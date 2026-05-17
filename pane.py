@@ -12,6 +12,7 @@ import annotations
 import settings
 import devotional
 import annotation_dialogs
+from lexicon_panel import LexiconPanel
 
 # Logical highlight IDs (persisted in annotations.json) → softer rendered tints.
 # Persisted values are unchanged so existing user data still reads correctly;
@@ -91,22 +92,6 @@ def _extract_segments(html):
     if pos < len(html):
         segments.append((html[pos:], None, None))
     return segments
-
-
-def _make_verse_markup(html, target_strong):
-    """Return Pango markup for a verse with words matching target_strong in bold."""
-    segments = _extract_segments(str(html))
-    if not any(s for _, s, _m in segments):
-        plain = re.sub(r'<[^>]+>', '', str(html))
-        return GLib.markup_escape_text(plain).strip()
-    parts = []
-    for seg_html, seg_strong, _morph in segments:
-        plain = GLib.markup_escape_text(re.sub(r'<[^>]+>', '', seg_html))
-        if seg_strong and seg_strong.upper() == target_strong.upper():
-            parts.append(f'<b>{plain}</b>')
-        else:
-            parts.append(plain)
-    return ''.join(parts).strip()
 
 
 
@@ -308,98 +293,26 @@ class BiblePane(Gtk.Box):
         scrolled.set_vexpand(True)
         scrolled.set_hexpand(True)
 
-        # Lexicon panel (hidden until a Strong's word is clicked)
-        self._lex_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self._lex_box.set_visible(False)
-        self._lex_box.set_size_request(-1, 80)
-        self._lex_box.add_css_class('lex-panel')
-        self._lex_history = []
-        self._current_strong = None
-        self._current_morph = None
+        # Lexicon panel (hidden until a Strong's word is clicked).
+        # Owns its own widgets, state, and navigation history; we just
+        # compose it into the vertical Paned below the Bible text view.
         self._flash_timers = set()
+        # _current_morph is a transient buffer: _on_left_click reads the
+        # morph: tag at click time and stashes it here, so when window.py
+        # later calls back via show_lexicon() we can pass it through to
+        # LexiconPanel for the header decode. Cross-reference clicks
+        # within the lex panel clear morph context on their own.
+        self._current_morph = None
+        self._lex_panel = LexiconPanel(
+            on_word_study_navigate=on_word_study_navigate,
+            on_first_show=self._init_outer_paned_position,
+        )
 
-        lex_header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        lex_header.add_css_class('lex-header')
-        lex_header.set_margin_start(12)
-        lex_header.set_margin_end(8)
-        lex_header.set_margin_top(6)
-        lex_header.set_margin_bottom(6)
-
-        self._lex_back_btn = Gtk.Button(icon_name='go-previous-symbolic')
-        self._lex_back_btn.add_css_class('flat')
-        self._lex_back_btn.set_sensitive(False)
-        self._lex_back_btn.set_tooltip_text('Back')
-        self._lex_back_btn.connect('clicked', self._on_lex_back)
-        lex_header.append(self._lex_back_btn)
-
-        self._lex_title = Gtk.Label(label="Strong's Lexicon", xalign=0)
-        self._lex_title.add_css_class('heading')
-        lex_header.append(self._lex_title)
-
-        self._morph_lbl = Gtk.Label(label='', xalign=0, hexpand=True)
-        self._morph_lbl.add_css_class('dim-label')
-        self._morph_lbl.set_ellipsize(Pango.EllipsizeMode.END)
-        lex_header.append(self._morph_lbl)
-
-        lex_close = Gtk.Button(icon_name='window-close-symbolic')
-        lex_close.add_css_class('flat')
-        lex_close.connect('clicked', lambda _: self._hide_lexicon())
-        lex_header.append(lex_close)
-
-        lex_scrolled = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
-        self._lex_inner = Gtk.TextView()
-        self._lex_inner.set_editable(False)
-        self._lex_inner.set_cursor_visible(False)
-        self._lex_inner.set_wrap_mode(Gtk.WrapMode.WORD)
-        self._lex_inner.set_left_margin(16)
-        self._lex_inner.set_right_margin(16)
-        self._lex_inner.set_top_margin(8)
-        self._lex_inner.set_bottom_margin(8)
-        self._lex_buf = self._lex_inner.get_buffer()
-        lex_scrolled.set_child(self._lex_inner)
-
-        gesture_lex = Gtk.GestureClick.new()
-        gesture_lex.set_button(1)
-        gesture_lex.connect('pressed', self._on_lex_click)
-        self._lex_inner.add_controller(gesture_lex)
-
-        # Word study panel (right third of lexicon area)
-        ws_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        ws_box.add_css_class('ws-panel')
-
-        # Badge-style header — distinct from the main lexicon title so the
-        # two stop competing as equal-weight headings.
-        self._ws_header = Gtk.Label(label='', xalign=0, hexpand=True)
-        self._ws_header.add_css_class('ws-header')
-        ws_box.append(self._ws_header)
-
-        self._ws_list = Gtk.ListBox()
-        self._ws_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
-        self._ws_list.connect('row-activated', self._on_ws_row_activated)
-
-        ws_scroll = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
-        ws_scroll.set_child(self._ws_list)
-        ws_box.append(ws_scroll)
-
-        # Horizontal paned: definition left, word study right
-        self._lex_h_paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL,
-                                      hexpand=True, vexpand=True)
-        self._lex_h_paned.set_start_child(lex_scrolled)
-        self._lex_h_paned.set_end_child(ws_box)
-        self._lex_h_paned.set_resize_start_child(True)
-        self._lex_h_paned.set_resize_end_child(True)
-        self._lex_h_paned.set_shrink_start_child(False)
-        self._lex_h_paned.set_shrink_end_child(False)
-
-        self._lex_box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
-        self._lex_box.append(lex_header)
-        self._lex_box.append(self._lex_h_paned)
-
-        # Vertical paned: Bible text on top, lexicon on bottom (resizable)
+        # Vertical paned: Bible text on top, lexicon panel on bottom.
         self._lex_paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL,
                                     vexpand=True, hexpand=True)
         self._lex_paned.set_start_child(scrolled)
-        self._lex_paned.set_end_child(self._lex_box)
+        self._lex_paned.set_end_child(self._lex_panel)
         self._lex_paned.set_resize_start_child(True)
         self._lex_paned.set_resize_end_child(True)
         self._lex_paned.set_shrink_start_child(False)
@@ -438,7 +351,7 @@ class BiblePane(Gtk.Box):
         gesture_close_search_lex = Gtk.GestureClick.new()
         gesture_close_search_lex.set_button(1)
         gesture_close_search_lex.connect('pressed', self._on_pane_click)
-        self._lex_inner.add_controller(gesture_close_search_lex)
+        self._lex_panel.def_view.add_controller(gesture_close_search_lex)
 
         # Hover-only Strong's underline — apply a transient underline tag
         # to the word under the cursor, instead of a permanent underline
@@ -1196,197 +1109,26 @@ class BiblePane(Gtk.Box):
         threading.Thread(target=fetch, daemon=True).start()
         return GLib.SOURCE_REMOVE
 
+    # ── Lexicon panel delegators ─────────────────────────────────────────
+
     def show_lexicon(self, strong_num, text):
-        """Called from window.py on Bible-text word click. Resets nav history."""
-        self._lex_history.clear()
-        self._lex_back_btn.set_sensitive(False)
-        self._current_strong = strong_num
-        self._show_lex_content(strong_num, text)
-        self._load_word_study(strong_num)
-
-    def _load_word_study(self, strong_num):
-        child = self._ws_list.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            self._ws_list.remove(child)
-            child = nxt
-        self._ws_header.set_text('Searching…')
-        module, book = self._module, self._book
-
-        def fetch():
-            results = []
-            for ch in range(1, sword_bridge.chapter_count(book) + 1):
-                for v_num, html in sword_bridge.load_chapter(module, book, ch):
-                    if re.search(rf'strong:{re.escape(strong_num)}',
-                                 str(html), re.IGNORECASE):
-                        markup = _make_verse_markup(html, strong_num)
-                        results.append((book, ch, v_num, markup))
-            GLib.idle_add(self._populate_word_study, strong_num, results, book, module)
-
-        threading.Thread(target=fetch, daemon=True).start()
-
-    def _populate_word_study(self, strong_num, results, book, module):
-        # Discard if the user has navigated away (module / book / strong's all must match)
-        if (self._current_strong != strong_num
-                or self._book != book
-                or self._module != module):
-            return GLib.SOURCE_REMOVE
-        child = self._ws_list.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            self._ws_list.remove(child)
-            child = nxt
-        n = len(results)
-        self._ws_header.set_text(
-            f'{n} occurrence{"s" if n != 1 else ""} in {book}')
-        for ref_book, ch, v_num, markup in results:
-            row = Gtk.ListBoxRow()
-            row._nav = (ref_book, ch, v_num)
-            card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-            card.set_margin_start(8)
-            card.set_margin_end(8)
-            card.set_margin_top(6)
-            card.set_margin_bottom(6)
-            ref_lbl = Gtk.Label(label=f'{ch}:{v_num}', xalign=0)
-            ref_lbl.add_css_class('dim-label')
-            text_lbl = Gtk.Label(xalign=0, wrap=True)
-            try:
-                text_lbl.set_markup(markup)
-            except Exception:
-                text_lbl.set_text(re.sub(r'<[^>]+>', '', markup))
-            card.append(ref_lbl)
-            card.append(text_lbl)
-            row.set_child(card)
-            self._ws_list.append(row)
-        return GLib.SOURCE_REMOVE
-
-    def _on_ws_row_activated(self, _listbox, row):
-        if hasattr(row, '_nav') and self._on_word_study_navigate:
-            self._on_word_study_navigate(*row._nav)
-
-    def _show_lex_content(self, strong_num, text):
-        # Quick lexicon navigations (G3056 → G2316 → G3056) spawn fetches whose
-        # callbacks land out of order; ignore any result that's not for the
-        # currently-active Strong's number.
-        if self._current_strong != strong_num:
-            return GLib.SOURCE_REMOVE
-        self._lex_title.set_text(f"Strong's {strong_num}")
-        decoded = ''
-        if self._current_morph:
-            m = self._current_morph
-            if 'robinson:' in m:
-                decoded = sword_bridge.decode_robinson(m) or ''
-            else:
-                decoded = sword_bridge.decode_hebrew_morph(m) or ''
-        self._morph_lbl.set_text(decoded)
-
-        if not text:
-            self._lex_buf.set_text("Definition not found.")
-        else:
-            dark = Adw.StyleManager.get_default().get_dark()
-            markup = _html_to_markup(text, dark)
-            self._lex_buf.set_text('')
-            try:
-                self._lex_buf.insert_markup(self._lex_buf.get_start_iter(), markup, -1)
-            except Exception as e:
-                plain = re.sub(r'<[^>]+>', '', markup)
-                self._lex_buf.set_text(plain)
-                print(f"[Lexicon] Markup error: {e}")
-            self._tag_lex_refs()
-
-        if not self._lex_box.get_visible():
-            self._lex_box.set_visible(True)
-            GLib.idle_add(self._init_lex_position)
-
-    def _tag_lex_refs(self):
-        """Tag cross-reference numbers in the lexicon text as clickable.
-
-        SWORD Strong's entries don't use G/H prefixes in the rendered text.
-        Handles variations like 'see HEBREW for 07554', 'from 3004', 'ref 123', etc.
-        """
-        start = self._lex_buf.get_start_iter()
-        end = self._lex_buf.get_end_iter()
-        text = self._lex_buf.get_text(start, end, False)
-        lang = self._current_strong[0].upper() if self._current_strong else 'G'
-
-        def apply_tag(m_start, m_end, prefix, raw_num):
-            num = str(int(raw_num))  # strip leading zeros
-            strong_num = f"{prefix}{num}"
-            s = self._lex_buf.get_iter_at_offset(m_start)
-            e = self._lex_buf.get_iter_at_offset(m_end)
-            tag_name = f"strg:{strong_num}"
-            tag = self._lex_buf.get_tag_table().lookup(tag_name)
-            if not tag:
-                tag = self._lex_buf.create_tag(tag_name, 
-                    underline=Pango.Underline.SINGLE,
-                    foreground='DodgerBlue'
-                )
-            self._lex_buf.apply_tag(tag, s, e)
-
-        # 1. Targeted search for language-switching refs:
-        # "see HEBREW for 07554" / "see GREEK for 3004"
-        for m in re.finditer(r'see (?:also\s+)?(HEBREW|GREEK)\s+for\s+(\d+)', text, re.I):
-            prefix = 'H' if m.group(1).upper() == 'HEBREW' else 'G'
-            apply_tag(m.start(2), m.end(2), prefix, m.group(2))
-
-        # 2. Sequential/Same-language refs:
-        # "from 7554" / "compare 1234" / "and 5346" / "ref 111"
-        for m in re.finditer(r'\b(?:from|compare|and|ref|see|also)\s+(\d+)\b', text, re.I):
-            apply_tag(m.start(1), m.end(1), lang, m.group(1))
-
-        # 3. Explicit G/H-prefixed refs (e.g. G3056, H1234)
-        for m in re.finditer(r'\b([GH])(\d+)\b', text, re.I):
-            apply_tag(m.start(), m.end(), m.group(1).upper(), m.group(2))
-
-    def _navigate_to_strong(self, strong_num):
-        """Navigate to a new Strong's entry from within the lexicon panel."""
-        if self._current_strong:
-            self._lex_history.append(self._current_strong)
-            self._lex_back_btn.set_sensitive(True)
-        self._current_strong = strong_num
-        self._current_morph = None
-
-        def fetch():
-            text = sword_bridge.lookup_strong(strong_num)
-            GLib.idle_add(self._show_lex_content, strong_num, text)
-            GLib.idle_add(self._load_word_study, strong_num)
-        threading.Thread(target=fetch, daemon=True).start()
-
-    def _on_lex_back(self, _btn):
-        if not self._lex_history:
-            return
-        prev = self._lex_history.pop()
-        self._current_strong = prev
-        self._current_morph = None
-        self._lex_back_btn.set_sensitive(bool(self._lex_history))
-
-        def fetch():
-            text = sword_bridge.lookup_strong(prev)
-            GLib.idle_add(self._show_lex_content, prev, text)
-            GLib.idle_add(self._load_word_study, prev)
-        threading.Thread(target=fetch, daemon=True).start()
-
-    def _on_lex_click(self, gesture, n_press, x, y):
-        bx, by = self._lex_inner.window_to_buffer_coords(Gtk.TextWindowType.WIDGET, int(x), int(y))
-        found, it = self._lex_inner.get_iter_at_location(bx, by)
-        if not found:
-            return
-        for tag in it.get_tags():
-            name = tag.get_property('name')
-            if name and name.startswith('strg:'):
-                self._navigate_to_strong(name[5:])
-                return
-
-    def _init_lex_position(self):
-        h = self._lex_paned.get_allocated_height()
-        self._lex_paned.set_position(h - 200 if h > 200 else 300)
-        w = self._lex_h_paned.get_allocated_width()
-        if w > 100:
-            self._lex_h_paned.set_position(int(w * 0.67))
-        return GLib.SOURCE_REMOVE
+        """Called from window.py on Bible-text word click. The window has
+        already fetched the definition text asynchronously; here we just
+        forward it to the panel along with the morph we captured during
+        the click (so the panel can decode and show it in the header)."""
+        self._lex_panel.set_context(self._book, self._module)
+        self._lex_panel.show(strong_num, text, morph=self._current_morph)
 
     def _hide_lexicon(self):
-        self._lex_box.set_visible(False)
+        self._lex_panel.hide()
+
+    def _init_outer_paned_position(self):
+        """Called by LexiconPanel via the on_first_show callback — sets
+        the vertical Paned's divider so the lex panel gets ~200px tall
+        on first reveal."""
+        h = self._lex_paned.get_allocated_height()
+        self._lex_paned.set_position(h - 200 if h > 200 else 300)
+        return GLib.SOURCE_REMOVE
 
     def _verses_in_range(self, start, end):
         seen = set()
@@ -1566,14 +1308,11 @@ class BiblePane(Gtk.Box):
             # _on_sync_toggled's catch-up logic loads the window's current
             # book/chapter into this pane.
             self._sync_btn.set_active(False)
-        # Clear stale per-module state — Strong's words, morph, selected verse, and
+        # Clear stale per-module state — morph buffer, selected verse, and
         # the lexicon panel are all keyed to the previous module's content.
-        self._current_strong = None
         self._current_morph = None
         self._selected_verse = None
-        self._lex_history.clear()
-        self._lex_back_btn.set_sensitive(False)
-        self._hide_lexicon()
+        self._lex_panel.clear_state()
         # Dismiss any dict popup since it's tied to a word in the previous module's text.
         prev_dict = getattr(self, '_dict_win', None)
         if prev_dict is not None:
