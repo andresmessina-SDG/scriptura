@@ -10,6 +10,7 @@ import sword_bridge
 import ebible_bridge
 import annotations
 import settings
+import devotional
 
 # Logical highlight IDs (persisted in annotations.json) → softer rendered tints.
 # Persisted values are unchanged so existing user data still reads correctly;
@@ -591,108 +592,13 @@ class BiblePane(Gtk.Box):
         self._cancel_all_flashes()
         self._buffer.set_text('')
         if raw:
-            self._render_devotional_osis(raw, dark)
+            devotional.render_osis(self._buffer, raw, dark)
         else:
             self._buffer.insert_markup(
                 self._buffer.get_end_iter(),
                 '<span foreground="gray">No entry found for this date.</span>', -1)
         self._view.get_vadjustment().set_value(0)
         return GLib.SOURCE_REMOVE
-
-    def _render_devotional_osis(self, raw, dark):
-        link_color = '#4a9dff' if dark else '#1a6ac4'
-
-        title_m = re.search(r'<title[^>]*>(.*?)</title>', raw, re.DOTALL)
-        title = re.sub(r'<[^>]+>', '', title_m.group(1)).strip() if title_m else ''
-
-        p_blocks = re.findall(r'<p\b[^>]*>(.*?)</p>', raw, re.DOTALL)
-
-        if not p_blocks:
-            # Fallback: strip all tags
-            if title:
-                self._buffer.insert_markup(
-                    self._buffer.get_end_iter(),
-                    f'<b><big>{GLib.markup_escape_text(title)}</big></b>\n\n', -1)
-            plain = re.sub(r'<[^>]+>', ' ', raw).strip()
-            self._buffer.insert(self._buffer.get_end_iter(), re.sub(r'\s+', ' ', plain))
-            return
-
-        if title:
-            self._buffer.insert_markup(
-                self._buffer.get_end_iter(),
-                f'<b><big>{GLib.markup_escape_text(title)}</big></b>\n\n', -1)
-
-        # Detect section headers — a <p> with both an italic quote AND a
-        # <reference> marks the start of a devotional section. SME packs the
-        # morning + evening readings into one entry, so we label the second
-        # (and any subsequent) sections to make the boundary obvious.
-        def _is_section_header(p):
-            return bool(
-                re.search(r'<hi\b[^>]*type=["\']italic["\'][^>]*>', p) and
-                re.search(r'<reference\b', p)
-            )
-
-        section_starts = [i for i, p in enumerate(p_blocks) if _is_section_header(p)]
-        multi_section  = len(section_starts) > 1
-        # Default labels for two-section SME-style entries; generic numbering otherwise.
-        labels = (['Morning', 'Evening']
-                  if len(section_starts) == 2
-                  else [f'Part {i + 1}' for i in range(len(section_starts))])
-
-        section_idx = -1
-        for i, p in enumerate(p_blocks):
-            if i in section_starts:
-                section_idx += 1
-                if multi_section:
-                    if section_idx > 0:
-                        # Spacer + label between sections
-                        self._buffer.insert_markup(
-                            self._buffer.get_end_iter(), '\n', -1)
-                    label = labels[section_idx] if section_idx < len(labels) else f'Part {section_idx + 1}'
-                    self._buffer.insert_markup(
-                        self._buffer.get_end_iter(),
-                        f'<b><big>{GLib.markup_escape_text(label)}</big></b>\n', -1)
-                # Italic quote
-                quote_m = re.search(r'<hi\b[^>]*type=["\']italic["\'][^>]*>(.*?)</hi>',
-                                     p, re.DOTALL)
-                if quote_m:
-                    quote = re.sub(r'<[^>]+>', '', quote_m.group(1)).strip()
-                    if quote:
-                        self._buffer.insert_markup(
-                            self._buffer.get_end_iter(),
-                            f'<i>{GLib.markup_escape_text(quote)}</i>\n', -1)
-                # Clickable reference
-                ref_m = re.search(r'<reference[^>]+osisRef="([^"]+)"[^>]*>(.*?)</reference>',
-                                  p, re.DOTALL)
-                if ref_m:
-                    osis_ref = ref_m.group(1)
-                    display  = re.sub(r'<[^>]+>', '', ref_m.group(2)).strip() or osis_ref
-                    clean    = osis_ref[6:] if osis_ref.startswith('Bible:') else osis_ref
-                    self._insert_devotional_ref(display, clean, link_color)
-                    self._buffer.insert(self._buffer.get_end_iter(), '\n')
-                self._buffer.insert(self._buffer.get_end_iter(), '\n')
-            else:
-                text = re.sub(r'<lb\s*/?>', '\n', p)
-                text = re.sub(r'<[^>]+>', '', text).strip()
-                text = re.sub(r'\s+', ' ', text)
-                if text:
-                    self._buffer.insert(self._buffer.get_end_iter(), text + '\n\n')
-
-    def _insert_devotional_ref(self, display_text, osis_ref, link_color):
-        start_offset = self._buffer.get_char_count()
-        self._buffer.insert(self._buffer.get_end_iter(), display_text)
-        end_offset = self._buffer.get_char_count()
-        tag_name = f'devref:{osis_ref}'
-        tag = self._buffer.get_tag_table().lookup(tag_name)
-        if not tag:
-            tag = self._buffer.create_tag(
-                tag_name,
-                foreground=link_color,
-                underline=Pango.Underline.SINGLE,
-            )
-        s = self._buffer.get_iter_at_offset(start_offset)
-        e = self._buffer.get_iter_at_offset(end_offset)
-        self._buffer.apply_tag(tag, s, e)
 
     def _go_devotional_day(self, delta, reset=False):
         if reset:
