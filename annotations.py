@@ -90,7 +90,11 @@ def save_tags(module, book, chapter, verse, tags):
     data = _load()
     key = f"{module}/{book}/{chapter}"
     _ensure_verse_dict(data, key, str(verse))
-    data[key][str(verse)]['tags'] = [t.strip() for t in tags if str(t).strip()]
+    # Coerce to strings before stripping — defensive against None / non-string
+    # entries that can sneak in from corrupt JSON or tests.
+    data[key][str(verse)]['tags'] = [
+        str(t).strip() for t in tags if t is not None and str(t).strip()
+    ]
     _save(data)
 
 
