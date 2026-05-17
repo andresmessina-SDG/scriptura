@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Editor / OS
+*.swp
+*.swo
+.vscode/
+.idea/
+.DS_Store
+
+# Syncthing
+.stfolder/
+
+# User runtime data — regenerated on first run or via UI actions
+annotations.json
+bookmarks.json
+reading_plans.json
+search_history.json
+settings.json
+
+# Downloaded resources (re-downloadable via Module Manager / eBible bridge)
+data/
+ebible.db
+ebible_catalog.csv
