@@ -375,13 +375,14 @@ class StudyJournalWindow(Adw.Window):
     # ── Actions ───────────────────────────────────────────────────────────────
 
     def _on_delete_entry(self, _btn, entry):
+        verse = None if entry.get('is_chapter_note') else entry['verse']
         annotations.delete_annotation(
-            entry['module'], entry['book'], entry['chapter'],
-            None if entry.get('is_chapter_note') else entry['verse']
+            entry['module'], entry['book'], entry['chapter'], verse
         )
         self._reload()
         if self._on_annotation_changed:
-            self._on_annotation_changed()
+            self._on_annotation_changed(
+                entry['module'], entry['book'], entry['chapter'], verse)
 
     def _on_row_activated(self, _listbox, row):
         if hasattr(row, '_entry'):

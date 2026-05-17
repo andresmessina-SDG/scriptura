@@ -26,7 +26,7 @@ def _render_highlight(color):
     return _HIGHLIGHT_RENDER.get(color, color) if color else color
 
 
-def _html_to_markup(html, dark, annotation=None):
+def _html_to_markup(html, dark):
     # Ensure we are working with a string
     html = str(html)
     # Strip lone surrogates that SWORD produces from non-UTF-8 module data
@@ -153,7 +153,6 @@ class BiblePane(Gtk.Box):
         self._book = 'Genesis'
         self._chapter = 1
         self._target_verse = None
-        self._saved_scroll = None
         self._selected_verse = None
         self._devotional_date = _date.today()
         # Mirrors of the window's current location, kept updated even when
@@ -559,22 +558,10 @@ class BiblePane(Gtk.Box):
         self._lexicon_enabled = enabled
         self._fetch_and_render()
 
-    def _fetch_and_render(self, keep_scroll=False):
+    def _fetch_and_render(self):
         if self._is_devotional:
             self._fetch_and_render_devotional()
             return
-        if keep_scroll:
-            # Save the EXACT buffer offset of the iter at the visible top.
-            # Within a chapter, annotation saves only change tag application
-            # — text content is unchanged — so offsets are stable between
-            # renders. Restoring to the offset gives pixel-precise alignment
-            # rather than verse-level snapping.
-            self._saved_top_offset = self._find_topmost_visible_offset()
-            self._saved_top_verse = None  # legacy field, no longer used
-        else:
-            self._saved_top_offset = None
-            self._saved_top_verse = None
-        self._saved_scroll = None
         book, chapter, module = self._book, self._chapter, self._module
 
         def fetch():
@@ -755,7 +742,7 @@ class BiblePane(Gtk.Box):
 
             # 2. Verse text
             v_anno = annos.get(str(v), {})
-            v_text_markup = _html_to_markup(html, dark, annotation=v_anno if not is_commentary else None)
+            v_text_markup = _html_to_markup(html, dark)
             # Drop-cap: enlarge the first letter of verse 1 for a print-Bible feel.
             # Skip the dropcap on highlighted v1 — the soft tint reads better as a flat block.
             if not is_commentary and v == 1 and not v_anno.get('highlight'):
@@ -798,10 +785,6 @@ class BiblePane(Gtk.Box):
             v = self._target_verse
             self._target_verse = None
             GLib.idle_add(self._scroll_to_verse, v)
-        elif getattr(self, '_saved_top_offset', None) is not None:
-            off = self._saved_top_offset
-            self._saved_top_offset = None
-            GLib.idle_add(self._scroll_to_offset_silent, off)
         else:
             self._view.scroll_to_iter(self._buffer.get_start_iter(), 0.0, False, 0, 0)
 
@@ -840,10 +823,6 @@ class BiblePane(Gtk.Box):
 
     def _flash_verse_deferred(self, verse_num):
         self._flash_verse(verse_num)
-        return GLib.SOURCE_REMOVE
-
-    def _restore_scroll(self, value):
-        self._view.get_vadjustment().set_value(value)
         return GLib.SOURCE_REMOVE
 
     def _verse_ranges(self, verse_num):
@@ -940,36 +919,6 @@ class BiblePane(Gtk.Box):
             self._module, self._book, self._chapter)
         v_anno = (annos or {}).get(str(verse_num), {})
         self._apply_anno_tags(verse_num, v_anno)
-
-    def _find_topmost_visible_offset(self):
-        """Return the buffer offset of the iter at the top of the visible
-        area, or None if it can't be probed. Buffer offsets are stable
-        across annotation-triggered re-renders within a chapter (text
-        content is unchanged; only tag application differs), so this is
-        a precise scroll-position key."""
-        rect = self._view.get_visible_rect()
-        # Probe into the middle of the visible column, just below the top.
-        # get_iter_at_location returns False for margin areas (textview
-        # has left_margin=26) or exactly on a paragraph boundary.
-        x = rect.x + max(40, rect.width // 2)
-        y = rect.y + 4
-        success, it = self._view.get_iter_at_location(x, y)
-        if not success:
-            return None
-        return it.get_offset()
-
-    def _scroll_to_offset_silent(self, offset):
-        """Scroll without flashing so that the iter at `offset` is at the
-        top of the visible area. Used to restore the visible position
-        after an annotation re-render."""
-        end = self._buffer.get_end_iter()
-        if offset > end.get_offset():
-            offset = end.get_offset()
-        it = self._buffer.get_iter_at_offset(offset)
-        mark = self._buffer.create_mark(None, it, True)
-        self._view.scroll_to_mark(mark, 0.0, True, 0.0, 0.0)
-        self._buffer.delete_mark(mark)
-        return GLib.SOURCE_REMOVE
 
     def _flash_verse(self, verse_num):
         tag = self._buffer.get_tag_table().lookup(f'vnum_{verse_num}')

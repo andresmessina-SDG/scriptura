@@ -96,19 +96,17 @@ class BibleWindow(Adw.ApplicationWindow):
         self._fwd_btn.connect('clicked', self._on_nav_fwd)
         header.pack_start(self._fwd_btn)
 
-        # Dropdowns remain as authoritative state holders. Kept in the widget
-        # tree but invisible — the combined Book+Chapter popover below drives
-        # navigation through the existing _on_book_changed / _on_chapter_changed
-        # handlers via _go_to(), so all the existing nav paths still work.
+        # Dropdowns remain as authoritative state holders for book/chapter
+        # index — used by Alt+arrow navigation and the quick-jump bar — but
+        # are not visible and have no change handlers. All navigation flows
+        # through _go_to(), which writes to them.
         self.book_drop = Gtk.DropDown(model=Gtk.StringList.new(BOOKS))
-        self._book_handler = self.book_drop.connect('notify::selected', self._on_book_changed)
         self.book_drop.set_visible(False)
         header.pack_start(self.book_drop)
 
         self.chapter_drop = Gtk.DropDown(
             model=Gtk.StringList.new([str(i) for i in range(1, 51)])
         )
-        self._chapter_handler = self.chapter_drop.connect('notify::selected', self._on_chapter_changed)
         self.chapter_drop.set_visible(False)
         header.pack_start(self.chapter_drop)
 
@@ -378,17 +376,10 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
             self._nav_fwd.clear()
             self._update_nav_btns()
 
-        self.book_drop.disconnect(self._book_handler)
-        self.chapter_drop.disconnect(self._chapter_handler)
-        try:
-            self.book_drop.set_selected(BOOKS.index(book))
-            count = sword_bridge.chapter_count(book)
-            self.chapter_drop.set_model(Gtk.StringList.new([str(i) for i in range(1, count + 1)]))
-            self.chapter_drop.set_selected(chapter - 1)
-        finally:
-            # Reconnect even on failure — otherwise dropdowns become permanently inert.
-            self._book_handler  = self.book_drop.connect('notify::selected', self._on_book_changed)
-            self._chapter_handler = self.chapter_drop.connect('notify::selected', self._on_chapter_changed)
+        self.book_drop.set_selected(BOOKS.index(book))
+        count = sword_bridge.chapter_count(book)
+        self.chapter_drop.set_model(Gtk.StringList.new([str(i) for i in range(1, count + 1)]))
+        self.chapter_drop.set_selected(chapter - 1)
 
         self._current_loc = (book, chapter)
         self._update_ref_label(book, chapter)
@@ -513,30 +504,6 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
                 book, chapter, verse = result
                 GLib.idle_add(self._go_to, book, chapter, verse, False)
         threading.Thread(target=fetch, daemon=True).start()
-
-    def _on_book_changed(self, drop, _param):
-        book = BOOKS[drop.get_selected()]
-        self._push_nav_back(self._current_loc)
-        self._nav_fwd.clear()
-        self._update_nav_btns()
-
-        count = sword_bridge.chapter_count(book)
-        self.chapter_drop.disconnect(self._chapter_handler)
-        self.chapter_drop.set_model(Gtk.StringList.new([str(i) for i in range(1, count + 1)]))
-        self.chapter_drop.set_selected(0)
-        self._chapter_handler = self.chapter_drop.connect('notify::selected', self._on_chapter_changed)
-
-        self._current_loc = (book, 1)
-        self._load_all_panes()
-
-    def _on_chapter_changed(self, _drop, _param):
-        book    = BOOKS[self.book_drop.get_selected()]
-        chapter = self.chapter_drop.get_selected() + 1
-        self._push_nav_back(self._current_loc)
-        self._nav_fwd.clear()
-        self._update_nav_btns()
-        self._current_loc = (book, chapter)
-        self._load_all_panes()
 
     # ── Back / forward ────────────────────────────────────────────────────────
 
@@ -978,10 +945,19 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         self._attach_esc_close(self._journal_win, '_journal_win')
         self._journal_win.present()
 
-    def _refresh_panes(self):
-        self.pane1._fetch_and_render(keep_scroll=True)
-        if self._paned.get_end_child().get_visible():
-            self.pane2._fetch_and_render(keep_scroll=True)
+    def _refresh_panes(self, module, book, chapter, verse):
+        """Called by Study Journal when an annotation is deleted there.
+        Surgical: refresh only the affected verse on whichever pane(s) are
+        currently showing the same module/book/chapter. No full re-render,
+        no scroll movement."""
+        for pane in (self.pane1, self.pane2):
+            if (pane._module == module
+                and pane._book == book
+                and pane._chapter == chapter):
+                if verse is None:
+                    pane._update_chapter_note_indicator()
+                else:
+                    pane._refresh_verse_annotation(verse)
 
     def _on_journal_navigate(self, module, book, chapter, verse):
         self._go_to(book, chapter, verse)
