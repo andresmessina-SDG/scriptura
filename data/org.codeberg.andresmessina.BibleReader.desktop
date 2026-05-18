@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Bible Reader
+GenericName=Bible Study
+Comment=GNOME-native Bible study with SWORD modules, Strong's lexicon, and cross-references
+Exec=python3 main.py
+Icon=org.codeberg.andresmessina.BibleReader
+Categories=Education;Office;Viewer;
+Keywords=Bible;Scripture;Study;SWORD;Lexicon;Strong's;
+Terminal=false
+Type=Application
+StartupNotify=true

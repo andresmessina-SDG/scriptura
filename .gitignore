@@ -21,7 +21,11 @@ reading_plans.json
 search_history.json
 settings.json
 
-# Downloaded resources (re-downloadable via Module Manager / eBible bridge)
-data/
+# Downloaded resources (re-downloadable via Module Manager / eBible bridge).
+# Specific files only — keeps data/icons/ and other ship-with-app assets
+# tracked.
+data/cross_references.txt
+data/topic-scores.txt
+data/dodson.csv
 ebible.db
 ebible_catalog.csv

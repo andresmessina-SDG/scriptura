@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Placeholder icon for Bible Reader. To be replaced with a real design.
+  Stylized open book in two-tone GNOME accent: a darker cover behind a
+  lighter page spread, with a thin spine and centered "bookmark" stripe.
+  Designed at 128×128 with stroke-aligned-to-grid geometry so it crisps
+  up cleanly at 32 / 48 / 64 / 256.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- Cover (behind) -->
+  <rect x="16" y="22" width="96" height="88" rx="6" ry="6"
+        fill="#1c2433" stroke="#0d1320" stroke-width="2"/>
+  <!-- Open pages — two leaves -->
+  <path d="M 64 30 C 56 28, 36 28, 28 32 L 28 100 C 36 96, 56 96, 64 100 Z"
+        fill="#f5e6a3" stroke="#a8924a" stroke-width="1.5"/>
+  <path d="M 64 30 C 72 28, 92 28, 100 32 L 100 100 C 92 96, 72 96, 64 100 Z"
+        fill="#fff8d8" stroke="#a8924a" stroke-width="1.5"/>
+  <!-- Spine (centered) -->
+  <line x1="64" y1="30" x2="64" y2="100"
+        stroke="#0d1320" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Text lines (suggestive of verses) -->
+  <g stroke="#a8924a" stroke-width="1.5" stroke-linecap="round" opacity="0.55">
+    <line x1="36" y1="42" x2="58" y2="42"/>
+    <line x1="36" y1="50" x2="56" y2="50"/>
+    <line x1="36" y1="58" x2="58" y2="58"/>
+    <line x1="36" y1="66" x2="54" y2="66"/>
+    <line x1="36" y1="74" x2="58" y2="74"/>
+    <line x1="36" y1="82" x2="52" y2="82"/>
+
+    <line x1="70" y1="42" x2="92" y2="42"/>
+    <line x1="70" y1="50" x2="90" y2="50"/>
+    <line x1="70" y1="58" x2="92" y2="58"/>
+    <line x1="70" y1="66" x2="88" y2="66"/>
+    <line x1="70" y1="74" x2="92" y2="74"/>
+    <line x1="70" y1="82" x2="86" y2="82"/>
+  </g>
+  <!-- Bookmark ribbon -->
+  <path d="M 60 22 L 60 38 L 64 34 L 68 38 L 68 22 Z"
+        fill="#bdd5e8" stroke="#5a7fa3" stroke-width="1"/>
+</svg>

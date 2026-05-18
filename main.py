@@ -1,17 +1,41 @@
+import os
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, Gio
+from gi.repository import Gtk, Adw, Gdk, Gio
 from window import BibleWindow
+
+
+APP_ID = 'org.codeberg.andresmessina.BibleReader'
+
+
+def _register_icon_search_path():
+    """Add our `data/icons/` directory to the default icon theme search
+    path so GTK finds the bundled app icon (otherwise the About dialog
+    and any other icon lookups fall back to GNOME's generic placeholder).
+
+    In a Flatpak install the icon ends up under /app/share/icons/...
+    and is picked up automatically, so this only matters for development
+    / direct-source runs."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    icons_dir = os.path.join(here, 'data', 'icons')
+    if not os.path.isdir(icons_dir):
+        return
+    display = Gdk.Display.get_default()
+    if display is None:
+        return
+    theme = Gtk.IconTheme.get_for_display(display)
+    theme.add_search_path(icons_dir)
 
 
 class BibleApp(Adw.Application):
     def __init__(self):
-        super().__init__(application_id='org.example.biblereader',
+        super().__init__(application_id=APP_ID,
                          flags=Gio.ApplicationFlags.NON_UNIQUE)
         self.connect('activate', self._on_activate)
 
     def _on_activate(self, app):
+        _register_icon_search_path()
         win = BibleWindow(application=app)
         win.present()
 

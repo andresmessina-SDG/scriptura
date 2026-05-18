@@ -986,6 +986,34 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         self._attach_esc_close(self._hotkeys_win, '_hotkeys_win')
         self._hotkeys_win.present()
 
+    # ── About ─────────────────────────────────────────────────────────────────
+
+    def _on_about_clicked(self, _btn):
+        dlg = Adw.AboutDialog(
+            application_name='Bible Reader',
+            application_icon='org.codeberg.andresmessina.BibleReader',
+            developer_name='Andres Messina',
+            version='0.1.0',
+            comments='GNOME-native Bible study with SWORD modules, '
+                     'Strong’s lexicon, cross-references, and reading plans.',
+            website='https://codeberg.org/andresmessina/bible-reader',
+            issue_url='https://codeberg.org/andresmessina/bible-reader/issues',
+            license_type=Gtk.License.GPL_3_0,
+            copyright='© 2026 Andres Messina',
+        )
+        dlg.add_credit_section('Data', [
+            'SWORD Project (CrossWire Bible Society) — modules and data layer',
+            'OpenBible.info — cross-references and topical tags (CC-BY)',
+            'Dodson Greek Lexicon — public-domain NT Greek definitions',
+            'eBible.org — modern translation catalog and texts',
+        ])
+        dlg.add_acknowledgement_section('Built with', [
+            'GTK4 + libadwaita',
+            'Python 3 / PyGObject',
+            'Whoosh full-text search',
+        ])
+        dlg.present(self)
+
     _HOTKEYS = [
         ('Navigation', [
             ('Ctrl+L',      'Quick jump to any reference (e.g. John 3:16)'),
@@ -1222,6 +1250,12 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         hotkeys_btn.set_tooltip_text('Keyboard shortcuts')
         hotkeys_btn.connect('clicked', self._on_hotkeys_clicked)
         tool_row.append(hotkeys_btn)
+
+        about_btn = Gtk.Button(icon_name='help-about-symbolic')
+        about_btn.add_css_class('circular')
+        about_btn.set_tooltip_text('About Bible Reader')
+        about_btn.connect('clicked', self._on_about_clicked)
+        tool_row.append(about_btn)
 
         _body.append(tool_row)
 
