@@ -124,7 +124,6 @@ class ModuleManagerWindow(Adw.Window):
 
         filter_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         filter_box.set_margin_top(4)
-        filter_box.set_margin_bottom(4)
 
         self._cat_drop = Gtk.DropDown(model=Gtk.StringList.new(['All Categories']))
         self._cat_drop.set_tooltip_text('Filter by category')
@@ -140,6 +139,18 @@ class ModuleManagerWindow(Adw.Window):
         self._strongs_check.set_tooltip_text("Only show modules with Strong's numbers")
         self._strongs_check.connect('toggled', self._on_filter_changed)
         filter_box.append(self._strongs_check)
+
+        # Search entry on its own row so a narrow window doesn't crush
+        # the entry into a few characters — dropdowns + checkbox can wrap
+        # on the row above; the search field keeps full width below.
+        search_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        search_row.set_margin_top(4)
+        search_row.set_margin_bottom(4)
+        self._cw_search = Gtk.SearchEntry()
+        self._cw_search.set_placeholder_text('Filter by name or description…')
+        self._cw_search.set_hexpand(True)
+        self._cw_search.connect('search-changed', self._on_filter_changed)
+        search_row.append(self._cw_search)
 
         self._available_list = Gtk.ListBox()
         self._available_list.set_selection_mode(Gtk.SelectionMode.NONE)
@@ -157,6 +168,7 @@ class ModuleManagerWindow(Adw.Window):
         box.append(self._installed_list)
         box.append(self._available_label)
         box.append(filter_box)
+        box.append(search_row)
         box.append(self._available_list)
 
         scroll = Gtk.ScrolledWindow(vexpand=True)
@@ -329,6 +341,12 @@ class ModuleManagerWindow(Adw.Window):
         if self._strongs_check.get_active():
             available = [m for m in available if 'StrongsNumbers' in m.get('features', set())]
 
+        query = self._cw_search.get_text().strip().lower()
+        if query:
+            available = [m for m in available
+                         if query in m['name'].lower()
+                         or query in m.get('description', '').lower()]
+
         self._available_label.set_text(f'Available ({len(available)})')
         for mod in available:
             self._available_list.append(self._make_row(mod, installed=False))
@@ -473,7 +491,7 @@ class ModuleManagerWindow(Adw.Window):
     def _finish_change(self, err, name):
         if err:
             print(f'[module manager] error for {name}: {err}', flush=True)
-            self._set_busy(False, f'Error: {err}')
+            self._set_busy(False, f'Couldn\'t install {name} — {err}')
         else:
             self._set_busy(False, '')
             if self._on_modules_changed:
@@ -487,12 +505,21 @@ class ModuleManagerWindow(Adw.Window):
             return
         btn.set_sensitive(False)
         btn.set_label('Downloading…')
-        self._set_busy(True, f'Downloading {src["label"]}…')
+        base_msg = f'Downloading {src["label"]}…'
+        self._set_busy(True, base_msg)
+
+        def _progress(done, total):
+            if total > 0:
+                pct = int(done * 100 / total)
+                msg = f'{base_msg} {pct}% ({done >> 20} of {total >> 20} MB)'
+            else:
+                msg = f'{base_msg} {done >> 20} MB'
+            GLib.idle_add(self._set_busy, True, msg)
 
         def work():
             err = None
             try:
-                open_data.download_source(source_id)
+                open_data.download_source(source_id, on_progress=_progress)
             except Exception as e:
                 err = str(e)
             GLib.idle_add(self._finish_db_change, err, src['label'])
@@ -505,7 +532,7 @@ class ModuleManagerWindow(Adw.Window):
 
     def _finish_db_change(self, err, label):
         if err:
-            self._set_busy(False, f'Error downloading {label}: {err}')
+            self._set_busy(False, f'Couldn\'t download {label} — {err}')
         else:
             self._set_busy(False, '')
         self._populate_open_db()
@@ -521,7 +548,7 @@ class ModuleManagerWindow(Adw.Window):
             self._eb_apply_filter()
         else:
             self._eb_status.set_text(
-                'No catalog cached yet. Click "Refresh Catalog" to download it.')
+                'No catalog cached yet — click "Refresh Catalog" to download it')
 
     def _eb_rebuild_lang_drop(self):
         langs = sorted(set(

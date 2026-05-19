@@ -55,11 +55,27 @@ SECTIONS = [
 
 _BOOK_TO_SECTION = {book: sec for sec, books in SECTIONS for book in books}
 
-_CSS = b"""
+
+def _searchable_modules():
+    """Modules suitable for full-text search — Bibles and commentaries
+    (both are book/chapter/verse-keyed, which Whoosh indexing assumes).
+    Excludes devotionals (date-keyed), lexicons / generic books (no verse
+    key space), and internal-use morphology modules (browsable via the
+    lexicon panel instead)."""
+    keep = []
+    for name in sword_bridge.module_names():
+        if sword_bridge.is_internal_use(name):
+            continue
+        t = sword_bridge.module_type(name)
+        if t in ('Biblical Texts', 'Commentaries'):
+            keep.append(name)
+    return keep
+
+_CSS = """
 .search-panel {
     background-color: @window_bg_color;
-    border-top: 2px solid @accent_color;
-    border-left: 2px solid @accent_color;
+    border-top: 1px solid @borders;
+    border-left: 1px solid @borders;
     border-top-left-radius: 12px;
     box-shadow: -4px 0 16px alpha(black, 0.18);
 }
@@ -106,6 +122,7 @@ class SearchPanel(Gtk.Box):
 
         close_btn = Gtk.Button(icon_name='window-close-symbolic')
         close_btn.add_css_class('flat')
+        close_btn.set_tooltip_text('Close search (Esc)')
         close_btn.connect('clicked', lambda _: self._on_close())
         header.append(close_btn)
 
@@ -119,7 +136,7 @@ class SearchPanel(Gtk.Box):
         controls.set_margin_top(8)
         controls.set_margin_bottom(6)
 
-        names = sword_bridge.module_names()
+        names = _searchable_modules()
         self._module_drop = Gtk.DropDown(model=Gtk.StringList.new(names), hexpand=True)
         controls.append(self._module_drop)
 
@@ -128,6 +145,7 @@ class SearchPanel(Gtk.Box):
         self._entry.connect('activate', self._on_search)
         entry_row.append(self._entry)
         search_btn = Gtk.Button(icon_name='system-search-symbolic')
+        search_btn.set_tooltip_text('Search')
         search_btn.connect('clicked', self._on_search)
         entry_row.append(search_btn)
         controls.append(entry_row)
@@ -191,7 +209,7 @@ class SearchPanel(Gtk.Box):
             self._show_history()
 
     def set_module(self, module_name):
-        names = sword_bridge.module_names()
+        names = _searchable_modules()
         self._module_drop.set_model(Gtk.StringList.new(names))
         if module_name in names:
             self._module_drop.set_selected(names.index(module_name))
@@ -200,6 +218,11 @@ class SearchPanel(Gtk.Box):
 
     def _on_indexing_start(self):
         GLib.idle_add(self._update_indexing_status, "Building search index…", True)
+
+    def _on_indexing_progress(self, book_idx, total, book_name):
+        GLib.idle_add(self._update_indexing_status,
+                      f'Building search index… {book_name} ({book_idx}/{total})',
+                      True)
 
     def _on_indexing_done(self):
         GLib.idle_add(self._update_indexing_status, "", False)
@@ -215,7 +238,7 @@ class SearchPanel(Gtk.Box):
         return GLib.SOURCE_REMOVE
 
     def _current_module(self):
-        names = sword_bridge.module_names()
+        names = _searchable_modules()
         idx = self._module_drop.get_selected()
         return names[idx] if names and idx < len(names) else None
 
@@ -238,10 +261,11 @@ class SearchPanel(Gtk.Box):
 
         def run():
             results = sword_bridge.search_module(
-                module, 
-                query, 
-                on_indexing_start=self._on_indexing_start, 
-                on_indexing_done=self._on_indexing_done
+                module,
+                query,
+                on_indexing_start=self._on_indexing_start,
+                on_indexing_progress=self._on_indexing_progress,
+                on_indexing_done=self._on_indexing_done,
             )
             _save_history(query, module)
             GLib.idle_add(self._on_search_done, results)
@@ -269,7 +293,7 @@ class SearchPanel(Gtk.Box):
         if not self._results and not truncated_msg:
             self._results_list.append(self._make_empty_row(
                 'No matches',
-                'Try a different word or phrase, or pick another module.'))
+                'Try a different word or phrase, or pick another module'))
         return GLib.SOURCE_REMOVE
 
     def _make_empty_row(self, title, description):
@@ -291,7 +315,8 @@ class SearchPanel(Gtk.Box):
             self._clear_results()
             self._results_list.append(self._make_empty_row(
                 'Search this module',
-                "Type a word or phrase above. Results show verse-level matches; the chart shows where they cluster across the Bible."))
+                "Type a word or phrase above. The chart shows where matches "
+                "cluster across the Bible"))
             return
         self._count_label.set_text('Recent searches')
         self._clear_results()

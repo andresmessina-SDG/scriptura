@@ -286,17 +286,47 @@ def invalidate(source_id):
         _dodson = None
 
 
-def download_source(source_id):
-    """Download and install a data source. Raises on failure."""
+def download_source(source_id, on_progress=None):
+    """Download and install a data source. Raises on failure.
+
+    `on_progress(bytes_done, total_bytes)` is invoked periodically while
+    bytes are streaming in; `total_bytes` may be 0 if the server doesn't
+    send a Content-Length header. The callback runs on whatever thread
+    invoked download_source — callers wanting to update UI should marshal
+    via GLib.idle_add."""
     import urllib.request
     src = _SOURCES[source_id]
     os.makedirs(_DIR, exist_ok=True)
     dest = os.path.join(_DIR, src['dest'])
 
+    chunk_size = 64 * 1024
+
+    def _stream(resp, sink):
+        total = 0
+        try:
+            total = int(resp.headers.get('Content-Length') or 0)
+        except (TypeError, ValueError):
+            total = 0
+        done = 0
+        while True:
+            buf = resp.read(chunk_size)
+            if not buf:
+                break
+            sink.write(buf)
+            done += len(buf)
+            if on_progress:
+                try:
+                    on_progress(done, total)
+                except Exception:
+                    pass
+
     if src['is_zip']:
+        # ZIPs need to be fully buffered before extraction.
+        buf = io.BytesIO()
         with urllib.request.urlopen(src['url'], timeout=60) as resp:
-            raw = resp.read()
-        with zipfile.ZipFile(io.BytesIO(raw)) as zf:
+            _stream(resp, buf)
+        buf.seek(0)
+        with zipfile.ZipFile(buf) as zf:
             names = zf.namelist()
             target = next(
                 (n for n in names if os.path.basename(n).lower() == src['dest'].lower()),
@@ -309,7 +339,7 @@ def download_source(source_id):
         # Use urlopen(timeout=) explicitly.
         with urllib.request.urlopen(src['url'], timeout=60) as resp, \
              open(dest, 'wb') as f_out:
-            shutil.copyfileobj(resp, f_out)
+            _stream(resp, f_out)
 
     invalidate(source_id)
 

@@ -4,10 +4,17 @@ import os
 ANNOTATIONS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'annotations.json')
 
 _cache = None
+_load_failed = False  # Set if an existing file failed to parse; the
+                      # window reads this once at startup to surface a toast.
+
+
+def load_failed():
+    _load()  # ensure load was attempted before we read the flag
+    return _load_failed
 
 
 def _load():
-    global _cache
+    global _cache, _load_failed
     if _cache is not None:
         return _cache
     if not os.path.exists(ANNOTATIONS_FILE):
@@ -17,9 +24,15 @@ def _load():
         with open(ANNOTATIONS_FILE, 'r', encoding='utf-8') as f:
             data = json.load(f)
         # Corrupted file producing a non-dict — start over rather than crash.
-        _cache = data if isinstance(data, dict) else {}
-    except Exception:
+        if isinstance(data, dict):
+            _cache = data
+        else:
+            _cache = {}
+            _load_failed = True
+    except Exception as e:
+        print(f'[annotations] load failed, using defaults: {e}')
         _cache = {}
+        _load_failed = True
     return _cache
 
 

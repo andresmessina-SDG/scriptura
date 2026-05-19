@@ -7,7 +7,7 @@ import sword_bridge
 
 _BOOK_ORDER = {book: i for i, book in enumerate(sword_bridge._ALL_BOOKS)}
 
-_STRIP_CSS = b"""
+_STRIP_CSS = """
 .strip-yellow { background-color: #d4be62; border-radius: 3px 0 0 3px; }
 .strip-green  { background-color: #8db58a; border-radius: 3px 0 0 3px; }
 .strip-blue   { background-color: #7fa3c1; border-radius: 3px 0 0 3px; }
@@ -260,10 +260,10 @@ class StudyJournalWindow(Adw.Window):
         if not filtered:
             if not self._entries:
                 title = 'No annotations yet'
-                desc = 'Right-click a verse to highlight it or add a note.'
+                desc = 'Right-click a verse to highlight it or add a note'
             else:
-                title = 'Nothing matches these filters'
-                desc = 'Try a wider Type, Module, Book, or Tag.'
+                title = 'No matches'
+                desc = 'Try a different Type, Module, Book, or Tag filter'
             empty = Adw.StatusPage(
                 icon_name='document-edit-symbolic',
                 title=title,

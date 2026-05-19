@@ -12,20 +12,42 @@ _defaults = {
     'text_color_dark':    None,
     'text_color_default': None,
     'color_scheme':       'default',
-    'default_module':     None,
-    'startup_devotional': None,
+    'window_width':       1100,
+    'window_height':      700,
+    'window_maximized':   False,
+    'last_book':          None,
+    'last_chapter':       None,
+    'pane1_module':       None,
+    'pane2_module':       None,
+    'split_pane_mode':    True,
 }
 _cache = None
+_load_failed = False  # Flipped if an existing file failed to parse.
+
+
+def load_failed():
+    if _cache is None:
+        _load()
+    return _load_failed
 
 
 def _load():
-    global _cache
+    global _cache, _load_failed
+    if not os.path.exists(_FILE):
+        _cache = {}
+        return
     try:
         with open(_FILE, encoding='utf-8') as f:
             data = json.load(f)
-        _cache = data if isinstance(data, dict) else {}
-    except Exception:
+        if isinstance(data, dict):
+            _cache = data
+        else:
+            _cache = {}
+            _load_failed = True
+    except Exception as e:
+        print(f'[settings] load failed, using defaults: {e}')
         _cache = {}
+        _load_failed = True
 
 
 def _save():

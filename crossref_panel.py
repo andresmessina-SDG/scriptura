@@ -40,6 +40,7 @@ class CrossRefPanel(Gtk.Box):
         close_btn = Gtk.Button(icon_name='window-close-symbolic')
         close_btn.add_css_class('flat')
         close_btn.set_valign(Gtk.Align.CENTER)
+        close_btn.set_tooltip_text('Hide cross-references')
         close_btn.connect('clicked', lambda _: self._on_close())
         ref_row.append(close_btn)
 

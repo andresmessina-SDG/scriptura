@@ -36,8 +36,25 @@ class BibleApp(Adw.Application):
 
     def _on_activate(self, app):
         _register_icon_search_path()
-        win = BibleWindow(application=app)
-        win.present()
+        self._present_main_or_welcome(app)
+
+    def _present_main_or_welcome(self, app):
+        import sword_bridge
+        import ebible_bridge
+        # BIBLE_READER_FORCE_WELCOME=1 forces the welcome window even
+        # when modules exist — useful for testing on systems with
+        # /usr/share/sword/ modules that can't be removed without sudo.
+        force_welcome = bool(os.environ.get('BIBLE_READER_FORCE_WELCOME'))
+        has_modules = bool(sword_bridge.module_names()
+                           or ebible_bridge.module_names())
+        if has_modules and not force_welcome:
+            BibleWindow(application=app).present()
+            return
+        from welcome import WelcomeWindow
+        WelcomeWindow(
+            application=app,
+            on_ready=lambda: BibleWindow(application=app).present(),
+        ).present()
 
 
 def main():

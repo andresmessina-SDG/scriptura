@@ -10,6 +10,7 @@ import sword_bridge
 import settings
 import bookmarks
 import reading_plans
+import annotations
 from pane import BiblePane
 from module_manager import ModuleManagerWindow
 from search_panel import SearchPanel
@@ -40,11 +41,30 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.set_default_size(1100, 700)
+        # Restore saved window size; falls back to settings defaults
+        # (1100x700) on first run.
+        self.set_default_size(
+            settings.get('window_width'), settings.get('window_height'))
+        if settings.get('window_maximized'):
+            self.maximize()
         self.set_title('Bible Reader')
         self._nav_back = []
         self._nav_fwd = []
-        self._current_loc = ('Genesis', 1)
+        # Restore last book/chapter — validated against BOOKS list and
+        # chapter count below, before the dropdowns get their initial value.
+        saved_book = settings.get('last_book')
+        saved_chap = settings.get('last_chapter')
+        if saved_book in BOOKS and isinstance(saved_chap, int):
+            try:
+                max_ch = sword_bridge.chapter_count(saved_book)
+                if 1 <= saved_chap <= max_ch:
+                    self._current_loc = (saved_book, saved_chap)
+                else:
+                    self._current_loc = ('Genesis', 1)
+            except Exception:
+                self._current_loc = ('Genesis', 1)
+        else:
+            self._current_loc = ('Genesis', 1)
         self._updating_plan = False
         self._today_row = None
         self._modules_win = None
@@ -52,6 +72,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._hotkeys_win = None
         self._build_ui()
         self._load_all_panes()
+        self.connect('close-request', self._on_close_request)
         if self._startup_devt_module:
             self._startup_navigate_to_devotional_ref(self._startup_devt_module)
         _scheme_map = {
@@ -62,6 +83,28 @@ class BibleWindow(Adw.ApplicationWindow):
         Adw.StyleManager.get_default().set_color_scheme(
             _scheme_map.get(settings.get('color_scheme') or 'default',
                             Adw.ColorScheme.DEFAULT))
+        # Surface any corrupted-data fallbacks once at startup so the user
+        # knows their file wasn't readable (and their default state isn't a
+        # silent loss). Deferred to idle so the window has time to lay out
+        # and the toast overlay is alive.
+        GLib.idle_add(self._warn_on_load_failures)
+
+    def _warn_on_load_failures(self):
+        failed = []
+        if settings.load_failed():
+            failed.append('settings')
+        if annotations.load_failed():
+            failed.append('annotations')
+        if bookmarks.load_failed():
+            failed.append('bookmarks')
+        if reading_plans.load_failed():
+            failed.append('reading plans')
+        if failed:
+            names = ', '.join(failed)
+            self._toast(
+                f"Couldn't read {names}.json — using defaults. "
+                f"Your file is preserved; rename to recover.")
+        return GLib.SOURCE_REMOVE
 
     def _push_nav_back(self, loc):
         self._nav_back.append(loc)
@@ -114,7 +157,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._ref_btn = Gtk.MenuButton()
         self._ref_btn.set_always_show_arrow(True)
         self._ref_btn.add_css_class('flat')
-        self._ref_btn.set_tooltip_text('Choose passage')
+        self._ref_btn.set_tooltip_text('Choose passage (Ctrl+L to jump)')
         self._ref_pop = Gtk.Popover()
         self._ref_pop.set_has_arrow(True)
         self._ref_btn.set_popover(self._ref_pop)
@@ -125,7 +168,8 @@ class BibleWindow(Adw.ApplicationWindow):
         lex_lbl = Gtk.Label()
         lex_lbl.set_markup('<span size="x-large">‎א</span><span size="large">Ω</span>')
         self.lex_toggle.set_child(lex_lbl)
-        self.lex_toggle.set_tooltip_text("Show/Hide Strong's word links")
+        self.lex_toggle.set_tooltip_text(
+            "Greek / Hebrew lexicon — click words for definitions")
         self.lex_toggle.connect('toggled', self._on_lex_toggle)
         header.pack_start(self.lex_toggle)
 
@@ -136,7 +180,7 @@ class BibleWindow(Adw.ApplicationWindow):
         header.pack_end(self._bookmark_btn)
 
         search_btn = Gtk.Button(icon_name='system-search-symbolic')
-        search_btn.set_tooltip_text('Search')
+        search_btn.set_tooltip_text('Search (Ctrl+F)')
         search_btn.connect('clicked', self._on_search_clicked)
         header.pack_end(search_btn)
 
@@ -146,8 +190,12 @@ class BibleWindow(Adw.ApplicationWindow):
         self._btn_single.set_tooltip_text('Single pane')
         self._btn_split = Gtk.ToggleButton(icon_name='view-dual-symbolic')
         self._btn_split.set_tooltip_text('Split pane')
-        self._btn_split.set_active(True)
         self._btn_single.set_group(self._btn_split)
+        # Restore saved view mode (split by default for first run).
+        if settings.get('split_pane_mode'):
+            self._btn_split.set_active(True)
+        else:
+            self._btn_single.set_active(True)
         self._btn_single.connect('toggled', self._on_view_mode)
         self._btn_split.connect('toggled', self._on_view_mode)
         view_box.append(self._btn_single)
@@ -155,23 +203,35 @@ class BibleWindow(Adw.ApplicationWindow):
         header.pack_end(view_box)
 
         # ── Panes ─────────────────────────────────────────────────────────────
-        sword_names = sword_bridge.module_names()
+        # Only modules readable in a pane (Bibles, commentaries, devotionals)
+        # are valid here — support modules like Strong's lexicons and MorphGNT
+        # live in the lexicon panel / dict popup, not the pane dropdown.
         import ebible_bridge as _eb
-        all_names = sword_names + _eb.module_names()
+        from pane import _pane_readable_modules
+        readable_names = _pane_readable_modules()
+        sword_readable = [n for n in readable_names
+                          if not _eb.is_ebible_module(n)]
 
-        default_mod  = settings.get('default_module')
-        startup_devt = settings.get('startup_devotional')
+        # Pane 1 module: per-session saved → first readable module.
+        # Pane 2 module: per-session saved → auto-detect any installed
+        # devotional → mirror pane 1. If pane 2 ends up showing a
+        # devotional on startup, we also auto-navigate pane 1 to today's
+        # reading (see _startup_navigate_to_devotional_ref).
+        p1_mod = settings.get('pane1_module')
+        if p1_mod not in readable_names:
+            p1_mod = sword_readable[0] if sword_readable else (readable_names[0] if readable_names else None)
 
-        # Pick pane1 module: saved default → first available
-        p1_mod = default_mod if default_mod and default_mod in all_names \
-                 else (sword_names[0] if sword_names else None)
-
-        # Pick pane2 module: saved devotional → auto-detect installed devotional
-        if not startup_devt or startup_devt not in sword_names:
+        p2_saved = settings.get('pane2_module')
+        if p2_saved in readable_names:
+            p2_mod = p2_saved
+            self._startup_devt_module = (
+                p2_saved if p2_saved in sword_readable
+                and sword_bridge.is_devotional_module(p2_saved) else None
+            )
+        else:
             devots = sword_bridge.installed_devotional_modules()
-            startup_devt = devots[0] if devots else None
-        p2_mod = startup_devt if startup_devt else p1_mod
-        self._startup_devt_module = startup_devt
+            self._startup_devt_module = devots[0] if devots else None
+            p2_mod = self._startup_devt_module or p1_mod
 
         self.pane1 = BiblePane(module_name=p1_mod,
                                on_word_click=self._on_word_click,
@@ -190,6 +250,12 @@ class BibleWindow(Adw.ApplicationWindow):
                                 vexpand=True, hexpand=True)
         self._paned.set_start_child(self.pane1)
         self._paned.set_end_child(self.pane2)
+        # Apply restored split/single mode to the actual pane visibility.
+        # The toggle button's set_active in _build_ui ran before pane2
+        # existed and before its 'toggled' handler was connected, so
+        # without this the button would say "single" while pane2 was
+        # still showing.
+        self.pane2.set_visible(self._btn_split.get_active())
         self._paned.set_resize_start_child(True)
         self._paned.set_resize_end_child(True)
         self._paned.set_shrink_start_child(False)
@@ -234,9 +300,14 @@ class BibleWindow(Adw.ApplicationWindow):
         self._jump_revealer.set_child(jump_wrap)
 
         # ── App menu panel (right-side revealer) ─────────────────────────────
-        menu_css = b"""
-.menu-panel { background-color: @card_bg_color;
-              border: 2px solid @accent_color;
+        menu_css = """
+/* @view_bg_color is opaque in both light + dark, whereas @card_bg_color
+   is semi-transparent in dark mode (it's designed to layer over a
+   solid window background, not to float as an overlay panel). Using
+   the card colour here let the Bible text behind the menu bleed
+   through in dark mode. */
+.menu-panel { background-color: @view_bg_color;
+              border: 1px solid @borders;
               border-radius: 0 12px 0 0;
               box-shadow: 4px 0 16px alpha(black, 0.35); }
 row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
@@ -245,9 +316,27 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
 .key-chip { background-color: alpha(@borders, 0.5); border-radius: 5px;
             padding: 2px 8px; font-family: monospace; font-weight: bold; }
 
+/* Internal padding for the appearance card - the libadwaita .card
+   class only paints a background + border-radius; without explicit
+   padding the dropdowns, scales, and toggle buttons hug the card's
+   edge. */
+.appearance-card {
+    padding: 12px;
+}
+
+/* Unify the reading column with the surrounding pane background.
+   Default libadwaita paints `textview text` with @view_bg_color (a
+   card-like surface) which sits on a different shade from
+   @window_bg_color around it. Forcing both the widget and its inner
+   text area to transparent makes the text inherit whatever the pane
+   itself is painting. */
+.bible-view, .bible-view text {
+    background-color: transparent;
+}
+
 /* Lexicon + Word-study panel styling */
 .lex-panel {
-    border-top: 2px solid alpha(@accent_color, 0.45);
+    border-top: 1px solid @borders;
 }
 .lex-header {
     background-color: alpha(@card_bg_color, 0.6);
@@ -290,20 +379,23 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         self._crossref_revealer.set_transition_duration(200)
         self._crossref_revealer.set_child(self._crossref_panel)
 
-        # Paned + crossref form the base content; overlay panels float above both
-        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        main_box.append(self._paned)
-        main_box.append(self._crossref_revealer)
-
+        # The paned + side overlays live inside the toast overlay so
+        # toasts float above the reading area; the cross-ref bar sits
+        # outside the toast overlay so toasts don't paint over it when
+        # both are visible.
         overlay = Gtk.Overlay(vexpand=True, hexpand=True)
-        overlay.set_child(main_box)
+        overlay.set_child(self._paned)
         overlay.add_overlay(self._search_revealer)
         overlay.add_overlay(self._jump_revealer)
         overlay.add_overlay(self._menu_revealer)
 
         self._toast_overlay = Adw.ToastOverlay()
         self._toast_overlay.set_child(overlay)
-        toolbar_view.set_content(self._toast_overlay)
+
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        main_box.append(self._toast_overlay)
+        main_box.append(self._crossref_revealer)
+        toolbar_view.set_content(main_box)
 
         key_controller = Gtk.EventControllerKey.new()
         key_controller.connect('key-pressed', self._on_key_press)
@@ -392,8 +484,15 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
             self.pane2.load_reference(book, chapter)
 
     def _load_all_panes(self):
-        book    = BOOKS[self.book_drop.get_selected()]
-        chapter = self.chapter_drop.get_selected() + 1
+        # Source of truth at startup is self._current_loc, which was
+        # restored from settings in __init__. Sync the hidden dropdowns
+        # (used by Alt+arrow nav and the chapter-count model) to match.
+        book, chapter = self._current_loc
+        self.book_drop.set_selected(BOOKS.index(book))
+        count = sword_bridge.chapter_count(book)
+        self.chapter_drop.set_model(
+            Gtk.StringList.new([str(i) for i in range(1, count + 1)]))
+        self.chapter_drop.set_selected(chapter - 1)
         self._update_ref_label(book, chapter)
         self.pane1.load_reference(book, chapter)
         self.pane2.load_reference(book, chapter)
@@ -425,6 +524,7 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         chap_flow.set_min_children_per_line(4)
         chap_flow.set_max_children_per_line(4)
         chap_flow.set_homogeneous(True)
+        chap_flow.set_valign(Gtk.Align.START)
         chap_flow.set_margin_start(8)
         chap_flow.set_margin_end(8)
         chap_flow.set_margin_top(8)
@@ -447,9 +547,11 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
                 count = 1
             for ch in range(1, count + 1):
                 btn = Gtk.Button(label=str(ch))
-                btn.add_css_class('flat')
+                btn.set_valign(Gtk.Align.CENTER)
                 if state['book'] == current_book and ch == current_chapter:
                     btn.add_css_class('suggested-action')
+                else:
+                    btn.add_css_class('flat')
                 btn.connect('clicked', self._on_ref_chapter_chosen, state)
                 btn._chapter = ch
                 chap_flow.append(btn)
@@ -661,18 +763,6 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         self.pane1.set_appearance(font_justify=justify)
         self.pane2.set_appearance(font_justify=justify)
 
-    def _on_default_mod_changed(self, drop, _param):
-        opts = drop.get_model()
-        idx  = drop.get_selected()
-        val  = opts.get_string(idx) if idx > 0 else None
-        settings.put('default_module', val)
-
-    def _on_devot_changed(self, drop, _param):
-        opts = drop.get_model()
-        idx  = drop.get_selected()
-        val  = opts.get_string(idx) if idx > 0 else None
-        settings.put('startup_devotional', val)
-
     # ── Quick jump ────────────────────────────────────────────────────────────
 
     def _close_other_overlays(self, keep=None):
@@ -787,6 +877,7 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
                 lbl.connect('clicked', self._go_to_bookmark, bm, popover)
                 del_btn = Gtk.Button(icon_name='edit-delete-symbolic')
                 del_btn.add_css_class('flat')
+                del_btn.set_tooltip_text('Remove bookmark')
                 del_btn.connect('clicked', self._remove_bookmark, i, popover)
                 rb.append(lbl)
                 rb.append(del_btn)
@@ -838,7 +929,32 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         self.pane2.set_lexicon_enabled(enabled)
 
     def _on_view_mode(self, _btn):
-        self.pane2.set_visible(self._btn_split.get_active())
+        split = self._btn_split.get_active()
+        self.pane2.set_visible(split)
+        settings.put('split_pane_mode', split)
+
+    def _on_close_request(self, _win):
+        # Persist current session state so the next launch restores it.
+        # close-request fires before destruction; return False to allow
+        # the close to proceed.
+        try:
+            is_max = bool(self.is_maximized())
+            settings.put('window_maximized', is_max)
+            # When maximized, get_width/get_height return the maximized
+            # size — saving that would lose the user's preferred restored
+            # size. Only update the dimension keys when we have a real
+            # unmaximized size to record.
+            if not is_max:
+                settings.put('window_width', int(self.get_width()))
+                settings.put('window_height', int(self.get_height()))
+            book, chapter = self._current_loc
+            settings.put('last_book', book)
+            settings.put('last_chapter', int(chapter))
+            settings.put('pane1_module', self.pane1._module)
+            settings.put('pane2_module', self.pane2._module)
+        except Exception as e:
+            print(f'[window] close-save: {e}')
+        return False
 
     # ── Search ────────────────────────────────────────────────────────────────
 
@@ -852,7 +968,8 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
             mod = self.pane1._module
             if self.pane1._is_devotional:
                 texts = [m for m in sword_bridge.module_names()
-                         if sword_bridge.module_type(m) == 'Biblical Texts']
+                         if not sword_bridge.is_internal_use(m)
+                         and sword_bridge.module_type(m) == 'Biblical Texts']
                 if texts:
                     mod = texts[0]
             self._search_panel.prepare_for_show(mod)
@@ -877,12 +994,15 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
     def _on_crossref_clicked(self, book, chapter, verse):
         if book not in BOOKS:
             return
-        # Prefer pane2 in split view, but fall back to pane1 if pane2 is hidden
-        # or showing a devotional (which ignores book/chapter navigation).
-        if self.pane2.get_visible() and not self.pane2._is_devotional:
+        # Prefer pane2 in split view, but fall back to pane1 if pane2 is
+        # hidden or showing a non-Bible resource (devotional, lexicon,
+        # dictionary, generic book). If neither pane can navigate, do nothing.
+        if self.pane2.get_visible() and self.pane2._is_verse_navigable():
             target = self.pane2
-        else:
+        elif self.pane1._is_verse_navigable():
             target = self.pane1
+        else:
+            return
         target.force_navigate(book, chapter, verse)
 
     def _on_crossref_right_clicked(self, book, chapter, verse, widget):
@@ -907,8 +1027,12 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
 
         btn1 = Gtk.Button(label='Open in Pane 1')
         btn1.add_css_class('flat')
-        btn1.connect('clicked', lambda _: (popover.popdown(),
-                                           self.pane1.force_navigate(book, chapter, verse)))
+        if not self.pane1._is_verse_navigable():
+            btn1.set_sensitive(False)
+            btn1.set_tooltip_text('Pane 1 is not showing a Bible or commentary')
+        else:
+            btn1.connect('clicked', lambda _: (popover.popdown(),
+                                               self.pane1.force_navigate(book, chapter, verse)))
         box.append(btn1)
 
         btn2 = Gtk.Button(label='Open in Pane 2')
@@ -916,9 +1040,9 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         if not self.pane2.get_visible():
             btn2.set_sensitive(False)
             btn2.set_tooltip_text('Switch to split view to use Pane 2')
-        elif self.pane2._is_devotional:
+        elif not self.pane2._is_verse_navigable():
             btn2.set_sensitive(False)
-            btn2.set_tooltip_text('Pane 2 is showing a devotional')
+            btn2.set_tooltip_text('Pane 2 is not showing a Bible or commentary')
         else:
             btn2.connect('clicked', lambda _: (popover.popdown(),
                                                self.pane2.force_navigate(book, chapter, verse)))
@@ -1075,6 +1199,50 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         toolbar_view.set_content(scroll)
         return win
 
+    def _on_copy_chapter(self, _btn):
+        """Copy the active pane's current chapter to the clipboard as
+        plain text. Format: 'Book Chapter\\n\\nN verse text\\nN verse
+        text…'. Devotionals and non-Bible modules are skipped because
+        their content isn't verse-keyed and copy-as-chapter is
+        meaningless."""
+        # Prefer pane1 unless it's not a verse-keyed module and pane2 is.
+        pane = self.pane1
+        if not pane._is_verse_navigable() and self.pane2._is_verse_navigable():
+            pane = self.pane2
+        if not pane._is_verse_navigable():
+            self._toast('Copy Chapter works on Bibles and commentaries only')
+            return
+
+        book, chapter, module = pane._book, pane._chapter, pane._module
+
+        def fetch():
+            try:
+                import ebible_bridge as _eb
+                if _eb.is_ebible_module(module):
+                    verses = _eb.load_chapter(module, book, chapter)
+                else:
+                    verses = sword_bridge.load_chapter(module, book, chapter)
+            except Exception as e:
+                GLib.idle_add(self._toast, f"Couldn't load chapter — {e}")
+                return
+            lines = [f'{book} {chapter}', '']
+            for v_num, html in verses:
+                plain = re.sub(r'<[^>]+>', '', str(html)).strip()
+                if plain:
+                    lines.append(f'{v_num} {plain}')
+            text = '\n'.join(lines) + '\n'
+            GLib.idle_add(self._finish_copy_chapter, text, book, chapter)
+
+        threading.Thread(target=fetch, daemon=True).start()
+
+    def _finish_copy_chapter(self, text, book, chapter):
+        clipboard = Gdk.Display.get_default().get_clipboard()
+        clipboard.set(text)
+        self._toast(f'Copied {book} {chapter}')
+        # Close the menu panel so the user lands back on the reading view.
+        self._menu_revealer.set_reveal_child(False)
+        return GLib.SOURCE_REMOVE
+
     def _on_modules_clicked(self, _btn):
         if self._modules_win is not None and self._modules_win.get_visible():
             self._modules_win.present()
@@ -1101,6 +1269,11 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         chapter = source_pane._chapter
         verse   = source_pane._selected_verse
         has_morph = bool(source_pane._current_morph)
+
+        # Reveal the lexicon panel with a spinner immediately so the
+        # user gets feedback that their click registered. Real content
+        # arrives via _show_lexicon once the SWORD fetch completes.
+        source_pane.show_lexicon_loading(strong_num)
 
         def fetch():
             text = sword_bridge.lookup_strong(strong_num)
@@ -1185,23 +1358,54 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         hbox.set_margin_end(8)
         hbox.set_margin_top(8)
         hbox.set_margin_bottom(8)
+        about_btn = Gtk.Button(icon_name='help-about-symbolic')
+        about_btn.add_css_class('flat')
+        about_btn.set_tooltip_text('About Bible Reader')
+        about_btn.connect('clicked', self._on_about_clicked)
         title = Gtk.Label(label='Menu', hexpand=True)
         title.set_xalign(0)
         title.add_css_class('title-4')
+
+        # Compact theme picker tucked into the header row. The same
+        # state is reflected in `_theme_light/dark/system` ToggleButtons
+        # which used to live inside the Text Appearance card — theme
+        # is global state, not per-pane typography, so it reads better
+        # next to the panel title than in the expandable card.
+        theme_picker = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        theme_picker.add_css_class('linked')
+        self._theme_light = Gtk.ToggleButton(icon_name='weather-clear-symbolic')
+        self._theme_light.set_tooltip_text('Light theme')
+        self._theme_dark = Gtk.ToggleButton(icon_name='weather-clear-night-symbolic')
+        self._theme_dark.set_tooltip_text('Dark theme')
+        self._theme_system = Gtk.ToggleButton(icon_name='emblem-system-symbolic')
+        self._theme_system.set_tooltip_text('Follow system theme')
+        cur_scheme = settings.get('color_scheme') or 'default'
+        self._theme_light.set_active(cur_scheme == 'light')
+        self._theme_dark.set_active(cur_scheme == 'dark')
+        self._theme_system.set_active(cur_scheme not in ('light', 'dark'))
+        for _tb in (self._theme_light, self._theme_dark, self._theme_system):
+            _tb.connect('clicked', self._on_appear_theme)
+            theme_picker.append(_tb)
+
         close_btn = Gtk.Button(icon_name='window-close-symbolic')
         close_btn.add_css_class('flat')
+        close_btn.set_tooltip_text('Close menu (Esc)')
         close_btn.connect('clicked', lambda _: self._menu_revealer.set_reveal_child(False))
+        hbox.append(about_btn)
         hbox.append(title)
+        hbox.append(theme_picker)
         hbox.append(close_btn)
         panel.append(hbox)
         panel.append(Gtk.Separator())
 
-        # Scrollable body — everything below the header lives here
-        _body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        _body_scroll = Gtk.ScrolledWindow(vexpand=True)
-        _body_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        _body_scroll.set_child(_body)
-        panel.append(_body_scroll)
+        # Body — direct vertical Box so the day list at the bottom can
+        # vexpand to fill remaining height. A wrapping ScrolledWindow
+        # would give _body its natural height only, which would defeat
+        # the vexpand. The day list is its own ScrolledWindow so long
+        # plans (e.g. Bible-in-a-Year, 365 rows) still scroll inside.
+        _body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL,
+                        spacing=0, vexpand=True)
+        panel.append(_body)
 
         # top nav buttons
         btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8,
@@ -1213,6 +1417,7 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         for icon, label, handler in [
             ('accessories-text-editor-symbolic', 'Study Journal', self._on_journal_clicked),
             ('application-x-addon-symbolic',     'Modules',       self._on_modules_clicked),
+            ('edit-copy-symbolic',               'Copy Chapter',  self._on_copy_chapter),
         ]:
             btn = Gtk.Button()
             bx = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
@@ -1251,12 +1456,6 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         hotkeys_btn.connect('clicked', self._on_hotkeys_clicked)
         tool_row.append(hotkeys_btn)
 
-        about_btn = Gtk.Button(icon_name='help-about-symbolic')
-        about_btn.add_css_class('circular')
-        about_btn.set_tooltip_text('About Bible Reader')
-        about_btn.connect('clicked', self._on_about_clicked)
-        tool_row.append(about_btn)
-
         _body.append(tool_row)
 
         # ── Appearance card (inline revealer) ─────────────────────────────────
@@ -1266,6 +1465,7 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
 
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         card.add_css_class('card')
+        card.add_css_class('appearance-card')
         card.set_margin_start(12)
         card.set_margin_end(12)
         card.set_margin_top(6)
@@ -1346,27 +1546,6 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         toggle_row.append(self._justify_btn)
         card.append(toggle_row)
 
-        # ── Theme ─────────────────────────────────────────────────────────────
-        card.append(Gtk.Separator())
-        theme_lbl = Gtk.Label(label='Theme', xalign=0)
-        theme_lbl.add_css_class('heading')
-        card.append(theme_lbl)
-
-        theme_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
-                            spacing=0, homogeneous=True)
-        theme_row.add_css_class('linked')
-        self._theme_light  = Gtk.ToggleButton(label='Light')
-        self._theme_dark   = Gtk.ToggleButton(label='Dark')
-        self._theme_system = Gtk.ToggleButton(label='System')
-        cur_scheme = settings.get('color_scheme') or 'default'
-        self._theme_light.set_active(cur_scheme == 'light')
-        self._theme_dark.set_active(cur_scheme == 'dark')
-        self._theme_system.set_active(cur_scheme not in ('light', 'dark'))
-        for _tb in [self._theme_light, self._theme_dark, self._theme_system]:
-            _tb.connect('clicked', self._on_appear_theme)
-            theme_row.append(_tb)
-        card.append(theme_row)
-
         # ── Text color ────────────────────────────────────────────────────────
         card.append(Gtk.Separator())
         color_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -1394,57 +1573,6 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
 
         self._appear_revealer.set_child(card)
         _body.append(self._appear_revealer)
-        _body.append(Gtk.Separator())
-
-        # ── Startup defaults (always visible, outside the appearance card) ─────
-        import ebible_bridge as _eb2
-        _all_bible_names = [n for n in sword_bridge.module_names()
-                            if sword_bridge.module_type(n) == 'Biblical Texts'] \
-                         + _eb2.module_names()
-        _devot_names = sword_bridge.installed_devotional_modules()
-
-        startup_lbl = Gtk.Label(label='Startup', xalign=0)
-        startup_lbl.add_css_class('heading')
-        startup_lbl.set_margin_start(12)
-        startup_lbl.set_margin_top(8)
-        startup_lbl.set_margin_bottom(2)
-        _body.append(startup_lbl)
-
-        def _srow(label_text):
-            r = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-            r.set_margin_start(12)
-            r.set_margin_end(12)
-            r.set_margin_top(4)
-            r.set_margin_bottom(4)
-            lbl = Gtk.Label(label=label_text, xalign=0)
-            lbl.set_size_request(80, -1)
-            r.append(lbl)
-            return r
-
-        default_mod_row = _srow('Bible')
-        _bible_opts = ['(last used)'] + _all_bible_names
-        _saved_def  = settings.get('default_module') or ''
-        _def_idx    = _bible_opts.index(_saved_def) if _saved_def in _bible_opts else 0
-        self._default_mod_drop = Gtk.DropDown(model=Gtk.StringList.new(_bible_opts))
-        self._default_mod_drop.set_hexpand(True)
-        self._default_mod_drop.set_enable_search(True)
-        self._default_mod_drop.set_expression(
-            Gtk.PropertyExpression.new(Gtk.StringObject, None, 'string'))
-        self._default_mod_drop.set_selected(_def_idx)
-        self._default_mod_drop.connect('notify::selected', self._on_default_mod_changed)
-        default_mod_row.append(self._default_mod_drop)
-        _body.append(default_mod_row)
-
-        devot_row = _srow('Devotional')
-        _devot_opts = ['(none)'] + _devot_names
-        _saved_devt = settings.get('startup_devotional') or ''
-        _devt_idx   = _devot_opts.index(_saved_devt) if _saved_devt in _devot_opts else 0
-        self._devot_drop = Gtk.DropDown(model=Gtk.StringList.new(_devot_opts))
-        self._devot_drop.set_hexpand(True)
-        self._devot_drop.set_selected(_devt_idx)
-        self._devot_drop.connect('notify::selected', self._on_devot_changed)
-        devot_row.append(self._devot_drop)
-        _body.append(devot_row)
         _body.append(Gtk.Separator())
 
         # reading plan section label
@@ -1494,10 +1622,17 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         self._plan_ctrl_box.append(self._plan_reset_btn)
         _body.append(self._plan_ctrl_box)
 
-        _body.append(Gtk.Separator())
+        # Separator + day list are only shown when a plan is active. Both
+        # are stored as instance attrs so _refresh_plan_ui can toggle
+        # them together — otherwise an empty boxed-list shows a stray
+        # card-shaped background under "Start today".
+        self._plan_sep = Gtk.Separator()
+        _body.append(self._plan_sep)
 
-        # day list (fixed height — outer body scroll handles overall panel scrolling)
-        self._plan_scroll = Gtk.ScrolledWindow()
+        # Day list fills the remaining vertical space when shown so the
+        # menu panel doesn't end abruptly. vexpand here only takes effect
+        # when the day list is visible (plan active).
+        self._plan_scroll = Gtk.ScrolledWindow(vexpand=True)
         self._plan_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         self._plan_scroll.set_min_content_height(200)
         self._day_listbox = Gtk.ListBox()
@@ -1533,7 +1668,8 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         self._plan_desc_lbl.set_text(desc)
 
         # controls
-        if start_date and reading_plans.get_active()[0] == sel_id:
+        plan_active = bool(start_date and reading_plans.get_active()[0] == sel_id)
+        if plan_active:
             self._plan_start_btn.set_visible(False)
             completed = reading_plans.get_completed(sel_id)
             total = next((p['total_days'] for p in plans if p['id'] == sel_id), 0)
@@ -1546,6 +1682,11 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
             self._plan_progress_lbl.set_visible(False)
             self._plan_reset_btn.set_visible(False)
             self._clear_day_list()
+        # The boxed-list day view and its leading separator only appear
+        # for an active plan — otherwise an empty card-shaped background
+        # would sit awkwardly under the "Start today" button.
+        self._plan_sep.set_visible(plan_active)
+        self._plan_scroll.set_visible(plan_active)
 
         self._updating_plan = False
 

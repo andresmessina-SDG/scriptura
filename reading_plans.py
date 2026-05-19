@@ -4,6 +4,12 @@ import datetime
 
 _FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'reading_plans.json')
 _cache = None
+_load_failed = False  # Flipped if an existing file failed to parse.
+
+
+def load_failed():
+    _load()  # ensure load was attempted before we read the flag
+    return _load_failed
 
 # (book, n_chapters) — names match sword_bridge._ALL_BOOKS exactly
 _CHAPTERS = [
@@ -149,14 +155,23 @@ def format_passages(readings):
 # ── Progress persistence ───────────────────────────────────────────────────────
 
 def _load():
-    global _cache
+    global _cache, _load_failed
     if _cache is None:
+        if not os.path.exists(_FILE):
+            _cache = {}
+            return _cache
         try:
             with open(_FILE, encoding='utf-8') as f:
                 data = json.load(f)
-            _cache = data if isinstance(data, dict) else {}
-        except Exception:
+            if isinstance(data, dict):
+                _cache = data
+            else:
+                _cache = {}
+                _load_failed = True
+        except Exception as e:
+            print(f'[plans] load failed, using defaults: {e}')
             _cache = {}
+            _load_failed = True
     return _cache
 
 

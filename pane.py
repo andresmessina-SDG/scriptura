@@ -10,6 +10,26 @@ import sword_bridge
 import ebible_bridge
 import annotations
 import settings
+
+
+def _pane_readable_modules():
+    """Return the list of installed modules suitable for display in a
+    pane's module dropdown — Bibles, commentaries, and devotionals.
+
+    Filters out support modules (Strong's lexicons, MorphGNT, OSHB,
+    dictionaries like Easton/Smith, generic books like Didache) that
+    are accessed through other UI surfaces (lexicon panel, dict popup)
+    or aren't verse-keyed and can't be rendered as a chapter."""
+    keep = []
+    for name in sword_bridge.module_names():
+        if sword_bridge.is_internal_use(name):
+            continue
+        t = sword_bridge.module_type(name)
+        if t in ('Biblical Texts', 'Commentaries'):
+            keep.append(name)
+        elif sword_bridge.is_devotional_module(name):
+            keep.append(name)
+    return keep + ebible_bridge.module_names()
 import devotional
 import annotation_dialogs
 from lexicon_panel import LexiconPanel
@@ -29,7 +49,7 @@ def _render_highlight(color):
     return _HIGHLIGHT_RENDER.get(color, color) if color else color
 
 
-def _html_to_markup(html, dark):
+def _html_to_markup(html, dark, strip=True):
     # Ensure we are working with a string
     html = str(html)
     # Strip lone surrogates that SWORD produces from non-UTF-8 module data
@@ -46,12 +66,30 @@ def _html_to_markup(html, dark):
     # Italics (translator additions)
     html = re.sub(r'<transChange type="added">(.*?)</transChange>', r'[[I_S]]\1[[I_E]]', html)
     html = re.sub(r'<i>(.*?)</i>', r'[[I_S]]\1[[I_E]]', html)
-    
+    # OSIS-style emphasis used by commentaries like Calvin's — `<hi
+    # type="italic">` wraps Bible-verse citations within the body;
+    # `<hi type="bold">` wraps the verse-number prefix ("1." etc.).
+    # Without these the commentary loses all visual hierarchy.
+    html = re.sub(r'<hi\s[^>]*type="italic"[^>]*>(.*?)</hi>', r'[[I_S]]\1[[I_E]]', html, flags=re.DOTALL)
+    html = re.sub(r'<hi\s[^>]*type="bold"[^>]*>(.*?)</hi>', r'[[INLINE_B_S]]\1[[INLINE_B_E]]', html, flags=re.DOTALL)
+    # Inline verse-number superscripts used by MHC: `<hi type="super">N</hi>`
+    # marks the start of verse N within a section's continuous prose.
+    html = re.sub(r'<hi\s[^>]*type="super"[^>]*>(.*?)</hi>', r'[[SUP_S]]\1[[SUP_E]]', html, flags=re.DOTALL)
+
     # Titles and Headings
     html = re.sub(r'<title>(.*?)</title>', r'[[B_S]]\1[[B_E]]', html)
     html = re.sub(r'<h3>(.*?)</h3>', r'[[B_S]]\1[[B_E]]', html)
     html = re.sub(r'<h[1-6]>(.*?)</h[1-6]>', r'[[B_S]]\1[[B_E]]', html)
-    
+
+    # Paragraph + section markers used by Clarke and other long-form
+    # commentaries: self-closing `<div sID="…" type="x-p"/>` brackets
+    # mark paragraph start/end (with matching sID/eID). Translate them
+    # to blank lines so multi-paragraph commentary entries render with
+    # structure instead of as a single wall of text. The final
+    # newline-collapse below dedups consecutive markers down to one
+    # blank line per actual break.
+    html = re.sub(r'<div\s[^>]*/>', '\n\n', html)
+
     # 2. Strip all other tags (like <w>, <p>, etc.) but keep content
     html = re.sub(r'<[^>]+>', '', html)
     
@@ -62,35 +100,72 @@ def _html_to_markup(html, dark):
     html = html.replace('[[RED_S]]', f'<span foreground="{red}">').replace('[[RED_E]]', '</span>')
     html = html.replace('[[I_S]]', '<i>').replace('[[I_E]]', '</i>')
     html = html.replace('[[B_S]]', '\n\n<b>').replace('[[B_E]]', '</b>\n')
+    # Inline bold — no surrounding newlines, used for in-paragraph
+    # emphasis like commentary verse-number prefixes ("1.", "2."), not
+    # block-level headings.
+    html = html.replace('[[INLINE_B_S]]', '<b>').replace('[[INLINE_B_E]]', '</b>')
+    # Superscript verse-number markers (MHC inline). Render small +
+    # raised so they read as verse pointers without looking like a
+    # separate "Verse N" header.
+    html = html.replace('[[SUP_S]]',
+                        '<span size="smaller" rise="4000" foreground="#888">')
+    html = html.replace('[[SUP_E]]', '</span>')
     
     # Annotation styling (highlight, underline, note) is NOT baked into the
     # Pango markup anymore — it's applied via named tags after the verse
     # text is inserted so that right-click changes can be reflected in-place
     # without re-rendering the chapter (which would shift the scroll).
 
-    # Clean up excess newlines
-    html = re.sub(r'\n{3,}', '\n\n', html)
+    # Clean up excess newlines — collapse runs of (whitespace + newline)
+    # to a single blank line. SWORD often emits adjacent paragraph
+    # markers separated by spaces (`<div eID/> <div sID/>`); naive
+    # `\n{3,}` collapse misses those because the interleaved space
+    # breaks the run of newlines.
+    html = re.sub(r'(?:[ \t]*\n){3,}', '\n\n', html)
 
-    return html.strip()
+    # Commentary's segmented insertion passes strip=False so the space
+    # before/after a <reference> segment is preserved — otherwise the
+    # rendered text reads "Elijah,Rom 11:1-5" with no breathing room.
+    return html.strip() if strip else html
 
 
 def _extract_segments(html):
-    """Parse SWORD HTML into [(text_html, strong_num_or_None, morph_or_None)] in order."""
+    """Parse SWORD HTML into [(text_html, strong_nums_list, morph_or_None)] in order.
+
+    A `<w>` tag may carry multiple Strong's numbers (e.g. KJV wraps "the
+    synagogue" as one tag with strong:G3588 strong:G4864, because the
+    Greek source is two words `τῇ συναγωγῇ`). We return them all; the
+    word-tagging step pairs them with the English words inside the
+    segment by position.
+
+    The regex accepts both regular `<w …>text</w>` tags and self-closing
+    `<w …/>` tags. KJV emits the self-closing form for Greek source
+    words that have no English equivalent in the translation (e.g. the
+    untranslated negation particle in 'Hath God cast away'). Without
+    matching it explicitly, the engine would consume the opening `<w …/>`
+    as if it were a regular tag opener and then match `</w>` from the
+    NEXT tag — swallowing that tag's English text under the wrong
+    Strong's number."""
     html = str(html)
     segments = []
     pos = 0
-    for m in re.finditer(r'<w(\s[^>]*)>(.*?)</w>', html, re.DOTALL):
+    for m in re.finditer(r'<w\s([^>]*?)(?:/>|>(.*?)</w>)', html, re.DOTALL):
         if m.start() > pos:
-            segments.append((html[pos:m.start()], None, None))
+            segments.append((html[pos:m.start()], [], None))
+        content = m.group(2)
+        if content is None:
+            # Self-closing — Greek word with no English mapping; nothing
+            # to tag in the rendered buffer.
+            pos = m.end()
+            continue
         attrs = m.group(1)
-        sm = re.search(r'strong:([GHgh]\d+)', attrs)
-        strong_num = sm.group(1).upper() if sm else None
+        strong_nums = [s.upper() for s in re.findall(r'strong:([GHgh]\d+)', attrs)]
         mm = re.search(r'morph="([^"]+)"', attrs)
         morph = mm.group(1) if mm else None
-        segments.append((m.group(2), strong_num, morph))
+        segments.append((content, strong_nums, morph))
         pos = m.end()
     if pos < len(html):
-        segments.append((html[pos:], None, None))
+        segments.append((html[pos:], [], None))
     return segments
 
 
@@ -108,7 +183,7 @@ class BiblePane(Gtk.Box):
         self._on_toast = on_toast
         self._lexicon_enabled = False
 
-        self._names = sword_bridge.module_names() + ebible_bridge.module_names()
+        self._names = _pane_readable_modules()
         if not self._names:
             raise RuntimeError('No SWORD modules installed.')
 
@@ -124,6 +199,7 @@ class BiblePane(Gtk.Box):
         self._book = 'Genesis'
         self._chapter = 1
         self._target_verse = None
+        self._restore_top_verse = None
         self._selected_verse = None
         self._devotional_date = _date.today()
         # Mirrors of the window's current location, kept updated even when
@@ -260,6 +336,15 @@ class BiblePane(Gtk.Box):
         self._view.set_editable(False)
         self._view.set_cursor_visible(False)
         self._view.set_wrap_mode(Gtk.WrapMode.WORD)
+        # Match the surrounding pane's background — the default libadwaita
+        # theme paints `textview text` with @view_bg_color (a card-like
+        # surface) which doesn't match the @window_bg_color of the
+        # outer pane. Without this the text column reads as a lighter
+        # rectangle inside a darker frame in dark mode, and as white-on-
+        # cream in light mode. The .bible-view class flips both the
+        # widget and its inner text area to transparent so they pick up
+        # the pane's background instead.
+        self._view.add_css_class('bible-view')
         self._view.set_left_margin(26)
         self._view.set_right_margin(26)
         self._view.set_top_margin(18)
@@ -285,6 +370,13 @@ class BiblePane(Gtk.Box):
         # for verse-flash + cross-pane sync. (Wrapping the TextView in a
         # Clamp forces an implicit Viewport that breaks scroll propagation.)
         inner_scrolled = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
+        # Pin the vertical scrollbar to always-visible so its gutter width
+        # is reserved permanently. With AUTOMATIC policy the scrollbar can
+        # flicker in/out when content height shifts (lexicon panel content
+        # swap, cross-ref panel update, hover tag changes); under justified
+        # wrapping that reflows the whole chapter, making a Strong's-word
+        # click feel like it lands on a neighboring word.
+        inner_scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.ALWAYS)
         inner_scrolled.set_child(self._view)
         scrolled = Adw.Clamp()
         scrolled.set_maximum_size(720)
@@ -303,6 +395,11 @@ class BiblePane(Gtk.Box):
         # LexiconPanel for the header decode. Cross-reference clicks
         # within the lex panel clear morph context on their own.
         self._current_morph = None
+        # (chain, english_text) for the clicked word's source <w> tag.
+        # Used by the lexicon header to display phrase context for
+        # multi-Strong's / multi-word tags. Reset on every click and
+        # on module change.
+        self._current_phrase = (None, None)
         self._lex_panel = LexiconPanel(
             on_word_study_navigate=on_word_study_navigate,
             on_first_show=self._init_outer_paned_position,
@@ -327,10 +424,17 @@ class BiblePane(Gtk.Box):
         gesture.connect('pressed', self._on_right_click)
         self._view.add_controller(gesture)
 
-        # Strong's word lookup on left click
+        # Strong's word lookup on left click. We defer the actual lookup
+        # to the 'released' signal: if it fires on 'pressed' and the
+        # lexicon entry is in cache, the panel content swap reflows the
+        # chapter before the user releases the mouse, and GTK's TextView
+        # interprets press-at-A + release-at-B (same screen coords, but
+        # the text under those coords moved) as a drag-select.
+        self._pending_strong_click = None
         gesture_left = Gtk.GestureClick.new()
         gesture_left.set_button(1)
         gesture_left.connect('pressed', self._on_left_click)
+        gesture_left.connect('released', self._on_left_release)
         self._view.add_controller(gesture_left)
 
         # Dictionary lookup on double-click — CAPTURE phase so n_press counts correctly
@@ -379,6 +483,16 @@ class BiblePane(Gtk.Box):
         if self._on_click_outside_search:
             self._on_click_outside_search()
 
+    def _is_verse_navigable(self):
+        """Verse-based navigation only makes sense for Bibles and commentaries.
+        Lexicons, dictionaries, and generic books (e.g. Didache) don't have
+        a book/chapter/verse key space — feeding them one would render
+        unrelated content as though it matched the requested reference."""
+        return (
+            self._module_type in ('Biblical Texts', 'Commentaries')
+            and not self._is_devotional
+        )
+
     def load_reference(self, book, chapter):
         # Track the window's location even when sync is locked — so toggling
         # back to "Following" can catch up to where the rest of the app is.
@@ -386,6 +500,8 @@ class BiblePane(Gtk.Box):
         self._window_chapter = chapter
         self._window_target_verse = None
         if self._sync_btn.get_active():
+            return
+        if not self._is_verse_navigable():
             return
         self._book = book
         self._chapter = chapter
@@ -396,6 +512,8 @@ class BiblePane(Gtk.Box):
         self._window_chapter = chapter
         self._window_target_verse = verse
         if self._sync_btn.get_active():
+            return
+        if not self._is_verse_navigable():
             return
         self._book = book
         self._chapter = chapter
@@ -455,12 +573,61 @@ class BiblePane(Gtk.Box):
                 self._fetch_and_render()
 
     def set_lexicon_enabled(self, enabled):
+        if self._lexicon_enabled == enabled:
+            return
         self._lexicon_enabled = enabled
+        # Toggling adds/removes Strong's word tags from the markup, which
+        # requires a full re-render. Capture the verse currently at the top
+        # of the viewport so we can restore the user's reading position
+        # after the re-render instead of jumping back to the chapter start.
+        self._restore_top_verse = self._find_topmost_visible_verse()
         self._fetch_and_render()
+
+    def _find_topmost_visible_verse(self):
+        if not self._view.get_realized():
+            return None
+        bx, by = self._view.window_to_buffer_coords(
+            Gtk.TextWindowType.TEXT,
+            max(40, self._view.get_left_margin() + 20),
+            4,
+        )
+        ok, it = self._view.get_iter_at_location(bx, by)
+        if not ok:
+            return None
+        for tag in it.get_tags():
+            name = tag.get_property('name') or ''
+            if name.startswith('vnum_'):
+                try:
+                    return int(name.split('_', 1)[1])
+                except (ValueError, IndexError):
+                    continue
+        return None
+
+    def _scroll_to_verse_silent(self, verse_num):
+        tag = self._buffer.get_tag_table().lookup(f'vnum_{verse_num}')
+        if not tag:
+            return GLib.SOURCE_REMOVE
+        it = self._buffer.get_start_iter()
+        if not it.has_tag(tag):
+            if not it.forward_to_tag_toggle(tag):
+                return GLib.SOURCE_REMOVE
+        mark = self._buffer.create_mark(None, it, True)
+        self._view.scroll_to_mark(mark, 0.0, True, 0.0, 0.0)
+        self._buffer.delete_mark(mark)
+        return GLib.SOURCE_REMOVE
 
     def _fetch_and_render(self):
         if self._is_devotional:
             self._fetch_and_render_devotional()
+            return
+        if not self._is_verse_navigable():
+            # Generic books (Didache), lexicons, dictionaries don't have
+            # a book/chapter/verse key space — load_chapter against them
+            # returns the same fallback content for every verse number,
+            # which looks like nonsense (the title repeated N times).
+            # Show a friendly placeholder until proper tree-key rendering
+            # is implemented.
+            self._display_unsupported_module()
             return
         book, chapter, module = self._book, self._chapter, self._module
 
@@ -472,6 +639,37 @@ class BiblePane(Gtk.Box):
             GLib.idle_add(self._display, verses, book, chapter, module)
 
         threading.Thread(target=fetch, daemon=True).start()
+
+    def _display_unsupported_module(self):
+        dark = Adw.StyleManager.get_default().get_dark()
+        fg = '#8d8278' if dark else '#7a7066'
+        self._cancel_all_flashes()
+        self._buffer.set_text('')
+        msg = (f'<span size="large" foreground="{fg}">'
+               f'{GLib.markup_escape_text(self._module)}</span>\n\n'
+               f'<span foreground="{fg}">'
+               f'This module isn’t organized by book and chapter, '
+               f'so it can’t be read in this pane yet. '
+               f'Switch to a Bible or commentary in the module dropdown above.'
+               f'</span>')
+        self._buffer.insert_markup(self._buffer.get_end_iter(), msg, -1)
+        self._view.scroll_to_iter(self._buffer.get_start_iter(), 0.0, False, 0, 0)
+
+    def _display_empty_chapter(self, book, chapter, dark):
+        """Show a friendly hint when the current module has no content
+        for the requested book/chapter — typically NT-only modules
+        (SBLGNT, MorphGNT) navigated to an OT passage, or vice versa."""
+        fg = '#8d8278' if dark else '#7a7066'
+        msg = (f'<span size="large" foreground="{fg}">'
+               f'{GLib.markup_escape_text(f"{book} {chapter}")}</span>\n\n'
+               f'<span foreground="{fg}">'
+               f'{GLib.markup_escape_text(self._module)} doesn’t include '
+               f'this passage. Some modules cover only the Old or New '
+               f'Testament — switch to a Bible with full coverage in the '
+               f'module dropdown above.'
+               f'</span>')
+        self._buffer.insert_markup(self._buffer.get_end_iter(), msg, -1)
+        self._view.scroll_to_iter(self._buffer.get_start_iter(), 0.0, False, 0, 0)
 
     def _fetch_and_render_devotional(self):
         module = self._module
@@ -517,16 +715,39 @@ class BiblePane(Gtk.Box):
         self._cancel_all_flashes()
         self._buffer.set_text('')
 
+        # Coverage check — every verse in `verses` may be empty if the
+        # module doesn't include this book/chapter (e.g. SBLGNT is NT
+        # only; navigating to Psalms returns the right verse_max but
+        # all empty content). Show a friendly empty state instead of
+        # rendering a chapter heading + bare verse numbers.
+        if not any(re.sub(r'<[^>]+>', '', str(h)).strip() for _, h in verses):
+            self._display_empty_chapter(book, chapter, dark)
+            return GLib.SOURCE_REMOVE
+
         # Chapter heading — muted, sits above the first verse and scrolls with text.
-        # Bibles only; commentary modules already emit their own per-verse headers.
-        if not is_commentary:
+        # Bibles only; commentaries emit their own per-verse headers, and
+        # generic books / dictionaries don't have a Book Chapter reference
+        # space so a heading there would just mislabel whatever happened
+        # to be loaded last.
+        if self._module_type == 'Biblical Texts':
             heading_color = '#8d8278' if dark else '#7a7066'
             heading = (f'<span size="x-large" weight="bold" '
                        f'foreground="{heading_color}" letter_spacing="600">'
                        f'{GLib.markup_escape_text(f"{book} {chapter}")}</span>\n\n')
             self._buffer.insert_markup(self._buffer.get_end_iter(), heading, -1)
 
-        for v, html in verses:
+        # For commentaries, group consecutive verses whose source HTML
+        # is identical — section-based modules (MHC, MHCC) return the
+        # same multi-thousand-character block for every verse in a
+        # section, so naive verse-by-verse rendering produces a wall
+        # of duplicate text. We render each unique block once and tag
+        # the whole verse range to it for click/navigation.
+        if is_commentary:
+            iterable = self._group_commentary_verses(verses)
+        else:
+            iterable = ((v, v, html) for v, html in verses)
+
+        for start_v, end_v, html in iterable:
             plain = re.sub(r'<[^>]+>', '', str(html)).strip()
 
             # Commentary: skip verses with no meaningful content
@@ -537,46 +758,75 @@ class BiblePane(Gtk.Box):
 
             # 1. Verse number — inline for Bibles, bold section header for commentaries
             if is_commentary:
-                header = f'\n<b>Verse {v}</b>\n' if self._buffer.get_char_count() > 0 else f'<b>Verse {v}</b>\n'
-                self._buffer.insert_markup(self._buffer.get_end_iter(), header, -1)
+                # Range label for grouped sections, single number otherwise
+                range_label = (f'Verse {start_v}' if start_v == end_v
+                               else f'Verses {start_v}-{end_v}')
+                # Some modules (Clarke, MHCC) emit their own "Verse N"
+                # or "Verses A-B" header inline via <hi type="bold">.
+                # Skip our injected header in that case so the result
+                # isn't doubled up.
+                if not re.match(
+                        r'^\s*<hi\s[^>]*type="bold"[^>]*>\s*Verses?\s+\d+(?:[-–]\d+)?\s*</hi>',
+                        str(html)):
+                    header = (f'\n<b>{range_label}</b>\n'
+                              if self._buffer.get_char_count() > 0
+                              else f'<b>{range_label}</b>\n')
+                    self._buffer.insert_markup(self._buffer.get_end_iter(), header, -1)
+                elif self._buffer.get_char_count() > 0:
+                    # Source provides the header — but we still want a
+                    # blank line of separation between commentary sections.
+                    self._buffer.insert(self._buffer.get_end_iter(), '\n')
             else:
-                v_num_markup = f'<span foreground="gray" size="small" weight="bold" rise="6000"> {v} </span>'
+                v_num_markup = f'<span foreground="gray" size="small" weight="bold" rise="6000"> {start_v} </span>'
                 self._buffer.insert_markup(self._buffer.get_end_iter(), v_num_markup, -1)
 
             text_start_mark = self._buffer.create_mark(None, self._buffer.get_end_iter(), True)
 
             # 2. Verse text
-            v_anno = annos.get(str(v), {})
-            v_text_markup = _html_to_markup(html, dark)
-            # Drop-cap: enlarge the first letter of verse 1 for a print-Bible feel.
-            # Skip the dropcap on highlighted v1 — the soft tint reads better as a flat block.
-            if not is_commentary and v == 1 and not v_anno.get('highlight'):
-                m = re.match(r'((?:<[^>]+>)*)([A-Za-z])', v_text_markup)
-                if m:
-                    v_text_markup = (
-                        f'{m.group(1)}<span size="200%" weight="bold" rise="-2000">'
-                        f'{m.group(2)}</span>{v_text_markup[m.end():]}'
-                    )
-            try:
-                suffix = '\n' if is_commentary else ' '
-                self._buffer.insert_markup(self._buffer.get_end_iter(), v_text_markup + suffix, -1)
-            except Exception:
-                self._buffer.insert(self._buffer.get_end_iter(), plain + ('\n' if is_commentary else ' '))
+            v_anno = annos.get(str(start_v), {})
+            if is_commentary:
+                # Commentaries use a segmented insertion so cross-refs
+                # like <reference osisRef="Bible:Phil.3.4">…</reference>
+                # become clickable styled links carrying a devref tag.
+                # Plain segments between refs still go through
+                # _html_to_markup so <hi>, <i>, etc. keep working.
+                self._insert_commentary_body(html, dark)
+                self._buffer.insert(self._buffer.get_end_iter(), '\n')
+            else:
+                v_text_markup = _html_to_markup(html, dark)
+                # Drop-cap: enlarge the first letter of verse 1 for a
+                # print-Bible feel. Skip the dropcap on highlighted v1 —
+                # the soft tint reads better as a flat block.
+                if start_v == 1 and not v_anno.get('highlight'):
+                    m = re.match(r'((?:<[^>]+>)*)([A-Za-z])', v_text_markup)
+                    if m:
+                        v_text_markup = (
+                            f'{m.group(1)}<span size="200%" weight="bold" rise="-2000">'
+                            f'{m.group(2)}</span>{v_text_markup[m.end():]}'
+                        )
+                try:
+                    self._buffer.insert_markup(self._buffer.get_end_iter(), v_text_markup + ' ', -1)
+                except Exception:
+                    self._buffer.insert(self._buffer.get_end_iter(), plain + ' ')
 
-            # 3. Apply vnum tag for click targeting and navigation
+            # 3. Apply vnum tags. For grouped commentary sections, every
+            # verse in [start_v, end_v] points at the same rendered
+            # block so navigation to any of them lands on this section.
             start_iter = self._buffer.get_iter_at_mark(start_mark)
-            tag_name = f'vnum_{v}'
-            tag = self._buffer.get_tag_table().lookup(tag_name)
-            if not tag:
-                tag = self._buffer.create_tag(tag_name)
-            self._buffer.apply_tag(tag, start_iter, self._buffer.get_end_iter())
+            end_iter = self._buffer.get_end_iter()
+            for v in range(start_v, end_v + 1):
+                tag_name = f'vnum_{v}'
+                tag = self._buffer.get_tag_table().lookup(tag_name)
+                if not tag:
+                    tag = self._buffer.create_tag(tag_name)
+                self._buffer.apply_tag(tag, start_iter, end_iter)
 
             # 4. Apply persistent annotation tags (highlight/underline/note
             # indicator) in-place — these can be changed later without a
             # full re-render via _refresh_verse_annotation. Bibles only;
             # commentaries don't get user annotations.
             if not is_commentary:
-                self._apply_anno_tags(v, v_anno)
+                self._apply_anno_tags(start_v, v_anno)
 
             # 5. Strong's word tagging (Bible mode only)
             if not is_commentary and self._lexicon_enabled and self._on_word_click:
@@ -589,12 +839,99 @@ class BiblePane(Gtk.Box):
         if self._target_verse is not None:
             v = self._target_verse
             self._target_verse = None
+            self._restore_top_verse = None
             GLib.idle_add(self._scroll_to_verse, v)
+        elif self._restore_top_verse is not None:
+            v = self._restore_top_verse
+            self._restore_top_verse = None
+            GLib.idle_add(self._scroll_to_verse_silent, v)
         else:
             self._view.scroll_to_iter(self._buffer.get_start_iter(), 0.0, False, 0, 0)
 
         self._update_chapter_note_indicator()
         return GLib.SOURCE_REMOVE
+
+    @staticmethod
+    def _group_commentary_verses(verses):
+        """Yield (start_v, end_v, html) tuples coalescing consecutive
+        verses that share identical commentary text. Section-based
+        modules (MHC, MHCC) return the same multi-KB block for every
+        verse in a section; deduping turns 36 repeats into 2–4 sections
+        with range headers like 'Verses 1-10'."""
+        groups = []
+        for v, html in verses:
+            s = str(html)
+            if groups and s == groups[-1][2]:
+                start, _, h = groups[-1]
+                groups[-1] = (start, v, h)
+            else:
+                groups.append((v, v, s))
+        return groups
+
+    _REF_PATTERN = re.compile(
+        r'<reference\s[^>]*osisRef="([^"]+)"[^>]*>(.*?)</reference>',
+        re.DOTALL)
+
+    def _insert_commentary_body(self, html, dark):
+        """Render a commentary verse, breaking on <reference> tags so
+        each cross-reference becomes a clickable styled link carrying
+        a devref: tag. The plain segments between references go through
+        _html_to_markup so existing emphasis (<hi>, <i>, <q>, etc.)
+        keeps working."""
+        s = str(html)
+        pos = 0
+        for m in self._REF_PATTERN.finditer(s):
+            if m.start() > pos:
+                # strip=False so a trailing space before the reference
+                # ("Elijah, " + ref) isn't swallowed by .strip(), which
+                # would render as "Elijah,Rom 11:1-5".
+                markup = _html_to_markup(s[pos:m.start()], dark, strip=False)
+                if markup:
+                    try:
+                        self._buffer.insert_markup(
+                            self._buffer.get_end_iter(), markup, -1)
+                    except Exception:
+                        self._buffer.insert(
+                            self._buffer.get_end_iter(),
+                            re.sub(r'<[^>]+>', '', s[pos:m.start()]))
+            osis = m.group(1)
+            ref_text = re.sub(r'<[^>]+>', '', m.group(2)).strip()
+            if ref_text:
+                self._insert_ref_segment(ref_text, osis, dark)
+            pos = m.end()
+        if pos < len(s):
+            markup = _html_to_markup(s[pos:], dark, strip=False)
+            if markup:
+                try:
+                    self._buffer.insert_markup(
+                        self._buffer.get_end_iter(), markup, -1)
+                except Exception:
+                    self._buffer.insert(
+                        self._buffer.get_end_iter(),
+                        re.sub(r'<[^>]+>', '', s[pos:]))
+
+    def _insert_ref_segment(self, text, osis, dark):
+        """Insert one cross-reference: styled text + devref: tag over
+        the same range, so _on_left_click's existing devref handler
+        routes the click to _on_word_study_navigate → _go_to."""
+        color = '#7fa3c1' if dark else '#5a7fa3'
+        start_mark = self._buffer.create_mark(
+            None, self._buffer.get_end_iter(), True)
+        markup = (f'<span foreground="{color}" underline="single">'
+                  f'{GLib.markup_escape_text(text)}</span>')
+        try:
+            self._buffer.insert_markup(
+                self._buffer.get_end_iter(), markup, -1)
+        except Exception:
+            self._buffer.insert(self._buffer.get_end_iter(), text)
+        start = self._buffer.get_iter_at_mark(start_mark)
+        end = self._buffer.get_end_iter()
+        tag_name = f'devref:{osis}'
+        tag = self._buffer.get_tag_table().lookup(tag_name)
+        if not tag:
+            tag = self._buffer.create_tag(tag_name)
+        self._buffer.apply_tag(tag, start, end)
+        self._buffer.delete_mark(start_mark)
 
     def _scroll_to_verse(self, verse_num):
         tag = self._buffer.get_tag_table().lookup(f'vnum_{verse_num}')
@@ -809,7 +1146,7 @@ class BiblePane(Gtk.Box):
         start_offset = start_iter.get_offset()
         search_pos = 0
 
-        for word_html, strong_num, morph in segments:
+        for word_html, strong_nums, morph in segments:
             word_plain = _html_mod.unescape(re.sub(r'<[^>]+>', '', word_html))
             if not word_plain.strip():
                 continue
@@ -822,9 +1159,58 @@ class BiblePane(Gtk.Box):
                     continue
                 word_plain = stripped
 
-            if strong_num:
-                s = self._buffer.get_iter_at_offset(start_offset + idx)
-                e = self._buffer.get_iter_at_offset(start_offset + idx + len(word_plain))
+            if not strong_nums:
+                search_pos = idx + len(word_plain)
+                continue
+
+            # Locate each English word inside the segment so we can apply
+            # a separate Strong's tag per word. SWORD's KJV-style markup
+            # uses one of three patterns:
+            #   (a) one Strong's, one English word — simple
+            #   (b) one Strong's, multiple English words — one Greek word
+            #       translated as a phrase ("his own", "he went out");
+            #       apply the same Strong's to every word
+            #   (c) multiple Strong's, matching English words — one Greek
+            #       word per English word in source order ("the synagogue"
+            #       → G3588 G4864); pair by index
+            # Before this split, (c) was applied as a single multi-word
+            # range tagged with only the first Strong's, so clicking
+            # "synagogue" returned G3588 ("the") — the user's bug report.
+            word_offsets = [(wm.start(), wm.end() - wm.start())
+                            for wm in re.finditer(r'\S+', word_plain)]
+            if not word_offsets:
+                search_pos = idx + len(word_plain)
+                continue
+
+            # When more Greek words collapse to fewer English words (e.g.
+            # "τῶν χειρῶν" → "hands", tagged G3588 G5495), the Greek
+            # definite article G3588 is grammatical filler — drop it so
+            # the content word's Strong's reaches the English word
+            # instead. Only do this when counts mismatch; matched-count
+            # phrases like "the synagogue" (G3588 G4864 → "the synagogue")
+            # legitimately pair article with article.
+            effective_nums = strong_nums
+            if len(strong_nums) > len(word_offsets):
+                filtered = [s for s in strong_nums if s != 'G3588']
+                if filtered:
+                    effective_nums = filtered
+
+            if len(effective_nums) == len(word_offsets):
+                pairs = list(zip(effective_nums, word_offsets))
+            elif len(effective_nums) == 1:
+                pairs = [(effective_nums[0], wo) for wo in word_offsets]
+            else:
+                # Still mismatched (rare). Pair by index for as many as
+                # we can; tag any remaining English words with the last
+                # Strong's so clicking still triggers something sensible.
+                pairs = list(zip(effective_nums, word_offsets))
+                if len(word_offsets) > len(effective_nums):
+                    last = effective_nums[-1]
+                    pairs.extend((last, wo) for wo in word_offsets[len(effective_nums):])
+
+            for strong_num, (local_off, local_len) in pairs:
+                s = self._buffer.get_iter_at_offset(start_offset + idx + local_off)
+                e = self._buffer.get_iter_at_offset(start_offset + idx + local_off + local_len)
                 tag_name = f"strg:{strong_num}"
                 tag = self._buffer.get_tag_table().lookup(tag_name)
                 if not tag:
@@ -840,6 +1226,23 @@ class BiblePane(Gtk.Box):
                     if not mtag:
                         mtag = self._buffer.create_tag(morph_tag_name)
                     self._buffer.apply_tag(mtag, s, e)
+
+            # Phrase tag — applied over the whole multi-word or multi-
+            # Strong's segment so the click handler can surface phrase
+            # context in the lexicon header. For idioms like "God forbid"
+            # (G3361 + G1096) clicking "God" returns G3361 (per markup),
+            # but the user benefits from seeing they clicked into a
+            # phrase, not a literal one-to-one word lookup.
+            if len(strong_nums) > 1 or len(word_offsets) > 1:
+                phrase_tag_name = f'phrase:{"+".join(strong_nums)}'
+                phrase_tag = self._buffer.get_tag_table().lookup(phrase_tag_name)
+                if not phrase_tag:
+                    phrase_tag = self._buffer.create_tag(phrase_tag_name)
+                first_off, _ = word_offsets[0]
+                last_off, last_len = word_offsets[-1]
+                ps = self._buffer.get_iter_at_offset(start_offset + idx + first_off)
+                pe = self._buffer.get_iter_at_offset(start_offset + idx + last_off + last_len)
+                self._buffer.apply_tag(phrase_tag, ps, pe)
 
             search_pos = idx + len(word_plain)
 
@@ -908,6 +1311,7 @@ class BiblePane(Gtk.Box):
         strong_num = None
         morph = None
         devref = None
+        phrase_tag = None
         for tag in it.get_tags():
             name = tag.get_property('name')
             if name and name.startswith('strg:'):
@@ -921,6 +1325,8 @@ class BiblePane(Gtk.Box):
                 morph = name[6:]
             elif name and name.startswith('devref:'):
                 devref = name[7:]
+            elif name and name.startswith('phrase:'):
+                phrase_tag = tag
         if n_press > 1:
             return
         if devref:
@@ -931,8 +1337,24 @@ class BiblePane(Gtk.Box):
         if verse_num is not None:
             self._selected_verse = verse_num
         if strong_num and self._on_word_click:
-            self._current_morph = morph
-            self._on_word_click(self, strong_num)
+            # Resolve phrase context — the full English phrase text and
+            # the full Strong's chain on the source <w> tag — so the
+            # lexicon header can show that the click landed inside a
+            # multi-word translation (idiomatic or otherwise).
+            phrase_chain = None
+            phrase_text = None
+            if phrase_tag is not None:
+                pname = phrase_tag.get_property('name') or ''
+                if pname.startswith('phrase:'):
+                    phrase_chain = pname[len('phrase:'):].split('+')
+                    ps = it.copy()
+                    pe = it.copy()
+                    ps.backward_to_tag_toggle(phrase_tag)
+                    pe.forward_to_tag_toggle(phrase_tag)
+                    phrase_text = self._buffer.get_text(ps, pe, False).strip()
+            # Stash for _on_left_release — see gesture setup comment.
+            self._pending_strong_click = (strong_num, morph,
+                                          phrase_chain, phrase_text)
         # Broadcast on every verse click, even when this pane's _selected_verse
         # already matches — it may match because the OTHER pane just broadcast
         # this same verse to us (select_verse writes _selected_verse on the
@@ -941,6 +1363,24 @@ class BiblePane(Gtk.Box):
         # No infinite-loop risk: select_verse() doesn't call _on_verse_select.
         if verse_num is not None and self._on_verse_select:
             self._on_verse_select(self, verse_num)
+
+    def _on_left_release(self, gesture, n_press, x, y):
+        pending = self._pending_strong_click
+        self._pending_strong_click = None
+        # Clear any selection GTK's TextView may have created if the
+        # press-release coordinates ended up mapping to different buffer
+        # offsets (rare now that the lexicon swap is deferred, but cheap
+        # to do as a safety net). place_cursor at start collapses the
+        # selection without moving the visible insertion point much.
+        bounds = self._buffer.get_selection_bounds()
+        if bounds:
+            self._buffer.place_cursor(bounds[0])
+        if pending is None:
+            return
+        strong_num, morph, phrase_chain, phrase_text = pending
+        self._current_morph = morph
+        self._current_phrase = (phrase_chain, phrase_text)
+        self._on_word_click(self, strong_num)
 
     def _on_dict_click(self, gesture, n_press, x, y):
         if n_press != 2:
@@ -1111,13 +1551,29 @@ class BiblePane(Gtk.Box):
 
     # ── Lexicon panel delegators ─────────────────────────────────────────
 
+    def show_lexicon_loading(self, strong_num):
+        """Reveal the lexicon panel with a spinner immediately when the
+        user clicks a Strong's word. The actual content arrives later
+        via show_lexicon(). Without this the panel is blank for several
+        hundred ms on the first click of a session while SWORD warms up."""
+        self._lex_panel.set_context(self._book, self._module)
+        chain, text = getattr(self, '_current_phrase', (None, None))
+        self._lex_panel.show_loading(strong_num,
+                                     morph=self._current_morph,
+                                     phrase_chain=chain,
+                                     phrase_text=text)
+
     def show_lexicon(self, strong_num, text):
         """Called from window.py on Bible-text word click. The window has
         already fetched the definition text asynchronously; here we just
         forward it to the panel along with the morph we captured during
         the click (so the panel can decode and show it in the header)."""
         self._lex_panel.set_context(self._book, self._module)
-        self._lex_panel.show(strong_num, text, morph=self._current_morph)
+        chain, ptext = getattr(self, '_current_phrase', (None, None))
+        self._lex_panel.show(strong_num, text,
+                             morph=self._current_morph,
+                             phrase_chain=chain,
+                             phrase_text=ptext)
 
     def _hide_lexicon(self):
         self._lex_panel.hide()
@@ -1221,6 +1677,10 @@ class BiblePane(Gtk.Box):
         def _idx_start():
             GLib.idle_add(self._pane_search_status.set_text, 'Building index…')
 
+        def _idx_progress(book_idx, total, book_name):
+            GLib.idle_add(self._pane_search_status.set_text,
+                          f'Building index… {book_name} ({book_idx}/{total})')
+
         def run():
             if ebible_bridge.is_ebible_module(module):
                 results = ebible_bridge.search_module(module, query)
@@ -1228,6 +1688,7 @@ class BiblePane(Gtk.Box):
                 results = sword_bridge.search_module(
                     module, query,
                     on_indexing_start=_idx_start,
+                    on_indexing_progress=_idx_progress,
                     on_indexing_done=lambda: None)
             GLib.idle_add(self._pane_search_done, results, module)
 
@@ -1271,7 +1732,7 @@ class BiblePane(Gtk.Box):
             self._on_word_study_navigate(*row._nav)
 
     def refresh_modules(self):
-        new_names = sword_bridge.module_names() + ebible_bridge.module_names()
+        new_names = _pane_readable_modules()
         self.module_drop.disconnect(self._module_handler)
         self._names = new_names
         self.module_drop.set_model(Gtk.StringList.new(self._names))
@@ -1294,10 +1755,15 @@ class BiblePane(Gtk.Box):
             and sword_bridge.is_devotional_module(self._module)
         )
         is_devot = self._is_devotional
+        is_chapter_keyed = self._is_verse_navigable()
         self._date_nav_revealer.set_reveal_child(is_devot)
-        self._sync_btn.set_visible(not is_devot)
-        self._chapter_note_btn.set_visible(not is_devot)
-        self._pane_search_btn.set_visible(not is_devot)
+        # Sync / chapter-note / per-pane search are only meaningful when
+        # the pane is rendering a verse-keyed chapter. Devotionals get
+        # date navigation instead, and generic books / dictionaries get
+        # the unsupported-module placeholder.
+        self._sync_btn.set_visible(is_chapter_keyed)
+        self._chapter_note_btn.set_visible(is_chapter_keyed)
+        self._pane_search_btn.set_visible(is_chapter_keyed)
         self._pane_search_btn.set_active(False)
         if is_devot:
             self._devotional_date = _date.today()
@@ -1311,6 +1777,7 @@ class BiblePane(Gtk.Box):
         # Clear stale per-module state — morph buffer, selected verse, and
         # the lexicon panel are all keyed to the previous module's content.
         self._current_morph = None
+        self._current_phrase = (None, None)
         self._selected_verse = None
         self._lex_panel.clear_state()
         # Dismiss any dict popup since it's tied to a word in the previous module's text.
@@ -1332,6 +1799,8 @@ class BiblePane(Gtk.Box):
 
     def force_navigate(self, book, chapter, verse):
         """Navigate to a reference regardless of the sync setting."""
+        if not self._is_verse_navigable():
+            return
         self._book = book
         self._chapter = chapter
         self._target_verse = verse

@@ -36,10 +36,11 @@ def _make_verse_markup(html, target_strong):
     if not any(s for _, s, _m in segments):
         plain = re.sub(r'<[^>]+>', '', str(html))
         return GLib.markup_escape_text(plain).strip()
+    target = target_strong.upper()
     parts = []
-    for seg_html, seg_strong, _morph in segments:
+    for seg_html, seg_strong_nums, _morph in segments:
         plain = GLib.markup_escape_text(re.sub(r'<[^>]+>', '', seg_html))
-        if seg_strong and seg_strong.upper() == target_strong.upper():
+        if seg_strong_nums and target in seg_strong_nums:
             parts.append(f'<b>{plain}</b>')
         else:
             parts.append(plain)
@@ -47,22 +48,33 @@ def _make_verse_markup(html, target_strong):
 
 
 def _extract_segments(html):
-    """[(text_html, strong_num, morph)] from SWORD <w> markup."""
+    """[(text_html, strong_nums_list, morph)] from SWORD <w> markup.
+
+    Returns a list of Strong's numbers per `<w>` tag — SWORD markup can
+    fuse multiple source-language words under one tag (e.g. KJV wraps
+    'the synagogue' with strong:G3588 strong:G4864). Also handles
+    self-closing `<w …/>` tags emitted for untranslated source words;
+    without explicit handling, the regex would consume them as openers
+    and steal text from the next tag (see pane._extract_segments for
+    the full explanation)."""
     html = str(html)
     segments = []
     pos = 0
-    for m in re.finditer(r'<w(\s[^>]*)>(.*?)</w>', html, re.DOTALL):
+    for m in re.finditer(r'<w\s([^>]*?)(?:/>|>(.*?)</w>)', html, re.DOTALL):
         if m.start() > pos:
-            segments.append((html[pos:m.start()], None, None))
+            segments.append((html[pos:m.start()], [], None))
+        content = m.group(2)
+        if content is None:
+            pos = m.end()
+            continue
         attrs = m.group(1)
-        sm = re.search(r'strong:([GHgh]\d+)', attrs)
-        strong_num = sm.group(1).upper() if sm else None
+        strong_nums = [s.upper() for s in re.findall(r'strong:([GHgh]\d+)', attrs)]
         mm = re.search(r'morph="([^"]+)"', attrs)
         morph = mm.group(1) if mm else None
-        segments.append((m.group(2), strong_num, morph))
+        segments.append((content, strong_nums, morph))
         pos = m.end()
     if pos < len(html):
-        segments.append((html[pos:], None, None))
+        segments.append((html[pos:], [], None))
     return segments
 
 
@@ -112,6 +124,11 @@ class LexiconPanel(Gtk.Box):
         self._history = []
         self._current_strong = None
         self._current_morph = None
+        # Phrase context for the currently-shown Strong's: a tuple of
+        # (chain_list, english_text). Set on show()/show_loading() from
+        # a Bible-text word click; cleared on within-lexicon navigation
+        # since those clicks aren't anchored to a specific phrase.
+        self._current_phrase = (None, None)
 
         # Context — the pane's current book/module. Word study uses this
         # to scope its scan. set_context() updates it.
@@ -129,13 +146,21 @@ class LexiconPanel(Gtk.Box):
         self._back_btn = Gtk.Button(icon_name='go-previous-symbolic')
         self._back_btn.add_css_class('flat')
         self._back_btn.set_sensitive(False)
-        self._back_btn.set_tooltip_text('Back')
+        self._back_btn.set_tooltip_text('Back to previous definition')
         self._back_btn.connect('clicked', self._on_back)
         header.append(self._back_btn)
 
         self._title = Gtk.Label(label="Strong's Lexicon", xalign=0)
         self._title.add_css_class('heading')
         header.append(self._title)
+
+        # Loading indicator — shown while the SWORD lexicon fetch is in
+        # flight on a click. The first-ever click on a Strong's word can
+        # take several hundred ms (SWORD initializes its module cache),
+        # which previously left the panel blank with no feedback.
+        self._spinner = Gtk.Spinner()
+        self._spinner.set_visible(False)
+        header.append(self._spinner)
 
         self._morph_lbl = Gtk.Label(label='', xalign=0, hexpand=True)
         self._morph_lbl.add_css_class('dim-label')
@@ -144,6 +169,7 @@ class LexiconPanel(Gtk.Box):
 
         close_btn = Gtk.Button(icon_name='window-close-symbolic')
         close_btn.add_css_class('flat')
+        close_btn.set_tooltip_text('Close lexicon')
         close_btn.connect('clicked', lambda _: self.hide())
         header.append(close_btn)
 
@@ -205,16 +231,74 @@ class LexiconPanel(Gtk.Box):
         self._book = book
         self._module = module
 
-    def show(self, strong_num, text, morph=''):
-        """Populate the panel for a Strong's number and reveal it.
-        Resets the back history (this is a fresh entry from a
-        Bible-text word click, not a navigation within the panel)."""
+    def show_loading(self, strong_num, morph='', phrase_chain=None, phrase_text=None):
+        """Reveal the panel immediately with a spinner while the lexicon
+        fetch is running. Called by the composer on click; the real
+        content arrives later via show(). Resets back history.
+
+        Setting `_current_strong` here also lets late callbacks for a
+        previous Strong's number short-circuit in `_show_content`."""
         self._history.clear()
         self._back_btn.set_sensitive(False)
         self._current_strong = strong_num
         self._current_morph = morph
+        self._current_phrase = (phrase_chain, phrase_text)
+        self._set_title_with_phrase(strong_num, phrase_chain, phrase_text)
+        self._morph_lbl.set_text('')
+        self._def_buf.set_text('')
+        # Clear any prior word-study list and header so the user doesn't
+        # see stale content from the previous word during the fetch.
+        child = self._ws_list.get_first_child()
+        while child:
+            nxt = child.get_next_sibling()
+            self._ws_list.remove(child)
+            child = nxt
+        self._ws_header.set_text('')
+        self._spinner.set_visible(True)
+        self._spinner.start()
+        if not self.get_visible():
+            self.set_visible(True)
+            if self._on_first_show:
+                GLib.idle_add(self._on_first_show)
+            GLib.idle_add(self.init_inner_position)
+
+    def show(self, strong_num, text, morph='', phrase_chain=None, phrase_text=None):
+        """Populate the panel for a Strong's number and reveal it.
+        Resets the back history (this is a fresh entry from a
+        Bible-text word click, not a navigation within the panel)."""
+        self._spinner.stop()
+        self._spinner.set_visible(False)
+        self._history.clear()
+        self._back_btn.set_sensitive(False)
+        self._current_strong = strong_num
+        self._current_morph = morph
+        self._current_phrase = (phrase_chain, phrase_text)
         self._show_content(strong_num, text)
         self._load_word_study(strong_num)
+
+    def _set_title_with_phrase(self, strong_num, chain, text):
+        """Render the title label with an optional muted phrase-context
+        suffix. For idiomatic multi-word translations like KJV's
+        'God forbid' = μή (G3361) + γένοιτο (G1096), the user sees they
+        clicked into a phrase, not a one-to-one word lookup."""
+        base = f"Strong's {strong_num}"
+        if not chain or len(chain) <= 1:
+            self._title.set_text(base)
+            return
+        others = [s for s in chain if s != strong_num]
+        bits = []
+        if text and ' ' in text.strip():
+            bits.append(f'in “{GLib.markup_escape_text(text.strip())}”')
+        if others:
+            bits.append('with ' + ' + '.join(others))
+        if not bits:
+            self._title.set_text(base)
+            return
+        suffix = ' · '.join(bits)
+        self._title.set_markup(
+            f"{GLib.markup_escape_text(base)}  "
+            f"<span size='small' alpha='65%'>· {suffix}</span>"
+        )
 
     def hide(self):
         self.set_visible(False)
@@ -234,6 +318,7 @@ class LexiconPanel(Gtk.Box):
         self._back_btn.set_sensitive(False)
         self._current_strong = None
         self._current_morph = None
+        self._current_phrase = (None, None)
         self.hide()
 
     # ── Definition rendering ─────────────────────────────────────────────
@@ -242,7 +327,8 @@ class LexiconPanel(Gtk.Box):
         # Ignore late callbacks from a previous navigation.
         if self._current_strong != strong_num:
             return GLib.SOURCE_REMOVE
-        self._title.set_text(f"Strong's {strong_num}")
+        chain, ptext = self._current_phrase
+        self._set_title_with_phrase(strong_num, chain, ptext)
         decoded = ''
         if self._current_morph:
             m = self._current_morph
@@ -312,11 +398,7 @@ class LexiconPanel(Gtk.Box):
 
     def _load_word_study(self, strong_num):
         # Clear the list immediately so the user sees the new search start.
-        child = self._ws_list.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            self._ws_list.remove(child)
-            child = nxt
+        self._clear_ws()
         self._ws_header.set_text('Searching…')
 
         # Capture the search context so a late callback after navigation
@@ -325,52 +407,79 @@ class LexiconPanel(Gtk.Box):
         if not book or not module:
             return
 
+        # Negative-lookahead so G65 doesn't also match G650, G651, G652,
+        # etc. — see lookup-side comments. Compiled once outside the loop.
+        pattern = re.compile(rf'strong:{re.escape(strong_num)}(?!\d)',
+                             re.IGNORECASE)
+
         def fetch():
-            results = []
-            for ch in range(1, sword_bridge.chapter_count(book) + 1):
+            total = sword_bridge.chapter_count(book)
+            running = 0
+            for ch in range(1, total + 1):
+                batch = []
                 for v_num, html in sword_bridge.load_chapter(module, book, ch):
-                    if re.search(rf'strong:{re.escape(strong_num)}',
-                                 str(html), re.IGNORECASE):
+                    if pattern.search(str(html)):
                         markup = _make_verse_markup(html, strong_num)
-                        results.append((book, ch, v_num, markup))
-            GLib.idle_add(self._populate_word_study, strong_num, results, book, module)
+                        batch.append((book, ch, v_num, markup))
+                running += len(batch)
+                GLib.idle_add(self._ws_chapter_done,
+                              strong_num, book, module, batch, ch, total, running)
+            GLib.idle_add(self._ws_finalize, strong_num, book, module, running)
 
         threading.Thread(target=fetch, daemon=True).start()
 
-    def _populate_word_study(self, strong_num, results, book, module):
-        # Discard stale results — the user may have navigated away.
-        if (self._current_strong != strong_num
-                or self._book != book
-                or self._module != module):
-            return GLib.SOURCE_REMOVE
+    def _clear_ws(self):
         child = self._ws_list.get_first_child()
         while child:
             nxt = child.get_next_sibling()
             self._ws_list.remove(child)
             child = nxt
-        n = len(results)
+
+    def _ws_chapter_done(self, strong_num, book, module, batch, ch, total, running):
+        # Discard stale callbacks — the user may have navigated to a
+        # different word, book, or module while the scan was in flight.
+        if (self._current_strong != strong_num
+                or self._book != book
+                or self._module != module):
+            return GLib.SOURCE_REMOVE
+        # Progress header — running count + chapter position. The chapter
+        # number gives the user a sense of how much scanning is left
+        # without a full progress bar.
+        s = '' if running == 1 else 's'
         self._ws_header.set_text(
-            f'{n} occurrence{"s" if n != 1 else ""} in {book}')
-        for ref_book, ch, v_num, markup in results:
-            row = Gtk.ListBoxRow()
-            row._nav = (ref_book, ch, v_num)
-            card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-            card.set_margin_start(8)
-            card.set_margin_end(8)
-            card.set_margin_top(6)
-            card.set_margin_bottom(6)
-            ref_lbl = Gtk.Label(label=f'{ch}:{v_num}', xalign=0)
-            ref_lbl.add_css_class('dim-label')
-            text_lbl = Gtk.Label(xalign=0, wrap=True)
-            try:
-                text_lbl.set_markup(markup)
-            except Exception:
-                text_lbl.set_text(re.sub(r'<[^>]+>', '', markup))
-            card.append(ref_lbl)
-            card.append(text_lbl)
-            row.set_child(card)
-            self._ws_list.append(row)
+            f'Searching {book}… {running} match{s} so far ({ch}/{total})')
+        for ref_book, c, v_num, markup in batch:
+            self._ws_list.append(self._build_ws_row(ref_book, c, v_num, markup))
         return GLib.SOURCE_REMOVE
+
+    def _ws_finalize(self, strong_num, book, module, running):
+        if (self._current_strong != strong_num
+                or self._book != book
+                or self._module != module):
+            return GLib.SOURCE_REMOVE
+        s = '' if running == 1 else 's'
+        self._ws_header.set_text(f'{running} occurrence{s} in {book}')
+        return GLib.SOURCE_REMOVE
+
+    def _build_ws_row(self, ref_book, ch, v_num, markup):
+        row = Gtk.ListBoxRow()
+        row._nav = (ref_book, ch, v_num)
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        card.set_margin_start(8)
+        card.set_margin_end(8)
+        card.set_margin_top(6)
+        card.set_margin_bottom(6)
+        ref_lbl = Gtk.Label(label=f'{ch}:{v_num}', xalign=0)
+        ref_lbl.add_css_class('dim-label')
+        text_lbl = Gtk.Label(xalign=0, wrap=True)
+        try:
+            text_lbl.set_markup(markup)
+        except Exception:
+            text_lbl.set_text(re.sub(r'<[^>]+>', '', markup))
+        card.append(ref_lbl)
+        card.append(text_lbl)
+        row.set_child(card)
+        return row
 
     def _on_ws_row_activated(self, _listbox, row):
         if hasattr(row, '_nav') and self._on_word_study_navigate:
@@ -384,6 +493,9 @@ class LexiconPanel(Gtk.Box):
             self._back_btn.set_sensitive(True)
         self._current_strong = strong_num
         self._current_morph = None
+        # Within-lexicon navigation isn't anchored to a specific Bible
+        # phrase, so clear the phrase suffix from the title.
+        self._current_phrase = (None, None)
 
         def fetch():
             text = sword_bridge.lookup_strong(strong_num)
@@ -397,6 +509,7 @@ class LexiconPanel(Gtk.Box):
         prev = self._history.pop()
         self._current_strong = prev
         self._current_morph = None
+        self._current_phrase = (None, None)
         self._back_btn.set_sensitive(bool(self._history))
 
         def fetch():

@@ -31,8 +31,14 @@ MAX_SEARCH_RESULTS = 5000 # Limit the number of Whoosh results to prevent perfor
 def _get_index_path(module_name):
     return os.path.join(WHOOSH_INDEX_DIR, module_name)
 
-def _build_module_index(module_name):
-    """Build a fresh Whoosh index for module_name. Always starts clean."""
+def _build_module_index(module_name, on_progress=None):
+    """Build a fresh Whoosh index for module_name. Always starts clean.
+
+    `on_progress(book_idx, total_books, book_name)` is invoked on the
+    indexing thread once per book; the receiver should marshal to the
+    main loop itself (via GLib.idle_add). Indexing a full Bible against
+    SWORD typically takes 5-15s; per-book ticks give the UI something
+    concrete to display while the work runs."""
     idx_path = _get_index_path(module_name)
     shutil.rmtree(idx_path, ignore_errors=True)
     os.makedirs(idx_path, exist_ok=True)
@@ -41,7 +47,13 @@ def _build_module_index(module_name):
     writer = ix.writer()
 
     try:
-        for book in _ALL_BOOKS:
+        total_books = len(_ALL_BOOKS)
+        for i, book in enumerate(_ALL_BOOKS, start=1):
+            if on_progress:
+                try:
+                    on_progress(i, total_books, book)
+                except Exception:
+                    pass
             for ch in range(1, chapter_count(book) + 1):
                 for v_num, html in load_chapter(module_name, book, ch):
                     plain_text = re.sub(r'<[^>]+>', '', str(html))
@@ -185,6 +197,21 @@ def installed_devotional_modules():
     return [n for n in module_names() if is_devotional_module(n)]
 
 
+# Modules used internally by the app for lookups, not as user-facing
+# reading material. Hidden from pane / search / compare dropdowns
+# because they register as Biblical Texts but their primary purpose is
+# morphology lookup via the lexicon panel (see lookup_morph_for_strong
+# and lookup_morph_for_strong_heb).
+INTERNAL_USE_MODULES = frozenset({
+    'MorphGNT',  # Greek NT morphology
+    'OSHB',      # Open Scriptures Hebrew Bible — Hebrew morphology
+})
+
+
+def is_internal_use(module_name):
+    return module_name in INTERNAL_USE_MODULES
+
+
 _OSIS_BOOKS = {
     'Gen': 'Genesis', 'Exod': 'Exodus', 'Lev': 'Leviticus', 'Num': 'Numbers',
     'Deut': 'Deuteronomy', 'Josh': 'Joshua', 'Judg': 'Judges', 'Ruth': 'Ruth',
@@ -239,10 +266,19 @@ def get_devotional_raw(module_name, date_obj=None):
 
 
 def parse_osis_ref(osis_ref):
-    """Parse 'Bible:Eph.1.3' or 'Eph.1.3' → ('Ephesians', 1, 3), or None on failure."""
+    """Parse 'Bible:Eph.1.3' or 'Eph.1.3' → ('Ephesians', 1, 3), or None
+    on failure. Ranges like 'Rom.11.1-Rom.11.5' collapse to the start
+    verse, which is enough for cross-pane navigation — the user can
+    page forward from there."""
     ref = osis_ref.strip()
     if ref.startswith('Bible:'):
         ref = ref[6:]
+    # Clip any range / list to the first reference. SWORD encodes
+    # range endpoints with '-' and grouped references with space.
+    for sep in ('-', ' ', ','):
+        if sep in ref:
+            ref = ref.split(sep, 1)[0]
+            break
     parts = ref.split('.')
     if len(parts) < 3:
         return None
@@ -594,7 +630,8 @@ _ALL_BOOKS = [
 
 
 
-def search_module(module_name, query, on_indexing_start=None, on_indexing_done=None):
+def search_module(module_name, query, on_indexing_start=None,
+                  on_indexing_done=None, on_indexing_progress=None):
     """
     Search a module using Whoosh. Builds index if it doesn't exist or is outdated.
     Returns [(book, chapter, verse, plain_text)]
@@ -630,6 +667,7 @@ def search_module(module_name, query, on_indexing_start=None, on_indexing_done=N
                 thread = threading.Thread(
                     target=_build_module_index,
                     args=(module_name,),
+                    kwargs={'on_progress': on_indexing_progress},
                     daemon=True
                 )
                 _indexing_threads[module_name] = thread
@@ -1069,10 +1107,15 @@ def lookup_morph_for_strong(book, chapter, verse, strong_num):
             raw = str(mod.getRawEntry())
         except Exception:
             return None
+    target = strong_num.upper()
     for m in re.finditer(r'<w\s([^>]*)>', raw):
         attrs = m.group(1)
-        sn = re.search(r'strong:([GH]\d+)', attrs)
-        if sn and sn.group(1).upper() == strong_num.upper():
+        # A single <w> tag can carry multiple Strong's (KJV-style markup
+        # for collapsed Greek phrases — see _extract_segments). Use
+        # findall + membership rather than search + ==, otherwise a
+        # match for the SECOND Strong's would be silently missed.
+        nums = [n.upper() for n in re.findall(r'strong:([GH]\d+)', attrs)]
+        if target in nums:
             mm = re.search(r'morph="([^"]*)"', attrs)
             if mm:
                 return mm.group(1)
@@ -1082,7 +1125,10 @@ def lookup_morph_for_strong(book, chapter, verse, strong_num):
 def count_strong_occurrences(module_name, strong_num, book=None):
     """Count verses containing strong_num in book (whole Bible if None)."""
     books = [book] if book else _ALL_BOOKS
-    pattern = re.compile(rf'strong:{re.escape(strong_num)}', re.IGNORECASE)
+    # Negative-lookahead anchor — `strong:G65` must not be followed by
+    # another digit. Without it, G65 matches G650 / G651 / G652 / etc.
+    # and the count balloons with unrelated verses.
+    pattern = re.compile(rf'strong:{re.escape(strong_num)}(?!\d)', re.IGNORECASE)
     count = 0
     for b in books:
         for ch in range(1, chapter_count(b) + 1):

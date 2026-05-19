@@ -36,7 +36,7 @@ def _ensure_hl_css():
         return
     _hl_css_loaded = True
     p = Gtk.CssProvider()
-    p.load_from_data(b"""
+    p.load_from_data("""
     button.hl-yellow { background-color: #f5e6a3; color: #000; }
     button.hl-green  { background-color: #c4dfb9; color: #000; }
     button.hl-blue   { background-color: #bdd5e8; color: #000; }
@@ -226,7 +226,8 @@ def compare_translations(pane, verse, popover):
 
     def fetch():
         names = [m for m in sword_bridge.module_names()
-                 if sword_bridge.module_type(m) == 'Biblical Texts']
+                 if not sword_bridge.is_internal_use(m)
+                 and sword_bridge.module_type(m) == 'Biblical Texts']
         names += ebible_bridge.module_names()
         results = []
         for mod in names:
