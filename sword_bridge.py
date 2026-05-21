@@ -341,25 +341,57 @@ def list_genbook_entries(module_name, max_entries=4000):
             _GENBOOK_TOC_CACHE[module_name] = entries
             return entries
 
+        # Helpers that adapt across binding variants. TreeKeyIdx's path
+        # accessor is spelled `getKeyText` on some bindings and `getText`
+        # on others (and short-name might be `getLocalName` or a missing
+        # method entirely). Try each and fall back to str(key).
+        def _path_of(k):
+            for name in ('getKeyText', 'getText', 'getShortText'):
+                fn = getattr(k, name, None)
+                if fn is None:
+                    continue
+                try:
+                    v = fn()
+                    if v is None:
+                        continue
+                    return str(v)
+                except Exception:
+                    continue
+            try:
+                return str(k)
+            except Exception:
+                return ''
+
+        def _label_of(k, path):
+            fn = getattr(k, 'getLocalName', None)
+            if fn:
+                try:
+                    v = fn()
+                    if v:
+                        return str(v)
+                except Exception:
+                    pass
+            return path.rsplit('/', 1)[-1] or path
+
         tk = _genbook_tree_key(mod)
         if tk is not None:
             try:
                 tk.root()
 
                 def _depth():
-                    try:
-                        return int(tk.getLevel())
-                    except Exception:
-                        return tk.getKeyText().count('/')
+                    fn = getattr(tk, 'getLevel', None)
+                    if fn:
+                        try:
+                            return int(fn())
+                        except Exception:
+                            pass
+                    return _path_of(tk).count('/')
 
                 def _record():
-                    path = tk.getKeyText() or ''
+                    path = _path_of(tk)
                     if not path or path == '/':
                         return
-                    try:
-                        label = tk.getLocalName() or path.rsplit('/', 1)[-1]
-                    except Exception:
-                        label = path.rsplit('/', 1)[-1]
+                    label = _label_of(tk, path)
                     entries.append((path, label, max(0, _depth() - 1)))
 
                 if tk.firstChild():
@@ -386,6 +418,22 @@ def list_genbook_entries(module_name, max_entries=4000):
         if not entries:
             # Flat fallback: increment the module forward, collecting
             # paths as we go. Depth derived from '/' count in path.
+            def _mod_path():
+                for name in ('getKeyText', 'getKey'):
+                    fn = getattr(mod, name, None)
+                    if fn is None:
+                        continue
+                    try:
+                        v = fn()
+                        if v is None:
+                            continue
+                        # getKey() returns a key object; getKeyText
+                        # returns a string. Stringify either way.
+                        return str(v)
+                    except Exception:
+                        continue
+                return ''
+
             try:
                 try:
                     mod.setKeyText('/')
@@ -403,10 +451,7 @@ def list_genbook_entries(module_name, max_entries=4000):
                             break
                     except Exception:
                         pass
-                    try:
-                        path = mod.getKeyText() or ''
-                    except Exception:
-                        break
+                    path = _mod_path()
                     if not path or path == '/':
                         count += 1
                         continue
