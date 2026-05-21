@@ -1066,8 +1066,12 @@ class BiblePane(Gtk.Box):
             return GLib.SOURCE_REMOVE
 
         # Section title (the entry's local name) so the reader has
-        # context above the body.
-        title = entry_path.rsplit('/', 1)[-1] if entry_path else module
+        # context above the body. Genbook TreeKeys often use underscores
+        # in segment names ("Title_Page", "Preface_to_the_Electronic_Edition")
+        # — convert to spaces for display while keeping the raw path
+        # untouched for setKeyText navigation.
+        raw_seg = entry_path.rsplit('/', 1)[-1] if entry_path else module
+        title = raw_seg.replace('_', ' ')
         title_fg = '#7a7066' if not dark else '#8d8278'
         self._buffer.insert_markup(
             self._buffer.get_end_iter(),
@@ -1101,7 +1105,10 @@ class BiblePane(Gtk.Box):
 
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        scroll.set_min_content_width(280)
+        # Wider min so labels like "Preface_to_the_Electronic_Edition"
+        # don't get aggressively ellipsized; max_content_height keeps
+        # tall TOCs from running off the bottom of the popover.
+        scroll.set_min_content_width(360)
         scroll.set_max_content_height(480)
         scroll.set_propagate_natural_height(True)
 
@@ -1126,8 +1133,17 @@ class BiblePane(Gtk.Box):
             for path, label, depth in entries:
                 row = Gtk.ListBoxRow()
                 row._path = path
-                lbl = Gtk.Label(label=label, xalign=0)
-                lbl.set_ellipsize(Pango.EllipsizeMode.END)
+                # Convert TreeKey segment underscores to spaces for
+                # display. The raw `path` is preserved for setKeyText.
+                display_label = label.replace('_', ' ')
+                lbl = Gtk.Label(label=display_label, xalign=0)
+                # Wrap rather than ellipsize so long section names
+                # ("Preface to the Electronic Edition") are fully
+                # readable. Cap at a reasonable width so the popover
+                # doesn't stretch arbitrarily.
+                lbl.set_wrap(True)
+                lbl.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+                lbl.set_max_width_chars(38)
                 # Indent according to TreeKey depth so the hierarchy
                 # reads visually.
                 lbl.set_margin_start(12 + depth * 14)
