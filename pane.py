@@ -630,15 +630,23 @@ class BiblePane(Gtk.Box):
         # Re-render when system theme switches dark/light
         Adw.StyleManager.get_default().connect('notify::dark', self._on_theme_changed)
 
-        # Apply initial devotional mode if starting with a devotional module
+        # Initial toolbar visibility based on what kind of module the
+        # pane starts on. Without this, a session that ended on a
+        # genbook or devotional re-opens with the verse-keyed chrome
+        # (lock / chapter-note / search / copy) visible inappropriately.
+        is_chapter_keyed = self._is_verse_navigable()
+        self._sync_btn.set_visible(is_chapter_keyed)
+        self._chapter_note_btn.set_visible(is_chapter_keyed)
+        self._pane_search_btn.set_visible(is_chapter_keyed)
+        self._copy_chapter_btn.set_visible(is_chapter_keyed)
+        self._genbook_toc_btn.set_visible(self._is_genbook)
+
         if self._is_devotional:
             self._date_nav_revealer.set_reveal_child(True)
-            self._sync_btn.set_visible(False)
-            self._chapter_note_btn.set_visible(False)
-            self._pane_search_btn.set_visible(False)
-            self._copy_chapter_btn.set_visible(False)
             self._sync_btn.set_active(True)
             GLib.idle_add(self._fetch_and_render_devotional)
+        elif self._is_genbook:
+            GLib.idle_add(self._fetch_and_render_genbook)
 
     def _on_pane_click(self, gesture, n_press, x, y):
         """Called when a pane or lexicon text view is clicked."""
@@ -1030,16 +1038,33 @@ class BiblePane(Gtk.Box):
 
     def _fetch_and_render_genbook(self):
         """Render the current Generic Book entry. If no entry is selected
-        (just switched modules), pick the first one from the TOC."""
+        (just switched modules), find the first one with content — many
+        books start with a Title_Page that's just a heading and renders
+        empty, which makes the cold-open look broken."""
         module = self._module
 
         def fetch():
             entries = sword_bridge.list_genbook_entries(module)
             entry_path = self._genbook_entry
+            html = ''
             if entry_path is None and entries:
-                entry_path = entries[0][0]
-            html = (sword_bridge.load_genbook_entry(module, entry_path)
-                    if entry_path else '')
+                # Try the first few entries until one has real content.
+                # Most genbooks have at most one or two heading-only
+                # entries before the actual prose starts.
+                for path, _label, _depth in entries[:8]:
+                    candidate = sword_bridge.load_genbook_entry(module, path)
+                    if candidate and re.sub(r'<[^>]+>', '', candidate).strip():
+                        entry_path = path
+                        html = candidate
+                        break
+                else:
+                    # All scanned entries were empty — fall back to the
+                    # first one anyway; the user can still pick a
+                    # different one from the TOC.
+                    entry_path = entries[0][0]
+                    html = sword_bridge.load_genbook_entry(module, entry_path)
+            elif entry_path:
+                html = sword_bridge.load_genbook_entry(module, entry_path)
             GLib.idle_add(self._display_genbook, entries, entry_path,
                           html, module)
 
@@ -1105,16 +1130,21 @@ class BiblePane(Gtk.Box):
 
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        # Wider min so labels like "Preface_to_the_Electronic_Edition"
-        # don't get aggressively ellipsized; max_content_height keeps
-        # tall TOCs from running off the bottom of the popover.
-        scroll.set_min_content_width(360)
         scroll.set_max_content_height(480)
         scroll.set_propagate_natural_height(True)
+        # Force the popover content to be wide. Setting min_content_width
+        # on the ScrolledWindow alone wasn't enough on narrow windows —
+        # the popover anchors to the TOC button (top-right of the pane
+        # toolbar) and constrained itself to the gap to the window edge.
+        # set_size_request on the listbox forces the popover to take at
+        # least this width; GTK will reposition the popover (flip arrow
+        # direction or shift offset) to honor it.
+        scroll.set_size_request(360, -1)
 
         listbox = Gtk.ListBox()
         listbox.set_selection_mode(Gtk.SelectionMode.NONE)
         listbox.add_css_class('navigation-sidebar')
+        listbox.set_size_request(360, -1)
 
         if not entries:
             row = Gtk.ListBoxRow()
