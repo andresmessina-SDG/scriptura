@@ -6,8 +6,9 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Gdk, Pango
 import sword_bridge
+import paths
 
-_HISTORY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'search_history.json')
+_HISTORY_FILE = paths.search_history_path()
 _HISTORY_MAX = 10
 
 

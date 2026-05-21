@@ -12,9 +12,12 @@ import threading
 import urllib.request
 import zipfile
 
-_DIR = os.path.dirname(os.path.abspath(__file__))
-_DB  = os.path.join(_DIR, 'ebible.db')
-_CAT = os.path.join(_DIR, 'ebible_catalog.csv')
+import paths
+
+# Database and catalog now live under XDG dirs. paths.* migrates the
+# legacy in-tree copies on first call.
+_DB  = paths.ebible_db_path()
+_CAT = paths.ebible_catalog_path()
 
 CATALOG_URL = 'https://ebible.org/Scriptures/translations.csv'
 _USFM_URL   = 'https://ebible.org/Scriptures/{id}_usfm.zip'

@@ -1,7 +1,9 @@
 import json
 import os
 
-ANNOTATIONS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'annotations.json')
+import paths
+
+ANNOTATIONS_FILE = paths.annotations_path()
 
 _cache = None
 _load_failed = False  # Set if an existing file failed to parse; the

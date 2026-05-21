@@ -2,7 +2,9 @@ import json
 import os
 import datetime
 
-_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'reading_plans.json')
+import paths
+
+_FILE = paths.reading_plans_path()
 _cache = None
 _load_failed = False  # Flipped if an existing file failed to parse.
 

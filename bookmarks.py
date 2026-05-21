@@ -1,7 +1,9 @@
 import json
 import os
 
-_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bookmarks.json')
+import paths
+
+_FILE = paths.bookmarks_path()
 _load_failed = False  # Flipped if an existing file failed to parse; the
                       # window reads this once at startup for a toast.
 

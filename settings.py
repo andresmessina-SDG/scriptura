@@ -2,7 +2,11 @@ import json
 import os
 import threading
 
-_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'settings.json')
+import paths
+
+# Resolved at import time; paths.settings_path() migrates the legacy
+# in-tree settings.json on first call if it exists.
+_FILE = paths.settings_path()
 _defaults = {
     'font_size':          12.5,
     'font_family':        'serif',

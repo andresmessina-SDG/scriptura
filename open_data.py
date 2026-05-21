@@ -4,7 +4,11 @@ import os
 import shutil
 import zipfile
 
-_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+import paths
+
+# Resolved at import time; paths.open_data_dir() also handles one-shot
+# migration of individual files from the legacy `data/` subdirectory.
+_DIR = paths.open_data_dir()
 
 _BOOKS = [
     'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
