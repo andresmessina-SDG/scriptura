@@ -277,15 +277,60 @@ def is_genbook_module(module_name):
     return module_type(module_name) == 'Generic Books'
 
 
+def _genbook_tree_key(mod):
+    """Try to get a TreeKey wrapper for a Generic Book module. The SWIG
+    bindings vary across distros — getKey() may return a plain SWKey
+    that's missing firstChild/nextSibling/parent. Try several known
+    cast paths; return None if none work (caller falls back to a flat
+    increment-based walk)."""
+    # createKey() should return the right subtype for the module
+    try:
+        k = mod.createKey()
+        if hasattr(k, 'firstChild'):
+            return k
+    except Exception:
+        pass
+    try:
+        raw = mod.getKey()
+    except Exception:
+        return None
+    if hasattr(raw, 'firstChild'):
+        return raw
+    # SWIG-generated static-cast helpers
+    for caster_name in ('TreeKeyIdx_castTo', 'TreeKey_castTo'):
+        caster = getattr(Sword, caster_name, None)
+        if caster:
+            try:
+                tk = caster(raw)
+                if hasattr(tk, 'firstChild'):
+                    return tk
+            except Exception:
+                continue
+    for cls_name in ('TreeKeyIdx', 'TreeKey'):
+        cls = getattr(Sword, cls_name, None)
+        if cls and hasattr(cls, 'castTo'):
+            try:
+                tk = cls.castTo(raw)
+                if hasattr(tk, 'firstChild'):
+                    return tk
+            except Exception:
+                continue
+    return None
+
+
 def list_genbook_entries(module_name, max_entries=4000):
     """Walk the Generic Book's TreeKey in document order and return a flat
     list of (path, label, depth) tuples — path is the full TreeKey string
     (e.g. '/Chapter 1/Section 2'), label is the local name to show, depth
     is the indentation level for TOC rendering.
 
-    Cached per module. SWORD's TreeKey API is reached via the module's
-    own key, so we use the module's iteration helpers rather than
-    constructing a TreeKey directly (which has Python-binding quirks)."""
+    Cached per module. Two strategies:
+      1. If we can obtain a real TreeKey wrapper (firstChild/nextSibling/
+         parent), do a proper depth-first walk — gives accurate depth.
+      2. Otherwise fall back to mod.increment() in document order and
+         derive depth from the path's '/' separator count. Loses fidelity
+         on TreeKey conventions that don't reflect depth in the path but
+         works for the common case (Didache, Westminster, etc.)."""
     if module_name in _GENBOOK_TOC_CACHE:
         return _GENBOOK_TOC_CACHE[module_name]
 
@@ -295,58 +340,87 @@ def list_genbook_entries(module_name, max_entries=4000):
         if mod is None:
             _GENBOOK_TOC_CACHE[module_name] = entries
             return entries
-        try:
-            # Module's getKey() returns a SWKey; for genbooks it's a
-            # TreeKeyIdx underneath. PyGObject/Swig exposes the
-            # navigation methods directly on the SWKey if the underlying
-            # type supports them.
-            key = mod.getKey()
-            # Reset to root then descend into the first real entry.
+
+        tk = _genbook_tree_key(mod)
+        if tk is not None:
             try:
-                key.root()
-            except Exception:
-                pass
+                tk.root()
 
-            def _depth():
-                # TreeKeyIdx exposes getLevel() on most bindings; fall
-                # back to counting '/' separators in the path.
+                def _depth():
+                    try:
+                        return int(tk.getLevel())
+                    except Exception:
+                        return tk.getKeyText().count('/')
+
+                def _record():
+                    path = tk.getKeyText() or ''
+                    if not path or path == '/':
+                        return
+                    try:
+                        label = tk.getLocalName() or path.rsplit('/', 1)[-1]
+                    except Exception:
+                        label = path.rsplit('/', 1)[-1]
+                    entries.append((path, label, max(0, _depth() - 1)))
+
+                if tk.firstChild():
+                    while len(entries) < max_entries:
+                        _record()
+                        if tk.firstChild():
+                            continue
+                        while True:
+                            if tk.nextSibling():
+                                break
+                            if not tk.parent():
+                                _GENBOOK_TOC_CACHE[module_name] = entries
+                                return entries
+                            try:
+                                if int(tk.getLevel()) <= 0:
+                                    _GENBOOK_TOC_CACHE[module_name] = entries
+                                    return entries
+                            except Exception:
+                                pass
+            except Exception as e:
+                print(f'[sword] genbook tree walk failed for {module_name}: {e}')
+                entries = []
+
+        if not entries:
+            # Flat fallback: increment the module forward, collecting
+            # paths as we go. Depth derived from '/' count in path.
+            try:
                 try:
-                    return int(key.getLevel())
+                    mod.setKeyText('/')
                 except Exception:
-                    return key.getKeyText().count('/')
-
-            def _record():
-                path = key.getKeyText() or ''
-                if not path or path == '/':
-                    return
-                try:
-                    label = key.getLocalName() or path.rsplit('/', 1)[-1]
-                except Exception:
-                    label = path.rsplit('/', 1)[-1]
-                entries.append((path, label, max(0, _depth() - 1)))
-
-            # Depth-first walk. We avoid recursion to keep the stack
-            # shallow for deeply nested books.
-            if key.firstChild():
-                while len(entries) < max_entries:
-                    _record()
-                    if key.firstChild():
-                        continue
-                    while True:
-                        if key.nextSibling():
+                    pass
+                seen = set()
+                count = 0
+                while count < max_entries:
+                    try:
+                        mod.increment()
+                    except Exception:
+                        break
+                    try:
+                        if mod.popError():
                             break
-                        if not key.parent():
-                            return _GENBOOK_TOC_CACHE.setdefault(
-                                module_name, entries)
-                        # Stop if we've ascended back above the root.
-                        try:
-                            if int(key.getLevel()) <= 0:
-                                return _GENBOOK_TOC_CACHE.setdefault(
-                                    module_name, entries)
-                        except Exception:
-                            pass
-        except Exception as e:
-            print(f'[sword] genbook TOC walk failed for {module_name}: {e}')
+                    except Exception:
+                        pass
+                    try:
+                        path = mod.getKeyText() or ''
+                    except Exception:
+                        break
+                    if not path or path == '/':
+                        count += 1
+                        continue
+                    if path in seen:
+                        # increment looped or stalled; bail rather than
+                        # spin forever
+                        break
+                    seen.add(path)
+                    label = path.rsplit('/', 1)[-1] or path
+                    depth = max(0, path.count('/') - 1)
+                    entries.append((path, label, depth))
+                    count += 1
+            except Exception as e:
+                print(f'[sword] genbook flat walk failed for {module_name}: {e}')
 
     _GENBOOK_TOC_CACHE[module_name] = entries
     return entries
@@ -354,7 +428,9 @@ def list_genbook_entries(module_name, max_entries=4000):
 
 def load_genbook_entry(module_name, path):
     """Render the Generic Book entry at the given TreeKey path. Returns
-    the rendered HTML string, or '' on failure."""
+    the rendered HTML string, or '' on failure. Uses setKeyText (which
+    works on the base SWKey regardless of binding variant) instead of
+    constructing a fresh TreeKey."""
     if not path:
         return ''
     with _lock:
@@ -362,9 +438,7 @@ def load_genbook_entry(module_name, path):
         if mod is None:
             return ''
         try:
-            key = mod.getKey()
-            key.setText(path)
-            mod.setKey(key)
+            mod.setKeyText(path)
             return str(mod.renderText())
         except Exception as e:
             print(f'[sword] genbook load failed for {module_name} {path!r}: {e}')
