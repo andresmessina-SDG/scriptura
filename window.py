@@ -329,9 +329,16 @@ class BibleWindow(Adw.ApplicationWindow):
    the card colour here let the Bible text behind the menu bleed
    through in dark mode. */
 .menu-panel { background-color: @view_bg_color;
-              border: 1px solid @borders;
+              border: 1px solid alpha(@borders, 0.6);
               border-radius: 0 12px 0 0;
-              box-shadow: 4px 0 16px alpha(black, 0.35); }
+              /* Two-layer shadow: a contracted-spread outer for the soft
+                 directional drop (negative spread keeps it close to the
+                 panel so it doesn't bleed past the window's top/bottom
+                 edges and look rectangular), plus a crisp 2px inner-ish
+                 shadow for the edge definition that respects the
+                 rounded top-right corner. */
+              box-shadow: 8px 0 20px -6px alpha(black, 0.35),
+                          2px 0 4px alpha(black, 0.15); }
 /* Same translucency gotcha as .menu-panel: the jump bar floats on top of
    the Bible content via Gtk.Overlay, so the default semi-transparent
    .card background (@card_bg_color) lets text and dropdown chrome bleed
