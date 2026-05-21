@@ -371,9 +371,26 @@ class BiblePane(Gtk.Box):
         self._copy_chapter_btn.connect('clicked', self._on_copy_chapter)
         toolbar.append(self._copy_chapter_btn)
 
-        # Generic Books table of contents — only visible when the pane's
-        # current module is type "Generic Books". Click to pop a list of
-        # TreeKey entries; select one to render that entry in the pane.
+        # Generic Books: prev / next sibling navigation + TOC popover.
+        # Visible only when the pane's current module is type
+        # "Generic Books". Verse-keyed chrome (lock/note/search/copy)
+        # is hidden in this mode.
+        self._genbook_prev_btn = Gtk.Button(icon_name='go-previous-symbolic')
+        self._genbook_prev_btn.add_css_class('flat')
+        self._genbook_prev_btn.set_tooltip_text('Previous entry')
+        self._genbook_prev_btn.set_visible(False)
+        self._genbook_prev_btn.connect('clicked',
+                                       lambda _b: self._step_genbook_entry(-1))
+        toolbar.append(self._genbook_prev_btn)
+
+        self._genbook_next_btn = Gtk.Button(icon_name='go-next-symbolic')
+        self._genbook_next_btn.add_css_class('flat')
+        self._genbook_next_btn.set_tooltip_text('Next entry')
+        self._genbook_next_btn.set_visible(False)
+        self._genbook_next_btn.connect('clicked',
+                                       lambda _b: self._step_genbook_entry(1))
+        toolbar.append(self._genbook_next_btn)
+
         self._genbook_toc_btn = Gtk.MenuButton(
             icon_name='view-list-bullet-symbolic')
         self._genbook_toc_btn.add_css_class('flat')
@@ -647,6 +664,8 @@ class BiblePane(Gtk.Box):
         self._pane_search_btn.set_visible(is_chapter_keyed)
         self._copy_chapter_btn.set_visible(is_chapter_keyed)
         self._genbook_toc_btn.set_visible(self._is_genbook)
+        self._genbook_prev_btn.set_visible(self._is_genbook)
+        self._genbook_next_btn.set_visible(self._is_genbook)
 
         if self._is_devotional:
             self._date_nav_revealer.set_reveal_child(True)
@@ -1045,19 +1064,31 @@ class BiblePane(Gtk.Box):
 
     def _fetch_and_render_genbook(self):
         """Render the current Generic Book entry. If no entry is selected
-        (just switched modules), find the first one with content — many
-        books start with a Title_Page that's just a heading and renders
-        empty, which makes the cold-open look broken."""
+        (cold open) or the saved entry path no longer renders (module
+        restructured between sessions), fall back to the first
+        non-empty entry."""
         module = self._module
 
         def fetch():
             entries = sword_bridge.list_genbook_entries(module)
             entry_path = self._genbook_entry
             html = ''
+
+            if entry_path:
+                html = sword_bridge.load_genbook_entry(module, entry_path)
+                # Saved path may be stale (module reinstalled with
+                # different TreeKey shape). Detect by checking if it
+                # strips to empty; if so, fall through to first-non-empty.
+                if not (html and re.sub(r'<[^>]+>', '', html).strip()):
+                    # Only auto-skip if the entry has no children either —
+                    # genuine section-heading entries (with kids) we
+                    # WANT to land on so the empty-entry hint can fire.
+                    if not self._entry_has_children(entries, entry_path):
+                        entry_path = None
+                        html = ''
+
             if entry_path is None and entries:
-                # Try the first few entries until one has real content.
-                # Most genbooks have at most one or two heading-only
-                # entries before the actual prose starts.
+                # Walk the first few entries until one has real content.
                 for path, _label, _depth in entries[:8]:
                     candidate = sword_bridge.load_genbook_entry(module, path)
                     if candidate and re.sub(r'<[^>]+>', '', candidate).strip():
@@ -1065,17 +1096,24 @@ class BiblePane(Gtk.Box):
                         html = candidate
                         break
                 else:
-                    # All scanned entries were empty — fall back to the
-                    # first one anyway; the user can still pick a
-                    # different one from the TOC.
+                    # All scanned entries were empty — land on the first
+                    # one anyway so the section-heading hint can render.
                     entry_path = entries[0][0]
                     html = sword_bridge.load_genbook_entry(module, entry_path)
-            elif entry_path:
-                html = sword_bridge.load_genbook_entry(module, entry_path)
+
             GLib.idle_add(self._display_genbook, entries, entry_path,
                           html, module)
 
         threading.Thread(target=fetch, daemon=True).start()
+
+    @staticmethod
+    def _entry_has_children(entries, path):
+        """True if any other entry in `entries` is a descendant of `path`
+        (i.e., `path` is a section heading with sub-entries)."""
+        if not path:
+            return False
+        prefix = path + '/'
+        return any(p.startswith(prefix) for p, _l, _d in entries)
 
     def _display_genbook(self, entries, entry_path, html, module):
         if module != self._module or not self._is_genbook:
@@ -1087,10 +1125,8 @@ class BiblePane(Gtk.Box):
         self._clear_chapter_scoped_tags()
 
         self._genbook_entry = entry_path
-        # Persist whatever entry we end up on — including the auto-picked
-        # first-non-empty one — so a later restart restores it without
-        # the scan.
         self._save_genbook_position()
+        self._update_genbook_nav_sensitivity(entries)
 
         if not entries:
             fg = '#8d8278' if dark else '#7a7066'
@@ -1101,21 +1137,24 @@ class BiblePane(Gtk.Box):
                 f'This generic book has no readable entries.</span>', -1)
             return GLib.SOURCE_REMOVE
 
-        # Section title (the entry's local name) so the reader has
-        # context above the body. Genbook TreeKeys often use underscores
-        # in segment names ("Title_Page", "Preface_to_the_Electronic_Edition")
-        # — convert to spaces for display while keeping the raw path
-        # untouched for setKeyText navigation.
-        raw_seg = entry_path.rsplit('/', 1)[-1] if entry_path else module
-        title = raw_seg.replace('_', ' ')
+        # Breadcrumb title: split the TreeKey path on '/' and join the
+        # segments with ' › '. Long hierarchies get full context
+        # ("Augsburg Confession › Of God › Article 1") rather than
+        # just the leaf name. Underscores in any segment → spaces.
+        if entry_path:
+            segs = [s.replace('_', ' ') for s in entry_path.split('/') if s]
+            breadcrumb = ' › '.join(segs) if segs else module
+        else:
+            breadcrumb = module
         title_fg = '#7a7066' if not dark else '#8d8278'
         self._buffer.insert_markup(
             self._buffer.get_end_iter(),
             f'<span size="x-large" weight="bold" foreground="{title_fg}" '
-            f'letter_spacing="600">{GLib.markup_escape_text(title)}</span>\n\n',
+            f'letter_spacing="400">'
+            f'{GLib.markup_escape_text(breadcrumb)}</span>\n\n',
             -1)
 
-        if html:
+        if html and re.sub(r'<[^>]+>', '', html).strip():
             try:
                 markup = _html_to_markup(html, dark)
                 self._buffer.insert_markup(
@@ -1125,13 +1164,60 @@ class BiblePane(Gtk.Box):
                     self._buffer.get_end_iter(),
                     re.sub(r'<[^>]+>', '', html))
         else:
+            # Distinguish "section heading with sub-entries" from a
+            # genuinely-empty leaf so the user knows whether to open
+            # the TOC or whether the module just has nothing here.
             fg = '#8d8278' if dark else '#7a7066'
+            if self._entry_has_children(entries, entry_path):
+                msg = ('This is a section heading. Open the table of '
+                       'contents and pick a sub-entry to read.')
+            else:
+                msg = '(Empty entry.)'
             self._buffer.insert_markup(
                 self._buffer.get_end_iter(),
-                f'<span foreground="{fg}">(Empty entry.)</span>', -1)
+                f'<span foreground="{fg}">'
+                f'{GLib.markup_escape_text(msg)}</span>', -1)
 
         self._view.get_vadjustment().set_value(0)
         return GLib.SOURCE_REMOVE
+
+    # ── Sibling navigation (prev/next entry buttons) ─────────────────────
+
+    def _step_genbook_entry(self, delta):
+        """Move to the previous (delta=-1) or next (delta=+1) entry in
+        document order."""
+        if not self._is_genbook:
+            return
+        entries = sword_bridge.list_genbook_entries(self._module)
+        if not entries:
+            return
+        paths = [p for p, _l, _d in entries]
+        try:
+            idx = paths.index(self._genbook_entry)
+        except ValueError:
+            idx = 0
+        new_idx = max(0, min(len(paths) - 1, idx + delta))
+        if new_idx == idx:
+            return
+        self._genbook_entry = paths[new_idx]
+        self._save_genbook_position()
+        self._fetch_and_render_genbook()
+
+    def _update_genbook_nav_sensitivity(self, entries):
+        """Grey out prev/next when at the first/last entry."""
+        if not hasattr(self, '_genbook_prev_btn'):
+            return
+        if not entries:
+            self._genbook_prev_btn.set_sensitive(False)
+            self._genbook_next_btn.set_sensitive(False)
+            return
+        paths = [p for p, _l, _d in entries]
+        try:
+            idx = paths.index(self._genbook_entry)
+        except ValueError:
+            idx = 0
+        self._genbook_prev_btn.set_sensitive(idx > 0)
+        self._genbook_next_btn.set_sensitive(idx < len(paths) - 1)
 
     def _build_genbook_toc(self):
         """Populate the TOC popover with this module's TreeKey entries.
@@ -1171,6 +1257,7 @@ class BiblePane(Gtk.Box):
             row.set_child(lbl)
             listbox.append(row)
         else:
+            current_row = None
             for path, label, depth in entries:
                 row = Gtk.ListBoxRow()
                 row._path = path
@@ -1193,9 +1280,30 @@ class BiblePane(Gtk.Box):
                 lbl.set_margin_bottom(4)
                 if path == self._genbook_entry:
                     lbl.add_css_class('accent')
+                    current_row = row
                 row.set_child(lbl)
                 listbox.append(row)
             listbox.connect('row-activated', self._on_genbook_entry_chosen)
+
+            # Auto-scroll the TOC to the current entry once the popover
+            # has had a chance to allocate. Without the idle defer, the
+            # row's vadjustment math runs against stale sizes.
+            if current_row is not None:
+                def _scroll_to_current():
+                    try:
+                        adj = scroll.get_vadjustment()
+                        success, rect = current_row.compute_bounds(listbox)
+                        if not success or adj is None:
+                            return GLib.SOURCE_REMOVE
+                        page = adj.get_page_size()
+                        target = max(0.0,
+                                     rect.get_y() - page / 2 + rect.get_height() / 2)
+                        adj.set_value(min(target,
+                                          max(0.0, adj.get_upper() - page)))
+                    except Exception:
+                        pass
+                    return GLib.SOURCE_REMOVE
+                GLib.idle_add(_scroll_to_current)
 
         scroll.set_child(listbox)
         pop.set_child(scroll)
@@ -2406,9 +2514,11 @@ class BiblePane(Gtk.Box):
         self._pane_search_btn.set_visible(is_chapter_keyed)
         self._copy_chapter_btn.set_visible(is_chapter_keyed)
         self._pane_search_btn.set_active(False)
-        # TOC button only visible for Generic Books
+        # TOC + prev/next buttons only visible for Generic Books
         if hasattr(self, '_genbook_toc_btn'):
             self._genbook_toc_btn.set_visible(self._is_genbook)
+            self._genbook_prev_btn.set_visible(self._is_genbook)
+            self._genbook_next_btn.set_visible(self._is_genbook)
         if is_devot:
             self._devotional_date = _date.today()
             self._sync_btn.set_active(True)  # lock navigation silently
