@@ -65,10 +65,17 @@ class WelcomeWindow(Adw.ApplicationWindow):
         outer.append(subtitle)
 
         # ── Bundle list ───────────────────────────────────────────────────
-        list_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        # Adw.ActionRow is a Gtk.ListBoxRow subclass — it asserts that
+        # its parent is a Gtk.ListBox during focus handling. Putting them
+        # in a plain Gtk.Box looks right (the .boxed-list CSS class
+        # styles them as a card) but spams `gtk_list_box_row_grab_focus:
+        # assertion 'box != NULL' failed` to stderr on construction.
+        list_card = Gtk.ListBox()
+        list_card.set_selection_mode(Gtk.SelectionMode.NONE)
         list_card.add_css_class('boxed-list')
         for _id, name, desc in _SWORD_ESSENTIALS + _OPEN_DATA_ESSENTIALS:
             row = Adw.ActionRow()
+            row.set_activatable(False)
             row.set_title(name)
             row.set_subtitle(desc)
             list_card.append(row)
