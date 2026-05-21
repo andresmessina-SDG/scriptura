@@ -14,18 +14,18 @@ import settings
 
 def _pane_readable_modules():
     """Return the list of installed modules suitable for display in a
-    pane's module dropdown — Bibles, commentaries, and devotionals.
+    pane's module dropdown — Bibles, commentaries, devotionals, and
+    Generic Books (Didache, Westminster Confession, Apostolic Fathers).
 
     Filters out support modules (Strong's lexicons, MorphGNT, OSHB,
-    dictionaries like Easton/Smith, generic books like Didache) that
-    are accessed through other UI surfaces (lexicon panel, dict popup)
-    or aren't verse-keyed and can't be rendered as a chapter."""
+    dictionaries like Easton/Smith) that are accessed through other UI
+    surfaces (lexicon panel, dict popup) rather than read as a pane."""
     keep = []
     for name in sword_bridge.module_names():
         if sword_bridge.is_internal_use(name):
             continue
         t = sword_bridge.module_type(name)
-        if t in ('Biblical Texts', 'Commentaries'):
+        if t in ('Biblical Texts', 'Commentaries', 'Generic Books'):
             keep.append(name)
         elif sword_bridge.is_devotional_module(name):
             keep.append(name)
@@ -293,6 +293,11 @@ class BiblePane(Gtk.Box):
             not ebible_bridge.is_ebible_module(self._module)
             and sword_bridge.is_devotional_module(self._module)
         )
+        self._is_genbook = (
+            not ebible_bridge.is_ebible_module(self._module)
+            and self._module_type == 'Generic Books'
+        )
+        self._genbook_entry = None
         self._book = 'Genesis'
         self._chapter = 1
         self._target_verse = None
@@ -358,6 +363,21 @@ class BiblePane(Gtk.Box):
         self._copy_chapter_btn.set_tooltip_text('Copy chapter')
         self._copy_chapter_btn.connect('clicked', self._on_copy_chapter)
         toolbar.append(self._copy_chapter_btn)
+
+        # Generic Books table of contents — only visible when the pane's
+        # current module is type "Generic Books". Click to pop a list of
+        # TreeKey entries; select one to render that entry in the pane.
+        self._genbook_toc_btn = Gtk.MenuButton(
+            icon_name='view-list-bullet-symbolic')
+        self._genbook_toc_btn.add_css_class('flat')
+        self._genbook_toc_btn.set_tooltip_text('Table of contents')
+        self._genbook_toc_btn.set_visible(False)
+        self._genbook_toc_pop = Gtk.Popover()
+        self._genbook_toc_pop.set_has_arrow(True)
+        self._genbook_toc_btn.set_popover(self._genbook_toc_pop)
+        self._genbook_toc_pop.connect(
+            'show', lambda _p: self._build_genbook_toc())
+        toolbar.append(self._genbook_toc_btn)
 
         # Date navigation row — shown only for Daily Devotional modules
         date_nav = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
@@ -919,13 +939,12 @@ class BiblePane(Gtk.Box):
         if self._is_devotional:
             self._fetch_and_render_devotional()
             return
+        if self._is_genbook:
+            self._fetch_and_render_genbook()
+            return
         if not self._is_verse_navigable():
-            # Generic books (Didache), lexicons, dictionaries don't have
-            # a book/chapter/verse key space — load_chapter against them
-            # returns the same fallback content for every verse number,
-            # which looks like nonsense (the title repeated N times).
-            # Show a friendly placeholder until proper tree-key rendering
-            # is implemented.
+            # Lexicons / dictionaries still fall through here — the
+            # dict-popup surface owns those, the pane shows a placeholder.
             self._display_unsupported_module()
             return
         book, chapter, module = self._book, self._chapter, self._module
@@ -1006,6 +1025,130 @@ class BiblePane(Gtk.Box):
         else:
             self._devotional_date += timedelta(days=delta)
         self._fetch_and_render_devotional()
+
+    # ── Generic Books rendering ──────────────────────────────────────────
+
+    def _fetch_and_render_genbook(self):
+        """Render the current Generic Book entry. If no entry is selected
+        (just switched modules), pick the first one from the TOC."""
+        module = self._module
+
+        def fetch():
+            entries = sword_bridge.list_genbook_entries(module)
+            entry_path = self._genbook_entry
+            if entry_path is None and entries:
+                entry_path = entries[0][0]
+            html = (sword_bridge.load_genbook_entry(module, entry_path)
+                    if entry_path else '')
+            GLib.idle_add(self._display_genbook, entries, entry_path,
+                          html, module)
+
+        threading.Thread(target=fetch, daemon=True).start()
+
+    def _display_genbook(self, entries, entry_path, html, module):
+        if module != self._module or not self._is_genbook:
+            return GLib.SOURCE_REMOVE
+        dark = Adw.StyleManager.get_default().get_dark()
+        self._cancel_all_flashes()
+        self._cancel_search_hl_timer()
+        self._buffer.set_text('')
+        self._clear_chapter_scoped_tags()
+
+        self._genbook_entry = entry_path
+
+        if not entries:
+            fg = '#8d8278' if dark else '#7a7066'
+            self._buffer.insert_markup(
+                self._buffer.get_end_iter(),
+                f'<span foreground="{fg}">'
+                f'{GLib.markup_escape_text(module)}\n\n'
+                f'This generic book has no readable entries.</span>', -1)
+            return GLib.SOURCE_REMOVE
+
+        # Section title (the entry's local name) so the reader has
+        # context above the body.
+        title = entry_path.rsplit('/', 1)[-1] if entry_path else module
+        title_fg = '#7a7066' if not dark else '#8d8278'
+        self._buffer.insert_markup(
+            self._buffer.get_end_iter(),
+            f'<span size="x-large" weight="bold" foreground="{title_fg}" '
+            f'letter_spacing="600">{GLib.markup_escape_text(title)}</span>\n\n',
+            -1)
+
+        if html:
+            try:
+                markup = _html_to_markup(html, dark)
+                self._buffer.insert_markup(
+                    self._buffer.get_end_iter(), markup, -1)
+            except Exception:
+                self._buffer.insert(
+                    self._buffer.get_end_iter(),
+                    re.sub(r'<[^>]+>', '', html))
+        else:
+            fg = '#8d8278' if dark else '#7a7066'
+            self._buffer.insert_markup(
+                self._buffer.get_end_iter(),
+                f'<span foreground="{fg}">(Empty entry.)</span>', -1)
+
+        self._view.get_vadjustment().set_value(0)
+        return GLib.SOURCE_REMOVE
+
+    def _build_genbook_toc(self):
+        """Populate the TOC popover with this module's TreeKey entries.
+        Built lazily on each show because the active module can change."""
+        pop = self._genbook_toc_pop
+        entries = sword_bridge.list_genbook_entries(self._module)
+
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_min_content_width(280)
+        scroll.set_max_content_height(480)
+        scroll.set_propagate_natural_height(True)
+
+        listbox = Gtk.ListBox()
+        listbox.set_selection_mode(Gtk.SelectionMode.NONE)
+        listbox.add_css_class('navigation-sidebar')
+
+        if not entries:
+            row = Gtk.ListBoxRow()
+            row.set_selectable(False)
+            row.set_activatable(False)
+            lbl = Gtk.Label(label='No entries in this book.',
+                            xalign=0)
+            lbl.add_css_class('dim-label')
+            lbl.set_margin_start(12)
+            lbl.set_margin_end(12)
+            lbl.set_margin_top(10)
+            lbl.set_margin_bottom(10)
+            row.set_child(lbl)
+            listbox.append(row)
+        else:
+            for path, label, depth in entries:
+                row = Gtk.ListBoxRow()
+                row._path = path
+                lbl = Gtk.Label(label=label, xalign=0)
+                lbl.set_ellipsize(Pango.EllipsizeMode.END)
+                # Indent according to TreeKey depth so the hierarchy
+                # reads visually.
+                lbl.set_margin_start(12 + depth * 14)
+                lbl.set_margin_end(12)
+                lbl.set_margin_top(4)
+                lbl.set_margin_bottom(4)
+                if path == self._genbook_entry:
+                    lbl.add_css_class('accent')
+                row.set_child(lbl)
+                listbox.append(row)
+            listbox.connect('row-activated', self._on_genbook_entry_chosen)
+
+        scroll.set_child(listbox)
+        pop.set_child(scroll)
+
+    def _on_genbook_entry_chosen(self, _lb, row):
+        if not hasattr(row, '_path'):
+            return
+        self._genbook_toc_pop.popdown()
+        self._genbook_entry = row._path
+        self._fetch_and_render_genbook()
 
     def _display(self, verses, book, chapter, module):
         if book != self._book or chapter != self._chapter or module != self._module:
@@ -2150,18 +2293,29 @@ class BiblePane(Gtk.Box):
             not ebible_bridge.is_ebible_module(self._module)
             and sword_bridge.is_devotional_module(self._module)
         )
+        # Generic Books are tree-keyed (TOC + entries) rather than
+        # verse-keyed. Track separately so the render path can branch
+        # and chrome buttons (sync / chapter note / search / copy /
+        # date-nav) can hide for them.
+        self._is_genbook = (
+            not ebible_bridge.is_ebible_module(self._module)
+            and self._module_type == 'Generic Books'
+        )
+        self._genbook_entry = None  # current TreeKey path
         is_devot = self._is_devotional
         is_chapter_keyed = self._is_verse_navigable()
         self._date_nav_revealer.set_reveal_child(is_devot)
         # Sync / chapter-note / per-pane search are only meaningful when
         # the pane is rendering a verse-keyed chapter. Devotionals get
-        # date navigation instead, and generic books / dictionaries get
-        # the unsupported-module placeholder.
+        # date navigation instead; Generic Books get the TOC button.
         self._sync_btn.set_visible(is_chapter_keyed)
         self._chapter_note_btn.set_visible(is_chapter_keyed)
         self._pane_search_btn.set_visible(is_chapter_keyed)
         self._copy_chapter_btn.set_visible(is_chapter_keyed)
         self._pane_search_btn.set_active(False)
+        # TOC button only visible for Generic Books
+        if hasattr(self, '_genbook_toc_btn'):
+            self._genbook_toc_btn.set_visible(self._is_genbook)
         if is_devot:
             self._devotional_date = _date.today()
             self._sync_btn.set_active(True)  # lock navigation silently

@@ -256,6 +256,121 @@ def is_internal_use(module_name):
     return module_name in INTERNAL_USE_MODULES
 
 
+# ── Generic Books ────────────────────────────────────────────────────────────
+# Generic Books (SWORD type "Generic Books") are tree-keyed rather than
+# verse-keyed. Examples: Didache, Westminster Confession, Apostolic
+# Fathers, Book of Common Prayer, theological treatises. Their primary
+# access pattern is "browse a table of contents, click an entry, read"
+# — not chapter navigation. The bridge below exposes:
+#   - is_genbook_module(name)
+#   - list_genbook_entries(name) → [(path, label, depth), ...] in document order
+#   - load_genbook_entry(name, path) → rendered HTML for that entry
+#
+# Cached per-module since walking the tree key on every popover open
+# would be wasteful (the structure doesn't change at runtime).
+
+_GENBOOK_TOC_CACHE = {}
+
+
+def is_genbook_module(module_name):
+    """True for SWORD type 'Generic Books'."""
+    return module_type(module_name) == 'Generic Books'
+
+
+def list_genbook_entries(module_name, max_entries=4000):
+    """Walk the Generic Book's TreeKey in document order and return a flat
+    list of (path, label, depth) tuples — path is the full TreeKey string
+    (e.g. '/Chapter 1/Section 2'), label is the local name to show, depth
+    is the indentation level for TOC rendering.
+
+    Cached per module. SWORD's TreeKey API is reached via the module's
+    own key, so we use the module's iteration helpers rather than
+    constructing a TreeKey directly (which has Python-binding quirks)."""
+    if module_name in _GENBOOK_TOC_CACHE:
+        return _GENBOOK_TOC_CACHE[module_name]
+
+    entries = []
+    with _lock:
+        mod = mgr().getModule(module_name)
+        if mod is None:
+            _GENBOOK_TOC_CACHE[module_name] = entries
+            return entries
+        try:
+            # Module's getKey() returns a SWKey; for genbooks it's a
+            # TreeKeyIdx underneath. PyGObject/Swig exposes the
+            # navigation methods directly on the SWKey if the underlying
+            # type supports them.
+            key = mod.getKey()
+            # Reset to root then descend into the first real entry.
+            try:
+                key.root()
+            except Exception:
+                pass
+
+            def _depth():
+                # TreeKeyIdx exposes getLevel() on most bindings; fall
+                # back to counting '/' separators in the path.
+                try:
+                    return int(key.getLevel())
+                except Exception:
+                    return key.getKeyText().count('/')
+
+            def _record():
+                path = key.getKeyText() or ''
+                if not path or path == '/':
+                    return
+                try:
+                    label = key.getLocalName() or path.rsplit('/', 1)[-1]
+                except Exception:
+                    label = path.rsplit('/', 1)[-1]
+                entries.append((path, label, max(0, _depth() - 1)))
+
+            # Depth-first walk. We avoid recursion to keep the stack
+            # shallow for deeply nested books.
+            if key.firstChild():
+                while len(entries) < max_entries:
+                    _record()
+                    if key.firstChild():
+                        continue
+                    while True:
+                        if key.nextSibling():
+                            break
+                        if not key.parent():
+                            return _GENBOOK_TOC_CACHE.setdefault(
+                                module_name, entries)
+                        # Stop if we've ascended back above the root.
+                        try:
+                            if int(key.getLevel()) <= 0:
+                                return _GENBOOK_TOC_CACHE.setdefault(
+                                    module_name, entries)
+                        except Exception:
+                            pass
+        except Exception as e:
+            print(f'[sword] genbook TOC walk failed for {module_name}: {e}')
+
+    _GENBOOK_TOC_CACHE[module_name] = entries
+    return entries
+
+
+def load_genbook_entry(module_name, path):
+    """Render the Generic Book entry at the given TreeKey path. Returns
+    the rendered HTML string, or '' on failure."""
+    if not path:
+        return ''
+    with _lock:
+        mod = mgr().getModule(module_name)
+        if mod is None:
+            return ''
+        try:
+            key = mod.getKey()
+            key.setText(path)
+            mod.setKey(key)
+            return str(mod.renderText())
+        except Exception as e:
+            print(f'[sword] genbook load failed for {module_name} {path!r}: {e}')
+            return ''
+
+
 _OSIS_BOOKS = {
     'Gen': 'Genesis', 'Exod': 'Exodus', 'Lev': 'Leviticus', 'Num': 'Numbers',
     'Deut': 'Deuteronomy', 'Josh': 'Joshua', 'Judg': 'Judges', 'Ruth': 'Ruth',
