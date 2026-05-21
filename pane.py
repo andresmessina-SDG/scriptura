@@ -262,7 +262,7 @@ class BiblePane(Gtk.Box):
     def __init__(self, module_name=None, on_word_click=None,
                  on_click_outside_search=None, on_verse_select=None,
                  on_word_study_navigate=None, on_toast=None,
-                 on_font_size_request=None):
+                 on_font_size_request=None, pane_id=1):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self._on_word_click = on_word_click
         self._on_click_outside_search = on_click_outside_search
@@ -270,6 +270,9 @@ class BiblePane(Gtk.Box):
         self._on_word_study_navigate = on_word_study_navigate
         self._on_toast = on_toast
         self._on_font_size_request = on_font_size_request
+        # Used to namespace per-pane persisted state (e.g. genbook
+        # bookmarks) so pane1 and pane2 don't trample each other.
+        self._pane_id = pane_id
         self._lexicon_enabled = False
         # Search result step-through state (populated in _pane_search_done)
         self._pane_search_results = []
@@ -297,7 +300,11 @@ class BiblePane(Gtk.Box):
             not ebible_bridge.is_ebible_module(self._module)
             and self._module_type == 'Generic Books'
         )
-        self._genbook_entry = None
+        # Restore the last-read entry path if the module is a genbook
+        # the user has touched before. None means the render path will
+        # fall back to its "first non-empty entry" heuristic.
+        self._genbook_entry = (self._restore_genbook_entry()
+                               if self._is_genbook else None)
         self._book = 'Genesis'
         self._chapter = 1
         self._target_verse = None
@@ -1080,6 +1087,10 @@ class BiblePane(Gtk.Box):
         self._clear_chapter_scoped_tags()
 
         self._genbook_entry = entry_path
+        # Persist whatever entry we end up on — including the auto-picked
+        # first-non-empty one — so a later restart restores it without
+        # the scan.
+        self._save_genbook_position()
 
         if not entries:
             fg = '#8d8278' if dark else '#7a7066'
@@ -1194,7 +1205,38 @@ class BiblePane(Gtk.Box):
             return
         self._genbook_toc_pop.popdown()
         self._genbook_entry = row._path
+        self._save_genbook_position()
         self._fetch_and_render_genbook()
+
+    # ── Genbook position persistence ─────────────────────────────────────
+
+    def _genbook_settings_key(self):
+        return f'pane{self._pane_id}_genbook_entries'
+
+    def _restore_genbook_entry(self):
+        """Return the last-known entry path for this pane's current
+        genbook module, or None if nothing's been saved."""
+        if not self._is_genbook:
+            return None
+        saved = settings.get(self._genbook_settings_key())
+        if not isinstance(saved, dict):
+            return None
+        return saved.get(self._module)
+
+    def _save_genbook_position(self):
+        """Persist the current entry path under this pane's genbook
+        positions dict so a later module switch / app restart can
+        restore it."""
+        if not self._is_genbook or not self._genbook_entry:
+            return
+        key = self._genbook_settings_key()
+        saved = settings.get(key)
+        if not isinstance(saved, dict):
+            saved = {}
+        if saved.get(self._module) == self._genbook_entry:
+            return  # nothing changed; avoid spurious settings writes
+        saved[self._module] = self._genbook_entry
+        settings.put(key, saved)
 
     def _display(self, verses, book, chapter, module):
         if book != self._book or chapter != self._chapter or module != self._module:
@@ -2347,7 +2389,12 @@ class BiblePane(Gtk.Box):
             not ebible_bridge.is_ebible_module(self._module)
             and self._module_type == 'Generic Books'
         )
-        self._genbook_entry = None  # current TreeKey path
+        # Restore this pane's last-read entry for the new module (if
+        # any). When the user toggles back and forth between a genbook
+        # and a Bible — or between two genbooks — both surfaces stay
+        # at the place they were last left.
+        self._genbook_entry = (self._restore_genbook_entry()
+                               if self._is_genbook else None)
         is_devot = self._is_devotional
         is_chapter_keyed = self._is_verse_navigable()
         self._date_nav_revealer.set_reveal_child(is_devot)

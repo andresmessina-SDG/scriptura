@@ -25,6 +25,11 @@ _defaults = {
     'pane1_top_verse':    None,
     'pane2_top_verse':    None,
     'recent_passages':    [],
+    # Per-pane dict: {module_name: last-read TreeKey path}. Keeps the
+    # user's place across module switches and app restarts so genbooks
+    # don't always re-open at the first entry.
+    'pane1_genbook_entries': {},
+    'pane2_genbook_entries': {},
 }
 _cache = None
 _load_failed = False  # Flipped if an existing file failed to parse.

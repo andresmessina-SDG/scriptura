@@ -258,14 +258,16 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_verse_select=self._on_verse_select,
                                on_word_study_navigate=self._on_word_study_nav,
                                on_toast=self._toast,
-                               on_font_size_request=self._adjust_font_size)
+                               on_font_size_request=self._adjust_font_size,
+                               pane_id=1)
         self.pane2 = BiblePane(module_name=p2_mod,
                                on_word_click=self._on_word_click,
                                on_click_outside_search=self._hide_search,
                                on_verse_select=self._on_verse_select,
                                on_word_study_navigate=self._on_word_study_nav,
                                on_toast=self._toast,
-                               on_font_size_request=self._adjust_font_size)
+                               on_font_size_request=self._adjust_font_size,
+                               pane_id=2)
 
         self._paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL,
                                 vexpand=True, hexpand=True)
