@@ -323,6 +323,10 @@ class SearchPanel(Gtk.Box):
             icon_name='system-search-symbolic',
             title=title, description=description,
         )
+        # `.compact` scales the icon + typography down for use in narrow
+        # / non-window-filling contexts — without it Adw.StatusPage
+        # renders a 128px icon designed for full-window empty states.
+        page.add_css_class('compact')
         page.set_vexpand(False)
         row.set_child(page)
         return row

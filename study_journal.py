@@ -192,6 +192,7 @@ class TagManagerWindow(Adw.Window):
                 title='No tags yet',
                 description='Tag annotations from the note editor to see them here.',
             )
+            empty.add_css_class('compact')
             empty.set_vexpand(True)
             self._list_box.remove_css_class('boxed-list')
             r = Gtk.ListBoxRow()
@@ -647,6 +648,7 @@ class StudyJournalWindow(Adw.Window):
                 title=title,
                 description=desc,
             )
+            empty.add_css_class('compact')
             empty.set_vexpand(True)
             row = Gtk.ListBoxRow()
             row.set_selectable(False)
