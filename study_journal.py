@@ -145,6 +145,45 @@ def _entry_key(e):
             None if e.get('is_chapter_note') else e['verse'])
 
 
+def _compact_empty_state(icon_name, title, description, icon_px=48):
+    """Hand-rolled compact empty-state widget. Replaces Adw.StatusPage
+    in confined / sidebar contexts: StatusPage's 128px icon is fine for
+    full-window empties but overwhelms small panels, and the `.compact`
+    style class isn't reliably honored across libadwaita versions /
+    distro themes (e.g. Zorin's themed Adwaita ignored it). Manual
+    layout gives us a stable look everywhere."""
+    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+    box.set_margin_start(16)
+    box.set_margin_end(16)
+    box.set_margin_top(24)
+    box.set_margin_bottom(24)
+    box.set_halign(Gtk.Align.CENTER)
+    box.set_valign(Gtk.Align.CENTER)
+
+    image = Gtk.Image.new_from_icon_name(icon_name)
+    image.set_pixel_size(icon_px)
+    image.set_halign(Gtk.Align.CENTER)
+    image.add_css_class('dim-label')
+    box.append(image)
+
+    title_lbl = Gtk.Label(label=title)
+    title_lbl.add_css_class('heading')
+    title_lbl.set_wrap(True)
+    title_lbl.set_justify(Gtk.Justification.CENTER)
+    title_lbl.set_halign(Gtk.Align.CENTER)
+    box.append(title_lbl)
+
+    desc_lbl = Gtk.Label(label=description)
+    desc_lbl.add_css_class('dim-label')
+    desc_lbl.set_wrap(True)
+    desc_lbl.set_justify(Gtk.Justification.CENTER)
+    desc_lbl.set_halign(Gtk.Align.CENTER)
+    desc_lbl.set_max_width_chars(40)
+    box.append(desc_lbl)
+
+    return box
+
+
 class TagManagerWindow(Adw.Window):
     """Manage every tag used by any annotation: rename (with implicit
     merge when the new name already exists) and delete."""
@@ -187,13 +226,11 @@ class TagManagerWindow(Adw.Window):
 
         counts = annotations.get_tag_counts()
         if not counts:
-            empty = Adw.StatusPage(
+            empty = _compact_empty_state(
                 icon_name='tag-outline-symbolic',
                 title='No tags yet',
                 description='Tag annotations from the note editor to see them here.',
             )
-            empty.add_css_class('compact')
-            empty.set_vexpand(True)
             self._list_box.remove_css_class('boxed-list')
             r = Gtk.ListBoxRow()
             r.set_selectable(False)
@@ -643,13 +680,11 @@ class StudyJournalWindow(Adw.Window):
             else:
                 title = 'No matches'
                 desc = 'Try a different search or filter'
-            empty = Adw.StatusPage(
+            empty = _compact_empty_state(
                 icon_name='document-edit-symbolic',
                 title=title,
                 description=desc,
             )
-            empty.add_css_class('compact')
-            empty.set_vexpand(True)
             row = Gtk.ListBoxRow()
             row.set_selectable(False)
             row.set_activatable(False)

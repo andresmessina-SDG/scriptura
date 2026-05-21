@@ -319,16 +319,41 @@ class SearchPanel(Gtk.Box):
         row = Gtk.ListBoxRow()
         row.set_selectable(False)
         row.set_activatable(False)
-        page = Adw.StatusPage(
-            icon_name='system-search-symbolic',
-            title=title, description=description,
-        )
-        # `.compact` scales the icon + typography down for use in narrow
-        # / non-window-filling contexts — without it Adw.StatusPage
-        # renders a 128px icon designed for full-window empty states.
-        page.add_css_class('compact')
-        page.set_vexpand(False)
-        row.set_child(page)
+        # Adw.StatusPage's `.compact` class isn't reliably honored across
+        # distro themes (Zorin's themed Adwaita ignored it), so we
+        # hand-roll the compact empty state — explicit 48px icon, manual
+        # centering. See study_journal._compact_empty_state for the
+        # canonical version.
+        body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        body.set_margin_start(16)
+        body.set_margin_end(16)
+        body.set_margin_top(24)
+        body.set_margin_bottom(24)
+        body.set_halign(Gtk.Align.CENTER)
+        body.set_valign(Gtk.Align.CENTER)
+
+        image = Gtk.Image.new_from_icon_name('system-search-symbolic')
+        image.set_pixel_size(48)
+        image.set_halign(Gtk.Align.CENTER)
+        image.add_css_class('dim-label')
+        body.append(image)
+
+        title_lbl = Gtk.Label(label=title)
+        title_lbl.add_css_class('heading')
+        title_lbl.set_wrap(True)
+        title_lbl.set_justify(Gtk.Justification.CENTER)
+        title_lbl.set_halign(Gtk.Align.CENTER)
+        body.append(title_lbl)
+
+        desc_lbl = Gtk.Label(label=description)
+        desc_lbl.add_css_class('dim-label')
+        desc_lbl.set_wrap(True)
+        desc_lbl.set_justify(Gtk.Justification.CENTER)
+        desc_lbl.set_halign(Gtk.Align.CENTER)
+        desc_lbl.set_max_width_chars(40)
+        body.append(desc_lbl)
+
+        row.set_child(body)
         return row
 
     def _show_history(self):
