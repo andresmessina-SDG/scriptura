@@ -132,6 +132,41 @@ def module_names():
     return sorted(str(k) for k in mgr().getModules().keys())
 
 
+def module_language(module_name):
+    """Return the 2/3-letter language code for a module ('en', 'grc',
+    'heb', …) or '' if the module/config can't be read."""
+    try:
+        mod = mgr().getModule(module_name)
+        if mod is None:
+            return ''
+        return str(mod.getConfigEntry('Lang') or '').strip().lower()
+    except Exception:
+        return ''
+
+
+def module_info(module_name):
+    """Return a dict of human-readable metadata for the Module Info popover.
+    Missing fields come back as ''."""
+    info = {'name': module_name, 'description': '', 'version': '',
+            'copyright': '', 'license': '', 'about': '', 'language': '',
+            'type': ''}
+    try:
+        mod = mgr().getModule(module_name)
+        if mod is None:
+            return info
+        info['description'] = str(mod.getConfigEntry('Description') or '')
+        info['version']     = str(mod.getConfigEntry('Version') or '')
+        info['copyright']   = str(mod.getConfigEntry('Copyright') or '')
+        info['license']     = str(mod.getConfigEntry('DistributionLicense')
+                                  or mod.getConfigEntry('License') or '')
+        info['about']       = str(mod.getConfigEntry('About') or '')
+        info['language']    = str(mod.getConfigEntry('Lang') or '').strip().lower()
+        info['type']        = str(mod.getType() or '')
+    except Exception:
+        pass
+    return info
+
+
 def chapter_count(book):
     try:
         vk = Sword.VerseKey()
@@ -140,6 +175,15 @@ def chapter_count(book):
     except Exception:
         # Bad book name (typo, deuterocanon outside KJV v11n) — return 1 so
         # callers don't crash. The whole nav/search/index chain depends on this.
+        return 1
+
+
+def verse_count(book, chapter):
+    try:
+        vk = Sword.VerseKey()
+        vk.setText(f'{book} {chapter}:1')
+        return vk.getVerseMax()
+    except Exception:
         return 1
 
 
@@ -631,7 +675,8 @@ _ALL_BOOKS = [
 
 
 def search_module(module_name, query, on_indexing_start=None,
-                  on_indexing_done=None, on_indexing_progress=None):
+                  on_indexing_done=None, on_indexing_progress=None,
+                  case_sensitive=False):
     """
     Search a module using Whoosh. Builds index if it doesn't exist or is outdated.
     Returns [(book, chapter, verse, plain_text)]
@@ -704,9 +749,19 @@ def search_module(module_name, query, on_indexing_start=None,
             results = searcher.search(parsed_query, limit=MAX_SEARCH_RESULTS)
             formatted = [(h['book'], h['chapter'], h['verse'], h['content'])
                          for h in results]
+            truncated = None
             if len(results) == MAX_SEARCH_RESULTS:
-                formatted.append(('', 0, 0,
-                    f'Showing first {MAX_SEARCH_RESULTS} results — try a more specific search.'))
+                truncated = ('', 0, 0,
+                    f'Showing first {MAX_SEARCH_RESULTS} results — try a more specific search.')
+            # Whoosh's StandardAnalyzer lowercases at index time, so the
+            # query is always case-insensitive. For a case-sensitive match
+            # we post-filter the result content (which is stored verbatim)
+            # for the original-case query string.
+            if case_sensitive and query_stripped:
+                formatted = [r for r in formatted
+                             if query_stripped in (r[3] or '')]
+            if truncated is not None:
+                formatted.append(truncated)
             return formatted
     except Exception as e:
         print(f'[search] Whoosh error: {e}')

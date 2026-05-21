@@ -49,6 +49,51 @@ def _render_highlight(color):
     return _HIGHLIGHT_RENDER.get(color, color) if color else color
 
 
+_DICT_SHORT_NAMES = {
+    # Hand-tuned for common SWORD dict modules where the heuristic below
+    # would otherwise pick a less recognisable form.
+    'Easton':       "Easton's",
+    'Smith':        "Smith's",
+    'ISBE':         'ISBE',
+    'Naves':        "Nave's",
+    'Torreys':      "Torrey's",
+    'WebstersDict': "Webster's 1913",
+}
+
+_DICT_FLUFF_WORDS = {
+    'dictionary', 'encyclopedia', 'revised', 'unabridged',
+    'concise', 'of', 'the', 'english', 'language', 'bible',
+    'topical', 'textbook', 'a', 'an',
+}
+
+
+def _short_dict_title(mod_name, mod_desc):
+    """Compact label for the dict popup tabs. SWORD descriptions can run
+    to ~60 chars (e.g. "Webster's 1913 Revised Unabridged Dictionary of
+    the English Language"), which wraps the StackSwitcher awkwardly and
+    pushes tabs off the popup edges. Prefer a known short name; fall back
+    to first 1-2 distinctive words from the description plus any
+    4-digit year."""
+    if mod_name in _DICT_SHORT_NAMES:
+        return _DICT_SHORT_NAMES[mod_name]
+    words = []
+    year = None
+    for raw in mod_desc.split():
+        clean = raw.rstrip(',.;:').strip()
+        if not clean:
+            continue
+        if re.fullmatch(r'\d{4}', clean):
+            year = clean
+            continue
+        if clean.lower() in _DICT_FLUFF_WORDS:
+            break
+        words.append(clean)
+        if len(words) >= 2:
+            break
+    short = ' '.join(words) if words else mod_name
+    return f'{short} {year}' if year else short
+
+
 def _html_to_markup(html, dark, strip=True):
     # Ensure we are working with a string
     html = str(html)
@@ -89,6 +134,16 @@ def _html_to_markup(html, dark, strip=True):
     # newline-collapse below dedups consecutive markers down to one
     # blank line per actual break.
     html = re.sub(r'<div\s[^>]*/>', '\n\n', html)
+
+    # Raw-HTML structure used by long-form dictionaries (Webster's 1913
+    # and similar). Bibles/commentaries don't typically emit these — OSIS
+    # uses <hi> / <div sID/> instead — so adding them here gives much
+    # better dict formatting without disturbing other render paths.
+    html = re.sub(r'<br\s*/?>', '\n', html, flags=re.IGNORECASE)
+    html = re.sub(r'</p\s*>', '\n\n', html, flags=re.IGNORECASE)
+    html = re.sub(r'</li\s*>', '\n', html, flags=re.IGNORECASE)
+    html = re.sub(r'<b>(.*?)</b>', r'[[INLINE_B_S]]\1[[INLINE_B_E]]',
+                  html, flags=re.DOTALL | re.IGNORECASE)
 
     # 2. Strip all other tags (like <w>, <p>, etc.) but keep content
     html = re.sub(r'<[^>]+>', '', html)
@@ -171,17 +226,59 @@ def _extract_segments(html):
 
 
 
+class _ReadingScrolledWindow(Gtk.ScrolledWindow):
+    """ScrolledWindow that centers a capped-width text column by pushing
+    symmetric left/right margins onto its TextView child. Keeps the
+    scrollbar at the widget's outer right edge (no Adw.Clamp wrapper)."""
+
+    __gtype_name__ = 'BibleReaderReadingScrolledWindow'
+
+    def __init__(self, view, base_margin=26, **kwargs):
+        super().__init__(**kwargs)
+        self._view = view
+        self._base = base_margin
+        self._reading_width = 720
+
+    def set_reading_width(self, px):
+        self._reading_width = max(200, int(px))
+        w = self.get_width()
+        if w > 0:
+            self._apply_margins(w)
+
+    def do_size_allocate(self, width, height, baseline):
+        Gtk.ScrolledWindow.do_size_allocate(self, width, height, baseline)
+        self._apply_margins(width)
+
+    def _apply_margins(self, avail):
+        if avail <= 0:
+            return
+        side = max(self._base, (avail - self._reading_width) // 2)
+        if self._view.get_left_margin() != side:
+            self._view.set_left_margin(side)
+            self._view.set_right_margin(side)
+
+
 class BiblePane(Gtk.Box):
     def __init__(self, module_name=None, on_word_click=None,
                  on_click_outside_search=None, on_verse_select=None,
-                 on_word_study_navigate=None, on_toast=None):
+                 on_word_study_navigate=None, on_toast=None,
+                 on_font_size_request=None):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self._on_word_click = on_word_click
         self._on_click_outside_search = on_click_outside_search
         self._on_verse_select = on_verse_select
         self._on_word_study_navigate = on_word_study_navigate
         self._on_toast = on_toast
+        self._on_font_size_request = on_font_size_request
         self._lexicon_enabled = False
+        # Search result step-through state (populated in _pane_search_done)
+        self._pane_search_results = []
+        self._pane_search_idx = -1
+        # Search highlight: set by a search surface before triggering
+        # navigation; consumed by _apply_search_highlight after the chapter
+        # renders. Tuple of (query, case_sensitive) or None.
+        self._pending_search_highlight = None
+        self._search_hl_timer = None  # GLib source id for the auto-expire
 
         self._names = _pane_readable_modules()
         if not self._names:
@@ -216,14 +313,25 @@ class BiblePane(Gtk.Box):
         toolbar.set_margin_top(6)
         toolbar.set_margin_bottom(6)
 
-        self.module_drop = Gtk.DropDown(model=Gtk.StringList.new(self._names))
+        # Module picker — MenuButton + custom popover with search,
+        # language-filter chips, and a per-module info view. Replaces the
+        # plain Gtk.DropDown so users with many installed translations /
+        # languages can narrow the list quickly.
+        self._picker_search = ''
+        self._picker_lang = 'All'
+        self.module_drop = Gtk.MenuButton()
         self.module_drop.set_hexpand(True)
         self.module_drop.set_size_request(120, -1)
-        self.module_drop.set_enable_search(True)
-        self.module_drop.set_expression(
-            Gtk.PropertyExpression.new(Gtk.StringObject, None, 'string'))
-        self.module_drop.set_selected(self._names.index(self._module))
-        self._module_handler = self.module_drop.connect('notify::selected', self._on_module_changed)
+        self.module_drop.add_css_class('flat')
+        self._picker_label = Gtk.Label(label=self._module, xalign=0,
+                                       hexpand=True)
+        self._picker_label.set_ellipsize(Pango.EllipsizeMode.END)
+        _label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        _label_box.append(self._picker_label)
+        _label_box.append(Gtk.Image.new_from_icon_name('pan-down-symbolic'))
+        self.module_drop.set_child(_label_box)
+        self._picker_popover = self._build_module_picker_popover()
+        self.module_drop.set_popover(self._picker_popover)
         toolbar.append(self.module_drop)
 
         self._sync_btn = Gtk.ToggleButton(icon_name='changes-allow-symbolic')
@@ -244,6 +352,12 @@ class BiblePane(Gtk.Box):
         self._pane_search_btn.set_tooltip_text('Search this module')
         self._pane_search_btn.connect('toggled', self._on_pane_search_toggled)
         toolbar.append(self._pane_search_btn)
+
+        self._copy_chapter_btn = Gtk.Button(icon_name='edit-copy-symbolic')
+        self._copy_chapter_btn.add_css_class('flat')
+        self._copy_chapter_btn.set_tooltip_text('Copy chapter')
+        self._copy_chapter_btn.connect('clicked', self._on_copy_chapter)
+        toolbar.append(self._copy_chapter_btn)
 
         # Date navigation row — shown only for Daily Devotional modules
         date_nav = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
@@ -290,9 +404,15 @@ class BiblePane(Gtk.Box):
         self._pane_search_entry.connect('activate', self._on_pane_search)
         self._pane_search_entry.connect('stop-search',
                                         lambda _: self._pane_search_btn.set_active(False))
+        self._pane_search_case_btn = Gtk.ToggleButton(label='Aa')
+        self._pane_search_case_btn.add_css_class('flat')
+        self._pane_search_case_btn.set_tooltip_text('Match case')
+        self._pane_search_case_btn.connect(
+            'toggled', self._on_pane_search_case_toggled)
         self._pane_search_spinner = Gtk.Spinner()
         self._pane_search_spinner.set_visible(False)
         _se_row.append(self._pane_search_entry)
+        _se_row.append(self._pane_search_case_btn)
         _se_row.append(self._pane_search_spinner)
         _sr_inner.append(_se_row)
         _sr_inner.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
@@ -364,26 +484,23 @@ class BiblePane(Gtk.Box):
 
         self._buffer = self._view.get_buffer()
 
-        # Cap the reading column width so long lines stay comfortable on wide
-        # windows. The scrolled window is itself clamped — TextView stays a
-        # direct Scrollable child of ScrolledWindow so scroll_to_iter() works
-        # for verse-flash + cross-pane sync. (Wrapping the TextView in a
-        # Clamp forces an implicit Viewport that breaks scroll propagation.)
-        inner_scrolled = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
+        # Cap the reading column via dynamic left/right margins on the
+        # TextView itself, not Adw.Clamp. TextView stays a direct Scrollable
+        # child of ScrolledWindow (so scroll_to_iter() works for verse-flash
+        # + cross-pane sync), and the vertical scrollbar sits at the pane's
+        # outer edge rather than inside the column. _ReadingScrolledWindow
+        # recomputes the margins on every size_allocate.
         # Pin the vertical scrollbar to always-visible so its gutter width
         # is reserved permanently. With AUTOMATIC policy the scrollbar can
         # flicker in/out when content height shifts (lexicon panel content
         # swap, cross-ref panel update, hover tag changes); under justified
         # wrapping that reflows the whole chapter, making a Strong's-word
         # click feel like it lands on a neighboring word.
-        inner_scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.ALWAYS)
-        inner_scrolled.set_child(self._view)
-        scrolled = Adw.Clamp()
-        scrolled.set_maximum_size(720)
-        scrolled.set_tightening_threshold(600)
-        scrolled.set_child(inner_scrolled)
-        scrolled.set_vexpand(True)
-        scrolled.set_hexpand(True)
+        scrolled = _ReadingScrolledWindow(self._view, vexpand=True, hexpand=True)
+        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.ALWAYS)
+        scrolled.set_child(self._view)
+        scrolled.set_reading_width(int(settings.get('reading_width') or 720))
+        self._reading_scroll = scrolled
 
         # Lexicon panel (hidden until a Strong's word is clicked).
         # Owns its own widgets, state, and navigation history; we just
@@ -415,6 +532,11 @@ class BiblePane(Gtk.Box):
         self._lex_paned.set_shrink_start_child(False)
         self._lex_paned.set_shrink_end_child(True)
         self.append(self._lex_paned)
+
+        # Enrich Ctrl+C / native copy: prepend the verse reference so
+        # selections paste with citation context. Falls through to default
+        # copy when nothing's selected or selection isn't anchored to a verse.
+        self._view.connect('copy-clipboard', self._on_copy_clipboard)
 
         # Context Menu for Study Tools
         gesture = Gtk.GestureClick.new()
@@ -466,6 +588,25 @@ class BiblePane(Gtk.Box):
         motion.connect('leave', lambda _c: self._clear_strg_hover())
         self._view.add_controller(motion)
 
+        # Ctrl+scroll over the reading area adjusts font size. Universal
+        # text-reader / browser convention. Pinch zoom (touchpad) goes
+        # through the same code path via GestureZoom below.
+        zoom_scroll = Gtk.EventControllerScroll.new(
+            Gtk.EventControllerScrollFlags.VERTICAL)
+        zoom_scroll.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        zoom_scroll.connect('scroll', self._on_zoom_scroll)
+        self._view.add_controller(zoom_scroll)
+
+        zoom_gesture = Gtk.GestureZoom.new()
+        # GestureZoom reports scale=1.0 at the start of each new pinch;
+        # reset our delta accumulator so a fresh gesture doesn't trigger
+        # spurious zoom-out from its first scale-changed signal.
+        zoom_gesture.connect(
+            'begin', lambda *_: setattr(self, '_zoom_gesture_accum', 1.0))
+        zoom_gesture.connect('scale-changed', self._on_zoom_gesture)
+        self._view.add_controller(zoom_gesture)
+        self._zoom_gesture_accum = 1.0
+
         # Re-render when system theme switches dark/light
         Adw.StyleManager.get_default().connect('notify::dark', self._on_theme_changed)
 
@@ -475,6 +616,7 @@ class BiblePane(Gtk.Box):
             self._sync_btn.set_visible(False)
             self._chapter_note_btn.set_visible(False)
             self._pane_search_btn.set_visible(False)
+            self._copy_chapter_btn.set_visible(False)
             self._sync_btn.set_active(True)
             GLib.idle_add(self._fetch_and_render_devotional)
 
@@ -482,6 +624,31 @@ class BiblePane(Gtk.Box):
         """Called when a pane or lexicon text view is clicked."""
         if self._on_click_outside_search:
             self._on_click_outside_search()
+
+    def _on_copy_clipboard(self, view):
+        """Intercept Ctrl+C (and any other path that emits copy-clipboard)
+        to prepend the verse reference, so selections paste as
+        'Book Ch:V[-V2] (Module)\\n<selected text>'. Falls through to the
+        default copy when nothing's selected or the selection isn't
+        anchored to any verse (e.g., in commentary headers / chapter title)."""
+        bounds = self._buffer.get_selection_bounds()
+        if not bounds:
+            return
+        start, end = bounds
+        verses = self._verses_in_range(start, end)
+        if not verses:
+            return
+        text = self._buffer.get_text(start, end, False).strip()
+        if not text:
+            return
+        first_v = min(verses)
+        last_v = max(verses)
+        ref = f'{self._book} {self._chapter}:{first_v}'
+        if last_v > first_v:
+            ref += f'-{last_v}'
+        enriched = f'{ref} ({self._module})\n{text}'
+        view.get_clipboard().set(enriched)
+        view.stop_emission_by_name('copy-clipboard')
 
     def _is_verse_navigable(self):
         """Verse-based navigation only makes sense for Bibles and commentaries.
@@ -558,6 +725,44 @@ class BiblePane(Gtk.Box):
     def set_font_size(self, size):
         self.set_appearance(font_size=size)
 
+    def set_reading_width(self, px):
+        self._reading_scroll.set_reading_width(int(px))
+
+    def _on_copy_chapter(self, _btn):
+        """Copy this pane's current chapter to clipboard as plain text:
+        'Book Chapter\\n\\nN verse text\\nN verse text…'."""
+        if not self._is_verse_navigable():
+            if self._on_toast:
+                self._on_toast('Copy chapter works on Bibles and commentaries only')
+            return
+        book, chapter, module = self._book, self._chapter, self._module
+
+        def fetch():
+            try:
+                if ebible_bridge.is_ebible_module(module):
+                    verses = ebible_bridge.load_chapter(module, book, chapter)
+                else:
+                    verses = sword_bridge.load_chapter(module, book, chapter)
+            except Exception as e:
+                if self._on_toast:
+                    GLib.idle_add(self._on_toast, f"Couldn't load chapter — {e}")
+                return
+            lines = [f'{book} {chapter}', '']
+            for v_num, html in verses:
+                plain = re.sub(r'<[^>]+>', '', str(html)).strip()
+                if plain:
+                    lines.append(f'{v_num} {plain}')
+            text = '\n'.join(lines) + '\n'
+            GLib.idle_add(self._finish_copy_chapter, text, book, chapter)
+
+        threading.Thread(target=fetch, daemon=True).start()
+
+    def _finish_copy_chapter(self, text, book, chapter):
+        self._view.get_clipboard().set(text)
+        if self._on_toast:
+            self._on_toast(f'Copied {book} {chapter}')
+        return GLib.SOURCE_REMOVE
+
     def _on_sync_toggled(self, btn, _param):
         locked = btn.get_active()
         btn.set_icon_name('changes-prevent-symbolic' if locked else 'changes-allow-symbolic')
@@ -616,6 +821,100 @@ class BiblePane(Gtk.Box):
         self._buffer.delete_mark(mark)
         return GLib.SOURCE_REMOVE
 
+    def _apply_search_highlight(self):
+        """If a search surface stashed a pending query on this pane,
+        find its word matches in the rendered chapter and tag them so
+        the user can spot what they were searching for.
+
+        Auto-expires after 5s so it doesn't persist as visual clutter
+        and doesn't get confused with the verse-click flash."""
+        # Always cancel any pending expire timer + remove any prior highlight
+        # before reapplying. Stale timers + tags shouldn't bleed across
+        # navigations or repeated F3 presses.
+        self._cancel_search_hl_timer()
+        start = self._buffer.get_start_iter()
+        end = self._buffer.get_end_iter()
+        tag_table = self._buffer.get_tag_table()
+        existing = tag_table.lookup('_search_hl')
+        if existing:
+            self._buffer.remove_tag(existing, start, end)
+
+        pending = self._pending_search_highlight
+        self._pending_search_highlight = None
+        if not pending:
+            return
+        query, case_sensitive = pending
+        words = [w for w in re.split(r'\s+', query.strip()) if w]
+        if not words:
+            return
+
+        tag = existing
+        if tag is None:
+            # Amber — visually distinct from the pale-yellow verse flash so
+            # the two don't merge into a single yellow blob on the matched
+            # word during the 1s flash window.
+            tag = self._buffer.create_tag(
+                '_search_hl', background='#ffd180', foreground='black')
+        # Bump priority so the highlight wins against insert_markup's
+        # anonymous tags (same pattern as the flash tag).
+        tag.set_priority(tag_table.get_size() - 1)
+
+        flags = 0 if case_sensitive else re.IGNORECASE
+        pattern = r'\b(?:' + '|'.join(re.escape(w) for w in words) + r')\b'
+        text = self._buffer.get_text(start, end, False)
+        applied = False
+        try:
+            for m in re.finditer(pattern, text, flags):
+                si = self._buffer.get_iter_at_offset(m.start())
+                ei = self._buffer.get_iter_at_offset(m.end())
+                self._buffer.apply_tag(tag, si, ei)
+                applied = True
+        except re.error:
+            return
+
+        if applied:
+            def _expire():
+                self._search_hl_timer = None
+                t = self._buffer.get_tag_table().lookup('_search_hl')
+                if t:
+                    self._buffer.remove_tag(
+                        t,
+                        self._buffer.get_start_iter(),
+                        self._buffer.get_end_iter())
+                return GLib.SOURCE_REMOVE
+            self._search_hl_timer = GLib.timeout_add(5000, _expire)
+
+    def _cancel_search_hl_timer(self):
+        if self._search_hl_timer is not None:
+            try:
+                GLib.source_remove(self._search_hl_timer)
+            except Exception:
+                pass
+            self._search_hl_timer = None
+
+    # Tags whose names start with these prefixes are chapter-scoped: a
+    # fresh set is created on every render (vnum_N for verse anchors,
+    # strg:GNNNN for Strong's words, morph:robinson:… for Greek
+    # morphology, phrase:G1+G2 for multi-Strong's segments, devref:OSIS
+    # for commentary references). Without explicit cleanup the tag table
+    # grows unbounded across navigations — set_text('') removes content
+    # but tags persist, and set_priority() then becomes O(N) in tag count.
+    _CHAPTER_SCOPED_TAG_PREFIXES = ('vnum_', 'strg:', 'morph:', 'phrase:',
+                                    'devref:')
+
+    def _clear_chapter_scoped_tags(self):
+        table = self._buffer.get_tag_table()
+        to_remove = []
+
+        def _collect(tag, _user_data):
+            name = tag.get_property('name') or ''
+            if name.startswith(self._CHAPTER_SCOPED_TAG_PREFIXES):
+                to_remove.append(tag)
+
+        table.foreach(_collect, None)
+        for tag in to_remove:
+            table.remove(tag)
+
     def _fetch_and_render(self):
         if self._is_devotional:
             self._fetch_and_render_devotional()
@@ -644,7 +943,9 @@ class BiblePane(Gtk.Box):
         dark = Adw.StyleManager.get_default().get_dark()
         fg = '#8d8278' if dark else '#7a7066'
         self._cancel_all_flashes()
+        self._cancel_search_hl_timer()
         self._buffer.set_text('')
+        self._clear_chapter_scoped_tags()
         msg = (f'<span size="large" foreground="{fg}">'
                f'{GLib.markup_escape_text(self._module)}</span>\n\n'
                f'<span foreground="{fg}">'
@@ -687,7 +988,9 @@ class BiblePane(Gtk.Box):
             return GLib.SOURCE_REMOVE
         dark = Adw.StyleManager.get_default().get_dark()
         self._cancel_all_flashes()
+        self._cancel_search_hl_timer()
         self._buffer.set_text('')
+        self._clear_chapter_scoped_tags()
         if raw:
             devotional.render_osis(self._buffer, raw, dark)
         else:
@@ -713,7 +1016,9 @@ class BiblePane(Gtk.Box):
         is_commentary = self._module_type == 'Commentaries'
 
         self._cancel_all_flashes()
+        self._cancel_search_hl_timer()
         self._buffer.set_text('')
+        self._clear_chapter_scoped_tags()
 
         # Coverage check — every verse in `verses` may be empty if the
         # module doesn't include this book/chapter (e.g. SBLGNT is NT
@@ -849,6 +1154,7 @@ class BiblePane(Gtk.Box):
             self._view.scroll_to_iter(self._buffer.get_start_iter(), 0.0, False, 0, 0)
 
         self._update_chapter_note_indicator()
+        self._apply_search_highlight()
         return GLib.SOURCE_REMOVE
 
     @staticmethod
@@ -1302,7 +1608,40 @@ class BiblePane(Gtk.Box):
             self._buffer.remove_tag(hover_tag, s, e)
         self._strg_hover_range = None
 
+    def _on_zoom_scroll(self, controller, _dx, dy):
+        """Ctrl+wheel = adjust font size. Without Ctrl, return False so
+        the ScrolledWindow handles normal vertical scrolling unchanged."""
+        if not self._on_font_size_request or dy == 0:
+            return False
+        event = controller.get_current_event()
+        if event is None:
+            return False
+        if not (event.get_modifier_state() & Gdk.ModifierType.CONTROL_MASK):
+            return False
+        # Wheel up (dy < 0) = zoom in, wheel down (dy > 0) = zoom out —
+        # matches browsers + every text reader.
+        self._on_font_size_request(-0.5 if dy > 0 else 0.5)
+        return True
+
+    def _on_zoom_gesture(self, gesture, scale):
+        """Touchpad pinch-to-zoom. The gesture reports cumulative scale
+        from its 'begin' point — we convert deltas above a small threshold
+        into discrete font-size steps so the gesture feels responsive
+        without runaway zooming."""
+        if not self._on_font_size_request:
+            return
+        ratio = scale / self._zoom_gesture_accum
+        if ratio >= 1.15:
+            self._on_font_size_request(0.5)
+            self._zoom_gesture_accum = scale
+        elif ratio <= 0.87:
+            self._on_font_size_request(-0.5)
+            self._zoom_gesture_accum = scale
+
     def _on_left_click(self, gesture, n_press, x, y):
+        # Stash press position so _on_left_release can distinguish a true
+        # click (collapse phantom selection) from a drag-select (preserve).
+        self._click_press_pos = (x, y)
         bx, by = self._view.window_to_buffer_coords(Gtk.TextWindowType.WIDGET, int(x), int(y))
         found, it = self._view.get_iter_at_location(bx, by)
         if not found:
@@ -1367,14 +1706,22 @@ class BiblePane(Gtk.Box):
     def _on_left_release(self, gesture, n_press, x, y):
         pending = self._pending_strong_click
         self._pending_strong_click = None
-        # Clear any selection GTK's TextView may have created if the
-        # press-release coordinates ended up mapping to different buffer
-        # offsets (rare now that the lexicon swap is deferred, but cheap
-        # to do as a safety net). place_cursor at start collapses the
-        # selection without moving the visible insertion point much.
-        bounds = self._buffer.get_selection_bounds()
-        if bounds:
-            self._buffer.place_cursor(bounds[0])
+
+        # Collapse phantom selection from a near-zero-movement click (the
+        # legacy safety net for the lexicon-swap reflow case), but PRESERVE
+        # selections that came from a genuine drag — otherwise drag-select
+        # never sticks and Ctrl+C has nothing to copy.
+        press_pos = getattr(self, '_click_press_pos', None)
+        self._click_press_pos = None
+        is_drag = False
+        if press_pos is not None:
+            is_drag = max(abs(x - press_pos[0]),
+                          abs(y - press_pos[1])) > 4
+        if not is_drag:
+            bounds = self._buffer.get_selection_bounds()
+            if bounds:
+                self._buffer.place_cursor(bounds[0])
+
         if pending is None:
             return
         strong_num, morph, phrase_chain, phrase_text = pending
@@ -1517,10 +1864,12 @@ class BiblePane(Gtk.Box):
                 sw.set_halign(Gtk.Align.CENTER)
                 sw.set_margin_top(8)
                 sw.set_margin_bottom(4)
+                sw.set_margin_start(18)
+                sw.set_margin_end(18)
                 for mn, md, html in sorted(results, key=lambda r: r[1].lower()):
                     page_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
                     _add_text(html, page_box)
-                    stack.add_titled(page_box, mn, md)
+                    stack.add_titled(page_box, mn, _short_dict_title(mn, md))
                 content.append(sw)
                 content.append(stack)
             return GLib.SOURCE_REMOVE
@@ -1681,27 +2030,42 @@ class BiblePane(Gtk.Box):
             GLib.idle_add(self._pane_search_status.set_text,
                           f'Building index… {book_name} ({book_idx}/{total})')
 
+        case = self._pane_search_case_btn.get_active()
+
         def run():
             if ebible_bridge.is_ebible_module(module):
-                results = ebible_bridge.search_module(module, query)
+                results = ebible_bridge.search_module(
+                    module, query, case_sensitive=case)
             else:
                 results = sword_bridge.search_module(
                     module, query,
                     on_indexing_start=_idx_start,
                     on_indexing_progress=_idx_progress,
-                    on_indexing_done=lambda: None)
+                    on_indexing_done=lambda: None,
+                    case_sensitive=case)
             GLib.idle_add(self._pane_search_done, results, module)
 
         threading.Thread(target=run, daemon=True).start()
+
+    def _on_pane_search_case_toggled(self, _btn):
+        # Re-run if there's a query to reflect the new mode.
+        if self._pane_search_entry.get_text().strip():
+            self._on_pane_search()
 
     def _pane_search_done(self, results, module):
         self._pane_search_spinner.stop()
         self._pane_search_spinner.set_visible(False)
         if module != self._module:
             return GLib.SOURCE_REMOVE
+        truncated_msg = None
         if results and results[-1][0] == '':
-            self._pane_search_status.set_text(results[-1][3])
+            truncated_msg = results[-1][3]
             results = results[:-1]
+        # Stash for F3/Shift+F3 step-through.
+        self._pane_search_results = list(results)
+        self._pane_search_idx = -1
+        if truncated_msg:
+            self._pane_search_status.set_text(truncated_msg)
         else:
             n = len(results)
             self._pane_search_status.set_text(
@@ -1729,23 +2093,55 @@ class BiblePane(Gtk.Box):
 
     def _on_pane_search_row(self, _listbox, row):
         if hasattr(row, '_nav') and self._on_word_study_navigate:
+            self._stash_search_highlight_for_self()
             self._on_word_study_navigate(*row._nav)
 
-    def refresh_modules(self):
-        new_names = _pane_readable_modules()
-        self.module_drop.disconnect(self._module_handler)
-        self._names = new_names
-        self.module_drop.set_model(Gtk.StringList.new(self._names))
-        if self._module in self._names:
-            self.module_drop.set_selected(self._names.index(self._module))
-        elif self._names:
-            self._module = self._names[0]
-            self.module_drop.set_selected(0)
-            self._fetch_and_render()
-        self._module_handler = self.module_drop.connect('notify::selected', self._on_module_changed)
+    def step_pane_search_result(self, prev=False):
+        """F3 / Shift+F3 step-through for this pane's search results.
+        Returns True if a navigation happened."""
+        results = getattr(self, '_pane_search_results', None) or []
+        if not results or not self._on_word_study_navigate:
+            return False
+        n = len(results)
+        idx = getattr(self, '_pane_search_idx', -1)
+        idx = (idx - 1) % n if prev else (idx + 1) % n
+        self._pane_search_idx = idx
+        book, ch, v, _text = results[idx]
+        self._stash_search_highlight_for_self()
+        self._on_word_study_navigate(book, ch, v)
+        self._pane_search_status.set_text(f'Result {idx + 1} of {n}')
+        return True
 
-    def _on_module_changed(self, drop, _param):
-        self._module = self._names[drop.get_selected()]
+    def _stash_search_highlight_for_self(self):
+        """Snapshot the per-pane search entry's query + case toggle so
+        _apply_search_highlight (which fires after the upcoming render)
+        paints the matched words."""
+        q = self._pane_search_entry.get_text().strip()
+        if not q:
+            return
+        case = self._pane_search_case_btn.get_active()
+        self._pending_search_highlight = (q, case)
+
+    def refresh_modules(self):
+        # Invalidate the language cache — a module that was just installed
+        # might not have been probed before; one that was uninstalled
+        # shouldn't keep its entry around.
+        self._invalidate_module_lang_cache()
+        new_names = _pane_readable_modules()
+        self._names = new_names
+        if self._module not in self._names and self._names:
+            # Module was uninstalled — fall back to the first available
+            self._apply_module_change(self._names[0])
+        else:
+            # Same module is still around; just sync the label in case it
+            # somehow drifted, and rebuild the picker contents on next open.
+            self._picker_label.set_label(self._module)
+
+    def _apply_module_change(self, new_module):
+        """Carry out a module switch: rewire metadata, hide/show
+        verse-navigation chrome, clear stale per-module state, re-render."""
+        self._module = new_module
+        self._picker_label.set_label(new_module)
         self._module_type = (
             'Biblical Texts' if ebible_bridge.is_ebible_module(self._module)
             else sword_bridge.module_type(self._module)
@@ -1764,6 +2160,7 @@ class BiblePane(Gtk.Box):
         self._sync_btn.set_visible(is_chapter_keyed)
         self._chapter_note_btn.set_visible(is_chapter_keyed)
         self._pane_search_btn.set_visible(is_chapter_keyed)
+        self._copy_chapter_btn.set_visible(is_chapter_keyed)
         self._pane_search_btn.set_active(False)
         if is_devot:
             self._devotional_date = _date.today()
@@ -1780,6 +2177,11 @@ class BiblePane(Gtk.Box):
         self._current_phrase = (None, None)
         self._selected_verse = None
         self._lex_panel.clear_state()
+        # Search results were keyed to the previous module — drop them
+        # so F3 doesn't try to step through stale references.
+        self._pane_search_results = []
+        self._pane_search_idx = -1
+        self._pending_search_highlight = None
         # Dismiss any dict popup since it's tied to a word in the previous module's text.
         prev_dict = getattr(self, '_dict_win', None)
         if prev_dict is not None:
@@ -1789,6 +2191,271 @@ class BiblePane(Gtk.Box):
                 pass
             self._dict_win = None
         self._fetch_and_render()
+
+    # ── Module picker popover ────────────────────────────────────────────
+
+    # Module languages never change at runtime, so cache the first lookup.
+    # The picker calls _module_lang(name) for every module on every search
+    # keystroke / chip toggle — uncached, that's many SWORD or SQLite probes
+    # per keystroke. Class-level dict so all panes share the cache.
+    _module_lang_cache = {}
+
+    def _module_lang(self, name):
+        cached = self._module_lang_cache.get(name)
+        if cached is not None:
+            return cached
+        if ebible_bridge.is_ebible_module(name):
+            lang = ebible_bridge.module_language(name)
+        else:
+            lang = sword_bridge.module_language(name)
+        # Cache misses (returns '') too — re-probing wouldn't help.
+        self._module_lang_cache[name] = lang or ''
+        return self._module_lang_cache[name]
+
+    @classmethod
+    def _invalidate_module_lang_cache(cls):
+        cls._module_lang_cache.clear()
+
+    def _build_module_picker_popover(self):
+        pop = Gtk.Popover()
+        pop.set_has_arrow(True)
+
+        stack = Gtk.Stack()
+        stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
+        stack.set_transition_duration(150)
+        self._picker_stack = stack
+
+        # ── List page ────────────────────────────────────────────────
+        list_page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        list_page.set_size_request(320, 420)
+        list_page.set_margin_start(8)
+        list_page.set_margin_end(8)
+        list_page.set_margin_top(8)
+        list_page.set_margin_bottom(8)
+
+        self._picker_search_entry = Gtk.SearchEntry()
+        self._picker_search_entry.set_placeholder_text('Filter modules…')
+        self._picker_search_entry.connect(
+            'search-changed', self._on_picker_search_changed)
+        list_page.append(self._picker_search_entry)
+
+        self._picker_chips_box = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        list_page.append(self._picker_chips_box)
+
+        list_scroll = Gtk.ScrolledWindow(vexpand=True)
+        list_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        self._picker_listbox = Gtk.ListBox()
+        self._picker_listbox.set_selection_mode(Gtk.SelectionMode.NONE)
+        self._picker_listbox.add_css_class('navigation-sidebar')
+        self._picker_listbox.connect(
+            'row-activated', self._on_picker_row_activated)
+        list_scroll.set_child(self._picker_listbox)
+        list_page.append(list_scroll)
+
+        stack.add_named(list_page, 'list')
+
+        # ── Info page ────────────────────────────────────────────────
+        info_page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        info_page.set_size_request(320, 420)
+        info_page.set_margin_start(8)
+        info_page.set_margin_end(8)
+        info_page.set_margin_top(8)
+        info_page.set_margin_bottom(8)
+
+        info_header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        back_btn = Gtk.Button(icon_name='go-previous-symbolic')
+        back_btn.add_css_class('flat')
+        back_btn.set_tooltip_text('Back to list')
+        back_btn.connect(
+            'clicked', lambda _b: stack.set_visible_child_name('list'))
+        info_header.append(back_btn)
+        self._picker_info_title = Gtk.Label(xalign=0, hexpand=True)
+        self._picker_info_title.add_css_class('heading')
+        self._picker_info_title.set_wrap(True)
+        info_header.append(self._picker_info_title)
+        info_page.append(info_header)
+        info_page.append(Gtk.Separator())
+
+        info_scroll = Gtk.ScrolledWindow(vexpand=True)
+        info_scroll.set_policy(
+            Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        self._picker_info_body = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        info_scroll.set_child(self._picker_info_body)
+        info_page.append(info_scroll)
+
+        stack.add_named(info_page, 'info')
+        stack.set_visible_child_name('list')
+
+        pop.set_child(stack)
+        pop.connect('show', lambda _p: self._refresh_module_picker())
+        return pop
+
+    def _refresh_module_picker(self):
+        self._picker_stack.set_visible_child_name('list')
+        if self._picker_search_entry.get_text():
+            self._picker_search_entry.set_text('')
+        self._picker_search = ''
+        self._build_picker_chips()
+        self._rebuild_picker_list()
+
+    def _build_picker_chips(self):
+        child = self._picker_chips_box.get_first_child()
+        while child:
+            nxt = child.get_next_sibling()
+            self._picker_chips_box.remove(child)
+            child = nxt
+
+        langs = {self._module_lang(name) for name in self._names}
+        langs.discard('')
+
+        # If there's only one language family (typically English), the
+        # row is dead UI weight. Hide it and force the filter to All.
+        if len(langs) <= 1:
+            self._picker_chips_box.set_visible(False)
+            self._picker_lang = 'All'
+            return
+        self._picker_chips_box.set_visible(True)
+
+        chip_values = ['All'] + sorted(langs)
+        for v in chip_values:
+            btn = Gtk.ToggleButton(label=v)
+            btn.add_css_class('pill')
+            if v == self._picker_lang:
+                btn.set_active(True)
+                btn.add_css_class('suggested-action')
+            btn.connect('toggled', self._on_picker_chip_toggled, v)
+            self._picker_chips_box.append(btn)
+
+    def _on_picker_chip_toggled(self, btn, lang_value):
+        if not btn.get_active():
+            # Enforce "exactly one active": if the user tried to untoggle
+            # the current chip, snap it back on.
+            if self._picker_lang == lang_value:
+                btn.set_active(True)
+            return
+        if self._picker_lang == lang_value:
+            return
+        self._picker_lang = lang_value
+        self._build_picker_chips()
+        self._rebuild_picker_list()
+
+    def _on_picker_search_changed(self, entry):
+        self._picker_search = entry.get_text().strip().lower()
+        self._rebuild_picker_list()
+
+    def _rebuild_picker_list(self):
+        child = self._picker_listbox.get_first_child()
+        while child:
+            nxt = child.get_next_sibling()
+            self._picker_listbox.remove(child)
+            child = nxt
+
+        q = self._picker_search
+        lang = self._picker_lang
+        any_match = False
+        for name in self._names:
+            if lang != 'All' and self._module_lang(name) != lang:
+                continue
+            if q and q not in name.lower():
+                continue
+            self._picker_listbox.append(self._make_picker_row(name))
+            any_match = True
+
+        if not any_match:
+            row = Gtk.ListBoxRow()
+            row.set_selectable(False)
+            row.set_activatable(False)
+            lbl = Gtk.Label(
+                label='No modules match this filter.',
+                xalign=0.5)
+            lbl.add_css_class('dim-label')
+            lbl.set_margin_start(12)
+            lbl.set_margin_end(12)
+            lbl.set_margin_top(20)
+            lbl.set_margin_bottom(20)
+            row.set_child(lbl)
+            self._picker_listbox.append(row)
+
+    def _make_picker_row(self, name):
+        row = Gtk.ListBoxRow()
+        row._module_name = name
+        hb = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        hb.set_margin_start(8)
+        hb.set_margin_end(4)
+        hb.set_margin_top(4)
+        hb.set_margin_bottom(4)
+        lbl = Gtk.Label(label=name, xalign=0, hexpand=True)
+        lbl.set_ellipsize(Pango.EllipsizeMode.END)
+        if name == self._module:
+            lbl.add_css_class('accent')
+        hb.append(lbl)
+        info_btn = Gtk.Button(icon_name='dialog-information-symbolic')
+        info_btn.add_css_class('flat')
+        info_btn.add_css_class('circular')
+        info_btn.set_tooltip_text('Module info')
+        info_btn.set_valign(Gtk.Align.CENTER)
+        info_btn.connect(
+            'clicked', lambda _b, _n=name: self._show_module_info(_n))
+        hb.append(info_btn)
+        row.set_child(hb)
+        return row
+
+    def _on_picker_row_activated(self, _listbox, row):
+        if not hasattr(row, '_module_name'):
+            return
+        name = row._module_name
+        self._picker_popover.popdown()
+        if name != self._module:
+            self._apply_module_change(name)
+
+    def _show_module_info(self, name):
+        self._picker_info_title.set_label(name)
+        child = self._picker_info_body.get_first_child()
+        while child:
+            nxt = child.get_next_sibling()
+            self._picker_info_body.remove(child)
+            child = nxt
+
+        if ebible_bridge.is_ebible_module(name):
+            info = ebible_bridge.module_info(name)
+        else:
+            info = sword_bridge.module_info(name)
+
+        def _add_field(label, value, multiline=False):
+            if not value:
+                return
+            cap = Gtk.Label(label=label, xalign=0)
+            cap.add_css_class('caption')
+            cap.add_css_class('dim-label')
+            cap.set_margin_top(6)
+            self._picker_info_body.append(cap)
+            val = Gtk.Label(label=str(value), xalign=0,
+                            wrap=multiline, selectable=True)
+            if multiline:
+                val.set_max_width_chars(40)
+            self._picker_info_body.append(val)
+
+        _add_field('Description', info.get('description', ''), multiline=True)
+        _add_field('Language',    info.get('language', ''))
+        _add_field('Version',     info.get('version', ''))
+        _add_field('Type',        info.get('type', ''))
+        _add_field('Copyright',   info.get('copyright', ''), multiline=True)
+        _add_field('License',     info.get('license', ''))
+        _add_field('About',       info.get('about', ''), multiline=True)
+
+        if self._picker_info_body.get_first_child() is None:
+            empty = Gtk.Label(
+                label='No metadata available for this module.',
+                xalign=0)
+            empty.add_css_class('dim-label')
+            empty.set_margin_top(12)
+            self._picker_info_body.append(empty)
+
+        self._picker_stack.set_visible_child_name('info')
+
+    # ── End module picker ────────────────────────────────────────────────
 
     def select_verse(self, verse_num):
         """Called by other panes broadcasting a verse selection."""

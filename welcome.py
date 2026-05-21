@@ -186,7 +186,14 @@ class WelcomeWindow(Adw.ApplicationWindow):
         # module-manager dependency chain on the no-op path.
         from module_manager import ModuleManagerWindow
 
-        win = ModuleManagerWindow(application=self.get_application())
+        # transient_for + modal so tiling compositors (Hyprland) keep the
+        # picker attached to the welcome window rather than spawning a
+        # separate tile, and Mutter stacks it above its parent.
+        win = ModuleManagerWindow(
+            application=self.get_application(),
+            transient_for=self,
+            modal=True,
+        )
         win.connect('close-request', self._on_mgr_closed)
         win.present()
 

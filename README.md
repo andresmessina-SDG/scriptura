@@ -39,14 +39,44 @@ libadwaita.
 - Linux (developed on Fedora; should run on any modern GNOME desktop)
 - Python 3
 - PyGObject (GTK4 + libadwaita bindings)
-- SWORD library and Python bindings (`python3-sword` / `libsword`)
-- Whoosh (`python3-whoosh`)
+- SWORD library and Python bindings
+- Whoosh (full-text search)
 
-On Fedora:
+### Fedora
 
 ```sh
 sudo dnf install python3-gobject gtk4 libadwaita sword python3-sword python3-whoosh
 ```
+
+### Ubuntu / Debian / Zorin OS / Pop!_OS / Mint
+
+```sh
+sudo apt install python3-gi python3-gi-cairo \
+                 gir1.2-gtk-4.0 gir1.2-adw-1 \
+                 python3-sword python3-whoosh \
+                 git
+```
+
+If `python3-whoosh` is not available in your repos (older Ubuntu / Debian
+stable), install it in a venv with system-package access:
+
+```sh
+python3 -m venv --system-site-packages ~/.venvs/bible-reader
+source ~/.venvs/bible-reader/bin/activate
+pip install whoosh
+# Activate this venv before running the app from now on.
+```
+
+### Arch / Manjaro / EndeavourOS / CachyOS
+
+```sh
+sudo pacman -S --needed python-gobject gtk4 libadwaita \
+                        sword python-whoosh git
+```
+
+Arch's `sword` package bundles both `libsword` and the Python bindings in
+one package. On Arch you can run the app with `python main.py` (the
+`python3` alias also works).
 
 ## Running
 
@@ -62,17 +92,60 @@ starter — includes Strong's tagging) plus `StrongsHebrew`, `StrongsGreek`,
 and `TSK`. Optionally download OpenBible cross-references, OpenBible
 topics, and the Dodson Greek lexicon from the "Open Databases" tab.
 
+## Running on tiling compositors (Hyprland, river, sway)
+
+The app passes `transient_for` + `modal=True` on every dialog and child
+window, which Mutter (GNOME) automatically floats above its parent.
+Tiling compositors honor those hints only if you tell them to. A few
+recommended rules for Hyprland users:
+
+```hyprlang
+# Float dialogs and child windows of the Bible Reader instead of tiling
+# them into the workspace. Match by title until Flatpak ships a stable
+# WM_CLASS / app_id you can pin to.
+windowrulev2 = float, title:^(Module Manager|Study Journal|Tag Manager|Keyboard Shortcuts)$
+windowrulev2 = float, title:^(Save .*|Export .*|Rename .*|Remove .*)$
+windowrulev2 = float, title:^(Bible Reader)$, floating:1
+```
+
+Sway / river users can translate these to `for_window [title=…] floating enable`
+and the river equivalent.
+
+**File picker (Export Study Journal):** uses `xdg-desktop-portal`. Make
+sure `xdg-desktop-portal-gtk` (or `xdg-desktop-portal-hyprland`) is
+installed under your Hyprland session, otherwise the picker may silently
+fall back or fail.
+
+```sh
+# Fedora
+sudo dnf install xdg-desktop-portal-gtk
+
+# Ubuntu / Debian / Zorin
+sudo apt install xdg-desktop-portal-gtk
+
+# Arch
+sudo pacman -S xdg-desktop-portal-gtk
+```
+
 ## Development
 
 Tests for the pure-Python bridges (sword_bridge, open_data, annotations,
 reading_plans):
 
 ```sh
-sudo dnf install python3-pytest    # or: pip install -r requirements-dev.txt
+# Fedora
+sudo dnf install python3-pytest
+# Ubuntu / Debian / Zorin
+sudo apt install python3-pytest
+# Arch
+sudo pacman -S python-pytest
+# Or for any distro:
+pip install -r requirements-dev.txt
+
 python3 -m pytest
 ```
 
-113 tests, runs in under a second. The GTK-side code (`pane.py`,
+124 tests, runs in well under a second. The GTK-side code (`pane.py`,
 `window.py`, dialogs, lexicon panel) is verified by running the app.
 
 See `PROJECT.md` for the architecture brief — file layout, internal

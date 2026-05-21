@@ -28,4 +28,6 @@ data/cross_references.txt
 data/topic-scores.txt
 data/dodson.csv
 ebible.db
+ebible.db-shm
+ebible.db-wal
 ebible_catalog.csv

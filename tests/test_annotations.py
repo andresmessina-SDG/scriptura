@@ -163,3 +163,84 @@ def test_save_writes_utf8_without_escaping(isolated):
     # File should contain the literal accented character, not a \u escape.
     content = isolated.joinpath('annotations.json').read_text(encoding='utf-8')
     assert 'Anständig' in content
+
+
+# ── Tag management (rename / merge / delete / counts) ─────────────────────────
+
+def test_get_tag_counts(isolated):
+    annotations.save_tags('KJVA', 'Genesis', 1, 1, ['origin', 'doctrine'])
+    annotations.save_tags('KJVA', 'John', 3, 16, ['salvation', 'doctrine'])
+    annotations.save_chapter_note('KJVA', 'Psalms', 23, 'shepherd psalm')
+    annotations.save_chapter_note_tags('KJVA', 'Psalms', 23, ['comfort', 'doctrine'])
+    counts = annotations.get_tag_counts()
+    assert counts == {'origin': 1, 'doctrine': 3, 'salvation': 1, 'comfort': 1}
+
+
+def test_get_tag_counts_empty(isolated):
+    assert annotations.get_tag_counts() == {}
+
+
+def test_rename_tag_simple(isolated):
+    annotations.save_tags('KJVA', 'Genesis', 1, 1, ['origin', 'doctrine'])
+    annotations.save_tags('KJVA', 'John', 3, 16, ['origin', 'salvation'])
+    annotations.rename_tag('origin', 'beginnings')
+    assert annotations.get_annotations('KJVA', 'Genesis', 1)['1']['tags'] == ['beginnings', 'doctrine']
+    assert annotations.get_annotations('KJVA', 'John', 3)['16']['tags'] == ['beginnings', 'salvation']
+
+
+def test_rename_tag_merges_when_target_exists(isolated):
+    # 'creation' and 'origin' both present on same verse → merge dedupes.
+    annotations.save_tags('KJVA', 'Genesis', 1, 1, ['creation', 'origin', 'doctrine'])
+    annotations.rename_tag('origin', 'creation')
+    assert annotations.get_annotations('KJVA', 'Genesis', 1)['1']['tags'] == ['creation', 'doctrine']
+
+
+def test_rename_tag_touches_chapter_notes(isolated):
+    annotations.save_chapter_note('KJVA', 'Psalms', 23, 'shepherd psalm')
+    annotations.save_chapter_note_tags('KJVA', 'Psalms', 23, ['comfort', 'old'])
+    annotations.rename_tag('old', 'new')
+    data = annotations.get_chapter_note_data('KJVA', 'Psalms', 23)
+    assert data['tags'] == ['comfort', 'new']
+
+
+def test_rename_tag_no_op_for_empty_or_same(isolated):
+    annotations.save_tags('KJVA', 'Genesis', 1, 1, ['a', 'b'])
+    annotations.rename_tag('', 'x')
+    annotations.rename_tag('a', '')
+    annotations.rename_tag('a', 'a')
+    assert annotations.get_annotations('KJVA', 'Genesis', 1)['1']['tags'] == ['a', 'b']
+
+
+def test_rename_tag_missing_tag_does_nothing(isolated):
+    annotations.save_tags('KJVA', 'Genesis', 1, 1, ['a', 'b'])
+    annotations.rename_tag('nonexistent', 'x')
+    assert annotations.get_annotations('KJVA', 'Genesis', 1)['1']['tags'] == ['a', 'b']
+
+
+def test_delete_tag(isolated):
+    annotations.save_tags('KJVA', 'Genesis', 1, 1, ['origin', 'doctrine'])
+    annotations.save_tags('KJVA', 'John', 3, 16, ['origin', 'salvation'])
+    annotations.delete_tag('origin')
+    assert annotations.get_annotations('KJVA', 'Genesis', 1)['1']['tags'] == ['doctrine']
+    assert annotations.get_annotations('KJVA', 'John', 3)['16']['tags'] == ['salvation']
+
+
+def test_delete_tag_clears_chapter_note_tags(isolated):
+    annotations.save_chapter_note('KJVA', 'Psalms', 23, 'shepherd')
+    annotations.save_chapter_note_tags('KJVA', 'Psalms', 23, ['comfort', 'drop'])
+    annotations.delete_tag('drop')
+    data = annotations.get_chapter_note_data('KJVA', 'Psalms', 23)
+    assert data['tags'] == ['comfort']
+
+
+def test_delete_tag_empty_is_noop(isolated):
+    annotations.save_tags('KJVA', 'Genesis', 1, 1, ['a', 'b'])
+    annotations.delete_tag('')
+    assert annotations.get_annotations('KJVA', 'Genesis', 1)['1']['tags'] == ['a', 'b']
+
+
+def test_rename_tag_persists_to_disk(isolated):
+    annotations.save_tags('KJVA', 'Genesis', 1, 1, ['a', 'b'])
+    annotations.rename_tag('a', 'c')
+    annotations._cache = None  # force reload
+    assert annotations.get_annotations('KJVA', 'Genesis', 1)['1']['tags'] == ['c', 'b']

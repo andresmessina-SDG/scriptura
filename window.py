@@ -139,6 +139,19 @@ class BibleWindow(Adw.ApplicationWindow):
         self._fwd_btn.connect('clicked', self._on_nav_fwd)
         header.pack_start(self._fwd_btn)
 
+        # Recent-passages dropdown — persistent across sessions, distinct
+        # from the session-local back/forward stacks. Click to see the
+        # last 10 distinct (book, chapter) pairs visited.
+        self._recent_btn = Gtk.MenuButton(icon_name='document-open-recent-symbolic')
+        self._recent_btn.add_css_class('flat')
+        self._recent_btn.set_tooltip_text('Recent passages')
+        self._recent_pop = Gtk.Popover()
+        self._recent_pop.set_has_arrow(True)
+        self._recent_btn.set_popover(self._recent_pop)
+        self._recent_pop.connect(
+            'show', lambda _p: self._build_recent_popover_content())
+        header.pack_start(self._recent_btn)
+
         # Dropdowns remain as authoritative state holders for book/chapter
         # index — used by Alt+arrow navigation and the quick-jump bar — but
         # are not visible and have no change handlers. All navigation flows
@@ -162,6 +175,12 @@ class BibleWindow(Adw.ApplicationWindow):
         self._ref_pop.set_has_arrow(True)
         self._ref_btn.set_popover(self._ref_pop)
         self._ref_pop.connect('show', lambda _p: self._build_ref_popover_content())
+        # Mouse wheel over the passage button cycles chapters — matches the
+        # convention from native readers and browsers (scroll-over-title).
+        ref_scroll = Gtk.EventControllerScroll.new(
+            Gtk.EventControllerScrollFlags.VERTICAL)
+        ref_scroll.connect('scroll', self._on_ref_btn_scroll)
+        self._ref_btn.add_controller(ref_scroll)
         header.pack_start(self._ref_btn)
 
         self.lex_toggle = Gtk.ToggleButton()
@@ -238,13 +257,15 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_click_outside_search=self._hide_search,
                                on_verse_select=self._on_verse_select,
                                on_word_study_navigate=self._on_word_study_nav,
-                               on_toast=self._toast)
+                               on_toast=self._toast,
+                               on_font_size_request=self._adjust_font_size)
         self.pane2 = BiblePane(module_name=p2_mod,
                                on_word_click=self._on_word_click,
                                on_click_outside_search=self._hide_search,
                                on_verse_select=self._on_verse_select,
                                on_word_study_navigate=self._on_word_study_nav,
-                               on_toast=self._toast)
+                               on_toast=self._toast,
+                               on_font_size_request=self._adjust_font_size)
 
         self._paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL,
                                 vexpand=True, hexpand=True)
@@ -290,6 +311,7 @@ class BibleWindow(Adw.ApplicationWindow):
         jump_wrap.set_halign(Gtk.Align.CENTER)
         jump_wrap.set_margin_top(8)
         jump_wrap.add_css_class('card')
+        jump_wrap.add_css_class('jump-bar')
         jump_wrap.append(self._jump_entry)
 
         self._jump_revealer = Gtk.Revealer()
@@ -310,6 +332,22 @@ class BibleWindow(Adw.ApplicationWindow):
               border: 1px solid @borders;
               border-radius: 0 12px 0 0;
               box-shadow: 4px 0 16px alpha(black, 0.35); }
+/* Same translucency gotcha as .menu-panel: the jump bar floats on top of
+   the Bible content via Gtk.Overlay, so the default semi-transparent
+   .card background (@card_bg_color) lets text and dropdown chrome bleed
+   through in dark mode. Force an opaque view background. */
+.jump-bar { background-color: @view_bg_color; }
+/* Exit-reading-mode pill at top-center while in reading mode. Opaque
+   surface + drop shadow so it reads clearly against the Bible text. */
+.reading-exit-btn {
+    background-color: @view_bg_color;
+    box-shadow: 0 2px 10px alpha(black, 0.35);
+    border: 1px solid alpha(@borders, 0.6);
+    padding: 6px;
+}
+.reading-exit-btn:hover {
+    background-color: alpha(@accent_bg_color, 0.18);
+}
 row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
 .resize-handle { background-color: transparent; min-width: 6px; }
 .resize-handle:hover { background-color: alpha(@borders, 0.25); }
@@ -389,6 +427,41 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         overlay.add_overlay(self._jump_revealer)
         overlay.add_overlay(self._menu_revealer)
 
+        # ── Exit-reading-mode affordance ─────────────────────────────────────
+        # Floats a small circular X at top-center after the cursor hovers in
+        # the top "hot zone" for 2s while reading mode is on. Gives users an
+        # obvious way out without relying on remembering Esc / F11.
+        self._exit_reading_btn = Gtk.Button(icon_name='window-close-symbolic')
+        self._exit_reading_btn.add_css_class('circular')
+        self._exit_reading_btn.add_css_class('reading-exit-btn')
+        self._exit_reading_btn.set_tooltip_text('Exit reading mode')
+        self._exit_reading_btn.connect(
+            'clicked', lambda _b: self._set_reading_mode(False))
+
+        self._exit_reading_revealer = Gtk.Revealer()
+        self._exit_reading_revealer.set_transition_type(
+            Gtk.RevealerTransitionType.SLIDE_DOWN)
+        self._exit_reading_revealer.set_transition_duration(180)
+        self._exit_reading_revealer.set_halign(Gtk.Align.CENTER)
+        self._exit_reading_revealer.set_valign(Gtk.Align.START)
+        self._exit_reading_revealer.set_margin_top(6)
+        self._exit_reading_revealer.set_child(self._exit_reading_btn)
+        self._exit_reading_revealer.set_reveal_child(False)
+        overlay.add_overlay(self._exit_reading_revealer)
+
+        self._reading_hover_timer = None
+        # Attach the motion controller to the window itself so that the
+        # event reaches us regardless of which child widget (TextView,
+        # Paned divider, scrollbars) the cursor is currently over. We also
+        # listen for `enter` so the first entry into the hot zone counts,
+        # not only subsequent movement.
+        self._reading_overlay_for_motion = overlay  # stash for coord remap
+        motion = Gtk.EventControllerMotion.new()
+        motion.connect('motion', self._on_reading_mouse_motion)
+        motion.connect('enter', self._on_reading_mouse_motion)
+        motion.connect('leave', lambda _c: self._reading_hide_exit_btn())
+        self.add_controller(motion)
+
         self._toast_overlay = Adw.ToastOverlay()
         self._toast_overlay.set_child(overlay)
 
@@ -397,7 +470,15 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         main_box.append(self._crossref_revealer)
         toolbar_view.set_content(main_box)
 
+        # CAPTURE phase: the window-level shortcut handler sees the key
+        # press BEFORE the focused widget gets a chance to swallow it.
+        # With the default BUBBLE phase, focus drifting onto a TextView /
+        # Entry / DropDown / dropdown popup after extended use could leave
+        # global shortcuts (Alt+arrows, Ctrl+L, Ctrl+F, F11, Esc, font size)
+        # silently dead. Returning False from _on_key_press still lets the
+        # event continue down to the focused widget for normal typing.
         key_controller = Gtk.EventControllerKey.new()
+        key_controller.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         key_controller.connect('key-pressed', self._on_key_press)
         self.add_controller(key_controller)
 
@@ -428,6 +509,11 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
             self._set_reading_mode(not getattr(self, '_reading_mode', False))
             return True
 
+        if keyval == Gdk.KEY_F3:
+            shift = bool(state & Gdk.ModifierType.SHIFT_MASK)
+            self._step_search_result(prev=shift)
+            return True
+
         if ctrl:
             if keyval in (Gdk.KEY_plus, Gdk.KEY_equal):
                 self._adjust_font_size(1.0)
@@ -440,6 +526,16 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
                 return True
             if keyval == Gdk.KEY_f:
                 self._on_search_clicked(None)
+                return True
+            if keyval == Gdk.KEY_1:
+                self.pane1._view.grab_focus()
+                return True
+            if keyval == Gdk.KEY_2:
+                if self.pane2.get_visible():
+                    self.pane2._view.grab_focus()
+                return True
+            if keyval == Gdk.KEY_Tab:
+                self._focus_other_pane()
                 return True
 
         if alt:
@@ -456,7 +552,90 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
                 self._go_next_book()
                 return True
 
+        # Home / End jump to first / last verse of current chapter — but
+        # only when focus isn't on a text input, so typing in the search
+        # bar / jump bar / tag entry still works normally.
+        if keyval in (Gdk.KEY_Home, Gdk.KEY_End) and not (ctrl or alt):
+            if not self._focus_is_text_input():
+                book, ch = self._current_loc
+                if keyval == Gdk.KEY_Home:
+                    target_v = 1
+                else:
+                    try:
+                        target_v = sword_bridge.verse_count(book, ch)
+                    except Exception:
+                        target_v = 1
+                self._go_to(book, ch, target_v, record=False)
+                return True
+
         return False
+
+    def _focus_is_text_input(self):
+        f = self.get_focus()
+        if f is None:
+            return False
+        if isinstance(f, Gtk.Editable):
+            return True
+        if isinstance(f, Gtk.TextView) and f.get_editable():
+            return True
+        return False
+
+    def _focus_other_pane(self):
+        f = self.get_focus()
+        while f is not None:
+            if f is self.pane1:
+                target = self.pane2 if self.pane2.get_visible() else self.pane1
+                target._view.grab_focus()
+                return
+            if f is self.pane2:
+                self.pane1._view.grab_focus()
+                return
+            f = f.get_parent()
+        # No pane focused yet — go to pane1 by default
+        self.pane1._view.grab_focus()
+
+    def _on_ref_btn_scroll(self, _ctrl, _dx, dy):
+        # Vertical scroll: down → next chapter, up → previous chapter.
+        if dy > 0:
+            self._go_next_chapter()
+        elif dy < 0:
+            self._go_prev_chapter()
+        return True
+
+    def _step_search_result(self, prev=False):
+        """F3 / Shift+F3 — step through results.
+        Priority:
+          1. A search panel that is currently visible AND has results.
+          2. Otherwise, any surface that still has cached results from a
+             previous search — so F3 keeps working after the panel is
+             dismissed (e.g. by clicking a row, which auto-closes the
+             window panel)."""
+        # Visible-panel priority pass.
+        if (self._search_revealer.get_reveal_child()
+                and getattr(self._search_panel, '_results', None)):
+            self._search_panel.step_result(prev=prev)
+            return
+        for pane in (self.pane1, self.pane2):
+            if (pane._pane_search_rev.get_reveal_child()
+                    and pane._pane_search_results):
+                pane.step_pane_search_result(prev=prev)
+                return
+
+        # Fallback: closed panel, but results still cached. Re-reveal the
+        # window panel so the user can see the count label update; pane
+        # results just keep stepping silently.
+        if getattr(self._search_panel, '_results', None):
+            self._search_revealer.set_reveal_child(True)
+            self._search_panel.step_result(prev=prev)
+            return
+        for pane in (self.pane1, self.pane2):
+            if pane._pane_search_results:
+                pane.step_pane_search_result(prev=prev)
+                return
+        # No cached results at all — surface a hint so the user knows F3
+        # fired but had nothing to step through (also useful for debugging:
+        # if you see this toast, the key reached the handler).
+        self._toast('No active search — Ctrl+F to search')
 
     # ── Central navigation ────────────────────────────────────────────────────
 
@@ -476,12 +655,94 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         self._current_loc = (book, chapter)
         self._update_ref_label(book, chapter)
 
+        if record:
+            self._push_recent(book, chapter)
+
         if verse:
             self.pane1.load_reference_at_verse(book, chapter, verse)
             self.pane2.load_reference_at_verse(book, chapter, verse)
         else:
             self.pane1.load_reference(book, chapter)
             self.pane2.load_reference(book, chapter)
+
+    def _push_recent(self, book, chapter):
+        """Push a (book, chapter) onto the recent-passages list, dedup so
+        the same passage never appears twice, cap at 10 entries."""
+        cur = settings.get('recent_passages') or []
+        if not isinstance(cur, list):
+            cur = []
+        entry = [book, int(chapter)]
+        cur = [e for e in cur if isinstance(e, list) and e[:2] != entry]
+        cur.insert(0, entry)
+        settings.put('recent_passages', cur[:10])
+
+    def _build_recent_popover_content(self):
+        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        outer.set_size_request(220, -1)
+
+        header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        header_box.set_margin_start(10)
+        header_box.set_margin_end(6)
+        header_box.set_margin_top(6)
+        header_box.set_margin_bottom(2)
+        title = Gtk.Label(label='Recent', xalign=0, hexpand=True)
+        title.add_css_class('heading')
+        header_box.append(title)
+        clear_btn = Gtk.Button(icon_name='user-trash-symbolic')
+        clear_btn.add_css_class('flat')
+        clear_btn.set_tooltip_text('Clear recent list')
+        clear_btn.connect('clicked', self._on_recent_clear)
+        header_box.append(clear_btn)
+        outer.append(header_box)
+        outer.append(Gtk.Separator())
+
+        entries = settings.get('recent_passages') or []
+        entries = [e for e in entries if isinstance(e, list) and len(e) >= 2
+                   and e[0] in BOOKS and isinstance(e[1], int)]
+
+        if not entries:
+            empty = Gtk.Label(
+                label='No recent passages yet.\nNavigate around — they\'ll show here.',
+                xalign=0.5, wrap=True)
+            empty.add_css_class('dim-label')
+            empty.set_margin_start(12)
+            empty.set_margin_end(12)
+            empty.set_margin_top(10)
+            empty.set_margin_bottom(12)
+            outer.append(empty)
+        else:
+            scroll = Gtk.ScrolledWindow(vexpand=True)
+            scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            scroll.set_max_content_height(360)
+            scroll.set_propagate_natural_height(True)
+            listbox = Gtk.ListBox()
+            listbox.add_css_class('navigation-sidebar')
+            for book, ch in entries:
+                row = Gtk.ListBoxRow()
+                row._passage = (book, ch)
+                lbl = Gtk.Label(label=f'{book} {ch}', xalign=0)
+                lbl.set_margin_start(12)
+                lbl.set_margin_end(12)
+                lbl.set_margin_top(6)
+                lbl.set_margin_bottom(6)
+                row.set_child(lbl)
+                listbox.append(row)
+            listbox.connect('row-activated', self._on_recent_row_activated)
+            scroll.set_child(listbox)
+            outer.append(scroll)
+
+        self._recent_pop.set_child(outer)
+
+    def _on_recent_row_activated(self, _lb, row):
+        if not hasattr(row, '_passage'):
+            return
+        self._recent_pop.popdown()
+        book, ch = row._passage
+        self._go_to(book, ch)
+
+    def _on_recent_clear(self, _btn):
+        settings.put('recent_passages', [])
+        self._build_recent_popover_content()
 
     def _load_all_panes(self):
         # Source of truth at startup is self._current_loc, which was
@@ -494,6 +755,18 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
             Gtk.StringList.new([str(i) for i in range(1, count + 1)]))
         self.chapter_drop.set_selected(chapter - 1)
         self._update_ref_label(book, chapter)
+        # Restore the per-pane scroll position by setting _restore_top_verse
+        # BEFORE load_reference triggers _fetch_and_render; the render path
+        # already understands this attribute (originally for the lexicon
+        # toggle's preserve-position case) and routes through the silent
+        # scroll helper, so we get scroll restoration without the navigation
+        # flash that would normally show on initial render.
+        v1 = settings.get('pane1_top_verse')
+        v2 = settings.get('pane2_top_verse')
+        if isinstance(v1, int) and v1 > 1:
+            self.pane1._restore_top_verse = v1
+        if isinstance(v2, int) and v2 > 1:
+            self.pane2._restore_top_verse = v2
         self.pane1.load_reference(book, chapter)
         self.pane2.load_reference(book, chapter)
 
@@ -501,24 +774,54 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         self._ref_btn.set_label(f'{book} {chapter}')
 
     def _build_ref_popover_content(self):
-        """Build the side-by-side Book/Chapter selector each time the popover opens."""
+        """Books on the left; right column flips between a Chapter grid and
+        a Verse grid via a Stack. Left-click on a chapter navigates straight
+        to that chapter; right-click slides the panel over to the verse
+        picker for that chapter."""
         current_book    = BOOKS[self.book_drop.get_selected()]
         current_chapter = self.chapter_drop.get_selected() + 1
 
         outer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        outer.set_size_request(420, 360)
+        outer.set_size_request(440, 380)
 
-        # Book list (left)
+        # ── Books (left) ──────────────────────────────────────────────────
         book_scroll = Gtk.ScrolledWindow(hexpand=True, vexpand=True)
         book_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         book_list = Gtk.ListBox()
         book_list.set_selection_mode(Gtk.SelectionMode.BROWSE)
         book_list.add_css_class('navigation-sidebar')
 
-        # Chapter grid (right)
+        # ── Right column (header + stack) ─────────────────────────────────
+        right_col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        right_col.set_size_request(190, -1)
+
+        header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        header_box.set_margin_start(6)
+        header_box.set_margin_end(8)
+        header_box.set_margin_top(6)
+        header_box.set_margin_bottom(4)
+
+        back_btn = Gtk.Button(icon_name='go-previous-symbolic')
+        back_btn.add_css_class('flat')
+        back_btn.set_tooltip_text('Back to chapters')
+        back_btn.set_visible(False)
+        header_box.append(back_btn)
+
+        title_lbl = Gtk.Label(label='Chapter', xalign=0, hexpand=True)
+        title_lbl.add_css_class('heading')
+        header_box.append(title_lbl)
+
+        right_col.append(header_box)
+        right_col.append(Gtk.Separator())
+
+        stack = Gtk.Stack()
+        stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
+        stack.set_transition_duration(180)
+        stack.set_vexpand(True)
+
+        # Chapter grid
         chap_scroll = Gtk.ScrolledWindow(vexpand=True)
         chap_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        chap_scroll.set_size_request(150, -1)
         chap_flow = Gtk.FlowBox()
         chap_flow.set_selection_mode(Gtk.SelectionMode.NONE)
         chap_flow.set_min_children_per_line(4)
@@ -531,9 +834,58 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         chap_flow.set_margin_bottom(8)
         chap_flow.set_column_spacing(6)
         chap_flow.set_row_spacing(6)
+        chap_scroll.set_child(chap_flow)
+        stack.add_named(chap_scroll, 'chapters')
 
-        # State for the popover
-        state = {'book': current_book}
+        # Verse grid
+        verse_scroll = Gtk.ScrolledWindow(vexpand=True)
+        verse_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        verse_flow = Gtk.FlowBox()
+        verse_flow.set_selection_mode(Gtk.SelectionMode.NONE)
+        verse_flow.set_min_children_per_line(5)
+        verse_flow.set_max_children_per_line(5)
+        verse_flow.set_homogeneous(True)
+        verse_flow.set_valign(Gtk.Align.START)
+        verse_flow.set_margin_start(8)
+        verse_flow.set_margin_end(8)
+        verse_flow.set_margin_top(8)
+        verse_flow.set_margin_bottom(8)
+        verse_flow.set_column_spacing(4)
+        verse_flow.set_row_spacing(4)
+        verse_scroll.set_child(verse_flow)
+        stack.add_named(verse_scroll, 'verses')
+
+        right_col.append(stack)
+
+        state = {'book': current_book, 'chapter': current_chapter}
+
+        def show_chapters():
+            title_lbl.set_label('Chapter')
+            back_btn.set_visible(False)
+            stack.set_visible_child_name('chapters')
+
+        def show_verses(ch):
+            # Rebuild verse grid for state.book / ch
+            child = verse_flow.get_first_child()
+            while child:
+                nxt = child.get_next_sibling()
+                verse_flow.remove(child)
+                child = nxt
+            try:
+                v_count = sword_bridge.verse_count(state['book'], ch)
+            except Exception:
+                v_count = 1
+            for v in range(1, v_count + 1):
+                vbtn = Gtk.Button(label=str(v))
+                vbtn.add_css_class('flat')
+                vbtn.set_valign(Gtk.Align.CENTER)
+                vbtn._verse = v
+                vbtn.connect('clicked', self._on_ref_verse_chosen, state)
+                verse_flow.append(vbtn)
+            state['chapter'] = ch
+            title_lbl.set_label(f'Chapter {ch} Verse')
+            back_btn.set_visible(True)
+            stack.set_visible_child_name('verses')
 
         def rebuild_chapters():
             child = chap_flow.get_first_child()
@@ -554,9 +906,15 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
                     btn.add_css_class('flat')
                 btn.connect('clicked', self._on_ref_chapter_chosen, state)
                 btn._chapter = ch
+                # Right-click → slide to verse picker for this chapter
+                rc = Gtk.GestureClick()
+                rc.set_button(Gdk.BUTTON_SECONDARY)
+                rc.connect('pressed',
+                           lambda g, n, x, y, _c=ch: show_verses(_c))
+                btn.add_controller(rc)
                 chap_flow.append(btn)
 
-        for i, name in enumerate(BOOKS):
+        for name in BOOKS:
             row = Gtk.ListBoxRow()
             row._book = name
             lbl = Gtk.Label(label=name, xalign=0)
@@ -573,27 +931,32 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
             if row is None:
                 return
             state['book'] = row._book
+            # Switching book resets back to the chapter view.
+            show_chapters()
             rebuild_chapters()
 
         book_list.connect('row-selected', on_book_row)
+        back_btn.connect('clicked', lambda _b: show_chapters())
 
         rebuild_chapters()
 
         book_scroll.set_child(book_list)
-        chap_scroll.set_child(chap_flow)
         outer.append(book_scroll)
         outer.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
-        outer.append(chap_scroll)
+        outer.append(right_col)
 
         self._ref_pop.set_child(outer)
 
-        # Scroll the selected book into view after the popover lays out
         GLib.idle_add(lambda: (book_list.get_selected_row()
                                and book_list.get_selected_row().grab_focus()) or False)
 
     def _on_ref_chapter_chosen(self, btn, state):
         self._ref_pop.popdown()
         self._go_to(state['book'], btn._chapter)
+
+    def _on_ref_verse_chosen(self, btn, state):
+        self._ref_pop.popdown()
+        self._go_to(state['book'], state['chapter'], btn._verse)
 
     def _startup_navigate_to_devotional_ref(self, devt_module):
         """Background thread: parse today's devotional, navigate pane1 to its passage."""
@@ -750,6 +1113,13 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         self._spacing_val_lbl.set_text(f'{val:.1f}×')
         self.pane1.set_appearance(line_spacing=val)
         self.pane2.set_appearance(line_spacing=val)
+
+    def _on_appear_width(self, scale):
+        px = int(round(scale.get_value() / 20.0) * 20)
+        settings.put('reading_width', px)
+        self._width_val_lbl.set_text(f'{px}px')
+        self.pane1.set_reading_width(px)
+        self.pane2.set_reading_width(px)
 
     def _on_appear_bold(self, btn):
         bold = btn.get_active()
@@ -908,7 +1278,7 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
 
     def _set_reading_mode(self, on):
         """Distraction-free mode: hide the window header, pane toolbars, and
-        any open overlay panels. Esc or F11 toggles back."""
+        any open overlay panels. Esc / F11 / mouse-to-top-edge to exit."""
         self._reading_mode = bool(on)
         self._header.set_visible(not on)
         self.pane1._toolbar.set_visible(not on)
@@ -919,7 +1289,58 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
             self._search_revealer.set_reveal_child(False)
             self._jump_revealer.set_reveal_child(False)
             self._crossref_revealer.set_reveal_child(False)
-            self._toast('Reading mode — Esc or F11 to exit')
+            self._toast('Reading mode — Esc, F11, or hover the top edge to exit')
+        else:
+            self._reading_hide_exit_btn()
+
+    # Two thresholds (window-relative y in reading mode):
+    #   TRIGGER zone (12px) — must enter this to start the 2s hover timer.
+    #   KEEP-VISIBLE zone (80px) — once the button is revealed, the cursor
+    #     can move down this far without dismissing it, giving the user
+    #     enough room to actually reach the button to click it.
+    _READING_TRIGGER_ZONE_PX = 12
+    _READING_KEEP_ZONE_PX = 80
+    _READING_HOVER_DELAY_MS = 2000
+
+    def _on_reading_mouse_motion(self, _controller, _x, y):
+        if not getattr(self, '_reading_mode', False):
+            return
+        revealed = self._exit_reading_revealer.get_reveal_child()
+
+        if revealed:
+            # Already showing — keep visible while the cursor stays inside
+            # the wide keep zone, hide once it wanders well below.
+            if y > self._READING_KEEP_ZONE_PX:
+                self._reading_hide_exit_btn()
+            return
+
+        # Not yet shown:
+        # - Entering the narrow trigger zone arms the hover timer.
+        # - Once armed, the timer survives small wobbles between the trigger
+        #   zone and the keep zone. Only cancel when the cursor drifts past
+        #   the keep zone entirely. Wayland compositors (Hyprland) report
+        #   raw pointer motion with no smoothing — holding a cursor inside
+        #   a 12 px strip for 2 s is effectively impossible, so the timer
+        #   needs the wider keep zone as its cancel boundary.
+        if y <= self._READING_TRIGGER_ZONE_PX:
+            if self._reading_hover_timer is None:
+                self._reading_hover_timer = GLib.timeout_add(
+                    self._READING_HOVER_DELAY_MS, self._reading_show_exit_btn)
+        elif y > self._READING_KEEP_ZONE_PX:
+            self._reading_hide_exit_btn()
+
+    def _reading_show_exit_btn(self):
+        self._reading_hover_timer = None
+        if getattr(self, '_reading_mode', False):
+            self._exit_reading_revealer.set_reveal_child(True)
+        return GLib.SOURCE_REMOVE
+
+    def _reading_hide_exit_btn(self):
+        if self._reading_hover_timer is not None:
+            GLib.source_remove(self._reading_hover_timer)
+            self._reading_hover_timer = None
+        if hasattr(self, '_exit_reading_revealer'):
+            self._exit_reading_revealer.set_reveal_child(False)
 
     # ── Lexicon toggle ────────────────────────────────────────────────────────
 
@@ -952,6 +1373,18 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
             settings.put('last_chapter', int(chapter))
             settings.put('pane1_module', self.pane1._module)
             settings.put('pane2_module', self.pane2._module)
+            # Per-pane scroll position so the next launch lands where we
+            # left off, not at verse 1.
+            v1 = (self.pane1._find_topmost_visible_verse()
+                  if self.pane1._is_verse_navigable() else None)
+            v2 = (self.pane2._find_topmost_visible_verse()
+                  if self.pane2._is_verse_navigable() else None)
+            settings.put('pane1_top_verse', v1)
+            settings.put('pane2_top_verse', v2)
+            # Force a synchronous write — the debounced put() above would
+            # otherwise still be waiting for its timer when the process
+            # exits, and the final session state would be lost.
+            settings.flush()
         except Exception as e:
             print(f'[window] close-save: {e}')
         return False
@@ -979,6 +1412,16 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         self._search_revealer.set_reveal_child(False)
 
     def _on_search_result(self, book, chapter, verse):
+        # Stash the query on any pane whose current module matches the
+        # search panel's module, so _apply_search_highlight can paint the
+        # matched word(s) once the chapter re-renders.
+        query = self._search_panel._entry.get_text().strip()
+        case = self._search_panel._case_btn.get_active()
+        if query:
+            target_mod = self._search_panel._current_module()
+            for pane in (self.pane1, self.pane2):
+                if pane._module == target_mod:
+                    pane._pending_search_highlight = (query, case)
         self._go_to(book, chapter, verse)
 
     # ── Verse select / cross-references ──────────────────────────────────────
@@ -1145,12 +1588,25 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
             ('Alt+Right',   'Next chapter'),
             ('Alt+Up',      'Previous book'),
             ('Alt+Down',    'Next book'),
+            ('Home',        'First verse of current chapter'),
+            ('End',         'Last verse of current chapter'),
+            ('Scroll over title', 'Cycle chapters via mouse wheel'),
         ]),
-        ('Search & View', [
+        ('Panes & view', [
+            ('Ctrl+1',      'Focus left pane'),
+            ('Ctrl+2',      'Focus right pane'),
+            ('Ctrl+Tab',    'Cycle between panes'),
             ('Ctrl+F',      'Open / close search panel'),
+            ('F3',          'Next search result'),
+            ('Shift+F3',    'Previous search result'),
             ('Ctrl+ +',     'Increase font size'),
             ('Ctrl+ -',     'Decrease font size'),
+            ('Ctrl+scroll', 'Zoom font (or pinch on touchpad)'),
+            ('F11',         'Reading mode (chrome hidden)'),
             ('Escape',      'Close search, jump bar, or menu'),
+        ]),
+        ('Selection', [
+            ('Ctrl+C',      'Copy selection with reference'),
         ]),
     ]
 
@@ -1198,50 +1654,6 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         scroll.set_child(outer)
         toolbar_view.set_content(scroll)
         return win
-
-    def _on_copy_chapter(self, _btn):
-        """Copy the active pane's current chapter to the clipboard as
-        plain text. Format: 'Book Chapter\\n\\nN verse text\\nN verse
-        text…'. Devotionals and non-Bible modules are skipped because
-        their content isn't verse-keyed and copy-as-chapter is
-        meaningless."""
-        # Prefer pane1 unless it's not a verse-keyed module and pane2 is.
-        pane = self.pane1
-        if not pane._is_verse_navigable() and self.pane2._is_verse_navigable():
-            pane = self.pane2
-        if not pane._is_verse_navigable():
-            self._toast('Copy Chapter works on Bibles and commentaries only')
-            return
-
-        book, chapter, module = pane._book, pane._chapter, pane._module
-
-        def fetch():
-            try:
-                import ebible_bridge as _eb
-                if _eb.is_ebible_module(module):
-                    verses = _eb.load_chapter(module, book, chapter)
-                else:
-                    verses = sword_bridge.load_chapter(module, book, chapter)
-            except Exception as e:
-                GLib.idle_add(self._toast, f"Couldn't load chapter — {e}")
-                return
-            lines = [f'{book} {chapter}', '']
-            for v_num, html in verses:
-                plain = re.sub(r'<[^>]+>', '', str(html)).strip()
-                if plain:
-                    lines.append(f'{v_num} {plain}')
-            text = '\n'.join(lines) + '\n'
-            GLib.idle_add(self._finish_copy_chapter, text, book, chapter)
-
-        threading.Thread(target=fetch, daemon=True).start()
-
-    def _finish_copy_chapter(self, text, book, chapter):
-        clipboard = Gdk.Display.get_default().get_clipboard()
-        clipboard.set(text)
-        self._toast(f'Copied {book} {chapter}')
-        # Close the menu panel so the user lands back on the reading view.
-        self._menu_revealer.set_reveal_child(False)
-        return GLib.SOURCE_REMOVE
 
     def _on_modules_clicked(self, _btn):
         if self._modules_win is not None and self._modules_win.get_visible():
@@ -1417,7 +1829,6 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         for icon, label, handler in [
             ('accessories-text-editor-symbolic', 'Study Journal', self._on_journal_clicked),
             ('application-x-addon-symbolic',     'Modules',       self._on_modules_clicked),
-            ('edit-copy-symbolic',               'Copy Chapter',  self._on_copy_chapter),
         ]:
             btn = Gtk.Button()
             bx = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
@@ -1532,6 +1943,21 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         spacing_row.append(self._spacing_scale)
         spacing_row.append(self._spacing_val_lbl)
         card.append(spacing_row)
+
+        # Reading column width — wider monitors benefit from a wider column.
+        width_row = _row('Width')
+        self._width_scale = Gtk.Scale.new_with_range(
+            Gtk.Orientation.HORIZONTAL, 540, 1600, 20)
+        self._width_scale.set_hexpand(True)
+        self._width_scale.set_draw_value(False)
+        _cur_w = int(settings.get('reading_width') or 720)
+        self._width_scale.set_value(_cur_w)
+        self._width_val_lbl = Gtk.Label(label=f'{_cur_w}px')
+        self._width_val_lbl.set_size_request(48, -1)
+        self._width_scale.connect('value-changed', self._on_appear_width)
+        width_row.append(self._width_scale)
+        width_row.append(self._width_val_lbl)
+        card.append(width_row)
 
         # Bold + Justify toggles
         toggle_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,

@@ -95,6 +95,9 @@ class SearchPanel(Gtk.Box):
         self._filter_book = None
         self._expanded_section = None
         self._populate_gen = 0
+        # F3 / Shift+F3 step-through pointer into `_results`. Reset to -1
+        # whenever a fresh search starts so the first F3 lands on result 0.
+        self._current_idx = -1
 
         self.set_size_request(420, -1)
         self.set_vexpand(True)
@@ -144,6 +147,11 @@ class SearchPanel(Gtk.Box):
         self._entry = Gtk.Entry(hexpand=True, placeholder_text='Search…')
         self._entry.connect('activate', self._on_search)
         entry_row.append(self._entry)
+        self._case_btn = Gtk.ToggleButton(label='Aa')
+        self._case_btn.set_tooltip_text('Match case')
+        self._case_btn.add_css_class('flat')
+        self._case_btn.connect('toggled', self._on_case_toggled)
+        entry_row.append(self._case_btn)
         search_btn = Gtk.Button(icon_name='system-search-symbolic')
         search_btn.set_tooltip_text('Search')
         search_btn.connect('clicked', self._on_search)
@@ -251,6 +259,7 @@ class SearchPanel(Gtk.Box):
             return
 
         self._results = []
+        self._current_idx = -1
         self._filter_book = None
         self._expanded_section = None
         self._clear_chart()
@@ -259,6 +268,8 @@ class SearchPanel(Gtk.Box):
         self._spinner.set_visible(True)
         self._spinner.start()
 
+        case = self._case_btn.get_active()
+
         def run():
             results = sword_bridge.search_module(
                 module,
@@ -266,11 +277,18 @@ class SearchPanel(Gtk.Box):
                 on_indexing_start=self._on_indexing_start,
                 on_indexing_progress=self._on_indexing_progress,
                 on_indexing_done=self._on_indexing_done,
+                case_sensitive=case,
             )
             _save_history(query, module)
             GLib.idle_add(self._on_search_done, results)
 
         threading.Thread(target=run, daemon=True).start()
+
+    def _on_case_toggled(self, _btn):
+        # Re-run the current query so the result list reflects the new
+        # case mode without the user having to hit Enter again.
+        if self._entry.get_text().strip():
+            self._on_search()
 
     def _on_search_done(self, results):
         self._spinner.stop()
@@ -282,6 +300,7 @@ class SearchPanel(Gtk.Box):
             results = results[:-1]
 
         self._results = results
+        self._current_idx = -1
         total = len(results)
         if truncated_msg:
             self._count_label.set_text(truncated_msg)
@@ -483,10 +502,19 @@ class SearchPanel(Gtk.Box):
         row.set_child(box)
         return row
 
+    # Cap the number of result rows rendered as widgets. The Whoosh
+    # search itself returns up to MAX_SEARCH_RESULTS (5000) which F3
+    # step-through can walk; the visible list just bloats GtkListBox and
+    # drags later UI interactions. 500 is plenty for visual browsing —
+    # users narrow down via the book filter or a more specific query.
+    _DISPLAY_CAP = 500
+
     def _populate_results(self, results):
         self._clear_results()
         gen = self._populate_gen
-        pending = list(results)
+        total = len(results)
+        pending = list(results[:self._DISPLAY_CAP])
+        display_truncated = total > self._DISPLAY_CAP
 
         def add_batch():
             if self._populate_gen != gen:
@@ -497,6 +525,15 @@ class SearchPanel(Gtk.Box):
                 self._results_list.append(self._make_result_row(book, ch, v, text))
             if pending and self._populate_gen == gen:
                 GLib.idle_add(add_batch)
+            elif display_truncated and self._populate_gen == gen:
+                # Final batch done — append a footer row hinting that
+                # the visible list is capped. F3 still steps through the
+                # full underlying _results so the user isn't cut off
+                # from the truncated portion.
+                hint = self._make_empty_row(
+                    f'Showing first {self._DISPLAY_CAP} of {total}',
+                    'F3 walks the full list; narrow the query or use a book filter for fewer matches.')
+                self._results_list.append(hint)
             return GLib.SOURCE_REMOVE
 
         GLib.idle_add(add_batch)
@@ -511,3 +548,22 @@ class SearchPanel(Gtk.Box):
             self.set_module(entry['module'])
             self._entry.set_text(entry['query'])
             self._on_search()
+
+    # ── F3 / Shift+F3 step-through ───────────────────────────────────────
+    def step_result(self, prev=False):
+        """Move to the next (or previous) result and navigate to it.
+        Keeps the panel open so the user can keep stepping. Wraps around
+        the result list. Returns True if a navigation happened."""
+        if not self._results:
+            return False
+        n = len(self._results)
+        if prev:
+            self._current_idx = (self._current_idx - 1) % n
+        else:
+            self._current_idx = (self._current_idx + 1) % n
+        book, ch, v, _text = self._results[self._current_idx]
+        self._on_result_clicked(book, ch, v)
+        # Update the count label so the user knows where they are
+        self._count_label.set_text(
+            f'Result {self._current_idx + 1} of {n}')
+        return True

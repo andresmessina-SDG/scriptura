@@ -8,6 +8,7 @@ import csv
 import io
 import os
 import sqlite3
+import threading
 import urllib.request
 import zipfile
 
@@ -47,7 +48,24 @@ _BOOK = {
 
 # ── SQLite helpers ────────────────────────────────────────────────────────────
 
+_conn_local = threading.local()
+
+
 def _db():
+    """Return a thread-local SQLite connection. Schema initialisation
+    runs once per thread on first use; subsequent calls return the cached
+    connection.
+
+    Previously this opened a fresh connection on every call (with
+    PRAGMA + CREATE TABLE IF NOT EXISTS + COMMIT each time), which became
+    significant overhead on hot paths like load_chapter and the module
+    picker's per-keystroke language probe. Threads are bounded (the main
+    GLib loop + a handful of short-lived fetch threads), and SQLite
+    connections aren't safe to share across threads without external
+    locking — so thread-local storage is the simplest correct shape."""
+    conn = getattr(_conn_local, 'conn', None)
+    if conn is not None:
+        return conn
     conn = sqlite3.connect(_DB)
     # WAL mode lets concurrent readers continue while a writer (translation
     # download) is in progress; default rollback mode would raise
@@ -63,6 +81,7 @@ def _db():
         id TEXT PRIMARY KEY, title TEXT, language TEXT, lang_code TEXT,
         copyright TEXT, license TEXT)''')
     conn.commit()
+    _conn_local.conn = conn
     return conn
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -77,7 +96,6 @@ def _tid(module_name):
         conn = _db()
         row = conn.execute(
             'SELECT id FROM translations WHERE title=?', (title,)).fetchone()
-        conn.close()
         return row[0] if row else title
     except Exception:
         return title
@@ -89,7 +107,6 @@ def installed_translations():
         rows = conn.execute(
             'SELECT id, title, language, lang_code, copyright, license '
             'FROM translations ORDER BY title').fetchall()
-        conn.close()
         return rows
     except Exception:
         return []
@@ -98,11 +115,47 @@ def module_names():
     """Display names suitable for the pane module dropdown."""
     return [f'{PREFIX}{r[1]}' for r in installed_translations()]
 
+
+def module_language(module_name):
+    """Return the 2-letter language code for an eBible module, or ''."""
+    try:
+        title = module_name[len(PREFIX):]
+        conn = _db()
+        row = conn.execute(
+            'SELECT lang_code FROM translations WHERE title=?', (title,)
+        ).fetchone()
+        return (row[0] or '').strip().lower() if row else ''
+    except Exception:
+        return ''
+
+
+def module_info(module_name):
+    """Same shape as sword_bridge.module_info(): description / version /
+    copyright / license / about / language / type — eBible only has a
+    subset, the rest come back as ''."""
+    info = {'name': module_name, 'description': '', 'version': '',
+            'copyright': '', 'license': '', 'about': '', 'language': '',
+            'type': 'eBible translation'}
+    try:
+        title = module_name[len(PREFIX):]
+        conn = _db()
+        row = conn.execute(
+            'SELECT title, language, lang_code, copyright, license '
+            'FROM translations WHERE title=?', (title,)
+        ).fetchone()
+        if row:
+            info['description'] = row[1] or row[0] or ''
+            info['language']    = (row[2] or '').strip().lower()
+            info['copyright']   = row[3] or ''
+            info['license']     = row[4] or ''
+    except Exception:
+        pass
+    return info
+
 def installed_ids():
     try:
         conn = _db()
         rows = conn.execute('SELECT id FROM translations').fetchall()
-        conn.close()
         return {r[0] for r in rows}
     except Exception:
         return set()
@@ -116,25 +169,31 @@ def load_chapter(module_name, book, chapter):
             'SELECT verse, text FROM verses '
             'WHERE translation=? AND book=? AND chapter=? ORDER BY verse',
             (tid, book, chapter)).fetchall()
-        conn.close()
         return list(rows)
     except Exception:
         return []
 
-def search_module(module_name, query, **_kwargs):
-    """Search verses using SQLite LIKE (AND across all words). Returns [(book, ch, v, text)]."""
+def search_module(module_name, query, case_sensitive=False, **_kwargs):
+    """Search verses with AND across all words. case_sensitive=False uses
+    SQLite LIKE (default ASCII-only case-insensitive); True uses GLOB
+    which is byte-exact case-sensitive. Returns [(book, ch, v, text)]."""
     tid = _tid(module_name)
     words = [w for w in query.strip().split() if w]
     if not words:
         return []
     try:
         conn = _db()
-        sql = ('SELECT book, chapter, verse, text FROM verses WHERE translation=? '
-               + ' '.join('AND text LIKE ?' for _ in words)
-               + ' ORDER BY rowid')
-        params = [tid] + [f'%{w}%' for w in words]
+        if case_sensitive:
+            sql = ('SELECT book, chapter, verse, text FROM verses WHERE translation=? '
+                   + ' '.join('AND text GLOB ?' for _ in words)
+                   + ' ORDER BY rowid')
+            params = [tid] + [f'*{w}*' for w in words]
+        else:
+            sql = ('SELECT book, chapter, verse, text FROM verses WHERE translation=? '
+                   + ' '.join('AND text LIKE ?' for _ in words)
+                   + ' ORDER BY rowid')
+            params = [tid] + [f'%{w}%' for w in words]
         rows = conn.execute(sql, params).fetchall()
-        conn.close()
         result = list(rows)
         if len(result) > 5000:
             result = result[:5000]
@@ -201,14 +260,12 @@ def download_translation_sync(tid, entry, on_status=None):
     conn.execute('INSERT OR REPLACE INTO translations VALUES (?,?,?,?,?,?)',
                  (tid, title, language, lang_code, copyright_, license_))
     conn.commit()
-    conn.close()
 
 def remove_translation(tid):
     conn = _db()
     conn.execute('DELETE FROM verses      WHERE translation=?', (tid,))
     conn.execute('DELETE FROM translations WHERE id=?',         (tid,))
     conn.commit()
-    conn.close()
 
 # ── USFM parser ───────────────────────────────────────────────────────────────
 

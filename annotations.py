@@ -120,6 +120,72 @@ def get_all_tags():
     return sorted(tags)
 
 
+def get_tag_counts():
+    """Return {tag: count} across every verse annotation and chapter note."""
+    counts = {}
+    for verses in _load().values():
+        for anno in verses.values():
+            if not isinstance(anno, dict):
+                continue
+            for t in anno.get('tags', []) or []:
+                if isinstance(t, str) and t.strip():
+                    counts[t] = counts.get(t, 0) + 1
+    return counts
+
+
+def rename_tag(old, new):
+    """Rename tag `old` → `new` across every annotation. If `new` already
+    sits on the same annotation as `old`, the result is deduped, so this
+    doubles as a merge. No-op when either side is empty or the names match."""
+    old = (old or '').strip()
+    new = (new or '').strip()
+    if not old or not new or old == new:
+        return
+    data = _load()
+    changed = False
+    for verses in data.values():
+        for anno in verses.values():
+            if not isinstance(anno, dict):
+                continue
+            tags = anno.get('tags')
+            if not tags or old not in tags:
+                continue
+            seen = set()
+            out = []
+            for t in tags:
+                if not isinstance(t, str):
+                    continue
+                replaced = new if t == old else t
+                if replaced not in seen:
+                    seen.add(replaced)
+                    out.append(replaced)
+            anno['tags'] = out
+            changed = True
+    if changed:
+        _save(data)
+
+
+def delete_tag(tag):
+    """Remove `tag` from every annotation it appears on. Notes/highlights
+    are untouched."""
+    tag = (tag or '').strip()
+    if not tag:
+        return
+    data = _load()
+    changed = False
+    for verses in data.values():
+        for anno in verses.values():
+            if not isinstance(anno, dict):
+                continue
+            tags = anno.get('tags')
+            if not tags or tag not in tags:
+                continue
+            anno['tags'] = [t for t in tags if t != tag]
+            changed = True
+    if changed:
+        _save(data)
+
+
 def _chapter_note_data(raw):
     """Normalise chapter_note storage: string (old) or dict (new) → dict."""
     if isinstance(raw, str):

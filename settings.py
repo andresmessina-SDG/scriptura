@@ -1,5 +1,6 @@
 import json
 import os
+import threading
 
 _FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'settings.json')
 _defaults = {
@@ -8,6 +9,7 @@ _defaults = {
     'line_spacing':       1.6,
     'font_bold':          False,
     'font_justify':       False,
+    'reading_width':      720,
     'text_color_light':   None,
     'text_color_dark':    None,
     'text_color_default': None,
@@ -20,6 +22,9 @@ _defaults = {
     'pane1_module':       None,
     'pane2_module':       None,
     'split_pane_mode':    True,
+    'pane1_top_verse':    None,
+    'pane2_top_verse':    None,
+    'recent_passages':    [],
 }
 _cache = None
 _load_failed = False  # Flipped if an existing file failed to parse.
@@ -50,12 +55,59 @@ def _load():
         _load_failed = True
 
 
-def _save():
+# ── Debounced save ───────────────────────────────────────────────────────────
+# Writes used to fire on every put(), which under bursts (Ctrl+scroll font
+# adjustment, recent_passages on every navigation) meant many small full-file
+# rewrites in quick succession. The debounce coalesces a burst into a single
+# write 500ms after the last put. flush() forces an immediate synchronous
+# write — called from close-request so nothing is lost on exit.
+
+_SAVE_DEBOUNCE_S = 0.5
+_save_timer = None
+_save_lock = threading.Lock()
+
+
+def _save_now():
+    """Synchronous write. Snapshots _cache under the lock to avoid the
+    'dictionary changed size during iteration' race if a put() lands
+    mid-serialise."""
+    with _save_lock:
+        snapshot = dict(_cache) if _cache is not None else {}
     try:
         with open(_FILE, 'w', encoding='utf-8') as f:
-            json.dump(_cache, f, indent=2, ensure_ascii=False)
+            json.dump(snapshot, f, indent=2, ensure_ascii=False)
     except Exception as e:
         print(f'[settings] {e}')
+
+
+def _on_debounce_fire():
+    global _save_timer
+    with _save_lock:
+        _save_timer = None
+    _save_now()
+
+
+def _schedule_save():
+    global _save_timer
+    with _save_lock:
+        if _save_timer is not None:
+            _save_timer.cancel()
+        _save_timer = threading.Timer(_SAVE_DEBOUNCE_S, _on_debounce_fire)
+        _save_timer.daemon = True
+        _save_timer.start()
+
+
+def flush():
+    """Cancel any pending debounce timer and write synchronously. Call
+    this from close-request before the process exits — otherwise a recent
+    put() may still be waiting for its debounce window when the GLib loop
+    stops, and the change is lost."""
+    global _save_timer
+    with _save_lock:
+        if _save_timer is not None:
+            _save_timer.cancel()
+            _save_timer = None
+    _save_now()
 
 
 def get(key):
@@ -70,4 +122,4 @@ def put(key, value):
     if _cache is None:
         _load()
     _cache[key] = value
-    _save()
+    _schedule_save()
