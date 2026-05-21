@@ -74,15 +74,14 @@ def _searchable_modules():
 _CSS = """
 .search-panel {
     background-color: @window_bg_color;
-    border-top: 1px solid alpha(@borders, 0.6);
-    border-left: 1px solid alpha(@borders, 0.6);
-    border-top-left-radius: 12px;
-    /* Mirror of .menu-panel's shadow shape — contracted-spread outer
-       drop layered with a crisp edge shadow so the rounded top-left
-       corner reads cleanly instead of as a rectangular smear cut off
-       at the window's top edge. */
-    box-shadow: -8px 0 20px -6px alpha(black, 0.3),
-                -2px 0 4px alpha(black, 0.12);
+    border-top: 1px solid alpha(@borders, 0.5);
+    border-left: 1px solid alpha(@borders, 0.5);
+    /* Bigger radius + diagonal shadow — mirror of .menu-panel's
+       shape but with the X offset reversed (panel slides in from
+       right, so the shadow drops to the LEFT + slightly down). */
+    border-top-left-radius: 20px;
+    box-shadow: -5px 3px 24px -4px alpha(black, 0.25),
+                -2px 1px 4px alpha(black, 0.12);
 }
 .bar-fill       { background-color: #4a9fd4; border-radius: 3px; min-height: 10px; }
 .bar-fill-sub   { background-color: #6dbf7e; border-radius: 3px; min-height: 10px; }
