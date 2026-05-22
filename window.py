@@ -349,12 +349,19 @@ class BibleWindow(Adw.ApplicationWindow):
    through in dark mode. Force an opaque view background. */
 .jump-bar { background-color: @view_bg_color; }
 /* Exit-reading-mode pill at top-center while in reading mode. Opaque
-   surface + drop shadow so it reads clearly against the Bible text. */
+   surface + drop shadow so it reads clearly against the Bible text.
+   `border-radius` is set explicitly here because Zorin's themed
+   Adwaita doesn't always honor `.circular`'s rounding through the
+   background + border layers we add below — the shadow then follows
+   the resulting rectangle and reads as a hard horizontal cut-off
+   below the icon. Negative-spread shadow contracts toward the button
+   so it doesn't bleed past the window's top edge either. */
 .reading-exit-btn {
     background-color: @view_bg_color;
-    box-shadow: 0 2px 10px alpha(black, 0.35);
-    border: 1px solid alpha(@borders, 0.6);
+    border: 1px solid alpha(@borders, 0.5);
+    border-radius: 9999px;
     padding: 6px;
+    box-shadow: 0 4px 12px -2px alpha(black, 0.25);
 }
 .reading-exit-btn:hover {
     background-color: alpha(@accent_bg_color, 0.18);
