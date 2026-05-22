@@ -27,7 +27,9 @@ app-id: org.codeberg.andresmessina.BibleReader
 runtime: org.gnome.Platform
 runtime-version: '48'
 sdk: org.gnome.Sdk
-command: bible-reader
+# Wrapper name matches the app-id so the desktop file's
+# Exec=org.codeberg.andresmessina.BibleReader resolves cleanly.
+command: org.codeberg.andresmessina.BibleReader
 
 finish-args:
   # Display protocols
@@ -100,8 +102,10 @@ modules:
   - name: bible-reader
     buildsystem: simple
     build-commands:
-      # Wrapper script in /app/bin
-      - install -Dm755 flatpak/bible-reader.sh /app/bin/bible-reader
+      # Wrapper script in /app/bin — named after the app-id so the
+      # desktop file's Exec line and Flatpak's `command:` resolve to
+      # the same path.
+      - install -Dm755 flatpak/bible-reader.sh /app/bin/org.codeberg.andresmessina.BibleReader
 
       # All Python sources go to /app/share/bible-reader. The wrapper
       # script runs `python3 /app/share/bible-reader/main.py` and
@@ -145,8 +149,15 @@ modules:
       #                  /app/share/metainfo/org.codeberg.andresmessina.BibleReader.metainfo.xml
       - install -Dm644 data/icons/hicolor/scalable/apps/org.codeberg.andresmessina.BibleReader.svg
                        /app/share/icons/hicolor/scalable/apps/org.codeberg.andresmessina.BibleReader.svg
-      - install -Dm644 data/icons/hicolor/symbolic/apps/org.codeberg.andresmessina.BibleReader-symbolic.svg
-                       /app/share/icons/hicolor/symbolic/apps/org.codeberg.andresmessina.BibleReader-symbolic.svg
+      # Symbolic icon install temporarily commented out — the
+      # placeholder SVG uses path constructs that Flatpak's icon
+      # validator (librsvg) rejects with "Format not recognized".
+      # Will be re-enabled with a cleaner SVG when the real icon
+      # design lands. The scalable color icon above is sufficient
+      # for the app to launch; symbolic is only used in some
+      # monochrome menu contexts.
+      # - install -Dm644 data/icons/hicolor/symbolic/apps/org.codeberg.andresmessina.BibleReader-symbolic.svg
+      #                  /app/share/icons/hicolor/symbolic/apps/org.codeberg.andresmessina.BibleReader-symbolic.svg
     sources:
       - type: dir
         path: .
