@@ -1,0 +1,140 @@
+# Flatpak manifest for Bible Reader.
+#
+# Build locally:
+#   flatpak-builder --user --install --force-clean build-dir \
+#       org.codeberg.andresmessina.BibleReader.yml
+#   flatpak run org.codeberg.andresmessina.BibleReader
+#
+# Three build modules:
+#   - libsword    : CrossWire's SWORD library + Python bindings, built
+#                   from source (Flathub runtimes don't ship it).
+#   - whoosh      : pure-Python full-text search, pip-installed
+#                   offline from a vendored tarball.
+#   - bible-reader: the app itself — Python sources installed under
+#                   /app/share/bible-reader, with a wrapper script
+#                   in /app/bin and desktop/icon/metainfo installed
+#                   to the conventional /app/share paths.
+#
+# TODOs flagged with [TODO: …] need values plugged in before this
+# manifest builds. Mostly SHA256 sums of upstream source archives,
+# which you compute with `sha256sum <downloaded-tarball>`.
+#
+# Runtime: GNOME Platform 48 is a stable choice in 2026; if the
+# Flathub builders default to a newer runtime by the time you
+# submit, just bump the runtime-version + sdk pair.
+
+app-id: org.codeberg.andresmessina.BibleReader
+runtime: org.gnome.Platform
+runtime-version: '48'
+sdk: org.gnome.Sdk
+command: bible-reader
+
+finish-args:
+  # Display protocols
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --device=dri
+  # Network access for module downloads (Module Manager + Open Databases
+  # tab + eBible catalog/translation downloads). Without this the
+  # first-run welcome flow can't fetch the essentials bundle.
+  - --share=network
+  # The app talks to xdg-desktop-portal for file chooser dialogs
+  # (Export Study Journal). No host-filesystem permissions needed —
+  # the portal handles file access through user prompts.
+
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /lib/cmake
+  - /share/man
+  - /share/doc
+  - /share/sword-utils
+  - '*.la'
+  - '*.a'
+
+modules:
+  # ── libsword + Python bindings ─────────────────────────────────────────
+  - name: libsword
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DLIBSWORD_LIBRARY_TYPE=Shared
+      - -DSWORD_BINDINGS=Python
+      - -DSWORD_NO_BINDINGS=OFF
+      - -DSWORD_BUILD_TESTS=OFF
+      - -DSWORD_BUILD_UTILS=OFF
+    cleanup:
+      - /bin
+    sources:
+      # [TODO: confirm the current released version on
+      # https://www.crosswire.org/sword/develop/ and update both URL
+      # and sha256. As of the manifest draft, 1.9.0 is the latest
+      # stable; CrossWire publishes signed tarballs at the path
+      # below.]
+      - type: archive
+        url: https://crosswire.org/ftpmirror/pub/sword/source/v1.9/sword-1.9.0.tar.gz
+        sha256: 0000000000000000000000000000000000000000000000000000000000000000  # [TODO: sha256sum sword-1.9.0.tar.gz]
+
+  # ── Whoosh (full-text search) ──────────────────────────────────────────
+  # Pip-installed from a vendored tarball so Flathub builders don't
+  # need network access at build time (the official Flathub builder
+  # runs with --share=none for the build phase).
+  - name: python3-whoosh
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}"
+                     --prefix=${FLATPAK_DEST} --no-build-isolation whoosh
+    sources:
+      # [TODO: pin a Whoosh version. 2.7.4 is the last stable from the
+      # mamba-org/whoosh-reloaded fork; you can also use 3.0+ from the
+      # active fork. Update URL + sha256 to match.]
+      - type: file
+        url: https://files.pythonhosted.org/packages/25/2b/6beed2107b148edc1321da0d489afc4617b9ed317ef7b72d4993cad9b684/Whoosh-2.7.4.tar.gz
+        sha256: 0000000000000000000000000000000000000000000000000000000000000000  # [TODO: pip download whoosh==2.7.4 then sha256sum]
+
+  # ── The app itself ─────────────────────────────────────────────────────
+  - name: bible-reader
+    buildsystem: simple
+    build-commands:
+      # Wrapper script in /app/bin
+      - install -Dm755 flatpak/bible-reader.sh /app/bin/bible-reader
+
+      # All Python sources go to /app/share/bible-reader. The wrapper
+      # script runs `python3 /app/share/bible-reader/main.py` and
+      # Python adds that directory to sys.path so the local imports
+      # (window.py, pane.py, paths.py, etc.) resolve.
+      - mkdir -p /app/share/bible-reader
+      - install -Dm644 main.py /app/share/bible-reader/main.py
+      - install -Dm644 _version.py /app/share/bible-reader/_version.py
+      - install -Dm644 paths.py /app/share/bible-reader/paths.py
+      - install -Dm644 window.py /app/share/bible-reader/window.py
+      - install -Dm644 pane.py /app/share/bible-reader/pane.py
+      - install -Dm644 sword_bridge.py /app/share/bible-reader/sword_bridge.py
+      - install -Dm644 ebible_bridge.py /app/share/bible-reader/ebible_bridge.py
+      - install -Dm644 annotations.py /app/share/bible-reader/annotations.py
+      - install -Dm644 bookmarks.py /app/share/bible-reader/bookmarks.py
+      - install -Dm644 settings.py /app/share/bible-reader/settings.py
+      - install -Dm644 reading_plans.py /app/share/bible-reader/reading_plans.py
+      - install -Dm644 open_data.py /app/share/bible-reader/open_data.py
+      - install -Dm644 search_panel.py /app/share/bible-reader/search_panel.py
+      - install -Dm644 study_journal.py /app/share/bible-reader/study_journal.py
+      - install -Dm644 crossref_panel.py /app/share/bible-reader/crossref_panel.py
+      - install -Dm644 module_manager.py /app/share/bible-reader/module_manager.py
+      - install -Dm644 annotation_dialogs.py /app/share/bible-reader/annotation_dialogs.py
+      - install -Dm644 lexicon_panel.py /app/share/bible-reader/lexicon_panel.py
+      - install -Dm644 devotional.py /app/share/bible-reader/devotional.py
+      - install -Dm644 welcome.py /app/share/bible-reader/welcome.py
+
+      # Desktop entry, AppStream metainfo, icons
+      - install -Dm644 data/org.codeberg.andresmessina.BibleReader.desktop
+                       /app/share/applications/org.codeberg.andresmessina.BibleReader.desktop
+      - install -Dm644 data/org.codeberg.andresmessina.BibleReader.metainfo.xml
+                       /app/share/metainfo/org.codeberg.andresmessina.BibleReader.metainfo.xml
+      - install -Dm644 data/icons/hicolor/scalable/apps/org.codeberg.andresmessina.BibleReader.svg
+                       /app/share/icons/hicolor/scalable/apps/org.codeberg.andresmessina.BibleReader.svg
+      - install -Dm644 data/icons/hicolor/symbolic/apps/org.codeberg.andresmessina.BibleReader-symbolic.svg
+                       /app/share/icons/hicolor/symbolic/apps/org.codeberg.andresmessina.BibleReader-symbolic.svg
+    sources:
+      - type: dir
+        path: .
