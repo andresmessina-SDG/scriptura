@@ -97,25 +97,40 @@ modules:
         url: https://curl.se/download/curl-8.10.0.tar.gz
         sha256: 58c9dcf73493ae9d181fd334b3b3987ff73124621565187ade237bff1064a716
 
-  # ── libsword (autotools) ───────────────────────────────────────────────
-  # Pattern lifted from BibleTime's Flathub manifest, which builds the
-  # same SWORD 1.9.0 source successfully against an org.kde runtime.
-  # No buildsystem: specified → flatpak-builder defaults to autotools
-  # and runs the ./configure script. SWORD's autotools build:
-  #   - discovers libcurl via pkg-config automatically (no -lcurl
-  #     linker flag gymnastics needed)
-  #   - handles bindings via --with-bindings=python3, which invokes
-  #     SWIG + builds the Sword.py / _Sword.so pair as part of
-  #     `make install`
-  # The previous cmake-ninja attempt built libsword fine but never
-  # produced the Python bindings — autotools' bindings flow is
-  # qualitatively different and matches what distro python3-sword
-  # packages use.
+  # ── libsword + Python bindings (cmake-ninja, Fedora pattern) ──────────
+  # Pattern lifted from Fedora's python3-sword RPM spec (sword.spec on
+  # src.fedoraproject.org). The exhaustive iteration we did locally
+  # missed three critical things:
+  #
+  #   1. The right CMake flag is SWORD_PYTHON_3:BOOL=TRUE, NOT
+  #      SWORD_BINDINGS=Python3 (the latter is a different / unrelated
+  #      target list that silently no-ops).
+  #
+  #   2. SWORD's bindings build generates a setup.py that imports from
+  #      `distutils`. Python 3.12+ removed distutils. Without a patch,
+  #      the generated setup.py fails at import time and no .so / .py
+  #      files get produced — silent failure. Fedora ships
+  #      `migrate-to-setuptools.diff` to fix this. We apply the same.
+  #
+  #   3. SWORD_PYTHON_INSTALL_DIR needs to point at the install prefix
+  #      so the bindings land somewhere Python can find them.
   - name: libsword
+    buildsystem: cmake-ninja
+    builddir: true
     config-opts:
-      - --disable-static
-      - --with-bindings=python3
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DLIBSWORD_LIBRARY_TYPE=Shared
+      - -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+      # The actual flag that turns Python 3 bindings on:
+      - -DSWORD_PYTHON_3:BOOL=TRUE
+      # Install the Sword.py / _Sword.so pair into /app's Python
+      # site-packages (the runtime's Python finds them automatically
+      # via the standard search path).
+      - -DSWORD_PYTHON_INSTALL_DIR=/app
+      - -DSWORD_BUILD_TESTS=OFF
+      - -DSWORD_BUILD_UTILS=OFF
     cleanup:
+      - /bin
       - /lib/pkgconfig
       - /lib/libsword.la
       - /include
@@ -123,6 +138,12 @@ modules:
       - type: archive
         url: https://crosswire.org/ftpmirror/pub/sword/source/v1.9/sword-1.9.0.tar.gz
         sha256: 42409cf3de2faf1108523e2c5ac0745d21f9ed2a5c78ed878ee9dcc303426b8a
+      # Replaces `from distutils.core import setup, Extension` with
+      # `from setuptools import setup, Extension` in the generated
+      # binding setup.py templates. Lifted verbatim from Fedora's
+      # python3-sword package; original author is Aaron Rainbolt.
+      - type: patch
+        path: flatpak/patches/migrate-to-setuptools.diff
 
   # ── Whoosh (full-text search) ──────────────────────────────────────────
   # Pip-installed from a vendored tarball so Flathub builders don't
