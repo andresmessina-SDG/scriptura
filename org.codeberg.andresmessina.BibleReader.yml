@@ -74,7 +74,7 @@ modules:
       # below.]
       - type: archive
         url: https://crosswire.org/ftpmirror/pub/sword/source/v1.9/sword-1.9.0.tar.gz
-        sha256: 0000000000000000000000000000000000000000000000000000000000000000  # [TODO: sha256sum sword-1.9.0.tar.gz]
+        sha256: 42409cf3de2faf1108523e2c5ac0745d21f9ed2a5c78ed878ee9dcc303426b8a
 
   # ── Whoosh (full-text search) ──────────────────────────────────────────
   # Pip-installed from a vendored tarball so Flathub builders don't
@@ -91,7 +91,7 @@ modules:
       # active fork. Update URL + sha256 to match.]
       - type: file
         url: https://files.pythonhosted.org/packages/25/2b/6beed2107b148edc1321da0d489afc4617b9ed317ef7b72d4993cad9b684/Whoosh-2.7.4.tar.gz
-        sha256: 0000000000000000000000000000000000000000000000000000000000000000  # [TODO: pip download whoosh==2.7.4 then sha256sum]
+        sha256: 7ca5633dbfa9e0e0fa400d3151a8a0c4bec53bd2ecedc0a67705b17565c31a83
 
   # ── The app itself ─────────────────────────────────────────────────────
   - name: bible-reader
