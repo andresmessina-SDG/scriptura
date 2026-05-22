@@ -25,7 +25,7 @@
 
 app-id: org.codeberg.andresmessina.BibleReader
 runtime: org.gnome.Platform
-runtime-version: '48'
+runtime-version: '49'
 sdk: org.gnome.Sdk
 # Wrapper name matches the app-id so the desktop file's
 # Exec=org.codeberg.andresmessina.BibleReader resolves cleanly.
@@ -56,6 +56,20 @@ cleanup:
   - '*.a'
 
 modules:
+  # ── SWIG (build-time only, needed by libsword's Python bindings) ───────
+  # The GNOME SDK doesn't ship swig, and SWORD's bindings generator
+  # invokes `swig` to produce the Sword.py + _Sword.so pair from .i
+  # interface files. `cleanup: ["*"]` removes swig from the final
+  # bundle since it's only needed at build time.
+  - name: swig
+    buildsystem: autotools
+    cleanup:
+      - '*'
+    sources:
+      - type: archive
+        url: https://prdownloads.sourceforge.net/swig/swig-4.2.1.tar.gz
+        sha256: fa045354e2d048b2cddc69579e4256245d4676894858fcf0bab2290ecf59b7d8
+
   # ── libsword + Python bindings ─────────────────────────────────────────
   - name: libsword
     buildsystem: cmake-ninja
@@ -65,18 +79,16 @@ modules:
     config-opts:
       - -DCMAKE_BUILD_TYPE=Release
       - -DLIBSWORD_LIBRARY_TYPE=Shared
-      - -DSWORD_BINDINGS=Python
+      # `Python3` is the modern SWORD 1.9+ name for the Python 3
+      # bindings target; the older `Python` value silently no-ops
+      # on current CMake configs.
+      - -DSWORD_BINDINGS=Python3
       - -DSWORD_NO_BINDINGS=OFF
       - -DSWORD_BUILD_TESTS=OFF
       - -DSWORD_BUILD_UTILS=OFF
     cleanup:
       - /bin
     sources:
-      # [TODO: confirm the current released version on
-      # https://www.crosswire.org/sword/develop/ and update both URL
-      # and sha256. As of the manifest draft, 1.9.0 is the latest
-      # stable; CrossWire publishes signed tarballs at the path
-      # below.]
       - type: archive
         url: https://crosswire.org/ftpmirror/pub/sword/source/v1.9/sword-1.9.0.tar.gz
         sha256: 42409cf3de2faf1108523e2c5ac0745d21f9ed2a5c78ed878ee9dcc303426b8a
