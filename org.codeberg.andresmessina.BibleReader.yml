@@ -70,6 +70,30 @@ modules:
         url: https://prdownloads.sourceforge.net/swig/swig-4.2.1.tar.gz
         sha256: fa045354e2d048b2cddc69579e4256245d4676894858fcf0bab2290ecf59b7d8
 
+  # ── libcurl (libsword depends on it for InstallMgr network ops) ───────
+  # The GNOME 49 runtime doesn't expose libcurl via the SDK's pkg-config
+  # / library search path in a way SWORD's CMake picks up cleanly — the
+  # build links libsword.so without curl symbols, then `buildtest`
+  # fails at link time with `undefined reference to curl_easy_*`.
+  # Building libcurl explicitly into /app/lib guarantees the symbols
+  # are present and SWORD's find_package(CURL) resolves correctly.
+  - name: libcurl
+    buildsystem: autotools
+    config-opts:
+      - --disable-static
+      - --with-openssl
+      - --without-libpsl
+      - --disable-docs
+      - --disable-manual
+    cleanup:
+      - /bin
+      - /share/man
+      - /share/aclocal
+    sources:
+      - type: archive
+        url: https://curl.se/download/curl-8.10.0.tar.gz
+        sha256: 58c9dcf73493ae9d181fd334b3b3987ff73124621565187ade237bff1064a716
+
   # ── libsword + Python bindings ─────────────────────────────────────────
   - name: libsword
     buildsystem: cmake-ninja
