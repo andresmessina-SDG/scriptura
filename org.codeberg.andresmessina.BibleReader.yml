@@ -165,10 +165,8 @@ modules:
       - pip3 install --no-build-isolation --no-deps --prefix=${FLATPAK_DEST} .
     sources:
       - type: archive
-        url: https://github.com/greg-hellings/python-libsword/archive/refs/tags/v1.9.0.post1.tar.gz
-        # [TODO: compute sha256 of the downloaded tarball, e.g.
-        # `wget URL && sha256sum python-libsword-1.9.0.post1.tar.gz`]
-        sha256: TODO_FILL_BEFORE_BUILD
+        url: https://github.com/greg-hellings/python-libsword/archive/refs/tags/1.9.0.post1.tar.gz
+        sha256: 37abd873b3418e4c30c5dac8c0d0609e3981480520d8304868b62be382a8958c
 
   # ── Whoosh (full-text search) ──────────────────────────────────────────
   # Pip-installed from a vendored tarball so Flathub builders don't
