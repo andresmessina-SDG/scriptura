@@ -83,6 +83,13 @@ def reading_plans_path():
     return _migrated_file(config_dir(), 'reading_plans.json')
 
 
+def module_positions_path():
+    """Per-module scroll/entry-path memory shared across both panes.
+    Lives in config since it's a small durable user-state file (not
+    derivable, not cache)."""
+    return _migrated_file(config_dir(), 'module_positions.json')
+
+
 # Data (user content + downloaded reference databases)
 def annotations_path():
     return _migrated_file(data_dir(), 'annotations.json')

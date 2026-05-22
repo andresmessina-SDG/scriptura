@@ -8,6 +8,7 @@ import datetime
 from gi.repository import Gtk, Adw, GLib, Gdk, Pango, PangoCairo
 import sword_bridge
 import settings
+import module_positions
 import bookmarks
 import reading_plans
 import annotations
@@ -345,35 +346,30 @@ class BibleWindow(Adw.ApplicationWindow):
    solid window background, not to float as an overlay panel). Using
    the card colour here let the Bible text behind the menu bleed
    through in dark mode. */
-/* Both right corners rounded so the rounded edge of the panel
-   never meets a square corner — a tight box-shadow at a sharp
-   corner reads as a 90° artifact. */
+/* No box-shadow on overlay panels: Gtk.Revealer clips its child
+   to a rectangular bounding box, so any shadow that tries to
+   extend past the panel edge gets cut off at a hard 90° line —
+   producing the very artifact we keep trying to fix. Lean on the
+   border for visual definition instead. */
 .menu-panel { background-color: @view_bg_color;
-              border: 1px solid alpha(@borders, 0.5);
-              border-radius: 0 20px 20px 0;
-              /* Single soft diffuse shadow. Negative spread keeps the
-                 halo close to the panel; no second tight shadow that
-                 would re-introduce a hard right-angle at any corner. */
-              box-shadow: 6px 0 20px -6px alpha(black, 0.35); }
+              border-top: 1px solid alpha(@borders, 0.6);
+              border-right: 1px solid alpha(@borders, 0.6);
+              border-bottom: 1px solid alpha(@borders, 0.6);
+              border-radius: 0 20px 20px 0; }
 /* Same translucency gotcha as .menu-panel: the jump bar floats on top of
    the Bible content via Gtk.Overlay, so the default semi-transparent
    .card background (@card_bg_color) lets text and dropdown chrome bleed
    through in dark mode. Force an opaque view background. */
 .jump-bar { background-color: @view_bg_color; }
-/* Exit-reading-mode pill at top-center while in reading mode. Opaque
-   surface + drop shadow so it reads clearly against the Bible text.
-   `border-radius` is set explicitly here because Zorin's themed
-   Adwaita doesn't always honor `.circular`'s rounding through the
-   background + border layers we add below — the shadow then follows
-   the resulting rectangle and reads as a hard horizontal cut-off
-   below the icon. Negative-spread shadow contracts toward the button
-   so it doesn't bleed past the window's top edge either. */
+/* Exit-reading-mode pill at top-center while in reading mode.
+   Lives inside a Gtk.Revealer which clips rectangularly, so no
+   shadow (same issue as the overlay panels). Border + opaque
+   background carry the visual weight. */
 .reading-exit-btn {
     background-color: @view_bg_color;
-    border: 1px solid alpha(@borders, 0.5);
+    border: 1px solid alpha(@borders, 0.6);
     border-radius: 9999px;
     padding: 6px;
-    box-shadow: 0 4px 12px -2px alpha(black, 0.25);
 }
 .reading-exit-btn:hover {
     background-color: alpha(@accent_bg_color, 0.18);
@@ -785,17 +781,17 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
             Gtk.StringList.new([str(i) for i in range(1, count + 1)]))
         self.chapter_drop.set_selected(chapter - 1)
         self._update_ref_label(book, chapter)
-        # Restore the per-pane scroll position by setting _restore_top_verse
-        # BEFORE load_reference triggers _fetch_and_render; the render path
-        # already understands this attribute (originally for the lexicon
-        # toggle's preserve-position case) and routes through the silent
-        # scroll helper, so we get scroll restoration without the navigation
-        # flash that would normally show on initial render.
-        v1 = settings.get('pane1_top_verse')
-        v2 = settings.get('pane2_top_verse')
-        if isinstance(v1, int) and v1 > 1:
+        # Restore per-module scroll positions via the shared
+        # module_positions store. Setting _restore_top_verse BEFORE
+        # load_reference triggers _fetch_and_render — the render path
+        # consumes the attribute and routes through _scroll_to_verse_silent.
+        v1 = module_positions.get_verse_position(
+            self.pane1._module, book, chapter)
+        v2 = module_positions.get_verse_position(
+            self.pane2._module, book, chapter)
+        if v1:
             self.pane1._restore_top_verse = v1
-        if isinstance(v2, int) and v2 > 1:
+        if v2:
             self.pane2._restore_top_verse = v2
         self.pane1.load_reference(book, chapter)
         self.pane2.load_reference(book, chapter)
@@ -1390,43 +1386,14 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         b = self.pane2._module
         if a == b:
             return
-        # Capture each pane's top-visible verse before swap so the
-        # scroll position travels with the module, not with the pane
-        # slot. _apply_module_change reads _restore_top_verse via
-        # _fetch_and_render → _display.
-        a_top = self._capture_pane_top_verse(self.pane1)
-        b_top = self._capture_pane_top_verse(self.pane2)
-        if b_top:
-            self.pane1._restore_top_verse = b_top
+        # No explicit position transfer needed: each _apply_module_change
+        # snapshots the outgoing module's position into module_positions
+        # before the change, then looks up the incoming module's saved
+        # position and applies it. Cross-pane scroll memory comes from
+        # the shared store, not from threading position through the swap.
         self.pane1._apply_module_change(b)
-        if a_top:
-            self.pane2._restore_top_verse = a_top
         self.pane2._apply_module_change(a)
         self._toast(f'Swapped: {a} ↔ {b}')
-
-    def _capture_pane_top_verse(self, pane):
-        """Return the first verse number visible in `pane`, scanning
-        several y-positions. `BiblePane._find_topmost_visible_verse`
-        only probes y=4 px from the top — which lands on the chapter
-        heading when the user is scrolled to chapter start, so the
-        probe returns None and the swap can't restore position."""
-        if not pane._view.get_realized():
-            return None
-        bx_base = max(40, pane._view.get_left_margin() + 20)
-        for y in (4, 24, 48, 80, 120, 180, 260):
-            bx, by = pane._view.window_to_buffer_coords(
-                Gtk.TextWindowType.TEXT, bx_base, y)
-            ok, it = pane._view.get_iter_at_location(bx, by)
-            if not ok:
-                continue
-            for tag in it.get_tags():
-                name = tag.get_property('name') or ''
-                if name.startswith('vnum_'):
-                    try:
-                        return int(name.split('_', 1)[1])
-                    except (ValueError, IndexError):
-                        continue
-        return None
 
     def _on_close_request(self, _win):
         # Persist current session state so the next launch restores it.
@@ -1447,14 +1414,11 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
             settings.put('last_chapter', int(chapter))
             settings.put('pane1_module', self.pane1._module)
             settings.put('pane2_module', self.pane2._module)
-            # Per-pane scroll position so the next launch lands where we
-            # left off, not at verse 1.
-            v1 = (self.pane1._find_topmost_visible_verse()
-                  if self.pane1._is_verse_navigable() else None)
-            v2 = (self.pane2._find_topmost_visible_verse()
-                  if self.pane2._is_verse_navigable() else None)
-            settings.put('pane1_top_verse', v1)
-            settings.put('pane2_top_verse', v2)
+            # Snapshot both panes' current positions into the shared
+            # module_positions store so each module reopens where it
+            # was last viewed regardless of which pane shows it next.
+            self.pane1._save_position_to_module_state()
+            self.pane2._save_position_to_module_state()
             # Force a synchronous write — the debounced put() above would
             # otherwise still be waiting for its timer when the process
             # exits, and the final session state would be lost.

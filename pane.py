@@ -10,6 +10,7 @@ import sword_bridge
 import ebible_bridge
 import annotations
 import settings
+import module_positions
 
 
 def _pane_readable_modules():
@@ -1318,33 +1319,30 @@ class BiblePane(Gtk.Box):
 
     # ── Genbook position persistence ─────────────────────────────────────
 
-    def _genbook_settings_key(self):
-        return f'pane{self._pane_id}_genbook_entries'
-
-    def _restore_genbook_entry(self):
-        """Return the last-known entry path for this pane's current
-        genbook module, or None if nothing's been saved."""
-        if not self._is_genbook:
-            return None
-        saved = settings.get(self._genbook_settings_key())
-        if not isinstance(saved, dict):
-            return None
-        return saved.get(self._module)
-
     def _save_genbook_position(self):
-        """Persist the current entry path under this pane's genbook
-        positions dict so a later module switch / app restart can
-        restore it."""
+        """Persist the current genbook entry path into the shared
+        module_positions store. Called from the genbook navigation
+        paths so position updates are durable across app restarts
+        and visible to whichever pane shows the module next."""
         if not self._is_genbook or not self._genbook_entry:
             return
-        key = self._genbook_settings_key()
-        saved = settings.get(key)
-        if not isinstance(saved, dict):
-            saved = {}
-        if saved.get(self._module) == self._genbook_entry:
-            return  # nothing changed; avoid spurious settings writes
-        saved[self._module] = self._genbook_entry
-        settings.put(key, saved)
+        module_positions.remember_genbook_path(self._module, self._genbook_entry)
+
+    def _save_position_to_module_state(self):
+        """Snapshot the pane's current position into module_positions.
+        Called before any transition that would otherwise drop the
+        current scroll (module change, app close)."""
+        if not self._module:
+            return
+        if self._is_genbook:
+            if self._genbook_entry:
+                module_positions.remember_genbook_path(
+                    self._module, self._genbook_entry)
+        elif self._is_verse_navigable():
+            v = self._find_topmost_visible_verse()
+            if v:
+                module_positions.remember_verse_position(
+                    self._module, self._book, self._chapter, v)
 
     def _display(self, verses, book, chapter, module):
         if book != self._book or chapter != self._chapter or module != self._module:
@@ -2479,6 +2477,11 @@ class BiblePane(Gtk.Box):
     def _apply_module_change(self, new_module):
         """Carry out a module switch: rewire metadata, hide/show
         verse-navigation chrome, clear stale per-module state, re-render."""
+        # Before changing modules, capture the OUTGOING module's
+        # position into the shared module_positions store so the next
+        # display of that module — even in the other pane — restores
+        # to here.
+        self._save_position_to_module_state()
         self._module = new_module
         self._picker_label.set_label(new_module)
         self._module_type = (
@@ -2497,12 +2500,17 @@ class BiblePane(Gtk.Box):
             not ebible_bridge.is_ebible_module(self._module)
             and self._module_type == 'Generic Books'
         )
-        # Restore this pane's last-read entry for the new module (if
-        # any). When the user toggles back and forth between a genbook
-        # and a Bible — or between two genbooks — both surfaces stay
-        # at the place they were last left.
-        self._genbook_entry = (self._restore_genbook_entry()
-                               if self._is_genbook else None)
+        # Restore the new module's last-known position from the shared
+        # module_positions store. Verse-keyed modules use _restore_top_verse
+        # (consumed by _display); genbooks use _genbook_entry.
+        if self._is_genbook:
+            self._genbook_entry = module_positions.get_genbook_path(new_module)
+        else:
+            self._genbook_entry = None
+            v = module_positions.get_verse_position(
+                new_module, self._book, self._chapter)
+            if v:
+                self._restore_top_verse = v
         is_devot = self._is_devotional
         is_chapter_keyed = self._is_verse_navigable()
         self._date_nav_revealer.set_reveal_child(is_devot)
