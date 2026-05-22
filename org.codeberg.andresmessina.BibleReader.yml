@@ -127,8 +127,21 @@ modules:
       # site-packages (the runtime's Python finds them automatically
       # via the standard search path).
       - -DSWORD_PYTHON_INSTALL_DIR=/app
-      - -DSWORD_BUILD_TESTS=OFF
-      - -DSWORD_BUILD_UTILS=OFF
+      # String-form disables (SWORD 1.9.0's CMakeLists treats these
+      # as strings, not booleans — OFF/FALSE silently no-op on some
+      # configs; "No" reliably skips the targets).
+      - -DSWORD_BUILD_TESTS=No
+      - -DSWORD_BUILD_UTILS=No
+      # Force -lcurl into every link line. SWORD's CMake locates
+      # libcurl's headers via find_package(CURL) but doesn't
+      # propagate the library to the link command on Flathub's
+      # builder, so libsword.so ships without curl resolution and
+      # downstream binaries (buildtest, diatheke, Python bindings)
+      # fail with `undefined reference to curl_easy_*`. The same
+      # workaround was effective earlier in this manifest's history.
+      - -DCMAKE_SHARED_LINKER_FLAGS=-lcurl
+      - -DCMAKE_EXE_LINKER_FLAGS=-lcurl
+      - -DCMAKE_MODULE_LINKER_FLAGS=-lcurl
     cleanup:
       - /bin
       - /lib/pkgconfig
