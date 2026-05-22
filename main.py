@@ -1,4 +1,5 @@
 import os
+import sys
 from urllib.parse import unquote
 import gi
 gi.require_version('Gtk', '4.0')
@@ -41,29 +42,50 @@ def _register_icon_search_path():
     theme.add_search_path(icons_dir)
 
 
+def _scan_argv_for_bible_uri():
+    """Return the first bible: ref found in sys.argv, or None.
+
+    Custom URI schemes don't always round-trip cleanly through
+    Gio.File.get_uri() — `Gio.File.new_for_uri('bible:John+3:16')`
+    may interpret the colon as a path separator and mangle the URI.
+    Scanning argv directly is the reliable path: when xdg-open
+    launches us via the desktop file, the URI lands here verbatim."""
+    for arg in sys.argv[1:]:
+        ref = _parse_bible_uri(arg)
+        if ref:
+            return ref
+    return None
+
+
 class BibleApp(Adw.Application):
     def __init__(self):
         super().__init__(
             application_id=APP_ID,
             flags=(Gio.ApplicationFlags.NON_UNIQUE
                    | Gio.ApplicationFlags.HANDLES_OPEN))
+        # Parsed from argv at init time — applies to both the activate
+        # path (no URI args) and the open path (URI args, where Gio may
+        # still mangle the URI through Gio.File.get_uri()).
+        self._argv_ref = _scan_argv_for_bible_uri()
         self.connect('activate', self._on_activate)
         self.connect('open', self._on_open)
 
     def _on_activate(self, app):
         _register_icon_search_path()
-        self._present_main_or_welcome(app)
+        self._present_main_or_welcome(app, startup_ref=self._argv_ref)
 
     def _on_open(self, app, files, _n_files, _hint):
         """Fired when invoked with a URI (e.g. `bible:John+3:16`).
-        Extract the first bible: ref, then present the window with
-        a startup reference."""
+        We prefer the argv-derived ref because Gio.File may not
+        preserve custom URI schemes; fall back to Gio.File only if
+        argv didn't yield a ref."""
         _register_icon_search_path()
-        ref = None
-        for f in files:
-            ref = _parse_bible_uri(f.get_uri())
-            if ref:
-                break
+        ref = self._argv_ref
+        if not ref:
+            for f in files:
+                ref = _parse_bible_uri(f.get_uri())
+                if ref:
+                    break
         self._present_main_or_welcome(app, startup_ref=ref)
 
     def _present_main_or_welcome(self, app, startup_ref=None):
