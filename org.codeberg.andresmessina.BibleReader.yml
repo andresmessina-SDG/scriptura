@@ -59,23 +59,6 @@ cleanup:
   - '*.a'
 
 modules:
-  # ── SWIG (build-time only) ────────────────────────────────────────────
-  # python-libsword ships pre-generated SWIG output, so strictly we
-  # don't need swig at build time anymore. Keep this module for now
-  # as a safety net — libsword's cmake configure step may still poke
-  # at find_program(SWIG) even when bindings are off, and we'd rather
-  # have it available than chase a confusing build failure. Cleanup
-  # `*` strips it from the final bundle. Remove this module in a
-  # follow-up commit once a clean build confirms it's unused.
-  - name: swig
-    buildsystem: autotools
-    cleanup:
-      - '*'
-    sources:
-      - type: archive
-        url: https://prdownloads.sourceforge.net/swig/swig-4.2.1.tar.gz
-        sha256: fa045354e2d048b2cddc69579e4256245d4676894858fcf0bab2290ecf59b7d8
-
   # ── libcurl (libsword depends on it for InstallMgr network ops) ───────
   # The GNOME 49 runtime doesn't expose libcurl via the SDK's pkg-config
   # / library search path in a way SWORD's CMake picks up cleanly — the
