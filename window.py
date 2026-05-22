@@ -1393,7 +1393,17 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         b = self.pane2._module
         if a == b:
             return
+        # Capture each pane's top-visible verse before swap so the
+        # scroll position travels with the module, not with the pane
+        # slot. _apply_module_change reads _restore_top_verse via
+        # _fetch_and_render → _display.
+        a_top = self.pane1._find_topmost_visible_verse()
+        b_top = self.pane2._find_topmost_visible_verse()
+        if b_top:
+            self.pane1._restore_top_verse = b_top
         self.pane1._apply_module_change(b)
+        if a_top:
+            self.pane2._restore_top_verse = a_top
         self.pane2._apply_module_change(a)
         self._toast(f'Swapped: {a} ↔ {b}')
 
