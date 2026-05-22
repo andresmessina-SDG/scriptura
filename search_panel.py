@@ -73,16 +73,16 @@ def _searchable_modules():
     return keep
 
 _CSS = """
-/* Both left corners rounded so neither rounded edge meets a
-   square corner — see the matching note in window.py's
-   .menu-panel for why a tight shadow at a sharp corner reads
-   as a 90° artifact. */
+/* No box-shadow — Gtk.Revealer clips child rectangularly, and any
+   shadow extending past the panel edge gets sheared off at a hard
+   90° line. Border + opaque background carry the visual weight. */
 .search-panel {
     background-color: @window_bg_color;
-    border: 1px solid alpha(@borders, 0.5);
+    border-top: 1px solid alpha(@borders, 0.6);
+    border-left: 1px solid alpha(@borders, 0.6);
+    border-bottom: 1px solid alpha(@borders, 0.6);
     border-top-left-radius: 20px;
     border-bottom-left-radius: 20px;
-    box-shadow: -6px 0 20px -6px alpha(black, 0.3);
 }
 .bar-fill       { background-color: #4a9fd4; border-radius: 3px; min-height: 10px; }
 .bar-fill-sub   { background-color: #6dbf7e; border-radius: 3px; min-height: 10px; }
