@@ -147,17 +147,28 @@ modules:
                        /app/share/applications/org.codeberg.andresmessina.BibleReader.desktop
       # - install -Dm644 data/org.codeberg.andresmessina.BibleReader.metainfo.xml
       #                  /app/share/metainfo/org.codeberg.andresmessina.BibleReader.metainfo.xml
-      - install -Dm644 data/icons/hicolor/scalable/apps/org.codeberg.andresmessina.BibleReader.svg
-                       /app/share/icons/hicolor/scalable/apps/org.codeberg.andresmessina.BibleReader.svg
-      # Symbolic icon install temporarily commented out — the
-      # placeholder SVG uses path constructs that Flatpak's icon
-      # validator (librsvg) rejects with "Format not recognized".
-      # Will be re-enabled with a cleaner SVG when the real icon
-      # design lands. The scalable color icon above is sufficient
-      # for the app to launch; symbolic is only used in some
-      # monochrome menu contexts.
-      # - install -Dm644 data/icons/hicolor/symbolic/apps/org.codeberg.andresmessina.BibleReader-symbolic.svg
-      #                  /app/share/icons/hicolor/symbolic/apps/org.codeberg.andresmessina.BibleReader-symbolic.svg
+      # Icons. The GNOME 48 runtime's GdkPixbuf doesn't always ship an
+      # SVG loader, which makes Flatpak's icon validator emit
+      # "Format not recognized" when we install the SVG directly.
+      # Render the SVG to PNG at standard sizes during the build using
+      # rsvg-convert (part of the SDK) — PNG is universally accepted
+      # by every icon validator and pixbuf loader.
+      - mkdir -p /app/share/icons/hicolor/256x256/apps
+      - mkdir -p /app/share/icons/hicolor/128x128/apps
+      - mkdir -p /app/share/icons/hicolor/64x64/apps
+      - mkdir -p /app/share/icons/hicolor/48x48/apps
+      - rsvg-convert -w 256 -h 256
+                     data/icons/hicolor/scalable/apps/org.codeberg.andresmessina.BibleReader.svg
+                     -o /app/share/icons/hicolor/256x256/apps/org.codeberg.andresmessina.BibleReader.png
+      - rsvg-convert -w 128 -h 128
+                     data/icons/hicolor/scalable/apps/org.codeberg.andresmessina.BibleReader.svg
+                     -o /app/share/icons/hicolor/128x128/apps/org.codeberg.andresmessina.BibleReader.png
+      - rsvg-convert -w 64 -h 64
+                     data/icons/hicolor/scalable/apps/org.codeberg.andresmessina.BibleReader.svg
+                     -o /app/share/icons/hicolor/64x64/apps/org.codeberg.andresmessina.BibleReader.png
+      - rsvg-convert -w 48 -h 48
+                     data/icons/hicolor/scalable/apps/org.codeberg.andresmessina.BibleReader.svg
+                     -o /app/share/icons/hicolor/48x48/apps/org.codeberg.andresmessina.BibleReader.png
     sources:
       - type: dir
         path: .
