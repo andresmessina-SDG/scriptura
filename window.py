@@ -40,6 +40,8 @@ class BibleWindow(Adw.ApplicationWindow):
     _NAV_MAX = 100
 
     def __init__(self, **kwargs):
+        # bible: URI ref to navigate to once panes are ready (see main.py).
+        self._startup_ref = kwargs.pop('startup_ref', None)
         super().__init__(**kwargs)
         # Restore saved window size; falls back to settings defaults
         # (1100x700) on first run.
@@ -88,6 +90,13 @@ class BibleWindow(Adw.ApplicationWindow):
         # silent loss). Deferred to idle so the window has time to lay out
         # and the toast overlay is alive.
         GLib.idle_add(self._warn_on_load_failures)
+        # If launched via `bible:John+3:16` URI, navigate now that the
+        # panes are loaded. Bad refs silently no-op.
+        if self._startup_ref:
+            result = self._parse_jump(self._startup_ref)
+            if result:
+                book, chapter, verse = result
+                GLib.idle_add(lambda: self._go_to(book, chapter, verse) or False)
 
     def _warn_on_load_failures(self):
         failed = []

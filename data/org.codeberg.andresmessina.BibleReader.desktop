@@ -6,6 +6,7 @@ Exec=org.codeberg.andresmessina.BibleReader %U
 Icon=org.codeberg.andresmessina.BibleReader
 Categories=Education;Literature;
 Keywords=Bible;Scripture;Study;SWORD;Lexicon;Strong's;
+MimeType=x-scheme-handler/bible;
 Terminal=false
 Type=Application
 StartupNotify=true

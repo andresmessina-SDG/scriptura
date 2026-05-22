@@ -1,4 +1,5 @@
 import os
+from urllib.parse import unquote
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
@@ -7,6 +8,18 @@ from window import BibleWindow
 
 
 APP_ID = 'org.codeberg.andresmessina.BibleReader'
+
+
+def _parse_bible_uri(uri):
+    """Extract a reference string from a bible: URI. Supports both
+    URL-encoded space (`bible:John%203:16`) and the casual `+` form
+    (`bible:John+3:16`). Returns the reference string or None."""
+    if not uri.startswith('bible:'):
+        return None
+    body = uri[len('bible:'):]
+    if not body:
+        return None
+    return unquote(body).replace('+', ' ').strip() or None
 
 
 def _register_icon_search_path():
@@ -30,15 +43,30 @@ def _register_icon_search_path():
 
 class BibleApp(Adw.Application):
     def __init__(self):
-        super().__init__(application_id=APP_ID,
-                         flags=Gio.ApplicationFlags.NON_UNIQUE)
+        super().__init__(
+            application_id=APP_ID,
+            flags=(Gio.ApplicationFlags.NON_UNIQUE
+                   | Gio.ApplicationFlags.HANDLES_OPEN))
         self.connect('activate', self._on_activate)
+        self.connect('open', self._on_open)
 
     def _on_activate(self, app):
         _register_icon_search_path()
         self._present_main_or_welcome(app)
 
-    def _present_main_or_welcome(self, app):
+    def _on_open(self, app, files, _n_files, _hint):
+        """Fired when invoked with a URI (e.g. `bible:John+3:16`).
+        Extract the first bible: ref, then present the window with
+        a startup reference."""
+        _register_icon_search_path()
+        ref = None
+        for f in files:
+            ref = _parse_bible_uri(f.get_uri())
+            if ref:
+                break
+        self._present_main_or_welcome(app, startup_ref=ref)
+
+    def _present_main_or_welcome(self, app, startup_ref=None):
         import sword_bridge
         import ebible_bridge
         # BIBLE_READER_FORCE_WELCOME=1 forces the welcome window even
@@ -50,8 +78,10 @@ class BibleApp(Adw.Application):
         has_modules = bool(sword_bridge.has_any_module()
                            or ebible_bridge.module_names())
         if has_modules and not force_welcome:
-            BibleWindow(application=app).present()
+            BibleWindow(application=app, startup_ref=startup_ref).present()
             return
+        # Welcome flow: a bible: URI without installed modules is ignored
+        # (no place to navigate to until at least one Bible is installed).
         from welcome import WelcomeWindow
         WelcomeWindow(
             application=app,
