@@ -79,6 +79,11 @@ modules:
     config-opts:
       - -DCMAKE_BUILD_TYPE=Release
       - -DLIBSWORD_LIBRARY_TYPE=Shared
+      # SWORD 1.9.0's CMakeLists.txt declares cmake_minimum_required
+      # against a very old version. Modern CMake (3.32+ in the GNOME
+      # 49 SDK) refuses to honor pre-3.5 policies unless we explicitly
+      # accept the compatibility layer.
+      - -DCMAKE_POLICY_VERSION_MINIMUM=3.5
       # `Python3` is the modern SWORD 1.9+ name for the Python 3
       # bindings target; the older `Python` value silently no-ops
       # on current CMake configs.
