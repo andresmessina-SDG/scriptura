@@ -151,6 +151,27 @@ python3 -m pytest
 See `PROJECT.md` for the architecture brief — file layout, internal
 contracts, known SWORD and GTK4 gotchas.
 
+## Privacy
+
+Bible Reader runs entirely on your computer. There is no telemetry,
+analytics, account, or background phone-home. Network access is
+used only when you explicitly install a module (Module Manager),
+download an open-data file (cross-references, topics, Dodson
+lexicon), or fetch an eBible translation.
+
+Your data lives in standard XDG directories:
+
+- `~/.config/bible-reader/` — preferences, bookmarks, reading-plan
+  progress.
+- `~/.local/share/bible-reader/` — annotations, eBible database,
+  downloaded reference files.
+- `~/.cache/bible-reader/` — search history, eBible catalog (all
+  regenerable).
+- `~/.sword/` — SWORD's own module directory (CrossWire convention).
+
+You can back up, sync, or wipe any of these. Removing them resets
+the corresponding part of the app to a clean state.
+
 ## Data attributions
 
 - **SWORD Project** modules — CrossWire Bible Society
