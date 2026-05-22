@@ -192,6 +192,7 @@ modules:
       - install -Dm644 annotations.py /app/share/bible-reader/annotations.py
       - install -Dm644 bookmarks.py /app/share/bible-reader/bookmarks.py
       - install -Dm644 settings.py /app/share/bible-reader/settings.py
+      - install -Dm644 module_positions.py /app/share/bible-reader/module_positions.py
       - install -Dm644 reading_plans.py /app/share/bible-reader/reading_plans.py
       - install -Dm644 open_data.py /app/share/bible-reader/open_data.py
       - install -Dm644 search_panel.py /app/share/bible-reader/search_panel.py
