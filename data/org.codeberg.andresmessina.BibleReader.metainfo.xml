@@ -40,28 +40,15 @@
 
   <launchable type="desktop-id">org.codeberg.andresmessina.BibleReader.desktop</launchable>
 
-  <screenshots>
-    <screenshot type="default">
-      <caption>Two-pane reading view with Strong's lexicon and cross-references</caption>
-      <image>https://codeberg.org/andresmessina/bible-reader/raw/branch/main/data/screenshots/reading.png</image>
-    </screenshot>
-    <screenshot>
-      <caption>Module Manager with downloadable SWORD and eBible.org translations</caption>
-      <image>https://codeberg.org/andresmessina/bible-reader/raw/branch/main/data/screenshots/module-manager.png</image>
-    </screenshot>
-    <screenshot>
-      <caption>Study Journal — every annotation, filterable and editable inline</caption>
-      <image>https://codeberg.org/andresmessina/bible-reader/raw/branch/main/data/screenshots/study-journal.png</image>
-    </screenshot>
-    <screenshot>
-      <caption>Full-text search with canon distribution chart</caption>
-      <image>https://codeberg.org/andresmessina/bible-reader/raw/branch/main/data/screenshots/search.png</image>
-    </screenshot>
-    <screenshot>
-      <caption>Lexicon panel showing the Strong's number for a clicked word</caption>
-      <image>https://codeberg.org/andresmessina/bible-reader/raw/branch/main/data/screenshots/lexicon.png</image>
-    </screenshot>
-  </screenshots>
+  <!--
+    <screenshots> block is deliberately omitted until real PNGs ship
+    in data/screenshots/. appstreamcli compose runs as part of the
+    Flatpak build and treats unreachable screenshot URLs as
+    file-read-errors, failing the build. Once the screenshots are
+    pushed to the repo, add this back referencing data/screenshots/
+    via raw.codeberg URLs (see the earlier draft in commit history
+    for the full block).
+  -->
 
   <url type="homepage">https://codeberg.org/andresmessina/bible-reader</url>
   <url type="bugtracker">https://codeberg.org/andresmessina/bible-reader/issues</url>
