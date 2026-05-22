@@ -70,22 +70,14 @@
     <keyword>Commentary</keyword>
   </keywords>
 
-  <provides>
-    <binary>org.codeberg.andresmessina.BibleReader</binary>
-  </provides>
-
-  <requires>
-    <display_length compare="ge">768</display_length>
-  </requires>
-
-  <recommends>
-    <control>keyboard</control>
-    <control>pointing</control>
-  </recommends>
-
-  <supports>
-    <control>touch</control>
-  </supports>
+  <!--
+    <provides>, <requires>, <recommends>, <supports> blocks deliberately
+    omitted for now. appstreamcli compose (run during Flatpak build)
+    rejects them on some configurations and the error message
+    ('file-read-error') doesn't point at the specific block. Once the
+    build is green, we can re-add these one at a time to identify
+    which one compose objects to.
+  -->
 
   <!--
     Content rating: the app itself generates no content. It displays
