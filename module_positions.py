@@ -88,19 +88,25 @@ def get_verse_position(module, book, chapter):
 
 
 def remember_genbook_path(module, path):
-    """Save the current entry path for a genbook module."""
+    """Save the current entry path for a genbook module. `path` is a
+    SWORD genbook key like '/Title_Page' — a string, NOT a list."""
     if not module or not path:
         return
     with _lock:
         _state[module] = {
             'kind': 'genbook',
-            'genbook_path': list(path),
+            'genbook_path': str(path),
         }
         _save_unlocked()
 
 
 def get_genbook_path(module):
-    """Return the saved entry path for a genbook module, or None."""
+    """Return the saved entry path string for a genbook module, or None.
+
+    Tolerates legacy data corrupted by an earlier `list(path)` call that
+    decomposed strings into per-character lists (e.g. '/Title_Page'
+    became ['/', 'T', 'i', 't', ...]). If we see that shape, join it
+    back into a string."""
     with _lock:
         entry = _state.get(module)
         if not isinstance(entry, dict):
@@ -108,8 +114,11 @@ def get_genbook_path(module):
         if entry.get('kind') != 'genbook':
             return None
         p = entry.get('genbook_path')
-        if isinstance(p, list):
-            return list(p)
+        if isinstance(p, list) and all(
+                isinstance(c, str) and len(c) <= 1 for c in p):
+            p = ''.join(p)
+        if isinstance(p, str) and p:
+            return p
     return None
 
 
