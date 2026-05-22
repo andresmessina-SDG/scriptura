@@ -3,13 +3,21 @@
 Current state of `org.codeberg.andresmessina.BibleReader.yml` and what
 the Flathub submission PR needs to resolve.
 
-## What works
+## What works (verified end-to-end 2026-05-22)
 
-End-to-end local builds with `flatpak-builder` complete successfully
-against `org.gnome.Platform//49`. The resulting Flatpak installs and
-the app's wrapper script runs Python. The previous wall — `import
-Sword` failing — should now be unblocked by the pivot below; **a
-clean build with the new manifest is the next test**.
+Flatpak builds, installs, and runs to the welcome window inside a
+clean Zorin OS 18 VM. Confirmed working in that environment:
+
+- `import Sword` resolves (the long-standing wall).
+- Welcome → Install essentials → modules land in
+  `~/.var/app/org.codeberg.andresmessina.BibleReader/.sword/`.
+- Open a module and read — SWMgr discovery, chapter loads,
+  annotations all work.
+- File picker via `xdg-desktop-portal` (Study Journal → Export).
+- Settings / bookmarks / annotations persist across relaunch
+  in the sandboxed XDG dirs (B1+S1 work paying off).
+
+The SWORD-in-Flatpak architecture question is closed.
 
 Validated pieces from prior builds (unchanged by the latest pivot):
 
@@ -91,20 +99,26 @@ or kept for historical reference.
 No existing Flathub app combines Python + SWORD. We're first; that's
 why the manifest needed the python-libsword pivot above.
 
-## Everything else for v1.0
+## Remaining work before Flathub submission
 
-Items that aren't blocked on the binding issue and can ship in
-parallel:
+The Flatpak runs locally. Items below are submission gates:
 
-- README + AboutDialog privacy statement.
-- `CHANGELOG.md` with v0.9.0 entry.
-- 5 screenshots in `data/screenshots/`.
-- Restore the `<screenshots>` block in
-  `data/org.codeberg.andresmessina.BibleReader.metainfo.xml`.
-- Restore the metainfo `install` line in the manifest (commented
-  out for now because Zorin's patched flatpak-builder couldn't run
-  compose; Flathub's own builder should handle it).
-- `git tag v0.9.0`.
+1. **App-ID decision** — `org.codeberg.*` (current) vs
+   `page.codeberg.*` (newer Flathub convention). Affects manifest,
+   metainfo, .desktop, icon filenames, `main.py` constant. Decide
+   before everything else so renames don't cascade.
+2. **Restore metainfo install line** in manifest (currently
+   commented out; Flathub's builder runs `appstreamcli compose`
+   cleanly, unlike Zorin's).
+3. **5 screenshots** captured from the running app, hosted at
+   stable Codeberg `raw/commit/<sha>/...` URLs, referenced from
+   `data/org.codeberg.andresmessina.BibleReader.metainfo.xml`'s
+   `<screenshots>` block.
+4. **`CHANGELOG.md`** with v1.0.0 entry.
+5. **Local `flatpak-builder-lint` pass** against the manifest +
+   metainfo.
+6. **`git tag v1.0.0`** + push tag.
+7. **PR to flathub/flathub** for new-app submission.
 
 ## App-ID note
 
