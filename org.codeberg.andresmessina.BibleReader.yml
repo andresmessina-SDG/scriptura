@@ -108,6 +108,15 @@ modules:
       # 49 SDK) refuses to honor pre-3.5 policies unless we explicitly
       # accept the compatibility layer.
       - -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+      # SWORD's CMake finds libcurl's headers (via find_package) but
+      # doesn't propagate -lcurl into the shared-lib or exe link
+      # lines. Force the linker to add it everywhere — libsword.so
+      # then carries its curl dependency cleanly, and downstream
+      # binaries (buildtest, diatheke, the Python bindings .so)
+      # inherit it.
+      - -DCMAKE_SHARED_LINKER_FLAGS=-lcurl
+      - -DCMAKE_EXE_LINKER_FLAGS=-lcurl
+      - -DCMAKE_MODULE_LINKER_FLAGS=-lcurl
       # `Python3` is the modern SWORD 1.9+ name for the Python 3
       # bindings target; the older `Python` value silently no-ops
       # on current CMake configs.
