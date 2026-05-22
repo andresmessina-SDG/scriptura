@@ -345,19 +345,16 @@ class BibleWindow(Adw.ApplicationWindow):
    solid window background, not to float as an overlay panel). Using
    the card colour here let the Bible text behind the menu bleed
    through in dark mode. */
+/* Both right corners rounded so the rounded edge of the panel
+   never meets a square corner — a tight box-shadow at a sharp
+   corner reads as a 90° artifact. */
 .menu-panel { background-color: @view_bg_color;
               border: 1px solid alpha(@borders, 0.5);
-              /* Bigger corner radius so the rounding is visually
-                 obvious — at 12px the curve was too subtle for the
-                 surrounding shadow to read as "wrapping" it. */
-              border-radius: 0 20px 0 0;
-              /* Diagonal offset (5px right, 3px down) reads as a drop
-                 shadow, so the top of the panel has less shadow than
-                 the side — which makes the rounded top-right corner
-                 pop visually instead of being framed by uniform halo.
-                 Crisp 2px secondary shadow defines the edge. */
-              box-shadow: 5px 3px 24px -4px alpha(black, 0.3),
-                          2px 1px 4px alpha(black, 0.15); }
+              border-radius: 0 20px 20px 0;
+              /* Single soft diffuse shadow. Negative spread keeps the
+                 halo close to the panel; no second tight shadow that
+                 would re-introduce a hard right-angle at any corner. */
+              box-shadow: 6px 0 20px -6px alpha(black, 0.35); }
 /* Same translucency gotcha as .menu-panel: the jump bar floats on top of
    the Bible content via Gtk.Overlay, so the default semi-transparent
    .card background (@card_bg_color) lets text and dropdown chrome bleed
@@ -1397,8 +1394,8 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         # scroll position travels with the module, not with the pane
         # slot. _apply_module_change reads _restore_top_verse via
         # _fetch_and_render → _display.
-        a_top = self.pane1._find_topmost_visible_verse()
-        b_top = self.pane2._find_topmost_visible_verse()
+        a_top = self._capture_pane_top_verse(self.pane1)
+        b_top = self._capture_pane_top_verse(self.pane2)
         if b_top:
             self.pane1._restore_top_verse = b_top
         self.pane1._apply_module_change(b)
@@ -1406,6 +1403,30 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
             self.pane2._restore_top_verse = a_top
         self.pane2._apply_module_change(a)
         self._toast(f'Swapped: {a} ↔ {b}')
+
+    def _capture_pane_top_verse(self, pane):
+        """Return the first verse number visible in `pane`, scanning
+        several y-positions. `BiblePane._find_topmost_visible_verse`
+        only probes y=4 px from the top — which lands on the chapter
+        heading when the user is scrolled to chapter start, so the
+        probe returns None and the swap can't restore position."""
+        if not pane._view.get_realized():
+            return None
+        bx_base = max(40, pane._view.get_left_margin() + 20)
+        for y in (4, 24, 48, 80, 120, 180, 260):
+            bx, by = pane._view.window_to_buffer_coords(
+                Gtk.TextWindowType.TEXT, bx_base, y)
+            ok, it = pane._view.get_iter_at_location(bx, by)
+            if not ok:
+                continue
+            for tag in it.get_tags():
+                name = tag.get_property('name') or ''
+                if name.startswith('vnum_'):
+                    try:
+                        return int(name.split('_', 1)[1])
+                    except (ValueError, IndexError):
+                        continue
+        return None
 
     def _on_close_request(self, _win):
         # Persist current session state so the next launch restores it.
