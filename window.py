@@ -233,7 +233,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._swap_btn = Gtk.Button(icon_name='object-flip-horizontal-symbolic')
         self._swap_btn.set_tooltip_text('Swap pane modules')
         self._swap_btn.connect('clicked', self._on_swap_clicked)
-        self._swap_btn.set_sensitive(bool(settings.get('split_pane_mode', True)))
+        self._swap_btn.set_sensitive(bool(settings.get('split_pane_mode')))
         header.pack_end(self._swap_btn)
 
         # ── Panes ─────────────────────────────────────────────────────────────
