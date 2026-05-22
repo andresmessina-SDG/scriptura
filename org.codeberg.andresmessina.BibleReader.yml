@@ -124,6 +124,12 @@ modules:
       - -DSWORD_NO_BINDINGS=OFF
       - -DSWORD_BUILD_TESTS=OFF
       - -DSWORD_BUILD_UTILS=OFF
+      # Explicitly point CMake at the toolchain. SWORD's binding
+      # subdir uses find_package(Python3) + find_package(SWIG) and
+      # silently skips itself if either lookup fails. Pinning the
+      # paths forces the binding target to actually evaluate.
+      - -DPython3_EXECUTABLE=/usr/bin/python3
+      - -DSWIG_EXECUTABLE=/app/bin/swig
     cleanup:
       - /bin
     sources:
