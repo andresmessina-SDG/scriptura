@@ -41,6 +41,9 @@ finish-args:
   # tab + eBible catalog/translation downloads). Without this the
   # first-run welcome flow can't fetch the essentials bundle.
   - --share=network
+  # Persist SWORD's data directory across runs so installed modules
+  # don't get wiped on Flatpak upgrade. Same pattern BibleTime uses.
+  - --persist=.sword
   # The app talks to xdg-desktop-portal for file chooser dialogs
   # (Export Study Journal). No host-filesystem permissions needed —
   # the portal handles file access through user prompts.
@@ -94,44 +97,28 @@ modules:
         url: https://curl.se/download/curl-8.10.0.tar.gz
         sha256: 58c9dcf73493ae9d181fd334b3b3987ff73124621565187ade237bff1064a716
 
-  # ── libsword + Python bindings ─────────────────────────────────────────
+  # ── libsword (autotools) ───────────────────────────────────────────────
+  # Pattern lifted from BibleTime's Flathub manifest, which builds the
+  # same SWORD 1.9.0 source successfully against an org.kde runtime.
+  # No buildsystem: specified → flatpak-builder defaults to autotools
+  # and runs the ./configure script. SWORD's autotools build:
+  #   - discovers libcurl via pkg-config automatically (no -lcurl
+  #     linker flag gymnastics needed)
+  #   - handles bindings via --with-bindings=python3, which invokes
+  #     SWIG + builds the Sword.py / _Sword.so pair as part of
+  #     `make install`
+  # The previous cmake-ninja attempt built libsword fine but never
+  # produced the Python bindings — autotools' bindings flow is
+  # qualitatively different and matches what distro python3-sword
+  # packages use.
   - name: libsword
-    buildsystem: cmake-ninja
-    # SWORD's CMakeLists.txt explicitly rejects in-source builds. Force
-    # flatpak-builder to use a separate build subdirectory.
-    builddir: true
     config-opts:
-      - -DCMAKE_BUILD_TYPE=Release
-      - -DLIBSWORD_LIBRARY_TYPE=Shared
-      # SWORD 1.9.0's CMakeLists.txt declares cmake_minimum_required
-      # against a very old version. Modern CMake (3.32+ in the GNOME
-      # 49 SDK) refuses to honor pre-3.5 policies unless we explicitly
-      # accept the compatibility layer.
-      - -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-      # SWORD's CMake finds libcurl's headers (via find_package) but
-      # doesn't propagate -lcurl into the shared-lib or exe link
-      # lines. Force the linker to add it everywhere — libsword.so
-      # then carries its curl dependency cleanly, and downstream
-      # binaries (buildtest, diatheke, the Python bindings .so)
-      # inherit it.
-      - -DCMAKE_SHARED_LINKER_FLAGS=-lcurl
-      - -DCMAKE_EXE_LINKER_FLAGS=-lcurl
-      - -DCMAKE_MODULE_LINKER_FLAGS=-lcurl
-      # `Python3` is the modern SWORD 1.9+ name for the Python 3
-      # bindings target; the older `Python` value silently no-ops
-      # on current CMake configs.
-      - -DSWORD_BINDINGS=Python3
-      - -DSWORD_NO_BINDINGS=OFF
-      - -DSWORD_BUILD_TESTS=OFF
-      - -DSWORD_BUILD_UTILS=OFF
-      # Explicitly point CMake at the toolchain. SWORD's binding
-      # subdir uses find_package(Python3) + find_package(SWIG) and
-      # silently skips itself if either lookup fails. Pinning the
-      # paths forces the binding target to actually evaluate.
-      - -DPython3_EXECUTABLE=/usr/bin/python3
-      - -DSWIG_EXECUTABLE=/app/bin/swig
+      - --disable-static
+      - --with-bindings=python3
     cleanup:
-      - /bin
+      - /lib/pkgconfig
+      - /lib/libsword.la
+      - /include
     sources:
       - type: archive
         url: https://crosswire.org/ftpmirror/pub/sword/source/v1.9/sword-1.9.0.tar.gz
