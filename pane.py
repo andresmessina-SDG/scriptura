@@ -304,7 +304,7 @@ class BiblePane(Gtk.Box):
         # Restore the last-read entry path if the module is a genbook
         # the user has touched before. None means the render path will
         # fall back to its "first non-empty entry" heuristic.
-        self._genbook_entry = (self._restore_genbook_entry()
+        self._genbook_entry = (module_positions.get_genbook_path(self._module)
                                if self._is_genbook else None)
         self._book = 'Genesis'
         self._chapter = 1
