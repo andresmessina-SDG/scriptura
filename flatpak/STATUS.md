@@ -7,17 +7,19 @@ the Flathub submission PR needs to resolve.
 
 End-to-end local builds with `flatpak-builder` complete successfully
 against `org.gnome.Platform//49`. The resulting Flatpak installs and
-the app's wrapper script runs Python, but `import Sword` fails at
-startup. Everything ELSE has been validated:
+the app's wrapper script runs Python. The previous wall — `import
+Sword` failing — should now be unblocked by the pivot below; **a
+clean build with the new manifest is the next test**.
+
+Validated pieces from prior builds (unchanged by the latest pivot):
 
 - **Runtime + SDK**: `org.gnome.Platform//49`, `org.gnome.Sdk//49`.
 - **SWIG** (`swig-4.2.1`): builds as a build-time-only module
-  (`cleanup: ['*']`).
+  (`cleanup: ['*']`). Kept as a safety net; may be removable.
 - **libcurl** (`curl-8.10.0`): built explicitly because libsword's
   configure didn't find a usable curl in the runtime cleanly.
-- **libsword** (`sword-1.9.0`): builds via autotools with
-  `--disable-static --with-bindings=python3` (BibleTime's Flathub
-  manifest pattern). `libsword.so` lands in `/app/lib/` correctly.
+- **libsword** (`sword-1.9.0`): C++ shared library only, no Python
+  bindings target. Installs `libsword.so` + `sword.pc`.
 - **Whoosh** (`Whoosh-2.7.4`): pip-installs into
   `/app/lib/python3.13/site-packages/`.
 - **Bible Reader app code**: all `.py` files installed to
@@ -29,58 +31,65 @@ startup. Everything ELSE has been validated:
 - **Sandbox**: wayland + fallback-x11 + network + dri + `~/.sword`
   persistence.
 
-## What doesn't work
+## Current binding strategy
 
-**SWORD's Python bindings are not built**, regardless of approach.
-`flatpak run` dies with:
+We stopped trying to coax SWORD's own bindings target into producing
+the `Sword.py` / `_Sword.so` pair. Instead the manifest now pulls in
+**Greg Hellings' `python-libsword`** (`github.com/greg-hellings/
+python-libsword`, tag `v1.9.0.post1`) as a separate module after
+libsword:
 
+| Layer | Source | What it produces |
+|---|---|---|
+| `libsword` | crosswire.org/...sword-1.9.0.tar.gz | `/app/lib/libsword.so`, `/app/lib/pkgconfig/sword.pc` |
+| `python-libsword` | github.com/greg-hellings/python-libsword v1.9.0.post1 | `/app/lib/python3.X/site-packages/Sword.py` + `_Sword*.so` |
+
+The python-libsword package ships **pre-generated SWIG output** —
+`Sword.cxx` and `Sword.py` are checked into its repo. Its `setup.py`
+just calls `pkg-config --cflags --libs sword` (resolves to our
+just-built libsword in `/app/lib`), compiles the `.cxx` against
+libsword + Python dev headers, and lands both files in
+`site-packages`. No SWIG run, no Makefile.am macros, no silent skip
+paths.
+
+**Outstanding TODO**: the `python-libsword` source has
+`sha256: TODO_FILL_BEFORE_BUILD`. Compute with:
+```sh
+wget https://github.com/greg-hellings/python-libsword/archive/refs/tags/v1.9.0.post1.tar.gz
+sha256sum v1.9.0.post1.tar.gz
 ```
-ModuleNotFoundError: No module named 'Sword'
-```
+and paste into the manifest before the next `flatpak-builder` run.
 
-We attempted both cmake-ninja and autotools paths:
+## What's been ruled out (do not retry)
+
+The following approaches were exhausted in earlier iterations. They
+all silently failed to produce `Sword.py` / `_Sword.so`:
 
 | Attempt | What we tried | Outcome |
 | --- | --- | --- |
 | 1 | `cmake-ninja` + `-DSWORD_BINDINGS=Python` | Bindings dir silently skipped. |
 | 2 | `cmake-ninja` + `-DSWORD_BINDINGS=Python3` | Same. |
 | 3 | Same + `-DPython3_EXECUTABLE=…` + `-DSWIG_EXECUTABLE=/app/bin/swig` | Same. |
-| 4 | autotools + `--with-bindings=python3` (BibleTime pattern) | libsword.so builds; no `Sword.py` / `_Sword.so` produced. |
+| 4 | autotools + `--with-bindings=python3` (BibleTime pattern) | libsword.so builds; no Sword.py / _Sword.so. |
+| 5 | `cmake-ninja` + `-DSWORD_PYTHON_3:BOOL=TRUE` + setuptools migration patch | libsword.so builds; bindings still missing. |
 
-In each case `libsword.so` itself ships, but the SWIG-generated
-Python bridge does not. SWORD's build system appears to silently
-skip the bindings target when something it requires isn't met — no
-hard error, no useful diagnostic in the build log.
+The patch `flatpak/patches/migrate-to-setuptools.diff` is no longer
+referenced by the manifest. It can be deleted in a follow-up commit
+or kept for historical reference.
 
-## What a Flathub maintainer would need to know
+## Reference manifests we studied
 
-- BibleTime's manifest doesn't help directly because BibleTime is
-  Qt/C++ and links libsword via C++ rather than Python. We need
-  the equivalent of `python3-sword` (Fedora/Ubuntu's distro package)
-  produced inside the Flatpak.
-- Yetzirah (also on Flathub) is reportedly a Python+SWORD app —
-  examining their manifest would likely resolve this in one read.
-- The Python bindings on distro systems are typically built by:
-  1. Running SWIG against `bindings/swig/sword.i` to generate
-     a C++ wrapper.
-  2. Building a Python extension module via `setup.py` linking
-     against libsword + Python's dev headers.
-  3. Installing both `Sword.py` and `_Sword*.so` into
-     `site-packages`.
-- We have SWIG built and available in the build environment
-  (`/app/bin/swig`); we have libsword built and available
-  (`/app/lib/libsword.so`); we have Python 3.13 in the runtime.
-  The missing piece is the right manifest-level recipe to invoke
-  step 2 and 3 above as part of the build.
+- **BibleTime** (`info.bibletime.BibleTime`) — Qt/C++, no Python.
+  Useful only for the libsword build skeleton.
+- **Xiphos** (`org.xiphos.Xiphos`) — GTK/C, no Python. Same.
+- **bibref** (`io.github.kovzol.bibref`) — Qt/C++, no Python. Same.
+- **Sonofman** (`org.hlwd.sonofman`) — Python, but uses its own SQLite
+  data, *not* SWORD. Not directly relevant.
+- **bible_gui** (`net.lugsole.bible_gui`) — Python, but uses SPB/
+  SQLite/tsv/xml formats, *not* SWORD. Not directly relevant.
 
-## Suggested next iteration (for a maintainer)
-
-A separate `python3-sword` build module after `libsword`, that uses
-the same SWORD tarball, runs SWIG and `setup.py` against
-`bindings/swig/`, and installs the resulting Python module to
-`/app/lib/python3.13/site-packages/`. The exact `build-commands`
-shape is what we couldn't figure out locally — a working example
-from another Python+SWORD Flathub app would be the unblocker.
+No existing Flathub app combines Python + SWORD. We're first; that's
+why the manifest needed the python-libsword pivot above.
 
 ## Everything else for v1.0
 
@@ -96,3 +105,14 @@ parallel:
   out for now because Zorin's patched flatpak-builder couldn't run
   compose; Flathub's own builder should handle it).
 - `git tag v0.9.0`.
+
+## App-ID note
+
+Real-world Codeberg-hosted apps on Flathub now use the prefix
+`page.codeberg.<user>.<App>` (e.g. `page.codeberg.ethicalhaquer.
+galaxyflasher`). The current manifest still uses
+`org.codeberg.andresmessina.BibleReader`, which a maintainer
+endorsed on GNOME Discourse but predates the `page.codeberg.*`
+convention. **Verify with Flathub before submission**; the change
+ripples through manifest, metainfo, desktop file, icon filenames,
+and source code constants.

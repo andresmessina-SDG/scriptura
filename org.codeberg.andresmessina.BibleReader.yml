@@ -59,11 +59,14 @@ cleanup:
   - '*.a'
 
 modules:
-  # ── SWIG (build-time only, needed by libsword's Python bindings) ───────
-  # The GNOME SDK doesn't ship swig, and SWORD's bindings generator
-  # invokes `swig` to produce the Sword.py + _Sword.so pair from .i
-  # interface files. `cleanup: ["*"]` removes swig from the final
-  # bundle since it's only needed at build time.
+  # ── SWIG (build-time only) ────────────────────────────────────────────
+  # python-libsword ships pre-generated SWIG output, so strictly we
+  # don't need swig at build time anymore. Keep this module for now
+  # as a safety net — libsword's cmake configure step may still poke
+  # at find_program(SWIG) even when bindings are off, and we'd rather
+  # have it available than chase a confusing build failure. Cleanup
+  # `*` strips it from the final bundle. Remove this module in a
+  # follow-up commit once a clean build confirms it's unused.
   - name: swig
     buildsystem: autotools
     cleanup:
@@ -97,23 +100,19 @@ modules:
         url: https://curl.se/download/curl-8.10.0.tar.gz
         sha256: 58c9dcf73493ae9d181fd334b3b3987ff73124621565187ade237bff1064a716
 
-  # ── libsword + Python bindings (cmake-ninja, Fedora pattern) ──────────
-  # Pattern lifted from Fedora's python3-sword RPM spec (sword.spec on
-  # src.fedoraproject.org). The exhaustive iteration we did locally
-  # missed three critical things:
+  # ── libsword (C++ only, no Python bindings) ───────────────────────────
+  # We build libsword as a plain shared library here. SWORD's own
+  # Python-bindings target has been a graveyard — it silently no-ops
+  # in every combination we've tried (cmake/autotools, SWORD_BINDINGS
+  # vs SWORD_PYTHON_3, with/without the setuptools-migration patch).
+  # Instead the next module (python-libsword) pip-installs Greg
+  # Hellings' standalone wrapper, which ships pre-generated SWIG
+  # output and just links against the libsword.so we install here.
   #
-  #   1. The right CMake flag is SWORD_PYTHON_3:BOOL=TRUE, NOT
-  #      SWORD_BINDINGS=Python3 (the latter is a different / unrelated
-  #      target list that silently no-ops).
-  #
-  #   2. SWORD's bindings build generates a setup.py that imports from
-  #      `distutils`. Python 3.12+ removed distutils. Without a patch,
-  #      the generated setup.py fails at import time and no .so / .py
-  #      files get produced — silent failure. Fedora ships
-  #      `migrate-to-setuptools.diff` to fix this. We apply the same.
-  #
-  #   3. SWORD_PYTHON_INSTALL_DIR needs to point at the install prefix
-  #      so the bindings land somewhere Python can find them.
+  # Keep /lib/pkgconfig in the *build*; python-libsword's setup.py
+  # uses `pkg-config --cflags --libs sword` to find us. The
+  # top-level cleanup strips /lib/pkgconfig at the end, after all
+  # modules have built.
   - name: libsword
     buildsystem: cmake-ninja
     builddir: true
@@ -121,42 +120,55 @@ modules:
       - -DCMAKE_BUILD_TYPE=Release
       - -DLIBSWORD_LIBRARY_TYPE=Shared
       - -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-      # The actual flag that turns Python 3 bindings on:
-      - -DSWORD_PYTHON_3:BOOL=TRUE
-      # Install the Sword.py / _Sword.so pair into /app's Python
-      # site-packages (the runtime's Python finds them automatically
-      # via the standard search path).
-      - -DSWORD_PYTHON_INSTALL_DIR=/app
-      # String-form disables (SWORD 1.9.0's CMakeLists treats these
-      # as strings, not booleans — OFF/FALSE silently no-op on some
-      # configs; "No" reliably skips the targets).
       - -DSWORD_BUILD_TESTS=No
       - -DSWORD_BUILD_UTILS=No
       # Force -lcurl into every link line. SWORD's CMake locates
       # libcurl's headers via find_package(CURL) but doesn't
       # propagate the library to the link command on Flathub's
-      # builder, so libsword.so ships without curl resolution and
-      # downstream binaries (buildtest, diatheke, Python bindings)
-      # fail with `undefined reference to curl_easy_*`. The same
-      # workaround was effective earlier in this manifest's history.
+      # builder, so libsword.so ships without curl resolution.
       - -DCMAKE_SHARED_LINKER_FLAGS=-lcurl
       - -DCMAKE_EXE_LINKER_FLAGS=-lcurl
       - -DCMAKE_MODULE_LINKER_FLAGS=-lcurl
     cleanup:
       - /bin
-      - /lib/pkgconfig
       - /lib/libsword.la
       - /include
     sources:
       - type: archive
         url: https://crosswire.org/ftpmirror/pub/sword/source/v1.9/sword-1.9.0.tar.gz
         sha256: 42409cf3de2faf1108523e2c5ac0745d21f9ed2a5c78ed878ee9dcc303426b8a
-      # Replaces `from distutils.core import setup, Extension` with
-      # `from setuptools import setup, Extension` in the generated
-      # binding setup.py templates. Lifted verbatim from Fedora's
-      # python3-sword package; original author is Aaron Rainbolt.
-      - type: patch
-        path: flatpak/patches/migrate-to-setuptools.diff
+
+  # ── python-libsword (the actual `import Sword` provider) ──────────────
+  # Greg Hellings' standalone Python bindings for libsword. Lives at
+  # https://github.com/greg-hellings/python-libsword. Version 1.9.0.post1
+  # was cut against sword 1.9.0 (matches our libsword above).
+  #
+  # Why this and not SWORD's own bindings target:
+  #   - It's a plain setup.py extension with `Sword.cxx` and `Sword.py`
+  #     *already generated* and committed to the repo. No SWIG run at
+  #     our build time, no Makefile.am macro chains, no silent skips.
+  #   - setup.py just calls `pkg-config --cflags --libs sword` to
+  #     locate our just-built libsword in /app/lib. As long as
+  #     sword.pc is on PKG_CONFIG_PATH (Flatpak sets it to /app/lib/
+  #     pkgconfig automatically at build time), the link resolves.
+  #   - Installs to /app/lib/python3.X/site-packages/ via pip's
+  #     --prefix mechanism, which is exactly where the runtime's
+  #     python3 looks.
+  #
+  # --no-build-isolation: so pip uses the SDK's Python + setuptools
+  # rather than spawning a hermetic venv that can't see /app.
+  # --no-deps: Flathub builders run sandboxed with no network; the
+  # package has no Python deps anyway.
+  - name: python-libsword
+    buildsystem: simple
+    build-commands:
+      - pip3 install --no-build-isolation --no-deps --prefix=${FLATPAK_DEST} .
+    sources:
+      - type: archive
+        url: https://github.com/greg-hellings/python-libsword/archive/refs/tags/v1.9.0.post1.tar.gz
+        # [TODO: compute sha256 of the downloaded tarball, e.g.
+        # `wget URL && sha256sum python-libsword-1.9.0.post1.tar.gz`]
+        sha256: TODO_FILL_BEFORE_BUILD
 
   # ── Whoosh (full-text search) ──────────────────────────────────────────
   # Pip-installed from a vendored tarball so Flathub builders don't
