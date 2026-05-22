@@ -57,6 +57,9 @@ modules:
   # ── libsword + Python bindings ─────────────────────────────────────────
   - name: libsword
     buildsystem: cmake-ninja
+    # SWORD's CMakeLists.txt explicitly rejects in-source builds. Force
+    # flatpak-builder to use a separate build subdirectory.
+    builddir: true
     config-opts:
       - -DCMAKE_BUILD_TYPE=Release
       - -DLIBSWORD_LIBRARY_TYPE=Shared
