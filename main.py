@@ -45,7 +45,9 @@ class BibleApp(Adw.Application):
         # when modules exist — useful for testing on systems with
         # /usr/share/sword/ modules that can't be removed without sudo.
         force_welcome = bool(os.environ.get('BIBLE_READER_FORCE_WELCOME'))
-        has_modules = bool(sword_bridge.module_names()
+        # Cheap probe — avoids paying SWMgr() init before first paint.
+        # The first BiblePane render does the real SWORD load.
+        has_modules = bool(sword_bridge.has_any_module()
                            or ebible_bridge.module_names())
         if has_modules and not force_welcome:
             BibleWindow(application=app).present()

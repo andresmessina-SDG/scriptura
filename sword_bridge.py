@@ -132,6 +132,23 @@ def module_names():
     return sorted(str(k) for k in mgr().getModules().keys())
 
 
+def has_any_module():
+    """Cheap check: does the user appear to have any SWORD module
+    installed? Reads `~/.sword/mods.d/*.conf` directly. Used by the
+    welcome-vs-main startup decision so we don't pay the first
+    `SWMgr()` cost just to discover whether to show the welcome
+    window. The first real SWORD call (a chapter render in
+    `BiblePane`) does the authoritative SWMgr() init."""
+    mods_dir = os.path.expanduser('~/.sword/mods.d')
+    try:
+        for name in os.listdir(mods_dir):
+            if name.endswith('.conf'):
+                return True
+    except OSError:
+        pass
+    return False
+
+
 def module_language(module_name):
     """Return the 2/3-letter language code for a module ('en', 'grc',
     'heb', …) or '' if the module/config can't be read."""
