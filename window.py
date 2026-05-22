@@ -221,6 +221,12 @@ class BibleWindow(Adw.ApplicationWindow):
         view_box.append(self._btn_split)
         header.pack_end(view_box)
 
+        self._swap_btn = Gtk.Button(icon_name='object-flip-horizontal-symbolic')
+        self._swap_btn.set_tooltip_text('Swap pane modules')
+        self._swap_btn.connect('clicked', self._on_swap_clicked)
+        self._swap_btn.set_sensitive(bool(settings.get('split_pane_mode', True)))
+        header.pack_end(self._swap_btn)
+
         # ── Panes ─────────────────────────────────────────────────────────────
         # Only modules readable in a pane (Bibles, commentaries, devotionals)
         # are valid here — support modules like Strong's lexicons and MorphGNT
@@ -1370,7 +1376,17 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
     def _on_view_mode(self, _btn):
         split = self._btn_split.get_active()
         self.pane2.set_visible(split)
+        self._swap_btn.set_sensitive(split)
         settings.put('split_pane_mode', split)
+
+    def _on_swap_clicked(self, _btn):
+        a = self.pane1._module
+        b = self.pane2._module
+        if a == b:
+            return
+        self.pane1._apply_module_change(b)
+        self.pane2._apply_module_change(a)
+        self._toast(f'Swapped: {a} ↔ {b}')
 
     def _on_close_request(self, _win):
         # Persist current session state so the next launch restores it.
