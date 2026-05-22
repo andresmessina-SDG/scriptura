@@ -1567,11 +1567,12 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
     # ── About ─────────────────────────────────────────────────────────────────
 
     def _on_about_clicked(self, _btn):
+        from _version import __version__
         dlg = Adw.AboutDialog(
             application_name='Bible Reader',
             application_icon='org.codeberg.andresmessina.BibleReader',
             developer_name='Andres Messina',
-            version='0.1.0',
+            version=__version__,
             comments='GNOME-native Bible study with SWORD modules, '
                      'Strong’s lexicon, cross-references, and reading plans.',
             website='https://codeberg.org/andresmessina/bible-reader',

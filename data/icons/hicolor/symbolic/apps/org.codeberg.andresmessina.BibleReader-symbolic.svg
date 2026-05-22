@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Symbolic (monochrome) version of the app icon. Drawn at 16×16 per
+  GNOME convention; libadwaita recolors via CSS at render time so the
+  fill stays neutral (#222 absolutely, but theme overrides it). Mirrors
+  the full-color icon's open-book silhouette in outline form — a spine
+  down the middle, two leaves splaying outward, faint suggestion of
+  text lines via small horizontal strokes.
+
+  Placeholder design — to be replaced when the final icon ships.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g fill="#222">
+    <!-- Left leaf -->
+    <path d="M2 3 C2 2.45, 2.45 2, 3 2 L7.5 2 C7.78 2, 8 2.22, 8 2.5 L8 13.5 C8 13.78, 7.78 14, 7.5 14 C6.5 13.3, 4.5 13, 3 13 C2.45 13, 2 12.55, 2 12 Z M3 3 L3 12 C4.5 12, 6 12.3, 7 12.7 L7 3 Z"/>
+    <!-- Right leaf (mirror) -->
+    <path d="M14 3 C14 2.45, 13.55 2, 13 2 L8.5 2 C8.22 2, 8 2.22, 8 2.5 L8 13.5 C8 13.78, 8.22 14, 8.5 14 C9.5 13.3, 11.5 13, 13 13 C13.55 13, 14 12.55, 14 12 Z M13 3 L13 12 C11.5 12, 10 12.3, 9 12.7 L9 3 Z"/>
+    <!-- Suggested text lines (left leaf) -->
+    <rect x="3.5" y="4.5" width="3" height="0.5" rx="0.25"/>
+    <rect x="3.5" y="6"   width="3" height="0.5" rx="0.25"/>
+    <rect x="3.5" y="7.5" width="2.5" height="0.5" rx="0.25"/>
+    <!-- Suggested text lines (right leaf) -->
+    <rect x="9.5" y="4.5" width="3" height="0.5" rx="0.25"/>
+    <rect x="9.5" y="6"   width="3" height="0.5" rx="0.25"/>
+    <rect x="9.5" y="7.5" width="2.5" height="0.5" rx="0.25"/>
+  </g>
+</svg>

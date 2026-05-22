@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.codeberg.andresmessina.BibleReader</id>
+
+  <name>Bible Reader</name>
+  <summary>GNOME-native Bible study with SWORD modules and Strong's lexicon</summary>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+
+  <developer id="org.codeberg.andresmessina">
+    <name>Andres Messina</name>
+  </developer>
+
+  <description>
+    <p>
+      Bible Reader is a focused, native Linux Bible study application
+      that pairs a quiet two-pane reading layout with the depth of
+      SWORD Project modules.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Two independent panes — read two translations side by side, with per-pane sync locks.</li>
+      <li>Strong's lexicon — click any Hebrew or Greek word for the original lexeme, morphology, and a word study across the book.</li>
+      <li>Per-verse annotations — four highlight colors, underlines, notes with topical tags; all in-place edits with no scroll jumps.</li>
+      <li>Cross-references — OpenBible.info's 340,000-reference database with a TSK fallback.</li>
+      <li>Full-text search — Whoosh-backed per-module index with a canon distribution chart and case-sensitive option.</li>
+      <li>Study Journal — master-detail browser for every annotation across every module, with tag management.</li>
+      <li>Reading plans — six built-in plans with day-by-day progress tracking.</li>
+      <li>Devotionals — Spurgeon's Morning and Evening and others with multi-section detection.</li>
+      <li>Generic Books — Didache, Westminster Confession, Apostolic Fathers, and other tree-keyed reference works with a table-of-contents browser.</li>
+      <li>eBible.org translations — modern licensed Bibles (LEB, BSB, etc.) not packaged for SWORD.</li>
+      <li>F11 distraction-free reading mode.</li>
+    </ul>
+    <p>
+      All data is stored locally. No telemetry. Network access only for
+      downloading modules and reference data that you explicitly request.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">org.codeberg.andresmessina.BibleReader.desktop</launchable>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Two-pane reading view with Strong's lexicon and cross-references</caption>
+      <image>https://codeberg.org/andresmessina/bible-reader/raw/branch/main/data/screenshots/reading.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Module Manager with downloadable SWORD and eBible.org translations</caption>
+      <image>https://codeberg.org/andresmessina/bible-reader/raw/branch/main/data/screenshots/module-manager.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Study Journal — every annotation, filterable and editable inline</caption>
+      <image>https://codeberg.org/andresmessina/bible-reader/raw/branch/main/data/screenshots/study-journal.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Full-text search with canon distribution chart</caption>
+      <image>https://codeberg.org/andresmessina/bible-reader/raw/branch/main/data/screenshots/search.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Lexicon panel showing the Strong's number for a clicked word</caption>
+      <image>https://codeberg.org/andresmessina/bible-reader/raw/branch/main/data/screenshots/lexicon.png</image>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">https://codeberg.org/andresmessina/bible-reader</url>
+  <url type="bugtracker">https://codeberg.org/andresmessina/bible-reader/issues</url>
+  <url type="vcs-browser">https://codeberg.org/andresmessina/bible-reader</url>
+
+  <categories>
+    <category>Education</category>
+    <category>Literature</category>
+  </categories>
+
+  <keywords>
+    <keyword>Bible</keyword>
+    <keyword>Scripture</keyword>
+    <keyword>Study</keyword>
+    <keyword>SWORD</keyword>
+    <keyword>Lexicon</keyword>
+    <keyword translate="no">Strong's</keyword>
+    <keyword>Devotional</keyword>
+    <keyword>Commentary</keyword>
+  </keywords>
+
+  <provides>
+    <binary>org.codeberg.andresmessina.BibleReader</binary>
+  </provides>
+
+  <requires>
+    <display_length compare="ge">768</display_length>
+  </requires>
+
+  <recommends>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </recommends>
+
+  <supports>
+    <control>touch</control>
+  </supports>
+
+  <!--
+    Content rating: the app itself generates no content. It displays
+    user-installed third-party scripture / commentary modules.
+    Following the convention of other Bible apps on Flathub
+    (BibleTime, Yetzirah), rate as "none" across the board.
+  -->
+  <content_rating type="oars-1.1">
+    <content_attribute id="violence-cartoon">none</content_attribute>
+    <content_attribute id="violence-fantasy">none</content_attribute>
+    <content_attribute id="violence-realistic">none</content_attribute>
+    <content_attribute id="violence-bloodshed">none</content_attribute>
+    <content_attribute id="violence-sexual">none</content_attribute>
+    <content_attribute id="violence-desecration">none</content_attribute>
+    <content_attribute id="violence-slavery">none</content_attribute>
+    <content_attribute id="violence-worship">none</content_attribute>
+    <content_attribute id="drugs-alcohol">none</content_attribute>
+    <content_attribute id="drugs-narcotics">none</content_attribute>
+    <content_attribute id="drugs-tobacco">none</content_attribute>
+    <content_attribute id="sex-nudity">none</content_attribute>
+    <content_attribute id="sex-themes">none</content_attribute>
+    <content_attribute id="sex-homosexuality">none</content_attribute>
+    <content_attribute id="sex-prostitution">none</content_attribute>
+    <content_attribute id="sex-adultery">none</content_attribute>
+    <content_attribute id="sex-appearance">none</content_attribute>
+    <content_attribute id="language-profanity">none</content_attribute>
+    <content_attribute id="language-humor">none</content_attribute>
+    <content_attribute id="language-discrimination">none</content_attribute>
+    <content_attribute id="social-chat">none</content_attribute>
+    <content_attribute id="social-info">none</content_attribute>
+    <content_attribute id="social-audio">none</content_attribute>
+    <content_attribute id="social-location">none</content_attribute>
+    <content_attribute id="social-contacts">none</content_attribute>
+    <content_attribute id="money-purchasing">none</content_attribute>
+    <content_attribute id="money-gambling">none</content_attribute>
+  </content_rating>
+
+  <releases>
+    <release version="0.9.0" date="2026-05-21">
+      <description>
+        <p>
+          First public testing release. Includes everything in the
+          milestone build (M1–M8) plus the post-release expansion:
+          adjustable reading-column width, master-detail Study Journal
+          with tag management, module picker with language filter and
+          per-module info, F11 reading-mode exit affordance, F3 /
+          Shift+F3 search step-through with case toggle and match
+          highlighting, Generic Books reader with TOC navigation, and
+          XDG-compliant data paths.
+        </p>
+      </description>
+    </release>
+  </releases>
+</component>
