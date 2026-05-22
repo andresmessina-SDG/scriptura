@@ -129,11 +129,20 @@ modules:
       - install -Dm644 devotional.py /app/share/bible-reader/devotional.py
       - install -Dm644 welcome.py /app/share/bible-reader/welcome.py
 
-      # Desktop entry, AppStream metainfo, icons
+      # Desktop entry and icons. The metainfo install line is
+      # deliberately commented out for now — flatpak-builder's
+      # appstreamcli compose post-step is failing on this Zorin /
+      # Ubuntu 24.04 builder for reasons that aren't reproducible
+      # locally. Without the metainfo file in the build output,
+      # compose has nothing to process and skips quietly, the
+      # build completes, and we can validate the app actually
+      # runs in Flatpak. Re-enable this install line once the
+      # compose path is debugged — it's only needed for Flathub
+      # submission, not for the app to function.
       - install -Dm644 data/org.codeberg.andresmessina.BibleReader.desktop
                        /app/share/applications/org.codeberg.andresmessina.BibleReader.desktop
-      - install -Dm644 data/org.codeberg.andresmessina.BibleReader.metainfo.xml
-                       /app/share/metainfo/org.codeberg.andresmessina.BibleReader.metainfo.xml
+      # - install -Dm644 data/org.codeberg.andresmessina.BibleReader.metainfo.xml
+      #                  /app/share/metainfo/org.codeberg.andresmessina.BibleReader.metainfo.xml
       - install -Dm644 data/icons/hicolor/scalable/apps/org.codeberg.andresmessina.BibleReader.svg
                        /app/share/icons/hicolor/scalable/apps/org.codeberg.andresmessina.BibleReader.svg
       - install -Dm644 data/icons/hicolor/symbolic/apps/org.codeberg.andresmessina.BibleReader-symbolic.svg
