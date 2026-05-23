@@ -204,6 +204,11 @@ modules:
       - install -Dm644 devotional.py /app/share/bible-reader/devotional.py
       - install -Dm644 welcome.py /app/share/bible-reader/welcome.py
 
+      # Pre-compile bytecode so first launch doesn't pay the compile
+      # cost. -q for quiet output; one .pyc per .py lands in
+      # /app/share/bible-reader/__pycache__/.
+      - python3 -m compileall -q /app/share/bible-reader/
+
       # Desktop entry and icons. The metainfo install line is
       # deliberately commented out for now — flatpak-builder's
       # appstreamcli compose post-step is failing on this Zorin /
