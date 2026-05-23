@@ -1,51 +1,66 @@
 # Bible Reader
 
-A GNOME-native Bible study app for Linux. Two-pane layout, SWORD modules,
-full-text search, per-verse annotations, cross-references, Strong's lexicon,
-reading plans, and devotional support — built with Python 3, GTK4, and
-libadwaita.
+A native Linux Bible study app for the new generation that wants to
+study and teach the old truth with digital efficiency. Two-pane
+reading, SWORD modules, Strong's lexicon, full-text search, per-verse
+notes — all on your own machine, all in service of a quiet, focused
+hour with the Word.
 
-## Features
+Built on GNOME with GTK4 + libadwaita, in Python, GPL-3.0.
 
-- **Two-pane layout** with independent module selectors. Lock either pane to
-  hold its place while you navigate in the other.
-- **SWORD modules** (KJVA, KJV, MHCC, TSK, Strongs, MorphGNT, devotionals)
-  plus **eBible.org translations** (LEB, BSB, ASV, and more) via a SQLite
-  backend.
-- **Strong's lexicon** with hover-only word underlines, definition view,
-  clickable cross-references, and a word-study panel that lists every verse
-  in the current book containing the Strong's number.
-- **Greek and Hebrew morphology** shown in the lexicon header — Robinson
-  codes for Greek (via MorphGNT), OSHB codes for Hebrew.
-- **Verse annotations** — four highlight colors, underlines, notes with
-  topical tags. All annotation actions are in-place tag mutations: the
-  scroll position never moves.
-- **Cross-references** — slim bottom bar with clickable pills. Uses
-  OpenBible.info's 340k references if downloaded, falls back to TSK.
-- **Topical tag suggestions** in the note editor sourced from OpenBible's
-  topic database.
-- **Full-text search** per module (Whoosh-backed), with a bar-chart
-  distribution view across the canon and click-to-navigate results.
-- **Study Journal** — all annotations across all modules in one filterable
-  surface with export.
-- **Reading plans** — six built-in plans (Bible in a Year, Blended,
-  OT/NT, Psalms, Proverbs) with progress tracking.
-- **Devotionals** with multi-section detection (e.g. Spurgeon's Morning &
-  Evening labels its two readings).
-- **F11 reading mode** — hides all chrome for distraction-free reading.
+> _"For the word of God is living and active, sharper than any
+> two-edged sword..."_ — Hebrews 4:12
 
-## Requirements
+---
 
-- Linux (developed on Fedora; should run on any modern GNOME desktop)
-- Python 3
-- PyGObject (GTK4 + libadwaita bindings)
-- SWORD library and Python bindings
-- Whoosh (full-text search)
+## What it does
+
+- **Read two translations side by side.** Each pane has its own
+  module picker; lock one in place while you navigate in the other.
+- **Strong's lexicon at a hover.** Click any tagged Hebrew or Greek
+  word for the original lexeme, its morphology, and a word-study
+  list of every verse in the current book that uses the same Strong's
+  number.
+- **Commentaries, devotionals, and confessions.** Matthew Henry,
+  Calvin, Clarke, Spurgeon's Morning & Evening, the Westminster
+  Confession, the Augsburg Confession, the Didache, the Apostolic
+  Fathers — anything CrossWire packages in SWORD format.
+- **Annotate your study.** Four highlight colors, underlines, notes
+  with topical tags, chapter-level notes. Everything you mark lives
+  in plain JSON in your XDG config directory — yours to back up,
+  sync, or migrate.
+- **Cross-references.** OpenBible.info's 340,000-reference database
+  is one click away (Module Manager → Open Databases). TSK is the
+  fallback when you're offline.
+- **Full-text search.** Per-module Whoosh index, distribution chart
+  across the canon, case-sensitive option, F3 step-through.
+- **Study Journal.** Every annotation, across every module, in one
+  filterable surface. Search free-text, filter by tag or module or
+  book, click a row to jump back to the verse.
+- **Reading plans.** Six built-in: Bible in a Year, OT/NT, Blended
+  four-stream, Psalms in 30 days, Proverbs in 31 days.
+- **Modern translations.** LEB, BSB, ASV, and the rest of the
+  eBible.org catalog — modules SWORD doesn't carry, fetched on
+  demand into a local SQLite store.
+- **F11 reading mode** when you want chrome to disappear.
+
+Bible Reader runs entirely on your computer. There is no telemetry,
+no account, no background phone-home. The only time the app uses the
+network is when you explicitly download a module, fetch a translation
+from eBible.org, or install an open-data file. Your study is your
+own.
+
+---
+
+## Installing dependencies
+
+Use whichever section matches your distribution.
 
 ### Fedora
 
 ```sh
-sudo dnf install python3-gobject gtk4 libadwaita sword python3-sword python3-whoosh
+sudo dnf install python3-gobject gtk4 libadwaita \
+                 sword python3-sword python3-whoosh
 ```
 
 ### Ubuntu / Debian / Zorin OS / Pop!_OS / Mint
@@ -53,12 +68,11 @@ sudo dnf install python3-gobject gtk4 libadwaita sword python3-sword python3-who
 ```sh
 sudo apt install python3-gi python3-gi-cairo \
                  gir1.2-gtk-4.0 gir1.2-adw-1 \
-                 python3-sword python3-whoosh \
-                 git
+                 python3-sword python3-whoosh git
 ```
 
-If `python3-whoosh` is not available in your repos (older Ubuntu / Debian
-stable), install it in a venv with system-package access:
+If your distribution doesn't ship `python3-whoosh` (older Debian /
+Ubuntu stable), install it into a system-aware venv:
 
 ```sh
 python3 -m venv --system-site-packages ~/.venvs/bible-reader
@@ -74,116 +88,164 @@ sudo pacman -S --needed python-gobject gtk4 libadwaita \
                         sword python-whoosh git
 ```
 
-Arch's `sword` package bundles both `libsword` and the Python bindings in
-one package. On Arch you can run the app with `python main.py` (the
-`python3` alias also works).
+Arch ships both `libsword` and the Python bindings in the same
+`sword` package. You can launch the app with `python main.py` —
+the `python3` alias works too.
+
+---
 
 ## Running
 
-The app is plain Python scripts — no build step.
+The app is plain Python — no build step:
 
 ```sh
+git clone https://codeberg.org/andresmessina/bible-reader.git
+cd bible-reader
 python3 main.py
 ```
 
-On first run you'll need at least one SWORD Bible installed. Use the
-**Module Manager** (burger menu → Modules) to install KJVA (the recommended
-starter — includes Strong's tagging) plus `StrongsHebrew`, `StrongsGreek`,
-and `TSK`. Optionally download OpenBible cross-references, OpenBible
-topics, and the Dodson Greek lexicon from the "Open Databases" tab.
+On first launch the welcome window will offer to download a starter
+bundle: KJVA (King James with Apocrypha — includes Strong's word
+tagging), Strong's Hebrew, Strong's Greek, the Treasury of Scripture
+Knowledge for cross-references, plus the OpenBible cross-references
+and Dodson Greek lexicon. Click "Install essentials" and let it run;
+everything else can be added later from the Module Manager.
 
-## Running on tiling compositors (Hyprland, river, sway)
+---
 
-The app passes `transient_for` + `modal=True` on every dialog and child
-window, which Mutter (GNOME) automatically floats above its parent.
-Tiling compositors honor those hints only if you tell them to. A few
-recommended rules for Hyprland users:
+## A few quiet design choices
+
+- **No web view.** The Bible text renders in a native `GtkTextView`
+  with Pango markup — starts faster, scrolls smoother, inherits your
+  system fonts and theme without us hardcoding anything.
+- **Annotations apply in place.** Highlighting a verse doesn't reload
+  the chapter or jump your scroll position. The mark just appears
+  where the verse is.
+- **Soft palette.** Highlight colors render as muted pastels at view
+  time even though stored as their familiar yellow / green / blue /
+  orange — easier on the eyes for long sessions.
+- **The reading column has a cap.** On wide monitors the verse text
+  stays at a comfortable reading width; the scrollbar lives at the
+  pane edge, not inside the column. Adjustable via the Width slider
+  in the menu panel.
+- **F11 hides everything.** Chrome, toolbars, panels — just the
+  Word.
+
+---
+
+## Tiling compositors (Hyprland, sway, river)
+
+Mutter (GNOME) floats child windows above their parent automatically.
+Tiling compositors need a hint. For Hyprland:
 
 ```hyprlang
-# Float dialogs and child windows of the Bible Reader instead of tiling
-# them into the workspace. Match by title until Flatpak ships a stable
-# WM_CLASS / app_id you can pin to.
 windowrulev2 = float, title:^(Module Manager|Study Journal|Tag Manager|Keyboard Shortcuts)$
 windowrulev2 = float, title:^(Save .*|Export .*|Rename .*|Remove .*)$
 windowrulev2 = float, title:^(Bible Reader)$, floating:1
 ```
 
-Sway / river users can translate these to `for_window [title=…] floating enable`
-and the river equivalent.
-
-**File picker (Export Study Journal):** uses `xdg-desktop-portal`. Make
-sure `xdg-desktop-portal-gtk` (or `xdg-desktop-portal-hyprland`) is
-installed under your Hyprland session, otherwise the picker may silently
-fall back or fail.
+`xdg-desktop-portal-gtk` (or `-hyprland`) needs to be installed
+for the Export Study Journal file picker to work:
 
 ```sh
 # Fedora
 sudo dnf install xdg-desktop-portal-gtk
-
-# Ubuntu / Debian / Zorin
+# Debian / Ubuntu / Zorin
 sudo apt install xdg-desktop-portal-gtk
-
 # Arch
 sudo pacman -S xdg-desktop-portal-gtk
 ```
 
-## Development
+---
 
-Tests for the pure-Python bridges (sword_bridge, open_data, annotations,
-reading_plans):
+## Running the tests (for contributors)
+
+The pure-Python layers (`sword_bridge`, `open_data`, `annotations`,
+`reading_plans`, etc.) have a pytest suite — 124 tests, under a
+second.
 
 ```sh
 # Fedora
 sudo dnf install python3-pytest
-# Ubuntu / Debian / Zorin
+# Debian / Ubuntu / Zorin
 sudo apt install python3-pytest
 # Arch
 sudo pacman -S python-pytest
-# Or for any distro:
+# Or any distribution:
 pip install -r requirements-dev.txt
 
 python3 -m pytest
 ```
 
-124 tests, runs in well under a second. The GTK-side code (`pane.py`,
-`window.py`, dialogs, lexicon panel) is verified by running the app.
+The GTK side — panes, dialogs, lexicon panel — is verified by
+running the app. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the
+internal map: file layout, render pipeline, known SWORD and GTK4
+quirks worth knowing before touching the rendering code.
 
-See `PROJECT.md` for the architecture brief — file layout, internal
-contracts, known SWORD and GTK4 gotchas.
+---
 
-## Privacy
+## What goes where
 
-Bible Reader runs entirely on your computer. There is no telemetry,
-analytics, account, or background phone-home. Network access is
-used only when you explicitly install a module (Module Manager),
-download an open-data file (cross-references, topics, Dodson
-lexicon), or fetch an eBible translation.
-
-Your data lives in standard XDG directories:
+Your data lives in standard XDG directories so it survives across
+installs and is easy to back up:
 
 - `~/.config/bible-reader/` — preferences, bookmarks, reading-plan
-  progress.
+  progress, per-module reading positions.
 - `~/.local/share/bible-reader/` — annotations, eBible database,
   downloaded reference files.
-- `~/.cache/bible-reader/` — search history, eBible catalog (all
-  regenerable).
-- `~/.sword/` — SWORD's own module directory (CrossWire convention).
+- `~/.cache/bible-reader/` — search history, regenerable indexes.
+- `~/.sword/` — SWORD's own module library (CrossWire convention,
+  shared with any other SWORD-compatible tool you use).
 
-You can back up, sync, or wipe any of these. Removing them resets
-the corresponding part of the app to a clean state.
+Wipe any of these to reset the corresponding part of the app to
+factory defaults.
 
-## Data attributions
+---
 
-- **SWORD Project** modules — CrossWire Bible Society
-- **OpenBible Cross-References** and **OpenBible Topics** —
-  [openbible.info](https://www.openbible.info/), CC-BY
-- **Dodson Greek Lexicon** — public-domain NT Greek definitions
-- **eBible.org** — modern translation catalog and texts
+## Credits
+
+This app stands on the work of others:
+
+- **The SWORD Project** — CrossWire Bible Society, who have spent
+  decades building the cross-platform Bible-software library this
+  app is built on, and have curated more than two hundred text
+  modules in over fifty languages.
+- **OpenBible.info** — cross-references and topical tags, released
+  under CC-BY. The reason a click on a verse can show you everywhere
+  else Scripture has interpreted Scripture.
+- **Dodson Greek Lexicon** — public-domain NT Greek definitions.
+- **eBible.org** — the modern licensed translations (LEB, BSB, ASV,
+  and many more) that complete the picture.
+- **GNOME** — the platform that makes a clean reading experience
+  possible on Linux: GTK4, libadwaita, PyGObject.
+- **Whoosh** — the pure-Python full-text search engine that indexes
+  every Bible the moment you ask.
+
+---
 
 ## License
 
-GPL-3.0-or-later. See [`LICENSE`](LICENSE). The SWORD library this app
-links against is also GPL-licensed.
+GPL-3.0-or-later. See [`LICENSE`](LICENSE) for the canonical text.
+The SWORD library this app links against is also GPL-licensed.
+
+---
+
+## A note on how this app was built
+
+Bible Reader was developed by Andres Messina in collaboration with
+Anthropic's AI assistant (AI Opus). The AI handled most of the
+code-typing under continuous human direction: every feature, every
+design decision, every bug report came from a real person studying
+Scripture and reasoning about what the tool should do. AI made the
+implementation faster; the vision, the choices, and the testing came
+from a human who wanted a Bible-study app that fit how he reads.
+
+If that sounds useful to you, the source is open and the architecture
+is documented. Pull requests, bug reports, and translation
+contributions are all welcome — from people, from AI-assisted
+developers, from anyone who wants this tool to keep growing.
+
+---
 
 ## Repository
 
