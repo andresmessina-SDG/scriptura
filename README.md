@@ -234,11 +234,11 @@ The SWORD library this app links against is also GPL-licensed.
 
 Bible Reader was developed in collaboration with Anthropic's AI
 assistant (AI Opus). The AI handled most of the code-typing
-under continuous human direction: every feature, every design
-decision, every bug report came from a real person studying
-Scripture and reasoning about what the tool should do. AI made the
-implementation faster; the vision, the choices, and the testing came
-from human input. I wanted a Bible-study app that fit how I read.
+under continuous direction: every feature, every design decision,
+every bug report came from sitting with Scripture and thinking
+about what the tool should do. AI made the implementation faster;
+the vision, the choices, and the testing were mine. I wanted a
+Bible-study app that fit how I read.
 
 If that sounds useful to you, the source is open and the architecture
 is documented. Pull requests, bug reports, and translation
