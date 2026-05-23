@@ -210,20 +210,12 @@ modules:
       # /app/share/scriptura/__pycache__/.
       - python3 -m compileall -q /app/share/scriptura/
 
-      # Desktop entry and icons. The metainfo install line is
-      # deliberately commented out for now — flatpak-builder's
-      # appstreamcli compose post-step is failing on this Zorin /
-      # Ubuntu 24.04 builder for reasons that aren't reproducible
-      # locally. Without the metainfo file in the build output,
-      # compose has nothing to process and skips quietly, the
-      # build completes, and we can validate the app actually
-      # runs in Flatpak. Re-enable this install line once the
-      # compose path is debugged — it's only needed for Flathub
-      # submission, not for the app to function.
+      # Desktop entry + AppStream metainfo. Both required by
+      # Flathub's appstreamcli compose step.
       - install -Dm644 data/page.codeberg.andresmessina.Scriptura.desktop
                        /app/share/applications/page.codeberg.andresmessina.Scriptura.desktop
-      # - install -Dm644 data/page.codeberg.andresmessina.Scriptura.metainfo.xml
-      #                  /app/share/metainfo/page.codeberg.andresmessina.Scriptura.metainfo.xml
+      - install -Dm644 data/page.codeberg.andresmessina.Scriptura.metainfo.xml
+                       /app/share/metainfo/page.codeberg.andresmessina.Scriptura.metainfo.xml
       # Icons. The GNOME 48 runtime's GdkPixbuf doesn't always ship an
       # SVG loader, which makes Flatpak's icon validator emit
       # "Format not recognized" when we install the SVG directly.

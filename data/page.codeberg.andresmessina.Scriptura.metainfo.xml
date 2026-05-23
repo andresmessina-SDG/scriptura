@@ -40,15 +40,28 @@
 
   <launchable type="desktop-id">page.codeberg.andresmessina.Scriptura.desktop</launchable>
 
-  <!--
-    <screenshots> block is deliberately omitted until real PNGs ship
-    in data/screenshots/. appstreamcli compose runs as part of the
-    Flatpak build and treats unreachable screenshot URLs as
-    file-read-errors, failing the build. Once the screenshots are
-    pushed to the repo, add this back referencing data/screenshots/
-    via raw.codeberg URLs (see the earlier draft in commit history
-    for the full block).
-  -->
+  <screenshots>
+    <screenshot type="default">
+      <image>https://codeberg.org/andresmessina/scriptura/raw/commit/63ca979c99d9f458eede7297cf5b2a69b0caaaf7/data/screenshots/01-two-pane-lexicon.png</image>
+      <caption>Two-pane reading with the Strong's lexicon open on a Greek word</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://codeberg.org/andresmessina/scriptura/raw/commit/63ca979c99d9f458eede7297cf5b2a69b0caaaf7/data/screenshots/02-translation-comparison.png</image>
+      <caption>Two translations side by side, sharing a verse selection</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://codeberg.org/andresmessina/scriptura/raw/commit/63ca979c99d9f458eede7297cf5b2a69b0caaaf7/data/screenshots/03-study-journal.png</image>
+      <caption>Study Journal — every annotation in one filterable surface</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://codeberg.org/andresmessina/scriptura/raw/commit/63ca979c99d9f458eede7297cf5b2a69b0caaaf7/data/screenshots/04-reading-plan.png</image>
+      <caption>Built-in reading plans with day-by-day progress</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://codeberg.org/andresmessina/scriptura/raw/commit/63ca979c99d9f458eede7297cf5b2a69b0caaaf7/data/screenshots/05-reading-mode-dark.png</image>
+      <caption>F11 reading mode hides all chrome for distraction-free reading</caption>
+    </screenshot>
+  </screenshots>
 
   <url type="homepage">https://codeberg.org/andresmessina/scriptura</url>
   <url type="bugtracker">https://codeberg.org/andresmessina/scriptura/issues</url>
