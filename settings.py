@@ -79,12 +79,16 @@ _save_lock = threading.Lock()
 def _save_now():
     """Synchronous write. Snapshots _cache under the lock to avoid the
     'dictionary changed size during iteration' race if a put() lands
-    mid-serialise."""
+    mid-serialise. Atomic write — see annotations.py for the rationale."""
     with _save_lock:
         snapshot = dict(_cache) if _cache is not None else {}
     try:
-        with open(_FILE, 'w', encoding='utf-8') as f:
+        tmp = _FILE + '.tmp'
+        with open(tmp, 'w', encoding='utf-8') as f:
             json.dump(snapshot, f, indent=2, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, _FILE)
     except Exception as e:
         print(f'[settings] {e}')
 

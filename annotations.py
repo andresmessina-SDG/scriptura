@@ -41,9 +41,18 @@ def _load():
 def _save(data):
     global _cache
     _cache = data
+    # Atomic write: build the file beside the destination, fsync, then
+    # os.replace (atomic on POSIX). A crash mid-write leaves the
+    # original intact instead of truncating it to zero bytes —
+    # annotations.json holds the user's irreplaceable highlights,
+    # notes, and tags.
     try:
-        with open(ANNOTATIONS_FILE, 'w', encoding='utf-8') as f:
+        tmp = ANNOTATIONS_FILE + '.tmp'
+        with open(tmp, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, ANNOTATIONS_FILE)
     except Exception as e:
         print(f'[annotations] Failed to save: {e}')
 

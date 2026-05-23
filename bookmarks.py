@@ -31,9 +31,14 @@ def _load():
 
 
 def _save(data):
+    # Atomic write — see annotations.py for the rationale.
     try:
-        with open(_FILE, 'w', encoding='utf-8') as f:
+        tmp = _FILE + '.tmp'
+        with open(tmp, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, _FILE)
     except Exception as e:
         print(f'[bookmarks] {e}')
 

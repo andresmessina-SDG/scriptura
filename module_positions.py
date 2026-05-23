@@ -19,6 +19,7 @@ Persisted to `module_positions.json` under the XDG config dir.
 """
 
 import json
+import os
 import threading
 
 import paths
@@ -47,9 +48,14 @@ _load()
 
 
 def _save_unlocked():
+    # Atomic write — see annotations.py for the rationale.
     try:
-        with open(_FILE, 'w', encoding='utf-8') as f:
+        tmp = _FILE + '.tmp'
+        with open(tmp, 'w', encoding='utf-8') as f:
             json.dump(_state, f, ensure_ascii=False, indent=0)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, _FILE)
     except OSError:
         pass
 
