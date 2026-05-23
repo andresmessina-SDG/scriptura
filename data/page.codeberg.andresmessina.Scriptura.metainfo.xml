@@ -129,6 +129,21 @@
   </content_rating>
 
   <releases>
+    <release version="1.0.0" date="2026-05-23">
+      <description>
+        <p>First Flathub release. Renamed from Bible Reader to Scriptura.</p>
+        <p>Highlights:</p>
+        <ul>
+          <li>Pane-swap button preserves reading position across the swap via per-module memory.</li>
+          <li>bible: URI scheme — external apps can deep-link to a reference.</li>
+          <li>Current-verse indicator marks the active verse subtly without looking like a selection.</li>
+          <li>Atomic writes across all state files protect annotations from crash-mid-save corruption.</li>
+          <li>LRU caps on chapter and Strong's caches keep memory bounded during long sessions.</li>
+          <li>Lazy Whoosh import and cheap module-presence probe shave startup time.</li>
+          <li>Pane search subsystem extracted into its own module for clean separation.</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.9.0" date="2026-05-21">
       <description>
         <p>

@@ -2,7 +2,115 @@
 
 All notable changes to Scriptura. Format roughly follows
 [Keep a Changelog](https://keepachangelog.com/). Versioning is
-semver-ish — 0.x is the pre-Flathub testing track.
+semver-ish — 0.x was the pre-Flathub testing track.
+
+## [1.0.0] — 2026-05-23
+
+First Flathub release. The app gets its proper name, a hardened
+persistence layer, and the Flatpak packaging story closed.
+
+### Name
+
+- **Renamed from Bible Reader to Scriptura.** Latin for
+  *Scripture* — distinctive, memorable, and aligned with the
+  audience this app is built for. App-ID is now
+  `page.codeberg.andresmessina.Scriptura`.
+
+### New features
+
+- **Pane-swap button** in the headerbar (alongside the single /
+  split toggle) — flips the two panes' modules in one click,
+  preserving scroll position via the new per-module memory.
+- **`bible:` URI scheme** — `xdg-open 'bible:John+3:16'` opens
+  Scriptura at the requested reference. Works for both `+`-
+  encoded spaces and proper `%20`. Lets external apps
+  (browsers, chat clients, notes) link directly into Scripture.
+- **Current-verse indicator** — the active verse number wears a
+  subtle accent (purple, bold). Persists across annotation saves;
+  cleared on chapter change. Distinct from the click-flash and
+  from annotation highlights.
+
+### Persistence
+
+- **Per-module position memory.** A single record per module
+  tracks the last reading position (top verse for verse-keyed
+  modules, entry path for Generic Books). Both panes consult the
+  same store, so swapping modules between panes — or opening the
+  same module in either pane on next launch — returns to the
+  last place it was viewed.
+- **Atomic writes** across every state file (annotations,
+  bookmarks, settings, module positions). A crash mid-write
+  leaves the original file intact instead of truncating it — your
+  annotations are no longer at risk if the system loses power
+  during a save.
+- **Debounced + locked-down module-position writes.** A pane
+  swap fires two module changes in quick succession; the
+  debounce coalesces them into one disk write, and the lock is
+  released before disk I/O so concurrent callers don't serialise.
+
+### Performance
+
+- **LRU caps on chapter and Strong's caches.** Reading the entire
+  canon in one session previously grew memory by ~230 MB. The
+  cap holds steady-state at ~175 MB. Re-rendering an evicted
+  chapter costs one SWORD round-trip (~20–80 ms).
+- **Lazy Whoosh import** — `sword_bridge` no longer pulls in the
+  full-text search engine at startup. Cold-start of the bridge
+  module dropped from ~102 ms to ~90 ms. Whoosh loads on first
+  search.
+- **Cheap module-presence probe.** The welcome-vs-main decision
+  reads `~/.sword/mods.d/` directly instead of instantiating
+  `Sword.SWMgr()` (105 ms → 0.09 ms). The full SWMgr init still
+  happens — just after first paint instead of before it.
+- **Stop caching Strong's misses.** A failed lookup is no longer
+  permanently cached as `None`; subsequent clicks on the same
+  Strong's number will retry, so installing the missing module
+  takes effect immediately.
+
+### Stability fixes
+
+- **Pane-swap scroll preservation** for all common chapter
+  positions, not just deep scrolls.
+- **`bible:` URI** parses from `sys.argv` directly — Gio.File
+  doesn't always round-trip custom URI schemes cleanly.
+- **Welcome / panel UI:** shadows on overlay panels (menu,
+  search, F11 exit button) no longer render with 90° artifacts
+  on certain themes. Borders carry the visual weight; revealer
+  clipping no longer fights the shadow.
+- **Genbook position saved as a string,** not a list of
+  characters. (A regression introduced during the per-module
+  refactor that broke Concord / Westminster Confession startup
+  briefly during testing.)
+
+### Code health
+
+- **Extract pane search into its own module** (`pane_search.py`,
+  ~345 lines). `pane.py` shrank from 2 831 to 2 607 lines as a
+  result; the external interface for window callers stayed
+  identical via property delegators.
+- **PROJECT.md → ARCHITECTURE.md.** The project brief is now a
+  neutral architecture document; AI-assistance acknowledgement
+  is consolidated into a single paragraph in the README.
+
+### Packaging
+
+- **Flatpak builds and runs end-to-end** in clean Zorin OS 18
+  VM and on Fedora. The SWORD-Python binding integration is
+  solved via `greg-hellings/python-libsword` 1.9.0.post1, which
+  ships pre-generated SWIG output and links against the
+  libsword built in the same manifest.
+- **Bytecode precompiled at install** (`python3 -m compileall`)
+  so first launch doesn't pay the compile cost.
+- **Atomic-write tmp files** auto-clean — the rename pattern
+  overwrites the same `.tmp` path on each save, so no orphan
+  files accumulate.
+
+### Tests
+
+- 124 → 136 tests, all passing in under a second. The 12 new
+  cases cover `module_positions` round-trip, kind discrimination,
+  chapter/book scoping, legacy data recovery, debounce, and
+  flush behaviour.
 
 ## [0.9.0] — 2026-05-21
 
