@@ -34,6 +34,7 @@ def _pane_readable_modules():
 import devotional
 import annotation_dialogs
 from lexicon_panel import LexiconPanel
+from pane_search import PaneSearch
 
 # Logical highlight IDs (persisted in annotations.json) → softer rendered tints.
 # Persisted values are unchanged so existing user data still reads correctly;
@@ -275,14 +276,10 @@ class BiblePane(Gtk.Box):
         # bookmarks) so pane1 and pane2 don't trample each other.
         self._pane_id = pane_id
         self._lexicon_enabled = False
-        # Search result step-through state (populated in _pane_search_done)
-        self._pane_search_results = []
-        self._pane_search_idx = -1
-        # Search highlight: set by a search surface before triggering
-        # navigation; consumed by _apply_search_highlight after the chapter
-        # renders. Tuple of (query, case_sensitive) or None.
-        self._pending_search_highlight = None
-        self._search_hl_timer = None  # GLib source id for the auto-expire
+        # Per-pane Ctrl+F search subsystem (widgets + state + highlight tag).
+        # Constructed eagerly so the toolbar button and revealer can be
+        # placed during _build_ui below.
+        self._search = PaneSearch(self)
 
         self._names = _pane_readable_modules()
         if not self._names:
@@ -360,11 +357,7 @@ class BiblePane(Gtk.Box):
             'clicked', lambda _b: annotation_dialogs.show_chapter_note(self))
         toolbar.append(self._chapter_note_btn)
 
-        self._pane_search_btn = Gtk.ToggleButton(icon_name='system-search-symbolic')
-        self._pane_search_btn.add_css_class('flat')
-        self._pane_search_btn.set_tooltip_text('Search this module')
-        self._pane_search_btn.connect('toggled', self._on_pane_search_toggled)
-        toolbar.append(self._pane_search_btn)
+        toolbar.append(self._search.build_button())
 
         self._copy_chapter_btn = Gtk.Button(icon_name='edit-copy-symbolic')
         self._copy_chapter_btn.add_css_class('flat')
@@ -436,62 +429,9 @@ class BiblePane(Gtk.Box):
         self.append(self._date_nav_revealer)
         self.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
 
-        # Per-pane inline search bar (revealed below toolbar)
-        _sr_inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-
-        _se_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        _se_row.set_margin_start(8)
-        _se_row.set_margin_end(8)
-        _se_row.set_margin_top(6)
-        _se_row.set_margin_bottom(6)
-        self._pane_search_entry = Gtk.SearchEntry(hexpand=True)
-        self._pane_search_entry.set_placeholder_text('Search this module…')
-        self._pane_search_entry.connect('activate', self._on_pane_search)
-        self._pane_search_entry.connect('stop-search',
-                                        lambda _: self._pane_search_btn.set_active(False))
-        self._pane_search_case_btn = Gtk.ToggleButton(label='Aa')
-        self._pane_search_case_btn.add_css_class('flat')
-        self._pane_search_case_btn.set_tooltip_text('Match case')
-        self._pane_search_case_btn.connect(
-            'toggled', self._on_pane_search_case_toggled)
-        self._pane_search_spinner = Gtk.Spinner()
-        self._pane_search_spinner.set_visible(False)
-        _se_row.append(self._pane_search_entry)
-        _se_row.append(self._pane_search_case_btn)
-        _se_row.append(self._pane_search_spinner)
-        _sr_inner.append(_se_row)
-        _sr_inner.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
-
-        self._pane_search_status = Gtk.Label(label='', xalign=0)
-        self._pane_search_status.add_css_class('dim-label')
-        self._pane_search_status.add_css_class('caption')
-        self._pane_search_status.set_margin_start(12)
-        self._pane_search_status.set_margin_top(4)
-        self._pane_search_status.set_margin_bottom(2)
-        _sr_inner.append(self._pane_search_status)
-
-        _ps_scroll = Gtk.ScrolledWindow()
-        _ps_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        _ps_scroll.set_max_content_height(200)
-        _ps_scroll.set_propagate_natural_height(True)
-        self._pane_search_list = Gtk.ListBox()
-        self._pane_search_list.set_selection_mode(Gtk.SelectionMode.NONE)
-        self._pane_search_list.add_css_class('boxed-list')
-        self._pane_search_list.set_margin_start(8)
-        self._pane_search_list.set_margin_end(8)
-        self._pane_search_list.set_margin_top(4)
-        self._pane_search_list.set_margin_bottom(8)
-        self._pane_search_list.connect('row-activated', self._on_pane_search_row)
-        _ps_scroll.set_child(self._pane_search_list)
-        _sr_inner.append(_ps_scroll)
-        _sr_inner.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
-
-        self._pane_search_rev = Gtk.Revealer()
-        self._pane_search_rev.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
-        self._pane_search_rev.set_transition_duration(150)
-        self._pane_search_rev.set_child(_sr_inner)
-        self._pane_search_rev.set_reveal_child(False)
-        self.append(self._pane_search_rev)
+        # Per-pane inline search bar (revealed below toolbar). All
+        # widgets + state live inside PaneSearch — see pane_search.py.
+        self.append(self._search.build_revealer())
 
         # Ensure the pane itself can be shrunk by the user without UI elements pushing it
         self.set_size_request(150, -1)
@@ -662,7 +602,7 @@ class BiblePane(Gtk.Box):
         is_chapter_keyed = self._is_verse_navigable()
         self._sync_btn.set_visible(is_chapter_keyed)
         self._chapter_note_btn.set_visible(is_chapter_keyed)
-        self._pane_search_btn.set_visible(is_chapter_keyed)
+        self._search.button.set_visible(is_chapter_keyed)
         self._copy_chapter_btn.set_visible(is_chapter_keyed)
         self._genbook_toc_btn.set_visible(self._is_genbook)
         self._genbook_prev_btn.set_visible(self._is_genbook)
@@ -876,76 +816,33 @@ class BiblePane(Gtk.Box):
         self._buffer.delete_mark(mark)
         return GLib.SOURCE_REMOVE
 
-    def _apply_search_highlight(self):
-        """If a search surface stashed a pending query on this pane,
-        find its word matches in the rendered chapter and tag them so
-        the user can spot what they were searching for.
+    # ── Per-pane search delegators (PaneSearch owns the real state) ──────
 
-        Auto-expires after 5s so it doesn't persist as visual clutter
-        and doesn't get confused with the verse-click flash."""
-        # Always cancel any pending expire timer + remove any prior highlight
-        # before reapplying. Stale timers + tags shouldn't bleed across
-        # navigations or repeated F3 presses.
-        self._cancel_search_hl_timer()
-        start = self._buffer.get_start_iter()
-        end = self._buffer.get_end_iter()
-        tag_table = self._buffer.get_tag_table()
-        existing = tag_table.lookup('_search_hl')
-        if existing:
-            self._buffer.remove_tag(existing, start, end)
+    @property
+    def _pane_search_rev(self):
+        """Window code (Ctrl+F / F3) reads this revealer's `get_reveal_child`
+        to decide which surface owns the active search. Kept on the pane
+        for compat; the real widget lives inside `self._search`."""
+        return self._search.revealer
 
-        pending = self._pending_search_highlight
-        self._pending_search_highlight = None
-        if not pending:
-            return
-        query, case_sensitive = pending
-        words = [w for w in re.split(r'\s+', query.strip()) if w]
-        if not words:
-            return
+    @property
+    def _pane_search_results(self):
+        return self._search.results
 
-        tag = existing
-        if tag is None:
-            # Amber — visually distinct from the pale-yellow verse flash so
-            # the two don't merge into a single yellow blob on the matched
-            # word during the 1s flash window.
-            tag = self._buffer.create_tag(
-                '_search_hl', background='#ffd180', foreground='black')
-        # Bump priority so the highlight wins against insert_markup's
-        # anonymous tags (same pattern as the flash tag).
-        tag.set_priority(tag_table.get_size() - 1)
+    @property
+    def _pending_search_highlight(self):
+        return self._search.pending_highlight
 
-        flags = 0 if case_sensitive else re.IGNORECASE
-        pattern = r'\b(?:' + '|'.join(re.escape(w) for w in words) + r')\b'
-        text = self._buffer.get_text(start, end, False)
-        applied = False
-        try:
-            for m in re.finditer(pattern, text, flags):
-                si = self._buffer.get_iter_at_offset(m.start())
-                ei = self._buffer.get_iter_at_offset(m.end())
-                self._buffer.apply_tag(tag, si, ei)
-                applied = True
-        except re.error:
-            return
+    @_pending_search_highlight.setter
+    def _pending_search_highlight(self, value):
+        if value is None:
+            self._search._pending_highlight = None
+        else:
+            q, case = value
+            self._search.stash_pending_highlight(q, case)
 
-        if applied:
-            def _expire():
-                self._search_hl_timer = None
-                t = self._buffer.get_tag_table().lookup('_search_hl')
-                if t:
-                    self._buffer.remove_tag(
-                        t,
-                        self._buffer.get_start_iter(),
-                        self._buffer.get_end_iter())
-                return GLib.SOURCE_REMOVE
-            self._search_hl_timer = GLib.timeout_add(5000, _expire)
-
-    def _cancel_search_hl_timer(self):
-        if self._search_hl_timer is not None:
-            try:
-                GLib.source_remove(self._search_hl_timer)
-            except Exception:
-                pass
-            self._search_hl_timer = None
+    def step_pane_search_result(self, prev=False):
+        return self._search.step(prev=prev)
 
     # Tags whose names start with these prefixes are chapter-scoped: a
     # fresh set is created on every render (vnum_N for verse anchors,
@@ -997,7 +894,7 @@ class BiblePane(Gtk.Box):
         dark = Adw.StyleManager.get_default().get_dark()
         fg = '#8d8278' if dark else '#7a7066'
         self._cancel_all_flashes()
-        self._cancel_search_hl_timer()
+        self._search.cancel_hl_timer()
         self._buffer.set_text('')
         self._clear_chapter_scoped_tags()
         msg = (f'<span size="large" foreground="{fg}">'
@@ -1042,7 +939,7 @@ class BiblePane(Gtk.Box):
             return GLib.SOURCE_REMOVE
         dark = Adw.StyleManager.get_default().get_dark()
         self._cancel_all_flashes()
-        self._cancel_search_hl_timer()
+        self._search.cancel_hl_timer()
         self._buffer.set_text('')
         self._clear_chapter_scoped_tags()
         if raw:
@@ -1121,7 +1018,7 @@ class BiblePane(Gtk.Box):
             return GLib.SOURCE_REMOVE
         dark = Adw.StyleManager.get_default().get_dark()
         self._cancel_all_flashes()
-        self._cancel_search_hl_timer()
+        self._search.cancel_hl_timer()
         self._buffer.set_text('')
         self._clear_chapter_scoped_tags()
 
@@ -1353,7 +1250,7 @@ class BiblePane(Gtk.Box):
         is_commentary = self._module_type == 'Commentaries'
 
         self._cancel_all_flashes()
-        self._cancel_search_hl_timer()
+        self._search.cancel_hl_timer()
         self._buffer.set_text('')
         self._clear_chapter_scoped_tags()
 
@@ -1491,7 +1388,7 @@ class BiblePane(Gtk.Box):
             self._view.scroll_to_iter(self._buffer.get_start_iter(), 0.0, False, 0, 0)
 
         self._update_chapter_note_indicator()
-        self._apply_search_highlight()
+        self._search.apply_highlight()
         return GLib.SOURCE_REMOVE
 
     @staticmethod
@@ -2332,133 +2229,6 @@ class BiblePane(Gtk.Box):
         self._update_font_css()
         self._fetch_and_render()
 
-    def _on_pane_search_toggled(self, btn):
-        if btn.get_active():
-            self._pane_search_rev.set_reveal_child(True)
-            self._pane_search_entry.grab_focus()
-        else:
-            self._pane_search_rev.set_reveal_child(False)
-            self._pane_search_entry.set_text('')
-            child = self._pane_search_list.get_first_child()
-            while child:
-                nxt = child.get_next_sibling()
-                self._pane_search_list.remove(child)
-                child = nxt
-            self._pane_search_status.set_text('')
-
-    def _on_pane_search(self, *_):
-        query = self._pane_search_entry.get_text().strip()
-        if not query:
-            return
-        module = self._module
-        child = self._pane_search_list.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            self._pane_search_list.remove(child)
-            child = nxt
-        self._pane_search_status.set_text('Searching…')
-        self._pane_search_spinner.set_visible(True)
-        self._pane_search_spinner.start()
-
-        def _idx_start():
-            GLib.idle_add(self._pane_search_status.set_text, 'Building index…')
-
-        def _idx_progress(book_idx, total, book_name):
-            GLib.idle_add(self._pane_search_status.set_text,
-                          f'Building index… {book_name} ({book_idx}/{total})')
-
-        case = self._pane_search_case_btn.get_active()
-
-        def run():
-            if ebible_bridge.is_ebible_module(module):
-                results = ebible_bridge.search_module(
-                    module, query, case_sensitive=case)
-            else:
-                results = sword_bridge.search_module(
-                    module, query,
-                    on_indexing_start=_idx_start,
-                    on_indexing_progress=_idx_progress,
-                    on_indexing_done=lambda: None,
-                    case_sensitive=case)
-            GLib.idle_add(self._pane_search_done, results, module)
-
-        threading.Thread(target=run, daemon=True).start()
-
-    def _on_pane_search_case_toggled(self, _btn):
-        # Re-run if there's a query to reflect the new mode.
-        if self._pane_search_entry.get_text().strip():
-            self._on_pane_search()
-
-    def _pane_search_done(self, results, module):
-        self._pane_search_spinner.stop()
-        self._pane_search_spinner.set_visible(False)
-        if module != self._module:
-            return GLib.SOURCE_REMOVE
-        truncated_msg = None
-        if results and results[-1][0] == '':
-            truncated_msg = results[-1][3]
-            results = results[:-1]
-        # Stash for F3/Shift+F3 step-through.
-        self._pane_search_results = list(results)
-        self._pane_search_idx = -1
-        if truncated_msg:
-            self._pane_search_status.set_text(truncated_msg)
-        else:
-            n = len(results)
-            self._pane_search_status.set_text(
-                f'{n} verse{"s" if n != 1 else ""} found')
-        for book, ch, v, text in results[:500]:
-            row = Gtk.ListBoxRow()
-            row._nav = (book, ch, v)
-            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
-            box.set_margin_start(10)
-            box.set_margin_end(10)
-            box.set_margin_top(5)
-            box.set_margin_bottom(5)
-            ref = Gtk.Label(label=f'{book} {ch}:{v}', xalign=0)
-            ref.add_css_class('caption')
-            snippet = text[:120] + ('…' if len(text) > 120 else '')
-            body = Gtk.Label(label=snippet, xalign=0, wrap=False)
-            body.set_ellipsize(Pango.EllipsizeMode.END)
-            body.add_css_class('dim-label')
-            body.add_css_class('caption')
-            box.append(ref)
-            box.append(body)
-            row.set_child(box)
-            self._pane_search_list.append(row)
-        return GLib.SOURCE_REMOVE
-
-    def _on_pane_search_row(self, _listbox, row):
-        if hasattr(row, '_nav') and self._on_word_study_navigate:
-            self._stash_search_highlight_for_self()
-            self._on_word_study_navigate(*row._nav)
-
-    def step_pane_search_result(self, prev=False):
-        """F3 / Shift+F3 step-through for this pane's search results.
-        Returns True if a navigation happened."""
-        results = getattr(self, '_pane_search_results', None) or []
-        if not results or not self._on_word_study_navigate:
-            return False
-        n = len(results)
-        idx = getattr(self, '_pane_search_idx', -1)
-        idx = (idx - 1) % n if prev else (idx + 1) % n
-        self._pane_search_idx = idx
-        book, ch, v, _text = results[idx]
-        self._stash_search_highlight_for_self()
-        self._on_word_study_navigate(book, ch, v)
-        self._pane_search_status.set_text(f'Result {idx + 1} of {n}')
-        return True
-
-    def _stash_search_highlight_for_self(self):
-        """Snapshot the per-pane search entry's query + case toggle so
-        _apply_search_highlight (which fires after the upcoming render)
-        paints the matched words."""
-        q = self._pane_search_entry.get_text().strip()
-        if not q:
-            return
-        case = self._pane_search_case_btn.get_active()
-        self._pending_search_highlight = (q, case)
-
     def refresh_modules(self):
         # Invalidate the language cache — a module that was just installed
         # might not have been probed before; one that was uninstalled
@@ -2519,9 +2289,9 @@ class BiblePane(Gtk.Box):
         # date navigation instead; Generic Books get the TOC button.
         self._sync_btn.set_visible(is_chapter_keyed)
         self._chapter_note_btn.set_visible(is_chapter_keyed)
-        self._pane_search_btn.set_visible(is_chapter_keyed)
+        self._search.button.set_visible(is_chapter_keyed)
         self._copy_chapter_btn.set_visible(is_chapter_keyed)
-        self._pane_search_btn.set_active(False)
+        self._search.button.set_active(False)
         # TOC + prev/next buttons only visible for Generic Books
         if hasattr(self, '_genbook_toc_btn'):
             self._genbook_toc_btn.set_visible(self._is_genbook)
@@ -2544,9 +2314,7 @@ class BiblePane(Gtk.Box):
         self._lex_panel.clear_state()
         # Search results were keyed to the previous module — drop them
         # so F3 doesn't try to step through stale references.
-        self._pane_search_results = []
-        self._pane_search_idx = -1
-        self._pending_search_highlight = None
+        self._search.clear_state()
         # Dismiss any dict popup since it's tied to a word in the previous module's text.
         prev_dict = getattr(self, '_dict_win', None)
         if prev_dict is not None:

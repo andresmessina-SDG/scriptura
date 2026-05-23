@@ -196,6 +196,7 @@ modules:
       - install -Dm644 reading_plans.py /app/share/bible-reader/reading_plans.py
       - install -Dm644 open_data.py /app/share/bible-reader/open_data.py
       - install -Dm644 search_panel.py /app/share/bible-reader/search_panel.py
+      - install -Dm644 pane_search.py /app/share/bible-reader/pane_search.py
       - install -Dm644 study_journal.py /app/share/bible-reader/study_journal.py
       - install -Dm644 crossref_panel.py /app/share/bible-reader/crossref_panel.py
       - install -Dm644 module_manager.py /app/share/bible-reader/module_manager.py
