@@ -1379,6 +1379,11 @@ class BiblePane(Gtk.Box):
             v = self._target_verse
             self._target_verse = None
             self._restore_top_verse = None
+            # Navigation to a specific verse — mark it as the active
+            # verse so the current-verse indicator sits on it after
+            # the scroll lands.
+            self._selected_verse = v
+            self._set_current_verse_indicator(v)
             GLib.idle_add(self._scroll_to_verse, v)
         elif self._restore_top_verse is not None:
             v = self._restore_top_verse
@@ -1386,6 +1391,15 @@ class BiblePane(Gtk.Box):
             GLib.idle_add(self._scroll_to_verse_silent, v)
         else:
             self._view.scroll_to_iter(self._buffer.get_start_iter(), 0.0, False, 0, 0)
+            # Fresh chapter render with no specific target — the
+            # previous chapter's active verse is no longer applicable.
+            self._selected_verse = None
+
+        # If _selected_verse survived (e.g. user clicked verse 5 in this
+        # chapter, then chapter re-rendered for an annotation save), the
+        # indicator paint was wiped by set_text('') above — restore it.
+        if self._selected_verse is not None:
+            self._set_current_verse_indicator(self._selected_verse)
 
         self._update_chapter_note_indicator()
         self._search.apply_highlight()
@@ -1506,6 +1520,51 @@ class BiblePane(Gtk.Box):
     def _flash_verse_deferred(self, verse_num):
         self._flash_verse(verse_num)
         return GLib.SOURCE_REMOVE
+
+    # ── Current-verse indicator ──────────────────────────────────────────
+    # A persistent subtle cue on the active verse (last clicked or
+    # navigated-to). Applied to the verse-number range only — sits on
+    # the left edge of the verse, visually distinct from the 1 s flash
+    # (yellow text background) and the user's annotation highlight
+    # (multi-color verse-text background). Bounded tag — lives across
+    # chapter renders, cleared and re-applied on selection changes.
+
+    _CURRENT_VERSE_TAG_NAME = '_current_verse'
+
+    def _ensure_current_verse_tag(self):
+        table = self._buffer.get_tag_table()
+        tag = table.lookup(self._CURRENT_VERSE_TAG_NAME)
+        if tag is not None:
+            return tag
+        dark = Adw.StyleManager.get_default().get_dark()
+        bg = '#3d5478' if dark else '#dde8f7'
+        return self._buffer.create_tag(
+            self._CURRENT_VERSE_TAG_NAME,
+            background=bg,
+            weight=Pango.Weight.BOLD)
+
+    def _set_current_verse_indicator(self, verse_num):
+        """Apply the active-verse indicator to verse_num (or clear if
+        None). Idempotent: prior placements are removed first so only
+        one verse ever shows the cue at a time."""
+        table = self._buffer.get_tag_table()
+        tag = table.lookup(self._CURRENT_VERSE_TAG_NAME)
+        if tag is not None:
+            self._buffer.remove_tag(
+                tag,
+                self._buffer.get_start_iter(),
+                self._buffer.get_end_iter())
+        if not verse_num:
+            return
+        ranges = self._verse_ranges(verse_num)
+        if not ranges:
+            return
+        vnum_start, vtext_start, _ = ranges
+        tag = self._ensure_current_verse_tag()
+        # Bump priority so anonymous insert_markup tags from subsequent
+        # annotation applies don't out-rank us.
+        tag.set_priority(table.get_size() - 1)
+        self._buffer.apply_tag(tag, vnum_start, vtext_start)
 
     def _verse_ranges(self, verse_num):
         """Return (vnum_start, vtext_start, vtext_end) iters for verse_num
@@ -1909,6 +1968,7 @@ class BiblePane(Gtk.Box):
             return
         if verse_num is not None:
             self._selected_verse = verse_num
+            self._set_current_verse_indicator(verse_num)
         if strong_num and self._on_word_click:
             # Resolve phrase context — the full English phrase text and
             # the full Strong's chain on the source <w> tag — so the
@@ -2226,6 +2286,13 @@ class BiblePane(Gtk.Box):
         # detached from its window — avoids touching a destroyed buffer.
         if self.get_root() is None:
             return
+        # The current-verse tag bakes its background color at creation
+        # time. Drop it so the next render re-creates it against the
+        # new theme.
+        table = self._buffer.get_tag_table()
+        cv = table.lookup(self._CURRENT_VERSE_TAG_NAME)
+        if cv is not None:
+            table.remove(cv)
         self._update_font_css()
         self._fetch_and_render()
 
@@ -2593,6 +2660,7 @@ class BiblePane(Gtk.Box):
     def select_verse(self, verse_num):
         """Called by other panes broadcasting a verse selection."""
         self._selected_verse = verse_num
+        self._set_current_verse_indicator(verse_num)
         tag = self._buffer.get_tag_table().lookup(f'vnum_{verse_num}')
         if tag:
             self._scroll_to_verse(verse_num)
