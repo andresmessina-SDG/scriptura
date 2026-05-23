@@ -1,6 +1,6 @@
 # Flatpak packaging status
 
-Current state of `org.codeberg.andresmessina.BibleReader.yml` and what
+Current state of `page.codeberg.andresmessina.Scriptura.yml` and what
 the Flathub submission PR needs to resolve.
 
 ## What works (verified end-to-end 2026-05-22)
@@ -10,7 +10,7 @@ clean Zorin OS 18 VM. Confirmed working in that environment:
 
 - `import Sword` resolves (the long-standing wall).
 - Welcome → Install essentials → modules land in
-  `~/.var/app/org.codeberg.andresmessina.BibleReader/.sword/`.
+  `~/.var/app/page.codeberg.andresmessina.Scriptura/.sword/`.
 - Open a module and read — SWMgr discovery, chapter loads,
   annotations all work.
 - File picker via `xdg-desktop-portal` (Study Journal → Export).
@@ -30,12 +30,12 @@ Validated pieces from prior builds (unchanged by the latest pivot):
   bindings target. Installs `libsword.so` + `sword.pc`.
 - **Whoosh** (`Whoosh-2.7.4`): pip-installs into
   `/app/lib/python3.13/site-packages/`.
-- **Bible Reader app code**: all `.py` files installed to
-  `/app/share/bible-reader/`. Wrapper at
-  `/app/bin/org.codeberg.andresmessina.BibleReader`.
+- **Scriptura app code**: all `.py` files installed to
+  `/app/share/scriptura/`. Wrapper at
+  `/app/bin/page.codeberg.andresmessina.Scriptura`.
 - **PNG icons**: 48/64/128/256 rendered by `rsvg-convert` from the
   source SVG.
-- **Desktop file**: `Exec=org.codeberg.andresmessina.BibleReader %U`.
+- **Desktop file**: `Exec=page.codeberg.andresmessina.Scriptura %U`.
 - **Sandbox**: wayland + fallback-x11 + network + dri + `~/.sword`
   persistence.
 
@@ -112,7 +112,7 @@ The Flatpak runs locally. Items below are submission gates:
    cleanly, unlike Zorin's).
 3. **5 screenshots** captured from the running app, hosted at
    stable Codeberg `raw/commit/<sha>/...` URLs, referenced from
-   `data/org.codeberg.andresmessina.BibleReader.metainfo.xml`'s
+   `data/page.codeberg.andresmessina.Scriptura.metainfo.xml`'s
    `<screenshots>` block.
 4. **`CHANGELOG.md`** with v1.0.0 entry.
 5. **Local `flatpak-builder-lint` pass** against the manifest +
@@ -125,7 +125,7 @@ The Flatpak runs locally. Items below are submission gates:
 Real-world Codeberg-hosted apps on Flathub now use the prefix
 `page.codeberg.<user>.<App>` (e.g. `page.codeberg.ethicalhaquer.
 galaxyflasher`). The current manifest still uses
-`org.codeberg.andresmessina.BibleReader`, which a maintainer
+`page.codeberg.andresmessina.Scriptura`, which a maintainer
 endorsed on GNOME Discourse but predates the `page.codeberg.*`
 convention. **Verify with Flathub before submission**; the change
 ripples through manifest, metainfo, desktop file, icon filenames,

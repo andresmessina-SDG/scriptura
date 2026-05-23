@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>org.codeberg.andresmessina.BibleReader</id>
+  <id>page.codeberg.andresmessina.Scriptura</id>
 
-  <name>Bible Reader</name>
+  <name>Scriptura</name>
   <summary>GNOME-native Bible study with SWORD modules and Strong's lexicon</summary>
 
   <metadata_license>CC0-1.0</metadata_license>
@@ -14,7 +14,7 @@
 
   <description>
     <p>
-      Bible Reader is a focused, native Linux Bible study application
+      Scriptura is a focused, native Linux Bible study application
       that pairs a quiet two-pane reading layout with the depth of
       SWORD Project modules.
     </p>
@@ -38,7 +38,7 @@
     </p>
   </description>
 
-  <launchable type="desktop-id">org.codeberg.andresmessina.BibleReader.desktop</launchable>
+  <launchable type="desktop-id">page.codeberg.andresmessina.Scriptura.desktop</launchable>
 
   <!--
     <screenshots> block is deliberately omitted until real PNGs ship
@@ -50,9 +50,9 @@
     for the full block).
   -->
 
-  <url type="homepage">https://codeberg.org/andresmessina/bible-reader</url>
-  <url type="bugtracker">https://codeberg.org/andresmessina/bible-reader/issues</url>
-  <url type="vcs-browser">https://codeberg.org/andresmessina/bible-reader</url>
+  <url type="homepage">https://codeberg.org/andresmessina/scriptura</url>
+  <url type="bugtracker">https://codeberg.org/andresmessina/scriptura/issues</url>
+  <url type="vcs-browser">https://codeberg.org/andresmessina/scriptura</url>
 
   <categories>
     <category>Education</category>

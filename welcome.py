@@ -34,7 +34,7 @@ class WelcomeWindow(Adw.ApplicationWindow):
     def __init__(self, on_ready, **kwargs):
         super().__init__(**kwargs)
         self._on_ready = on_ready
-        self.set_title('Bible Reader — Welcome')
+        self.set_title('Scriptura — Welcome')
         self.set_default_size(620, 540)
 
         toolbar_view = Adw.ToolbarView()
@@ -49,7 +49,7 @@ class WelcomeWindow(Adw.ApplicationWindow):
         toolbar_view.set_content(outer)
 
         # ── Hero ──────────────────────────────────────────────────────────
-        title = Gtk.Label(label='Welcome to Bible Reader')
+        title = Gtk.Label(label='Welcome to Scriptura')
         title.add_css_class('title-1')
         title.set_xalign(0)
         outer.append(title)
@@ -175,7 +175,7 @@ class WelcomeWindow(Adw.ApplicationWindow):
                 f'Installed with warnings — these failed and can be retried '
                 f'later from the Module Manager: {names}')
         else:
-            self._status.set_text('Done. Opening Bible Reader…')
+            self._status.set_text('Done. Opening Scriptura…')
 
         # Hand off to main.py to construct the real window.
         GLib.timeout_add(600, self._handoff)

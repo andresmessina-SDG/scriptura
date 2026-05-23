@@ -1,13 +1,13 @@
 [Desktop Entry]
-Name=Bible Reader
+Name=Scriptura
 GenericName=Bible Study
 Comment=GNOME-native Bible study with SWORD modules, Strong's lexicon, and cross-references
-Exec=org.codeberg.andresmessina.BibleReader %U
-Icon=org.codeberg.andresmessina.BibleReader
+Exec=page.codeberg.andresmessina.Scriptura %U
+Icon=page.codeberg.andresmessina.Scriptura
 Categories=Education;Literature;
 Keywords=Bible;Scripture;Study;SWORD;Lexicon;Strong's;
 MimeType=x-scheme-handler/bible;
 Terminal=false
 Type=Application
 StartupNotify=true
-StartupWMClass=org.codeberg.andresmessina.BibleReader
+StartupWMClass=page.codeberg.andresmessina.Scriptura

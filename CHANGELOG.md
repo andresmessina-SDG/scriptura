@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Bible Reader. Format roughly follows
+All notable changes to Scriptura. Format roughly follows
 [Keep a Changelog](https://keepachangelog.com/). Versioning is
 semver-ish — 0.x is the pre-Flathub testing track.
 
@@ -141,7 +141,7 @@ this and a 1.0 tag is the Flathub submission round-trip.
 
 ### Packaging
 
-- Flatpak manifest for `org.codeberg.andresmessina.BibleReader`
+- Flatpak manifest for `page.codeberg.andresmessina.Scriptura`
   is checked in but the SWORD-Python binding integration step is
   pending Flathub-maintainer help. See `flatpak/STATUS.md`.
 

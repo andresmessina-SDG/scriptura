@@ -118,7 +118,7 @@ set `SWORD_PYTHON_INSTALL_DIR=/app`.
 ## If you need to verify the bindings landed
 
 ```sh
-flatpak run --command=find org.codeberg.andresmessina.BibleReader \
+flatpak run --command=find page.codeberg.andresmessina.Scriptura \
     /app -iname "Sword*" -o -iname "_Sword*"
 ```
 

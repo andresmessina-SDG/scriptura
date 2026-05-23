@@ -1,4 +1,4 @@
-# Full-Text Search Library Research for Bible Reader
+# Full-Text Search Library Research for Scriptura
 
 ## Problem Statement
 
@@ -6,7 +6,7 @@ The current `sword_bridge.search_module` performs a brute-force linear scan thro
 
 ## Chosen Library: Whoosh (with `whoosh-reloaded` considerations)
 
-After evaluating several options, **Whoosh** is selected as the most suitable library for the `bible-reader` application.
+After evaluating several options, **Whoosh** is selected as the most suitable library for the Scriptura application.
 
 **Why Whoosh?**
 *   **Pure Python:** Avoids complex compilation issues with C/Rust extensions, simplifying `pip install` and deployment.

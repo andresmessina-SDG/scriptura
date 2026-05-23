@@ -1,4 +1,4 @@
-# Bible Reader
+# Scriptura
 
 A native Linux Bible study app for the new generation that wants to
 study and teach the old truth with digital efficiency. Two-pane
@@ -44,7 +44,7 @@ Built on GNOME with GTK4 + libadwaita, in Python, GPL-3.0.
   demand into a local SQLite store.
 - **F11 reading mode** when you want chrome to disappear.
 
-Bible Reader runs entirely on your computer. There is no telemetry,
+Scriptura runs entirely on your computer. There is no telemetry,
 no account, no background phone-home. The only time the app uses the
 network is when you explicitly download a module, fetch a translation
 from eBible.org, or install an open-data file. Your study is your
@@ -75,8 +75,8 @@ If your distribution doesn't ship `python3-whoosh` (older Debian /
 Ubuntu stable), install it into a system-aware venv:
 
 ```sh
-python3 -m venv --system-site-packages ~/.venvs/bible-reader
-source ~/.venvs/bible-reader/bin/activate
+python3 -m venv --system-site-packages ~/.venvs/scriptura
+source ~/.venvs/scriptura/bin/activate
 pip install whoosh
 # Activate this venv before running the app from now on.
 ```
@@ -99,8 +99,8 @@ the `python3` alias works too.
 The app is plain Python — no build step:
 
 ```sh
-git clone https://codeberg.org/andresmessina/bible-reader.git
-cd bible-reader
+git clone https://codeberg.org/andresmessina/scriptura.git
+cd scriptura
 python3 main.py
 ```
 
@@ -141,7 +141,7 @@ Tiling compositors need a hint. For Hyprland:
 ```hyprlang
 windowrulev2 = float, title:^(Module Manager|Study Journal|Tag Manager|Keyboard Shortcuts)$
 windowrulev2 = float, title:^(Save .*|Export .*|Rename .*|Remove .*)$
-windowrulev2 = float, title:^(Bible Reader)$, floating:1
+windowrulev2 = float, title:^(Scriptura)$, floating:1
 ```
 
 `xdg-desktop-portal-gtk` (or `-hyprland`) needs to be installed
@@ -232,7 +232,7 @@ The SWORD library this app links against is also GPL-licensed.
 
 ## A note on how this app was built
 
-Bible Reader was developed in collaboration with Anthropic's AI
+Scriptura was developed in collaboration with Anthropic's AI
 assistant (AI Opus). The AI handled most of the code-typing
 under continuous direction: every feature, every design decision,
 every bug report came from sitting with Scripture and thinking
@@ -249,4 +249,4 @@ developers, from anyone who wants this tool to keep growing.
 
 ## Repository
 
-[codeberg.org/andresmessina/bible-reader](https://codeberg.org/andresmessina/bible-reader)
+[codeberg.org/andresmessina/scriptura](https://codeberg.org/andresmessina/scriptura)

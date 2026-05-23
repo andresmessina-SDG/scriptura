@@ -2,7 +2,7 @@
 
 This directory holds the wrapper script for the Flatpak build. The
 manifest lives at the repo root as
-`org.codeberg.andresmessina.BibleReader.yml`.
+`page.codeberg.andresmessina.Scriptura.yml`.
 
 ## Prerequisites
 
@@ -53,8 +53,8 @@ From the repo root:
 
 ```sh
 flatpak-builder --user --install --force-clean build-dir \
-    org.codeberg.andresmessina.BibleReader.yml
-flatpak run org.codeberg.andresmessina.BibleReader
+    page.codeberg.andresmessina.Scriptura.yml
+flatpak run page.codeberg.andresmessina.Scriptura
 ```
 
 Iterate as needed. `--force-clean` wipes the build dir each run so
@@ -86,7 +86,7 @@ mistakes don't compound.
 Once the manifest builds clean and the screenshots are in place:
 
 1. Fork `flathub/flathub` on GitHub.
-2. Create a branch named `new-pr/org.codeberg.andresmessina.BibleReader`.
+2. Create a branch named `new-pr/page.codeberg.andresmessina.Scriptura`.
 3. Add the manifest + (optionally) a `flathub.json` config for
    long-term maintenance settings.
 4. Open a PR. Flathub maintainers review.

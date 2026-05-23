@@ -1,4 +1,4 @@
-# Bible Reader — Architecture Brief
+# Scriptura — Architecture Brief
 
 Internal architecture and design notes for anyone working on the
 codebase. For the user-facing introduction, see [README.md](README.md).
@@ -67,14 +67,14 @@ own module selector dropdown.
 ## File layout
 
 ```
-bible-reader/
+scriptura/
 +-- PROJECT.md             # this file
 +-- README.md             # user-facing overview, install, credits, license
 +-- LICENSE               # GPL-3.0-or-later (canonical text)
 +-- SEARCH_RESEARCH.md    # early design notes (kept for reference)
 +-- pytest.ini            # testpaths + pythonpath config
 +-- requirements-dev.txt  # pytest + dev tools
-+-- main.py               # app entry, Adw.Application (org.codeberg.andresmessina.BibleReader)
++-- main.py               # app entry, Adw.Application (page.codeberg.andresmessina.Scriptura)
 +-- window.py             # BibleWindow — header, panes, navigation funnels, About dialog
 +-- pane.py               # BiblePane — text rendering, annotations, click handling
 +-- lexicon_panel.py      # LexiconPanel — definition view + word study (own class)
@@ -98,8 +98,8 @@ bible-reader/
 |   +-- test_reading_plans.py
 |   +-- test_sword_bridge.py
 +-- data/
-|   +-- icons/hicolor/scalable/apps/org.codeberg.andresmessina.BibleReader.svg
-|   +-- org.codeberg.andresmessina.BibleReader.desktop
+|   +-- icons/hicolor/scalable/apps/page.codeberg.andresmessina.Scriptura.svg
+|   +-- page.codeberg.andresmessina.Scriptura.desktop
 |   +-- cross_references.txt   # gitignored — OpenBible download
 |   +-- topic-scores.txt       # gitignored — OpenBible download
 |   +-- dodson.csv             # gitignored — Dodson Greek download
@@ -566,14 +566,14 @@ crashed on `None` entries — used `t.strip()` on raw values after a defensive
 **Phase D — Identity & polish (done):**
 * `LICENSE` — canonical GPL-3.0 text from `/usr/share/licenses/`.
 * `README.md` — feature list, install steps, credits, license.
-* `data/icons/hicolor/scalable/apps/org.codeberg.andresmessina.BibleReader.svg`
+* `data/icons/hicolor/scalable/apps/page.codeberg.andresmessina.Scriptura.svg`
   — placeholder open-book icon. User will replace with their own design.
-* `data/org.codeberg.andresmessina.BibleReader.desktop` — name, icon
+* `data/page.codeberg.andresmessina.Scriptura.desktop` — name, icon
   reference, categories, keywords.
 * `Adw.AboutDialog` wired to a new About button in the menu panel's tool
   row, with credits sections for SWORD/OpenBible/Dodson/eBible.org and
   build acknowledgements.
-* App ID changed `org.example.biblereader` → `org.codeberg.andresmessina.BibleReader`
+* App ID changed `org.example.biblereader` → `page.codeberg.andresmessina.Scriptura`
   to match the icon/desktop/about strings.
 * `_register_icon_search_path()` added to `main.py` so the bundled icon
   resolves in dev runs (Flatpak install will pick it up automatically).
@@ -582,7 +582,7 @@ crashed on `None` entries — used `t.strip()` on raw values after a defensive
   topic-scores.txt, dodson.csv).
 
 **Still pending (Phase E + F):**
-- Flatpak manifest (`org.codeberg.andresmessina.BibleReader.yml`).
+- Flatpak manifest (`page.codeberg.andresmessina.Scriptura.yml`).
 - First-run module install flow (detect no SWORD modules and walk through
   installing KJVA + Strongs* + TSK).
 - `flatpak-builder` local test.

@@ -50,7 +50,7 @@ class BibleWindow(Adw.ApplicationWindow):
             settings.get('window_width'), settings.get('window_height'))
         if settings.get('window_maximized'):
             self.maximize()
-        self.set_title('Bible Reader')
+        self.set_title('Scriptura')
         self._nav_back = []
         self._nav_fwd = []
         # Restore last book/chapter — validated against BOOKS list and
@@ -1597,14 +1597,14 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
     def _on_about_clicked(self, _btn):
         from _version import __version__
         dlg = Adw.AboutDialog(
-            application_name='Bible Reader',
-            application_icon='org.codeberg.andresmessina.BibleReader',
+            application_name='Scriptura',
+            application_icon='page.codeberg.andresmessina.Scriptura',
             developer_name='Andres Messina',
             version=__version__,
             comments='GNOME-native Bible study with SWORD modules, '
                      'Strong’s lexicon, cross-references, and reading plans.',
-            website='https://codeberg.org/andresmessina/bible-reader',
-            issue_url='https://codeberg.org/andresmessina/bible-reader/issues',
+            website='https://codeberg.org/andresmessina/scriptura',
+            issue_url='https://codeberg.org/andresmessina/scriptura/issues',
             license_type=Gtk.License.GPL_3_0,
             copyright='© 2026 Andres Messina',
         )
@@ -1812,7 +1812,7 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
         hbox.set_margin_bottom(8)
         about_btn = Gtk.Button(icon_name='help-about-symbolic')
         about_btn.add_css_class('flat')
-        about_btn.set_tooltip_text('About Bible Reader')
+        about_btn.set_tooltip_text('About Scriptura')
         about_btn.connect('clicked', self._on_about_clicked)
         title = Gtk.Label(label='Menu', hexpand=True)
         title.set_xalign(0)

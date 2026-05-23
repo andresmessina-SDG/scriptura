@@ -2,8 +2,8 @@
 
 These PNGs are referenced by the AppStream metainfo and by Flathub's
 store page. Once captured, restore the `<screenshots>` block in
-`data/org.codeberg.andresmessina.BibleReader.metainfo.xml` and the
-metainfo install line in `org.codeberg.andresmessina.BibleReader.yml`.
+`data/page.codeberg.andresmessina.Scriptura.metainfo.xml` and the
+metainfo install line in `page.codeberg.andresmessina.Scriptura.yml`.
 
 ## Capture checklist
 

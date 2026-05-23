@@ -8,7 +8,7 @@ from gi.repository import Gtk, Adw, Gdk, Gio
 from window import BibleWindow
 
 
-APP_ID = 'org.codeberg.andresmessina.BibleReader'
+APP_ID = 'page.codeberg.andresmessina.Scriptura'
 
 
 def _parse_bible_uri(uri):
