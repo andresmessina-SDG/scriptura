@@ -6,6 +6,7 @@ import tarfile
 import threading
 import urllib.request
 import zipfile
+from collections import OrderedDict
 import Sword
 
 # Whoosh is only imported on first search/index — saves ~50 ms on cold
@@ -49,8 +50,33 @@ def _bible_schema():
 _mgr = None
 # RLock allows reentry: callers like load_chapter hold _lock and then call mgr().
 _lock = threading.RLock()
-_cache = {}
-_strongs_cache = {}
+# Chapter render cache. OrderedDict + cap = LRU eviction so a long reading
+# session that touches the whole canon doesn't grow memory unboundedly.
+# 200 chapters × ~50 KB ≈ 10 MB worst case; comfortably above any normal
+# session's working set.
+_CHAPTER_CACHE_CAP = 200
+_cache = OrderedDict()
+# Strong's lookup cache — same shape, smaller cap. A typical chapter
+# references 30–50 unique Strong's numbers; 500 covers many chapters of
+# recent activity before evicting.
+_STRONGS_CACHE_CAP = 500
+_strongs_cache = OrderedDict()
+
+
+def _cache_chapter(key, value):
+    """Insert a chapter render with LRU eviction. Caller holds _lock."""
+    _cache[key] = value
+    _cache.move_to_end(key)
+    if len(_cache) > _CHAPTER_CACHE_CAP:
+        _cache.popitem(last=False)
+
+
+def _cache_strong(strong_num, value):
+    """Insert a Strong's lookup with LRU eviction. Caller holds _lock."""
+    _strongs_cache[strong_num] = value
+    _strongs_cache.move_to_end(strong_num)
+    if len(_strongs_cache) > _STRONGS_CACHE_CAP:
+        _strongs_cache.popitem(last=False)
 
 _indexing_threads = {} # To keep track of indexing processes per module
 # Separate lock for _indexing_threads dict ops only — never held during join().
@@ -235,6 +261,7 @@ def load_chapter(module_name, book, chapter):
     # which would race with a bare `if key in _cache` / `_cache[key]` read.
     with _lock:
         if key in _cache:
+            _cache.move_to_end(key)  # mark as recently used
             return _cache[key]
 
         mod = mgr().getModule(module_name)
@@ -258,7 +285,7 @@ def load_chapter(module_name, book, chapter):
             except Exception:
                 continue
 
-        _cache[key] = results
+        _cache_chapter(key, results)
         return results
 
 
@@ -1477,6 +1504,7 @@ def lookup_strong(strong_num):
 
     with _lock:
         if strong_num in _strongs_cache:
+            _strongs_cache.move_to_end(strong_num)  # mark as recently used
             return _strongs_cache[strong_num]
 
     # For Greek words, try Dodson first (cleaner definitions).
@@ -1487,7 +1515,7 @@ def lookup_strong(strong_num):
         dodson = open_data.lookup_dodson(strong_num)
         if dodson:
             with _lock:
-                _strongs_cache[strong_num] = dodson
+                _cache_strong(strong_num, dodson)
             return dodson
 
     installed = module_names()
@@ -1515,7 +1543,7 @@ def lookup_strong(strong_num):
             except Exception:
                 continue
             if actual.lstrip('0') == num_bare and text:
-                _strongs_cache[strong_num] = text
+                _cache_strong(strong_num, text)
                 return text
 
         # Deliberately NOT caching misses. Previously this stored
