@@ -1537,10 +1537,16 @@ class BiblePane(Gtk.Box):
         if tag is not None:
             return tag
         dark = Adw.StyleManager.get_default().get_dark()
-        bg = '#3d5478' if dark else '#dde8f7'
+        # Foreground-only styling avoids the rectangle-looks-like-
+        # selection problem. Purple accent — distinct from the blue
+        # _note_marker and from highlight backgrounds (yellow/green/
+        # blue/orange), so a current verse with a note still reads
+        # clearly. No size change — keeps line height stable when
+        # toggling between verses.
+        fg = '#d4a8ff' if dark else '#7a4dbf'
         return self._buffer.create_tag(
             self._CURRENT_VERSE_TAG_NAME,
-            background=bg,
+            foreground=fg,
             weight=Pango.Weight.BOLD)
 
     def _set_current_verse_indicator(self, verse_num):
