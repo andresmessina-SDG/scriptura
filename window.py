@@ -1419,10 +1419,11 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
             # was last viewed regardless of which pane shows it next.
             self.pane1._save_position_to_module_state()
             self.pane2._save_position_to_module_state()
-            # Force a synchronous write — the debounced put() above would
-            # otherwise still be waiting for its timer when the process
-            # exits, and the final session state would be lost.
+            # Force synchronous writes — the debounced timers above
+            # would otherwise still be waiting when the process exits,
+            # and the final session state would be lost.
             settings.flush()
+            module_positions.flush()
         except Exception as e:
             print(f'[window] close-save: {e}')
         return False

@@ -16,6 +16,11 @@ Two kinds of position:
     identifying the current TOC entry inside the module's tree.
 
 Persisted to `module_positions.json` under the XDG config dir.
+
+Writes are debounced (500 ms) so a burst of module changes
+coalesces into one disk write. The lock is released BEFORE the
+write so a slow disk doesn't block other callers. `flush()` from
+close-request forces a synchronous final save.
 """
 
 import json
@@ -28,6 +33,12 @@ _FILE = paths.module_positions_path()
 _lock = threading.Lock()
 _state = {}
 _load_failed = False
+
+# Mirror of settings.py's debounce pattern: rapid remember_*() calls
+# (e.g. a pane swap fires two in a row) coalesce into one disk write.
+_SAVE_DEBOUNCE_S = 0.5
+_save_timer = None
+_save_timer_lock = threading.Lock()
 
 
 def _load():
@@ -47,17 +58,57 @@ def _load():
 _load()
 
 
-def _save_unlocked():
-    # Atomic write — see annotations.py for the rationale.
+def _write_snapshot(snapshot):
+    """Atomic write of `snapshot` to disk. Called with the lock NOT
+    held — the caller is responsible for taking a consistent
+    snapshot under the lock before passing it here."""
     try:
         tmp = _FILE + '.tmp'
         with open(tmp, 'w', encoding='utf-8') as f:
-            json.dump(_state, f, ensure_ascii=False, indent=0)
+            json.dump(snapshot, f, ensure_ascii=False, indent=0)
             f.flush()
             os.fsync(f.fileno())
         os.replace(tmp, _FILE)
     except OSError:
         pass
+
+
+def _save_now():
+    """Synchronous save. Snapshots state under the lock, then writes
+    outside the lock so disk I/O can't block other callers."""
+    with _lock:
+        snapshot = dict(_state)
+    _write_snapshot(snapshot)
+
+
+def _on_debounce_fire():
+    global _save_timer
+    with _save_timer_lock:
+        _save_timer = None
+    _save_now()
+
+
+def _schedule_save():
+    """Start (or restart) the debounce timer. Calling repeatedly
+    within the window resets it — only the final save lands."""
+    global _save_timer
+    with _save_timer_lock:
+        if _save_timer is not None:
+            _save_timer.cancel()
+        _save_timer = threading.Timer(_SAVE_DEBOUNCE_S, _on_debounce_fire)
+        _save_timer.daemon = True
+        _save_timer.start()
+
+
+def flush():
+    """Force a synchronous write of pending state. Call from
+    close-request so unsaved positions aren't lost on exit."""
+    global _save_timer
+    with _save_timer_lock:
+        if _save_timer is not None:
+            _save_timer.cancel()
+            _save_timer = None
+    _save_now()
 
 
 def remember_verse_position(module, book, chapter, top_verse):
@@ -73,7 +124,7 @@ def remember_verse_position(module, book, chapter, top_verse):
             'chapter': int(chapter),
             'top_verse': int(top_verse),
         }
-        _save_unlocked()
+    _schedule_save()
 
 
 def get_verse_position(module, book, chapter):
@@ -103,7 +154,7 @@ def remember_genbook_path(module, path):
             'kind': 'genbook',
             'genbook_path': str(path),
         }
-        _save_unlocked()
+    _schedule_save()
 
 
 def get_genbook_path(module):
