@@ -1,8 +1,7 @@
 # Bible Reader — Architecture Brief
 
-Internal architecture and design notes for anyone (human or
-AI-assisted) working on the codebase. For the user-facing
-introduction, see [README.md](README.md).
+Internal architecture and design notes for anyone working on the
+codebase. For the user-facing introduction, see [README.md](README.md).
 
 ## What we're building
 
