@@ -1518,5 +1518,10 @@ def lookup_strong(strong_num):
                 _strongs_cache[strong_num] = text
                 return text
 
-        _strongs_cache[strong_num] = None  # cache miss to avoid retrying
+        # Deliberately NOT caching misses. Previously this stored
+        # None to skip future lookups, but it also blocked retries
+        # after the user installed a Strong's module that didn't
+        # exist when the first click happened. Cost of a re-lookup
+        # is a single SWORD module probe (~5 ms) — small enough that
+        # always-retrying is the right trade-off.
         return None
