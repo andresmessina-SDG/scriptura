@@ -18,6 +18,7 @@ panel can route word-study row clicks back to the window without
 knowing about its composer.
 """
 
+import logging
 import re
 import threading
 import gi
@@ -26,6 +27,8 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Pango
 
 import sword_bridge
+
+_log = logging.getLogger('scriptura.lexicon')
 
 
 def _make_verse_markup(html, target_strong):
@@ -349,7 +352,7 @@ class LexiconPanel(Gtk.Box):
             except Exception as e:
                 plain = re.sub(r'<[^>]+>', '', markup)
                 self._def_buf.set_text(plain)
-                print(f'[Lexicon] Markup error: {e}')
+                _log.exception('Markup error')
             self._tag_refs()
 
         if not self.get_visible():

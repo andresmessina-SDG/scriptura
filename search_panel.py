@@ -4,7 +4,7 @@ import threading
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, GLib, Gdk, Pango
+from gi.repository import Gtk, Adw, GLib, Pango
 import sword_bridge
 import paths
 
@@ -72,25 +72,6 @@ def _searchable_modules():
             keep.append(name)
     return keep
 
-_CSS = """
-/* No box-shadow — Gtk.Revealer clips child rectangularly, and any
-   shadow extending past the panel edge gets sheared off at a hard
-   90° line. Border + opaque background carry the visual weight. */
-.search-panel {
-    background-color: @window_bg_color;
-    border-top: 1px solid alpha(@borders, 0.6);
-    border-left: 1px solid alpha(@borders, 0.6);
-    border-bottom: 1px solid alpha(@borders, 0.6);
-    border-top-left-radius: 20px;
-    border-bottom-left-radius: 20px;
-}
-.bar-fill       { background-color: #4a9fd4; border-radius: 3px; min-height: 10px; }
-.bar-fill-sub   { background-color: #6dbf7e; border-radius: 3px; min-height: 10px; }
-.bar-label-active { color: @accent_color; font-weight: bold; }
-.result-ref     { font-weight: bold; }
-"""
-
-
 class SearchPanel(Gtk.Box):
     def __init__(self, on_result_clicked, on_close):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
@@ -107,12 +88,6 @@ class SearchPanel(Gtk.Box):
         self.set_size_request(420, -1)
         self.set_vexpand(True)
         self.add_css_class('search-panel')
-
-        provider = Gtk.CssProvider()
-        provider.load_from_data(_CSS)
-        Gtk.StyleContext.add_provider_for_display(
-            Gdk.Display.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
-        )
 
         self._build_ui()
 

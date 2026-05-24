@@ -1,3 +1,4 @@
+import logging
 import threading
 import gi
 gi.require_version('Gtk', '4.0')
@@ -6,6 +7,8 @@ from gi.repository import Gtk, Adw, GLib
 import sword_bridge
 import open_data
 import ebible_bridge
+
+_log = logging.getLogger('scriptura.modules')
 
 _LANG_NAMES = {
     'en': 'English', 'de': 'German', 'fr': 'French', 'es': 'Spanish',
@@ -490,7 +493,7 @@ class ModuleManagerWindow(Adw.Window):
 
     def _finish_change(self, err, name):
         if err:
-            print(f'[module manager] error for {name}: {err}', flush=True)
+            _log.error('install/uninstall error for %s: %s', name, err)
             self._set_busy(False, f'Couldn\'t install {name} — {err}')
         else:
             self._set_busy(False, '')

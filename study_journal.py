@@ -1,55 +1,14 @@
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, GLib, Gdk, Pango
+from gi.repository import Gtk, Adw, GLib, Pango
 import annotations
 import sword_bridge
 
 _BOOK_ORDER = {book: i for i, book in enumerate(sword_bridge._ALL_BOOKS)}
 
-_STRIP_CSS = """
-.strip-yellow { background-color: #d4be62; border-radius: 3px 0 0 3px; }
-.strip-green  { background-color: #8db58a; border-radius: 3px 0 0 3px; }
-.strip-blue   { background-color: #7fa3c1; border-radius: 3px 0 0 3px; }
-.strip-orange { background-color: #c8a575; border-radius: 3px 0 0 3px; }
-.strip-plain  { background-color: alpha(@borders, 0.6); border-radius: 3px 0 0 3px; }
-
-.hl-swatch {
-    min-width: 26px;
-    min-height: 26px;
-    padding: 0;
-    margin: 0;
-    border-radius: 4px;
-    border: 1px solid alpha(@borders, 0.6);
-}
-.hl-swatch:hover { border-color: @accent_color; }
-.hl-swatch.selected { border: 2px solid @accent_color; }
-.hl-swatch-yellow { background-color: #d4be62; }
-.hl-swatch-green  { background-color: #8db58a; }
-.hl-swatch-blue   { background-color: #7fa3c1; }
-.hl-swatch-orange { background-color: #c8a575; }
-.hl-swatch-clear  { background-color: transparent; }
-
-.journal-note-card {
-    background-color: @view_bg_color;
-    border: 1px solid alpha(@borders, 0.6);
-    border-radius: 6px;
-}
-
-.tag-chip {
-    padding: 1px 8px;
-    min-height: 0;
-    border-radius: 10px;
-    background-color: alpha(@accent_color, 0.13);
-    color: @accent_color;
-    font-size: smaller;
-    border: none;
-    box-shadow: none;
-}
-.tag-chip:hover {
-    background-color: alpha(@accent_color, 0.22);
-}
-"""
+# Strip / swatch / journal-card / tag-chip CSS rules are defined in
+# data/style.css and loaded once at app startup by styles.load_app_css().
 
 _HIGHLIGHT_CLASS = {
     '#ffff00': 'strip-yellow',
@@ -66,23 +25,6 @@ _HL_SWATCH_CLASS = {
 }
 
 _HL_COLORS = ['#ffff00', '#90ee90', '#add8e6', '#ffa500']
-
-_css_loaded = False
-
-
-def _ensure_strip_css():
-    global _css_loaded
-    if _css_loaded:
-        return
-    display = Gdk.Display.get_default()
-    if display is None:
-        return
-    provider = Gtk.CssProvider()
-    provider.load_from_data(_STRIP_CSS)
-    Gtk.StyleContext.add_provider_for_display(
-        display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
-    )
-    _css_loaded = True
 
 
 def _all_entries():
@@ -265,9 +207,7 @@ class TagManagerWindow(Adw.Window):
         return row
 
     def _on_rename_tag(self, _btn, tag):
-        dlg = Adw.MessageDialog(
-            transient_for=self,
-            modal=True,
+        dlg = Adw.AlertDialog(
             heading=f'Rename "{tag}"',
             body=('Type the new name. If it matches an existing tag, '
                   'the two will be merged.'),
@@ -292,12 +232,10 @@ class TagManagerWindow(Adw.Window):
             d.close()
 
         dlg.connect('response', on_response)
-        dlg.present()
+        dlg.present(self)
 
     def _on_delete_tag(self, _btn, tag):
-        dlg = Adw.MessageDialog(
-            transient_for=self,
-            modal=True,
+        dlg = Adw.AlertDialog(
             heading=f'Remove "{tag}"?',
             body=('This removes the tag from every annotation it appears '
                   'on. Notes and highlights stay where they are.'),
@@ -316,7 +254,7 @@ class TagManagerWindow(Adw.Window):
             d.close()
 
         dlg.connect('response', on_response)
-        dlg.present()
+        dlg.present(self)
 
 
 class StudyJournalWindow(Adw.Window):
@@ -330,8 +268,6 @@ class StudyJournalWindow(Adw.Window):
         self._preserve_select = None
         self.set_title('Study Journal')
         self.set_default_size(1080, 720)
-
-        _ensure_strip_css()
 
         self._build_ui()
         self._reload()
@@ -1027,7 +963,6 @@ class StudyJournalWindow(Adw.Window):
             self._show_export_error(f'Could not write to {path}:\n{ex}')
 
     def _show_export_error(self, msg):
-        dlg = Adw.MessageDialog(transient_for=self, modal=True,
-                                heading='Export failed', body=msg)
+        dlg = Adw.AlertDialog(heading='Export failed', body=msg)
         dlg.add_response('ok', 'OK')
-        dlg.present()
+        dlg.present(self)

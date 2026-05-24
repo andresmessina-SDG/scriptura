@@ -1,21 +1,38 @@
 import json
+import logging
 import os
+from typing import Any, TypedDict
 
 import paths
 
-ANNOTATIONS_FILE = paths.annotations_path()
+ANNOTATIONS_FILE: str = paths.annotations_path()
+_log = logging.getLogger('scriptura.annotations')
 
-_cache = None
-_load_failed = False  # Set if an existing file failed to parse; the
-                      # window reads this once at startup to surface a toast.
+# The on-disk JSON is intentionally schemaless across versions —
+# legacy data may have a bare highlight color string where a current
+# file has a verse dict; chapter_note may be a string or a dict.
+# We type the cache as dict[str, Any] for that reason; specific
+# helpers narrow via isinstance() at the boundary.
+ChapterData = dict[str, Any]
+Annotations = dict[str, ChapterData]
 
 
-def load_failed():
+class ChapterNoteData(TypedDict):
+    note: str
+    tags: list[str]
+
+
+_cache: Annotations | None = None
+_load_failed: bool = False  # Set if an existing file failed to parse; the
+                            # window reads this once at startup to surface a toast.
+
+
+def load_failed() -> bool:
     _load()  # ensure load was attempted before we read the flag
     return _load_failed
 
 
-def _load():
+def _load() -> Annotations:
     global _cache, _load_failed
     if _cache is not None:
         return _cache
@@ -31,14 +48,14 @@ def _load():
         else:
             _cache = {}
             _load_failed = True
-    except Exception as e:
-        print(f'[annotations] load failed, using defaults: {e}')
+    except Exception:
+        _log.exception('load failed, using defaults')
         _cache = {}
         _load_failed = True
     return _cache
 
 
-def _save(data):
+def _save(data: Annotations) -> None:
     global _cache
     _cache = data
     # Atomic write: build the file beside the destination, fsync, then
@@ -53,15 +70,15 @@ def _save(data):
             f.flush()
             os.fsync(f.fileno())
         os.replace(tmp, ANNOTATIONS_FILE)
-    except Exception as e:
-        print(f'[annotations] Failed to save: {e}')
+    except Exception:
+        _log.exception('Failed to save')
 
-def get_annotations(module, book, chapter):
+def get_annotations(module: str, book: str, chapter: int) -> ChapterData:
     data = _load()
     key = f"{module}/{book}/{chapter}"
     return data.get(key, {})
 
-def save_highlight(module, book, chapter, verse, color):
+def save_highlight(module: str, book: str, chapter: int, verse: int, color: str | None) -> None:
     data = _load()
     key = f"{module}/{book}/{chapter}"
     if key not in data: data[key] = {}
@@ -75,7 +92,7 @@ def save_highlight(module, book, chapter, verse, color):
     data[key][vkey]['highlight'] = color
     _save(data)
 
-def save_underline(module, book, chapter, verse, enabled):
+def save_underline(module: str, book: str, chapter: int, verse: int, enabled: bool) -> None:
     data = _load()
     key = f"{module}/{book}/{chapter}"
     if key not in data: data[key] = {}
@@ -88,7 +105,7 @@ def save_underline(module, book, chapter, verse, enabled):
     data[key][vkey]['underline'] = enabled
     _save(data)
 
-def save_note(module, book, chapter, verse, text):
+def save_note(module: str, book: str, chapter: int, verse: int, text: str | None) -> None:
     data = _load()
     key = f"{module}/{book}/{chapter}"
     if key not in data: data[key] = {}
@@ -102,7 +119,7 @@ def save_note(module, book, chapter, verse, text):
     _save(data)
 
 
-def _ensure_verse_dict(data, key, vkey):
+def _ensure_verse_dict(data: Annotations, key: str, vkey: str) -> None:
     if key not in data:
         data[key] = {}
     if vkey not in data[key] or not isinstance(data[key][vkey], dict):
@@ -110,7 +127,7 @@ def _ensure_verse_dict(data, key, vkey):
         data[key][vkey] = {'highlight': old_val if isinstance(old_val, str) else None}
 
 
-def save_tags(module, book, chapter, verse, tags):
+def save_tags(module: str, book: str, chapter: int, verse: int, tags: list[str]) -> None:
     data = _load()
     key = f"{module}/{book}/{chapter}"
     _ensure_verse_dict(data, key, str(verse))
@@ -122,8 +139,8 @@ def save_tags(module, book, chapter, verse, tags):
     _save(data)
 
 
-def get_all_tags():
-    tags = set()
+def get_all_tags() -> list[str]:
+    tags: set[str] = set()
     for verses in _load().values():
         for anno in verses.values():
             if isinstance(anno, dict):
@@ -131,9 +148,9 @@ def get_all_tags():
     return sorted(tags)
 
 
-def get_tag_counts():
+def get_tag_counts() -> dict[str, int]:
     """Return {tag: count} across every verse annotation and chapter note."""
-    counts = {}
+    counts: dict[str, int] = {}
     for verses in _load().values():
         for anno in verses.values():
             if not isinstance(anno, dict):
@@ -144,7 +161,7 @@ def get_tag_counts():
     return counts
 
 
-def rename_tag(old, new):
+def rename_tag(old: str, new: str) -> None:
     """Rename tag `old` → `new` across every annotation. If `new` already
     sits on the same annotation as `old`, the result is deduped, so this
     doubles as a merge. No-op when either side is empty or the names match."""
@@ -161,8 +178,8 @@ def rename_tag(old, new):
             tags = anno.get('tags')
             if not tags or old not in tags:
                 continue
-            seen = set()
-            out = []
+            seen: set[str] = set()
+            out: list[str] = []
             for t in tags:
                 if not isinstance(t, str):
                     continue
@@ -176,7 +193,7 @@ def rename_tag(old, new):
         _save(data)
 
 
-def delete_tag(tag):
+def delete_tag(tag: str) -> None:
     """Remove `tag` from every annotation it appears on. Notes/highlights
     are untouched."""
     tag = (tag or '').strip()
@@ -197,7 +214,7 @@ def delete_tag(tag):
         _save(data)
 
 
-def _chapter_note_data(raw):
+def _chapter_note_data(raw: Any) -> ChapterNoteData | None:
     """Normalise chapter_note storage: string (old) or dict (new) → dict."""
     if isinstance(raw, str):
         return {'note': raw, 'tags': []}
@@ -206,18 +223,18 @@ def _chapter_note_data(raw):
     return None
 
 
-def get_chapter_note(module, book, chapter):
+def get_chapter_note(module: str, book: str, chapter: int) -> str | None:
     raw = _load().get(f"{module}/{book}/{chapter}", {}).get('chapter_note')
     d = _chapter_note_data(raw)
     return d['note'] if d and d['note'].strip() else None
 
 
-def get_chapter_note_data(module, book, chapter):
+def get_chapter_note_data(module: str, book: str, chapter: int) -> ChapterNoteData | None:
     raw = _load().get(f"{module}/{book}/{chapter}", {}).get('chapter_note')
     return _chapter_note_data(raw)
 
 
-def save_chapter_note(module, book, chapter, text):
+def save_chapter_note(module: str, book: str, chapter: int, text: str) -> None:
     data = _load()
     key = f"{module}/{book}/{chapter}"
     if key not in data:
@@ -231,7 +248,7 @@ def save_chapter_note(module, book, chapter, text):
     _save(data)
 
 
-def save_chapter_note_tags(module, book, chapter, tags):
+def save_chapter_note_tags(module: str, book: str, chapter: int, tags: list[str]) -> None:
     data = _load()
     key = f"{module}/{book}/{chapter}"
     if key not in data:
@@ -245,7 +262,7 @@ def save_chapter_note_tags(module, book, chapter, tags):
     _save(data)
 
 
-def delete_annotation(module, book, chapter, verse):
+def delete_annotation(module: str, book: str, chapter: int, verse: int | None) -> None:
     """Remove all annotation data for a verse. verse=None removes the chapter note."""
     data = _load()
     key = f"{module}/{book}/{chapter}"

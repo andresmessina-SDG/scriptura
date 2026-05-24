@@ -1,0 +1,168 @@
+/* Scriptura — application stylesheet.
+ *
+ * Centralized at `data/style.css`; loaded once at app startup by
+ * `styles.load_app_css()`. Per-pane dynamic CSS (font family, size,
+ * line spacing, user-chosen text color) stays in pane.py because it
+ * depends on runtime settings.
+ *
+ * Sections below were merged from:
+ *   - search_panel.py    (overlay panel + result bars)
+ *   - annotation_dialogs.py (highlight popover swatches)
+ *   - study_journal.py   (annotation strips, swatches, journal cards, tag chips)
+ *   - window.py          (menu panel, jump bar, reading-mode pill, plan rows,
+ *                         resize handles, key chips, appearance card, bible view,
+ *                         lexicon + word-study panels)
+ *
+ * GTK quirks worth remembering when adding rules:
+ *   - Gtk.Revealer clips its child to a rectangular bounding box, so any
+ *     box-shadow that extends past the panel edge gets sheared off at a
+ *     hard 90° line. Use opaque background + border, never shadow, for
+ *     panels and overlays that live inside a Revealer.
+ *   - @view_bg_color is opaque in both light and dark; @card_bg_color is
+ *     semi-transparent in dark mode (designed to layer over a solid window
+ *     background, not to float as an overlay). Use @view_bg_color for
+ *     floating panels so the content behind doesn't bleed through.
+ */
+
+/* ── Search panel (right-side revealer) ──────────────────────────────── */
+
+.search-panel {
+    background-color: @window_bg_color;
+    border-top: 1px solid alpha(@borders, 0.6);
+    border-left: 1px solid alpha(@borders, 0.6);
+    border-bottom: 1px solid alpha(@borders, 0.6);
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+}
+.bar-fill       { background-color: #4a9fd4; border-radius: 3px; min-height: 10px; }
+.bar-fill-sub   { background-color: #6dbf7e; border-radius: 3px; min-height: 10px; }
+.bar-label-active { color: @accent_color; font-weight: bold; }
+.result-ref     { font-weight: bold; }
+
+/* ── Right-click study menu — highlight color buttons ────────────────── */
+
+button.hl-yellow { background-color: #f5e6a3; color: #000; }
+button.hl-green  { background-color: #c4dfb9; color: #000; }
+button.hl-blue   { background-color: #bdd5e8; color: #000; }
+button.hl-orange { background-color: #f0c894; color: #000; }
+
+/* ── Study Journal — left-edge color strips + swatches ───────────────── */
+/* Distinct (darker) palette from the popover above: the strips sit on
+ * top of the journal card surface and need more contrast. */
+
+.strip-yellow { background-color: #d4be62; border-radius: 3px 0 0 3px; }
+.strip-green  { background-color: #8db58a; border-radius: 3px 0 0 3px; }
+.strip-blue   { background-color: #7fa3c1; border-radius: 3px 0 0 3px; }
+.strip-orange { background-color: #c8a575; border-radius: 3px 0 0 3px; }
+.strip-plain  { background-color: alpha(@borders, 0.6); border-radius: 3px 0 0 3px; }
+
+.hl-swatch {
+    min-width: 26px;
+    min-height: 26px;
+    padding: 0;
+    margin: 0;
+    border-radius: 4px;
+    border: 1px solid alpha(@borders, 0.6);
+}
+.hl-swatch:hover { border-color: @accent_color; }
+.hl-swatch.selected { border: 2px solid @accent_color; }
+.hl-swatch-yellow { background-color: #d4be62; }
+.hl-swatch-green  { background-color: #8db58a; }
+.hl-swatch-blue   { background-color: #7fa3c1; }
+.hl-swatch-orange { background-color: #c8a575; }
+.hl-swatch-clear  { background-color: transparent; }
+
+/* ── Study Journal — note card + tag chips ───────────────────────────── */
+
+.journal-note-card {
+    background-color: @view_bg_color;
+    border: 1px solid alpha(@borders, 0.6);
+    border-radius: 6px;
+}
+
+.tag-chip {
+    padding: 1px 8px;
+    min-height: 0;
+    border-radius: 10px;
+    background-color: alpha(@accent_color, 0.13);
+    color: @accent_color;
+    font-size: smaller;
+    border: none;
+    box-shadow: none;
+}
+.tag-chip:hover {
+    background-color: alpha(@accent_color, 0.22);
+}
+
+/* ── Window-level overlay panels (menu, jump bar, reading mode) ──────── */
+/* See the Revealer/box-shadow note at the top of the file. */
+
+.menu-panel {
+    background-color: @view_bg_color;
+    border-top: 1px solid alpha(@borders, 0.6);
+    border-right: 1px solid alpha(@borders, 0.6);
+    border-bottom: 1px solid alpha(@borders, 0.6);
+    border-radius: 0 20px 20px 0;
+}
+
+.jump-bar { background-color: @view_bg_color; }
+
+.reading-exit-btn {
+    background-color: @view_bg_color;
+    border: 1px solid alpha(@borders, 0.6);
+    border-radius: 9999px;
+    padding: 6px;
+}
+.reading-exit-btn:hover {
+    background-color: alpha(@accent_bg_color, 0.18);
+}
+
+/* ── Reading plan + miscellaneous chrome ─────────────────────────────── */
+
+row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
+
+.resize-handle { background-color: transparent; min-width: 6px; }
+.resize-handle:hover { background-color: alpha(@borders, 0.25); }
+
+.key-chip {
+    background-color: alpha(@borders, 0.5);
+    border-radius: 5px;
+    padding: 2px 8px;
+    font-family: monospace;
+    font-weight: bold;
+}
+
+/* libadwaita's .card paints only background + border-radius; without
+ * explicit padding the inner widgets hug the card's edge. */
+.appearance-card {
+    padding: 12px;
+}
+
+/* ── Bible reading column ────────────────────────────────────────────── */
+/* Force both the TextView widget and its inner text area to transparent
+ * so the reading column inherits the surrounding pane background
+ * (@window_bg_color) rather than the card-like @view_bg_color libadwaita
+ * paints by default. */
+.bible-view, .bible-view text {
+    background-color: transparent;
+}
+
+/* ── Lexicon + Word-study panel ──────────────────────────────────────── */
+
+.lex-panel {
+    border-top: 1px solid @borders;
+}
+.lex-header {
+    background-color: alpha(@card_bg_color, 0.6);
+    border-bottom: 1px solid alpha(@borders, 0.4);
+}
+.ws-panel {
+    border-left: 1px solid alpha(@borders, 0.4);
+}
+.ws-header {
+    background-color: alpha(@accent_color, 0.12);
+    color: @accent_color;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-bottom: 1px solid alpha(@borders, 0.4);
+}

@@ -1,15 +1,37 @@
 import json
+import logging
 import os
 import datetime
+from typing import Any, TypedDict
 
 import paths
 
-_FILE = paths.reading_plans_path()
-_cache = None
-_load_failed = False  # Flipped if an existing file failed to parse.
+# A reading is a (book, chapter) pair; a day's readings is a list of them;
+# a plan stores 'days' as a list of days.
+Reading = tuple[str, int]
+ReadingGroup = tuple[str, int, int]  # (book, start_ch, end_ch)
 
 
-def load_failed():
+class Plan(TypedDict):
+    id: str
+    name: str
+    description: str
+    days: list[list[Reading]]
+
+
+class PlanSummary(TypedDict):
+    id: str
+    name: str
+    description: str
+    total_days: int
+
+_FILE: str = paths.reading_plans_path()
+_log = logging.getLogger('scriptura.plans')
+_cache: dict[str, Any] | None = None
+_load_failed: bool = False  # Flipped if an existing file failed to parse.
+
+
+def load_failed() -> bool:
     _load()  # ensure load was attempted before we read the flag
     return _load_failed
 
@@ -56,16 +78,16 @@ _ABBREV = {
 }
 
 
-def _expand(books):
+def _expand(books: list[tuple[str, int]]) -> list[Reading]:
     return [(b, c) for b, n in books for c in range(1, n + 1)]
 
 
-def _spread(chapters, n_days):
+def _spread(chapters: list[Reading], n_days: int) -> list[list[Reading]]:
     n = len(chapters)
     return [chapters[n * d // n_days: n * (d + 1) // n_days] for d in range(n_days)]
 
 
-def _make_blended():
+def _make_blended() -> list[list[Reading]]:
     # Four daily streams: OT history, OT prophecy, NT, Psalms+Proverbs
     s1 = _spread(_expand(_OT[:22]), 365)   # Gen–Song of Solomon
     s2 = _spread(_expand(_OT[22:]), 365)   # Isaiah–Malachi
@@ -74,7 +96,7 @@ def _make_blended():
     return [s1[d] + s2[d] + s3[d] + s4[d] for d in range(365)]
 
 
-_PLANS = [
+_PLANS: list[Plan] = [
     {
         'id': 'bible_1_year',
         'name': 'Bible in a Year',
@@ -114,21 +136,21 @@ _PLANS = [
 ]
 
 
-def get_plans():
+def get_plans() -> list[PlanSummary]:
     return [{'id': p['id'], 'name': p['name'], 'description': p['description'],
              'total_days': len(p['days'])} for p in _PLANS]
 
 
-def get_plan_days(plan_id):
+def get_plan_days(plan_id: str) -> list[list[Reading]]:
     for p in _PLANS:
         if p['id'] == plan_id:
             return p['days']
     return []
 
 
-def group_readings(readings):
+def group_readings(readings: list[Reading]) -> list[ReadingGroup]:
     """Return [(book, start_ch, end_ch)] for contiguous same-book runs."""
-    groups = []
+    groups: list[ReadingGroup] = []
     i = 0
     while i < len(readings):
         book, ch = readings[i]
@@ -143,7 +165,7 @@ def group_readings(readings):
     return groups
 
 
-def format_passages(readings):
+def format_passages(readings: list[Reading]) -> str:
     """Compress [(book, ch), …] into e.g. 'Gen 1–3 · Matt 1'."""
     if not readings:
         return ''
@@ -156,7 +178,7 @@ def format_passages(readings):
 
 # ── Progress persistence ───────────────────────────────────────────────────────
 
-def _load():
+def _load() -> dict[str, Any]:
     global _cache, _load_failed
     if _cache is None:
         if not os.path.exists(_FILE):
@@ -170,24 +192,24 @@ def _load():
             else:
                 _cache = {}
                 _load_failed = True
-        except Exception as e:
-            print(f'[plans] load failed, using defaults: {e}')
+        except Exception:
+            _log.exception('load failed, using defaults')
             _cache = {}
             _load_failed = True
     return _cache
 
 
-def _save(d):
+def _save(d: dict[str, Any]) -> None:
     global _cache
     _cache = d
     try:
         with open(_FILE, 'w', encoding='utf-8') as f:
             json.dump(d, f, indent=2, ensure_ascii=False)
-    except Exception as e:
-        print(f'[plans] save failed: {e}')
+    except Exception:
+        _log.exception('save failed')
 
 
-def get_active():
+def get_active() -> tuple[str | None, str | None]:
     """Return (plan_id, start_date_str_or_None) for the currently selected plan."""
     d = _load()
     plan_id = d.get('plan_id')
@@ -197,30 +219,30 @@ def get_active():
     return plan_id, start_date
 
 
-def set_plan(plan_id):
+def set_plan(plan_id: str) -> None:
     d = _load()
     d['plan_id'] = plan_id
     _save(d)
 
 
-def set_start_date(plan_id, date_str):
+def set_start_date(plan_id: str, date_str: str) -> None:
     d = _load()
     d['plan_id'] = plan_id
     d.setdefault('start_dates', {})[plan_id] = date_str
     _save(d)
 
 
-def clear_start_date(plan_id):
+def clear_start_date(plan_id: str) -> None:
     d = _load()
     d.setdefault('start_dates', {}).pop(plan_id, None)
     _save(d)
 
 
-def get_completed(plan_id):
+def get_completed(plan_id: str) -> set[int]:
     return set(_load().get('completed', {}).get(plan_id, []))
 
 
-def set_day_done(plan_id, day_idx, done):
+def set_day_done(plan_id: str, day_idx: int, done: bool) -> None:
     d = _load()
     comp = d.setdefault('completed', {}).setdefault(plan_id, [])
     if done and day_idx not in comp:
@@ -230,7 +252,7 @@ def set_day_done(plan_id, day_idx, done):
     _save(d)
 
 
-def today_index(start_date_str):
+def today_index(start_date_str: str) -> int:
     """0-based day index for today. Negative if plan hasn't started yet."""
     try:
         return (datetime.date.today() - datetime.date.fromisoformat(start_date_str)).days

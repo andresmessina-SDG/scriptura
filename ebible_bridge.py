@@ -3,6 +3,7 @@ ebible_bridge.py — eBible.org translation download, USFM parsing, SQLite stora
 Exposes the same load_chapter() shape as sword_bridge for transparent pane integration.
 """
 
+import logging
 import re
 import csv
 import io
@@ -10,6 +11,8 @@ import os
 import sqlite3
 import threading
 import urllib.request
+
+_log = logging.getLogger('scriptura.ebible')
 import zipfile
 
 import paths
@@ -204,7 +207,7 @@ def search_module(module_name, query, case_sensitive=False, **_kwargs):
                 'Showing first 5000 results — try a more specific search.'))
         return result
     except Exception as e:
-        print(f'[ebible search] {e}')
+        _log.exception('search failed')
         return []
 
 def catalog_entries():

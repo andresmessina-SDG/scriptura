@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 from urllib.parse import unquote
@@ -5,10 +6,30 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Gdk, Gio
-from window import BibleWindow
 
 
 APP_ID = 'page.codeberg.andresmessina.Scriptura'
+
+
+def _setup_logging():
+    """Configure the 'scriptura' logger tree. Users debugging SWORD or
+    persistence issues can crank verbosity with SCRIPTURA_LOG_LEVEL=DEBUG."""
+    level_name = os.environ.get('SCRIPTURA_LOG_LEVEL', 'WARNING').upper()
+    level = getattr(logging, level_name, logging.WARNING)
+    root = logging.getLogger('scriptura')
+    root.setLevel(level)
+    if not root.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(
+            logging.Formatter('%(name)s [%(levelname)s] %(message)s'))
+        root.addHandler(handler)
+    root.propagate = False
+
+
+_setup_logging()
+
+from styles import load_app_css  # noqa: E402
+from window import BibleWindow  # noqa: E402  (after logging setup)
 
 
 def _parse_bible_uri(uri):
@@ -72,6 +93,7 @@ class BibleApp(Adw.Application):
 
     def _on_activate(self, app):
         _register_icon_search_path()
+        load_app_css()
         self._present_main_or_welcome(app, startup_ref=self._argv_ref)
 
     def _on_open(self, app, files, _n_files, _hint):
@@ -80,6 +102,7 @@ class BibleApp(Adw.Application):
         preserve custom URI schemes; fall back to Gio.File only if
         argv didn't yield a ref."""
         _register_icon_search_path()
+        load_app_css()
         ref = self._argv_ref
         if not ref:
             for f in files:

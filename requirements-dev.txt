@@ -1,5 +1,9 @@
 # Development dependencies — runtime deps are not pinned here.
 # Install with:  pip install --user -r requirements-dev.txt
 # Or via the system package manager:
-#   Fedora:  sudo dnf install python3-pytest
+#   Fedora:  sudo dnf install python3-pytest python3-mypy
 pytest>=7
+
+# mypy is scoped to the persistence layer today (see mypy.ini); widens
+# module-by-module as more files gain annotations. Run with:  mypy .
+mypy>=1.10

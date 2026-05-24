@@ -185,8 +185,10 @@ modules:
       - install -Dm644 main.py /app/share/scriptura/main.py
       - install -Dm644 _version.py /app/share/scriptura/_version.py
       - install -Dm644 paths.py /app/share/scriptura/paths.py
+      - install -Dm644 styles.py /app/share/scriptura/styles.py
       - install -Dm644 window.py /app/share/scriptura/window.py
       - install -Dm644 pane.py /app/share/scriptura/pane.py
+      - install -Dm644 genbook_reader.py /app/share/scriptura/genbook_reader.py
       - install -Dm644 sword_bridge.py /app/share/scriptura/sword_bridge.py
       - install -Dm644 ebible_bridge.py /app/share/scriptura/ebible_bridge.py
       - install -Dm644 annotations.py /app/share/scriptura/annotations.py
@@ -204,6 +206,11 @@ modules:
       - install -Dm644 lexicon_panel.py /app/share/scriptura/lexicon_panel.py
       - install -Dm644 devotional.py /app/share/scriptura/devotional.py
       - install -Dm644 welcome.py /app/share/scriptura/welcome.py
+
+      # Application stylesheet — loaded once at startup by styles.py.
+      # Installed under /app/share/scriptura/data/ so styles.py finds it
+      # at the same relative path it uses in development.
+      - install -Dm644 data/style.css /app/share/scriptura/data/style.css
 
       # Pre-compile bytecode so first launch doesn't pay the compile
       # cost. -q for quiet output; one .pyc per .py lands in

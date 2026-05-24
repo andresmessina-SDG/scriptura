@@ -1,36 +1,51 @@
 import json
+import logging
 import os
+from typing import TypedDict, cast
 
 import paths
 
-_FILE = paths.bookmarks_path()
-_load_failed = False  # Flipped if an existing file failed to parse; the
-                      # window reads this once at startup for a toast.
+
+class Bookmark(TypedDict):
+    book: str
+    chapter: int
+    verse: int | None
+    label: str
 
 
-def load_failed():
+_FILE: str = paths.bookmarks_path()
+_log = logging.getLogger('scriptura.bookmarks')
+_load_failed: bool = False  # Flipped if an existing file failed to parse; the
+                            # window reads this once at startup for a toast.
+
+
+def load_failed() -> bool:
     _load()  # ensure load was attempted before we read the flag
     return _load_failed
 
 
-def _load():
+def _load() -> list[Bookmark]:
     global _load_failed
     if not os.path.exists(_FILE):
         return []
     try:
         with open(_FILE, encoding='utf-8') as f:
             data = json.load(f)
-        # Defensive: drop any malformed entries (hand-edited file, version skew)
-        return [e for e in data
-                if isinstance(e, dict) and 'book' in e and 'chapter' in e]
-    except Exception as e:
+        # Defensive: drop any malformed entries (hand-edited file, version skew).
+        # cast() reflects the JSON boundary — the predicate filters to dicts
+        # with the required keys, but mypy can't infer Bookmark-shape from
+        # runtime checks. Trust is at the I/O edge, not in the static type.
+        return cast(list[Bookmark],
+                    [e for e in data
+                     if isinstance(e, dict) and 'book' in e and 'chapter' in e])
+    except Exception:
         if not _load_failed:
-            print(f'[bookmarks] load failed, using defaults: {e}')
+            _log.exception('load failed, using defaults')
             _load_failed = True
         return []
 
 
-def _save(data):
+def _save(data: list[Bookmark]) -> None:
     # Atomic write — see annotations.py for the rationale.
     try:
         tmp = _FILE + '.tmp'
@@ -39,15 +54,15 @@ def _save(data):
             f.flush()
             os.fsync(f.fileno())
         os.replace(tmp, _FILE)
-    except Exception as e:
-        print(f'[bookmarks] {e}')
+    except Exception:
+        _log.exception('save failed')
 
 
-def get_all():
+def get_all() -> list[Bookmark]:
     return _load()
 
 
-def add(book, chapter, verse=None):
+def add(book: str, chapter: int, verse: int | None = None) -> bool:
     data = _load()
     label = f'{book} {chapter}' + (f':{verse}' if verse else '')
     for e in data:
@@ -58,7 +73,7 @@ def add(book, chapter, verse=None):
     return True
 
 
-def remove(index):
+def remove(index: int) -> None:
     data = _load()
     if 0 <= index < len(data):
         data.pop(index)

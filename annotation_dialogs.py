@@ -12,6 +12,7 @@ verses, x, y)` builds the menu and wires its buttons to other
 functions in this module.
 """
 
+import logging
 import re
 import threading
 import gi
@@ -24,26 +25,7 @@ import sword_bridge
 import ebible_bridge
 import open_data
 
-
-# ── Highlight-button CSS (lazy, one-shot) ────────────────────────────────────
-
-_hl_css_loaded = False
-
-
-def _ensure_hl_css():
-    global _hl_css_loaded
-    if _hl_css_loaded:
-        return
-    _hl_css_loaded = True
-    p = Gtk.CssProvider()
-    p.load_from_data("""
-    button.hl-yellow { background-color: #f5e6a3; color: #000; }
-    button.hl-green  { background-color: #c4dfb9; color: #000; }
-    button.hl-blue   { background-color: #bdd5e8; color: #000; }
-    button.hl-orange { background-color: #f0c894; color: #000; }
-    """)
-    Gtk.StyleContext.add_provider_for_display(
-        Gdk.Display.get_default(), p, Gtk.STYLE_PROVIDER_PRIORITY_USER)
+_log = logging.getLogger('scriptura.notes')
 
 
 # ── Right-click study menu ───────────────────────────────────────────────────
@@ -75,7 +57,6 @@ def show_study_menu(pane, verses, x, y):
     # 1. Highlight color picker
     color_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
     color_box.set_halign(Gtk.Align.CENTER)
-    _ensure_hl_css()
     for color, css_cls in [('#ffff00', 'hl-yellow'), ('#90ee90', 'hl-green'),
                             ('#add8e6', 'hl-blue'),  ('#ffa500', 'hl-orange')]:
         btn = Gtk.Button()
@@ -334,7 +315,7 @@ def _show_note_window(pane, verse, current_note, current_tags):
         suggested = build_suggested_topics(pane._book, pane._chapter, verse, tags_entry)
         box.append(suggested)
     except Exception as e:
-        print(f'[note window] suggested topics failed: {e}')
+        _log.exception('suggested topics failed')
 
     save_btn.connect('clicked',
                      lambda b: _save_note_window(pane, verse, note_buf, tags_entry, win))

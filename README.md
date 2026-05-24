@@ -161,8 +161,8 @@ sudo pacman -S xdg-desktop-portal-gtk
 ## Running the tests (for contributors)
 
 The pure-Python layers (`sword_bridge`, `open_data`, `annotations`,
-`reading_plans`, etc.) have a pytest suite — 124 tests, under a
-second.
+`reading_plans`, `paths`, `bookmarks`, `settings`, `ebible_bridge`,
+etc.) have a pytest suite — 227 tests, under two seconds.
 
 ```sh
 # Fedora
@@ -199,6 +199,23 @@ installs and is easy to back up:
 
 Wipe any of these to reset the corresponding part of the app to
 factory defaults.
+
+---
+
+## Reporting bugs
+
+If something misbehaves — especially anything SWORD-related (a module
+fails to load, a chapter is blank, search returns nothing) — re-run
+with verbose logging and include the output in the report:
+
+```sh
+SCRIPTURA_LOG_LEVEL=DEBUG python3 main.py
+```
+
+Logs go to stderr, prefixed with the component (`scriptura.sword`,
+`scriptura.search`, `scriptura.ebible`, …) and include full
+tracebacks for any caught exception. The default level is `WARNING`
+so normal runs stay quiet.
 
 ---
 

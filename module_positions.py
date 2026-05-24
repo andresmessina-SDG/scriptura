@@ -26,22 +26,26 @@ close-request forces a synchronous final save.
 import json
 import os
 import threading
+from typing import Any
 
 import paths
 
-_FILE = paths.module_positions_path()
+_FILE: str = paths.module_positions_path()
 _lock = threading.Lock()
-_state = {}
-_load_failed = False
+# Per-module entry shape is either {'kind': 'verse', 'book', 'chapter',
+# 'top_verse'} or {'kind': 'genbook', 'genbook_path'}; dict[str, Any]
+# keeps both shapes addressable without union noise.
+_state: dict[str, dict[str, Any]] = {}
+_load_failed: bool = False
 
 # Mirror of settings.py's debounce pattern: rapid remember_*() calls
 # (e.g. a pane swap fires two in a row) coalesce into one disk write.
-_SAVE_DEBOUNCE_S = 0.5
-_save_timer = None
+_SAVE_DEBOUNCE_S: float = 0.5
+_save_timer: threading.Timer | None = None
 _save_timer_lock = threading.Lock()
 
 
-def _load():
+def _load() -> None:
     global _state, _load_failed
     try:
         with open(_FILE, encoding='utf-8') as f:
@@ -58,7 +62,7 @@ def _load():
 _load()
 
 
-def _write_snapshot(snapshot):
+def _write_snapshot(snapshot: dict[str, dict[str, Any]]) -> None:
     """Atomic write of `snapshot` to disk. Called with the lock NOT
     held — the caller is responsible for taking a consistent
     snapshot under the lock before passing it here."""
@@ -73,7 +77,7 @@ def _write_snapshot(snapshot):
         pass
 
 
-def _save_now():
+def _save_now() -> None:
     """Synchronous save. Snapshots state under the lock, then writes
     outside the lock so disk I/O can't block other callers."""
     with _lock:
@@ -81,14 +85,14 @@ def _save_now():
     _write_snapshot(snapshot)
 
 
-def _on_debounce_fire():
+def _on_debounce_fire() -> None:
     global _save_timer
     with _save_timer_lock:
         _save_timer = None
     _save_now()
 
 
-def _schedule_save():
+def _schedule_save() -> None:
     """Start (or restart) the debounce timer. Calling repeatedly
     within the window resets it — only the final save lands."""
     global _save_timer
@@ -100,7 +104,7 @@ def _schedule_save():
         _save_timer.start()
 
 
-def flush():
+def flush() -> None:
     """Force a synchronous write of pending state. Call from
     close-request so unsaved positions aren't lost on exit."""
     global _save_timer
@@ -111,7 +115,7 @@ def flush():
     _save_now()
 
 
-def remember_verse_position(module, book, chapter, top_verse):
+def remember_verse_position(module: str, book: str, chapter: int, top_verse: int) -> None:
     """Save the user's current top-visible verse for a verse-keyed
     module. Top_verse is scoped to (book, chapter) — viewing the same
     module at a different chapter creates a fresh entry on next save."""
@@ -127,7 +131,7 @@ def remember_verse_position(module, book, chapter, top_verse):
     _schedule_save()
 
 
-def get_verse_position(module, book, chapter):
+def get_verse_position(module: str, book: str, chapter: int) -> int | None:
     """Return the saved top_verse for this module at (book, chapter),
     or None if nothing saved or saved location is for a different chapter."""
     with _lock:
@@ -144,7 +148,7 @@ def get_verse_position(module, book, chapter):
     return None
 
 
-def remember_genbook_path(module, path):
+def remember_genbook_path(module: str, path: str) -> None:
     """Save the current entry path for a genbook module. `path` is a
     SWORD genbook key like '/Title_Page' — a string, NOT a list."""
     if not module or not path:
@@ -157,7 +161,7 @@ def remember_genbook_path(module, path):
     _schedule_save()
 
 
-def get_genbook_path(module):
+def get_genbook_path(module: str) -> str | None:
     """Return the saved entry path string for a genbook module, or None.
 
     Tolerates legacy data corrupted by an earlier `list(path)` call that
@@ -179,5 +183,5 @@ def get_genbook_path(module):
     return None
 
 
-def load_failed():
+def load_failed() -> bool:
     return _load_failed

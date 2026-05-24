@@ -1,4 +1,5 @@
 import io
+import logging
 import os
 import re
 import shutil
@@ -8,6 +9,9 @@ import urllib.request
 import zipfile
 from collections import OrderedDict
 import Sword
+
+_sword_log = logging.getLogger('scriptura.sword')
+_search_log = logging.getLogger('scriptura.search')
 
 # Whoosh is only imported on first search/index — saves ~50 ms on cold
 # start for the common case where the user never searches. The lazy
@@ -123,7 +127,7 @@ def _build_module_index(module_name, on_progress=None):
     except Exception as e:
         # Without cancel(), Whoosh leaves a MAIN_WRITELOCK file that blocks
         # all future searches against this module until manual cleanup.
-        print(f'[search] index build failed for {module_name!r}: {e}')
+        _search_log.exception('index build failed for %r', module_name)
         try:
             writer.cancel()
         except Exception:
@@ -163,7 +167,7 @@ def mgr():
                 # Return a no-op stub so all `mgr().getModule(name)` callers
                 # get None (which they already handle). Don't cache the stub —
                 # we want to retry on next call after the user fixes their setup.
-                print(f'[sword] SWMgr init failed: {e}')
+                _sword_log.exception('SWMgr init failed')
                 return _null_mgr
         return _mgr
 
@@ -273,7 +277,7 @@ def load_chapter(module_name, book, chapter):
             vk.setText(f'{book} {chapter}:1')
             verse_max = vk.getVerseMax()
         except Exception as e:
-            print(f'[sword] load_chapter VerseKey failed for {book} {chapter}: {e}')
+            _sword_log.exception('load_chapter VerseKey failed for %s %s', book, chapter)
             return []
 
         results = []
@@ -481,7 +485,7 @@ def list_genbook_entries(module_name, max_entries=4000):
                             except Exception:
                                 pass
             except Exception as e:
-                print(f'[sword] genbook tree walk failed for {module_name}: {e}')
+                _sword_log.exception('genbook tree walk failed for %s', module_name)
                 entries = []
 
         if not entries:
@@ -534,7 +538,7 @@ def list_genbook_entries(module_name, max_entries=4000):
                     entries.append((path, label, depth))
                     count += 1
             except Exception as e:
-                print(f'[sword] genbook flat walk failed for {module_name}: {e}')
+                _sword_log.exception('genbook flat walk failed for %s', module_name)
 
     _GENBOOK_TOC_CACHE[module_name] = entries
     return entries
@@ -555,7 +559,7 @@ def load_genbook_entry(module_name, path):
             mod.setKeyText(path)
             return str(mod.renderText())
         except Exception as e:
-            print(f'[sword] genbook load failed for {module_name} {path!r}: {e}')
+            _sword_log.exception('genbook load failed for %s %r', module_name, path)
             return ''
 
 
@@ -1068,7 +1072,7 @@ def search_module(module_name, query, on_indexing_start=None,
                 formatted.append(truncated)
             return formatted
     except Exception as e:
-        print(f'[search] Whoosh error: {e}')
+        _search_log.exception('Whoosh error')
         return []
 
 

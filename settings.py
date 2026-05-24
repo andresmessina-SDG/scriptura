@@ -1,13 +1,17 @@
 import json
+import logging
 import os
 import threading
+from typing import Any
 
 import paths
 
+_log = logging.getLogger('scriptura.settings')
+
 # Resolved at import time; paths.settings_path() migrates the legacy
 # in-tree settings.json on first call if it exists.
-_FILE = paths.settings_path()
-_defaults = {
+_FILE: str = paths.settings_path()
+_defaults: dict[str, Any] = {
     'font_size':          12.5,
     'font_family':        'serif',
     'line_spacing':       1.6,
@@ -35,17 +39,17 @@ _defaults = {
     'pane1_genbook_entries': {},
     'pane2_genbook_entries': {},
 }
-_cache = None
-_load_failed = False  # Flipped if an existing file failed to parse.
+_cache: dict[str, Any] | None = None
+_load_failed: bool = False  # Flipped if an existing file failed to parse.
 
 
-def load_failed():
+def load_failed() -> bool:
     if _cache is None:
         _load()
     return _load_failed
 
 
-def _load():
+def _load() -> None:
     global _cache, _load_failed
     if not os.path.exists(_FILE):
         _cache = {}
@@ -58,8 +62,8 @@ def _load():
         else:
             _cache = {}
             _load_failed = True
-    except Exception as e:
-        print(f'[settings] load failed, using defaults: {e}')
+    except Exception:
+        _log.exception('load failed, using defaults')
         _cache = {}
         _load_failed = True
 
@@ -71,12 +75,12 @@ def _load():
 # write 500ms after the last put. flush() forces an immediate synchronous
 # write — called from close-request so nothing is lost on exit.
 
-_SAVE_DEBOUNCE_S = 0.5
-_save_timer = None
+_SAVE_DEBOUNCE_S: float = 0.5
+_save_timer: threading.Timer | None = None
 _save_lock = threading.Lock()
 
 
-def _save_now():
+def _save_now() -> None:
     """Synchronous write. Snapshots _cache under the lock to avoid the
     'dictionary changed size during iteration' race if a put() lands
     mid-serialise. Atomic write — see annotations.py for the rationale."""
@@ -89,18 +93,18 @@ def _save_now():
             f.flush()
             os.fsync(f.fileno())
         os.replace(tmp, _FILE)
-    except Exception as e:
-        print(f'[settings] {e}')
+    except Exception:
+        _log.exception('save failed')
 
 
-def _on_debounce_fire():
+def _on_debounce_fire() -> None:
     global _save_timer
     with _save_lock:
         _save_timer = None
     _save_now()
 
 
-def _schedule_save():
+def _schedule_save() -> None:
     global _save_timer
     with _save_lock:
         if _save_timer is not None:
@@ -110,7 +114,7 @@ def _schedule_save():
         _save_timer.start()
 
 
-def flush():
+def flush() -> None:
     """Cancel any pending debounce timer and write synchronously. Call
     this from close-request before the process exits — otherwise a recent
     put() may still be waiting for its debounce window when the GLib loop
@@ -123,16 +127,16 @@ def flush():
     _save_now()
 
 
-def get(key):
-    global _cache
+def get(key: str) -> Any:
     if _cache is None:
         _load()
+    assert _cache is not None  # _load() always assigns
     return _cache.get(key, _defaults.get(key))
 
 
-def put(key, value):
-    global _cache
+def put(key: str, value: Any) -> None:
     if _cache is None:
         _load()
+    assert _cache is not None
     _cache[key] = value
     _schedule_save()

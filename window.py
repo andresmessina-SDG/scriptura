@@ -1,3 +1,4 @@
+import logging
 import re
 import threading
 import gi
@@ -16,6 +17,8 @@ from pane import BiblePane
 from module_manager import ModuleManagerWindow
 from search_panel import SearchPanel
 from study_journal import StudyJournalWindow
+
+_log = logging.getLogger('scriptura.window')
 from crossref_panel import CrossRefPanel
 
 
@@ -340,88 +343,10 @@ class BibleWindow(Adw.ApplicationWindow):
         self._jump_revealer.set_child(jump_wrap)
 
         # ── App menu panel (right-side revealer) ─────────────────────────────
-        menu_css = """
-/* @view_bg_color is opaque in both light + dark, whereas @card_bg_color
-   is semi-transparent in dark mode (it's designed to layer over a
-   solid window background, not to float as an overlay panel). Using
-   the card colour here let the Bible text behind the menu bleed
-   through in dark mode. */
-/* No box-shadow on overlay panels: Gtk.Revealer clips its child
-   to a rectangular bounding box, so any shadow that tries to
-   extend past the panel edge gets cut off at a hard 90° line —
-   producing the very artifact we keep trying to fix. Lean on the
-   border for visual definition instead. */
-.menu-panel { background-color: @view_bg_color;
-              border-top: 1px solid alpha(@borders, 0.6);
-              border-right: 1px solid alpha(@borders, 0.6);
-              border-bottom: 1px solid alpha(@borders, 0.6);
-              border-radius: 0 20px 20px 0; }
-/* Same translucency gotcha as .menu-panel: the jump bar floats on top of
-   the Bible content via Gtk.Overlay, so the default semi-transparent
-   .card background (@card_bg_color) lets text and dropdown chrome bleed
-   through in dark mode. Force an opaque view background. */
-.jump-bar { background-color: @view_bg_color; }
-/* Exit-reading-mode pill at top-center while in reading mode.
-   Lives inside a Gtk.Revealer which clips rectangularly, so no
-   shadow (same issue as the overlay panels). Border + opaque
-   background carry the visual weight. */
-.reading-exit-btn {
-    background-color: @view_bg_color;
-    border: 1px solid alpha(@borders, 0.6);
-    border-radius: 9999px;
-    padding: 6px;
-}
-.reading-exit-btn:hover {
-    background-color: alpha(@accent_bg_color, 0.18);
-}
-row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
-.resize-handle { background-color: transparent; min-width: 6px; }
-.resize-handle:hover { background-color: alpha(@borders, 0.25); }
-.key-chip { background-color: alpha(@borders, 0.5); border-radius: 5px;
-            padding: 2px 8px; font-family: monospace; font-weight: bold; }
-
-/* Internal padding for the appearance card - the libadwaita .card
-   class only paints a background + border-radius; without explicit
-   padding the dropdowns, scales, and toggle buttons hug the card's
-   edge. */
-.appearance-card {
-    padding: 12px;
-}
-
-/* Unify the reading column with the surrounding pane background.
-   Default libadwaita paints `textview text` with @view_bg_color (a
-   card-like surface) which sits on a different shade from
-   @window_bg_color around it. Forcing both the widget and its inner
-   text area to transparent makes the text inherit whatever the pane
-   itself is painting. */
-.bible-view, .bible-view text {
-    background-color: transparent;
-}
-
-/* Lexicon + Word-study panel styling */
-.lex-panel {
-    border-top: 1px solid @borders;
-}
-.lex-header {
-    background-color: alpha(@card_bg_color, 0.6);
-    border-bottom: 1px solid alpha(@borders, 0.4);
-}
-.ws-panel {
-    border-left: 1px solid alpha(@borders, 0.4);
-}
-.ws-header {
-    background-color: alpha(@accent_color, 0.12);
-    color: @accent_color;
-    font-weight: 600;
-    padding: 8px 14px;
-    border-bottom: 1px solid alpha(@borders, 0.4);
-}
-"""
-        _mp = Gtk.CssProvider()
-        _mp.load_from_data(menu_css)
-        Gtk.StyleContext.add_provider_for_display(
-            Gdk.Display.get_default(), _mp, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
-        )
+        # CSS for .menu-panel, .jump-bar, .reading-exit-btn, .bible-view,
+        # .lex-panel / .ws-panel, .appearance-card, .key-chip, .plan-today,
+        # and .resize-handle lives in data/style.css (loaded once at startup
+        # by styles.load_app_css from main.py).
         self._menu_revealer = Gtk.Revealer()
         self._menu_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_RIGHT)
         self._menu_revealer.set_transition_duration(200)
@@ -1425,7 +1350,7 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
             settings.flush()
             module_positions.flush()
         except Exception as e:
-            print(f'[window] close-save: {e}')
+            _log.exception('close-save failed')
         return False
 
     # ── Search ────────────────────────────────────────────────────────────────
