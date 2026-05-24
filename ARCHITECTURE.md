@@ -77,6 +77,8 @@ scriptura/
 +-- main.py               # app entry, Adw.Application (page.codeberg.andresmessina.Scriptura)
 +-- window.py             # BibleWindow — header, panes, navigation funnels, About dialog
 +-- pane.py               # BiblePane — text rendering, annotations, click handling
++-- genbook_reader.py     # GenbookReader — Generic Books (TreeKey) subsystem extracted from pane.py
++-- styles.py             # Loads data/style.css once at startup; per-pane dynamic CSS stays in pane.py
 +-- lexicon_panel.py      # LexiconPanel — definition view + word study (own class)
 +-- annotation_dialogs.py # Right-click study menu, note editor, chapter note, compare translations
 +-- devotional.py         # Devotional OSIS rendering (Spurgeon-style multi-section labels)
@@ -92,20 +94,40 @@ scriptura/
 +-- crossref_panel.py     # Cross-reference bar (slim single row)
 +-- module_manager.py     # Module Manager (3 tabs: SWORD, Open Databases, eBible)
 +-- welcome.py            # First-run welcome window (essentials bundle download)
-+-- tests/                # Pytest suite for the pure-Python bridges (124 tests)
++-- tests/                # Pytest suite for the pure-Python bridges (227 tests)
 |   +-- test_open_data.py
 |   +-- test_annotations.py
 |   +-- test_reading_plans.py
 |   +-- test_sword_bridge.py
+|   +-- test_paths.py
+|   +-- test_bookmarks.py
+|   +-- test_settings.py
+|   +-- test_ebible_bridge.py
+|   +-- test_module_positions.py
 +-- data/
 |   +-- icons/hicolor/scalable/apps/page.codeberg.andresmessina.Scriptura.svg
 |   +-- page.codeberg.andresmessina.Scriptura.desktop
+|   +-- style.css              # Centralised application stylesheet (loaded by styles.py)
 |   +-- cross_references.txt   # gitignored — OpenBible download
 |   +-- topic-scores.txt       # gitignored — OpenBible download
 |   +-- dodson.csv             # gitignored — Dodson Greek download
 +-- *.json                # User runtime data (annotations, settings, bookmarks, reading_plans, search_history) — gitignored
 +-- ebible.db             # eBible SQLite — gitignored
 ```
+
+### Naming convention: `Bible*` vs `Scriptura`
+
+Internal class names use `Bible*` (`BibleApp`, `BibleWindow`,
+`BiblePane`); the user-facing brand is "Scriptura". This split is
+deliberate — `Bible` describes the *domain* (what the objects work
+on), `Scriptura` is the *product name*. Same pattern most apps
+follow (Firefox's classes aren't `Firefox*`). The app-ID, window
+title, About dialog, desktop entry, and `.flatpak` all use
+Scriptura; the class hierarchy stays domain-named so it remains
+accurate if the product is ever rebranded again.
+
+If you're grepping for the main application class and expected
+`ScripturaApp`, it's `BibleApp` in `main.py`.
 
 ## pane.py — key internals
 
@@ -340,6 +362,59 @@ and calls `_apply_anno_tags`. Called from `_apply_highlight`,
 - `lookup_dodson(strong_num)` → readable NT Greek definition.
 - `download_source(id)` — fetches + extracts OpenBible cross-references ZIP,
   topics ZIP, or Dodson CSV into `data/`.
+
+## Logging
+
+App-wide logging lives on the `scriptura.*` logger tree. `main.py` calls
+`_setup_logging()` before any module import, which:
+
+- reads `SCRIPTURA_LOG_LEVEL` (default `WARNING`),
+- attaches one `StreamHandler` to the `scriptura` logger with format
+  `name [LEVEL] message`,
+- sets `propagate = False` so we don't double-print through the root logger.
+
+Each module declares its own logger near the top of the file, e.g.
+`_log = logging.getLogger('scriptura.sword')`. Component names preserve
+the historical `[tag]` prefixes used before the migration — including
+the deliberate split inside `sword_bridge.py`, which carries both
+`scriptura.sword` (module load / verse keys / genbook walks) and
+`scriptura.search` (index build / Whoosh query path).
+
+Convention: `_log.exception(msg)` inside `except` blocks (logs at ERROR
+with the traceback — the main reason this exists is debugging weird
+SWORD setups from user reports), `_log.info(msg)` for one-shot
+informational events like the legacy-file migrations in `paths.py`.
+There are no `_log.debug()` sites yet; they're available when a tricky
+bug needs them.
+
+To debug a user report: `SCRIPTURA_LOG_LEVEL=DEBUG python3 main.py`.
+The Flatpak install writes the same stream to the journal — viewable
+with `journalctl --user -f` while the app runs.
+
+## Type hints (gradual)
+
+Scriptura uses gradual typing. The persistence layer is fully
+annotated and mypy-clean: `paths`, `bookmarks`, `settings`,
+`annotations`, `module_positions`, `reading_plans`. TypedDicts capture
+the on-disk shapes (`Bookmark`, `Plan`, `ChapterNoteData`,
+`PlanSummary`).
+
+Conventions:
+
+- **Modern syntax.** PEP 585 (`list[str]`, `dict[str, Any]`) and
+  PEP 604 (`str | None`). No `from typing import List, Optional`
+  in new code. `python_version = 3.10` in `mypy.ini`.
+- **`dict[str, Any]` at the JSON I/O boundary.** Real on-disk data is
+  schemaless across versions; helpers narrow via `isinstance()` once
+  inside. Using `cast()` at the I/O boundary is preferred over
+  `# type: ignore`.
+- **mypy scope widens module-by-module.** `mypy.ini` enforces
+  `disallow_untyped_defs` only on already-typed modules. Other
+  modules are listed in the `[mypy-…] ignore_errors = True` section
+  at the bottom; when you finish typing a file, move it from the
+  ignore list to the strict list.
+
+Run: `mypy .` (uses `mypy.ini`; excludes `build-dir/`).
 
 ## annotations.py
 

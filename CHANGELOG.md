@@ -4,6 +4,55 @@ All notable changes to Scriptura. Format roughly follows
 [Keep a Changelog](https://keepachangelog.com/). Versioning is
 semver-ish — 0.x was the pre-Flathub testing track.
 
+## [Unreleased]
+
+### Internal
+
+- **Logging migration.** Replaced ~25 `print('[tag] …')` sites across
+  11 modules with the standard `logging` module, rooted at the
+  `scriptura.*` logger tree. Exception handlers now use
+  `_log.exception()` so caught errors include a traceback —
+  invaluable for debugging user-reported SWORD setup issues.
+  Verbosity is controlled with `SCRIPTURA_LOG_LEVEL` (default
+  `WARNING`); README's "Reporting bugs" section asks users to attach
+  the `DEBUG` output to issues.
+- **`Adw.MessageDialog` → `Adw.AlertDialog`** in `study_journal.py`
+  (rename / delete tag, export error). `MessageDialog` is deprecated
+  in libadwaita 1.6 and emits runtime warnings.
+- **Tests for the pure-Python bridges.** 91 new tests across
+  `paths.py` (XDG resolution + legacy migration), `bookmarks.py`,
+  `settings.py` (debounce + corrupt-file recovery), and
+  `ebible_bridge.py` (USFM parsing + SQLite-backed verse storage).
+  Total suite: 227 tests.
+- **Type hints — persistence layer.** Annotated `paths`, `bookmarks`,
+  `settings`, `annotations`, `module_positions`, `reading_plans` with
+  modern syntax (PEP 585/604). Introduced TypedDicts for the
+  on-disk shapes (`Bookmark`, `Plan`, `ChapterNoteData`). `mypy.ini`
+  enforces `disallow_untyped_defs` on these six modules and runs
+  clean (the rest of the tree remains `ignore_errors` for now,
+  widening module-by-module). Tooling: `mypy>=1.10` added to
+  `requirements-dev.txt`.
+- **CSS centralised.** All static styling moved from five inline blocks
+  (in `search_panel.py`, `annotation_dialogs.py`, `study_journal.py`,
+  `window.py`) into `data/style.css`. A small `styles.py` loader calls
+  `Gtk.CssProvider.load_from_path` once at startup. The per-pane dynamic
+  CSS (font family, size, line spacing, user-chosen text color) stays
+  in `pane.py` since it depends on runtime state. Saved ~160 lines of
+  per-module CSS plumbing; one place to edit, with editor syntax
+  highlighting and a clearer comment trail about Revealer-shadow and
+  `@view_bg_color`-vs-`@card_bg_color` quirks. Flatpak manifest updated
+  to install `data/style.css` and the previously-missing
+  `genbook_reader.py` and `styles.py`.
+- **Generic Books subsystem extracted from `pane.py`.** ~270 lines
+  of TreeKey rendering, prev/next/TOC widgets, async fetch, and
+  entry-path persistence moved into a new `GenbookReader` class in
+  `genbook_reader.py`. `pane.py` drops from 2 681 → 2 381 lines;
+  the new file is fully type-hinted and joins the strict mypy
+  surface. Behavior is unchanged — same icons, same fallback
+  heuristics, same TreeKey auto-scroll. The pane retains
+  `_is_genbook` because it gates pane-level chrome and dispatches
+  between verse-keyed / genbook / devotional render paths.
+
 ## [1.0.0] — 2026-05-23
 
 First Flathub release. The app gets its proper name, a hardened
