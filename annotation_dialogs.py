@@ -237,7 +237,7 @@ def compare_translations(pane, verse, popover):
             rb.set_margin_end(12)
             rb.set_margin_top(8)
             rb.set_margin_bottom(8)
-            ml = Gtk.Label(label=mod, xalign=0)
+            ml = Gtk.Label(label=sword_bridge.display_name(mod), xalign=0)
             ml.add_css_class('dim-label')
             tl = Gtk.Label(label=text, xalign=0, wrap=True)
             tl.set_max_width_chars(52)

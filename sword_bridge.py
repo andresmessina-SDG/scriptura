@@ -329,6 +329,75 @@ def is_internal_use(module_name):
     return module_name in INTERNAL_USE_MODULES
 
 
+# Curated human-friendly labels for popular CrossWire modules. The
+# SWORD `Name=` (e.g. "MHCC") is what the library uses internally; the
+# labels below are what users see in module pickers, the search target
+# dropdown, and the Compare Translations dialog. Modules not in this
+# map fall back to their short name. The Module Manager intentionally
+# keeps short names — users browsing the catalog match against
+# CrossWire's own pages which use the canonical short names.
+DISPLAY_NAMES = {
+    # Bibles
+    'KJV':           'King James Version',
+    'KJVA':          'King James (with Apocrypha)',
+    'ASV':           'American Standard Version',
+    'WEB':           'World English Bible',
+    'WEBA':          'World English Bible (with Apocrypha)',
+    'LEB':           'Lexham English Bible',
+    'NET':           'NET Bible',
+    'YLT':           "Young's Literal Translation",
+    'Darby':         'Darby Translation',
+    'Geneva1599':    'Geneva Bible (1599)',
+    'Bishops':       "Bishops' Bible (1568)",
+    'BBE':           'Bible in Basic English',
+    'DRC':           'Douay-Rheims (Challoner)',
+    'Webster':       "Webster's Revision",
+    'KJV2006':       'King James Version (2006)',
+    'EMTV':          "English Majority Text",
+    # Commentaries
+    'MHC':           'Matthew Henry (Complete)',
+    'MHCC':          'Matthew Henry (Concise)',
+    'TSK':           'Treasury of Scripture Knowledge',
+    'Calvin':        "Calvin's Commentaries",
+    'Clarke':        "Adam Clarke's Commentary",
+    'Barnes':        "Barnes' Notes",
+    'Wesley':        "Wesley's Notes",
+    'JFB':           'Jamieson-Fausset-Brown',
+    'Gill':          "Gill's Exposition",
+    'ScofieldNotes': 'Scofield Reference Notes',
+    'Robertson':     "Robertson's Word Pictures",
+    'Family':        'Family Bible Notes',
+    'GerNeueBruns':  'Brunswick Commentary',
+    # Devotionals
+    'SME':           'Spurgeon — Morning & Evening',
+    'Spurgeon':      "Spurgeon's Morning & Evening",
+    'Chambers':      'My Utmost for His Highest',
+    'DailyTSK':      'Daily TSK',
+    # Greek / Hebrew sources
+    'TR':            'Textus Receptus',
+    'SBLGNT':        'SBL Greek New Testament',
+    'WHNU':          'Westcott-Hort / Nestle-Aland',
+    'Byz':           'Byzantine Majority Text',
+    'LXX':           'Septuagint',
+    'ABP':           'Apostolic Bible Polyglot',
+    # Lexicons + dictionaries
+    'StrongsHebrew': "Strong's Hebrew Dictionary",
+    'StrongsGreek':  "Strong's Greek Dictionary",
+    'Easton':        "Easton's Bible Dictionary",
+    'Smith':         "Smith's Bible Dictionary",
+    'ISBE':          'ISBE Encyclopedia',
+    'Naves':         "Nave's Topical Bible",
+}
+
+
+def display_name(name):
+    """Return the human-friendly label for a SWORD module, falling back
+    to the short name if not in the curated map. Safe to call on
+    non-SWORD module names (e.g. eBible.org titles) — they pass through
+    unchanged because they're already descriptive."""
+    return DISPLAY_NAMES.get(name, name)
+
+
 # ── Generic Books ────────────────────────────────────────────────────────────
 # Generic Books (SWORD type "Generic Books") are tree-keyed rather than
 # verse-keyed. Examples: Didache, Westminster Confession, Apostolic

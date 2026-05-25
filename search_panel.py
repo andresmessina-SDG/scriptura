@@ -120,7 +120,8 @@ class SearchPanel(Gtk.Box):
         controls.set_margin_bottom(6)
 
         names = _searchable_modules()
-        self._module_drop = Gtk.DropDown(model=Gtk.StringList.new(names), hexpand=True)
+        labels = [sword_bridge.display_name(n) for n in names]
+        self._module_drop = Gtk.DropDown(model=Gtk.StringList.new(labels), hexpand=True)
         controls.append(self._module_drop)
 
         entry_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
@@ -198,7 +199,8 @@ class SearchPanel(Gtk.Box):
 
     def set_module(self, module_name):
         names = _searchable_modules()
-        self._module_drop.set_model(Gtk.StringList.new(names))
+        labels = [sword_bridge.display_name(n) for n in names]
+        self._module_drop.set_model(Gtk.StringList.new(labels))
         if module_name in names:
             self._module_drop.set_selected(names.index(module_name))
 
@@ -365,7 +367,7 @@ class SearchPanel(Gtk.Box):
             text_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1, hexpand=True)
             query_lbl = Gtk.Label(label=entry['query'], xalign=0)
             query_lbl.add_css_class('result-ref')
-            mod_lbl = Gtk.Label(label=entry['module'], xalign=0)
+            mod_lbl = Gtk.Label(label=sword_bridge.display_name(entry['module']), xalign=0)
             mod_lbl.add_css_class('dim-label')
             text_box.append(query_lbl)
             text_box.append(mod_lbl)

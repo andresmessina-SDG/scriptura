@@ -335,8 +335,8 @@ class BiblePane(Gtk.Box):
         self.module_drop.set_hexpand(True)
         self.module_drop.set_size_request(120, -1)
         self.module_drop.add_css_class('flat')
-        self._picker_label = Gtk.Label(label=self._module, xalign=0,
-                                       hexpand=True)
+        self._picker_label = Gtk.Label(label=sword_bridge.display_name(self._module),
+                                       xalign=0, hexpand=True)
         self._picker_label.set_ellipsize(Pango.EllipsizeMode.END)
         _label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         _label_box.append(self._picker_label)
@@ -2034,7 +2034,7 @@ class BiblePane(Gtk.Box):
         else:
             # Same module is still around; just sync the label in case it
             # somehow drifted, and rebuild the picker contents on next open.
-            self._picker_label.set_label(self._module)
+            self._picker_label.set_label(sword_bridge.display_name(self._module))
 
     def _apply_module_change(self, new_module):
         """Carry out a module switch: rewire metadata, hide/show
@@ -2045,7 +2045,7 @@ class BiblePane(Gtk.Box):
         # to here.
         self._save_position_to_module_state()
         self._module = new_module
-        self._picker_label.set_label(new_module)
+        self._picker_label.set_label(sword_bridge.display_name(new_module))
         self._module_type = (
             'Biblical Texts' if ebible_bridge.is_ebible_module(self._module)
             else sword_bridge.module_type(self._module)
@@ -2306,7 +2306,7 @@ class BiblePane(Gtk.Box):
         hb.set_margin_end(4)
         hb.set_margin_top(4)
         hb.set_margin_bottom(4)
-        lbl = Gtk.Label(label=name, xalign=0, hexpand=True)
+        lbl = Gtk.Label(label=sword_bridge.display_name(name), xalign=0, hexpand=True)
         lbl.set_ellipsize(Pango.EllipsizeMode.END)
         if name == self._module:
             lbl.add_css_class('accent')
