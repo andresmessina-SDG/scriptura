@@ -1041,11 +1041,18 @@ class BiblePane(Gtk.Box):
                 # Drop-cap: enlarge the first letter of verse 1 for a
                 # print-Bible feel. Skip the dropcap on highlighted v1 —
                 # the soft tint reads better as a flat block.
+                #
+                # No `rise` attribute: combining `size="200%"` with a
+                # negative `rise` made the verse-1 line's ink extent
+                # exceed its reported logical extent, and GTK4 TextView's
+                # incremental redraw on scroll left ghost fragments
+                # above the cap when the user scrolled the chapter back
+                # into view.
                 if start_v == 1 and not v_anno.get('highlight'):
                     m = re.match(r'((?:<[^>]+>)*)([A-Za-z])', v_text_markup)
                     if m:
                         v_text_markup = (
-                            f'{m.group(1)}<span size="200%" weight="bold" rise="-2000">'
+                            f'{m.group(1)}<span size="200%" weight="bold">'
                             f'{m.group(2)}</span>{v_text_markup[m.end():]}'
                         )
                 try:
@@ -1266,6 +1273,13 @@ class BiblePane(Gtk.Box):
                 self._buffer.get_start_iter(),
                 self._buffer.get_end_iter())
         if not verse_num:
+            return
+        # Bibles only. Commentary sections render their verse anchor as
+        # an injected "Verse N" / "Verses A-B" header, not as " N "; the
+        # indicator's offset math would paint the first few letters of
+        # the word "Verse" in accent color. The header itself already
+        # marks the active section visually.
+        if self._module_type != 'Biblical Texts':
             return
         ranges = self._verse_ranges(verse_num)
         if not ranges:
