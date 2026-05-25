@@ -80,6 +80,14 @@ def _db():
         conn.execute('PRAGMA journal_mode=WAL')
     except sqlite3.Error:
         pass
+    # Unicode-aware case folding for search. SQLite's LIKE (and LOWER) only
+    # fold ASCII, so a search for polytonic Greek wouldn't match across case.
+    # casefold() is the Unicode-correct fold; deterministic=True lets SQLite
+    # treat it as a pure function.
+    conn.create_function(
+        'pycasefold', 1,
+        lambda s: s.casefold() if isinstance(s, str) else s,
+        deterministic=True)
     conn.execute('''CREATE TABLE IF NOT EXISTS verses (
         translation TEXT, book TEXT, chapter INTEGER, verse INTEGER, text TEXT,
         PRIMARY KEY (translation, book, chapter, verse))''')
@@ -180,9 +188,10 @@ def load_chapter(module_name, book, chapter):
         return []
 
 def search_module(module_name, query, case_sensitive=False, **_kwargs):
-    """Search verses with AND across all words. case_sensitive=False uses
-    SQLite LIKE (default ASCII-only case-insensitive); True uses GLOB
-    which is byte-exact case-sensitive. Returns [(book, ch, v, text)]."""
+    """Search verses with AND across all words. case_sensitive=False folds
+    both sides with Unicode casefold() (so non-ASCII case matches too) before
+    a LIKE substring test; True uses GLOB which is byte-exact case-sensitive.
+    Returns [(book, ch, v, text)]."""
     tid = _tid(module_name)
     words = [w for w in query.strip().split() if w]
     if not words:
@@ -196,9 +205,9 @@ def search_module(module_name, query, case_sensitive=False, **_kwargs):
             params = [tid] + [f'*{w}*' for w in words]
         else:
             sql = ('SELECT book, chapter, verse, text FROM verses WHERE translation=? '
-                   + ' '.join('AND text LIKE ?' for _ in words)
+                   + ' '.join('AND pycasefold(text) LIKE ?' for _ in words)
                    + ' ORDER BY rowid')
-            params = [tid] + [f'%{w}%' for w in words]
+            params = [tid] + [f'%{w.casefold()}%' for w in words]
         rows = conn.execute(sql, params).fetchall()
         result = list(rows)
         if len(result) > 5000:

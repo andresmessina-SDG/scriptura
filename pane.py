@@ -777,7 +777,20 @@ class BiblePane(Gtk.Box):
                     continue
         return None
 
+    def _resolve_present_verse(self, verse_num):
+        """Map a requested verse to one actually rendered this chapter.
+        If the exact verse is missing (e.g. an inner verse of a \\v 1-2
+        bridge, or a stale cross-ref from a different versification), fall
+        back to the nearest preceding verse so navigation lands on real
+        text instead of nowhere."""
+        present = getattr(self, '_present_verses', None)
+        if not present or verse_num in present:
+            return verse_num
+        earlier = [v for v in present if v < verse_num]
+        return max(earlier) if earlier else verse_num
+
     def _scroll_to_verse_silent(self, verse_num):
+        verse_num = self._resolve_present_verse(verse_num)
         tag = self._buffer.get_tag_table().lookup(f'vnum_{verse_num}')
         if not tag:
             return GLib.SOURCE_REMOVE
@@ -968,6 +981,12 @@ class BiblePane(Gtk.Box):
             self._display_empty_chapter(book, chapter, dark)
             return GLib.SOURCE_REMOVE
 
+        # Verse numbers actually rendered this chapter, for nearest-preceding
+        # nav fallback: a USFM verse bridge (\v 1-2) stores its text under the
+        # start verse only, so a jump to an inner verse (2) should land on that
+        # block rather than silently doing nothing.
+        self._present_verses = sorted(v for v, _ in verses)
+
         # Chapter heading — muted, sits above the first verse and scrolls with text.
         # Bibles only; commentaries emit their own per-verse headers, and
         # generic books / dictionaries don't have a Book Chapter reference
@@ -1088,7 +1107,9 @@ class BiblePane(Gtk.Box):
             self._buffer.delete_mark(text_start_mark)
 
         if self._target_verse is not None:
-            v = self._target_verse
+            # Resolve to a rendered verse up front so the indicator and the
+            # scroll agree when the target is an inner verse of a bridge.
+            v = self._resolve_present_verse(self._target_verse)
             self._target_verse = None
             self._restore_top_verse = None
             # Navigation to a specific verse — mark it as the active
@@ -1200,6 +1221,7 @@ class BiblePane(Gtk.Box):
         self._buffer.delete_mark(start_mark)
 
     def _scroll_to_verse(self, verse_num):
+        verse_num = self._resolve_present_verse(verse_num)
         tag = self._buffer.get_tag_table().lookup(f'vnum_{verse_num}')
         if tag:
             it = self._buffer.get_start_iter()

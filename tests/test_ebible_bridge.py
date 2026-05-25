@@ -311,6 +311,18 @@ def test_search_AND_across_words(db):
     assert results[0][:3] == ('John', 3, 16)
 
 
+def test_search_case_insensitive_non_ascii(db):
+    """Case-insensitive search folds non-ASCII too — a lowercase Greek
+    query matches a verse with a capital (accented) initial, which plain
+    SQLite LIKE/LOWER (ASCII-only) would miss."""
+    conn = eb._db()
+    conn.execute('INSERT INTO verses VALUES (?,?,?,?,?)',
+                 ('engwebp', 'John', 1, 1, 'Ἰησοῦς Χριστός'))
+    conn.commit()
+    results = eb.search_module('eBible: WEB', 'ἰησοῦς')
+    assert ('John', 1, 1) in {(b, c, v) for (b, c, v, _t) in results}
+
+
 def test_search_empty_query_returns_empty(db):
     assert eb.search_module('eBible: WEB', '') == []
     assert eb.search_module('eBible: WEB', '   ') == []
