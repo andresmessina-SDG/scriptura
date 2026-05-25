@@ -87,6 +87,14 @@ def test_parse_basic_verse():
     assert 'without form' in verses[('Genesis', 1, 2)]
 
 
+def test_parse_verse_range_marker():
+    """\\v 1-2 keys off the first number and drops the range suffix
+    rather than leaking "-2" into the verse text."""
+    usfm = '\\id GEN Genesis\n\\c 1\n\\v 1-2 In the beginning God created.\n'
+    verses = _parse(usfm)
+    assert verses[('Genesis', 1, 1)] == 'In the beginning God created.'
+
+
 def test_parse_book_code_resolution():
     """USFM book codes are uppercased and looked up in _BOOK."""
     usfm = '\\id jhn John\n\\c 3\n\\v 16 For God so loved the world.\n'

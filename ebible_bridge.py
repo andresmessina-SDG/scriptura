@@ -49,7 +49,7 @@ _BOOK = {
     '2JN':'2 John','3JN':'3 John','JUD':'Jude','REV':'Revelation',
     # alternate codes found in some eBible distributions
     'JOE':'Joel','EZE':'Ezekiel','NAH':'Nahum','ZEF':'Zephaniah',
-    'SNG':'Song of Solomon','SONG':'Song of Solomon',
+    'SONG':'Song of Solomon',
 }
 
 # ── SQLite helpers ────────────────────────────────────────────────────────────
@@ -284,7 +284,7 @@ _RE_SB  = re.compile(r'\\esb\b.*?\\esbe\b', re.DOTALL)
 # Line-start marker patterns
 _RE_BOOK    = re.compile(r'^\\id\s+([A-Z1-9]{3})',   re.IGNORECASE)
 _RE_CHAPTER = re.compile(r'^\\c\s+(\d+)')
-_RE_VERSE   = re.compile(r'^\\v\s+(\d+)\s*(.*)')
+_RE_VERSE   = re.compile(r'^\\v\s+(\d+)(?:-\d+)?\s*(.*)')
 _RE_HEADING = re.compile(r'^\\(?:s\d?|ms\d?|d)\s+(.*)')
 _RE_POETRY  = re.compile(r'^\\(q[cmr]?\d?|b)\s*(.*)')
 _RE_PARA    = re.compile(r'^\\(?:p|m|pi\d?|mi|nb|ph\d?|pr|li\d?|pc|po)\s*(.*)')

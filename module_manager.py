@@ -472,7 +472,7 @@ class ModuleManagerWindow(Adw.Window):
                 sword_bridge.install_module(name)
             except Exception as e:
                 err = str(e)
-            GLib.idle_add(self._finish_change, err, name)
+            GLib.idle_add(self._finish_change, err, name, 'install')
 
         threading.Thread(target=work, daemon=True).start()
 
@@ -487,14 +487,15 @@ class ModuleManagerWindow(Adw.Window):
                 sword_bridge.remove_module(name)
             except Exception as e:
                 err = str(e)
-            GLib.idle_add(self._finish_change, err, name)
+            GLib.idle_add(self._finish_change, err, name, 'remove')
 
         threading.Thread(target=work, daemon=True).start()
 
-    def _finish_change(self, err, name):
+    def _finish_change(self, err, name, action='install'):
         if err:
-            _log.error('install/uninstall error for %s: %s', name, err)
-            self._set_busy(False, f'Couldn\'t install {name} — {err}')
+            _log.error('%s error for %s: %s', action, name, err)
+            verb = 'remove' if action == 'remove' else 'install'
+            self._set_busy(False, f'Couldn\'t {verb} {name} — {err}')
         else:
             self._set_busy(False, '')
             if self._on_modules_changed:

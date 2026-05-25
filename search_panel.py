@@ -81,6 +81,9 @@ class SearchPanel(Gtk.Box):
         self._filter_book = None
         self._expanded_section = None
         self._populate_gen = 0
+        # Bumped on every search; a result callback whose token no longer
+        # matches has been superseded by a newer search and is dropped.
+        self._search_gen = 0
         # F3 / Shift+F3 step-through pointer into `_results`. Reset to -1
         # whenever a fresh search starts so the first F3 lands on result 0.
         self._current_idx = -1
@@ -252,6 +255,9 @@ class SearchPanel(Gtk.Box):
 
         case = self._case_btn.get_active()
 
+        self._search_gen += 1
+        gen = self._search_gen
+
         def run():
             results = sword_bridge.search_module(
                 module,
@@ -262,7 +268,7 @@ class SearchPanel(Gtk.Box):
                 case_sensitive=case,
             )
             _save_history(query, module)
-            GLib.idle_add(self._on_search_done, results)
+            GLib.idle_add(self._on_search_done, results, gen)
 
         threading.Thread(target=run, daemon=True).start()
 
@@ -272,7 +278,10 @@ class SearchPanel(Gtk.Box):
         if self._entry.get_text().strip():
             self._on_search()
 
-    def _on_search_done(self, results):
+    def _on_search_done(self, results, gen=None):
+        # Drop results from a search that a newer query has superseded.
+        if gen is not None and gen != self._search_gen:
+            return
         self._spinner.stop()
         self._spinner.set_visible(False)
 

@@ -600,6 +600,9 @@ class BibleWindow(Adw.ApplicationWindow):
 
         self.book_drop.set_selected(BOOKS.index(book))
         count = sword_bridge.chapter_count(book)
+        # Stale callers (bookmarks, search results from a different
+        # versification) may pass a chapter outside this book's range.
+        chapter = max(1, min(chapter, count))
         self.chapter_drop.set_model(Gtk.StringList.new([str(i) for i in range(1, count + 1)]))
         self.chapter_drop.set_selected(chapter - 1)
 
