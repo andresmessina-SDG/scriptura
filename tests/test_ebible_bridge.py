@@ -95,6 +95,15 @@ def test_parse_verse_range_marker():
     assert verses[('Genesis', 1, 1)] == 'In the beginning God created.'
 
 
+def test_apply_char_nested_marker():
+    """Nested character markers (\\+wj … \\+wj*) are styled like their plain
+    form, not leaked as raw tags."""
+    out = eb._apply_char(r'\add an \+wj angel\+wj* spoke\add*')
+    assert out == ('<transChange type="added">an '
+                   '<q who="Jesus">angel</q> spoke</transChange>')
+    assert '\\+' not in out
+
+
 def test_parse_book_code_resolution():
     """USFM book codes are uppercased and looked up in _BOOK."""
     usfm = '\\id jhn John\n\\c 3\n\\v 16 For God so loved the world.\n'
@@ -321,6 +330,23 @@ def test_search_case_insensitive_non_ascii(db):
     conn.commit()
     results = eb.search_module('eBible: WEB', 'ἰησοῦς')
     assert ('John', 1, 1) in {(b, c, v) for (b, c, v, _t) in results}
+
+
+def test_search_wildcards_are_literal(db):
+    """LIKE/GLOB metacharacters in a query match literally, not as wildcards."""
+    conn = eb._db()
+    conn.executemany('INSERT INTO verses VALUES (?,?,?,?,?)',
+                     [('engwebp', 'Mark', 1, 1, 'gave 100% effort'),
+                      ('engwebp', 'Mark', 1, 2, 'gave one hundred percent'),
+                      ('engwebp', 'Mark', 1, 3, 'the [Lord] reigns')])
+    conn.commit()
+    # '%' must not act as a LIKE wildcard.
+    pct = {(b, c, v) for (b, c, v, _t) in eb.search_module('eBible: WEB', '100%')}
+    assert pct == {('Mark', 1, 1)}
+    # '[' must not act as a GLOB character class.
+    brk = {(b, c, v) for (b, c, v, _t)
+           in eb.search_module('eBible: WEB', '[Lord]', case_sensitive=True)}
+    assert brk == {('Mark', 1, 3)}
 
 
 def test_search_empty_query_returns_empty(db):

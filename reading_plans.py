@@ -88,8 +88,11 @@ def _spread(chapters: list[Reading], n_days: int) -> list[list[Reading]]:
 
 
 def _make_blended() -> list[list[Reading]]:
-    # Four daily streams: OT history, OT prophecy, NT, Psalms+Proverbs
-    s1 = _spread(_expand(_OT[:22]), 365)   # Gen–Song of Solomon
+    # Four daily streams: OT history/wisdom, OT prophecy, NT, Psalms+Proverbs.
+    # Psalms and Proverbs are excluded from s1 — they're their own stream (s4),
+    # so without this they'd be read twice a year.
+    s1 = _spread(_expand([b for b in _OT[:22]
+                          if b[0] not in ('Psalms', 'Proverbs')]), 365)
     s2 = _spread(_expand(_OT[22:]), 365)   # Isaiah–Malachi
     s3 = _spread(_expand(_NT), 365)
     s4 = _spread(_expand([('Psalms', 150), ('Proverbs', 31)]), 365)

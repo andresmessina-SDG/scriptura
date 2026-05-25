@@ -189,6 +189,17 @@ def test_get_plan_days_unknown_id_returns_empty():
     assert reading_plans.get_plan_days('does_not_exist') == []
 
 
+def test_blended_plan_reads_each_chapter_once():
+    """The blended plan's four streams must partition the canon — no book
+    read twice. Regression: Psalms/Proverbs once appeared in both the
+    Gen–Song stream and their own stream."""
+    from collections import Counter
+    flat = [ch for day in reading_plans.get_plan_days('blended_1_year')
+            for ch in day]
+    assert len(flat) == 1189  # whole Bible, exactly once
+    assert max(Counter(flat).values()) == 1
+
+
 # ── Progress persistence ─────────────────────────────────────────────────────
 
 @pytest.fixture

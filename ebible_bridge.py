@@ -187,10 +187,23 @@ def load_chapter(module_name, book, chapter):
     except Exception:
         return []
 
+def _like_escape(s):
+    """Escape LIKE wildcards so a query is matched literally (paired with
+    ESCAPE '\\'). Backslash first, then % and _."""
+    return s.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+
+
+def _glob_escape(s):
+    """Escape GLOB metacharacters literally. GLOB has no ESCAPE clause, so
+    each is wrapped in a one-char class: * → [*], ? → [?], [ → [[]."""
+    return s.replace('[', '[[]').replace('*', '[*]').replace('?', '[?]')
+
+
 def search_module(module_name, query, case_sensitive=False, **_kwargs):
     """Search verses with AND across all words. case_sensitive=False folds
     both sides with Unicode casefold() (so non-ASCII case matches too) before
     a LIKE substring test; True uses GLOB which is byte-exact case-sensitive.
+    Wildcard metacharacters in the query are escaped so they match literally.
     Returns [(book, ch, v, text)]."""
     tid = _tid(module_name)
     words = [w for w in query.strip().split() if w]
@@ -202,12 +215,12 @@ def search_module(module_name, query, case_sensitive=False, **_kwargs):
             sql = ('SELECT book, chapter, verse, text FROM verses WHERE translation=? '
                    + ' '.join('AND text GLOB ?' for _ in words)
                    + ' ORDER BY rowid')
-            params = [tid] + [f'*{w}*' for w in words]
+            params = [tid] + [f'*{_glob_escape(w)}*' for w in words]
         else:
             sql = ('SELECT book, chapter, verse, text FROM verses WHERE translation=? '
-                   + ' '.join('AND pycasefold(text) LIKE ?' for _ in words)
+                   + ' '.join("AND pycasefold(text) LIKE ? ESCAPE '\\'" for _ in words)
                    + ' ORDER BY rowid')
-            params = [tid] + [f'%{w.casefold()}%' for w in words]
+            params = [tid] + [f'%{_like_escape(w.casefold())}%' for w in words]
         rows = conn.execute(sql, params).fetchall()
         result = list(rows)
         if len(result) > 5000:
@@ -313,6 +326,10 @@ def _apply_char(text):
       \\title        → <title>...</title>            (bold heading)
       everything else → plain text (markers stripped)
     """
+    # Nested character markers carry a '+' right after the backslash
+    # (\+wj ... \+wj*). Drop the '+' so the rules below — which match the
+    # plain \wj form — handle nested markers too instead of leaking raw tags.
+    text = re.sub(r'\\\+', r'\\', text)
     # Alternate / published verse-number spans
     text = re.sub(r'\\(?:va|vp|ca)\s.*?\\(?:va|vp|ca)\*', '', text, flags=re.DOTALL)
     # Words of Jesus → red letter

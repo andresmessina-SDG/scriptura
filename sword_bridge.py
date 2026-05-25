@@ -274,6 +274,16 @@ def load_chapter(module_name, book, chapter):
 
         try:
             vk = Sword.VerseKey()
+            # Use the module's own versification, not the default KJV — modules
+            # like RusSynodal (Synodal), MorphGNT (NRSV) or Wycliffe (Vulg)
+            # have different verse counts (e.g. Synodal Psalms have an extra
+            # verse), so a KJV key would truncate or overshoot the chapter.
+            v11n = mod.getConfigEntry('Versification')
+            if v11n:
+                try:
+                    vk.setVersificationSystem(v11n)
+                except Exception:
+                    pass  # unknown system → fall back to default
             vk.setText(f'{book} {chapter}:1')
             verse_max = vk.getVerseMax()
         except Exception as e:

@@ -155,14 +155,21 @@ def copy_verse(pane, verses, popover):
 # ── Compare translations popover ─────────────────────────────────────────────
 
 def compare_translations(pane, verse, popover):
+    # Reuse the study menu's anchor (the click point) so the compare popover
+    # opens where the user clicked, like the menu it replaces — both are
+    # parented to pane._view, so the rect is in the same coordinate space.
+    ok, src_rect = popover.get_pointing_to()
     popover.popdown()
 
     comp = Gtk.Popover()
     comp.set_parent(pane._view)
     comp.connect('closed', lambda p: p.unparent())
-    rect = Gdk.Rectangle()
-    rect.x, rect.y, rect.width, rect.height = 160, 80, 1, 1
-    comp.set_pointing_to(rect)
+    if ok:
+        comp.set_pointing_to(src_rect)
+    else:
+        rect = Gdk.Rectangle()
+        rect.x, rect.y, rect.width, rect.height = 160, 80, 1, 1
+        comp.set_pointing_to(rect)
 
     outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
 
