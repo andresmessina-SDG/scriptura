@@ -155,6 +155,14 @@ class LexiconPanel(Gtk.Box):
 
         self._title = Gtk.Label(label="Strong's Lexicon", xalign=0)
         self._title.add_css_class('heading')
+        # Cap natural width + allow ellipsize. Without these, the
+        # title (e.g. `Strong's H3068 · in "the LORD"`) reports the
+        # full text width as its natural request, which combines with
+        # _ws_header below through the inner h_paned (shrink=False on
+        # both children) to push the lexicon — and therefore pane 1 —
+        # wider than its allocation when content first loads.
+        self._title.set_max_width_chars(28)
+        self._title.set_ellipsize(Pango.EllipsizeMode.END)
         header.append(self._title)
 
         # Loading indicator — shown while the SWORD lexicon fetch is in
@@ -180,6 +188,12 @@ class LexiconPanel(Gtk.Box):
         # `def_view` is exposed as a public attribute so the composer can
         # attach extra gestures (e.g. "close search panel on click").
         def_scroll = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
+        # NEVER on the horizontal policy bounds the scrolled window's
+        # natural width to its allocation — otherwise the TextView's
+        # natural width briefly balloons to "longest unwrapped line"
+        # the moment a new definition is inserted, pushing the lexicon
+        # (and therefore the parent pane) wider for a frame.
+        def_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         self._def_view = self.def_view = Gtk.TextView()
         self._def_view.set_editable(False)
         self._def_view.set_cursor_visible(False)
@@ -202,6 +216,12 @@ class LexiconPanel(Gtk.Box):
 
         self._ws_header = Gtk.Label(label='', xalign=0, hexpand=True)
         self._ws_header.add_css_class('ws-header')
+        # Same reason as _title above: bound the natural width so a
+        # long progress string ("Searching Proverbs… 87 matches so far
+        # (31/31)") doesn't widen the lexicon panel's allocation
+        # request when it updates during the word-study scan.
+        self._ws_header.set_max_width_chars(32)
+        self._ws_header.set_ellipsize(Pango.EllipsizeMode.END)
         ws_box.append(self._ws_header)
 
         self._ws_list = Gtk.ListBox()
@@ -209,6 +229,7 @@ class LexiconPanel(Gtk.Box):
         self._ws_list.connect('row-activated', self._on_ws_row_activated)
 
         ws_scroll = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
+        ws_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         ws_scroll.set_child(self._ws_list)
         ws_box.append(ws_scroll)
 
@@ -260,9 +281,17 @@ class LexiconPanel(Gtk.Box):
         self._spinner.set_visible(True)
         self._spinner.start()
         if not self.get_visible():
-            self.set_visible(True)
+            # Set the vertical paned position BEFORE the panel becomes
+            # visible. The outer paned has been allocated since BiblePane
+            # was constructed (only this end-child was hidden), so its
+            # height is already known and the position-set sticks for
+            # the next allocation. Without this, GtkPaned's first layout
+            # with both children visible uses a roughly 50/50 default
+            # and the lexicon flashes as a huge empty half-pane for a
+            # frame before the idle callback shrinks it to ~200px.
             if self._on_first_show:
-                GLib.idle_add(self._on_first_show)
+                self._on_first_show()
+            self.set_visible(True)
             GLib.idle_add(self.init_inner_position)
 
     def show(self, strong_num, text, morph='', phrase_chain=None, phrase_text=None):
@@ -356,9 +385,17 @@ class LexiconPanel(Gtk.Box):
             self._tag_refs()
 
         if not self.get_visible():
-            self.set_visible(True)
+            # Set the vertical paned position BEFORE the panel becomes
+            # visible. The outer paned has been allocated since BiblePane
+            # was constructed (only this end-child was hidden), so its
+            # height is already known and the position-set sticks for
+            # the next allocation. Without this, GtkPaned's first layout
+            # with both children visible uses a roughly 50/50 default
+            # and the lexicon flashes as a huge empty half-pane for a
+            # frame before the idle callback shrinks it to ~200px.
             if self._on_first_show:
-                GLib.idle_add(self._on_first_show)
+                self._on_first_show()
+            self.set_visible(True)
             GLib.idle_add(self.init_inner_position)
 
     def _tag_refs(self):
@@ -475,6 +512,10 @@ class LexiconPanel(Gtk.Box):
         ref_lbl = Gtk.Label(label=f'{ch}:{v_num}', xalign=0)
         ref_lbl.add_css_class('dim-label')
         text_lbl = Gtk.Label(xalign=0, wrap=True)
+        # Cap the label's *natural* width so the ListBox doesn't request
+        # "widest verse" worth of horizontal space when a batch of rows
+        # arrives — that's what made the panel pop wider for a frame.
+        text_lbl.set_max_width_chars(40)
         try:
             text_lbl.set_markup(markup)
         except Exception:
