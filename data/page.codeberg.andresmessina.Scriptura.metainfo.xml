@@ -36,6 +36,11 @@
 
   <launchable type="desktop-id">page.codeberg.andresmessina.Scriptura.desktop</launchable>
 
+  <branding>
+    <color type="primary" scheme_preference="light">#8B6520</color>
+    <color type="primary" scheme_preference="dark">#C49B35</color>
+  </branding>
+
   <screenshots>
     <screenshot type="default">
       <image>https://codeberg.org/andresmessina/scriptura/raw/commit/63ca979c99d9f458eede7297cf5b2a69b0caaaf7/data/screenshots/01-two-pane-lexicon.png</image>
