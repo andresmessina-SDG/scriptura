@@ -15,14 +15,9 @@
 #                   in /app/bin and desktop/icon/metainfo installed
 #                   to the conventional /app/share paths.
 #
-# TODOs flagged with [TODO: …] need values plugged in before this
-# manifest builds. Mostly SHA256 sums of upstream source archives,
-# which you compute with `sha256sum <downloaded-tarball>`.
-#
 # Runtime: GNOME Platform 50 is the latest on Flathub as of mid-2026.
-# Flathub requires the newest runtime at submission time — bump the
-# runtime-version (sdk follows it automatically) if a newer one ships
-# before the PR is merged.
+# Flathub requires the newest runtime at submission time — bump
+# runtime-version if a newer one ships before the PR is merged.
 
 app-id: page.codeberg.andresmessina.Scriptura
 runtime: org.gnome.Platform
@@ -159,7 +154,7 @@ modules:
   - name: python3-whoosh
     buildsystem: simple
     build-commands:
-      - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}"
+      - pip3 install --exists-action=i --no-index --find-links="file://${PWD}"
                      --prefix=${FLATPAK_DEST} --no-build-isolation whoosh
     sources:
       # Pinned to Whoosh 2.7.4 (last stable upstream release); search
