@@ -1,48 +1,16 @@
-# Flatpak manifest for Scriptura.
-#
-# Build locally:
-#   flatpak-builder --user --install --force-clean build-dir \
-#       page.codeberg.andresmessina.Scriptura.yml
-#   flatpak run page.codeberg.andresmessina.Scriptura
-#
-# Three build modules:
-#   - libsword    : CrossWire's SWORD library + Python bindings, built
-#                   from source (Flathub runtimes don't ship it).
-#   - whoosh      : pure-Python full-text search, pip-installed
-#                   offline from a vendored tarball.
-#   - scriptura: the app itself — Python sources installed under
-#                   /app/share/scriptura, with a wrapper script
-#                   in /app/bin and desktop/icon/metainfo installed
-#                   to the conventional /app/share paths.
-#
-# Runtime: GNOME Platform 50 is the latest on Flathub as of mid-2026.
-# Flathub requires the newest runtime at submission time — bump
-# runtime-version if a newer one ships before the PR is merged.
-
 app-id: page.codeberg.andresmessina.Scriptura
 runtime: org.gnome.Platform
 runtime-version: '50'
 sdk: org.gnome.Sdk
-# Wrapper name matches the app-id so the desktop file's
-# Exec=page.codeberg.andresmessina.Scriptura resolves cleanly.
 command: page.codeberg.andresmessina.Scriptura
 
 finish-args:
-  # Display protocols
   - --socket=wayland
   - --socket=fallback-x11
   - --share=ipc
   - --device=dri
-  # Network access for module downloads (Module Manager + Open Databases
-  # tab + eBible catalog/translation downloads). Without this the
-  # first-run welcome flow can't fetch the essentials bundle.
   - --share=network
-  # Persist SWORD's data directory across runs so installed modules
-  # don't get wiped on Flatpak upgrade. Same pattern BibleTime uses.
   - --persist=.sword
-  # The app talks to xdg-desktop-portal for file chooser dialogs
-  # (Export Study Journal). No host-filesystem permissions needed —
-  # the portal handles file access through user prompts.
 
 cleanup:
   - /include
@@ -55,13 +23,8 @@ cleanup:
   - '*.a'
 
 modules:
-  # ── libcurl (libsword depends on it for InstallMgr network ops) ───────
-  # The GNOME 49 runtime doesn't expose libcurl via the SDK's pkg-config
-  # / library search path in a way SWORD's CMake picks up cleanly — the
-  # build links libsword.so without curl symbols, then `buildtest`
-  # fails at link time with `undefined reference to curl_easy_*`.
-  # Building libcurl explicitly into /app/lib guarantees the symbols
-  # are present and SWORD's find_package(CURL) resolves correctly.
+  # libcurl is bundled because SWORD's CMake does not pick up the
+  # runtime's curl cleanly, causing link failures on undefined curl_easy_*.
   - name: libcurl
     buildsystem: autotools
     config-opts:
@@ -79,19 +42,6 @@ modules:
         url: https://curl.se/download/curl-8.10.0.tar.gz
         sha256: 58c9dcf73493ae9d181fd334b3b3987ff73124621565187ade237bff1064a716
 
-  # ── libsword (C++ only, no Python bindings) ───────────────────────────
-  # We build libsword as a plain shared library here. SWORD's own
-  # Python-bindings target has been a graveyard — it silently no-ops
-  # in every combination we've tried (cmake/autotools, SWORD_BINDINGS
-  # vs SWORD_PYTHON_3, with/without the setuptools-migration patch).
-  # Instead the next module (python-libsword) pip-installs Greg
-  # Hellings' standalone wrapper, which ships pre-generated SWIG
-  # output and just links against the libsword.so we install here.
-  #
-  # Keep /lib/pkgconfig in the *build*; python-libsword's setup.py
-  # uses `pkg-config --cflags --libs sword` to find us. The
-  # top-level cleanup strips /lib/pkgconfig at the end, after all
-  # modules have built.
   - name: libsword
     buildsystem: cmake-ninja
     builddir: true
@@ -101,10 +51,6 @@ modules:
       - -DCMAKE_POLICY_VERSION_MINIMUM=3.5
       - -DSWORD_BUILD_TESTS=No
       - -DSWORD_BUILD_UTILS=No
-      # Force -lcurl into every link line. SWORD's CMake locates
-      # libcurl's headers via find_package(CURL) but doesn't
-      # propagate the library to the link command on Flathub's
-      # builder, so libsword.so ships without curl resolution.
       - -DCMAKE_SHARED_LINKER_FLAGS=-lcurl
       - -DCMAKE_EXE_LINKER_FLAGS=-lcurl
       - -DCMAKE_MODULE_LINKER_FLAGS=-lcurl
@@ -117,27 +63,7 @@ modules:
         url: https://crosswire.org/ftpmirror/pub/sword/source/v1.9/sword-1.9.0.tar.gz
         sha256: 42409cf3de2faf1108523e2c5ac0745d21f9ed2a5c78ed878ee9dcc303426b8a
 
-  # ── python-libsword (the actual `import Sword` provider) ──────────────
-  # Greg Hellings' standalone Python bindings for libsword. Lives at
-  # https://github.com/greg-hellings/python-libsword. Version 1.9.0.post1
-  # was cut against sword 1.9.0 (matches our libsword above).
-  #
-  # Why this and not SWORD's own bindings target:
-  #   - It's a plain setup.py extension with `Sword.cxx` and `Sword.py`
-  #     *already generated* and committed to the repo. No SWIG run at
-  #     our build time, no Makefile.am macro chains, no silent skips.
-  #   - setup.py just calls `pkg-config --cflags --libs sword` to
-  #     locate our just-built libsword in /app/lib. As long as
-  #     sword.pc is on PKG_CONFIG_PATH (Flatpak sets it to /app/lib/
-  #     pkgconfig automatically at build time), the link resolves.
-  #   - Installs to /app/lib/python3.X/site-packages/ via pip's
-  #     --prefix mechanism, which is exactly where the runtime's
-  #     python3 looks.
-  #
-  # --no-build-isolation: so pip uses the SDK's Python + setuptools
-  # rather than spawning a hermetic venv that can't see /app.
-  # --no-deps: Flathub builders run sandboxed with no network; the
-  # package has no Python deps anyway.
+  # Greg Hellings' standalone Python bindings (ships pre-generated SWIG output).
   - name: python-libsword
     buildsystem: simple
     build-commands:
@@ -147,35 +73,20 @@ modules:
         url: https://github.com/greg-hellings/python-libsword/archive/refs/tags/1.9.0.post1.tar.gz
         sha256: 37abd873b3418e4c30c5dac8c0d0609e3981480520d8304868b62be382a8958c
 
-  # ── Whoosh (full-text search) ──────────────────────────────────────────
-  # Pip-installed from a vendored tarball so Flathub builders don't
-  # need network access at build time (the official Flathub builder
-  # runs with --share=none for the build phase).
   - name: python3-whoosh
     buildsystem: simple
     build-commands:
       - pip3 install --exists-action=i --no-index --find-links="file://${PWD}"
                      --prefix=${FLATPAK_DEST} --no-build-isolation whoosh
     sources:
-      # Pinned to Whoosh 2.7.4 (last stable upstream release); search
-      # works fully against it. Bump URL + sha256 together if updating.
       - type: file
         url: https://files.pythonhosted.org/packages/25/2b/6beed2107b148edc1321da0d489afc4617b9ed317ef7b72d4993cad9b684/Whoosh-2.7.4.tar.gz
         sha256: 7ca5633dbfa9e0e0fa400d3151a8a0c4bec53bd2ecedc0a67705b17565c31a83
 
-  # ── The app itself ─────────────────────────────────────────────────────
   - name: scriptura
     buildsystem: simple
     build-commands:
-      # Wrapper script in /app/bin — named after the app-id so the
-      # desktop file's Exec line and Flatpak's `command:` resolve to
-      # the same path.
       - install -Dm755 flatpak/scriptura.sh /app/bin/page.codeberg.andresmessina.Scriptura
-
-      # All Python sources go to /app/share/scriptura. The wrapper
-      # script runs `python3 /app/share/scriptura/main.py` and
-      # Python adds that directory to sys.path so the local imports
-      # (window.py, pane.py, paths.py, etc.) resolve.
       - mkdir -p /app/share/scriptura
       - install -Dm644 main.py /app/share/scriptura/main.py
       - install -Dm644 _version.py /app/share/scriptura/_version.py
@@ -201,33 +112,14 @@ modules:
       - install -Dm644 lexicon_panel.py /app/share/scriptura/lexicon_panel.py
       - install -Dm644 devotional.py /app/share/scriptura/devotional.py
       - install -Dm644 welcome.py /app/share/scriptura/welcome.py
-
-      # Application stylesheet — loaded once at startup by styles.py.
-      # Installed under /app/share/scriptura/data/ so styles.py finds it
-      # at the same relative path it uses in development.
       - install -Dm644 data/style.css /app/share/scriptura/data/style.css
-
-      # Pre-compile bytecode so first launch doesn't pay the compile
-      # cost. -q for quiet output; one .pyc per .py lands in
-      # /app/share/scriptura/__pycache__/.
       - python3 -m compileall -q /app/share/scriptura/
-
-      # Desktop entry + AppStream metainfo. Both required by
-      # Flathub's appstreamcli compose step.
       - install -Dm644 data/page.codeberg.andresmessina.Scriptura.desktop
                        /app/share/applications/page.codeberg.andresmessina.Scriptura.desktop
       - install -Dm644 data/page.codeberg.andresmessina.Scriptura.metainfo.xml
                        /app/share/metainfo/page.codeberg.andresmessina.Scriptura.metainfo.xml
-
-      # License — Flathub requires it installed under share/licenses/$FLATPAK_ID.
       - install -Dm644 LICENSE
                        /app/share/licenses/page.codeberg.andresmessina.Scriptura/LICENSE
-      # Icons. The GNOME 48 runtime's GdkPixbuf doesn't always ship an
-      # SVG loader, which makes Flatpak's icon validator emit
-      # "Format not recognized" when we install the SVG directly.
-      # Render the SVG to PNG at standard sizes during the build using
-      # rsvg-convert (part of the SDK) — PNG is universally accepted
-      # by every icon validator and pixbuf loader.
       - mkdir -p /app/share/icons/hicolor/256x256/apps
       - mkdir -p /app/share/icons/hicolor/128x128/apps
       - mkdir -p /app/share/icons/hicolor/64x64/apps
