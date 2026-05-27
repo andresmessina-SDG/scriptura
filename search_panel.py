@@ -6,6 +6,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Pango
 import sword_bridge
+import ebible_bridge
 import paths
 
 _HISTORY_FILE = paths.search_history_path()
@@ -70,6 +71,9 @@ def _searchable_modules():
         t = sword_bridge.module_type(name)
         if t in ('Biblical Texts', 'Commentaries'):
             keep.append(name)
+    # eBible translations are verse-keyed too, and searchable per-pane;
+    # include them here so the window search picker matches.
+    keep += ebible_bridge.module_names()
     return keep
 
 class SearchPanel(Gtk.Box):
@@ -259,14 +263,18 @@ class SearchPanel(Gtk.Box):
         gen = self._search_gen
 
         def run():
-            results = sword_bridge.search_module(
-                module,
-                query,
-                on_indexing_start=self._on_indexing_start,
-                on_indexing_progress=self._on_indexing_progress,
-                on_indexing_done=self._on_indexing_done,
-                case_sensitive=case,
-            )
+            if ebible_bridge.is_ebible_module(module):
+                results = ebible_bridge.search_module(
+                    module, query, case_sensitive=case)
+            else:
+                results = sword_bridge.search_module(
+                    module,
+                    query,
+                    on_indexing_start=self._on_indexing_start,
+                    on_indexing_progress=self._on_indexing_progress,
+                    on_indexing_done=self._on_indexing_done,
+                    case_sensitive=case,
+                )
             _save_history(query, module)
             GLib.idle_add(self._on_search_done, results, gen)
 
