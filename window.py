@@ -433,6 +433,17 @@ class BibleWindow(Adw.ApplicationWindow):
         key_controller.connect('key-pressed', self._on_key_press)
         self.add_controller(key_controller)
 
+        # After the compositor suspends/resumes — or the window simply sits
+        # backgrounded for a long time — GTK4-on-Wayland can leave the
+        # content area in a stale state: the focus widget goes NULL so the
+        # window-level key controller above stops seeing shortcuts, and
+        # allocations queued while the frame clock was paused (e.g. a
+        # just-revealed lexicon panel) never flush. The header bar keeps
+        # working, and manually toggling the split view "fixes" it by
+        # forcing a relayout. Run that same revive automatically whenever
+        # the window regains activation.
+        self.connect('notify::is-active', self._on_active_changed)
+
         self._update_ref_label(*self._current_loc)
 
     # ── Keyboard shortcuts ────────────────────────────────────────────────────
@@ -520,6 +531,23 @@ class BibleWindow(Adw.ApplicationWindow):
                 return True
 
         return False
+
+    def _on_active_changed(self, *_args):
+        """Revive a stale content area when the window regains activation
+        after a long idle or suspend/resume. See the connect() comment in
+        _build_ui for why this is needed."""
+        if not self.is_active():
+            return
+        # Restore a focus widget so the window-level key controller gets
+        # shortcuts again — but only when focus was genuinely lost, so we
+        # never yank focus out of an entry (e.g. the search bar) that the
+        # user left focused before alt-tabbing back.
+        if self.get_focus() is None:
+            self.pane1._view.grab_focus()
+        # Flush layout deferred while the frame clock was paused. This is
+        # what the manual split-view toggle was doing to bring the lexicon
+        # panel (and the pane's click gestures) back to life.
+        self.queue_resize()
 
     def _focus_is_text_input(self):
         f = self.get_focus()

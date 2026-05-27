@@ -383,6 +383,7 @@ def _parse_usfm(content):
     vnum    = None
     parts   = []          # text segments for the current verse
     heading = None        # pending section/psalm heading
+    pre     = []          # text after \c but before the first \v
 
     def flush():
         if book and chapter is not None and vnum is not None and parts:
@@ -406,6 +407,7 @@ def _parse_usfm(content):
             book    = _BOOK.get(m.group(1).upper())
             chapter = vnum = None
             heading = None
+            pre.clear()
             continue
 
         # ── Chapter ───────────────────────────────────────────────────────────
@@ -414,6 +416,7 @@ def _parse_usfm(content):
             flush()
             vnum    = None
             chapter = int(m.group(1))
+            pre.clear()
             continue
 
         # ── Section / psalm / descriptive heading ─────────────────────────────
@@ -439,41 +442,53 @@ def _parse_usfm(content):
             if heading:
                 parts.append(f'<title>{heading}</title>')
                 heading = None
+            if pre:
+                parts.extend(pre)
+                pre.clear()
             if rest:
                 parts.append(rest)
             continue
 
         # ── Poetry lines ──────────────────────────────────────────────────────
         m = _RE_POETRY.match(line)
-        if m and vnum is not None:
+        if m and (vnum is not None or chapter is not None):
+            target = parts if vnum is not None else pre
             marker = m.group(1)
             rest   = m.group(2).strip()
             if marker == 'b':                       # stanza break
-                parts.append('\n')
+                target.append('\n')
             elif rest:
                 level  = int(marker[-1]) if marker[-1:].isdigit() else 1
                 indent = ' ' * level           # em-space per indent level
-                parts.append(f'\n{indent}{rest}')
+                target.append(f'\n{indent}{rest}')
             continue
 
         # ── Paragraph markers (may carry text after them) ─────────────────────
         m = _RE_PARA.match(line)
         if m:
             rest = m.group(1).strip()
-            if rest and vnum is not None:
-                parts.append(rest)
+            if rest:
+                if vnum is not None:
+                    parts.append(rest)
+                elif chapter is not None:
+                    pre.append(rest)
             continue
 
         # ── Unknown marker: try to salvage any text content ───────────────────
         if line.startswith('\\'):
             rest = re.sub(r'^\\[a-zA-Z]+\d*\s*', '', line).strip()
-            if rest and vnum is not None:
-                parts.append(rest)
+            if rest:
+                if vnum is not None:
+                    parts.append(rest)
+                elif chapter is not None:
+                    pre.append(rest)
             continue
 
         # ── Plain continuation text ───────────────────────────────────────────
         if vnum is not None:
             parts.append(line)
+        elif chapter is not None:
+            pre.append(line)
 
     flush()
     return verses

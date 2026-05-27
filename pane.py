@@ -478,6 +478,8 @@ class BiblePane(Gtk.Box):
         # multi-Strong's / multi-word tags. Reset on every click and
         # on module change.
         self._current_phrase = (None, None)
+        # Last verses passed to _display, reused for re-theming without IO.
+        self._rendered_verses = None
         self._lex_panel = LexiconPanel(
             on_word_study_navigate=on_word_study_navigate,
             on_first_show=self._init_outer_paned_position,
@@ -855,6 +857,7 @@ class BiblePane(Gtk.Box):
             table.remove(tag)
 
     def _fetch_and_render(self):
+        self._rendered_verses = None
         if self._is_devotional:
             self._fetch_and_render_devotional()
             return
@@ -962,6 +965,7 @@ class BiblePane(Gtk.Box):
     def _display(self, verses, book, chapter, module):
         if book != self._book or chapter != self._chapter or module != self._module:
             return GLib.SOURCE_REMOVE
+        self._rendered_verses = verses
 
         dark = Adw.StyleManager.get_default().get_dark()
         annos = annotations.get_annotations(module, book, chapter)
@@ -2041,7 +2045,11 @@ class BiblePane(Gtk.Box):
         if cv is not None:
             table.remove(cv)
         self._update_font_css()
-        self._fetch_and_render()
+        if self._is_verse_navigable() and self._rendered_verses is not None:
+            self._display(self._rendered_verses,
+                          self._book, self._chapter, self._module)
+        else:
+            self._fetch_and_render()
 
     def refresh_modules(self):
         # Invalidate the language cache — a module that was just installed
