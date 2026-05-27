@@ -249,18 +249,15 @@ The SWORD library this app links against is also GPL-licensed.
 
 ## A note on how this app was built
 
-Scriptura was developed in collaboration with Anthropic's AI
-assistant (AI Opus). The AI handled most of the code-typing
-under continuous direction: every feature, every design decision,
-every bug report came from sitting with Scripture and thinking
-about what the tool should do. AI made the implementation faster;
-the vision, the choices, and the testing were mine. I wanted a
-Bible-study app that fit how I read.
+Scriptura is one person's project, built with the help of an AI
+assistant. Every feature, every design decision, every bug report
+came from sitting with Scripture and thinking about what the tool
+should do; the assistant made the implementation faster. The vision,
+the choices, and the testing were mine. I wanted a Bible-study app
+that fit how I read.
 
-If that sounds useful to you, the source is open and the architecture
-is documented. Pull requests, bug reports, and translation
-contributions are all welcome — from people, from AI-assisted
-developers, from anyone who wants this tool to keep growing.
+The source is open and the architecture is documented. Pull requests,
+bug reports, and translation contributions are all welcome.
 
 ---
 

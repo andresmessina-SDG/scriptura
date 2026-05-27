@@ -36,3 +36,6 @@ ebible_catalog.csv
 .flatpak-builder/
 build-dir/
 repo/
+
+# Internal working doc — not for the public repo
+SEARCH_RESEARCH.md
