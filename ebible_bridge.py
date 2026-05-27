@@ -94,6 +94,13 @@ def _db():
     conn.execute('''CREATE TABLE IF NOT EXISTS translations (
         id TEXT PRIMARY KEY, title TEXT, language TEXT, lang_code TEXT,
         copyright TEXT, license TEXT)''')
+    # Schema version stamp. The layout above is v1. When it changes,
+    # bump this and add the migration steps in an `if ver < N` block so
+    # existing user DBs upgrade in place instead of silently missing
+    # columns.
+    ver = conn.execute('PRAGMA user_version').fetchone()[0]
+    if ver < 1:
+        conn.execute('PRAGMA user_version = 1')
     conn.commit()
     _conn_local.conn = conn
     return conn
