@@ -1354,6 +1354,13 @@ class BiblePane(Gtk.Box):
         for verse_num based on the given annotation dict. Clears any prior
         annotation tags first. Does not modify the buffer text — pure tag
         manipulation, so the scroll position is preserved."""
+        # Annotations are a Bible-only feature. Commentary panes tag whole
+        # sections under vnum_*, so the verse-number offset math would paint
+        # the section header (e.g. the first letters of "Verses 1-7"). The
+        # render path guards its own call (is_commentary); guard here too so
+        # the _refresh_verse_annotation path can't leak onto non-Bible panes.
+        if self._module_type != 'Biblical Texts':
+            return
         ranges = self._verse_ranges(verse_num)
         if not ranges:
             return
