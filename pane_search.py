@@ -23,6 +23,9 @@ import ebible_bridge
 class PaneSearch:
     def __init__(self, pane):
         self._pane = pane
+        # Bumped on each search; a finishing background search whose token
+        # no longer matches has been superseded and its results are dropped.
+        self._search_gen = 0
         # F3 / Shift+F3 step-through state. `results` is the full list
         # produced by the most recent search; `idx` is the current
         # step position into it.
@@ -280,6 +283,9 @@ class PaneSearch:
 
         case = self._case_btn.get_active()
 
+        self._search_gen += 1
+        gen = self._search_gen
+
         def run():
             if ebible_bridge.is_ebible_module(module):
                 results = ebible_bridge.search_module(
@@ -291,7 +297,7 @@ class PaneSearch:
                     on_indexing_progress=_idx_progress,
                     on_indexing_done=lambda: None,
                     case_sensitive=case)
-            GLib.idle_add(self._on_done, results, module)
+            GLib.idle_add(self._on_done, results, module, gen)
 
         threading.Thread(target=run, daemon=True).start()
 
@@ -300,7 +306,9 @@ class PaneSearch:
         if self._entry.get_text().strip():
             self._on_search()
 
-    def _on_done(self, results, module):
+    def _on_done(self, results, module, gen):
+        if gen != self._search_gen:
+            return GLib.SOURCE_REMOVE
         self._spinner.stop()
         self._spinner.set_visible(False)
         if module != self._pane._module:
