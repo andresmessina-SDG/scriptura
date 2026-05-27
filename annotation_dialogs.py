@@ -28,6 +28,19 @@ import open_data
 _log = logging.getLogger('scriptura.notes')
 
 
+def _grab_focus_once(widget):
+    """idle_add target that focuses `widget` exactly once.
+
+    Gtk.Widget.grab_focus() returns True, so a bare
+    GLib.idle_add(widget.grab_focus) keeps returning a truthy value and
+    re-arms itself every idle cycle — continuously stealing focus back to
+    `widget`, so sibling fields (e.g. the tags entry) can never be focused.
+    Returning SOURCE_REMOVE makes it a true one-shot.
+    """
+    widget.grab_focus()
+    return GLib.SOURCE_REMOVE
+
+
 # ── Right-click study menu ───────────────────────────────────────────────────
 
 def show_study_menu(pane, verses, x, y):
@@ -336,7 +349,7 @@ def _show_note_window(pane, verse, current_note, current_tags):
     win.add_controller(key_ctrl)
 
     win.present()
-    GLib.idle_add(entry.grab_focus)
+    GLib.idle_add(_grab_focus_once, entry)
     return GLib.SOURCE_REMOVE
 
 
@@ -457,7 +470,7 @@ def show_chapter_note(pane):
 
     popover.set_child(box)
     popover.popup()
-    GLib.idle_add(tv.grab_focus)
+    GLib.idle_add(_grab_focus_once, tv)
 
 
 def _save_chapter_note(pane, buf, tags_entry, popover):
