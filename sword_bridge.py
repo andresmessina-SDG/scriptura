@@ -1196,8 +1196,9 @@ def search_module(module_name, query, on_indexing_start=None,
             # we post-filter the result content (which is stored verbatim)
             # for the original-case query string.
             if case_sensitive and query_stripped:
+                cs_words = query_stripped.split()
                 formatted = [r for r in formatted
-                             if query_stripped in (r[3] or '')]
+                             if all(w in (r[3] or '') for w in cs_words)]
             if truncated is not None:
                 formatted.append(truncated)
             return formatted
