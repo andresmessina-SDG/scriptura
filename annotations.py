@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import Any, TypedDict
+from typing import Any, Callable, TypedDict
 
 import paths
 
@@ -25,6 +25,17 @@ class ChapterNoteData(TypedDict):
 _cache: Annotations | None = None
 _load_failed: bool = False  # Set if an existing file failed to parse; the
                             # window reads this once at startup to surface a toast.
+
+# The UI registers a handler here so a failed save (disk full, bad
+# permissions) becomes a visible toast. _save() updates the in-memory
+# cache before writing, so without this the change would persist for the
+# session and silently vanish on the next launch.
+_on_save_error: Callable[[], None] | None = None
+
+
+def set_save_error_handler(handler: Callable[[], None]) -> None:
+    global _on_save_error
+    _on_save_error = handler
 
 
 def load_failed() -> bool:
@@ -72,6 +83,11 @@ def _save(data: Annotations) -> None:
         os.replace(tmp, ANNOTATIONS_FILE)
     except Exception:
         _log.exception('Failed to save')
+        if _on_save_error is not None:
+            try:
+                _on_save_error()
+            except Exception:
+                _log.exception('save-error handler raised')
 
 def get_annotations(module: str, book: str, chapter: int) -> ChapterData:
     data = _load()

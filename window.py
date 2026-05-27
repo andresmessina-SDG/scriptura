@@ -94,6 +94,13 @@ class BibleWindow(Adw.ApplicationWindow):
         # silent loss). Deferred to idle so the window has time to lay out
         # and the toast overlay is alive.
         GLib.idle_add(self._warn_on_load_failures)
+        # Surface a failed annotation write as a toast — otherwise the
+        # in-memory change would quietly disappear on the next launch.
+        annotations.set_save_error_handler(
+            lambda: GLib.idle_add(
+                self._toast,
+                "Couldn't save your annotation — check disk space or "
+                "permissions. The change may be lost when you quit."))
         # If launched via `bible:John+3:16` URI, navigate now that the
         # panes are loaded. Bad refs silently no-op.
         if self._startup_ref:
