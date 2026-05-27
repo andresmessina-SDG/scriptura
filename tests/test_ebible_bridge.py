@@ -294,6 +294,12 @@ def test_installed_ids(db):
     assert eb.installed_ids() == {'engwebp'}
 
 
+def test_schema_version_stamped(db):
+    """A fresh DB carries the v1 stamp, locking in the migration hook."""
+    conn = eb._db()
+    assert conn.execute('PRAGMA user_version').fetchone()[0] == 1
+
+
 def test_module_language(db):
     assert eb.module_language('eBible: engwebp') == 'en'
 
