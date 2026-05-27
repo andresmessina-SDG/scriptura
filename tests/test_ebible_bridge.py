@@ -284,9 +284,10 @@ def test_duplicate_titles_get_distinct_keys(db):
         == 'For God so loved the world'
     assert eb.load_chapter('eBible: engwebp2', 'John', 3)[0][1] \
         == 'A different WEB rendering'
-    # Both display the same (colliding) title — fine for a label.
-    assert eb.display_name('eBible: engwebp') == 'WEB'
-    assert eb.display_name('eBible: engwebp2') == 'WEB'
+    # Colliding titles are disambiguated by id so the dropdown labels
+    # aren't identical.
+    assert eb.display_name('eBible: engwebp') == 'WEB (engwebp)'
+    assert eb.display_name('eBible: engwebp2') == 'WEB (engwebp2)'
 
 
 def test_installed_ids(db):

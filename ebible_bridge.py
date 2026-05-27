@@ -135,14 +135,22 @@ def module_names():
 
 
 def display_name(module_name):
-    """Friendly title for an eBible module key (PREFIX + id). Falls back
-    to the id if the translation isn't in the DB (e.g. read error)."""
+    """Friendly title for an eBible module key (PREFIX + id). When another
+    installed translation shares the title, the id is appended so the two
+    aren't indistinguishable in the dropdown. Falls back to the id if the
+    translation isn't in the DB (e.g. read error)."""
     tid = module_name[len(PREFIX):]
     try:
         conn = _db()
         row = conn.execute(
             'SELECT title FROM translations WHERE id=?', (tid,)).fetchone()
-        return row[0] if row and row[0] else tid
+        if not row or not row[0]:
+            return tid
+        title = row[0]
+        shared = conn.execute(
+            'SELECT COUNT(*) FROM translations WHERE title=?', (title,)
+        ).fetchone()[0]
+        return f'{title} ({tid})' if shared > 1 else title
     except Exception:
         return tid
 
