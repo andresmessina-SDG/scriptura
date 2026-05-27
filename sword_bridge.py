@@ -449,10 +449,13 @@ DISPLAY_NAMES = {
 
 
 def display_name(name):
-    """Return the human-friendly label for a SWORD module, falling back
-    to the short name if not in the curated map. Safe to call on
-    non-SWORD module names (e.g. eBible.org titles) — they pass through
-    unchanged because they're already descriptive."""
+    """Return the human-friendly label for any module key. SWORD modules
+    map through the curated name table; eBible keys (PREFIX + id) are
+    resolved to their title by ebible_bridge. The lazy import keeps this
+    bridge otherwise independent of the eBible one."""
+    if isinstance(name, str) and name.startswith('eBible: '):
+        import ebible_bridge
+        return ebible_bridge.display_name(name)
     return DISPLAY_NAMES.get(name, name)
 
 

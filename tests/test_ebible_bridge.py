@@ -15,7 +15,7 @@ import ebible_bridge as eb
 # ── PREFIX guard ────────────────────────────────────────────────────────────
 
 def test_is_ebible_module():
-    assert eb.is_ebible_module('eBible: WEB')
+    assert eb.is_ebible_module('eBible: engwebp')
     assert eb.is_ebible_module('eBible: ')  # prefix alone still matches
     assert not eb.is_ebible_module('KJVA')
     assert not eb.is_ebible_module('')
@@ -257,7 +257,36 @@ def test_installed_translations(db):
 
 
 def test_module_names(db):
-    assert eb.module_names() == ['eBible: WEB']
+    assert eb.module_names() == ['eBible: engwebp']
+
+
+def test_display_name(db):
+    # The key carries the stable id; the friendly title is resolved from
+    # the DB for display.
+    assert eb.display_name('eBible: engwebp') == 'WEB'
+    # Unknown id falls back to the id itself rather than blowing up.
+    assert eb.display_name('eBible: zzz') == 'zzz'
+
+
+def test_duplicate_titles_get_distinct_keys(db):
+    """Two translations can share a shortTitle; identity must stay
+    distinct (keyed on the id), or one would shadow the other in
+    loading, search, and annotations."""
+    conn = eb._db()
+    conn.execute('INSERT INTO translations VALUES (?,?,?,?,?,?)',
+                 ('engwebp2', 'WEB', 'English', 'en', '© WEB2', 'PD'))
+    conn.execute('INSERT INTO verses VALUES (?,?,?,?,?)',
+                 ('engwebp2', 'John', 3, 16, 'A different WEB rendering'))
+    conn.commit()
+    assert set(eb.module_names()) == {'eBible: engwebp', 'eBible: engwebp2'}
+    # Each key resolves to its own text, not the other's.
+    assert eb.load_chapter('eBible: engwebp', 'John', 3)[0][1] \
+        == 'For God so loved the world'
+    assert eb.load_chapter('eBible: engwebp2', 'John', 3)[0][1] \
+        == 'A different WEB rendering'
+    # Both display the same (colliding) title — fine for a label.
+    assert eb.display_name('eBible: engwebp') == 'WEB'
+    assert eb.display_name('eBible: engwebp2') == 'WEB'
 
 
 def test_installed_ids(db):
@@ -265,7 +294,7 @@ def test_installed_ids(db):
 
 
 def test_module_language(db):
-    assert eb.module_language('eBible: WEB') == 'en'
+    assert eb.module_language('eBible: engwebp') == 'en'
 
 
 def test_module_language_unknown(db):
@@ -273,7 +302,7 @@ def test_module_language_unknown(db):
 
 
 def test_module_info_known(db):
-    info = eb.module_info('eBible: WEB')
+    info = eb.module_info('eBible: engwebp')
     assert info['language'] == 'en'
     assert info['copyright'] == '© WEB'
     assert info['license'] == 'Public Domain'
@@ -289,17 +318,17 @@ def test_module_info_unknown_still_returns_shape(db):
 
 
 def test_load_chapter(db):
-    verses = eb.load_chapter('eBible: WEB', 'John', 3)
+    verses = eb.load_chapter('eBible: engwebp', 'John', 3)
     assert verses == [(16, 'For God so loved the world'),
                       (17, 'For God did not send his Son to condemn')]
 
 
 def test_load_chapter_missing_returns_empty(db):
-    assert eb.load_chapter('eBible: WEB', 'Revelation', 22) == []
+    assert eb.load_chapter('eBible: engwebp', 'Revelation', 22) == []
 
 
 def test_search_case_insensitive(db):
-    results = eb.search_module('eBible: WEB', 'GOD')
+    results = eb.search_module('eBible: engwebp', 'GOD')
     books = {(b, c, v) for (b, c, v, _t) in results}
     assert ('John', 3, 16) in books
     assert ('John', 3, 17) in books
@@ -308,14 +337,14 @@ def test_search_case_insensitive(db):
 
 def test_search_case_sensitive(db):
     # 'world' is lowercase in the seed.
-    assert len(eb.search_module('eBible: WEB', 'world', case_sensitive=True)) == 1
+    assert len(eb.search_module('eBible: engwebp', 'world', case_sensitive=True)) == 1
     # 'World' (capital) shouldn't match.
-    assert eb.search_module('eBible: WEB', 'World', case_sensitive=True) == []
+    assert eb.search_module('eBible: engwebp', 'World', case_sensitive=True) == []
 
 
 def test_search_AND_across_words(db):
     """Both 'God' AND 'world' should land only on John 3:16."""
-    results = eb.search_module('eBible: WEB', 'God world')
+    results = eb.search_module('eBible: engwebp', 'God world')
     assert len(results) == 1
     assert results[0][:3] == ('John', 3, 16)
 
@@ -328,7 +357,7 @@ def test_search_case_insensitive_non_ascii(db):
     conn.execute('INSERT INTO verses VALUES (?,?,?,?,?)',
                  ('engwebp', 'John', 1, 1, 'Ἰησοῦς Χριστός'))
     conn.commit()
-    results = eb.search_module('eBible: WEB', 'ἰησοῦς')
+    results = eb.search_module('eBible: engwebp', 'ἰησοῦς')
     assert ('John', 1, 1) in {(b, c, v) for (b, c, v, _t) in results}
 
 
@@ -341,23 +370,23 @@ def test_search_wildcards_are_literal(db):
                       ('engwebp', 'Mark', 1, 3, 'the [Lord] reigns')])
     conn.commit()
     # '%' must not act as a LIKE wildcard.
-    pct = {(b, c, v) for (b, c, v, _t) in eb.search_module('eBible: WEB', '100%')}
+    pct = {(b, c, v) for (b, c, v, _t) in eb.search_module('eBible: engwebp', '100%')}
     assert pct == {('Mark', 1, 1)}
     # '[' must not act as a GLOB character class.
     brk = {(b, c, v) for (b, c, v, _t)
-           in eb.search_module('eBible: WEB', '[Lord]', case_sensitive=True)}
+           in eb.search_module('eBible: engwebp', '[Lord]', case_sensitive=True)}
     assert brk == {('Mark', 1, 3)}
 
 
 def test_search_empty_query_returns_empty(db):
-    assert eb.search_module('eBible: WEB', '') == []
-    assert eb.search_module('eBible: WEB', '   ') == []
+    assert eb.search_module('eBible: engwebp', '') == []
+    assert eb.search_module('eBible: engwebp', '   ') == []
 
 
 def test_remove_translation(db):
     eb.remove_translation('engwebp')
     assert eb.installed_ids() == set()
-    assert eb.load_chapter('eBible: WEB', 'John', 3) == []
+    assert eb.load_chapter('eBible: engwebp', 'John', 3) == []
 
 
 # ── catalog_entries — file-backed CSV cache ─────────────────────────────────

@@ -104,15 +104,9 @@ def is_ebible_module(name):
     return isinstance(name, str) and name.startswith(PREFIX)
 
 def _tid(module_name):
-    """Resolve display name → DB translation id."""
-    title = module_name[len(PREFIX):]
-    try:
-        conn = _db()
-        row = conn.execute(
-            'SELECT id FROM translations WHERE title=?', (title,)).fetchone()
-        return row[0] if row else title
-    except Exception:
-        return title
+    """Module key → DB translation id. The key embeds the id directly
+    (PREFIX + id), so this just strips the prefix."""
+    return module_name[len(PREFIX):]
 
 def installed_translations():
     """Returns [(id, title, language, lang_code, copyright, license)]."""
@@ -126,17 +120,33 @@ def installed_translations():
         return []
 
 def module_names():
-    """Display names suitable for the pane module dropdown."""
-    return [f'{PREFIX}{r[1]}' for r in installed_translations()]
+    """Module keys for the pane dropdown: PREFIX + the stable
+    translationId (the DB primary key), not the display title — two
+    catalog rows can share a title, but ids are unique. The friendly
+    title is resolved for display by display_name()."""
+    return [f'{PREFIX}{r[0]}' for r in installed_translations()]
+
+
+def display_name(module_name):
+    """Friendly title for an eBible module key (PREFIX + id). Falls back
+    to the id if the translation isn't in the DB (e.g. read error)."""
+    tid = module_name[len(PREFIX):]
+    try:
+        conn = _db()
+        row = conn.execute(
+            'SELECT title FROM translations WHERE id=?', (tid,)).fetchone()
+        return row[0] if row and row[0] else tid
+    except Exception:
+        return tid
 
 
 def module_language(module_name):
     """Return the 2-letter language code for an eBible module, or ''."""
     try:
-        title = module_name[len(PREFIX):]
+        tid = module_name[len(PREFIX):]
         conn = _db()
         row = conn.execute(
-            'SELECT lang_code FROM translations WHERE title=?', (title,)
+            'SELECT lang_code FROM translations WHERE id=?', (tid,)
         ).fetchone()
         return (row[0] or '').strip().lower() if row else ''
     except Exception:
@@ -151,11 +161,11 @@ def module_info(module_name):
             'copyright': '', 'license': '', 'about': '', 'language': '',
             'type': 'eBible translation'}
     try:
-        title = module_name[len(PREFIX):]
+        tid = module_name[len(PREFIX):]
         conn = _db()
         row = conn.execute(
             'SELECT title, language, lang_code, copyright, license '
-            'FROM translations WHERE title=?', (title,)
+            'FROM translations WHERE id=?', (tid,)
         ).fetchone()
         if row:
             info['description'] = row[1] or row[0] or ''
