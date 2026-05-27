@@ -318,12 +318,13 @@ class BiblePane(Gtk.Box):
         self._window_target_verse = None
 
         # Pane toolbar: module selector
-        toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        toolbar.add_css_class('pane-toolbar')
         self._toolbar = toolbar
-        toolbar.set_margin_start(8)
+        toolbar.set_margin_start(10)
         toolbar.set_margin_end(8)
-        toolbar.set_margin_top(6)
-        toolbar.set_margin_bottom(6)
+        toolbar.set_margin_top(4)
+        toolbar.set_margin_bottom(4)
 
         # Module picker — MenuButton + custom popover with search,
         # language-filter chips, and a per-module info view. Replaces the
@@ -332,12 +333,15 @@ class BiblePane(Gtk.Box):
         self._picker_search = ''
         self._picker_lang = 'All'
         self.module_drop = Gtk.MenuButton()
-        self.module_drop.set_hexpand(True)
+        self.module_drop.set_hexpand(False)
         self.module_drop.set_size_request(120, -1)
         self.module_drop.add_css_class('flat')
+        self.module_drop.add_css_class('pane-module-button')
         self._picker_label = Gtk.Label(label=sword_bridge.display_name(self._module),
-                                       xalign=0, hexpand=True)
+                                       xalign=0)
         self._picker_label.set_ellipsize(Pango.EllipsizeMode.END)
+        self._picker_label.set_max_width_chars(32)
+        self._picker_label.add_css_class('pane-module-title')
         _label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         _label_box.append(self._picker_label)
         _label_box.append(Gtk.Image.new_from_icon_name('pan-down-symbolic'))
@@ -346,14 +350,18 @@ class BiblePane(Gtk.Box):
         self.module_drop.set_popover(self._picker_popover)
         toolbar.append(self.module_drop)
 
+        toolbar.append(Gtk.Box(hexpand=True))
+
         self._sync_btn = Gtk.ToggleButton(icon_name='changes-allow-symbolic')
         self._sync_btn.add_css_class('flat')
+        self._sync_btn.add_css_class('pane-action')
         self._sync_btn.set_tooltip_text('Following navigation')
         self._sync_btn.connect('notify::active', self._on_sync_toggled)
         toolbar.append(self._sync_btn)
 
         self._chapter_note_btn = Gtk.Button(icon_name='document-edit-symbolic')
         self._chapter_note_btn.add_css_class('flat')
+        self._chapter_note_btn.add_css_class('pane-action')
         self._chapter_note_btn.set_tooltip_text('Chapter note')
         self._chapter_note_btn.connect(
             'clicked', lambda _b: annotation_dialogs.show_chapter_note(self))
@@ -363,6 +371,7 @@ class BiblePane(Gtk.Box):
 
         self._copy_chapter_btn = Gtk.Button(icon_name='edit-copy-symbolic')
         self._copy_chapter_btn.add_css_class('flat')
+        self._copy_chapter_btn.add_css_class('pane-action')
         self._copy_chapter_btn.set_tooltip_text('Copy chapter')
         self._copy_chapter_btn.connect('clicked', self._on_copy_chapter)
         toolbar.append(self._copy_chapter_btn)
@@ -403,7 +412,9 @@ class BiblePane(Gtk.Box):
 
         self.append(toolbar)
         self.append(self._date_nav_revealer)
-        self.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+        self._toolbar_separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        self._toolbar_separator.add_css_class('pane-toolbar-separator')
+        self.append(self._toolbar_separator)
 
         # Per-pane inline search bar (revealed below toolbar). All
         # widgets + state live inside PaneSearch — see pane_search.py.

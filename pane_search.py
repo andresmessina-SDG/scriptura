@@ -52,6 +52,7 @@ class PaneSearch:
         """Construct + return the toolbar toggle button."""
         self._btn = Gtk.ToggleButton(icon_name='system-search-symbolic')
         self._btn.add_css_class('flat')
+        self._btn.add_css_class('pane-action')
         self._btn.set_tooltip_text('Search this module')
         self._btn.connect('toggled', self._on_toggled)
         return self._btn

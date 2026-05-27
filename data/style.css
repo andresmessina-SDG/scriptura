@@ -94,6 +94,89 @@ button.hl-orange { background-color: #f0c894; color: #000; }
     background-color: alpha(@accent_color, 0.22);
 }
 
+/* ── Header + pane chrome ────────────────────────────────────────────── */
+
+.scriptura-header {
+    border-bottom-color: alpha(@borders, 0.45);
+}
+
+button.header-action,
+menubutton.header-action > button {
+    min-width: 34px;
+    min-height: 34px;
+    padding: 4px;
+}
+
+button.header-action:not(:hover):not(:checked),
+menubutton.header-action > button:not(:hover):not(:checked) {
+    color: alpha(@window_fg_color, 0.78);
+}
+
+menubutton.reference-title-button > button {
+    min-height: 34px;
+    padding: 4px 12px;
+    font-weight: 700;
+}
+
+menubutton.reference-title-button > button:not(:hover):not(:checked) {
+    background: transparent;
+    box-shadow: none;
+}
+
+button.scriptura-lex-toggle {
+    min-height: 34px;
+    padding: 2px 10px;
+}
+
+.pane-toolbar {
+    background-color: transparent;
+}
+
+.pane-toolbar-separator {
+    background-color: alpha(@borders, 0.28);
+}
+
+.pane-module-title {
+    font-weight: 650;
+}
+
+menubutton.pane-module-button > button,
+button.pane-action,
+menubutton.pane-action > button {
+    min-height: 30px;
+    padding: 3px 7px;
+    background: transparent;
+    box-shadow: none;
+}
+
+menubutton.pane-module-button > button {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+menubutton.pane-module-button > button:not(:hover):not(:checked),
+button.pane-action:not(:hover):not(:checked),
+menubutton.pane-action > button:not(:hover):not(:checked) {
+    color: alpha(@window_fg_color, 0.72);
+}
+
+menubutton.pane-module-button > button:hover,
+button.pane-action:hover,
+button.pane-action:checked,
+menubutton.pane-action > button:hover,
+menubutton.pane-action > button:checked {
+    background-color: alpha(@window_fg_color, 0.07);
+}
+
+paned.main-split > separator {
+    background-color: alpha(@borders, 0.36);
+    min-width: 1px;
+}
+
+paned.main-split > separator:hover {
+    background-color: alpha(@accent_color, 0.28);
+}
+
 /* ── Window-level overlay panels (menu, jump bar, reading mode) ──────── */
 /* See the Revealer/box-shadow note at the top of the file. */
 
@@ -103,6 +186,16 @@ button.hl-orange { background-color: #f0c894; color: #000; }
     border-right: 1px solid alpha(@borders, 0.6);
     border-bottom: 1px solid alpha(@borders, 0.6);
     border-radius: 0 20px 20px 0;
+}
+
+button.menu-utility-action {
+    min-width: 30px;
+    min-height: 30px;
+    padding: 3px;
+}
+
+button.menu-utility-action:not(:hover):not(:checked) {
+    color: alpha(@window_fg_color, 0.82);
 }
 
 .jump-bar { background-color: @view_bg_color; }

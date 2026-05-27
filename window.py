@@ -137,6 +137,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._toolbar_view = toolbar_view
 
         header = Adw.HeaderBar()
+        header.add_css_class('scriptura-header')
         self._header = header
         toolbar_view.add_top_bar(header)
 
@@ -144,17 +145,22 @@ class BibleWindow(Adw.ApplicationWindow):
         burger_btn = Gtk.Button(icon_name='open-menu-symbolic')
         burger_btn.set_tooltip_text('Menu')
         burger_btn.add_css_class('flat')
+        burger_btn.add_css_class('header-action')
         burger_btn.connect('clicked', self._toggle_menu)
         header.pack_start(burger_btn)
 
         self._back_btn = Gtk.Button(icon_name='go-previous-symbolic')
         self._back_btn.set_tooltip_text('Go back (Alt+←)')
+        self._back_btn.add_css_class('flat')
+        self._back_btn.add_css_class('header-action')
         self._back_btn.set_sensitive(False)
         self._back_btn.connect('clicked', self._on_nav_back)
         header.pack_start(self._back_btn)
 
         self._fwd_btn = Gtk.Button(icon_name='go-next-symbolic')
         self._fwd_btn.set_tooltip_text('Go forward (Alt+→)')
+        self._fwd_btn.add_css_class('flat')
+        self._fwd_btn.add_css_class('header-action')
         self._fwd_btn.set_sensitive(False)
         self._fwd_btn.connect('clicked', self._on_nav_fwd)
         header.pack_start(self._fwd_btn)
@@ -164,6 +170,7 @@ class BibleWindow(Adw.ApplicationWindow):
         # last 10 distinct (book, chapter) pairs visited.
         self._recent_btn = Gtk.MenuButton(icon_name='document-open-recent-symbolic')
         self._recent_btn.add_css_class('flat')
+        self._recent_btn.add_css_class('header-action')
         self._recent_btn.set_tooltip_text('Recent passages')
         self._recent_pop = Gtk.Popover()
         self._recent_pop.set_has_arrow(True)
@@ -190,6 +197,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._ref_btn = Gtk.MenuButton()
         self._ref_btn.set_always_show_arrow(True)
         self._ref_btn.add_css_class('flat')
+        self._ref_btn.add_css_class('reference-title-button')
         self._ref_btn.set_tooltip_text('Choose passage (Ctrl+L to jump)')
         self._ref_pop = Gtk.Popover()
         self._ref_pop.set_has_arrow(True)
@@ -201,12 +209,14 @@ class BibleWindow(Adw.ApplicationWindow):
             Gtk.EventControllerScrollFlags.VERTICAL)
         ref_scroll.connect('scroll', self._on_ref_btn_scroll)
         self._ref_btn.add_controller(ref_scroll)
-        header.pack_start(self._ref_btn)
+        header.set_title_widget(self._ref_btn)
 
         self.lex_toggle = Gtk.ToggleButton()
         lex_lbl = Gtk.Label()
         lex_lbl.set_markup('<span size="x-large">‎א</span><span size="large">Ω</span>')
         self.lex_toggle.set_child(lex_lbl)
+        self.lex_toggle.add_css_class('flat')
+        self.lex_toggle.add_css_class('scriptura-lex-toggle')
         self.lex_toggle.set_tooltip_text(
             "Greek / Hebrew lexicon — click words for definitions")
         self.lex_toggle.connect('toggled', self._on_lex_toggle)
@@ -214,11 +224,15 @@ class BibleWindow(Adw.ApplicationWindow):
 
         # ── Right: search + bookmarks + view toggle ────────────────────────────
         self._bookmark_btn = Gtk.Button(icon_name='bookmark-new-symbolic')
+        self._bookmark_btn.add_css_class('flat')
+        self._bookmark_btn.add_css_class('header-action')
         self._bookmark_btn.set_tooltip_text('Bookmarks')
         self._bookmark_btn.connect('clicked', self._on_bookmark_clicked)
         header.pack_end(self._bookmark_btn)
 
         search_btn = Gtk.Button(icon_name='system-search-symbolic')
+        search_btn.add_css_class('flat')
+        search_btn.add_css_class('header-action')
         search_btn.set_tooltip_text('Search (Ctrl+F)')
         search_btn.connect('clicked', self._on_search_clicked)
         header.pack_end(search_btn)
@@ -226,8 +240,10 @@ class BibleWindow(Adw.ApplicationWindow):
         view_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         view_box.add_css_class('linked')
         self._btn_single = Gtk.ToggleButton(icon_name='view-paged-symbolic')
+        self._btn_single.add_css_class('header-action')
         self._btn_single.set_tooltip_text('Single pane')
         self._btn_split = Gtk.ToggleButton(icon_name='view-dual-symbolic')
+        self._btn_split.add_css_class('header-action')
         self._btn_split.set_tooltip_text('Split pane')
         self._btn_single.set_group(self._btn_split)
         # Restore saved view mode (split by default for first run).
@@ -242,6 +258,8 @@ class BibleWindow(Adw.ApplicationWindow):
         header.pack_end(view_box)
 
         self._swap_btn = Gtk.Button(icon_name='object-flip-horizontal-symbolic')
+        self._swap_btn.add_css_class('flat')
+        self._swap_btn.add_css_class('header-action')
         self._swap_btn.set_tooltip_text('Swap pane modules')
         self._swap_btn.connect('clicked', self._on_swap_clicked)
         self._swap_btn.set_sensitive(bool(settings.get('split_pane_mode')))
@@ -297,6 +315,7 @@ class BibleWindow(Adw.ApplicationWindow):
 
         self._paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL,
                                 vexpand=True, hexpand=True)
+        self._paned.add_css_class('main-split')
         self._paned.set_start_child(self.pane1)
         self._paned.set_end_child(self.pane2)
         # Apply restored split/single mode to the actual pane visibility.
@@ -1775,6 +1794,7 @@ class BibleWindow(Adw.ApplicationWindow):
         hbox.set_margin_bottom(8)
         about_btn = Gtk.Button(icon_name='help-about-symbolic')
         about_btn.add_css_class('flat')
+        about_btn.add_css_class('menu-utility-action')
         about_btn.set_tooltip_text('About Scriptura')
         about_btn.connect('clicked', self._on_about_clicked)
         title = Gtk.Label(label='Menu', hexpand=True)
@@ -1802,13 +1822,21 @@ class BibleWindow(Adw.ApplicationWindow):
             _tb.connect('clicked', self._on_appear_theme)
             theme_picker.append(_tb)
 
+        hotkeys_btn = Gtk.Button(icon_name='preferences-desktop-keyboard-shortcuts-symbolic')
+        hotkeys_btn.add_css_class('flat')
+        hotkeys_btn.add_css_class('menu-utility-action')
+        hotkeys_btn.set_tooltip_text('Keyboard shortcuts')
+        hotkeys_btn.connect('clicked', self._on_hotkeys_clicked)
+
         close_btn = Gtk.Button(icon_name='window-close-symbolic')
         close_btn.add_css_class('flat')
+        close_btn.add_css_class('menu-utility-action')
         close_btn.set_tooltip_text('Close menu (Esc)')
         close_btn.connect('clicked', lambda _: self._menu_revealer.set_reveal_child(False))
-        hbox.append(about_btn)
         hbox.append(title)
         hbox.append(theme_picker)
+        hbox.append(hotkeys_btn)
+        hbox.append(about_btn)
         hbox.append(close_btn)
         panel.append(hbox)
         panel.append(Gtk.Separator())
@@ -1844,7 +1872,7 @@ class BibleWindow(Adw.ApplicationWindow):
         _body.append(btn_box)
         _body.append(Gtk.Separator())
 
-        # ── Appearance + Hotkeys button row ──────────────────────────────────
+        # ── Text Appearance row ──────────────────────────────────────────────
         tool_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         tool_row.set_margin_start(12)
         tool_row.set_margin_end(12)
@@ -1863,12 +1891,6 @@ class BibleWindow(Adw.ApplicationWindow):
         self._appear_btn.set_child(abx)
         self._appear_btn.connect('clicked', self._toggle_appear_card)
         tool_row.append(self._appear_btn)
-
-        hotkeys_btn = Gtk.Button(icon_name='help-browser-symbolic')
-        hotkeys_btn.add_css_class('circular')
-        hotkeys_btn.set_tooltip_text('Keyboard shortcuts')
-        hotkeys_btn.connect('clicked', self._on_hotkeys_clicked)
-        tool_row.append(hotkeys_btn)
 
         _body.append(tool_row)
 

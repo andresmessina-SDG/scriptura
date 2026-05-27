@@ -66,6 +66,7 @@ class GenbookReader:
         when the active module is a Generic Book."""
         self._prev_btn = Gtk.Button(icon_name='go-previous-symbolic')
         self._prev_btn.add_css_class('flat')
+        self._prev_btn.add_css_class('pane-action')
         self._prev_btn.set_tooltip_text('Previous entry')
         self._prev_btn.set_visible(False)
         self._prev_btn.connect('clicked', lambda _b: self.step(-1))
@@ -73,6 +74,7 @@ class GenbookReader:
 
         self._next_btn = Gtk.Button(icon_name='go-next-symbolic')
         self._next_btn.add_css_class('flat')
+        self._next_btn.add_css_class('pane-action')
         self._next_btn.set_tooltip_text('Next entry')
         self._next_btn.set_visible(False)
         self._next_btn.connect('clicked', lambda _b: self.step(1))
@@ -81,6 +83,7 @@ class GenbookReader:
         self._toc_btn = Gtk.MenuButton(
             icon_name='view-list-bullet-symbolic')
         self._toc_btn.add_css_class('flat')
+        self._toc_btn.add_css_class('pane-action')
         self._toc_btn.set_tooltip_text('Table of contents')
         self._toc_btn.set_visible(False)
         self._toc_pop = Gtk.Popover()
