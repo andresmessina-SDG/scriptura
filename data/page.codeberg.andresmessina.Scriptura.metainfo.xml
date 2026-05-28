@@ -132,6 +132,15 @@
   </content_rating>
 
   <releases>
+    <release version="1.0.1" date="2026-05-28">
+      <description>
+        <p>Packaging fixes.</p>
+        <ul>
+          <li>Convert the build to meson for a cleaner Flatpak install.</li>
+          <li>Patch SWORD's CMake to properly link libcurl (upstream bug API-263).</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-05-23">
       <description>
         <p>
