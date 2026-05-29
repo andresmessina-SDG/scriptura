@@ -259,3 +259,31 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
     padding: 8px 14px;
     border-bottom: 1px solid alpha(@borders, 0.4);
 }
+
+/* ── Historical Commentaries (catena) pane ───────────────────────────── */
+
+.catena-header {
+    padding: 10px 14px 6px 14px;
+}
+.catena-chips {
+    padding: 0 12px 8px 12px;
+}
+.catena-list {
+    padding: 4px 12px 12px 12px;
+}
+.catena-era {
+    color: @accent_color;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin: 10px 2px 2px 2px;
+}
+.catena-card {
+    padding: 12px 14px;
+}
+.catena-card .catena-author {
+    font-weight: bold;
+}
+.catena-meta {
+    /* dim caption row: year + source */
+    opacity: 0.7;
+}
