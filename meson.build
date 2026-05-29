@@ -31,6 +31,8 @@ py_sources = files(
   'annotation_dialogs.py',
   'annotations.py',
   'bookmarks.py',
+  'catena_bridge.py',
+  'catena_reader.py',
   'crossref_panel.py',
   'devotional.py',
   'ebible_bridge.py',

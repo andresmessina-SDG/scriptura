@@ -80,6 +80,8 @@ scriptura/
 +-- devotional.py         # Devotional OSIS rendering (Spurgeon-style multi-section labels)
 +-- sword_bridge.py       # SWORD library wrapper + Whoosh indexing
 +-- ebible_bridge.py      # eBible.org SQLite translation backend
++-- catena_bridge.py      # Historical Commentaries pack — SQLite query layer + download/install
++-- catena_reader.py      # CatenaReader — verse-synced commentary card view (pane subsystem)
 +-- open_data.py          # OpenBible refs/topics + Dodson Greek (CC-BY)
 +-- annotations.py        # Per-verse JSON persistence
 +-- bookmarks.py          # Bookmark list
@@ -90,7 +92,9 @@ scriptura/
 +-- crossref_panel.py     # Cross-reference bar (slim single row)
 +-- module_manager.py     # Module Manager (3 tabs: SWORD, Open Databases, eBible)
 +-- welcome.py            # First-run welcome window (essentials bundle download)
-+-- tests/                # Pytest suite for the pure-Python bridges (227 tests)
++-- tools/
+|   +-- build_catena_pack.py  # offline builder: HCF database -> catena pack (dev-only, not shipped)
++-- tests/                # Pytest suite for the pure-Python bridges
 |   +-- test_open_data.py
 |   +-- test_annotations.py
 |   +-- test_reading_plans.py
@@ -358,6 +362,36 @@ and calls `_apply_anno_tags`. Called from `_apply_highlight`,
   key and resets. A wrong key decrypts to garbage, which the pane catches
   on render (see `_printable_ratio` / `_display_cipher_locked`) and the
   window turns into an "Edit Key" toast.
+
+## Historical Commentaries (catena)
+
+A fourth pane mode (`_is_catena` in pane.py, alongside `_is_devotional`
+and `_is_genbook`) showing how the church read each verse across time.
+
+- **The pack** is a single SQLite file built offline by
+  `tools/build_catena_pack.py` from a checkout of the
+  [HistoricalChristianFaith Commentaries Database]. The builder keeps
+  only public-domain authors (those before a 1928 cutoff — the upstream's
+  fair-use excerpts aren't ours to redistribute), normalises book names,
+  derives a church-history era from each author's year, and writes one
+  denormalised `quotes` table (verse keys encoded as
+  `chapter*1_000_000 + verse`, so a range row's `[loc_start, loc_end]`
+  span surfaces on every verse it covers) plus a `pack_meta` table. It's
+  hosted gzipped (~31 MB) on Codeberg Releases and downloaded on demand —
+  never bundled in the Flatpak.
+- **`catena_bridge.py`** is the read layer: a read-only thread-local
+  connection (reopened via a generation counter when the pack is
+  installed/removed), `lookup(book, ch, v)` returning `CatenaEntry`
+  dicts oldest-first, install-state, `pack_info()`, and
+  `download_and_install()` (stream gz → gunzip → atomic rename).
+- **`catena_reader.py`** (`CatenaReader`) is the pane subsystem,
+  mirroring `genbook_reader`'s shape: chronological cards grouped by era,
+  a per-author filter, lazy quote previews. The pane hosts it in a
+  `Gtk.Stack` that flips between the flowing reading view and the card
+  view; it follows the partnered Bible pane via `load_reference` /
+  `select_verse`.
+- **Module Manager** lists the pack in the Open Databases tab
+  (Download/Remove); install/remove refresh both panes' pickers.
 
 ## open_data.py — key internals
 

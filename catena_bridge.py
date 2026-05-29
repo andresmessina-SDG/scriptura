@@ -66,7 +66,7 @@ def _db() -> sqlite3.Connection | None:
         return None
     with _gen_lock:
         gen = _generation
-    conn = getattr(_conn_local, 'conn', None)
+    conn: sqlite3.Connection | None = getattr(_conn_local, 'conn', None)
     if conn is not None and getattr(_conn_local, 'gen', -1) == gen:
         return conn
     if conn is not None:

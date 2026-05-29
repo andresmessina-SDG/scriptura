@@ -29,6 +29,11 @@ Built on GNOME with GTK4 + libadwaita, in Python, GPL-3.0.
   with topical tags, chapter-level notes. Everything you mark lives
   in plain JSON in your XDG config directory — yours to back up,
   sync, or migrate.
+- **The church through the centuries.** An optional Historical
+  Commentaries pack shows how the church read each verse across time —
+  the ante-Nicene fathers, the medieval doctors, and the Reformers,
+  a chorus of voices synced to the verse you're studying, from
+  Irenaeus to Calvin.
 - **Cross-references.** OpenBible.info's 340,000-reference database
   is one click away (Module Manager → Open Databases). TSK is the
   fallback when you're offline.
@@ -238,6 +243,9 @@ This app stands on the work of others:
 - **Dodson Greek Lexicon** — public-domain NT Greek definitions.
 - **eBible.org** — the modern licensed translations (LEB, BSB, ASV,
   and many more) that complete the picture.
+- **HistoricalChristianFaith Commentaries Database** — the
+  public-domain patristic, medieval, and Reformation commentary that
+  powers the Historical Commentaries pack.
 - **GNOME** — the platform that makes a clean reading experience
   possible on Linux: GTK4, libadwaita, PyGObject.
 - **Whoosh** — the pure-Python full-text search engine that indexes

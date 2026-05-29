@@ -1649,6 +1649,7 @@ class BibleWindow(Adw.ApplicationWindow):
             'OpenBible.info — cross-references and topical tags (CC-BY)',
             'Dodson Greek Lexicon — public-domain NT Greek definitions',
             'eBible.org — modern translation catalog and texts',
+            'HistoricalChristianFaith Commentaries Database — historical commentary pack',
         ])
         dlg.add_acknowledgement_section('Built with', [
             'GTK4 + libadwaita',
