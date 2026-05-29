@@ -270,10 +270,14 @@ class BibleWindow(Adw.ApplicationWindow):
         # are valid here — support modules like Strong's lexicons and MorphGNT
         # live in the lexicon panel / dict popup, not the pane dropdown.
         import ebible_bridge as _eb
-        from pane import _pane_readable_modules
-        readable_names = _pane_readable_modules()
+        import catena_bridge as _cat
+        import content
+        readable_names = content.readable_module_names()
+        # SWORD-only subset for picking a default Bible/commentary pane —
+        # eBible texts and the catena pack aren't default-Bible candidates.
         sword_readable = [n for n in readable_names
-                          if not _eb.is_ebible_module(n)]
+                          if not _eb.is_ebible_module(n)
+                          and not _cat.is_catena_module(n)]
 
         # Pane 1 module: per-session saved → first readable module.
         # Pane 2 module: per-session saved → auto-detect any installed

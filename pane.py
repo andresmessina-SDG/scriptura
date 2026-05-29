@@ -9,6 +9,7 @@ from gi.repository import Gtk, Adw, GLib, Gdk, Pango
 import sword_bridge
 import ebible_bridge
 import catena_bridge
+import content
 import annotations
 import settings
 import module_positions
@@ -16,24 +17,6 @@ from genbook_reader import GenbookReader
 from catena_reader import CatenaReader
 
 
-def _pane_readable_modules():
-    """Return the list of installed modules suitable for display in a
-    pane's module dropdown — Bibles, commentaries, devotionals, and
-    Generic Books (Didache, Westminster Confession, Apostolic Fathers).
-
-    Filters out support modules (Strong's lexicons, MorphGNT, OSHB,
-    dictionaries like Easton/Smith) that are accessed through other UI
-    surfaces (lexicon panel, dict popup) rather than read as a pane."""
-    keep = []
-    for name in sword_bridge.module_names():
-        if sword_bridge.is_internal_use(name):
-            continue
-        t = sword_bridge.module_type(name)
-        if t in ('Biblical Texts', 'Commentaries', 'Generic Books'):
-            keep.append(name)
-        elif sword_bridge.is_devotional_module(name):
-            keep.append(name)
-    return keep + ebible_bridge.module_names() + catena_bridge.module_names()
 import devotional
 import annotation_dialogs
 from lexicon_panel import LexiconPanel
@@ -312,7 +295,7 @@ class BiblePane(Gtk.Box):
         # placed during _build_ui below.
         self._search = PaneSearch(self)
 
-        self._names = _pane_readable_modules()
+        self._names = content.readable_module_names()
         if not self._names:
             raise RuntimeError('No SWORD modules installed.')
 
@@ -2187,7 +2170,7 @@ class BiblePane(Gtk.Box):
         # might not have been probed before; one that was uninstalled
         # shouldn't keep its entry around.
         self._invalidate_module_lang_cache()
-        new_names = _pane_readable_modules()
+        new_names = content.readable_module_names()
         self._names = new_names
         if self._module not in self._names and self._names:
             # Module was uninstalled — fall back to the first available
@@ -2270,14 +2253,8 @@ class BiblePane(Gtk.Box):
         cached = self._module_lang_cache.get(name)
         if cached is not None:
             return cached
-        if catena_bridge.is_catena_module(name):
-            lang = 'en'
-        elif ebible_bridge.is_ebible_module(name):
-            lang = ebible_bridge.module_language(name)
-        else:
-            lang = sword_bridge.module_language(name)
         # Cache misses (returns '') too — re-probing wouldn't help.
-        self._module_lang_cache[name] = lang or ''
+        self._module_lang_cache[name] = content.language(name) or ''
         return self._module_lang_cache[name]
 
     @classmethod
@@ -2500,22 +2477,7 @@ class BiblePane(Gtk.Box):
             self._picker_info_body.remove(child)
             child = nxt
 
-        if catena_bridge.is_catena_module(name):
-            meta = catena_bridge.pack_info()
-            info = {
-                'description': 'Patristic, medieval, and Reformation '
-                               'commentary keyed to each verse — the church '
-                               'reading Scripture across the centuries.',
-                'version': meta.get('built', ''),
-                'type': f'{meta.get("quote_count", "?")} quotations',
-                'license': 'Public domain (compiled from public-domain sources)',
-                'about': 'Compiled from the HistoricalChristianFaith '
-                         'Commentaries Database.',
-            }
-        elif ebible_bridge.is_ebible_module(name):
-            info = ebible_bridge.module_info(name)
-        else:
-            info = sword_bridge.module_info(name)
+        info = content.info(name)
 
         def _add_field(label, value, multiline=False):
             if not value:
@@ -2554,11 +2516,7 @@ class BiblePane(Gtk.Box):
         read-only system SWORD module."""
         if len(self._names) <= 1:
             return False
-        if catena_bridge.is_catena_module(name):
-            return True
-        if ebible_bridge.is_ebible_module(name):
-            return True
-        return sword_bridge.can_remove_module(name)
+        return content.can_remove(name)
 
     def _on_remove_module_clicked(self, _btn):
         name = self._picker_info_name
@@ -2586,12 +2544,7 @@ class BiblePane(Gtk.Box):
     def _do_remove_module(self, name):
         disp = sword_bridge.display_name(name)
         try:
-            if catena_bridge.is_catena_module(name):
-                catena_bridge.remove_pack()
-            elif ebible_bridge.is_ebible_module(name):
-                ebible_bridge.remove_module(name)
-            else:
-                sword_bridge.remove_module(name)
+            content.remove(name)
         except Exception as e:
             if self._on_toast:
                 self._on_toast(f"Couldn't remove {disp} — {e}")
