@@ -1164,6 +1164,16 @@ def installed_version(module_name):
     return _parse_conf(conf).get('version', '')
 
 
+def can_remove_module(module_name):
+    """True if the module lives in the user's ~/.sword and can be deleted.
+
+    System modules (in /usr/share/sword) are read-only — `remove_module`
+    refuses them — so the UI shouldn't offer removal for those.
+    """
+    return os.path.exists(
+        os.path.join(_SWORD_PATH, 'mods.d', f'{module_name.lower()}.conf'))
+
+
 def is_encrypted_module(module_name):
     """True if the installed module's conf declares a CipherKey line.
 

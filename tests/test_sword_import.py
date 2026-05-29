@@ -195,3 +195,16 @@ def test_is_encrypted_module_false_for_plain(sword_home):
 
 def test_is_encrypted_module_false_when_missing(sword_home):
     assert sword_bridge.is_encrypted_module('Nope') is False
+
+
+# ── can_remove_module ──────────────────────────────────────────────────────────
+
+def test_can_remove_user_module(sword_home):
+    (sword_home / 'mods.d' / 'kjvx.conf').write_text(_conf('KJVx'))
+    assert sword_bridge.can_remove_module('KJVx') is True
+
+
+def test_cannot_remove_absent_module(sword_home):
+    # Not in the user's ~/.sword (e.g. a system module or unknown) -> not
+    # removable through the in-app control.
+    assert sword_bridge.can_remove_module('SystemOnly') is False

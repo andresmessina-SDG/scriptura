@@ -320,6 +320,11 @@ def remove_translation(tid):
     conn.execute('DELETE FROM translations WHERE id=?',         (tid,))
     conn.commit()
 
+
+def remove_module(module_name):
+    """Remove an eBible translation by its pane module key (PREFIX + id)."""
+    remove_translation(_tid(module_name))
+
 # ── USFM parser ───────────────────────────────────────────────────────────────
 
 # Block-level note removal (spans multiple lines)

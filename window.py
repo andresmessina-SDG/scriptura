@@ -308,6 +308,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_toast=self._toast,
                                on_font_size_request=self._adjust_font_size,
                                on_cipher_error=self._on_cipher_error,
+                               on_modules_changed=self._on_modules_changed,
                                pane_id=1)
         self.pane2 = BiblePane(module_name=p2_mod,
                                on_word_click=self._on_word_click,
@@ -317,6 +318,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_toast=self._toast,
                                on_font_size_request=self._adjust_font_size,
                                on_cipher_error=self._on_cipher_error,
+                               on_modules_changed=self._on_modules_changed,
                                pane_id=2)
 
         self._paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL,

@@ -290,7 +290,8 @@ class BiblePane(Gtk.Box):
     def __init__(self, module_name=None, on_word_click=None,
                  on_click_outside_search=None, on_verse_select=None,
                  on_word_study_navigate=None, on_toast=None,
-                 on_font_size_request=None, on_cipher_error=None, pane_id=1):
+                 on_font_size_request=None, on_cipher_error=None,
+                 on_modules_changed=None, pane_id=1):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self._on_word_click = on_word_click
         self._on_click_outside_search = on_click_outside_search
@@ -299,6 +300,7 @@ class BiblePane(Gtk.Box):
         self._on_toast = on_toast
         self._on_font_size_request = on_font_size_request
         self._on_cipher_error = on_cipher_error
+        self._on_modules_changed = on_modules_changed
         # Used to namespace per-pane persisted state (e.g. genbook
         # bookmarks) so pane1 and pane2 don't trample each other.
         self._pane_id = pane_id
@@ -2316,6 +2318,18 @@ class BiblePane(Gtk.Box):
         info_scroll.set_child(self._picker_info_body)
         info_page.append(info_scroll)
 
+        # Pinned at the bottom of the info page — deliberate, behind a
+        # confirmation. Hidden for system modules and when this is the
+        # pane's last remaining module.
+        self._picker_remove_btn = Gtk.Button()
+        self._picker_remove_btn.set_child(Adw.ButtonContent(
+            icon_name='user-trash-symbolic', label='Remove module'))
+        self._picker_remove_btn.add_css_class('destructive-action')
+        self._picker_remove_btn.set_margin_top(4)
+        self._picker_remove_btn.connect('clicked', self._on_remove_module_clicked)
+        info_page.append(self._picker_remove_btn)
+        self._picker_info_name = None
+
         stack.add_named(info_page, 'info')
         stack.set_visible_child_name('list')
 
@@ -2443,6 +2457,8 @@ class BiblePane(Gtk.Box):
 
     def _show_module_info(self, name):
         self._picker_info_title.set_label(name)
+        self._picker_info_name = name
+        self._picker_remove_btn.set_visible(self._can_remove_module(name))
         child = self._picker_info_body.get_first_child()
         while child:
             nxt = child.get_next_sibling()
@@ -2485,6 +2501,57 @@ class BiblePane(Gtk.Box):
             self._picker_info_body.append(empty)
 
         self._picker_stack.set_visible_child_name('info')
+
+    def _can_remove_module(self, name):
+        """Removable only if it isn't the pane's last module and isn't a
+        read-only system SWORD module."""
+        if len(self._names) <= 1:
+            return False
+        if ebible_bridge.is_ebible_module(name):
+            return True
+        return sword_bridge.can_remove_module(name)
+
+    def _on_remove_module_clicked(self, _btn):
+        name = self._picker_info_name
+        if not name:
+            return
+        self._picker_popover.popdown()
+        self._confirm_remove_module(name)
+
+    def _confirm_remove_module(self, name):
+        disp = sword_bridge.display_name(name)
+        dialog = Adw.AlertDialog(
+            heading=f'Remove {disp}?',
+            body=('This deletes the module from your library. You can '
+                  're-download or re-import it later from the Module Manager.'))
+        dialog.add_response('cancel', 'Cancel')
+        dialog.add_response('remove', 'Remove')
+        dialog.set_response_appearance('remove', Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.set_default_response('cancel')
+        dialog.set_close_response('cancel')
+        dialog.connect(
+            'response',
+            lambda _d, resp: resp == 'remove' and self._do_remove_module(name))
+        dialog.present(self)
+
+    def _do_remove_module(self, name):
+        disp = sword_bridge.display_name(name)
+        try:
+            if ebible_bridge.is_ebible_module(name):
+                ebible_bridge.remove_module(name)
+            else:
+                sword_bridge.remove_module(name)
+        except Exception as e:
+            if self._on_toast:
+                self._on_toast(f"Couldn't remove {disp} — {e}")
+            return
+        if self._on_toast:
+            self._on_toast(f'Removed {disp}')
+        # Refresh both panes (and fall back if a pane showed this module).
+        if self._on_modules_changed:
+            self._on_modules_changed()
+        else:
+            self.refresh_modules()
 
     # ── End module picker ────────────────────────────────────────────────
 
