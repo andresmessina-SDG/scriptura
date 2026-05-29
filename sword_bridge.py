@@ -731,6 +731,7 @@ def get_devotional_raw(module_name, date_obj=None):
         try:
             fresh_mgr = Sword.SWMgr()
         except Exception:
+            _sword_log.exception('SWMgr init failed in get_devotional_raw')
             return ''
         mod = fresh_mgr.getModule(module_name)
         if mod is None:
@@ -847,7 +848,11 @@ def lookup_dict_word(module_name, word):
     with _lock:
         # Fresh SWMgr per call: a failed setKeyText corrupts the module's key
         # state and prevents subsequent lookups in the same module object.
-        fresh_mgr = Sword.SWMgr()
+        try:
+            fresh_mgr = Sword.SWMgr()
+        except Exception:
+            _sword_log.exception('SWMgr init failed in lookup_dict_word')
+            return ''
         mod = fresh_mgr.getModule(module_name)
         if mod is None:
             return ''
@@ -882,6 +887,7 @@ def load_devotional(module_name, date_obj=None):
         try:
             fresh_mgr = Sword.SWMgr()
         except Exception:
+            _sword_log.exception('SWMgr init failed in load_devotional')
             return ''
         mod = fresh_mgr.getModule(module_name)
         if mod is None:
