@@ -6,7 +6,40 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
-### Internal
+### Added
+
+- **Historical Commentaries.** An optional church-history commentary
+  pane: how the church read each verse across time — the ante-Nicene
+  fathers, the medieval doctors, and the Reformers — as chronological
+  cards grouped by era, synced to the verse you're studying. Download
+  the pack from Module Manager → Open Databases (compiled from the
+  public-domain HistoricalChristianFaith Commentaries Database).
+- **Import your own SWORD modules.** A `.zip` you already have on disk
+  (a commercial translation, a shared draft, anything CrossWire doesn't
+  carry) installs via Module Manager — an import button plus drag-and-
+  drop, with a preview sheet and support for cipher-locked modules.
+- **Remove a module from the pane picker.** The picker's info page now
+  has a "Remove module" action, behind a confirmation.
+- **Manage search history.** Each recent search has a remove button, a
+  "Clear" button wipes the list, and searching an empty field returns
+  to the recent-searches view.
+
+### Fixed
+
+- Wrong/missing cipher key on an encrypted module now shows a "the
+  cipher key may be incorrect" message with an Edit Key action instead
+  of rendering gibberish (or nothing).
+
+### Internal (v1.1)
+
+- **`content.py` routing facade** over the SWORD / eBible / catena
+  bridges, so source dispatch lives in one place rather than scattered
+  `if/elif` chains.
+- **`ModulePicker` extracted** from `pane.py` into `module_picker.py`
+  (the module selector popover); plus a consolidated module-flag helper.
+  From a whole-app code review.
+
+### Internal (post-1.0 cleanup)
 
 - **Logging migration.** Replaced ~25 `print('[tag] …')` sites across
   11 modules with the standard `logging` module, rooted at the

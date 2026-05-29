@@ -82,6 +82,7 @@ scriptura/
 +-- ebible_bridge.py      # eBible.org SQLite translation backend
 +-- catena_bridge.py      # Historical Commentaries pack — SQLite query layer + download/install
 +-- catena_reader.py      # CatenaReader — verse-synced commentary card view (pane subsystem)
++-- content.py            # Routing facade — which bridge owns a module key (names/display/info/remove)
 +-- open_data.py          # OpenBible refs/topics + Dodson Greek (CC-BY)
 +-- annotations.py        # Per-verse JSON persistence
 +-- bookmarks.py          # Bookmark list
@@ -91,6 +92,7 @@ scriptura/
 +-- study_journal.py      # Study Journal window (master-detail) + TagManagerWindow
 +-- crossref_panel.py     # Cross-reference bar (slim single row)
 +-- module_manager.py     # Module Manager (3 tabs: SWORD, Open Databases, eBible)
++-- module_picker.py      # ModulePicker — pane's module selector (MenuButton popover, info, remove)
 +-- welcome.py            # First-run welcome window (essentials bundle download)
 +-- tools/
 |   +-- build_catena_pack.py  # offline builder: HCF database -> catena pack (dev-only, not shipped)
