@@ -317,23 +317,7 @@ class BiblePane(Gtk.Box):
             raise RuntimeError('No SWORD modules installed.')
 
         self._module = module_name if module_name in self._names else self._names[0]
-        self._is_catena = catena_bridge.is_catena_module(self._module)
-        if self._is_catena:
-            self._module_type = 'Historical Commentaries'
-        elif ebible_bridge.is_ebible_module(self._module):
-            self._module_type = 'Biblical Texts'
-        else:
-            self._module_type = sword_bridge.module_type(self._module)
-        self._is_devotional = (
-            not self._is_catena
-            and not ebible_bridge.is_ebible_module(self._module)
-            and sword_bridge.is_devotional_module(self._module)
-        )
-        self._is_genbook = (
-            not self._is_catena
-            and not ebible_bridge.is_ebible_module(self._module)
-            and self._module_type == 'Generic Books'
-        )
+        self._compute_module_flags()
         # Generic Books rendering, TOC, prev/next/TOC widgets, and entry-
         # path persistence live in GenbookReader. build_toolbar() below
         # attaches the three toolbar widgets; set_module() loads the
@@ -682,6 +666,29 @@ class BiblePane(Gtk.Box):
         enriched = f'{ref} ({self._module})\n{text}'
         view.get_clipboard().set(enriched)
         view.stop_emission_by_name('copy-clipboard')
+
+    def _compute_module_flags(self):
+        """Derive the module-mode flags from self._module. Called from
+        __init__ and on every module change, so the two paths can't drift.
+
+        catena and devotional modules aren't verse-keyed; Generic Books are
+        tree-keyed (TOC + entries). The render path and the toolbar chrome
+        (sync / chapter note / search / copy / date-nav) branch on these."""
+        m = self._module
+        self._is_catena = catena_bridge.is_catena_module(m)
+        is_ebible = ebible_bridge.is_ebible_module(m)
+        if self._is_catena:
+            self._module_type = 'Historical Commentaries'
+        elif is_ebible:
+            self._module_type = 'Biblical Texts'
+        else:
+            self._module_type = sword_bridge.module_type(m)
+        self._is_devotional = (
+            not self._is_catena and not is_ebible
+            and sword_bridge.is_devotional_module(m))
+        self._is_genbook = (
+            not self._is_catena and not is_ebible
+            and self._module_type == 'Generic Books')
 
     def _is_verse_navigable(self):
         """Verse-based navigation only makes sense for Bibles and commentaries.
@@ -2200,27 +2207,7 @@ class BiblePane(Gtk.Box):
         self._save_position_to_module_state()
         self._module = new_module
         self._picker_label.set_label(sword_bridge.display_name(new_module))
-        self._is_catena = catena_bridge.is_catena_module(self._module)
-        if self._is_catena:
-            self._module_type = 'Historical Commentaries'
-        elif ebible_bridge.is_ebible_module(self._module):
-            self._module_type = 'Biblical Texts'
-        else:
-            self._module_type = sword_bridge.module_type(self._module)
-        self._is_devotional = (
-            not self._is_catena
-            and not ebible_bridge.is_ebible_module(self._module)
-            and sword_bridge.is_devotional_module(self._module)
-        )
-        # Generic Books are tree-keyed (TOC + entries) rather than
-        # verse-keyed. Track separately so the render path can branch
-        # and chrome buttons (sync / chapter note / search / copy /
-        # date-nav) can hide for them.
-        self._is_genbook = (
-            not self._is_catena
-            and not ebible_bridge.is_ebible_module(self._module)
-            and self._module_type == 'Generic Books'
-        )
+        self._compute_module_flags()
         # Restore the new module's last-known position from the shared
         # module_positions store. Verse-keyed modules use _restore_top_verse
         # (consumed by _display); genbooks delegate to GenbookReader.
