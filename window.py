@@ -296,6 +296,10 @@ class BibleWindow(Adw.ApplicationWindow):
             self._startup_devt_module = devots[0] if devots else None
             p2_mod = self._startup_devt_module or p1_mod
 
+        # Modules currently showing a cipher-key error toast — avoids
+        # stacking duplicates across panes / re-renders.
+        self._cipher_toasting = set()
+
         self.pane1 = BiblePane(module_name=p1_mod,
                                on_word_click=self._on_word_click,
                                on_click_outside_search=self._hide_search,
@@ -303,6 +307,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_word_study_navigate=self._on_word_study_nav,
                                on_toast=self._toast,
                                on_font_size_request=self._adjust_font_size,
+                               on_cipher_error=self._on_cipher_error,
                                pane_id=1)
         self.pane2 = BiblePane(module_name=p2_mod,
                                on_word_click=self._on_word_click,
@@ -311,6 +316,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_word_study_navigate=self._on_word_study_nav,
                                on_toast=self._toast,
                                on_font_size_request=self._adjust_font_size,
+                               on_cipher_error=self._on_cipher_error,
                                pane_id=2)
 
         self._paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL,
@@ -1283,6 +1289,52 @@ class BibleWindow(Adw.ApplicationWindow):
         t = Adw.Toast.new(message)
         t.set_timeout(2)
         self._toast_overlay.add_toast(t)
+
+    def _on_cipher_error(self, module):
+        """A pane detected unreadable (wrong-key) content for an encrypted
+        module. Offer a one-tap path to fix the key."""
+        if module in self._cipher_toasting:
+            return
+        self._cipher_toasting.add(module)
+        t = Adw.Toast.new(
+            f'{module}: content isn’t readable — the cipher key may be incorrect.')
+        t.set_timeout(6)
+        t.set_button_label('Edit Key')
+        t.connect('button-clicked', lambda _t: self._show_edit_cipher_key(module))
+        t.connect('dismissed', lambda _t: self._cipher_toasting.discard(module))
+        self._toast_overlay.add_toast(t)
+
+    def _show_edit_cipher_key(self, module):
+        dialog = Adw.AlertDialog(
+            heading='Unlock Module',
+            body=(f'Enter the cipher key for {module}. Keys are issued by the '
+                  f'module’s publisher (e.g. where you purchased it); '
+                  f'Scriptura does not provide them.'))
+        entry = Gtk.PasswordEntry(show_peek_icon=True)
+        entry.set_property('placeholder-text', 'Paste the unlock key')
+        dialog.set_extra_child(entry)
+        dialog.add_response('cancel', 'Cancel')
+        dialog.add_response('save', 'Save')
+        dialog.set_response_appearance('save', Adw.ResponseAppearance.SUGGESTED)
+        dialog.set_default_response('save')
+        dialog.set_close_response('cancel')
+
+        def on_resp(_d, resp):
+            if resp == 'save':
+                key = entry.get_text().strip()
+                if key:
+                    sword_bridge.set_cipher_key(module, key)
+                    self._reload_module_panes(module)
+
+        dialog.connect('response', on_resp)
+        dialog.present(self)
+
+    def _reload_module_panes(self, module):
+        """Re-render any pane currently showing `module` (e.g. after the
+        cipher key changed)."""
+        for pane in (self.pane1, self.pane2):
+            if pane._module == module:
+                pane.force_navigate(pane._book, pane._chapter, None)
 
     def _set_reading_mode(self, on):
         """Distraction-free mode: hide the window header, pane toolbars, and

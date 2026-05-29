@@ -3,7 +3,7 @@ import threading
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, GLib
+from gi.repository import Gtk, Adw, GLib, Gio, Gdk
 import sword_bridge
 import open_data
 import ebible_bridge
@@ -80,6 +80,16 @@ class ModuleManagerWindow(Adw.Window):
 
         header = Adw.HeaderBar()
         toolbar_view.add_top_bar(header)
+
+        self._import_btn = Gtk.Button(icon_name='folder-download-symbolic')
+        self._import_btn.set_tooltip_text('Import module from file')
+        self._import_btn.connect('clicked', self._on_import_clicked)
+        header.pack_start(self._import_btn)
+
+        # Drag a .zip anywhere onto the window to open the same import sheet.
+        drop = Gtk.DropTarget.new(Gio.File, Gdk.DragAction.COPY)
+        drop.connect('drop', self._on_file_dropped)
+        self.add_controller(drop)
 
         self._progress = Gtk.ProgressBar()
         self._progress.set_show_text(True)
@@ -458,6 +468,222 @@ class ModuleManagerWindow(Adw.Window):
             self._set_busy(False, f'Refresh failed: {err}')
         else:
             self._set_busy(False, '')
+            self._populate()
+        return GLib.SOURCE_REMOVE
+
+    # ── Import module from file (sideload) ────────────────────────────────────
+
+    def _on_import_clicked(self, _btn):
+        dialog = Gtk.FileDialog()
+        dialog.set_title('Import SWORD Module')
+        zip_filter = Gtk.FileFilter()
+        zip_filter.set_name('SWORD module (.zip)')
+        zip_filter.add_pattern('*.zip')
+        filters = Gio.ListStore.new(Gtk.FileFilter)
+        filters.append(zip_filter)
+        dialog.set_filters(filters)
+        dialog.set_default_filter(zip_filter)
+        dialog.open(self, None, self._on_import_file_chosen)
+
+    def _on_import_file_chosen(self, dialog, result):
+        try:
+            gfile = dialog.open_finish(result)
+        except GLib.Error:
+            return  # user cancelled
+        if gfile is not None:
+            self._load_zip_path(gfile.get_path())
+
+    def _on_file_dropped(self, _target, value, _x, _y):
+        path = value.get_path() if isinstance(value, Gio.File) else None
+        if not path or not path.lower().endswith('.zip'):
+            self._set_busy(False, 'Drop a SWORD module .zip file to import it.')
+            return False
+        self._load_zip_path(path)
+        return True
+
+    def _load_zip_path(self, path):
+        self._set_busy(True, 'Reading module file…')
+
+        def work():
+            err = None
+            mods = None
+            data = None
+            try:
+                with open(path, 'rb') as f:
+                    data = f.read()
+                mods = sword_bridge.inspect_module_zip(data)
+            except (ValueError, OSError) as e:
+                err = str(e)
+            GLib.idle_add(self._finish_inspect, err, mods, data)
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def _finish_inspect(self, err, mods, data):
+        if err:
+            self._set_busy(False, f"Couldn't read that file — {err}")
+        else:
+            self._set_busy(False, '')
+            if mods:
+                self._show_import_sheet(mods, data)
+        return GLib.SOURCE_REMOVE
+
+    def _show_import_sheet(self, mods, zip_bytes):
+        win = Adw.Window(transient_for=self, modal=True)
+        win.set_title('Import Module')
+        win.set_default_size(440, 420)
+
+        tv = Adw.ToolbarView()
+        header = Adw.HeaderBar()
+        cancel = Gtk.Button(label='Cancel')
+        cancel.connect('clicked', lambda _b: win.close())
+        header.pack_start(cancel)
+        install = Gtk.Button(label='Install')
+        install.add_css_class('suggested-action')
+        header.pack_end(install)
+        tv.add_top_bar(header)
+
+        scroller = Gtk.ScrolledWindow()
+        scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        box.set_margin_top(12)
+        box.set_margin_bottom(12)
+        box.set_margin_start(16)
+        box.set_margin_end(16)
+        scroller.set_child(box)
+        tv.set_content(scroller)
+
+        rows = []  # list of (mod, check, key_entry|None)
+        for mod in mods:
+            rows.append(self._build_import_row(box, mod))
+
+        def refresh_install_sensitivity(*_a):
+            any_checked = any(c.get_active() for _m, c, _k in rows)
+            needs_key = any(
+                c.get_active() and k is not None and not k.get_text().strip()
+                for _m, c, k in rows)
+            install.set_sensitive(any_checked and not needs_key)
+
+        for mod, check, key_entry in rows:
+            check.connect('toggled', refresh_install_sensitivity)
+            if key_entry is not None:
+                key_entry.connect('changed', refresh_install_sensitivity)
+        refresh_install_sensitivity()
+
+        install.connect(
+            'clicked',
+            lambda _b: self._do_import(zip_bytes, rows, win))
+
+        win.set_content(tv)
+        win.present()
+
+    def _build_import_row(self, box, mod):
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        card.add_css_class('card')
+
+        inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        inner.set_margin_top(12)
+        inner.set_margin_bottom(12)
+        inner.set_margin_start(12)
+        inner.set_margin_end(12)
+        card.append(inner)
+
+        check = Gtk.CheckButton()
+        check.set_active(True)
+        name_lbl = Gtk.Label(label=mod['name'], xalign=0)
+        name_lbl.add_css_class('heading')
+        check.set_child(name_lbl)
+        inner.append(check)
+
+        meta = []
+        if mod.get('type'):
+            meta.append(mod['type'])
+        if mod.get('lang'):
+            meta.append(_lang_label(mod['lang']))
+        if mod.get('size'):
+            meta.append(f"{mod['size'] / (1 << 20):.1f} MB")
+        if mod.get('locked'):
+            meta.append('🔒 Locked')
+        if meta:
+            sub = Gtk.Label(label=' · '.join(meta), xalign=0, wrap=True)
+            sub.add_css_class('dim-label')
+            sub.add_css_class('caption')
+            sub.set_margin_start(28)
+            inner.append(sub)
+
+        if mod.get('description'):
+            desc = Gtk.Label(label=mod['description'], xalign=0, wrap=True)
+            desc.add_css_class('caption')
+            desc.set_margin_start(28)
+            inner.append(desc)
+
+        verb, hint, warn = self._collision_verb(mod)
+        if hint:
+            hint_lbl = Gtk.Label(label=hint, xalign=0, wrap=True)
+            hint_lbl.add_css_class('caption')
+            hint_lbl.add_css_class('warning' if warn else 'dim-label')
+            hint_lbl.set_margin_start(28)
+            inner.append(hint_lbl)
+
+        key_entry = None
+        if mod.get('locked'):
+            key_entry = Gtk.PasswordEntry()
+            key_entry.set_show_peek_icon(True)
+            key_entry.set_property('placeholder-text', 'Paste the unlock key from the publisher')
+            key_entry.set_margin_start(28)
+            key_entry.set_margin_top(4)
+            inner.append(key_entry)
+
+        box.append(card)
+        return (mod, check, key_entry)
+
+    @staticmethod
+    def _collision_verb(mod):
+        """Return (verb, subtext, warn) describing install vs installed."""
+        if not mod.get('installed'):
+            return 'Install', '', False
+        new_v = mod.get('version', '')
+        old_v = mod.get('installed_version', '')
+        if not new_v or not old_v:
+            # Can't compare meaningfully — treat as a plain reinstall.
+            return 'Reinstall', 'Already installed', False
+        cmp = sword_bridge.cmp_version(new_v, old_v)
+        if cmp > 0:
+            return 'Update', f'Update from v{old_v} to v{new_v}', False
+        if cmp == 0:
+            return 'Reinstall', f'Already installed (v{old_v})', False
+        return 'Replace', f'Replace v{old_v} with older v{new_v}', True
+
+    def _do_import(self, zip_bytes, rows, win):
+        selected = [m['name'] for m, c, _k in rows if c.get_active()]
+        cipher_keys = {
+            m['name']: k.get_text().strip()
+            for m, c, k in rows
+            if c.get_active() and k is not None and k.get_text().strip()
+        }
+        if not selected:
+            return
+        win.close()
+        label = selected[0] if len(selected) == 1 else f'{len(selected)} modules'
+        self._set_busy(True, f'Installing {label}…')
+
+        def work():
+            err = None
+            try:
+                sword_bridge.install_module_from_zip(zip_bytes, selected, cipher_keys)
+            except Exception as e:
+                err = str(e)
+            GLib.idle_add(self._finish_import, err, label)
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def _finish_import(self, err, label):
+        if err:
+            _log.error('import error for %s: %s', label, err)
+            self._set_busy(False, f"Couldn't import {label} — {err}")
+        else:
+            self._set_busy(False, f'Imported {label}.')
+            if self._on_modules_changed:
+                self._on_modules_changed()
             self._populate()
         return GLib.SOURCE_REMOVE
 

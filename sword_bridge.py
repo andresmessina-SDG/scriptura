@@ -930,16 +930,13 @@ _CROSSWIRE_HTTP = 'https://crosswire.org/ftpmirror/pub/sword/packages/rawzip'
 _SWORD_PATH = os.path.expanduser('~/.sword')
 
 
-def _parse_conf(path):
-    """Return dict of name/description/type from a SWORD .conf file."""
+def _parse_conf_lines(raw_lines):
+    """Parse SWORD .conf line strings (no file I/O) → dict of fields.
+
+    Accepts raw lines from a file or from zip bytes; folds `\\`
+    continuations the same way SWORD does.
+    """
     info = {}
-    try:
-        # utf-8-sig strips a leading BOM that would otherwise break the
-        # `[Module]` header detection on the first line.
-        with open(path, encoding='utf-8-sig', errors='replace') as f:
-            raw_lines = f.readlines()
-    except OSError:
-        return info
 
     # SWORD .conf permits `\` at end of line for continuation — join them up.
     lines = []
@@ -976,9 +973,28 @@ def _parse_conf(path):
                 info['datapath'] = v
             elif k == 'lang':
                 info['lang'] = v
+            elif k == 'version':
+                info['version'] = v
+            elif k == 'cipherkey':
+                # Present-but-empty means the module is locked and needs a
+                # key; we keep the value (possibly '') and use presence as
+                # the "is encrypted" signal.
+                info['cipherkey'] = v
             elif k == 'feature':
                 info.setdefault('features', set()).add(v)
     return info
+
+
+def _parse_conf(path):
+    """Return dict of name/description/type from a SWORD .conf file."""
+    try:
+        # utf-8-sig strips a leading BOM that would otherwise break the
+        # `[Module]` header detection on the first line.
+        with open(path, encoding='utf-8-sig', errors='replace') as f:
+            raw_lines = f.readlines()
+    except OSError:
+        return {}
+    return _parse_conf_lines(raw_lines)
 
 
 def list_available_modules():
@@ -1086,7 +1102,240 @@ def remove_module(module_name):
     idx_path = _get_index_path(module_name)
     if os.path.exists(idx_path):
         shutil.rmtree(idx_path)
-    
+
+    _reset()
+
+
+# ── Module sideload (import from local .zip) ───────────────────────────────────
+
+def _category_from_info(info):
+    """Friendly category label for a parsed .conf (preview display)."""
+    cat = info.get('category', '')
+    if cat:
+        return 'Biblical Texts' if ('Bible' in cat and 'Texts' not in cat) else cat
+    lcsh = info.get('lcsh', '')
+    drv = info.get('moddrv', '')
+    if 'Bible' in lcsh:
+        return 'Commentaries' if 'Commentary' in lcsh else 'Biblical Texts'
+    if 'Lexicon' in lcsh or 'Dictionary' in lcsh:
+        return 'Lexicons / Dictionaries'
+    if drv in ('RawText', 'zText', 'OldzText'):
+        return 'Biblical Texts'
+    if drv in ('RawCom', 'zCom'):
+        return 'Commentaries'
+    if drv in ('RawLD', 'RawLD4', 'zLD'):
+        return 'Lexicons / Dictionaries'
+    if 'Daily Devotional' in info.get('description', ''):
+        return 'Daily Devotional'
+    return 'Generic Books'
+
+
+def _zip_conf_members(infos):
+    """Yield ZipInfo entries that are SWORD module confs (mods.d/*.conf)."""
+    for i in infos:
+        if i.is_dir():
+            continue
+        if 'mods.d' in i.filename.split('/') and i.filename.lower().endswith('.conf'):
+            yield i
+
+
+def cmp_version(a, b):
+    """Compare two SWORD version strings. Returns -1, 0, or 1.
+
+    Compares dotted numeric components (1.10 > 1.9); falls back to a
+    plain string compare when a component isn't numeric.
+    """
+    def parts(v):
+        out = []
+        for chunk in str(v).split('.'):
+            out.append((0, int(chunk)) if chunk.isdigit() else (1, chunk))
+        return out
+    pa, pb = parts(a), parts(b)
+    if pa == pb:
+        return 0
+    return -1 if pa < pb else 1
+
+
+def installed_version(module_name):
+    """Return the Version= of an installed module, or '' if unknown."""
+    conf = os.path.join(_SWORD_PATH, 'mods.d', f'{module_name.lower()}.conf')
+    if not os.path.exists(conf):
+        return ''
+    return _parse_conf(conf).get('version', '')
+
+
+def is_encrypted_module(module_name):
+    """True if the installed module's conf declares a CipherKey line.
+
+    Used to gate the wrong-cipher-key detection so non-encrypted modules
+    (and valid non-Latin scripts) are never flagged.
+    """
+    for base in (_SWORD_PATH, '/usr/share/sword'):
+        conf = os.path.join(base, 'mods.d', f'{module_name.lower()}.conf')
+        if os.path.exists(conf):
+            return 'cipherkey' in _parse_conf(conf)
+    return False
+
+
+def chapter_in_index(module_name, book, chapter):
+    """True if any verse in the chapter physically exists in the module's
+    index, independent of whether it decrypts.
+
+    Lets the wrong-cipher-key check tell two empty-render cases apart: a
+    compressed encrypted module with a bad key fails to decompress and
+    returns nothing even though the data is there (index says yes), versus
+    a genuine coverage gap (index says no).
+    """
+    with _lock:
+        mod = mgr().getModule(module_name)
+        if mod is None:
+            return False
+        try:
+            vk = Sword.VerseKey()
+            v11n = mod.getConfigEntry('Versification')
+            if v11n:
+                try:
+                    vk.setVersificationSystem(v11n)
+                except Exception:
+                    pass
+            vk.setText(f'{book} {chapter}:1')
+            verse_max = vk.getVerseMax()
+        except Exception:
+            return False
+        for v in range(1, verse_max + 1):
+            try:
+                vk.setVerse(v)
+                if mod.hasEntry(vk):
+                    return True
+            except Exception:
+                continue
+    return False
+
+
+def inspect_module_zip(zip_bytes):
+    """Inspect a SWORD module .zip held in memory — no disk writes.
+
+    Returns one dict per detected module:
+      {name, description, type, lang, version, size, locked,
+       installed, installed_version}
+    Raises ValueError if the file is not a SWORD module zip.
+    """
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(zip_bytes))
+    except zipfile.BadZipFile:
+        raise ValueError('That file is not a valid .zip archive.')
+
+    installed = {n.lower() for n in module_names()}
+    results = []
+    with zf:
+        infos = zf.infolist()
+        conf_members = list(_zip_conf_members(infos))
+        if not conf_members:
+            raise ValueError(
+                "This doesn't look like a SWORD module "
+                '(no mods.d/*.conf inside).')
+        for cm in conf_members:
+            text = zf.read(cm.filename).decode('utf-8-sig', errors='replace')
+            info = _parse_conf_lines(text.splitlines())
+            name = info.get('name')
+            if not name:
+                continue
+            datapath = info.get('datapath', '').lstrip('./').rstrip('/')
+            size = 0
+            if datapath:
+                for i in infos:
+                    if i.is_dir():
+                        continue
+                    p = i.filename.lstrip('./')
+                    if p == datapath or p.startswith(datapath + '/'):
+                        size += i.file_size
+            is_installed = name.lower() in installed
+            results.append({
+                'name': name,
+                'description': info.get('description', ''),
+                'type': _category_from_info(info),
+                'lang': info.get('lang', ''),
+                'version': info.get('version', ''),
+                'size': size,
+                'locked': 'cipherkey' in info and not info.get('cipherkey'),
+                'installed': is_installed,
+                'installed_version': installed_version(name) if is_installed else None,
+            })
+    return results
+
+
+def _safe_extract(zf, member, dest):
+    """Extract one zip member under dest, refusing paths that escape it."""
+    target = os.path.realpath(os.path.join(dest, member.filename))
+    root = os.path.realpath(dest)
+    if target != root and not target.startswith(root + os.sep):
+        raise ValueError(f'Unsafe path in zip: {member.filename}')
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    with zf.open(member) as src, open(target, 'wb') as out:
+        shutil.copyfileobj(src, out)
+
+
+def _write_cipher_key(module_name, key):
+    """Write/replace the CipherKey= line in an installed module's conf."""
+    conf = os.path.join(_SWORD_PATH, 'mods.d', f'{module_name.lower()}.conf')
+    if not os.path.exists(conf):
+        return
+    with open(conf, encoding='utf-8-sig', errors='replace') as f:
+        lines = f.readlines()
+    out = []
+    found = False
+    for ln in lines:
+        if ln.strip().lower().startswith('cipherkey'):
+            out.append(f'CipherKey={key}\n')
+            found = True
+        else:
+            out.append(ln)
+    if not found:
+        if out and not out[-1].endswith('\n'):
+            out[-1] += '\n'
+        out.append(f'CipherKey={key}\n')
+    with open(conf, 'w', encoding='utf-8') as f:
+        f.writelines(out)
+
+
+def install_module_from_zip(zip_bytes, names, cipher_keys=None):
+    """Extract the named modules from an in-memory SWORD zip into ~/.sword.
+
+    `names` selects which detected modules to install (a multi-module zip
+    may carry more than the user wants). `cipher_keys` is an optional
+    {name: key} map written into each installed conf after extraction.
+    Validation happens before any file is written, so a bad zip leaves no
+    partial state.
+    """
+    cipher_keys = cipher_keys or {}
+    wanted = set(names)
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+        infos = zf.infolist()
+        for cm in _zip_conf_members(infos):
+            info = _parse_conf_lines(
+                zf.read(cm.filename).decode('utf-8-sig', errors='replace').splitlines())
+            name = info.get('name')
+            if name not in wanted:
+                continue
+            _safe_extract(zf, cm, _SWORD_PATH)
+            datapath = info.get('datapath', '').lstrip('./').rstrip('/')
+            if datapath:
+                for i in infos:
+                    if i.is_dir():
+                        continue
+                    p = i.filename.lstrip('./')
+                    if p == datapath or p.startswith(datapath + '/'):
+                        _safe_extract(zf, i, _SWORD_PATH)
+            key = cipher_keys.get(name)
+            if key:
+                _write_cipher_key(name, key)
+    _reset()
+
+
+def set_cipher_key(module_name, key):
+    """Set/replace the CipherKey of an already-installed module, then reset
+    caches so the next chapter load decrypts with the new key."""
+    _write_cipher_key(module_name, key)
     _reset()
 
 

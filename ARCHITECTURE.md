@@ -341,8 +341,23 @@ and calls `_apply_anno_tags`. Called from `_apply_highlight`,
 - `parse_devotional_refs(raw_osis)` — extracts the first `osisRef` from a
   devotional entry. Used to navigate pane 1 to the day's passage on startup.
 - `_OSIS_BOOKS` — book-abbreviation map used by `parse_osis_ref()`.
-- `_parse_conf(path)` — reads SWORD `.conf` files with `utf-8-sig` (BOM-safe)
-  and backslash line-continuation handling.
+- `_parse_conf(path)` — reads a SWORD `.conf` file with `utf-8-sig`
+  (BOM-safe) and backslash line-continuation handling. The actual
+  parsing lives in `_parse_conf_lines(lines)` so the same logic works on
+  `.conf` text pulled straight from a zip in memory.
+- **Module sideload** (import a `.zip` you already have, no network):
+  `inspect_module_zip(bytes)` validates the archive and returns one dict
+  per module (name, type, lang, version, size, locked, installed,
+  installed_version) without writing anything; `install_module_from_zip`
+  extracts only the chosen modules' conf + datapath, guarded by
+  `_safe_extract` against zip-slip paths. `cmp_version` drives the
+  install/update/reinstall/replace label. The UI side is the import
+  button + drag-target + preview sheet in `module_manager.py`.
+- **Cipher-locked modules:** `is_encrypted_module(name)` reports whether
+  a conf declares a `CipherKey`; `set_cipher_key(name, key)` writes the
+  key and resets. A wrong key decrypts to garbage, which the pane catches
+  on render (see `_printable_ratio` / `_display_cipher_locked`) and the
+  window turns into an "Edit Key" toast.
 
 ## open_data.py — key internals
 

@@ -261,11 +261,36 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
             self._view.set_right_margin(side)
 
 
+def _printable_ratio(text):
+    """Fraction of characters that are printable (Unicode-aware).
+
+    Valid scripts — Greek, Hebrew, CJK — are all printable, so this stays
+    near 1.0 for real content; a wrong SWORD cipher key decrypts to
+    control/replacement bytes and drives the ratio well down.
+    """
+    if not text:
+        return 1.0
+    ok = sum(1 for c in text if c.isprintable() or c in '\n\t ')
+    return ok / len(text)
+
+
+def _is_bad_cipher(all_empty, chapter_in_index, ratio):
+    """Decide whether a render is a wrong-cipher-key symptom.
+
+    Compressed modules with a bad key fail to decompress and come back
+    empty (so we trust the index: data present == bad key, not a coverage
+    gap); uncompressed modules decrypt to gibberish (low printable ratio).
+    """
+    if all_empty:
+        return chapter_in_index
+    return ratio < 0.6
+
+
 class BiblePane(Gtk.Box):
     def __init__(self, module_name=None, on_word_click=None,
                  on_click_outside_search=None, on_verse_select=None,
                  on_word_study_navigate=None, on_toast=None,
-                 on_font_size_request=None, pane_id=1):
+                 on_font_size_request=None, on_cipher_error=None, pane_id=1):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self._on_word_click = on_word_click
         self._on_click_outside_search = on_click_outside_search
@@ -273,6 +298,7 @@ class BiblePane(Gtk.Box):
         self._on_word_study_navigate = on_word_study_navigate
         self._on_toast = on_toast
         self._on_font_size_request = on_font_size_request
+        self._on_cipher_error = on_cipher_error
         # Used to namespace per-pane persisted state (e.g. genbook
         # bookmarks) so pane1 and pane2 don't trample each other.
         self._pane_id = pane_id
@@ -908,6 +934,24 @@ class BiblePane(Gtk.Box):
         self._buffer.insert_markup(self._buffer.get_end_iter(), msg, -1)
         self._view.scroll_to_iter(self._buffer.get_start_iter(), 0.0, False, 0, 0)
 
+    def _display_cipher_locked(self, dark):
+        """Shown when an encrypted module's content decrypts to gibberish —
+        the cipher key is wrong or missing. Pairs with the window's
+        'Edit Key' toast."""
+        fg = '#8d8278' if dark else '#7a7066'
+        self._cancel_all_flashes()
+        self._search.cancel_hl_timer()
+        self._buffer.set_text('')
+        self._clear_chapter_scoped_tags()
+        msg = (f'<span size="large" foreground="{fg}">🔒 '
+               f'{GLib.markup_escape_text(self._module)}</span>\n\n'
+               f'<span foreground="{fg}">'
+               f'This module’s content isn’t readable. The cipher key may '
+               f'be incorrect — use “Edit Key” to enter it again.'
+               f'</span>')
+        self._buffer.insert_markup(self._buffer.get_end_iter(), msg, -1)
+        self._view.scroll_to_iter(self._buffer.get_start_iter(), 0.0, False, 0, 0)
+
     def _display_empty_chapter(self, book, chapter, dark):
         """Show a friendly hint when the current module has no content
         for the requested book/chapter — typically NT-only modules
@@ -992,7 +1036,26 @@ class BiblePane(Gtk.Box):
         # only; navigating to Psalms returns the right verse_max but
         # all empty content). Show a friendly empty state instead of
         # rendering a chapter heading + bare verse numbers.
-        if not any(re.sub(r'<[^>]+>', '', str(h)).strip() for _, h in verses):
+        all_empty = not any(
+            re.sub(r'<[^>]+>', '', str(h)).strip() for _, h in verses)
+
+        # Wrong/missing cipher key on an encrypted module. Two shapes:
+        # uncompressed modules decrypt to gibberish; compressed modules
+        # fail to decompress and come back empty. The index tells the
+        # empty case apart from a real coverage gap. Gated to encrypted
+        # modules so valid non-Latin scripts are never flagged.
+        if (self._on_cipher_error
+                and not ebible_bridge.is_ebible_module(module)
+                and sword_bridge.is_encrypted_module(module)):
+            sample = ' '.join(re.sub(r'<[^>]+>', '', str(h)) for _, h in verses)
+            in_index = (sword_bridge.chapter_in_index(module, book, chapter)
+                        if all_empty else False)
+            if _is_bad_cipher(all_empty, in_index, _printable_ratio(sample)):
+                self._display_cipher_locked(dark)
+                self._on_cipher_error(module)
+                return GLib.SOURCE_REMOVE
+
+        if all_empty:
             self._display_empty_chapter(book, chapter, dark)
             return GLib.SOURCE_REMOVE
 

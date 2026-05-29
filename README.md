@@ -42,6 +42,11 @@ Built on GNOME with GTK4 + libadwaita, in Python, GPL-3.0.
 - **Modern translations.** LEB, BSB, ASV, and the rest of the
   eBible.org catalog — modules SWORD doesn't carry, fetched on
   demand into a local SQLite store.
+- **Bring your own modules.** Already have a SWORD module on disk —
+  a translation you bought, a draft a colleague shared, something
+  CrossWire no longer hosts? Drag the `.zip` onto the Module Manager
+  (or use the import button) and it's installed. Locked commercial
+  modules ask for their publisher's key.
 - **F11 reading mode** when you want chrome to disappear.
 
 Scriptura runs entirely on your computer. There is no telemetry,
