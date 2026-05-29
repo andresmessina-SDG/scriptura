@@ -27,17 +27,28 @@ def _load_history():
         return []
 
 
-def _save_history(query, module):
-    history = _load_history()
-    entry = {'query': query, 'module': module}
-    history = [e for e in history if e != entry]  # remove duplicate
-    history.insert(0, entry)
-    history = history[:_HISTORY_MAX]
+def _write_history(history):
     try:
         with open(_HISTORY_FILE, 'w', encoding='utf-8') as f:
             json.dump(history, f, ensure_ascii=False)
     except Exception:
         pass
+
+
+def _save_history(query, module):
+    history = _load_history()
+    entry = {'query': query, 'module': module}
+    history = [e for e in history if e != entry]  # remove duplicate
+    history.insert(0, entry)
+    _write_history(history[:_HISTORY_MAX])
+
+
+def _delete_history(entry):
+    _write_history([e for e in _load_history() if e != entry])
+
+
+def _clear_history():
+    _write_history([])
 
 SECTIONS = [
     ('Pentateuch',       ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']),
@@ -158,6 +169,13 @@ class SearchPanel(Gtk.Box):
         self._count_label.add_css_class('dim-label')
         status_row.append(self._count_label)
 
+        self._clear_history_btn = Gtk.Button(label='Clear')
+        self._clear_history_btn.add_css_class('flat')
+        self._clear_history_btn.set_tooltip_text('Clear search history')
+        self._clear_history_btn.set_visible(False)
+        self._clear_history_btn.connect('clicked', self._on_clear_history)
+        status_row.append(self._clear_history_btn)
+
         self._spinner = Gtk.Spinner()
         self._spinner.set_visible(False)
         status_row.append(self._spinner)
@@ -242,6 +260,13 @@ class SearchPanel(Gtk.Box):
     def _on_search(self, *_):
         query = self._entry.get_text().strip()
         if not query:
+            # Empty query returns to the recent-searches view.
+            self._results = []
+            self._current_idx = -1
+            self._filter_book = None
+            self._expanded_section = None
+            self._clear_chart()
+            self._show_history()
             return
         module = self._current_module()
         if not module:
@@ -253,6 +278,7 @@ class SearchPanel(Gtk.Box):
         self._expanded_section = None
         self._clear_chart()
         self._clear_results()
+        self._clear_history_btn.set_visible(False)
         self._count_label.set_text('Searching…')
         self._spinner.set_visible(True)
         self._spinner.start()
@@ -359,6 +385,7 @@ class SearchPanel(Gtk.Box):
         history = _load_history()
         if not history:
             self._count_label.set_text('')
+            self._clear_history_btn.set_visible(False)
             self._clear_results()
             self._results_list.append(self._make_empty_row(
                 'Search this module',
@@ -366,6 +393,7 @@ class SearchPanel(Gtk.Box):
                 "cluster across the Bible"))
             return
         self._count_label.set_text('Recent searches')
+        self._clear_history_btn.set_visible(True)
         self._clear_results()
         for entry in history:
             row = Gtk.ListBoxRow()
@@ -373,7 +401,7 @@ class SearchPanel(Gtk.Box):
 
             box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
             box.set_margin_start(10)
-            box.set_margin_end(10)
+            box.set_margin_end(6)
             box.set_margin_top(8)
             box.set_margin_bottom(8)
 
@@ -390,8 +418,26 @@ class SearchPanel(Gtk.Box):
             text_box.append(mod_lbl)
             box.append(text_box)
 
+            del_btn = Gtk.Button(icon_name='window-close-symbolic')
+            del_btn.add_css_class('flat')
+            del_btn.add_css_class('circular')
+            del_btn.set_valign(Gtk.Align.CENTER)
+            del_btn.set_tooltip_text('Remove from history')
+            del_btn.connect('clicked', self._on_delete_history_entry, entry)
+            box.append(del_btn)
+
             row.set_child(box)
             self._results_list.append(row)
+
+    def _on_delete_history_entry(self, _btn, entry):
+        _delete_history(entry)
+        # Rebuild after the click event finishes — we're removing the row
+        # that owns the button being clicked.
+        GLib.idle_add(self._show_history)
+
+    def _on_clear_history(self, _btn):
+        _clear_history()
+        GLib.idle_add(self._show_history)
 
     # ── Chart ─────────────────────────────────────────────────────────────────
 
