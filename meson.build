@@ -39,6 +39,7 @@ py_sources = files(
   'genbook_reader.py',
   'lexicon_panel.py',
   'module_manager.py',
+  'module_picker.py',
   'module_positions.py',
   'open_data.py',
   'pane.py',
