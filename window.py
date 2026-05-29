@@ -313,6 +313,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_font_size_request=self._adjust_font_size,
                                on_cipher_error=self._on_cipher_error,
                                on_modules_changed=self._on_modules_changed,
+                               on_verse_source_available=self._verse_source_available,
                                pane_id=1)
         self.pane2 = BiblePane(module_name=p2_mod,
                                on_word_click=self._on_word_click,
@@ -323,6 +324,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_font_size_request=self._adjust_font_size,
                                on_cipher_error=self._on_cipher_error,
                                on_modules_changed=self._on_modules_changed,
+                               on_verse_source_available=self._verse_source_available,
                                pane_id=2)
 
         self._paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL,
@@ -1415,11 +1417,24 @@ class BibleWindow(Adw.ApplicationWindow):
         self.pane1.set_lexicon_enabled(enabled)
         self.pane2.set_lexicon_enabled(enabled)
 
+    def _verse_source_available(self, catena_pane):
+        """True if a visible, verse-navigable pane exists alongside the
+        catena pane to drive its verse sync. pane2 is hidden in single-pane
+        mode, so a lone catena pane has nothing to follow."""
+        other = self.pane2 if catena_pane is self.pane1 else self.pane1
+        if other is self.pane2 and not self._btn_split.get_active():
+            return False
+        return other._is_verse_navigable()
+
     def _on_view_mode(self, _btn):
         split = self._btn_split.get_active()
         self.pane2.set_visible(split)
         self._swap_btn.set_sensitive(split)
         settings.put('split_pane_mode', split)
+        # A catena pane's "is there a Bible alongside?" answer just changed.
+        for p in (self.pane1, self.pane2):
+            if p._is_catena:
+                p._fetch_and_render()
 
     def _on_swap_clicked(self, _btn):
         a = self.pane1._module

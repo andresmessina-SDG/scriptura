@@ -277,7 +277,8 @@ class BiblePane(Gtk.Box):
                  on_click_outside_search=None, on_verse_select=None,
                  on_word_study_navigate=None, on_toast=None,
                  on_font_size_request=None, on_cipher_error=None,
-                 on_modules_changed=None, pane_id=1):
+                 on_modules_changed=None, on_verse_source_available=None,
+                 pane_id=1):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self._on_word_click = on_word_click
         self._on_click_outside_search = on_click_outside_search
@@ -287,6 +288,9 @@ class BiblePane(Gtk.Box):
         self._on_font_size_request = on_font_size_request
         self._on_cipher_error = on_cipher_error
         self._on_modules_changed = on_modules_changed
+        # Returns True if another visible, verse-navigable pane exists to
+        # drive a catena view; None until wired (treated as available).
+        self._on_verse_source_available = on_verse_source_available
         # Used to namespace per-pane persisted state (e.g. genbook
         # bookmarks) so pane1 and pane2 don't trample each other.
         self._pane_id = pane_id
@@ -909,8 +913,13 @@ class BiblePane(Gtk.Box):
         self._content_stack.set_visible_child_name(
             'catena' if self._is_catena else 'text')
         if self._is_catena:
-            self._catena.render_for(
-                self._book, self._chapter, self._selected_verse or 1)
+            if (self._on_verse_source_available
+                    and not self._on_verse_source_available(self)):
+                # No verse-navigable pane alongside to drive the view.
+                self._catena.show_no_bible()
+            else:
+                self._catena.render_for(
+                    self._book, self._chapter, self._selected_verse or 1)
             return
         if self._is_devotional:
             self._fetch_and_render_devotional()
