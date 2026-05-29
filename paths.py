@@ -116,6 +116,12 @@ def ebible_db_path() -> str:
     return target
 
 
+def catena_db_path() -> str:
+    """Historical Commentaries (catena) SQLite pack, downloaded on demand
+    from Module Manager. A brand-new file — no legacy location to migrate."""
+    return os.path.join(data_dir(), 'catena.db')
+
+
 def open_data_dir() -> str:
     """Directory for downloaded reference files (OpenBible cross-refs,
     OpenBible topics, Dodson Greek lexicon). Migrates each file
