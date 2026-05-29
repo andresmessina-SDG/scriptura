@@ -12,11 +12,14 @@ passage-level entries (e.g. the John 7:53-8:11 pericope) surface on each
 verse they cover.
 """
 
+import gzip
 import logging
 import os
+import shutil
 import sqlite3
 import threading
-from typing import TypedDict
+import urllib.request
+from typing import Callable, TypedDict
 
 import paths
 
@@ -24,6 +27,11 @@ _log = logging.getLogger('scriptura.catena')
 
 # The single pane-picker module name this bridge contributes.
 MODULE_KEY = 'Historical Commentaries'
+
+# The downloadable pack, hosted as a gzipped SQLite on Codeberg Releases.
+# Replace the tag once the release is published.
+PACK_URL = ('https://codeberg.org/andresmessina/scriptura/releases/'
+            'download/catena-pack-v1/catena.db.gz')
 
 # Mirrors the build script's sentinel for "date unknown".
 _UNKNOWN_YEAR = 9999
@@ -145,6 +153,45 @@ def lookup(book: str, chapter: int, verse: int) -> list[CatenaEntry]:
             source_title=r[4], source_url=r[5], wiki_url=r[6], text=r[7])
         for r in rows
     ]
+
+
+def download_and_install(on_progress: Callable[[int, int], None] | None = None,
+                         url: str | None = None) -> None:
+    """Download the gzipped pack, decompress it into place, and reset.
+
+    Synchronous — call from a background thread. `on_progress(done, total)`
+    reports downloaded bytes (total is 0 if the server sends no length).
+    Writes through temp files and renames atomically, so an interrupted
+    download never leaves a half-written pack in service.
+    """
+    url = url or PACK_URL
+    dest = paths.catena_db_path()
+    tmp_gz = dest + '.gz.part'
+    tmp_db = dest + '.part'
+    try:
+        with urllib.request.urlopen(url, timeout=120) as resp:
+            total = int(resp.headers.get('Content-Length') or 0)
+            done = 0
+            with open(tmp_gz, 'wb') as out:
+                while True:
+                    chunk = resp.read(65536)
+                    if not chunk:
+                        break
+                    out.write(chunk)
+                    done += len(chunk)
+                    if on_progress:
+                        on_progress(done, total)
+        with gzip.open(tmp_gz, 'rb') as gz, open(tmp_db, 'wb') as out:
+            shutil.copyfileobj(gz, out)
+        os.replace(tmp_db, dest)
+    finally:
+        for p in (tmp_gz, tmp_db):
+            try:
+                if os.path.exists(p):
+                    os.remove(p)
+            except OSError:
+                pass
+    _reset()
 
 
 def remove_pack() -> None:

@@ -7,6 +7,7 @@ from gi.repository import Gtk, Adw, GLib, Gio, Gdk
 import sword_bridge
 import open_data
 import ebible_bridge
+import catena_bridge
 
 _log = logging.getLogger('scriptura.modules')
 
@@ -295,6 +296,7 @@ class ModuleManagerWindow(Adw.Window):
     def _populate_open_db(self):
         while self._open_db_list.get_row_at_index(0):
             self._open_db_list.remove(self._open_db_list.get_row_at_index(0))
+        self._open_db_list.append(self._make_catena_row())
         for src in open_data.get_sources():
             row = Adw.ActionRow()
             row.set_title(src['label'])
@@ -310,6 +312,69 @@ class ModuleManagerWindow(Adw.Window):
             btn.set_valign(Gtk.Align.CENTER)
             row.add_suffix(btn)
             self._open_db_list.append(row)
+
+    def _make_catena_row(self):
+        row = Adw.ActionRow()
+        row.set_title('Historical Commentaries')
+        if catena_bridge.is_installed():
+            n = catena_bridge.pack_info().get('quote_count', '')
+            row.set_subtitle(
+                f'{n} quotations from the church fathers to the Reformers, '
+                'verse by verse' if n else
+                'Church-history commentary, verse by verse')
+            btn = Gtk.Button(label='Remove')
+            btn.add_css_class('destructive-action')
+            btn.connect('clicked', self._on_catena_remove)
+        else:
+            row.set_subtitle(
+                'How the church read each verse, from the fathers to the '
+                'Reformers · ~31 MB download')
+            btn = Gtk.Button(label='Download')
+            btn.add_css_class('suggested-action')
+            btn.connect('clicked', self._on_catena_download)
+        btn.set_valign(Gtk.Align.CENTER)
+        row.add_suffix(btn)
+        return row
+
+    def _on_catena_download(self, btn):
+        btn.set_sensitive(False)
+        btn.set_label('Downloading…')
+        base = 'Downloading Historical Commentaries…'
+        self._set_busy(True, base)
+
+        def _progress(done, total):
+            if total > 0:
+                msg = f'{base} {int(done * 100 / total)}% ({done >> 20} of {total >> 20} MB)'
+            else:
+                msg = f'{base} {done >> 20} MB'
+            GLib.idle_add(self._set_busy, True, msg)
+
+        def work():
+            err = None
+            try:
+                catena_bridge.download_and_install(on_progress=_progress)
+            except Exception as e:
+                err = str(e)
+            GLib.idle_add(self._finish_catena, err)
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def _on_catena_remove(self, _btn):
+        catena_bridge.remove_pack()
+        if self._on_modules_changed:
+            self._on_modules_changed()
+        self._populate_open_db()
+
+    def _finish_catena(self, err):
+        if err:
+            _log.error('catena download error: %s', err)
+            self._set_busy(False, f"Couldn't download Historical Commentaries — {err}")
+        else:
+            self._set_busy(False, '')
+            if self._on_modules_changed:
+                self._on_modules_changed()
+        self._populate_open_db()
+        return GLib.SOURCE_REMOVE
 
     def _rebuild_filter_options(self):
         available = [m for m in self._all_modules if not m['installed']]

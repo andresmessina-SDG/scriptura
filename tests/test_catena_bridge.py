@@ -113,3 +113,25 @@ def test_remove_pack(pack):
     catena_bridge.remove_pack()
     assert not catena_bridge.is_installed()
     assert not pack.exists()
+
+
+def test_download_and_install_from_local_gz(tmp_path, monkeypatch):
+    import gzip
+    src = tmp_path / 'src.db'
+    _seed(str(src), [_q('John', 3, 16, 'Augustine', 430, 'Nicene & Post-Nicene')])
+    gz = tmp_path / 'pack.db.gz'
+    with open(src, 'rb') as f, gzip.open(gz, 'wb') as out:
+        out.write(f.read())
+    dest = tmp_path / 'installed.db'
+    monkeypatch.setattr(catena_bridge.paths, 'catena_db_path', lambda: str(dest))
+    catena_bridge._reset()
+    assert not catena_bridge.is_installed()
+
+    prog = []
+    catena_bridge.download_and_install(
+        on_progress=lambda d, t: prog.append(d), url=gz.as_uri())
+
+    assert catena_bridge.is_installed()
+    assert len(catena_bridge.lookup('John', 3, 16)) == 1
+    assert prog and prog[-1] > 0
+    assert not (dest.parent / (dest.name + '.gz.part')).exists()  # temp cleaned
