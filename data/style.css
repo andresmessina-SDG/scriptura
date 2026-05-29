@@ -282,6 +282,13 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
 }
 .catena-card .catena-author {
     font-weight: bold;
+    font-size: 1.2em;
+}
+.catena-quote {
+    /* The reader's font-size slider doesn't reach these cards, so nudge
+       the quote body up for comfortable reading. */
+    font-size: 1.1em;
+    line-height: 1.35;
 }
 .catena-meta {
     /* dim caption row: year + source */
