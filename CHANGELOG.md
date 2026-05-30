@@ -29,6 +29,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - Wrong/missing cipher key on an encrypted module now shows a "the
   cipher key may be incorrect" message with an Edit Key action instead
   of rendering gibberish (or nothing).
+- The chapter-note editor now opens as a window instead of a popover,
+  so its text field reliably accepts keyboard input on Wayland.
 
 ### Internal (v1.1)
 

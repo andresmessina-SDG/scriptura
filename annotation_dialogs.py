@@ -1,4 +1,4 @@
-"""Annotation dialogs — study menu, note editor, chapter-note popover,
+"""Annotation dialogs — study menu, note editor, chapter-note editor,
 compare-translations popover, suggested-topics chip row.
 
 All functions take a `pane` argument (the BiblePane instance) and read
@@ -415,30 +415,38 @@ def build_suggested_topics(book, chapter, verse, tags_entry):
 # ── Chapter note popover ────────────────────────────────────────────────────
 
 def show_chapter_note(pane):
-    """Popover anchored to the chapter-note toolbar button — edit the
-    chapter's overall note and its topical tags."""
+    """Modal editor for the chapter's overall note and its topical tags.
+
+    An Adw.Window (not a popover): a TextView inside an autohide popover
+    doesn't reliably receive keyboard input on Wayland, so this mirrors the
+    verse note editor's window pattern."""
     data = annotations.get_chapter_note_data(pane._module, pane._book, pane._chapter)
     note = data['note'] if data else ''
     tags = data['tags'] if data else []
 
-    popover = Gtk.Popover()
-    popover.set_parent(pane._chapter_note_btn)
-    popover.connect('closed', lambda p: p.unparent())
+    root = pane._view.get_root()
+    win = Adw.Window(transient_for=root, modal=True)
+    win.set_title(f'{pane._book} {pane._chapter} — Chapter Note')
+    win.set_default_size(420, 360)
+
+    toolbar_view = Adw.ToolbarView()
+    win.set_content(toolbar_view)
+    header = Adw.HeaderBar()
+    toolbar_view.add_top_bar(header)
+
+    save_btn = Gtk.Button(label='Save')
+    save_btn.add_css_class('suggested-action')
+    header.pack_end(save_btn)
 
     box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-    box.set_margin_start(12)
-    box.set_margin_end(12)
+    box.set_margin_start(14)
+    box.set_margin_end(14)
     box.set_margin_top(12)
-    box.set_margin_bottom(12)
+    box.set_margin_bottom(14)
+    toolbar_view.set_content(box)
 
-    title = Gtk.Label(
-        label=f'{pane._book} {pane._chapter} — Chapter Note', xalign=0)
-    title.add_css_class('heading')
-    box.append(title)
-
-    scrolled = Gtk.ScrolledWindow()
+    scrolled = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
     scrolled.set_min_content_height(160)
-    scrolled.set_min_content_width(320)
     tv = Gtk.TextView()
     tv.set_editable(True)
     tv.set_cursor_visible(True)
@@ -450,7 +458,9 @@ def show_chapter_note(pane):
     buf = tv.get_buffer()
     buf.set_text(note)
     scrolled.set_child(tv)
-    box.append(scrolled)
+    frame = Gtk.Frame()
+    frame.set_child(scrolled)
+    box.append(frame)
 
     tags_lbl = Gtk.Label(label='Topics (comma-separated)', xalign=0)
     tags_lbl.add_css_class('dim-label')
@@ -462,18 +472,22 @@ def show_chapter_note(pane):
     tags_entry.set_placeholder_text('e.g. Creation, Covenant')
     box.append(tags_entry)
 
-    save_btn = Gtk.Button(label='Save')
-    save_btn.add_css_class('suggested-action')
     save_btn.connect('clicked',
-                     lambda b: _save_chapter_note(pane, buf, tags_entry, popover))
-    box.append(save_btn)
+                     lambda b: _save_chapter_note(pane, buf, tags_entry, win))
 
-    popover.set_child(box)
-    popover.popup()
+    # Esc closes
+    key_ctrl = Gtk.EventControllerKey.new()
+    key_ctrl.connect(
+        'key-pressed',
+        lambda _c, kv, _kc, _s: (win.close() or True) if kv == Gdk.KEY_Escape else False,
+    )
+    win.add_controller(key_ctrl)
+
+    win.present()
     GLib.idle_add(_grab_focus_once, tv)
 
 
-def _save_chapter_note(pane, buf, tags_entry, popover):
+def _save_chapter_note(pane, buf, tags_entry, win):
     start, end = buf.get_bounds()
     annotations.save_chapter_note(
         pane._module, pane._book, pane._chapter,
@@ -482,5 +496,5 @@ def _save_chapter_note(pane, buf, tags_entry, popover):
     tags = [t.strip() for t in raw.split(',') if t.strip()] if raw else []
     annotations.save_chapter_note_tags(
         pane._module, pane._book, pane._chapter, tags)
-    popover.popdown()
+    win.close()
     pane._update_chapter_note_indicator()
