@@ -103,15 +103,6 @@ class CatenaReader:
             self._entries = []
         self._rebuild()
 
-    def show_no_bible(self):
-        """Render the 'open a Bible alongside' placeholder — used when no
-        verse-navigable pane is visible to drive this view."""
-        self._book = self._chapter = self._verse = None
-        self._entries = []
-        self._era_filter = None
-        self._author_query = ''
-        self._rebuild()
-
     # ── rendering ──────────────────────────────────────────────────────────────
 
     def _clear(self, box):
