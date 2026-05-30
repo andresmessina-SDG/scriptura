@@ -295,6 +295,7 @@ class BibleTextView(Gtk.TextView):
 
     _HL_PAD = 2
     _SEARCH_COLOR = '#ffd180'  # amber band for search matches
+    _FLASH_COLOR = '#fff176'   # yellow band for the navigation flash
 
     def do_snapshot(self, snapshot):
         try:
@@ -322,27 +323,33 @@ class BibleTextView(Gtk.TextView):
         table = buf.get_tag_table()
         hl_tags = self._hl_tags()
         search = table.lookup('_search_hl')
-        if not hl_tags and search is None:
+        flash = table.lookup('_flash')
+        if not hl_tags and search is None and flash is None:
             return
         vr = self.get_visible_rect()
         _, lo = self.get_iter_at_location(0, vr.y)
         _, hi = self.get_iter_at_location(0, vr.y + vr.height)
         hi.forward_line()
         asc, desc = self._metrics()
-        # Annotation bands (bottom layer).
+        # Stacked, bottom to top: verse highlights, then the search-match
+        # band, then the navigation flash — so each stays visible over the
+        # one(s) below (e.g. a search hit on a highlighted verse, a flash on
+        # either).
         for tag, hexcol in hl_tags:
-            rgba = Gdk.RGBA()
-            if not rgba.parse(hexcol):
-                continue
-            for start, end in self._tag_ranges(buf, tag, lo, hi):
-                self._draw_band(snapshot, start, end, rgba, asc, desc)
-        # Search-match bands, painted over the annotation tint so a hit on a
-        # highlighted verse stays visible.
-        if search is not None:
-            rgba = Gdk.RGBA()
-            rgba.parse(self._SEARCH_COLOR)
-            for start, end in self._tag_ranges(buf, search, lo, hi):
-                self._draw_band(snapshot, start, end, rgba, asc, desc)
+            self._draw_tag_layer(snapshot, buf, tag, hexcol, lo, hi, asc, desc)
+        self._draw_tag_layer(snapshot, buf, search, self._SEARCH_COLOR,
+                             lo, hi, asc, desc)
+        self._draw_tag_layer(snapshot, buf, flash, self._FLASH_COLOR,
+                             lo, hi, asc, desc)
+
+    def _draw_tag_layer(self, snapshot, buf, tag, color, lo, hi, asc, desc):
+        if tag is None:
+            return
+        rgba = Gdk.RGBA()
+        if not rgba.parse(color):
+            return
+        for start, end in self._tag_ranges(buf, tag, lo, hi):
+            self._draw_band(snapshot, start, end, rgba, asc, desc)
 
     def _tag_ranges(self, buf, tag, lo, hi):
         it = lo.copy()
@@ -1658,14 +1665,10 @@ class BiblePane(Gtk.Box):
 
         flash_tag = self._buffer.get_tag_table().lookup('_flash')
         if not flash_tag:
-            # Pale yellow on black text in both light and dark modes — keeps
-            # the flash unambiguous against any theme background (including
-            # blue-tinted dark themes where a blue flash camouflages).
-            flash_tag = self._buffer.create_tag(
-                '_flash',
-                background='#fff176',
-                foreground='black',
-            )
+            # Zero-visual marker: BibleTextView paints the yellow band from
+            # this tag (uniform height, top layer). The black foreground keeps
+            # the text readable on the band in both light and dark themes.
+            flash_tag = self._buffer.create_tag('_flash', foreground='black')
         # Always pin flash to the highest priority — every chapter render
         # creates fresh anonymous tags via insert_markup (highlights, drop-cap,
         # red letters), and any of those added after the flash tag's creation
@@ -1694,6 +1697,7 @@ class BiblePane(Gtk.Box):
                 s = self._buffer.get_iter_at_offset(start_offset)
                 e = self._buffer.get_iter_at_offset(end_offset)
                 self._buffer.remove_tag(ft, s, e)
+                self._view.queue_draw()  # band is painted from this tag
             return GLib.SOURCE_REMOVE
 
         holder[0] = GLib.timeout_add(1000, _expire)
@@ -1713,6 +1717,7 @@ class BiblePane(Gtk.Box):
                 self._buffer.get_start_iter(),
                 self._buffer.get_end_iter(),
             )
+            self._view.queue_draw()  # band is painted from this tag
 
 
     def _tag_strong_words(self, start_iter, end_iter, raw_html):
