@@ -294,6 +294,7 @@ class BibleTextView(Gtk.TextView):
     __gtype_name__ = 'BibleTextView'
 
     _HL_PAD = 2
+    _SEARCH_COLOR = '#ffd180'  # amber band for search matches
 
     def do_snapshot(self, snapshot):
         try:
@@ -317,20 +318,30 @@ class BibleTextView(Gtk.TextView):
         return out
 
     def _draw_highlights(self, snapshot):
-        tags = self._hl_tags()
-        if not tags:
-            return
         buf = self.get_buffer()
+        table = buf.get_tag_table()
+        hl_tags = self._hl_tags()
+        search = table.lookup('_search_hl')
+        if not hl_tags and search is None:
+            return
         vr = self.get_visible_rect()
         _, lo = self.get_iter_at_location(0, vr.y)
         _, hi = self.get_iter_at_location(0, vr.y + vr.height)
         hi.forward_line()
         asc, desc = self._metrics()
-        for tag, hexcol in tags:
+        # Annotation bands (bottom layer).
+        for tag, hexcol in hl_tags:
             rgba = Gdk.RGBA()
             if not rgba.parse(hexcol):
                 continue
             for start, end in self._tag_ranges(buf, tag, lo, hi):
+                self._draw_band(snapshot, start, end, rgba, asc, desc)
+        # Search-match bands, painted over the annotation tint so a hit on a
+        # highlighted verse stays visible.
+        if search is not None:
+            rgba = Gdk.RGBA()
+            rgba.parse(self._SEARCH_COLOR)
+            for start, end in self._tag_ranges(buf, search, lo, hi):
                 self._draw_band(snapshot, start, end, rgba, asc, desc)
 
     def _tag_ranges(self, buf, tag, lo, hi):

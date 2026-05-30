@@ -200,6 +200,7 @@ class PaneSearch:
         existing = tag_table.lookup('_search_hl')
         if existing:
             buf.remove_tag(existing, start, end)
+            self._pane._view.queue_draw()  # bands are painted from this tag
 
         pending = self._pending_highlight
         self._pending_highlight = None
@@ -212,11 +213,10 @@ class PaneSearch:
 
         tag = existing
         if tag is None:
-            # Amber — visually distinct from the pale-yellow verse flash
-            # so the two don't merge into one yellow blob on the matched
-            # word during the 1 s flash window.
-            tag = buf.create_tag(
-                '_search_hl', background='#ffd180', foreground='black')
+            # Zero-visual marker: BibleTextView paints the amber band from
+            # this tag's ranges (uniform height, like verse highlights). The
+            # black foreground keeps the matched word readable on the band.
+            tag = buf.create_tag('_search_hl', foreground='black')
         # Bump priority so the highlight wins against insert_markup's
         # anonymous tags (same pattern as the flash tag).
         tag.set_priority(tag_table.get_size() - 1)
@@ -235,12 +235,15 @@ class PaneSearch:
             return
 
         if applied:
+            self._pane._view.queue_draw()
+
             def _expire():
                 self._hl_timer = None
                 t = buf.get_tag_table().lookup('_search_hl')
                 if t:
                     buf.remove_tag(
                         t, buf.get_start_iter(), buf.get_end_iter())
+                    self._pane._view.queue_draw()
                 return GLib.SOURCE_REMOVE
             self._hl_timer = GLib.timeout_add(5000, _expire)
 
