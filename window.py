@@ -6,7 +6,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 gi.require_version('PangoCairo', '1.0')
 import datetime
-from gi.repository import Gtk, Adw, GLib, Gdk, Pango, PangoCairo
+from gi.repository import Gtk, Adw, GLib, Gdk, Gio, Pango, PangoCairo
 import sword_bridge
 import settings
 import module_positions
@@ -75,7 +75,6 @@ class BibleWindow(Adw.ApplicationWindow):
         self._today_row = None
         self._modules_win = None
         self._journal_win = None
-        self._hotkeys_win = None
         self._build_ui()
         self._load_all_panes()
         self.connect('close-request', self._on_close_request)
@@ -382,8 +381,8 @@ class BibleWindow(Adw.ApplicationWindow):
 
         # ── App menu panel (right-side revealer) ─────────────────────────────
         # CSS for .menu-panel, .jump-bar, .reading-exit-btn, .bible-view,
-        # .lex-panel / .ws-panel, .appearance-card, .key-chip, .plan-today,
-        # and .resize-handle lives in data/style.css (loaded once at startup
+        # .lex-panel / .ws-panel, .appearance-card, .plan-today, and
+        # .resize-handle lives in data/style.css (loaded once at startup
         # by styles.load_app_css from main.py).
         self._menu_revealer = Gtk.Revealer()
         self._menu_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_RIGHT)
@@ -459,32 +458,89 @@ class BibleWindow(Adw.ApplicationWindow):
         main_box.append(self._crossref_revealer)
         toolbar_view.set_content(main_box)
 
-        # CAPTURE phase: the window-level shortcut handler sees the key
-        # press BEFORE the focused widget gets a chance to swallow it.
-        # With the default BUBBLE phase, focus drifting onto a TextView /
-        # Entry / DropDown / dropdown popup after extended use could leave
-        # global shortcuts (Alt+arrows, Ctrl+L, Ctrl+F, F11, Esc, font size)
-        # silently dead. Returning False from _on_key_press still lets the
-        # event continue down to the focused widget for normal typing.
+        # Global shortcuts are GActions with accelerators (see
+        # _install_actions). Their accelerators are dispatched by GTK's
+        # global-scope shortcut controller, which fires regardless of which
+        # widget is focused — and even when nothing is focused. That focus
+        # independence is the whole point: a window-level EventControllerKey
+        # only sees keys while a focus widget exists, so on Wayland a NULL
+        # focus (fresh launch, resume, a popover closing) used to leave every
+        # shortcut silently dead.
+        self._install_actions()
+
+        # Only the genuinely contextual keys stay on a key controller:
+        # Escape (dismiss whichever overlay is open) and Home/End (first /
+        # last verse, suppressed inside text inputs). CAPTURE phase so the
+        # window sees Escape before a focused search entry swallows it.
         key_controller = Gtk.EventControllerKey.new()
         key_controller.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         key_controller.connect('key-pressed', self._on_key_press)
         self.add_controller(key_controller)
 
-        # After the compositor suspends/resumes — or the window simply sits
-        # backgrounded for a long time — GTK4-on-Wayland can leave the
-        # content area in a stale state: the focus widget goes NULL so the
-        # window-level key controller above stops seeing shortcuts, and
-        # allocations queued while the frame clock was paused (e.g. a
-        # just-revealed lexicon panel) never flush. The header bar keeps
-        # working, and manually toggling the split view "fixes" it by
-        # forcing a relayout. Run that same revive automatically whenever
-        # the window regains activation.
+        # Start with the reading view focused so the contextual keys above
+        # work from launch (and the app opens in a sensible state) rather
+        # than only after the user's first click. One-shot on first map.
+        self.connect('map', self._on_first_map)
+
+        # After the compositor suspends/resumes — or the window sits
+        # backgrounded for a long time — GTK4-on-Wayland can leave allocations
+        # queued while the frame clock was paused (e.g. a just-revealed
+        # lexicon panel) unflushed. Manually toggling the split view "fixes"
+        # it by forcing a relayout; run that same relayout automatically on
+        # reactivation. (Shortcuts no longer depend on this — they're actions.)
         self.connect('notify::is-active', self._on_active_changed)
 
         self._update_ref_label(*self._current_loc)
 
     # ── Keyboard shortcuts ────────────────────────────────────────────────────
+
+    def _install_actions(self):
+        """Register the global shortcuts as window GActions with accelerators.
+
+        Action accelerators dispatch focus-independently (GTK runs them via a
+        global-scope shortcut controller), which is why these survive a NULL
+        focus where a window-level key controller would not. The displayed
+        accelerators in the Keyboard Shortcuts dialog are read back from the
+        map registered here, so the two can't drift."""
+        app = self.get_application()
+        # (action name, accelerators, handler)
+        specs = [
+            ('zoom-in',  ['<Ctrl>plus', '<Ctrl>equal', '<Ctrl>KP_Add'],
+             lambda: self._adjust_font_size(1.0)),
+            ('zoom-out', ['<Ctrl>minus', '<Ctrl>KP_Subtract'],
+             lambda: self._adjust_font_size(-1.0)),
+            ('goto',     ['<Ctrl>l'], self._show_jump),
+            ('search',   ['<Ctrl>f'], lambda: self._on_search_clicked(None)),
+            ('search-next', ['F3'], lambda: self._step_search_result(prev=False)),
+            ('search-prev', ['<Shift>F3'], lambda: self._step_search_result(prev=True)),
+            ('reading-mode', ['F11'],
+             lambda: self._set_reading_mode(not getattr(self, '_reading_mode', False))),
+            ('focus-pane-1', ['<Ctrl>1'], lambda: self.pane1._view.grab_focus()),
+            ('focus-pane-2', ['<Ctrl>2'], self._focus_pane2),
+            ('focus-other-pane', ['<Ctrl>Tab'], self._focus_other_pane),
+            ('prev-chapter', ['<Alt>Left'], self._go_prev_chapter),
+            ('next-chapter', ['<Alt>Right'], self._go_next_chapter),
+            ('prev-book', ['<Alt>Up'], self._go_prev_book),
+            ('next-book', ['<Alt>Down'], self._go_next_book),
+            ('show-help-overlay', ['<Ctrl>question'], self._open_shortcuts_dialog),
+        ]
+        self._action_accels = {}
+        for name, accels, handler in specs:
+            action = Gio.SimpleAction.new(name, None)
+            action.connect('activate', lambda _a, _p, h=handler: h())
+            self.add_action(action)
+            app.set_accels_for_action(f'win.{name}', accels)
+            self._action_accels[name] = accels
+
+    def _focus_pane2(self):
+        if self.pane2.get_visible():
+            self.pane2._view.grab_focus()
+
+    def _on_first_map(self, *_args):
+        if getattr(self, '_did_initial_focus', False):
+            return
+        self._did_initial_focus = True
+        self.pane1._view.grab_focus()
 
     def _on_key_press(self, controller, keyval, keycode, state):
         alt  = bool(state & Gdk.ModifierType.ALT_MASK)
@@ -505,53 +561,6 @@ class BibleWindow(Adw.ApplicationWindow):
                 return True
             return False
 
-        if keyval == Gdk.KEY_F11:
-            self._set_reading_mode(not getattr(self, '_reading_mode', False))
-            return True
-
-        if keyval == Gdk.KEY_F3:
-            shift = bool(state & Gdk.ModifierType.SHIFT_MASK)
-            self._step_search_result(prev=shift)
-            return True
-
-        if ctrl:
-            if keyval in (Gdk.KEY_plus, Gdk.KEY_equal):
-                self._adjust_font_size(1.0)
-                return True
-            if keyval == Gdk.KEY_minus:
-                self._adjust_font_size(-1.0)
-                return True
-            if keyval == Gdk.KEY_l:
-                self._show_jump()
-                return True
-            if keyval == Gdk.KEY_f:
-                self._on_search_clicked(None)
-                return True
-            if keyval == Gdk.KEY_1:
-                self.pane1._view.grab_focus()
-                return True
-            if keyval == Gdk.KEY_2:
-                if self.pane2.get_visible():
-                    self.pane2._view.grab_focus()
-                return True
-            if keyval == Gdk.KEY_Tab:
-                self._focus_other_pane()
-                return True
-
-        if alt:
-            if keyval == Gdk.KEY_Left:
-                self._go_prev_chapter()
-                return True
-            if keyval == Gdk.KEY_Right:
-                self._go_next_chapter()
-                return True
-            if keyval == Gdk.KEY_Up:
-                self._go_prev_book()
-                return True
-            if keyval == Gdk.KEY_Down:
-                self._go_next_book()
-                return True
-
         # Home / End jump to first / last verse of current chapter — but
         # only when focus isn't on a text input, so typing in the search
         # bar / jump bar / tag entry still works normally.
@@ -571,20 +580,12 @@ class BibleWindow(Adw.ApplicationWindow):
         return False
 
     def _on_active_changed(self, *_args):
-        """Revive a stale content area when the window regains activation
-        after a long idle or suspend/resume. See the connect() comment in
-        _build_ui for why this is needed."""
+        """Flush layout deferred while the frame clock was paused (suspend /
+        resume / long idle). See the connect() comment in _build_ui. This is
+        what the manual split-view toggle was doing to bring the lexicon
+        panel (and the pane's click gestures) back to life."""
         if not self.is_active():
             return
-        # Restore a focus widget so the window-level key controller gets
-        # shortcuts again — but only when focus was genuinely lost, so we
-        # never yank focus out of an entry (e.g. the search bar) that the
-        # user left focused before alt-tabbing back.
-        if self.get_focus() is None:
-            self.pane1._view.grab_focus()
-        # Flush layout deferred while the frame clock was paused. This is
-        # what the manual split-view toggle was doing to bring the lexicon
-        # panel (and the pane's click gestures) back to life.
         self.queue_resize()
 
     def _focus_is_text_input(self):
@@ -1625,12 +1626,7 @@ class BibleWindow(Adw.ApplicationWindow):
             win.connect('close-request', _clear)
 
     def _on_hotkeys_clicked(self, _btn):
-        if self._hotkeys_win is not None and self._hotkeys_win.get_visible():
-            self._hotkeys_win.present()
-            return
-        self._hotkeys_win = self._build_hotkeys_window()
-        self._attach_esc_close(self._hotkeys_win, '_hotkeys_win')
-        self._hotkeys_win.present()
+        self._open_shortcuts_dialog()
 
     # ── About ─────────────────────────────────────────────────────────────────
 
@@ -1662,79 +1658,77 @@ class BibleWindow(Adw.ApplicationWindow):
         ])
         dlg.present(self)
 
-    _HOTKEYS = [
+    # Display spec for the Keyboard Shortcuts dialog. Each row is
+    # (description, kind, value):
+    #   'action'  → value is an action name; its accelerator is read from
+    #               _action_accels (single source of truth — can't drift).
+    #   'accel'   → value is an accelerator string handled elsewhere
+    #               (the contextual key controller).
+    #   'literal' → value is plain text for input that isn't a key accel
+    #               (mouse wheel gestures).
+    _SHORTCUT_SECTIONS = [
         ('Navigation', [
-            ('Ctrl+L',      'Quick jump to any reference (e.g. John 3:16)'),
-            ('Alt+Left',    'Previous chapter'),
-            ('Alt+Right',   'Next chapter'),
-            ('Alt+Up',      'Previous book'),
-            ('Alt+Down',    'Next book'),
-            ('Home',        'First verse of current chapter'),
-            ('End',         'Last verse of current chapter'),
-            ('Scroll over title', 'Cycle chapters via mouse wheel'),
+            ('Quick jump to any reference (e.g. John 3:16)', 'action', 'goto'),
+            ('Previous chapter', 'action', 'prev-chapter'),
+            ('Next chapter', 'action', 'next-chapter'),
+            ('Previous book', 'action', 'prev-book'),
+            ('Next book', 'action', 'next-book'),
+            ('First verse of current chapter', 'accel', 'Home'),
+            ('Last verse of current chapter', 'accel', 'End'),
+            ('Cycle chapters with the mouse wheel', 'literal', 'Scroll over title'),
         ]),
         ('Panes & view', [
-            ('Ctrl+1',      'Focus left pane'),
-            ('Ctrl+2',      'Focus right pane'),
-            ('Ctrl+Tab',    'Cycle between panes'),
-            ('Ctrl+F',      'Open / close search panel'),
-            ('F3',          'Next search result'),
-            ('Shift+F3',    'Previous search result'),
-            ('Ctrl+ +',     'Increase font size'),
-            ('Ctrl+ -',     'Decrease font size'),
-            ('Ctrl+scroll', 'Zoom font (or pinch on touchpad)'),
-            ('F11',         'Reading mode (chrome hidden)'),
-            ('Escape',      'Close search, jump bar, or menu'),
+            ('Focus left pane', 'action', 'focus-pane-1'),
+            ('Focus right pane', 'action', 'focus-pane-2'),
+            ('Cycle between panes', 'action', 'focus-other-pane'),
+            ('Open / close search panel', 'action', 'search'),
+            ('Next search result', 'action', 'search-next'),
+            ('Previous search result', 'action', 'search-prev'),
+            ('Increase font size', 'action', 'zoom-in'),
+            ('Decrease font size', 'action', 'zoom-out'),
+            ('Zoom font (or pinch on touchpad)', 'literal', 'Ctrl + scroll'),
+            ('Reading mode (chrome hidden)', 'action', 'reading-mode'),
+            ('Close search, jump bar, or menu', 'accel', 'Escape'),
         ]),
-        ('Selection', [
-            ('Ctrl+C',      'Copy selection with reference'),
+        ('General', [
+            ('Copy selection with reference', 'accel', '<Ctrl>c'),
+            ('Keyboard shortcuts', 'action', 'show-help-overlay'),
         ]),
     ]
 
-    def _build_hotkeys_window(self):
-        win = Adw.Window(transient_for=self, modal=False)
-        win.set_title('Keyboard Shortcuts')
-        win.set_default_size(560, 320)
+    def _open_shortcuts_dialog(self):
+        """Modern Adw.Dialog listing the shortcuts, with native key-cap
+        rendering via Gtk.ShortcutLabel. (Gtk.ShortcutsWindow, the old
+        standard, is deprecated since GTK 4.18 with no drop-in replacement,
+        so this rolls a libadwaita-native equivalent.)"""
+        dialog = Adw.Dialog()
+        dialog.set_title('Keyboard Shortcuts')
+        dialog.set_content_width(460)
+        dialog.set_content_height(620)
 
         toolbar_view = Adw.ToolbarView()
-        win.set_content(toolbar_view)
-        header = Adw.HeaderBar()
-        toolbar_view.add_top_bar(header)
+        toolbar_view.add_top_bar(Adw.HeaderBar())
+        page = Adw.PreferencesPage()
 
-        outer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=32)
-        outer.set_margin_start(28)
-        outer.set_margin_end(28)
-        outer.set_margin_top(20)
-        outer.set_margin_bottom(24)
-        outer.set_halign(Gtk.Align.CENTER)
-        outer.set_valign(Gtk.Align.START)
+        for section, rows in self._SHORTCUT_SECTIONS:
+            group = Adw.PreferencesGroup(title=section)
+            for desc, kind, value in rows:
+                row = Adw.ActionRow(title=desc)
+                if kind == 'literal':
+                    suffix = Gtk.Label(label=value)
+                    suffix.add_css_class('dim-label')
+                else:
+                    accel = (self._action_accels[value][0]
+                             if kind == 'action' else value)
+                    suffix = Gtk.ShortcutLabel(accelerator=accel)
+                suffix.set_valign(Gtk.Align.CENTER)
+                row.add_suffix(suffix)
+                group.add(row)
+            page.add(group)
 
-        for section, bindings in self._HOTKEYS:
-            col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-            col.set_hexpand(True)
-
-            heading = Gtk.Label(label=section, xalign=0)
-            heading.add_css_class('heading')
-            col.append(heading)
-            col.append(Gtk.Separator())
-
-            for keys, desc in bindings:
-                row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-                key_lbl = Gtk.Label(label=keys, xalign=0)
-                key_lbl.add_css_class('key-chip')
-                key_lbl.set_size_request(110, -1)
-                desc_lbl = Gtk.Label(label=desc, xalign=0, hexpand=True, wrap=True)
-                desc_lbl.add_css_class('dim-label')
-                row.append(key_lbl)
-                row.append(desc_lbl)
-                col.append(row)
-
-            outer.append(col)
-
-        scroll = Gtk.ScrolledWindow(vexpand=True)
-        scroll.set_child(outer)
-        toolbar_view.set_content(scroll)
-        return win
+        toolbar_view.set_content(page)
+        dialog.set_child(toolbar_view)
+        dialog.present(self)
 
     def _on_modules_clicked(self, _btn):
         if self._modules_win is not None and self._modules_win.get_visible():
