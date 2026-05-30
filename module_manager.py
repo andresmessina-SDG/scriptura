@@ -593,14 +593,15 @@ class ModuleManagerWindow(Adw.Window):
         return GLib.SOURCE_REMOVE
 
     def _show_import_sheet(self, mods, zip_bytes):
-        win = Adw.Window(transient_for=self, modal=True)
-        win.set_title('Import Module')
-        win.set_default_size(440, 420)
+        dialog = Adw.Dialog()
+        dialog.set_title('Import Module')
+        dialog.set_content_width(440)
+        dialog.set_content_height(420)
 
         tv = Adw.ToolbarView()
         header = Adw.HeaderBar()
         cancel = Gtk.Button(label='Cancel')
-        cancel.connect('clicked', lambda _b: win.close())
+        cancel.connect('clicked', lambda _b: dialog.close())
         header.pack_start(cancel)
         install = Gtk.Button(label='Install')
         install.add_css_class('suggested-action')
@@ -636,10 +637,10 @@ class ModuleManagerWindow(Adw.Window):
 
         install.connect(
             'clicked',
-            lambda _b: self._do_import(zip_bytes, rows, win))
+            lambda _b: self._do_import(zip_bytes, rows, dialog))
 
-        win.set_content(tv)
-        win.present()
+        dialog.set_child(tv)
+        dialog.present(self)
 
     def _build_import_row(self, box, mod):
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
@@ -718,7 +719,7 @@ class ModuleManagerWindow(Adw.Window):
             return 'Reinstall', f'Already installed (v{old_v})', False
         return 'Replace', f'Replace v{old_v} with older v{new_v}', True
 
-    def _do_import(self, zip_bytes, rows, win):
+    def _do_import(self, zip_bytes, rows, dialog):
         selected = [m['name'] for m, c, _k in rows if c.get_active()]
         cipher_keys = {
             m['name']: k.get_text().strip()
@@ -727,7 +728,7 @@ class ModuleManagerWindow(Adw.Window):
         }
         if not selected:
             return
-        win.close()
+        dialog.close()
         label = selected[0] if len(selected) == 1 else f'{len(selected)} modules'
         self._set_busy(True, f'Installing {label}…')
 
