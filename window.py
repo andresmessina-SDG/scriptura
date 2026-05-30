@@ -1677,7 +1677,7 @@ class BibleWindow(Adw.ApplicationWindow):
             ('Last verse of current chapter', 'accel', 'End'),
             ('Cycle chapters with the mouse wheel', 'literal', 'Scroll over title'),
         ]),
-        ('Panes & view', [
+        ('Panes and view', [
             ('Focus left pane', 'action', 'focus-pane-1'),
             ('Focus right pane', 'action', 'focus-pane-2'),
             ('Cycle between panes', 'action', 'focus-other-pane'),
@@ -1875,7 +1875,7 @@ class BibleWindow(Adw.ApplicationWindow):
             _tb.connect('clicked', self._on_appear_theme)
             theme_picker.append(_tb)
 
-        hotkeys_btn = Gtk.Button(icon_name='preferences-desktop-keyboard-shortcuts-symbolic')
+        hotkeys_btn = Gtk.Button(icon_name='scriptura-keyboard-symbolic')
         hotkeys_btn.add_css_class('flat')
         hotkeys_btn.add_css_class('menu-utility-action')
         hotkeys_btn.set_tooltip_text('Keyboard shortcuts')
