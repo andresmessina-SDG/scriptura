@@ -920,19 +920,16 @@ class StudyJournalWindow(Adw.Window):
         self._tag_mgr_win.present()
 
     def _on_export(self, _btn):
-        dialog = Gtk.FileChooserNative(
-            title='Export Study Journal',
-            transient_for=self,
-            action=Gtk.FileChooserAction.SAVE,
-        )
-        dialog.set_current_name('study_journal.txt')
-        dialog.connect('response', self._on_export_response)
-        dialog.show()
+        dialog = Gtk.FileDialog()
+        dialog.set_title('Export Study Journal')
+        dialog.set_initial_name('study_journal.txt')
+        dialog.save(self, None, self._on_export_finish)
 
-    def _on_export_response(self, dialog, response):
-        if response != Gtk.ResponseType.ACCEPT:
-            return
-        gfile = dialog.get_file()
+    def _on_export_finish(self, dialog, result):
+        try:
+            gfile = dialog.save_finish(result)
+        except GLib.Error:
+            return  # cancelled, or no location chosen
         path = gfile.get_path() if gfile else None
         if not path:
             self._show_export_error(
