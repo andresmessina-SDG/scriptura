@@ -377,10 +377,16 @@ class BibleTextView(Gtk.TextView):
             r0 = self.get_iter_location(cur)
             r1 = self.get_iter_location(seg_end)
             x0, x1 = r0.x, r1.x + r1.width
-            # GTK lays the text at the line-box top with the line-height
-            # leading added below, so the body text top is the line top; anchor
-            # the band there regardless of line spacing.
-            band_top = r0.y - pad
+            # Anchor the band's top to the display line's *start*, not the
+            # segment's first char — a verse that begins mid-line with the
+            # small raised number reports a slightly different y than a plain
+            # continuation char, which made adjacent verses' bands step. The
+            # line start gives every band on the line one shared top. (GTK lays
+            # text at the line-box top with the line-height leading below, so
+            # the line top is the body-text top regardless of line spacing.)
+            ls = cur.copy()
+            self.backward_display_line_start(ls)
+            band_top = self.get_iter_location(ls).y - pad
             wx0, wy = self.buffer_to_window_coords(
                 Gtk.TextWindowType.TEXT, int(x0), int(band_top))
             wx1, _ = self.buffer_to_window_coords(
