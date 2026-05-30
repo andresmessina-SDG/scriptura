@@ -23,6 +23,11 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - **Manage search history.** Each recent search has a remove button, a
   "Clear" button wipes the list, and searching an empty field returns
   to the recent-searches view.
+- **Guided first run.** The welcome screen now offers three curated
+  starting points — *Just reading*, *Reading + study* (recommended), and
+  *Full library* — framed by what you get rather than by SWORD module
+  names, so a newcomer can pick one and start reading. Everything stays
+  addable or removable later from the Module Manager.
 
 ### Fixed
 

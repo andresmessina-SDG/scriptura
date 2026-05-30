@@ -93,7 +93,7 @@ scriptura/
 +-- crossref_panel.py     # Cross-reference bar (slim single row)
 +-- module_manager.py     # Module Manager (3 tabs: SWORD, Open Databases, eBible)
 +-- module_picker.py      # ModulePicker — pane's module selector (MenuButton popover, info, remove)
-+-- welcome.py            # First-run welcome window (essentials bundle download)
++-- welcome.py            # First-run welcome: 3 curated bundle choices (reading / study / full)
 +-- tools/
 |   +-- build_catena_pack.py  # offline builder: HCF database -> catena pack (dev-only, not shipped)
 +-- tests/                # Pytest suite for the pure-Python bridges
