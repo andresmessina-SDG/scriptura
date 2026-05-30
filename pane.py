@@ -491,6 +491,10 @@ class BiblePane(Gtk.Box):
         self._content_stack = Gtk.Stack()
         self._content_stack.add_named(scrolled, 'text')
         self._content_stack.add_named(self._catena.widget, 'catena')
+        # Full-pane placeholder for "can't show content here" states
+        # (unsupported module, wrong cipher key, passage not in this module).
+        self._status_page = Adw.StatusPage()
+        self._content_stack.add_named(self._status_page, 'status')
         self._content_stack.set_visible_child_name(
             'catena' if self._is_catena else 'text')
 
@@ -936,55 +940,41 @@ class BiblePane(Gtk.Box):
 
         threading.Thread(target=fetch, daemon=True).start()
 
-    def _display_unsupported_module(self):
-        dark = Adw.StyleManager.get_default().get_dark()
-        fg = '#8d8278' if dark else '#7a7066'
+    def _show_status_page(self, icon, title, description):
         self._cancel_all_flashes()
         self._search.cancel_hl_timer()
         self._buffer.set_text('')
         self._clear_chapter_scoped_tags()
-        msg = (f'<span size="large" foreground="{fg}">'
-               f'{GLib.markup_escape_text(self._module)}</span>\n\n'
-               f'<span foreground="{fg}">'
-               f'This module isn’t organized by book and chapter, '
-               f'so it can’t be read in this pane yet. '
-               f'Switch to a Bible or commentary in the module dropdown above.'
-               f'</span>')
-        self._buffer.insert_markup(self._buffer.get_end_iter(), msg, -1)
-        self._view.scroll_to_iter(self._buffer.get_start_iter(), 0.0, False, 0, 0)
+        self._status_page.set_icon_name(icon)
+        self._status_page.set_title(title)
+        self._status_page.set_description(description)
+        self._content_stack.set_visible_child_name('status')
 
-    def _display_cipher_locked(self, dark):
+    def _display_unsupported_module(self):
+        self._show_status_page(
+            'dialog-information-symbolic', self._module,
+            'This module isn’t organized by book and chapter, so it can’t be '
+            'read in this pane yet. Switch to a Bible or commentary in the '
+            'module dropdown above.')
+
+    def _display_cipher_locked(self):
         """Shown when an encrypted module's content decrypts to gibberish —
         the cipher key is wrong or missing. Pairs with the window's
         'Edit Key' toast."""
-        fg = '#8d8278' if dark else '#7a7066'
-        self._cancel_all_flashes()
-        self._search.cancel_hl_timer()
-        self._buffer.set_text('')
-        self._clear_chapter_scoped_tags()
-        msg = (f'<span size="large" foreground="{fg}">🔒 '
-               f'{GLib.markup_escape_text(self._module)}</span>\n\n'
-               f'<span foreground="{fg}">'
-               f'This module’s content isn’t readable. The cipher key may '
-               f'be incorrect — use “Edit Key” to enter it again.'
-               f'</span>')
-        self._buffer.insert_markup(self._buffer.get_end_iter(), msg, -1)
-        self._view.scroll_to_iter(self._buffer.get_start_iter(), 0.0, False, 0, 0)
+        self._show_status_page(
+            'dialog-password-symbolic', self._module,
+            'This module’s content isn’t readable. The cipher key may be '
+            'incorrect — use “Edit Key” to enter it again.')
 
-    def _display_empty_chapter(self, book, chapter, dark):
+    def _display_empty_chapter(self, book, chapter):
         """Show a friendly hint when the current module has no content
         for the requested book/chapter — typically NT-only modules
         (SBLGNT, MorphGNT) navigated to an OT passage, or vice versa."""
-        fg = '#8d8278' if dark else '#7a7066'
-        msg = (f'<span size="large" foreground="{fg}">'
-               f'{GLib.markup_escape_text(f"{book} {chapter}")}</span>\n\n'
-               f'<span foreground="{fg}">'
-               f'{GLib.markup_escape_text(self._module)} doesn’t include '
-               f'this passage. Some modules cover only the Old or New '
-               f'Testament — switch to a Bible with full coverage in the '
-               f'module dropdown above.'
-               f'</span>')
-        self._buffer.insert_markup(self._buffer.get_end_iter(), msg, -1)
+        self._show_status_page(
+            'dialog-information-symbolic', f'{book} {chapter}',
+            f'{self._module} doesn’t include this passage. Some modules cover '
+            'only the Old or New Testament — switch to a Bible with full '
+            'coverage in the module dropdown above.')
         self._view.scroll_to_iter(self._buffer.get_start_iter(), 0.0, False, 0, 0)
 
     def _fetch_and_render_devotional(self):
@@ -1070,12 +1060,12 @@ class BiblePane(Gtk.Box):
             in_index = (sword_bridge.chapter_in_index(module, book, chapter)
                         if all_empty else False)
             if _is_bad_cipher(all_empty, in_index, _printable_ratio(sample)):
-                self._display_cipher_locked(dark)
+                self._display_cipher_locked()
                 self._on_cipher_error(module)
                 return GLib.SOURCE_REMOVE
 
         if all_empty:
-            self._display_empty_chapter(book, chapter, dark)
+            self._display_empty_chapter(book, chapter)
             return GLib.SOURCE_REMOVE
 
         # Verse numbers actually rendered this chapter, for nearest-preceding

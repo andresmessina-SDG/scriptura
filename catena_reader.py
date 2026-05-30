@@ -12,7 +12,8 @@ import logging
 
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import Gtk, Gio
+gi.require_version('Adw', '1')
+from gi.repository import Gtk, Adw, Gio
 
 import catena_bridge
 
@@ -295,23 +296,12 @@ class CatenaReader:
             _log.exception('could not open %s', url)
 
     def _status(self, title, detail):
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        box.set_margin_top(40)
-        box.set_margin_start(20)
-        box.set_margin_end(20)
-        box.set_valign(Gtk.Align.START)
-        icon = Gtk.Image.new_from_icon_name('open-book-symbolic')
-        icon.set_pixel_size(40)
-        icon.add_css_class('dim-label')
-        box.append(icon)
-        t = Gtk.Label(label=title, wrap=True, justify=Gtk.Justification.CENTER)
-        t.add_css_class('heading')
-        box.append(t)
-        d = Gtk.Label(label=detail, wrap=True, justify=Gtk.Justification.CENTER)
-        d.add_css_class('dim-label')
-        d.set_max_width_chars(36)
-        box.append(d)
-        return box
+        page = Adw.StatusPage()
+        page.set_icon_name('accessories-dictionary-symbolic')
+        page.set_title(title)
+        page.set_description(detail)
+        page.set_vexpand(True)
+        return page
 
 
 def _year_label(year):
