@@ -165,9 +165,13 @@ tags**, not baked into Pango markup. This means right-click annotation changes
 are pure tag-application — no `set_text` / re-render / scroll restoration.
 Scroll position is genuinely untouched.
 
-- `hl_<rendered_color>` tag — `background=color, foreground=black`. Applied
-  to the verse text range. Soft palette via `_HIGHLIGHT_RENDER` (stored
-  colors map to softer rendered colors; existing JSON data unchanged).
+- `hl_bg_<hex>` tag — **zero-visual marker** (no properties). The highlight
+  is *painted* as a uniform band by `BibleTextView` (see "Highlight bands"
+  below); this tag only records the verse's range + color (parsed back from
+  the name). A separate `hl_fg` tag (`foreground=black`) covers the verse
+  *text* so it stays readable on the band, leaving the gray verse number on
+  the tint. Soft palette via `_HIGHLIGHT_RENDER` (stored colors map to softer
+  rendered colors; existing JSON data unchanged).
 - `_ul_text` tag — `underline=Pango.Underline.DOUBLE`. Applied to verse text.
 - `_note_marker` tag — `foreground=#5b8def, weight=BOLD`. Applied to verse
   *number* only — gives notes a subtle accent-colored number instead of the
@@ -182,6 +186,30 @@ anonymous insert_markup tags.
 `_refresh_verse_annotation(verse_num)` — re-reads `annotations.get_annotations`
 and calls `_apply_anno_tags`. Called from `_apply_highlight`,
 `_toggle_underline`, and `_save_note_window` instead of any `_fetch_and_render`.
+
+### Highlight bands (`BibleTextView`) — important
+
+Verse highlights, search matches, and the navigation flash are **painted by
+`BibleTextView.do_snapshot`**, not drawn as GTK tag backgrounds. A tag
+`background` hugs each line's run/line metrics, so the 200% verse-1 drop cap
+(which makes its wrapped line ~2× taller) and the small superscript verse
+numbers (shorter runs) produced uneven block heights and notches/gaps. The
+painter instead draws each line of a highlight as a band of
+`body_height + 2·pad`, anchored to the **display-line start** (every band on a
+line shares one top, so a verse that begins mid-line with the raised number
+can't drift). Bands are drawn before the text (chained `super().do_snapshot`);
+the `.bible-view` background is transparent, so they sit behind the glyphs.
+
+Three stacked layers, bottom to top, via `_draw_tag_layer`: verse highlights
+(`hl_bg_<hex>`), search matches (`_search_hl`, amber `_SEARCH_COLOR`), and the
+navigation flash (`_flash`, yellow `_FLASH_COLOR`) — all **zero-visual marker
+tags** the painter reads ranges/colors from.
+
+**Don't** give these tags a `background=` property — that reintroduces the
+line-height/notch problems. When their ranges change, repaint with
+`self._view.queue_draw()` (done in `_apply_anno_tags`, the search apply/clear/
+expire, the flash apply/expire, and `_cancel_all_flashes`; also on appearance
+changes in `_update_font_css`).
 
 ### Strong's hover model
 
@@ -200,14 +228,16 @@ and calls `_apply_anno_tags`. Called from `_apply_highlight`,
 
 - **Chapter heading** — muted `[Book Chapter]` rendered at top of buffer for
   Bibles (not commentaries). Scrolls with the text.
-- **Drop-cap on v1** — first letter rendered at `size="200%" weight="bold"
-  rise="-2000"` via a regex that skips leading Pango span tags. Suppressed
-  when v1 is highlighted.
+- **Drop-cap on v1** — first letter rendered at `size="200%" weight="bold"`
+  (no `rise` — a negative rise once caused scroll ghost-fragments) via a regex
+  that skips leading Pango span tags. Always shown; it rises above the uniform
+  highlight band rather than inflating the block.
 - **Soft highlight palette** — `_HIGHLIGHT_RENDER` maps the four stored
   highlight colors to muted pastels for rendering. Storage values unchanged
   so legacy annotations.json data still loads.
-- **Flash highlight** — `_flash_verse(N)` applies a `_flash` tag (pale yellow
-  bg / black fg in both light and dark mode), priority bumped to top, with
+- **Flash highlight** — `_flash_verse(N)` applies a zero-visual `_flash`
+  marker tag (painted as a yellow band by `BibleTextView`, top layer; black-fg
+  text), priority bumped to top, with
   per-flash independent timers held in `self._flash_timers: set[int]` so
   rapid clicks don't cancel each other. `_cancel_all_flashes()` runs before
   `set_text('')` in `_display` / `_display_devotional` to clear stale flashes.

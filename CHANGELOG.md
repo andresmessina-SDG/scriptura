@@ -35,6 +35,10 @@ semver-ish — 0.x was the pre-Flathub testing track.
   focus on Wayland; they're now window actions with accelerators.
 - The chapter-note editor now opens as a dialog instead of a popover, so
   its text field reliably accepts keyboard input on Wayland.
+- Verse highlights (and the search-match and navigation-flash highlights)
+  now render as uniform bands that hug the text — no more tall blocks on
+  the drop-cap line, notches around verse numbers, or per-verse stepping
+  — and stay aligned at any font size, line spacing, or margin.
 
 ### Internal (v1.1)
 
@@ -53,6 +57,11 @@ semver-ish — 0.x was the pre-Flathub testing track.
   their manual Escape handlers); journal export uses `Gtk.FileDialog`;
   the catena and "can't read this module" placeholders use
   `Adw.StatusPage`.
+- **Highlights painted, not tag backgrounds.** `BibleTextView` draws the
+  verse / search / flash highlights as uniform bands in `do_snapshot` (from
+  zero-visual marker tags `hl_bg_<hex>` / `_search_hl` / `_flash`); GTK tag
+  backgrounds hug line metrics and broke on the drop cap and small verse
+  numbers. Anchored to the display-line start so adjacent bands can't drift.
 
 ### Internal (post-1.0 cleanup)
 
