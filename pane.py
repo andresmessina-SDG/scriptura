@@ -5,7 +5,8 @@ from datetime import date as _date, timedelta
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, GLib, Gdk, Pango
+gi.require_version('Gsk', '4.0')
+from gi.repository import Gtk, Adw, GLib, Gdk, Gsk, Graphene, Pango
 import sword_bridge
 import ebible_bridge
 import catena_bridge
@@ -272,6 +273,111 @@ def _is_bad_cipher(all_empty, chapter_in_index, ratio):
     return ratio < 0.6
 
 
+class BibleTextView(Gtk.TextView):
+    """TextView that paints verse highlights itself, as bands of a uniform
+    height, instead of relying on tag backgrounds.
+
+    A tag background hugs each line's run/line metrics, so the enlarged
+    verse-1 drop cap (which makes its wrapped line ~2× taller) and the small
+    superscript verse numbers (shorter runs) produced uneven block heights and
+    notches. Drawing the band ourselves decouples its height from the line:
+    every line of a highlight gets `body_height + 2·pad`. GTK lays text at the
+    line-box top with the line-height leading added below, so the band is
+    anchored to the line top — uniform regardless of line spacing — letting the
+    drop cap rise above it and the numbers sit flush. Highlights are marked by
+    zero-visual `hl_bg_<hex>` tags (applied in BiblePane._apply_anno_tags); we
+    read their ranges and colors here. Drawn before the text (chained super),
+    and the `.bible-view` background is transparent, so the band sits behind
+    the glyphs.
+    """
+
+    __gtype_name__ = 'BibleTextView'
+
+    _HL_PAD = 2
+
+    def do_snapshot(self, snapshot):
+        try:
+            self._draw_highlights(snapshot)
+        except Exception:
+            pass  # never let a paint glitch blank the reading view
+        Gtk.TextView.do_snapshot(self, snapshot)
+
+    def _metrics(self):
+        m = self.get_pango_context().get_metrics(None, None)
+        return m.get_ascent() / Pango.SCALE, m.get_descent() / Pango.SCALE
+
+    def _hl_tags(self):
+        out = []
+        table = self.get_buffer().get_tag_table()
+        def collect(t, _d):
+            name = t.get_property('name') or ''
+            if name.startswith('hl_bg_'):
+                out.append((t, name[len('hl_bg_'):]))
+        table.foreach(collect, None)
+        return out
+
+    def _draw_highlights(self, snapshot):
+        tags = self._hl_tags()
+        if not tags:
+            return
+        buf = self.get_buffer()
+        vr = self.get_visible_rect()
+        _, lo = self.get_iter_at_location(0, vr.y)
+        _, hi = self.get_iter_at_location(0, vr.y + vr.height)
+        hi.forward_line()
+        asc, desc = self._metrics()
+        for tag, hexcol in tags:
+            rgba = Gdk.RGBA()
+            if not rgba.parse(hexcol):
+                continue
+            for start, end in self._tag_ranges(buf, tag, lo, hi):
+                self._draw_band(snapshot, start, end, rgba, asc, desc)
+
+    def _tag_ranges(self, buf, tag, lo, hi):
+        it = lo.copy()
+        if not it.has_tag(tag) and not it.forward_to_tag_toggle(tag):
+            return
+        while it.compare(hi) < 0:
+            if it.has_tag(tag):
+                s = it.copy()
+                e = it.copy()
+                e.forward_to_tag_toggle(tag)
+                yield s, (e if e.compare(hi) < 0 else hi.copy())
+                it = e.copy()
+            elif not it.forward_to_tag_toggle(tag):
+                return
+
+    def _draw_band(self, snapshot, start, end, rgba, asc, desc):
+        pad = self._HL_PAD
+        body = asc + desc
+        band_h = body + 2 * pad
+        cur = start.copy()
+        while cur.compare(end) < 0:
+            line_end = cur.copy()
+            has_end = self.forward_display_line_end(line_end)
+            seg_end = line_end if (has_end and line_end.compare(end) < 0) else end.copy()
+            r0 = self.get_iter_location(cur)
+            r1 = self.get_iter_location(seg_end)
+            x0, x1 = r0.x, r1.x + r1.width
+            # GTK lays the text at the line-box top with the line-height
+            # leading added below, so the body text top is the line top; anchor
+            # the band there regardless of line spacing.
+            band_top = r0.y - pad
+            wx0, wy = self.buffer_to_window_coords(
+                Gtk.TextWindowType.TEXT, int(x0), int(band_top))
+            wx1, _ = self.buffer_to_window_coords(
+                Gtk.TextWindowType.TEXT, int(x1), 0)
+            rect = Graphene.Rect().init(wx0, wy, max(1.0, wx1 - wx0), band_h)
+            rounded = Gsk.RoundedRect()
+            rounded.init_from_rect(rect, 3)
+            snapshot.push_rounded_clip(rounded)
+            snapshot.append_color(rgba, rect)
+            snapshot.pop()
+            cur = line_end.copy()
+            if not cur.forward_char():
+                break
+
+
 class BiblePane(Gtk.Box):
     def __init__(self, module_name=None, on_word_click=None,
                  on_click_outside_search=None, on_verse_select=None,
@@ -413,7 +519,7 @@ class BiblePane(Gtk.Box):
         self.set_size_request(150, -1)
 
         # Native TextView
-        self._view = Gtk.TextView()
+        self._view = BibleTextView()
         self._view.set_editable(False)
         self._view.set_cursor_visible(False)
         self._view.set_wrap_mode(Gtk.WrapMode.WORD)
@@ -735,6 +841,9 @@ class BiblePane(Gtk.Box):
         self._css_provider.load_from_data(css.encode())
         just = Gtk.Justification.FILL if self._font_justify else Gtk.Justification.LEFT
         self._view.set_justification(just)
+        # Font size / line spacing changed the layout the highlight bands are
+        # measured against — repaint them.
+        self._view.queue_draw()
 
     def set_appearance(self, **kwargs):
         if 'font_size'    in kwargs: self._font_size    = kwargs['font_size']
@@ -1127,7 +1236,7 @@ class BiblePane(Gtk.Box):
                     # blank line of separation between commentary sections.
                     self._buffer.insert(self._buffer.get_end_iter(), '\n')
             else:
-                v_num_markup = f'<span foreground="gray" size="small" weight="bold" rise="6000"> {start_v} </span>'
+                v_num_markup = f'<span foreground="gray" size="small" weight="bold" rise="2500"> {start_v} </span>'
                 self._buffer.insert_markup(self._buffer.get_end_iter(), v_num_markup, -1)
 
             text_start_mark = self._buffer.create_mark(None, self._buffer.get_end_iter(), True)
@@ -1145,8 +1254,9 @@ class BiblePane(Gtk.Box):
             else:
                 v_text_markup = _html_to_markup(html, dark)
                 # Drop-cap: enlarge the first letter of verse 1 for a
-                # print-Bible feel. Skip the dropcap on highlighted v1 —
-                # the soft tint reads better as a flat block.
+                # print-Bible feel. Kept even under a highlight — the band is
+                # painted at a uniform height by BibleTextView, so the cap
+                # rises within it cleanly instead of inflating the block.
                 #
                 # No `rise` attribute: combining `size="200%"` with a
                 # negative `rise` made the verse-1 line's ink extent
@@ -1154,7 +1264,7 @@ class BiblePane(Gtk.Box):
                 # incremental redraw on scroll left ghost fragments
                 # above the cap when the user scrolled the chapter back
                 # into view.
-                if start_v == 1 and not v_anno.get('highlight'):
+                if start_v == 1:
                     m = re.match(r'((?:<[^>]+>)*)([A-Za-z])', v_text_markup)
                     if m:
                         v_text_markup = (
@@ -1439,7 +1549,9 @@ class BiblePane(Gtk.Box):
         vnum_start, vtext_start, vtext_end = ranges
         table = self._buffer.get_tag_table()
 
-        # Clear any previous annotation tags from the verse's ranges.
+        # Clear any previous annotation tags from the verse's ranges. The
+        # highlight background can reach back over the verse number, so clear
+        # from vnum_start (removing where a tag isn't applied is a no-op).
         old_tags = []
         def _collect(t, _data):
             name = t.get_property('name') or ''
@@ -1447,15 +1559,22 @@ class BiblePane(Gtk.Box):
                 old_tags.append(t)
         table.foreach(_collect, None)
         for t in old_tags:
-            self._buffer.remove_tag(t, vtext_start, vtext_end)
+            self._buffer.remove_tag(t, vnum_start, vtext_end)
         note_tag = table.lookup('_note_marker')
         if note_tag:
             self._buffer.remove_tag(note_tag, vnum_start, vtext_start)
 
-        if not anno:
-            return
         if isinstance(anno, str):
             anno = {'highlight': anno, 'underline': False, 'note': None}
+        anno = anno or {}
+        highlight = anno.get('highlight')
+
+        # The highlight band is painted by BibleTextView (uniform height); a
+        # change here means it must repaint.
+        self._view.queue_draw()
+
+        if not (highlight or anno.get('underline') or anno.get('note')):
+            return
 
         def _bump(t):
             # Annotation tags created during chapter render get out-prioritized
@@ -1463,16 +1582,24 @@ class BiblePane(Gtk.Box):
             # (same priority-decay we hit with flash). Bump to top each apply.
             t.set_priority(table.get_size() - 1)
 
-        highlight = anno.get('highlight')
         if highlight:
             rendered = _render_highlight(highlight)
-            name = f'hl_{rendered}'
-            tag = table.lookup(name)
-            if not tag:
-                tag = self._buffer.create_tag(
-                    name, background=rendered, foreground='black')
-            _bump(tag)
-            self._buffer.apply_tag(tag, vtext_start, vtext_end)
+            # Zero-visual marker tag: BibleTextView reads its range + color
+            # (from the `hl_bg_<hex>` name) and paints the band itself. Spans
+            # the verse number too (vnum_start) so the band is continuous; the
+            # black text foreground covers the verse text only, leaving the
+            # gray verse number readable on the tint.
+            bg_name = f'hl_bg_{rendered}'
+            bg = table.lookup(bg_name)
+            if not bg:
+                bg = self._buffer.create_tag(bg_name)
+            self._buffer.apply_tag(bg, vnum_start, vtext_end)
+
+            fg = table.lookup('hl_fg')
+            if not fg:
+                fg = self._buffer.create_tag('hl_fg', foreground='black')
+            _bump(fg)
+            self._buffer.apply_tag(fg, vtext_start, vtext_end)
 
         if anno.get('underline'):
             ul = table.lookup('_ul_text')
