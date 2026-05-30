@@ -286,12 +286,15 @@ and calls `_apply_anno_tags`. Called from `_apply_highlight`,
   `record=True` (back/forward stack moves and initial restore don't push).
 - **Cross-ref clicks** target pane 2 in split mode, pane 1 in single-pane mode
   (with fallback if pane 2 is on a devotional / sync-locked).
-- **Key controller phase = CAPTURE.** Without this, focus drift onto
-  TextView/Entry/DropDown after extended use could silently swallow
-  Alt+arrows, F-keys, Esc, font-size shortcuts. CAPTURE makes the
-  window-level handler the first responder; it still returns False for
-  unhandled keys so normal typing in entries works.
-- **Keyboard shortcuts:**
+- **Global shortcuts are window GActions** registered in
+  `_install_actions` with `app.set_accels_for_action`. GTK dispatches
+  these via a global-scope shortcut controller that fires regardless of
+  which widget (if any) holds focus — so they survive the NULL-focus a
+  window-level `EventControllerKey` could not (fresh launch, suspend/
+  resume, a popover closing). Only the contextual keys — `Esc` and
+  `Home`/`End` — stay on a CAPTURE-phase key controller, and the reading
+  view grabs focus on first map so those work from launch too.
+- **Keyboard shortcuts** (the bindings; all but Esc/Home/End are actions):
   - `Ctrl+=` / `Ctrl+-` — font size (also `Ctrl+scroll` and touchpad
     pinch — see `BiblePane._on_zoom_scroll` / `_on_zoom_gesture`)
   - `Ctrl+L` — quick jump bar
@@ -534,11 +537,14 @@ Includes migration logic for old single-color string format.
   after `set_text('')`) walks the table via `foreach` and removes
   tags matching `_CHAPTER_SCOPED_TAG_PREFIXES`. Two-pass: collect into
   a list, then remove — don't mutate the table during iteration.
-- **`Gtk.EventControllerKey` default phase is BUBBLE**, which lets the
-  focused widget swallow keys before window-level handlers see them.
-  Use `set_propagation_phase(Gtk.PropagationPhase.CAPTURE)` for global
-  shortcuts; return False for keys you don't care about so normal
-  typing in entries still propagates.
+- **Don't route global shortcuts through a window `EventControllerKey`.**
+  GTK4 delivers key events along the focus chain, so a toplevel key
+  controller goes dead whenever no widget holds focus — and on Wayland
+  that happens often (fresh launch, suspend/resume, a popover closing),
+  silently killing every shortcut. Register global shortcuts as GActions
+  with `set_accels_for_action` instead; those dispatch focus-independently.
+  Reserve `EventControllerKey` for genuinely contextual keys, and use
+  CAPTURE phase + return False there so normal typing still propagates.
 - **`Adw.ToolbarView` top bars + `Adw.Window` overlay handling on
   Wayland:** dismissing the panel via row activation auto-closes the
   panel. F3 step-through must therefore tolerate a closed panel —

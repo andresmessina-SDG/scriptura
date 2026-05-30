@@ -29,8 +29,12 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - Wrong/missing cipher key on an encrypted module now shows a "the
   cipher key may be incorrect" message with an Edit Key action instead
   of rendering gibberish (or nothing).
-- The chapter-note editor now opens as a window instead of a popover,
-  so its text field reliably accepts keyboard input on Wayland.
+- Global keyboard shortcuts now work reliably from launch and after the
+  window loses and regains focus. They were dispatched through a
+  focus-dependent key handler that went dead whenever no widget held
+  focus on Wayland; they're now window actions with accelerators.
+- The chapter-note editor now opens as a dialog instead of a popover, so
+  its text field reliably accepts keyboard input on Wayland.
 
 ### Internal (v1.1)
 
@@ -40,6 +44,15 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - **`ModulePicker` extracted** from `pane.py` into `module_picker.py`
   (the module selector popover); plus a consolidated module-flag helper.
   From a whole-app code review.
+- **Keyboard shortcuts as GActions.** Global shortcuts moved to window
+  actions + `set_accels_for_action`; the Keyboard Shortcuts window is now
+  an `Adw.Dialog` with `Gtk.ShortcutLabel` key-caps read back from the
+  action map. Only Escape and Home/End remain on a key controller.
+- **Modern dialog / widget pass.** Note editors and the module-import
+  sheet converted from transient `Adw.Window` to `Adw.Dialog` (dropping
+  their manual Escape handlers); journal export uses `Gtk.FileDialog`;
+  the catena and "can't read this module" placeholders use
+  `Adw.StatusPage`.
 
 ### Internal (post-1.0 cleanup)
 
