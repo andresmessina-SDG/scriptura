@@ -1,0 +1,138 @@
+# Plate -> scene + scripture reference for Julius Schnorr von Carolsfeld's
+# "Die Bibel in Bildern" (1860). The Wikimedia Commons files are named
+# "Schnorr von Carolsfeld Bibel in Bildern 1860 NNN.png", numbered in Bible
+# order, and each plate carries a chapter:verse reference in the original
+# edition — so this table is a transcription, not a guess.
+#
+# Fields per plate:
+#   n            = Commons plate number (NNN)
+#   title        = display title
+#   book         = canonical Scriptura book name
+#   chapter, verse = anchor location
+#   verse_end      = optional; last verse of the scene's range (same chapter)
+#   chapter_end    = optional; last chapter, for cross-chapter ranges
+#   passage_label  = optional human scope string
+#
+# SEED STATUS: the Genesis opening sequence (plates 1-15) is filled in and
+# verified against the Commons gallery order + the per-file references. The
+# remaining plates (to ~240, through the New Testament) are still to be
+# transcribed — append [[plate]] entries in Commons number order. Run e.g.
+#   python tools/build_imagery_pack.py /tmp/imagery --source schnorr --limit 5
+# to fetch + catalog the first few.
+
+[[plate]]
+n = 1
+title = "The First Day — Let there be light"
+book = "Genesis"
+chapter = 1
+verse = 3
+
+[[plate]]
+n = 2
+title = "The Second Day — The firmament"
+book = "Genesis"
+chapter = 1
+verse = 6
+verse_end = 8
+
+[[plate]]
+n = 3
+title = "The Third Day — Dry land and plants"
+book = "Genesis"
+chapter = 1
+verse = 9
+verse_end = 13
+
+[[plate]]
+n = 4
+title = "The Fourth Day — Sun, moon, and stars"
+book = "Genesis"
+chapter = 1
+verse = 14
+verse_end = 19
+
+[[plate]]
+n = 5
+title = "The Fifth Day — Birds and sea creatures"
+book = "Genesis"
+chapter = 1
+verse = 20
+verse_end = 23
+
+[[plate]]
+n = 6
+title = "The Sixth Day — The creation of humankind"
+book = "Genesis"
+chapter = 1
+verse = 26
+verse_end = 31
+
+[[plate]]
+n = 7
+title = "The Seventh Day — God rests"
+book = "Genesis"
+chapter = 2
+verse = 1
+verse_end = 3
+
+[[plate]]
+n = 8
+title = "The Fall"
+book = "Genesis"
+chapter = 3
+verse = 1
+verse_end = 7
+
+[[plate]]
+n = 9
+title = "God confronts Adam and Eve"
+book = "Genesis"
+chapter = 3
+verse = 8
+verse_end = 13
+
+[[plate]]
+n = 10
+title = "The Expulsion from Eden"
+book = "Genesis"
+chapter = 3
+verse = 22
+verse_end = 24
+
+[[plate]]
+n = 11
+title = "Adam, Eve, and their family"
+book = "Genesis"
+chapter = 4
+verse = 1
+verse_end = 2
+
+[[plate]]
+n = 12
+title = "The offerings of Cain and Abel"
+book = "Genesis"
+chapter = 4
+verse = 3
+verse_end = 5
+
+[[plate]]
+n = 13
+title = "Cain slays Abel"
+book = "Genesis"
+chapter = 4
+verse = 8
+
+[[plate]]
+n = 14
+title = "Cain builds the city of Enoch"
+book = "Genesis"
+chapter = 4
+verse = 17
+
+[[plate]]
+n = 15
+title = "The days of Noah"
+book = "Genesis"
+chapter = 6
+verse = 1
+verse_end = 8
