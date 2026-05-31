@@ -1,0 +1,67 @@
+# Modern vector (SVG) Bible maps — crisp, clean, for the modern-app aesthetic.
+# Seeded with Roberto Reggi's Pauline journey set on Wikimedia Commons, which
+# he released into the public domain — a cohesive, single-cartographer modern
+# set covering the New Testament journeys (the same Acts ranges the antique
+# Hurlbut maps cover, so a journey can be seen in both styles). SVGs render
+# crisply via the gdk-pixbuf rsvg loader. tradition = 'modern_map' so the Where
+# tab leads with the modern map.
+#
+# `file` = exact Commons filename; `slug` = local basename. Extend with more
+# subjects (OT empires, the Exodus, tribal allotment) as cleanly-licensed
+# modern SVGs are verified — record each one's license + attribution.
+
+[[map]]
+file = "Paul the Apostle, first missionary journey.svg"
+slug = "paul-journey-1"
+title = "Paul's First Missionary Journey"
+passage_label = "Acts 13–14"
+license = "PD"
+attribution = "Roberto Reggi, Wikimedia Commons (public domain)"
+[[map.ranges]]
+book = "Acts"
+chapter = 13
+verse = 1
+chapter_end = 14
+verse_end = 28
+
+[[map]]
+file = "Paul the Apostle, second missionary journey.svg"
+slug = "paul-journey-2"
+title = "Paul's Second Missionary Journey"
+passage_label = "Acts 15:36 – 18:22"
+license = "PD"
+attribution = "Roberto Reggi, Wikimedia Commons (public domain)"
+[[map.ranges]]
+book = "Acts"
+chapter = 15
+verse = 36
+chapter_end = 18
+verse_end = 22
+
+[[map]]
+file = "Paul the Apostle, third missionary journey.svg"
+slug = "paul-journey-3"
+title = "Paul's Third Missionary Journey"
+passage_label = "Acts 18:23 – 21:16"
+license = "PD"
+attribution = "Roberto Reggi, Wikimedia Commons (public domain)"
+[[map.ranges]]
+book = "Acts"
+chapter = 18
+verse = 23
+chapter_end = 21
+verse_end = 16
+
+[[map]]
+file = "Paul the Apostle, fourth missionary journey (Rome).svg"
+slug = "paul-journey-4"
+title = "Paul's Journey to Rome"
+passage_label = "Acts 27–28"
+license = "PD"
+attribution = "Roberto Reggi, Wikimedia Commons (public domain)"
+[[map.ranges]]
+book = "Acts"
+chapter = 27
+verse = 1
+chapter_end = 28
+verse_end = 31

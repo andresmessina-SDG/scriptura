@@ -182,6 +182,9 @@ class ImageryReader:
                 'illustration.'))
             return
 
+        # Lead with the modern vector map (Scriptura's modern aesthetic), then
+        # the antique atlas maps for the same passage.
+        maps = sorted(maps, key=lambda m: 0 if m['tradition'] == 'modern_map' else 1)
         for m in maps:
             self._where_box.append(self._image_card(m))
 

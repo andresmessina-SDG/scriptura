@@ -254,8 +254,50 @@ def ingest_hurlbut(conn, images_dir, width, limit, fetch_images):
     return rows
 
 
+# ── Modern vector maps (Wikimedia SVGs) ─────────────────────────────────────
+
+def ingest_modern(conn, images_dir, width, limit, fetch_images):
+    """Insert modern SVG maps from tools/modern_maps.toml. Fetches the raw SVG
+    (Special:FilePath without a width param returns the original vector file,
+    which renders crisply via the rsvg loader). tradition='modern_map'."""
+    with open(os.path.join(_HERE, 'modern_maps.toml'), 'rb') as f:
+        maps = tomllib.load(f)['map']
+    if limit:
+        maps = maps[:limit]
+    rows = 0
+    for m in maps:
+        slug = m['slug']
+        rel = f'images/modern_{slug}.svg'
+        size = None
+        if fetch_images:
+            url = ('https://commons.wikimedia.org/wiki/Special:FilePath/'
+                   + urllib.parse.quote(m['file']))
+            try:
+                size = fetch(url, os.path.join(images_dir, f'modern_{slug}.svg'))
+            except Exception as e:  # noqa: BLE001
+                print(f'  ! modern {slug} fetch failed: {e}')
+                continue
+        file_url = ('https://commons.wikimedia.org/wiki/File:'
+                    + m['file'].replace(' ', '_'))
+        for rng in m['ranges']:
+            ce = rng.get('chapter_end', rng['chapter'])
+            ve = rng.get('verse_end', rng['verse'])
+            conn.execute(
+                'INSERT INTO imagery (kind, tradition, title, caption, book, '
+                'loc_start, loc_end, passage_label, file_path, file_size, '
+                'source, source_url, license, attribution, artist, year, '
+                'iconclass) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                ('map', 'modern_map', m['title'], None, rng['book'],
+                 encode(rng['chapter'], rng['verse']), encode(ce, ve),
+                 m.get('passage_label'), rel, size, 'wikimedia_svg', file_url,
+                 m.get('license', 'PD'), m.get('attribution'), None, None, None))
+            rows += 1
+        print(f'  + modern {slug}  {m["title"]}')
+    return rows
+
+
 _SOURCES = {'schnorr': ingest_schnorr, 'openbible': ingest_openbible,
-            'hurlbut': ingest_hurlbut}
+            'hurlbut': ingest_hurlbut, 'modern': ingest_modern}
 
 
 def main():
