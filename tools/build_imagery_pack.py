@@ -22,6 +22,7 @@ Usage:
 """
 
 import argparse
+import json
 import os
 import sqlite3
 import tarfile
@@ -71,6 +72,23 @@ def fetch(url, dest):
     return len(data)
 
 
+# Protestant 66 in canonical order — index = OpenBible `sort` book number (BB).
+# Names must match the app's book names exactly (so place_verses keys line up).
+CANON66 = [
+    'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy', 'Joshua',
+    'Judges', 'Ruth', '1 Samuel', '2 Samuel', '1 Kings', '2 Kings',
+    '1 Chronicles', '2 Chronicles', 'Ezra', 'Nehemiah', 'Esther', 'Job',
+    'Psalms', 'Proverbs', 'Ecclesiastes', 'Song of Solomon', 'Isaiah',
+    'Jeremiah', 'Lamentations', 'Ezekiel', 'Daniel', 'Hosea', 'Joel', 'Amos',
+    'Obadiah', 'Jonah', 'Micah', 'Nahum', 'Habakkuk', 'Zephaniah', 'Haggai',
+    'Zechariah', 'Malachi', 'Matthew', 'Mark', 'Luke', 'John', 'Acts',
+    'Romans', '1 Corinthians', '2 Corinthians', 'Galatians', 'Ephesians',
+    'Philippians', 'Colossians', '1 Thessalonians', '2 Thessalonians',
+    '1 Timothy', '2 Timothy', 'Titus', 'Philemon', 'Hebrews', 'James',
+    '1 Peter', '2 Peter', '1 John', '2 John', '3 John', 'Jude', 'Revelation',
+]
+
+
 # ── Schnorr von Carolsfeld, "Die Bibel in Bildern" (1860) ───────────────────
 
 def ingest_schnorr(conn, images_dir, width, limit, fetch_images):
@@ -110,7 +128,80 @@ def ingest_schnorr(conn, images_dir, width, limit, fetch_images):
     return rows
 
 
-_SOURCES = {'schnorr': ingest_schnorr}
+# ── OpenBible.info geocoding — places named in each verse ───────────────────
+
+# Pinned to the default branch; switch to a pinned commit SHA for fully
+# reproducible builds. CC BY 4.0.
+_OPENBIBLE_ANCIENT = ('https://raw.githubusercontent.com/openbibleinfo/'
+                      'Bible-Geocoding-Data/main/data/ancient.jsonl')
+
+
+def ingest_openbible(conn, images_dir, width, limit, fetch_images):
+    """Populate places + place_verses from OpenBible's ancient.jsonl.
+
+    Each place's verse references carry a `sort` key encoded BBCCCVVV, where BB
+    is the canonical Protestant book number — so we map straight to CANON66
+    without parsing OSIS abbreviations. Photos are deferred (image.jsonl +
+    the 180 MB thumbnails); the place list (name + modern name + confidence)
+    is what the Where tab needs first. Confidence = the best modern
+    association's score (OpenBible's 0-1000) normalised to 0-100.
+    """
+    req = urllib.request.Request(_OPENBIBLE_ANCIENT, headers={'User-Agent': _UA})
+    with urllib.request.urlopen(req, timeout=180) as resp:
+        lines = resp.read().decode('utf-8').splitlines()
+    if limit:
+        lines = lines[:limit]
+    places = links = 0
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        obj = json.loads(line)
+        pid = obj['id']
+        ancient = obj.get('friendly_id') or pid
+        modern = score = lat = lon = None
+        massoc = obj.get('modern_associations') or {}
+        if massoc:
+            best = max(massoc.values(), key=lambda m: m.get('score', 0) or 0)
+            modern = best.get('name')
+            s = best.get('score')
+            if s is not None:
+                score = max(0, min(100, round(s / 10)))   # 0-1000 -> 0-100
+        for r in obj.get('resolutions') or []:
+            ll = r.get('lonlat')
+            if ll:
+                try:
+                    lo, la = ll.split(',')[:2]
+                    lon, lat = float(lo), float(la)
+                except ValueError:
+                    pass
+                break
+        conn.execute('INSERT OR REPLACE INTO places VALUES (?,?,?,?,?,?,?)',
+                     (pid, ancient, modern, lat, lon, score, None))
+        places += 1
+        seen = set()
+        for v in obj.get('verses') or []:
+            srt = v.get('sort')
+            if not srt or len(srt) != 8:
+                continue
+            try:
+                bb, ccc, vvv = int(srt[:2]), int(srt[2:5]), int(srt[5:8])
+            except ValueError:
+                continue
+            if not 1 <= bb <= 66:
+                continue
+            key = (bb, ccc, vvv)
+            if key in seen:
+                continue
+            seen.add(key)
+            conn.execute('INSERT INTO place_verses VALUES (?,?,?,?)',
+                         (pid, CANON66[bb - 1], ccc, vvv))
+            links += 1
+    print(f'  + {places} places, {links} place-verse links')
+    return 0   # adds places, not imagery-table rows
+
+
+_SOURCES = {'schnorr': ingest_schnorr, 'openbible': ingest_openbible}
 
 
 def main():
@@ -142,15 +233,18 @@ def main():
         total += _SOURCES[name](conn, images_dir, args.width, args.limit,
                                 not args.no_fetch)
 
+    img_n = conn.execute('SELECT COUNT(*) FROM imagery').fetchone()[0]
+    place_n = conn.execute('SELECT COUNT(*) FROM places').fetchone()[0]
     conn.executemany('INSERT INTO pack_meta VALUES (?,?)', [
         ('schema', '1'),
         ('built', date.today().isoformat()),
-        ('image_count', str(total)),
+        ('image_count', str(img_n)),
+        ('place_count', str(place_n)),
         ('sources', ','.join(sources)),
     ])
     conn.commit()
     conn.close()
-    print(f'wrote {db_path} ({total} images)')
+    print(f'wrote {db_path} ({img_n} images, {place_n} places, {total} new this run)')
 
     if args.tar:
         tar_path = os.path.join(os.path.dirname(os.path.abspath(args.outdir)),

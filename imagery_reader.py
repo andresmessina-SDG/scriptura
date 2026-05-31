@@ -210,8 +210,10 @@ class ImageryReader:
         card.append(title)
 
         # Confidence cue — don't assert a contested identification as fact.
+        # OpenBible confidence is 0-100 (its 0-1000 score, normalised); flag
+        # low-confidence modern identifications.
         conf = place.get('confidence')
-        if conf is not None and conf <= 1:
+        if conf is not None and conf < 50:
             note = Gtk.Label(label='Traditional / uncertain identification',
                              xalign=0, wrap=True)
             note.add_css_class('caption')
@@ -235,14 +237,20 @@ class ImageryReader:
             card.append(title)
 
         meta = _meta_line(item)
-        if meta:
+        artist = item.get('artist')
+        attribution = item.get('attribution')
+        # Skip the "artist · year" meta line when the attribution already names
+        # the artist — avoids showing "Schnorr · 1860" directly above
+        # "Schnorr, Die Bibel in Bildern (1860)". Kept for maps (whose meta is a
+        # passage scope, not the artist) and for items lacking attribution.
+        if meta and not (artist and attribution and artist in attribution):
             meta_lbl = Gtk.Label(label=meta, xalign=0, wrap=True)
             meta_lbl.add_css_class('caption')
             meta_lbl.add_css_class('imagery-meta')
             card.append(meta_lbl)
 
-        if item.get('attribution'):
-            attr = Gtk.Label(label=item['attribution'], xalign=0, wrap=True)
+        if attribution:
+            attr = Gtk.Label(label=attribution, xalign=0, wrap=True)
             attr.add_css_class('caption')
             attr.add_css_class('imagery-meta')
             card.append(attr)
