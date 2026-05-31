@@ -1,25 +1,27 @@
 # Plate -> scene + scripture reference for Julius Schnorr von Carolsfeld's
 # "Die Bibel in Bildern" (1860). The Wikimedia Commons files are named
-# "Schnorr von Carolsfeld Bibel in Bildern 1860 NNN.png", numbered in Bible
-# order, and each plate carries a chapter:verse reference in the original
-# edition — so this table is a transcription, not a guess.
+# "Schnorr von Carolsfeld Bibel in Bildern 1860 NNN.png", numbered 1-235
+# (the full series; confirmed contiguous via the Commons category API).
 #
-# Fields per plate:
-#   n            = Commons plate number (NNN)
-#   title        = display title
-#   book         = canonical Scriptura book name
-#   chapter, verse = anchor location
-#   verse_end      = optional; last verse of the scene's range (same chapter)
-#   chapter_end    = optional; last chapter, for cross-chapter ranges
-#   passage_label  = optional human scope string
+# Each plate is keyed independently to its scene's verse range, so plate
+# *order* is irrelevant to the app — only each plate's own (book, chapter,
+# verse[, verse_end][, chapter_end]) matters. Scene titles come from the
+# Commons gallery (in order) + the per-file categories; references are the
+# well-known passage for each scene. The `book` is the scene's TRUE canonical
+# book (the gallery's section headings group loosely — e.g. its "Exodus" run
+# actually spans Exodus through Deuteronomy; corrected here).
 #
-# SEED STATUS: the Genesis opening sequence (plates 1-15) is filled in and
-# verified against the Commons gallery order + the per-file references. The
-# remaining plates (to ~240, through the New Testament) are still to be
-# transcribed — append [[plate]] entries in Commons number order. Run e.g.
-#   python tools/build_imagery_pack.py /tmp/imagery --source schnorr --limit 5
-# to fetch + catalog the first few.
+# Confidence: canonical scenes are high-confidence; some verse anchors are the
+# representative verse/short range for the moment depicted. Fields:
+#   n, title, book, chapter, verse, [verse_end] (same chapter),
+#   [chapter_end] (for cross-chapter ranges), [passage_label].
+#
+# DEUTEROCANON (plates 138, 144-159): mapped with apocrypha book names. These
+# only surface when an apocrypha Bible (e.g. KJVA) is loaded (self-gating). If
+# a name doesn't match the loaded module's exact book string the plate simply
+# won't appear — verify against the module when wiring an apocrypha pack.
 
+# ── Genesis ─────────────────────────────────────────────────────────────────
 [[plate]]
 n = 1
 title = "The First Day — Let there be light"
@@ -136,3 +138,1770 @@ book = "Genesis"
 chapter = 6
 verse = 1
 verse_end = 8
+
+[[plate]]
+n = 16
+title = "Noah builds the ark"
+book = "Genesis"
+chapter = 6
+verse = 14
+verse_end = 22
+
+[[plate]]
+n = 17
+title = "The Flood"
+book = "Genesis"
+chapter = 7
+verse = 17
+verse_end = 24
+
+[[plate]]
+n = 18
+title = "Noah leaves the ark"
+book = "Genesis"
+chapter = 8
+verse = 15
+verse_end = 19
+
+[[plate]]
+n = 19
+title = "Noah's altar and God's promise"
+book = "Genesis"
+chapter = 8
+verse = 20
+chapter_end = 9
+verse_end = 17
+
+[[plate]]
+n = 20
+title = "Noah curses Ham"
+book = "Genesis"
+chapter = 9
+verse = 20
+verse_end = 27
+
+[[plate]]
+n = 21
+title = "The Tower of Babel"
+book = "Genesis"
+chapter = 11
+verse = 1
+verse_end = 9
+
+[[plate]]
+n = 22
+title = "God's covenant with Abram"
+book = "Genesis"
+chapter = 15
+verse = 1
+verse_end = 21
+
+[[plate]]
+n = 23
+title = "Abram and Melchizedek"
+book = "Genesis"
+chapter = 14
+verse = 18
+verse_end = 20
+
+[[plate]]
+n = 24
+title = "Abram leaves Haran"
+book = "Genesis"
+chapter = 12
+verse = 4
+verse_end = 5
+
+[[plate]]
+n = 25
+title = "Abraham's three visitors"
+book = "Genesis"
+chapter = 18
+verse = 1
+verse_end = 15
+
+[[plate]]
+n = 26
+title = "Fleeing Sodom and Gomorrah"
+book = "Genesis"
+chapter = 19
+verse = 15
+verse_end = 26
+
+[[plate]]
+n = 27
+title = "Hagar and Ishmael sent away"
+book = "Genesis"
+chapter = 21
+verse = 14
+verse_end = 19
+
+[[plate]]
+n = 28
+title = "The sacrifice of Isaac"
+book = "Genesis"
+chapter = 22
+verse = 9
+verse_end = 13
+
+[[plate]]
+n = 29
+title = "Rebekah at the well"
+book = "Genesis"
+chapter = 24
+verse = 15
+verse_end = 27
+
+[[plate]]
+n = 30
+title = "Isaac and Rebekah meet"
+book = "Genesis"
+chapter = 24
+verse = 62
+verse_end = 67
+
+[[plate]]
+n = 31
+title = "Isaac blesses Jacob"
+book = "Genesis"
+chapter = 27
+verse = 18
+verse_end = 29
+
+[[plate]]
+n = 32
+title = "Jacob's dream"
+book = "Genesis"
+chapter = 28
+verse = 10
+verse_end = 17
+
+[[plate]]
+n = 33
+title = "Jacob meets Rachel"
+book = "Genesis"
+chapter = 29
+verse = 9
+verse_end = 12
+
+[[plate]]
+n = 34
+title = "Jacob works for Laban"
+book = "Genesis"
+chapter = 29
+verse = 15
+verse_end = 30
+
+[[plate]]
+n = 35
+title = "Jacob flees Laban"
+book = "Genesis"
+chapter = 31
+verse = 17
+verse_end = 21
+
+[[plate]]
+n = 36
+title = "Jacob wrestles with God"
+book = "Genesis"
+chapter = 32
+verse = 24
+verse_end = 30
+
+[[plate]]
+n = 37
+title = "Jacob and Esau reunited"
+book = "Genesis"
+chapter = 33
+verse = 1
+verse_end = 11
+
+[[plate]]
+n = 38
+title = "The Ishmaelites purchase Joseph"
+book = "Genesis"
+chapter = 37
+verse = 23
+verse_end = 28
+
+[[plate]]
+n = 39
+title = "Joseph and Potiphar's wife"
+book = "Genesis"
+chapter = 39
+verse = 7
+verse_end = 18
+
+[[plate]]
+n = 40
+title = "Joseph interprets Pharaoh's dreams"
+book = "Genesis"
+chapter = 41
+verse = 14
+verse_end = 36
+
+[[plate]]
+n = 41
+title = "Joseph promoted in Egypt"
+book = "Genesis"
+chapter = 41
+verse = 37
+verse_end = 45
+
+[[plate]]
+n = 42
+title = "Joseph reveals himself to his brothers"
+book = "Genesis"
+chapter = 45
+verse = 1
+verse_end = 15
+
+[[plate]]
+n = 43
+title = "Jacob and Joseph reunited"
+book = "Genesis"
+chapter = 46
+verse = 28
+verse_end = 30
+
+# ── Exodus / Leviticus / Numbers / Deuteronomy ──────────────────────────────
+[[plate]]
+n = 44
+title = "Slavery and the massacre of the infants"
+book = "Exodus"
+chapter = 1
+verse = 22
+
+[[plate]]
+n = 45
+title = "Moses is found"
+book = "Exodus"
+chapter = 2
+verse = 1
+verse_end = 10
+
+[[plate]]
+n = 46
+title = "Moses kills an Egyptian"
+book = "Exodus"
+chapter = 2
+verse = 11
+verse_end = 12
+
+[[plate]]
+n = 47
+title = "The burning bush"
+book = "Exodus"
+chapter = 3
+verse = 1
+verse_end = 6
+
+[[plate]]
+n = 48
+title = "Staffs turned to snakes"
+book = "Exodus"
+chapter = 7
+verse = 8
+verse_end = 13
+
+[[plate]]
+n = 49
+title = "The Passover and death of the firstborn"
+book = "Exodus"
+chapter = 12
+verse = 29
+verse_end = 30
+
+[[plate]]
+n = 50
+title = "Pharaoh frees the Hebrews"
+book = "Exodus"
+chapter = 12
+verse = 31
+verse_end = 33
+
+[[plate]]
+n = 51
+title = "Miriam's song"
+book = "Exodus"
+chapter = 15
+verse = 20
+verse_end = 21
+
+[[plate]]
+n = 52
+title = "Manna and water from the rock"
+book = "Exodus"
+chapter = 16
+verse = 11
+verse_end = 15
+
+[[plate]]
+n = 53
+title = "Battle with the Amalekites"
+book = "Exodus"
+chapter = 17
+verse = 8
+verse_end = 13
+
+[[plate]]
+n = 54
+title = "The Ten Commandments"
+book = "Exodus"
+chapter = 20
+verse = 1
+verse_end = 17
+
+[[plate]]
+n = 55
+title = "The golden calf"
+book = "Exodus"
+chapter = 32
+verse = 1
+verse_end = 6
+
+[[plate]]
+n = 56
+title = "Judgment after the golden calf"
+book = "Exodus"
+chapter = 32
+verse = 25
+verse_end = 28
+
+[[plate]]
+n = 57
+title = "The second tablets of the Law"
+book = "Exodus"
+chapter = 34
+verse = 1
+verse_end = 4
+
+[[plate]]
+n = 58
+title = "The spies return from Canaan"
+book = "Numbers"
+chapter = 13
+verse = 23
+verse_end = 27
+
+[[plate]]
+n = 59
+title = "Korah's rebellion"
+book = "Numbers"
+chapter = 16
+verse = 31
+verse_end = 33
+
+[[plate]]
+n = 60
+title = "Aaron's staff buds"
+book = "Numbers"
+chapter = 17
+verse = 8
+
+[[plate]]
+n = 61
+title = "The bronze serpent"
+book = "Numbers"
+chapter = 21
+verse = 8
+verse_end = 9
+
+[[plate]]
+n = 62
+title = "Balaam's donkey"
+book = "Numbers"
+chapter = 22
+verse = 21
+verse_end = 33
+
+[[plate]]
+n = 63
+title = "The selection of Joshua"
+book = "Numbers"
+chapter = 27
+verse = 18
+verse_end = 23
+
+[[plate]]
+n = 64
+title = "Moses sees the Promised Land"
+book = "Deuteronomy"
+chapter = 34
+verse = 1
+verse_end = 4
+
+[[plate]]
+n = 65
+title = "The burial of Moses"
+book = "Deuteronomy"
+chapter = 34
+verse = 5
+verse_end = 8
+
+# ── Joshua ──────────────────────────────────────────────────────────────────
+[[plate]]
+n = 66
+title = "Rahab and the spies"
+book = "Joshua"
+chapter = 2
+verse = 1
+verse_end = 21
+
+[[plate]]
+n = 67
+title = "Crossing the Jordan"
+book = "Joshua"
+chapter = 3
+verse = 14
+verse_end = 17
+
+[[plate]]
+n = 68
+title = "Joshua and the commander of the Lord's army"
+book = "Joshua"
+chapter = 5
+verse = 13
+verse_end = 15
+
+[[plate]]
+n = 69
+title = "The battle of Jericho"
+book = "Joshua"
+chapter = 6
+verse = 15
+verse_end = 20
+
+[[plate]]
+n = 70
+title = "The fall of Ai"
+book = "Joshua"
+chapter = 8
+verse = 18
+verse_end = 28
+
+[[plate]]
+n = 71
+title = "The sun stands still"
+book = "Joshua"
+chapter = 10
+verse = 12
+verse_end = 14
+
+[[plate]]
+n = 72
+title = "The five kings captured"
+book = "Joshua"
+chapter = 10
+verse = 16
+verse_end = 27
+
+[[plate]]
+n = 73
+title = "The tribal inheritance"
+book = "Joshua"
+chapter = 14
+verse = 1
+verse_end = 5
+
+# ── Judges ──────────────────────────────────────────────────────────────────
+[[plate]]
+n = 74
+title = "Jael shows Barak the body of Sisera"
+book = "Judges"
+chapter = 4
+verse = 22
+
+[[plate]]
+n = 75
+title = "Gideon's call"
+book = "Judges"
+chapter = 6
+verse = 11
+verse_end = 24
+
+[[plate]]
+n = 76
+title = "Gideon chooses his soldiers"
+book = "Judges"
+chapter = 7
+verse = 4
+verse_end = 7
+
+[[plate]]
+n = 77
+title = "The death of Abimelech"
+book = "Judges"
+chapter = 9
+verse = 50
+verse_end = 54
+
+[[plate]]
+n = 78
+title = "Jephthah's daughter"
+book = "Judges"
+chapter = 11
+verse = 34
+verse_end = 40
+
+[[plate]]
+n = 79
+title = "Samson slays a lion"
+book = "Judges"
+chapter = 14
+verse = 5
+verse_end = 6
+
+[[plate]]
+n = 80
+title = "Samson slays the Philistines"
+book = "Judges"
+chapter = 15
+verse = 14
+verse_end = 16
+
+[[plate]]
+n = 81
+title = "Samson and Delilah"
+book = "Judges"
+chapter = 16
+verse = 4
+verse_end = 19
+
+[[plate]]
+n = 82
+title = "The death of Samson"
+book = "Judges"
+chapter = 16
+verse = 28
+verse_end = 30
+
+[[plate]]
+n = 83
+title = "The Benjaminites seize wives at Shiloh"
+book = "Judges"
+chapter = 21
+verse = 20
+verse_end = 23
+
+# ── Ruth ────────────────────────────────────────────────────────────────────
+[[plate]]
+n = 84
+title = "Naomi, Ruth, and Orpah"
+book = "Ruth"
+chapter = 1
+verse = 8
+verse_end = 18
+
+[[plate]]
+n = 85
+title = "Boaz meets Ruth"
+book = "Ruth"
+chapter = 2
+verse = 5
+verse_end = 12
+
+# ── 1 & 2 Samuel ────────────────────────────────────────────────────────────
+[[plate]]
+n = 86
+title = "Hannah's prayer"
+book = "1 Samuel"
+chapter = 1
+verse = 9
+verse_end = 18
+
+[[plate]]
+n = 87
+title = "God calls Samuel"
+book = "1 Samuel"
+chapter = 3
+verse = 1
+verse_end = 10
+
+[[plate]]
+n = 88
+title = "The death of Eli"
+book = "1 Samuel"
+chapter = 4
+verse = 18
+
+[[plate]]
+n = 89
+title = "Samuel anoints Saul"
+book = "1 Samuel"
+chapter = 10
+verse = 1
+
+[[plate]]
+n = 90
+title = "God rejects Saul"
+book = "1 Samuel"
+chapter = 15
+verse = 26
+verse_end = 28
+
+[[plate]]
+n = 91
+title = "David is chosen"
+book = "1 Samuel"
+chapter = 16
+verse = 1
+verse_end = 13
+
+[[plate]]
+n = 92
+title = "David and Goliath"
+book = "1 Samuel"
+chapter = 17
+verse = 40
+verse_end = 51
+
+[[plate]]
+n = 93
+title = "Saul attacks David"
+book = "1 Samuel"
+chapter = 18
+verse = 10
+verse_end = 11
+
+[[plate]]
+n = 94
+title = "David and Jonathan"
+book = "1 Samuel"
+chapter = 20
+verse = 41
+verse_end = 42
+
+[[plate]]
+n = 95
+title = "David spares Saul's life"
+book = "1 Samuel"
+chapter = 24
+verse = 1
+verse_end = 12
+
+[[plate]]
+n = 96
+title = "David and Abigail"
+book = "1 Samuel"
+chapter = 25
+verse = 18
+verse_end = 35
+
+[[plate]]
+n = 97
+title = "Saul consults the medium at Endor"
+book = "1 Samuel"
+chapter = 28
+verse = 7
+verse_end = 20
+
+[[plate]]
+n = 98
+title = "The death of Saul"
+book = "1 Samuel"
+chapter = 31
+verse = 1
+verse_end = 6
+
+[[plate]]
+n = 99
+title = "David anointed king"
+book = "2 Samuel"
+chapter = 5
+verse = 1
+verse_end = 5
+
+[[plate]]
+n = 100
+title = "David brings the ark to Jerusalem"
+book = "2 Samuel"
+chapter = 6
+verse = 12
+verse_end = 19
+
+[[plate]]
+n = 101
+title = "David and Bathsheba"
+book = "2 Samuel"
+chapter = 11
+verse = 2
+verse_end = 5
+
+[[plate]]
+n = 102
+title = "Nathan confronts David"
+book = "2 Samuel"
+chapter = 12
+verse = 1
+verse_end = 14
+
+[[plate]]
+n = 103
+title = "David's child dies"
+book = "2 Samuel"
+chapter = 12
+verse = 15
+verse_end = 23
+
+[[plate]]
+n = 104
+title = "Shimei curses David"
+book = "2 Samuel"
+chapter = 16
+verse = 5
+verse_end = 13
+
+[[plate]]
+n = 105
+title = "The death of Absalom"
+book = "2 Samuel"
+chapter = 18
+verse = 9
+verse_end = 15
+
+[[plate]]
+n = 106
+title = "David pours out the water"
+book = "2 Samuel"
+chapter = 23
+verse = 15
+verse_end = 17
+
+[[plate]]
+n = 107
+title = "God smites Israel with a plague"
+book = "2 Samuel"
+chapter = 24
+verse = 15
+verse_end = 17
+
+# ── 1 & 2 Kings ─────────────────────────────────────────────────────────────
+[[plate]]
+n = 108
+title = "Solomon made king"
+book = "1 Kings"
+chapter = 1
+verse = 32
+verse_end = 40
+
+[[plate]]
+n = 109
+title = "Solomon's wisdom"
+book = "1 Kings"
+chapter = 3
+verse = 16
+verse_end = 28
+
+[[plate]]
+n = 110
+title = "Solomon plans the temple"
+book = "1 Kings"
+chapter = 6
+verse = 1
+verse_end = 14
+
+[[plate]]
+n = 111
+title = "The Queen of Sheba"
+book = "1 Kings"
+chapter = 10
+verse = 1
+verse_end = 13
+
+[[plate]]
+n = 112
+title = "Solomon's idolatry"
+book = "1 Kings"
+chapter = 11
+verse = 1
+verse_end = 8
+
+[[plate]]
+n = 113
+title = "Rehoboam and Jeroboam"
+book = "1 Kings"
+chapter = 12
+verse = 1
+verse_end = 19
+
+[[plate]]
+n = 114
+title = "Ravens feed Elijah"
+book = "1 Kings"
+chapter = 17
+verse = 1
+verse_end = 6
+
+[[plate]]
+n = 115
+title = "Elijah raises the widow's son"
+book = "1 Kings"
+chapter = 17
+verse = 17
+verse_end = 24
+
+[[plate]]
+n = 116
+title = "Elijah and the prophets of Baal"
+book = "1 Kings"
+chapter = 18
+verse = 20
+verse_end = 40
+
+[[plate]]
+n = 117
+title = "God appears to Elijah"
+book = "1 Kings"
+chapter = 19
+verse = 9
+verse_end = 13
+
+[[plate]]
+n = 118
+title = "The death of Ahab"
+book = "1 Kings"
+chapter = 22
+verse = 29
+verse_end = 38
+
+[[plate]]
+n = 119
+title = "The chariot of fire"
+book = "2 Kings"
+chapter = 2
+verse = 11
+verse_end = 12
+
+[[plate]]
+n = 120
+title = "Elisha raises the Shunammite's son"
+book = "2 Kings"
+chapter = 4
+verse = 32
+verse_end = 37
+
+[[plate]]
+n = 121
+title = "The death of Jezebel"
+book = "2 Kings"
+chapter = 9
+verse = 30
+verse_end = 37
+
+[[plate]]
+n = 122
+title = "Jerusalem delivered from Sennacherib"
+book = "2 Kings"
+chapter = 19
+verse = 32
+verse_end = 36
+
+[[plate]]
+n = 123
+title = "The Book of the Law found"
+book = "2 Kings"
+chapter = 22
+verse = 8
+verse_end = 13
+
+[[plate]]
+n = 124
+title = "The fall of Jerusalem"
+book = "2 Kings"
+chapter = 25
+verse = 8
+verse_end = 10
+
+# ── Ezra / Nehemiah ─────────────────────────────────────────────────────────
+[[plate]]
+n = 125
+title = "The return from exile"
+book = "Ezra"
+chapter = 1
+verse = 1
+verse_end = 4
+
+[[plate]]
+n = 126
+title = "Rebuilding the temple"
+book = "Ezra"
+chapter = 3
+verse = 8
+verse_end = 11
+
+[[plate]]
+n = 127
+title = "The temple completed"
+book = "Ezra"
+chapter = 6
+verse = 14
+verse_end = 16
+
+[[plate]]
+n = 128
+title = "Ezra reads the Book of the Law"
+book = "Nehemiah"
+chapter = 8
+verse = 1
+verse_end = 8
+
+# ── Esther ──────────────────────────────────────────────────────────────────
+[[plate]]
+n = 129
+title = "The coronation of Esther"
+book = "Esther"
+chapter = 2
+verse = 17
+
+[[plate]]
+n = 130
+title = "Mordecai honored"
+book = "Esther"
+chapter = 6
+verse = 10
+verse_end = 11
+
+# ── Job ─────────────────────────────────────────────────────────────────────
+[[plate]]
+n = 131
+title = "The messengers come to Job"
+book = "Job"
+chapter = 1
+verse = 13
+verse_end = 19
+
+[[plate]]
+n = 132
+title = "Job's affliction"
+book = "Job"
+chapter = 2
+verse = 7
+verse_end = 10
+
+[[plate]]
+n = 133
+title = "The restoration of Job"
+book = "Job"
+chapter = 42
+verse = 10
+verse_end = 13
+
+# ── Psalms ──────────────────────────────────────────────────────────────────
+[[plate]]
+n = 134
+title = "David the psalmist"
+book = "Psalms"
+chapter = 1
+verse = 1
+verse_end = 6
+
+[[plate]]
+n = 135
+title = "David confesses his sin"
+book = "Psalms"
+chapter = 51
+verse = 1
+verse_end = 4
+
+[[plate]]
+n = 136
+title = "David prays for deliverance"
+book = "Psalms"
+chapter = 3
+verse = 1
+verse_end = 8
+
+[[plate]]
+n = 137
+title = "A psalm of praise"
+book = "Psalms"
+chapter = 150
+verse = 1
+verse_end = 6
+
+# ── Proverbs (Wisdom) ───────────────────────────────────────────────────────
+[[plate]]
+n = 138
+title = "Solomon and Lady Wisdom"
+book = "Proverbs"
+chapter = 8
+verse = 1
+verse_end = 11
+
+# ── Prophets ────────────────────────────────────────────────────────────────
+[[plate]]
+n = 139
+title = "The call of Isaiah"
+book = "Isaiah"
+chapter = 6
+verse = 1
+verse_end = 8
+
+[[plate]]
+n = 140
+title = "The call of Jeremiah"
+book = "Jeremiah"
+chapter = 1
+verse = 4
+verse_end = 10
+
+[[plate]]
+n = 141
+title = "Jeremiah's lament"
+book = "Lamentations"
+chapter = 1
+verse = 1
+verse_end = 5
+
+[[plate]]
+n = 142
+title = "Ezekiel's vision"
+book = "Ezekiel"
+chapter = 1
+verse = 4
+verse_end = 28
+
+[[plate]]
+n = 143
+title = "The writing on the wall"
+book = "Daniel"
+chapter = 5
+verse = 5
+verse_end = 28
+
+# ── Deuterocanon (surfaces only with an apocrypha Bible loaded) ─────────────
+[[plate]]
+n = 144
+title = "The death of Holofernes"
+book = "Judith"
+chapter = 13
+verse = 6
+verse_end = 10
+
+[[plate]]
+n = 145
+title = "Judith returns to Bethulia"
+book = "Judith"
+chapter = 13
+verse = 11
+verse_end = 20
+
+[[plate]]
+n = 146
+title = "Tobias and Sarah pray"
+book = "Tobit"
+chapter = 8
+verse = 4
+verse_end = 9
+
+[[plate]]
+n = 147
+title = "Tobias and Sarah"
+book = "Tobit"
+chapter = 8
+verse = 1
+verse_end = 3
+
+[[plate]]
+n = 148
+title = "Jesus Ben Sirach"
+book = "Sirach"
+chapter = 1
+verse = 1
+
+[[plate]]
+n = 149
+title = "The praise of wisdom"
+book = "Sirach"
+chapter = 24
+verse = 1
+
+[[plate]]
+n = 150
+title = "The Maccabean martyrs"
+book = "2 Maccabees"
+chapter = 7
+verse = 1
+verse_end = 42
+
+[[plate]]
+n = 151
+title = "The followers of Mattathias"
+book = "1 Maccabees"
+chapter = 2
+verse = 15
+verse_end = 28
+
+[[plate]]
+n = 152
+title = "Judas Maccabeus"
+book = "1 Maccabees"
+chapter = 3
+verse = 1
+verse_end = 9
+
+[[plate]]
+n = 153
+title = "Simon Maccabeus made high priest"
+book = "1 Maccabees"
+chapter = 14
+verse = 41
+verse_end = 47
+
+[[plate]]
+n = 154
+title = "The death of Heliodorus"
+book = "2 Maccabees"
+chapter = 3
+verse = 24
+verse_end = 30
+
+[[plate]]
+n = 155
+title = "The martyrs"
+book = "2 Maccabees"
+chapter = 6
+verse = 18
+verse_end = 31
+
+[[plate]]
+n = 156
+title = "The rider on the horse"
+book = "2 Maccabees"
+chapter = 3
+verse = 25
+verse_end = 27
+
+[[plate]]
+n = 157
+title = "The vision of Judas Maccabeus"
+book = "2 Maccabees"
+chapter = 15
+verse = 11
+verse_end = 16
+
+[[plate]]
+n = 158
+title = "Susanna and the elders"
+book = "Susanna"
+chapter = 1
+verse = 19
+verse_end = 27
+
+[[plate]]
+n = 159
+title = "The trial of Susanna"
+book = "Susanna"
+chapter = 1
+verse = 45
+verse_end = 62
+
+# ── Daniel ──────────────────────────────────────────────────────────────────
+[[plate]]
+n = 160
+title = "Daniel in the lions' den"
+book = "Daniel"
+chapter = 6
+verse = 16
+verse_end = 23
+
+# ── Gospels ─────────────────────────────────────────────────────────────────
+[[plate]]
+n = 161
+title = "Gabriel visits Zechariah"
+book = "Luke"
+chapter = 1
+verse = 11
+verse_end = 20
+
+[[plate]]
+n = 162
+title = "The Annunciation"
+book = "Luke"
+chapter = 1
+verse = 26
+verse_end = 38
+
+[[plate]]
+n = 163
+title = "The Visitation"
+book = "Luke"
+chapter = 1
+verse = 39
+verse_end = 45
+
+[[plate]]
+n = 164
+title = "The naming of John the Baptist"
+book = "Luke"
+chapter = 1
+verse = 57
+verse_end = 66
+
+[[plate]]
+n = 165
+title = "The angel visits the shepherds"
+book = "Luke"
+chapter = 2
+verse = 8
+verse_end = 14
+
+[[plate]]
+n = 166
+title = "The shepherds visit"
+book = "Luke"
+chapter = 2
+verse = 15
+verse_end = 20
+
+[[plate]]
+n = 167
+title = "The shepherds spread the good news"
+book = "Luke"
+chapter = 2
+verse = 17
+verse_end = 18
+
+[[plate]]
+n = 168
+title = "Simeon and Anna"
+book = "Luke"
+chapter = 2
+verse = 25
+verse_end = 38
+
+[[plate]]
+n = 169
+title = "The visit of the wise men"
+book = "Matthew"
+chapter = 2
+verse = 1
+verse_end = 12
+
+[[plate]]
+n = 170
+title = "The angel warns Joseph"
+book = "Matthew"
+chapter = 2
+verse = 13
+
+[[plate]]
+n = 171
+title = "The flight to Egypt"
+book = "Matthew"
+chapter = 2
+verse = 14
+verse_end = 15
+
+[[plate]]
+n = 172
+title = "The massacre of the innocents"
+book = "Matthew"
+chapter = 2
+verse = 16
+verse_end = 18
+
+[[plate]]
+n = 173
+title = "The young Jesus in the temple"
+book = "Luke"
+chapter = 2
+verse = 41
+verse_end = 52
+
+[[plate]]
+n = 174
+title = "John the Baptist preaches"
+book = "Matthew"
+chapter = 3
+verse = 1
+verse_end = 6
+
+[[plate]]
+n = 175
+title = "The baptism of Jesus"
+book = "Matthew"
+chapter = 3
+verse = 13
+verse_end = 17
+
+[[plate]]
+n = 176
+title = "Angels attend Jesus"
+book = "Matthew"
+chapter = 4
+verse = 11
+
+[[plate]]
+n = 177
+title = "The witness of John the Baptist"
+book = "John"
+chapter = 1
+verse = 29
+verse_end = 34
+
+[[plate]]
+n = 178
+title = "The first disciples"
+book = "John"
+chapter = 1
+verse = 35
+verse_end = 42
+
+[[plate]]
+n = 179
+title = "The wedding at Cana"
+book = "John"
+chapter = 2
+verse = 1
+verse_end = 11
+
+[[plate]]
+n = 180
+title = "Cleansing the temple"
+book = "John"
+chapter = 2
+verse = 13
+verse_end = 17
+
+[[plate]]
+n = 181
+title = "Nicodemus"
+book = "John"
+chapter = 3
+verse = 1
+verse_end = 21
+
+[[plate]]
+n = 182
+title = "The woman at the well"
+book = "John"
+chapter = 4
+verse = 1
+verse_end = 26
+
+[[plate]]
+n = 183
+title = "Jesus heals a paralytic"
+book = "Mark"
+chapter = 2
+verse = 1
+verse_end = 12
+
+[[plate]]
+n = 184
+title = "Jairus' daughter"
+book = "Mark"
+chapter = 5
+verse = 22
+verse_end = 43
+
+[[plate]]
+n = 185
+title = "Healing the man born blind"
+book = "John"
+chapter = 9
+verse = 1
+verse_end = 7
+
+[[plate]]
+n = 186
+title = "The Sermon on the Mount"
+book = "Matthew"
+chapter = 5
+verse = 1
+verse_end = 12
+
+[[plate]]
+n = 187
+title = "The death of John the Baptist"
+book = "Matthew"
+chapter = 14
+verse = 6
+verse_end = 12
+
+[[plate]]
+n = 188
+title = "The raising of the son at Nain"
+book = "Luke"
+chapter = 7
+verse = 11
+verse_end = 17
+
+[[plate]]
+n = 189
+title = "Jesus forgives the sinful woman"
+book = "Luke"
+chapter = 7
+verse = 36
+verse_end = 50
+
+[[plate]]
+n = 190
+title = "Jesus calms the storm"
+book = "Mark"
+chapter = 4
+verse = 35
+verse_end = 41
+
+[[plate]]
+n = 191
+title = "The Gerasene demoniac"
+book = "Mark"
+chapter = 5
+verse = 1
+verse_end = 20
+
+[[plate]]
+n = 192
+title = "Jesus sends out the twelve"
+book = "Matthew"
+chapter = 10
+verse = 1
+verse_end = 10
+
+[[plate]]
+n = 193
+title = "Feeding the five thousand"
+book = "Mark"
+chapter = 6
+verse = 30
+verse_end = 44
+
+[[plate]]
+n = 194
+title = "Jesus walks on water"
+book = "Matthew"
+chapter = 14
+verse = 22
+verse_end = 33
+
+[[plate]]
+n = 195
+title = "The Transfiguration"
+book = "Matthew"
+chapter = 17
+verse = 1
+verse_end = 8
+
+[[plate]]
+n = 196
+title = "Mary and Martha"
+book = "Luke"
+chapter = 10
+verse = 38
+verse_end = 42
+
+[[plate]]
+n = 197
+title = "The Good Samaritan"
+book = "Luke"
+chapter = 10
+verse = 30
+verse_end = 37
+
+[[plate]]
+n = 198
+title = "The Prodigal Son"
+book = "Luke"
+chapter = 15
+verse = 11
+verse_end = 32
+
+[[plate]]
+n = 199
+title = "The rich man and Lazarus"
+book = "Luke"
+chapter = 16
+verse = 19
+verse_end = 31
+
+[[plate]]
+n = 200
+title = "The Pharisee and the tax collector"
+book = "Luke"
+chapter = 18
+verse = 9
+verse_end = 14
+
+[[plate]]
+n = 201
+title = "The woman taken in adultery"
+book = "John"
+chapter = 8
+verse = 1
+verse_end = 11
+
+[[plate]]
+n = 202
+title = "Jesus raises Lazarus"
+book = "John"
+chapter = 11
+verse = 38
+verse_end = 44
+
+[[plate]]
+n = 203
+title = "Jesus' teaching on greatness"
+book = "Mark"
+chapter = 9
+verse = 33
+verse_end = 37
+
+[[plate]]
+n = 204
+title = "The anointing at Bethany"
+book = "John"
+chapter = 12
+verse = 1
+verse_end = 8
+
+[[plate]]
+n = 205
+title = "The triumphal entry"
+book = "Matthew"
+chapter = 21
+verse = 1
+verse_end = 11
+
+[[plate]]
+n = 206
+title = "Jesus washes the disciples' feet"
+book = "John"
+chapter = 13
+verse = 1
+verse_end = 17
+
+[[plate]]
+n = 207
+title = "The institution of the Lord's Supper"
+book = "Matthew"
+chapter = 26
+verse = 26
+verse_end = 29
+
+[[plate]]
+n = 208
+title = "The agony in Gethsemane"
+book = "Matthew"
+chapter = 26
+verse = 36
+verse_end = 46
+
+[[plate]]
+n = 209
+title = "The arrest of Jesus"
+book = "Matthew"
+chapter = 26
+verse = 47
+verse_end = 56
+
+[[plate]]
+n = 210
+title = "Jesus before Caiaphas"
+book = "Matthew"
+chapter = 26
+verse = 57
+verse_end = 68
+
+[[plate]]
+n = 211
+title = "Peter denies Jesus"
+book = "Matthew"
+chapter = 26
+verse = 69
+verse_end = 75
+
+[[plate]]
+n = 212
+title = "Jesus mocked"
+book = "Matthew"
+chapter = 27
+verse = 27
+verse_end = 31
+
+[[plate]]
+n = 213
+title = "Jesus delivered to be crucified"
+book = "Matthew"
+chapter = 27
+verse = 24
+verse_end = 26
+
+[[plate]]
+n = 214
+title = "The death of Judas"
+book = "Matthew"
+chapter = 27
+verse = 3
+verse_end = 5
+
+[[plate]]
+n = 215
+title = "Carrying the cross"
+book = "John"
+chapter = 19
+verse = 16
+verse_end = 17
+
+[[plate]]
+n = 216
+title = "The Crucifixion"
+book = "Matthew"
+chapter = 27
+verse = 33
+verse_end = 50
+
+[[plate]]
+n = 217
+title = "The burial of Jesus"
+book = "Matthew"
+chapter = 27
+verse = 57
+verse_end = 61
+
+[[plate]]
+n = 218
+title = "The Resurrection"
+book = "Matthew"
+chapter = 28
+verse = 1
+verse_end = 7
+
+[[plate]]
+n = 219
+title = "The empty tomb"
+book = "Luke"
+chapter = 24
+verse = 1
+verse_end = 8
+
+[[plate]]
+n = 220
+title = "Jesus appears to Mary Magdalene"
+book = "John"
+chapter = 20
+verse = 11
+verse_end = 18
+
+[[plate]]
+n = 221
+title = "Jesus meets the women"
+book = "Matthew"
+chapter = 28
+verse = 8
+verse_end = 10
+
+[[plate]]
+n = 222
+title = "The road to Emmaus"
+book = "Luke"
+chapter = 24
+verse = 13
+verse_end = 35
+
+[[plate]]
+n = 223
+title = "Doubting Thomas"
+book = "John"
+chapter = 20
+verse = 24
+verse_end = 29
+
+[[plate]]
+n = 224
+title = "The miraculous catch of fish"
+book = "John"
+chapter = 21
+verse = 1
+verse_end = 14
+
+# ── Acts ────────────────────────────────────────────────────────────────────
+[[plate]]
+n = 225
+title = "The Ascension"
+book = "Acts"
+chapter = 1
+verse = 9
+verse_end = 11
+
+[[plate]]
+n = 226
+title = "Pentecost"
+book = "Acts"
+chapter = 2
+verse = 1
+verse_end = 4
+
+[[plate]]
+n = 227
+title = "Healing the crippled beggar"
+book = "Acts"
+chapter = 3
+verse = 1
+verse_end = 10
+
+[[plate]]
+n = 228
+title = "The stoning of Stephen"
+book = "Acts"
+chapter = 7
+verse = 54
+verse_end = 60
+
+[[plate]]
+n = 229
+title = "Philip baptises the Ethiopian"
+book = "Acts"
+chapter = 8
+verse = 26
+verse_end = 40
+
+[[plate]]
+n = 230
+title = "The conversion of Saul"
+book = "Acts"
+chapter = 9
+verse = 1
+verse_end = 19
+
+[[plate]]
+n = 231
+title = "Peter's vision"
+book = "Acts"
+chapter = 10
+verse = 9
+verse_end = 16
+
+[[plate]]
+n = 232
+title = "Paul and Barnabas at Lystra"
+book = "Acts"
+chapter = 14
+verse = 8
+verse_end = 18
+
+[[plate]]
+n = 233
+title = "Paul at Athens"
+book = "Acts"
+chapter = 17
+verse = 16
+verse_end = 34
+
+[[plate]]
+n = 234
+title = "Paul at Ephesus"
+book = "Acts"
+chapter = 19
+verse = 11
+verse_end = 20
+
+[[plate]]
+n = 235
+title = "Paul in Rome"
+book = "Acts"
+chapter = 28
+verse = 16
+verse_end = 31
