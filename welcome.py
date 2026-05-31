@@ -103,6 +103,7 @@ class WelcomeWindow(Adw.ApplicationWindow):
         # Two pages: the bundle chooser, and the install-progress view.
         self._stack = Gtk.Stack()
         self._stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
+        self._stack.set_transition_duration(150)
         self._stack.add_named(self._build_choose(), 'choose')
         self._stack.add_named(self._build_progress(), 'progress')
         toolbar_view.set_content(self._stack)

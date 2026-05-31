@@ -197,7 +197,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._ref_btn.set_always_show_arrow(True)
         self._ref_btn.add_css_class('flat')
         self._ref_btn.add_css_class('reference-title-button')
-        self._ref_btn.set_tooltip_text('Choose passage (Ctrl+L to jump)')
+        self._ref_btn.set_tooltip_text('Choose passage (Ctrl+L)')
         self._ref_pop = Gtk.Popover()
         self._ref_pop.set_has_arrow(True)
         self._ref_btn.set_popover(self._ref_pop)
@@ -219,7 +219,9 @@ class BibleWindow(Adw.ApplicationWindow):
         self.lex_toggle.set_tooltip_text(
             "Greek / Hebrew lexicon — click words for definitions")
         self.lex_toggle.connect('toggled', self._on_lex_toggle)
-        header.pack_start(self.lex_toggle)
+        # Packed into the right-hand content cluster below — it acts on the
+        # displayed text, so it belongs with the reading-view controls rather
+        # than the navigation buttons on the left.
 
         # ── Right: search + bookmarks + view toggle ────────────────────────────
         self._bookmark_btn = Gtk.Button(icon_name='bookmark-new-symbolic')
@@ -263,6 +265,12 @@ class BibleWindow(Adw.ApplicationWindow):
         self._swap_btn.connect('clicked', self._on_swap_clicked)
         self._swap_btn.set_sensitive(bool(settings.get('split_pane_mode')))
         header.pack_end(self._swap_btn)
+
+        # Lexicon toggle sits at the inner edge of the right cluster (just
+        # right of the centred passage title), grouped with the reading-view
+        # controls. The אΩ glyph is kept deliberately — it names the two
+        # languages it covers, which a generic dictionary icon would lose.
+        header.pack_end(self.lex_toggle)
 
         # ── Panes ─────────────────────────────────────────────────────────────
         # Only modules readable in a pane (Bibles, commentaries, devotionals)
@@ -311,6 +319,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_toast=self._toast,
                                on_font_size_request=self._adjust_font_size,
                                on_cipher_error=self._on_cipher_error,
+                               on_edit_cipher=self._show_edit_cipher_key,
                                on_modules_changed=self._on_modules_changed,
                                pane_id=1)
         self.pane2 = BiblePane(module_name=p2_mod,
@@ -321,6 +330,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_toast=self._toast,
                                on_font_size_request=self._adjust_font_size,
                                on_cipher_error=self._on_cipher_error,
+                               on_edit_cipher=self._show_edit_cipher_key,
                                on_modules_changed=self._on_modules_changed,
                                pane_id=2)
 
@@ -374,7 +384,7 @@ class BibleWindow(Adw.ApplicationWindow):
 
         self._jump_revealer = Gtk.Revealer()
         self._jump_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
-        self._jump_revealer.set_transition_duration(150)
+        self._jump_revealer.set_transition_duration(200)
         self._jump_revealer.set_halign(Gtk.Align.CENTER)
         self._jump_revealer.set_valign(Gtk.Align.START)
         self._jump_revealer.set_child(jump_wrap)
@@ -429,7 +439,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._exit_reading_revealer = Gtk.Revealer()
         self._exit_reading_revealer.set_transition_type(
             Gtk.RevealerTransitionType.SLIDE_DOWN)
-        self._exit_reading_revealer.set_transition_duration(180)
+        self._exit_reading_revealer.set_transition_duration(200)
         self._exit_reading_revealer.set_halign(Gtk.Align.CENTER)
         self._exit_reading_revealer.set_valign(Gtk.Align.START)
         self._exit_reading_revealer.set_margin_top(6)
@@ -837,7 +847,7 @@ class BibleWindow(Adw.ApplicationWindow):
 
         stack = Gtk.Stack()
         stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
-        stack.set_transition_duration(180)
+        stack.set_transition_duration(150)
         stack.set_vexpand(True)
 
         # Chapter grid
@@ -1950,7 +1960,7 @@ class BibleWindow(Adw.ApplicationWindow):
         # ── Appearance card (inline revealer) ─────────────────────────────────
         self._appear_revealer = Gtk.Revealer()
         self._appear_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
-        self._appear_revealer.set_transition_duration(150)
+        self._appear_revealer.set_transition_duration(200)
 
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         card.add_css_class('card')

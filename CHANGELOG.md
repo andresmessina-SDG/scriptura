@@ -45,7 +45,22 @@ semver-ish — 0.x was the pre-Flathub testing track.
   the drop-cap line, notches around verse numbers, or per-verse stepping
   — and stay aligned at any font size, line spacing, or margin.
 
+### Changed
+
+- **Empty placeholders are now actionable.** The “can’t read this module
+  here” and “passage isn’t in this module” pages offer a *Choose another
+  module* button (it opens the module picker), and a locked module offers
+  *Edit Key* — instead of only describing what to do.
+- **UI polish pass.** Consistent transition timing across panels and menus,
+  search-result bars that follow your GNOME accent colour, and the lexicon
+  toggle regrouped with the reading-view controls rather than the
+  navigation buttons.
+
 ### Internal (v1.1)
+
+- **Shared empty-state widget** (`empty_state.py`) deduplicates the compact
+  placeholder used by the search panel and study journal; `style.css` now
+  documents the spacing / radius / motion scale as a convention.
 
 - **`content.py` routing facade** over the SWORD / eBible / catena
   bridges, so source dispatch lives in one place rather than scattered

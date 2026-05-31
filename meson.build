@@ -36,6 +36,7 @@ py_sources = files(
   'crossref_panel.py',
   'devotional.py',
   'ebible_bridge.py',
+  'empty_state.py',
   'genbook_reader.py',
   'lexicon_panel.py',
   'module_manager.py',

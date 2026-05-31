@@ -8,6 +8,7 @@ from gi.repository import Gtk, Adw, GLib, Pango
 import sword_bridge
 import ebible_bridge
 import paths
+from empty_state import compact_empty_state
 
 _HISTORY_FILE = paths.search_history_path()
 _HISTORY_MAX = 10
@@ -337,47 +338,16 @@ class SearchPanel(Gtk.Box):
         if not self._results and not truncated_msg:
             self._results_list.append(self._make_empty_row(
                 'No matches',
-                'Try a different word or phrase, or pick another module'))
+                'Try a different word or phrase, or pick another module.'))
         return GLib.SOURCE_REMOVE
 
     def _make_empty_row(self, title, description):
         row = Gtk.ListBoxRow()
         row.set_selectable(False)
         row.set_activatable(False)
-        # Adw.StatusPage's `.compact` class isn't reliably honored across
-        # distro themes (Zorin's themed Adwaita ignored it), so we
-        # hand-roll the compact empty state — explicit 48px icon, manual
-        # centering. See study_journal._compact_empty_state for the
-        # canonical version.
-        body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        body.set_margin_start(16)
-        body.set_margin_end(16)
-        body.set_margin_top(24)
-        body.set_margin_bottom(24)
-        body.set_halign(Gtk.Align.CENTER)
-        body.set_valign(Gtk.Align.CENTER)
-
-        image = Gtk.Image.new_from_icon_name('system-search-symbolic')
-        image.set_pixel_size(48)
-        image.set_halign(Gtk.Align.CENTER)
-        image.add_css_class('dim-label')
-        body.append(image)
-
-        title_lbl = Gtk.Label(label=title)
-        title_lbl.add_css_class('heading')
-        title_lbl.set_wrap(True)
-        title_lbl.set_justify(Gtk.Justification.CENTER)
-        title_lbl.set_halign(Gtk.Align.CENTER)
-        body.append(title_lbl)
-
-        desc_lbl = Gtk.Label(label=description)
-        desc_lbl.add_css_class('dim-label')
-        desc_lbl.set_wrap(True)
-        desc_lbl.set_justify(Gtk.Justification.CENTER)
-        desc_lbl.set_halign(Gtk.Align.CENTER)
-        desc_lbl.set_max_width_chars(40)
-        body.append(desc_lbl)
-
+        # Shared compact empty state (see empty_state.py) — keeps the search,
+        # journal, and tag-list empties visually identical.
+        body = compact_empty_state('system-search-symbolic', title, description)
         row.set_child(body)
         return row
 
@@ -390,7 +360,7 @@ class SearchPanel(Gtk.Box):
             self._results_list.append(self._make_empty_row(
                 'Search this module',
                 "Type a word or phrase above. The chart shows where matches "
-                "cluster across the Bible"))
+                "cluster across the Bible."))
             return
         self._count_label.set_text('Recent searches')
         self._clear_history_btn.set_visible(True)

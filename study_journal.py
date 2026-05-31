@@ -4,6 +4,7 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Pango
 import annotations
 import sword_bridge
+from empty_state import compact_empty_state
 
 _BOOK_ORDER = {book: i for i, book in enumerate(sword_bridge._ALL_BOOKS)}
 
@@ -87,45 +88,6 @@ def _entry_key(e):
             None if e.get('is_chapter_note') else e['verse'])
 
 
-def _compact_empty_state(icon_name, title, description, icon_px=48):
-    """Hand-rolled compact empty-state widget. Replaces Adw.StatusPage
-    in confined / sidebar contexts: StatusPage's 128px icon is fine for
-    full-window empties but overwhelms small panels, and the `.compact`
-    style class isn't reliably honored across libadwaita versions /
-    distro themes (e.g. Zorin's themed Adwaita ignored it). Manual
-    layout gives us a stable look everywhere."""
-    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-    box.set_margin_start(16)
-    box.set_margin_end(16)
-    box.set_margin_top(24)
-    box.set_margin_bottom(24)
-    box.set_halign(Gtk.Align.CENTER)
-    box.set_valign(Gtk.Align.CENTER)
-
-    image = Gtk.Image.new_from_icon_name(icon_name)
-    image.set_pixel_size(icon_px)
-    image.set_halign(Gtk.Align.CENTER)
-    image.add_css_class('dim-label')
-    box.append(image)
-
-    title_lbl = Gtk.Label(label=title)
-    title_lbl.add_css_class('heading')
-    title_lbl.set_wrap(True)
-    title_lbl.set_justify(Gtk.Justification.CENTER)
-    title_lbl.set_halign(Gtk.Align.CENTER)
-    box.append(title_lbl)
-
-    desc_lbl = Gtk.Label(label=description)
-    desc_lbl.add_css_class('dim-label')
-    desc_lbl.set_wrap(True)
-    desc_lbl.set_justify(Gtk.Justification.CENTER)
-    desc_lbl.set_halign(Gtk.Align.CENTER)
-    desc_lbl.set_max_width_chars(40)
-    box.append(desc_lbl)
-
-    return box
-
-
 class TagManagerWindow(Adw.Window):
     """Manage every tag used by any annotation: rename (with implicit
     merge when the new name already exists) and delete."""
@@ -168,7 +130,7 @@ class TagManagerWindow(Adw.Window):
 
         counts = annotations.get_tag_counts()
         if not counts:
-            empty = _compact_empty_state(
+            empty = compact_empty_state(
                 icon_name='tag-outline-symbolic',
                 title='No tags yet',
                 description='Tag annotations from the note editor to see them here.',
@@ -395,7 +357,7 @@ class StudyJournalWindow(Adw.Window):
         self._detail_stack = Gtk.Stack()
         self._detail_stack.set_transition_type(
             Gtk.StackTransitionType.CROSSFADE)
-        self._detail_stack.set_transition_duration(120)
+        self._detail_stack.set_transition_duration(150)
 
         empty = Adw.StatusPage(
             icon_name='document-edit-symbolic',
@@ -612,11 +574,11 @@ class StudyJournalWindow(Adw.Window):
         if not filtered:
             if not self._entries:
                 title = 'No annotations yet'
-                desc = 'Right-click a verse to highlight it or add a note'
+                desc = 'Right-click a verse to highlight it or add a note.'
             else:
                 title = 'No matches'
-                desc = 'Try a different search or filter'
-            empty = _compact_empty_state(
+                desc = 'Try a different search or filter.'
+            empty = compact_empty_state(
                 icon_name='document-edit-symbolic',
                 title=title,
                 description=desc,

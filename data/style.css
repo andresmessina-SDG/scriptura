@@ -24,6 +24,19 @@
  *     floating panels so the content behind doesn't bleed through.
  */
 
+/* ── Design scale ────────────────────────────────────────────────────────
+ * GTK CSS has no length custom-properties, so this is a convention rather
+ * than an enforced token set — new rules should snap to it:
+ *   spacing / padding : multiples of 4 — 4, 8, 12, 16, 24
+ *   corner radius     : 4 (inline bars/swatches) · 6 (cards/controls) ·
+ *                       10 (chips) · 20 (overlay panels) · 9999 (pills)
+ *   motion            : 150ms in-place stacks · 200ms sliding panels/overlays
+ *                       (see the transition_duration calls in window.py etc.)
+ * Accent-tinted chrome uses @accent_* tokens so it follows the user's chosen
+ * GNOME accent colour; the highlighter palette below is intentionally fixed
+ * (those are semantic content colours, not chrome).
+ */
+
 /* ── Search panel (right-side revealer) ──────────────────────────────── */
 
 .search-panel {
@@ -34,8 +47,8 @@
     border-top-left-radius: 20px;
     border-bottom-left-radius: 20px;
 }
-.bar-fill       { background-color: #4a9fd4; border-radius: 3px; min-height: 10px; }
-.bar-fill-sub   { background-color: #6dbf7e; border-radius: 3px; min-height: 10px; }
+.bar-fill       { background-color: @accent_bg_color; border-radius: 4px; min-height: 10px; }
+.bar-fill-sub   { background-color: alpha(@accent_bg_color, 0.5); border-radius: 4px; min-height: 10px; }
 .bar-label-active { color: @accent_color; font-weight: bold; }
 .result-ref     { font-weight: bold; }
 
@@ -125,7 +138,7 @@ menubutton.reference-title-button > button:not(:hover):not(:checked) {
 
 button.scriptura-lex-toggle {
     min-height: 34px;
-    padding: 2px 10px;
+    padding: 4px 8px;
 }
 
 .pane-toolbar {
@@ -144,7 +157,7 @@ menubutton.pane-module-button > button,
 button.pane-action,
 menubutton.pane-action > button {
     min-height: 30px;
-    padding: 3px 7px;
+    padding: 4px 8px;
     background: transparent;
     box-shadow: none;
 }

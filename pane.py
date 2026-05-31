@@ -407,7 +407,7 @@ class BiblePane(Gtk.Box):
                  on_click_outside_search=None, on_verse_select=None,
                  on_word_study_navigate=None, on_toast=None,
                  on_font_size_request=None, on_cipher_error=None,
-                 on_modules_changed=None, pane_id=1):
+                 on_edit_cipher=None, on_modules_changed=None, pane_id=1):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self._on_word_click = on_word_click
         self._on_click_outside_search = on_click_outside_search
@@ -416,6 +416,7 @@ class BiblePane(Gtk.Box):
         self._on_toast = on_toast
         self._on_font_size_request = on_font_size_request
         self._on_cipher_error = on_cipher_error
+        self._on_edit_cipher = on_edit_cipher
         self._on_modules_changed = on_modules_changed
         # Used to namespace per-pane persisted state (e.g. genbook
         # bookmarks) so pane1 and pane2 don't trample each other.
@@ -526,6 +527,7 @@ class BiblePane(Gtk.Box):
 
         self._date_nav_revealer = Gtk.Revealer()
         self._date_nav_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
+        self._date_nav_revealer.set_transition_duration(200)
         self._date_nav_revealer.set_child(date_nav)
         self._date_nav_revealer.set_reveal_child(False)
 
@@ -922,7 +924,7 @@ class BiblePane(Gtk.Box):
     def _on_sync_toggled(self, btn, _param):
         locked = btn.get_active()
         btn.set_icon_name('changes-prevent-symbolic' if locked else 'changes-allow-symbolic')
-        btn.set_tooltip_text('Locked – not following navigation' if locked else 'Following navigation')
+        btn.set_tooltip_text('Locked — not following navigation' if locked else 'Following navigation')
         # When re-enabling "Following navigation", catch up to wherever the rest
         # of the app has navigated to since the lock was applied.
         if not locked and getattr(self, '_window_book', None):
@@ -1073,7 +1075,7 @@ class BiblePane(Gtk.Box):
 
         threading.Thread(target=fetch, daemon=True).start()
 
-    def _show_status_page(self, icon, title, description):
+    def _show_status_page(self, icon, title, description, action=None):
         self._cancel_all_flashes()
         self._search.cancel_hl_timer()
         self._buffer.set_text('')
@@ -1081,23 +1083,41 @@ class BiblePane(Gtk.Box):
         self._status_page.set_icon_name(icon)
         self._status_page.set_title(title)
         self._status_page.set_description(description)
+        self._status_page.set_child(self._status_action_button(action))
         self._content_stack.set_visible_child_name('status')
+
+    def _status_action_button(self, action):
+        """Optional centred pill button for a status page (or None) — turns a
+        dead-end placeholder into something the user can act on."""
+        if action is None:
+            return None
+        label, callback = action
+        btn = Gtk.Button(label=label)
+        btn.add_css_class('pill')
+        btn.add_css_class('suggested-action')
+        btn.set_halign(Gtk.Align.CENTER)
+        btn.connect('clicked', lambda _b: callback())
+        return btn
 
     def _display_unsupported_module(self):
         self._show_status_page(
             'dialog-information-symbolic', self._module,
             'This module isn’t organized by book and chapter, so it can’t be '
-            'read in this pane yet. Switch to a Bible or commentary in the '
-            'module dropdown above.')
+            'read in this pane. Pick a Bible or commentary to read here.',
+            action=('Choose another module',
+                    lambda: self._picker.menu_button.popup()))
 
     def _display_cipher_locked(self):
         """Shown when an encrypted module's content decrypts to gibberish —
         the cipher key is wrong or missing. Pairs with the window's
         'Edit Key' toast."""
+        action = (('Edit Key', lambda: self._on_edit_cipher(self._module))
+                  if self._on_edit_cipher is not None else None)
         self._show_status_page(
             'dialog-password-symbolic', self._module,
-            'This module’s content isn’t readable. The cipher key may be '
-            'incorrect — use “Edit Key” to enter it again.')
+            'This module’s content isn’t readable — the cipher key may be '
+            'incorrect.',
+            action=action)
 
     def _display_empty_chapter(self, book, chapter):
         """Show a friendly hint when the current module has no content
@@ -1106,8 +1126,9 @@ class BiblePane(Gtk.Box):
         self._show_status_page(
             'dialog-information-symbolic', f'{book} {chapter}',
             f'{self._module} doesn’t include this passage. Some modules cover '
-            'only the Old or New Testament — switch to a Bible with full '
-            'coverage in the module dropdown above.')
+            'only the Old or New Testament — pick a Bible with full coverage.',
+            action=('Choose another module',
+                    lambda: self._picker.menu_button.popup()))
         self._view.scroll_to_iter(self._buffer.get_start_iter(), 0.0, False, 0, 0)
 
     def _fetch_and_render_devotional(self):
