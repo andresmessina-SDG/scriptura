@@ -39,6 +39,7 @@ py_sources = files(
   'empty_state.py',
   'genbook_reader.py',
   'imagery_bridge.py',
+  'imagery_reader.py',
   'lexicon_panel.py',
   'module_manager.py',
   'module_picker.py',

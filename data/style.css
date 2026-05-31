@@ -312,3 +312,22 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
     padding: 1px 8px;
     font-weight: bold;
 }
+
+/* ── Bible Imagery pane ──────────────────────────────────────────────── */
+
+.imagery-header {
+    padding: 10px 14px 6px 14px;
+}
+.imagery-list {
+    padding: 4px 12px 12px 12px;
+}
+.imagery-card {
+    padding: 10px 12px;
+}
+.imagery-card picture {
+    border-radius: 6px;
+}
+.imagery-meta {
+    /* dim caption rows: artist · year, attribution, tradition dividers */
+    opacity: 0.7;
+}
