@@ -1,0 +1,287 @@
+# Hurlbut's "Bible Atlas" (1882) — antique sepia maps, public domain, fetched
+# from Project Gutenberg eBook #41140 (images i-NNN-big.jpg). Each map is keyed
+# to the passage range(s) it covers; a map spanning several books gets several
+# ranges (one imagery row per range, same image), so it surfaces on every book
+# it depicts. img = the Gutenberg image stem.
+#
+# Seed: the regional + journey maps with clean narrative coverage. City/temple
+# plans (Jerusalem, Athens, Corinth, Ephesus, Rome, Herod's Temple) and the
+# comparative-size charts are skippable extensions, added later.
+
+[[map]]
+img = "i-022"
+title = "Palestine before the Conquest — Journeys of the Patriarchs"
+passage_label = "Genesis 12–50"
+[[map.ranges]]
+book = "Genesis"
+chapter = 12
+verse = 1
+chapter_end = 50
+verse_end = 26
+
+[[map]]
+img = "i-028"
+title = "Lands of the Sojourn and Wandering"
+passage_label = "Exodus – Deuteronomy"
+[[map.ranges]]
+book = "Exodus"
+chapter = 12
+verse = 1
+chapter_end = 40
+verse_end = 38
+[[map.ranges]]
+book = "Numbers"
+chapter = 1
+verse = 1
+chapter_end = 36
+verse_end = 13
+[[map.ranges]]
+book = "Deuteronomy"
+chapter = 1
+verse = 1
+chapter_end = 34
+verse_end = 12
+
+[[map]]
+img = "i-032"
+title = "The Conquest of Canaan"
+passage_label = "Joshua 1–12"
+[[map.ranges]]
+book = "Joshua"
+chapter = 1
+verse = 1
+chapter_end = 12
+verse_end = 24
+
+[[map]]
+img = "i-039"
+title = "Palestine among the Tribes"
+passage_label = "Joshua 13–21"
+[[map.ranges]]
+book = "Joshua"
+chapter = 13
+verse = 1
+chapter_end = 21
+verse_end = 45
+
+[[map]]
+img = "i-041"
+title = "Palestine under the Judges"
+passage_label = "Judges"
+[[map.ranges]]
+book = "Judges"
+chapter = 1
+verse = 1
+chapter_end = 21
+verse_end = 25
+
+[[map]]
+img = "i-043"
+title = "The Kingdom of Saul"
+passage_label = "1 Samuel 9–31"
+[[map.ranges]]
+book = "1 Samuel"
+chapter = 9
+verse = 1
+chapter_end = 31
+verse_end = 13
+
+[[map]]
+img = "i-045"
+title = "The Empire of David and Solomon"
+passage_label = "2 Samuel – 1 Kings 11"
+[[map.ranges]]
+book = "2 Samuel"
+chapter = 1
+verse = 1
+chapter_end = 24
+verse_end = 25
+[[map.ranges]]
+book = "1 Kings"
+chapter = 1
+verse = 1
+chapter_end = 11
+verse_end = 43
+
+[[map]]
+img = "i-058"
+title = "The Division of Solomon's Empire"
+passage_label = "1 Kings 12 – 2 Kings 17"
+[[map.ranges]]
+book = "1 Kings"
+chapter = 12
+verse = 1
+chapter_end = 22
+verse_end = 53
+[[map.ranges]]
+book = "2 Kings"
+chapter = 1
+verse = 1
+chapter_end = 17
+verse_end = 41
+
+[[map]]
+img = "i-064a"
+title = "The Assyrian Empire"
+passage_label = "2 Kings 15–19"
+[[map.ranges]]
+book = "2 Kings"
+chapter = 15
+verse = 1
+chapter_end = 19
+verse_end = 37
+
+[[map]]
+img = "i-064b"
+title = "The Babylonian Empire"
+passage_label = "2 Kings 24–25"
+[[map.ranges]]
+book = "2 Kings"
+chapter = 24
+verse = 1
+chapter_end = 25
+verse_end = 30
+
+[[map]]
+img = "i-066a"
+title = "The Persian Empire"
+passage_label = "Ezra · Nehemiah · Esther"
+[[map.ranges]]
+book = "Ezra"
+chapter = 1
+verse = 1
+chapter_end = 10
+verse_end = 44
+[[map.ranges]]
+book = "Nehemiah"
+chapter = 1
+verse = 1
+chapter_end = 13
+verse_end = 31
+[[map.ranges]]
+book = "Esther"
+chapter = 1
+verse = 1
+chapter_end = 10
+verse_end = 3
+
+[[map]]
+img = "i-072"
+title = "The Kingdom of Herod the Great"
+passage_label = "Matthew 2 · Luke 1–2"
+[[map.ranges]]
+book = "Matthew"
+chapter = 2
+verse = 1
+chapter_end = 2
+verse_end = 23
+[[map.ranges]]
+book = "Luke"
+chapter = 1
+verse = 1
+chapter_end = 2
+verse_end = 52
+
+[[map]]
+img = "i-074a"
+title = "Palestine during the Ministry of Jesus"
+passage_label = "The Gospels"
+[[map.ranges]]
+book = "Matthew"
+chapter = 1
+verse = 1
+chapter_end = 28
+verse_end = 20
+[[map.ranges]]
+book = "Mark"
+chapter = 1
+verse = 1
+chapter_end = 16
+verse_end = 20
+[[map.ranges]]
+book = "Luke"
+chapter = 1
+verse = 1
+chapter_end = 24
+verse_end = 53
+[[map.ranges]]
+book = "John"
+chapter = 1
+verse = 1
+chapter_end = 21
+verse_end = 25
+
+[[map]]
+img = "i-084"
+title = "Early Apostolic History"
+passage_label = "Acts 1–12"
+[[map.ranges]]
+book = "Acts"
+chapter = 1
+verse = 1
+chapter_end = 12
+verse_end = 25
+
+[[map]]
+img = "i-088"
+title = "Paul's First Missionary Journey"
+passage_label = "Acts 13–14"
+[[map.ranges]]
+book = "Acts"
+chapter = 13
+verse = 1
+chapter_end = 14
+verse_end = 28
+
+[[map]]
+img = "i-092"
+title = "Paul's Second Missionary Journey"
+passage_label = "Acts 15:36 – 18:22"
+[[map.ranges]]
+book = "Acts"
+chapter = 15
+verse = 36
+chapter_end = 18
+verse_end = 22
+
+[[map]]
+img = "i-096"
+title = "Paul's Third Missionary Journey"
+passage_label = "Acts 18:23 – 21:16"
+[[map.ranges]]
+book = "Acts"
+chapter = 18
+verse = 23
+chapter_end = 21
+verse_end = 16
+
+[[map]]
+img = "i-098"
+title = "Paul's Voyage to Rome"
+passage_label = "Acts 27–28"
+[[map.ranges]]
+book = "Acts"
+chapter = 27
+verse = 1
+chapter_end = 28
+verse_end = 31
+
+[[map]]
+img = "i-102"
+title = "The Isles of Greece and the Seven Churches"
+passage_label = "Revelation 1–3"
+[[map.ranges]]
+book = "Revelation"
+chapter = 1
+verse = 1
+chapter_end = 3
+verse_end = 22
+
+[[map]]
+img = "i-104"
+title = "The Isle of Patmos"
+passage_label = "Revelation 1:9"
+[[map.ranges]]
+book = "Revelation"
+chapter = 1
+verse = 9

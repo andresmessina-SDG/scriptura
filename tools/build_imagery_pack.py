@@ -201,7 +201,61 @@ def ingest_openbible(conn, images_dir, width, limit, fetch_images):
     return 0   # adds places, not imagery-table rows
 
 
-_SOURCES = {'schnorr': ingest_schnorr, 'openbible': ingest_openbible}
+# ── Hurlbut's Bible Atlas (1882) — antique maps from Project Gutenberg ──────
+
+_GUTENBERG_IMG = 'https://www.gutenberg.org/files/41140/41140-h/images/{}'
+
+
+def _fetch_gutenberg_map(img, dest):
+    """Fetch a Hurlbut map image, preferring the hi-res `-big` variant."""
+    for suffix in ('-big.jpg', '.jpg'):
+        try:
+            return fetch(_GUTENBERG_IMG.format(img + suffix), dest)
+        except Exception:
+            continue
+    raise RuntimeError(f'no image for {img}')
+
+
+def ingest_hurlbut(conn, images_dir, width, limit, fetch_images):
+    """Insert Hurlbut maps from tools/hurlbut_maps.toml. A map covering several
+    books gets one imagery row per range (same image file), so it surfaces on
+    each book it depicts."""
+    with open(os.path.join(_HERE, 'hurlbut_maps.toml'), 'rb') as f:
+        maps = tomllib.load(f)['map']
+    if limit:
+        maps = maps[:limit]
+    rows = 0
+    for m in maps:
+        img = m['img']
+        rel = f'images/hurlbut_{img}.jpg'
+        size = None
+        if fetch_images:
+            try:
+                size = _fetch_gutenberg_map(
+                    img, os.path.join(images_dir, f'hurlbut_{img}.jpg'))
+            except Exception as e:  # noqa: BLE001
+                print(f'  ! map {img} fetch failed: {e}')
+                continue
+        for rng in m['ranges']:
+            ce = rng.get('chapter_end', rng['chapter'])
+            ve = rng.get('verse_end', rng['verse'])
+            conn.execute(
+                'INSERT INTO imagery (kind, tradition, title, caption, book, '
+                'loc_start, loc_end, passage_label, file_path, file_size, '
+                'source, source_url, license, attribution, artist, year, '
+                'iconclass) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                ('map', 'cartography', m['title'], None, rng['book'],
+                 encode(rng['chapter'], rng['verse']), encode(ce, ve),
+                 m.get('passage_label'), rel, size, 'hurlbut_1882',
+                 'https://www.gutenberg.org/ebooks/41140', 'PD',
+                 'Jesse L. Hurlbut, Bible Atlas (1882)', None, 1882, None))
+            rows += 1
+        print(f'  + map {img}  {m["title"]}  ({len(m["ranges"])} range(s))')
+    return rows
+
+
+_SOURCES = {'schnorr': ingest_schnorr, 'openbible': ingest_openbible,
+            'hurlbut': ingest_hurlbut}
 
 
 def main():
