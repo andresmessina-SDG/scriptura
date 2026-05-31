@@ -10,12 +10,14 @@ from gi.repository import Gtk, Adw, GLib, Gdk, Gsk, Graphene, Pango
 import sword_bridge
 import ebible_bridge
 import catena_bridge
+import imagery_bridge
 import content
 import annotations
 import settings
 import module_positions
 from genbook_reader import GenbookReader
 from catena_reader import CatenaReader
+from imagery_reader import ImageryReader
 from module_picker import ModulePicker
 
 
@@ -442,6 +444,9 @@ class BiblePane(Gtk.Box):
         # Historical Commentaries (catena) card view — verse-synced from
         # the partnered Bible pane. Composed into the content stack below.
         self._catena = CatenaReader(self)
+        # Bible Imagery card view — also verse-synced from the partnered
+        # Bible pane; composed into the content stack below.
+        self._imagery = ImageryReader(self)
         self._book = 'Genesis'
         self._chapter = 1
         self._target_verse = None
@@ -623,12 +628,12 @@ class BiblePane(Gtk.Box):
         self._content_stack = Gtk.Stack()
         self._content_stack.add_named(scrolled, 'text')
         self._content_stack.add_named(self._catena.widget, 'catena')
+        self._content_stack.add_named(self._imagery.widget, 'imagery')
         # Full-pane placeholder for "can't show content here" states
         # (unsupported module, wrong cipher key, passage not in this module).
         self._status_page = Adw.StatusPage()
         self._content_stack.add_named(self._status_page, 'status')
-        self._content_stack.set_visible_child_name(
-            'catena' if self._is_catena else 'text')
+        self._content_stack.set_visible_child_name(self._content_child())
 
         # Vertical paned: Bible text on top, lexicon panel on bottom.
         self._lex_paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL,
@@ -725,7 +730,8 @@ class BiblePane(Gtk.Box):
         is_chapter_keyed = self._is_verse_navigable()
         # The catena pane follows the partnered Bible (book/chapter + verse),
         # so it keeps the sync button but none of the verse-text chrome.
-        self._sync_btn.set_visible(is_chapter_keyed or self._is_catena)
+        self._sync_btn.set_visible(
+            is_chapter_keyed or self._is_catena or self._is_imagery)
         self._chapter_note_btn.set_visible(is_chapter_keyed)
         self._search.button.set_visible(is_chapter_keyed)
         self._copy_chapter_btn.set_visible(is_chapter_keyed)
@@ -737,7 +743,7 @@ class BiblePane(Gtk.Box):
             GLib.idle_add(self._fetch_and_render_devotional)
         elif self._is_genbook:
             GLib.idle_add(self._genbook.fetch_and_render)
-        elif self._is_catena:
+        elif self._is_catena or self._is_imagery:
             GLib.idle_add(self._fetch_and_render)
 
     def _on_pane_click(self, gesture, n_press, x, y):
@@ -779,19 +785,30 @@ class BiblePane(Gtk.Box):
         (sync / chapter note / search / copy / date-nav) branch on these."""
         m = self._module
         self._is_catena = catena_bridge.is_catena_module(m)
+        self._is_imagery = imagery_bridge.is_imagery_module(m)
         is_ebible = ebible_bridge.is_ebible_module(m)
         if self._is_catena:
             self._module_type = 'Historical Commentaries'
+        elif self._is_imagery:
+            self._module_type = 'Bible Imagery'
         elif is_ebible:
             self._module_type = 'Biblical Texts'
         else:
             self._module_type = sword_bridge.module_type(m)
         self._is_devotional = (
-            not self._is_catena and not is_ebible
+            not self._is_catena and not self._is_imagery and not is_ebible
             and sword_bridge.is_devotional_module(m))
         self._is_genbook = (
-            not self._is_catena and not is_ebible
+            not self._is_catena and not self._is_imagery and not is_ebible
             and self._module_type == 'Generic Books')
+
+    def _content_child(self):
+        """Which content-stack child the current module renders into."""
+        if self._is_catena:
+            return 'catena'
+        if self._is_imagery:
+            return 'imagery'
+        return 'text'
 
     def _is_verse_navigable(self):
         """Verse-based navigation only makes sense for Bibles and commentaries.
@@ -811,7 +828,7 @@ class BiblePane(Gtk.Box):
         self._window_target_verse = None
         if self._sync_btn.get_active():
             return
-        if self._is_catena:
+        if self._is_catena or self._is_imagery:
             self._book = book
             self._chapter = chapter
             self._selected_verse = None  # no verse context yet → defaults to 1
@@ -829,7 +846,7 @@ class BiblePane(Gtk.Box):
         self._window_target_verse = verse
         if self._sync_btn.get_active():
             return
-        if self._is_catena:
+        if self._is_catena or self._is_imagery:
             self._book = book
             self._chapter = chapter
             self._selected_verse = verse
@@ -1045,12 +1062,15 @@ class BiblePane(Gtk.Box):
 
     def _fetch_and_render(self):
         self._rendered_verses = None
-        self._content_stack.set_visible_child_name(
-            'catena' if self._is_catena else 'text')
+        self._content_stack.set_visible_child_name(self._content_child())
         if self._is_catena:
             # Follows the global book/chapter picker (and any verse the
             # partnered Bible broadcasts); defaults to verse 1 on its own.
             self._catena.render_for(
+                self._book, self._chapter, self._selected_verse or 1)
+            return
+        if self._is_imagery:
+            self._imagery.render_for(
                 self._book, self._chapter, self._selected_verse or 1)
             return
         if self._is_devotional:
@@ -2352,7 +2372,8 @@ class BiblePane(Gtk.Box):
         # Sync / chapter-note / per-pane search are only meaningful when
         # the pane is rendering a verse-keyed chapter. Devotionals get
         # date navigation instead; Generic Books get the TOC button.
-        self._sync_btn.set_visible(is_chapter_keyed or self._is_catena)
+        self._sync_btn.set_visible(
+            is_chapter_keyed or self._is_catena or self._is_imagery)
         self._chapter_note_btn.set_visible(is_chapter_keyed)
         self._search.button.set_visible(is_chapter_keyed)
         self._copy_chapter_btn.set_visible(is_chapter_keyed)
@@ -2392,6 +2413,10 @@ class BiblePane(Gtk.Box):
         if self._is_catena:
             self._selected_verse = verse_num
             self._catena.render_for(self._book, self._chapter, verse_num)
+            return
+        if self._is_imagery:
+            self._selected_verse = verse_num
+            self._imagery.render_for(self._book, self._chapter, verse_num)
             return
         self._selected_verse = verse_num
         self._set_current_verse_indicator(verse_num)

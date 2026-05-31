@@ -8,6 +8,7 @@ import sword_bridge
 import open_data
 import ebible_bridge
 import catena_bridge
+import imagery_bridge
 
 _log = logging.getLogger('scriptura.modules')
 
@@ -297,6 +298,7 @@ class ModuleManagerWindow(Adw.Window):
         while self._open_db_list.get_row_at_index(0):
             self._open_db_list.remove(self._open_db_list.get_row_at_index(0))
         self._open_db_list.append(self._make_catena_row())
+        self._open_db_list.append(self._make_imagery_row())
         for src in open_data.get_sources():
             row = Adw.ActionRow()
             row.set_title(src['label'])
@@ -369,6 +371,69 @@ class ModuleManagerWindow(Adw.Window):
         if err:
             _log.error('catena download error: %s', err)
             self._set_busy(False, f"Couldn't download Historical Commentaries — {err}")
+        else:
+            self._set_busy(False, '')
+            if self._on_modules_changed:
+                self._on_modules_changed()
+        self._populate_open_db()
+        return GLib.SOURCE_REMOVE
+
+    def _make_imagery_row(self):
+        row = Adw.ActionRow()
+        row.set_title('Bible Imagery')
+        if imagery_bridge.is_installed():
+            n = imagery_bridge.pack_info().get('image_count', '')
+            row.set_subtitle(
+                f'{n} illustrations, maps, and place photos, verse by verse'
+                if n else
+                'Illustrations, maps, and place photos, verse by verse')
+            btn = Gtk.Button(label='Remove')
+            btn.add_css_class('destructive-action')
+            btn.connect('clicked', self._on_imagery_remove)
+        else:
+            row.set_subtitle(
+                'Illustrations, historical maps, and photographs of the '
+                'places named in each verse · large download')
+            btn = Gtk.Button(label='Download')
+            btn.add_css_class('suggested-action')
+            btn.connect('clicked', self._on_imagery_download)
+        btn.set_valign(Gtk.Align.CENTER)
+        row.add_suffix(btn)
+        return row
+
+    def _on_imagery_download(self, btn):
+        btn.set_sensitive(False)
+        btn.set_label('Downloading…')
+        base = 'Downloading Bible Imagery…'
+        self._set_busy(True, base)
+
+        def _progress(done, total):
+            if total > 0:
+                msg = f'{base} {int(done * 100 / total)}% ({done >> 20} of {total >> 20} MB)'
+            else:
+                msg = f'{base} {done >> 20} MB'
+            GLib.idle_add(self._set_busy, True, msg)
+
+        def work():
+            err = None
+            try:
+                imagery_bridge.download_and_install(on_progress=_progress)
+            except Exception as e:
+                err = str(e)
+            GLib.idle_add(self._finish_imagery, err)
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def _on_imagery_remove(self, _btn):
+        imagery_bridge.remove_pack()
+        if self._on_modules_changed:
+            self._on_modules_changed()
+        self._populate_open_db()
+
+    def _finish_imagery(self, err):
+        if err:
+            _log.error('imagery download error: %s', err)
+            self._set_busy(False, f"Couldn't download Bible Imagery — {err}")
         else:
             self._set_busy(False, '')
             if self._on_modules_changed:

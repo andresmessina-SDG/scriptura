@@ -16,6 +16,7 @@ from typing import cast
 import sword_bridge
 import ebible_bridge
 import catena_bridge
+import imagery_bridge
 
 # Pane-readable SWORD module types (Bibles, commentaries, browsable books).
 # Lexicons / dictionaries / morphology modules are reached through other
@@ -34,12 +35,14 @@ def readable_module_names() -> list[str]:
                 or sword_bridge.is_devotional_module(name):
             keep.append(name)
     return (keep + cast(list[str], ebible_bridge.module_names())
-            + catena_bridge.module_names())
+            + catena_bridge.module_names() + imagery_bridge.module_names())
 
 
 def language(name: str) -> str:
     """ISO language code for a module key (''/unknown when unavailable)."""
     if catena_bridge.is_catena_module(name):
+        return 'en'
+    if imagery_bridge.is_imagery_module(name):
         return 'en'
     if ebible_bridge.is_ebible_module(name):
         return cast(str, ebible_bridge.module_language(name))
@@ -61,6 +64,19 @@ def info(name: str) -> dict:
             'about': 'Compiled from the HistoricalChristianFaith '
                      'Commentaries Database.',
         }
+    if imagery_bridge.is_imagery_module(name):
+        meta = imagery_bridge.pack_info()
+        return {
+            'description': 'Public-domain illustrations, historical maps, and '
+                           'photographs of the places named in Scripture, '
+                           'shown beside the verse you are reading.',
+            'version': meta.get('built', ''),
+            'type': f'{meta.get("image_count", "?")} images',
+            'license': 'Public domain & Creative Commons (per-item credits)',
+            'about': 'Engravings (Doré, Schnorr, Merian), historical maps, and '
+                     'place photography from public-domain and openly-licensed '
+                     'sources.',
+        }
     if ebible_bridge.is_ebible_module(name):
         return cast(dict, ebible_bridge.module_info(name))
     return cast(dict, sword_bridge.module_info(name))
@@ -75,6 +91,8 @@ def can_remove(name: str) -> bool:
     depends on what else a pane has."""
     if catena_bridge.is_catena_module(name):
         return True
+    if imagery_bridge.is_imagery_module(name):
+        return True
     if ebible_bridge.is_ebible_module(name):
         return True
     return cast(bool, sword_bridge.can_remove_module(name))
@@ -84,6 +102,8 @@ def remove(name: str) -> None:
     """Delete a module from disk, routed to its owning bridge."""
     if catena_bridge.is_catena_module(name):
         catena_bridge.remove_pack()
+    elif imagery_bridge.is_imagery_module(name):
+        imagery_bridge.remove_pack()
     elif ebible_bridge.is_ebible_module(name):
         ebible_bridge.remove_module(name)
     else:
