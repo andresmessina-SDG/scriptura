@@ -122,6 +122,20 @@ def catena_db_path() -> str:
     return os.path.join(data_dir(), 'catena.db')
 
 
+def imagery_dir() -> str:
+    """Directory holding the downloaded Bible Imagery pack — the
+    `imagery.sqlite` catalog plus an `images/` tree. Brand-new; no legacy
+    location to migrate."""
+    d = os.path.join(data_dir(), 'imagery')
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def imagery_db_path() -> str:
+    """The imagery catalog SQLite, inside the imagery pack directory."""
+    return os.path.join(imagery_dir(), 'imagery.sqlite')
+
+
 def open_data_dir() -> str:
     """Directory for downloaded reference files (OpenBible cross-refs,
     OpenBible topics, Dodson Greek lexicon). Migrates each file
