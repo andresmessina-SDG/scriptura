@@ -65,3 +65,71 @@ chapter = 27
 verse = 1
 chapter_end = 28
 verse_end = 31
+
+# ── Old Testament subjects ──────────────────────────────────────────────────
+# No public-domain modern SVGs exist for these; the good cartography is all
+# Creative Commons. That's fine in an aggregated pack (mere aggregation, not an
+# adaptation, so share-alike doesn't propagate), but each one MUST show its
+# attribution + license — so the license name is carried inside `attribution`,
+# the string the Where tab renders. Ranges parallel the antique Hurlbut maps
+# for the same passages, so each OT verse gets modern + antique side by side.
+
+[[map]]
+file = "12 Tribes of Israel Map.svg"
+slug = "tribes-of-israel"
+title = "The Twelve Tribes of Israel"
+passage_label = "Joshua 13–21"
+license = "CC BY-SA 3.0"
+attribution = "Kordas et al. · CC BY-SA 3.0 · Wikimedia Commons"
+[[map.ranges]]
+book = "Joshua"
+chapter = 13
+verse = 1
+chapter_end = 21
+verse_end = 45
+
+[[map]]
+file = "Kingdoms of Israel and Judah (8th century BCE).svg"
+slug = "israel-judah-divided"
+title = "The Kingdoms of Israel and Judah"
+passage_label = "1 Kings 12 – 2 Kings 17"
+license = "CC BY 4.0"
+attribution = "Tobias Schäfer · CC BY 4.0 · Wikimedia Commons"
+[[map.ranges]]
+book = "1 Kings"
+chapter = 12
+verse = 1
+chapter_end = 22
+verse_end = 53
+[[map.ranges]]
+book = "2 Kings"
+chapter = 1
+verse = 1
+chapter_end = 17
+verse_end = 41
+
+[[map]]
+file = "Achaemenid Empire En.svg"
+slug = "persian-empire"
+title = "The Persian (Achaemenid) Empire"
+passage_label = "Ezra · Nehemiah · Esther"
+license = "CC BY-SA 3.0"
+attribution = "Anton Gutsunaev & Uirauna · CC BY-SA 3.0 · Wikimedia Commons"
+[[map.ranges]]
+book = "Ezra"
+chapter = 1
+verse = 1
+chapter_end = 10
+verse_end = 44
+[[map.ranges]]
+book = "Nehemiah"
+chapter = 1
+verse = 1
+chapter_end = 13
+verse_end = 31
+[[map.ranges]]
+book = "Esther"
+chapter = 1
+verse = 1
+chapter_end = 10
+verse_end = 3
