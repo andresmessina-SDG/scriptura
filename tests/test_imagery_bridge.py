@@ -225,3 +225,79 @@ def test_safe_extract_rejects_traversal(tmp_path, monkeypatch):
     with pytest.raises(ValueError):
         imagery_bridge.download_and_install(url=evil.as_uri())
     assert not (tmp_path / 'escape.txt').exists()
+
+
+def test_resolve_parts_single(monkeypatch):
+    # No `.000` part exists → single-file pack.
+    sizes = {'http://x/p.tar.gz': 1234}
+    monkeypatch.setattr(imagery_bridge, '_probe',
+                        lambda u: sizes.get(u))
+    assert imagery_bridge._resolve_parts('http://x/p.tar.gz') == [
+        ('http://x/p.tar.gz', 1234)]
+
+
+def test_resolve_parts_multi(monkeypatch):
+    # `.000`/`.001` present, `.002` is 404 → two ordered parts, sizes summed.
+    sizes = {'http://x/p.tar.gz.000': 80, 'http://x/p.tar.gz.001': 20}
+    monkeypatch.setattr(imagery_bridge, '_probe',
+                        lambda u: sizes.get(u))
+    parts = imagery_bridge._resolve_parts('http://x/p.tar.gz')
+    assert parts == [('http://x/p.tar.gz.000', 80),
+                     ('http://x/p.tar.gz.001', 20)]
+
+
+def test_resolve_parts_missing_raises(monkeypatch):
+    # Neither parts nor a single file exist → explicit error (no silent
+    # truncated install).
+    monkeypatch.setattr(imagery_bridge, '_probe', lambda u: None)
+    with pytest.raises(FileNotFoundError):
+        imagery_bridge._resolve_parts('http://x/p.tar.gz')
+
+
+def test_download_install_multipart(tmp_path, monkeypatch):
+    # End-to-end: a pack split into two byte-range parts of a real tar.gz is
+    # reassembled, extracted, and installed.
+    import sqlite3 as _sqlite
+    src = tmp_path / 'pack'
+    (src / 'images').mkdir(parents=True)
+    db = src / 'imagery.sqlite'
+    conn = _sqlite.connect(db)
+    conn.execute('CREATE TABLE imagery (id INTEGER PRIMARY KEY, kind TEXT, '
+                 'tradition TEXT, title TEXT, caption TEXT, book TEXT, '
+                 'loc_start INT, loc_end INT, passage_label TEXT, '
+                 'file_path TEXT, file_size INT, source TEXT, source_url TEXT, '
+                 'license TEXT, attribution TEXT, artist TEXT, year INT, '
+                 'iconclass TEXT)')
+    conn.execute("INSERT INTO imagery (kind, tradition, title, book, loc_start, "
+                 "loc_end, file_path, source, license) VALUES "
+                 "('illustration','engraving','t','Genesis',6000014,6000014,"
+                 "'images/a.png','s','PD')")
+    conn.execute('CREATE TABLE places (place_id TEXT PRIMARY KEY, '
+                 'ancient_name TEXT, modern_name TEXT, latitude REAL, '
+                 'longitude REAL, confidence INT, photo_path TEXT, '
+                 'photo_caption TEXT, photo_credit TEXT, photo_license TEXT, '
+                 'photo_source_url TEXT)')
+    conn.execute('CREATE TABLE place_verses (place_id TEXT, book TEXT, '
+                 'chapter INT, verse INT)')
+    conn.execute('CREATE TABLE pack_meta (key TEXT PRIMARY KEY, value TEXT)')
+    conn.commit(); conn.close()
+    (src / 'images' / 'a.png').write_bytes(b'\x89PNG\r\n\x1a\n' + b'0' * 4000)
+
+    archive = tmp_path / 'imagery.tar.gz'
+    with tarfile.open(archive, 'w:gz') as tar:
+        tar.add(db, 'imagery.sqlite')
+        tar.add(src / 'images', 'images')
+    data = archive.read_bytes()
+    mid = len(data) // 2
+    (tmp_path / 'imagery.tar.gz.000').write_bytes(data[:mid])
+    (tmp_path / 'imagery.tar.gz.001').write_bytes(data[mid:])
+
+    dest = tmp_path / 'installed'
+    monkeypatch.setattr(imagery_bridge.paths, 'imagery_dir', lambda: str(dest))
+    monkeypatch.setattr(imagery_bridge.paths, 'imagery_db_path',
+                        lambda: str(dest / 'imagery.sqlite'))
+    imagery_bridge._reset()
+    base = (tmp_path / 'imagery.tar.gz').as_uri()
+    imagery_bridge.download_and_install(url=base)
+    assert imagery_bridge.is_installed()
+    assert imagery_bridge.art_for('Genesis', 6, 14)

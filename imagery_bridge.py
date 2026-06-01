@@ -26,6 +26,7 @@ import shutil
 import sqlite3
 import tarfile
 import threading
+import urllib.error
 import urllib.request
 from typing import Callable, TypedDict
 
@@ -273,12 +274,69 @@ def _safe_extract(tar: tarfile.TarFile, dest: str) -> None:
     tar.extractall(dest)
 
 
+def _probe(url: str) -> int | None:
+    """Return the byte size of `url` if it exists, or None on 404.
+
+    Uses a one-byte ranged GET so it works on hosts that don't allow HEAD;
+    the total comes from Content-Range (`bytes 0-0/<total>`) when the server
+    honours the range, else from Content-Length. Any non-404 HTTP error is
+    raised — a transient failure must abort, never look like 'no more parts'.
+    """
+    req = urllib.request.Request(url, headers={'Range': 'bytes=0-0'})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            cr = r.headers.get('Content-Range')
+            if cr and '/' in cr:
+                tail = cr.rsplit('/', 1)[1]
+                if tail.isdigit():
+                    return int(tail)
+            return int(r.headers.get('Content-Length') or 0)
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return None
+        raise
+    except urllib.error.URLError as e:
+        # A missing file:// path surfaces as URLError(FileNotFoundError) —
+        # treat as 'not found'; real network failures still propagate.
+        if isinstance(e.reason, FileNotFoundError):
+            return None
+        raise
+
+
+def _resolve_parts(url: str) -> list[tuple[str, int]]:
+    """Resolve the pack to an ordered list of (part_url, size).
+
+    Packs too large for a single release asset (host caps vary, e.g. 100 MB)
+    are split into `<url>.000`, `<url>.001`, … which the installer downloads
+    in order and concatenates. A single `<url>` is used when no `.000` part
+    exists, so small packs keep working unchanged. The part count is open —
+    probing stops at the first 404 — so the pack can grow without code
+    changes."""
+    first = _probe(f'{url}.000')
+    if first is None:
+        size = _probe(url)
+        if size is None:
+            raise FileNotFoundError(f'imagery pack not found at {url}')
+        return [(url, size)]
+    parts = [(f'{url}.000', first)]
+    i = 1
+    while True:
+        size = _probe(f'{url}.{i:03d}')
+        if size is None:
+            break
+        parts.append((f'{url}.{i:03d}', size))
+        i += 1
+    return parts
+
+
 def download_and_install(on_progress: Callable[[int, int], None] | None = None,
                          url: str | None = None) -> None:
     """Download the .tar.gz pack, extract it into place, and reset.
 
     Synchronous — call from a background thread. `on_progress(done, total)`
-    reports downloaded bytes (total is 0 if the server sends no length).
+    reports downloaded bytes (total is 0 if sizes are unknown). Large packs
+    are served as ordered `.000/.001/…` parts (see _resolve_parts); they are
+    streamed in sequence into one archive, so concatenation is implicit.
     Extracts into a sibling staging dir then swaps it in, so an interrupted
     download never leaves a half-written pack in service.
     """
@@ -289,18 +347,20 @@ def download_and_install(on_progress: Callable[[int, int], None] | None = None,
     tmp_archive = os.path.join(parent, '.imagery.tar.gz.part')
     shutil.rmtree(staging, ignore_errors=True)
     try:
-        with urllib.request.urlopen(url, timeout=120) as resp:
-            total = int(resp.headers.get('Content-Length') or 0)
-            done = 0
-            with open(tmp_archive, 'wb') as out:
-                while True:
-                    chunk = resp.read(65536)
-                    if not chunk:
-                        break
-                    out.write(chunk)
-                    done += len(chunk)
-                    if on_progress:
-                        on_progress(done, total)
+        parts = _resolve_parts(url)
+        total = sum(size for _, size in parts)
+        done = 0
+        with open(tmp_archive, 'wb') as out:
+            for part_url, _size in parts:
+                with urllib.request.urlopen(part_url, timeout=120) as resp:
+                    while True:
+                        chunk = resp.read(65536)
+                        if not chunk:
+                            break
+                        out.write(chunk)
+                        done += len(chunk)
+                        if on_progress:
+                            on_progress(done, total)
         os.makedirs(staging, exist_ok=True)
         with tarfile.open(tmp_archive, mode='r:gz') as tar:
             _safe_extract(tar, staging)

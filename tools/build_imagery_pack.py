@@ -583,6 +583,11 @@ def main():
                     help='write catalog rows only; skip downloading images')
     ap.add_argument('--tar', action='store_true',
                     help='also write <outdir>/../imagery.tar.gz')
+    ap.add_argument('--split-mb', type=int, default=0,
+                    help='split imagery.tar.gz into <=N MB parts (.000, .001, '
+                         '…) for hosts that cap release-asset size '
+                         '(e.g. Codeberg = 100). The pack downloader '
+                         'reassembles the parts automatically.')
     args = ap.parse_args()
 
     images_dir = os.path.join(args.outdir, 'images')
@@ -620,6 +625,24 @@ def main():
             tar.add(db_path, arcname='imagery.sqlite')
             tar.add(images_dir, arcname='images')
         print(f'wrote {tar_path}')
+        if args.split_mb:
+            _split_file(tar_path, args.split_mb * 1024 * 1024)
+
+
+def _split_file(path, chunk_bytes):
+    """Split `path` into `<path>.000`, `.001`, … of at most chunk_bytes each.
+    The combined file is kept (handy for local testing); upload the parts."""
+    part = 0
+    with open(path, 'rb') as f:
+        while True:
+            data = f.read(chunk_bytes)
+            if not data:
+                break
+            with open(f'{path}.{part:03d}', 'wb') as out:
+                out.write(data)
+            print(f'  + {path}.{part:03d} ({len(data):,} bytes)')
+            part += 1
+    print(f'split into {part} part(s); upload the .NNN parts (kept {path} too)')
 
 
 if __name__ == '__main__':
