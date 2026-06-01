@@ -280,8 +280,19 @@ class ImageryReader:
         pic = Gtk.Picture.new_for_filename(path)
         pic.set_content_fit(Gtk.ContentFit.CONTAIN)
         pic.set_can_shrink(True)
+        pic.set_hexpand(True)
         pic.set_alternative_text(alt or '')
         pic.add_css_class('imagery-pic')
+        # Gtk.Picture under-requests its height, so in a verse with several
+        # cards the images get squeezed to slivers (worse the more cards
+        # share the pane). Reserve a definite height from the image's aspect
+        # ratio at a reference card width, so each renders at a sensible,
+        # orientation-aware size regardless of how many cards there are.
+        paintable = pic.get_paintable()
+        iw = paintable.get_intrinsic_width() if paintable is not None else 0
+        ih = paintable.get_intrinsic_height() if paintable is not None else 0
+        aspect = ih / iw if iw and ih else 0.7
+        pic.set_size_request(-1, max(150, min(int(360 * aspect), 420)))
         if zoom is not None:
             click = Gtk.GestureClick()
             click.connect('released', lambda *_a: self._zoom(zoom))
