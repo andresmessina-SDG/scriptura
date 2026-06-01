@@ -133,6 +133,11 @@ class ImageryReader:
 
     def render_for(self, book, chapter, verse):
         """Show imagery for a verse (driven by the partnered Bible pane)."""
+        # Skip redundant rebuilds: the same verse can be broadcast again (e.g.
+        # the back-broadcast between synced panes), and rebuilding re-queries
+        # the catalog and reloads every card image from disk for no change.
+        if (book, chapter, verse) == (self._book, self._chapter, self._verse):
+            return
         self._book, self._chapter, self._verse = book, chapter, verse
         self._clear(self._art_box)
         self._clear(self._where_box)
