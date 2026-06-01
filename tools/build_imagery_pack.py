@@ -173,7 +173,9 @@ def ingest_dore(conn, images_dir, width, limit, fetch_images):
             ('illustration', 'engraving', p['title'], None, p['book'],
              encode(p['chapter'], v), encode(ch_end, v_end),
              p.get('passage_label'), rel, size, 'dore_1866',
-             'https://commons.wikimedia.org/wiki/Category:Doré%27s_English_Bible',
+             p.get('source_url',
+                   'https://commons.wikimedia.org/wiki/'
+                   'Category:Doré%27s_English_Bible'),
              'PD', 'Gustave Doré, The Holy Bible (1866)',
              'Gustave Doré', 1866, None))
         rows += 1

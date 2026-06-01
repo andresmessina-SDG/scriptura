@@ -1268,3 +1268,407 @@ title = "The Angel Is Sent to Deliver Israel"
 book = "2 Maccabees"
 chapter = 11
 verse = 8
+
+# ── New Testament (Phase 2) ─────────────────────────────────────────────────
+# Doré made no single numbered NT plate set on Commons the way the OT/Apocrypha
+# set ('Doré's English Bible') is numbered, so these are hand-curated genuine
+# wood engravings from the Holy Bible — paintings, studies, stained glass, and
+# duplicate/foreign re-scans in the NT category were excluded. Each was visually
+# verified as an engraving. n = "NT##" so dest filenames never collide with the
+# numbered OT plates. source_url points at the NT category they came from.
+
+[[plate]]
+n = "NT01"
+file = "Gustave Dore - The Annunciation.jpg"
+title = "The Annunciation"
+book = "Luke"
+chapter = 1
+verse = 28
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT02"
+file = "The Birth of Jesus.jpg"
+title = "The Birth of Jesus"
+book = "Luke"
+chapter = 2
+verse = 7
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT03"
+file = "Gustave Dore - Jesus converses with the learned ones in the Temple.jpg"
+title = "Jesus in the Temple with the Doctors"
+book = "Luke"
+chapter = 2
+verse = 46
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT04"
+file = "DoreJohntheBaptistPreachingintheWilderness.jpg"
+title = "John the Baptist Preaching in the Wilderness"
+book = "Matthew"
+chapter = 3
+verse = 1
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT05"
+file = "Gustave Dore - John the Baptist baptizes Jesus.jpg"
+title = "The Baptism of Jesus"
+book = "Matthew"
+chapter = 3
+verse = 16
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT06"
+file = "Marriage at Cana engraving by Gustave Doré.jpg"
+title = "The Marriage at Cana"
+book = "John"
+chapter = 2
+verse = 7
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT07"
+file = "Jesus asks the Samaritan woman for a draft from the well.jpg"
+title = "Jesus and the Woman of Samaria"
+book = "John"
+chapter = 4
+verse = 7
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT08"
+file = "Dore Bible Sermon on the Mount.jpg"
+title = "The Sermon on the Mount"
+book = "Matthew"
+chapter = 5
+verse = 1
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT09"
+file = "Jesus healing the sick (89476181).jpg"
+title = "Jesus Healing the Sick"
+book = "Matthew"
+chapter = 8
+verse = 16
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT10"
+file = "La pêche miraculeuse de Gustave Doré.jpg"
+title = "The Miraculous Draught of Fishes"
+book = "Luke"
+chapter = 5
+verse = 6
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT11"
+file = "JesusCalmingtheTempestDore.jpg"
+title = "Jesus Stilling the Tempest"
+book = "Mark"
+chapter = 4
+verse = 39
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT12"
+file = "Gustave Dore - Jesus raises the daughter of Jairus from the dead.jpg"
+title = "The Raising of Jairus' Daughter"
+book = "Mark"
+chapter = 5
+verse = 41
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT13"
+file = "Jesus walks on the sea.jpg"
+title = "Jesus Walking on the Water"
+book = "Matthew"
+chapter = 14
+verse = 25
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT14"
+file = "JesusFeedingMultitude.jpg"
+title = "The Feeding of the Five Thousand"
+book = "Matthew"
+chapter = 14
+verse = 19
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT15"
+file = "Jesus talks with Mary and Martha in their house.jpg"
+title = "Jesus with Mary and Martha"
+book = "Luke"
+chapter = 10
+verse = 39
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT16"
+file = "Gustave Dore - The Transfiguration.jpg"
+title = "The Transfiguration"
+book = "Matthew"
+chapter = 17
+verse = 2
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT17"
+file = "DoreJesusHealingtheLunatic.jpg"
+title = "Jesus Healing the Possessed Boy"
+book = "Mark"
+chapter = 9
+verse = 25
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT18"
+file = "Dore adultress.jpg"
+title = "The Woman Taken in Adultery"
+book = "John"
+chapter = 8
+verse = 7
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT19"
+file = "Gustave Dore - The prodigal son decides to return to his father.jpg"
+title = "The Return of the Prodigal Son"
+book = "Luke"
+chapter = 15
+verse = 20
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT20"
+file = "Gustave Dore Lazarus and the Rich Man.jpg"
+title = "Lazarus and the Rich Man"
+book = "Luke"
+chapter = 16
+verse = 23
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT21"
+file = "The Pharisee and the publican.jpg"
+title = "The Pharisee and the Publican"
+book = "Luke"
+chapter = 18
+verse = 11
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT22"
+file = "Gustave Dore - Jesus rides into Jerusalem on a donkey on Palm Sunday.jpg"
+title = "The Entry into Jerusalem"
+book = "Matthew"
+chapter = 21
+verse = 8
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT23"
+file = "Gustave Dore - Jesus talks of the tribute money.jpg"
+title = "The Tribute Money"
+book = "Matthew"
+chapter = 22
+verse = 21
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT24"
+file = "Jesus and the disciples at the Last Supper.jpg"
+title = "The Last Supper"
+book = "Matthew"
+chapter = 26
+verse = 26
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT25"
+file = "DoreJesusPrayingintheGarden.jpg"
+title = "The Agony in the Garden"
+book = "Luke"
+chapter = 22
+verse = 44
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT26"
+file = "Gustave Doré - The Holy Bible - Plate CXLI, The Judas Kiss.jpg"
+title = "The Judas Kiss"
+book = "Matthew"
+chapter = 26
+verse = 49
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT27"
+file = "Gustave Doré, St Peter Denying Christ.jpg"
+title = "Peter Denying Christ"
+book = "Matthew"
+chapter = 26
+verse = 74
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT28"
+file = "Christ Presented to the PeopleDore.jpg"
+title = "Christ Presented to the People"
+book = "John"
+chapter = 19
+verse = 5
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT29"
+file = "Gustave Doré - El sueño de la esposa de Pilato.jpg"
+title = "The Dream of Pilate's Wife"
+book = "Matthew"
+chapter = 27
+verse = 19
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT30"
+file = "Jesus is scourged.jpg"
+title = "The Flagellation"
+book = "John"
+chapter = 19
+verse = 1
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT31"
+file = "TheCrownofThornsDore.jpg"
+title = "The Crown of Thorns"
+book = "Matthew"
+chapter = 27
+verse = 29
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT32"
+file = "DoreArrivalatCalvary.jpg"
+title = "The Arrival at Calvary"
+book = "Luke"
+chapter = 23
+verse = 26
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT33"
+file = "Gustave Dore - Jesus is nailed to the cross.jpg"
+title = "The Crucifixion"
+book = "John"
+chapter = 19
+verse = 18
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT34"
+file = "Crucifixiondarkness.jpg"
+title = "The Darkness at the Crucifixion"
+book = "Matthew"
+chapter = 27
+verse = 45
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT35"
+file = "DoreTheDeadchrist.jpg"
+title = "The Dead Christ"
+book = "John"
+chapter = 19
+verse = 40
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT36"
+file = "Gusta Dore - The Ascension.jpg"
+title = "The Ascension"
+book = "Acts"
+chapter = 1
+verse = 9
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT37"
+file = "DoreDeathofAnanias.jpg"
+title = "The Death of Ananias"
+book = "Acts"
+chapter = 5
+verse = 5
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT38"
+file = "The Death of Stephen by Gustave Doré.jpg"
+title = "The Death of Stephen"
+book = "Acts"
+chapter = 7
+verse = 59
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT39"
+file = "StPeterattheHouseofCornelius.jpg"
+title = "Peter at the House of Cornelius"
+book = "Acts"
+chapter = 10
+verse = 25
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT40"
+file = "Peter'sEscapefromPrison.jpg"
+title = "Peter's Escape from Prison"
+book = "Acts"
+chapter = 12
+verse = 7
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT41"
+file = "DoreStPaulPreachingtotheThessalonians.jpg"
+title = "Paul Preaching to the Thessalonians"
+book = "Acts"
+chapter = 17
+verse = 2
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT42"
+file = "Paul Addresses the Crowd After His Arrest by Gustave Doré.jpg"
+title = "Paul Addresses the Crowd After His Arrest"
+book = "Acts"
+chapter = 22
+verse = 1
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT43"
+file = "St Paul in prison.jpg"
+title = "Paul in Prison"
+book = "Acts"
+chapter = 28
+verse = 30
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
+
+[[plate]]
+n = "NT44"
+file = "Gustave Doré - St. John's vision of death.jpg"
+title = "The Vision of Death"
+book = "Revelation"
+chapter = 6
+verse = 8
+source_url = "https://commons.wikimedia.org/wiki/Category:Art_depicting_the_New_Testament_by_Gustave_Doré"
