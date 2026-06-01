@@ -33,6 +33,7 @@ py_sources = files(
   'bookmarks.py',
   'catena_bridge.py',
   'catena_reader.py',
+  'content.py',
   'crossref_panel.py',
   'devotional.py',
   'ebible_bridge.py',
