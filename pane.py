@@ -367,41 +367,81 @@ class BibleTextView(Gtk.TextView):
             elif not it.forward_to_tag_toggle(tag):
                 return
 
+    _BAND_WS = (' ', '\t', ' ', '\n', '\r')
+
+    def _skip_ws_fwd(self, start, end):
+        """First non-whitespace iter in [start, end), else end."""
+        it = start.copy()
+        while it.compare(end) < 0 and it.get_char() in self._BAND_WS:
+            if not it.forward_char():
+                break
+        return it
+
+    def _trim_ws_end(self, start, end):
+        """Iter just past the last non-whitespace char in [start, end)."""
+        it = end.copy()
+        while it.compare(start) > 0:
+            probe = it.copy()
+            probe.backward_char()
+            if probe.get_char() in self._BAND_WS:
+                it = probe
+            else:
+                break
+        return it
+
     def _draw_band(self, snapshot, start, end, rgba, asc, desc):
         pad = self._HL_PAD
         body = asc + desc
         band_h = body + 2 * pad
-        cur = start.copy()
+        # Start on real text — skips the leading space before the verse number
+        # and any blank line, so band_top and the x-extent are measured from
+        # the same (text-bearing) display line.
+        cur = self._skip_ws_fwd(start.copy(), end)
         while cur.compare(end) < 0:
             line_end = cur.copy()
             has_end = self.forward_display_line_end(line_end)
             seg_end = line_end if (has_end and line_end.compare(end) < 0) else end.copy()
-            r0 = self.get_iter_location(cur)
-            r1 = self.get_iter_location(seg_end)
-            x0, x1 = r0.x, r1.x + r1.width
-            # Anchor the band's top to the display line's *start*, not the
-            # segment's first char — a verse that begins mid-line with the
-            # small raised number reports a slightly different y than a plain
-            # continuation char, which made adjacent verses' bands step. The
-            # line start gives every band on the line one shared top. (GTK lays
-            # text at the line-box top with the line-height leading below, so
-            # the line top is the body-text top regardless of line spacing.)
-            ls = cur.copy()
-            self.backward_display_line_start(ls)
-            band_top = self.get_iter_location(ls).y - pad
-            wx0, wy = self.buffer_to_window_coords(
-                Gtk.TextWindowType.TEXT, int(x0), int(band_top))
-            wx1, _ = self.buffer_to_window_coords(
-                Gtk.TextWindowType.TEXT, int(x1), 0)
-            rect = Graphene.Rect().init(wx0, wy, max(1.0, wx1 - wx0), band_h)
-            rounded = Gsk.RoundedRect()
-            rounded.init_from_rect(rect, 3)
-            snapshot.push_rounded_clip(rounded)
-            snapshot.append_color(rgba, rect)
-            snapshot.pop()
-            cur = line_end.copy()
+            # A verse can cross a paragraph break (rendered as a blank line);
+            # the band must pause in the gap and resume on the next paragraph,
+            # never bridge it. So a segment never spans a hard newline.
+            scan = cur.copy()
+            while scan.compare(seg_end) < 0:
+                if scan.get_char() == '\n':
+                    seg_end = scan
+                    break
+                if not scan.forward_char():
+                    break
+            # Trim trailing whitespace so the band hugs the last glyph instead
+            # of bleeding onto the space render appends after every verse.
+            seg_last = self._trim_ws_end(cur, seg_end)
+            if seg_last.compare(cur) > 0:
+                r0 = self.get_iter_location(cur)
+                r1 = self.get_iter_location(seg_last)
+                # Anchor the band's top to the display line's *start* so a verse
+                # that begins mid-line with the small raised number shares one
+                # top with its neighbours. (GTK lays text at the line-box top
+                # with the line-height leading below, so the line top is the
+                # body-text top regardless of line spacing.)
+                ls = cur.copy()
+                self.backward_display_line_start(ls)
+                band_top = self.get_iter_location(ls).y - pad
+                wx0, wy = self.buffer_to_window_coords(
+                    Gtk.TextWindowType.TEXT, int(r0.x), int(band_top))
+                wx1, _ = self.buffer_to_window_coords(
+                    Gtk.TextWindowType.TEXT, int(r1.x), 0)
+                rect = Graphene.Rect().init(
+                    wx0, wy, max(1.0, wx1 - wx0), band_h)
+                rounded = Gsk.RoundedRect()
+                rounded.init_from_rect(rect, 3)
+                snapshot.push_rounded_clip(rounded)
+                snapshot.append_color(rgba, rect)
+                snapshot.pop()
+            # Advance past this segment, then skip whitespace / blank lines so
+            # the next segment starts on real text.
+            cur = seg_end.copy()
             if not cur.forward_char():
                 break
+            cur = self._skip_ws_fwd(cur, end)
 
 
 class BiblePane(Gtk.Box):
@@ -1398,7 +1438,26 @@ class BiblePane(Gtk.Box):
 
         self._update_chapter_note_indicator()
         self._search.apply_highlight()
+        # Every verse's body-text spans (created by insert_markup during the
+        # render loop) carry an ever-increasing tag priority, which can
+        # out-rank the readable-text foreground applied earlier — leaving
+        # highlighted text in its light body colour on the tint until a later
+        # re-apply flips it dark. Re-assert the overlay foregrounds above all
+        # body spans now that the whole chapter (and its tags) exists.
+        self._bump_overlay_priorities()
         return GLib.SOURCE_REMOVE
+
+    def _bump_overlay_priorities(self):
+        """Pin the readable-text overlay tags above the chapter's body-text
+        spans so highlighted/underlined/searched/flashed text paints with its
+        dark foreground from the first frame. Listed low→high; the flash sits
+        on top so it stays legible over a highlight or search hit beneath it."""
+        table = self._buffer.get_tag_table()
+        for name in ('_ul_text', 'hl_fg', '_current_verse',
+                     '_search_hl', '_flash'):
+            tag = table.lookup(name)
+            if tag is not None:
+                tag.set_priority(table.get_size() - 1)
 
     @staticmethod
     def _group_commentary_verses(verses):
