@@ -1,0 +1,180 @@
+# Byzantine / Orthodox icons — the 'byzantine_icon' tradition (gold-ground
+# panels). A curated set of canonical scene-icons, each a specific pre-modern
+# Public-Domain work on Wikimedia Commons (2-D painted panels: faithful
+# reproductions of works whose authors died >100 yrs ago are PD), hand-mapped
+# to the verse the scene depicts and visually verified. The Gospel Great Feasts
+# form a coherent core; a few Old-Testament icons anchor it. `n` keys are
+# "IC##" so dest filenames never collide with other sources. source_url is the
+# Commons File: page (built from `file` by the builder).
+
+[[icon]]
+n = "IC01"
+file = "Annunciation Icon Sinai 12th century.jpg"
+title = "The Annunciation"
+book = "Luke"
+chapter = 1
+verse = 28
+year = 1150
+attribution = "Byzantine, 12th c. · St Catherine's Monastery, Sinai"
+
+[[icon]]
+n = "IC02"
+file = "Icon Nativity Kargopol.jpg"
+title = "The Nativity"
+book = "Luke"
+chapter = 2
+verse = 7
+year = 1550
+attribution = "Russian (Kargopol), 16th c."
+
+[[icon]]
+n = "IC03"
+file = "Baptism (15th c., Annunciation Cathedral in Moscow).jpg"
+title = "The Baptism of Christ (Theophany)"
+book = "Matthew"
+chapter = 3
+verse = 16
+year = 1405
+attribution = "Russian, 15th c. · Annunciation Cathedral, Moscow"
+
+[[icon]]
+n = "IC04"
+file = "1400-10 Theophanes the Greek Transfiguration anagoria.JPG"
+title = "The Transfiguration"
+book = "Matthew"
+chapter = 17
+verse = 2
+year = 1408
+artist = "Theophanes the Greek"
+attribution = "Theophanes the Greek, c. 1408"
+
+[[icon]]
+n = "IC05"
+file = "Воскрешение Лазаря.jpg"
+title = "The Raising of Lazarus"
+book = "John"
+chapter = 11
+verse = 43
+year = 1350
+attribution = "Byzantine, 14th c."
+
+[[icon]]
+n = "IC06"
+file = "Entry into Jerusalem (Annunciation Cathedral in Moscow).jpg"
+title = "The Entry into Jerusalem"
+book = "John"
+chapter = 12
+verse = 13
+year = 1405
+attribution = "Russian, 15th c. · Annunciation Cathedral, Moscow"
+
+[[icon]]
+n = "IC07"
+file = "Eucharisty with bread (1420s, Sergiev Posad).jpg"
+title = "The Mystical Supper (Communion of the Apostles)"
+book = "Matthew"
+chapter = 26
+verse = 26
+year = 1425
+attribution = "Russian, 1420s · Sergiev Posad"
+
+[[icon]]
+n = "IC08"
+file = "Omovenie nog.jpg"
+title = "The Washing of the Feet"
+book = "John"
+chapter = 13
+verse = 5
+year = 1550
+attribution = "Russian, 16th c."
+
+[[icon]]
+n = "IC09"
+file = "Double-side icon with Crucifixion and Hodegetria (14th century, Byzantine museum).jpg"
+title = "The Crucifixion"
+book = "John"
+chapter = 19
+verse = 18
+year = 1350
+attribution = "Byzantine, 14th c. · Byzantine Museum, Athens"
+
+[[icon]]
+n = "IC10"
+file = "Russian School - Icon with the Resurrection and the Anastasis (Descent into Hell) - FA001215 - Brighton Museum ^ Art Gallery.jpg"
+title = "The Anastasis (Resurrection)"
+book = "Matthew"
+chapter = 28
+verse = 6
+year = 1850
+attribution = "Russian, 19th c. · Brighton Museum & Art Gallery"
+
+[[icon]]
+n = "IC11"
+file = "Zheny mironosicy u Groba Gospodnja.jpg"
+title = "The Myrrh-Bearing Women at the Tomb"
+book = "Mark"
+chapter = 16
+verse = 1
+year = 1490
+attribution = "Russian, late 15th c."
+
+[[icon]]
+n = "IC12"
+file = "The incredulity of Thomas.jpg"
+title = "The Incredulity of Thomas"
+book = "John"
+chapter = 20
+verse = 27
+year = 1450
+attribution = "Byzantine, 15th c."
+
+[[icon]]
+n = "IC13"
+file = "Ascension (Candia, 15th c.).jpg"
+title = "The Ascension"
+book = "Acts"
+chapter = 1
+verse = 9
+year = 1450
+attribution = "Cretan (Candia), 15th c."
+
+[[icon]]
+n = "IC14"
+file = "Descent of the Holy Spirit icon, 12th century. National Museum of Georgia.jpg"
+title = "Pentecost (Descent of the Holy Spirit)"
+book = "Acts"
+chapter = 2
+verse = 1
+year = 1150
+attribution = "Georgian, 12th c. · National Museum of Georgia"
+
+[[icon]]
+n = "IC15"
+file = "Andrej Rublëv 001.jpg"
+title = "The Hospitality of Abraham (Old Testament Trinity)"
+book = "Genesis"
+chapter = 18
+verse = 1
+year = 1410
+artist = "Andrei Rublev"
+attribution = "Andrei Rublev, c. 1410 · Tretyakov Gallery"
+
+[[icon]]
+n = "IC16"
+file = "Elie with the firey wagon.jpg"
+title = "The Prophet Elijah's Fiery Ascent"
+book = "2 Kings"
+chapter = 2
+verse = 11
+year = 1550
+attribution = "Russian, 16th c."
+
+[[icon]]
+n = "IC17"
+file = "Daniel in the lions' den icon.jpg"
+title = "Daniel in the Lions' Den"
+book = "Daniel"
+chapter = 6
+verse = 16
+year = 1550
+attribution = "Russian, 16th c."

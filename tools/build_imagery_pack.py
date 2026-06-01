@@ -234,6 +234,49 @@ def ingest_tissot(conn, images_dir, width, limit, fetch_images):
     return rows
 
 
+# Icons are gold-ground panels; 960px (the zoom width) is plenty of detail.
+_ICON_WIDTH = 960
+
+
+def ingest_icon(conn, images_dir, width, limit, fetch_images):
+    """Byzantine/Orthodox scene-icons from tools/icon_plates.toml — the
+    'byzantine_icon' tradition. A curated set of canonical Great-Feast and
+    Old-Testament icons, each a pre-modern Public-Domain panel mapped to its
+    scene's verse. All PD (faithful repros of pre-1900 2-D works)."""
+    with open(os.path.join(_HERE, 'icon_plates.toml'), 'rb') as f:
+        icons = tomllib.load(f)['icon']
+    if limit:
+        icons = icons[:limit]
+    rows = 0
+    for p in icons:
+        n = p['n']
+        ext = os.path.splitext(p['file'])[1] or '.jpg'
+        rel = f'images/icon_{n}{ext}'
+        size = None
+        if fetch_images:
+            dest = os.path.join(images_dir, f'icon_{n}{ext}')
+            try:
+                size = fetch(commons_filepath_url(p['file'], _ICON_WIDTH), dest)
+            except Exception as e:  # noqa: BLE001 — report and skip one icon
+                print(f'  ! icon {n} fetch failed: {e}')
+                continue
+        v = p['verse']
+        src_url = ('https://commons.wikimedia.org/wiki/File:'
+                   + urllib.parse.quote(p['file'].replace(' ', '_')))
+        conn.execute(
+            'INSERT INTO imagery (kind, tradition, title, caption, book, '
+            'loc_start, loc_end, passage_label, file_path, file_size, source, '
+            'source_url, license, attribution, artist, year, iconclass) '
+            'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+            ('icon', 'byzantine_icon', p['title'], None, p['book'],
+             encode(p['chapter'], v), encode(p['chapter'], v),
+             None, rel, size, 'icons', src_url, 'PD',
+             p['attribution'], p.get('artist'), p.get('year'), None))
+        rows += 1
+        print(f'  + icon {n}  {p["book"]} {p["chapter"]}:{v}  {p["title"]}')
+    return rows
+
+
 # ── OpenBible.info geocoding — places named in each verse ───────────────────
 
 # Pinned to the default branch; switch to a pinned commit SHA for fully
@@ -523,8 +566,9 @@ def ingest_modern(conn, images_dir, width, limit, fetch_images):
 
 
 _SOURCES = {'schnorr': ingest_schnorr, 'dore': ingest_dore,
-            'tissot': ingest_tissot, 'openbible': ingest_openbible,
-            'hurlbut': ingest_hurlbut, 'modern': ingest_modern}
+            'tissot': ingest_tissot, 'icons': ingest_icon,
+            'openbible': ingest_openbible, 'hurlbut': ingest_hurlbut,
+            'modern': ingest_modern}
 
 
 def main():
