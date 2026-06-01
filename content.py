@@ -7,8 +7,8 @@ source (e.g. a future imagery pack) means teaching this one module about
 it rather than hunting down every dispatch site.
 
 Note: display_name routing already lives in sword_bridge.display_name
-(which delegates eBible keys and passes catena's name through), so it is
-intentionally not duplicated here.
+(which delegates eBible keys and the catena / imagery feature packs to
+their bridges), so it is intentionally not duplicated here.
 """
 
 from typing import cast
@@ -36,6 +36,39 @@ def readable_module_names() -> list[str]:
             keep.append(name)
     return (keep + cast(list[str], ebible_bridge.module_names())
             + catena_bridge.module_names() + imagery_bridge.module_names())
+
+
+def kind(name: str) -> str:
+    """Coarse content category for the module picker's tabs.
+
+    One of: 'bible', 'commentary', 'imagery', 'books'. SWORD generic books
+    and devotionals both fold into 'books'; everything verse-keyed that
+    isn't a commentary is a 'bible'."""
+    if catena_bridge.is_catena_module(name):
+        return 'commentary'
+    if imagery_bridge.is_imagery_module(name):
+        return 'imagery'
+    if ebible_bridge.is_ebible_module(name):
+        return 'bible'
+    mtype = sword_bridge.module_type(name)
+    if mtype == 'Commentaries':
+        return 'commentary'
+    if mtype == 'Generic Books' or sword_bridge.is_devotional_module(name):
+        return 'books'
+    return 'bible'
+
+
+def feature_card(name: str) -> dict | None:
+    """Hero-row presentation for the marquee packs, or None for plain
+    modules. The picker renders these with a leading icon and a one-line
+    tagline beneath the (curated) title; ordinary modules get a plain row."""
+    if catena_bridge.is_catena_module(name):
+        return {'icon': 'scriptura-commentary-symbolic',
+                'tagline': 'Fathers, medievals & reformers — per verse'}
+    if imagery_bridge.is_imagery_module(name):
+        return {'icon': 'scriptura-imagery-symbolic',
+                'tagline': 'Engravings, maps & place photos'}
+    return None
 
 
 def language(name: str) -> str:

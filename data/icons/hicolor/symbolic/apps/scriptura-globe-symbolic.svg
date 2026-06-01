@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Globe glyph for the picker's "Filter by language" button. Bundled (not
+  pulled from the icon theme) because the platform ships no globe-symbolic
+  and theme region/locale icons vary wildly. Drawn fill-only — an even-odd
+  outer ring, an even-odd ellipse ring for the curved meridians, plus a
+  straight axis and equator bar — so GTK4 recolors it reliably on any
+  background, like the keyboard symbolic alongside it.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g fill="#222">
+    <path fill-rule="evenodd" d="M8 1 A7 7 0 1 0 8 15 A7 7 0 1 0 8 1 Z M8 2.1 A5.9 5.9 0 1 1 8 13.9 A5.9 5.9 0 1 1 8 2.1 Z"/>
+    <path fill-rule="evenodd" d="M8 1.1 A3.5 6.9 0 0 0 8 14.9 A3.5 6.9 0 0 0 8 1.1 Z M8 2.2 A2.45 5.8 0 0 1 8 13.8 A2.45 5.8 0 0 1 8 2.2 Z"/>
+    <rect x="7.55" y="1.2" width="0.9" height="13.6" rx="0.45"/>
+    <rect x="1.4" y="7.55" width="13.2" height="0.9" rx="0.45"/>
+  </g>
+</svg>

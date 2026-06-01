@@ -26,6 +26,7 @@ class ModulePicker:
     def __init__(self, pane):
         self._pane = pane
         self._search = ''
+        self._kind = 'all'
         self._lang = 'All'
         self._info_name = None
         self._build()
@@ -70,30 +71,61 @@ class ModulePicker:
         stack = Gtk.Stack()
         stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
         stack.set_transition_duration(150)
+        # Let each page drive its own height so a short tab (one-item
+        # Imagery) doesn't reserve the full list height of dead space.
+        stack.set_vhomogeneous(False)
         self._stack = stack
 
         # ── List page ────────────────────────────────────────────────
         list_page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        list_page.set_size_request(320, 420)
+        list_page.set_size_request(340, -1)
         list_page.set_margin_start(8)
         list_page.set_margin_end(8)
         list_page.set_margin_top(8)
         list_page.set_margin_bottom(8)
 
-        self._search_entry = Gtk.SearchEntry()
+        search_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self._search_entry = Gtk.SearchEntry(hexpand=True)
         self._search_entry.set_placeholder_text('Filter modules…')
         self._search_entry.connect('search-changed', self._on_search_changed)
-        list_page.append(self._search_entry)
+        search_row.append(self._search_entry)
 
-        self._chips_box = Gtk.Box(
-            orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-        list_page.append(self._chips_box)
+        # Language demoted to a filter menu — only ever shown for a
+        # multilingual library (see _build_lang_menu).
+        self._lang_button = Gtk.MenuButton(icon_name='scriptura-globe-symbolic')
+        self._lang_button.add_css_class('flat')
+        self._lang_button.set_tooltip_text('Filter by language')
+        self._lang_button.set_valign(Gtk.Align.CENTER)
+        lang_pop = Gtk.Popover()
+        lang_pop.set_has_arrow(True)
+        self._lang_popover = lang_pop
+        self._lang_list = Gtk.ListBox()
+        self._lang_list.set_selection_mode(Gtk.SelectionMode.NONE)
+        self._lang_list.add_css_class('navigation-sidebar')
+        self._lang_list.connect('row-activated', self._on_lang_row_activated)
+        lang_pop.set_child(self._lang_list)
+        self._lang_button.set_popover(lang_pop)
+        search_row.append(self._lang_button)
+        list_page.append(search_row)
+
+        # Kind tabs (underline style). Built from the kinds actually installed.
+        self._tabs_box = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        self._tabs_box.add_css_class('module-tabs')
+        self._tabs_box.set_halign(Gtk.Align.CENTER)
+        list_page.append(self._tabs_box)
 
         list_scroll = Gtk.ScrolledWindow(vexpand=True)
         list_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        # Shrink-to-fit: the popover follows the list's natural height up to
+        # a cap, then scrolls — instead of a fixed 420 with empty space.
+        list_scroll.set_propagate_natural_height(True)
+        list_scroll.set_min_content_height(120)
+        list_scroll.set_max_content_height(360)
         self._listbox = Gtk.ListBox()
         self._listbox.set_selection_mode(Gtk.SelectionMode.NONE)
         self._listbox.add_css_class('navigation-sidebar')
+        self._listbox.add_css_class('module-list')
         self._listbox.connect('row-activated', self._on_row_activated)
         list_scroll.set_child(self._listbox)
         list_page.append(list_scroll)
@@ -102,7 +134,7 @@ class ModulePicker:
 
         # ── Info page ────────────────────────────────────────────────
         info_page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        info_page.set_size_request(320, 420)
+        info_page.set_size_request(340, -1)
         info_page.set_margin_start(8)
         info_page.set_margin_end(8)
         info_page.set_margin_top(8)
@@ -123,6 +155,9 @@ class ModulePicker:
 
         info_scroll = Gtk.ScrolledWindow(vexpand=True)
         info_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        info_scroll.set_propagate_natural_height(True)
+        info_scroll.set_min_content_height(160)
+        info_scroll.set_max_content_height(360)
         self._info_body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         info_scroll.set_child(self._info_body)
         info_page.append(info_scroll)
@@ -147,59 +182,121 @@ class ModulePicker:
 
     # ── list page ──────────────────────────────────────────────────────────────
 
+    # Kind tabs, in display order. The picker shows 'All' plus only the
+    # kinds actually installed.
+    _TAB_DEFS = [('all', 'All'), ('bible', 'Bibles'),
+                 ('commentary', 'Commentary'), ('imagery', 'Imagery'),
+                 ('books', 'Books')]
+    # Section order + headers for the grouped 'All' view.
+    _KIND_ORDER = ['bible', 'commentary', 'imagery', 'books']
+    _KIND_HEADERS = {'bible': 'Translations', 'commentary': 'Commentary',
+                     'imagery': 'Imagery', 'books': 'Books & Confessions'}
+    # Collapse SWORD's redundant ISO variants so the language menu isn't
+    # a wall of near-duplicates (en/eng, es/spa, la/lat).
+    _LANG_NORMALIZE = {'eng': 'en', 'spa': 'es', 'lat': 'la',
+                       'fra': 'fr', 'deu': 'de', 'ger': 'de'}
+    _LANG_NAMES = {'All': 'All languages', 'en': 'English',
+                   'enm': 'Middle English', 'es': 'Spanish', 'grc': 'Greek',
+                   'la': 'Latin', 'ru': 'Russian', 'fr': 'French',
+                   'de': 'German', 'he': 'Hebrew'}
+
+    @staticmethod
+    def _clear(container):
+        child = container.get_first_child()
+        while child:
+            nxt = child.get_next_sibling()
+            container.remove(child)
+            child = nxt
+
     def _lang_of(self, name):
         cached = self._lang_cache.get(name)
         if cached is not None:
             return cached
-        # Cache misses (returns '') too — re-probing wouldn't help.
-        self._lang_cache[name] = content.language(name) or ''
-        return self._lang_cache[name]
+        raw = (content.language(name) or '').lower()
+        norm = self._LANG_NORMALIZE.get(raw, raw)
+        self._lang_cache[name] = norm
+        return norm
 
     def _refresh(self):
         self._stack.set_visible_child_name('list')
         if self._search_entry.get_text():
             self._search_entry.set_text('')
         self._search = ''
-        self._build_chips()
+        self._kind = 'all'
+        self._build_tabs()
+        self._build_lang_menu()
         self._rebuild_list()
 
-    def _build_chips(self):
-        child = self._chips_box.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            self._chips_box.remove(child)
-            child = nxt
+    def _build_tabs(self):
+        self._clear(self._tabs_box)
+        kinds = {content.kind(name) for name in self._pane._names}
+        present = [k for k, _ in self._TAB_DEFS if k == 'all' or k in kinds]
+        if self._kind not in present:
+            self._kind = 'all'
 
+        # 'All' plus a single kind = nothing to filter; hide the bar.
+        if len(present) <= 2:
+            self._tabs_box.set_visible(False)
+            self._kind = 'all'
+            return
+        self._tabs_box.set_visible(True)
+
+        labels = dict(self._TAB_DEFS)
+        for k in present:
+            btn = Gtk.ToggleButton(label=labels[k])
+            if k == self._kind:
+                btn.set_active(True)
+            btn.connect('toggled', self._on_tab_toggled, k)
+            self._tabs_box.append(btn)
+
+    def _on_tab_toggled(self, btn, kind_value):
+        if not btn.get_active():
+            # Enforce "exactly one active": snap the current tab back on.
+            if self._kind == kind_value:
+                btn.set_active(True)
+            return
+        if self._kind == kind_value:
+            return
+        self._kind = kind_value
+        self._build_tabs()
+        self._rebuild_list()
+
+    def _build_lang_menu(self):
+        self._clear(self._lang_list)
         langs = {self._lang_of(name) for name in self._pane._names}
         langs.discard('')
 
-        # If there's only one language family (typically English), the row
-        # is dead UI weight. Hide it and force the filter to All.
+        # Single-language library: the menu is dead UI weight. Hide it.
         if len(langs) <= 1:
-            self._chips_box.set_visible(False)
+            self._lang_button.set_visible(False)
             self._lang = 'All'
             return
-        self._chips_box.set_visible(True)
+        self._lang_button.set_visible(True)
+        self._lang_button.remove_css_class('accent')
+        if self._lang != 'All':
+            self._lang_button.add_css_class('accent')
 
         for v in ['All'] + sorted(langs):
-            btn = Gtk.ToggleButton(label=v)
-            btn.add_css_class('pill')
-            if v == self._lang:
-                btn.set_active(True)
-                btn.add_css_class('suggested-action')
-            btn.connect('toggled', self._on_chip_toggled, v)
-            self._chips_box.append(btn)
+            row = Gtk.ListBoxRow()
+            row._lang_value = v
+            hb = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            hb.set_margin_start(8)
+            hb.set_margin_end(8)
+            hb.set_margin_top(4)
+            hb.set_margin_bottom(4)
+            lbl = Gtk.Label(
+                label=self._LANG_NAMES.get(v, v), xalign=0, hexpand=True)
+            hb.append(lbl)
+            tick = Gtk.Image.new_from_icon_name('object-select-symbolic')
+            tick.set_visible(v == self._lang)
+            hb.append(tick)
+            row.set_child(hb)
+            self._lang_list.append(row)
 
-    def _on_chip_toggled(self, btn, lang_value):
-        if not btn.get_active():
-            # Enforce "exactly one active": snap the current chip back on.
-            if self._lang == lang_value:
-                btn.set_active(True)
-            return
-        if self._lang == lang_value:
-            return
-        self._lang = lang_value
-        self._build_chips()
+    def _on_lang_row_activated(self, _listbox, row):
+        self._lang = row._lang_value
+        self._lang_popover.popdown()
+        self._build_lang_menu()
         self._rebuild_list()
 
     def _on_search_changed(self, entry):
@@ -207,22 +304,36 @@ class ModulePicker:
         self._rebuild_list()
 
     def _rebuild_list(self):
-        child = self._listbox.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            self._listbox.remove(child)
-            child = nxt
+        self._clear(self._listbox)
 
         q = self._search
-        lang = self._lang
-        any_match = False
+        # Bucket matching modules by kind, preserving the pane's order.
+        buckets: dict = {k: [] for k in self._KIND_ORDER}
         for name in self._pane._names:
-            if lang != 'All' and self._lang_of(name) != lang:
+            k = content.kind(name)
+            if self._kind != 'all' and k != self._kind:
                 continue
-            if q and q not in name.lower():
+            if self._lang != 'All' and self._lang_of(name) != self._lang:
                 continue
-            self._listbox.append(self._make_row(name))
+            if q and q not in name.lower() \
+                    and q not in sword_bridge.display_name(name).lower():
+                continue
+            buckets.setdefault(k, []).append(name)
+
+        grouped = self._kind == 'all'
+        any_match = False
+        for k in self._KIND_ORDER:
+            names = buckets.get(k) or []
+            if not names:
+                continue
             any_match = True
+            if grouped:
+                self._listbox.append(self._make_header(self._KIND_HEADERS[k]))
+            # Float the marquee packs to the top of their group so they're
+            # the first thing seen, not buried after the plain modules.
+            ordered = sorted(names, key=lambda n: content.feature_card(n) is None)
+            for name in ordered:
+                self._listbox.append(self._make_row(name))
 
         if not any_match:
             row = Gtk.ListBoxRow()
@@ -237,26 +348,81 @@ class ModulePicker:
             row.set_child(lbl)
             self._listbox.append(row)
 
+    def _make_header(self, text):
+        row = Gtk.ListBoxRow()
+        row.set_selectable(False)
+        row.set_activatable(False)
+        lbl = Gtk.Label(label=text.upper(), xalign=0)
+        lbl.add_css_class('caption')
+        lbl.add_css_class('dim-label')
+        lbl.add_css_class('module-section-header')
+        lbl.set_margin_start(8)
+        lbl.set_margin_top(10)
+        lbl.set_margin_bottom(2)
+        row.set_child(lbl)
+        return row
+
+    def _info_button(self, name):
+        btn = Gtk.Button(icon_name='dialog-information-symbolic')
+        btn.add_css_class('flat')
+        btn.add_css_class('circular')
+        # Ghosted until the row is hovered/focused (see CSS) so the list
+        # isn't a vertical rail of repeated info icons.
+        btn.add_css_class('module-info-btn')
+        btn.set_tooltip_text('Module info')
+        btn.set_valign(Gtk.Align.CENTER)
+        btn.connect('clicked', lambda _b, _n=name: self._show_info(_n))
+        return btn
+
     def _make_row(self, name):
+        card = content.feature_card(name)
+        if card:
+            return self._make_feature_row(name, card)
         row = Gtk.ListBoxRow()
         row._module_name = name
         hb = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         hb.set_margin_start(8)
         hb.set_margin_end(4)
-        hb.set_margin_top(4)
-        hb.set_margin_bottom(4)
+        hb.set_margin_top(2)
+        hb.set_margin_bottom(2)
         lbl = Gtk.Label(label=sword_bridge.display_name(name), xalign=0, hexpand=True)
         lbl.set_ellipsize(Pango.EllipsizeMode.END)
         if name == self._pane._module:
             lbl.add_css_class('accent')
         hb.append(lbl)
-        info_btn = Gtk.Button(icon_name='dialog-information-symbolic')
-        info_btn.add_css_class('flat')
-        info_btn.add_css_class('circular')
-        info_btn.set_tooltip_text('Module info')
-        info_btn.set_valign(Gtk.Align.CENTER)
-        info_btn.connect('clicked', lambda _b, _n=name: self._show_info(_n))
-        hb.append(info_btn)
+        hb.append(self._info_button(name))
+        row.set_child(hb)
+        return row
+
+    def _make_feature_row(self, name, card):
+        """Richer row for the marquee packs — leading icon, curated title,
+        and a one-line tagline — so they read as features, not list filler."""
+        row = Gtk.ListBoxRow()
+        row._module_name = name
+        hb = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        hb.set_margin_start(8)
+        hb.set_margin_end(4)
+        hb.set_margin_top(6)
+        hb.set_margin_bottom(6)
+        icon = Gtk.Image.new_from_icon_name(card['icon'])
+        icon.add_css_class('module-feature-icon')
+        icon.set_valign(Gtk.Align.CENTER)
+        hb.append(icon)
+        text = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL, spacing=1, hexpand=True)
+        title = Gtk.Label(label=sword_bridge.display_name(name), xalign=0)
+        title.set_ellipsize(Pango.EllipsizeMode.END)
+        title.add_css_class('module-feature-title')
+        if name == self._pane._module:
+            title.add_css_class('accent')
+        text.append(title)
+        sub = Gtk.Label(label=card['tagline'], xalign=0)
+        sub.set_ellipsize(Pango.EllipsizeMode.END)
+        sub.add_css_class('caption')
+        sub.add_css_class('dim-label')
+        text.append(sub)
+        hb.append(text)
+        hb.append(self._info_button(name))
         row.set_child(hb)
         return row
 

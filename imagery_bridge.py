@@ -141,7 +141,9 @@ def is_imagery_module(name: str) -> bool:
 
 
 def display_name(name: str) -> str:
-    return MODULE_KEY
+    # Curated feature name shown in the UI. MODULE_KEY ('Bible Imagery')
+    # remains the on-disk identity used everywhere else.
+    return 'Scripture in Art'
 
 
 def is_installed() -> bool:

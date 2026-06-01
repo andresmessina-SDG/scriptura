@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Open-book glyph anchoring the "Voices of the Church" hero row. Bundled
+  and drawn fill-only (two solid page halves with a centre gutter) so GTK4
+  recolors it to @accent_color reliably — the platform's dictionary
+  symbolic is a legacy multi-colour icon that ignores recolouring.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g fill="#222">
+    <path d="M7.4 4.1 C5.6 3.0 3.2 3.0 1.7 3.5 C1.5 3.57 1.4 3.75 1.4 3.95 L1.4 12.1 C1.4 12.4 1.7 12.62 2.0 12.53 C3.4 12.12 5.5 12.2 7.0 13.05 C7.18 13.15 7.4 13.02 7.4 12.8 Z"/>
+    <path d="M8.6 4.1 C10.4 3.0 12.8 3.0 14.3 3.5 C14.5 3.57 14.6 3.75 14.6 3.95 L14.6 12.1 C14.6 12.4 14.3 12.62 14.0 12.53 C12.6 12.12 10.5 12.2 9.0 13.05 C8.82 13.15 8.6 13.02 8.6 12.8 Z"/>
+  </g>
+</svg>

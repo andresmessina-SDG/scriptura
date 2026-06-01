@@ -415,6 +415,10 @@ DISPLAY_NAMES = {
     'Family':        'Family Bible Notes',
     'GerNeueBruns':  'Brunswick Commentary',
     'CalvinCommentaries': "Calvin's Commentaries",
+    # Generic Books / Confessions
+    'BaptistConfession1689': 'Baptist Confession of Faith (1689)',
+    'Concord':              'Book of Concord',
+    'DarkNightOfTheSoul':   'The Dark Night of the Soul',
     # Devotionals
     'SME':           'Spurgeon — Morning & Evening',
     'Spurgeon':      "Spurgeon's Morning & Evening",
@@ -456,6 +460,14 @@ def display_name(name):
     if isinstance(name, str) and name.startswith('eBible: '):
         import ebible_bridge
         return ebible_bridge.display_name(name)
+    # The feature packs carry curated names of their own. Lazy imports keep
+    # this bridge independent of them, mirroring the eBible branch above.
+    import catena_bridge
+    if catena_bridge.is_catena_module(name):
+        return catena_bridge.display_name(name)
+    import imagery_bridge
+    if imagery_bridge.is_imagery_module(name):
+        return imagery_bridge.display_name(name)
     return DISPLAY_NAMES.get(name, name)
 
 

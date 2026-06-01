@@ -37,6 +37,18 @@
  * (those are semantic content colours, not chrome).
  */
 
+/* ── Typography ──────────────────────────────────────────────────────────
+ * Modern UI font for all chrome. Adwaita Sans is the GNOME 48+ default
+ * (Inter-based, screen-optimised — crisper than Cantarell at small sizes);
+ * Inter and sans-serif are fallbacks for older runtimes. Scoped to `window`
+ * so the reading pane's own `textview { font-family }` rule still wins for
+ * Scripture text (see BiblePane._update_font_css). Contextual alternates +
+ * kerning on for cleaner rendering. */
+window {
+    font-family: "Adwaita Sans", "Inter", sans-serif;
+    font-feature-settings: "cv05", "calt", "kern";
+}
+
 /* ── Search panel (right-side revealer) ──────────────────────────────── */
 
 .search-panel {
@@ -151,6 +163,77 @@ button.scriptura-lex-toggle {
 
 .pane-module-title {
     font-weight: 650;
+}
+
+/* ── Module picker: kind tabs, section headers, feature rows ─────────── */
+
+/* Underline tabs — flat text with an accent underline on the active one,
+ * instead of the default linked-toggle grey fill (which reads as pressed,
+ * not selected). */
+.module-tabs {
+    margin-top: 2px;
+    margin-bottom: 4px;
+}
+
+.module-tabs button {
+    padding: 4px 8px 5px;
+    min-height: 0;
+    font-size: 0.88em;
+    background: transparent;
+    box-shadow: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    color: alpha(@window_fg_color, 0.62);
+}
+
+.module-tabs button:hover {
+    background: transparent;
+    color: alpha(@window_fg_color, 0.9);
+}
+
+.module-tabs button:checked {
+    background: transparent;
+    color: @accent_color;
+    font-weight: 600;
+    border-bottom-color: @accent_color;
+}
+
+.module-section-header {
+    font-weight: 700;
+    opacity: 0.7;
+    letter-spacing: 0.04em;
+}
+
+/* Info button: present but ghosted, revealed when its row is hovered or
+ * holds keyboard focus — keeps the layout stable (no reflow) while quieting
+ * the right-hand rail of repeated glyphs. */
+.module-list button.module-info-btn {
+    opacity: 0;
+    transition: opacity 120ms ease;
+}
+
+.module-list row:hover button.module-info-btn,
+.module-list row:focus-within button.module-info-btn {
+    opacity: 0.55;
+}
+
+.module-list button.module-info-btn:hover {
+    opacity: 1;
+}
+
+/* Tighter list rhythm than the sidebar default. */
+.module-list > row {
+    min-height: 0;
+}
+
+.module-feature-title {
+    font-weight: 600;
+}
+
+image.module-feature-icon {
+    color: @accent_color;
+    -gtk-icon-size: 24px;
 }
 
 menubutton.pane-module-button > button,
