@@ -183,6 +183,57 @@ def ingest_dore(conn, images_dir, width, limit, fetch_images):
     return rows
 
 
+# Tissot gouaches are colour scans; the zoom dialog is 960px wide, so cap there.
+_TISSOT_WIDTH = 960
+_TISSOT_URL = {
+    'NT': 'https://commons.wikimedia.org/wiki/'
+          'Category:The_Life_of_Jesus_Christ_by_James_Tissot',
+    'OT': 'https://commons.wikimedia.org/wiki/'
+          'Category:Old_Testament_by_James_Tissot',
+}
+_TISSOT_YEAR = {'NT': 1894, 'OT': 1900}
+
+
+def ingest_tissot(conn, images_dir, width, limit, fetch_images):
+    """James Tissot's colour gouache narrative from tools/tissot_plates.toml —
+    the Life of Our Lord Jesus Christ (NT) and the Old Testament. The first
+    'watercolor' tradition, so a verse Tissot shares with an engraving now
+    offers both styles. License/attribution are per-plate (NT + English OT are
+    PD; the Medhurst Genesis reproductions are CC BY-SA 4.0)."""
+    with open(os.path.join(_HERE, 'tissot_plates.toml'), 'rb') as f:
+        plates = tomllib.load(f)['plate']
+    if limit:
+        plates = plates[:limit]
+    rows = 0
+    for p in plates:
+        n = p['n']
+        ext = os.path.splitext(p['file'])[1] or '.jpg'
+        rel = f'images/tissot_{n}{ext}'
+        size = None
+        if fetch_images:
+            dest = os.path.join(images_dir, f'tissot_{n}{ext}')
+            try:
+                size = fetch(commons_filepath_url(p['file'], _TISSOT_WIDTH), dest)
+            except Exception as e:  # noqa: BLE001 — report and skip one plate
+                print(f'  ! tissot {n} fetch failed: {e}')
+                continue
+        t = p['testament']
+        v = p['verse']
+        conn.execute(
+            'INSERT INTO imagery (kind, tradition, title, caption, book, '
+            'loc_start, loc_end, passage_label, file_path, file_size, source, '
+            'source_url, license, attribution, artist, year, iconclass) '
+            'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+            ('painting', 'watercolor', p['title'], None, p['book'],
+             encode(p['chapter'], v), encode(p['chapter'], v),
+             None, rel, size, 'tissot', _TISSOT_URL[t],
+             p['license'], p['attribution'], 'James Tissot',
+             _TISSOT_YEAR[t], None))
+        rows += 1
+        print(f'  + tissot {n}  {p["book"]} {p["chapter"]}:{v}  {p["title"]}')
+    return rows
+
+
 # ── OpenBible.info geocoding — places named in each verse ───────────────────
 
 # Pinned to the default branch; switch to a pinned commit SHA for fully
@@ -472,8 +523,8 @@ def ingest_modern(conn, images_dir, width, limit, fetch_images):
 
 
 _SOURCES = {'schnorr': ingest_schnorr, 'dore': ingest_dore,
-            'openbible': ingest_openbible, 'hurlbut': ingest_hurlbut,
-            'modern': ingest_modern}
+            'tissot': ingest_tissot, 'openbible': ingest_openbible,
+            'hurlbut': ingest_hurlbut, 'modern': ingest_modern}
 
 
 def main():

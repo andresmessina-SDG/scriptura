@@ -1,0 +1,4935 @@
+# James Tissot — colour gouache narrative (tradition = watercolor).
+# NT: *The Life of Our Lord Jesus Christ* (~1886–1894, Brooklyn
+# Museum, Public Domain). OT: *The Old Testament* (PD gouaches, plus
+# Phillip Medhurst colour reproductions for some Genesis scenes which
+# are CC BY-SA 4.0 — license/attribution carried per plate). Generated
+# by tools/gen_tissot.py; do not hand-edit. `n` keys are "TN###"/
+# "TO###" so dest filenames never collide with other sources.
+
+[[plate]]
+n = "TN001"
+file = "Brooklyn Museum - A Woman Cries Out in a Crowd (Une femme crie dans en foule) - James Tissot.jpg"
+title = "A Woman Cries Out in a Crowd"
+book = "Luke"
+chapter = 11
+verse = 27
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN002"
+file = "Brooklyn Museum - Address to Saint Philip (Allocution à Saint Philippe) - James Tissot.jpg"
+title = "Address to Saint Philip"
+book = "John"
+chapter = 14
+verse = 8
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN003"
+file = "Brooklyn Museum - Agnus-Dei The Scapegoat (Agnus-Dei. Le bouc émissaire.) - James Tissot.jpg"
+title = "Agnus-Dei The Scapegoat"
+book = "John"
+chapter = 1
+verse = 29
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN004"
+file = "Brooklyn Museum - All the City Was Gathered at His Door (Toute la ville étant à sa porte) - James Tissot - overall.jpg"
+title = "All the City Was Gathered at His Door"
+book = "Mark"
+chapter = 1
+verse = 33
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN005"
+file = "Brooklyn Museum - Annas and Caiaphas (Anne et Caïphe) - James Tissot.jpg"
+title = "Annas and Caiaphas"
+book = "John"
+chapter = 18
+verse = 24
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN006"
+file = "Brooklyn Museum - Apparition of Our Lord to Saint Peter (Apparition de Notre-Seigneur à St-Pierre) - James Tissot.jpg"
+title = "Apparition of Our Lord to Saint Peter"
+book = "Luke"
+chapter = 24
+verse = 34
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN007"
+file = "Brooklyn Museum - Behold the Man (Ecce Homo) - James Tissot.jpg"
+title = "Behold the Man"
+book = "John"
+chapter = 19
+verse = 5
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN008"
+file = "Brooklyn Museum - But No Man Laid Hands Upon Him (Les satellites ne prirent point Jésus) - James Tissot.jpg"
+title = "But No Man Laid Hands Upon Him"
+book = "John"
+chapter = 7
+verse = 44
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN009"
+file = "Brooklyn Museum - Christ Appears on the Shore of Lake Tiberias (Apparition du Christ sur les bords du lac de Tibériade) - James Tissot.jpg"
+title = "Christ Appears on the Shore of Lake Tiberias"
+book = "John"
+chapter = 21
+verse = 4
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN010"
+file = "Brooklyn Museum - Christ Retreats to the Mountain at Night (Jésus se retira la nuit sur la montagne) - James Tissot.jpg"
+title = "Christ Retreats to the Mountain at Night"
+book = "Luke"
+chapter = 6
+verse = 12
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN011"
+file = "Brooklyn Museum - Conspiracy of the Jews (Conspiration des juifs) - James Tissot.jpg"
+title = "Conspiracy of the Jews"
+book = "Matthew"
+chapter = 26
+verse = 4
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN012"
+file = "Brooklyn Museum - Curses Against the Pharisees (Imprécations contre les pharisiens) - James Tissot.jpg"
+title = "Curses Against the Pharisees"
+book = "Matthew"
+chapter = 23
+verse = 13
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN013"
+file = "Brooklyn Museum - Feed My Lambs (Pais mes brebis) - James Tissot.jpg"
+title = "Feed My Lambs"
+book = "John"
+chapter = 21
+verse = 15
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN014"
+file = "Brooklyn Museum - Get Thee Behind Me Satan (Rétire-toi Satan) - James Tissot.jpg"
+title = "Get Thee Behind Me Satan"
+book = "Matthew"
+chapter = 4
+verse = 10
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN015"
+file = "Brooklyn Museum - Good Friday Morning Jesus in Prison (Le matin Vendredi Saint Jésus en prison) - James Tissot.jpg"
+title = "Good Friday Morning Jesus in Prison"
+book = "Matthew"
+chapter = 27
+verse = 1
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN016"
+file = "Brooklyn Museum - He Did No Miracles But He Healed Them (Il ne fit pas des miracles mais il guérit) - James Tissot.jpg"
+title = "He Did No Miracles But He Healed Them"
+book = "Matthew"
+chapter = 13
+verse = 58
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN017"
+file = "Brooklyn Museum - He Heals the Lame (Il guérit les boiteux) - James Tissot.jpg"
+title = "He Heals the Lame"
+book = "Matthew"
+chapter = 21
+verse = 14
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN018"
+file = "Brooklyn Museum - He Sent them out Two by Two (Il les envoya deux à deux) - James Tissot - overall.jpg"
+title = "He Sent them out Two by Two"
+book = "Mark"
+chapter = 6
+verse = 7
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN019"
+file = "Brooklyn Museum - He Vanished from Their Sight (Il disparut à leurs yeux) - James Tissot.jpg"
+title = "He Vanished from Their Sight"
+book = "Luke"
+chapter = 24
+verse = 31
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN020"
+file = "Brooklyn Museum - He Went on His Way to Ephraim (Il s'en alla à Ephrem) - James Tissot.jpg"
+title = "He Went on His Way to Ephraim"
+book = "John"
+chapter = 11
+verse = 54
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN021"
+file = "Brooklyn Museum - He Went Through the Villages on the Way to Jerusalem (Il allait par les villages en route pour Jérusalem) - James Tissot - overall.jpg"
+title = "He Went Through the Villages on the Way to Jerusalem"
+book = "Luke"
+chapter = 13
+verse = 22
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN022"
+file = "Brooklyn Museum - He Who is of God Hears the Word of God (Celui de Dieu entend la parole de Dieu) - James Tissot.jpg"
+title = "He Who is of God Hears the Word of God"
+book = "John"
+chapter = 8
+verse = 47
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN023"
+file = "Brooklyn Museum - He Who Winnows His Wheat (Celui qui vane le blé) - James Tissot.jpg"
+title = "He Who Winnows His Wheat"
+book = "Matthew"
+chapter = 3
+verse = 12
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN024"
+file = "Brooklyn Museum - Healing of the Lepers at Capernaum (Guérison des lépreux à Capernaum) - James Tissot - overall.jpg"
+title = "Healing of the Lepers at Capernaum"
+book = "Mark"
+chapter = 1
+verse = 40
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN025"
+file = "Brooklyn Museum - \"I Thirst\" The Vinegar Given to Jesus (\"J'ai soif.\" Le vinaigre donné à Jésus) - James Tissot.jpg"
+title = "\"I Thirst\" The Vinegar Given to Jesus"
+book = "John"
+chapter = 19
+verse = 28
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN026"
+file = "Brooklyn Museum - In the Villages the Sick Were Presented to Him (Dans les villages on lui présentait des malades) - James Tissot.jpg"
+title = "In the Villages the Sick Were Presented to Him"
+book = "Mark"
+chapter = 6
+verse = 55
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN027"
+file = "Brooklyn Museum - Interview between Jesus and Nicodemus (Entretien de Jésus et de Nicodème) - James Tissot.jpg"
+title = "Interview between Jesus and Nicodemus"
+book = "John"
+chapter = 3
+verse = 2
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN028"
+file = "Brooklyn Museum - It Is Finished (Consummatum Est) - James Tissot.jpg"
+title = "It Is Finished"
+book = "John"
+chapter = 19
+verse = 30
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN029"
+file = "Brooklyn Museum - Jesus Alone on the Cross (Jésus seul sur la Croix) - James Tissot.jpg"
+title = "Jesus Alone on the Cross"
+book = "John"
+chapter = 19
+verse = 18
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN030"
+file = "Brooklyn Museum - Jesus Among the Doctors (Jésus parmi les docteurs) - James Tissot - overall.jpg"
+title = "Jesus Among the Doctors"
+book = "Luke"
+chapter = 2
+verse = 46
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN031"
+file = "Brooklyn Museum - Jesus and his Mother at the Fountain (Jésus et sa mère à la fontaine) - James Tissot - overall.jpg"
+title = "Jesus and his Mother at the Fountain"
+book = "Luke"
+chapter = 2
+verse = 51
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN032"
+file = "Brooklyn Museum - Jesus and the Little Child (Jésus et le petit enfant) - James Tissot - overall.jpg"
+title = "Jesus and the Little Child"
+book = "Matthew"
+chapter = 18
+verse = 2
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN033"
+file = "Brooklyn Museum - Jesus Appears to Mary Magdalene (Apparition de Jésus à Madeleine) - James Tissot.jpg"
+title = "Jesus Appears to Mary Magdalene"
+book = "John"
+chapter = 20
+verse = 16
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN034"
+file = "Brooklyn Museum - Jesus Appears to the Holy Women (Apparition de Jésus aux saintes femmes) - James Tissot.jpg"
+title = "Jesus Appears to the Holy Women"
+book = "Matthew"
+chapter = 28
+verse = 9
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN035"
+file = "Brooklyn Museum - Jesus Bearing the Cross (Jésus chargé de la Croix) - James Tissot.jpg"
+title = "Jesus Bearing the Cross"
+book = "John"
+chapter = 19
+verse = 17
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN036"
+file = "Brooklyn Museum - Jesus Before Herod (Jésus devant Hérode) - James Tissot.jpg"
+title = "Jesus Before Herod"
+book = "Luke"
+chapter = 23
+verse = 8
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN037"
+file = "Brooklyn Museum - Jesus Before Pilate First Interview (Jésus devant Pilate. Premier entretien). - James Tissot.jpg"
+title = "Jesus Before Pilate First Interview."
+book = "John"
+chapter = 18
+verse = 33
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN038"
+file = "Brooklyn Museum - Jesus Before Pilate Second Interview (Jésus devant Pilate. Deuxième entretien) - James Tissot.jpg"
+title = "Jesus Before Pilate Second Interview"
+book = "John"
+chapter = 19
+verse = 9
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN039"
+file = "Brooklyn Museum - Jesus Carried to the Tomb (Jésus porté au tombeau) - James Tissot.jpg"
+title = "Jesus Carried to the Tomb"
+book = "John"
+chapter = 19
+verse = 41
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN040"
+file = "Brooklyn Museum - Jesus Carried up to a Pinnacle of the Temple (Jésus porté sur le pinacle du Temple) - James Tissot - overall.jpg"
+title = "Jesus Carried up to a Pinnacle of the Temple"
+book = "Matthew"
+chapter = 4
+verse = 5
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN041"
+file = "Brooklyn Museum - Jesus Chases a Possessed Man from the Synagogue (Jésus chasse un possédé de la synagogue) - James Tissot.jpg"
+title = "Jesus Chases a Possessed Man from the Synagogue"
+book = "Mark"
+chapter = 1
+verse = 26
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN042"
+file = "Brooklyn Museum - Jesus Commands the Apostles to Rest (Jésus engage les apôtres à se reposer) - James Tissot.jpg"
+title = "Jesus Commands the Apostles to Rest"
+book = "Mark"
+chapter = 6
+verse = 31
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN043"
+file = "Brooklyn Museum - Jesus Falls Beneath the Cross (Jésus tombe sous la Croix) - James Tissot.jpg"
+title = "Jesus Falls Beneath the Cross"
+book = "John"
+chapter = 19
+verse = 17
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN044"
+file = "Brooklyn Museum - Jesus Forbids the Carrying of Loads in the Forecourt of the Temple - James Tissot.jpg"
+title = "Jesus Forbids the Carrying of Loads in the Forecourt of the Temple"
+book = "Mark"
+chapter = 11
+verse = 16
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN045"
+file = "Brooklyn Museum - Jesus Found in the Temple (Jesus retrouvé dans le temple) - James Tissot - overall.jpg"
+title = "Jesus Found in the Temple"
+book = "Luke"
+chapter = 2
+verse = 46
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN046"
+file = "Brooklyn Museum - Jesus Goes in the Evening to Bethany (Jésus va le soir à Béthanie) - James Tissot.jpg"
+title = "Jesus Goes in the Evening to Bethany"
+book = "Mark"
+chapter = 11
+verse = 11
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN047"
+file = "Brooklyn Museum - Jesus Goes Up Alone onto a Mountain to Pray (Jésus monte seul sur une montagne pour prier) - James Tissot - overall.jpg"
+title = "Jesus Goes Up Alone onto a Mountain to Pray"
+book = "Matthew"
+chapter = 14
+verse = 23
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN048"
+file = "Brooklyn Museum - Jesus Heals a Mute Possessed Man (Jésus guérit un possédé muet) - James Tissot.jpg"
+title = "Jesus Heals a Mute Possessed Man"
+book = "Matthew"
+chapter = 9
+verse = 32
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN049"
+file = "Brooklyn Museum - Jesus Heals the Blind and Lame on the Mountain (Sur la montagne Jésus guérit les aveugles et les boiteux) - James Tissot - overall.jpg"
+title = "Jesus Heals the Blind and Lame on the Mountain"
+book = "Matthew"
+chapter = 15
+verse = 30
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN050"
+file = "Brooklyn Museum - Jesus in the Sepulchre (Jésus dans le sépulcre) - James Tissot.jpg"
+title = "Jesus in the Sepulchre"
+book = "Matthew"
+chapter = 27
+verse = 60
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN051"
+file = "Brooklyn Museum - Jesus Leaves the Praetorium (Jésus quitte le pretoire) - James Tissot.jpg"
+title = "Jesus Leaves the Praetorium"
+book = "John"
+chapter = 19
+verse = 16
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN052"
+file = "Brooklyn Museum - Jesus Led from Caiaphas to Pilate (Jésus conduit de Caïphe à Pilate) - James Tissot.jpg"
+title = "Jesus Led from Caiaphas to Pilate"
+book = "John"
+chapter = 18
+verse = 28
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN053"
+file = "Brooklyn Museum - Jesus Led from Herod to Pilate (Jésus emmené de Hérode à Pilate) - James Tissot.jpg"
+title = "Jesus Led from Herod to Pilate"
+book = "Luke"
+chapter = 23
+verse = 11
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN054"
+file = "Brooklyn Museum - Jesus Mary Magdalene and Martha at Bethany (Jésus à Bethanie Marie Madeleine et Marthe) - James Tissot.jpg"
+title = "Jesus Mary Magdalene and Martha at Bethany"
+book = "Luke"
+chapter = 10
+verse = 39
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN055"
+file = "Brooklyn Museum - Jesus Meets His Mother (Jésus rencontre sa mère) - James Tissot.jpg"
+title = "Jesus Meets His Mother"
+book = "Luke"
+chapter = 23
+verse = 27
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN056"
+file = "Brooklyn Museum - Jesus Ministered to by Angels (Jésus assisté par les anges) - James Tissot - overall.jpg"
+title = "Jesus Ministered to by Angels"
+book = "Matthew"
+chapter = 4
+verse = 11
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN057"
+file = "Brooklyn Museum - Jesus Preaches in a Ship (Jésus prèche dans une barque) - James Tissot - overall.jpg"
+title = "Jesus Preaches in a Ship"
+book = "Luke"
+chapter = 5
+verse = 3
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN058"
+file = "Brooklyn Museum - Jesus Sits by the Seashore and Preaches (Jésus s'assied au bord de la mer et prêche) - James Tissot.jpg"
+title = "Jesus Sits by the Seashore and Preaches"
+book = "Matthew"
+chapter = 13
+verse = 1
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN059"
+file = "Brooklyn Museum - Jesus Sleeping During the Tempest (Jésus dormant pendant la tempête) - James Tissot - overall.jpg"
+title = "Jesus Sleeping During the Tempest"
+book = "Mark"
+chapter = 4
+verse = 38
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN060"
+file = "Brooklyn Museum - Jesus Speaks Near the Treasury (Jésus parle près du trésor) - James Tissot.jpg"
+title = "Jesus Speaks Near the Treasury"
+book = "John"
+chapter = 8
+verse = 20
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN061"
+file = "Brooklyn Museum - Jesus Stilling the Tempest (Jésus calmant la tempête) - James Tissot - overall.jpg"
+title = "Jesus Stilling the Tempest"
+book = "Mark"
+chapter = 4
+verse = 39
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN062"
+file = "Brooklyn Museum - Jesus Stripped of His Clothing (Jésus dépouillé des ses vêtements) - James Tissot.jpg"
+title = "Jesus Stripped of His Clothing"
+book = "Mark"
+chapter = 15
+verse = 24
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN063"
+file = "Brooklyn Museum - Jesus Taken from the Cistern (Jésus tiré de la citerne) - James Tissot.jpg"
+title = "Jesus Taken from the Cistern"
+book = "Luke"
+chapter = 22
+verse = 66
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN064"
+file = "Brooklyn Museum - Jesus Teaches in the Synagogues (Jésus enseigne dans les synagogues) - James Tissot.jpg"
+title = "Jesus Teaches in the Synagogues"
+book = "Matthew"
+chapter = 4
+verse = 23
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN065"
+file = "Brooklyn Museum - Jesus Teaches the People by the Sea (Jésus enseigne le peuple près de la mer) - James Tissot - overall.jpg"
+title = "Jesus Teaches the People by the Sea"
+book = "Mark"
+chapter = 4
+verse = 1
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN066"
+file = "Brooklyn Museum - Jesus Tempted in the Wilderness (Jésus tenté dans le désert) - James Tissot - overall.jpg"
+title = "Jesus Tempted in the Wilderness"
+book = "Matthew"
+chapter = 4
+verse = 1
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN067"
+file = "Brooklyn Museum - Jesus Transported by a Spirit onto a High Mountain (Jésus transporté par l'esprit sur une haute montagne) - James Tissot - overall.jpg"
+title = "Jesus Transported by a Spirit onto a High Mountain"
+book = "Matthew"
+chapter = 4
+verse = 8
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN068"
+file = "Brooklyn Museum - Jesus Unrolls the Book in the Synagogue (Jésus dans la synagogue déroule le livre) - James Tissot - overall.jpg"
+title = "Jesus Unrolls the Book in the Synagogue"
+book = "Luke"
+chapter = 4
+verse = 17
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN069"
+file = "Brooklyn Museum - Jesus Walks in the Portico of Solomon (Jésus se promène dans le portique de Salomon) - James Tissot.jpg"
+title = "Jesus Walks in the Portico of Solomon"
+book = "John"
+chapter = 10
+verse = 23
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN070"
+file = "Brooklyn Museum - Jesus Walks on the Sea (Jésus marche sur la mer) - James Tissot - overall.jpg"
+title = "Jesus Walks on the Sea"
+book = "Matthew"
+chapter = 14
+verse = 25
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN071"
+file = "Brooklyn Museum - Jesus Went Out into a Desert Place (Jésus va dans un endroit désert) - James Tissot - overall.jpg"
+title = "Jesus Went Out into a Desert Place"
+book = "Matthew"
+chapter = 14
+verse = 13
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN072"
+file = "Brooklyn Museum - Jesus Wept (Jésus pleura) - James Tissot.jpg"
+title = "Jesus Wept"
+book = "John"
+chapter = 11
+verse = 35
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN073"
+file = "Brooklyn Museum - Joseph of Arimathaea Seeks Pilate to Beg Permission to Remove the Body of Jesus - James Tissot.jpg"
+title = "Joseph of Arimathaea Seeks Pilate to Beg Permission to Remove the Body of Jesus"
+book = "Mark"
+chapter = 15
+verse = 43
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN074"
+file = "Brooklyn Museum - Judas Goes to Find the Jews (Judas va trouver les Juifs) - James Tissot.jpg"
+title = "Judas Goes to Find the Jews"
+book = "Matthew"
+chapter = 26
+verse = 14
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN075"
+file = "Brooklyn Museum - Judas Hangs Himself (Judas se pend) - James Tissot.jpg"
+title = "Judas Hangs Himself"
+book = "Matthew"
+chapter = 27
+verse = 5
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN076"
+file = "Brooklyn Museum - Judas Leaves the Cenacle (Judas quitte le Cénacle) - James Tissot.jpg"
+title = "Judas Leaves the Cenacle"
+book = "John"
+chapter = 13
+verse = 30
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN077"
+file = "Brooklyn Museum - Judas Returns the Money (Judas rend l'argent) - James Tissot.jpg"
+title = "Judas Returns the Money"
+book = "Matthew"
+chapter = 27
+verse = 3
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN078"
+file = "Brooklyn Museum - Le possédé au pied du Thabor (The Possessed Boy at the Foot of Mount Tabor) - James Tissot.jpg"
+title = "Le possédé au pied du Thabor"
+book = "Mark"
+chapter = 9
+verse = 18
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN079"
+file = "Brooklyn Museum - Let Him Be Crucified (Qu'il soit crucifié) - James Tissot.jpg"
+title = "Let Him Be Crucified"
+book = "Matthew"
+chapter = 27
+verse = 22
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN080"
+file = "Brooklyn Museum - Lord, I Am Not Worthy (Domine Non Sum Dignus) - James Tissot - overall.jpg"
+title = "Lord, I Am Not Worthy"
+book = "Matthew"
+chapter = 8
+verse = 8
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN081"
+file = "Brooklyn Museum - Maltreatments in the House of Caiaphas (Les mauvais traitements chez Caïphe) - James Tissot.jpg"
+title = "Maltreatments in the House of Caiaphas"
+book = "Matthew"
+chapter = 26
+verse = 67
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN082"
+file = "Brooklyn Museum - Mary Magdalene and the Holy Women at the Tomb (Madeleine et les saintes femmes au tombeau) - James Tissot.jpg"
+title = "Mary Magdalene and the Holy Women at the Tomb"
+book = "Mark"
+chapter = 16
+verse = 1
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN083"
+file = "Brooklyn Museum - Mary Magdalene at the Feet of Jesus - James Tissot.jpg"
+title = "Mary Magdalene at the Feet of Jesus"
+book = "Luke"
+chapter = 7
+verse = 38
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN084"
+file = "Brooklyn Museum - Mary Magdalene Questions the Angels in the Tomb (Madeleine dans le tombeau interroge les anges) - James Tissot.jpg"
+title = "Mary Magdalene Questions the Angels in the Tomb"
+book = "John"
+chapter = 20
+verse = 13
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN085"
+file = "Brooklyn Museum - Meal of Our Lord and the Apostles (Repas de Notre-Seigneur et des apôtres) - James Tissot.jpg"
+title = "Meal of Our Lord and the Apostles"
+book = "Luke"
+chapter = 22
+verse = 14
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN086"
+file = "Brooklyn Museum - My God My God why hast thou forsaken me (Eli Eli lama sabactani) - James Tissot.jpg"
+title = "My God My God why hast thou forsaken me"
+book = "Matthew"
+chapter = 27
+verse = 46
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN087"
+file = "Brooklyn Museum - My Name is Legion (Je m'appelle Légion) - James Tissot - overall.jpg"
+title = "My Name is Legion"
+book = "Mark"
+chapter = 5
+verse = 9
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN088"
+file = "Brooklyn Museum - My Soul is Sorrowful unto Death (Mon âme est triste jusqu'à la mort) - James Tissot.jpg"
+title = "My Soul is Sorrowful unto Death"
+book = "Matthew"
+chapter = 26
+verse = 38
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN089"
+file = "Brooklyn Museum - Nathaniel Under the Fig Tree (Nathanaël sous le figuier) - James Tissot - overall.jpg"
+title = "Nathaniel Under the Fig Tree"
+book = "John"
+chapter = 1
+verse = 48
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN090"
+file = "Brooklyn Museum - On Entering the House, Salute It (En entrant la maison salue-la) - James Tissot - overall.jpg"
+title = "On Entering the House, Salute It"
+book = "Matthew"
+chapter = 10
+verse = 12
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN091"
+file = "Brooklyn Museum - On Return from Jerusalem, It is Noticed that Jesus is Lost - James Tissot.jpg"
+title = "On Return from Jerusalem, It is Noticed that Jesus is Lost"
+book = "Luke"
+chapter = 2
+verse = 43
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN092"
+file = "Brooklyn Museum - Ordaining of the Twelve Apostles (Election des douze apôtres) - James Tissot.jpg"
+title = "Ordaining of the Twelve Apostles"
+book = "Mark"
+chapter = 3
+verse = 14
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN093"
+file = "Brooklyn Museum - Pilate Washes His Hands (Pilate se lave les mains) - James Tissot.jpg"
+title = "Pilate Washes His Hands"
+book = "Matthew"
+chapter = 27
+verse = 24
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN094"
+file = "Brooklyn Museum - Saint John the Baptist and the Pharisees (Saint Jean-Baptiste et les pharisiens) - James Tissot - overall.jpg"
+title = "Saint John the Baptist and the Pharisees"
+book = "John"
+chapter = 1
+verse = 24
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN095"
+file = "Brooklyn Museum - Saint John the Baptist Sees Jesus from Afar (Saint Jean-Baptiste voit Jésus de loin) - James Tissot - overall.jpg"
+title = "Saint John the Baptist Sees Jesus from Afar"
+book = "John"
+chapter = 1
+verse = 29
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN096"
+file = "Brooklyn Museum - Saint Joseph Seeks a Lodging in Bethlehem (Saint Joseph cherche un gîte à Bethléem) - James Tissot - overall.jpg"
+title = "Saint Joseph Seeks a Lodging in Bethlehem"
+book = "Luke"
+chapter = 2
+verse = 7
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN097"
+file = "Brooklyn Museum - Saint Peter Alerted by Saint John to the Presence of the Lord Casts Himself into the Water - James Tissot.jpg"
+title = "Saint Peter Alerted by Saint John to the Presence of the Lord Casts Himself into the Water"
+book = "John"
+chapter = 21
+verse = 7
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN098"
+file = "Brooklyn Museum - Saint Peter and Saint John Follow from Afar (Saint Pierre et Saint Jean suivent de loin) - James Tissot.jpg"
+title = "Saint Peter and Saint John Follow from Afar"
+book = "Luke"
+chapter = 22
+verse = 54
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN099"
+file = "Brooklyn Museum - Saint Peter and Saint John Run to the Sepulchre (Saint Pierre et Saint Jean courent au sépulcre) - James Tissot.jpg"
+title = "Saint Peter and Saint John Run to the Sepulchre"
+book = "John"
+chapter = 20
+verse = 4
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN100"
+file = "Brooklyn Museum - Saint Peter Walks on the Sea (Saint Pierre marche sur la mer) - James Tissot - overall.jpg"
+title = "Saint Peter Walks on the Sea"
+book = "Matthew"
+chapter = 14
+verse = 29
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN101"
+file = "Brooklyn Museum - Simon the Cyrenian and His Two Sons Alexander and Rufus (Simon de Cyrène et ses deux fils, Alexandre et Rufus) - James Tissot.jpg"
+title = "Simon the Cyrenian and His Two Sons Alexander and Rufus"
+book = "Mark"
+chapter = 15
+verse = 21
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN102"
+file = "Brooklyn Museum - Simon the Cyrenian Compelled to Carry the Cross with Jesus (Simon de Cyrène contraint de porter la Croix avec Jésus) - James Tissot.jpg"
+title = "Simon the Cyrenian Compelled to Carry the Cross with Jesus"
+book = "Matthew"
+chapter = 27
+verse = 32
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN103"
+file = "Brooklyn Museum - Suffer the Little Children to Come unto Me (Laisser venir à moi les petits enfants) - James Tissot.jpg"
+title = "Suffer the Little Children to Come unto Me"
+book = "Mark"
+chapter = 10
+verse = 14
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN104"
+file = "Brooklyn Museum - The Accursed Fig Tree (Le figuier maudit) - James Tissot.jpg"
+title = "The Accursed Fig Tree"
+book = "Matthew"
+chapter = 21
+verse = 19
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN105"
+file = "Brooklyn Museum - The Adoration of the Magi (L'adoration des mages) - James Tissot - overall.jpg"
+title = "The Adoration of the Magi"
+book = "Matthew"
+chapter = 2
+verse = 11
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN106"
+file = "Brooklyn Museum - The Adoration of the Shepherds (L'adoration des bergers) - James Tissot - overall.jpg"
+title = "The Adoration of the Shepherds"
+book = "Luke"
+chapter = 2
+verse = 16
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN107"
+file = "Brooklyn Museum - The Adulterous Woman Alone with Jesus (La femme adultère seule avec Jésus) - James Tissot.jpg"
+title = "The Adulterous Woman Alone with Jesus"
+book = "John"
+chapter = 8
+verse = 10
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN108"
+file = "Brooklyn Museum - The Adulterous Woman--Christ Writing upon the Ground (La femme adultère--Christ écrit par terre) - James Tissot.jpg"
+title = "The Adulterous Woman--Christ Writing upon the Ground"
+book = "John"
+chapter = 8
+verse = 6
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN109"
+file = "Brooklyn Museum - The Angel and the Shepherds (L'ange et les bergers) - James Tissot.jpg"
+title = "The Angel and the Shepherds"
+book = "Luke"
+chapter = 2
+verse = 9
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN110"
+file = "Brooklyn Museum - The Angel Seated on the Stone of the Tomb (L'ange assis sur la pierre du tombeau) - James Tissot.jpg"
+title = "The Angel Seated on the Stone of the Tomb"
+book = "Matthew"
+chapter = 28
+verse = 2
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN111"
+file = "Brooklyn Museum - The Annunciation (L'annonciation) - James Tissot - overall.jpg"
+title = "The Annunciation"
+book = "Luke"
+chapter = 1
+verse = 28
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN112"
+file = "Brooklyn Museum - The Anxiety of Saint Joseph (L'anxiété de Saint Joseph) - James Tissot - overall.jpg"
+title = "The Anxiety of Saint Joseph"
+book = "Matthew"
+chapter = 1
+verse = 19
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN113"
+file = "Brooklyn Museum - The Appearance of Christ at the Cenacle (Apparition du Christ au cénacle) - James Tissot.jpg"
+title = "The Appearance of Christ at the Cenacle"
+book = "Luke"
+chapter = 24
+verse = 36
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN114"
+file = "Brooklyn Museum - The Ascension (L'Ascension) - James Tissot.jpg"
+title = "The Ascension"
+book = "Acts"
+chapter = 1
+verse = 9
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN115"
+file = "Brooklyn Museum - The Axe in the Trunk of the Tree (La cognée dans le tronc de l'arbre) - James Tissot - overall.jpg"
+title = "The Axe in the Trunk of the Tree"
+book = "Matthew"
+chapter = 3
+verse = 10
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN116"
+file = "Brooklyn Museum - The Bad Rich Man in Hell (Le mauvais riche dans l'Enfer) - James Tissot - overall.jpg"
+title = "The Bad Rich Man in Hell"
+book = "Luke"
+chapter = 16
+verse = 23
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN117"
+file = "Brooklyn Museum - The Baptism of Jesus (Baptême de Jésus) - James Tissot - overall.jpg"
+title = "The Baptism of Jesus"
+book = "Matthew"
+chapter = 3
+verse = 16
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN118"
+file = "Brooklyn Museum - The Betrothal of the Holy Virgin and Saint Joseph (Fiançailles de la sainte vierge et de saint Joseph) - James Tissot - overall.jpg"
+title = "The Betrothal of the Holy Virgin and Saint Joseph"
+book = "Matthew"
+chapter = 1
+verse = 18
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN119"
+file = "Brooklyn Museum - The Betrothed of Cana (Les fiancés de Cana) - James Tissot - overall.jpg"
+title = "The Betrothed of Cana"
+book = "John"
+chapter = 2
+verse = 1
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN120"
+file = "Brooklyn Museum - The Birth of Our Lord Jesus Christ (La nativité de Notre-Seigneur Jésus-Christ) - James Tissot - overall.jpg"
+title = "The Birth of Our Lord Jesus Christ"
+book = "Luke"
+chapter = 2
+verse = 7
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN121"
+file = "Brooklyn Museum - The Blind and Mute Man Possessed by Devils (Le démoniaque aveugle et muet) - James Tissot.jpg"
+title = "The Blind and Mute Man Possessed by Devils"
+book = "Matthew"
+chapter = 12
+verse = 22
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN122"
+file = "Brooklyn Museum - The Blind in the Ditch (Les aveugles dans le fossé) - James Tissot.jpg"
+title = "The Blind in the Ditch"
+book = "Matthew"
+chapter = 15
+verse = 14
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN123"
+file = "Brooklyn Museum - The Blind Man Washes in the Pool of Siloam (Le aveugle-né se lave à la piscine de Siloë) - James Tissot.jpg"
+title = "The Blind Man Washes in the Pool of Siloam"
+book = "John"
+chapter = 9
+verse = 7
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN124"
+file = "Brooklyn Museum - The Blind of Capernaum (Les aveugles de Capharnum) - James Tissot - overall.jpg"
+title = "The Blind of Capernaum"
+book = "Matthew"
+chapter = 9
+verse = 27
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN125"
+file = "Brooklyn Museum - The Body of Jesus Carried to the Anointing Stone (Le corps de Jésus porté à la pierre de l'onction) - James Tissot.jpg"
+title = "The Body of Jesus Carried to the Anointing Stone"
+book = "John"
+chapter = 19
+verse = 40
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN126"
+file = "Brooklyn Museum - The Brow of the Hill near Nazareth (L'escarpement de Nazareth) - James Tissot.jpg"
+title = "The Brow of the Hill near Nazareth"
+book = "Luke"
+chapter = 4
+verse = 29
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN127"
+file = "Brooklyn Museum - The Calling of Saint James and Saint John (Vocation de Saint Jacques et de Saint Jean) - James Tissot - overall.jpg"
+title = "The Calling of Saint James and Saint John"
+book = "Matthew"
+chapter = 4
+verse = 21
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN128"
+file = "Brooklyn Museum - The Calling of Saint John and Saint Andrew (Vocation de Saint Jean et de Saint André) - James Tissot - overall.jpg"
+title = "The Calling of Saint John and Saint Andrew"
+book = "John"
+chapter = 1
+verse = 35
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN129"
+file = "Brooklyn Museum - The Calling of Saint Matthew (Vocation de Saint Mathieu) - James Tissot - overall.jpg"
+title = "The Calling of Saint Matthew"
+book = "Matthew"
+chapter = 9
+verse = 9
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN130"
+file = "Brooklyn Museum - The Calling of Saint Peter and Saint Andrew (Vocation de Saint Pierre et Saint André) - James Tissot - overall.jpg"
+title = "The Calling of Saint Peter and Saint Andrew"
+book = "Matthew"
+chapter = 4
+verse = 18
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN131"
+file = "Brooklyn Museum - The Canaanite's Daughter (La Chananéenne) - James Tissot.jpg"
+title = "The Canaanite's Daughter"
+book = "Matthew"
+chapter = 15
+verse = 28
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN132"
+file = "Brooklyn Museum - The Centurion (Le Centurion) - James Tissot.jpg"
+title = "The Centurion"
+book = "Matthew"
+chapter = 8
+verse = 5
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN133"
+file = "Brooklyn Museum - The Chief Priests Ask Jesus by What Right Does He Act in This Way - James Tissot.jpg"
+title = "The Chief Priests Ask Jesus by What Right Does He Act in This Way"
+book = "Matthew"
+chapter = 21
+verse = 23
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN134"
+file = "Brooklyn Museum - The Chief Priests Take Counsel Together (Les princes des prêtres se consultent) - James Tissot.jpg"
+title = "The Chief Priests Take Counsel Together"
+book = "Matthew"
+chapter = 26
+verse = 3
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN135"
+file = "Brooklyn Museum - The Childhood of Saint John the Baptist (L'enfance de saint Jean-Baptiste) - James Tissot - overall.jpg"
+title = "The Childhood of Saint John the Baptist"
+book = "Luke"
+chapter = 1
+verse = 80
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN136"
+file = "Brooklyn Museum - The Cock Crowed (Le coq chanta) - James Tissot.jpg"
+title = "The Cock Crowed"
+book = "Matthew"
+chapter = 26
+verse = 74
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN137"
+file = "Brooklyn Museum - The Communion of the Apostles (La communion des apôtres) - James Tissot.jpg"
+title = "The Communion of the Apostles"
+book = "Matthew"
+chapter = 26
+verse = 26
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN138"
+file = "Brooklyn Museum - The Confession of Saint Longinus (Confession de Saint Longin) - James Tissot.jpg"
+title = "The Confession of Saint Longinus"
+book = "John"
+chapter = 19
+verse = 34
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN139"
+file = "Brooklyn Museum - The Confession of the Centurion (La Confession du Centurion) - James Tissot.jpg"
+title = "The Confession of the Centurion"
+book = "Mark"
+chapter = 15
+verse = 39
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN140"
+file = "Brooklyn Museum - The Corner Stone (Le pierre angulaire) - James Tissot.jpg"
+title = "The Corner Stone"
+book = "Matthew"
+chapter = 21
+verse = 42
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN141"
+file = "Brooklyn Museum - The Crowd Left Calvary While Beating Their Breasts (La foule quitte le calvaire en se frappant la poitrine) - James Tissot.jpg"
+title = "The Crowd Left Calvary While Beating Their Breasts"
+book = "Luke"
+chapter = 23
+verse = 48
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN142"
+file = "Brooklyn Museum - The Crowning of Thorns (Le couronnement d'épines) - James Tissot.jpg"
+title = "The Crowning of Thorns"
+book = "Matthew"
+chapter = 27
+verse = 29
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN143"
+file = "Brooklyn Museum - The Daughter of Herodias Dancing (Hérodiade dansant) - James Tissot - overall.jpg"
+title = "The Daughter of Herodias Dancing"
+book = "Mark"
+chapter = 6
+verse = 22
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN144"
+file = "Brooklyn Museum - The Daughter of Jairus (La fille de Zäire) - James Tissot - overall.jpg"
+title = "The Daughter of Jairus"
+book = "Mark"
+chapter = 5
+verse = 41
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN145"
+file = "Brooklyn Museum - The Daughters of Jerusalem (Les filles de Jérusalem) - James Tissot.jpg"
+title = "The Daughters of Jerusalem"
+book = "Luke"
+chapter = 23
+verse = 28
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN146"
+file = "Brooklyn Museum - The Dead Appear in Jerusalem (Les morts apparaissent dans Jérusalem) - James Tissot.jpg"
+title = "The Dead Appear in Jerusalem"
+book = "Matthew"
+chapter = 27
+verse = 53
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN147"
+file = "Brooklyn Museum - The Dead Appear in the Temple (Les morts apparaissent dans le Temple) - James Tissot.jpg"
+title = "The Dead Appear in the Temple"
+book = "Matthew"
+chapter = 27
+verse = 52
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN148"
+file = "Brooklyn Museum - The Death of Jesus (La mort de Jésus) - James Tissot.jpg"
+title = "The Death of Jesus"
+book = "Luke"
+chapter = 23
+verse = 46
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN149"
+file = "Brooklyn Museum - The Descent from the Cross (La descent de croix) - James Tissot.jpg"
+title = "The Descent from the Cross"
+book = "John"
+chapter = 19
+verse = 38
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN150"
+file = "Brooklyn Museum - The Disbelief of Saint Thomas (Incredulité de Saint Thomas) - James Tissot.jpg"
+title = "The Disbelief of Saint Thomas"
+book = "John"
+chapter = 20
+verse = 27
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN151"
+file = "Brooklyn Museum - The Disciples Admire the Buildings of the Temple (Les disciples admirent les constructions du Temple) - James Tissot.jpg"
+title = "The Disciples Admire the Buildings of the Temple"
+book = "Mark"
+chapter = 13
+verse = 1
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN152"
+file = "Brooklyn Museum - The Disciples Eat Wheat on the Sabbath (Les disciples mangent du blé au sabbat) - James Tissot - overall.jpg"
+title = "The Disciples Eat Wheat on the Sabbath"
+book = "Matthew"
+chapter = 12
+verse = 1
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN153"
+file = "Brooklyn Museum - The Disciples Having Left Their Hiding Place Watch from Afar in Agony - James Tissot.jpg"
+title = "The Disciples Having Left Their Hiding Place Watch from Afar in Agony"
+book = "Luke"
+chapter = 23
+verse = 49
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN154"
+file = "Brooklyn Museum - The Disciples of Jesus Baptize (Les disciples de Jésus baptisent) - James Tissot - overall.jpg"
+title = "The Disciples of Jesus Baptize"
+book = "John"
+chapter = 3
+verse = 22
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN155"
+file = "Brooklyn Museum - The Ear of Malchus (L'oreille de Malchus) - James Tissot.jpg"
+title = "The Ear of Malchus"
+book = "John"
+chapter = 18
+verse = 10
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN156"
+file = "Brooklyn Museum - The Earthquake (Le tremblement de terre ) - James Tissot.jpg"
+title = "The Earthquake"
+book = "Matthew"
+chapter = 27
+verse = 51
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN157"
+file = "Brooklyn Museum - The Enemy Who Sows (L'Ennemi qui sème) - James Tissot.jpg"
+title = "The Enemy Who Sows"
+book = "Matthew"
+chapter = 13
+verse = 25
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN158"
+file = "Brooklyn Museum - The Evil Counsel (Le mauvais conseil) - James Tissot.jpg"
+title = "The Evil Counsel"
+book = "John"
+chapter = 11
+verse = 47
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN159"
+file = "Brooklyn Museum - The Exhortation to the Apostles (Recommandation aux apôtres) - James Tissot.jpg"
+title = "The Exhortation to the Apostles"
+book = "Matthew"
+chapter = 10
+verse = 16
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN160"
+file = "Brooklyn Museum - The False Witnesses (Les faux témoins) - James Tissot.jpg"
+title = "The False Witnesses"
+book = "Matthew"
+chapter = 26
+verse = 60
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN161"
+file = "Brooklyn Museum - The First Denial of Saint Peter (Premier reniement de Saint Pierre ) - James Tissot.jpg"
+title = "The First Denial of Saint Peter"
+book = "John"
+chapter = 18
+verse = 17
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN162"
+file = "Brooklyn Museum - The First Nail (Le premier clou) - James Tissot.jpg"
+title = "The First Nail"
+book = "Matthew"
+chapter = 27
+verse = 35
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN163"
+file = "Brooklyn Museum - The First Shall Be Last (Le premier sera le dernier) - James Tissot - overall.jpg"
+title = "The First Shall Be Last"
+book = "Matthew"
+chapter = 20
+verse = 16
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN164"
+file = "Brooklyn Museum - The Flight into Egypt (La fuite en Égypte) - James Tissot - overall.jpg"
+title = "The Flight into Egypt"
+book = "Matthew"
+chapter = 2
+verse = 14
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN165"
+file = "Brooklyn Museum - The Flight of the Apostles (La fuite des Apôtres) - James Tissot.jpg"
+title = "The Flight of the Apostles"
+book = "Mark"
+chapter = 14
+verse = 50
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN166"
+file = "Brooklyn Museum - The Foal of Bethpage (L'ânon de Bethphagé) - James Tissot.jpg"
+title = "The Foal of Bethpage"
+book = "Matthew"
+chapter = 21
+verse = 2
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN167"
+file = "Brooklyn Museum - The Foolish Virgins (Les vierges folles) - James Tissot.jpg"
+title = "The Foolish Virgins"
+book = "Matthew"
+chapter = 25
+verse = 3
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN168"
+file = "Brooklyn Museum - The Four Guards Sat Down and Watched Him (Les quatre gardes s'assirent et le gardèrent) - James Tissot.jpg"
+title = "The Four Guards Sat Down and Watched Him"
+book = "Matthew"
+chapter = 27
+verse = 36
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN169"
+file = "Brooklyn Museum - The Garments Divided by Cast Lots (Les vêtements tirés au sort) - James Tissot.jpg"
+title = "The Garments Divided by Cast Lots"
+book = "John"
+chapter = 19
+verse = 24
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN170"
+file = "Brooklyn Museum - The Gentiles Ask to See Jesus (Les gentils demandent à voir Jésus) - James Tissot.jpg"
+title = "The Gentiles Ask to See Jesus"
+book = "John"
+chapter = 12
+verse = 20
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN171"
+file = "Brooklyn Museum - The Good Samaritan (Le bon samaritain) - James Tissot.jpg"
+title = "The Good Samaritan"
+book = "Luke"
+chapter = 10
+verse = 33
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN172"
+file = "Brooklyn Museum - The Good Shepherd (Le bon pasteur) - James Tissot - overall.jpg"
+title = "The Good Shepherd"
+book = "John"
+chapter = 10
+verse = 11
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN173"
+file = "Brooklyn Museum - The Grotto of the Agony (La Grotte de l'agonie) - James Tissot.jpg"
+title = "The Grotto of the Agony"
+book = "Matthew"
+chapter = 26
+verse = 36
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN174"
+file = "Brooklyn Museum - The Guards Falling Backwards (Les gardes tombant à la renverse) - James Tissot.jpg"
+title = "The Guards Falling Backwards"
+book = "John"
+chapter = 18
+verse = 6
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN175"
+file = "Brooklyn Museum - The Head of Saint John the Baptist on a Charger (La tête de saint Jean-Baptiste dans le plat) - James Tissot - overall.jpg"
+title = "The Head of Saint John the Baptist on a Charger"
+book = "Mark"
+chapter = 6
+verse = 28
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN176"
+file = "Brooklyn Museum - The Healed Blind Man Tells His Story to the Jews (L'aveugle-né guéri s'explique avec les Juifs) - James Tissot.jpg"
+title = "The Healed Blind Man Tells His Story to the Jews"
+book = "John"
+chapter = 9
+verse = 13
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN177"
+file = "Brooklyn Museum - The Healing of Malchus (La guérison de Malchus) - James Tissot.jpg"
+title = "The Healing of Malchus"
+book = "Luke"
+chapter = 22
+verse = 51
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN178"
+file = "Brooklyn Museum - The Healing of Peter's Mother-in-law (La guérison de la belle-mère de Pierre) - James Tissot - overall.jpg"
+title = "The Healing of Peter's Mother-in-law"
+book = "Mark"
+chapter = 1
+verse = 31
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN179"
+file = "Brooklyn Museum - The Healing of Ten Lepers (Guérison de dix lépreux) - James Tissot - overall.jpg"
+title = "The Healing of Ten Lepers"
+book = "Luke"
+chapter = 17
+verse = 14
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN180"
+file = "Brooklyn Museum - The Healing of the Officer's Son (La guérison du fils de l'officier) - James Tissot.jpg"
+title = "The Healing of the Officer's Son"
+book = "John"
+chapter = 4
+verse = 50
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN181"
+file = "Brooklyn Museum - The Hidden Treasure (Le trésor enfoui) - James Tissot - overall.jpg"
+title = "The Hidden Treasure"
+book = "Matthew"
+chapter = 13
+verse = 44
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN182"
+file = "Brooklyn Museum - The Holy Virgin Kisses the Face of Jesus Before He is Enshrouded on the Anointing Stone - James Tissot.jpg"
+title = "The Holy Virgin Kisses the Face of Jesus Before He is Enshrouded on the Anointing Stone"
+book = "John"
+chapter = 19
+verse = 40
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN183"
+file = "Brooklyn Museum - The Holy Virgin Receives the Body of Jesus (La Sainte Vierge reçoit le corps de Jésus) - James Tissot.jpg"
+title = "The Holy Virgin Receives the Body of Jesus"
+book = "John"
+chapter = 19
+verse = 38
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN184"
+file = "Brooklyn Museum - The Holy Women (Les femmes saintes) - James Tissot - overall.jpg"
+title = "The Holy Women"
+book = "Luke"
+chapter = 23
+verse = 49
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN185"
+file = "Brooklyn Museum - The Holy Women Watch from Afar (Les saintes femmes observent de loin) - James Tissot.jpg"
+title = "The Holy Women Watch from Afar"
+book = "Mark"
+chapter = 15
+verse = 40
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN186"
+file = "Brooklyn Museum - The Jews Took Up Rocks to Stone Jesus (Les juifs prirent des pierres pour lapider Jésus) - James Tissot.jpg"
+title = "The Jews Took Up Rocks to Stone Jesus"
+book = "John"
+chapter = 8
+verse = 59
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN187"
+file = "Brooklyn Museum - The Judgment on the Gabbatha (Le jugement sur le Gabatha) - James Tissot.jpg"
+title = "The Judgment on the Gabbatha"
+book = "John"
+chapter = 19
+verse = 13
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN188"
+file = "Brooklyn Museum - The Kiss of Judas (Le baiser de Judas) - James Tissot.jpg"
+title = "The Kiss of Judas"
+book = "Matthew"
+chapter = 26
+verse = 49
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN189"
+file = "Brooklyn Museum - The Last Sermon of Our Lord (Dernier Sermon de Notre-Seigneur) - James Tissot.jpg"
+title = "The Last Sermon of Our Lord"
+book = "John"
+chapter = 12
+verse = 44
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN190"
+file = "Brooklyn Museum - The Last Supper (La Cène légale) - James Tissot.jpg"
+title = "The Last Supper"
+book = "Matthew"
+chapter = 26
+verse = 20
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN191"
+file = "Brooklyn Museum - The Last Supper Judas Dipping his Hand in the Dish (La Céne. Judas met la main dans le plat) - James Tissot.jpg"
+title = "The Last Supper Judas Dipping his Hand in the Dish"
+book = "Matthew"
+chapter = 26
+verse = 23
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN192"
+file = "Brooklyn Museum - The Lord Wept (Le Seigneur pleura) - James Tissot.jpg"
+title = "The Lord Wept"
+book = "Luke"
+chapter = 19
+verse = 41
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN193"
+file = "Brooklyn Museum - The Lord's Prayer (Le Pater Noster) - James Tissot.jpg"
+title = "The Lord's Prayer"
+book = "Matthew"
+chapter = 6
+verse = 9
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN194"
+file = "Brooklyn Museum - The Lost Drachma (La drachme perdue) - James Tissot - overall.jpg"
+title = "The Lost Drachma"
+book = "Luke"
+chapter = 15
+verse = 8
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN195"
+file = "Brooklyn Museum - The Madgalene Runs to the Cenacle to Tell the Apostles that the Body of Jesus is No Longer in the Tomb - James Tissot.jpg"
+title = "The Madgalene Runs to the Cenacle to Tell the Apostles that the Body of Jesus is No Longer in the Tomb"
+book = "John"
+chapter = 20
+verse = 2
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN196"
+file = "Brooklyn Museum - The Magi in the House of Herod (Les rois mages chez Hérode) - James Tissot.jpg"
+title = "The Magi in the House of Herod"
+book = "Matthew"
+chapter = 2
+verse = 7
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN197"
+file = "Brooklyn Museum - The Magi Journeying (Les rois mages en voyage) - James Tissot - overall.jpg"
+title = "The Magi Journeying"
+book = "Matthew"
+chapter = 2
+verse = 1
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN198"
+file = "Brooklyn Museum - The Magnificat (Le magnificat) - James Tissot - overall .jpg"
+title = "The Magnificat"
+book = "Luke"
+chapter = 1
+verse = 46
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN199"
+file = "Brooklyn Museum - The Man at the Plough (L'homme à la charrue) - James Tissot - overall.jpg"
+title = "The Man at the Plough"
+book = "Luke"
+chapter = 9
+verse = 62
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN200"
+file = "Brooklyn Museum - The Man Bearing a Pitcher (L'homme à la cruche) - James Tissot.jpg"
+title = "The Man Bearing a Pitcher"
+book = "Mark"
+chapter = 14
+verse = 13
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN201"
+file = "Brooklyn Museum - The Man Who Hoards (L'homme qui thésaurise) - James Tissot.jpg"
+title = "The Man Who Hoards"
+book = "Luke"
+chapter = 12
+verse = 18
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN202"
+file = "Brooklyn Museum - The Man with an Infirmity of Thirty-Eight Years (Le malade de trente-huit ans) - James Tissot.jpg"
+title = "The Man with an Infirmity of Thirty-Eight Years"
+book = "John"
+chapter = 5
+verse = 5
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN203"
+file = "Brooklyn Museum - The Man with the Withered Hand (L'homme à la main desséchée) - James Tissot - overall.jpg"
+title = "The Man with the Withered Hand"
+book = "Mark"
+chapter = 3
+verse = 1
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN204"
+file = "Brooklyn Museum - The Marriage at Cana (Les noces de Cana) - James Tissot - overall.jpg"
+title = "The Marriage at Cana"
+book = "John"
+chapter = 2
+verse = 7
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN205"
+file = "Brooklyn Museum - The Massacre of the Innocents (Le massacre des innocents) - James Tissot - overall.jpg"
+title = "The Massacre of the Innocents"
+book = "Matthew"
+chapter = 2
+verse = 16
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN206"
+file = "Brooklyn Museum - The Meal in the House of Matthew (Le repas chez Mathieu) - James Tissot.jpg"
+title = "The Meal in the House of Matthew"
+book = "Matthew"
+chapter = 9
+verse = 10
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN207"
+file = "Brooklyn Museum - The Meal in the House of the Pharisee (Le repas chez le pharisien) - James Tissot - overall.jpg"
+title = "The Meal in the House of the Pharisee"
+book = "Luke"
+chapter = 7
+verse = 36
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN208"
+file = "Brooklyn Museum - The Merchants Chased from the Temple (Les vendeurs chassés du Temple) - James Tissot.jpg"
+title = "The Merchants Chased from the Temple"
+book = "John"
+chapter = 2
+verse = 15
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN209"
+file = "Brooklyn Museum - The Message of Pilate's Wife. Pilate - James Tissot.jpg"
+title = "The Message of Pilate's Wife. Pilate"
+book = "Matthew"
+chapter = 27
+verse = 19
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN210"
+file = "Brooklyn Museum - The Miracle of the Loaves and Fishes (La multiplication des pains) by James Tissot.jpg"
+title = "The Miracle of the Loaves and Fishes by James Tissot"
+book = "Matthew"
+chapter = 14
+verse = 19
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN211"
+file = "Brooklyn Museum - The Miraculous Draught of Fishes (La pêche miraculeuse) - James Tissot - overall.jpg"
+title = "The Miraculous Draught of Fishes"
+book = "Luke"
+chapter = 5
+verse = 6
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN212"
+file = "Brooklyn Museum - The Morning Judgment (Le jugement du matin) - James Tissot.jpg"
+title = "The Morning Judgment"
+book = "Matthew"
+chapter = 27
+verse = 1
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN213"
+file = "Brooklyn Museum - The Nail for the Feet (Le clou des pieds) - James Tissot.jpg"
+title = "The Nail for the Feet"
+book = "Matthew"
+chapter = 27
+verse = 35
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN214"
+file = "Brooklyn Museum - The Ointment of the Magdalene (Le parfum de Madeleine) - James Tissot.jpg"
+title = "The Ointment of the Magdalene"
+book = "Luke"
+chapter = 7
+verse = 37
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN215"
+file = "Brooklyn Museum - The Palsied Man Let Down through the Roof (Le paralytique descendu du toit) - James Tissot - overall.jpg"
+title = "The Palsied Man Let Down through the Roof"
+book = "Mark"
+chapter = 2
+verse = 4
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN216"
+file = "Brooklyn Museum - The Pardon of the Good Thief (Le pardon du bon Larron) - James Tissot.jpg"
+title = "The Pardon of the Good Thief"
+book = "Luke"
+chapter = 23
+verse = 43
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN217"
+file = "Brooklyn Museum - The People Seek Jesus to Make Him King (On cherche Jésus pour le faire roi) - James Tissot - overall.jpg"
+title = "The People Seek Jesus to Make Him King"
+book = "John"
+chapter = 6
+verse = 15
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN218"
+file = "Brooklyn Museum - The Pharisees and the Herodians Conspire Against Jesus (Les pharisiens et les hérodiens conspirent contre Jésus) - James Tissot - overall.jpg"
+title = "The Pharisees and the Herodians Conspire Against Jesus"
+book = "Mark"
+chapter = 3
+verse = 6
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN219"
+file = "Brooklyn Museum - The Pharisees and the Saduccees Come to Tempt Jesus (Les pharisiens et les saducéens viennent pour tenter Jésus) - James Tissot - overall.jpg"
+title = "The Pharisees and the Saduccees Come to Tempt Jesus"
+book = "Matthew"
+chapter = 16
+verse = 1
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN220"
+file = "Brooklyn Museum - The Pharisees Question Jesus (Les pharisiens questionnent Jésus) - James Tissot.jpg"
+title = "The Pharisees Question Jesus"
+book = "Matthew"
+chapter = 22
+verse = 15
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN221"
+file = "Brooklyn Museum - The Pilgrims of Emmaus on the Road (Les pèlerins d'Emmaüs en chemin) - James Tissot.jpg"
+title = "The Pilgrims of Emmaus on the Road"
+book = "Luke"
+chapter = 24
+verse = 15
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN222"
+file = "Brooklyn Museum - The Piscina Probatica or Pool of Bethesda (La piscine probatique ou de Bethesda) - James Tissot - overall.jpg"
+title = "The Piscina Probatica or Pool of Bethesda"
+book = "John"
+chapter = 5
+verse = 2
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN223"
+file = "Brooklyn Museum - The Poor Lazarus at the Rich Man's Door (Le pauvre Lazare à la porte du riche) - James Tissot.jpg"
+title = "The Poor Lazarus at the Rich Man's Door"
+book = "Luke"
+chapter = 16
+verse = 20
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN224"
+file = "Brooklyn Museum - The Possessed Man in the Synagogue (Le possédé dans la Synagogue) - James Tissot.jpg"
+title = "The Possessed Man in the Synagogue"
+book = "Mark"
+chapter = 1
+verse = 23
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN225"
+file = "Brooklyn Museum - The Presentation of Jesus in the Temple (La présentation de Jésus au Temple) - James Tissot - overall.jpg"
+title = "The Presentation of Jesus in the Temple"
+book = "Luke"
+chapter = 2
+verse = 22
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN226"
+file = "Brooklyn Museum - The Primacy of Saint Peter (La primauté de Saint-Pierre) - James Tissot.jpg"
+title = "The Primacy of Saint Peter"
+book = "John"
+chapter = 21
+verse = 15
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN227"
+file = "Brooklyn Museum - The Procession in the Streets of Jerusalem (Le cortège dans les rues de Jérusalem) - James Tissot.jpg"
+title = "The Procession in the Streets of Jerusalem"
+book = "Matthew"
+chapter = 21
+verse = 8
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN228"
+file = "Brooklyn Museum - The Procession in the Temple (Le cortège dans le Temple) - James Tissot.jpg"
+title = "The Procession in the Temple"
+book = "Matthew"
+chapter = 21
+verse = 15
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN229"
+file = "Brooklyn Museum - The Procession Nearing Calvary (Le cortège arrivant au calvaire) - James Tissot.jpg"
+title = "The Procession Nearing Calvary"
+book = "Luke"
+chapter = 23
+verse = 32
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN230"
+file = "Brooklyn Museum - The Procession of Judas (Le cortège de Judas) - James Tissot.jpg"
+title = "The Procession of Judas"
+book = "Matthew"
+chapter = 26
+verse = 47
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN231"
+file = "Brooklyn Museum - The Procession on the Mount of Olives (Le cortège sur le mont des Oliviers) - James Tissot.jpg"
+title = "The Procession on the Mount of Olives"
+book = "Luke"
+chapter = 19
+verse = 37
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN232"
+file = "Brooklyn Museum - The Prodigal Son Begging (L'enfant prodigue mendiant) - James Tissot.jpg"
+title = "The Prodigal Son Begging"
+book = "Luke"
+chapter = 15
+verse = 16
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN233"
+file = "Brooklyn Museum - The Prophecy of the Destruction of the Temple (La prédication de la ruine du Temple) - James Tissot.jpg"
+title = "The Prophecy of the Destruction of the Temple"
+book = "Matthew"
+chapter = 24
+verse = 2
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN234"
+file = "Brooklyn Museum - The Protestations of Saint Peter (Protestations de Saint Pierre) - James Tissot.jpg"
+title = "The Protestations of Saint Peter"
+book = "Matthew"
+chapter = 26
+verse = 35
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN235"
+file = "Brooklyn Museum - The Raising of the Cross (L'élévation de la Croix) - James Tissot.jpg"
+title = "The Raising of the Cross"
+book = "John"
+chapter = 19
+verse = 18
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN236"
+file = "Brooklyn Museum - The Repentant Mary Magdalene (Madeleine répentante) - James Tissot - overall.jpg"
+title = "The Repentant Mary Magdalene"
+book = "Luke"
+chapter = 7
+verse = 38
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN237"
+file = "Brooklyn Museum - The Resurrection (La Résurrection) - James Tissot.jpg"
+title = "The Resurrection"
+book = "Matthew"
+chapter = 28
+verse = 6
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN238"
+file = "Brooklyn Museum - The Resurrection of Lazarus (La résurrection de Lazare) - James Tissot.jpg"
+title = "The Resurrection of Lazarus"
+book = "John"
+chapter = 11
+verse = 43
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN239"
+file = "Brooklyn Museum - The Resurrection of the Widow's Son at Nain (La résurrection du fils de la veuve de Naïm) - James Tissot - overall.jpg"
+title = "The Resurrection of the Widow's Son at Nain"
+book = "Luke"
+chapter = 7
+verse = 14
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN240"
+file = "Brooklyn Museum - The Return from Egypt (Retour d'Égypte) - James Tissot - overall.jpg"
+title = "The Return from Egypt"
+book = "Matthew"
+chapter = 2
+verse = 21
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN241"
+file = "Brooklyn Museum - The Return of the Prodigal Son (Le retour de l'enfant prodigue) - James Tissot.jpg"
+title = "The Return of the Prodigal Son"
+book = "Luke"
+chapter = 15
+verse = 20
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN242"
+file = "Brooklyn Museum - The Rich Young Man Went Away Sorrowful (Le jeune homme riche s'en alla triste) - James Tissot - overall.jpg"
+title = "The Rich Young Man Went Away Sorrowful"
+book = "Matthew"
+chapter = 19
+verse = 22
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN243"
+file = "Brooklyn Museum - The Scourging on the Back (La flagellation de dos) - James Tissot.jpg"
+title = "The Scourging on the Back"
+book = "Matthew"
+chapter = 27
+verse = 26
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN244"
+file = "Brooklyn Museum - The Scourging on the Front (La flagellation de face) - James Tissot.jpg"
+title = "The Scourging on the Front"
+book = "John"
+chapter = 19
+verse = 1
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN245"
+file = "Brooklyn Museum - The Scribe Stood to Tempt Jesus (Le scribe se leva pour tenter Jésus) - James Tissot - overall.jpg"
+title = "The Scribe Stood to Tempt Jesus"
+book = "Luke"
+chapter = 10
+verse = 25
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN246"
+file = "Brooklyn Museum - The Second Denial of Saint Peter (Deuxième reniement de Saint Pierre) - James Tissot.jpg"
+title = "The Second Denial of Saint Peter"
+book = "Matthew"
+chapter = 26
+verse = 71
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN247"
+file = "Brooklyn Museum - The Second Miraculous Draught of Fishes (La seconde pêche miraculeuse) - James Tissot.jpg"
+title = "The Second Miraculous Draught of Fishes"
+book = "John"
+chapter = 21
+verse = 6
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN248"
+file = "Brooklyn Museum - The Sermon of the Beatitudes (La sermon des béatitudes) - James Tissot.jpg"
+title = "The Sermon of the Beatitudes"
+book = "Matthew"
+chapter = 5
+verse = 1
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN249"
+file = "Brooklyn Museum - The Sick Awaiting the Passage of Jesus (Les malades attendant le passage de Jésus) - James Tissot - overall.jpg"
+title = "The Sick Awaiting the Passage of Jesus"
+book = "Mark"
+chapter = 6
+verse = 56
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN250"
+file = "Brooklyn Museum - The Sojourn in Egypt (Le séjour en Égypte) - James Tissot - overall.jpg"
+title = "The Sojourn in Egypt"
+book = "Matthew"
+chapter = 2
+verse = 15
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN251"
+file = "Brooklyn Museum - The Son of the Vineyard (Le fils de la vigne) - James Tissot.jpg"
+title = "The Son of the Vineyard"
+book = "Matthew"
+chapter = 21
+verse = 37
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN252"
+file = "Brooklyn Museum - The Sorrow of Saint Peter (La douleur de Saint Pierre) - James Tissot.jpg"
+title = "The Sorrow of Saint Peter"
+book = "Luke"
+chapter = 22
+verse = 62
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN253"
+file = "Brooklyn Museum - The Sorrowful Mother (Mater Dolorosa) - James Tissot.jpg"
+title = "The Sorrowful Mother"
+book = "John"
+chapter = 19
+verse = 25
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN254"
+file = "Brooklyn Museum - The Soul of the Good Thief (L'âme du bon Larron) - James Tissot.jpg"
+title = "The Soul of the Good Thief"
+book = "Luke"
+chapter = 23
+verse = 46
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN255"
+file = "Brooklyn Museum - The Sower (Le semeur) - James Tissot - overall.jpg"
+title = "The Sower"
+book = "Matthew"
+chapter = 13
+verse = 3
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN256"
+file = "Brooklyn Museum - The Strike of the Lance (Le coup de lance) - James Tissot.jpg"
+title = "The Strike of the Lance"
+book = "John"
+chapter = 19
+verse = 34
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN257"
+file = "Brooklyn Museum - The Swine Driven into the Sea (Les porcs précipités dans la mer) - James Tissot.jpg"
+title = "The Swine Driven into the Sea"
+book = "Mark"
+chapter = 5
+verse = 13
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN258"
+file = "Brooklyn Museum - The Thieves Legs Are Broken (On rompt les jambes aux larrons) - James Tissot.jpg"
+title = "The Thieves Legs Are Broken"
+book = "John"
+chapter = 19
+verse = 32
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN259"
+file = "Brooklyn Museum - The Third Denial of Peter. Jesus' Look of Reproach - James Tissot.jpg"
+title = "The Third Denial of Peter. Jesus' Look of Reproach"
+book = "Luke"
+chapter = 22
+verse = 61
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN260"
+file = "Brooklyn Museum - The Title on the Cross (Titre de la Croix) - James Tissot.jpg"
+title = "The Title on the Cross"
+book = "John"
+chapter = 19
+verse = 19
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN261"
+file = "Brooklyn Museum - The Torn Cloak--Jesus Condemned to Death by the Jews - James Tissot.jpg"
+title = "The Torn Cloak--Jesus Condemned to Death by the Jews"
+book = "Matthew"
+chapter = 26
+verse = 65
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN262"
+file = "Brooklyn Museum - The Tower of Siloam (Le tour de Siloë) - James Tissot.jpg"
+title = "The Tower of Siloam"
+book = "Luke"
+chapter = 13
+verse = 4
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN263"
+file = "Brooklyn Museum - The Transfiguration (La transfiguration) - James Tissot - overall.jpg"
+title = "The Transfiguration"
+book = "Matthew"
+chapter = 17
+verse = 2
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN264"
+file = "Brooklyn Museum - The Tribunal of Annas (Le tribunal d'Anne) - James Tissot.jpg"
+title = "The Tribunal of Annas"
+book = "John"
+chapter = 18
+verse = 19
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN265"
+file = "Brooklyn Museum - The Tribute Money (Le denier de César) - James Tissot.jpg"
+title = "The Tribute Money"
+book = "Matthew"
+chapter = 22
+verse = 21
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN266"
+file = "Brooklyn Museum - The Two Blind Men at Jericho (Les deux aveugles à Jericho) - James Tissot.jpg"
+title = "The Two Blind Men at Jericho"
+book = "Matthew"
+chapter = 20
+verse = 30
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN267"
+file = "Brooklyn Museum - The Two Marys Watch the Tomb (Les deux Maries observent le tombeau) - James Tissot.jpg"
+title = "The Two Marys Watch the Tomb"
+book = "Matthew"
+chapter = 27
+verse = 61
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN268"
+file = "Brooklyn Museum - The Two Men Possessed with Devils (Les deux démoniaques) - James Tissot.jpg"
+title = "The Two Men Possessed with Devils"
+book = "Matthew"
+chapter = 8
+verse = 28
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN269"
+file = "Brooklyn Museum - The Two Women at the Mill (Les deux femmes au moulin) - James Tissot - overall.jpg"
+title = "The Two Women at the Mill"
+book = "Matthew"
+chapter = 24
+verse = 41
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN270"
+file = "Brooklyn Museum - The Vase of Myrrh and Gall (Le vase de myrrhe et de fiel) - James Tissot.jpg"
+title = "The Vase of Myrrh and Gall"
+book = "Matthew"
+chapter = 27
+verse = 34
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN271"
+file = "Brooklyn Museum - The Vine Dresser and the Fig Tree (Le vigneron et le figuier) - James Tissot.jpg"
+title = "The Vine Dresser and the Fig Tree"
+book = "Luke"
+chapter = 13
+verse = 7
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN272"
+file = "Brooklyn Museum - The Vision of Saint Joseph (Vision de Saint Joseph) - James Tissot - overall.jpg"
+title = "The Vision of Saint Joseph"
+book = "Matthew"
+chapter = 1
+verse = 20
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN273"
+file = "Brooklyn Museum - The Vision of Zacharias (Vision de Zacharie) - James Tissot - overall.jpg"
+title = "The Vision of Zacharias"
+book = "Luke"
+chapter = 1
+verse = 11
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN274"
+file = "Brooklyn Museum - The Visitation (La visitation) - James Tissot - overall.jpg"
+title = "The Visitation"
+book = "Luke"
+chapter = 1
+verse = 40
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN275"
+file = "Brooklyn Museum - The Voice from on High (La voix d'en haut) - James Tissot.jpg"
+title = "The Voice from on High"
+book = "Matthew"
+chapter = 3
+verse = 17
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN276"
+file = "Brooklyn Museum - The Voice in the Desert (La voix dans le désert) - James Tissot - overall.jpg"
+title = "The Voice in the Desert"
+book = "Matthew"
+chapter = 3
+verse = 3
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN277"
+file = "Brooklyn Museum - The Washing of the Feet (Le lavement des pieds) - James Tissot.jpg"
+title = "The Washing of the Feet"
+book = "John"
+chapter = 13
+verse = 5
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN278"
+file = "Brooklyn Museum - The Watch Over the Tomb (La garde du Tombeau) - James Tissot.jpg"
+title = "The Watch Over the Tomb"
+book = "Matthew"
+chapter = 27
+verse = 66
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN279"
+file = "Brooklyn Museum - The Widow's Mite (Le denier de la veuve) - James Tissot.jpg"
+title = "The Widow's Mite"
+book = "Mark"
+chapter = 12
+verse = 42
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN280"
+file = "Brooklyn Museum - The Wise Virgins (Les vierges sages) - James Tissot.jpg"
+title = "The Wise Virgins"
+book = "Matthew"
+chapter = 25
+verse = 4
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN281"
+file = "Brooklyn Museum - The Woman of Samaria at the Well (La Samaritaine à la fontaine) - James Tissot - overall.jpg"
+title = "The Woman of Samaria at the Well"
+book = "John"
+chapter = 4
+verse = 7
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN282"
+file = "Brooklyn Museum - The Woman with an Infirmity of Eighteen Years (La femme malade depuis dix-huit ans) - James Tissot.jpg"
+title = "The Woman with an Infirmity of Eighteen Years"
+book = "Luke"
+chapter = 13
+verse = 11
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN283"
+file = "Brooklyn Museum - The Woman with an Issue of Blood (L'hémoroïsse) - James Tissot.jpg"
+title = "The Woman with an Issue of Blood"
+book = "Mark"
+chapter = 5
+verse = 27
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN284"
+file = "Brooklyn Museum - The Youth of Jesus (Jeunesse de Jésus) - James Tissot - overall.jpg"
+title = "The Youth of Jesus"
+book = "Luke"
+chapter = 2
+verse = 40
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN285"
+file = "Brooklyn Museum - They Dressed Him in His Own Garments (On remet à Jésus ses vêtements) - James Tissot.jpg"
+title = "They Dressed Him in His Own Garments"
+book = "Matthew"
+chapter = 27
+verse = 31
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN286"
+file = "Brooklyn Museum - Touch Me Not (Noli me tangere) - James Tissot.jpg"
+title = "Touch Me Not"
+book = "John"
+chapter = 20
+verse = 17
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN287"
+file = "Brooklyn Museum - Two or Three Gathered in my Name (Deux ou trois personnes assemblées en mon nom) - James Tissot.jpg"
+title = "Two or Three Gathered in my Name"
+book = "Matthew"
+chapter = 18
+verse = 20
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN288"
+file = "Brooklyn Museum - What Our Lord Saw from the Cross (Ce que voyait Notre-Seigneur sur la Croix) - James Tissot.jpg"
+title = "What Our Lord Saw from the Cross"
+book = "Luke"
+chapter = 23
+verse = 35
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN289"
+file = "Brooklyn Museum - With Passover Approaching, Jesus Goes Up to Jerusalem - James Tissot - overall.jpg"
+title = "With Passover Approaching, Jesus Goes Up to Jerusalem"
+book = "John"
+chapter = 11
+verse = 55
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN290"
+file = "Brooklyn Museum - Woe unto You, Scribes and Pharisees (Malheur à vous, scribes et pharisiens) - James Tissot.jpg"
+title = "Woe unto You, Scribes and Pharisees"
+book = "Matthew"
+chapter = 23
+verse = 29
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN291"
+file = "Brooklyn Museum - Woman Behold Thy Son (Stabat Mater) - James Tissot.jpg"
+title = "Woman Behold Thy Son"
+book = "John"
+chapter = 19
+verse = 26
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN292"
+file = "Brooklyn Museum - You Could Not Watch One Hour With Me (Vous n'avez pu veiller une heure avec moi) - James Tissot.jpg"
+title = "You Could Not Watch One Hour With Me"
+book = "Matthew"
+chapter = 26
+verse = 40
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN293"
+file = "Brooklyn Museum - You Follow Me for the Miracles (Vous me suivez pour des miracles) - James Tissot.jpg"
+title = "You Follow Me for the Miracles"
+book = "John"
+chapter = 6
+verse = 26
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN294"
+file = "Brooklyn Museum - Zacchaeus in the Sycamore Awaiting the Passage of Jesus (Zachée sur le sycomore attendant le passage de Jésus) - James Tissot.jpg"
+title = "Zacchaeus in the Sycamore Awaiting the Passage of Jesus"
+book = "Luke"
+chapter = 19
+verse = 4
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN295"
+file = "Brooklyn Museum - Zacharias Killed Between the Temple and the Altar (Zacharie tué entre le temple et l'autel) - James Tissot - overall.jpg"
+title = "Zacharias Killed Between the Temple and the Altar"
+book = "Matthew"
+chapter = 23
+verse = 35
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TN296"
+file = "Tissot The Pharisee and the publican Brooklyn.jpg"
+title = "The Pharisee and the Publican"
+book = "Luke"
+chapter = 18
+verse = 10
+testament = "NT"
+license = "PD"
+attribution = "James Tissot, The Life of Our Lord Jesus Christ (Brooklyn Museum)"
+
+[[plate]]
+n = "TO001"
+file = "Tissot The Wisdom of Solomon.jpg"
+title = "The Wisdom of Solomon"
+book = "1 Kings"
+chapter = 3
+verse = 25
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO002"
+file = "Tissot Solomon Dedicates the Temple at Jerusalem.jpg"
+title = "Solomon Dedicates the Temple at Jerusalem"
+book = "1 Kings"
+chapter = 8
+verse = 22
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO003"
+file = "Tissot Elijah.jpg"
+title = "Elijah"
+book = "1 Kings"
+chapter = 17
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO004"
+file = "Saul meets Samuel.jpg"
+title = "Saul meets Samuel"
+book = "1 Samuel"
+chapter = 9
+verse = 18
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO005"
+file = "Tissot Michal Watching David from a Window.jpg"
+title = "Michal Watching David from a Window"
+book = "1 Samuel"
+chapter = 19
+verse = 12
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO006"
+file = "David returns to Achish.jpg"
+title = "David returns to Achish"
+book = "1 Samuel"
+chapter = 29
+verse = 2
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO007"
+file = "Tissot The Chaldees Destroy the Brazen Sea.jpg"
+title = "The Chaldees Destroy the Brazen Sea"
+book = "2 Kings"
+chapter = 25
+verse = 13
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO008"
+file = "Tissot David Danced Before the Lord with All His Might.jpg"
+title = "David Danced Before the Lord with All His Might"
+book = "2 Samuel"
+chapter = 6
+verse = 14
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO009"
+file = "Tissot Nathan Rebukes David.jpg"
+title = "Nathan Rebukes David"
+book = "2 Samuel"
+chapter = 12
+verse = 7
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO010"
+file = "Desolation of Tamar by J.Tissot.jpg"
+title = "Desolation of Tamar"
+book = "2 Samuel"
+chapter = 13
+verse = 19
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO011"
+file = "Death of Amnon by J.Tissot.jpg"
+title = "Death of Amnon"
+book = "2 Samuel"
+chapter = 13
+verse = 29
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO012"
+file = "David Mourns His Son Amnon by J.Tissot.jpg"
+title = "David Mourns His Son Amnon"
+book = "2 Samuel"
+chapter = 13
+verse = 37
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO013"
+file = "Tissot Amos.jpg"
+title = "Amos"
+book = "Amos"
+chapter = 1
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO014"
+file = "Tissot Daniel in the Lion's Den.jpg"
+title = "Daniel in the Lion's Den"
+book = "Daniel"
+chapter = 6
+verse = 16
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO015"
+file = "Tissot Pharaoh Notes the Importance of the Jewish People.jpg"
+title = "Pharaoh Notes the Importance of the Jewish People"
+book = "Exodus"
+chapter = 1
+verse = 9
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO016"
+file = "Tissot Pharaoh and the Midwives.jpg"
+title = "Pharaoh and the Midwives"
+book = "Exodus"
+chapter = 1
+verse = 15
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO017"
+file = "Tissot Moses Laid Amid the Flags.jpg"
+title = "Moses Laid Amid the Flags"
+book = "Exodus"
+chapter = 2
+verse = 3
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO018"
+file = "Tissot Pharaoh's Daughter Has Moses Brought to Her.jpg"
+title = "Pharaoh's Daughter Has Moses Brought to Her"
+book = "Exodus"
+chapter = 2
+verse = 5
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO019"
+file = "Tissot Pharaoh's Daughter Receives the Mother of Moses.jpg"
+title = "Pharaoh's Daughter Receives the Mother of Moses"
+book = "Exodus"
+chapter = 2
+verse = 8
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO020"
+file = "Tissot The Plague of Flies.jpg"
+title = "The Plague of Flies"
+book = "Exodus"
+chapter = 8
+verse = 24
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO021"
+file = "Tissot The Plague of Locusts.jpg"
+title = "The Plague of Locusts"
+book = "Exodus"
+chapter = 10
+verse = 13
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO022"
+file = "Tissot The Signs on the Door.jpg"
+title = "The Signs on the Door"
+book = "Exodus"
+chapter = 12
+verse = 7
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO023"
+file = "Tissot Passover.jpg"
+title = "Passover"
+book = "Exodus"
+chapter = 12
+verse = 11
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO024"
+file = "Tissot The Exodus.jpg"
+title = "The Exodus"
+book = "Exodus"
+chapter = 12
+verse = 37
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO025"
+file = "Tissot Pharaoh Pursues the Israelites.jpg"
+title = "Pharaoh Pursues the Israelites"
+book = "Exodus"
+chapter = 14
+verse = 9
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO026"
+file = "Tissot The Waters Are Divided.jpg"
+title = "The Waters Are Divided"
+book = "Exodus"
+chapter = 14
+verse = 21
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO027"
+file = "Tissot The Egyptians Are Destroyed.jpg"
+title = "The Egyptians Are Destroyed"
+book = "Exodus"
+chapter = 14
+verse = 28
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO028"
+file = "Tissot The Songs of Joy.jpg"
+title = "The Songs of Joy"
+book = "Exodus"
+chapter = 15
+verse = 20
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO029"
+file = "Tissot The Gathering of the Manna.jpg"
+title = "The Gathering of the Manna"
+book = "Exodus"
+chapter = 16
+verse = 15
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO030"
+file = "Tissot Moses Strikes the Rock.jpg"
+title = "Moses Strikes the Rock"
+book = "Exodus"
+chapter = 17
+verse = 6
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO031"
+file = "Tissot The Ark of the Covenant.jpg"
+title = "The Ark of the Covenant"
+book = "Exodus"
+chapter = 25
+verse = 10
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO032"
+file = "Tissot Moses and the Ten Commandments.jpg"
+title = "Moses and the Ten Commandments"
+book = "Exodus"
+chapter = 31
+verse = 18
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO033"
+file = "Tissot The Golden Calf.jpg"
+title = "The Golden Calf"
+book = "Exodus"
+chapter = 32
+verse = 19
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO034"
+file = "Tissot Bezalel.jpg"
+title = "Bezalel"
+book = "Exodus"
+chapter = 35
+verse = 30
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO035"
+file = "Tissot Ezekiel.jpg"
+title = "Ezekiel"
+book = "Ezekiel"
+chapter = 1
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO036"
+file = "Tissot The Creation.jpg"
+title = "The Creation"
+book = "Genesis"
+chapter = 1
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO037"
+file = "Adam et Éve dans le Paradis terrestre (Genesis 2 25) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "Adam et Éve dans le Paradis terrestre"
+book = "Genesis"
+chapter = 2
+verse = 25
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO038"
+file = "Tentation d'Éve par le serpent (Genesis 3 1) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "Tentation d'Éve par le serpent"
+book = "Genesis"
+chapter = 3
+verse = 1
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO039"
+file = "Tissot Adam Is Tempted by Eve.jpg"
+title = "Adam Is Tempted by Eve"
+book = "Genesis"
+chapter = 3
+verse = 6
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO040"
+file = "Adam et Éve s'aperçoivent qu'ils sont nus (Genesis 3 7) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "Adam et Éve s'aperçoivent qu'ils sont nus"
+book = "Genesis"
+chapter = 3
+verse = 7
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO041"
+file = "Tissot God's Curse.jpg"
+title = "God's Curse"
+book = "Genesis"
+chapter = 3
+verse = 14
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO042"
+file = "Remontrances de Dieu (Genesis 3 16) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "Remontrances de Dieu"
+book = "Genesis"
+chapter = 3
+verse = 16
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO043"
+file = "Tissot Adam and Eve Driven from Paradise.jpg"
+title = "Adam and Eve Driven from Paradise"
+book = "Genesis"
+chapter = 3
+verse = 24
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO044"
+file = "Cain leadeth abel to death tissot.jpg"
+title = "Cain leadeth abel to death"
+book = "Genesis"
+chapter = 4
+verse = 8
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO045"
+file = "Châtiment de Caïn (Genesis 4 13) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "Châtiment de Caïn"
+book = "Genesis"
+chapter = 4
+verse = 13
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO046"
+file = "Tubalcaïn (Genesis 4 22) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Tubalcaïn"
+book = "Genesis"
+chapter = 4
+verse = 22
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO047"
+file = "Naissance de Noé (Genesis 5 20) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "Naissance de Noé"
+book = "Genesis"
+chapter = 5
+verse = 20
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO048"
+file = "Birth of Noah.jpg"
+title = "Birth of Noah"
+book = "Genesis"
+chapter = 5
+verse = 29
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO049"
+file = "Noé (Genesis 6 9) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "Noé"
+book = "Genesis"
+chapter = 6
+verse = 9
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO050"
+file = "Tissot God Appears to Noah.jpg"
+title = "God Appears to Noah"
+book = "Genesis"
+chapter = 6
+verse = 13
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO051"
+file = "Tissot Building the Ark.jpg"
+title = "Building the Ark"
+book = "Genesis"
+chapter = 6
+verse = 14
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO052"
+file = "Tissot The Animals Enter the Ark.jpg"
+title = "The Animals Enter the Ark"
+book = "Genesis"
+chapter = 7
+verse = 9
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO053"
+file = "Les animaux entrant dans l'Arche (Genesis 7 14-15) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "Les animaux entrant dans l'Arche"
+book = "Genesis"
+chapter = 7
+verse = 14
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO054"
+file = "Tissot The Deluge.jpg"
+title = "The Deluge"
+book = "Genesis"
+chapter = 7
+verse = 17
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO055"
+file = "Le Déluge (Genesis 7 23) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "Le Déluge"
+book = "Genesis"
+chapter = 7
+verse = 23
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO056"
+file = "Tissot The Dove Returns to Noah.jpg"
+title = "The Dove Returns to Noah"
+book = "Genesis"
+chapter = 8
+verse = 11
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO057"
+file = "Tissot Noah's Sacrifice.jpg"
+title = "Noah's Sacrifice"
+book = "Genesis"
+chapter = 8
+verse = 20
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO058"
+file = "Sem, Cham et Japhet (Genesis 9 18) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "Sem, Cham et Japhet"
+book = "Genesis"
+chapter = 9
+verse = 18
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO059"
+file = "Tissot Noah's Drunkenness.jpg"
+title = "Noah's Drunkenness"
+book = "Genesis"
+chapter = 9
+verse = 21
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO060"
+file = "Shem, Ham and Japheth.jpg"
+title = "Shem, Ham and Japheth"
+book = "Genesis"
+chapter = 9
+verse = 23
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO061"
+file = "Nemrod (Genesis 10 8) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "Nemrod"
+book = "Genesis"
+chapter = 10
+verse = 8
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO062"
+file = "Tissot Building the Tower of Babel.jpg"
+title = "Building the Tower of Babel"
+book = "Genesis"
+chapter = 11
+verse = 4
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO063"
+file = "Tissot The Caravan of Abraham.jpg"
+title = "The Caravan of Abraham"
+book = "Genesis"
+chapter = 12
+verse = 5
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO064"
+file = "La caravane d'Abram (Genesis 12 6) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "La caravane d'Abram"
+book = "Genesis"
+chapter = 12
+verse = 6
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO065"
+file = "Tissot The Egyptians Admire Sarai's Beauty.jpg"
+title = "The Egyptians Admire Sarai's Beauty"
+book = "Genesis"
+chapter = 12
+verse = 14
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO066"
+file = "Tissot Sarai Is Taken to Pharaoh's Palace.jpg"
+title = "Sarai Is Taken to Pharaoh's Palace"
+book = "Genesis"
+chapter = 12
+verse = 15
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO067"
+file = "Promesses de Dieu à Abram (Genesis 13 16) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "Promesses de Dieu à Abram"
+book = "Genesis"
+chapter = 13
+verse = 16
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO068"
+file = "Les cinq rois de la Pentapole (Genesis 14 1) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "Les cinq rois de la Pentapole"
+book = "Genesis"
+chapter = 14
+verse = 1
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO069"
+file = "L'offrande de Melchisédech (Genesis 14 18) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "L'offrande de Melchisédech"
+book = "Genesis"
+chapter = 14
+verse = 18
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO070"
+file = "Tissot God's Promises to Abram.jpg"
+title = "God's Promises to Abram"
+book = "Genesis"
+chapter = 15
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO071"
+file = "Tissot Abram Guarding His Sacrifice.jpg"
+title = "Abram Guarding His Sacrifice"
+book = "Genesis"
+chapter = 15
+verse = 11
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO072"
+file = "Dispute de Saraï et d'Agar (Genesis 16 6) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "Dispute de Saraï et d'Agar"
+book = "Genesis"
+chapter = 16
+verse = 6
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO073"
+file = "Tissot God Renews His Promises to Abraham.jpg"
+title = "God Renews His Promises to Abraham"
+book = "Genesis"
+chapter = 17
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO074"
+file = "Nouvelles promesses de Dieu à Abraham (Genesis 17 19) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "Nouvelles promesses de Dieu à Abraham"
+book = "Genesis"
+chapter = 17
+verse = 19
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO075"
+file = "Tissot Abraham and the Three Angels.jpg"
+title = "Abraham and the Three Angels"
+book = "Genesis"
+chapter = 18
+verse = 2
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO076"
+file = "Sara rit en écoutant (Genesis 18 10) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "Sara rit en écoutant"
+book = "Genesis"
+chapter = 18
+verse = 10
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO077"
+file = "Les Sodomites (Genesis 19 5) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
+title = "Les Sodomites"
+book = "Genesis"
+chapter = 19
+verse = 5
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO078"
+file = "Tissot Abraham Sees Sodom in Flames.jpg"
+title = "Abraham Sees Sodom in Flames"
+book = "Genesis"
+chapter = 19
+verse = 28
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO079"
+file = "038.3 403 Les filles de Lot (Genesis 19 30) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Les filles de Lot"
+book = "Genesis"
+chapter = 19
+verse = 30
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO080"
+file = "Tissot Sarai Sends Hagar Away.jpg"
+title = "Sarai Sends Hagar Away"
+book = "Genesis"
+chapter = 21
+verse = 14
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO081"
+file = "Tissot Hagar and the Angel in the Desert.jpg"
+title = "Hagar and the Angel in the Desert"
+book = "Genesis"
+chapter = 21
+verse = 17
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO082"
+file = "Tissot Ishmael.jpg"
+title = "Ishmael"
+book = "Genesis"
+chapter = 21
+verse = 20
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO083"
+file = "Tissot Isaac Bears the Wood for His Sacrifice.jpg"
+title = "Isaac Bears the Wood for His Sacrifice"
+book = "Genesis"
+chapter = 22
+verse = 6
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO084"
+file = "043.3 403 Le sacrifice d'Abraham (Genesis 22 12) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Le sacrifice d'Abraham"
+book = "Genesis"
+chapter = 22
+verse = 12
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO085"
+file = "Tissot Abraham's Servant Meets Rebecca.jpg"
+title = "Abraham's Servant Meets Rebecca"
+book = "Genesis"
+chapter = 24
+verse = 17
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO086"
+file = "045.3 402 Rébecca rencontre sur le chemin Isaac (Genesis 24 65) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Rébecca rencontre sur le chemin Isaac"
+book = "Genesis"
+chapter = 24
+verse = 65
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO087"
+file = "Tissot The Mess of Pottage.jpg"
+title = "The Mess of Pottage"
+book = "Genesis"
+chapter = 25
+verse = 34
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO088"
+file = "048.3 402 Recommandations d'Isaac à Esaü (Genesis 27 21) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Recommandations d'Isaac à Esaü"
+book = "Genesis"
+chapter = 27
+verse = 21
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO089"
+file = "Tissot Jacob Deceives Isaac.jpg"
+title = "Jacob Deceives Isaac"
+book = "Genesis"
+chapter = 27
+verse = 22
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO090"
+file = "050.3 402 Le songe de Jacob (Genesis 28 12) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Le songe de Jacob"
+book = "Genesis"
+chapter = 28
+verse = 12
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO091"
+file = "051.3 402 Jacob et Rachel à la fontaine (Genesis 29 9) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Jacob et Rachel à la fontaine"
+book = "Genesis"
+chapter = 29
+verse = 9
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO092"
+file = "Tissot Jacob and Rachel at the Well.jpg"
+title = "Jacob and Rachel at the Well"
+book = "Genesis"
+chapter = 29
+verse = 10
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO093"
+file = "Tissot Rachel and Leah.jpg"
+title = "Rachel and Leah"
+book = "Genesis"
+chapter = 29
+verse = 16
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO094"
+file = "053.3 402 La lutte de l'Ange avec Jacob (Genesis 32 24) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "La lutte de l'Ange avec Jacob"
+book = "Genesis"
+chapter = 32
+verse = 24
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO095"
+file = "Tissot Jacob Sees Esau Coming to Meet Him.jpg"
+title = "Jacob Sees Esau Coming to Meet Him"
+book = "Genesis"
+chapter = 33
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO096"
+file = "Tissot The Meeting of Esau and Jacob.jpg"
+title = "The Meeting of Esau and Jacob"
+book = "Genesis"
+chapter = 33
+verse = 4
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO097"
+file = "Dinah tissot.jpg"
+title = "Dinah"
+book = "Genesis"
+chapter = 34
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO098"
+file = "056.3 402 Enlèvement de Dinah, fille de Lia (Genesis 34 2) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Enlèvement de Dinah, fille de Lia"
+book = "Genesis"
+chapter = 34
+verse = 2
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO099"
+file = "057.3 402 Le massacre des Sichémites (Genesis 35 5) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Le massacre des Sichémites"
+book = "Genesis"
+chapter = 35
+verse = 5
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO100"
+file = "058 403 Joseph raconte ses songes (Genesis 37 8) • invenit James Tissot • pinxit James Tissot et alia • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Joseph raconte ses songes"
+book = "Genesis"
+chapter = 37
+verse = 8
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO101"
+file = "Tissot Joseph Reveals His Dream to His Brethren.jpg"
+title = "Joseph Reveals His Dream to His Brethren"
+book = "Genesis"
+chapter = 37
+verse = 9
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO102"
+file = "059.3 402 Joseph cherche ses frères (Genesis 37 15) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Joseph cherche ses frères"
+book = "Genesis"
+chapter = 37
+verse = 15
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO103"
+file = "060.3 402 Joseph descendu dans la citerne (Genesis 37 24) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Joseph descendu dans la citerne"
+book = "Genesis"
+chapter = 37
+verse = 24
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO104"
+file = "Tissot Joseph Sold into Egypt.jpg"
+title = "Joseph Sold into Egypt"
+book = "Genesis"
+chapter = 37
+verse = 28
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO105"
+file = "Tissot Jacob Mourns His Son Joseph.jpg"
+title = "Jacob Mourns His Son Joseph"
+book = "Genesis"
+chapter = 37
+verse = 34
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO106"
+file = "061.3 402 La douleur de Jacob (Genesis 37 35) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "La douleur de Jacob"
+book = "Genesis"
+chapter = 37
+verse = 35
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO107"
+file = "Judah and Tamar by J.Tissot.jpg"
+title = "Judah and Tamar"
+book = "Genesis"
+chapter = 38
+verse = 18
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO108"
+file = "063.3 403 Joseph vendu en Egypt (Genesis 39 1) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Joseph vendu en Egypt"
+book = "Genesis"
+chapter = 39
+verse = 1
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO109"
+file = "064.3 402 Joseph jeune (Genesis 39 6) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Joseph jeune"
+book = "Genesis"
+chapter = 39
+verse = 6
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO110"
+file = "065.3 402 Joseph et la Femme de Putiphar (Genesis 39 7) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Joseph et la Femme de Putiphar"
+book = "Genesis"
+chapter = 39
+verse = 7
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO111"
+file = "066.3 402 Joseph distribue du pain dans le prison (Genesis 39 22) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Joseph distribue du pain dans le prison"
+book = "Genesis"
+chapter = 39
+verse = 22
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO112"
+file = "Tissot Joseph Interprets the Dreams While in Prison.jpg"
+title = "Joseph Interprets the Dreams While in Prison"
+book = "Genesis"
+chapter = 40
+verse = 8
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO113"
+file = "Tissot Pharaoh's Dreams.jpg"
+title = "Pharaoh's Dreams"
+book = "Genesis"
+chapter = 41
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO114"
+file = "069.3 402 Le songe des vaches, le songe des épis (Genesis 41 2,5)• invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Le songe des vaches, le songe des épis"
+book = "Genesis"
+chapter = 41
+verse = 2
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO115"
+file = "068.3 402 Joseph explique les songes à Pharaon (Genesis 41 15) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Joseph explique les songes à Pharaon"
+book = "Genesis"
+chapter = 41
+verse = 15
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO116"
+file = "Tissot Joseph Interprets Pharaoh's Dream.jpg"
+title = "Joseph Interprets Pharaoh's Dream"
+book = "Genesis"
+chapter = 41
+verse = 25
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO117"
+file = "Tissot The Glory of Joseph.jpg"
+title = "The Glory of Joseph"
+book = "Genesis"
+chapter = 41
+verse = 41
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO118"
+file = "070.3 402 Gloire de Joseph (Genesis 41 46) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst.jpg"
+title = "Gloire de Joseph"
+book = "Genesis"
+chapter = 41
+verse = 46
+testament = "OT"
+license = "CC-BY-SA-4.0"
+attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+
+[[plate]]
+n = "TO119"
+file = "Tissot The Cup Found.jpg"
+title = "The Cup Found"
+book = "Genesis"
+chapter = 44
+verse = 12
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO120"
+file = "Tissot Joseph Converses With Judah, His Brother.jpg"
+title = "Joseph Converses With Judah, His Brother"
+book = "Genesis"
+chapter = 44
+verse = 18
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO121"
+file = "Tissot Joseph Makes Himself Known to His Brethren.jpg"
+title = "Joseph Makes Himself Known to His Brethren"
+book = "Genesis"
+chapter = 45
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO122"
+file = "Tissot Joseph and His Brethren Welcomed by Pharaoh.jpg"
+title = "Joseph and His Brethren Welcomed by Pharaoh"
+book = "Genesis"
+chapter = 47
+verse = 7
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO123"
+file = "Tissot Joseph Dwells in Egypt.jpg"
+title = "Joseph Dwells in Egypt"
+book = "Genesis"
+chapter = 47
+verse = 27
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO124"
+file = "Tissot Habakkuk.jpg"
+title = "Habakkuk"
+book = "Habakkuk"
+chapter = 1
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO125"
+file = "Tissot Haggai.jpg"
+title = "Haggai"
+book = "Haggai"
+chapter = 1
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO126"
+file = "Hosea by James Tissot.jpg"
+title = "Hosea"
+book = "Hosea"
+chapter = 1
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO127"
+file = "Tissot Isaiah.jpg"
+title = "Isaiah"
+book = "Isaiah"
+chapter = 1
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO128"
+file = "Tissot Joel.jpg"
+title = "Joel"
+book = "Joel"
+chapter = 1
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO129"
+file = "Tissot Jonah.jpg"
+title = "Jonah"
+book = "Jonah"
+chapter = 1
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO130"
+file = "Tissot The Harlot of Jericho and the Two Spies.jpg"
+title = "The Harlot of Jericho and the Two Spies"
+book = "Joshua"
+chapter = 2
+verse = 4
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO131"
+file = "Tissot The Seven Trumpets of Jericho.jpg"
+title = "The Seven Trumpets of Jericho"
+book = "Joshua"
+chapter = 6
+verse = 4
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO132"
+file = "Tissot The Taking of Jericho.jpg"
+title = "The Taking of Jericho"
+book = "Joshua"
+chapter = 6
+verse = 20
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO133"
+file = "Tissot The Conquest of the Amorites.jpg"
+title = "The Conquest of the Amorites"
+book = "Joshua"
+chapter = 10
+verse = 10
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO134"
+file = "Tissot Deborah Beneath the Palm Tree.jpg"
+title = "Deborah Beneath the Palm Tree"
+book = "Judges"
+chapter = 4
+verse = 5
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO135"
+file = "Tissot Jael Smote Sisera, and Slew Him.jpg"
+title = "Jael Smote Sisera, and Slew Him"
+book = "Judges"
+chapter = 4
+verse = 21
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO136"
+file = "Tissot Jael Shows to Barak, Sisera Lying Dead.jpg"
+title = "Jael Shows to Barak, Sisera Lying Dead"
+book = "Judges"
+chapter = 4
+verse = 22
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO137"
+file = "Jephthah’s Daughter by James Tissot.jpg"
+title = "Jephthah’s Daughter"
+book = "Judges"
+chapter = 11
+verse = 34
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO138"
+file = "Tissot Samson Slays a Thousand Men.jpg"
+title = "Samson Slays a Thousand Men"
+book = "Judges"
+chapter = 15
+verse = 15
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO139"
+file = "The Levite Before The Corpse Of His Wife by James Tissot.jpg"
+title = "The Levite Before The Corpse Of His Wife"
+book = "Judges"
+chapter = 19
+verse = 27
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO140"
+file = "Tissot The Fire of Atonement.jpg"
+title = "The Fire of Atonement"
+book = "Leviticus"
+chapter = 9
+verse = 24
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO141"
+file = "Tissot Malachi.jpg"
+title = "Malachi"
+book = "Malachi"
+chapter = 1
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO142"
+file = "Micah by James Tissot.jpg"
+title = "Micah"
+book = "Micah"
+chapter = 1
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO143"
+file = "Nahum.jpg"
+title = "Nahum"
+book = "Nahum"
+chapter = 1
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO144"
+file = "Tissot Miriam Shut Out from the Camp.jpg"
+title = "Miriam Shut Out from the Camp"
+book = "Numbers"
+chapter = 12
+verse = 14
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO145"
+file = "Tissot The Grapes of Canaan.jpg"
+title = "The Grapes of Canaan"
+book = "Numbers"
+chapter = 13
+verse = 23
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO146"
+file = "Tissot The Flight of the Spies.jpg"
+title = "The Flight of the Spies"
+book = "Numbers"
+chapter = 13
+verse = 26
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO147"
+file = "Tissot The Sabbath-Breaker Stoned.jpg"
+title = "The Sabbath-Breaker Stoned"
+book = "Numbers"
+chapter = 15
+verse = 36
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO148"
+file = "Tissot Balaam and the Ass.jpg"
+title = "Balaam and the Ass"
+book = "Numbers"
+chapter = 22
+verse = 28
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO149"
+file = "Tissot The Women of Midian Led Captive by the Hebrews.jpg"
+title = "The Women of Midian Led Captive by the Hebrews"
+book = "Numbers"
+chapter = 31
+verse = 9
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO150"
+file = "Obadiah by James Tissot.jpg"
+title = "Obadiah"
+book = "Obadiah"
+chapter = 1
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO151"
+file = "Tissot Gleaners.jpg"
+title = "Gleaners"
+book = "Ruth"
+chapter = 2
+verse = 3
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
+
+[[plate]]
+n = "TO152"
+file = "Tissot Zechariah.jpg"
+title = "Zechariah"
+book = "Zechariah"
+chapter = 1
+verse = 1
+testament = "OT"
+license = "PD"
+attribution = "James Tissot, The Old Testament"
