@@ -78,6 +78,10 @@ class Place(TypedDict):
     modern_name: str | None
     confidence: int | None
     path: str | None          # absolute photo path, or None
+    caption: str | None       # 'aerial panorama of ruins at Tel …'
+    credit: str | None        # photographer / author
+    license: str | None       # human-readable, e.g. 'CC BY-SA 4.0'
+    source_url: str | None    # Commons file page
 
 
 # ── connection (thread-local, read-only) ───────────────────────────────────────
@@ -239,7 +243,8 @@ def places_for(book: str, chapter: int, verse: int) -> list[Place]:
     try:
         rows = conn.execute(
             'SELECT p.place_id, p.ancient_name, p.modern_name, p.confidence, '
-            'p.photo_path FROM places p '
+            'p.photo_path, p.photo_caption, p.photo_credit, p.photo_license, '
+            'p.photo_source_url FROM places p '
             'JOIN place_verses v ON v.place_id = p.place_id '
             'WHERE v.book = ? AND v.chapter = ? AND v.verse = ? '
             'ORDER BY (p.confidence IS NULL), p.confidence DESC, p.ancient_name',
@@ -250,7 +255,8 @@ def places_for(book: str, chapter: int, verse: int) -> list[Place]:
         return []
     return [
         Place(place_id=r[0], ancient_name=r[1], modern_name=r[2],
-              confidence=r[3], path=_abs(r[4]))
+              confidence=r[3], path=_abs(r[4]), caption=r[5], credit=r[6],
+              license=r[7], source_url=r[8])
         for r in rows
     ]
 

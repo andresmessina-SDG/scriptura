@@ -22,7 +22,9 @@ _SCHEMA = """
         year INTEGER, iconclass TEXT);
     CREATE TABLE places (
         place_id TEXT PRIMARY KEY, ancient_name TEXT, modern_name TEXT,
-        latitude REAL, longitude REAL, confidence INTEGER, photo_path TEXT);
+        latitude REAL, longitude REAL, confidence INTEGER, photo_path TEXT,
+        photo_caption TEXT, photo_credit TEXT, photo_license TEXT,
+        photo_source_url TEXT);
     CREATE TABLE place_verses (
         place_id TEXT, book TEXT, chapter INTEGER, verse INTEGER);
     CREATE TABLE pack_meta (key TEXT PRIMARY KEY, value TEXT);
@@ -53,7 +55,9 @@ def _seed(db_path, imagery=(), places=(), place_verses=(), meta=None):
             'INSERT INTO imagery VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
             imagery)
     if places:
-        conn.executemany('INSERT INTO places VALUES (?,?,?,?,?,?,?)', places)
+        conn.executemany(
+            'INSERT INTO places (place_id, ancient_name, modern_name, latitude,'
+            ' longitude, confidence, photo_path) VALUES (?,?,?,?,?,?,?)', places)
     if place_verses:
         conn.executemany('INSERT INTO place_verses VALUES (?,?,?,?)',
                           place_verses)

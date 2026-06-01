@@ -203,7 +203,9 @@ class ImageryReader:
         card.add_css_class('imagery-card')
 
         if place['path'] and os.path.exists(place['path']):
-            card.append(self._picture(place['path'], place['ancient_name']))
+            card.append(self._picture(
+                place['path'], place['ancient_name'],
+                zoom={'path': place['path'], 'title': place['ancient_name']}))
 
         name = place['ancient_name']
         if place.get('modern_name'):
@@ -211,6 +213,21 @@ class ImageryReader:
         title = Gtk.Label(label=name, xalign=0, wrap=True)
         title.add_css_class('heading')
         card.append(title)
+
+        if place.get('caption'):
+            cap = Gtk.Label(label=place['caption'], xalign=0, wrap=True)
+            cap.add_css_class('caption')
+            cap.add_css_class('imagery-meta')
+            card.append(cap)
+
+        # Photo credit + license — required for the CC/PD Commons photos.
+        credit = ' · '.join(
+            b for b in (place.get('credit'), place.get('license')) if b)
+        if credit:
+            attr = Gtk.Label(label=credit, xalign=0, wrap=True)
+            attr.add_css_class('caption')
+            attr.add_css_class('imagery-meta')
+            card.append(attr)
 
         # Confidence cue — don't assert a contested identification as fact.
         # OpenBible confidence is 0-100 (its 0-1000 score, normalised); flag

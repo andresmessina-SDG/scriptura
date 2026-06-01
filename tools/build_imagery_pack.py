@@ -24,9 +24,11 @@ Usage:
 import argparse
 import json
 import os
+import re
 import sqlite3
 import tarfile
 import tomllib
+import zipfile
 import urllib.parse
 import urllib.request
 from datetime import date
@@ -45,7 +47,9 @@ CREATE TABLE imagery (
 CREATE INDEX idx_imagery_verse ON imagery (book, loc_start);
 CREATE TABLE places (
     place_id TEXT PRIMARY KEY, ancient_name TEXT, modern_name TEXT,
-    latitude REAL, longitude REAL, confidence INTEGER, photo_path TEXT);
+    latitude REAL, longitude REAL, confidence INTEGER, photo_path TEXT,
+    photo_caption TEXT, photo_credit TEXT, photo_license TEXT,
+    photo_source_url TEXT);
 CREATE TABLE place_verses (place_id TEXT, book TEXT, chapter INTEGER, verse INTEGER);
 CREATE INDEX idx_place_verses ON place_verses (book, chapter, verse);
 CREATE TABLE pack_meta (key TEXT PRIMARY KEY, value TEXT);
@@ -134,23 +138,76 @@ def ingest_schnorr(conn, images_dir, width, limit, fetch_images):
 # reproducible builds. CC BY 4.0.
 _OPENBIBLE_ANCIENT = ('https://raw.githubusercontent.com/openbibleinfo/'
                       'Bible-Geocoding-Data/main/data/ancient.jsonl')
+# Photo metadata for the places: a curated Commons image per modern site
+# (real photographs, plus Copernicus Sentinel satellite tiles as fallback).
+_OPENBIBLE_IMAGE = ('https://raw.githubusercontent.com/openbibleinfo/'
+                    'Bible-Geocoding-Data/main/data/image.jsonl')
+# 512x512 thumbnail for every location (real photographs and Copernicus
+# Sentinel satellite tiles alike). 184 MB, fetched once at build time; only
+# the per-place tiles we extract ship. This is OpenBible's purpose-built
+# per-location image set — one clean download, no Commons rate-limiting.
+_OPENBIBLE_THUMBS_ZIP = 'https://a.openbible.info/geo/thumbnails.zip'
+
+# image.jsonl license codes -> human-readable, for the attribution line.
+_LICENSE_LABEL = {
+    'PD': 'Public domain', 'CC-Zero': 'CC0', 'sentinel': 'Copernicus Sentinel',
+    'attribution': 'Attribution', 'GFDL': 'GFDL', 'GPL': 'GPL', 'FAL': 'FAL',
+    'OGL-1.0': 'OGL 1.0',
+}
+
+
+def _license_label(code):
+    if code in _LICENSE_LABEL:
+        return _LICENSE_LABEL[code]
+    # 'CC-BY-SA-4.0' -> 'CC BY-SA 4.0'; 'CC-BY-3.0' -> 'CC BY 3.0'.
+    m = re.match(r'CC-BY(-SA)?-([\d.]+)', code)
+    if m:
+        return f'CC BY{m.group(1) or ""} {m.group(2)}'
+    return code
+
+
+def _strip_tags(text):
+    """Drop OpenBible's inline <modern>/<ancient> markup from a caption."""
+    return re.sub(r'<[^>]+>', '', text or '').strip()
+
+
+def _pick_photo(massoc, img_by_modern):
+    """Best image across a place's modern associations: real photographs
+    (highest-confidence modern first, 'color' preferred) before satellite."""
+    mids = sorted(massoc, key=lambda k: massoc[k].get('score', 0) or 0,
+                  reverse=True)
+    real, sat = [], []
+    for mid in mids:
+        for im in img_by_modern.get(mid, []):
+            (sat if im['license'] == 'sentinel' else real).append((mid, im))
+    pool = real or sat
+    if not pool:
+        return None
+    pool.sort(key=lambda mi: 0 if mi[1].get('color') == 'color' else 1)
+    return pool[0]   # (modern_id, image_record)
 
 
 def ingest_openbible(conn, images_dir, width, limit, fetch_images):
-    """Populate places + place_verses from OpenBible's ancient.jsonl.
+    """Populate places + place_verses from OpenBible's ancient.jsonl, then
+    attach a Commons site photo per place from image.jsonl.
 
     Each place's verse references carry a `sort` key encoded BBCCCVVV, where BB
     is the canonical Protestant book number — so we map straight to CANON66
-    without parsing OSIS abbreviations. Photos are deferred (image.jsonl +
-    the 180 MB thumbnails); the place list (name + modern name + confidence)
-    is what the Where tab needs first. Confidence = the best modern
+    without parsing OSIS abbreviations. Confidence = the best modern
     association's score (OpenBible's 0-1000) normalised to 0-100.
+
+    Photos: image.jsonl keys images by *modern* place id, so we pick the best
+    image across a place's modern associations (real photographs preferred over
+    Copernicus Sentinel satellite tiles) and fetch a width-scaled copy. The
+    photo is CC/PD — credit + license are stored and shown on the place card.
     """
     req = urllib.request.Request(_OPENBIBLE_ANCIENT, headers={'User-Agent': _UA})
     with urllib.request.urlopen(req, timeout=180) as resp:
         lines = resp.read().decode('utf-8').splitlines()
     if limit:
         lines = lines[:limit]
+
+    to_photo = []   # (place_id, modern_associations) for the photo phase
     places = links = 0
     for line in lines:
         line = line.strip()
@@ -167,6 +224,7 @@ def ingest_openbible(conn, images_dir, width, limit, fetch_images):
             s = best.get('score')
             if s is not None:
                 score = max(0, min(100, round(s / 10)))   # 0-1000 -> 0-100
+            to_photo.append((pid, massoc))
         for r in obj.get('resolutions') or []:
             ll = r.get('lonlat')
             if ll:
@@ -176,8 +234,10 @@ def ingest_openbible(conn, images_dir, width, limit, fetch_images):
                 except ValueError:
                     pass
                 break
-        conn.execute('INSERT OR REPLACE INTO places VALUES (?,?,?,?,?,?,?)',
-                     (pid, ancient, modern, lat, lon, score, None))
+        conn.execute('INSERT OR REPLACE INTO places '
+                     'VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+                     (pid, ancient, modern, lat, lon, score,
+                      None, None, None, None, None))
         places += 1
         seen = set()
         for v in obj.get('verses') or []:
@@ -198,7 +258,71 @@ def ingest_openbible(conn, images_dir, width, limit, fetch_images):
                          (pid, CANON66[bb - 1], ccc, vvv))
             links += 1
     print(f'  + {places} places, {links} place-verse links')
+
+    if fetch_images:
+        _attach_place_photos(conn, images_dir, to_photo)
     return 0   # adds places, not imagery-table rows
+
+
+def _attach_place_photos(conn, images_dir, to_photo):
+    """Attach one 512px site thumbnail per place from OpenBible's
+    thumbnails.zip (downloaded once) and UPDATE its row. The zip carries a
+    thumbnail for every location — real photographs and Copernicus Sentinel
+    satellite tiles alike — so a single download covers every place with no
+    Commons rate-limiting. _pick_photo still prefers a real photograph over a
+    satellite tile; a place keeps its name-only card if it has no thumbnail."""
+    req = urllib.request.Request(_OPENBIBLE_IMAGE, headers={'User-Agent': _UA})
+    with urllib.request.urlopen(req, timeout=180) as resp:
+        img_lines = resp.read().decode('utf-8').splitlines()
+    img_by_modern = {}
+    for line in img_lines:
+        if not line.strip():
+            continue
+        im = json.loads(line)
+        for mid in (im.get('thumbnails') or {}):
+            img_by_modern.setdefault(mid, []).append(im)
+
+    # The zip lives in outdir (sibling of images/), so it is never swept into
+    # the shipped tar — only the per-place tiles we extract are.
+    zip_path = os.path.join(os.path.dirname(images_dir), '_thumbnails.zip')
+    if not os.path.exists(zip_path):
+        print('    fetching OpenBible thumbnails.zip (184 MB)…')
+        fetch(_OPENBIBLE_THUMBS_ZIP, zip_path)
+    thumbs = zipfile.ZipFile(zip_path)
+    members = set(thumbs.namelist())
+
+    got = sat = miss = 0
+    total = len(to_photo)
+    for i, (pid, massoc) in enumerate(to_photo, 1):
+        pick = _pick_photo(massoc, img_by_modern)
+        if not pick:
+            miss += 1
+            continue
+        mid, im = pick
+        member = (im.get('thumbnails') or {}).get(mid, {}).get('file')
+        if not member or member not in members:
+            miss += 1
+            continue
+        rel = f'images/place_{pid}.jpg'
+        with thumbs.open(member) as src, \
+                open(os.path.join(images_dir, f'place_{pid}.jpg'), 'wb') as out:
+            out.write(src.read())
+        caption = _strip_tags((im.get('descriptions') or {}).get(mid, ''))
+        conn.execute(
+            'UPDATE places SET photo_path=?, photo_caption=?, photo_credit=?, '
+            'photo_license=?, photo_source_url=? WHERE place_id=?',
+            (rel, caption or None, im.get('credit') or im.get('author'),
+             _license_label(im['license']), im.get('url'), pid))
+        if im['license'] == 'sentinel':
+            sat += 1
+        else:
+            got += 1
+        if i % 200 == 0:
+            conn.commit()
+            print(f'    …{i}/{total} photos')
+    thumbs.close()
+    conn.commit()
+    print(f'  + photos: {got} real, {sat} satellite, {miss} none')
 
 
 # ── Hurlbut's Bible Atlas (1882) — antique maps from Project Gutenberg ──────
