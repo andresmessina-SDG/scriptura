@@ -132,6 +132,55 @@ def ingest_schnorr(conn, images_dir, width, limit, fetch_images):
     return rows
 
 
+# ── Gustave Doré, "The Holy Bible" (1866) ───────────────────────────────────
+
+# Doré's Commons scans are large (~2.4 MB at 1920px); the zoom dialog is only
+# 960px wide, so 960 (a Commons thumbnail bucket) is all the detail that ever
+# shows, at a quarter the size. Independent of --width (which sizes Schnorr).
+_DORE_WIDTH = 960
+
+
+def ingest_dore(conn, images_dir, width, limit, fetch_images):
+    """Doré's English Bible plates (OT + Apocrypha) from tools/dore_plates.toml.
+    Filenames are irregular, so each plate carries its exact Commons `file`.
+    Same 'engraving' tradition as Schnorr, so on a shared verse both artists'
+    engravings show together."""
+    with open(os.path.join(_HERE, 'dore_plates.toml'), 'rb') as f:
+        plates = tomllib.load(f)['plate']
+    if limit:
+        plates = plates[:limit]
+    rows = 0
+    for p in plates:
+        n = p['n']
+        ext = os.path.splitext(p['file'])[1] or '.jpg'
+        rel = f'images/dore_{n}{ext}'
+        size = None
+        if fetch_images:
+            dest = os.path.join(images_dir, f'dore_{n}{ext}')
+            try:
+                size = fetch(commons_filepath_url(p['file'], _DORE_WIDTH), dest)
+            except Exception as e:  # noqa: BLE001 — report and skip one plate
+                print(f'  ! dore {n} fetch failed: {e}')
+                continue
+        v = p['verse']
+        v_end = p.get('verse_end', v)
+        ch_end = p.get('chapter_end', p['chapter'])
+        conn.execute(
+            'INSERT INTO imagery (kind, tradition, title, caption, book, '
+            'loc_start, loc_end, passage_label, file_path, file_size, source, '
+            'source_url, license, attribution, artist, year, iconclass) '
+            'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+            ('illustration', 'engraving', p['title'], None, p['book'],
+             encode(p['chapter'], v), encode(ch_end, v_end),
+             p.get('passage_label'), rel, size, 'dore_1866',
+             'https://commons.wikimedia.org/wiki/Category:Doré%27s_English_Bible',
+             'PD', 'Gustave Doré, The Holy Bible (1866)',
+             'Gustave Doré', 1866, None))
+        rows += 1
+        print(f'  + dore {n}  {p["book"]} {p["chapter"]}:{v}  {p["title"]}')
+    return rows
+
+
 # ── OpenBible.info geocoding — places named in each verse ───────────────────
 
 # Pinned to the default branch; switch to a pinned commit SHA for fully
@@ -420,8 +469,9 @@ def ingest_modern(conn, images_dir, width, limit, fetch_images):
     return rows
 
 
-_SOURCES = {'schnorr': ingest_schnorr, 'openbible': ingest_openbible,
-            'hurlbut': ingest_hurlbut, 'modern': ingest_modern}
+_SOURCES = {'schnorr': ingest_schnorr, 'dore': ingest_dore,
+            'openbible': ingest_openbible, 'hurlbut': ingest_hurlbut,
+            'modern': ingest_modern}
 
 
 def main():

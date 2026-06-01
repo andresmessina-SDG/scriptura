@@ -1,0 +1,1270 @@
+# Gustave Doré — *The Holy Bible* (1866), Old Testament + Apocrypha.
+# 152 numbered plates + 6 lettered supplements from Wikimedia Commons
+# category 'Doré's English Bible', all public domain (Doré d. 1883).
+# `file` is the exact Commons filename; each plate is keyed to the
+# verse its scene depicts. Second engraving source alongside Schnorr
+# (same 'engraving' tradition). NT plates are a separate later phase.
+
+[[plate]]
+n = "001"
+file = "001.The Creation of Light.jpg"
+title = "The Creation of Light"
+book = "Genesis"
+chapter = 1
+verse = 3
+
+[[plate]]
+n = "002"
+file = "002.The Creation of Eve.jpg"
+title = "The Creation of Eve"
+book = "Genesis"
+chapter = 2
+verse = 21
+
+[[plate]]
+n = "003"
+file = "003.Adam and Eve Are Driven out of Eden.jpg"
+title = "Adam and Eve Are Driven out of Eden"
+book = "Genesis"
+chapter = 3
+verse = 23
+
+[[plate]]
+n = "004"
+file = "004.Cain and Abel Offer Their Sacrifices.jpg"
+title = "Cain and Abel Offer Their Sacrifices"
+book = "Genesis"
+chapter = 4
+verse = 3
+
+[[plate]]
+n = "005"
+file = "005.Cain Slays Abel.jpg"
+title = "Cain Slays Abel"
+book = "Genesis"
+chapter = 4
+verse = 8
+
+[[plate]]
+n = "006"
+file = "006.The World Is Destroyed by Water.jpg"
+title = "The World Is Destroyed by Water"
+book = "Genesis"
+chapter = 7
+verse = 21
+
+[[plate]]
+n = "007"
+file = "007.The Great Flood.jpg"
+title = "The Great Flood"
+book = "Genesis"
+chapter = 7
+verse = 11
+
+[[plate]]
+n = "008"
+file = "008.A Dove Is Sent Forth from the Ark.jpg"
+title = "A Dove Is Sent Forth from the Ark"
+book = "Genesis"
+chapter = 8
+verse = 8
+
+[[plate]]
+n = "009"
+file = "009.Noah Curses Ham and Canaan.jpg"
+title = "Noah Curses Ham and Canaan"
+book = "Genesis"
+chapter = 9
+verse = 25
+
+[[plate]]
+n = "010"
+file = "010.The Tower of Babel.jpg"
+title = "The Tower of Babel"
+book = "Genesis"
+chapter = 11
+verse = 4
+
+[[plate]]
+n = "011"
+file = "011.Abraham Goes to the Land of Canaan.jpg"
+title = "Abraham Goes to the Land of Canaan"
+book = "Genesis"
+chapter = 12
+verse = 5
+
+[[plate]]
+n = "012"
+file = "012.Abraham and the Three Angels.jpg"
+title = "Abraham and the Three Angels"
+book = "Genesis"
+chapter = 18
+verse = 2
+
+[[plate]]
+n = "013"
+file = "013.Lot Flees as Sodom and Gomorrah Burn.jpg"
+title = "Lot Flees as Sodom and Gomorrah Burn"
+book = "Genesis"
+chapter = 19
+verse = 24
+
+[[plate]]
+n = "014"
+file = "014.Abraham Sends Hagar and Ishmael Away.jpg"
+title = "Abraham Sends Hagar and Ishmael Away"
+book = "Genesis"
+chapter = 21
+verse = 14
+
+[[plate]]
+n = "015"
+file = "015.Hagar and Ishmael in the Wilderness.jpg"
+title = "Hagar and Ishmael in the Wilderness"
+book = "Genesis"
+chapter = 21
+verse = 15
+
+[[plate]]
+n = "016"
+file = "016.The Testing of Abraham's Faith.jpg"
+title = "The Testing of Abraham's Faith"
+book = "Genesis"
+chapter = 22
+verse = 10
+
+[[plate]]
+n = "017"
+file = "017.The Burial of Sarah.jpg"
+title = "The Burial of Sarah"
+book = "Genesis"
+chapter = 23
+verse = 19
+
+[[plate]]
+n = "018"
+file = "018.Eliezer and Rebekah at the Well.jpg"
+title = "Eliezer and Rebekah at the Well"
+book = "Genesis"
+chapter = 24
+verse = 15
+
+[[plate]]
+n = "019"
+file = "019.The Meeting of Isaac and Rebekah.jpg"
+title = "The Meeting of Isaac and Rebekah"
+book = "Genesis"
+chapter = 24
+verse = 64
+
+[[plate]]
+n = "020"
+file = "020.Isaac Blesses Jacob.jpg"
+title = "Isaac Blesses Jacob"
+book = "Genesis"
+chapter = 27
+verse = 27
+
+[[plate]]
+n = "021"
+file = "021.Jacob's Dream.jpg"
+title = "Jacob's Dream"
+book = "Genesis"
+chapter = 28
+verse = 12
+
+[[plate]]
+n = "022"
+file = "022.Jacob Tends Laban's Flocks and Meets Rachel.jpg"
+title = "Jacob Tends Laban's Flocks and Meets Rachel"
+book = "Genesis"
+chapter = 29
+verse = 10
+
+[[plate]]
+n = "023"
+file = "023.Jacob Prays for Protection.jpg"
+title = "Jacob Prays for Protection"
+book = "Genesis"
+chapter = 32
+verse = 11
+
+[[plate]]
+n = "024"
+file = "024.Jacob Wrestles with the Angel.jpg"
+title = "Jacob Wrestles with the Angel"
+book = "Genesis"
+chapter = 32
+verse = 24
+
+[[plate]]
+n = "025"
+file = "025.Jacob and Esau Meet.jpg"
+title = "Jacob and Esau Meet"
+book = "Genesis"
+chapter = 33
+verse = 4
+
+[[plate]]
+n = "026"
+file = "026.Joseph Is Sold by His Brothers.jpg"
+title = "Joseph Is Sold by His Brothers"
+book = "Genesis"
+chapter = 37
+verse = 28
+
+[[plate]]
+n = "027"
+file = "027.Joseph Interprets Pharaoh's Dream.jpg"
+title = "Joseph Interprets Pharaoh's Dream"
+book = "Genesis"
+chapter = 41
+verse = 25
+
+[[plate]]
+n = "028"
+file = "028.Joseph Reveals Himself to His Brothers.jpg"
+title = "Joseph Reveals Himself to His Brothers"
+book = "Genesis"
+chapter = 45
+verse = 1
+
+[[plate]]
+n = "029"
+file = "029.Jacob Goes to Egypt.jpg"
+title = "Jacob Goes to Egypt"
+book = "Genesis"
+chapter = 46
+verse = 5
+
+[[plate]]
+n = "030"
+file = "030.The Child Moses on the Nile.jpg"
+title = "The Child Moses on the Nile"
+book = "Exodus"
+chapter = 2
+verse = 3
+
+[[plate]]
+n = "031"
+file = "031.The Finding of Moses.jpg"
+title = "The Finding of Moses"
+book = "Exodus"
+chapter = 2
+verse = 5
+
+[[plate]]
+n = "032"
+file = "032.Moses and Aaron Appear before Pharaoh.jpg"
+title = "Moses and Aaron Appear before Pharaoh"
+book = "Exodus"
+chapter = 7
+verse = 10
+
+[[plate]]
+n = "033"
+file = "033.The Fifth Plague. Livestock Disease.jpg"
+title = "The Fifth Plague. Livestock Disease"
+book = "Exodus"
+chapter = 9
+verse = 6
+
+[[plate]]
+n = "034"
+file = "034.The Ninth Plague. Darkness.jpg"
+title = "The Ninth Plague. Darkness"
+book = "Exodus"
+chapter = 10
+verse = 22
+
+[[plate]]
+n = "035"
+file = "035.The Firstborn of the Egyptians Are Slain.jpg"
+title = "The Firstborn of the Egyptians Are Slain"
+book = "Exodus"
+chapter = 12
+verse = 29
+
+[[plate]]
+n = "036"
+file = "036.The Egyptians Ask Moses to Depart.jpg"
+title = "The Egyptians Ask Moses to Depart"
+book = "Exodus"
+chapter = 12
+verse = 31
+
+[[plate]]
+n = "037"
+file = "037.The Egyptians Drown in the Sea.jpg"
+title = "The Egyptians Drown in the Sea"
+book = "Exodus"
+chapter = 14
+verse = 28
+
+[[plate]]
+n = "038"
+file = "038.The Giving of the Law on Mount Sinai.jpg"
+title = "The Giving of the Law on Mount Sinai"
+book = "Exodus"
+chapter = 19
+verse = 20
+
+[[plate]]
+n = "039"
+file = "039.Moses Comes Down from Mount Sinai.jpg"
+title = "Moses Comes Down from Mount Sinai"
+book = "Exodus"
+chapter = 34
+verse = 29
+
+[[plate]]
+n = "040"
+file = "040.The Death of Korah, Dathan, and Abiram.jpg"
+title = "The Death of Korah, Dathan, and Abiram"
+book = "Numbers"
+chapter = 16
+verse = 31
+
+[[plate]]
+n = "041"
+file = "041.Moses Strikes the Rock at Horeb.jpg"
+title = "Moses Strikes the Rock at Horeb"
+book = "Exodus"
+chapter = 17
+verse = 6
+
+[[plate]]
+n = "041A"
+file = "041A.Moses Breaks the Tables of the Law.jpg"
+title = "Moses Breaks the Tables of the Law"
+book = "Exodus"
+chapter = 32
+verse = 19
+
+[[plate]]
+n = "041B"
+file = "041B.The Spies Return from the Promised Land.jpg"
+title = "The Spies Return from the Promised Land"
+book = "Numbers"
+chapter = 13
+verse = 26
+
+[[plate]]
+n = "042"
+file = "042.The Bronze Serpent.jpg"
+title = "The Bronze Serpent"
+book = "Numbers"
+chapter = 21
+verse = 9
+
+[[plate]]
+n = "043"
+file = "043.An Angel Appears to Balaam.jpg"
+title = "An Angel Appears to Balaam"
+book = "Numbers"
+chapter = 22
+verse = 31
+
+[[plate]]
+n = "044"
+file = "044. The Israelites Cross the Jordan River.jpg"
+title = "The Israelites Cross the Jordan River"
+book = "Joshua"
+chapter = 3
+verse = 17
+
+[[plate]]
+n = "045"
+file = "045. An Angel Appears to the Israelites.jpg"
+title = "An Angel Appears to the Israelites"
+book = "Joshua"
+chapter = 5
+verse = 13
+
+[[plate]]
+n = "046"
+file = "046.The Walls of Jericho Fall Down.jpg"
+title = "The Walls of Jericho Fall Down"
+book = "Joshua"
+chapter = 6
+verse = 20
+
+[[plate]]
+n = "047"
+file = "047.Joshua Spares Rahab.jpg"
+title = "Joshua Spares Rahab"
+book = "Joshua"
+chapter = 6
+verse = 25
+
+[[plate]]
+n = "048"
+file = "048.Achan Is Stoned to Death.jpg"
+title = "Achan Is Stoned to Death"
+book = "Joshua"
+chapter = 7
+verse = 25
+
+[[plate]]
+n = "049"
+file = "049.Joshua Burns the Town of Ai.jpg"
+title = "Joshua Burns the Town of Ai"
+book = "Joshua"
+chapter = 8
+verse = 28
+
+[[plate]]
+n = "050"
+file = "050.The Army of the Amorites Is Destroyed.jpg"
+title = "The Army of the Amorites Is Destroyed"
+book = "Joshua"
+chapter = 10
+verse = 10
+
+[[plate]]
+n = "051"
+file = "051.Joshua Commands the Sun to Stand Still.jpg"
+title = "Joshua Commands the Sun to Stand Still"
+book = "Joshua"
+chapter = 10
+verse = 12
+
+[[plate]]
+n = "052"
+file = "052.Jael Kills Sisera.jpg"
+title = "Jael Kills Sisera"
+book = "Judges"
+chapter = 4
+verse = 21
+
+[[plate]]
+n = "054"
+file = "054.Gideon Chooses 300 Soldiers.jpg"
+title = "Gideon Chooses 300 Soldiers"
+book = "Judges"
+chapter = 7
+verse = 6
+
+[[plate]]
+n = "055"
+file = "055.The Midianites Are Routed.jpg"
+title = "The Midianites Are Routed"
+book = "Judges"
+chapter = 7
+verse = 21
+
+[[plate]]
+n = "056"
+file = "056.The Death of Gideon's Sons.jpg"
+title = "The Death of Gideon's Sons"
+book = "Judges"
+chapter = 9
+verse = 5
+
+[[plate]]
+n = "057"
+file = "057.The Death of Abimelech.jpg"
+title = "The Death of Abimelech"
+book = "Judges"
+chapter = 9
+verse = 53
+
+[[plate]]
+n = "058"
+file = "058.Jephthah's Daughter Comes to Meet Her Father.jpg"
+title = "Jephthah's Daughter Comes to Meet Her Father"
+book = "Judges"
+chapter = 11
+verse = 34
+
+[[plate]]
+n = "059"
+file = "059.Israelite Women Mourn with Jephthah's Daughter.jpg"
+title = "Israelite Women Mourn with Jephthah's Daughter"
+book = "Judges"
+chapter = 11
+verse = 40
+
+[[plate]]
+n = "060"
+file = "060.Samson Slays a Lion.jpg"
+title = "Samson Slays a Lion"
+book = "Judges"
+chapter = 14
+verse = 6
+
+[[plate]]
+n = "061"
+file = "061.Samson Destroys the Philistines with an Ass' Jawbone.jpg"
+title = "Samson Destroys the Philistines with an Ass' Jawbone"
+book = "Judges"
+chapter = 15
+verse = 15
+
+[[plate]]
+n = "062"
+file = "062.Samson Carries away the Gates of Gaza.jpg"
+title = "Samson Carries away the Gates of Gaza"
+book = "Judges"
+chapter = 16
+verse = 3
+
+[[plate]]
+n = "063"
+file = "063.Samson and Delilah.jpg"
+title = "Samson and Delilah"
+book = "Judges"
+chapter = 16
+verse = 19
+
+[[plate]]
+n = "064"
+file = "064.The Death of Samson.jpg"
+title = "The Death of Samson"
+book = "Judges"
+chapter = 16
+verse = 30
+
+[[plate]]
+n = "065"
+file = "065.A Levite Finds a Woman's Corpse.jpg"
+title = "A Levite Finds a Woman's Corpse"
+book = "Judges"
+chapter = 19
+verse = 27
+
+[[plate]]
+n = "066"
+file = "066.The Levite Carries the Woman's Body Away.jpg"
+title = "The Levite Carries the Woman's Body Away"
+book = "Judges"
+chapter = 19
+verse = 28
+
+[[plate]]
+n = "067"
+file = "067.The Benjaminites Take the Virgins of Jabesh-gilead.jpg"
+title = "The Benjaminites Take the Virgins of Jabesh-gilead"
+book = "Judges"
+chapter = 21
+verse = 12
+
+[[plate]]
+n = "068"
+file = "068.Naomi and Her Daughters-in-Law.jpg"
+title = "Naomi and Her Daughters-in-Law"
+book = "Ruth"
+chapter = 1
+verse = 9
+
+[[plate]]
+n = "069"
+file = "069.Ruth and Boaz.jpg"
+title = "Ruth and Boaz"
+book = "Ruth"
+chapter = 2
+verse = 5
+
+[[plate]]
+n = "070"
+file = "070.The Ark Is Returned to Beth-shemesh.jpg"
+title = "The Ark Is Returned to Beth-shemesh"
+book = "1 Samuel"
+chapter = 6
+verse = 13
+
+[[plate]]
+n = "070A"
+file = "070A.Samuel Blesses Saul.jpg"
+title = "Samuel Blesses Saul"
+book = "1 Samuel"
+chapter = 10
+verse = 1
+
+[[plate]]
+n = "071"
+file = "071.The Death of Agag.jpg"
+title = "The Death of Agag"
+book = "1 Samuel"
+chapter = 15
+verse = 33
+
+[[plate]]
+n = "071A"
+file = "071A.David Slays Goliath.jpg"
+title = "David Slays Goliath"
+book = "1 Samuel"
+chapter = 17
+verse = 49
+
+[[plate]]
+n = "072"
+file = "072.Saul Attempts to Kill David.jpg"
+title = "Saul Attempts to Kill David"
+book = "1 Samuel"
+chapter = 18
+verse = 11
+
+[[plate]]
+n = "073"
+file = "073.David Escapes through a Window.jpg"
+title = "David Escapes through a Window"
+book = "1 Samuel"
+chapter = 19
+verse = 12
+
+[[plate]]
+n = "073A"
+file = "073A.David and Jonathan.jpg"
+title = "David and Jonathan"
+book = "1 Samuel"
+chapter = 20
+verse = 41
+
+[[plate]]
+n = "074"
+file = "074.David Shows Saul How He Spared His Life.jpg"
+title = "David Shows Saul How He Spared His Life"
+book = "1 Samuel"
+chapter = 24
+verse = 8
+
+[[plate]]
+n = "075"
+file = "075.Saul and the Witch of Endor.jpg"
+title = "Saul and the Witch of Endor"
+book = "1 Samuel"
+chapter = 28
+verse = 14
+
+[[plate]]
+n = "076"
+file = "076.The Death of Saul.jpg"
+title = "The Death of Saul"
+book = "1 Samuel"
+chapter = 31
+verse = 4
+
+[[plate]]
+n = "077"
+file = "077.Jabesh-Gileadites Recover the Bodies of Saul and His Sons.jpg"
+title = "Jabesh-Gileadites Recover the Bodies of Saul and His Sons"
+book = "1 Samuel"
+chapter = 31
+verse = 12
+
+[[plate]]
+n = "078"
+file = "078.Combat between Soldiers of Ish-bosheth and David.jpg"
+title = "Combat between Soldiers of Ish-bosheth and David"
+book = "2 Samuel"
+chapter = 2
+verse = 16
+
+[[plate]]
+n = "079"
+file = "079.David Attacks the Ammonites.jpg"
+title = "David Attacks the Ammonites"
+book = "2 Samuel"
+chapter = 12
+verse = 29
+
+[[plate]]
+n = "080"
+file = "080.The Death of Absalom.jpg"
+title = "The Death of Absalom"
+book = "2 Samuel"
+chapter = 18
+verse = 14
+
+[[plate]]
+n = "081"
+file = "081.David Mourns the Death of Absalom.jpg"
+title = "David Mourns the Death of Absalom"
+book = "2 Samuel"
+chapter = 18
+verse = 33
+
+[[plate]]
+n = "082"
+file = "082.Rizpah’s Kindness toward the Dead.jpg"
+title = "Rizpah’s Kindness toward the Dead"
+book = "2 Samuel"
+chapter = 21
+verse = 10
+
+[[plate]]
+n = "083"
+file = "083.Abishai Saves David's Life.jpg"
+title = "Abishai Saves David's Life"
+book = "2 Samuel"
+chapter = 21
+verse = 17
+
+[[plate]]
+n = "084"
+file = "084.The Judgment of Solomon.jpg"
+title = "The Judgment of Solomon"
+book = "1 Kings"
+chapter = 3
+verse = 25
+
+[[plate]]
+n = "085"
+file = "085.Cedars Are Cut Down for the Jerusalem Temple.jpg"
+title = "Cedars Are Cut Down for the Jerusalem Temple"
+book = "1 Kings"
+chapter = 5
+verse = 18
+
+[[plate]]
+n = "086"
+file = "086.Solomon Receives the Queen of Sheba.jpg"
+title = "Solomon Receives the Queen of Sheba"
+book = "1 Kings"
+chapter = 10
+verse = 2
+
+[[plate]]
+n = "087"
+file = "087.King Solomon in Old Age.jpg"
+title = "King Solomon in Old Age"
+book = "1 Kings"
+chapter = 11
+verse = 4
+
+[[plate]]
+n = "088"
+file = "088.The Disobedient Prophet Is Slain by a Lion.jpg"
+title = "The Disobedient Prophet Is Slain by a Lion"
+book = "1 Kings"
+chapter = 13
+verse = 24
+
+[[plate]]
+n = "089"
+file = "089.Elijah Raises the Son of the Widow of Zarephath.jpg"
+title = "Elijah Raises the Son of the Widow of Zarephath"
+book = "1 Kings"
+chapter = 17
+verse = 22
+
+[[plate]]
+n = "090"
+file = "090.The Prophets of Baal Are Slaughtered.jpg"
+title = "The Prophets of Baal Are Slaughtered"
+book = "1 Kings"
+chapter = 18
+verse = 40
+
+[[plate]]
+n = "091"
+file = "091.Elijah Is Nourished by an Angel.jpg"
+title = "Elijah Is Nourished by an Angel"
+book = "1 Kings"
+chapter = 19
+verse = 5
+
+[[plate]]
+n = "092"
+file = "092.The Israelites Slaughter the Syrians.jpg"
+title = "The Israelites Slaughter the Syrians"
+book = "1 Kings"
+chapter = 20
+verse = 21
+
+[[plate]]
+n = "093"
+file = "093.The Death of Ahab.jpg"
+title = "The Death of Ahab"
+book = "1 Kings"
+chapter = 22
+verse = 35
+
+[[plate]]
+n = "094"
+file = "094.Elijah Destroys the Messengers of Ahaziah.jpg"
+title = "Elijah Destroys the Messengers of Ahaziah"
+book = "2 Kings"
+chapter = 1
+verse = 10
+
+[[plate]]
+n = "095"
+file = "095.Elijah Ascends to Heaven in a Chariot of Fire.jpg"
+title = "Elijah Ascends to Heaven in a Chariot of Fire"
+book = "2 Kings"
+chapter = 2
+verse = 11
+
+[[plate]]
+n = "095a"
+file = "095.Some Children Are Destroyed by Bears.jpg"
+title = "Some Children Are Destroyed by Bears"
+book = "2 Kings"
+chapter = 2
+verse = 24
+
+[[plate]]
+n = "096"
+file = "096.A Famine in Samaria.jpg"
+title = "A Famine in Samaria"
+book = "2 Kings"
+chapter = 6
+verse = 25
+
+[[plate]]
+n = "097"
+file = "097.The Death of Jezebel.jpg"
+title = "The Death of Jezebel"
+book = "2 Kings"
+chapter = 9
+verse = 33
+
+[[plate]]
+n = "098"
+file = "098.Jehu's Companions Find Jezebel's Remains.jpg"
+title = "Jehu's Companions Find Jezebel's Remains"
+book = "2 Kings"
+chapter = 9
+verse = 35
+
+[[plate]]
+n = "099"
+file = "099.The Death of Athaliah.jpg"
+title = "The Death of Athaliah"
+book = "2 Kings"
+chapter = 11
+verse = 16
+
+[[plate]]
+n = "100"
+file = "100.Foreign Nations Are Slain by Lions in Samaria.jpg"
+title = "Foreign Nations Are Slain by Lions in Samaria"
+book = "2 Kings"
+chapter = 17
+verse = 25
+
+[[plate]]
+n = "101"
+file = "101.Sennacherib's Army Is Destroyed.jpg"
+title = "Sennacherib's Army Is Destroyed"
+book = "2 Kings"
+chapter = 19
+verse = 35
+
+[[plate]]
+n = "102"
+file = "102.Zedekiah's Sons Are Slaughtered before His Eyes.jpg"
+title = "Zedekiah's Sons Are Slaughtered before His Eyes"
+book = "2 Kings"
+chapter = 25
+verse = 7
+
+[[plate]]
+n = "102A"
+file = "102A.The Plague of Jerusalem.jpg"
+title = "The Plague of Jerusalem"
+book = "2 Samuel"
+chapter = 24
+verse = 15
+
+[[plate]]
+n = "103"
+file = "103.The Ammonite and Moabite Armies Are Destroyed.jpg"
+title = "The Ammonite and Moabite Armies Are Destroyed"
+book = "2 Chronicles"
+chapter = 20
+verse = 23
+
+[[plate]]
+n = "104"
+file = "104.Cyrus Restores the Vessels of the Temple.jpg"
+title = "Cyrus Restores the Vessels of the Temple"
+book = "Ezra"
+chapter = 1
+verse = 7
+
+[[plate]]
+n = "105"
+file = "105.The Rebuilding of the Temple Is Begun.jpg"
+title = "The Rebuilding of the Temple Is Begun"
+book = "Ezra"
+chapter = 3
+verse = 10
+
+[[plate]]
+n = "106"
+file = "106.Artaxerxes Grants Freedom to the Jews.jpg"
+title = "Artaxerxes Grants Freedom to the Jews"
+book = "Ezra"
+chapter = 7
+verse = 13
+
+[[plate]]
+n = "107"
+file = "107.Ezra Kneels in Prayer.jpg"
+title = "Ezra Kneels in Prayer"
+book = "Ezra"
+chapter = 9
+verse = 5
+
+[[plate]]
+n = "108"
+file = "108.Nehemiah Views the Ruins of Jerusalem's Walls.jpg"
+title = "Nehemiah Views the Ruins of Jerusalem's Walls"
+book = "Nehemiah"
+chapter = 2
+verse = 13
+
+[[plate]]
+n = "109"
+file = "109.Ezra Reads the Law to the People.jpg"
+title = "Ezra Reads the Law to the People"
+book = "Nehemiah"
+chapter = 8
+verse = 3
+
+[[plate]]
+n = "110"
+file = "110.Tobias and the Angel.jpg"
+title = "Tobias and the Angel"
+book = "Tobit"
+chapter = 6
+verse = 1
+
+[[plate]]
+n = "111"
+file = "111.The Angel Raphael and the Family of Tobit.jpg"
+title = "The Angel Raphael and the Family of Tobit"
+book = "Tobit"
+chapter = 12
+verse = 15
+
+[[plate]]
+n = "112"
+file = "112.Judith and Holofernes.jpg"
+title = "Judith and Holofernes"
+book = "Judith"
+chapter = 13
+verse = 8
+
+[[plate]]
+n = "113"
+file = "113.Judith Shows the Head of Holofernes.jpg"
+title = "Judith Shows the Head of Holofernes"
+book = "Judith"
+chapter = 13
+verse = 15
+
+[[plate]]
+n = "114"
+file = "114.Queen Vashti Refuses to Obey Ahasuerus' Command.jpg"
+title = "Queen Vashti Refuses to Obey Ahasuerus' Command"
+book = "Esther"
+chapter = 1
+verse = 12
+
+[[plate]]
+n = "115"
+file = "115.Esther Before the King.jpg"
+title = "Esther Before the King"
+book = "Esther"
+chapter = 5
+verse = 2
+
+[[plate]]
+n = "116"
+file = "116.The Triumph of Mordecai.jpg"
+title = "The Triumph of Mordecai"
+book = "Esther"
+chapter = 6
+verse = 11
+
+[[plate]]
+n = "117"
+file = "117.Esther Accuses Haman.jpg"
+title = "Esther Accuses Haman"
+book = "Esther"
+chapter = 7
+verse = 6
+
+[[plate]]
+n = "118"
+file = "118.Job Hears of His Misfortunes.jpg"
+title = "Job Hears of His Misfortunes"
+book = "Job"
+chapter = 1
+verse = 14
+
+[[plate]]
+n = "119"
+file = "119.Job Speaks with His Friends.jpg"
+title = "Job Speaks with His Friends"
+book = "Job"
+chapter = 2
+verse = 11
+
+[[plate]]
+n = "120"
+file = "120.The Prophet Isaiah.jpg"
+title = "The Prophet Isaiah"
+book = "Isaiah"
+chapter = 6
+verse = 1
+
+[[plate]]
+n = "121"
+file = "121.Isaiah's Vision of the Destruction of Babylon.jpg"
+title = "Isaiah's Vision of the Destruction of Babylon"
+book = "Isaiah"
+chapter = 13
+verse = 19
+
+[[plate]]
+n = "122"
+file = "122.The Destruction of Leviathan.jpg"
+title = "The Destruction of Leviathan"
+book = "Isaiah"
+chapter = 27
+verse = 1
+
+[[plate]]
+n = "123"
+file = "123.Baruch Writes Jeremiah's Prophecies.jpg"
+title = "Baruch Writes Jeremiah's Prophecies"
+book = "Jeremiah"
+chapter = 36
+verse = 4
+
+[[plate]]
+n = "123a"
+file = "123.The Prophet Jeremiah.jpg"
+title = "The Prophet Jeremiah"
+book = "Jeremiah"
+chapter = 1
+verse = 5
+
+[[plate]]
+n = "124"
+file = "124.People Mourn over the Destruction of Jerusalem.jpg"
+title = "People Mourn over the Destruction of Jerusalem"
+book = "Lamentations"
+chapter = 1
+verse = 1
+
+[[plate]]
+n = "125"
+file = "125.Baruch.jpg"
+title = "Baruch"
+book = "Baruch"
+chapter = 1
+verse = 1
+
+[[plate]]
+n = "126"
+file = "126.The Prophet Ezekiel.jpg"
+title = "The Prophet Ezekiel"
+book = "Ezekiel"
+chapter = 1
+verse = 1
+
+[[plate]]
+n = "128"
+file = "128.Daniel among the Exiles.jpg"
+title = "Daniel among the Exiles"
+book = "Daniel"
+chapter = 1
+verse = 6
+
+[[plate]]
+n = "129"
+file = "129.Shadrach, Meshach and Abednego in the Furnace.jpg"
+title = "Shadrach, Meshach and Abednego in the Furnace"
+book = "Daniel"
+chapter = 3
+verse = 25
+
+[[plate]]
+n = "130"
+file = "130.Daniel Interprets the Writing on the Wall.jpg"
+title = "Daniel Interprets the Writing on the Wall"
+book = "Daniel"
+chapter = 5
+verse = 17
+
+[[plate]]
+n = "131"
+file = "131.Daniel in the Lions' Den.jpg"
+title = "Daniel in the Lions' Den"
+book = "Daniel"
+chapter = 6
+verse = 16
+
+[[plate]]
+n = "132"
+file = "132.Daniel's Vision of the Four Beasts.jpg"
+title = "Daniel's Vision of the Four Beasts"
+book = "Daniel"
+chapter = 7
+verse = 3
+
+[[plate]]
+n = "133"
+file = "133.Susanna in the Bath.jpg"
+title = "Susanna in the Bath"
+book = "Susanna"
+chapter = 1
+verse = 15
+
+[[plate]]
+n = "134"
+file = "134.The Justification of Susanna.jpg"
+title = "The Justification of Susanna"
+book = "Susanna"
+chapter = 1
+verse = 45
+
+[[plate]]
+n = "135"
+file = "135.Daniel Confounds the Priests of Bel.jpg"
+title = "Daniel Confounds the Priests of Bel"
+book = "Bel and the Dragon"
+chapter = 1
+verse = 21
+
+[[plate]]
+n = "136"
+file = "136.The Prophet Amos.jpg"
+title = "The Prophet Amos"
+book = "Amos"
+chapter = 1
+verse = 1
+
+[[plate]]
+n = "137"
+file = "137.Jonah Is Spewed Forth by the Whale.jpg"
+title = "Jonah Is Spewed Forth by the Whale"
+book = "Jonah"
+chapter = 2
+verse = 10
+
+[[plate]]
+n = "138"
+file = "138.Jonah Preaches to the Ninevites.jpg"
+title = "Jonah Preaches to the Ninevites"
+book = "Jonah"
+chapter = 3
+verse = 4
+
+[[plate]]
+n = "139"
+file = "139.Micah Exhorts the Israelites to Repent.jpg"
+title = "Micah Exhorts the Israelites to Repent"
+book = "Micah"
+chapter = 6
+verse = 1
+
+[[plate]]
+n = "140"
+file = "140.Zechariah's Vision of Four Chariots.jpg"
+title = "Zechariah's Vision of Four Chariots"
+book = "Zechariah"
+chapter = 6
+verse = 1
+
+[[plate]]
+n = "141"
+file = "141.Mattathias and the Apostate.jpg"
+title = "Mattathias and the Apostate"
+book = "1 Maccabees"
+chapter = 2
+verse = 24
+
+[[plate]]
+n = "142"
+file = "142.Matthias Appealing to Jewish Refugees.jpg"
+title = "Matthias Appealing to Jewish Refugees"
+book = "1 Maccabees"
+chapter = 2
+verse = 27
+
+[[plate]]
+n = "143"
+file = "143.Judas Maccabeus Pursues Timotheus.jpg"
+title = "Judas Maccabeus Pursues Timotheus"
+book = "1 Maccabees"
+chapter = 5
+verse = 6
+
+[[plate]]
+n = "144"
+file = "144.The Death of Eleazar.jpg"
+title = "The Death of Eleazar"
+book = "1 Maccabees"
+chapter = 6
+verse = 46
+
+[[plate]]
+n = "145"
+file = "145.Judas Maccabeus before the Army of Nicanor.jpg"
+title = "Judas Maccabeus before the Army of Nicanor"
+book = "1 Maccabees"
+chapter = 7
+verse = 43
+
+[[plate]]
+n = "146"
+file = "146.Jonathan Destroys the Temple of Dagon.jpg"
+title = "Jonathan Destroys the Temple of Dagon"
+book = "1 Maccabees"
+chapter = 10
+verse = 84
+
+[[plate]]
+n = "147"
+file = "147.Heliodorus Is Cast Down.jpg"
+title = "Heliodorus Is Cast Down"
+book = "2 Maccabees"
+chapter = 3
+verse = 25
+
+[[plate]]
+n = "148"
+file = "148.The Army Appears in the Heavens.jpg"
+title = "The Army Appears in the Heavens"
+book = "2 Maccabees"
+chapter = 5
+verse = 2
+
+[[plate]]
+n = "149"
+file = "149.The Martyrdom of Eleazar the Scribe.jpg"
+title = "The Martyrdom of Eleazar the Scribe"
+book = "2 Maccabees"
+chapter = 6
+verse = 18
+
+[[plate]]
+n = "150"
+file = "150.The Courage of a Mother.jpg"
+title = "The Courage of a Mother"
+book = "2 Maccabees"
+chapter = 7
+verse = 20
+
+[[plate]]
+n = "151"
+file = "151.The Punishment of Antiochus.jpg"
+title = "The Punishment of Antiochus"
+book = "2 Maccabees"
+chapter = 9
+verse = 5
+
+[[plate]]
+n = "152"
+file = "152.The Angel Is Sent to Deliver Israel.jpg"
+title = "The Angel Is Sent to Deliver Israel"
+book = "2 Maccabees"
+chapter = 11
+verse = 8
