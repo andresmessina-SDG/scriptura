@@ -133,3 +133,17 @@ chapter = 1
 verse = 1
 chapter_end = 10
 verse_end = 3
+
+[[map]]
+file = "Territorial organization of the Assyrian Empire in times of Ashurbanipal.svg"
+slug = "assyrian-empire"
+title = "The Assyrian Empire"
+passage_label = "2 Kings 15–19"
+license = "CC BY-SA 4.0"
+attribution = "Juan Miguel · CC BY-SA 4.0 · Wikimedia Commons"
+[[map.ranges]]
+book = "2 Kings"
+chapter = 15
+verse = 1
+chapter_end = 19
+verse_end = 37
