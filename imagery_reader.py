@@ -29,6 +29,27 @@ import imagery_bridge
 
 _log = logging.getLogger('scriptura.imagery')
 
+
+class _ImageryPicture(Gtk.Picture):
+    """A Gtk.Picture that caps its *natural* width so the card grid can pair
+    cards into two columns. A plain Gtk.Picture reports the image's intrinsic
+    width as its natural width, which makes the FlowBox treat a wide map as
+    needing a full row (one column); capping the natural width lets two cards
+    share a row, while hexpand still lets each fill its column."""
+    __gtype_name__ = 'ScripturaImageryPicture'
+    NAT_CAP = 340
+
+    def do_measure(self, orientation, for_size):
+        m, n, mb, nb = Gtk.Picture.do_measure(self, orientation, for_size)
+        if orientation == Gtk.Orientation.HORIZONTAL:
+            if n > self.NAT_CAP:
+                n = self.NAT_CAP
+                if m > n:
+                    m = n
+            return (m, n, -1, -1)   # horizontal measures carry no baseline
+        return (m, n, mb, nb)
+
+
 _TRADITION_LABEL = {
     'engraving': 'Engravings',
     'old_master': 'Paintings',
@@ -95,6 +116,19 @@ class ImageryReader:
         scroll.set_child(box)
         return box, scroll
 
+    def _card_grid(self):
+        """A run of cards that reflows to two columns when the pane is wide
+        and collapses to one when narrow (a lone card still fills the width)."""
+        grid = Gtk.FlowBox()
+        grid.set_selection_mode(Gtk.SelectionMode.NONE)
+        grid.set_min_children_per_line(1)
+        grid.set_max_children_per_line(2)
+        grid.set_homogeneous(True)
+        grid.set_column_spacing(10)
+        grid.set_row_spacing(10)
+        grid.set_valign(Gtk.Align.START)
+        return grid
+
     # ── public drive ──────────────────────────────────────────────────────────
 
     def render_for(self, book, chapter, verse):
@@ -147,8 +181,10 @@ class ImageryReader:
         default = [i for i in items if i['tradition'] == house]
         others = [i for i in items if i['tradition'] != house]
 
+        grid = self._card_grid()
         for it in default:
-            self._art_box.append(self._image_card(it))
+            grid.insert(self._image_card(it), -1)
+        self._art_box.append(grid)
 
         if others:
             expander = Gtk.Expander(
@@ -157,11 +193,14 @@ class ImageryReader:
             inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
             inner.set_margin_top(8)
             prev = None
+            tgrid = None
             for it in others:
                 if it['tradition'] != prev:
                     inner.append(self._tradition_divider(it['tradition']))
+                    tgrid = self._card_grid()
+                    inner.append(tgrid)
                     prev = it['tradition']
-                inner.append(self._image_card(it))
+                tgrid.insert(self._image_card(it), -1)
             expander.set_child(inner)
             self._art_box.append(expander)
 
@@ -185,8 +224,11 @@ class ImageryReader:
         # Lead with the modern vector map (Scriptura's modern aesthetic), then
         # the antique atlas maps for the same passage.
         maps = sorted(maps, key=lambda m: 0 if m['tradition'] == 'modern_map' else 1)
-        for m in maps:
-            self._where_box.append(self._image_card(m))
+        if maps:
+            mgrid = self._card_grid()
+            for m in maps:
+                mgrid.insert(self._image_card(m), -1)
+            self._where_box.append(mgrid)
 
         if places:
             head = Gtk.Label(label='Places in this verse', xalign=0)
@@ -194,13 +236,18 @@ class ImageryReader:
             head.add_css_class('imagery-meta')
             head.set_margin_top(4)
             self._where_box.append(head)
+            pgrid = self._card_grid()
             for p in places:
-                self._where_box.append(self._place_card(p))
+                pgrid.insert(self._place_card(p), -1)
+            self._where_box.append(pgrid)
 
     def _place_card(self, place):
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         card.add_css_class('card')
         card.add_css_class('imagery-card')
+        # Min width so the FlowBox only splits into two columns when the pane
+        # is genuinely wide; narrower panes stay single-column.
+        card.set_size_request(280, -1)
 
         if place['path'] and os.path.exists(place['path']):
             card.append(self._picture(
@@ -247,6 +294,7 @@ class ImageryReader:
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         card.add_css_class('card')
         card.add_css_class('imagery-card')
+        card.set_size_request(280, -1)
 
         if item['path'] and os.path.exists(item['path']):
             card.append(self._picture(item['path'], item['title'], zoom=item))
@@ -277,7 +325,8 @@ class ImageryReader:
         return card
 
     def _picture(self, path, alt, zoom=None):
-        pic = Gtk.Picture.new_for_filename(path)
+        pic = _ImageryPicture()
+        pic.set_filename(path)
         pic.set_content_fit(Gtk.ContentFit.CONTAIN)
         pic.set_can_shrink(True)
         pic.set_hexpand(True)
