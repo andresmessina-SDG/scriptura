@@ -208,12 +208,26 @@ class GenbookReader:
         else:
             breadcrumb = module
         title_fg = '#7a7066' if not dark else '#8d8278'
+        title_start = pane._buffer.get_end_iter().get_offset()
         pane._buffer.insert_markup(
             pane._buffer.get_end_iter(),
             f'<span size="x-large" weight="bold" foreground="{title_fg}" '
             f'letter_spacing="400">'
             f'{GLib.markup_escape_text(breadcrumb)}</span>\n\n',
             -1)
+        # The view-wide justification (FILL when the user enables "Justified")
+        # would stretch a wrapped title into ragged word gaps — headings must
+        # never justify. Pin the title paragraph to left-aligned via a tag,
+        # which overrides the view default. Reused across renders.
+        table = pane._buffer.get_tag_table()
+        left_tag = table.lookup('gb-title-left')
+        if left_tag is None:
+            left_tag = pane._buffer.create_tag(
+                'gb-title-left', justification=Gtk.Justification.LEFT)
+        pane._buffer.apply_tag(
+            left_tag,
+            pane._buffer.get_iter_at_offset(title_start),
+            pane._buffer.get_end_iter())
 
         if html and re.sub(r'<[^>]+>', '', html).strip():
             try:
