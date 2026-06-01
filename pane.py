@@ -296,8 +296,17 @@ class BibleTextView(Gtk.TextView):
     __gtype_name__ = 'BibleTextView'
 
     _HL_PAD = 2
-    _SEARCH_COLOR = '#ffd180'  # amber band for search matches
-    _FLASH_COLOR = '#fff176'   # yellow band for the navigation flash
+    # Transient cues (search match, navigation flash) are painted as bands
+    # only — they carry NO text-foreground tag. Recolouring the text via a tag
+    # applied/removed after the initial layout desyncs from this custom band
+    # paint (GtkTextView keeps a cached glyph rendering that a bare queue_draw
+    # doesn't revalidate), which showed up as light-on-light during a flash and
+    # black-on-dark after it. So instead the band is a *translucent,
+    # mid-luminance* colour: it tints visibly while leaving the reading text
+    # legible whatever its colour — light text in dark mode, dark text in light
+    # mode, and the black text of a user highlight a flash happens to land on.
+    _SEARCH_COLOR = 'rgba(214,150,40,0.40)'   # amber, search matches
+    _FLASH_COLOR = 'rgba(232,120,32,0.44)'    # orange, navigation flash
 
     def do_snapshot(self, snapshot):
         try:
@@ -1448,13 +1457,13 @@ class BiblePane(Gtk.Box):
         return GLib.SOURCE_REMOVE
 
     def _bump_overlay_priorities(self):
-        """Pin the readable-text overlay tags above the chapter's body-text
-        spans so highlighted/underlined/searched/flashed text paints with its
-        dark foreground from the first frame. Listed low→high; the flash sits
-        on top so it stays legible over a highlight or search hit beneath it."""
+        """Pin the foreground-bearing overlay tags above the chapter's body-text
+        spans so their colour wins from the first frame. Only persistent
+        annotations recolour text now — the user highlight (hl_fg), underline,
+        and current-verse indicator. The transient cues (search/flash) are
+        band-only with no foreground, so they need no priority here."""
         table = self._buffer.get_tag_table()
-        for name in ('_ul_text', 'hl_fg', '_current_verse',
-                     '_search_hl', '_flash'):
+        for name in ('_ul_text', 'hl_fg', '_current_verse'):
             tag = table.lookup(name)
             if tag is not None:
                 tag.set_priority(table.get_size() - 1)
@@ -1771,16 +1780,12 @@ class BiblePane(Gtk.Box):
 
         flash_tag = self._buffer.get_tag_table().lookup('_flash')
         if not flash_tag:
-            # Zero-visual marker: BibleTextView paints the yellow band from
-            # this tag (uniform height, top layer). The black foreground keeps
-            # the text readable on the band in both light and dark themes.
-            flash_tag = self._buffer.create_tag('_flash', foreground='black')
-        # Always pin flash to the highest priority — every chapter render
-        # creates fresh anonymous tags via insert_markup (highlights, drop-cap,
-        # red letters), and any of those added after the flash tag's creation
-        # would otherwise out-prioritize its background.
-        table = self._buffer.get_tag_table()
-        flash_tag.set_priority(table.get_size() - 1)
+            # Pure marker — no foreground. BibleTextView paints the translucent
+            # band from this tag's range; the reading text keeps its own colour
+            # so applying/removing the flash never desyncs the glyph colour from
+            # the band (the bug that left text low-contrast during the flash and
+            # dark after it).
+            flash_tag = self._buffer.create_tag('_flash')
 
         self._buffer.apply_tag(flash_tag, start, end)
         # Force the textview to repaint — apply_tag alone sometimes fails to

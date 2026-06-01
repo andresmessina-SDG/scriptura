@@ -213,13 +213,11 @@ class PaneSearch:
 
         tag = existing
         if tag is None:
-            # Zero-visual marker: BibleTextView paints the amber band from
-            # this tag's ranges (uniform height, like verse highlights). The
-            # black foreground keeps the matched word readable on the band.
-            tag = buf.create_tag('_search_hl', foreground='black')
-        # Bump priority so the highlight wins against insert_markup's
-        # anonymous tags (same pattern as the flash tag).
-        tag.set_priority(tag_table.get_size() - 1)
+            # Pure marker — no foreground. BibleTextView paints the translucent
+            # amber band from this tag's ranges; the matched word keeps its own
+            # text colour, so applying/removing the search highlight never
+            # desyncs the glyph colour from the band paint.
+            tag = buf.create_tag('_search_hl')
 
         flags = 0 if case_sensitive else re.IGNORECASE
         pattern = r'\b(?:' + '|'.join(re.escape(w) for w in words) + r')\b'
