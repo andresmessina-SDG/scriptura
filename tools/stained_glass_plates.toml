@@ -1,0 +1,105 @@
+# Medieval stained glass — the 'stained_glass' tradition (kind='glass'). A
+# curated set of famous in-situ windows from the great Gothic cathedrals
+# (Chartres, Sainte-Chapelle, Canterbury, Poitiers, Le Mans), each a specific
+# Wikimedia Commons photograph hand-mapped to the verse its scene depicts and
+# visually verified. `n` keys are "GL##" so dest filenames never collide with
+# other sources. source_url is built from `file` by the builder.
+#
+# LICENSING NOTE (differs from icons): a photograph of a 3-D stained-glass
+# window is its own copyrightable work, so unlike a flat icon panel these are
+# NOT automatically PD. Many Commons glass photos are CC BY-SA by the
+# photographer. License is therefore PER-PLATE, and for the CC ones the
+# photographer credit + licence is baked into `attribution` (the Art card shows
+# attribution but not the raw licence column — that string is the compliance
+# surface). Windows themselves are all pre-1300, so where a faithful frontal
+# photo was released PD we use that.
+
+[[glass]]
+n = "GL01"
+file = "France Chartres JesseTree c1145 a.JPG"
+title = "The Tree of Jesse"
+book = "Isaiah"
+chapter = 11
+verse = 1
+license = "PD"
+attribution = "Chartres Cathedral, c. 1145"
+
+[[glass]]
+n = "GL02"
+file = "Sainte-Chapelle - God creates plants and trees.jpg"
+title = "The Creation"
+book = "Genesis"
+chapter = 1
+verse = 11
+license = "PD"
+attribution = "Sainte-Chapelle, Paris, c. 1248"
+
+[[glass]]
+n = "GL03"
+file = "Canterbury, Canterbury cathedral-stained glass 03 Adam delving.JPG"
+title = "Adam Delving"
+book = "Genesis"
+chapter = 3
+verse = 23
+license = "CC-BY-SA-3.0"
+attribution = "Canterbury Cathedral, c. 1178 · photo Mattana (CC BY-SA 3.0)"
+
+[[glass]]
+n = "GL04"
+file = "Vitrail 047 Histoire de Noé cathédrale Notre-Dame de Chartres Eure-et-Loir France.jpg"
+title = "The Story of Noah"
+book = "Genesis"
+chapter = 7
+verse = 7
+license = "CC-BY-SA-4.0"
+attribution = "Chartres Cathedral, 13th c. · photo Le Passant (CC BY-SA 4.0)"
+
+[[glass]]
+n = "GL05"
+file = "Sainte-Chapelle - Moses strikes water of the Red sea.jpg"
+title = "Moses Strikes the Rock"
+book = "Exodus"
+chapter = 17
+verse = 6
+license = "PD"
+attribution = "Sainte-Chapelle, Paris, c. 1248"
+
+[[glass]]
+n = "GL06"
+file = "Chartres - cathédrale - ND de la belle verrière.JPG"
+title = "The Virgin and Child (Notre-Dame de la Belle-Verrière)"
+book = "Luke"
+chapter = 2
+verse = 7
+license = "PD"
+attribution = "Chartres Cathedral, 12th–13th c."
+
+[[glass]]
+n = "GL07"
+file = "Vitrail Chartres-044 rectifié.JPG"
+title = "The Good Samaritan"
+book = "Luke"
+chapter = 10
+verse = 33
+license = "PD"
+attribution = "Chartres Cathedral, 13th c."
+
+[[glass]]
+n = "GL08"
+file = "Poitiers - Cathédrale Saint-Pierre - 22.jpg"
+title = "The Crucifixion"
+book = "John"
+chapter = 19
+verse = 18
+license = "CC-BY-SA-4.0"
+attribution = "Poitiers Cathedral, c. 1165 · photo Benjamin Smith (CC BY-SA 4.0)"
+
+[[glass]]
+n = "GL09"
+file = "LeMansAscension 1.jpg"
+title = "The Ascension"
+book = "Acts"
+chapter = 1
+verse = 9
+license = "CC-BY-SA-4.0"
+attribution = "Le Mans Cathedral, c. 1145 (CC BY-SA 4.0)"

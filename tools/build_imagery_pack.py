@@ -277,6 +277,50 @@ def ingest_icon(conn, images_dir, width, limit, fetch_images):
     return rows
 
 
+# Medieval glass: 960px (the zoom width) is plenty for these frontal shots.
+_GLASS_WIDTH = 960
+
+
+def ingest_glass(conn, images_dir, width, limit, fetch_images):
+    """Medieval stained-glass windows from tools/stained_glass_plates.toml — the
+    'stained_glass' tradition. Famous in-situ Gothic-cathedral windows, each a
+    Commons photo mapped to its scene's verse. License is per-plate (some PD,
+    some CC BY-SA by the photographer — see the toml's licensing note); for the
+    CC ones the credit + licence are carried in `attribution`."""
+    with open(os.path.join(_HERE, 'stained_glass_plates.toml'), 'rb') as f:
+        plates = tomllib.load(f)['glass']
+    if limit:
+        plates = plates[:limit]
+    rows = 0
+    for p in plates:
+        n = p['n']
+        ext = os.path.splitext(p['file'])[1] or '.jpg'
+        rel = f'images/glass_{n}{ext}'
+        size = None
+        if fetch_images:
+            dest = os.path.join(images_dir, f'glass_{n}{ext}')
+            try:
+                size = fetch(commons_filepath_url(p['file'], _GLASS_WIDTH), dest)
+            except Exception as e:  # noqa: BLE001 — report and skip one plate
+                print(f'  ! glass {n} fetch failed: {e}')
+                continue
+        v = p['verse']
+        src_url = ('https://commons.wikimedia.org/wiki/File:'
+                   + urllib.parse.quote(p['file'].replace(' ', '_')))
+        conn.execute(
+            'INSERT INTO imagery (kind, tradition, title, caption, book, '
+            'loc_start, loc_end, passage_label, file_path, file_size, source, '
+            'source_url, license, attribution, artist, year, iconclass) '
+            'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+            ('glass', 'stained_glass', p['title'], None, p['book'],
+             encode(p['chapter'], v), encode(p['chapter'], v),
+             None, rel, size, 'glass', src_url, p['license'],
+             p['attribution'], None, None, None))
+        rows += 1
+        print(f'  + glass {n}  {p["book"]} {p["chapter"]}:{v}  {p["title"]}')
+    return rows
+
+
 # ── OpenBible.info geocoding — places named in each verse ───────────────────
 
 # Pinned to the default branch; switch to a pinned commit SHA for fully
@@ -567,6 +611,7 @@ def ingest_modern(conn, images_dir, width, limit, fetch_images):
 
 _SOURCES = {'schnorr': ingest_schnorr, 'dore': ingest_dore,
             'tissot': ingest_tissot, 'icons': ingest_icon,
+            'glass': ingest_glass,
             'openbible': ingest_openbible, 'hurlbut': ingest_hurlbut,
             'modern': ingest_modern}
 
