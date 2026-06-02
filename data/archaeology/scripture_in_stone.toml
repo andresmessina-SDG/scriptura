@@ -7,8 +7,8 @@
 #  - Measured and scholarly. Describe what the object *is* and what it *attests*
 #    ("names Pontius Pilate as prefect of Judea"), never "proves the Bible".
 #  - No forgeries or high-doubt objects. Where reputable scholars genuinely
-#    disagree, state the doubt plainly in the caption (see Caiaphas, Cyrus).
-#  - `credit` carries photographer + licence (the images are CC-BY-SA visitor
+#    disagree, state the doubt plainly in the caption (see Mesha, Shebna, Caiaphas).
+#  - `credit` carries photographer + licence (the images are CC-BY-SA/CC0/PD
 #    photos of public-domain ancient objects).
 
 [intro]
@@ -22,26 +22,65 @@ A note on method. The aim here is evidence, not argument. Each entry describes w
 
 # ── Chapters (era spine; rendered in this order) ─────────────────────────────
 [[chapter]]
+id = "before-israel"
+title = "Before the Kingdom"
+
+[[chapter]]
 id = "united-monarchy"
 title = "The United Monarchy"
 
 [[chapter]]
-id = "israel"
-title = "The Divided Kingdom — Israel"
+id = "divided"
+title = "The Kingdom Divided"
 
 [[chapter]]
 id = "judah"
-title = "Judah and Assyria"
+title = "Judah, Assyria, and Nineveh"
 
 [[chapter]]
 id = "exile"
-title = "Exile and Return"
+title = "The Fall and the Exile"
+
+[[chapter]]
+id = "return"
+title = "Return under Persia"
+
+[[chapter]]
+id = "between"
+title = "Between the Testaments"
 
 [[chapter]]
 id = "jesus"
 title = "The World of Jesus"
 
-# ── Entries ──────────────────────────────────────────────────────────────────
+[[chapter]]
+id = "ad70"
+title = "The Fall of Jerusalem"
+
+# ── Before the Kingdom ───────────────────────────────────────────────────────
+[[entry]]
+chapter = "before-israel"
+image = "amarna.jpg"
+title = "The Amarna Letter of Abdi-Heba"
+place = "Tell el-Amarna, Egypt"
+date = "14th century BC"
+holding = "Vorderasiatisches Museum, Berlin"
+credit = "photo Osama S. M. Amin · CC BY-SA 4.0"
+caption = "A cuneiform letter from Abdi-Heba, the ruler of Jerusalem, to the Egyptian pharaoh, written generations before David. It is among the earliest references to Jerusalem (as 'Urusalim'), and shows the city as a small Canaanite kingdom under Egyptian oversight — the world into which Israel would later come."
+refs = [ { book = "Joshua", chapter = 10, verse = 1 } ]
+
+[[entry]]
+chapter = "before-israel"
+image = "merneptah.jpg"
+title = "The Merneptah Stele"
+place = "Thebes, Egypt"
+date = "c. 1208 BC"
+holding = "Egyptian Museum, Cairo"
+credit = "photo Webscribe · CC BY-SA 3.0"
+caption = "A victory stele of the pharaoh Merneptah, listing peoples his armies claimed to have defeated in Canaan. Among them, in hieroglyphs, is the name 'Israel' — marked as a people rather than a place. It is the earliest mention of Israel found outside the Bible, placing the people in the land in the era of the Judges."
+refs = [ { book = "Judges", chapter = 2, verse = 16 } ]
+
+# ── The United Monarchy ──────────────────────────────────────────────────────
 [[entry]]
 chapter = "united-monarchy"
 image = "tel_dan.jpg"
@@ -57,7 +96,85 @@ refs = [
 ]
 
 [[entry]]
-chapter = "israel"
+chapter = "united-monarchy"
+image = "eshbaal_jar.jpg"
+title = "The Eshbaal Inscription"
+place = "Khirbet Qeiyafa, Judah"
+date = "c. 1000 BC"
+holding = "Israel Antiquities Authority"
+credit = "photo SalemOptix · CC0"
+caption = "A large storage jar from a fortified Judahite town, incised before firing with the name 'Eshbaal son of Beda' in early alphabetic script. Eshbaal is a rare name — its only biblical bearer is a son of King Saul — and the inscription shows it in use, and Judahites writing, in the very era the Bible assigns to Saul and David."
+refs = [ { book = "1 Chronicles", chapter = 8, verse = 33 } ]
+
+[[entry]]
+chapter = "united-monarchy"
+image = "gezer_gate.jpg"
+title = "The Six-Chambered Gate at Gezer"
+place = "Tel Gezer"
+date = "10th century BC (debated)"
+holding = "in situ"
+credit = "photo Ian Scott · CC BY-SA 2.0"
+caption = "A monumental city gate at Gezer, one of three nearly identical gates (with Hazor and Megiddo) long linked to a single royal building programme — the cities First Kings says Solomon fortified. The dating is debated, some placing the gates a little later, but they attest a kingdom building on a substantial, centralised scale."
+refs = [ { book = "1 Kings", chapter = 9, verse = 15 } ]
+
+[[entry]]
+chapter = "united-monarchy"
+image = "gezer_calendar.jpg"
+title = "The Gezer Calendar"
+place = "Gezer"
+date = "10th century BC"
+holding = "Istanbul Archaeology Museums"
+credit = "photo Ana al'ain · CC BY-SA 3.0"
+caption = "A small limestone tablet inscribed with a list of the agricultural year — months of sowing, harvest, and pruning. Written in early Hebrew letters, it is among the oldest known texts in the language of the Bible, from the century the Scriptures assign to Solomon, who is said to have rebuilt Gezer."
+refs = [ { book = "1 Kings", chapter = 9, verse = 17 } ]
+
+# ── The Kingdom Divided ──────────────────────────────────────────────────────
+[[entry]]
+chapter = "divided"
+image = "shishak.jpg"
+title = "The Campaign Relief of Shishak"
+place = "Karnak, Egypt"
+date = "c. 925 BC"
+holding = "in situ"
+credit = "photo Neithsabes · CC BY-SA 3.0"
+caption = "On the temple wall at Karnak, the pharaoh Sheshonq I left a relief of his campaign into Canaan, with a long list of the towns his army claimed. Sheshonq is widely identified with the biblical Shishak, who, the Bible says, marched against Jerusalem in the fifth year of Rehoboam and carried off the treasures of the Temple."
+refs = [ { book = "1 Kings", chapter = 14, verse = 25 } ]
+
+[[entry]]
+chapter = "divided"
+image = "mesha.jpg"
+title = "The Mesha Stele"
+place = "Dibon, Moab"
+date = "c. 840 BC"
+holding = "Louvre, Paris"
+credit = "photo Mbzt · CC BY-SA 4.0"
+caption = "A black basalt victory stele set up by Mesha, king of Moab, recounting his rebellion against Israel. It names 'Omri king of Israel' and his dynasty, and the God of Israel by the name YHWH; by a contested reading it may also name the 'House of David.' Second Kings tells the same revolt of Mesha from Israel's side."
+refs = [ { book = "2 Kings", chapter = 3, verse = 4 } ]
+
+[[entry]]
+chapter = "divided"
+image = "kurkh.jpg"
+title = "The Kurkh Monolith of Shalmaneser III"
+place = "Üçtepe (Diyarbakır), Turkey"
+date = "c. 853 BC"
+holding = "British Museum, London"
+credit = "photo Osama S. M. Amin · CC BY-SA 4.0"
+caption = "A monument of the Assyrian king Shalmaneser III recording his campaigns, including the battle of Qarqar in 853 BC against a coalition of western kings. Among the allies it lists 'Ahab the Israelite,' credited with two thousand chariots — the earliest Assyrian mention of a named king of Israel, who reigns through much of First Kings."
+refs = [ { book = "1 Kings", chapter = 16, verse = 29 } ]
+
+[[entry]]
+chapter = "divided"
+image = "nimrud_ivory.jpg"
+title = "A Nimrud Ivory"
+place = "Nimrud (Kalhu), Assyria"
+date = "9th–8th century BC"
+holding = "Metropolitan Museum of Art"
+credit = "Metropolitan Museum of Art · CC0"
+caption = "A finely carved ivory furniture inlay from the Assyrian palaces at Nimrud, where such pieces — much of it Phoenician work, gathered as tribute — survive by the hundred. Ivories like these give substance to the Bible's notice of the 'house of ivory' that Ahab built, and the prophets' rebukes of those who lounged on 'beds of ivory.'"
+refs = [ { book = "1 Kings", chapter = 22, verse = 39 } ]
+
+[[entry]]
+chapter = "divided"
 image = "black_obelisk.jpg"
 title = "The Black Obelisk of Shalmaneser III"
 place = "Nimrud (Kalhu), Assyria"
@@ -69,6 +186,29 @@ refs = [
   { book = "2 Kings", chapter = 10, verse = 31 },
   { book = "2 Kings", chapter = 9, verse = 2 },
 ]
+
+# ── Judah, Assyria, and Nineveh ──────────────────────────────────────────────
+[[entry]]
+chapter = "judah"
+image = "nineveh_lamassu.jpg"
+title = "The Gate of Nineveh"
+place = "Nineveh (Mosul), Iraq"
+date = "8th–7th century BC"
+holding = "in situ (destroyed 2016)"
+credit = "photo Photonashwan · CC BY-SA 4.0"
+caption = "A reconstructed gate of Nineveh, flanked by the colossal human-headed winged bulls (lamassu) that guarded the Assyrian capital. Nineveh looms large in Scripture — the city Jonah was sent to, and whose violence Nahum condemned. The ancient gate and its bulls were destroyed in 2016; this records them as they stood."
+refs = [ { book = "Jonah", chapter = 3, verse = 3 } ]
+
+[[entry]]
+chapter = "judah"
+image = "sargon.jpg"
+title = "Sargon II in His Chariot"
+place = "Khorsabad (Dur-Sharrukin)"
+date = "c. 710 BC"
+holding = "Iraq Museum, Baghdad"
+credit = "photo Osama S. M. Amin · CC BY-SA 4.0"
+caption = "A palace relief of the Assyrian king Sargon II riding to war. Sargon completed the conquest of Samaria and deported the northern kingdom; his reign was so briefly named in the Bible, yet so absent from other records, that his existence was once doubted — until his vast palace at Khorsabad was unearthed. Isaiah names him directly."
+refs = [ { book = "Isaiah", chapter = 20, verse = 1 } ]
 
 [[entry]]
 chapter = "judah"
@@ -85,7 +225,86 @@ refs = [
 ]
 
 [[entry]]
+chapter = "judah"
+image = "taylor_prism.jpg"
+title = "The Taylor Prism of Sennacherib"
+place = "Nineveh"
+date = "c. 691 BC"
+holding = "British Museum, London"
+credit = "photo David Castor · public domain"
+caption = "A six-sided clay prism inscribed with the annals of Sennacherib. It records his campaign of 701 BC against Judah, boasting that he shut up Hezekiah 'like a bird in a cage' in Jerusalem — but, tellingly, never claims to have taken the city. Second Kings tells of the same siege, and of Jerusalem's deliverance."
+refs = [ { book = "2 Kings", chapter = 18, verse = 17 } ]
+
+[[entry]]
+chapter = "judah"
+image = "siloam_inscription.jpg"
+title = "The Siloam Inscription"
+place = "Jerusalem (Siloam tunnel)"
+date = "c. 701 BC"
+holding = "Istanbul Archaeology Museums"
+credit = "Matson Collection (Library of Congress) · public domain"
+caption = "An inscription carved in the wall of a water tunnel beneath Jerusalem, describing the moment two teams of diggers, working from opposite ends, met in the middle. The tunnel carried water from the Gihon spring inside the city walls — the engineering work the Bible credits to King Hezekiah as he prepared for the Assyrian siege."
+refs = [ { book = "2 Kings", chapter = 20, verse = 20 } ]
+
+[[entry]]
+chapter = "judah"
+image = "hezekiah_bulla.jpg"
+title = "The Bulla of Hezekiah"
+place = "Jerusalem (Ophel)"
+date = "c. 700 BC"
+holding = "Israel Museum, Jerusalem"
+credit = "photo Tamir Zegman · CC BY-SA 4.0"
+caption = "A clay sealing once pressed over the cord of a document, stamped with the royal seal of 'Hezekiah son of Ahaz, king of Judah,' above a winged sun-disk. Recovered in controlled excavation near the Temple Mount, it is a personal impression from the administration of the reforming king of Hezekiah's chapters."
+refs = [ { book = "2 Kings", chapter = 18, verse = 1 } ]
+
+[[entry]]
+chapter = "judah"
+image = "shebna.jpg"
+title = "The Royal Steward Inscription"
+place = "Silwan, Jerusalem"
+date = "c. 700 BC"
+holding = "British Museum, London"
+credit = "photo Mustafaa · CC BY-SA 3.0"
+caption = "The carved lintel of a rock-cut tomb in Silwan, opposite the City of David, bearing a Hebrew inscription that warns against disturbing the bones of a royal steward. The official's name is broken away, but its surviving ending and his office fit Shebna, the steward whom Isaiah rebukes for hewing himself just such a showy tomb."
+refs = [ { book = "Isaiah", chapter = 22, verse = 15 } ]
+
+# ── The Fall and the Exile ───────────────────────────────────────────────────
+[[entry]]
 chapter = "exile"
+image = "babylonian_chronicle.jpg"
+title = "The Babylonian Chronicle"
+place = "Babylon"
+date = "c. 550 BC"
+holding = "British Museum, London"
+credit = "British Museum · CC BY-SA 4.0"
+caption = "A clay tablet from the Babylonian Chronicles, the year-by-year record of Babylon's kings. One entry notes how Nebuchadnezzar besieged 'the city of Judah,' captured it, seized its king, and appointed another — the fall of Jerusalem in 597 BC and the exile of Jehoiachin, set down in plain Babylonian prose beside the account in Second Kings."
+refs = [ { book = "2 Kings", chapter = 24, verse = 10 } ]
+
+[[entry]]
+chapter = "exile"
+image = "ishtar_gate.jpg"
+title = "The Ishtar Gate of Babylon"
+place = "Babylon"
+date = "6th century BC"
+holding = "Pergamon Museum, Berlin"
+credit = "photo Osama S. M. Amin · CC BY-SA 4.0"
+caption = "A dragon of the god Marduk, in glazed and moulded brick from the Ishtar Gate of Babylon — the dazzling capital Nebuchadnezzar rebuilt, and to which Judah was carried into exile. In the book of Daniel the king surveys it in pride: 'Is not this great Babylon, which I have built?'"
+refs = [ { book = "Daniel", chapter = 4, verse = 30 } ]
+
+[[entry]]
+chapter = "exile"
+image = "nabonidus.jpg"
+title = "The Nabonidus Cylinder"
+place = "Ur"
+date = "c. 540 BC"
+holding = "British Museum, London"
+credit = "British Museum · CC BY 2.5"
+caption = "A clay cylinder of Nabonidus, last king of Babylon, recording his building works and a prayer for his son. That son is Bel-shar-usur — Belshazzar — who in the book of Daniel holds the feast on the night Babylon falls. The cylinder explains a long-doubted detail: Belshazzar ruled as regent in his father's absence, which is why Daniel could be offered only 'third' place in the kingdom."
+refs = [ { book = "Daniel", chapter = 5, verse = 1 } ]
+
+# ── Return under Persia ──────────────────────────────────────────────────────
+[[entry]]
+chapter = "return"
 image = "cyrus_cylinder.jpg"
 title = "The Cyrus Cylinder"
 place = "Babylon"
@@ -98,6 +317,52 @@ refs = [
   { book = "Isaiah", chapter = 45, verse = 1 },
 ]
 
+[[entry]]
+chapter = "return"
+image = "behistun.jpg"
+title = "The Behistun Inscription"
+place = "Behistun, Iran"
+date = "c. 520 BC"
+holding = "in situ"
+credit = "photo Leen van Dorp · CC0"
+caption = "High on a cliff in western Iran, Darius the Great proclaimed his rise to power in three languages — the trilingual key that finally let scholars read cuneiform. Darius authorised the rebuilding of the Temple in Jerusalem; this monument shows the very king whose decree, in the book of Ezra, sent the work forward."
+refs = [ { book = "Ezra", chapter = 6, verse = 1 } ]
+
+# ── Between the Testaments ───────────────────────────────────────────────────
+[[entry]]
+chapter = "between"
+image = "heliodorus.jpg"
+title = "The Heliodorus Stele"
+place = "Maresha, Israel"
+date = "178 BC"
+holding = "Israel Museum, Jerusalem"
+credit = "photo Gary Todd · CC0"
+caption = "A limestone stele inscribed with letters of the Seleucid king Seleucus IV and his minister Heliodorus, appointing officials over the temples of the realm. Heliodorus is remembered in Second Maccabees as the agent sent to seize the treasures of the Temple in Jerusalem — and miraculously driven back."
+refs = [ { book = "2 Maccabees", chapter = 3, verse = 7 } ]
+
+[[entry]]
+chapter = "between"
+image = "hyrcanus_coin.jpg"
+title = "A Coin of John Hyrcanus"
+place = "Judea"
+date = "135–104 BC"
+holding = ""
+credit = "Classical Numismatic Group · CC BY-SA 3.0"
+caption = "A small bronze coin of the Hasmonean ruler John Hyrcanus, its Hebrew legend naming 'Yehohanan the High Priest and the Council of the Jews,' its reverse a double cornucopia. It is a coin of the priest-kings descended from the Maccabean revolt — the independent Jewish state whose story First Maccabees carries toward the New Testament age."
+refs = [ { book = "1 Maccabees", chapter = 16, verse = 23 } ]
+
+[[entry]]
+chapter = "between"
+image = "isaiah_scroll.jpg"
+title = "The Great Isaiah Scroll"
+place = "Qumran, Cave 1"
+date = "c. 125 BC"
+holding = "Israel Museum, Jerusalem"
+credit = "Israel Museum (photo Ardon Bar-Hama) · public domain"
+caption = "A column of the Great Isaiah Scroll from Qumran — here the song of the suffering servant, 'he was wounded for our transgressions.' Found among the Dead Sea Scrolls in 1947, it is a thousand years older than the previously oldest Hebrew copies of Isaiah, and matches them closely: a witness to how faithfully the text was handed down."
+refs = [ { book = "Isaiah", chapter = 53, verse = 5 } ]
+
+# ── The World of Jesus ───────────────────────────────────────────────────────
 [[entry]]
 chapter = "jesus"
 image = "pilate_stone.jpg"
@@ -125,3 +390,70 @@ refs = [
   { book = "Matthew", chapter = 26, verse = 57 },
   { book = "John", chapter = 18, verse = 13 },
 ]
+
+[[entry]]
+chapter = "jesus"
+image = "bethesda.jpg"
+title = "The Pool of Bethesda"
+place = "Jerusalem"
+date = "1st century AD"
+holding = "in situ"
+credit = "photo Alzbeta · CC BY-SA 3.0"
+caption = "The excavated remains of a large twin pool, ringed by porticoes, on the north side of Jerusalem's Temple area. John's Gospel describes the healing of a paralysed man at the pool of Bethesda 'which has five roofed colonnades' — a precise detail, once thought merely symbolic, that the archaeology of the twin pool and its surrounding porches bears out."
+refs = [ { book = "John", chapter = 5, verse = 2 } ]
+
+[[entry]]
+chapter = "jesus"
+image = "siloam_pool.jpg"
+title = "The Pool of Siloam"
+place = "Jerusalem (City of David)"
+date = "1st century AD"
+holding = "in situ"
+credit = "photo Rhododendrites · CC BY-SA 4.0"
+caption = "The stepped stone edge of the Pool of Siloam, uncovered in 2004 at the foot of the City of David — the pool fed by Hezekiah's tunnel. In John's Gospel Jesus sends a man born blind to wash here, and he returns seeing; these are the steps on which that man, and countless pilgrims, once stood."
+refs = [ { book = "John", chapter = 9, verse = 7 } ]
+
+[[entry]]
+chapter = "jesus"
+image = "soreg.jpg"
+title = "The Temple Warning Inscription"
+place = "Jerusalem (Temple Mount)"
+date = "1st century BC–AD"
+holding = "Istanbul Archaeology Museums"
+credit = "photo Tamar Hayardeni · CC BY 2.5"
+caption = "A limestone block carved with a Greek warning that forbade Gentiles, on pain of death, from passing the barrier into the inner courts of the Temple. It is the very 'dividing wall' Paul was accused of breaching when he was seized in the Temple — and the image the letter to the Ephesians turns around, declaring that Christ has broken it down."
+refs = [ { book = "Acts", chapter = 21, verse = 28 } ]
+
+[[entry]]
+chapter = "jesus"
+image = "tribute_penny.jpg"
+title = "The Tribute Penny"
+place = "Lugdunum (Lyon) mint"
+date = "AD 14–37"
+holding = ""
+credit = "photo DrusMAX · CC BY-SA 3.0"
+caption = "A silver denarius of the emperor Tiberius, his portrait on one side, an enthroned figure on the other. A coin exactly like this is the 'tribute penny' of the Gospels: shown such a coin and asked about paying taxes, Jesus answers, 'Render to Caesar the things that are Caesar's, and to God the things that are God's.'"
+refs = [ { book = "Matthew", chapter = 22, verse = 21 } ]
+
+# ── The Fall of Jerusalem ────────────────────────────────────────────────────
+[[entry]]
+chapter = "ad70"
+image = "arch_titus.jpg"
+title = "The Arch of Titus"
+place = "Rome (Forum)"
+date = "c. AD 81"
+holding = "in situ"
+credit = "photo Laurel Lodged · public domain"
+caption = "On the Arch of Titus in Rome, a relief shows soldiers carrying the spoils of the Jerusalem Temple in triumph — the seven-branched menorah, the table of showbread, the silver trumpets — after the city's destruction in AD 70. It is the Temple's own furniture, paraded as plunder, in the years after Jesus foretold that not one stone would be left upon another."
+refs = [ { book = "Luke", chapter = 21, verse = 6 } ]
+
+[[entry]]
+chapter = "ad70"
+image = "judaea_capta.jpg"
+title = "The Judaea Capta Coinage"
+place = "Rome"
+date = "AD 71"
+holding = ""
+credit = "Classical Numismatic Group · CC BY-SA 2.5"
+caption = "A Roman coin struck to celebrate the crushing of the Jewish revolt: a palm tree, a bound captive, a mourning woman, and the words IUDAEA CAPTA — 'Judea captured.' Minted across the empire after AD 70, it is Rome's own monument to the fall of Jerusalem that the Gospels record Jesus foretelling."
+refs = [ { book = "Matthew", chapter = 24, verse = 2 } ]
