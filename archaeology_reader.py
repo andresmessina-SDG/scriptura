@@ -23,7 +23,7 @@ import logging
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, GLib
+from gi.repository import Gtk, Adw, GLib, Gio, Gdk, Graphene
 
 import archaeology_bridge
 
@@ -74,14 +74,33 @@ class ArchaeologyReader:
         self._page.get_style_context().add_provider(
             self._font_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
+        # Trimmed right-click menu for the read-only prose. GtkLabel's stock
+        # selection menu carries inert Cut/Paste/Delete items and can't be
+        # pruned via public API, so we suppress it (claim the secondary click)
+        # and show our own Copy / Select All popover, wired to the label.
+        self._menu_target: Gtk.Label | None = None
+        actions = Gio.SimpleActionGroup()
+        a_copy = Gio.SimpleAction.new('copy', None)
+        a_copy.connect('activate', self._menu_copy)
+        a_sel = Gio.SimpleAction.new('select-all', None)
+        a_sel.connect('activate', self._menu_select_all)
+        actions.add_action(a_copy)
+        actions.add_action(a_sel)
+        self._root.insert_action_group('stonetext', actions)
+        model = Gio.Menu()
+        model.append('Copy', 'stonetext.copy')
+        model.append('Select All', 'stonetext.select-all')
+        self._text_menu = Gtk.PopoverMenu.new_from_model(model)
+        self._text_menu.set_has_arrow(False)
+        self._text_menu.set_parent(self._root)
+
     @staticmethod
     def _clamp(child, width):
         c = Adw.Clamp(maximum_size=width, tightening_threshold=int(width * 0.85))
         c.set_child(child)
         return c
 
-    @staticmethod
-    def _label(text, css, selectable=False, xalign=0):
+    def _label(self, text, css, selectable=False, xalign=0):
         lbl = Gtk.Label(label=text, xalign=xalign, wrap=True)
         lbl.add_css_class(css)
         if selectable:
@@ -91,7 +110,36 @@ class ArchaeologyReader:
             # (the caret) while mouse drag-select and right-click Copy still
             # work. This is read-only prose — there's nothing to type into.
             lbl.set_focusable(False)
+            gesture = Gtk.GestureClick(button=Gdk.BUTTON_SECONDARY)
+            gesture.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+            gesture.connect('pressed', self._on_label_secondary, lbl)
+            lbl.add_controller(gesture)
         return lbl
+
+    # ── trimmed Copy / Select All menu ─────────────────────────────────────────
+    def _on_label_secondary(self, gesture, _n, x, y, label):
+        # Claim the secondary click so GtkLabel's stock menu never opens, then
+        # show our own at the cursor.
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+        self._menu_target = label
+        ok, pt = label.compute_point(self._root, Graphene.Point().init(x, y))
+        rect = Gdk.Rectangle()
+        rect.x, rect.y, rect.width, rect.height = (
+            (int(pt.x), int(pt.y), 1, 1) if ok else (0, 0, 1, 1))
+        self._text_menu.set_pointing_to(rect)
+        self._text_menu.popup()
+
+    def _menu_copy(self, *_):
+        lbl = self._menu_target
+        if lbl is None:
+            return
+        ok, start, end = lbl.get_selection_bounds()
+        text = lbl.get_text()[start:end] if ok else lbl.get_text()
+        lbl.get_clipboard().set(text)
+
+    def _menu_select_all(self, *_):
+        if self._menu_target is not None:
+            self._menu_target.select_region(0, -1)
 
     # ── rendering ─────────────────────────────────────────────────────────────
     def render(self):
