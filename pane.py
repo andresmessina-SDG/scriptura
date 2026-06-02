@@ -1291,6 +1291,25 @@ class BiblePane(Gtk.Box):
                 module_positions.remember_verse_position(
                     self._module, self._book, self._chapter, v)
 
+    def _insert_artifact_marker(self, verse):
+        """Embed a tiny clay amphora icon at the end of `verse`, linking to the
+        Scripture-in-Stone gallery. A real widget (anchored in the text) rather
+        than a font glyph, so it always renders and clicks directly."""
+        self._buffer.insert(self._buffer.get_end_iter(), ' ')
+        anchor = self._buffer.create_child_anchor(self._buffer.get_end_iter())
+        btn = Gtk.Button(icon_name='scriptura-artifact-symbolic')
+        btn.add_css_class('flat')
+        btn.add_css_class('artifact-marker')
+        btn.set_can_focus(False)
+        btn.set_valign(Gtk.Align.CENTER)
+        btn.set_tooltip_text('Related artifact — open in Scripture in Stone')
+        if self._on_open_artifact:
+            btn.connect(
+                'clicked',
+                lambda *_a, v=verse: self._on_open_artifact(
+                    self, self._book, self._chapter, v))
+        self._view.add_child_at_anchor(btn, anchor)
+
     def _display(self, verses, book, chapter, module):
         if book != self._book or chapter != self._chapter or module != self._module:
             return GLib.SOURCE_REMOVE
@@ -1435,23 +1454,14 @@ class BiblePane(Gtk.Box):
                     self._buffer.insert_markup(self._buffer.get_end_iter(), v_text_markup + ' ', -1)
                 except Exception:
                     self._buffer.insert(self._buffer.get_end_iter(), plain + ' ')
-                # Subtle 'related artifact' marker — a small clickable amphora
-                # beside any verse a gallery artifact references. Rare (only ~34
-                # verses across the whole Bible), so it reads as a quiet cue.
+                # Subtle 'related artifact' marker — a small clickable
+                # amphora icon beside any verse a gallery artifact
+                # references. Rare (~34 verses Bible-wide), so it reads as
+                # a quiet cue. An embedded icon (not a font glyph) so it
+                # always renders — the U+26B1 codepoint falls back to tofu
+                # in many reading fonts.
                 if start_v in art_verses:
-                    am_start = self._buffer.create_mark(
-                        None, self._buffer.get_end_iter(), True)
-                    self._buffer.insert_markup(
-                        self._buffer.get_end_iter(),
-                        '<span foreground="#a9744f" size="x-small" '
-                        'rise="1500"> ⚱ </span>', -1)
-                    table = self._buffer.get_tag_table()
-                    am = table.lookup('_artifact_marker') \
-                        or self._buffer.create_tag('_artifact_marker')
-                    self._buffer.apply_tag(
-                        am, self._buffer.get_iter_at_mark(am_start),
-                        self._buffer.get_end_iter())
-                    self._buffer.delete_mark(am_start)
+                    self._insert_artifact_marker(start_v)
 
             # 3. Apply vnum tags. For grouped commentary sections, every
             # verse in [start_v, end_v] points at the same rendered
@@ -2095,7 +2105,6 @@ class BiblePane(Gtk.Box):
         morph = None
         devref = None
         phrase_tag = None
-        artifact_marker = False
         for tag in it.get_tags():
             name = tag.get_property('name')
             if name and name.startswith('strg:'):
@@ -2111,17 +2120,12 @@ class BiblePane(Gtk.Box):
                 devref = name[7:]
             elif name and name.startswith('phrase:'):
                 phrase_tag = tag
-            elif name == '_artifact_marker':
-                artifact_marker = True
         if n_press > 1:
             return
         if devref:
             result = sword_bridge.parse_osis_ref(devref)
             if result and self._on_word_study_navigate:
                 self._on_word_study_navigate(*result)
-            return
-        if artifact_marker and verse_num is not None and self._on_open_artifact:
-            self._on_open_artifact(self, self._book, self._chapter, verse_num)
             return
         if verse_num is not None:
             self._selected_verse = verse_num
@@ -2198,7 +2202,7 @@ class BiblePane(Gtk.Box):
         # opens on the first click, the dict on the second.
         for tag in it.get_tags():
             name = tag.get_property('name') or ''
-            if name.startswith('devref:') or name == '_artifact_marker':
+            if name.startswith('devref:'):
                 return
         word_start = it.copy()
         word_end = it.copy()
