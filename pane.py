@@ -41,9 +41,25 @@ _HIGHLIGHT_RENDER = {
     '#ffa500': 'rgba(234,134,40,0.42)',   # orange
 }
 
+# Dark-mode overrides. Orange-only: at full saturation it was the loudest of
+# the four bands against a dark page (reads as a confident terracotta where the
+# others whisper). Pulled toward amber (less red, a touch more green) with lower
+# alpha so the four colors feel like one family. Light mode keeps the table
+# above. Theme toggle re-renders the chapter (_on_theme_changed) → this is
+# re-evaluated, so the band name stays in sync with the current theme.
+_HIGHLIGHT_RENDER_DARK = {
+    '#ffa500': 'rgba(214,150,54,0.34)',   # orange — muted amber for dark mode
+}
+
 
 def _render_highlight(color):
-    return _HIGHLIGHT_RENDER.get(color, color) if color else color
+    if not color:
+        return color
+    if Adw.StyleManager.get_default().get_dark():
+        dark = _HIGHLIGHT_RENDER_DARK.get(color)
+        if dark is not None:
+            return dark
+    return _HIGHLIGHT_RENDER.get(color, color)
 
 
 _DICT_SHORT_NAMES = {
