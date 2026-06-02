@@ -2119,6 +2119,12 @@ class BiblePane(Gtk.Box):
         self._on_word_click(self, strong_num)
 
     def _on_dict_click(self, gesture, n_press, x, y):
+        # Any click in the view dismisses an open dict peek (it's non-autohide,
+        # so we close it ourselves).
+        existing = getattr(self, '_dict_pop', None)
+        if existing is not None and existing.get_visible():
+            self._dict_user_closed = True
+            existing.popdown()
         if n_press != 2:
             return
         bx, by = self._view.window_to_buffer_coords(Gtk.TextWindowType.WIDGET, int(x), int(y))
@@ -2141,56 +2147,150 @@ class BiblePane(Gtk.Box):
         word = self._buffer.get_text(word_start, word_end, False).strip()
         if word and word.replace("'", '').replace('’', '').isalpha():
             offset = word_start.get_offset()
-            GLib.idle_add(self._show_dict_popup, word, offset)
+            # Small defer off the click dispatch; the popover shows invisibly
+            # and is revealed only once stable, so we don't need to wait out
+            # the relayout cascade here.
+            GLib.timeout_add(100, self._show_dict_popup, word, offset)
+
+    def _dict_reshow(self, pop):
+        """Re-show the dict peek after the relayout cascade unmapped it (see
+        the self-heal note in _show_dict_popup). Still invisible (opacity 0)
+        until it survives long enough to be revealed."""
+        if self._dict_pop is pop and not self._dict_user_closed:
+            pop.set_opacity(0.0)
+            pop.popup()
+            self._dict_arm_reveal(pop)
+        return GLib.SOURCE_REMOVE
+
+    def _dict_arm_reveal(self, pop):
+        """Reveal the peek once it has stayed mapped briefly — i.e. the
+        relayout cascade is over. Re-armed on every (re)show and cancelled
+        whenever a close interrupts, so opacity only reaches 1 on a stable
+        show and the user never sees the intervening churn."""
+        if getattr(self, '_dict_reveal_timer', 0):
+            GLib.source_remove(self._dict_reveal_timer)
+        self._dict_reveal_timer = GLib.timeout_add(130, self._dict_reveal, pop)
+
+    def _dict_reveal(self, pop):
+        self._dict_reveal_timer = 0
+        if self._dict_pop is pop and not self._dict_user_closed:
+            pop.set_opacity(1.0)
+        return GLib.SOURCE_REMOVE
 
     def _show_dict_popup(self, word, word_offset):
-        # Close any prior dict window cleanly
-        prev = getattr(self, '_dict_win', None)
-        if prev is not None:
-            try:
-                prev.close()
-            except Exception:
-                pass
-            self._dict_win = None
+        # A lightweight "Look Up" peek anchored at the double-clicked word,
+        # not a detached window centred on the screen. Deep study still goes
+        # through the Strong's lexicon panel.
+        #
+        # The popover is *non-autohide* and reused per pane: an autohide
+        # popover grabs the pointer the instant it's shown, so the very
+        # double-click that opened it would read as a click-outside and dismiss
+        # it. We dismiss it ourselves instead — on any click in the view
+        # (_on_dict_click), a new lookup, or a module change.
 
+        # Guard the self-heal (below) against our own teardown/rebuild: True
+        # while we intentionally close or replace the popover.
+        self._dict_user_closed = True
+        pop = getattr(self, '_dict_pop', None)
+        if pop is None:
+            pop = Gtk.Popover()
+            pop.set_has_arrow(True)
+            pop.set_autohide(False)
+            pop.set_can_focus(False)
+            # Parent to the text view so the arrow anchors on the word in the
+            # view's own coordinate space (parenting elsewhere mis-anchors it).
+            pop.set_parent(self._view)
+            # Clicking a word re-renders the other pane (cross-pane verse
+            # sync); that relayout cascade unmaps a freshly-shown popover no
+            # matter where it's parented — a Gtk.Popover can't survive a
+            # concurrent relayout. So self-heal: if it's torn down within the
+            # settle window and the user didn't dismiss it, re-show until the
+            # layout goes quiet (the stable state the popover lives in).
+            def _on_closed(p):
+                # Cancel a pending reveal — the show was interrupted, so it
+                # wasn't stable; the next reshow re-arms it.
+                if getattr(self, '_dict_reveal_timer', 0):
+                    GLib.source_remove(self._dict_reveal_timer)
+                    self._dict_reveal_timer = 0
+                if (not self._dict_user_closed
+                        and self._dict_pop is p
+                        and self._dict_retries < 12
+                        and GLib.get_monotonic_time() - self._dict_open_at
+                        < 1_200_000):
+                    self._dict_retries += 1
+                    GLib.timeout_add(60, self._dict_reshow, p)
+            pop.connect('closed', _on_closed)
+            self._dict_pop = pop
+        else:
+            pop.popdown()
+
+        # Stale-result guard: a newer lookup bumps the generation so an
+        # earlier fetch returning late can't overwrite the current content.
+        self._dict_gen = getattr(self, '_dict_gen', 0) + 1
+        gen = self._dict_gen
+
+        # Point the arrow at the word: union the start/end iter rectangles,
+        # converted from buffer coords to widget coords.
+        start = self._buffer.get_iter_at_offset(word_offset)
+        end = start.copy()
+        if not end.ends_word():
+            end.forward_word_end()
+        r1 = self._view.get_iter_location(start)
+        r2 = self._view.get_iter_location(end)
+        wx1, wy1 = self._view.buffer_to_window_coords(
+            Gtk.TextWindowType.WIDGET, r1.x, r1.y)
+        wx2, _wy = self._view.buffer_to_window_coords(
+            Gtk.TextWindowType.WIDGET, r2.x, r2.y)
+        rect = Gdk.Rectangle()
+        rect.x = wx1
+        rect.y = wy1
+        rect.width = max(1, wx2 - wx1) if r2.y == r1.y else max(1, r1.width)
+        rect.height = r1.height
+
+        # Open the peek on whichever side of the word has more room, and cap
+        # the definition height so the whole popover *fits* on that side. If it
+        # doesn't fit, GTK flips it to the other side but strands the arrow on
+        # the original edge (pointing away from the word) — capping avoids the
+        # flip entirely. Room is measured in the window, where the popover
+        # actually lives (it can extend up over the toolbar).
         root = self._view.get_root()
-        win = Adw.Window(transient_for=root, modal=False)
-        win.set_default_size(380, 300)
-        self._dict_win = win
-
-        # Clear the slot when the user closes via ESC / X, so a later double-click
-        # doesn't call .close() on an already-destroyed window.
-        def _on_close(_w):
-            if self._dict_win is win:
-                self._dict_win = None
-            return False
-        win.connect('close-request', _on_close)
-
-        key_ctrl = Gtk.EventControllerKey.new()
-        key_ctrl.connect('key-pressed',
-                         lambda _c, kv, _kc, _s: win.close() or True
-                         if kv == Gdk.KEY_Escape else False)
-        win.add_controller(key_ctrl)
-
-        toolbar_view = Adw.ToolbarView()
-        header = Adw.HeaderBar()
-        toolbar_view.add_top_bar(header)
-        win.set_content(toolbar_view)
+        ok, pt = self._view.compute_point(
+            root, Graphene.Point().init(float(rect.x), float(rect.y)))
+        word_y = pt.y if ok else rect.y
+        win_h = root.get_height() if root is not None else self._view.get_height()
+        room_above = word_y
+        room_below = win_h - (word_y + rect.height)
+        if room_above > room_below:
+            pop.set_position(Gtk.PositionType.TOP)
+            avail = room_above
+        else:
+            pop.set_position(Gtk.PositionType.BOTTOM)
+            avail = room_below
+        # ~130px is the title + tabs + popover chrome above the scrolled body.
+        self._dict_max_body = int(max(140, min(320, avail - 130)))
+        pop.set_pointing_to(rect)
 
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-
-        title_widget = Adw.WindowTitle(title=word.capitalize(), subtitle='Dictionary')
-        header.set_title_widget(title_widget)
-
+        content.set_size_request(360, -1)
+        pop.set_child(content)
         spinner = Gtk.Spinner()
         spinner.start()
-        spinner.set_margin_top(24)
-        spinner.set_margin_bottom(24)
+        spinner.set_margin_top(28)
+        spinner.set_margin_bottom(28)
         spinner.set_halign(Gtk.Align.CENTER)
         content.append(spinner)
-        toolbar_view.set_content(content)
-
-        win.present()
+        # Arm the self-heal, then show *invisibly*: the relayout cascade may
+        # unmap the popover a few times before the layout settles. Opacity 0
+        # until it has stayed up briefly (see _dict_arm_reveal) hides that
+        # churn — the user only ever sees the final, stable peek. (Shown with a
+        # spinner first so the wrapped TextView can measure its natural height
+        # once mapped; building before showing collapses it to a sliver.)
+        self._dict_retries = 0
+        self._dict_open_at = GLib.get_monotonic_time()
+        self._dict_user_closed = False
+        pop.set_opacity(0.0)
+        pop.popup()
+        self._dict_arm_reveal(pop)
 
         def _clear():
             child = content.get_first_child()
@@ -2199,30 +2299,90 @@ class BiblePane(Gtk.Box):
                 content.remove(child)
                 child = nxt
 
-        def _hint(text):
-            lbl = Gtk.Label(label=text, wrap=True, xalign=0)
-            lbl.add_css_class('dim-label')
+        def _status(icon, title, desc):
+            # Hand-built (not Adw.StatusPage): StatusPage is vexpand and
+            # collapses in a small popover, leaving the disclaimer invisible.
+            # A plain box reports a real natural height the popover sizes to.
+            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            box.set_margin_top(22)
+            box.set_margin_bottom(22)
+            box.set_margin_start(24)
+            box.set_margin_end(24)
+            box.set_valign(Gtk.Align.CENTER)
+            img = Gtk.Image.new_from_icon_name(icon)
+            img.set_pixel_size(36)
+            img.add_css_class('dim-label')
+            box.append(img)
+            t = Gtk.Label(label=title)
+            t.add_css_class('title-4')
+            t.set_wrap(True)
+            t.set_justify(Gtk.Justification.CENTER)
+            box.append(t)
+            d = Gtk.Label(label=desc)
+            d.add_css_class('dim-label')
+            d.set_wrap(True)
+            d.set_justify(Gtk.Justification.CENTER)
+            d.set_max_width_chars(34)
+            box.append(d)
+            content.append(box)
+
+        def _headword_title(text):
+            # Serif title echoing the app's chapter headings, so the peek
+            # reads as a Scriptura entry rather than a system tooltip.
+            lbl = Gtk.Label(label=text[:1].upper() + text[1:], xalign=0)
+            lbl.add_css_class('dict-headword')
+            lbl.set_ellipsize(Pango.EllipsizeMode.END)
             lbl.set_margin_start(18)
             lbl.set_margin_end(18)
-            lbl.set_margin_top(16)
-            lbl.set_margin_bottom(16)
-            content.append(lbl)
+            lbl.set_margin_top(10)
+            lbl.set_margin_bottom(2)
+            return lbl
 
-        def _add_text(html, box=None):
+        def _strip_headword(html):
+            # Drop a leading headword that duplicates the serif title (plus any
+            # indent the SWORD HTML carries). Best-effort: if nothing matches,
+            # the body is returned unchanged.
+            stripped = re.sub(
+                r'^\s*(?:<[^>]+>\s*)*' + re.escape(word)
+                + r'(?:\s*</[^>]+>)*\s*(?:<br\s*/?>|[—:.\-,])?\s*',
+                '', html, count=1, flags=re.IGNORECASE)
+            return re.sub(r'^(?:\s| |&nbsp;)+', '', stripped)
+
+        def _add_text(html, box=None, source=None):
             if box is None:
                 box = content
             dark = Adw.StyleManager.get_default().get_dark()
-            scroll = Gtk.ScrolledWindow(vexpand=True)
+            # Source attribution for the single-dictionary case (the tabs carry
+            # it when there are several).
+            if source:
+                cap = Gtk.Label(label=source, xalign=0)
+                cap.add_css_class('caption')
+                cap.add_css_class('dim-label')
+                cap.set_margin_start(18)
+                cap.set_margin_bottom(6)
+                box.append(cap)
+            scroll = Gtk.ScrolledWindow()
             scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            scroll.set_propagate_natural_height(True)
+            scroll.set_max_content_height(self._dict_max_body)
+            # Floor the body so a long entry can't collapse to a sliver when
+            # the natural-height measurement under-reports (it does for some
+            # popover positions). A short entry sits in this min with a little
+            # slack rather than scrolling.
+            scroll.set_min_content_height(min(self._dict_max_body, 200))
             tv = Gtk.TextView()
             tv.set_editable(False)
             tv.set_cursor_visible(False)
             tv.set_wrap_mode(Gtk.WrapMode.WORD)
             tv.set_left_margin(18)
             tv.set_right_margin(18)
-            tv.set_top_margin(12)
-            tv.set_bottom_margin(12)
+            tv.set_top_margin(4)
+            tv.set_bottom_margin(14)
+            # Breathe — the app reads generously everywhere else.
+            tv.set_pixels_below_lines(3)
+            tv.set_pixels_inside_wrap(3)
             buf = tv.get_buffer()
+            html = _strip_headword(html)
             markup = _html_to_markup(html, dark)
             try:
                 buf.insert_markup(buf.get_end_iter(), markup, -1)
@@ -2231,45 +2391,75 @@ class BiblePane(Gtk.Box):
             scroll.set_child(tv)
             box.append(scroll)
 
+        def _build_source_tabs(results):
+            # Underline tabs matching the module picker, not a chunky
+            # StackSwitcher.
+            tabs = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+            tabs.add_css_class('module-tabs')
+            tabs.set_halign(Gtk.Align.START)
+            tabs.set_margin_start(10)
+            tabs.set_margin_top(2)
+            tabs.set_margin_bottom(7)
+            stack = Gtk.Stack()
+            stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
+            stack.set_transition_duration(120)
+            stack.set_vhomogeneous(False)
+            btns: dict = {}
+
+            def _on_tab(btn, mn):
+                if not btn.get_active():
+                    if stack.get_visible_child_name() == mn:
+                        btn.set_active(True)   # enforce exactly-one
+                    return
+                # Switch first, then clear the others — deactivating a sibling
+                # re-enters this handler, and it must see the new selection so
+                # it doesn't snap itself back on.
+                stack.set_visible_child_name(mn)
+                for k, b in btns.items():
+                    if k != mn and b.get_active():
+                        b.set_active(False)
+
+            ordered = sorted(results, key=lambda r: r[1].lower())
+            for mn, md, html in ordered:
+                page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+                _add_text(html, page)
+                stack.add_named(page, mn)
+                btn = Gtk.ToggleButton(label=_short_dict_title(mn, md))
+                btns[mn] = btn
+                btn.connect('toggled', _on_tab, mn)
+                tabs.append(btn)
+            first = ordered[0][0]
+            btns[first].set_active(True)
+            stack.set_visible_child_name(first)
+            content.append(tabs)
+            content.append(stack)
+
         def populate(results):
-            # Guard against a later double-click having replaced this window.
-            if self._dict_win is not win:
+            # Guard against a later double-click having replaced this popover.
+            if gen != self._dict_gen:
                 return GLib.SOURCE_REMOVE
             _clear()
             if not results:
-                _hint(f'No dictionary entry found for "{word}".\n\n'
-                      'Bible dictionaries index proper nouns and theological terms — '
-                      'try a word like "covenant," "Abraham," or "atonement."')
-                return GLib.SOURCE_REMOVE
-            if len(results) == 1:
-                _mod_name, mod_desc, html = results[0]
-                title_widget.set_subtitle(mod_desc)
-                _add_text(html)
+                _status('system-search-symbolic', f'No entry for “{word}”',
+                        'Bible dictionaries index proper nouns and key terms '
+                        '— try a word like “covenant,” “Abraham,” or '
+                        '“atonement.”')
             else:
-                stack = Gtk.Stack()
-                stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
-                sw = Gtk.StackSwitcher()
-                sw.set_stack(stack)
-                sw.set_halign(Gtk.Align.CENTER)
-                sw.set_margin_top(8)
-                sw.set_margin_bottom(4)
-                sw.set_margin_start(18)
-                sw.set_margin_end(18)
-                for mn, md, html in sorted(results, key=lambda r: r[1].lower()):
-                    page_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-                    _add_text(html, page_box)
-                    stack.add_titled(page_box, mn, _short_dict_title(mn, md))
-                content.append(sw)
-                content.append(stack)
+                content.append(_headword_title(word))
+                if len(results) == 1:
+                    mn, md, html = results[0]
+                    _add_text(html, source=_short_dict_title(mn, md))
+                else:
+                    _build_source_tabs(results)
             return GLib.SOURCE_REMOVE
 
         def show_no_dicts():
-            if self._dict_win is not win:
+            if gen != self._dict_gen:
                 return GLib.SOURCE_REMOVE
             _clear()
-            _hint('No dictionary modules installed.\n\n'
-                  'Install Easton\'s Bible Dictionary or Smith\'s Bible Dictionary '
-                  'from the Module Manager.')
+            _status('dialog-information-symbolic', 'No dictionaries installed',
+                    'Add Easton’s or Smith’s Bible Dictionary from the '
+                    'Module Manager.')
             return GLib.SOURCE_REMOVE
 
         def fetch():
@@ -2462,14 +2652,12 @@ class BiblePane(Gtk.Box):
         # Search results were keyed to the previous module — drop them
         # so F3 doesn't try to step through stale references.
         self._search.clear_state()
-        # Dismiss any dict popup since it's tied to a word in the previous module's text.
-        prev_dict = getattr(self, '_dict_win', None)
-        if prev_dict is not None:
-            try:
-                prev_dict.close()
-            except Exception:
-                pass
-            self._dict_win = None
+        # Dismiss any dict peek since it's tied to a word in the previous
+        # module's text. Reused popover — hide it, don't unparent.
+        prev_dict = getattr(self, '_dict_pop', None)
+        if prev_dict is not None and prev_dict.get_visible():
+            self._dict_user_closed = True
+            prev_dict.popdown()
         self._fetch_and_render()
 
     def select_verse(self, verse_num):

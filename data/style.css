@@ -236,6 +236,14 @@ image.module-feature-icon {
     -gtk-icon-size: 24px;
 }
 
+/* Dictionary peek: serif headword echoing the app's chapter headings. */
+.dict-headword {
+    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-size: 1.4em;
+    font-weight: 600;
+}
+
 menubutton.pane-module-button > button,
 button.pane-action,
 menubutton.pane-action > button {
