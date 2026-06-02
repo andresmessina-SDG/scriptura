@@ -980,6 +980,8 @@ class BiblePane(Gtk.Box):
         if 'font_justify' in kwargs: self._font_justify = kwargs['font_justify']
         if 'text_color'   in kwargs: self._text_color   = kwargs['text_color']
         self._update_font_css()
+        # The archaeology document scales with the same reading font size.
+        self._archaeology.apply_font_size(self._font_size)
 
     def set_font_size(self, size):
         self.set_appearance(font_size=size)

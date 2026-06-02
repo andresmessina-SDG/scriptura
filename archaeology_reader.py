@@ -7,10 +7,15 @@ caption) followed by tappable verse chips; clicking a chip drives the Bible
 pane to that passage via the pane's word-study navigation callback (the same
 channel a Strong's link uses → window._go_to).
 
+Layout is magazine-style: a comfortable narrow measure for text, with images
+allowed to run wider — so a wide / single pane reads like long-form rather
+than a thin centred column. Prose is selectable (native right-click Copy), and
+the document scales with the app's reading font size (the .stone-* sizes are
+em-relative, so one base size on .stone-page scales the whole thing).
+
 Unlike the imagery/catena readers it is NOT verse-keyed — it's a standalone
 document you open and read, so it ignores the partnered Bible's navigation and
-renders once. A Contents button jumps between chapters. Mirrors the
-compose-and-drive shape of the other pane subsystems.
+renders once. A Contents button jumps between chapters.
 """
 
 import logging
@@ -23,6 +28,9 @@ from gi.repository import Gtk, Adw, GLib
 import archaeology_bridge
 
 _log = logging.getLogger('scriptura.archaeology')
+
+_TEXT_W = 680    # comfortable reading measure
+_IMG_W = 920     # images run wider than the text
 
 
 class ArchaeologyReader:
@@ -48,19 +56,37 @@ class ArchaeologyReader:
         self._contents_btn.add_css_class('flat')
         self._contents_pop = Gtk.Popover()
         self._contents_btn.set_popover(self._contents_pop)
-        spacer = Gtk.Box(hexpand=True)
-        bar.append(spacer)
+        bar.append(Gtk.Box(hexpand=True))
         bar.append(self._contents_btn)
         self._root.append(bar)
 
         self._scroller = Gtk.ScrolledWindow(
             hscrollbar_policy=Gtk.PolicyType.NEVER, vexpand=True)
-        self._page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self._page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, hexpand=True)
         self._page.add_css_class('stone-page')
-        clamp = Adw.Clamp(maximum_size=720, tightening_threshold=560)
-        clamp.set_child(self._page)
-        self._scroller.set_child(clamp)
+        self._scroller.set_child(self._page)
         self._root.append(self._scroller)
+
+        # Font scaling: the .stone-* sizes are em-relative, so one base
+        # font-size on .stone-page scales the whole document. Driven by the
+        # app's reading font-size (apply_font_size, called by the pane).
+        self._font_provider = Gtk.CssProvider()
+        self._page.get_style_context().add_provider(
+            self._font_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+    @staticmethod
+    def _clamp(child, width):
+        c = Adw.Clamp(maximum_size=width, tightening_threshold=int(width * 0.85))
+        c.set_child(child)
+        return c
+
+    @staticmethod
+    def _label(text, css, selectable=False, xalign=0):
+        lbl = Gtk.Label(label=text, xalign=xalign, wrap=True)
+        lbl.add_css_class(css)
+        if selectable:
+            lbl.set_selectable(True)
+        return lbl
 
     # ── rendering ─────────────────────────────────────────────────────────────
     def render(self):
@@ -69,89 +95,81 @@ class ArchaeologyReader:
             return
         doc = archaeology_bridge.document()
 
-        self._page.append(self._frontispiece(doc))
+        self._page.append(self._clamp(self._frontispiece(doc), _TEXT_W))
         for chap in doc['chapters']:
             if not chap['entries']:
                 continue
-            divider = self._era_divider(chap['title'])
+            divider = self._clamp(self._era_divider(chap['title']), _TEXT_W)
             self._chapter_anchors[chap['id']] = divider
             self._page.append(divider)
             for entry in chap['entries']:
                 self._page.append(self._plate(entry))
 
         self._build_contents(doc)
+        self.apply_font_size(getattr(self._pane, '_font_size', None))
         self._built = True
 
     def _frontispiece(self, doc):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         box.add_css_class('stone-front')
-        title = Gtk.Label(label=doc['title'], xalign=0, wrap=True)
-        title.add_css_class('stone-front-title')
-        box.append(title)
+        box.append(self._label(doc['title'], 'stone-front-title', selectable=True))
         if doc['subtitle']:
-            sub = Gtk.Label(label=doc['subtitle'], xalign=0, wrap=True)
-            sub.add_css_class('stone-front-sub')
-            box.append(sub)
+            box.append(self._label(doc['subtitle'], 'stone-front-sub',
+                                   selectable=True))
         if doc['body']:
             for para in doc['body'].split('\n\n'):
-                p = Gtk.Label(label=para.strip(), xalign=0, wrap=True)
-                p.add_css_class('stone-front-body')
-                box.append(p)
+                box.append(self._label(para.strip(), 'stone-front-body',
+                                       selectable=True))
         return box
 
     def _era_divider(self, title):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         box.add_css_class('stone-era')
-        lbl = Gtk.Label(label=title, xalign=0, wrap=True)
-        lbl.add_css_class('stone-era-title')
-        box.append(lbl)
+        box.append(self._label(title, 'stone-era-title'))
         box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
         return box
 
     def _plate(self, entry):
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        box.add_css_class('stone-plate')
+        plate = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        plate.add_css_class('stone-plate')
 
         pic = Gtk.Picture()
         pic.set_filename(archaeology_bridge.image_path(entry['image']))
         pic.set_content_fit(Gtk.ContentFit.CONTAIN)
         pic.set_can_shrink(True)
         pic.set_hexpand(True)
-        pic.set_size_request(-1, 380)          # uniform plate band
+        pic.set_size_request(-1, 420)          # uniform plate band
         pic.set_alternative_text(entry['title'])
         pic.add_css_class('stone-pic')
-        box.append(pic)
+        plate.append(self._clamp(pic, _IMG_W))
 
-        title = Gtk.Label(label=entry['title'], xalign=0, wrap=True)
-        title.add_css_class('stone-title')
-        box.append(title)
+        txt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        txt.add_css_class('stone-text')
+        txt.append(self._label(entry['title'], 'stone-title', selectable=True))
 
         meta_bits = [b for b in (entry['place'], entry['date'],
                                  entry['holding']) if b]
         if meta_bits:
-            meta = Gtk.Label(label=' · '.join(meta_bits), xalign=0, wrap=True)
-            meta.add_css_class('stone-meta')
-            box.append(meta)
+            txt.append(self._label(' · '.join(meta_bits), 'stone-meta',
+                                   selectable=True))
 
-        cap = Gtk.Label(label=entry['caption'], xalign=0, wrap=True)
-        cap.add_css_class('stone-caption')
-        box.append(cap)
+        txt.append(self._label(entry['caption'], 'stone-caption', selectable=True))
 
         if entry['refs']:
             chips = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
             chips.add_css_class('stone-chips')
-            lead = Gtk.Label(label='Attests', xalign=0)
-            lead.add_css_class('stone-chips-lead')
+            lead = self._label('Attests', 'stone-chips-lead')
+            lead.set_valign(Gtk.Align.CENTER)
             chips.append(lead)
             for ref in entry['refs']:
                 chips.append(self._verse_chip(ref))
-            box.append(chips)
+            txt.append(chips)
 
         if entry['credit']:
-            credit = Gtk.Label(label=entry['credit'], xalign=0, wrap=True)
-            credit.add_css_class('stone-credit')
-            box.append(credit)
-        return box
+            txt.append(self._label(entry['credit'], 'stone-credit',
+                                   selectable=True))
+        plate.append(self._clamp(txt, _TEXT_W))
+        return plate
 
     def _verse_chip(self, ref):
         btn = Gtk.Button(label=ref['label'])
@@ -168,6 +186,16 @@ class ArchaeologyReader:
         cb = getattr(self._pane, '_on_word_study_navigate', None)
         if cb:
             cb(ref['book'], ref['chapter'], ref['verse'])
+
+    # ── font scaling ──────────────────────────────────────────────────────────
+    def apply_font_size(self, pt):
+        """Scale the whole document from the app's reading font size (the
+        .stone-* sizes are em-relative). Called on render and whenever the
+        pane's appearance changes."""
+        if not pt:
+            return
+        self._font_provider.load_from_data(
+            f'.stone-page {{ font-size: {pt}pt; }}'.encode())
 
     # ── contents jump ─────────────────────────────────────────────────────────
     def _build_contents(self, doc):
