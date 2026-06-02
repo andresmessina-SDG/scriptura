@@ -1,0 +1,184 @@
+# Old Master oils — the 'old_master' tradition (kind='painting'). A curated set
+# of the supreme Bible-narrative paintings of Western art (Caravaggio, Rembrandt,
+# Artemisia Gentileschi, Velázquez, Mantegna, Fra Angelico), each a specific
+# Wikimedia Commons scan hand-mapped to the verse it depicts and visually
+# verified. `n` keys are "OM##" so dest filenames never collide with other
+# sources. source_url is built from `file` by the builder.
+#
+# LICENSING: all pre-1900 works, so a faithful frontal scan is Public Domain
+# (PD-Art) — same basis as the icon panels (unlike the 3-D stained glass, whose
+# photos carry the photographer's copyright). License is still per-plate in case
+# a future addition is a CC0 museum upload. artist + year are populated (the
+# Art card shows "Artist · year"); attribution carries the holding institution.
+
+# ── Old Testament ────────────────────────────────────────────────────────────
+
+[[painting]]
+n = "OM01"
+file = "Sacrifice of Isaac-Caravaggio (Uffizi).jpg"
+title = "The Sacrifice of Isaac"
+artist = "Caravaggio"
+year = 1603
+book = "Genesis"
+chapter = 22
+verse = 10
+license = "PD"
+attribution = "Uffizi, Florence"
+
+[[painting]]
+n = "OM02"
+file = "Rembrandt - Jacob Wrestling with the Angel - Google Art Project.jpg"
+title = "Jacob Wrestling with the Angel"
+artist = "Rembrandt"
+year = 1659
+book = "Genesis"
+chapter = 32
+verse = 24
+license = "PD"
+attribution = "Gemäldegalerie, Berlin"
+
+[[painting]]
+n = "OM03"
+file = "David with the Head of Goliath-Caravaggio (1610).jpg"
+title = "David with the Head of Goliath"
+artist = "Caravaggio"
+year = 1610
+book = "1 Samuel"
+chapter = 17
+verse = 51
+license = "PD"
+attribution = "Galleria Borghese, Rome"
+
+[[painting]]
+n = "OM04"
+file = "Artemisia Gentileschi - Giuditta decapita Oloferne - Google Art Project-Adjust.jpg"
+title = "Judith Beheading Holofernes"
+artist = "Artemisia Gentileschi"
+year = 1620
+book = "Judith"
+chapter = 13
+verse = 8
+license = "PD"
+attribution = "Uffizi, Florence"
+
+[[painting]]
+n = "OM05"
+file = "Susanna and the Elders (1610), Artemisia Gentileschi.jpg"
+title = "Susanna and the Elders"
+artist = "Artemisia Gentileschi"
+year = 1610
+book = "Susanna"
+chapter = 1
+verse = 19
+license = "PD"
+attribution = "Schloss Weißenstein, Pommersfelden"
+
+# ── New Testament ────────────────────────────────────────────────────────────
+
+[[painting]]
+n = "OM06"
+file = "La Anunciación (Fra Angelico-Prado).jpg"
+title = "The Annunciation"
+artist = "Fra Angelico"
+year = 1426
+book = "Luke"
+chapter = 1
+verse = 28
+license = "PD"
+attribution = "Museo del Prado, Madrid"
+
+[[painting]]
+n = "OM07"
+file = "Diego Velázquez - The Adoration of the Magi - WGA24359.jpg"
+title = "The Adoration of the Magi"
+artist = "Diego Velázquez"
+year = 1619
+book = "Matthew"
+chapter = 2
+verse = 11
+license = "PD"
+attribution = "Museo del Prado, Madrid"
+
+[[painting]]
+n = "OM08"
+file = "Caravaggio, Michelangelo Merisi da - The Calling of Saint Matthew - 1599-1600 (hi res).jpg"
+title = "The Calling of Saint Matthew"
+artist = "Caravaggio"
+year = 1600
+book = "Matthew"
+chapter = 9
+verse = 9
+license = "PD"
+attribution = "Contarelli Chapel, San Luigi dei Francesi, Rome"
+
+[[painting]]
+n = "OM09"
+file = "Andrea Mantegna - Agony in the Garden - WGA13946.jpg"
+title = "The Agony in the Garden"
+artist = "Andrea Mantegna"
+year = 1459
+book = "Matthew"
+chapter = 26
+verse = 39
+license = "PD"
+attribution = "National Gallery, London"
+
+[[painting]]
+n = "OM10"
+file = "Supper at Emmaus-Caravaggio (1601).jpg"
+title = "The Supper at Emmaus"
+artist = "Caravaggio"
+year = 1601
+book = "Luke"
+chapter = 24
+verse = 30
+license = "PD"
+attribution = "National Gallery, London"
+
+[[painting]]
+n = "OM11"
+file = "Diego Velázquez - Christ on the Cross - WGA24389.jpg"
+title = "Christ Crucified"
+artist = "Diego Velázquez"
+year = 1632
+book = "John"
+chapter = 19
+verse = 18
+license = "PD"
+attribution = "Museo del Prado, Madrid"
+
+[[painting]]
+n = "OM12"
+file = "The Incredulity of Saint Thomas-Caravaggio (1601-2).jpg"
+title = "The Incredulity of Saint Thomas"
+artist = "Caravaggio"
+year = 1602
+book = "John"
+chapter = 20
+verse = 27
+license = "PD"
+attribution = "Sanssouci, Potsdam"
+
+[[painting]]
+n = "OM13"
+file = "Conversion on the Way to Damascus-Caravaggio (c.1600-1).jpg"
+title = "The Conversion of Saint Paul"
+artist = "Caravaggio"
+year = 1601
+book = "Acts"
+chapter = 9
+verse = 4
+license = "PD"
+attribution = "Cerasi Chapel, Santa Maria del Popolo, Rome"
+
+[[painting]]
+n = "OM14"
+file = "Rembrandt Harmensz van Rijn - Return of the Prodigal Son - Google Art Project.jpg"
+title = "The Return of the Prodigal Son"
+artist = "Rembrandt"
+year = 1669
+book = "Luke"
+chapter = 15
+verse = 20
+license = "PD"
+attribution = "Hermitage, Saint Petersburg"

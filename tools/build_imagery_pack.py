@@ -321,6 +321,50 @@ def ingest_glass(conn, images_dir, width, limit, fetch_images):
     return rows
 
 
+# Paintings carry fine detail, but 960px (the zoom width) keeps the pack light.
+_OILS_WIDTH = 960
+
+
+def ingest_oils(conn, images_dir, width, limit, fetch_images):
+    """Old Master oils from tools/oldmaster_plates.toml — the 'old_master'
+    tradition (kind='painting', distinct from Tissot's watercolor). The supreme
+    Bible-narrative paintings of Western art, each a Commons scan mapped to its
+    scene's verse. All PD (faithful scans of pre-1900 works); artist + year are
+    shown on the card, attribution names the holding institution."""
+    with open(os.path.join(_HERE, 'oldmaster_plates.toml'), 'rb') as f:
+        plates = tomllib.load(f)['painting']
+    if limit:
+        plates = plates[:limit]
+    rows = 0
+    for p in plates:
+        n = p['n']
+        ext = os.path.splitext(p['file'])[1] or '.jpg'
+        rel = f'images/oils_{n}{ext}'
+        size = None
+        if fetch_images:
+            dest = os.path.join(images_dir, f'oils_{n}{ext}')
+            try:
+                size = fetch(commons_filepath_url(p['file'], _OILS_WIDTH), dest)
+            except Exception as e:  # noqa: BLE001 — report and skip one plate
+                print(f'  ! oils {n} fetch failed: {e}')
+                continue
+        v = p['verse']
+        src_url = ('https://commons.wikimedia.org/wiki/File:'
+                   + urllib.parse.quote(p['file'].replace(' ', '_')))
+        conn.execute(
+            'INSERT INTO imagery (kind, tradition, title, caption, book, '
+            'loc_start, loc_end, passage_label, file_path, file_size, source, '
+            'source_url, license, attribution, artist, year, iconclass) '
+            'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+            ('painting', 'old_master', p['title'], None, p['book'],
+             encode(p['chapter'], v), encode(p['chapter'], v),
+             None, rel, size, 'oldmaster', src_url, p['license'],
+             p['attribution'], p['artist'], p['year'], None))
+        rows += 1
+        print(f'  + oils {n}  {p["book"]} {p["chapter"]}:{v}  {p["title"]}')
+    return rows
+
+
 # ── OpenBible.info geocoding — places named in each verse ───────────────────
 
 # Pinned to the default branch; switch to a pinned commit SHA for fully
@@ -611,7 +655,7 @@ def ingest_modern(conn, images_dir, width, limit, fetch_images):
 
 _SOURCES = {'schnorr': ingest_schnorr, 'dore': ingest_dore,
             'tissot': ingest_tissot, 'icons': ingest_icon,
-            'glass': ingest_glass,
+            'glass': ingest_glass, 'oils': ingest_oils,
             'openbible': ingest_openbible, 'hurlbut': ingest_hurlbut,
             'modern': ingest_modern}
 
