@@ -557,6 +557,8 @@ class BibleWindow(Adw.ApplicationWindow):
         ctrl = bool(state & Gdk.ModifierType.CONTROL_MASK)
 
         if keyval == Gdk.KEY_Escape:
+            if self.pane1.dismiss_dict_peek() or self.pane2.dismiss_dict_peek():
+                return True
             if self._jump_revealer.get_reveal_child():
                 self._hide_jump()
                 return True
