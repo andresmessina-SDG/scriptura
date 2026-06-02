@@ -1761,7 +1761,43 @@ class BibleWindow(Adw.ApplicationWindow):
     # ── Lexicon word click ────────────────────────────────────────────────────
 
     def _on_word_study_nav(self, book, chapter, verse):
+        # A verse link (a Strong's word-study jump, or a Scripture-in-Stone
+        # artifact chip) needs a Bible on screen to land in. Word-study clicks
+        # always come from a Bible pane, so one is already visible; but the
+        # archaeology gallery isn't verse-keyed, so in single-pane mode there
+        # may be no Bible showing — reveal one before navigating.
+        self._ensure_bible_visible()
         self._go_to(book, chapter, verse)
+
+    def _ensure_bible_visible(self):
+        """Guarantee a visible, verse-navigable Bible pane to receive a verse
+        jump. If none is on screen (e.g. the artifact gallery is the only pane),
+        reveal the second pane and, if it isn't already a Bible, load one —
+        keeping the gallery where it is."""
+        panes = (self.pane1, self.pane2)
+        if any(p.get_visible() and p._is_verse_navigable() for p in panes):
+            return
+        if not self._btn_split.get_active():
+            self._btn_split.set_active(True)  # → _on_view_mode reveals pane2
+        # Put the Bible in whichever pane isn't the gallery (defaults to pane2).
+        target = self.pane2 if self.pane1._is_archaeology else self.pane1
+        if not target._is_verse_navigable():
+            bible = self._first_bible_module()
+            if bible:
+                target._apply_module_change(bible)
+
+    def _first_bible_module(self):
+        """A sensible Bible module key: prefer one a pane was already set to,
+        else the first available Bible."""
+        import content
+        names = content.readable_module_names()
+        for cand in (settings.get('pane2_module'), settings.get('pane1_module')):
+            if cand in names and content.kind(cand) == 'bible':
+                return cand
+        for name in names:
+            if content.kind(name) == 'bible':
+                return name
+        return None
 
     def _on_word_click(self, source_pane, strong_num):
         book    = source_pane._book
