@@ -86,6 +86,11 @@ class ArchaeologyReader:
         lbl.add_css_class(css)
         if selectable:
             lbl.set_selectable(True)
+            # A selectable label shows a blinking text caret only while it has
+            # focus; making it non-focusable removes the "editable field" look
+            # (the caret) while mouse drag-select and right-click Copy still
+            # work. This is read-only prose — there's nothing to type into.
+            lbl.set_focusable(False)
         return lbl
 
     # ── rendering ─────────────────────────────────────────────────────────────
