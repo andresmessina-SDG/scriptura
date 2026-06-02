@@ -29,11 +29,16 @@ from pane_search import PaneSearch
 # Logical highlight IDs (persisted in annotations.json) → softer rendered tints.
 # Persisted values are unchanged so existing user data still reads correctly;
 # only the on-screen color is muted.
+# Rendered as *translucent, mid-luminance* bands (not opaque pastels): the
+# band tints visibly while the reading text shows through legibly in both
+# light and dark mode — no black-text foreground tag, which used to race the
+# custom band paint and leave light-on-light highlights (see the band-only
+# note on BibleTextView and _apply_anno_tags).
 _HIGHLIGHT_RENDER = {
-    '#ffff00': '#f5e6a3',  # yellow
-    '#90ee90': '#c4dfb9',  # green
-    '#add8e6': '#bdd5e8',  # blue
-    '#ffa500': '#f0c894',  # orange
+    '#ffff00': 'rgba(226,196,48,0.40)',   # yellow
+    '#90ee90': 'rgba(96,180,96,0.40)',    # green
+    '#add8e6': 'rgba(74,150,208,0.42)',   # blue
+    '#ffa500': 'rgba(234,134,40,0.42)',   # orange
 }
 
 
@@ -1458,12 +1463,11 @@ class BiblePane(Gtk.Box):
 
     def _bump_overlay_priorities(self):
         """Pin the foreground-bearing overlay tags above the chapter's body-text
-        spans so their colour wins from the first frame. Only persistent
-        annotations recolour text now — the user highlight (hl_fg), underline,
-        and current-verse indicator. The transient cues (search/flash) are
-        band-only with no foreground, so they need no priority here."""
+        spans so their colour wins from the first frame — the underline and the
+        current-verse indicator. Highlights and the transient cues (search /
+        flash) are band-only with no foreground, so they need no priority."""
         table = self._buffer.get_tag_table()
-        for name in ('_ul_text', 'hl_fg', '_current_verse'):
+        for name in ('_ul_text', '_current_verse'):
             tag = table.lookup(name)
             if tag is not None:
                 tag.set_priority(table.get_size() - 1)
@@ -1718,21 +1722,15 @@ class BiblePane(Gtk.Box):
         if highlight:
             rendered = _render_highlight(highlight)
             # Zero-visual marker tag: BibleTextView reads its range + color
-            # (from the `hl_bg_<hex>` name) and paints the band itself. Spans
-            # the verse number too (vnum_start) so the band is continuous; the
-            # black text foreground covers the verse text only, leaving the
-            # gray verse number readable on the tint.
+            # (from the `hl_bg_<rgba>` name) and paints the translucent band
+            # itself, spanning the verse number too so it's continuous. No text
+            # foreground — the band's translucency keeps the reading text (and
+            # the gray verse number) legible in both light and dark mode.
             bg_name = f'hl_bg_{rendered}'
             bg = table.lookup(bg_name)
             if not bg:
                 bg = self._buffer.create_tag(bg_name)
             self._buffer.apply_tag(bg, vnum_start, vtext_end)
-
-            fg = table.lookup('hl_fg')
-            if not fg:
-                fg = self._buffer.create_tag('hl_fg', foreground='black')
-            _bump(fg)
-            self._buffer.apply_tag(fg, vtext_start, vtext_end)
 
         if anno.get('underline'):
             ul = table.lookup('_ul_text')
@@ -2176,6 +2174,17 @@ class BiblePane(Gtk.Box):
         if self._dict_pop is pop and not self._dict_user_closed:
             pop.set_opacity(1.0)
         return GLib.SOURCE_REMOVE
+
+    def dismiss_dict_peek(self):
+        """Close an open dictionary peek. Returns True if one was open — the
+        window's Escape handler uses this (the peek is non-focusable, so it
+        never sees the key itself)."""
+        pop = getattr(self, '_dict_pop', None)
+        if pop is not None and pop.get_visible():
+            self._dict_user_closed = True
+            pop.popdown()
+            return True
+        return False
 
     def _show_dict_popup(self, word, word_offset):
         # A lightweight "Look Up" peek anchored at the double-clicked word,
