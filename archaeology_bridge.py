@@ -124,6 +124,28 @@ def document() -> Document:
     return _doc
 
 
+_verse_index: dict[tuple[str, int, int], Entry] | None = None
+
+
+def _index() -> dict[tuple[str, int, int], Entry]:
+    """(book, chapter, verse) → the artifact entry that references it, for the
+    Bible pane's per-verse 'related artifact' markers. Cached."""
+    global _verse_index
+    if _verse_index is None:
+        idx: dict[tuple[str, int, int], Entry] = {}
+        for chap in document()['chapters']:
+            for entry in chap['entries']:
+                for r in entry['refs']:
+                    idx.setdefault((r['book'], r['chapter'], r['verse']), entry)
+        _verse_index = idx
+    return _verse_index
+
+
+def verses_with_artifacts(book: str, chapter: int) -> set[int]:
+    """The verse numbers in this chapter that a gallery artifact references."""
+    return {v for (b, c, v) in _index() if b == book and c == chapter}
+
+
 def info() -> dict[str, str]:
     """Metadata for the module picker's info page."""
     doc = document()

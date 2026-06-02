@@ -507,3 +507,11 @@ button.stone-chip {
 .stone-contents button {
     padding: 6px 12px;
 }
+/* Gentle flash when a Bible 'related artifact' marker scrolls here. */
+.stone-plate {
+    transition: background 400ms ease;
+    border-radius: 10px;
+}
+.stone-plate.stone-flash {
+    background: alpha(@accent_color, 0.13);
+}

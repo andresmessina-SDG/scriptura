@@ -481,12 +481,14 @@ class BiblePane(Gtk.Box):
                  on_click_outside_search=None, on_verse_select=None,
                  on_word_study_navigate=None, on_toast=None,
                  on_font_size_request=None, on_cipher_error=None,
-                 on_edit_cipher=None, on_modules_changed=None, pane_id=1):
+                 on_edit_cipher=None, on_modules_changed=None,
+                 on_open_artifact=None, pane_id=1):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self._on_word_click = on_word_click
         self._on_click_outside_search = on_click_outside_search
         self._on_verse_select = on_verse_select
         self._on_word_study_navigate = on_word_study_navigate
+        self._on_open_artifact = on_open_artifact
         self._on_toast = on_toast
         self._on_font_size_request = on_font_size_request
         self._on_cipher_error = on_cipher_error
@@ -1297,6 +1299,10 @@ class BiblePane(Gtk.Box):
         dark = Adw.StyleManager.get_default().get_dark()
         annos = annotations.get_annotations(module, book, chapter)
         is_commentary = self._module_type == 'Commentaries'
+        # Verses in this chapter that a Scripture-in-Stone artifact references,
+        # so we can drop a subtle clickable marker beside them (Bibles only).
+        art_verses = (set() if is_commentary
+                      else archaeology_bridge.verses_with_artifacts(book, chapter))
 
         self._cancel_all_flashes()
         self._search.cancel_hl_timer()
@@ -1429,6 +1435,23 @@ class BiblePane(Gtk.Box):
                     self._buffer.insert_markup(self._buffer.get_end_iter(), v_text_markup + ' ', -1)
                 except Exception:
                     self._buffer.insert(self._buffer.get_end_iter(), plain + ' ')
+                # Subtle 'related artifact' marker — a small clickable amphora
+                # beside any verse a gallery artifact references. Rare (only ~34
+                # verses across the whole Bible), so it reads as a quiet cue.
+                if start_v in art_verses:
+                    am_start = self._buffer.create_mark(
+                        None, self._buffer.get_end_iter(), True)
+                    self._buffer.insert_markup(
+                        self._buffer.get_end_iter(),
+                        '<span foreground="#a9744f" size="x-small" '
+                        'rise="1500"> ⚱ </span>', -1)
+                    table = self._buffer.get_tag_table()
+                    am = table.lookup('_artifact_marker') \
+                        or self._buffer.create_tag('_artifact_marker')
+                    self._buffer.apply_tag(
+                        am, self._buffer.get_iter_at_mark(am_start),
+                        self._buffer.get_end_iter())
+                    self._buffer.delete_mark(am_start)
 
             # 3. Apply vnum tags. For grouped commentary sections, every
             # verse in [start_v, end_v] points at the same rendered
@@ -2072,6 +2095,7 @@ class BiblePane(Gtk.Box):
         morph = None
         devref = None
         phrase_tag = None
+        artifact_marker = False
         for tag in it.get_tags():
             name = tag.get_property('name')
             if name and name.startswith('strg:'):
@@ -2087,12 +2111,17 @@ class BiblePane(Gtk.Box):
                 devref = name[7:]
             elif name and name.startswith('phrase:'):
                 phrase_tag = tag
+            elif name == '_artifact_marker':
+                artifact_marker = True
         if n_press > 1:
             return
         if devref:
             result = sword_bridge.parse_osis_ref(devref)
             if result and self._on_word_study_navigate:
                 self._on_word_study_navigate(*result)
+            return
+        if artifact_marker and verse_num is not None and self._on_open_artifact:
+            self._on_open_artifact(self, self._book, self._chapter, verse_num)
             return
         if verse_num is not None:
             self._selected_verse = verse_num
@@ -2169,7 +2198,7 @@ class BiblePane(Gtk.Box):
         # opens on the first click, the dict on the second.
         for tag in it.get_tags():
             name = tag.get_property('name') or ''
-            if name.startswith('devref:'):
+            if name.startswith('devref:') or name == '_artifact_marker':
                 return
         word_start = it.copy()
         word_end = it.copy()

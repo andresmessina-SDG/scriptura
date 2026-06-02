@@ -38,6 +38,9 @@ class ArchaeologyReader:
         self._pane = pane
         self._built = False
         self._chapter_anchors: dict[str, Gtk.Widget] = {}
+        self._verse_anchors: dict[tuple, Gtk.Widget] = {}
+        self._scroll_target = None
+        self._scroll_tries = 0
         self._build_widget()
 
     @property
@@ -156,7 +159,12 @@ class ArchaeologyReader:
             self._chapter_anchors[chap['id']] = divider
             self._page.append(divider)
             for entry in chap['entries']:
-                self._page.append(self._plate(entry))
+                plate = self._plate(entry)
+                self._page.append(plate)
+                # Map each referenced verse to this plate, so a Bible 'related
+                # artifact' marker can scroll the gallery straight to it.
+                for r in entry['refs']:
+                    self._verse_anchors[(r['book'], r['chapter'], r['verse'])] = plate
 
         self._build_contents(doc)
         self.apply_font_size(getattr(self._pane, '_font_size', None))
@@ -279,3 +287,31 @@ class ArchaeologyReader:
 
         # Defer so a freshly-realised layout has valid bounds.
         GLib.idle_add(scroll)
+
+    # ── scroll to a specific artifact (from a Bible verse marker) ──────────────
+    def scroll_to_verse(self, book, chapter, verse):
+        """Scroll to the plate of the artifact that references this verse, and
+        flash it. Called when a 'related artifact' marker is clicked in a Bible
+        pane (the gallery may have just been revealed, so retry until laid out)."""
+        self.render()
+        w = self._verse_anchors.get((book, chapter, verse))
+        if w is None:
+            return
+        self._scroll_target = w
+        self._scroll_tries = 0
+        GLib.timeout_add(40, self._do_scroll)
+
+    def _do_scroll(self):
+        w = self._scroll_target
+        if w is None:
+            return False
+        self._scroll_tries += 1
+        ok, rect = w.compute_bounds(self._page)
+        if not ok:
+            return self._scroll_tries < 25      # retry until the pane lays out
+        self._scroller.get_vadjustment().set_value(max(0, rect.get_y() - 8))
+        w.add_css_class('stone-flash')
+        GLib.timeout_add(1400, lambda: (w.remove_css_class('stone-flash')
+                                        and False) or False)
+        self._scroll_target = None
+        return False
