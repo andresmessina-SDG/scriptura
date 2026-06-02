@@ -11,6 +11,7 @@ import sword_bridge
 import ebible_bridge
 import catena_bridge
 import imagery_bridge
+import archaeology_bridge
 import content
 import annotations
 import settings
@@ -18,6 +19,7 @@ import module_positions
 from genbook_reader import GenbookReader
 from catena_reader import CatenaReader
 from imagery_reader import ImageryReader
+from archaeology_reader import ArchaeologyReader
 from module_picker import ModulePicker
 
 
@@ -517,6 +519,10 @@ class BiblePane(Gtk.Box):
         # Bible Imagery card view — also verse-synced from the partnered
         # Bible pane; composed into the content stack below.
         self._imagery = ImageryReader(self)
+        # Scripture in Stone — a standalone, bundled archaeology document.
+        # NOT verse-synced; it renders once and its verse chips drive the
+        # partnered Bible pane.
+        self._archaeology = ArchaeologyReader(self)
         self._book = 'Genesis'
         self._chapter = 1
         self._target_verse = None
@@ -699,6 +705,7 @@ class BiblePane(Gtk.Box):
         self._content_stack.add_named(scrolled, 'text')
         self._content_stack.add_named(self._catena.widget, 'catena')
         self._content_stack.add_named(self._imagery.widget, 'imagery')
+        self._content_stack.add_named(self._archaeology.widget, 'archaeology')
         # Full-pane placeholder for "can't show content here" states
         # (unsupported module, wrong cipher key, passage not in this module).
         self._status_page = Adw.StatusPage()
@@ -813,7 +820,7 @@ class BiblePane(Gtk.Box):
             GLib.idle_add(self._fetch_and_render_devotional)
         elif self._is_genbook:
             GLib.idle_add(self._genbook.fetch_and_render)
-        elif self._is_catena or self._is_imagery:
+        elif self._is_catena or self._is_imagery or self._is_archaeology:
             GLib.idle_add(self._fetch_and_render)
 
     def _on_pane_click(self, gesture, n_press, x, y):
@@ -856,20 +863,25 @@ class BiblePane(Gtk.Box):
         m = self._module
         self._is_catena = catena_bridge.is_catena_module(m)
         self._is_imagery = imagery_bridge.is_imagery_module(m)
+        self._is_archaeology = archaeology_bridge.is_archaeology_module(m)
         is_ebible = ebible_bridge.is_ebible_module(m)
         if self._is_catena:
             self._module_type = 'Historical Commentaries'
         elif self._is_imagery:
             self._module_type = 'Bible Imagery'
+        elif self._is_archaeology:
+            self._module_type = 'Scripture in Stone'
         elif is_ebible:
             self._module_type = 'Biblical Texts'
         else:
             self._module_type = sword_bridge.module_type(m)
         self._is_devotional = (
-            not self._is_catena and not self._is_imagery and not is_ebible
+            not self._is_catena and not self._is_imagery
+            and not self._is_archaeology and not is_ebible
             and sword_bridge.is_devotional_module(m))
         self._is_genbook = (
-            not self._is_catena and not self._is_imagery and not is_ebible
+            not self._is_catena and not self._is_imagery
+            and not self._is_archaeology and not is_ebible
             and self._module_type == 'Generic Books')
 
     def _content_child(self):
@@ -878,6 +890,8 @@ class BiblePane(Gtk.Box):
             return 'catena'
         if self._is_imagery:
             return 'imagery'
+        if self._is_archaeology:
+            return 'archaeology'
         return 'text'
 
     def _is_verse_navigable(self):
@@ -1142,6 +1156,9 @@ class BiblePane(Gtk.Box):
         if self._is_imagery:
             self._imagery.render_for(
                 self._book, self._chapter, self._selected_verse or 1)
+            return
+        if self._is_archaeology:
+            self._archaeology.render()
             return
         if self._is_devotional:
             self._fetch_and_render_devotional()
@@ -2687,6 +2704,8 @@ class BiblePane(Gtk.Box):
 
     def select_verse(self, verse_num):
         """Called by other panes broadcasting a verse selection."""
+        if self._is_archaeology:
+            return  # standalone document — not verse-keyed
         if self._is_catena:
             self._selected_verse = verse_num
             self._catena.render_for(self._book, self._chapter, verse_num)

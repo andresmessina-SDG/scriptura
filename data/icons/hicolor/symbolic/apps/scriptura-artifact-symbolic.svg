@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Amphora glyph anchoring the "Scripture in Stone" hero row — the universal
+  museum/antiquity symbol, distinct from the picture-frame (imagery) and book
+  glyphs. Bundled, fill-only (#222) so GTK4 recolors it to @accent_color
+  reliably, matching the imagery / commentary / globe symbolics alongside it.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g fill="#222">
+    <path d="M6.3 1.5 H9.7 V2.7 H6.3 Z"/>
+    <path d="M7 2.7 H9 L9.2 4.3 C11.4 5.3 12.4 7.3 12.4 9.3 C12.4 11.9 10.5 14 8 14 C5.5 14 3.6 11.9 3.6 9.3 C3.6 7.3 4.6 5.3 6.8 4.3 Z"/>
+    <path d="M6.7 13.6 H9.3 V14.6 H6.7 Z"/>
+    <path d="M6.8 4.3 C4.9 4.6 3.7 6.1 3.7 7.8 L4.9 7.6 C4.9 6.3 5.8 5.4 7.0 5.3 Z"/>
+    <path d="M9.2 4.3 C11.1 4.6 12.3 6.1 12.3 7.8 L11.1 7.6 C11.1 6.3 10.2 5.4 9.0 5.3 Z"/>
+  </g>
+</svg>

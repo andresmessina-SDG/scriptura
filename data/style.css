@@ -422,3 +422,88 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
     /* dim caption rows: artist · year, attribution, tradition dividers */
     opacity: 0.7;
 }
+
+/* ── Scripture in Stone (archaeology module) ──────────────────────────────
+   A read-as-a-book document: frontispiece, era dividers, artifact plates.
+   Serif headings echo the chapter headings / dict headword; restrained,
+   generous margins, Apple-Books-ish reading rhythm. */
+.stone-topbar {
+    padding: 4px 8px;
+}
+.stone-page {
+    padding: 8px 20px 40px;
+}
+.stone-front {
+    margin: 12px 0 8px;
+}
+.stone-front-title {
+    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-size: 2em;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+.stone-front-sub {
+    font-size: 1.15em;
+    opacity: 0.7;
+    margin-bottom: 12px;
+}
+.stone-front-body {
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+.stone-era {
+    margin: 30px 0 6px;
+}
+.stone-era-title {
+    font-size: 0.95em;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: @accent_color;
+    margin-bottom: 6px;
+}
+.stone-plate {
+    margin: 18px 0 8px;
+}
+.stone-pic {
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+.stone-title {
+    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-size: 1.3em;
+    font-weight: 600;
+}
+.stone-meta {
+    opacity: 0.65;
+    font-size: 0.9em;
+    margin-bottom: 8px;
+}
+.stone-caption {
+    line-height: 1.5;
+}
+.stone-chips {
+    margin-top: 10px;
+}
+.stone-chips-lead {
+    opacity: 0.55;
+    font-size: 0.8em;
+    letter-spacing: 0.08em;
+    margin-right: 4px;
+}
+button.stone-chip {
+    min-height: 0;
+    padding: 2px 10px;
+    margin-right: 6px;
+    border-radius: 999px;
+    font-size: 0.9em;
+}
+.stone-credit {
+    opacity: 0.5;
+    font-size: 0.8em;
+    margin-top: 8px;
+}
+.stone-contents button {
+    padding: 6px 12px;
+}

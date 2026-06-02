@@ -17,6 +17,7 @@ import sword_bridge
 import ebible_bridge
 import catena_bridge
 import imagery_bridge
+import archaeology_bridge
 
 # Pane-readable SWORD module types (Bibles, commentaries, browsable books).
 # Lexicons / dictionaries / morphology modules are reached through other
@@ -35,7 +36,8 @@ def readable_module_names() -> list[str]:
                 or sword_bridge.is_devotional_module(name):
             keep.append(name)
     return (keep + cast(list[str], ebible_bridge.module_names())
-            + catena_bridge.module_names() + imagery_bridge.module_names())
+            + catena_bridge.module_names() + imagery_bridge.module_names()
+            + archaeology_bridge.module_names())
 
 
 def kind(name: str) -> str:
@@ -48,6 +50,8 @@ def kind(name: str) -> str:
         return 'commentary'
     if imagery_bridge.is_imagery_module(name):
         return 'imagery'
+    if archaeology_bridge.is_archaeology_module(name):
+        return 'books'
     if ebible_bridge.is_ebible_module(name):
         return 'bible'
     mtype = sword_bridge.module_type(name)
@@ -68,6 +72,9 @@ def feature_card(name: str) -> dict | None:
     if imagery_bridge.is_imagery_module(name):
         return {'icon': 'scriptura-imagery-symbolic',
                 'tagline': 'Engravings, maps & place photos'}
+    if archaeology_bridge.is_archaeology_module(name):
+        return {'icon': 'scriptura-artifact-symbolic',
+                'tagline': 'Artifacts of the biblical world'}
     return None
 
 
@@ -76,6 +83,8 @@ def language(name: str) -> str:
     if catena_bridge.is_catena_module(name):
         return 'en'
     if imagery_bridge.is_imagery_module(name):
+        return 'en'
+    if archaeology_bridge.is_archaeology_module(name):
         return 'en'
     if ebible_bridge.is_ebible_module(name):
         return cast(str, ebible_bridge.module_language(name))
@@ -110,6 +119,8 @@ def info(name: str) -> dict:
                      'place photography from public-domain and openly-licensed '
                      'sources.',
         }
+    if archaeology_bridge.is_archaeology_module(name):
+        return archaeology_bridge.info()
     if ebible_bridge.is_ebible_module(name):
         return cast(dict, ebible_bridge.module_info(name))
     return cast(dict, sword_bridge.module_info(name))
@@ -126,6 +137,8 @@ def can_remove(name: str) -> bool:
         return True
     if imagery_bridge.is_imagery_module(name):
         return True
+    if archaeology_bridge.is_archaeology_module(name):
+        return False  # bundled inside the app; not user-removable
     if ebible_bridge.is_ebible_module(name):
         return True
     return cast(bool, sword_bridge.can_remove_module(name))

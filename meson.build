@@ -30,6 +30,8 @@ py_sources = files(
   '_version.py',
   'annotation_dialogs.py',
   'annotations.py',
+  'archaeology_bridge.py',
+  'archaeology_reader.py',
   'bookmarks.py',
   'catena_bridge.py',
   'catena_reader.py',

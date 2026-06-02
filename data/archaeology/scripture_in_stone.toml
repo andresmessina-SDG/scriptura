@@ -1,0 +1,127 @@
+# Scripture in Stone — a curated, bundled archaeology module for Scriptura.
+# A short illustrated "book": artifacts in biblical/chronological sequence,
+# each mapped to the verse(s) it touches. Read as a document; clicking a verse
+# opens that passage in the Bible pane.
+#
+# EDITORIAL RULES (keep captions to this standard):
+#  - Measured and scholarly. Describe what the object *is* and what it *attests*
+#    ("names Pontius Pilate as prefect of Judea"), never "proves the Bible".
+#  - No forgeries or high-doubt objects. Where reputable scholars genuinely
+#    disagree, state the doubt plainly in the caption (see Caiaphas, Cyrus).
+#  - `credit` carries photographer + licence (the images are CC-BY-SA visitor
+#    photos of public-domain ancient objects).
+
+[intro]
+title = "Scripture in Stone"
+subtitle = "The Bible and the archaeological record"
+body = """
+Scripture was written in a real world of kings, empires, and cities — and that world left traces in the ground. This gallery gathers artifacts that touch the people, places, and events named in the Bible: a victory stele that mentions the house of David, an Assyrian monument that pictures a king of Israel, a Persian cylinder, a stone bearing Pilate's name.
+
+A note on method. The aim here is evidence, not argument. Each entry describes what the object is and what it attests, and stops there; an inscription can confirm that a king reigned or a governor held office without settling everything the Bible says about him. Objects of doubtful authenticity are left out, and where serious scholars disagree, the disagreement is named. Read in this spirit, these stones are not proofs but witnesses — fragments of the historical ground on which the text stands.
+"""
+
+# ── Chapters (era spine; rendered in this order) ─────────────────────────────
+[[chapter]]
+id = "united-monarchy"
+title = "The United Monarchy"
+
+[[chapter]]
+id = "israel"
+title = "The Divided Kingdom — Israel"
+
+[[chapter]]
+id = "judah"
+title = "Judah and Assyria"
+
+[[chapter]]
+id = "exile"
+title = "Exile and Return"
+
+[[chapter]]
+id = "jesus"
+title = "The World of Jesus"
+
+# ── Entries ──────────────────────────────────────────────────────────────────
+[[entry]]
+chapter = "united-monarchy"
+image = "tel_dan.jpg"
+title = "The Tel Dan Stele"
+place = "Tel Dan, northern Israel"
+date = "9th century BC"
+holding = "Israel Museum, Jerusalem"
+credit = "photo Oren Rozen · CC BY-SA 4.0"
+caption = "A fragmentary basalt victory stele, written in Aramaic, set up by a king of Aram-Damascus. Its lines boast of defeating a 'king of Israel' and a king of the 'House of David' (bytdwd) — the earliest reference outside the Bible to David's dynasty, and a witness that the line of David was remembered as a real royal house within about a century and a half of his reign."
+refs = [
+  { book = "2 Samuel", chapter = 7, verse = 16 },
+  { book = "1 Kings", chapter = 15, verse = 20 },
+]
+
+[[entry]]
+chapter = "israel"
+image = "black_obelisk.jpg"
+title = "The Black Obelisk of Shalmaneser III"
+place = "Nimrud (Kalhu), Assyria"
+date = "c. 825 BC"
+holding = "British Museum, London"
+credit = "photo Osama S. M. Amin · CC BY-SA 4.0"
+caption = "A black limestone monument recording the campaigns of the Assyrian king Shalmaneser III. One register shows a figure bowing to bring tribute, labelled in cuneiform 'Jehu, son of Omri' — an Assyrian formula for a king of the land of Omri, that is, Israel. It is the only known contemporary image of an Israelite monarch, set against the heavy Assyrian pressure the Bible records in Jehu's day."
+refs = [
+  { book = "2 Kings", chapter = 10, verse = 31 },
+  { book = "2 Kings", chapter = 9, verse = 2 },
+]
+
+[[entry]]
+chapter = "judah"
+image = "lachish.jpg"
+title = "The Lachish Reliefs"
+place = "Palace of Sennacherib, Nineveh"
+date = "c. 700–692 BC"
+holding = "British Museum, London"
+credit = "photo Osama S. M. Amin · CC BY-SA 4.0"
+caption = "Carved gypsum panels from Sennacherib's palace, depicting in documentary detail the Assyrian siege and capture of the Judahite fortress city of Lachish in 701 BC — siege ramps, archers, and files of captives carrying their belongings into exile. The Bible records the same campaign, when Sennacherib 'came up against all the fortified cities of Judah and took them.'"
+refs = [
+  { book = "2 Kings", chapter = 18, verse = 13 },
+  { book = "2 Chronicles", chapter = 32, verse = 9 },
+]
+
+[[entry]]
+chapter = "exile"
+image = "cyrus_cylinder.jpg"
+title = "The Cyrus Cylinder"
+place = "Babylon"
+date = "after 539 BC"
+holding = "British Museum, London"
+credit = "photo Mike Peel · CC BY-SA 4.0"
+caption = "A clay cylinder inscribed in Babylonian cuneiform after Cyrus the Great of Persia took Babylon. It proclaims his policy of returning displaced peoples and restoring their sanctuaries — the same imperial outlook that, in the biblical account, let the exiles of Judah return from Babylon and rebuild the Temple. The cylinder names no Jews in particular; it attests the policy, not the specific decree."
+refs = [
+  { book = "Ezra", chapter = 1, verse = 1 },
+  { book = "Isaiah", chapter = 45, verse = 1 },
+]
+
+[[entry]]
+chapter = "jesus"
+image = "pilate_stone.jpg"
+title = "The Pilate Stone"
+place = "Caesarea Maritima"
+date = "c. AD 26–36"
+holding = "Israel Museum, Jerusalem"
+credit = "photo Marion Doss · CC BY-SA 2.0"
+caption = "A limestone block, later reused in the theatre at Caesarea, bearing a Latin dedication that names '[Pon]tius Pilatus, [Praef]ectus Iuda[ea]e' — Pontius Pilate, prefect of Judea. Found in 1961, it is the only inscription naming Pilate from his own province and time, confirming both his name and his exact title in the years of Jesus' ministry and trial."
+refs = [
+  { book = "Luke", chapter = 3, verse = 1 },
+  { book = "John", chapter = 19, verse = 16 },
+]
+
+[[entry]]
+chapter = "jesus"
+image = "caiaphas_ossuary.jpg"
+title = "The Caiaphas Ossuary"
+place = "Jerusalem"
+date = "1st century AD"
+holding = "Israel Museum, Jerusalem"
+credit = "photo deror_avi · CC BY-SA 3.0"
+caption = "An ornately carved limestone ossuary — a box for reburied bones — found in a Jerusalem tomb in 1990. Twice inscribed 'Yehosef bar Qayafa' (Joseph, son of Caiaphas), it is widely identified with the high priest before whom, in the Gospels, Jesus was brought for trial. A minority of scholars question the identification; the name and the priestly family, however, are firmly attested."
+refs = [
+  { book = "Matthew", chapter = 26, verse = 57 },
+  { book = "John", chapter = 18, verse = 13 },
+]

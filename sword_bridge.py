@@ -468,6 +468,9 @@ def display_name(name):
     import imagery_bridge
     if imagery_bridge.is_imagery_module(name):
         return imagery_bridge.display_name(name)
+    import archaeology_bridge
+    if archaeology_bridge.is_archaeology_module(name):
+        return archaeology_bridge.display_name(name)
     return DISPLAY_NAMES.get(name, name)
 
 
