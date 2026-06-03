@@ -227,10 +227,25 @@ class ArchaeologyReader:
             txt.append(chips)
 
         if entry['credit']:
-            txt.append(self._label(entry['credit'], 'stone-credit',
-                                   selectable=True))
+            txt.append(self._credit(entry))
         plate.append(self._clamp(txt, _TEXT_W))
         return plate
+
+    def _credit(self, entry):
+        """The photo credit line — a link to the source (the Commons file page,
+        which carries the full attribution and licence) when one is recorded,
+        so a reader can click through to verify or learn more."""
+        lbl = Gtk.Label(xalign=0, wrap=True)
+        lbl.add_css_class('stone-credit')
+        if entry.get('source'):
+            text = GLib.markup_escape_text(entry['credit'])
+            url = GLib.markup_escape_text(entry['source'])
+            lbl.set_markup(f'<a href="{url}">{text}</a>')   # opens in browser
+        else:
+            lbl.set_text(entry['credit'])
+            lbl.set_selectable(True)
+            lbl.set_focusable(False)
+        return lbl
 
     def _verse_chip(self, ref):
         btn = Gtk.Button(label=ref['label'])

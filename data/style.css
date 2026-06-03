@@ -504,6 +504,13 @@ button.stone-chip {
     font-size: 0.8em;
     margin-top: 8px;
 }
+.stone-credit a {
+    color: #a9744f;          /* clay, matching the artifact marker */
+    text-decoration: underline;
+}
+.stone-credit a:hover {
+    color: @accent_color;
+}
 .stone-contents button {
     padding: 6px 12px;
 }

@@ -54,6 +54,10 @@ id = "jesus"
 title = "The World of Jesus"
 
 [[chapter]]
+id = "apostolic"
+title = "The Apostolic World"
+
+[[chapter]]
 id = "ad70"
 title = "The Fall of Jerusalem"
 
@@ -61,6 +65,7 @@ title = "The Fall of Jerusalem"
 [[entry]]
 chapter = "before-israel"
 image = "amarna.jpg"
+source = "https://commons.wikimedia.org/wiki/File:One_of_the_Amarna_letters._A_letter_from_Abdi-Heba_of_Jerusalem_to_the_Egyptian_Pharaoh_Amenhotep_III._1st_half_of_the_14th_century_BCE._From_Tell_el-Amarna%2C_Egypt._Vorderasiatisches_Museum%2C_Berlin.jpg"
 title = "The Amarna Letter of Abdi-Heba"
 place = "Tell el-Amarna, Egypt"
 date = "14th century BC"
@@ -72,6 +77,7 @@ refs = [ { book = "Joshua", chapter = 10, verse = 1 } ]
 [[entry]]
 chapter = "before-israel"
 image = "merneptah.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Merenptah_Israel_Stele_Cairo.jpg"
 title = "The Merneptah Stele"
 place = "Thebes, Egypt"
 date = "c. 1208 BC"
@@ -84,6 +90,7 @@ refs = [ { book = "Judges", chapter = 2, verse = 16 } ]
 [[entry]]
 chapter = "united-monarchy"
 image = "tel_dan.jpg"
+source = "https://commons.wikimedia.org/wiki/File:JRSLM_300116_Tel_Dan_Stele_01.jpg"
 title = "The Tel Dan Stele"
 place = "Tel Dan, northern Israel"
 date = "9th century BC"
@@ -98,6 +105,7 @@ refs = [
 [[entry]]
 chapter = "united-monarchy"
 image = "eshbaal_jar.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Ishbaal_son_of_Beda%2C_storage_jar_inscription_from_Khirbet_Qeiyafa%2C_10th_c_BC.jpg"
 title = "The Eshbaal Inscription"
 place = "Khirbet Qeiyafa, Judah"
 date = "c. 1000 BC"
@@ -109,6 +117,7 @@ refs = [ { book = "1 Chronicles", chapter = 8, verse = 33 } ]
 [[entry]]
 chapter = "united-monarchy"
 image = "gezer_gate.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Six-chambered_gate_at_Tel_Gezer_%285751793235%29.jpg"
 title = "The Six-Chambered Gate at Gezer"
 place = "Tel Gezer"
 date = "10th century BC (debated)"
@@ -120,6 +129,7 @@ refs = [ { book = "1 Kings", chapter = 9, verse = 15 } ]
 [[entry]]
 chapter = "united-monarchy"
 image = "gezer_calendar.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Gezer_tablet_-_orig.frontal.jpg"
 title = "The Gezer Calendar"
 place = "Gezer"
 date = "10th century BC"
@@ -132,6 +142,7 @@ refs = [ { book = "1 Kings", chapter = 9, verse = 17 } ]
 [[entry]]
 chapter = "divided"
 image = "shishak.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Karnak_Sheshonq_I.jpg"
 title = "The Campaign Relief of Shishak"
 place = "Karnak, Egypt"
 date = "c. 925 BC"
@@ -143,6 +154,7 @@ refs = [ { book = "1 Kings", chapter = 14, verse = 25 } ]
 [[entry]]
 chapter = "divided"
 image = "mesha.jpg"
+source = "https://commons.wikimedia.org/wiki/File:F4171_Louvre_stele_de_Mesha_AO5066_rwk.jpg"
 title = "The Mesha Stele"
 place = "Dibon, Moab"
 date = "c. 840 BC"
@@ -154,6 +166,7 @@ refs = [ { book = "2 Kings", chapter = 3, verse = 4 } ]
 [[entry]]
 chapter = "divided"
 image = "kurkh.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Kurkh_stele_of_Shalmaneser_III._From_Diyarbak%C4%B1r%2C_southern_Turkey._British_Museum.jpg"
 title = "The Kurkh Monolith of Shalmaneser III"
 place = "Üçtepe (Diyarbakır), Turkey"
 date = "c. 853 BC"
@@ -165,6 +178,7 @@ refs = [ { book = "1 Kings", chapter = 16, verse = 29 } ]
 [[entry]]
 chapter = "divided"
 image = "nimrud_ivory.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Phoenician-style_Nimrud_ivory_of_two_sphinxes_flanking_a_cartouche.jpg"
 title = "A Nimrud Ivory"
 place = "Nimrud (Kalhu), Assyria"
 date = "9th–8th century BC"
@@ -176,6 +190,7 @@ refs = [ { book = "1 Kings", chapter = 22, verse = 39 } ]
 [[entry]]
 chapter = "divided"
 image = "black_obelisk.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Jehu_of_the_House_of_Omri_bows_before_the_Assyrian_king_Shalmaneser_III%2C_The_Black_Obelisk..JPG"
 title = "The Black Obelisk of Shalmaneser III"
 place = "Nimrud (Kalhu), Assyria"
 date = "c. 825 BC"
@@ -191,6 +206,7 @@ refs = [
 [[entry]]
 chapter = "judah"
 image = "nineveh_lamassu.jpg"
+source = "https://commons.wikimedia.org/wiki/File:%D8%A8%D9%88%D8%A7%D8%A8%D8%A9_%D9%86%D8%B1%D9%83%D8%A7%D9%84.jpg"
 title = "The Gate of Nineveh"
 place = "Nineveh (Mosul), Iraq"
 date = "8th–7th century BC"
@@ -202,6 +218,7 @@ refs = [ { book = "Jonah", chapter = 3, verse = 3 } ]
 [[entry]]
 chapter = "judah"
 image = "sargon.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Alabaster_bas-relief_from_Khorsabad%2C_Iraq._Sargon_II_in_his_war_chariot._Iraq_Museum%2C_Baghdad%2C_Iraq.jpg"
 title = "Sargon II in His Chariot"
 place = "Khorsabad (Dur-Sharrukin)"
 date = "c. 710 BC"
@@ -213,6 +230,7 @@ refs = [ { book = "Isaiah", chapter = 20, verse = 1 } ]
 [[entry]]
 chapter = "judah"
 image = "lachish.jpg"
+source = "https://commons.wikimedia.org/wiki/File:The_fall_of_Lachish%2C_King_Sennacherib_reviews_Judaean_prisoners..JPG"
 title = "The Lachish Reliefs"
 place = "Palace of Sennacherib, Nineveh"
 date = "c. 700–692 BC"
@@ -227,6 +245,7 @@ refs = [
 [[entry]]
 chapter = "judah"
 image = "taylor_prism.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Taylor_Prism-1.jpg"
 title = "The Taylor Prism of Sennacherib"
 place = "Nineveh"
 date = "c. 691 BC"
@@ -238,6 +257,7 @@ refs = [ { book = "2 Kings", chapter = 18, verse = 17 } ]
 [[entry]]
 chapter = "judah"
 image = "siloam_inscription.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Various_subjects_of_archaeological_interest._The_Siloam_inscription._Removed_from_Hezekiah%27s_tunnel%3B_%28Inscription_on_stone%29._LOC_matpc.03009.jpg"
 title = "The Siloam Inscription"
 place = "Jerusalem (Siloam tunnel)"
 date = "c. 701 BC"
@@ -249,6 +269,7 @@ refs = [ { book = "2 Kings", chapter = 20, verse = 20 } ]
 [[entry]]
 chapter = "judah"
 image = "hezekiah_bulla.jpg"
+source = "https://commons.wikimedia.org/wiki/File:%D7%98%D7%91%D7%99%D7%A2%D7%AA_%D7%97%D7%95%D7%AA%D7%9D_%D7%94%D7%9E%D7%9C%D7%9A_%D7%97%D7%96%D7%A7%D7%99%D7%94%D7%95.jpg"
 title = "The Bulla of Hezekiah"
 place = "Jerusalem (Ophel)"
 date = "c. 700 BC"
@@ -260,6 +281,7 @@ refs = [ { book = "2 Kings", chapter = 18, verse = 1 } ]
 [[entry]]
 chapter = "judah"
 image = "shebna.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Silwan-inscr.jpg"
 title = "The Royal Steward Inscription"
 place = "Silwan, Jerusalem"
 date = "c. 700 BC"
@@ -272,6 +294,7 @@ refs = [ { book = "Isaiah", chapter = 22, verse = 15 } ]
 [[entry]]
 chapter = "exile"
 image = "babylonian_chronicle.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Tablets_with_cuneiform_texts_in_the_British_Museum.jpg"
 title = "The Babylonian Chronicle"
 place = "Babylon"
 date = "c. 550 BC"
@@ -283,6 +306,7 @@ refs = [ { book = "2 Kings", chapter = 24, verse = 10 } ]
 [[entry]]
 chapter = "exile"
 image = "ishtar_gate.jpg"
+source = "https://commons.wikimedia.org/wiki/File:One_dragon_of_the_Ishtar_Gate_of_Babylon%2C_Iraq%2C_colored_glazed_and_molded_bricks%2C_6th_century_BCE._Pergamon_Museum_in_Berlin.jpg"
 title = "The Ishtar Gate of Babylon"
 place = "Babylon"
 date = "6th century BC"
@@ -294,6 +318,7 @@ refs = [ { book = "Daniel", chapter = 4, verse = 30 } ]
 [[entry]]
 chapter = "exile"
 image = "nabonidus.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Cylinder_Nabonidus_BM_WA91128.jpg"
 title = "The Nabonidus Cylinder"
 place = "Ur"
 date = "c. 540 BC"
@@ -306,6 +331,7 @@ refs = [ { book = "Daniel", chapter = 5, verse = 1 } ]
 [[entry]]
 chapter = "return"
 image = "cyrus_cylinder.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Cyrus_Cylinder.jpg"
 title = "The Cyrus Cylinder"
 place = "Babylon"
 date = "after 539 BC"
@@ -320,6 +346,7 @@ refs = [
 [[entry]]
 chapter = "return"
 image = "behistun.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Behistun_Darius_the_Great.jpg"
 title = "The Behistun Inscription"
 place = "Behistun, Iran"
 date = "c. 520 BC"
@@ -332,6 +359,7 @@ refs = [ { book = "Ezra", chapter = 6, verse = 1 } ]
 [[entry]]
 chapter = "between"
 image = "heliodorus.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Limestone_Stele_with_Greek_Inscription_of_Correspondence_Between_Seleucus_IV_and_His_Viceroy_Heliodoros%2C_178_BC_%2842499187134%29.jpg"
 title = "The Heliodorus Stele"
 place = "Maresha, Israel"
 date = "178 BC"
@@ -343,6 +371,7 @@ refs = [ { book = "2 Maccabees", chapter = 3, verse = 7 } ]
 [[entry]]
 chapter = "between"
 image = "hyrcanus_coin.jpg"
+source = "https://commons.wikimedia.org/wiki/File:John_Hyrcanus.jpg"
 title = "A Coin of John Hyrcanus"
 place = "Judea"
 date = "135–104 BC"
@@ -354,6 +383,7 @@ refs = [ { book = "1 Maccabees", chapter = 16, verse = 23 } ]
 [[entry]]
 chapter = "between"
 image = "isaiah_scroll.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Great_Isaiah_Scroll_Ch53.jpg"
 title = "The Great Isaiah Scroll"
 place = "Qumran, Cave 1"
 date = "c. 125 BC"
@@ -366,6 +396,7 @@ refs = [ { book = "Isaiah", chapter = 53, verse = 5 } ]
 [[entry]]
 chapter = "jesus"
 image = "pilate_stone.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Pilate_Inscription.JPG"
 title = "The Pilate Stone"
 place = "Caesarea Maritima"
 date = "c. AD 26–36"
@@ -380,6 +411,7 @@ refs = [
 [[entry]]
 chapter = "jesus"
 image = "caiaphas_ossuary.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Ossuary_of_the_high_priest_Joseph_Caiaphas_P1180839.JPG"
 title = "The Caiaphas Ossuary"
 place = "Jerusalem"
 date = "1st century AD"
@@ -394,6 +426,7 @@ refs = [
 [[entry]]
 chapter = "jesus"
 image = "bethesda.jpg"
+source = "https://commons.wikimedia.org/wiki/File:The_pool_of_Betheshda_%D7%91%D7%A8%D7%99%D7%9B%D7%95%D7%AA_%D7%91%D7%99%D7%AA_%D7%97%D7%A1%D7%93%D7%90.jpg"
 title = "The Pool of Bethesda"
 place = "Jerusalem"
 date = "1st century AD"
@@ -405,6 +438,7 @@ refs = [ { book = "John", chapter = 5, verse = 2 } ]
 [[entry]]
 chapter = "jesus"
 image = "siloam_pool.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Pool_of_Siloam_%2830260%29.jpg"
 title = "The Pool of Siloam"
 place = "Jerusalem (City of David)"
 date = "1st century AD"
@@ -416,6 +450,7 @@ refs = [ { book = "John", chapter = 9, verse = 7 } ]
 [[entry]]
 chapter = "jesus"
 image = "soreg.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Soreg_inscription.jpg"
 title = "The Temple Warning Inscription"
 place = "Jerusalem (Temple Mount)"
 date = "1st century BC–AD"
@@ -427,6 +462,7 @@ refs = [ { book = "Acts", chapter = 21, verse = 28 } ]
 [[entry]]
 chapter = "jesus"
 image = "tribute_penny.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Emperor_Tiberius_Denarius_-_Tribute_Penny.jpg"
 title = "The Tribute Penny"
 place = "Lugdunum (Lyon) mint"
 date = "AD 14–37"
@@ -439,6 +475,7 @@ refs = [ { book = "Matthew", chapter = 22, verse = 21 } ]
 [[entry]]
 chapter = "ad70"
 image = "arch_titus.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Carrying_off_the_Menorah_from_the_Temple_in_Jerusalem_depicted_on_a_frieze_on_the_Arch_of_Titus_in_the_Forum_Romanum.JPG"
 title = "The Arch of Titus"
 place = "Rome (Forum)"
 date = "c. AD 81"
@@ -450,6 +487,7 @@ refs = [ { book = "Luke", chapter = 21, verse = 6 } ]
 [[entry]]
 chapter = "ad70"
 image = "judaea_capta.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Iudaea_capta_reverse_of_Vespasian_sestertius.jpg"
 title = "The Judaea Capta Coinage"
 place = "Rome"
 date = "AD 71"
@@ -457,3 +495,175 @@ holding = ""
 credit = "Classical Numismatic Group · CC BY-SA 2.5"
 caption = "A Roman coin struck to celebrate the crushing of the Jewish revolt: a palm tree, a bound captive, a mourning woman, and the words IUDAEA CAPTA — 'Judea captured.' Minted across the empire after AD 70, it is Rome's own monument to the fall of Jerusalem that the Gospels record Jesus foretelling."
 refs = [ { book = "Matthew", chapter = 24, verse = 2 } ]
+
+
+# ── Additions: apostolic world + sites (2026-06-02) ──────────────────────────
+
+[[entry]]
+chapter = "apostolic"
+image = "philippi.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Archaeological_site_of_Philippi_BW_2017-10-05_12-47-21.jpg"
+title = "The Forum of Philippi"
+place = "Philippi, Macedonia"
+date = "Roman era"
+holding = "in situ"
+credit = "photo Berthold Werner · CC BY-SA 3.0"
+caption = "The forum of Philippi, the Roman colony in Macedonia where Paul founded his first church on European soil. Acts tells of his arrival, the conversion of Lydia by the riverside, and a night in the city jail — the gospel's first steps into Europe."
+refs = [
+  { book = "Acts", chapter = 16, verse = 12 },
+]
+
+[[entry]]
+chapter = "apostolic"
+image = "areopagus.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Mars_Hill.jpg"
+title = "The Areopagus (Mars Hill)"
+place = "Athens"
+date = ""
+holding = "in situ"
+credit = "photo Sings83 · CC BY 4.0"
+caption = "The Areopagus — Mars Hill — the rocky height below the Athenian Acropolis where the city's council met. Acts sets here Paul's address to the philosophers, taking their altar 'to an unknown god' as his starting point for the God who 'made the world and everything in it.'"
+refs = [
+  { book = "Acts", chapter = 17, verse = 22 },
+]
+
+[[entry]]
+chapter = "apostolic"
+image = "corinth_bema.jpg"
+source = "https://commons.wikimedia.org/wiki/File:View_of_the_historical_seat_of_the_Metropolis_of_Corinth_in_the_Roman_Forum_of_Ancient_Corinth_on_6_April_2019.jpg"
+title = "The Bema at Corinth"
+place = "Ancient Corinth"
+date = "1st century AD"
+holding = "in situ"
+credit = "photo George E. Koronaios · CC0"
+caption = "The forum of ancient Corinth, with the bema — the raised platform from which Roman officials gave judgment. It was before this seat, Acts records, that the proconsul Gallio dismissed the charge brought against Paul. Gallio's term of office, dated by an inscription at Delphi, is the firmest anchor for the chronology of Paul's mission."
+refs = [
+  { book = "Acts", chapter = 18, verse = 12 },
+]
+
+[[entry]]
+chapter = "apostolic"
+image = "ephesus_theatre.jpg"
+source = "https://commons.wikimedia.org/wiki/File:For_it%27s_time%2C_the_amphitheatre_was_massive%21_%2816129207397%29.jpg"
+title = "The Great Theatre of Ephesus"
+place = "Ephesus"
+date = "Roman era"
+holding = "in situ"
+credit = "photo shankar s. · CC BY 2.0"
+caption = "The great theatre of Ephesus, which held some 25,000 people. Acts sets here the riot of the silversmiths, who feared Paul's preaching would ruin the trade in silver shrines of Artemis and filled the theatre with the chant, 'Great is Artemis of the Ephesians!'"
+refs = [
+  { book = "Acts", chapter = 19, verse = 29 },
+]
+
+[[entry]]
+chapter = "apostolic"
+image = "artemis.jpg"
+source = "https://commons.wikimedia.org/wiki/File:TR.IZ.Selcuk_Ephesus_2011-10-04_Temple-of-Artemis_07_3x2-R_5K.jpg"
+title = "The Temple of Artemis"
+place = "Ephesus"
+date = ""
+holding = "in situ"
+credit = "photo Roy Egloff · CC BY-SA 4.0"
+caption = "A single re-erected column marks the temple of Artemis at Ephesus, once counted among the seven wonders of the world. The cult of 'Artemis of the Ephesians,' and the craftsmen who profited from it, form the backdrop to the uproar Paul's preaching stirred in the city."
+refs = [
+  { book = "Acts", chapter = 19, verse = 27 },
+]
+
+[[entry]]
+chapter = "apostolic"
+image = "erastus.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Erastus_stone_at_Theater_of_Corinth.jpg"
+title = "The Erastus Inscription"
+place = "Ancient Corinth"
+date = "1st century AD"
+holding = "in situ"
+credit = "photo Rduncan2 · CC BY-SA 4.0"
+caption = "A paving stone by the theatre of Corinth, its bronze letters lost but their cut sockets still legible: 'Erastus, in return for his aedileship, laid this at his own expense.' Many identify this magistrate with the Erastus, 'the city treasurer,' whom Paul names sending greetings from Corinth — though the identification is not certain."
+refs = [
+  { book = "Romans", chapter = 16, verse = 23 },
+]
+
+[[entry]]
+chapter = "before-israel"
+image = "jericho.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Tower_of_Jericho_2018.jpg"
+title = "Ancient Jericho"
+place = "Tell es-Sultan, Jericho"
+date = "tower c. 8000 BC"
+holding = "in situ"
+credit = "photo Immanuelle · CC BY-SA 4.0"
+caption = "The mound of ancient Jericho (Tell es-Sultan), among the oldest towns on earth — the great stone tower here is Neolithic, millennia older than Joshua. The Bible tells of Jericho's walls falling before Israel; the dating of the site's destruction layers is much debated, one of the harder places where text and trowel meet."
+refs = [
+  { book = "Joshua", chapter = 6, verse = 20 },
+]
+
+[[entry]]
+chapter = "before-israel"
+image = "hazor.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Tel-Hazor-1965.jpg"
+title = "Tel Hazor"
+place = "Tel Hazor"
+date = "Bronze–Iron Age"
+holding = "in situ"
+credit = "photo Bukvoed · CC BY 4.0"
+caption = "The vast mound of Hazor, the largest tel in the land — in the Bible 'the head of all those kingdoms,' the Canaanite city Joshua is said to have burned. Excavators have found a destroyed Canaanite city beneath a later Israelite one, fortified with a monumental gate of the type the Bible links to Solomon."
+refs = [
+  { book = "Joshua", chapter = 11, verse = 10 },
+]
+
+[[entry]]
+chapter = "judah"
+image = "megiddo.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Chambered_Gate_of_Megiddo_%2820726303061%29.jpg"
+title = "The Gate of Megiddo"
+place = "Tel Megiddo"
+date = "10th c. BC and later"
+holding = "in situ"
+credit = "photo Ian Scott · CC BY-SA 2.0"
+caption = "The chambered gate of Megiddo, the fortress city guarding the pass into the Jezreel Valley. Here King Josiah fell facing Pharaoh Necho; and the city's hill — Har Megiddo — gives its name to Armageddon, the gathering-place of Revelation's final battle."
+refs = [
+  { book = "2 Kings", chapter = 23, verse = 29 },
+  { book = "Revelation", chapter = 16, verse = 16 },
+]
+
+[[entry]]
+chapter = "judah"
+image = "tel_arad.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Tel-Arad-865.jpg"
+title = "The Sanctuary at Arad"
+place = "Tel Arad"
+date = "Iron Age"
+holding = "in situ"
+credit = "photo Bukvoed · CC BY 4.0"
+caption = "The desert fortress of Arad, holding the only Israelite temple yet excavated — a courtyard with a sacrificial altar and a small inner shrine, apparently taken out of use during a religious reform of the kind the Bible credits to Hezekiah, who 'removed the high places' to centre worship on Jerusalem."
+refs = [
+  { book = "2 Kings", chapter = 18, verse = 4 },
+]
+
+[[entry]]
+chapter = "jesus"
+image = "western_wall.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Western_Wall_stones%2C_closeup.jpg"
+title = "The Herodian Temple Stones"
+place = "Jerusalem (Temple Mount)"
+date = "1st century BC"
+holding = "in situ"
+credit = "photo Daniel Rosehill · CC BY 4.0"
+caption = "The massive Herodian ashlars of the Western Wall — part of the retaining wall Herod the Great raised to enlarge the Temple platform. These are the kind of stones behind a disciple's awe, 'what wonderful stones and what wonderful buildings,' and Jesus' reply that not one would be left upon another."
+refs = [
+  { book = "Mark", chapter = 13, verse = 1 },
+]
+
+[[entry]]
+chapter = "jesus"
+image = "capernaum.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Capernaum_byzantine_synagogue%2C_Israel%2C_2017_01.jpg"
+title = "The Synagogue at Capernaum"
+place = "Capernaum, Galilee"
+date = "synagogue 4th–5th c. AD"
+holding = "in situ"
+credit = "photo Benjamín Núñez González · CC BY-SA 4.0"
+caption = "The white limestone synagogue of Capernaum, the lakeside town that was the base of Jesus' Galilean ministry. This building is later (4th–5th century), but it rests on the black basalt foundations of the 1st-century synagogue where, the Gospels say, Jesus taught and healed."
+refs = [
+  { book = "Mark", chapter = 1, verse = 21 },
+]

@@ -37,6 +37,7 @@ class Ref(TypedDict):
 
 class Entry(TypedDict):
     image: str
+    source: str
     title: str
     place: str
     date: str
@@ -109,7 +110,8 @@ def document() -> Document:
             for r in e.get('refs', [])
         ]
         chap['entries'].append({
-            'image': e['image'], 'title': e['title'], 'place': e.get('place', ''),
+            'image': e['image'], 'source': e.get('source', ''),
+            'title': e['title'], 'place': e.get('place', ''),
             'date': e.get('date', ''), 'holding': e.get('holding', ''),
             'credit': e.get('credit', ''), 'caption': e.get('caption', ''),
             'refs': refs,
