@@ -462,6 +462,15 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
     color: @accent_color;
     margin-bottom: 6px;
 }
+.stone-era-intro {
+    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-style: italic;
+    font-size: 1.02em;
+    opacity: 0.72;
+    line-height: 1.5;
+    margin-top: 8px;
+}
 .stone-plate {
     margin: 18px 0 8px;
 }

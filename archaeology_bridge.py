@@ -66,6 +66,7 @@ class Entry(TypedDict):
 class Chapter(TypedDict):
     id: str
     title: str
+    intro: str
     entries: list[Entry]
 
 
@@ -128,7 +129,8 @@ def document() -> Document:
     intro = raw.get('intro', {})
     # Preserve declared chapter order; bucket entries into their chapter.
     chapters: list[Chapter] = [
-        {'id': c['id'], 'title': c['title'], 'entries': []}
+        {'id': c['id'], 'title': c['title'], 'intro': c.get('intro', ''),
+         'entries': []}
         for c in raw.get('chapter', [])
     ]
     by_id = {c['id']: c for c in chapters}

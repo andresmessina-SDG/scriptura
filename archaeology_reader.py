@@ -117,7 +117,7 @@ class ArchaeologyReader:
         self._contents_pop = Gtk.Popover()
         self._contents_btn.set_popover(self._contents_pop)
         self._timeline_btn = Gtk.Button(
-            icon_name='document-open-recent-symbolic',
+            icon_name='scriptura-timeline-symbolic',
             tooltip_text='Timeline — when they date from')
         self._timeline_btn.add_css_class('flat')
         self._timeline_btn.connect('clicked', lambda *_a: self._open_timeline())
@@ -226,7 +226,8 @@ class ArchaeologyReader:
         for chap in doc['chapters']:
             if not chap['entries']:
                 continue
-            divider = self._clamp(self._era_divider(chap['title']), _TEXT_W)
+            divider = self._clamp(
+                self._era_divider(chap['title'], chap['intro']), _TEXT_W)
             self._chapter_anchors[chap['id']] = divider
             self._page.append(divider)
             plates: list[tuple] = []
@@ -270,11 +271,13 @@ class ArchaeologyReader:
                                        selectable=True))
         return box
 
-    def _era_divider(self, title):
+    def _era_divider(self, title, intro=''):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         box.add_css_class('stone-era')
         box.append(self._label(title, 'stone-era-title'))
         box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+        if intro:
+            box.append(self._label(intro, 'stone-era-intro', selectable=True))
         return box
 
     def _glossary_section(self, terms):

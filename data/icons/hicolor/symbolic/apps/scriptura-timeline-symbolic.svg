@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Timeline glyph for the "Scripture in Stone" date axis — a baseline with
+  staggered stems and dot markers, mirroring the timeline view itself. Kept
+  distinct from document-open-recent (the "Recent Passages" clock) it used to
+  borrow. Bundled, fill-only (#222) so GTK4 recolors it to @accent_color,
+  matching the artifact / imagery / commentary / globe symbolics alongside it.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g fill="#222">
+    <!-- baseline axis -->
+    <path d="M1.6 11 H14.4 V11.9 H1.6 Z"/>
+    <!-- stems -->
+    <path d="M3.7 6.4 H4.5 V11 H3.7 Z"/>
+    <path d="M7.6 4.1 H8.4 V11 H7.6 Z"/>
+    <path d="M11.5 7.2 H12.3 V11 H11.5 Z"/>
+    <!-- dot markers -->
+    <circle cx="4.1" cy="5.5" r="1.4"/>
+    <circle cx="8.0" cy="3.2" r="1.5"/>
+    <circle cx="11.9" cy="6.3" r="1.4"/>
+  </g>
+</svg>
