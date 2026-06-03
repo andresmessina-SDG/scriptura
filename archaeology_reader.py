@@ -19,11 +19,13 @@ renders once. A Contents button jumps between chapters.
 """
 
 import logging
+import math
 
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, GLib, Gio, Gdk, Graphene
+gi.require_version('GdkPixbuf', '2.0')
+from gi.repository import Gtk, Adw, GLib, Gio, Gdk, Graphene, GdkPixbuf
 
 import archaeology_bridge
 
@@ -32,6 +34,9 @@ _log = logging.getLogger('scriptura.archaeology')
 _TEXT_W = 680    # comfortable reading measure
 _IMG_W = 920     # images run wider than the text
 
+# Bounds of the bundled biblical-world base map (the crop in build/data).
+_MAP_BOUNDS = (11.0, 50.0, 24.0, 43.0)   # lon_min, lon_max, lat_min, lat_max
+
 
 class ArchaeologyReader:
     def __init__(self, pane=None):
@@ -39,8 +44,13 @@ class ArchaeologyReader:
         self._built = False
         self._chapter_anchors: dict[str, Gtk.Widget] = {}
         self._verse_anchors: dict[tuple, Gtk.Widget] = {}
+        self._entry_anchors: dict[str, Gtk.Widget] = {}
         self._scroll_target = None
         self._scroll_tries = 0
+        self._map_points: list = []
+        self._map_screen: list = []
+        self._map_pixbuf = None
+        self._map_dialog = None
         self._build_widget()
 
     @property
@@ -59,7 +69,13 @@ class ArchaeologyReader:
         self._contents_btn.add_css_class('flat')
         self._contents_pop = Gtk.Popover()
         self._contents_btn.set_popover(self._contents_pop)
+        self._map_btn = Gtk.Button(
+            icon_name='mark-location-symbolic',
+            tooltip_text='Map — where these were found')
+        self._map_btn.add_css_class('flat')
+        self._map_btn.connect('clicked', lambda *_a: self._open_map())
         bar.append(Gtk.Box(hexpand=True))
+        bar.append(self._map_btn)
         bar.append(self._contents_btn)
         self._root.append(bar)
 
@@ -161,6 +177,7 @@ class ArchaeologyReader:
             for entry in chap['entries']:
                 plate = self._plate(entry)
                 self._page.append(plate)
+                self._entry_anchors[entry['image']] = plate
                 # Map each referenced verse to this plate, so a Bible 'related
                 # artifact' marker can scroll the gallery straight to it.
                 for r in entry['refs']:
@@ -359,3 +376,108 @@ class ArchaeologyReader:
                                         and False) or False)
         self._scroll_target = None
         return False
+
+    def scroll_to_entry(self, image):
+        """Scroll to a specific artifact's plate (used by the map) and flash it."""
+        self.render()
+        w = self._entry_anchors.get(image)
+        if w is None:
+            return
+        self._scroll_target = w
+        self._scroll_tries = 0
+        GLib.timeout_add(40, self._do_scroll)
+
+    # ── map (where the artifacts were found) ──────────────────────────────────
+    def _open_map(self):
+        """Show the bundled biblical-world map with a marker at every artifact's
+        find-spot; clicking a marker jumps the gallery to that artifact."""
+        root = self._root.get_root()
+        if root is None:
+            return
+        pts = [e for c in archaeology_bridge.document()['chapters']
+               for e in c['entries']
+               if e.get('lat') is not None and e.get('lon') is not None]
+        self._map_points = self._jitter(pts)
+        self._map_screen = []
+        try:
+            self._map_pixbuf = GdkPixbuf.Pixbuf.new_from_file(
+                archaeology_bridge.map_path())
+        except Exception:
+            _log.exception('failed to load the biblical-world map')
+            self._map_pixbuf = None
+        area = Gtk.DrawingArea(hexpand=True, vexpand=True)
+        area.set_draw_func(self._draw_map, None)
+        area.set_cursor(Gdk.Cursor.new_from_name('pointer', None))
+        click = Gtk.GestureClick()
+        click.connect('released', self._on_map_click)
+        area.add_controller(click)
+
+        dialog = Adw.Dialog()
+        dialog.set_title('Where they were found')
+        dialog.set_content_width(1060)
+        dialog.set_content_height(620)
+        view = Adw.ToolbarView()
+        view.add_top_bar(Adw.HeaderBar())
+        view.set_content(area)
+        dialog.set_child(view)
+        self._map_dialog = dialog
+        dialog.present(root)
+
+    @staticmethod
+    def _jitter(pts):
+        """Spread artifacts sharing a find-spot into a small ring so each marker
+        stays clickable (e.g. the many finds at Jerusalem or Nineveh)."""
+        groups: dict = {}
+        for e in pts:
+            groups.setdefault((round(e['lat'], 2), round(e['lon'], 2)), []).append(e)
+        out = []
+        for members in groups.values():
+            n = len(members)
+            if n == 1:
+                e = members[0]
+                out.append((e['lat'], e['lon'], 0.0, 0.0, e))
+            else:
+                r = 6.0 + 1.3 * n
+                for i, e in enumerate(members):
+                    a = 2 * math.pi * i / n
+                    out.append((e['lat'], e['lon'],
+                                r * math.cos(a), r * math.sin(a), e))
+        return out
+
+    def _draw_map(self, _area, cr, w, h, _data):
+        pb = self._map_pixbuf
+        if pb is None:
+            return
+        lon0, lon1, lat0, lat1 = _MAP_BOUNDS
+        pw, ph = pb.get_width(), pb.get_height()
+        scale = min(w / pw, h / ph)
+        dw, dh = pw * scale, ph * scale
+        ox, oy = (w - dw) / 2, (h - dh) / 2
+        cr.save()
+        cr.translate(ox, oy)
+        cr.scale(scale, scale)
+        Gdk.cairo_set_source_pixbuf(cr, pb, 0, 0)
+        cr.paint()
+        cr.restore()
+        self._map_screen = []
+        for lat, lon, jx, jy, e in self._map_points:
+            px = ox + (lon - lon0) / (lon1 - lon0) * dw + jx
+            py = oy + (lat1 - lat) / (lat1 - lat0) * dh + jy
+            self._map_screen.append((px, py, e))
+            cr.set_source_rgba(1, 1, 1, 0.95)      # white ring
+            cr.arc(px, py, 5, 0, 6.2831853)
+            cr.fill()
+            cr.set_source_rgba(0.70, 0.42, 0.26, 1)  # clay dot
+            cr.arc(px, py, 3.2, 0, 6.2831853)
+            cr.fill()
+
+    def _on_map_click(self, _gesture, _n, x, y):
+        best, bd = None, 16.0 * 16.0
+        for px, py, e in self._map_screen:
+            d = (px - x) ** 2 + (py - y) ** 2
+            if d < bd:
+                bd, best = d, e
+        if best is not None:
+            if self._map_dialog is not None:
+                self._map_dialog.close()
+            self.scroll_to_entry(best['image'])

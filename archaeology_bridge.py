@@ -44,6 +44,8 @@ class Entry(TypedDict):
     holding: str
     credit: str
     caption: str
+    lat: float | None
+    lon: float | None
     refs: list[Ref]
 
 
@@ -81,6 +83,12 @@ def image_path(filename: str) -> str:
     return os.path.join(_DATA_DIR, 'images', filename)
 
 
+def map_path() -> str:
+    """The bundled biblical-world base map (NASA Blue Marble, equirectangular,
+    cropped to lon 11–50°E / lat 24–43°N — the bounds the reader projects with)."""
+    return os.path.join(_DATA_DIR, 'map', 'biblical_world.jpg')
+
+
 def document() -> Document:
     """The parsed gallery: intro + chapters (in declared order), each with its
     entries (in declared order). Cached after first load."""
@@ -114,6 +122,7 @@ def document() -> Document:
             'title': e['title'], 'place': e.get('place', ''),
             'date': e.get('date', ''), 'holding': e.get('holding', ''),
             'credit': e.get('credit', ''), 'caption': e.get('caption', ''),
+            'lat': e.get('lat'), 'lon': e.get('lon'),
             'refs': refs,
         })
 
