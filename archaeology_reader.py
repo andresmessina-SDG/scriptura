@@ -21,6 +21,7 @@ renders once. A Contents button jumps between chapters.
 import logging
 import math
 
+import cairo
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
@@ -31,11 +32,38 @@ import archaeology_bridge
 
 _log = logging.getLogger('scriptura.archaeology')
 
+# Cairo font-face slant/weight aliases for the map's text overlays.
+cairo_normal = cairo.FONT_SLANT_NORMAL
+cairo_italic = cairo.FONT_SLANT_ITALIC
+cairo_book = cairo.FONT_WEIGHT_NORMAL
+cairo_bold = cairo.FONT_WEIGHT_BOLD
+
 _TEXT_W = 680    # comfortable reading measure
 _IMG_W = 920     # images run wider than the text
 
 # Bounds of the bundled biblical-world base map (the crop in build/data).
 _MAP_BOUNDS = (11.0, 50.0, 24.0, 43.0)   # lon_min, lon_max, lat_min, lat_max
+
+# Faint orientation labels on the find-spot map (lat, lon, text). Seas are set
+# in italic, land regions in spaced uppercase, key cities in plain small caps —
+# enough to read the geography at a glance without competing with the markers.
+_SEA_LABELS = [
+    (34.0, 18.5, 'Mediterranean Sea'),
+    (25.6, 35.2, 'Red Sea'),
+    (28.4, 48.6, 'Persian Gulf'),
+]
+_REGION_LABELS = [
+    (27.2, 30.0, 'EGYPT'),
+    (25.8, 44.0, 'ARABIA'),
+    (39.2, 32.5, 'ASIA  MINOR'),
+    (39.6, 21.8, 'GREECE'),
+    (35.6, 41.2, 'MESOPOTAMIA'),
+]
+_CITY_LABELS = [
+    (31.78, 35.23, 'Jerusalem'),
+    (36.36, 43.15, 'Nineveh'),
+    (32.54, 44.42, 'Babylon'),
+]
 
 
 class ArchaeologyReader:
@@ -49,8 +77,13 @@ class ArchaeologyReader:
         self._scroll_tries = 0
         self._map_points: list = []
         self._map_screen: list = []
+        self._map_pts_raw: list = []
         self._map_pixbuf = None
         self._map_dialog = None
+        self._map_area = None
+        self._map_hover = None      # entry under the cursor (hover-to-identify)
+        self._map_here = None       # entry being read when the map was opened
+        self._map_tick = 0          # frame-clock tick for the "you are here" pulse
         self._build_widget()
 
     @property
@@ -421,9 +454,13 @@ class ArchaeologyReader:
         GLib.timeout_add(40, self._do_scroll)
 
     # ── map (where the artifacts were found) ──────────────────────────────────
+    _HIT = 22.0    # click / hover tolerance in px (generous hit targets)
+
     def _open_map(self):
         """Show the bundled biblical-world map with a marker at every artifact's
-        find-spot; clicking a marker jumps the gallery to that artifact."""
+        find-spot. Hover a marker to read its name; click to jump the gallery to
+        it. If a marker exists for the artifact currently being read, it is
+        ringed as a gentle "you are here"."""
         root = self._root.get_root()
         if root is None:
             return
@@ -432,34 +469,82 @@ class ArchaeologyReader:
                if e.get('lat') is not None and e.get('lon') is not None]
         self._map_points = self._jitter(pts)
         self._map_screen = []
+        self._map_hover = None
+        self._map_here = self._current_entry()
         try:
             self._map_pixbuf = GdkPixbuf.Pixbuf.new_from_file(
                 archaeology_bridge.map_path())
         except Exception:
             _log.exception('failed to load the biblical-world map')
             self._map_pixbuf = None
+
         area = Gtk.DrawingArea(hexpand=True, vexpand=True)
         area.set_draw_func(self._draw_map, None)
         area.set_cursor(Gdk.Cursor.new_from_name('pointer', None))
+        self._map_area = area
         click = Gtk.GestureClick()
         click.connect('released', self._on_map_click)
         area.add_controller(click)
+        motion = Gtk.EventControllerMotion()
+        motion.connect('motion', self._on_map_motion)
+        motion.connect('leave', self._on_map_leave)
+        area.add_controller(motion)
+        # Gentle pulse for the "you are here" ring (only if there's one to draw).
+        if self._map_here is not None:
+            self._map_tick = area.add_tick_callback(
+                lambda a, _c, _d: (a.queue_draw() or True), None)
+
+        title = Adw.WindowTitle(title='Where they were found')
+        if self._map_here is not None:
+            title.set_subtitle(f'Reading: {self._map_here["title"]}')
+        header = Adw.HeaderBar()
+        header.set_title_widget(title)
 
         dialog = Adw.Dialog()
         dialog.set_title('Where they were found')
         dialog.set_content_width(1060)
         dialog.set_content_height(620)
+        dialog.connect('closed', self._on_map_closed)
         view = Adw.ToolbarView()
-        view.add_top_bar(Adw.HeaderBar())
+        view.add_top_bar(header)
         view.set_content(area)
         dialog.set_child(view)
         self._map_dialog = dialog
         dialog.present(root)
 
-    @staticmethod
-    def _jitter(pts):
+    def _on_map_closed(self, _dialog):
+        if self._map_tick and self._map_area is not None:
+            self._map_area.remove_tick_callback(self._map_tick)
+        self._map_tick = 0
+        self._map_area = None
+
+    def _current_entry(self):
+        """The artifact whose plate is at the top of the viewport — used so the
+        map can orient the reader to where they are. None if nothing maps."""
+        adj = self._scroller.get_vadjustment().get_value()
+        by_image = {e['image']: e
+                    for c in archaeology_bridge.document()['chapters']
+                    for e in c['entries']
+                    if e.get('lat') is not None and e.get('lon') is not None}
+        best, best_y = None, -1.0
+        for image, w in self._entry_anchors.items():
+            if image not in by_image:
+                continue
+            ok, rect = w.compute_bounds(self._page)
+            if not ok:
+                continue
+            y = rect.get_y()
+            # The topmost plate at or just above the viewport top.
+            if y <= adj + 80 and y > best_y:
+                best_y, best = y, by_image[image]
+        if best is None:                 # scrolled above the first plate
+            return next(iter(by_image.values()), None)
+        return best
+
+    def _jitter(self, pts):
         """Spread artifacts sharing a find-spot into a small ring so each marker
         stays clickable (e.g. the many finds at Jerusalem or Nineveh)."""
+        self._map_pts_raw = pts
         groups: dict = {}
         for e in pts:
             groups.setdefault((round(e['lat'], 2), round(e['lon'], 2)), []).append(e)
@@ -470,18 +555,51 @@ class ArchaeologyReader:
                 e = members[0]
                 out.append((e['lat'], e['lon'], 0.0, 0.0, e))
             else:
-                r = 6.0 + 1.3 * n
+                r = 9.0 + 1.9 * n
                 for i, e in enumerate(members):
-                    a = 2 * math.pi * i / n
+                    a = 2 * math.pi * i / n - math.pi / 2
                     out.append((e['lat'], e['lon'],
                                 r * math.cos(a), r * math.sin(a), e))
         return out
+
+    def _nearby_count(self, lat, lon, deg=0.6):
+        """How many find-spots fall within ~deg° of a point — lets a city label
+        double as a 'N finds here' badge without a separate cluttered marker."""
+        return sum(1 for e in getattr(self, '_map_pts_raw', [])
+                   if abs(e['lat'] - lat) <= deg and abs(e['lon'] - lon) <= deg)
+
+    @staticmethod
+    def _project(lon, lat, ox, oy, dw, dh):
+        lon0, lon1, lat0, lat1 = _MAP_BOUNDS
+        return (ox + (lon - lon0) / (lon1 - lon0) * dw,
+                oy + (lat1 - lat) / (lat1 - lat0) * dh)
+
+    @staticmethod
+    def _stroked_text(cr, x, y, text, size, *, italic=False, bold=False,
+                      align='left', alpha=1.0):
+        """Draw legible text over any background: a dark halo then light glyphs."""
+        slant = cairo_italic if italic else cairo_normal
+        weight = cairo_bold if bold else cairo_book
+        cr.select_font_face('sans-serif', slant, weight)
+        cr.set_font_size(size)
+        ext = cr.text_extents(text)
+        if align == 'center':
+            x -= ext.width / 2 + ext.x_bearing
+        elif align == 'right':
+            x -= ext.width + ext.x_bearing
+        cr.set_source_rgba(0, 0, 0, 0.55 * alpha)
+        for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            cr.move_to(x + dx, y + dy)
+            cr.show_text(text)
+        cr.set_source_rgba(1, 1, 1, 0.92 * alpha)
+        cr.move_to(x, y)
+        cr.show_text(text)
+        return ext.width
 
     def _draw_map(self, _area, cr, w, h, _data):
         pb = self._map_pixbuf
         if pb is None:
             return
-        lon0, lon1, lat0, lat1 = _MAP_BOUNDS
         pw, ph = pb.get_width(), pb.get_height()
         scale = min(w / pw, h / ph)
         dw, dh = pw * scale, ph * scale
@@ -492,24 +610,134 @@ class ArchaeologyReader:
         Gdk.cairo_set_source_pixbuf(cr, pb, 0, 0)
         cr.paint()
         cr.restore()
+
+        # Orientation labels (drawn under the markers).
+        for lat, lon, text in _SEA_LABELS:
+            px, py = self._project(lon, lat, ox, oy, dw, dh)
+            self._stroked_text(cr, px, py, text, 13, italic=True,
+                               align='center', alpha=0.75)
+        for lat, lon, text in _REGION_LABELS:
+            px, py = self._project(lon, lat, ox, oy, dw, dh)
+            self._stroked_text(cr, px, py, text, 13, bold=True,
+                               align='center', alpha=0.7)
+        # City labels as legible pills above their (often dense) swarm, with the
+        # nearby find-count folded in so a busy spot reads as "Jerusalem · 14".
+        for lat, lon, name in _CITY_LABELS:
+            px, py = self._project(lon, lat, ox, oy, dw, dh)
+            n = self._nearby_count(lat, lon)
+            text = f'{name} · {n}' if n >= 3 else name
+            self._pill_label(cr, px, py - 30, text)
+
+        # Markers.
         self._map_screen = []
         for lat, lon, jx, jy, e in self._map_points:
-            px = ox + (lon - lon0) / (lon1 - lon0) * dw + jx
-            py = oy + (lat1 - lat) / (lat1 - lat0) * dh + jy
+            bx, by = self._project(lon, lat, ox, oy, dw, dh)
+            px, py = bx + jx, by + jy
             self._map_screen.append((px, py, e))
-            cr.set_source_rgba(1, 1, 1, 0.95)      # white ring
-            cr.arc(px, py, 5, 0, 6.2831853)
+            hovered = e is self._map_hover
+            rr, ir = (7.5, 5.0) if hovered else (5.5, 3.4)
+            cr.set_source_rgba(1, 1, 1, 0.96)             # white ring
+            cr.arc(px, py, rr, 0, 6.2831853)
             cr.fill()
-            cr.set_source_rgba(0.70, 0.42, 0.26, 1)  # clay dot
-            cr.arc(px, py, 3.2, 0, 6.2831853)
+            cr.set_source_rgba(0.70, 0.42, 0.26, 1)       # clay dot
+            cr.arc(px, py, ir, 0, 6.2831853)
             cr.fill()
 
-    def _on_map_click(self, _gesture, _n, x, y):
-        best, bd = None, 16.0 * 16.0
+        # "You are here" ring on the currently-read artifact (gentle pulse).
+        if self._map_here is not None:
+            for px, py, e in self._map_screen:
+                if e is self._map_here:
+                    t = GLib.get_monotonic_time() / 1e6
+                    pulse = 0.5 + 0.5 * math.sin(t * 3.0)
+                    cr.set_source_rgba(0.20, 0.52, 0.89, 0.85)
+                    cr.set_line_width(2.5)
+                    cr.arc(px, py, 11 + 3 * pulse, 0, 6.2831853)
+                    cr.stroke()
+                    break
+
+        # Hover name card (drawn last, on top of everything).
+        if self._map_hover is not None:
+            for px, py, e in self._map_screen:
+                if e is self._map_hover:
+                    self._draw_name_card(cr, px, py, e, w, h)
+                    break
+
+    def _draw_name_card(self, cr, px, py, e, w, h):
+        title, place = e['title'], e.get('place', '')
+        cr.select_font_face('sans-serif', cairo_normal, cairo_bold)
+        cr.set_font_size(14)
+        tw = cr.text_extents(title).width
+        cr.select_font_face('sans-serif', cairo_normal, cairo_book)
+        cr.set_font_size(11.5)
+        pw_ = cr.text_extents(place).width if place else 0
+        cw = max(tw, pw_) + 22
+        ch = 44 if place else 28
+        # Prefer above the marker; flip below / clamp to stay on screen.
+        cx = min(max(px - cw / 2, 6), w - cw - 6)
+        cy = py - ch - 14
+        if cy < 6:
+            cy = py + 16
+        self._rounded_rect(cr, cx, cy, cw, ch, 8)
+        cr.set_source_rgba(0.12, 0.10, 0.09, 0.92)
+        cr.fill()
+        cr.select_font_face('sans-serif', cairo_normal, cairo_bold)
+        cr.set_font_size(14)
+        cr.set_source_rgba(1, 1, 1, 0.98)
+        cr.move_to(cx + 11, cy + 19)
+        cr.show_text(title)
+        if place:
+            cr.select_font_face('sans-serif', cairo_normal, cairo_book)
+            cr.set_font_size(11.5)
+            cr.set_source_rgba(0.82, 0.70, 0.58, 0.95)
+            cr.move_to(cx + 11, cy + 35)
+            cr.show_text(place)
+
+    def _pill_label(self, cr, cx, cy, text):
+        """A small dark rounded pill centred at (cx, cy) with light text — reads
+        cleanly over a busy marker swarm where plain stroked text would not."""
+        cr.select_font_face('sans-serif', cairo_normal, cairo_bold)
+        cr.set_font_size(11.5)
+        ext = cr.text_extents(text)
+        pw, ph = ext.width + 16, 20
+        self._rounded_rect(cr, cx - pw / 2, cy - ph / 2, pw, ph, 9)
+        cr.set_source_rgba(0.12, 0.10, 0.09, 0.82)
+        cr.fill()
+        cr.set_source_rgba(1, 1, 1, 0.96)
+        cr.move_to(cx - ext.width / 2 - ext.x_bearing, cy + 4)
+        cr.show_text(text)
+
+    @staticmethod
+    def _rounded_rect(cr, x, y, w, h, r):
+        cr.new_sub_path()
+        cr.arc(x + w - r, y + r, r, -math.pi / 2, 0)
+        cr.arc(x + w - r, y + h - r, r, 0, math.pi / 2)
+        cr.arc(x + r, y + h - r, r, math.pi / 2, math.pi)
+        cr.arc(x + r, y + r, r, math.pi, 1.5 * math.pi)
+        cr.close_path()
+
+    def _nearest(self, x, y):
+        best, bd = None, self._HIT * self._HIT
         for px, py, e in self._map_screen:
             d = (px - x) ** 2 + (py - y) ** 2
             if d < bd:
                 bd, best = d, e
+        return best
+
+    def _on_map_motion(self, _ctrl, x, y):
+        hit = self._nearest(x, y)
+        if hit is not self._map_hover:
+            self._map_hover = hit
+            if self._map_area is not None:
+                self._map_area.queue_draw()
+
+    def _on_map_leave(self, _ctrl):
+        if self._map_hover is not None:
+            self._map_hover = None
+            if self._map_area is not None:
+                self._map_area.queue_draw()
+
+    def _on_map_click(self, _gesture, _n, x, y):
+        best = self._nearest(x, y)
         if best is not None:
             if self._map_dialog is not None:
                 self._map_dialog.close()
