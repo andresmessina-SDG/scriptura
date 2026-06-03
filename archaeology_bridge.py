@@ -35,6 +35,12 @@ class Ref(TypedDict):
     label: str
 
 
+class Detail(TypedDict):
+    image: str
+    source: str
+    caption: str
+
+
 class Entry(TypedDict):
     image: str
     source: str
@@ -47,6 +53,7 @@ class Entry(TypedDict):
     lat: float | None
     lon: float | None
     refs: list[Ref]
+    details: list[Detail]
 
 
 class Chapter(TypedDict):
@@ -123,7 +130,19 @@ def document() -> Document:
             'date': e.get('date', ''), 'holding': e.get('holding', ''),
             'credit': e.get('credit', ''), 'caption': e.get('caption', ''),
             'lat': e.get('lat'), 'lon': e.get('lon'),
-            'refs': refs,
+            'refs': refs, 'details': [],
+        })
+
+    # Attach detail closeups to their parent entry (matched by image filename).
+    by_image = {en['image']: en for c in chapters for en in c['entries']}
+    for d in raw.get('detail', []):
+        parent = by_image.get(d.get('parent', ''))
+        if parent is None:
+            _log.warning('detail references unknown parent %r', d.get('parent'))
+            continue
+        parent['details'].append({
+            'image': d['image'], 'source': d.get('source', ''),
+            'caption': d.get('caption', ''),
         })
 
     _doc = {

@@ -511,6 +511,16 @@ button.stone-chip {
 .stone-credit a:hover {
     color: @accent_color;
 }
+.stone-views {
+    color: #a9744f;
+    font-size: 0.82em;
+    opacity: 0.85;
+    margin-top: 6px;
+}
+.stone-zoom-caption {
+    margin: 8px 16px 14px;
+    opacity: 0.85;
+}
 .stone-contents button {
     padding: 6px 12px;
 }

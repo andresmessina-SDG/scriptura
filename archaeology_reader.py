@@ -224,7 +224,9 @@ class ArchaeologyReader:
         click.connect('released', lambda *_a, e=entry: self._zoom(e))
         pic.add_controller(click)
         pic.set_cursor(Gdk.Cursor.new_from_name('pointer', None))
-        pic.set_tooltip_text('Click to enlarge')
+        n_views = 1 + len(entry.get('details', []))
+        pic.set_tooltip_text('Click to enlarge' if n_views == 1
+                             else f'Click to enlarge — {n_views} views')
         plate.append(self._clamp(pic, _IMG_W))
 
         txt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -238,6 +240,13 @@ class ArchaeologyReader:
                                    selectable=True))
 
         txt.append(self._label(entry['caption'], 'stone-caption', selectable=True))
+
+        if entry.get('details'):
+            n = len(entry['details'])
+            hint = self._label(
+                f'{n} detail closeup{"s" if n > 1 else ""} — click the image to view',
+                'stone-views')
+            txt.append(hint)
 
         if entry['refs']:
             chips = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
@@ -255,27 +264,51 @@ class ArchaeologyReader:
         return plate
 
     def _zoom(self, entry):
-        """Open the artifact image full-size in a scrollable dialog (mirrors the
-        imagery pane's zoom). Inscriptions especially reward the closer look."""
+        """Open the artifact full-size in a dialog. When the entry has detail
+        closeups, present them as a swipeable carousel (full view first, then
+        each detail with its own caption). Inscriptions reward the closer look."""
         root = self._root.get_root()
         if root is None:
             return
+        meta = ' · '.join(b for b in (entry['place'], entry['date'],
+                                      entry['holding']) if b)
+        pages = [(entry['image'], meta)]
+        pages += [(d['image'], d['caption']) for d in entry.get('details', [])]
+
         dialog = Adw.Dialog()
         dialog.set_title(entry['title'])
         dialog.set_content_width(1000)
-        dialog.set_content_height(780)
+        dialog.set_content_height(800)
         view = Adw.ToolbarView()
         view.add_top_bar(Adw.HeaderBar())
-        scroll = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
-        pic = Gtk.Picture.new_for_filename(
-            archaeology_bridge.image_path(entry['image']))
-        pic.set_content_fit(Gtk.ContentFit.CONTAIN)
-        pic.set_can_shrink(True)
-        pic.set_alternative_text(entry['title'])
-        scroll.set_child(pic)
-        view.set_content(scroll)
+        if len(pages) == 1:
+            view.set_content(self._zoom_page(*pages[0]))
+        else:
+            carousel = Adw.Carousel(hexpand=True, vexpand=True)
+            for img, cap in pages:
+                carousel.append(self._zoom_page(img, cap))
+            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            box.append(carousel)
+            box.append(Adw.CarouselIndicatorDots(carousel=carousel,
+                                                 margin_top=6, margin_bottom=6))
+            view.set_content(box)
         dialog.set_child(view)
         dialog.present(root)
+
+    def _zoom_page(self, image, caption):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        scroll = Gtk.ScrolledWindow(hexpand=True, vexpand=True)
+        pic = Gtk.Picture.new_for_filename(archaeology_bridge.image_path(image))
+        pic.set_content_fit(Gtk.ContentFit.CONTAIN)
+        pic.set_can_shrink(True)
+        scroll.set_child(pic)
+        box.append(scroll)
+        if caption:
+            lbl = Gtk.Label(label=caption, xalign=0, wrap=True)
+            lbl.add_css_class('stone-caption')
+            lbl.add_css_class('stone-zoom-caption')
+            box.append(lbl)
+        return box
 
     def _credit(self, entry):
         """The photo credit line — a link to the source (the Commons file page,

@@ -759,3 +759,36 @@ caption = "The white limestone synagogue of Capernaum, the lakeside town that wa
 refs = [
   { book = "Mark", chapter = 1, verse = 21 },
 ]
+
+
+# ── Detail closeups (carousel in the zoom view) ─────────────────────────────
+
+[[detail]]
+parent = "tel_dan.jpg"
+image = "tel_dan_detail.png"
+source = "https://commons.wikimedia.org/wiki/File:Tel_Dan_Stele.svg"
+caption = "A drawing of the inscription's letters; line 9 carries the phrase bytdwd — 'House of David.'"
+
+[[detail]]
+parent = "merneptah.jpg"
+image = "merneptah_detail.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Israel_segment.jpg"
+caption = "A closeup of line 27, where the hieroglyphs spell out the name 'Israel.'"
+
+[[detail]]
+parent = "mesha.jpg"
+image = "mesha_detail.jpg"
+source = "https://commons.wikimedia.org/wiki/File:YHWH_on_Mesha_Stele.jpg"
+caption = "Line 18 (circled), naming YHWH — the God of Israel — among the spoils Mesha carried off."
+
+[[detail]]
+parent = "lachish.jpg"
+image = "lachish_detail.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Capture_of_Lachish_-_ramps_and_battle_engines.jpg"
+caption = "Another panel of the same relief: Assyrian siege-ramps and engines storming the walls of Lachish."
+
+[[detail]]
+parent = "erastus.jpg"
+image = "erastus_detail.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Erastus_stone_at_Theater_of_Corinth_%28cropped%29.jpg"
+caption = "The letters read closely — '[E]RASTVS PRO AED[ILITATE] S[VA] P[ECVNIA] STRAVIT,' Erastus paving it at his own expense."
