@@ -61,6 +61,10 @@ title = "The Apostolic World"
 id = "ad70"
 title = "The Fall of Jerusalem"
 
+[[chapter]]
+id = "everyday"
+title = "Everyday Life"
+
 # ── Before the Kingdom ───────────────────────────────────────────────────────
 [[entry]]
 chapter = "before-israel"
@@ -868,6 +872,130 @@ parent = "erastus.jpg"
 image = "erastus_detail.jpg"
 source = "https://commons.wikimedia.org/wiki/File:Erastus_stone_at_Theater_of_Corinth_%28cropped%29.jpg"
 caption = "The letters read closely — '[E]RASTVS PRO AED[ILITATE] S[VA] P[ECVNIA] STRAVIT,' Erastus paving it at his own expense."
+
+
+# ── Everyday Life (everyday material culture, 2026-06-03) ────────────────────
+
+[[entry]]
+chapter = "everyday"
+image = "pillar_figurine.jpg"
+provenance = "Excavated; common in Judahite homes"
+related = [ "tel_arad.jpg" ]
+source = "https://commons.wikimedia.org/wiki/File:Judaean%20female%20figurines%20-%20Israel%20Museum%2C%20Jerusalem.jpg"
+title = "A Judean Pillar Figurine"
+place = "Judah"
+date = "8th–7th century BC"
+holding = "Israel Museum, Jerusalem"
+credit = "photo Chamberi · CC BY-SA 3.0"
+lat = 31.7
+lon = 35.1
+caption = """Small clay figurines of a woman supporting her breasts, mass-produced and found by the hundreds in ordinary Judahite houses. Their exact meaning is debated — fertility, protection, a goddess — but they put a face on the popular household religion the prophets kept condemning, when even in Jerusalem families baked cakes for 'the queen of heaven.'"""
+refs = [ { book = "Jeremiah", chapter = 7, verse = 18 } ]
+
+[[entry]]
+chapter = "everyday"
+image = "oil_lamp.jpg"
+provenance = "Metropolitan Museum (acc. 1934); findspot unrecorded"
+related = [ "herodian_lamp.jpg" ]
+source = "https://commons.wikimedia.org/wiki/File:Lamp%20MET%20me34%20126%2061.jpg"
+title = "An Israelite Oil Lamp"
+place = "Levant"
+date = "c. 900 BC"
+holding = "Metropolitan Museum of Art"
+credit = "Metropolitan Museum of Art · CC0"
+caption = """A simple wheel-made saucer with one edge pinched into a spout to hold the wick — the lamp that lit every Israelite house, burning a little olive oil through the night. Plain and everywhere, it is the lamp of the Psalmist's 'lamp unto my feet, and a light unto my path.'"""
+refs = [ { book = "Psalms", chapter = 119, verse = 105 } ]
+
+[[entry]]
+chapter = "everyday"
+image = "four_room_house.jpg"
+provenance = "Modern full-scale reconstruction (Harvard Semitic Museum)"
+source = "https://commons.wikimedia.org/wiki/File:Israelite%20house%20mockup%2C%20Iron%20Age%2C%201200-586%20BC%20-%20Harvard%20Semitic%20Museum%20-%20Cambridge%2C%20MA%20-%20DSC06022.jpg"
+title = "The Four-Room House"
+place = "(modern reconstruction)"
+date = "Iron Age type"
+holding = "Harvard Semitic Museum"
+credit = "photo Daderot · CC0"
+caption = """A full-scale modern reconstruction of the 'four-room house,' the standard Israelite dwelling of the Iron Age: a broad rear room behind three long spaces, the ground floor for animals and storage, the family living above. This is the house behind countless biblical scenes — the home whose doorposts were to carry the words of the Law."""
+refs = [ { book = "Deuteronomy", chapter = 6, verse = 9 } ]
+
+[[entry]]
+chapter = "everyday"
+image = "winepress.jpg"
+provenance = "Rock-cut installation, Judean hills"
+related = [ "gezer_calendar.jpg" ]
+source = "https://commons.wikimedia.org/wiki/File:Ancient%20winepress%20near%20Jerusalem%2C%20Israel.jpg"
+title = "A Rock-Cut Winepress"
+place = "Judean hills, near Jerusalem"
+date = "Iron Age–Roman"
+holding = "in situ"
+credit = "photo Tombah · CC BY-SA 4.0"
+lat = 31.78
+lon = 35.13
+caption = """A winepress hewn from the bedrock: an upper floor where grapes were trodden underfoot, and a lower vat where the juice ran down and gathered. Thousands dot the hills of the land. Isaiah's song of the vineyard tells of one being cut, and the treading of the press — juice splashing the treader's garments red — became Scripture's image of both joy and wrath."""
+refs = [ { book = "Isaiah", chapter = 5, verse = 2 } ]
+
+[[entry]]
+chapter = "everyday"
+image = "stone_weights.jpg"
+provenance = "Excavated, Judahite sites"
+related = [ "lmlk.jpg" ]
+source = "https://commons.wikimedia.org/wiki/File:Judaean%20weights.%20Israel%20Museum%2C%20Jerusalem.JPG"
+title = "Judean Scale Weights"
+place = "Judah"
+date = "8th–7th century BC"
+holding = "Israel Museum, Jerusalem"
+credit = "photo Chamberi · CC BY-SA 3.0"
+lat = 31.78
+lon = 35.0
+caption = """A graded set of polished limestone weights for the balance scale, several inscribed with their value — the shekel and its fractions, the beka, the pim. The standards were never quite uniform, which is why the Law returns so often to honest weights, and why a 'just balance' and a hidden 'bag of deceitful weights' could stand for righteousness and fraud themselves."""
+refs = [ { book = "Proverbs", chapter = 11, verse = 1 }, { book = "Exodus", chapter = 38, verse = 26 } ]
+
+[[entry]]
+chapter = "everyday"
+image = "collared_jar.jpg"
+provenance = "Excavated at Shiloh"
+related = [ "eshbaal_jar.jpg" ]
+source = "https://commons.wikimedia.org/wiki/File:Shiloh-606.jpg"
+title = "A Collared-Rim Storage Jar"
+place = "Shiloh"
+date = "12th–11th century BC"
+holding = ""
+credit = "photo Bukvoed · CC BY 4.0"
+lat = 32.06
+lon = 35.29
+caption = """A large collared-rim storage jar — the heavy pithos, named for the ridge at its neck, that became a hallmark of the new highland villages of the early Iron Age, the world of the settlement and the judges. This one comes from Shiloh, where the tabernacle stood and the boy Samuel served; jars like it held the grain, oil, and wine of a household's year."""
+refs = [ { book = "1 Samuel", chapter = 1, verse = 9 } ]
+
+[[entry]]
+chapter = "everyday"
+image = "lmlk.jpg"
+provenance = "Excavated; thousands known across Judah"
+related = [ "hezekiah_bulla.jpg", "taylor_prism.jpg", "stone_weights.jpg" ]
+source = "https://commons.wikimedia.org/wiki/File:Lmlk-seal%20impression-h2d-gg22%202003-02-21.jpg"
+title = "An LMLK Seal Impression"
+place = "Judah"
+date = "c. 700 BC"
+holding = ""
+credit = "photo Funhistory · public domain"
+lat = 31.6
+lon = 34.9
+caption = """A jar handle stamped before firing with a royal seal: a four-winged beetle, the paleo-Hebrew letters l-m-l-k ('belonging to the king') above, and a town name below. Thousands are known, almost all from the years around Hezekiah's reign — marks of a royal system of storage jars, most likely provisioning Judah's towns against the Assyrian onslaught the Bible records him preparing for."""
+refs = [ { book = "2 Chronicles", chapter = 32, verse = 28 } ]
+
+[[entry]]
+chapter = "everyday"
+image = "herodian_lamp.jpg"
+provenance = "Common Herodian-period type"
+related = [ "oil_lamp.jpg" ]
+source = "https://commons.wikimedia.org/wiki/File:Oil%20Lamps%2C%20-9-10%20Hellenistic%3B%20-11%20%22Herodian%22%20%2810450650274%29.jpg"
+title = "A Herodian Oil Lamp"
+place = "Judea"
+date = "1st century BC–AD"
+holding = ""
+credit = "photo Gary Todd · CC0"
+caption = """The small wheel-made lamp of the New Testament age, with a short nozzle for the wick and a wide hole for the oil. Lamps like this lit the houses of Jesus' day — the lamp set on a stand, not under a basket; the lamp a woman lights to sweep her house in search of one lost coin."""
+refs = [ { book = "Matthew", chapter = 5, verse = 15 }, { book = "Luke", chapter = 15, verse = 8 } ]
 
 
 # ── Glossary (closing reference section) ─────────────────────────────────────
