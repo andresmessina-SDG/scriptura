@@ -649,6 +649,9 @@ class BiblePane(Gtk.Box):
         
         self._font_size    = settings.get('font_size')
         self._font_family  = settings.get('font_family')
+        # Embedded 'related artifact' marker icons in the current chapter, kept
+        # so they can be resized live when the reading font changes.
+        self._artifact_markers = []
         self._line_spacing = settings.get('line_spacing')
         self._font_bold    = settings.get('font_bold')
         self._font_justify = settings.get('font_justify')
@@ -968,6 +971,11 @@ class BiblePane(Gtk.Box):
                f"line-height: {self._line_spacing}; "
                f"{color_rule}}}")
         self._css_provider.load_from_data(css.encode())
+        # Resize the embedded artifact markers live with the reading font — no
+        # re-render needed (the text reflows via the CSS above on its own).
+        px = self._artifact_icon_px()
+        for img in getattr(self, '_artifact_markers', ()):
+            img.set_pixel_size(px)
         just = Gtk.Justification.FILL if self._font_justify else Gtk.Justification.LEFT
         self._view.set_justification(just)
         # Font size / line spacing changed the layout the highlight bands are
@@ -1291,6 +1299,10 @@ class BiblePane(Gtk.Box):
                 module_positions.remember_verse_position(
                     self._module, self._book, self._chapter, v)
 
+    def _artifact_icon_px(self):
+        # Match the reading font (pt) at text height; ×1.4 ≈ the glyph em-box.
+        return max(14, int(self._font_size * 1.4))
+
     def _insert_artifact_marker(self, verse):
         """Embed a tiny clay amphora icon at the end of `verse`, linking to the
         Scripture-in-Stone gallery. A real widget (anchored in the text) rather
@@ -1300,7 +1312,8 @@ class BiblePane(Gtk.Box):
         img = Gtk.Image.new_from_icon_name('scriptura-artifact-symbolic')
         # Scale the icon to the current reading font so it sits at text height
         # (font_size is in pt; ×1.4 ≈ the glyph em-box in px).
-        img.set_pixel_size(max(14, int(self._font_size * 1.4)))
+        img.set_pixel_size(self._artifact_icon_px())
+        self._artifact_markers.append(img)
         btn = Gtk.Button(child=img)
         btn.add_css_class('flat')
         btn.add_css_class('artifact-marker')
@@ -1326,6 +1339,7 @@ class BiblePane(Gtk.Box):
         # so we can drop a subtle clickable marker beside them (Bibles only).
         art_verses = (set() if is_commentary
                       else archaeology_bridge.verses_with_artifacts(book, chapter))
+        self._artifact_markers = []  # rebuilt below; old ones died with set_text('')
 
         self._cancel_all_flashes()
         self._search.cancel_hl_timer()
