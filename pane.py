@@ -1297,7 +1297,11 @@ class BiblePane(Gtk.Box):
         than a font glyph, so it always renders and clicks directly."""
         self._buffer.insert(self._buffer.get_end_iter(), ' ')
         anchor = self._buffer.create_child_anchor(self._buffer.get_end_iter())
-        btn = Gtk.Button(icon_name='scriptura-artifact-symbolic')
+        img = Gtk.Image.new_from_icon_name('scriptura-artifact-symbolic')
+        # Scale the icon to the current reading font so it sits at text height
+        # (font_size is in pt; ×1.4 ≈ the glyph em-box in px).
+        img.set_pixel_size(max(14, int(self._font_size * 1.4)))
+        btn = Gtk.Button(child=img)
         btn.add_css_class('flat')
         btn.add_css_class('artifact-marker')
         btn.set_can_focus(False)

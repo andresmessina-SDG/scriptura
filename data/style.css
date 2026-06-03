@@ -526,7 +526,6 @@ button.artifact-marker {
     background: none;
     box-shadow: none;
     border: none;
-    -gtk-icon-size: 13px;
     color: #a9744f;
     opacity: 0.7;
 }
