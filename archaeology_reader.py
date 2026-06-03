@@ -202,6 +202,12 @@ class ArchaeologyReader:
         pic.set_size_request(-1, 420)          # uniform plate band
         pic.set_alternative_text(entry['title'])
         pic.add_css_class('stone-pic')
+        # Click to zoom — inscriptions and reliefs reward a closer look.
+        click = Gtk.GestureClick()
+        click.connect('released', lambda *_a, e=entry: self._zoom(e))
+        pic.add_controller(click)
+        pic.set_cursor(Gdk.Cursor.new_from_name('pointer', None))
+        pic.set_tooltip_text('Click to enlarge')
         plate.append(self._clamp(pic, _IMG_W))
 
         txt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -230,6 +236,29 @@ class ArchaeologyReader:
             txt.append(self._credit(entry))
         plate.append(self._clamp(txt, _TEXT_W))
         return plate
+
+    def _zoom(self, entry):
+        """Open the artifact image full-size in a scrollable dialog (mirrors the
+        imagery pane's zoom). Inscriptions especially reward the closer look."""
+        root = self._root.get_root()
+        if root is None:
+            return
+        dialog = Adw.Dialog()
+        dialog.set_title(entry['title'])
+        dialog.set_content_width(1000)
+        dialog.set_content_height(780)
+        view = Adw.ToolbarView()
+        view.add_top_bar(Adw.HeaderBar())
+        scroll = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
+        pic = Gtk.Picture.new_for_filename(
+            archaeology_bridge.image_path(entry['image']))
+        pic.set_content_fit(Gtk.ContentFit.CONTAIN)
+        pic.set_can_shrink(True)
+        pic.set_alternative_text(entry['title'])
+        scroll.set_child(pic)
+        view.set_content(scroll)
+        dialog.set_child(view)
+        dialog.present(root)
 
     def _credit(self, entry):
         """The photo credit line — a link to the source (the Commons file page,
