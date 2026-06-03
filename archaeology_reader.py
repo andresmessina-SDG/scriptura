@@ -20,6 +20,7 @@ renders once. A Contents button jumps between chapters.
 
 import logging
 import math
+import re
 
 import cairo
 import gi
@@ -73,6 +74,9 @@ class ArchaeologyReader:
         self._chapter_anchors: dict[str, Gtk.Widget] = {}
         self._verse_anchors: dict[tuple, Gtk.Widget] = {}
         self._entry_anchors: dict[str, Gtk.Widget] = {}
+        self._sections: list[tuple] = []     # (divider, [(plate, search_text)])
+        self._apparatus: list[Gtk.Widget] = []  # glossary / further-reading
+        self._front = None
         self._scroll_target = None
         self._scroll_tries = 0
         self._map_points: list = []
@@ -84,6 +88,11 @@ class ArchaeologyReader:
         self._map_hover = None      # entry under the cursor (hover-to-identify)
         self._map_here = None       # entry being read when the map was opened
         self._map_tick = 0          # frame-clock tick for the "you are here" pulse
+        self._tl_dialog = None
+        self._tl_area = None
+        self._tl_points: list = []
+        self._tl_screen: list = []
+        self._tl_hover = None
         self._build_widget()
 
     @property
@@ -97,17 +106,29 @@ class ArchaeologyReader:
         # Slim top bar with a Contents jump menu (the "book" affordance).
         bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         bar.add_css_class('stone-topbar')
+        self._search = Gtk.SearchEntry(placeholder_text='Search artifacts')
+        self._search.add_css_class('stone-search')
+        self._search.set_hexpand(False)
+        self._search.set_max_width_chars(28)
+        self._search.connect('search-changed', self._on_search)
         self._contents_btn = Gtk.MenuButton(
             icon_name='view-list-symbolic', tooltip_text='Contents')
         self._contents_btn.add_css_class('flat')
         self._contents_pop = Gtk.Popover()
         self._contents_btn.set_popover(self._contents_pop)
+        self._timeline_btn = Gtk.Button(
+            icon_name='document-open-recent-symbolic',
+            tooltip_text='Timeline — when they date from')
+        self._timeline_btn.add_css_class('flat')
+        self._timeline_btn.connect('clicked', lambda *_a: self._open_timeline())
         self._map_btn = Gtk.Button(
             icon_name='mark-location-symbolic',
             tooltip_text='Map — where these were found')
         self._map_btn.add_css_class('flat')
         self._map_btn.connect('clicked', lambda *_a: self._open_map())
+        bar.append(self._search)
         bar.append(Gtk.Box(hexpand=True))
+        bar.append(self._timeline_btn)
         bar.append(self._map_btn)
         bar.append(self._contents_btn)
         self._root.append(bar)
@@ -200,21 +221,37 @@ class ArchaeologyReader:
             return
         doc = archaeology_bridge.document()
 
-        self._page.append(self._clamp(self._frontispiece(doc), _TEXT_W))
+        self._front = self._clamp(self._frontispiece(doc), _TEXT_W)
+        self._page.append(self._front)
         for chap in doc['chapters']:
             if not chap['entries']:
                 continue
             divider = self._clamp(self._era_divider(chap['title']), _TEXT_W)
             self._chapter_anchors[chap['id']] = divider
             self._page.append(divider)
+            plates: list[tuple] = []
             for entry in chap['entries']:
                 plate = self._plate(entry)
                 self._page.append(plate)
                 self._entry_anchors[entry['image']] = plate
+                plates.append((plate, self._search_text(entry)))
                 # Map each referenced verse to this plate, so a Bible 'related
                 # artifact' marker can scroll the gallery straight to it.
                 for r in entry['refs']:
                     self._verse_anchors[(r['book'], r['chapter'], r['verse'])] = plate
+            self._sections.append((divider, plates))
+
+        # Closing reference sections (scholarly apparatus).
+        if doc['terms']:
+            sec = self._clamp(self._glossary_section(doc['terms']), _TEXT_W)
+            self._chapter_anchors['_glossary'] = sec
+            self._apparatus.append(sec)
+            self._page.append(sec)
+        if doc['reading']:
+            sec = self._clamp(self._reading_section(doc['reading']), _TEXT_W)
+            self._chapter_anchors['_reading'] = sec
+            self._apparatus.append(sec)
+            self._page.append(sec)
 
         self._build_contents(doc)
         self.apply_font_size(getattr(self._pane, '_font_size', None))
@@ -238,6 +275,33 @@ class ArchaeologyReader:
         box.add_css_class('stone-era')
         box.append(self._label(title, 'stone-era-title'))
         box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+        return box
+
+    def _glossary_section(self, terms):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        box.add_css_class('stone-apparatus')
+        box.append(self._era_divider('Glossary'))
+        for t in terms:
+            row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            row.add_css_class('stone-term')
+            row.append(self._label(t['term'], 'stone-term-name', selectable=True))
+            row.append(self._label(t['definition'], 'stone-term-def',
+                                   selectable=True))
+            box.append(row)
+        return box
+
+    def _reading_section(self, reading):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        box.add_css_class('stone-apparatus')
+        box.append(self._era_divider('Sources & further reading'))
+        for r in reading:
+            row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            row.add_css_class('stone-read')
+            row.append(self._label(r['title'], 'stone-read-title', selectable=True))
+            if r['note']:
+                row.append(self._label(r['note'], 'stone-read-note',
+                                       selectable=True))
+            box.append(row)
         return box
 
     def _plate(self, entry):
@@ -272,6 +336,12 @@ class ArchaeologyReader:
             txt.append(self._label(' · '.join(meta_bits), 'stone-meta',
                                    selectable=True))
 
+        if entry.get('provenance'):
+            # How the object is known — excavated in context vs. market-bought —
+            # is the field's whole point: it shows why a piece earns its place.
+            txt.append(self._label('Provenance · ' + entry['provenance'],
+                                   'stone-prov', selectable=True))
+
         txt.append(self._label(entry['caption'], 'stone-caption', selectable=True))
 
         if entry.get('details'):
@@ -291,10 +361,31 @@ class ArchaeologyReader:
                 chips.append(self._verse_chip(ref))
             txt.append(chips)
 
+        if entry.get('related'):
+            # "See also" — jump to a thematically related artifact in the gallery
+            # (a wrapping flow, since titles are long). Turns the list into a web.
+            txt.append(self._label('See also', 'stone-chips-lead'))
+            flow = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE,
+                               column_spacing=6, row_spacing=6,
+                               max_children_per_line=4, homogeneous=False)
+            flow.add_css_class('stone-seealso')
+            for r in entry['related']:
+                flow.append(self._related_chip(r))
+            txt.append(flow)
+
         if entry['credit']:
             txt.append(self._credit(entry))
         plate.append(self._clamp(txt, _TEXT_W))
         return plate
+
+    def _related_chip(self, rel):
+        """A chip that jumps to another artifact's plate within the gallery."""
+        btn = Gtk.Button(label=rel['title'])
+        btn.add_css_class('stone-chip')
+        btn.add_css_class('stone-chip-rel')
+        btn.set_tooltip_text(f'Go to {rel["title"]}')
+        btn.connect('clicked', lambda _b, img=rel['image']: self.scroll_to_entry(img))
+        return btn
 
     def _zoom(self, entry):
         """Open the artifact full-size in a dialog. When the entry has detail
@@ -375,6 +466,36 @@ class ArchaeologyReader:
         if cb:
             cb(ref['book'], ref['chapter'], ref['verse'])
 
+    # ── search / filter ────────────────────────────────────────────────────────
+    @staticmethod
+    def _search_text(entry):
+        """The haystack a plate matches against — everything a reader might
+        reasonably type: title, place, date, museum, provenance, caption, the
+        verses it attests, and the artifacts it links to."""
+        parts = [entry['title'], entry['place'], entry['date'],
+                 entry['holding'], entry.get('provenance', ''),
+                 entry['caption']]
+        parts += [r['label'] for r in entry['refs']]
+        parts += [r['title'] for r in entry.get('related', [])]
+        return ' '.join(parts).lower()
+
+    def _on_search(self, search):
+        q = search.get_text().strip().lower()
+        # Frontispiece and the reference sections aren't artifacts — hide them
+        # while a query is active so the result list reads clean.
+        searching = bool(q)
+        if self._front is not None:
+            self._front.set_visible(not searching)
+        for w in self._apparatus:
+            w.set_visible(not searching)
+        for divider, plates in self._sections:
+            any_visible = False
+            for plate, text in plates:
+                hit = (not searching) or (q in text)
+                plate.set_visible(hit)
+                any_visible = any_visible or hit
+            divider.set_visible(any_visible)
+
     # ── font scaling ──────────────────────────────────────────────────────────
     def apply_font_size(self, pt):
         """Scale the whole document from the app's reading font size (the
@@ -397,6 +518,17 @@ class ArchaeologyReader:
             btn.set_halign(Gtk.Align.FILL)
             btn.get_child().set_xalign(0)
             btn.connect('clicked', lambda _b, cid=chap['id']: self._jump(cid))
+            box.append(btn)
+        for cid, title in (('_glossary', 'Glossary'),
+                           ('_reading', 'Sources & further reading')):
+            if cid not in self._chapter_anchors:
+                continue
+            btn = Gtk.Button(label=title)
+            btn.add_css_class('flat')
+            btn.add_css_class('stone-contents-apx')
+            btn.set_halign(Gtk.Align.FILL)
+            btn.get_child().set_xalign(0)
+            btn.connect('clicked', lambda _b, c=cid: self._jump(c))
             box.append(btn)
         self._contents_pop.set_child(box)
 
@@ -596,6 +728,19 @@ class ArchaeologyReader:
         cr.show_text(text)
         return ext.width
 
+    @staticmethod
+    def _axis_text(cr, x, y, text, size, ink, alpha, align='center'):
+        """Plain text in the theme's foreground colour — for the timeline, which
+        sits on a solid background and so needs no halo (unlike the map)."""
+        cr.select_font_face('sans-serif', cairo_normal, cairo_book)
+        cr.set_font_size(size)
+        ext = cr.text_extents(text)
+        if align == 'center':
+            x -= ext.width / 2 + ext.x_bearing
+        cr.set_source_rgba(ink[0], ink[1], ink[2], alpha)
+        cr.move_to(x, y)
+        cr.show_text(text)
+
     def _draw_map(self, _area, cr, w, h, _data):
         pb = self._map_pixbuf
         if pb is None:
@@ -741,4 +886,185 @@ class ArchaeologyReader:
         if best is not None:
             if self._map_dialog is not None:
                 self._map_dialog.close()
+            self.scroll_to_entry(best['image'])
+
+    # ── timeline (when the artifacts date from) ────────────────────────────────
+    _CENTURY = re.compile(r'(\d+)\s*(?:st|nd|rd|th)?\s*c(?:entury|\.)')
+    _NUMBER = re.compile(r'\d+')
+
+    @classmethod
+    def _parse_year(cls, date):
+        """A representative year for a date string ('9th century BC' → -850,
+        'c. AD 81' → 81), or None when it can't be placed (e.g. 'Roman era')."""
+        s = date.lower().replace('–', '-').replace('—', '-')
+        if not s:
+            return None
+        bc, ad = 'bc' in s, 'ad' in s
+        m = cls._CENTURY.search(s)
+        if m:
+            year = (int(m.group(1)) - 1) * 100 + 50      # century midpoint
+        else:
+            m = cls._NUMBER.search(s)
+            if not m:
+                return None
+            year = int(m.group())
+        if bc and ad:
+            return 0                                     # spans the turn of era
+        if bc:
+            return -year
+        if ad:
+            return year
+        return None                                      # no era token → skip
+
+    def _open_timeline(self):
+        """A chronological axis of the artifacts; hover a tick to read it, click
+        to jump. The gallery's spine is chronological, so this is the 'when' that
+        partners the map's 'where'."""
+        root = self._root.get_root()
+        if root is None:
+            return
+        self.render()
+        items = []
+        for c in archaeology_bridge.document()['chapters']:
+            for e in c['entries']:
+                y = self._parse_year(e['date'])
+                if y is not None and -1450 <= y <= 150:   # keep to the biblical era
+                    items.append((y, e))
+        items.sort(key=lambda t: t[0])
+        self._tl_points = items
+        self._tl_screen = []
+        self._tl_hover = None
+
+        area = Gtk.DrawingArea(hexpand=True, vexpand=True)
+        area.set_draw_func(self._draw_timeline, None)
+        area.set_cursor(Gdk.Cursor.new_from_name('pointer', None))
+        self._tl_area = area
+        click = Gtk.GestureClick()
+        click.connect('released', self._on_tl_click)
+        area.add_controller(click)
+        motion = Gtk.EventControllerMotion()
+        motion.connect('motion', self._on_tl_motion)
+        motion.connect('leave', self._on_tl_leave)
+        area.add_controller(motion)
+
+        dialog = Adw.Dialog()
+        dialog.set_title('When they date from')
+        dialog.set_content_width(1080)
+        dialog.set_content_height(540)
+        view = Adw.ToolbarView()
+        view.add_top_bar(Adw.HeaderBar())
+        view.set_content(area)
+        dialog.set_child(view)
+        self._tl_dialog = dialog
+        dialog.present(root)
+
+    @staticmethod
+    def _year_label(yv):
+        if yv < 0:
+            return f'{-yv} BC'
+        return f'AD {yv}' if yv > 0 else 'AD 1'
+
+    def _draw_timeline(self, _area, cr, w, h, _data):
+        items = self._tl_points
+        if not items:
+            return
+        years = [y for y, _ in items]
+        lo, hi = min(years), max(years)
+        span = max(hi - lo, 100)
+        lo, hi = lo - span * 0.04, hi + span * 0.04
+        ml, mr, axis_y = 56, 28, h - 64
+        plot_w = w - ml - mr
+
+        def xof(year):
+            return ml + (year - lo) / (hi - lo) * plot_w
+
+        # Unlike the map (which sits on a dark photo), the timeline sits on the
+        # themed dialog background — so its grid/axis/labels follow the theme.
+        ink = (1, 1, 1) if Adw.StyleManager.get_default().get_dark() else (0, 0, 0)
+
+        # Century gridlines + labels.
+        step = 100 if (hi - lo) <= 1300 else 200
+        cr.set_line_width(1)
+        gv = math.ceil(lo / step) * step
+        while gv <= hi:
+            gx = xof(gv)
+            cr.set_source_rgba(*ink, 0.09)
+            cr.move_to(gx, 30)
+            cr.line_to(gx, axis_y)
+            cr.stroke()
+            self._axis_text(cr, gx, axis_y + 20, self._year_label(gv), 11,
+                            ink, 0.7)
+            gv += step
+
+        # Axis line.
+        cr.set_source_rgba(*ink, 0.32)
+        cr.set_line_width(1.5)
+        cr.move_to(ml, axis_y)
+        cr.line_to(w - mr, axis_y)
+        cr.stroke()
+
+        # Lay artifacts out in stacked lanes so close dates don't overlap.
+        self._tl_screen = []
+        lanes: list[float] = []
+        rowh, base, mingap = 17, axis_y - 26, 15
+        placed = []
+        for year, e in items:
+            x = xof(year)
+            lane = next((i for i, lx in enumerate(lanes) if x - lx > mingap), None)
+            if lane is None:
+                lanes.append(x)
+                lane = len(lanes) - 1
+            else:
+                lanes[lane] = x
+            placed.append((x, base - lane * rowh, e))
+
+        for x, y, e in placed:
+            self._tl_screen.append((x, y, e))
+            hovered = e is self._tl_hover
+            cr.set_source_rgba(0.70, 0.42, 0.26, 0.45)   # stem to the axis
+            cr.set_line_width(1)
+            cr.move_to(x, axis_y)
+            cr.line_to(x, y)
+            cr.stroke()
+            rr, ir = (7.0, 4.5) if hovered else (5.0, 3.2)
+            cr.set_source_rgba(1, 1, 1, 0.96)
+            cr.arc(x, y, rr, 0, 6.2831853)
+            cr.fill()
+            cr.set_source_rgba(0.70, 0.42, 0.26, 1)
+            cr.arc(x, y, ir, 0, 6.2831853)
+            cr.fill()
+
+        if self._tl_hover is not None:
+            for x, y, e in self._tl_screen:
+                if e is self._tl_hover:
+                    self._draw_name_card(cr, x, y, e, w, h)
+                    break
+
+    @staticmethod
+    def _nearest_in(screen, x, y, tol):
+        best, bd = None, tol * tol
+        for px, py, e in screen:
+            d = (px - x) ** 2 + (py - y) ** 2
+            if d < bd:
+                bd, best = d, e
+        return best
+
+    def _on_tl_motion(self, _ctrl, x, y):
+        hit = self._nearest_in(self._tl_screen, x, y, 16.0)
+        if hit is not self._tl_hover:
+            self._tl_hover = hit
+            if self._tl_area is not None:
+                self._tl_area.queue_draw()
+
+    def _on_tl_leave(self, _ctrl):
+        if self._tl_hover is not None:
+            self._tl_hover = None
+            if self._tl_area is not None:
+                self._tl_area.queue_draw()
+
+    def _on_tl_click(self, _gesture, _n, x, y):
+        best = self._nearest_in(self._tl_screen, x, y, 16.0)
+        if best is not None:
+            if self._tl_dialog is not None:
+                self._tl_dialog.close()
             self.scroll_to_entry(best['image'])

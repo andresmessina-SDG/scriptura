@@ -521,6 +521,51 @@ button.stone-chip {
     margin: 8px 16px 14px;
     opacity: 0.85;
 }
+/* Provenance line — how the object is known (excavated in situ vs market). */
+.stone-prov {
+    opacity: 0.6;
+    font-size: 0.82em;
+    font-style: italic;
+    margin-bottom: 8px;
+}
+/* 'See also' cross-link chips — clay-toned, to set them apart from the blue
+   verse chips (those leave for the Bible; these jump within the gallery). */
+.stone-seealso {
+    margin-top: 4px;
+    margin-bottom: 2px;
+}
+.stone-seealso > flowboxchild {
+    padding: 0;
+    min-height: 0;
+}
+button.stone-chip-rel {
+    color: #a9744f;
+}
+/* Closing reference sections: glossary + further reading. */
+.stone-apparatus {
+    margin-top: 8px;
+}
+.stone-term,
+.stone-read {
+    margin: 4px 0 10px;
+}
+.stone-term-name {
+    font-weight: 700;
+}
+.stone-term-def,
+.stone-read-note {
+    opacity: 0.75;
+    line-height: 1.45;
+}
+.stone-read-title {
+    font-style: italic;
+}
+.stone-contents-apx {
+    opacity: 0.8;
+}
+.stone-search {
+    margin-right: 6px;
+}
 .stone-contents button {
     padding: 6px 12px;
 }

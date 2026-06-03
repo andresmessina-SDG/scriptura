@@ -127,3 +127,72 @@ sentence goes. New `kind`/`tradition` value (e.g. `kind='artifact'`), a new
 `source='artifact'`, and a third reader tab "Artifacts" alongside Art/Where. The
 `art_for`-style lookup is identical (book + loc range), just filtered to the
 artifact kind for the new tab.
+
+---
+
+# Expansion research: everyday material culture (2026-06-03)
+
+The current roster (46) is heavy on **royal inscriptions and monuments** — the
+glamorous 5% that *name* people. It answers "did these kings exist?" far better
+than "what was life like?" This section curates **everyday material culture** to
+add the texture of the world the Bible describes: writing, worship, farming,
+trade, home. These illuminate a *practice* rather than a single name, but they
+still verse-link cleanly (a lamp → Matt 5:15, a figurine → Jer 7:18).
+
+**Tone/curation unchanged:** measured; non-NC images only (PD/CC0/CC-BY);
+forgeries and high-doubt objects excluded. Note the recurring temptation here —
+**unprovenanced market pieces** (many seals/bullae) — which now also fails the
+new provenance test, so prefer *excavated* examples.
+
+**Sourcing reality (good news for this category):** the **Metropolitan Museum
+(CC0)** holds a deep, freely-usable trove of ANE everyday objects — pottery,
+lamps, figurines, weights, ivories — photographed on clean backgrounds. Plus
+**Gary Todd (CC0)** and **Osama S. M. Amin (CC-BY-SA)** for museum pieces, and
+Commons visitor photos for in-situ installations. This is *easier* sourcing than
+the monuments were.
+
+## Candidates (prioritised)
+
+### HIGH — strong illumination, image almost certainly available
+| Object | What it shows | Likely source | Verse hook |
+|---|---|---|---|
+| Judean pillar figurine | household/popular religion the prophets condemn | Met CC0 / Israel Museum visitor photo | Jer 7:18; 44:17 |
+| Iron Age oil lamp (open saucer) | the everyday lamp; "light to my path" | Met CC0 | Ps 119:105; Matt 5:15 |
+| Herodian wheel-made lamp (1st c) | the lamp "under a basket" world | Met CC0 / Gary Todd | Matt 5:15; Luke 15:8 |
+| Four-room ("Israelite") house | the standard Iron Age dwelling | site/reconstruction photo (Commons) | (daily life; Judg–Kings) |
+| Olive press / winepress installation | the agrarian economy; Gethsemane = "oil press" | in-situ Commons photo | Micah 6:15; Mark 14:32 |
+| Stone weights (shekel / beka / pim) | honest scales; the literal "beka a head" | Met CC0 / Israel Museum | Exod 38:26; Prov 11:1; 1 Sam 13:21 |
+| Collared-rim storage jar | the highland Iron-I marker jar | Met CC0 / site photo | (settlement era) |
+| LMLK jar-handle stamp | royal Judahite storage system, Hezekiah era | Commons CC-BY (abundant) | 2 Chr 32:28 |
+
+### MEDIUM — illuminating; image needs a confirming pass
+| Object | What it shows | Note | Verse hook |
+|---|---|---|---|
+| Arad ostraca | military supply orders; names "house of YHWH" | Israel Museum; recheck Commons | 2 Kgs 18; Neh-era admin |
+| Mesad Hashavyahu ostracon | a reaper's plea for his seized cloak | echoes the pledge law beautifully | Exod 22:26–27 |
+| Ketef Hinnom silver amulets | oldest biblical text — priestly blessing | excavated, provenanced; image mostly diagrams — recheck | Num 6:24–26 |
+| Mikveh (ritual bath) | purity practice; Temple-Mount & Qumran examples | in-situ Commons photo | Lev 15; John 2:6 |
+| City of David bulla — Gemaryahu son of Shaphan | a named scribe of Jeremiah's court (excavated) | Shiloh dig = provenanced (avoid market bullae) | Jer 36:10 |
+| Standing stones / massebot (Gezer, Dan) | the "high places" and pillars | in-situ Commons photo | Exod 23:24; 2 Kgs 18:4 |
+| Incense altar (Megiddo / Tel Sheva horned altar) | cult practice; the dismantled altar | site/museum photo | 1 Kgs 13:1; Amos 3:14 |
+
+### RECHECK — previously dropped for image scarcity; worth a second look
+- **Lachish Letters** (military dispatches, 588 BC) — the prior Commons original
+  was a 5 KB thumbnail; look for a British Museum / Israel Museum visitor photo.
+- **Samaria Ostraca** (wine & oil receipts) — earlier only line drawings found.
+- **Kuntillet Ajrud** ("YHWH … and his Asherah") — popular-religion bombshell, but
+  surviving imagery is mostly drawings; recheck for sherd photos.
+
+## Design fit & open question
+
+These slot into the existing TOML/bridge with **no schema change** — same `entry`
+shape, with the new `provenance` field doing real work here (excavated vs market).
+The one design question is **placement**: everyday objects don't belong to a
+single reign, so either (a) interleave them into the existing era chapters by
+date, or (b) add one cross-cutting chapter — *"Everyday life in the biblical
+world"* — grouping home, work, and worship. (b) reads more coherently and keeps
+the era spine about politics/events; (a) keeps strict chronology. **Lean (b).**
+
+Realistic first batch (the HIGH table) = **~8 objects**, mostly Met CC0, low
+fetch-risk. That alone would rebalance the gallery from "epigraphy" toward
+"archaeology."

@@ -41,6 +41,11 @@ class Detail(TypedDict):
     caption: str
 
 
+class RelatedRef(TypedDict):
+    image: str
+    title: str
+
+
 class Entry(TypedDict):
     image: str
     source: str
@@ -48,12 +53,14 @@ class Entry(TypedDict):
     place: str
     date: str
     holding: str
+    provenance: str
     credit: str
     caption: str
     lat: float | None
     lon: float | None
     refs: list[Ref]
     details: list[Detail]
+    related: list[RelatedRef]
 
 
 class Chapter(TypedDict):
@@ -62,11 +69,23 @@ class Chapter(TypedDict):
     entries: list[Entry]
 
 
+class Term(TypedDict):
+    term: str
+    definition: str
+
+
+class Reading(TypedDict):
+    title: str
+    note: str
+
+
 class Document(TypedDict):
     title: str
     subtitle: str
     body: str
     chapters: list[Chapter]
+    terms: list[Term]
+    reading: list[Reading]
 
 
 _doc: Document | None = None
@@ -113,6 +132,7 @@ def document() -> Document:
         for c in raw.get('chapter', [])
     ]
     by_id = {c['id']: c for c in chapters}
+    raw_related: dict[str, list[str]] = {}
     for e in raw.get('entry', []):
         chap = by_id.get(e['chapter'])
         if chap is None:
@@ -128,10 +148,12 @@ def document() -> Document:
             'image': e['image'], 'source': e.get('source', ''),
             'title': e['title'], 'place': e.get('place', ''),
             'date': e.get('date', ''), 'holding': e.get('holding', ''),
+            'provenance': e.get('provenance', ''),
             'credit': e.get('credit', ''), 'caption': e.get('caption', ''),
             'lat': e.get('lat'), 'lon': e.get('lon'),
-            'refs': refs, 'details': [],
+            'refs': refs, 'details': [], 'related': [],
         })
+        raw_related[e['image']] = list(e.get('related', []))
 
     # Attach detail closeups to their parent entry (matched by image filename).
     by_image = {en['image']: en for c in chapters for en in c['entries']}
@@ -145,11 +167,25 @@ def document() -> Document:
             'caption': d.get('caption', ''),
         })
 
+    # Resolve cross-links ("see also") to {image, title} once all entries exist.
+    for image, others in raw_related.items():
+        entry = by_image.get(image)
+        if entry is None:
+            continue
+        for other in others:
+            tgt = by_image.get(other)
+            if tgt is not None:
+                entry['related'].append({'image': other, 'title': tgt['title']})
+
     _doc = {
         'title': intro.get('title', DISPLAY_NAME),
         'subtitle': intro.get('subtitle', ''),
         'body': intro.get('body', '').strip(),
         'chapters': chapters,
+        'terms': [{'term': t['term'], 'definition': t['definition']}
+                  for t in raw.get('term', [])],
+        'reading': [{'title': r['title'], 'note': r.get('note', '')}
+                    for r in raw.get('reading', [])],
     }
     return _doc
 
