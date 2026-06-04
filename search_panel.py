@@ -107,19 +107,23 @@ class SearchPanel(Gtk.Box):
         self.set_size_request(420, -1)
         self.set_vexpand(True)
         self.add_css_class('search-panel')
+        # Clip children to the panel's rounded left corners — without this, a
+        # result/recent card's square corner bleeds past the 20px bottom-left arc.
+        self.set_overflow(Gtk.Overflow.HIDDEN)
 
         self._build_ui()
 
     def _build_ui(self):
-        # ── Header ────────────────────────────────────────────────────────────
+        # ── Header — matches the app menu (title-4, no rule) so the two side
+        # panels read as a set; grouped by whitespace, not separators. ─────────
         header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        header.set_margin_start(12)
+        header.set_margin_start(14)
         header.set_margin_end(8)
         header.set_margin_top(10)
-        header.set_margin_bottom(6)
+        header.set_margin_bottom(8)
 
         title = Gtk.Label(label='Search', xalign=0, hexpand=True)
-        title.add_css_class('title-3')
+        title.add_css_class('title-4')
         header.append(title)
 
         close_btn = Gtk.Button(icon_name='window-close-symbolic')
@@ -129,7 +133,6 @@ class SearchPanel(Gtk.Box):
         header.append(close_btn)
 
         self.append(header)
-        self.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
 
         # ── Module + query ────────────────────────────────────────────────────
         controls = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -144,18 +147,18 @@ class SearchPanel(Gtk.Box):
         controls.append(self._module_drop)
 
         entry_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        self._entry = Gtk.Entry(hexpand=True, placeholder_text='Search…')
+        # SearchEntry gives the leading magnifier + a clear-✕ for free. Enter
+        # runs the search (we deliberately do NOT search-as-you-type — it
+        # indexes); clearing the field returns to the recent-searches view.
+        self._entry = Gtk.SearchEntry(hexpand=True, placeholder_text='Search…')
         self._entry.connect('activate', self._on_search)
+        self._entry.connect('search-changed', self._on_entry_changed)
         entry_row.append(self._entry)
         self._case_btn = Gtk.ToggleButton(label='Aa')
         self._case_btn.set_tooltip_text('Match case')
         self._case_btn.add_css_class('flat')
         self._case_btn.connect('toggled', self._on_case_toggled)
         entry_row.append(self._case_btn)
-        search_btn = Gtk.Button(icon_name='system-search-symbolic')
-        search_btn.set_tooltip_text('Search')
-        search_btn.connect('clicked', self._on_search)
-        entry_row.append(search_btn)
         controls.append(entry_row)
 
         self.append(controls)
@@ -190,14 +193,18 @@ class SearchPanel(Gtk.Box):
         self._chart_box.set_margin_top(4)
         self._chart_box.set_margin_bottom(4)
 
-        chart_scroll = Gtk.ScrolledWindow()
-        chart_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        chart_scroll.set_propagate_natural_height(True)
-        chart_scroll.set_max_content_height(200)
-        chart_scroll.set_child(self._chart_box)
-        self.append(chart_scroll)
-
-        self.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+        # Hidden whenever there are no results (recent/empty view) — a chart is
+        # meaningless without a search, and leaving it laid out opened a dead
+        # band above the recent list. Compact bars (see _bar_button) let all 8
+        # sections show collapsed within this cap; it only scrolls once a
+        # section is expanded into its books.
+        self._chart_scroll = Gtk.ScrolledWindow()
+        self._chart_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        self._chart_scroll.set_propagate_natural_height(True)
+        self._chart_scroll.set_max_content_height(220)
+        self._chart_scroll.set_visible(False)
+        self._chart_scroll.set_child(self._chart_box)
+        self.append(self._chart_scroll)
 
         # ── Results list ──────────────────────────────────────────────────────
         self._results_scroll = Gtk.ScrolledWindow(vexpand=True)
@@ -278,6 +285,7 @@ class SearchPanel(Gtk.Box):
         self._filter_book = None
         self._expanded_section = None
         self._clear_chart()
+        self._chart_scroll.set_visible(False)
         self._clear_results()
         self._clear_history_btn.set_visible(False)
         self._count_label.set_text('Searching…')
@@ -334,6 +342,7 @@ class SearchPanel(Gtk.Box):
             self._count_label.set_text(f'{total} verse{"s" if total != 1 else ""} found')
 
         self._rebuild_chart()
+        self._chart_scroll.set_visible(bool(self._results))
         self._populate_results(self._results)
         if not self._results and not truncated_msg:
             self._results_list.append(self._make_empty_row(
@@ -351,7 +360,19 @@ class SearchPanel(Gtk.Box):
         row.set_child(body)
         return row
 
+    def _on_entry_changed(self, entry):
+        # Emptying the field (typically via the clear-✕) returns to recents.
+        # Typing does NOT auto-search — indexing is too costly; Enter searches.
+        if not entry.get_text().strip():
+            self._results = []
+            self._current_idx = -1
+            self._filter_book = None
+            self._expanded_section = None
+            self._clear_chart()
+            self._show_history()
+
     def _show_history(self):
+        self._chart_scroll.set_visible(False)
         history = _load_history()
         if not history:
             self._count_label.set_text('')
@@ -463,12 +484,13 @@ class SearchPanel(Gtk.Box):
     def _bar_button(self, label_text, count, max_val, sub=False, active=False):
         btn = Gtk.Button()
         btn.add_css_class('flat')
+        btn.add_css_class('chart-bar')
 
         row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         row.set_margin_start(4)
         row.set_margin_end(4)
-        row.set_margin_top(2)
-        row.set_margin_bottom(2)
+        row.set_margin_top(1)
+        row.set_margin_bottom(1)
 
         lbl = Gtk.Label(label=label_text, xalign=0)
         lbl.set_size_request(130 if not sub else 110, -1)
