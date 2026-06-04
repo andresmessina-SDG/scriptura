@@ -337,6 +337,22 @@ button.menu-utility-action:not(:hover):not(:checked) {
     color: alpha(@window_fg_color, 0.82);
 }
 
+/* The menu's bottom utility bar (theme / shortcuts / about). A single hairline
+   above it anchors the panel's foot without the old stack of separators. The
+   top padding keeps the controls off the divider line. */
+.menu-footer {
+    border-top: 1px solid alpha(@borders, 0.5);
+    padding-top: 8px;
+}
+
+/* Compact theme toggles so they sit clear of the divider and balance the
+   small utility icons on the other side of the footer. */
+button.menu-theme-toggle {
+    min-height: 28px;
+    min-width: 34px;
+    padding: 2px 6px;
+}
+
 .jump-bar { background-color: @view_bg_color; }
 
 .reading-exit-btn {
@@ -649,4 +665,15 @@ button.artifact-marker:hover {
     opacity: 1;
     color: @accent_color;
     background: none;
+}
+
+/* Module Manager catalogue-filter popover lists. Tighter than a plain
+   boxed-list and without the scrollbar channel, so the Category/Language
+   pickers read as a compact filter rather than a raw data dump. */
+.module-filter-list > row {
+    min-height: 0;
+}
+.module-filter-scroll scrollbar trough {
+    background: transparent;
+    border: none;
 }

@@ -4,7 +4,7 @@ from datetime import datetime
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, GLib, Gio, Gdk
+from gi.repository import Gtk, Adw, GLib, Gio, Gdk, Pango
 import sword_bridge
 import open_data
 import ebible_bridge
@@ -175,13 +175,22 @@ class ModuleManagerWindow(Adw.Window):
             orientation=Gtk.Orientation.VERTICAL, spacing=18)
 
         # Browse-catalogue refinement filters (apply to the available list).
-        self._cat_drop = Gtk.DropDown(model=Gtk.StringList.new(['All Categories']))
-        self._cat_drop.set_tooltip_text('Filter by category')
-        self._cat_drop.connect('notify::selected', self._on_filter_changed)
+        # These are inline single-select ListBoxes, NOT Gtk.DropDowns: a
+        # DropDown opens its OWN nested autohide popover, and opening that
+        # inside this filter popover steals the parent's outside-click grab and
+        # never returns it — orphaning the popover (stuck open; even its own
+        # button can't dismiss it). A ListBox selects in place, no child popup.
+        self._cat_list = Gtk.ListBox()
+        self._cat_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        self._cat_list.add_css_class('boxed-list')
+        self._cat_list.add_css_class('module-filter-list')
+        self._cat_list.connect('row-selected', self._on_filter_changed)
 
-        self._lang_drop = Gtk.DropDown(model=Gtk.StringList.new(['All Languages']))
-        self._lang_drop.set_tooltip_text('Filter by language')
-        self._lang_drop.connect('notify::selected', self._on_filter_changed)
+        self._lang_list = Gtk.ListBox()
+        self._lang_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        self._lang_list.add_css_class('boxed-list')
+        self._lang_list.add_css_class('module-filter-list')
+        self._lang_list.connect('row-selected', self._on_filter_changed)
 
         self._strongs_check = Gtk.CheckButton(label="Strong's")
         self._strongs_check.set_tooltip_text("Only modules with Strong's numbers")
@@ -196,15 +205,32 @@ class ModuleManagerWindow(Adw.Window):
         filt_box.set_margin_bottom(12)
         filt_box.set_margin_start(12)
         filt_box.set_margin_end(12)
-        for label, drop in (('Category', self._cat_drop),
-                            ('Language', self._lang_drop)):
+        filt_box.set_size_request(190, -1)
+
+        # Category and Language each get their own fixed-height scroll with a
+        # pinned caption above, so the section labels stay visible while you
+        # scroll (a single merged scroll hid them, reading as a raw dump).
+        # Heights are FIXED (min == max) and the total kept ~320px: (1) a popover
+        # taller than the short modules window gets resized-to-fit AFTER it maps,
+        # and that post-map resize snaps an autohide popover shut (the ~1s flash
+        # / "invisible window"); a definite size that fits never resizes. (2)
+        # ListBox rows open no nested popup, so — unlike the old Gtk.DropDowns —
+        # picking a filter can't steal the popover's outside-click grab.
+        for label, lst, height in (('Category', self._cat_list, 88),
+                                    ('Language', self._lang_list, 104)):
+            scroll = Gtk.ScrolledWindow()
+            scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            scroll.set_min_content_height(height)
+            scroll.set_max_content_height(height)
+            scroll.add_css_class('module-filter-scroll')
+            scroll.set_child(lst)
+
             field = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
             cap = Gtk.Label(label=label, xalign=0)
             cap.add_css_class('caption')
             cap.add_css_class('dim-label')
-            drop.set_hexpand(True)
             field.append(cap)
-            field.append(drop)
+            field.append(scroll)
             filt_box.append(field)
         filt_box.append(self._strongs_check)
 
@@ -274,23 +300,33 @@ class ModuleManagerWindow(Adw.Window):
         self._eb_search.set_hexpand(True)
         self._eb_search.connect('search-changed', lambda _: self._eb_apply_filter())
 
-        self._eb_lang_drop = Gtk.DropDown(model=Gtk.StringList.new(['All Languages']))
-        self._eb_lang_drop.set_tooltip_text('Filter by language')
-        self._eb_lang_drop.set_hexpand(True)
-        self._eb_lang_drop.connect('notify::selected', self._eb_on_lang_changed)
+        self._eb_lang_list = Gtk.ListBox()
+        self._eb_lang_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        self._eb_lang_list.add_css_class('boxed-list')
+        self._eb_lang_list.add_css_class('module-filter-list')
+        self._eb_lang_list.connect('row-selected', self._eb_on_lang_changed)
 
-        # Language filter in a popover, refresh as an icon — same compact
-        # header as the Modules tab's Browse catalogue.
+        # Language filter in a popover — same inline ListBox design as the
+        # Modules tab. A Gtk.DropDown here opened a nested popup that stole the
+        # popover's outside-click grab and left it stuck open; a ListBox selects
+        # in place, so the popover stays dismissable.
         filt_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         filt_box.set_margin_top(12)
         filt_box.set_margin_bottom(12)
         filt_box.set_margin_start(12)
         filt_box.set_margin_end(12)
+        filt_box.set_size_request(190, -1)
         cap = Gtk.Label(label='Language', xalign=0)
         cap.add_css_class('caption')
         cap.add_css_class('dim-label')
+        eb_lang_scroll = Gtk.ScrolledWindow()
+        eb_lang_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        eb_lang_scroll.set_min_content_height(220)
+        eb_lang_scroll.set_max_content_height(220)
+        eb_lang_scroll.add_css_class('module-filter-scroll')
+        eb_lang_scroll.set_child(self._eb_lang_list)
         filt_box.append(cap)
-        filt_box.append(self._eb_lang_drop)
+        filt_box.append(eb_lang_scroll)
         filter_popover = Gtk.Popover()
         filter_popover.set_child(filt_box)
         self._eb_filter_btn = Gtk.MenuButton(icon_name='view-filter-symbolic')
@@ -564,23 +600,42 @@ class ModuleManagerWindow(Adw.Window):
                        key=lambda c: _lang_label(c))
 
         self._updating_filters = True
-        cur_cat  = self._get_drop_text(self._cat_drop)
-        cur_lang = self._get_drop_text(self._lang_drop)
+        cur_cat  = self._selected_filter_text(self._cat_list)
+        cur_lang = self._selected_filter_text(self._lang_list)
 
-        cat_items  = ['All Categories'] + cats
-        lang_items = ['All Languages']  + [_lang_label(c) for c in langs]
-        self._cat_drop.set_model(Gtk.StringList.new(cat_items))
-        self._lang_drop.set_model(Gtk.StringList.new(lang_items))
-
-        if cur_cat  in cat_items:  self._cat_drop.set_selected(cat_items.index(cur_cat))
-        if cur_lang in lang_items: self._lang_drop.set_selected(lang_items.index(cur_lang))
+        self._fill_filter_list(self._cat_list,
+                               ['All Categories'] + cats, cur_cat)
+        self._fill_filter_list(self._lang_list,
+                               ['All Languages'] + [_lang_label(c) for c in langs],
+                               cur_lang)
         self._lang_codes = [''] + langs
         self._updating_filters = False
 
-    def _get_drop_text(self, drop):
-        model = drop.get_model()
-        idx   = drop.get_selected()
-        return model.get_string(idx) if model and idx < model.get_n_items() else ''
+    def _selected_filter_text(self, listbox):
+        row = listbox.get_selected_row()
+        return row.get_child().get_label() if row else ''
+
+    def _fill_filter_list(self, listbox, items, cur_text):
+        child = listbox.get_first_child()
+        while child:
+            nxt = child.get_next_sibling()
+            listbox.remove(child)
+            child = nxt
+        sel_row = None
+        for text in items:
+            lbl = Gtk.Label(label=text, xalign=0)
+            # Ellipsize long entries (e.g. "Cults / Unorthodox / …") so one
+            # outlier can't force the whole popover wide; full text on hover.
+            lbl.set_ellipsize(Pango.EllipsizeMode.END)
+            lbl.set_tooltip_text(text)
+            lbl.set_margin_top(4); lbl.set_margin_bottom(4)
+            lbl.set_margin_start(10); lbl.set_margin_end(10)
+            row = Gtk.ListBoxRow()
+            row.set_child(lbl)
+            listbox.append(row)
+            if text == cur_text:
+                sel_row = row
+        listbox.select_row(sel_row or listbox.get_row_at_index(0))
 
     def _catalog_status(self):
         if not self._has_catalog:
@@ -597,12 +652,13 @@ class ModuleManagerWindow(Adw.Window):
 
         available = [m for m in self._all_modules if not m['installed']]
 
-        cat_idx = self._cat_drop.get_selected()
-        if cat_idx > 0:
-            chosen = self._cat_drop.get_model().get_string(cat_idx)
+        cat_row = self._cat_list.get_selected_row()
+        if cat_row and cat_row.get_index() > 0:
+            chosen = cat_row.get_child().get_label()
             available = [m for m in available if m['type'] == chosen]
 
-        lang_idx = self._lang_drop.get_selected()
+        lang_row = self._lang_list.get_selected_row()
+        lang_idx = lang_row.get_index() if lang_row else 0
         if 0 < lang_idx < len(self._lang_codes):
             available = [m for m in available if m['lang'] == self._lang_codes[lang_idx]]
 
@@ -632,6 +688,10 @@ class ModuleManagerWindow(Adw.Window):
         self._apply_filter()
 
     def _on_filter_changed(self, *_):
+        # Live: the catalogue rebuilds below the (fixed) header the popover is
+        # anchored to, so it doesn't move the popover or cost it its grab — and
+        # the lists open no nested popup, so the popover stays put while you
+        # refine. (No deferral needed now that the DropDowns are gone.)
         if not self._updating_filters:
             self._apply_filter()
 
@@ -1094,7 +1154,7 @@ class ModuleManagerWindow(Adw.Window):
         entries = ebible_bridge.catalog_entries()
         if entries:
             self._eb_catalog = entries
-            self._eb_rebuild_lang_drop()
+            self._eb_rebuild_lang_list()
             self._eb_apply_filter()
         else:
             self._eb_status.set_text(
@@ -1102,27 +1162,33 @@ class ModuleManagerWindow(Adw.Window):
             self._eb_status.set_visible(True)
             self._eb_group.set_description('')
 
-    def _eb_rebuild_lang_drop(self):
+    def _eb_rebuild_lang_list(self):
         langs = sorted(set(
             e.get('languageCode', '').strip()
             for e in self._eb_catalog
             if e.get('languageCode', '').strip()
             and e.get('downloadable', '').strip() == 'True'
         ), key=lambda c: _lang_label(c))
-        self._eb_lang_drop.set_model(Gtk.StringList.new(['All Languages'] + [_lang_label(c) for c in langs]))
+        self._updating_filters = True
+        cur = self._selected_filter_text(self._eb_lang_list)
+        self._fill_filter_list(
+            self._eb_lang_list,
+            ['All Languages'] + [_lang_label(c) for c in langs], cur)
         self._eb_lang_codes = [''] + langs
+        self._updating_filters = False
 
     def _eb_on_lang_changed(self, *_):
-        # Picking a language collapses the list, which relayouts the header the
-        # filter popover is anchored to and can cost it its outside-click grab
-        # (leaving it stuck open). Dismiss the popover first, then apply — for a
-        # single-choice filter, closing on selection is also the natural UX.
-        self._eb_filter_btn.popdown()
-        self._eb_apply_filter()
+        # Live: the ListBox opens no nested popup, so picking a language can't
+        # steal the popover's grab (the old DropDown's did, hence the former
+        # popdown-on-select workaround). Guard against the rebuild's own
+        # select_row firing this mid-populate.
+        if not self._updating_filters:
+            self._eb_apply_filter()
 
     def _eb_apply_filter(self):
         query      = self._eb_search.get_text().strip().lower()
-        lang_idx   = self._eb_lang_drop.get_selected()
+        lang_row   = self._eb_lang_list.get_selected_row()
+        lang_idx   = lang_row.get_index() if lang_row else 0
         lang_filter = self._eb_lang_codes[lang_idx] if lang_idx < len(self._eb_lang_codes) else ''
 
         filtered = []
@@ -1243,7 +1309,7 @@ class ModuleManagerWindow(Adw.Window):
             self._eb_status.set_visible(True)
         else:
             self._eb_catalog = ebible_bridge.catalog_entries()
-            self._eb_rebuild_lang_drop()
+            self._eb_rebuild_lang_list()
             self._eb_apply_filter()
         return GLib.SOURCE_REMOVE
 

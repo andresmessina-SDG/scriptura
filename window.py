@@ -1082,17 +1082,12 @@ class BibleWindow(Adw.ApplicationWindow):
             self._size_scale.set_value(new_size)
             self._size_val_lbl.set_text(f'{new_size:.0f}pt')
 
-    def _toggle_appear_card(self, _btn):
+    def _toggle_appear_card(self, _w):
         open_ = not self._appear_revealer.get_reveal_child()
         self._appear_revealer.set_reveal_child(open_)
+        # Chevron rotates ▸ → ▾ to signal the inline expansion.
         self._appear_arrow.set_from_icon_name(
             'pan-down-symbolic' if open_ else 'pan-end-symbolic')
-        if open_:
-            self._appear_btn.remove_css_class('flat')
-            self._appear_btn.add_css_class('suggested-action')
-        else:
-            self._appear_btn.remove_css_class('suggested-action')
-            self._appear_btn.add_css_class('flat')
 
     def _on_appear_font(self, drop, _):
         idx = drop.get_selected()
@@ -1926,60 +1921,27 @@ class BibleWindow(Adw.ApplicationWindow):
         panel.add_css_class('menu-panel')
         self._menu_panel_box = panel
 
-        # header row
+        # ── Header: title + close only. Global utilities (theme, shortcuts,
+        # about) now live in a bottom footer (Apple-sidebar style), which
+        # declutters this strip and anchors the panel's otherwise-empty lower
+        # area. No separator — the panel reads as one calm surface, grouped by
+        # whitespace rather than a stack of rules.
         hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        hbox.set_margin_start(12)
+        hbox.set_margin_start(14)
         hbox.set_margin_end(8)
-        hbox.set_margin_top(8)
+        hbox.set_margin_top(10)
         hbox.set_margin_bottom(8)
-        about_btn = Gtk.Button(icon_name='help-about-symbolic')
-        about_btn.add_css_class('flat')
-        about_btn.add_css_class('menu-utility-action')
-        about_btn.set_tooltip_text('About Scriptura')
-        about_btn.connect('clicked', self._on_about_clicked)
         title = Gtk.Label(label='Menu', hexpand=True)
         title.set_xalign(0)
         title.add_css_class('title-4')
-
-        # Compact theme picker tucked into the header row. The same
-        # state is reflected in `_theme_light/dark/system` ToggleButtons
-        # which used to live inside the Text Appearance card — theme
-        # is global state, not per-pane typography, so it reads better
-        # next to the panel title than in the expandable card.
-        theme_picker = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        theme_picker.add_css_class('linked')
-        self._theme_light = Gtk.ToggleButton(icon_name='weather-clear-symbolic')
-        self._theme_light.set_tooltip_text('Light theme')
-        self._theme_dark = Gtk.ToggleButton(icon_name='weather-clear-night-symbolic')
-        self._theme_dark.set_tooltip_text('Dark theme')
-        self._theme_system = Gtk.ToggleButton(icon_name='emblem-system-symbolic')
-        self._theme_system.set_tooltip_text('Follow system theme')
-        cur_scheme = settings.get('color_scheme') or 'default'
-        self._theme_light.set_active(cur_scheme == 'light')
-        self._theme_dark.set_active(cur_scheme == 'dark')
-        self._theme_system.set_active(cur_scheme not in ('light', 'dark'))
-        for _tb in (self._theme_light, self._theme_dark, self._theme_system):
-            _tb.connect('clicked', self._on_appear_theme)
-            theme_picker.append(_tb)
-
-        hotkeys_btn = Gtk.Button(icon_name='scriptura-keyboard-symbolic')
-        hotkeys_btn.add_css_class('flat')
-        hotkeys_btn.add_css_class('menu-utility-action')
-        hotkeys_btn.set_tooltip_text('Keyboard shortcuts')
-        hotkeys_btn.connect('clicked', self._on_hotkeys_clicked)
-
         close_btn = Gtk.Button(icon_name='window-close-symbolic')
         close_btn.add_css_class('flat')
         close_btn.add_css_class('menu-utility-action')
         close_btn.set_tooltip_text('Close menu (Esc)')
         close_btn.connect('clicked', lambda _: self._menu_revealer.set_reveal_child(False))
         hbox.append(title)
-        hbox.append(theme_picker)
-        hbox.append(hotkeys_btn)
-        hbox.append(about_btn)
         hbox.append(close_btn)
         panel.append(hbox)
-        panel.append(Gtk.Separator())
 
         # Body — direct vertical Box so the day list at the bottom can
         # vexpand to fill remaining height. A wrapping ScrolledWindow
@@ -1990,49 +1952,44 @@ class BibleWindow(Adw.ApplicationWindow):
                         spacing=0, vexpand=True)
         panel.append(_body)
 
-        # top nav buttons
-        btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8,
-                          homogeneous=True)
-        btn_box.set_margin_start(12)
-        btn_box.set_margin_end(12)
-        btn_box.set_margin_top(12)
-        btn_box.set_margin_bottom(12)
+        # ── Navigation group (Study Journal / Modules) as coherent list rows
+        # (icon + label + chevron), matching the app's Adw idiom rather than
+        # plain grey buttons. ────────────────────────────────────────────────
+        nav_group = Adw.PreferencesGroup()
+        nav_group.set_margin_start(12)
+        nav_group.set_margin_end(12)
+        nav_group.set_margin_top(6)
+        nav_group.set_margin_bottom(14)
         for icon, label, handler in [
             ('accessories-text-editor-symbolic', 'Study Journal', self._on_journal_clicked),
             ('application-x-addon-symbolic',     'Modules',       self._on_modules_clicked),
         ]:
-            btn = Gtk.Button()
-            bx = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-            bx.set_halign(Gtk.Align.CENTER)
-            bx.append(Gtk.Image.new_from_icon_name(icon))
-            bx.append(Gtk.Label(label=label))
-            btn.set_child(bx)
-            btn.connect('clicked', handler)
-            btn_box.append(btn)
-        _body.append(btn_box)
-        _body.append(Gtk.Separator())
+            row = Adw.ActionRow(title=label)
+            row.add_prefix(Gtk.Image.new_from_icon_name(icon))
+            chevron = Gtk.Image.new_from_icon_name('go-next-symbolic')
+            chevron.add_css_class('dim-label')
+            row.add_suffix(chevron)
+            row.set_activatable(True)
+            row.connect('activated', handler)
+            nav_group.add(row)
+        _body.append(nav_group)
 
-        # ── Text Appearance row ──────────────────────────────────────────────
-        tool_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        tool_row.set_margin_start(12)
-        tool_row.set_margin_end(12)
-        tool_row.set_margin_top(8)
-        tool_row.set_margin_bottom(8)
-
-        self._appear_btn = Gtk.Button()
-        self._appear_btn.add_css_class('flat')
-        self._appear_btn.set_hexpand(True)
-        abx = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        abx.set_margin_start(4)
-        abx.append(Gtk.Image.new_from_icon_name('preferences-desktop-font-symbolic'))
-        abx.append(Gtk.Label(label='Text Appearance', hexpand=True, xalign=0))
+        # ── Text Appearance: its own row whose chevron rotates (▸→▾) to expand
+        # the inline appearance card just below — a real expander affordance,
+        # not a → arrow that falsely implies push-navigation. ────────────────
+        appear_group = Adw.PreferencesGroup()
+        appear_group.set_margin_start(12)
+        appear_group.set_margin_end(12)
+        self._appear_row = Adw.ActionRow(title='Text Appearance')
+        self._appear_row.add_prefix(
+            Gtk.Image.new_from_icon_name('preferences-desktop-font-symbolic'))
         self._appear_arrow = Gtk.Image.new_from_icon_name('pan-end-symbolic')
-        abx.append(self._appear_arrow)
-        self._appear_btn.set_child(abx)
-        self._appear_btn.connect('clicked', self._toggle_appear_card)
-        tool_row.append(self._appear_btn)
-
-        _body.append(tool_row)
+        self._appear_arrow.add_css_class('dim-label')
+        self._appear_row.add_suffix(self._appear_arrow)
+        self._appear_row.set_activatable(True)
+        self._appear_row.connect('activated', self._toggle_appear_card)
+        appear_group.add(self._appear_row)
+        _body.append(appear_group)
 
         # ── Appearance card (inline revealer) ─────────────────────────────────
         self._appear_revealer = Gtk.Revealer()
@@ -2164,13 +2121,12 @@ class BibleWindow(Adw.ApplicationWindow):
 
         self._appear_revealer.set_child(card)
         _body.append(self._appear_revealer)
-        _body.append(Gtk.Separator())
 
-        # reading plan section label
+        # reading plan section label — grouped by whitespace, not a rule.
         plan_hdr = Gtk.Label(label='Reading Plan', xalign=0)
         plan_hdr.add_css_class('heading')
-        plan_hdr.set_margin_start(12)
-        plan_hdr.set_margin_top(10)
+        plan_hdr.set_margin_start(14)
+        plan_hdr.set_margin_top(18)
         plan_hdr.set_margin_bottom(4)
         _body.append(plan_hdr)
 
@@ -2232,6 +2188,58 @@ class BibleWindow(Adw.ApplicationWindow):
         self._day_listbox.connect('row-activated', self._on_day_row_activated)
         self._plan_scroll.set_child(self._day_listbox)
         _body.append(self._plan_scroll)
+
+        # ── Footer: global utilities pinned to the bottom. _body above is
+        # vexpand, so this stays anchored at the panel's foot — Apple-sidebar
+        # placement that also fills the lower void when no plan is active.
+        footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        footer.add_css_class('menu-footer')
+        footer.set_margin_start(12)
+        footer.set_margin_end(8)
+        footer.set_margin_top(8)
+        footer.set_margin_bottom(10)
+
+        theme_picker = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        theme_picker.add_css_class('linked')
+        self._theme_light = Gtk.ToggleButton(icon_name='weather-clear-symbolic')
+        self._theme_light.set_tooltip_text('Light theme')
+        self._theme_dark = Gtk.ToggleButton(icon_name='weather-clear-night-symbolic')
+        self._theme_dark.set_tooltip_text('Dark theme')
+        # Bundled half-filled "auto" disc — light half + dark half = "follow
+        # system". Bundled (like the globe/keyboard symbolics) because this
+        # theme's platform system/monitor icons hardcode a fill and render
+        # blank; ours is fill-only so GTK4 recolors it reliably.
+        self._theme_system = Gtk.ToggleButton(
+            icon_name='scriptura-theme-system-symbolic')
+        self._theme_system.set_tooltip_text('Follow system theme')
+        cur_scheme = settings.get('color_scheme') or 'default'
+        self._theme_light.set_active(cur_scheme == 'light')
+        self._theme_dark.set_active(cur_scheme == 'dark')
+        self._theme_system.set_active(cur_scheme not in ('light', 'dark'))
+        for _tb in (self._theme_light, self._theme_dark, self._theme_system):
+            _tb.add_css_class('menu-theme-toggle')
+            _tb.set_valign(Gtk.Align.CENTER)
+            _tb.connect('clicked', self._on_appear_theme)
+            theme_picker.append(_tb)
+        footer.append(theme_picker)
+
+        footer.append(Gtk.Box(hexpand=True))  # spacer
+
+        hotkeys_btn = Gtk.Button(icon_name='scriptura-keyboard-symbolic')
+        hotkeys_btn.add_css_class('flat')
+        hotkeys_btn.add_css_class('menu-utility-action')
+        hotkeys_btn.set_tooltip_text('Keyboard shortcuts')
+        hotkeys_btn.connect('clicked', self._on_hotkeys_clicked)
+        footer.append(hotkeys_btn)
+
+        about_btn = Gtk.Button(icon_name='help-about-symbolic')
+        about_btn.add_css_class('flat')
+        about_btn.add_css_class('menu-utility-action')
+        about_btn.set_tooltip_text('About Scriptura')
+        about_btn.connect('clicked', self._on_about_clicked)
+        footer.append(about_btn)
+
+        panel.append(footer)
 
         handle = Gtk.Box()
         handle.add_css_class('resize-handle')

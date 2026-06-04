@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  "Follow system theme" glyph for the menu footer's theme picker (alongside
+  the sun / moon toggles). The classic half-filled contrast disc — light half
+  + dark half = "let the system decide". Bundled (not pulled from the icon
+  theme) because this theme's device/system symbolics hardcode a fill and
+  render blank on a dark/accent background; drawn fill-only with an even-odd
+  ring + a solid right semicircle so GTK4 recolors it reliably, like the
+  globe and keyboard symbolics alongside it.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g fill="#222">
+    <path fill-rule="evenodd" d="M8 1 A7 7 0 1 0 8 15 A7 7 0 1 0 8 1 Z M8 2.1 A5.9 5.9 0 1 1 8 13.9 A5.9 5.9 0 1 1 8 2.1 Z"/>
+    <path d="M8 2.1 A5.9 5.9 0 0 1 8 13.9 Z"/>
+  </g>
+</svg>
