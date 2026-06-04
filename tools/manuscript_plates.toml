@@ -1,0 +1,271 @@
+# Illuminated-manuscript miniatures — the 'illumination' tradition (kind shares
+# 'illustration', so no bridge query change). A curated set of medieval
+# picture-Bible scenes, each a specific Wikimedia Commons scan hand-mapped to
+# the verse it depicts and visually verified (built manuscripts-only to /tmp,
+# each image eyeballed against its scene). `n` keys are "MS##" so dest
+# filenames never collide with other sources; source_url is built from `file`.
+#
+# Two manuscripts carry the set: the 13th-c. Morgan Crusader Bible (Old
+# Testament narrative — its strength is the battle and royal cycle of Joshua
+# through Kings) and the 15th-c. Très Riches Heures du Duc de Berry (a complete
+# Infancy-to-Pentecost New Testament cycle in full-page miniatures). Three
+# Genesis scenes come from the Saint Louis Psalters (Paris and Leiden).
+#
+# LICENSING: every plate is a faithful 2-D scan of a pre-1900 work, so all are
+# Public Domain (same PD-Art basis as the icon and oil panels). The per-plate
+# `attribution` names the manuscript, its date, and the holding library; that
+# string is the card's only date line (no separate `year`), to avoid showing a
+# bare "1416" above the attribution.
+#
+# Verses are chosen to overlap existing traditions where possible (e.g. the
+# Crucifixion at John 19:18 sits beside the oil and the stained glass; the
+# Ascension at Acts 1:9 beside the Le Mans window; David & Goliath at
+# 1 Samuel 17:49 beside the engravings) so the "other traditions" expander
+# lights up with the manuscript alongside them.
+
+# ── Old Testament ────────────────────────────────────────────────────────────
+
+[[plate]]
+n = "MS01"
+file = "Saint Louis Psalter 7 recto.jpg"
+title = "The Days of Creation"
+book = "Genesis"
+chapter = 1
+verse = 1
+attribution = "Saint Louis Psalter (Leiden, UB MS BPL 76A), 12th c. · Leiden University Library"
+
+[[plate]]
+n = "MS02"
+file = "Folio 25v - The Garden of Eden.jpg"
+title = "The Garden of Eden"
+book = "Genesis"
+chapter = 3
+verse = 6
+attribution = "Très Riches Heures du Duc de Berry, Limbourg brothers, c. 1412–16 · Musée Condé, Chantilly"
+
+[[plate]]
+n = "MS03"
+file = "Saint Louis Psalter 9 recto.jpg"
+title = "The Expulsion from Eden"
+book = "Genesis"
+chapter = 3
+verse = 23
+attribution = "Saint Louis Psalter (Leiden, UB MS BPL 76A), 12th c. · Leiden University Library"
+
+[[plate]]
+n = "MS04"
+file = "Psautier dit de saint Louis - BNF Lat10525 f1v.jpeg"
+title = "The Offerings of Cain and Abel"
+book = "Genesis"
+chapter = 4
+verse = 4
+attribution = "Psalter of Saint Louis (BnF MS lat. 10525), Paris, c. 1270 · Bibliothèque nationale de France"
+
+[[plate]]
+n = "MS05"
+file = "Maciejowski Tower of Babel.jpg"
+title = "The Tower of Babel"
+book = "Genesis"
+chapter = 11
+verse = 4
+attribution = "Morgan Crusader Bible (MS M.638), France, c. 1250 · Morgan Library & Museum, New York"
+
+[[plate]]
+n = "MS06"
+file = "MaciejowskiExodusManna.jpg"
+title = "The Gathering of the Manna"
+book = "Exodus"
+chapter = 16
+verse = 14
+attribution = "Morgan Crusader Bible (MS M.638), France, c. 1250 · Morgan Library & Museum, New York"
+
+[[plate]]
+n = "MS07"
+file = "AchanStone-MaciejowskiBible.jpg"
+title = "The Stoning of Achan"
+book = "Joshua"
+chapter = 7
+verse = 25
+attribution = "Morgan Crusader Bible (MS M.638), France, c. 1250 · Morgan Library & Museum, New York"
+
+[[plate]]
+n = "MS08"
+file = "Jephthah's sacrifice - Maciejowski Bible.JPG"
+title = "Jephthah and His Daughter"
+book = "Judges"
+chapter = 11
+verse = 34
+attribution = "Morgan Crusader Bible (MS M.638), France, c. 1250 · Morgan Library & Museum, New York"
+
+[[plate]]
+n = "MS09"
+file = "Maciejowski Bible - Morgan Library & Museum MS M.638, fol. 28v (cropped Goliath).jpg"
+title = "Goliath of Gath"
+book = "1 Samuel"
+chapter = 17
+verse = 49
+attribution = "Morgan Crusader Bible (MS M.638), France, c. 1250 · Morgan Library & Museum, New York"
+
+[[plate]]
+n = "MS10"
+file = "Ishbosheth is slain.gif"
+title = "The Death of Ishbosheth"
+book = "2 Samuel"
+chapter = 4
+verse = 7
+attribution = "Morgan Crusader Bible (MS M.638), France, c. 1250 · Morgan Library & Museum, New York"
+
+[[plate]]
+n = "MS11"
+file = "Mephibosheth kneels before David.gif"
+title = "Mephibosheth before David"
+book = "2 Samuel"
+chapter = 9
+verse = 6
+attribution = "Morgan Crusader Bible (MS M.638), France, c. 1250 · Morgan Library & Museum, New York"
+
+[[plate]]
+n = "MS12"
+file = "Hanun humiliates David's ambassadors.gif"
+title = "Hanun Humiliates David's Envoys"
+book = "2 Samuel"
+chapter = 10
+verse = 4
+attribution = "Morgan Crusader Bible (MS M.638), France, c. 1250 · Morgan Library & Museum, New York"
+
+[[plate]]
+n = "MS13"
+file = "David flees Jerusalem.png"
+title = "David Flees Jerusalem"
+book = "2 Samuel"
+chapter = 15
+verse = 30
+attribution = "Morgan Crusader Bible (MS M.638), France, c. 1250 · Morgan Library & Museum, New York"
+
+[[plate]]
+n = "MS14"
+file = "Folio 40v - The Three Hebrews Cast into the Fiery Furnace.jpg"
+title = "The Three Hebrews in the Fiery Furnace"
+book = "Daniel"
+chapter = 3
+verse = 21
+attribution = "Très Riches Heures du Duc de Berry, Limbourg brothers, c. 1412–16 · Musée Condé, Chantilly"
+
+# ── New Testament ────────────────────────────────────────────────────────────
+
+[[plate]]
+n = "MS15"
+file = "Folio 26r - The Annunciation.jpg"
+title = "The Annunciation"
+book = "Luke"
+chapter = 1
+verse = 28
+attribution = "Très Riches Heures du Duc de Berry, Limbourg brothers, c. 1412–16 · Musée Condé, Chantilly"
+
+[[plate]]
+n = "MS16"
+file = "Folio 44v - The Nativity.jpg"
+title = "The Nativity"
+book = "Luke"
+chapter = 2
+verse = 7
+attribution = "Très Riches Heures du Duc de Berry, Limbourg brothers, c. 1412–16 · Musée Condé, Chantilly"
+
+[[plate]]
+n = "MS17"
+file = "Folio 48r - The Annunciation to the Shepherds.jpg"
+title = "The Annunciation to the Shepherds"
+book = "Luke"
+chapter = 2
+verse = 9
+attribution = "Très Riches Heures du Duc de Berry, Limbourg brothers, c. 1412–16 · Musée Condé, Chantilly"
+
+[[plate]]
+n = "MS18"
+file = "Folio 52r - The Adoration of the Magi.jpg"
+title = "The Adoration of the Magi"
+book = "Matthew"
+chapter = 2
+verse = 11
+attribution = "Très Riches Heures du Duc de Berry, Limbourg brothers, c. 1412–16 · Musée Condé, Chantilly"
+
+[[plate]]
+n = "MS19"
+file = "Folio 109v - The Baptism of Christ.jpg"
+title = "The Baptism of Christ"
+book = "Matthew"
+chapter = 3
+verse = 16
+attribution = "Très Riches Heures du Duc de Berry, Limbourg brothers, c. 1412–16 · Musée Condé, Chantilly"
+
+[[plate]]
+n = "MS20"
+file = "Folio 161v - The Temptation of Christ.jpg"
+title = "The Temptation of Christ"
+book = "Matthew"
+chapter = 4
+verse = 8
+attribution = "Très Riches Heures du Duc de Berry, Limbourg brothers, c. 1412–16 · Musée Condé, Chantilly"
+
+[[plate]]
+n = "MS21"
+file = "Folio 171r - The Raising of Lazarus.jpg"
+title = "The Raising of Lazarus"
+book = "John"
+chapter = 11
+verse = 43
+attribution = "Très Riches Heures du Duc de Berry, Limbourg brothers, c. 1412–16 · Musée Condé, Chantilly"
+
+[[plate]]
+n = "MS22"
+file = "Folio 173v - The Entry into Jerusalem.jpg"
+title = "The Entry into Jerusalem"
+book = "Matthew"
+chapter = 21
+verse = 8
+attribution = "Très Riches Heures du Duc de Berry, Limbourg brothers, c. 1412–16 · Musée Condé, Chantilly"
+
+[[plate]]
+n = "MS23"
+file = "Folio 142v - Christ in Gethsemane.jpg"
+title = "The Agony in the Garden"
+book = "Matthew"
+chapter = 26
+verse = 39
+attribution = "Très Riches Heures du Duc de Berry, Limbourg brothers, c. 1412–16 · Musée Condé, Chantilly"
+
+[[plate]]
+n = "MS24"
+file = "Folio 152v - The Crucifixion.jpg"
+title = "The Crucifixion"
+book = "John"
+chapter = 19
+verse = 18
+attribution = "Très Riches Heures du Duc de Berry, Limbourg brothers, c. 1412–16 · Musée Condé, Chantilly"
+
+[[plate]]
+n = "MS25"
+file = "Folio 182v - The Resurrection.jpg"
+title = "The Resurrection"
+book = "Matthew"
+chapter = 28
+verse = 6
+attribution = "Très Riches Heures du Duc de Berry, Limbourg brothers, c. 1412–16 · Musée Condé, Chantilly"
+
+[[plate]]
+n = "MS26"
+file = "Folio 184r - The Ascension.jpg"
+title = "The Ascension"
+book = "Acts"
+chapter = 1
+verse = 9
+attribution = "Très Riches Heures du Duc de Berry, Limbourg brothers, c. 1412–16 · Musée Condé, Chantilly"
+
+[[plate]]
+n = "MS27"
+file = "Folio 79r - Pentecostes.jpg"
+title = "Pentecost"
+book = "Acts"
+chapter = 2
+verse = 3
+attribution = "Très Riches Heures du Duc de Berry, Limbourg brothers, c. 1412–16 · Musée Condé, Chantilly"

@@ -996,6 +996,10 @@ def _parse_conf_lines(raw_lines):
                 info['lang'] = v
             elif k == 'version':
                 info['version'] = v
+            elif k == 'distributionlicense':
+                info['license'] = v
+            elif k == 'installsize':
+                info['size'] = v
             elif k == 'cipherkey':
                 # Present-but-empty means the module is locked and needs a
                 # key; we keep the value (possibly '') and use presence as
@@ -1038,26 +1042,41 @@ def list_available_modules():
             drv = info.get('moddrv', '')
 
             if not cat:
-                if 'Bible' in lcsh:
-                    if 'Commentary' in lcsh:
-                        cat = 'Commentaries'
-                    else:
-                        cat = 'Biblical Texts'
+                # The module *driver* is the authoritative signal — it
+                # distinguishes texts / commentaries / dictionaries reliably,
+                # whereas LCSH subject strings like "Bible--Dictionaries" trip
+                # up a naive "Bible in lcsh" test (Easton, Nave, Torrey are
+                # dictionaries/indexes, not Bibles). So classify by driver
+                # first, then fall back to LCSH only when the driver is unknown.
+                is_devotional = (
+                    'DailyDevotion' in info.get('features', set())
+                    or 'Devotional' in lcsh
+                    or 'Daily Devotional' in info.get('description', ''))
+                if drv in ('RawText', 'zText', 'OldzText', 'RawText4', 'zText4'):
+                    cat = 'Biblical Texts'
+                elif drv in ('RawCom', 'zCom', 'RawCom4', 'zCom4', 'RawFiles'):
+                    cat = 'Commentaries'
+                elif drv in ('RawLD', 'zLD', 'RawLD4', 'OldzLD'):
+                    # The LD driver backs both dictionaries and the date-keyed
+                    # daily devotionals — split them by the devotional signal.
+                    cat = 'Daily Devotional' if is_devotional \
+                        else 'Lexicons / Dictionaries'
+                elif drv in ('RawGenBook', 'zGenBook'):
+                    cat = 'Generic Books'
+                elif 'Commentary' in lcsh:
+                    cat = 'Commentaries'
                 elif 'Lexicon' in lcsh or 'Dictionary' in lcsh:
                     cat = 'Lexicons / Dictionaries'
-                elif drv in ('RawText', 'zText', 'OldzText'):
-                    cat = 'Biblical Texts'
-                elif drv in ('RawCom', 'zCom'):
-                    cat = 'Commentaries'
-                elif drv in ('RawLD', 'zLD'):
-                    cat = 'Lexicons / Dictionaries'
-                elif 'Daily Devotional' in info.get('description', ''):
+                elif is_devotional:
                     cat = 'Daily Devotional'
+                elif 'Bible' in lcsh:
+                    cat = 'Biblical Texts'
                 else:
                     cat = 'Generic Books'
 
-            # Standardize common category names
-            if 'Bible' in cat and 'Texts' not in cat:
+            # Standardize common spellings of the Bible-text category, without
+            # catching "Bible Dictionary"-style categories.
+            if cat in ('Bible', 'Bibles', 'Bible Texts', 'Biblical Text'):
                 cat = 'Biblical Texts'
 
             result.append({
@@ -1066,9 +1085,26 @@ def list_available_modules():
                 'type': cat,
                 'lang': info.get('lang', ''),
                 'features': info.get('features', set()),
+                'license': info.get('license', ''),
+                'size': info.get('size', ''),
                 'installed': name in installed,
             })
     return sorted(result, key=lambda m: m['name'].lower())
+
+
+def catalog_timestamp():
+    """When the cached CrossWire catalogue was downloaded, or None.
+
+    The catalogue lives in a 14-digit timestamp-named shadow dir (see
+    `_shadow_path`), so the directory name is the download time."""
+    from datetime import datetime
+    path = _shadow_path()
+    if not path:
+        return None
+    try:
+        return datetime.strptime(os.path.basename(path), '%Y%m%d%H%M%S')
+    except ValueError:
+        return None
 
 
 _CROSSWIRE_CATALOG = 'https://crosswire.org/ftpmirror/pub/sword/raw/mods.d.tar.gz'

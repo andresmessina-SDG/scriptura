@@ -51,10 +51,11 @@ _TRADITION_RANK = {
     'engraving': 0,
     'old_master': 1,
     'byzantine_icon': 2,
-    'stained_glass': 3,
-    'watercolor': 4,
-    'photo': 5,
-    'cartography': 6,
+    'illumination': 3,
+    'stained_glass': 4,
+    'watercolor': 5,
+    'photo': 6,
+    'cartography': 7,
 }
 
 

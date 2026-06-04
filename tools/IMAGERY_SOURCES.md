@@ -4,8 +4,10 @@ Status of every imagery layer for the download-on-demand pack
 (`build_imagery_pack.py`). "Register" = which tab/visual family it belongs to
 (Art = the per-verse "other traditions" expander; Where = the place tab).
 
-Counts are rows in the pack. Oils + glass are **built locally and committed**
-but not yet in the **hosted** Codeberg pack (batched upload pending).
+Counts are rows in the pack. Oils + glass + illuminated manuscripts are **built
+locally** but not yet in the **hosted** Codeberg pack (batched upload pending —
+needs the `write:repository` token; outward-facing, the user's call). Build all
+three pending sources with `--source oils --source glass --source manuscripts`.
 
 ## Built
 
@@ -16,6 +18,7 @@ but not yet in the **hosted** Codeberg pack (batched upload pending).
 | Byzantine icons | Art (icon) | ✅ shipped | 17 |
 | Old Master oils | Art (painting) | ✅ built — host pending | 14 |
 | Stained glass | Art (glass) | ✅ built — host pending | 9 |
+| Illuminated manuscripts | Art (illumination) | ✅ built — host pending | 27 |
 | Maps — Hurlbut antique | Where (maps) | ✅ shipped | 30 |
 | Maps — modern SVG | Where (maps) | ✅ shipped | 11 |
 | Place photos — OpenBible | Where (photos) | ✅ shipped | 1335 |
@@ -24,8 +27,8 @@ but not yet in the **hosted** Codeberg pack (batched upload pending).
 
 | Layer / tradition | Register | Priority | Notes |
 |---|---|---|---|
-| **Illuminated manuscripts** | Art (NEW tradition) | **HIGH** | Medieval picture-Bibles. Morgan Crusader Bible (Maciejowski) ~340 OT scenes alone, all with published verse refs; + Holkham Bible Picture Book, Très Riches Heures, Bible moralisée (thousands of medallions), Nuremberg Chronicle. PD (faithful 2-D scans). A genuinely new visual register; hundreds of images. Best next build. |
-| **Historical Holy Land photographs** | Where (photos) | **HIGH** | Matson Collection (Library of Congress) ~thousands of PD photos, geo-tagged → maps to existing OpenBible places as a "then vs. now" layer; + Frith / Bonfils / American Colony (19th c.). Hundreds easily. The biggest photo source available. |
+| **Historical Holy Land photographs** | Where (photos) | **HIGH — next** | Matson Collection (Library of Congress) ~thousands of PD photos, geo-tagged → maps to existing OpenBible places as a "then vs. now" layer; + Frith / Bonfils / American Colony (19th c.). Hundreds easily. The biggest photo source available. |
+| Illuminated manuscripts — *volume expansion* | Art (illumination) | low | The curated set (27, below) is built. Raw-numbers expansion path: bulk-ingest the full Morgan Crusader Bible (~340 OT scenes via its published folio scene-IDs) and/or the Très Riches Heures full-page cycle. Multi-register folios would break the single-scene-per-card consistency the curated set holds to — only worth it if volume is the goal. |
 | Engravings — Merian / Holbein / Dalziel | Art (engraving) | low | Same register as Schnorr/Doré — deepens, doesn't widen. Cheap (PD) but marginal. |
 | Maps — Smith atlas | Where (maps) | low | Same antique-map register as Hurlbut. Only worth it if Hurlbut has real gaps. |
 

@@ -365,6 +365,53 @@ def ingest_oils(conn, images_dir, width, limit, fetch_images):
     return rows
 
 
+# Manuscript miniatures: 960px (the zoom width) keeps the pack light.
+_MSS_WIDTH = 960
+
+
+def ingest_manuscript(conn, images_dir, width, limit, fetch_images):
+    """Medieval illuminated-manuscript miniatures from
+    tools/manuscript_plates.toml — the 'illumination' tradition (kind shares
+    'illustration' so no bridge query change). A curated set drawn from the
+    13th-c. Morgan Crusader Bible (Old Testament narrative) and the 15th-c.
+    Très Riches Heures du Duc de Berry (New Testament cycle), each a Commons
+    scan mapped to its scene's verse and visually verified. All PD (faithful
+    scans of pre-1900 works); per-plate `attribution` names the manuscript and
+    holding library, `year` the approximate date shown on the card."""
+    with open(os.path.join(_HERE, 'manuscript_plates.toml'), 'rb') as f:
+        plates = tomllib.load(f)['plate']
+    if limit:
+        plates = plates[:limit]
+    rows = 0
+    for p in plates:
+        n = p['n']
+        ext = os.path.splitext(p['file'])[1] or '.jpg'
+        rel = f'images/mss_{n}{ext}'
+        size = None
+        if fetch_images:
+            dest = os.path.join(images_dir, f'mss_{n}{ext}')
+            try:
+                size = fetch(commons_filepath_url(p['file'], _MSS_WIDTH), dest)
+            except Exception as e:  # noqa: BLE001 — report and skip one plate
+                print(f'  ! mss {n} fetch failed: {e}')
+                continue
+        v = p['verse']
+        src_url = ('https://commons.wikimedia.org/wiki/File:'
+                   + urllib.parse.quote(p['file'].replace(' ', '_')))
+        conn.execute(
+            'INSERT INTO imagery (kind, tradition, title, caption, book, '
+            'loc_start, loc_end, passage_label, file_path, file_size, source, '
+            'source_url, license, attribution, artist, year, iconclass) '
+            'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+            ('illustration', 'illumination', p['title'], None, p['book'],
+             encode(p['chapter'], v), encode(p['chapter'], v),
+             None, rel, size, 'manuscripts', src_url, 'PD',
+             p['attribution'], None, p.get('year'), None))
+        rows += 1
+        print(f'  + mss {n}  {p["book"]} {p["chapter"]}:{v}  {p["title"]}')
+    return rows
+
+
 # ── OpenBible.info geocoding — places named in each verse ───────────────────
 
 # Pinned to the default branch; switch to a pinned commit SHA for fully
@@ -656,6 +703,7 @@ def ingest_modern(conn, images_dir, width, limit, fetch_images):
 _SOURCES = {'schnorr': ingest_schnorr, 'dore': ingest_dore,
             'tissot': ingest_tissot, 'icons': ingest_icon,
             'glass': ingest_glass, 'oils': ingest_oils,
+            'manuscripts': ingest_manuscript,
             'openbible': ingest_openbible, 'hurlbut': ingest_hurlbut,
             'modern': ingest_modern}
 

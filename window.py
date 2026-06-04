@@ -137,6 +137,9 @@ class BibleWindow(Adw.ApplicationWindow):
 
         header = Adw.HeaderBar()
         header.add_css_class('scriptura-header')
+        # Flat header so it blends into the window background — the toolbar and
+        # the two pane headers read as one calm band (Apple-Books style).
+        header.add_css_class('flat')
         self._header = header
         toolbar_view.add_top_bar(header)
 
@@ -164,19 +167,25 @@ class BibleWindow(Adw.ApplicationWindow):
         self._fwd_btn.connect('clicked', self._on_nav_fwd)
         header.pack_start(self._fwd_btn)
 
-        # Recent-passages dropdown — persistent across sessions, distinct
-        # from the session-local back/forward stacks. Click to see the
-        # last 10 distinct (book, chapter) pairs visited.
-        self._recent_btn = Gtk.MenuButton(icon_name='document-open-recent-symbolic')
-        self._recent_btn.add_css_class('flat')
-        self._recent_btn.add_css_class('header-action')
-        self._recent_btn.set_tooltip_text('Recent passages')
+        # Recent passages (last 10 distinct book/chapter pairs, persistent
+        # across sessions) now live behind the back arrow — right-click or
+        # long-press it — instead of a dedicated button, for a calmer header.
         self._recent_pop = Gtk.Popover()
         self._recent_pop.set_has_arrow(True)
-        self._recent_btn.set_popover(self._recent_pop)
+        self._recent_pop.set_position(Gtk.PositionType.BOTTOM)
+        self._recent_pop.set_parent(self._back_btn)
         self._recent_pop.connect(
             'show', lambda _p: self._build_recent_popover_content())
-        header.pack_start(self._recent_btn)
+        self._back_btn.set_tooltip_text(
+            'Go back (Alt+←) · right-click or hold for recent passages')
+
+        recent_click = Gtk.GestureClick()
+        recent_click.set_button(3)  # secondary (right) button
+        recent_click.connect('pressed', self._on_back_history)
+        self._back_btn.add_controller(recent_click)
+        recent_hold = Gtk.GestureLongPress()
+        recent_hold.connect('pressed', self._on_back_history)
+        self._back_btn.add_controller(recent_hold)
 
         # Dropdowns remain as authoritative state holders for book/chapter
         # index — used by Alt+arrow navigation and the quick-jump bar — but
@@ -767,6 +776,12 @@ class BibleWindow(Adw.ApplicationWindow):
             outer.append(scroll)
 
         self._recent_pop.set_child(outer)
+
+    def _on_back_history(self, gesture, *_args):
+        # Right-click / long-press on the back arrow opens recent passages.
+        # Claim the sequence so a long-press doesn't also fire back navigation.
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+        self._recent_pop.popup()
 
     def _on_recent_row_activated(self, _lb, row):
         if not hasattr(row, '_passage'):

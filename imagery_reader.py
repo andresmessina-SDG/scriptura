@@ -23,7 +23,7 @@ import os
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw
+from gi.repository import Gtk, Adw, Gdk, GLib
 
 import imagery_bridge
 
@@ -54,6 +54,7 @@ _TRADITION_LABEL = {
     'engraving': 'Engravings',
     'old_master': 'Paintings',
     'byzantine_icon': 'Icons',
+    'illumination': 'Illuminated manuscripts',
     'stained_glass': 'Stained glass',
     'watercolor': 'Watercolours',
     'cartography': 'Maps',
@@ -70,6 +71,175 @@ def _meta_line(item):
     if not bits and item.get('passage_label'):
         bits.append(item['passage_label'])
     return ' · '.join(bits)
+
+
+class _ZoomViewer(Gtk.ScrolledWindow):
+    """Scroll-/button-to-zoom, drag-to-pan image view for the zoom dialog.
+
+    Starts fitted to the viewport; zooming past fit sizes the picture
+    explicitly in natural-pixel multiples so the scrolled window provides the
+    panning. The antique map scans are stored at full resolution, so zooming
+    actually reveals the place names the fit view is too small to show.
+    """
+
+    _MAX = 4.0    # cap display at 400% of the image's natural pixels
+    _STEP = 1.4   # multiplicative zoom per scroll notch / button press
+
+    def __init__(self, texture):
+        super().__init__(hexpand=True, vexpand=True)
+        self._tex = texture
+        self._nw = texture.get_width() or 1
+        self._nh = texture.get_height() or 1
+        self._scale = None        # None == fitted; otherwise display/natural
+        self._pan0 = (0.0, 0.0)
+        self._pending = None      # (frac_x, frac_y, vx, vy) anchor after a zoom
+        self._pinch = None        # (base_scale, frac_x, frac_y, cx, cy) during pinch
+        self._changed_cb = None
+
+        self._pic = Gtk.Picture.new_for_paintable(texture)
+        self._pic.set_content_fit(Gtk.ContentFit.CONTAIN)
+        self._pic.set_can_shrink(True)
+        self._pic.set_halign(Gtk.Align.CENTER)
+        self._pic.set_valign(Gtk.Align.CENTER)
+        self.set_child(self._pic)
+
+        # Two-finger scroll pans the image — the GtkScrolledWindow does this
+        # natively once the picture overflows the viewport, so we don't touch
+        # scroll events. Pinch zooms; mouse users get click-drag panning and
+        # the header-bar buttons.
+        pinch = Gtk.GestureZoom()
+        pinch.connect('begin', self._on_pinch_begin)
+        pinch.connect('scale-changed', self._on_pinch_scale)
+        self.add_controller(pinch)
+        drag = Gtk.GestureDrag()
+        drag.connect('drag-begin', self._on_drag_begin)
+        drag.connect('drag-update', self._on_drag_update)
+        self.add_controller(drag)
+
+    # ── state ────────────────────────────────────────────────────────────────
+
+    def set_changed_cb(self, cb):
+        self._changed_cb = cb
+
+    def _fit(self):
+        vw, vh = self.get_width(), self.get_height()
+        if vw <= 0 or vh <= 0:
+            return 1.0
+        return min(vw / self._nw, vh / self._nh)
+
+    def _eff(self):
+        return self._fit() if self._scale is None else self._scale
+
+    def _ceil(self):
+        return max(self._fit(), self._MAX)
+
+    def can_zoom_in(self):
+        return self._eff() < self._ceil() - 1e-3
+
+    def can_zoom_out(self):
+        return self._scale is not None
+
+    # ── apply ────────────────────────────────────────────────────────────────
+
+    def _apply(self):
+        if self._scale is None:
+            self._pic.set_content_fit(Gtk.ContentFit.CONTAIN)
+            self._pic.set_can_shrink(True)
+            self._pic.set_hexpand(True)
+            self._pic.set_vexpand(True)
+            self._pic.set_size_request(-1, -1)
+            self.set_cursor(None)
+        else:
+            self._pic.set_content_fit(Gtk.ContentFit.FILL)
+            self._pic.set_can_shrink(False)
+            self._pic.set_hexpand(False)
+            self._pic.set_vexpand(False)
+            self._pic.set_size_request(int(self._nw * self._scale),
+                                       int(self._nh * self._scale))
+            self.set_cursor(Gdk.Cursor.new_from_name('grab', None))
+        if self._pending is not None:
+            self.add_tick_callback(self._restore_anchor)
+        if self._changed_cb is not None:
+            self._changed_cb()
+
+    def _content_fraction_at(self, vx, vy):
+        vw, vh = self.get_width(), self.get_height()
+        if self._scale is None:
+            fit = self._fit()
+            iw, ih = self._nw * fit, self._nh * fit
+            mx, my = max(0.0, (vw - iw) / 2), max(0.0, (vh - ih) / 2)
+            fx = min(max((vx - mx) / iw, 0.0), 1.0) if iw else 0.5
+            fy = min(max((vy - my) / ih, 0.0), 1.0) if ih else 0.5
+        else:
+            dw, dh = self._nw * self._scale, self._nh * self._scale
+            fx = (self.get_hadjustment().get_value() + vx) / dw
+            fy = (self.get_vadjustment().get_value() + vy) / dh
+        return fx, fy
+
+    def _restore_anchor(self, *_a):
+        if self._pending is None or self._scale is None:
+            return GLib.SOURCE_REMOVE
+        fx, fy, vx, vy = self._pending
+        self._pending = None
+        dw, dh = self._nw * self._scale, self._nh * self._scale
+        ha, va = self.get_hadjustment(), self.get_vadjustment()
+        ha.set_value(min(max(fx * dw - vx, 0.0),
+                         max(0.0, ha.get_upper() - ha.get_page_size())))
+        va.set_value(min(max(fy * dh - vy, 0.0),
+                         max(0.0, va.get_upper() - va.get_page_size())))
+        return GLib.SOURCE_REMOVE
+
+    def _zoom_to(self, scale, anchor):
+        fit = self._fit()
+        scale = max(fit, min(scale, self._ceil()))
+        if scale <= fit * 1.001:
+            self._scale = None
+            self._pending = None
+        else:
+            self._scale = scale
+            self._pending = anchor
+        self._apply()
+
+    # ── controls ─────────────────────────────────────────────────────────────
+
+    def zoom_in(self):
+        vw, vh = self.get_width(), self.get_height()
+        fx, fy = self._content_fraction_at(vw / 2, vh / 2)
+        self._zoom_to(self._eff() * self._STEP, (fx, fy, vw / 2, vh / 2))
+
+    def zoom_out(self):
+        vw, vh = self.get_width(), self.get_height()
+        fx, fy = self._content_fraction_at(vw / 2, vh / 2)
+        self._zoom_to(self._eff() / self._STEP, (fx, fy, vw / 2, vh / 2))
+
+    def reset(self):
+        self._scale = None
+        self._pending = None
+        self._apply()
+
+    def _on_pinch_begin(self, gesture, _seq):
+        ok, cx, cy = gesture.get_bounding_box_center()
+        if not ok:
+            cx, cy = self.get_width() / 2, self.get_height() / 2
+        fx, fy = self._content_fraction_at(cx, cy)
+        self._pinch = (self._eff(), fx, fy, cx, cy)
+
+    def _on_pinch_scale(self, _gesture, scale):
+        if self._pinch is None:
+            return
+        base, fx, fy, cx, cy = self._pinch
+        self._zoom_to(base * scale, (fx, fy, cx, cy))
+
+    def _on_drag_begin(self, _g, _x, _y):
+        self._pan0 = (self.get_hadjustment().get_value(),
+                      self.get_vadjustment().get_value())
+
+    def _on_drag_update(self, _g, ox, oy):
+        if self._scale is None:
+            return
+        h0, v0 = self._pan0
+        self.get_hadjustment().set_value(h0 - ox)
+        self.get_vadjustment().set_value(v0 - oy)
 
 
 class ImageryReader:
@@ -367,13 +537,47 @@ class ImageryReader:
         dialog.set_content_width(960)
         dialog.set_content_height(720)
         view = Adw.ToolbarView()
-        view.add_top_bar(Adw.HeaderBar())
-        scroll = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
-        pic = Gtk.Picture.new_for_filename(item['path'])
-        pic.set_content_fit(Gtk.ContentFit.CONTAIN)
-        pic.set_can_shrink(True)
-        scroll.set_child(pic)
-        view.set_content(scroll)
+        header = Adw.HeaderBar()
+
+        try:
+            texture = Gdk.Texture.new_from_filename(item['path'])
+        except GLib.Error:
+            texture = None
+        if texture is None:
+            # Fall back to a plain fitted view if the image won't decode.
+            pic = Gtk.Picture.new_for_filename(item['path'])
+            pic.set_content_fit(Gtk.ContentFit.CONTAIN)
+            pic.set_can_shrink(True)
+            view.add_top_bar(header)
+            view.set_content(pic)
+            dialog.set_child(view)
+            if root is not None:
+                dialog.present(root)
+            return
+
+        viewer = _ZoomViewer(texture)
+        out_btn = Gtk.Button(icon_name='zoom-out-symbolic')
+        out_btn.set_tooltip_text('Zoom out')
+        in_btn = Gtk.Button(icon_name='zoom-in-symbolic')
+        in_btn.set_tooltip_text('Zoom in')
+        fit_btn = Gtk.Button(icon_name='zoom-fit-best-symbolic')
+        fit_btn.set_tooltip_text('Fit to window')
+        out_btn.connect('clicked', lambda *_a: viewer.zoom_out())
+        in_btn.connect('clicked', lambda *_a: viewer.zoom_in())
+        fit_btn.connect('clicked', lambda *_a: viewer.reset())
+
+        def _sync():
+            in_btn.set_sensitive(viewer.can_zoom_in())
+            out_btn.set_sensitive(viewer.can_zoom_out())
+            fit_btn.set_sensitive(viewer.can_zoom_out())
+        viewer.set_changed_cb(_sync)
+        _sync()
+
+        header.pack_start(out_btn)
+        header.pack_start(in_btn)
+        header.pack_start(fit_btn)
+        view.add_top_bar(header)
+        view.set_content(viewer)
         dialog.set_child(view)
         if root is not None:
             dialog.present(root)

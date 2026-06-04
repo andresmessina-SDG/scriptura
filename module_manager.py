@@ -1,5 +1,6 @@
 import logging
 import threading
+from datetime import datetime
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
@@ -24,55 +25,91 @@ _LANG_NAMES = {
     'id': 'Indonesian', 'sw': 'Swahili', 'tl': 'Tagalog',
 }
 
-_DESC_CROSSWIRE = (
-    'The SWORD Project by CrossWire Bible Society provides hundreds of Bible translations, '
-    'commentaries, lexicons, and devotional works. Modules tagged with "Strong\'s" include '
-    'original-language word tagging for Hebrew and Greek study. Most modules are in the '
-    'public domain or freely licensed; a handful require separate permission from their publishers.'
-)
-
-_DESC_OPEN_DB = (
-    'These open-access databases extend word-study features built into the app. '
-    'The TSK (Treasury of Scripture Knowledge) supplies cross-references; '
-    'Strong\'s lexicons power the Hebrew and Greek definition panel; '
-    'MorphGNT adds grammatical parsing for every Greek New Testament word. '
-    'All sources are freely redistributable.'
-)
-
-_DESC_EBIBLE = (
-    'eBible.org curates over 1,500 Bible translations in more than 1,000 languages, '
-    'contributed by Bible societies and mission organizations worldwide. Only translations '
-    'that are freely downloadable are listed here. These are stored separately from SWORD '
-    'modules and do not require the SWORD library. Note: some translations cover only the '
-    'New Testament or select books, and formatting quality varies by source.'
-)
-
-
 def _lang_label(code):
     name = _LANG_NAMES.get(code.lower(), '')
     return f'{name} ({code})' if name else code
 
 
-def _desc_label(text):
-    lbl = Gtk.Label(label=text, wrap=True, xalign=0)
-    lbl.add_css_class('dim-label')
-    lbl.set_margin_bottom(12)
-    return lbl
+# Installed modules are grouped by kind. SWORD reports finer-grained types;
+# these fold them into a few human sections, in display order.
+_KIND_ORDER = ['Bibles', 'Commentaries', 'Lexicons & Dictionaries',
+               'Devotionals', 'Books & Other']
+_KIND_MAP = {
+    'Biblical Texts': 'Bibles',
+    'Commentaries': 'Commentaries',
+    'Lexicons / Dictionaries': 'Lexicons & Dictionaries',
+    'Glossaries': 'Lexicons & Dictionaries',
+    'Daily Devotional': 'Devotionals',
+}
+
+
+def _display_kind(module_type):
+    return _KIND_MAP.get(module_type, 'Books & Other')
+
+
+# The eBible catalogue has ~1,500+ translations and PreferencesGroup rows
+# aren't virtualised, so rendering them all is laggy. We materialise only the
+# first slice of any result set and invite the user to search to narrow it —
+# a 1,500-item list is found by searching, not scrolling.
+_EB_RENDER_CAP = 200
+
+
+def _fmt_size(raw):
+    """SWORD InstallSize (bytes, as a string) → '2.3 MB'."""
+    try:
+        n = float(raw)
+    except (TypeError, ValueError):
+        return ''
+    if n <= 0:
+        return ''
+    for unit in ('bytes', 'KB', 'MB', 'GB'):
+        if n < 1024 or unit == 'GB':
+            if unit == 'bytes':
+                return f'{int(n)} bytes'
+            return f'{n:.1f} {unit}'
+        n /= 1024
+    return ''
+
+
+def _short_license(text):
+    """Trim a DistributionLicense string to something subtitle-sized."""
+    if not text:
+        return ''
+    text = text.strip()
+    return text if len(text) <= 28 else text[:27].rstrip() + '…'
+
+
+def _ago(dt):
+    """Humanise a catalogue timestamp as 'updated 3 days ago'."""
+    if dt is None:
+        return ''
+    secs = (datetime.now() - dt).total_seconds()
+    if secs < 3600:
+        return 'updated less than an hour ago'
+    if secs < 86400:
+        h = int(secs // 3600)
+        return f'updated {h} hour{"s" if h != 1 else ""} ago'
+    days = int(secs // 86400)
+    if days < 30:
+        return f'updated {days} day{"s" if days != 1 else ""} ago'
+    months = days // 30
+    return f'updated {months} month{"s" if months != 1 else ""} ago'
 
 
 class ModuleManagerWindow(Adw.Window):
     def __init__(self, on_modules_changed=None, **kwargs):
         super().__init__(**kwargs)
         self.set_title('Module Manager')
-        self.set_default_size(580, 700)
+        self.set_default_size(640, 720)
         self._on_modules_changed = on_modules_changed
         self._all_modules = []
+        self._has_catalog = False
         self._lang_codes = ['']
         self._updating_filters = False
         self._eb_catalog = []
         self._eb_lang_codes = ['']
-        self._eb_populate_gen = 0
         self._pulse_source = None
+        self._op_busy = False
         self._build_ui()
         self._populate()
 
@@ -114,110 +151,124 @@ class ModuleManagerWindow(Adw.Window):
     # ── CrossWire tab ─────────────────────────────────────────────────────────
 
     def _build_crosswire_tab(self):
+        # Transient busy / error line (hidden unless there's a message).
         self._status = Gtk.Label(label='', wrap=True, xalign=0)
         self._status.add_css_class('dim-label')
-        self._status.set_margin_bottom(4)
+        self._status.set_visible(False)
 
-        self._cw_refresh_btn = Gtk.Button(label='Refresh from CrossWire')
-        self._cw_refresh_btn.add_css_class('suggested-action')
+        # Refresh is contextual to the catalogue freshness, not a big blue
+        # button — it lives as the browse group's header suffix.
+        self._cw_refresh_btn = Gtk.Button(icon_name='view-refresh-symbolic')
+        self._cw_refresh_btn.add_css_class('flat')
+        self._cw_refresh_btn.set_valign(Gtk.Align.CENTER)
+        self._cw_refresh_btn.set_tooltip_text('Refresh catalogue from CrossWire')
         self._cw_refresh_btn.connect('clicked', self._on_refresh_clicked)
 
-        top_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        top_row.set_margin_bottom(8)
-        top_row.append(self._cw_refresh_btn)
+        # One search filters both the installed sections and the catalogue.
+        self._cw_search = Gtk.SearchEntry()
+        self._cw_search.set_placeholder_text('Search installed and catalogue…')
+        self._cw_search.set_hexpand(True)
+        self._cw_search.connect('search-changed', self._on_search_changed)
 
-        self._installed_label = Gtk.Label(xalign=0)
-        self._installed_label.add_css_class('heading')
+        # Installed modules, grouped by kind, are rebuilt into this container.
+        self._installed_container = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL, spacing=18)
 
-        self._installed_list = Gtk.ListBox()
-        self._installed_list.set_selection_mode(Gtk.SelectionMode.NONE)
-        self._installed_list.add_css_class('boxed-list')
-
-        self._available_label = Gtk.Label(xalign=0)
-        self._available_label.add_css_class('heading')
-        self._available_label.set_margin_top(16)
-
-        filter_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        filter_box.set_margin_top(4)
-
+        # Browse-catalogue refinement filters (apply to the available list).
         self._cat_drop = Gtk.DropDown(model=Gtk.StringList.new(['All Categories']))
         self._cat_drop.set_tooltip_text('Filter by category')
         self._cat_drop.connect('notify::selected', self._on_filter_changed)
-        filter_box.append(self._cat_drop)
 
         self._lang_drop = Gtk.DropDown(model=Gtk.StringList.new(['All Languages']))
         self._lang_drop.set_tooltip_text('Filter by language')
         self._lang_drop.connect('notify::selected', self._on_filter_changed)
-        filter_box.append(self._lang_drop)
 
-        self._strongs_check = Gtk.CheckButton(label="Strong's numbers")
-        self._strongs_check.set_tooltip_text("Only show modules with Strong's numbers")
+        self._strongs_check = Gtk.CheckButton(label="Strong's")
+        self._strongs_check.set_tooltip_text("Only modules with Strong's numbers")
+        self._strongs_check.set_valign(Gtk.Align.CENTER)
         self._strongs_check.connect('toggled', self._on_filter_changed)
-        filter_box.append(self._strongs_check)
 
-        # Search entry on its own row so a narrow window doesn't crush
-        # the entry into a few characters — dropdowns + checkbox can wrap
-        # on the row above; the search field keeps full width below.
-        search_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        search_row.set_margin_top(4)
-        search_row.set_margin_bottom(4)
-        self._cw_search = Gtk.SearchEntry()
-        self._cw_search.set_placeholder_text('Filter by name or description…')
-        self._cw_search.set_hexpand(True)
-        self._cw_search.connect('search-changed', self._on_filter_changed)
-        search_row.append(self._cw_search)
+        # The filters collapse into a popover in the Browse catalogue header,
+        # next to refresh — full dropdowns inline crush the title and stretch
+        # tall, so the section gets a compact "Filter" button instead.
+        filt_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        filt_box.set_margin_top(12)
+        filt_box.set_margin_bottom(12)
+        filt_box.set_margin_start(12)
+        filt_box.set_margin_end(12)
+        for label, drop in (('Category', self._cat_drop),
+                            ('Language', self._lang_drop)):
+            field = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+            cap = Gtk.Label(label=label, xalign=0)
+            cap.add_css_class('caption')
+            cap.add_css_class('dim-label')
+            drop.set_hexpand(True)
+            field.append(cap)
+            field.append(drop)
+            filt_box.append(field)
+        filt_box.append(self._strongs_check)
 
-        self._available_list = Gtk.ListBox()
-        self._available_list.set_selection_mode(Gtk.SelectionMode.NONE)
-        self._available_list.add_css_class('boxed-list')
+        filter_popover = Gtk.Popover()
+        filter_popover.set_child(filt_box)
+        self._filter_btn = Gtk.MenuButton(icon_name='view-filter-symbolic')
+        self._filter_btn.add_css_class('flat')
+        self._filter_btn.set_valign(Gtk.Align.CENTER)
+        self._filter_btn.set_tooltip_text('Filter the catalogue')
+        self._filter_btn.set_popover(filter_popover)
 
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        box.set_margin_start(16)
-        box.set_margin_end(16)
-        box.set_margin_top(12)
-        box.set_margin_bottom(16)
-        box.append(_desc_label(_DESC_CROSSWIRE))
-        box.append(top_row)
+        header_controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
+                                  spacing=6)
+        header_controls.append(self._filter_btn)
+        header_controls.append(self._cw_refresh_btn)
+
+        self._browse_group = Adw.PreferencesGroup()
+        self._browse_group.set_title('Browse catalogue')
+        self._browse_group.set_header_suffix(header_controls)
+        self._available_rows = []
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
+        box.set_margin_start(12)
+        box.set_margin_end(12)
+        box.set_margin_top(18)
+        box.set_margin_bottom(18)
         box.append(self._status)
-        box.append(self._installed_label)
-        box.append(self._installed_list)
-        box.append(self._available_label)
-        box.append(filter_box)
-        box.append(search_row)
-        box.append(self._available_list)
+        box.append(self._cw_search)
+        box.append(self._installed_container)
+        box.append(self._browse_group)
 
+        clamp = Adw.Clamp(child=box, maximum_size=720)
         scroll = Gtk.ScrolledWindow(vexpand=True)
-        scroll.set_child(box)
+        scroll.set_child(clamp)
         self._stack.add_titled_with_icon(
             scroll, 'modules', 'Modules', 'application-x-addon-symbolic')
 
     # ── Open Databases tab ────────────────────────────────────────────────────
 
     def _build_open_db_tab(self):
-        self._open_db_list = Gtk.ListBox()
-        self._open_db_list.set_selection_mode(Gtk.SelectionMode.NONE)
-        self._open_db_list.add_css_class('boxed-list')
+        self._open_db_group = Adw.PreferencesGroup()
+        self._open_db_group.set_title('Open databases')
+        self._open_db_group.set_description(
+            'Open-access data behind the word-study features — cross-references, '
+            'Hebrew and Greek lexicons, grammatical parsing, plus the commentary '
+            'and imagery packs.')
+        self._open_db_rows = []
 
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        box.set_margin_start(16)
-        box.set_margin_end(16)
-        box.set_margin_top(12)
-        box.set_margin_bottom(16)
-        box.append(_desc_label(_DESC_OPEN_DB))
-        box.append(self._open_db_list)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
+        box.set_margin_start(12)
+        box.set_margin_end(12)
+        box.set_margin_top(18)
+        box.set_margin_bottom(18)
+        box.append(self._open_db_group)
 
+        clamp = Adw.Clamp(child=box, maximum_size=720)
         scroll = Gtk.ScrolledWindow(vexpand=True)
-        scroll.set_child(box)
+        scroll.set_child(clamp)
         self._stack.add_titled_with_icon(
-            scroll, 'open_databases', 'Open Databases', 'application-x-addon-symbolic')
+            scroll, 'open_databases', 'Databases', 'network-server-symbolic')
 
     # ── eBible tab ────────────────────────────────────────────────────────────
 
     def _build_ebible_tab(self):
-        self._eb_refresh_btn = Gtk.Button(label='Refresh Catalog')
-        self._eb_refresh_btn.add_css_class('suggested-action')
-        self._eb_refresh_btn.connect('clicked', self._on_eb_refresh)
-
         self._eb_search = Gtk.SearchEntry()
         self._eb_search.set_placeholder_text('Search by name or language…')
         self._eb_search.set_hexpand(True)
@@ -225,95 +276,160 @@ class ModuleManagerWindow(Adw.Window):
 
         self._eb_lang_drop = Gtk.DropDown(model=Gtk.StringList.new(['All Languages']))
         self._eb_lang_drop.set_tooltip_text('Filter by language')
-        self._eb_lang_drop.connect('notify::selected', lambda *_: self._eb_apply_filter())
+        self._eb_lang_drop.set_hexpand(True)
+        self._eb_lang_drop.connect('notify::selected', self._eb_on_lang_changed)
 
-        top_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        top_row.set_margin_bottom(4)
-        top_row.append(self._eb_refresh_btn)
-        top_row.append(self._eb_search)
-        top_row.append(self._eb_lang_drop)
+        # Language filter in a popover, refresh as an icon — same compact
+        # header as the Modules tab's Browse catalogue.
+        filt_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        filt_box.set_margin_top(12)
+        filt_box.set_margin_bottom(12)
+        filt_box.set_margin_start(12)
+        filt_box.set_margin_end(12)
+        cap = Gtk.Label(label='Language', xalign=0)
+        cap.add_css_class('caption')
+        cap.add_css_class('dim-label')
+        filt_box.append(cap)
+        filt_box.append(self._eb_lang_drop)
+        filter_popover = Gtk.Popover()
+        filter_popover.set_child(filt_box)
+        self._eb_filter_btn = Gtk.MenuButton(icon_name='view-filter-symbolic')
+        self._eb_filter_btn.add_css_class('flat')
+        self._eb_filter_btn.set_valign(Gtk.Align.CENTER)
+        self._eb_filter_btn.set_tooltip_text('Filter translations')
+        self._eb_filter_btn.set_popover(filter_popover)
+
+        self._eb_refresh_btn = Gtk.Button(icon_name='view-refresh-symbolic')
+        self._eb_refresh_btn.add_css_class('flat')
+        self._eb_refresh_btn.set_valign(Gtk.Align.CENTER)
+        self._eb_refresh_btn.set_tooltip_text('Refresh catalogue from eBible.org')
+        self._eb_refresh_btn.connect('clicked', self._on_eb_refresh)
+
+        header_controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
+                                  spacing=6)
+        header_controls.append(self._eb_filter_btn)
+        header_controls.append(self._eb_refresh_btn)
+
+        self._eb_group = Adw.PreferencesGroup()
+        self._eb_group.set_title('Translations')
+        self._eb_group.set_header_suffix(header_controls)
+        self._eb_rows = []
 
         self._eb_status = Gtk.Label(label='', xalign=0, wrap=True)
         self._eb_status.add_css_class('dim-label')
-        self._eb_status.set_margin_bottom(4)
+        self._eb_status.set_visible(False)
 
-        self._eb_count = Gtk.Label(label='', xalign=0)
-        self._eb_count.add_css_class('dim-label')
-        self._eb_count.set_margin_bottom(4)
-
-        self._eb_list = Gtk.ListBox()
-        self._eb_list.set_selection_mode(Gtk.SelectionMode.NONE)
-        self._eb_list.add_css_class('boxed-list')
-
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        box.set_margin_start(16)
-        box.set_margin_end(16)
-        box.set_margin_top(12)
-        box.set_margin_bottom(16)
-        box.append(_desc_label(_DESC_EBIBLE))
-        box.append(top_row)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
+        box.set_margin_start(12)
+        box.set_margin_end(12)
+        box.set_margin_top(18)
+        box.set_margin_bottom(18)
         box.append(self._eb_status)
-        box.append(self._eb_count)
-        box.append(self._eb_list)
+        box.append(self._eb_search)
+        box.append(self._eb_group)
 
+        clamp = Adw.Clamp(child=box, maximum_size=720)
         scroll = Gtk.ScrolledWindow(vexpand=True)
-        scroll.set_child(box)
+        scroll.set_child(clamp)
         self._stack.add_titled_with_icon(
-            scroll, 'ebible', 'eBible', 'application-x-addon-symbolic')
+            scroll, 'ebible', 'eBible', 'web-browser-symbolic')
 
     # ── CrossWire data ────────────────────────────────────────────────────────
 
-    def _clear_lists(self):
-        for lb in (self._installed_list, self._available_list):
-            while lb.get_row_at_index(0):
-                lb.remove(lb.get_row_at_index(0))
+    def _clear_box(self, box):
+        child = box.get_first_child()
+        while child is not None:
+            nxt = child.get_next_sibling()
+            box.remove(child)
+            child = nxt
 
     def _populate(self):
-        self._clear_lists()
         try:
             self._all_modules = sword_bridge.list_available_modules()
+            self._has_catalog = True
         except Exception as e:
-            self._status.set_text(
-                f'No module list cached yet. Click "Refresh from CrossWire" to download it.\n({e})'
-            )
-            self._installed_label.set_text('')
-            self._available_label.set_text('')
-            self._add_installed_fallback()
-            self._populate_open_db()
-            return
+            _log.info('no module catalogue cached yet: %s', e)
+            self._has_catalog = False
+            # Degraded state: list what's installed (no kinds/licences/sizes).
+            self._all_modules = [
+                {'name': n, 'description': '', 'type': '', 'lang': '',
+                 'features': set(), 'license': '', 'size': '', 'installed': True}
+                for n in sword_bridge.module_names()
+            ]
+        self._status.set_visible(False)
 
-        self._status.set_text('')
-        installed = [m for m in self._all_modules if m['installed']]
-        self._installed_label.set_text(f'Installed ({len(installed)})')
-        for mod in installed:
-            self._installed_list.append(self._make_row(mod, installed=True))
-        if not installed:
-            self._installed_list.append(self._make_empty_installed_row())
-
+        self._rebuild_installed()
         self._rebuild_filter_options()
         self._apply_filter()
         self._populate_open_db()
 
+    def _matches(self, mod, query):
+        return (query in mod['name'].lower()
+                or query in mod.get('description', '').lower())
+
+    def _rebuild_installed(self):
+        self._clear_box(self._installed_container)
+        query = self._cw_search.get_text().strip().lower()
+        installed = [m for m in self._all_modules if m['installed']]
+        if query:
+            installed = [m for m in installed if self._matches(m, query)]
+
+        if not installed:
+            group = Adw.PreferencesGroup()
+            group.set_title('Installed')
+            group.set_description(
+                'No installed modules match your search.' if query else
+                'No modules yet — install one from the catalogue below to get '
+                'started.')
+            self._installed_container.append(group)
+            return
+
+        if self._has_catalog:
+            buckets = {}
+            for mod in installed:
+                buckets.setdefault(_display_kind(mod['type']), []).append(mod)
+            kinds = [k for k in _KIND_ORDER if buckets.get(k)]
+        else:
+            buckets = {'Installed': installed}
+            kinds = ['Installed']
+
+        for kind in kinds:
+            mods = sorted(buckets[kind],
+                          key=lambda m: (m.get('description') or m['name']).lower())
+            group = Adw.PreferencesGroup()
+            # Titles are markup-parsed, so the "&" in "Lexicons & Dictionaries"
+            # / "Books & Other" must be escaped.
+            group.set_title(GLib.markup_escape_text(f'{kind} ({len(mods)})'))
+            for mod in mods:
+                group.add(self._make_row(mod, installed=True))
+            self._installed_container.append(group)
+
     def _populate_open_db(self):
-        while self._open_db_list.get_row_at_index(0):
-            self._open_db_list.remove(self._open_db_list.get_row_at_index(0))
-        self._open_db_list.append(self._make_catena_row())
-        self._open_db_list.append(self._make_imagery_row())
+        for row in self._open_db_rows:
+            self._open_db_group.remove(row)
+        self._open_db_rows = []
+        rows = [self._make_catena_row(), self._make_imagery_row()]
         for src in open_data.get_sources():
-            row = Adw.ActionRow()
-            row.set_title(src['label'])
-            row.set_subtitle(src['description'])
-            if src['installed']:
-                btn = Gtk.Button(label='Remove')
-                btn.add_css_class('destructive-action')
-                btn.connect('clicked', lambda b, sid=src['id']: self._on_db_remove(b, sid))
-            else:
-                btn = Gtk.Button(label='Download')
-                btn.add_css_class('suggested-action')
-                btn.connect('clicked', lambda b, sid=src['id']: self._on_db_download(b, sid))
+            rows.append(self._make_db_source_row(src))
+        for row in rows:
+            self._open_db_group.add(row)
+            self._open_db_rows.append(row)
+
+    def _make_db_source_row(self, src):
+        row = Adw.ActionRow()
+        row.set_title(GLib.markup_escape_text(src['label']))
+        row.set_subtitle(GLib.markup_escape_text(src['description']))
+        if src['installed']:
+            btn = self._trash_button(
+                lambda: self._confirm_remove_generic(
+                    src['label'], lambda: self._do_db_remove(src['id'])))
+        else:
+            btn = Gtk.Button(label='Download')
+            btn.add_css_class('suggested-action')
             btn.set_valign(Gtk.Align.CENTER)
-            row.add_suffix(btn)
-            self._open_db_list.append(row)
+            btn.connect('clicked', lambda b, sid=src['id']: self._on_db_download(b, sid))
+        row.add_suffix(btn)
+        return row
 
     def _make_catena_row(self):
         row = Adw.ActionRow()
@@ -324,9 +440,9 @@ class ModuleManagerWindow(Adw.Window):
                 f'{n} quotations from the church fathers to the Reformers, '
                 'verse by verse' if n else
                 'Church-history commentary, verse by verse')
-            btn = Gtk.Button(label='Remove')
-            btn.add_css_class('destructive-action')
-            btn.connect('clicked', self._on_catena_remove)
+            btn = self._trash_button(
+                lambda: self._confirm_remove_generic(
+                    'Historical Commentaries', self._do_catena_remove))
         else:
             row.set_subtitle(
                 'How the church read each verse, from the fathers to the '
@@ -361,7 +477,7 @@ class ModuleManagerWindow(Adw.Window):
 
         threading.Thread(target=work, daemon=True).start()
 
-    def _on_catena_remove(self, _btn):
+    def _do_catena_remove(self):
         catena_bridge.remove_pack()
         if self._on_modules_changed:
             self._on_modules_changed()
@@ -387,9 +503,9 @@ class ModuleManagerWindow(Adw.Window):
                 f'{n} illustrations, maps, and place photos, verse by verse'
                 if n else
                 'Illustrations, maps, and place photos, verse by verse')
-            btn = Gtk.Button(label='Remove')
-            btn.add_css_class('destructive-action')
-            btn.connect('clicked', self._on_imagery_remove)
+            btn = self._trash_button(
+                lambda: self._confirm_remove_generic(
+                    'Bible Imagery', self._do_imagery_remove))
         else:
             row.set_subtitle(
                 'Illustrations, historical maps, and photographs of the '
@@ -424,7 +540,7 @@ class ModuleManagerWindow(Adw.Window):
 
         threading.Thread(target=work, daemon=True).start()
 
-    def _on_imagery_remove(self, _btn):
+    def _do_imagery_remove(self):
         imagery_bridge.remove_pack()
         if self._on_modules_changed:
             self._on_modules_changed()
@@ -466,9 +582,18 @@ class ModuleManagerWindow(Adw.Window):
         idx   = drop.get_selected()
         return model.get_string(idx) if model and idx < model.get_n_items() else ''
 
+    def _catalog_status(self):
+        if not self._has_catalog:
+            return 'No catalogue cached yet — refresh to download the module list.'
+        n = sum(1 for m in self._all_modules if not m['installed'])
+        ago = _ago(sword_bridge.catalog_timestamp())
+        return ' · '.join(p for p in (f'{n} modules available', ago) if p)
+
     def _apply_filter(self):
-        while self._available_list.get_row_at_index(0):
-            self._available_list.remove(self._available_list.get_row_at_index(0))
+        for row in self._available_rows:
+            self._browse_group.remove(row)
+        self._available_rows = []
+        self._browse_group.set_description(self._catalog_status())
 
         available = [m for m in self._all_modules if not m['installed']]
 
@@ -486,13 +611,25 @@ class ModuleManagerWindow(Adw.Window):
 
         query = self._cw_search.get_text().strip().lower()
         if query:
-            available = [m for m in available
-                         if query in m['name'].lower()
-                         or query in m.get('description', '').lower()]
+            available = [m for m in available if self._matches(m, query)]
 
-        self._available_label.set_text(f'Available ({len(available)})')
+        if not available:
+            placeholder = Adw.ActionRow()
+            placeholder.set_title('No modules match your filters' if self._has_catalog
+                                  else 'No catalogue cached yet')
+            placeholder.set_sensitive(False)
+            self._browse_group.add(placeholder)
+            self._available_rows.append(placeholder)
+            return
+
         for mod in available:
-            self._available_list.append(self._make_row(mod, installed=False))
+            row = self._make_row(mod, installed=False)
+            self._browse_group.add(row)
+            self._available_rows.append(row)
+
+    def _on_search_changed(self, *_):
+        self._rebuild_installed()
+        self._apply_filter()
 
     def _on_filter_changed(self, *_):
         if not self._updating_filters:
@@ -504,65 +641,55 @@ class ModuleManagerWindow(Adw.Window):
 
     # ── CrossWire rows ────────────────────────────────────────────────────────
 
-    def _add_installed_fallback(self):
-        names = sword_bridge.module_names()
-        self._installed_label.set_text(f'Installed ({len(names)})')
-        for name in names:
-            mod = {'name': name, 'description': '', 'type': '', 'lang': '', 'features': set()}
-            self._installed_list.append(self._make_row(mod, installed=True))
-        if not names:
-            self._installed_list.append(self._make_empty_installed_row())
-
-    def _make_empty_installed_row(self):
-        row = Gtk.ListBoxRow()
-        row.set_selectable(False)
-        row.set_activatable(False)
-        lbl = Gtk.Label(
-            label='No modules installed yet. Pick a Bible from the list below to get started.',
-            wrap=True, xalign=0,
-        )
-        lbl.add_css_class('dim-label')
-        lbl.set_margin_start(12)
-        lbl.set_margin_end(12)
-        lbl.set_margin_top(12)
-        lbl.set_margin_bottom(12)
-        row.set_child(lbl)
-        return row
-
     def _make_row(self, mod, installed):
         row = Adw.ActionRow()
-        row.set_title(mod['name'])
+        key = mod['name']
+        friendly = mod.get('description') or key
+        row.set_title(GLib.markup_escape_text(friendly[:80]))
 
-        parts = [mod.get('description') or mod.get('type') or '']
-        meta  = []
+        meta = []
         if mod.get('lang'):
             meta.append(_lang_label(mod['lang']))
         if 'StrongsNumbers' in mod.get('features', set()):
             meta.append("Strong's")
+        size = _fmt_size(mod.get('size'))
+        if size:
+            meta.append(size)
+        lic = _short_license(mod.get('license', ''))
+        if lic:
+            meta.append(lic)
+        # The raw module key as a dim monospace tag, friendly name as the title.
+        subtitle = f'<tt>{GLib.markup_escape_text(key)}</tt>'
         if meta:
-            parts.append(' · '.join(meta))
-        subtitle = '  —  '.join(p for p in parts if p)
-        if subtitle:
-            row.set_subtitle(GLib.markup_escape_text(subtitle[:100]))
+            subtitle += '  ·  ' + GLib.markup_escape_text(' · '.join(meta))
+        row.set_subtitle(subtitle)
 
         if installed:
-            btn = Gtk.Button(label='Remove')
-            btn.add_css_class('destructive-action')
-            btn.connect('clicked', lambda b, n=mod['name']: self._on_remove(b, n))
+            btn = Gtk.Button(icon_name='user-trash-symbolic')
+            btn.add_css_class('flat')
+            btn.set_tooltip_text('Remove module')
+            btn.connect(
+                'clicked',
+                lambda b, n=key, f=friendly, r=row: self._confirm_remove(b, n, f, r))
         else:
             btn = Gtk.Button(label='Install')
             btn.add_css_class('suggested-action')
-            btn.connect('clicked', lambda b, n=mod['name']: self._on_install(b, n))
+            btn.connect('clicked',
+                        lambda b, n=key, r=row: self._on_install(b, n, r))
         btn.set_valign(Gtk.Align.CENTER)
         row.add_suffix(btn)
         return row
 
     # ── Shared busy / progress ────────────────────────────────────────────────
 
-    def _set_busy(self, busy, status=''):
+    def _set_busy(self, busy, status='', show_bar=True):
+        # Per-row installs/removes give their feedback on the row itself (a
+        # spinner), so they pass show_bar=False — the global progress bar is
+        # reserved for window-level work (refresh, import, database downloads).
         self._cw_refresh_btn.set_sensitive(not busy)
         self._status.set_text(status)
-        if busy:
+        self._status.set_visible(bool(status))
+        if busy and show_bar:
             self._progress.set_text(status)
             self._progress.set_visible(True)
             if self._pulse_source is None:
@@ -574,6 +701,40 @@ class ModuleManagerWindow(Adw.Window):
                 GLib.source_remove(self._pulse_source)
                 self._pulse_source = None
 
+    def _row_spinner(self, row, button):
+        """Swap a row's action button for a spinner while it installs/removes.
+        The list is rebuilt on completion, so the spinner row is transient."""
+        row.remove(button)
+        spinner = Gtk.Spinner()
+        spinner.set_valign(Gtk.Align.CENTER)
+        spinner.start()
+        row.add_suffix(spinner)
+
+    def _trash_button(self, on_confirm):
+        """A flat trash-icon remove button; `on_confirm` runs when clicked."""
+        btn = Gtk.Button(icon_name='user-trash-symbolic')
+        btn.add_css_class('flat')
+        btn.set_valign(Gtk.Align.CENTER)
+        btn.set_tooltip_text('Remove')
+        btn.connect('clicked', lambda _b: on_confirm())
+        return btn
+
+    def _confirm_remove_generic(self, friendly, on_confirm):
+        """Confirmation dialog for removing a non-SWORD pack/source."""
+        dialog = Adw.AlertDialog()
+        dialog.set_heading('Remove?')
+        dialog.set_body(
+            f'“{friendly}” will be removed. You can download it again later.')
+        dialog.add_response('cancel', 'Cancel')
+        dialog.add_response('remove', 'Remove')
+        dialog.set_response_appearance('remove',
+                                       Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.set_default_response('cancel')
+        dialog.set_close_response('cancel')
+        dialog.connect('response',
+                       lambda _d, r: on_confirm() if r == 'remove' else None)
+        dialog.present(self)
+
     def _pulse(self):
         self._progress.pulse()
         return GLib.SOURCE_CONTINUE
@@ -581,6 +742,9 @@ class ModuleManagerWindow(Adw.Window):
     # ── CrossWire network ops ─────────────────────────────────────────────────
 
     def _on_refresh_clicked(self, _btn):
+        if self._op_busy:
+            return
+        self._op_busy = True
         self._set_busy(True, 'Downloading module list from CrossWire…')
 
         def work():
@@ -594,6 +758,7 @@ class ModuleManagerWindow(Adw.Window):
         threading.Thread(target=work, daemon=True).start()
 
     def _finish_refresh(self, err):
+        self._op_busy = False
         if err:
             self._set_busy(False, f'Refresh failed: {err}')
         else:
@@ -818,10 +983,12 @@ class ModuleManagerWindow(Adw.Window):
             self._populate()
         return GLib.SOURCE_REMOVE
 
-    def _on_install(self, btn, name):
-        btn.set_sensitive(False)
-        btn.set_label('Installing…')
-        self._set_busy(True, f'Downloading and installing {name} — this may take a minute…')
+    def _on_install(self, btn, name, row):
+        if self._op_busy:
+            return
+        self._op_busy = True
+        self._row_spinner(row, btn)
+        self._set_busy(True, show_bar=False)
 
         def work():
             err = None
@@ -833,10 +1000,31 @@ class ModuleManagerWindow(Adw.Window):
 
         threading.Thread(target=work, daemon=True).start()
 
-    def _on_remove(self, btn, name):
-        btn.set_sensitive(False)
-        btn.set_label('Removing…')
-        self._set_busy(True, f'Removing {name}…')
+    def _confirm_remove(self, btn, name, friendly, row):
+        dialog = Adw.AlertDialog()
+        dialog.set_heading('Remove module?')
+        dialog.set_body(
+            f'“{friendly}” will be removed from your library. '
+            'You can reinstall it from the catalogue later.')
+        dialog.add_response('cancel', 'Cancel')
+        dialog.add_response('remove', 'Remove')
+        dialog.set_response_appearance('remove',
+                                       Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.set_default_response('cancel')
+        dialog.set_close_response('cancel')
+        dialog.connect('response', self._on_remove_response, btn, name, row)
+        dialog.present(self)
+
+    def _on_remove_response(self, _dialog, response, btn, name, row):
+        if response == 'remove':
+            self._on_remove(btn, name, row)
+
+    def _on_remove(self, btn, name, row):
+        if self._op_busy:
+            return
+        self._op_busy = True
+        self._row_spinner(row, btn)
+        self._set_busy(True, show_bar=False)
 
         def work():
             err = None
@@ -849,6 +1037,7 @@ class ModuleManagerWindow(Adw.Window):
         threading.Thread(target=work, daemon=True).start()
 
     def _finish_change(self, err, name, action='install'):
+        self._op_busy = False
         if err:
             _log.error('%s error for %s: %s', action, name, err)
             verb = 'remove' if action == 'remove' else 'install'
@@ -887,7 +1076,7 @@ class ModuleManagerWindow(Adw.Window):
 
         threading.Thread(target=work, daemon=True).start()
 
-    def _on_db_remove(self, btn, source_id):
+    def _do_db_remove(self, source_id):
         open_data.remove_source(source_id)
         self._populate_open_db()
 
@@ -909,7 +1098,9 @@ class ModuleManagerWindow(Adw.Window):
             self._eb_apply_filter()
         else:
             self._eb_status.set_text(
-                'No catalog cached yet — click "Refresh Catalog" to download it')
+                'No catalogue cached yet — refresh to download it.')
+            self._eb_status.set_visible(True)
+            self._eb_group.set_description('')
 
     def _eb_rebuild_lang_drop(self):
         langs = sorted(set(
@@ -920,6 +1111,14 @@ class ModuleManagerWindow(Adw.Window):
         ), key=lambda c: _lang_label(c))
         self._eb_lang_drop.set_model(Gtk.StringList.new(['All Languages'] + [_lang_label(c) for c in langs]))
         self._eb_lang_codes = [''] + langs
+
+    def _eb_on_lang_changed(self, *_):
+        # Picking a language collapses the list, which relayouts the header the
+        # filter popover is anchored to and can cost it its outside-click grab
+        # (leaving it stuck open). Dismiss the popover first, then apply — for a
+        # single-choice filter, closing on selection is also the natural UX.
+        self._eb_filter_btn.popdown()
+        self._eb_apply_filter()
 
     def _eb_apply_filter(self):
         query      = self._eb_search.get_text().strip().lower()
@@ -941,32 +1140,52 @@ class ModuleManagerWindow(Adw.Window):
                 continue
             filtered.append((tid, title, lang_code, lang_name, entry))
 
-        # Cancel any in-flight batch and clear list
-        self._eb_populate_gen += 1
-        gen = self._eb_populate_gen
-        child = self._eb_list.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            self._eb_list.remove(child)
-            child = nxt
+        # Clear and re-render. The render cap keeps the result set small enough
+        # to build synchronously — which, unlike the old idle-batched append,
+        # doesn't relayout the list across several main-loop turns under an open
+        # filter popover. That repeated relayout was breaking the popover's
+        # outside-click grab; a single synchronous pass (as the Modules tab
+        # does) keeps it dismissable.
+        for row in self._eb_rows:
+            self._eb_group.remove(row)
+        self._eb_rows = []
 
         n = len(filtered)
-        self._eb_count.set_text(f'{n} translation{"s" if n != 1 else ""}')
+        self._eb_group.set_description(
+            f'{n} translation{"s" if n != 1 else ""} · eBible.org')
+        self._eb_status.set_visible(False)
         self._eb_status.set_text('')
 
-        installed = ebible_bridge.installed_ids()
-        GLib.idle_add(self._eb_batch_append, filtered, installed, 0, gen)
+        if not filtered:
+            placeholder = Adw.ActionRow()
+            placeholder.set_title('No translations match your search')
+            placeholder.set_sensitive(False)
+            self._eb_group.add(placeholder)
+            self._eb_rows.append(placeholder)
+            return
 
-    def _eb_batch_append(self, filtered, installed, offset, gen):
-        if gen != self._eb_populate_gen:
-            return GLib.SOURCE_REMOVE
-        for tid, title, lang_code, lang_name, entry in filtered[offset:offset + 150]:
-            self._eb_list.append(
-                self._eb_make_row(tid, title, lang_code, lang_name, entry,
-                                  installed=tid in installed))
-        if offset + 150 < len(filtered):
-            GLib.idle_add(self._eb_batch_append, filtered, installed, offset + 150, gen)
-        return GLib.SOURCE_REMOVE
+        installed = ebible_bridge.installed_ids()
+        shown = filtered[:_EB_RENDER_CAP]
+        for tid, title, lang_code, lang_name, entry in shown:
+            row = self._eb_make_row(tid, title, lang_code, lang_name, entry,
+                                    installed=tid in installed)
+            self._eb_group.add(row)
+            self._eb_rows.append(row)
+        if n > len(shown):
+            footer = self._eb_more_row(len(shown), n)
+            self._eb_group.add(footer)
+            self._eb_rows.append(footer)
+
+    def _eb_more_row(self, shown, total):
+        """A dim, non-interactive footer row noting the result set was capped.
+        It's a real ActionRow so it inherits the boxed-list styling exactly."""
+        row = Adw.ActionRow()
+        row.set_title(
+            f'Showing the first {shown} of {total:,} — '
+            'refine your search to see more')
+        row.set_sensitive(False)
+        row.add_prefix(Gtk.Image.new_from_icon_name('system-search-symbolic'))
+        return row
 
     def _eb_make_row(self, tid, title, lang_code, lang_name, entry, installed):
         row = Adw.ActionRow()
@@ -983,14 +1202,14 @@ class ModuleManagerWindow(Adw.Window):
             row.set_subtitle(GLib.markup_escape_text('  ·  '.join(parts)))
 
         if installed:
-            btn = Gtk.Button(label='Remove')
-            btn.add_css_class('destructive-action')
-            btn.connect('clicked', lambda b, t=tid: self._on_eb_remove(b, t))
+            btn = self._trash_button(
+                lambda t=tid, ti=title: self._confirm_remove_generic(
+                    ti, lambda: self._do_eb_remove(t)))
         else:
             btn = Gtk.Button(label='Download')
             btn.add_css_class('suggested-action')
+            btn.set_valign(Gtk.Align.CENTER)
             btn.connect('clicked', lambda b, t=tid, e=entry: self._on_eb_download(b, t, e))
-        btn.set_valign(Gtk.Align.CENTER)
         row.add_suffix(btn)
         return row
 
@@ -1021,6 +1240,7 @@ class ModuleManagerWindow(Adw.Window):
             self._pulse_source = None
         if err:
             self._eb_status.set_text(f'Refresh failed: {err}')
+            self._eb_status.set_visible(True)
         else:
             self._eb_catalog = ebible_bridge.catalog_entries()
             self._eb_rebuild_lang_drop()
@@ -1056,6 +1276,7 @@ class ModuleManagerWindow(Adw.Window):
             self._pulse_source = None
         if err:
             self._eb_status.set_text(f'Error downloading {title}: {err}')
+            self._eb_status.set_visible(True)
             btn.set_sensitive(True)
             btn.set_label('Download')
         else:
@@ -1064,7 +1285,7 @@ class ModuleManagerWindow(Adw.Window):
             self._eb_apply_filter()
         return GLib.SOURCE_REMOVE
 
-    def _on_eb_remove(self, btn, tid):
+    def _do_eb_remove(self, tid):
         ebible_bridge.remove_translation(tid)
         if self._on_modules_changed:
             self._on_modules_changed()

@@ -63,6 +63,13 @@ class ModulePicker:
         self._button.set_child(label_box)
         self._popover = self._build_popover()
         self._button.set_popover(self._popover)
+        # Populate before the popover maps (not on its 'show' signal): building
+        # the list afterwards resizes the popover post-map, which costs it the
+        # autohide grab and leaves it stuck open on a click-away.
+        self._button.set_create_popup_func(self._before_popup)
+
+    def _before_popup(self, _button):
+        self._refresh()
 
     def _build_popover(self):
         pop = Gtk.Popover()
@@ -177,7 +184,6 @@ class ModulePicker:
         stack.set_visible_child_name('list')
 
         pop.set_child(stack)
-        pop.connect('show', lambda _p: self._refresh())
         return pop
 
     # ── list page ──────────────────────────────────────────────────────────────

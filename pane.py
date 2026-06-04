@@ -543,8 +543,8 @@ class BiblePane(Gtk.Box):
         self._toolbar = toolbar
         toolbar.set_margin_start(10)
         toolbar.set_margin_end(8)
-        toolbar.set_margin_top(4)
-        toolbar.set_margin_bottom(4)
+        toolbar.set_margin_top(1)
+        toolbar.set_margin_bottom(1)
 
         # Module picker — MenuButton + custom popover with search,
         # language-filter chips, and a per-module info view. Replaces the
@@ -718,8 +718,11 @@ class BiblePane(Gtk.Box):
         self._content_stack.set_visible_child_name(self._content_child())
 
         # Vertical paned: Bible text on top, lexicon panel on bottom.
+        # Styled as a soft "page" (rounded top, gentle surface, gutter margins)
+        # so the two panes read as pages floating under the header band.
         self._lex_paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL,
                                     vexpand=True, hexpand=True)
+        self._lex_paned.add_css_class('reading-page')
         self._lex_paned.set_start_child(self._content_stack)
         self._lex_paned.set_end_child(self._lex_panel)
         self._lex_paned.set_resize_start_child(True)

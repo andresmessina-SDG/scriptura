@@ -157,8 +157,11 @@ button.scriptura-lex-toggle {
     background-color: transparent;
 }
 
+/* Hidden: the reading "page" surface below provides the separation now,
+ * so the toolbar reads as part of the one continuous header band. */
 .pane-toolbar-separator {
-    background-color: alpha(@borders, 0.28);
+    min-height: 0;
+    background-color: transparent;
 }
 
 .pane-module-title {
@@ -247,8 +250,8 @@ image.module-feature-icon {
 menubutton.pane-module-button > button,
 button.pane-action,
 menubutton.pane-action > button {
-    min-height: 30px;
-    padding: 4px 8px;
+    min-height: 26px;
+    padding: 2px 8px;
     background: transparent;
     box-shadow: none;
 }
@@ -272,13 +275,45 @@ menubutton.pane-action > button:checked {
     background-color: alpha(@window_fg_color, 0.07);
 }
 
+/* One equal gutter everywhere: the split is inset 8px on the outside and the
+ * divider is exactly 8px in the middle, so the gap between the two pages
+ * matches the gap to each app border (and stays symmetric in single-pane
+ * mode). The divider is an invisible draggable column with a subtle rounded
+ * handle only on hover. */
+paned.main-split {
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
+/* The non-wide GtkPaned handle draws a built-in grey line as part of its own
+ * rendering, BENEATH any CSS background — so background-color can't hide it
+ * (opaque red masked it; transparent and window-bg both revealed it). opacity
+ * reaches the whole node, so opacity:0 hides the handle entirely; hover
+ * restores it as the soft rounded pill for resizing. */
 paned.main-split > separator {
-    background-color: alpha(@borders, 0.36);
-    min-width: 1px;
+    opacity: 0;
+    background-color: transparent;
+    min-width: 8px;
 }
 
 paned.main-split > separator:hover {
-    background-color: alpha(@accent_color, 0.28);
+    opacity: 1;
+    /* Full-height fill is deliberate: showing the handle requires opacity:1,
+     * which re-reveals GtkPaned's built-in grey line — so the fill must cover
+     * the whole gutter to mask it. A short grip would let the line show. */
+    background-color: alpha(@window_fg_color, 0.10);
+    border-radius: 4px;
+    margin-top: 14px;
+    margin-bottom: 14px;
+}
+
+/* Each pane's reading area as a floating "page" — gentle surface, rounded
+ * top corners. No side margins: the 8px split inset + 8px separator above
+ * provide the gutters, so the pages fill their columns edge-to-edge. */
+.reading-page {
+    background-color: alpha(@window_fg_color, 0.05);
+    border-radius: 14px 14px 0 0;
+    margin: 6px 0 0 0;
 }
 
 /* ── Window-level overlay panels (menu, jump bar, reading mode) ──────── */
@@ -334,6 +369,16 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
  * paints by default. */
 .bible-view, .bible-view text {
     background-color: transparent;
+}
+
+/* The reading scrollbar is pinned always-visible (to reserve its width so a
+ * Strong's click never reflows the column). Make its trough transparent so it
+ * doesn't read as a full-height line at the pane edge — only the thin thumb
+ * shows. Scoped to the reading page so other scrollbars are unaffected. */
+.reading-page scrollbar,
+.reading-page scrollbar trough {
+    background-color: transparent;
+    border: none;
 }
 
 /* ── Lexicon + Word-study panel ──────────────────────────────────────── */
