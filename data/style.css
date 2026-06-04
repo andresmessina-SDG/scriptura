@@ -67,6 +67,16 @@ window {
    8 sections fit collapsed without scrolling. */
 button.chart-bar { min-height: 0; padding: 1px 4px; }
 
+/* ── Recent / Bookmark popovers — flat sibling list rows ─────────────── */
+/* Bookmarks' Add row: flat, accent-tinted (label + symbolic star), not a
+   loud suggested-action pill. */
+.bookmark-add { color: @accent_color; font-weight: bold; }
+/* Per-row delete hides until the row is hovered or keyboard-focused; it keeps
+   its slot (opacity, not visibility) so revealing it doesn't shift the label. */
+.bookmark-row .bookmark-del { opacity: 0; transition: opacity 120ms; }
+.bookmark-row:hover .bookmark-del,
+.bookmark-row:focus-within .bookmark-del { opacity: 1; }
+
 /* ── Right-click study menu — highlight color buttons ────────────────── */
 
 button.hl-yellow { background-color: #f5e6a3; color: #000; }

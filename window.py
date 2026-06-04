@@ -727,8 +727,8 @@ class BibleWindow(Adw.ApplicationWindow):
         header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         header_box.set_margin_start(10)
         header_box.set_margin_end(6)
-        header_box.set_margin_top(6)
-        header_box.set_margin_bottom(2)
+        header_box.set_margin_top(8)
+        header_box.set_margin_bottom(6)
         title = Gtk.Label(label='Recent', xalign=0, hexpand=True)
         title.add_css_class('heading')
         header_box.append(title)
@@ -738,7 +738,8 @@ class BibleWindow(Adw.ApplicationWindow):
         clear_btn.connect('clicked', self._on_recent_clear)
         header_box.append(clear_btn)
         outer.append(header_box)
-        outer.append(Gtk.Separator())
+        # No separator rule — grouped by whitespace, matching the search panel
+        # and the bookmarks popover so the side surfaces read as a set.
 
         entries = settings.get('recent_passages') or []
         entries = [e for e in entries if isinstance(e, list) and len(e) >= 2
@@ -1255,49 +1256,60 @@ class BibleWindow(Adw.ApplicationWindow):
         popover.popup()
 
     def _build_bookmark_content(self, popover):
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        box.set_margin_start(12)
-        box.set_margin_end(12)
-        box.set_margin_top(12)
-        box.set_margin_bottom(12)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         box.set_size_request(260, -1)
+
+        # Header — a quiet title so the popover rhymes with the Recent popover
+        # (title + flat list, no separator rule).
+        header = Gtk.Label(label='Bookmarks', xalign=0)
+        header.add_css_class('heading')
+        header.set_margin_start(12)
+        header.set_margin_end(12)
+        header.set_margin_top(8)
+        header.set_margin_bottom(6)
+        box.append(header)
 
         book    = BOOKS[self.book_drop.get_selected()]
         chapter = self.chapter_drop.get_selected() + 1
-        add_btn = Gtk.Button()
-        add_btn.set_child(Adw.ButtonContent(
-            icon_name='starred-symbolic', label=f'Add {book} {chapter}'))
-        add_btn.add_css_class('suggested-action')
+        add_content = Adw.ButtonContent(
+            icon_name='starred-symbolic', label=f'Add {book} {chapter}')
+        add_content.set_halign(Gtk.Align.START)
+        add_btn = Gtk.Button(child=add_content)
+        add_btn.add_css_class('flat')
+        add_btn.add_css_class('bookmark-add')
         add_btn.connect('clicked', self._add_bookmark, book, chapter, popover)
         box.append(add_btn)
 
         bmarks = bookmarks.get_all()
         if bmarks:
-            box.append(Gtk.Separator())
-            scroll = Gtk.ScrolledWindow()
+            scroll = Gtk.ScrolledWindow(vexpand=True)
             scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-            scroll.set_max_content_height(280)
+            scroll.set_max_content_height(300)
             scroll.set_propagate_natural_height(True)
             blist = Gtk.ListBox()
             blist.set_selection_mode(Gtk.SelectionMode.NONE)
-            blist.add_css_class('boxed-list')
+            blist.add_css_class('navigation-sidebar')
             for i, bm in enumerate(bmarks):
                 row = Gtk.ListBoxRow()
-                rb = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-                rb.set_margin_start(6)
-                rb.set_margin_top(4)
-                rb.set_margin_bottom(4)
-                lbl = Gtk.Button(label=bm['label'], hexpand=True)
-                lbl.add_css_class('flat')
-                lbl.connect('clicked', self._go_to_bookmark, bm, popover)
+                row.add_css_class('bookmark-row')
+                row._bookmark = bm
+                rb = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+                lbl = Gtk.Label(label=bm['label'], xalign=0, hexpand=True)
+                lbl.set_margin_start(12)
+                lbl.set_margin_top(6)
+                lbl.set_margin_bottom(6)
+                rb.append(lbl)
                 del_btn = Gtk.Button(icon_name='edit-delete-symbolic')
                 del_btn.add_css_class('flat')
+                del_btn.add_css_class('bookmark-del')
+                del_btn.set_valign(Gtk.Align.CENTER)
+                del_btn.set_margin_end(6)
                 del_btn.set_tooltip_text('Remove bookmark')
                 del_btn.connect('clicked', self._remove_bookmark, i, popover)
-                rb.append(lbl)
                 rb.append(del_btn)
                 row.set_child(rb)
                 blist.append(row)
+            blist.connect('row-activated', self._on_bookmark_row_activated, popover)
             scroll.set_child(blist)
             box.append(scroll)
         return box
@@ -1307,7 +1319,10 @@ class BibleWindow(Adw.ApplicationWindow):
         popover.popdown()
         self._toast(f'Bookmarked {book} {chapter}')
 
-    def _go_to_bookmark(self, _btn, bm, popover):
+    def _on_bookmark_row_activated(self, _lb, row, popover):
+        bm = getattr(row, '_bookmark', None)
+        if bm is None:
+            return
         popover.popdown()
         self._go_to(bm['book'], bm['chapter'], bm.get('verse'))
 
