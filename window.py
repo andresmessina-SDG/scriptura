@@ -880,7 +880,6 @@ class BibleWindow(Adw.ApplicationWindow):
         header_box.append(title_lbl)
 
         right_col.append(header_box)
-        right_col.append(Gtk.Separator())
 
         stack = Gtk.Stack()
         stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
@@ -945,6 +944,7 @@ class BibleWindow(Adw.ApplicationWindow):
                 v_count = 1
             for v in range(1, v_count + 1):
                 vbtn = Gtk.Button(label=str(v))
+                vbtn.add_css_class('nav-cell')
                 vbtn.add_css_class('flat')
                 vbtn.set_valign(Gtk.Align.CENTER)
                 vbtn._verse = v
@@ -967,9 +967,10 @@ class BibleWindow(Adw.ApplicationWindow):
                 count = 1
             for ch in range(1, count + 1):
                 btn = Gtk.Button(label=str(ch))
+                btn.add_css_class('nav-cell')
                 btn.set_valign(Gtk.Align.CENTER)
                 if state['book'] == current_book and ch == current_chapter:
-                    btn.add_css_class('suggested-action')
+                    btn.add_css_class('nav-current')   # filled-accent pill
                 else:
                     btn.add_css_class('flat')
                 btn.connect('clicked', self._on_ref_chapter_chosen, state)
@@ -1010,7 +1011,9 @@ class BibleWindow(Adw.ApplicationWindow):
 
         book_scroll.set_child(book_list)
         outer.append(book_scroll)
-        outer.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
+        nav_sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+        nav_sep.add_css_class('nav-divider')
+        outer.append(nav_sep)
         outer.append(right_col)
 
         self._ref_pop.set_child(outer)

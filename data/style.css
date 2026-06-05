@@ -114,6 +114,22 @@ button.hl-orange { background-color: #f0c894; color: #000; }
 .compare-list > row:last-child { border-bottom: none; }
 .compare-version { font-weight: bold; }
 
+/* Book/chapter/verse picker — the current cell is a clean filled-accent pill
+   (iOS-calendar 'today' look), not a loud suggested-action button; the
+   book|grid divider is a faint hairline. */
+button.nav-current {
+    background-image: none;
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+    border: none;
+    box-shadow: none;
+    border-radius: 999px;
+}
+button.nav-current:hover { background-color: shade(@accent_bg_color, 1.08); }
+/* Unselected grid cells get a pill hover too, matching the current cell. */
+button.nav-cell:hover { border-radius: 999px; }
+separator.nav-divider { background-color: alpha(@borders, 0.3); }
+
 /* ── Study Journal — left-edge color strips + swatches ───────────────── */
 /* Distinct (darker) palette from the popover above: the strips sit on
  * top of the journal card surface and need more contrast. */
