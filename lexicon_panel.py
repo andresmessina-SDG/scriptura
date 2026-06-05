@@ -140,11 +140,9 @@ class LexiconPanel(Gtk.Box):
 
         # ── Header row ──
         header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        # Tint + inset live in CSS (.lex-header) as padding, not widget margins,
+        # so the header surface is full-bleed and joins the occurrences header.
         header.add_css_class('lex-header')
-        header.set_margin_start(12)
-        header.set_margin_end(8)
-        header.set_margin_top(6)
-        header.set_margin_bottom(6)
 
         self._back_btn = Gtk.Button(icon_name='go-previous-symbolic')
         self._back_btn.add_css_class('flat')
@@ -203,6 +201,9 @@ class LexiconPanel(Gtk.Box):
         self._def_view.set_top_margin(8)
         self._def_view.set_bottom_margin(8)
         self._def_buf = self._def_view.get_buffer()
+        # Headword (first line of an entry) rendered a tad more prominent.
+        self._headword_tag = self._def_buf.create_tag(
+            'headword', weight=Pango.Weight.BOLD, scale=1.1)
         def_scroll.set_child(self._def_view)
 
         gesture = Gtk.GestureClick.new()
@@ -243,7 +244,8 @@ class LexiconPanel(Gtk.Box):
         self._h_paned.set_shrink_start_child(False)
         self._h_paned.set_shrink_end_child(False)
 
-        self.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+        # No separator rule — the soft .lex-panel top border is the only divider
+        # from the reading area; the header below is flat, grouped by whitespace.
         self.append(header)
         self.append(self._h_paned)
 
@@ -383,6 +385,12 @@ class LexiconPanel(Gtk.Box):
                 self._def_buf.set_text(plain)
                 _log.exception('Markup error')
             self._tag_refs()
+            # Bump the headword (first line) so the lemma stands out from the gloss.
+            head_start = self._def_buf.get_start_iter()
+            head_end = head_start.copy()
+            if not head_end.ends_line():
+                head_end.forward_to_line_end()
+            self._def_buf.apply_tag(self._headword_tag, head_start, head_end)
 
         if not self.get_visible():
             # Set the vertical paned position BEFORE the panel becomes

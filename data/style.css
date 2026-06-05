@@ -435,22 +435,37 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
 
 /* ── Lexicon + Word-study panel ──────────────────────────────────────── */
 
+/* Soft top hairline from the reading area. */
 .lex-panel {
-    border-top: 1px solid @borders;
+    border-top: 1px solid alpha(@borders, 0.3);
 }
+/* Flat header (no fill/rule), grouped by whitespace like the search panel and
+   popovers; padding (not widget margins) carries the insets. */
 .lex-header {
-    background-color: alpha(@card_bg_color, 0.6);
-    border-bottom: 1px solid alpha(@borders, 0.4);
+    padding: 6px 8px 6px 12px;
 }
+/* Faint column divider between the definition and the occurrences list. */
 .ws-panel {
     border-left: 1px solid alpha(@borders, 0.4);
 }
+/* Quiet accent eyebrow over the occurrences list — accent text only, no fill,
+   no rule. Balances the bold headword atop the definition column. */
 .ws-header {
-    background-color: alpha(@accent_color, 0.12);
     color: @accent_color;
     font-weight: 600;
-    padding: 8px 14px;
-    border-bottom: 1px solid alpha(@borders, 0.4);
+    /* Roomy bottom padding so the first occurrence isn't cramped under the
+       eyebrow — matches the breathing room atop the definition column. */
+    padding: 8px 14px 8px 14px;
+}
+/* Put the whole panel on ONE surface. The definition TextView and the
+   occurrences ListBox default to @view_bg_color (white), while the header and
+   eyebrow boxes are @window_bg_color (grey) — that mismatch, not any tint, was
+   the asymmetric step. Force the content transparent so the panel is uniformly
+   window_bg, like the reading area it hangs below. */
+.lex-panel textview,
+.lex-panel textview text,
+.lex-panel list {
+    background-color: transparent;
 }
 
 /* ── Historical Commentaries (catena) pane ───────────────────────────── */
