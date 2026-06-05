@@ -43,6 +43,18 @@ def _grab_focus_once(widget):
 
 # ── Right-click study menu ───────────────────────────────────────────────────
 
+def _menu_row(icon_name, label):
+    """A flat, left-aligned menu row: leading symbolic icon + label. Gives the
+    items menu-like structure/affordance without the heavy filled-button look."""
+    btn = Gtk.Button()
+    btn.add_css_class('flat')
+    content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+    content.append(Gtk.Image.new_from_icon_name(icon_name))
+    content.append(Gtk.Label(label=label, xalign=0, hexpand=True))
+    btn.set_child(content)
+    return btn
+
+
 def show_study_menu(pane, verses, x, y):
     """Right-click annotation menu — highlight colors, underline, note,
     copy, compare translations. Single-verse-only actions (note, compare)
@@ -67,6 +79,16 @@ def show_study_menu(pane, verses, x, y):
     lbl.add_css_class('dim-label')
     box.append(lbl)
 
+    # Load this chapter's annotations once — drives the underline label, the
+    # note prefill, and whether a "Clear Highlight" row is worth showing.
+    annos = annotations.get_annotations(pane._module, pane._book, pane._chapter)
+
+    def _verse_anno(v):
+        a = annos.get(str(v), {})
+        return {'highlight': a} if isinstance(a, str) else (a or {})
+
+    any_highlighted = any(_verse_anno(v).get('highlight') for v in verses)
+
     # 1. Highlight color picker
     color_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
     color_box.set_halign(Gtk.Align.CENTER)
@@ -78,50 +100,45 @@ def show_study_menu(pane, verses, x, y):
         btn.connect('clicked',
                     lambda b, c=color: apply_highlight(pane, verses, c, popover))
         color_box.append(btn)
-    clear_btn = Gtk.Button(label='Clear Highlight')
-    clear_btn.connect('clicked', lambda b: apply_highlight(pane, verses, None, popover))
     box.append(color_box)
-    box.append(clear_btn)
-    box.append(Gtk.Separator())
+    # Only offer "Clear Highlight" when something is actually highlighted.
+    if any_highlighted:
+        clear_btn = _menu_row('edit-clear-symbolic', 'Clear Highlight')
+        clear_btn.connect('clicked',
+                          lambda b: apply_highlight(pane, verses, None, popover))
+        box.append(clear_btn)
 
     # 2. Underline toggle
-    annos = annotations.get_annotations(pane._module, pane._book, pane._chapter)
-    all_underlined = all(
-        (a if isinstance(a, dict) else {'underline': False}).get('underline', False)
-        for a in (annos.get(str(v), {}) for v in verses)
-    )
+    all_underlined = all(_verse_anno(v).get('underline', False) for v in verses)
     und_lbl = 'Remove Underline' if all_underlined else 'Underline'
-    und_btn = Gtk.Button(label=und_lbl)
+    und_btn = _menu_row('format-text-underline-symbolic', und_lbl)
+    und_btn.set_margin_top(8)   # whitespace gap to the highlight group above
     und_btn.connect('clicked',
                     lambda b: toggle_underline(pane, verses, not all_underlined, popover))
     box.append(und_btn)
 
     # 3. Note & Tags (single verse only)
     if len(verses) == 1:
-        anno = annos.get(str(verses[0]), {})
-        if isinstance(anno, str):
-            anno = {'highlight': anno, 'underline': False, 'note': None}
+        anno = _verse_anno(verses[0])
         note_text = anno.get('note', '')
         current_tags = anno.get('tags', [])
         has_study = bool(note_text or current_tags)
-        note_btn = Gtk.Button(label='Edit Note & Tags' if has_study else 'Note & Tags')
+        note_btn = _menu_row('document-edit-symbolic',
+                             'Edit Note & Tags' if has_study else 'Note & Tags')
         note_btn.connect('clicked',
                          lambda b: _edit_note(pane, verses[0], note_text, current_tags, popover))
         box.append(note_btn)
 
-    box.append(Gtk.Separator())
-
     # 4. Copy verse(s)
     copy_lbl = 'Copy verses' if len(verses) > 1 else 'Copy verse'
-    copy_btn = Gtk.Button(label=copy_lbl)
-    copy_btn.add_css_class('flat')
+    copy_btn = _menu_row('edit-copy-symbolic', copy_lbl)
+    copy_btn.set_margin_top(8)   # whitespace gap to the annotate group above
     copy_btn.connect('clicked', lambda b: copy_verse(pane, verses, popover))
     box.append(copy_btn)
 
     # 5. Compare translations (single verse only)
     if len(verses) == 1:
-        comp_btn = Gtk.Button(label='Compare translations')
-        comp_btn.add_css_class('flat')
+        comp_btn = _menu_row('view-dual-symbolic', 'Compare translations')
         comp_btn.connect('clicked', lambda b: compare_translations(pane, verses[0], popover))
         box.append(comp_btn)
 
