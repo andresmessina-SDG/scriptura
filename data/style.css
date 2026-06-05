@@ -321,35 +321,36 @@ paned.main-split {
     margin-right: 8px;
 }
 
-/* The non-wide GtkPaned handle draws a built-in grey line as part of its own
- * rendering, BENEATH any CSS background — so background-color can't hide it
- * (opaque red masked it; transparent and window-bg both revealed it). opacity
- * reaches the whole node, so opacity:0 hides the handle entirely; hover
- * restores it as the soft rounded pill for resizing. */
+/* The non-wide GtkPaned handle draws a built-in grey line BENEATH any CSS
+ * background — opacity:0 is the only thing that hides it, but opacity:1 (any
+ * hover styling) re-reveals it and a translucent fill can't mask it. So the
+ * separator stays opacity:0 *always* (no line, ever); the visible drag
+ * affordance is a separate overlay widget — `.pane-grip`, positioned by
+ * window.py — that owes nothing to the separator's paint. */
 paned.main-split > separator {
     opacity: 0;
     background-color: transparent;
     min-width: 8px;
 }
 
-paned.main-split > separator:hover {
-    opacity: 1;
-    /* Full-height fill is deliberate: showing the handle requires opacity:1,
-     * which re-reveals GtkPaned's built-in grey line — so the fill must cover
-     * the whole gutter to mask it. A short grip would let the line show. */
-    background-color: alpha(@window_fg_color, 0.10);
-    border-radius: 4px;
-    margin-top: 14px;
-    margin-bottom: 14px;
+/* Floating centered drag-grip — a soft vertical pill that fades in on hover
+ * near the divider (visibility + x-position driven from window.py). */
+.pane-grip {
+    background-color: alpha(@window_fg_color, 0.28);
+    border-radius: 999px;
+    min-width: 6px;
+    min-height: 44px;
 }
 
-/* Each pane's reading area as a floating "page" — gentle surface, rounded
- * top corners. No side margins: the 8px split inset + 8px separator above
- * provide the gutters, so the pages fill their columns edge-to-edge. */
+/* Each pane's reading area as a distinct floating "page" card — gentle surface,
+ * all four corners rounded, lifted off the bottom edge so the window-bg gutter
+ * wraps it on every side (left/right gutters come from the 8px split inset).
+ * window.py sets overflow:hidden on the paned so the scroll/lexicon clip to the
+ * rounded corners. */
 .reading-page {
     background-color: alpha(@window_fg_color, 0.05);
-    border-radius: 14px 14px 0 0;
-    margin: 6px 0 0 0;
+    border-radius: 16px;
+    margin: 6px 0 8px 0;
 }
 
 /* ── Window-level overlay panels (menu, jump bar, reading mode) ──────── */

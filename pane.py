@@ -775,6 +775,9 @@ class BiblePane(Gtk.Box):
         self._lex_paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL,
                                     vexpand=True, hexpand=True)
         self._lex_paned.add_css_class('reading-page')
+        # Clip the scroll/lexicon to the page's rounded corners (square child
+        # corners would otherwise poke past the 16px card edge).
+        self._lex_paned.set_overflow(Gtk.Overflow.HIDDEN)
         self._lex_paned.set_start_child(self._content_stack)
         self._lex_paned.set_end_child(self._lex_panel)
         self._lex_paned.set_resize_start_child(True)

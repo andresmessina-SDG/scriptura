@@ -432,6 +432,23 @@ class BibleWindow(Adw.ApplicationWindow):
         # both are visible.
         overlay = Gtk.Overlay(vexpand=True, hexpand=True)
         overlay.set_child(self._paned)
+        # Floating centered drag-grip for the split. The GtkPaned separator
+        # stays opacity:0 forever (its built-in hairline never shows); this
+        # separate overlay widget is the only visible affordance, fading in on
+        # hover near the divider. can_target=False so drags pass straight
+        # through to the separator beneath it.
+        self._pane_grip = Gtk.Box()
+        self._pane_grip.add_css_class('pane-grip')
+        self._pane_grip.set_halign(Gtk.Align.START)
+        self._pane_grip.set_valign(Gtk.Align.CENTER)
+        self._pane_grip.set_can_target(False)
+        self._pane_grip.set_visible(False)
+        overlay.add_overlay(self._pane_grip)
+        self._paned.connect('notify::position', self._update_pane_grip)
+        grip_motion = Gtk.EventControllerMotion.new()
+        grip_motion.connect('motion', self._on_grip_motion)
+        grip_motion.connect('leave', lambda _c: self._pane_grip.set_visible(False))
+        overlay.add_controller(grip_motion)
         overlay.add_overlay(self._search_revealer)
         overlay.add_overlay(self._jump_revealer)
         overlay.add_overlay(self._menu_revealer)
@@ -1407,6 +1424,22 @@ class BibleWindow(Adw.ApplicationWindow):
     _READING_TRIGGER_ZONE_PX = 12
     _READING_KEEP_ZONE_PX = 80
     _READING_HOVER_DELAY_MS = 2000
+
+    # ── Split drag-grip ──────────────────────────────────────────────────────
+    # The divider's centre x = 8px (paned margin-left) + position + 4px (half of
+    # the 8px separator); the 6px grip is centred on it (−3).
+    def _update_pane_grip(self, *_args):
+        self._pane_grip.set_margin_start(int(8 + self._paned.get_position() + 4 - 3))
+
+    def _on_grip_motion(self, _controller, x, _y):
+        if not self.pane2.get_visible():        # single-pane: no divider
+            self._pane_grip.set_visible(False)
+            return
+        center = 8 + self._paned.get_position() + 4
+        near = abs(x - center) <= 10
+        if near:
+            self._update_pane_grip()
+        self._pane_grip.set_visible(near)
 
     def _on_reading_mouse_motion(self, _controller, _x, y):
         if not getattr(self, '_reading_mode', False):
