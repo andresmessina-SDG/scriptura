@@ -15,10 +15,12 @@ class CrossRefPanel(Gtk.Box):
         self._build_ui()
 
     def _build_ui(self):
-        self.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+        # No separator rule — a faint .crossref-bar surface tint reads as a calm
+        # tray attached to the reading page (matches the popover/search de-ruling).
+        self.add_css_class('crossref-bar')
 
-        # Single-row pills layout: small reference label on the left, scrollable
-        # pills in the middle, close button on the right.
+        # Single-row chips layout: source-verse eyebrow on the left, scrollable
+        # outline chips in the middle, close button on the right.
         ref_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         ref_row.set_margin_start(12)
         ref_row.set_margin_end(8)
@@ -31,8 +33,18 @@ class CrossRefPanel(Gtk.Box):
         ref_row.append(self._title)
 
         ref_scroll = Gtk.ScrolledWindow()
-        ref_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+        # EXTERNAL (not AUTOMATIC) horizontally: no scrollbar is drawn — the slim
+        # chips no longer hide it, and a bar across them read as strikethrough.
+        ref_scroll.set_policy(Gtk.PolicyType.EXTERNAL, Gtk.PolicyType.NEVER)
         ref_scroll.set_hexpand(True)
+        ref_scroll.set_valign(Gtk.Align.CENTER)
+        self._ref_scroll = ref_scroll
+        # With no scrollbar, drive horizontal scroll from the wheel/trackpad
+        # ourselves — GTK won't translate a vertical wheel to horizontal here.
+        wheel = Gtk.EventControllerScroll.new(
+            Gtk.EventControllerScrollFlags.BOTH_AXES)
+        wheel.connect('scroll', self._on_wheel_scroll)
+        ref_scroll.add_controller(wheel)
         self._ref_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         ref_scroll.set_child(self._ref_box)
         ref_row.append(ref_scroll)
@@ -46,8 +58,15 @@ class CrossRefPanel(Gtk.Box):
 
         self.append(ref_row)
 
+    def _on_wheel_scroll(self, _ctrl, dx, dy):
+        # Map whichever axis the device reports onto the row's horizontal scroll.
+        adj = self._ref_scroll.get_hadjustment()
+        delta = dx if abs(dx) > abs(dy) else dy
+        adj.set_value(adj.get_value() + delta * 60)
+        return True
+
     def load(self, book, chapter, verse):
-        self._title.set_text(f'{book} {chapter}:{verse}')
+        self._title.set_text(f'Cross-references · {book} {chapter}:{verse}')
         self._clear_refs()
 
         spinner = Gtk.Spinner()
@@ -80,7 +99,7 @@ class CrossRefPanel(Gtk.Box):
         else:
             for ref_book, ref_ch, ref_v, label in refs:
                 btn = Gtk.Button(label=label)
-                btn.add_css_class('pill')
+                btn.add_css_class('xref-chip')
                 btn.connect('clicked', self._make_handler(ref_book, ref_ch, ref_v))
                 if self._on_ref_right_clicked:
                     rc = Gtk.GestureClick.new()
