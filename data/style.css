@@ -107,6 +107,13 @@ button.hl-green  { background-color: #c4dfb9; color: #000; }
 button.hl-blue   { background-color: #bdd5e8; color: #000; }
 button.hl-orange { background-color: #f0c894; color: #000; }
 
+/* ── Compare-translations popover — flat rows on one surface, faint dividers,
+   clear (non-dim) version name (was raised .boxed-list cards + dim labels). */
+.compare-list, .compare-list > row { background-color: transparent; }
+.compare-list > row { border-bottom: 1px solid alpha(@borders, 0.3); }
+.compare-list > row:last-child { border-bottom: none; }
+.compare-version { font-weight: bold; }
+
 /* ── Study Journal — left-edge color strips + swatches ───────────────── */
 /* Distinct (darker) palette from the popover above: the strips sit on
  * top of the journal card surface and need more contrast. */

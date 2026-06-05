@@ -212,7 +212,6 @@ def compare_translations(pane, verse, popover):
     title.set_margin_top(8)
     title.set_margin_bottom(6)
     outer.append(title)
-    outer.append(Gtk.Separator())
 
     scroll = Gtk.ScrolledWindow()
     scroll.set_min_content_width(420)
@@ -223,7 +222,7 @@ def compare_translations(pane, verse, popover):
     # Local — two compare popovers in flight don't clobber each other.
     comp_list = Gtk.ListBox()
     comp_list.set_selection_mode(Gtk.SelectionMode.NONE)
-    comp_list.add_css_class('boxed-list')
+    comp_list.add_css_class('compare-list')
     comp_list.set_margin_start(8)
     comp_list.set_margin_end(8)
     comp_list.set_margin_top(8)
@@ -275,7 +274,7 @@ def compare_translations(pane, verse, popover):
             rb.set_margin_top(8)
             rb.set_margin_bottom(8)
             ml = Gtk.Label(label=sword_bridge.display_name(mod), xalign=0)
-            ml.add_css_class('dim-label')
+            ml.add_css_class('compare-version')
             tl = Gtk.Label(label=text, xalign=0, wrap=True)
             tl.set_max_width_chars(52)
             rb.append(ml)
