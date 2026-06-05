@@ -319,6 +319,7 @@ class BibleTextView(Gtk.TextView):
     __gtype_name__ = 'BibleTextView'
 
     _HL_PAD = 2
+    _HL_RADIUS = 6   # softly-rounded band corners (band height ~ body + 4px)
     # Transient cues (search match, navigation flash) are painted as bands
     # only — they carry NO text-foreground tag. Recolouring the text via a tag
     # applied/removed after the initial layout desyncs from this custom band
@@ -330,6 +331,12 @@ class BibleTextView(Gtk.TextView):
     # mode, and the black text of a user highlight a flash happens to land on.
     _SEARCH_COLOR = 'rgba(214,150,40,0.40)'   # amber, search matches
     _FLASH_COLOR = 'rgba(232,120,32,0.44)'    # orange, navigation flash
+    # Annotation + lexicon underlines are painted (not Pango underlines) so they
+    # stay uniform under the 200% verse-1 drop cap. Thickness, and the muted
+    # accent of the hover/lexicon dotted underline (per theme).
+    _UL_THICK = 1.5
+    _LEX_COLOR_DARK = '#7fa3c1'
+    _LEX_COLOR_LIGHT = '#5a7fa3'
 
     def do_snapshot(self, snapshot):
         try:
@@ -358,7 +365,10 @@ class BibleTextView(Gtk.TextView):
         hl_tags = self._hl_tags()
         search = table.lookup('_search_hl')
         flash = table.lookup('_flash')
-        if not hl_tags and search is None and flash is None:
+        ul = table.lookup('_ul_text')        # annotation underline (solid)
+        hover = table.lookup('_strg_hover')  # lexicon hover underline (dotted)
+        if (not hl_tags and search is None and flash is None
+                and ul is None and hover is None):
             return
         vr = self.get_visible_rect()
         _, lo = self.get_iter_at_location(0, vr.y)
@@ -375,6 +385,21 @@ class BibleTextView(Gtk.TextView):
                              lo, hi, asc, desc)
         self._draw_tag_layer(snapshot, buf, flash, self._FLASH_COLOR,
                              lo, hi, asc, desc)
+        # Annotation underline — a uniform painted line in the text colour.
+        if ul is not None:
+            ucol = self.get_color()
+            for s, e in self._tag_ranges(buf, ul, lo, hi):
+                self._draw_band(snapshot, s, e, ucol, asc, desc,
+                                underline=True)
+        # Lexicon hover — a dotted accent underline ("defined term" affordance).
+        if hover is not None:
+            hcol = Gdk.RGBA()
+            hcol.parse(self._LEX_COLOR_DARK
+                       if Adw.StyleManager.get_default().get_dark()
+                       else self._LEX_COLOR_LIGHT)
+            for s, e in self._tag_ranges(buf, hover, lo, hi):
+                self._draw_band(snapshot, s, e, hcol, asc, desc,
+                                underline=True, dotted=True)
 
     def _draw_tag_layer(self, snapshot, buf, tag, color, lo, hi, asc, desc):
         if tag is None:
@@ -421,7 +446,8 @@ class BibleTextView(Gtk.TextView):
                 break
         return it
 
-    def _draw_band(self, snapshot, start, end, rgba, asc, desc):
+    def _draw_band(self, snapshot, start, end, rgba, asc, desc,
+                   underline=False, dotted=False):
         pad = self._HL_PAD
         body = asc + desc
         band_h = body + 2 * pad
@@ -461,13 +487,35 @@ class BibleTextView(Gtk.TextView):
                     Gtk.TextWindowType.TEXT, int(r0.x), int(band_top))
                 wx1, _ = self.buffer_to_window_coords(
                     Gtk.TextWindowType.TEXT, int(r1.x), 0)
-                rect = Graphene.Rect().init(
-                    wx0, wy, max(1.0, wx1 - wx0), band_h)
-                rounded = Gsk.RoundedRect()
-                rounded.init_from_rect(rect, 3)
-                snapshot.push_rounded_clip(rounded)
-                snapshot.append_color(rgba, rect)
-                snapshot.pop()
+                seg_w = max(1.0, wx1 - wx0)
+                if underline:
+                    # Thin line at a fixed offset below the body baseline —
+                    # asc is the uniform font ascent, so the line sits at the
+                    # same height on every display line, drop cap included.
+                    uy = wy + pad + asc + 1.0
+                    if dotted:
+                        x = wx0
+                        while x < wx1:
+                            w = min(2.0, wx1 - x)
+                            snapshot.append_color(
+                                rgba, Graphene.Rect().init(
+                                    x, uy, w, self._UL_THICK))
+                            x += 5.0   # 2px dot + 3px gap
+                    else:
+                        urect = Graphene.Rect().init(
+                            wx0, uy, seg_w, self._UL_THICK)
+                        rounded = Gsk.RoundedRect()
+                        rounded.init_from_rect(urect, self._UL_THICK / 2)
+                        snapshot.push_rounded_clip(rounded)
+                        snapshot.append_color(rgba, urect)
+                        snapshot.pop()
+                else:
+                    rect = Graphene.Rect().init(wx0, wy, seg_w, band_h)
+                    rounded = Gsk.RoundedRect()
+                    rounded.init_from_rect(rect, self._HL_RADIUS)
+                    snapshot.push_rounded_clip(rounded)
+                    snapshot.append_color(rgba, rect)
+                    snapshot.pop()
             # Advance past this segment, then skip whitespace / blank lines so
             # the next segment starts on real text.
             cur = seg_end.copy()
@@ -1390,9 +1438,11 @@ class BiblePane(Gtk.Box):
         # to be loaded last.
         if self._module_type == 'Biblical Texts':
             heading_color = '#8d8278' if dark else '#7a7066'
+            # Single trailing newline (not two): line_spacing 1.6 already gives
+            # ample separation, and a blank line here left an oversized top gap.
             heading = (f'<span size="x-large" weight="bold" '
                        f'foreground="{heading_color}" letter_spacing="600">'
-                       f'{GLib.markup_escape_text(f"{book} {chapter}")}</span>\n\n')
+                       f'{GLib.markup_escape_text(f"{book} {chapter}")}</span>\n')
             self._buffer.insert_markup(self._buffer.get_end_iter(), heading, -1)
 
         # For commentaries, group consecutive verses whose source HTML
@@ -1824,8 +1874,9 @@ class BiblePane(Gtk.Box):
         if anno.get('underline'):
             ul = table.lookup('_ul_text')
             if not ul:
-                ul = self._buffer.create_tag(
-                    '_ul_text', underline=Pango.Underline.DOUBLE)
+                # Zero-visual marker: BibleTextView paints a uniform line for
+                # this range (a Pango underline dips/thickens under the drop cap).
+                ul = self._buffer.create_tag('_ul_text')
             _bump(ul)
             self._buffer.apply_tag(ul, vtext_start, vtext_end)
 
@@ -2063,9 +2114,11 @@ class BiblePane(Gtk.Box):
             # tag is created lazily so its priority lands above the
             # anonymous span tags created during chapter render.
             dark = Adw.StyleManager.get_default().get_dark()
+            # Foreground only — the dotted underline is painted by
+            # BibleTextView (Pango has no dotted underline), so the lexicon mark
+            # reads distinctly from the solid annotation underline.
             hover_tag = self._buffer.create_tag(
                 '_strg_hover',
-                underline=Pango.Underline.SINGLE,
                 foreground='#7fa3c1' if dark else '#5a7fa3',
             )
         table = self._buffer.get_tag_table()
