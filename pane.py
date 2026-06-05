@@ -492,8 +492,12 @@ class BibleTextView(Gtk.TextView):
                     # Thin line at a fixed offset below the body baseline —
                     # asc is the uniform font ascent, so the line sits at the
                     # same height on every display line, drop cap included.
-                    uy = wy + pad + asc + 1.0
+                    base_uy = wy + pad + asc + 1.0
                     if dotted:
+                        # Sit 2px below a solid annotation line so the two read
+                        # as parallel lines (not a smear) when a word is both
+                        # underlined and hovered for its definition.
+                        uy = base_uy + 2.0
                         x = wx0
                         while x < wx1:
                             w = min(2.0, wx1 - x)
@@ -503,7 +507,7 @@ class BibleTextView(Gtk.TextView):
                             x += 5.0   # 2px dot + 3px gap
                     else:
                         urect = Graphene.Rect().init(
-                            wx0, uy, seg_w, self._UL_THICK)
+                            wx0, base_uy, seg_w, self._UL_THICK)
                         rounded = Gsk.RoundedRect()
                         rounded.init_from_rect(urect, self._UL_THICK / 2)
                         snapshot.push_rounded_clip(rounded)
