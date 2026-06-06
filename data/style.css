@@ -447,6 +447,20 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
     background-color: transparent;
 }
 
+/* Note/Tags editor field — a soft inset matching the reading-page surface
+ * (faint tint + rounded corners) instead of GNOME's hard view-frame. The
+ * ScrolledWindow carries the tint; the TextView and its text paint
+ * transparent so it shows through (same trick as .bible-view). The widget's
+ * set_overflow(HIDDEN) clips the text to the rounded corners. */
+.note-field {
+    background-color: alpha(@window_fg_color, 0.05);
+    border-radius: 12px;
+}
+.note-field textview,
+.note-field textview text {
+    background-color: transparent;
+}
+
 /* The reading scrollbar is pinned always-visible (to reserve its width so a
  * Strong's click never reflows the column). Make its trough transparent so it
  * doesn't read as a full-height line at the pane edge — only the thin thumb

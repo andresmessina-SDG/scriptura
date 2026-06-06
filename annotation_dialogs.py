@@ -321,22 +321,24 @@ def _show_note_window(pane, verse, current_note, current_tags):
 
     scrolled = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
     scrolled.set_min_content_height(160)
+    # Soft inset field — a faint surface tint + rounded corners (matching the
+    # reading page) instead of GNOME's hard view-frame. overflow:HIDDEN clips
+    # the TextView to the rounded corners; the TextView paints transparent so
+    # the tint shows through (see .note-field in style.css).
+    scrolled.add_css_class('note-field')
+    scrolled.set_overflow(Gtk.Overflow.HIDDEN)
     entry = Gtk.TextView()
     entry.set_editable(True)
     entry.set_cursor_visible(True)
     entry.set_wrap_mode(Gtk.WrapMode.WORD)
-    entry.set_left_margin(8)
-    entry.set_right_margin(8)
-    entry.set_top_margin(6)
-    entry.set_bottom_margin(6)
+    entry.set_left_margin(10)
+    entry.set_right_margin(10)
+    entry.set_top_margin(8)
+    entry.set_bottom_margin(8)
     note_buf = entry.get_buffer()
     note_buf.set_text(current_note or '')
     scrolled.set_child(entry)
-    # Frame gives the GNOME standard "view" background — distinct from the
-    # surrounding window so the input area reads as an editable field.
-    frame = Gtk.Frame()
-    frame.set_child(scrolled)
-    box.append(frame)
+    box.append(scrolled)
 
     tags_lbl = Gtk.Label(label='Topics (comma-separated)', xalign=0)
     tags_lbl.add_css_class('dim-label')
@@ -375,6 +377,14 @@ def _save_note_window(pane, verse, note_buf, tags_entry, dialog):
 
 # ── Suggested topics chip row (OpenBible topics) ────────────────────────────
 
+def _chip_wheel_scroll(_ctrl, dx, dy, scroll):
+    # Map whichever axis the device reports onto the row's horizontal scroll.
+    adj = scroll.get_hadjustment()
+    delta = dx if abs(dx) > abs(dy) else dy
+    adj.set_value(adj.get_value() + delta * 60)
+    return True
+
+
 def build_suggested_topics(book, chapter, verse, tags_entry):
     """Chip row that fetches OpenBible topics for the verse and appends
     each one to tags_entry on click. Hidden if no topics for this verse
@@ -389,9 +399,18 @@ def build_suggested_topics(book, chapter, verse, tags_entry):
     wrapper.append(hint)
 
     chip_scroll = Gtk.ScrolledWindow()
-    chip_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+    # EXTERNAL (not AUTOMATIC): no scrollbar is drawn — the slim outline chips
+    # no longer mask it, so it would otherwise read as a strikethrough line
+    # through them (the same fix as the cross-ref bar). Wheel scroll is wired
+    # explicitly since EXTERNAL won't translate a vertical wheel to horizontal.
+    chip_scroll.set_policy(Gtk.PolicyType.EXTERNAL, Gtk.PolicyType.NEVER)
     chip_scroll.set_propagate_natural_height(True)
     chip_scroll.set_min_content_height(36)
+    chip_scroll.set_valign(Gtk.Align.CENTER)
+    wheel = Gtk.EventControllerScroll.new(
+        Gtk.EventControllerScrollFlags.BOTH_AXES)
+    wheel.connect('scroll', _chip_wheel_scroll, chip_scroll)
+    chip_scroll.add_controller(wheel)
     chip_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
     chip_scroll.set_child(chip_box)
     wrapper.append(chip_scroll)
@@ -410,7 +429,9 @@ def build_suggested_topics(book, chapter, verse, tags_entry):
                 return False
             for topic in topics:
                 btn = Gtk.Button(label=topic)
-                btn.add_css_class('pill')
+                # Slim outline chip — same family as the cross-ref bar's chips,
+                # so the suggestions read lighter than the field they feed.
+                btn.add_css_class('xref-chip')
                 btn.connect('clicked', append_topic, topic)
                 chip_box.append(btn)
             wrapper.set_visible(True)
@@ -457,20 +478,20 @@ def show_chapter_note(pane):
 
     scrolled = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
     scrolled.set_min_content_height(160)
+    scrolled.add_css_class('note-field')
+    scrolled.set_overflow(Gtk.Overflow.HIDDEN)
     tv = Gtk.TextView()
     tv.set_editable(True)
     tv.set_cursor_visible(True)
     tv.set_wrap_mode(Gtk.WrapMode.WORD)
-    tv.set_left_margin(8)
-    tv.set_right_margin(8)
-    tv.set_top_margin(6)
-    tv.set_bottom_margin(6)
+    tv.set_left_margin(10)
+    tv.set_right_margin(10)
+    tv.set_top_margin(8)
+    tv.set_bottom_margin(8)
     buf = tv.get_buffer()
     buf.set_text(note)
     scrolled.set_child(tv)
-    frame = Gtk.Frame()
-    frame.set_child(scrolled)
-    box.append(frame)
+    box.append(scrolled)
 
     tags_lbl = Gtk.Label(label='Topics (comma-separated)', xalign=0)
     tags_lbl.add_css_class('dim-label')
