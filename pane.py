@@ -529,6 +529,15 @@ class BibleTextView(Gtk.TextView):
 
 
 class BiblePane(Gtk.Box):
+    # Auto-hide-on-scroll tuning for the pane toolbar (pixels of the reading
+    # scroll). A top dead-zone always shows the bar near the chapter start;
+    # the bar only hides after this much accumulated downward scroll, and
+    # reveals after a smaller upward scroll (reveal is deliberately cheaper —
+    # hidden chrome must always be trivially easy to bring back).
+    _CHROME_TOP_DEADZONE = 64.0
+    _CHROME_HIDE_THRESHOLD = 48.0
+    _CHROME_SHOW_THRESHOLD = 24.0
+
     def __init__(self, module_name=None, on_word_click=None,
                  on_click_outside_search=None, on_verse_select=None,
                  on_word_study_navigate=None, on_toast=None,
@@ -666,7 +675,22 @@ class BiblePane(Gtk.Box):
         self._date_nav_revealer.set_child(date_nav)
         self._date_nav_revealer.set_reveal_child(False)
 
-        self.append(toolbar)
+        # The pane toolbar auto-hides while reading (scroll down to reclaim
+        # its height, scroll up / tap the text / focus a control to bring it
+        # back) — see _on_reading_scroll below. SLIDE_UP retracts it upward so
+        # the reading page rises to fill the space.
+        self._toolbar_revealer = Gtk.Revealer()
+        self._toolbar_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_UP)
+        self._toolbar_revealer.set_transition_duration(280)
+        self._toolbar_revealer.set_child(toolbar)
+        self._toolbar_revealer.set_reveal_child(True)
+        # Keyboard focus must never strand the user on a hidden control: any
+        # focus entering the toolbar (Tab, Ctrl+L → picker, etc.) reveals it.
+        toolbar_focus = Gtk.EventControllerFocus.new()
+        toolbar_focus.connect('enter', lambda _c: self._reveal_chrome())
+        toolbar.add_controller(toolbar_focus)
+
+        self.append(self._toolbar_revealer)
         self.append(self._date_nav_revealer)
         self._toolbar_separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
         self._toolbar_separator.add_css_class('pane-toolbar-separator')
@@ -732,6 +756,19 @@ class BiblePane(Gtk.Box):
         scrolled.set_child(self._view)
         scrolled.set_reading_width(int(settings.get('reading_width') or 720))
         self._reading_scroll = scrolled
+
+        # Auto-hide-on-scroll state for the pane toolbar. Direction-driven with
+        # a top dead-zone and a hysteresis accumulator so small or ambiguous
+        # motion never toggles it (the jitter that separates premium from
+        # janky). Reveal is biased easier than hide. _chrome_lock swallows the
+        # value-changes the content reflow emits while the bar animates, so the
+        # resize can't bounce the state back near the bottom of a chapter.
+        self._chrome_revealed = True
+        self._scroll_accum = 0.0
+        self._last_scroll_value = 0.0
+        self._chrome_lock = False
+        self._chrome_lock_id = 0
+        scrolled.get_vadjustment().connect('value-changed', self._on_reading_scroll)
 
         # Lexicon panel (hidden until a Strong's word is clicked).
         # Owns its own widgets, state, and navigation history; we just
@@ -888,8 +925,68 @@ class BiblePane(Gtk.Box):
 
     def _on_pane_click(self, gesture, n_press, x, y):
         """Called when a pane or lexicon text view is clicked."""
+        # A tap in the reading area brings the toolbar back (reading-app
+        # convention). Reveal-only, not toggle: a tap should never hide chrome
+        # mid-read (e.g. a Strong's-word click) — scrolling down does that.
+        self._reveal_chrome()
         if self._on_click_outside_search:
             self._on_click_outside_search()
+
+    def _on_reading_scroll(self, adj):
+        """Hide/show the pane toolbar based on reading-scroll direction.
+
+        Direction-driven with a top dead-zone and a hysteresis accumulator:
+        motion in one direction accumulates and only flips the bar past a
+        threshold; a direction change resets the accumulator. Only engages for
+        the flowing Bible text — the card views (catena/imagery/archaeology)
+        scroll through their own containers and keep the toolbar pinned."""
+        v = adj.get_value()
+        delta = v - self._last_scroll_value
+        self._last_scroll_value = v
+        if self._chrome_lock or self._content_child() != 'text':
+            self._scroll_accum = 0.0
+            return
+        # Always reveal near the top of the chapter.
+        if v <= self._CHROME_TOP_DEADZONE:
+            self._scroll_accum = 0.0
+            self._set_chrome_revealed(True)
+            return
+        # Accumulate motion in the current direction; a reversal resets it.
+        if (delta > 0) != (self._scroll_accum > 0):
+            self._scroll_accum = 0.0
+        self._scroll_accum += delta
+        if self._chrome_revealed and self._scroll_accum > self._CHROME_HIDE_THRESHOLD:
+            self._set_chrome_revealed(False)
+        elif (not self._chrome_revealed
+              and self._scroll_accum < -self._CHROME_SHOW_THRESHOLD):
+            self._set_chrome_revealed(True)
+
+    def _set_chrome_revealed(self, reveal):
+        """Toggle the toolbar revealer, with asymmetric motion timing: exits
+        are brisk (get out of the way), entrances gentler (arrive softly)."""
+        if reveal == self._chrome_revealed:
+            return
+        self._chrome_revealed = reveal
+        self._scroll_accum = 0.0
+        self._toolbar_revealer.set_transition_duration(280 if reveal else 200)
+        self._toolbar_revealer.set_reveal_child(reveal)
+        # Swallow the value-changes the content reflow emits while the bar
+        # animates, so the resize can't bounce the state back.
+        self._chrome_lock = True
+        if self._chrome_lock_id:
+            GLib.source_remove(self._chrome_lock_id)
+        self._chrome_lock_id = GLib.timeout_add(360, self._release_chrome_lock)
+
+    def _release_chrome_lock(self):
+        self._chrome_lock = False
+        self._chrome_lock_id = 0
+        self._last_scroll_value = self._reading_scroll.get_vadjustment().get_value()
+        return GLib.SOURCE_REMOVE
+
+    def _reveal_chrome(self):
+        """Force the pane toolbar back into view (tap, focus, module change)."""
+        self._scroll_accum = 0.0
+        self._set_chrome_revealed(True)
 
     def _on_copy_clipboard(self, view):
         """Intercept Ctrl+C (and any other path that emits copy-clipboard)
@@ -2816,6 +2913,9 @@ class BiblePane(Gtk.Box):
         if prev_dict is not None and prev_dict.get_visible():
             self._dict_user_closed = True
             prev_dict.popdown()
+        # A fresh module starts with its chrome shown (the new content may not
+        # even drive the reading scroll — card views don't).
+        self._reveal_chrome()
         self._fetch_and_render()
 
     def select_verse(self, verse_num):
