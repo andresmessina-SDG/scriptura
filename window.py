@@ -93,6 +93,13 @@ class BibleWindow(Adw.ApplicationWindow):
         # silent loss). Deferred to idle so the window has time to lay out
         # and the toast overlay is alive.
         GLib.idle_add(self._warn_on_load_failures)
+        # Build the cross-reference index ahead of time on a background thread,
+        # so the first verse click is instant. Parsing the 8MB OpenBible TSV is
+        # ~1.3s of pure-Python (GIL-held) work the first time — paid here at
+        # idle instead of stalling the user's click. Cached to a pickle after,
+        # so later launches warm in <100ms. Deferred to idle so it doesn't
+        # compete with the initial chapter render.
+        GLib.idle_add(self._prewarm_cross_refs)
         # Surface a failed annotation write as a toast — otherwise the
         # in-memory change would quietly disappear on the next launch.
         annotations.set_save_error_handler(
@@ -107,6 +114,13 @@ class BibleWindow(Adw.ApplicationWindow):
             if result:
                 book, chapter, verse = result
                 GLib.idle_add(lambda: self._go_to(book, chapter, verse) or False)
+
+    def _prewarm_cross_refs(self):
+        import open_data
+        if open_data.has_cross_refs():
+            threading.Thread(
+                target=open_data.warm_cross_refs, daemon=True).start()
+        return GLib.SOURCE_REMOVE
 
     def _warn_on_load_failures(self):
         failed = []

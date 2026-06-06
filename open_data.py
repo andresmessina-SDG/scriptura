@@ -1,7 +1,9 @@
 import csv
 import io
 import os
+import pickle
 import shutil
+import threading
 import zipfile
 
 import paths
@@ -110,34 +112,90 @@ def _osis_first_tuple(s):
     return _parse_osis_one(s)
 
 
+# ── Parsed-index disk cache ───────────────────────────────────────────────────
+# The OpenBible datasets are large TSVs whose parse is ~0.9–1.5s of pure-Python
+# (GIL-held) work — enough to stall the UI on first use. We cache the parsed
+# index to a sibling .pickle (round-trips in <100ms) keyed to the source file's
+# mtime+size, so a re-download transparently invalidates it.
+
+def _file_signature(path):
+    st = os.stat(path)
+    return (int(st.st_mtime), st.st_size)
+
+
+def _read_parsed_cache(src_path):
+    """Return the cached parsed object if its .pickle matches src, else None."""
+    cache_path = src_path + '.pickle'
+    if not os.path.exists(cache_path):
+        return None
+    try:
+        with open(cache_path, 'rb') as f:
+            sig, data = pickle.load(f)
+        if sig == _file_signature(src_path):
+            return data
+    except Exception:
+        pass
+    return None
+
+
+def _write_parsed_cache(src_path, data):
+    """Atomically write the parsed object + source signature for next launch."""
+    try:
+        cache_path = src_path + '.pickle'
+        tmp = cache_path + '.tmp'
+        with open(tmp, 'wb') as f:
+            pickle.dump((_file_signature(src_path), data), f,
+                        protocol=pickle.HIGHEST_PROTOCOL)
+        os.replace(tmp, cache_path)
+    except Exception:
+        pass
+
+
 # ── Cross-references ──────────────────────────────────────────────────────────
 
 _xref = None
+# Serializes the (expensive) parse so a startup pre-warm thread and an
+# on-click fetch thread can't both build the index at once.
+_xref_lock = threading.Lock()
 
 
 def _load_xref():
     global _xref
     if _xref is not None:
         return
-    path = os.path.join(_DIR, 'cross_references.txt')
-    if not os.path.exists(path):
-        _xref = {}
-        return
-    data = {}
-    with open(path, encoding='utf-8') as f:
-        reader = csv.reader(f, delimiter='\t')
-        next(reader)
-        for row in reader:
-            if len(row) < 2:
-                continue
-            # Columns: From Verse (OSIS) | To Verse (OSIS, maybe a range) | Votes
-            from_vids = _osis_to_vids(row[0])
-            to_tuple  = _osis_first_tuple(row[1])
-            if not from_vids or not to_tuple:
-                continue
-            for fv in from_vids:
-                data.setdefault(fv, []).append(to_tuple)
-    _xref = data
+    with _xref_lock:
+        if _xref is not None:
+            return
+        path = os.path.join(_DIR, 'cross_references.txt')
+        if not os.path.exists(path):
+            _xref = {}
+            return
+        cached = _read_parsed_cache(path)
+        if cached is not None:
+            _xref = cached
+            return
+        data = {}
+        with open(path, encoding='utf-8') as f:
+            reader = csv.reader(f, delimiter='\t')
+            next(reader)
+            for row in reader:
+                if len(row) < 2:
+                    continue
+                # Columns: From Verse (OSIS) | To Verse (OSIS, maybe a range) | Votes
+                from_vids = _osis_to_vids(row[0])
+                to_tuple  = _osis_first_tuple(row[1])
+                if not from_vids or not to_tuple:
+                    continue
+                for fv in from_vids:
+                    data.setdefault(fv, []).append(to_tuple)
+        _xref = data
+        _write_parsed_cache(path, data)
+
+
+def warm_cross_refs():
+    """Build (or load from cache) the cross-reference index. Safe to call from
+    a background thread at startup so the first verse click is instant."""
+    _load_xref()
 
 
 def get_cross_refs(book, chapter, verse):
@@ -156,36 +214,46 @@ def has_cross_refs():
 # ── Topics ────────────────────────────────────────────────────────────────────
 
 _topics = None
+_topics_lock = threading.Lock()
 
 
 def _load_topics():
     global _topics
     if _topics is not None:
         return
-    path = os.path.join(_DIR, 'topic-scores.txt')
-    if not os.path.exists(path):
-        _topics = {}
-        return
-    raw = {}
-    with open(path, encoding='utf-8') as f:
-        reader = csv.reader(f, delimiter='\t')
-        next(reader)
-        for row in reader:
-            if len(row) < 3:
-                continue
-            # Columns: Topic | OSIS reference (often a range) | Quality Score
-            topic = row[0].strip()
-            osis  = row[1].strip()
-            try:
-                votes = int(row[2])
-            except ValueError:
-                votes = 0
-            for vid in _osis_to_vids(osis):
-                raw.setdefault(vid, []).append((votes, topic))
-    _topics = {
-        vid: [t for _, t in sorted(items, reverse=True)]
-        for vid, items in raw.items()
-    }
+    with _topics_lock:
+        if _topics is not None:
+            return
+        path = os.path.join(_DIR, 'topic-scores.txt')
+        if not os.path.exists(path):
+            _topics = {}
+            return
+        cached = _read_parsed_cache(path)
+        if cached is not None:
+            _topics = cached
+            return
+        raw = {}
+        with open(path, encoding='utf-8') as f:
+            reader = csv.reader(f, delimiter='\t')
+            next(reader)
+            for row in reader:
+                if len(row) < 3:
+                    continue
+                # Columns: Topic | OSIS reference (often a range) | Quality Score
+                topic = row[0].strip()
+                osis  = row[1].strip()
+                try:
+                    votes = int(row[2])
+                except ValueError:
+                    votes = 0
+                for vid in _osis_to_vids(osis):
+                    raw.setdefault(vid, []).append((votes, topic))
+        data = {
+            vid: [t for _, t in sorted(items, reverse=True)]
+            for vid, items in raw.items()
+        }
+        _topics = data
+        _write_parsed_cache(path, data)
 
 
 def get_topics(book, chapter, verse):
