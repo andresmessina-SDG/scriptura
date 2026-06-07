@@ -28,6 +28,22 @@ _HL_SWATCH_CLASS = {
 _HL_COLORS = ['#ffff00', '#90ee90', '#add8e6', '#ffa500']
 
 
+def N_(message):
+    """No-op gettext marker for strings in module-level data; translated at
+    display time via _()."""
+    return message
+
+
+# Highlight-color display names (shown as swatch tooltips), translated at
+# display via _(). Replaces deriving the name from the CSS class.
+_HL_NAMES = {
+    '#ffff00': N_('Yellow'),
+    '#90ee90': N_('Green'),
+    '#add8e6': N_('Blue'),
+    '#ffa500': N_('Orange'),
+}
+
+
 def _all_entries():
     data = annotations._load()
     entries = []
@@ -95,7 +111,7 @@ class TagManagerWindow(Adw.Window):
     def __init__(self, on_changed=None, **kwargs):
         super().__init__(**kwargs)
         self._on_changed = on_changed
-        self.set_title('Tag Manager')
+        self.set_title(_('Tag Manager'))
         self.set_default_size(440, 540)
         self._build_ui()
         self._populate_tags()
@@ -132,8 +148,8 @@ class TagManagerWindow(Adw.Window):
         if not counts:
             empty = compact_empty_state(
                 icon_name='view-list-bullet-symbolic',
-                title='No tags yet',
-                description='Tag annotations from the note editor to see them here.',
+                title=_('No tags yet'),
+                description=_('Tag annotations from the note editor to see them here.'),
             )
             self._list_box.remove_css_class('boxed-list')
             r = Gtk.ListBoxRow()
@@ -150,19 +166,20 @@ class TagManagerWindow(Adw.Window):
     def _make_tag_row(self, tag, count):
         row = Adw.ActionRow()
         row.set_title(GLib.markup_escape_text(tag))
-        row.set_subtitle(f'{count} annotation{"s" if count != 1 else ""}')
+        row.set_subtitle(ngettext(
+            '{n} annotation', '{n} annotations', count).format(n=count))
 
         rename_btn = Gtk.Button(icon_name='document-edit-symbolic')
         rename_btn.add_css_class('flat')
         rename_btn.set_valign(Gtk.Align.CENTER)
-        rename_btn.set_tooltip_text('Rename or merge into another tag')
+        rename_btn.set_tooltip_text(_('Rename or merge into another tag'))
         rename_btn.connect('clicked', self._on_rename_tag, tag)
         row.add_suffix(rename_btn)
 
         del_btn = Gtk.Button(icon_name='user-trash-symbolic')
         del_btn.add_css_class('flat')
         del_btn.set_valign(Gtk.Align.CENTER)
-        del_btn.set_tooltip_text('Remove tag from all annotations')
+        del_btn.set_tooltip_text(_('Remove tag from all annotations'))
         del_btn.connect('clicked', self._on_delete_tag, tag)
         row.add_suffix(del_btn)
 
@@ -170,16 +187,16 @@ class TagManagerWindow(Adw.Window):
 
     def _on_rename_tag(self, _btn, tag):
         dlg = Adw.AlertDialog(
-            heading=f'Rename "{tag}"',
-            body=('Type the new name. If it matches an existing tag, '
-                  'the two will be merged.'),
+            heading=_('Rename “{tag}”').format(tag=tag),
+            body=_('Type the new name. If it matches an existing tag, '
+                   'the two will be merged.'),
         )
         entry = Gtk.Entry()
         entry.set_text(tag)
         entry.set_activates_default(True)
         dlg.set_extra_child(entry)
-        dlg.add_response('cancel', 'Cancel')
-        dlg.add_response('rename', 'Rename')
+        dlg.add_response('cancel', _('Cancel'))
+        dlg.add_response('rename', _('Rename'))
         dlg.set_response_appearance('rename', Adw.ResponseAppearance.SUGGESTED)
         dlg.set_default_response('rename')
 
@@ -198,12 +215,12 @@ class TagManagerWindow(Adw.Window):
 
     def _on_delete_tag(self, _btn, tag):
         dlg = Adw.AlertDialog(
-            heading=f'Remove "{tag}"?',
-            body=('This removes the tag from every annotation it appears '
-                  'on. Notes and highlights stay where they are.'),
+            heading=_('Remove “{tag}”?').format(tag=tag),
+            body=_('This removes the tag from every annotation it appears '
+                   'on. Notes and highlights stay where they are.'),
         )
-        dlg.add_response('cancel', 'Cancel')
-        dlg.add_response('delete', 'Remove')
+        dlg.add_response('cancel', _('Cancel'))
+        dlg.add_response('delete', _('Remove'))
         dlg.set_response_appearance('delete', Adw.ResponseAppearance.DESTRUCTIVE)
         dlg.set_default_response('cancel')
 
@@ -228,7 +245,7 @@ class StudyJournalWindow(Adw.Window):
         self._updating = False
         self._current_entry = None
         self._preserve_select = None
-        self.set_title('Study Journal')
+        self.set_title(_('Study Journal'))
         self.set_default_size(1080, 720)
 
         self._build_ui()
@@ -243,19 +260,19 @@ class StudyJournalWindow(Adw.Window):
         toolbar_view.add_top_bar(header)
 
         refresh_btn = Gtk.Button(icon_name='view-refresh-symbolic')
-        refresh_btn.set_tooltip_text('Refresh')
+        refresh_btn.set_tooltip_text(_('Refresh'))
         refresh_btn.add_css_class('flat')
         refresh_btn.connect('clicked', lambda _: self._reload())
         header.pack_start(refresh_btn)
 
         tag_mgr_btn = Gtk.Button(icon_name='view-list-bullet-symbolic')
-        tag_mgr_btn.set_tooltip_text('Manage tags')
+        tag_mgr_btn.set_tooltip_text(_('Manage tags'))
         tag_mgr_btn.add_css_class('flat')
         tag_mgr_btn.connect('clicked', self._on_open_tag_manager)
         header.pack_start(tag_mgr_btn)
 
         export_btn = Gtk.Button(icon_name='document-save-symbolic')
-        export_btn.set_tooltip_text('Export to text file')
+        export_btn.set_tooltip_text(_('Export to text file'))
         export_btn.connect('clicked', self._on_export)
         header.pack_end(export_btn)
 
@@ -288,7 +305,7 @@ class StudyJournalWindow(Adw.Window):
 
         self._search_entry = Gtk.SearchEntry()
         self._search_entry.set_placeholder_text(
-            'Search notes, tags, references…')
+            _('Search notes, tags, references…'))
         self._search_entry.connect(
             'search-changed', lambda *_: self._apply_filter())
         filter_region.append(self._search_entry)
@@ -298,23 +315,23 @@ class StudyJournalWindow(Adw.Window):
 
         self._type_drop = Gtk.DropDown(
             model=Gtk.StringList.new(
-                ['All types', 'Notes', 'Highlights', 'Underlines'])
+                [_('All types'), _('Notes'), _('Highlights'), _('Underlines')])
         )
         self._type_drop.connect(
             'notify::selected', lambda *_: self._apply_filter())
         grid.attach(self._type_drop, 0, 0, 1, 1)
 
-        self._tag_drop = Gtk.DropDown(model=Gtk.StringList.new(['All tags']))
+        self._tag_drop = Gtk.DropDown(model=Gtk.StringList.new([_('All tags')]))
         self._tag_drop.connect(
             'notify::selected', lambda *_: self._apply_filter())
         grid.attach(self._tag_drop, 1, 0, 1, 1)
 
-        self._mod_drop = Gtk.DropDown(model=Gtk.StringList.new(['All modules']))
+        self._mod_drop = Gtk.DropDown(model=Gtk.StringList.new([_('All modules')]))
         self._mod_drop.connect(
             'notify::selected', lambda *_: self._apply_filter())
         grid.attach(self._mod_drop, 0, 1, 1, 1)
 
-        self._book_drop = Gtk.DropDown(model=Gtk.StringList.new(['All books']))
+        self._book_drop = Gtk.DropDown(model=Gtk.StringList.new([_('All books')]))
         self._book_drop.connect(
             'notify::selected', lambda *_: self._apply_filter())
         grid.attach(self._book_drop, 1, 1, 1, 1)
@@ -361,8 +378,8 @@ class StudyJournalWindow(Adw.Window):
 
         empty = Adw.StatusPage(
             icon_name='document-edit-symbolic',
-            title='No entry selected',
-            description='Pick an annotation from the list to view or edit it.',
+            title=_('No entry selected'),
+            description=_('Pick an annotation from the list to view or edit it.'),
         )
         empty.set_vexpand(True)
         self._detail_stack.add_named(empty, 'empty')
@@ -393,7 +410,7 @@ class StudyJournalWindow(Adw.Window):
 
         # Highlight + underline row (hidden for chapter notes)
         self._hl_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        hl_label = Gtk.Label(label='Highlight', xalign=0)
+        hl_label = Gtk.Label(label=_('Highlight'), xalign=0)
         hl_label.set_size_request(70, -1)
         self._hl_row.append(hl_label)
 
@@ -402,20 +419,18 @@ class StudyJournalWindow(Adw.Window):
             btn = Gtk.Button()
             btn.add_css_class('hl-swatch')
             btn.add_css_class(_HL_SWATCH_CLASS[stored_color])
-            btn.set_tooltip_text(_HL_SWATCH_CLASS[stored_color]
-                                 .replace('hl-swatch-', '')
-                                 .capitalize())
+            btn.set_tooltip_text(_(_HL_NAMES[stored_color]))
             btn.connect('clicked', self._on_hl_click, stored_color)
             self._hl_row.append(btn)
             self._hl_buttons[stored_color] = btn
 
         clear_btn = Gtk.Button(icon_name='edit-clear-symbolic')
         clear_btn.add_css_class('flat')
-        clear_btn.set_tooltip_text('Clear highlight')
+        clear_btn.set_tooltip_text(_('Clear highlight'))
         clear_btn.connect('clicked', self._on_hl_click, None)
         self._hl_row.append(clear_btn)
 
-        self._ul_check = Gtk.CheckButton(label='Underline')
+        self._ul_check = Gtk.CheckButton(label=_('Underline'))
         self._ul_handler = self._ul_check.connect(
             'toggled', self._on_ul_toggled)
         self._hl_row.append(self._ul_check)
@@ -423,16 +438,16 @@ class StudyJournalWindow(Adw.Window):
         box.append(self._hl_row)
 
         # Tags
-        tags_lbl = Gtk.Label(label='Tags (comma-separated)', xalign=0)
+        tags_lbl = Gtk.Label(label=_('Tags (comma-separated)'), xalign=0)
         tags_lbl.add_css_class('dim-label')
         tags_lbl.add_css_class('caption')
         box.append(tags_lbl)
         self._tags_entry = Gtk.Entry()
-        self._tags_entry.set_placeholder_text('e.g. prayer, faith, covenant')
+        self._tags_entry.set_placeholder_text(_('e.g. prayer, faith, covenant'))
         box.append(self._tags_entry)
 
         # Note text
-        note_lbl = Gtk.Label(label='Note', xalign=0)
+        note_lbl = Gtk.Label(label=_('Note'), xalign=0)
         note_lbl.add_css_class('dim-label')
         note_lbl.add_css_class('caption')
         box.append(note_lbl)
@@ -453,14 +468,14 @@ class StudyJournalWindow(Adw.Window):
 
         # Action row: Go to verse + Save
         action_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        go_btn = Gtk.Button(label='Go to verse')
+        go_btn = Gtk.Button(label=_('Go to verse'))
         go_btn.connect('clicked', self._on_detail_navigate)
         action_row.append(go_btn)
 
         spacer = Gtk.Box(hexpand=True)
         action_row.append(spacer)
 
-        save_btn = Gtk.Button(label='Save note & tags')
+        save_btn = Gtk.Button(label=_('Save note & tags'))
         save_btn.add_css_class('suggested-action')
         save_btn.connect('clicked', self._on_detail_save)
         action_row.append(save_btn)
@@ -475,10 +490,10 @@ class StudyJournalWindow(Adw.Window):
         self._updating = True
         self._entries = _all_entries()
 
-        modules = ['All modules'] + sorted({e['module'] for e in self._entries})
-        books = ['All books'] + [b for b in sword_bridge._ALL_BOOKS
-                                 if any(e['book'] == b for e in self._entries)]
-        all_tags = ['All tags'] + sorted(
+        modules = [_('All modules')] + sorted({e['module'] for e in self._entries})
+        books = [_('All books')] + [b for b in sword_bridge._ALL_BOOKS
+                                    if any(e['book'] == b for e in self._entries)]
+        all_tags = [_('All tags')] + sorted(
             {t for e in self._entries for t in e.get('tags', [])})
 
         # Preserve current dropdown selections so a save doesn't reset filters
@@ -518,16 +533,16 @@ class StudyJournalWindow(Adw.Window):
         type_map = {0: 'all', 1: 'notes', 2: 'highlights', 3: 'underlines'}
         tf = type_map.get(self._type_drop.get_selected(), 'all')
 
-        mf = self._dropdown_text(self._mod_drop) or 'All modules'
-        bf = self._dropdown_text(self._book_drop) or 'All books'
-        tag_filter = self._dropdown_text(self._tag_drop) or 'All tags'
+        mf = self._dropdown_text(self._mod_drop) or _('All modules')
+        bf = self._dropdown_text(self._book_drop) or _('All books')
+        tag_filter = self._dropdown_text(self._tag_drop) or _('All tags')
         q = self._search_entry.get_text().strip().lower()
 
         result = []
         for e in self._entries:
-            if mf != 'All modules' and e['module'] != mf:
+            if mf != _('All modules') and e['module'] != mf:
                 continue
-            if bf != 'All books' and e['book'] != bf:
+            if bf != _('All books') and e['book'] != bf:
                 continue
             if tf == 'notes' and not e['note']:
                 continue
@@ -535,7 +550,7 @@ class StudyJournalWindow(Adw.Window):
                 continue
             if tf == 'underlines' and not e['underline']:
                 continue
-            if tag_filter != 'All tags' and tag_filter not in e.get('tags', []):
+            if tag_filter != _('All tags') and tag_filter not in e.get('tags', []):
                 continue
             if q:
                 ref = (f'{e["book"]} {e["chapter"]}' if e.get('is_chapter_note')
@@ -565,7 +580,7 @@ class StudyJournalWindow(Adw.Window):
             child = nxt
 
         n = len(filtered)
-        self._count_lbl.set_text(f'{n} entr{"y" if n == 1 else "ies"}')
+        self._count_lbl.set_text(ngettext('{n} entry', '{n} entries', n).format(n=n))
 
         preserve = self._preserve_select
         self._preserve_select = None
@@ -573,11 +588,11 @@ class StudyJournalWindow(Adw.Window):
 
         if not filtered:
             if not self._entries:
-                title = 'No annotations yet'
-                desc = 'Right-click a verse to highlight it or add a note.'
+                title = _('No annotations yet')
+                desc = _('Right-click a verse to highlight it or add a note.')
             else:
-                title = 'No matches'
-                desc = 'Try a different search or filter.'
+                title = _('No matches')
+                desc = _('Try a different search or filter.')
             empty = compact_empty_state(
                 icon_name='document-edit-symbolic',
                 title=title,
@@ -644,7 +659,8 @@ class StudyJournalWindow(Adw.Window):
         # Reference + module
         top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         if entry.get('is_chapter_note'):
-            ref_text = f'{entry["book"]} {entry["chapter"]} — Chapter Note'
+            ref_text = _('{ref} — Chapter Note').format(
+                ref=f'{entry["book"]} {entry["chapter"]}')
         else:
             ref_text = f'{entry["book"]} {entry["chapter"]}:{entry["verse"]}'
         ref = Gtk.Label(label=ref_text, xalign=0, hexpand=True)
@@ -662,11 +678,11 @@ class StudyJournalWindow(Adw.Window):
         if not entry.get('is_chapter_note'):
             parts = []
             if entry['highlight']:
-                parts.append('● Highlight')
+                parts.append(_('● Highlight'))
             if entry['underline']:
-                parts.append('▁ Underline')
+                parts.append(_('▁ Underline'))
             if entry['note']:
-                parts.append('📝 Note')
+                parts.append(_('📝 Note'))
             if parts:
                 badges = Gtk.Label(label='   '.join(parts), xalign=0)
                 badges.add_css_class('dim-label')
@@ -693,7 +709,7 @@ class StudyJournalWindow(Adw.Window):
             for t in tags:
                 btn = Gtk.Button(label=f'#{t}')
                 btn.add_css_class('tag-chip')
-                btn.set_tooltip_text(f'Filter by #{t}')
+                btn.set_tooltip_text(_('Filter by #{tag}').format(tag=t))
                 btn.connect('clicked',
                             lambda _b, _t=t: self._filter_by_tag(_t))
                 tag_flow.append(btn)
@@ -706,7 +722,7 @@ class StudyJournalWindow(Adw.Window):
         del_btn.add_css_class('flat')
         del_btn.set_valign(Gtk.Align.CENTER)
         del_btn.set_margin_end(6)
-        del_btn.set_tooltip_text('Delete annotation')
+        del_btn.set_tooltip_text(_('Delete annotation'))
         del_btn.connect('clicked', self._on_delete_entry, entry)
         outer.append(del_btn)
 
@@ -729,7 +745,8 @@ class StudyJournalWindow(Adw.Window):
 
         if is_cn:
             self._detail_ref.set_label(
-                f'{entry["book"]} {entry["chapter"]} — Chapter Note')
+                _('{ref} — Chapter Note').format(
+                    ref=f'{entry["book"]} {entry["chapter"]}'))
         else:
             self._detail_ref.set_label(
                 f'{entry["book"]} {entry["chapter"]}:{entry["verse"]}')
@@ -832,7 +849,7 @@ class StudyJournalWindow(Adw.Window):
             v = None if e.get('is_chapter_note') else e['verse']
             self._on_annotation_changed(e['module'], e['book'], e['chapter'], v)
 
-        self._toast('Saved')
+        self._toast(_('Saved'))
         self._preserve_select = _entry_key(e)
         self._reload()
 
@@ -883,7 +900,7 @@ class StudyJournalWindow(Adw.Window):
 
     def _on_export(self, _btn):
         dialog = Gtk.FileDialog()
-        dialog.set_title('Export Study Journal')
+        dialog.set_title(_('Export Study Journal'))
         dialog.set_initial_name('study_journal.txt')
         dialog.save(self, None, self._on_export_finish)
 
@@ -895,33 +912,36 @@ class StudyJournalWindow(Adw.Window):
         path = gfile.get_path() if gfile else None
         if not path:
             self._show_export_error(
-                'Please choose a location on this computer.')
+                _('Please choose a location on this computer.'))
             return
-        lines = ['Study Journal', '=' * 40, '']
+        lines = [_('Study Journal'), '=' * 40, '']
         for e in self._filtered_entries():
             if e.get('is_chapter_note'):
-                lines.append(f'{e["book"]} {e["chapter"]} — Chapter Note  ({e["module"]})')
+                lines.append(_('{ref} — Chapter Note').format(
+                    ref=f'{e["book"]} {e["chapter"]}') + f'  ({e["module"]})')
             else:
                 lines.append(f'{e["book"]} {e["chapter"]}:{e["verse"]}  ({e["module"]})')
                 types = []
                 if e['highlight']:
-                    types.append('Highlight')
+                    types.append(_('Highlight'))
                 if e['underline']:
-                    types.append('Underline')
+                    types.append(_('Underline'))
                 if types:
                     lines.append(f'  [{", ".join(types)}]')
             if e['note']:
                 lines.append(f'  {e["note"]}')
             if e.get('tags'):
-                lines.append(f'  Tags: {", ".join("#" + t for t in e["tags"])}')
+                lines.append('  ' + _('Tags: {tags}').format(
+                    tags=', '.join('#' + t for t in e['tags'])))
             lines.append('')
         try:
             with open(path, 'w', encoding='utf-8') as f:
                 f.write('\n'.join(lines))
         except Exception as ex:
-            self._show_export_error(f'Could not write to {path}:\n{ex}')
+            self._show_export_error(
+                _('Could not write to {path}:\n{error}').format(path=path, error=ex))
 
     def _show_export_error(self, msg):
-        dlg = Adw.AlertDialog(heading='Export failed', body=msg)
-        dlg.add_response('ok', 'OK')
+        dlg = Adw.AlertDialog(heading=_('Export failed'), body=msg)
+        dlg.add_response('ok', _('OK'))
         dlg.present(self)

@@ -11,5 +11,6 @@ module_picker.py
 pane_search.py
 reading_plans.py
 search_panel.py
+study_journal.py
 welcome.py
 window.py
