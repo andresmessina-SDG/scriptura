@@ -315,24 +315,31 @@ def has_dodson():
 
 # ── Source registry + download ────────────────────────────────────────────────
 
+
+def N_(message):
+    """No-op gettext marker for the source labels/descriptions in _SOURCES;
+    translated at display time by get_sources()."""
+    return message
+
+
 _SOURCES = {
     'cross_references': {
-        'label': 'OpenBible Cross-References',
-        'description': '340,000 cross-references — 5× more than TSK',
+        'label': N_('OpenBible Cross-References'),
+        'description': N_('340,000 cross-references — 5× more than TSK'),
         'url': 'https://a.openbible.info/data/cross-references.zip',
         'is_zip': True,
         'dest': 'cross_references.txt',
     },
     'topics': {
-        'label': 'OpenBible Topics',
-        'description': '700+ topical tags for every verse',
+        'label': N_('OpenBible Topics'),
+        'description': N_('700+ topical tags for every verse'),
         'url': 'https://a.openbible.info/data/topic-scores.zip',
         'is_zip': True,
         'dest': 'topic-scores.txt',
     },
     'dodson': {
-        'label': 'Dodson Greek Lexicon',
-        'description': 'Readable NT Greek definitions keyed to Strong\'s numbers',
+        'label': N_('Dodson Greek Lexicon'),
+        'description': N_('Readable NT Greek definitions keyed to Strong\'s numbers'),
         'url': 'https://raw.githubusercontent.com/biblicalhumanities/Dodson-Greek-Lexicon/master/dodson.csv',
         'is_zip': False,
         'dest': 'dodson.csv',
@@ -341,8 +348,11 @@ _SOURCES = {
 
 
 def get_sources():
+    # label/description carry N_ markers; translate them here so every
+    # consumer (Module Manager rows, download status) gets localized text.
     return [
         {**v, 'id': k,
+         'label': _(v['label']), 'description': _(v['description']),
          'installed': os.path.exists(os.path.join(_DIR, v['dest']))}
         for k, v in _SOURCES.items()
     ]

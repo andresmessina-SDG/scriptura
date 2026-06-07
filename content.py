@@ -68,13 +68,13 @@ def feature_card(name: str) -> dict | None:
     tagline beneath the (curated) title; ordinary modules get a plain row."""
     if catena_bridge.is_catena_module(name):
         return {'icon': 'scriptura-commentary-symbolic',
-                'tagline': 'Fathers, medievals & reformers — per verse'}
+                'tagline': _('Fathers, medievals & reformers — per verse')}
     if imagery_bridge.is_imagery_module(name):
         return {'icon': 'scriptura-imagery-symbolic',
-                'tagline': 'Engravings, maps & place photos'}
+                'tagline': _('Engravings, maps & place photos')}
     if archaeology_bridge.is_archaeology_module(name):
         return {'icon': 'scriptura-artifact-symbolic',
-                'tagline': 'Artifacts of the biblical world'}
+                'tagline': _('Artifacts of the biblical world')}
     return None
 
 
@@ -97,27 +97,27 @@ def info(name: str) -> dict:
     if catena_bridge.is_catena_module(name):
         meta = catena_bridge.pack_info()
         return {
-            'description': 'Patristic, medieval, and Reformation commentary '
-                           'keyed to each verse — the church reading '
-                           'Scripture across the centuries.',
+            'description': _('Patristic, medieval, and Reformation commentary '
+                             'keyed to each verse — the church reading '
+                             'Scripture across the centuries.'),
             'version': meta.get('built', ''),
-            'type': f'{meta.get("quote_count", "?")} quotations',
-            'license': 'Public domain (compiled from public-domain sources)',
-            'about': 'Compiled from the HistoricalChristianFaith '
-                     'Commentaries Database.',
+            'type': _('{n} quotations').format(n=meta.get('quote_count', '?')),
+            'license': _('Public domain (compiled from public-domain sources)'),
+            'about': _('Compiled from the HistoricalChristianFaith '
+                       'Commentaries Database.'),
         }
     if imagery_bridge.is_imagery_module(name):
         meta = imagery_bridge.pack_info()
         return {
-            'description': 'Public-domain illustrations, historical maps, and '
-                           'photographs of the places named in Scripture, '
-                           'shown beside the verse you are reading.',
+            'description': _('Public-domain illustrations, historical maps, and '
+                             'photographs of the places named in Scripture, '
+                             'shown beside the verse you are reading.'),
             'version': meta.get('built', ''),
-            'type': f'{meta.get("image_count", "?")} images',
-            'license': 'Public domain & Creative Commons (per-item credits)',
-            'about': 'Engravings (Doré, Schnorr, Merian), historical maps, and '
-                     'place photography from public-domain and openly-licensed '
-                     'sources.',
+            'type': _('{n} images').format(n=meta.get('image_count', '?')),
+            'license': _('Public domain & Creative Commons (per-item credits)'),
+            'about': _('Engravings (Doré, Schnorr, Merian), historical maps, and '
+                       'place photography from public-domain and openly-licensed '
+                       'sources.'),
         }
     if archaeology_bridge.is_archaeology_module(name):
         return archaeology_bridge.info()
