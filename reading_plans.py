@@ -6,6 +6,12 @@ from typing import Any, TypedDict
 
 import paths
 
+
+def N_(message: str) -> str:
+    """No-op gettext marker for the plan names/descriptions in _PLANS;
+    translated at display time via _() in window.py."""
+    return message
+
 # A reading is a (book, chapter) pair; a day's readings is a list of them;
 # a plan stores 'days' as a list of days.
 Reading = tuple[str, int]
@@ -102,38 +108,38 @@ def _make_blended() -> list[list[Reading]]:
 _PLANS: list[Plan] = [
     {
         'id': 'bible_1_year',
-        'name': 'Bible in a Year',
-        'description': 'Read the entire Bible cover to cover in 365 days.',
+        'name': N_('Bible in a Year'),
+        'description': N_('Read the entire Bible cover to cover in 365 days.'),
         'days': _spread(_expand(_OT + _NT), 365),
     },
     {
         'id': 'blended_1_year',
-        'name': 'Bible in a Year — Blended',
-        'description': 'Four daily readings: OT history, OT prophecy, NT, and Psalms/Proverbs.',
+        'name': N_('Bible in a Year — Blended'),
+        'description': N_('Four daily readings: OT history, OT prophecy, NT, and Psalms/Proverbs.'),
         'days': _make_blended(),
     },
     {
         'id': 'ot_1_year',
-        'name': 'Old Testament in a Year',
-        'description': 'Read the Old Testament in 365 days.',
+        'name': N_('Old Testament in a Year'),
+        'description': N_('Read the Old Testament in 365 days.'),
         'days': _spread(_expand(_OT), 365),
     },
     {
         'id': 'nt_90_days',
-        'name': 'New Testament in 90 Days',
-        'description': 'Read through the entire New Testament in three months.',
+        'name': N_('New Testament in 90 Days'),
+        'description': N_('Read through the entire New Testament in three months.'),
         'days': _spread(_expand(_NT), 90),
     },
     {
         'id': 'psalms_30_days',
-        'name': 'Psalms in 30 Days',
-        'description': 'Five psalms per day for a month.',
+        'name': N_('Psalms in 30 Days'),
+        'description': N_('Five psalms per day for a month.'),
         'days': _spread(_expand([('Psalms', 150)]), 30),
     },
     {
         'id': 'proverbs_31_days',
-        'name': 'Proverbs in 31 Days',
-        'description': 'One chapter of Proverbs each day of the month.',
+        'name': N_('Proverbs in 31 Days'),
+        'description': N_('One chapter of Proverbs each day of the month.'),
         'days': _spread(_expand([('Proverbs', 31)]), 31),
     },
 ]

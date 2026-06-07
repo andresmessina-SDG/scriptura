@@ -2205,7 +2205,7 @@ class BibleWindow(Adw.ApplicationWindow):
 
         # plan selector
         plans = reading_plans.get_plans()
-        plan_names = [p['name'] for p in plans]
+        plan_names = [_(p['name']) for p in plans]
         self._plan_ids = [p['id'] for p in plans]
         self._plan_drop = Gtk.DropDown(model=Gtk.StringList.new(plan_names))
         self._plan_drop.set_margin_start(12)
@@ -2337,7 +2337,7 @@ class BibleWindow(Adw.ApplicationWindow):
 
         # description
         desc = next((p['description'] for p in plans if p['id'] == sel_id), '')
-        self._plan_desc_lbl.set_text(desc)
+        self._plan_desc_lbl.set_text(_(desc) if desc else '')
 
         # controls
         plan_active = bool(start_date and reading_plans.get_active()[0] == sel_id)
