@@ -8,6 +8,7 @@ devotional.py
 lexicon_panel.py
 module_manager.py
 module_picker.py
+pane.py
 pane_search.py
 reading_plans.py
 search_panel.py
