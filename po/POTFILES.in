@@ -6,6 +6,7 @@ annotation_dialogs.py
 crossref_panel.py
 devotional.py
 lexicon_panel.py
+module_manager.py
 module_picker.py
 pane_search.py
 search_panel.py
