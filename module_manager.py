@@ -236,7 +236,7 @@ class ModuleManagerWindow(Adw.Window):
 
         filter_popover = Gtk.Popover()
         filter_popover.set_child(filt_box)
-        self._filter_btn = Gtk.MenuButton(icon_name='view-filter-symbolic')
+        self._filter_btn = Gtk.MenuButton(icon_name='view-more-symbolic')
         self._filter_btn.add_css_class('flat')
         self._filter_btn.set_valign(Gtk.Align.CENTER)
         self._filter_btn.set_tooltip_text('Filter the catalogue')
@@ -329,7 +329,7 @@ class ModuleManagerWindow(Adw.Window):
         filt_box.append(eb_lang_scroll)
         filter_popover = Gtk.Popover()
         filter_popover.set_child(filt_box)
-        self._eb_filter_btn = Gtk.MenuButton(icon_name='view-filter-symbolic')
+        self._eb_filter_btn = Gtk.MenuButton(icon_name='view-more-symbolic')
         self._eb_filter_btn.add_css_class('flat')
         self._eb_filter_btn.set_valign(Gtk.Align.CENTER)
         self._eb_filter_btn.set_tooltip_text('Filter translations')

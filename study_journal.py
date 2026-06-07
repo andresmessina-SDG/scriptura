@@ -131,7 +131,7 @@ class TagManagerWindow(Adw.Window):
         counts = annotations.get_tag_counts()
         if not counts:
             empty = compact_empty_state(
-                icon_name='tag-outline-symbolic',
+                icon_name='view-list-bullet-symbolic',
                 title='No tags yet',
                 description='Tag annotations from the note editor to see them here.',
             )
