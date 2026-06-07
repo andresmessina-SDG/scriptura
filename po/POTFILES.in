@@ -2,8 +2,11 @@
 # Append .py files here as their strings are wrapped in _().
 data/page.codeberg.andresmessina.Scriptura.desktop.in
 data/page.codeberg.andresmessina.Scriptura.metainfo.xml.in
+annotation_dialogs.py
 crossref_panel.py
 devotional.py
 lexicon_panel.py
 module_picker.py
+pane_search.py
+search_panel.py
 welcome.py

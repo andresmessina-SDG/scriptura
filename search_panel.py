@@ -14,6 +14,12 @@ _HISTORY_FILE = paths.search_history_path()
 _HISTORY_MAX = 10
 
 
+def N_(message):
+    """No-op gettext marker for strings in module-level data; translated at
+    display time via _()."""
+    return message
+
+
 def _load_history():
     try:
         with open(_HISTORY_FILE, encoding='utf-8') as f:
@@ -52,18 +58,18 @@ def _clear_history():
     _write_history([])
 
 SECTIONS = [
-    ('Pentateuch',       ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']),
-    ('History',          ['Joshua', 'Judges', 'Ruth', '1 Samuel', '2 Samuel', '1 Kings',
+    (N_('Pentateuch'),       ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']),
+    (N_('History'),          ['Joshua', 'Judges', 'Ruth', '1 Samuel', '2 Samuel', '1 Kings',
                           '2 Kings', '1 Chronicles', '2 Chronicles', 'Ezra', 'Nehemiah', 'Esther']),
-    ('Wisdom & Poetry',  ['Job', 'Psalms', 'Proverbs', 'Ecclesiastes', 'Song of Solomon']),
-    ('Major Prophets',   ['Isaiah', 'Jeremiah', 'Lamentations', 'Ezekiel', 'Daniel']),
-    ('Minor Prophets',   ['Hosea', 'Joel', 'Amos', 'Obadiah', 'Jonah', 'Micah',
+    (N_('Wisdom & Poetry'),  ['Job', 'Psalms', 'Proverbs', 'Ecclesiastes', 'Song of Solomon']),
+    (N_('Major Prophets'),   ['Isaiah', 'Jeremiah', 'Lamentations', 'Ezekiel', 'Daniel']),
+    (N_('Minor Prophets'),   ['Hosea', 'Joel', 'Amos', 'Obadiah', 'Jonah', 'Micah',
                           'Nahum', 'Habakkuk', 'Zephaniah', 'Haggai', 'Zechariah', 'Malachi']),
-    ('Gospels & Acts',   ['Matthew', 'Mark', 'Luke', 'John', 'Acts']),
-    ('Pauline Epistles', ['Romans', '1 Corinthians', '2 Corinthians', 'Galatians',
+    (N_('Gospels & Acts'),   ['Matthew', 'Mark', 'Luke', 'John', 'Acts']),
+    (N_('Pauline Epistles'), ['Romans', '1 Corinthians', '2 Corinthians', 'Galatians',
                           'Ephesians', 'Philippians', 'Colossians', '1 Thessalonians',
                           '2 Thessalonians', '1 Timothy', '2 Timothy', 'Titus', 'Philemon']),
-    ('General Epistles', ['Hebrews', 'James', '1 Peter', '2 Peter', '1 John',
+    (N_('General Epistles'), ['Hebrews', 'James', '1 Peter', '2 Peter', '1 John',
                           '2 John', '3 John', 'Jude', 'Revelation']),
 ]
 
@@ -122,13 +128,13 @@ class SearchPanel(Gtk.Box):
         header.set_margin_top(10)
         header.set_margin_bottom(8)
 
-        title = Gtk.Label(label='Search', xalign=0, hexpand=True)
+        title = Gtk.Label(label=_('Search'), xalign=0, hexpand=True)
         title.add_css_class('title-4')
         header.append(title)
 
         close_btn = Gtk.Button(icon_name='window-close-symbolic')
         close_btn.add_css_class('flat')
-        close_btn.set_tooltip_text('Close search (Esc)')
+        close_btn.set_tooltip_text(_('Close search (Esc)'))
         close_btn.connect('clicked', lambda _: self._on_close())
         header.append(close_btn)
 
@@ -150,12 +156,12 @@ class SearchPanel(Gtk.Box):
         # SearchEntry gives the leading magnifier + a clear-✕ for free. Enter
         # runs the search (we deliberately do NOT search-as-you-type — it
         # indexes); clearing the field returns to the recent-searches view.
-        self._entry = Gtk.SearchEntry(hexpand=True, placeholder_text='Search…')
+        self._entry = Gtk.SearchEntry(hexpand=True, placeholder_text=_('Search…'))
         self._entry.connect('activate', self._on_search)
         self._entry.connect('search-changed', self._on_entry_changed)
         entry_row.append(self._entry)
         self._case_btn = Gtk.ToggleButton(label='Aa')
-        self._case_btn.set_tooltip_text('Match case')
+        self._case_btn.set_tooltip_text(_('Match case'))
         self._case_btn.add_css_class('flat')
         self._case_btn.connect('toggled', self._on_case_toggled)
         entry_row.append(self._case_btn)
@@ -173,9 +179,9 @@ class SearchPanel(Gtk.Box):
         self._count_label.add_css_class('dim-label')
         status_row.append(self._count_label)
 
-        self._clear_history_btn = Gtk.Button(label='Clear')
+        self._clear_history_btn = Gtk.Button(label=_('Clear'))
         self._clear_history_btn.add_css_class('flat')
-        self._clear_history_btn.set_tooltip_text('Clear search history')
+        self._clear_history_btn.set_tooltip_text(_('Clear search history'))
         self._clear_history_btn.set_visible(False)
         self._clear_history_btn.connect('clicked', self._on_clear_history)
         status_row.append(self._clear_history_btn)
@@ -240,11 +246,13 @@ class SearchPanel(Gtk.Box):
     # ── Search ────────────────────────────────────────────────────────────────
 
     def _on_indexing_start(self):
-        GLib.idle_add(self._update_indexing_status, "Building search index…", True)
+        GLib.idle_add(self._update_indexing_status,
+                      _('Building search index…'), True)
 
     def _on_indexing_progress(self, book_idx, total, book_name):
         GLib.idle_add(self._update_indexing_status,
-                      f'Building search index… {book_name} ({book_idx}/{total})',
+                      _('Building search index… {book} ({idx}/{total})').format(
+                          book=book_name, idx=book_idx, total=total),
                       True)
 
     def _on_indexing_done(self):
@@ -288,7 +296,7 @@ class SearchPanel(Gtk.Box):
         self._chart_scroll.set_visible(False)
         self._clear_results()
         self._clear_history_btn.set_visible(False)
-        self._count_label.set_text('Searching…')
+        self._count_label.set_text(_('Searching…'))
         self._spinner.set_visible(True)
         self._spinner.start()
 
@@ -339,15 +347,16 @@ class SearchPanel(Gtk.Box):
         if truncated_msg:
             self._count_label.set_text(truncated_msg)
         else:
-            self._count_label.set_text(f'{total} verse{"s" if total != 1 else ""} found')
+            self._count_label.set_text(ngettext(
+                '{n} verse found', '{n} verses found', total).format(n=total))
 
         self._rebuild_chart()
         self._chart_scroll.set_visible(bool(self._results))
         self._populate_results(self._results)
         if not self._results and not truncated_msg:
             self._results_list.append(self._make_empty_row(
-                'No matches',
-                'Try a different word or phrase, or pick another module.'))
+                _('No matches'),
+                _('Try a different word or phrase, or pick another module.')))
         return GLib.SOURCE_REMOVE
 
     def _make_empty_row(self, title, description):
@@ -379,11 +388,11 @@ class SearchPanel(Gtk.Box):
             self._clear_history_btn.set_visible(False)
             self._clear_results()
             self._results_list.append(self._make_empty_row(
-                'Search this module',
-                "Type a word or phrase above. The chart shows where matches "
-                "cluster across the Bible."))
+                _('Search this module'),
+                _("Type a word or phrase above. The chart shows where matches "
+                  "cluster across the Bible.")))
             return
-        self._count_label.set_text('Recent searches')
+        self._count_label.set_text(_('Recent searches'))
         self._clear_history_btn.set_visible(True)
         self._clear_results()
         for entry in history:
@@ -413,7 +422,7 @@ class SearchPanel(Gtk.Box):
             del_btn.add_css_class('flat')
             del_btn.add_css_class('circular')
             del_btn.set_valign(Gtk.Align.CENTER)
-            del_btn.set_tooltip_text('Remove from history')
+            del_btn.set_tooltip_text(_('Remove from history'))
             del_btn.connect('clicked', self._on_delete_history_entry, entry)
             box.append(del_btn)
 
@@ -462,7 +471,7 @@ class SearchPanel(Gtk.Box):
         for sec_name, sec_books in SECTIONS:
             count = sec_counts.get(sec_name, 0)
             expanded = (sec_name == self._expanded_section)
-            btn = self._bar_button(sec_name, count, max_val, sub=False, active=expanded)
+            btn = self._bar_button(_(sec_name), count, max_val, sub=False, active=expanded)
             btn.connect('clicked', self._on_section_clicked, sec_name, sec_books)
             self._chart_box.append(btn)
 
@@ -597,8 +606,9 @@ class SearchPanel(Gtk.Box):
                 # full underlying _results so the user isn't cut off
                 # from the truncated portion.
                 hint = self._make_empty_row(
-                    f'Showing first {self._DISPLAY_CAP} of {total}',
-                    'F3 walks the full list; narrow the query or use a book filter for fewer matches.')
+                    _('Showing first {cap} of {total}').format(
+                        cap=self._DISPLAY_CAP, total=total),
+                    _('F3 walks the full list; narrow the query or use a book filter for fewer matches.'))
                 self._results_list.append(hint)
             return GLib.SOURCE_REMOVE
 
@@ -631,5 +641,5 @@ class SearchPanel(Gtk.Box):
         self._on_result_clicked(book, ch, v)
         # Update the count label so the user knows where they are
         self._count_label.set_text(
-            f'Result {self._current_idx + 1} of {n}')
+            _('Result {i} of {n}').format(i=self._current_idx + 1, n=n))
         return True

@@ -72,9 +72,10 @@ def show_study_menu(pane, verses, x, y):
     box.set_margin_top(6)
     box.set_margin_bottom(6)
 
-    title = (f'Verse {verses[0]}'
+    title = (_('Verse {v}').format(v=verses[0])
              if len(verses) == 1
-             else f'Verses {verses[0]}–{verses[-1]}')
+             else _('Verses {first}–{last}').format(
+                 first=verses[0], last=verses[-1]))
     lbl = Gtk.Label(label=title)
     lbl.add_css_class('dim-label')
     box.append(lbl)
@@ -103,14 +104,14 @@ def show_study_menu(pane, verses, x, y):
     box.append(color_box)
     # Only offer "Clear Highlight" when something is actually highlighted.
     if any_highlighted:
-        clear_btn = _menu_row('edit-clear-symbolic', 'Clear Highlight')
+        clear_btn = _menu_row('edit-clear-symbolic', _('Clear Highlight'))
         clear_btn.connect('clicked',
                           lambda b: apply_highlight(pane, verses, None, popover))
         box.append(clear_btn)
 
     # 2. Underline toggle
     all_underlined = all(_verse_anno(v).get('underline', False) for v in verses)
-    und_lbl = 'Remove Underline' if all_underlined else 'Underline'
+    und_lbl = _('Remove Underline') if all_underlined else _('Underline')
     und_btn = _menu_row('format-text-underline-symbolic', und_lbl)
     und_btn.set_margin_top(8)   # whitespace gap to the highlight group above
     und_btn.connect('clicked',
@@ -124,13 +125,13 @@ def show_study_menu(pane, verses, x, y):
         current_tags = anno.get('tags', [])
         has_study = bool(note_text or current_tags)
         note_btn = _menu_row('document-edit-symbolic',
-                             'Edit Note & Tags' if has_study else 'Note & Tags')
+                             _('Edit Note & Tags') if has_study else _('Note & Tags'))
         note_btn.connect('clicked',
                          lambda b: _edit_note(pane, verses[0], note_text, current_tags, popover))
         box.append(note_btn)
 
     # 4. Copy verse(s)
-    copy_lbl = 'Copy verses' if len(verses) > 1 else 'Copy verse'
+    copy_lbl = _('Copy verses') if len(verses) > 1 else _('Copy verse')
     copy_btn = _menu_row('edit-copy-symbolic', copy_lbl)
     copy_btn.set_margin_top(8)   # whitespace gap to the annotate group above
     copy_btn.connect('clicked', lambda b: copy_verse(pane, verses, popover))
@@ -138,7 +139,7 @@ def show_study_menu(pane, verses, x, y):
 
     # 5. Compare translations (single verse only)
     if len(verses) == 1:
-        comp_btn = _menu_row('view-dual-symbolic', 'Compare translations')
+        comp_btn = _menu_row('view-dual-symbolic', _('Compare translations'))
         comp_btn.connect('clicked', lambda b: compare_translations(pane, verses[0], popover))
         box.append(comp_btn)
 
@@ -179,7 +180,7 @@ def copy_verse(pane, verses, popover):
     text = f'{ref} ({pane._module})\n' + '\n'.join(lines)
     pane._view.get_clipboard().set(text)
     if pane._on_toast:
-        pane._on_toast(f'Copied {ref}')
+        pane._on_toast(_('Copied {ref}').format(ref=ref))
 
 
 # ── Compare translations popover ─────────────────────────────────────────────
@@ -204,7 +205,8 @@ def compare_translations(pane, verse, popover):
     outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
 
     title = Gtk.Label(
-        label=f'{pane._book} {pane._chapter}:{verse} — Translations',
+        label=_('{ref} — Translations').format(
+            ref=f'{pane._book} {pane._chapter}:{verse}'),
         xalign=0)
     title.add_css_class('heading')
     title.set_margin_start(12)
@@ -308,7 +310,7 @@ def _show_note_window(pane, verse, current_note, current_tags):
     header = Adw.HeaderBar()
     toolbar_view.add_top_bar(header)
 
-    save_btn = Gtk.Button(label='Save')
+    save_btn = Gtk.Button(label=_('Save'))
     save_btn.add_css_class('suggested-action')
     header.pack_end(save_btn)
 
@@ -340,14 +342,14 @@ def _show_note_window(pane, verse, current_note, current_tags):
     scrolled.set_child(entry)
     box.append(scrolled)
 
-    tags_lbl = Gtk.Label(label='Topics (comma-separated)', xalign=0)
+    tags_lbl = Gtk.Label(label=_('Topics (comma-separated)'), xalign=0)
     tags_lbl.add_css_class('dim-label')
     box.append(tags_lbl)
 
     tags_entry = Gtk.Entry()
     safe_tags = [str(t) for t in (current_tags or []) if t]
     tags_entry.set_text(', '.join(safe_tags))
-    tags_entry.set_placeholder_text('e.g. Salvation, Prayer, Prophecy')
+    tags_entry.set_placeholder_text(_('e.g. Salvation, Prayer, Prophecy'))
     box.append(tags_entry)
 
     try:
@@ -393,7 +395,7 @@ def build_suggested_topics(book, chapter, verse, tags_entry):
     wrapper = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
     wrapper.set_visible(False)
 
-    hint = Gtk.Label(label='Suggested', xalign=0)
+    hint = Gtk.Label(label=_('Suggested'), xalign=0)
     hint.add_css_class('dim-label')
     hint.add_css_class('caption')
     wrapper.append(hint)
@@ -456,7 +458,8 @@ def show_chapter_note(pane):
 
     root = pane._view.get_root()
     dialog = Adw.Dialog()
-    dialog.set_title(f'{pane._book} {pane._chapter} — Chapter Note')
+    dialog.set_title(_('{ref} — Chapter Note').format(
+        ref=f'{pane._book} {pane._chapter}'))
     dialog.set_content_width(420)
     dialog.set_content_height(360)
 
@@ -465,7 +468,7 @@ def show_chapter_note(pane):
     header = Adw.HeaderBar()
     toolbar_view.add_top_bar(header)
 
-    save_btn = Gtk.Button(label='Save')
+    save_btn = Gtk.Button(label=_('Save'))
     save_btn.add_css_class('suggested-action')
     header.pack_end(save_btn)
 
@@ -493,14 +496,14 @@ def show_chapter_note(pane):
     scrolled.set_child(tv)
     box.append(scrolled)
 
-    tags_lbl = Gtk.Label(label='Topics (comma-separated)', xalign=0)
+    tags_lbl = Gtk.Label(label=_('Topics (comma-separated)'), xalign=0)
     tags_lbl.add_css_class('dim-label')
     box.append(tags_lbl)
 
     tags_entry = Gtk.Entry()
     safe_tags = [str(t) for t in (tags or []) if t]
     tags_entry.set_text(', '.join(safe_tags))
-    tags_entry.set_placeholder_text('e.g. Creation, Covenant')
+    tags_entry.set_placeholder_text(_('e.g. Creation, Covenant'))
     box.append(tags_entry)
 
     save_btn.connect('clicked',
