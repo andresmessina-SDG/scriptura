@@ -325,8 +325,10 @@ class ArchaeologyReader:
         pic.add_controller(click)
         pic.set_cursor(Gdk.Cursor.new_from_name('pointer', None))
         n_views = 1 + len(entry.get('details', []))
-        pic.set_tooltip_text('Click to enlarge' if n_views == 1
-                             else f'Click to enlarge — {n_views} views')
+        pic.set_tooltip_text(
+            _('Click to enlarge') if n_views == 1
+            else ngettext('Click to enlarge — {n} view',
+                          'Click to enlarge — {n} views', n_views).format(n=n_views))
         plate.append(self._clamp(pic, _IMG_W))
 
         txt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -629,14 +631,15 @@ class ArchaeologyReader:
             self._map_tick = area.add_tick_callback(
                 lambda a, _c, _d: (a.queue_draw() or True), None)
 
-        title = Adw.WindowTitle(title='Where they were found')
+        title = Adw.WindowTitle(title=_('Where they were found'))
         if self._map_here is not None:
-            title.set_subtitle(f'Reading: {self._map_here["title"]}')
+            title.set_subtitle(
+                _('Reading: {title}').format(title=self._map_here['title']))
         header = Adw.HeaderBar()
         header.set_title_widget(title)
 
         dialog = Adw.Dialog()
-        dialog.set_title('Where they were found')
+        dialog.set_title(_('Where they were found'))
         dialog.set_content_width(1060)
         dialog.set_content_height(620)
         dialog.connect('closed', self._on_map_closed)
@@ -951,7 +954,7 @@ class ArchaeologyReader:
         area.add_controller(motion)
 
         dialog = Adw.Dialog()
-        dialog.set_title('When they date from')
+        dialog.set_title(_('When they date from'))
         dialog.set_content_width(1080)
         dialog.set_content_height(540)
         view = Adw.ToolbarView()

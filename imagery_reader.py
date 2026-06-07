@@ -313,13 +313,13 @@ class ImageryReader:
         self._clear(self._where_box)
 
         if not (book and chapter and verse):
-            self._header.set_text('Bible Imagery')
+            self._header.set_text(_('Bible Imagery'))
             self._switcher.set_visible(False)
             self._art_box.append(self._status(
                 'image-x-generic-symbolic',
-                'Open a Bible alongside this pane',
-                'Navigate there to see illustrations, maps, and photos of the '
-                'places named in each verse.'))
+                _('Open a Bible alongside this pane'),
+                _('Navigate there to see illustrations, maps, and photos of the '
+                  'places named in each verse.')))
             self._stack.set_visible_child_name('art')
             return
 
@@ -347,9 +347,9 @@ class ImageryReader:
     def _build_art(self, items):
         if not items:
             self._art_box.append(self._status(
-                'image-x-generic-symbolic', 'No illustration for this verse',
-                'Try a neighbouring verse, or a scene the artists depicted '
-                'more often. The Where tab may still have a map or places.'))
+                'image-x-generic-symbolic', _('No illustration for this verse'),
+                _('Try a neighbouring verse, or a scene the artists depicted '
+                  'more often. The Where tab may still have a map or places.')))
             return
 
         house = items[0]['tradition']
@@ -391,9 +391,9 @@ class ImageryReader:
     def _build_where(self, maps, places):
         if not maps and not places:
             self._where_box.append(self._status(
-                'find-location-symbolic', 'No places mapped for this verse',
-                'Not every verse names a place. The Art tab may still have an '
-                'illustration.'))
+                'find-location-symbolic', _('No places mapped for this verse'),
+                _('Not every verse names a place. The Art tab may still have an '
+                  'illustration.')))
             return
 
         # Lead with the modern vector map (Scriptura's modern aesthetic), then
@@ -406,7 +406,7 @@ class ImageryReader:
             self._where_box.append(mgrid)
 
         if places:
-            head = Gtk.Label(label='Places in this verse', xalign=0)
+            head = Gtk.Label(label=_('Places in this verse'), xalign=0)
             head.add_css_class('caption')
             head.add_css_class('imagery-meta')
             head.set_margin_top(4)
@@ -431,7 +431,8 @@ class ImageryReader:
 
         name = place['ancient_name']
         if place.get('modern_name'):
-            name = f'{name} · today {place["modern_name"]}'
+            name = _('{ancient} · today {modern}').format(
+                ancient=name, modern=place['modern_name'])
         title = Gtk.Label(label=name, xalign=0, wrap=True)
         title.add_css_class('heading')
         card.append(title)
@@ -456,7 +457,7 @@ class ImageryReader:
         # low-confidence modern identifications.
         conf = place.get('confidence')
         if conf is not None and conf < 50:
-            note = Gtk.Label(label='Traditional / uncertain identification',
+            note = Gtk.Label(label=_('Traditional / uncertain identification'),
                              xalign=0, wrap=True)
             note.add_css_class('caption')
             note.add_css_class('imagery-meta')
@@ -557,11 +558,11 @@ class ImageryReader:
 
         viewer = _ZoomViewer(texture)
         out_btn = Gtk.Button(icon_name='zoom-out-symbolic')
-        out_btn.set_tooltip_text('Zoom out')
+        out_btn.set_tooltip_text(_('Zoom out'))
         in_btn = Gtk.Button(icon_name='zoom-in-symbolic')
-        in_btn.set_tooltip_text('Zoom in')
+        in_btn.set_tooltip_text(_('Zoom in'))
         fit_btn = Gtk.Button(icon_name='zoom-fit-best-symbolic')
-        fit_btn.set_tooltip_text('Fit to window')
+        fit_btn.set_tooltip_text(_('Fit to window'))
         out_btn.connect('clicked', lambda *_a: viewer.zoom_out())
         in_btn.connect('clicked', lambda *_a: viewer.zoom_in())
         fit_btn.connect('clicked', lambda *_a: viewer.reset())

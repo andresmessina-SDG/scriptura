@@ -66,7 +66,7 @@ class CatenaReader:
 
         # Per-figure filter — appears only when a verse has many voices.
         self._author_entry = Gtk.SearchEntry()
-        self._author_entry.set_placeholder_text('Filter by author…')
+        self._author_entry.set_placeholder_text(_('Filter by author…'))
         self._author_entry.set_margin_start(14)
         self._author_entry.set_margin_end(14)
         self._author_entry.set_margin_top(2)
@@ -118,11 +118,11 @@ class CatenaReader:
         self._clear(self._chip_box)
 
         if not self._book:
-            self._header.set_text('Historical Commentaries')
+            self._header.set_text(_('Historical Commentaries'))
             self._list.append(self._status(
-                'Open a Bible alongside this pane',
-                'Select a verse there to see how the early church, the '
-                'medieval doctors, and the Reformers read it.'))
+                _('Open a Bible alongside this pane'),
+                _('Select a verse there to see how the early church, the '
+                  'medieval doctors, and the Reformers read it.')))
             return
 
         ref = f'{self._book} {self._chapter}:{self._verse}'
@@ -140,23 +140,26 @@ class CatenaReader:
         if not n:
             self._header.set_text(ref)
         elif filtering:
-            self._header.set_text(f'{ref} · {len(shown)} of {n}')
+            self._header.set_text(
+                _('{ref} · {shown} of {total}').format(
+                    ref=ref, shown=len(shown), total=n))
         else:
-            self._header.set_text(f'{ref} · {n} voice{"s" if n != 1 else ""}')
+            self._header.set_text(ngettext(
+                '{ref} · {n} voice', '{ref} · {n} voices', n).format(ref=ref, n=n))
 
         self._build_chips()
 
         if not self._entries:
             self._list.append(self._status(
-                'No historical commentary on this verse',
-                'Try a neighbouring verse, or a passage the fathers wrote '
-                'about more often.'))
+                _('No historical commentary on this verse'),
+                _('Try a neighbouring verse, or a passage the fathers wrote '
+                  'about more often.')))
             return
 
         if not shown:
             self._list.append(self._status(
-                'No voices match this filter',
-                'Clear the author filter or choose a different era.'))
+                _('No voices match this filter'),
+                _('Clear the author filter or choose a different era.')))
             return
 
         display = shown if self._show_all else shown[:_CARD_CAP]
@@ -168,7 +171,8 @@ class CatenaReader:
             self._list.append(self._card(e))
 
         if len(shown) > len(display):
-            more = Gtk.Button(label=f'Show all {len(shown)} voices')
+            more = Gtk.Button(label=ngettext(
+                'Show all {n} voice', 'Show all {n} voices', len(shown)).format(n=len(shown)))
             more.add_css_class('flat')
             more.set_margin_top(8)
             more.connect('clicked', self._on_show_all)
@@ -182,7 +186,7 @@ class CatenaReader:
         self._chip_box.set_visible(True)
         ordered = ['All'] + [era for era in _ERA_ORDER if era in present]
         for value in ordered:
-            chip = Gtk.ToggleButton(label=value)
+            chip = Gtk.ToggleButton(label=_('All') if value == 'All' else value)
             chip.add_css_class('pill')
             active = (value == 'All' and self._era_filter is None) \
                 or (value == self._era_filter)
@@ -245,7 +249,7 @@ class CatenaReader:
 
         if e.get('source_title') or e.get('source_url'):
             src_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-            src_lbl = Gtk.Label(label=e.get('source_title') or 'Source',
+            src_lbl = Gtk.Label(label=e.get('source_title') or _('Source'),
                                 xalign=0, hexpand=True, wrap=True)
             src_lbl.add_css_class('caption')
             src_lbl.add_css_class('catena-meta')
@@ -255,7 +259,7 @@ class CatenaReader:
                 link.add_css_class('flat')
                 link.add_css_class('circular')
                 link.set_valign(Gtk.Align.CENTER)
-                link.set_tooltip_text('Open source')
+                link.set_tooltip_text(_('Open source'))
                 link.connect('clicked', self._open_url, e['source_url'])
                 src_row.append(link)
             card.append(src_row)
@@ -271,7 +275,7 @@ class CatenaReader:
             # so a long quote's full Pango layout is never built unless read.
             preview = text[:_PREVIEW_CHARS].rsplit(' ', 1)[0].rstrip() + '…'
             quote.set_text(preview)
-            toggle = Gtk.Button(label='more')
+            toggle = Gtk.Button(label=_('more'))
             toggle.add_css_class('flat')
             toggle.set_halign(Gtk.Align.START)
             toggle.connect('clicked', self._toggle_more, quote, preview, text)
@@ -282,12 +286,12 @@ class CatenaReader:
         return card
 
     def _toggle_more(self, btn, quote, preview, full):
-        if btn.get_label() == 'more':
+        if btn.get_label() == _('more'):
             quote.set_text(full)
-            btn.set_label('less')
+            btn.set_label(_('less'))
         else:
             quote.set_text(preview)
-            btn.set_label('more')
+            btn.set_label(_('more'))
 
     def _open_url(self, _btn, url):
         try:
@@ -308,5 +312,5 @@ def _year_label(year):
     if year is None or year == 9999:
         return ''
     if year < 0:
-        return f'c. {-year} BC'
-    return f'c. {year} AD'
+        return _('c. {year} BC').format(year=-year)
+    return _('c. {year} AD').format(year=year)

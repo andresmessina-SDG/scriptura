@@ -3,8 +3,12 @@
 data/page.codeberg.andresmessina.Scriptura.desktop.in
 data/page.codeberg.andresmessina.Scriptura.metainfo.xml.in
 annotation_dialogs.py
+archaeology_reader.py
+catena_reader.py
 crossref_panel.py
 devotional.py
+genbook_reader.py
+imagery_reader.py
 lexicon_panel.py
 module_manager.py
 module_picker.py
