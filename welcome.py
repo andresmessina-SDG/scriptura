@@ -25,6 +25,12 @@ import open_data
 import catena_bridge
 
 
+def N_(message):
+    """No-op gettext marker. Tags strings in module-level data for xgettext
+    extraction; the actual translation happens at display time via _()."""
+    return message
+
+
 # Each step is (kind, ident, label):
 #   'sword'    → sword_bridge.install_module(ident)
 #   'opendata' → open_data.download_source(ident)
@@ -32,10 +38,10 @@ import catena_bridge
 _BUNDLES = [
     {
         'id': 'reading',
-        'title': 'Just reading',
-        'tagline': 'Open a Bible and start reading right away.',
-        'summary': '1 Bible',
-        'size': 'Quick download',
+        'title': N_('Just reading'),
+        'tagline': N_('Open a Bible and start reading right away.'),
+        'summary': N_('1 Bible'),
+        'size': N_('Quick download'),
         'recommended': False,
         'items': [
             ('sword', 'KJVA', 'King James Bible'),
@@ -43,11 +49,11 @@ _BUNDLES = [
     },
     {
         'id': 'study',
-        'title': 'Reading + study',
-        'tagline': 'A few translations, historical commentary, and '
-                   'word-study tools.',
-        'summary': '3 Bibles · commentary · lexicon · cross-references',
-        'size': 'Small download',
+        'title': N_('Reading + study'),
+        'tagline': N_('A few translations, historical commentary, and '
+                      'word-study tools.'),
+        'summary': N_('3 Bibles · commentary · lexicon · cross-references'),
+        'size': N_('Small download'),
         'recommended': True,
         'items': [
             ('sword',    'KJVA',          'King James Bible'),
@@ -62,11 +68,11 @@ _BUNDLES = [
     },
     {
         'id': 'full',
-        'title': 'Full library',
-        'tagline': 'The complete set — more translations and commentaries '
-                   'from the start.',
-        'summary': '5 Bibles · 3 commentaries · lexicon · 340k cross-references',
-        'size': 'Larger download',
+        'title': N_('Full library'),
+        'tagline': N_('The complete set — more translations and commentaries '
+                      'from the start.'),
+        'summary': N_('5 Bibles · 3 commentaries · lexicon · 340k cross-references'),
+        'size': N_('Larger download'),
         'recommended': False,
         'items': [
             ('sword',    'KJVA',          'King James Bible'),
@@ -93,7 +99,7 @@ class WelcomeWindow(Adw.ApplicationWindow):
         super().__init__(**kwargs)
         self._on_ready = on_ready
         self._last_items = None
-        self.set_title('Welcome to Scriptura')
+        self.set_title(_('Welcome to Scriptura'))
         self.set_default_size(900, 600)
 
         toolbar_view = Adw.ToolbarView()
@@ -118,13 +124,13 @@ class WelcomeWindow(Adw.ApplicationWindow):
         outer.set_margin_end(28)
         outer.set_valign(Gtk.Align.CENTER)
 
-        title = Gtk.Label(label='Welcome to Scriptura')
+        title = Gtk.Label(label=_('Welcome to Scriptura'))
         title.add_css_class('title-1')
         outer.append(title)
 
         subtitle = Gtk.Label(
-            label='Choose a starting point. Pick the shape that fits how '
-                  'you want to work — this is just a head start.')
+            label=_('Choose a starting point. Pick the shape that fits how '
+                    'you want to work — this is just a head start.'))
         subtitle.set_wrap(True)
         subtitle.set_wrap_mode(Pango.WrapMode.WORD)
         subtitle.set_justify(Gtk.Justification.CENTER)
@@ -143,14 +149,14 @@ class WelcomeWindow(Adw.ApplicationWindow):
         outer.append(cards)
 
         footnote = Gtk.Label(
-            label='You can add or remove anything later from the '
-                  'Module Manager.')
+            label=_('You can add or remove anything later from the '
+                    'Module Manager.'))
         footnote.add_css_class('caption')
         footnote.add_css_class('dim-label')
         footnote.set_margin_top(4)
         outer.append(footnote)
 
-        mgr_btn = Gtk.Button(label='Choose individual modules instead')
+        mgr_btn = Gtk.Button(label=_('Choose individual modules instead'))
         mgr_btn.add_css_class('flat')
         mgr_btn.set_halign(Gtk.Align.CENTER)
         mgr_btn.connect('clicked', self._on_open_mgr)
@@ -173,26 +179,26 @@ class WelcomeWindow(Adw.ApplicationWindow):
         box.set_margin_end(16)
 
         if bundle['recommended']:
-            badge = Gtk.Label(label='★ Recommended')
+            badge = Gtk.Label(label=_('★ Recommended'))
             badge.add_css_class('welcome-badge')
             badge.set_halign(Gtk.Align.START)
             badge.set_margin_bottom(2)
             box.append(badge)
 
-        title = Gtk.Label(label=bundle['title'])
+        title = Gtk.Label(label=_(bundle['title']))
         title.add_css_class('title-4')
         title.set_xalign(0)
         title.set_wrap(True)
         box.append(title)
 
-        tagline = Gtk.Label(label=bundle['tagline'])
+        tagline = Gtk.Label(label=_(bundle['tagline']))
         tagline.set_wrap(True)
         tagline.set_wrap_mode(Pango.WrapMode.WORD)
         tagline.set_xalign(0)
         tagline.add_css_class('dim-label')
         box.append(tagline)
 
-        summary = Gtk.Label(label=bundle['summary'])
+        summary = Gtk.Label(label=_(bundle['summary']))
         summary.set_wrap(True)
         summary.set_wrap_mode(Pango.WrapMode.WORD)
         summary.set_xalign(0)
@@ -204,7 +210,7 @@ class WelcomeWindow(Adw.ApplicationWindow):
         spacer.set_vexpand(True)
         box.append(spacer)
 
-        size = Gtk.Label(label=bundle['size'])
+        size = Gtk.Label(label=_(bundle['size']))
         size.set_xalign(0)
         size.add_css_class('caption')
         size.add_css_class('dim-label')
@@ -226,7 +232,7 @@ class WelcomeWindow(Adw.ApplicationWindow):
         self._back_btn.set_visible(False)
         self._spinner.set_visible(True)
         self._spinner.start()
-        self._status.set_text('Starting download…')
+        self._status.set_text(_('Starting download…'))
         self._stack.set_visible_child_name('progress')
         threading.Thread(
             target=self._install_worker, args=(bundle['items'],),
@@ -251,7 +257,7 @@ class WelcomeWindow(Adw.ApplicationWindow):
         self._status.set_justify(Gtk.Justification.CENTER)
         box.append(self._status)
 
-        self._back_btn = Gtk.Button(label='Back to options')
+        self._back_btn = Gtk.Button(label=_('Back to options'))
         self._back_btn.set_halign(Gtk.Align.CENTER)
         self._back_btn.set_visible(False)
         self._back_btn.connect('clicked', self._on_back)
@@ -267,7 +273,8 @@ class WelcomeWindow(Adw.ApplicationWindow):
         failed = []
         total = len(items)
         for step, (kind, ident, label) in enumerate(items, start=1):
-            base = f'({step}/{total}) Downloading {label}…'
+            base = _('({step}/{total}) Downloading {label}…').format(
+                step=step, total=total, label=label)
             GLib.idle_add(self._set_status, base)
             try:
                 if kind == 'sword':
@@ -286,11 +293,11 @@ class WelcomeWindow(Adw.ApplicationWindow):
         def _progress(done, total):
             if total > 0:
                 pct = int(done * 100 / total)
-                GLib.idle_add(
-                    self._set_status,
-                    f'{base} {pct}% ({done >> 20} of {total >> 20} MB)')
+                detail = _('{pct}% ({done} of {total} MB)').format(
+                    pct=pct, done=done >> 20, total=total >> 20)
             else:
-                GLib.idle_add(self._set_status, f'{base} {done >> 20} MB')
+                detail = _('{done} MB').format(done=done >> 20)
+            GLib.idle_add(self._set_status, f'{base} {detail}')
         return _progress
 
     def _set_status(self, msg):
@@ -307,22 +314,23 @@ class WelcomeWindow(Adw.ApplicationWindow):
         )
 
         if not has_bible:
-            details = '; '.join(f'{n}: {e}' for n, e in failed) or 'unknown error'
+            details = ('; '.join(f'{n}: {e}' for n, e in failed)
+                       or _('unknown error'))
             self._spinner.stop()
             self._spinner.set_visible(False)
             self._status.set_text(
-                f'Couldn’t download a Bible — please check your connection '
-                f'and try again. ({details})')
+                _('Couldn’t download a Bible — please check your connection '
+                  'and try again. ({details})').format(details=details))
             self._back_btn.set_visible(True)
             return GLib.SOURCE_REMOVE
 
         if failed:
-            names = ', '.join(n for n, _ in failed)
+            names = ', '.join(n for n, _err in failed)
             self._status.set_text(
-                f'Installed with warnings — these can be retried later from '
-                f'the Module Manager: {names}')
+                _('Installed with warnings — these can be retried later from '
+                  'the Module Manager: {names}').format(names=names))
         else:
-            self._status.set_text('Done. Opening Scriptura…')
+            self._status.set_text(_('Done. Opening Scriptura…'))
         self._spinner.stop()
         self._spinner.set_visible(False)
 

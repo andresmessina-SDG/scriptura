@@ -1,0 +1,5 @@
+# List of source files containing translatable strings.
+# Append .py files here as their strings are wrapped in _().
+data/page.codeberg.andresmessina.Scriptura.desktop.in
+data/page.codeberg.andresmessina.Scriptura.metainfo.xml.in
+welcome.py

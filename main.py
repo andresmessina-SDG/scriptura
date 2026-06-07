@@ -1,3 +1,5 @@
+import gettext
+import locale
 import logging
 import os
 import sys
@@ -9,6 +11,9 @@ from gi.repository import Gtk, Adw, Gdk, Gio
 
 
 APP_ID = 'page.codeberg.andresmessina.Scriptura'
+# gettext domain — must match i18n.gettext('scriptura') in po/meson.build and
+# the installed scriptura.mo, or translations won't load.
+GETTEXT_DOMAIN = 'scriptura'
 
 
 def _setup_logging():
@@ -27,6 +32,26 @@ def _setup_logging():
 
 
 _setup_logging()
+
+
+def _setup_gettext():
+    """Install `_()` as a builtin for the whole app. localedir is resolved
+    relative to this file (installed at {prefix}/share/scriptura/, locale at
+    {prefix}/share/locale — same __file__-relative trick as the icon search
+    path). A missing localedir is fine: gettext falls back to the untranslated
+    strings. Done before importing the UI so module-level strings translate."""
+    localedir = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), '..', 'locale')
+    try:
+        locale.setlocale(locale.LC_ALL, '')
+        locale.bindtextdomain(GETTEXT_DOMAIN, localedir)
+        locale.textdomain(GETTEXT_DOMAIN)
+    except (locale.Error, AttributeError):
+        pass
+    gettext.install(GETTEXT_DOMAIN, localedir)
+
+
+_setup_gettext()
 
 from styles import load_app_css  # noqa: E402
 from window import BibleWindow  # noqa: E402  (after logging setup)
