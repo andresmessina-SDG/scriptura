@@ -52,7 +52,7 @@ class CrossRefPanel(Gtk.Box):
         close_btn = Gtk.Button(icon_name='window-close-symbolic')
         close_btn.add_css_class('flat')
         close_btn.set_valign(Gtk.Align.CENTER)
-        close_btn.set_tooltip_text('Hide cross-references')
+        close_btn.set_tooltip_text(_('Hide cross-references'))
         close_btn.connect('clicked', lambda _: self._on_close())
         ref_row.append(close_btn)
 
@@ -66,7 +66,9 @@ class CrossRefPanel(Gtk.Box):
         return True
 
     def load(self, book, chapter, verse):
-        self._title.set_text(f'Cross-references · {book} {chapter}:{verse}')
+        self._title.set_text(
+            _('Cross-references · {book} {chapter}:{verse}').format(
+                book=book, chapter=chapter, verse=verse))
         self._clear_refs()
 
         spinner = Gtk.Spinner()
@@ -89,11 +91,11 @@ class CrossRefPanel(Gtk.Box):
     def _show_refs(self, refs):
         self._clear_refs()
         if refs is None:
-            lbl = Gtk.Label(label='Install the TSK module or download OpenBible cross-references.')
+            lbl = Gtk.Label(label=_('Install the TSK module or download OpenBible cross-references.'))
             lbl.add_css_class('dim-label')
             self._ref_box.append(lbl)
         elif not refs:
-            lbl = Gtk.Label(label='No cross-references found.')
+            lbl = Gtk.Label(label=_('No cross-references found.'))
             lbl.add_css_class('dim-label')
             self._ref_box.append(lbl)
         else:

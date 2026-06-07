@@ -17,6 +17,12 @@ import sword_bridge
 import content
 
 
+def N_(message):
+    """No-op gettext marker for strings in class-level data; translated at
+    display time via _()."""
+    return message
+
+
 class ModulePicker:
     # Module languages never change at runtime. The chips call _lang_of()
     # for every module on every keystroke / chip toggle; uncached that's
@@ -93,7 +99,7 @@ class ModulePicker:
 
         search_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         self._search_entry = Gtk.SearchEntry(hexpand=True)
-        self._search_entry.set_placeholder_text('Filter modules…')
+        self._search_entry.set_placeholder_text(_('Filter modules…'))
         self._search_entry.connect('search-changed', self._on_search_changed)
         search_row.append(self._search_entry)
 
@@ -101,7 +107,7 @@ class ModulePicker:
         # multilingual library (see _build_lang_menu).
         self._lang_button = Gtk.MenuButton(icon_name='scriptura-globe-symbolic')
         self._lang_button.add_css_class('flat')
-        self._lang_button.set_tooltip_text('Filter by language')
+        self._lang_button.set_tooltip_text(_('Filter by language'))
         self._lang_button.set_valign(Gtk.Align.CENTER)
         lang_pop = Gtk.Popover()
         lang_pop.set_has_arrow(True)
@@ -150,7 +156,7 @@ class ModulePicker:
         info_header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         back_btn = Gtk.Button(icon_name='go-previous-symbolic')
         back_btn.add_css_class('flat')
-        back_btn.set_tooltip_text('Back to list')
+        back_btn.set_tooltip_text(_('Back to list'))
         back_btn.connect('clicked', lambda _b: stack.set_visible_child_name('list'))
         info_header.append(back_btn)
         self._info_title = Gtk.Label(xalign=0, hexpand=True)
@@ -174,7 +180,7 @@ class ModulePicker:
         # pane's last remaining module.
         self._remove_btn = Gtk.Button()
         self._remove_btn.set_child(Adw.ButtonContent(
-            icon_name='user-trash-symbolic', label='Remove module'))
+            icon_name='user-trash-symbolic', label=_('Remove module')))
         self._remove_btn.add_css_class('destructive-action')
         self._remove_btn.set_margin_top(4)
         self._remove_btn.connect('clicked', self._on_remove_clicked)
@@ -190,21 +196,21 @@ class ModulePicker:
 
     # Kind tabs, in display order. The picker shows 'All' plus only the
     # kinds actually installed.
-    _TAB_DEFS = [('all', 'All'), ('bible', 'Bibles'),
-                 ('commentary', 'Commentary'), ('imagery', 'Imagery'),
-                 ('books', 'Books')]
+    _TAB_DEFS = [('all', N_('All')), ('bible', N_('Bibles')),
+                 ('commentary', N_('Commentary')), ('imagery', N_('Imagery')),
+                 ('books', N_('Books'))]
     # Section order + headers for the grouped 'All' view.
     _KIND_ORDER = ['bible', 'commentary', 'imagery', 'books']
-    _KIND_HEADERS = {'bible': 'Translations', 'commentary': 'Commentary',
-                     'imagery': 'Imagery', 'books': 'Books & Confessions'}
+    _KIND_HEADERS = {'bible': N_('Translations'), 'commentary': N_('Commentary'),
+                     'imagery': N_('Imagery'), 'books': N_('Books & Confessions')}
     # Collapse SWORD's redundant ISO variants so the language menu isn't
     # a wall of near-duplicates (en/eng, es/spa, la/lat).
     _LANG_NORMALIZE = {'eng': 'en', 'spa': 'es', 'lat': 'la',
                        'fra': 'fr', 'deu': 'de', 'ger': 'de'}
-    _LANG_NAMES = {'All': 'All languages', 'en': 'English',
-                   'enm': 'Middle English', 'es': 'Spanish', 'grc': 'Greek',
-                   'la': 'Latin', 'ru': 'Russian', 'fr': 'French',
-                   'de': 'German', 'he': 'Hebrew'}
+    _LANG_NAMES = {'All': N_('All languages'), 'en': N_('English'),
+                   'enm': N_('Middle English'), 'es': N_('Spanish'),
+                   'grc': N_('Greek'), 'la': N_('Latin'), 'ru': N_('Russian'),
+                   'fr': N_('French'), 'de': N_('German'), 'he': N_('Hebrew')}
 
     @staticmethod
     def _clear(container):
@@ -249,7 +255,7 @@ class ModulePicker:
 
         labels = dict(self._TAB_DEFS)
         for k in present:
-            btn = Gtk.ToggleButton(label=labels[k])
+            btn = Gtk.ToggleButton(label=_(labels[k]))
             if k == self._kind:
                 btn.set_active(True)
             btn.connect('toggled', self._on_tab_toggled, k)
@@ -291,7 +297,7 @@ class ModulePicker:
             hb.set_margin_top(4)
             hb.set_margin_bottom(4)
             lbl = Gtk.Label(
-                label=self._LANG_NAMES.get(v, v), xalign=0, hexpand=True)
+                label=_(self._LANG_NAMES.get(v, v)), xalign=0, hexpand=True)
             hb.append(lbl)
             tick = Gtk.Image.new_from_icon_name('object-select-symbolic')
             tick.set_visible(v == self._lang)
@@ -334,7 +340,8 @@ class ModulePicker:
                 continue
             any_match = True
             if grouped:
-                self._listbox.append(self._make_header(self._KIND_HEADERS[k]))
+                self._listbox.append(
+                    self._make_header(_(self._KIND_HEADERS[k])))
             # Float the marquee packs to the top of their group so they're
             # the first thing seen, not buried after the plain modules.
             ordered = sorted(names, key=lambda n: content.feature_card(n) is None)
@@ -345,7 +352,7 @@ class ModulePicker:
             row = Gtk.ListBoxRow()
             row.set_selectable(False)
             row.set_activatable(False)
-            lbl = Gtk.Label(label='No modules match this filter.', xalign=0.5)
+            lbl = Gtk.Label(label=_('No modules match this filter.'), xalign=0.5)
             lbl.add_css_class('dim-label')
             lbl.set_margin_start(12)
             lbl.set_margin_end(12)
@@ -468,17 +475,17 @@ class ModulePicker:
                 val.set_max_width_chars(40)
             self._info_body.append(val)
 
-        _add_field('Description', info.get('description', ''), multiline=True)
-        _add_field('Language',    info.get('language', ''))
-        _add_field('Version',     info.get('version', ''))
-        _add_field('Type',        info.get('type', ''))
-        _add_field('Copyright',   info.get('copyright', ''), multiline=True)
-        _add_field('License',     info.get('license', ''))
-        _add_field('About',       info.get('about', ''), multiline=True)
+        _add_field(_('Description'), info.get('description', ''), multiline=True)
+        _add_field(_('Language'),    info.get('language', ''))
+        _add_field(_('Version'),     info.get('version', ''))
+        _add_field(_('Type'),        info.get('type', ''))
+        _add_field(_('Copyright'),   info.get('copyright', ''), multiline=True)
+        _add_field(_('License'),     info.get('license', ''))
+        _add_field(_('About'),       info.get('about', ''), multiline=True)
 
         if self._info_body.get_first_child() is None:
             empty = Gtk.Label(
-                label='No metadata available for this module.', xalign=0)
+                label=_('No metadata available for this module.'), xalign=0)
             empty.add_css_class('dim-label')
             empty.set_margin_top(12)
             self._info_body.append(empty)
@@ -502,11 +509,11 @@ class ModulePicker:
     def _confirm_remove(self, name):
         disp = sword_bridge.display_name(name)
         dialog = Adw.AlertDialog(
-            heading=f'Remove {disp}?',
-            body=('This deletes the module from your library. You can '
-                  're-download or re-import it later from the Module Manager.'))
-        dialog.add_response('cancel', 'Cancel')
-        dialog.add_response('remove', 'Remove')
+            heading=_('Remove {name}?').format(name=disp),
+            body=_('This deletes the module from your library. You can '
+                   're-download or re-import it later from the Module Manager.'))
+        dialog.add_response('cancel', _('Cancel'))
+        dialog.add_response('remove', _('Remove'))
         dialog.set_response_appearance('remove', Adw.ResponseAppearance.DESTRUCTIVE)
         dialog.set_default_response('cancel')
         dialog.set_close_response('cancel')
@@ -521,10 +528,12 @@ class ModulePicker:
             content.remove(name)
         except Exception as e:
             if self._pane._on_toast:
-                self._pane._on_toast(f"Couldn't remove {disp} — {e}")
+                self._pane._on_toast(
+                    _("Couldn't remove {name} — {error}").format(
+                        name=disp, error=e))
             return
         if self._pane._on_toast:
-            self._pane._on_toast(f'Removed {disp}')
+            self._pane._on_toast(_('Removed {name}').format(name=disp))
         # Refresh both panes (and fall back if a pane showed this module).
         if self._pane._on_modules_changed:
             self._pane._on_modules_changed()

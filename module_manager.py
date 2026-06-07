@@ -13,27 +13,36 @@ import imagery_bridge
 
 _log = logging.getLogger('scriptura.modules')
 
+
+def N_(message):
+    """No-op gettext marker for strings in module-level data; translated at
+    display time via _()."""
+    return message
+
+
 _LANG_NAMES = {
-    'en': 'English', 'de': 'German', 'fr': 'French', 'es': 'Spanish',
-    'it': 'Italian', 'pt': 'Portuguese', 'nl': 'Dutch', 'ru': 'Russian',
-    'el': 'Greek', 'he': 'Hebrew', 'la': 'Latin', 'ar': 'Arabic',
-    'zh': 'Chinese', 'ja': 'Japanese', 'ko': 'Korean', 'sv': 'Swedish',
-    'fi': 'Finnish', 'da': 'Danish', 'no': 'Norwegian', 'pl': 'Polish',
-    'cs': 'Czech', 'sk': 'Slovak', 'hu': 'Hungarian', 'ro': 'Romanian',
-    'uk': 'Ukrainian', 'bg': 'Bulgarian', 'hr': 'Croatian', 'sr': 'Serbian',
-    'af': 'Afrikaans', 'fa': 'Persian', 'tr': 'Turkish', 'vi': 'Vietnamese',
-    'id': 'Indonesian', 'sw': 'Swahili', 'tl': 'Tagalog',
+    'en': N_('English'), 'de': N_('German'), 'fr': N_('French'), 'es': N_('Spanish'),
+    'it': N_('Italian'), 'pt': N_('Portuguese'), 'nl': N_('Dutch'), 'ru': N_('Russian'),
+    'el': N_('Greek'), 'he': N_('Hebrew'), 'la': N_('Latin'), 'ar': N_('Arabic'),
+    'zh': N_('Chinese'), 'ja': N_('Japanese'), 'ko': N_('Korean'), 'sv': N_('Swedish'),
+    'fi': N_('Finnish'), 'da': N_('Danish'), 'no': N_('Norwegian'), 'pl': N_('Polish'),
+    'cs': N_('Czech'), 'sk': N_('Slovak'), 'hu': N_('Hungarian'), 'ro': N_('Romanian'),
+    'uk': N_('Ukrainian'), 'bg': N_('Bulgarian'), 'hr': N_('Croatian'), 'sr': N_('Serbian'),
+    'af': N_('Afrikaans'), 'fa': N_('Persian'), 'tr': N_('Turkish'), 'vi': N_('Vietnamese'),
+    'id': N_('Indonesian'), 'sw': N_('Swahili'), 'tl': N_('Tagalog'),
 }
 
 def _lang_label(code):
-    name = _LANG_NAMES.get(code.lower(), '')
+    raw = _LANG_NAMES.get(code.lower(), '')
+    # Guard the empty case: _('') returns the .po metadata header, not ''.
+    name = _(raw) if raw else ''
     return f'{name} ({code})' if name else code
 
 
 # Installed modules are grouped by kind. SWORD reports finer-grained types;
 # these fold them into a few human sections, in display order.
-_KIND_ORDER = ['Bibles', 'Commentaries', 'Lexicons & Dictionaries',
-               'Devotionals', 'Books & Other']
+_KIND_ORDER = [N_('Bibles'), N_('Commentaries'), N_('Lexicons & Dictionaries'),
+               N_('Devotionals'), N_('Books & Other')]
 _KIND_MAP = {
     'Biblical Texts': 'Bibles',
     'Commentaries': 'Commentaries',
@@ -85,21 +94,32 @@ def _ago(dt):
         return ''
     secs = (datetime.now() - dt).total_seconds()
     if secs < 3600:
-        return 'updated less than an hour ago'
+        return _('updated less than an hour ago')
     if secs < 86400:
         h = int(secs // 3600)
-        return f'updated {h} hour{"s" if h != 1 else ""} ago'
+        return ngettext('updated {h} hour ago', 'updated {h} hours ago', h).format(h=h)
     days = int(secs // 86400)
     if days < 30:
-        return f'updated {days} day{"s" if days != 1 else ""} ago'
+        return ngettext('updated {d} day ago', 'updated {d} days ago', days).format(d=days)
     months = days // 30
-    return f'updated {months} month{"s" if months != 1 else ""} ago'
+    return ngettext('updated {m} month ago', 'updated {m} months ago', months).format(m=months)
+
+
+def _fmt_progress(base, done, total):
+    """Append a translated percent/size detail to a base progress message.
+    Shares the '{pct}% (…)' / '{done} MB' msgids with welcome.py."""
+    if total > 0:
+        detail = _('{pct}% ({done} of {total} MB)').format(
+            pct=int(done * 100 / total), done=done >> 20, total=total >> 20)
+    else:
+        detail = _('{done} MB').format(done=done >> 20)
+    return f'{base} {detail}'
 
 
 class ModuleManagerWindow(Adw.Window):
     def __init__(self, on_modules_changed=None, **kwargs):
         super().__init__(**kwargs)
-        self.set_title('Module Manager')
+        self.set_title(_('Module Manager'))
         self.set_default_size(640, 720)
         self._on_modules_changed = on_modules_changed
         self._all_modules = []
@@ -121,7 +141,7 @@ class ModuleManagerWindow(Adw.Window):
         toolbar_view.add_top_bar(header)
 
         self._import_btn = Gtk.Button(icon_name='folder-download-symbolic')
-        self._import_btn.set_tooltip_text('Import module from file')
+        self._import_btn.set_tooltip_text(_('Import module from file'))
         self._import_btn.connect('clicked', self._on_import_clicked)
         header.pack_start(self._import_btn)
 
@@ -161,12 +181,12 @@ class ModuleManagerWindow(Adw.Window):
         self._cw_refresh_btn = Gtk.Button(icon_name='view-refresh-symbolic')
         self._cw_refresh_btn.add_css_class('flat')
         self._cw_refresh_btn.set_valign(Gtk.Align.CENTER)
-        self._cw_refresh_btn.set_tooltip_text('Refresh catalogue from CrossWire')
+        self._cw_refresh_btn.set_tooltip_text(_('Refresh catalogue from CrossWire'))
         self._cw_refresh_btn.connect('clicked', self._on_refresh_clicked)
 
         # One search filters both the installed sections and the catalogue.
         self._cw_search = Gtk.SearchEntry()
-        self._cw_search.set_placeholder_text('Search installed and catalogue…')
+        self._cw_search.set_placeholder_text(_('Search installed and catalogue…'))
         self._cw_search.set_hexpand(True)
         self._cw_search.connect('search-changed', self._on_search_changed)
 
@@ -192,8 +212,8 @@ class ModuleManagerWindow(Adw.Window):
         self._lang_list.add_css_class('module-filter-list')
         self._lang_list.connect('row-selected', self._on_filter_changed)
 
-        self._strongs_check = Gtk.CheckButton(label="Strong's")
-        self._strongs_check.set_tooltip_text("Only modules with Strong's numbers")
+        self._strongs_check = Gtk.CheckButton(label=_("Strong's"))
+        self._strongs_check.set_tooltip_text(_("Only modules with Strong's numbers"))
         self._strongs_check.set_valign(Gtk.Align.CENTER)
         self._strongs_check.connect('toggled', self._on_filter_changed)
 
@@ -216,8 +236,8 @@ class ModuleManagerWindow(Adw.Window):
         # / "invisible window"); a definite size that fits never resizes. (2)
         # ListBox rows open no nested popup, so — unlike the old Gtk.DropDowns —
         # picking a filter can't steal the popover's outside-click grab.
-        for label, lst, height in (('Category', self._cat_list, 88),
-                                    ('Language', self._lang_list, 104)):
+        for label, lst, height in ((_('Category'), self._cat_list, 88),
+                                    (_('Language'), self._lang_list, 104)):
             scroll = Gtk.ScrolledWindow()
             scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
             scroll.set_min_content_height(height)
@@ -239,7 +259,7 @@ class ModuleManagerWindow(Adw.Window):
         self._filter_btn = Gtk.MenuButton(icon_name='view-more-symbolic')
         self._filter_btn.add_css_class('flat')
         self._filter_btn.set_valign(Gtk.Align.CENTER)
-        self._filter_btn.set_tooltip_text('Filter the catalogue')
+        self._filter_btn.set_tooltip_text(_('Filter the catalogue'))
         self._filter_btn.set_popover(filter_popover)
 
         header_controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
@@ -248,7 +268,7 @@ class ModuleManagerWindow(Adw.Window):
         header_controls.append(self._cw_refresh_btn)
 
         self._browse_group = Adw.PreferencesGroup()
-        self._browse_group.set_title('Browse catalogue')
+        self._browse_group.set_title(_('Browse catalogue'))
         self._browse_group.set_header_suffix(header_controls)
         self._available_rows = []
 
@@ -266,17 +286,17 @@ class ModuleManagerWindow(Adw.Window):
         scroll = Gtk.ScrolledWindow(vexpand=True)
         scroll.set_child(clamp)
         self._stack.add_titled_with_icon(
-            scroll, 'modules', 'Modules', 'application-x-addon-symbolic')
+            scroll, 'modules', _('Modules'), 'application-x-addon-symbolic')
 
     # ── Open Databases tab ────────────────────────────────────────────────────
 
     def _build_open_db_tab(self):
         self._open_db_group = Adw.PreferencesGroup()
-        self._open_db_group.set_title('Open databases')
+        self._open_db_group.set_title(_('Open databases'))
         self._open_db_group.set_description(
-            'Open-access data behind the word-study features — cross-references, '
-            'Hebrew and Greek lexicons, grammatical parsing, plus the commentary '
-            'and imagery packs.')
+            _('Open-access data behind the word-study features — cross-references, '
+              'Hebrew and Greek lexicons, grammatical parsing, plus the commentary '
+              'and imagery packs.'))
         self._open_db_rows = []
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
@@ -290,13 +310,13 @@ class ModuleManagerWindow(Adw.Window):
         scroll = Gtk.ScrolledWindow(vexpand=True)
         scroll.set_child(clamp)
         self._stack.add_titled_with_icon(
-            scroll, 'open_databases', 'Databases', 'network-server-symbolic')
+            scroll, 'open_databases', _('Databases'), 'network-server-symbolic')
 
     # ── eBible tab ────────────────────────────────────────────────────────────
 
     def _build_ebible_tab(self):
         self._eb_search = Gtk.SearchEntry()
-        self._eb_search.set_placeholder_text('Search by name or language…')
+        self._eb_search.set_placeholder_text(_('Search by name or language…'))
         self._eb_search.set_hexpand(True)
         self._eb_search.connect('search-changed', lambda _: self._eb_apply_filter())
 
@@ -316,7 +336,7 @@ class ModuleManagerWindow(Adw.Window):
         filt_box.set_margin_start(12)
         filt_box.set_margin_end(12)
         filt_box.set_size_request(190, -1)
-        cap = Gtk.Label(label='Language', xalign=0)
+        cap = Gtk.Label(label=_('Language'), xalign=0)
         cap.add_css_class('caption')
         cap.add_css_class('dim-label')
         eb_lang_scroll = Gtk.ScrolledWindow()
@@ -332,13 +352,13 @@ class ModuleManagerWindow(Adw.Window):
         self._eb_filter_btn = Gtk.MenuButton(icon_name='view-more-symbolic')
         self._eb_filter_btn.add_css_class('flat')
         self._eb_filter_btn.set_valign(Gtk.Align.CENTER)
-        self._eb_filter_btn.set_tooltip_text('Filter translations')
+        self._eb_filter_btn.set_tooltip_text(_('Filter translations'))
         self._eb_filter_btn.set_popover(filter_popover)
 
         self._eb_refresh_btn = Gtk.Button(icon_name='view-refresh-symbolic')
         self._eb_refresh_btn.add_css_class('flat')
         self._eb_refresh_btn.set_valign(Gtk.Align.CENTER)
-        self._eb_refresh_btn.set_tooltip_text('Refresh catalogue from eBible.org')
+        self._eb_refresh_btn.set_tooltip_text(_('Refresh catalogue from eBible.org'))
         self._eb_refresh_btn.connect('clicked', self._on_eb_refresh)
 
         header_controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
@@ -347,7 +367,7 @@ class ModuleManagerWindow(Adw.Window):
         header_controls.append(self._eb_refresh_btn)
 
         self._eb_group = Adw.PreferencesGroup()
-        self._eb_group.set_title('Translations')
+        self._eb_group.set_title(_('Translations'))
         self._eb_group.set_header_suffix(header_controls)
         self._eb_rows = []
 
@@ -412,11 +432,11 @@ class ModuleManagerWindow(Adw.Window):
 
         if not installed:
             group = Adw.PreferencesGroup()
-            group.set_title('Installed')
+            group.set_title(_('Installed'))
             group.set_description(
-                'No installed modules match your search.' if query else
-                'No modules yet — install one from the catalogue below to get '
-                'started.')
+                _('No installed modules match your search.') if query else
+                _('No modules yet — install one from the catalogue below to get '
+                  'started.'))
             self._installed_container.append(group)
             return
 
@@ -426,8 +446,8 @@ class ModuleManagerWindow(Adw.Window):
                 buckets.setdefault(_display_kind(mod['type']), []).append(mod)
             kinds = [k for k in _KIND_ORDER if buckets.get(k)]
         else:
-            buckets = {'Installed': installed}
-            kinds = ['Installed']
+            buckets = {N_('Installed'): installed}
+            kinds = [N_('Installed')]
 
         for kind in kinds:
             mods = sorted(buckets[kind],
@@ -435,7 +455,7 @@ class ModuleManagerWindow(Adw.Window):
             group = Adw.PreferencesGroup()
             # Titles are markup-parsed, so the "&" in "Lexicons & Dictionaries"
             # / "Books & Other" must be escaped.
-            group.set_title(GLib.markup_escape_text(f'{kind} ({len(mods)})'))
+            group.set_title(GLib.markup_escape_text(f'{_(kind)} ({len(mods)})'))
             for mod in mods:
                 group.add(self._make_row(mod, installed=True))
             self._installed_container.append(group)
@@ -460,7 +480,7 @@ class ModuleManagerWindow(Adw.Window):
                 lambda: self._confirm_remove_generic(
                     src['label'], lambda: self._do_db_remove(src['id'])))
         else:
-            btn = Gtk.Button(label='Download')
+            btn = Gtk.Button(label=_('Download'))
             btn.add_css_class('suggested-action')
             btn.set_valign(Gtk.Align.CENTER)
             btn.connect('clicked', lambda b, sid=src['id']: self._on_db_download(b, sid))
@@ -469,21 +489,21 @@ class ModuleManagerWindow(Adw.Window):
 
     def _make_catena_row(self):
         row = Adw.ActionRow()
-        row.set_title('Historical Commentaries')
+        row.set_title(_('Historical Commentaries'))
         if catena_bridge.is_installed():
             n = catena_bridge.pack_info().get('quote_count', '')
             row.set_subtitle(
-                f'{n} quotations from the church fathers to the Reformers, '
-                'verse by verse' if n else
-                'Church-history commentary, verse by verse')
+                _('{n} quotations from the church fathers to the Reformers, '
+                  'verse by verse').format(n=n) if n else
+                _('Church-history commentary, verse by verse'))
             btn = self._trash_button(
                 lambda: self._confirm_remove_generic(
-                    'Historical Commentaries', self._do_catena_remove))
+                    _('Historical Commentaries'), self._do_catena_remove))
         else:
             row.set_subtitle(
-                'How the church read each verse, from the fathers to the '
-                'Reformers · ~31 MB download')
-            btn = Gtk.Button(label='Download')
+                _('How the church read each verse, from the fathers to the '
+                  'Reformers · ~31 MB download'))
+            btn = Gtk.Button(label=_('Download'))
             btn.add_css_class('suggested-action')
             btn.connect('clicked', self._on_catena_download)
         btn.set_valign(Gtk.Align.CENTER)
@@ -492,16 +512,12 @@ class ModuleManagerWindow(Adw.Window):
 
     def _on_catena_download(self, btn):
         btn.set_sensitive(False)
-        btn.set_label('Downloading…')
-        base = 'Downloading Historical Commentaries…'
+        btn.set_label(_('Downloading…'))
+        base = _('Downloading {name}…').format(name=_('Historical Commentaries'))
         self._set_busy(True, base)
 
         def _progress(done, total):
-            if total > 0:
-                msg = f'{base} {int(done * 100 / total)}% ({done >> 20} of {total >> 20} MB)'
-            else:
-                msg = f'{base} {done >> 20} MB'
-            GLib.idle_add(self._set_busy, True, msg)
+            GLib.idle_add(self._set_busy, True, _fmt_progress(base, done, total))
 
         def work():
             err = None
@@ -522,7 +538,8 @@ class ModuleManagerWindow(Adw.Window):
     def _finish_catena(self, err):
         if err:
             _log.error('catena download error: %s', err)
-            self._set_busy(False, f"Couldn't download Historical Commentaries — {err}")
+            self._set_busy(False, _("Couldn't download {name} — {error}").format(
+                name=_('Historical Commentaries'), error=err))
         else:
             self._set_busy(False, '')
             if self._on_modules_changed:
@@ -532,21 +549,21 @@ class ModuleManagerWindow(Adw.Window):
 
     def _make_imagery_row(self):
         row = Adw.ActionRow()
-        row.set_title('Bible Imagery')
+        row.set_title(_('Bible Imagery'))
         if imagery_bridge.is_installed():
             n = imagery_bridge.pack_info().get('image_count', '')
             row.set_subtitle(
-                f'{n} illustrations, maps, and place photos, verse by verse'
+                _('{n} illustrations, maps, and place photos, verse by verse').format(n=n)
                 if n else
-                'Illustrations, maps, and place photos, verse by verse')
+                _('Illustrations, maps, and place photos, verse by verse'))
             btn = self._trash_button(
                 lambda: self._confirm_remove_generic(
-                    'Bible Imagery', self._do_imagery_remove))
+                    _('Bible Imagery'), self._do_imagery_remove))
         else:
             row.set_subtitle(
-                'Illustrations, historical maps, and photographs of the '
-                'places named in each verse · large download')
-            btn = Gtk.Button(label='Download')
+                _('Illustrations, historical maps, and photographs of the '
+                  'places named in each verse · large download'))
+            btn = Gtk.Button(label=_('Download'))
             btn.add_css_class('suggested-action')
             btn.connect('clicked', self._on_imagery_download)
         btn.set_valign(Gtk.Align.CENTER)
@@ -555,16 +572,12 @@ class ModuleManagerWindow(Adw.Window):
 
     def _on_imagery_download(self, btn):
         btn.set_sensitive(False)
-        btn.set_label('Downloading…')
-        base = 'Downloading Bible Imagery…'
+        btn.set_label(_('Downloading…'))
+        base = _('Downloading {name}…').format(name=_('Bible Imagery'))
         self._set_busy(True, base)
 
         def _progress(done, total):
-            if total > 0:
-                msg = f'{base} {int(done * 100 / total)}% ({done >> 20} of {total >> 20} MB)'
-            else:
-                msg = f'{base} {done >> 20} MB'
-            GLib.idle_add(self._set_busy, True, msg)
+            GLib.idle_add(self._set_busy, True, _fmt_progress(base, done, total))
 
         def work():
             err = None
@@ -585,7 +598,8 @@ class ModuleManagerWindow(Adw.Window):
     def _finish_imagery(self, err):
         if err:
             _log.error('imagery download error: %s', err)
-            self._set_busy(False, f"Couldn't download Bible Imagery — {err}")
+            self._set_busy(False, _("Couldn't download {name} — {error}").format(
+                name=_('Bible Imagery'), error=err))
         else:
             self._set_busy(False, '')
             if self._on_modules_changed:
@@ -604,9 +618,9 @@ class ModuleManagerWindow(Adw.Window):
         cur_lang = self._selected_filter_text(self._lang_list)
 
         self._fill_filter_list(self._cat_list,
-                               ['All Categories'] + cats, cur_cat)
+                               [_('All Categories')] + cats, cur_cat)
         self._fill_filter_list(self._lang_list,
-                               ['All Languages'] + [_lang_label(c) for c in langs],
+                               [_('All Languages')] + [_lang_label(c) for c in langs],
                                cur_lang)
         self._lang_codes = [''] + langs
         self._updating_filters = False
@@ -639,10 +653,11 @@ class ModuleManagerWindow(Adw.Window):
 
     def _catalog_status(self):
         if not self._has_catalog:
-            return 'No catalogue cached yet — refresh to download the module list.'
+            return _('No catalogue cached yet — refresh to download the module list.')
         n = sum(1 for m in self._all_modules if not m['installed'])
         ago = _ago(sword_bridge.catalog_timestamp())
-        return ' · '.join(p for p in (f'{n} modules available', ago) if p)
+        avail = ngettext('{n} module available', '{n} modules available', n).format(n=n)
+        return ' · '.join(p for p in (avail, ago) if p)
 
     def _apply_filter(self):
         for row in self._available_rows:
@@ -671,8 +686,8 @@ class ModuleManagerWindow(Adw.Window):
 
         if not available:
             placeholder = Adw.ActionRow()
-            placeholder.set_title('No modules match your filters' if self._has_catalog
-                                  else 'No catalogue cached yet')
+            placeholder.set_title(_('No modules match your filters') if self._has_catalog
+                                  else _('No catalogue cached yet'))
             placeholder.set_sensitive(False)
             self._browse_group.add(placeholder)
             self._available_rows.append(placeholder)
@@ -711,7 +726,7 @@ class ModuleManagerWindow(Adw.Window):
         if mod.get('lang'):
             meta.append(_lang_label(mod['lang']))
         if 'StrongsNumbers' in mod.get('features', set()):
-            meta.append("Strong's")
+            meta.append(_("Strong's"))
         size = _fmt_size(mod.get('size'))
         if size:
             meta.append(size)
@@ -727,12 +742,12 @@ class ModuleManagerWindow(Adw.Window):
         if installed:
             btn = Gtk.Button(icon_name='user-trash-symbolic')
             btn.add_css_class('flat')
-            btn.set_tooltip_text('Remove module')
+            btn.set_tooltip_text(_('Remove module'))
             btn.connect(
                 'clicked',
                 lambda b, n=key, f=friendly, r=row: self._confirm_remove(b, n, f, r))
         else:
-            btn = Gtk.Button(label='Install')
+            btn = Gtk.Button(label=_('Install'))
             btn.add_css_class('suggested-action')
             btn.connect('clicked',
                         lambda b, n=key, r=row: self._on_install(b, n, r))
@@ -775,18 +790,19 @@ class ModuleManagerWindow(Adw.Window):
         btn = Gtk.Button(icon_name='user-trash-symbolic')
         btn.add_css_class('flat')
         btn.set_valign(Gtk.Align.CENTER)
-        btn.set_tooltip_text('Remove')
+        btn.set_tooltip_text(_('Remove'))
         btn.connect('clicked', lambda _b: on_confirm())
         return btn
 
     def _confirm_remove_generic(self, friendly, on_confirm):
         """Confirmation dialog for removing a non-SWORD pack/source."""
         dialog = Adw.AlertDialog()
-        dialog.set_heading('Remove?')
+        dialog.set_heading(_('Remove?'))
         dialog.set_body(
-            f'“{friendly}” will be removed. You can download it again later.')
-        dialog.add_response('cancel', 'Cancel')
-        dialog.add_response('remove', 'Remove')
+            _('“{name}” will be removed. You can download it again later.').format(
+                name=friendly))
+        dialog.add_response('cancel', _('Cancel'))
+        dialog.add_response('remove', _('Remove'))
         dialog.set_response_appearance('remove',
                                        Adw.ResponseAppearance.DESTRUCTIVE)
         dialog.set_default_response('cancel')
@@ -805,7 +821,7 @@ class ModuleManagerWindow(Adw.Window):
         if self._op_busy:
             return
         self._op_busy = True
-        self._set_busy(True, 'Downloading module list from CrossWire…')
+        self._set_busy(True, _('Downloading module list from CrossWire…'))
 
         def work():
             err = None
@@ -820,7 +836,7 @@ class ModuleManagerWindow(Adw.Window):
     def _finish_refresh(self, err):
         self._op_busy = False
         if err:
-            self._set_busy(False, f'Refresh failed: {err}')
+            self._set_busy(False, _('Refresh failed: {error}').format(error=err))
         else:
             self._set_busy(False, '')
             self._populate()
@@ -830,9 +846,9 @@ class ModuleManagerWindow(Adw.Window):
 
     def _on_import_clicked(self, _btn):
         dialog = Gtk.FileDialog()
-        dialog.set_title('Import SWORD Module')
+        dialog.set_title(_('Import SWORD Module'))
         zip_filter = Gtk.FileFilter()
-        zip_filter.set_name('SWORD module (.zip)')
+        zip_filter.set_name(_('SWORD module (.zip)'))
         zip_filter.add_pattern('*.zip')
         filters = Gio.ListStore.new(Gtk.FileFilter)
         filters.append(zip_filter)
@@ -851,13 +867,13 @@ class ModuleManagerWindow(Adw.Window):
     def _on_file_dropped(self, _target, value, _x, _y):
         path = value.get_path() if isinstance(value, Gio.File) else None
         if not path or not path.lower().endswith('.zip'):
-            self._set_busy(False, 'Drop a SWORD module .zip file to import it.')
+            self._set_busy(False, _('Drop a SWORD module .zip file to import it.'))
             return False
         self._load_zip_path(path)
         return True
 
     def _load_zip_path(self, path):
-        self._set_busy(True, 'Reading module file…')
+        self._set_busy(True, _('Reading module file…'))
 
         def work():
             err = None
@@ -875,7 +891,7 @@ class ModuleManagerWindow(Adw.Window):
 
     def _finish_inspect(self, err, mods, data):
         if err:
-            self._set_busy(False, f"Couldn't read that file — {err}")
+            self._set_busy(False, _("Couldn't read that file — {error}").format(error=err))
         else:
             self._set_busy(False, '')
             if mods:
@@ -884,16 +900,16 @@ class ModuleManagerWindow(Adw.Window):
 
     def _show_import_sheet(self, mods, zip_bytes):
         dialog = Adw.Dialog()
-        dialog.set_title('Import Module')
+        dialog.set_title(_('Import Module'))
         dialog.set_content_width(440)
         dialog.set_content_height(420)
 
         tv = Adw.ToolbarView()
         header = Adw.HeaderBar()
-        cancel = Gtk.Button(label='Cancel')
+        cancel = Gtk.Button(label=_('Cancel'))
         cancel.connect('clicked', lambda _b: dialog.close())
         header.pack_start(cancel)
-        install = Gtk.Button(label='Install')
+        install = Gtk.Button(label=_('Install'))
         install.add_css_class('suggested-action')
         header.pack_end(install)
         tv.add_top_bar(header)
@@ -958,7 +974,7 @@ class ModuleManagerWindow(Adw.Window):
         if mod.get('size'):
             meta.append(f"{mod['size'] / (1 << 20):.1f} MB")
         if mod.get('locked'):
-            meta.append('🔒 Locked')
+            meta.append(_('🔒 Locked'))
         if meta:
             sub = Gtk.Label(label=' · '.join(meta), xalign=0, wrap=True)
             sub.add_css_class('dim-label')
@@ -984,7 +1000,7 @@ class ModuleManagerWindow(Adw.Window):
         if mod.get('locked'):
             key_entry = Gtk.PasswordEntry()
             key_entry.set_show_peek_icon(True)
-            key_entry.set_property('placeholder-text', 'Paste the unlock key from the publisher')
+            key_entry.set_property('placeholder-text', _('Paste the unlock key from the publisher'))
             key_entry.set_margin_start(28)
             key_entry.set_margin_top(4)
             inner.append(key_entry)
@@ -1001,13 +1017,13 @@ class ModuleManagerWindow(Adw.Window):
         old_v = mod.get('installed_version', '')
         if not new_v or not old_v:
             # Can't compare meaningfully — treat as a plain reinstall.
-            return 'Reinstall', 'Already installed', False
+            return 'Reinstall', _('Already installed'), False
         cmp = sword_bridge.cmp_version(new_v, old_v)
         if cmp > 0:
-            return 'Update', f'Update from v{old_v} to v{new_v}', False
+            return 'Update', _('Update from v{old} to v{new}').format(old=old_v, new=new_v), False
         if cmp == 0:
-            return 'Reinstall', f'Already installed (v{old_v})', False
-        return 'Replace', f'Replace v{old_v} with older v{new_v}', True
+            return 'Reinstall', _('Already installed (v{old})').format(old=old_v), False
+        return 'Replace', _('Replace v{old} with older v{new}').format(old=old_v, new=new_v), True
 
     def _do_import(self, zip_bytes, rows, dialog):
         selected = [m['name'] for m, c, _k in rows if c.get_active()]
@@ -1019,8 +1035,10 @@ class ModuleManagerWindow(Adw.Window):
         if not selected:
             return
         dialog.close()
-        label = selected[0] if len(selected) == 1 else f'{len(selected)} modules'
-        self._set_busy(True, f'Installing {label}…')
+        label = (selected[0] if len(selected) == 1
+                 else ngettext('{n} module', '{n} modules',
+                               len(selected)).format(n=len(selected)))
+        self._set_busy(True, _('Installing {label}…').format(label=label))
 
         def work():
             err = None
@@ -1035,9 +1053,10 @@ class ModuleManagerWindow(Adw.Window):
     def _finish_import(self, err, label):
         if err:
             _log.error('import error for %s: %s', label, err)
-            self._set_busy(False, f"Couldn't import {label} — {err}")
+            self._set_busy(False, _("Couldn't import {label} — {error}").format(
+                label=label, error=err))
         else:
-            self._set_busy(False, f'Imported {label}.')
+            self._set_busy(False, _('Imported {label}.').format(label=label))
             if self._on_modules_changed:
                 self._on_modules_changed()
             self._populate()
@@ -1062,12 +1081,12 @@ class ModuleManagerWindow(Adw.Window):
 
     def _confirm_remove(self, btn, name, friendly, row):
         dialog = Adw.AlertDialog()
-        dialog.set_heading('Remove module?')
+        dialog.set_heading(_('Remove module?'))
         dialog.set_body(
-            f'“{friendly}” will be removed from your library. '
-            'You can reinstall it from the catalogue later.')
-        dialog.add_response('cancel', 'Cancel')
-        dialog.add_response('remove', 'Remove')
+            _('“{name}” will be removed from your library. '
+              'You can reinstall it from the catalogue later.').format(name=friendly))
+        dialog.add_response('cancel', _('Cancel'))
+        dialog.add_response('remove', _('Remove'))
         dialog.set_response_appearance('remove',
                                        Adw.ResponseAppearance.DESTRUCTIVE)
         dialog.set_default_response('cancel')
@@ -1100,8 +1119,11 @@ class ModuleManagerWindow(Adw.Window):
         self._op_busy = False
         if err:
             _log.error('%s error for %s: %s', action, name, err)
-            verb = 'remove' if action == 'remove' else 'install'
-            self._set_busy(False, f'Couldn\'t {verb} {name} — {err}')
+            if action == 'remove':
+                msg = _("Couldn't remove {name} — {error}").format(name=name, error=err)
+            else:
+                msg = _("Couldn't install {name} — {error}").format(name=name, error=err)
+            self._set_busy(False, msg)
         else:
             self._set_busy(False, '')
             if self._on_modules_changed:
@@ -1114,17 +1136,13 @@ class ModuleManagerWindow(Adw.Window):
         if src is None:
             return
         btn.set_sensitive(False)
-        btn.set_label('Downloading…')
-        base_msg = f'Downloading {src["label"]}…'
+        btn.set_label(_('Downloading…'))
+        base_msg = _('Downloading {name}…').format(name=src['label'])
         self._set_busy(True, base_msg)
 
         def _progress(done, total):
-            if total > 0:
-                pct = int(done * 100 / total)
-                msg = f'{base_msg} {pct}% ({done >> 20} of {total >> 20} MB)'
-            else:
-                msg = f'{base_msg} {done >> 20} MB'
-            GLib.idle_add(self._set_busy, True, msg)
+            GLib.idle_add(self._set_busy, True,
+                          _fmt_progress(base_msg, done, total))
 
         def work():
             err = None
@@ -1142,7 +1160,8 @@ class ModuleManagerWindow(Adw.Window):
 
     def _finish_db_change(self, err, label):
         if err:
-            self._set_busy(False, f'Couldn\'t download {label} — {err}')
+            self._set_busy(False, _("Couldn't download {name} — {error}").format(
+                name=label, error=err))
         else:
             self._set_busy(False, '')
         self._populate_open_db()
@@ -1158,7 +1177,7 @@ class ModuleManagerWindow(Adw.Window):
             self._eb_apply_filter()
         else:
             self._eb_status.set_text(
-                'No catalogue cached yet — refresh to download it.')
+                _('No catalogue cached yet — refresh to download it.'))
             self._eb_status.set_visible(True)
             self._eb_group.set_description('')
 
@@ -1217,14 +1236,15 @@ class ModuleManagerWindow(Adw.Window):
         self._eb_rows = []
 
         n = len(filtered)
-        self._eb_group.set_description(
-            f'{n} translation{"s" if n != 1 else ""} · eBible.org')
+        self._eb_group.set_description(ngettext(
+            '{n} translation · eBible.org',
+            '{n} translations · eBible.org', n).format(n=n))
         self._eb_status.set_visible(False)
         self._eb_status.set_text('')
 
         if not filtered:
             placeholder = Adw.ActionRow()
-            placeholder.set_title('No translations match your search')
+            placeholder.set_title(_('No translations match your search'))
             placeholder.set_sensitive(False)
             self._eb_group.add(placeholder)
             self._eb_rows.append(placeholder)
@@ -1247,8 +1267,9 @@ class ModuleManagerWindow(Adw.Window):
         It's a real ActionRow so it inherits the boxed-list styling exactly."""
         row = Adw.ActionRow()
         row.set_title(
-            f'Showing the first {shown} of {total:,} — '
-            'refine your search to see more')
+            _('Showing the first {shown} of {total} — '
+              'refine your search to see more').format(
+                  shown=shown, total=f'{total:,}'))
         row.set_sensitive(False)
         row.add_prefix(Gtk.Image.new_from_icon_name('system-search-symbolic'))
         return row
@@ -1272,7 +1293,7 @@ class ModuleManagerWindow(Adw.Window):
                 lambda t=tid, ti=title: self._confirm_remove_generic(
                     ti, lambda: self._do_eb_remove(t)))
         else:
-            btn = Gtk.Button(label='Download')
+            btn = Gtk.Button(label=_('Download'))
             btn.add_css_class('suggested-action')
             btn.set_valign(Gtk.Align.CENTER)
             btn.connect('clicked', lambda b, t=tid, e=entry: self._on_eb_download(b, t, e))
@@ -1283,7 +1304,7 @@ class ModuleManagerWindow(Adw.Window):
 
     def _on_eb_refresh(self, _btn):
         self._eb_refresh_btn.set_sensitive(False)
-        self._progress.set_text('Downloading eBible catalog…')
+        self._progress.set_text(_('Downloading eBible catalog…'))
         self._progress.set_visible(True)
         if self._pulse_source is None:
             self._pulse_source = GLib.timeout_add(80, self._pulse)
@@ -1305,7 +1326,7 @@ class ModuleManagerWindow(Adw.Window):
             GLib.source_remove(self._pulse_source)
             self._pulse_source = None
         if err:
-            self._eb_status.set_text(f'Refresh failed: {err}')
+            self._eb_status.set_text(_('Refresh failed: {error}').format(error=err))
             self._eb_status.set_visible(True)
         else:
             self._eb_catalog = ebible_bridge.catalog_entries()
@@ -1315,9 +1336,9 @@ class ModuleManagerWindow(Adw.Window):
 
     def _on_eb_download(self, btn, tid, entry):
         btn.set_sensitive(False)
-        btn.set_label('Downloading…')
+        btn.set_label(_('Downloading…'))
         title = (entry.get('shortTitle') or tid).strip()
-        self._progress.set_text(f'Downloading {title}…')
+        self._progress.set_text(_('Downloading {name}…').format(name=title))
         self._progress.set_visible(True)
         if self._pulse_source is None:
             self._pulse_source = GLib.timeout_add(80, self._pulse)
@@ -1341,10 +1362,11 @@ class ModuleManagerWindow(Adw.Window):
             GLib.source_remove(self._pulse_source)
             self._pulse_source = None
         if err:
-            self._eb_status.set_text(f'Error downloading {title}: {err}')
+            self._eb_status.set_text(
+                _('Error downloading {title}: {error}').format(title=title, error=err))
             self._eb_status.set_visible(True)
             btn.set_sensitive(True)
-            btn.set_label('Download')
+            btn.set_label(_('Download'))
         else:
             if self._on_modules_changed:
                 self._on_modules_changed()

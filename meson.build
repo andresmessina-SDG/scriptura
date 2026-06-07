@@ -5,6 +5,7 @@ project('scriptura',
 )
 
 python = import('python').find_installation('python3')
+i18n = import('i18n')
 
 app_id = 'page.codeberg.andresmessina.Scriptura'
 pkgdatadir = get_option('prefix') / get_option('datadir') / meson.project_name()
@@ -65,6 +66,7 @@ install_data(py_sources, install_dir: pkgdatadir)
 
 install_data('LICENSE', install_dir: licensedir)
 
+subdir('po')
 subdir('data')
 
 meson.add_install_script('meson_post_install.py')

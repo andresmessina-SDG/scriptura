@@ -619,14 +619,14 @@ class BiblePane(Gtk.Box):
         self._sync_btn = Gtk.ToggleButton(icon_name='changes-allow-symbolic')
         self._sync_btn.add_css_class('flat')
         self._sync_btn.add_css_class('pane-action')
-        self._sync_btn.set_tooltip_text('Following navigation')
+        self._sync_btn.set_tooltip_text(_('Following navigation'))
         self._sync_btn.connect('notify::active', self._on_sync_toggled)
         toolbar.append(self._sync_btn)
 
         self._chapter_note_btn = Gtk.Button(icon_name='document-edit-symbolic')
         self._chapter_note_btn.add_css_class('flat')
         self._chapter_note_btn.add_css_class('pane-action')
-        self._chapter_note_btn.set_tooltip_text('Chapter note')
+        self._chapter_note_btn.set_tooltip_text(_('Chapter note'))
         self._chapter_note_btn.connect(
             'clicked', lambda _b: annotation_dialogs.show_chapter_note(self))
         toolbar.append(self._chapter_note_btn)
@@ -636,7 +636,7 @@ class BiblePane(Gtk.Box):
         self._copy_chapter_btn = Gtk.Button(icon_name='edit-copy-symbolic')
         self._copy_chapter_btn.add_css_class('flat')
         self._copy_chapter_btn.add_css_class('pane-action')
-        self._copy_chapter_btn.set_tooltip_text('Copy chapter')
+        self._copy_chapter_btn.set_tooltip_text(_('Copy chapter'))
         self._copy_chapter_btn.connect('clicked', self._on_copy_chapter)
         toolbar.append(self._copy_chapter_btn)
 
@@ -653,15 +653,15 @@ class BiblePane(Gtk.Box):
         date_nav.set_margin_bottom(4)
         prev_day_btn = Gtk.Button(icon_name='go-previous-symbolic')
         prev_day_btn.add_css_class('flat')
-        prev_day_btn.set_tooltip_text('Previous day')
+        prev_day_btn.set_tooltip_text(_('Previous day'))
         prev_day_btn.connect('clicked', lambda _: self._go_devotional_day(-1))
         self._date_label = Gtk.Label(label='', xalign=0.5, hexpand=True)
         self._date_label.add_css_class('heading')
         next_day_btn = Gtk.Button(icon_name='go-next-symbolic')
         next_day_btn.add_css_class('flat')
-        next_day_btn.set_tooltip_text('Next day')
+        next_day_btn.set_tooltip_text(_('Next day'))
         next_day_btn.connect('clicked', lambda _: self._go_devotional_day(1))
-        today_btn = Gtk.Button(label='Today')
+        today_btn = Gtk.Button(label=_('Today'))
         today_btn.add_css_class('flat')
         today_btn.connect('clicked', lambda _: self._go_devotional_day(0, reset=True))
         date_nav.append(prev_day_btn)
@@ -1159,7 +1159,7 @@ class BiblePane(Gtk.Box):
         'Book Chapter\\n\\nN verse text\\nN verse text…'."""
         if not self._is_verse_navigable():
             if self._on_toast:
-                self._on_toast('Copy chapter works on Bibles and commentaries only')
+                self._on_toast(_('Copy chapter works on Bibles and commentaries only'))
             return
         book, chapter, module = self._book, self._chapter, self._module
 
@@ -1171,7 +1171,8 @@ class BiblePane(Gtk.Box):
                     verses = sword_bridge.load_chapter(module, book, chapter)
             except Exception as e:
                 if self._on_toast:
-                    GLib.idle_add(self._on_toast, f"Couldn't load chapter — {e}")
+                    GLib.idle_add(self._on_toast,
+                                  _("Couldn't load chapter — {error}").format(error=e))
                 return
             lines = [f'{book} {chapter}', '']
             for v_num, html in verses:
@@ -1186,13 +1187,14 @@ class BiblePane(Gtk.Box):
     def _finish_copy_chapter(self, text, book, chapter):
         self._view.get_clipboard().set(text)
         if self._on_toast:
-            self._on_toast(f'Copied {book} {chapter}')
+            self._on_toast(_('Copied {ref}').format(ref=f'{book} {chapter}'))
         return GLib.SOURCE_REMOVE
 
     def _on_sync_toggled(self, btn, _param):
         locked = btn.get_active()
         btn.set_icon_name('changes-prevent-symbolic' if locked else 'changes-allow-symbolic')
-        btn.set_tooltip_text('Locked — not following navigation' if locked else 'Following navigation')
+        btn.set_tooltip_text(_('Locked — not following navigation') if locked
+                             else _('Following navigation'))
         # When re-enabling "Following navigation", catch up to wherever the rest
         # of the app has navigated to since the lock was applied.
         if not locked and getattr(self, '_window_book', None):
@@ -1376,21 +1378,21 @@ class BiblePane(Gtk.Box):
     def _display_unsupported_module(self):
         self._show_status_page(
             'dialog-information-symbolic', self._module,
-            'This module isn’t organized by book and chapter, so it can’t be '
-            'read in this pane. Pick a Bible or commentary to read here.',
-            action=('Choose another module',
+            _('This module isn’t organized by book and chapter, so it can’t be '
+              'read in this pane. Pick a Bible or commentary to read here.'),
+            action=(_('Choose another module'),
                     lambda: self._picker.menu_button.popup()))
 
     def _display_cipher_locked(self):
         """Shown when an encrypted module's content decrypts to gibberish —
         the cipher key is wrong or missing. Pairs with the window's
         'Edit Key' toast."""
-        action = (('Edit Key', lambda: self._on_edit_cipher(self._module))
+        action = ((_('Edit Key'), lambda: self._on_edit_cipher(self._module))
                   if self._on_edit_cipher is not None else None)
         self._show_status_page(
             'dialog-password-symbolic', self._module,
-            'This module’s content isn’t readable — the cipher key may be '
-            'incorrect.',
+            _('This module’s content isn’t readable — the cipher key may be '
+              'incorrect.'),
             action=action)
 
     def _display_empty_chapter(self, book, chapter):
@@ -1399,9 +1401,10 @@ class BiblePane(Gtk.Box):
         (SBLGNT, MorphGNT) navigated to an OT passage, or vice versa."""
         self._show_status_page(
             'dialog-information-symbolic', f'{book} {chapter}',
-            f'{self._module} doesn’t include this passage. Some modules cover '
-            'only the Old or New Testament — pick a Bible with full coverage.',
-            action=('Choose another module',
+            _('{module} doesn’t include this passage. Some modules cover '
+              'only the Old or New Testament — pick a Bible with full coverage.').format(
+                  module=self._module),
+            action=(_('Choose another module'),
                     lambda: self._picker.menu_button.popup()))
         self._view.scroll_to_iter(self._buffer.get_start_iter(), 0.0, False, 0, 0)
 
@@ -1429,7 +1432,9 @@ class BiblePane(Gtk.Box):
         else:
             self._buffer.insert_markup(
                 self._buffer.get_end_iter(),
-                '<span foreground="gray">No entry found for this date.</span>', -1)
+                '<span foreground="gray">'
+                + GLib.markup_escape_text(_('No entry found for this date.'))
+                + '</span>', -1)
         self._view.get_vadjustment().set_value(0)
         return GLib.SOURCE_REMOVE
 
@@ -1474,7 +1479,7 @@ class BiblePane(Gtk.Box):
         btn.add_css_class('artifact-marker')
         btn.set_can_focus(False)
         btn.set_valign(Gtk.Align.CENTER)
-        btn.set_tooltip_text('Related artifact — open in Scripture in Stone')
+        btn.set_tooltip_text(_('Related artifact — open in Scripture in Stone'))
         if self._on_open_artifact:
             btn.connect(
                 'clicked',

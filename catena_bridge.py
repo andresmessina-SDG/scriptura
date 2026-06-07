@@ -100,7 +100,7 @@ def is_catena_module(name: str) -> bool:
 def display_name(name: str) -> str:
     # Curated feature name shown in the UI. MODULE_KEY ('Historical
     # Commentaries') remains the on-disk identity used everywhere else.
-    return 'Voices of the Church'
+    return _('Voices of the Church')
 
 
 def is_installed() -> bool:

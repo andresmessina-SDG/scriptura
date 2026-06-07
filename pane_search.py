@@ -53,7 +53,7 @@ class PaneSearch:
         self._btn = Gtk.ToggleButton(icon_name='system-search-symbolic')
         self._btn.add_css_class('flat')
         self._btn.add_css_class('pane-action')
-        self._btn.set_tooltip_text('Search this module')
+        self._btn.set_tooltip_text(_('Search this module'))
         self._btn.connect('toggled', self._on_toggled)
         return self._btn
 
@@ -68,14 +68,14 @@ class PaneSearch:
         se_row.set_margin_bottom(6)
 
         self._entry = Gtk.SearchEntry(hexpand=True)
-        self._entry.set_placeholder_text('Search this module…')
+        self._entry.set_placeholder_text(_('Search this module…'))
         self._entry.connect('activate', self._on_search)
         self._entry.connect('stop-search',
                             lambda _: self._btn.set_active(False))
 
         self._case_btn = Gtk.ToggleButton(label='Aa')
         self._case_btn.add_css_class('flat')
-        self._case_btn.set_tooltip_text('Match case')
+        self._case_btn.set_tooltip_text(_('Match case'))
         self._case_btn.connect('toggled', self._on_case_toggled)
 
         self._spinner = Gtk.Spinner()
@@ -184,7 +184,8 @@ class PaneSearch:
         book, ch, v, _text = self._results[idx]
         self.stash_for_self()
         self._pane._on_word_study_navigate(book, ch, v)
-        self._status.set_text(f'Result {idx + 1} of {n}')
+        self._status.set_text(
+            _('Result {i} of {n}').format(i=idx + 1, n=n))
         return True
 
     def apply_highlight(self):
@@ -271,17 +272,18 @@ class PaneSearch:
             nxt = child.get_next_sibling()
             self._list.remove(child)
             child = nxt
-        self._status.set_text('Searching…')
+        self._status.set_text(_('Searching…'))
         self._spinner.set_visible(True)
         self._spinner.start()
 
         def _idx_start():
-            GLib.idle_add(self._status.set_text, 'Building index…')
+            GLib.idle_add(self._status.set_text, _('Building index…'))
 
         def _idx_progress(book_idx, total, book_name):
             GLib.idle_add(
                 self._status.set_text,
-                f'Building index… {book_name} ({book_idx}/{total})')
+                _('Building index… {book} ({idx}/{total})').format(
+                    book=book_name, idx=book_idx, total=total))
 
         case = self._case_btn.get_active()
 
@@ -326,8 +328,8 @@ class PaneSearch:
             self._status.set_text(truncated_msg)
         else:
             n = len(results)
-            self._status.set_text(
-                f'{n} verse{"s" if n != 1 else ""} found')
+            self._status.set_text(ngettext(
+                '{n} verse found', '{n} verses found', n).format(n=n))
         for book, ch, v, text in results[:500]:
             row = Gtk.ListBoxRow()
             row._nav = (book, ch, v)

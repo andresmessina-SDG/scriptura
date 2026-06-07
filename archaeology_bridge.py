@@ -17,9 +17,15 @@ from typing import TypedDict, cast
 
 _log = logging.getLogger('scriptura.archaeology')
 
+
+def N_(message):
+    """No-op gettext marker; DISPLAY_NAME is translated at display via _()."""
+    return message
+
+
 # Single bundled module. The key is internal; the display name is curated.
 MODULE_KEY = 'ScriptureInStone'
-DISPLAY_NAME = 'Scripture in Stone'
+DISPLAY_NAME = N_('Scripture in Stone')
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 # Co-located with the python modules in both dev and the meson install
@@ -102,7 +108,7 @@ def module_names() -> list[str]:
 
 
 def display_name(name: str) -> str:
-    return DISPLAY_NAME
+    return _(DISPLAY_NAME)
 
 
 def image_path(filename: str) -> str:
@@ -219,12 +225,12 @@ def info() -> dict[str, str]:
     doc = document()
     n = sum(len(c['entries']) for c in doc['chapters'])
     return {
-        'description': 'Artifacts of the biblical world — inscriptions, '
-                       'monuments, and objects that touch the people, places, '
-                       'and events named in Scripture, in historical sequence.',
-        'type': f'{n} artifacts',
-        'license': 'Public-domain objects; photographs CC BY-SA (per-item credit)',
-        'about': 'A curated, measured gallery: each artifact links to the '
-                 'passage it attests. Forgeries and disputed objects are '
-                 'excluded; genuine scholarly doubt is noted.',
+        'description': _('Artifacts of the biblical world — inscriptions, '
+                         'monuments, and objects that touch the people, places, '
+                         'and events named in Scripture, in historical sequence.'),
+        'type': _('{n} artifacts').format(n=n),
+        'license': _('Public-domain objects; photographs CC BY-SA (per-item credit)'),
+        'about': _('A curated, measured gallery: each artifact links to the '
+                   'passage it attests. Forgeries and disputed objects are '
+                   'excluded; genuine scholarly doubt is noted.'),
     }
