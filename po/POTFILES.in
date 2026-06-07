@@ -11,3 +11,4 @@ module_picker.py
 pane_search.py
 search_panel.py
 welcome.py
+window.py
