@@ -48,7 +48,9 @@ def _setup_gettext():
         locale.textdomain(GETTEXT_DOMAIN)
     except (locale.Error, AttributeError):
         pass
-    gettext.install(GETTEXT_DOMAIN, localedir)
+    # names=['ngettext'] also installs ngettext() as a builtin for correct
+    # plural handling (languages with >2 plural forms can't use "+ 's'").
+    gettext.install(GETTEXT_DOMAIN, localedir, names=['ngettext'])
 
 
 _setup_gettext()

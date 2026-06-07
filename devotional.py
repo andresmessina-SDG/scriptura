@@ -63,9 +63,10 @@ def render_osis(buffer, raw, dark):
 
     section_starts = [i for i, p in enumerate(p_blocks) if _is_section_header(p)]
     multi_section  = len(section_starts) > 1
-    labels = (['Morning', 'Evening']
+    labels = ([_('Morning'), _('Evening')]
               if len(section_starts) == 2
-              else [f'Part {i + 1}' for i in range(len(section_starts))])
+              else [_('Part {n}').format(n=i + 1)
+                    for i in range(len(section_starts))])
 
     section_idx = -1
     for i, p in enumerate(p_blocks):
@@ -76,7 +77,7 @@ def render_osis(buffer, raw, dark):
                     buffer.insert_markup(buffer.get_end_iter(), '\n', -1)
                 label = (labels[section_idx]
                          if section_idx < len(labels)
-                         else f'Part {section_idx + 1}')
+                         else _('Part {n}').format(n=section_idx + 1))
                 buffer.insert_markup(
                     buffer.get_end_iter(),
                     f'<b><big>{GLib.markup_escape_text(label)}</big></b>\n', -1)

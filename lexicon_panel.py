@@ -147,11 +147,11 @@ class LexiconPanel(Gtk.Box):
         self._back_btn = Gtk.Button(icon_name='go-previous-symbolic')
         self._back_btn.add_css_class('flat')
         self._back_btn.set_sensitive(False)
-        self._back_btn.set_tooltip_text('Back to previous definition')
+        self._back_btn.set_tooltip_text(_('Back to previous definition'))
         self._back_btn.connect('clicked', self._on_back)
         header.append(self._back_btn)
 
-        self._title = Gtk.Label(label="Strong's Lexicon", xalign=0)
+        self._title = Gtk.Label(label=_("Strong's Lexicon"), xalign=0)
         self._title.add_css_class('heading')
         # Cap natural width + allow ellipsize. Without these, the
         # title (e.g. `Strong's H3068 · in "the LORD"`) reports the
@@ -178,7 +178,7 @@ class LexiconPanel(Gtk.Box):
 
         close_btn = Gtk.Button(icon_name='window-close-symbolic')
         close_btn.add_css_class('flat')
-        close_btn.set_tooltip_text('Close lexicon')
+        close_btn.set_tooltip_text(_('Close lexicon'))
         close_btn.connect('clicked', lambda _: self.hide())
         header.append(close_btn)
 
@@ -315,16 +315,17 @@ class LexiconPanel(Gtk.Box):
         suffix. For idiomatic multi-word translations like KJV's
         'God forbid' = μή (G3361) + γένοιτο (G1096), the user sees they
         clicked into a phrase, not a one-to-one word lookup."""
-        base = f"Strong's {strong_num}"
+        base = _("Strong's {num}").format(num=strong_num)
         if not chain or len(chain) <= 1:
             self._title.set_text(base)
             return
         others = [s for s in chain if s != strong_num]
         bits = []
         if text and ' ' in text.strip():
-            bits.append(f'in “{GLib.markup_escape_text(text.strip())}”')
+            bits.append(_('in “{text}”').format(
+                text=GLib.markup_escape_text(text.strip())))
         if others:
-            bits.append('with ' + ' + '.join(others))
+            bits.append(_('with {strongs}').format(strongs=' + '.join(others)))
         if not bits:
             self._title.set_text(base)
             return
@@ -373,7 +374,7 @@ class LexiconPanel(Gtk.Box):
         self._morph_lbl.set_text(decoded)
 
         if not text:
-            self._def_buf.set_text('Definition not found.')
+            self._def_buf.set_text(_('Definition not found.'))
         else:
             dark = Adw.StyleManager.get_default().get_dark()
             markup = _html_to_markup(text, dark)
@@ -447,7 +448,7 @@ class LexiconPanel(Gtk.Box):
     def _load_word_study(self, strong_num):
         # Clear the list immediately so the user sees the new search start.
         self._clear_ws()
-        self._ws_header.set_text('Searching…')
+        self._ws_header.set_text(_('Searching…'))
 
         # Capture the search context so a late callback after navigation
         # can be discarded.
@@ -493,9 +494,10 @@ class LexiconPanel(Gtk.Box):
         # Progress header — running count + chapter position. The chapter
         # number gives the user a sense of how much scanning is left
         # without a full progress bar.
-        s = '' if running == 1 else 's'
-        self._ws_header.set_text(
-            f'Searching {book}… {running} match{s} so far ({ch}/{total})')
+        self._ws_header.set_text(ngettext(
+            'Searching {book}… {n} match so far ({ch}/{total})',
+            'Searching {book}… {n} matches so far ({ch}/{total})',
+            running).format(book=book, n=running, ch=ch, total=total))
         for ref_book, c, v_num, markup in batch:
             self._ws_list.append(self._build_ws_row(ref_book, c, v_num, markup))
         return GLib.SOURCE_REMOVE
@@ -505,8 +507,10 @@ class LexiconPanel(Gtk.Box):
                 or self._book != book
                 or self._module != module):
             return GLib.SOURCE_REMOVE
-        s = '' if running == 1 else 's'
-        self._ws_header.set_text(f'{running} occurrence{s} in {book}')
+        self._ws_header.set_text(ngettext(
+            '{n} occurrence in {book}',
+            '{n} occurrences in {book}',
+            running).format(n=running, book=book))
         return GLib.SOURCE_REMOVE
 
     def _build_ws_row(self, ref_book, ch, v_num, markup):
