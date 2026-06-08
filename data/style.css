@@ -165,6 +165,12 @@ separator.nav-divider { background-color: alpha(@borders, 0.3); }
     color: alpha(#000, 0.5);
 }
 
+/* ── Header overflow ⋯ menu — flat, full-width action rows ───────────── */
+/* Same quiet vocabulary as the study/app menus: flat rows grouped by
+ * whitespace, the leading glyph/icon then a left-aligned label. */
+.overflow-menu { padding: 2px; min-width: 200px; }
+.overflow-menu > button { padding: 6px 10px; min-height: 0; }
+
 /* ── Study Journal — note card + tag chips ───────────────────────────── */
 
 .journal-note-card {
