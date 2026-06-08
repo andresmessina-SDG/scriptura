@@ -156,6 +156,15 @@ separator.nav-divider { background-color: alpha(@borders, 0.3); }
 .hl-swatch-orange { background-color: #c8a575; }
 .hl-swatch-clear  { background-color: transparent; }
 
+/* Colorblind-safe initial centred in each highlight swatch: a muted letter
+ * so hue isn't the only cue distinguishing the four palette colors. Dark,
+ * low-opacity ink reads on both the popover pastels and the journal mid-tones. */
+.hl-letter {
+    font-size: 0.78em;
+    font-weight: 700;
+    color: alpha(#000, 0.5);
+}
+
 /* ── Study Journal — note card + tag chips ───────────────────────────── */
 
 .journal-note-card {

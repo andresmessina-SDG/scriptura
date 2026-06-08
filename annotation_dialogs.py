@@ -101,6 +101,11 @@ def show_study_menu(pane, verses, x, y):
         btn = Gtk.Button()
         btn.set_size_request(28, 28)
         btn.add_css_class(css_cls)
+        # Muted initial as a non-hue (colorblind-safe) cue; first letter of the
+        # localized color name so it tracks the tooltip/accessible name.
+        letter = Gtk.Label(label=name[:1])
+        letter.add_css_class('hl-letter')
+        btn.set_child(letter)
         # Icon-/color-only control: give AT the color name (no visible change).
         set_accessible_label(btn, name)
         btn.connect('clicked',

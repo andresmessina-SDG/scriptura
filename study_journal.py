@@ -425,8 +425,13 @@ class StudyJournalWindow(Adw.Window):
             btn = Gtk.Button()
             btn.add_css_class('hl-swatch')
             btn.add_css_class(_HL_SWATCH_CLASS[stored_color])
-            btn.set_tooltip_text(_(_HL_NAMES[stored_color]))
-            set_accessible_label(btn, _(_HL_NAMES[stored_color]))
+            name = _(_HL_NAMES[stored_color])
+            # Muted initial as a non-hue (colorblind-safe) cue — see .hl-letter.
+            letter = Gtk.Label(label=name[:1])
+            letter.add_css_class('hl-letter')
+            btn.set_child(letter)
+            btn.set_tooltip_text(name)
+            set_accessible_label(btn, name)
             btn.connect('clicked', self._on_hl_click, stored_color)
             self._hl_row.append(btn)
             self._hl_buttons[stored_color] = btn
@@ -686,7 +691,10 @@ class StudyJournalWindow(Adw.Window):
         if not entry.get('is_chapter_note'):
             parts = []
             if entry['highlight']:
-                parts.append(_('● Highlight'))
+                # Name the color in text so the highlight is distinguishable
+                # without relying on the strip's hue (colorblind-safe).
+                hl_name = _HL_NAMES.get(entry['highlight'])
+                parts.append('● ' + _(hl_name) if hl_name else _('● Highlight'))
             if entry['underline']:
                 parts.append(_('▁ Underline'))
             if entry['note']:
