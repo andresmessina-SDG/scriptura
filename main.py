@@ -48,6 +48,12 @@ def _setup_gettext():
         locale.textdomain(GETTEXT_DOMAIN)
     except (locale.Error, AttributeError):
         pass
+    # Bind the domain for the gettext module's own functions too, so the
+    # importable helpers in i18n.py (which alias gettext.gettext/ngettext)
+    # resolve the same catalog as the installed builtins. mypy-strict modules
+    # import from i18n.py; the (ignore_errors) UI modules use the builtins.
+    gettext.bindtextdomain(GETTEXT_DOMAIN, localedir)
+    gettext.textdomain(GETTEXT_DOMAIN)
     # names=['ngettext'] also installs ngettext() as a builtin for correct
     # plural handling (languages with >2 plural forms can't use "+ 's'").
     gettext.install(GETTEXT_DOMAIN, localedir, names=['ngettext'])
