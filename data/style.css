@@ -651,13 +651,23 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
     letter-spacing: 0.08em;
     margin-right: 4px;
 }
+/* Outline chips matching .xref-chip — transparent fill, 1px tinted border,
+   colour-coded: accent verse chips leave to the Bible, clay 'see also' chips
+   (.stone-chip-rel) jump within the gallery. */
 button.stone-chip {
     min-height: 0;
-    padding: 2px 10px;
+    padding: 2px 12px;
     margin-right: 6px;
     border-radius: 999px;
     font-size: 0.9em;
+    color: @accent_color;
+    border: 1px solid alpha(@accent_color, 0.5);
+    background-image: none;
+    background-color: transparent;
+    box-shadow: none;
 }
+button.stone-chip:hover  { background-color: alpha(@window_fg_color, 0.06); }
+button.stone-chip:active { background-color: alpha(@window_fg_color, 0.10); }
 .stone-credit {
     opacity: 0.5;
     font-size: 0.8em;
@@ -699,6 +709,7 @@ button.stone-chip {
 }
 button.stone-chip-rel {
     color: #a9744f;
+    border-color: alpha(#a9744f, 0.55);
 }
 /* Closing reference sections: glossary + further reading. */
 .stone-apparatus {

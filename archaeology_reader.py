@@ -106,25 +106,33 @@ class ArchaeologyReader:
         # Slim top bar with a Contents jump menu (the "book" affordance).
         bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         bar.add_css_class('stone-topbar')
-        self._search = Gtk.SearchEntry(placeholder_text='Search artifacts')
+        self._search = Gtk.SearchEntry(placeholder_text=_('Search artifacts'))
         self._search.add_css_class('stone-search')
         self._search.set_hexpand(False)
         self._search.set_max_width_chars(28)
         self._search.connect('search-changed', self._on_search)
         self._contents_btn = Gtk.MenuButton(
-            icon_name='view-list-symbolic', tooltip_text='Contents')
+            icon_name='view-list-symbolic', tooltip_text=_('Contents'))
         self._contents_btn.add_css_class('flat')
+        # Icon-only buttons need an explicit accessible name — a tooltip is
+        # not a reliable AT-SPI label for Orca/screen readers.
+        self._contents_btn.update_property(
+            [Gtk.AccessibleProperty.LABEL], [_('Contents')])
         self._contents_pop = Gtk.Popover()
         self._contents_btn.set_popover(self._contents_pop)
         self._timeline_btn = Gtk.Button(
             icon_name='scriptura-timeline-symbolic',
-            tooltip_text='Timeline — when they date from')
+            tooltip_text=_('Timeline — when they date from'))
         self._timeline_btn.add_css_class('flat')
+        self._timeline_btn.update_property(
+            [Gtk.AccessibleProperty.LABEL], [_('Timeline')])
         self._timeline_btn.connect('clicked', lambda *_a: self._open_timeline())
         self._map_btn = Gtk.Button(
             icon_name='mark-location-symbolic',
-            tooltip_text='Map — where these were found')
+            tooltip_text=_('Map — where these were found'))
         self._map_btn.add_css_class('flat')
+        self._map_btn.update_property(
+            [Gtk.AccessibleProperty.LABEL], [_('Map')])
         self._map_btn.connect('clicked', lambda *_a: self._open_map())
         bar.append(self._search)
         bar.append(Gtk.Box(hexpand=True))
@@ -275,7 +283,8 @@ class ArchaeologyReader:
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         box.add_css_class('stone-era')
         box.append(self._label(title, 'stone-era-title'))
-        box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+        # De-ruled: chapter/section headers group by whitespace, not a
+        # separator (the app's house style — see the UI coherence pass).
         if intro:
             box.append(self._label(intro, 'stone-era-intro', selectable=True))
         return box
@@ -283,7 +292,7 @@ class ArchaeologyReader:
     def _glossary_section(self, terms):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         box.add_css_class('stone-apparatus')
-        box.append(self._era_divider('Glossary'))
+        box.append(self._era_divider(_('Glossary')))
         for t in terms:
             row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
             row.add_css_class('stone-term')
@@ -296,7 +305,7 @@ class ArchaeologyReader:
     def _reading_section(self, reading):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         box.add_css_class('stone-apparatus')
-        box.append(self._era_divider('Sources & further reading'))
+        box.append(self._era_divider(_('Sources & further reading')))
         for r in reading:
             row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
             row.add_css_class('stone-read')
@@ -388,7 +397,9 @@ class ArchaeologyReader:
         btn = Gtk.Button(label=rel['title'])
         btn.add_css_class('stone-chip')
         btn.add_css_class('stone-chip-rel')
-        btn.set_tooltip_text(f'Go to {rel["title"]}')
+        # Content-width pill, not stretched to the full FlowBox cell.
+        btn.set_halign(Gtk.Align.START)
+        btn.set_tooltip_text(_('Go to {title}').format(title=rel['title']))
         btn.connect('clicked', lambda _b, img=rel['image']: self.scroll_to_entry(img))
         return btn
 
@@ -458,7 +469,8 @@ class ArchaeologyReader:
     def _verse_chip(self, ref):
         btn = Gtk.Button(label=ref['label'])
         btn.add_css_class('stone-chip')
-        btn.set_tooltip_text(f'Open {ref["label"]} in the Bible pane')
+        btn.set_tooltip_text(
+            _('Open {ref} in the Bible pane').format(ref=ref['label']))
         btn.connect('clicked', lambda _b, r=ref: self._open_ref(r))
         return btn
 
@@ -524,8 +536,8 @@ class ArchaeologyReader:
             btn.get_child().set_xalign(0)
             btn.connect('clicked', lambda _b, cid=chap['id']: self._jump(cid))
             box.append(btn)
-        for cid, title in (('_glossary', 'Glossary'),
-                           ('_reading', 'Sources & further reading')):
+        for cid, title in (('_glossary', _('Glossary')),
+                           ('_reading', _('Sources & further reading'))):
             if cid not in self._chapter_anchors:
                 continue
             btn = Gtk.Button(label=title)
