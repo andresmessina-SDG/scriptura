@@ -14,6 +14,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Gio
+from a11y import set_accessible_label
 
 import catena_bridge
 
@@ -260,6 +261,7 @@ class CatenaReader:
                 link.add_css_class('circular')
                 link.set_valign(Gtk.Align.CENTER)
                 link.set_tooltip_text(_('Open source'))
+                set_accessible_label(link, _('Open source'))
                 link.connect('clicked', self._open_url, e['source_url'])
                 src_row.append(link)
             card.append(src_row)

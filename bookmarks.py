@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import TypedDict, cast
+from typing import Callable, TypedDict, cast
 
 import paths
 
@@ -17,6 +17,15 @@ _FILE: str = paths.bookmarks_path()
 _log = logging.getLogger('scriptura.bookmarks')
 _load_failed: bool = False  # Flipped if an existing file failed to parse; the
                             # window reads this once at startup for a toast.
+# The UI registers a handler so a failed save (disk full, bad permissions)
+# becomes a visible toast instead of a bookmark that silently vanishes on
+# the next launch — see annotations.py for the same pattern.
+_on_save_error: Callable[[], None] | None = None
+
+
+def set_save_error_handler(handler: Callable[[], None]) -> None:
+    global _on_save_error
+    _on_save_error = handler
 
 
 def load_failed() -> bool:
@@ -56,6 +65,11 @@ def _save(data: list[Bookmark]) -> None:
         os.replace(tmp, _FILE)
     except Exception:
         _log.exception('save failed')
+        if _on_save_error is not None:
+            try:
+                _on_save_error()
+            except Exception:
+                _log.exception('save-error handler raised')
 
 
 def get_all() -> list[Bookmark]:

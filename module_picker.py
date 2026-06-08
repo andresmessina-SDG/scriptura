@@ -12,6 +12,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Pango
+from a11y import set_accessible_label
 
 import sword_bridge
 import content
@@ -108,6 +109,7 @@ class ModulePicker:
         self._lang_button = Gtk.MenuButton(icon_name='scriptura-globe-symbolic')
         self._lang_button.add_css_class('flat')
         self._lang_button.set_tooltip_text(_('Filter by language'))
+        set_accessible_label(self._lang_button, _('Filter by language'))
         self._lang_button.set_valign(Gtk.Align.CENTER)
         lang_pop = Gtk.Popover()
         lang_pop.set_has_arrow(True)
@@ -157,6 +159,7 @@ class ModulePicker:
         back_btn = Gtk.Button(icon_name='go-previous-symbolic')
         back_btn.add_css_class('flat')
         back_btn.set_tooltip_text(_('Back to list'))
+        set_accessible_label(back_btn, _('Back to list'))
         back_btn.connect('clicked', lambda _b: stack.set_visible_child_name('list'))
         info_header.append(back_btn)
         self._info_title = Gtk.Label(xalign=0, hexpand=True)
@@ -382,7 +385,8 @@ class ModulePicker:
         # Ghosted until the row is hovered/focused (see CSS) so the list
         # isn't a vertical rail of repeated info icons.
         btn.add_css_class('module-info-btn')
-        btn.set_tooltip_text('Module info')
+        btn.set_tooltip_text(_('Module info'))
+        set_accessible_label(btn, _('Module info'))
         btn.set_valign(Gtk.Align.CENTER)
         btn.connect('clicked', lambda _b, _n=name: self._show_info(_n))
         return btn

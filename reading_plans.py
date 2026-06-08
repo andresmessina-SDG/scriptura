@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import datetime
-from typing import Any, TypedDict
+from typing import Any, Callable, TypedDict
 
 import paths
 
@@ -35,6 +35,15 @@ _FILE: str = paths.reading_plans_path()
 _log = logging.getLogger('scriptura.plans')
 _cache: dict[str, Any] | None = None
 _load_failed: bool = False  # Flipped if an existing file failed to parse.
+# The UI registers a handler so a failed save (disk full, bad permissions)
+# surfaces as a toast rather than silently losing the user's plan progress
+# on the next launch — see annotations.py for the same pattern.
+_on_save_error: Callable[[], None] | None = None
+
+
+def set_save_error_handler(handler: Callable[[], None]) -> None:
+    global _on_save_error
+    _on_save_error = handler
 
 
 def load_failed() -> bool:
@@ -216,6 +225,11 @@ def _save(d: dict[str, Any]) -> None:
             json.dump(d, f, indent=2, ensure_ascii=False)
     except Exception:
         _log.exception('save failed')
+        if _on_save_error is not None:
+            try:
+                _on_save_error()
+            except Exception:
+                _log.exception('save-error handler raised')
 
 
 def get_active() -> tuple[str | None, str | None]:

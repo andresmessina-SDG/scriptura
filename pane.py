@@ -27,6 +27,7 @@ import devotional
 import annotation_dialogs
 from lexicon_panel import LexiconPanel
 from pane_search import PaneSearch
+from a11y import set_accessible_label
 
 # Logical highlight IDs (persisted in annotations.json) → softer rendered tints.
 # Persisted values are unchanged so existing user data still reads correctly;
@@ -620,6 +621,7 @@ class BiblePane(Gtk.Box):
         self._sync_btn.add_css_class('flat')
         self._sync_btn.add_css_class('pane-action')
         self._sync_btn.set_tooltip_text(_('Following navigation'))
+        set_accessible_label(self._sync_btn, _('Follow navigation'))
         self._sync_btn.connect('notify::active', self._on_sync_toggled)
         toolbar.append(self._sync_btn)
 
@@ -627,6 +629,7 @@ class BiblePane(Gtk.Box):
         self._chapter_note_btn.add_css_class('flat')
         self._chapter_note_btn.add_css_class('pane-action')
         self._chapter_note_btn.set_tooltip_text(_('Chapter note'))
+        set_accessible_label(self._chapter_note_btn, _('Chapter note'))
         self._chapter_note_btn.connect(
             'clicked', lambda _b: annotation_dialogs.show_chapter_note(self))
         toolbar.append(self._chapter_note_btn)
@@ -637,6 +640,7 @@ class BiblePane(Gtk.Box):
         self._copy_chapter_btn.add_css_class('flat')
         self._copy_chapter_btn.add_css_class('pane-action')
         self._copy_chapter_btn.set_tooltip_text(_('Copy chapter'))
+        set_accessible_label(self._copy_chapter_btn, _('Copy chapter'))
         self._copy_chapter_btn.connect('clicked', self._on_copy_chapter)
         toolbar.append(self._copy_chapter_btn)
 
@@ -654,12 +658,14 @@ class BiblePane(Gtk.Box):
         prev_day_btn = Gtk.Button(icon_name='go-previous-symbolic')
         prev_day_btn.add_css_class('flat')
         prev_day_btn.set_tooltip_text(_('Previous day'))
+        set_accessible_label(prev_day_btn, _('Previous day'))
         prev_day_btn.connect('clicked', lambda _: self._go_devotional_day(-1))
         self._date_label = Gtk.Label(label='', xalign=0.5, hexpand=True)
         self._date_label.add_css_class('heading')
         next_day_btn = Gtk.Button(icon_name='go-next-symbolic')
         next_day_btn.add_css_class('flat')
         next_day_btn.set_tooltip_text(_('Next day'))
+        set_accessible_label(next_day_btn, _('Next day'))
         next_day_btn.connect('clicked', lambda _: self._go_devotional_day(1))
         today_btn = Gtk.Button(label=_('Today'))
         today_btn.add_css_class('flat')
@@ -1477,9 +1483,12 @@ class BiblePane(Gtk.Box):
         btn = Gtk.Button(child=img)
         btn.add_css_class('flat')
         btn.add_css_class('artifact-marker')
-        btn.set_can_focus(False)
+        # Keyboard/AT users need to reach the marker; an inline icon-only
+        # control also needs an explicit accessible name (the tooltip isn't one).
+        btn.set_can_focus(True)
         btn.set_valign(Gtk.Align.CENTER)
         btn.set_tooltip_text(_('Related artifact — open in Scripture in Stone'))
+        set_accessible_label(btn, _('Related artifact'))
         if self._on_open_artifact:
             btn.connect(
                 'clicked',

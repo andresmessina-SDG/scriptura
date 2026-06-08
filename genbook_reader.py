@@ -33,6 +33,7 @@ from gi.repository import Gtk, Adw, GLib, Pango
 
 import module_positions
 import sword_bridge
+from a11y import set_accessible_label
 from i18n import _
 
 if TYPE_CHECKING:
@@ -69,6 +70,7 @@ class GenbookReader:
         self._prev_btn.add_css_class('flat')
         self._prev_btn.add_css_class('pane-action')
         self._prev_btn.set_tooltip_text(_('Previous entry'))
+        set_accessible_label(self._prev_btn, _('Previous entry'))
         self._prev_btn.set_visible(False)
         self._prev_btn.connect('clicked', lambda _b: self.step(-1))
         toolbar.append(self._prev_btn)
@@ -77,6 +79,7 @@ class GenbookReader:
         self._next_btn.add_css_class('flat')
         self._next_btn.add_css_class('pane-action')
         self._next_btn.set_tooltip_text(_('Next entry'))
+        set_accessible_label(self._next_btn, _('Next entry'))
         self._next_btn.set_visible(False)
         self._next_btn.connect('clicked', lambda _b: self.step(1))
         toolbar.append(self._next_btn)
@@ -86,6 +89,7 @@ class GenbookReader:
         self._toc_btn.add_css_class('flat')
         self._toc_btn.add_css_class('pane-action')
         self._toc_btn.set_tooltip_text(_('Table of contents'))
+        set_accessible_label(self._toc_btn, _('Table of contents'))
         self._toc_btn.set_visible(False)
         self._toc_pop = Gtk.Popover()
         self._toc_pop.set_has_arrow(True)
