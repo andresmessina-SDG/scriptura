@@ -18,6 +18,7 @@ import ebible_bridge
 import catena_bridge
 import imagery_bridge
 import archaeology_bridge
+from i18n import _
 
 # Pane-readable SWORD module types (Bibles, commentaries, browsable books).
 # Lexicons / dictionaries / morphology modules are reached through other

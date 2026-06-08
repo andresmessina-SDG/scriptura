@@ -15,13 +15,9 @@ import os
 import tomllib
 from typing import TypedDict, cast
 
+from i18n import _, N_
+
 _log = logging.getLogger('scriptura.archaeology')
-
-
-def N_(message):
-    """No-op gettext marker; DISPLAY_NAME is translated at display via _()."""
-    return message
-
 
 # Single bundled module. The key is internal; the display name is curated.
 MODULE_KEY = 'ScriptureInStone'

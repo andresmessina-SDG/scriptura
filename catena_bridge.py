@@ -22,6 +22,7 @@ import urllib.request
 from typing import Callable, TypedDict
 
 import paths
+from i18n import _
 
 _log = logging.getLogger('scriptura.catena')
 

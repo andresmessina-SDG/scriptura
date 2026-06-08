@@ -33,6 +33,7 @@ from gi.repository import Gtk, Adw, GLib, Pango
 
 import module_positions
 import sword_bridge
+from i18n import _
 
 if TYPE_CHECKING:
     from pane import BiblePane
