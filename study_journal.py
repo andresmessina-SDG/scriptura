@@ -2,6 +2,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Pango
+from a11y import set_accessible_label
 import annotations
 import sword_bridge
 from empty_state import compact_empty_state
@@ -173,6 +174,7 @@ class TagManagerWindow(Adw.Window):
         rename_btn.add_css_class('flat')
         rename_btn.set_valign(Gtk.Align.CENTER)
         rename_btn.set_tooltip_text(_('Rename or merge into another tag'))
+        set_accessible_label(rename_btn, _('Rename or merge into another tag'))
         rename_btn.connect('clicked', self._on_rename_tag, tag)
         row.add_suffix(rename_btn)
 
@@ -180,6 +182,7 @@ class TagManagerWindow(Adw.Window):
         del_btn.add_css_class('flat')
         del_btn.set_valign(Gtk.Align.CENTER)
         del_btn.set_tooltip_text(_('Remove tag from all annotations'))
+        set_accessible_label(del_btn, _('Remove tag from all annotations'))
         del_btn.connect('clicked', self._on_delete_tag, tag)
         row.add_suffix(del_btn)
 
@@ -261,18 +264,21 @@ class StudyJournalWindow(Adw.Window):
 
         refresh_btn = Gtk.Button(icon_name='view-refresh-symbolic')
         refresh_btn.set_tooltip_text(_('Refresh'))
+        set_accessible_label(refresh_btn, _('Refresh'))
         refresh_btn.add_css_class('flat')
         refresh_btn.connect('clicked', lambda _: self._reload())
         header.pack_start(refresh_btn)
 
         tag_mgr_btn = Gtk.Button(icon_name='view-list-bullet-symbolic')
         tag_mgr_btn.set_tooltip_text(_('Manage tags'))
+        set_accessible_label(tag_mgr_btn, _('Manage tags'))
         tag_mgr_btn.add_css_class('flat')
         tag_mgr_btn.connect('clicked', self._on_open_tag_manager)
         header.pack_start(tag_mgr_btn)
 
         export_btn = Gtk.Button(icon_name='document-save-symbolic')
         export_btn.set_tooltip_text(_('Export to text file'))
+        set_accessible_label(export_btn, _('Export to text file'))
         export_btn.connect('clicked', self._on_export)
         header.pack_end(export_btn)
 
@@ -420,6 +426,7 @@ class StudyJournalWindow(Adw.Window):
             btn.add_css_class('hl-swatch')
             btn.add_css_class(_HL_SWATCH_CLASS[stored_color])
             btn.set_tooltip_text(_(_HL_NAMES[stored_color]))
+            set_accessible_label(btn, _(_HL_NAMES[stored_color]))
             btn.connect('clicked', self._on_hl_click, stored_color)
             self._hl_row.append(btn)
             self._hl_buttons[stored_color] = btn
@@ -427,6 +434,7 @@ class StudyJournalWindow(Adw.Window):
         clear_btn = Gtk.Button(icon_name='edit-clear-symbolic')
         clear_btn.add_css_class('flat')
         clear_btn.set_tooltip_text(_('Clear highlight'))
+        set_accessible_label(clear_btn, _('Clear highlight'))
         clear_btn.connect('clicked', self._on_hl_click, None)
         self._hl_row.append(clear_btn)
 
@@ -723,6 +731,7 @@ class StudyJournalWindow(Adw.Window):
         del_btn.set_valign(Gtk.Align.CENTER)
         del_btn.set_margin_end(6)
         del_btn.set_tooltip_text(_('Delete annotation'))
+        set_accessible_label(del_btn, _('Delete annotation'))
         del_btn.connect('clicked', self._on_delete_entry, entry)
         outer.append(del_btn)
 

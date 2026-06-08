@@ -15,6 +15,7 @@ import re
 import threading
 
 from gi.repository import Gtk, GLib, Pango
+from a11y import set_accessible_label
 
 import sword_bridge
 import ebible_bridge
@@ -51,6 +52,7 @@ class PaneSearch:
     def build_button(self):
         """Construct + return the toolbar toggle button."""
         self._btn = Gtk.ToggleButton(icon_name='system-search-symbolic')
+        set_accessible_label(self._btn, _('Search this module'))
         self._btn.add_css_class('flat')
         self._btn.add_css_class('pane-action')
         self._btn.set_tooltip_text(_('Search this module'))
@@ -76,6 +78,7 @@ class PaneSearch:
         self._case_btn = Gtk.ToggleButton(label='Aa')
         self._case_btn.add_css_class('flat')
         self._case_btn.set_tooltip_text(_('Match case'))
+        set_accessible_label(self._case_btn, _('Match case'))
         self._case_btn.connect('toggled', self._on_case_toggled)
 
         self._spinner = Gtk.Spinner()

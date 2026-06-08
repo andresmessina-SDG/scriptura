@@ -29,6 +29,7 @@ configure_file(
 py_sources = files(
   'main.py',
   '_version.py',
+  'a11y.py',
   'annotation_dialogs.py',
   'annotations.py',
   'archaeology_bridge.py',

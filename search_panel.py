@@ -5,6 +5,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Pango
+from a11y import set_accessible_label
 import sword_bridge
 import ebible_bridge
 import paths
@@ -135,6 +136,7 @@ class SearchPanel(Gtk.Box):
         close_btn = Gtk.Button(icon_name='window-close-symbolic')
         close_btn.add_css_class('flat')
         close_btn.set_tooltip_text(_('Close search (Esc)'))
+        set_accessible_label(close_btn, _('Close search'))
         close_btn.connect('clicked', lambda _: self._on_close())
         header.append(close_btn)
 
@@ -162,6 +164,7 @@ class SearchPanel(Gtk.Box):
         entry_row.append(self._entry)
         self._case_btn = Gtk.ToggleButton(label='Aa')
         self._case_btn.set_tooltip_text(_('Match case'))
+        set_accessible_label(self._case_btn, _('Match case'))
         self._case_btn.add_css_class('flat')
         self._case_btn.connect('toggled', self._on_case_toggled)
         entry_row.append(self._case_btn)
@@ -423,6 +426,7 @@ class SearchPanel(Gtk.Box):
             del_btn.add_css_class('circular')
             del_btn.set_valign(Gtk.Align.CENTER)
             del_btn.set_tooltip_text(_('Remove from history'))
+            set_accessible_label(del_btn, _('Remove from history'))
             del_btn.connect('clicked', self._on_delete_history_entry, entry)
             box.append(del_btn)
 

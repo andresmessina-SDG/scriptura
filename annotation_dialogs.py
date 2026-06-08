@@ -20,6 +20,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Gdk
 
+from a11y import set_accessible_label
 import annotations
 import sword_bridge
 import ebible_bridge
@@ -93,11 +94,15 @@ def show_study_menu(pane, verses, x, y):
     # 1. Highlight color picker
     color_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
     color_box.set_halign(Gtk.Align.CENTER)
-    for color, css_cls in [('#ffff00', 'hl-yellow'), ('#90ee90', 'hl-green'),
-                            ('#add8e6', 'hl-blue'),  ('#ffa500', 'hl-orange')]:
+    for color, css_cls, name in [('#ffff00', 'hl-yellow', _('Yellow')),
+                                 ('#90ee90', 'hl-green', _('Green')),
+                                 ('#add8e6', 'hl-blue', _('Blue')),
+                                 ('#ffa500', 'hl-orange', _('Orange'))]:
         btn = Gtk.Button()
         btn.set_size_request(28, 28)
         btn.add_css_class(css_cls)
+        # Icon-/color-only control: give AT the color name (no visible change).
+        set_accessible_label(btn, name)
         btn.connect('clicked',
                     lambda b, c=color: apply_highlight(pane, verses, c, popover))
         color_box.append(btn)

@@ -3,6 +3,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, GLib
+from a11y import set_accessible_label
 import sword_bridge
 
 
@@ -53,6 +54,7 @@ class CrossRefPanel(Gtk.Box):
         close_btn.add_css_class('flat')
         close_btn.set_valign(Gtk.Align.CENTER)
         close_btn.set_tooltip_text(_('Hide cross-references'))
+        set_accessible_label(close_btn, _('Hide cross-references'))
         close_btn.connect('clicked', lambda _: self._on_close())
         ref_row.append(close_btn)
 

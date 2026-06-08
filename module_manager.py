@@ -5,6 +5,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Gio, Gdk, Pango
+from a11y import set_accessible_label
 import sword_bridge
 import open_data
 import ebible_bridge
@@ -142,6 +143,7 @@ class ModuleManagerWindow(Adw.Window):
 
         self._import_btn = Gtk.Button(icon_name='folder-download-symbolic')
         self._import_btn.set_tooltip_text(_('Import module from file'))
+        set_accessible_label(self._import_btn, _('Import module from file'))
         self._import_btn.connect('clicked', self._on_import_clicked)
         header.pack_start(self._import_btn)
 
@@ -182,6 +184,7 @@ class ModuleManagerWindow(Adw.Window):
         self._cw_refresh_btn.add_css_class('flat')
         self._cw_refresh_btn.set_valign(Gtk.Align.CENTER)
         self._cw_refresh_btn.set_tooltip_text(_('Refresh catalogue from CrossWire'))
+        set_accessible_label(self._cw_refresh_btn, _('Refresh catalogue from CrossWire'))
         self._cw_refresh_btn.connect('clicked', self._on_refresh_clicked)
 
         # One search filters both the installed sections and the catalogue.
@@ -260,6 +263,7 @@ class ModuleManagerWindow(Adw.Window):
         self._filter_btn.add_css_class('flat')
         self._filter_btn.set_valign(Gtk.Align.CENTER)
         self._filter_btn.set_tooltip_text(_('Filter the catalogue'))
+        set_accessible_label(self._filter_btn, _('Filter the catalogue'))
         self._filter_btn.set_popover(filter_popover)
 
         header_controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
@@ -353,12 +357,14 @@ class ModuleManagerWindow(Adw.Window):
         self._eb_filter_btn.add_css_class('flat')
         self._eb_filter_btn.set_valign(Gtk.Align.CENTER)
         self._eb_filter_btn.set_tooltip_text(_('Filter translations'))
+        set_accessible_label(self._eb_filter_btn, _('Filter translations'))
         self._eb_filter_btn.set_popover(filter_popover)
 
         self._eb_refresh_btn = Gtk.Button(icon_name='view-refresh-symbolic')
         self._eb_refresh_btn.add_css_class('flat')
         self._eb_refresh_btn.set_valign(Gtk.Align.CENTER)
         self._eb_refresh_btn.set_tooltip_text(_('Refresh catalogue from eBible.org'))
+        set_accessible_label(self._eb_refresh_btn, _('Refresh catalogue from eBible.org'))
         self._eb_refresh_btn.connect('clicked', self._on_eb_refresh)
 
         header_controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
@@ -743,6 +749,7 @@ class ModuleManagerWindow(Adw.Window):
             btn = Gtk.Button(icon_name='user-trash-symbolic')
             btn.add_css_class('flat')
             btn.set_tooltip_text(_('Remove module'))
+            set_accessible_label(btn, _('Remove module'))
             btn.connect(
                 'clicked',
                 lambda b, n=key, f=friendly, r=row: self._confirm_remove(b, n, f, r))
@@ -791,6 +798,7 @@ class ModuleManagerWindow(Adw.Window):
         btn.add_css_class('flat')
         btn.set_valign(Gtk.Align.CENTER)
         btn.set_tooltip_text(_('Remove'))
+        set_accessible_label(btn, _('Remove'))
         btn.connect('clicked', lambda _b: on_confirm())
         return btn
 

@@ -25,6 +25,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Pango
+from a11y import set_accessible_label
 
 import sword_bridge
 
@@ -148,6 +149,7 @@ class LexiconPanel(Gtk.Box):
         self._back_btn.add_css_class('flat')
         self._back_btn.set_sensitive(False)
         self._back_btn.set_tooltip_text(_('Back to previous definition'))
+        set_accessible_label(self._back_btn, _('Back to previous definition'))
         self._back_btn.connect('clicked', self._on_back)
         header.append(self._back_btn)
 
@@ -179,6 +181,7 @@ class LexiconPanel(Gtk.Box):
         close_btn = Gtk.Button(icon_name='window-close-symbolic')
         close_btn.add_css_class('flat')
         close_btn.set_tooltip_text(_('Close lexicon'))
+        set_accessible_label(close_btn, _('Close lexicon'))
         close_btn.connect('clicked', lambda _: self.hide())
         header.append(close_btn)
 

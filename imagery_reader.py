@@ -24,6 +24,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Gdk, GLib
+from a11y import set_accessible_label
 
 import imagery_bridge
 
@@ -559,10 +560,13 @@ class ImageryReader:
         viewer = _ZoomViewer(texture)
         out_btn = Gtk.Button(icon_name='zoom-out-symbolic')
         out_btn.set_tooltip_text(_('Zoom out'))
+        set_accessible_label(out_btn, _('Zoom out'))
         in_btn = Gtk.Button(icon_name='zoom-in-symbolic')
         in_btn.set_tooltip_text(_('Zoom in'))
+        set_accessible_label(in_btn, _('Zoom in'))
         fit_btn = Gtk.Button(icon_name='zoom-fit-best-symbolic')
         fit_btn.set_tooltip_text(_('Fit to window'))
+        set_accessible_label(fit_btn, _('Fit to window'))
         out_btn.connect('clicked', lambda *_a: viewer.zoom_out())
         in_btn.connect('clicked', lambda *_a: viewer.zoom_in())
         fit_btn.connect('clicked', lambda *_a: viewer.reset())
