@@ -261,6 +261,15 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
         if w > 0:
             self._apply_margins(w)
 
+    def set_base_margin(self, px):
+        """Minimum side margin once the column is wider than the window — the
+        floor of the centering. Tightened in ultra-narrow mode so the text
+        reflows into the available width instead of clipping."""
+        self._base = max(0, int(px))
+        w = self.get_width()
+        if w > 0:
+            self._apply_margins(w)
+
     def do_size_allocate(self, width, height, baseline):
         Gtk.ScrolledWindow.do_size_allocate(self, width, height, baseline)
         self._apply_margins(width)
@@ -1159,6 +1168,9 @@ class BiblePane(Gtk.Box):
 
     def set_reading_width(self, px):
         self._reading_scroll.set_reading_width(int(px))
+
+    def set_reading_margin(self, px):
+        self._reading_scroll.set_base_margin(px)
 
     def _on_copy_chapter(self, _btn):
         """Copy this pane's current chapter to clipboard as plain text:
