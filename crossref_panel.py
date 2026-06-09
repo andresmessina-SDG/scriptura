@@ -60,6 +60,13 @@ class CrossRefPanel(Gtk.Box):
 
         self.append(ref_row)
 
+    def set_compact(self, compact):
+        """Narrow windows: drop the 'Cross-references · Ref' eyebrow so the
+        single-row bar spends its scarce width on the cross-ref chips rather
+        than the title (which otherwise leaves room for one clipped chip).
+        The current verse is already shown in the pane header."""
+        self._title.set_visible(not compact)
+
     def _on_wheel_scroll(self, _ctrl, dx, dy):
         # Map whichever axis the device reports onto the row's horizontal scroll.
         adj = self._ref_scroll.get_hadjustment()

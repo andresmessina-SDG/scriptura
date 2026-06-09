@@ -1679,6 +1679,9 @@ class BibleWindow(Adw.ApplicationWindow):
         if narrow == self._panes_narrow:
             return
         self._panes_narrow = narrow
+        # Single-column width: let the cross-ref bar drop its title eyebrow so
+        # the chips aren't squeezed down to one clipped reference.
+        self._crossref_panel.set_compact(narrow)
         split = self._btn_split.get_active()
         if narrow:
             self._view_box.set_visible(False)
