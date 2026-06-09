@@ -26,6 +26,15 @@ _HL_SWATCH_CLASS = {
     '#ffa500': 'hl-swatch-orange',
 }
 
+# Per-hue class for the small list-row badge dot (coloured to its highlight;
+# the name beside it stays the colourblind-safe cue).
+_HL_DOT_CLASS = {
+    '#ffff00': 'journal-dot-yellow',
+    '#90ee90': 'journal-dot-green',
+    '#add8e6': 'journal-dot-blue',
+    '#ffa500': 'journal-dot-orange',
+}
+
 _HL_COLORS = ['#ffff00', '#90ee90', '#add8e6', '#ffa500']
 
 
@@ -345,7 +354,9 @@ class StudyJournalWindow(Adw.Window):
         filter_region.append(grid)
         sidebar.append(filter_region)
 
-        sidebar.append(Gtk.Separator())
+        filter_div = Gtk.Separator()
+        filter_div.add_css_class('journal-divider')
+        sidebar.append(filter_div)
 
         # ── Count + list ──────────────────────────────────────────────────────
         self._count_lbl = Gtk.Label(label='', xalign=0)
@@ -357,7 +368,7 @@ class StudyJournalWindow(Adw.Window):
         self._list = Gtk.ListBox()
         self._list.set_selection_mode(Gtk.SelectionMode.SINGLE)
         self._list.set_activate_on_single_click(False)
-        self._list.add_css_class('boxed-list')
+        self._list.add_css_class('journal-list')
         self._list.connect('row-activated', self._on_row_activated)
         self._list.connect('row-selected', self._on_row_selected)
 
@@ -395,11 +406,11 @@ class StudyJournalWindow(Adw.Window):
         return self._detail_stack
 
     def _build_detail_editor(self):
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        box.set_margin_start(18)
-        box.set_margin_end(18)
-        box.set_margin_top(18)
-        box.set_margin_bottom(18)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        box.set_margin_start(16)
+        box.set_margin_end(16)
+        box.set_margin_top(16)
+        box.set_margin_bottom(16)
 
         # Header: ref + module
         self._detail_ref = Gtk.Label(xalign=0)
@@ -412,7 +423,9 @@ class StudyJournalWindow(Adw.Window):
         self._detail_mod.add_css_class('caption')
         box.append(self._detail_mod)
 
-        box.append(Gtk.Separator())
+        header_div = Gtk.Separator()
+        header_div.add_css_class('journal-divider')
+        box.append(header_div)
 
         # Highlight + underline row (hidden for chapter notes)
         self._hl_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -616,12 +629,10 @@ class StudyJournalWindow(Adw.Window):
             row.set_activatable(False)
             row.set_child(empty)
             self._list.append(row)
-            self._list.remove_css_class('boxed-list')
             self._current_entry = None
             self._detail_stack.set_visible_child_name('empty')
             return
 
-        self._list.add_css_class('boxed-list')
         for entry in filtered:
             row = self._make_row(entry)
             self._list.append(row)
@@ -662,7 +673,7 @@ class StudyJournalWindow(Adw.Window):
         row._strip_class = strip_class
 
         # Content
-        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         content.set_hexpand(True)
         content.set_margin_start(10)
         content.set_margin_end(10)
@@ -687,22 +698,38 @@ class StudyJournalWindow(Adw.Window):
         top.append(mod_lbl)
         content.append(top)
 
-        # Type badges
+        # Type badges — a hue dot coloured to the highlight (the name beside it
+        # stays the colourblind-safe cue), then plain captions for underline /
+        # note. No emoji: muted captions in the app's quiet vocabulary.
         if not entry.get('is_chapter_note'):
-            parts = []
+            badges = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+            have_badge = False
             if entry['highlight']:
-                # Name the color in text so the highlight is distinguishable
-                # without relying on the strip's hue (colorblind-safe).
+                have_badge = True
+                hue = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+                dot = Gtk.Label(label='●')
+                dot.set_valign(Gtk.Align.CENTER)
+                dot.add_css_class('journal-dot')
+                dot_cls = _HL_DOT_CLASS.get(entry['highlight'])
+                if dot_cls:
+                    dot.add_css_class(dot_cls)
                 hl_name = _HL_NAMES.get(entry['highlight'])
-                parts.append('● ' + _(hl_name) if hl_name else _('● Highlight'))
-            if entry['underline']:
-                parts.append(_('▁ Underline'))
-            if entry['note']:
-                parts.append(_('📝 Note'))
-            if parts:
-                badges = Gtk.Label(label='   '.join(parts), xalign=0)
-                badges.add_css_class('dim-label')
-                badges.add_css_class('caption')
+                name = Gtk.Label(
+                    label=_(hl_name) if hl_name else _('Highlight'), xalign=0)
+                name.add_css_class('dim-label')
+                name.add_css_class('caption')
+                hue.append(dot)
+                hue.append(name)
+                badges.append(hue)
+            for present, text in ((entry['underline'], _('Underline')),
+                                  (entry['note'], _('Note'))):
+                if present:
+                    have_badge = True
+                    lbl = Gtk.Label(label=text, xalign=0)
+                    lbl.add_css_class('dim-label')
+                    lbl.add_css_class('caption')
+                    badges.append(lbl)
+            if have_badge:
                 content.append(badges)
 
         # Note preview (single line in compact sidebar; full text in detail)
@@ -736,6 +763,7 @@ class StudyJournalWindow(Adw.Window):
         # Trash button
         del_btn = Gtk.Button(icon_name='user-trash-symbolic')
         del_btn.add_css_class('flat')
+        del_btn.add_css_class('journal-del')
         del_btn.set_valign(Gtk.Align.CENTER)
         del_btn.set_margin_end(6)
         del_btn.set_tooltip_text(_('Delete annotation'))
