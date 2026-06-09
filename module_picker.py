@@ -76,6 +76,13 @@ class ModulePicker:
         self._button.set_create_popup_func(self._before_popup)
 
     def _before_popup(self, _button):
+        # Cap the popover pages to the window width so they don't overflow a
+        # narrow window (340 when there's room).
+        root = self._pane.get_root()
+        win_w = root.get_width() if root is not None else 0
+        w = 340 if win_w <= 0 else max(260, min(340, win_w - 24))
+        self._list_page.set_size_request(w, -1)
+        self._info_page.set_size_request(w, -1)
         self._refresh()
 
     def _build_popover(self):
@@ -91,7 +98,8 @@ class ModulePicker:
         self._stack = stack
 
         # ── List page ────────────────────────────────────────────────
-        list_page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        self._list_page = list_page = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL, spacing=6)
         list_page.set_size_request(340, -1)
         list_page.set_margin_start(8)
         list_page.set_margin_end(8)
@@ -148,7 +156,8 @@ class ModulePicker:
         stack.add_named(list_page, 'list')
 
         # ── Info page ────────────────────────────────────────────────
-        info_page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        self._info_page = info_page = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL, spacing=8)
         info_page.set_size_request(340, -1)
         info_page.set_margin_start(8)
         info_page.set_margin_end(8)

@@ -421,9 +421,10 @@ class ImageryReader:
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         card.add_css_class('card')
         card.add_css_class('imagery-card')
-        # Min width so the FlowBox only splits into two columns when the pane
-        # is genuinely wide; narrower panes stay single-column.
-        card.set_size_request(280, -1)
+        # No hard min width: the card shrinks to fit a narrow pane (its picture
+        # can_shrinks, its labels wrap). Two-column pairing is driven by the
+        # picture's *natural* width cap (_ImageryPicture.NAT_CAP) instead, so
+        # the grid still stays single-column until the pane is genuinely wide.
 
         if place['path'] and os.path.exists(place['path']):
             card.append(self._picture(
@@ -471,7 +472,7 @@ class ImageryReader:
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         card.add_css_class('card')
         card.add_css_class('imagery-card')
-        card.set_size_request(280, -1)
+        # See _place_card: no hard min width; pairing is natural-width-driven.
 
         if item['path'] and os.path.exists(item['path']):
             card.append(self._picture(item['path'], item['title'], zoom=item))

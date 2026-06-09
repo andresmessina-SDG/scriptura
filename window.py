@@ -469,6 +469,15 @@ class BibleWindow(Adw.ApplicationWindow):
         self._search_revealer.set_halign(Gtk.Align.END)
         self._search_revealer.set_vexpand(True)
         self._search_revealer.set_child(search_wrapper)
+        # When collapsed the revealer must not capture pointer events — in
+        # ultra-narrow it's halign FILL (full-width sheet), so a collapsed-but-
+        # targetable revealer would otherwise blanket the whole content area
+        # and swallow scroll/clicks (incl. the pane toolbar). Track targetability
+        # to the reveal state.
+        self._search_revealer.set_can_target(False)
+        self._search_revealer.connect(
+            'notify::reveal-child',
+            lambda r, _p: r.set_can_target(r.get_reveal_child()))
 
         # ── Quick jump overlay ────────────────────────────────────────────────
         self._jump_entry = Gtk.SearchEntry()
@@ -1665,6 +1674,9 @@ class BibleWindow(Adw.ApplicationWindow):
         if narrow:
             self._view_box.set_visible(False)
             self._narrow_switch_box.set_visible(split)
+            # No divider in single-pane: hide the drag grip (it would otherwise
+            # linger at the far edge where the collapsed paned puts it).
+            self._pane_grip.set_visible(False)
             self._apply_narrow_pane()
         else:
             self._narrow_switch_box.set_visible(False)
@@ -1697,6 +1709,15 @@ class BibleWindow(Adw.ApplicationWindow):
         margin = 12 if narrow else 26
         self.pane1.set_reading_margin(margin)
         self.pane2.set_reading_margin(margin)
+        # The 420px side search panel would overflow an ultra-narrow window, so
+        # let it fill the width (full-width sheet) here; restore the docked
+        # right panel otherwise. 420 mirrors SearchPanel's own request.
+        if narrow:
+            self._search_panel.set_size_request(-1, -1)
+            self._search_revealer.set_halign(Gtk.Align.FILL)
+        else:
+            self._search_panel.set_size_request(420, -1)
+            self._search_revealer.set_halign(Gtk.Align.END)
 
     def _apply_narrow_pane(self):
         """While collapsed, show exactly one pane: pane 1 in single mode, or the

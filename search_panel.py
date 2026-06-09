@@ -276,7 +276,7 @@ class SearchPanel(Gtk.Box):
         idx = self._module_drop.get_selected()
         return names[idx] if names and idx < len(names) else None
 
-    def _on_search(self, *_):
+    def _on_search(self, *_a):
         query = self._entry.get_text().strip()
         if not query:
             # Empty query returns to the recent-searches view.

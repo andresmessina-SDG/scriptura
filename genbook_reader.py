@@ -319,12 +319,17 @@ class GenbookReader:
         # set_size_request on the listbox forces the popover to take at
         # least this width; GTK will reposition the popover (flip arrow
         # direction or shift offset) to honor it.
-        scroll.set_size_request(360, -1)
+        # …but never wider than the window — cap to the available width so the
+        # popover doesn't overflow a narrow window (360 when there's room).
+        root = self._pane.get_root()
+        win_w = root.get_width() if root is not None else 0
+        toc_w = 360 if win_w <= 0 else max(260, min(360, win_w - 24))
+        scroll.set_size_request(toc_w, -1)
 
         listbox = Gtk.ListBox()
         listbox.set_selection_mode(Gtk.SelectionMode.NONE)
         listbox.add_css_class('navigation-sidebar')
-        listbox.set_size_request(360, -1)
+        listbox.set_size_request(toc_w, -1)
 
         if not entries:
             row = Gtk.ListBoxRow()
