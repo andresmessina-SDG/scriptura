@@ -265,7 +265,7 @@ class PaneSearch:
                 child = nxt
             self._status.set_text('')
 
-    def _on_search(self, *_):
+    def _on_search(self, *_a):
         query = self._entry.get_text().strip()
         if not query:
             return

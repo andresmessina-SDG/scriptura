@@ -261,6 +261,15 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
         if w > 0:
             self._apply_margins(w)
 
+    def set_base_margin(self, px):
+        """Minimum side margin once the column is wider than the window — the
+        floor of the centering. Tightened in ultra-narrow mode so the text
+        reflows into the available width instead of clipping."""
+        self._base = max(0, int(px))
+        w = self.get_width()
+        if w > 0:
+            self._apply_margins(w)
+
     def do_size_allocate(self, width, height, baseline):
         Gtk.ScrolledWindow.do_size_allocate(self, width, height, baseline)
         self._apply_margins(width)
@@ -510,14 +519,21 @@ class BibleTextView(Gtk.TextView):
                         urect = Graphene.Rect().init(
                             wx0, base_uy, seg_w, self._UL_THICK)
                         rounded = Gsk.RoundedRect()
-                        rounded.init_from_rect(urect, self._UL_THICK / 2)
+                        # Radius must never exceed half the smallest side, or
+                        # the rounded region is degenerate (pixman "invalid
+                        # rectangle") — seg_w can be ~1px on a narrow column.
+                        rounded.init_from_rect(
+                            urect, min(self._UL_THICK / 2, seg_w / 2))
                         snapshot.push_rounded_clip(rounded)
                         snapshot.append_color(rgba, urect)
                         snapshot.pop()
                 else:
                     rect = Graphene.Rect().init(wx0, wy, seg_w, band_h)
                     rounded = Gsk.RoundedRect()
-                    rounded.init_from_rect(rect, self._HL_RADIUS)
+                    # Clamp radius to half the smallest side so a ~1px-wide
+                    # segment (narrow column) can't make a degenerate region.
+                    rounded.init_from_rect(
+                        rect, min(self._HL_RADIUS, seg_w / 2, band_h / 2))
                     snapshot.push_rounded_clip(rounded)
                     snapshot.append_color(rgba, rect)
                     snapshot.pop()
@@ -802,6 +818,12 @@ class BiblePane(Gtk.Box):
         # in Historical Commentaries mode. Both share the lexicon paned
         # below (the lexicon stays hidden in catena mode).
         self._content_stack = Gtk.Stack()
+        # Each child sizes to its own content, not to the widest sibling. A
+        # homogeneous stack would pin the min-width-0 reading view to the
+        # imagery/archaeology card widths (~280px), so the start child of the
+        # non-shrinking lexicon paned could never narrow past that floor —
+        # clipping genbook/devotional/archaeology text where Bibles reflow.
+        self._content_stack.set_hhomogeneous(False)
         self._content_stack.add_named(scrolled, 'text')
         self._content_stack.add_named(self._catena.widget, 'catena')
         self._content_stack.add_named(self._imagery.widget, 'imagery')
@@ -1159,6 +1181,9 @@ class BiblePane(Gtk.Box):
 
     def set_reading_width(self, px):
         self._reading_scroll.set_reading_width(int(px))
+
+    def set_reading_margin(self, px):
+        self._reading_scroll.set_base_margin(px)
 
     def _on_copy_chapter(self, _btn):
         """Copy this pane's current chapter to clipboard as plain text:
@@ -2540,7 +2565,12 @@ class BiblePane(Gtk.Box):
         pop.set_pointing_to(rect)
 
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        content.set_size_request(360, -1)
+        # Cap to the window width so the popover doesn't overflow a narrow
+        # window; 360 is the comfortable width when there's room.
+        _root = self.get_root()
+        _win_w = _root.get_width() if _root is not None else 0
+        content.set_size_request(
+            360 if _win_w <= 0 else max(260, min(360, _win_w - 24)), -1)
         pop.set_child(content)
         spinner = Gtk.Spinner()
         spinner.start()

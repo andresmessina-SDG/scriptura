@@ -165,6 +165,40 @@ separator.nav-divider { background-color: alpha(@borders, 0.3); }
     color: alpha(#000, 0.5);
 }
 
+/* ── Study Journal — de-ruled entry list ─────────────────────────────── */
+/* Flat rows on one surface (not boxed-list cards), mirroring .compare-list:
+ * faint hairline dividers, a soft accent-tinted selection in the app's accent
+ * vocabulary (not GTK's stock-blue block), and a per-row trash that hides
+ * until the row is hovered/focused/selected (mirrors .bookmark-del). */
+.journal-list, .journal-list > row { background-color: transparent; }
+.journal-list > row { border-bottom: 1px solid alpha(@borders, 0.3); }
+.journal-list > row:last-child { border-bottom: none; }
+.journal-list > row:hover { background-color: alpha(@window_fg_color, 0.04); }
+.journal-list > row:selected {
+    background-color: alpha(@accent_color, 0.14);
+    color: @window_fg_color;
+}
+.journal-del { opacity: 0; transition: opacity 120ms; }
+.journal-list > row:hover .journal-del,
+.journal-list > row:focus-within .journal-del,
+.journal-list > row:selected .journal-del { opacity: 1; }
+
+/* Row highlight dot — coloured to its hue (matches the left strip palette). */
+.journal-dot { font-size: 0.7em; }
+.journal-dot-yellow { color: #d4be62; }
+.journal-dot-green  { color: #8db58a; }
+.journal-dot-blue   { color: #7fa3c1; }
+.journal-dot-orange { color: #c8a575; }
+
+/* Faint structural divider (filter/list split, editor header rule). */
+separator.journal-divider { background-color: alpha(@borders, 0.3); }
+
+/* ── Header overflow ⋯ menu — flat, full-width action rows ───────────── */
+/* Same quiet vocabulary as the study/app menus: flat rows grouped by
+ * whitespace, the leading glyph/icon then a left-aligned label. */
+.overflow-menu { padding: 2px; min-width: 200px; }
+.overflow-menu > button { padding: 6px 10px; min-height: 0; }
+
 /* ── Study Journal — note card + tag chips ───────────────────────────── */
 
 .journal-note-card {

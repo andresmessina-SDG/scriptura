@@ -26,6 +26,15 @@ _HL_SWATCH_CLASS = {
     '#ffa500': 'hl-swatch-orange',
 }
 
+# Per-hue class for the small list-row badge dot (coloured to its highlight;
+# the name beside it stays the colourblind-safe cue).
+_HL_DOT_CLASS = {
+    '#ffff00': 'journal-dot-yellow',
+    '#90ee90': 'journal-dot-green',
+    '#add8e6': 'journal-dot-blue',
+    '#ffa500': 'journal-dot-orange',
+}
+
 _HL_COLORS = ['#ffff00', '#90ee90', '#add8e6', '#ffa500']
 
 
@@ -255,48 +264,70 @@ class StudyJournalWindow(Adw.Window):
         self._reload()
 
     def _build_ui(self):
-        toolbar_view = Adw.ToolbarView()
-        self.set_content(toolbar_view)
+        # Master/detail via NavigationSplitView: list + editor side-by-side when
+        # wide, collapsing to a single navigation stack (list → entry, with a
+        # back button) once the window narrows past the breakpoint below.
+        self._split_view = Adw.NavigationSplitView()
+        self._split_view.set_min_sidebar_width(340)
+        self._split_view.set_max_sidebar_width(440)
+        self._split_view.set_sidebar_width_fraction(0.34)
 
-        # ── Header ────────────────────────────────────────────────────────────
-        header = Adw.HeaderBar()
-        toolbar_view.add_top_bar(header)
+        # ── Sidebar page: the list + its header (refresh · tags · export) ─────
+        sidebar_tv = Adw.ToolbarView()
+        sidebar_header = Adw.HeaderBar()
+        sidebar_tv.add_top_bar(sidebar_header)
 
         refresh_btn = Gtk.Button(icon_name='view-refresh-symbolic')
         refresh_btn.set_tooltip_text(_('Refresh'))
         set_accessible_label(refresh_btn, _('Refresh'))
         refresh_btn.add_css_class('flat')
         refresh_btn.connect('clicked', lambda _: self._reload())
-        header.pack_start(refresh_btn)
+        sidebar_header.pack_start(refresh_btn)
 
         tag_mgr_btn = Gtk.Button(icon_name='view-list-bullet-symbolic')
         tag_mgr_btn.set_tooltip_text(_('Manage tags'))
         set_accessible_label(tag_mgr_btn, _('Manage tags'))
         tag_mgr_btn.add_css_class('flat')
         tag_mgr_btn.connect('clicked', self._on_open_tag_manager)
-        header.pack_start(tag_mgr_btn)
+        sidebar_header.pack_start(tag_mgr_btn)
 
         export_btn = Gtk.Button(icon_name='document-save-symbolic')
         export_btn.set_tooltip_text(_('Export to text file'))
         set_accessible_label(export_btn, _('Export to text file'))
         export_btn.connect('clicked', self._on_export)
-        header.pack_end(export_btn)
+        sidebar_header.pack_end(export_btn)
 
-        # ── Toast overlay wraps the paned content ─────────────────────────────
+        sidebar_tv.set_content(self._build_sidebar())
+        sidebar_page = Adw.NavigationPage(title=_('Study Journal'))
+        sidebar_page.set_child(sidebar_tv)
+        self._split_view.set_sidebar(sidebar_page)
+
+        # ── Content page: the editor + its header. The verse ref lives in this
+        # header (a WindowTitle), and the back button is added to it
+        # automatically when the split view collapses. ───────────────────────
+        content_tv = Adw.ToolbarView()
+        content_header = Adw.HeaderBar()
+        self._detail_title = Adw.WindowTitle(title='', subtitle='')
+        content_header.set_title_widget(self._detail_title)
+        content_tv.add_top_bar(content_header)
+        content_tv.set_content(self._build_detail_stack())
+        self._content_page = Adw.NavigationPage(title=_('Annotation'))
+        self._content_page.set_child(content_tv)
+        self._split_view.set_content(self._content_page)
+
+        # Toasts float over the whole split view.
         self._toast_overlay = Adw.ToastOverlay()
-        toolbar_view.set_content(self._toast_overlay)
+        self._toast_overlay.set_child(self._split_view)
+        self.set_content(self._toast_overlay)
 
-        # ── Paned: sidebar list + detail editor ───────────────────────────────
-        paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
-        paned.set_position(380)
-        paned.set_resize_start_child(False)
-        paned.set_shrink_start_child(False)
-        paned.set_resize_end_child(True)
-        paned.set_shrink_end_child(False)
-        self._toast_overlay.set_child(paned)
-
-        paned.set_start_child(self._build_sidebar())
-        paned.set_end_child(self._build_detail_stack())
+        # Collapse to a single page once the window can no longer hold both
+        # panes side-by-side. The uncollapsed split view needs ~657px (sidebar
+        # 340 + editor 317); collapsing at 660 avoids a band where the two-pane
+        # layout overflows the window (the AdwToastOverlay width warning).
+        bp = Adw.Breakpoint.new(
+            Adw.BreakpointCondition.parse('max-width: 660px'))
+        bp.add_setter(self._split_view, 'collapsed', True)
+        self.add_breakpoint(bp)
 
     def _build_sidebar(self):
         sidebar = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -345,7 +376,9 @@ class StudyJournalWindow(Adw.Window):
         filter_region.append(grid)
         sidebar.append(filter_region)
 
-        sidebar.append(Gtk.Separator())
+        filter_div = Gtk.Separator()
+        filter_div.add_css_class('journal-divider')
+        sidebar.append(filter_div)
 
         # ── Count + list ──────────────────────────────────────────────────────
         self._count_lbl = Gtk.Label(label='', xalign=0)
@@ -357,7 +390,7 @@ class StudyJournalWindow(Adw.Window):
         self._list = Gtk.ListBox()
         self._list.set_selection_mode(Gtk.SelectionMode.SINGLE)
         self._list.set_activate_on_single_click(False)
-        self._list.add_css_class('boxed-list')
+        self._list.add_css_class('journal-list')
         self._list.connect('row-activated', self._on_row_activated)
         self._list.connect('row-selected', self._on_row_selected)
 
@@ -395,31 +428,25 @@ class StudyJournalWindow(Adw.Window):
         return self._detail_stack
 
     def _build_detail_editor(self):
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        box.set_margin_start(18)
-        box.set_margin_end(18)
-        box.set_margin_top(18)
-        box.set_margin_bottom(18)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        box.set_margin_start(16)
+        box.set_margin_end(16)
+        box.set_margin_top(16)
+        box.set_margin_bottom(16)
 
-        # Header: ref + module
-        self._detail_ref = Gtk.Label(xalign=0)
-        self._detail_ref.add_css_class('title-2')
-        self._detail_ref.set_wrap(True)
-        box.append(self._detail_ref)
+        # The verse ref + module now live in the content page's header
+        # (self._detail_title); the body starts straight at the highlight row.
 
-        self._detail_mod = Gtk.Label(xalign=0)
-        self._detail_mod.add_css_class('dim-label')
-        self._detail_mod.add_css_class('caption')
-        box.append(self._detail_mod)
-
-        box.append(Gtk.Separator())
-
-        # Highlight + underline row (hidden for chapter notes)
-        self._hl_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        # Highlight + underline row (hidden for chapter notes). A WrapBox so the
+        # controls wrap to a second line on a narrow window instead of forcing
+        # the editor wider than the list (which then clips when collapsed).
+        self._hl_row = Adw.WrapBox(child_spacing=8, line_spacing=6)
         hl_label = Gtk.Label(label=_('Highlight'), xalign=0)
-        hl_label.set_size_request(70, -1)
+        hl_label.set_valign(Gtk.Align.CENTER)
         self._hl_row.append(hl_label)
 
+        # Swatches + clear stay together as one unit (never split mid-row).
+        swatch_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         self._hl_buttons = {}
         for stored_color in _HL_COLORS:
             btn = Gtk.Button()
@@ -433,7 +460,7 @@ class StudyJournalWindow(Adw.Window):
             btn.set_tooltip_text(name)
             set_accessible_label(btn, name)
             btn.connect('clicked', self._on_hl_click, stored_color)
-            self._hl_row.append(btn)
+            swatch_box.append(btn)
             self._hl_buttons[stored_color] = btn
 
         clear_btn = Gtk.Button(icon_name='edit-clear-symbolic')
@@ -441,9 +468,11 @@ class StudyJournalWindow(Adw.Window):
         clear_btn.set_tooltip_text(_('Clear highlight'))
         set_accessible_label(clear_btn, _('Clear highlight'))
         clear_btn.connect('clicked', self._on_hl_click, None)
-        self._hl_row.append(clear_btn)
+        swatch_box.append(clear_btn)
+        self._hl_row.append(swatch_box)
 
         self._ul_check = Gtk.CheckButton(label=_('Underline'))
+        self._ul_check.set_valign(Gtk.Align.CENTER)
         self._ul_handler = self._ul_check.connect(
             'toggled', self._on_ul_toggled)
         self._hl_row.append(self._ul_check)
@@ -616,12 +645,11 @@ class StudyJournalWindow(Adw.Window):
             row.set_activatable(False)
             row.set_child(empty)
             self._list.append(row)
-            self._list.remove_css_class('boxed-list')
             self._current_entry = None
+            self._clear_detail_title()
             self._detail_stack.set_visible_child_name('empty')
             return
 
-        self._list.add_css_class('boxed-list')
         for entry in filtered:
             row = self._make_row(entry)
             self._list.append(row)
@@ -638,6 +666,7 @@ class StudyJournalWindow(Adw.Window):
         elif preserve is not None:
             # Entry no longer exists (all annotations cleared); reset detail
             self._current_entry = None
+            self._clear_detail_title()
             self._detail_stack.set_visible_child_name('empty')
 
     # ── Row builder ───────────────────────────────────────────────────────────
@@ -662,7 +691,7 @@ class StudyJournalWindow(Adw.Window):
         row._strip_class = strip_class
 
         # Content
-        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         content.set_hexpand(True)
         content.set_margin_start(10)
         content.set_margin_end(10)
@@ -687,22 +716,38 @@ class StudyJournalWindow(Adw.Window):
         top.append(mod_lbl)
         content.append(top)
 
-        # Type badges
+        # Type badges — a hue dot coloured to the highlight (the name beside it
+        # stays the colourblind-safe cue), then plain captions for underline /
+        # note. No emoji: muted captions in the app's quiet vocabulary.
         if not entry.get('is_chapter_note'):
-            parts = []
+            badges = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+            have_badge = False
             if entry['highlight']:
-                # Name the color in text so the highlight is distinguishable
-                # without relying on the strip's hue (colorblind-safe).
+                have_badge = True
+                hue = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+                dot = Gtk.Label(label='●')
+                dot.set_valign(Gtk.Align.CENTER)
+                dot.add_css_class('journal-dot')
+                dot_cls = _HL_DOT_CLASS.get(entry['highlight'])
+                if dot_cls:
+                    dot.add_css_class(dot_cls)
                 hl_name = _HL_NAMES.get(entry['highlight'])
-                parts.append('● ' + _(hl_name) if hl_name else _('● Highlight'))
-            if entry['underline']:
-                parts.append(_('▁ Underline'))
-            if entry['note']:
-                parts.append(_('📝 Note'))
-            if parts:
-                badges = Gtk.Label(label='   '.join(parts), xalign=0)
-                badges.add_css_class('dim-label')
-                badges.add_css_class('caption')
+                name = Gtk.Label(
+                    label=_(hl_name) if hl_name else _('Highlight'), xalign=0)
+                name.add_css_class('dim-label')
+                name.add_css_class('caption')
+                hue.append(dot)
+                hue.append(name)
+                badges.append(hue)
+            for present, text in ((entry['underline'], _('Underline')),
+                                  (entry['note'], _('Note'))):
+                if present:
+                    have_badge = True
+                    lbl = Gtk.Label(label=text, xalign=0)
+                    lbl.add_css_class('dim-label')
+                    lbl.add_css_class('caption')
+                    badges.append(lbl)
+            if have_badge:
                 content.append(badges)
 
         # Note preview (single line in compact sidebar; full text in detail)
@@ -736,6 +781,7 @@ class StudyJournalWindow(Adw.Window):
         # Trash button
         del_btn = Gtk.Button(icon_name='user-trash-symbolic')
         del_btn.add_css_class('flat')
+        del_btn.add_css_class('journal-del')
         del_btn.set_valign(Gtk.Align.CENTER)
         del_btn.set_margin_end(6)
         del_btn.set_tooltip_text(_('Delete annotation'))
@@ -751,24 +797,30 @@ class StudyJournalWindow(Adw.Window):
     def _on_row_selected(self, _list, row):
         if row is None or not hasattr(row, '_entry'):
             self._current_entry = None
+            self._clear_detail_title()
             self._detail_stack.set_visible_child_name('empty')
             return
         self._current_entry = row._entry
         self._populate_detail(row._entry)
         self._detail_stack.set_visible_child_name('editor')
+        # When collapsed, navigate into the entry (pushes the content page +
+        # its back button); side-by-side this is a visual no-op.
+        self._split_view.set_show_content(True)
+
+    def _clear_detail_title(self):
+        self._detail_title.set_title('')
+        self._detail_title.set_subtitle('')
 
     def _populate_detail(self, entry):
         is_cn = bool(entry.get('is_chapter_note'))
 
         if is_cn:
-            self._detail_ref.set_label(
-                _('{ref} — Chapter Note').format(
-                    ref=f'{entry["book"]} {entry["chapter"]}'))
+            ref = _('{ref} — Chapter Note').format(
+                ref=f'{entry["book"]} {entry["chapter"]}')
         else:
-            self._detail_ref.set_label(
-                f'{entry["book"]} {entry["chapter"]}:{entry["verse"]}')
-
-        self._detail_mod.set_label(entry.get('module', ''))
+            ref = f'{entry["book"]} {entry["chapter"]}:{entry["verse"]}'
+        self._detail_title.set_title(ref)
+        self._detail_title.set_subtitle(entry.get('module', ''))
 
         self._hl_row.set_visible(not is_cn)
         if not is_cn:

@@ -82,6 +82,14 @@ class BibleWindow(Adw.ApplicationWindow):
         self._today_row = None
         self._modules_win = None
         self._journal_win = None
+        # Adaptive layout state, driven by Adw.Breakpoints (see _build_ui).
+        # _header_narrow: secondary controls folded into the overflow menu.
+        # _panes_narrow: collapsed to a single pane; _narrow_pane (1 or 2) is
+        # which one shows while collapsed in split mode.
+        self._header_narrow = False
+        self._panes_narrow = False
+        self._ultra_narrow = False
+        self._narrow_pane = 1
         self._build_ui()
         self._load_all_panes()
         self.connect('close-request', self._on_close_request)
@@ -280,7 +288,24 @@ class BibleWindow(Adw.ApplicationWindow):
         self._bookmark_btn.connect('clicked', self._on_bookmark_clicked)
         header.pack_end(self._bookmark_btn)
 
-        search_btn = Gtk.Button(icon_name='system-search-symbolic')
+        # Overflow — folds the secondary header controls (lexicon, bookmarks,
+        # swap) into one popover when the window is too narrow to show them all.
+        # Hidden at full width; the Adw.Breakpoint swaps it in (see _build_ui
+        # end + _set_header_narrow).
+        self._overflow_btn = Gtk.MenuButton(icon_name='view-more-symbolic')
+        self._overflow_btn.add_css_class('flat')
+        self._overflow_btn.add_css_class('header-action')
+        self._overflow_btn.set_tooltip_text(_('More'))
+        set_accessible_label(self._overflow_btn, _('More actions'))
+        self._overflow_pop = Gtk.Popover()
+        self._overflow_btn.set_popover(self._overflow_pop)
+        self._overflow_pop.connect(
+            'show', lambda _p: self._overflow_pop.set_child(
+                self._build_overflow_content()))
+        self._overflow_btn.set_visible(False)
+        header.pack_end(self._overflow_btn)
+
+        self._search_btn = search_btn = Gtk.Button(icon_name='system-search-symbolic')
         search_btn.add_css_class('flat')
         search_btn.add_css_class('header-action')
         search_btn.set_tooltip_text(_('Search (Ctrl+F)'))
@@ -288,7 +313,7 @@ class BibleWindow(Adw.ApplicationWindow):
         search_btn.connect('clicked', self._on_search_clicked)
         header.pack_end(search_btn)
 
-        view_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        self._view_box = view_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         view_box.add_css_class('linked')
         self._btn_single = Gtk.ToggleButton(icon_name='view-paged-symbolic')
         self._btn_single.add_css_class('header-action')
@@ -309,6 +334,28 @@ class BibleWindow(Adw.ApplicationWindow):
         view_box.append(self._btn_single)
         view_box.append(self._btn_split)
         header.pack_end(view_box)
+
+        # Narrow-mode pane switcher — replaces the single/split toggle when the
+        # window is too narrow for two panes (shown only when the user is in
+        # split mode and thus has two distinct panes to flip between).
+        self._narrow_switch_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        self._narrow_switch_box.add_css_class('linked')
+        self._narrow_btn1 = Gtk.ToggleButton(label='1')
+        self._narrow_btn1.add_css_class('header-action')
+        self._narrow_btn1.set_tooltip_text(_('Show pane 1'))
+        set_accessible_label(self._narrow_btn1, _('Show pane 1'))
+        self._narrow_btn2 = Gtk.ToggleButton(label='2')
+        self._narrow_btn2.add_css_class('header-action')
+        self._narrow_btn2.set_tooltip_text(_('Show pane 2'))
+        set_accessible_label(self._narrow_btn2, _('Show pane 2'))
+        self._narrow_btn2.set_group(self._narrow_btn1)
+        self._narrow_btn1.set_active(True)
+        self._narrow_btn1.connect('toggled', self._on_narrow_switch)
+        self._narrow_btn2.connect('toggled', self._on_narrow_switch)
+        self._narrow_switch_box.append(self._narrow_btn1)
+        self._narrow_switch_box.append(self._narrow_btn2)
+        self._narrow_switch_box.set_visible(False)
+        header.pack_end(self._narrow_switch_box)
 
         self._swap_btn = Gtk.Button(icon_name='object-flip-horizontal-symbolic')
         self._swap_btn.add_css_class('flat')
@@ -422,6 +469,15 @@ class BibleWindow(Adw.ApplicationWindow):
         self._search_revealer.set_halign(Gtk.Align.END)
         self._search_revealer.set_vexpand(True)
         self._search_revealer.set_child(search_wrapper)
+        # When collapsed the revealer must not capture pointer events — in
+        # ultra-narrow it's halign FILL (full-width sheet), so a collapsed-but-
+        # targetable revealer would otherwise blanket the whole content area
+        # and swallow scroll/clicks (incl. the pane toolbar). Track targetability
+        # to the reveal state.
+        self._search_revealer.set_can_target(False)
+        self._search_revealer.connect(
+            'notify::reveal-child',
+            lambda r, _p: r.set_can_target(r.get_reveal_child()))
 
         # ── Quick jump overlay ────────────────────────────────────────────────
         self._jump_entry = Gtk.SearchEntry()
@@ -540,6 +596,37 @@ class BibleWindow(Adw.ApplicationWindow):
         main_box.append(self._toast_overlay)
         main_box.append(self._crossref_revealer)
         toolbar_view.set_content(main_box)
+
+        # Adaptive layout via two breakpoints (thresholds are easy to tune):
+        #  • ≤850px — the full header no longer fits, so fold the secondary
+        #    controls (lexicon/bookmark/swap) into the overflow ⋯ menu.
+        #  • ≤680px — two reading panes get too cramped, so also collapse to
+        #    one (with a 1/2 switcher).
+        # Adw applies only ONE breakpoint at a time (the last-added match), so
+        # we don't drive state from each breakpoint's apply/unapply — that
+        # would unapply the header breakpoint the moment the panes one kicks
+        # in. Instead we watch `current-breakpoint` and set the full state for
+        # whichever is active (panes added last → wins at the narrowest band).
+        # Grip/gutters/cards and the user's wide-mode split choice are
+        # untouched — only visibility flips.
+        self._bp_header = Adw.Breakpoint.new(
+            Adw.BreakpointCondition.parse('max-width: 850px'))
+        self.add_breakpoint(self._bp_header)
+        self._bp_panes = Adw.Breakpoint.new(
+            Adw.BreakpointCondition.parse('max-width: 680px'))
+        self.add_breakpoint(self._bp_panes)
+        #  • ≤600px — ultra-narrow desktop: fold the *rest* of the chrome
+        #    (back/forward, search, the pane switcher) into ⋯ too, leaving only
+        #    the menu, passage title, one ⋯, and the system buttons, and tighten
+        #    the reading margins. Chrome loses so the text never clips.
+        #    This kicks in *above* the ~572px floor of the band-above so there's
+        #    no dead range that clips between the two working layouts: the
+        #    overflow/panes header can't shrink past ~572, so ultra must take
+        #    over before the window reaches it.
+        self._bp_ultra = Adw.Breakpoint.new(
+            Adw.BreakpointCondition.parse('max-width: 600px'))
+        self.add_breakpoint(self._bp_ultra)
+        self.connect('notify::current-breakpoint', self._on_breakpoint_changed)
 
         # Global shortcuts are GActions with accelerators (see
         # _install_actions). Their accelerators are dispatched by GTK's
@@ -1314,8 +1401,11 @@ class BibleWindow(Adw.ApplicationWindow):
     # ── Bookmarks ─────────────────────────────────────────────────────────────
 
     def _on_bookmark_clicked(self, _btn):
+        self._show_bookmarks(self._bookmark_btn)
+
+    def _show_bookmarks(self, anchor):
         popover = Gtk.Popover()
-        popover.set_parent(self._bookmark_btn)
+        popover.set_parent(anchor)
         # Popovers using set_parent must be explicitly unparented in GTK4,
         # otherwise they accumulate as hidden children on each click.
         popover.connect('closed', lambda p: p.unparent())
@@ -1543,9 +1633,180 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _on_view_mode(self, _btn):
         split = self._btn_split.get_active()
+        settings.put('split_pane_mode', split)
+        if self._panes_narrow:
+            # View toggle is hidden while collapsed; the switcher only matters
+            # in split mode (two distinct panes to flip between).
+            self._narrow_switch_box.set_visible(split)
+            self._apply_narrow_pane()
+            return
         self.pane2.set_visible(split)
         self._swap_btn.set_sensitive(split)
-        settings.put('split_pane_mode', split)
+
+    def _on_breakpoint_changed(self, *_args):
+        """Map the single active breakpoint to the full adaptive state. None =
+        wide; header breakpoint = condensed header; panes breakpoint = + single
+        pane; ultra breakpoint (narrowest) = + fold the rest of the chrome."""
+        bp = self.get_current_breakpoint()
+        self._set_header_narrow(bp is not None)
+        self._set_panes_narrow(bp in (self._bp_panes, self._bp_ultra))
+        self._set_ultra_narrow(bp is self._bp_ultra)
+
+    def _set_header_narrow(self, narrow):
+        """Fold the secondary header controls (lexicon, bookmarks, swap) into
+        the overflow ⋯ menu when the full header no longer fits, and restore
+        them when it does."""
+        if narrow == self._header_narrow:
+            return
+        self._header_narrow = narrow
+        for w in (self.lex_toggle, self._bookmark_btn, self._swap_btn):
+            w.set_visible(not narrow)
+        self._overflow_btn.set_visible(narrow)
+
+    def _set_panes_narrow(self, narrow):
+        """Collapse to a single visible pane when two get too cramped. Reuses
+        the single/split visibility plumbing; the user's wide-mode split choice
+        is preserved and restored when the window widens again."""
+        if narrow == self._panes_narrow:
+            return
+        self._panes_narrow = narrow
+        split = self._btn_split.get_active()
+        if narrow:
+            self._view_box.set_visible(False)
+            self._narrow_switch_box.set_visible(split)
+            # No divider in single-pane: hide the drag grip (it would otherwise
+            # linger at the far edge where the collapsed paned puts it).
+            self._pane_grip.set_visible(False)
+            self._apply_narrow_pane()
+        else:
+            self._narrow_switch_box.set_visible(False)
+            self._view_box.set_visible(True)
+            self.pane1.set_visible(True)
+            self.pane2.set_visible(split)
+
+    def _set_ultra_narrow(self, narrow):
+        """Stricter desktop-narrow mode: fold the remaining nav/search/switcher
+        into the overflow ⋯ too, leaving only menu · passage title · ⋯ · system
+        buttons, and tighten the reading margins. Chrome gives way so the text
+        keeps reflowing instead of clipping."""
+        if narrow == self._ultra_narrow:
+            return
+        self._ultra_narrow = narrow
+        for w in (self._back_btn, self._fwd_btn, self._search_btn):
+            w.set_visible(not narrow)
+        if narrow:
+            self._narrow_switch_box.set_visible(False)
+        else:
+            # Restore the in-header switcher if we're still in collapsed-panes
+            # territory and split; sync it to the active pane.
+            show_switch = self._panes_narrow and self._btn_split.get_active()
+            self._narrow_switch_box.set_visible(show_switch)
+            if show_switch:
+                btn = (self._narrow_btn2 if self._narrow_pane == 2
+                       else self._narrow_btn1)
+                if not btn.get_active():
+                    btn.set_active(True)
+        margin = 12 if narrow else 26
+        self.pane1.set_reading_margin(margin)
+        self.pane2.set_reading_margin(margin)
+        # The 420px side search panel would overflow an ultra-narrow window, so
+        # let it fill the width (full-width sheet) here; restore the docked
+        # right panel otherwise. 420 mirrors SearchPanel's own request.
+        if narrow:
+            self._search_panel.set_size_request(-1, -1)
+            self._search_revealer.set_halign(Gtk.Align.FILL)
+        else:
+            self._search_panel.set_size_request(420, -1)
+            self._search_revealer.set_halign(Gtk.Align.END)
+
+    def _apply_narrow_pane(self):
+        """While collapsed, show exactly one pane: pane 1 in single mode, or the
+        switcher-selected pane in split mode."""
+        if not self._btn_split.get_active():
+            self.pane1.set_visible(True)
+            self.pane2.set_visible(False)
+            return
+        sel2 = self._narrow_pane == 2
+        self.pane1.set_visible(not sel2)
+        self.pane2.set_visible(sel2)
+
+    def _on_narrow_switch(self, btn):
+        if not btn.get_active():
+            return
+        self._select_narrow_pane(2 if btn is self._narrow_btn2 else 1)
+
+    def _select_narrow_pane(self, n):
+        """Show pane n while collapsed. Used by both the in-header switcher and
+        the overflow rows (when the switcher itself is folded away in ultra)."""
+        self._narrow_pane = n
+        self._apply_narrow_pane()
+        btn = self._narrow_btn2 if n == 2 else self._narrow_btn1
+        if not btn.get_active():
+            btn.set_active(True)
+
+    def _build_overflow_content(self):
+        """Popover body for the header overflow ⋯ menu: the secondary controls
+        that don't fit a narrow header, as flat rows that delegate to the same
+        handlers and then dismiss."""
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        box.add_css_class('overflow-menu')
+
+        def row(leading, label, handler, sensitive=True):
+            btn = Gtk.Button()
+            btn.add_css_class('flat')
+            btn.set_sensitive(sensitive)
+            inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+            inner.append(leading)
+            lbl = Gtk.Label(label=label, xalign=0, hexpand=True)
+            inner.append(lbl)
+            btn.set_child(inner)
+
+            def on_click(_b, h=handler):
+                self._overflow_pop.popdown()
+                h()
+            btn.connect('clicked', on_click)
+            box.append(btn)
+            return btn
+
+        # Ultra-narrow: nav + search fold in here too (they stay in the header
+        # at the wider narrow band).
+        if self._ultra_narrow:
+            row(Gtk.Image.new_from_icon_name('go-previous-symbolic'),
+                _('Go back'), lambda: self._on_nav_back(None),
+                sensitive=bool(self._nav_back))
+            row(Gtk.Image.new_from_icon_name('go-next-symbolic'),
+                _('Go forward'), lambda: self._on_nav_fwd(None),
+                sensitive=bool(self._nav_fwd))
+            row(Gtk.Image.new_from_icon_name('system-search-symbolic'),
+                _('Search'), lambda: self._on_search_clicked(None))
+
+        # Lexicon — leading glyph mirrors the header toggle (אΩ); a check marks
+        # it when the lexicon is currently on.
+        lex_glyph = Gtk.Label()
+        lex_glyph.set_markup(
+            '<span size="large">‎א</span><span size="small">Ω</span>')
+        lex_row = row(lex_glyph, _('Greek / Hebrew lexicon'),
+                      lambda: self.lex_toggle.set_active(
+                          not self.lex_toggle.get_active()))
+        if self.lex_toggle.get_active():
+            lex_row.get_child().append(
+                Gtk.Image.new_from_icon_name('object-select-symbolic'))
+
+        row(Gtk.Image.new_from_icon_name('bookmark-new-symbolic'),
+            _('Bookmarks'), lambda: self._show_bookmarks(self._overflow_btn))
+
+        row(Gtk.Image.new_from_icon_name('object-flip-horizontal-symbolic'),
+            _('Swap pane modules'), lambda: self._on_swap_clicked(None),
+            sensitive=self._btn_split.get_active())
+
+        # Ultra-narrow: the 1/2 pane switcher folds in here too (it's hidden
+        # from the header at this width).
+        if self._ultra_narrow and self._btn_split.get_active():
+            row(Gtk.Label(label='1'), _('Show pane 1'),
+                lambda: self._select_narrow_pane(1))
+            row(Gtk.Label(label='2'), _('Show pane 2'),
+                lambda: self._select_narrow_pane(2))
+        return box
 
     def _on_swap_clicked(self, _btn):
         a = self.pane1._module

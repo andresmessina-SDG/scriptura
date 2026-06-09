@@ -366,7 +366,10 @@ class ArchaeologyReader:
             txt.append(hint)
 
         if entry['refs']:
-            chips = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+            # WrapBox (not a plain HBox): the chip row wraps to new lines on a
+            # narrow pane instead of summing every chip's width into one wide
+            # min that would clip the whole document.
+            chips = Adw.WrapBox(child_spacing=0, line_spacing=6)
             chips.add_css_class('stone-chips')
             lead = self._label('Attests', 'stone-chips-lead')
             lead.set_valign(Gtk.Align.CENTER)
@@ -379,9 +382,7 @@ class ArchaeologyReader:
             # "See also" — jump to a thematically related artifact in the gallery
             # (a wrapping flow, since titles are long). Turns the list into a web.
             txt.append(self._label('See also', 'stone-chips-lead'))
-            flow = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE,
-                               column_spacing=6, row_spacing=6,
-                               max_children_per_line=4, homogeneous=False)
+            flow = Adw.WrapBox(child_spacing=0, line_spacing=6)
             flow.add_css_class('stone-seealso')
             for r in entry['related']:
                 flow.append(self._related_chip(r))
@@ -397,8 +398,11 @@ class ArchaeologyReader:
         btn = Gtk.Button(label=rel['title'])
         btn.add_css_class('stone-chip')
         btn.add_css_class('stone-chip-rel')
-        # Content-width pill, not stretched to the full FlowBox cell.
+        # Content-width pill, not stretched to the full cell; ellipsize a long
+        # title rather than force the chip (and the document) wider than a
+        # narrow pane.
         btn.set_halign(Gtk.Align.START)
+        btn.set_can_shrink(True)
         btn.set_tooltip_text(_('Go to {title}').format(title=rel['title']))
         btn.connect('clicked', lambda _b, img=rel['image']: self.scroll_to_entry(img))
         return btn
@@ -469,6 +473,7 @@ class ArchaeologyReader:
     def _verse_chip(self, ref):
         btn = Gtk.Button(label=ref['label'])
         btn.add_css_class('stone-chip')
+        btn.set_can_shrink(True)
         btn.set_tooltip_text(
             _('Open {ref} in the Bible pane').format(ref=ref['label']))
         btn.connect('clicked', lambda _b, r=ref: self._open_ref(r))
