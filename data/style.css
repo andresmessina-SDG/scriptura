@@ -629,31 +629,39 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
 .stone-front {
     margin: 12px 0 8px;
 }
+/* Apple News-style hero: a crisp sans headline (matching the app chrome)
+   over an editorial serif body. The title leans on weight + tight tracking
+   rather than size, so it stops eating the viewport on narrow windows. */
 .stone-front-title {
-    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
-                 'Iowan Old Style', 'Georgia', serif;
-    font-size: 2em;
-    font-weight: 600;
+    font-family: "Adwaita Sans", "Inter", sans-serif;
+    font-size: 1.5em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     margin-bottom: 2px;
 }
 .stone-front-sub {
-    font-size: 1.15em;
-    opacity: 0.7;
-    margin-bottom: 12px;
+    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-size: 1.05em;
+    opacity: 0.6;
+    line-height: 1.6;
+    margin-bottom: 14px;
 }
 .stone-front-body {
-    line-height: 1.5;
+    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    line-height: 1.6;
     margin-bottom: 10px;
 }
 .stone-era {
-    margin: 30px 0 6px;
+    margin: 32px 0 8px;
 }
 .stone-era-title {
-    font-size: 0.95em;
+    font-size: 1em;
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.03em;
     color: @accent_color;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
 }
 .stone-era-intro {
     font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
@@ -665,25 +673,33 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
     margin-top: 8px;
 }
 .stone-plate {
-    margin: 18px 0 8px;
+    margin: 24px 0 10px;
 }
 .stone-pic {
     border-radius: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
+/* Artifact name — a heading, so sans (matching the hero) rather than serif:
+   the serif voice is reserved for running reading text. */
 .stone-title {
-    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
-                 'Iowan Old Style', 'Georgia', serif;
-    font-size: 1.3em;
-    font-weight: 600;
+    font-family: "Adwaita Sans", "Inter", sans-serif;
+    font-size: 1.2em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
 }
+/* Header block (title · byline · provenance) sits tight as one sans unit; the
+   serif body opens below it with a clear gap — the font switch and the space
+   together signal "header ended, reading begins" (Apple News article anatomy). */
 .stone-meta {
     opacity: 0.65;
     font-size: 0.9em;
-    margin-bottom: 8px;
+    margin-bottom: 2px;
 }
 .stone-caption {
-    line-height: 1.5;
+    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    line-height: 1.6;
+    margin-top: 14px;
 }
 .stone-chips {
     margin-top: 10px;
@@ -691,7 +707,7 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
 .stone-chips-lead {
     opacity: 0.55;
     font-size: 0.8em;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.04em;
     margin-right: 4px;
 }
 /* Outline chips matching .xref-chip — transparent fill, 1px tinted border,
@@ -716,17 +732,22 @@ button.stone-chip:active { background-color: alpha(@window_fg_color, 0.10); }
     font-size: 0.8em;
     margin-top: 8px;
 }
+/* The credit is the lowest-priority line on a plate, so it stays quiet gray
+   (inheriting .stone-credit's dim fg) and only reveals it's a link — clay +
+   underline — on hover, rather than shouting in colour at rest. */
 .stone-credit a {
+    color: inherit;
+    text-decoration: none;
+}
+.stone-credit a:hover {
     color: #a9744f;          /* clay, matching the artifact marker */
     text-decoration: underline;
 }
-.stone-credit a:hover {
-    color: @accent_color;
-}
+/* Instruction, not a control (the clickable image + pointer + tooltip are the
+   real affordance) — so quiet gray, leaving clay/blue for the tappable chips. */
 .stone-views {
-    color: #a9744f;
     font-size: 0.82em;
-    opacity: 0.85;
+    opacity: 0.55;
     margin-top: 6px;
 }
 .stone-zoom-caption {
@@ -737,8 +758,7 @@ button.stone-chip:active { background-color: alpha(@window_fg_color, 0.10); }
 .stone-prov {
     opacity: 0.6;
     font-size: 0.82em;
-    font-style: italic;
-    margin-bottom: 8px;
+    margin-bottom: 2px;
 }
 /* 'See also' cross-link chips — clay-toned, to set them apart from the blue
    verse chips (those leave for the Bible; these jump within the gallery). */
@@ -764,11 +784,14 @@ button.stone-chip-rel {
 }
 .stone-term-name {
     font-weight: 700;
+    letter-spacing: -0.01em;
 }
 .stone-term-def,
 .stone-read-note {
+    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
     opacity: 0.75;
-    line-height: 1.45;
+    line-height: 1.55;
 }
 .stone-read-title {
     font-style: italic;
