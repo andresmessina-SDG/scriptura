@@ -29,21 +29,25 @@ def N_(message):
     return message
 
 
+# Canonical English book names. These double as keys (SWORD VerseKey text,
+# saved positions/bookmarks, BOOKS.index lookups), so the list itself stays
+# English; N_() only marks them for translator extraction. The translated
+# form is fetched at display time via book_label().
 BOOKS = [
-    'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
-    'Joshua', 'Judges', 'Ruth', '1 Samuel', '2 Samuel',
-    '1 Kings', '2 Kings', '1 Chronicles', '2 Chronicles',
-    'Ezra', 'Nehemiah', 'Esther', 'Job', 'Psalms', 'Proverbs',
-    'Ecclesiastes', 'Song of Solomon', 'Isaiah', 'Jeremiah',
-    'Lamentations', 'Ezekiel', 'Daniel', 'Hosea', 'Joel', 'Amos',
-    'Obadiah', 'Jonah', 'Micah', 'Nahum', 'Habakkuk', 'Zephaniah',
-    'Haggai', 'Zechariah', 'Malachi',
-    'Matthew', 'Mark', 'Luke', 'John', 'Acts', 'Romans',
-    '1 Corinthians', '2 Corinthians', 'Galatians', 'Ephesians',
-    'Philippians', 'Colossians', '1 Thessalonians', '2 Thessalonians',
-    '1 Timothy', '2 Timothy', 'Titus', 'Philemon', 'Hebrews',
-    'James', '1 Peter', '2 Peter', '1 John', '2 John', '3 John',
-    'Jude', 'Revelation',
+    N_('Genesis'), N_('Exodus'), N_('Leviticus'), N_('Numbers'), N_('Deuteronomy'),
+    N_('Joshua'), N_('Judges'), N_('Ruth'), N_('1 Samuel'), N_('2 Samuel'),
+    N_('1 Kings'), N_('2 Kings'), N_('1 Chronicles'), N_('2 Chronicles'),
+    N_('Ezra'), N_('Nehemiah'), N_('Esther'), N_('Job'), N_('Psalms'), N_('Proverbs'),
+    N_('Ecclesiastes'), N_('Song of Solomon'), N_('Isaiah'), N_('Jeremiah'),
+    N_('Lamentations'), N_('Ezekiel'), N_('Daniel'), N_('Hosea'), N_('Joel'), N_('Amos'),
+    N_('Obadiah'), N_('Jonah'), N_('Micah'), N_('Nahum'), N_('Habakkuk'), N_('Zephaniah'),
+    N_('Haggai'), N_('Zechariah'), N_('Malachi'),
+    N_('Matthew'), N_('Mark'), N_('Luke'), N_('John'), N_('Acts'), N_('Romans'),
+    N_('1 Corinthians'), N_('2 Corinthians'), N_('Galatians'), N_('Ephesians'),
+    N_('Philippians'), N_('Colossians'), N_('1 Thessalonians'), N_('2 Thessalonians'),
+    N_('1 Timothy'), N_('2 Timothy'), N_('Titus'), N_('Philemon'), N_('Hebrews'),
+    N_('James'), N_('1 Peter'), N_('2 Peter'), N_('1 John'), N_('2 John'), N_('3 John'),
+    N_('Jude'), N_('Revelation'),
 ]
 
 
@@ -915,7 +919,7 @@ class BibleWindow(Adw.ApplicationWindow):
             for book, ch in entries:
                 row = Gtk.ListBoxRow()
                 row._passage = (book, ch)
-                lbl = Gtk.Label(label=f'{book} {ch}', xalign=0)
+                lbl = Gtk.Label(label=f'{book_label(book)} {ch}', xalign=0)
                 lbl.set_margin_start(12)
                 lbl.set_margin_end(12)
                 lbl.set_margin_top(6)
@@ -972,7 +976,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self.pane2.load_reference(book, chapter)
 
     def _update_ref_label(self, book, chapter):
-        self._ref_btn.set_label(f'{book} {chapter}')
+        self._ref_btn.set_label(f'{book_label(book)} {chapter}')
 
     def _build_ref_popover_content(self):
         """Books on the left; right column flips between a Chapter grid and
@@ -1120,7 +1124,7 @@ class BibleWindow(Adw.ApplicationWindow):
         for name in BOOKS:
             row = Gtk.ListBoxRow()
             row._book = name
-            lbl = Gtk.Label(label=name, xalign=0)
+            lbl = Gtk.Label(label=book_label(name), xalign=0)
             lbl.set_margin_start(12)
             lbl.set_margin_end(12)
             lbl.set_margin_top(6)
@@ -1430,7 +1434,7 @@ class BibleWindow(Adw.ApplicationWindow):
         chapter = self.chapter_drop.get_selected() + 1
         add_content = Adw.ButtonContent(
             icon_name='starred-symbolic',
-            label=_('Add {ref}').format(ref=f'{book} {chapter}'))
+            label=_('Add {ref}').format(ref=f'{book_label(book)} {chapter}'))
         add_content.set_halign(Gtk.Align.START)
         add_btn = Gtk.Button(child=add_content)
         add_btn.add_css_class('flat')
@@ -1452,7 +1456,12 @@ class BibleWindow(Adw.ApplicationWindow):
                 row.add_css_class('bookmark-row')
                 row._bookmark = bm
                 rb = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-                lbl = Gtk.Label(label=bm['label'], xalign=0, hexpand=True)
+                # Stored fields stay English; recompute the display so the
+                # book name follows the UI language rather than freezing in
+                # whatever was active when the bookmark was created.
+                disp = book_label(bm['book']) + f" {bm['chapter']}" + (
+                    f":{bm['verse']}" if bm.get('verse') else '')
+                lbl = Gtk.Label(label=disp, xalign=0, hexpand=True)
                 lbl.set_margin_start(12)
                 lbl.set_margin_top(6)
                 lbl.set_margin_bottom(6)
@@ -1476,7 +1485,7 @@ class BibleWindow(Adw.ApplicationWindow):
     def _add_bookmark(self, _btn, book, chapter, popover):
         bookmarks.add(book, chapter)
         popover.popdown()
-        self._toast(_('Bookmarked {ref}').format(ref=f'{book} {chapter}'))
+        self._toast(_('Bookmarked {ref}').format(ref=f'{book_label(book)} {chapter}'))
 
     def _on_bookmark_row_activated(self, _lb, row, popover):
         bm = getattr(row, '_bookmark', None)
@@ -1927,7 +1936,7 @@ class BibleWindow(Adw.ApplicationWindow):
         box.set_margin_top(8)
         box.set_margin_bottom(8)
 
-        ref_lbl = Gtk.Label(label=f'{book} {chapter}:{verse}', xalign=0)
+        ref_lbl = Gtk.Label(label=f'{book_label(book)} {chapter}:{verse}', xalign=0)
         ref_lbl.add_css_class('dim-label')
         ref_lbl.add_css_class('caption')
         ref_lbl.set_margin_bottom(4)
@@ -2784,7 +2793,7 @@ class BibleWindow(Adw.ApplicationWindow):
         box.set_margin_top(6)
         box.set_margin_bottom(6)
         for book, start, end in groups:
-            label = f'{book} {start}' if start == end else f'{book} {start}–{end}'
+            label = f'{book_label(book)} {start}' if start == end else f'{book_label(book)} {start}–{end}'
             btn = Gtk.Button(label=label)
             btn.add_css_class('flat')
             btn.set_halign(Gtk.Align.FILL)

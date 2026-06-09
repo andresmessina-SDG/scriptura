@@ -57,6 +57,12 @@ def _setup_gettext():
     # names=['ngettext'] also installs ngettext() as a builtin for correct
     # plural handling (languages with >2 plural forms can't use "+ 's'").
     gettext.install(GETTEXT_DOMAIN, localedir, names=['ngettext'])
+    # book_label() (i18n.py) translates a canonical English book name for
+    # display; install it as a builtin too so the UI modules call it the same
+    # unqualified way they call _() / ngettext().
+    import builtins
+    import i18n
+    builtins.book_label = i18n.book_label
 
 
 _setup_gettext()

@@ -70,7 +70,7 @@ class CrossRefPanel(Gtk.Box):
     def load(self, book, chapter, verse):
         self._title.set_text(
             _('Cross-references · {book} {chapter}:{verse}').format(
-                book=book, chapter=chapter, verse=verse))
+                book=book_label(book), chapter=chapter, verse=verse))
         self._clear_refs()
 
         spinner = Gtk.Spinner()

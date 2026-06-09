@@ -332,7 +332,7 @@ class ImageryReader:
             _log.exception('imagery lookup failed')
             art, maps, places = [], [], []
 
-        self._header.set_text(f'{book} {chapter}:{verse}')
+        self._header.set_text(f'{book_label(book)} {chapter}:{verse}')
         self._build_art(art)
         self._build_where(maps, places)
 

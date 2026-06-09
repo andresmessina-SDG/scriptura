@@ -126,7 +126,7 @@ class CatenaReader:
                   'medieval doctors, and the Reformers read it.')))
             return
 
-        ref = f'{self._book} {self._chapter}:{self._verse}'
+        ref = f'{book_label(self._book)} {self._chapter}:{self._verse}'
         n = len(self._entries)
         self._author_entry.set_visible(n > _AUTHOR_FILTER_MIN)
 
