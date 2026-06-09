@@ -184,9 +184,9 @@ def copy_verse(pane, verses, popover):
     lines = []
     for v in verses:
         plain = re.sub(r'<[^>]+>', '', str(verse_map.get(v, ''))).strip()
-        lines.append(f'{pane._book} {pane._chapter}:{v}  {plain}')
-    ref = (f'{pane._book} {pane._chapter}:{verses[0]}–{verses[-1]}'
-           if len(verses) > 1 else f'{pane._book} {pane._chapter}:{verses[0]}')
+        lines.append(f'{book_label(pane._book)} {pane._chapter}:{v}  {plain}')
+    ref = (f'{book_label(pane._book)} {pane._chapter}:{verses[0]}–{verses[-1]}'
+           if len(verses) > 1 else f'{book_label(pane._book)} {pane._chapter}:{verses[0]}')
     text = f'{ref} ({pane._module})\n' + '\n'.join(lines)
     pane._view.get_clipboard().set(text)
     if pane._on_toast:
@@ -216,7 +216,7 @@ def compare_translations(pane, verse, popover):
 
     title = Gtk.Label(
         label=_('{ref} — Translations').format(
-            ref=f'{pane._book} {pane._chapter}:{verse}'),
+            ref=f'{book_label(pane._book)} {pane._chapter}:{verse}'),
         xalign=0)
     title.add_css_class('heading')
     title.set_margin_start(12)
@@ -311,7 +311,7 @@ def _edit_note(pane, verse, current_note, current_tags, parent_popover):
 def _show_note_window(pane, verse, current_note, current_tags):
     root = pane._view.get_root()
     dialog = Adw.Dialog()
-    dialog.set_title(f'{pane._book} {pane._chapter}:{verse}')
+    dialog.set_title(f'{book_label(pane._book)} {pane._chapter}:{verse}')
     dialog.set_content_width(420)
     dialog.set_content_height(360)
 
@@ -469,7 +469,7 @@ def show_chapter_note(pane):
     root = pane._view.get_root()
     dialog = Adw.Dialog()
     dialog.set_title(_('{ref} — Chapter Note').format(
-        ref=f'{pane._book} {pane._chapter}'))
+        ref=f'{book_label(pane._book)} {pane._chapter}'))
     dialog.set_content_width(420)
     dialog.set_content_height(360)
 

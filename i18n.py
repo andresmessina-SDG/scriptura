@@ -21,3 +21,15 @@ def N_(message: str) -> str:
     translating at definition time (module-level data tables), then translated
     at display via _()."""
     return message
+
+
+def book_label(name: str) -> str:
+    """Localized *display* name for a Bible book.
+
+    The English name stays canonical everywhere it acts as a key — SWORD
+    VerseKey text, OSIS mapping, persisted annotation/bookmark/position
+    records — and is translated only here, at the point it is shown to the
+    user. The 66 canonical names are marked for extraction with ``N_()`` in
+    window.BOOKS; an unknown name (e.g. an apocryphal book outside that list)
+    has no catalog entry and falls through to English unchanged."""
+    return _(name)

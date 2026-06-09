@@ -286,7 +286,7 @@ class PaneSearch:
             GLib.idle_add(
                 self._status.set_text,
                 _('Building index… {book} ({idx}/{total})').format(
-                    book=book_name, idx=book_idx, total=total))
+                    book=book_label(book_name), idx=book_idx, total=total))
 
         case = self._case_btn.get_active()
 
@@ -341,7 +341,7 @@ class PaneSearch:
             box.set_margin_end(10)
             box.set_margin_top(5)
             box.set_margin_bottom(5)
-            ref = Gtk.Label(label=f'{book} {ch}:{v}', xalign=0)
+            ref = Gtk.Label(label=f'{book_label(book)} {ch}:{v}', xalign=0)
             ref.add_css_class('caption')
             snippet = text[:120] + ('…' if len(text) > 120 else '')
             body = Gtk.Label(label=snippet, xalign=0, wrap=False)

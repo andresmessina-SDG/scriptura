@@ -83,59 +83,12 @@ modules:
         url: https://files.pythonhosted.org/packages/25/2b/6beed2107b148edc1321da0d489afc4617b9ed317ef7b72d4993cad9b684/Whoosh-2.7.4.tar.gz
         sha256: 7ca5633dbfa9e0e0fa400d3151a8a0c4bec53bd2ecedc0a67705b17565c31a83
 
+  # All install logic lives in meson.build / data/meson.build (the canonical,
+  # maintained list of .py sources, icons, archaeology data, translations,
+  # desktop/metainfo, launcher). Delegating to meson keeps the Flatpak in
+  # lockstep with the source tree instead of duplicating an install list here.
   - name: scriptura
-    buildsystem: simple
-    build-commands:
-      - install -Dm755 flatpak/scriptura.sh /app/bin/page.codeberg.andresmessina.Scriptura
-      - mkdir -p /app/share/scriptura
-      - install -Dm644 main.py /app/share/scriptura/main.py
-      - install -Dm644 _version.py /app/share/scriptura/_version.py
-      - install -Dm644 paths.py /app/share/scriptura/paths.py
-      - install -Dm644 styles.py /app/share/scriptura/styles.py
-      - install -Dm644 window.py /app/share/scriptura/window.py
-      - install -Dm644 pane.py /app/share/scriptura/pane.py
-      - install -Dm644 genbook_reader.py /app/share/scriptura/genbook_reader.py
-      - install -Dm644 sword_bridge.py /app/share/scriptura/sword_bridge.py
-      - install -Dm644 ebible_bridge.py /app/share/scriptura/ebible_bridge.py
-      - install -Dm644 annotations.py /app/share/scriptura/annotations.py
-      - install -Dm644 bookmarks.py /app/share/scriptura/bookmarks.py
-      - install -Dm644 settings.py /app/share/scriptura/settings.py
-      - install -Dm644 module_positions.py /app/share/scriptura/module_positions.py
-      - install -Dm644 reading_plans.py /app/share/scriptura/reading_plans.py
-      - install -Dm644 open_data.py /app/share/scriptura/open_data.py
-      - install -Dm644 search_panel.py /app/share/scriptura/search_panel.py
-      - install -Dm644 pane_search.py /app/share/scriptura/pane_search.py
-      - install -Dm644 study_journal.py /app/share/scriptura/study_journal.py
-      - install -Dm644 crossref_panel.py /app/share/scriptura/crossref_panel.py
-      - install -Dm644 module_manager.py /app/share/scriptura/module_manager.py
-      - install -Dm644 annotation_dialogs.py /app/share/scriptura/annotation_dialogs.py
-      - install -Dm644 lexicon_panel.py /app/share/scriptura/lexicon_panel.py
-      - install -Dm644 devotional.py /app/share/scriptura/devotional.py
-      - install -Dm644 welcome.py /app/share/scriptura/welcome.py
-      - install -Dm644 data/style.css /app/share/scriptura/data/style.css
-      - python3 -m compileall -q /app/share/scriptura/
-      - install -Dm644 data/page.codeberg.andresmessina.Scriptura.desktop
-                       /app/share/applications/page.codeberg.andresmessina.Scriptura.desktop
-      - install -Dm644 data/page.codeberg.andresmessina.Scriptura.metainfo.xml
-                       /app/share/metainfo/page.codeberg.andresmessina.Scriptura.metainfo.xml
-      - install -Dm644 LICENSE
-                       /app/share/licenses/page.codeberg.andresmessina.Scriptura/LICENSE
-      - mkdir -p /app/share/icons/hicolor/256x256/apps
-      - mkdir -p /app/share/icons/hicolor/128x128/apps
-      - mkdir -p /app/share/icons/hicolor/64x64/apps
-      - mkdir -p /app/share/icons/hicolor/48x48/apps
-      - rsvg-convert -w 256 -h 256
-                     data/icons/hicolor/scalable/apps/page.codeberg.andresmessina.Scriptura.svg
-                     -o /app/share/icons/hicolor/256x256/apps/page.codeberg.andresmessina.Scriptura.png
-      - rsvg-convert -w 128 -h 128
-                     data/icons/hicolor/scalable/apps/page.codeberg.andresmessina.Scriptura.svg
-                     -o /app/share/icons/hicolor/128x128/apps/page.codeberg.andresmessina.Scriptura.png
-      - rsvg-convert -w 64 -h 64
-                     data/icons/hicolor/scalable/apps/page.codeberg.andresmessina.Scriptura.svg
-                     -o /app/share/icons/hicolor/64x64/apps/page.codeberg.andresmessina.Scriptura.png
-      - rsvg-convert -w 48 -h 48
-                     data/icons/hicolor/scalable/apps/page.codeberg.andresmessina.Scriptura.svg
-                     -o /app/share/icons/hicolor/48x48/apps/page.codeberg.andresmessina.Scriptura.png
+    buildsystem: meson
     sources:
       - type: dir
         path: .

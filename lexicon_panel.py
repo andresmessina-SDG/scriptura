@@ -500,7 +500,7 @@ class LexiconPanel(Gtk.Box):
         self._ws_header.set_text(ngettext(
             'Searching {book}… {n} match so far ({ch}/{total})',
             'Searching {book}… {n} matches so far ({ch}/{total})',
-            running).format(book=book, n=running, ch=ch, total=total))
+            running).format(book=book_label(book), n=running, ch=ch, total=total))
         for ref_book, c, v_num, markup in batch:
             self._ws_list.append(self._build_ws_row(ref_book, c, v_num, markup))
         return GLib.SOURCE_REMOVE
@@ -513,7 +513,7 @@ class LexiconPanel(Gtk.Box):
         self._ws_header.set_text(ngettext(
             '{n} occurrence in {book}',
             '{n} occurrences in {book}',
-            running).format(n=running, book=book))
+            running).format(n=running, book=book_label(book)))
         return GLib.SOURCE_REMOVE
 
     def _build_ws_row(self, ref_book, ch, v_num, markup):

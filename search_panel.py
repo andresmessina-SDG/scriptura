@@ -255,7 +255,7 @@ class SearchPanel(Gtk.Box):
     def _on_indexing_progress(self, book_idx, total, book_name):
         GLib.idle_add(self._update_indexing_status,
                       _('Building search index… {book} ({idx}/{total})').format(
-                          book=book_name, idx=book_idx, total=total),
+                          book=book_label(book_name), idx=book_idx, total=total),
                       True)
 
     def _on_indexing_done(self):
@@ -569,7 +569,7 @@ class SearchPanel(Gtk.Box):
         box.set_margin_end(8)
         box.set_margin_top(6)
         box.set_margin_bottom(6)
-        ref = Gtk.Label(label=f'{book} {ch}:{v}', xalign=0)
+        ref = Gtk.Label(label=f'{book_label(book)} {ch}:{v}', xalign=0)
         ref.add_css_class('result-ref')
         snippet = text[:200] + ('…' if len(text) > 200 else '')
         body = Gtk.Label(label=snippet, xalign=0, wrap=True)

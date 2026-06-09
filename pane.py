@@ -1034,7 +1034,7 @@ class BiblePane(Gtk.Box):
             return
         first_v = min(verses)
         last_v = max(verses)
-        ref = f'{self._book} {self._chapter}:{first_v}'
+        ref = f'{book_label(self._book)} {self._chapter}:{first_v}'
         if last_v > first_v:
             ref += f'-{last_v}'
         enriched = f'{ref} ({self._module})\n{text}'
@@ -1205,7 +1205,7 @@ class BiblePane(Gtk.Box):
                     GLib.idle_add(self._on_toast,
                                   _("Couldn't load chapter — {error}").format(error=e))
                 return
-            lines = [f'{book} {chapter}', '']
+            lines = [f'{book_label(book)} {chapter}', '']
             for v_num, html in verses:
                 plain = re.sub(r'<[^>]+>', '', str(html)).strip()
                 if plain:
@@ -1218,7 +1218,7 @@ class BiblePane(Gtk.Box):
     def _finish_copy_chapter(self, text, book, chapter):
         self._view.get_clipboard().set(text)
         if self._on_toast:
-            self._on_toast(_('Copied {ref}').format(ref=f'{book} {chapter}'))
+            self._on_toast(_('Copied {ref}').format(ref=f'{book_label(book)} {chapter}'))
         return GLib.SOURCE_REMOVE
 
     def _on_sync_toggled(self, btn, _param):
@@ -1431,7 +1431,7 @@ class BiblePane(Gtk.Box):
         for the requested book/chapter — typically NT-only modules
         (SBLGNT, MorphGNT) navigated to an OT passage, or vice versa."""
         self._show_status_page(
-            'dialog-information-symbolic', f'{book} {chapter}',
+            'dialog-information-symbolic', f'{book_label(book)} {chapter}',
             _('{module} doesn’t include this passage. Some modules cover '
               'only the Old or New Testament — pick a Bible with full coverage.').format(
                   module=self._module),
@@ -1585,7 +1585,7 @@ class BiblePane(Gtk.Box):
             # ample separation, and a blank line here left an oversized top gap.
             heading = (f'<span size="x-large" weight="bold" '
                        f'foreground="{heading_color}" letter_spacing="600">'
-                       f'{GLib.markup_escape_text(f"{book} {chapter}")}</span>\n')
+                       f'{GLib.markup_escape_text(f"{book_label(book)} {chapter}")}</span>\n')
             self._buffer.insert_markup(self._buffer.get_end_iter(), heading, -1)
 
         # For commentaries, group consecutive verses whose source HTML

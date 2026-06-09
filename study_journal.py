@@ -368,6 +368,10 @@ class StudyJournalWindow(Adw.Window):
             'notify::selected', lambda *_: self._apply_filter())
         grid.attach(self._mod_drop, 0, 1, 1, 1)
 
+        # The book dropdown shows localized names but filters by the canonical
+        # English key; _book_keys holds those keys parallel to the model rows
+        # after the "All books" sentinel, so we match by index, not by label.
+        self._book_keys: list[str] = []
         self._book_drop = Gtk.DropDown(model=Gtk.StringList.new([_('All books')]))
         self._book_drop.connect(
             'notify::selected', lambda *_: self._apply_filter())
@@ -533,23 +537,26 @@ class StudyJournalWindow(Adw.Window):
         self._entries = _all_entries()
 
         modules = [_('All modules')] + sorted({e['module'] for e in self._entries})
-        books = [_('All books')] + [b for b in sword_bridge._ALL_BOOKS
-                                    if any(e['book'] == b for e in self._entries)]
+        book_keys = [b for b in sword_bridge._ALL_BOOKS
+                     if any(e['book'] == b for e in self._entries)]
         all_tags = [_('All tags')] + sorted(
             {t for e in self._entries for t in e.get('tags', [])})
 
         # Preserve current dropdown selections so a save doesn't reset filters
         prev_type = self._type_drop.get_selected()
         prev_mod_text = self._dropdown_text(self._mod_drop)
-        prev_book_text = self._dropdown_text(self._book_drop)
+        prev_book_key = self._selected_book_key()
         prev_tag_text = self._dropdown_text(self._tag_drop)
 
         self._mod_drop.set_model(Gtk.StringList.new(modules))
-        self._book_drop.set_model(Gtk.StringList.new(books))
+        self._book_keys = book_keys
+        self._book_drop.set_model(Gtk.StringList.new(
+            [_('All books')] + [book_label(b) for b in book_keys]))
         self._tag_drop.set_model(Gtk.StringList.new(all_tags))
 
         self._select_by_text(self._mod_drop, modules, prev_mod_text)
-        self._select_by_text(self._book_drop, books, prev_book_text)
+        self._book_drop.set_selected(
+            book_keys.index(prev_book_key) + 1 if prev_book_key in book_keys else 0)
         self._select_by_text(self._tag_drop, all_tags, prev_tag_text)
         self._type_drop.set_selected(prev_type)
 
@@ -571,12 +578,20 @@ class StudyJournalWindow(Adw.Window):
         else:
             drop.set_selected(0)
 
+    def _selected_book_key(self):
+        """Canonical English book name for the book dropdown's selection, or
+        None for the 'All books' sentinel (index 0)."""
+        idx = self._book_drop.get_selected()
+        if idx >= 1 and idx - 1 < len(self._book_keys):
+            return self._book_keys[idx - 1]
+        return None
+
     def _filtered_entries(self):
         type_map = {0: 'all', 1: 'notes', 2: 'highlights', 3: 'underlines'}
         tf = type_map.get(self._type_drop.get_selected(), 'all')
 
         mf = self._dropdown_text(self._mod_drop) or _('All modules')
-        bf = self._dropdown_text(self._book_drop) or _('All books')
+        bf_key = self._selected_book_key()
         tag_filter = self._dropdown_text(self._tag_drop) or _('All tags')
         q = self._search_entry.get_text().strip().lower()
 
@@ -584,7 +599,7 @@ class StudyJournalWindow(Adw.Window):
         for e in self._entries:
             if mf != _('All modules') and e['module'] != mf:
                 continue
-            if bf != _('All books') and e['book'] != bf:
+            if bf_key is not None and e['book'] != bf_key:
                 continue
             if tf == 'notes' and not e['note']:
                 continue
@@ -595,8 +610,9 @@ class StudyJournalWindow(Adw.Window):
             if tag_filter != _('All tags') and tag_filter not in e.get('tags', []):
                 continue
             if q:
-                ref = (f'{e["book"]} {e["chapter"]}' if e.get('is_chapter_note')
-                       else f'{e["book"]} {e["chapter"]}:{e["verse"]}')
+                disp_book = book_label(e['book'])
+                ref = (f'{disp_book} {e["chapter"]}' if e.get('is_chapter_note')
+                       else f'{disp_book} {e["chapter"]}:{e["verse"]}')
                 haystack = ' '.join([
                     e['module'].lower(),
                     e['book'].lower(),
@@ -702,9 +718,9 @@ class StudyJournalWindow(Adw.Window):
         top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         if entry.get('is_chapter_note'):
             ref_text = _('{ref} — Chapter Note').format(
-                ref=f'{entry["book"]} {entry["chapter"]}')
+                ref=f'{book_label(entry["book"])} {entry["chapter"]}')
         else:
-            ref_text = f'{entry["book"]} {entry["chapter"]}:{entry["verse"]}'
+            ref_text = f'{book_label(entry["book"])} {entry["chapter"]}:{entry["verse"]}'
         ref = Gtk.Label(label=ref_text, xalign=0, hexpand=True)
         ref.set_ellipsize(Pango.EllipsizeMode.END)
         ref.add_css_class('heading')
@@ -816,9 +832,9 @@ class StudyJournalWindow(Adw.Window):
 
         if is_cn:
             ref = _('{ref} — Chapter Note').format(
-                ref=f'{entry["book"]} {entry["chapter"]}')
+                ref=f'{book_label(entry["book"])} {entry["chapter"]}')
         else:
-            ref = f'{entry["book"]} {entry["chapter"]}:{entry["verse"]}'
+            ref = f'{book_label(entry["book"])} {entry["chapter"]}:{entry["verse"]}'
         self._detail_title.set_title(ref)
         self._detail_title.set_subtitle(entry.get('module', ''))
 
@@ -987,9 +1003,9 @@ class StudyJournalWindow(Adw.Window):
         for e in self._filtered_entries():
             if e.get('is_chapter_note'):
                 lines.append(_('{ref} — Chapter Note').format(
-                    ref=f'{e["book"]} {e["chapter"]}') + f'  ({e["module"]})')
+                    ref=f'{book_label(e["book"])} {e["chapter"]}') + f'  ({e["module"]})')
             else:
-                lines.append(f'{e["book"]} {e["chapter"]}:{e["verse"]}  ({e["module"]})')
+                lines.append(f'{book_label(e["book"])} {e["chapter"]}:{e["verse"]}  ({e["module"]})')
                 types = []
                 if e['highlight']:
                     types.append(_('Highlight'))
