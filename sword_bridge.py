@@ -118,7 +118,10 @@ def _build_module_index(module_name, on_progress=None):
                     on_progress(i, total_books, book)
                 except Exception:
                     pass
-            for ch in range(1, chapter_count(book) + 1):
+            # Module's own versification — a KJV-keyed count under- or
+            # over-iterates chapters for modules like RusSynodal/Wycliffe
+            # (load_chapter already renders with the module's system).
+            for ch in range(1, chapter_count(book, module_name) + 1):
                 for v_num, html in load_chapter(module_name, book, ch):
                     plain_text = re.sub(r'<[^>]+>', '', str(html))
                     writer.add_document(module=module_name, book=book,
@@ -239,9 +242,27 @@ def module_info(module_name):
     return info
 
 
-def chapter_count(book):
+def _verse_key(module_name=None):
+    """A VerseKey, switched to module_name's versification when given.
+    The default (KJV) key is right for window-level navigation, which is
+    pinned to the 66-book Protestant canon; per-module work (indexing)
+    must use the module's own system or chapter/verse maxima drift on
+    modules like RusSynodal (Synodal) or Wycliffe (Vulg)."""
+    vk = Sword.VerseKey()
+    if module_name:
+        try:
+            mod = mgr().getModule(module_name)
+            v11n = mod.getConfigEntry('Versification') if mod else None
+            if v11n:
+                vk.setVersificationSystem(v11n)
+        except Exception:
+            pass  # unknown system → fall back to default
+    return vk
+
+
+def chapter_count(book, module_name=None):
     try:
-        vk = Sword.VerseKey()
+        vk = _verse_key(module_name)
         vk.setText(f'{book} 1:1')
         return vk.getChapterMax()
     except Exception:
@@ -250,9 +271,9 @@ def chapter_count(book):
         return 1
 
 
-def verse_count(book, chapter):
+def verse_count(book, chapter, module_name=None):
     try:
-        vk = Sword.VerseKey()
+        vk = _verse_key(module_name)
         vk.setText(f'{book} {chapter}:1')
         return vk.getVerseMax()
     except Exception:
@@ -1118,7 +1139,8 @@ def refresh_source():
         data = resp.read()
 
     ts = datetime.now().strftime('%Y%m%d%H%M%S')
-    mods_d = os.path.expanduser(f'~/.sword/InstallMgr/{ts}/mods.d')
+    base = os.path.expanduser('~/.sword/InstallMgr')
+    mods_d = os.path.join(base, ts, 'mods.d')
     os.makedirs(mods_d, exist_ok=True)
 
     with tarfile.open(fileobj=io.BytesIO(data), mode='r:gz') as tar:
@@ -1126,6 +1148,14 @@ def refresh_source():
             if member.name.endswith('.conf') and not member.isdir():
                 member.name = os.path.basename(member.name)
                 tar.extract(member, mods_d)
+
+    # Prune superseded shadow dirs — every refresh creates a fresh
+    # timestamp dir and _shadow_path only ever reads the newest, so old
+    # ones would otherwise accumulate a few MB of .conf trees forever.
+    timestamp_re = re.compile(r'^\d{14}$')
+    for d in os.listdir(base):
+        if d != ts and timestamp_re.match(d):
+            shutil.rmtree(os.path.join(base, d), ignore_errors=True)
 
 
 def install_module(module_name):
@@ -1930,22 +1960,6 @@ def lookup_morph_for_strong(book, chapter, verse, strong_num):
             if mm:
                 return mm.group(1)
     return None
-
-
-def count_strong_occurrences(module_name, strong_num, book=None):
-    """Count verses containing strong_num in book (whole Bible if None)."""
-    books = [book] if book else _ALL_BOOKS
-    # Negative-lookahead anchor — `strong:G65` must not be followed by
-    # another digit. Without it, G65 matches G650 / G651 / G652 / etc.
-    # and the count balloons with unrelated verses.
-    pattern = re.compile(rf'strong:{re.escape(strong_num)}(?!\d)', re.IGNORECASE)
-    count = 0
-    for b in books:
-        for ch in range(1, chapter_count(b) + 1):
-            for _, html in load_chapter(module_name, b, ch):
-                if pattern.search(str(html)):
-                    count += 1
-    return count
 
 
 def lookup_strong(strong_num):

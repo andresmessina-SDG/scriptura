@@ -30,8 +30,6 @@ _defaults: dict[str, Any] = {
     'pane1_module':       None,
     'pane2_module':       None,
     'split_pane_mode':    True,
-    'pane1_top_verse':    None,
-    'pane2_top_verse':    None,
     'recent_passages':    [],
     # Per-pane dict: {module_name: last-read TreeKey path}. Keeps the
     # user's place across module switches and app restarts so genbooks
