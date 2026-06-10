@@ -425,30 +425,30 @@ paned.main-split > separator {
 /* ── Window-level overlay panels (menu sidebar, jump bar, reading mode) ── */
 /* See the Revealer/box-shadow note at the top of the file. */
 
-/* The menu is an Adw.OverlaySplitView kept permanently collapsed (overlay +
-   scrim presentation). Re-apply the house floating-card chrome to its
-   sidebar pane so it rhymes with the search panel and the reading pages
-   instead of reading as a stock square sheet. Node names verified by
-   introspection on libadwaita 1.9: in *collapsed* mode the sidebar pane is
-   `widget.background` (`.sidebar-pane` only exists uncollapsed — covered
-   anyway for safety). The native `border` gizmo is neutralized so it can't
-   double up with our hairline; the native edge `shadow` is kept — it reads
-   well over the scrim (and was impossible inside the old Revealer). */
-/* Two-layer trick for the rounded corners: the split view allocates its
-   dimming gizmo BESIDE the sidebar, not beneath it, so a rounded pane's
-   corner cut-outs reveal *undimmed* content — square-looking artifacts
-   (measured: cut-outs showed the raw window shade where neighbours showed
-   the scrimmed one). So the pane itself paints a square base in the
-   scrim's own shade, and the rounded opaque card is the .menu-panel child
-   inside it — the cut-outs then read as continuous scrim. @shade_color is
-   the exact token libadwaita's dimming gizmo uses (verified in the 1.9
-   stylesheet: `overlay-split-view > dimming { background:
-   var(--shade-color) }`), so it tracks light/dark automatically. */
+/* The menu and search panels are Adw.OverlaySplitViews kept permanently
+   collapsed (overlay presentation). Re-apply the house floating-card
+   chrome to the sidebar pane so it rhymes with the reading pages instead
+   of reading as a stock square sheet. Node names verified by
+   introspection on libadwaita 1.9: in *collapsed* mode the sidebar pane
+   is `widget.background` (`.sidebar-pane` only exists uncollapsed —
+   covered anyway for safety). */
+/* No scrim: the native dimming gizmo only covers the split view's own
+   area (below the header), so it would draw a hard tonal line exactly
+   where the header ends — against the house style of one continuous
+   surface. It's painted out here but still allocated, so click-out
+   dismissal keeps working. With no scrim, the sidebar pane's base must
+   be transparent too: its rounded corner cut-outs then show the content
+   unchanged (the gizmo is allocated BESIDE the sidebar, not beneath it,
+   so the pane base — not the dimming — is what shows in the cut-outs). */
+overlay-split-view.menu-split > dimming,
+overlay-split-view.search-split > dimming {
+    background: none;
+}
 overlay-split-view.menu-split > widget.background,
 overlay-split-view.menu-split > widget.sidebar-pane,
 overlay-split-view.search-split > widget.background,
 overlay-split-view.search-split > widget.sidebar-pane {
-    background-color: @shade_color;
+    background: none;
 }
 .menu-panel {
     background-color: @view_bg_color;
