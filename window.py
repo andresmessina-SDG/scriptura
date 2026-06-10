@@ -1729,6 +1729,14 @@ class BibleWindow(Adw.ApplicationWindow):
         margin = 12 if narrow else 26
         self.pane1.set_reading_margin(margin)
         self.pane2.set_reading_margin(margin)
+        # The search split's min-sidebar-width is a hard minimum that
+        # propagates up to the window even while the sidebar is hidden —
+        # below 420px the window under-allocates (Adwaita warns) and the
+        # open panel overflows the right edge. Drop the floor here so the
+        # sidebar fills the window instead (measured: a collapsed OSV
+        # sizes its sidebar to min(max-sidebar-width, window width));
+        # restore the 420px floor when leaving the ultra band.
+        self._search_split.set_min_sidebar_width(0 if narrow else 420)
 
     def _apply_narrow_pane(self):
         """While collapsed, show exactly one pane: pane 1 in single mode, or the
