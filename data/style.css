@@ -437,12 +437,14 @@ paned.main-split > separator {
    corner cut-outs reveal *undimmed* content — square-looking artifacts
    (measured: cut-outs showed the raw window shade where neighbours showed
    the scrimmed one). So the pane itself paints a square base in the
-   scrim's own shade (α matched to libadwaita's dimming), and the rounded
-   opaque card is the .menu-panel child inside it — the cut-outs then read
-   as continuous scrim. */
+   scrim's own shade, and the rounded opaque card is the .menu-panel child
+   inside it — the cut-outs then read as continuous scrim. @shade_color is
+   the exact token libadwaita's dimming gizmo uses (verified in the 1.9
+   stylesheet: `overlay-split-view > dimming { background:
+   var(--shade-color) }`), so it tracks light/dark automatically. */
 overlay-split-view.menu-split > widget.background,
 overlay-split-view.menu-split > widget.sidebar-pane {
-    background-color: alpha(black, 0.26);
+    background-color: @shade_color;
 }
 .menu-panel {
     background-color: @view_bg_color;
