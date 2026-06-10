@@ -57,11 +57,14 @@ def _display_kind(module_type):
     return _KIND_MAP.get(module_type, 'Books & Other')
 
 
-# The eBible catalogue has ~1,500+ translations and PreferencesGroup rows
-# aren't virtualised, so rendering them all is laggy. We materialise only the
-# first slice of any result set and invite the user to search to narrow it —
-# a 1,500-item list is found by searching, not scrolling.
-_EB_RENDER_CAP = 200
+# The eBible catalogue has ~1,500+ translations (CrossWire ~400) and
+# PreferencesGroup rows aren't virtualised, so rendering a whole result set
+# is laggy — and idle-batched appends are not an option here: the repeated
+# relayout under an open filter popover breaks its outside-click grab. So
+# both tabs materialise only the first slice of any result set,
+# synchronously, with a Load-more footer row appending the next slice on
+# demand.
+_RENDER_CAP = 150
 
 
 def _fmt_size(raw):
@@ -275,9 +278,10 @@ class ModuleManagerWindow(Adw.Window):
         self._browse_group.set_title(_('Browse catalogue'))
         self._browse_group.set_header_suffix(header_controls)
         self._available_rows = []
-        # Bumped on every _apply_filter; pending idle batches from a
-        # superseded filter pass see the mismatch and stop.
-        self._filter_gen = 0
+        # Current filtered result set + how many of it are rendered;
+        # _append_cw_rows materialises _RENDER_CAP at a time.
+        self._cw_filtered = []
+        self._cw_shown = 0
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
         box.set_margin_start(12)
@@ -379,6 +383,8 @@ class ModuleManagerWindow(Adw.Window):
         self._eb_group.set_title(_('Translations'))
         self._eb_group.set_header_suffix(header_controls)
         self._eb_rows = []
+        self._eb_filtered = []
+        self._eb_shown = 0
 
         self._eb_status = Gtk.Label(label='', xalign=0, wrap=True)
         self._eb_status.add_css_class('dim-label')
@@ -693,7 +699,6 @@ class ModuleManagerWindow(Adw.Window):
         if query:
             available = [m for m in available if self._matches(m, query)]
 
-        self._filter_gen += 1
         if not available:
             placeholder = Adw.ActionRow()
             placeholder.set_title(_('No modules match your filters') if self._has_catalog
@@ -703,30 +708,42 @@ class ModuleManagerWindow(Adw.Window):
             self._available_rows.append(placeholder)
             return
 
-        # Stream the rows in batches (same pattern as SearchPanel's result
-        # list): the full catalogue is ~425 ActionRows ≈ 220 ms of widget
-        # construction, which used to freeze the click that opened the
-        # window. The first batch lands synchronously so the visible
-        # viewport is never empty; the rest arrive in idles, cancelled via
-        # _filter_gen if a newer filter pass supersedes this one.
-        gen = self._filter_gen
-        pos = [0]
-        BATCH = 30
+        self._cw_filtered = available
+        self._cw_shown = 0
+        self._append_cw_rows()
 
-        def add_batch():
-            if gen != self._filter_gen:
-                return GLib.SOURCE_REMOVE
-            for mod in available[pos[0]:pos[0] + BATCH]:
-                row = self._make_row(mod, installed=False)
-                self._browse_group.add(row)
-                self._available_rows.append(row)
-            pos[0] += BATCH
-            if pos[0] >= len(available):
-                return GLib.SOURCE_REMOVE
-            return GLib.SOURCE_CONTINUE
+    def _append_cw_rows(self):
+        """Materialise the next _RENDER_CAP slice of the filtered catalogue,
+        followed by a Load-more footer while results remain (see the
+        _RENDER_CAP note up top for why the list is capped + synchronous)."""
+        chunk = self._cw_filtered[self._cw_shown:self._cw_shown + _RENDER_CAP]
+        for mod in chunk:
+            row = self._make_row(mod, installed=False)
+            self._browse_group.add(row)
+            self._available_rows.append(row)
+        self._cw_shown += len(chunk)
+        if self._cw_shown < len(self._cw_filtered):
+            footer = self._load_more_row(
+                self._cw_shown, len(self._cw_filtered), self._on_cw_more)
+            self._browse_group.add(footer)
+            self._available_rows.append(footer)
 
-        if add_batch() == GLib.SOURCE_CONTINUE:
-            GLib.idle_add(add_batch)
+    def _on_cw_more(self):
+        # The footer is always the last row; swap it for the next slice.
+        footer = self._available_rows.pop()
+        self._browse_group.remove(footer)
+        self._append_cw_rows()
+
+    def _load_more_row(self, shown, total, on_more):
+        """An activatable footer row that appends the next result slice.
+        A real ActionRow so it inherits the boxed-list styling exactly."""
+        row = Adw.ActionRow()
+        row.set_title(_('Load more — showing the first {shown} of {total}')
+                      .format(shown=shown, total=f'{total:,}'))
+        row.set_activatable(True)
+        row.add_prefix(Gtk.Image.new_from_icon_name('view-more-symbolic'))
+        row.connect('activated', lambda _r: on_more())
+        return row
 
     def _on_search_changed(self, *_):
         self._rebuild_installed()
@@ -1291,29 +1308,31 @@ class ModuleManagerWindow(Adw.Window):
             self._eb_rows.append(placeholder)
             return
 
+        self._eb_filtered = filtered
+        self._eb_shown = 0
+        self._eb_append_rows()
+
+    def _eb_append_rows(self):
+        """eBible mirror of _append_cw_rows: next _RENDER_CAP slice plus a
+        Load-more footer while results remain."""
         installed = ebible_bridge.installed_ids()
-        shown = filtered[:_EB_RENDER_CAP]
-        for tid, title, lang_code, lang_name, entry in shown:
+        chunk = self._eb_filtered[self._eb_shown:self._eb_shown + _RENDER_CAP]
+        for tid, title, lang_code, lang_name, entry in chunk:
             row = self._eb_make_row(tid, title, lang_code, lang_name, entry,
                                     installed=tid in installed)
             self._eb_group.add(row)
             self._eb_rows.append(row)
-        if n > len(shown):
-            footer = self._eb_more_row(len(shown), n)
+        self._eb_shown += len(chunk)
+        if self._eb_shown < len(self._eb_filtered):
+            footer = self._load_more_row(
+                self._eb_shown, len(self._eb_filtered), self._eb_on_more)
             self._eb_group.add(footer)
             self._eb_rows.append(footer)
 
-    def _eb_more_row(self, shown, total):
-        """A dim, non-interactive footer row noting the result set was capped.
-        It's a real ActionRow so it inherits the boxed-list styling exactly."""
-        row = Adw.ActionRow()
-        row.set_title(
-            _('Showing the first {shown} of {total} — '
-              'refine your search to see more').format(
-                  shown=shown, total=f'{total:,}'))
-        row.set_sensitive(False)
-        row.add_prefix(Gtk.Image.new_from_icon_name('system-search-symbolic'))
-        return row
+    def _eb_on_more(self):
+        footer = self._eb_rows.pop()
+        self._eb_group.remove(footer)
+        self._eb_append_rows()
 
     def _eb_make_row(self, tid, title, lang_code, lang_name, entry, installed):
         row = Adw.ActionRow()
