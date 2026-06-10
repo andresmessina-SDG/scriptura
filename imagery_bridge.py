@@ -26,8 +26,6 @@ import shutil
 import sqlite3
 import tarfile
 import threading
-import urllib.error
-import urllib.request
 from typing import Callable, TypedDict
 
 import paths
@@ -286,6 +284,9 @@ def _probe(url: str) -> int | None:
     honours the range, else from Content-Length. Any non-404 HTTP error is
     raised — a transient failure must abort, never look like 'no more parts'.
     """
+    # Lazy: pulls in http/ssl/email (~40 ms) — only needed for downloads.
+    import urllib.error
+    import urllib.request
     req = urllib.request.Request(url, headers={'Range': 'bytes=0-0'})
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
@@ -344,6 +345,7 @@ def download_and_install(on_progress: Callable[[int, int], None] | None = None,
     Extracts into a sibling staging dir then swaps it in, so an interrupted
     download never leaves a half-written pack in service.
     """
+    import urllib.request
     url = url or PACK_URL
     dest_dir = paths.imagery_dir()
     parent = os.path.dirname(dest_dir)

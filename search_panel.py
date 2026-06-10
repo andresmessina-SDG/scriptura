@@ -111,7 +111,9 @@ class SearchPanel(Gtk.Box):
         # whenever a fresh search starts so the first F3 lands on result 0.
         self._current_idx = -1
 
-        self.set_size_request(420, -1)
+        # No size request: width is governed by the OverlaySplitView's
+        # min/max sidebar width (window.py) so ultra-narrow windows can
+        # shrink the panel instead of overflowing.
         self.set_vexpand(True)
         self.add_css_class('search-panel')
         # Clip children to the panel's rounded left corners — without this, a

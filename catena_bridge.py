@@ -18,7 +18,6 @@ import os
 import shutil
 import sqlite3
 import threading
-import urllib.request
 from typing import Callable, TypedDict
 
 import paths
@@ -167,6 +166,8 @@ def download_and_install(on_progress: Callable[[int, int], None] | None = None,
     Writes through temp files and renames atomically, so an interrupted
     download never leaves a half-written pack in service.
     """
+    # Lazy: pulls in http/ssl/email (~40 ms) — only needed for downloads.
+    import urllib.request
     url = url or PACK_URL
     dest = paths.catena_db_path()
     tmp_gz = dest + '.gz.part'

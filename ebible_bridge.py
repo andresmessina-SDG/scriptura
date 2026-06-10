@@ -10,7 +10,6 @@ import io
 import os
 import sqlite3
 import threading
-import urllib.request
 
 _log = logging.getLogger('scriptura.ebible')
 import zipfile
@@ -241,6 +240,16 @@ def search_module(module_name, query, case_sensitive=False, **_kwargs):
                    + ' '.join('AND text GLOB ?' for _ in words)
                    + ' ORDER BY rowid')
             params = [tid] + [f'*{_glob_escape(w)}*' for w in words]
+        elif query.isascii():
+            # ASCII fast path: SQLite's native LIKE is already
+            # case-insensitive for ASCII letters and runs in C. The
+            # pycasefold UDF below costs a C→Python call per verse row
+            # (~5× slower measured); it's only needed when the query has
+            # non-ASCII case to fold (Cyrillic, accented Latin).
+            sql = ('SELECT book, chapter, verse, text FROM verses WHERE translation=? '
+                   + ' '.join("AND text LIKE ? ESCAPE '\\'" for _ in words)
+                   + ' ORDER BY rowid')
+            params = [tid] + [f'%{_like_escape(w)}%' for w in words]
         else:
             sql = ('SELECT book, chapter, verse, text FROM verses WHERE translation=? '
                    + ' '.join("AND pycasefold(text) LIKE ? ESCAPE '\\'" for _ in words)
@@ -271,6 +280,8 @@ def catalog_entries():
 
 def download_catalog_sync():
     """Download and cache the eBible catalog CSV. Raises on failure."""
+    # Lazy: pulls in http/ssl/email (~40 ms) — only needed for downloads.
+    import urllib.request
     req = urllib.request.Request(CATALOG_URL, headers={'User-Agent': 'Mozilla/5.0'})
     with urllib.request.urlopen(req, timeout=20) as r:
         data = r.read()
@@ -279,6 +290,7 @@ def download_catalog_sync():
 
 def download_translation_sync(tid, entry, on_status=None):
     """Download, parse, and store one translation. Raises on failure."""
+    import urllib.request
     if on_status:
         on_status('Downloading…')
     url = _USFM_URL.format(id=tid)

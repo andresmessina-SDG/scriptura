@@ -153,30 +153,41 @@ class LexiconPanel(Gtk.Box):
         self._back_btn.connect('clicked', self._on_back)
         header.append(self._back_btn)
 
+        # Title + morphology share a horizontal scroller: in a narrow pane
+        # the full Strong's heading and morphology stay reachable by
+        # scrolling instead of vanishing into an ellipsis. The scroller
+        # also serves the purpose the old max-width-chars + ellipsize caps
+        # had — a ScrolledWindow doesn't propagate its child's natural
+        # width, so a long title (e.g. `Strong's H3068 · in "the LORD"`)
+        # can't combine with _ws_header below through the inner h_paned
+        # (shrink=False on both children) to push the lexicon — and
+        # therefore pane 1 — wider than its allocation when content loads.
         self._title = Gtk.Label(label=_("Strong's Lexicon"), xalign=0)
         self._title.add_css_class('heading')
-        # Cap natural width + allow ellipsize. Without these, the
-        # title (e.g. `Strong's H3068 · in "the LORD"`) reports the
-        # full text width as its natural request, which combines with
-        # _ws_header below through the inner h_paned (shrink=False on
-        # both children) to push the lexicon — and therefore pane 1 —
-        # wider than its allocation when content first loads.
-        self._title.set_max_width_chars(28)
-        self._title.set_ellipsize(Pango.EllipsizeMode.END)
-        header.append(self._title)
+
+        self._morph_lbl = Gtk.Label(label='', xalign=0, hexpand=True)
+        self._morph_lbl.add_css_class('dim-label')
+
+        title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        title_box.append(self._title)
+        title_box.append(self._morph_lbl)
+        title_scroll = Gtk.ScrolledWindow(hexpand=True)
+        title_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+        # .lex-title-scroll pins the overlay scrollbar to a hairline at the
+        # bottom edge (see style.css) — at this scroller's one-line height
+        # the stock hover-fattened bar blankets the text it scrolls.
+        title_scroll.add_css_class('lex-title-scroll')
+        title_scroll.set_child(title_box)
+        header.append(title_scroll)
 
         # Loading indicator — shown while the SWORD lexicon fetch is in
         # flight on a click. The first-ever click on a Strong's word can
         # take several hundred ms (SWORD initializes its module cache),
-        # which previously left the panel blank with no feedback.
+        # which previously left the panel blank with no feedback. Lives
+        # outside the title scroller so it can't scroll out of view.
         self._spinner = Gtk.Spinner()
         self._spinner.set_visible(False)
         header.append(self._spinner)
-
-        self._morph_lbl = Gtk.Label(label='', xalign=0, hexpand=True)
-        self._morph_lbl.add_css_class('dim-label')
-        self._morph_lbl.set_ellipsize(Pango.EllipsizeMode.END)
-        header.append(self._morph_lbl)
 
         close_btn = Gtk.Button(icon_name='window-close-symbolic')
         close_btn.add_css_class('flat')

@@ -225,7 +225,12 @@ class PaneSearch:
 
         flags = 0 if case_sensitive else re.IGNORECASE
         pattern = r'\b(?:' + '|'.join(re.escape(w) for w in words) + r')\b'
-        text = buf.get_text(start, end, False)
+        # get_slice, not get_text: get_text omits the placeholder char for
+        # embedded child anchors (the artifact-marker buttons), but iter
+        # offsets count them — so in a chapter with markers every match after
+        # one would be tagged shifted. get_slice keeps the U+FFFC placeholders
+        # so regex offsets and buffer offsets stay aligned.
+        text = buf.get_slice(start, end, True)
         applied = False
         try:
             for m in re.finditer(pattern, text, flags):

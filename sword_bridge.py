@@ -5,7 +5,6 @@ import re
 import shutil
 import tarfile
 import threading
-import urllib.request
 import zipfile
 from collections import OrderedDict
 import Sword
@@ -54,6 +53,34 @@ def _bible_schema():
 _mgr = None
 # RLock allows reentry: callers like load_chapter hold _lock and then call mgr().
 _lock = threading.RLock()
+
+_warm_thread = None
+
+
+def start_warm():
+    """Pay SWORD's one-time versification/locale init (~150 ms — the cost
+    of the *first* VerseKey construction; later ones are free) on a
+    background thread so it overlaps window construction. The C call runs
+    without the GIL (measured), so the main thread keeps building UI.
+    Call wait_warm() before the first main-thread SWORD use."""
+    global _warm_thread
+
+    def _warm():
+        with _lock:
+            try:
+                Sword.VerseKey().setText('Genesis 1:1')
+            except Exception:
+                pass
+
+    _warm_thread = threading.Thread(target=_warm, daemon=True)
+    _warm_thread.start()
+
+
+def wait_warm():
+    if _warm_thread is not None:
+        _warm_thread.join()
+
+
 # Chapter render cache. OrderedDict + cap = LRU eviction so a long reading
 # session that touches the whole canon doesn't grow memory unboundedly.
 # 200 chapters × ~50 KB ≈ 10 MB worst case; comfortably above any normal
@@ -118,7 +145,10 @@ def _build_module_index(module_name, on_progress=None):
                     on_progress(i, total_books, book)
                 except Exception:
                     pass
-            for ch in range(1, chapter_count(book) + 1):
+            # Module's own versification — a KJV-keyed count under- or
+            # over-iterates chapters for modules like RusSynodal/Wycliffe
+            # (load_chapter already renders with the module's system).
+            for ch in range(1, chapter_count(book, module_name) + 1):
                 for v_num, html in load_chapter(module_name, book, ch):
                     plain_text = re.sub(r'<[^>]+>', '', str(html))
                     writer.add_document(module=module_name, book=book,
@@ -239,9 +269,27 @@ def module_info(module_name):
     return info
 
 
-def chapter_count(book):
+def _verse_key(module_name=None):
+    """A VerseKey, switched to module_name's versification when given.
+    The default (KJV) key is right for window-level navigation, which is
+    pinned to the 66-book Protestant canon; per-module work (indexing)
+    must use the module's own system or chapter/verse maxima drift on
+    modules like RusSynodal (Synodal) or Wycliffe (Vulg)."""
+    vk = Sword.VerseKey()
+    if module_name:
+        try:
+            mod = mgr().getModule(module_name)
+            v11n = mod.getConfigEntry('Versification') if mod else None
+            if v11n:
+                vk.setVersificationSystem(v11n)
+        except Exception:
+            pass  # unknown system → fall back to default
+    return vk
+
+
+def chapter_count(book, module_name=None):
     try:
-        vk = Sword.VerseKey()
+        vk = _verse_key(module_name)
         vk.setText(f'{book} 1:1')
         return vk.getChapterMax()
     except Exception:
@@ -250,9 +298,9 @@ def chapter_count(book):
         return 1
 
 
-def verse_count(book, chapter):
+def verse_count(book, chapter, module_name=None):
     try:
-        vk = Sword.VerseKey()
+        vk = _verse_key(module_name)
         vk.setText(f'{book} {chapter}:1')
         return vk.getVerseMax()
     except Exception:
@@ -1022,11 +1070,25 @@ def _parse_conf(path):
     return _parse_conf_lines(raw_lines)
 
 
+# Parsed catalogue cache: (shadow_path, [module dicts sans 'installed']).
+# Each Refresh writes a brand-new timestamped shadow dir, so keying on the
+# path self-invalidates; the volatile 'installed' flag is stamped fresh on
+# every call. Parsing 425 .conf files costs ~190 ms — was paid on every
+# Module Manager open.
+_catalog_cache = None
+
+
 def list_available_modules():
-    """Read available modules by parsing .conf files from the local shadow."""
+    """Read available modules by parsing .conf files from the local shadow
+    (cached per shadow dir — see _catalog_cache above)."""
+    global _catalog_cache
     path = _shadow_path()
     if not path:
         raise FileNotFoundError('No module list cached yet — click Refresh first.')
+    if _catalog_cache is not None and _catalog_cache[0] == path:
+        installed = set(module_names())
+        return [{**m, 'installed': m['name'] in installed}
+                for m in _catalog_cache[1]]
     mods_d = os.path.join(path, 'mods.d')
     installed = set(module_names())
     result = []
@@ -1087,9 +1149,10 @@ def list_available_modules():
                 'features': info.get('features', set()),
                 'license': info.get('license', ''),
                 'size': info.get('size', ''),
-                'installed': name in installed,
             })
-    return sorted(result, key=lambda m: m['name'].lower())
+    result.sort(key=lambda m: m['name'].lower())
+    _catalog_cache = (path, result)
+    return [{**m, 'installed': m['name'] in installed} for m in result]
 
 
 def catalog_timestamp():
@@ -1112,13 +1175,16 @@ _CROSSWIRE_CATALOG = 'https://crosswire.org/ftpmirror/pub/sword/raw/mods.d.tar.g
 
 def refresh_source():
     """Download the CrossWire module catalogue and store in a new shadow dir."""
+    # Lazy: pulls in http/ssl/email (~40 ms) — only needed for downloads.
+    import urllib.request
     from datetime import datetime
     url = _CROSSWIRE_CATALOG
     with urllib.request.urlopen(url, timeout=60) as resp:
         data = resp.read()
 
     ts = datetime.now().strftime('%Y%m%d%H%M%S')
-    mods_d = os.path.expanduser(f'~/.sword/InstallMgr/{ts}/mods.d')
+    base = os.path.expanduser('~/.sword/InstallMgr')
+    mods_d = os.path.join(base, ts, 'mods.d')
     os.makedirs(mods_d, exist_ok=True)
 
     with tarfile.open(fileobj=io.BytesIO(data), mode='r:gz') as tar:
@@ -1127,9 +1193,18 @@ def refresh_source():
                 member.name = os.path.basename(member.name)
                 tar.extract(member, mods_d)
 
+    # Prune superseded shadow dirs — every refresh creates a fresh
+    # timestamp dir and _shadow_path only ever reads the newest, so old
+    # ones would otherwise accumulate a few MB of .conf trees forever.
+    timestamp_re = re.compile(r'^\d{14}$')
+    for d in os.listdir(base):
+        if d != ts and timestamp_re.match(d):
+            shutil.rmtree(os.path.join(base, d), ignore_errors=True)
+
 
 def install_module(module_name):
     """Download module zip from CrossWire and extract into ~/.sword/."""
+    import urllib.request
     url = f'{_CROSSWIRE_HTTP}/{module_name}.zip'
     with urllib.request.urlopen(url, timeout=120) as resp:
         data = resp.read()
@@ -1500,7 +1575,12 @@ def search_module(module_name, query, on_indexing_start=None,
         with ix.searcher() as searcher:
             parser = w['QueryParser']("content", ix.schema)
             parsed_query = parser.parse(query_stripped)
-            results = searcher.search(parsed_query, limit=MAX_SEARCH_RESULTS)
+            # Unscored: returns hits in document order, which is canonical
+            # (verses are indexed in canon order) — matching the eBible
+            # backend's ORDER BY rowid — and skips the relevance-ranking
+            # pass (~80 ms on a common word like "God").
+            results = searcher.search(parsed_query, limit=MAX_SEARCH_RESULTS,
+                                      scored=False, sortedby=None)
             formatted = [(h['book'], h['chapter'], h['verse'], h['content'])
                          for h in results]
             truncated = None
@@ -1930,22 +2010,6 @@ def lookup_morph_for_strong(book, chapter, verse, strong_num):
             if mm:
                 return mm.group(1)
     return None
-
-
-def count_strong_occurrences(module_name, strong_num, book=None):
-    """Count verses containing strong_num in book (whole Bible if None)."""
-    books = [book] if book else _ALL_BOOKS
-    # Negative-lookahead anchor — `strong:G65` must not be followed by
-    # another digit. Without it, G65 matches G650 / G651 / G652 / etc.
-    # and the count balloons with unrelated verses.
-    pattern = re.compile(rf'strong:{re.escape(strong_num)}(?!\d)', re.IGNORECASE)
-    count = 0
-    for b in books:
-        for ch in range(1, chapter_count(b) + 1):
-            for _, html in load_chapter(module_name, b, ch):
-                if pattern.search(str(html)):
-                    count += 1
-    return count
 
 
 def lookup_strong(strong_num):

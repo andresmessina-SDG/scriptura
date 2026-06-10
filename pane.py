@@ -1692,9 +1692,12 @@ class BiblePane(Gtk.Box):
             # 4. Apply persistent annotation tags (highlight/underline/note
             # indicator) in-place — these can be changed later without a
             # full re-render via _refresh_verse_annotation. Bibles only;
-            # commentaries don't get user annotations.
-            if not is_commentary:
-                self._apply_anno_tags(start_v, v_anno)
+            # commentaries don't get user annotations. Skipped entirely for
+            # un-annotated verses: on a fresh buffer there is nothing to
+            # clear, and the per-verse call was the chapter render's main
+            # scaling cost.
+            if not is_commentary and v_anno:
+                self._apply_anno_tags(start_v, v_anno, fresh=True)
 
             # 5. Strong's word tagging (Bible mode only)
             if not is_commentary and self._lexicon_enabled and self._on_word_click:
@@ -1950,11 +1953,17 @@ class BiblePane(Gtk.Box):
         vtext_start.forward_chars(len(str(verse_num)) + 2)
         return vnum_start, vtext_start, vtext_end
 
-    def _apply_anno_tags(self, verse_num, anno):
+    def _apply_anno_tags(self, verse_num, anno, fresh=False):
         """Idempotently apply highlight / underline / note-indicator tags
         for verse_num based on the given annotation dict. Clears any prior
         annotation tags first. Does not modify the buffer text — pure tag
-        manipulation, so the scroll position is preserved."""
+        manipulation, so the scroll position is preserved.
+
+        `fresh=True` (the full-render path) skips the clear pass: the
+        buffer was just rebuilt, so no annotation tags are applied yet —
+        and the clearing scan is the expensive part (a tag-table foreach
+        per verse made big chapters quadratic; Psalm 119 spent ~125 ms
+        of its render freeze there)."""
         # Annotations are a Bible-only feature. Commentary panes tag whole
         # sections under vnum_*, so the verse-number offset math would paint
         # the section header (e.g. the first letters of "Verses 1-7"). The
@@ -1968,20 +1977,22 @@ class BiblePane(Gtk.Box):
         vnum_start, vtext_start, vtext_end = ranges
         table = self._buffer.get_tag_table()
 
-        # Clear any previous annotation tags from the verse's ranges. The
-        # highlight background can reach back over the verse number, so clear
-        # from vnum_start (removing where a tag isn't applied is a no-op).
-        old_tags = []
-        def _collect(t, _data):
-            name = t.get_property('name') or ''
-            if name.startswith('hl_') or name == '_ul_text':
-                old_tags.append(t)
-        table.foreach(_collect, None)
-        for t in old_tags:
-            self._buffer.remove_tag(t, vnum_start, vtext_end)
-        note_tag = table.lookup('_note_marker')
-        if note_tag:
-            self._buffer.remove_tag(note_tag, vnum_start, vtext_start)
+        if not fresh:
+            # Clear any previous annotation tags from the verse's ranges. The
+            # highlight background can reach back over the verse number, so
+            # clear from vnum_start (removing where a tag isn't applied is a
+            # no-op).
+            old_tags = []
+            def _collect(t, _data):
+                name = t.get_property('name') or ''
+                if name.startswith('hl_') or name == '_ul_text':
+                    old_tags.append(t)
+            table.foreach(_collect, None)
+            for t in old_tags:
+                self._buffer.remove_tag(t, vnum_start, vtext_end)
+            note_tag = table.lookup('_note_marker')
+            if note_tag:
+                self._buffer.remove_tag(note_tag, vnum_start, vtext_start)
 
         if isinstance(anno, str):
             anno = {'highlight': anno, 'underline': False, 'note': None}

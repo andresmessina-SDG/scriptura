@@ -9,9 +9,10 @@
  *   - search_panel.py    (overlay panel + result bars)
  *   - annotation_dialogs.py (highlight popover swatches)
  *   - study_journal.py   (annotation strips, swatches, journal cards, tag chips)
- *   - window.py          (menu panel, jump bar, reading-mode pill, plan rows,
- *                         resize handles, key chips, appearance card, bible view,
- *                         lexicon + word-study panels)
+ *   - window.py          (jump bar, reading-mode pill, plan rows, key chips,
+ *                         appearance card, bible view, lexicon + word-study
+ *                         panels; the menu and search panels are
+ *                         Adw.OverlaySplitView sidebars — see their rules)
  *
  * GTK quirks worth remembering when adding rules:
  *   - Gtk.Revealer clips its child to a rectangular bounding box, so any
@@ -49,7 +50,9 @@ window {
     font-feature-settings: "cv05", "calt", "kern";
 }
 
-/* ── Search panel (right-side revealer) ──────────────────────────────── */
+/* ── Search panel (end-side OverlaySplitView sidebar) ────────────────────
+   The rounded opaque card; its split view's scrim-base + gizmo rules live
+   with the .menu-split block further down (same two-layer trick). */
 
 .search-panel {
     background-color: @window_bg_color;
@@ -419,15 +422,51 @@ paned.main-split > separator {
     margin: 6px 0 8px 0;
 }
 
-/* ── Window-level overlay panels (menu, jump bar, reading mode) ──────── */
+/* ── Window-level overlay panels (menu sidebar, jump bar, reading mode) ── */
 /* See the Revealer/box-shadow note at the top of the file. */
 
+/* The menu and search panels are Adw.OverlaySplitViews kept permanently
+   collapsed (overlay presentation). Re-apply the house floating-card
+   chrome to the sidebar pane so it rhymes with the reading pages instead
+   of reading as a stock square sheet. Node names verified by
+   introspection on libadwaita 1.9: in *collapsed* mode the sidebar pane
+   is `widget.background` (`.sidebar-pane` only exists uncollapsed —
+   covered anyway for safety). */
+/* No scrim: the native dimming gizmo only covers the split view's own
+   area (below the header), so it would draw a hard tonal line exactly
+   where the header ends — against the house style of one continuous
+   surface. It's painted out here but still allocated, so click-out
+   dismissal keeps working. With no scrim, the sidebar pane's base must
+   be transparent too: its rounded corner cut-outs then show the content
+   unchanged (the gizmo is allocated BESIDE the sidebar, not beneath it,
+   so the pane base — not the dimming — is what shows in the cut-outs). */
+overlay-split-view.menu-split > dimming,
+overlay-split-view.search-split > dimming {
+    background: none;
+}
+overlay-split-view.menu-split > widget.background,
+overlay-split-view.menu-split > widget.sidebar-pane,
+overlay-split-view.search-split > widget.background,
+overlay-split-view.search-split > widget.sidebar-pane {
+    background: none;
+}
 .menu-panel {
     background-color: @view_bg_color;
-    border-top: 1px solid alpha(@borders, 0.6);
     border-right: 1px solid alpha(@borders, 0.6);
-    border-bottom: 1px solid alpha(@borders, 0.6);
     border-radius: 0 20px 20px 0;
+}
+/* The split view's own edge gizmos (border line, drop shadow, outline) are
+   straight full-height bands — against the rounded panel they poke out as
+   square artifacts in the 20px corner cut-outs. The hairline above defines
+   the edge instead. */
+overlay-split-view.menu-split > border,
+overlay-split-view.menu-split > shadow,
+overlay-split-view.menu-split > outline,
+overlay-split-view.search-split > border,
+overlay-split-view.search-split > shadow,
+overlay-split-view.search-split > outline {
+    background: none;
+    box-shadow: none;
 }
 
 button.menu-utility-action {
@@ -471,9 +510,6 @@ button.menu-theme-toggle {
 /* ── Reading plan + miscellaneous chrome ─────────────────────────────── */
 
 row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
-
-.resize-handle { background-color: transparent; min-width: 6px; }
-.resize-handle:hover { background-color: alpha(@borders, 0.25); }
 
 /* libadwaita's .card paints only background + border-radius; without
  * explicit padding the inner widgets hug the card's edge. */
@@ -547,6 +583,16 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
 .lex-panel textview text,
 .lex-panel list {
     background-color: transparent;
+}
+/* The header's title/morphology scroller is one line tall, so the stock
+   overlay scrollbar — especially its fattened hover state — blankets the
+   very text it scrolls. Hide it with opacity only: scrolling (wheel,
+   touchpad swipe, drag) is unaffected, and unlike min-height/margin
+   overrides this can't hand the renderer a degenerate-size rectangle
+   (forcing the hover-animation geometry to 3px coincided with pixman
+   "Invalid rectangle" errors on Wayland). */
+.lex-title-scroll scrollbar {
+    opacity: 0;
 }
 
 /* ── Historical Commentaries (catena) pane ───────────────────────────── */

@@ -57,11 +57,14 @@ def _display_kind(module_type):
     return _KIND_MAP.get(module_type, 'Books & Other')
 
 
-# The eBible catalogue has ~1,500+ translations and PreferencesGroup rows
-# aren't virtualised, so rendering them all is laggy. We materialise only the
-# first slice of any result set and invite the user to search to narrow it —
-# a 1,500-item list is found by searching, not scrolling.
-_EB_RENDER_CAP = 200
+# The eBible catalogue has ~1,500+ translations (CrossWire ~400) and
+# PreferencesGroup rows aren't virtualised, so rendering a whole result set
+# is laggy — and idle-batched appends are not an option here: the repeated
+# relayout under an open filter popover breaks its outside-click grab. So
+# both tabs materialise only the first slice of any result set,
+# synchronously, with a Load-more footer row appending the next slice on
+# demand.
+_RENDER_CAP = 150
 
 
 def _fmt_size(raw):
@@ -275,6 +278,10 @@ class ModuleManagerWindow(Adw.Window):
         self._browse_group.set_title(_('Browse catalogue'))
         self._browse_group.set_header_suffix(header_controls)
         self._available_rows = []
+        # Current filtered result set + how many of it are rendered;
+        # _append_cw_rows materialises _RENDER_CAP at a time.
+        self._cw_filtered = []
+        self._cw_shown = 0
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
         box.set_margin_start(12)
@@ -376,6 +383,8 @@ class ModuleManagerWindow(Adw.Window):
         self._eb_group.set_title(_('Translations'))
         self._eb_group.set_header_suffix(header_controls)
         self._eb_rows = []
+        self._eb_filtered = []
+        self._eb_shown = 0
 
         self._eb_status = Gtk.Label(label='', xalign=0, wrap=True)
         self._eb_status.add_css_class('dim-label')
@@ -699,10 +708,42 @@ class ModuleManagerWindow(Adw.Window):
             self._available_rows.append(placeholder)
             return
 
-        for mod in available:
+        self._cw_filtered = available
+        self._cw_shown = 0
+        self._append_cw_rows()
+
+    def _append_cw_rows(self):
+        """Materialise the next _RENDER_CAP slice of the filtered catalogue,
+        followed by a Load-more footer while results remain (see the
+        _RENDER_CAP note up top for why the list is capped + synchronous)."""
+        chunk = self._cw_filtered[self._cw_shown:self._cw_shown + _RENDER_CAP]
+        for mod in chunk:
             row = self._make_row(mod, installed=False)
             self._browse_group.add(row)
             self._available_rows.append(row)
+        self._cw_shown += len(chunk)
+        if self._cw_shown < len(self._cw_filtered):
+            footer = self._load_more_row(
+                self._cw_shown, len(self._cw_filtered), self._on_cw_more)
+            self._browse_group.add(footer)
+            self._available_rows.append(footer)
+
+    def _on_cw_more(self):
+        # The footer is always the last row; swap it for the next slice.
+        footer = self._available_rows.pop()
+        self._browse_group.remove(footer)
+        self._append_cw_rows()
+
+    def _load_more_row(self, shown, total, on_more):
+        """An activatable footer row that appends the next result slice.
+        A real ActionRow so it inherits the boxed-list styling exactly."""
+        row = Adw.ActionRow()
+        row.set_title(_('Load more — showing the first {shown} of {total}')
+                      .format(shown=shown, total=f'{total:,}'))
+        row.set_activatable(True)
+        row.add_prefix(Gtk.Image.new_from_icon_name('view-more-symbolic'))
+        row.connect('activated', lambda _r: on_more())
+        return row
 
     def _on_search_changed(self, *_):
         self._rebuild_installed()
@@ -937,11 +978,19 @@ class ModuleManagerWindow(Adw.Window):
             rows.append(self._build_import_row(box, mod))
 
         def refresh_install_sensitivity(*_a):
-            any_checked = any(c.get_active() for _m, c, _k in rows)
+            checked = [(m, c, k) for m, c, k in rows if c.get_active()]
             needs_key = any(
-                c.get_active() and k is not None and not k.get_text().strip()
-                for _m, c, k in rows)
-            install.set_sensitive(any_checked and not needs_key)
+                k is not None and not k.get_text().strip()
+                for _m, _c, k in checked)
+            install.set_sensitive(bool(checked) and not needs_key)
+            # Button label matches the action (see the collision table in
+            # ROADMAP.md): a single selected module that's already installed
+            # reads Update / Reinstall / Replace; anything else is Install.
+            if len(checked) == 1:
+                verb, _hint, _warn = self._collision_verb(checked[0][0])
+                install.set_label(_(verb))
+            else:
+                install.set_label(_('Install'))
 
         for mod, check, key_entry in rows:
             check.connect('toggled', refresh_install_sensitivity)
@@ -1018,20 +1067,21 @@ class ModuleManagerWindow(Adw.Window):
 
     @staticmethod
     def _collision_verb(mod):
-        """Return (verb, subtext, warn) describing install vs installed."""
+        """Return (verb, subtext, warn) describing install vs installed.
+        The verb is an N_-marked msgid — translate with _() at display."""
         if not mod.get('installed'):
-            return 'Install', '', False
+            return N_('Install'), '', False
         new_v = mod.get('version', '')
         old_v = mod.get('installed_version', '')
         if not new_v or not old_v:
             # Can't compare meaningfully — treat as a plain reinstall.
-            return 'Reinstall', _('Already installed'), False
+            return N_('Reinstall'), _('Already installed'), False
         cmp = sword_bridge.cmp_version(new_v, old_v)
         if cmp > 0:
-            return 'Update', _('Update from v{old} to v{new}').format(old=old_v, new=new_v), False
+            return N_('Update'), _('Update from v{old} to v{new}').format(old=old_v, new=new_v), False
         if cmp == 0:
-            return 'Reinstall', _('Already installed (v{old})').format(old=old_v), False
-        return 'Replace', _('Replace v{old} with older v{new}').format(old=old_v, new=new_v), True
+            return N_('Reinstall'), _('Already installed (v{old})').format(old=old_v), False
+        return N_('Replace'), _('Replace v{old} with older v{new}').format(old=old_v, new=new_v), True
 
     def _do_import(self, zip_bytes, rows, dialog):
         selected = [m['name'] for m, c, _k in rows if c.get_active()]
@@ -1200,7 +1250,7 @@ class ModuleManagerWindow(Adw.Window):
         cur = self._selected_filter_text(self._eb_lang_list)
         self._fill_filter_list(
             self._eb_lang_list,
-            ['All Languages'] + [_lang_label(c) for c in langs], cur)
+            [_('All Languages')] + [_lang_label(c) for c in langs], cur)
         self._eb_lang_codes = [''] + langs
         self._updating_filters = False
 
@@ -1258,29 +1308,31 @@ class ModuleManagerWindow(Adw.Window):
             self._eb_rows.append(placeholder)
             return
 
+        self._eb_filtered = filtered
+        self._eb_shown = 0
+        self._eb_append_rows()
+
+    def _eb_append_rows(self):
+        """eBible mirror of _append_cw_rows: next _RENDER_CAP slice plus a
+        Load-more footer while results remain."""
         installed = ebible_bridge.installed_ids()
-        shown = filtered[:_EB_RENDER_CAP]
-        for tid, title, lang_code, lang_name, entry in shown:
+        chunk = self._eb_filtered[self._eb_shown:self._eb_shown + _RENDER_CAP]
+        for tid, title, lang_code, lang_name, entry in chunk:
             row = self._eb_make_row(tid, title, lang_code, lang_name, entry,
                                     installed=tid in installed)
             self._eb_group.add(row)
             self._eb_rows.append(row)
-        if n > len(shown):
-            footer = self._eb_more_row(len(shown), n)
+        self._eb_shown += len(chunk)
+        if self._eb_shown < len(self._eb_filtered):
+            footer = self._load_more_row(
+                self._eb_shown, len(self._eb_filtered), self._eb_on_more)
             self._eb_group.add(footer)
             self._eb_rows.append(footer)
 
-    def _eb_more_row(self, shown, total):
-        """A dim, non-interactive footer row noting the result set was capped.
-        It's a real ActionRow so it inherits the boxed-list styling exactly."""
-        row = Adw.ActionRow()
-        row.set_title(
-            _('Showing the first {shown} of {total} — '
-              'refine your search to see more').format(
-                  shown=shown, total=f'{total:,}'))
-        row.set_sensitive(False)
-        row.add_prefix(Gtk.Image.new_from_icon_name('system-search-symbolic'))
-        return row
+    def _eb_on_more(self):
+        footer = self._eb_rows.pop()
+        self._eb_group.remove(footer)
+        self._eb_append_rows()
 
     def _eb_make_row(self, tid, title, lang_code, lang_name, entry, installed):
         row = Adw.ActionRow()
