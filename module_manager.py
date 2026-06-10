@@ -275,6 +275,9 @@ class ModuleManagerWindow(Adw.Window):
         self._browse_group.set_title(_('Browse catalogue'))
         self._browse_group.set_header_suffix(header_controls)
         self._available_rows = []
+        # Bumped on every _apply_filter; pending idle batches from a
+        # superseded filter pass see the mismatch and stop.
+        self._filter_gen = 0
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
         box.set_margin_start(12)
@@ -690,6 +693,7 @@ class ModuleManagerWindow(Adw.Window):
         if query:
             available = [m for m in available if self._matches(m, query)]
 
+        self._filter_gen += 1
         if not available:
             placeholder = Adw.ActionRow()
             placeholder.set_title(_('No modules match your filters') if self._has_catalog
@@ -699,10 +703,30 @@ class ModuleManagerWindow(Adw.Window):
             self._available_rows.append(placeholder)
             return
 
-        for mod in available:
-            row = self._make_row(mod, installed=False)
-            self._browse_group.add(row)
-            self._available_rows.append(row)
+        # Stream the rows in batches (same pattern as SearchPanel's result
+        # list): the full catalogue is ~425 ActionRows ≈ 220 ms of widget
+        # construction, which used to freeze the click that opened the
+        # window. The first batch lands synchronously so the visible
+        # viewport is never empty; the rest arrive in idles, cancelled via
+        # _filter_gen if a newer filter pass supersedes this one.
+        gen = self._filter_gen
+        pos = [0]
+        BATCH = 30
+
+        def add_batch():
+            if gen != self._filter_gen:
+                return GLib.SOURCE_REMOVE
+            for mod in available[pos[0]:pos[0] + BATCH]:
+                row = self._make_row(mod, installed=False)
+                self._browse_group.add(row)
+                self._available_rows.append(row)
+            pos[0] += BATCH
+            if pos[0] >= len(available):
+                return GLib.SOURCE_REMOVE
+            return GLib.SOURCE_CONTINUE
+
+        if add_batch() == GLib.SOURCE_CONTINUE:
+            GLib.idle_add(add_batch)
 
     def _on_search_changed(self, *_):
         self._rebuild_installed()

@@ -1070,11 +1070,25 @@ def _parse_conf(path):
     return _parse_conf_lines(raw_lines)
 
 
+# Parsed catalogue cache: (shadow_path, [module dicts sans 'installed']).
+# Each Refresh writes a brand-new timestamped shadow dir, so keying on the
+# path self-invalidates; the volatile 'installed' flag is stamped fresh on
+# every call. Parsing 425 .conf files costs ~190 ms — was paid on every
+# Module Manager open.
+_catalog_cache = None
+
+
 def list_available_modules():
-    """Read available modules by parsing .conf files from the local shadow."""
+    """Read available modules by parsing .conf files from the local shadow
+    (cached per shadow dir — see _catalog_cache above)."""
+    global _catalog_cache
     path = _shadow_path()
     if not path:
         raise FileNotFoundError('No module list cached yet — click Refresh first.')
+    if _catalog_cache is not None and _catalog_cache[0] == path:
+        installed = set(module_names())
+        return [{**m, 'installed': m['name'] in installed}
+                for m in _catalog_cache[1]]
     mods_d = os.path.join(path, 'mods.d')
     installed = set(module_names())
     result = []
@@ -1135,9 +1149,10 @@ def list_available_modules():
                 'features': info.get('features', set()),
                 'license': info.get('license', ''),
                 'size': info.get('size', ''),
-                'installed': name in installed,
             })
-    return sorted(result, key=lambda m: m['name'].lower())
+    result.sort(key=lambda m: m['name'].lower())
+    _catalog_cache = (path, result)
+    return [{**m, 'installed': m['name'] in installed} for m in result]
 
 
 def catalog_timestamp():
