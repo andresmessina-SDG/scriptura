@@ -9,9 +9,10 @@
  *   - search_panel.py    (overlay panel + result bars)
  *   - annotation_dialogs.py (highlight popover swatches)
  *   - study_journal.py   (annotation strips, swatches, journal cards, tag chips)
- *   - window.py          (menu panel, jump bar, reading-mode pill, plan rows,
- *                         resize handles, key chips, appearance card, bible view,
- *                         lexicon + word-study panels)
+ *   - window.py          (jump bar, reading-mode pill, plan rows, the search
+ *                         resize handle, key chips, appearance card, bible view,
+ *                         lexicon + word-study panels; the menu panel is an
+ *                         Adw.OverlaySplitView sidebar — natively styled)
  *
  * GTK quirks worth remembering when adding rules:
  *   - Gtk.Revealer clips its child to a rectangular bounding box, so any
@@ -419,16 +420,10 @@ paned.main-split > separator {
     margin: 6px 0 8px 0;
 }
 
-/* ── Window-level overlay panels (menu, jump bar, reading mode) ──────── */
-/* See the Revealer/box-shadow note at the top of the file. */
-
-.menu-panel {
-    background-color: @view_bg_color;
-    border-top: 1px solid alpha(@borders, 0.6);
-    border-right: 1px solid alpha(@borders, 0.6);
-    border-bottom: 1px solid alpha(@borders, 0.6);
-    border-radius: 0 20px 20px 0;
-}
+/* ── Window-level overlay panels (jump bar, reading mode) ────────────── */
+/* See the Revealer/box-shadow note at the top of the file. The menu panel
+   itself is an Adw.OverlaySplitView sidebar (natively styled); only its
+   inner controls below keep custom rules. */
 
 button.menu-utility-action {
     min-width: 30px;

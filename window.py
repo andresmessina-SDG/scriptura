@@ -504,19 +504,25 @@ class BibleWindow(Adw.ApplicationWindow):
         self._jump_revealer.set_valign(Gtk.Align.START)
         self._jump_revealer.set_child(jump_wrap)
 
-        # ── App menu panel (right-side revealer) ─────────────────────────────
-        # CSS for .menu-panel, .jump-bar, .reading-exit-btn, .bible-view,
-        # .lex-panel / .ws-panel, .appearance-card, .plan-today, and
-        # .resize-handle lives in data/style.css (loaded once at startup
-        # by styles.load_app_css from main.py).
-        self._menu_revealer = Gtk.Revealer()
-        self._menu_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_RIGHT)
-        self._menu_revealer.set_transition_duration(200)
-        self._menu_revealer.set_halign(Gtk.Align.START)
-        self._menu_revealer.set_vexpand(True)
-        menu_panel_body, menu_handle = self._build_menu_panel()
-        self._menu_revealer.set_child(menu_panel_body)
-        self._setup_resize_handle(menu_handle, self._menu_panel_box, left_panel=True)
+        # ── App menu panel (Adw.OverlaySplitView sidebar) ─────────────────────
+        # CSS for .jump-bar, .reading-exit-btn, .bible-view, .lex-panel /
+        # .ws-panel, .appearance-card, .plan-today, and .resize-handle lives
+        # in data/style.css (loaded once at startup by styles.load_app_css
+        # from main.py).
+        #
+        # Kept permanently *collapsed*: the sidebar presents as an overlay
+        # above the reading area (with a scrim and click-out dismissal), so
+        # opening the menu never reflows the reading column — same surface
+        # semantics as the old SLIDE_RIGHT Revealer, with native motion and
+        # edge-swipe gestures for free. Trade accepted: the old drag-resize
+        # handle is gone (OSV sidebars aren't user-resizable; width is pinned
+        # around the previous 340px default).
+        self._menu_split = Adw.OverlaySplitView()
+        self._menu_split.set_collapsed(True)
+        self._menu_split.set_show_sidebar(False)
+        self._menu_split.set_min_sidebar_width(340)
+        self._menu_split.set_max_sidebar_width(400)
+        self._menu_split.set_sidebar(self._build_menu_panel())
         self._setup_resize_handle(search_handle, self._search_panel, left_panel=False)
 
         # ── Cross-reference panel ─────────────────────────────────────────────
@@ -555,7 +561,6 @@ class BibleWindow(Adw.ApplicationWindow):
         overlay.add_controller(grip_motion)
         overlay.add_overlay(self._search_revealer)
         overlay.add_overlay(self._jump_revealer)
-        overlay.add_overlay(self._menu_revealer)
 
         # ── Exit-reading-mode affordance ─────────────────────────────────────
         # Floats a small circular X at top-center after the cursor hovers in
@@ -599,7 +604,11 @@ class BibleWindow(Adw.ApplicationWindow):
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         main_box.append(self._toast_overlay)
         main_box.append(self._crossref_revealer)
-        toolbar_view.set_content(main_box)
+        # The menu sidebar slides over everything below the header (reading
+        # area, side overlays, cross-ref bar) — the split view wraps the
+        # whole content stack, mirroring the old window-spanning Revealer.
+        self._menu_split.set_content(main_box)
+        toolbar_view.set_content(self._menu_split)
 
         # Adaptive layout via two breakpoints (thresholds are easy to tune):
         #  • ≤850px — the full header no longer fits, so fold the secondary
@@ -729,8 +738,8 @@ class BibleWindow(Adw.ApplicationWindow):
             if self._search_revealer.get_reveal_child():
                 self._hide_search()
                 return True
-            if self._menu_revealer.get_reveal_child():
-                self._menu_revealer.set_reveal_child(False)
+            if self._menu_split.get_show_sidebar():
+                self._menu_split.set_show_sidebar(False)
                 return True
             if getattr(self, '_reading_mode', False):
                 self._set_reading_mode(False)
@@ -1343,7 +1352,7 @@ class BibleWindow(Adw.ApplicationWindow):
         """Dismiss any overlay panels other than the one named in `keep`.
         Only one of menu / search / jump should be visible at a time."""
         if keep != 'menu':
-            self._menu_revealer.set_reveal_child(False)
+            self._menu_split.set_show_sidebar(False)
         if keep != 'search':
             self._search_revealer.set_reveal_child(False)
         if keep != 'jump':
@@ -1560,7 +1569,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self.pane2._toolbar.set_visible(not on)
         if on:
             # Dismiss anything floating so the text stands alone
-            self._menu_revealer.set_reveal_child(False)
+            self._menu_split.set_show_sidebar(False)
             self._search_revealer.set_reveal_child(False)
             self._jump_revealer.set_reveal_child(False)
             self._crossref_revealer.set_reveal_child(False)
@@ -2272,17 +2281,17 @@ class BibleWindow(Adw.ApplicationWindow):
         self.add_controller(drag)
 
     def _toggle_menu(self, _btn):
-        open_ = not self._menu_revealer.get_reveal_child()
+        open_ = not self._menu_split.get_show_sidebar()
         if open_:
             self._close_other_overlays(keep='menu')
             self._refresh_plan_ui()
-        self._menu_revealer.set_reveal_child(open_)
+        self._menu_split.set_show_sidebar(open_)
 
     def _build_menu_panel(self):
+        # Surface chrome (background, edge) comes from the OverlaySplitView
+        # sidebar now — no .menu-panel CSS, no size request (width is
+        # governed by the split view's min/max sidebar width).
         panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        panel.set_size_request(340, -1)
-        panel.add_css_class('menu-panel')
-        self._menu_panel_box = panel
 
         # ── Header: title + close only. Global utilities (theme, shortcuts,
         # about) now live in a bottom footer (Apple-sidebar style), which
@@ -2302,7 +2311,7 @@ class BibleWindow(Adw.ApplicationWindow):
         close_btn.add_css_class('menu-utility-action')
         close_btn.set_tooltip_text(_('Close menu (Esc)'))
         set_accessible_label(close_btn, _('Close menu'))
-        close_btn.connect('clicked', lambda _: self._menu_revealer.set_reveal_child(False))
+        close_btn.connect('clicked', lambda _: self._menu_split.set_show_sidebar(False))
         hbox.append(title)
         hbox.append(close_btn)
         panel.append(hbox)
@@ -2609,15 +2618,7 @@ class BibleWindow(Adw.ApplicationWindow):
         footer.append(about_btn)
 
         panel.append(footer)
-
-        handle = Gtk.Box()
-        handle.add_css_class('resize-handle')
-        handle.set_vexpand(True)
-
-        outer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        outer.append(panel)
-        outer.append(handle)
-        return outer, handle
+        return panel
 
     def _refresh_plan_ui(self):
         self._updating_plan = True
@@ -2772,7 +2773,7 @@ class BibleWindow(Adw.ApplicationWindow):
         groups = reading_plans.group_readings(row._readings)
         if len(groups) <= 1:
             book, chapter = row._readings[0]
-            self._menu_revealer.set_reveal_child(False)
+            self._menu_split.set_show_sidebar(False)
             self._go_to(book, chapter)
             return
 
@@ -2798,5 +2799,5 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _on_plan_passage_clicked(self, _btn, pop, book, chapter):
         pop.popdown()
-        self._menu_revealer.set_reveal_child(False)
+        self._menu_split.set_show_sidebar(False)
         self._go_to(book, chapter)
