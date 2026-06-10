@@ -9,10 +9,10 @@
  *   - search_panel.py    (overlay panel + result bars)
  *   - annotation_dialogs.py (highlight popover swatches)
  *   - study_journal.py   (annotation strips, swatches, journal cards, tag chips)
- *   - window.py          (jump bar, reading-mode pill, plan rows, the search
- *                         resize handle, key chips, appearance card, bible view,
- *                         lexicon + word-study panels; the menu panel is an
- *                         Adw.OverlaySplitView sidebar — natively styled)
+ *   - window.py          (jump bar, reading-mode pill, plan rows, key chips,
+ *                         appearance card, bible view, lexicon + word-study
+ *                         panels; the menu and search panels are
+ *                         Adw.OverlaySplitView sidebars — see their rules)
  *
  * GTK quirks worth remembering when adding rules:
  *   - Gtk.Revealer clips its child to a rectangular bounding box, so any
@@ -50,7 +50,9 @@ window {
     font-feature-settings: "cv05", "calt", "kern";
 }
 
-/* ── Search panel (right-side revealer) ──────────────────────────────── */
+/* ── Search panel (end-side OverlaySplitView sidebar) ────────────────────
+   The rounded opaque card; its split view's scrim-base + gizmo rules live
+   with the .menu-split block further down (same two-layer trick). */
 
 .search-panel {
     background-color: @window_bg_color;
@@ -443,7 +445,9 @@ paned.main-split > separator {
    stylesheet: `overlay-split-view > dimming { background:
    var(--shade-color) }`), so it tracks light/dark automatically. */
 overlay-split-view.menu-split > widget.background,
-overlay-split-view.menu-split > widget.sidebar-pane {
+overlay-split-view.menu-split > widget.sidebar-pane,
+overlay-split-view.search-split > widget.background,
+overlay-split-view.search-split > widget.sidebar-pane {
     background-color: @shade_color;
 }
 .menu-panel {
@@ -457,7 +461,10 @@ overlay-split-view.menu-split > widget.sidebar-pane {
    the edge instead. */
 overlay-split-view.menu-split > border,
 overlay-split-view.menu-split > shadow,
-overlay-split-view.menu-split > outline {
+overlay-split-view.menu-split > outline,
+overlay-split-view.search-split > border,
+overlay-split-view.search-split > shadow,
+overlay-split-view.search-split > outline {
     background: none;
     box-shadow: none;
 }
@@ -503,9 +510,6 @@ button.menu-theme-toggle {
 /* ── Reading plan + miscellaneous chrome ─────────────────────────────── */
 
 row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
-
-.resize-handle { background-color: transparent; min-width: 6px; }
-.resize-handle:hover { background-color: alpha(@borders, 0.25); }
 
 /* libadwaita's .card paints only background + border-radius; without
  * explicit padding the inner widgets hug the card's edge. */

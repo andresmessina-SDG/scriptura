@@ -456,32 +456,27 @@ class BibleWindow(Adw.ApplicationWindow):
         self._paned.set_shrink_start_child(False)
         self._paned.set_shrink_end_child(False)
 
-        # ── Search overlay ────────────────────────────────────────────────────
+        # ── Search overlay (Adw.OverlaySplitView, end-side sidebar) ──────────
+        # Same permanently-collapsed pattern as the menu split below: the
+        # panel overlays the reading area from the right with a scrim and
+        # click-out dismissal, no reflow. Width is governed by the split
+        # view's min/max (≈ the panel's old 420px request) and shrinks to
+        # the window on ultra-narrow — the old halign-FILL sheet hack and
+        # the drag-resize handle are both retired.
         self._search_panel = SearchPanel(
             on_result_clicked=self._on_search_result,
             on_close=self._hide_search,
         )
-        search_handle = Gtk.Box()
-        search_handle.add_css_class('resize-handle')
-        search_wrapper = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        search_wrapper.append(search_handle)
-        search_wrapper.append(self._search_panel)
-
-        self._search_revealer = Gtk.Revealer()
-        self._search_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_LEFT)
-        self._search_revealer.set_transition_duration(200)
-        self._search_revealer.set_halign(Gtk.Align.END)
-        self._search_revealer.set_vexpand(True)
-        self._search_revealer.set_child(search_wrapper)
-        # When collapsed the revealer must not capture pointer events — in
-        # ultra-narrow it's halign FILL (full-width sheet), so a collapsed-but-
-        # targetable revealer would otherwise blanket the whole content area
-        # and swallow scroll/clicks (incl. the pane toolbar). Track targetability
-        # to the reveal state.
-        self._search_revealer.set_can_target(False)
-        self._search_revealer.connect(
-            'notify::reveal-child',
-            lambda r, _p: r.set_can_target(r.get_reveal_child()))
+        self._search_split = Adw.OverlaySplitView()
+        # .search-split scopes the scrim-base + gizmo-silencing CSS (the
+        # rounded-corner two-layer trick) — see style.css.
+        self._search_split.add_css_class('search-split')
+        self._search_split.set_collapsed(True)
+        self._search_split.set_show_sidebar(False)
+        self._search_split.set_sidebar_position(Gtk.PackType.END)
+        self._search_split.set_min_sidebar_width(420)
+        self._search_split.set_max_sidebar_width(460)
+        self._search_split.set_sidebar(self._search_panel)
 
         # ── Quick jump overlay ────────────────────────────────────────────────
         self._jump_entry = Gtk.SearchEntry()
@@ -506,8 +501,8 @@ class BibleWindow(Adw.ApplicationWindow):
 
         # ── App menu panel (Adw.OverlaySplitView sidebar) ─────────────────────
         # CSS for .jump-bar, .reading-exit-btn, .bible-view, .lex-panel /
-        # .ws-panel, .appearance-card, .plan-today, and .resize-handle lives
-        # in data/style.css (loaded once at startup by styles.load_app_css
+        # .ws-panel, .appearance-card, and .plan-today lives in
+        # data/style.css (loaded once at startup by styles.load_app_css
         # from main.py).
         #
         # Kept permanently *collapsed*: the sidebar presents as an overlay
@@ -527,7 +522,6 @@ class BibleWindow(Adw.ApplicationWindow):
         self._menu_split.set_min_sidebar_width(340)
         self._menu_split.set_max_sidebar_width(400)
         self._menu_split.set_sidebar(self._build_menu_panel())
-        self._setup_resize_handle(search_handle, self._search_panel, left_panel=False)
 
         # ── Cross-reference panel ─────────────────────────────────────────────
         self._crossref_panel = CrossRefPanel(
@@ -563,7 +557,6 @@ class BibleWindow(Adw.ApplicationWindow):
         grip_motion.connect('motion', self._on_grip_motion)
         grip_motion.connect('leave', lambda _c: self._pane_grip.set_visible(False))
         overlay.add_controller(grip_motion)
-        overlay.add_overlay(self._search_revealer)
         overlay.add_overlay(self._jump_revealer)
 
         # ── Exit-reading-mode affordance ─────────────────────────────────────
@@ -608,10 +601,12 @@ class BibleWindow(Adw.ApplicationWindow):
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         main_box.append(self._toast_overlay)
         main_box.append(self._crossref_revealer)
-        # The menu sidebar slides over everything below the header (reading
-        # area, side overlays, cross-ref bar) — the split view wraps the
-        # whole content stack, mirroring the old window-spanning Revealer.
-        self._menu_split.set_content(main_box)
+        # Both sidebars slide over everything below the header (reading
+        # area, side overlays, cross-ref bar): the search split wraps the
+        # content stack, and the menu split wraps the search split — two
+        # nested overlay views, one per edge.
+        self._search_split.set_content(main_box)
+        self._menu_split.set_content(self._search_split)
         toolbar_view.set_content(self._menu_split)
 
         # Adaptive layout via two breakpoints (thresholds are easy to tune):
@@ -739,7 +734,7 @@ class BibleWindow(Adw.ApplicationWindow):
             if self._jump_revealer.get_reveal_child():
                 self._hide_jump()
                 return True
-            if self._search_revealer.get_reveal_child():
+            if self._search_split.get_show_sidebar():
                 self._hide_search()
                 return True
             if self._menu_split.get_show_sidebar():
@@ -818,7 +813,7 @@ class BibleWindow(Adw.ApplicationWindow):
              dismissed (e.g. by clicking a row, which auto-closes the
              window panel)."""
         # Visible-panel priority pass.
-        if (self._search_revealer.get_reveal_child()
+        if (self._search_split.get_show_sidebar()
                 and getattr(self._search_panel, '_results', None)):
             self._search_panel.step_result(prev=prev)
             return
@@ -832,7 +827,7 @@ class BibleWindow(Adw.ApplicationWindow):
         # window panel so the user can see the count label update; pane
         # results just keep stepping silently.
         if getattr(self._search_panel, '_results', None):
-            self._search_revealer.set_reveal_child(True)
+            self._search_split.set_show_sidebar(True)
             self._search_panel.step_result(prev=prev)
             return
         for pane in (self.pane1, self.pane2):
@@ -1358,7 +1353,7 @@ class BibleWindow(Adw.ApplicationWindow):
         if keep != 'menu':
             self._menu_split.set_show_sidebar(False)
         if keep != 'search':
-            self._search_revealer.set_reveal_child(False)
+            self._search_split.set_show_sidebar(False)
         if keep != 'jump':
             self._jump_revealer.set_reveal_child(False)
 
@@ -1574,7 +1569,7 @@ class BibleWindow(Adw.ApplicationWindow):
         if on:
             # Dismiss anything floating so the text stands alone
             self._menu_split.set_show_sidebar(False)
-            self._search_revealer.set_reveal_child(False)
+            self._search_split.set_show_sidebar(False)
             self._jump_revealer.set_reveal_child(False)
             self._crossref_revealer.set_reveal_child(False)
             self._toast(_('Reading mode — Esc, F11, or hover the top edge to exit'))
@@ -1734,15 +1729,6 @@ class BibleWindow(Adw.ApplicationWindow):
         margin = 12 if narrow else 26
         self.pane1.set_reading_margin(margin)
         self.pane2.set_reading_margin(margin)
-        # The 420px side search panel would overflow an ultra-narrow window, so
-        # let it fill the width (full-width sheet) here; restore the docked
-        # right panel otherwise. 420 mirrors SearchPanel's own request.
-        if narrow:
-            self._search_panel.set_size_request(-1, -1)
-            self._search_revealer.set_halign(Gtk.Align.FILL)
-        else:
-            self._search_panel.set_size_request(420, -1)
-            self._search_revealer.set_halign(Gtk.Align.END)
 
     def _apply_narrow_pane(self):
         """While collapsed, show exactly one pane: pane 1 in single mode, or the
@@ -1883,8 +1869,8 @@ class BibleWindow(Adw.ApplicationWindow):
     # ── Search ────────────────────────────────────────────────────────────────
 
     def _on_search_clicked(self, _btn):
-        if self._search_revealer.get_reveal_child():
-            self._search_revealer.set_reveal_child(False)
+        if self._search_split.get_show_sidebar():
+            self._search_split.set_show_sidebar(False)
         else:
             self._close_other_overlays(keep='search')
             # Default to pane1's module — but fall back to a Bible-text module
@@ -1897,10 +1883,10 @@ class BibleWindow(Adw.ApplicationWindow):
                 if texts:
                     mod = texts[0]
             self._search_panel.prepare_for_show(mod)
-            self._search_revealer.set_reveal_child(True)
+            self._search_split.set_show_sidebar(True)
 
     def _hide_search(self):
-        self._search_revealer.set_reveal_child(False)
+        self._search_split.set_show_sidebar(False)
 
     def _on_search_result(self, book, chapter, verse):
         # Stash the query on any pane whose current module matches the
@@ -2240,49 +2226,6 @@ class BibleWindow(Adw.ApplicationWindow):
         return GLib.SOURCE_REMOVE
 
     # ── App menu panel ────────────────────────────────────────────────────────
-
-    def _setup_resize_handle(self, handle, target, left_panel):
-        handle.set_cursor(Gdk.Cursor.new_from_name('ew-resize'))
-
-        start_w = [0]
-        latest_w = [340]
-        pending = [False]
-
-        drag = Gtk.GestureDrag()
-        drag.set_button(1)
-        # BUBBLE phase (default): fires after children, so AdwHeaderBar handles
-        # title-bar drags first — GNOME Shell can snap the window normally.
-        # Window-level coords are stable even as the panel/handle moves during resize.
-
-        def on_begin(g, start_x, start_y):
-            pos = handle.translate_coordinates(self, 0, 0)
-            if pos is None:
-                g.set_state(Gtk.EventSequenceState.DENIED)
-                return
-            hx, hy = pos
-            if not (hx <= start_x <= hx + handle.get_width()
-                    and hy <= start_y <= hy + handle.get_height()):
-                g.set_state(Gtk.EventSequenceState.DENIED)
-                return
-            w = target.get_width()
-            start_w[0] = w if w > 0 else (target.get_size_request()[0] or 340)
-            latest_w[0] = start_w[0]
-            g.set_state(Gtk.EventSequenceState.CLAIMED)
-
-        def on_update(g, offset_x, offset_y):
-            delta = offset_x if left_panel else -offset_x
-            latest_w[0] = max(240, min(700, int(start_w[0] + delta)))
-            if not pending[0]:
-                pending[0] = True
-                def apply():
-                    target.set_size_request(latest_w[0], -1)
-                    pending[0] = False
-                    return GLib.SOURCE_REMOVE
-                GLib.idle_add(apply)
-
-        drag.connect('drag-begin', on_begin)
-        drag.connect('drag-update', on_update)
-        self.add_controller(drag)
 
     def _toggle_menu(self, _btn):
         open_ = not self._menu_split.get_show_sidebar()
