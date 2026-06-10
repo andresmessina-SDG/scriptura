@@ -432,14 +432,25 @@ paned.main-split > separator {
    anyway for safety). The native `border` gizmo is neutralized so it can't
    double up with our hairline; the native edge `shadow` is kept — it reads
    well over the scrim (and was impossible inside the old Revealer). */
+/* Two-layer trick for the rounded corners: the split view allocates its
+   dimming gizmo BESIDE the sidebar, not beneath it, so a rounded pane's
+   corner cut-outs reveal *undimmed* content — square-looking artifacts
+   (measured: cut-outs showed the raw window shade where neighbours showed
+   the scrimmed one). So the pane itself paints a square base in the
+   scrim's own shade (α matched to libadwaita's dimming), and the rounded
+   opaque card is the .menu-panel child inside it — the cut-outs then read
+   as continuous scrim. */
 overlay-split-view.menu-split > widget.background,
 overlay-split-view.menu-split > widget.sidebar-pane {
+    background-color: alpha(black, 0.26);
+}
+.menu-panel {
     background-color: @view_bg_color;
     border-right: 1px solid alpha(@borders, 0.6);
     border-radius: 0 20px 20px 0;
 }
 /* The split view's own edge gizmos (border line, drop shadow, outline) are
-   straight full-height bands — against the rounded pane they poke out as
+   straight full-height bands — against the rounded panel they poke out as
    square artifacts in the 20px corner cut-outs. The hairline above defines
    the edge instead. */
 overlay-split-view.menu-split > border,

@@ -2292,10 +2292,14 @@ class BibleWindow(Adw.ApplicationWindow):
         self._menu_split.set_show_sidebar(open_)
 
     def _build_menu_panel(self):
-        # Surface chrome (background, edge) comes from the OverlaySplitView
-        # sidebar now — no .menu-panel CSS, no size request (width is
-        # governed by the split view's min/max sidebar width).
+        # .menu-panel carries the floating-card chrome (opaque background,
+        # hairline edge, rounded right corners); the OverlaySplitView pane
+        # behind it paints a scrim-shade base so the rounded cut-outs read
+        # as continuous scrim — see the .menu-split rules in style.css.
+        # No size request: width is governed by the split view's min/max
+        # sidebar width.
         panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        panel.add_css_class('menu-panel')
 
         # ── Header: title + close only. Global utilities (theme, shortcuts,
         # about) now live in a bottom footer (Apple-sidebar style), which
