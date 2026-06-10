@@ -10,7 +10,6 @@ import io
 import os
 import sqlite3
 import threading
-import urllib.request
 
 _log = logging.getLogger('scriptura.ebible')
 import zipfile
@@ -271,6 +270,8 @@ def catalog_entries():
 
 def download_catalog_sync():
     """Download and cache the eBible catalog CSV. Raises on failure."""
+    # Lazy: pulls in http/ssl/email (~40 ms) — only needed for downloads.
+    import urllib.request
     req = urllib.request.Request(CATALOG_URL, headers={'User-Agent': 'Mozilla/5.0'})
     with urllib.request.urlopen(req, timeout=20) as r:
         data = r.read()
@@ -279,6 +280,7 @@ def download_catalog_sync():
 
 def download_translation_sync(tid, entry, on_status=None):
     """Download, parse, and store one translation. Raises on failure."""
+    import urllib.request
     if on_status:
         on_status('Downloading…')
     url = _USFM_URL.format(id=tid)

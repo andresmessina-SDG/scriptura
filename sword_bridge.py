@@ -5,7 +5,6 @@ import re
 import shutil
 import tarfile
 import threading
-import urllib.request
 import zipfile
 from collections import OrderedDict
 import Sword
@@ -54,6 +53,34 @@ def _bible_schema():
 _mgr = None
 # RLock allows reentry: callers like load_chapter hold _lock and then call mgr().
 _lock = threading.RLock()
+
+_warm_thread = None
+
+
+def start_warm():
+    """Pay SWORD's one-time versification/locale init (~150 ms — the cost
+    of the *first* VerseKey construction; later ones are free) on a
+    background thread so it overlaps window construction. The C call runs
+    without the GIL (measured), so the main thread keeps building UI.
+    Call wait_warm() before the first main-thread SWORD use."""
+    global _warm_thread
+
+    def _warm():
+        with _lock:
+            try:
+                Sword.VerseKey().setText('Genesis 1:1')
+            except Exception:
+                pass
+
+    _warm_thread = threading.Thread(target=_warm, daemon=True)
+    _warm_thread.start()
+
+
+def wait_warm():
+    if _warm_thread is not None:
+        _warm_thread.join()
+
+
 # Chapter render cache. OrderedDict + cap = LRU eviction so a long reading
 # session that touches the whole canon doesn't grow memory unboundedly.
 # 200 chapters × ~50 KB ≈ 10 MB worst case; comfortably above any normal
@@ -1133,6 +1160,8 @@ _CROSSWIRE_CATALOG = 'https://crosswire.org/ftpmirror/pub/sword/raw/mods.d.tar.g
 
 def refresh_source():
     """Download the CrossWire module catalogue and store in a new shadow dir."""
+    # Lazy: pulls in http/ssl/email (~40 ms) — only needed for downloads.
+    import urllib.request
     from datetime import datetime
     url = _CROSSWIRE_CATALOG
     with urllib.request.urlopen(url, timeout=60) as resp:
@@ -1160,6 +1189,7 @@ def refresh_source():
 
 def install_module(module_name):
     """Download module zip from CrossWire and extract into ~/.sword/."""
+    import urllib.request
     url = f'{_CROSSWIRE_HTTP}/{module_name}.zip'
     with urllib.request.urlopen(url, timeout=120) as resp:
         data = resp.read()

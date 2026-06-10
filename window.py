@@ -67,19 +67,18 @@ class BibleWindow(Adw.ApplicationWindow):
         self.set_title('Scriptura')  # app name — not translated
         self._nav_back = []
         self._nav_fwd = []
-        # Restore last book/chapter — validated against BOOKS list and
-        # chapter count below, before the dropdowns get their initial value.
+        # Warm SWORD's one-time versification init (~150 ms, first VerseKey)
+        # on a background thread so it overlaps _build_ui instead of running
+        # serially before first paint. _load_all_panes joins it before the
+        # first main-thread SWORD call.
+        sword_bridge.start_warm()
+        # Restore last book/chapter — book validated against BOOKS here;
+        # the chapter is range-clamped in _load_all_panes (the clamp needs
+        # chapter_count, i.e. the SWORD init warming above).
         saved_book = settings.get('last_book')
         saved_chap = settings.get('last_chapter')
-        if saved_book in BOOKS and isinstance(saved_chap, int):
-            try:
-                max_ch = sword_bridge.chapter_count(saved_book)
-                if 1 <= saved_chap <= max_ch:
-                    self._current_loc = (saved_book, saved_chap)
-                else:
-                    self._current_loc = ('Genesis', 1)
-            except Exception:
-                self._current_loc = ('Genesis', 1)
+        if saved_book in BOOKS and isinstance(saved_chap, int) and saved_chap >= 1:
+            self._current_loc = (saved_book, saved_chap)
         else:
             self._current_loc = ('Genesis', 1)
         self._updating_plan = False
@@ -521,7 +520,11 @@ class BibleWindow(Adw.ApplicationWindow):
         self._menu_split.set_show_sidebar(False)
         self._menu_split.set_min_sidebar_width(340)
         self._menu_split.set_max_sidebar_width(400)
-        self._menu_split.set_sidebar(self._build_menu_panel())
+        # The panel itself (~80 ms of widgets) is built lazily after first
+        # paint — see _ensure_menu_panel; an idle kicks it off so it's
+        # ready long before the user can reach the menu button.
+        self._menu_panel_built = False
+        GLib.idle_add(self._ensure_menu_panel)
 
         # ── Cross-reference panel ─────────────────────────────────────────────
         self._crossref_panel = CrossRefPanel(
@@ -963,7 +966,13 @@ class BibleWindow(Adw.ApplicationWindow):
         # (used by Alt+arrow nav and the chapter-count model) to match.
         book, chapter = self._current_loc
         self.book_drop.set_selected(BOOKS.index(book))
+        # First main-thread SWORD call: join the warm-up thread started in
+        # __init__ (a no-op wait by now — _build_ui takes longer than the
+        # init), then clamp the restored chapter, deferred from __init__.
+        sword_bridge.wait_warm()
         count = sword_bridge.chapter_count(book)
+        chapter = max(1, min(chapter, count))
+        self._current_loc = (book, chapter)
         self.chapter_drop.set_model(
             Gtk.StringList.new([str(i) for i in range(1, count + 1)]))
         self.chapter_drop.set_selected(chapter - 1)
@@ -2235,9 +2244,19 @@ class BibleWindow(Adw.ApplicationWindow):
 
     # ── App menu panel ────────────────────────────────────────────────────────
 
+    def _ensure_menu_panel(self):
+        """Build the menu sidebar on first need. Deferred out of _build_ui
+        so its ~80 ms of widget construction doesn't delay first paint;
+        normally the post-init idle gets here before the user can."""
+        if not self._menu_panel_built:
+            self._menu_panel_built = True
+            self._menu_split.set_sidebar(self._build_menu_panel())
+        return GLib.SOURCE_REMOVE
+
     def _toggle_menu(self, _btn):
         open_ = not self._menu_split.get_show_sidebar()
         if open_:
+            self._ensure_menu_panel()
             self._close_other_overlays(keep='menu')
             self._refresh_plan_ui()
         self._menu_split.set_show_sidebar(open_)
