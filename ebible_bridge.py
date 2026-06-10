@@ -240,6 +240,16 @@ def search_module(module_name, query, case_sensitive=False, **_kwargs):
                    + ' '.join('AND text GLOB ?' for _ in words)
                    + ' ORDER BY rowid')
             params = [tid] + [f'*{_glob_escape(w)}*' for w in words]
+        elif query.isascii():
+            # ASCII fast path: SQLite's native LIKE is already
+            # case-insensitive for ASCII letters and runs in C. The
+            # pycasefold UDF below costs a C→Python call per verse row
+            # (~5× slower measured); it's only needed when the query has
+            # non-ASCII case to fold (Cyrillic, accented Latin).
+            sql = ('SELECT book, chapter, verse, text FROM verses WHERE translation=? '
+                   + ' '.join("AND text LIKE ? ESCAPE '\\'" for _ in words)
+                   + ' ORDER BY rowid')
+            params = [tid] + [f'%{_like_escape(w)}%' for w in words]
         else:
             sql = ('SELECT book, chapter, verse, text FROM verses WHERE translation=? '
                    + ' '.join("AND pycasefold(text) LIKE ? ESCAPE '\\'" for _ in words)

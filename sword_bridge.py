@@ -1560,7 +1560,12 @@ def search_module(module_name, query, on_indexing_start=None,
         with ix.searcher() as searcher:
             parser = w['QueryParser']("content", ix.schema)
             parsed_query = parser.parse(query_stripped)
-            results = searcher.search(parsed_query, limit=MAX_SEARCH_RESULTS)
+            # Unscored: returns hits in document order, which is canonical
+            # (verses are indexed in canon order) — matching the eBible
+            # backend's ORDER BY rowid — and skips the relevance-ranking
+            # pass (~80 ms on a common word like "God").
+            results = searcher.search(parsed_query, limit=MAX_SEARCH_RESULTS,
+                                      scored=False, sortedby=None)
             formatted = [(h['book'], h['chapter'], h['verse'], h['content'])
                          for h in results]
             truncated = None
