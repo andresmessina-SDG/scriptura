@@ -109,6 +109,88 @@ def _credit_text(item):
     return '\n'.join(lines)
 
 
+def _place_labels(place, pane=None):
+    """The identification labels for one place — name (with modern name),
+    caption, photo credit/license, and the low-confidence cue. Shared by the
+    imagery pane's place cards and the catena pane's place dialog (which
+    passes no pane, so the caption gets no dictionary attachment)."""
+    out = []
+    name = imagery_bridge.place_display_name(place['ancient_name'])
+    if place.get('modern_name'):
+        name = _('{ancient} · today {modern}').format(
+            ancient=name, modern=place['modern_name'])
+    title = Gtk.Label(label=name, xalign=0, wrap=True)
+    title.add_css_class('heading')
+    out.append(title)
+
+    if place.get('caption'):
+        cap = Gtk.Label(label=place['caption'], xalign=0, wrap=True)
+        cap.add_css_class('caption')
+        cap.add_css_class('imagery-meta')
+        if pane is not None:
+            pane._attach_dict_to_label(cap)
+        out.append(cap)
+
+    # Photo credit + license — required for the CC/PD Commons photos.
+    credit = ' · '.join(
+        b for b in (place.get('credit'), place.get('license')) if b)
+    if credit:
+        attr = Gtk.Label(label=credit, xalign=0, wrap=True)
+        attr.add_css_class('caption')
+        attr.add_css_class('imagery-meta')
+        out.append(attr)
+
+    # Confidence cue — don't assert a contested identification as fact.
+    # OpenBible confidence is 0-100 (its 0-1000 score, normalised); flag
+    # low-confidence modern identifications.
+    conf = place.get('confidence')
+    if conf is not None and conf < 50:
+        note = Gtk.Label(label=_('Traditional / uncertain identification'),
+                         xalign=0, wrap=True)
+        note.add_css_class('caption')
+        note.add_css_class('imagery-meta')
+        out.append(note)
+    return out
+
+
+def present_place_dialog(root, place):
+    """A small dialog showing one place's photo and identification.
+
+    Used by the catena pane's place chips — 'a quote on Acts 13 highlights
+    the place' — so the cross-link never has to displace either pane (with
+    two panes, swapping one to the imagery module would evict the Bible or
+    the commentary the user is reading)."""
+    dialog = Adw.Dialog()
+    dialog.set_title(imagery_bridge.place_display_name(place['ancient_name']))
+    dialog.set_content_width(460)
+    view = Adw.ToolbarView()
+    view.add_top_bar(Adw.HeaderBar())
+
+    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+    box.set_margin_start(16)
+    box.set_margin_end(16)
+    box.set_margin_top(4)
+    box.set_margin_bottom(16)
+
+    if place['path'] and os.path.exists(place['path']):
+        pic = Gtk.Picture.new_for_filename(place['path'])
+        pic.set_content_fit(Gtk.ContentFit.CONTAIN)
+        pic.set_can_shrink(True)
+        pic.set_alternative_text(
+            imagery_bridge.place_display_name(place['ancient_name']))
+        pic.add_css_class('imagery-pic')
+        pic.set_size_request(-1, 280)
+        box.append(pic)
+
+    for lbl in _place_labels(place):
+        box.append(lbl)
+
+    view.set_content(box)
+    dialog.set_child(view)
+    if root is not None:
+        dialog.present(root)
+
+
 class _ZoomViewer(Gtk.ScrolledWindow):
     """Scroll-/button-to-zoom, drag-to-pan image view for the zoom dialog.
 
@@ -556,45 +638,13 @@ class ImageryReader:
         # the grid still stays single-column until the pane is genuinely wide.
 
         if place['path'] and os.path.exists(place['path']):
+            disp = imagery_bridge.place_display_name(place['ancient_name'])
             card.append(self._picture(
-                place['path'], place['ancient_name'],
-                zoom={'path': place['path'], 'title': place['ancient_name']}))
+                place['path'], disp,
+                zoom={'path': place['path'], 'title': disp}))
 
-        name = place['ancient_name']
-        if place.get('modern_name'):
-            name = _('{ancient} · today {modern}').format(
-                ancient=name, modern=place['modern_name'])
-        title = Gtk.Label(label=name, xalign=0, wrap=True)
-        title.add_css_class('heading')
-        card.append(title)
-
-        if place.get('caption'):
-            cap = Gtk.Label(label=place['caption'], xalign=0, wrap=True)
-            cap.add_css_class('caption')
-            cap.add_css_class('imagery-meta')
-            card.append(cap)
-            if self._pane is not None:
-                self._pane._attach_dict_to_label(cap)
-
-        # Photo credit + license — required for the CC/PD Commons photos.
-        credit = ' · '.join(
-            b for b in (place.get('credit'), place.get('license')) if b)
-        if credit:
-            attr = Gtk.Label(label=credit, xalign=0, wrap=True)
-            attr.add_css_class('caption')
-            attr.add_css_class('imagery-meta')
-            card.append(attr)
-
-        # Confidence cue — don't assert a contested identification as fact.
-        # OpenBible confidence is 0-100 (its 0-1000 score, normalised); flag
-        # low-confidence modern identifications.
-        conf = place.get('confidence')
-        if conf is not None and conf < 50:
-            note = Gtk.Label(label=_('Traditional / uncertain identification'),
-                             xalign=0, wrap=True)
-            note.add_css_class('caption')
-            note.add_css_class('imagery-meta')
-            card.append(note)
+        for lbl in _place_labels(place, pane=self._pane):
+            card.append(lbl)
         return card
 
     # ── shared card / picture / zoom ─────────────────────────────────────────
@@ -616,6 +666,15 @@ class ImageryReader:
         meta = _meta_line(item)
         artist = item.get('artist')
         attribution = item.get('attribution')
+        # Maps carry their passage scope ("Acts 13–14") as a navigation chip —
+        # clicking drives the partnered Bible pane to the start of the range.
+        # Art plates don't get one: their range is (almost always) the verse
+        # already on screen, so a chip would be noise.
+        chip = self._passage_chip(item) if item.get('kind') == 'map' else None
+        # The chip already carries the passage label; don't repeat it as the
+        # meta fallback line.
+        if chip is not None and meta == item.get('passage_label'):
+            meta = ''
         # Skip the "artist · year" meta line when the attribution already names
         # the artist — avoids showing "Schnorr · 1860" directly above
         # "Schnorr, Die Bibel in Bildern (1860)". Kept for maps (whose meta is a
@@ -625,6 +684,8 @@ class ImageryReader:
             meta_lbl.add_css_class('caption')
             meta_lbl.add_css_class('imagery-meta')
             card.append(meta_lbl)
+        if chip is not None:
+            card.append(chip)
 
         if attribution:
             attr = Gtk.Label(label=attribution, xalign=0, wrap=True)
@@ -632,6 +693,30 @@ class ImageryReader:
             attr.add_css_class('imagery-meta')
             card.append(attr)
         return card
+
+    def _passage_chip(self, item):
+        """A slim outline chip carrying the item's passage label; clicking
+        navigates the partnered Bible pane to the start of the covered range
+        (mirrors the archaeology reader's verse chips). Returns None when the
+        item carries no resolvable target or no pane callback is wired."""
+        label = item.get('passage_label')
+        book, chapter = item.get('book'), item.get('chapter')
+        cb = getattr(self._pane, '_on_word_study_navigate', None)
+        if not (label and book and chapter and cb):
+            return None
+        btn = Gtk.Button(label=label)
+        btn.add_css_class('xref-chip')
+        btn.set_halign(Gtk.Align.START)
+        btn.set_can_shrink(True)
+        btn.set_tooltip_text(
+            _('Open {ref} in the Bible pane').format(ref=label))
+        set_accessible_label(
+            btn, _('Open {ref} in the Bible pane').format(ref=label))
+        verse = item.get('verse') or 1
+        btn.connect(
+            'clicked',
+            lambda _b, b=book, c=chapter, v=verse: cb(b, c, v))
+        return btn
 
     def _picture(self, path, alt, zoom=None):
         pic = _ImageryPicture()

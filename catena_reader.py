@@ -18,6 +18,7 @@ from a11y import set_accessible_label
 from gtk_utils import clear_children
 
 import catena_bridge
+import imagery_bridge
 
 _log = logging.getLogger('scriptura.catena')
 
@@ -81,6 +82,15 @@ class CatenaReader:
         self._chip_box.add_css_class('catena-chips')
         self._root.append(self._chip_box)
 
+        # Places named in the verse under commentary (from the imagery pack,
+        # when installed) — outline chips opening a small place dialog, so a
+        # quote on Acts 13 can highlight Pisidian Antioch without displacing
+        # either pane. Hidden when the pack is absent or the verse names none.
+        self._place_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
+                                  spacing=6)
+        self._place_box.add_css_class('catena-chips')
+        self._root.append(self._place_box)
+
         scroll = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.ALWAYS)
         self._list = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
@@ -114,6 +124,7 @@ class CatenaReader:
     def _rebuild(self):
         self._clear(self._list)
         self._clear(self._chip_box)
+        self._build_place_chips()
 
         if not self._book:
             self._header.set_text(_('Historical Commentaries'))
@@ -193,6 +204,40 @@ class CatenaReader:
                 chip.add_css_class('suggested-action')
             chip.connect('toggled', self._on_chip_toggled, value)
             self._chip_box.append(chip)
+
+    def _build_place_chips(self):
+        self._clear(self._place_box)
+        places = []
+        if self._book and self._chapter and self._verse:
+            try:
+                places = imagery_bridge.places_for(
+                    self._book, self._chapter, self._verse)
+            except Exception:
+                _log.exception('place lookup failed')
+        self._place_box.set_visible(bool(places))
+        if not places:
+            return
+        lead = Gtk.Label(label=_('Places'))
+        lead.add_css_class('caption')
+        lead.add_css_class('catena-meta')
+        lead.set_valign(Gtk.Align.CENTER)
+        self._place_box.append(lead)
+        for place in places:
+            disp = imagery_bridge.place_display_name(place['ancient_name'])
+            chip = Gtk.Button(label=disp)
+            chip.add_css_class('xref-chip')
+            chip.set_can_shrink(True)
+            chip.set_tooltip_text(_('About {place}').format(place=disp))
+            set_accessible_label(
+                chip, _('About {place}').format(place=disp))
+            chip.connect('clicked', self._on_place_chip, place)
+            self._place_box.append(chip)
+
+    def _on_place_chip(self, _btn, place):
+        # Imported here, not at module top: imagery_reader pulls in the zoom
+        # viewer machinery, which the catena pane otherwise never needs.
+        from imagery_reader import present_place_dialog
+        present_place_dialog(self._root.get_root(), place)
 
     def _on_chip_toggled(self, chip, value):
         if not chip.get_active():

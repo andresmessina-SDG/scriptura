@@ -270,6 +270,12 @@ This app stands on the work of others:
 - **HistoricalChristianFaith Commentaries Database** — the
   public-domain patristic, medieval, and Reformation commentary that
   powers the Historical Commentaries pack.
+- **Wikimedia Commons & Project Gutenberg** — the public-domain and
+  openly-licensed scans behind the Scripture in Art pack: Schnorr von
+  Carolsfeld and Doré engravings, Tissot watercolours, Old Master
+  paintings, Byzantine icons, stained glass, illuminated manuscripts,
+  Hurlbut's *Bible Atlas* (1882), modern public-domain journey maps,
+  and the place photographs (per-item credits shown in the app).
 - **GNOME** — the platform that makes a clean reading experience
   possible on Linux: GTK4, libadwaita, PyGObject.
 - **SQLite FTS5** — the full-text search engine, built into Python's

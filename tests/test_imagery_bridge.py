@@ -112,6 +112,26 @@ def test_art_excludes_maps(pack):
         == ['First Journey']
 
 
+def test_place_display_name_strips_disambiguation_suffix():
+    # OpenBible's 'Antioch 2' / 'Galilee 1' suffixes are data, not display.
+    assert imagery_bridge.place_display_name('Antioch 2') == 'Antioch'
+    assert imagery_bridge.place_display_name('Galilee 1') == 'Galilee'
+    assert imagery_bridge.place_display_name('Perga') == 'Perga'
+    # Real digits that aren't a disambiguator stay (no such places today,
+    # but the rule is: only a single trailing space-digit group is dropped).
+    assert imagery_bridge.place_display_name('') == ''
+
+
+def test_item_carries_navigation_target(pack):
+    # The reader's clickable passage chip navigates to the start of the
+    # item's covered range — book/chapter/verse must decode from loc_start.
+    _seed(str(pack), imagery=[
+        _img('map', 'cartography', 'First Journey', 'Acts', 13, 1,
+             ch_end=14, v_end=28)])
+    m = imagery_bridge.maps_for('Acts', 14, 5)[0]
+    assert (m['book'], m['chapter'], m['verse']) == ('Acts', 13, 1)
+
+
 def test_cross_chapter_range_containment(pack):
     # The key correctness case: a map spanning Acts 13:1–14:28 must match a
     # verse *late in chapter 13* (13:40), which naive verse_start/verse_end

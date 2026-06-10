@@ -22,6 +22,7 @@ carries the human-readable scope for display.
 
 import logging
 import os
+import re
 import shutil
 import sqlite3
 import tarfile
@@ -71,6 +72,9 @@ class ImageryItem(TypedDict):
     attribution: str | None
     artist: str | None
     year: int | None
+    book: str
+    chapter: int              # start of the verse range the item covers
+    verse: int
 
 
 class Place(TypedDict):
@@ -146,6 +150,17 @@ def display_name(name: str) -> str:
     return _('Scripture in Art')
 
 
+_PLACE_SUFFIX_RE = re.compile(r'\s+\d+$')
+
+
+def place_display_name(name: str) -> str:
+    """OpenBible disambiguates duplicate place names with a numeric suffix
+    ('Antioch 2', 'Galilee 1'). Strip it for display — the place card's
+    modern name / caption carries the real disambiguation. The stored
+    `ancient_name` is left untouched everywhere it acts as data."""
+    return _PLACE_SUFFIX_RE.sub('', name or '')
+
+
 def is_installed() -> bool:
     conn = _db()
     if conn is None:
@@ -179,15 +194,20 @@ def _encode(chapter: int, verse: int) -> int:
 # ── verse → content queries ─────────────────────────────────────────────────
 
 def _item(row: sqlite3.Row | tuple) -> ImageryItem:
+    # loc_start decodes back to the (chapter, verse) the item's range opens
+    # on — the navigation target for the card's clickable passage label.
+    loc = row[13] or 0
     return ImageryItem(
         kind=row[0], tradition=row[1], title=row[2], caption=row[3],
         passage_label=row[4], path=_abs(row[5]), source=row[6],
         source_url=row[7], license=row[8], attribution=row[9],
-        artist=row[10], year=row[11])
+        artist=row[10], year=row[11],
+        book=row[12], chapter=loc // 1_000_000, verse=loc % 1_000_000)
 
 
 _ITEM_COLS = ('kind, tradition, title, caption, passage_label, file_path, '
-              'source, source_url, license, attribution, artist, year')
+              'source, source_url, license, attribution, artist, year, '
+              'book, loc_start')
 
 
 def art_for(book: str, chapter: int, verse: int) -> list[ImageryItem]:

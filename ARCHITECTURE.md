@@ -69,13 +69,19 @@ scriptura/
 +-- ARCHITECTURE.md       # this file
 +-- README.md             # user-facing overview, install, credits, license
 +-- LICENSE               # GPL-3.0-or-later (canonical text)
-+-- SEARCH_RESEARCH.md    # early design notes (kept for reference)
 +-- pytest.ini            # testpaths + pythonpath config
 +-- requirements-dev.txt  # pytest + dev tools
++-- mypy.ini              # gradual strict-typing config (per-module sections)
++-- meson.build           # install rules (Flatpak builds via meson)
 +-- main.py               # app entry, Adw.Application (page.codeberg.andresmessina.Scriptura)
++-- i18n.py               # importable gettext helpers (_ / ngettext / N_ / book_label)
 +-- window.py             # BibleWindow — header, panes, navigation funnels, About dialog
 +-- pane.py               # BiblePane — text rendering, annotations, click handling
++-- pane_search.py        # PaneSearch — per-pane Ctrl+F bar + match highlight
 +-- genbook_reader.py     # GenbookReader — Generic Books (TreeKey) subsystem extracted from pane.py
++-- catena_reader.py      # CatenaReader — verse-synced commentary card view (pane subsystem)
++-- imagery_reader.py     # ImageryReader — Art/Where tabs, traditions expander, zoom viewer
++-- archaeology_reader.py # ArchaeologyReader — Scripture in Stone bundled gallery
 +-- styles.py             # Loads data/style.css once at startup; per-pane dynamic CSS stays in pane.py
 +-- lexicon_panel.py      # LexiconPanel — definition view + word study (own class)
 +-- annotation_dialogs.py # Right-click study menu, note editor, chapter note, compare translations
@@ -84,12 +90,15 @@ scriptura/
 +-- search_query.py       # Shared user-query → FTS5 MATCH grammar translator
 +-- ebible_bridge.py      # eBible.org SQLite translation backend
 +-- catena_bridge.py      # Historical Commentaries pack — SQLite query layer + download/install
-+-- catena_reader.py      # CatenaReader — verse-synced commentary card view (pane subsystem)
++-- imagery_bridge.py     # Scripture in Art pack — SQLite query layer + multi-part download
++-- archaeology_bridge.py # Scripture in Stone — bundled artifact catalog
 +-- content.py            # Routing facade — which bridge owns a module key (names/display/info/remove)
 +-- open_data.py          # OpenBible refs/topics + Dodson Greek (CC-BY)
++-- paths.py              # XDG config/data/cache resolution + legacy-file migration
 +-- annotations.py        # Per-verse JSON persistence
 +-- bookmarks.py          # Bookmark list
-+-- settings.py           # User preferences
++-- settings.py           # User preferences (debounced atomic writes)
++-- module_positions.py   # Per-module scroll/entry-path memory shared across panes
 +-- reading_plans.py      # Built-in plans + progress
 +-- search_panel.py       # Search overlay (right-side revealer)
 +-- study_journal.py      # Study Journal window (master-detail) + TagManagerWindow
@@ -97,28 +106,27 @@ scriptura/
 +-- module_manager.py     # Module Manager (kind tabs: Bibles / Commentaries / Study Tools / Books & More, all sources merged per tab)
 +-- module_picker.py      # ModulePicker — pane's module selector (MenuButton popover, info, remove)
 +-- welcome.py            # First-run welcome: 3 curated bundle choices (reading / study / full)
-+-- tools/
-|   +-- build_catena_pack.py  # offline builder: HCF database -> catena pack (dev-only, not shipped)
-+-- tests/                # Pytest suite for the pure-Python bridges
-|   +-- test_open_data.py
-|   +-- test_annotations.py
-|   +-- test_reading_plans.py
-|   +-- test_sword_bridge.py
-|   +-- test_paths.py
-|   +-- test_bookmarks.py
-|   +-- test_settings.py
-|   +-- test_ebible_bridge.py
-|   +-- test_module_positions.py
++-- empty_state.py        # Shared compact empty-state widget
++-- a11y.py               # set_accessible_label helper
++-- po/                   # gettext scaffolding (LINGUAS, POTFILES.in)
++-- tools/                # offline pack builders (dev-only, not shipped)
+|   +-- build_catena_pack.py   # HCF database -> catena pack
+|   +-- build_imagery_pack.py  # ten ingest sources -> imagery pack (see *_plates.toml)
+|   +-- gen_tissot.py          # Tissot plate-list generator
++-- tests/                # Pytest suite for the pure-Python bridges + helpers
++-- flatpak/              # manifest patches (e.g. sword-curl-libraries.patch)
 +-- data/
-|   +-- icons/hicolor/scalable/apps/page.codeberg.andresmessina.Scriptura.svg
+|   +-- icons/             # app + bundled symbolic icons
 |   +-- page.codeberg.andresmessina.Scriptura.desktop
-|   +-- style.css              # Centralised application stylesheet (loaded by styles.py)
-|   +-- cross_references.txt   # gitignored — OpenBible download
-|   +-- topic-scores.txt       # gitignored — OpenBible download
-|   +-- dodson.csv             # gitignored — Dodson Greek download
-+-- *.json                # User runtime data (annotations, settings, bookmarks, reading_plans, search_history) — gitignored
-+-- ebible.db             # eBible SQLite — gitignored
+|   +-- style.css          # Centralised application stylesheet (loaded by styles.py)
 ```
+
+User-mutable state does **not** live in the tree: `paths.py` resolves
+settings/bookmarks/plans/positions to `$XDG_CONFIG_HOME/bible-reader/`,
+annotations + the eBible DB + downloaded packs/open-data to
+`$XDG_DATA_HOME/bible-reader/`, and search history + the eBible catalog
+to `$XDG_CACHE_HOME/bible-reader/` (with one-shot migration of legacy
+in-tree files).
 
 ### Naming convention: `Bible*` vs `Scriptura`
 
@@ -560,6 +568,48 @@ and `_is_genbook`) showing how the church read each verse across time.
   `select_verse`.
 - **Module Manager** lists the pack in the Open Databases tab
   (Download/Remove); install/remove refresh both panes' pickers.
+
+## Scripture in Art (imagery)
+
+A verse-synced imagery pane mode (`_is_imagery` in pane.py), three layers:
+narrative **art**, **maps**, and **photos of the places** named in the verse.
+
+- **The pack** is a directory (`$XDG_DATA_HOME/bible-reader/imagery/`)
+  holding `imagery.sqlite` plus an `images/` tree, built offline by
+  `tools/build_imagery_pack.py` from ten ingest sources, each driven by a
+  hand-curated per-plate TOML in `tools/`: Schnorr + Doré engravings,
+  Tissot watercolours (via `gen_tissot.py`), Byzantine icons, stained
+  glass, Old Master oils, illuminated manuscripts, OpenBible place photos,
+  Hurlbut atlas maps, and modern PD vector SVG journey maps. Verse ranges
+  use the catena encoding (`chapter*1_000_000 + verse`, `[loc_start,
+  loc_end]`). Hosted on Codeberg Releases; large pack — downloaded on
+  demand with multi-part support (`imagery_bridge._resolve_parts`).
+- **`imagery_bridge.py`** is the read layer: read-only thread-local
+  connection with a generation counter, `art_for` / `maps_for` /
+  `places_for(book, ch, v)`. Items carry `book`/`chapter`/`verse` decoded
+  from `loc_start` — the navigation target for the reader's clickable map
+  passage chips.
+- **`imagery_reader.py`** (`ImageryReader`) renders two tabs: **Art**
+  (house engraving first, the rest behind a "See this scene in other
+  traditions" expander) and **Where** (modern map first, then antique
+  maps, then place cards with credit + a low-confidence cue). Cards
+  click-through to a zoom/pan dialog (`_ZoomViewer`: pinch, drag,
+  header-bar zoom buttons). Map cards carry an outline passage chip that
+  drives the partnered Bible pane to the start of the covered range.
+- **Catena cross-link:** the catena pane shows outline chips for the
+  places named in the verse under commentary (`imagery_bridge.places_for`,
+  silent when the pack isn't installed); clicking opens a small place
+  dialog (`imagery_reader.present_place_dialog`) — photo, identification,
+  credit — rather than swapping a pane to the imagery module.
+
+## Scripture in Stone (archaeology)
+
+A bundled (not downloaded) standalone gallery of biblical-world artifacts
+(`archaeology_bridge.py` + `archaeology_reader.py`; `_is_archaeology` pane
+mode). Not verse-synced — it renders once; its verse chips drive the
+partnered Bible pane, and Bible verses that an artifact attests carry a
+small inline amphora marker that opens the gallery scrolled to that
+artifact (`window._on_open_artifact`).
 
 ## open_data.py — key internals
 
