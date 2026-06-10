@@ -584,6 +584,16 @@ row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
 .lex-panel list {
     background-color: transparent;
 }
+/* The header's title/morphology scroller is one line tall, so the stock
+   overlay scrollbar — especially its fattened hover state — blankets the
+   very text it scrolls. Hide it with opacity only: scrolling (wheel,
+   touchpad swipe, drag) is unaffected, and unlike min-height/margin
+   overrides this can't hand the renderer a degenerate-size rectangle
+   (forcing the hover-animation geometry to 3px coincided with pixman
+   "Invalid rectangle" errors on Wayland). */
+.lex-title-scroll scrollbar {
+    opacity: 0;
+}
 
 /* ── Historical Commentaries (catena) pane ───────────────────────────── */
 

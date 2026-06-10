@@ -173,6 +173,10 @@ class LexiconPanel(Gtk.Box):
         title_box.append(self._morph_lbl)
         title_scroll = Gtk.ScrolledWindow(hexpand=True)
         title_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+        # .lex-title-scroll pins the overlay scrollbar to a hairline at the
+        # bottom edge (see style.css) — at this scroller's one-line height
+        # the stock hover-fattened bar blankets the text it scrolls.
+        title_scroll.add_css_class('lex-title-scroll')
         title_scroll.set_child(title_box)
         header.append(title_scroll)
 
