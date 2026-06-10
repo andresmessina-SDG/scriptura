@@ -2095,37 +2095,26 @@ class BibleWindow(Adw.ApplicationWindow):
     ]
 
     def _open_shortcuts_dialog(self):
-        """Modern Adw.Dialog listing the shortcuts, with native key-cap
-        rendering via Gtk.ShortcutLabel. (Gtk.ShortcutsWindow, the old
-        standard, is deprecated since GTK 4.18 with no drop-in replacement,
-        so this rolls a libadwaita-native equivalent.)"""
-        dialog = Adw.Dialog()
-        dialog.set_title(_('Keyboard Shortcuts'))
-        dialog.set_content_width(460)
-        dialog.set_content_height(620)
-
-        toolbar_view = Adw.ToolbarView()
-        toolbar_view.add_top_bar(Adw.HeaderBar())
-        page = Adw.PreferencesPage()
-
+        """Native shortcuts dialog (Adw.ShortcutsDialog, libadwaita 1.8+ —
+        the official successor to the deprecated Gtk.ShortcutsWindow, which
+        is why a hand-rolled Adw.Dialog used to live here). Built from
+        _SHORTCUT_SECTIONS; _action_accels stays the single source of truth
+        for action accelerators, so the dialog and the dispatch can't
+        drift. 'literal' rows (mouse / scroll gestures that aren't key
+        accelerators) render as title + subtitle with no key caps."""
+        dialog = Adw.ShortcutsDialog()
         for section, rows in self._SHORTCUT_SECTIONS:
-            group = Adw.PreferencesGroup(title=_(section))
+            sec = Adw.ShortcutsSection.new(_(section))
             for desc, kind, value in rows:
-                row = Adw.ActionRow(title=_(desc))
                 if kind == 'literal':
-                    suffix = Gtk.Label(label=_(value))
-                    suffix.add_css_class('dim-label')
+                    item = Adw.ShortcutsItem.new(_(desc), '')
+                    item.set_subtitle(_(value))
                 else:
                     accel = (self._action_accels[value][0]
                              if kind == 'action' else value)
-                    suffix = Gtk.ShortcutLabel(accelerator=accel)
-                suffix.set_valign(Gtk.Align.CENTER)
-                row.add_suffix(suffix)
-                group.add(row)
-            page.add(group)
-
-        toolbar_view.set_content(page)
-        dialog.set_child(toolbar_view)
+                    item = Adw.ShortcutsItem.new(_(desc), accel)
+                sec.add(item)
+            dialog.add(sec)
         dialog.present(self)
 
     def _on_modules_clicked(self, _btn):
