@@ -438,8 +438,15 @@ overlay-split-view.menu-split > widget.sidebar-pane {
     border-right: 1px solid alpha(@borders, 0.6);
     border-radius: 0 20px 20px 0;
 }
-overlay-split-view.menu-split > border {
+/* The split view's own edge gizmos (border line, drop shadow, outline) are
+   straight full-height bands — against the rounded pane they poke out as
+   square artifacts in the 20px corner cut-outs. The hairline above defines
+   the edge instead. */
+overlay-split-view.menu-split > border,
+overlay-split-view.menu-split > shadow,
+overlay-split-view.menu-split > outline {
     background: none;
+    box-shadow: none;
 }
 
 button.menu-utility-action {
