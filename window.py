@@ -518,6 +518,10 @@ class BibleWindow(Adw.ApplicationWindow):
         # handle is gone (OSV sidebars aren't user-resizable; width is pinned
         # around the previous 340px default).
         self._menu_split = Adw.OverlaySplitView()
+        # .menu-split scopes the CSS that re-applies the house floating-card
+        # chrome (rounded right edge + hairline) to the sidebar pane — see
+        # the overlay-split-view rules in style.css.
+        self._menu_split.add_css_class('menu-split')
         self._menu_split.set_collapsed(True)
         self._menu_split.set_show_sidebar(False)
         self._menu_split.set_min_sidebar_width(340)

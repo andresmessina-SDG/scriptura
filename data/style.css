@@ -420,10 +420,27 @@ paned.main-split > separator {
     margin: 6px 0 8px 0;
 }
 
-/* ── Window-level overlay panels (jump bar, reading mode) ────────────── */
-/* See the Revealer/box-shadow note at the top of the file. The menu panel
-   itself is an Adw.OverlaySplitView sidebar (natively styled); only its
-   inner controls below keep custom rules. */
+/* ── Window-level overlay panels (menu sidebar, jump bar, reading mode) ── */
+/* See the Revealer/box-shadow note at the top of the file. */
+
+/* The menu is an Adw.OverlaySplitView kept permanently collapsed (overlay +
+   scrim presentation). Re-apply the house floating-card chrome to its
+   sidebar pane so it rhymes with the search panel and the reading pages
+   instead of reading as a stock square sheet. Node names verified by
+   introspection on libadwaita 1.9: in *collapsed* mode the sidebar pane is
+   `widget.background` (`.sidebar-pane` only exists uncollapsed — covered
+   anyway for safety). The native `border` gizmo is neutralized so it can't
+   double up with our hairline; the native edge `shadow` is kept — it reads
+   well over the scrim (and was impossible inside the old Revealer). */
+overlay-split-view.menu-split > widget.background,
+overlay-split-view.menu-split > widget.sidebar-pane {
+    background-color: @view_bg_color;
+    border-right: 1px solid alpha(@borders, 0.6);
+    border-radius: 0 20px 20px 0;
+}
+overlay-split-view.menu-split > border {
+    background: none;
+}
 
 button.menu-utility-action {
     min-width: 30px;
