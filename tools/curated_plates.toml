@@ -1285,3 +1285,351 @@ artist = "El Greco"
 year = 1612
 license = "PD"
 attribution = "El Greco, Saint Jude Thaddeus (c. 1610–14) — Museo Nacional de Escultura, Valladolid"
+
+# ── Option A gap-fill — one best work per remaining uncovered book/scene ──
+# Closes the last zero-art books (1-2 Chronicles, Ecclesiastes, Song of
+# Solomon, Zephaniah) and the thin prophets. The minor prophets use
+# Tissot's Jewish Museum portrait series (joins the existing watercolor
+# tradition; NB the Commons scans are small, ~300-800 px — best available).
+# Whole-book ranges (chapter_end 99) where the work frames the entire book
+# (portraits, vanitas, Nineveh); scene ranges where it depicts a passage.
+# All picks approved from contact sheets (2026-06-11).
+
+[[plate]]
+n = "GAP01"
+file = "Herzog Anton Ulrich-Museum, Jan de Bray, David Harfe spielend mit Priester und Leviten.jpg"
+title = "David Playing the Harp before the Ark"
+book = "1 Chronicles"
+chapter = 15
+verse = 1
+chapter_end = 16
+verse_end = 999
+passage_label = "1 Chronicles 15–16"
+kind = "painting"
+tradition = "old_master"
+artist = "Jan de Bray"
+license = "CC BY 3.0"
+attribution = "Jan de Bray, David Playing the Harp before the Ark — Herzog Anton Ulrich-Museum, Braunschweig; photo: museum, CC BY 3.0"
+
+[[plate]]
+n = "GAP02"
+file = "Sir Edward John Poynter - The visit of the Queen of Sheba to King Solomon - Google Art Project.jpg"
+title = "The Visit of the Queen of Sheba to King Solomon"
+book = "2 Chronicles"
+chapter = 9
+verse = 1
+chapter_end = 9
+verse_end = 12
+passage_label = "2 Chronicles 9:1–12"
+kind = "painting"
+tradition = "old_master"
+artist = "Edward Poynter"
+year = 1890
+license = "PD"
+attribution = "Edward Poynter, The Visit of the Queen of Sheba to King Solomon (1890) — Art Gallery of New South Wales, Sydney"
+
+[[plate]]
+n = "GAP03"
+file = "Pieter Claesz - Vanitas still life with a book, a glass roemer, a skull, a lute, a pack of cards and piece of parchment on a table.jpg"
+title = "Vanitas Still Life"
+book = "Ecclesiastes"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Ecclesiastes"
+kind = "painting"
+tradition = "old_master"
+artist = "Pieter Claesz"
+year = 1630
+license = "PD"
+attribution = "Pieter Claesz, Vanitas Still Life (c. 1630)"
+
+[[plate]]
+n = "GAP04"
+file = "The Beloved by Dante Gabriel Rossetti.jpg"
+title = "The Beloved (The Bride)"
+book = "Song of Solomon"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Song of Solomon"
+kind = "painting"
+tradition = "old_master"
+artist = "Dante Gabriel Rossetti"
+year = 1866
+license = "PD"
+attribution = "Dante Gabriel Rossetti, The Beloved (1866) — Tate, London"
+
+[[plate]]
+n = "GAP05"
+file = "William Holman Hunt - The Scapegoat.jpg"
+title = "The Scapegoat"
+book = "Leviticus"
+chapter = 16
+verse = 1
+chapter_end = 16
+verse_end = 34
+passage_label = "Leviticus 16"
+kind = "painting"
+tradition = "old_master"
+artist = "William Holman Hunt"
+year = 1854
+license = "PD"
+attribution = "William Holman Hunt, The Scapegoat (1854) — Lady Lever Art Gallery, Port Sunlight"
+
+[[plate]]
+n = "GAP06"
+file = "Carl Ludwig Kuhbeil - Gott zeigt Moses das gelobte Land (1818).jpg"
+title = "God Shows Moses the Promised Land"
+book = "Deuteronomy"
+chapter = 34
+verse = 1
+chapter_end = 34
+verse_end = 4
+passage_label = "Deuteronomy 34:1–4"
+kind = "painting"
+tradition = "old_master"
+artist = "Carl Ludwig Kuhbeil"
+year = 1818
+license = "PD"
+attribution = "Carl Ludwig Kuhbeil, God Shows Moses the Promised Land (1818)"
+
+[[plate]]
+n = "GAP07"
+file = "087.King Solomon in Old Age.jpg"
+title = "King Solomon in Old Age"
+book = "Proverbs"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Proverbs"
+kind = "illustration"
+tradition = "engraving"
+artist = "Gustave Doré"
+year = 1866
+license = "PD"
+attribution = "Gustave Doré, King Solomon in Old Age (1866)"
+
+[[plate]]
+n = "GAP08"
+file = "Rembrandt Harmensz. van Rijn - Jeremia treurend over de verwoesting van Jeruzalem - Google Art Project.jpg"
+title = "Jeremiah Lamenting the Destruction of Jerusalem"
+book = "Lamentations"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Lamentations"
+kind = "painting"
+tradition = "old_master"
+artist = "Rembrandt van Rijn"
+year = 1630
+license = "PD"
+attribution = "Rembrandt van Rijn, Jeremiah Lamenting the Destruction of Jerusalem (1630) — Rijksmuseum, Amsterdam"
+
+[[plate]]
+n = "GAP09"
+file = "Raphael - Ezekiel's Vision.jpg"
+title = "Ezekiel's Vision"
+book = "Ezekiel"
+chapter = 1
+verse = 1
+chapter_end = 1
+verse_end = 28
+passage_label = "Ezekiel 1"
+kind = "painting"
+tradition = "old_master"
+artist = "Raphael"
+year = 1518
+license = "PD"
+attribution = "Raphael, Ezekiel's Vision (c. 1518) — Palazzo Pitti, Florence"
+
+[[plate]]
+n = "GAP10"
+file = "The Vision of The Valley of The Dry Bones.jpg"
+title = "The Vision of the Valley of Dry Bones"
+book = "Ezekiel"
+chapter = 37
+verse = 1
+chapter_end = 37
+verse_end = 14
+passage_label = "Ezekiel 37:1–14"
+kind = "illustration"
+tradition = "engraving"
+artist = "Gustave Doré"
+year = 1866
+license = "PD"
+attribution = "Gustave Doré, The Vision of the Valley of Dry Bones (1866)"
+
+[[plate]]
+n = "GAP11"
+file = "Hosea by James Tissot.jpg"
+title = "Hosea"
+book = "Hosea"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Hosea"
+kind = "painting"
+tradition = "watercolor"
+artist = "James Tissot"
+year = 1896
+license = "PD"
+attribution = "James Tissot, Hosea (c. 1888–1902) — The Jewish Museum, New York"
+
+[[plate]]
+n = "GAP12"
+file = "Tissot Joel.jpg"
+title = "Joel"
+book = "Joel"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Joel"
+kind = "painting"
+tradition = "watercolor"
+artist = "James Tissot"
+year = 1896
+license = "PD"
+attribution = "James Tissot, Joel (c. 1888–1902) — The Jewish Museum, New York"
+
+[[plate]]
+n = "GAP13"
+file = "Tissot Amos.jpg"
+title = "Amos"
+book = "Amos"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Amos"
+kind = "painting"
+tradition = "watercolor"
+artist = "James Tissot"
+year = 1896
+license = "PD"
+attribution = "James Tissot, Amos (c. 1888–1902) — The Jewish Museum, New York"
+
+[[plate]]
+n = "GAP14"
+file = "Tissot Obadiah.jpg"
+title = "Obadiah"
+book = "Obadiah"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Obadiah"
+kind = "painting"
+tradition = "watercolor"
+artist = "James Tissot"
+year = 1896
+license = "PD"
+attribution = "James Tissot, Obadiah (c. 1888–1902) — The Jewish Museum, New York"
+
+[[plate]]
+n = "GAP15"
+file = "Tissot Micah.jpg"
+title = "Micah"
+book = "Micah"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Micah"
+kind = "painting"
+tradition = "watercolor"
+artist = "James Tissot"
+year = 1896
+license = "PD"
+attribution = "James Tissot, Micah (c. 1888–1902) — The Jewish Museum, New York"
+
+[[plate]]
+n = "GAP16"
+file = "Fall of nineveh.jpg"
+title = "The Fall of Nineveh"
+book = "Nahum"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Nahum"
+kind = "illustration"
+tradition = "engraving"
+artist = "John Martin"
+year = 1829
+license = "CC BY-SA 4.0"
+attribution = "John Martin, The Fall of Nineveh (1829, mezzotint); photo CC BY-SA 4.0"
+
+[[plate]]
+n = "GAP17"
+file = "Zephaniah from Yaroslavl (18 c, priv.coll).jpg"
+title = "The Prophet Zephaniah"
+book = "Zephaniah"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Zephaniah"
+kind = "icon"
+tradition = "byzantine_icon"
+artist = "Yaroslavl school"
+year = 1750
+license = "PD"
+attribution = "The Prophet Zephaniah — Russian icon, Yaroslavl school (18th century)"
+
+[[plate]]
+n = "GAP18"
+file = "Tissot Haggai.jpg"
+title = "Haggai"
+book = "Haggai"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Haggai"
+kind = "painting"
+tradition = "watercolor"
+artist = "James Tissot"
+year = 1896
+license = "PD"
+attribution = "James Tissot, Haggai (c. 1888–1902) — The Jewish Museum, New York"
+
+[[plate]]
+n = "GAP19"
+file = "Tissot Zechariah.jpg"
+title = "Zechariah"
+book = "Zechariah"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Zechariah"
+kind = "painting"
+tradition = "watercolor"
+artist = "James Tissot"
+year = 1896
+license = "PD"
+attribution = "James Tissot, Zechariah (c. 1888–1902) — The Jewish Museum, New York"
+
+[[plate]]
+n = "GAP20"
+file = "Tissot Malachi.jpg"
+title = "Malachi"
+book = "Malachi"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Malachi"
+kind = "painting"
+tradition = "watercolor"
+artist = "James Tissot"
+year = 1896
+license = "PD"
+attribution = "James Tissot, Malachi (c. 1888–1902) — The Jewish Museum, New York"
