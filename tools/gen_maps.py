@@ -67,6 +67,29 @@ PLACES = {                          # lon, lat (OpenBible.info, CC BY)
 # like a rendering error at zoom).
 WAYPOINTS = {}
 
+# Context cities — gray, no route: anchor the journey in the known NT
+# world (reference-map study, 2026-06-12). Tarsus is Paul's hometown
+# (Acts 9:11), Myra a later voyage stop (Acts 27:5).
+CONTEXT_PLACES = {
+    'Tarsus': (34.892056, 36.913028),
+    'Myra':   (29.985278, 36.259167),
+}
+CONTEXT_LABEL_POS = {
+    'Tarsus': (10, -6, 'start'),
+    'Myra':   (10, -8, 'start'),
+}
+
+# The journey's origin gets a quiet ring around its dot (the reference
+# maps mark it with a star; a ring is the house-calm version).
+ORIGIN = 'Antioch (Syria)'
+
+# Land legs the return retraced (Acts 14:21) — drawn as offset parallel
+# pairs with per-direction arrows in the 'return' variant, single calm
+# lines otherwise.
+RETRACED = {('Perga', 'Antioch in Pisidia'),
+            ('Antioch in Pisidia', 'Iconium'),
+            ('Iconium', 'Lystra'), ('Lystra', 'Derbe')}
+
 # Route legs: (from, to, kind, bow, arrow). Sea legs render dashed with a
 # gentle bow (bow > 0 bends left of travel); arrow=True draws a direction
 # arrowhead at the leg's midpoint. The return retraces the outbound roads
@@ -105,11 +128,13 @@ LABEL_POS = {                       # (dx, dy, text-anchor)
 SEA_LABELS = [('Mediterranean Sea', 33.0, 34.45, 0)]
 # Region labels follow the passage's own geography: Acts 14:6 names
 # Lycaonia (Lystra & Derbe); Pisidia is the lake district *south* of
-# Pisidian Antioch (the first draft's position was in Phrygia).
-REGION_LABELS = [('CYPRUS', 33.2, 35.05), ('PISIDIA', 30.45, 37.72),
-                 ('LYCAONIA', 33.45, 37.95),
-                 ('PAMPHYLIA', 31.7, 36.8), ('GALATIA', 33.0, 38.6),
-                 ('CILICIA', 34.9, 37.05), ('SYRIA', 36.9, 35.7)]
+# Pisidian Antioch (the first draft's position was in Phrygia). The
+# rotation (degrees) lets a name follow its land's sweep, like the
+# classic atlas charts (reference-map study).
+REGION_LABELS = [('CYPRUS', 33.2, 35.05, -8), ('PISIDIA', 30.45, 37.72, 0),
+                 ('LYCAONIA', 33.45, 37.95, 0),
+                 ('PAMPHYLIA', 31.7, 36.8, -6), ('GALATIA', 33.0, 38.6, 0),
+                 ('CILICIA', 34.9, 37.05, -10), ('SYRIA', 36.9, 35.7, 55)]
 
 TITLE_TEXT = "PAUL'S FIRST MISSIONARY JOURNEY"
 SUBTITLE_TEXT = 'Acts 13–14 · c. AD 46–48'
@@ -250,7 +275,7 @@ def arrow_marker(pts, size=9.0):
             f'transform="translate({x:.1f},{y:.1f}) rotate({ang:.1f})"/>')
 
 
-def build(data_dir, out_path):
+def build(data_dir, out_path, return_variant=False):
     proj, height = make_projection(BBOX, WIDTH)
     pad_top = 96          # title block
     H = int(height) + pad_top + 24
@@ -324,12 +349,13 @@ def build(data_dir, out_path):
                    f'y2="{b[1]:.0f}" stroke="#8aa0b0" stroke-width="0.5" '
                    f'opacity="0.13"/>')
 
-    # Region + sea labels (under the route)
-    for text, lon, lat in REGION_LABELS:
+    # Region + sea labels (under the route); rotation follows the land
+    for text, lon, lat, rot in REGION_LABELS:
         x, y = proj(lon, lat)
+        xf = (f' transform="rotate({rot} {x:.0f} {y:.0f})"' if rot else '')
         svg.append(f'<text x="{x:.0f}" y="{y:.0f}" text-anchor="middle" '
                    f'fill="{REGION_LABEL}" font-size="16" '
-                   f'letter-spacing="4">{text}</text>')
+                   f'letter-spacing="4"{xf}>{text}</text>')
     for text, lon, lat, rot in SEA_LABELS:
         x, y = proj(lon, lat)
         svg.append(f'<text x="{x:.0f}" y="{y:.0f}" text-anchor="middle" '
@@ -348,20 +374,39 @@ def build(data_dir, out_path):
     coords = dict(PLACES)
     coords.update(WAYPOINTS)
     arrows = []
+
+    def draw_land(p, q, bow, arrow):
+        c = bowed(p, q, bow) if bow else ((p[0]+q[0])/2, (p[1]+q[1])/2)
+        if bow:
+            d = (f'M{p[0]:.1f},{p[1]:.1f} Q{c[0]:.1f},{c[1]:.1f} '
+                 f'{q[0]:.1f},{q[1]:.1f}')
+        else:
+            d = f'M{p[0]:.1f},{p[1]:.1f} L{q[0]:.1f},{q[1]:.1f}'
+        svg.append(f'<path d="{d}" fill="none" stroke="{ROUTE}" '
+                   f'stroke-width="{ROUTE_W}" stroke-linecap="round" '
+                   f'opacity="0.9"/>')
+        if arrow:
+            arrows.append(arrow_marker(sample_quad(p, c, q)))
+
+    def offset_pts(p, q, d):
+        dx, dy = q[0] - p[0], q[1] - p[1]
+        ln = math.hypot(dx, dy) or 1.0
+        ox, oy = -dy / ln * d, dx / ln * d
+        return (p[0] + ox, p[1] + oy), (q[0] + ox, q[1] + oy)
+
     for frm, to, kind, bow, arrow in LEGS:
         p, q = proj(*coords[frm]), proj(*coords[to])
         c = bowed(p, q, bow) if bow else ((p[0]+q[0])/2, (p[1]+q[1])/2)
         if kind == 'land':
-            if bow:
-                d = (f'M{p[0]:.1f},{p[1]:.1f} Q{c[0]:.1f},{c[1]:.1f} '
-                     f'{q[0]:.1f},{q[1]:.1f}')
+            if return_variant and (frm, to) in RETRACED:
+                # the retraced road as an offset pair, each direction
+                # with its own arrowhead (reference-map treatment)
+                po, qo = offset_pts(p, q, 3.4)
+                pr, qr = offset_pts(q, p, 3.4)
+                draw_land(po, qo, 0, True)
+                draw_land(pr, qr, 0, True)
             else:
-                d = f'M{p[0]:.1f},{p[1]:.1f} L{q[0]:.1f},{q[1]:.1f}'
-            svg.append(f'<path d="{d}" fill="none" stroke="{ROUTE}" '
-                       f'stroke-width="{ROUTE_W}" stroke-linecap="round" '
-                       f'opacity="0.9"/>')
-            if arrow:
-                arrows.append(arrow_marker(sample_quad(p, c, q)))
+                draw_land(p, q, bow, arrow)
             continue
         # sea leg: split the sampled curve into water/land runs
         samples = sample_quad(p, c, q)
@@ -399,9 +444,24 @@ def build(data_dir, out_path):
             arrows.append(arrow_marker(max(water_runs, key=len)))
     svg.extend(arrows)   # arrowheads above all route lines
 
-    # Places: dot + haloed label
+    # Context cities — muted, no route: orientation anchors only
+    for name, (lon, lat) in CONTEXT_PLACES.items():
+        x, y = proj(lon, lat)
+        svg.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.0" '
+                   f'fill="#8a8f8d" stroke="#ffffff" stroke-width="1.3"/>')
+        dx, dy, anchor = CONTEXT_LABEL_POS.get(name, (8, -8, 'start'))
+        svg.append(f'<text x="{x+dx:.0f}" y="{y+dy:.0f}" text-anchor="{anchor}" '
+                   f'fill="#6b7075" font-size="15" '
+                   f'paint-order="stroke" stroke="{LABEL_HALO}" '
+                   f'stroke-width="3" stroke-linejoin="round">{name}</text>')
+
+    # Places: dot + haloed label; the journey's origin gets a quiet ring
     for name, (lon, lat) in PLACES.items():
         x, y = proj(lon, lat)
+        if name == ORIGIN:
+            svg.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="8.5" '
+                       f'fill="none" stroke="{DOT}" stroke-width="1.3" '
+                       f'opacity="0.7"/>')
         svg.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{DOT_R}" '
                    f'fill="{DOT}" stroke="#ffffff" stroke-width="1.6"/>')
         dx, dy, anchor = LABEL_POS.get(name, (8, -8, 'start'))
@@ -409,6 +469,21 @@ def build(data_dir, out_path):
                    f'fill="{LABEL}" font-size="17" font-weight="600" '
                    f'paint-order="stroke" stroke="{LABEL_HALO}" '
                    f'stroke-width="3.5" stroke-linejoin="round">{name}</text>')
+
+    # Scale bar — bottom-left; 100 km at the standard parallel
+    lat_mid = math.radians((BBOX[1] + BBOX[3]) / 2)
+    px_per_km = (WIDTH / (BBOX[2] - BBOX[0])) / (111.32 * math.cos(lat_mid))
+    bar = 100 * px_per_km
+    bx, by = 26, height - 26
+    svg.append(f'<g stroke="#74797f" stroke-width="1.4">'
+               f'<line x1="{bx}" y1="{by}" x2="{bx+bar:.0f}" y2="{by}"/>'
+               f'<line x1="{bx}" y1="{by-4}" x2="{bx}" y2="{by+4}"/>'
+               f'<line x1="{bx+bar:.0f}" y1="{by-4}" x2="{bx+bar:.0f}" '
+               f'y2="{by+4}"/></g>')
+    svg.append(f'<text x="{bx+bar/2:.0f}" y="{by-8}" text-anchor="middle" '
+               f'fill="#74797f" font-size="12.5" paint-order="stroke" '
+               f'stroke="#ffffff" stroke-width="3" '
+               f'stroke-linejoin="round">100 km · 62 mi</text>')
 
     svg.append('</g>')   # clip
     svg.append(f'<rect x="0.5" y="0.5" width="{WIDTH-1}" '
@@ -425,8 +500,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--data-dir', default='/tmp/mapdata')
     ap.add_argument('--out', default='/tmp/paul-journey-1.svg')
+    ap.add_argument('--return-variant', action='store_true',
+                    help='draw retraced roads as offset pairs with '
+                         'per-direction arrows')
     args = ap.parse_args()
-    build(args.data_dir, args.out)
+    build(args.data_dir, args.out, return_variant=args.return_variant)
 
 
 if __name__ == '__main__':
