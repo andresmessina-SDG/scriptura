@@ -74,6 +74,24 @@ def _meta_line(item):
     return ' · '.join(bits)
 
 
+def _credit_text(item):
+    """Multi-line credit for the clipboard: title, artist · year, and the
+    full attribution — ready to paste under a slide. The artist/year line
+    is skipped when the attribution already names the artist (same
+    redundancy rule as the card)."""
+    lines = []
+    if item.get('title'):
+        lines.append(item['title'])
+    meta = _meta_line(item)
+    artist = item.get('artist')
+    attribution = item.get('attribution')
+    if meta and not (artist and attribution and artist in attribution):
+        lines.append(meta)
+    if attribution:
+        lines.append(attribution)
+    return '\n'.join(lines)
+
+
 class _ZoomViewer(Gtk.ScrolledWindow):
     """Scroll-/button-to-zoom, drag-to-pan image view for the zoom dialog.
 
@@ -541,11 +559,44 @@ class ImageryReader:
         dialog.set_content_height(720)
         view = Adw.ToolbarView()
         header = Adw.HeaderBar()
+        # Toasts confirm the copy actions; local to the dialog since the
+        # reader has no window toast hook (and the dialog overlays the pane).
+        toaster = Adw.ToastOverlay()
+        toaster.set_child(view)
 
         try:
             texture = Gdk.Texture.new_from_filename(item['path'])
         except GLib.Error:
             texture = None
+
+        # ── Copy actions — for pasting plates into slides/documents. The
+        # image goes to the clipboard as a texture (pastes as PNG); the
+        # credit as title / artist · year / attribution text.
+        def _toast(msg):
+            toaster.add_toast(Adw.Toast.new(msg))
+
+        def _copy_image(_b):
+            self._root.get_clipboard().set(texture)
+            _toast(_('Image copied'))
+
+        def _copy_credit(_b):
+            self._root.get_clipboard().set(_credit_text(item))
+            _toast(_('Credit copied'))
+
+        if _credit_text(item):
+            credit_btn = Gtk.Button(label=_('Copy credit'))
+            credit_btn.add_css_class('flat')
+            credit_btn.set_tooltip_text(
+                _("Copy the artwork's title, artist, and source"))
+            credit_btn.connect('clicked', _copy_credit)
+            header.pack_end(credit_btn)
+        if texture is not None:
+            copy_btn = Gtk.Button(icon_name='edit-copy-symbolic')
+            copy_btn.set_tooltip_text(_('Copy image'))
+            set_accessible_label(copy_btn, _('Copy image'))
+            copy_btn.connect('clicked', _copy_image)
+            header.pack_end(copy_btn)
+
         if texture is None:
             # Fall back to a plain fitted view if the image won't decode.
             pic = Gtk.Picture.new_for_filename(item['path'])
@@ -553,7 +604,7 @@ class ImageryReader:
             pic.set_can_shrink(True)
             view.add_top_bar(header)
             view.set_content(pic)
-            dialog.set_child(view)
+            dialog.set_child(toaster)
             if root is not None:
                 dialog.present(root)
             return
@@ -584,7 +635,7 @@ class ImageryReader:
         header.pack_start(fit_btn)
         view.add_top_bar(header)
         view.set_content(viewer)
-        dialog.set_child(view)
+        dialog.set_child(toaster)
         if root is not None:
             dialog.present(root)
 
