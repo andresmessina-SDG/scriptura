@@ -40,6 +40,10 @@ REGION_LABEL = '#8f8875'
 TITLE = '#33373b'
 SUBTITLE = '#74797f'
 FONT = 'Adwaita Sans, Inter, sans-serif'
+# Water names take the house *serif italic* — the app's dual-voice type
+# system (sans = structure, serif = the read/lyrical voice) mapped onto
+# cartography's own convention of italic water labels.
+SEA_FONT = "'Source Serif 4', Georgia, serif" 
 FRAME = '#c9c4ba'
 # Hypsometric relief: elevation bands as successively deeper paper tones
 # (subtle — texture, not topo-map). Thresholds in metres; the Anatolian
@@ -447,10 +451,12 @@ def arrow_marker(pts, size=9.0, frac=0.5):
             f'transform="translate({x:.1f},{y:.1f}) rotate({ang:.1f})"/>')
 
 
-def build(data_dir, out_path, return_variant=True):
+def build(data_dir, out_path, return_variant=True, no_title=False):
     proj, height = make_projection(BBOX, WIDTH)
-    pad_top = 96          # title block
-    H = int(height) + pad_top + 24
+    # In-app, the imagery card already titles the map in house type — the
+    # no-title build is pure content (a thin margin instead of the block).
+    pad_top = 10 if no_title else 96
+    H = int(height) + pad_top + (10 if no_title else 24)
 
     def land_paths(name, fill, stroke, stroke_w):
         out = []
@@ -487,13 +493,13 @@ def build(data_dir, out_path, return_variant=True):
                f'width="{WIDTH}" height="{H}" '
                f'viewBox="0 0 {WIDTH} {H}" font-family="{FONT}">')
     svg.append(f'<rect width="{WIDTH}" height="{H}" fill="#ffffff"/>')
-    # Title block
-    svg.append(f'<text x="{WIDTH/2}" y="44" text-anchor="middle" '
-               f'fill="{TITLE}" font-size="26" font-weight="700" '
-               f'letter-spacing="3">{TITLE_TEXT}</text>')
-    svg.append(f'<text x="{WIDTH/2}" y="72" text-anchor="middle" '
-               f'fill="{SUBTITLE}" font-size="16" '
-               f'letter-spacing="1">{SUBTITLE_TEXT}</text>')
+    if not no_title:
+        svg.append(f'<text x="{WIDTH/2}" y="44" text-anchor="middle" '
+                   f'fill="{TITLE}" font-size="26" font-weight="700" '
+                   f'letter-spacing="3">{TITLE_TEXT}</text>')
+        svg.append(f'<text x="{WIDTH/2}" y="72" text-anchor="middle" '
+                   f'fill="{SUBTITLE}" font-size="16" '
+                   f'letter-spacing="1">{SUBTITLE_TEXT}</text>')
 
     svg.append(f'<g transform="translate(0,{pad_top})">')
     svg.append(f'<clipPath id="frame"><rect x="0" y="0" width="{WIDTH}" '
@@ -541,7 +547,7 @@ def build(data_dir, out_path, return_variant=True):
         x, y = proj(lon, lat)
         svg.append(f'<text x="{x:.0f}" y="{y:.0f}" text-anchor="middle" '
                    f'fill="{SEA_LABEL}" font-size="17" font-style="italic" '
-                   f'letter-spacing="3" '
+                   f'font-family="{SEA_FONT}" letter-spacing="2" '
                    f'transform="rotate({rot} {x:.0f} {y:.0f})">{text}</text>')
 
     # ── Route — terrain-aware: sea legs are sampled and tested against the
@@ -747,9 +753,13 @@ def main():
     ap.add_argument('--single-retrace', action='store_true',
                     help='draw retraced roads as single calm lines instead '
                          'of the default offset out/return pair')
+    ap.add_argument('--no-title', action='store_true',
+                    help='omit the title block (in-app builds — the card '
+                         'supplies the header)')
     args = ap.parse_args()
     build(args.data_dir, args.out,
-          return_variant=not args.single_retrace)
+          return_variant=not args.single_retrace,
+          no_title=args.no_title)
 
 
 if __name__ == '__main__':
