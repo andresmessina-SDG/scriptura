@@ -77,7 +77,7 @@ LEGS = [
     ('Antioch (Syria)', 'Seleucia', 'land', 0, False),
     ('Seleucia', 'Salamis', 'sea', 0.18, True),
     ('Salamis', 'Paphos', 'land', 0.06, True),
-    ('Paphos', 'Perga', 'sea', 0.25, True),
+    ('Paphos', 'Perga', 'sea', 0.08, True),
     ('Perga', 'Antioch in Pisidia', 'land', 0, False),
     ('Antioch in Pisidia', 'Iconium', 'land', 0, False),
     ('Iconium', 'Lystra', 'land', 0, False),
