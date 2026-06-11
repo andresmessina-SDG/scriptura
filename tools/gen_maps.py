@@ -77,7 +77,7 @@ PLACES = {                          # lon, lat (OpenBible.info, CC BY)
 # Cyprus, "through the whole island" (Acts 13:6) followed the south-coast
 # Roman road: Kition, Amathus, Kourion.
 WAYPOINTS = {
-    'Via Sebaste S': (30.38, 37.20),   # near Comama
+    'Via Sebaste S': (30.48, 37.34),   # near Comama
     'Via Sebaste N': (30.46, 38.07),   # near Apollonia
     'Kition':  (33.63, 34.92),
     'Amathus': (33.14, 34.71),
@@ -557,26 +557,86 @@ def build(data_dir, out_path, return_variant=True):
         if arrow:
             arrows.append(arrow_marker(sample_quad(p, c, q), frac=frac))
 
-    def offset_pts(p, q, d):
-        dx, dy = q[0] - p[0], q[1] - p[1]
-        ln = math.hypot(dx, dy) or 1.0
-        ox, oy = -dy / ln * d, dx / ln * d
-        return (p[0] + ox, p[1] + oy), (q[0] + ox, q[1] + oy)
+    def offset_polyline(pts, d):
+        """Offset a polyline by d (left of travel) with mitered joints —
+        per-segment offsetting notches at every bend; the miter keeps the
+        two parallels continuous through corners."""
+        out = []
+        n = len(pts)
+        for i in range(n):
+            if i == 0:
+                dirs = [(pts[1][0] - pts[0][0], pts[1][1] - pts[0][1])]
+            elif i == n - 1:
+                dirs = [(pts[-1][0] - pts[-2][0], pts[-1][1] - pts[-2][1])]
+            else:
+                dirs = [(pts[i][0] - pts[i-1][0], pts[i][1] - pts[i-1][1]),
+                        (pts[i+1][0] - pts[i][0], pts[i+1][1] - pts[i][1])]
+            normals = []
+            for dx, dy in dirs:
+                ln = math.hypot(dx, dy) or 1.0
+                normals.append((-dy / ln, dx / ln))
+            mx = sum(nv[0] for nv in normals) / len(normals)
+            my = sum(nv[1] for nv in normals) / len(normals)
+            ln = math.hypot(mx, my) or 1.0
+            # miter scale = 1/cos(half-angle); cap for near-hairpins
+            scale = min(1.0 / max(ln, 0.25), 3.0)
+            out.append((pts[i][0] + mx / ln * d * ln * scale,
+                        pts[i][1] + my / ln * d * ln * scale))
+        return out
+
+    def densify(pts, step=4.0):
+        out = [pts[0]]
+        for a, b in zip(pts, pts[1:]):
+            ln = math.hypot(b[0] - a[0], b[1] - a[1])
+            for k in range(1, max(2, int(ln / step)) + 1):
+                t = k / max(2, int(ln / step))
+                out.append((a[0] + (b[0] - a[0]) * t,
+                            a[1] + (b[1] - a[1]) * t))
+        return out
+
+    def draw_chain_pair(chain_pts):
+        """A retraced road as one continuous mitered parallel pair, with
+        two staggered arrowheads per direction along the whole chain."""
+        # fracs interleave when mapped onto the shared road: forward at
+        # 20%/60%, reverse at 20%/60% of ITS direction = 80%/40% forward —
+        # four arrowheads evenly spaced, never face to face
+        for pts, fracs in ((offset_polyline(chain_pts, 3.4), (0.20, 0.60)),
+                           (offset_polyline(chain_pts[::-1], 3.4),
+                            (0.20, 0.60))):
+            svg.append(f'<path d="{path_d(pts)}" fill="none" '
+                       f'stroke="{ROUTE}" stroke-width="{ROUTE_W}" '
+                       f'stroke-linecap="round" stroke-linejoin="round" '
+                       f'opacity="0.9"/>')
+            dense = densify(pts)
+            for fr in fracs:
+                arrows.append(arrow_marker(dense, frac=fr))
+
+    # group consecutive retraced land legs into chains
+    pending_chain = []
+
+    def flush_chain():
+        if pending_chain and return_variant:
+            draw_chain_pair(pending_chain.copy())
+        elif pending_chain:
+            for a, b in zip(pending_chain, pending_chain[1:]):
+                draw_land(a, b, 0, False)
+        pending_chain.clear()
 
     for frm, to, kind, bow, arrow in LEGS:
         p, q = proj(*coords[frm]), proj(*coords[to])
         c = bowed(p, q, bow) if bow else ((p[0]+q[0])/2, (p[1]+q[1])/2)
         if kind == 'land':
-            if return_variant and (frm, to) in RETRACED:
-                # the retraced road as an offset pair, each direction
-                # with its own arrowhead (reference-map treatment)
-                po, qo = offset_pts(p, q, 3.4)
-                pr, qr = offset_pts(q, p, 3.4)
-                draw_land(po, qo, 0, arrow, frac=0.30)
-                draw_land(pr, qr, 0, arrow, frac=0.30)
+            if (frm, to) in RETRACED:
+                if pending_chain and pending_chain[-1] != p:
+                    flush_chain()
+                if not pending_chain:
+                    pending_chain.append(p)
+                pending_chain.append(q)
             else:
+                flush_chain()
                 draw_land(p, q, bow, arrow)
             continue
+        flush_chain()
         # sea leg: split the sampled curve into water/land runs
         samples = sample_quad(p, c, q)
         runs = []          # [is_water, [pts]]
@@ -611,6 +671,7 @@ def build(data_dir, out_path, return_variant=True):
                       f'({len(pts)} samples) — adjust the bow')
         if arrow and water_runs:
             arrows.append(arrow_marker(max(water_runs, key=len)))
+    flush_chain()
     svg.extend(arrows)   # arrowheads above all route lines
 
     # Context cities — muted, no route: orientation anchors only
