@@ -70,7 +70,19 @@ PLACES = {                          # lon, lat (OpenBible.info, CC BY)
 # ships went upriver to the city, so dashes ending at inland Perga are the
 # accurate reading (a coastal waypoint + road stub was tried and looked
 # like a rendering error at zoom).
-WAYPOINTS = {}
+# Road-corridor waypoints (unlabeled). The Via Sebaste (the Roman highway
+# of 6 BC that Acts scholarship puts Paul on) climbed from Perga through
+# the Taurus and threaded the Pisidian lake corridor — between Lake Burdur
+# and Lake Eğirdir — to Pisidian Antioch (via Comama and Apollonia). On
+# Cyprus, "through the whole island" (Acts 13:6) followed the south-coast
+# Roman road: Kition, Amathus, Kourion.
+WAYPOINTS = {
+    'Via Sebaste S': (30.38, 37.20),   # near Comama
+    'Via Sebaste N': (30.46, 38.07),   # near Apollonia
+    'Kition':  (33.63, 34.92),
+    'Amathus': (33.14, 34.71),
+    'Kourion': (32.87, 34.66),
+}
 
 # Context cities — gray, no route: anchor the journey in the known NT
 # world (reference-map study, 2026-06-12). Tarsus is Paul's hometown
@@ -91,7 +103,8 @@ ORIGIN = 'Antioch (Syria)'
 # Land legs the return retraced (Acts 14:21) — drawn as offset parallel
 # pairs with per-direction arrows in the 'return' variant, single calm
 # lines otherwise.
-RETRACED = {('Perga', 'Antioch in Pisidia'),
+RETRACED = {('Perga', 'Via Sebaste S'), ('Via Sebaste S', 'Via Sebaste N'),
+            ('Via Sebaste N', 'Antioch in Pisidia'),
             ('Antioch in Pisidia', 'Iconium'),
             ('Iconium', 'Lystra'), ('Lystra', 'Derbe')}
 
@@ -104,12 +117,20 @@ RETRACED = {('Perga', 'Antioch in Pisidia'),
 LEGS = [
     ('Antioch (Syria)', 'Seleucia', 'land', 0, False),
     ('Seleucia', 'Salamis', 'sea', 0.18, True),
-    ('Salamis', 'Paphos', 'land', 0.06, True),
+    # Cyprus south-coast road; one arrow mid-island
+    ('Salamis', 'Kition', 'land', 0, False),
+    ('Kition', 'Amathus', 'land', 0, True),
+    ('Amathus', 'Kourion', 'land', 0, False),
+    ('Kourion', 'Paphos', 'land', 0, False),
     ('Paphos', 'Perga', 'sea', 0.08, True),
-    ('Perga', 'Antioch in Pisidia', 'land', 0, False),
-    ('Antioch in Pisidia', 'Iconium', 'land', 0, False),
-    ('Iconium', 'Lystra', 'land', 0, False),
-    ('Lystra', 'Derbe', 'land', 0, False),
+    # Via Sebaste climb through the lake corridor; arrows on the long
+    # first segment only (the pair logic uses each row's own flag)
+    ('Perga', 'Via Sebaste S', 'land', 0, True),
+    ('Via Sebaste S', 'Via Sebaste N', 'land', 0, False),
+    ('Via Sebaste N', 'Antioch in Pisidia', 'land', 0, False),
+    ('Antioch in Pisidia', 'Iconium', 'land', 0, True),
+    ('Iconium', 'Lystra', 'land', 0, True),
+    ('Lystra', 'Derbe', 'land', 0, True),
     ('Perga', 'Attalia', 'land', 0, False),
     # Homebound sail ends at Seleucia, the port — the final hop to
     # Antioch reuses the already-drawn road (no doubled line).
@@ -551,8 +572,8 @@ def build(data_dir, out_path, return_variant=True):
                 # with its own arrowhead (reference-map treatment)
                 po, qo = offset_pts(p, q, 3.4)
                 pr, qr = offset_pts(q, p, 3.4)
-                draw_land(po, qo, 0, True, frac=0.30)
-                draw_land(pr, qr, 0, True, frac=0.30)
+                draw_land(po, qo, 0, arrow, frac=0.30)
+                draw_land(pr, qr, 0, arrow, frac=0.30)
             else:
                 draw_land(p, q, bow, arrow)
             continue
