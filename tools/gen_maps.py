@@ -83,7 +83,9 @@ LEGS = [
     ('Iconium', 'Lystra', 'land', 0, False),
     ('Lystra', 'Derbe', 'land', 0, False),
     ('Perga', 'Attalia', 'land', 0, False),
-    ('Attalia', 'Antioch (Syria)', 'sea', -0.34, True),
+    # Homebound sail ends at Seleucia, the port — the final hop to
+    # Antioch reuses the already-drawn road (no doubled line).
+    ('Attalia', 'Seleucia', 'sea', -0.34, True),
 ]
 
 # Label placement: anchor + pixel nudge per place (the hand-tuned part).
@@ -209,17 +211,39 @@ def bowed(p, q, bow):
     return (mx + dy * bow, my - dx * bow)
 
 
-def arrow_at(p, c, q, t=0.5, size=9.0):
-    """A direction arrowhead on the quadratic (p, c, q) at parameter t:
-    point + tangent give a small triangle aligned with travel."""
-    def bez(t):
+def sample_quad(p, c, q, n=240):
+    """Sample the quadratic (p, c, q) as n+1 points."""
+    pts = []
+    for i in range(n + 1):
+        t = i / n
         u = 1 - t
-        return (u*u*p[0] + 2*u*t*c[0] + t*t*q[0],
-                u*u*p[1] + 2*u*t*c[1] + t*t*q[1])
-    x, y = bez(t)
-    # tangent
-    tx = 2*(1-t)*(c[0]-p[0]) + 2*t*(q[0]-c[0])
-    ty = 2*(1-t)*(c[1]-p[1]) + 2*t*(q[1]-c[1])
+        pts.append((u*u*p[0] + 2*u*t*c[0] + t*t*q[0],
+                    u*u*p[1] + 2*u*t*c[1] + t*t*q[1]))
+    return pts
+
+
+def point_in_rings(pt, rings):
+    """Ray-casting point-in-polygon across disjoint rings (projected px)."""
+    x, y = pt
+    inside = False
+    for ring in rings:
+        j = len(ring) - 1
+        for i in range(len(ring)):
+            xi, yi = ring[i]
+            xj, yj = ring[j]
+            if (yi > y) != (yj > y) and \
+                    x < (xj - xi) * (y - yi) / (yj - yi) + xi:
+                inside = not inside
+            j = i
+    return inside
+
+
+def arrow_marker(pts, size=9.0):
+    """A direction arrowhead at the midpoint of a sampled run, aligned
+    with travel."""
+    m = len(pts) // 2
+    x, y = pts[m]
+    tx, ty = pts[m + 1][0] - pts[m - 1][0], pts[m + 1][1] - pts[m - 1][1]
     ang = math.degrees(math.atan2(ty, tx))
     return (f'<path d="M{size:.0f},0 L-{size*0.45:.1f},{size*0.55:.1f} '
             f'L-{size*0.45:.1f},-{size*0.55:.1f} Z" fill="{ROUTE}" '
@@ -233,6 +257,7 @@ def build(data_dir, out_path):
 
     def land_paths(name, fill, stroke, stroke_w):
         out = []
+        rings = []
         with open(os.path.join(data_dir, name)) as f:
             data = json.load(f)
         for feat in data['features']:
@@ -240,11 +265,12 @@ def build(data_dir, out_path):
                 clipped = clip_polygon(ring, BBOX)
                 if len(clipped) >= 3:
                     pts = [proj(*p) for p in clipped]
+                    rings.append(pts)
                     out.append(f'<path d="{path_d(pts, close=True)}" '
                                f'fill="{fill}" stroke="{stroke}" '
                                f'stroke-width="{stroke_w}" '
                                f'stroke-linejoin="round"/>')
-        return out
+        return out, rings
 
     river_paths = []
     with open(os.path.join(data_dir, 'ne_10m_rivers_lake_centerlines.geojson')) as f:
@@ -277,9 +303,11 @@ def build(data_dir, out_path):
                f'height="{height:.0f}" rx="10"/></clipPath>')
     svg.append('<g clip-path="url(#frame)">')
     svg.append(f'<rect width="{WIDTH}" height="{height:.0f}" fill="{SEA}"/>')
-    svg.extend(land_paths('ne_10m_land.geojson', LAND, COAST, '1.4'))
+    land_svg, land_rings = land_paths('ne_10m_land.geojson', LAND, COAST, '1.4')
+    svg.extend(land_svg)
     svg.extend(river_paths)
-    svg.extend(land_paths('ne_10m_lakes.geojson', LAKE, COAST, '1.0'))
+    lake_svg, _ = land_paths('ne_10m_lakes.geojson', LAKE, COAST, '1.0')
+    svg.extend(lake_svg)
 
     # Whisper-faint 1° graticule — gives the empty interior a cartographic
     # texture without competing with anything (see the methodology doc's
@@ -309,26 +337,61 @@ def build(data_dir, out_path):
                    f'letter-spacing="3" '
                    f'transform="rotate({rot} {x:.0f} {y:.0f})">{text}</text>')
 
-    # Route
+    # ── Route — terrain-aware: sea legs are sampled and tested against the
+    # very land polygons the map draws, so dashes are *only ever painted on
+    # water*. A land run at the leg's start is the harbor departure (left
+    # as a gap); a land run at the leg's end is an inland river/road
+    # arrival (ships sailed up the Cestrus to Perga; travellers walked from
+    # Seleucia's docks up to Antioch) and renders as a solid land leg from
+    # the exact coast crossing. A land run in the middle means the bow
+    # crosses an island/isthmus — a route bug, so it warns.
     coords = dict(PLACES)
     coords.update(WAYPOINTS)
     arrows = []
     for frm, to, kind, bow, arrow in LEGS:
         p, q = proj(*coords[frm]), proj(*coords[to])
-        # dashoffset starts the pattern with a gap, so a harbor
-        # departure doesn't paint its first dashes on the headland.
-        dash = (' stroke-dasharray="2 9" stroke-dashoffset="-7"'
-                if kind == 'sea' else '')
         c = bowed(p, q, bow) if bow else ((p[0]+q[0])/2, (p[1]+q[1])/2)
-        if bow:
-            d = f'M{p[0]:.1f},{p[1]:.1f} Q{c[0]:.1f},{c[1]:.1f} {q[0]:.1f},{q[1]:.1f}'
-        else:
-            d = f'M{p[0]:.1f},{p[1]:.1f} L{q[0]:.1f},{q[1]:.1f}'
-        svg.append(f'<path d="{d}" fill="none" stroke="{ROUTE}" '
-                   f'stroke-width="{ROUTE_W}" stroke-linecap="round"{dash} '
-                   f'opacity="0.9"/>')
-        if arrow:
-            arrows.append(arrow_at(p, c, q))
+        if kind == 'land':
+            if bow:
+                d = (f'M{p[0]:.1f},{p[1]:.1f} Q{c[0]:.1f},{c[1]:.1f} '
+                     f'{q[0]:.1f},{q[1]:.1f}')
+            else:
+                d = f'M{p[0]:.1f},{p[1]:.1f} L{q[0]:.1f},{q[1]:.1f}'
+            svg.append(f'<path d="{d}" fill="none" stroke="{ROUTE}" '
+                       f'stroke-width="{ROUTE_W}" stroke-linecap="round" '
+                       f'opacity="0.9"/>')
+            if arrow:
+                arrows.append(arrow_marker(sample_quad(p, c, q)))
+            continue
+        # sea leg: split the sampled curve into water/land runs
+        samples = sample_quad(p, c, q)
+        runs = []          # [is_water, [pts]]
+        for pt in samples:
+            water = not point_in_rings(pt, land_rings)
+            if runs and runs[-1][0] == water:
+                runs[-1][1].append(pt)
+            else:
+                runs.append([water, [pt]])
+        water_runs = [pts for w, pts in runs if w]
+        for i, (water, pts) in enumerate(runs):
+            if len(pts) < 2:
+                continue
+            if water:
+                svg.append(f'<path d="{path_d(pts)}" fill="none" '
+                           f'stroke="{ROUTE}" stroke-width="{ROUTE_W}" '
+                           f'stroke-linecap="round" '
+                           f'stroke-dasharray="2 9" opacity="0.9"/>')
+            elif i == 0:
+                pass        # harbor departure — leave the land bit as a gap
+            elif i == len(runs) - 1:
+                svg.append(f'<path d="{path_d(pts)}" fill="none" '
+                           f'stroke="{ROUTE}" stroke-width="{ROUTE_W}" '
+                           f'stroke-linecap="round" opacity="0.9"/>')
+            else:
+                print(f'  ! sea leg {frm}->{to} crosses land mid-route '
+                      f'({len(pts)} samples) — adjust the bow')
+        if arrow and water_runs:
+            arrows.append(arrow_marker(max(water_runs, key=len)))
     svg.extend(arrows)   # arrowheads above all route lines
 
     # Places: dot + haloed label
