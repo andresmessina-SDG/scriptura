@@ -41,6 +41,11 @@ TITLE = '#33373b'
 SUBTITLE = '#74797f'
 FONT = 'Adwaita Sans, Inter, sans-serif'
 FRAME = '#c9c4ba'
+# Hypsometric relief: elevation bands as successively deeper paper tones
+# (subtle — texture, not topo-map). Thresholds in metres; the Anatolian
+# plateau (~1000 m) and the Taurus range carry the story of the hard
+# climb inland from Perga.
+RELIEF_BANDS = [(400, '#f2ece0'), (1000, '#ece4d3'), (1800, '#e4dac6')]
 
 # ── The map definition (editorial content) ──────────────────────────────────
 BBOX = (29.6, 33.9, 37.8, 39.3)   # lon_min, lat_min, lon_max, lat_max
@@ -204,6 +209,147 @@ def clip_line(points, bbox):
     return runs
 
 
+# ── Hypsometric relief (Mapzen terrarium DEM → marching squares) ─────────────
+# Elevation from the public-domain terrarium tiles on AWS
+# (s3.amazonaws.com/elevation-tiles-prod), decoded with PIL, resampled to a
+# regular lon/lat grid over the bbox, then contoured per RELIEF_BANDS with
+# marching squares (interpolated edges, segments chained into closed rings).
+# Grid borders are forced below every threshold so rings always close.
+
+def load_elevation_grid(tile_dir, bbox, nx=420, ny=320, z=7):
+    from PIL import Image
+    lon0, lat0, lon1, lat1 = bbox
+
+    def txf(lon):
+        return (lon + 180) / 360 * (1 << z)
+
+    def tyf(lat):
+        r = math.radians(lat)
+        return (1 - math.log(math.tan(r) + 1 / math.cos(r)) / math.pi) \
+            / 2 * (1 << z)
+
+    tiles = {}
+
+    def elev(lon, lat):
+        fx, fy = txf(lon), tyf(lat)
+        tx, ty = int(fx), int(fy)
+        if (tx, ty) not in tiles:
+            path = os.path.join(tile_dir, f'{z}_{tx}_{ty}.png')
+            tiles[(tx, ty)] = (Image.open(path).convert('RGB').load()
+                               if os.path.exists(path) else None)
+        px = tiles[(tx, ty)]
+        if px is None:
+            return -1000.0
+        r, g, b = px[min(255, int((fx - tx) * 256)),
+                     min(255, int((fy - ty) * 256))]
+        return (r * 256 + g + b / 256) - 32768
+
+    grid = []
+    for j in range(ny):
+        lat = lat1 - (lat1 - lat0) * j / (ny - 1)
+        row = [elev(lon0 + (lon1 - lon0) * i / (nx - 1), lat)
+               for i in range(nx)]
+        grid.append(row)
+    # Smooth before contouring: raw 1-km cells contour into speckled
+    # camo patches; two 3x3 box-blur passes yield coherent ranges
+    # (relief here is texture, not survey data).
+    for _ in range(2):
+        prev = [row[:] for row in grid]
+        for j in range(1, ny - 1):
+            for i in range(1, nx - 1):
+                grid[j][i] = (
+                    prev[j-1][i-1] + prev[j-1][i] + prev[j-1][i+1] +
+                    prev[j][i-1] + prev[j][i] + prev[j][i+1] +
+                    prev[j+1][i-1] + prev[j+1][i] + prev[j+1][i+1]) / 9.0
+    # closed-ring guarantee: borders below any threshold
+    for i in range(nx):
+        grid[0][i] = grid[ny - 1][i] = -10000.0
+    for j in range(ny):
+        grid[j][0] = grid[j][nx - 1] = -10000.0
+    return grid
+
+
+def marching_squares(grid, threshold):
+    """Closed contour rings (grid coordinates) for grid >= threshold."""
+    ny, nx = len(grid), len(grid[0])
+    segs = {}   # start -> (end) with rounded keys
+
+    def interp(va, vb, a, b):
+        t = (threshold - va) / (vb - va)
+        return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+
+    def key(p):
+        return (round(p[0], 3), round(p[1], 3))
+
+    for j in range(ny - 1):
+        for i in range(nx - 1):
+            tl, tr = grid[j][i], grid[j][i + 1]
+            bl, br = grid[j + 1][i], grid[j + 1][i + 1]
+            case = ((tl >= threshold) | (tr >= threshold) << 1 |
+                    (br >= threshold) << 2 | (bl >= threshold) << 3)
+            if case in (0, 15):
+                continue
+            # edge midpoints (interpolated): top/right/bottom/left
+            T = interp(tl, tr, (i, j), (i + 1, j)) if (tl >= threshold) != (tr >= threshold) else None
+            R = interp(tr, br, (i + 1, j), (i + 1, j + 1)) if (tr >= threshold) != (br >= threshold) else None
+            B = interp(bl, br, (i, j + 1), (i + 1, j + 1)) if (bl >= threshold) != (br >= threshold) else None
+            L = interp(tl, bl, (i, j), (i, j + 1)) if (tl >= threshold) != (bl >= threshold) else None
+            # segments oriented with the >=threshold side on the LEFT
+            table = {
+                1: [(L, T)], 2: [(T, R)], 3: [(L, R)], 4: [(R, B)],
+                5: [(L, T), (R, B)], 6: [(T, B)], 7: [(L, B)],
+                8: [(B, L)], 9: [(B, T)], 10: [(T, L), (B, R)],
+                11: [(B, R)], 12: [(R, L)], 13: [(R, T)], 14: [(T, L)],
+            }
+            for a, b in table[case]:
+                if a and b:
+                    segs[key(a)] = (a, b)
+
+    rings = []
+    while segs:
+        start_key, (a, b) = next(iter(segs.items()))
+        del segs[start_key]
+        ring = [a, b]
+        while True:
+            nxt = segs.pop(key(ring[-1]), None)
+            if nxt is None:
+                break
+            ring.append(nxt[1])
+            if key(nxt[1]) == start_key:
+                break
+        if len(ring) > 3:
+            rings.append(ring)
+    return rings
+
+
+def relief_paths(tile_dir, bbox, proj):
+    out = []
+    grid = load_elevation_grid(tile_dir, bbox)
+    ny, nx = len(grid), len(grid[0])
+    lon0, lat0, lon1, lat1 = bbox
+
+    def to_lonlat(p):
+        return (lon0 + (lon1 - lon0) * p[0] / (nx - 1),
+                lat1 - (lat1 - lat0) * p[1] / (ny - 1))
+
+    for threshold, color in RELIEF_BANDS:
+        d_parts = []
+        for ring in marching_squares(grid, threshold):
+            pts = [proj(*to_lonlat(p)) for p in ring]
+            # drop speckle rings and thin the rest — relief is texture,
+            # not survey data; halves the SVG without visible change
+            xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
+            if (max(xs) - min(xs)) * (max(ys) - min(ys)) < 300:
+                continue
+            pts = pts[::2] if len(pts) > 24 else pts
+            d_parts.append('M' + ' L'.join(f'{x:.0f},{y:.0f}'
+                                           for x, y in pts) + ' Z')
+        if d_parts:
+            out.append(f'<path d="{" ".join(d_parts)}" fill="{color}" '
+                       f'fill-rule="evenodd"/>')
+    return out
+
+
 # ── SVG emission ─────────────────────────────────────────────────────────────
 
 def path_d(points, close=False):
@@ -263,10 +409,10 @@ def point_in_rings(pt, rings):
     return inside
 
 
-def arrow_marker(pts, size=9.0):
-    """A direction arrowhead at the midpoint of a sampled run, aligned
-    with travel."""
-    m = len(pts) // 2
+def arrow_marker(pts, size=9.0, frac=0.5):
+    """A direction arrowhead along a sampled run (frac of its length),
+    aligned with travel."""
+    m = max(1, min(len(pts) - 2, int(len(pts) * frac)))
     x, y = pts[m]
     tx, ty = pts[m + 1][0] - pts[m - 1][0], pts[m + 1][1] - pts[m - 1][1]
     ang = math.degrees(math.atan2(ty, tx))
@@ -275,7 +421,7 @@ def arrow_marker(pts, size=9.0):
             f'transform="translate({x:.1f},{y:.1f}) rotate({ang:.1f})"/>')
 
 
-def build(data_dir, out_path, return_variant=False):
+def build(data_dir, out_path, return_variant=True):
     proj, height = make_projection(BBOX, WIDTH)
     pad_top = 96          # title block
     H = int(height) + pad_top + 24
@@ -330,6 +476,8 @@ def build(data_dir, out_path, return_variant=False):
     svg.append(f'<rect width="{WIDTH}" height="{height:.0f}" fill="{SEA}"/>')
     land_svg, land_rings = land_paths('ne_10m_land.geojson', LAND, COAST, '1.4')
     svg.extend(land_svg)
+    # Hypsometric relief — texture for the interior, and the Taurus story
+    svg.extend(relief_paths(os.path.join(data_dir, 'terrarium'), BBOX, proj))
     svg.extend(river_paths)
     lake_svg, _ = land_paths('ne_10m_lakes.geojson', LAKE, COAST, '1.0')
     svg.extend(lake_svg)
@@ -375,7 +523,7 @@ def build(data_dir, out_path, return_variant=False):
     coords.update(WAYPOINTS)
     arrows = []
 
-    def draw_land(p, q, bow, arrow):
+    def draw_land(p, q, bow, arrow, frac=0.5):
         c = bowed(p, q, bow) if bow else ((p[0]+q[0])/2, (p[1]+q[1])/2)
         if bow:
             d = (f'M{p[0]:.1f},{p[1]:.1f} Q{c[0]:.1f},{c[1]:.1f} '
@@ -386,7 +534,7 @@ def build(data_dir, out_path, return_variant=False):
                    f'stroke-width="{ROUTE_W}" stroke-linecap="round" '
                    f'opacity="0.9"/>')
         if arrow:
-            arrows.append(arrow_marker(sample_quad(p, c, q)))
+            arrows.append(arrow_marker(sample_quad(p, c, q), frac=frac))
 
     def offset_pts(p, q, d):
         dx, dy = q[0] - p[0], q[1] - p[1]
@@ -403,8 +551,8 @@ def build(data_dir, out_path, return_variant=False):
                 # with its own arrowhead (reference-map treatment)
                 po, qo = offset_pts(p, q, 3.4)
                 pr, qr = offset_pts(q, p, 3.4)
-                draw_land(po, qo, 0, True)
-                draw_land(pr, qr, 0, True)
+                draw_land(po, qo, 0, True, frac=0.30)
+                draw_land(pr, qr, 0, True, frac=0.30)
             else:
                 draw_land(p, q, bow, arrow)
             continue
@@ -500,11 +648,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--data-dir', default='/tmp/mapdata')
     ap.add_argument('--out', default='/tmp/paul-journey-1.svg')
-    ap.add_argument('--return-variant', action='store_true',
-                    help='draw retraced roads as offset pairs with '
-                         'per-direction arrows')
+    ap.add_argument('--single-retrace', action='store_true',
+                    help='draw retraced roads as single calm lines instead '
+                         'of the default offset out/return pair')
     args = ap.parse_args()
-    build(args.data_dir, args.out, return_variant=args.return_variant)
+    build(args.data_dir, args.out,
+          return_variant=not args.single_retrace)
 
 
 if __name__ == '__main__':
