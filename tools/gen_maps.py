@@ -315,7 +315,10 @@ def build(data_dir, out_path):
     arrows = []
     for frm, to, kind, bow, arrow in LEGS:
         p, q = proj(*coords[frm]), proj(*coords[to])
-        dash = ' stroke-dasharray="2 9"' if kind == 'sea' else ''
+        # dashoffset starts the pattern with a gap, so a harbor
+        # departure doesn't paint its first dashes on the headland.
+        dash = (' stroke-dasharray="2 9" stroke-dashoffset="-7"'
+                if kind == 'sea' else '')
         c = bowed(p, q, bow) if bow else ((p[0]+q[0])/2, (p[1]+q[1])/2)
         if bow:
             d = f'M{p[0]:.1f},{p[1]:.1f} Q{c[0]:.1f},{c[1]:.1f} {q[0]:.1f},{q[1]:.1f}'
