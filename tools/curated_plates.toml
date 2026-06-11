@@ -1,0 +1,1635 @@
+# Curated masterwork cycles — whole-book sets that close out books the pack
+# barely covered (ROADMAP Phase I "completeness" pass, Option B). Unlike the
+# per-artist TOMLs, every plate here carries its own kind/tradition/artist
+# metadata, so one ingest (ingest_curated) serves all the cycles; future
+# curated one-off additions (Option A gap-fill) land in this same file.
+#
+# LICENSING: every plate is a faithful 2-D reproduction of a pre-1900 work
+# (PD-Art) — license is recorded per plate. `n` keys are unique across the
+# file and become the dest filename (cur_<n>.<ext>).
+#
+# Cycles in this file:
+#   DUR01–15  Dürer, "The Apocalypse" (1498) — 15 woodcuts covering most of
+#             Revelation's narrative arc (previously: 1 chapter of coverage).
+#             Scans: Rijksmuseum / Chester Beatty / Leiden UL / LACMA, chosen
+#             as the highest-resolution Commons file per scene.
+#   BLA01–21  Blake, "Illustrations of the Book of Job" (1826) — the complete
+#             21-engraving cycle; passages follow the plates' own inscribed
+#             texts. Commons set "Blake Job N.jpg" (10/11 are "A10"/"A11"),
+#             each file's description confirms "Nth print from…".
+#   RAF01–07  Raphael Cartoons (c. 1515–16) — the seven surviving tapestry
+#             cartoons: two Gospel scenes and five Acts scenes (the canonical
+#             Acts images; previously Acts art was Doré-only).
+
+# ── Dürer — The Apocalypse (1498) ────────────────────────────────────────────
+
+[[plate]]
+n = "DUR01"
+file = "Martyrdom of St John (CBL WEp 0018).jpg"
+title = "The Martyrdom of Saint John"
+book = "Revelation"
+chapter = 1
+verse = 1
+verse_end = 9
+passage_label = "Revelation 1:1–9"
+kind = "illustration"
+tradition = "engraving"
+artist = "Albrecht Dürer"
+year = 1498
+license = "PD"
+attribution = "Albrecht Dürer, The Apocalypse (1498) — Chester Beatty, Dublin"
+
+[[plate]]
+n = "DUR02"
+file = "Johannes de Evangelist knielt voor Christus temidden van zeven kandelaars, RP-P-OB-1376.jpg"
+title = "The Vision of the Seven Candlesticks"
+book = "Revelation"
+chapter = 1
+verse = 12
+verse_end = 20
+passage_label = "Revelation 1:12–20"
+kind = "illustration"
+tradition = "engraving"
+artist = "Albrecht Dürer"
+year = 1498
+license = "PD"
+attribution = "Albrecht Dürer, The Apocalypse (1498) — Rijksmuseum, Amsterdam"
+
+[[plate]]
+n = "DUR03"
+file = "Johannes de Evangelist knielt voor Christus en het lam met de zeven hoorns en de zeven ogen, RP-P-OB-1377.jpg"
+title = "Saint John Before God and the Elders"
+book = "Revelation"
+chapter = 4
+verse = 1
+chapter_end = 5
+verse_end = 14
+passage_label = "Revelation 4–5"
+kind = "illustration"
+tradition = "engraving"
+artist = "Albrecht Dürer"
+year = 1498
+license = "PD"
+attribution = "Albrecht Dürer, The Apocalypse (1498) — Rijksmuseum, Amsterdam"
+
+[[plate]]
+n = "DUR04"
+file = "The Four Horsemen (CBL WEp 0021).jpg"
+title = "The Four Horsemen of the Apocalypse"
+book = "Revelation"
+chapter = 6
+verse = 1
+verse_end = 8
+passage_label = "Revelation 6:1–8"
+kind = "illustration"
+tradition = "engraving"
+artist = "Albrecht Dürer"
+year = 1498
+license = "PD"
+attribution = "Albrecht Dürer, The Apocalypse (1498) — Chester Beatty, Dublin"
+
+[[plate]]
+n = "DUR05"
+file = "The Apocalypse 06 The opening of the fifth and sixth seals PK-P-127.231.jpg"
+title = "The Opening of the Fifth and Sixth Seals"
+book = "Revelation"
+chapter = 6
+verse = 9
+verse_end = 17
+passage_label = "Revelation 6:9–17"
+kind = "illustration"
+tradition = "engraving"
+artist = "Albrecht Dürer"
+year = 1498
+license = "PD"
+attribution = "Albrecht Dürer, The Apocalypse (1498) — Leiden University Libraries"
+
+[[plate]]
+n = "DUR06"
+file = "Engelen houden de vier winden tegen, RP-P-OB-1380.jpg"
+title = "Four Angels Holding Back the Winds"
+book = "Revelation"
+chapter = 7
+verse = 1
+verse_end = 8
+passage_label = "Revelation 7:1–8"
+kind = "illustration"
+tradition = "engraving"
+artist = "Albrecht Dürer"
+year = 1498
+license = "PD"
+attribution = "Albrecht Dürer, The Apocalypse (1498) — Rijksmuseum, Amsterdam"
+
+[[plate]]
+n = "DUR07"
+file = "Johannes de Evangelist aanschouwt de aanbidding van het lam, RP-P-OB-1382.jpg"
+title = "The Adoration of the Lamb"
+book = "Revelation"
+chapter = 7
+verse = 9
+verse_end = 17
+passage_label = "Revelation 7:9–17"
+kind = "illustration"
+tradition = "engraving"
+artist = "Albrecht Dürer"
+year = 1498
+license = "PD"
+attribution = "Albrecht Dürer, The Apocalypse (1498) — Rijksmuseum, Amsterdam"
+
+[[plate]]
+n = "DUR08"
+file = "De zeven engelen met de bazuinen, RP-P-OB-1383.jpg"
+title = "The Seven Angels with the Trumpets"
+book = "Revelation"
+chapter = 8
+verse = 1
+verse_end = 13
+passage_label = "Revelation 8"
+kind = "illustration"
+tradition = "engraving"
+artist = "Albrecht Dürer"
+year = 1498
+license = "PD"
+attribution = "Albrecht Dürer, The Apocalypse (1498) — Rijksmuseum, Amsterdam"
+
+[[plate]]
+n = "DUR09"
+file = "De vier wrekende engelen, RP-P-OB-1385.jpg"
+title = "The Four Avenging Angels"
+book = "Revelation"
+chapter = 9
+verse = 13
+verse_end = 21
+passage_label = "Revelation 9:13–21"
+kind = "illustration"
+tradition = "engraving"
+artist = "Albrecht Dürer"
+year = 1498
+license = "PD"
+attribution = "Albrecht Dürer, The Apocalypse (1498) — Rijksmuseum, Amsterdam"
+
+[[plate]]
+n = "DUR10"
+file = "Johannes de Evangelist verslindt het boek, RP-P-OB-1386.jpg"
+title = "Saint John Devouring the Book"
+book = "Revelation"
+chapter = 10
+verse = 1
+verse_end = 11
+passage_label = "Revelation 10"
+kind = "illustration"
+tradition = "engraving"
+artist = "Albrecht Dürer"
+year = 1498
+license = "PD"
+attribution = "Albrecht Dürer, The Apocalypse (1498) — Rijksmuseum, Amsterdam"
+
+[[plate]]
+n = "DUR11"
+file = "De apocalyptische vrouw en de zevenkoppige draak, RP-P-OB-1388.jpg"
+title = "The Woman Clothed with the Sun and the Seven-Headed Dragon"
+book = "Revelation"
+chapter = 12
+verse = 1
+verse_end = 6
+passage_label = "Revelation 12:1–6"
+kind = "illustration"
+tradition = "engraving"
+artist = "Albrecht Dürer"
+year = 1498
+license = "PD"
+attribution = "Albrecht Dürer, The Apocalypse (1498) — Rijksmuseum, Amsterdam"
+
+[[plate]]
+n = "DUR12"
+file = "Aartsengel Michaël en zijn engelen bestrijden enkele draken, RP-P-OB-1389.jpg"
+title = "Saint Michael Fighting the Dragon"
+book = "Revelation"
+chapter = 12
+verse = 7
+verse_end = 12
+passage_label = "Revelation 12:7–12"
+kind = "illustration"
+tradition = "engraving"
+artist = "Albrecht Dürer"
+year = 1498
+license = "PD"
+attribution = "Albrecht Dürer, The Apocalypse (1498) — Rijksmuseum, Amsterdam"
+
+[[plate]]
+n = "DUR13"
+file = "Christus met een sikkel, het beest met de hoorns als van een lam en de zevenkoppige draak, RP-P-OB-1392.jpg"
+title = "The Beast with the Lamb's Horns and the Harvest of the World"
+book = "Revelation"
+chapter = 13
+verse = 1
+chapter_end = 14
+verse_end = 20
+passage_label = "Revelation 13–14"
+kind = "illustration"
+tradition = "engraving"
+artist = "Albrecht Dürer"
+year = 1498
+license = "PD"
+attribution = "Albrecht Dürer, The Apocalypse (1498) — Rijksmuseum, Amsterdam"
+
+[[plate]]
+n = "DUR14"
+file = "Albrecht Dürer - The Babylonian Whore from the Apocalypse (LACMA).jpg"
+title = "The Whore of Babylon"
+book = "Revelation"
+chapter = 17
+verse = 1
+chapter_end = 18
+verse_end = 24
+passage_label = "Revelation 17–18"
+kind = "illustration"
+tradition = "engraving"
+artist = "Albrecht Dürer"
+year = 1498
+license = "PD"
+attribution = "Albrecht Dürer, The Apocalypse (1498) — LACMA, Los Angeles"
+
+[[plate]]
+n = "DUR15"
+file = "Een engel werpt een draak in een put een engel toont Johannes de Evangelist het nieuwe Jeruzalem, RP-P-OB-1393.jpg"
+title = "The Angel with the Key and the New Jerusalem"
+book = "Revelation"
+chapter = 20
+verse = 1
+chapter_end = 21
+verse_end = 27
+passage_label = "Revelation 20–21"
+kind = "illustration"
+tradition = "engraving"
+artist = "Albrecht Dürer"
+year = 1498
+license = "PD"
+attribution = "Albrecht Dürer, The Apocalypse (1498) — Rijksmuseum, Amsterdam"
+
+# ── Blake — Illustrations of the Book of Job (1826) ─────────────────────────
+
+[[plate]]
+n = "BLA01"
+file = "Blake Job 1.jpg"
+title = "Job and His Family"
+book = "Job"
+chapter = 1
+verse = 1
+verse_end = 5
+passage_label = "Job 1:1–5"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA02"
+file = "Blake Job 2.jpg"
+title = "Satan Before the Throne of God"
+book = "Job"
+chapter = 1
+verse = 6
+verse_end = 12
+passage_label = "Job 1:6–12"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA03"
+file = "Blake Job 3.jpg"
+title = "Job's Sons and Daughters Overwhelmed by Satan"
+book = "Job"
+chapter = 1
+verse = 18
+verse_end = 19
+passage_label = "Job 1:18–19"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA04"
+file = "Blake Job 4.jpg"
+title = "The Messengers Tell Job of His Misfortunes"
+book = "Job"
+chapter = 1
+verse = 13
+verse_end = 17
+passage_label = "Job 1:13–17"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA05"
+file = "Blake Job 5.jpg"
+title = "Satan Going Forth from the Presence of the Lord"
+book = "Job"
+chapter = 2
+verse = 1
+verse_end = 6
+passage_label = "Job 2:1–6"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA06"
+file = "Blake Job 6.jpg"
+title = "Satan Smiting Job with Boils"
+book = "Job"
+chapter = 2
+verse = 7
+verse_end = 8
+passage_label = "Job 2:7–8"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA07"
+file = "Blake Job 7.jpg"
+title = "Job's Comforters"
+book = "Job"
+chapter = 2
+verse = 11
+verse_end = 13
+passage_label = "Job 2:11–13"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA08"
+file = "Blake Job 8.jpg"
+title = "Job's Despair"
+book = "Job"
+chapter = 3
+verse = 1
+verse_end = 10
+passage_label = "Job 3:1–10"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA09"
+file = "Blake Job 9.jpg"
+title = "The Vision of Eliphaz"
+book = "Job"
+chapter = 4
+verse = 12
+verse_end = 21
+passage_label = "Job 4:12–21"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA10"
+file = "Blake Job A10.jpg"
+title = "Job Rebuked by His Friends"
+book = "Job"
+chapter = 12
+verse = 1
+verse_end = 5
+passage_label = "Job 12:1–5"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA11"
+file = "Blake Job A11.jpg"
+title = "Job's Evil Dreams"
+book = "Job"
+chapter = 7
+verse = 13
+verse_end = 14
+passage_label = "Job 7:13–14"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA12"
+file = "Blake Job 12.jpg"
+title = "The Wrath of Elihu"
+book = "Job"
+chapter = 32
+verse = 1
+verse_end = 10
+passage_label = "Job 32:1–10"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA13"
+file = "Blake Job 13.jpg"
+title = "The Lord Answering Job out of the Whirlwind"
+book = "Job"
+chapter = 38
+verse = 1
+verse_end = 3
+passage_label = "Job 38:1–3"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA14"
+file = "Blake Job 14.jpg"
+title = "When the Morning Stars Sang Together"
+book = "Job"
+chapter = 38
+verse = 4
+verse_end = 7
+passage_label = "Job 38:4–7"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA15"
+file = "Blake Job 15.jpg"
+title = "Behemoth and Leviathan"
+book = "Job"
+chapter = 40
+verse = 15
+chapter_end = 41
+verse_end = 34
+passage_label = "Job 40:15 – 41:34"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA16"
+file = "Blake Job 16.jpg"
+title = "The Fall of Satan"
+book = "Job"
+chapter = 36
+verse = 17
+passage_label = "Job 36:17"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA17"
+file = "Blake Job 17.jpg"
+title = "The Vision of God"
+book = "Job"
+chapter = 42
+verse = 5
+verse_end = 6
+passage_label = "Job 42:5–6"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA18"
+file = "Blake Job 18.jpg"
+title = "Job's Sacrifice"
+book = "Job"
+chapter = 42
+verse = 8
+verse_end = 10
+passage_label = "Job 42:8–10"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA19"
+file = "Blake Job 19.jpg"
+title = "Every Man Also Gave Him a Piece of Money"
+book = "Job"
+chapter = 42
+verse = 11
+passage_label = "Job 42:11"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA20"
+file = "Blake Job 20.jpg"
+title = "Job and His Daughters"
+book = "Job"
+chapter = 42
+verse = 13
+verse_end = 15
+passage_label = "Job 42:13–15"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+[[plate]]
+n = "BLA21"
+file = "Blake Job 21.jpg"
+title = "Job and His Family Restored to Prosperity"
+book = "Job"
+chapter = 42
+verse = 12
+passage_label = "Job 42:12"
+kind = "illustration"
+tradition = "engraving"
+artist = "William Blake"
+year = 1826
+license = "PD"
+attribution = "William Blake, Illustrations of the Book of Job (1826)"
+
+# ── Raphael — the Sistine tapestry cartoons (c. 1515–16) ────────────────────
+
+[[plate]]
+n = "RAF01"
+file = "Raphael - The Miraculous Draft of Fishes - Google Art Project.jpg"
+title = "The Miraculous Draught of Fishes"
+book = "Luke"
+chapter = 5
+verse = 1
+verse_end = 11
+passage_label = "Luke 5:1–11"
+kind = "painting"
+tradition = "old_master"
+artist = "Raphael"
+year = 1516
+license = "PD"
+attribution = "Raphael, cartoon for the Sistine Chapel tapestries (c. 1515–16) — Royal Collection, on loan to the V&A, London"
+
+[[plate]]
+n = "RAF02"
+file = "Raphael - Christ's Charge to Peter c.1515-6.jpg"
+title = "Christ's Charge to Peter"
+book = "John"
+chapter = 21
+verse = 15
+verse_end = 17
+passage_label = "John 21:15–17"
+kind = "painting"
+tradition = "old_master"
+artist = "Raphael"
+year = 1516
+license = "PD"
+attribution = "Raphael, cartoon for the Sistine Chapel tapestries (c. 1515–16) — Royal Collection, on loan to the V&A, London"
+
+[[plate]]
+n = "RAF03"
+file = "V&A - Raphael, The Healing of the Lame Man (1515).jpg"
+title = "The Healing of the Lame Man"
+book = "Acts"
+chapter = 3
+verse = 1
+verse_end = 10
+passage_label = "Acts 3:1–10"
+kind = "painting"
+tradition = "old_master"
+artist = "Raphael"
+year = 1516
+license = "PD"
+attribution = "Raphael, cartoon for the Sistine Chapel tapestries (c. 1515–16) — Royal Collection, on loan to the V&A, London"
+
+[[plate]]
+n = "RAF04"
+file = "Raphael - The Death of Ananias c.1515-6.jpg"
+title = "The Death of Ananias"
+book = "Acts"
+chapter = 5
+verse = 1
+verse_end = 11
+passage_label = "Acts 5:1–11"
+kind = "painting"
+tradition = "old_master"
+artist = "Raphael"
+year = 1516
+license = "PD"
+attribution = "Raphael, cartoon for the Sistine Chapel tapestries (c. 1515–16) — Royal Collection, on loan to the V&A, London"
+
+[[plate]]
+n = "RAF05"
+file = "Raphael (1483-1520) - The Conversion of the Proconsul - Royal Loans.8 - Victoria and Albert Museum.jpg"
+title = "The Conversion of the Proconsul"
+book = "Acts"
+chapter = 13
+verse = 6
+verse_end = 12
+passage_label = "Acts 13:6–12"
+kind = "painting"
+tradition = "old_master"
+artist = "Raphael"
+year = 1516
+license = "PD"
+attribution = "Raphael, cartoon for the Sistine Chapel tapestries (c. 1515–16) — Royal Collection, on loan to the V&A, London"
+
+[[plate]]
+n = "RAF06"
+file = "V&A - Raphael, The Sacrifice at Lystra (1515).jpg"
+title = "The Sacrifice at Lystra"
+book = "Acts"
+chapter = 14
+verse = 8
+verse_end = 18
+passage_label = "Acts 14:8–18"
+kind = "painting"
+tradition = "old_master"
+artist = "Raphael"
+year = 1516
+license = "PD"
+attribution = "Raphael, cartoon for the Sistine Chapel tapestries (c. 1515–16) — Royal Collection, on loan to the V&A, London"
+
+[[plate]]
+n = "RAF07"
+file = "Raphael - St Paul Preaching at Athens c.1515-6.jpg"
+title = "Saint Paul Preaching in Athens"
+book = "Acts"
+chapter = 17
+verse = 16
+verse_end = 34
+passage_label = "Acts 17:16–34"
+kind = "painting"
+tradition = "old_master"
+artist = "Raphael"
+year = 1516
+license = "PD"
+attribution = "Raphael, cartoon for the Sistine Chapel tapestries (c. 1515–16) — Royal Collection, on loan to the V&A, London"
+
+# ── Utrecht Psalter — the sixteen cantica (the biblical songs appended to
+# the psalter; same manuscript, source and licensing as psalter_plates.toml,
+# but the book mapping is editorial so these live here, hand-curated). The
+# Te Deum, Athanasian Creed and apocryphal Psalm 151 are omitted. The
+# Benedicite (Vulgate Daniel 3:56-88) is mapped to the furnace narrative
+# of the Protestant canon (Daniel 3:19-30), which its picture depicts.
+
+[[plate]]
+n = "UPS01"
+url = "https://objects.library.uu.nl/fcgi-bin/iipsrv.fcgi?IIIF=/manifestation/viewer/25/31/24/25312464120611145054146278674769925338.jp2/full/1100,/0/default.jpg"
+source_url = "https://psalter.library.uu.nl/"
+title = "The Song of Isaiah (Utrecht Psalter, f. 83v)"
+book = "Isaiah"
+chapter = 12
+verse = 1
+chapter_end = 12
+verse_end = 6
+passage_label = "Isaiah 12"
+kind = "illustration"
+tradition = "illumination"
+artist = "Utrecht Psalter"
+year = 830
+license = "PD"
+attribution = "Utrecht Psalter (c. 830) — Utrecht University Library, Ms. 32"
+
+[[plate]]
+n = "UPS02"
+url = "https://objects.library.uu.nl/fcgi-bin/iipsrv.fcgi?IIIF=/manifestation/viewer/16/34/21/163421605399961231480192040265968841164.jp2/full/1100,/0/default.jpg"
+source_url = "https://psalter.library.uu.nl/"
+title = "Hezekiah's Song of Thanksgiving (Utrecht Psalter, f. 84r)"
+book = "Isaiah"
+chapter = 38
+verse = 10
+chapter_end = 38
+verse_end = 20
+passage_label = "Isaiah 38:10–20"
+kind = "illustration"
+tradition = "illumination"
+artist = "Utrecht Psalter"
+year = 830
+license = "PD"
+attribution = "Utrecht Psalter (c. 830) — Utrecht University Library, Ms. 32"
+
+[[plate]]
+n = "UPS03"
+url = "https://objects.library.uu.nl/fcgi-bin/iipsrv.fcgi?IIIF=/manifestation/viewer/90/58/95/90589543658052686571505656776178402454.jp2/full/1100,/0/default.jpg"
+source_url = "https://psalter.library.uu.nl/"
+title = "Hannah's Song (Utrecht Psalter, f. 84v)"
+book = "1 Samuel"
+chapter = 2
+verse = 1
+chapter_end = 2
+verse_end = 10
+passage_label = "1 Samuel 2:1–10"
+kind = "illustration"
+tradition = "illumination"
+artist = "Utrecht Psalter"
+year = 830
+license = "PD"
+attribution = "Utrecht Psalter (c. 830) — Utrecht University Library, Ms. 32"
+
+[[plate]]
+n = "UPS04"
+url = "https://objects.library.uu.nl/fcgi-bin/iipsrv.fcgi?IIIF=/manifestation/viewer/14/46/32/144632792925264846085114545739080706849.jp2/full/1100,/0/default.jpg"
+source_url = "https://psalter.library.uu.nl/"
+title = "The Song of Moses at the Sea (Utrecht Psalter, f. 85r)"
+book = "Exodus"
+chapter = 15
+verse = 1
+chapter_end = 15
+verse_end = 19
+passage_label = "Exodus 15:1–19"
+kind = "illustration"
+tradition = "illumination"
+artist = "Utrecht Psalter"
+year = 830
+license = "PD"
+attribution = "Utrecht Psalter (c. 830) — Utrecht University Library, Ms. 32"
+
+[[plate]]
+n = "UPS05"
+url = "https://objects.library.uu.nl/fcgi-bin/iipsrv.fcgi?IIIF=/manifestation/viewer/12/45/67/124567850681116265475445322627263871372.jp2/full/1100,/0/default.jpg"
+source_url = "https://psalter.library.uu.nl/"
+title = "The Prayer of Habakkuk (Utrecht Psalter, f. 85v)"
+book = "Habakkuk"
+chapter = 3
+verse = 2
+chapter_end = 3
+verse_end = 19
+passage_label = "Habakkuk 3:2–19"
+kind = "illustration"
+tradition = "illumination"
+artist = "Utrecht Psalter"
+year = 830
+license = "PD"
+attribution = "Utrecht Psalter (c. 830) — Utrecht University Library, Ms. 32"
+
+[[plate]]
+n = "UPS06"
+url = "https://objects.library.uu.nl/fcgi-bin/iipsrv.fcgi?IIIF=/manifestation/viewer/15/94/02/159402580063674935198729082672921415882.jp2/full/1100,/0/default.jpg"
+source_url = "https://psalter.library.uu.nl/"
+title = "The Song of Moses (Utrecht Psalter, f. 86r)"
+book = "Deuteronomy"
+chapter = 32
+verse = 1
+chapter_end = 32
+verse_end = 43
+passage_label = "Deuteronomy 32:1–43"
+kind = "illustration"
+tradition = "illumination"
+artist = "Utrecht Psalter"
+year = 830
+license = "PD"
+attribution = "Utrecht Psalter (c. 830) — Utrecht University Library, Ms. 32"
+
+[[plate]]
+n = "UPS07"
+url = "https://objects.library.uu.nl/fcgi-bin/iipsrv.fcgi?IIIF=/manifestation/viewer/66/19/64/66196435196065585617583916733878276635.jp2/full/1100,/0/default.jpg"
+source_url = "https://psalter.library.uu.nl/"
+title = "The Song of the Three in the Furnace (Utrecht Psalter, f. 87v)"
+book = "Daniel"
+chapter = 3
+verse = 19
+chapter_end = 3
+verse_end = 30
+passage_label = "Daniel 3:19–30"
+kind = "illustration"
+tradition = "illumination"
+artist = "Utrecht Psalter"
+year = 830
+license = "PD"
+attribution = "Utrecht Psalter (c. 830) — Utrecht University Library, Ms. 32"
+
+[[plate]]
+n = "UPS08"
+url = "https://objects.library.uu.nl/fcgi-bin/iipsrv.fcgi?IIIF=/manifestation/viewer/11/60/05/116005711677214750068121286265901970337.jp2/full/1100,/0/default.jpg"
+source_url = "https://psalter.library.uu.nl/"
+title = "The Benedictus — the Song of Zechariah (Utrecht Psalter, f. 88v)"
+book = "Luke"
+chapter = 1
+verse = 68
+chapter_end = 1
+verse_end = 79
+passage_label = "Luke 1:68–79"
+kind = "illustration"
+tradition = "illumination"
+artist = "Utrecht Psalter"
+year = 830
+license = "PD"
+attribution = "Utrecht Psalter (c. 830) — Utrecht University Library, Ms. 32"
+
+[[plate]]
+n = "UPS09"
+url = "https://objects.library.uu.nl/fcgi-bin/iipsrv.fcgi?IIIF=/manifestation/viewer/13/51/53/13515374241116276700906485264963278951.jp2/full/1100,/0/default.jpg"
+source_url = "https://psalter.library.uu.nl/"
+title = "The Magnificat — the Song of Mary (Utrecht Psalter, f. 89r)"
+book = "Luke"
+chapter = 1
+verse = 46
+chapter_end = 1
+verse_end = 55
+passage_label = "Luke 1:46–55"
+kind = "illustration"
+tradition = "illumination"
+artist = "Utrecht Psalter"
+year = 830
+license = "PD"
+attribution = "Utrecht Psalter (c. 830) — Utrecht University Library, Ms. 32"
+
+[[plate]]
+n = "UPS10"
+url = "https://objects.library.uu.nl/fcgi-bin/iipsrv.fcgi?IIIF=/manifestation/viewer/16/41/73/164173634153566151565755771661955113452.jp2/full/1100,/0/default.jpg"
+source_url = "https://psalter.library.uu.nl/"
+title = "The Nunc Dimittis — the Song of Simeon (Utrecht Psalter, f. 89v)"
+book = "Luke"
+chapter = 2
+verse = 29
+chapter_end = 2
+verse_end = 32
+passage_label = "Luke 2:29–32"
+kind = "illustration"
+tradition = "illumination"
+artist = "Utrecht Psalter"
+year = 830
+license = "PD"
+attribution = "Utrecht Psalter (c. 830) — Utrecht University Library, Ms. 32"
+
+[[plate]]
+n = "UPS11"
+url = "https://objects.library.uu.nl/fcgi-bin/iipsrv.fcgi?IIIF=/manifestation/viewer/14/99/31/149931268287814917477288101528878391055.jp2/full/1100,/0/default.jpg"
+source_url = "https://psalter.library.uu.nl/"
+title = "The Lord's Prayer (Utrecht Psalter, f. 90r)"
+book = "Matthew"
+chapter = 6
+verse = 9
+chapter_end = 6
+verse_end = 13
+passage_label = "Matthew 6:9–13"
+kind = "illustration"
+tradition = "illumination"
+artist = "Utrecht Psalter"
+year = 830
+license = "PD"
+attribution = "Utrecht Psalter (c. 830) — Utrecht University Library, Ms. 32"
+
+# ── Epistle author portraits — one dignified painting per epistle ──────────
+# Whole-book verse ranges (chapter_end 99): the portrait accompanies the
+# reader anywhere in the letter, since epistles have no narrative scenes
+# to illustrate verse-by-verse. Authors follow the traditional ascriptions;
+# Hebrews (anonymous) gets the Melchizedek meeting (Hebrews 7) instead.
+# Every pick visually verified against a contact sheet before inclusion.
+
+[[plate]]
+n = "EPI01"
+file = "Saint Paul, Rembrandt van Rijn (and Workshop?), c. 1657.jpg"
+title = "Saint Paul"
+book = "Romans"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Romans"
+kind = "painting"
+tradition = "old_master"
+artist = "Rembrandt van Rijn"
+year = 1657
+license = "PD"
+attribution = "Rembrandt van Rijn (and workshop), Saint Paul (c. 1657) — National Gallery of Art, Washington"
+
+[[plate]]
+n = "EPI02"
+file = "Valentin de Boulogne - Saint Paul Writing His Epistles - BF.1991.4 - Museum of Fine Arts.jpg"
+title = "Saint Paul Writing His Epistles"
+book = "1 Corinthians"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "1 Corinthians"
+kind = "painting"
+tradition = "old_master"
+artist = "Valentin de Boulogne"
+year = 1620
+license = "PD"
+attribution = "Valentin de Boulogne, Saint Paul Writing His Epistles (c. 1618–20) — Museum of Fine Arts, Houston"
+
+[[plate]]
+n = "EPI03"
+file = "Rembrandt St. Paul in Prison.jpg"
+title = "The Apostle Paul in Prison"
+book = "2 Corinthians"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "2 Corinthians"
+kind = "painting"
+tradition = "old_master"
+artist = "Rembrandt van Rijn"
+year = 1627
+license = "PD"
+attribution = "Rembrandt van Rijn, The Apostle Paul in Prison (1627) — Staatsgalerie, Stuttgart"
+
+[[plate]]
+n = "EPI04"
+file = "San Pablo (El Greco).jpg"
+title = "Saint Paul"
+book = "Galatians"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Galatians"
+kind = "painting"
+tradition = "old_master"
+artist = "El Greco"
+year = 1600
+license = "PD"
+attribution = "El Greco, Saint Paul (c. 1598–1600)"
+
+[[plate]]
+n = "EPI05"
+file = "Albrecht Dürer - The Four Apostles, Saints Mark and Paul.jpg"
+title = "The Four Apostles: Saints Mark and Paul"
+book = "Ephesians"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Ephesians"
+kind = "painting"
+tradition = "old_master"
+artist = "Albrecht Dürer"
+year = 1526
+license = "PD"
+attribution = "Albrecht Dürer, The Four Apostles (1526) — Alte Pinakothek, Munich"
+
+[[plate]]
+n = "EPI06"
+file = "Rembrandt - Self-Portrait as the Apostle Paul - WGA19222.jpg"
+title = "Self-Portrait as the Apostle Paul"
+book = "Philippians"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Philippians"
+kind = "painting"
+tradition = "old_master"
+artist = "Rembrandt van Rijn"
+year = 1661
+license = "PD"
+attribution = "Rembrandt van Rijn, Self-Portrait as the Apostle Paul (1661) — Rijksmuseum, Amsterdam"
+
+[[plate]]
+n = "EPI07"
+file = "The Apostle Paul, made 1627-1629, by Jan Lievens (1607-1674). Nationalmuseum, Stockholm, Sweden.jpg"
+title = "The Apostle Paul"
+book = "Colossians"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Colossians"
+kind = "painting"
+tradition = "old_master"
+artist = "Jan Lievens"
+year = 1628
+license = "CC BY-SA 4.0"
+attribution = "Jan Lievens, The Apostle Paul (c. 1627–29) — Nationalmuseum, Stockholm; photo: Nationalmuseum, CC BY-SA 4.0"
+
+[[plate]]
+n = "EPI08"
+file = "Masaccio, san paolo, pisa.jpg"
+title = "Saint Paul (Pisa polyptych)"
+book = "1 Thessalonians"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "1 Thessalonians"
+kind = "painting"
+tradition = "old_master"
+artist = "Masaccio"
+year = 1426
+license = "PD"
+attribution = "Masaccio, Saint Paul from the Pisa polyptych (1426) — Museo Nazionale di San Matteo, Pisa"
+
+[[plate]]
+n = "EPI09"
+file = "Bartolomeo Montagna - Saint Paul - Google Art Project.jpg"
+title = "Saint Paul"
+book = "2 Thessalonians"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "2 Thessalonians"
+kind = "painting"
+tradition = "old_master"
+artist = "Bartolomeo Montagna"
+year = 1482
+license = "PD"
+attribution = "Bartolomeo Montagna, Saint Paul (1482) — Museo Poldi Pezzoli, Milan"
+
+[[plate]]
+n = "EPI10"
+file = "Jan Lievens - St. Paul, circa 1624-1625.jpg"
+title = "Saint Paul"
+book = "1 Timothy"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "1 Timothy"
+kind = "painting"
+tradition = "old_master"
+artist = "Jan Lievens"
+year = 1625
+license = "PD"
+attribution = "Jan Lievens, Saint Paul (c. 1624–25)"
+
+[[plate]]
+n = "EPI11"
+file = "Anthony van Dyck - De apostel Paulus - Gal.-Nr. 1021 A - Staatliche Kunstsammlungen Dresden.jpg"
+title = "The Apostle Paul"
+book = "2 Timothy"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "2 Timothy"
+kind = "painting"
+tradition = "old_master"
+artist = "Anthony van Dyck"
+year = 1620
+license = "PD"
+attribution = "Anthony van Dyck, The Apostle Paul (c. 1618–20) — Gemäldegalerie Alte Meister, Dresden"
+
+[[plate]]
+n = "EPI12"
+file = "An Elderly Man as Saint Paul.jpg"
+title = "An Elderly Man as Saint Paul"
+book = "Titus"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Titus"
+kind = "painting"
+tradition = "old_master"
+artist = "Circle of Rembrandt"
+year = 1659
+license = "PD"
+attribution = "Circle of Rembrandt, An Elderly Man as Saint Paul (c. 1659) — National Gallery, London"
+
+[[plate]]
+n = "EPI13"
+file = "Diego Velázquez - Saint Paul - Google Art Project.jpg"
+title = "Saint Paul"
+book = "Philemon"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Philemon"
+kind = "painting"
+tradition = "old_master"
+artist = "Diego Velázquez"
+year = 1619
+license = "PD"
+attribution = "Diego Velázquez, Saint Paul (c. 1619) — Museu Nacional d'Art de Catalunya, Barcelona"
+
+[[plate]]
+n = "EPI14"
+file = "Sir Peter Paul Rubens, The Meeting of Abraham and Melchizedek, c. 1626, NGA 45640.jpg"
+title = "The Meeting of Abraham and Melchizedek"
+book = "Hebrews"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Hebrews"
+kind = "painting"
+tradition = "old_master"
+artist = "Peter Paul Rubens"
+year = 1626
+license = "CC0"
+attribution = "Peter Paul Rubens, The Meeting of Abraham and Melchizedek (c. 1626) — National Gallery of Art, Washington"
+
+[[plate]]
+n = "EPI15"
+file = "Santiago el Menor, de El Greco (Museo Nacional de Escultura de Valladolid).JPG"
+title = "Saint James the Less"
+book = "James"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "James"
+kind = "painting"
+tradition = "old_master"
+artist = "El Greco"
+year = 1612
+license = "PD"
+attribution = "El Greco, Saint James the Less (c. 1610–14) — Museo Nacional de Escultura, Valladolid"
+
+[[plate]]
+n = "EPI16"
+file = "El Greco - Saint Peter - WGA10621.jpg"
+title = "Saint Peter"
+book = "1 Peter"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "1 Peter"
+kind = "painting"
+tradition = "old_master"
+artist = "El Greco"
+year = 1612
+license = "PD"
+attribution = "El Greco, Saint Peter (c. 1610–13) — Real Monasterio de El Escorial"
+
+[[plate]]
+n = "EPI17"
+file = "El Greco - Tears of Saint Peter 3164.jpg"
+title = "The Tears of Saint Peter"
+book = "2 Peter"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "2 Peter"
+kind = "painting"
+tradition = "old_master"
+artist = "El Greco"
+year = 1585
+license = "PD"
+attribution = "El Greco, The Tears of Saint Peter (c. 1580s)"
+
+[[plate]]
+n = "EPI18"
+file = "San Juan Evangelista (El Greco, Museo del Prado).jpg"
+title = "Saint John the Evangelist"
+book = "1 John"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "1 John"
+kind = "painting"
+tradition = "old_master"
+artist = "El Greco"
+year = 1605
+license = "PD"
+attribution = "El Greco, Saint John the Evangelist (c. 1605) — Museo del Prado, Madrid"
+
+[[plate]]
+n = "EPI19"
+file = "Zampieri St John Evangelist.jpg"
+title = "Saint John the Evangelist"
+book = "2 John"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "2 John"
+kind = "painting"
+tradition = "old_master"
+artist = "Domenichino"
+year = 1625
+license = "PD"
+attribution = "Domenichino, Saint John the Evangelist (c. 1620s) — National Gallery, London"
+
+[[plate]]
+n = "EPI20"
+file = "San Juan Evangelista en Patmos, atribuido a Alonso Cano (Museo del Prado).jpg"
+title = "Saint John the Evangelist on Patmos"
+book = "3 John"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "3 John"
+kind = "painting"
+tradition = "old_master"
+artist = "Alonso Cano"
+year = 1645
+license = "PD"
+attribution = "Attributed to Alonso Cano, Saint John the Evangelist on Patmos — Museo del Prado, Madrid"
+
+[[plate]]
+n = "EPI21"
+file = "San Judas Tadeo, de El Greco (Museo Nacional de Escultura de Valladolid).JPG"
+title = "Saint Jude Thaddeus"
+book = "Jude"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Jude"
+kind = "painting"
+tradition = "old_master"
+artist = "El Greco"
+year = 1612
+license = "PD"
+attribution = "El Greco, Saint Jude Thaddeus (c. 1610–14) — Museo Nacional de Escultura, Valladolid"
+
+# ── Option A gap-fill — one best work per remaining uncovered book/scene ──
+# Closes the last zero-art books (1-2 Chronicles, Ecclesiastes, Song of
+# Solomon, Zephaniah) and the thin prophets. The minor prophets use
+# Tissot's Jewish Museum portrait series (joins the existing watercolor
+# tradition; NB the Commons scans are small, ~300-800 px — best available).
+# Whole-book ranges (chapter_end 99) where the work frames the entire book
+# (portraits, vanitas, Nineveh); scene ranges where it depicts a passage.
+# All picks approved from contact sheets (2026-06-11).
+
+[[plate]]
+n = "GAP01"
+file = "Herzog Anton Ulrich-Museum, Jan de Bray, David Harfe spielend mit Priester und Leviten.jpg"
+title = "David Playing the Harp before the Ark"
+book = "1 Chronicles"
+chapter = 15
+verse = 1
+chapter_end = 16
+verse_end = 999
+passage_label = "1 Chronicles 15–16"
+kind = "painting"
+tradition = "old_master"
+artist = "Jan de Bray"
+license = "CC BY 3.0"
+attribution = "Jan de Bray, David Playing the Harp before the Ark — Herzog Anton Ulrich-Museum, Braunschweig; photo: museum, CC BY 3.0"
+
+[[plate]]
+n = "GAP02"
+file = "Sir Edward John Poynter - The visit of the Queen of Sheba to King Solomon - Google Art Project.jpg"
+title = "The Visit of the Queen of Sheba to King Solomon"
+book = "2 Chronicles"
+chapter = 9
+verse = 1
+chapter_end = 9
+verse_end = 12
+passage_label = "2 Chronicles 9:1–12"
+kind = "painting"
+tradition = "old_master"
+artist = "Edward Poynter"
+year = 1890
+license = "PD"
+attribution = "Edward Poynter, The Visit of the Queen of Sheba to King Solomon (1890) — Art Gallery of New South Wales, Sydney"
+
+[[plate]]
+n = "GAP03"
+file = "Pieter Claesz - Vanitas still life with a book, a glass roemer, a skull, a lute, a pack of cards and piece of parchment on a table.jpg"
+title = "Vanitas Still Life"
+book = "Ecclesiastes"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Ecclesiastes"
+kind = "painting"
+tradition = "old_master"
+artist = "Pieter Claesz"
+year = 1630
+license = "PD"
+attribution = "Pieter Claesz, Vanitas Still Life (c. 1630)"
+
+[[plate]]
+n = "GAP04"
+file = "The Beloved by Dante Gabriel Rossetti.jpg"
+title = "The Beloved (The Bride)"
+book = "Song of Solomon"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Song of Solomon"
+kind = "painting"
+tradition = "old_master"
+artist = "Dante Gabriel Rossetti"
+year = 1866
+license = "PD"
+attribution = "Dante Gabriel Rossetti, The Beloved (1866) — Tate, London"
+
+[[plate]]
+n = "GAP05"
+file = "William Holman Hunt - The Scapegoat.jpg"
+title = "The Scapegoat"
+book = "Leviticus"
+chapter = 16
+verse = 1
+chapter_end = 16
+verse_end = 34
+passage_label = "Leviticus 16"
+kind = "painting"
+tradition = "old_master"
+artist = "William Holman Hunt"
+year = 1854
+license = "PD"
+attribution = "William Holman Hunt, The Scapegoat (1854) — Lady Lever Art Gallery, Port Sunlight"
+
+[[plate]]
+n = "GAP06"
+file = "Carl Ludwig Kuhbeil - Gott zeigt Moses das gelobte Land (1818).jpg"
+title = "God Shows Moses the Promised Land"
+book = "Deuteronomy"
+chapter = 34
+verse = 1
+chapter_end = 34
+verse_end = 4
+passage_label = "Deuteronomy 34:1–4"
+kind = "painting"
+tradition = "old_master"
+artist = "Carl Ludwig Kuhbeil"
+year = 1818
+license = "PD"
+attribution = "Carl Ludwig Kuhbeil, God Shows Moses the Promised Land (1818)"
+
+[[plate]]
+n = "GAP07"
+file = "087.King Solomon in Old Age.jpg"
+title = "King Solomon in Old Age"
+book = "Proverbs"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Proverbs"
+kind = "illustration"
+tradition = "engraving"
+artist = "Gustave Doré"
+year = 1866
+license = "PD"
+attribution = "Gustave Doré, King Solomon in Old Age (1866)"
+
+[[plate]]
+n = "GAP08"
+file = "Rembrandt Harmensz. van Rijn - Jeremia treurend over de verwoesting van Jeruzalem - Google Art Project.jpg"
+title = "Jeremiah Lamenting the Destruction of Jerusalem"
+book = "Lamentations"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Lamentations"
+kind = "painting"
+tradition = "old_master"
+artist = "Rembrandt van Rijn"
+year = 1630
+license = "PD"
+attribution = "Rembrandt van Rijn, Jeremiah Lamenting the Destruction of Jerusalem (1630) — Rijksmuseum, Amsterdam"
+
+[[plate]]
+n = "GAP09"
+file = "Raphael - Ezekiel's Vision.jpg"
+title = "Ezekiel's Vision"
+book = "Ezekiel"
+chapter = 1
+verse = 1
+chapter_end = 1
+verse_end = 28
+passage_label = "Ezekiel 1"
+kind = "painting"
+tradition = "old_master"
+artist = "Raphael"
+year = 1518
+license = "PD"
+attribution = "Raphael, Ezekiel's Vision (c. 1518) — Palazzo Pitti, Florence"
+
+[[plate]]
+n = "GAP10"
+file = "The Vision of The Valley of The Dry Bones.jpg"
+title = "The Vision of the Valley of Dry Bones"
+book = "Ezekiel"
+chapter = 37
+verse = 1
+chapter_end = 37
+verse_end = 14
+passage_label = "Ezekiel 37:1–14"
+kind = "illustration"
+tradition = "engraving"
+artist = "Gustave Doré"
+year = 1866
+license = "PD"
+attribution = "Gustave Doré, The Vision of the Valley of Dry Bones (1866)"
+
+[[plate]]
+n = "GAP11"
+file = "Hosea by James Tissot.jpg"
+title = "Hosea"
+book = "Hosea"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Hosea"
+kind = "painting"
+tradition = "watercolor"
+artist = "James Tissot"
+year = 1896
+license = "PD"
+attribution = "James Tissot, Hosea (c. 1888–1902) — The Jewish Museum, New York"
+
+[[plate]]
+n = "GAP12"
+file = "Tissot Joel.jpg"
+title = "Joel"
+book = "Joel"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Joel"
+kind = "painting"
+tradition = "watercolor"
+artist = "James Tissot"
+year = 1896
+license = "PD"
+attribution = "James Tissot, Joel (c. 1888–1902) — The Jewish Museum, New York"
+
+[[plate]]
+n = "GAP13"
+file = "Tissot Amos.jpg"
+title = "Amos"
+book = "Amos"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Amos"
+kind = "painting"
+tradition = "watercolor"
+artist = "James Tissot"
+year = 1896
+license = "PD"
+attribution = "James Tissot, Amos (c. 1888–1902) — The Jewish Museum, New York"
+
+[[plate]]
+n = "GAP14"
+file = "Tissot Obadiah.jpg"
+title = "Obadiah"
+book = "Obadiah"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Obadiah"
+kind = "painting"
+tradition = "watercolor"
+artist = "James Tissot"
+year = 1896
+license = "PD"
+attribution = "James Tissot, Obadiah (c. 1888–1902) — The Jewish Museum, New York"
+
+[[plate]]
+n = "GAP15"
+file = "Tissot Micah.jpg"
+title = "Micah"
+book = "Micah"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Micah"
+kind = "painting"
+tradition = "watercolor"
+artist = "James Tissot"
+year = 1896
+license = "PD"
+attribution = "James Tissot, Micah (c. 1888–1902) — The Jewish Museum, New York"
+
+[[plate]]
+n = "GAP16"
+file = "Fall of nineveh.jpg"
+title = "The Fall of Nineveh"
+book = "Nahum"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Nahum"
+kind = "illustration"
+tradition = "engraving"
+artist = "John Martin"
+year = 1829
+license = "CC BY-SA 4.0"
+attribution = "John Martin, The Fall of Nineveh (1829, mezzotint); photo CC BY-SA 4.0"
+
+[[plate]]
+n = "GAP17"
+file = "Zephaniah from Yaroslavl (18 c, priv.coll).jpg"
+title = "The Prophet Zephaniah"
+book = "Zephaniah"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Zephaniah"
+kind = "icon"
+tradition = "byzantine_icon"
+artist = "Yaroslavl school"
+year = 1750
+license = "PD"
+attribution = "The Prophet Zephaniah — Russian icon, Yaroslavl school (18th century)"
+
+[[plate]]
+n = "GAP18"
+file = "Tissot Haggai.jpg"
+title = "Haggai"
+book = "Haggai"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Haggai"
+kind = "painting"
+tradition = "watercolor"
+artist = "James Tissot"
+year = 1896
+license = "PD"
+attribution = "James Tissot, Haggai (c. 1888–1902) — The Jewish Museum, New York"
+
+[[plate]]
+n = "GAP19"
+file = "Tissot Zechariah.jpg"
+title = "Zechariah"
+book = "Zechariah"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Zechariah"
+kind = "painting"
+tradition = "watercolor"
+artist = "James Tissot"
+year = 1896
+license = "PD"
+attribution = "James Tissot, Zechariah (c. 1888–1902) — The Jewish Museum, New York"
+
+[[plate]]
+n = "GAP20"
+file = "Tissot Malachi.jpg"
+title = "Malachi"
+book = "Malachi"
+chapter = 1
+verse = 1
+chapter_end = 99
+verse_end = 999
+passage_label = "Malachi"
+kind = "painting"
+tradition = "watercolor"
+artist = "James Tissot"
+year = 1896
+license = "PD"
+attribution = "James Tissot, Malachi (c. 1888–1902) — The Jewish Museum, New York"
