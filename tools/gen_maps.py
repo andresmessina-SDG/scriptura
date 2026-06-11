@@ -32,13 +32,13 @@ RIVER = '#c2d6e2'
 ROUTE = '#c5443c'        # journey red — the one saturated voice on the map
 ROUTE_W = 3.0
 DOT = '#3a3a3a'
-DOT_R = 4.0
+DOT_R = 4.4
 LABEL = '#33373b'
 LABEL_HALO = '#ffffff'
-SEA_LABEL = '#8aa0b0'
-REGION_LABEL = '#a9a194'
+SEA_LABEL = '#6e8da3'
+REGION_LABEL = '#8f8875'
 TITLE = '#33373b'
-SUBTITLE = '#8a8f94'
+SUBTITLE = '#74797f'
 FONT = 'Adwaita Sans, Inter, sans-serif'
 FRAME = '#c9c4ba'
 
@@ -328,7 +328,7 @@ def build(data_dir, out_path):
     for text, lon, lat in REGION_LABELS:
         x, y = proj(lon, lat)
         svg.append(f'<text x="{x:.0f}" y="{y:.0f}" text-anchor="middle" '
-                   f'fill="{REGION_LABEL}" font-size="15" '
+                   f'fill="{REGION_LABEL}" font-size="16" '
                    f'letter-spacing="4">{text}</text>')
     for text, lon, lat, rot in SEA_LABELS:
         x, y = proj(lon, lat)
@@ -384,9 +384,14 @@ def build(data_dir, out_path):
             elif i == 0:
                 pass        # harbor departure — leave the land bit as a gap
             elif i == len(runs) - 1:
-                svg.append(f'<path d="{path_d(pts)}" fill="none" '
-                           f'stroke="{ROUTE}" stroke-width="{ROUTE_W}" '
-                           f'stroke-linecap="round" opacity="0.9"/>')
+                # micro arrival runs at coastal ports are just the dot's
+                # own shoreline — drawing them leaves a stray fleck
+                span = math.hypot(pts[-1][0] - pts[0][0],
+                                  pts[-1][1] - pts[0][1])
+                if span >= 6:
+                    svg.append(f'<path d="{path_d(pts)}" fill="none" '
+                               f'stroke="{ROUTE}" stroke-width="{ROUTE_W}" '
+                               f'stroke-linecap="round" opacity="0.9"/>')
             else:
                 print(f'  ! sea leg {frm}->{to} crosses land mid-route '
                       f'({len(pts)} samples) — adjust the bow')
@@ -401,7 +406,7 @@ def build(data_dir, out_path):
                    f'fill="{DOT}" stroke="#ffffff" stroke-width="1.6"/>')
         dx, dy, anchor = LABEL_POS.get(name, (8, -8, 'start'))
         svg.append(f'<text x="{x+dx:.0f}" y="{y+dy:.0f}" text-anchor="{anchor}" '
-                   f'fill="{LABEL}" font-size="16" font-weight="600" '
+                   f'fill="{LABEL}" font-size="17" font-weight="600" '
                    f'paint-order="stroke" stroke="{LABEL_HALO}" '
                    f'stroke-width="3.5" stroke-linejoin="round">{name}</text>')
 
