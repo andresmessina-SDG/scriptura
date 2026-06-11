@@ -79,6 +79,10 @@ PLACES = {                          # lon, lat (OpenBible.info, CC BY)
 WAYPOINTS = {
     'Via Sebaste S': (30.48, 37.34),   # near Comama
     'Via Sebaste N': (30.46, 38.07),   # near Apollonia
+    # The road rounded the NORTH shore of Lake Eğirdir's Hoyran arm —
+    # placed from the drawn lake's own north tip (30.86, 38.28), so the
+    # route can never clip the water it skirts.
+    'Hoyran N': (30.87, 38.34),
     'Kition':  (33.63, 34.92),
     'Amathus': (33.14, 34.71),
     'Kourion': (32.87, 34.66),
@@ -104,7 +108,7 @@ ORIGIN = 'Antioch (Syria)'
 # pairs with per-direction arrows in the 'return' variant, single calm
 # lines otherwise.
 RETRACED = {('Perga', 'Via Sebaste S'), ('Via Sebaste S', 'Via Sebaste N'),
-            ('Via Sebaste N', 'Antioch in Pisidia'),
+            ('Via Sebaste N', 'Hoyran N'), ('Hoyran N', 'Antioch in Pisidia'),
             ('Antioch in Pisidia', 'Iconium'),
             ('Iconium', 'Lystra'), ('Lystra', 'Derbe')}
 
@@ -127,7 +131,8 @@ LEGS = [
     # first segment only (the pair logic uses each row's own flag)
     ('Perga', 'Via Sebaste S', 'land', 0, True),
     ('Via Sebaste S', 'Via Sebaste N', 'land', 0, False),
-    ('Via Sebaste N', 'Antioch in Pisidia', 'land', 0, False),
+    ('Via Sebaste N', 'Hoyran N', 'land', 0, False),
+    ('Hoyran N', 'Antioch in Pisidia', 'land', 0, False),
     ('Antioch in Pisidia', 'Iconium', 'land', 0, True),
     ('Iconium', 'Lystra', 'land', 0, True),
     ('Lystra', 'Derbe', 'land', 0, True),
@@ -500,8 +505,15 @@ def build(data_dir, out_path, return_variant=True):
     # Hypsometric relief — texture for the interior, and the Taurus story
     svg.extend(relief_paths(os.path.join(data_dir, 'terrarium'), BBOX, proj))
     svg.extend(river_paths)
-    lake_svg, _ = land_paths('ne_10m_lakes.geojson', LAKE, COAST, '1.0')
+    lake_svg, lake_rings = land_paths('ne_10m_lakes.geojson', LAKE, COAST,
+                                      '1.0')
     svg.extend(lake_svg)
+
+    def warn_if_wet(pts, what):
+        wet = sum(1 for pt in pts if point_in_rings(pt, lake_rings))
+        if wet > 1:
+            print(f'  ! land route {what} crosses a lake '
+                  f'({wet} samples) — add a shore waypoint')
 
     # Whisper-faint 1° graticule — gives the empty interior a cartographic
     # texture without competing with anything (see the methodology doc's
@@ -554,6 +566,7 @@ def build(data_dir, out_path, return_variant=True):
         svg.append(f'<path d="{d}" fill="none" stroke="{ROUTE}" '
                    f'stroke-width="{ROUTE_W}" stroke-linecap="round" '
                    f'opacity="0.9"/>')
+        warn_if_wet(sample_quad(p, c, q), 'leg')
         if arrow:
             arrows.append(arrow_marker(sample_quad(p, c, q), frac=frac))
 
@@ -608,6 +621,7 @@ def build(data_dir, out_path, return_variant=True):
                        f'stroke-linecap="round" stroke-linejoin="round" '
                        f'opacity="0.9"/>')
             dense = densify(pts)
+            warn_if_wet(dense, 'chain')
             for fr in fracs:
                 arrows.append(arrow_marker(dense, frac=fr))
 
