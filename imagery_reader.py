@@ -576,7 +576,17 @@ class ImageryReader:
             toaster.add_toast(Adw.Toast.new(msg))
 
         def _copy_image(_b):
-            self._root.get_clipboard().set(texture)
+            # Provide explicit image/png bytes: a bare texture value only
+            # works for same-process pastes (local reads skip
+            # serialization); browsers and other apps negotiate a mime
+            # type, and image/png is what they all accept. The texture
+            # value rides along for GTK-native consumers.
+            png = texture.save_to_png_bytes()
+            provider = Gdk.ContentProvider.new_union([
+                Gdk.ContentProvider.new_for_bytes('image/png', png),
+                Gdk.ContentProvider.new_for_value(texture),
+            ])
+            self._root.get_clipboard().set_content(provider)
             _toast(_('Image copied'))
 
         def _copy_credit(_b):
