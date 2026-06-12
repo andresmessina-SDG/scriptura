@@ -19,11 +19,21 @@ Follows the partnered Bible pane and degrades gracefully — never locks down.
 
 import logging
 import os
+import threading
 
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Gdk, GLib
+
+# librsvg for pixel-crisp SVG zoom (the generated maps); optional — without
+# it SVGs zoom like rasters, scaled from their natural-size decode.
+try:
+    gi.require_version('Rsvg', '2.0')
+    from gi.repository import Rsvg
+    import cairo
+except (ValueError, ImportError):   # pragma: no cover — runtime fallback
+    Rsvg = None
 from a11y import set_accessible_label
 
 import imagery_bridge
@@ -104,11 +114,28 @@ class _ZoomViewer(Gtk.ScrolledWindow):
     _MAX = 4.0    # cap display at 400% of the image's natural pixels
     _STEP = 1.4   # multiplicative zoom per scroll notch / button press
 
-    def __init__(self, texture):
+    def __init__(self, texture, vector_path=None):
         super().__init__(hexpand=True, vexpand=True)
         self._tex = texture
         self._nw = texture.get_width() or 1
         self._nh = texture.get_height() or 1
+        # SVG sources stay pixel-crisp at any zoom: the base raster shows
+        # during interaction, and a viewport-sized sharp render (librsvg in
+        # a worker thread, ~200 ms) overlays it when the view settles —
+        # re-rendering the whole sheet at 4x would take seconds.
+        self._svg = None
+        if vector_path is not None and Rsvg is not None:
+            try:
+                self._svg = Rsvg.Handle.new_from_file(vector_path)
+            except GLib.Error:
+                pass
+        self.crisp_layer = Gtk.Picture()    # dialog pins this over the view
+        self.crisp_layer.set_visible(False)
+        self.crisp_layer.set_can_target(False)   # input falls through
+        self._render_id = None
+        self._render_gen = 0
+        for adj in (self.get_hadjustment(), self.get_vadjustment()):
+            adj.connect('value-changed', lambda *_a: self._invalidate_crisp())
         self._scale = None        # None == fitted; otherwise display/natural
         self._pan0 = (0.0, 0.0)
         self._pending = None      # (frac_x, frac_y, vx, vy) anchor after a zoom
@@ -140,13 +167,78 @@ class _ZoomViewer(Gtk.ScrolledWindow):
     def set_changed_cb(self, cb):
         self._changed_cb = cb
 
-    def set_texture(self, texture):
+    def set_texture(self, texture, vector_path=None):
         """Swap the displayed image in place, keeping the zoom/pan state —
         the map era pair shares one geometry, so the view must not jump."""
         self._tex = texture
         self._nw = texture.get_width() or 1
         self._nh = texture.get_height() or 1
         self._pic.set_paintable(texture)
+        self._svg = None
+        if vector_path is not None and Rsvg is not None:
+            try:
+                self._svg = Rsvg.Handle.new_from_file(vector_path)
+            except GLib.Error:
+                pass
+        self._invalidate_crisp()
+
+    # ── crisp vector overlay ─────────────────────────────────────────────────
+    # Any pan or zoom hides the sharp layer (the base raster shows through);
+    # once the view rests for 120 ms the visible window is re-rendered from
+    # the SVG at display resolution off the main thread and overlaid.
+
+    def _invalidate_crisp(self):
+        if self._svg is None:
+            return
+        self.crisp_layer.set_visible(False)
+        if self._render_id is not None:
+            GLib.source_remove(self._render_id)
+            self._render_id = None
+        if self._scale is None or self._eff() <= 1.001:
+            return    # the natural-size decode is already exact
+        self._render_id = GLib.timeout_add(120, self._start_crisp_render)
+
+    def _start_crisp_render(self):
+        self._render_id = None
+        self._render_gen += 1
+        s = min(self._eff(), self._MAX)
+        sf = self.get_scale_factor() or 1
+        vw, vh = self.get_width(), self.get_height()
+        if vw <= 0 or vh <= 0:
+            return GLib.SOURCE_REMOVE
+        dw, dh = self._nw * s, self._nh * s
+        ox = self.get_hadjustment().get_value() - max(0.0, (vw - dw) / 2)
+        oy = self.get_vadjustment().get_value() - max(0.0, (vh - dh) / 2)
+        threading.Thread(
+            target=self._crisp_worker, daemon=True,
+            args=(self._render_gen, self._svg, sf,
+                  int(vw * sf), int(vh * sf),
+                  ox * sf, oy * sf, dw * sf, dh * sf)).start()
+        return GLib.SOURCE_REMOVE
+
+    def _crisp_worker(self, gen, svg, sf, w, h, ox, oy, dw, dh):
+        surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
+        cr = cairo.Context(surf)
+        cr.translate(-ox, -oy)
+        vp = Rsvg.Rectangle()
+        vp.x = vp.y = 0
+        vp.width, vp.height = dw, dh
+        try:
+            svg.render_document(cr, vp)
+        except GLib.Error:
+            return
+        surf.flush()
+        data = GLib.Bytes.new(bytes(surf.get_data()))
+        GLib.idle_add(self._apply_crisp, gen, data, w, h, surf.get_stride())
+
+    def _apply_crisp(self, gen, data, w, h, stride):
+        # a pan/zoom after this render started has already queued a fresh one
+        if gen != self._render_gen or self._scale is None:
+            return GLib.SOURCE_REMOVE
+        self.crisp_layer.set_paintable(Gdk.MemoryTexture.new(
+            w, h, Gdk.MemoryFormat.B8G8R8A8_PREMULTIPLIED, data, stride))
+        self.crisp_layer.set_visible(True)
+        return GLib.SOURCE_REMOVE
 
     def _fit(self):
         vw, vh = self.get_width(), self.get_height()
@@ -186,6 +278,7 @@ class _ZoomViewer(Gtk.ScrolledWindow):
             self.set_cursor(Gdk.Cursor.new_from_name('grab', None))
         if self._pending is not None:
             self.add_tick_callback(self._restore_anchor)
+        self._invalidate_crisp()
         if self._changed_cb is not None:
             self._changed_cb()
 
@@ -635,7 +728,9 @@ class ImageryReader:
                 dialog.present(root)
             return
 
-        viewer = _ZoomViewer(texture)
+        is_svg = item['path'].lower().endswith('.svg')
+        viewer = _ZoomViewer(
+            texture, vector_path=item['path'] if is_svg else None)
 
         if modern_path is not None:
             era_textures = {False: texture}
@@ -651,7 +746,9 @@ class ImageryReader:
                         btn.set_active(False)
                         return
                 texture = era_textures[modern]
-                viewer.set_texture(texture)
+                viewer.set_texture(
+                    texture,
+                    vector_path=modern_path if modern else item['path'])
 
             era_btn = Gtk.ToggleButton(label=_('Today'))
             era_btn.set_tooltip_text(
@@ -683,7 +780,12 @@ class ImageryReader:
         header.pack_start(in_btn)
         header.pack_start(fit_btn)
         view.add_top_bar(header)
-        view.set_content(viewer)
+        # The crisp SVG layer renders exactly the visible window, so it pins
+        # to the viewport (an overlay), not to the scrolling content.
+        overlay = Gtk.Overlay()
+        overlay.set_child(viewer)
+        overlay.add_overlay(viewer.crisp_layer)
+        view.set_content(overlay)
         dialog.set_child(toaster)
         if root is not None:
             dialog.present(root)
