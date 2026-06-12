@@ -140,6 +140,14 @@ class _ZoomViewer(Gtk.ScrolledWindow):
     def set_changed_cb(self, cb):
         self._changed_cb = cb
 
+    def set_texture(self, texture):
+        """Swap the displayed image in place, keeping the zoom/pan state —
+        the map era pair shares one geometry, so the view must not jump."""
+        self._tex = texture
+        self._nw = texture.get_width() or 1
+        self._nh = texture.get_height() or 1
+        self._pic.set_paintable(texture)
+
     def _fit(self):
         vw, vh = self.get_width(), self.get_height()
         if vw <= 0 or vh <= 0:
@@ -569,6 +577,14 @@ class ImageryReader:
         except GLib.Error:
             texture = None
 
+        # Generated maps ship in two eras (same geometry, different labels);
+        # the present-day sibling sits beside the ancient file.
+        modern_path = None
+        if item['path'].endswith('_ancient.svg'):
+            sibling = item['path'][:-len('_ancient.svg')] + '_modern.svg'
+            if os.path.exists(sibling):
+                modern_path = sibling
+
         # ── Copy actions — for pasting plates into slides/documents. The
         # image goes to the clipboard as a texture (pastes as PNG); the
         # credit as title / artist · year / attribution text.
@@ -620,6 +636,29 @@ class ImageryReader:
             return
 
         viewer = _ZoomViewer(texture)
+
+        if modern_path is not None:
+            era_textures = {False: texture}
+
+            def _on_era(btn):
+                nonlocal texture
+                modern = btn.get_active()
+                if modern not in era_textures:
+                    try:
+                        era_textures[modern] = \
+                            Gdk.Texture.new_from_filename(modern_path)
+                    except GLib.Error:
+                        btn.set_active(False)
+                        return
+                texture = era_textures[modern]
+                viewer.set_texture(texture)
+
+            era_btn = Gtk.ToggleButton(label=_('Today'))
+            era_btn.set_tooltip_text(
+                _('Switch between Bible-time and present-day names'))
+            era_btn.connect('toggled', _on_era)
+            header.pack_end(era_btn)
+
         out_btn = Gtk.Button(icon_name='zoom-out-symbolic')
         out_btn.set_tooltip_text(_('Zoom out'))
         set_accessible_label(out_btn, _('Zoom out'))
