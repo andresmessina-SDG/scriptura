@@ -496,9 +496,10 @@ def build(data_dir, out_path, return_variant=True, no_title=False,
 
     proj, height = make_projection(BBOX, WIDTH)
     # In-app, the imagery card already titles the map in house type — the
-    # no-title build is pure content (a thin margin instead of the block).
-    pad_top = 10 if no_title else 96
-    H = int(height) + pad_top + (10 if no_title else 24)
+    # no-title build is pure content: no margins and a transparent
+    # background, so nothing peeks past the rounded frame in dark mode.
+    pad_top = 0 if no_title else 96
+    H = int(height) if no_title else int(height) + pad_top + 24
 
     def land_paths(name, fill, stroke, stroke_w):
         out = []
@@ -534,8 +535,8 @@ def build(data_dir, out_path, return_variant=True, no_title=False,
     svg.append(f'<svg xmlns="http://www.w3.org/2000/svg" '
                f'width="{WIDTH}" height="{H}" '
                f'viewBox="0 0 {WIDTH} {H}" font-family="{FONT}">')
-    svg.append(f'<rect width="{WIDTH}" height="{H}" fill="#ffffff"/>')
     if not no_title:
+        svg.append(f'<rect width="{WIDTH}" height="{H}" fill="#ffffff"/>')
         svg.append(f'<text x="{WIDTH/2}" y="44" text-anchor="middle" '
                    f'fill="{TITLE}" font-size="26" font-weight="700" '
                    f'letter-spacing="3">{TITLE_TEXT}</text>')
