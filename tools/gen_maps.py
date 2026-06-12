@@ -174,6 +174,40 @@ REGION_LABELS = [('CYPRUS', 33.2, 35.05, -8), ('PISIDIA', 30.45, 37.72, 0),
 TITLE_TEXT = "PAUL'S FIRST MISSIONARY JOURNEY"
 SUBTITLE_TEXT = 'Acts 13–14 · c. AD 46–48'
 
+# ── Present-day era (the "where is this today?" toggle) ─────────────────────
+# Same geometry, same route, same dots — only the editorial layer changes,
+# so the toggle reads as "same place, new labels". Living successor cities
+# get their modern name (the continuity IS the teaching: Konya is a city of
+# two million, and Paul preached there); pure ruins keep the ancient name
+# with a quiet "(ruins)" — inventing the nearest village name nobody knows
+# would defeat the grounding purpose.
+MODERN_NAMES = {
+    'Antioch (Syria)':    'Antakya',          # Hatay, Türkiye — not Syria!
+    'Seleucia':           'Samandağ',         # town at Seleucia Pieria
+    'Salamis':            'Salamis (ruins)',  # north of Famagusta
+    'Paphos':             'Paphos',           # still Paphos
+    'Perga':              'Perge (ruins)',    # Aksu, outside Antalya
+    'Attalia':            'Antalya',
+    'Antioch in Pisidia': 'Yalvaç',           # town beside the site
+    'Iconium':            'Konya',
+    'Lystra':             'Lystra (ruins)',   # near Hatunsaray
+    'Derbe':              'Derbe (ruins)',    # Kerti Hüyük, near Karaman
+}
+MODERN_CONTEXT_NAMES = {'Tarsus': 'Tarsus', 'Myra': 'Demre'}
+# Modern names run longer — per-place nudges where the shared LABEL_POS
+# would collide ("Salamis (ruins)" runs into the incoming sea dashes).
+MODERN_LABEL_POS = {'Salamis': (9, 20, 'start')}
+MODERN_REGION_LABELS = [('CYPRUS', 33.2, 35.05, -8),
+                        ('TÜRKİYE', 32.6, 38.5, 0),
+                        ('SYRIA', 36.9, 35.7, 55),
+                        ('LEBANON', 36.35, 34.25, 40)]
+MODERN_SUBTITLE = 'Acts 13–14 · present-day place names'
+# Modern borders: major international boundaries only — the Cyprus
+# micro-lines (UN buffer, base areas) are noise at teaching scale, and
+# Cyprus is presented whole (the standard de jure rendering).
+BORDER_COUNTRIES = {'Turkey', 'Syria', 'Lebanon'}
+BORDER = '#8d9298'       # quiet dashed hairline — context, never content
+
 
 # ── Projection ───────────────────────────────────────────────────────────────
 
@@ -451,7 +485,15 @@ def arrow_marker(pts, size=9.0, frac=0.5):
             f'transform="translate({x:.1f},{y:.1f}) rotate({ang:.1f})"/>')
 
 
-def build(data_dir, out_path, return_variant=True, no_title=False):
+def build(data_dir, out_path, return_variant=True, no_title=False,
+          era='ancient'):
+    modern = era == 'modern'
+
+    def display(name):
+        if modern:
+            return MODERN_NAMES.get(name, MODERN_CONTEXT_NAMES.get(name, name))
+        return name
+
     proj, height = make_projection(BBOX, WIDTH)
     # In-app, the imagery card already titles the map in house type — the
     # no-title build is pure content (a thin margin instead of the block).
@@ -498,8 +540,8 @@ def build(data_dir, out_path, return_variant=True, no_title=False):
                    f'fill="{TITLE}" font-size="26" font-weight="700" '
                    f'letter-spacing="3">{TITLE_TEXT}</text>')
         svg.append(f'<text x="{WIDTH/2}" y="72" text-anchor="middle" '
-                   f'fill="{SUBTITLE}" font-size="16" '
-                   f'letter-spacing="1">{SUBTITLE_TEXT}</text>')
+                   f'fill="{SUBTITLE}" font-size="16" letter-spacing="1">'
+                   f'{MODERN_SUBTITLE if modern else SUBTITLE_TEXT}</text>')
 
     svg.append(f'<g transform="translate(0,{pad_top})">')
     svg.append(f'<clipPath id="frame"><rect x="0" y="0" width="{WIDTH}" '
@@ -514,6 +556,25 @@ def build(data_dir, out_path, return_variant=True, no_title=False):
     lake_svg, lake_rings = land_paths('ne_10m_lakes.geojson', LAKE, COAST,
                                       '1.0')
     svg.extend(lake_svg)
+
+    # Present-day country borders — a quiet dashed hairline under the
+    # labels and route (borders are context, never content)
+    if modern:
+        with open(os.path.join(
+                data_dir, 'ne_10m_admin_0_boundary_lines_land.geojson')) as f:
+            borders = json.load(f)
+        for feat in borders['features']:
+            p = feat['properties']
+            if not {p.get('ADM0_LEFT'), p.get('ADM0_RIGHT')} <= BORDER_COUNTRIES:
+                continue
+            for line in geojson_lines(feat):
+                for run in clip_line(line, BBOX):
+                    if len(run) >= 2:
+                        pts = [proj(*c) for c in run]
+                        svg.append(f'<path d="{path_d(pts)}" fill="none" '
+                                   f'stroke="{BORDER}" stroke-width="1.2" '
+                                   f'stroke-dasharray="7 4" opacity="0.6" '
+                                   f'stroke-linecap="round"/>')
 
     def warn_if_wet(pts, what):
         wet = sum(1 for pt in pts if point_in_rings(pt, lake_rings))
@@ -537,7 +598,8 @@ def build(data_dir, out_path, return_variant=True, no_title=False):
                    f'opacity="0.13"/>')
 
     # Region + sea labels (under the route); rotation follows the land
-    for text, lon, lat, rot in REGION_LABELS:
+    for text, lon, lat, rot in (MODERN_REGION_LABELS if modern
+                                else REGION_LABELS):
         x, y = proj(lon, lat)
         xf = (f' transform="rotate({rot} {x:.0f} {y:.0f})"' if rot else '')
         svg.append(f'<text x="{x:.0f}" y="{y:.0f}" text-anchor="middle" '
@@ -703,7 +765,8 @@ def build(data_dir, out_path, return_variant=True, no_title=False):
         svg.append(f'<text x="{x+dx:.0f}" y="{y+dy:.0f}" text-anchor="{anchor}" '
                    f'fill="#6b7075" font-size="15" '
                    f'paint-order="stroke" stroke="{LABEL_HALO}" '
-                   f'stroke-width="3" stroke-linejoin="round">{name}</text>')
+                   f'stroke-width="3" '
+                   f'stroke-linejoin="round">{display(name)}</text>')
 
     # Places: dot + haloed label; the journey's origin gets a quiet ring
     for name, (lon, lat) in PLACES.items():
@@ -715,10 +778,13 @@ def build(data_dir, out_path, return_variant=True, no_title=False):
         svg.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{DOT_R}" '
                    f'fill="{DOT}" stroke="#ffffff" stroke-width="1.6"/>')
         dx, dy, anchor = LABEL_POS.get(name, (8, -8, 'start'))
+        if modern and name in MODERN_LABEL_POS:
+            dx, dy, anchor = MODERN_LABEL_POS[name]
         svg.append(f'<text x="{x+dx:.0f}" y="{y+dy:.0f}" text-anchor="{anchor}" '
                    f'fill="{LABEL}" font-size="17" font-weight="600" '
                    f'paint-order="stroke" stroke="{LABEL_HALO}" '
-                   f'stroke-width="3.5" stroke-linejoin="round">{name}</text>')
+                   f'stroke-width="3.5" '
+                   f'stroke-linejoin="round">{display(name)}</text>')
 
     # Scale bar — bottom-left; 100 km at the standard parallel
     lat_mid = math.radians((BBOX[1] + BBOX[3]) / 2)
@@ -756,10 +822,13 @@ def main():
     ap.add_argument('--no-title', action='store_true',
                     help='omit the title block (in-app builds — the card '
                          'supplies the header)')
+    ap.add_argument('--era', choices=['ancient', 'modern'], default='ancient',
+                    help='label era: ancient (Bible-time, default) or '
+                         'modern (present-day names + country borders)')
     args = ap.parse_args()
     build(args.data_dir, args.out,
           return_variant=not args.single_retrace,
-          no_title=args.no_title)
+          no_title=args.no_title, era=args.era)
 
 
 if __name__ == '__main__':
