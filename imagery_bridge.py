@@ -219,7 +219,12 @@ def art_for(book: str, chapter: int, verse: int) -> list[ImageryItem]:
 
 
 def maps_for(book: str, chapter: int, verse: int) -> list[ImageryItem]:
-    """Maps whose passage range covers a verse (oldest first)."""
+    """Maps whose passage range covers a verse.
+
+    Our own generated maps (source 'generated_maps' — modern SVG, dual-era,
+    vector-crisp) lead; the rest follow oldest-first (antique atlas plates
+    before Wikimedia SVGs).
+    """
     conn = _db()
     if conn is None:
         return []
@@ -229,7 +234,8 @@ def maps_for(book: str, chapter: int, verse: int) -> list[ImageryItem]:
             f'SELECT {_ITEM_COLS} FROM imagery '
             f"WHERE book = ? AND kind = 'map' "
             f'AND loc_start <= ? AND loc_end >= ? '
-            f'ORDER BY (year IS NULL), year, title',
+            f"ORDER BY (source <> 'generated_maps'), (year IS NULL), "
+            f'year, title',
             (book, key, key)).fetchall()
     except sqlite3.Error:
         _log.exception('imagery map lookup failed for %s %s:%s',
