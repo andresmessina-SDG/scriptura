@@ -783,6 +783,12 @@ def ingest_genmaps(conn, images_dir, width, limit, fetch_images):
         'passage_label': 'Acts 13–14',
         'ranges': [{'book': 'Acts', 'chapter': 13, 'verse': 1,
                     'chapter_end': 14, 'verse_end': 28}],
+    }, {
+        'slug': 'paul_journey_2',
+        'title': "Paul's Second Missionary Journey",
+        'passage_label': 'Acts 15:36–18:22',
+        'ranges': [{'book': 'Acts', 'chapter': 15, 'verse': 36,
+                    'chapter_end': 18, 'verse_end': 22}],
     }]
     if limit:
         maps = maps[:limit]
@@ -802,7 +808,7 @@ def ingest_genmaps(conn, images_dir, width, limit, fetch_images):
                 gen_maps.build(
                     data_dir,
                     os.path.join(images_dir, f'genmap_{slug}_{era}.svg'),
-                    no_title=True, era=era)
+                    mapdef=gen_maps.MAPS[slug], no_title=True, era=era)
             size = os.path.getsize(os.path.join(
                 images_dir, f'genmap_{slug}_ancient.svg'))
         for rng in m['ranges']:
