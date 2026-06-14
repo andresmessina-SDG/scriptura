@@ -1,21 +1,31 @@
 #!/usr/bin/env python3
 """Generate Scriptura's modern SVG Bible maps from open geodata.
 
-PROTOTYPE: Paul's first missionary journey (Acts 13-14). The geometry is
-computed, never drawn: coastlines/lakes/rivers come from Natural Earth 10m
-(public domain), place coordinates from OpenBible.info (CC BY 4.0); an
+Each map is one entry in the MAPS dict (Paul's journeys 1 and 2 so far).
+The geometry is computed, never drawn: coastlines/lakes/rivers come from
+Natural Earth 10m (public domain), place coordinates from OpenBible.info
+(CC BY 4.0), hypsometric relief from Mapzen terrarium tiles (PD); an
 equirectangular projection with a mid-latitude standard parallel turns them
-into SVG paths. The aesthetic layer is the small parameter block below —
-palette, strokes, type — iterated against the app's house style.
+into SVG paths. The aesthetic layer is the small style-token block below.
 
-Data files (downloaded once, cached in --data-dir):
+Routes are guaranteed against the terrain at build time — sea legs are
+clipped so dashes fall only on water, land legs warned if they cross sea or
+a lake, and every dot checked to clear the drawn coastline by its radius;
+see CARTOGRAPHY_METHODOLOGY.md for the principles.
+
+Data files (downloaded once, cached in --data-dir, default /tmp/mapdata):
   ne_10m_land.geojson, ne_10m_lakes.geojson,
-  ne_10m_rivers_lake_centerlines.geojson
+  ne_10m_rivers_lake_centerlines.geojson,
+  ne_10m_admin_0_boundary_lines_land.geojson  (--era modern only)
     from https://github.com/nvkelso/natural-earth-vector (PD)
+  terrarium/{z}_{x}_{y}.png  elevation tiles
+    from s3.amazonaws.com/elevation-tiles-prod/terrarium (PD)
   ancient.jsonl
     from https://github.com/openbibleinfo/Bible-Geocoding-Data (CC BY 4.0)
 
-Usage: gen_maps.py [--data-dir /tmp/mapdata] [--out maps/]
+Usage: gen_maps.py [--map paul_journey_1] [--era ancient|modern]
+                   [--no-title] [--single-retrace]
+                   [--data-dir DIR] [--out FILE]
 """
 
 import argparse
@@ -24,10 +34,10 @@ import math
 import os
 
 # ── Style tokens (the entire aesthetic surface) ──────────────────────────────
-SEA = '#dce8f0'          # quiet blue-gray wash
+SEA = '#b7d0e2'          # quiet blue-gray wash (deepened for land/sea contrast)
 LAND = '#f7f4ed'         # warm paper
-COAST = '#b7c6d0'        # coastline hairline
-LAKE = '#cfe0ea'
+COAST = '#8fa8bd'        # coastline hairline (darkened to reinforce the edge)
+LAKE = '#bcd4e4'         # inland water — sits in the sea's family, a hair lighter
 RIVER = '#c2d6e2'
 ROUTE = '#c5443c'        # journey red — the one saturated voice on the map
 ROUTE_W = 3.0
@@ -35,7 +45,7 @@ DOT = '#3a3a3a'
 DOT_R = 4.4
 LABEL = '#33373b'
 LABEL_HALO = '#ffffff'
-SEA_LABEL = '#6e8da3'
+SEA_LABEL = '#557790'    # re-darkened to hold ~3:1 on the deeper sea (lesson 12)
 REGION_LABEL = '#8f8875'
 TITLE = '#33373b'
 SUBTITLE = '#74797f'
@@ -51,161 +61,390 @@ FRAME = '#c9c4ba'
 # climb inland from Perga.
 RELIEF_BANDS = [(400, '#f2ece0'), (1000, '#ece4d3'), (1800, '#e4dac6')]
 
-# ── The map definition (editorial content) ──────────────────────────────────
-BBOX = (29.6, 33.9, 37.8, 39.3)   # lon_min, lat_min, lon_max, lat_max
-WIDTH = 1400
+# ── Map definitions (editorial content) ─────────────────────────────────────
+# Each map is one dict; build() consumes it. Geometry/coordinate sources:
+# OpenBible.info (CC BY) for biblical places, Pleiades for road stations.
+MAPS = {}
 
-PLACES = {                          # lon, lat (OpenBible.info, CC BY)
-    'Antioch (Syria)':    (36.171743, 36.226691),
-    'Seleucia':           (35.922000, 36.124000),
-    'Salamis':            (33.901944, 35.184944),
-    'Paphos':             (32.404167, 34.755667),
-    'Perga':              (30.853686, 36.960353),
-    'Attalia':            (30.703614, 36.881272),
-    'Antioch in Pisidia': (31.189167, 38.306111),
-    'Iconium':            (32.492331, 37.872202),
-    'Lystra':             (32.338400, 37.601700),
-    'Derbe':              (33.361453, 37.348569),
-}
+MAPS['paul_journey_1'] = dict(
+    bbox=(29.6, 33.9, 37.8, 39.3),   # lon_min, lat_min, lon_max, lat_max
+    width=1400,
+    places={                          # lon, lat (OpenBible.info, CC BY)
+        'Antioch (Syria)':    (36.171743, 36.226691),
+        'Seleucia':           (35.922000, 36.124000),
+        'Salamis':            (33.901944, 35.184944),
+        'Paphos':             (32.404167, 34.755667),
+        'Perga':              (30.853686, 36.960353),
+        'Attalia':            (30.703614, 36.881272),
+        'Antioch in Pisidia': (31.189167, 38.306111),
+        'Iconium':            (32.492331, 37.872202),
+        'Lystra':             (32.338400, 37.601700),
+        'Derbe':              (33.361453, 37.348569),
+    },
+    # Unlabeled route vertices. Paphos->Perga stays a *water* leg the whole
+    # way — Acts 13:13 "sailed to Perga"; the Cestrus was navigable.
+    # Road corridors: the Via Sebaste (the Roman highway of 6 BC) climbed
+    # from Perga through the Taurus and threaded the Pisidian lake corridor
+    # — between Lake Burdur and Lake Egirdir — via Comama and Apollonia;
+    # it rounded the NORTH shore of Lake Egirdir's Hoyran arm (waypoint
+    # placed from the drawn lake's own north tip, 30.86/38.28). On Cyprus,
+    # "through the whole island" (Acts 13:6) follows the south-coast road:
+    # Kition, Amathus, Kourion.
+    waypoints={
+        'Via Sebaste S': (30.48, 37.34),   # near Comama
+        'Via Sebaste N': (30.46, 38.07),   # near Apollonia
+        'Hoyran N': (30.87, 38.34),
+        'Kition':  (33.63, 34.92),
+        'Amathus': (33.14, 34.71),
+        'Kourion': (32.87, 34.66),
+    },
+    # Context cities — gray, no route: anchor the journey in the known NT
+    # world. Tarsus is Paul's hometown (Acts 9:11), Myra a later voyage
+    # stop (Acts 27:5).
+    context_places={
+        'Tarsus': (34.892056, 36.913028),
+        'Myra':   (29.985278, 36.259167),
+    },
+    context_label_pos={
+        'Tarsus': (10, -6, 'start'),
+        'Myra':   (10, -8, 'start'),
+    },
+    origin='Antioch (Syria)',
+    # Land legs the return retraced (Acts 14:21) — drawn as one offset
+    # mitered parallel pair with per-direction arrows.
+    retraced={('Perga', 'Via Sebaste S'), ('Via Sebaste S', 'Via Sebaste N'),
+              ('Via Sebaste N', 'Hoyran N'),
+              ('Hoyran N', 'Antioch in Pisidia'),
+              ('Antioch in Pisidia', 'Iconium'),
+              ('Iconium', 'Lystra'), ('Lystra', 'Derbe')},
+    # (from, to, kind, bow, arrow). Sea legs render dashed with a gentle
+    # bow (bow > 0 bends left of travel). Salamis->Paphos is LAND:
+    # Acts 13:6, "through the whole island".
+    legs=[
+        ('Antioch (Syria)', 'Seleucia', 'land', 0, False),
+        ('Seleucia', 'Salamis', 'sea', 0.18, True),
+        ('Salamis', 'Kition', 'land', 0, False),
+        ('Kition', 'Amathus', 'land', 0, True),
+        ('Amathus', 'Kourion', 'land', 0, False),
+        ('Kourion', 'Paphos', 'land', 0, False),
+        ('Paphos', 'Perga', 'sea', 0.08, True),
+        ('Perga', 'Via Sebaste S', 'land', 0, True),
+        ('Via Sebaste S', 'Via Sebaste N', 'land', 0, False),
+        ('Via Sebaste N', 'Hoyran N', 'land', 0, False),
+        ('Hoyran N', 'Antioch in Pisidia', 'land', 0, False),
+        ('Antioch in Pisidia', 'Iconium', 'land', 0, True),
+        ('Iconium', 'Lystra', 'land', 0, True),
+        ('Lystra', 'Derbe', 'land', 0, True),
+        ('Perga', 'Attalia', 'land', 0, False),
+        # Homebound sail ends at Seleucia, the port — the final hop to
+        # Antioch reuses the already-drawn road (no doubled line).
+        ('Attalia', 'Seleucia', 'sea', -0.34, True),
+    ],
+    label_pos={                       # (dx, dy, text-anchor)
+        'Antioch (Syria)':    (10, 4, 'start'),
+        'Seleucia':           (-6, -10, 'end'),
+        'Salamis':            (8, -8, 'start'),
+        'Paphos':             (-10, 4, 'end'),
+        'Perga':              (11, -6, 'start'),
+        'Attalia':            (-10, 14, 'end'),
+        'Antioch in Pisidia': (10, -8, 'start'),
+        'Iconium':            (12, -4, 'start'),
+        'Lystra':             (-11, 8, 'end'),
+        'Derbe':              (10, 14, 'start'),
+    },
+    sea_labels=[('Mediterranean Sea', 33.0, 34.45, 0)],
+    # Region labels follow the passage's own geography (Acts 14:6 names
+    # Lycaonia); rotation follows the land's sweep.
+    region_labels=[('CYPRUS', 33.2, 35.05, -8), ('PISIDIA', 30.45, 37.72, 0),
+                   ('LYCAONIA', 33.45, 37.95, 0),
+                   ('PAMPHYLIA', 31.7, 36.8, -6), ('GALATIA', 33.0, 38.6, 0),
+                   ('CILICIA', 34.9, 37.05, -10), ('SYRIA', 36.9, 35.7, 55)],
+    title="PAUL'S FIRST MISSIONARY JOURNEY",
+    subtitle='Acts 13\u201314 \u00b7 c. AD 46\u201348',
+    # Present-day era: living successor cities take modern names; pure
+    # ruins keep the ancient name + "(ruins)".
+    modern_names={
+        'Antioch (Syria)':    'Antakya',          # Hatay, Turkiye
+        'Seleucia':           'Samanda\u011f',
+        'Salamis':            'Salamis (ruins)',
+        'Paphos':             'Paphos',
+        'Perga':              'Perge (ruins)',
+        'Attalia':            'Antalya',
+        'Antioch in Pisidia': 'Yalva\u00e7',
+        'Iconium':            'Konya',
+        'Lystra':             'Lystra (ruins)',
+        'Derbe':              'Derbe (ruins)',
+    },
+    modern_context_names={'Tarsus': 'Tarsus', 'Myra': 'Demre'},
+    modern_label_pos={'Salamis': (9, 20, 'start')},
+    modern_region_labels=[('CYPRUS', 33.2, 35.05, -8),
+                          ('T\u00dcRK\u0130YE', 32.6, 38.5, 0),
+                          ('SYRIA', 36.9, 35.7, 55),
+                          ('LEBANON', 36.35, 34.25, 40)],
+    modern_subtitle='Acts 13\u201314 \u00b7 present-day place names',
+    border_countries={'Turkey', 'Syria', 'Lebanon'},
+)
 
-# Unlabeled route vertices (no dot, no label) for legs that need a shaping
-# point. None currently: Paphos→Perga stays a *water* leg the whole way —
-# Acts 13:13 says they "sailed to Perga"; the Cestrus was navigable and
-# ships went upriver to the city, so dashes ending at inland Perga are the
-# accurate reading (a coastal waypoint + road stub was tried and looked
-# like a rendering error at zoom).
-# Road-corridor waypoints (unlabeled). The Via Sebaste (the Roman highway
-# of 6 BC that Acts scholarship puts Paul on) climbed from Perga through
-# the Taurus and threaded the Pisidian lake corridor — between Lake Burdur
-# and Lake Eğirdir — to Pisidian Antioch (via Comama and Apollonia). On
-# Cyprus, "through the whole island" (Acts 13:6) followed the south-coast
-# Roman road: Kition, Amathus, Kourion.
-WAYPOINTS = {
-    'Via Sebaste S': (30.48, 37.34),   # near Comama
-    'Via Sebaste N': (30.46, 38.07),   # near Apollonia
-    # The road rounded the NORTH shore of Lake Eğirdir's Hoyran arm —
-    # placed from the drawn lake's own north tip (30.86, 38.28), so the
-    # route can never clip the water it skirts.
-    'Hoyran N': (30.87, 38.34),
-    'Kition':  (33.63, 34.92),
-    'Amathus': (33.14, 34.71),
-    'Kourion': (32.87, 34.66),
-}
+# Paul's second missionary journey (Acts 15:36-18:22). Route scholarship:
+# Antioch->Tarsus crosses the Amanus at the Syrian Gates (Belen Pass) and
+# the Taurus at the Cilician Gates (15:41-16:1, "through Syria and
+# Cilicia"); on through Derbe/Lystra/Iconium to Pisidian Antioch, then
+# "through Phrygia and Galatia, forbidden in Asia" (16:6) — traditional
+# corridor north via Prymnessus to Cotiaeum, then "passing by Mysia, down
+# to Troas" (16:7-8) via Hadrianutherae. Sea to Samothrace + Neapolis in
+# two days (16:11), then the VIA EGNATIA: Neapolis-Philippi-Amphipolis-
+# Apollonia-Thessalonica (17:1 names the stations). Berea (17:10); to the
+# coast at Methone, then SEA to Athens (17:14 "sent him off to the sea")
+# — southbound = downwind with the Etesians (lesson 12), threading east
+# of Euboea to Sounion. Athens->Corinth by the Megara coast road. Home:
+# Cenchreae (18:18, Corinth's east port, unlabeled waypoint: 10 px from
+# Corinth's dot) -> Ephesus (eastbound open sea) -> Caesarea (long
+# downwind run passing south of Cyprus, the Acts 21:1-3 pattern), "up"
+# to Jerusalem (18:22, retraced to Caesarea), then home BY SEA up the
+# Levant coast to Seleucia (Antioch's port) and the short road inland —
+# 18:22 names no land stops, and coasting the Phoenician shore is exactly
+# the Acts 21:1-7 pattern. Tyre/Sidon/Ptolemais ride along as context
+# dots (they are journey-3 ports).
+MAPS['paul_journey_2'] = dict(
+    bbox=(21.4, 31.4, 37.2, 41.6),
+    width=1400,
+    places={
+        'Antioch (Syria)':    (36.171743, 36.226691),
+        'Tarsus':             (34.892056, 36.913028),
+        'Derbe':              (33.361453, 37.348569),
+        'Lystra':             (32.338400, 37.601700),
+        'Iconium':            (32.492331, 37.872202),
+        'Antioch in Pisidia': (31.189167, 38.306111),
+        'Troas':              (26.158611, 39.751944),
+        'Samothrace':         (25.583333, 40.450000),
+        'Neapolis':           (24.415000, 40.935000),
+        'Philippi':           (24.284576, 41.012072),
+        'Amphipolis':         (23.847209, 40.820159),
+        'Apollonia':          (23.469685, 40.623703),
+        'Thessalonica':       (22.945767, 40.637771),
+        'Berea':              (22.200000, 40.518333),
+        'Athens':             (23.726738, 37.971851),
+        'Corinth':            (22.878741, 37.905785),
+        'Ephesus':            (27.340700, 37.939125),
+        'Caesarea':           (34.891667, 32.500000),
+        'Jerusalem':          (35.234167, 31.776667),
+    },
+    waypoints={
+        'Syrian Gates':     (36.204, 36.494),   # Belen Pass, Amanus
+        'Iskenderun':       (36.300, 36.610),   # E shore of the gulf
+        'Cilician Plain':   (36.150, 36.980),   # round the gulf's NE head
+        'Cilician Gates':   (34.770, 37.280),   # Gulek Pass, Taurus
+        'Cybistra':         (34.050, 37.510),   # Eregli, Tyana road
+        'Prymnessus':       (30.550, 38.720),   # near Afyon
+        'Cotiaeum':         (29.980, 39.420),   # Kutahya
+        'Hadrianutherae':   (27.890, 39.650),   # Balikesir ("passing by Mysia")
+        'Methone':          (22.620, 40.410),   # Pierian port for Berea
+        # Aegean sea-lane vertices, placed from the DRAWN islands' own
+        # extents (the Hoyran rule): the lanes are the ancient ones —
+        # round Tenedos, the Lemnos-Imbros gap, down the Magnesian coast
+        # through the Trikeri channel, outside Euboea, the Doro passage
+        # (Euboea-Andros), round Sounion; eastbound via the Kea-Kythnos
+        # passage, Delos (the entrepot lane), south of Ikaria and Samos.
+        'Tenedos S':        (25.950, 39.740),
+        'Imbros W':         (25.550, 40.060),
+        'Thasos N':         (24.730, 40.830),
+        'Thermaic Mid':     (22.900, 40.220),
+        'Thermaic S':       (22.950, 39.800),
+        'Magnesia E':       (23.620, 39.400),
+        'Skiathos E':       (23.545, 39.060),
+        'Euboea E':         (24.450, 38.620),
+        'Kafireas S':       (24.660, 38.010),
+        'Kea Channel':      (24.210, 37.600),
+        'Saronic':          (23.620, 37.780),
+        'Saronic N':        (23.500, 37.830),
+        'Sounion S':        (24.050, 37.560),
+        'Cyclades W':       (24.430, 37.500),
+        'Syros S':          (24.920, 37.320),
+        'Delos':            (25.270, 37.370),
+        'Ikaria S':         (26.300, 37.440),
+        'Samos S':          (26.850, 37.550),
+        'Mycale':           (27.100, 37.660),
+        'Patmos E':         (26.660, 37.330),
+        'Kos W':            (26.750, 36.700),
+        'Nisyros S':        (27.170, 36.520),
+        'Symi S':           (27.850, 36.480),
+        'Rhodes N':         (28.260, 36.490),
+        'Rhodes E':         (28.400, 36.320),
+        'Pella':            (22.550, 40.780),   # round the Thermaic head
+        'Eleusis N':        (23.460, 38.135),   # N of the bay/Salamis
+        'Isthmus':          (23.000, 37.950),   # the Corinth isthmus road
+        'Megara':           (23.340, 37.995),
+        'Cenchreae':        (22.996816, 37.884335),
+        'Seleucia':         (35.922, 36.124),   # Antioch's port (sea landfall)
+    },
+    context_places={
+        'Byzantium': (28.760, 41.060),   # the modern era's Istanbul anchor (W of the strait)
+        'Rhodes':    (28.220, 36.440),   # journey-3 stop (Acts 21:1)
+        'Patmos':    (26.545, 37.309),   # John's exile (Rev 1:9)
+        'Tyre':      (35.196, 33.272),   # Acts 21:3-7
+        'Sidon':     (35.371, 33.563),   # Acts 27:3
+        'Ptolemais': (35.070, 32.920),   # Acts 21:7
+    },
+    context_label_pos={
+        'Byzantium': (8, -8, 'start'),
+        'Rhodes':    (-23, 29, 'middle'),   # centred over the island body
+        'Patmos':    (9, 4, 'start'),
+        'Tyre':      (9, 1, 'start'),
+        'Sidon':     (9, 2, 'start'),
+        'Ptolemais': (-9, 4, 'end'),
+    },
+    # Cities that legitimately sit AT the shore (ports + island cities), so
+    # the dot-placement guarantee expects them on the coast, not clearing
+    # it. Sea-leg endpoints are auto-detected; these are the coastal cities
+    # reached only by land legs (Thessalonica/Corinth/Amphipolis are
+    # port-cities) or named as context (the islands + Phoenician ports).
+    coastal={'Thessalonica', 'Corinth', 'Amphipolis', 'Rhodes', 'Patmos',
+             'Tyre', 'Sidon', 'Ptolemais'},
+    origin='Antioch (Syria)',
+    retraced={('Caesarea', 'Jerusalem')},   # 18:22 "up... and down"
+    legs=[
+        ('Antioch (Syria)', 'Syrian Gates', 'land', 0, False),
+        ('Syrian Gates', 'Iskenderun', 'land', 0, False),
+        ('Iskenderun', 'Cilician Plain', 'land', 0, False),
+        ('Cilician Plain', 'Tarsus', 'land', 0, True),
+        ('Tarsus', 'Cilician Gates', 'land', 0, False),
+        ('Cilician Gates', 'Cybistra', 'land', 0, False),
+        ('Cybistra', 'Derbe', 'land', 0, False),
+        ('Derbe', 'Lystra', 'land', 0, True),
+        ('Lystra', 'Iconium', 'land', 0, False),
+        ('Iconium', 'Antioch in Pisidia', 'land', 0, True),
+        ('Antioch in Pisidia', 'Prymnessus', 'land', 0, False),
+        ('Prymnessus', 'Cotiaeum', 'land', 0, True),
+        ('Cotiaeum', 'Hadrianutherae', 'land', 0, False),
+        ('Hadrianutherae', 'Troas', 'land', 0, True),
+        ('Troas', 'Tenedos S', 'sea', 0.04, False),
+        ('Tenedos S', 'Imbros W', 'sea', 0.04, False),
+        ('Imbros W', 'Samothrace', 'sea', 0.04, True),
+        ('Samothrace', 'Thasos N', 'sea', 0, False),
+        ('Thasos N', 'Neapolis', 'sea', 0.05, False),
+        ('Neapolis', 'Philippi', 'land', 0, False),
+        ('Philippi', 'Amphipolis', 'land', 0, False),
+        ('Amphipolis', 'Apollonia', 'land', 0, False),
+        ('Apollonia', 'Thessalonica', 'land', 0, True),
+        ('Thessalonica', 'Pella', 'land', 0, False),
+        ('Pella', 'Berea', 'land', 0, False),
+        ('Berea', 'Methone', 'land', 0, False),
+        ('Methone', 'Thermaic Mid', 'sea', 0.02, False),
+        ('Thermaic Mid', 'Thermaic S', 'sea', 0.02, False),
+        ('Thermaic S', 'Magnesia E', 'sea', 0.05, False),
+        ('Magnesia E', 'Skiathos E', 'sea', 0.02, False),
+        ('Skiathos E', 'Euboea E', 'sea', 0.04, True),
+        ('Euboea E', 'Kafireas S', 'sea', 0.03, False),
+        ('Kafireas S', 'Kea Channel', 'sea', 0.03, False),
+        ('Kea Channel', 'Sounion S', 'sea', 0.02, False),
+        ('Sounion S', 'Saronic', 'sea', 0.02, False),
+        ('Saronic', 'Athens', 'sea', 0.02, False),
+        ('Athens', 'Eleusis N', 'land', 0, False),
+        ('Eleusis N', 'Megara', 'land', 0, False),
+        ('Megara', 'Isthmus', 'land', 0, False),
+        ('Isthmus', 'Corinth', 'land', 0, False),
+        ('Corinth', 'Cenchreae', 'land', 0, False),
+        ('Cenchreae', 'Saronic N', 'sea', 0.02, False),
+        ('Saronic N', 'Sounion S', 'sea', 0.02, False),
+        ('Sounion S', 'Cyclades W', 'sea', 0.02, False),
+        ('Cyclades W', 'Syros S', 'sea', 0.02, False),
+        ('Syros S', 'Delos', 'sea', 0.02, False),
+        ('Delos', 'Ikaria S', 'sea', 0.02, True),
+        ('Ikaria S', 'Samos S', 'sea', 0.02, False),
+        ('Samos S', 'Mycale', 'sea', 0.02, False),
+        ('Mycale', 'Ephesus', 'sea', 0.02, False),
+        # Homebound, ships left Ephesus back down the Samos strait — the
+        # same water the arrival lane just drew, so (like retraced roads,
+        # lesson 3) it is drawn once: the outbound resumes at Samos S and
+        # takes the west-of-Dodecanese lane past Leros, Kos, Nisyros and
+        # Symi to the Rhodes channel, then the long open downwind run
+        # south of Cyprus (Acts 21:1-3 pattern; lesson 12).
+        ('Samos S', 'Patmos E', 'sea', -0.08, False),
+        ('Patmos E', 'Kos W', 'sea', 0, False),
+        ('Kos W', 'Nisyros S', 'sea', 0.02, False),
+        ('Nisyros S', 'Symi S', 'sea', 0.02, False),
+        ('Symi S', 'Rhodes N', 'sea', 0, False),
+        ('Rhodes N', 'Rhodes E', 'sea', 0, False),
+        ('Rhodes E', 'Caesarea', 'sea', -0.10, True),
+        ('Caesarea', 'Jerusalem', 'land', 0, False),
+        ('Caesarea', 'Seleucia', 'sea', 0.10, True),
+        ('Seleucia', 'Antioch (Syria)', 'land', 0, False),
+    ],
+    label_pos={
+        'Antioch (Syria)':    (-12, -10, 'end'),
+        'Tarsus':             (6, 19, 'start'),
+        'Derbe':              (10, 14, 'start'),
+        'Lystra':             (-11, 8, 'end'),
+        'Iconium':            (12, -4, 'start'),
+        'Antioch in Pisidia': (10, -8, 'start'),
+        'Troas':              (-10, -6, 'end'),
+        'Samothrace':         (10, 12, 'start'),
+        'Neapolis':           (10, 12, 'start'),
+        'Philippi':           (8, -10, 'start'),
+        'Amphipolis':         (8, 17, 'start'),
+        'Apollonia':          (-8, 19, 'end'),
+        'Thessalonica':       (-11, -9, 'end'),
+        'Berea':              (-10, 12, 'end'),
+        'Athens':             (12, 10, 'start'),
+        'Corinth':            (-11, -6, 'end'),
+        'Ephesus':            (10, -8, 'start'),
+        'Caesarea':           (10, 4, 'start'),
+        'Jerusalem':          (12, 6, 'start'),
+    },
+    sea_labels=[('Aegean Sea', 25.05, 38.65, -70),
+                ('Mediterranean Sea', 30.0, 33.6, 0)],
+    # Acts 15:36-18:22 names them all: Syria & Cilicia (15:41), Phrygia &
+    # Galatia (16:6), Asia (16:6), Mysia & Bithynia (16:7), Macedonia
+    # (16:9), Achaia (18:12).
+    region_labels=[('SYRIA', 36.8, 35.3, 50), ('CILICIA', 34.6, 37.02, -8),
+                   ('PHRYGIA', 29.55, 38.72, 0), ('GALATIA', 32.6, 39.3, 0),
+                   ('ASIA', 28.6, 38.45, 0), ('MYSIA', 27.25, 39.35, 0),
+                   ('BITHYNIA', 30.6, 40.55, 0),
+                   ('MACEDONIA', 23.45, 41.3, 0), ('ACHAIA', 22.4, 38.4, 0)],
+    title="PAUL'S SECOND MISSIONARY JOURNEY",
+    subtitle='Acts 15:36\u201318:22 \u00b7 c. AD 49\u201352',
+    modern_names={
+        'Antioch (Syria)':    'Antakya',
+        'Tarsus':             'Tarsus',
+        'Derbe':              'Derbe (ruins)',
+        'Lystra':             'Lystra (ruins)',
+        'Iconium':            'Konya',
+        'Antioch in Pisidia': 'Yalva\u00e7',
+        'Troas':              'Troas (ruins)',
+        'Samothrace':         'Samothraki',
+        'Neapolis':           'Kavala',
+        'Philippi':           'Philippi (ruins)',
+        'Amphipolis':         'Amphipolis (ruins)',
+        'Apollonia':          'Apollonia (ruins)',
+        'Thessalonica':       'Thessaloniki',
+        'Berea':              'Veria',
+        'Athens':             'Athens',
+        'Corinth':            'Corinth',
+        'Ephesus':            'Ephesus (ruins)',
+        'Caesarea':           'Caesarea',
+        'Jerusalem':          'Jerusalem',
+    },
+    modern_context_names={'Byzantium': 'Istanbul', 'Rhodes': 'Rhodes',
+                          'Patmos': 'Patmos', 'Tyre': 'Tyre',
+                          'Sidon': 'Sidon', 'Ptolemais': 'Akko'},
+    # "(ruins)" names run longer — Veria/Apollonia collide on the shared
+    # nudges
+    modern_label_pos={'Apollonia': (3, 19, 'start'),
+                      'Berea': (-10, -7, 'end')},
+    # West Bank lines excluded like Cyprus' in journey 1 — major
+    # international boundaries only; the calm rendering.
+    modern_region_labels=[('GREECE', 22.6, 39.4, 0),
+                          ('T\u00dcRK\u0130YE', 31.5, 39.6, 0),
+                          ('SYRIA', 36.8, 35.3, 50),
+                          ('CYPRUS', 33.2, 35.05, -8),
+                          ('LEBANON', 35.85, 34.15, 40),
+                          ('ISRAEL', 34.72, 32.2, 60),
+                          ('JORDAN', 36.25, 31.78, 0)],
+    modern_subtitle='Acts 15:36\u201318:22 \u00b7 present-day place names',
+    border_countries={'Turkey', 'Greece', 'Bulgaria', 'North Macedonia',
+                      'Albania', 'Syria', 'Lebanon', 'Israel', 'Jordan'},
+)
 
-# Context cities — gray, no route: anchor the journey in the known NT
-# world (reference-map study, 2026-06-12). Tarsus is Paul's hometown
-# (Acts 9:11), Myra a later voyage stop (Acts 27:5).
-CONTEXT_PLACES = {
-    'Tarsus': (34.892056, 36.913028),
-    'Myra':   (29.985278, 36.259167),
-}
-CONTEXT_LABEL_POS = {
-    'Tarsus': (10, -6, 'start'),
-    'Myra':   (10, -8, 'start'),
-}
-
-# The journey's origin gets a quiet ring around its dot (the reference
-# maps mark it with a star; a ring is the house-calm version).
-ORIGIN = 'Antioch (Syria)'
-
-# Land legs the return retraced (Acts 14:21) — drawn as offset parallel
-# pairs with per-direction arrows in the 'return' variant, single calm
-# lines otherwise.
-RETRACED = {('Perga', 'Via Sebaste S'), ('Via Sebaste S', 'Via Sebaste N'),
-            ('Via Sebaste N', 'Hoyran N'), ('Hoyran N', 'Antioch in Pisidia'),
-            ('Antioch in Pisidia', 'Iconium'),
-            ('Iconium', 'Lystra'), ('Lystra', 'Derbe')}
-
-# Route legs: (from, to, kind, bow, arrow). Sea legs render dashed with a
-# gentle bow (bow > 0 bends left of travel); arrow=True draws a direction
-# arrowhead at the leg's midpoint. The return retraces the outbound roads
-# (Acts 14:21), so retraced land legs are drawn once (no arrow — direction
-# is both ways); the arrows on the sea legs carry the loop's story.
-# Salamis→Paphos is LAND: Acts 13:6, "through the whole island".
-LEGS = [
-    ('Antioch (Syria)', 'Seleucia', 'land', 0, False),
-    ('Seleucia', 'Salamis', 'sea', 0.18, True),
-    # Cyprus south-coast road; one arrow mid-island
-    ('Salamis', 'Kition', 'land', 0, False),
-    ('Kition', 'Amathus', 'land', 0, True),
-    ('Amathus', 'Kourion', 'land', 0, False),
-    ('Kourion', 'Paphos', 'land', 0, False),
-    ('Paphos', 'Perga', 'sea', 0.08, True),
-    # Via Sebaste climb through the lake corridor; arrows on the long
-    # first segment only (the pair logic uses each row's own flag)
-    ('Perga', 'Via Sebaste S', 'land', 0, True),
-    ('Via Sebaste S', 'Via Sebaste N', 'land', 0, False),
-    ('Via Sebaste N', 'Hoyran N', 'land', 0, False),
-    ('Hoyran N', 'Antioch in Pisidia', 'land', 0, False),
-    ('Antioch in Pisidia', 'Iconium', 'land', 0, True),
-    ('Iconium', 'Lystra', 'land', 0, True),
-    ('Lystra', 'Derbe', 'land', 0, True),
-    ('Perga', 'Attalia', 'land', 0, False),
-    # Homebound sail ends at Seleucia, the port — the final hop to
-    # Antioch reuses the already-drawn road (no doubled line).
-    ('Attalia', 'Seleucia', 'sea', -0.34, True),
-]
-
-# Label placement: anchor + pixel nudge per place (the hand-tuned part).
-LABEL_POS = {                       # (dx, dy, text-anchor)
-    'Antioch (Syria)':    (10, 4, 'start'),
-    'Seleucia':           (-6, -10, 'end'),
-    'Salamis':            (8, -8, 'start'),
-    'Paphos':             (-10, 4, 'end'),
-    'Perga':              (11, -6, 'start'),
-    'Attalia':            (-10, 14, 'end'),
-    'Antioch in Pisidia': (10, -8, 'start'),
-    'Iconium':            (12, -4, 'start'),
-    'Lystra':             (-11, 8, 'end'),
-    'Derbe':              (10, 14, 'start'),
-}
-
-SEA_LABELS = [('Mediterranean Sea', 33.0, 34.45, 0)]
-# Region labels follow the passage's own geography: Acts 14:6 names
-# Lycaonia (Lystra & Derbe); Pisidia is the lake district *south* of
-# Pisidian Antioch (the first draft's position was in Phrygia). The
-# rotation (degrees) lets a name follow its land's sweep, like the
-# classic atlas charts (reference-map study).
-REGION_LABELS = [('CYPRUS', 33.2, 35.05, -8), ('PISIDIA', 30.45, 37.72, 0),
-                 ('LYCAONIA', 33.45, 37.95, 0),
-                 ('PAMPHYLIA', 31.7, 36.8, -6), ('GALATIA', 33.0, 38.6, 0),
-                 ('CILICIA', 34.9, 37.05, -10), ('SYRIA', 36.9, 35.7, 55)]
-
-TITLE_TEXT = "PAUL'S FIRST MISSIONARY JOURNEY"
-SUBTITLE_TEXT = 'Acts 13–14 · c. AD 46–48'
-
-# ── Present-day era (the "where is this today?" toggle) ─────────────────────
-# Same geometry, same route, same dots — only the editorial layer changes,
-# so the toggle reads as "same place, new labels". Living successor cities
-# get their modern name (the continuity IS the teaching: Konya is a city of
-# two million, and Paul preached there); pure ruins keep the ancient name
-# with a quiet "(ruins)" — inventing the nearest village name nobody knows
-# would defeat the grounding purpose.
-MODERN_NAMES = {
-    'Antioch (Syria)':    'Antakya',          # Hatay, Türkiye — not Syria!
-    'Seleucia':           'Samandağ',         # town at Seleucia Pieria
-    'Salamis':            'Salamis (ruins)',  # north of Famagusta
-    'Paphos':             'Paphos',           # still Paphos
-    'Perga':              'Perge (ruins)',    # Aksu, outside Antalya
-    'Attalia':            'Antalya',
-    'Antioch in Pisidia': 'Yalvaç',           # town beside the site
-    'Iconium':            'Konya',
-    'Lystra':             'Lystra (ruins)',   # near Hatunsaray
-    'Derbe':              'Derbe (ruins)',    # Kerti Hüyük, near Karaman
-}
-MODERN_CONTEXT_NAMES = {'Tarsus': 'Tarsus', 'Myra': 'Demre'}
-# Modern names run longer — per-place nudges where the shared LABEL_POS
-# would collide ("Salamis (ruins)" runs into the incoming sea dashes).
-MODERN_LABEL_POS = {'Salamis': (9, 20, 'start')}
-MODERN_REGION_LABELS = [('CYPRUS', 33.2, 35.05, -8),
-                        ('TÜRKİYE', 32.6, 38.5, 0),
-                        ('SYRIA', 36.9, 35.7, 55),
-                        ('LEBANON', 36.35, 34.25, 40)]
-MODERN_SUBTITLE = 'Acts 13–14 · present-day place names'
-# Modern borders: major international boundaries only — the Cyprus
-# micro-lines (UN buffer, base areas) are noise at teaching scale, and
-# Cyprus is presented whole (the standard de jure rendering).
-BORDER_COUNTRIES = {'Turkey', 'Syria', 'Lebanon'}
 BORDER = '#8d9298'       # quiet dashed hairline — context, never content
 
 
@@ -405,7 +644,14 @@ def relief_paths(tile_dir, bbox, proj):
             xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
             if (max(xs) - min(xs)) * (max(ys) - min(ys)) < 300:
                 continue
-            pts = pts[::2] if len(pts) > 24 else pts
+            # NB: the fast [::2] halving is safe ONLY here — relief rings are
+            # closed interior contours, never bbox-clipped, so halving can't
+            # drop a corner vertex and fold the ring. On coastlines (which
+            # ARE clipped) use thin_pts instead; do not copy this idiom there.
+            if len(pts) > 24:
+                pts = pts[::2]
+                if len(pts) > 24:
+                    pts = thin_pts(pts, 1.2)
             d_parts.append('M' + ' L'.join(f'{x:.0f},{y:.0f}'
                                            for x, y in pts) + ' Z')
         if d_parts:
@@ -416,8 +662,21 @@ def relief_paths(tile_dir, bbox, proj):
 
 # ── SVG emission ─────────────────────────────────────────────────────────────
 
-def path_d(points, close=False):
-    d = 'M' + ' L'.join(f'{x:.1f},{y:.1f}' for x, y in points)
+def thin_pts(pts, tol=0.7):
+    """Radial-distance simplification: drop points closer than tol px to
+    the last kept one. Error is bounded by tol (sub-pixel), so corners
+    survive — naive [::n] slicing can drop bbox-corner vertices and fold
+    a clipped ring across the map."""
+    out = [pts[0]]
+    for p in pts[1:-1]:
+        if math.hypot(p[0] - out[-1][0], p[1] - out[-1][1]) >= tol:
+            out.append(p)
+    out.append(pts[-1])
+    return out
+
+
+def path_d(points, close=False, dec=1):
+    d = 'M' + ' L'.join(f'{x:.{dec}f},{y:.{dec}f}' for x, y in points)
     return d + (' Z' if close else '')
 
 
@@ -457,11 +716,33 @@ def sample_quad(p, c, q, n=240):
     return pts
 
 
+_ring_bbox = {}      # id(ring) -> (x0, x1, y0, y1); rings live for one build
+
+
+def _bbox(ring):
+    b = _ring_bbox.get(id(ring))
+    if b is None:
+        xs = [p[0] for p in ring]
+        ys = [p[1] for p in ring]
+        b = (min(xs), max(xs), min(ys), max(ys))
+        _ring_bbox[id(ring)] = b
+    return b
+
+
 def point_in_rings(pt, rings):
-    """Ray-casting point-in-polygon across disjoint rings (projected px)."""
+    """Ray-casting point-in-polygon across disjoint rings (projected px).
+
+    The ray is cast to the RIGHT (+x), so a ring can be skipped iff it does
+    not span the point's y, OR lies entirely to its left (x1 < x) — neither
+    can contribute a rightward crossing. This bbox pre-filter is exact (same
+    result, no ring that matters is skipped) and is the hot path's main
+    speedup: a point near Greece never scans Anatolia's vertices."""
     x, y = pt
     inside = False
     for ring in rings:
+        x0, x1, y0, y1 = _bbox(ring)
+        if y < y0 or y > y1 or x1 < x:
+            continue
         j = len(ring) - 1
         for i in range(len(ring)):
             xi, yi = ring[i]
@@ -485,8 +766,33 @@ def arrow_marker(pts, size=9.0, frac=0.5):
             f'transform="translate({x:.1f},{y:.1f}) rotate({ang:.1f})"/>')
 
 
-def build(data_dir, out_path, return_variant=True, no_title=False,
-          era='ancient'):
+def build(data_dir, out_path, mapdef=None, return_variant=True,
+          no_title=False, era='ancient'):
+    m = mapdef or MAPS['paul_journey_1']
+    # Required (ancient) fields — a missing one should error loudly.
+    BBOX = m['bbox']
+    WIDTH = m['width']
+    PLACES = m['places']
+    WAYPOINTS = m['waypoints']
+    CONTEXT_PLACES = m['context_places']
+    CONTEXT_LABEL_POS = m['context_label_pos']
+    ORIGIN = m['origin']
+    RETRACED = m['retraced']
+    LEGS = m['legs']
+    LABEL_POS = m['label_pos']
+    SEA_LABELS = m['sea_labels']
+    REGION_LABELS = m['region_labels']
+    TITLE_TEXT = m['title']
+    SUBTITLE_TEXT = m['subtitle']
+    COASTAL = m.get('coastal', frozenset())   # places meant to sit at the shore
+    # Present-day layer — optional; an ancient-only map omits it and the
+    # modern build degrades gracefully (ancient names, no borders).
+    MODERN_NAMES = m.get('modern_names', {})
+    MODERN_CONTEXT_NAMES = m.get('modern_context_names', {})
+    MODERN_LABEL_POS = m.get('modern_label_pos', {})
+    MODERN_REGION_LABELS = m.get('modern_region_labels', REGION_LABELS)
+    MODERN_SUBTITLE = m.get('modern_subtitle', SUBTITLE_TEXT)
+    BORDER_COUNTRIES = m.get('border_countries', frozenset())
     modern = era == 'modern'
 
     def display(name):
@@ -511,8 +817,10 @@ def build(data_dir, out_path, return_variant=True, no_title=False,
                 clipped = clip_polygon(ring, BBOX)
                 if len(clipped) >= 3:
                     pts = [proj(*p) for p in clipped]
+                    if len(pts) > 150:
+                        pts = thin_pts(pts, 1.0)
                     rings.append(pts)
-                    out.append(f'<path d="{path_d(pts, close=True)}" '
+                    out.append(f'<path d="{path_d(pts, close=True, dec=0)}" '
                                f'fill="{fill}" stroke="{stroke}" '
                                f'stroke-width="{stroke_w}" '
                                f'stroke-linejoin="round"/>')
@@ -526,8 +834,10 @@ def build(data_dir, out_path, return_variant=True, no_title=False,
             for run in clip_line(line, BBOX):
                 if len(run) >= 2:
                     pts = [proj(*p) for p in run]
+                    if len(pts) > 60:
+                        pts = thin_pts(pts)
                     river_paths.append(
-                        f'<path d="{path_d(pts)}" fill="none" '
+                        f'<path d="{path_d(pts, dec=0)}" fill="none" '
                         f'stroke="{RIVER}" stroke-width="1.1" '
                         f'stroke-linecap="round"/>')
 
@@ -583,6 +893,32 @@ def build(data_dir, out_path, return_variant=True, no_title=False,
             print(f'  ! land route {what} crosses a lake '
                   f'({wet} samples) — add a shore waypoint')
 
+    def warn_if_sea(pts, what):
+        # A land leg that dips into the SEA mid-route (e.g. a straight chord
+        # cutting across a gulf head) — the terrain guarantee only clipped
+        # *sea* legs against land, so this class slipped through (the
+        # Antioch->Tarsus gulf crossing, found 2026-06-13). Endpoint water
+        # is ignored (coastal city dots sit at the shoreline). The test is
+        # the wet run's PIXEL SPAN, not sample count: a straight road
+        # shaving a convex coast by a pixel or two at 10m thinned
+        # resolution is invisible, not a crossing — only a visible run
+        # (> ~5 px) is a real route-through-water.
+        runs = []          # [is_wet, [pts]]
+        for pt in pts:
+            wet = not point_in_rings(pt, land_rings)
+            if runs and runs[-1][0] == wet:
+                runs[-1][1].append(pt)
+            else:
+                runs.append([wet, [pt]])
+        for i, (wet, run) in enumerate(runs):
+            if wet and 0 < i < len(runs) - 1:
+                span = math.hypot(run[-1][0] - run[0][0],
+                                  run[-1][1] - run[0][1])
+                if span > 5:
+                    print(f'  ! land route {what} crosses the sea '
+                          f'(~{span:.0f} px) — route it round the shore')
+                    return
+
     # Whisper-faint 1° graticule — gives the empty interior a cartographic
     # texture without competing with anything (see the methodology doc's
     # "empty-interior problem"; hypsometric relief is the open follow-up).
@@ -625,7 +961,41 @@ def build(data_dir, out_path, return_variant=True, no_title=False,
     coords.update(WAYPOINTS)
     arrows = []
 
-    def draw_land(p, q, bow, arrow, frac=0.5):
+    # ── Dot-placement guarantee (the point-analogue of the route clip) ──────
+    # A dot is render-correct iff its SIGNED clearance to the drawn coastline
+    # has the right sign AND exceeds its own radius — so the whole 4.4 px
+    # footprint sits on the intended side of the shore, not just the centre
+    # (the Byzantium-on-the-strait class). Clearance is measured against the
+    # exact thinned rings the SVG draws, so this is render-correct by
+    # construction, not a coordinate check. Ports (sea-leg endpoints + the
+    # `coastal` set) legitimately sit AT the waterline and only fail if a dot
+    # lands well out to sea; every other land dot must clear the coast.
+    def _seg_dist(p, a, b):
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        L2 = dx*dx + dy*dy
+        if L2 == 0:
+            return math.hypot(p[0]-a[0], p[1]-a[1])
+        t = max(0.0, min(1.0, ((p[0]-a[0])*dx + (p[1]-a[1])*dy) / L2))
+        return math.hypot(p[0]-(a[0]+t*dx), p[1]-(a[1]+t*dy))
+
+    def coast_clearance(pt):
+        d = min(_seg_dist(pt, ring[i], ring[(i+1) % len(ring)])
+                for ring in land_rings for i in range(len(ring)))
+        return d if point_in_rings(pt, land_rings) else -d
+
+    ports = {n for f, t, k, *_ in LEGS if k == 'sea' for n in (f, t)} | set(COASTAL)
+    for name, (lon, lat) in {**PLACES, **CONTEXT_PLACES}.items():
+        c = coast_clearance(proj(lon, lat))
+        if name in ports:
+            if c < -DOT_R:
+                print(f'  ! port {name} sits {-c:.1f} px out to sea — '
+                      f'nudge to the drawn shore')
+        elif c < DOT_R:
+            print(f'  ! land dot {name} clears the drawn coast by {c:.1f} px '
+                  f'(< {DOT_R} px dot radius) — its footprint bleeds into '
+                  f'water; nudge inland or use finer coastline data')
+
+    def draw_land(p, q, bow, arrow, what, frac=0.5):
         c = bowed(p, q, bow) if bow else ((p[0]+q[0])/2, (p[1]+q[1])/2)
         if bow:
             d = (f'M{p[0]:.1f},{p[1]:.1f} Q{c[0]:.1f},{c[1]:.1f} '
@@ -635,7 +1005,8 @@ def build(data_dir, out_path, return_variant=True, no_title=False,
         svg.append(f'<path d="{d}" fill="none" stroke="{ROUTE}" '
                    f'stroke-width="{ROUTE_W}" stroke-linecap="round" '
                    f'opacity="0.9"/>')
-        warn_if_wet(sample_quad(p, c, q), 'leg')
+        warn_if_wet(sample_quad(p, c, q), what)
+        warn_if_sea(sample_quad(p, c, q), what)
         if arrow:
             arrows.append(arrow_marker(sample_quad(p, c, q), frac=frac))
 
@@ -678,19 +1049,26 @@ def build(data_dir, out_path, return_variant=True, no_title=False,
 
     def draw_chain_pair(chain_pts):
         """A retraced road as one continuous mitered parallel pair, with
-        two staggered arrowheads per direction along the whole chain."""
-        # fracs interleave when mapped onto the shared road: forward at
-        # 20%/60%, reverse at 20%/60% of ITS direction = 80%/40% forward —
-        # four arrowheads evenly spaced, never face to face
-        for pts, fracs in ((offset_polyline(chain_pts, 3.4), (0.20, 0.60)),
-                           (offset_polyline(chain_pts[::-1], 3.4),
-                            (0.20, 0.60))):
+        staggered arrowheads per direction along the whole chain."""
+        # Arrow count scales with the drawn chain length: two per direction
+        # on a long loop (Galatia) spread out and read clearly; on a short
+        # retrace (Caesarea<->Jerusalem) four 9px heads pile up on the two
+        # near-touching lanes, so one per direction — at 0.66 of each
+        # direction (= 0.66 and 0.34 forward), which drops the two arrows
+        # into opposite halves of the leg so the out-and-back reads at a
+        # glance instead of clustering mid-line.
+        chain_px = sum(math.hypot(b[0] - a[0], b[1] - a[1])
+                       for a, b in zip(chain_pts, chain_pts[1:]))
+        fracs = (0.20, 0.60) if chain_px > 260 else (0.66,)
+        for pts in (offset_polyline(chain_pts, 3.4),
+                    offset_polyline(chain_pts[::-1], 3.4)):
             svg.append(f'<path d="{path_d(pts)}" fill="none" '
                        f'stroke="{ROUTE}" stroke-width="{ROUTE_W}" '
                        f'stroke-linecap="round" stroke-linejoin="round" '
                        f'opacity="0.9"/>')
             dense = densify(pts)
             warn_if_wet(dense, 'chain')
+            warn_if_sea(dense, 'chain')
             for fr in fracs:
                 arrows.append(arrow_marker(dense, frac=fr))
 
@@ -702,7 +1080,7 @@ def build(data_dir, out_path, return_variant=True, no_title=False,
             draw_chain_pair(pending_chain.copy())
         elif pending_chain:
             for a, b in zip(pending_chain, pending_chain[1:]):
-                draw_land(a, b, 0, False)
+                draw_land(a, b, 0, False, 'retraced chain')
         pending_chain.clear()
 
     for frm, to, kind, bow, arrow in LEGS:
@@ -717,7 +1095,7 @@ def build(data_dir, out_path, return_variant=True, no_title=False,
                 pending_chain.append(q)
             else:
                 flush_chain()
-                draw_land(p, q, bow, arrow)
+                draw_land(p, q, bow, arrow, f'{frm}->{to}')
             continue
         flush_chain()
         # sea leg: split the sampled curve into water/land runs
@@ -734,7 +1112,7 @@ def build(data_dir, out_path, return_variant=True, no_title=False,
             if len(pts) < 2:
                 continue
             if water:
-                svg.append(f'<path d="{path_d(pts)}" fill="none" '
+                svg.append(f'<path d="{path_d(thin_pts(pts, 1.5))}" fill="none" '
                            f'stroke="{ROUTE}" stroke-width="{ROUTE_W}" '
                            f'stroke-linecap="round" '
                            f'stroke-dasharray="2 9" opacity="0.9"/>')
@@ -816,7 +1194,9 @@ def build(data_dir, out_path, return_variant=True, no_title=False,
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--data-dir', default='/tmp/mapdata')
-    ap.add_argument('--out', default='/tmp/paul-journey-1.svg')
+    ap.add_argument('--map', choices=sorted(MAPS), default='paul_journey_1')
+    ap.add_argument('--out', default=None,
+                    help='output path (default /tmp/<map>.svg)')
     ap.add_argument('--single-retrace', action='store_true',
                     help='draw retraced roads as single calm lines instead '
                          'of the default offset out/return pair')
@@ -827,7 +1207,8 @@ def main():
                     help='label era: ancient (Bible-time, default) or '
                          'modern (present-day names + country borders)')
     args = ap.parse_args()
-    build(args.data_dir, args.out,
+    out = args.out or f'/tmp/{args.map}.svg'
+    build(args.data_dir, out, mapdef=MAPS[args.map],
           return_variant=not args.single_retrace,
           no_title=args.no_title, era=args.era)
 
