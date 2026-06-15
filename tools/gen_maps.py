@@ -59,6 +59,7 @@ DOT = '#3a3a3a'
 DOT_R = 4.4
 LABEL = '#33373b'
 LABEL_HALO = '#ffffff'
+NUMBER = '#b34635'       # stop-sequence numerals (long journeys) — muted red
 SEA_LABEL = '#557790'    # re-darkened to hold ~3:1 on the deeper sea (lesson 12)
 REGION_LABEL = '#8f8875'
 TITLE = '#33373b'
@@ -588,6 +589,7 @@ MAPS['paul_journey_3'] = dict(
     },
     coastal={'Corinth', 'Thessalonica', 'Chios', 'Patmos', 'Cnidus'},
     origin='Antioch (Syria)',
+    numbered=True,   # ~20 stops — number them so the sequence reads (lesson 23)
     # The Greek land corridor (Neapolis down to Corinth) is traversed both
     # ways — drawn as an offset out/return pair. The Neapolis<->Troas sea
     # crossing and the island voyage home are coloured by return_from below.
@@ -818,6 +820,7 @@ MAPS['paul_journey_4'] = dict(
     },
     coastal={'Phoenix'},
     origin='Caesarea',
+    numbered=True,   # the long one-way voyage — number the stops (lesson 23)
     retraced=set(),
     legs=[
         ('Caesarea', 'Phoenicia W', 'sea', 0.0, False),
@@ -1388,6 +1391,7 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
     # single-direction leg is drawn in the return hue. None => all outbound
     # (retraced corridors still split out/return by lane, see draw_chain_pair).
     RETURN_FROM = m.get('return_from')
+    NUMBERED = m.get('numbered', False)   # number stops in visit order
     LEGS = m['legs']
     LABEL_POS = m['label_pos']
     SEA_LABELS = m['sea_labels']
@@ -1817,6 +1821,17 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
         text_boxes.append((name, display(name),
                            label_aabb(x+dx, y+dy, 15, anchor, display(name))))
 
+    # Stop numbers (long journeys): first-visit order along the legs, so the
+    # sequence reads at a glance where arrows alone can't (a place revisited
+    # on the return keeps its first number). A small haloed numeral tucked on
+    # the side of the dot OPPOSITE its label.
+    stop_no = {}
+    if NUMBERED:
+        for frm, to, *_ in LEGS:
+            for nm in (frm, to):
+                if nm in PLACES and nm not in stop_no:
+                    stop_no[nm] = len(stop_no) + 1
+
     # Places: dot + haloed label; the journey's origin gets a quiet ring
     for name, (lon, lat) in PLACES.items():
         x, y = proj(lon, lat)
@@ -1838,6 +1853,17 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
         text_boxes.append((name, display(name),
                            label_aabb(x+dx, y+dy, 17, anchor, display(name),
                                       bold=True)))
+        if name in stop_no:
+            # tuck the numeral on the dot side away from the label
+            if anchor == 'end':            # label left  -> number right
+                nx, nanc = x + 7, 'start'
+            else:                          # label right/centre -> number left
+                nx, nanc = x - 7, 'end'
+            svg.append(f'<text x="{nx:.0f}" y="{y+4:.0f}" text-anchor="{nanc}" '
+                       f'fill="{NUMBER}" font-size="11" font-weight="700" '
+                       f'paint-order="stroke" stroke="{LABEL_HALO}" '
+                       f'stroke-width="2.6" '
+                       f'stroke-linejoin="round">{stop_no[name]}</text>')
 
     # ── Label-collision guard ── no label may cover another label or another
     # place's dot; reposition via label_pos onto free sea/land space.
