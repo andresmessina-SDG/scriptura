@@ -736,6 +736,160 @@ MAPS['paul_journey_3'] = dict(
                       'Albania', 'Syria', 'Lebanon', 'Israel', 'Jordan'},
 )
 
+# Paul's voyage to Rome (Acts 27:1-28:16). A prisoner transport, one way -
+# so the whole route is outbound (no return hue). From Caesarea up the coast
+# to Sidon (27:3), then "under the lee of Cyprus, the winds being contrary"
+# (27:4) = up the sheltered E/N side of the island, across the open sea off
+# Cilicia and Pamphylia to Myra in Lycia (27:5), where they changed to an
+# Alexandrian grain ship. Slow westing to Cnidus (27:7), then forced SW
+# "under the lee of Crete off Salmone" (the NE cape), coasting the south
+# shore to Fair Havens by Lasea (27:8). Leaving for Phoenix they were caught
+# by the Euraquilo and run under the lee of Cauda (27:14-16), then driven
+# fourteen days across "the Adria" (27:27) - fearing the Syrtis shoals
+# (27:17) - to shipwreck on Malta (28:1). After three months: Syracuse,
+# Rhegium, Puteoli (28:12-13), then the Via Appia by LAND through the Forum
+# of Appius and Three Taverns to Rome (28:15-16). All coords OpenBible.info.
+MAPS['paul_journey_4'] = dict(
+    bbox=(11.4, 31.6, 36.4, 42.4),
+    width=1800,
+    places={
+        'Caesarea':         (34.891667, 32.500000),
+        'Sidon':            (35.371944, 33.560985),
+        'Myra':             (29.985278, 36.259167),
+        'Cnidus':           (27.375000, 36.685830),
+        'Salmone':          (26.311041, 35.313628),
+        'Fair Havens':      (24.800306, 34.929694),
+        'Cauda':            (24.121511, 34.801558),
+        'Malta':            (14.401000, 35.953000),   # St Paul's Bay landfall
+        'Syracuse':         (15.293060, 37.063890),
+        'Rhegium':          (15.644120, 38.108800),
+        'Puteoli':          (14.120556, 40.826111),
+        'Forum of Appius':  (12.997500, 41.466390),
+        'Three Taverns':    (12.873890, 41.561940),
+        'Rome':             (12.485200, 41.892200),
+    },
+    # Sea-lane vertices charted from the drawn coast: round Cyprus' E/N
+    # shore (the "lee"), offshore of the Lycian capes, round Crete's SE cape
+    # and along its south coast, and up the Tyrrhenian offshore of Calabria.
+    waypoints={
+        'Phoenicia W':   (34.92, 33.10),   # offshore W of Tyre/Ptolemais
+        'Cyprus E':      (34.20, 34.75),   # off the SE corner (Cape Greco)
+        'Cyprus NE':     (34.80, 35.75),   # off the Karpas NE tip
+        'Cyprus N':      (33.00, 35.70),   # north coast, offshore
+        'Lycia S':       (29.50, 35.80),   # open water S of the Lycian coast
+        'Rhodes S':      (27.85, 35.72),   # S of Rhodes (charted clear lane)
+        'Rhodes W':      (27.20, 36.40),   # W of Rhodes & the Tilos islets
+        'Crete E':       (26.45, 35.05),   # off Crete's east coast
+        'Crete SE':      (26.05, 34.68),   # S of the SE cape
+        'Crete S':       (25.30, 34.72),   # south coast, offshore
+        'Sicily SE':     (15.45, 36.62),   # off Cape Passero
+        'Syracuse E':    (15.45, 36.95),   # E of the Plemmirio cape (arrival)
+        'Syracuse N':    (15.52, 37.02),   # due E out of the harbour (departure)
+        'Strait N':      (15.72, 38.55),   # through the strait, Calabrian side
+        'Tyrrhenian S':  (15.10, 39.30),   # offshore W of Calabria
+        'Tyrrhenian N':  (14.20, 40.55),   # W of Capri, into the bay
+        'Capua':         (14.25, 41.08),   # Via Appia inland (land leg)
+    },
+    # The harbor they made for but never reached (27:12) - an off-route
+    # context dot, not a stop.
+    context_places={
+        'Phoenix':       (24.078580, 35.200010),
+    },
+    context_label_pos={
+        'Phoenix':       (-9, -6, 'end'),
+    },
+    coastal={'Phoenix'},
+    origin='Caesarea',
+    retraced=set(),
+    legs=[
+        ('Caesarea', 'Phoenicia W', 'sea', 0.0, False),
+        ('Phoenicia W', 'Sidon', 'sea', 0.04, False),
+        ('Sidon', 'Cyprus E', 'sea', 0.0, False),
+        ('Cyprus E', 'Cyprus NE', 'sea', -0.05, False),  # bow E off the Karpas
+        ('Cyprus NE', 'Cyprus N', 'sea', 0.04, False),
+        ('Cyprus N', 'Myra', 'sea', 0.05, True),
+        ('Myra', 'Lycia S', 'sea', 0.0, False),
+        ('Lycia S', 'Rhodes S', 'sea', 0.0, False),
+        ('Rhodes S', 'Rhodes W', 'sea', 0.0, False),
+        ('Rhodes W', 'Cnidus', 'sea', 0.0, False),
+        ('Cnidus', 'Salmone', 'sea', 0.08, True),
+        ('Salmone', 'Crete E', 'sea', 0.0, False),
+        ('Crete E', 'Crete SE', 'sea', 0.0, False),
+        ('Crete SE', 'Crete S', 'sea', 0.0, False),
+        ('Crete S', 'Fair Havens', 'sea', 0.0, False),
+        ('Fair Havens', 'Cauda', 'sea', -0.08, True),
+        ('Cauda', 'Malta', 'sea', 0.10, True),
+        ('Malta', 'Sicily SE', 'sea', 0.0, True),        # round Cape Passero
+        ('Sicily SE', 'Syracuse E', 'sea', 0.0, False),
+        ('Syracuse E', 'Syracuse', 'sea', 0.0, False),   # into the harbour from E
+        ('Syracuse', 'Syracuse N', 'sea', 0.0, False),   # back out, NE
+        ('Syracuse N', 'Rhegium', 'sea', 0.04, True),    # NE across the Ionian
+        ('Rhegium', 'Strait N', 'sea', 0.0, False),      # N through the strait
+        ('Strait N', 'Tyrrhenian S', 'sea', 0.0, False),
+        ('Tyrrhenian S', 'Tyrrhenian N', 'sea', 0.04, False),
+        ('Tyrrhenian N', 'Puteoli', 'sea', 0.0, True),
+        ('Puteoli', 'Capua', 'land', 0, False),
+        ('Capua', 'Forum of Appius', 'land', 0, False),
+        ('Forum of Appius', 'Three Taverns', 'land', 0, False),
+        ('Three Taverns', 'Rome', 'land', 0, True),
+    ],
+    label_pos={
+        'Caesarea':         (-9, 13, 'end'),
+        'Sidon':            (9, 2, 'start'),
+        'Myra':             (6, -9, 'start'),
+        'Cnidus':           (-9, -6, 'end'),
+        'Salmone':          (9, -4, 'start'),
+        'Fair Havens':      (-7, 15, 'end'),
+        'Cauda':            (0, 16, 'middle'),
+        'Malta':            (9, 8, 'start'),
+        'Syracuse':         (-9, 8, 'end'),
+        'Rhegium':          (9, 4, 'start'),
+        'Puteoli':          (-9, -3, 'end'),
+        # The three Via Appia stations cluster tight near the left edge —
+        # fan the labels (Rome above, the two stations stacked to the right).
+        'Forum of Appius':  (9, 14, 'start'),
+        'Three Taverns':    (9, -5, 'start'),
+        'Rome':             (0, -11, 'middle'),
+    },
+    sea_labels=[('Mediterranean Sea', 20.0, 33.6, 0),
+                ('The Adria', 18.3, 36.0, 0),
+                ('Tyrrhenian Sea', 12.6, 39.7, 0),
+                ('Aegean Sea', 25.2, 38.4, -70)],
+    region_labels=[('ITALIA', 13.6, 41.7, 0), ('SICILIA', 14.2, 37.5, 0),
+                   ('CRETE', 24.9, 35.18, 0), ('CYPRUS', 33.2, 35.0, 0),
+                   ('LYCIA', 29.7, 36.7, 0), ('ACHAIA', 21.8, 37.9, 0),
+                   ('SYRTIS', 19.2, 32.2, 0), ('AFRICA', 15.5, 32.2, 0)],
+    title="PAUL'S VOYAGE TO ROME",
+    subtitle='Acts 27–28 · c. AD 59–60',
+    modern_names={
+        'Caesarea':         'Caesarea',
+        'Sidon':            'Sidon',
+        'Myra':             'Demre',
+        'Cnidus':           'Cnidus (ruins)',
+        'Salmone':          'Cape Sideros',
+        'Fair Havens':      'Kaloi Limenes',
+        'Cauda':            'Gavdos',
+        'Malta':            "St Paul's Bay",
+        'Syracuse':         'Siracusa',
+        'Rhegium':          'Reggio Calabria',
+        'Puteoli':          'Pozzuoli',
+        'Forum of Appius':  'Forum Appii (ruins)',
+        'Three Taverns':    'Tres Tabernae (ruins)',
+        'Rome':             'Rome',
+    },
+    modern_context_names={'Phoenix': 'Loutro'},
+    modern_label_pos={},
+    modern_region_labels=[('ITALY', 13.6, 41.7, 0), ('SICILY', 14.2, 37.5, 0),
+                          ('CRETE', 24.9, 35.18, 0), ('CYPRUS', 33.2, 35.0, 0),
+                          ('GREECE', 21.8, 37.9, 0),
+                          ('TÜRKİYE', 30.2, 37.4, 0),
+                          ('LIBYA', 17.0, 32.1, 0), ('TUNISIA', 11.9, 34.2, 0)],
+    modern_subtitle='Acts 27–28 · present-day place names',
+    border_countries={'Italy', 'Greece', 'Turkey', 'Cyprus', 'Malta',
+                      'Libya', 'Tunisia', 'Lebanon', 'Israel', 'Syria',
+                      'Egypt'},
+)
+
 BORDER = '#8d9298'       # quiet dashed hairline — context, never content
 
 
