@@ -750,7 +750,10 @@ MAPS['paul_journey_3'] = dict(
 # Rhegium, Puteoli (28:12-13), then the Via Appia by LAND through the Forum
 # of Appius and Three Taverns to Rome (28:15-16). All coords OpenBible.info.
 MAPS['paul_journey_4'] = dict(
-    bbox=(11.4, 31.6, 36.4, 42.4),
+    # Left edge carries extra Tyrrhenian sea so the tight Via Appia cluster
+    # (Rome/Three Taverns/Forum of Appius) can label onto open water instead
+    # of burying the ITALIA region label.
+    bbox=(10.0, 31.6, 36.4, 42.4),
     width=1800,
     places={
         'Caesarea':         (34.891667, 32.500000),
@@ -845,17 +848,18 @@ MAPS['paul_journey_4'] = dict(
         'Syracuse':         (-9, 8, 'end'),
         'Rhegium':          (9, 4, 'start'),
         'Puteoli':          (-9, -3, 'end'),
-        # The three Via Appia stations cluster tight near the left edge —
-        # fan the labels (Rome above, the two stations stacked to the right).
-        'Forum of Appius':  (9, 14, 'start'),
-        'Three Taverns':    (9, -5, 'start'),
-        'Rome':             (0, -11, 'middle'),
+        # The three Via Appia stations cluster tight; the route runs inland
+        # (right), so labels go LEFT onto the open Tyrrhenian — Rome above,
+        # the two stations cascading down the sea — leaving ITALIA clear.
+        'Forum of Appius':  (-12, 21, 'end'),
+        'Three Taverns':    (-12, 3, 'end'),
+        'Rome':             (0, -12, 'middle'),
     },
     sea_labels=[('Mediterranean Sea', 20.0, 33.6, 0),
                 ('The Adria', 18.3, 36.0, 0),
                 ('Tyrrhenian Sea', 12.6, 39.7, 0),
                 ('Aegean Sea', 25.2, 38.4, -70)],
-    region_labels=[('ITALIA', 13.6, 41.7, 0), ('SICILIA', 14.2, 37.5, 0),
+    region_labels=[('ITALIA', 14.6, 41.95, 0), ('SICILIA', 14.2, 37.5, 0),
                    ('CRETE', 24.9, 35.18, 0), ('CYPRUS', 33.2, 35.0, 0),
                    ('LYCIA', 29.7, 36.7, 0), ('ACHAIA', 21.8, 37.9, 0),
                    ('SYRTIS', 19.2, 32.2, 0), ('AFRICA', 15.5, 32.2, 0)],
@@ -879,7 +883,7 @@ MAPS['paul_journey_4'] = dict(
     },
     modern_context_names={'Phoenix': 'Loutro'},
     modern_label_pos={},
-    modern_region_labels=[('ITALY', 13.6, 41.7, 0), ('SICILY', 14.2, 37.5, 0),
+    modern_region_labels=[('ITALY', 14.6, 41.95, 0), ('SICILY', 14.2, 37.5, 0),
                           ('CRETE', 24.9, 35.18, 0), ('CYPRUS', 33.2, 35.0, 0),
                           ('GREECE', 21.8, 37.9, 0),
                           ('TÜRKİYE', 30.2, 37.4, 0),
