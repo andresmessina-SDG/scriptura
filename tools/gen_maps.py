@@ -69,6 +69,15 @@ FRAME = '#c9c4ba'
 # plateau (~1000 m) and the Taurus range carry the story of the hard
 # climb inland from Perga.
 RELIEF_BANDS = [(400, '#f2ece0'), (1000, '#ece4d3'), (1800, '#e4dac6')]
+# Faint shaded relief from the same DEM (Imhof: tints carry altitude, the
+# hillshade carries 3-D form). Classed slope shading, NW illumination: slopes
+# turned away from the light get progressively darker grey overlays at low
+# opacity. Texture, never a topo map — drawn UNDER the route so figure-ground
+# holds. (shade-threshold, opacity); z_factor exaggerates the gentle slopes
+# that survive at 10m/this grid so ranges actually read.
+HILLSHADE = '#5e6253'         # desaturated warm-grey shadow (sits with paper)
+HILLSHADE_BANDS = [(0.05, 0.05), (0.11, 0.05), (0.20, 0.06)]
+HILLSHADE_ZF = 6.0
 
 # ── Map definitions (editorial content) ─────────────────────────────────────
 # Each map is one dict; build() consumes it. Geometry/coordinate sources:
@@ -1075,29 +1084,26 @@ def marching_squares(grid, threshold):
     return rings
 
 
-def relief_paths(tile_dir, bbox, proj):
-    out = []
-    grid = load_elevation_grid(tile_dir, bbox)
-    ny, nx = len(grid), len(grid[0])
+def _grid_to_lonlat(bbox, nx, ny):
     lon0, lat0, lon1, lat1 = bbox
+    return lambda p: (lon0 + (lon1 - lon0) * p[0] / (nx - 1),
+                      lat1 - (lat1 - lat0) * p[1] / (ny - 1))
 
-    def to_lonlat(p):
-        return (lon0 + (lon1 - lon0) * p[0] / (nx - 1),
-                lat1 - (lat1 - lat0) * p[1] / (ny - 1))
 
-    for threshold, color in RELIEF_BANDS:
+def _contour_overlay(grid, thresholds_colors, bbox, proj, opacity=None,
+                     min_area=300, thin_tol=1.2):
+    """Marching-squares contour bands shared by relief + hillshade: drop
+    speckle rings, thin the rest, emit one evenodd path per threshold."""
+    ny, nx = len(grid), len(grid[0])
+    to_lonlat = _grid_to_lonlat(bbox, nx, ny)
+    out = []
+    for k, (threshold, color) in enumerate(thresholds_colors):
         d_parts = []
         for ring in marching_squares(grid, threshold):
             pts = [proj(*to_lonlat(p)) for p in ring]
-            # drop speckle rings and thin the rest — relief is texture,
-            # not survey data; halves the SVG without visible change
             xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
-            if (max(xs) - min(xs)) * (max(ys) - min(ys)) < 300:
+            if (max(xs) - min(xs)) * (max(ys) - min(ys)) < min_area:
                 continue
-            # NB: the fast [::2] halving is safe ONLY here — relief rings are
-            # closed interior contours, never bbox-clipped, so halving can't
-            # drop a corner vertex and fold the ring. On coastlines (which
-            # ARE clipped) use thin_pts instead; do not copy this idiom there.
             if len(pts) > 24:
                 pts = pts[::2]
                 if len(pts) > 24:
@@ -1105,9 +1111,54 @@ def relief_paths(tile_dir, bbox, proj):
             d_parts.append('M' + ' L'.join(f'{x:.0f},{y:.0f}'
                                            for x, y in pts) + ' Z')
         if d_parts:
+            op = f' opacity="{opacity[k]}"' if opacity else ''
             out.append(f'<path d="{" ".join(d_parts)}" fill="{color}" '
-                       f'fill-rule="evenodd"/>')
+                       f'fill-rule="evenodd"{op}/>')
     return out
+
+
+def hillshade_paths(grid, bbox, proj):
+    """Faint classed slope-shading from the elevation grid (NW light)."""
+    ny, nx = len(grid), len(grid[0])
+    lon0, lat0, lon1, lat1 = bbox
+    lat_mid = math.radians((lat0 + lat1) / 2)
+    cell_x = (lon1 - lon0) * 111320 * math.cos(lat_mid) / (nx - 1)
+    cell_y = (lat1 - lat0) * 111320 / (ny - 1)
+    Lx, Ly, Lz = -0.5, -0.5, 0.70711   # NW azimuth, 45° altitude (i, j, up)
+    shadow = [[0.0] * nx for _ in range(ny)]
+    for j in range(1, ny - 1):
+        for i in range(1, nx - 1):
+            dzdi = (grid[j][i+1] - grid[j][i-1]) / (2 * cell_x)
+            dzdj = (grid[j+1][i] - grid[j-1][i]) / (2 * cell_y)
+            nxv, nyv = -HILLSHADE_ZF * dzdi, -HILLSHADE_ZF * dzdj
+            nlen = math.sqrt(nxv*nxv + nyv*nyv + 1.0)
+            illum = (nxv*Lx + nyv*Ly + Lz) / nlen
+            shadow[j][i] = max(0.0, Lz - illum)    # 0 on flat/lit ground
+    # Smooth the shadow field before contouring — the gradient amplifies
+    # grid noise into a speckle of tiny rings; one box-blur merges them into
+    # coherent shadowed flanks and roughly halves the path count.
+    for _ in range(2):
+        prev = [row[:] for row in shadow]
+        for j in range(1, ny - 1):
+            for i in range(1, nx - 1):
+                shadow[j][i] = (
+                    prev[j-1][i-1] + prev[j-1][i] + prev[j-1][i+1] +
+                    prev[j][i-1] + prev[j][i] + prev[j][i+1] +
+                    prev[j+1][i-1] + prev[j+1][i] + prev[j+1][i+1]) / 9.0
+    # Contour at half resolution — the shadow field is soft texture, so a
+    # 2x-downsampled grid quarters the ring data with no visible loss.
+    shadow = [row[::2] for row in shadow[::2]]
+    bands = [(t, HILLSHADE) for t, _ in HILLSHADE_BANDS]
+    return _contour_overlay(shadow, bands, bbox, proj,
+                            opacity=[o for _, o in HILLSHADE_BANDS],
+                            min_area=650, thin_tol=2.6)
+
+
+def relief_paths(grid, bbox, proj):
+    # Hypsometric tint bands — texture, not survey data. (The [::2] halving
+    # inside _contour_overlay is safe here: these rings are closed interior
+    # contours, never bbox-clipped, so halving can't fold a clipped corner.)
+    return _contour_overlay(grid, RELIEF_BANDS, bbox, proj)
 
 
 # ── SVG emission ─────────────────────────────────────────────────────────────
@@ -1415,8 +1466,12 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
     svg.append(f'<rect width="{WIDTH}" height="{height:.0f}" fill="{SEA}"/>')
     land_svg, land_rings = land_paths('ne_10m_land.geojson', LAND, COAST, '1.4')
     svg.extend(land_svg)
-    # Hypsometric relief — texture for the interior, and the Taurus story
-    svg.extend(relief_paths(os.path.join(data_dir, 'terrarium'), BBOX, proj))
+    # Relief from the terrarium DEM (loaded once): hypsometric tints for
+    # altitude + a faint NW hillshade for 3-D form (Imhof). Both texture,
+    # both under the route.
+    elev = load_elevation_grid(os.path.join(data_dir, 'terrarium'), BBOX)
+    svg.extend(relief_paths(elev, BBOX, proj))
+    svg.extend(hillshade_paths(elev, BBOX, proj))
     svg.extend(river_paths)
     lake_svg, lake_rings = land_paths('ne_10m_lakes.geojson', LAKE, COAST,
                                       '1.0')
