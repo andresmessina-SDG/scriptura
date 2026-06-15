@@ -1456,9 +1456,23 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
                         f'stroke-linecap="round"/>')
 
     svg = []
-    svg.append(f'<svg xmlns="http://www.w3.org/2000/svg" '
-               f'width="{WIDTH}" height="{H}" '
+    svg.append(f'<svg xmlns="http://www.w3.org/2000/svg" role="img" '
+               f'aria-labelledby="t d" width="{WIDTH}" height="{H}" '
                f'viewBox="0 0 {WIDTH} {H}" font-family="{FONT}">')
+    # Accessible name + description (screen readers, exports, future web use):
+    # the title line, then the route as a readable ordered stop list.
+    def _xml(s):
+        return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    _ordered = []
+    for _f, _t, *_ in LEGS:
+        for _nm in (_f, _t):
+            if _nm in PLACES and _nm not in _ordered:
+                _ordered.append(_nm)
+    _sub = MODERN_SUBTITLE if modern else SUBTITLE_TEXT
+    _route = ', '.join(display(n) for n in _ordered)
+    svg.append(f'<title id="t">{_xml(TITLE_TEXT)} — {_xml(_sub)}</title>')
+    svg.append(f'<desc id="d">Map of {_xml(TITLE_TEXT)}. Route: '
+               f'{_xml(_route)}.</desc>')
     if not no_title:
         svg.append(f'<rect width="{WIDTH}" height="{H}" fill="#ffffff"/>')
         svg.append(f'<text x="{WIDTH/2}" y="44" text-anchor="middle" '
