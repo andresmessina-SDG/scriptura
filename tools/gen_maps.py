@@ -399,7 +399,7 @@ MAPS['paul_journey_2'] = dict(
         'Samothrace':         (10, 12, 'start'),
         'Neapolis':           (10, 12, 'start'),
         'Philippi':           (8, -10, 'start'),
-        'Amphipolis':         (8, 17, 'start'),
+        'Amphipolis':         (6, -9, 'end'),
         'Apollonia':          (-8, 19, 'end'),
         'Thessalonica':       (-11, -9, 'end'),
         'Berea':              (-10, 12, 'end'),
@@ -448,7 +448,8 @@ MAPS['paul_journey_2'] = dict(
     # "(ruins)" names run longer — Veria/Apollonia collide on the shared
     # nudges
     modern_label_pos={'Apollonia': (3, 19, 'start'),
-                      'Berea': (-10, -7, 'end')},
+                      'Berea': (-9, 15, 'end'),
+                      'Amphipolis': (6, -9, 'end')},
     # West Bank lines excluded like Cyprus' in journey 1 — major
     # international boundaries only; the calm rendering.
     modern_region_labels=[('GREECE', 22.6, 39.4, 0),
@@ -677,8 +678,8 @@ MAPS['paul_journey_3'] = dict(
         'Assos':              (-10, -6, 'end'),
         'Mitylene':           (10, 3, 'start'),
         'Samos':              (-10, 1, 'end'),
-        'Miletus':            (-9, 17, 'end'),
-        'Cos':                (11, 6, 'start'),
+        'Miletus':            (9, 16, 'start'),   # below-right, clear of Patmos
+        'Cos':                (0, -9, 'middle'),  # above, clear of Cnidus
         'Rhodes':             (-23, 29, 'middle'),
         'Patara':             (8, 16, 'start'),
         'Tyre':               (10, 2, 'start'),
@@ -840,10 +841,10 @@ MAPS['paul_journey_4'] = dict(
         'Caesarea':         (-9, 13, 'end'),
         'Sidon':            (9, 2, 'start'),
         'Myra':             (6, -9, 'start'),
-        'Cnidus':           (-9, -6, 'end'),
-        'Salmone':          (9, -4, 'start'),
-        'Fair Havens':      (-7, 15, 'end'),
-        'Cauda':            (0, 16, 'middle'),
+        'Cnidus':           (10, 6, 'start'),   # E onto its peninsula, off islets
+        'Salmone':          (11, 6, 'start'),   # level w/ dot, over open sea
+        'Fair Havens':      (11, 19, 'start'),  # below-right onto the sea
+        'Cauda':            (-10, 19, 'end'),   # below-left onto the sea
         'Malta':            (9, 8, 'start'),
         'Syracuse':         (-9, 8, 'end'),
         'Rhegium':          (9, 4, 'start'),
@@ -1188,6 +1189,29 @@ def smooth_points(pts, n=12):
     return out
 
 
+def label_aabb(x, y, fs, anchor, text, ls=0.0, rot=0.0, bold=False):
+    """Approximate axis-aligned bbox of a rendered text label (avg glyph
+    advance + letter-spacing; rotated about its anchor). Rough but enough to
+    catch labels colliding — the build-time enforcement of "no label covers
+    another label or dot"."""
+    cw = (0.57 if bold else 0.52) * fs
+    w = len(text) * cw + max(0, len(text) - 1) * ls
+    x0 = x if anchor == 'start' else (x - w if anchor == 'end' else x - w / 2)
+    y0 = y - 0.74 * fs
+    corners = [(x0, y0), (x0 + w, y0), (x0 + w, y0 + fs), (x0, y0 + fs)]
+    if rot:
+        a = math.radians(rot); ca, sa = math.cos(a), math.sin(a)
+        corners = [((cx - x) * ca - (cy - y) * sa + x,
+                    (cx - x) * sa + (cy - y) * ca + y) for cx, cy in corners]
+    xs = [c[0] for c in corners]; ys = [c[1] for c in corners]
+    return (min(xs), min(ys), max(xs), max(ys))
+
+
+def boxes_overlap(a, b, pad=1.0):
+    return not (a[2] < b[0] - pad or b[2] < a[0] - pad or
+                a[3] < b[1] - pad or b[3] < a[1] - pad)
+
+
 def bezier_point_angle(seg, t=0.5):
     """Position and travel angle (deg) on one cubic at parameter t — so an
     arrowhead sits ON the drawn curve and points along its tangent, not on
@@ -1464,6 +1488,15 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
                    f'y2="{b[1]:.0f}" stroke="#8aa0b0" stroke-width="0.5" '
                    f'opacity="0.13"/>')
 
+    # Label-collision guard collects only the FOREGROUND haloed labels
+    # (place + context) and dots: (rawname, display, bbox) and (rawname,
+    # bbox). Region/sea names are a faint background layer drawn first, with
+    # everything haloed on top, so they're exempt by design (standard
+    # cartographic underlay) — the rule is no FOREGROUND label covers another
+    # foreground label or another place's dot.
+    text_boxes = []
+    dot_boxes = []
+
     # Region + sea labels (under the route); rotation follows the land
     for text, lon, lat, rot in (MODERN_REGION_LABELS if modern
                                 else REGION_LABELS):
@@ -1714,12 +1747,15 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
         x, y = proj(lon, lat)
         svg.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.0" '
                    f'fill="#8a8f8d" stroke="#ffffff" stroke-width="1.3"/>')
+        dot_boxes.append((name, (x-3, y-3, x+3, y+3)))
         dx, dy, anchor = CONTEXT_LABEL_POS.get(name, (8, -8, 'start'))
         svg.append(f'<text x="{x+dx:.0f}" y="{y+dy:.0f}" text-anchor="{anchor}" '
                    f'fill="#6b7075" font-size="15" '
                    f'paint-order="stroke" stroke="{LABEL_HALO}" '
                    f'stroke-width="3" '
                    f'stroke-linejoin="round">{display(name)}</text>')
+        text_boxes.append((name, display(name),
+                           label_aabb(x+dx, y+dy, 15, anchor, display(name))))
 
     # Places: dot + haloed label; the journey's origin gets a quiet ring
     for name, (lon, lat) in PLACES.items():
@@ -1730,6 +1766,7 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
                        f'opacity="0.7"/>')
         svg.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{DOT_R}" '
                    f'fill="{DOT}" stroke="#ffffff" stroke-width="1.6"/>')
+        dot_boxes.append((name, (x-DOT_R, y-DOT_R, x+DOT_R, y+DOT_R)))
         dx, dy, anchor = LABEL_POS.get(name, (8, -8, 'start'))
         if modern and name in MODERN_LABEL_POS:
             dx, dy, anchor = MODERN_LABEL_POS[name]
@@ -1738,6 +1775,22 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
                    f'paint-order="stroke" stroke="{LABEL_HALO}" '
                    f'stroke-width="3.5" '
                    f'stroke-linejoin="round">{display(name)}</text>')
+        text_boxes.append((name, display(name),
+                           label_aabb(x+dx, y+dy, 17, anchor, display(name),
+                                      bold=True)))
+
+    # ── Label-collision guard ── no label may cover another label or another
+    # place's dot; reposition via label_pos onto free sea/land space.
+    for i in range(len(text_boxes)):
+        ri, di_, bi = text_boxes[i]
+        for j in range(i + 1, len(text_boxes)):
+            rj, dj_, bj = text_boxes[j]
+            if boxes_overlap(bi, bj):
+                print(f'  ! label "{di_}" overlaps label "{dj_}" — '
+                      f'reposition onto free space')
+        for dn, db in dot_boxes:
+            if dn != ri and boxes_overlap(bi, db):
+                print(f'  ! label "{di_}" covers the {dn} dot — reposition')
 
     # Scale bar — bottom-left; 100 km at the standard parallel
     lat_mid = math.radians((BBOX[1] + BBOX[3]) / 2)
