@@ -1862,6 +1862,37 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
                f'stroke="#ffffff" stroke-width="3" '
                f'stroke-linejoin="round">100 km · 62 mi</text>')
 
+    # Route legend — keyed to what THIS map actually shows: the outbound/
+    # return colour key only when the journey has a return leg; the context
+    # key only when there are context dots. Stacked above the scale bar in the
+    # open-sea corner; haloed like the other chrome, no panel (house calm).
+    has_return = bool(RETURN_FROM) or bool(RETRACED)
+    rows = []
+    if has_return:
+        rows.append([(ROUTE_OUT, False, 'outbound'),
+                     (ROUTE_RETURN, False, 'return')])
+    rows.append([('#6f7479', False, 'by land'), ('#6f7479', True, 'by sea')])
+    if CONTEXT_PLACES:
+        rows.append([('dot', None, 'nearby town')])
+    n = len(rows)
+    for i, row in enumerate(rows):
+        ly = by - 30 - (n - 1 - i) * 17
+        cx = bx
+        for color, dashed, text in row:
+            if color == 'dot':
+                svg.append(f'<circle cx="{cx+7}" cy="{ly-4}" r="3.4" '
+                           f'fill="#8a8f8d" stroke="#ffffff" '
+                           f'stroke-width="1.2"/>')
+            else:
+                dash = ' stroke-dasharray="2 4"' if dashed else ''
+                svg.append(f'<line x1="{cx}" y1="{ly-4}" x2="{cx+22}" '
+                           f'y2="{ly-4}" stroke="{color}" stroke-width="3" '
+                           f'stroke-linecap="round"{dash}/>')
+            svg.append(f'<text x="{cx+28}" y="{ly}" fill="#5a5f63" '
+                       f'font-size="12.5" paint-order="stroke" stroke="#ffffff" '
+                       f'stroke-width="3" stroke-linejoin="round">{text}</text>')
+            cx += 112
+
     svg.append('</g>')   # clip
     svg.append(f'<rect x="0.5" y="0.5" width="{WIDTH-1}" '
                f'height="{height:.0f}" rx="10" fill="none" '
