@@ -1133,11 +1133,18 @@ def hillshade_paths(grid, bbox, proj):
     cell_x = (lon1 - lon0) * 111320 * math.cos(lat_mid) / (nx - 1)
     cell_y = (lat1 - lat0) * 111320 / (ny - 1)
     Lx, Ly, Lz = -0.5, -0.5, 0.70711   # NW azimuth, 45° altitude (i, j, up)
+    # The terrarium DEM carries BATHYMETRY too, so the raw gradient shades the
+    # sea floor (a deep Mediterranean basin showed as a diagonal band across
+    # the water). Clamp sea/below-sea to flat 0 so hillshade forms on LAND
+    # only, and the coast becomes a normal land-slope-to-0, not a 2 km cliff.
+    e = [[v if v > 0.0 else 0.0 for v in row] for row in grid]
     shadow = [[0.0] * nx for _ in range(ny)]
     for j in range(1, ny - 1):
         for i in range(1, nx - 1):
-            dzdi = (grid[j][i+1] - grid[j][i-1]) / (2 * cell_x)
-            dzdj = (grid[j+1][i] - grid[j-1][i]) / (2 * cell_y)
+            if e[j][i] <= 0.0:
+                continue                       # sea stays flat (no shading)
+            dzdi = (e[j][i+1] - e[j][i-1]) / (2 * cell_x)
+            dzdj = (e[j+1][i] - e[j-1][i]) / (2 * cell_y)
             nxv, nyv = -HILLSHADE_ZF * dzdi, -HILLSHADE_ZF * dzdj
             nlen = math.sqrt(nxv*nxv + nyv*nyv + 1.0)
             illum = (nxv*Lx + nyv*Ly + Lz) / nlen
@@ -1156,6 +1163,15 @@ def hillshade_paths(grid, bbox, proj):
     # Contour at half resolution — the shadow field is soft texture, so a
     # 2x-downsampled grid quarters the ring data with no visible loss.
     shadow = [row[::2] for row in shadow[::2]]
+    # The [::2] step drops the true 0-border row/col, leaving nonzero shadow on
+    # the bottom/right edges; marching-squares then can't close those contours
+    # and the fill bridges the open ends straight across the map (the
+    # corner-to-corner diagonal). Re-force a 0 border so every ring closes.
+    ny2, nx2 = len(shadow), len(shadow[0])
+    for i in range(nx2):
+        shadow[0][i] = shadow[ny2 - 1][i] = 0.0
+    for j in range(ny2):
+        shadow[j][0] = shadow[j][nx2 - 1] = 0.0
     bands = [(t, HILLSHADE) for t, _ in HILLSHADE_BANDS]
     return _contour_overlay(shadow, bands, bbox, proj,
                             opacity=[o for _, o in HILLSHADE_BANDS],
