@@ -46,7 +46,12 @@ RIVER = '#c2d6e2'
 # draw-once retrace (methodology lessons 3 & 5) — the two now run as an
 # offset parallel pair, direction carried by hue as well as arrowheads.
 ROUTE_OUT = '#c5443c'    # outbound — journey red
-ROUTE_RETURN = '#c8862a'  # homeward — amber/ochre, legible on land and sea
+# Homeward — amber/ochre. Lightened from the first #c8862a so it carries a
+# clear LIGHTNESS delta from the red (CIE L* 47 vs 68, ΔL*≈21), which is what
+# keeps the two lanes separable under red-green colour-vision deficiency
+# (deuteranopia/protanopia) — verified in simulation. Direction is also
+# redundantly encoded (arrowheads + the offset pair), never colour-only.
+ROUTE_RETURN = '#d99a2b'
 ROUTE = ROUTE_OUT        # legacy alias (default colour for helpers)
 ROUTE_SMOOTH = 0.16      # Catmull-Rom handle fraction for rounded land bends
 ROUTE_W = 3.0
