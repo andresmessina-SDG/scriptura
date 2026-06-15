@@ -789,6 +789,12 @@ def ingest_genmaps(conn, images_dir, width, limit, fetch_images):
         'passage_label': 'Acts 15:36–18:22',
         'ranges': [{'book': 'Acts', 'chapter': 15, 'verse': 36,
                     'chapter_end': 18, 'verse_end': 22}],
+    }, {
+        'slug': 'paul_journey_3',
+        'title': "Paul's Third Missionary Journey",
+        'passage_label': 'Acts 18:23–21:16',
+        'ranges': [{'book': 'Acts', 'chapter': 18, 'verse': 23,
+                    'chapter_end': 21, 'verse_end': 16}],
     }]
     if limit:
         maps = maps[:limit]

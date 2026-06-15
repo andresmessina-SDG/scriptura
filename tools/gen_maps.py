@@ -39,7 +39,16 @@ LAND = '#f7f4ed'         # warm paper
 COAST = '#8fa8bd'        # coastline hairline (darkened to reinforce the edge)
 LAKE = '#bcd4e4'         # inland water — sits in the sea's family, a hair lighter
 RIVER = '#c2d6e2'
-ROUTE = '#c5443c'        # journey red — the one saturated voice on the map
+# Two route voices: the outbound stays the journey red (long the map's one
+# saturated voice); the homeward leg takes a warm amber/ochre that reads on
+# BOTH the paper land and the blue sea (the return is largely the voyage
+# home). Drawing out and back in distinct hues deliberately reverses the old
+# draw-once retrace (methodology lessons 3 & 5) — the two now run as an
+# offset parallel pair, direction carried by hue as well as arrowheads.
+ROUTE_OUT = '#c5443c'    # outbound — journey red
+ROUTE_RETURN = '#c8862a'  # homeward — amber/ochre, legible on land and sea
+ROUTE = ROUTE_OUT        # legacy alias (default colour for helpers)
+ROUTE_SMOOTH = 0.16      # Catmull-Rom handle fraction for rounded land bends
 ROUTE_W = 3.0
 DOT = '#3a3a3a'
 DOT_R = 4.4
@@ -94,9 +103,12 @@ MAPS['paul_journey_1'] = dict(
         'Via Sebaste S': (30.48, 37.34),   # near Comama
         'Via Sebaste N': (30.46, 38.07),   # near Apollonia
         'Hoyran N': (30.87, 38.34),
-        'Kition':  (33.63, 34.92),
-        'Amathus': (33.14, 34.71),
-        'Kourion': (32.87, 34.66),
+        # Nudged a few km inland of the actual coastal sites so the rounded
+        # (smoothed) road holds the land instead of bulging past the convex
+        # south cape into the sea — the methodology's shore-waypoint fix.
+        'Kition':  (33.63, 34.95),
+        'Amathus': (33.14, 34.77),
+        'Kourion': (32.87, 34.73),
     },
     # Context cities — gray, no route: anchor the journey in the known NT
     # world. Tarsus is Paul's hometown (Acts 9:11), Myra a later voyage
@@ -117,6 +129,9 @@ MAPS['paul_journey_1'] = dict(
               ('Hoyran N', 'Antioch in Pisidia'),
               ('Antioch in Pisidia', 'Iconium'),
               ('Iconium', 'Lystra'), ('Lystra', 'Derbe')},
+    # Homeward from here: Perga down to Attalia and the sail back to Seleucia
+    # (Acts 14:25-26) — drawn in the return hue.
+    return_from=('Perga', 'Attalia'),
     # (from, to, kind, bow, arrow). Sea legs render dashed with a gentle
     # bow (bow > 0 bends left of travel). Salamis->Paphos is LAND:
     # Acts 13:6, "through the whole island".
@@ -266,7 +281,7 @@ MAPS['paul_journey_2'] = dict(
         'Mycale':           (27.100, 37.660),
         'Patmos E':         (26.660, 37.330),
         'Kos W':            (26.750, 36.700),
-        'Nisyros S':        (27.170, 36.520),
+        'Nisyros S':        (27.020, 36.560),
         'Symi S':           (27.850, 36.480),
         'Rhodes N':         (28.260, 36.490),
         'Rhodes E':         (28.400, 36.320),
@@ -302,6 +317,9 @@ MAPS['paul_journey_2'] = dict(
              'Tyre', 'Sidon', 'Ptolemais'},
     origin='Antioch (Syria)',
     retraced={('Caesarea', 'Jerusalem')},   # 18:22 "up... and down"
+    # Corinth is the turn: from the departure for Cenchreae onward the route
+    # is the voyage home (Ephesus, Caesarea, Jerusalem, Antioch) — return hue.
+    return_from=('Corinth', 'Cenchreae'),
     legs=[
         ('Antioch (Syria)', 'Syrian Gates', 'land', 0, False),
         ('Syrian Gates', 'Iskenderun', 'land', 0, False),
@@ -441,6 +459,279 @@ MAPS['paul_journey_2'] = dict(
                           ('ISRAEL', 34.72, 32.2, 60),
                           ('JORDAN', 36.25, 31.78, 0)],
     modern_subtitle='Acts 15:36\u201318:22 \u00b7 present-day place names',
+    border_countries={'Turkey', 'Greece', 'Bulgaria', 'North Macedonia',
+                      'Albania', 'Syria', 'Lebanon', 'Israel', 'Jordan'},
+)
+
+# Paul's third missionary journey (Acts 18:23-21:16). Same Greece->Jerusalem
+# frame as journey 2. Outbound overland through "Galatia and Phrygia"
+# strengthening the churches (18:23) - the journey-2 corridor as far as
+# Pisidian Antioch - then WEST by the "upper country" road (19:1, ta
+# anoterika mere: the interior highway via Apamea down the Lycus/Maeander to
+# Ephesus, NOT the coast). Three years at Ephesus (19), then to Macedonia and
+# Greece (20:1-2). The signature is the verse-by-verse return voyage
+# (20:13-21:16): Troas -> Assos (Paul ALONE on foot, 20:13) -> Mitylene ->
+# past Chios -> Samos -> Miletus (the Ephesian-elders farewell) -> Cos ->
+# Rhodes -> Patara, then the open run "leaving Cyprus on the left" (21:3) to
+# Tyre, down the coast to Ptolemais and Caesarea, and up to Jerusalem.
+# The Macedonia excursion is traversed both ways. The Greek LAND corridor
+# (Neapolis down to Corinth and back) is now drawn as an offset out/return
+# PAIR — red out, amber back — so the homeward Macedonia/Achaia leg is
+# visible (a deliberate reversal of the old draw-once, lessons 3 & 5; the two
+# hues keep the doubled corridor legible rather than burying the map). The
+# shared Neapolis<->Troas sea crossing stays drawn once (the islands leave no
+# clean parallel lane); the amber return resumes at the Troas farewell.
+MAPS['paul_journey_3'] = dict(
+    bbox=(21.4, 31.4, 37.2, 41.6),
+    width=1400,
+    places={
+        'Antioch (Syria)':    (36.171743, 36.226691),
+        'Tarsus':             (34.892056, 36.913028),
+        'Derbe':              (33.361453, 37.348569),
+        'Lystra':             (32.338400, 37.601700),
+        'Iconium':            (32.492331, 37.872202),
+        'Antioch in Pisidia': (31.189167, 38.306111),
+        'Ephesus':            (27.340700, 37.939125),
+        'Troas':              (26.158611, 39.751944),
+        'Neapolis':           (24.415000, 40.935000),
+        'Philippi':           (24.284576, 41.012072),
+        'Thessalonica':       (22.945767, 40.637771),
+        'Berea':              (22.200000, 40.518333),
+        'Corinth':            (22.878741, 37.905785),
+        'Assos':              (26.336700, 39.490600),
+        'Mitylene':           (26.547000, 39.110500),
+        'Samos':              (26.833300, 37.750000),
+        'Miletus':            (27.275600, 37.531100),
+        'Cos':                (27.110300, 36.815300),
+        'Rhodes':             (28.220000, 36.440000),
+        'Patara':             (29.314200, 36.260300),
+        'Tyre':               (35.196100, 33.270800),
+        'Ptolemais':          (35.069200, 32.921400),
+        'Caesarea':           (34.891667, 32.500000),
+        'Jerusalem':          (35.234167, 31.776667),
+    },
+    waypoints={
+        # Anatolian gates (journey-2 routing round the Gulf of Iskenderun)
+        'Syrian Gates':     (36.204, 36.494),
+        'Iskenderun':       (36.300, 36.610),
+        'Cilician Plain':   (36.150, 36.980),
+        'Cilician Gates':   (34.770, 37.280),
+        'Cybistra':         (34.050, 37.510),
+        # "upper country" road (19:1): Apamea then down the Lycus valley
+        'Apamea':           (30.170, 38.070),
+        'Lycus':            (29.110, 37.840),   # Laodicea/Colossae corridor
+        'Maeander':         (27.900, 37.870),   # over to the Cayster/Ephesus
+        # Karaburun (the big mainland headland) blocks the inside channel,
+        # so BOTH directions pass west of it: the outbound sweeps the open
+        # Aegean west of Chios/Lesbos, the return threads back nearer the
+        # islands - a clean loop, arrows carrying direction.
+        'Aegean SW':        (25.700, 37.950),
+        'Aegean W':         (25.600, 38.850),
+        'Mytilene Str':     (26.720, 39.330),
+        'Lesbos E S':       (26.700, 39.000),
+        'Lesbos SW':        (25.950, 38.850),
+        # Carian coast / Dodecanese (the island-hop south)
+        'Mycale S':         (27.020, 37.600),
+        'Bodrum W':         (26.820, 37.020),
+        'Kos N':            (26.780, 36.820),
+        'Nisyros S':        (27.020, 36.560),
+        'Symi S':           (27.850, 36.480),
+        'Rhodes N':         (28.180, 36.500),
+        # North Aegean (Troas<->Neapolis): the islands (Thasos sits right off
+        # Neapolis) force a single threaded lane — no clean parallel exists on
+        # either side — so the shared crossing is drawn ONCE (outbound) and the
+        # homeward leg resumes in amber at Troas (lessons 3 & 5).
+        'Tenedos S':        (25.950, 39.740),
+        'Imbros W':         (25.520, 40.120),
+        'Samothrace N':     (25.300, 40.560),
+        'Thasos S':         (24.720, 40.630),
+        # Levant coastal sail (offshore of the convex coast)
+        'Pella':            (22.550, 40.780),   # round the Thermaic head
+        # the historic road south to Corinth: down Thessaly, the Maliac
+        # gulf at Thermopylae, Boeotia/Thebes, then round the Gulf of
+        # Corinth's east end and over the isthmus (the only land bridge)
+        'Tempe':            (22.420, 39.850),
+        'Lamia':            (22.430, 38.950),
+        'Thermopylae':      (22.400, 38.720),
+        'Thebes':           (23.320, 38.330),
+        # Nudged a touch inland (NW) of the Saronic shore so the smoothed
+        # out/return pair turns the corner on land, not over the bay.
+        'Megara':           (23.300, 38.045),
+        'Isthmus':          (23.000, 37.955),
+        'Egirdir S':        (30.980, 37.720),   # skirt the lakes to Apamea
+        'Burdur S':         (30.300, 37.560),
+    },
+    context_places={
+        'Chios':     (26.1375, 38.3725),   # "came opposite Chios" (20:15)
+        'Patmos':    (26.545, 37.309),     # Rev 1:9 - on the island return lane
+        'Cnidus':    (27.375, 36.686),     # journey-to-Rome stop (27:7)
+    },
+    context_label_pos={
+        'Chios':  (-9, 4, 'end'),
+        'Patmos': (-9, 13, 'end'),
+        'Cnidus': (9, 6, 'start'),
+    },
+    coastal={'Corinth', 'Thessalonica', 'Chios', 'Patmos', 'Cnidus'},
+    origin='Antioch (Syria)',
+    # The Greek land corridor (Neapolis down to Corinth) is traversed both
+    # ways — drawn as an offset out/return pair. The Neapolis<->Troas sea
+    # crossing and the island voyage home are coloured by return_from below.
+    retraced={('Neapolis', 'Philippi'), ('Philippi', 'Thessalonica'),
+              ('Thessalonica', 'Pella'), ('Pella', 'Berea'),
+              ('Berea', 'Tempe'), ('Tempe', 'Lamia'),
+              ('Lamia', 'Thermopylae'), ('Thermopylae', 'Thebes'),
+              ('Thebes', 'Megara'), ('Megara', 'Isthmus'),
+              ('Isthmus', 'Corinth')},
+    # Corinth is the turn; from the Troas farewell on, the whole island
+    # voyage down to Jerusalem is drawn in the return hue.
+    return_from=('Troas', 'Assos'),
+    legs=[
+        # ── outbound: Galatia & Phrygia, strengthening the churches (18:23)
+        ('Antioch (Syria)', 'Syrian Gates', 'land', 0, False),
+        ('Syrian Gates', 'Iskenderun', 'land', 0, False),
+        ('Iskenderun', 'Cilician Plain', 'land', 0, False),
+        ('Cilician Plain', 'Tarsus', 'land', 0, True),
+        ('Tarsus', 'Cilician Gates', 'land', 0, False),
+        ('Cilician Gates', 'Cybistra', 'land', 0, False),
+        ('Cybistra', 'Derbe', 'land', 0, False),
+        ('Derbe', 'Lystra', 'land', 0, False),
+        ('Lystra', 'Iconium', 'land', 0, True),
+        ('Iconium', 'Antioch in Pisidia', 'land', 0, False),
+        # ── upper country to Ephesus (19:1)
+        ('Antioch in Pisidia', 'Egirdir S', 'land', 0, True),
+        ('Egirdir S', 'Burdur S', 'land', 0, False),
+        ('Burdur S', 'Apamea', 'land', 0, False),
+        ('Apamea', 'Lycus', 'land', 0, False),
+        ('Lycus', 'Maeander', 'land', 0, False),
+        ('Maeander', 'Ephesus', 'land', 0, False),
+        # ── Ephesus -> Macedonia -> Greece (20:1-2); drawn once.
+        # Up the Ionian straits (east of Chios and Lesbos) to Troas.
+        ('Ephesus', 'Aegean SW', 'sea', 0.04, True),
+        ('Aegean SW', 'Aegean W', 'sea', 0, False),
+        ('Aegean W', 'Troas', 'sea', 0.03, False),
+        # North Aegean crossing to Macedonia
+        ('Troas', 'Tenedos S', 'sea', 0.03, False),
+        ('Tenedos S', 'Imbros W', 'sea', 0.03, False),
+        ('Imbros W', 'Samothrace N', 'sea', 0.03, False),
+        ('Samothrace N', 'Thasos S', 'sea', 0.02, False),
+        ('Thasos S', 'Neapolis', 'sea', 0.04, False),
+        ('Neapolis', 'Philippi', 'land', 0, False),
+        ('Philippi', 'Thessalonica', 'land', 0, False),
+        ('Thessalonica', 'Pella', 'land', 0, False),
+        ('Pella', 'Berea', 'land', 0, False),
+        ('Berea', 'Tempe', 'land', 0, True),
+        ('Tempe', 'Lamia', 'land', 0, False),
+        ('Lamia', 'Thermopylae', 'land', 0, False),
+        ('Thermopylae', 'Thebes', 'land', 0, False),
+        ('Thebes', 'Megara', 'land', 0, False),
+        ('Megara', 'Isthmus', 'land', 0, False),
+        ('Isthmus', 'Corinth', 'land', 0, False),
+        # ── homeward (20:3-6): back through Macedonia (the corridor above is
+        # the return lane of the pair) to Philippi/Neapolis, then the shared
+        # Neapolis->Troas sea crossing (drawn once, outbound). The return
+        # voyage (20:13-21:16) resumes in amber at Troas: walk to Assos, then
+        # the island-hop south to the Levant.
+        ('Troas', 'Assos', 'land', 0, True),
+        ('Assos', 'Mytilene Str', 'sea', 0.03, False),
+        ('Mytilene Str', 'Mitylene', 'sea', 0.02, False),
+        # back down the shared channel to Samos (bypassing Ephesus, 20:16)
+        ('Mitylene', 'Lesbos E S', 'sea', 0, True),
+        ('Lesbos E S', 'Lesbos SW', 'sea', 0, False),
+        ('Lesbos SW', 'Aegean W', 'sea', 0, False),
+        ('Aegean W', 'Aegean SW', 'sea', 0, False),
+        ('Aegean SW', 'Samos', 'sea', 0, False),
+        ('Samos', 'Mycale S', 'sea', 0.02, False),
+        ('Mycale S', 'Miletus', 'sea', 0.02, False),
+        # offshore round the Bodrum peninsula to Cos
+        ('Miletus', 'Bodrum W', 'sea', 0.03, False),
+        ('Bodrum W', 'Kos N', 'sea', 0.02, False),
+        ('Kos N', 'Cos', 'sea', 0.02, False),
+        # south of the Datca/Cnidus peninsula to Rhodes
+        ('Cos', 'Nisyros S', 'sea', 0.03, False),
+        ('Nisyros S', 'Symi S', 'sea', 0.02, False),
+        ('Symi S', 'Rhodes N', 'sea', 0.02, False),
+        ('Rhodes N', 'Rhodes', 'sea', 0.02, True),
+        ('Rhodes', 'Patara', 'sea', 0.04, True),
+        # open run "leaving Cyprus on the left" (21:3)
+        ('Patara', 'Tyre', 'sea', -0.10, True),
+        # coastal sail down to Ptolemais and Caesarea (offshore of the
+        # convex Phoenician coast, then landing at each named port)
+        ('Tyre', 'Ptolemais', 'sea', -0.55, False),
+        ('Ptolemais', 'Caesarea', 'sea', -0.40, True),
+        ('Caesarea', 'Jerusalem', 'land', 0, True),
+    ],
+    label_pos={
+        'Antioch (Syria)':    (-12, -10, 'end'),
+        'Tarsus':             (6, 19, 'start'),
+        'Derbe':              (10, 14, 'start'),
+        'Lystra':             (-11, 8, 'end'),
+        'Iconium':            (10, -8, 'start'),
+        'Antioch in Pisidia': (10, -8, 'start'),
+        'Ephesus':            (9, -7, 'start'),
+        'Troas':              (-10, -6, 'end'),
+        'Neapolis':           (10, 12, 'start'),
+        'Philippi':           (8, -10, 'start'),
+        'Thessalonica':       (-11, -9, 'end'),
+        'Berea':              (-10, 4, 'end'),
+        'Corinth':            (-11, -6, 'end'),
+        'Assos':              (-10, -6, 'end'),
+        'Mitylene':           (10, 3, 'start'),
+        'Samos':              (-10, 1, 'end'),
+        'Miletus':            (-9, 17, 'end'),
+        'Cos':                (11, 6, 'start'),
+        'Rhodes':             (-23, 29, 'middle'),
+        'Patara':             (8, 16, 'start'),
+        'Tyre':               (10, 2, 'start'),
+        'Ptolemais':          (-9, 4, 'end'),
+        'Caesarea':           (10, 4, 'start'),
+        'Jerusalem':          (12, 6, 'start'),
+    },
+    sea_labels=[('Aegean Sea', 25.05, 38.55, -70),
+                ('Mediterranean Sea', 30.5, 33.3, 0)],
+    region_labels=[('SYRIA', 36.8, 35.3, 50), ('CILICIA', 34.6, 37.02, -8),
+                   ('PHRYGIA', 30.0, 38.6, 0), ('GALATIA', 32.6, 39.3, 0),
+                   ('ASIA', 28.4, 38.7, 0), ('LYDIA', 28.0, 38.25, 0),
+                   ('MACEDONIA', 23.45, 41.3, 0), ('ACHAIA', 22.5, 38.5, 0),
+                   ('LYCIA', 29.6, 36.6, 0)],
+    title="PAUL'S THIRD MISSIONARY JOURNEY",
+    subtitle='Acts 18:23\u201321:16 \u00b7 c. AD 53\u201357',
+    modern_names={
+        'Antioch (Syria)':    'Antakya',
+        'Tarsus':             'Tarsus',
+        'Derbe':              'Derbe (ruins)',
+        'Lystra':             'Lystra (ruins)',
+        'Iconium':            'Konya',
+        'Antioch in Pisidia': 'Yalva\u00e7',
+        'Ephesus':            'Ephesus (ruins)',
+        'Troas':              'Troas (ruins)',
+        'Neapolis':           'Kavala',
+        'Philippi':           'Philippi (ruins)',
+        'Thessalonica':       'Thessaloniki',
+        'Berea':              'Veria',
+        'Corinth':            'Corinth',
+        'Assos':              'Behramkale',
+        'Mitylene':           'Mytilene',
+        'Samos':              'Samos',
+        'Miletus':            'Miletus (ruins)',
+        'Cos':                'Kos',
+        'Rhodes':             'Rhodes',
+        'Patara':             'Patara (ruins)',
+        'Tyre':               'Tyre',
+        'Ptolemais':          'Akko',
+        'Caesarea':           'Caesarea',
+        'Jerusalem':          'Jerusalem',
+    },
+    modern_context_names={'Chios': 'Chios', 'Patmos': 'Patmos',
+                          'Cnidus': 'Cnidus (ruins)'},
+    modern_label_pos={},
+    modern_region_labels=[('GREECE', 22.6, 39.4, 0),
+                          ('T\u00dcRK\u0130YE', 31.5, 39.6, 0),
+                          ('SYRIA', 36.8, 35.3, 50),
+                          ('CYPRUS', 33.2, 35.05, -8),
+                          ('LEBANON', 35.85, 34.15, 40),
+                          ('ISRAEL', 34.72, 32.2, 60),
+                          ('JORDAN', 36.25, 31.78, 0)],
+    modern_subtitle='Acts 18:23\u201321:16 \u00b7 present-day place names',
     border_countries={'Turkey', 'Greece', 'Bulgaria', 'North Macedonia',
                       'Albania', 'Syria', 'Lebanon', 'Israel', 'Jordan'},
 )
@@ -680,6 +971,78 @@ def path_d(points, close=False, dec=1):
     return d + (' Z' if close else '')
 
 
+def catmull_rom_beziers(pts, s=ROUTE_SMOOTH, clamp=0.22):
+    """Cubic segments (p0, c1, c2, p1) of a Catmull-Rom spline THROUGH every
+    point — the curve passes exactly through each city/waypoint, only the
+    tangents are smoothed, so bends round without the route leaving its
+    coordinates. Ends are duplicated, giving a straight run into terminals
+    (no overshoot past the first/last dot).
+
+    Each control handle is capped at `clamp`x the local chord length so a
+    sharp corner can't overshoot the curve off the road into water — the
+    bound that keeps rounding honest (it was ~12 px of sea-bulge uncapped)."""
+    if len(pts) < 3:
+        return [(pts[0], pts[0], pts[-1], pts[-1])] if len(pts) == 2 else []
+
+    def handle(anchor, vec, chord):
+        ln = math.hypot(vec[0], vec[1])
+        cap = clamp * chord
+        if ln > cap > 0:
+            vec = (vec[0] * cap / ln, vec[1] * cap / ln)
+        return (anchor[0] + vec[0], anchor[1] + vec[1])
+
+    P = [pts[0]] + list(pts) + [pts[-1]]
+    segs = []
+    for i in range(1, len(P) - 2):
+        pm, p0, p1, pp = P[i - 1], P[i], P[i + 1], P[i + 2]
+        chord = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+        c1 = handle(p0, ((p1[0] - pm[0]) * s, (p1[1] - pm[1]) * s), chord)
+        c2 = handle(p1, (-(pp[0] - p0[0]) * s, -(pp[1] - p0[1]) * s), chord)
+        segs.append((p0, c1, c2, p1))
+    return segs
+
+
+def smooth_path_d(pts):
+    """SVG path string of the rounded route through pts."""
+    segs = catmull_rom_beziers(pts)
+    if not segs:
+        return path_d(pts)
+    d = f'M{segs[0][0][0]:.1f},{segs[0][0][1]:.1f}'
+    for _, c1, c2, p1 in segs:
+        d += (f' C{c1[0]:.1f},{c1[1]:.1f} {c2[0]:.1f},{c2[1]:.1f} '
+              f'{p1[0]:.1f},{p1[1]:.1f}')
+    return d
+
+
+def smooth_points(pts, n=12):
+    """Sample the rounded route as points — for the terrain warnings, which
+    must test the curve actually drawn, not the straight chords."""
+    segs = catmull_rom_beziers(pts)
+    if not segs:
+        return list(pts)
+    out = [segs[0][0]]
+    for p0, c1, c2, p1 in segs:
+        for k in range(1, n + 1):
+            t = k / n
+            u = 1 - t
+            out.append((u*u*u*p0[0] + 3*u*u*t*c1[0] + 3*u*t*t*c2[0] + t*t*t*p1[0],
+                        u*u*u*p0[1] + 3*u*u*t*c1[1] + 3*u*t*t*c2[1] + t*t*t*p1[1]))
+    return out
+
+
+def bezier_point_angle(seg, t=0.5):
+    """Position and travel angle (deg) on one cubic at parameter t — so an
+    arrowhead sits ON the drawn curve and points along its tangent, not on
+    the straight chord beside it."""
+    p0, c1, c2, p1 = seg
+    u = 1 - t
+    x = u*u*u*p0[0] + 3*u*u*t*c1[0] + 3*u*t*t*c2[0] + t*t*t*p1[0]
+    y = u*u*u*p0[1] + 3*u*u*t*c1[1] + 3*u*t*t*c2[1] + t*t*t*p1[1]
+    dx = 3*u*u*(c1[0]-p0[0]) + 6*u*t*(c2[0]-c1[0]) + 3*t*t*(p1[0]-c2[0])
+    dy = 3*u*u*(c1[1]-p0[1]) + 6*u*t*(c2[1]-c1[1]) + 3*t*t*(p1[1]-c2[1])
+    return x, y, math.degrees(math.atan2(dy, dx))
+
+
 def geojson_rings(feature):
     g = feature['geometry']
     if g['type'] == 'Polygon':
@@ -754,16 +1117,21 @@ def point_in_rings(pt, rings):
     return inside
 
 
-def arrow_marker(pts, size=9.0, frac=0.5):
+def arrow_at(x, y, ang, color=ROUTE, size=9.0):
+    """A direction arrowhead at (x, y), rotated to ang (degrees)."""
+    return (f'<path d="M{size:.0f},0 L-{size*0.45:.1f},{size*0.55:.1f} '
+            f'L-{size*0.45:.1f},-{size*0.55:.1f} Z" fill="{color}" '
+            f'transform="translate({x:.1f},{y:.1f}) rotate({ang:.1f})"/>')
+
+
+def arrow_marker(pts, size=9.0, frac=0.5, color=ROUTE):
     """A direction arrowhead along a sampled run (frac of its length),
     aligned with travel."""
     m = max(1, min(len(pts) - 2, int(len(pts) * frac)))
     x, y = pts[m]
     tx, ty = pts[m + 1][0] - pts[m - 1][0], pts[m + 1][1] - pts[m - 1][1]
     ang = math.degrees(math.atan2(ty, tx))
-    return (f'<path d="M{size:.0f},0 L-{size*0.45:.1f},{size*0.55:.1f} '
-            f'L-{size*0.45:.1f},-{size*0.55:.1f} Z" fill="{ROUTE}" '
-            f'transform="translate({x:.1f},{y:.1f}) rotate({ang:.1f})"/>')
+    return arrow_at(x, y, ang, color, size)
 
 
 def build(data_dir, out_path, mapdef=None, return_variant=True,
@@ -778,6 +1146,10 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
     CONTEXT_LABEL_POS = m['context_label_pos']
     ORIGIN = m['origin']
     RETRACED = m['retraced']
+    # The leg (frm, to) at which the homeward half begins; from here on every
+    # single-direction leg is drawn in the return hue. None => all outbound
+    # (retraced corridors still split out/return by lane, see draw_chain_pair).
+    RETURN_FROM = m.get('return_from')
     LEGS = m['legs']
     LABEL_POS = m['label_pos']
     SEA_LABELS = m['sea_labels']
@@ -995,20 +1367,39 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
                   f'(< {DOT_R} px dot radius) — its footprint bleeds into '
                   f'water; nudge inland or use finer coastline data')
 
-    def draw_land(p, q, bow, arrow, what, frac=0.5):
+    def draw_land(p, q, bow, arrow, what, frac=0.5, color=ROUTE_OUT):
         c = bowed(p, q, bow) if bow else ((p[0]+q[0])/2, (p[1]+q[1])/2)
         if bow:
             d = (f'M{p[0]:.1f},{p[1]:.1f} Q{c[0]:.1f},{c[1]:.1f} '
                  f'{q[0]:.1f},{q[1]:.1f}')
         else:
             d = f'M{p[0]:.1f},{p[1]:.1f} L{q[0]:.1f},{q[1]:.1f}'
-        svg.append(f'<path d="{d}" fill="none" stroke="{ROUTE}" '
+        svg.append(f'<path d="{d}" fill="none" stroke="{color}" '
                    f'stroke-width="{ROUTE_W}" stroke-linecap="round" '
                    f'opacity="0.9"/>')
         warn_if_wet(sample_quad(p, c, q), what)
         warn_if_sea(sample_quad(p, c, q), what)
         if arrow:
-            arrows.append(arrow_marker(sample_quad(p, c, q), frac=frac))
+            arrows.append(arrow_marker(sample_quad(p, c, q), frac=frac,
+                                       color=color))
+
+    def draw_land_chain(pts, arrowed, color, what='land chain'):
+        """Consecutive non-retraced land legs as ONE rounded path through
+        every point (cities/waypoints are passed through exactly, only the
+        bends are smoothed). `arrowed` is the set of segment indices whose
+        leg asked for a direction arrowhead — placed on the curve, mid-leg."""
+        svg.append(f'<path d="{smooth_path_d(pts)}" fill="none" '
+                   f'stroke="{color}" stroke-width="{ROUTE_W}" '
+                   f'stroke-linecap="round" stroke-linejoin="round" '
+                   f'opacity="0.9"/>')
+        sampled = smooth_points(pts)
+        warn_if_wet(sampled, what)
+        warn_if_sea(sampled, what)
+        segs = catmull_rom_beziers(pts)
+        for si in arrowed:
+            if 0 <= si < len(segs):
+                x, y, ang = bezier_point_angle(segs[si])
+                arrows.append(arrow_at(x, y, ang, color))
 
     def offset_polyline(pts, d):
         """Offset a polyline by d (left of travel) with mitered joints —
@@ -1037,16 +1428,6 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
                         pts[i][1] + my / ln * d * ln * scale))
         return out
 
-    def densify(pts, step=4.0):
-        out = [pts[0]]
-        for a, b in zip(pts, pts[1:]):
-            ln = math.hypot(b[0] - a[0], b[1] - a[1])
-            for k in range(1, max(2, int(ln / step)) + 1):
-                t = k / max(2, int(ln / step))
-                out.append((a[0] + (b[0] - a[0]) * t,
-                            a[1] + (b[1] - a[1]) * t))
-        return out
-
     def draw_chain_pair(chain_pts):
         """A retraced road as one continuous mitered parallel pair, with
         staggered arrowheads per direction along the whole chain."""
@@ -1060,20 +1441,31 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
         chain_px = sum(math.hypot(b[0] - a[0], b[1] - a[1])
                        for a, b in zip(chain_pts, chain_pts[1:]))
         fracs = (0.20, 0.60) if chain_px > 260 else (0.66,)
-        for pts in (offset_polyline(chain_pts, 3.4),
-                    offset_polyline(chain_pts[::-1], 3.4)):
-            svg.append(f'<path d="{path_d(pts)}" fill="none" '
-                       f'stroke="{ROUTE}" stroke-width="{ROUTE_W}" '
+        # The two lanes carry the two directions: the forward offset is the
+        # outbound (red), the reversed offset the homeward leg (amber).
+        for pts, color in ((offset_polyline(chain_pts, 3.4), ROUTE_OUT),
+                           (offset_polyline(chain_pts[::-1], 3.4),
+                            ROUTE_RETURN)):
+            svg.append(f'<path d="{smooth_path_d(pts)}" fill="none" '
+                       f'stroke="{color}" stroke-width="{ROUTE_W}" '
                        f'stroke-linecap="round" stroke-linejoin="round" '
                        f'opacity="0.9"/>')
-            dense = densify(pts)
-            warn_if_wet(dense, 'chain')
-            warn_if_sea(dense, 'chain')
+            # warn + arrows ride the SMOOTH curve actually drawn (sampling the
+            # straight offset polyline would float the heads off the bends)
+            curve = smooth_points(pts)
+            warn_if_wet(curve, 'chain')
+            warn_if_sea(curve, 'chain')
             for fr in fracs:
-                arrows.append(arrow_marker(dense, frac=fr))
+                arrows.append(arrow_marker(curve, frac=fr, color=color))
 
-    # group consecutive retraced land legs into chains
-    pending_chain = []
+    # group consecutive retraced land legs into chains (offset out/return
+    # pairs); separately, group consecutive non-retraced land legs into one
+    # rounded chain so the city-to-city road bends smoothly instead of
+    # snapping at every vertex.
+    pending_chain = []          # retraced corridor points
+    land_chain = []             # non-retraced consecutive land points
+    land_arrows = []            # segment indices of arrowed legs in land_chain
+    land_color = [ROUTE_OUT]    # hue of the current land_chain (mutable box)
 
     def flush_chain():
         if pending_chain and return_variant:
@@ -1083,11 +1475,23 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
                 draw_land(a, b, 0, False, 'retraced chain')
         pending_chain.clear()
 
+    def flush_land():
+        if len(land_chain) >= 2:
+            draw_land_chain(land_chain.copy(), land_arrows.copy(),
+                            land_color[0])
+        land_chain.clear()
+        land_arrows.clear()
+
+    is_return = False
     for frm, to, kind, bow, arrow in LEGS:
+        if RETURN_FROM and (frm, to) == RETURN_FROM:
+            is_return = True
+        color = ROUTE_RETURN if is_return else ROUTE_OUT
         p, q = proj(*coords[frm]), proj(*coords[to])
         c = bowed(p, q, bow) if bow else ((p[0]+q[0])/2, (p[1]+q[1])/2)
         if kind == 'land':
             if (frm, to) in RETRACED:
+                flush_land()
                 if pending_chain and pending_chain[-1] != p:
                     flush_chain()
                 if not pending_chain:
@@ -1095,8 +1499,19 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
                 pending_chain.append(q)
             else:
                 flush_chain()
-                draw_land(p, q, bow, arrow, f'{frm}->{to}')
+                # break the rounded chain at a gap or a hue change so out and
+                # return never blend into one curve
+                if land_chain and (land_chain[-1] != p
+                                   or land_color[0] != color):
+                    flush_land()
+                if not land_chain:
+                    land_chain.append(p)
+                    land_color[0] = color
+                land_chain.append(q)
+                if arrow:   # segment just appended: pts[-2] -> pts[-1]
+                    land_arrows.append(len(land_chain) - 2)
             continue
+        flush_land()
         flush_chain()
         # sea leg: split the sampled curve into water/land runs
         samples = sample_quad(p, c, q)
@@ -1113,7 +1528,7 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
                 continue
             if water:
                 svg.append(f'<path d="{path_d(thin_pts(pts, 1.5))}" fill="none" '
-                           f'stroke="{ROUTE}" stroke-width="{ROUTE_W}" '
+                           f'stroke="{color}" stroke-width="{ROUTE_W}" '
                            f'stroke-linecap="round" '
                            f'stroke-dasharray="2 9" opacity="0.9"/>')
             elif i == 0:
@@ -1125,13 +1540,14 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
                                   pts[-1][1] - pts[0][1])
                 if span >= 6:
                     svg.append(f'<path d="{path_d(pts)}" fill="none" '
-                               f'stroke="{ROUTE}" stroke-width="{ROUTE_W}" '
+                               f'stroke="{color}" stroke-width="{ROUTE_W}" '
                                f'stroke-linecap="round" opacity="0.9"/>')
             else:
                 print(f'  ! sea leg {frm}->{to} crosses land mid-route '
                       f'({len(pts)} samples) — adjust the bow')
         if arrow and water_runs:
-            arrows.append(arrow_marker(max(water_runs, key=len)))
+            arrows.append(arrow_marker(max(water_runs, key=len), color=color))
+    flush_land()
     flush_chain()
     svg.extend(arrows)   # arrowheads above all route lines
 
