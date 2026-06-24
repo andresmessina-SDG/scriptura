@@ -135,6 +135,7 @@ class ModuleManagerWindow(Adw.Window):
         self._eb_lang_codes = ['']
         self._pulse_source = None
         self._op_busy = False
+        self._closed = False
         self._build_ui()
         self.connect('close-request', self._on_close_request)
         self._populate()
@@ -549,6 +550,8 @@ class ModuleManagerWindow(Adw.Window):
         self._populate_open_db()
 
     def _finish_catena(self, err):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
         self._op_busy = False
         if err:
             _log.error('catena download error: %s', err)
@@ -613,6 +616,8 @@ class ModuleManagerWindow(Adw.Window):
         self._populate_open_db()
 
     def _finish_imagery(self, err):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
         self._op_busy = False
         if err:
             _log.error('imagery download error: %s', err)
@@ -805,6 +810,8 @@ class ModuleManagerWindow(Adw.Window):
     # ── Shared busy / progress ────────────────────────────────────────────────
 
     def _set_busy(self, busy, status='', show_bar=True):
+        if self._closed:
+            return
         # Per-row installs/removes give their feedback on the row itself (a
         # spinner), so they pass show_bar=False — the global progress bar is
         # reserved for window-level work (refresh, import, database downloads).
@@ -864,8 +871,10 @@ class ModuleManagerWindow(Adw.Window):
         return GLib.SOURCE_CONTINUE
 
     def _on_close_request(self, _win):
-        # Stop the progress pulse so its timeout can't keep firing on the
-        # window once it's gone; the daemon worker threads finish harmlessly.
+        # Mark closed so the daemon workers' idle callbacks (_finish_*, the
+        # progress ticks) early-return instead of mutating finalized widgets,
+        # and stop the progress pulse so its timeout can't keep firing.
+        self._closed = True
         if self._pulse_source is not None:
             GLib.source_remove(self._pulse_source)
             self._pulse_source = None
@@ -890,6 +899,8 @@ class ModuleManagerWindow(Adw.Window):
         threading.Thread(target=work, daemon=True).start()
 
     def _finish_refresh(self, err):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
         self._op_busy = False
         if err:
             self._set_busy(False, _('Refresh failed: {error}').format(error=err))
@@ -949,6 +960,8 @@ class ModuleManagerWindow(Adw.Window):
         threading.Thread(target=work, daemon=True).start()
 
     def _finish_inspect(self, err, mods, data):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
         self._op_busy = False
         if err:
             self._set_busy(False, _("Couldn't read that file — {error}").format(error=err))
@@ -1042,7 +1055,7 @@ class ModuleManagerWindow(Adw.Window):
         if mod.get('size'):
             meta.append(f"{mod['size'] / (1 << 20):.1f} MB")
         if mod.get('locked'):
-            meta.append(_('🔒 Locked'))
+            meta.append(_('Locked'))
         if meta:
             sub = Gtk.Label(label=' · '.join(meta), xalign=0, wrap=True)
             sub.add_css_class('dim-label')
@@ -1123,6 +1136,8 @@ class ModuleManagerWindow(Adw.Window):
         threading.Thread(target=work, daemon=True).start()
 
     def _finish_import(self, err, label):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
         self._op_busy = False
         if err:
             _log.error('import error for %s: %s', label, err)
@@ -1189,6 +1204,8 @@ class ModuleManagerWindow(Adw.Window):
         threading.Thread(target=work, daemon=True).start()
 
     def _finish_change(self, err, name, action='install'):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
         self._op_busy = False
         if err:
             _log.error('%s error for %s: %s', action, name, err)
@@ -1235,6 +1252,8 @@ class ModuleManagerWindow(Adw.Window):
         self._populate_open_db()
 
     def _finish_db_change(self, err, label):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
         self._op_busy = False
         if err:
             self._set_busy(False, _("Couldn't download {name} — {error}").format(
@@ -1402,6 +1421,8 @@ class ModuleManagerWindow(Adw.Window):
         threading.Thread(target=work, daemon=True).start()
 
     def _finish_eb_refresh(self, err):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
         self._op_busy = False
         self._eb_refresh_btn.set_sensitive(True)
         self._progress.set_visible(False)
@@ -1429,8 +1450,8 @@ class ModuleManagerWindow(Adw.Window):
         if self._pulse_source is None:
             self._pulse_source = GLib.timeout_add(80, self._pulse)
 
-        def on_status(msg):
-            GLib.idle_add(self._progress.set_text, msg)
+        def on_status(code):
+            GLib.idle_add(self._eb_set_status, code)
 
         def work():
             err = None
@@ -1443,6 +1464,8 @@ class ModuleManagerWindow(Adw.Window):
         threading.Thread(target=work, daemon=True).start()
 
     def _finish_eb_download(self, err, tid, title, btn):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
         self._op_busy = False
         self._progress.set_visible(False)
         if self._pulse_source is not None:
@@ -1458,6 +1481,21 @@ class ModuleManagerWindow(Adw.Window):
             if self._on_modules_changed:
                 self._on_modules_changed()
             self._eb_apply_filter()
+        return GLib.SOURCE_REMOVE
+
+    # eBible download phase codes → translated status text. The text lives
+    # here, not in the (English-free) ebible_bridge backend — same i18n
+    # boundary as the search-truncation message.
+    _EB_STATUS = {
+        'download': N_('Downloading…'),
+        'parse': N_('Parsing USFM…'),
+        'save': N_('Saving…'),
+    }
+
+    def _eb_set_status(self, code):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
+        self._progress.set_text(_(self._EB_STATUS.get(code, code)))
         return GLib.SOURCE_REMOVE
 
     def _do_eb_remove(self, tid):

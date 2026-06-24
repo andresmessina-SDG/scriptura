@@ -2798,15 +2798,15 @@ class BiblePane(Gtk.Box):
                                      phrase_chain=chain,
                                      phrase_text=text)
 
-    def show_lexicon(self, strong_num, text):
+    def show_lexicon(self, strong_num, text, morph=None, phrase=(None, None)):
         """Called from window.py on Bible-text word click. The window has
-        already fetched the definition text asynchronously; here we just
-        forward it to the panel along with the morph we captured during
-        the click (so the panel can decode and show it in the header)."""
+        already fetched the definition text asynchronously and passes the
+        morph + phrase snapshot taken at click time — threaded through rather
+        than re-read here, so a rapid second click can't swap them under us."""
         self._lex_panel.set_context(self._book, self._module)
-        chain, ptext = getattr(self, '_current_phrase', (None, None))
+        chain, ptext = phrase
         self._lex_panel.show(strong_num, text,
-                             morph=self._current_morph,
+                             morph=morph,
                              phrase_chain=chain,
                              phrase_text=ptext)
 

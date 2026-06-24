@@ -2226,7 +2226,12 @@ class BibleWindow(Adw.ApplicationWindow):
         book    = source_pane._book
         chapter = source_pane._chapter
         verse   = source_pane._selected_verse
-        has_morph = bool(source_pane._current_morph)
+        # Snapshot the click's display context on the main thread and thread it
+        # through to the async display. Reading the pane's live _current_morph /
+        # _current_phrase at display time races a rapid second click — an older
+        # worker would show the newer word's text with the wrong morphology.
+        click_morph = source_pane._current_morph
+        phrase = getattr(source_pane, '_current_phrase', (None, None))
 
         # Reveal the lexicon panel with a spinner immediately so the
         # user gets feedback that their click registered. Real content
@@ -2235,21 +2240,23 @@ class BibleWindow(Adw.ApplicationWindow):
 
         def fetch():
             text = sword_bridge.lookup_strong(strong_num)
-            if not has_morph and verse:
+            morph = click_morph
+            if not morph and verse:
                 if strong_num.startswith('G'):
                     morph = sword_bridge.lookup_morph_for_strong(book, chapter, verse, strong_num)
                 else:
                     morph = sword_bridge.lookup_morph_for_strong_heb(book, chapter, verse, strong_num)
-                source_pane._current_morph = morph
-            GLib.idle_add(self._show_lexicon, source_pane, strong_num, text)
+            GLib.idle_add(self._show_lexicon, source_pane, strong_num, text, morph, phrase)
         threading.Thread(target=fetch, daemon=True).start()
 
-    def _show_lexicon(self, source_pane, strong_num, text):
+    def _show_lexicon(self, source_pane, strong_num, text, morph, phrase):
         if text:
-            source_pane.show_lexicon(strong_num, text)
+            source_pane.show_lexicon(strong_num, text, morph, phrase)
         else:
-            source_pane.show_lexicon(strong_num,
-                _("Install StrongsGreek or StrongsHebrew from the Module Manager."))
+            source_pane.show_lexicon(
+                strong_num,
+                _("Install StrongsGreek or StrongsHebrew from the Module Manager."),
+                morph, phrase)
         return GLib.SOURCE_REMOVE
 
     # ── App menu panel ────────────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import json
+import os
 import threading
 import gi
 gi.require_version('Gtk', '4.0')
@@ -11,6 +12,10 @@ import paths
 from empty_state import compact_empty_state
 
 _HISTORY_FILE = paths.search_history_path()
+# Searches run on worker threads, so overlapping searches (fast typing) can
+# call _save_history concurrently. Serialize the read-modify-write so they
+# can't race on the shared tmp file or drop each other's entries.
+_HISTORY_LOCK = threading.Lock()
 _HISTORY_MAX = 10
 
 
@@ -35,27 +40,36 @@ def _load_history():
 
 
 def _write_history(history):
+    # Atomic write (tmp + fsync + os.replace), matching the other state
+    # stores — a killed write can't leave a truncated/malformed file.
     try:
-        with open(_HISTORY_FILE, 'w', encoding='utf-8') as f:
+        tmp = _HISTORY_FILE + '.tmp'
+        with open(tmp, 'w', encoding='utf-8') as f:
             json.dump(history, f, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, _HISTORY_FILE)
     except Exception:
         pass
 
 
 def _save_history(query, module):
-    history = _load_history()
-    entry = {'query': query, 'module': module}
-    history = [e for e in history if e != entry]  # remove duplicate
-    history.insert(0, entry)
-    _write_history(history[:_HISTORY_MAX])
+    with _HISTORY_LOCK:
+        history = _load_history()
+        entry = {'query': query, 'module': module}
+        history = [e for e in history if e != entry]  # remove duplicate
+        history.insert(0, entry)
+        _write_history(history[:_HISTORY_MAX])
 
 
 def _delete_history(entry):
-    _write_history([e for e in _load_history() if e != entry])
+    with _HISTORY_LOCK:
+        _write_history([e for e in _load_history() if e != entry])
 
 
 def _clear_history():
-    _write_history([])
+    with _HISTORY_LOCK:
+        _write_history([])
 
 SECTIONS = [
     (N_('Pentateuch'),       ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']),
