@@ -507,9 +507,72 @@ button.menu-theme-toggle {
     background-color: alpha(@accent_bg_color, 0.18);
 }
 
-/* ── Reading plan + miscellaneous chrome ─────────────────────────────── */
+/* ── Reading plan ────────────────────────────────────────────────────── */
 
-row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
+/* Today hero: a dim accent eyebrow over a prominent passage reference. */
+.plan-eyebrow {
+    color: @accent_color;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.plan-today-passage {
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+/* Slim progress meter — thin trough + accent fill, fully rounded. */
+progressbar.plan-progress,
+progressbar.plan-progress > trough,
+progressbar.plan-progress > trough > progress {
+    min-height: 6px;
+}
+progressbar.plan-progress > trough {
+    border-radius: 999px;
+    background-color: alpha(@window_fg_color, 0.10);
+}
+progressbar.plan-progress > trough > progress {
+    border-radius: 999px;
+    background-color: @accent_bg_color;
+    margin: 0;
+}
+
+/* Month dot-grid: each day is a small round cell. done = accent fill,
+ * today = accent ring (composes with the fill), a missed scheduled day =
+ * hollow outline, upcoming = faint. The high specificity overrides the
+ * default Adwaita button chrome (gradient/border/min-size). */
+.plan-grid > button.plan-dot {
+    min-width: 28px;
+    min-height: 28px;
+    padding: 0;
+    margin: 0;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    background-image: none;
+    box-shadow: none;
+    background-color: alpha(@window_fg_color, 0.10);
+    transition: background-color 120ms ease, box-shadow 120ms ease;
+}
+.plan-grid > button.plan-dot.plan-dot-ahead {
+    background-color: alpha(@window_fg_color, 0.10);
+}
+.plan-grid > button.plan-dot.plan-dot-overdue {
+    background-color: transparent;
+    border-color: alpha(@window_fg_color, 0.28);
+}
+.plan-grid > button.plan-dot.plan-dot-done {
+    background-color: @accent_bg_color;
+}
+.plan-grid > button.plan-dot.plan-dot-today {
+    box-shadow: 0 0 0 2px @accent_bg_color;
+}
+.plan-grid > button.plan-dot:hover {
+    background-color: alpha(@window_fg_color, 0.24);
+}
+.plan-grid > button.plan-dot.plan-dot-done:hover {
+    background-color: alpha(@accent_bg_color, 0.82);
+}
+
+/* ── Miscellaneous chrome ────────────────────────────────────────────── */
 
 /* libadwaita's .card paints only background + border-radius; without
  * explicit padding the inner widgets hug the card's edge. */

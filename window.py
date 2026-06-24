@@ -6,7 +6,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 gi.require_version('PangoCairo', '1.0')
 import datetime
-from gi.repository import Gtk, Adw, GLib, Gdk, Gio, Pango, PangoCairo
+from gi.repository import Gtk, Adw, GLib, Gdk, Gio, PangoCairo
 from gtk_utils import clear_children
 import sword_bridge
 import settings
@@ -51,14 +51,6 @@ BOOKS = [
     N_('Jude'), N_('Revelation'),
 ]
 
-# Reading-plan day list is windowed: it opens anchored on the plan's current
-# day and renders that day plus the next 20, with a "Load more" footer that
-# appends the following 20 on demand. Building every row up-front (365 for
-# Bible-in-a-Year) hitched the menu open; this keeps it to a couple dozen rows.
-_DAY_WINDOW_FIRST = 21   # current day + next 20
-_DAY_WINDOW_MORE = 20
-
-
 class BibleWindow(Adw.ApplicationWindow):
     _NAV_MAX = 100
 
@@ -90,7 +82,6 @@ class BibleWindow(Adw.ApplicationWindow):
         else:
             self._current_loc = ('Genesis', 1)
         self._updating_plan = False
-        self._today_row = None
         self._modules_win = None
         self._journal_win = None
         # Adaptive layout state, driven by Adw.Breakpoints (see _build_ui).
@@ -2497,67 +2488,125 @@ class BibleWindow(Adw.ApplicationWindow):
         self._appear_revealer.set_child(card)
         _body.append(self._appear_revealer)
 
-        # reading plan section label — grouped by whitespace, not a rule.
-        plan_hdr = Gtk.Label(label=_('Reading Plan'), xalign=0)
+        # ── Reading Plan ──────────────────────────────────────────────────────
+        # Header: title + a quiet ⋯ menu. Reset lives in that menu rather than
+        # as a loud red button, keeping the destructive action off the calm
+        # surface.
+        plan_hdr_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        plan_hdr_box.set_margin_start(14)
+        plan_hdr_box.set_margin_end(8)
+        plan_hdr_box.set_margin_top(18)
+        plan_hdr_box.set_margin_bottom(2)
+        plan_hdr = Gtk.Label(label=_('Reading Plan'), xalign=0, hexpand=True)
         plan_hdr.add_css_class('heading')
-        plan_hdr.set_margin_start(14)
-        plan_hdr.set_margin_top(18)
-        plan_hdr.set_margin_bottom(4)
-        _body.append(plan_hdr)
+        plan_hdr_box.append(plan_hdr)
+        self._plan_menu_btn = Gtk.MenuButton(icon_name='view-more-symbolic')
+        self._plan_menu_btn.add_css_class('flat')
+        self._plan_menu_btn.add_css_class('menu-utility-action')
+        self._plan_menu_btn.set_valign(Gtk.Align.CENTER)
+        self._plan_menu_btn.set_tooltip_text(_('Reading plan options'))
+        set_accessible_label(self._plan_menu_btn, _('Reading plan options'))
+        self._plan_menu_pop = Gtk.Popover()
+        _reset_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        _reset_box.set_margin_start(4)
+        _reset_box.set_margin_end(4)
+        _reset_box.set_margin_top(4)
+        _reset_box.set_margin_bottom(4)
+        self._plan_reset_btn = Gtk.Button(label=_('Reset progress'))
+        self._plan_reset_btn.add_css_class('flat')
+        self._plan_reset_btn.get_child().set_xalign(0)
+        self._plan_reset_btn.connect('clicked', self._on_plan_reset)
+        _reset_box.append(self._plan_reset_btn)
+        self._plan_menu_pop.set_child(_reset_box)
+        self._plan_menu_btn.set_popover(self._plan_menu_pop)
+        plan_hdr_box.append(self._plan_menu_btn)
+        _body.append(plan_hdr_box)
 
-        # plan selector
+        # Quiet plan switcher.
         plans = reading_plans.get_plans()
         plan_names = [_(p['name']) for p in plans]
         self._plan_ids = [p['id'] for p in plans]
         self._plan_drop = Gtk.DropDown(model=Gtk.StringList.new(plan_names))
         self._plan_drop.set_margin_start(12)
         self._plan_drop.set_margin_end(12)
-        self._plan_drop.set_margin_top(10)
-        self._plan_drop.set_margin_bottom(6)
+        self._plan_drop.set_margin_top(6)
+        self._plan_drop.set_margin_bottom(8)
         self._plan_drop_handler = self._plan_drop.connect(
             'notify::selected', self._on_plan_dropdown_changed)
         _body.append(self._plan_drop)
 
-        # plan description label
+        # Not-started state: a one-line description + a single Start button.
         self._plan_desc_lbl = Gtk.Label(wrap=True, xalign=0)
         self._plan_desc_lbl.set_margin_start(12)
         self._plan_desc_lbl.set_margin_end(12)
-        self._plan_desc_lbl.set_margin_bottom(8)
+        self._plan_desc_lbl.set_margin_bottom(10)
         self._plan_desc_lbl.add_css_class('dim-label')
         self._plan_desc_lbl.add_css_class('caption')
         _body.append(self._plan_desc_lbl)
 
-        # controls row (start / progress + reset)
-        self._plan_ctrl_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        self._plan_ctrl_box.set_margin_start(12)
-        self._plan_ctrl_box.set_margin_end(12)
-        self._plan_ctrl_box.set_margin_bottom(8)
         self._plan_start_btn = Gtk.Button(label=_('Start today'))
         self._plan_start_btn.add_css_class('suggested-action')
+        self._plan_start_btn.set_halign(Gtk.Align.START)
+        self._plan_start_btn.set_margin_start(12)
+        self._plan_start_btn.set_margin_end(12)
+        self._plan_start_btn.set_margin_bottom(8)
         self._plan_start_btn.connect('clicked', self._on_plan_start)
-        self._plan_progress_lbl = Gtk.Label(hexpand=True, xalign=0)
-        self._plan_reset_btn = Gtk.Button(label=_('Reset'))
-        self._plan_reset_btn.add_css_class('destructive-action')
-        self._plan_reset_btn.connect('clicked', self._on_plan_reset)
-        self._plan_ctrl_box.append(self._plan_start_btn)
-        self._plan_ctrl_box.append(self._plan_progress_lbl)
-        self._plan_ctrl_box.append(self._plan_reset_btn)
-        _body.append(self._plan_ctrl_box)
+        _body.append(self._plan_start_btn)
 
-        # Separator + day list are only shown when a plan is active. Both
-        # are stored as instance attrs so _refresh_plan_ui can toggle
-        # them together — otherwise an empty boxed-list shows a stray
-        # card-shaped background under "Start today".
-        self._plan_sep = Gtk.Separator()
-        _body.append(self._plan_sep)
+        # Active-plan view: a "Today" hero, a slim progress meter, and a
+        # tappable month dot-grid (done = accent fill, today = ring,
+        # missed = hollow). Built/refreshed by _refresh_plan_ui.
+        self._plan_active_box = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        self._plan_active_box.set_margin_start(14)
+        self._plan_active_box.set_margin_end(14)
 
-        # Day list flows directly in the body so it scrolls with the rest of
-        # the panel via the outer ScrolledWindow — no nested scroll region.
-        self._day_listbox = Gtk.ListBox()
-        self._day_listbox.set_selection_mode(Gtk.SelectionMode.NONE)
-        self._day_listbox.add_css_class('boxed-list')
-        self._day_listbox.connect('row-activated', self._on_day_row_activated)
-        _body.append(self._day_listbox)
+        self._plan_today_eyebrow = Gtk.Label(xalign=0)
+        self._plan_today_eyebrow.add_css_class('caption')
+        self._plan_today_eyebrow.add_css_class('plan-eyebrow')
+        self._plan_active_box.append(self._plan_today_eyebrow)
+
+        self._plan_today_passage = Gtk.Label(xalign=0, wrap=True)
+        self._plan_today_passage.add_css_class('plan-today-passage')
+        self._plan_today_passage.set_margin_top(1)
+        self._plan_active_box.append(self._plan_today_passage)
+
+        _today_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        _today_actions.set_margin_top(10)
+        self._plan_open_btn = Gtk.Button(label=_('Open'))
+        self._plan_open_btn.add_css_class('suggested-action')
+        self._plan_open_btn.connect('clicked', self._on_plan_open_today)
+        _today_actions.append(self._plan_open_btn)
+        self._plan_today_check = Gtk.CheckButton(label=_('Mark done'))
+        self._plan_today_check.set_valign(Gtk.Align.CENTER)
+        self._plan_today_check_handler = self._plan_today_check.connect(
+            'toggled', self._on_plan_today_check)
+        _today_actions.append(self._plan_today_check)
+        self._plan_active_box.append(_today_actions)
+
+        self._plan_progress_bar = Gtk.ProgressBar()
+        self._plan_progress_bar.add_css_class('plan-progress')
+        self._plan_progress_bar.set_margin_top(16)
+        self._plan_active_box.append(self._plan_progress_bar)
+        self._plan_progress_lbl = Gtk.Label(xalign=0)
+        self._plan_progress_lbl.add_css_class('caption')
+        self._plan_progress_lbl.add_css_class('dim-label')
+        self._plan_progress_lbl.set_margin_top(5)
+        self._plan_active_box.append(self._plan_progress_lbl)
+
+        self._plan_grid = Gtk.Grid()
+        self._plan_grid.add_css_class('plan-grid')
+        self._plan_grid.set_row_spacing(8)
+        self._plan_grid.set_column_spacing(8)
+        self._plan_grid.set_margin_top(14)
+        # Spread the 7 columns across the full panel width rather than
+        # crowding into a left-hand column.
+        self._plan_grid.set_hexpand(True)
+        self._plan_grid.set_halign(Gtk.Align.FILL)
+        self._plan_grid.set_column_homogeneous(True)
+        self._plan_active_box.append(self._plan_grid)
+
+        _body.append(self._plan_active_box)
 
         # ── Footer: global utilities pinned to the bottom. The scroller above
         # is vexpand, so this stays anchored at the panel's foot — Apple-sidebar
@@ -2622,159 +2671,188 @@ class BibleWindow(Adw.ApplicationWindow):
         plan_id, start_date = reading_plans.get_active()
         plans = reading_plans.get_plans()
 
-        # sync dropdown to active plan
         if plan_id and plan_id in self._plan_ids:
             self._plan_drop.set_selected(self._plan_ids.index(plan_id))
-        sel_idx = self._plan_drop.get_selected()
-        sel_id = self._plan_ids[sel_idx]
-        plan_id = plan_id or sel_id
+        sel_id = self._plan_ids[self._plan_drop.get_selected()]
 
-        # description
-        desc = next((p['description'] for p in plans if p['id'] == sel_id), '')
-        self._plan_desc_lbl.set_text(_(desc) if desc else '')
-
-        # controls
         plan_active = bool(start_date and reading_plans.get_active()[0] == sel_id)
         if plan_active:
+            self._plan_desc_lbl.set_visible(False)
             self._plan_start_btn.set_visible(False)
-            completed = reading_plans.get_completed(sel_id)
-            total = next((p['total_days'] for p in plans if p['id'] == sel_id), 0)
-            self._plan_progress_lbl.set_text(ngettext(
-                '{done} / {total} day', '{done} / {total} days', total).format(
-                    done=len(completed), total=total))
-            self._plan_progress_lbl.set_visible(True)
-            self._plan_reset_btn.set_visible(True)
-            self._populate_day_list(sel_id, start_date)
+            self._plan_menu_btn.set_visible(True)
+            self._plan_active_box.set_visible(True)
+            self._build_plan_view(sel_id, start_date)
         else:
+            desc = next((p['description'] for p in plans if p['id'] == sel_id), '')
+            self._plan_desc_lbl.set_text(_(desc) if desc else '')
+            self._plan_desc_lbl.set_visible(bool(desc))
             self._plan_start_btn.set_visible(True)
-            self._plan_progress_lbl.set_visible(False)
-            self._plan_reset_btn.set_visible(False)
-            self._clear_day_list()
-        # The boxed-list day view and its leading separator only appear
-        # for an active plan — otherwise an empty card-shaped background
-        # would sit awkwardly under the "Start today" button.
-        self._plan_sep.set_visible(plan_active)
-        self._day_listbox.set_visible(plan_active)
+            self._plan_menu_btn.set_visible(False)
+            self._plan_active_box.set_visible(False)
 
         self._updating_plan = False
 
-    def _clear_day_list(self):
-        self._today_row = None
-        self._day_more_row = None
-        while True:
-            row = self._day_listbox.get_row_at_index(0)
-            if row is None:
-                break
-            self._day_listbox.remove(row)
+    def _build_plan_view(self, plan_id, start_date):
+        """Populate the Today hero, progress meter, and dot grid for an
+        active plan."""
+        days = reading_plans.get_plan_days(plan_id)
+        total = len(days)
+        self._plan_id = plan_id
+        self._plan_days = days
+        self._plan_total = total
+        self._plan_completed = set(reading_plans.get_completed(plan_id))
+        self._plan_today_idx = reading_plans.today_index(start_date)
+        # Clamp the hero day into range so a finished or not-yet-due plan
+        # still shows a real day.
+        self._plan_anchor = (max(0, min(self._plan_today_idx, total - 1))
+                             if total else 0)
 
-    def _populate_day_list(self, plan_id, start_date):
-        self._clear_day_list()
-        self._day_plan_id = plan_id
-        self._day_start_date = start_date
-        self._day_days = reading_plans.get_plan_days(plan_id)
-        self._day_completed = reading_plans.get_completed(plan_id)
-        # Anchor the window on the plan's current day, clamped into range so a
-        # not-yet-started (negative) or long-overdue (past the end) plan still
-        # opens on a real day. From the anchor we render forward only.
-        today_idx = reading_plans.today_index(start_date)
-        total = len(self._day_days)
-        self._day_today_idx = today_idx
-        self._day_anchor = max(0, min(today_idx, total - 1)) if total else 0
-        self._day_next = self._day_anchor
-        self._append_day_rows(_DAY_WINDOW_FIRST)
-        GLib.idle_add(self._scroll_to_today)
+        finished = bool(total) and self._plan_today_idx >= total
+        self._plan_today_eyebrow.set_text(
+            _('Plan complete') if finished
+            else _('Day {n} · Today').format(n=self._plan_anchor + 1))
+        self._plan_today_passage.set_text(
+            reading_plans.format_passages(days[self._plan_anchor]) if total else '')
 
-    def _append_day_rows(self, count):
-        """Materialise the next `count` day rows from the current window
-        position, then re-add the Load-more footer if days remain."""
-        if self._day_more_row is not None:
-            self._day_listbox.remove(self._day_more_row)
-            self._day_more_row = None
-        total = len(self._day_days)
-        end = min(self._day_next + count, total)
-        for idx in range(self._day_next, end):
-            try:
-                date = (datetime.date.fromisoformat(self._day_start_date)
-                        + datetime.timedelta(days=idx)).isoformat()
-            except Exception:
-                date = ''
-            is_today = (idx == self._day_today_idx)
-            row = self._make_day_row(
-                self._day_plan_id, idx, self._day_days[idx], date,
-                done=(idx in self._day_completed), is_today=is_today)
-            self._day_listbox.append(row)
-            if is_today:
-                self._today_row = row
-        self._day_next = end
-        if self._day_next < total:
-            self._day_more_row = self._make_day_more_row(total - self._day_next)
-            self._day_listbox.append(self._day_more_row)
+        self._plan_today_check.handler_block(self._plan_today_check_handler)
+        self._plan_today_check.set_active(self._plan_anchor in self._plan_completed)
+        self._plan_today_check.handler_unblock(self._plan_today_check_handler)
 
-    def _make_day_more_row(self, remaining):
-        """Activatable footer row that reveals the next slice of days. A real
-        ActionRow so it inherits the boxed-list styling exactly; it's driven
-        from the listbox's row-activated handler (see _on_day_row_activated)."""
-        row = Adw.ActionRow()
-        row._is_more = True
-        row.set_title(ngettext('Load {n} more day', 'Load {n} more days',
-                               remaining).format(n=remaining))
-        row.add_prefix(Gtk.Image.new_from_icon_name('view-more-symbolic'))
-        row.set_activatable(True)
-        return row
+        self._update_plan_progress()
+        self._build_plan_grid()
 
-    def _make_day_row(self, plan_id, idx, readings, date, done, is_today):
-        row = Gtk.ListBoxRow()
-        row._plan_id = plan_id
-        row._day_idx = idx
-        row._readings = readings
-        if is_today:
-            row.add_css_class('plan-today')
+    def _update_plan_progress(self):
+        total = self._plan_total
+        done_n = len(self._plan_completed)
+        self._plan_progress_bar.set_fraction(done_n / total if total else 0.0)
+        self._plan_progress_lbl.set_text(ngettext(
+            '{done} of {total} day read · tap a day to read',
+            '{done} of {total} days read · tap a day to read',
+            total).format(done=done_n, total=total))
 
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+    def _build_plan_grid(self):
+        clear_children(self._plan_grid)
+        self._plan_cells = {}
+        cols = 7
+        for idx in range(self._plan_total):
+            cell = Gtk.Button()
+            cell.add_css_class('plan-dot')
+            cell.set_valign(Gtk.Align.CENTER)
+            cell.set_halign(Gtk.Align.CENTER)
+            cell.set_hexpand(True)   # share the row width evenly
+            summary = self._plan_day_summary(idx)
+            cell.set_tooltip_text(summary)
+            set_accessible_label(cell, summary)
+            cell.connect('clicked', self._on_plan_dot_clicked, idx)
+            self._style_plan_cell(cell, idx)
+            self._plan_grid.attach(cell, idx % cols, idx // cols, 1, 1)
+            self._plan_cells[idx] = cell
+
+    def _style_plan_cell(self, cell, idx):
+        for c in ('plan-dot-done', 'plan-dot-today',
+                  'plan-dot-overdue', 'plan-dot-ahead'):
+            cell.remove_css_class(c)
+        if idx in self._plan_completed:
+            cell.add_css_class('plan-dot-done')
+        elif idx < self._plan_today_idx:
+            cell.add_css_class('plan-dot-overdue')   # a scheduled day went unread
+        else:
+            cell.add_css_class('plan-dot-ahead')
+        if idx == self._plan_today_idx:
+            cell.add_css_class('plan-dot-today')     # ring; composes with the fill
+
+    def _plan_day_summary(self, idx):
+        return _('Day {n} · {passages}').format(
+            n=idx + 1,
+            passages=reading_plans.format_passages(self._plan_days[idx]))
+
+    def _on_plan_dot_clicked(self, cell, idx):
+        pop = Gtk.Popover()
+        pop.set_parent(cell)
+        pop.set_has_arrow(True)
+        pop.connect('closed', lambda p: p.unparent())
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         box.set_margin_start(8)
         box.set_margin_end(8)
+        box.set_margin_top(8)
+        box.set_margin_bottom(8)
+        eyebrow = Gtk.Label(label=_('Day {n}').format(n=idx + 1), xalign=0)
+        eyebrow.add_css_class('caption')
+        eyebrow.add_css_class('dim-label')
+        box.append(eyebrow)
+        # One tappable row per passage group — opens it and closes the menu.
+        for book, start, end in reading_plans.group_readings(self._plan_days[idx]):
+            label = (f'{book_label(book)} {start}' if start == end
+                     else f'{book_label(book)} {start}–{end}')
+            btn = Gtk.Button(label=label)
+            btn.add_css_class('flat')
+            btn.set_halign(Gtk.Align.FILL)
+            btn.get_child().set_xalign(0)
+            btn.connect('clicked', self._on_plan_passage_clicked, pop, book, start)
+            box.append(btn)
+        done_chk = Gtk.CheckButton(label=_('Mark done'))
+        done_chk.set_margin_top(4)
+        done_chk.set_active(idx in self._plan_completed)
+        done_chk.connect(
+            'toggled', lambda b, i=idx: self._set_plan_day_done(i, b.get_active()))
+        box.append(done_chk)
+        pop.set_child(box)
+        pop.popup()
+
+    def _set_plan_day_done(self, idx, done):
+        reading_plans.set_day_done(self._plan_id, idx, done)
+        if done:
+            self._plan_completed.add(idx)
+        else:
+            self._plan_completed.discard(idx)
+        cell = self._plan_cells.get(idx)
+        if cell is not None:
+            self._style_plan_cell(cell, idx)
+        if idx == self._plan_anchor:
+            self._plan_today_check.handler_block(self._plan_today_check_handler)
+            self._plan_today_check.set_active(done)
+            self._plan_today_check.handler_unblock(self._plan_today_check_handler)
+        self._update_plan_progress()
+
+    def _on_plan_today_check(self, btn):
+        if self._updating_plan:
+            return
+        self._set_plan_day_done(self._plan_anchor, btn.get_active())
+
+    def _on_plan_open_today(self, _btn):
+        self._open_plan_day(self._plan_anchor, self._plan_open_btn)
+
+    def _open_plan_day(self, idx, anchor):
+        readings = self._plan_days[idx]
+        if not readings:
+            return
+        groups = reading_plans.group_readings(readings)
+        if len(groups) <= 1:
+            book, chapter = readings[0]
+            self._menu_split.set_show_sidebar(False)
+            self._go_to(book, chapter)
+            return
+        # Multi-passage day: let the user pick which to open.
+        pop = Gtk.Popover()
+        pop.set_parent(anchor)
+        pop.set_has_arrow(True)
+        pop.connect('closed', lambda p: p.unparent())
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        box.set_margin_start(6)
+        box.set_margin_end(6)
         box.set_margin_top(6)
         box.set_margin_bottom(6)
-
-        check = Gtk.CheckButton()
-        check.set_active(done)
-        check.connect('toggled', self._on_day_check_toggled, plan_id, idx)
-        box.append(check)
-
-        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        day_lbl = Gtk.Label(label=_('Day {n}').format(n=idx + 1), xalign=0)
-        day_lbl.add_css_class('caption')
-        day_lbl.add_css_class('dim-label')
-        passage_lbl = Gtk.Label(
-            label=reading_plans.format_passages(readings), xalign=0, hexpand=True)
-        passage_lbl.set_ellipsize(Pango.EllipsizeMode.END)
-        if done:
-            passage_lbl.add_css_class('dim-label')
-        vbox.append(day_lbl)
-        vbox.append(passage_lbl)
-        box.append(vbox)
-
-        if date:
-            date_lbl = Gtk.Label(label=date, xalign=1)
-            date_lbl.add_css_class('caption')
-            date_lbl.add_css_class('dim-label')
-            box.append(date_lbl)
-
-        row.set_child(box)
-        return row
-
-    def _scroll_to_today(self):
-        if self._today_row:
-            self._today_row.grab_focus()
-            adj = self._menu_scroll.get_vadjustment()
-            alloc = self._today_row.get_allocation()
-            if alloc.height > 0:
-                # Row y is relative to the listbox; add the listbox's own
-                # offset within the scrolled body for the true scroll target.
-                row_y = self._day_listbox.get_allocation().y + alloc.y
-                target = row_y - (self._menu_scroll.get_allocated_height() // 2)
-                adj.set_value(max(0, target))
-        return GLib.SOURCE_REMOVE
+        for book, start, end in groups:
+            label = (f'{book_label(book)} {start}' if start == end
+                     else f'{book_label(book)} {start}–{end}')
+            btn = Gtk.Button(label=label)
+            btn.add_css_class('flat')
+            btn.set_halign(Gtk.Align.FILL)
+            btn.get_child().set_xalign(0)
+            btn.connect('clicked', self._on_plan_passage_clicked, pop, book, start)
+            box.append(btn)
+        pop.set_child(box)
+        pop.popup()
 
     def _on_plan_dropdown_changed(self, _drop, _param):
         if self._updating_plan:
@@ -2790,53 +2868,10 @@ class BibleWindow(Adw.ApplicationWindow):
         self._refresh_plan_ui()
 
     def _on_plan_reset(self, _btn):
+        self._plan_menu_pop.popdown()
         sel_id = self._plan_ids[self._plan_drop.get_selected()]
         reading_plans.clear_start_date(sel_id)
         self._refresh_plan_ui()
-
-    def _on_day_check_toggled(self, check, plan_id, idx):
-        reading_plans.set_day_done(plan_id, idx, check.get_active())
-        # update progress label without rebuilding the whole list
-        plans = reading_plans.get_plans()
-        completed = reading_plans.get_completed(plan_id)
-        total = next((p['total_days'] for p in plans if p['id'] == plan_id), 0)
-        self._plan_progress_lbl.set_text(ngettext(
-            '{done} / {total} day', '{done} / {total} days', total).format(
-                done=len(completed), total=total))
-
-    def _on_day_row_activated(self, _listbox, row):
-        # The Load-more footer reveals the next slice of days in place.
-        if getattr(row, '_is_more', False):
-            self._append_day_rows(_DAY_WINDOW_MORE)
-            return
-        if not getattr(row, '_readings', None):
-            return
-        groups = reading_plans.group_readings(row._readings)
-        if len(groups) <= 1:
-            book, chapter = row._readings[0]
-            self._menu_split.set_show_sidebar(False)
-            self._go_to(book, chapter)
-            return
-
-        pop = Gtk.Popover()
-        pop.set_parent(row)
-        pop.set_has_arrow(True)
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        box.set_margin_start(6)
-        box.set_margin_end(6)
-        box.set_margin_top(6)
-        box.set_margin_bottom(6)
-        for book, start, end in groups:
-            label = f'{book_label(book)} {start}' if start == end else f'{book_label(book)} {start}–{end}'
-            btn = Gtk.Button(label=label)
-            btn.add_css_class('flat')
-            btn.set_halign(Gtk.Align.FILL)
-            btn.get_child().set_xalign(0)
-            btn.connect('clicked', self._on_plan_passage_clicked, pop, book, start)
-            box.append(btn)
-        pop.set_child(box)
-        pop.connect('closed', lambda p: p.unparent())
-        pop.popup()
 
     def _on_plan_passage_clicked(self, _btn, pop, book, chapter):
         pop.popdown()
