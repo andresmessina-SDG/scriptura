@@ -220,9 +220,16 @@ def _load() -> dict[str, Any]:
 def _save(d: dict[str, Any]) -> None:
     global _cache
     _cache = d
+    # Atomic write (tmp + fsync + os.replace) so a crash mid-write can't
+    # truncate the user's plan progress — matching settings/annotations/
+    # bookmarks. See annotations._save for the rationale.
     try:
-        with open(_FILE, 'w', encoding='utf-8') as f:
+        tmp = _FILE + '.tmp'
+        with open(tmp, 'w', encoding='utf-8') as f:
             json.dump(d, f, indent=2, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, _FILE)
     except Exception:
         _log.exception('save failed')
         if _on_save_error is not None:

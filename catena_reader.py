@@ -15,6 +15,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Gio
 from a11y import set_accessible_label
+from gtk_utils import clear_children
 
 import catena_bridge
 
@@ -108,11 +109,7 @@ class CatenaReader:
     # ── rendering ──────────────────────────────────────────────────────────────
 
     def _clear(self, box):
-        child = box.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            box.remove(child)
-            child = nxt
+        clear_children(box)
 
     def _rebuild(self):
         self._clear(self._list)
@@ -311,7 +308,7 @@ class CatenaReader:
 
 
 def _year_label(year):
-    if year is None or year == 9999:
+    if year is None or year == catena_bridge._UNKNOWN_YEAR:
         return ''
     if year < 0:
         return _('c. {year} BC').format(year=-year)

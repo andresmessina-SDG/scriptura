@@ -7,6 +7,7 @@ gi.require_version('Adw', '1')
 gi.require_version('PangoCairo', '1.0')
 import datetime
 from gi.repository import Gtk, Adw, GLib, Gdk, Gio, Pango, PangoCairo
+from gtk_utils import clear_children
 import sword_bridge
 import settings
 import module_positions
@@ -49,6 +50,13 @@ BOOKS = [
     N_('James'), N_('1 Peter'), N_('2 Peter'), N_('1 John'), N_('2 John'), N_('3 John'),
     N_('Jude'), N_('Revelation'),
 ]
+
+# Reading-plan day list is windowed: it opens anchored on the plan's current
+# day and renders that day plus the next 20, with a "Load more" footer that
+# appends the following 20 on demand. Building every row up-front (365 for
+# Bible-in-a-Year) hitched the menu open; this keeps it to a couple dozen rows.
+_DAY_WINDOW_FIRST = 21   # current day + next 20
+_DAY_WINDOW_MORE = 20
 
 
 class BibleWindow(Adw.ApplicationWindow):
@@ -1088,11 +1096,7 @@ class BibleWindow(Adw.ApplicationWindow):
 
         def show_verses(ch):
             # Rebuild verse grid for state.book / ch
-            child = verse_flow.get_first_child()
-            while child:
-                nxt = child.get_next_sibling()
-                verse_flow.remove(child)
-                child = nxt
+            clear_children(verse_flow)
             try:
                 v_count = sword_bridge.verse_count(state['book'], ch)
             except Exception:
@@ -1111,11 +1115,7 @@ class BibleWindow(Adw.ApplicationWindow):
             stack.set_visible_child_name('verses')
 
         def rebuild_chapters():
-            child = chap_flow.get_first_child()
-            while child:
-                nxt = child.get_next_sibling()
-                chap_flow.remove(child)
-                child = nxt
+            clear_children(chap_flow)
             try:
                 count = sword_bridge.chapter_count(state['book'])
             except Exception:
@@ -1255,7 +1255,11 @@ class BibleWindow(Adw.ApplicationWindow):
         self.pane1.set_appearance(font_size=new_size)
         self.pane2.set_appearance(font_size=new_size)
         if hasattr(self, '_size_scale'):
+            # Sync the slider without re-firing _on_appear_size, which would
+            # redundantly re-apply and re-save the same value.
+            self._size_scale.handler_block(self._size_scale_handler)
             self._size_scale.set_value(new_size)
+            self._size_scale.handler_unblock(self._size_scale_handler)
             self._size_val_lbl.set_text(f'{new_size:.0f}pt')
 
     def _toggle_appear_card(self, _w):
@@ -1277,12 +1281,18 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _apply_mode_color(self):
         color = settings.get(self._current_mode_key())
-        self._color_check.set_active(bool(color))
-        self._color_btn.set_sensitive(bool(color))
         if color:
             rgba = Gdk.RGBA()
             if rgba.parse(color):
                 self._color_btn.set_rgba(rgba)
+        self._color_btn.set_sensitive(bool(color))
+        # Block the toggled handler: this is a programmatic sync to the
+        # newly-active scheme's saved color, not a user edit. Letting it fire
+        # would run _on_color_changed against the button's stale RGBA and write
+        # that over the scheme's just-loaded saved color.
+        self._color_check.handler_block(self._color_check_handler)
+        self._color_check.set_active(bool(color))
+        self._color_check.handler_unblock(self._color_check_handler)
         self.pane1.set_appearance(text_color=color)
         self.pane2.set_appearance(text_color=color)
 
@@ -1879,7 +1889,7 @@ class BibleWindow(Adw.ApplicationWindow):
             # and the final session state would be lost.
             settings.flush()
             module_positions.flush()
-        except Exception as e:
+        except Exception:
             _log.exception('close-save failed')
         return False
 
@@ -2059,11 +2069,11 @@ class BibleWindow(Adw.ApplicationWindow):
             copyright='© 2026 Andres Messina',
         )
         dlg.add_credit_section(_('Data'), [
-            'SWORD Project (CrossWire Bible Society) — modules and data layer',
-            'OpenBible.info — cross-references and topical tags (CC-BY)',
-            'Dodson Greek Lexicon — public-domain NT Greek definitions',
-            'eBible.org — modern translation catalog and texts',
-            'HistoricalChristianFaith Commentaries Database — historical commentary pack',
+            _('SWORD Project (CrossWire Bible Society) — modules and data layer'),
+            _('OpenBible.info — cross-references and topical tags (CC-BY)'),
+            _('Dodson Greek Lexicon — public-domain NT Greek definitions'),
+            _('eBible.org — modern translation catalog and texts'),
+            _('HistoricalChristianFaith Commentaries Database — historical commentary pack'),
         ])
         dlg.add_acknowledgement_section(_('Built with'), [
             'GTK4 + libadwaita',
@@ -2294,14 +2304,16 @@ class BibleWindow(Adw.ApplicationWindow):
         hbox.append(close_btn)
         panel.append(hbox)
 
-        # Body — direct vertical Box so the day list at the bottom can
-        # vexpand to fill remaining height. A wrapping ScrolledWindow
-        # would give _body its natural height only, which would defeat
-        # the vexpand. The day list is its own ScrolledWindow so long
-        # plans (e.g. Bible-in-a-Year, 365 rows) still scroll inside.
-        _body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL,
-                        spacing=0, vexpand=True)
-        panel.append(_body)
+        # Body — a vertical Box inside a ScrolledWindow so the panel can
+        # scroll when its content (the expanded appearance card, or a long
+        # reading plan) exceeds the available height. The footer below is a
+        # sibling of the scroller, so it stays pinned to the panel's foot
+        # instead of being pushed off-screen when the body overflows.
+        self._menu_scroll = Gtk.ScrolledWindow(vexpand=True)
+        self._menu_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        _body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        self._menu_scroll.set_child(_body)
+        panel.append(self._menu_scroll)
 
         # ── Navigation group (Study Journal / Modules) as coherent list rows
         # (icon + label + chevron), matching the app's Adw idiom rather than
@@ -2393,11 +2405,13 @@ class BibleWindow(Adw.ApplicationWindow):
             Gtk.Orientation.HORIZONTAL, 8, 26, 0.5)
         self._size_scale.set_hexpand(True)
         self._size_scale.set_draw_value(False)
+        set_accessible_label(self._size_scale, _('Font size'))
         self._size_scale.set_value(settings.get('font_size'))
         self._size_val_lbl = Gtk.Label(
             label=f'{settings.get("font_size"):.0f}pt')
         self._size_val_lbl.set_size_request(36, -1)
-        self._size_scale.connect('value-changed', self._on_appear_size)
+        self._size_scale_handler = self._size_scale.connect(
+            'value-changed', self._on_appear_size)
         size_row.append(self._size_scale)
         size_row.append(self._size_val_lbl)
         card.append(size_row)
@@ -2408,6 +2422,7 @@ class BibleWindow(Adw.ApplicationWindow):
             Gtk.Orientation.HORIZONTAL, 1.0, 2.5, 0.1)
         self._spacing_scale.set_hexpand(True)
         self._spacing_scale.set_draw_value(False)
+        set_accessible_label(self._spacing_scale, _('Line spacing'))
         self._spacing_scale.set_value(settings.get('line_spacing'))
         self._spacing_val_lbl = Gtk.Label(
             label=f'{settings.get("line_spacing"):.1f}×')
@@ -2423,6 +2438,7 @@ class BibleWindow(Adw.ApplicationWindow):
             Gtk.Orientation.HORIZONTAL, 540, 1600, 20)
         self._width_scale.set_hexpand(True)
         self._width_scale.set_draw_value(False)
+        set_accessible_label(self._width_scale, _('Reading column width'))
         _cur_w = int(settings.get('reading_width') or 720)
         self._width_scale.set_value(_cur_w)
         self._width_val_lbl = Gtk.Label(label=f'{_cur_w}px')
@@ -2452,7 +2468,8 @@ class BibleWindow(Adw.ApplicationWindow):
         self._color_check.set_hexpand(True)
         saved_color = settings.get(f'text_color_{settings.get("color_scheme") or "default"}')
         self._color_check.set_active(bool(saved_color))
-        self._color_check.connect('toggled', self._on_color_check)
+        self._color_check_handler = self._color_check.connect(
+            'toggled', self._on_color_check)
 
         import warnings
         with warnings.catch_warnings():
@@ -2527,21 +2544,16 @@ class BibleWindow(Adw.ApplicationWindow):
         self._plan_sep = Gtk.Separator()
         _body.append(self._plan_sep)
 
-        # Day list fills the remaining vertical space when shown so the
-        # menu panel doesn't end abruptly. vexpand here only takes effect
-        # when the day list is visible (plan active).
-        self._plan_scroll = Gtk.ScrolledWindow(vexpand=True)
-        self._plan_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        self._plan_scroll.set_min_content_height(200)
+        # Day list flows directly in the body so it scrolls with the rest of
+        # the panel via the outer ScrolledWindow — no nested scroll region.
         self._day_listbox = Gtk.ListBox()
         self._day_listbox.set_selection_mode(Gtk.SelectionMode.NONE)
         self._day_listbox.add_css_class('boxed-list')
         self._day_listbox.connect('row-activated', self._on_day_row_activated)
-        self._plan_scroll.set_child(self._day_listbox)
-        _body.append(self._plan_scroll)
+        _body.append(self._day_listbox)
 
-        # ── Footer: global utilities pinned to the bottom. _body above is
-        # vexpand, so this stays anchored at the panel's foot — Apple-sidebar
+        # ── Footer: global utilities pinned to the bottom. The scroller above
+        # is vexpand, so this stays anchored at the panel's foot — Apple-sidebar
         # placement that also fills the lower void when no plan is active.
         footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         footer.add_css_class('menu-footer')
@@ -2635,12 +2647,13 @@ class BibleWindow(Adw.ApplicationWindow):
         # for an active plan — otherwise an empty card-shaped background
         # would sit awkwardly under the "Start today" button.
         self._plan_sep.set_visible(plan_active)
-        self._plan_scroll.set_visible(plan_active)
+        self._day_listbox.set_visible(plan_active)
 
         self._updating_plan = False
 
     def _clear_day_list(self):
         self._today_row = None
+        self._day_more_row = None
         while True:
             row = self._day_listbox.get_row_at_index(0)
             if row is None:
@@ -2649,22 +2662,58 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _populate_day_list(self, plan_id, start_date):
         self._clear_day_list()
-        days = reading_plans.get_plan_days(plan_id)
-        completed = reading_plans.get_completed(plan_id)
+        self._day_plan_id = plan_id
+        self._day_start_date = start_date
+        self._day_days = reading_plans.get_plan_days(plan_id)
+        self._day_completed = reading_plans.get_completed(plan_id)
+        # Anchor the window on the plan's current day, clamped into range so a
+        # not-yet-started (negative) or long-overdue (past the end) plan still
+        # opens on a real day. From the anchor we render forward only.
         today_idx = reading_plans.today_index(start_date)
-        for idx, readings in enumerate(days):
+        total = len(self._day_days)
+        self._day_today_idx = today_idx
+        self._day_anchor = max(0, min(today_idx, total - 1)) if total else 0
+        self._day_next = self._day_anchor
+        self._append_day_rows(_DAY_WINDOW_FIRST)
+        GLib.idle_add(self._scroll_to_today)
+
+    def _append_day_rows(self, count):
+        """Materialise the next `count` day rows from the current window
+        position, then re-add the Load-more footer if days remain."""
+        if self._day_more_row is not None:
+            self._day_listbox.remove(self._day_more_row)
+            self._day_more_row = None
+        total = len(self._day_days)
+        end = min(self._day_next + count, total)
+        for idx in range(self._day_next, end):
             try:
-                date = (datetime.date.fromisoformat(start_date)
+                date = (datetime.date.fromisoformat(self._day_start_date)
                         + datetime.timedelta(days=idx)).isoformat()
             except Exception:
                 date = ''
-            is_today = (idx == today_idx)
-            row = self._make_day_row(plan_id, idx, readings, date,
-                                     done=(idx in completed), is_today=is_today)
+            is_today = (idx == self._day_today_idx)
+            row = self._make_day_row(
+                self._day_plan_id, idx, self._day_days[idx], date,
+                done=(idx in self._day_completed), is_today=is_today)
             self._day_listbox.append(row)
             if is_today:
                 self._today_row = row
-        GLib.idle_add(self._scroll_to_today)
+        self._day_next = end
+        if self._day_next < total:
+            self._day_more_row = self._make_day_more_row(total - self._day_next)
+            self._day_listbox.append(self._day_more_row)
+
+    def _make_day_more_row(self, remaining):
+        """Activatable footer row that reveals the next slice of days. A real
+        ActionRow so it inherits the boxed-list styling exactly; it's driven
+        from the listbox's row-activated handler (see _on_day_row_activated)."""
+        row = Adw.ActionRow()
+        row._is_more = True
+        row.set_title(ngettext('Load {n} more day', 'Load {n} more days',
+                               remaining).format(n=remaining))
+        row.add_prefix(Gtk.Image.new_from_icon_name('view-more-symbolic'))
+        row.set_activatable(True)
+        return row
 
     def _make_day_row(self, plan_id, idx, readings, date, done, is_today):
         row = Gtk.ListBoxRow()
@@ -2710,10 +2759,13 @@ class BibleWindow(Adw.ApplicationWindow):
     def _scroll_to_today(self):
         if self._today_row:
             self._today_row.grab_focus()
-            adj = self._plan_scroll.get_vadjustment()
+            adj = self._menu_scroll.get_vadjustment()
             alloc = self._today_row.get_allocation()
             if alloc.height > 0:
-                target = alloc.y - (self._plan_scroll.get_allocated_height() // 2)
+                # Row y is relative to the listbox; add the listbox's own
+                # offset within the scrolled body for the true scroll target.
+                row_y = self._day_listbox.get_allocation().y + alloc.y
+                target = row_y - (self._menu_scroll.get_allocated_height() // 2)
                 adj.set_value(max(0, target))
         return GLib.SOURCE_REMOVE
 
@@ -2746,7 +2798,11 @@ class BibleWindow(Adw.ApplicationWindow):
                 done=len(completed), total=total))
 
     def _on_day_row_activated(self, _listbox, row):
-        if not row._readings:
+        # The Load-more footer reveals the next slice of days in place.
+        if getattr(row, '_is_more', False):
+            self._append_day_rows(_DAY_WINDOW_MORE)
+            return
+        if not getattr(row, '_readings', None):
             return
         groups = reading_plans.group_readings(row._readings)
         if len(groups) <= 1:

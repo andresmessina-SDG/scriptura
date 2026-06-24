@@ -3,6 +3,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Pango
 from a11y import set_accessible_label
+from gtk_utils import clear_children
 import annotations
 import sword_bridge
 from empty_state import compact_empty_state
@@ -36,6 +37,10 @@ _HL_DOT_CLASS = {
 }
 
 _HL_COLORS = ['#ffff00', '#90ee90', '#add8e6', '#ffa500']
+
+# Cap the synchronous list build so a large journal doesn't rebuild every
+# rich row on each filter keystroke; a footer pulls the next slice on demand.
+_RENDER_CAP = 200
 
 
 def N_(message):
@@ -148,11 +153,7 @@ class TagManagerWindow(Adw.Window):
         toolbar_view.set_content(scroll)
 
     def _populate_tags(self):
-        child = self._list_box.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            self._list_box.remove(child)
-            child = nxt
+        clear_children(self._list_box)
 
         counts = annotations.get_tag_counts()
         if not counts:
@@ -254,9 +255,13 @@ class StudyJournalWindow(Adw.Window):
         self._on_navigate = on_navigate
         self._on_annotation_changed = on_annotation_changed
         self._entries = []
+        self._filtered = []
         self._updating = False
         self._current_entry = None
         self._preserve_select = None
+        self._preserve = None
+        self._more_row = None
+        self._shown = 0
         self.set_title(_('Study Journal'))
         self.set_default_size(1080, 720)
 
@@ -590,14 +595,16 @@ class StudyJournalWindow(Adw.Window):
         type_map = {0: 'all', 1: 'notes', 2: 'highlights', 3: 'underlines'}
         tf = type_map.get(self._type_drop.get_selected(), 'all')
 
-        mf = self._dropdown_text(self._mod_drop) or _('All modules')
+        all_modules = _('All modules')
+        all_tags = _('All tags')
+        mf = self._dropdown_text(self._mod_drop) or all_modules
         bf_key = self._selected_book_key()
-        tag_filter = self._dropdown_text(self._tag_drop) or _('All tags')
+        tag_filter = self._dropdown_text(self._tag_drop) or all_tags
         q = self._search_entry.get_text().strip().lower()
 
         result = []
         for e in self._entries:
-            if mf != _('All modules') and e['module'] != mf:
+            if mf != all_modules and e['module'] != mf:
                 continue
             if bf_key is not None and e['book'] != bf_key:
                 continue
@@ -607,7 +614,7 @@ class StudyJournalWindow(Adw.Window):
                 continue
             if tf == 'underlines' and not e['underline']:
                 continue
-            if tag_filter != _('All tags') and tag_filter not in e.get('tags', []):
+            if tag_filter != all_tags and tag_filter not in e.get('tags', []):
                 continue
             if q:
                 disp_book = book_label(e['book'])
@@ -628,23 +635,20 @@ class StudyJournalWindow(Adw.Window):
     def _apply_filter(self):
         if self._updating:
             return
-        filtered = self._filtered_entries()
+        self._filtered = self._filtered_entries()
 
-        # Clear existing rows
-        child = self._list.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            self._list.remove(child)
-            child = nxt
+        # Clear existing rows (also drops any prior footer).
+        clear_children(self._list)
+        self._more_row = None
+        self._shown = 0
 
-        n = len(filtered)
+        n = len(self._filtered)
         self._count_lbl.set_text(ngettext('{n} entry', '{n} entries', n).format(n=n))
 
-        preserve = self._preserve_select
+        self._preserve = self._preserve_select
         self._preserve_select = None
-        target_row = None
 
-        if not filtered:
+        if not self._filtered:
             if not self._entries:
                 title = _('No annotations yet')
                 desc = _('Right-click a verse to highlight it or add a note.')
@@ -666,11 +670,15 @@ class StudyJournalWindow(Adw.Window):
             self._detail_stack.set_visible_child_name('empty')
             return
 
-        for entry in filtered:
-            row = self._make_row(entry)
-            self._list.append(row)
-            if preserve and _entry_key(entry) == preserve:
-                target_row = row
+        # Render the first slice. If a preserved entry (set by save/delete)
+        # still exists further down, keep materialising slices until it
+        # appears so the edited row stays selected after the reload.
+        preserve_present = self._preserve is not None and any(
+            _entry_key(e) == self._preserve for e in self._filtered)
+        target_row = self._append_journal_rows()
+        while (target_row is None and preserve_present
+               and self._shown < len(self._filtered)):
+            target_row = self._append_journal_rows()
 
         if target_row is not None:
             self._list.select_row(target_row)
@@ -679,11 +687,47 @@ class StudyJournalWindow(Adw.Window):
             self._current_entry = target_row._entry
             self._populate_detail(target_row._entry)
             self._detail_stack.set_visible_child_name('editor')
-        elif preserve is not None:
+        elif self._preserve is not None:
             # Entry no longer exists (all annotations cleared); reset detail
             self._current_entry = None
             self._clear_detail_title()
             self._detail_stack.set_visible_child_name('empty')
+
+    def _append_journal_rows(self):
+        """Append the next _RENDER_CAP slice of self._filtered, then a
+        Show-more footer if rows remain. Returns the row matching the
+        preserved entry key if it lands in this slice, else None."""
+        if self._more_row is not None:
+            self._list.remove(self._more_row)
+            self._more_row = None
+
+        target = None
+        chunk = self._filtered[self._shown:self._shown + _RENDER_CAP]
+        for entry in chunk:
+            row = self._make_row(entry)
+            self._list.append(row)
+            if self._preserve and _entry_key(entry) == self._preserve:
+                target = row
+        self._shown += len(chunk)
+
+        if self._shown < len(self._filtered):
+            self._more_row = self._make_more_row()
+            self._list.append(self._more_row)
+        return target
+
+    def _make_more_row(self):
+        remaining = len(self._filtered) - self._shown
+        row = Gtk.ListBoxRow()
+        row.set_selectable(False)
+        btn = Gtk.Button(label=ngettext(
+            'Show {n} more', 'Show {n} more', remaining).format(n=remaining))
+        btn.add_css_class('flat')
+        btn.set_halign(Gtk.Align.CENTER)
+        btn.set_margin_top(4)
+        btn.set_margin_bottom(4)
+        btn.connect('clicked', lambda _b: self._append_journal_rows())
+        row.set_child(btn)
+        return row
 
     # ── Row builder ───────────────────────────────────────────────────────────
 

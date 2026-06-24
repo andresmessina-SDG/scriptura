@@ -26,6 +26,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Pango
 from a11y import set_accessible_label
+from gtk_utils import clear_children
 
 import sword_bridge
 
@@ -288,27 +289,11 @@ class LexiconPanel(Gtk.Box):
         self._def_buf.set_text('')
         # Clear any prior word-study list and header so the user doesn't
         # see stale content from the previous word during the fetch.
-        child = self._ws_list.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            self._ws_list.remove(child)
-            child = nxt
+        self._clear_ws()
         self._ws_header.set_text('')
         self._spinner.set_visible(True)
         self._spinner.start()
-        if not self.get_visible():
-            # Set the vertical paned position BEFORE the panel becomes
-            # visible. The outer paned has been allocated since BiblePane
-            # was constructed (only this end-child was hidden), so its
-            # height is already known and the position-set sticks for
-            # the next allocation. Without this, GtkPaned's first layout
-            # with both children visible uses a roughly 50/50 default
-            # and the lexicon flashes as a huge empty half-pane for a
-            # frame before the idle callback shrinks it to ~200px.
-            if self._on_first_show:
-                self._on_first_show()
-            self.set_visible(True)
-            GLib.idle_add(self.init_inner_position)
+        self._reveal_if_hidden()
 
     def show(self, strong_num, text, morph='', phrase_chain=None, phrase_text=None):
         """Populate the panel for a Strong's number and reveal it.
@@ -395,7 +380,7 @@ class LexiconPanel(Gtk.Box):
             self._def_buf.set_text('')
             try:
                 self._def_buf.insert_markup(self._def_buf.get_start_iter(), markup, -1)
-            except Exception as e:
+            except Exception:
                 plain = re.sub(r'<[^>]+>', '', markup)
                 self._def_buf.set_text(plain)
                 _log.exception('Markup error')
@@ -407,19 +392,24 @@ class LexiconPanel(Gtk.Box):
                 head_end.forward_to_line_end()
             self._def_buf.apply_tag(self._headword_tag, head_start, head_end)
 
-        if not self.get_visible():
-            # Set the vertical paned position BEFORE the panel becomes
-            # visible. The outer paned has been allocated since BiblePane
-            # was constructed (only this end-child was hidden), so its
-            # height is already known and the position-set sticks for
-            # the next allocation. Without this, GtkPaned's first layout
-            # with both children visible uses a roughly 50/50 default
-            # and the lexicon flashes as a huge empty half-pane for a
-            # frame before the idle callback shrinks it to ~200px.
-            if self._on_first_show:
-                self._on_first_show()
-            self.set_visible(True)
-            GLib.idle_add(self.init_inner_position)
+        self._reveal_if_hidden()
+
+    def _reveal_if_hidden(self):
+        """Reveal the panel, first nudging the outer vertical paned to the
+        lexicon's compact height. Setting that position BEFORE the panel
+        becomes visible matters: the outer paned has been allocated since
+        BiblePane was constructed (only this end-child was hidden), so its
+        height is already known and the position-set sticks for the next
+        allocation. Without it, GtkPaned's first layout with both children
+        visible uses a roughly 50/50 default and the lexicon flashes as a
+        huge empty half-pane for a frame before the idle callback shrinks it
+        to ~200px."""
+        if self.get_visible():
+            return
+        if self._on_first_show:
+            self._on_first_show()
+        self.set_visible(True)
+        GLib.idle_add(self.init_inner_position)
 
     def _tag_refs(self):
         """Find and tag cross-reference numbers in the definition body so
@@ -492,11 +482,7 @@ class LexiconPanel(Gtk.Box):
         threading.Thread(target=fetch, daemon=True).start()
 
     def _clear_ws(self):
-        child = self._ws_list.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            self._ws_list.remove(child)
-            child = nxt
+        clear_children(self._ws_list)
 
     def _ws_chapter_done(self, strong_num, book, module, batch, ch, total, running):
         # Discard stale callbacks — the user may have navigated to a

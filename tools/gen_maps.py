@@ -590,6 +590,12 @@ MAPS['paul_journey_3'] = dict(
     coastal={'Corinth', 'Thessalonica', 'Chios', 'Patmos', 'Cnidus'},
     origin='Antioch (Syria)',
     numbered=True,   # ~20 stops — number them so the sequence reads (lesson 23)
+    # Two tight knots: 9 (Neapolis) sat on the Philippi dot just above it, and
+    # 18 (Cos) tucked under its own label — nudge both clear (lesson 25a).
+    number_pos={
+        'Neapolis': (-9, 13, 'end'),    # down-left, off the Philippi dot
+        'Cos':      (8, 5, 'start'),    # right of the dot, below its label
+    },
     # The Greek land corridor (Neapolis down to Corinth) is traversed both
     # ways — drawn as an offset out/return pair. The Neapolis<->Troas sea
     # crossing and the island voyage home are coloured by return_from below.
@@ -798,7 +804,10 @@ MAPS['paul_journey_4'] = dict(
         'Cyprus N':      (33.00, 35.70),   # north coast, offshore
         'Lycia S':       (29.50, 35.80),   # open water S of the Lycian coast
         'Rhodes S':      (27.85, 35.72),   # S of Rhodes (charted clear lane)
-        'Rhodes W':      (27.20, 36.40),   # W of Rhodes & the Tilos islets
+        'Cnidus S':      (27.52, 36.18),   # SSE of Cnidus, NW of Rhodes —
+        #   approach Cnidus from the SE so the arrival and the forced SW
+        #   departure to Salmone form a clean ~45° peak, not the old SW/SW
+        #   hairpin that doubled the two lanes onto each other (user 2026-06-16)
         'Crete E':       (26.45, 35.05),   # off Crete's east coast
         'Crete SE':      (26.05, 34.68),   # S of the SE cape
         'Crete S':       (25.30, 34.72),   # south coast, offshore
@@ -821,32 +830,38 @@ MAPS['paul_journey_4'] = dict(
     coastal={'Phoenix'},
     origin='Caesarea',
     numbered=True,   # the long one-way voyage — number the stops (lesson 23)
+    # The Via Appia trio sit almost on top of each other; the auto-tuck puts
+    # 12 and 13 in the same spot, so split them vertically (lesson 25).
+    number_pos={
+        'Three Taverns':   (7, -5, 'start'),   # 13 above the dot
+        'Forum of Appius': (7, 14, 'start'),   # 12 below the dot
+    },
     retraced=set(),
     legs=[
         ('Caesarea', 'Phoenicia W', 'sea', 0.0, False),
         ('Phoenicia W', 'Sidon', 'sea', 0.04, False),
-        ('Sidon', 'Cyprus E', 'sea', 0.0, False),
+        ('Sidon', 'Cyprus E', 'sea', 0.06, False),      # gentle bow into open sea
         ('Cyprus E', 'Cyprus NE', 'sea', -0.05, False),  # bow E off the Karpas
         ('Cyprus NE', 'Cyprus N', 'sea', 0.04, False),
-        ('Cyprus N', 'Myra', 'sea', 0.05, True),
+        ('Cyprus N', 'Myra', 'sea', 0.06, True),         # arc S into open water
         ('Myra', 'Lycia S', 'sea', 0.0, False),
-        ('Lycia S', 'Rhodes S', 'sea', 0.0, False),
-        ('Rhodes S', 'Rhodes W', 'sea', 0.0, False),
-        ('Rhodes W', 'Cnidus', 'sea', 0.0, False),
+        ('Lycia S', 'Rhodes S', 'sea', 0.06, False),     # bow S off the coast
+        ('Rhodes S', 'Cnidus S', 'sea', 0.0, False),
+        ('Cnidus S', 'Cnidus', 'sea', 0.0, False),
         ('Cnidus', 'Salmone', 'sea', 0.08, True),
         ('Salmone', 'Crete E', 'sea', 0.0, False),
         ('Crete E', 'Crete SE', 'sea', 0.0, False),
         ('Crete SE', 'Crete S', 'sea', 0.0, False),
-        ('Crete S', 'Fair Havens', 'sea', 0.0, False),
+        ('Crete S', 'Fair Havens', 'sea', 0.05, False),  # bow off Crete's shore
         ('Fair Havens', 'Cauda', 'sea', -0.08, True),
-        ('Cauda', 'Malta', 'sea', 0.10, True),
+        ('Cauda', 'Malta', 'sea', 0.12, True),           # the long Adria curve
         ('Malta', 'Sicily SE', 'sea', 0.0, True),        # round Cape Passero
         ('Sicily SE', 'Syracuse E', 'sea', 0.0, False),
         ('Syracuse E', 'Syracuse', 'sea', 0.0, False),   # into the harbour from E
         ('Syracuse', 'Syracuse N', 'sea', 0.0, False),   # back out, NE
         ('Syracuse N', 'Rhegium', 'sea', 0.04, True),    # NE across the Ionian
         ('Rhegium', 'Strait N', 'sea', 0.0, False),      # N through the strait
-        ('Strait N', 'Tyrrhenian S', 'sea', 0.0, False),
+        ('Strait N', 'Tyrrhenian S', 'sea', 0.05, False),  # arc W off Calabria
         ('Tyrrhenian S', 'Tyrrhenian N', 'sea', 0.04, False),
         ('Tyrrhenian N', 'Puteoli', 'sea', 0.0, True),
         ('Puteoli', 'Capua', 'land', 0, False),
@@ -877,7 +892,7 @@ MAPS['paul_journey_4'] = dict(
                 ('The Adria', 18.3, 36.0, 0),
                 ('Tyrrhenian Sea', 12.6, 39.7, 0),
                 ('Aegean Sea', 25.2, 38.4, -70)],
-    region_labels=[('ITALIA', 14.6, 41.95, 0), ('SICILIA', 14.2, 37.5, 0),
+    region_labels=[('ITALIA', 14.5, 41.6, 0), ('SICILIA', 14.2, 37.5, 0),
                    ('CRETE', 24.9, 35.18, 0), ('CYPRUS', 33.2, 35.0, 0),
                    ('LYCIA', 29.7, 36.7, 0), ('ACHAIA', 21.8, 37.9, 0),
                    ('SYRTIS', 19.2, 32.2, 0), ('AFRICA', 15.5, 32.2, 0)],
@@ -901,7 +916,7 @@ MAPS['paul_journey_4'] = dict(
     },
     modern_context_names={'Phoenix': 'Loutro'},
     modern_label_pos={},
-    modern_region_labels=[('ITALY', 14.6, 41.95, 0), ('SICILY', 14.2, 37.5, 0),
+    modern_region_labels=[('ITALY', 14.5, 41.6, 0), ('SICILY', 14.2, 37.5, 0),
                           ('CRETE', 24.9, 35.18, 0), ('CYPRUS', 33.2, 35.0, 0),
                           ('GREECE', 21.8, 37.9, 0),
                           ('TÜRKİYE', 30.2, 37.4, 0),
@@ -1408,6 +1423,7 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
     # (retraced corridors still split out/return by lane, see draw_chain_pair).
     RETURN_FROM = m.get('return_from')
     NUMBERED = m.get('numbered', False)   # number stops in visit order
+    NUMBER_POS = m.get('number_pos', {})  # per-place numeral nudge overrides
     LEGS = m['legs']
     LABEL_POS = m['label_pos']
     SEA_LABELS = m['sea_labels']
@@ -1590,6 +1606,7 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
     # foreground label or another place's dot.
     text_boxes = []
     dot_boxes = []
+    num_boxes = []   # stop-sequence numerals — held to the same no-overlap rule
 
     # Region + sea labels (under the route); rotation follows the land
     for text, lon, lat, rot in (MODERN_REGION_LABELS if modern
@@ -1884,19 +1901,28 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
                            label_aabb(x+dx, y+dy, 17, anchor, display(name),
                                       bold=True)))
         if name in stop_no:
-            # tuck the numeral on the dot side away from the label
-            if anchor == 'end':            # label left  -> number right
-                nx, nanc = x + 7, 'start'
+            # tuck the numeral on the dot side away from the label; a tight
+            # cluster (e.g. Forum Appii / Tres Tabernae) can override the auto
+            # side via number_pos so two numerals never overlap (lesson 25).
+            if name in NUMBER_POS:
+                ndx, ndy, nanc = NUMBER_POS[name]
+                nx, ny = x + ndx, y + ndy
+            elif anchor == 'end':          # label left  -> number right
+                nx, ny, nanc = x + 7, y + 4, 'start'
             else:                          # label right/centre -> number left
-                nx, nanc = x - 7, 'end'
-            svg.append(f'<text x="{nx:.0f}" y="{y+4:.0f}" text-anchor="{nanc}" '
+                nx, ny, nanc = x - 7, y + 4, 'end'
+            num = str(stop_no[name])
+            svg.append(f'<text x="{nx:.0f}" y="{ny:.0f}" text-anchor="{nanc}" '
                        f'fill="{NUMBER}" font-size="11" font-weight="700" '
                        f'paint-order="stroke" stroke="{LABEL_HALO}" '
                        f'stroke-width="2.6" '
-                       f'stroke-linejoin="round">{stop_no[name]}</text>')
+                       f'stroke-linejoin="round">{num}</text>')
+            num_boxes.append((name, f'#{num} ({display(name)})',
+                              label_aabb(nx, ny, 11, nanc, num, bold=True)))
 
-    # ── Label-collision guard ── no label may cover another label or another
-    # place's dot; reposition via label_pos onto free sea/land space.
+    # ── Label-collision guard ── no foreground label OR stop numeral may
+    # cover another label, numeral, or another place's dot; reposition via
+    # label_pos / number_pos onto free sea/land space (lessons 21, 25).
     for i in range(len(text_boxes)):
         ri, di_, bi = text_boxes[i]
         for j in range(i + 1, len(text_boxes)):
@@ -1907,6 +1933,20 @@ def build(data_dir, out_path, mapdef=None, return_variant=True,
         for dn, db in dot_boxes:
             if dn != ri and boxes_overlap(bi, db):
                 print(f'  ! label "{di_}" covers the {dn} dot — reposition')
+    # Numerals: against each other, every foreground label, and foreign dots.
+    for i, (rni, ni, bi) in enumerate(num_boxes):
+        for rnj, nj, bj in num_boxes[i + 1:]:
+            if boxes_overlap(bi, bj):
+                print(f'  ! numeral {ni} overlaps numeral {nj} — '
+                      f'set number_pos to separate them')
+        for rn, dn_, db in text_boxes:
+            if boxes_overlap(bi, db):
+                print(f'  ! numeral {ni} overlaps label "{dn_}" — '
+                      f'set number_pos onto free space')
+        for dn, db in dot_boxes:
+            if dn != rni and boxes_overlap(bi, db):
+                print(f'  ! numeral {ni} covers the {dn} dot — '
+                      f'set number_pos onto free space')
 
     # Scale bar — bottom-left; 100 km at the standard parallel
     lat_mid = math.radians((BBOX[1] + BBOX[3]) / 2)

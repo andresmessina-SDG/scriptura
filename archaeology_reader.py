@@ -169,8 +169,8 @@ class ArchaeologyReader:
         actions.add_action(a_sel)
         self._root.insert_action_group('stonetext', actions)
         model = Gio.Menu()
-        model.append('Copy', 'stonetext.copy')
-        model.append('Select All', 'stonetext.select-all')
+        model.append(_('Copy'), 'stonetext.copy')
+        model.append(_('Select All'), 'stonetext.select-all')
         self._text_menu = Gtk.PopoverMenu.new_from_model(model)
         self._text_menu.set_has_arrow(False)
         self._text_menu.set_parent(self._root)
@@ -353,15 +353,18 @@ class ArchaeologyReader:
         if entry.get('provenance'):
             # How the object is known — excavated in context vs. market-bought —
             # is the field's whole point: it shows why a piece earns its place.
-            txt.append(self._label('Provenance · ' + entry['provenance'],
-                                   'stone-prov', selectable=True))
+            txt.append(self._label(
+                _('Provenance · {text}').format(text=entry['provenance']),
+                'stone-prov', selectable=True))
 
         txt.append(self._label(entry['caption'], 'stone-caption', selectable=True))
 
         if entry.get('details'):
             n = len(entry['details'])
             hint = self._label(
-                f'{n} detail closeup{"s" if n > 1 else ""} — click the image to view',
+                ngettext('{n} detail closeup — click the image to view',
+                         '{n} detail closeups — click the image to view',
+                         n).format(n=n),
                 'stone-views')
             txt.append(hint)
 
@@ -371,7 +374,7 @@ class ArchaeologyReader:
             # min that would clip the whole document.
             chips = Adw.WrapBox(child_spacing=0, line_spacing=6)
             chips.add_css_class('stone-chips')
-            lead = self._label('Attests', 'stone-chips-lead')
+            lead = self._label(_('Attests'), 'stone-chips-lead')
             lead.set_valign(Gtk.Align.CENTER)
             chips.append(lead)
             for ref in entry['refs']:
@@ -381,7 +384,7 @@ class ArchaeologyReader:
         if entry.get('related'):
             # "See also" — jump to a thematically related artifact in the gallery
             # (a wrapping flow, since titles are long). Turns the list into a web.
-            txt.append(self._label('See also', 'stone-chips-lead'))
+            txt.append(self._label(_('See also'), 'stone-chips-lead'))
             flow = Adw.WrapBox(child_spacing=0, line_spacing=6)
             flow.add_css_class('stone-seealso')
             for r in entry['related']:
@@ -592,8 +595,8 @@ class ArchaeologyReader:
             return self._scroll_tries < 25      # retry until the pane lays out
         self._scroller.get_vadjustment().set_value(max(0, rect.get_y() - 8))
         w.add_css_class('stone-flash')
-        GLib.timeout_add(1400, lambda: (w.remove_css_class('stone-flash')
-                                        and False) or False)
+        GLib.timeout_add(1400,
+                         lambda: w.remove_css_class('stone-flash') or False)
         self._scroll_target = None
         return False
 

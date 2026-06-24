@@ -35,6 +35,7 @@ try:
 except (ValueError, ImportError):   # pragma: no cover — runtime fallback
     Rsvg = None
 from a11y import set_accessible_label
+from gtk_utils import clear_children
 
 import imagery_bridge
 
@@ -61,14 +62,20 @@ class _ImageryPicture(Gtk.Picture):
         return (m, n, mb, nb)
 
 
+def N_(message):
+    """No-op gettext marker for strings in module-level data; translated at
+    display time via _()."""
+    return message
+
+
 _TRADITION_LABEL = {
-    'engraving': 'Engravings',
-    'old_master': 'Paintings',
-    'byzantine_icon': 'Icons',
-    'illumination': 'Illuminated manuscripts',
-    'stained_glass': 'Stained glass',
-    'watercolor': 'Watercolours',
-    'cartography': 'Maps',
+    'engraving': N_('Engravings'),
+    'old_master': N_('Paintings'),
+    'byzantine_icon': N_('Icons'),
+    'illumination': N_('Illuminated manuscripts'),
+    'stained_glass': N_('Stained glass'),
+    'watercolor': N_('Watercolours'),
+    'cartography': N_('Maps'),
 }
 
 
@@ -394,9 +401,9 @@ class ImageryReader:
         self._art_box, art_scroll = self._scrolling_list()
         self._where_box, where_scroll = self._scrolling_list()
         self._stack.add_titled_with_icon(
-            art_scroll, 'art', 'Art', 'image-x-generic-symbolic')
+            art_scroll, 'art', _('Art'), 'image-x-generic-symbolic')
         self._stack.add_titled_with_icon(
-            where_scroll, 'where', 'Where', 'find-location-symbolic')
+            where_scroll, 'where', _('Where'), 'find-location-symbolic')
 
     def _scrolling_list(self):
         scroll = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
@@ -429,8 +436,8 @@ class ImageryReader:
         if (book, chapter, verse) == (self._book, self._chapter, self._verse):
             return
         self._book, self._chapter, self._verse = book, chapter, verse
-        self._clear(self._art_box)
-        self._clear(self._where_box)
+        clear_children(self._art_box)
+        clear_children(self._where_box)
 
         if not (book and chapter and verse):
             self._header.set_text(_('Bible Imagery'))
@@ -483,7 +490,9 @@ class ImageryReader:
 
         if others:
             expander = Gtk.Expander(
-                label=f'See this scene in other traditions ({len(others)})')
+                label=ngettext('See this scene in other traditions ({n})',
+                               'See this scene in other traditions ({n})',
+                               len(others)).format(n=len(others)))
             expander.set_margin_top(4)
             inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
             inner.set_margin_top(8)
@@ -500,7 +509,8 @@ class ImageryReader:
             self._art_box.append(expander)
 
     def _tradition_divider(self, tradition):
-        lbl = Gtk.Label(label=_TRADITION_LABEL.get(tradition, tradition.title()),
+        raw = _TRADITION_LABEL.get(tradition)
+        lbl = Gtk.Label(label=_(raw) if raw else tradition.title(),
                         xalign=0)
         lbl.add_css_class('caption')
         lbl.add_css_class('imagery-meta')
@@ -647,7 +657,6 @@ class ImageryReader:
         return pic
 
     def _pointer(self):
-        from gi.repository import Gdk
         return Gdk.Cursor.new_from_name('pointer', None)
 
     def _zoom(self, item):
@@ -655,7 +664,7 @@ class ImageryReader:
             return
         root = self._root.get_root()
         dialog = Adw.Dialog()
-        dialog.set_title(item.get('title') or 'Image')
+        dialog.set_title(item.get('title') or _('Image'))
         dialog.set_content_width(960)
         dialog.set_content_height(720)
         view = Adw.ToolbarView()
@@ -791,13 +800,6 @@ class ImageryReader:
             dialog.present(root)
 
     # ── helpers ───────────────────────────────────────────────────────────────
-
-    def _clear(self, box):
-        child = box.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            box.remove(child)
-            child = nxt
 
     def _status(self, icon, title, detail):
         page = Adw.StatusPage()

@@ -43,6 +43,7 @@ py_sources = files(
   'ebible_bridge.py',
   'empty_state.py',
   'genbook_reader.py',
+  'gtk_utils.py',
   'i18n.py',
   'imagery_bridge.py',
   'imagery_reader.py',

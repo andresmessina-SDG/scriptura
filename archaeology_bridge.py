@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 import os
 import tomllib
-from typing import TypedDict, cast
+from typing import TypedDict
 
 from i18n import _, N_
 

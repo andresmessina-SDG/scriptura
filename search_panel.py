@@ -1,11 +1,10 @@
 import json
-import os
 import threading
 import gi
 gi.require_version('Gtk', '4.0')
-gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, GLib, Pango
+from gi.repository import Gtk, GLib, Pango
 from a11y import set_accessible_label
+from gtk_utils import clear_children
 import sword_bridge
 import ebible_bridge
 import paths
@@ -341,16 +340,17 @@ class SearchPanel(Gtk.Box):
         self._spinner.stop()
         self._spinner.set_visible(False)
 
-        truncated_msg = None
-        if results and results[-1][0] == '':
-            truncated_msg = results[-1][3]
+        truncated = bool(results and results[-1][0] == '')
+        if truncated:
             results = results[:-1]
 
         self._results = results
         self._current_idx = -1
         total = len(results)
-        if truncated_msg:
-            self._count_label.set_text(truncated_msg)
+        if truncated:
+            self._count_label.set_text(
+                _('Showing first {n} results — try a more specific search.')
+                .format(n=sword_bridge.MAX_SEARCH_RESULTS))
         else:
             self._count_label.set_text(ngettext(
                 '{n} verse found', '{n} verses found', total).format(n=total))
@@ -358,7 +358,7 @@ class SearchPanel(Gtk.Box):
         self._rebuild_chart()
         self._chart_scroll.set_visible(bool(self._results))
         self._populate_results(self._results)
-        if not self._results and not truncated_msg:
+        if not self._results and not truncated:
             self._results_list.append(self._make_empty_row(
                 _('No matches'),
                 _('Try a different word or phrase, or pick another module.')))
@@ -463,11 +463,7 @@ class SearchPanel(Gtk.Box):
         return counts
 
     def _clear_chart(self):
-        child = self._chart_box.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            self._chart_box.remove(child)
-            child = nxt
+        clear_children(self._chart_box)
 
     def _rebuild_chart(self):
         self._clear_chart()
@@ -557,11 +553,7 @@ class SearchPanel(Gtk.Box):
 
     def _clear_results(self):
         self._populate_gen += 1  # cancel any in-progress batch
-        child = self._results_list.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            self._results_list.remove(child)
-            child = nxt
+        clear_children(self._results_list)
 
     def _make_result_row(self, book, ch, v, text):
         row = Gtk.ListBoxRow()
