@@ -4,6 +4,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, GLib
 from a11y import set_accessible_label
+from gtk_utils import clear_children
 import sword_bridge
 
 
@@ -91,11 +92,7 @@ class CrossRefPanel(Gtk.Box):
         threading.Thread(target=fetch, daemon=True).start()
 
     def _clear_refs(self):
-        child = self._ref_box.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            self._ref_box.remove(child)
-            child = nxt
+        clear_children(self._ref_box)
 
     def _show_refs(self, refs):
         self._clear_refs()

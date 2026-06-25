@@ -19,12 +19,23 @@ Follows the partnered Bible pane and degrades gracefully — never locks down.
 
 import logging
 import os
+import threading
 
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Gdk, GLib
+
+# librsvg for pixel-crisp SVG zoom (the generated maps); optional — without
+# it SVGs zoom like rasters, scaled from their natural-size decode.
+try:
+    gi.require_version('Rsvg', '2.0')
+    from gi.repository import Rsvg
+    import cairo
+except (ValueError, ImportError):   # pragma: no cover — runtime fallback
+    Rsvg = None
 from a11y import set_accessible_label
+from gtk_utils import clear_children
 
 import imagery_bridge
 
@@ -51,14 +62,20 @@ class _ImageryPicture(Gtk.Picture):
         return (m, n, mb, nb)
 
 
+def N_(message):
+    """No-op gettext marker for strings in module-level data; translated at
+    display time via _()."""
+    return message
+
+
 _TRADITION_LABEL = {
-    'engraving': 'Engravings',
-    'old_master': 'Paintings',
-    'byzantine_icon': 'Icons',
-    'illumination': 'Illuminated manuscripts',
-    'stained_glass': 'Stained glass',
-    'watercolor': 'Watercolours',
-    'cartography': 'Maps',
+    'engraving': N_('Engravings'),
+    'old_master': N_('Paintings'),
+    'byzantine_icon': N_('Icons'),
+    'illumination': N_('Illuminated manuscripts'),
+    'stained_glass': N_('Stained glass'),
+    'watercolor': N_('Watercolours'),
+    'cartography': N_('Maps'),
 }
 
 
@@ -74,6 +91,24 @@ def _meta_line(item):
     return ' · '.join(bits)
 
 
+def _credit_text(item):
+    """Multi-line credit for the clipboard: title, artist · year, and the
+    full attribution — ready to paste under a slide. The artist/year line
+    is skipped when the attribution already names the artist (same
+    redundancy rule as the card)."""
+    lines = []
+    if item.get('title'):
+        lines.append(item['title'])
+    meta = _meta_line(item)
+    artist = item.get('artist')
+    attribution = item.get('attribution')
+    if meta and not (artist and attribution and artist in attribution):
+        lines.append(meta)
+    if attribution:
+        lines.append(attribution)
+    return '\n'.join(lines)
+
+
 class _ZoomViewer(Gtk.ScrolledWindow):
     """Scroll-/button-to-zoom, drag-to-pan image view for the zoom dialog.
 
@@ -86,11 +121,28 @@ class _ZoomViewer(Gtk.ScrolledWindow):
     _MAX = 4.0    # cap display at 400% of the image's natural pixels
     _STEP = 1.4   # multiplicative zoom per scroll notch / button press
 
-    def __init__(self, texture):
+    def __init__(self, texture, vector_path=None):
         super().__init__(hexpand=True, vexpand=True)
         self._tex = texture
         self._nw = texture.get_width() or 1
         self._nh = texture.get_height() or 1
+        # SVG sources stay pixel-crisp at any zoom: the base raster shows
+        # during interaction, and a viewport-sized sharp render (librsvg in
+        # a worker thread, ~200 ms) overlays it when the view settles —
+        # re-rendering the whole sheet at 4x would take seconds.
+        self._svg = None
+        if vector_path is not None and Rsvg is not None:
+            try:
+                self._svg = Rsvg.Handle.new_from_file(vector_path)
+            except GLib.Error:
+                pass
+        self.crisp_layer = Gtk.Picture()    # dialog pins this over the view
+        self.crisp_layer.set_visible(False)
+        self.crisp_layer.set_can_target(False)   # input falls through
+        self._render_id = None
+        self._render_gen = 0
+        for adj in (self.get_hadjustment(), self.get_vadjustment()):
+            adj.connect('value-changed', lambda *_a: self._invalidate_crisp())
         self._scale = None        # None == fitted; otherwise display/natural
         self._pan0 = (0.0, 0.0)
         self._pending = None      # (frac_x, frac_y, vx, vy) anchor after a zoom
@@ -121,6 +173,79 @@ class _ZoomViewer(Gtk.ScrolledWindow):
 
     def set_changed_cb(self, cb):
         self._changed_cb = cb
+
+    def set_texture(self, texture, vector_path=None):
+        """Swap the displayed image in place, keeping the zoom/pan state —
+        the map era pair shares one geometry, so the view must not jump."""
+        self._tex = texture
+        self._nw = texture.get_width() or 1
+        self._nh = texture.get_height() or 1
+        self._pic.set_paintable(texture)
+        self._svg = None
+        if vector_path is not None and Rsvg is not None:
+            try:
+                self._svg = Rsvg.Handle.new_from_file(vector_path)
+            except GLib.Error:
+                pass
+        self._invalidate_crisp()
+
+    # ── crisp vector overlay ─────────────────────────────────────────────────
+    # Any pan or zoom hides the sharp layer (the base raster shows through);
+    # once the view rests for 120 ms the visible window is re-rendered from
+    # the SVG at display resolution off the main thread and overlaid.
+
+    def _invalidate_crisp(self):
+        if self._svg is None:
+            return
+        self.crisp_layer.set_visible(False)
+        if self._render_id is not None:
+            GLib.source_remove(self._render_id)
+            self._render_id = None
+        if self._scale is None or self._eff() <= 1.001:
+            return    # the natural-size decode is already exact
+        self._render_id = GLib.timeout_add(120, self._start_crisp_render)
+
+    def _start_crisp_render(self):
+        self._render_id = None
+        self._render_gen += 1
+        s = min(self._eff(), self._MAX)
+        sf = self.get_scale_factor() or 1
+        vw, vh = self.get_width(), self.get_height()
+        if vw <= 0 or vh <= 0:
+            return GLib.SOURCE_REMOVE
+        dw, dh = self._nw * s, self._nh * s
+        ox = self.get_hadjustment().get_value() - max(0.0, (vw - dw) / 2)
+        oy = self.get_vadjustment().get_value() - max(0.0, (vh - dh) / 2)
+        threading.Thread(
+            target=self._crisp_worker, daemon=True,
+            args=(self._render_gen, self._svg, sf,
+                  int(vw * sf), int(vh * sf),
+                  ox * sf, oy * sf, dw * sf, dh * sf)).start()
+        return GLib.SOURCE_REMOVE
+
+    def _crisp_worker(self, gen, svg, sf, w, h, ox, oy, dw, dh):
+        surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
+        cr = cairo.Context(surf)
+        cr.translate(-ox, -oy)
+        vp = Rsvg.Rectangle()
+        vp.x = vp.y = 0
+        vp.width, vp.height = dw, dh
+        try:
+            svg.render_document(cr, vp)
+        except GLib.Error:
+            return
+        surf.flush()
+        data = GLib.Bytes.new(bytes(surf.get_data()))
+        GLib.idle_add(self._apply_crisp, gen, data, w, h, surf.get_stride())
+
+    def _apply_crisp(self, gen, data, w, h, stride):
+        # a pan/zoom after this render started has already queued a fresh one
+        if gen != self._render_gen or self._scale is None:
+            return GLib.SOURCE_REMOVE
+        self.crisp_layer.set_paintable(Gdk.MemoryTexture.new(
+            w, h, Gdk.MemoryFormat.B8G8R8A8_PREMULTIPLIED, data, stride))
+        self.crisp_layer.set_visible(True)
+        return GLib.SOURCE_REMOVE
 
     def _fit(self):
         vw, vh = self.get_width(), self.get_height()
@@ -160,6 +285,7 @@ class _ZoomViewer(Gtk.ScrolledWindow):
             self.set_cursor(Gdk.Cursor.new_from_name('grab', None))
         if self._pending is not None:
             self.add_tick_callback(self._restore_anchor)
+        self._invalidate_crisp()
         if self._changed_cb is not None:
             self._changed_cb()
 
@@ -275,9 +401,9 @@ class ImageryReader:
         self._art_box, art_scroll = self._scrolling_list()
         self._where_box, where_scroll = self._scrolling_list()
         self._stack.add_titled_with_icon(
-            art_scroll, 'art', 'Art', 'image-x-generic-symbolic')
+            art_scroll, 'art', _('Art'), 'image-x-generic-symbolic')
         self._stack.add_titled_with_icon(
-            where_scroll, 'where', 'Where', 'find-location-symbolic')
+            where_scroll, 'where', _('Where'), 'find-location-symbolic')
 
     def _scrolling_list(self):
         scroll = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
@@ -310,8 +436,8 @@ class ImageryReader:
         if (book, chapter, verse) == (self._book, self._chapter, self._verse):
             return
         self._book, self._chapter, self._verse = book, chapter, verse
-        self._clear(self._art_box)
-        self._clear(self._where_box)
+        clear_children(self._art_box)
+        clear_children(self._where_box)
 
         if not (book and chapter and verse):
             self._header.set_text(_('Bible Imagery'))
@@ -364,7 +490,9 @@ class ImageryReader:
 
         if others:
             expander = Gtk.Expander(
-                label=f'See this scene in other traditions ({len(others)})')
+                label=ngettext('See this scene in other traditions ({n})',
+                               'See this scene in other traditions ({n})',
+                               len(others)).format(n=len(others)))
             expander.set_margin_top(4)
             inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
             inner.set_margin_top(8)
@@ -381,7 +509,8 @@ class ImageryReader:
             self._art_box.append(expander)
 
     def _tradition_divider(self, tradition):
-        lbl = Gtk.Label(label=_TRADITION_LABEL.get(tradition, tradition.title()),
+        raw = _TRADITION_LABEL.get(tradition)
+        lbl = Gtk.Label(label=_(raw) if raw else tradition.title(),
                         xalign=0)
         lbl.add_css_class('caption')
         lbl.add_css_class('imagery-meta')
@@ -528,7 +657,6 @@ class ImageryReader:
         return pic
 
     def _pointer(self):
-        from gi.repository import Gdk
         return Gdk.Cursor.new_from_name('pointer', None)
 
     def _zoom(self, item):
@@ -536,16 +664,67 @@ class ImageryReader:
             return
         root = self._root.get_root()
         dialog = Adw.Dialog()
-        dialog.set_title(item.get('title') or 'Image')
+        dialog.set_title(item.get('title') or _('Image'))
         dialog.set_content_width(960)
         dialog.set_content_height(720)
         view = Adw.ToolbarView()
         header = Adw.HeaderBar()
+        # Toasts confirm the copy actions; local to the dialog since the
+        # reader has no window toast hook (and the dialog overlays the pane).
+        toaster = Adw.ToastOverlay()
+        toaster.set_child(view)
 
         try:
             texture = Gdk.Texture.new_from_filename(item['path'])
         except GLib.Error:
             texture = None
+
+        # Generated maps ship in two eras (same geometry, different labels);
+        # the present-day sibling sits beside the ancient file.
+        modern_path = None
+        if item['path'].endswith('_ancient.svg'):
+            sibling = item['path'][:-len('_ancient.svg')] + '_modern.svg'
+            if os.path.exists(sibling):
+                modern_path = sibling
+
+        # ── Copy actions — for pasting plates into slides/documents. The
+        # image goes to the clipboard as a texture (pastes as PNG); the
+        # credit as title / artist · year / attribution text.
+        def _toast(msg):
+            toaster.add_toast(Adw.Toast.new(msg))
+
+        def _copy_image(_b):
+            # Provide explicit image/png bytes: a bare texture value only
+            # works for same-process pastes (local reads skip
+            # serialization); browsers and other apps negotiate a mime
+            # type, and image/png is what they all accept. The texture
+            # value rides along for GTK-native consumers.
+            png = texture.save_to_png_bytes()
+            provider = Gdk.ContentProvider.new_union([
+                Gdk.ContentProvider.new_for_bytes('image/png', png),
+                Gdk.ContentProvider.new_for_value(texture),
+            ])
+            self._root.get_clipboard().set_content(provider)
+            _toast(_('Image copied'))
+
+        def _copy_credit(_b):
+            self._root.get_clipboard().set(_credit_text(item))
+            _toast(_('Credit copied'))
+
+        if _credit_text(item):
+            credit_btn = Gtk.Button(label=_('Copy credit'))
+            credit_btn.add_css_class('flat')
+            credit_btn.set_tooltip_text(
+                _("Copy the artwork's title, artist, and source"))
+            credit_btn.connect('clicked', _copy_credit)
+            header.pack_end(credit_btn)
+        if texture is not None:
+            copy_btn = Gtk.Button(icon_name='edit-copy-symbolic')
+            copy_btn.set_tooltip_text(_('Copy image'))
+            set_accessible_label(copy_btn, _('Copy image'))
+            copy_btn.connect('clicked', _copy_image)
+            header.pack_end(copy_btn)
+
         if texture is None:
             # Fall back to a plain fitted view if the image won't decode.
             pic = Gtk.Picture.new_for_filename(item['path'])
@@ -553,12 +732,39 @@ class ImageryReader:
             pic.set_can_shrink(True)
             view.add_top_bar(header)
             view.set_content(pic)
-            dialog.set_child(view)
+            dialog.set_child(toaster)
             if root is not None:
                 dialog.present(root)
             return
 
-        viewer = _ZoomViewer(texture)
+        is_svg = item['path'].lower().endswith('.svg')
+        viewer = _ZoomViewer(
+            texture, vector_path=item['path'] if is_svg else None)
+
+        if modern_path is not None:
+            era_textures = {False: texture}
+
+            def _on_era(btn):
+                nonlocal texture
+                modern = btn.get_active()
+                if modern not in era_textures:
+                    try:
+                        era_textures[modern] = \
+                            Gdk.Texture.new_from_filename(modern_path)
+                    except GLib.Error:
+                        btn.set_active(False)
+                        return
+                texture = era_textures[modern]
+                viewer.set_texture(
+                    texture,
+                    vector_path=modern_path if modern else item['path'])
+
+            era_btn = Gtk.ToggleButton(label=_('Today'))
+            era_btn.set_tooltip_text(
+                _('Switch between Bible-time and present-day names'))
+            era_btn.connect('toggled', _on_era)
+            header.pack_end(era_btn)
+
         out_btn = Gtk.Button(icon_name='zoom-out-symbolic')
         out_btn.set_tooltip_text(_('Zoom out'))
         set_accessible_label(out_btn, _('Zoom out'))
@@ -583,19 +789,17 @@ class ImageryReader:
         header.pack_start(in_btn)
         header.pack_start(fit_btn)
         view.add_top_bar(header)
-        view.set_content(viewer)
-        dialog.set_child(view)
+        # The crisp SVG layer renders exactly the visible window, so it pins
+        # to the viewport (an overlay), not to the scrolling content.
+        overlay = Gtk.Overlay()
+        overlay.set_child(viewer)
+        overlay.add_overlay(viewer.crisp_layer)
+        view.set_content(overlay)
+        dialog.set_child(toaster)
         if root is not None:
             dialog.present(root)
 
     # ── helpers ───────────────────────────────────────────────────────────────
-
-    def _clear(self, box):
-        child = box.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            box.remove(child)
-            child = nxt
 
     def _status(self, icon, title, detail):
         page = Adw.StatusPage()

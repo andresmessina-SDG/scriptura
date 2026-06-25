@@ -10,11 +10,11 @@ import io
 import os
 import sqlite3
 import threading
-
-_log = logging.getLogger('scriptura.ebible')
 import zipfile
 
 import paths
+
+_log = logging.getLogger('scriptura.ebible')
 
 # Database and catalog now live under XDG dirs. paths.* migrates the
 # legacy in-tree copies on first call.
@@ -262,7 +262,7 @@ def search_module(module_name, query, case_sensitive=False, **_kwargs):
             result.append(('', 0, 0,
                 'Showing first 5000 results — try a more specific search.'))
         return result
-    except Exception as e:
+    except Exception:
         _log.exception('search failed')
         return []
 
@@ -285,21 +285,25 @@ def download_catalog_sync():
     req = urllib.request.Request(CATALOG_URL, headers={'User-Agent': 'Mozilla/5.0'})
     with urllib.request.urlopen(req, timeout=20) as r:
         data = r.read()
-    with open(_CAT, 'wb') as f:
+    # Write through a tmp + os.replace so a killed download can't leave a
+    # truncated catalog that catalog_entries() would then parse partially.
+    tmp = _CAT + '.tmp'
+    with open(tmp, 'wb') as f:
         f.write(data)
+    os.replace(tmp, _CAT)
 
 def download_translation_sync(tid, entry, on_status=None):
     """Download, parse, and store one translation. Raises on failure."""
     import urllib.request
     if on_status:
-        on_status('Downloading…')
+        on_status('download')
     url = _USFM_URL.format(id=tid)
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     with urllib.request.urlopen(req, timeout=120) as r:
         data = r.read()
 
     if on_status:
-        on_status('Parsing USFM…')
+        on_status('parse')
     verses = {}
     with zipfile.ZipFile(io.BytesIO(data)) as z:
         for name in z.namelist():
@@ -309,7 +313,7 @@ def download_translation_sync(tid, entry, on_status=None):
                 verses.update(_parse_usfm(content))
 
     if on_status:
-        on_status('Saving…')
+        on_status('save')
     title     = (entry.get('shortTitle') or entry.get('translationId') or tid).strip()
     language  = (entry.get('languageName') or '').strip()
     lang_code = (entry.get('languageCode') or '').strip()

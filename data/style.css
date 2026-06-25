@@ -507,9 +507,108 @@ button.menu-theme-toggle {
     background-color: alpha(@accent_bg_color, 0.18);
 }
 
-/* ── Reading plan + miscellaneous chrome ─────────────────────────────── */
+/* ── Reading plan ────────────────────────────────────────────────────── */
 
-row.plan-today { background-color: alpha(@accent_bg_color, 0.18); }
+/* Today hero: a neutral grey kicker over a prominent passage reference.
+   Accent is reserved for actions + progress, so the eyebrow stays quiet. */
+.plan-eyebrow {
+    color: alpha(@window_fg_color, 0.55);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.plan-today-passage {
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+/* Slim progress meter — thin trough + accent fill, fully rounded. */
+progressbar.plan-progress,
+progressbar.plan-progress > trough,
+progressbar.plan-progress > trough > progress {
+    min-height: 6px;
+}
+progressbar.plan-progress > trough {
+    border-radius: 999px;
+    background-color: alpha(@window_fg_color, 0.10);
+}
+progressbar.plan-progress > trough > progress {
+    border-radius: 999px;
+    background-color: @accent_bg_color;
+    margin: 0;
+}
+
+/* Month calendar: each day is a rounded "squircle" tile showing its
+ * day-of-month number, grouped under a slim month header. done = accent fill,
+ * today = accent ring (composes with the fill), a missed scheduled day =
+ * hollow outline, upcoming = faint. The high specificity overrides the
+ * default Adwaita button chrome (gradient/border/min-size). */
+.plan-grid > button.plan-tile {
+    min-width: 38px;
+    min-height: 47px;
+    padding: 0;
+    margin: 0;
+    border-radius: 11px;
+    border: 1px solid transparent;
+    background-image: none;
+    box-shadow: none;
+    font-size: 0.95em;
+    font-weight: 600;
+    color: alpha(@window_fg_color, 0.65);
+    background-color: alpha(@window_fg_color, 0.17);
+    transition: background-color 120ms ease, box-shadow 120ms ease;
+}
+.plan-grid > button.plan-tile.plan-tile-ahead {
+    background-color: alpha(@window_fg_color, 0.17);
+}
+.plan-grid > button.plan-tile.plan-tile-overdue {
+    background-color: transparent;
+    border-color: alpha(@window_fg_color, 0.34);
+    color: alpha(@window_fg_color, 0.75);
+}
+.plan-grid > button.plan-tile.plan-tile-today {
+    box-shadow: 0 0 0 2px @accent_bg_color;
+    color: @window_fg_color;
+}
+.plan-grid > button.plan-tile.plan-tile-done {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+}
+/* Today + done would be accent-ring-on-accent-fill (invisible). Swap to a
+   contrasting inset ring so "today" still reads on a completed tile. */
+.plan-grid > button.plan-tile.plan-tile-today.plan-tile-done {
+    box-shadow: inset 0 0 0 2px @accent_fg_color;
+}
+.plan-grid > button.plan-tile:hover {
+    background-color: alpha(@window_fg_color, 0.30);
+}
+.plan-grid > button.plan-tile.plan-tile-done:hover {
+    background-color: alpha(@accent_bg_color, 0.82);
+}
+/* Digits have no descenders, so the centered line-box leaves the number
+   sitting ~1.5px high. Nudge the label down to optically centre it. */
+.plan-grid > button.plan-tile > label {
+    margin-top: 3px;
+}
+
+/* The Reading Plan title doubles as a collapse toggle. Keep it compact (it
+   hugs its label + chevron) with a small even pad so the hover pill has
+   breathing room without ballooning to full width. */
+button.plan-section-toggle {
+    padding: 4px 6px;
+    min-height: 0;
+}
+
+/* Slim month header spanning the grid; quiet so the tiles lead. */
+.plan-grid > label.plan-month {
+    font-size: 0.78em;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: alpha(@window_fg_color, 0.45);
+    margin-top: 6px;
+    margin-bottom: 1px;
+}
+
+/* ── Miscellaneous chrome ────────────────────────────────────────────── */
 
 /* libadwaita's .card paints only background + border-radius; without
  * explicit padding the inner widgets hug the card's edge. */

@@ -220,9 +220,16 @@ def _load() -> dict[str, Any]:
 def _save(d: dict[str, Any]) -> None:
     global _cache
     _cache = d
+    # Atomic write (tmp + fsync + os.replace) so a crash mid-write can't
+    # truncate the user's plan progress — matching settings/annotations/
+    # bookmarks. See annotations._save for the rationale.
     try:
-        with open(_FILE, 'w', encoding='utf-8') as f:
+        tmp = _FILE + '.tmp'
+        with open(tmp, 'w', encoding='utf-8') as f:
             json.dump(d, f, indent=2, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, _FILE)
     except Exception:
         _log.exception('save failed')
         if _on_save_error is not None:
@@ -261,6 +268,15 @@ def clear_start_date(plan_id: str) -> None:
     _save(d)
 
 
+def reset_progress(plan_id: str) -> None:
+    """Wipe a plan's start date and every completed day — a full reset back
+    to the not-started state, so a later Start begins genuinely fresh."""
+    d = _load()
+    d.setdefault('start_dates', {}).pop(plan_id, None)
+    d.setdefault('completed', {}).pop(plan_id, None)
+    _save(d)
+
+
 def get_completed(plan_id: str) -> set[int]:
     return set(_load().get('completed', {}).get(plan_id, []))
 
@@ -273,6 +289,17 @@ def set_day_done(plan_id: str, day_idx: int, done: bool) -> None:
     elif not done and day_idx in comp:
         comp.remove(day_idx)
     _save(d)
+
+
+def mark_done_through(plan_id: str, last_idx: int) -> set[int]:
+    """Mark days 0..last_idx (inclusive) read, preserving any later days
+    already done. Returns the resulting completed set."""
+    d = _load()
+    comp = set(d.setdefault('completed', {}).get(plan_id, []))
+    comp.update(range(last_idx + 1))
+    d['completed'][plan_id] = sorted(comp)
+    _save(d)
+    return comp
 
 
 def today_index(start_date_str: str) -> int:

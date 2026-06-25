@@ -16,6 +16,7 @@ import threading
 
 from gi.repository import Gtk, GLib, Pango
 from a11y import set_accessible_label
+from gtk_utils import clear_children
 
 import sword_bridge
 import ebible_bridge
@@ -263,11 +264,7 @@ class PaneSearch:
         else:
             self._rev.set_reveal_child(False)
             self._entry.set_text('')
-            child = self._list.get_first_child()
-            while child:
-                nxt = child.get_next_sibling()
-                self._list.remove(child)
-                child = nxt
+            clear_children(self._list)
             self._status.set_text('')
 
     def _on_search(self, *_a):
@@ -275,11 +272,7 @@ class PaneSearch:
         if not query:
             return
         module = self._pane._module
-        child = self._list.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            self._list.remove(child)
-            child = nxt
+        clear_children(self._list)
         self._status.set_text(_('Searching…'))
         self._spinner.set_visible(True)
         self._spinner.start()
@@ -325,15 +318,16 @@ class PaneSearch:
         self._spinner.set_visible(False)
         if module != self._pane._module:
             return GLib.SOURCE_REMOVE
-        truncated_msg = None
-        if results and results[-1][0] == '':
-            truncated_msg = results[-1][3]
+        truncated = bool(results and results[-1][0] == '')
+        if truncated:
             results = results[:-1]
         # Stash for F3 / Shift+F3 step-through.
         self._results = list(results)
         self._idx = -1
-        if truncated_msg:
-            self._status.set_text(truncated_msg)
+        if truncated:
+            self._status.set_text(
+                _('Showing first {n} results — try a more specific search.')
+                .format(n=sword_bridge.MAX_SEARCH_RESULTS))
         else:
             n = len(results)
             self._status.set_text(ngettext(

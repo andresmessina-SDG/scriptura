@@ -7,6 +7,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 gi.require_version('Gsk', '4.0')
 from gi.repository import Gtk, Adw, GLib, Gdk, Gsk, Graphene, Pango
+from gtk_utils import clear_children
 import sword_bridge
 import ebible_bridge
 import catena_bridge
@@ -116,14 +117,14 @@ def _html_to_markup(html, dark, strip=True):
     # Strip lone surrogates that SWORD produces from non-UTF-8 module data
     if any('\ud800' <= c <= '\udfff' for c in html):
         html = ''.join(c for c in html if not ('\ud800' <= c <= '\udfff'))
-    
+
     # 1. Map SWORD/HTML tags to temporary markers to protect them from escaping
     red = '#e07070' if dark else '#bb0000'
-    
+
     # Red letters (Jesus' words)
     html = re.sub(r'<q [^>]*who="Jesus"[^>]*>(.*?)</q>', r'[[RED_S]]\1[[RED_E]]', html)
     html = re.sub(r'<font color="red">(.*?)</font>', r'[[RED_S]]\1[[RED_E]]', html)
-    
+
     # Italics (translator additions)
     html = re.sub(r'<transChange type="added">(.*?)</transChange>', r'[[I_S]]\1[[I_E]]', html)
     html = re.sub(r'<i>(.*?)</i>', r'[[I_S]]\1[[I_E]]', html)
@@ -163,10 +164,10 @@ def _html_to_markup(html, dark, strip=True):
 
     # 2. Strip all other tags (like <w>, <p>, etc.) but keep content
     html = re.sub(r'<[^>]+>', '', html)
-    
+
     # 3. Escape the raw text so characters like '&' and '<' don't break Pango
     html = GLib.markup_escape_text(html)
-    
+
     # 4. Swap markers back for real Pango Markup
     html = html.replace('[[RED_S]]', f'<span foreground="{red}">').replace('[[RED_E]]', '</span>')
     html = html.replace('[[I_S]]', '<i>').replace('[[I_E]]', '</i>')
@@ -181,7 +182,7 @@ def _html_to_markup(html, dark, strip=True):
     html = html.replace('[[SUP_S]]',
                         '<span size="smaller" rise="4000" foreground="#888">')
     html = html.replace('[[SUP_E]]', '</span>')
-    
+
     # Annotation styling (highlight, underline, note) is NOT baked into the
     # Pango markup anymore — it's applied via named tags after the verse
     # text is inserted so that right-click changes can be reflected in-place
@@ -744,7 +745,7 @@ class BiblePane(Gtk.Box):
         self._view.set_top_margin(18)
         self._view.set_bottom_margin(18)
         self._view.set_pixels_below_lines(8)
-        
+
         self._font_size    = settings.get('font_size')
         self._font_family  = settings.get('font_family')
         # Embedded 'related artifact' marker icons in the current chapter, kept
@@ -890,7 +891,7 @@ class BiblePane(Gtk.Box):
         gesture_close_search_view.set_button(1)
         gesture_close_search_view.connect('pressed', self._on_pane_click)
         self._view.add_controller(gesture_close_search_view)
-        
+
         # Gesture to close search panel on click outside for lexicon
         gesture_close_search_lex = Gtk.GestureClick.new()
         gesture_close_search_lex.set_button(1)
@@ -2603,11 +2604,7 @@ class BiblePane(Gtk.Box):
         self._dict_arm_reveal(pop)
 
         def _clear():
-            child = content.get_first_child()
-            while child:
-                nxt = child.get_next_sibling()
-                content.remove(child)
-                child = nxt
+            clear_children(content)
 
         def _status(icon, title, desc):
             # Hand-built (not Adw.StatusPage): StatusPage is vexpand and
@@ -2801,15 +2798,15 @@ class BiblePane(Gtk.Box):
                                      phrase_chain=chain,
                                      phrase_text=text)
 
-    def show_lexicon(self, strong_num, text):
+    def show_lexicon(self, strong_num, text, morph=None, phrase=(None, None)):
         """Called from window.py on Bible-text word click. The window has
-        already fetched the definition text asynchronously; here we just
-        forward it to the panel along with the morph we captured during
-        the click (so the panel can decode and show it in the header)."""
+        already fetched the definition text asynchronously and passes the
+        morph + phrase snapshot taken at click time — threaded through rather
+        than re-read here, so a rapid second click can't swap them under us."""
         self._lex_panel.set_context(self._book, self._module)
-        chain, ptext = getattr(self, '_current_phrase', (None, None))
+        chain, ptext = phrase
         self._lex_panel.show(strong_num, text,
-                             morph=self._current_morph,
+                             morph=morph,
                              phrase_chain=chain,
                              phrase_text=ptext)
 

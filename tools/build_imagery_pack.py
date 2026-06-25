@@ -769,13 +769,88 @@ def ingest_modern(conn, images_dir, width, limit, fetch_images):
     return rows
 
 
+# ── Generated maps (tools/gen_maps.py — own work) ───────────────────────────
+
+def ingest_genmaps(conn, images_dir, width, limit, fetch_images):
+    """Build the in-house SVG journey maps straight into the pack, in both
+    eras (--no-title; the imagery card supplies the header). One imagery row
+    per map points at the ancient file; the viewer finds the present-day
+    sibling by the `_modern.svg` suffix and offers the era toggle."""
+    import gen_maps
+    maps = [{
+        'slug': 'paul_journey_1',
+        'title': "Paul's First Missionary Journey",
+        'passage_label': 'Acts 13–14',
+        'ranges': [{'book': 'Acts', 'chapter': 13, 'verse': 1,
+                    'chapter_end': 14, 'verse_end': 28}],
+    }, {
+        'slug': 'paul_journey_2',
+        'title': "Paul's Second Missionary Journey",
+        'passage_label': 'Acts 15:36–18:22',
+        'ranges': [{'book': 'Acts', 'chapter': 15, 'verse': 36,
+                    'chapter_end': 18, 'verse_end': 22}],
+    }, {
+        'slug': 'paul_journey_3',
+        'title': "Paul's Third Missionary Journey",
+        'passage_label': 'Acts 18:23–21:16',
+        'ranges': [{'book': 'Acts', 'chapter': 18, 'verse': 23,
+                    'chapter_end': 21, 'verse_end': 16}],
+    }, {
+        'slug': 'paul_journey_4',
+        'title': "Paul's Voyage to Rome",
+        'passage_label': 'Acts 27–28',
+        'ranges': [{'book': 'Acts', 'chapter': 27, 'verse': 1,
+                    'chapter_end': 28, 'verse_end': 16}],
+    }]
+    if limit:
+        maps = maps[:limit]
+    data_dir = os.environ.get('SCRIPTURA_MAPDATA', '/tmp/mapdata')
+    if fetch_images and not os.path.exists(
+            os.path.join(data_dir, 'ne_10m_land.geojson')):
+        print(f'  ! map geodata missing in {data_dir} (see gen_maps.py '
+              f'docstring; override with SCRIPTURA_MAPDATA)')
+        return 0
+    rows = 0
+    for m in maps:
+        slug = m['slug']
+        rel = f'images/genmap_{slug}_ancient.svg'
+        size = None
+        if fetch_images:
+            for era in ('ancient', 'modern'):
+                gen_maps.build(
+                    data_dir,
+                    os.path.join(images_dir, f'genmap_{slug}_{era}.svg'),
+                    mapdef=gen_maps.MAPS[slug], no_title=True, era=era)
+            size = os.path.getsize(os.path.join(
+                images_dir, f'genmap_{slug}_ancient.svg'))
+        for rng in m['ranges']:
+            ce = rng.get('chapter_end', rng['chapter'])
+            ve = rng.get('verse_end', rng['verse'])
+            conn.execute(
+                'INSERT INTO imagery (kind, tradition, title, caption, book, '
+                'loc_start, loc_end, passage_label, file_path, file_size, '
+                'source, source_url, license, attribution, artist, year, '
+                'iconclass) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                ('map', 'modern_map', m['title'], None, rng['book'],
+                 encode(rng['chapter'], rng['verse']), encode(ce, ve),
+                 m.get('passage_label'), rel, size, 'generated_maps',
+                 'https://codeberg.org/andresmessina/scriptura',
+                 'PD (own work; data: Natural Earth PD, '
+                 'OpenBible.info CC BY 4.0)',
+                 'Scriptura · map data: Natural Earth (PD), '
+                 'OpenBible.info (CC BY 4.0)', None, None, None))
+            rows += 1
+        print(f'  + genmap {slug}  {m["title"]}')
+    return rows
+
+
 _SOURCES = {'schnorr': ingest_schnorr, 'dore': ingest_dore,
             'tissot': ingest_tissot, 'icons': ingest_icon,
             'glass': ingest_glass, 'oils': ingest_oils,
             'manuscripts': ingest_manuscript, 'curated': ingest_curated,
             'psalter': ingest_psalter,
             'openbible': ingest_openbible, 'hurlbut': ingest_hurlbut,
-            'modern': ingest_modern}
+            'modern': ingest_modern, 'genmaps': ingest_genmaps}
 
 
 def main():

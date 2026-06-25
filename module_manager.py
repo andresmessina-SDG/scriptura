@@ -6,6 +6,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Gio, Gdk, Pango
 from a11y import set_accessible_label
+from gtk_utils import clear_children
 import sword_bridge
 import open_data
 import ebible_bridge
@@ -134,7 +135,9 @@ class ModuleManagerWindow(Adw.Window):
         self._eb_lang_codes = ['']
         self._pulse_source = None
         self._op_busy = False
+        self._closed = False
         self._build_ui()
+        self.connect('close-request', self._on_close_request)
         self._populate()
 
     def _build_ui(self):
@@ -407,13 +410,6 @@ class ModuleManagerWindow(Adw.Window):
 
     # ── CrossWire data ────────────────────────────────────────────────────────
 
-    def _clear_box(self, box):
-        child = box.get_first_child()
-        while child is not None:
-            nxt = child.get_next_sibling()
-            box.remove(child)
-            child = nxt
-
     def _populate(self):
         try:
             self._all_modules = sword_bridge.list_available_modules()
@@ -439,7 +435,7 @@ class ModuleManagerWindow(Adw.Window):
                 or query in mod.get('description', '').lower())
 
     def _rebuild_installed(self):
-        self._clear_box(self._installed_container)
+        clear_children(self._installed_container)
         query = self._cw_search.get_text().strip().lower()
         installed = [m for m in self._all_modules if m['installed']]
         if query:
@@ -526,6 +522,9 @@ class ModuleManagerWindow(Adw.Window):
         return row
 
     def _on_catena_download(self, btn):
+        if self._op_busy:
+            return
+        self._op_busy = True
         btn.set_sensitive(False)
         btn.set_label(_('Downloading…'))
         base = _('Downloading {name}…').format(name=_('Historical Commentaries'))
@@ -551,6 +550,9 @@ class ModuleManagerWindow(Adw.Window):
         self._populate_open_db()
 
     def _finish_catena(self, err):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
+        self._op_busy = False
         if err:
             _log.error('catena download error: %s', err)
             self._set_busy(False, _("Couldn't download {name} — {error}").format(
@@ -586,6 +588,9 @@ class ModuleManagerWindow(Adw.Window):
         return row
 
     def _on_imagery_download(self, btn):
+        if self._op_busy:
+            return
+        self._op_busy = True
         btn.set_sensitive(False)
         btn.set_label(_('Downloading…'))
         base = _('Downloading {name}…').format(name=_('Bible Imagery'))
@@ -611,6 +616,9 @@ class ModuleManagerWindow(Adw.Window):
         self._populate_open_db()
 
     def _finish_imagery(self, err):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
+        self._op_busy = False
         if err:
             _log.error('imagery download error: %s', err)
             self._set_busy(False, _("Couldn't download {name} — {error}").format(
@@ -645,11 +653,7 @@ class ModuleManagerWindow(Adw.Window):
         return row.get_child().get_label() if row else ''
 
     def _fill_filter_list(self, listbox, items, cur_text):
-        child = listbox.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            listbox.remove(child)
-            child = nxt
+        clear_children(listbox)
         sel_row = None
         for text in items:
             lbl = Gtk.Label(label=text, xalign=0)
@@ -739,7 +743,7 @@ class ModuleManagerWindow(Adw.Window):
         A real ActionRow so it inherits the boxed-list styling exactly."""
         row = Adw.ActionRow()
         row.set_title(_('Load more — showing the first {shown} of {total}')
-                      .format(shown=shown, total=f'{total:,}'))
+                      .format(shown=f'{shown:,}', total=f'{total:,}'))
         row.set_activatable(True)
         row.add_prefix(Gtk.Image.new_from_icon_name('view-more-symbolic'))
         row.connect('activated', lambda _r: on_more())
@@ -806,6 +810,8 @@ class ModuleManagerWindow(Adw.Window):
     # ── Shared busy / progress ────────────────────────────────────────────────
 
     def _set_busy(self, busy, status='', show_bar=True):
+        if self._closed:
+            return
         # Per-row installs/removes give their feedback on the row itself (a
         # spinner), so they pass show_bar=False — the global progress bar is
         # reserved for window-level work (refresh, import, database downloads).
@@ -864,6 +870,16 @@ class ModuleManagerWindow(Adw.Window):
         self._progress.pulse()
         return GLib.SOURCE_CONTINUE
 
+    def _on_close_request(self, _win):
+        # Mark closed so the daemon workers' idle callbacks (_finish_*, the
+        # progress ticks) early-return instead of mutating finalized widgets,
+        # and stop the progress pulse so its timeout can't keep firing.
+        self._closed = True
+        if self._pulse_source is not None:
+            GLib.source_remove(self._pulse_source)
+            self._pulse_source = None
+        return False
+
     # ── CrossWire network ops ─────────────────────────────────────────────────
 
     def _on_refresh_clicked(self, _btn):
@@ -883,6 +899,8 @@ class ModuleManagerWindow(Adw.Window):
         threading.Thread(target=work, daemon=True).start()
 
     def _finish_refresh(self, err):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
         self._op_busy = False
         if err:
             self._set_busy(False, _('Refresh failed: {error}').format(error=err))
@@ -922,6 +940,9 @@ class ModuleManagerWindow(Adw.Window):
         return True
 
     def _load_zip_path(self, path):
+        if self._op_busy:
+            return
+        self._op_busy = True
         self._set_busy(True, _('Reading module file…'))
 
         def work():
@@ -939,6 +960,9 @@ class ModuleManagerWindow(Adw.Window):
         threading.Thread(target=work, daemon=True).start()
 
     def _finish_inspect(self, err, mods, data):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
+        self._op_busy = False
         if err:
             self._set_busy(False, _("Couldn't read that file — {error}").format(error=err))
         else:
@@ -1031,7 +1055,7 @@ class ModuleManagerWindow(Adw.Window):
         if mod.get('size'):
             meta.append(f"{mod['size'] / (1 << 20):.1f} MB")
         if mod.get('locked'):
-            meta.append(_('🔒 Locked'))
+            meta.append(_('Locked'))
         if meta:
             sub = Gtk.Label(label=' · '.join(meta), xalign=0, wrap=True)
             sub.add_css_class('dim-label')
@@ -1092,6 +1116,9 @@ class ModuleManagerWindow(Adw.Window):
         }
         if not selected:
             return
+        if self._op_busy:
+            return
+        self._op_busy = True
         dialog.close()
         label = (selected[0] if len(selected) == 1
                  else ngettext('{n} module', '{n} modules',
@@ -1109,6 +1136,9 @@ class ModuleManagerWindow(Adw.Window):
         threading.Thread(target=work, daemon=True).start()
 
     def _finish_import(self, err, label):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
+        self._op_busy = False
         if err:
             _log.error('import error for %s: %s', label, err)
             self._set_busy(False, _("Couldn't import {label} — {error}").format(
@@ -1174,6 +1204,8 @@ class ModuleManagerWindow(Adw.Window):
         threading.Thread(target=work, daemon=True).start()
 
     def _finish_change(self, err, name, action='install'):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
         self._op_busy = False
         if err:
             _log.error('%s error for %s: %s', action, name, err)
@@ -1193,6 +1225,9 @@ class ModuleManagerWindow(Adw.Window):
         src = next((s for s in open_data.get_sources() if s['id'] == source_id), None)
         if src is None:
             return
+        if self._op_busy:
+            return
+        self._op_busy = True
         btn.set_sensitive(False)
         btn.set_label(_('Downloading…'))
         base_msg = _('Downloading {name}…').format(name=src['label'])
@@ -1217,6 +1252,9 @@ class ModuleManagerWindow(Adw.Window):
         self._populate_open_db()
 
     def _finish_db_change(self, err, label):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
+        self._op_busy = False
         if err:
             self._set_busy(False, _("Couldn't download {name} — {error}").format(
                 name=label, error=err))
@@ -1363,6 +1401,9 @@ class ModuleManagerWindow(Adw.Window):
     # ── eBible network ops ────────────────────────────────────────────────────
 
     def _on_eb_refresh(self, _btn):
+        if self._op_busy:
+            return
+        self._op_busy = True
         self._eb_refresh_btn.set_sensitive(False)
         self._progress.set_text(_('Downloading eBible catalog…'))
         self._progress.set_visible(True)
@@ -1380,6 +1421,9 @@ class ModuleManagerWindow(Adw.Window):
         threading.Thread(target=work, daemon=True).start()
 
     def _finish_eb_refresh(self, err):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
+        self._op_busy = False
         self._eb_refresh_btn.set_sensitive(True)
         self._progress.set_visible(False)
         if self._pulse_source is not None:
@@ -1395,6 +1439,9 @@ class ModuleManagerWindow(Adw.Window):
         return GLib.SOURCE_REMOVE
 
     def _on_eb_download(self, btn, tid, entry):
+        if self._op_busy:
+            return
+        self._op_busy = True
         btn.set_sensitive(False)
         btn.set_label(_('Downloading…'))
         title = (entry.get('shortTitle') or tid).strip()
@@ -1403,8 +1450,8 @@ class ModuleManagerWindow(Adw.Window):
         if self._pulse_source is None:
             self._pulse_source = GLib.timeout_add(80, self._pulse)
 
-        def on_status(msg):
-            GLib.idle_add(self._progress.set_text, msg)
+        def on_status(code):
+            GLib.idle_add(self._eb_set_status, code)
 
         def work():
             err = None
@@ -1417,6 +1464,9 @@ class ModuleManagerWindow(Adw.Window):
         threading.Thread(target=work, daemon=True).start()
 
     def _finish_eb_download(self, err, tid, title, btn):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
+        self._op_busy = False
         self._progress.set_visible(False)
         if self._pulse_source is not None:
             GLib.source_remove(self._pulse_source)
@@ -1431,6 +1481,21 @@ class ModuleManagerWindow(Adw.Window):
             if self._on_modules_changed:
                 self._on_modules_changed()
             self._eb_apply_filter()
+        return GLib.SOURCE_REMOVE
+
+    # eBible download phase codes → translated status text. The text lives
+    # here, not in the (English-free) ebible_bridge backend — same i18n
+    # boundary as the search-truncation message.
+    _EB_STATUS = {
+        'download': N_('Downloading…'),
+        'parse': N_('Parsing USFM…'),
+        'save': N_('Saving…'),
+    }
+
+    def _eb_set_status(self, code):
+        if self._closed:
+            return GLib.SOURCE_REMOVE
+        self._progress.set_text(_(self._EB_STATUS.get(code, code)))
         return GLib.SOURCE_REMOVE
 
     def _do_eb_remove(self, tid):

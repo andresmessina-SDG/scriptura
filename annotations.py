@@ -98,13 +98,13 @@ def save_highlight(module: str, book: str, chapter: int, verse: int, color: str 
     data = _load()
     key = f"{module}/{book}/{chapter}"
     if key not in data: data[key] = {}
-    
+
     # Migrate old string data to dict if necessary
     vkey = str(verse)
     if vkey not in data[key] or not isinstance(data[key][vkey], dict):
         old_val = data[key].get(vkey)
         data[key][vkey] = {'highlight': old_val if isinstance(old_val, str) else None}
-    
+
     data[key][vkey]['highlight'] = color
     _save(data)
 
@@ -112,12 +112,12 @@ def save_underline(module: str, book: str, chapter: int, verse: int, enabled: bo
     data = _load()
     key = f"{module}/{book}/{chapter}"
     if key not in data: data[key] = {}
-    
+
     vkey = str(verse)
     if vkey not in data[key] or not isinstance(data[key][vkey], dict):
         old_val = data[key].get(vkey)
         data[key][vkey] = {'highlight': old_val if isinstance(old_val, str) else None}
-    
+
     data[key][vkey]['underline'] = enabled
     _save(data)
 

@@ -98,7 +98,6 @@ class WelcomeWindow(Adw.ApplicationWindow):
     def __init__(self, on_ready, **kwargs):
         super().__init__(**kwargs)
         self._on_ready = on_ready
-        self._last_items = None
         self.set_title(_('Welcome to Scriptura'))
         self.set_default_size(900, 600)
 
@@ -228,7 +227,6 @@ class WelcomeWindow(Adw.ApplicationWindow):
         return card
 
     def _on_card_clicked(self, _btn, bundle):
-        self._last_items = bundle['items']
         self._back_btn.set_visible(False)
         self._spinner.set_visible(True)
         self._spinner.start()

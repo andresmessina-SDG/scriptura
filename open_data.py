@@ -2,7 +2,6 @@ import csv
 import io
 import os
 import pickle
-import shutil
 import threading
 import zipfile
 
@@ -270,6 +269,7 @@ def has_topics():
 # ── Dodson Greek Lexicon ──────────────────────────────────────────────────────
 
 _dodson = None
+_dodson_lock = threading.Lock()
 
 
 def _norm_strongs(s):
@@ -283,22 +283,25 @@ def _load_dodson():
     global _dodson
     if _dodson is not None:
         return
-    path = os.path.join(_DIR, 'dodson.csv')
-    if not os.path.exists(path):
-        _dodson = {}
-        return
-    data = {}
-    with open(path, encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            strongs = (row.get("Strong's") or row.get('strongs') or
-                       row.get('Strongs') or '').strip()
-            defn = (row.get('English Definition (longer)') or
-                    row.get('English Definition (brief)') or
-                    row.get('kjv_def') or row.get('definition') or '').strip()
-            if strongs and defn:
-                data[_norm_strongs(strongs)] = defn
-    _dodson = data
+    with _dodson_lock:
+        if _dodson is not None:
+            return
+        path = os.path.join(_DIR, 'dodson.csv')
+        if not os.path.exists(path):
+            _dodson = {}
+            return
+        data = {}
+        with open(path, encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                strongs = (row.get("Strong's") or row.get('strongs') or
+                           row.get('Strongs') or '').strip()
+                defn = (row.get('English Definition (longer)') or
+                        row.get('English Definition (brief)') or
+                        row.get('kjv_def') or row.get('definition') or '').strip()
+                if strongs and defn:
+                    data[_norm_strongs(strongs)] = defn
+        _dodson = data
 
 
 def lookup_dodson(strong_num):
@@ -402,26 +405,36 @@ def download_source(source_id, on_progress=None):
                 except Exception:
                     pass
 
-    if src['is_zip']:
-        # ZIPs need to be fully buffered before extraction.
-        buf = io.BytesIO()
-        with urllib.request.urlopen(src['url'], timeout=60) as resp:
-            _stream(resp, buf)
-        buf.seek(0)
-        with zipfile.ZipFile(buf) as zf:
-            names = zf.namelist()
-            target = next(
-                (n for n in names if os.path.basename(n).lower() == src['dest'].lower()),
-                names[0]
-            )
-            with zf.open(target) as zf_in, open(dest, 'wb') as f_out:
-                f_out.write(zf_in.read())
-    else:
-        # urlretrieve has no timeout — a hung server would freeze the app forever.
-        # Use urlopen(timeout=) explicitly.
-        with urllib.request.urlopen(src['url'], timeout=60) as resp, \
-             open(dest, 'wb') as f_out:
-            _stream(resp, f_out)
+    # Write through a sibling .tmp, then os.replace — a killed download leaves
+    # the original (or nothing) instead of a truncated file that has_*() would
+    # still report as installed.
+    tmp = dest + '.tmp'
+    try:
+        if src['is_zip']:
+            # ZIPs need to be fully buffered before extraction.
+            buf = io.BytesIO()
+            with urllib.request.urlopen(src['url'], timeout=60) as resp:
+                _stream(resp, buf)
+            buf.seek(0)
+            with zipfile.ZipFile(buf) as zf:
+                names = zf.namelist()
+                target = next(
+                    (n for n in names if os.path.basename(n).lower() == src['dest'].lower()),
+                    names[0]
+                )
+                with zf.open(target) as zf_in, open(tmp, 'wb') as f_out:
+                    f_out.write(zf_in.read())
+        else:
+            # urlretrieve has no timeout — a hung server would freeze the app
+            # forever. Use urlopen(timeout=) explicitly.
+            with urllib.request.urlopen(src['url'], timeout=60) as resp, \
+                 open(tmp, 'wb') as f_out:
+                _stream(resp, f_out)
+        os.replace(tmp, dest)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        raise
 
     invalidate(source_id)
 

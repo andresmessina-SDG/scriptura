@@ -6,7 +6,8 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 gi.require_version('PangoCairo', '1.0')
 import datetime
-from gi.repository import Gtk, Adw, GLib, Gdk, Gio, Pango, PangoCairo
+from gi.repository import Gtk, Adw, GLib, Gdk, Gio, PangoCairo
+from gtk_utils import clear_children
 import sword_bridge
 import settings
 import module_positions
@@ -50,7 +51,6 @@ BOOKS = [
     N_('Jude'), N_('Revelation'),
 ]
 
-
 class BibleWindow(Adw.ApplicationWindow):
     _NAV_MAX = 100
 
@@ -82,7 +82,6 @@ class BibleWindow(Adw.ApplicationWindow):
         else:
             self._current_loc = ('Genesis', 1)
         self._updating_plan = False
-        self._today_row = None
         self._modules_win = None
         self._journal_win = None
         # Adaptive layout state, driven by Adw.Breakpoints (see _build_ui).
@@ -1088,11 +1087,7 @@ class BibleWindow(Adw.ApplicationWindow):
 
         def show_verses(ch):
             # Rebuild verse grid for state.book / ch
-            child = verse_flow.get_first_child()
-            while child:
-                nxt = child.get_next_sibling()
-                verse_flow.remove(child)
-                child = nxt
+            clear_children(verse_flow)
             try:
                 v_count = sword_bridge.verse_count(state['book'], ch)
             except Exception:
@@ -1111,11 +1106,7 @@ class BibleWindow(Adw.ApplicationWindow):
             stack.set_visible_child_name('verses')
 
         def rebuild_chapters():
-            child = chap_flow.get_first_child()
-            while child:
-                nxt = child.get_next_sibling()
-                chap_flow.remove(child)
-                child = nxt
+            clear_children(chap_flow)
             try:
                 count = sword_bridge.chapter_count(state['book'])
             except Exception:
@@ -1255,7 +1246,11 @@ class BibleWindow(Adw.ApplicationWindow):
         self.pane1.set_appearance(font_size=new_size)
         self.pane2.set_appearance(font_size=new_size)
         if hasattr(self, '_size_scale'):
+            # Sync the slider without re-firing _on_appear_size, which would
+            # redundantly re-apply and re-save the same value.
+            self._size_scale.handler_block(self._size_scale_handler)
             self._size_scale.set_value(new_size)
+            self._size_scale.handler_unblock(self._size_scale_handler)
             self._size_val_lbl.set_text(f'{new_size:.0f}pt')
 
     def _toggle_appear_card(self, _w):
@@ -1277,12 +1272,18 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _apply_mode_color(self):
         color = settings.get(self._current_mode_key())
-        self._color_check.set_active(bool(color))
-        self._color_btn.set_sensitive(bool(color))
         if color:
             rgba = Gdk.RGBA()
             if rgba.parse(color):
                 self._color_btn.set_rgba(rgba)
+        self._color_btn.set_sensitive(bool(color))
+        # Block the toggled handler: this is a programmatic sync to the
+        # newly-active scheme's saved color, not a user edit. Letting it fire
+        # would run _on_color_changed against the button's stale RGBA and write
+        # that over the scheme's just-loaded saved color.
+        self._color_check.handler_block(self._color_check_handler)
+        self._color_check.set_active(bool(color))
+        self._color_check.handler_unblock(self._color_check_handler)
         self.pane1.set_appearance(text_color=color)
         self.pane2.set_appearance(text_color=color)
 
@@ -1879,7 +1880,7 @@ class BibleWindow(Adw.ApplicationWindow):
             # and the final session state would be lost.
             settings.flush()
             module_positions.flush()
-        except Exception as e:
+        except Exception:
             _log.exception('close-save failed')
         return False
 
@@ -2059,11 +2060,11 @@ class BibleWindow(Adw.ApplicationWindow):
             copyright='© 2026 Andres Messina',
         )
         dlg.add_credit_section(_('Data'), [
-            'SWORD Project (CrossWire Bible Society) — modules and data layer',
-            'OpenBible.info — cross-references and topical tags (CC-BY)',
-            'Dodson Greek Lexicon — public-domain NT Greek definitions',
-            'eBible.org — modern translation catalog and texts',
-            'HistoricalChristianFaith Commentaries Database — historical commentary pack',
+            _('SWORD Project (CrossWire Bible Society) — modules and data layer'),
+            _('OpenBible.info — cross-references and topical tags (CC-BY)'),
+            _('Dodson Greek Lexicon — public-domain NT Greek definitions'),
+            _('eBible.org — modern translation catalog and texts'),
+            _('HistoricalChristianFaith Commentaries Database — historical commentary pack'),
         ])
         dlg.add_acknowledgement_section(_('Built with'), [
             'GTK4 + libadwaita',
@@ -2216,7 +2217,12 @@ class BibleWindow(Adw.ApplicationWindow):
         book    = source_pane._book
         chapter = source_pane._chapter
         verse   = source_pane._selected_verse
-        has_morph = bool(source_pane._current_morph)
+        # Snapshot the click's display context on the main thread and thread it
+        # through to the async display. Reading the pane's live _current_morph /
+        # _current_phrase at display time races a rapid second click — an older
+        # worker would show the newer word's text with the wrong morphology.
+        click_morph = source_pane._current_morph
+        phrase = getattr(source_pane, '_current_phrase', (None, None))
 
         # Reveal the lexicon panel with a spinner immediately so the
         # user gets feedback that their click registered. Real content
@@ -2225,21 +2231,23 @@ class BibleWindow(Adw.ApplicationWindow):
 
         def fetch():
             text = sword_bridge.lookup_strong(strong_num)
-            if not has_morph and verse:
+            morph = click_morph
+            if not morph and verse:
                 if strong_num.startswith('G'):
                     morph = sword_bridge.lookup_morph_for_strong(book, chapter, verse, strong_num)
                 else:
                     morph = sword_bridge.lookup_morph_for_strong_heb(book, chapter, verse, strong_num)
-                source_pane._current_morph = morph
-            GLib.idle_add(self._show_lexicon, source_pane, strong_num, text)
+            GLib.idle_add(self._show_lexicon, source_pane, strong_num, text, morph, phrase)
         threading.Thread(target=fetch, daemon=True).start()
 
-    def _show_lexicon(self, source_pane, strong_num, text):
+    def _show_lexicon(self, source_pane, strong_num, text, morph, phrase):
         if text:
-            source_pane.show_lexicon(strong_num, text)
+            source_pane.show_lexicon(strong_num, text, morph, phrase)
         else:
-            source_pane.show_lexicon(strong_num,
-                _("Install StrongsGreek or StrongsHebrew from the Module Manager."))
+            source_pane.show_lexicon(
+                strong_num,
+                _("Install StrongsGreek or StrongsHebrew from the Module Manager."),
+                morph, phrase)
         return GLib.SOURCE_REMOVE
 
     # ── App menu panel ────────────────────────────────────────────────────────
@@ -2294,14 +2302,20 @@ class BibleWindow(Adw.ApplicationWindow):
         hbox.append(close_btn)
         panel.append(hbox)
 
-        # Body — direct vertical Box so the day list at the bottom can
-        # vexpand to fill remaining height. A wrapping ScrolledWindow
-        # would give _body its natural height only, which would defeat
-        # the vexpand. The day list is its own ScrolledWindow so long
-        # plans (e.g. Bible-in-a-Year, 365 rows) still scroll inside.
-        _body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL,
-                        spacing=0, vexpand=True)
-        panel.append(_body)
+        # Body — a vertical Box inside a ScrolledWindow so the panel can
+        # scroll when its content (the expanded appearance card, or a long
+        # reading plan) exceeds the available height. The footer below is a
+        # sibling of the scroller, so it stays pinned to the panel's foot
+        # instead of being pushed off-screen when the body overflows.
+        self._menu_scroll = Gtk.ScrolledWindow(vexpand=True)
+        self._menu_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        # Reserve a gutter for the scrollbar instead of overlaying it on the
+        # content, so it can't steal clicks from edge controls like the plan
+        # ⋯ menu button.
+        self._menu_scroll.set_overlay_scrolling(False)
+        _body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        self._menu_scroll.set_child(_body)
+        panel.append(self._menu_scroll)
 
         # ── Navigation group (Study Journal / Modules) as coherent list rows
         # (icon + label + chevron), matching the app's Adw idiom rather than
@@ -2393,11 +2407,13 @@ class BibleWindow(Adw.ApplicationWindow):
             Gtk.Orientation.HORIZONTAL, 8, 26, 0.5)
         self._size_scale.set_hexpand(True)
         self._size_scale.set_draw_value(False)
+        set_accessible_label(self._size_scale, _('Font size'))
         self._size_scale.set_value(settings.get('font_size'))
         self._size_val_lbl = Gtk.Label(
             label=f'{settings.get("font_size"):.0f}pt')
         self._size_val_lbl.set_size_request(36, -1)
-        self._size_scale.connect('value-changed', self._on_appear_size)
+        self._size_scale_handler = self._size_scale.connect(
+            'value-changed', self._on_appear_size)
         size_row.append(self._size_scale)
         size_row.append(self._size_val_lbl)
         card.append(size_row)
@@ -2408,6 +2424,7 @@ class BibleWindow(Adw.ApplicationWindow):
             Gtk.Orientation.HORIZONTAL, 1.0, 2.5, 0.1)
         self._spacing_scale.set_hexpand(True)
         self._spacing_scale.set_draw_value(False)
+        set_accessible_label(self._spacing_scale, _('Line spacing'))
         self._spacing_scale.set_value(settings.get('line_spacing'))
         self._spacing_val_lbl = Gtk.Label(
             label=f'{settings.get("line_spacing"):.1f}×')
@@ -2423,6 +2440,7 @@ class BibleWindow(Adw.ApplicationWindow):
             Gtk.Orientation.HORIZONTAL, 540, 1600, 20)
         self._width_scale.set_hexpand(True)
         self._width_scale.set_draw_value(False)
+        set_accessible_label(self._width_scale, _('Reading column width'))
         _cur_w = int(settings.get('reading_width') or 720)
         self._width_scale.set_value(_cur_w)
         self._width_val_lbl = Gtk.Label(label=f'{_cur_w}px')
@@ -2452,7 +2470,8 @@ class BibleWindow(Adw.ApplicationWindow):
         self._color_check.set_hexpand(True)
         saved_color = settings.get(f'text_color_{settings.get("color_scheme") or "default"}')
         self._color_check.set_active(bool(saved_color))
-        self._color_check.connect('toggled', self._on_color_check)
+        self._color_check_handler = self._color_check.connect(
+            'toggled', self._on_color_check)
 
         import warnings
         with warnings.catch_warnings():
@@ -2473,75 +2492,151 @@ class BibleWindow(Adw.ApplicationWindow):
         self._appear_revealer.set_child(card)
         _body.append(self._appear_revealer)
 
-        # reading plan section label — grouped by whitespace, not a rule.
+        # ── Reading Plan ──────────────────────────────────────────────────────
+        # Header: title + a quiet ⋯ menu. Reset lives in that menu rather than
+        # as a loud red button, keeping the destructive action off the calm
+        # surface.
+        plan_hdr_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        plan_hdr_box.set_margin_start(8)
+        plan_hdr_box.set_margin_end(8)
+        plan_hdr_box.set_margin_top(18)
+        plan_hdr_box.set_margin_bottom(2)
+        # The title row doubles as a collapse toggle: click it to fold the
+        # whole section down to just this header (state persists).
+        self._plan_collapsed = bool(settings.get('plan_collapsed'))
+        self._plan_collapse_btn = Gtk.Button()
+        self._plan_collapse_btn.add_css_class('flat')
+        self._plan_collapse_btn.add_css_class('plan-section-toggle')
+        self._plan_collapse_btn.set_halign(Gtk.Align.START)
+        self._plan_collapse_btn.set_tooltip_text(_('Show or hide the reading plan'))
+        _hdr_inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         plan_hdr = Gtk.Label(label=_('Reading Plan'), xalign=0)
         plan_hdr.add_css_class('heading')
-        plan_hdr.set_margin_start(14)
-        plan_hdr.set_margin_top(18)
-        plan_hdr.set_margin_bottom(4)
-        _body.append(plan_hdr)
+        _hdr_inner.append(plan_hdr)
+        self._plan_chevron = Gtk.Image.new_from_icon_name('pan-down-symbolic')
+        self._plan_chevron.add_css_class('dim-label')
+        _hdr_inner.append(self._plan_chevron)
+        self._plan_collapse_btn.set_child(_hdr_inner)
+        self._plan_collapse_btn.connect('clicked', self._on_plan_toggle_collapse)
+        plan_hdr_box.append(self._plan_collapse_btn)
+        self._plan_menu_btn = Gtk.MenuButton(icon_name='view-more-symbolic')
+        self._plan_menu_btn.add_css_class('flat')
+        self._plan_menu_btn.add_css_class('menu-utility-action')
+        self._plan_menu_btn.set_valign(Gtk.Align.CENTER)
+        self._plan_menu_btn.set_hexpand(True)        # float the ⋯ to the right
+        self._plan_menu_btn.set_halign(Gtk.Align.END)
+        self._plan_menu_btn.set_tooltip_text(_('Reading plan options'))
+        set_accessible_label(self._plan_menu_btn, _('Reading plan options'))
+        self._plan_menu_pop = Gtk.Popover()
+        _reset_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        _reset_box.set_margin_start(4)
+        _reset_box.set_margin_end(4)
+        _reset_box.set_margin_top(4)
+        _reset_box.set_margin_bottom(4)
+        self._plan_catchup_btn = Gtk.Button(label=_('Catch up to today'))
+        self._plan_catchup_btn.add_css_class('flat')
+        self._plan_catchup_btn.get_child().set_xalign(0)
+        self._plan_catchup_btn.connect('clicked', self._on_plan_catch_up)
+        _reset_box.append(self._plan_catchup_btn)
+        _reset_box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+        self._plan_reset_btn = Gtk.Button(label=_('Reset progress'))
+        self._plan_reset_btn.add_css_class('flat')
+        self._plan_reset_btn.get_child().set_xalign(0)
+        self._plan_reset_btn.connect('clicked', self._on_plan_reset)
+        _reset_box.append(self._plan_reset_btn)
+        self._plan_menu_pop.set_child(_reset_box)
+        self._plan_menu_btn.set_popover(self._plan_menu_pop)
+        plan_hdr_box.append(self._plan_menu_btn)
+        _body.append(plan_hdr_box)
 
-        # plan selector
+        # Quiet plan switcher.
         plans = reading_plans.get_plans()
         plan_names = [_(p['name']) for p in plans]
         self._plan_ids = [p['id'] for p in plans]
         self._plan_drop = Gtk.DropDown(model=Gtk.StringList.new(plan_names))
         self._plan_drop.set_margin_start(12)
         self._plan_drop.set_margin_end(12)
-        self._plan_drop.set_margin_top(10)
-        self._plan_drop.set_margin_bottom(6)
+        self._plan_drop.set_margin_top(6)
+        self._plan_drop.set_margin_bottom(8)
         self._plan_drop_handler = self._plan_drop.connect(
             'notify::selected', self._on_plan_dropdown_changed)
         _body.append(self._plan_drop)
 
-        # plan description label
+        # Not-started state: a one-line description + a single Start button.
         self._plan_desc_lbl = Gtk.Label(wrap=True, xalign=0)
         self._plan_desc_lbl.set_margin_start(12)
         self._plan_desc_lbl.set_margin_end(12)
-        self._plan_desc_lbl.set_margin_bottom(8)
+        self._plan_desc_lbl.set_margin_bottom(10)
         self._plan_desc_lbl.add_css_class('dim-label')
         self._plan_desc_lbl.add_css_class('caption')
         _body.append(self._plan_desc_lbl)
 
-        # controls row (start / progress + reset)
-        self._plan_ctrl_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        self._plan_ctrl_box.set_margin_start(12)
-        self._plan_ctrl_box.set_margin_end(12)
-        self._plan_ctrl_box.set_margin_bottom(8)
         self._plan_start_btn = Gtk.Button(label=_('Start today'))
         self._plan_start_btn.add_css_class('suggested-action')
+        self._plan_start_btn.set_halign(Gtk.Align.START)
+        self._plan_start_btn.set_margin_start(12)
+        self._plan_start_btn.set_margin_end(12)
+        self._plan_start_btn.set_margin_bottom(8)
         self._plan_start_btn.connect('clicked', self._on_plan_start)
-        self._plan_progress_lbl = Gtk.Label(hexpand=True, xalign=0)
-        self._plan_reset_btn = Gtk.Button(label=_('Reset'))
-        self._plan_reset_btn.add_css_class('destructive-action')
-        self._plan_reset_btn.connect('clicked', self._on_plan_reset)
-        self._plan_ctrl_box.append(self._plan_start_btn)
-        self._plan_ctrl_box.append(self._plan_progress_lbl)
-        self._plan_ctrl_box.append(self._plan_reset_btn)
-        _body.append(self._plan_ctrl_box)
+        _body.append(self._plan_start_btn)
 
-        # Separator + day list are only shown when a plan is active. Both
-        # are stored as instance attrs so _refresh_plan_ui can toggle
-        # them together — otherwise an empty boxed-list shows a stray
-        # card-shaped background under "Start today".
-        self._plan_sep = Gtk.Separator()
-        _body.append(self._plan_sep)
+        # Active-plan view: a "Today" hero, a slim progress meter, and a
+        # tappable month dot-grid (done = accent fill, today = ring,
+        # missed = hollow). Built/refreshed by _refresh_plan_ui.
+        self._plan_active_box = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        self._plan_active_box.set_margin_start(14)
+        self._plan_active_box.set_margin_end(14)
 
-        # Day list fills the remaining vertical space when shown so the
-        # menu panel doesn't end abruptly. vexpand here only takes effect
-        # when the day list is visible (plan active).
-        self._plan_scroll = Gtk.ScrolledWindow(vexpand=True)
-        self._plan_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        self._plan_scroll.set_min_content_height(200)
-        self._day_listbox = Gtk.ListBox()
-        self._day_listbox.set_selection_mode(Gtk.SelectionMode.NONE)
-        self._day_listbox.add_css_class('boxed-list')
-        self._day_listbox.connect('row-activated', self._on_day_row_activated)
-        self._plan_scroll.set_child(self._day_listbox)
-        _body.append(self._plan_scroll)
+        self._plan_today_eyebrow = Gtk.Label(xalign=0)
+        self._plan_today_eyebrow.add_css_class('caption')
+        self._plan_today_eyebrow.add_css_class('plan-eyebrow')
+        self._plan_active_box.append(self._plan_today_eyebrow)
 
-        # ── Footer: global utilities pinned to the bottom. _body above is
-        # vexpand, so this stays anchored at the panel's foot — Apple-sidebar
+        self._plan_today_passage = Gtk.Label(xalign=0, wrap=True)
+        self._plan_today_passage.add_css_class('plan-today-passage')
+        self._plan_today_passage.set_margin_top(1)
+        self._plan_active_box.append(self._plan_today_passage)
+
+        _today_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        _today_actions.set_margin_top(10)
+        self._plan_open_btn = Gtk.Button(label=_('Open'))
+        self._plan_open_btn.add_css_class('suggested-action')
+        self._plan_open_btn.connect('clicked', self._on_plan_open_today)
+        _today_actions.append(self._plan_open_btn)
+        self._plan_today_check = Gtk.CheckButton(label=_('Mark done'))
+        self._plan_today_check.set_valign(Gtk.Align.CENTER)
+        self._plan_today_check_handler = self._plan_today_check.connect(
+            'toggled', self._on_plan_today_check)
+        _today_actions.append(self._plan_today_check)
+        self._plan_active_box.append(_today_actions)
+
+        self._plan_progress_bar = Gtk.ProgressBar()
+        self._plan_progress_bar.add_css_class('plan-progress')
+        self._plan_progress_bar.set_margin_top(16)
+        self._plan_active_box.append(self._plan_progress_bar)
+        self._plan_progress_lbl = Gtk.Label(xalign=0)
+        self._plan_progress_lbl.add_css_class('caption')
+        self._plan_progress_lbl.add_css_class('dim-label')
+        self._plan_progress_lbl.set_margin_top(5)
+        self._plan_active_box.append(self._plan_progress_lbl)
+
+        self._plan_grid = Gtk.Grid()
+        self._plan_grid.add_css_class('plan-grid')
+        self._plan_grid.set_row_spacing(5)
+        self._plan_grid.set_column_spacing(5)
+        self._plan_grid.set_margin_top(14)
+        # Spread the 7 columns across the full panel width rather than
+        # crowding into a left-hand column.
+        self._plan_grid.set_hexpand(True)
+        self._plan_grid.set_halign(Gtk.Align.FILL)
+        self._plan_grid.set_column_homogeneous(True)
+        self._plan_active_box.append(self._plan_grid)
+
+        _body.append(self._plan_active_box)
+
+        # ── Footer: global utilities pinned to the bottom. The scroller above
+        # is vexpand, so this stays anchored at the panel's foot — Apple-sidebar
         # placement that also fills the lower void when no plan is active.
         footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         footer.add_css_class('menu-footer')
@@ -2603,119 +2698,230 @@ class BibleWindow(Adw.ApplicationWindow):
         plan_id, start_date = reading_plans.get_active()
         plans = reading_plans.get_plans()
 
-        # sync dropdown to active plan
         if plan_id and plan_id in self._plan_ids:
             self._plan_drop.set_selected(self._plan_ids.index(plan_id))
-        sel_idx = self._plan_drop.get_selected()
-        sel_id = self._plan_ids[sel_idx]
-        plan_id = plan_id or sel_id
+        sel_id = self._plan_ids[self._plan_drop.get_selected()]
 
-        # description
-        desc = next((p['description'] for p in plans if p['id'] == sel_id), '')
-        self._plan_desc_lbl.set_text(_(desc) if desc else '')
+        self._plan_chevron.set_from_icon_name(
+            'pan-end-symbolic' if self._plan_collapsed else 'pan-down-symbolic')
+        if self._plan_collapsed:
+            # Folded: only the header row shows.
+            for w in (self._plan_drop, self._plan_desc_lbl,
+                      self._plan_start_btn, self._plan_menu_btn,
+                      self._plan_active_box):
+                w.set_visible(False)
+            self._updating_plan = False
+            return
+        self._plan_drop.set_visible(True)
 
-        # controls
         plan_active = bool(start_date and reading_plans.get_active()[0] == sel_id)
         if plan_active:
+            self._plan_desc_lbl.set_visible(False)
             self._plan_start_btn.set_visible(False)
-            completed = reading_plans.get_completed(sel_id)
-            total = next((p['total_days'] for p in plans if p['id'] == sel_id), 0)
-            self._plan_progress_lbl.set_text(ngettext(
-                '{done} / {total} day', '{done} / {total} days', total).format(
-                    done=len(completed), total=total))
-            self._plan_progress_lbl.set_visible(True)
-            self._plan_reset_btn.set_visible(True)
-            self._populate_day_list(sel_id, start_date)
+            self._plan_menu_btn.set_visible(True)
+            self._plan_active_box.set_visible(True)
+            self._build_plan_view(sel_id, start_date)
         else:
+            desc = next((p['description'] for p in plans if p['id'] == sel_id), '')
+            self._plan_desc_lbl.set_text(_(desc) if desc else '')
+            self._plan_desc_lbl.set_visible(bool(desc))
             self._plan_start_btn.set_visible(True)
-            self._plan_progress_lbl.set_visible(False)
-            self._plan_reset_btn.set_visible(False)
-            self._clear_day_list()
-        # The boxed-list day view and its leading separator only appear
-        # for an active plan — otherwise an empty card-shaped background
-        # would sit awkwardly under the "Start today" button.
-        self._plan_sep.set_visible(plan_active)
-        self._plan_scroll.set_visible(plan_active)
+            self._plan_menu_btn.set_visible(False)
+            self._plan_active_box.set_visible(False)
 
         self._updating_plan = False
 
-    def _clear_day_list(self):
-        self._today_row = None
-        while True:
-            row = self._day_listbox.get_row_at_index(0)
-            if row is None:
-                break
-            self._day_listbox.remove(row)
-
-    def _populate_day_list(self, plan_id, start_date):
-        self._clear_day_list()
+    def _build_plan_view(self, plan_id, start_date):
+        """Populate the Today hero, progress meter, and dot grid for an
+        active plan."""
         days = reading_plans.get_plan_days(plan_id)
-        completed = reading_plans.get_completed(plan_id)
-        today_idx = reading_plans.today_index(start_date)
-        for idx, readings in enumerate(days):
-            try:
-                date = (datetime.date.fromisoformat(start_date)
-                        + datetime.timedelta(days=idx)).isoformat()
-            except Exception:
-                date = ''
-            is_today = (idx == today_idx)
-            row = self._make_day_row(plan_id, idx, readings, date,
-                                     done=(idx in completed), is_today=is_today)
-            self._day_listbox.append(row)
-            if is_today:
-                self._today_row = row
-        GLib.idle_add(self._scroll_to_today)
+        total = len(days)
+        self._plan_id = plan_id
+        try:
+            self._plan_start_date = datetime.date.fromisoformat(start_date)
+        except (TypeError, ValueError):
+            self._plan_start_date = datetime.date.today()
+        self._plan_days = days
+        self._plan_total = total
+        self._plan_completed = set(reading_plans.get_completed(plan_id))
+        self._plan_today_idx = reading_plans.today_index(start_date)
+        # Clamp the hero day into range so a finished or not-yet-due plan
+        # still shows a real day.
+        self._plan_anchor = (max(0, min(self._plan_today_idx, total - 1))
+                             if total else 0)
 
-    def _make_day_row(self, plan_id, idx, readings, date, done, is_today):
-        row = Gtk.ListBoxRow()
-        row._plan_id = plan_id
-        row._day_idx = idx
-        row._readings = readings
-        if is_today:
-            row.add_css_class('plan-today')
+        finished = bool(total) and self._plan_today_idx >= total
+        self._plan_today_eyebrow.set_text(
+            _('Plan complete') if finished
+            else _('Day {n} · Today').format(n=self._plan_anchor + 1))
+        self._plan_today_passage.set_text(
+            reading_plans.format_passages(days[self._plan_anchor]) if total else '')
 
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        self._plan_today_check.handler_block(self._plan_today_check_handler)
+        self._plan_today_check.set_active(self._plan_anchor in self._plan_completed)
+        self._plan_today_check.handler_unblock(self._plan_today_check_handler)
+
+        self._update_plan_progress()
+        self._build_plan_grid()
+
+    def _update_plan_progress(self):
+        total = self._plan_total
+        done_n = len(self._plan_completed)
+        self._plan_progress_bar.set_fraction(done_n / total if total else 0.0)
+        self._plan_progress_lbl.set_text(ngettext(
+            '{done} of {total} day read · tap a day to read',
+            '{done} of {total} days read · tap a day to read',
+            total).format(done=done_n, total=total))
+
+    def _build_plan_grid(self):
+        clear_children(self._plan_grid)
+        self._plan_cells = {}
+        cols = 7
+        row = col = 0
+        prev_month = None
+        for idx in range(self._plan_total):
+            date = self._plan_start_date + datetime.timedelta(days=idx)
+            month = (date.year, date.month)
+            if month != prev_month:
+                # Start each calendar month on a fresh row under its header.
+                if col != 0:
+                    row += 1
+                    col = 0
+                header = Gtk.Label(label=self._format_plan_month(date), xalign=0)
+                header.add_css_class('plan-month')
+                self._plan_grid.attach(header, 0, row, cols, 1)
+                row += 1
+                prev_month = month
+            cell = Gtk.Button(label=str(date.day))
+            cell.add_css_class('plan-tile')
+            cell.set_valign(Gtk.Align.CENTER)
+            cell.set_halign(Gtk.Align.FILL)
+            cell.set_hexpand(True)   # share the row width evenly
+            summary = self._plan_day_summary(idx)
+            cell.set_tooltip_text(summary)
+            set_accessible_label(cell, summary)
+            cell.connect('clicked', self._on_plan_dot_clicked, idx)
+            self._style_plan_cell(cell, idx)
+            self._plan_grid.attach(cell, col, row, 1, 1)
+            self._plan_cells[idx] = cell
+            col += 1
+            if col == cols:
+                col = 0
+                row += 1
+
+    def _format_plan_month(self, date):
+        """Localized month header, e.g. 'Jun' — with the year once the plan
+        crosses into a different calendar year than its start."""
+        label = date.strftime('%b')
+        if date.year != self._plan_start_date.year:
+            label = f'{label} {date.year}'
+        return label
+
+    def _style_plan_cell(self, cell, idx):
+        for c in ('plan-tile-done', 'plan-tile-today',
+                  'plan-tile-overdue', 'plan-tile-ahead'):
+            cell.remove_css_class(c)
+        if idx in self._plan_completed:
+            cell.add_css_class('plan-tile-done')
+        elif idx < self._plan_today_idx:
+            cell.add_css_class('plan-tile-overdue')  # a scheduled day went unread
+        else:
+            cell.add_css_class('plan-tile-ahead')
+        if idx == self._plan_today_idx:
+            cell.add_css_class('plan-tile-today')    # ring; composes with the fill
+
+    def _plan_day_summary(self, idx):
+        return _('Day {n} · {passages}').format(
+            n=idx + 1,
+            passages=reading_plans.format_passages(self._plan_days[idx]))
+
+    def _on_plan_dot_clicked(self, cell, idx):
+        pop = Gtk.Popover()
+        pop.set_parent(cell)
+        pop.set_has_arrow(True)
+        pop.connect('closed', lambda p: p.unparent())
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         box.set_margin_start(8)
         box.set_margin_end(8)
+        box.set_margin_top(8)
+        box.set_margin_bottom(8)
+        eyebrow = Gtk.Label(label=_('Day {n}').format(n=idx + 1), xalign=0)
+        eyebrow.add_css_class('caption')
+        eyebrow.add_css_class('dim-label')
+        box.append(eyebrow)
+        # One tappable row per passage group — opens it and closes the menu.
+        for book, start, end in reading_plans.group_readings(self._plan_days[idx]):
+            label = (f'{book_label(book)} {start}' if start == end
+                     else f'{book_label(book)} {start}–{end}')
+            btn = Gtk.Button(label=label)
+            btn.add_css_class('flat')
+            btn.set_halign(Gtk.Align.FILL)
+            btn.get_child().set_xalign(0)
+            btn.connect('clicked', self._on_plan_passage_clicked, pop, book, start)
+            box.append(btn)
+        done_chk = Gtk.CheckButton(label=_('Mark done'))
+        done_chk.set_margin_top(4)
+        done_chk.set_active(idx in self._plan_completed)
+        done_chk.connect(
+            'toggled', lambda b, i=idx: self._set_plan_day_done(i, b.get_active()))
+        box.append(done_chk)
+        pop.set_child(box)
+        pop.popup()
+
+    def _set_plan_day_done(self, idx, done):
+        reading_plans.set_day_done(self._plan_id, idx, done)
+        if done:
+            self._plan_completed.add(idx)
+        else:
+            self._plan_completed.discard(idx)
+        cell = self._plan_cells.get(idx)
+        if cell is not None:
+            self._style_plan_cell(cell, idx)
+        if idx == self._plan_anchor:
+            self._plan_today_check.handler_block(self._plan_today_check_handler)
+            self._plan_today_check.set_active(done)
+            self._plan_today_check.handler_unblock(self._plan_today_check_handler)
+        self._update_plan_progress()
+
+    def _on_plan_today_check(self, btn):
+        if self._updating_plan:
+            return
+        self._set_plan_day_done(self._plan_anchor, btn.get_active())
+
+    def _on_plan_open_today(self, _btn):
+        self._open_plan_day(self._plan_anchor, self._plan_open_btn)
+
+    def _open_plan_day(self, idx, anchor):
+        readings = self._plan_days[idx]
+        if not readings:
+            return
+        groups = reading_plans.group_readings(readings)
+        if len(groups) <= 1:
+            book, chapter = readings[0]
+            self._menu_split.set_show_sidebar(False)
+            self._go_to(book, chapter)
+            return
+        # Multi-passage day: let the user pick which to open.
+        pop = Gtk.Popover()
+        pop.set_parent(anchor)
+        pop.set_has_arrow(True)
+        pop.connect('closed', lambda p: p.unparent())
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        box.set_margin_start(6)
+        box.set_margin_end(6)
         box.set_margin_top(6)
         box.set_margin_bottom(6)
-
-        check = Gtk.CheckButton()
-        check.set_active(done)
-        check.connect('toggled', self._on_day_check_toggled, plan_id, idx)
-        box.append(check)
-
-        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        day_lbl = Gtk.Label(label=_('Day {n}').format(n=idx + 1), xalign=0)
-        day_lbl.add_css_class('caption')
-        day_lbl.add_css_class('dim-label')
-        passage_lbl = Gtk.Label(
-            label=reading_plans.format_passages(readings), xalign=0, hexpand=True)
-        passage_lbl.set_ellipsize(Pango.EllipsizeMode.END)
-        if done:
-            passage_lbl.add_css_class('dim-label')
-        vbox.append(day_lbl)
-        vbox.append(passage_lbl)
-        box.append(vbox)
-
-        if date:
-            date_lbl = Gtk.Label(label=date, xalign=1)
-            date_lbl.add_css_class('caption')
-            date_lbl.add_css_class('dim-label')
-            box.append(date_lbl)
-
-        row.set_child(box)
-        return row
-
-    def _scroll_to_today(self):
-        if self._today_row:
-            self._today_row.grab_focus()
-            adj = self._plan_scroll.get_vadjustment()
-            alloc = self._today_row.get_allocation()
-            if alloc.height > 0:
-                target = alloc.y - (self._plan_scroll.get_allocated_height() // 2)
-                adj.set_value(max(0, target))
-        return GLib.SOURCE_REMOVE
+        for book, start, end in groups:
+            label = (f'{book_label(book)} {start}' if start == end
+                     else f'{book_label(book)} {start}–{end}')
+            btn = Gtk.Button(label=label)
+            btn.add_css_class('flat')
+            btn.set_halign(Gtk.Align.FILL)
+            btn.get_child().set_xalign(0)
+            btn.connect('clicked', self._on_plan_passage_clicked, pop, book, start)
+            box.append(btn)
+        pop.set_child(box)
+        pop.popup()
 
     def _on_plan_dropdown_changed(self, _drop, _param):
         if self._updating_plan:
@@ -2730,50 +2936,30 @@ class BibleWindow(Adw.ApplicationWindow):
         reading_plans.set_start_date(sel_id, today)
         self._refresh_plan_ui()
 
-    def _on_plan_reset(self, _btn):
-        sel_id = self._plan_ids[self._plan_drop.get_selected()]
-        reading_plans.clear_start_date(sel_id)
+    def _on_plan_toggle_collapse(self, _btn):
+        self._plan_collapsed = not self._plan_collapsed
+        settings.put('plan_collapsed', self._plan_collapsed)
         self._refresh_plan_ui()
 
-    def _on_day_check_toggled(self, check, plan_id, idx):
-        reading_plans.set_day_done(plan_id, idx, check.get_active())
-        # update progress label without rebuilding the whole list
-        plans = reading_plans.get_plans()
-        completed = reading_plans.get_completed(plan_id)
-        total = next((p['total_days'] for p in plans if p['id'] == plan_id), 0)
-        self._plan_progress_lbl.set_text(ngettext(
-            '{done} / {total} day', '{done} / {total} days', total).format(
-                done=len(completed), total=total))
-
-    def _on_day_row_activated(self, _listbox, row):
-        if not row._readings:
+    def _on_plan_catch_up(self, _btn):
+        """Mark every day up to and including today read, in one action."""
+        self._plan_menu_pop.popdown()
+        last = min(self._plan_today_idx, self._plan_total - 1)
+        if last < 0:
             return
-        groups = reading_plans.group_readings(row._readings)
-        if len(groups) <= 1:
-            book, chapter = row._readings[0]
-            self._menu_split.set_show_sidebar(False)
-            self._go_to(book, chapter)
-            return
+        self._plan_completed = reading_plans.mark_done_through(self._plan_id, last)
+        for idx, cell in self._plan_cells.items():
+            self._style_plan_cell(cell, idx)
+        self._plan_today_check.handler_block(self._plan_today_check_handler)
+        self._plan_today_check.set_active(self._plan_anchor in self._plan_completed)
+        self._plan_today_check.handler_unblock(self._plan_today_check_handler)
+        self._update_plan_progress()
 
-        pop = Gtk.Popover()
-        pop.set_parent(row)
-        pop.set_has_arrow(True)
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        box.set_margin_start(6)
-        box.set_margin_end(6)
-        box.set_margin_top(6)
-        box.set_margin_bottom(6)
-        for book, start, end in groups:
-            label = f'{book_label(book)} {start}' if start == end else f'{book_label(book)} {start}–{end}'
-            btn = Gtk.Button(label=label)
-            btn.add_css_class('flat')
-            btn.set_halign(Gtk.Align.FILL)
-            btn.get_child().set_xalign(0)
-            btn.connect('clicked', self._on_plan_passage_clicked, pop, book, start)
-            box.append(btn)
-        pop.set_child(box)
-        pop.connect('closed', lambda p: p.unparent())
-        pop.popup()
+    def _on_plan_reset(self, _btn):
+        self._plan_menu_pop.popdown()
+        sel_id = self._plan_ids[self._plan_drop.get_selected()]
+        reading_plans.reset_progress(sel_id)
+        self._refresh_plan_ui()
 
     def _on_plan_passage_clicked(self, _btn, pop, book, chapter):
         pop.popdown()

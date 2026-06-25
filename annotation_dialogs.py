@@ -21,6 +21,7 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Gdk
 
 from a11y import set_accessible_label
+from gtk_utils import clear_children
 import annotations
 import sword_bridge
 import ebible_bridge
@@ -273,11 +274,7 @@ def compare_translations(pane, verse, popover):
     def populate(results):
         if comp.get_parent() is None:
             return GLib.SOURCE_REMOVE
-        child = comp_list.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            comp_list.remove(child)
-            child = nxt
+        clear_children(comp_list)
         for mod, text in results:
             row = Gtk.ListBoxRow()
             rb = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
@@ -365,7 +362,7 @@ def _show_note_window(pane, verse, current_note, current_tags):
     try:
         suggested = build_suggested_topics(pane._book, pane._chapter, verse, tags_entry)
         box.append(suggested)
-    except Exception as e:
+    except Exception:
         _log.exception('suggested topics failed')
 
     save_btn.connect('clicked',
@@ -437,6 +434,11 @@ def build_suggested_topics(book, chapter, verse, tags_entry):
         topics = open_data.get_topics(book, chapter, verse) if verse else []
 
         def apply():
+            # Bail if the editor was closed before the fetch returned — appending
+            # to a finalized widget would emit GTK-CRITICALs (cf. the compare
+            # popover's get_parent() guard).
+            if chip_box.get_root() is None:
+                return False
             if not topics:
                 return False
             for topic in topics:

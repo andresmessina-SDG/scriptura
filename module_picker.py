@@ -13,6 +13,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Pango
 from a11y import set_accessible_label
+from gtk_utils import clear_children
 
 import sword_bridge
 import content
@@ -224,14 +225,6 @@ class ModulePicker:
                    'grc': N_('Greek'), 'la': N_('Latin'), 'ru': N_('Russian'),
                    'fr': N_('French'), 'de': N_('German'), 'he': N_('Hebrew')}
 
-    @staticmethod
-    def _clear(container):
-        child = container.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            container.remove(child)
-            child = nxt
-
     def _lang_of(self, name):
         cached = self._lang_cache.get(name)
         if cached is not None:
@@ -252,7 +245,7 @@ class ModulePicker:
         self._rebuild_list()
 
     def _build_tabs(self):
-        self._clear(self._tabs_box)
+        clear_children(self._tabs_box)
         kinds = {content.kind(name) for name in self._pane._names}
         present = [k for k, _ in self._TAB_DEFS if k == 'all' or k in kinds]
         if self._kind not in present:
@@ -286,7 +279,7 @@ class ModulePicker:
         self._rebuild_list()
 
     def _build_lang_menu(self):
-        self._clear(self._lang_list)
+        clear_children(self._lang_list)
         langs = {self._lang_of(name) for name in self._pane._names}
         langs.discard('')
 
@@ -328,7 +321,7 @@ class ModulePicker:
         self._rebuild_list()
 
     def _rebuild_list(self):
-        self._clear(self._listbox)
+        clear_children(self._listbox)
 
         q = self._search
         # Bucket matching modules by kind, preserving the pane's order.
@@ -463,14 +456,10 @@ class ModulePicker:
     # ── info page + removal ────────────────────────────────────────────────────
 
     def _show_info(self, name):
-        self._info_title.set_label(name)
+        self._info_title.set_label(sword_bridge.display_name(name))
         self._info_name = name
         self._remove_btn.set_visible(self._can_remove(name))
-        child = self._info_body.get_first_child()
-        while child:
-            nxt = child.get_next_sibling()
-            self._info_body.remove(child)
-            child = nxt
+        clear_children(self._info_body)
 
         info = content.info(name)
 
