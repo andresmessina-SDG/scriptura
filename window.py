@@ -2309,6 +2309,10 @@ class BibleWindow(Adw.ApplicationWindow):
         # instead of being pushed off-screen when the body overflows.
         self._menu_scroll = Gtk.ScrolledWindow(vexpand=True)
         self._menu_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        # Reserve a gutter for the scrollbar instead of overlaying it on the
+        # content, so it can't steal clicks from edge controls like the plan
+        # ⋯ menu button.
+        self._menu_scroll.set_overlay_scrolling(False)
         _body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self._menu_scroll.set_child(_body)
         panel.append(self._menu_scroll)
@@ -2493,17 +2497,34 @@ class BibleWindow(Adw.ApplicationWindow):
         # as a loud red button, keeping the destructive action off the calm
         # surface.
         plan_hdr_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        plan_hdr_box.set_margin_start(14)
+        plan_hdr_box.set_margin_start(8)
         plan_hdr_box.set_margin_end(8)
         plan_hdr_box.set_margin_top(18)
         plan_hdr_box.set_margin_bottom(2)
-        plan_hdr = Gtk.Label(label=_('Reading Plan'), xalign=0, hexpand=True)
+        # The title row doubles as a collapse toggle: click it to fold the
+        # whole section down to just this header (state persists).
+        self._plan_collapsed = bool(settings.get('plan_collapsed'))
+        self._plan_collapse_btn = Gtk.Button()
+        self._plan_collapse_btn.add_css_class('flat')
+        self._plan_collapse_btn.add_css_class('plan-section-toggle')
+        self._plan_collapse_btn.set_halign(Gtk.Align.START)
+        self._plan_collapse_btn.set_tooltip_text(_('Show or hide the reading plan'))
+        _hdr_inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        plan_hdr = Gtk.Label(label=_('Reading Plan'), xalign=0)
         plan_hdr.add_css_class('heading')
-        plan_hdr_box.append(plan_hdr)
+        _hdr_inner.append(plan_hdr)
+        self._plan_chevron = Gtk.Image.new_from_icon_name('pan-down-symbolic')
+        self._plan_chevron.add_css_class('dim-label')
+        _hdr_inner.append(self._plan_chevron)
+        self._plan_collapse_btn.set_child(_hdr_inner)
+        self._plan_collapse_btn.connect('clicked', self._on_plan_toggle_collapse)
+        plan_hdr_box.append(self._plan_collapse_btn)
         self._plan_menu_btn = Gtk.MenuButton(icon_name='view-more-symbolic')
         self._plan_menu_btn.add_css_class('flat')
         self._plan_menu_btn.add_css_class('menu-utility-action')
         self._plan_menu_btn.set_valign(Gtk.Align.CENTER)
+        self._plan_menu_btn.set_hexpand(True)        # float the ⋯ to the right
+        self._plan_menu_btn.set_halign(Gtk.Align.END)
         self._plan_menu_btn.set_tooltip_text(_('Reading plan options'))
         set_accessible_label(self._plan_menu_btn, _('Reading plan options'))
         self._plan_menu_pop = Gtk.Popover()
@@ -2512,6 +2533,12 @@ class BibleWindow(Adw.ApplicationWindow):
         _reset_box.set_margin_end(4)
         _reset_box.set_margin_top(4)
         _reset_box.set_margin_bottom(4)
+        self._plan_catchup_btn = Gtk.Button(label=_('Catch up to today'))
+        self._plan_catchup_btn.add_css_class('flat')
+        self._plan_catchup_btn.get_child().set_xalign(0)
+        self._plan_catchup_btn.connect('clicked', self._on_plan_catch_up)
+        _reset_box.append(self._plan_catchup_btn)
+        _reset_box.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
         self._plan_reset_btn = Gtk.Button(label=_('Reset progress'))
         self._plan_reset_btn.add_css_class('flat')
         self._plan_reset_btn.get_child().set_xalign(0)
@@ -2596,8 +2623,8 @@ class BibleWindow(Adw.ApplicationWindow):
 
         self._plan_grid = Gtk.Grid()
         self._plan_grid.add_css_class('plan-grid')
-        self._plan_grid.set_row_spacing(8)
-        self._plan_grid.set_column_spacing(8)
+        self._plan_grid.set_row_spacing(5)
+        self._plan_grid.set_column_spacing(5)
         self._plan_grid.set_margin_top(14)
         # Spread the 7 columns across the full panel width rather than
         # crowding into a left-hand column.
@@ -2675,6 +2702,18 @@ class BibleWindow(Adw.ApplicationWindow):
             self._plan_drop.set_selected(self._plan_ids.index(plan_id))
         sel_id = self._plan_ids[self._plan_drop.get_selected()]
 
+        self._plan_chevron.set_from_icon_name(
+            'pan-end-symbolic' if self._plan_collapsed else 'pan-down-symbolic')
+        if self._plan_collapsed:
+            # Folded: only the header row shows.
+            for w in (self._plan_drop, self._plan_desc_lbl,
+                      self._plan_start_btn, self._plan_menu_btn,
+                      self._plan_active_box):
+                w.set_visible(False)
+            self._updating_plan = False
+            return
+        self._plan_drop.set_visible(True)
+
         plan_active = bool(start_date and reading_plans.get_active()[0] == sel_id)
         if plan_active:
             self._plan_desc_lbl.set_visible(False)
@@ -2698,6 +2737,10 @@ class BibleWindow(Adw.ApplicationWindow):
         days = reading_plans.get_plan_days(plan_id)
         total = len(days)
         self._plan_id = plan_id
+        try:
+            self._plan_start_date = datetime.date.fromisoformat(start_date)
+        except (TypeError, ValueError):
+            self._plan_start_date = datetime.date.today()
         self._plan_days = days
         self._plan_total = total
         self._plan_completed = set(reading_plans.get_completed(plan_id))
@@ -2734,32 +2777,58 @@ class BibleWindow(Adw.ApplicationWindow):
         clear_children(self._plan_grid)
         self._plan_cells = {}
         cols = 7
+        row = col = 0
+        prev_month = None
         for idx in range(self._plan_total):
-            cell = Gtk.Button()
-            cell.add_css_class('plan-dot')
+            date = self._plan_start_date + datetime.timedelta(days=idx)
+            month = (date.year, date.month)
+            if month != prev_month:
+                # Start each calendar month on a fresh row under its header.
+                if col != 0:
+                    row += 1
+                    col = 0
+                header = Gtk.Label(label=self._format_plan_month(date), xalign=0)
+                header.add_css_class('plan-month')
+                self._plan_grid.attach(header, 0, row, cols, 1)
+                row += 1
+                prev_month = month
+            cell = Gtk.Button(label=str(date.day))
+            cell.add_css_class('plan-tile')
             cell.set_valign(Gtk.Align.CENTER)
-            cell.set_halign(Gtk.Align.CENTER)
+            cell.set_halign(Gtk.Align.FILL)
             cell.set_hexpand(True)   # share the row width evenly
             summary = self._plan_day_summary(idx)
             cell.set_tooltip_text(summary)
             set_accessible_label(cell, summary)
             cell.connect('clicked', self._on_plan_dot_clicked, idx)
             self._style_plan_cell(cell, idx)
-            self._plan_grid.attach(cell, idx % cols, idx // cols, 1, 1)
+            self._plan_grid.attach(cell, col, row, 1, 1)
             self._plan_cells[idx] = cell
+            col += 1
+            if col == cols:
+                col = 0
+                row += 1
+
+    def _format_plan_month(self, date):
+        """Localized month header, e.g. 'Jun' — with the year once the plan
+        crosses into a different calendar year than its start."""
+        label = date.strftime('%b')
+        if date.year != self._plan_start_date.year:
+            label = f'{label} {date.year}'
+        return label
 
     def _style_plan_cell(self, cell, idx):
-        for c in ('plan-dot-done', 'plan-dot-today',
-                  'plan-dot-overdue', 'plan-dot-ahead'):
+        for c in ('plan-tile-done', 'plan-tile-today',
+                  'plan-tile-overdue', 'plan-tile-ahead'):
             cell.remove_css_class(c)
         if idx in self._plan_completed:
-            cell.add_css_class('plan-dot-done')
+            cell.add_css_class('plan-tile-done')
         elif idx < self._plan_today_idx:
-            cell.add_css_class('plan-dot-overdue')   # a scheduled day went unread
+            cell.add_css_class('plan-tile-overdue')  # a scheduled day went unread
         else:
-            cell.add_css_class('plan-dot-ahead')
+            cell.add_css_class('plan-tile-ahead')
         if idx == self._plan_today_idx:
-            cell.add_css_class('plan-dot-today')     # ring; composes with the fill
+            cell.add_css_class('plan-tile-today')    # ring; composes with the fill
 
     def _plan_day_summary(self, idx):
         return _('Day {n} · {passages}').format(
@@ -2867,10 +2936,29 @@ class BibleWindow(Adw.ApplicationWindow):
         reading_plans.set_start_date(sel_id, today)
         self._refresh_plan_ui()
 
+    def _on_plan_toggle_collapse(self, _btn):
+        self._plan_collapsed = not self._plan_collapsed
+        settings.put('plan_collapsed', self._plan_collapsed)
+        self._refresh_plan_ui()
+
+    def _on_plan_catch_up(self, _btn):
+        """Mark every day up to and including today read, in one action."""
+        self._plan_menu_pop.popdown()
+        last = min(self._plan_today_idx, self._plan_total - 1)
+        if last < 0:
+            return
+        self._plan_completed = reading_plans.mark_done_through(self._plan_id, last)
+        for idx, cell in self._plan_cells.items():
+            self._style_plan_cell(cell, idx)
+        self._plan_today_check.handler_block(self._plan_today_check_handler)
+        self._plan_today_check.set_active(self._plan_anchor in self._plan_completed)
+        self._plan_today_check.handler_unblock(self._plan_today_check_handler)
+        self._update_plan_progress()
+
     def _on_plan_reset(self, _btn):
         self._plan_menu_pop.popdown()
         sel_id = self._plan_ids[self._plan_drop.get_selected()]
-        reading_plans.clear_start_date(sel_id)
+        reading_plans.reset_progress(sel_id)
         self._refresh_plan_ui()
 
     def _on_plan_passage_clicked(self, _btn, pop, book, chapter):

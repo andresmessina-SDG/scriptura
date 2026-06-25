@@ -248,3 +248,24 @@ def test_clear_start_date(isolated_plans):
 
 def test_get_completed_unknown_plan_returns_empty(isolated_plans):
     assert reading_plans.get_completed('unknown_plan') == set()
+
+
+def test_mark_done_through_marks_range_and_preserves_later(isolated_plans):
+    reading_plans.set_day_done('nt_90_days', 40, True)   # a later day, already done
+    result = reading_plans.mark_done_through('nt_90_days', 5)
+    assert result == {0, 1, 2, 3, 4, 5, 40}
+    assert reading_plans.get_completed('nt_90_days') == {0, 1, 2, 3, 4, 5, 40}
+
+
+def test_mark_done_through_is_idempotent(isolated_plans):
+    reading_plans.mark_done_through('nt_90_days', 5)
+    assert reading_plans.mark_done_through('nt_90_days', 5) == {0, 1, 2, 3, 4, 5}
+
+
+def test_reset_progress_clears_start_and_completed(isolated_plans):
+    reading_plans.set_start_date('nt_90_days', '2026-01-01')
+    reading_plans.mark_done_through('nt_90_days', 5)
+    reading_plans.reset_progress('nt_90_days')
+    _, start = reading_plans.get_active()
+    assert start is None                                   # un-started
+    assert reading_plans.get_completed('nt_90_days') == set()  # progress wiped
