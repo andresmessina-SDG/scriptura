@@ -62,6 +62,28 @@ own.
 
 ---
 
+## Install
+
+[![Install — Flatpak](https://img.shields.io/badge/Install-Flatpak-4A86CF?logo=flatpak&logoColor=white)](https://andresmessina.codeberg.page/scriptura.flatpakref)
+
+The easiest way to run Scriptura — one click, with automatic updates:
+
+**[➜ Install Scriptura (Flatpak)](https://andresmessina.codeberg.page/scriptura.flatpakref)**
+
+Or from a terminal:
+
+```bash
+flatpak install https://andresmessina.codeberg.page/scriptura.flatpakref
+```
+
+You'll need [Flatpak](https://flatpak.org/setup/) with the Flathub remote (for
+the GNOME runtime). Updates arrive automatically with `flatpak update`. The
+build is GPG-signed and served from this project's own repository.
+
+Prefer to run from source? See **Installing dependencies** below.
+
+---
+
 ## Installing dependencies
 
 Use whichever section matches your distribution.

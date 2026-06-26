@@ -420,6 +420,14 @@ paned.main-split > separator {
     background-color: alpha(@window_fg_color, 0.05);
     border-radius: 16px;
     margin: 6px 0 8px 0;
+    border: 1px solid alpha(@window_fg_color, 0.08);
+    box-shadow: 0 1px 4px alpha(@window_fg_color, 0.10);
+}
+/* Dark mode: the card is already a darker, recessed surface, so a pale
+   hairline reads as a boxy outline. Drop the border there; the shadow and
+   surface contrast carry the separation. Toggled from _apply_reading_page_edge. */
+.reading-page.reading-page-flush {
+    border-color: transparent;
 }
 
 /* ── Window-level overlay panels (menu sidebar, jump bar, reading mode) ── */
@@ -617,12 +625,14 @@ button.plan-section-toggle {
 }
 
 /* ── Bible reading column ────────────────────────────────────────────── */
-/* Force both the TextView widget and its inner text area to transparent
- * so the reading column inherits the surrounding pane background
- * (@window_bg_color) rather than the card-like @view_bg_color libadwaita
- * paints by default. */
+/* The reading surface must be OPAQUE: a transparent text node doesn't repaint
+ * a fill as it scrolls, so some GTK backends (notably the GNOME Flatpak
+ * runtime) leave stale glyph trails in the gaps. @view_bg_color is the
+ * opaque reading surface; light mode warms it to soft paper via the dynamic
+ * CSS in _update_font_css. Highlight bands draw above this background through
+ * BibleTextView.do_snapshot_layer. */
 .bible-view, .bible-view text {
-    background-color: transparent;
+    background-color: @view_bg_color;
 }
 
 /* Note/Tags editor field — a soft inset matching the reading-page surface
