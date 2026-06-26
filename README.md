@@ -11,6 +11,8 @@ Built on GNOME with GTK4 + libadwaita, in Python, GPL-3.0.
 > _"For the word of God is living and active, sharper than any
 > two-edged sword..."_ — Hebrews 4:12
 
+![Scriptura — two-pane reading with the Strong's lexicon panel open](data/screenshots/01-two-pane-lexicon.png)
+
 ---
 
 ## What it does
@@ -60,11 +62,17 @@ network is when you explicitly download a module, fetch a translation
 from eBible.org, or install an open-data file. Your study is your
 own.
 
+| | |
+|:---:|:---:|
+| ![Study Journal — every annotation across every module in one filterable view](data/screenshots/03-study-journal.png) | ![Distraction-free reading mode in dark theme](data/screenshots/05-reading-mode-dark.png) |
+| _Study Journal_ | _Reading mode (dark)_ |
+
 ---
 
 ## Install
 
 [![Install — Flatpak](https://img.shields.io/badge/Install-Flatpak-4A86CF?logo=flatpak&logoColor=white)](https://andresmessina.codeberg.page/scriptura.flatpakref)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 The easiest way to run Scriptura — one click, with automatic updates:
 
@@ -194,7 +202,7 @@ sudo pacman -S xdg-desktop-portal-gtk
 
 The pure-Python layers (`sword_bridge`, `open_data`, `annotations`,
 `reading_plans`, `paths`, `bookmarks`, `settings`, `ebible_bridge`,
-etc.) have a pytest suite — 227 tests, under two seconds.
+etc.) have a pytest suite — 310 tests, under two seconds.
 
 ```sh
 # Fedora
