@@ -35,7 +35,9 @@ ebible_catalog.csv
 # Flatpak build artifacts
 .flatpak-builder/
 build-dir/
+flatpak-build/
 repo/
+public/
 
 # Internal working docs — not for the public repo
 SEARCH_RESEARCH.md
@@ -47,3 +49,7 @@ SENIOR_REVIEW.md
 IMAGERY_RESEARCH.md
 FLATHUB_REVIEW_PLAN.md
 CARTOGRAPHY_METHODOLOGY.md
+FLATPAK_RELEASE.md
+
+# Local promotion plan — keep private
+PROMOTION.md
