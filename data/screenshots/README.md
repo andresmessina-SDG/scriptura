@@ -1,43 +1,43 @@
 # Screenshots
 
-These PNGs are referenced by the AppStream metainfo and by Flathub's
-store page. Once captured, restore the `<screenshots>` block in
-`data/page.codeberg.andresmessina.Scriptura.metainfo.xml` and the
-metainfo install line in `page.codeberg.andresmessina.Scriptura.yml`.
+These PNGs are the app's store screenshots. They are referenced by
+the AppStream metainfo
+(`data/page.codeberg.andresmessina.Scriptura.metainfo.xml.in`) and
+shown by GNOME Software on the app's detail page. The repo README also
+embeds a few of them.
 
-## Capture checklist
+The `<screenshots>` block is **already wired up** — no restoration
+needed. The metainfo is installed automatically by meson
+(`data/meson.build`), so there's no manual install line to maintain in
+the Flatpak manifest either.
 
-Take all five on a real machine (not the VM) for crisp rendering.
-Target dimensions: roughly **1280 × 720** to **1600 × 900** depending
-on your panel, in **PNG** format. Light or dark mode is fine —
-some Flathub apps ship both. Captions below match what's already in
-the metainfo draft.
+## How the metainfo points at these files
 
-| File | What's in the shot |
+Each `<image>` URL tracks the `main` branch:
+
+```
+https://codeberg.org/andresmessina/scriptura/raw/branch/main/data/screenshots/<file>.png
+```
+
+Because the URLs follow `branch/main` (not a pinned commit), refreshing
+a screenshot is just: **overwrite the file in place and push to
+`main`.** No URL edit, no commit-SHA bump.
+
+## The files
+
+These exact filenames are referenced by the metainfo `<image>` URLs and
+captions. Renaming one means editing the metainfo to match.
+
+| File | Caption (must match metainfo) |
 | --- | --- |
-| `reading.png` | Two-pane reading view with Strong's lexicon and cross-references. KJVA in pane 1, a modern translation in pane 2, lexicon panel visible at the bottom of pane 1 showing a Greek word's definition, cross-ref bar populated at the bottom of the window. |
-| `module-manager.png` | Module Manager open on the SWORD tab (or eBible) showing a populated module list with at least one installed and several Available. |
-| `study-journal.png` | Study Journal in master-detail layout. Sidebar with several entries (mix of highlights / notes / chapter notes), detail pane on the right with a note being edited or a recent entry selected. |
-| `search.png` | Search panel open with results for something content-rich like "covenant" or "spirit" — the canon distribution chart visible at the top. |
-| `lexicon.png` | Close-up of the lexicon panel showing a Strong's lookup (e.g., G2316 / θεός) with the Dodson definition and word-study list. Bible-text view above with the matching word hovered. |
+| `01-two-pane-lexicon.png` | Two-pane reading with the Strong's lexicon open on a Greek word |
+| `02-historical-commentaries.png` | The Historical Commentaries pane — the church's voices on a verse, across the centuries |
+| `03-study-journal.png` | Study Journal — every annotation in one filterable surface |
+| `04-reading-plan.png` | Built-in reading plans with day-by-day progress |
+| `05-reading-mode-dark.png` | F11 reading mode hides all chrome for distraction-free reading |
 
-## File names matter
+## Capture guidance
 
-The metainfo references these exact filenames via the Codeberg
-`raw.codeberg.org/...` URLs:
-
-- `data/screenshots/reading.png`
-- `data/screenshots/module-manager.png`
-- `data/screenshots/study-journal.png`
-- `data/screenshots/search.png`
-- `data/screenshots/lexicon.png`
-
-If you rename, update the metainfo `<image>` URLs to match.
-
-## Quick checklist after capture
-
-1. Drop the PNGs into this directory.
-2. Restore the `<screenshots>` block in the metainfo (was last
-   present at commit `31610f6`; the captions match the table above).
-3. Restore the metainfo `install` line in the Flatpak manifest.
-4. Push.
+Take them on a real machine (not a VM) for crisp text. Target roughly
+**1280×720 to 1600×900**, PNG, opaque (RGB). Light or dark mode is
+fine — `05` is the dark-mode shot.
