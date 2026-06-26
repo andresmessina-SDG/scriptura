@@ -31,7 +31,7 @@ captions. Renaming one means editing the metainfo to match.
 | File | Caption (must match metainfo) |
 | --- | --- |
 | `01-two-pane-lexicon.png` | Two-pane reading with the Strong's lexicon open on a Greek word |
-| `02-translation-comparison.png` | Two translations side by side, sharing a verse selection |
+| `02-historical-commentaries.png` | The Historical Commentaries pane — the church's voices on a verse, across the centuries |
 | `03-study-journal.png` | Study Journal — every annotation in one filterable surface |
 | `04-reading-plan.png` | Built-in reading plans with day-by-day progress |
 | `05-reading-mode-dark.png` | F11 reading mode hides all chrome for distraction-free reading |
