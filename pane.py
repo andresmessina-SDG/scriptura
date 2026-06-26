@@ -349,12 +349,18 @@ class BibleTextView(Gtk.TextView):
     _LEX_COLOR_DARK = '#7fa3c1'
     _LEX_COLOR_LIGHT = '#5a7fa3'
 
-    def do_snapshot(self, snapshot):
-        try:
-            self._draw_highlights(snapshot)
-        except Exception:
-            pass  # never let a paint glitch blank the reading view
-        Gtk.TextView.do_snapshot(self, snapshot)
+    def do_snapshot_layer(self, layer, snapshot):
+        # Paint our bands/underlines via GtkTextView's BELOW_TEXT hook rather
+        # than overriding do_snapshot. Overriding do_snapshot breaks the view's
+        # internal scroll/viewport pipeline — it leaves stale glyph "trails"
+        # while scrolling under stricter GTK backends (e.g. the Flatpak
+        # runtime). snapshot_layer is the supported extension point and draws
+        # in buffer coordinate space, so no buffer_to_window_coords is needed.
+        if layer == Gtk.TextViewLayer.BELOW_TEXT:
+            try:
+                self._draw_highlights(snapshot)
+            except Exception:
+                pass  # never let a paint glitch blank the reading view
 
     def _metrics(self):
         m = self.get_pango_context().get_metrics(None, None)
@@ -493,11 +499,11 @@ class BibleTextView(Gtk.TextView):
                 # body-text top regardless of line spacing.)
                 ls = cur.copy()
                 self.backward_display_line_start(ls)
-                band_top = self.get_iter_location(ls).y - pad
-                wx0, wy = self.buffer_to_window_coords(
-                    Gtk.TextWindowType.TEXT, int(r0.x), int(band_top))
-                wx1, _ = self.buffer_to_window_coords(
-                    Gtk.TextWindowType.TEXT, int(r1.x), 0)
+                # snapshot_layer draws in buffer coordinates, so use the iter
+                # locations directly — GTK applies the scroll/viewport offset.
+                wx0 = int(r0.x)
+                wy = int(self.get_iter_location(ls).y - pad)
+                wx1 = int(r1.x)
                 seg_w = max(1.0, wx1 - wx0)
                 if underline:
                     # Thin line at a fixed offset below the body baseline —
@@ -851,6 +857,7 @@ class BiblePane(Gtk.Box):
         self._lex_paned.set_shrink_start_child(False)
         self._lex_paned.set_shrink_end_child(True)
         self.append(self._lex_paned)
+        self._apply_reading_page_edge()
 
         # Enrich Ctrl+C / native copy: prepend the verse reference so
         # selections paste with citation context. Falls through to default
@@ -1154,6 +1161,13 @@ class BiblePane(Gtk.Box):
                f"font-weight: {weight}; "
                f"line-height: {self._line_spacing}; "
                f"{color_rule}}}")
+        # Light mode: a soft warm "paper" reading surface — gentler than the
+        # stark @view_bg_color white and on-brand (the warm house palette),
+        # while staying opaque so the scroll-clear fix holds. Higher specificity
+        # than the static .bible-view rule so it wins; dark keeps @view_bg_color.
+        if not Adw.StyleManager.get_default().get_dark():
+            css += (" textview.bible-view, textview.bible-view text "
+                    "{ background-color: #f7f4ee; }")
         self._css_provider.load_from_data(css.encode())
         # Resize the embedded artifact markers live with the reading font — no
         # re-render needed (the text reflows via the CSS above on its own).
@@ -2886,11 +2900,21 @@ class BiblePane(Gtk.Box):
         if cv is not None:
             table.remove(cv)
         self._update_font_css()
+        self._apply_reading_page_edge()
         if self._is_verse_navigable() and self._rendered_verses is not None:
             self._display(self._rendered_verses,
                           self._book, self._chapter, self._module)
         else:
             self._fetch_and_render()
+
+    def _apply_reading_page_edge(self):
+        """Hairline card border in light mode only — in dark the pale border
+        reads as a boxy outline on the already-recessed surface."""
+        dark = Adw.StyleManager.get_default().get_dark()
+        if dark:
+            self._lex_paned.add_css_class('reading-page-flush')
+        else:
+            self._lex_paned.remove_css_class('reading-page-flush')
 
     def refresh_modules(self):
         # Invalidate the language cache — a module that was just installed
