@@ -1,5 +1,6 @@
 import html as _html_mod
 import threading
+import colorsys
 import re
 from datetime import date as _date, timedelta
 import gi
@@ -29,6 +30,24 @@ import annotation_dialogs
 from lexicon_panel import LexiconPanel
 from pane_search import PaneSearch
 from a11y import set_accessible_label
+
+
+def auto_reading_ink(paper_hex):
+    """Derive a comfortable reading ink for a paper colour. Dark papers get a
+    warm off-white; light papers get a warm dark ink that *shares the paper's
+    hue* — near-black on neutral/white, warm brown on sepia, deep green on a
+    green paper — so 'Default' ink stays harmonious on any paper, including a
+    custom one. Mirrored in the Appearance chip previews."""
+    r = int(paper_hex[1:3], 16) / 255
+    g = int(paper_hex[3:5], 16) / 255
+    b = int(paper_hex[5:7], 16) / 255
+    if 0.299 * r + 0.587 * g + 0.114 * b < 0.5:
+        return '#e8e0d4'                       # dark paper → warm light ink
+    h, _l, s = colorsys.rgb_to_hls(r, g, b)
+    if s < 0.06:
+        return '#1a1a1a'                       # neutral/white paper → near-black
+    nr, ng, nb = colorsys.hls_to_rgb(h, 0.16, min(s, 0.55))
+    return f'#{round(nr * 255):02x}{round(ng * 255):02x}{round(nb * 255):02x}'
 
 # Logical highlight IDs (persisted in annotations.json) → softer rendered tints.
 # Persisted values are unchanged so existing user data still reads correctly;
@@ -761,6 +780,7 @@ class BiblePane(Gtk.Box):
         self._font_bold    = settings.get('font_bold')
         self._font_justify = settings.get('font_justify')
         self._text_color   = settings.get(f'text_color_{settings.get("color_scheme") or "default"}')
+        self._bg_color     = settings.get(f'reading_bg_{settings.get("color_scheme") or "default"}')
         self._css_provider = Gtk.CssProvider()
         self._view.get_style_context().add_provider(
             self._css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
@@ -1148,26 +1168,33 @@ class BiblePane(Gtk.Box):
                           "'Iowan Old Style', 'Georgia', serif"
         else:
             family_decl = f"'{self._font_family}', serif"
-        # In dark mode, default to a warm off-white instead of pure white —
-        # easier on the eyes for long reading sessions. Honors any user override.
-        if self._text_color:
-            color_rule = f"color: {self._text_color}; "
-        elif Adw.StyleManager.get_default().get_dark():
-            color_rule = "color: #e8e0d4; "
+        dark = Adw.StyleManager.get_default().get_dark()
+        # Reading "paper" surface. Must stay OPAQUE so scrolling repaints a fill
+        # (the scroll-trail fix). A user-chosen paper (preset or custom) wins;
+        # otherwise a soft warm paper in light mode, and in dark mode the static
+        # .bible-view @view_bg_color rule (surface=None, no override needed).
+        if self._bg_color:
+            surface = self._bg_color
+        elif not dark:
+            surface = '#f7f4ee'
         else:
-            color_rule = ""
+            surface = None
+        # Ink: an explicit user choice wins; otherwise auto-derive from the paper
+        # (warm-light on dark papers, warm dark sharing the paper's hue on light).
+        if self._text_color:
+            ink = self._text_color
+        else:
+            ink = auto_reading_ink(surface or ('#1e1e1e' if dark else '#f7f4ee'))
         css = (f"textview {{ font-family: {family_decl}; "
                f"font-size: {self._font_size}pt; "
                f"font-weight: {weight}; "
                f"line-height: {self._line_spacing}; "
-               f"{color_rule}}}")
-        # Light mode: a soft warm "paper" reading surface — gentler than the
-        # stark @view_bg_color white and on-brand (the warm house palette),
-        # while staying opaque so the scroll-clear fix holds. Higher specificity
-        # than the static .bible-view rule so it wins; dark keeps @view_bg_color.
-        if not Adw.StyleManager.get_default().get_dark():
+               f"color: {ink}; }}")
+        # Higher specificity than the static .bible-view rule, so when emitted
+        # the chosen/derived surface wins.
+        if surface:
             css += (" textview.bible-view, textview.bible-view text "
-                    "{ background-color: #f7f4ee; }")
+                    f"{{ background-color: {surface}; }}")
         self._css_provider.load_from_data(css.encode())
         # Resize the embedded artifact markers live with the reading font — no
         # re-render needed (the text reflows via the CSS above on its own).
@@ -1187,6 +1214,7 @@ class BiblePane(Gtk.Box):
         if 'font_bold'    in kwargs: self._font_bold    = kwargs['font_bold']
         if 'font_justify' in kwargs: self._font_justify = kwargs['font_justify']
         if 'text_color'   in kwargs: self._text_color   = kwargs['text_color']
+        if 'bg_color'     in kwargs: self._bg_color     = kwargs['bg_color']
         self._update_font_css()
         # The archaeology document scales with the same reading font size.
         self._archaeology.apply_font_size(self._font_size)
