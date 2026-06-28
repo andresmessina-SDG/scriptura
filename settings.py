@@ -21,6 +21,11 @@ _defaults: dict[str, Any] = {
     'text_color_light':   None,
     'text_color_dark':    None,
     'text_color_default': None,
+    # Reading-surface "paper" colour, per active scheme. None = the built-in
+    # default surface (warm paper in light, @view_bg_color in dark).
+    'reading_bg_light':   None,
+    'reading_bg_dark':    None,
+    'reading_bg_default': None,
     'color_scheme':       'default',
     'window_width':       1100,
     'window_height':      700,

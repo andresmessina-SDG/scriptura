@@ -14,7 +14,7 @@ import module_positions
 import bookmarks
 import reading_plans
 import annotations
-from pane import BiblePane
+from pane import BiblePane, auto_reading_ink
 from module_manager import ModuleManagerWindow
 from search_panel import SearchPanel
 from study_journal import StudyJournalWindow
@@ -1267,25 +1267,238 @@ class BibleWindow(Adw.ApplicationWindow):
         self.pane1.set_appearance(font_family=family)
         self.pane2.set_appearance(font_family=family)
 
+    # Curated reading "papers" per resolved appearance: (label, swatch, store).
+    # Default stores None (warm paper in light, @view_bg_color in dark). Light
+    # papers use the leading readers' values — Apple Books off-white #fbfbfb
+    # (pure #fff glares) and warm gold sepia #f8f1e3, plus a restful pale-green.
+    # The reading ink is auto-derived from the paper (auto_reading_ink), so each
+    # chip previews its pairing — the paper name in that paper's ink — without a
+    # separate ink list. Labels N_()-marked for extraction, translated at build.
+    _PAPER_LIGHT = [
+        (N_('Paper'), '#f7f4ee', None),
+        (N_('White'), '#fbfbfb', '#fbfbfb'),
+        (N_('Sepia'), '#f8f1e3', '#f8f1e3'),
+        (N_('Green'), '#dce8d0', '#dce8d0'),
+    ]
+    _PAPER_DARK = [
+        (N_('Slate'),    '#1e1e1e', None),
+        (N_('Charcoal'), '#2a2622', '#2a2622'),
+        (N_('Black'),    '#000000', '#000000'),
+    ]
+
     def _current_mode_key(self):
         return f'text_color_{settings.get("color_scheme") or "default"}'
 
-    def _apply_mode_color(self):
-        color = settings.get(self._current_mode_key())
-        if color:
-            rgba = Gdk.RGBA()
-            if rgba.parse(color):
-                self._color_btn.set_rgba(rgba)
-        self._color_btn.set_sensitive(bool(color))
-        # Block the toggled handler: this is a programmatic sync to the
-        # newly-active scheme's saved color, not a user edit. Letting it fire
-        # would run _on_color_changed against the button's stale RGBA and write
-        # that over the scheme's just-loaded saved color.
-        self._color_check.handler_block(self._color_check_handler)
-        self._color_check.set_active(bool(color))
-        self._color_check.handler_unblock(self._color_check_handler)
-        self.pane1.set_appearance(text_color=color)
-        self.pane2.set_appearance(text_color=color)
+    def _current_bg_key(self):
+        return f'reading_bg_{settings.get("color_scheme") or "default"}'
+
+    def _resolved_dark(self):
+        # Explicit schemes resolve deterministically; System follows appearance.
+        scheme = settings.get('color_scheme') or 'default'
+        if scheme == 'light':
+            return False
+        if scheme == 'dark':
+            return True
+        return Adw.StyleManager.get_default().get_dark()
+
+    def _papers(self):
+        return self._PAPER_DARK if self._resolved_dark() else self._PAPER_LIGHT
+
+    @staticmethod
+    def _ink_for(hex_bg):
+        """Pick a legible label ink (warm-dark or warm-light) for a swatch fill
+        by its perceived luminance."""
+        r, g, b = (int(hex_bg[i:i + 2], 16) for i in (1, 3, 5))
+        lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+        return '#2b2620' if lum > 0.55 else '#e8e0d4'
+
+    def _make_swatch(self, label, fill_hex, ink_hex, size, tooltip, on_click,
+                     extra_class=None):
+        """A round colour chip: `fill_hex` background, `label` drawn in `ink_hex`
+        (a paper name in that paper's ink). Fixed square + centred so it stays
+        circular in its homogeneous cell."""
+        btn = Gtk.Button(label=label)
+        btn.add_css_class('paper-swatch')
+        for cls in (extra_class or '').split():
+            btn.add_css_class(cls)
+        btn.set_size_request(size, size)
+        btn.set_halign(Gtk.Align.CENTER)
+        btn.set_valign(Gtk.Align.CENTER)
+        btn.set_tooltip_text(tooltip)
+        set_accessible_label(btn, tooltip)
+        prov = Gtk.CssProvider()
+        prov.load_from_data(
+            (f'button.paper-swatch {{ background-color: {fill_hex}; '
+             f'color: {ink_hex}; }}').encode())
+        btn.get_style_context().add_provider(
+            prov, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        btn.connect('clicked', on_click)
+        return btn
+
+    def _rebuild_colour_row(self):
+        """One row of theme chips for the active scheme. Each preset chip shows
+        its paper name in that paper's auto ink, on the paper fill — so the chip
+        previews the whole pairing. The active paper rings it; a custom text or
+        paper instead rings the dashed Custom chip, which opens a popover to
+        override either colour."""
+        child = self._paper_box.get_first_child()
+        while child:
+            nxt = child.get_next_sibling()
+            self._paper_box.remove(child)
+            child = nxt
+        paper_stored = settings.get(self._current_bg_key())
+        ink_stored = settings.get(self._current_mode_key())
+        pnorm = (paper_stored or '').lower()
+        papers = self._papers()
+        preset_stores = {(v or '').lower() for _l, _s, v in papers}
+        # "Custom" is active when the ink is overridden, or the paper is off-preset.
+        custom = bool(ink_stored) or (bool(paper_stored) and pnorm not in preset_stores)
+        for label, sw, val in papers:
+            chip = self._make_swatch(
+                _(label), sw, auto_reading_ink(sw), 56, _(label),
+                lambda b, v=val: self._on_paper_preset(v))
+            if not custom and (val or '').lower() == pnorm:
+                chip.add_css_class('selected')
+            self._paper_box.append(chip)
+        # Dashed Custom chip: previews the active custom combo, or a neutral
+        # opener. Click → popover to set a custom text and/or paper colour.
+        if custom:
+            eff_paper = paper_stored or papers[0][1]
+            ccustom = self._make_swatch(
+                _('Custom'), eff_paper, ink_stored or auto_reading_ink(eff_paper),
+                56, _('Custom colours'), self._on_custom_clicked,
+                extra_class='custom-swatch')
+            ccustom.add_css_class('selected')
+        else:
+            neutral = '#3a3a3a' if self._resolved_dark() else '#e0ddd6'
+            ccustom = self._make_swatch(
+                _('Custom'), neutral, self._ink_for(neutral), 56,
+                _('Custom colours'), self._on_custom_clicked,
+                extra_class='custom-swatch')
+        self._paper_box.append(ccustom)
+
+    def _apply_paper(self, value):
+        settings.put(self._current_bg_key(), value)
+        self.pane1.set_appearance(bg_color=value)
+        self.pane2.set_appearance(bg_color=value)
+
+    def _apply_ink(self, value):
+        settings.put(self._current_mode_key(), value)
+        self.pane1.set_appearance(text_color=value)
+        self.pane2.set_appearance(text_color=value)
+
+    def _on_paper_preset(self, store_val):
+        # A preset is a coordinated theme: set the paper and return ink to auto.
+        self._apply_paper(store_val)
+        self._apply_ink(None)
+        self._rebuild_colour_row()
+
+    def _on_custom_clicked(self, btn):
+        # The single Custom chip fans out to either override via a mini-picker:
+        # a live "Aa" preview of the current combo over a Text and a Paper row,
+        # each showing the current colour and opening the colour dialog. The
+        # dialog is parented to the window (not the popover), so dismissing the
+        # popover can't orphan it; unparent is deferred to idle to avoid
+        # destroying a row mid-click.
+        paper_stored = settings.get(self._current_bg_key())
+        ink_stored = settings.get(self._current_mode_key())
+        eff_paper = paper_stored or self._papers()[0][1]
+        eff_ink = ink_stored or auto_reading_ink(eff_paper)
+
+        pop = Gtk.Popover()
+        pop.set_parent(btn)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        for m in ('top', 'bottom', 'start', 'end'):
+            getattr(box, f'set_margin_{m}')(8)
+
+        preview = Gtk.Label(label=_('Aa'))
+        preview.add_css_class('custom-preview')
+        pv = Gtk.CssProvider()
+        pv.load_from_data(
+            (f'label.custom-preview {{ background-color: {eff_paper}; '
+             f'color: {eff_ink}; }}').encode())
+        preview.get_style_context().add_provider(
+            pv, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        box.append(preview)
+
+        box.append(self._custom_pick_row(
+            eff_ink, _('Text colour'), self._on_ink_custom_clicked, pop))
+        box.append(self._custom_pick_row(
+            eff_paper, _('Paper colour'), self._on_paper_custom_clicked, pop))
+
+        pop.set_child(box)
+        pop.connect('closed', lambda p: GLib.idle_add(p.unparent))
+        pop.popup()
+
+    def _custom_pick_row(self, colour, label, handler, pop):
+        """A popover row: a swatch of the current colour + label; opens the
+        colour dialog (window-parented) after dismissing the popover."""
+        row = Gtk.Button()
+        row.add_css_class('flat')
+        row.add_css_class('custom-pick-row')
+        inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        sw = Gtk.Box()
+        sw.add_css_class('mini-swatch')
+        sw.set_size_request(18, 18)
+        sw.set_valign(Gtk.Align.CENTER)
+        prov = Gtk.CssProvider()
+        prov.load_from_data(f'box.mini-swatch {{ background-color: {colour}; }}'.encode())
+        sw.get_style_context().add_provider(
+            prov, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        inner.append(sw)
+        inner.append(Gtk.Label(label=label, xalign=0, hexpand=True))
+        row.set_child(inner)
+        row.connect('clicked', lambda _x: (pop.popdown(), handler(None)))
+        return row
+
+    def _on_paper_custom_clicked(self, btn):
+        dialog = Gtk.ColorDialog()
+        dialog.set_title(_('Custom background colour'))
+        initial = Gdk.RGBA()
+        stored = settings.get(self._current_bg_key())
+        if not (stored and initial.parse(stored)):
+            initial.parse('#ffffff')
+        dialog.choose_rgba(self, initial, None, self._on_paper_custom_done)
+
+    def _on_paper_custom_done(self, dialog, result):
+        try:
+            rgba = dialog.choose_rgba_finish(result)
+        except GLib.Error:
+            return  # dismissed
+        self._apply_paper(self._rgba_hex(rgba))
+        self._rebuild_colour_row()
+
+    def _on_ink_custom_clicked(self, btn):
+        dialog = Gtk.ColorDialog()
+        dialog.set_title(_('Custom text colour'))
+        initial = Gdk.RGBA()
+        stored = settings.get(self._current_mode_key())
+        if not (stored and initial.parse(stored)):
+            initial.parse('#000000')
+        dialog.choose_rgba(self, initial, None, self._on_ink_custom_done)
+
+    def _on_ink_custom_done(self, dialog, result):
+        try:
+            rgba = dialog.choose_rgba_finish(result)
+        except GLib.Error:
+            return  # dismissed
+        self._apply_ink(self._rgba_hex(rgba))
+        self._rebuild_colour_row()
+
+    @staticmethod
+    def _rgba_hex(rgba):
+        return (f'#{round(rgba.red * 255):02x}'
+                f'{round(rgba.green * 255):02x}'
+                f'{round(rgba.blue * 255):02x}')
+
+    def _apply_mode_theme(self):
+        """Re-apply the active scheme's saved paper + ink to both panes and
+        rebuild the colour row (called when the light/dark theme changes)."""
+        bg = settings.get(self._current_bg_key())
+        ink = settings.get(self._current_mode_key())
+        for pane in (self.pane1, self.pane2):
+            pane.set_appearance(bg_color=bg, text_color=ink)
+        self._rebuild_colour_row()
 
     def _on_appear_theme(self, btn):
         self._theme_light.set_active(btn is self._theme_light)
@@ -1299,28 +1512,7 @@ class BibleWindow(Adw.ApplicationWindow):
             scheme, adw = 'default', Adw.ColorScheme.DEFAULT
         settings.put('color_scheme', scheme)
         Adw.StyleManager.get_default().set_color_scheme(adw)
-        self._apply_mode_color()
-
-    def _on_color_check(self, btn):
-        enabled = btn.get_active()
-        self._color_btn.set_sensitive(enabled)
-        if not enabled:
-            settings.put(self._current_mode_key(), None)
-            self.pane1.set_appearance(text_color=None)
-            self.pane2.set_appearance(text_color=None)
-        else:
-            self._on_color_changed(self._color_btn)
-
-    def _on_color_changed(self, btn):
-        if not self._color_check.get_active():
-            return
-        rgba = btn.get_rgba()
-        color = (f'#{round(rgba.red*255):02x}'
-                 f'{round(rgba.green*255):02x}'
-                 f'{round(rgba.blue*255):02x}')
-        settings.put(self._current_mode_key(), color)
-        self.pane1.set_appearance(text_color=color)
-        self.pane2.set_appearance(text_color=color)
+        self._apply_mode_theme()
 
     def _on_appear_size(self, scale):
         size = round(scale.get_value(), 1)
@@ -2317,6 +2509,17 @@ class BibleWindow(Adw.ApplicationWindow):
         self._menu_scroll.set_child(_body)
         panel.append(self._menu_scroll)
 
+        def _section_header(text):
+            # One quiet ALL-CAPS label leading a section, so the panel's
+            # settings groups share a rhythm (Appearance / Reading Plan).
+            h = Gtk.Label(label=text, xalign=0)
+            h.add_css_class('menu-section-header')
+            h.set_margin_start(14)
+            h.set_margin_end(12)
+            h.set_margin_top(16)
+            h.set_margin_bottom(4)
+            return h
+
         # ── Navigation group (Study Journal / Modules) as coherent list rows
         # (icon + label + chevron), matching the app's Adw idiom rather than
         # plain grey buttons. ────────────────────────────────────────────────
@@ -2339,15 +2542,16 @@ class BibleWindow(Adw.ApplicationWindow):
             nav_group.add(row)
         _body.append(nav_group)
 
-        # ── Text Appearance: its own row whose chevron rotates (▸→▾) to expand
-        # the inline appearance card just below — a real expander affordance,
-        # not a → arrow that falsely implies push-navigation. ────────────────
+        # ── Appearance: a section header + its own row whose chevron rotates
+        # (▸→▾) to expand the inline appearance card just below — a real expander
+        # affordance, not a → arrow that falsely implies push-navigation. ──────
+        _body.append(_section_header(_('Appearance')))
         appear_group = Adw.PreferencesGroup()
         appear_group.set_margin_start(12)
         appear_group.set_margin_end(12)
-        self._appear_row = Adw.ActionRow(title=_('Text Appearance'))
+        self._appear_row = Adw.ActionRow(title=_('Appearance'))
         self._appear_row.add_prefix(
-            Gtk.Image.new_from_icon_name('preferences-desktop-font-symbolic'))
+            Gtk.Image.new_from_icon_name('applications-graphics-symbolic'))
         self._appear_arrow = Gtk.Image.new_from_icon_name('pan-end-symbolic')
         self._appear_arrow.add_css_class('dim-label')
         self._appear_row.add_suffix(self._appear_arrow)
@@ -2399,6 +2603,24 @@ class BibleWindow(Adw.ApplicationWindow):
         self._font_drop.set_selected(font_idx)
         self._font_drop.connect('notify::selected', self._on_appear_font)
         font_row.append(self._font_drop)
+        # Bold + Justify ride the Font row as compact icon toggles (linked pair),
+        # so they cost no extra vertical row; the dropdown narrows to make room.
+        style_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        style_box.add_css_class('linked')
+        style_box.add_css_class('appear-style-toggles')
+        self._bold_btn = Gtk.ToggleButton(icon_name='format-text-bold-symbolic')
+        self._bold_btn.set_tooltip_text(_('Bold'))
+        set_accessible_label(self._bold_btn, _('Bold'))
+        self._bold_btn.set_active(bool(settings.get('font_bold')))
+        self._bold_btn.connect('toggled', self._on_appear_bold)
+        self._justify_btn = Gtk.ToggleButton(icon_name='format-justify-fill-symbolic')
+        self._justify_btn.set_tooltip_text(_('Justified'))
+        set_accessible_label(self._justify_btn, _('Justified'))
+        self._justify_btn.set_active(bool(settings.get('font_justify')))
+        self._justify_btn.connect('toggled', self._on_appear_justify)
+        style_box.append(self._bold_btn)
+        style_box.append(self._justify_btn)
+        font_row.append(style_box)
         card.append(font_row)
 
         # Font size
@@ -2450,44 +2672,21 @@ class BibleWindow(Adw.ApplicationWindow):
         width_row.append(self._width_val_lbl)
         card.append(width_row)
 
-        # Bold + Justify toggles
-        toggle_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
-                             spacing=8, homogeneous=True)
-        self._bold_btn = Gtk.ToggleButton(label=_('Bold'))
-        self._bold_btn.set_active(bool(settings.get('font_bold')))
-        self._bold_btn.connect('toggled', self._on_appear_bold)
-        self._justify_btn = Gtk.ToggleButton(label=_('Justified'))
-        self._justify_btn.set_active(bool(settings.get('font_justify')))
-        self._justify_btn.connect('toggled', self._on_appear_justify)
-        toggle_row.append(self._bold_btn)
-        toggle_row.append(self._justify_btn)
-        card.append(toggle_row)
-
-        # ── Text color ────────────────────────────────────────────────────────
+        # ── Colour: one row of theme chips ────────────────────────────────────
+        # Each chip previews its pairing — the paper name drawn in that paper's
+        # auto ink, on the paper fill. Selecting one sets the paper and returns
+        # the ink to auto; the dashed Custom chip opens a popover to override
+        # text and/or paper. Built per active scheme by _rebuild_colour_row;
+        # rebuilt on theme change via _apply_mode_theme.
         card.append(Gtk.Separator())
-        color_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        self._color_check = Gtk.CheckButton(label=_('Custom text color'))
-        self._color_check.set_hexpand(True)
-        saved_color = settings.get(f'text_color_{settings.get("color_scheme") or "default"}')
-        self._color_check.set_active(bool(saved_color))
-        self._color_check_handler = self._color_check.connect(
-            'toggled', self._on_color_check)
-
-        import warnings
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            self._color_btn = Gtk.ColorButton()
-        self._color_btn.set_use_alpha(False)
-        self._color_btn.set_sensitive(bool(saved_color))
-        _init_rgba = Gdk.RGBA()
-        if not (saved_color and _init_rgba.parse(saved_color)):
-            _init_rgba.red = _init_rgba.green = _init_rgba.blue = _init_rgba.alpha = 1.0
-        self._color_btn.set_rgba(_init_rgba)
-        self._color_btn.connect('color-set', self._on_color_changed)
-
-        color_row.append(self._color_check)
-        color_row.append(self._color_btn)
-        card.append(color_row)
+        colour_cap = Gtk.Label(label=_('Colour'), xalign=0)
+        colour_cap.add_css_class('paper-caption')
+        card.append(colour_cap)
+        self._paper_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
+                                  spacing=8, homogeneous=True, hexpand=True)
+        self._paper_box.add_css_class('paper-flow')
+        card.append(self._paper_box)
+        self._rebuild_colour_row()
 
         self._appear_revealer.set_child(card)
         _body.append(self._appear_revealer)
@@ -2511,7 +2710,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._plan_collapse_btn.set_tooltip_text(_('Show or hide the reading plan'))
         _hdr_inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         plan_hdr = Gtk.Label(label=_('Reading Plan'), xalign=0)
-        plan_hdr.add_css_class('heading')
+        plan_hdr.add_css_class('menu-section-header')
         _hdr_inner.append(plan_hdr)
         self._plan_chevron = Gtk.Image.new_from_icon_name('pan-down-symbolic')
         self._plan_chevron.add_css_class('dim-label')
