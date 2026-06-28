@@ -132,6 +132,17 @@
   </content_rating>
 
   <releases>
+    <release version="1.1.0" date="2026-06-28">
+      <description>
+        <p>Customizable reading appearance.</p>
+        <ul>
+          <li>New Appearance panel: pick a reading paper — Paper, White, Sepia, Green, or a custom colour — with text colour that adapts to the page (a warm ink on sepia, and so on).</li>
+          <li>Bold and justified text move to compact controls beside the font, and the menu's sections gain a clearer, calmer layout.</li>
+          <li>Redesigned reading plans with a Today view and a month calendar of your progress.</li>
+          <li>Fixed faint text trails when scrolling the reading view under Flatpak.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.1" date="2026-05-28">
       <description>
         <p>Packaging fixes.</p>
