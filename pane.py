@@ -2489,6 +2489,40 @@ class BiblePane(Gtk.Box):
             # the relayout cascade here.
             GLib.timeout_add(100, self._show_dict_popup, word, offset)
 
+    def _attach_dict_to_label(self, label):
+        """Wire the double-click dictionary peek onto a card label (commentary
+        quote, caption, archaeology body). Makes the text selectable so GTK's
+        native double-click selects the word; a CAPTURE-phase click then reads
+        that selection and shows the same peek used in the reading view."""
+        if label is None:
+            return
+        label.set_selectable(True)
+        g = Gtk.GestureClick.new()
+        g.set_button(1)
+        g.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        g.connect('pressed', self._on_label_dict_click, label)
+        label.add_controller(g)
+
+    def _on_label_dict_click(self, gesture, n_press, x, y, label):
+        # Any click dismisses an open peek (it's non-autohide). Defer the
+        # lookup so the label has settled its native double-click selection.
+        existing = getattr(self, '_dict_pop', None)
+        if existing is not None and existing.get_visible():
+            self._dict_user_closed = True
+            existing.popdown()
+        if n_press == 2:
+            GLib.timeout_add(50, self._label_dict_lookup, label, int(x), int(y))
+
+    def _label_dict_lookup(self, label, x, y):
+        non_empty, s, e = label.get_selection_bounds()
+        if non_empty:
+            word = label.get_text()[s:e].strip()
+            if word and word.replace("'", '').replace('’', '').isalpha():
+                rect = Gdk.Rectangle()
+                rect.x, rect.y, rect.width, rect.height = x, y, 1, 1
+                self._show_dict_popup_at(word, label, rect)
+        return GLib.SOURCE_REMOVE
+
     def _dict_reshow(self, pop):
         """Re-show the dict peek after the relayout cascade unmapped it (see
         the self-heal note in _show_dict_popup). Still invisible (opacity 0)
@@ -2526,9 +2560,30 @@ class BiblePane(Gtk.Box):
         return False
 
     def _show_dict_popup(self, word, word_offset):
+        # TextView entry point: compute the word's rectangle in the view's
+        # widget coords, then hand off to the shared peek anchored on the view.
+        start = self._buffer.get_iter_at_offset(word_offset)
+        end = start.copy()
+        if not end.ends_word():
+            end.forward_word_end()
+        r1 = self._view.get_iter_location(start)
+        r2 = self._view.get_iter_location(end)
+        wx1, wy1 = self._view.buffer_to_window_coords(
+            Gtk.TextWindowType.WIDGET, r1.x, r1.y)
+        wx2, _wy = self._view.buffer_to_window_coords(
+            Gtk.TextWindowType.WIDGET, r2.x, r2.y)
+        rect = Gdk.Rectangle()
+        rect.x = wx1
+        rect.y = wy1
+        rect.width = max(1, wx2 - wx1) if r2.y == r1.y else max(1, r1.width)
+        rect.height = r1.height
+        self._show_dict_popup_at(word, self._view, rect)
+
+    def _show_dict_popup_at(self, word, anchor_widget, rect):
         # A lightweight "Look Up" peek anchored at the double-clicked word,
         # not a detached window centred on the screen. Deep study still goes
-        # through the Strong's lexicon panel.
+        # through the Strong's lexicon panel. `anchor_widget`/`rect` say where
+        # to point the arrow (the reading view, or a card label).
         #
         # The popover is *non-autohide* and reused per pane: an autohide
         # popover grabs the pointer the instant it's shown, so the very
@@ -2545,9 +2600,6 @@ class BiblePane(Gtk.Box):
             pop.set_has_arrow(True)
             pop.set_autohide(False)
             pop.set_can_focus(False)
-            # Parent to the text view so the arrow anchors on the word in the
-            # view's own coordinate space (parenting elsewhere mis-anchors it).
-            pop.set_parent(self._view)
             # Clicking a word re-renders the other pane (cross-pane verse
             # sync); that relayout cascade unmaps a freshly-shown popover no
             # matter where it's parented — a Gtk.Popover can't survive a
@@ -2571,29 +2623,19 @@ class BiblePane(Gtk.Box):
             self._dict_pop = pop
         else:
             pop.popdown()
+        # Parent to the anchor widget so the arrow anchors on the word in that
+        # widget's own coordinate space (parenting elsewhere mis-anchors it).
+        # Re-parent when the lookup comes from a different widget (e.g. the
+        # reading view vs. a commentary card label).
+        if pop.get_parent() is not anchor_widget:
+            if pop.get_parent() is not None:
+                pop.unparent()
+            pop.set_parent(anchor_widget)
 
         # Stale-result guard: a newer lookup bumps the generation so an
         # earlier fetch returning late can't overwrite the current content.
         self._dict_gen = getattr(self, '_dict_gen', 0) + 1
         gen = self._dict_gen
-
-        # Point the arrow at the word: union the start/end iter rectangles,
-        # converted from buffer coords to widget coords.
-        start = self._buffer.get_iter_at_offset(word_offset)
-        end = start.copy()
-        if not end.ends_word():
-            end.forward_word_end()
-        r1 = self._view.get_iter_location(start)
-        r2 = self._view.get_iter_location(end)
-        wx1, wy1 = self._view.buffer_to_window_coords(
-            Gtk.TextWindowType.WIDGET, r1.x, r1.y)
-        wx2, _wy = self._view.buffer_to_window_coords(
-            Gtk.TextWindowType.WIDGET, r2.x, r2.y)
-        rect = Gdk.Rectangle()
-        rect.x = wx1
-        rect.y = wy1
-        rect.width = max(1, wx2 - wx1) if r2.y == r1.y else max(1, r1.width)
-        rect.height = r1.height
 
         # Open the peek on whichever side of the word has more room, and cap
         # the definition height so the whole popover *fits* on that side. If it
@@ -2601,11 +2643,11 @@ class BiblePane(Gtk.Box):
         # the original edge (pointing away from the word) — capping avoids the
         # flip entirely. Room is measured in the window, where the popover
         # actually lives (it can extend up over the toolbar).
-        root = self._view.get_root()
-        ok, pt = self._view.compute_point(
+        root = anchor_widget.get_root()
+        ok, pt = anchor_widget.compute_point(
             root, Graphene.Point().init(float(rect.x), float(rect.y)))
         word_y = pt.y if ok else rect.y
-        win_h = root.get_height() if root is not None else self._view.get_height()
+        win_h = root.get_height() if root is not None else anchor_widget.get_height()
         room_above = word_y
         room_below = win_h - (word_y + rect.height)
         if room_above > room_below:
