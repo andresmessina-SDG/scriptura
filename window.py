@@ -2261,7 +2261,7 @@ class BibleWindow(Adw.ApplicationWindow):
         dlg.add_acknowledgement_section(_('Built with'), [
             'GTK4 + libadwaita',
             'Python 3 / PyGObject',
-            'Whoosh full-text search',
+            'SQLite FTS5 full-text search',
         ])
         dlg.present(self)
 

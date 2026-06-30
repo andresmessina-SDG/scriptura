@@ -21,7 +21,9 @@ a clean GNOME look and feel and an emphasis on quiet, distraction-free reading.
   Lexicon (CC-BY). Downloaded on demand via Module Manager.
 - **Text rendering:** Native `Gtk.TextView` + Pango markup (WebKitGTK was tried
   and reverted — do not suggest switching back)
-- **Search:** Whoosh full-text indexing (per-module, lazy-built)
+- **Search:** SQLite FTS5 full-text indexing (per-module, lazy-built;
+  shared query grammar across the SWORD and eBible backends — see
+  `search_query.py`)
 - **Build:** No build step; plain Python scripts
 - **Platform:** Fedora Linux, GNOME desktop (Zorin Blue-Dark theme on this
   development machine; should work on any GNOME)
@@ -78,7 +80,8 @@ scriptura/
 +-- lexicon_panel.py      # LexiconPanel — definition view + word study (own class)
 +-- annotation_dialogs.py # Right-click study menu, note editor, chapter note, compare translations
 +-- devotional.py         # Devotional OSIS rendering (Spurgeon-style multi-section labels)
-+-- sword_bridge.py       # SWORD library wrapper + Whoosh indexing
++-- sword_bridge.py       # SWORD library wrapper + FTS5 indexing
++-- search_query.py       # Shared user-query → FTS5 MATCH grammar translator
 +-- ebible_bridge.py      # eBible.org SQLite translation backend
 +-- catena_bridge.py      # Historical Commentaries pack — SQLite query layer + download/install
 +-- catena_reader.py      # CatenaReader — verse-synced commentary card view (pane subsystem)
@@ -373,8 +376,12 @@ changes in `_update_font_css`).
   `robinson:V-2AAI-3S` to readable strings.
 - `lookup_morph_for_strong_heb(...)` + `decode_hebrew_morph(...)` — OSHB
   morphology for Hebrew.
-- `search_module(module, query)` — Whoosh full-text search. Lazy-builds
-  per-module index on first use (background thread). Max 5000 results.
+- `search_module(module, query)` — FTS5 full-text search via the shared
+  `search_query` grammar (phrase / AND / OR / exclude / prefix). Lazy-builds
+  a per-module FTS5 index (`~/.sword/fts5_indexes/<module>.db`) on first use
+  (background thread, atomic rename). Canonical (rowid) result order. Max
+  5000 results. The eBible backend uses the same grammar over an
+  external-content FTS5 table in `ebible.db`.
 - `get_devotional_raw(module, date)` / `load_devotional(...)` — fresh SWMgr
   per call for the same reason as dict lookup.
 - `parse_devotional_refs(raw_osis)` — extracts the first `osisRef` from a
@@ -458,7 +465,7 @@ Each module declares its own logger near the top of the file, e.g.
 the historical `[tag]` prefixes used before the migration — including
 the deliberate split inside `sword_bridge.py`, which carries both
 `scriptura.sword` (module load / verse keys / genbook walks) and
-`scriptura.search` (index build / Whoosh query path).
+`scriptura.search` (index build / FTS5 query path).
 
 Convention: `_log.exception(msg)` inside `except` blocks (logs at ERROR
 with the traceback — the main reason this exists is debugging weird

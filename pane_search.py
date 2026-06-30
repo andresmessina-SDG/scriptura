@@ -20,6 +20,7 @@ from gtk_utils import clear_children
 
 import sword_bridge
 import ebible_bridge
+import search_query
 
 
 class PaneSearch:
@@ -72,6 +73,9 @@ class PaneSearch:
 
         self._entry = Gtk.SearchEntry(hexpand=True)
         self._entry.set_placeholder_text(_('Search this module…'))
+        self._entry.set_tooltip_text(_(
+            'Phrase: "living water" · either: bread OR wine · '
+            'exclude: faith -works · prefix: baptiz*'))
         self._entry.connect('activate', self._on_search)
         self._entry.connect('stop-search',
                             lambda _: self._btn.set_active(False))
@@ -212,7 +216,11 @@ class PaneSearch:
         if not pending:
             return
         query, case_sensitive = pending
-        words = [w for w in re.split(r'\s+', query.strip()) if w]
+        # Highlight exactly the query's positive terms (phrases split into
+        # their words, prefix '*' stripped, excluded -terms dropped) — the
+        # same grammar the backend matched on, so the highlight reflects what
+        # was actually searched for.
+        words = search_query.plain_terms(query)
         if not words:
             return
 

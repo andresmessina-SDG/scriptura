@@ -92,7 +92,7 @@ _BOOK_TO_SECTION = {book: sec for sec, books in SECTIONS for book in books}
 
 def _searchable_modules():
     """Modules suitable for full-text search — Bibles and commentaries
-    (both are book/chapter/verse-keyed, which Whoosh indexing assumes).
+    (both are book/chapter/verse-keyed, which FTS5 indexing assumes).
     Excludes devotionals (date-keyed), lexicons / generic books (no verse
     key space), and internal-use morphology modules (browsable via the
     lexicon panel instead)."""
@@ -174,6 +174,9 @@ class SearchPanel(Gtk.Box):
         # runs the search (we deliberately do NOT search-as-you-type — it
         # indexes); clearing the field returns to the recent-searches view.
         self._entry = Gtk.SearchEntry(hexpand=True, placeholder_text=_('Search…'))
+        self._entry.set_tooltip_text(_(
+            'Phrase: "living water" · either: bread OR wine · '
+            'exclude: faith -works · prefix: baptiz*'))
         self._entry.connect('activate', self._on_search)
         self._entry.connect('search-changed', self._on_entry_changed)
         entry_row.append(self._entry)
@@ -589,8 +592,8 @@ class SearchPanel(Gtk.Box):
         row.set_child(box)
         return row
 
-    # Cap the number of result rows rendered as widgets. The Whoosh
-    # search itself returns up to MAX_SEARCH_RESULTS (5000) which F3
+    # Cap the number of result rows rendered as widgets. The search
+    # backend returns up to MAX_SEARCH_RESULTS (5000) which F3
     # step-through can walk; the visible list just bloats GtkListBox and
     # drags later UI interactions. 500 is plenty for visual browsing —
     # users narrow down via the book filter or a more specific query.

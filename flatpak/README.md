@@ -38,14 +38,11 @@ The first build will fail until you fill in:
    Also confirm the version on CrossWire's downloads page is still
    `1.9.0`; bump if needed.
 
-2. **Whoosh sha256.** Same drill:
-   ```sh
-   pip download --no-binary=:all: --no-deps whoosh==2.7.4
-   sha256sum Whoosh-2.7.4.tar.gz
-   ```
+   (Full-text search uses SQLite FTS5 from the runtime's bundled Python
+   `sqlite3` — there's no separate search package to vendor.)
 
-Both sha256 values get pasted into the `sha256:` lines that currently
-hold `0000…0000` placeholders.
+This sha256 value gets pasted into the `sha256:` line that currently
+holds a `0000…0000` placeholder.
 
 ## Build + run locally
 
@@ -68,11 +65,6 @@ mistakes don't compound.
   may not provide. If you see `swig: command not found`, add `swig`
   as a build dependency to the libsword module via a
   `build-options.append-path` or a separate prep module.
-- **Whoosh version conflict with newer pip.** Whoosh 2.7.4 is old
-  enough that newer pip resolvers complain. The official Whoosh
-  fork (`whoosh-reloaded`) ships 2.7.x with patches. If the build
-  fails on Whoosh-2.7.4, switch the source to the reloaded fork:
-  `https://files.pythonhosted.org/.../Whoosh_Reloaded-2.7.4.tar.gz`.
 - **No SWORD modules on first launch.** The Flatpak sandbox has its
   own `~/.var/app/<id>/data/.sword/` — your existing host-level
   `~/.sword/` modules don't carry over. The welcome window's "Install

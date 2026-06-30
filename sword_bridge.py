@@ -3,11 +3,14 @@ import logging
 import os
 import re
 import shutil
+import sqlite3
 import tarfile
 import threading
 import zipfile
 from collections import OrderedDict
 import Sword
+
+import search_query
 
 _sword_log = logging.getLogger('scriptura.sword')
 _search_log = logging.getLogger('scriptura.search')
@@ -15,44 +18,6 @@ _search_log = logging.getLogger('scriptura.search')
 # InstallMgr shadow dirs are named with a 14-digit timestamp (e.g.
 # 20081216195754); both the newest-dir lookup and the prune below match on it.
 _TS_DIR_RE = re.compile(r'^\d{14}$')
-
-# Whoosh is only imported on first search/index — saves ~50 ms on cold
-# start for the common case where the user never searches. The lazy
-# helpers `_whoosh_*` below cache the imported names and the bible
-# schema so repeated calls are dict-lookup-cheap.
-_whoosh_imports = None
-_bible_schema_cached = None
-
-
-def _whoosh_load():
-    """Import Whoosh on demand and return the names we use."""
-    global _whoosh_imports
-    if _whoosh_imports is None:
-        from whoosh.index import create_in, open_dir, exists_in
-        from whoosh.qparser import QueryParser
-        _whoosh_imports = {
-            'create_in': create_in,
-            'open_dir': open_dir,
-            'exists_in': exists_in,
-            'QueryParser': QueryParser,
-        }
-    return _whoosh_imports
-
-
-def _bible_schema():
-    """Lazy-construct the Whoosh schema we index Bibles into."""
-    global _bible_schema_cached
-    if _bible_schema_cached is None:
-        from whoosh.fields import Schema, ID, TEXT, NUMERIC
-        from whoosh.analysis import StemmingAnalyzer
-        _bible_schema_cached = Schema(
-            module=ID(stored=True),
-            book=ID(stored=True),
-            chapter=NUMERIC(stored=True),
-            verse=NUMERIC(stored=True),
-            content=TEXT(stored=True, analyzer=StemmingAnalyzer()),
-        )
-    return _bible_schema_cached
 
 _mgr = None
 # RLock allows reentry: callers like load_chapter hold _lock and then call mgr().
@@ -119,29 +84,61 @@ _indexing_threads = {} # To keep track of indexing processes per module
 # inside load_chapter; if we held _lock here, the indexer couldn't make progress).
 _indexing_lock = threading.Lock()
 
-WHOOSH_INDEX_DIR = os.path.expanduser('~/.sword/whoosh_indexes')
-MAX_SEARCH_RESULTS = 5000 # Limit the number of Whoosh results to prevent performance issues with common words
+FTS_INDEX_DIR = os.path.expanduser('~/.sword/fts5_indexes')
+MAX_SEARCH_RESULTS = 5000  # cap result count so a common word can't flood the UI
+# Bump when the index schema/tokenizer changes so stale indexes rebuild.
+_FTS_INDEX_VERSION = 1
+
 
 def _get_index_path(module_name):
-    return os.path.join(WHOOSH_INDEX_DIR, module_name)
+    # One SQLite/FTS5 file per module. Module names are filename-safe in
+    # practice (KJVA, StrongsGreek…); guard against a stray separator anyway.
+    safe = module_name.replace(os.sep, '_').replace('/', '_')
+    return os.path.join(FTS_INDEX_DIR, safe + '.db')
+
+
+def _index_is_valid(idx_path):
+    """True if a built, current-version FTS5 index exists at idx_path."""
+    if not os.path.exists(idx_path):
+        return False
+    try:
+        conn = sqlite3.connect(idx_path)
+        try:
+            ver = conn.execute('PRAGMA user_version').fetchone()[0]
+            conn.execute('SELECT 1 FROM verses LIMIT 1')  # table present?
+        finally:
+            conn.close()
+        return ver == _FTS_INDEX_VERSION
+    except Exception:
+        return False
 
 def _build_module_index(module_name, on_progress=None):
-    """Build a fresh Whoosh index for module_name. Always starts clean.
+    """Build a fresh FTS5 index for module_name into a per-module SQLite file.
 
     `on_progress(book_idx, total_books, book_name)` is invoked on the
     indexing thread once per book; the receiver should marshal to the
     main loop itself (via GLib.idle_add). Indexing a full Bible against
-    SWORD typically takes 5-15s; per-book ticks give the UI something
-    concrete to display while the work runs."""
+    SWORD typically takes 5-15s (dominated by SWORD's per-verse render);
+    per-book ticks give the UI something concrete to display.
+
+    Built into a sibling .tmp and atomically renamed, so a killed build
+    leaves the previous index (or nothing) rather than a half-built file."""
     idx_path = _get_index_path(module_name)
-    shutil.rmtree(idx_path, ignore_errors=True)
-    os.makedirs(idx_path, exist_ok=True)
+    os.makedirs(FTS_INDEX_DIR, exist_ok=True)
+    tmp_path = idx_path + '.tmp'
+    if os.path.exists(tmp_path):
+        os.remove(tmp_path)
 
-    w = _whoosh_load()
-    ix = w['create_in'](idx_path, _bible_schema())
-    writer = ix.writer()
-
+    conn = None
     try:
+        conn = sqlite3.connect(tmp_path)
+        # Metadata columns UNINDEXED (stored, not searched); content indexed.
+        # unicode61 gives word-boundary, case/diacritic-folded matching, shared
+        # with the eBible backend via the search_query grammar.
+        conn.execute("CREATE VIRTUAL TABLE verses USING fts5("
+                     "book UNINDEXED, chapter UNINDEXED, verse UNINDEXED, "
+                     "content, tokenize='unicode61')")
+        conn.execute(f'PRAGMA user_version = {_FTS_INDEX_VERSION}')
         total_books = len(_ALL_BOOKS)
         for i, book in enumerate(_ALL_BOOKS, start=1):
             if on_progress:
@@ -152,27 +149,35 @@ def _build_module_index(module_name, on_progress=None):
             # Module's own versification — a KJV-keyed count under- or
             # over-iterates chapters for modules like RusSynodal/Wycliffe
             # (load_chapter already renders with the module's system).
+            book_rows = []
             for ch in range(1, chapter_count(book, module_name) + 1):
                 for v_num, html in load_chapter(module_name, book, ch):
                     plain_text = re.sub(r'<[^>]+>', '', str(html))
-                    writer.add_document(module=module_name, book=book,
-                                        chapter=ch, verse=v_num, content=plain_text)
-        writer.commit()
+                    book_rows.append((book, ch, v_num, plain_text))
+            # Insert in canonical order so rowid order == verse order, which is
+            # the result ordering the UI relies on (no relevance re-sort).
+            if book_rows:
+                conn.executemany(
+                    'INSERT INTO verses(book, chapter, verse, content) '
+                    'VALUES (?, ?, ?, ?)', book_rows)
+        conn.commit()
+        conn.close()
+        conn = None
+        os.replace(tmp_path, idx_path)
+        return True
     except Exception:
-        # Without cancel(), Whoosh leaves a MAIN_WRITELOCK file that blocks
-        # all future searches against this module until manual cleanup.
         _search_log.exception('index build failed for %r', module_name)
-        try:
-            writer.cancel()
-        except Exception:
-            pass
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
         return False
-    finally:
-        try:
-            ix.close()
-        except Exception:
-            pass
-    return True
 
 
 
@@ -1238,10 +1243,13 @@ def remove_module(module_name):
             shutil.rmtree(full)
     os.remove(conf)
 
-    # Delete the associated Whoosh index
+    # Delete the associated FTS5 search index (a single .db file).
     idx_path = _get_index_path(module_name)
     if os.path.exists(idx_path):
-        shutil.rmtree(idx_path)
+        try:
+            os.remove(idx_path)
+        except OSError:
+            pass
 
     _reset()
 
@@ -1513,35 +1521,22 @@ _ALL_BOOKS = [
 def search_module(module_name, query, on_indexing_start=None,
                   on_indexing_done=None, on_indexing_progress=None,
                   case_sensitive=False):
+    """Search a module via its FTS5 index, using the shared query grammar
+    (phrase / AND / OR / exclude / prefix — see search_query). Builds the
+    index on first use (or after a schema-version bump). Returns
+    [(book, chapter, verse, plain_text)], with a truncation sentinel row
+    when capped.
     """
-    Search a module using Whoosh. Builds index if it doesn't exist or is outdated.
-    Returns [(book, chapter, verse, plain_text)]
-    """
-    query_stripped = query.strip()
-    if not query_stripped:
+    match = search_query.build_match(query)
+    if match is None:
         return []
 
     idx_path = _get_index_path(module_name)
-    w = _whoosh_load()
 
-    # Check if index exists and is valid
-    index_exists = w['exists_in'](idx_path)
-    index_needs_rebuild = False
-    if index_exists:
-        try:
-            ix = w['open_dir'](idx_path)
-            if ix.schema != _bible_schema(): # Schema changed, need rebuild
-                ix.close()
-                index_needs_rebuild = True
-            else:
-                ix.close()
-        except Exception: # Index corrupt, need rebuild
-            index_needs_rebuild = True
-
-    if not index_exists or index_needs_rebuild:
-        # Atomic check-and-spawn: two concurrent searches must not both
-        # rmtree+create_in the same index dir. Hold _indexing_lock only for the
-        # dict op, never during the long-running join below.
+    if not _index_is_valid(idx_path):
+        # Atomic check-and-spawn: two concurrent searches must not both build
+        # the same index. Hold _indexing_lock only for the dict op, never
+        # during the long-running join below.
         started_here = False
         with _indexing_lock:
             existing = _indexing_threads.get(module_name)
@@ -1574,43 +1569,39 @@ def search_module(module_name, query, on_indexing_start=None,
         if on_indexing_done:
             on_indexing_done()
 
-        if not w['exists_in'](idx_path):
+        if not _index_is_valid(idx_path):
             return []
 
-    # Perform search
+    # Perform search. chapter/verse are stored as FTS5 text columns, so CAST
+    # them back to int — the navigation chain (chapter_count/clamp) does
+    # integer comparisons. Fetch one past the cap to detect truncation.
     try:
-        ix = w['open_dir'](idx_path)
-        with ix.searcher() as searcher:
-            parser = w['QueryParser']("content", ix.schema)
-            parsed_query = parser.parse(query_stripped)
-            # Unscored: returns hits in document order, which is canonical
-            # (verses are indexed in canon order) — matching the eBible
-            # backend's ORDER BY rowid — and skips the relevance-ranking
-            # pass (~80 ms on a common word like "God").
-            results = searcher.search(parsed_query, limit=MAX_SEARCH_RESULTS,
-                                      scored=False, sortedby=None)
-            formatted = [(h['book'], h['chapter'], h['verse'], h['content'])
-                         for h in results]
-            # Truncation marker: an empty-book sentinel row that the panel
-            # detects and replaces with its own translated message, so this
-            # backend stays English-free (see search_panel / pane_search).
-            truncated = None
-            if len(results) == MAX_SEARCH_RESULTS:
-                truncated = ('', 0, 0, '')
-            # Whoosh's StandardAnalyzer lowercases at index time, so the
-            # query is always case-insensitive. For a case-sensitive match
-            # we post-filter the result content (which is stored verbatim)
-            # for the original-case query string.
-            if case_sensitive and query_stripped:
-                cs_words = query_stripped.split()
-                formatted = [r for r in formatted
-                             if all(w in (r[3] or '') for w in cs_words)]
-            if truncated is not None:
-                formatted.append(truncated)
-            return formatted
+        conn = sqlite3.connect(idx_path)
+        try:
+            rows = conn.execute(
+                'SELECT book, CAST(chapter AS INTEGER), CAST(verse AS INTEGER), '
+                'content FROM verses WHERE verses MATCH ? ORDER BY rowid '
+                'LIMIT ?', (match, MAX_SEARCH_RESULTS + 1)).fetchall()
+        finally:
+            conn.close()
     except Exception:
-        _search_log.exception('Whoosh error')
+        _search_log.exception('FTS5 search error')
         return []
+
+    truncated = len(rows) > MAX_SEARCH_RESULTS
+    formatted = [(b, c, v, content) for (b, c, v, content) in rows[:MAX_SEARCH_RESULTS]]
+    # FTS5 (unicode61) folds case at index time, so MATCH is case-insensitive.
+    # For a case-sensitive match we post-filter the stored verbatim content
+    # for the original-case terms (shared with the eBible backend).
+    if case_sensitive:
+        cs_words = search_query.plain_terms(query)
+        formatted = [r for r in formatted
+                     if all(w in (r[3] or '') for w in cs_words)]
+    if truncated:
+        # Sentinel row the panel detects and replaces with its own translated
+        # message, so this backend stays English-free.
+        formatted.append(('', 0, 0, ''))
+    return formatted
 
 
 _CROSS_REF_ABBREVS = {

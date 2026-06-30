@@ -295,9 +295,10 @@ def test_installed_ids(db):
 
 
 def test_schema_version_stamped(db):
-    """A fresh DB carries the v1 stamp, locking in the migration hook."""
+    """A fresh DB carries the current v2 stamp (v1 base tables + v2 FTS
+    index), locking in the migration hook."""
     conn = eb._db()
-    assert conn.execute('PRAGMA user_version').fetchone()[0] == 1
+    assert conn.execute('PRAGMA user_version').fetchone()[0] == 2
 
 
 def test_module_language(db):
@@ -388,6 +389,42 @@ def test_search_wildcards_are_literal(db):
 def test_search_empty_query_returns_empty(db):
     assert eb.search_module('eBible: engwebp', '') == []
     assert eb.search_module('eBible: engwebp', '   ') == []
+
+
+def test_search_word_boundary_not_substring(db):
+    """FTS5 fix: a word query no longer matches inside another word, as the
+    old LIKE '%art%' did ('art' must not match 'heart')."""
+    conn = eb._db()
+    conn.execute('INSERT INTO verses VALUES (?,?,?,?,?)',
+                 ('engwebp', 'Psalms', 119, 11, 'hidden in my heart'))
+    conn.commit()
+    assert eb.search_module('eBible: engwebp', 'art') == []
+
+
+def test_search_phrase(db):
+    """A quoted phrase matches adjacent words in order; a loose AND of the
+    same words anywhere does not constrain order."""
+    phrase = {r[:3] for r in eb.search_module('eBible: engwebp', '"loved the world"')}
+    assert phrase == {('John', 3, 16)}
+    assert eb.search_module('eBible: engwebp', '"world loved"') == []
+
+
+def test_search_exclude(db):
+    res = {r[:3] for r in eb.search_module('eBible: engwebp', 'God -world')}
+    assert ('John', 3, 16) not in res     # excluded — contains "world"
+    assert ('John', 3, 17) in res
+    assert ('Genesis', 1, 1) in res
+
+
+def test_search_prefix(db):
+    res = {r[:3] for r in eb.search_module('eBible: engwebp', 'creat*')}
+    assert ('Genesis', 1, 1) in res       # matches "created"
+
+
+def test_search_or(db):
+    res = {r[:3] for r in eb.search_module('eBible: engwebp', 'beginning OR condemn')}
+    assert ('Genesis', 1, 1) in res
+    assert ('John', 3, 17) in res
 
 
 def test_remove_translation(db):

@@ -39,8 +39,9 @@ Built on GNOME with GTK4 + libadwaita, in Python, GPL-3.0.
 - **Cross-references.** OpenBible.info's 340,000-reference database
   is one click away (Module Manager → Open Databases). TSK is the
   fallback when you're offline.
-- **Full-text search.** Per-module Whoosh index, distribution chart
-  across the canon, case-sensitive option, F3 step-through.
+- **Full-text search.** Fast per-module SQLite FTS5 index with phrase,
+  AND/OR, exclude, and prefix queries; a distribution chart across the
+  canon, case-sensitive option, and F3 step-through.
 - **Study Journal.** Every annotation, across every module, in one
   filterable surface. Search free-text, filter by tag or module or
   book, click a row to jump back to the verse.
@@ -100,7 +101,7 @@ Use whichever section matches your distribution.
 
 ```sh
 sudo dnf install python3-gobject gtk4 libadwaita \
-                 sword python3-sword python3-whoosh
+                 sword python3-sword
 ```
 
 ### Ubuntu / Debian / Zorin OS / Pop!_OS / Mint
@@ -108,24 +109,17 @@ sudo dnf install python3-gobject gtk4 libadwaita \
 ```sh
 sudo apt install python3-gi python3-gi-cairo \
                  gir1.2-gtk-4.0 gir1.2-adw-1 \
-                 python3-sword python3-whoosh git
+                 python3-sword git
 ```
 
-If your distribution doesn't ship `python3-whoosh` (older Debian /
-Ubuntu stable), install it into a system-aware venv:
-
-```sh
-python3 -m venv --system-site-packages ~/.venvs/scriptura
-source ~/.venvs/scriptura/bin/activate
-pip install whoosh
-# Activate this venv before running the app from now on.
-```
+Full-text search uses SQLite FTS5, which ships with Python's standard
+`sqlite3` module — there's no separate search package to install.
 
 ### Arch / Manjaro / EndeavourOS / CachyOS
 
 ```sh
 sudo pacman -S --needed python-gobject gtk4 libadwaita \
-                        sword python-whoosh git
+                        sword git
 ```
 
 Arch ships both `libsword` and the Python bindings in the same
@@ -278,8 +272,8 @@ This app stands on the work of others:
   powers the Historical Commentaries pack.
 - **GNOME** — the platform that makes a clean reading experience
   possible on Linux: GTK4, libadwaita, PyGObject.
-- **Whoosh** — the pure-Python full-text search engine that indexes
-  every Bible the moment you ask.
+- **SQLite FTS5** — the full-text search engine, built into Python's
+  standard library, that indexes every Bible the moment you ask.
 
 ---
 
