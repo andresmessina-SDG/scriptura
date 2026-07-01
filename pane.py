@@ -360,6 +360,10 @@ class BibleTextView(Gtk.TextView):
     # legible whatever its colour — light text in dark mode, dark text in light
     # mode, and the black text of a user highlight a flash happens to land on.
     _SEARCH_COLOR = 'rgba(214,150,40,0.40)'   # amber, search matches
+    # The find bar's *current* match — same amber hue, near-opaque so it reads
+    # as "you are here" against the soft bands on the other matches (Safari's
+    # yellow-all / orange-current split, kept in one colour family).
+    _SEARCH_CUR_COLOR = 'rgba(224,150,36,0.85)'
     _FLASH_COLOR = 'rgba(232,120,32,0.44)'    # orange, navigation flash
     # Annotation + lexicon underlines are painted (not Pango underlines) so they
     # stay uniform under the 200% verse-1 drop cap. Thickness, and the muted
@@ -400,11 +404,12 @@ class BibleTextView(Gtk.TextView):
         table = buf.get_tag_table()
         hl_tags = self._hl_tags()
         search = table.lookup('_search_hl')
+        search_cur = table.lookup('_search_hl_cur')
         flash = table.lookup('_flash')
         ul = table.lookup('_ul_text')        # annotation underline (solid)
         hover = table.lookup('_strg_hover')  # lexicon hover underline (dotted)
-        if (not hl_tags and search is None and flash is None
-                and ul is None and hover is None):
+        if (not hl_tags and search is None and search_cur is None
+                and flash is None and ul is None and hover is None):
             return
         vr = self.get_visible_rect()
         _, lo = self.get_iter_at_location(0, vr.y)
@@ -418,6 +423,8 @@ class BibleTextView(Gtk.TextView):
         for tag, hexcol in hl_tags:
             self._draw_tag_layer(snapshot, buf, tag, hexcol, lo, hi, asc, desc)
         self._draw_tag_layer(snapshot, buf, search, self._SEARCH_COLOR,
+                             lo, hi, asc, desc)
+        self._draw_tag_layer(snapshot, buf, search_cur, self._SEARCH_CUR_COLOR,
                              lo, hi, asc, desc)
         self._draw_tag_layer(snapshot, buf, flash, self._FLASH_COLOR,
                              lo, hi, asc, desc)
