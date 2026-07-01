@@ -12,23 +12,22 @@ Extracted from pane.py as part of the v1.0 polish pass; previously
 """
 
 import re
-import threading
 
 from gi.repository import Gtk, GLib, Pango
 from a11y import set_accessible_label
 from gtk_utils import clear_children
 
 import sword_bridge
-import ebible_bridge
 import search_query
+import search_controller
 
 
 class PaneSearch:
     def __init__(self, pane):
         self._pane = pane
-        # Bumped on each search; a finishing background search whose token
-        # no longer matches has been superseded and its results are dropped.
-        self._search_gen = 0
+        # Shared search execution (dispatch + threading + stale-result
+        # guarding) lives in search_controller; this owns only the widgets.
+        self._runner = search_controller.SearchRunner()
         # F3 / Shift+F3 step-through state. `results` is the full list
         # produced by the most recent search; `idx` is the current
         # step position into it.
@@ -296,39 +295,27 @@ class PaneSearch:
 
         case = self._case_btn.get_active()
 
-        self._search_gen += 1
-        gen = self._search_gen
+        def _search():
+            return search_controller.search_backend(
+                module, query, case,
+                on_indexing_start=_idx_start,
+                on_indexing_progress=_idx_progress,
+                on_indexing_done=lambda: None)
 
-        def run():
-            if ebible_bridge.is_ebible_module(module):
-                results = ebible_bridge.search_module(
-                    module, query, case_sensitive=case)
-            else:
-                results = sword_bridge.search_module(
-                    module, query,
-                    on_indexing_start=_idx_start,
-                    on_indexing_progress=_idx_progress,
-                    on_indexing_done=lambda: None,
-                    case_sensitive=case)
-            GLib.idle_add(self._on_done, results, module, gen)
-
-        threading.Thread(target=run, daemon=True).start()
+        self._runner.run(_search, lambda rows, truncated:
+                         self._on_done(rows, truncated, module))
 
     def _on_case_toggled(self, _btn):
         # Re-run if there's a query to reflect the new mode.
         if self._entry.get_text().strip():
             self._on_search()
 
-    def _on_done(self, results, module, gen):
-        if gen != self._search_gen:
-            return GLib.SOURCE_REMOVE
+    def _on_done(self, results, truncated, module):
+        # Stale results were already dropped by the runner's generation guard.
         self._spinner.stop()
         self._spinner.set_visible(False)
         if module != self._pane._module:
-            return GLib.SOURCE_REMOVE
-        truncated = bool(results and results[-1][0] == '')
-        if truncated:
-            results = results[:-1]
+            return
         # Stash for F3 / Shift+F3 step-through.
         self._results = list(results)
         self._idx = -1
@@ -359,7 +346,6 @@ class PaneSearch:
             box.append(body)
             row.set_child(box)
             self._list.append(row)
-        return GLib.SOURCE_REMOVE
 
     def _on_row_activated(self, _listbox, row):
         if hasattr(row, '_nav') and self._pane._on_word_study_navigate:

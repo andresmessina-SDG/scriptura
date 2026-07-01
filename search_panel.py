@@ -9,6 +9,7 @@ from gtk_utils import clear_children
 import sword_bridge
 import ebible_bridge
 import paths
+import search_controller
 from empty_state import compact_empty_state
 
 _HISTORY_FILE = paths.search_history_path()
@@ -117,9 +118,9 @@ class SearchPanel(Gtk.Box):
         self._filter_book = None
         self._expanded_section = None
         self._populate_gen = 0
-        # Bumped on every search; a result callback whose token no longer
-        # matches has been superseded by a newer search and is dropped.
-        self._search_gen = 0
+        # Shared search execution (dispatch + threading + stale-result
+        # guarding + the 'all Bibles' union) lives in search_controller.
+        self._runner = search_controller.SearchRunner()
         # F3 / Shift+F3 step-through pointer into `_results`. Reset to -1
         # whenever a fresh search starts so the first F3 lands on result 0.
         self._current_idx = -1
@@ -164,9 +165,10 @@ class SearchPanel(Gtk.Box):
         controls.set_margin_top(8)
         controls.set_margin_bottom(6)
 
-        names = _searchable_modules()
-        labels = [sword_bridge.display_name(n) for n in names]
-        self._module_drop = Gtk.DropDown(model=Gtk.StringList.new(labels), hexpand=True)
+        self._module_drop = Gtk.DropDown(
+            model=Gtk.StringList.new(self._module_labels()), hexpand=True)
+        self._module_drop.set_tooltip_text(
+            _('Search one module, or “All Bibles” for every translation at once'))
         controls.append(self._module_drop)
 
         entry_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
@@ -257,12 +259,20 @@ class SearchPanel(Gtk.Box):
         if not self._results:
             self._show_history()
 
+    def _module_keys(self):
+        """Picker keys: the 'All Bibles' sentinel first, then every searchable
+        module."""
+        return [search_controller.ALL_BIBLES] + _searchable_modules()
+
+    def _module_labels(self):
+        return [_('All Bibles')] + [sword_bridge.display_name(n)
+                                    for n in _searchable_modules()]
+
     def set_module(self, module_name):
-        names = _searchable_modules()
-        labels = [sword_bridge.display_name(n) for n in names]
-        self._module_drop.set_model(Gtk.StringList.new(labels))
-        if module_name in names:
-            self._module_drop.set_selected(names.index(module_name))
+        keys = self._module_keys()
+        self._module_drop.set_model(Gtk.StringList.new(self._module_labels()))
+        if module_name in keys:
+            self._module_drop.set_selected(keys.index(module_name))
 
     # ── Search ────────────────────────────────────────────────────────────────
 
@@ -290,9 +300,9 @@ class SearchPanel(Gtk.Box):
         return GLib.SOURCE_REMOVE
 
     def _current_module(self):
-        names = _searchable_modules()
+        keys = self._module_keys()
         idx = self._module_drop.get_selected()
-        return names[idx] if names and idx < len(names) else None
+        return keys[idx] if keys and idx < len(keys) else None
 
     def _on_search(self, *_a):
         query = self._entry.get_text().strip()
@@ -323,26 +333,21 @@ class SearchPanel(Gtk.Box):
 
         case = self._case_btn.get_active()
 
-        self._search_gen += 1
-        gen = self._search_gen
-
-        def run():
-            if ebible_bridge.is_ebible_module(module):
-                results = ebible_bridge.search_module(
-                    module, query, case_sensitive=case)
-            else:
-                results = sword_bridge.search_module(
-                    module,
-                    query,
+        def _search():
+            if module == search_controller.ALL_BIBLES:
+                return search_controller.search_all_bibles(
+                    query, case,
                     on_indexing_start=self._on_indexing_start,
                     on_indexing_progress=self._on_indexing_progress,
-                    on_indexing_done=self._on_indexing_done,
-                    case_sensitive=case,
-                )
-            _save_history(query, module)
-            GLib.idle_add(self._on_search_done, results, gen)
+                    on_indexing_done=self._on_indexing_done)
+            return search_controller.search_backend(
+                module, query, case,
+                on_indexing_start=self._on_indexing_start,
+                on_indexing_progress=self._on_indexing_progress,
+                on_indexing_done=self._on_indexing_done)
 
-        threading.Thread(target=run, daemon=True).start()
+        self._runner.run(_search, lambda rows, truncated:
+                         self._on_search_done(rows, truncated, query, module))
 
     def _on_case_toggled(self, _btn):
         # Re-run the current query so the result list reflects the new
@@ -350,16 +355,11 @@ class SearchPanel(Gtk.Box):
         if self._entry.get_text().strip():
             self._on_search()
 
-    def _on_search_done(self, results, gen=None):
-        # Drop results from a search that a newer query has superseded.
-        if gen is not None and gen != self._search_gen:
-            return
+    def _on_search_done(self, results, truncated, query, module):
+        # Stale results were already dropped by the runner's generation guard.
         self._spinner.stop()
         self._spinner.set_visible(False)
-
-        truncated = bool(results and results[-1][0] == '')
-        if truncated:
-            results = results[:-1]
+        _save_history(query, module)
 
         self._results = results
         self._current_idx = -1
@@ -379,7 +379,6 @@ class SearchPanel(Gtk.Box):
             self._results_list.append(self._make_empty_row(
                 _('No matches'),
                 _('Try a different word or phrase, or pick another module.')))
-        return GLib.SOURCE_REMOVE
 
     def _make_empty_row(self, title, description):
         row = Gtk.ListBoxRow()
@@ -434,7 +433,10 @@ class SearchPanel(Gtk.Box):
             text_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1, hexpand=True)
             query_lbl = Gtk.Label(label=entry['query'], xalign=0)
             query_lbl.add_css_class('result-ref')
-            mod_lbl = Gtk.Label(label=sword_bridge.display_name(entry['module']), xalign=0)
+            mod_name = (_('All Bibles')
+                        if entry['module'] == search_controller.ALL_BIBLES
+                        else sword_bridge.display_name(entry['module']))
+            mod_lbl = Gtk.Label(label=mod_name, xalign=0)
             mod_lbl.add_css_class('dim-label')
             text_box.append(query_lbl)
             text_box.append(mod_lbl)
