@@ -195,6 +195,9 @@ class ArchaeologyReader:
             gesture.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
             gesture.connect('pressed', self._on_label_secondary, lbl)
             lbl.add_controller(gesture)
+            # Same double-click dictionary peek as the reading view.
+            if self._pane is not None:
+                self._pane._attach_dict_to_label(lbl)
         return lbl
 
     # ── trimmed Copy / Select All menu ─────────────────────────────────────────

@@ -13,6 +13,7 @@ import threading
 import zipfile
 
 import paths
+import search_query
 
 _log = logging.getLogger('scriptura.ebible')
 
@@ -79,27 +80,41 @@ def _db():
         conn.execute('PRAGMA journal_mode=WAL')
     except sqlite3.Error:
         pass
-    # Unicode-aware case folding for search. SQLite's LIKE (and LOWER) only
-    # fold ASCII, so a search for polytonic Greek wouldn't match across case.
-    # casefold() is the Unicode-correct fold; deterministic=True lets SQLite
-    # treat it as a pure function.
-    conn.create_function(
-        'pycasefold', 1,
-        lambda s: s.casefold() if isinstance(s, str) else s,
-        deterministic=True)
     conn.execute('''CREATE TABLE IF NOT EXISTS verses (
         translation TEXT, book TEXT, chapter INTEGER, verse INTEGER, text TEXT,
         PRIMARY KEY (translation, book, chapter, verse))''')
     conn.execute('''CREATE TABLE IF NOT EXISTS translations (
         id TEXT PRIMARY KEY, title TEXT, language TEXT, lang_code TEXT,
         copyright TEXT, license TEXT)''')
-    # Schema version stamp. The layout above is v1. When it changes,
-    # bump this and add the migration steps in an `if ver < N` block so
-    # existing user DBs upgrade in place instead of silently missing
-    # columns.
+    # Full-text search index over verse text (shared FTS5 grammar with the
+    # SWORD backend — see search_query). External-content: the index points
+    # at `verses` instead of duplicating the text. unicode61 tokenization
+    # gives word-boundary matching (no more substring over-match) and folds
+    # case + diacritics, so searches match across Greek/Hebrew pointing.
+    conn.execute('''CREATE VIRTUAL TABLE IF NOT EXISTS verses_fts USING fts5(
+        text, content='verses', content_rowid='rowid', tokenize='unicode61')''')
+    # Triggers keep the index in lock-step with `verses`, so every
+    # download/removal path maintains it automatically.
+    conn.execute('''CREATE TRIGGER IF NOT EXISTS verses_ai AFTER INSERT ON verses BEGIN
+        INSERT INTO verses_fts(rowid, text) VALUES (new.rowid, new.text);
+    END''')
+    conn.execute('''CREATE TRIGGER IF NOT EXISTS verses_ad AFTER DELETE ON verses BEGIN
+        INSERT INTO verses_fts(verses_fts, rowid, text) VALUES('delete', old.rowid, old.text);
+    END''')
+    conn.execute('''CREATE TRIGGER IF NOT EXISTS verses_au AFTER UPDATE ON verses BEGIN
+        INSERT INTO verses_fts(verses_fts, rowid, text) VALUES('delete', old.rowid, old.text);
+        INSERT INTO verses_fts(rowid, text) VALUES (new.rowid, new.text);
+    END''')
+    # Schema version stamp. v1 = base tables; v2 = FTS index added. When the
+    # layout changes, bump this and add the migration steps in an `if ver < N`
+    # block so existing user DBs upgrade in place.
     ver = conn.execute('PRAGMA user_version').fetchone()[0]
     if ver < 1:
         conn.execute('PRAGMA user_version = 1')
+    if ver < 2:
+        # Backfill the FTS index for verses that existed before it was added.
+        conn.execute("INSERT INTO verses_fts(verses_fts) VALUES('rebuild')")
+        conn.execute('PRAGMA user_version = 2')
     conn.commit()
     _conn_local.conn = conn
     return conn
@@ -211,52 +226,31 @@ def load_chapter(module_name, book, chapter):
     except Exception:
         return []
 
-def _like_escape(s):
-    """Escape LIKE wildcards so a query is matched literally (paired with
-    ESCAPE '\\'). Backslash first, then % and _."""
-    return s.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
-
-
-def _glob_escape(s):
-    """Escape GLOB metacharacters literally. GLOB has no ESCAPE clause, so
-    each is wrapped in a one-char class: * → [*], ? → [?], [ → [[]."""
-    return s.replace('[', '[[]').replace('*', '[*]').replace('?', '[?]')
-
-
 def search_module(module_name, query, case_sensitive=False, **_kwargs):
-    """Search verses with AND across all words. case_sensitive=False folds
-    both sides with Unicode casefold() (so non-ASCII case matches too) before
-    a LIKE substring test; True uses GLOB which is byte-exact case-sensitive.
-    Wildcard metacharacters in the query are escaped so they match literally.
-    Returns [(book, ch, v, text)]."""
-    tid = _tid(module_name)
-    words = [w for w in query.strip().split() if w]
-    if not words:
+    """Full-text verse search via the FTS5 index, using the shared query
+    grammar (phrase / AND / OR / exclude / prefix — see search_query).
+
+    FTS5 (unicode61) tokenization is word-boundary and case/diacritic
+    insensitive, so 'art' no longer matches 'heart' and a query matches across
+    Greek/Hebrew pointing. case_sensitive=True post-filters the matched text
+    for the original-case terms. Returns [(book, ch, v, text)], with a
+    truncation sentinel row when the result set is capped."""
+    match = search_query.build_match(query)
+    if match is None:
         return []
+    tid = _tid(module_name)
     try:
         conn = _db()
-        if case_sensitive:
-            sql = ('SELECT book, chapter, verse, text FROM verses WHERE translation=? '
-                   + ' '.join('AND text GLOB ?' for _ in words)
-                   + ' ORDER BY rowid')
-            params = [tid] + [f'*{_glob_escape(w)}*' for w in words]
-        elif query.isascii():
-            # ASCII fast path: SQLite's native LIKE is already
-            # case-insensitive for ASCII letters and runs in C. The
-            # pycasefold UDF below costs a C→Python call per verse row
-            # (~5× slower measured); it's only needed when the query has
-            # non-ASCII case to fold (Cyrillic, accented Latin).
-            sql = ('SELECT book, chapter, verse, text FROM verses WHERE translation=? '
-                   + ' '.join("AND text LIKE ? ESCAPE '\\'" for _ in words)
-                   + ' ORDER BY rowid')
-            params = [tid] + [f'%{_like_escape(w)}%' for w in words]
-        else:
-            sql = ('SELECT book, chapter, verse, text FROM verses WHERE translation=? '
-                   + ' '.join("AND pycasefold(text) LIKE ? ESCAPE '\\'" for _ in words)
-                   + ' ORDER BY rowid')
-            params = [tid] + [f'%{_like_escape(w.casefold())}%' for w in words]
-        rows = conn.execute(sql, params).fetchall()
+        rows = conn.execute(
+            'SELECT v.book, v.chapter, v.verse, v.text FROM verses v '
+            'WHERE v.translation=? AND v.rowid IN '
+            '(SELECT rowid FROM verses_fts WHERE verses_fts MATCH ?) '
+            'ORDER BY v.rowid', (tid, match)).fetchall()
         result = list(rows)
+        if case_sensitive:
+            terms = search_query.plain_terms(query)
+            result = [r for r in result
+                      if all(w in (r[3] or '') for w in terms)]
         if len(result) > 5000:
             result = result[:5000]
             result.append(('', 0, 0,

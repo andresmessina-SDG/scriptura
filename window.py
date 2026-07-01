@@ -14,6 +14,7 @@ import module_positions
 import bookmarks
 import reading_plans
 import annotations
+import search_controller
 from pane import BiblePane, auto_reading_ink
 from module_manager import ModuleManagerWindow
 from search_panel import SearchPanel
@@ -2106,8 +2107,11 @@ class BibleWindow(Adw.ApplicationWindow):
         case = self._search_panel._case_btn.get_active()
         if query:
             target_mod = self._search_panel._current_module()
+            # 'All Bibles' has no single source module — highlight on whatever
+            # each pane is showing; otherwise only the matching module's pane.
+            all_bibles = target_mod == search_controller.ALL_BIBLES
             for pane in (self.pane1, self.pane2):
-                if pane._module == target_mod:
+                if all_bibles or pane._module == target_mod:
                     pane._pending_search_highlight = (query, case)
         self._go_to(book, chapter, verse)
 
@@ -2261,7 +2265,7 @@ class BibleWindow(Adw.ApplicationWindow):
         dlg.add_acknowledgement_section(_('Built with'), [
             'GTK4 + libadwaita',
             'Python 3 / PyGObject',
-            'Whoosh full-text search',
+            'SQLite FTS5 full-text search',
         ])
         dlg.present(self)
 

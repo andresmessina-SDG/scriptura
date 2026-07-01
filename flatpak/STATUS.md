@@ -28,8 +28,8 @@ Validated pieces from prior builds (unchanged by the latest pivot):
   configure didn't find a usable curl in the runtime cleanly.
 - **libsword** (`sword-1.9.0`): C++ shared library only, no Python
   bindings target. Installs `libsword.so` + `sword.pc`.
-- **Whoosh** (`Whoosh-2.7.4`): pip-installs into
-  `/app/lib/python3.13/site-packages/`.
+- **Full-text search**: SQLite FTS5 via the runtime's bundled Python
+  `sqlite3` — no vendored search package.
 - **Scriptura app code**: all `.py` files installed to
   `/app/share/scriptura/`. Wrapper at
   `/app/bin/page.codeberg.andresmessina.Scriptura`.

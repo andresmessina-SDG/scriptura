@@ -268,6 +268,8 @@ class CatenaReader:
         quote.add_css_class('catena-quote')
         quote.set_margin_top(2)
         card.append(quote)
+        if self._pane is not None:
+            self._pane._attach_dict_to_label(quote)
 
         if len(text) > _PREVIEW_CHARS:
             # Lazy: hold only a short preview string until the user expands,

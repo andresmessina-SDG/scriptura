@@ -573,6 +573,8 @@ class ImageryReader:
             cap.add_css_class('caption')
             cap.add_css_class('imagery-meta')
             card.append(cap)
+            if self._pane is not None:
+                self._pane._attach_dict_to_label(cap)
 
         # Photo credit + license — required for the CC/PD Commons photos.
         credit = ' · '.join(
