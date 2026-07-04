@@ -11,7 +11,7 @@ Note: display_name routing already lives in sword_bridge.display_name
 their bridges), so it is intentionally not duplicated here.
 """
 
-from typing import cast
+from typing import TypedDict, cast
 
 import sword_bridge
 import ebible_bridge
@@ -167,3 +167,80 @@ def remove(name: str) -> None:
         ebible_bridge.remove_module(name)
     else:
         sword_bridge.remove_module(name)
+
+
+# ── Cross-source editions of the same translation ────────────────────────────
+#
+# The same translation often exists both as a CrossWire SWORD module and
+# as an eBible.org download (differing in markup: Strong's tagging,
+# footnotes, deuterocanon). The Module Manager folds such duplicates into
+# one row per *work* with the editions selectable underneath. The table
+# is curated, not fuzzy: the sources share no identifier, and title
+# matching silently mis-pairs distinct revisions — a wrong merge is worse
+# than a duplicate row. Every id below was read out of the two live
+# catalogues; extending the table is one line per newly spotted pair.
+
+class EditionWork(TypedDict):
+    id: str
+    title: str          # canonical display title (proper name, untranslated)
+    sword: tuple[str, ...]
+    ebible: tuple[str, ...]
+
+
+EDITION_WORKS: list[EditionWork] = [
+    {'id': 'kjv', 'title': 'King James Version',
+     'sword': ('KJV', 'KJVA'), 'ebible': ('eng-kjv', 'eng-kjv2006')},
+    {'id': 'asv', 'title': 'American Standard Version (1901)',
+     'sword': ('ASV',), 'ebible': ('eng-asv',)},
+    {'id': 'ylt', 'title': 'Young’s Literal Translation',
+     'sword': ('YLT',), 'ebible': ('engylt',)},
+    {'id': 'darby', 'title': 'Darby Bible',
+     'sword': ('Darby',), 'ebible': ('engDBY',)},
+    {'id': 'drc', 'title': 'Douay-Rheims (Challoner)',
+     'sword': ('DRC',), 'ebible': ('engDRA',)},
+    {'id': 'bbe', 'title': 'Bible in Basic English',
+     'sword': ('BBE',), 'ebible': ('engBBE',)},
+    {'id': 'geneva', 'title': 'Geneva Bible (1599)',
+     'sword': ('Geneva1599',), 'ebible': ('enggnv',)},
+    {'id': 'webster', 'title': 'Webster Bible',
+     'sword': ('Webster',), 'ebible': ('engwebster',)},
+    {'id': 'jps', 'title': 'JPS TaNaKH (1917)',
+     'sword': ('JPS',), 'ebible': ('engjps',)},
+    {'id': 'emtv', 'title': 'English Majority Text Version',
+     'sword': ('EMTV',), 'ebible': ('engemtv',)},
+    {'id': 'godsword', 'title': 'GOD’S WORD',
+     'sword': ('GodsWord',), 'ebible': ('enggw',)},
+    {'id': 'noyes', 'title': 'Noyes Translation (1869)',
+     'sword': ('Noyes',), 'ebible': ('engnoy',)},
+    {'id': 'oeb', 'title': 'Open English Bible (US)',
+     'sword': ('OEB',), 'ebible': ('engoebus',)},
+    {'id': 'oebcth', 'title': 'Open English Bible (Commonwealth)',
+     'sword': ('OEBcth',), 'ebible': ('engoebcw',)},
+    {'id': 'bsb', 'title': 'Berean Standard Bible',
+     'sword': ('BSB',), 'ebible': ('engbsb',)},
+    {'id': 'net', 'title': 'New English Translation (NET)',
+     'sword': ('NETfree', 'NETtext'), 'ebible': ('engnet',)},
+    {'id': 'tyndale', 'title': 'Tyndale Bible',
+     'sword': ('Tyndale',), 'ebible': ('engtnt',)},
+]
+
+_WORK_BY_KEY: dict[tuple[str, str], str] = {}
+_WORK_TITLE: dict[str, str] = {}
+for _w in EDITION_WORKS:
+    _WORK_TITLE[_w['id']] = _w['title']
+    for _k in _w['sword']:
+        _WORK_BY_KEY[('sword', _k)] = _w['id']
+    for _k in _w['ebible']:
+        _WORK_BY_KEY[('ebible', _k)] = _w['id']
+
+
+def edition_work(source: str, key: str) -> str | None:
+    """The curated work id shared by cross-source editions of one
+    translation, or None when the key has no known counterpart.
+    `source` is 'sword' (module key) or 'ebible' (translationId)."""
+    return _WORK_BY_KEY.get((source, key))
+
+
+def edition_work_title(work_id: str) -> str:
+    """Canonical display title for a work id from EDITION_WORKS."""
+    return _WORK_TITLE[work_id]

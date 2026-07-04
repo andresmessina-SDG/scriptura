@@ -1094,3 +1094,92 @@ button.artifact-marker:hover {
     background: transparent;
     border: none;
 }
+
+/* ── Module Manager ──────────────────────────────────────────────────────── */
+/* Filter chips: one slim capsule per filter — the language menubutton with
+   its clear (✕), and the Strong's toggle — so each reads as a single
+   removable chip. At rest a quiet outline like the xref chips; active, the
+   capsule takes the accent tint — colour earns attention only on tappable
+   chips, and an active filter is exactly that. */
+.module-chip {
+    border: 1px solid alpha(@borders, 0.7);
+    border-radius: 999px;
+}
+.module-chip.active {
+    border-color: transparent;
+    background-color: alpha(@accent_bg_color, 0.15);
+}
+.module-chip > menubutton > button,
+.module-chip > button {
+    background-image: none;
+    background-color: transparent;
+    box-shadow: none;
+    border: none;
+    border-radius: 999px;
+    min-height: 0;
+    padding: 2px 12px;
+}
+.module-chip > menubutton > button { padding-right: 4px; }
+.module-chip > button.chip-clear {   /* the ✕ — symmetric, so the glyph sits
+    dead-center of its own hover pill; snugness against the label comes from
+    the menubutton's slim right padding instead. */
+    padding: 2px 8px;
+    min-width: 0;
+}
+.module-chip.active > menubutton > button,
+.module-chip.active > button { color: @accent_color; }
+/* Each target lights its own zone on hover, so a capsule visibly holds
+   its controls (the transparent base above suppresses the stock flat-button
+   feedback, so it is restored explicitly per state). The capsule's .active
+   tint carries the checked state, so a checked toggle stays transparent. */
+.module-chip > menubutton > button:hover,
+.module-chip > button:hover {
+    background-color: alpha(@window_fg_color, 0.08);
+}
+.module-chip > menubutton > button:active,
+.module-chip > menubutton > button:checked,
+.module-chip > button:active {
+    background-color: alpha(@window_fg_color, 0.12);
+}
+.module-chip > button:checked { background-color: transparent; }
+.module-chip > button:checked:hover {
+    background-color: alpha(@accent_bg_color, 0.22);
+}
+.module-chip.active > menubutton > button:hover,
+.module-chip.active > button:hover {
+    background-color: alpha(@accent_bg_color, 0.22);
+}
+.module-chip.active > menubutton > button:active,
+.module-chip.active > menubutton > button:checked,
+.module-chip.active > button:active {
+    background-color: alpha(@accent_bg_color, 0.30);
+}
+
+/* Language picker list: flat rows on the popover surface with faint
+   dividers (house rule — no boxed chrome-on-chrome), selection carried by
+   a checkmark plus a whisper of tint; content padded clear of the overlay
+   scrollbar. */
+.module-filter-list,
+.module-filter-list > row { background-color: transparent; }
+.module-filter-list > row {
+    border-bottom: 1px solid alpha(@borders, 0.3);
+    border-radius: 6px;
+}
+.module-filter-list > row:last-child { border-bottom: none; }
+.module-filter-list > row:hover { background-color: alpha(@window_fg_color, 0.05); }
+.module-filter-list > row:selected { background-color: alpha(@window_fg_color, 0.07); }
+/* Strip the popover's own content padding so the list (and its overlay
+   scrollbar) reaches the card's right edge; the rows' end margins keep
+   the text clear of the bar. */
+.module-filter-pop > contents { padding: 0; }
+
+/* Row remove buttons appear on hover/focus (house rule: hover-reveal row
+   actions) — twenty permanent trash cans read as noise, and Install/Update
+   stay always-visible as the rows' primary actions. focus-within keeps the
+   reveal keyboard-reachable. */
+.module-manager row button.module-row-action {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+.module-manager row:hover button.module-row-action,
+.module-manager row:focus-within button.module-row-action { opacity: 1; }

@@ -1,4 +1,16 @@
+"""Module Manager — install, update, and remove content from every source.
+
+Tabs are the user's content kinds (Bibles / Commentaries / Study Tools /
+Books & More), not the app's supply chains: each tab merges every source
+that can feed it (CrossWire SWORD catalogue, eBible.org, the curated
+packs, the open databases) and badges each row with where it comes from.
+Browse lists default to the UI language so the eBible catalogue's ~1,500
+languages don't drown the list; the filter is a visible, removable chip,
+and a search query widens back to every language so the default can
+never dead-end a search.
+"""
 import logging
+import os
 import threading
 from datetime import datetime
 import gi
@@ -12,6 +24,8 @@ import open_data
 import ebible_bridge
 import catena_bridge
 import imagery_bridge
+import archaeology_bridge
+import content
 
 _log = logging.getLogger('scriptura.modules')
 
@@ -34,6 +48,29 @@ _LANG_NAMES = {
     'id': N_('Indonesian'), 'sw': N_('Swahili'), 'tl': N_('Tagalog'),
 }
 
+# eBible uses ISO 639-3 codes ('eng', 'spa'), SWORD mostly 639-1 ('en',
+# 'es'); a merged language filter needs one canonical key or the default
+# silently excludes a whole source. Majors map to two-letter; everything
+# else passes through unchanged.
+_ISO3TO2 = {
+    'eng': 'en', 'spa': 'es', 'deu': 'de', 'ger': 'de', 'fra': 'fr',
+    'fre': 'fr', 'ita': 'it', 'por': 'pt', 'nld': 'nl', 'dut': 'nl',
+    'rus': 'ru', 'ell': 'el', 'gre': 'el', 'heb': 'he', 'lat': 'la',
+    'ara': 'ar', 'zho': 'zh', 'chi': 'zh', 'jpn': 'ja', 'kor': 'ko',
+    'swe': 'sv', 'fin': 'fi', 'dan': 'da', 'nor': 'no', 'nob': 'no',
+    'nno': 'no', 'pol': 'pl', 'ces': 'cs', 'cze': 'cs', 'slk': 'sk',
+    'slo': 'sk', 'hun': 'hu', 'ron': 'ro', 'rum': 'ro', 'ukr': 'uk',
+    'bul': 'bg', 'hrv': 'hr', 'srp': 'sr', 'afr': 'af', 'fas': 'fa',
+    'per': 'fa', 'tur': 'tr', 'vie': 'vi', 'ind': 'id', 'swh': 'sw',
+    'swa': 'sw', 'tgl': 'tl',
+}
+
+
+def _norm_lang(code):
+    code = (code or '').strip().lower()
+    return _ISO3TO2.get(code, code)
+
+
 def _lang_label(code):
     raw = _LANG_NAMES.get(code.lower(), '')
     # Guard the empty case: _('') returns the .po metadata header, not ''.
@@ -41,28 +78,63 @@ def _lang_label(code):
     return f'{name} ({code})' if name else code
 
 
-# Installed modules are grouped by kind. SWORD reports finer-grained types;
-# these fold them into a few human sections, in display order.
-_KIND_ORDER = [N_('Bibles'), N_('Commentaries'), N_('Lexicons & Dictionaries'),
-               N_('Devotionals'), N_('Books & Other')]
-_KIND_MAP = {
-    'Biblical Texts': 'Bibles',
-    'Commentaries': 'Commentaries',
-    'Lexicons / Dictionaries': 'Lexicons & Dictionaries',
-    'Glossaries': 'Lexicons & Dictionaries',
-    'Daily Devotional': 'Devotionals',
-}
+def _eb_lang_display(lang_code, lang_name):
+    """eBible language for a row subtitle, rendered like the CrossWire
+    rows ('Latin (la)') when the code normalizes to a known language;
+    the catalogue's self-name ('Latine') otherwise."""
+    norm = _norm_lang(lang_code)
+    if norm in _LANG_NAMES:
+        return _lang_label(norm)
+    return lang_name or _lang_label(lang_code)
 
 
-def _display_kind(module_type):
-    return _KIND_MAP.get(module_type, 'Books & Other')
+def _ui_lang():
+    """The user's interface language code ('en', 'es', …) — the default
+    browse-list language filter."""
+    for var in ('LC_ALL', 'LC_MESSAGES', 'LANG'):
+        val = os.environ.get(var)
+        if val:
+            return val.split('.')[0].split('_')[0].lower() or 'en'
+    return 'en'
+
+
+# ── Tabs: the user's content kinds, each fed by every capable source ────────
+#
+# 'sword_types' claims catalogue/installed SWORD categories; 'catch_all'
+# sweeps any category no tab claims (odd third-party confs) into Books &
+# More rather than losing it. 'lang_default' pre-selects the UI language
+# in the browse filter — deliberately NOT on Study Tools, where the
+# content (Greek/Hebrew lexicons, morphology) is inherently cross-language.
+_TABS = (
+    {'id': 'bibles', 'title': N_('Bibles'),
+     'sword_types': ('Biblical Texts',), 'ebible': True,
+     'lang_default': True, 'catch_all': False},
+    {'id': 'commentaries', 'title': N_('Commentaries'),
+     'sword_types': ('Commentaries',), 'ebible': False,
+     'lang_default': True, 'catch_all': False},
+    {'id': 'study', 'title': N_('Study Tools'),
+     'sword_types': ('Lexicons / Dictionaries', 'Glossaries'),
+     'ebible': False, 'lang_default': False, 'catch_all': False},
+    {'id': 'books', 'title': N_('Books & More'),
+     'sword_types': ('Generic Books', 'Daily Devotional'), 'ebible': False,
+     'lang_default': True, 'catch_all': True},
+)
+
+_CLAIMED_TYPES = {t for tab in _TABS for t in tab['sword_types']}
+
+
+def _tab_of_type(sword_type):
+    for tab in _TABS:
+        if sword_type in tab['sword_types']:
+            return tab['id']
+    return 'books'  # the catch-all
 
 
 # The eBible catalogue has ~1,500+ translations (CrossWire ~400) and
 # PreferencesGroup rows aren't virtualised, so rendering a whole result set
 # is laggy — and idle-batched appends are not an option here: the repeated
 # relayout under an open filter popover breaks its outside-click grab. So
-# both tabs materialise only the first slice of any result set,
+# every browse list materialises only the first slice of any result set,
 # synchronously, with a Load-more footer row appending the next slice on
 # demand.
 _RENDER_CAP = 150
@@ -129,16 +201,20 @@ class ModuleManagerWindow(Adw.Window):
         self._on_modules_changed = on_modules_changed
         self._all_modules = []
         self._has_catalog = False
-        self._lang_codes = ['']
-        self._updating_filters = False
         self._eb_catalog = []
-        self._eb_lang_codes = ['']
+        self._updates = []
+        self._updating_filters = False
         self._pulse_source = None
         self._op_busy = False
         self._closed = False
+        self._flash_source = None
+        self._tabs = {}
+        self.add_css_class('module-manager')
         self._build_ui()
         self.connect('close-request', self._on_close_request)
         self._populate()
+
+    # ── Window chrome ─────────────────────────────────────────────────────────
 
     def _build_ui(self):
         toolbar_view = Adw.ToolbarView()
@@ -163,252 +239,192 @@ class ModuleManagerWindow(Adw.Window):
         self._progress.set_visible(False)
         toolbar_view.add_top_bar(self._progress)
 
+        # Window-level status strip: transient errors + a Retry for the
+        # failed operation (raw exception text alone left no way forward).
+        self._status = Gtk.Label(label='', wrap=True, xalign=0, hexpand=True)
+        self._status.add_css_class('dim-label')
+        self._retry_btn = Gtk.Button(label=_('Retry'))
+        self._retry_btn.add_css_class('flat')
+        self._retry_btn.set_valign(Gtk.Align.CENTER)
+        self._retry_cb = None
+        self._retry_btn.connect('clicked', self._on_retry)
+        self._status_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
+                                   spacing=8)
+        self._status_bar.set_margin_start(12)
+        self._status_bar.set_margin_end(12)
+        self._status_bar.set_margin_top(4)
+        self._status_bar.set_margin_bottom(4)
+        self._status_bar.append(self._status)
+        self._status_bar.append(self._retry_btn)
+        self._status_bar.set_visible(False)
+        toolbar_view.add_top_bar(self._status_bar)
+
         self._stack = Adw.ViewStack()
-        switcher = Adw.ViewSwitcher()
+        # Label-only tabs: Adw.ViewSwitcher renders an empty icon slot for
+        # icon-less pages, so the inline switcher's LABELS mode is the
+        # supported way to drop icons (four titled tabs with icons truncate
+        # at this width, and the icons added nothing the words don't).
+        switcher = Adw.InlineViewSwitcher()
         switcher.set_stack(self._stack)
-        switcher.set_policy(Adw.ViewSwitcherPolicy.WIDE)
+        switcher.set_display_mode(Adw.InlineViewSwitcherDisplayMode.LABELS)
         header.set_title_widget(switcher)
 
-        self._build_crosswire_tab()
-        self._build_open_db_tab()
-        self._build_ebible_tab()
-
-        self._stack.connect('notify::visible-child', self._on_tab_changed)
+        for spec in _TABS:
+            self._build_tab(spec)
         toolbar_view.set_content(self._stack)
 
-    # ── CrossWire tab ─────────────────────────────────────────────────────────
+    # ── One tab = one content kind ────────────────────────────────────────────
 
-    def _build_crosswire_tab(self):
-        # Transient busy / error line (hidden unless there's a message).
-        self._status = Gtk.Label(label='', wrap=True, xalign=0)
-        self._status.add_css_class('dim-label')
-        self._status.set_visible(False)
+    def _build_tab(self, spec):
+        t = {'spec': spec, 'filtered': [], 'shown': 0, 'browse_rows': [],
+             'lang_codes': [''], 'lang_sel': ''}
+        self._tabs[spec['id']] = t
 
-        # Refresh is contextual to the catalogue freshness, not a big blue
-        # button — it lives as the browse group's header suffix.
-        self._cw_refresh_btn = Gtk.Button(icon_name='view-refresh-symbolic')
-        self._cw_refresh_btn.add_css_class('flat')
-        self._cw_refresh_btn.set_valign(Gtk.Align.CENTER)
-        self._cw_refresh_btn.set_tooltip_text(_('Refresh catalogue from CrossWire'))
-        set_accessible_label(self._cw_refresh_btn, _('Refresh catalogue from CrossWire'))
-        self._cw_refresh_btn.connect('clicked', self._on_refresh_clicked)
+        # Search + the language chip live on one row above the lists.
+        t['search'] = Gtk.SearchEntry()
+        t['search'].set_placeholder_text(_('Search installed and catalogue…'))
+        t['search'].set_hexpand(True)
+        t['search'].connect('search-changed',
+                            lambda _e, tid=spec['id']: self._refresh_tab(tid))
 
-        # One search filters both the installed sections and the catalogue.
-        self._cw_search = Gtk.SearchEntry()
-        self._cw_search.set_placeholder_text(_('Search installed and catalogue…'))
-        self._cw_search.set_hexpand(True)
-        self._cw_search.connect('search-changed', self._on_search_changed)
+        # Language filter: an inline single-select ListBox in a popover, NOT
+        # a Gtk.DropDown — a DropDown opens its OWN nested autohide popover,
+        # and opening that inside this popover steals the parent's
+        # outside-click grab and never returns it (stuck popover). A ListBox
+        # selects in place, no child popup. Fixed height so the popover
+        # never resizes after it maps (a post-map resize snaps an autohide
+        # popover shut).
+        t['lang_list'] = Gtk.ListBox()
+        t['lang_list'].set_selection_mode(Gtk.SelectionMode.SINGLE)
+        t['lang_list'].add_css_class('module-filter-list')
+        t['lang_list'].connect(
+            'row-selected',
+            lambda _l, _r, tid=spec['id']: self._on_lang_selected(tid))
 
-        # Installed modules, grouped by kind, are rebuilt into this container.
-        self._installed_container = Gtk.Box(
+        # Type-to-filter: the Bibles union spans eBible's thousand-plus
+        # languages, mostly bare ISO codes — scrolling that is hopeless,
+        # three typed letters are not.
+        t['lang_search'] = Gtk.SearchEntry()
+        t['lang_search'].set_placeholder_text(_('Filter languages…'))
+        t['lang_search'].connect(
+            'search-changed',
+            lambda _e, tid=spec['id']:
+                self._tabs[tid]['lang_list'].invalidate_filter())
+        t['lang_list'].set_filter_func(
+            lambda row, tid=spec['id']: self._lang_row_visible(tid, row))
+
+        # The popover's own content padding is stripped (.module-filter-pop)
+        # so the list can bleed to the right edge — the overlay scrollbar
+        # then rides the card's edge instead of crossing the option text.
+        filt_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        filt_box.set_margin_top(12)
+        filt_box.set_margin_bottom(12)
+        filt_box.set_margin_start(12)
+        t['lang_search'].set_margin_end(12)
+        filt_box.set_size_request(210, -1)
+        t['lang_scroll'] = Gtk.ScrolledWindow()
+        t['lang_scroll'].set_policy(Gtk.PolicyType.NEVER,
+                                    Gtk.PolicyType.AUTOMATIC)
+        t['lang_scroll'].set_min_content_height(220)
+        t['lang_scroll'].set_max_content_height(220)
+        t['lang_scroll'].add_css_class('module-filter-scroll')
+        t['lang_scroll'].set_child(t['lang_list'])
+        filt_box.append(t['lang_search'])
+        filt_box.append(t['lang_scroll'])
+
+        popover = Gtk.Popover()
+        popover.add_css_class('module-filter-pop')
+        popover.set_child(filt_box)
+        popover.connect(
+            'show', lambda _p, tid=spec['id']: self._on_filter_open(tid))
+        # The chip: shows the active language, opens the filter popover.
+        # Its ✕ companion (visible only while a language is active) drops
+        # back to All — the filter must be visibly removable, or the
+        # default reads as "the catalogue is English-only".
+        # The chip and its ✕ share one capsule (`.module-lang-chip`, see
+        # style.css) so the pair reads as a single removable filter chip.
+        t['chip'] = Gtk.MenuButton()
+        t['chip'].add_css_class('flat')
+        t['chip'].set_popover(popover)
+        set_accessible_label(t['chip'], _('Filter by language'))
+        t['chip_clear'] = Gtk.Button(icon_name='window-close-symbolic')
+        t['chip_clear'].add_css_class('flat')
+        t['chip_clear'].set_tooltip_text(_('Show all languages'))
+        set_accessible_label(t['chip_clear'], _('Show all languages'))
+        t['chip_clear'].connect(
+            'clicked', lambda _b, tid=spec['id']: self._set_lang(tid, ''))
+        # FILL, not CENTER: the capsule stretches to the search entry's
+        # height, so the row reads as two equal-weight controls.
+        t['chip_clear'].add_css_class('chip-clear')
+        t['chip_box'] = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        t['chip_box'].add_css_class('module-chip')
+        t['chip_box'].set_valign(Gtk.Align.FILL)
+        t['chip_box'].append(t['chip'])
+        t['chip_box'].append(t['chip_clear'])
+
+        search_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        search_row.append(t['search'])
+        if spec['id'] == 'bibles':
+            # Strong's as its own toggle chip — a useful refinement was
+            # buried as a checkbox at the popover's foot; as a chip it is
+            # discoverable and speaks the same capsule grammar.
+            t['strongs'] = Gtk.ToggleButton(label=_("Strong's"))
+            t['strongs'].add_css_class('flat')
+            t['strongs'].set_tooltip_text(_("Only modules with Strong's numbers"))
+            set_accessible_label(t['strongs'], _("Only modules with Strong's numbers"))
+            strongs_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+            strongs_box.add_css_class('module-chip')
+            strongs_box.set_valign(Gtk.Align.FILL)
+            strongs_box.append(t['strongs'])
+
+            def _on_strongs(btn, tid=spec['id'], box=strongs_box):
+                if btn.get_active():
+                    box.add_css_class('active')
+                else:
+                    box.remove_css_class('active')
+                self._refresh_tab(tid)
+            t['strongs'].connect('toggled', _on_strongs)
+            search_row.append(strongs_box)
+        search_row.append(t['chip_box'])
+
+        # Curated packs pinned on top, before anything installed/browsable.
+        t['curated'] = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        t['installed_box'] = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL, spacing=18)
+        t['updates_group'] = Adw.PreferencesGroup()
+        t['updates_group'].set_visible(False)
 
-        # Browse-catalogue refinement filters (apply to the available list).
-        # These are inline single-select ListBoxes, NOT Gtk.DropDowns: a
-        # DropDown opens its OWN nested autohide popover, and opening that
-        # inside this filter popover steals the parent's outside-click grab and
-        # never returns it — orphaning the popover (stuck open; even its own
-        # button can't dismiss it). A ListBox selects in place, no child popup.
-        self._cat_list = Gtk.ListBox()
-        self._cat_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
-        self._cat_list.add_css_class('boxed-list')
-        self._cat_list.add_css_class('module-filter-list')
-        self._cat_list.connect('row-selected', self._on_filter_changed)
+        t['refresh'] = Gtk.Button(icon_name='view-refresh-symbolic')
+        t['refresh'].add_css_class('flat')
+        t['refresh'].set_valign(Gtk.Align.CENTER)
+        t['refresh'].set_tooltip_text(_('Refresh the catalogue'))
+        set_accessible_label(t['refresh'], _('Refresh the catalogue'))
+        t['refresh'].connect(
+            'clicked', lambda _b, tid=spec['id']: self._on_refresh(tid))
 
-        self._lang_list = Gtk.ListBox()
-        self._lang_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
-        self._lang_list.add_css_class('boxed-list')
-        self._lang_list.add_css_class('module-filter-list')
-        self._lang_list.connect('row-selected', self._on_filter_changed)
-
-        self._strongs_check = Gtk.CheckButton(label=_("Strong's"))
-        self._strongs_check.set_tooltip_text(_("Only modules with Strong's numbers"))
-        self._strongs_check.set_valign(Gtk.Align.CENTER)
-        self._strongs_check.connect('toggled', self._on_filter_changed)
-
-        # The filters collapse into a popover in the Browse catalogue header,
-        # next to refresh — full dropdowns inline crush the title and stretch
-        # tall, so the section gets a compact "Filter" button instead.
-        filt_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        filt_box.set_margin_top(12)
-        filt_box.set_margin_bottom(12)
-        filt_box.set_margin_start(12)
-        filt_box.set_margin_end(12)
-        filt_box.set_size_request(190, -1)
-
-        # Category and Language each get their own fixed-height scroll with a
-        # pinned caption above, so the section labels stay visible while you
-        # scroll (a single merged scroll hid them, reading as a raw dump).
-        # Heights are FIXED (min == max) and the total kept ~320px: (1) a popover
-        # taller than the short modules window gets resized-to-fit AFTER it maps,
-        # and that post-map resize snaps an autohide popover shut (the ~1s flash
-        # / "invisible window"); a definite size that fits never resizes. (2)
-        # ListBox rows open no nested popup, so — unlike the old Gtk.DropDowns —
-        # picking a filter can't steal the popover's outside-click grab.
-        for label, lst, height in ((_('Category'), self._cat_list, 88),
-                                    (_('Language'), self._lang_list, 104)):
-            scroll = Gtk.ScrolledWindow()
-            scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-            scroll.set_min_content_height(height)
-            scroll.set_max_content_height(height)
-            scroll.add_css_class('module-filter-scroll')
-            scroll.set_child(lst)
-
-            field = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-            cap = Gtk.Label(label=label, xalign=0)
-            cap.add_css_class('caption')
-            cap.add_css_class('dim-label')
-            field.append(cap)
-            field.append(scroll)
-            filt_box.append(field)
-        filt_box.append(self._strongs_check)
-
-        filter_popover = Gtk.Popover()
-        filter_popover.set_child(filt_box)
-        self._filter_btn = Gtk.MenuButton(icon_name='view-more-symbolic')
-        self._filter_btn.add_css_class('flat')
-        self._filter_btn.set_valign(Gtk.Align.CENTER)
-        self._filter_btn.set_tooltip_text(_('Filter the catalogue'))
-        set_accessible_label(self._filter_btn, _('Filter the catalogue'))
-        self._filter_btn.set_popover(filter_popover)
-
-        header_controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
-                                  spacing=6)
-        header_controls.append(self._filter_btn)
-        header_controls.append(self._cw_refresh_btn)
-
-        self._browse_group = Adw.PreferencesGroup()
-        self._browse_group.set_title(_('Browse catalogue'))
-        self._browse_group.set_header_suffix(header_controls)
-        self._available_rows = []
-        # Current filtered result set + how many of it are rendered;
-        # _append_cw_rows materialises _RENDER_CAP at a time.
-        self._cw_filtered = []
-        self._cw_shown = 0
+        t['browse_group'] = Adw.PreferencesGroup()
+        t['browse_group'].set_title(_('Browse catalogue'))
+        t['browse_group'].set_header_suffix(t['refresh'])
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
-        box.set_margin_start(12)
-        box.set_margin_end(12)
+        for m in ('start', 'end'):
+            getattr(box, f'set_margin_{m}')(12)
         box.set_margin_top(18)
         box.set_margin_bottom(18)
-        box.append(self._status)
-        box.append(self._cw_search)
-        box.append(self._installed_container)
-        box.append(self._browse_group)
+        box.append(search_row)
+        box.append(t['curated'])
+        box.append(t['updates_group'])
+        box.append(t['installed_box'])
+        box.append(t['browse_group'])
 
         clamp = Adw.Clamp(child=box, maximum_size=720)
         scroll = Gtk.ScrolledWindow(vexpand=True)
         scroll.set_child(clamp)
-        self._stack.add_titled_with_icon(
-            scroll, 'modules', _('Modules'), 'application-x-addon-symbolic')
+        # Label-only switcher tabs: four titled tabs with icons truncate
+        # at the default width, and the icons add nothing the words don't.
+        self._stack.add_titled(scroll, spec['id'], _(spec['title']))
 
-    # ── Open Databases tab ────────────────────────────────────────────────────
-
-    def _build_open_db_tab(self):
-        self._open_db_group = Adw.PreferencesGroup()
-        self._open_db_group.set_title(_('Open databases'))
-        self._open_db_group.set_description(
-            _('Open-access data behind the word-study features — cross-references, '
-              'Hebrew and Greek lexicons, grammatical parsing, plus the commentary '
-              'and imagery packs.'))
-        self._open_db_rows = []
-
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
-        box.set_margin_start(12)
-        box.set_margin_end(12)
-        box.set_margin_top(18)
-        box.set_margin_bottom(18)
-        box.append(self._open_db_group)
-
-        clamp = Adw.Clamp(child=box, maximum_size=720)
-        scroll = Gtk.ScrolledWindow(vexpand=True)
-        scroll.set_child(clamp)
-        self._stack.add_titled_with_icon(
-            scroll, 'open_databases', _('Databases'), 'network-server-symbolic')
-
-    # ── eBible tab ────────────────────────────────────────────────────────────
-
-    def _build_ebible_tab(self):
-        self._eb_search = Gtk.SearchEntry()
-        self._eb_search.set_placeholder_text(_('Search by name or language…'))
-        self._eb_search.set_hexpand(True)
-        self._eb_search.connect('search-changed', lambda _: self._eb_apply_filter())
-
-        self._eb_lang_list = Gtk.ListBox()
-        self._eb_lang_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
-        self._eb_lang_list.add_css_class('boxed-list')
-        self._eb_lang_list.add_css_class('module-filter-list')
-        self._eb_lang_list.connect('row-selected', self._eb_on_lang_changed)
-
-        # Language filter in a popover — same inline ListBox design as the
-        # Modules tab. A Gtk.DropDown here opened a nested popup that stole the
-        # popover's outside-click grab and left it stuck open; a ListBox selects
-        # in place, so the popover stays dismissable.
-        filt_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        filt_box.set_margin_top(12)
-        filt_box.set_margin_bottom(12)
-        filt_box.set_margin_start(12)
-        filt_box.set_margin_end(12)
-        filt_box.set_size_request(190, -1)
-        cap = Gtk.Label(label=_('Language'), xalign=0)
-        cap.add_css_class('caption')
-        cap.add_css_class('dim-label')
-        eb_lang_scroll = Gtk.ScrolledWindow()
-        eb_lang_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        eb_lang_scroll.set_min_content_height(220)
-        eb_lang_scroll.set_max_content_height(220)
-        eb_lang_scroll.add_css_class('module-filter-scroll')
-        eb_lang_scroll.set_child(self._eb_lang_list)
-        filt_box.append(cap)
-        filt_box.append(eb_lang_scroll)
-        filter_popover = Gtk.Popover()
-        filter_popover.set_child(filt_box)
-        self._eb_filter_btn = Gtk.MenuButton(icon_name='view-more-symbolic')
-        self._eb_filter_btn.add_css_class('flat')
-        self._eb_filter_btn.set_valign(Gtk.Align.CENTER)
-        self._eb_filter_btn.set_tooltip_text(_('Filter translations'))
-        set_accessible_label(self._eb_filter_btn, _('Filter translations'))
-        self._eb_filter_btn.set_popover(filter_popover)
-
-        self._eb_refresh_btn = Gtk.Button(icon_name='view-refresh-symbolic')
-        self._eb_refresh_btn.add_css_class('flat')
-        self._eb_refresh_btn.set_valign(Gtk.Align.CENTER)
-        self._eb_refresh_btn.set_tooltip_text(_('Refresh catalogue from eBible.org'))
-        set_accessible_label(self._eb_refresh_btn, _('Refresh catalogue from eBible.org'))
-        self._eb_refresh_btn.connect('clicked', self._on_eb_refresh)
-
-        header_controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
-                                  spacing=6)
-        header_controls.append(self._eb_filter_btn)
-        header_controls.append(self._eb_refresh_btn)
-
-        self._eb_group = Adw.PreferencesGroup()
-        self._eb_group.set_title(_('Translations'))
-        self._eb_group.set_header_suffix(header_controls)
-        self._eb_rows = []
-        self._eb_filtered = []
-        self._eb_shown = 0
-
-        self._eb_status = Gtk.Label(label='', xalign=0, wrap=True)
-        self._eb_status.add_css_class('dim-label')
-        self._eb_status.set_visible(False)
-
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
-        box.set_margin_start(12)
-        box.set_margin_end(12)
-        box.set_margin_top(18)
-        box.set_margin_bottom(18)
-        box.append(self._eb_status)
-        box.append(self._eb_search)
-        box.append(self._eb_group)
-
-        clamp = Adw.Clamp(child=box, maximum_size=720)
-        scroll = Gtk.ScrolledWindow(vexpand=True)
-        scroll.set_child(clamp)
-        self._stack.add_titled_with_icon(
-            scroll, 'ebible', 'eBible', 'web-browser-symbolic')
-
-    # ── CrossWire data ────────────────────────────────────────────────────────
+    # ── Data gathering ────────────────────────────────────────────────────────
 
     def _populate(self):
         try:
@@ -417,86 +433,67 @@ class ModuleManagerWindow(Adw.Window):
         except Exception as e:
             _log.info('no module catalogue cached yet: %s', e)
             self._has_catalog = False
-            # Degraded state: list what's installed (no kinds/licences/sizes).
+            # Degraded state: classify what's installed from its local conf
+            # so each module still lands on its right tab.
             self._all_modules = [
-                {'name': n, 'description': '', 'type': '', 'lang': '',
-                 'features': set(), 'license': '', 'size': '', 'installed': True}
+                {'name': n, 'description': '',
+                 'type': sword_bridge.module_type(n),
+                 'lang': sword_bridge.module_language(n),
+                 'features': set(), 'license': '', 'size': '',
+                 'version': '', 'locked': False, 'installed': True}
                 for n in sword_bridge.module_names()
             ]
-        self._status.set_visible(False)
+        self._eb_catalog = ebible_bridge.catalog_entries() or []
+        self._updates = sword_bridge.available_updates() if self._has_catalog else []
+        for tab_id in self._tabs:
+            self._refresh_tab(tab_id, full=True)
 
-        self._rebuild_installed()
-        self._rebuild_filter_options()
-        self._apply_filter()
-        self._populate_open_db()
+    def _refresh_tab(self, tab_id, full=False):
+        """Re-render one tab against current data. `full` also rebuilds the
+        language filter options and curated rows (data changed, not just
+        the user's filter/search)."""
+        t = self._tabs[tab_id]
+        if full:
+            self._rebuild_curated(t)
+            self._rebuild_lang_options(t)
+        self._rebuild_updates(t)
+        self._rebuild_installed(t)
+        self._rebuild_browse(t)
+        self._sync_chip(t)
 
-    def _matches(self, mod, query):
-        return (query in mod['name'].lower()
-                or query in mod.get('description', '').lower())
+    # ── Curated packs (pinned rows) ───────────────────────────────────────────
 
-    def _rebuild_installed(self):
-        clear_children(self._installed_container)
-        query = self._cw_search.get_text().strip().lower()
-        installed = [m for m in self._all_modules if m['installed']]
-        if query:
-            installed = [m for m in installed if self._matches(m, query)]
-
-        if not installed:
+    def _rebuild_curated(self, t):
+        clear_children(t['curated'])
+        tab_id = t['spec']['id']
+        if tab_id == 'books':
             group = Adw.PreferencesGroup()
-            group.set_title(_('Installed'))
+            group.set_title(_('Curated for Scriptura'))
             group.set_description(
-                _('No installed modules match your search.') if query else
-                _('No modules yet — install one from the catalogue below to get '
-                  'started.'))
-            self._installed_container.append(group)
-            return
-
-        if self._has_catalog:
-            buckets = {}
-            for mod in installed:
-                buckets.setdefault(_display_kind(mod['type']), []).append(mod)
-            kinds = [k for k in _KIND_ORDER if buckets.get(k)]
-        else:
-            buckets = {N_('Installed'): installed}
-            kinds = [N_('Installed')]
-
-        for kind in kinds:
-            mods = sorted(buckets[kind],
-                          key=lambda m: (m.get('description') or m['name']).lower())
+                _('Hand-assembled companions, built for this app.'))
+            group.add(self._make_catena_row())
+            group.add(self._make_archaeology_row())
+            group.add(self._make_imagery_row())
+            t['curated'].append(group)
+        elif tab_id == 'commentaries':
+            # Also pinned here: someone hunting commentaries should meet it
+            # without knowing about the curated shelf in Books & More. Same
+            # quiet title so the row doesn't float context-free (no
+            # description line — compact here, the full shelf explains it).
             group = Adw.PreferencesGroup()
-            # Titles are markup-parsed, so the "&" in "Lexicons & Dictionaries"
-            # / "Books & Other" must be escaped.
-            group.set_title(GLib.markup_escape_text(f'{_(kind)} ({len(mods)})'))
-            for mod in mods:
-                group.add(self._make_row(mod, installed=True))
-            self._installed_container.append(group)
-
-    def _populate_open_db(self):
-        for row in self._open_db_rows:
-            self._open_db_group.remove(row)
-        self._open_db_rows = []
-        rows = [self._make_catena_row(), self._make_imagery_row()]
-        for src in open_data.get_sources():
-            rows.append(self._make_db_source_row(src))
-        for row in rows:
-            self._open_db_group.add(row)
-            self._open_db_rows.append(row)
-
-    def _make_db_source_row(self, src):
-        row = Adw.ActionRow()
-        row.set_title(GLib.markup_escape_text(src['label']))
-        row.set_subtitle(GLib.markup_escape_text(src['description']))
-        if src['installed']:
-            btn = self._trash_button(
-                lambda: self._confirm_remove_generic(
-                    src['label'], lambda: self._do_db_remove(src['id'])))
-        else:
-            btn = Gtk.Button(label=_('Download'))
-            btn.add_css_class('suggested-action')
-            btn.set_valign(Gtk.Align.CENTER)
-            btn.connect('clicked', lambda b, sid=src['id']: self._on_db_download(b, sid))
-        row.add_suffix(btn)
-        return row
+            group.set_title(_('Curated for Scriptura'))
+            group.add(self._make_catena_row())
+            t['curated'].append(group)
+        elif tab_id == 'study':
+            group = Adw.PreferencesGroup()
+            group.set_title(_('Open databases'))
+            group.set_description(
+                _('Open-access data behind the word-study features — '
+                  'cross-references, Hebrew and Greek lexicons, and '
+                  'grammatical parsing.'))
+            for src in open_data.get_sources():
+                group.add(self._make_db_source_row(src))
+            t['curated'].append(group)
 
     def _make_catena_row(self):
         row = Adw.ActionRow()
@@ -521,49 +518,6 @@ class ModuleManagerWindow(Adw.Window):
         row.add_suffix(btn)
         return row
 
-    def _on_catena_download(self, btn):
-        if self._op_busy:
-            return
-        self._op_busy = True
-        btn.set_sensitive(False)
-        btn.set_label(_('Downloading…'))
-        base = _('Downloading {name}…').format(name=_('Historical Commentaries'))
-        self._set_busy(True, base)
-
-        def _progress(done, total):
-            GLib.idle_add(self._set_busy, True, _fmt_progress(base, done, total))
-
-        def work():
-            err = None
-            try:
-                catena_bridge.download_and_install(on_progress=_progress)
-            except Exception as e:
-                err = str(e)
-            GLib.idle_add(self._finish_catena, err)
-
-        threading.Thread(target=work, daemon=True).start()
-
-    def _do_catena_remove(self):
-        catena_bridge.remove_pack()
-        if self._on_modules_changed:
-            self._on_modules_changed()
-        self._populate_open_db()
-
-    def _finish_catena(self, err):
-        if self._closed:
-            return GLib.SOURCE_REMOVE
-        self._op_busy = False
-        if err:
-            _log.error('catena download error: %s', err)
-            self._set_busy(False, _("Couldn't download {name} — {error}").format(
-                name=_('Historical Commentaries'), error=err))
-        else:
-            self._set_busy(False, '')
-            if self._on_modules_changed:
-                self._on_modules_changed()
-        self._populate_open_db()
-        return GLib.SOURCE_REMOVE
-
     def _make_imagery_row(self):
         row = Adw.ActionRow()
         row.set_title(_('Bible Imagery'))
@@ -587,237 +541,517 @@ class ModuleManagerWindow(Adw.Window):
         row.add_suffix(btn)
         return row
 
-    def _on_imagery_download(self, btn):
-        if self._op_busy:
-            return
-        self._op_busy = True
-        btn.set_sensitive(False)
-        btn.set_label(_('Downloading…'))
-        base = _('Downloading {name}…').format(name=_('Bible Imagery'))
-        self._set_busy(True, base)
-
-        def _progress(done, total):
-            GLib.idle_add(self._set_busy, True, _fmt_progress(base, done, total))
-
-        def work():
-            err = None
-            try:
-                imagery_bridge.download_and_install(on_progress=_progress)
-            except Exception as e:
-                err = str(e)
-            GLib.idle_add(self._finish_imagery, err)
-
-        threading.Thread(target=work, daemon=True).start()
-
-    def _do_imagery_remove(self):
-        imagery_bridge.remove_pack()
-        if self._on_modules_changed:
-            self._on_modules_changed()
-        self._populate_open_db()
-
-    def _finish_imagery(self, err):
-        if self._closed:
-            return GLib.SOURCE_REMOVE
-        self._op_busy = False
-        if err:
-            _log.error('imagery download error: %s', err)
-            self._set_busy(False, _("Couldn't download {name} — {error}").format(
-                name=_('Bible Imagery'), error=err))
-        else:
-            self._set_busy(False, '')
-            if self._on_modules_changed:
-                self._on_modules_changed()
-        self._populate_open_db()
-        return GLib.SOURCE_REMOVE
-
-    def _rebuild_filter_options(self):
-        available = [m for m in self._all_modules if not m['installed']]
-        cats  = sorted(set(m['type'] for m in available if m['type']))
-        langs = sorted(set(m['lang'] for m in available if m['lang']),
-                       key=lambda c: _lang_label(c))
-
-        self._updating_filters = True
-        cur_cat  = self._selected_filter_text(self._cat_list)
-        cur_lang = self._selected_filter_text(self._lang_list)
-
-        self._fill_filter_list(self._cat_list,
-                               [_('All Categories')] + cats, cur_cat)
-        self._fill_filter_list(self._lang_list,
-                               [_('All Languages')] + [_lang_label(c) for c in langs],
-                               cur_lang)
-        self._lang_codes = [''] + langs
-        self._updating_filters = False
-
-    def _selected_filter_text(self, listbox):
-        row = listbox.get_selected_row()
-        return row.get_child().get_label() if row else ''
-
-    def _fill_filter_list(self, listbox, items, cur_text):
-        clear_children(listbox)
-        sel_row = None
-        for text in items:
-            lbl = Gtk.Label(label=text, xalign=0)
-            # Ellipsize long entries (e.g. "Cults / Unorthodox / …") so one
-            # outlier can't force the whole popover wide; full text on hover.
-            lbl.set_ellipsize(Pango.EllipsizeMode.END)
-            lbl.set_tooltip_text(text)
-            lbl.set_margin_top(4); lbl.set_margin_bottom(4)
-            lbl.set_margin_start(10); lbl.set_margin_end(10)
-            row = Gtk.ListBoxRow()
-            row.set_child(lbl)
-            listbox.append(row)
-            if text == cur_text:
-                sel_row = row
-        listbox.select_row(sel_row or listbox.get_row_at_index(0))
-
-    def _catalog_status(self):
-        if not self._has_catalog:
-            return _('No catalogue cached yet — refresh to download the module list.')
-        n = sum(1 for m in self._all_modules if not m['installed'])
-        ago = _ago(sword_bridge.catalog_timestamp())
-        avail = ngettext('{n} module available', '{n} modules available', n).format(n=n)
-        return ' · '.join(p for p in (avail, ago) if p)
-
-    def _apply_filter(self):
-        for row in self._available_rows:
-            self._browse_group.remove(row)
-        self._available_rows = []
-        self._browse_group.set_description(self._catalog_status())
-
-        available = [m for m in self._all_modules if not m['installed']]
-
-        cat_row = self._cat_list.get_selected_row()
-        if cat_row and cat_row.get_index() > 0:
-            chosen = cat_row.get_child().get_label()
-            available = [m for m in available if m['type'] == chosen]
-
-        lang_row = self._lang_list.get_selected_row()
-        lang_idx = lang_row.get_index() if lang_row else 0
-        if 0 < lang_idx < len(self._lang_codes):
-            available = [m for m in available if m['lang'] == self._lang_codes[lang_idx]]
-
-        if self._strongs_check.get_active():
-            available = [m for m in available if 'StrongsNumbers' in m.get('features', set())]
-
-        query = self._cw_search.get_text().strip().lower()
-        if query:
-            available = [m for m in available if self._matches(m, query)]
-
-        if not available:
-            placeholder = Adw.ActionRow()
-            placeholder.set_title(_('No modules match your filters') if self._has_catalog
-                                  else _('No catalogue cached yet'))
-            placeholder.set_sensitive(False)
-            self._browse_group.add(placeholder)
-            self._available_rows.append(placeholder)
-            return
-
-        self._cw_filtered = available
-        self._cw_shown = 0
-        self._append_cw_rows()
-
-    def _append_cw_rows(self):
-        """Materialise the next _RENDER_CAP slice of the filtered catalogue,
-        followed by a Load-more footer while results remain (see the
-        _RENDER_CAP note up top for why the list is capped + synchronous)."""
-        chunk = self._cw_filtered[self._cw_shown:self._cw_shown + _RENDER_CAP]
-        for mod in chunk:
-            row = self._make_row(mod, installed=False)
-            self._browse_group.add(row)
-            self._available_rows.append(row)
-        self._cw_shown += len(chunk)
-        if self._cw_shown < len(self._cw_filtered):
-            footer = self._load_more_row(
-                self._cw_shown, len(self._cw_filtered), self._on_cw_more)
-            self._browse_group.add(footer)
-            self._available_rows.append(footer)
-
-    def _on_cw_more(self):
-        # The footer is always the last row; swap it for the next slice.
-        footer = self._available_rows.pop()
-        self._browse_group.remove(footer)
-        self._append_cw_rows()
-
-    def _load_more_row(self, shown, total, on_more):
-        """An activatable footer row that appends the next result slice.
-        A real ActionRow so it inherits the boxed-list styling exactly."""
+    def _make_archaeology_row(self):
+        """Scripture in Stone ships inside the app — nothing to download,
+        but it must be discoverable next to its curated siblings."""
         row = Adw.ActionRow()
-        row.set_title(_('Load more — showing the first {shown} of {total}')
-                      .format(shown=f'{shown:,}', total=f'{total:,}'))
-        row.set_activatable(True)
-        row.add_prefix(Gtk.Image.new_from_icon_name('view-more-symbolic'))
-        row.connect('activated', lambda _r: on_more())
+        row.set_title(_(archaeology_bridge.DISPLAY_NAME))
+        row.set_subtitle(
+            _('Artifacts, inscriptions, and excavated places in biblical '
+              'sequence — open it from any pane’s module picker'))
+        tag = Gtk.Label(label=_('Included'))
+        tag.add_css_class('caption')
+        tag.add_css_class('dim-label')
+        tag.set_valign(Gtk.Align.CENTER)
+        row.add_suffix(tag)
         return row
 
-    def _on_search_changed(self, *_):
-        self._rebuild_installed()
-        self._apply_filter()
+    def _make_db_source_row(self, src):
+        row = Adw.ActionRow()
+        row.set_title(GLib.markup_escape_text(src['label']))
+        row.set_subtitle(GLib.markup_escape_text(src['description']))
+        if src['installed']:
+            btn = self._trash_button(
+                lambda: self._confirm_remove_generic(
+                    src['label'], lambda: self._do_db_remove(src['id'])))
+        else:
+            btn = Gtk.Button(label=_('Download'))
+            btn.add_css_class('suggested-action')
+            btn.set_valign(Gtk.Align.CENTER)
+            btn.connect('clicked', lambda b, sid=src['id']: self._on_db_download(b, sid))
+        row.add_suffix(btn)
+        return row
 
-    def _on_filter_changed(self, *_):
-        # Live: the catalogue rebuilds below the (fixed) header the popover is
-        # anchored to, so it doesn't move the popover or cost it its grab — and
-        # the lists open no nested popup, so the popover stays put while you
-        # refine. (No deferral needed now that the DropDowns are gone.)
-        if not self._updating_filters:
-            self._apply_filter()
+    # ── Language filter (chip + popover list) ─────────────────────────────────
 
-    def _on_tab_changed(self, stack, _):
-        if stack.get_visible_child_name() == 'ebible' and not self._eb_catalog:
-            self._eb_load_catalog()
+    def _tab_sword_modules(self, t, installed):
+        spec = t['spec']
+        out = []
+        for m in self._all_modules:
+            if m['installed'] != installed:
+                continue
+            claimed = m['type'] in spec['sword_types'] or (
+                spec['catch_all'] and m['type'] not in _CLAIMED_TYPES)
+            if claimed:
+                out.append(m)
+        return out
 
-    # ── CrossWire rows ────────────────────────────────────────────────────────
+    def _rebuild_lang_options(self, t):
+        langs = {_norm_lang(m['lang'])
+                 for m in self._tab_sword_modules(t, installed=False)
+                 if m['lang']}
+        if t['spec']['ebible']:
+            langs |= {_norm_lang(e.get('languageCode'))
+                      for e in self._eb_catalog
+                      if e.get('downloadable', '').strip() == 'True'
+                      and e.get('languageCode', '').strip()}
+        codes = sorted(langs, key=lambda c: _lang_label(c))
+        # The UI language is the one privileged row, pinned right under
+        # "All languages"; the rest stay alphabetical and reachable by the
+        # type-to-filter above the list.
+        ui = _ui_lang()
+        if ui in codes:
+            codes.remove(ui)
+            codes.insert(0, ui)
+        if t['lang_sel'] == '' and t['spec']['lang_default'] \
+                and ui == (codes[0] if codes else '') \
+                and not t.get('lang_touched'):
+            t['lang_sel'] = ui
+        if t['lang_sel'] and t['lang_sel'] not in codes:
+            t['lang_sel'] = ''
+        t['lang_codes'] = [''] + codes
 
-    def _make_row(self, mod, installed):
+        self._updating_filters = True
+        clear_children(t['lang_list'])
+        t['lang_rows'] = []
+        sel_row = None
+        for code in t['lang_codes']:
+            text = _('All languages') if not code else _lang_label(code)
+            lbl = Gtk.Label(label=text, xalign=0, hexpand=True)
+            # Ellipsize long entries so one outlier can't force the whole
+            # popover wide; full text on hover.
+            lbl.set_ellipsize(Pango.EllipsizeMode.END)
+            lbl.set_tooltip_text(text)
+            check = Gtk.Image.new_from_icon_name('object-select-symbolic')
+            check.set_visible(code == t['lang_sel'])
+            box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+            box.set_margin_top(4); box.set_margin_bottom(4)
+            # end margin keeps the checkmark and text clear of the overlay
+            # scrollbar riding the popover's right edge
+            box.set_margin_start(10); box.set_margin_end(16)
+            box.append(lbl)
+            box.append(check)
+            row = Gtk.ListBoxRow()
+            row.set_child(box)
+            row._label_text = text.lower()
+            row._check = check
+            t['lang_list'].append(row)
+            t['lang_rows'].append(row)
+            if code == t['lang_sel']:
+                sel_row = row
+        t['lang_list'].select_row(sel_row or t['lang_list'].get_row_at_index(0))
+        self._updating_filters = False
+
+    def _lang_row_visible(self, tab_id, row):
+        query = self._tabs[tab_id]['lang_search'].get_text().strip().lower()
+        return not query or query in row._label_text
+
+    def _on_filter_open(self, tab_id):
+        """Popover opening: fresh filter, and the current selection in view
+        (a picker that opens somewhere mid-alphabet hides your own state)."""
+        t = self._tabs[tab_id]
+        t['lang_search'].set_text('')
+        GLib.idle_add(self._scroll_filter_to_selection, tab_id)
+
+    def _scroll_filter_to_selection(self, tab_id):
+        t = self._tabs[tab_id]
+        row = t['lang_list'].get_selected_row()
+        if row is not None:
+            adj = t['lang_scroll'].get_vadjustment()
+            alloc = row.get_allocation()
+            adj.set_value(max(0.0, alloc.y - (adj.get_page_size()
+                                              - alloc.height) / 2))
+        return GLib.SOURCE_REMOVE
+
+    def _on_lang_selected(self, tab_id):
+        if self._updating_filters:
+            return
+        t = self._tabs[tab_id]
+        row = t['lang_list'].get_selected_row()
+        idx = row.get_index() if row else 0
+        t['lang_sel'] = t['lang_codes'][idx] if idx < len(t['lang_codes']) else ''
+        t['lang_touched'] = True  # user's explicit pick outlives repopulates
+        for r in t.get('lang_rows', []):
+            r._check.set_visible(r is row)
+        self._refresh_tab(tab_id)
+
+    def _set_lang(self, tab_id, code):
+        t = self._tabs[tab_id]
+        t['lang_sel'] = code
+        t['lang_touched'] = True
+        self._rebuild_lang_options(t)
+        self._refresh_tab(tab_id)
+
+    def _sync_chip(self, t):
+        active = bool(t['lang_sel'])
+        t['chip'].set_label(_lang_label(t['lang_sel']) if active
+                            else _('All languages'))
+        t['chip_clear'].set_visible(active)
+        if active:
+            t['chip_box'].add_css_class('active')
+        else:
+            t['chip_box'].remove_css_class('active')
+
+    # ── Updates ───────────────────────────────────────────────────────────────
+
+    def _rebuild_updates(self, t):
+        group = t['updates_group']
+        # PreferencesGroup has no clear API for rows; track and remove.
+        for row in t.get('update_rows', []):
+            group.remove(row)
+        t['update_rows'] = []
+        mine = [(m, old) for m, old in self._updates
+                if _tab_of_type(m['type']) == t['spec']['id']]
+        group.set_visible(bool(mine))
+        if not mine:
+            return
+        group.set_title(ngettext('{n} update available',
+                                 '{n} updates available',
+                                 len(mine)).format(n=len(mine)))
+        for mod, old in mine:
+            row = Adw.ActionRow()
+            row.set_title(GLib.markup_escape_text(
+                (mod.get('description') or mod['name'])[:80]))
+            row.set_subtitle(GLib.markup_escape_text(
+                _('Update from v{old} to v{new}').format(
+                    old=old, new=mod['version'])))
+            btn = Gtk.Button(label=_('Update'))
+            btn.add_css_class('suggested-action')
+            btn.set_valign(Gtk.Align.CENTER)
+            btn.connect('clicked',
+                        lambda b, m=mod, r=row: self._on_install(b, m, r))
+            row.add_suffix(btn)
+            group.add(row)
+            t['update_rows'].append(row)
+
+    # ── Installed section ─────────────────────────────────────────────────────
+
+    def _matches(self, mod, query):
+        return (query in mod['name'].lower()
+                or query in mod.get('description', '').lower())
+
+    def _rebuild_installed(self, t):
+        clear_children(t['installed_box'])
+        query = t['search'].get_text().strip().lower()
+
+        entries = []   # (sort_key, (src, payload))
+        for mod in self._tab_sword_modules(t, installed=True):
+            if query and not self._matches(mod, query):
+                continue
+            entries.append(((mod.get('description') or mod['name']).lower(),
+                            ('sword', mod)))
+        if t['spec']['ebible']:
+            installed_ids = ebible_bridge.installed_ids()
+            by_id = {e.get('translationId', '').strip(): e
+                     for e in self._eb_catalog}
+            for tid in sorted(installed_ids):
+                entry = by_id.get(tid, {})
+                title = (entry.get('shortTitle') or tid).strip()
+                lang_code = entry.get('languageCode', '').strip()
+                lang_name = entry.get('languageName', '').strip()
+                if query and query not in title.lower() \
+                        and query not in tid.lower():
+                    continue
+                entries.append((title.lower(),
+                                ('ebible', (tid, title, lang_code,
+                                            lang_name, entry))))
+
+        n = len(entries)   # edition count, before folding
+        entries = self._fold_editions(entries)
+        group = Adw.PreferencesGroup()
+        group.set_title(_('Installed') + (f' ({n})' if n else ''))
+        if not entries:
+            group.set_description(
+                _('No installed modules match your search.') if query else
+                _('Nothing yet — install something from the catalogue below.'))
+        for _key, item in sorted(entries, key=lambda e: e[0]):
+            group.add(self._entry_row(item, installed=True))
+        t['installed_box'].append(group)
+
+    # ── Browse (merged catalogue) ─────────────────────────────────────────────
+
+    def _catalog_status(self, t):
+        parts = []
+        if self._has_catalog:
+            n = len(self._tab_sword_modules(t, installed=False))
+            parts.append(ngettext('{n} CrossWire module',
+                                  '{n} CrossWire modules', n).format(n=n))
+        if t['spec']['ebible'] and self._eb_catalog:
+            n = sum(1 for e in self._eb_catalog
+                    if e.get('downloadable', '').strip() == 'True')
+            parts.append(ngettext('{n} eBible translation',
+                                  '{n} eBible translations', n).format(n=n))
+        ago = _ago(sword_bridge.catalog_timestamp())
+        if ago:
+            parts.append(ago)
+        if t['search'].get_text().strip() and t['lang_sel']:
+            parts.append(_('searching all languages'))
+        return ' · '.join(parts)
+
+    def _rebuild_browse(self, t):
+        group = t['browse_group']
+        for row in t['browse_rows']:
+            group.remove(row)
+        t['browse_rows'] = []
+        group.set_description(self._catalog_status(t))
+
+        query = t['search'].get_text().strip().lower()
+        # A search query widens to every language: the language default is
+        # a browsing convenience and must never make a search dead-end.
+        lang = '' if query else t['lang_sel']
+
+        merged = []   # (sort_key, ('sword', mod) | ('ebible', tuple))
+        for mod in self._tab_sword_modules(t, installed=False):
+            if lang and _norm_lang(mod['lang']) != lang:
+                continue
+            if t.get('strongs') and t['strongs'].get_active() \
+                    and 'StrongsNumbers' not in mod.get('features', set()):
+                continue
+            if query and not self._matches(mod, query):
+                continue
+            merged.append(((mod.get('description') or mod['name']).lower(),
+                           ('sword', mod)))
+        if t['spec']['ebible']:
+            if not (t.get('strongs') and t['strongs'].get_active()):
+                installed_ids = ebible_bridge.installed_ids()
+                for entry in self._eb_catalog:
+                    if entry.get('downloadable', '').strip() != 'True':
+                        continue
+                    tid = entry.get('translationId', '').strip()
+                    if not tid or tid in installed_ids:
+                        continue
+                    title = (entry.get('shortTitle') or tid).strip()
+                    lang_code = entry.get('languageCode', '').strip()
+                    lang_name = entry.get('languageName', '').strip()
+                    if lang and _norm_lang(lang_code) != lang:
+                        continue
+                    if query and query not in title.lower() \
+                            and query not in lang_name.lower() \
+                            and query not in tid.lower():
+                        continue
+                    merged.append((title.lower(),
+                                   ('ebible', (tid, title, lang_code,
+                                               lang_name, entry))))
+
+        if not merged:
+            placeholder = Adw.ActionRow()
+            if self._has_catalog or (t['spec']['ebible'] and self._eb_catalog):
+                placeholder.set_title(_('No modules match your filters'))
+            else:
+                placeholder.set_title(
+                    _('No catalogue cached yet — refresh to download the '
+                      'module list.'))
+            placeholder.set_sensitive(False)
+            group.add(placeholder)
+            t['browse_rows'].append(placeholder)
+            return
+
+        merged = self._fold_editions(merged)
+        merged.sort(key=lambda e: e[0])
+        t['filtered'] = [item for _k, item in merged]
+        t['shown'] = 0
+        self._append_browse_rows(t)
+
+    def _append_browse_rows(self, t):
+        """Materialise the next _RENDER_CAP slice of the filtered result,
+        followed by a Load-more footer while results remain (see the
+        _RENDER_CAP note up top for why the list is capped + synchronous)."""
+        group = t['browse_group']
+        chunk = t['filtered'][t['shown']:t['shown'] + _RENDER_CAP]
+        for item in chunk:
+            row = self._entry_row(item, installed=False)
+            group.add(row)
+            t['browse_rows'].append(row)
+        t['shown'] += len(chunk)
+        if t['shown'] < len(t['filtered']):
+            footer = Adw.ActionRow()
+            footer.set_title(
+                _('Load more — showing the first {shown} of {total}').format(
+                    shown=f"{t['shown']:,}", total=f"{len(t['filtered']):,}"))
+            footer.set_activatable(True)
+            footer.add_prefix(Gtk.Image.new_from_icon_name('view-more-symbolic'))
+            footer.connect('activated', lambda _r: self._on_more(t))
+            group.add(footer)
+            t['browse_rows'].append(footer)
+
+    def _on_more(self, t):
+        # The footer is always the last row; swap it for the next slice.
+        footer = t['browse_rows'].pop()
+        t['browse_group'].remove(footer)
+        self._append_browse_rows(t)
+
+    # ── Rows ──────────────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _fold_editions(entries):
+        """Fold cross-source editions of one translation
+        (content.EDITION_WORKS) into ('group', (work_id, [items])) entries.
+        Folding runs over the survivors of the current filters only, and a
+        group left with a single member stays a plain row — an expander
+        hiding one child would be pure friction."""
+        by_work = {}
+        out = []
+        for sort_key, item in entries:
+            src, payload = item
+            key = payload['name'] if src == 'sword' else payload[0]
+            work = content.edition_work(src, key)
+            if work is None:
+                out.append((sort_key, item))
+                continue
+            if work not in by_work:
+                members = []
+                by_work[work] = members
+                out.append((content.edition_work_title(work).lower(),
+                            ('group', (work, members))))
+            by_work[work].append(item)
+        return [(k, it[1][1][0]) if it[0] == 'group' and len(it[1][1]) == 1
+                else (k, it)
+                for k, it in out]
+
+    def _entry_row(self, item, installed):
+        src, payload = item
+        if src == 'group':
+            return self._make_group_row(*payload, installed=installed)
+        if src == 'sword':
+            return self._make_sword_row(payload, installed)
+        return self._make_eb_row(*payload, installed=installed)
+
+    def _make_group_row(self, work, items, installed):
+        """One expandable row per translation; each edition keeps its full
+        row (badges, metadata, its own action button) underneath."""
+        row = Adw.ExpanderRow()
+        row.set_title(GLib.markup_escape_text(content.edition_work_title(work)))
+        sources = []
+        for src, _p in items:
+            label = 'CrossWire' if src == 'sword' else 'eBible.org'
+            if label not in sources:
+                sources.append(label)
+        row.set_subtitle(GLib.markup_escape_text(
+            ngettext('{n} edition', '{n} editions',
+                     len(items)).format(n=len(items))
+            + '  ·  ' + ' · '.join(sources)))
+        for item in items:
+            row.add_row(self._entry_row(item, installed))
+        return row
+
+    def _make_sword_row(self, mod, installed):
         row = Adw.ActionRow()
         key = mod['name']
         friendly = mod.get('description') or key
         row.set_title(GLib.markup_escape_text(friendly[:80]))
 
         meta = []
-        if mod.get('lang'):
+        # A language label on every row is catalogue noise when it's the
+        # user's own language — name it only where it informs (Latin,
+        # Greek, enm, …), like a library that doesn't label English books
+        # "English" in an English library.
+        if mod.get('lang') and _norm_lang(mod['lang']) != _ui_lang():
             meta.append(_lang_label(mod['lang']))
         if 'StrongsNumbers' in mod.get('features', set()):
             meta.append(_("Strong's"))
+        if mod.get('locked'):
+            meta.append(_('Locked'))
         size = _fmt_size(mod.get('size'))
         if size:
             meta.append(size)
         lic = _short_license(mod.get('license', ''))
         if lic:
             meta.append(lic)
+        meta.append('CrossWire')
         # The raw module key as a dim monospace tag, friendly name as the title.
         subtitle = f'<tt>{GLib.markup_escape_text(key)}</tt>'
-        if meta:
-            subtitle += '  ·  ' + GLib.markup_escape_text(' · '.join(meta))
+        subtitle += '  ·  ' + GLib.markup_escape_text(' · '.join(meta))
         row.set_subtitle(subtitle)
 
         if installed:
-            btn = Gtk.Button(icon_name='user-trash-symbolic')
-            btn.add_css_class('flat')
+            btn = self._trash_button(
+                lambda n=key, f=friendly, r=row: self._confirm_remove(n, f, r))
             btn.set_tooltip_text(_('Remove module'))
             set_accessible_label(btn, _('Remove module'))
-            btn.connect(
-                'clicked',
-                lambda b, n=key, f=friendly, r=row: self._confirm_remove(b, n, f, r))
         else:
             btn = Gtk.Button(label=_('Install'))
             btn.add_css_class('suggested-action')
+            btn.set_valign(Gtk.Align.CENTER)
             btn.connect('clicked',
-                        lambda b, n=key, r=row: self._on_install(b, n, r))
-        btn.set_valign(Gtk.Align.CENTER)
+                        lambda b, m=mod, r=row: self._on_install(b, m, r))
         row.add_suffix(btn)
         return row
 
-    # ── Shared busy / progress ────────────────────────────────────────────────
+    def _make_eb_row(self, tid, title, lang_code, lang_name, entry, installed):
+        row = Adw.ActionRow()
+        row.set_title(GLib.markup_escape_text(title))
+        parts = []
+        # Same rule as the CrossWire rows: the user's own language goes
+        # unsaid; only a differing language earns its label.
+        if (lang_code or lang_name) and _norm_lang(lang_code) != _ui_lang():
+            parts.append(_eb_lang_display(lang_code, lang_name))
+        license_ = (entry.get('licenseType') or '').strip()
+        if license_:
+            parts.append(license_)
+        parts.append('eBible.org')
+        row.set_subtitle(GLib.markup_escape_text('  ·  '.join(parts)))
+
+        if installed:
+            btn = self._trash_button(
+                lambda t_=tid, ti=title: self._confirm_remove_generic(
+                    ti, lambda: self._do_eb_remove(t_)))
+        else:
+            # Same verb as the CrossWire rows — the user is installing a
+            # module either way; which wire it arrives over is plumbing.
+            btn = Gtk.Button(label=_('Install'))
+            btn.add_css_class('suggested-action')
+            btn.set_valign(Gtk.Align.CENTER)
+            btn.connect('clicked',
+                        lambda b, t_=tid, e=entry: self._on_eb_download(b, t_, e))
+        row.add_suffix(btn)
+        return row
+
+    # ── One async runner for every operation ──────────────────────────────────
+    #
+    # Every network/disk operation goes through here: one gate
+    # (`_op_busy`), one thread pattern, one _closed guard — and a visible
+    # answer when an operation is refused, instead of a silent no-op.
+
+    def _run_async(self, work, on_done, busy_msg='', show_bar=True, retry=None):
+        """Run work() on a daemon thread; on_done(err) on the main loop.
+        Returns False (with visible feedback) if another operation holds
+        the gate. `retry` re-runs the whole operation from the error strip."""
+        if self._op_busy:
+            self._flash(_('Waiting for the current operation to finish…'))
+            return False
+        self._op_busy = True
+        self._set_busy(True, busy_msg, show_bar=show_bar)
+
+        def runner():
+            err = None
+            try:
+                work()
+            except Exception as e:
+                err = str(e)
+            GLib.idle_add(finish, err)
+
+        def finish(err):
+            if self._closed:
+                return GLib.SOURCE_REMOVE
+            self._op_busy = False
+            self._set_busy(False)
+            if err:
+                _log.error('operation failed: %s', err)
+                self._set_error(err, retry)
+            on_done(err)
+            return GLib.SOURCE_REMOVE
+
+        threading.Thread(target=runner, daemon=True).start()
+        return True
 
     def _set_busy(self, busy, status='', show_bar=True):
         if self._closed:
             return
         # Per-row installs/removes give their feedback on the row itself (a
         # spinner), so they pass show_bar=False — the global progress bar is
-        # reserved for window-level work (refresh, import, database downloads).
-        self._cw_refresh_btn.set_sensitive(not busy)
-        self._status.set_text(status)
-        self._status.set_visible(bool(status))
+        # reserved for window-level work (refresh, import, pack downloads).
+        if busy:
+            self._status_bar.set_visible(False)
         if busy and show_bar:
             self._progress.set_text(status)
             self._progress.set_visible(True)
@@ -830,6 +1064,39 @@ class ModuleManagerWindow(Adw.Window):
                 GLib.source_remove(self._pulse_source)
                 self._pulse_source = None
 
+    def _set_progress_text(self, text):
+        if not self._closed:
+            self._progress.set_text(text)
+        return GLib.SOURCE_REMOVE
+
+    def _set_error(self, message, retry=None):
+        self._status.set_text(message)
+        self._retry_cb = retry
+        self._retry_btn.set_visible(retry is not None)
+        self._status_bar.set_visible(True)
+
+    def _on_retry(self, _btn):
+        cb = self._retry_cb
+        self._retry_cb = None
+        self._status_bar.set_visible(False)
+        if cb is not None:
+            cb()
+
+    def _flash(self, message):
+        """Transient, self-clearing status line (busy-gate refusals)."""
+        self._status.set_text(message)
+        self._retry_btn.set_visible(False)
+        self._status_bar.set_visible(True)
+        if self._flash_source is not None:
+            GLib.source_remove(self._flash_source)
+        self._flash_source = GLib.timeout_add(2500, self._end_flash)
+
+    def _end_flash(self):
+        self._flash_source = None
+        if not self._closed and self._retry_cb is None:
+            self._status_bar.set_visible(False)
+        return GLib.SOURCE_REMOVE
+
     def _row_spinner(self, row, button):
         """Swap a row's action button for a spinner while it installs/removes.
         The list is rebuilt on completion, so the spinner row is transient."""
@@ -840,14 +1107,183 @@ class ModuleManagerWindow(Adw.Window):
         row.add_suffix(spinner)
 
     def _trash_button(self, on_confirm):
-        """A flat trash-icon remove button; `on_confirm` runs when clicked."""
+        """A flat trash-icon remove button; `on_confirm` runs when clicked.
+        Hover-revealed (`.module-row-action`) per the house row-action rule."""
         btn = Gtk.Button(icon_name='user-trash-symbolic')
         btn.add_css_class('flat')
+        btn.add_css_class('module-row-action')
         btn.set_valign(Gtk.Align.CENTER)
         btn.set_tooltip_text(_('Remove'))
         set_accessible_label(btn, _('Remove'))
         btn.connect('clicked', lambda _b: on_confirm())
         return btn
+
+    def _pulse(self):
+        self._progress.pulse()
+        return GLib.SOURCE_CONTINUE
+
+    def _on_close_request(self, _win):
+        # Mark closed so the daemon workers' idle callbacks early-return
+        # instead of mutating finalized widgets, and stop the pulse.
+        self._closed = True
+        if self._pulse_source is not None:
+            GLib.source_remove(self._pulse_source)
+            self._pulse_source = None
+        return False
+
+    def _modules_changed(self):
+        if self._on_modules_changed:
+            self._on_modules_changed()
+
+    # ── SWORD install / update / remove ───────────────────────────────────────
+
+    def _on_install(self, btn, mod, row):
+        name = mod['name']
+        if mod.get('locked') and not sword_bridge.is_encrypted_module(name):
+            # Enciphered module fresh from the catalogue: ask for the key
+            # up front rather than letting it install and render garbage.
+            self._prompt_cipher_install(btn, mod, row)
+            return
+        self._start_install(btn, name, row)
+
+    def _start_install(self, btn, name, row, cipher_key=None):
+        def work():
+            sword_bridge.install_module(name)
+            if cipher_key:
+                sword_bridge.set_cipher_key(name, cipher_key)
+
+        def done(err):
+            self._modules_changed()
+            self._populate()
+
+        if self._run_async(work, done, show_bar=False,
+                           retry=lambda: self._start_install(
+                               btn, name, row, cipher_key)):
+            self._row_spinner(row, btn)
+
+    def _prompt_cipher_install(self, btn, mod, row):
+        dialog = Adw.AlertDialog()
+        dialog.set_heading(_('Unlock Module'))
+        dialog.set_body(
+            _('“{name}” is enciphered. Enter the unlock key from the '
+              'publisher to install it.').format(
+                name=mod.get('description') or mod['name']))
+        entry = Gtk.PasswordEntry()
+        entry.set_show_peek_icon(True)
+        entry.set_property('placeholder-text',
+                           _('Paste the unlock key from the publisher'))
+        dialog.set_extra_child(entry)
+        dialog.add_response('cancel', _('Cancel'))
+        dialog.add_response('install', _('Install'))
+        dialog.set_response_appearance('install',
+                                       Adw.ResponseAppearance.SUGGESTED)
+        dialog.set_default_response('install')
+        dialog.set_close_response('cancel')
+        dialog.connect(
+            'response',
+            lambda _d, r: self._start_install(
+                btn, mod['name'], row, entry.get_text().strip() or None)
+            if r == 'install' else None)
+        dialog.present(self)
+
+    def _confirm_remove(self, name, friendly, row):
+        dialog = Adw.AlertDialog()
+        dialog.set_heading(_('Remove module?'))
+        dialog.set_body(
+            _('“{name}” will be removed from your library. '
+              'You can reinstall it from the catalogue later.').format(name=friendly))
+        dialog.add_response('cancel', _('Cancel'))
+        dialog.add_response('remove', _('Remove'))
+        dialog.set_response_appearance('remove',
+                                       Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.set_default_response('cancel')
+        dialog.set_close_response('cancel')
+        dialog.connect(
+            'response',
+            lambda _d, r: self._start_remove(name, row) if r == 'remove' else None)
+        dialog.present(self)
+
+    def _start_remove(self, name, row):
+        def done(err):
+            self._modules_changed()
+            self._populate()
+
+        self._run_async(lambda: sword_bridge.remove_module(name), done,
+                        show_bar=False,
+                        retry=lambda: self._start_remove(name, row))
+
+    # ── Refresh (per tab: every catalogue that feeds it) ─────────────────────
+
+    def _on_refresh(self, tab_id):
+        wants_ebible = self._tabs[tab_id]['spec']['ebible']
+
+        def work():
+            sword_bridge.refresh_source()
+            if wants_ebible:
+                GLib.idle_add(self._set_progress_text,
+                              _('Downloading eBible catalog…'))
+                ebible_bridge.download_catalog_sync()
+
+        def done(err):
+            if not err:
+                self._populate()
+
+        self._run_async(work, done,
+                        busy_msg=_('Downloading module list from CrossWire…'),
+                        retry=lambda: self._on_refresh(tab_id))
+
+    # ── Curated pack / database downloads ────────────────────────────────────
+
+    def _pack_download(self, btn, name, download):
+        """Shared flow for the catena/imagery/database downloads: byte
+        progress on the window bar, button disabled while running."""
+        base = _('Downloading {name}…').format(name=name)
+
+        def progress(done_b, total):
+            GLib.idle_add(self._set_progress_text,
+                          _fmt_progress(base, done_b, total))
+
+        def done(err):
+            self._modules_changed()
+            self._populate()
+
+        if self._run_async(lambda: download(progress), done, busy_msg=base,
+                           retry=lambda: self._pack_download(
+                               btn, name, download)):
+            btn.set_sensitive(False)
+            btn.set_label(_('Downloading…'))
+
+    def _on_catena_download(self, btn):
+        self._pack_download(
+            btn, _('Historical Commentaries'),
+            lambda p: catena_bridge.download_and_install(on_progress=p))
+
+    def _on_imagery_download(self, btn):
+        self._pack_download(
+            btn, _('Bible Imagery'),
+            lambda p: imagery_bridge.download_and_install(on_progress=p))
+
+    def _on_db_download(self, btn, source_id):
+        src = next((s for s in open_data.get_sources() if s['id'] == source_id), None)
+        if src is None:
+            return
+        self._pack_download(
+            btn, src['label'],
+            lambda p: open_data.download_source(source_id, on_progress=p))
+
+    def _do_catena_remove(self):
+        catena_bridge.remove_pack()
+        self._modules_changed()
+        self._populate()
+
+    def _do_imagery_remove(self):
+        imagery_bridge.remove_pack()
+        self._modules_changed()
+        self._populate()
+
+    def _do_db_remove(self, source_id):
+        open_data.remove_source(source_id)
+        self._populate()
 
     def _confirm_remove_generic(self, friendly, on_confirm):
         """Confirmation dialog for removing a non-SWORD pack/source."""
@@ -866,48 +1302,40 @@ class ModuleManagerWindow(Adw.Window):
                        lambda _d, r: on_confirm() if r == 'remove' else None)
         dialog.present(self)
 
-    def _pulse(self):
-        self._progress.pulse()
-        return GLib.SOURCE_CONTINUE
+    # ── eBible download / remove ─────────────────────────────────────────────
 
-    def _on_close_request(self, _win):
-        # Mark closed so the daemon workers' idle callbacks (_finish_*, the
-        # progress ticks) early-return instead of mutating finalized widgets,
-        # and stop the progress pulse so its timeout can't keep firing.
-        self._closed = True
-        if self._pulse_source is not None:
-            GLib.source_remove(self._pulse_source)
-            self._pulse_source = None
-        return False
+    # eBible download phase codes → translated status text. The text lives
+    # here, not in the (English-free) ebible_bridge backend — same i18n
+    # boundary as the search-truncation message.
+    _EB_STATUS = {
+        'download': N_('Downloading…'),
+        'parse': N_('Parsing USFM…'),
+        'save': N_('Saving…'),
+    }
 
-    # ── CrossWire network ops ─────────────────────────────────────────────────
+    def _on_eb_download(self, btn, tid, entry):
+        title = (entry.get('shortTitle') or tid).strip()
 
-    def _on_refresh_clicked(self, _btn):
-        if self._op_busy:
-            return
-        self._op_busy = True
-        self._set_busy(True, _('Downloading module list from CrossWire…'))
+        def on_status(code):
+            GLib.idle_add(self._set_progress_text,
+                          _(self._EB_STATUS.get(code, code)))
 
-        def work():
-            err = None
-            try:
-                sword_bridge.refresh_source()
-            except Exception as e:
-                err = str(e)
-            GLib.idle_add(self._finish_refresh, err)
-
-        threading.Thread(target=work, daemon=True).start()
-
-    def _finish_refresh(self, err):
-        if self._closed:
-            return GLib.SOURCE_REMOVE
-        self._op_busy = False
-        if err:
-            self._set_busy(False, _('Refresh failed: {error}').format(error=err))
-        else:
-            self._set_busy(False, '')
+        def done(err):
+            self._modules_changed()
             self._populate()
-        return GLib.SOURCE_REMOVE
+
+        if self._run_async(
+                lambda: ebible_bridge.download_translation_sync(
+                    tid, entry, on_status=on_status),
+                done, busy_msg=_('Downloading {name}…').format(name=title),
+                retry=lambda: self._on_eb_download(btn, tid, entry)):
+            btn.set_sensitive(False)
+            btn.set_label(_('Installing…'))
+
+    def _do_eb_remove(self, tid):
+        ebible_bridge.remove_translation(tid)
+        self._modules_changed()
+        self._populate()
 
     # ── Import module from file (sideload) ────────────────────────────────────
 
@@ -934,42 +1362,25 @@ class ModuleManagerWindow(Adw.Window):
     def _on_file_dropped(self, _target, value, _x, _y):
         path = value.get_path() if isinstance(value, Gio.File) else None
         if not path or not path.lower().endswith('.zip'):
-            self._set_busy(False, _('Drop a SWORD module .zip file to import it.'))
+            self._flash(_('Drop a SWORD module .zip file to import it.'))
             return False
         self._load_zip_path(path)
         return True
 
     def _load_zip_path(self, path):
-        if self._op_busy:
-            return
-        self._op_busy = True
-        self._set_busy(True, _('Reading module file…'))
+        state = {}
 
         def work():
-            err = None
-            mods = None
-            data = None
-            try:
-                with open(path, 'rb') as f:
-                    data = f.read()
-                mods = sword_bridge.inspect_module_zip(data)
-            except (ValueError, OSError) as e:
-                err = str(e)
-            GLib.idle_add(self._finish_inspect, err, mods, data)
+            with open(path, 'rb') as f:
+                state['data'] = f.read()
+            state['mods'] = sword_bridge.inspect_module_zip(state['data'])
 
-        threading.Thread(target=work, daemon=True).start()
+        def done(err):
+            if not err and state.get('mods'):
+                self._show_import_sheet(state['mods'], state['data'])
 
-    def _finish_inspect(self, err, mods, data):
-        if self._closed:
-            return GLib.SOURCE_REMOVE
-        self._op_busy = False
-        if err:
-            self._set_busy(False, _("Couldn't read that file — {error}").format(error=err))
-        else:
-            self._set_busy(False, '')
-            if mods:
-                self._show_import_sheet(mods, data)
-        return GLib.SOURCE_REMOVE
+        self._run_async(work, done, busy_msg=_('Reading module file…'),
+                        retry=lambda: self._load_zip_path(path))
 
     def _show_import_sheet(self, mods, zip_bytes):
         dialog = Adw.Dialog()
@@ -1116,390 +1527,18 @@ class ModuleManagerWindow(Adw.Window):
         }
         if not selected:
             return
-        if self._op_busy:
-            return
-        self._op_busy = True
-        dialog.close()
         label = (selected[0] if len(selected) == 1
                  else ngettext('{n} module', '{n} modules',
                                len(selected)).format(n=len(selected)))
-        self._set_busy(True, _('Installing {label}…').format(label=label))
 
-        def work():
-            err = None
-            try:
-                sword_bridge.install_module_from_zip(zip_bytes, selected, cipher_keys)
-            except Exception as e:
-                err = str(e)
-            GLib.idle_add(self._finish_import, err, label)
-
-        threading.Thread(target=work, daemon=True).start()
-
-    def _finish_import(self, err, label):
-        if self._closed:
-            return GLib.SOURCE_REMOVE
-        self._op_busy = False
-        if err:
-            _log.error('import error for %s: %s', label, err)
-            self._set_busy(False, _("Couldn't import {label} — {error}").format(
-                label=label, error=err))
-        else:
-            self._set_busy(False, _('Imported {label}.').format(label=label))
-            if self._on_modules_changed:
-                self._on_modules_changed()
+        def done(err):
+            if not err:
+                self._modules_changed()
             self._populate()
-        return GLib.SOURCE_REMOVE
 
-    def _on_install(self, btn, name, row):
-        if self._op_busy:
-            return
-        self._op_busy = True
-        self._row_spinner(row, btn)
-        self._set_busy(True, show_bar=False)
-
-        def work():
-            err = None
-            try:
-                sword_bridge.install_module(name)
-            except Exception as e:
-                err = str(e)
-            GLib.idle_add(self._finish_change, err, name, 'install')
-
-        threading.Thread(target=work, daemon=True).start()
-
-    def _confirm_remove(self, btn, name, friendly, row):
-        dialog = Adw.AlertDialog()
-        dialog.set_heading(_('Remove module?'))
-        dialog.set_body(
-            _('“{name}” will be removed from your library. '
-              'You can reinstall it from the catalogue later.').format(name=friendly))
-        dialog.add_response('cancel', _('Cancel'))
-        dialog.add_response('remove', _('Remove'))
-        dialog.set_response_appearance('remove',
-                                       Adw.ResponseAppearance.DESTRUCTIVE)
-        dialog.set_default_response('cancel')
-        dialog.set_close_response('cancel')
-        dialog.connect('response', self._on_remove_response, btn, name, row)
-        dialog.present(self)
-
-    def _on_remove_response(self, _dialog, response, btn, name, row):
-        if response == 'remove':
-            self._on_remove(btn, name, row)
-
-    def _on_remove(self, btn, name, row):
-        if self._op_busy:
-            return
-        self._op_busy = True
-        self._row_spinner(row, btn)
-        self._set_busy(True, show_bar=False)
-
-        def work():
-            err = None
-            try:
-                sword_bridge.remove_module(name)
-            except Exception as e:
-                err = str(e)
-            GLib.idle_add(self._finish_change, err, name, 'remove')
-
-        threading.Thread(target=work, daemon=True).start()
-
-    def _finish_change(self, err, name, action='install'):
-        if self._closed:
-            return GLib.SOURCE_REMOVE
-        self._op_busy = False
-        if err:
-            _log.error('%s error for %s: %s', action, name, err)
-            if action == 'remove':
-                msg = _("Couldn't remove {name} — {error}").format(name=name, error=err)
-            else:
-                msg = _("Couldn't install {name} — {error}").format(name=name, error=err)
-            self._set_busy(False, msg)
-        else:
-            self._set_busy(False, '')
-            if self._on_modules_changed:
-                self._on_modules_changed()
-        self._populate()
-        return GLib.SOURCE_REMOVE
-
-    def _on_db_download(self, btn, source_id):
-        src = next((s for s in open_data.get_sources() if s['id'] == source_id), None)
-        if src is None:
-            return
-        if self._op_busy:
-            return
-        self._op_busy = True
-        btn.set_sensitive(False)
-        btn.set_label(_('Downloading…'))
-        base_msg = _('Downloading {name}…').format(name=src['label'])
-        self._set_busy(True, base_msg)
-
-        def _progress(done, total):
-            GLib.idle_add(self._set_busy, True,
-                          _fmt_progress(base_msg, done, total))
-
-        def work():
-            err = None
-            try:
-                open_data.download_source(source_id, on_progress=_progress)
-            except Exception as e:
-                err = str(e)
-            GLib.idle_add(self._finish_db_change, err, src['label'])
-
-        threading.Thread(target=work, daemon=True).start()
-
-    def _do_db_remove(self, source_id):
-        open_data.remove_source(source_id)
-        self._populate_open_db()
-
-    def _finish_db_change(self, err, label):
-        if self._closed:
-            return GLib.SOURCE_REMOVE
-        self._op_busy = False
-        if err:
-            self._set_busy(False, _("Couldn't download {name} — {error}").format(
-                name=label, error=err))
-        else:
-            self._set_busy(False, '')
-        self._populate_open_db()
-        return GLib.SOURCE_REMOVE
-
-    # ── eBible data ───────────────────────────────────────────────────────────
-
-    def _eb_load_catalog(self):
-        entries = ebible_bridge.catalog_entries()
-        if entries:
-            self._eb_catalog = entries
-            self._eb_rebuild_lang_list()
-            self._eb_apply_filter()
-        else:
-            self._eb_status.set_text(
-                _('No catalogue cached yet — refresh to download it.'))
-            self._eb_status.set_visible(True)
-            self._eb_group.set_description('')
-
-    def _eb_rebuild_lang_list(self):
-        langs = sorted(set(
-            e.get('languageCode', '').strip()
-            for e in self._eb_catalog
-            if e.get('languageCode', '').strip()
-            and e.get('downloadable', '').strip() == 'True'
-        ), key=lambda c: _lang_label(c))
-        self._updating_filters = True
-        cur = self._selected_filter_text(self._eb_lang_list)
-        self._fill_filter_list(
-            self._eb_lang_list,
-            [_('All Languages')] + [_lang_label(c) for c in langs], cur)
-        self._eb_lang_codes = [''] + langs
-        self._updating_filters = False
-
-    def _eb_on_lang_changed(self, *_):
-        # Live: the ListBox opens no nested popup, so picking a language can't
-        # steal the popover's grab (the old DropDown's did, hence the former
-        # popdown-on-select workaround). Guard against the rebuild's own
-        # select_row firing this mid-populate.
-        if not self._updating_filters:
-            self._eb_apply_filter()
-
-    def _eb_apply_filter(self):
-        query      = self._eb_search.get_text().strip().lower()
-        lang_row   = self._eb_lang_list.get_selected_row()
-        lang_idx   = lang_row.get_index() if lang_row else 0
-        lang_filter = self._eb_lang_codes[lang_idx] if lang_idx < len(self._eb_lang_codes) else ''
-
-        filtered = []
-        for entry in self._eb_catalog:
-            if entry.get('downloadable', '').strip() != 'True':
-                continue
-            tid       = entry.get('translationId', '').strip()
-            title     = (entry.get('shortTitle') or tid).strip()
-            lang_code = entry.get('languageCode', '').strip()
-            lang_name = entry.get('languageName', '').strip()
-            if lang_filter and lang_code != lang_filter:
-                continue
-            if query and query not in title.lower() and query not in lang_name.lower() \
-                    and query not in tid.lower():
-                continue
-            filtered.append((tid, title, lang_code, lang_name, entry))
-
-        # Clear and re-render. The render cap keeps the result set small enough
-        # to build synchronously — which, unlike the old idle-batched append,
-        # doesn't relayout the list across several main-loop turns under an open
-        # filter popover. That repeated relayout was breaking the popover's
-        # outside-click grab; a single synchronous pass (as the Modules tab
-        # does) keeps it dismissable.
-        for row in self._eb_rows:
-            self._eb_group.remove(row)
-        self._eb_rows = []
-
-        n = len(filtered)
-        self._eb_group.set_description(ngettext(
-            '{n} translation · eBible.org',
-            '{n} translations · eBible.org', n).format(n=n))
-        self._eb_status.set_visible(False)
-        self._eb_status.set_text('')
-
-        if not filtered:
-            placeholder = Adw.ActionRow()
-            placeholder.set_title(_('No translations match your search'))
-            placeholder.set_sensitive(False)
-            self._eb_group.add(placeholder)
-            self._eb_rows.append(placeholder)
-            return
-
-        self._eb_filtered = filtered
-        self._eb_shown = 0
-        self._eb_append_rows()
-
-    def _eb_append_rows(self):
-        """eBible mirror of _append_cw_rows: next _RENDER_CAP slice plus a
-        Load-more footer while results remain."""
-        installed = ebible_bridge.installed_ids()
-        chunk = self._eb_filtered[self._eb_shown:self._eb_shown + _RENDER_CAP]
-        for tid, title, lang_code, lang_name, entry in chunk:
-            row = self._eb_make_row(tid, title, lang_code, lang_name, entry,
-                                    installed=tid in installed)
-            self._eb_group.add(row)
-            self._eb_rows.append(row)
-        self._eb_shown += len(chunk)
-        if self._eb_shown < len(self._eb_filtered):
-            footer = self._load_more_row(
-                self._eb_shown, len(self._eb_filtered), self._eb_on_more)
-            self._eb_group.add(footer)
-            self._eb_rows.append(footer)
-
-    def _eb_on_more(self):
-        footer = self._eb_rows.pop()
-        self._eb_group.remove(footer)
-        self._eb_append_rows()
-
-    def _eb_make_row(self, tid, title, lang_code, lang_name, entry, installed):
-        row = Adw.ActionRow()
-        row.set_title(GLib.markup_escape_text(title))
-        parts = []
-        if lang_name:
-            parts.append(lang_name)
-        elif lang_code:
-            parts.append(_lang_label(lang_code))
-        license_ = (entry.get('licenseType') or '').strip()
-        if license_:
-            parts.append(license_)
-        if parts:
-            row.set_subtitle(GLib.markup_escape_text('  ·  '.join(parts)))
-
-        if installed:
-            btn = self._trash_button(
-                lambda t=tid, ti=title: self._confirm_remove_generic(
-                    ti, lambda: self._do_eb_remove(t)))
-        else:
-            btn = Gtk.Button(label=_('Download'))
-            btn.add_css_class('suggested-action')
-            btn.set_valign(Gtk.Align.CENTER)
-            btn.connect('clicked', lambda b, t=tid, e=entry: self._on_eb_download(b, t, e))
-        row.add_suffix(btn)
-        return row
-
-    # ── eBible network ops ────────────────────────────────────────────────────
-
-    def _on_eb_refresh(self, _btn):
-        if self._op_busy:
-            return
-        self._op_busy = True
-        self._eb_refresh_btn.set_sensitive(False)
-        self._progress.set_text(_('Downloading eBible catalog…'))
-        self._progress.set_visible(True)
-        if self._pulse_source is None:
-            self._pulse_source = GLib.timeout_add(80, self._pulse)
-
-        def work():
-            err = None
-            try:
-                ebible_bridge.download_catalog_sync()
-            except Exception as e:
-                err = str(e)
-            GLib.idle_add(self._finish_eb_refresh, err)
-
-        threading.Thread(target=work, daemon=True).start()
-
-    def _finish_eb_refresh(self, err):
-        if self._closed:
-            return GLib.SOURCE_REMOVE
-        self._op_busy = False
-        self._eb_refresh_btn.set_sensitive(True)
-        self._progress.set_visible(False)
-        if self._pulse_source is not None:
-            GLib.source_remove(self._pulse_source)
-            self._pulse_source = None
-        if err:
-            self._eb_status.set_text(_('Refresh failed: {error}').format(error=err))
-            self._eb_status.set_visible(True)
-        else:
-            self._eb_catalog = ebible_bridge.catalog_entries()
-            self._eb_rebuild_lang_list()
-            self._eb_apply_filter()
-        return GLib.SOURCE_REMOVE
-
-    def _on_eb_download(self, btn, tid, entry):
-        if self._op_busy:
-            return
-        self._op_busy = True
-        btn.set_sensitive(False)
-        btn.set_label(_('Downloading…'))
-        title = (entry.get('shortTitle') or tid).strip()
-        self._progress.set_text(_('Downloading {name}…').format(name=title))
-        self._progress.set_visible(True)
-        if self._pulse_source is None:
-            self._pulse_source = GLib.timeout_add(80, self._pulse)
-
-        def on_status(code):
-            GLib.idle_add(self._eb_set_status, code)
-
-        def work():
-            err = None
-            try:
-                ebible_bridge.download_translation_sync(tid, entry, on_status=on_status)
-            except Exception as e:
-                err = str(e)
-            GLib.idle_add(self._finish_eb_download, err, tid, title, btn)
-
-        threading.Thread(target=work, daemon=True).start()
-
-    def _finish_eb_download(self, err, tid, title, btn):
-        if self._closed:
-            return GLib.SOURCE_REMOVE
-        self._op_busy = False
-        self._progress.set_visible(False)
-        if self._pulse_source is not None:
-            GLib.source_remove(self._pulse_source)
-            self._pulse_source = None
-        if err:
-            self._eb_status.set_text(
-                _('Error downloading {title}: {error}').format(title=title, error=err))
-            self._eb_status.set_visible(True)
-            btn.set_sensitive(True)
-            btn.set_label(_('Download'))
-        else:
-            if self._on_modules_changed:
-                self._on_modules_changed()
-            self._eb_apply_filter()
-        return GLib.SOURCE_REMOVE
-
-    # eBible download phase codes → translated status text. The text lives
-    # here, not in the (English-free) ebible_bridge backend — same i18n
-    # boundary as the search-truncation message.
-    _EB_STATUS = {
-        'download': N_('Downloading…'),
-        'parse': N_('Parsing USFM…'),
-        'save': N_('Saving…'),
-    }
-
-    def _eb_set_status(self, code):
-        if self._closed:
-            return GLib.SOURCE_REMOVE
-        self._progress.set_text(_(self._EB_STATUS.get(code, code)))
-        return GLib.SOURCE_REMOVE
-
-    def _do_eb_remove(self, tid):
-        ebible_bridge.remove_translation(tid)
-        if self._on_modules_changed:
-            self._on_modules_changed()
-        self._eb_apply_filter()
+        if self._run_async(
+                lambda: sword_bridge.install_module_from_zip(
+                    zip_bytes, selected, cipher_keys),
+                done, busy_msg=_('Installing {label}…').format(label=label),
+                retry=lambda: self._do_import(zip_bytes, rows, dialog)):
+            dialog.close()

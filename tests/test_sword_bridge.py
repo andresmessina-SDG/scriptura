@@ -411,3 +411,26 @@ def test_map_target_verse_falls_back(v11n_mods):
     assert sword_bridge.map_target_verse('FakeKJV', 'Psalms', 23, 4) == 4
     assert sword_bridge.map_target_verse('FakeVulg', 'Genesis', 1, 5) == 5
     assert sword_bridge.map_target_verse('FakeVulg', 'Psalms', 23, None) is None
+
+
+# ── available_updates ────────────────────────────────────────────────────────
+
+def test_available_updates_compares_catalogue_to_installed(monkeypatch):
+    cat = [
+        {'name': 'KJV', 'installed': True, 'version': '3.1'},
+        {'name': 'ASV', 'installed': True, 'version': '1.0'},   # current
+        {'name': 'WEB', 'installed': False, 'version': '9.9'},  # not installed
+        {'name': 'Old', 'installed': True, 'version': ''},      # no version
+    ]
+    monkeypatch.setattr(sword_bridge, 'list_available_modules', lambda: cat)
+    monkeypatch.setattr(sword_bridge, 'installed_version',
+                        lambda n: {'KJV': '3.0', 'ASV': '1.0'}.get(n, ''))
+    ups = sword_bridge.available_updates()
+    assert [(m['name'], old) for m, old in ups] == [('KJV', '3.0')]
+
+
+def test_available_updates_without_catalogue_is_empty(monkeypatch):
+    def no_catalogue():
+        raise FileNotFoundError('no shadow dir')
+    monkeypatch.setattr(sword_bridge, 'list_available_modules', no_catalogue)
+    assert sword_bridge.available_updates() == []

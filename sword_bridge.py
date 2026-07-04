@@ -1378,6 +1378,8 @@ def list_available_modules():
                 'features': info.get('features', set()),
                 'license': info.get('license', ''),
                 'size': info.get('size', ''),
+                'version': info.get('version', ''),
+                'locked': 'cipherkey' in info,
             })
     result.sort(key=lambda m: m['name'].lower())
     _catalog_cache = (path, result)
@@ -1531,6 +1533,24 @@ def installed_version(module_name):
     if not os.path.exists(conf):
         return ''
     return _parse_conf(conf).get('version', '')
+
+
+def available_updates():
+    """Installed modules whose catalogue Version is newer than the
+    installed one: [(catalogue_entry, installed_version)]. Empty when no
+    catalogue is cached — updates are a catalogue-derived notion."""
+    try:
+        catalogue = list_available_modules()
+    except FileNotFoundError:
+        return []
+    out = []
+    for m in catalogue:
+        if not (m['installed'] and m.get('version')):
+            continue
+        cur = installed_version(m['name'])
+        if cur and cmp_version(m['version'], cur) > 0:
+            out.append((m, cur))
+    return out
 
 
 def can_remove_module(module_name):
