@@ -98,7 +98,11 @@ MAX_SEARCH_RESULTS = 5000  # cap result count so a common word can't flood the U
 # v2: chapters of versification-mapped modules (Vulg/Synodal psalters…)
 # are stored under app-space (KJV) numbers, matching how navigation
 # addresses them since the cross-versification mapping landed.
-_FTS_INDEX_VERSION = 2
+# v3: VERSES of mapped chapters are reverse-mapped to app-space too, so
+# every stored reference speaks the one navigation space (a hit's verse
+# number previously targeted one verse off on mapped modules); merged
+# chapters (KJV Ps 9+10 = Vulg 9) dedupe instead of double-indexing.
+_FTS_INDEX_VERSION = 3
 
 
 def _get_index_path(module_name):
@@ -162,12 +166,28 @@ def _build_module_index(module_name, on_progress=None):
             # translates each chapter, so index rows carry the same
             # app-space numbers navigation uses. Unmapped books keep the
             # module's own count (a KJV-keyed count would under- or
-            # over-iterate RusSynodal/Wycliffe).
+            # over-iterate RusSynodal/Wycliffe). Verse numbers from a
+            # mapped chapter are the module's own — reverse-map them so
+            # the stored triple is app-space through and through; merged
+            # chapters render twice, so identical reversed refs dedupe.
             book_rows = []
+            seen_refs = set()
+            v11n = _module_v11n(module_name)
             for ch in range(1, chapter_count(book, module_name) + 1):
+                mapped = mapped_chapter(module_name, book, ch)
                 for v_num, html in load_chapter(module_name, book, ch):
                     plain_text = re.sub(r'<[^>]+>', '', str(html))
-                    book_rows.append((book, ch, v_num, plain_text))
+                    ref = (book, ch, v_num)
+                    if mapped and v11n:
+                        rev = _map_ref_reverse(v11n, mapped[0], mapped[1],
+                                               v_num)
+                        if rev is not None:
+                            ref = rev
+                    if mapped:
+                        if ref in seen_refs:
+                            continue
+                        seen_refs.add(ref)
+                    book_rows.append((*ref, plain_text))
             # Insert in canonical order so rowid order == verse order, which is
             # the result ordering the UI relies on (no relevance re-sort).
             if book_rows:
@@ -446,6 +466,45 @@ def mapped_chapter(module_name, book, chapter):
     text, or None when the module is app-keyed or the book is unmapped."""
     m = _chapter_map(module_name, book)
     return m.get(chapter) if m else None
+
+
+def _map_ref_reverse(v11n, book, chapter, verse):
+    """One module-space reference → app-space (KJV), or None. The
+    mirror of _map_ref, with the same clamping guard on the source."""
+    try:
+        src = Sword.VerseKey()
+        src.setVersificationSystem(v11n)
+        src.setText(f'{book} {chapter}:{verse}')
+        if (str(src.getBookName()).lower() != book.lower()
+                or src.getChapter() != chapter or src.getVerse() != verse):
+            return None
+        dst = Sword.VerseKey()
+        dst.positionFrom(src)
+        return str(dst.getBookName()), dst.getChapter(), dst.getVerse()
+    except Exception:
+        return None
+
+
+def map_verse_to_app(module_name, book, chapter, verse):
+    """A verse number as displayed in a mapped module's rendered chapter
+    → the app-space (KJV) verse it holds; the inverse of
+    map_target_verse. `book`/`chapter` are the pane's app-space
+    position. Falls back to `verse` unchanged — including when the
+    reverse lands in a different app chapter (merged psalms), where a
+    cross-chapter broadcast would desync the panes."""
+    if verse is None:
+        return verse
+    v11n = _module_v11n(module_name)
+    if v11n is None:
+        return verse
+    mapped = mapped_chapter(module_name, book, chapter)
+    if mapped is None:
+        return verse
+    ref = _map_ref_reverse(v11n, mapped[0], mapped[1], verse)
+    if ref is not None and ref[0].lower() == book.lower() \
+            and ref[1] == chapter:
+        return ref[2]
+    return verse
 
 
 def map_target_verse(module_name, book, chapter, verse):

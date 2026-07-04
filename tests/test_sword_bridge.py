@@ -434,3 +434,22 @@ def test_available_updates_without_catalogue_is_empty(monkeypatch):
         raise FileNotFoundError('no shadow dir')
     monkeypatch.setattr(sword_bridge, 'list_available_modules', no_catalogue)
     assert sword_bridge.available_updates() == []
+
+
+def test_map_verse_to_app_inverse_of_target(v11n_mods):
+    """Vulgate title-verses: KJV Ps 9:1 is Vulg 9:2 — the displayed 2
+    must broadcast back as app-space 1."""
+    assert sword_bridge.map_verse_to_app('FakeVulg', 'Psalms', 9, 2) == 1
+    assert sword_bridge.map_verse_to_app('FakeVulg', 'Psalms', 23, 1) == 1
+
+
+def test_map_verse_to_app_falls_back(v11n_mods):
+    assert sword_bridge.map_verse_to_app('FakeKJV', 'Psalms', 23, 4) == 4
+    assert sword_bridge.map_verse_to_app('FakeVulg', 'Genesis', 1, 5) == 5
+    assert sword_bridge.map_verse_to_app('FakeVulg', 'Psalms', 23, None) is None
+
+
+def test_map_verse_to_app_merged_chapter_stays_put(v11n_mods):
+    """App ch 9 renders merged Vulg 9; its deep verses reverse to KJV Ps
+    10 — a cross-chapter broadcast would desync panes, so fall back."""
+    assert sword_bridge.map_verse_to_app('FakeVulg', 'Psalms', 9, 25) == 25

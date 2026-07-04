@@ -2305,6 +2305,14 @@ class BibleWindow(Adw.ApplicationWindow):
     # ── Verse select / cross-references ──────────────────────────────────────
 
     def _on_verse_select(self, source_pane, verse_num):
+        # The source pane reports its own displayed verse number, which on
+        # a versification-mapped module (Vulgate/Synodal psalter) is that
+        # module's numbering. Normalize to app-space here so the partner
+        # pane and the (KJV-keyed) cross-reference panel both receive the
+        # one shared reference space; select_verse maps back per receiver.
+        verse_num = sword_bridge.map_verse_to_app(
+            source_pane._module, source_pane._book, source_pane._chapter,
+            verse_num)
         for pane in [self.pane1, self.pane2]:
             if pane is not source_pane:
                 pane.select_verse(verse_num)

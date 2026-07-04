@@ -3908,6 +3908,11 @@ class BiblePane(Gtk.Box):
             self._selected_verse = verse_num
             self._imagery.render_for(self._book, self._chapter, verse_num)
             return
+        # The broadcast speaks app-space; this pane's rendered verse
+        # numbers are its module's own — translate before touching tags
+        # (no-op for app-keyed modules).
+        verse_num = sword_bridge.map_target_verse(
+            self._module, self._book, self._chapter, verse_num)
         self._selected_verse = verse_num
         self._set_current_verse_indicator(verse_num)
         tag = self._buffer.get_tag_table().lookup(f'vnum_{verse_num}')

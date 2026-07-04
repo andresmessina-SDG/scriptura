@@ -238,6 +238,9 @@ class PaneSearch:
         # per chapter, so a same-numbered verse elsewhere could collide).
         if (book, ch) != (self._pane._book, self._pane._chapter):
             return None
+        # Index refs are app-space (FTS v3); the buffer's vnum tags carry
+        # the module's own numbering — translate (no-op for app-keyed).
+        v = sword_bridge.map_target_verse(self._pane._module, book, ch, v)
         tag = buf.get_tag_table().lookup(f'vnum_{v}')
         if not tag:
             return None
