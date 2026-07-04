@@ -244,3 +244,33 @@ def test_rename_tag_persists_to_disk(isolated):
     annotations.rename_tag('a', 'c')
     annotations._cache = None  # force reload
     assert annotations.get_annotations('KJVA', 'Genesis', 1)['1']['tags'] == ['c', 'b']
+
+
+# ── Delete returns the payload; restore undoes it ────────────────────────────
+
+def test_delete_returns_payload_and_restore_undoes(isolated):
+    annotations.save_highlight('KJVA', 'John', 3, 16, '#ffff00')
+    annotations.save_note('KJVA', 'John', 3, 16, 'so loved')
+    payload = annotations.delete_annotation('KJVA', 'John', 3, 16)
+    assert payload == {'highlight': '#ffff00', 'note': 'so loved'}
+    assert annotations.get_annotations('KJVA', 'John', 3) == {}
+
+    annotations.restore_annotation('KJVA', 'John', 3, 16, payload)
+    assert annotations.get_annotations('KJVA', 'John', 3)['16']['note'] == 'so loved'
+
+
+def test_delete_chapter_note_round_trip(isolated):
+    annotations.save_chapter_note('KJVA', 'Psalms', 23, 'shepherd')
+    payload = annotations.delete_annotation('KJVA', 'Psalms', 23, None)
+    assert annotations.get_chapter_note('KJVA', 'Psalms', 23) is None
+    annotations.restore_annotation('KJVA', 'Psalms', 23, None, payload)
+    assert annotations.get_chapter_note('KJVA', 'Psalms', 23) == 'shepherd'
+
+
+def test_delete_nothing_returns_none(isolated):
+    assert annotations.delete_annotation('KJVA', 'John', 3, 16) is None
+
+
+def test_restore_none_payload_is_noop(isolated):
+    annotations.restore_annotation('KJVA', 'John', 3, 16, None)
+    assert annotations.get_annotations('KJVA', 'John', 3) == {}

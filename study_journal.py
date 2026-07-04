@@ -998,11 +998,30 @@ class StudyJournalWindow(Adw.Window):
 
     def _on_delete_entry(self, _btn, entry):
         verse = None if entry.get('is_chapter_note') else entry['verse']
-        annotations.delete_annotation(
+        removed = annotations.delete_annotation(
             entry['module'], entry['book'], entry['chapter'], verse
         )
         # If we just deleted the currently-selected entry, the detail pane
         # will reset to empty when _reload finds no matching row to restore.
+        self._preserve_select = _entry_key(entry)
+        self._reload()
+        if self._on_annotation_changed:
+            self._on_annotation_changed(
+                entry['module'], entry['book'], entry['chapter'], verse)
+        if removed is None:
+            return
+        # Deletion is otherwise irreversible — offer an undo while the
+        # toast lasts (default timeout, unlike _toast's quick 2s).
+        toast = Adw.Toast.new(_('Note deleted') if verse is None
+                              else _('Annotation deleted'))
+        toast.set_button_label(_('Undo'))
+        toast.connect('button-clicked', self._on_undo_delete,
+                      entry, verse, removed)
+        self._toast_overlay.add_toast(toast)
+
+    def _on_undo_delete(self, _toast, entry, verse, removed):
+        annotations.restore_annotation(
+            entry['module'], entry['book'], entry['chapter'], verse, removed)
         self._preserve_select = _entry_key(entry)
         self._reload()
         if self._on_annotation_changed:

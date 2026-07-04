@@ -308,3 +308,14 @@ def today_index(start_date_str: str) -> int:
         return (datetime.date.today() - datetime.date.fromisoformat(start_date_str)).days
     except Exception:
         return 0
+
+
+def export_raw() -> dict[str, Any]:
+    """The whole progress store (active plan, start dates, completed days)
+    in its on-disk shape, for study-data backup. Treat as read-only."""
+    return _load()
+
+
+def replace_all(d: dict[str, Any]) -> None:
+    """Swap in a whole progress store (study-data restore)."""
+    _save(dict(d))

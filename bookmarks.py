@@ -87,8 +87,32 @@ def add(book: str, chapter: int, verse: int | None = None) -> bool:
     return True
 
 
-def remove(index: int) -> None:
+def remove(index: int) -> Bookmark | None:
+    """Delete the bookmark at `index`; returns it so the caller can offer
+    an undo (see restore), or None if the index was stale."""
     data = _load()
     if 0 <= index < len(data):
-        data.pop(index)
+        bm = data.pop(index)
         _save(data)
+        return bm
+    return None
+
+
+def restore(index: int, bm: Bookmark) -> None:
+    """Reinsert a bookmark removed by remove() at its old position — the
+    undo half. The index is clamped in case the list changed meanwhile."""
+    data = _load()
+    data.insert(min(max(index, 0), len(data)), bm)
+    _save(data)
+
+
+def export_raw() -> list[Bookmark]:
+    """The whole list, for study-data backup. Treat as read-only."""
+    return _load()
+
+
+def replace_all(data: list[Bookmark]) -> None:
+    """Swap in a whole list (study-data restore); same entry filtering
+    as _load."""
+    _save([e for e in data
+           if isinstance(e, dict) and 'book' in e and 'chapter' in e])

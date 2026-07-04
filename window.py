@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 import threading
@@ -11,6 +12,7 @@ from gtk_utils import clear_children
 import sword_bridge
 import settings
 import module_positions
+import backup
 import bookmarks
 import reading_plans
 import annotations
@@ -1769,14 +1771,97 @@ class BibleWindow(Adw.ApplicationWindow):
         self._go_to(bm['book'], bm['chapter'], bm.get('verse'))
 
     def _remove_bookmark(self, _btn, index, popover):
-        bookmarks.remove(index)
+        removed = bookmarks.remove(index)
         popover.popdown()
-        self._toast(_('Bookmark removed'))
+        if removed is None:
+            return
+        # Default (longer) timeout, not _toast's 2s — the user needs time
+        # to reach the Undo button.
+        t = Adw.Toast.new(_('Bookmark removed'))
+        t.set_button_label(_('Undo'))
+        t.connect('button-clicked',
+                  lambda _t: bookmarks.restore(index, removed))
+        self._toast_overlay.add_toast(t)
 
     def _toast(self, message):
         t = Adw.Toast.new(message)
         t.set_timeout(2)
         self._toast_overlay.add_toast(t)
+
+    # ── Study data backup / restore ───────────────────────────────────────────
+
+    def _on_backup_clicked(self, _row):
+        dialog = Gtk.FileDialog()
+        dialog.set_title(_('Back Up Study Data'))
+        dialog.set_initial_name(
+            f'scriptura-study-data-{datetime.date.today().isoformat()}.json')
+        dialog.save(self, None, self._on_backup_finish)
+
+    def _on_backup_finish(self, dialog, result):
+        try:
+            gfile = dialog.save_finish(result)
+        except GLib.Error:
+            return  # cancelled
+        try:
+            with open(gfile.get_path(), 'w', encoding='utf-8') as f:
+                json.dump(backup.collect(), f, indent=2, ensure_ascii=False)
+        except Exception:
+            _log.exception('backup failed')
+            self._toast(_('Could not write the backup file'))
+            return
+        self._toast(_('Study data backed up'))
+
+    def _on_restore_clicked(self, _row):
+        dialog = Gtk.FileDialog()
+        dialog.set_title(_('Restore Study Data'))
+        dialog.open(self, None, self._on_restore_open)
+
+    def _on_restore_open(self, dialog, result):
+        try:
+            gfile = dialog.open_finish(result)
+        except GLib.Error:
+            return  # cancelled
+        try:
+            with open(gfile.get_path(), encoding='utf-8') as f:
+                payload = backup.validate(json.load(f))
+        except Exception:
+            _log.exception('restore rejected')
+            self._toast(_('Not a Scriptura study-data file'))
+            return
+        c = backup.counts(payload)
+        confirm = Adw.AlertDialog(
+            heading=_('Replace study data?'),
+            body=_('The file contains {a} annotation entries, {b} bookmarks '
+                   'and {p} plan days marked read. Your current annotations, '
+                   'bookmarks and reading-plan progress will be replaced.'
+                   ).format(a=c['annotations'], b=c['bookmarks'],
+                            p=c['plan_days']),
+        )
+        confirm.add_response('cancel', _('Cancel'))
+        confirm.add_response('replace', _('Replace'))
+        confirm.set_response_appearance(
+            'replace', Adw.ResponseAppearance.DESTRUCTIVE)
+        confirm.set_default_response('cancel')
+        confirm.set_close_response('cancel')
+        confirm.connect('response', self._on_restore_confirm, payload)
+        confirm.present(self)
+
+    def _on_restore_confirm(self, _dialog, response, payload):
+        if response != 'replace':
+            return
+        backup.restore(payload)
+        # Re-render both panes so restored highlights/notes/indicators
+        # appear (the reading anchor keeps the text in place), and rebuild
+        # the plan section against the restored progress.
+        for pane in (self.pane1, self.pane2):
+            pane._fetch_and_render()
+        if self._menu_panel_built:
+            self._refresh_plan_ui()
+        # An open Study Journal still lists the replaced annotations —
+        # deleting one of those stale rows would silently no-op.
+        if self._journal_win is not None and self._journal_win.get_visible():
+            self._journal_win._reload()
+        self._toast(_('Study data restored'))
 
     def _on_cipher_error(self, module):
         """A pane detected unreadable (wrong-key) content for an encrypted
@@ -2943,6 +3028,25 @@ class BibleWindow(Adw.ApplicationWindow):
         self._plan_active_box.append(self._plan_grid)
 
         _body.append(self._plan_active_box)
+
+        # ── Study data: one-file backup / restore of everything the reader
+        # accumulates by hand (annotations, bookmarks, plan progress) — the
+        # data is otherwise trapped inside the Flatpak datadir. ──────────────
+        _body.append(_section_header(_('Study Data')))
+        data_group = Adw.PreferencesGroup()
+        data_group.set_margin_start(12)
+        data_group.set_margin_end(12)
+        data_group.set_margin_bottom(8)
+        for icon, label, handler in [
+            ('document-save-symbolic', _('Back Up…'), self._on_backup_clicked),
+            ('document-open-symbolic', _('Restore…'), self._on_restore_clicked),
+        ]:
+            row = Adw.ActionRow(title=label)
+            row.add_prefix(Gtk.Image.new_from_icon_name(icon))
+            row.set_activatable(True)
+            row.connect('activated', handler)
+            data_group.add(row)
+        _body.append(data_group)
 
         # ── Footer: global utilities pinned to the bottom. The scroller above
         # is vexpand, so this stays anchored at the panel's foot — Apple-sidebar

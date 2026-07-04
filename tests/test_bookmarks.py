@@ -162,3 +162,27 @@ def test_save_preserves_non_ascii_labels(isolated, monkeypatch):
     bookmarks.add('Génesis', 1)
     content = (isolated / 'bookmarks.json').read_text(encoding='utf-8')
     assert 'Génesis' in content
+
+
+# ── Remove returns the entry; restore undoes it ─────────────────────────────
+
+def test_remove_returns_entry_and_restore_reinserts(isolated):
+    bookmarks.add('John', 3, 16)
+    bookmarks.add('Genesis', 1)   # list is now [Genesis, John]
+    removed = bookmarks.remove(0)
+    assert removed['book'] == 'Genesis'
+    assert [b['book'] for b in bookmarks.get_all()] == ['John']
+
+    bookmarks.restore(0, removed)
+    assert [b['book'] for b in bookmarks.get_all()] == ['Genesis', 'John']
+
+
+def test_remove_stale_index_returns_none(isolated):
+    assert bookmarks.remove(5) is None
+
+
+def test_restore_clamps_index(isolated):
+    bookmarks.add('John', 3, 16)
+    bookmarks.restore(99, {'book': 'Genesis', 'chapter': 1,
+                           'verse': None, 'label': 'Genesis 1'})
+    assert [b['book'] for b in bookmarks.get_all()] == ['John', 'Genesis']

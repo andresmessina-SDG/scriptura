@@ -278,14 +278,41 @@ def save_chapter_note_tags(module: str, book: str, chapter: int, tags: list[str]
     _save(data)
 
 
-def delete_annotation(module: str, book: str, chapter: int, verse: int | None) -> None:
-    """Remove all annotation data for a verse. verse=None removes the chapter note."""
+def delete_annotation(module: str, book: str, chapter: int, verse: int | None) -> Any:
+    """Remove all annotation data for a verse. verse=None removes the chapter
+    note. Returns the removed payload so the caller can offer an undo
+    (see restore_annotation), or None if there was nothing to remove."""
     data = _load()
     key = f"{module}/{book}/{chapter}"
     if key not in data:
-        return
+        return None
     if verse is None:
-        data[key].pop('chapter_note', None)
+        removed = data[key].pop('chapter_note', None)
     else:
-        data[key].pop(str(verse), None)
+        removed = data[key].pop(str(verse), None)
+    if removed is not None:
+        _save(data)
+    return removed
+
+
+def restore_annotation(module: str, book: str, chapter: int, verse: int | None,
+                       payload: Any) -> None:
+    """Reinstate a payload returned by delete_annotation — the undo half."""
+    if payload is None:
+        return
+    data = _load()
+    key = f"{module}/{book}/{chapter}"
+    data.setdefault(key, {})['chapter_note' if verse is None else str(verse)] = payload
     _save(data)
+
+
+def export_raw() -> Annotations:
+    """The whole store in its on-disk shape, for study-data backup.
+    Callers must treat the returned dict as read-only."""
+    return _load()
+
+
+def replace_all(data: Annotations) -> None:
+    """Swap in a whole store (study-data restore). Same light validation
+    as _load: keep only chapter entries that are dicts."""
+    _save({str(k): v for k, v in data.items() if isinstance(v, dict)})
