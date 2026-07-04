@@ -21,3 +21,24 @@ steps:
       # the shipped app — kept out of the CI type gate. The app's typed layer
       # is checked exactly as `mypy .` does locally.
       - python3 -m mypy . --exclude '^tools/'
+
+  # The scroll-stability matrix drives the real app under GTK Broadway and
+  # asserts the "reading text never moves" invariant (ARCHITECTURE.md).
+  # A separate step so a CrossWire outage or Broadway flake is visibly not
+  # a test/typecheck failure: exit 2 = environment (module download),
+  # exit 1 = a stability regression (after one automatic retry).
+  - name: scroll-stability
+    image: fedora:latest
+    commands:
+      # gobject-introspection carries the cairo typelib PyGObject imports
+      # at Gtk load time (a weak dep skipped by install_weak_deps=False).
+      - >-
+        dnf install -y --setopt=install_weak_deps=False
+        python3-gobject gobject-introspection gtk4 libadwaita
+        python3-sword sword-utils dejavu-sans-fonts dejavu-serif-fonts
+      # KJVA + MHCC from CrossWire; the flag is installmgr's documented
+      # non-interactive mode.
+      - >-
+        installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom
+        -init -sc -r CrossWire -ri CrossWire KJVA -ri CrossWire MHCC
+      - python3 tools/verify-scroll-stability.py

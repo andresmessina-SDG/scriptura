@@ -267,7 +267,12 @@ it. Never regress these mechanisms:
 
 Verified headless (broadway + scratch XDG dirs): every interaction above
 holds the top-of-viewport text to 0px; footnote toggling 10× cumulative
-drift is 0px.
+drift is 0px. The committed regression matrix is
+`tools/verify-scroll-stability.py` — one command, spawns its own
+broadwayd, quiescence-gated judgments, retry-once for Broadway flakiness
+— and CI runs it on every push (the `scroll-stability` step in
+`.woodpecker.yml`). Run it after touching pane.py scroll/render/chrome
+code or window.py pane sizing.
 
 ### Strong's hover model
 

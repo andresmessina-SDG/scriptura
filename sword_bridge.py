@@ -251,18 +251,21 @@ def module_names():
 
 def has_any_module():
     """Cheap check: does the user appear to have any SWORD module
-    installed? Reads `~/.sword/mods.d/*.conf` directly. Used by the
-    welcome-vs-main startup decision so we don't pay the first
-    `SWMgr()` cost just to discover whether to show the welcome
-    window. The first real SWORD call (a chapter render in
+    installed? Reads the standard `mods.d/*.conf` locations directly —
+    the per-user dir and the system-wide one (distro packages, or
+    installmgr run as root, install to /usr/share/sword; SWMgr reads
+    both). Used by the welcome-vs-main startup decision so we don't pay
+    the first `SWMgr()` cost just to discover whether to show the
+    welcome window. The first real SWORD call (a chapter render in
     `BiblePane`) does the authoritative SWMgr() init."""
-    mods_dir = os.path.expanduser('~/.sword/mods.d')
-    try:
-        for name in os.listdir(mods_dir):
-            if name.endswith('.conf'):
-                return True
-    except OSError:
-        pass
+    for mods_dir in (os.path.expanduser('~/.sword/mods.d'),
+                     '/usr/share/sword/mods.d'):
+        try:
+            for name in os.listdir(mods_dir):
+                if name.endswith('.conf'):
+                    return True
+        except OSError:
+            continue
     return False
 
 
