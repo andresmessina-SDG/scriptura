@@ -214,6 +214,61 @@ line-height/notch problems. When their ranges change, repaint with
 expire, the flash apply/expire, and `_cancel_all_flashes`; also on appearance
 changes in `_update_font_css`).
 
+### Scroll stability — the "north star" invariant (recent, important)
+
+The reading text's position is fixed; chrome and side effects move around
+it. Never regress these mechanisms:
+
+- **Chrome overlays, never reflows.** The pane toolbar / date nav /
+  find bar live in `_chrome_band`, an overlay child (`Gtk.Overlay`) above
+  the reading page. The band's strip is reserved as `margin_top` on the
+  page card (`_sync_view_top_margin`) so the card keeps its original
+  below-the-toolbar look. Auto-hide reclaims the strip via
+  `_animate_page_strip`: each frame moves the card top by dm AND the
+  scroll value by dm, so hiding unveils earlier text while the glyphs
+  stay screen-fixed (fresh-chapter renders snap it open uncompensated —
+  there is no locus to preserve). Reading mode reuses the same animation
+  (a hidden toolbar measures 0).
+- **The window split is fraction-pinned** (`_FractionPaned`, window.py):
+  a plain GtkPaned with no set position re-derives the divider from the
+  children's natural widths, so the lexicon panel appearing/loading
+  wobbled both reading columns horizontally. The divider follows a
+  width-fraction (user drags update it) and ignores child requests.
+- **The reading anchor** (`_reading_anchor`: verse, visible-char offset,
+  intra-line px delta) is the persisted reading locus. Captured after
+  user scrolls settle (250ms debounce) and after programmatic jumps;
+  cleared only by user scrolls and navigation — **not** by re-renders.
+  Content-mutating re-renders (footnote toggle, theme flip) restore it
+  via `_apply_scroll_anchor`: `scroll_to_mark` for rough placement, then
+  corrective `set_value` polls until the anchor's y stops moving (GTK
+  revalidates line-height estimates long after render/resize).
+  Offsets count **visible chars only** (skip `fnote:`-tagged marker
+  glyphs) so they round-trip between marker states. Capture snaps along
+  display lines against the **converted** buffer y (`window_to_buffer_coords`
+  subtracts the top margin — never compare `get_iter_location` values
+  against raw adjustment values).
+- **Viewport resizes re-assert the anchor** (`_on_viewport_resized` via
+  `_ReadingScrolledWindow.on_height_change`): a resize makes GTK correct
+  its line-height estimates, silently shifting which text sits under a
+  constant adjustment value (this was the "first lexicon click moves the
+  text" bug).
+- **Lexicon toggle never re-renders** — Strong's/morph/phrase tags are
+  applied/removed in place (`_tag_strong_words_in_place` /
+  `_remove_strong_tags`); commentaries are a no-op.
+- **Auto-hide listens to the reader, not the layout.** `value-changed`
+  cannot distinguish user scrolling from validation churn, so
+  `_on_reading_scroll` only acts when a scroll input was seen recently
+  (wheel/scroll-keys/scrollbar controllers → `_user_scroll_recent`), and
+  `_mark_programmatic_scroll` shields known code-driven scrolls.
+- **Fetch generations** (`_fetch_gen`): only the newest requested render
+  may display. Without it, rapid toggling (faster than the fetch thread)
+  landed two `_display` calls for the same chapter — the second found no
+  scroll restore and jumped to the chapter start.
+
+Verified headless (broadway + scratch XDG dirs): every interaction above
+holds the top-of-viewport text to 0px; footnote toggling 10× cumulative
+drift is 0px.
+
 ### Strong's hover model
 
 - Strong's-tagged words no longer carry a static underline (the wall of
@@ -277,6 +332,41 @@ changes in `_update_font_css`).
   the scrollbar inside the reading column, which the user disliked.
   Clamping the TextView itself still forces a Viewport that breaks
   `scroll_to_iter` — don't go back to that path.
+- **Footnotes** — translator notes as clickable superscript labels
+  (a b c … z aa ab, bijective base-26 via `_fn_label`, so every note in
+  a chapter is unique; chapter-continuous, print-Bible style). Rendered
+  as plain letters in a `rise`+`size` span, not Unicode superscript
+  glyphs — the superscript block has no q. Toggled by the *f\** header
+  button (linked pair with אΩ; persisted as `settings.show_footnotes`,
+  default **on** — safe because markers only appear where notes exist).
+  The window disables the toggle (tooltip explains, layout stays put)
+  when neither pane's module can show notes: `content.has_footnotes`
+  dispatches to `sword_bridge.module_has_footnotes` (conf declares a
+  `*Footnotes` `GlobalOptionFilter`; walks `getConfigMap().items()` —
+  `getConfigEntry` only returns the FIRST repeated key) or
+  `ebible_bridge.module_has_footnotes` (any stored notes rows), and
+  re-evaluates via the panes' `on_module_switched` callback plus
+  `_on_modules_changed`. Pipeline: both backends leave an empty
+  `<note swordFootnote="N"/>` anchor per note (SWORD bodies live in
+  entry attributes, eBible bodies in the `notes` table — see each
+  bridge's `chapter_footnotes`); `_display` swaps anchors to `[[FN_n]]`
+  tokens before `_html_to_markup` (markers-off = the generic strip
+  removing them, i.e. the pre-feature rendering), then
+  `_substitute_footnote_markers` turns tokens into styled labels on the
+  **final markup string** — for Bibles never segmented insertion, so
+  Pango spans crossing an anchor (red-letter text) stay paired — and
+  returns plain-text offsets for `_apply_footnote_tags` to tag
+  `fnote:{verse}:{n}` ranges by offset arithmetic (no buffer search).
+  Commentaries run the same substitution **per plain segment** inside
+  `_insert_commentary_body` (insertion there is segmented around
+  `<reference>` links, so offsets are taken against each segment's own
+  start mark). Click → note body in the shared peek popover
+  (`_ensure_peek_popover`, same instance + dismissal paths as the dict
+  peek; opens at full opacity — no fetch, and a footnote click
+  deliberately doesn't broadcast verse selection, so no cross-pane
+  reflow). Hit-test probes ±1 char around the clicked iter: a click on
+  a glyph's right half resolves to the *next* character, which missed
+  half of every marker's width.
 - **Module picker** — `pane.module_drop` is a `Gtk.MenuButton` (was
   `Gtk.DropDown`) opening a popover with a two-page `Gtk.Stack`: a list
   page (SearchEntry + language chip row + scrollable module list, each
@@ -382,6 +472,19 @@ changes in `_update_font_css`).
   (background thread, atomic rename). Canonical (rowid) result order. Max
   5000 results. The eBible backend uses the same grammar over an
   external-content FTS5 table in `ebible.db`.
+- `chapter_footnotes(module, book, chapter)` → `{verse: [(marker_index,
+  type, body_html), ...]}`. The main SWMgr always renders with
+  `setGlobalOption('Footnotes', 'On')`; `load_chapter`'s render pass
+  reads each verse's note bodies out of `getEntryAttributesMap()
+  ['Footnote']` (must happen right after `renderText()` — the next
+  render replaces the map) into `_notes_cache`, evicted in lockstep
+  with the chapter cache. `marker_index` matches the `swordFootnote="N"`
+  attribute on the inline anchor. OSIS `type` distinguishes
+  `crossReference` / `study` / `variant` / plain.
+- `module_has_footnotes(module)` — conf-level capability probe (does any
+  `GlobalOptionFilter` line name a `*Footnotes` filter). Must walk
+  `getConfigMap().items()`: `getConfigEntry` returns only the first of a
+  repeated conf key, and e.g. SBLGNT lists `UTF8GreekAccents` first.
 - `get_devotional_raw(module, date)` / `load_devotional(...)` — fresh SWMgr
   per call for the same reason as dict lookup.
 - `parse_devotional_refs(raw_osis)` — extracts the first `osisRef` from a
@@ -404,7 +507,6 @@ changes in `_update_font_css`).
   key and resets. A wrong key decrypts to garbage, which the pane catches
   on render (see `_printable_ratio` / `_display_cipher_locked`) and the
   window turns into an "Edit Key" toast.
-
 ## Historical Commentaries (catena)
 
 A fourth pane mode (`_is_catena` in pane.py, alongside `_is_devotional`

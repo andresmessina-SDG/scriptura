@@ -82,3 +82,48 @@ def test_bad_cipher_ratio_boundary():
     # Threshold is < 0.6 (exclusive).
     assert _is_bad_cipher(False, False, 0.59) is True
     assert _is_bad_cipher(False, False, 0.60) is False
+
+
+# ── footnote marker labels ────────────────────────────────────────────────────
+
+from pane import _fn_label, _substitute_footnote_markers
+
+
+def test_fn_label_full_alphabet_including_q():
+    labels = [_fn_label(i) for i in range(26)]
+    assert labels == list('abcdefghijklmnopqrstuvwxyz')
+
+
+def test_fn_label_wraps_bijective_base26():
+    assert _fn_label(26) == 'aa'
+    assert _fn_label(27) == 'ab'
+    assert _fn_label(51) == 'az'
+    assert _fn_label(52) == 'ba'
+    # No collisions across a note-heavy chapter's worth of markers.
+    labels = [_fn_label(i) for i in range(120)]
+    assert len(set(labels)) == len(labels)
+
+
+def test_substitute_markers_offsets_and_multichar_labels():
+    vnotes = {str(n): ('', f'note {n}') for n in range(1, 30)}
+    markup = ''.join(f'v{n}[[FN_{n}]] ' for n in range(1, 30))
+    out, markers, nxt = _substitute_footnote_markers(markup, vnotes, False)
+    assert nxt == 29
+    assert '[[FN_' not in out
+    # Rebuild the inserted plain text the way the buffer sees it and check
+    # each recorded offset lands exactly on its label.
+    import re as _re
+    plain = _re.sub(r'<[^>]+>', '', out)
+    for off, n, label in markers:
+        assert plain[off:off + len(label)] == label
+    # 27th and later markers wrap into two-char labels.
+    assert markers[26][2] == 'aa'
+
+
+def test_substitute_markers_skips_tokens_without_bodies():
+    out, markers, nxt = _substitute_footnote_markers(
+        'word[[FN_1]] tail[[FN_2]]', {'2': ('', 'only note two')}, False)
+    assert nxt == 1
+    assert len(markers) == 1
+    assert markers[0][1] == '2'
+    assert markers[0][2] == 'a'

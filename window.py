@@ -52,6 +52,39 @@ BOOKS = [
     N_('Jude'), N_('Revelation'),
 ]
 
+
+class _FractionPaned(Gtk.Paned):
+    """Paned that keeps its divider at a fraction of its own width.
+
+    Without an explicit position, GtkPaned re-derives the split from the
+    children's natural widths — so content changes inside a pane (the
+    lexicon panel appearing, a definition loading) visibly wobbled both
+    reading columns. Here the divider follows a fraction instead: 50%
+    until the user drags it, then theirs; re-applied whenever the paned's
+    width changes and immune to child size requests."""
+
+    __gtype_name__ = 'ScripturaFractionPaned'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._fraction = 0.5
+        self._applying = False
+        self.connect('notify::position', self._record_drag)
+
+    def _record_drag(self, *_args):
+        w = self.get_width()
+        if w > 0 and not self._applying:
+            self._fraction = self.get_position() / w
+
+    def do_size_allocate(self, width, height, baseline):
+        target = round(width * self._fraction)
+        if width > 0 and self.get_position() != target:
+            self._applying = True
+            self.set_position(target)
+            self._applying = False
+        Gtk.Paned.do_size_allocate(self, width, height, baseline)
+
+
 class BibleWindow(Adw.ApplicationWindow):
     _NAV_MAX = 100
 
@@ -282,6 +315,27 @@ class BibleWindow(Adw.ApplicationWindow):
         # displayed text, so it belongs with the reading-view controls rather
         # than the navigation buttons on the left.
 
+        # Footnotes toggle — an italic f wearing the asterisk, print's
+        # oldest footnote mark (a bare dagger was tried and reads as a +
+        # in this theme's font; a bare * as "required"). Two-glyph shape
+        # mirrors the אΩ toggle it's linked with. Persisted (unlike the
+        # lexicon): footnotes are reading content, so the preference
+        # carries across sessions.
+        self.fnote_toggle = Gtk.ToggleButton()
+        fn_lbl = Gtk.Label()
+        # 122%/102% ≈ the x-large/large pair scaled down 15% so the pair
+        # sits flush beside the אΩ toggle.
+        fn_lbl.set_markup('<span size="122%"><i>f</i></span>'
+                          '<span size="102%">*</span>')
+        self.fnote_toggle.set_child(fn_lbl)
+        self.fnote_toggle.add_css_class('flat')
+        self.fnote_toggle.add_css_class('scriptura-lex-toggle')
+        self.fnote_toggle.set_tooltip_text(
+            _("Footnotes — the translation's own notes, marked in the text"))
+        set_accessible_label(self.fnote_toggle, _('Footnotes'))
+        self.fnote_toggle.set_active(bool(settings.get('show_footnotes')))
+        self.fnote_toggle.connect('toggled', self._on_fnote_toggle)
+
         # ── Right: search + bookmarks + view toggle ────────────────────────────
         self._bookmark_btn = Gtk.Button(icon_name='bookmark-new-symbolic')
         self._bookmark_btn.add_css_class('flat')
@@ -369,11 +423,16 @@ class BibleWindow(Adw.ApplicationWindow):
         self._swap_btn.set_sensitive(bool(settings.get('split_pane_mode')))
         header.pack_end(self._swap_btn)
 
-        # Lexicon toggle sits at the inner edge of the right cluster (just
+        # Study-marks pair at the inner edge of the right cluster (just
         # right of the centred passage title), grouped with the reading-view
-        # controls. The אΩ glyph is kept deliberately — it names the two
-        # languages it covers, which a generic dictionary icon would lose.
-        header.pack_end(self.lex_toggle)
+        # controls: the אΩ lexicon toggle (the glyph is kept deliberately —
+        # it names the two languages it covers, which a generic dictionary
+        # icon would lose) linked with the † footnotes toggle.
+        self._study_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        self._study_box.add_css_class('linked')
+        self._study_box.append(self.lex_toggle)
+        self._study_box.append(self.fnote_toggle)
+        header.pack_end(self._study_box)
 
         # ── Panes ─────────────────────────────────────────────────────────────
         # Only modules readable in a pane (Bibles, commentaries, devotionals)
@@ -425,6 +484,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_edit_cipher=self._show_edit_cipher_key,
                                on_modules_changed=self._on_modules_changed,
                                on_open_artifact=self._on_open_artifact,
+                               on_module_switched=self._update_fnote_sensitivity,
                                pane_id=1)
         self.pane2 = BiblePane(module_name=p2_mod,
                                on_word_click=self._on_word_click,
@@ -437,10 +497,14 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_edit_cipher=self._show_edit_cipher_key,
                                on_modules_changed=self._on_modules_changed,
                                on_open_artifact=self._on_open_artifact,
+                               on_module_switched=self._update_fnote_sensitivity,
                                pane_id=2)
+        # Initial f* sensitivity for the startup modules — the pane
+        # callbacks above only fire on later switches.
+        self._update_fnote_sensitivity()
 
-        self._paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL,
-                                vexpand=True, hexpand=True)
+        self._paned = _FractionPaned(orientation=Gtk.Orientation.HORIZONTAL,
+                                     vexpand=True, hexpand=True)
         self._paned.add_css_class('main-split')
         self._paned.set_start_child(self.pane1)
         self._paned.set_end_child(self.pane2)
@@ -454,7 +518,6 @@ class BibleWindow(Adw.ApplicationWindow):
         self._paned.set_resize_end_child(True)
         self._paned.set_shrink_start_child(False)
         self._paned.set_shrink_end_child(False)
-
         # ── Search overlay (Adw.OverlaySplitView, end-side sidebar) ──────────
         # Same permanently-collapsed pattern as the menu split below: the
         # panel overlays the reading area from the right with a scrim and
@@ -1769,6 +1832,12 @@ class BibleWindow(Adw.ApplicationWindow):
         self._header.set_visible(not on)
         self.pane1._toolbar.set_visible(not on)
         self.pane2._toolbar.set_visible(not on)
+        # Slide each page's top edge into (or back out of) the vacated
+        # strip, scroll-compensated so the text itself never moves.
+        # A hidden toolbar measures 0, so the same animation serves both
+        # directions.
+        self.pane1._animate_page_strip()
+        self.pane2._animate_page_strip()
         if on:
             # Dismiss anything floating so the text stands alone
             self._menu_split.set_show_sidebar(False)
@@ -1851,6 +1920,26 @@ class BibleWindow(Adw.ApplicationWindow):
         self.pane1.set_lexicon_enabled(enabled)
         self.pane2.set_lexicon_enabled(enabled)
 
+    def _on_fnote_toggle(self, _btn):
+        enabled = self.fnote_toggle.get_active()
+        settings.put('show_footnotes', enabled)
+        self.pane1.set_show_footnotes(enabled)
+        self.pane2.set_show_footnotes(enabled)
+
+    def _update_fnote_sensitivity(self):
+        """Enable the f* toggle only when a loaded module can actually show
+        footnotes, so flipping it never silently does nothing. Disabled (not
+        hidden) with an explanatory tooltip — the header layout stays put.
+        Runs on every pane module switch and after module installs."""
+        import content
+        capable = any(content.has_footnotes(p._module)
+                      for p in (self.pane1, self.pane2))
+        self.fnote_toggle.set_sensitive(capable)
+        self.fnote_toggle.set_tooltip_text(
+            _("Footnotes — the translation's own notes, marked in the text")
+            if capable else
+            _("Footnotes — the open translations don't include any"))
+
     def _on_view_mode(self, _btn):
         split = self._btn_split.get_active()
         settings.put('split_pane_mode', split)
@@ -1879,7 +1968,7 @@ class BibleWindow(Adw.ApplicationWindow):
         if narrow == self._header_narrow:
             return
         self._header_narrow = narrow
-        for w in (self.lex_toggle, self._bookmark_btn, self._swap_btn):
+        for w in (self._study_box, self._bookmark_btn, self._swap_btn):
             w.set_visible(not narrow)
         self._overflow_btn.set_visible(narrow)
 
@@ -2012,6 +2101,19 @@ class BibleWindow(Adw.ApplicationWindow):
                           not self.lex_toggle.get_active()))
         if self.lex_toggle.get_active():
             lex_row.get_child().append(
+                Gtk.Image.new_from_icon_name('object-select-symbolic'))
+
+        fn_glyph = Gtk.Label()
+        # Same italic-f + asterisk as the header toggle, a step smaller to
+        # sit in the overflow row (mirrors the lex row's smaller אΩ).
+        fn_glyph.set_markup('<span size="large"><i>f</i></span>'
+                            '<span size="small">*</span>')
+        fn_row = row(fn_glyph, _('Footnotes'),
+                     lambda: self.fnote_toggle.set_active(
+                         not self.fnote_toggle.get_active()),
+                     sensitive=self.fnote_toggle.get_sensitive())
+        if self.fnote_toggle.get_active():
+            fn_row.get_child().append(
                 Gtk.Image.new_from_icon_name('object-select-symbolic'))
 
         row(Gtk.Image.new_from_icon_name('bookmark-new-symbolic'),
@@ -2345,6 +2447,10 @@ class BibleWindow(Adw.ApplicationWindow):
     def _on_modules_changed(self):
         self.pane1.refresh_modules()
         self.pane2.refresh_modules()
+        # A same-module refresh doesn't fire on_module_switched, but an
+        # install can still change capability (e.g. an eBible re-download
+        # that now carries notes).
+        self._update_fnote_sensitivity()
 
     # ── Lexicon word click ────────────────────────────────────────────────────
 

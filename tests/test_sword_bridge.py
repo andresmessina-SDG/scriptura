@@ -278,3 +278,59 @@ def test_parse_conf_ignores_unknown_keys(tmp_path):
     # Unknown keys silently dropped.
     assert 'globaloptionfilter' not in info
     assert 'unknownkey' not in info
+
+
+# ── module_has_footnotes ─────────────────────────────────────────────────────
+# Stubbed mgr() — keeps this file's no-SWMgr contract while locking in the
+# repeated-conf-key behavior: getConfigEntry returns only the FIRST
+# GlobalOptionFilter line, so the probe must walk the full config map.
+
+class _FakeConfigMod:
+    """SWModule stand-in exposing just getConfigMap().items()."""
+    def __init__(self, pairs):
+        self._pairs = pairs
+
+    def getConfigMap(self):
+        pairs = self._pairs
+
+        class _Map:
+            def items(self):
+                return list(pairs)
+        return _Map()
+
+
+def _patch_mgr(monkeypatch, mods):
+    class _FakeMgr:
+        def getModule(self, name):
+            return mods.get(name)
+    monkeypatch.setattr(sword_bridge, 'mgr', lambda: _FakeMgr())
+
+
+def test_module_has_footnotes_scans_all_repeated_filter_lines(monkeypatch):
+    """A footnote filter declared after other filters must still be found
+    (e.g. a conf listing UTF8GreekAccents first)."""
+    mod = _FakeConfigMod([('GlobalOptionFilter', 'UTF8GreekAccents'),
+                          ('GlobalOptionFilter', 'OSISFootnotes'),
+                          ('Lang', 'grc')])
+    _patch_mgr(monkeypatch, {'X': mod})
+    assert sword_bridge.module_has_footnotes('X')
+
+
+def test_module_has_footnotes_false_without_footnote_filter(monkeypatch):
+    mod = _FakeConfigMod([('GlobalOptionFilter', 'OSISHeadings'),
+                          ('GlobalOptionFilter', 'OSISScripref')])
+    _patch_mgr(monkeypatch, {'X': mod})
+    assert not sword_bridge.module_has_footnotes('X')
+
+
+def test_module_has_footnotes_thml_and_gbf_variants(monkeypatch):
+    _patch_mgr(monkeypatch, {
+        'A': _FakeConfigMod([('GlobalOptionFilter', 'ThMLFootnotes')]),
+        'B': _FakeConfigMod([('GlobalOptionFilter', 'GBFFootnotes')])})
+    assert sword_bridge.module_has_footnotes('A')
+    assert sword_bridge.module_has_footnotes('B')
+
+
+def test_module_has_footnotes_missing_module(monkeypatch):
+    _patch_mgr(monkeypatch, {})
+    assert not sword_bridge.module_has_footnotes('Nope')

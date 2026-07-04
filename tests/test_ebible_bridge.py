@@ -73,7 +73,8 @@ def test_apply_char_strips_published_verse_number_spans():
 # ── _parse_usfm — small end-to-end samples ──────────────────────────────────
 
 def _parse(s):
-    return eb._parse_usfm(s)
+    """Verse dict only — most tests don't care about footnotes."""
+    return eb._parse_usfm(s)[0]
 
 
 def test_parse_basic_verse():
@@ -125,17 +126,56 @@ def test_parse_skips_metadata_lines():
     assert verses[('Genesis', 1, 1)] == 'In the beginning.'
 
 
-def test_parse_strips_footnotes_and_cross_refs():
+def test_parse_footnotes_become_anchors_cross_refs_stripped():
     usfm = r'''\id GEN
 \c 1
 \v 1 In the beginning\f + footnote text \f* God created\x + cross ref \x*.
 '''
-    verses = _parse(usfm)
+    verses, notes = eb._parse_usfm(usfm)
     text = verses[('Genesis', 1, 1)]
+    # The note body moves out of the text into the notes dict; an anchor
+    # (the same shape SWORD's filters emit) marks the attachment point.
     assert 'footnote' not in text
+    assert '<note swordFootnote="1"/>' in text
     assert 'cross ref' not in text
     assert 'In the beginning' in text
     assert 'God created' in text
+    assert notes[('Genesis', 1, 1)] == [(1, '', 'footnote text')]
+
+
+def test_parse_footnote_numbering_restarts_per_verse():
+    usfm = r'''\id GEN
+\c 1
+\v 1 First\f + \fr 1:1 \ft origin note\f* verse.
+\v 2 Second\f + \ft note a\f* verse\f + \ft note b\f* here.
+'''
+    verses, notes = eb._parse_usfm(usfm)
+    assert verses[('Genesis', 1, 1)].count('swordFootnote="1"') == 1
+    v2 = verses[('Genesis', 1, 2)]
+    assert '<note swordFootnote="1"/>' in v2
+    assert '<note swordFootnote="2"/>' in v2
+    # \fr origin renders bold, \ft text plain.
+    assert notes[('Genesis', 1, 1)] == [
+        (1, '', '<hi type="bold">1:1</hi> origin note')]
+    assert notes[('Genesis', 1, 2)] == [(1, '', 'note a'), (2, '', 'note b')]
+
+
+def test_parse_footnote_quotation_italicised():
+    usfm = ('\\id GEN\n\\c 1\n'
+            '\\v 6 God said\\f + \\fr 1:6 \\ft Or \\fq expanse\\f*.\n')
+    _, notes = eb._parse_usfm(usfm)
+    assert notes[('Genesis', 1, 6)] == [
+        (1, '', '<hi type="bold">1:6</hi> Or <i>expanse</i>')]
+
+
+def test_parse_footnote_in_heading_dropped():
+    usfm = ('\\id GEN\n\\c 1\n'
+            '\\s1 The Creation\\f + \\ft heading note\\f*\n'
+            '\\v 1 In the beginning.\n')
+    verses, notes = eb._parse_usfm(usfm)
+    assert verses[('Genesis', 1, 1)].startswith('<title>The Creation</title>')
+    assert 'heading note' not in verses[('Genesis', 1, 1)]
+    assert notes == {}
 
 
 def test_parse_section_heading_attached_to_next_verse():
@@ -203,11 +243,11 @@ def test_parse_paragraph_marker_with_inline_text():
 
 
 def test_parse_empty_input_yields_nothing():
-    assert _parse('') == {}
+    assert eb._parse_usfm('') == ({}, {})
 
 
 def test_parse_only_metadata_yields_nothing():
-    assert _parse('\\id GEN\n\\h Genesis\n\\mt1 Genesis\n') == {}
+    assert eb._parse_usfm('\\id GEN\n\\h Genesis\n\\mt1 Genesis\n') == ({}, {})
 
 
 # ── SQLite-backed API (with isolated DB) ────────────────────────────────────
@@ -237,6 +277,11 @@ def db(tmp_path, monkeypatch):
          ('engwebp', 'John', 3, 17, 'For God did not send his Son to condemn'),
          ('engwebp', 'Genesis', 1, 1, 'In the beginning God created'),
          ('engwebp', 'Genesis', 1, 2, 'And the earth was without form')])
+    conn.executemany(
+        'INSERT INTO notes VALUES (?,?,?,?,?,?,?)',
+        [('engwebp', 'Genesis', 1, 1, 1, '', 'Or <i>when God began</i>'),
+         ('engwebp', 'Genesis', 1, 2, 1, '', 'Hebrew <i>tohu</i>'),
+         ('engwebp', 'Genesis', 1, 2, 2, '', 'second note')])
     conn.commit()
     yield tmp_path
     if hasattr(eb._conn_local, 'conn'):
@@ -295,10 +340,10 @@ def test_installed_ids(db):
 
 
 def test_schema_version_stamped(db):
-    """A fresh DB carries the current v2 stamp (v1 base tables + v2 FTS
-    index), locking in the migration hook."""
+    """A fresh DB carries the current v3 stamp (v1 base tables + v2 FTS
+    index + v3 notes), locking in the migration hook."""
     conn = eb._db()
-    assert conn.execute('PRAGMA user_version').fetchone()[0] == 2
+    assert conn.execute('PRAGMA user_version').fetchone()[0] == 3
 
 
 def test_module_language(db):
@@ -431,6 +476,28 @@ def test_remove_translation(db):
     eb.remove_translation('engwebp')
     assert eb.installed_ids() == set()
     assert eb.load_chapter('eBible: engwebp', 'John', 3) == []
+    assert eb.chapter_footnotes('eBible: engwebp', 'Genesis', 1) == {}
+
+
+def test_chapter_footnotes_shape(db):
+    """Same {verse: [(marker_index, type, body)]} shape as
+    sword_bridge.chapter_footnotes — marker_index as a string matching
+    the swordFootnote anchor, ordered by (verse, n)."""
+    notes = eb.chapter_footnotes('eBible: engwebp', 'Genesis', 1)
+    assert notes == {1: [('1', '', 'Or <i>when God began</i>')],
+                     2: [('1', '', 'Hebrew <i>tohu</i>'),
+                         ('2', '', 'second note')]}
+
+
+def test_chapter_footnotes_missing_chapter_empty(db):
+    assert eb.chapter_footnotes('eBible: engwebp', 'John', 3) == {}
+
+
+def test_module_has_footnotes(db):
+    assert eb.module_has_footnotes('eBible: engwebp')
+    # A translation with no stored notes (e.g. imported before the notes
+    # table existed) reports False.
+    assert not eb.module_has_footnotes('eBible: Nonexistent')
 
 
 # ── catalog_entries — file-backed CSV cache ─────────────────────────────────

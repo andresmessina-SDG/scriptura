@@ -63,6 +63,18 @@ def kind(name: str) -> str:
     return 'bible'
 
 
+def has_footnotes(name: str) -> bool:
+    """Whether the module can surface translator footnotes in a reading
+    pane — drives the header f* toggle's sensitivity. Only verse-keyed
+    render paths run the marker pipeline, so a genbook/devotional conf
+    declaring a footnote filter still counts as False here."""
+    if ebible_bridge.is_ebible_module(name):
+        return bool(ebible_bridge.module_has_footnotes(name))
+    if kind(name) not in ('bible', 'commentary'):
+        return False
+    return bool(sword_bridge.module_has_footnotes(name))
+
+
 def feature_card(name: str) -> dict | None:
     """Hero-row presentation for the marquee packs, or None for plain
     modules. The picker renders these with a leading icon and a one-line

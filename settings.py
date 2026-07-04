@@ -18,6 +18,10 @@ _defaults: dict[str, Any] = {
     'font_bold':          False,
     'font_justify':       False,
     'reading_width':      720,
+    # Translator-footnote markers in the reading text (the f* header
+    # toggle). On by default — markers only appear where notes exist, and
+    # the toggle disables on modules that can't show any.
+    'show_footnotes':     True,
     'text_color_light':   None,
     'text_color_dark':    None,
     'text_color_default': None,

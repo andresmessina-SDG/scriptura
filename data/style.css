@@ -262,6 +262,13 @@ button.scriptura-lex-toggle {
     background-color: transparent;
 }
 
+/* The pane chrome band floats over the reading page (Gtk.Overlay) so
+ * revealing/hiding it never moves the text; it must be opaque to mask
+ * the content scrolling beneath it. */
+.pane-chrome-band {
+    background-color: @window_bg_color;
+}
+
 /* Hidden: the reading "page" surface below provides the separation now,
  * so the toolbar reads as part of the one continuous header band. */
 .pane-toolbar-separator {
@@ -350,6 +357,14 @@ image.module-feature-icon {
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 1.4em;
     font-weight: 600;
+}
+
+/* Footnote peek — caption stays UI-sans; the note body reads in the serif
+ * voice of the page it annotates. */
+.fnote-body {
+    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-size: 1.1em;
 }
 
 menubutton.pane-module-button > button,

@@ -86,6 +86,16 @@ def _db():
     conn.execute('''CREATE TABLE IF NOT EXISTS translations (
         id TEXT PRIMARY KEY, title TEXT, language TEXT, lang_code TEXT,
         copyright TEXT, license TEXT)''')
+    # Translator footnotes (\f…\f* in the USFM source). n is the 1-based
+    # per-verse index matching the <note swordFootnote="n"/> anchor left in
+    # the verse text — the same anchor shape SWORD's footnote filters emit,
+    # so the pane's marker pipeline serves both backends. Translations
+    # imported before this table existed have no rows here (and no anchors
+    # in their text); a re-download re-imports with notes.
+    conn.execute('''CREATE TABLE IF NOT EXISTS notes (
+        translation TEXT, book TEXT, chapter INTEGER, verse INTEGER,
+        n INTEGER, type TEXT, body TEXT,
+        PRIMARY KEY (translation, book, chapter, verse, n))''')
     # Full-text search index over verse text (shared FTS5 grammar with the
     # SWORD backend — see search_query). External-content: the index points
     # at `verses` instead of duplicating the text. unicode61 tokenization
@@ -105,9 +115,10 @@ def _db():
         INSERT INTO verses_fts(verses_fts, rowid, text) VALUES('delete', old.rowid, old.text);
         INSERT INTO verses_fts(rowid, text) VALUES (new.rowid, new.text);
     END''')
-    # Schema version stamp. v1 = base tables; v2 = FTS index added. When the
-    # layout changes, bump this and add the migration steps in an `if ver < N`
-    # block so existing user DBs upgrade in place.
+    # Schema version stamp. v1 = base tables; v2 = FTS index added; v3 =
+    # notes table (created above — no data migration, old imports just have
+    # no rows). When the layout changes, bump this and add the migration
+    # steps in an `if ver < N` block so existing user DBs upgrade in place.
     ver = conn.execute('PRAGMA user_version').fetchone()[0]
     if ver < 1:
         conn.execute('PRAGMA user_version = 1')
@@ -115,6 +126,8 @@ def _db():
         # Backfill the FTS index for verses that existed before it was added.
         conn.execute("INSERT INTO verses_fts(verses_fts) VALUES('rebuild')")
         conn.execute('PRAGMA user_version = 2')
+    if ver < 3:
+        conn.execute('PRAGMA user_version = 3')
     conn.commit()
     _conn_local.conn = conn
     return conn
@@ -226,6 +239,37 @@ def load_chapter(module_name, book, chapter):
     except Exception:
         return []
 
+def chapter_footnotes(module_name, book, chapter):
+    """{verse: [(marker_index, type, body_html), …]} — same shape as
+    sword_bridge.chapter_footnotes. marker_index is the string matching
+    the swordFootnote="N" anchor in the stored verse text."""
+    tid = _tid(module_name)
+    try:
+        conn = _db()
+        rows = conn.execute(
+            'SELECT verse, n, type, body FROM notes '
+            'WHERE translation=? AND book=? AND chapter=? ORDER BY verse, n',
+            (tid, book, chapter)).fetchall()
+    except Exception:
+        return {}
+    out = {}
+    for v, n, t, body in rows:
+        out.setdefault(v, []).append((str(n), t, body))
+    return out
+
+
+def module_has_footnotes(module_name):
+    """True if any stored note exists for this translation. Translations
+    imported before notes were kept return False until re-downloaded."""
+    try:
+        conn = _db()
+        return conn.execute(
+            'SELECT 1 FROM notes WHERE translation=? LIMIT 1',
+            (_tid(module_name),)).fetchone() is not None
+    except Exception:
+        return False
+
+
 def search_module(module_name, query, case_sensitive=False, **_kwargs):
     """Full-text verse search via the FTS5 index, using the shared query
     grammar (phrase / AND / OR / exclude / prefix — see search_query).
@@ -299,12 +343,15 @@ def download_translation_sync(tid, entry, on_status=None):
     if on_status:
         on_status('parse')
     verses = {}
+    notes = {}
     with zipfile.ZipFile(io.BytesIO(data)) as z:
         for name in z.namelist():
             if re.search(r'\.(usfm|sfm)$', name, re.IGNORECASE):
                 with z.open(name) as f:
                     content = f.read().decode('utf-8', errors='replace')
-                verses.update(_parse_usfm(content))
+                file_verses, file_notes = _parse_usfm(content)
+                verses.update(file_verses)
+                notes.update(file_notes)
 
     if on_status:
         on_status('save')
@@ -316,10 +363,16 @@ def download_translation_sync(tid, entry, on_status=None):
 
     conn = _db()
     conn.execute('DELETE FROM verses      WHERE translation=?', (tid,))
+    conn.execute('DELETE FROM notes       WHERE translation=?', (tid,))
     conn.execute('DELETE FROM translations WHERE id=?',         (tid,))
     conn.executemany(
         'INSERT OR REPLACE INTO verses VALUES (?,?,?,?,?)',
         [(tid, b, c, v, t) for (b, c, v), t in verses.items() if b])
+    conn.executemany(
+        'INSERT OR REPLACE INTO notes VALUES (?,?,?,?,?,?,?)',
+        [(tid, b, c, v, n, t, body)
+         for (b, c, v), lst in notes.items() if b
+         for n, t, body in lst])
     conn.execute('INSERT OR REPLACE INTO translations VALUES (?,?,?,?,?,?)',
                  (tid, title, language, lang_code, copyright_, license_))
     conn.commit()
@@ -327,6 +380,7 @@ def download_translation_sync(tid, entry, on_status=None):
 def remove_translation(tid):
     conn = _db()
     conn.execute('DELETE FROM verses      WHERE translation=?', (tid,))
+    conn.execute('DELETE FROM notes       WHERE translation=?', (tid,))
     conn.execute('DELETE FROM translations WHERE id=?',         (tid,))
     conn.commit()
 
@@ -337,11 +391,17 @@ def remove_module(module_name):
 
 # ── USFM parser ───────────────────────────────────────────────────────────────
 
-# Block-level note removal (spans multiple lines)
-_RE_FN  = re.compile(r'\\f\b.*?\\f\*',   re.DOTALL)
+# Block-level notes (span multiple lines). \f footnotes are captured into
+# note bodies (see _parse_usfm); the rest are stripped: \x cross-references
+# are a separate system out of scope here, \fe endnotes and \esb sidebars
+# have no reading-pane surface.
+_RE_FN  = re.compile(r'\\f\b(.*?)\\f\*',  re.DOTALL)
 _RE_XR  = re.compile(r'\\x\b.*?\\x\*',   re.DOTALL)
 _RE_EN  = re.compile(r'\\fe\b.*?\\fe\*',  re.DOTALL)
 _RE_SB  = re.compile(r'\\esb\b.*?\\esbe\b', re.DOTALL)
+# Placeholder a captured footnote leaves in the text until verse assembly
+# renumbers it per verse and swaps in the <note swordFootnote="n"/> anchor.
+_RE_NOTE_PH = re.compile(r'\[\[EBN_(\d+)\]\]')
 
 # Line-start marker patterns
 _RE_BOOK    = re.compile(r'^\\id\s+([A-Z1-9]{3})',   re.IGNORECASE)
@@ -402,22 +462,66 @@ def _apply_char(text):
     return text.strip()
 
 
+def _note_body(inner):
+    """One \\f…\\f* note's internals → body HTML in the dialect
+    _apply_char emits (pane._html_to_markup renders it in the peek):
+    \\fr origin reference → bold, quoted/keyword text (\\fq \\fqa \\fk
+    \\fl) → italic, \\ft and untagged text → plain. Footnote content
+    markers are usually unpaired — each runs to the next marker — so
+    this walks marker/text tokens instead of matching pairs."""
+    inner = re.sub(r'\\\+', r'\\', inner)          # nested \+marker forms
+    inner = re.sub(r'^\s*[^\s\\]\s+', '', inner)   # the caller ('+' = auto)
+    out = []
+    style = 'ft'
+    for tok in re.split(r'(\\[a-z]+\d*\*?)', inner):
+        if tok.startswith('\\'):
+            style = 'ft' if tok.endswith('*') else tok[1:]
+            continue
+        text = tok.strip()
+        if not text:
+            continue
+        if style == 'fr':
+            out.append(f'<hi type="bold">{text}</hi>')
+        elif style in ('fq', 'fqa', 'fk', 'fl'):
+            out.append(f'<i>{text}</i>')
+        else:
+            out.append(text)
+    return ' '.join(out)
+
+
 def _parse_usfm(content):
     """
-    Parse one USFM file into {(book, chapter, verse): html_text}.
+    Parse one USFM file into a pair:
+      {(book, chapter, verse): html_text},
+      {(book, chapter, verse): [(n, type, body_html), …]}   (footnotes)
 
     Output html_text is compatible with pane._html_to_markup():
       • Red-letter words in <q who="Jesus">…</q>
       • Translator additions in <transChange type="added">…</transChange>
       • Section / psalm headings in <title>…</title> prepended to first verse
       • Poetry lines indented with em-spaces and separated by newlines
-      • Footnotes, cross-references, and metadata fully stripped
+      • Footnotes become <note swordFootnote="n"/> anchors (bodies in the
+        second dict); cross-references and metadata fully stripped
     """
-    # Strip all block-level notes before line processing
-    for pat in (_RE_FN, _RE_XR, _RE_EN, _RE_SB):
+    # Strip the note types we don't keep, then capture \f footnotes into
+    # per-file bodies, leaving a placeholder that verse assembly (flush)
+    # renumbers per verse. Strips run first so a footnote inside a
+    # stripped sidebar vanishes with it.
+    for pat in (_RE_XR, _RE_EN, _RE_SB):
         content = pat.sub('', content)
+    bodies = []
+
+    def _stash(m):
+        body = _note_body(m.group(1))
+        if not body:
+            return ''
+        bodies.append(body)
+        return f'[[EBN_{len(bodies) - 1}]]'
+
+    content = _RE_FN.sub(_stash, content)
 
     verses  = {}
+    notes   = {}
     book    = None
     chapter = None
     vnum    = None
@@ -431,8 +535,17 @@ def _parse_usfm(content):
             raw = re.sub(r'[ \t]+',       ' ',  raw)   # collapse inline spaces
             raw = re.sub(r'[ \t]*\n[ \t]*', '\n', raw) # clean around newlines
             raw = _apply_char(raw)
+            vnotes = []
+
+            def _anchor(m):
+                vnotes.append((len(vnotes) + 1, '', bodies[int(m.group(1))]))
+                return f'<note swordFootnote="{len(vnotes)}"/>'
+
+            raw = _RE_NOTE_PH.sub(_anchor, raw)
             if raw:
                 verses[(book, chapter, vnum)] = raw
+                if vnotes:
+                    notes[(book, chapter, vnum)] = vnotes
         parts.clear()
 
     for line in content.splitlines():
@@ -463,8 +576,10 @@ def _parse_usfm(content):
         m = _RE_HEADING.match(line)
         if m:
             txt = m.group(1).strip()
-            # Strip inline markers from heading text
+            # Strip inline markers from heading text; a footnote in a
+            # heading has no verse to attach to, so it stays dropped.
             txt = re.sub(r'\\[a-zA-Z]+\d*\+?\s?', '', txt).strip()
+            txt = _RE_NOTE_PH.sub('', txt).strip()
             if txt:
                 heading = txt
             continue
@@ -531,4 +646,4 @@ def _parse_usfm(content):
             pre.append(line)
 
     flush()
-    return verses
+    return verses, notes

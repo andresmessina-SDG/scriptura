@@ -85,6 +85,69 @@ def _render_highlight(color):
     return _HIGHLIGHT_RENDER.get(color, color)
 
 
+# A footnote filter leaves an empty <note swordFootnote="N" …/> anchor at
+# each note's attachment point (the body lives elsewhere — see
+# sword_bridge.chapter_footnotes / ebible_bridge.chapter_footnotes, both
+# of which key their bodies to this N). Matched pre-markup so the anchor
+# becomes a marker token instead of being silently stripped.
+_NOTE_ANCHOR_RE = re.compile(
+    r'<note\s[^>]*?swordFootnote="(\d+)"[^>]*?(?:/>|>\s*</note>)')
+_FN_TOKEN_RE = re.compile(r'\[\[FN_(\d+)\]\]')
+
+
+def _fn_label(idx):
+    """0-based marker index → bijective base-26 label: a…z, aa, ab, …
+    Every note in a chapter gets a unique label, print-Bible style."""
+    label = ''
+    idx += 1
+    while idx:
+        idx, r = divmod(idx - 1, 26)
+        label = chr(ord('a') + r) + label
+    return label
+
+
+def _substitute_footnote_markers(markup, vnotes, dark, start_idx=0):
+    """Replace [[FN_n]] tokens with superscript marker labels.
+
+    Labels run continuously through the chapter (print-Bible style), so
+    `start_idx` carries the counter across verses and the next index is
+    returned. Returns (markup, [(plain_offset, n, label)], next_idx) —
+    plain_offset is the marker's character offset within the inserted
+    text, so the fnote: tag can be applied by offset arithmetic instead
+    of a buffer search. Tokens whose n has no body in vnotes are dropped.
+    Done on the final markup string (not by segmented insertion) so Pango
+    spans that cross an anchor — e.g. red-letter text — stay correctly
+    paired.
+
+    Ordinary letters raised with `rise`, not Unicode superscript glyphs:
+    the superscript block has no q (the old glyph set wrapped at 25 with
+    q missing), while rise+size renders the full a…z, aa… sequence."""
+    color = '#7fa3c1' if dark else '#5a7fa3'
+    out = []
+    markers = []
+    pos = 0
+    plain_off = 0
+    idx = start_idx
+    for m in _FN_TOKEN_RE.finditer(markup):
+        chunk = markup[pos:m.start()]
+        out.append(chunk)
+        plain_off += len(_html_mod.unescape(re.sub(r'<[^>]+>', '', chunk)))
+        pos = m.end()
+        n = m.group(1)
+        if n not in vnotes:
+            continue
+        label = _fn_label(idx)
+        idx += 1
+        # small + rise ≈ the old size="large" superscript glyphs' visual
+        # weight and elevation; small keeps the click target fair.
+        out.append(f'<span size="small" rise="3000" foreground="{color}">'
+                   f'{label}</span>')
+        markers.append((plain_off, n, label))
+        plain_off += len(label)
+    out.append(markup[pos:])
+    return ''.join(out), markers, idx
+
+
 _DICT_SHORT_NAMES = {
     # Hand-tuned for common SWORD dict modules where the heuristic below
     # would otherwise pick a less recognisable form.
@@ -147,6 +210,9 @@ def _html_to_markup(html, dark, strip=True):
     # Italics (translator additions)
     html = re.sub(r'<transChange type="added">(.*?)</transChange>', r'[[I_S]]\1[[I_E]]', html)
     html = re.sub(r'<i>(.*?)</i>', r'[[I_S]]\1[[I_E]]', html)
+    # The quoted word a footnote comments on ("<catchWord>firmament</catchWord>:
+    # Heb. expansion") — italicised so note bodies keep their word/gloss shape.
+    html = re.sub(r'<catchWord>(.*?)</catchWord>', r'[[I_S]]\1[[I_E]]', html, flags=re.DOTALL)
     # OSIS-style emphasis used by commentaries like Calvin's — `<hi
     # type="italic">` wraps Bible-verse citations within the body;
     # `<hi type="bold">` wraps the verse-number prefix ("1." etc.).
@@ -274,6 +340,11 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
         self._view = view
         self._base = base_margin
         self._reading_width = 720
+        # Set by BiblePane: called (during layout — receiver must defer
+        # real work to idle) when the viewport height changes, e.g. the
+        # lexicon paned opening or a window resize.
+        self.on_height_change = None
+        self._last_alloc_height = -1
 
     def set_reading_width(self, px):
         self._reading_width = max(200, int(px))
@@ -293,6 +364,11 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
     def do_size_allocate(self, width, height, baseline):
         Gtk.ScrolledWindow.do_size_allocate(self, width, height, baseline)
         self._apply_margins(width)
+        if height != self._last_alloc_height:
+            was_first = self._last_alloc_height < 0
+            self._last_alloc_height = height
+            if not was_first and self.on_height_change is not None:
+                self.on_height_change()
 
     def _apply_margins(self, avail):
         if avail <= 0:
@@ -578,6 +654,51 @@ class BibleTextView(Gtk.TextView):
             cur = self._skip_ws_fwd(cur, end)
 
 
+def _is_fnote_marker_char(it):
+    """True when the iter sits on a footnote-marker glyph (superscript
+    letter) — identified by its fnote: tag."""
+    return any((t.get_property('name') or '').startswith('fnote:')
+               for t in it.get_tags())
+
+
+def _visible_chars_between(start, until):
+    """Count chars in [start, until) that aren't footnote-marker glyphs.
+    Walks tag-toggle segments (the tag set is constant between toggles)
+    rather than chars — commentary sections run to thousands of chars and
+    this is on the scroll-settle path."""
+    count = 0
+    cur = start.copy()
+    while cur.compare(until) < 0:
+        seg_end = cur.copy()
+        if not seg_end.forward_to_tag_toggle(None) or seg_end.compare(until) > 0:
+            seg_end.assign(until)
+        if not _is_fnote_marker_char(cur):
+            count += seg_end.get_offset() - cur.get_offset()
+        cur.assign(seg_end)
+    return count
+
+
+def _forward_visible_chars(it, count, limit):
+    """Advance `it` past `count` non-marker chars, never crossing `limit`.
+    Segment walk, mirror of _visible_chars_between."""
+    remaining = count
+    while remaining > 0 and it.compare(limit) < 0:
+        seg_end = it.copy()
+        if not seg_end.forward_to_tag_toggle(None) or seg_end.compare(limit) > 0:
+            seg_end.assign(limit)
+        seg_len = seg_end.get_offset() - it.get_offset()
+        if seg_len <= 0:
+            break
+        if _is_fnote_marker_char(it):
+            it.assign(seg_end)
+            continue
+        if seg_len >= remaining:
+            it.forward_chars(remaining)
+            return
+        remaining -= seg_len
+        it.assign(seg_end)
+
+
 class BiblePane(Gtk.Box):
     # Auto-hide-on-scroll tuning for the pane toolbar (pixels of the reading
     # scroll). A top dead-zone always shows the bar near the chapter start;
@@ -593,7 +714,7 @@ class BiblePane(Gtk.Box):
                  on_word_study_navigate=None, on_toast=None,
                  on_font_size_request=None, on_cipher_error=None,
                  on_edit_cipher=None, on_modules_changed=None,
-                 on_open_artifact=None, pane_id=1):
+                 on_open_artifact=None, on_module_switched=None, pane_id=1):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self._on_word_click = on_word_click
         self._on_click_outside_search = on_click_outside_search
@@ -605,10 +726,21 @@ class BiblePane(Gtk.Box):
         self._on_cipher_error = on_cipher_error
         self._on_edit_cipher = on_edit_cipher
         self._on_modules_changed = on_modules_changed
+        # Fires after this pane switches to a different module — the window
+        # re-evaluates cross-pane state that depends on what's loaded
+        # (currently the f* footnote toggle's sensitivity).
+        self._on_module_switched = on_module_switched
         # Used to namespace per-pane persisted state (e.g. genbook
         # bookmarks) so pane1 and pane2 don't trample each other.
         self._pane_id = pane_id
         self._lexicon_enabled = False
+        # Translator-footnote markers (the † header toggle). Persisted,
+        # unlike the lexicon: footnotes are reading content, not a lookup
+        # mode, so a reader who wants them wants them every session.
+        self._show_footnotes = bool(settings.get('show_footnotes'))
+        # (verse, marker_index) → (type, body) for the rendered chapter;
+        # the fnote: click handler reads the peek content from here.
+        self._chapter_footnotes = {}
         # Per-pane Ctrl+F search subsystem (widgets + state + highlight tag).
         # Constructed eagerly so the toolbar button and revealer can be
         # placed during _build_ui below.
@@ -640,6 +772,39 @@ class BiblePane(Gtk.Box):
         self._chapter = 1
         self._target_verse = None
         self._restore_top_verse = None
+        # Pixel-exact reading locus captured before a content-mutating
+        # re-render (footnote toggle, theme flip) — consumed by _display.
+        # Coarser than _restore_top_verse's use (module switches), finer
+        # restore: same verse, same character, same pixel.
+        self._restore_anchor = None
+        # The persisted reading locus. Re-deriving the anchor from viewport
+        # geometry after every re-render ratchets (wrap boundaries shift
+        # with footnote markers, so a line-start char lands on the previous
+        # line and each toggle pair walks the view one line) — so the
+        # anchor is computed once and reused until the USER moves: real
+        # scrolls and navigation clear it, restores do not.
+        self._reading_anchor = None
+        # Bumped whenever the buffer is rebuilt; in-flight anchor
+        # corrections compare against it and die if superseded.
+        self._anchor_seq = 0
+        # Deadline for _mark_programmatic_scroll — initialized here (not in
+        # the auto-hide block) because _update_font_css marks it during
+        # construction, before that block runs.
+        self._ignore_scroll_until = 0
+        # Debounce source for the post-scroll anchor re-capture, its
+        # quiescence-retry counter, and the last time the reading
+        # adjustment's value changed (any cause).
+        self._anchor_capture_id = 0
+        self._settle_retries = 0
+        self._last_value_change = 0
+        # Running Adw.TimedAnimation for the chrome strip (reveal/hide).
+        self._strip_anim = None
+        # True while an anchor re-assert idle is queued (dedupe for
+        # per-frame resize storms, e.g. dragging the lexicon divider).
+        self._anchor_apply_pending = False
+        # Monotonic id of the newest chapter fetch; _display drops results
+        # from superseded fetches (see _fetch_and_render).
+        self._fetch_gen = 0
         self._selected_verse = None
         self._devotional_date = _date.today()
         # Mirrors of the window's current location, kept updated even when
@@ -723,6 +888,7 @@ class BiblePane(Gtk.Box):
         date_nav.append(self._date_label)
         date_nav.append(today_btn)
         date_nav.append(next_day_btn)
+        self._date_nav = date_nav
 
         self._date_nav_revealer = Gtk.Revealer()
         self._date_nav_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
@@ -730,10 +896,13 @@ class BiblePane(Gtk.Box):
         self._date_nav_revealer.set_child(date_nav)
         self._date_nav_revealer.set_reveal_child(False)
 
-        # The pane toolbar auto-hides while reading (scroll down to reclaim
-        # its height, scroll up / tap the text / focus a control to bring it
-        # back) — see _on_reading_scroll below. SLIDE_UP retracts it upward so
-        # the reading page rises to fill the space.
+        # The pane toolbar auto-hides while reading (scroll down to get it
+        # out of the way, scroll up / tap the text / focus a control to
+        # bring it back) — see _on_reading_scroll below. SLIDE_UP retracts
+        # it upward, sliding OVER the reading page: all pane chrome lives
+        # in an overlay band above the text surface, so revealing or hiding
+        # it never reallocates the viewport — the reading text is the fixed
+        # point everything else moves around.
         self._toolbar_revealer = Gtk.Revealer()
         self._toolbar_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_UP)
         self._toolbar_revealer.set_transition_duration(280)
@@ -745,15 +914,22 @@ class BiblePane(Gtk.Box):
         toolbar_focus.connect('enter', lambda _c: self._reveal_chrome())
         toolbar.add_controller(toolbar_focus)
 
-        self.append(self._toolbar_revealer)
-        self.append(self._date_nav_revealer)
+        # The floating chrome band: toolbar + devotional date nav +
+        # per-pane search bar, stacked over the top of the reading page
+        # (composed into a Gtk.Overlay with the paned below). Opaque via
+        # .pane-chrome-band so text scrolling beneath it is masked.
+        self._chrome_band = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self._chrome_band.add_css_class('pane-chrome-band')
+        self._chrome_band.set_valign(Gtk.Align.START)
+        self._chrome_band.append(self._toolbar_revealer)
+        self._chrome_band.append(self._date_nav_revealer)
         self._toolbar_separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
         self._toolbar_separator.add_css_class('pane-toolbar-separator')
-        self.append(self._toolbar_separator)
+        self._chrome_band.append(self._toolbar_separator)
 
         # Per-pane inline search bar (revealed below toolbar). All
         # widgets + state live inside PaneSearch — see pane_search.py.
-        self.append(self._search.build_revealer())
+        self._chrome_band.append(self._search.build_revealer())
 
         # Ensure the pane itself can be shrunk by the user without UI elements pushing it
         self.set_size_request(150, -1)
@@ -811,20 +987,46 @@ class BiblePane(Gtk.Box):
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.ALWAYS)
         scrolled.set_child(self._view)
         scrolled.set_reading_width(int(settings.get('reading_width') or 720))
+        scrolled.on_height_change = self._on_viewport_resized
         self._reading_scroll = scrolled
 
         # Auto-hide-on-scroll state for the pane toolbar. Direction-driven with
         # a top dead-zone and a hysteresis accumulator so small or ambiguous
         # motion never toggles it (the jitter that separates premium from
-        # janky). Reveal is biased easier than hide. _chrome_lock swallows the
-        # value-changes the content reflow emits while the bar animates, so the
-        # resize can't bounce the state back near the bottom of a chapter.
+        # janky). Reveal is biased easier than hide. _ignore_scroll_until is a
+        # monotonic deadline (µs): adjustment changes before it are treated as
+        # programmatic (renders, verse jumps, anchor restores) and never feed
+        # the accumulator — chrome reacts to the reader's hand, not to
+        # layout work.
         self._chrome_revealed = True
         self._scroll_accum = 0.0
         self._last_scroll_value = 0.0
-        self._chrome_lock = False
-        self._chrome_lock_id = 0
         scrolled.get_vadjustment().connect('value-changed', self._on_reading_scroll)
+
+        # User-intent scroll detection. value-changed alone can't tell the
+        # reader's hand from layout churn: lazy validation keeps correcting
+        # line-height estimates (and with them the adjustment) long after a
+        # render, past any fixed ignore window. Only input says "the reader
+        # moved": wheel/touchpad, scroll keys, or a scrollbar drag. Scroll
+        # handling treats value changes without recent input as churn.
+        self._last_scroll_input = 0
+        self._scrollbar_held = False
+        wheel = Gtk.EventControllerScroll.new(
+            Gtk.EventControllerScrollFlags.BOTH_AXES)
+        wheel.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        wheel.connect('scroll', self._on_wheel_input)
+        scrolled.add_controller(wheel)
+        scroll_keys = Gtk.EventControllerKey.new()
+        scroll_keys.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        scroll_keys.connect('key-pressed', self._on_scroll_key_input)
+        scrolled.add_controller(scroll_keys)
+        sb_drag = Gtk.GestureClick.new()
+        sb_drag.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        sb_drag.connect('pressed',
+                        lambda *_a: setattr(self, '_scrollbar_held', True))
+        sb_drag.connect('released', self._on_scrollbar_released)
+        sb_drag.connect('cancel', self._on_scrollbar_released)
+        scrolled.get_vscrollbar().add_controller(sb_drag)
 
         # Lexicon panel (hidden until a Strong's word is clicked).
         # Owns its own widgets, state, and navigation history; we just
@@ -841,8 +1043,10 @@ class BiblePane(Gtk.Box):
         # multi-Strong's / multi-word tags. Reset on every click and
         # on module change.
         self._current_phrase = (None, None)
-        # Last verses passed to _display, reused for re-theming without IO.
+        # Last verses/footnotes passed to _display, reused for re-theming
+        # without IO.
         self._rendered_verses = None
+        self._rendered_notes = {}
         self._lex_panel = LexiconPanel(
             on_word_study_navigate=on_word_study_navigate,
             on_first_show=self._init_outer_paned_position,
@@ -883,7 +1087,16 @@ class BiblePane(Gtk.Box):
         self._lex_paned.set_resize_end_child(True)
         self._lex_paned.set_shrink_start_child(False)
         self._lex_paned.set_shrink_end_child(True)
-        self.append(self._lex_paned)
+        # The chrome band floats in a Gtk.Overlay, so its reveal/hide can
+        # never move the text. Its steady height is reserved as a constant
+        # top margin on the page card (_sync_view_top_margin), so the band
+        # occupies its own strip above the card — visually identical to
+        # the old in-flow layout when revealed.
+        chrome_overlay = Gtk.Overlay(vexpand=True)
+        chrome_overlay.set_child(self._lex_paned)
+        chrome_overlay.add_overlay(self._chrome_band)
+        self.append(chrome_overlay)
+        self._sync_view_top_margin()
         self._apply_reading_page_edge()
 
         # Enrich Ctrl+C / native copy: prepend the verse reference so
@@ -1006,9 +1219,17 @@ class BiblePane(Gtk.Box):
         v = adj.get_value()
         delta = v - self._last_scroll_value
         self._last_scroll_value = v
-        if self._chrome_lock or self._content_child() != 'text':
+        self._last_value_change = GLib.get_monotonic_time()
+        if (GLib.get_monotonic_time() < self._ignore_scroll_until
+                or self._content_child() != 'text'
+                or not self._user_scroll_recent()):
             self._scroll_accum = 0.0
             return
+        # A real user scroll moves the reading locus — the persisted
+        # anchor no longer describes it. Re-capture once the motion
+        # settles so resizes can keep holding the reader's place.
+        self._reading_anchor = None
+        self._schedule_anchor_capture()
         # Always reveal near the top of the chapter.
         if v <= self._CHROME_TOP_DEADZONE:
             self._scroll_accum = 0.0
@@ -1033,18 +1254,169 @@ class BiblePane(Gtk.Box):
         self._scroll_accum = 0.0
         self._toolbar_revealer.set_transition_duration(280 if reveal else 200)
         self._toolbar_revealer.set_reveal_child(reveal)
-        # Swallow the value-changes the content reflow emits while the bar
-        # animates, so the resize can't bounce the state back.
-        self._chrome_lock = True
-        if self._chrome_lock_id:
-            GLib.source_remove(self._chrome_lock_id)
-        self._chrome_lock_id = GLib.timeout_add(360, self._release_chrome_lock)
+        self._animate_page_strip()
 
-    def _release_chrome_lock(self):
-        self._chrome_lock = False
-        self._chrome_lock_id = 0
-        self._last_scroll_value = self._reading_scroll.get_vadjustment().get_value()
+    def _strip_targets(self):
+        """(base, toolbar) strip heights: base chrome that never auto-hides
+        (the devotional date bar) and the auto-hiding toolbar."""
+        base = 0
+        if self._is_devotional:
+            base = self._date_nav.measure(Gtk.Orientation.VERTICAL, -1)[1]
+        return base, self._toolbar.measure(Gtk.Orientation.VERTICAL, -1)[1]
+
+    def _animate_page_strip(self):
+        """Slide the page card's top edge in step with the toolbar,
+        keeping the glyphs screen-fixed: each frame the card top moves by
+        dm and the scroll value moves by dm with it, so hiding the chrome
+        unveils a strip of earlier text (reclaiming the space) instead of
+        dragging the page up — and revealing tucks it back."""
+        base, tb = self._strip_targets()
+        target = base + (tb if self._chrome_revealed else 0)
+        if self._strip_anim is not None:
+            self._strip_anim.pause()
+            self._strip_anim = None
+        start = self._lex_paned.get_margin_top()
+        if start == target:
+            return
+        adj = self._reading_scroll.get_vadjustment()
+        last = {'m': start}
+
+        def frame(value):
+            m = round(value)
+            dm = m - last['m']
+            if dm == 0:
+                return
+            last['m'] = m
+            self._lex_paned.set_margin_top(m)
+            self._mark_programmatic_scroll()
+            adj.set_value(adj.get_value() + dm)
+
+        def done(_anim):
+            self._strip_anim = None
+            # The viewport top edge genuinely moved — the old anchor's
+            # pixel delta no longer describes the reading locus.
+            self._reading_anchor = None
+            self._capture_scroll_anchor()
+
+        anim = Adw.TimedAnimation.new(
+            self._lex_paned, start, target,
+            280 if self._chrome_revealed else 200,
+            Adw.CallbackAnimationTarget.new(frame))
+        anim.connect('done', done)
+        self._strip_anim = anim
+        anim.play()
+
+        def force_finish():
+            # A stalled frame clock (headless, hidden window) must not
+            # leave the strip mid-flight and the anchor machinery
+            # suppressed — jump to the end state.
+            if self._strip_anim is anim:
+                anim.skip()
+            return GLib.SOURCE_REMOVE
+
+        GLib.timeout_add(600, force_finish)
+
+    def _on_viewport_resized(self):
+        """Viewport height changed (lexicon paned, window resize). The
+        text layout re-estimates line heights on resize, and with a
+        constant adjustment value that silently shifts which text sits
+        under the viewport. Re-assert the reading anchor — text-based, so
+        immune to estimate corrections — to hold the reader's place.
+        Not during the strip animation: its per-frame scroll compensation
+        is authoritative there, and re-asserting the (stale) anchor
+        would fight it. Deduped — a divider drag fires per-frame height
+        changes, and each apply spawns its own correction sources."""
+        if (self._strip_anim is None
+                and not self._anchor_apply_pending
+                and self._reading_anchor is not None
+                and self._rendered_verses):
+            self._anchor_apply_pending = True
+
+            def apply():
+                self._anchor_apply_pending = False
+                if self._reading_anchor is not None:
+                    self._apply_scroll_anchor(self._reading_anchor)
+                return GLib.SOURCE_REMOVE
+
+            GLib.idle_add(apply)
+
+    def _settle_capture_anchor(self):
+        """Runs shortly after a scroll settles: record the new reading
+        locus so a later resize/re-render can hold it. If the adjustment
+        is still moving (a pending scroll_to completing, validation
+        churn), re-arm instead of capturing a mid-flight position — a
+        resize would then faithfully restore the wrong place."""
+        self._anchor_capture_id = 0
+        quiet_for = GLib.get_monotonic_time() - self._last_value_change
+        if quiet_for < 200_000 and self._settle_retries < 20:
+            self._settle_retries += 1
+            self._schedule_anchor_capture()
+            return GLib.SOURCE_REMOVE
+        self._settle_retries = 0
+        self._capture_scroll_anchor()
         return GLib.SOURCE_REMOVE
+
+    def _schedule_anchor_capture(self, ms=250):
+        """(Re)arm the post-scroll anchor capture — called for user scrolls
+        and for programmatic jumps alike, so a reading anchor exists at
+        (nearly) all times for resizes to re-assert. Retries are counted
+        in _settle_capture_anchor; a fresh schedule resets them."""
+        if self._anchor_capture_id:
+            GLib.source_remove(self._anchor_capture_id)
+            self._settle_retries = 0
+        self._anchor_capture_id = GLib.timeout_add(
+            ms, self._settle_capture_anchor)
+
+    def _on_wheel_input(self, controller, _dx, _dy):
+        state = controller.get_current_event_state()
+        if state & Gdk.ModifierType.CONTROL_MASK:
+            return False  # Ctrl+wheel is zoom, not scrolling
+        self._last_scroll_input = GLib.get_monotonic_time()
+        return False  # never consume — the ScrolledWindow scrolls
+
+    _SCROLL_KEYVALS = frozenset((
+        Gdk.KEY_Up, Gdk.KEY_Down, Gdk.KEY_Page_Up, Gdk.KEY_Page_Down,
+        Gdk.KEY_Home, Gdk.KEY_End, Gdk.KEY_space,
+        Gdk.KEY_KP_Up, Gdk.KEY_KP_Down, Gdk.KEY_KP_Page_Up,
+        Gdk.KEY_KP_Page_Down, Gdk.KEY_KP_Home, Gdk.KEY_KP_End,
+    ))
+
+    def _on_scroll_key_input(self, _controller, keyval, _keycode, _state):
+        if keyval in self._SCROLL_KEYVALS:
+            self._last_scroll_input = GLib.get_monotonic_time()
+        return False
+
+    def _on_scrollbar_released(self, *_args):
+        self._scrollbar_held = False
+        self._last_scroll_input = GLib.get_monotonic_time()
+
+    def _user_scroll_recent(self):
+        """Did the reader actually touch a scroll input lately? (Wheel
+        ticks animate the adjustment for a few hundred ms; a held
+        scrollbar counts for as long as it's held.)"""
+        return (self._scrollbar_held
+                or GLib.get_monotonic_time() - self._last_scroll_input
+                < 1_500_000)
+
+    def _mark_programmatic_scroll(self, ms=400):
+        """Call before (or while) moving the reading scroll from code —
+        renders, verse navigation, anchor restores. _on_reading_scroll
+        ignores adjustment changes until the deadline passes, so layout
+        work never flips the toolbar."""
+        self._ignore_scroll_until = GLib.get_monotonic_time() + ms * 1000
+
+    def _sync_view_top_margin(self):
+        """Reserve the chrome band's current strip height above the
+        reading page, so the page keeps its original below-the-toolbar
+        look — rounded corners, gutter and all. Reveal/hide transitions
+        animate this margin with a compensating scroll (see
+        _animate_page_strip) so the text never rides along."""
+        if self._strip_anim is not None:
+            self._strip_anim.pause()
+            self._strip_anim = None
+        base, tb = self._strip_targets()
+        self._lex_paned.set_margin_top(
+            base + (tb if self._chrome_revealed else 0))
 
     def _reveal_chrome(self):
         """Force the pane toolbar back into view (tap, focus, module change)."""
@@ -1192,6 +1564,9 @@ class BiblePane(Gtk.Box):
             ink = self._text_color
         else:
             ink = auto_reading_ink(surface or ('#1e1e1e' if dark else '#f7f4ee'))
+        # The whole buffer reflows when this loads — adjustment churn from
+        # it must not flip the auto-hiding toolbar.
+        self._mark_programmatic_scroll()
         css = (f"textview {{ font-family: {family_decl}; "
                f"font-size: {self._font_size}pt; "
                f"font-weight: {weight}; "
@@ -1290,12 +1665,220 @@ class BiblePane(Gtk.Box):
         if self._lexicon_enabled == enabled:
             return
         self._lexicon_enabled = enabled
-        # Toggling adds/removes Strong's word tags from the markup, which
-        # requires a full re-render. Capture the verse currently at the top
-        # of the viewport so we can restore the user's reading position
-        # after the re-render instead of jumping back to the chapter start.
-        self._restore_top_verse = self._find_topmost_visible_verse()
-        self._fetch_and_render()
+        # No re-render: the toggle changes only which TextTags exist, never
+        # the text itself — Strong's tags are applied over the finished
+        # buffer (step 5 of _display). Tag/untag in place so the reading
+        # position physically cannot move. Non-Bible content never carries
+        # Strong's tags, so there is nothing to do for it at all.
+        if (self._rendered_verses is None
+                or self._module_type != 'Biblical Texts'):
+            return
+        if enabled:
+            self._tag_strong_words_in_place()
+        else:
+            self._remove_strong_tags()
+
+    def _tag_strong_words_in_place(self):
+        """Apply Strong's/morph/phrase tags to the already-rendered chapter,
+        verse by verse, using the source HTML kept in _rendered_verses."""
+        if not self._on_word_click:
+            return
+        table = self._buffer.get_tag_table()
+        for verse, html in self._rendered_verses:
+            tag = table.lookup(f'vnum_{verse}')
+            if tag is None:
+                continue
+            start = self._buffer.get_start_iter()
+            if not start.has_tag(tag) and not start.forward_to_tag_toggle(tag):
+                continue
+            end = start.copy()
+            end.forward_to_tag_toggle(tag)
+            self._tag_strong_words(start, end, html)
+
+    def _remove_strong_tags(self):
+        """Drop all Strong's-related tags (and the hover underline) from the
+        buffer — removing them from the tag table detaches them from the
+        text and keeps the table from accumulating stale entries."""
+        self._clear_strg_hover()
+        table = self._buffer.get_tag_table()
+        to_remove = []
+
+        def _collect(tag, _user_data):
+            name = tag.get_property('name') or ''
+            if name.startswith(('strg:', 'morph:', 'phrase:')):
+                to_remove.append(tag)
+
+        table.foreach(_collect, None)
+        for tag in to_remove:
+            table.remove(tag)
+
+    def _capture_scroll_anchor(self):
+        """Pixel-exact reading locus at the viewport top: (verse, char
+        offset within the verse's rendered range, px of the anchor line
+        already scrolled past the top edge). The restore counterpart is
+        _apply_scroll_anchor. Returns None when nothing anchorable is
+        rendered — callers fall back to the coarser top-verse probe."""
+        if not self._view.get_realized() or self._rendered_verses is None:
+            return None
+        # The user hasn't scrolled since the last capture/restore — their
+        # reading locus is, by definition, where we last anchored it.
+        # Reusing it makes toggle round-trips exact instead of re-deriving
+        # (and re-erring) from geometry every time.
+        if self._reading_anchor is not None:
+            return self._reading_anchor
+        adj = self._reading_scroll.get_vadjustment()
+        bx, by = self._view.window_to_buffer_coords(
+            Gtk.TextWindowType.TEXT,
+            max(40, self._view.get_left_margin() + 20), 1)
+        # by, NOT adj+1: window→buffer conversion subtracts the view's top
+        # margin, and the snap below must compare get_iter_location values
+        # (same layout frame as by) against the converted probe — mixing
+        # frames put the reference more than a line off and made the
+        # snap flip-flop.
+        probe_y = by
+        ok, it = self._view.get_iter_at_location(bx, by)
+        if not ok:
+            return None
+        # get_iter_at_location can land a display line off when the probe
+        # falls into inter-line spacing (pixels_below_lines / CSS
+        # line-height). Snap along display lines until the iter's own
+        # reported box (per get_iter_location — the same measurement the
+        # restore uses) is the last one starting at or above the probe.
+        # Without this the captured pixel delta exceeds a line height and
+        # every capture→restore round trip ratchets the view up one line.
+        loc = self._view.get_iter_location(it)
+        guard = 0
+        while loc.y > probe_y and guard < 8:
+            if not self._view.backward_display_line(it):
+                break
+            loc = self._view.get_iter_location(it)
+            guard += 1
+        while guard < 8:
+            nxt = it.copy()
+            if not self._view.forward_display_line(nxt):
+                break
+            nloc = self._view.get_iter_location(nxt)
+            if nloc.y <= probe_y:
+                it, loc = nxt, nloc
+                guard += 1
+            else:
+                break
+        vtag = None
+        hops = 0
+        while vtag is None:
+            for tag in it.get_tags():
+                name = tag.get_property('name') or ''
+                if name.startswith('vnum_'):
+                    vtag = tag
+                    break
+            if vtag is None:
+                # The probe landed on untagged content (chapter heading,
+                # blank line). Walk forward to the first verse on screen
+                # instead of giving up — a miss here used to mean "jump
+                # to the chapter start". Anonymous span tags toggle often,
+                # so allow a generous number of hops.
+                hops += 1
+                if hops > 32 or not it.forward_to_tag_toggle(None):
+                    return None
+        try:
+            verse = int(vtag.get_property('name').split('_', 1)[1])
+        except (ValueError, IndexError):
+            return None
+        start = it.copy()
+        if not start.starts_tag(vtag):
+            start.backward_to_tag_toggle(vtag)
+        # Count visible-text chars only, skipping footnote-marker glyphs
+        # (fnote: tags): markers come and go with the f* toggle, so an
+        # offset counted over them can't round-trip between the two buffer
+        # states — the residual one-line-per-toggle walk the toggle had.
+        offset_in_verse = _visible_chars_between(start, it)
+        # Negative when the anchor sits below the viewport top (heading
+        # case above) — the restore then reproduces that gap exactly.
+        delta = adj.get_value() - self._view.get_iter_location(it).y
+        self._reading_anchor = (verse, offset_in_verse, delta)
+        return self._reading_anchor
+
+    def _apply_scroll_anchor(self, anchor):
+        """Scroll so the anchored character's line sits at the same pixel
+        offset from the viewport top as when it was captured. scroll_to_mark
+        does the rough placement (its pending-scroll survives GTK's lazy
+        line validation, which a bare set_value does not), then corrective
+        passes re-assert the exact pixel once geometry has settled."""
+        verse, offset_in_verse, delta = anchor
+        self._mark_programmatic_scroll()
+        verse = self._resolve_present_verse(verse)
+        tag = self._buffer.get_tag_table().lookup(f'vnum_{verse}')
+        if tag is None:
+            return GLib.SOURCE_REMOVE
+        it = self._buffer.get_start_iter()
+        if not it.has_tag(tag) and not it.forward_to_tag_toggle(tag):
+            return GLib.SOURCE_REMOVE
+        end = it.copy()
+        end.forward_to_tag_toggle(tag)
+        # Advance offset_in_verse VISIBLE chars (mirror of the capture's
+        # marker-skipping count), stopping at the verse edge.
+        _forward_visible_chars(it, offset_in_verse, end)
+        mark = self._buffer.create_mark(None, it, True)
+        self._view.scroll_to_mark(mark, 0.0, True, 0.0, 0.0)
+        seq = self._anchor_seq
+        input_t0 = self._last_scroll_input
+        state = {'last_y': None, 'polls': 0}
+
+        def stale():
+            # Superseded by a newer render, the user grabbed the wheel or
+            # scrollbar mid-correction (their motion wins), or the chrome
+            # strip is animating (its per-frame compensation owns the
+            # adjustment) — stop steering.
+            return (seq != self._anchor_seq
+                    or self._scrollbar_held
+                    or self._strip_anim is not None
+                    or self._last_scroll_input != input_t0)
+
+        def reassert():
+            if mark.get_deleted():
+                return False
+            if stale():
+                self._buffer.delete_mark(mark)
+                return False
+            self._mark_programmatic_scroll()
+            loc = self._view.get_iter_location(
+                self._buffer.get_iter_at_mark(mark))
+            self._reading_scroll.get_vadjustment().set_value(loc.y + delta)
+            return loc.y
+
+        def correct():
+            y = reassert()
+            if y is False:
+                return GLib.SOURCE_REMOVE
+            state['polls'] += 1
+            # GTK keeps revalidating line-height estimates for a while
+            # after a render or resize, shifting geometry under earlier
+            # corrections — poll until the anchor's y stops moving.
+            if y == state['last_y'] or state['polls'] >= 12:
+                self._buffer.delete_mark(mark)
+                return GLib.SOURCE_REMOVE
+            state['last_y'] = y
+            GLib.timeout_add(120, correct)
+            return GLib.SOURCE_REMOVE
+
+        def pin(_widget, _clock):
+            # Frame-rate glue while validation churns: without it the
+            # 120ms polls visibly chase the shifting layout (the "text
+            # moves around a bit" on lexicon-panel open). Never deletes
+            # the mark — the poll loop owns cleanup and stops this by
+            # deleting it.
+            if mark.get_deleted() or stale():
+                return GLib.SOURCE_REMOVE
+            reassert()
+            return GLib.SOURCE_CONTINUE
+
+        # Default-idle runs after GTK's validation cycle (and with it
+        # scroll_to_mark's pending scroll). The tick callback rides the
+        # frame clock, which may not tick headless — the poll loop is the
+        # fallback that always runs.
+        GLib.idle_add(correct)
+        self._view.add_tick_callback(pin)
+        return GLib.SOURCE_REMOVE
 
     def _find_topmost_visible_verse(self):
         if not self._view.get_realized():
@@ -1330,6 +1913,9 @@ class BiblePane(Gtk.Box):
         return max(earlier) if earlier else verse_num
 
     def _scroll_to_verse_silent(self, verse_num):
+        self._mark_programmatic_scroll()
+        self._reading_anchor = None  # a jump IS a new reading locus
+        self._schedule_anchor_capture(400)  # …and worth holding, too
         verse_num = self._resolve_present_verse(verse_num)
         tag = self._buffer.get_tag_table().lookup(f'vnum_{verse_num}')
         if not tag:
@@ -1379,9 +1965,12 @@ class BiblePane(Gtk.Box):
     # grows unbounded across navigations — set_text('') removes content
     # but tags persist, and set_priority() then becomes O(N) in tag count.
     _CHAPTER_SCOPED_TAG_PREFIXES = ('vnum_', 'strg:', 'morph:', 'phrase:',
-                                    'devref:')
+                                    'devref:', 'fnote:')
 
     def _clear_chapter_scoped_tags(self):
+        # Every buffer rebuild passes through here — invalidate any
+        # in-flight scroll-anchor corrections aimed at the old layout.
+        self._anchor_seq += 1
         table = self._buffer.get_tag_table()
         to_remove = []
 
@@ -1422,13 +2011,23 @@ class BiblePane(Gtk.Box):
             self._display_unsupported_module()
             return
         book, chapter, module = self._book, self._chapter, self._module
+        # Last-write-wins across overlapping fetches. The location guard in
+        # _display can't catch two renders of the SAME chapter (e.g. rapid
+        # footnote toggling faster than the fetch): the first consumed the
+        # scroll restore, the late one found none and jumped to the chapter
+        # start. Only the most recently requested render may display.
+        self._fetch_gen += 1
+        gen = self._fetch_gen
 
         def fetch():
             if ebible_bridge.is_ebible_module(module):
                 verses = ebible_bridge.load_chapter(module, book, chapter)
+                notes = ebible_bridge.chapter_footnotes(module, book, chapter)
             else:
                 verses = sword_bridge.load_chapter(module, book, chapter)
-            GLib.idle_add(self._display, verses, book, chapter, module)
+                notes = sword_bridge.chapter_footnotes(module, book, chapter)
+            GLib.idle_add(self._display, verses, book, chapter, module,
+                          notes, gen)
 
         threading.Thread(target=fetch, daemon=True).start()
 
@@ -1571,10 +2170,21 @@ class BiblePane(Gtk.Box):
                     self, self._book, self._chapter, v))
         self._view.add_child_at_anchor(btn, anchor)
 
-    def _display(self, verses, book, chapter, module):
+    def _display(self, verses, book, chapter, module, notes=None, gen=None):
         if book != self._book or chapter != self._chapter or module != self._module:
             return GLib.SOURCE_REMOVE
+        if gen is not None and gen != self._fetch_gen:
+            return GLib.SOURCE_REMOVE  # superseded by a newer fetch
+        # The rebuild collapses and re-grows the adjustment; none of that
+        # is the reader scrolling.
+        self._mark_programmatic_scroll()
         self._rendered_verses = verses
+        # The re-theming path re-calls _display without notes; reuse the
+        # set from the original fetch.
+        if notes is None:
+            notes = self._rendered_notes or {}
+        else:
+            self._rendered_notes = notes
 
         dark = Adw.StyleManager.get_default().get_dark()
         annos = annotations.get_annotations(module, book, chapter)
@@ -1589,6 +2199,7 @@ class BiblePane(Gtk.Box):
         self._search.cancel_hl_timer()
         self._buffer.set_text('')
         self._clear_chapter_scoped_tags()
+        self._chapter_footnotes = {}
 
         # Coverage check — every verse in `verses` may be empty if the
         # module doesn't include this book/chapter (e.g. SBLGNT is NT
@@ -1649,6 +2260,10 @@ class BiblePane(Gtk.Box):
         else:
             iterable = ((v, v, html) for v, html in verses)
 
+        # Footnote marker letters run a, b, c… through the whole chapter
+        # (print-Bible style), not restarting per verse.
+        fn_letter_idx = 0
+
         for start_v, end_v, html in iterable:
             plain = re.sub(r'<[^>]+>', '', str(html)).strip()
 
@@ -1692,10 +2307,30 @@ class BiblePane(Gtk.Box):
                 # become clickable styled links carrying a devref tag.
                 # Plain segments between refs still go through
                 # _html_to_markup so <hi>, <i>, etc. keep working.
-                self._insert_commentary_body(html, dark)
+                src_html = str(html)
+                vnotes = {}
+                if self._show_footnotes and notes.get(start_v):
+                    # A grouped section renders one identical block for its
+                    # whole verse range, so its anchors — and note bodies —
+                    # are the same for every verse; the start verse's set
+                    # serves the group.
+                    vnotes = {n: (t, b) for n, t, b in notes[start_v]}
+                    src_html = _NOTE_ANCHOR_RE.sub(
+                        lambda m: f'[[FN_{m.group(1)}]]', src_html)
+                fn_letter_idx = self._insert_commentary_body(
+                    src_html, dark, start_v, vnotes, fn_letter_idx)
                 self._buffer.insert(self._buffer.get_end_iter(), '\n')
             else:
-                v_text_markup = _html_to_markup(html, dark)
+                # Footnote anchors → [[FN_n]] tokens before the generic tag
+                # strip in _html_to_markup (which otherwise removes them —
+                # the markers-off state is exactly that removal).
+                src_html = str(html)
+                vnotes = {}
+                if self._show_footnotes and notes.get(start_v):
+                    vnotes = {n: (t, b) for n, t, b in notes[start_v]}
+                    src_html = _NOTE_ANCHOR_RE.sub(
+                        lambda m: f'[[FN_{m.group(1)}]]', src_html)
+                v_text_markup = _html_to_markup(src_html, dark)
                 # Drop-cap: enlarge the first letter of verse 1 for a
                 # print-Bible feel. Kept even under a highlight — the band is
                 # painted at a uniform height by BibleTextView, so the cap
@@ -1714,10 +2349,21 @@ class BiblePane(Gtk.Box):
                             f'{m.group(1)}<span size="200%" weight="bold">'
                             f'{m.group(2)}</span>{v_text_markup[m.end():]}'
                         )
+                # Tokens → superscript marker letters, after the drop-cap
+                # transform so the recorded plain-text offsets are final.
+                fn_markers = []
+                if vnotes:
+                    v_text_markup, fn_markers, fn_letter_idx = (
+                        _substitute_footnote_markers(
+                            v_text_markup, vnotes, dark, fn_letter_idx))
                 try:
                     self._buffer.insert_markup(self._buffer.get_end_iter(), v_text_markup + ' ', -1)
                 except Exception:
                     self._buffer.insert(self._buffer.get_end_iter(), plain + ' ')
+                    fn_markers = []  # fallback text has no marker letters
+                if fn_markers:
+                    self._apply_footnote_tags(
+                        start_v, fn_markers, vnotes, text_start_mark)
                 # Subtle 'related artifact' marker — a small clickable
                 # amphora icon beside any verse a gallery artifact
                 # references. Rare (~34 verses Bible-wide), so it reads as
@@ -1763,21 +2409,43 @@ class BiblePane(Gtk.Box):
             v = self._resolve_present_verse(self._target_verse)
             self._target_verse = None
             self._restore_top_verse = None
+            self._restore_anchor = None
+            self._reading_anchor = None
             # Navigation to a specific verse — mark it as the active
             # verse so the current-verse indicator sits on it after
             # the scroll lands.
             self._selected_verse = v
             self._set_current_verse_indicator(v)
             GLib.idle_add(self._scroll_to_verse, v)
+        elif self._restore_anchor is not None:
+            anchor = self._restore_anchor
+            self._restore_anchor = None
+            GLib.idle_add(self._apply_scroll_anchor, anchor)
         elif self._restore_top_verse is not None:
             v = self._restore_top_verse
             self._restore_top_verse = None
             GLib.idle_add(self._scroll_to_verse_silent, v)
         else:
+            # Belt and braces: scroll_to_iter's pending scroll can be
+            # dropped during a buffer swap (observed: navigation from a
+            # deep scroll landed at the clamp, not the top — pre-existing
+            # even before the anchor work). Position 0 needs no layout
+            # validation, so set it directly as well.
+            self._reading_scroll.get_vadjustment().set_value(0)
             self._view.scroll_to_iter(self._buffer.get_start_iter(), 0.0, False, 0, 0)
             # Fresh chapter render with no specific target — the
             # previous chapter's active verse is no longer applicable.
             self._selected_verse = None
+            self._reading_anchor = None
+            self._schedule_anchor_capture(400)
+            # New chapter, top of page: starting context, chrome present.
+            # (The scroll gate keys off real input, so the deadzone
+            # can't reveal it for programmatic scrolls like this one.)
+            # Snap the strip open WITHOUT scroll compensation — there is
+            # no reading locus to preserve, and a compensated reveal
+            # would land the fresh chapter 32px below its top.
+            self._reveal_chrome()
+            self._sync_view_top_margin()
 
         # If _selected_verse survived (e.g. user clicked verse 5 in this
         # chapter, then chapter re-rendered for an annotation save), the
@@ -1828,43 +2496,61 @@ class BiblePane(Gtk.Box):
         r'<reference\s[^>]*osisRef="([^"]+)"[^>]*>(.*?)</reference>',
         re.DOTALL)
 
-    def _insert_commentary_body(self, html, dark):
+    def _insert_commentary_body(self, html, dark, verse, vnotes, fn_idx):
         """Render a commentary verse, breaking on <reference> tags so
         each cross-reference becomes a clickable styled link carrying
         a devref: tag. The plain segments between references go through
         _html_to_markup so existing emphasis (<hi>, <i>, <q>, etc.)
-        keeps working."""
+        keeps working.
+
+        Footnote [[FN_n]] tokens (pre-substituted by _display) become
+        superscript markers here. Insertion is segmented, so marker
+        offsets are taken against each segment's own start mark — a
+        whole-verse base would drift across the styled reference
+        insertions. Returns the chapter's next marker-letter index."""
         s = str(html)
         pos = 0
+
+        def insert_plain(seg):
+            nonlocal fn_idx
+            # strip=False so a trailing space before the reference
+            # ("Elijah, " + ref) isn't swallowed by .strip(), which
+            # would render as "Elijah,Rom 11:1-5".
+            markup = _html_to_markup(seg, dark, strip=False)
+            if not markup:
+                return
+            fn_markers = []
+            if vnotes:
+                markup, fn_markers, fn_idx = _substitute_footnote_markers(
+                    markup, vnotes, dark, fn_idx)
+            seg_mark = self._buffer.create_mark(
+                None, self._buffer.get_end_iter(), True)
+            try:
+                self._buffer.insert_markup(
+                    self._buffer.get_end_iter(), markup, -1)
+            except Exception:
+                self._buffer.insert(
+                    self._buffer.get_end_iter(),
+                    _FN_TOKEN_RE.sub('', re.sub(r'<[^>]+>', '', seg)))
+                fn_markers = []  # fallback text has no marker letters
+            if fn_markers:
+                self._apply_footnote_tags(verse, fn_markers, vnotes, seg_mark)
+            self._buffer.delete_mark(seg_mark)
+
         for m in self._REF_PATTERN.finditer(s):
             if m.start() > pos:
-                # strip=False so a trailing space before the reference
-                # ("Elijah, " + ref) isn't swallowed by .strip(), which
-                # would render as "Elijah,Rom 11:1-5".
-                markup = _html_to_markup(s[pos:m.start()], dark, strip=False)
-                if markup:
-                    try:
-                        self._buffer.insert_markup(
-                            self._buffer.get_end_iter(), markup, -1)
-                    except Exception:
-                        self._buffer.insert(
-                            self._buffer.get_end_iter(),
-                            re.sub(r'<[^>]+>', '', s[pos:m.start()]))
+                insert_plain(s[pos:m.start()])
             osis = m.group(1)
-            ref_text = re.sub(r'<[^>]+>', '', m.group(2)).strip()
+            # Tokens never belong inside a reference's link text; drop any
+            # that land there so they can't render literally.
+            ref_text = _FN_TOKEN_RE.sub(
+                '', re.sub(r'<[^>]+>', '', m.group(2))).strip()
             if ref_text:
                 self._insert_ref_segment(ref_text, osis, dark)
             pos = m.end()
         if pos < len(s):
-            markup = _html_to_markup(s[pos:], dark, strip=False)
-            if markup:
-                try:
-                    self._buffer.insert_markup(
-                        self._buffer.get_end_iter(), markup, -1)
-                except Exception:
-                    self._buffer.insert(
-                        self._buffer.get_end_iter(),
-                        re.sub(r'<[^>]+>', '', s[pos:]))
+            insert_plain(s[pos:])
+        return fn_idx
 
     def _insert_ref_segment(self, text, osis, dark):
         """Insert one cross-reference: styled text + devref: tag over
@@ -1889,7 +2575,38 @@ class BiblePane(Gtk.Box):
         self._buffer.apply_tag(tag, start, end)
         self._buffer.delete_mark(start_mark)
 
+    def _apply_footnote_tags(self, verse, markers, vnotes, text_start_mark):
+        """Tag each marker label with fnote:{verse}:{n} (click → peek) and
+        stash (type, body, label) for the handler. Offsets from
+        _substitute_footnote_markers are relative to text_start_mark."""
+        base = self._buffer.get_iter_at_mark(text_start_mark).get_offset()
+        table = self._buffer.get_tag_table()
+        for off, n, label in markers:
+            name = f'fnote:{verse}:{n}'
+            tag = table.lookup(name) or self._buffer.create_tag(name)
+            s = self._buffer.get_iter_at_offset(base + off)
+            e = self._buffer.get_iter_at_offset(base + off + len(label))
+            self._buffer.apply_tag(tag, s, e)
+            ftype, body = vnotes[n]
+            self._chapter_footnotes[(verse, n)] = (ftype, body, label)
+
+    def set_show_footnotes(self, enabled):
+        if self._show_footnotes == bool(enabled):
+            return
+        self._show_footnotes = bool(enabled)
+        if not self._is_verse_navigable():
+            return  # flag applies whenever a Bible next renders here
+        # Markers are baked into the rendered markup — re-render, restoring
+        # the exact reading locus (pixel anchor; coarse verse fallback).
+        self._restore_anchor = self._capture_scroll_anchor()
+        if self._restore_anchor is None:
+            self._restore_top_verse = self._find_topmost_visible_verse()
+        self._fetch_and_render()
+
     def _scroll_to_verse(self, verse_num):
+        self._mark_programmatic_scroll()
+        self._reading_anchor = None  # a jump IS a new reading locus
+        self._schedule_anchor_capture(400)  # …and worth holding, too
         verse_num = self._resolve_present_verse(verse_num)
         tag = self._buffer.get_tag_table().lookup(f'vnum_{verse_num}')
         if tag:
@@ -2382,6 +3099,7 @@ class BiblePane(Gtk.Box):
         strong_num = None
         morph = None
         devref = None
+        fnote = None
         phrase_tag = None
         for tag in it.get_tags():
             name = tag.get_property('name')
@@ -2396,14 +3114,39 @@ class BiblePane(Gtk.Box):
                 morph = name[6:]
             elif name and name.startswith('devref:'):
                 devref = name[7:]
+            elif name and name.startswith('fnote:'):
+                fnote = name[6:]
             elif name and name.startswith('phrase:'):
                 phrase_tag = tag
+        if fnote is None:
+            # A marker is a single narrow superscript glyph, and
+            # get_iter_at_location resolves a click on its right half to
+            # the NEXT character — so exact-iter tagging misses half the
+            # glyph. Probe one char to each side and accept a marker there.
+            for step in (-1, 1):
+                p = it.copy()
+                moved = p.backward_char() if step < 0 else p.forward_char()
+                if not moved:
+                    continue
+                for tag in p.get_tags():
+                    name = tag.get_property('name') or ''
+                    if name.startswith('fnote:'):
+                        fnote = name[6:]
+                        it = p  # anchor the peek on the marker itself
+                        break
+                if fnote:
+                    break
         if n_press > 1:
             return
         if devref:
             result = sword_bridge.parse_osis_ref(devref)
             if result and self._on_word_study_navigate:
                 self._on_word_study_navigate(*result)
+            return
+        if fnote:
+            # Peek only — no verse broadcast, so the other pane doesn't
+            # re-render (and reflow) underneath the open popover.
+            self._show_footnote_peek(fnote, it)
             return
         if verse_num is not None:
             self._selected_verse = verse_num
@@ -2475,12 +3218,13 @@ class BiblePane(Gtk.Box):
         found, it = self._view.get_iter_at_location(bx, by)
         if not found:
             return
-        # Suppress only on navigation links (devref); Strong's-tagged words
+        # Suppress on navigation links (devref) and footnote markers (the
+        # first click already opened the note peek); Strong's-tagged words
         # should still open the dict popup on double-click — the lexicon
         # opens on the first click, the dict on the second.
         for tag in it.get_tags():
             name = tag.get_property('name') or ''
-            if name.startswith('devref:'):
+            if name.startswith(('devref:', 'fnote:')):
                 return
         word_start = it.copy()
         word_end = it.copy()
@@ -2586,18 +3330,12 @@ class BiblePane(Gtk.Box):
         rect.height = r1.height
         self._show_dict_popup_at(word, self._view, rect)
 
-    def _show_dict_popup_at(self, word, anchor_widget, rect):
-        # A lightweight "Look Up" peek anchored at the double-clicked word,
-        # not a detached window centred on the screen. Deep study still goes
-        # through the Strong's lexicon panel. `anchor_widget`/`rect` say where
-        # to point the arrow (the reading view, or a card label).
-        #
-        # The popover is *non-autohide* and reused per pane: an autohide
-        # popover grabs the pointer the instant it's shown, so the very
-        # double-click that opened it would read as a click-outside and dismiss
-        # it. We dismiss it ourselves instead — on any click in the view
-        # (_on_dict_click), a new lookup, or a module change.
-
+    def _ensure_peek_popover(self, anchor_widget):
+        """The shared non-autohide peek popover — dictionary look-ups and
+        footnote markers use the same reused instance, so the dismissal
+        paths (click in view, Esc, module change) cover both. Created once
+        per pane with the self-heal closed-handler; re-parented to whichever
+        widget anchors the current peek."""
         # Guard the self-heal (below) against our own teardown/rebuild: True
         # while we intentionally close or replace the popover.
         self._dict_user_closed = True
@@ -2638,6 +3376,80 @@ class BiblePane(Gtk.Box):
             if pop.get_parent() is not None:
                 pop.unparent()
             pop.set_parent(anchor_widget)
+        return pop
+
+    def _show_footnote_peek(self, key, it):
+        """Show a footnote's body in the shared peek popover, anchored at
+        the clicked marker letter. `key` is '{verse}:{n}' from the fnote:
+        tag. Content is already in memory (no fetch), and the click doesn't
+        trigger a cross-pane re-render, so unlike the dictionary peek this
+        shows immediately at full opacity — the self-heal machinery stays
+        armed anyway in case some other relayout lands on it."""
+        try:
+            verse_s, n = key.split(':', 1)
+            verse = int(verse_s)
+        except ValueError:
+            return
+        entry = self._chapter_footnotes.get((verse, n))
+        if not entry:
+            return
+        ftype, body, letter = entry
+        r = self._view.get_iter_location(it)
+        wx, wy = self._view.buffer_to_window_coords(
+            Gtk.TextWindowType.WIDGET, r.x, r.y)
+        rect = Gdk.Rectangle()
+        rect.x, rect.y, rect.width, rect.height = (
+            wx, wy, max(1, r.width), r.height)
+
+        pop = self._ensure_peek_popover(self._view)
+        # Bump the generation so a dictionary fetch already in flight can't
+        # replace this note's content when it returns.
+        self._dict_gen = getattr(self, '_dict_gen', 0) + 1
+        pop.set_position(Gtk.PositionType.BOTTOM)
+        pop.set_pointing_to(rect)
+
+        dark = Adw.StyleManager.get_default().get_dark()
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        content.set_size_request(280, -1)
+        cap_text = (_('Cross-references ({letter}) · verse {v}')
+                    if ftype == 'crossReference'
+                    else _('Footnote ({letter}) · verse {v}')).format(
+                        letter=letter, v=verse)
+        cap = Gtk.Label(label=cap_text, xalign=0)
+        cap.add_css_class('caption')
+        cap.add_css_class('dim-label')
+        content.append(cap)
+        lbl = Gtk.Label(xalign=0, wrap=True)
+        lbl.add_css_class('fnote-body')
+        lbl.set_max_width_chars(40)
+        try:
+            lbl.set_markup(_html_to_markup(body, dark))
+        except Exception:
+            lbl.set_text(re.sub(r'<[^>]+>', '', body))
+        content.append(lbl)
+        for m in ('top', 'bottom', 'start', 'end'):
+            getattr(content, f'set_margin_{m}')(14)
+        pop.set_child(content)
+
+        self._dict_retries = 0
+        self._dict_open_at = GLib.get_monotonic_time()
+        self._dict_user_closed = False
+        pop.set_opacity(1.0)
+        pop.popup()
+
+    def _show_dict_popup_at(self, word, anchor_widget, rect):
+        # A lightweight "Look Up" peek anchored at the double-clicked word,
+        # not a detached window centred on the screen. Deep study still goes
+        # through the Strong's lexicon panel. `anchor_widget`/`rect` say where
+        # to point the arrow (the reading view, or a card label).
+        #
+        # The popover is *non-autohide* and reused per pane: an autohide
+        # popover grabs the pointer the instant it's shown, so the very
+        # double-click that opened it would read as a click-outside and dismiss
+        # it. We dismiss it ourselves instead — on any click in the view
+        # (_on_dict_click), a new lookup, or a module change.
+
+        pop = self._ensure_peek_popover(anchor_widget)
 
         # Stale-result guard: a newer lookup bumps the generation so an
         # earlier fetch returning late can't overwrite the current content.
@@ -2979,6 +3791,9 @@ class BiblePane(Gtk.Box):
         self._update_font_css()
         self._apply_reading_page_edge()
         if self._is_verse_navigable() and self._rendered_verses is not None:
+            # Same text, new colors — hold the reading locus through the
+            # rebuild (without this a theme flip jumped to the chapter top).
+            self._restore_anchor = self._capture_scroll_anchor()
             self._display(self._rendered_verses,
                           self._book, self._chapter, self._module)
         else:
@@ -3031,6 +3846,9 @@ class BiblePane(Gtk.Box):
         is_devot = self._is_devotional
         is_chapter_keyed = self._is_verse_navigable()
         self._date_nav_revealer.set_reveal_child(is_devot)
+        # Devotionals keep the date bar in the chrome band — reserve its
+        # height too (the switch re-renders anyway, so no mid-read reflow).
+        self._sync_view_top_margin()
         # Sync / chapter-note / per-pane search are only meaningful when
         # the pane is rendering a verse-keyed chapter. Devotionals get
         # date navigation instead; Generic Books get the TOC button.
@@ -3070,6 +3888,8 @@ class BiblePane(Gtk.Box):
         # even drive the reading scroll — card views don't).
         self._reveal_chrome()
         self._fetch_and_render()
+        if self._on_module_switched:
+            self._on_module_switched()
 
     def select_verse(self, verse_num):
         """Called by other panes broadcasting a verse selection."""

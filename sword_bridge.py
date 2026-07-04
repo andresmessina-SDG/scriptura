@@ -56,6 +56,10 @@ def wait_warm():
 # session's working set.
 _CHAPTER_CACHE_CAP = 200
 _cache = OrderedDict()
+# Footnotes for the same chapters: {verse: [(marker_index, type, body)]}.
+# Filled by the same render pass and evicted in lockstep with _cache
+# (every insert goes through _cache_chapter, which writes both).
+_notes_cache = OrderedDict()
 # Strong's lookup cache — same shape, smaller cap. A typical chapter
 # references 30–50 unique Strong's numbers; 500 covers many chapters of
 # recent activity before evicting.
@@ -63,12 +67,16 @@ _STRONGS_CACHE_CAP = 500
 _strongs_cache = OrderedDict()
 
 
-def _cache_chapter(key, value):
-    """Insert a chapter render with LRU eviction. Caller holds _lock."""
+def _cache_chapter(key, value, notes):
+    """Insert a chapter render + its footnotes with LRU eviction (the two
+    caches stay in lockstep). Caller holds _lock."""
     _cache[key] = value
     _cache.move_to_end(key)
+    _notes_cache[key] = notes
+    _notes_cache.move_to_end(key)
     if len(_cache) > _CHAPTER_CACHE_CAP:
         _cache.popitem(last=False)
+        _notes_cache.popitem(last=False)
 
 
 def _cache_strong(strong_num, value):
@@ -208,6 +216,13 @@ def mgr():
                 # we want to retry on next call after the user fixes their setup.
                 _sword_log.exception('SWMgr init failed')
                 return _null_mgr
+            # Footnote bodies are moved into entry attributes at render
+            # time by SWORD's footnote filters (read back by
+            # chapter_footnotes); inline all that remains is an empty
+            # <note swordFootnote="N"/> anchor, which the pane either
+            # turns into a marker or strips. Without this option the
+            # filters drop the notes entirely.
+            _mgr.setGlobalOption('Footnotes', 'On')
         return _mgr
 
 
@@ -216,6 +231,7 @@ def _reset():
     with _lock:
         _mgr = None
         _cache.clear()
+        _notes_cache.clear()
         _strongs_cache.clear()
     with _indexing_lock:
         _indexing_threads.clear()
@@ -348,6 +364,7 @@ def load_chapter(module_name, book, chapter):
             return []
 
         results = []
+        notes = {}
         for v in range(1, verse_max + 1):
             try:
                 vk.setVerse(v)
@@ -355,15 +372,77 @@ def load_chapter(module_name, book, chapter):
                 results.append((v, mod.renderText()))
             except Exception:
                 continue
+            v_notes = _collect_footnotes(mod)
+            if v_notes:
+                notes[v] = v_notes
 
-        _cache_chapter(key, results)
+        _cache_chapter(key, results, notes)
         return results
+
+
+def _collect_footnotes(mod):
+    """[(marker_index, type, body_html)] for the verse just rendered.
+
+    Must run right after renderText(): the footnote filters move each
+    note's body out of the text into the module's entry attributes, and
+    the next setKey/render replaces the map. marker_index matches the
+    swordFootnote="N" attribute on the inline anchor."""
+    out = []
+    try:
+        ea = mod.getEntryAttributesMap()
+        for k1 in ea.keys():
+            if str(k1) != 'Footnote':
+                continue
+            fmap = ea[k1]
+            for k2 in fmap.keys():
+                note = fmap[k2]
+                # AttributeValueMap has no .get(); walk the keys.
+                fields = {str(k3): str(note[k3]) for k3 in note.keys()}
+                body = fields.get('body', '').strip()
+                if body:
+                    out.append((str(k2), fields.get('type', ''), body))
+    except Exception:
+        _sword_log.exception('footnote attribute read failed')
+    out.sort(key=lambda t: int(t[0]) if t[0].isdigit() else 0)
+    return out
+
+
+def chapter_footnotes(module_name, book, chapter):
+    """{verse: [(marker_index, type, body_html), ...]} for a chapter.
+
+    Populated by the same render pass as load_chapter — a cache hit here
+    is free, a miss renders (and caches) the chapter."""
+    key = (module_name, book, chapter)
+    with _lock:
+        if key in _notes_cache:
+            _notes_cache.move_to_end(key)
+            return _notes_cache[key]
+    load_chapter(module_name, book, chapter)
+    with _lock:
+        return _notes_cache.get(key, {})
 
 
 def module_type(module_name):
     """Return the SWORD type string for a module: 'Biblical Texts', 'Commentaries', etc."""
     mod = mgr().getModule(module_name)
     return str(mod.getType()) if mod else None
+
+
+def module_has_footnotes(module_name):
+    """True if the module's conf declares a footnote filter
+    (GlobalOptionFilter=OSISFootnotes / ThMLFootnotes / GBFFootnotes) —
+    i.e. its markup can carry translator notes at all. getConfigEntry
+    returns only the FIRST of a repeated conf key (SBLGNT's first
+    GlobalOptionFilter is UTF8GreekAccents), so walk the full config
+    multimap instead."""
+    try:
+        mod = mgr().getModule(module_name)
+        if mod is None:
+            return False
+        return any(str(k) == 'GlobalOptionFilter' and 'Footnotes' in str(v)
+                   for k, v in mod.getConfigMap().items())
+    except Exception:
+        return False
 
 
 def is_devotional_module(module_name):
