@@ -2404,9 +2404,14 @@ class BiblePane(Gtk.Box):
             self._buffer.delete_mark(text_start_mark)
 
         if self._target_verse is not None:
-            # Resolve to a rendered verse up front so the indicator and the
-            # scroll agree when the target is an inner verse of a bridge.
-            v = self._resolve_present_verse(self._target_verse)
+            # The target arrives in app-space (KJV) numbering; the rendered
+            # verse numbers are the module's own. Translate where the module
+            # is versification-mapped (no-op otherwise), then resolve to a
+            # rendered verse up front so the indicator and the scroll agree
+            # when the target is an inner verse of a bridge.
+            v = sword_bridge.map_target_verse(
+                self._module, self._book, self._chapter, self._target_verse)
+            v = self._resolve_present_verse(v)
             self._target_verse = None
             self._restore_top_verse = None
             self._restore_anchor = None

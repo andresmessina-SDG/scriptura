@@ -507,6 +507,25 @@ drift is 0px.
   key and resets. A wrong key decrypts to garbage, which the pane catches
   on render (see `_printable_ratio` / `_display_cipher_locked`) and the
   window turns into an "Edit Key" toast.
+- **Cross-versification mapping** — app-space references (navigation,
+  pane sync, bookmarks, TSK cross-refs, annotation keys) are KJV-shaped;
+  modules keyed to another system (Vulg, Synodal, …) number the same
+  text differently, most visibly the Greek/Latin psalter (one behind the
+  KJV for most of the book). `VerseKey.positionFrom` applies the
+  engine's av11n tables; a per-(module, book) chapter map — each app
+  chapter anchored by its first verse, cached in `_book_maps`, adopted
+  only when non-identity — translates inside `load_chapter`,
+  `chapter_count`, `verse_count` and `chapter_in_index`, and
+  `map_target_verse` converts a verse target for the pane scroll
+  (`pane._display`). Merged chapters (KJV Ps 9+10 = Vulg 9) share a
+  target; split chapters (KJV Ps 116 = Vulg 114+115) render the anchor
+  chapter and lose direct access to the split-off tail — range-rendering
+  across module chapters is the known follow-up if that residue matters.
+  Systems without mapping tables read back as identity and keep plain
+  module-space behavior. Verse numbers shown are always the module's own
+  printed numbering (Vulgate title-verses shift by one). FTS index rows
+  store app-space chapter numbers (`_FTS_INDEX_VERSION` 2).
+
 ## Historical Commentaries (catena)
 
 A fourth pane mode (`_is_catena` in pane.py, alongside `_is_devotional`

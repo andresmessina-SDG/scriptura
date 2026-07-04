@@ -95,7 +95,10 @@ _indexing_lock = threading.Lock()
 FTS_INDEX_DIR = os.path.expanduser('~/.sword/fts5_indexes')
 MAX_SEARCH_RESULTS = 5000  # cap result count so a common word can't flood the UI
 # Bump when the index schema/tokenizer changes so stale indexes rebuild.
-_FTS_INDEX_VERSION = 1
+# v2: chapters of versification-mapped modules (Vulg/Synodal psalters…)
+# are stored under app-space (KJV) numbers, matching how navigation
+# addresses them since the cross-versification mapping landed.
+_FTS_INDEX_VERSION = 2
 
 
 def _get_index_path(module_name):
@@ -154,9 +157,12 @@ def _build_module_index(module_name, on_progress=None):
                     on_progress(i, total_books, book)
                 except Exception:
                     pass
-            # Module's own versification — a KJV-keyed count under- or
-            # over-iterates chapters for modules like RusSynodal/Wycliffe
-            # (load_chapter already renders with the module's system).
+            # App-space iteration bounds: for versification-mapped books
+            # chapter_count returns the KJV count and load_chapter
+            # translates each chapter, so index rows carry the same
+            # app-space numbers navigation uses. Unmapped books keep the
+            # module's own count (a KJV-keyed count would under- or
+            # over-iterate RusSynodal/Wycliffe).
             book_rows = []
             for ch in range(1, chapter_count(book, module_name) + 1):
                 for v_num, html in load_chapter(module_name, book, ch):
@@ -233,6 +239,7 @@ def _reset():
         _cache.clear()
         _notes_cache.clear()
         _strongs_cache.clear()
+        _book_maps.clear()
     with _indexing_lock:
         _indexing_threads.clear()
 
@@ -314,6 +321,10 @@ def _verse_key(module_name=None):
 
 def chapter_count(book, module_name=None):
     try:
+        # A mapped book is addressed in app-space chapters everywhere
+        # (load_chapter translates), so the app-space count governs.
+        if module_name and _chapter_map(module_name, book):
+            module_name = None
         vk = _verse_key(module_name)
         vk.setText(f'{book} 1:1')
         return vk.getChapterMax()
@@ -325,11 +336,131 @@ def chapter_count(book, module_name=None):
 
 def verse_count(book, chapter, module_name=None):
     try:
+        if module_name:
+            mapped = mapped_chapter(module_name, book, chapter)
+            if mapped:
+                book, chapter = mapped
         vk = _verse_key(module_name)
         vk.setText(f'{book} {chapter}:1')
         return vk.getVerseMax()
     except Exception:
         return 1
+
+
+# ── Cross-versification mapping ──────────────────────────────────────────────
+#
+# App-space references — window navigation, pane-to-pane sync, bookmarks,
+# TSK cross-refs, annotation keys — live in the default KJV-shaped
+# book/chapter/verse space. A module keyed to another versification
+# (Vulg, Synodal, LXX, …) numbers the same text differently, most
+# famously the Greek/Latin psalter sitting one psalm behind the
+# Hebrew/KJV numbering for most of the book; addressing such a module
+# with app-space numbers lands on the wrong psalm. VerseKey.positionFrom
+# applies the engine's av11n mapping tables between systems.
+#
+# Mapping is adopted per (module, book): each app chapter is anchored to
+# the module chapter holding its FIRST verse. Where the systems merge
+# chapters (KJV Ps 9+10 are one Vulgate psalm) two app chapters share a
+# module chapter and both show the whole merged psalm — the right text
+# unit either way. Where they split one (KJV Ps 116 spans Vulgate
+# 114+115) the anchor renders the module chapter containing the opening
+# verses; the split-off tail is only reachable through the neighbouring
+# app chapter when the tables allow. Systems the engine has no mapping
+# tables for come back as the identity and the book keeps today's
+# module-space behavior wholesale. Verse numbers inside a mapped chapter
+# stay the module's own (a Vulgate psalter shows its printed numbering,
+# including title-verses — KJV Ps 9:1 is Vulgate Ps 9:2).
+
+_book_maps = {}  # (module_name, book) → {app_chapter: (m_book, m_chapter)} | None
+
+
+def _module_v11n(module_name):
+    """The module's versification system, or None when it matches the
+    app space (KJV, or its KJVA superset — identical for the 66 books)."""
+    try:
+        mod = mgr().getModule(module_name)
+        v11n = str(mod.getConfigEntry('Versification') or '') if mod else ''
+        return v11n if v11n not in ('', 'KJV', 'KJVA') else None
+    except Exception:
+        return None
+
+
+def _map_ref(book, chapter, verse, to_v11n):
+    """One app-space (KJV) reference → (book, chapter, verse) in
+    `to_v11n`, or None. Guards against VerseKey's silent clamping of
+    unparseable input by round-tripping the source key first."""
+    try:
+        src = Sword.VerseKey()
+        src.setText(f'{book} {chapter}:{verse}')
+        if (str(src.getBookName()).lower() != book.lower()
+                or src.getChapter() != chapter or src.getVerse() != verse):
+            return None
+        dst = Sword.VerseKey()
+        dst.setVersificationSystem(to_v11n)
+        dst.positionFrom(src)
+        return str(dst.getBookName()), dst.getChapter(), dst.getVerse()
+    except Exception:
+        return None
+
+
+def _compute_book_map(book, v11n):
+    """{app_chapter: (module_book, module_chapter)} anchoring every KJV
+    chapter of `book` by its first verse, or None when any chapter fails
+    to map or the whole map is the identity (no tables → nothing to do)."""
+    src = Sword.VerseKey()
+    src.setText(f'{book} 1:1')
+    if str(src.getBookName()).lower() != book.lower():
+        return None
+    out = {}
+    identity = True
+    for ch in range(1, src.getChapterMax() + 1):
+        first = _map_ref(book, ch, 1, v11n)
+        if first is None:
+            return None
+        out[ch] = first[:2]
+        if first[:2] != (book, ch):
+            identity = False
+    return None if identity else out
+
+
+def _chapter_map(module_name, book):
+    """The (cached) per-book chapter map for a module, or None. Cached
+    entries are dropped by _reset() alongside the chapter cache."""
+    v11n = _module_v11n(module_name)
+    if v11n is None:
+        return None
+    key = (module_name, book)
+    if key not in _book_maps:
+        try:
+            _book_maps[key] = _compute_book_map(book, v11n)
+        except Exception:
+            _book_maps[key] = None
+    return _book_maps[key]
+
+
+def mapped_chapter(module_name, book, chapter):
+    """App-space chapter → the module-v11n (book, chapter) holding that
+    text, or None when the module is app-keyed or the book is unmapped."""
+    m = _chapter_map(module_name, book)
+    return m.get(chapter) if m else None
+
+
+def map_target_verse(module_name, book, chapter, verse):
+    """App-space verse → the verse number to target inside the chapter a
+    pane rendered for app-space (book, chapter). Falls back to `verse`
+    whenever mapping doesn't apply cleanly."""
+    if verse is None:
+        return verse
+    v11n = _module_v11n(module_name)
+    if v11n is None:
+        return verse
+    mapped = mapped_chapter(module_name, book, chapter)
+    if mapped is None:
+        return verse
+    ref = _map_ref(book, chapter, verse, v11n)
+    if ref is not None and ref[:2] == mapped:
+        return ref[2]
+    return verse
 
 
 def load_chapter(module_name, book, chapter):
@@ -344,6 +475,14 @@ def load_chapter(module_name, book, chapter):
         mod = mgr().getModule(module_name)
         if mod is None:
             return []
+
+        # The caller addresses in app-space (KJV) numbers; translate into
+        # the module's own numbering where a safe per-book map exists
+        # (Greek/Latin psalter offset). The cache key above deliberately
+        # stays app-space.
+        mapped = mapped_chapter(module_name, book, chapter)
+        if mapped:
+            book, chapter = mapped
 
         try:
             vk = Sword.VerseKey()
@@ -1427,6 +1566,9 @@ def chapter_in_index(module_name, book, chapter):
         mod = mgr().getModule(module_name)
         if mod is None:
             return False
+        mapped = mapped_chapter(module_name, book, chapter)
+        if mapped:
+            book, chapter = mapped
         try:
             vk = Sword.VerseKey()
             v11n = mod.getConfigEntry('Versification')

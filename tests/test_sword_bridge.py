@@ -334,3 +334,80 @@ def test_module_has_footnotes_thml_and_gbf_variants(monkeypatch):
 def test_module_has_footnotes_missing_module(monkeypatch):
     _patch_mgr(monkeypatch, {})
     assert not sword_bridge.module_has_footnotes('Nope')
+
+
+# ── Cross-versification mapping ──────────────────────────────────────────────
+# Real VerseKey work (standalone — still no SWMgr), stubbed module config
+# for the versification lookup.
+
+class _FakeV11nMod:
+    """SWModule stand-in exposing just the Versification config entry."""
+    def __init__(self, v11n):
+        self._v11n = v11n
+
+    def getConfigEntry(self, key):
+        return self._v11n if key == 'Versification' else None
+
+
+@pytest.fixture
+def v11n_mods(monkeypatch):
+    _patch_mgr(monkeypatch, {'FakeVulg': _FakeV11nMod('Vulg'),
+                             'FakeKJV': _FakeV11nMod('KJV'),
+                             'FakeGerman': _FakeV11nMod('German')})
+    monkeypatch.setattr(sword_bridge, '_book_maps', {})
+
+
+def test_map_ref_psalter_offset():
+    assert sword_bridge._map_ref('Psalms', 23, 1, 'Vulg') == ('Psalms', 22, 1)
+
+
+def test_map_ref_rejects_clamped_input():
+    """VerseKey silently clamps bad references; the guard must catch that
+    instead of mapping a different verse than the caller asked for."""
+    assert sword_bridge._map_ref('Psalms', 999, 1, 'Vulg') is None
+
+
+def test_mapped_chapter_psalter_offset(v11n_mods):
+    assert sword_bridge.mapped_chapter('FakeVulg', 'Psalms', 23) == ('Psalms', 22)
+    assert sword_bridge.mapped_chapter('FakeVulg', 'Psalms', 110) == ('Psalms', 109)
+
+
+def test_mapped_chapter_merged_psalms_share_target(v11n_mods):
+    """KJV Ps 9 and 10 are one Vulgate psalm — both anchor to it."""
+    assert sword_bridge.mapped_chapter('FakeVulg', 'Psalms', 9) == ('Psalms', 9)
+    assert sword_bridge.mapped_chapter('FakeVulg', 'Psalms', 10) == ('Psalms', 9)
+
+
+def test_mapped_chapter_identity_book_unmapped(v11n_mods):
+    """Genesis numbering agrees between KJV and Vulg — no map, no overhead."""
+    assert sword_bridge.mapped_chapter('FakeVulg', 'Genesis', 1) is None
+
+
+def test_mapped_chapter_kjv_module_unmapped(v11n_mods):
+    assert sword_bridge.mapped_chapter('FakeKJV', 'Psalms', 23) is None
+
+
+def test_mapped_chapter_no_tables_is_identity(v11n_mods):
+    """The engine has no Joel reslice tables for German — positionFrom
+    clamps instead of mapping, which must read as identity (unmapped),
+    keeping today's module-space behavior for the whole book."""
+    assert sword_bridge.mapped_chapter('FakeGerman', 'Joel', 2) is None
+
+
+def test_chapter_count_mapped_book_uses_app_space(v11n_mods):
+    assert sword_bridge.chapter_count('Psalms', 'FakeVulg') == 150
+
+
+def test_map_target_verse_title_verse_shift(v11n_mods):
+    """Vulgate psalms count the title as a verse: KJV Ps 9:1 is Vulg 9:2."""
+    assert sword_bridge.map_target_verse('FakeVulg', 'Psalms', 9, 1) == 2
+
+
+def test_map_target_verse_plain_offset(v11n_mods):
+    assert sword_bridge.map_target_verse('FakeVulg', 'Psalms', 23, 4) == 4
+
+
+def test_map_target_verse_falls_back(v11n_mods):
+    assert sword_bridge.map_target_verse('FakeKJV', 'Psalms', 23, 4) == 4
+    assert sword_bridge.map_target_verse('FakeVulg', 'Genesis', 1, 5) == 5
+    assert sword_bridge.map_target_verse('FakeVulg', 'Psalms', 23, None) is None
