@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  "Justify text" glyph for the reading toolbar's justify toggle. Bundled
+  (not pulled from the icon theme) because some themes ship no
+  format-justify-fill-symbolic and don't fall back to Adwaita for it, so
+  the button renders blank (seen on CachyOS / Hyprland). Faithful to
+  Adwaita's four equal full-width bars, drawn fill-only like the other
+  scriptura-* symbolics so GTK4 recolors it reliably on any background.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g fill="#222">
+    <rect x="1" y="2.5" width="14" height="1.9" rx="0.5"/>
+    <rect x="1" y="6.05" width="14" height="1.9" rx="0.5"/>
+    <rect x="1" y="9.6" width="14" height="1.9" rx="0.5"/>
+    <rect x="1" y="13.15" width="14" height="1.9" rx="0.5"/>
+  </g>
+</svg>

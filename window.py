@@ -2844,7 +2844,7 @@ class BibleWindow(Adw.ApplicationWindow):
         set_accessible_label(self._bold_btn, _('Bold'))
         self._bold_btn.set_active(bool(settings.get('font_bold')))
         self._bold_btn.connect('toggled', self._on_appear_bold)
-        self._justify_btn = Gtk.ToggleButton(icon_name='format-justify-fill-symbolic')
+        self._justify_btn = Gtk.ToggleButton(icon_name='scriptura-justify-symbolic')
         self._justify_btn.set_tooltip_text(_('Justified'))
         set_accessible_label(self._justify_btn, _('Justified'))
         self._justify_btn.set_active(bool(settings.get('font_justify')))
