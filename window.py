@@ -12,6 +12,7 @@ from gtk_utils import clear_children
 import sword_bridge
 import settings
 import module_positions
+import onboarding
 import backup
 import bookmarks
 import reading_plans
@@ -475,6 +476,11 @@ class BibleWindow(Adw.ApplicationWindow):
         # stacking duplicates across panes / re-renders.
         self._cipher_toasting = set()
 
+        # First-run discoverability. The controller decides once-per-hint;
+        # its present callback resolves _toast_overlay lazily (built below),
+        # so it's safe to construct here, before the panes that fire hints.
+        self._hints = onboarding.HintController(self._present_hint_toast)
+
         self.pane1 = BiblePane(module_name=p1_mod,
                                on_word_click=self._on_word_click,
                                on_click_outside_search=self._hide_search,
@@ -487,6 +493,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_modules_changed=self._on_modules_changed,
                                on_open_artifact=self._on_open_artifact,
                                on_module_switched=self._update_fnote_sensitivity,
+                               on_hint=self._hints.maybe_fire,
                                pane_id=1)
         self.pane2 = BiblePane(module_name=p2_mod,
                                on_word_click=self._on_word_click,
@@ -500,6 +507,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_modules_changed=self._on_modules_changed,
                                on_open_artifact=self._on_open_artifact,
                                on_module_switched=self._update_fnote_sensitivity,
+                               on_hint=self._hints.maybe_fire,
                                pane_id=2)
         # Initial f* sensitivity for the startup modules — the pane
         # callbacks above only fire on later switches.
@@ -1788,6 +1796,20 @@ class BibleWindow(Adw.ApplicationWindow):
         t.set_timeout(2)
         self._toast_overlay.add_toast(t)
 
+    def _present_hint_toast(self, message):
+        # Contextual hints linger a touch longer than a plain _toast (they're
+        # instructional) and carry a way to the full reference, which is also
+        # where hints can be turned off — dismissible now, re-findable later.
+        t = Adw.Toast.new(message)
+        t.set_timeout(6)
+        t.set_button_label(_('Tips'))
+        t.connect('button-clicked', lambda _t: self._open_tips_dialog())
+        self._toast_overlay.add_toast(t)
+
+    def _open_tips_dialog(self, *_args):
+        onboarding.build_tips_dialog(
+            on_shortcuts=self._open_shortcuts_dialog).present(self)
+
     # ── Study data backup / restore ───────────────────────────────────────────
 
     def _on_backup_clicked(self, _row):
@@ -2004,6 +2026,10 @@ class BibleWindow(Adw.ApplicationWindow):
         enabled = self.lex_toggle.get_active()
         self.pane1.set_lexicon_enabled(enabled)
         self.pane2.set_lexicon_enabled(enabled)
+        # Strong's words carry no visible mark at rest; on first enabling the
+        # mode, name the gesture that now pays off.
+        if enabled:
+            self._hints.maybe_fire('first_lexicon')
 
     def _on_fnote_toggle(self, _btn):
         enabled = self.fnote_toggle.get_active()
@@ -2319,6 +2345,8 @@ class BibleWindow(Adw.ApplicationWindow):
         if source_pane._book and source_pane._chapter:
             self._crossref_panel.load(source_pane._book, source_pane._chapter, verse_num)
             self._crossref_revealer.set_reveal_child(True)
+        # They've engaged a verse — the moment to reveal the deeper gesture.
+        self._hints.maybe_fire('first_verse_click')
 
     def _on_crossref_clicked(self, book, chapter, verse):
         if book not in BOOKS:
@@ -3094,6 +3122,14 @@ class BibleWindow(Adw.ApplicationWindow):
         footer.append(theme_picker)
 
         footer.append(Gtk.Box(hexpand=True))  # spacer
+
+        tips_btn = Gtk.Button(icon_name='scriptura-tips-symbolic')
+        tips_btn.add_css_class('flat')
+        tips_btn.add_css_class('menu-utility-action')
+        tips_btn.set_tooltip_text(_('Tips & gestures'))
+        set_accessible_label(tips_btn, _('Tips & gestures'))
+        tips_btn.connect('clicked', self._open_tips_dialog)
+        footer.append(tips_btn)
 
         hotkeys_btn = Gtk.Button(icon_name='scriptura-keyboard-symbolic')
         hotkeys_btn.add_css_class('flat')

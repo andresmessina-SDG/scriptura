@@ -46,6 +46,11 @@ _defaults: dict[str, Any] = {
     # don't always re-open at the first entry.
     'pane1_genbook_entries': {},
     'pane2_genbook_entries': {},
+    # First-run discoverability. Contextual hints fire once each; the keys of
+    # hints already shown are recorded here so they never repeat. tips_enabled
+    # is the master switch (toggled from the Tips & Gestures dialog).
+    'tips_enabled':       True,
+    'hints_seen':         [],
 }
 _cache: dict[str, Any] | None = None
 _load_failed: bool = False  # Flipped if an existing file failed to parse.

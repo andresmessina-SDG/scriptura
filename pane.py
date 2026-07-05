@@ -714,7 +714,8 @@ class BiblePane(Gtk.Box):
                  on_word_study_navigate=None, on_toast=None,
                  on_font_size_request=None, on_cipher_error=None,
                  on_edit_cipher=None, on_modules_changed=None,
-                 on_open_artifact=None, on_module_switched=None, pane_id=1):
+                 on_open_artifact=None, on_module_switched=None,
+                 on_hint=None, pane_id=1):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self._on_word_click = on_word_click
         self._on_click_outside_search = on_click_outside_search
@@ -730,6 +731,10 @@ class BiblePane(Gtk.Box):
         # re-evaluates cross-pane state that depends on what's loaded
         # (currently the f* footnote toggle's sensitivity).
         self._on_module_switched = on_module_switched
+        # Fired with a hint key the first time a discoverability context
+        # occurs (see onboarding.HintController); the controller collapses
+        # repeats, so the pane may call it freely.
+        self._on_hint = on_hint
         # Used to namespace per-pane persisted state (e.g. genbook
         # bookmarks) so pane1 and pane2 don't trample each other.
         self._pane_id = pane_id
@@ -2467,6 +2472,11 @@ class BiblePane(Gtk.Box):
         # re-apply flips it dark. Re-assert the overlay foregrounds above all
         # body spans now that the whole chapter (and its tags) exists.
         self._bump_overlay_priorities()
+        # A real chapter of Scripture is now on screen (not a commentary,
+        # empty, or cipher-locked state — each of those returned earlier):
+        # the right context to teach that verses are tappable.
+        if self._on_hint and self._module_type == 'Biblical Texts':
+            self._on_hint('first_render')
         return GLib.SOURCE_REMOVE
 
     def _bump_overlay_priorities(self):

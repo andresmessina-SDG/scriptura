@@ -52,6 +52,7 @@ py_sources = files(
   'module_manager.py',
   'module_picker.py',
   'module_positions.py',
+  'onboarding.py',
   'open_data.py',
   'pane.py',
   'pane_search.py',
