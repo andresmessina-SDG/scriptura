@@ -132,6 +132,15 @@
   </content_rating>
 
   <releases>
+    <release version="1.2.0" date="2026-07-05">
+      <description>
+        <p>Getting started, made discoverable.</p>
+        <ul>
+          <li>A new Tips &amp; Gestures guide, reachable from the menu, gathers every reading gesture in one place.</li>
+          <li>Gentle one-time tips point out hidden gestures — like tapping a verse for its cross-references — the first time each is useful, then never again. You can turn them off any time.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.1.0" date="2026-06-28">
       <description>
         <p>Customizable reading appearance.</p>
