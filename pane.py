@@ -2072,7 +2072,8 @@ class BiblePane(Gtk.Box):
             return
         if self._is_interlinear:
             self._interlinear.render_for(
-                self._book, self._chapter, self._selected_verse or 1)
+                self._module, self._book, self._chapter,
+                self._selected_verse or 1)
             return
         if self._is_archaeology:
             self._archaeology.render()
@@ -3779,13 +3780,16 @@ class BiblePane(Gtk.Box):
 
     def _lex_scan_module(self):
         """Module the lexicon panel's word-study scan reads. The interlinear
-        pseudo-module has no SWORD text (the scan would find 0 matches for
-        every word), so it scans MorphGNT instead — the same tagged Greek
-        source lookup_morph_for_strong already relies on. Absent MorphGNT,
-        fall through to the pane's own module (scan degrades to empty, as
-        any untagged module's would)."""
-        if self._is_interlinear and 'MorphGNT' in sword_bridge.module_names():
-            return 'MorphGNT'
+        pseudo-modules have no SWORD text (the scan would find 0 matches for
+        every word), so they scan the tagged original-language source the
+        morph lookups already rely on — MorphGNT for the Greek NT, OSHB for
+        the Hebrew OT. Absent those, fall through to the pane's own module
+        (scan degrades to empty, as any untagged module's would)."""
+        if self._is_interlinear:
+            tagged = ('OSHB' if interlinear_data.is_hebrew(self._module)
+                      else 'MorphGNT')
+            if tagged in sword_bridge.module_names():
+                return tagged
         return self._module
 
     def show_lexicon_loading(self, strong_num):

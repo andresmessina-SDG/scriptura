@@ -106,7 +106,9 @@ def feature_card(name: str) -> dict | None:
                 'tagline': _('Artifacts of the biblical world')}
     if interlinear_data.is_interlinear_module(name):
         return {'icon': 'font-x-generic-symbolic',
-                'tagline': _('Greek with gloss & parsing, word by word')}
+                'tagline': (_('Hebrew with gloss & parsing, word by word')
+                            if interlinear_data.is_hebrew(name) else
+                            _('Greek with gloss & parsing, word by word'))}
     return None
 
 
@@ -119,7 +121,7 @@ def language(name: str) -> str:
     if archaeology_bridge.is_archaeology_module(name):
         return 'en'
     if interlinear_data.is_interlinear_module(name):
-        return 'grc'
+        return 'hbo' if interlinear_data.is_hebrew(name) else 'grc'
     if ebible_bridge.is_ebible_module(name):
         return cast(str, ebible_bridge.module_language(name))
     return cast(str, sword_bridge.module_language(name))
@@ -156,6 +158,18 @@ def info(name: str) -> dict:
     if archaeology_bridge.is_archaeology_module(name):
         return archaeology_bridge.info()
     if interlinear_data.is_interlinear_module(name):
+        if interlinear_data.is_hebrew(name):
+            return {
+                'description': _('The Hebrew Old Testament word by word — '
+                                 'each word with its English gloss, parsing, '
+                                 'transliteration, and Strong’s number.'),
+                'type': _('Interlinear'),
+                'license': 'CC BY 4.0',
+                'about': _('Translators Amalgamated Hebrew OT (TAHOT), '
+                           'created by STEPBible at Tyndale House Cambridge '
+                           'from the Leningrad Codex, with Qere readings '
+                           'and English-first verse numbering.'),
+            }
         return {
             'description': _('The Greek New Testament word by word — each '
                              'word with its English gloss, parsing, '
@@ -199,7 +213,7 @@ def remove(name: str) -> None:
     elif imagery_bridge.is_imagery_module(name):
         imagery_bridge.remove_pack()
     elif interlinear_data.is_interlinear_module(name):
-        interlinear_data.remove()
+        interlinear_data.remove(name)
     elif ebible_bridge.is_ebible_module(name):
         ebible_bridge.remove_module(name)
     else:

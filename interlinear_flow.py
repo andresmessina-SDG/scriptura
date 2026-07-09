@@ -33,6 +33,15 @@ class WordFlow(Gtk.Widget):
     def __init__(self):
         super().__init__()
         self._sizes = {}       # child -> (natural_w, natural_h)
+        self._rtl = False
+
+    def set_rtl(self, rtl):
+        """Right-to-left packing (Hebrew): reading order still follows
+        append order, lines fill from the right edge."""
+        rtl = bool(rtl)
+        if rtl != self._rtl:
+            self._rtl = rtl
+            self.queue_allocate()
 
     def append(self, child):
         child.set_parent(self)
@@ -78,6 +87,10 @@ class WordFlow(Gtk.Widget):
         def flush():
             nonlocal x, y, line, line_h
             for child, cx, w, h in line:
+                # RTL: mirror the whole line off the right edge — reading
+                # order is append order either way.
+                if self._rtl:
+                    cx = width - cx - w
                 # Bottom-align within the line: verse-number labels are
                 # shorter than word cells and should sit near the shared
                 # bottom edge rather than float at the top.

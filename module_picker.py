@@ -219,7 +219,8 @@ class ModulePicker:
     # Collapse SWORD's redundant ISO variants so the language menu isn't
     # a wall of near-duplicates (en/eng, es/spa, la/lat).
     _LANG_NORMALIZE = {'eng': 'en', 'spa': 'es', 'lat': 'la',
-                       'fra': 'fr', 'deu': 'de', 'ger': 'de'}
+                       'fra': 'fr', 'deu': 'de', 'ger': 'de',
+                       'hbo': 'he'}   # ancient Hebrew folds into Hebrew
     _LANG_NAMES = {'All': N_('All languages'), 'en': N_('English'),
                    'enm': N_('Middle English'), 'es': N_('Spanish'),
                    'grc': N_('Greek'), 'la': N_('Latin'), 'ru': N_('Russian'),

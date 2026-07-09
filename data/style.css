@@ -590,6 +590,14 @@ button.menu-theme-toggle {
     font-family: 'Noto Serif', 'DejaVu Serif', 'Source Serif 4', serif;
     font-size: 21px;
 }
+/* Pointed + cantillated Hebrew: needs a face with full niqqud/te'amim
+   mark positioning; slightly larger because Hebrew reads optically
+   smaller at equal px. */
+.interlinear-word-heb {
+    font-family: 'Noto Serif Hebrew', 'SBL Hebrew', 'Ezra SIL',
+                 'Taamey Frank CLM', serif;
+    font-size: 24px;
+}
 .interlinear-strongs {
     font-size: 10px;
     color: alpha(currentColor, 0.45);

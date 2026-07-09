@@ -17,6 +17,7 @@ the first screenful paints immediately and navigation can never paint a
 stale chapter, and with line-packed layout the streamed-in tail can never
 move what's already on screen.
 """
+import re
 import threading
 
 import gi
@@ -45,12 +46,18 @@ _LINES = [
 ]
 _SETTINGS_KEY = 'interlinear_lines'
 
+# Cantillation marks (te'amim, U+0591–05AF) — strippable for a calmer
+# Hebrew reading surface; vowel points (niqqud) always stay.
+_CANTILLATION_RE = re.compile('[֑-֯]')
+
 _CHUNK = 120            # cells per idle batch — first batch ≈ one screenful
 
 
 class InterlinearReader:
     def __init__(self, pane=None):
         self._pane = pane
+        self._module = None
+        self._rtl = False
         self._book = None
         self._chapter = None
         self._verse_anchors = {}     # verse -> first cell widget (scroll targets)
@@ -84,6 +91,17 @@ class InterlinearReader:
             btn.connect('toggled', self._on_chip_toggled, line_id)
             self._chip_btns[line_id] = btn
             chips.append(btn)
+        # Cantillation toggle — Hebrew only (shown/hidden per module). Not a
+        # stacked line: it transforms the word text itself, so it has its
+        # own handler rather than the visibility one above.
+        self._accents_btn = Gtk.ToggleButton(label=_('Accents'))
+        self._accents_btn.add_css_class('interlinear-chip')
+        self._accents_btn.set_active(self._lines['accents'])
+        self._accents_btn.set_tooltip_text(_('Cantillation marks'))
+        set_accessible_label(self._accents_btn, _('Cantillation marks'))
+        self._accents_btn.connect('toggled', self._on_accents_toggled)
+        self._accents_btn.set_visible(False)
+        chips.append(self._accents_btn)
         self._root.append(chips)
 
         self._header = Gtk.Label(xalign=0)
@@ -127,24 +145,29 @@ class InterlinearReader:
 
     def _load_line_prefs(self):
         saved = settings.get(_SETTINGS_KEY) or {}
-        return {line_id: bool(saved.get(line_id, default))
-                for line_id, default, _label in _LINES}
+        prefs = {line_id: bool(saved.get(line_id, default))
+                 for line_id, default, _label in _LINES}
+        prefs['accents'] = bool(saved.get('accents', True))
+        return prefs
 
     # ── rendering ───────────────────────────────────────────────────────────
 
-    def render_for(self, book, chapter, verse):
+    def render_for(self, module, book, chapter, verse):
         """Load and show a chapter; scrolls to `verse` when it's > 1.
-        Re-renders only on a chapter change — a verse broadcast within the
-        current chapter just scrolls."""
-        if (book, chapter) == (self._book, self._chapter):
+        Re-renders only on a module/chapter change — a verse broadcast
+        within the current chapter just scrolls."""
+        if (module, book, chapter) == (self._module, self._book,
+                                       self._chapter):
             self._scroll_to_verse(verse)
             return
+        self._module = module
+        self._rtl = interlinear_data.is_hebrew(module)
         self._book, self._chapter = book, chapter
         self._gen += 1
         gen = self._gen
 
         def fetch():
-            words = interlinear_data.load_chapter(book, chapter)
+            words = interlinear_data.load_chapter(module, book, chapter)
             GLib.idle_add(self._show_chapter, gen, words, verse)
 
         threading.Thread(target=fetch, daemon=True).start()
@@ -156,9 +179,13 @@ class InterlinearReader:
         self._cells = []
         self._verse_anchors = {}
         self._header.set_label(f'{book_label(self._book)} {self._chapter}')
+        self._flow.set_rtl(self._rtl)
+        self._accents_btn.set_visible(self._rtl)
         if not words:
             self._flow.set_visible(False)
             self._empty.set_label(
+                _('The Hebrew Old Testament ends at Malachi.')
+                if self._rtl else
                 _('The Greek New Testament begins at Matthew.'))
             self._empty.set_visible(True)
             return GLib.SOURCE_REMOVE
@@ -207,9 +234,14 @@ class InterlinearReader:
         translit.add_css_class('interlinear-translit')
         labels['translit'] = translit
 
-        surface = Gtk.Label(label=w.surface)
-        surface.add_css_class('interlinear-word')
+        shown = w.surface
+        if self._rtl and not self._lines['accents']:
+            shown = _CANTILLATION_RE.sub('', shown)
+        surface = Gtk.Label(label=shown)
+        surface.add_css_class(
+            'interlinear-word-heb' if self._rtl else 'interlinear-word')
         labels['surface'] = surface
+        labels['_surface_full'] = w.surface   # for the accents toggle
 
         gloss = Gtk.Label(label=w.gloss)
         gloss.add_css_class('interlinear-gloss')
@@ -219,9 +251,16 @@ class InterlinearReader:
             gloss.add_css_class('interlinear-gloss-implicit')
         labels['gloss'] = gloss
 
-        parse = Gtk.Label(label=w.morph.replace(' ', ' · '))
+        if self._rtl:
+            # 'HR/Ncfsa' → 'R · Ncfsa': the H is the language tag, the
+            # slashes separate morphemes (prefix/stem/suffix).
+            code = w.morph[1:] if w.morph.startswith('H') else w.morph
+            parse = Gtk.Label(label=code.replace('/', ' · '))
+            decoded = self._decode_heb_morph(w.morph)
+        else:
+            parse = Gtk.Label(label=w.morph.replace(' ', ' · '))
+            decoded = self._decode_morph(w.morph)
         parse.add_css_class('interlinear-parse')
-        decoded = self._decode_morph(w.morph)
         if decoded:
             parse.set_tooltip_text(decoded)
         labels['parse'] = parse
@@ -230,8 +269,9 @@ class InterlinearReader:
             labels[line_id].set_visible(self._lines[line_id])
         for line_id in ('gloss', 'parse'):
             labels[line_id].set_visible(self._lines[line_id])
+        align = Gtk.Align.END if self._rtl else Gtk.Align.START
         for lbl in (strongs, translit, surface, gloss, parse):
-            lbl.set_halign(Gtk.Align.START)
+            lbl.set_halign(align)
             lbl.set_ellipsize(Pango.EllipsizeMode.NONE)
             cell.append(lbl)
 
@@ -255,6 +295,21 @@ class InterlinearReader:
                 parts.append(d)
         return '  +  '.join(parts)
 
+    @staticmethod
+    def _decode_heb_morph(morph):
+        """'HR/Ncfsa' → per-morpheme decode. decode_hebrew_morph reads one
+        segment at a time; the language tag H belongs to the first segment
+        only, so re-prefix the rest before decoding each."""
+        segs = morph.split('/')
+        parts = []
+        for i, seg in enumerate(segs):
+            if i > 0 and not seg.startswith('H'):
+                seg = 'H' + seg
+            d = sword_bridge.decode_hebrew_morph(f'oshm:{seg}')
+            if d:
+                parts.append(d)
+        return '  +  '.join(parts)
+
     # ── interactions ────────────────────────────────────────────────────────
 
     def _on_chip_toggled(self, btn, line_id):
@@ -266,6 +321,17 @@ class InterlinearReader:
         # Cell heights changed — drop the flow's cached sizes and reflow.
         self._flow.invalidate_sizes()
 
+    def _on_accents_toggled(self, btn):
+        on = btn.get_active()
+        self._lines['accents'] = on
+        settings.put(_SETTINGS_KEY, dict(self._lines))
+        for _cell, labels in self._cells:
+            full = labels['_surface_full']
+            labels['surface'].set_label(
+                full if on else _CANTILLATION_RE.sub('', full))
+        # Mark widths change with the marks — reflow with fresh sizes.
+        self._flow.invalidate_sizes()
+
     def _on_word_clicked(self, _gesture, _n, _x, _y, w):
         """Route through the pane's word-click callback — the same path a
         Strong's-tagged Bible click takes (window shows the lexicon spinner,
@@ -274,8 +340,12 @@ class InterlinearReader:
         pane = self._pane
         if pane is None or not w.strongs or not pane._on_word_click:
             return
-        pane._current_morph = (
-            f'robinson:{w.morph.split()[0]}' if w.morph else None)
+        if not w.morph:
+            pane._current_morph = None
+        elif self._rtl:
+            pane._current_morph = f'oshm:{w.morph}'
+        else:
+            pane._current_morph = f'robinson:{w.morph.split()[0]}'
         pane._current_phrase = (None, None)
         pane._on_word_click(pane, w.strongs)
 

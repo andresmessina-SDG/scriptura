@@ -475,15 +475,18 @@ class ModuleManagerWindow(Adw.Window):
             group.add(self._make_catena_row())
             group.add(self._make_archaeology_row())
             group.add(self._make_imagery_row())
-            group.add(self._make_interlinear_row())
+            group.add(self._make_interlinear_row(interlinear_data.GREEK))
+            group.add(self._make_interlinear_row(interlinear_data.HEBREW))
             t['curated'].append(group)
         elif tab_id == 'bibles':
-            # Pinned here too: someone browsing Greek texts should meet the
-            # interlinear beside them, without knowing about the curated
-            # shelf in Books & More (same pattern as the catena pin below).
+            # Pinned here too: someone browsing Greek/Hebrew texts should
+            # meet the interlinears beside them, without knowing about the
+            # curated shelf in Books & More (same pattern as the catena pin
+            # below).
             group = Adw.PreferencesGroup()
             group.set_title(_('Curated for Scriptura'))
-            group.add(self._make_interlinear_row())
+            group.add(self._make_interlinear_row(interlinear_data.GREEK))
+            group.add(self._make_interlinear_row(interlinear_data.HEBREW))
             t['curated'].append(group)
         elif tab_id == 'commentaries':
             # Also pinned here: someone hunting commentaries should meet it
@@ -528,23 +531,31 @@ class ModuleManagerWindow(Adw.Window):
         row.add_suffix(btn)
         return row
 
-    def _make_interlinear_row(self):
+    def _make_interlinear_row(self, name=interlinear_data.GREEK):
+        hebrew = interlinear_data.is_hebrew(name)
+        title = (_('Interlinear — Hebrew OT') if hebrew
+                 else _('Interlinear — Greek NT'))
         row = Adw.ActionRow()
-        row.set_title(_('Interlinear — Greek NT'))
-        if interlinear_data.is_installed():
+        row.set_title(title)
+        if interlinear_data.is_installed(name):
             row.set_subtitle(
+                _('Every OT word with gloss, parsing, and Strong’s — '
+                  'Tyndale House data (CC BY)') if hebrew else
                 _('Every NT word with gloss, parsing, and Strong’s — '
                   'Tyndale House data (CC BY)'))
             btn = self._trash_button(
                 lambda: self._confirm_remove_generic(
-                    _('Interlinear — Greek NT'), self._do_interlinear_remove))
+                    title, lambda: self._do_interlinear_remove(name)))
         else:
             row.set_subtitle(
+                _('The Hebrew Old Testament word by word — gloss, parsing, '
+                  'and Strong’s under each word · ~16 MB download')
+                if hebrew else
                 _('The Greek New Testament word by word — gloss, parsing, '
-                  'and Strong’s under each word · ~29 MB download'))
+                  'and Strong’s under each word · ~7 MB download'))
             btn = Gtk.Button(label=_('Download'))
             btn.add_css_class('suggested-action')
-            btn.connect('clicked', self._on_interlinear_download)
+            btn.connect('clicked', self._on_interlinear_download, name)
         btn.set_valign(Gtk.Align.CENTER)
         row.add_suffix(btn)
         return row
@@ -1302,13 +1313,17 @@ class ModuleManagerWindow(Adw.Window):
             btn, src['label'],
             lambda p: open_data.download_source(source_id, on_progress=p))
 
-    def _on_interlinear_download(self, btn):
+    def _on_interlinear_download(self, btn, name):
+        label = (_('Interlinear — Hebrew OT')
+                 if interlinear_data.is_hebrew(name)
+                 else _('Interlinear — Greek NT'))
         self._pack_download(
-            btn, _('Interlinear — Greek NT'),
-            lambda p: interlinear_data.download_and_build(on_progress=p))
+            btn, label,
+            lambda p: interlinear_data.download_and_build(name,
+                                                          on_progress=p))
 
-    def _do_interlinear_remove(self):
-        interlinear_data.remove()
+    def _do_interlinear_remove(self, name):
+        interlinear_data.remove(name)
         self._modules_changed()
         self._populate()
 
