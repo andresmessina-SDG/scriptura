@@ -49,9 +49,10 @@ def split_truncation(results):
 
 def bible_modules():
     """Every Bible-type module key (excludes commentaries, devotionals,
-    generic books) — the set 'All Bibles' searches over."""
+    generic books, and the interlinear pseudo-module, which has no FTS
+    backend) — the set 'All Bibles' searches over."""
     return [m for m in content.readable_module_names()
-            if content.kind(m) == 'bible']
+            if content.is_text_bible(m)]
 
 
 def search_all_bibles(query, case_sensitive, on_indexing_start=None,

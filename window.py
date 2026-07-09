@@ -3052,14 +3052,15 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _first_bible_module(self):
         """A sensible Bible module key: prefer one a pane was already set to,
-        else the first available Bible."""
+        else the first available Bible. Text Bibles only — callers want a
+        verse-navigable reading pane, which the interlinear isn't."""
         import content
         names = content.readable_module_names()
         for cand in (settings.get('pane2_module'), settings.get('pane1_module')):
-            if cand in names and content.kind(cand) == 'bible':
+            if cand in names and content.is_text_bible(cand):
                 return cand
         for name in names:
-            if content.kind(name) == 'bible':
+            if content.is_text_bible(name):
                 return name
         return None
 

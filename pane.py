@@ -22,6 +22,8 @@ from genbook_reader import GenbookReader
 from catena_reader import CatenaReader
 from imagery_reader import ImageryReader
 from archaeology_reader import ArchaeologyReader
+from interlinear_view import InterlinearReader
+import interlinear_data
 from module_picker import ModulePicker
 
 
@@ -778,6 +780,8 @@ class BiblePane(Gtk.Box):
         # NOT verse-synced; it renders once and its verse chips drive the
         # partnered Bible pane.
         self._archaeology = ArchaeologyReader(self)
+        # Interlinear Greek NT — word-stack cells, verse-synced like a Bible.
+        self._interlinear = InterlinearReader(self)
         self._book = 'Genesis'
         self._chapter = 1
         self._target_verse = None
@@ -1076,6 +1080,7 @@ class BiblePane(Gtk.Box):
         self._content_stack.add_named(self._catena.widget, 'catena')
         self._content_stack.add_named(self._imagery.widget, 'imagery')
         self._content_stack.add_named(self._archaeology.widget, 'archaeology')
+        self._content_stack.add_named(self._interlinear.widget, 'interlinear')
         # Full-pane placeholder for "can't show content here" states
         # (unsupported module, wrong cipher key, passage not in this module).
         self._status_page = Adw.StatusPage()
@@ -1194,7 +1199,8 @@ class BiblePane(Gtk.Box):
         # The catena pane follows the partnered Bible (book/chapter + verse),
         # so it keeps the sync button but none of the verse-text chrome.
         self._sync_btn.set_visible(
-            is_chapter_keyed or self._is_catena or self._is_imagery)
+            is_chapter_keyed or self._is_catena or self._is_imagery
+            or self._is_interlinear)
         self._chapter_note_btn.set_visible(is_chapter_keyed)
         self._search.button.set_visible(is_chapter_keyed)
         self._copy_chapter_btn.set_visible(is_chapter_keyed)
@@ -1206,7 +1212,8 @@ class BiblePane(Gtk.Box):
             GLib.idle_add(self._fetch_and_render_devotional)
         elif self._is_genbook:
             GLib.idle_add(self._genbook.fetch_and_render)
-        elif self._is_catena or self._is_imagery or self._is_archaeology:
+        elif (self._is_catena or self._is_imagery or self._is_archaeology
+                or self._is_interlinear):
             GLib.idle_add(self._fetch_and_render)
 
     def _on_pane_click(self, gesture, n_press, x, y):
@@ -1469,6 +1476,7 @@ class BiblePane(Gtk.Box):
         self._is_catena = catena_bridge.is_catena_module(m)
         self._is_imagery = imagery_bridge.is_imagery_module(m)
         self._is_archaeology = archaeology_bridge.is_archaeology_module(m)
+        self._is_interlinear = interlinear_data.is_interlinear_module(m)
         is_ebible = ebible_bridge.is_ebible_module(m)
         if self._is_catena:
             self._module_type = 'Historical Commentaries'
@@ -1476,17 +1484,21 @@ class BiblePane(Gtk.Box):
             self._module_type = 'Bible Imagery'
         elif self._is_archaeology:
             self._module_type = 'Scripture in Stone'
+        elif self._is_interlinear:
+            self._module_type = 'Interlinear'
         elif is_ebible:
             self._module_type = 'Biblical Texts'
         else:
             self._module_type = sword_bridge.module_type(m)
         self._is_devotional = (
             not self._is_catena and not self._is_imagery
-            and not self._is_archaeology and not is_ebible
+            and not self._is_archaeology and not self._is_interlinear
+            and not is_ebible
             and sword_bridge.is_devotional_module(m))
         self._is_genbook = (
             not self._is_catena and not self._is_imagery
-            and not self._is_archaeology and not is_ebible
+            and not self._is_archaeology and not self._is_interlinear
+            and not is_ebible
             and self._module_type == 'Generic Books')
 
     def _content_child(self):
@@ -1497,6 +1509,8 @@ class BiblePane(Gtk.Box):
             return 'imagery'
         if self._is_archaeology:
             return 'archaeology'
+        if self._is_interlinear:
+            return 'interlinear'
         return 'text'
 
     def _is_verse_navigable(self):
@@ -1517,7 +1531,7 @@ class BiblePane(Gtk.Box):
         self._window_target_verse = None
         if self._sync_btn.get_active():
             return
-        if self._is_catena or self._is_imagery:
+        if self._is_catena or self._is_imagery or self._is_interlinear:
             self._book = book
             self._chapter = chapter
             self._selected_verse = None  # no verse context yet → defaults to 1
@@ -1535,7 +1549,7 @@ class BiblePane(Gtk.Box):
         self._window_target_verse = verse
         if self._sync_btn.get_active():
             return
-        if self._is_catena or self._is_imagery:
+        if self._is_catena or self._is_imagery or self._is_interlinear:
             self._book = book
             self._chapter = chapter
             self._selected_verse = verse
@@ -2049,6 +2063,10 @@ class BiblePane(Gtk.Box):
             return
         if self._is_imagery:
             self._imagery.render_for(
+                self._book, self._chapter, self._selected_verse or 1)
+            return
+        if self._is_interlinear:
+            self._interlinear.render_for(
                 self._book, self._chapter, self._selected_verse or 1)
             return
         if self._is_archaeology:
@@ -3754,12 +3772,23 @@ class BiblePane(Gtk.Box):
 
     # ── Lexicon panel delegators ─────────────────────────────────────────
 
+    def _lex_scan_module(self):
+        """Module the lexicon panel's word-study scan reads. The interlinear
+        pseudo-module has no SWORD text (the scan would find 0 matches for
+        every word), so it scans MorphGNT instead — the same tagged Greek
+        source lookup_morph_for_strong already relies on. Absent MorphGNT,
+        fall through to the pane's own module (scan degrades to empty, as
+        any untagged module's would)."""
+        if self._is_interlinear and 'MorphGNT' in sword_bridge.module_names():
+            return 'MorphGNT'
+        return self._module
+
     def show_lexicon_loading(self, strong_num):
         """Reveal the lexicon panel with a spinner immediately when the
         user clicks a Strong's word. The actual content arrives later
         via show_lexicon(). Without this the panel is blank for several
         hundred ms on the first click of a session while SWORD warms up."""
-        self._lex_panel.set_context(self._book, self._module)
+        self._lex_panel.set_context(self._book, self._lex_scan_module())
         chain, text = getattr(self, '_current_phrase', (None, None))
         self._lex_panel.show_loading(strong_num,
                                      morph=self._current_morph,
@@ -3771,7 +3800,7 @@ class BiblePane(Gtk.Box):
         already fetched the definition text asynchronously and passes the
         morph + phrase snapshot taken at click time — threaded through rather
         than re-read here, so a rapid second click can't swap them under us."""
-        self._lex_panel.set_context(self._book, self._module)
+        self._lex_panel.set_context(self._book, self._lex_scan_module())
         chain, ptext = phrase
         self._lex_panel.show(strong_num, text,
                              morph=morph,
@@ -3918,7 +3947,8 @@ class BiblePane(Gtk.Box):
         # the pane is rendering a verse-keyed chapter. Devotionals get
         # date navigation instead; Generic Books get the TOC button.
         self._sync_btn.set_visible(
-            is_chapter_keyed or self._is_catena or self._is_imagery)
+            is_chapter_keyed or self._is_catena or self._is_imagery
+            or self._is_interlinear)
         self._chapter_note_btn.set_visible(is_chapter_keyed)
         self._search.button.set_visible(is_chapter_keyed)
         self._copy_chapter_btn.set_visible(is_chapter_keyed)
@@ -3967,6 +3997,10 @@ class BiblePane(Gtk.Box):
         if self._is_imagery:
             self._selected_verse = verse_num
             self._imagery.render_for(self._book, self._chapter, verse_num)
+            return
+        if self._is_interlinear:
+            self._selected_verse = verse_num
+            self._interlinear.select_verse(verse_num)
             return
         # The broadcast speaks app-space; this pane's rendered verse
         # numbers are its module's own — translate before touching tags

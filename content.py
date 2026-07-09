@@ -18,6 +18,7 @@ import ebible_bridge
 import catena_bridge
 import imagery_bridge
 import archaeology_bridge
+import interlinear_data
 from i18n import _
 
 # Pane-readable SWORD module types (Bibles, commentaries, browsable books).
@@ -38,7 +39,8 @@ def readable_module_names() -> list[str]:
             keep.append(name)
     return (keep + cast(list[str], ebible_bridge.module_names())
             + catena_bridge.module_names() + imagery_bridge.module_names()
-            + archaeology_bridge.module_names())
+            + archaeology_bridge.module_names()
+            + interlinear_data.module_names())
 
 
 def kind(name: str) -> str:
@@ -53,6 +55,8 @@ def kind(name: str) -> str:
         return 'imagery'
     if archaeology_bridge.is_archaeology_module(name):
         return 'books'
+    if interlinear_data.is_interlinear_module(name):
+        return 'bible'
     if ebible_bridge.is_ebible_module(name):
         return 'bible'
     mtype = sword_bridge.module_type(name)
@@ -63,6 +67,16 @@ def kind(name: str) -> str:
     return 'bible'
 
 
+def is_text_bible(name: str) -> bool:
+    """A 'bible'-kind module that actually carries readable verse text in a
+    SWORD/eBible backend. The interlinear is bible-kind for picker grouping
+    but has neither a searchable text stream nor a TextView render path —
+    callers wanting a Bible to search or to read (All-Bibles search, the
+    window's default-Bible pick) filter through here."""
+    return (kind(name) == 'bible'
+            and not interlinear_data.is_interlinear_module(name))
+
+
 def has_footnotes(name: str) -> bool:
     """Whether the module can surface translator footnotes in a reading
     pane — drives the header f* toggle's sensitivity. Only verse-keyed
@@ -70,6 +84,8 @@ def has_footnotes(name: str) -> bool:
     declaring a footnote filter still counts as False here."""
     if ebible_bridge.is_ebible_module(name):
         return bool(ebible_bridge.module_has_footnotes(name))
+    if interlinear_data.is_interlinear_module(name):
+        return False   # glosses are inline; no translator-footnote stream
     if kind(name) not in ('bible', 'commentary'):
         return False
     return bool(sword_bridge.module_has_footnotes(name))
@@ -88,6 +104,9 @@ def feature_card(name: str) -> dict | None:
     if archaeology_bridge.is_archaeology_module(name):
         return {'icon': 'scriptura-artifact-symbolic',
                 'tagline': _('Artifacts of the biblical world')}
+    if interlinear_data.is_interlinear_module(name):
+        return {'icon': 'font-x-generic-symbolic',
+                'tagline': _('Greek with gloss & parsing, word by word')}
     return None
 
 
@@ -99,6 +118,8 @@ def language(name: str) -> str:
         return 'en'
     if archaeology_bridge.is_archaeology_module(name):
         return 'en'
+    if interlinear_data.is_interlinear_module(name):
+        return 'grc'
     if ebible_bridge.is_ebible_module(name):
         return cast(str, ebible_bridge.module_language(name))
     return cast(str, sword_bridge.module_language(name))
@@ -134,6 +155,18 @@ def info(name: str) -> dict:
         }
     if archaeology_bridge.is_archaeology_module(name):
         return archaeology_bridge.info()
+    if interlinear_data.is_interlinear_module(name):
+        return {
+            'description': _('The Greek New Testament word by word — each '
+                             'word with its English gloss, parsing, '
+                             'transliteration, and Strong’s number.'),
+            'type': _('Interlinear'),
+            'license': 'CC BY 4.0',
+            'about': _('Translators Amalgamated Greek NT (TAGNT), created '
+                       'by STEPBible at Tyndale House Cambridge. Follows '
+                       'the Nestle-Aland word stream; variant words from '
+                       'other editions are preserved in the data.'),
+        }
     if ebible_bridge.is_ebible_module(name):
         return cast(dict, ebible_bridge.module_info(name))
     return cast(dict, sword_bridge.module_info(name))
@@ -152,6 +185,8 @@ def can_remove(name: str) -> bool:
         return True
     if archaeology_bridge.is_archaeology_module(name):
         return False  # bundled inside the app; not user-removable
+    if interlinear_data.is_interlinear_module(name):
+        return True
     if ebible_bridge.is_ebible_module(name):
         return True
     return cast(bool, sword_bridge.can_remove_module(name))
@@ -163,6 +198,8 @@ def remove(name: str) -> None:
         catena_bridge.remove_pack()
     elif imagery_bridge.is_imagery_module(name):
         imagery_bridge.remove_pack()
+    elif interlinear_data.is_interlinear_module(name):
+        interlinear_data.remove()
     elif ebible_bridge.is_ebible_module(name):
         ebible_bridge.remove_module(name)
     else:

@@ -166,6 +166,34 @@ def test_decode_robinson_noun_case_number_gender():
     assert 'Masculine' in result
 
 
+def test_decode_robinson_negative_particle_is_not_nominative():
+    # PRT-N = negative particle (μή, οὐ). The -N suffix on a caseless part
+    # of speech is a qualifier, not a case — this used to decode as
+    # 'Particle · Nominative'.
+    result = sword_bridge.decode_robinson('robinson:PRT-N')
+    assert result == 'Particle · Negative'
+
+
+def test_decode_robinson_indeclinable_suffixes():
+    assert sword_bridge.decode_robinson(
+        'robinson:ADV-N') == 'Adverb · Negative'
+    assert sword_bridge.decode_robinson(
+        'robinson:ADV-I') == 'Adverb · Interrogative'
+    assert sword_bridge.decode_robinson(
+        'robinson:ADV-S') == 'Adverb · Superlative'
+    assert sword_bridge.decode_robinson(
+        'robinson:CONJ-N') == 'Conjunction · Negative'
+    assert sword_bridge.decode_robinson(
+        'robinson:COND-K') == 'Conditional · Crasis'
+
+
+def test_decode_robinson_declinables_unaffected_by_suffix_fix():
+    # The CNG path must still handle real cases — N starts a CNG triple
+    # only on declinable parts of speech.
+    result = sword_bridge.decode_robinson('robinson:N-NSF')
+    assert 'Nominative' in result and 'Feminine' in result
+
+
 # ── decode_hebrew_morph — Hebrew morphology ──────────────────────────────────
 
 def test_decode_hebrew_morph_none_input():

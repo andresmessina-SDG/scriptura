@@ -25,6 +25,7 @@ import ebible_bridge
 import catena_bridge
 import imagery_bridge
 import archaeology_bridge
+import interlinear_data
 import content
 
 _log = logging.getLogger('scriptura.modules')
@@ -474,6 +475,15 @@ class ModuleManagerWindow(Adw.Window):
             group.add(self._make_catena_row())
             group.add(self._make_archaeology_row())
             group.add(self._make_imagery_row())
+            group.add(self._make_interlinear_row())
+            t['curated'].append(group)
+        elif tab_id == 'bibles':
+            # Pinned here too: someone browsing Greek texts should meet the
+            # interlinear beside them, without knowing about the curated
+            # shelf in Books & More (same pattern as the catena pin below).
+            group = Adw.PreferencesGroup()
+            group.set_title(_('Curated for Scriptura'))
+            group.add(self._make_interlinear_row())
             t['curated'].append(group)
         elif tab_id == 'commentaries':
             # Also pinned here: someone hunting commentaries should meet it
@@ -514,6 +524,27 @@ class ModuleManagerWindow(Adw.Window):
             btn = Gtk.Button(label=_('Download'))
             btn.add_css_class('suggested-action')
             btn.connect('clicked', self._on_catena_download)
+        btn.set_valign(Gtk.Align.CENTER)
+        row.add_suffix(btn)
+        return row
+
+    def _make_interlinear_row(self):
+        row = Adw.ActionRow()
+        row.set_title(_('Interlinear — Greek NT'))
+        if interlinear_data.is_installed():
+            row.set_subtitle(
+                _('Every NT word with gloss, parsing, and Strong’s — '
+                  'Tyndale House data (CC BY)'))
+            btn = self._trash_button(
+                lambda: self._confirm_remove_generic(
+                    _('Interlinear — Greek NT'), self._do_interlinear_remove))
+        else:
+            row.set_subtitle(
+                _('The Greek New Testament word by word — gloss, parsing, '
+                  'and Strong’s under each word · ~29 MB download'))
+            btn = Gtk.Button(label=_('Download'))
+            btn.add_css_class('suggested-action')
+            btn.connect('clicked', self._on_interlinear_download)
         btn.set_valign(Gtk.Align.CENTER)
         row.add_suffix(btn)
         return row
@@ -1270,6 +1301,16 @@ class ModuleManagerWindow(Adw.Window):
         self._pack_download(
             btn, src['label'],
             lambda p: open_data.download_source(source_id, on_progress=p))
+
+    def _on_interlinear_download(self, btn):
+        self._pack_download(
+            btn, _('Interlinear — Greek NT'),
+            lambda p: interlinear_data.download_and_build(on_progress=p))
+
+    def _do_interlinear_remove(self):
+        interlinear_data.remove()
+        self._modules_changed()
+        self._populate()
 
     def _do_catena_remove(self):
         catena_bridge.remove_pack()

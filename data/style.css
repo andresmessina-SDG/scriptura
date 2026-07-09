@@ -575,6 +575,101 @@ button.menu-theme-toggle {
     padding: 0 2px;
 }
 
+/* ── Interlinear ─────────────────────────────────────────────────────── */
+/* Word-stack cells: the Greek surface in a serif at reading size; gloss /
+   parsing / translit / Strong's as small quiet apparatus. Hierarchy by
+   type, never colour — the one accent appears only on the tappable word
+   under the pointer and on the active line chips.
+   Font note: the Greek face must lead with a FULLY polytonic serif. The
+   house reading stack falls through to Georgia (= Gelasio on Fedora),
+   which claims the varia-accented codepoints but renders them with a
+   detached spacing grave (καὶ → και`), while chars it lacks fall through
+   to Noto Serif and look right — so one polytonic face for the whole word
+   avoids both the broken graves and mid-word font switching. */
+.interlinear-word {
+    font-family: 'Noto Serif', 'DejaVu Serif', 'Source Serif 4', serif;
+    font-size: 21px;
+}
+.interlinear-strongs {
+    font-size: 10px;
+    color: alpha(currentColor, 0.45);
+    font-feature-settings: "tnum" 1;
+}
+.interlinear-translit {
+    font-size: 11px;
+    font-style: italic;
+    color: alpha(currentColor, 0.6);
+}
+.interlinear-gloss {
+    font-size: 12px;
+    color: alpha(currentColor, 0.65);
+    margin-top: 1px;
+}
+/* '<the>' — a word English supplies implicitly; quieter than a real gloss
+   so it reads as annotation, not markup. */
+.interlinear-gloss-implicit {
+    font-style: italic;
+    color: alpha(currentColor, 0.4);
+}
+.interlinear-parse {
+    font-size: 9.5px;
+    letter-spacing: 1px;
+    color: alpha(currentColor, 0.45);
+    margin-top: 1px;
+}
+.interlinear-cell {
+    padding: 3px 6px;
+    border-radius: 6px;
+}
+.interlinear-cell:hover {
+    background-color: alpha(@accent_bg_color, 0.10);
+}
+.interlinear-vnum {
+    font-size: 12px;
+    font-weight: 600;
+    color: alpha(currentColor, 0.4);
+    font-feature-settings: "tnum" 1;
+    padding: 0 3px 5px 1px;
+}
+.interlinear-chap-head {
+    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-size: 19px;
+    font-weight: 600;
+}
+.interlinear-attrib {
+    font-size: 10.5px;
+    color: alpha(currentColor, 0.4);
+}
+/* Line chips: same capsule grammar as .module-chip — quiet outline at
+   rest, accent tint when the line is on (an active toggle is a tappable
+   chip, so it may carry colour). Transparent base kills the stock hover,
+   so each state is restored explicitly. */
+button.interlinear-chip {
+    background-image: none;
+    background-color: transparent;
+    box-shadow: none;
+    border: 1px solid alpha(@borders, 0.7);
+    border-radius: 999px;
+    min-height: 0;
+    padding: 2px 12px;
+    font-size: 12px;
+}
+button.interlinear-chip:hover {
+    background-color: alpha(currentColor, 0.07);
+}
+button.interlinear-chip:active {
+    background-color: alpha(currentColor, 0.12);
+}
+button.interlinear-chip:checked {
+    border-color: transparent;
+    background-color: alpha(@accent_bg_color, 0.15);
+    color: @accent_color;
+}
+button.interlinear-chip:checked:hover {
+    background-color: alpha(@accent_bg_color, 0.22);
+}
+
 /* ── Reading plan ────────────────────────────────────────────────────── */
 
 /* Today hero: a neutral grey kicker over a prominent passage reference.

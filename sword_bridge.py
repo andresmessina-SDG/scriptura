@@ -808,6 +808,9 @@ def display_name(name):
     import archaeology_bridge
     if archaeology_bridge.is_archaeology_module(name):
         return archaeology_bridge.display_name(name)
+    import interlinear_data
+    if interlinear_data.is_interlinear_module(name):
+        return interlinear_data.display_name(name)
     return DISPLAY_NAMES.get(name, name)
 
 
@@ -2244,6 +2247,15 @@ _ROB_CASE   = {'N': 'Nominative', 'G': 'Genitive', 'D': 'Dative',
 _ROB_NUMBER = {'S': 'Singular', 'P': 'Plural'}
 _ROB_GENDER = {'M': 'Masculine', 'F': 'Feminine', 'N': 'Neuter'}
 _ROB_PERSON = {'1': '1st', '2': '2nd', '3': '3rd'}
+# Caseless parts of speech: a trailing field is a qualifier suffix, never a
+# case-number-gender triple (PRT-N = negative particle — not nominative,
+# which particles cannot carry).
+_ROB_INDECLINABLE = ('PRT', 'CONJ', 'PREP', 'ADV', 'INJ', 'COND',
+                     'ARAM', 'HEB')
+_ROB_SUFFIX = {'N': 'Negative', 'I': 'Interrogative', 'K': 'Crasis',
+               'C': 'Comparative', 'S': 'Superlative', 'ATT': 'Attic form',
+               'ABB': 'Abbreviated', 'HEB': 'Hebrew transliteration',
+               'ARAM': 'Aramaic transliteration'}
 
 
 def decode_robinson(morph):
@@ -2280,6 +2292,9 @@ def decode_robinson(morph):
             elif len(extra) >= 2:
                 tokens.append(_ROB_PERSON.get(extra[0], extra[0]) + ' Person')
                 tokens.append(_ROB_NUMBER.get(extra[1], extra[1]))
+    elif pos_raw in _ROB_INDECLINABLE:
+        for f in fields:
+            tokens.append(_ROB_SUFFIX.get(f, f))
     elif fields:
         cng = fields[0]
         if len(cng) >= 1: tokens.append(_ROB_CASE.get(cng[0], cng[0]))
