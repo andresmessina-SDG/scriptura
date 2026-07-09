@@ -53,8 +53,13 @@ def auto_reading_ink(paper_hex):
 
 # The curated reading serif stack, expanded from the generic 'serif' default.
 # Shared so presentation mode renders in the same face as the reading pane.
+# 'Noto Serif' sits before 'Georgia' deliberately: on Fedora, fontconfig
+# binds Georgia to Gelasio, which claims the polytonic varia codepoints but
+# renders them as detached spacing graves (καὶ → και`) — so tagged Greek
+# (MorphGNT/SBLGNT) must reach a fully polytonic face first. Machines with
+# the earlier families installed are unaffected for Latin text.
 READING_SERIF_STACK = ("'Source Serif 4', 'Source Serif Pro', 'Charter', "
-                       "'Iowan Old Style', 'Georgia', serif")
+                       "'Iowan Old Style', 'Noto Serif', 'Georgia', serif")
 
 # Logical highlight IDs (persisted in annotations.json) → softer rendered tints.
 # Persisted values are unchanged so existing user data still reads correctly;
