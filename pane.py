@@ -49,6 +49,11 @@ def auto_reading_ink(paper_hex):
     nr, ng, nb = colorsys.hls_to_rgb(h, 0.16, min(s, 0.55))
     return f'#{round(nr * 255):02x}{round(ng * 255):02x}{round(nb * 255):02x}'
 
+# The curated reading serif stack, expanded from the generic 'serif' default.
+# Shared so presentation mode renders in the same face as the reading pane.
+READING_SERIF_STACK = ("'Source Serif 4', 'Source Serif Pro', 'Charter', "
+                       "'Iowan Old Style', 'Georgia', serif")
+
 # Logical highlight IDs (persisted in annotations.json) → softer rendered tints.
 # Persisted values are unchanged so existing user data still reads correctly;
 # only the on-screen color is muted.
@@ -1548,8 +1553,7 @@ class BiblePane(Gtk.Box):
         # Expand the generic 'serif' default into a curated reading stack;
         # respect any explicit family the user has chosen.
         if self._font_family == 'serif':
-            family_decl = "'Source Serif 4', 'Source Serif Pro', 'Charter', " \
-                          "'Iowan Old Style', 'Georgia', serif"
+            family_decl = READING_SERIF_STACK
         else:
             family_decl = f"'{self._font_family}', serif"
         dark = Adw.StyleManager.get_default().get_dark()
@@ -1614,6 +1618,52 @@ class BiblePane(Gtk.Box):
 
     def set_reading_margin(self, px):
         self._reading_scroll.set_base_margin(px)
+
+    # ── Presentation-mode accessors ───────────────────────────────────────────
+    def current_passage(self):
+        """(book, chapter, translation, verses) for this pane's current chapter,
+        or None when it isn't showing a navigable Bible/commentary chapter.
+        `book` stays canonical English (the cross-chapter navigator and SWORD
+        keys need it); `verses` is the same [(verse, source_html), …] the
+        reading view drew, so presentation reuses the fetched text without
+        re-hitting SWORD."""
+        if not self._is_verse_navigable() or not self._rendered_verses:
+            return None
+        # Bibles only — a commentary returns the same multi-verse block for
+        # every verse in a section, which would project as a wall of repeats.
+        if self._module_type != 'Biblical Texts':
+            return None
+        # An out-of-coverage chapter (e.g. an NT-only module on an OT book) is
+        # kept in _rendered_verses as empty entries; don't present a blank.
+        if not any(re.sub(r'<[^>]+>', '', str(h)).strip()
+                   for _v, h in self._rendered_verses):
+            return None
+        translation = sword_bridge.display_name(self._module)
+        return self._book, self._chapter, translation, self._rendered_verses
+
+    def current_verse(self):
+        """The verse the reader is focused on (or None), so presentation can
+        open on the page holding it rather than always at the chapter top."""
+        return self._selected_verse
+
+    def reading_appearance(self):
+        """The effective paper / ink / serif this pane reads with, so the
+        presentation surface can mirror it (opaque bg — a fullscreen slide
+        can't fall through to @view_bg_color the way the docked view does)."""
+        dark = Adw.StyleManager.get_default().get_dark()
+        if self._bg_color:
+            surface = self._bg_color
+        elif not dark:
+            surface = '#f7f4ee'
+        else:
+            surface = '#1e1e1e'
+        ink = self._text_color or auto_reading_ink(surface)
+        family = (READING_SERIF_STACK if self._font_family == 'serif'
+                  else f"'{self._font_family}', serif")
+        return {
+            'surface': surface, 'ink': ink, 'family': family,
+            'bold': self._font_bold, 'font_size': self._font_size,
+        }
 
     def _on_copy_chapter(self, _btn):
         """Copy this pane's current chapter to clipboard as plain text:

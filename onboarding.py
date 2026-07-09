@@ -56,6 +56,20 @@ GESTURES: list[tuple[str, list[tuple[str, str]]]] = [
         (N_('Hover the top edge in reading mode'),
          N_('Bring the toolbar back')),
     ]),
+    (N_('Presentation'), [
+        (N_('Press F5, or open the menu'),
+         N_('Present the passage full-screen')),
+        (N_('Arrow keys, Space, or the on-screen controls'),
+         N_('Step through the passage')),
+        (N_('The V key, or the “V” button'),
+         N_('Switch to one verse per slide')),
+        (N_('The P key, or the Parallel button'),
+         N_('Show both open translations side by side')),
+        (N_('Ctrl+L while presenting'),
+         N_('Jump to any passage')),
+        (N_('+ / − keys, or the zoom controls'),
+         N_('Make the text larger or smaller')),
+    ]),
 ]
 
 

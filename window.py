@@ -19,6 +19,7 @@ import reading_plans
 import annotations
 import search_controller
 from pane import BiblePane, auto_reading_ink
+from present import PresentView
 from module_manager import ModuleManagerWindow
 from search_panel import SearchPanel
 from study_journal import StudyJournalWindow
@@ -633,7 +634,6 @@ class BibleWindow(Adw.ApplicationWindow):
         grip_motion.connect('motion', self._on_grip_motion)
         grip_motion.connect('leave', lambda _c: self._pane_grip.set_visible(False))
         overlay.add_controller(grip_motion)
-        overlay.add_overlay(self._jump_revealer)
 
         # ── Exit-reading-mode affordance ─────────────────────────────────────
         # Floats a small circular X at top-center after the cursor hovers in
@@ -657,6 +657,19 @@ class BibleWindow(Adw.ApplicationWindow):
         self._exit_reading_revealer.set_child(self._exit_reading_btn)
         self._exit_reading_revealer.set_reveal_child(False)
         overlay.add_overlay(self._exit_reading_revealer)
+
+        # Presentation surface — an opaque fullscreen page laid over the reading
+        # panes. Hidden until F5 / present mode; covers the panes so exiting is
+        # just a hide (the reading view underneath is never torn down).
+        self._present_view = PresentView(on_cross=self._present_cross)
+        self._present_view.set_visible(False)
+        overlay.add_overlay(self._present_view)
+        self._build_present_controls(overlay)
+
+        # The quick-jump bar sits on top of every other overlay — including the
+        # opaque presentation surface — so Ctrl+L is never occluded (added here,
+        # after the present view, because Gtk.Overlay z-order follows add order).
+        overlay.add_overlay(self._jump_revealer)
 
         self._reading_hover_timer = None
         # Attach the motion controller to the window itself so that the
@@ -771,8 +784,8 @@ class BibleWindow(Adw.ApplicationWindow):
             ('search',   ['<Ctrl>f'], lambda: self._on_search_clicked(None)),
             ('search-next', ['F3'], lambda: self._step_search_result(prev=False)),
             ('search-prev', ['<Shift>F3'], lambda: self._step_search_result(prev=True)),
-            ('reading-mode', ['F11'],
-             lambda: self._set_reading_mode(not getattr(self, '_reading_mode', False))),
+            ('reading-mode', ['F11'], self._toggle_reading_mode),
+            ('present-mode', ['F5'], self._toggle_present_mode),
             ('focus-pane-1', ['<Ctrl>1'], lambda: self.pane1._view.grab_focus()),
             ('focus-pane-2', ['<Ctrl>2'], self._focus_pane2),
             ('focus-other-pane', ['<Ctrl>Tab'], self._focus_other_pane),
@@ -816,10 +829,54 @@ class BibleWindow(Adw.ApplicationWindow):
             if self._menu_split.get_show_sidebar():
                 self._menu_split.set_show_sidebar(False)
                 return True
+            if getattr(self, '_present_mode', False):
+                self._set_present_mode(False)
+                return True
             if getattr(self, '_reading_mode', False):
                 self._set_reading_mode(False)
                 return True
             return False
+
+        # Presentation stepping: while presenting, the passage is paged and
+        # these keys walk it. Gate on the jump bar being closed (the only text
+        # entry over the surface — Ctrl+L) rather than on focus, so stepping
+        # works regardless of which widget holds focus, and only pauses while
+        # you're actually typing a reference.
+        if (getattr(self, '_present_mode', False) and not alt
+                and not self._jump_revealer.get_reveal_child()):
+            pv = self._present_view
+            # Size nudge honours both plain +/- and the universal Ctrl +/- zoom
+            # idiom, so it fires whether or not Ctrl is held.
+            if keyval in (Gdk.KEY_plus, Gdk.KEY_equal, Gdk.KEY_KP_Add):
+                pv.bump_size(1)
+                return True
+            if keyval in (Gdk.KEY_minus, Gdk.KEY_underscore,
+                          Gdk.KEY_KP_Subtract):
+                pv.bump_size(-1)
+                return True
+            # Stepping / granularity are plain (unmodified) keys, so Ctrl+F,
+            # Ctrl+L, Ctrl+1/2 etc. still pass through in present mode.
+            if not ctrl:
+                action = None
+                if keyval in (Gdk.KEY_Right, Gdk.KEY_space, Gdk.KEY_Page_Down):
+                    action = pv.step_next
+                elif keyval in (Gdk.KEY_Left, Gdk.KEY_Page_Up):
+                    action = pv.step_prev
+                elif keyval == Gdk.KEY_Home:
+                    action = pv.step_home
+                elif keyval == Gdk.KEY_End:
+                    action = pv.step_end
+                elif keyval in (Gdk.KEY_v, Gdk.KEY_V):
+                    action = pv.toggle_granularity
+                elif keyval in (Gdk.KEY_p, Gdk.KEY_P):
+                    self._present_toggle_parallel(not pv.parallel)
+                    return True
+                if action is not None:
+                    action()
+                    # Keep the strip's toggles in sync (e.g. after 'v'); the
+                    # strip itself is shown by pointer position, not keys.
+                    self._sync_present_controls()
+                    return True
 
         # Home / End jump to first / last verse of current chapter — but
         # only when focus isn't on a text input, so typing in the search
@@ -1647,7 +1704,10 @@ class BibleWindow(Adw.ApplicationWindow):
         if result:
             book, chapter, verse = result
             self._hide_jump()
-            self._go_to(book, chapter, verse)
+            if getattr(self, '_present_mode', False):
+                self._present_jump(book, chapter, verse)
+            else:
+                self._go_to(book, chapter, verse)
         else:
             entry.add_css_class('error')
             def clear_err():
@@ -1932,9 +1992,12 @@ class BibleWindow(Adw.ApplicationWindow):
             if pane._module == module:
                 pane.force_navigate(pane._book, pane._chapter, None)
 
-    def _set_reading_mode(self, on):
+    def _set_reading_mode(self, on, toast=True):
         """Distraction-free mode: hide the window header, pane toolbars, and
-        any open overlay panels. Esc / F11 / mouse-to-top-edge to exit."""
+        any open overlay panels. Esc / F11 / mouse-to-top-edge to exit.
+
+        Presentation mode reuses this chrome-hiding primitive but supplies its
+        own messaging, so it calls with ``toast=False``."""
         self._reading_mode = bool(on)
         self._header.set_visible(not on)
         self.pane1._toolbar.set_visible(not on)
@@ -1951,7 +2014,9 @@ class BibleWindow(Adw.ApplicationWindow):
             self._search_split.set_show_sidebar(False)
             self._jump_revealer.set_reveal_child(False)
             self._crossref_revealer.set_reveal_child(False)
-            self._toast(_('Reading mode — Esc, F11, or hover the top edge to exit'))
+            if toast:
+                self._toast(
+                    _('Reading mode — Esc, F11, or hover the top edge to exit'))
         else:
             self._reading_hide_exit_btn()
 
@@ -1982,6 +2047,12 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _on_reading_mouse_motion(self, _controller, _x, y):
         if not getattr(self, '_reading_mode', False):
+            return
+        # Presentation mode reuses reading-mode chrome-hiding but has its own
+        # control strip, shown by pointer position (bottom edge), not the
+        # reading exit affordance.
+        if getattr(self, '_present_mode', False):
+            self._present_update_controls(y)
             return
         revealed = self._exit_reading_revealer.get_reveal_child()
 
@@ -2019,6 +2090,351 @@ class BibleWindow(Adw.ApplicationWindow):
             self._reading_hover_timer = None
         if hasattr(self, '_exit_reading_revealer'):
             self._exit_reading_revealer.set_reveal_child(False)
+
+    # ── Presentation mode ─────────────────────────────────────────────────────
+    # Built on top of reading mode: the same chrome-hiding, plus fullscreen so
+    # a single passage fills a projector / mirrored display. Entering remembers
+    # the prior reading + fullscreen state so exit restores exactly what the
+    # user had. The large-type render (step 2), keyboard stepping (step 3) and
+    # auto-hiding control strip (step 4) layer on from here.
+    def _toggle_present_mode(self):
+        self._set_present_mode(not getattr(self, '_present_mode', False))
+
+    def _toggle_reading_mode(self):
+        # F11 out of the immersive state: if presenting, leave presentation
+        # entirely rather than half-peeling only the reading chrome.
+        if getattr(self, '_present_mode', False):
+            self._set_present_mode(False)
+            return
+        self._set_reading_mode(not getattr(self, '_reading_mode', False))
+
+    def _set_present_mode(self, on):
+        on = bool(on)
+        if on == getattr(self, '_present_mode', False):
+            return
+        self._present_mode = on
+        if on:
+            self._present_was_reading = getattr(self, '_reading_mode', False)
+            self._present_was_fullscreen = self.is_fullscreen()
+            self._set_reading_mode(True, toast=False)
+            self._show_present()
+            self.fullscreen()
+            self._toast(
+                _('Presentation — Esc to exit, controls at the bottom edge'))
+        else:
+            self._present_show_controls(False)
+            self._present_view.set_visible(False)
+            if not getattr(self, '_present_was_fullscreen', False):
+                self.unfullscreen()
+            if not getattr(self, '_present_was_reading', False):
+                self._set_reading_mode(False, toast=False)
+
+    def _present_source_pane(self):
+        """The pane whose passage projects. The primary pane leads; fall back to
+        the secondary if only it has a navigable chapter loaded."""
+        if self.pane1.current_passage() is not None:
+            return self.pane1
+        if self.pane2.get_visible() and self.pane2.current_passage() is not None:
+            return self.pane2
+        return self.pane1
+
+    def _present_bilingual_source(self):
+        """(primary, secondary) panes when a parallel projection is possible:
+        split view, both showing a navigable Bible chapter, on the same
+        reference, in different modules. Else None. Primary is pane1."""
+        if not self.pane2.get_visible():
+            return None
+        p1 = self.pane1.current_passage()
+        p2 = self.pane2.current_passage()
+        if p1 is None or p2 is None:
+            return None
+        if (p1[0], p1[1]) != (p2[0], p2[1]):        # same book & chapter
+            return None
+        if self.pane1._module == self.pane2._module:  # two views of one text
+            return None
+        return (self.pane1, self.pane2)
+
+    def _show_present(self):
+        bi = self._present_bilingual_source()
+        pane = bi[0] if bi else self._present_source_pane()
+        self._present_module = pane._module
+        self._present_module_b = bi[1]._module if bi else None
+        self._present_bilingual = bool(bi)          # user intent, per session
+        # Invalidate any cross/jump load still in flight from a previous present
+        # session so it can't clobber the passage we're about to show.
+        self._present_load_gen = getattr(self, '_present_load_gen', 0) + 1
+        # Header is already hidden (reading mode), so the window height minus the
+        # surface's own padding is a good pre-allocation viewport estimate — lets
+        # the very first page pre-fit instead of flashing an overflow.
+        self._present_view.set_viewport_hint(self.get_height() - 80)
+        self._present_view.set_appearance(pane.reading_appearance())
+        passage = pane.current_passage()
+        if passage is None:
+            # Nothing navigable to project (e.g. a lexicon/imagery module) —
+            # show the surface with a gentle placeholder rather than a blank.
+            self._present_book = None
+            self._present_view.show_placeholder(
+                _('Open a Bible passage to present it.'))
+        else:
+            book, chapter, translation, verses = passage
+            self._present_book, self._present_chapter = book, chapter
+            secondary = None
+            if bi:
+                _b, _c, trans_b, verses_b = bi[1].current_passage()
+                secondary = (trans_b, verses_b)
+            # Both panes' verses are already fetched — load synchronously (no
+            # worker thread needed) so the first slide is ready instantly.
+            self._present_view.load_chapter(
+                book, chapter, translation, verses,
+                focus_verse=pane.current_verse(), secondary=secondary)
+            self._present_view.set_parallel(bool(bi))
+        self._present_view.set_visible(True)
+        self._sync_present_controls()
+
+    # ── Cross-chapter navigation (presentation) ───────────────────────────────
+    # Stepping off either end of a chapter rolls into the adjacent one, so the
+    # arrows are always live. Present mode navigates its own location; the
+    # source pane is left where it was (exit returns you to your study spot).
+    def _adjacent_chapter(self, book, chapter, delta):
+        """(book, chapter) one chapter forward/back from here, crossing book
+        boundaries; None at the very start / end of the canon."""
+        try:
+            idx = BOOKS.index(book)
+        except ValueError:
+            return None
+        module = self._present_module
+        if delta > 0:
+            if chapter < sword_bridge.chapter_count(book, module):
+                return (book, chapter + 1)
+            if idx < len(BOOKS) - 1:
+                return (BOOKS[idx + 1], 1)
+            return None
+        if chapter > 1:
+            return (book, chapter - 1)
+        if idx > 0:
+            prev = BOOKS[idx - 1]
+            return (prev, sword_bridge.chapter_count(prev, module))
+        return None
+
+    def _load_chapter_verses(self, module, book, chapter):
+        import ebible_bridge
+        if ebible_bridge.is_ebible_module(module):
+            return ebible_bridge.load_chapter(module, book, chapter)
+        return sword_bridge.load_chapter(module, book, chapter)
+
+    def _present_cross(self, delta):
+        """Load the chapter `delta` away into the presentation surface, landing
+        on its first page (forward) or last page (backward). A canon edge or an
+        empty (out-of-coverage) chapter leaves the current slide unchanged."""
+        if not getattr(self, '_present_book', None):
+            return
+        nxt = self._adjacent_chapter(
+            self._present_book, self._present_chapter, delta)
+        if nxt is None:
+            return
+        book, chapter = nxt
+        self._present_load_async(
+            book, chapter, land='first' if delta > 0 else 'last')
+
+    def _present_jump(self, book, chapter, verse):
+        """Jump the presentation to an arbitrary reference (from the Ctrl+L bar)
+        without moving the source pane. Opens on the page holding `verse` when
+        one is given. A book the presenting module doesn't carry leaves the
+        slide unchanged and says so, rather than projecting a blank."""
+        if book not in BOOKS:
+            return
+        chapter = max(1, min(chapter,
+                             sword_bridge.chapter_count(book,
+                                                        self._present_module)))
+        self._present_load_async(
+            book, chapter, focus_verse=verse, empty_toast=True)
+
+    def _present_load_async(self, book, chapter, *, land='first',
+                            focus_verse=None, empty_toast=False):
+        """Load a chapter for the presentation surface off the UI thread, then
+        show it on the main loop — so a slow module never stalls the projected
+        display mid-roll. A generation counter drops any load a newer navigation
+        (or exiting present mode) has superseded, so rapid arrow-rolls can't
+        paint a stale chapter."""
+        module = self._present_module
+        module_b = (self._present_module_b
+                    if getattr(self, '_present_bilingual', False) else None)
+        self._present_load_gen = getattr(self, '_present_load_gen', 0) + 1
+        gen = self._present_load_gen
+
+        def work():
+            try:
+                verses = self._load_chapter_verses(module, book, chapter)
+            except Exception:
+                verses = []
+            translation = sword_bridge.display_name(module)
+            secondary = None
+            if module_b:
+                try:
+                    verses_b = self._load_chapter_verses(module_b, book, chapter)
+                except Exception:
+                    verses_b = []
+                # Only offer the second column where it actually has this
+                # chapter — otherwise this chapter degrades cleanly to single.
+                if any(re.sub(r'<[^>]+>', '', str(h)).strip()
+                       for _v, h in verses_b):
+                    secondary = (sword_bridge.display_name(module_b), verses_b)
+            GLib.idle_add(self._present_load_finish, gen, book, chapter, verses,
+                          translation, secondary, land, focus_verse, empty_toast)
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def _present_load_finish(self, gen, book, chapter, verses, translation,
+                             secondary, land, focus_verse, empty_toast):
+        if (gen != getattr(self, '_present_load_gen', 0)
+                or not getattr(self, '_present_mode', False)):
+            return GLib.SOURCE_REMOVE           # superseded, or present exited
+        if not any(re.sub(r'<[^>]+>', '', str(h)).strip() for _v, h in verses):
+            if empty_toast:
+                self._toast(_('%s isn’t in this translation.') % book_label(book))
+            return GLib.SOURCE_REMOVE           # canon edge / out of coverage
+        self._present_book, self._present_chapter = book, chapter
+        self._present_view.load_chapter(
+            book, chapter, translation, verses,
+            land=land, focus_verse=focus_verse, secondary=secondary)
+        # Honour the session's parallel intent, but only where the second column
+        # actually loaded (an out-of-coverage chapter shows single).
+        self._present_view.set_parallel(
+            bool(secondary) and getattr(self, '_present_bilingual', False))
+        self._sync_present_controls()
+        return GLib.SOURCE_REMOVE
+
+    # ── Presentation control strip ────────────────────────────────────────────
+    # A floating OSD bar (media-overlay style, theme-neutral over any paper)
+    # with the step + toggle controls. Shown by pointer position (near the
+    # bottom edge) rather than an idle timer, so it never hops on its own;
+    # keyboard-only presenting leaves it hidden for a clean slide.
+    def _build_present_controls(self, overlay):
+        def icon_button(icon, tooltip, handler, toggle=False):
+            btn = (Gtk.ToggleButton() if toggle else Gtk.Button())
+            btn.set_icon_name(icon)
+            btn.add_css_class('flat')
+            btn.set_tooltip_text(tooltip)
+            set_accessible_label(btn, tooltip)
+            btn.connect('toggled' if toggle else 'clicked', handler)
+            return btn
+
+        self._present_prev_btn = icon_button(
+            'go-previous-symbolic', _('Previous'),
+            lambda _b: self._present_step(self._present_view.step_prev))
+        self._present_next_btn = icon_button(
+            'go-next-symbolic', _('Next'),
+            lambda _b: self._present_step(self._present_view.step_next))
+        self._present_numbers_btn = icon_button(
+            'view-list-ordered-symbolic', _('Verse numbers'),
+            lambda b: self._present_view.set_show_numbers(b.get_active()),
+            toggle=True)
+        # A stylized "V" (Verse) reads better here than any stock icon — the
+        # paged/fullscreen glyphs looked like copy/fullscreen.
+        self._present_gran_btn = Gtk.ToggleButton()
+        self._present_gran_btn.add_css_class('flat')
+        _vglyph = Gtk.Label(label='V')
+        _vglyph.add_css_class('present-verse-glyph')
+        self._present_gran_btn.set_child(_vglyph)
+        self._present_gran_btn.set_tooltip_text(_('One verse per page'))
+        set_accessible_label(self._present_gran_btn, _('One verse per page'))
+        self._present_gran_btn.connect(
+            'toggled',
+            lambda b: self._present_view.set_verse_at_a_time(b.get_active()))
+        # Parallel (bilingual) toggle — only meaningful, and only shown, when a
+        # second translation is loaded (see _sync_present_controls).
+        self._present_parallel_btn = icon_button(
+            'view-dual-symbolic', _('Parallel — both translations'),
+            lambda b: self._present_toggle_parallel(b.get_active()),
+            toggle=True)
+        self._present_zoom_out_btn = icon_button(
+            'zoom-out-symbolic', _('Smaller text'),
+            lambda _b: self._present_view.bump_size(-1))
+        self._present_zoom_in_btn = icon_button(
+            'zoom-in-symbolic', _('Larger text'),
+            lambda _b: self._present_view.bump_size(1))
+        self._present_exit_btn = icon_button(
+            'window-close-symbolic', _('Exit presentation'),
+            lambda _b: self._set_present_mode(False))
+
+        strip = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        strip.add_css_class('osd')
+        strip.add_css_class('toolbar')
+        strip.add_css_class('present-controls')
+        strip.append(self._present_prev_btn)
+        strip.append(self._present_next_btn)
+        strip.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
+        strip.append(self._present_numbers_btn)
+        strip.append(self._present_gran_btn)
+        strip.append(self._present_parallel_btn)
+        strip.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
+        strip.append(self._present_zoom_out_btn)
+        strip.append(self._present_zoom_in_btn)
+        strip.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
+        strip.append(self._present_exit_btn)
+
+        self._present_controls_revealer = Gtk.Revealer()
+        self._present_controls_revealer.set_transition_type(
+            Gtk.RevealerTransitionType.SLIDE_UP)
+        self._present_controls_revealer.set_transition_duration(200)
+        self._present_controls_revealer.set_halign(Gtk.Align.CENTER)
+        self._present_controls_revealer.set_valign(Gtk.Align.END)
+        self._present_controls_revealer.set_margin_bottom(28)
+        self._present_controls_revealer.set_child(strip)
+        self._present_controls_revealer.set_reveal_child(False)
+        overlay.add_overlay(self._present_controls_revealer)
+
+        self._present_controls_shown = False
+
+    def _sync_present_controls(self):
+        """Reflect the view's current toggle state on the strip. The setters the
+        buttons drive are idempotent, so mirroring back here can't loop."""
+        if not hasattr(self, '_present_numbers_btn'):
+            return
+        self._present_numbers_btn.set_active(self._present_view.show_numbers)
+        self._present_gran_btn.set_active(self._present_view.verse_at_a_time)
+        # The parallel toggle only appears when a second translation is loaded.
+        self._present_parallel_btn.set_visible(self._present_view.has_secondary)
+        self._present_parallel_btn.set_active(self._present_view.parallel)
+
+    def _present_toggle_parallel(self, on):
+        """Show both translations (on) or collapse to the primary. Records the
+        session intent so cross-chapter rolls keep the presenter's choice."""
+        self._present_bilingual = bool(on)
+        self._present_view.set_parallel(bool(on))
+        self._sync_present_controls()
+
+    def _present_step(self, op):
+        op()
+        self._sync_present_controls()
+
+    # Show the strip while the pointer is within this many px of the bottom
+    # (near the controls), hide it once the pointer moves up to read. Purely
+    # position-driven — no idle timer — so it never hops on its own.
+    _PRESENT_CONTROL_ZONE_PX = 150
+
+    def _present_update_controls(self, y):
+        if not getattr(self, '_present_mode', False):
+            return
+        height = self.get_height()
+        if not height:
+            return
+        self._present_show_controls(y > height - self._PRESENT_CONTROL_ZONE_PX)
+
+    def _present_show_controls(self, show):
+        show = bool(show)
+        if show == self._present_controls_shown:
+            return                              # only act on an actual edge
+        self._present_controls_shown = show
+        if show:
+            self._sync_present_controls()
+        self._present_controls_revealer.set_reveal_child(show)
+
+    def _on_present_menu_clicked(self, _row):
+        # Menu entry point (F5 is the shortcut). Close the menu first so it
+        # isn't left open behind the fullscreen surface.
+        self._menu_split.set_show_sidebar(False)
+        self._set_present_mode(True)
 
     # ── Lexicon toggle ────────────────────────────────────────────────────────
 
@@ -2524,6 +2940,17 @@ class BibleWindow(Adw.ApplicationWindow):
             (N_('Reading mode (chrome hidden)'), 'action', 'reading-mode'),
             (N_('Close search, jump bar, or menu'), 'accel', 'Escape'),
         ]),
+        (N_('Presentation'), [
+            (N_('Present the passage full-screen'), 'action', 'present-mode'),
+            (N_('Next page'), 'accel', 'Right'),
+            (N_('Previous page'), 'accel', 'Left'),
+            (N_('First page'), 'accel', 'Home'),
+            (N_('Last page'), 'accel', 'End'),
+            (N_('One verse per page'), 'accel', 'v'),
+            (N_('Larger / smaller text'), 'accel', 'plus minus'),
+            (N_('Jump to a passage'), 'action', 'goto'),
+            (N_('Exit presentation'), 'accel', 'Escape'),
+        ]),
         (N_('General'), [
             (N_('Copy selection with reference'), 'accel', '<Ctrl>c'),
             (N_('Keyboard shortcuts'), 'action', 'show-help-overlay'),
@@ -2762,6 +3189,7 @@ class BibleWindow(Adw.ApplicationWindow):
         for icon, label, handler in [
             ('accessories-text-editor-symbolic', _('Study Journal'), self._on_journal_clicked),
             ('application-x-addon-symbolic',     _('Modules'),       self._on_modules_clicked),
+            ('view-fullscreen-symbolic',         _('Presentation'),  self._on_present_menu_clicked),
         ]:
             row = Adw.ActionRow(title=label)
             row.add_prefix(Gtk.Image.new_from_icon_name(icon))

@@ -530,6 +530,51 @@ button.menu-theme-toggle {
     background-color: alpha(@accent_bg_color, 0.18);
 }
 
+/* ── Presentation mode ───────────────────────────────────────────────── */
+/* Fullscreen single-passage surface. Paper / ink / serif and the passage
+   font-size are set live from the reading pane via present.py's own provider;
+   only structure + the quiet eyebrow live here. */
+.present-view {
+    padding: 40px 32px;
+}
+.present-eyebrow {
+    font-size: 12pt;
+    letter-spacing: 3px;
+    opacity: 0.5;
+    margin-bottom: 28px;
+}
+.present-text {
+    line-height: 1.4;
+}
+/* Parallel (bilingual) mode: the dimmed verse-number "spine" between the two
+   language columns. Quiet enough not to compete, tabular so it reads as a
+   marker not a word. (Grid gutters are set in code, not CSS.) */
+.present-spine {
+    font-size: 60%;
+    opacity: 0.42;
+    letter-spacing: 1px;
+    font-feature-settings: "tnum" 1;
+    margin-top: 0.35em;
+}
+/* Floating control strip: .osd + .toolbar carry the media-overlay pill; add a
+   little breathing room and keep the separators quiet. */
+.present-controls {
+    padding: 4px;
+    border-radius: 9999px;
+}
+.present-controls > separator {
+    margin: 4px 4px;
+    opacity: 0.4;
+}
+/* Stylized "V" (Verse) glyph on the one-verse-per-page toggle, sized to sit
+   with the symbolic icons beside it. */
+.present-verse-glyph {
+    font-family: 'Source Serif 4', 'Charter', Georgia, serif;
+    font-weight: bold;
+    font-size: 15px;
+    padding: 0 2px;
+}
+
 /* ── Reading plan ────────────────────────────────────────────────────── */
 
 /* Today hero: a neutral grey kicker over a prominent passage reference.
