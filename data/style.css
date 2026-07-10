@@ -649,6 +649,14 @@ button.menu-theme-toggle {
     font-size: 10.5px;
     color: alpha(currentColor, 0.4);
 }
+/* Lexicon depth link ("Full LSJ entry") — a quiet tappable link under the
+   definition; accent is allowed on tappables. */
+button.lex-depth-link {
+    font-size: 12px;
+    padding: 1px 14px;
+    min-height: 0;
+    color: @accent_color;
+}
 /* Line chips: same capsule grammar as .module-chip — quiet outline at
    rest, accent tint when the line is on (an active toggle is a tappable
    chip, so it may carry colour). Transparent base kills the stock hover,

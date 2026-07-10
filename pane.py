@@ -727,7 +727,7 @@ class BiblePane(Gtk.Box):
                  on_font_size_request=None, on_cipher_error=None,
                  on_edit_cipher=None, on_modules_changed=None,
                  on_open_artifact=None, on_module_switched=None,
-                 on_hint=None, pane_id=1):
+                 on_hint=None, on_open_verse=None, pane_id=1):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self._on_word_click = on_word_click
         self._on_click_outside_search = on_click_outside_search
@@ -1069,6 +1069,9 @@ class BiblePane(Gtk.Box):
         self._lex_panel = LexiconPanel(
             on_word_study_navigate=on_word_study_navigate,
             on_first_show=self._init_outer_paned_position,
+            on_show_peek=self.show_anchored_peek,
+            on_dismiss_peek=self._dismiss_lexicon_peek,
+            on_open_verse=on_open_verse,
         )
 
         # Content stack: the flowing reading view, or the catena card view
@@ -3398,6 +3401,38 @@ class BiblePane(Gtk.Box):
             pop.popdown()
             return True
         return False
+
+    def show_anchored_peek(self, anchor_widget, rect, content):
+        """Show `content` in the shared self-healing peek popover, anchored
+        at `rect` in `anchor_widget`. The lexicon panel's verse peek rides
+        the same instance as the dictionary/footnote peeks, so the reshow-
+        until-stable machinery and the dismissal paths (Escape, module
+        change, new lookup) cover it too."""
+        pop = self._ensure_peek_popover(anchor_widget)
+        # Bump the generation so a dictionary fetch already in flight can't
+        # replace this peek's content when it returns.
+        self._dict_gen = getattr(self, '_dict_gen', 0) + 1
+        pop.set_position(Gtk.PositionType.BOTTOM)
+        pop.set_pointing_to(rect)
+        pop.set_child(content)
+        # Invisible until it has survived the post-click relayout churn —
+        # the same show-when-stable dance as the dictionary peek.
+        self._dict_retries = 0
+        self._dict_open_at = GLib.get_monotonic_time()
+        self._dict_user_closed = False
+        pop.set_opacity(0.0)
+        pop.popup()
+        self._dict_arm_reveal(pop)
+
+    def _dismiss_lexicon_peek(self):
+        """Dismiss the shared peek only when it's the lexicon panel's verse
+        peek (anchored on the def view) — clicks inside the lexicon must
+        not reach across and close a reading-view dict/footnote peek."""
+        pop = getattr(self, '_dict_pop', None)
+        if (pop is not None and pop.get_visible()
+                and pop.get_parent() is self._lex_panel.def_view):
+            self._dict_user_closed = True
+            pop.popdown()
 
     def _show_dict_popup(self, word, word_offset):
         # TextView entry point: compute the word's rectangle in the view's

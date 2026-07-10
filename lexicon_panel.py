@@ -24,13 +24,32 @@ import threading
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, GLib, Pango
+from gi.repository import Gtk, Adw, Gdk, GLib, Pango
 from a11y import set_accessible_label
 from gtk_utils import clear_children
 
 import sword_bridge
 
 _log = logging.getLogger('scriptura.lexicon')
+
+
+def _norm_strong(strong):
+    """G0746 → G746. Module markup zero-pads to four digits while
+    interlinear clicks pass the plain form; every comparison between the
+    two worlds must go through this."""
+    return re.sub(r'^([GH])0+(?=\d)', r'\1', strong.upper())
+
+
+def _scan_pattern(strong_num):
+    """Compiled regex matching strong_num in SWORD <w> markup regardless
+    of zero-padding. Negative-lookahead so G65 doesn't also match G650,
+    G651, G652, etc. — see lookup-side comments."""
+    m = re.match(r'^([GH])0*(\d+)$', strong_num, re.IGNORECASE)
+    if m:
+        return re.compile(rf'strong:{m.group(1)}0*{m.group(2)}(?!\d)',
+                          re.IGNORECASE)
+    return re.compile(rf'strong:{re.escape(strong_num)}(?!\d)',
+                      re.IGNORECASE)
 
 
 def _make_verse_markup(html, target_strong):
@@ -41,11 +60,11 @@ def _make_verse_markup(html, target_strong):
     if not any(s for _, s, _m in segments):
         plain = re.sub(r'<[^>]+>', '', str(html))
         return GLib.markup_escape_text(plain).strip()
-    target = target_strong.upper()
+    target = _norm_strong(target_strong)
     parts = []
     for seg_html, seg_strong_nums, _morph in segments:
         plain = GLib.markup_escape_text(re.sub(r'<[^>]+>', '', seg_html))
-        if seg_strong_nums and target in seg_strong_nums:
+        if seg_strong_nums and target in map(_norm_strong, seg_strong_nums):
             parts.append(f'<b>{plain}</b>')
         else:
             parts.append(plain)
@@ -103,6 +122,25 @@ def _html_to_markup(html, dark):
     return html.strip()
 
 
+def _preview_bible_module():
+    """A text Bible to preview cited verses from: the Lexham English
+    Bible when installed (a tight, scholarly rendering — the right
+    register next to a lexicon entry), else one a pane is already
+    reading, else the first available (mirrors the window's
+    _first_bible_module — the panel keeps no window reference)."""
+    import content
+    import settings
+    names = content.readable_module_names()
+    for cand in ('LEB', settings.get('pane1_module'),
+                 settings.get('pane2_module')):
+        if cand in names and content.is_text_bible(cand):
+            return cand
+    for name in names:
+        if content.is_text_bible(name):
+            return name
+    return None
+
+
 class LexiconPanel(Gtk.Box):
     """Vertical Box containing the lexicon header, definition view, and
     word-study list. Hidden by default; the composer calls show() to
@@ -112,13 +150,33 @@ class LexiconPanel(Gtk.Box):
     user clicks a row in the word-study list. The composer typically
     routes this to window-level navigation."""
 
-    def __init__(self, on_word_study_navigate=None, on_first_show=None):
+    def __init__(self, on_word_study_navigate=None, on_first_show=None,
+                 on_show_peek=None, on_dismiss_peek=None,
+                 on_open_verse=None):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.set_visible(False)
         self.set_size_request(-1, 80)
         self.add_css_class('lex-panel')
 
         self._on_word_study_navigate = on_word_study_navigate
+        # Verse-peek plumbing: the composing pane lends us its shared
+        # self-healing peek popover (show_anchored_peek) and a dismisser
+        # scoped to peeks anchored on our def view. A popover of our own
+        # dies to the post-click relayout churn the pane's machinery was
+        # built to survive.
+        self._on_show_peek = on_show_peek
+        self._on_dismiss_peek = on_dismiss_peek
+        # Verse-peek 'open in Bible pane' button: routed to the window
+        # (which owns pane visibility), signature (book, ch, v, module).
+        self._on_open_verse = on_open_verse
+        # Bumped by every def-view click and re-render; an in-flight verse
+        # fetch only shows its peek if the generation still matches.
+        self._verse_pop_gen = 0
+        # Hiding the panel (close button, content-kind switch) takes the
+        # def view — the peek's anchor — off screen: dismiss an open peek
+        # (deliberately, so the pane's self-heal doesn't fight it) and
+        # supersede an in-flight fetch so it can't pop up over nothing.
+        self.connect('unmap', self._on_panel_unmap)
         # Called the first time the panel becomes visible after being
         # hidden — lets the composer initialize the outer vertical Paned
         # position. Fires on the idle queue, after the panel has been laid
@@ -226,6 +284,24 @@ class LexiconPanel(Gtk.Box):
         gesture.connect('pressed', self._on_def_click)
         self._def_view.add_controller(gesture)
 
+        # Depth bar: when the scholar's lexicon pack is installed and the
+        # entry has a full LSJ article, one quiet link swaps the brief
+        # Abbott-Smith entry for it (and back). Hidden otherwise.
+        self._lsj_btn = Gtk.Button(label=_('Full LSJ entry'))
+        self._lsj_btn.add_css_class('flat')
+        self._lsj_btn.add_css_class('lex-depth-link')
+        self._lsj_btn.set_halign(Gtk.Align.START)
+        self._lsj_btn.set_visible(False)
+        set_accessible_label(self._lsj_btn, _('Full LSJ entry'))
+        self._lsj_btn.connect('clicked', self._on_lsj_toggle)
+        self._showing_lsj = False
+        self._brief_text = None      # panel-dialect html of the brief entry
+        self._brief_heuristic_refs = True
+
+        def_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        def_box.append(def_scroll)
+        def_box.append(self._lsj_btn)
+
         # ── Word study (right side) ──
         ws_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         ws_box.add_css_class('ws-panel')
@@ -252,7 +328,7 @@ class LexiconPanel(Gtk.Box):
         # ── Horizontal paned: definition left, word study right ──
         self._h_paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL,
                                   hexpand=True, vexpand=True)
-        self._h_paned.set_start_child(def_scroll)
+        self._h_paned.set_start_child(def_box)
         self._h_paned.set_end_child(ws_box)
         self._h_paned.set_resize_start_child(True)
         self._h_paned.set_resize_end_child(True)
@@ -293,6 +369,9 @@ class LexiconPanel(Gtk.Box):
         self._ws_header.set_text('')
         self._spinner.set_visible(True)
         self._spinner.start()
+        # The previous entry's depth link would be stale for the word now
+        # loading — hide until _show_content decides for the new one.
+        self._lsj_btn.set_visible(False)
         self._reveal_if_hidden()
 
     def show(self, strong_num, text, morph='', phrase_chain=None, phrase_text=None):
@@ -372,27 +451,73 @@ class LexiconPanel(Gtk.Box):
                 decoded = sword_bridge.decode_hebrew_morph(m) or ''
         self._morph_lbl.set_text(decoded)
 
+        # Scholar's-pack entries (Abbott-Smith / LSJ) are scholarly prose
+        # where "compare 143" cites a section of Herodotus, not Strong's
+        # G143 — the heuristic ref rules only fit Strong's-1890 dictionary
+        # text. Cheap indexed point queries.
+        import lexicon_data
+        from_pack = (bool(text) and strong_num.startswith('G')
+                     and lexicon_data.has_brief(strong_num))
+        self._brief_heuristic_refs = not from_pack
+
         if not text:
             self._def_buf.set_text(_('Definition not found.'))
         else:
-            dark = Adw.StyleManager.get_default().get_dark()
-            markup = _html_to_markup(text, dark)
-            self._def_buf.set_text('')
-            try:
-                self._def_buf.insert_markup(self._def_buf.get_start_iter(), markup, -1)
-            except Exception:
-                plain = re.sub(r'<[^>]+>', '', markup)
-                self._def_buf.set_text(plain)
-                _log.exception('Markup error')
-            self._tag_refs()
-            # Bump the headword (first line) so the lemma stands out from the gloss.
-            head_start = self._def_buf.get_start_iter()
-            head_end = head_start.copy()
-            if not head_end.ends_line():
-                head_end.forward_to_line_end()
-            self._def_buf.apply_tag(self._headword_tag, head_start, head_end)
+            self._render_def(text, heuristic_refs=not from_pack)
+
+        # Depth link: offer the full LSJ article where the scholar's pack
+        # carries one for this word.
+        self._brief_text = text
+        self._showing_lsj = False
+        self._lsj_btn.set_label(_('Full LSJ entry'))
+        self._lsj_btn.set_visible(
+            bool(text) and strong_num.startswith('G')
+            and lexicon_data.has_lsj(strong_num))
 
         self._reveal_if_hidden()
+
+    def _render_def(self, text, heuristic_refs=True):
+        """Render a definition (panel-dialect HTML) into the buffer with
+        ref tagging and the headword bump — shared by the brief entry and
+        the LSJ depth view."""
+        # Any re-render leaves an open verse peek pointing at stale text —
+        # close it, and supersede one whose fetch is still in flight.
+        self._verse_pop_gen += 1
+        if self._on_dismiss_peek:
+            self._on_dismiss_peek()
+        dark = Adw.StyleManager.get_default().get_dark()
+        markup = _html_to_markup(text, dark)
+        self._def_buf.set_text('')
+        try:
+            self._def_buf.insert_markup(self._def_buf.get_start_iter(), markup, -1)
+        except Exception:
+            plain = re.sub(r'<[^>]+>', '', markup)
+            self._def_buf.set_text(plain)
+            _log.exception('Markup error')
+        self._tag_refs(heuristic=heuristic_refs)
+        # Bump the headword (first line) so the lemma stands out from the gloss.
+        head_start = self._def_buf.get_start_iter()
+        head_end = head_start.copy()
+        if not head_end.ends_line():
+            head_end.forward_to_line_end()
+        self._def_buf.apply_tag(self._headword_tag, head_start, head_end)
+
+    def _on_lsj_toggle(self, _btn):
+        """Swap the definition area between the brief (Abbott-Smith) entry
+        and the full LSJ article for the same word."""
+        import lexicon_data
+        if self._showing_lsj:
+            self._render_def(self._brief_text or '',
+                             heuristic_refs=self._brief_heuristic_refs)
+            self._showing_lsj = False
+            self._lsj_btn.set_label(_('Full LSJ entry'))
+            return
+        lsj = lexicon_data.lookup_lsj(self._current_strong or '')
+        if not lsj:
+            return
+        self._render_def(lsj, heuristic_refs=False)
+        self._showing_lsj = True
+        self._lsj_btn.set_label(_('Brief entry (Abbott-Smith)'))
 
     def _reveal_if_hidden(self):
         """Reveal the panel, first nudging the outer vertical paned to the
@@ -411,11 +536,13 @@ class LexiconPanel(Gtk.Box):
         self.set_visible(True)
         GLib.idle_add(self.init_inner_position)
 
-    def _tag_refs(self):
+    def _tag_refs(self, heuristic=True):
         """Find and tag cross-reference numbers in the definition body so
         clicks navigate within the lexicon. Handles SWORD's various
         formats: 'see HEBREW for 07554', 'from 3004', 'ref 123', plain
-        'G3056' / 'H1234'."""
+        'G3056' / 'H1234'. The bare-number rules (1–2) fit Strong's-1890
+        dictionary prose only; pass heuristic=False for scholarly entries
+        where 'compare 143' cites a classical text."""
         start = self._def_buf.get_start_iter()
         end = self._def_buf.get_end_iter()
         text = self._def_buf.get_text(start, end, False)
@@ -429,23 +556,41 @@ class LexiconPanel(Gtk.Box):
             tag_name = f"strg:{strong}"
             tag = self._def_buf.get_tag_table().lookup(tag_name)
             if not tag:
+                # Colour-only: at Abbott-Smith's citation density an
+                # underline per ref makes the entry read like a link
+                # index — the link colour alone carries the affordance.
                 tag = self._def_buf.create_tag(
                     tag_name,
-                    underline=Pango.Underline.SINGLE,
                     foreground='DodgerBlue',
                 )
             self._def_buf.apply_tag(tag, s, e)
 
-        # 1. Language-switch refs: "see HEBREW for 07554"
-        for m in re.finditer(r'see (?:also\s+)?(HEBREW|GREEK)\s+for\s+(\d+)', text, re.I):
-            prefix = 'H' if m.group(1).upper() == 'HEBREW' else 'G'
-            apply_tag(m.start(2), m.end(2), prefix, m.group(2))
-        # 2. Same-language refs: "from 7554", "compare 1234", etc.
-        for m in re.finditer(r'\b(?:from|compare|and|ref|see|also)\s+(\d+)\b', text, re.I):
-            apply_tag(m.start(1), m.end(1), lang, m.group(1))
+        if heuristic:
+            # 1. Language-switch refs: "see HEBREW for 07554"
+            for m in re.finditer(r'see (?:also\s+)?(HEBREW|GREEK)\s+for\s+(\d+)', text, re.I):
+                prefix = 'H' if m.group(1).upper() == 'HEBREW' else 'G'
+                apply_tag(m.start(2), m.end(2), prefix, m.group(2))
+            # 2. Same-language refs: "from 7554", "compare 1234", etc.
+            for m in re.finditer(r'\b(?:from|compare|and|ref|see|also)\s+(\d+)\b', text, re.I):
+                apply_tag(m.start(1), m.end(1), lang, m.group(1))
         # 3. Explicit G/H-prefixed refs
         for m in re.finditer(r'\b([GH])(\d+)\b', text, re.I):
             apply_tag(m.start(), m.end(), m.group(1).upper(), m.group(2))
+        # 4. Scripture refs (Abbott-Smith's 'Mat.8:8' style) — clicking
+        # navigates the Bible pane, like a word-study row.
+        import lexicon_data
+        for start_off, end_off, book, ch, v in \
+                lexicon_data.scripture_refs(text):
+            tag_name = f'sref:{book}:{ch}:{v}'
+            tag = self._def_buf.get_tag_table().lookup(tag_name)
+            if not tag:
+                tag = self._def_buf.create_tag(
+                    tag_name,
+                    foreground='DodgerBlue',
+                )
+            self._def_buf.apply_tag(
+                tag, self._def_buf.get_iter_at_offset(start_off),
+                self._def_buf.get_iter_at_offset(end_off))
 
     # ── Word study list ──────────────────────────────────────────────────
 
@@ -460,10 +605,9 @@ class LexiconPanel(Gtk.Box):
         if not book or not module:
             return
 
-        # Negative-lookahead so G65 doesn't also match G650, G651, G652,
-        # etc. — see lookup-side comments. Compiled once outside the loop.
-        pattern = re.compile(rf'strong:{re.escape(strong_num)}(?!\d)',
-                             re.IGNORECASE)
+        # Padding-agnostic: interlinear clicks pass G746 while module
+        # markup carries strong:G0746. Compiled once outside the loop.
+        pattern = _scan_pattern(strong_num)
 
         def fetch():
             total = sword_bridge.chapter_count(book)
@@ -541,6 +685,103 @@ class LexiconPanel(Gtk.Box):
         if hasattr(row, '_nav') and self._on_word_study_navigate:
             self._on_word_study_navigate(*row._nav)
 
+    # ── Verse peek (clicking a scripture citation) ───────────────────────
+
+    def _on_panel_unmap(self, _widget):
+        self._verse_pop_gen += 1
+        if self._on_dismiss_peek:
+            self._on_dismiss_peek()
+
+    def _show_verse_peek(self, book, chapter, verse, it):
+        """Preview a cited verse in a small anchored popover — the
+        footnote-peek idiom. A citation click must not tear the user away
+        from the pane they're studying, so nothing navigates. The popover
+        is the pane's shared self-healing peek (on_show_peek): a popover
+        of our own — autohide or not — gets unmapped by the post-click
+        relayout churn and vanishes within a second; the pane's instance
+        reshows until the layout is stable and only then becomes visible."""
+        if self._on_show_peek is None:
+            return
+        r = self._def_view.get_iter_location(it)
+        wx, wy = self._def_view.buffer_to_window_coords(
+            Gtk.TextWindowType.WIDGET, r.x, r.y)
+        rect = Gdk.Rectangle()
+        rect.x, rect.y, rect.width, rect.height = (
+            wx, wy, max(1, r.width), r.height)
+
+        module = _preview_bible_module()
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        box.set_size_request(280, -1)
+        cap_text = f'{book_label(book)} {chapter}:{verse}'
+        if module:
+            cap_text += f' · {sword_bridge.display_name(module)}'
+        head = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        cap = Gtk.Label(label=cap_text, xalign=0, hexpand=True)
+        cap.add_css_class('caption')
+        cap.add_css_class('dim-label')
+        head.append(cap)
+        if self._on_open_verse and module:
+            open_btn = Gtk.Button(icon_name='go-next-symbolic')
+            open_btn.add_css_class('flat')
+            open_btn.set_valign(Gtk.Align.CENTER)
+            open_btn.set_tooltip_text(_('Open in Bible pane'))
+            set_accessible_label(open_btn, _('Open in Bible pane'))
+
+            def _open(_btn):
+                # The peek's job is done — close it before the pane
+                # opens (the relayout would strand it mid-air anyway).
+                if self._on_dismiss_peek:
+                    self._on_dismiss_peek()
+                self._on_open_verse(book, chapter, verse, module)
+
+            open_btn.connect('clicked', _open)
+            head.append(open_btn)
+        box.append(head)
+        body = Gtk.Label(xalign=0, wrap=True)
+        body.set_max_width_chars(44)
+        body.add_css_class('fnote-body')
+        box.append(body)
+        for m in ('top', 'bottom', 'start', 'end'):
+            getattr(box, f'set_margin_{m}')(14)
+
+        if module is None:
+            body.set_text(_('No Bible installed.'))
+            self._on_show_peek(self._def_view, rect, box)
+            return
+
+        # Fetch off the main thread (first hit may touch disk), and only
+        # show the peek once the verse text is in the box — popping up
+        # with an empty body and resizing when the text lands reads as
+        # flicker. A newer peek (or any dismissing click) supersedes this
+        # one via the generation.
+        gen = self._verse_pop_gen
+
+        def fetch():
+            import ebible_bridge
+            text = ''
+            try:
+                if ebible_bridge.is_ebible_module(module):
+                    verses = ebible_bridge.load_chapter(module, book, chapter)
+                else:
+                    verses = sword_bridge.load_chapter(module, book, chapter)
+                for v_num, html in verses:
+                    if v_num == verse:
+                        text = re.sub(r'<[^>]+>', '', str(html)).strip()
+                        break
+            except Exception:
+                _log.exception('verse peek fetch failed')
+
+            def show():
+                if gen != self._verse_pop_gen:
+                    return GLib.SOURCE_REMOVE
+                body.set_text(text or _('Verse not found in this Bible.'))
+                self._on_show_peek(self._def_view, rect, box)
+                return GLib.SOURCE_REMOVE
+
+            GLib.idle_add(show)
+
+        threading.Thread(target=fetch, daemon=True).start()
+
     # ── In-panel navigation (clicking a cross-reference) ────────────────
 
     def _navigate_to(self, strong_num):
@@ -575,6 +816,13 @@ class LexiconPanel(Gtk.Box):
         threading.Thread(target=fetch, daemon=True).start()
 
     def _on_def_click(self, gesture, n_press, x, y):
+        # Any click in the view dismisses an open verse peek (the shared
+        # peek is non-autohide, so we close it ourselves) and supersedes
+        # a peek whose fetch is still in flight, so it can't pop up after
+        # this click moved on. A click on another citation re-peeks below.
+        self._verse_pop_gen += 1
+        if self._on_dismiss_peek:
+            self._on_dismiss_peek()
         bx, by = self._def_view.window_to_buffer_coords(
             Gtk.TextWindowType.WIDGET, int(x), int(y))
         found, it = self._def_view.get_iter_at_location(bx, by)
@@ -584,4 +832,8 @@ class LexiconPanel(Gtk.Box):
             name = tag.get_property('name')
             if name and name.startswith('strg:'):
                 self._navigate_to(name[5:])
+                return
+            if name and name.startswith('sref:'):
+                book, ch, v = name[5:].rsplit(':', 2)
+                self._show_verse_peek(book, int(ch), int(v), it)
                 return

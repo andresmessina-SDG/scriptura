@@ -495,6 +495,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_open_artifact=self._on_open_artifact,
                                on_module_switched=self._update_fnote_sensitivity,
                                on_hint=self._hints.maybe_fire,
+                               on_open_verse=self._open_verse_in_pane2,
                                pane_id=1)
         self.pane2 = BiblePane(module_name=p2_mod,
                                on_word_click=self._on_word_click,
@@ -509,6 +510,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_open_artifact=self._on_open_artifact,
                                on_module_switched=self._update_fnote_sensitivity,
                                on_hint=self._hints.maybe_fire,
+                               on_open_verse=self._open_verse_in_pane2,
                                pane_id=2)
         # Initial f* sensitivity for the startup modules — the pane
         # callbacks above only fire on later switches.
@@ -3027,6 +3029,28 @@ class BibleWindow(Adw.ApplicationWindow):
             bible = self._first_bible_module()
             if bible:
                 target._apply_module_change(bible)
+
+    def _open_verse_in_pane2(self, book, chapter, verse, module=None):
+        """A verse peek's 'open in Bible pane' button: put the cited verse
+        in pane 2 and leave pane 1 exactly where it is — the peek exists
+        so a citation never tears the user away from what they're
+        studying, and this button extends that to the full-pane view.
+        Reveals pane 2 if the window is single-pane; if it isn't showing
+        a text Bible, loads `module` (the Bible the peek previewed)."""
+        import content
+        if not self._btn_split.get_active():
+            self._btn_split.set_active(True)  # → _on_view_mode reveals pane2
+        if not content.is_text_bible(self.pane2._module):
+            fallback = module or self._first_bible_module()
+            if not fallback:
+                return
+            self.pane2._apply_module_change(fallback)
+        # A locked pane ignores navigation but still stashes the target;
+        # navigate first, then unlock — the unlock's catch-up render then
+        # lands on the verse (one render either way).
+        self.pane2.load_reference_at_verse(book, chapter, verse)
+        if self.pane2._sync_btn.get_active():
+            self.pane2._sync_btn.set_active(False)
 
     def _on_open_artifact(self, source_pane, book, chapter, verse):
         """A 'related artifact' marker beside a Bible verse was clicked: show

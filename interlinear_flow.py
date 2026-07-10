@@ -76,8 +76,10 @@ class WordFlow(Gtk.Widget):
             child = child.get_next_sibling()
 
     def _break_lines(self, width):
-        """[(child, x, y, w, h)] placements plus total height for a wrap
-        width — the single source of truth for measure AND allocate."""
+        """[(child, x, y, w, h, line_y)] placements plus total height for a
+        wrap width — the single source of truth for measure AND allocate.
+        line_y is the top of the child's line: bottom-aligned children sit
+        below it, and scroll anchoring must target the line, not the child."""
         placements = []
         x = 0
         y = 0
@@ -94,7 +96,7 @@ class WordFlow(Gtk.Widget):
                 # Bottom-align within the line: verse-number labels are
                 # shorter than word cells and should sit near the shared
                 # bottom edge rather than float at the top.
-                placements.append((child, cx, y + (line_h - h), w, h))
+                placements.append((child, cx, y + (line_h - h), w, h, y))
             y += line_h + _ROW_GAP
             x = 0
             line = []
@@ -128,10 +130,23 @@ class WordFlow(Gtk.Widget):
         _placements, total_h = self._break_lines(width)
         return (total_h, total_h, -1, -1)
 
+    def line_top(self, target):
+        """Top edge (widget-local y) of the line `target` sits on, or None
+        before this widget has a width. A verse-number label's own y is
+        NOT its line's top — the tall word cells beside it reach higher,
+        and a scroll anchored to the label clips them."""
+        width = self.get_width()
+        if width <= 0:
+            return None
+        for child, _x, _y, _w, _h, line_y in self._break_lines(width)[0]:
+            if child is target:
+                return line_y
+        return None
+
     def do_size_allocate(self, width, _height, _baseline):
         placements, _total = self._break_lines(width)
         rect = Gdk.Rectangle()
-        for child, x, y, w, h in placements:
+        for child, x, y, w, h, _line_y in placements:
             rect.x, rect.y, rect.width, rect.height = x, y, w, h
             child.size_allocate(rect, -1)
 

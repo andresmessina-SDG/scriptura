@@ -51,6 +51,7 @@ py_sources = files(
   'interlinear_data.py',
   'interlinear_flow.py',
   'interlinear_view.py',
+  'lexicon_data.py',
   'lexicon_panel.py',
   'module_manager.py',
   'module_picker.py',

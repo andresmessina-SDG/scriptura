@@ -26,6 +26,7 @@ import catena_bridge
 import imagery_bridge
 import archaeology_bridge
 import interlinear_data
+import lexicon_data
 import content
 
 _log = logging.getLogger('scriptura.modules')
@@ -506,6 +507,7 @@ class ModuleManagerWindow(Adw.Window):
                   'grammatical parsing.'))
             for src in open_data.get_sources():
                 group.add(self._make_db_source_row(src))
+            group.add(self._make_lexicon_pack_row())
             t['curated'].append(group)
 
     def _make_catena_row(self):
@@ -1312,6 +1314,37 @@ class ModuleManagerWindow(Adw.Window):
         self._pack_download(
             btn, src['label'],
             lambda p: open_data.download_source(source_id, on_progress=p))
+
+    def _make_lexicon_pack_row(self):
+        row = Adw.ActionRow()
+        row.set_title(_('Scholar’s Greek Lexicon'))
+        if lexicon_data.is_installed():
+            row.set_subtitle(
+                _('Abbott-Smith + full Liddell-Scott-Jones — Tyndale House '
+                  'data (CC BY)'))
+            btn = self._trash_button(
+                lambda: self._confirm_remove_generic(
+                    _('Scholar’s Greek Lexicon'), self._do_lexicon_remove))
+        else:
+            row.set_subtitle(
+                _('Upgrade Greek definitions to Abbott-Smith, with the full '
+                  'Liddell-Scott-Jones one click deeper · ~7 MB download'))
+            btn = Gtk.Button(label=_('Download'))
+            btn.add_css_class('suggested-action')
+            btn.connect('clicked', self._on_lexicon_download)
+        btn.set_valign(Gtk.Align.CENTER)
+        row.add_suffix(btn)
+        return row
+
+    def _on_lexicon_download(self, btn):
+        self._pack_download(
+            btn, _('Scholar’s Greek Lexicon'),
+            lambda p: lexicon_data.download_and_build(on_progress=p))
+
+    def _do_lexicon_remove(self):
+        lexicon_data.remove()
+        self._modules_changed()
+        self._populate()
 
     def _on_interlinear_download(self, btn, name):
         label = (_('Interlinear — Hebrew OT')

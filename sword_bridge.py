@@ -2341,11 +2341,18 @@ def lookup_strong(strong_num):
             _strongs_cache.move_to_end(strong_num)  # mark as recently used
             return _strongs_cache[strong_num]
 
-    # For Greek words, try Dodson first (cleaner definitions).
-    # open_data.lookup_dodson does its own file I/O; don't hold _lock for it.
+    # Greek preference order: Abbott-Smith (TBESG pack) when installed —
+    # the scholarly manual lexicon — then Dodson, then Strong's 1890.
+    # Both do their own file I/O; don't hold _lock for them.
     import open_data
     letter = strong_num[0].upper()
     if letter == 'G':
+        import lexicon_data
+        brief = lexicon_data.lookup_brief(strong_num)
+        if brief:
+            with _lock:
+                _cache_strong(strong_num, brief)
+            return brief
         dodson = open_data.lookup_dodson(strong_num)
         if dodson:
             with _lock:

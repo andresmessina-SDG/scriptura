@@ -379,15 +379,19 @@ class InterlinearReader:
                 # which also covers a verse number beyond the chapter).
                 state['on_target'] = 0
                 return GLib.SOURCE_CONTINUE
-            ok, bounds = anchor.compute_bounds(self._flow)
-            quiet = ok and upper == state['last_upper'] and \
-                upper >= bounds.origin.y
+            # Anchor to the TOP OF THE LINE holding the verse number: the
+            # bottom-aligned number sits ~a cell below its line's top, and
+            # a scroll anchored to the label itself clips the verse's own
+            # words (verse 1 ended up "slightly scrolled down" at startup).
+            line_y = self._flow.line_top(anchor)
+            quiet = line_y is not None and upper == state['last_upper'] \
+                and upper >= line_y
             state['last_upper'] = upper
             if not quiet:
                 state['on_target'] = 0
                 return GLib.SOURCE_CONTINUE
             # Headroom above the verse, clamped to the (now real) range.
-            target = max(0.0, min(bounds.origin.y - 24,
+            target = max(0.0, min(line_y - 24,
                                   upper - adj.get_page_size()))
             if abs(adj.get_value() - target) <= 4:
                 # Done only after the value HOLDS across two quiet ticks — a
