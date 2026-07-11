@@ -136,6 +136,18 @@
   </content_rating>
 
   <releases>
+    <release version="1.3.0" date="2026-07-10">
+      <description>
+        <p>The original languages, word by word.</p>
+        <ul>
+          <li>Two interlinear reading surfaces — the Greek New Testament and the Hebrew Old Testament (Tyndale House data): every word carries its English gloss and parsing, with transliteration and Strong's numbers a chip away and the lexicon a click away. A Hebrew Accents chip calms the cantillation marks.</li>
+          <li>A Scholar's Greek Lexicon pack: Abbott-Smith becomes the brief Greek entry, with the full Liddell-Scott-Jones one click deeper. Scripture citations inside entries are live — click one to peek the verse in place, or send it to the other pane.</li>
+          <li>Presentation mode: press F5 to project the current passage full-screen for a projector or mirrored display, with paging through chapters, a verse-per-page toggle, live type-size control, and a side-by-side parallel view of two translations.</li>
+          <li>Maps in Scripture in Art now carry their passage as a chip — click it to drive the partnered Bible pane there. And the Historical Commentaries pane shows place chips for the verse under commentary: click one for the place's photo and identification, without displacing what you're reading.</li>
+          <li>Greek in the reading panes now renders with correctly composed accents on systems where the default serif drew them detached.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.2.0" date="2026-07-05">
       <description>
         <p>Getting started, made discoverable.</p>

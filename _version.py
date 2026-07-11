@@ -10,4 +10,4 @@ Versioning is semver-ish: bump MINOR for new features, PATCH for
 bugfixes.
 """
 
-__version__ = '1.2.0'
+__version__ = '1.3.0'

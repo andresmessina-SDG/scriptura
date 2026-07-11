@@ -19,7 +19,7 @@ cd "$(dirname "$0")/.."                       # repo root
 
 SIGN_HOME="${SIGN_HOME:-$HOME/.scriptura-flatpak-signing}"
 BASE_URL="${BASE_URL:-https://andresmessina.codeberg.page}"
-HOMEPAGE="https://codeberg.org/andresmessina/bible-reader"
+HOMEPAGE="https://codeberg.org/andresmessina/scriptura"
 MANIFEST="page.codeberg.andresmessina.Scriptura.yml"
 APPID="page.codeberg.andresmessina.Scriptura"
 BUILDDIR="flatpak-build"
