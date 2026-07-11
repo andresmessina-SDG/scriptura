@@ -1082,9 +1082,14 @@ box.mini-swatch {
 .stone-plate {
     margin: 24px 0 10px;
 }
+/* The plate band is a fixed-height strip the photo CONTAIN-fits into, so a
+   portrait plate leaves empty flanks. The shade backing turns that empty
+   space into a museum mat — a deliberate mount, not a failed fill. */
 .stone-pic {
     border-radius: 8px;
     margin-bottom: 12px;
+    background-color: @shade_color;
+    box-shadow: inset 0 0 0 1px alpha(@window_fg_color, 0.05);
 }
 /* Artifact name — a heading, so sans (matching the hero) rather than serif:
    the serif voice is reserved for running reading text. */
@@ -1140,15 +1145,14 @@ button.stone-chip:active { background-color: alpha(@window_fg_color, 0.10); }
     margin-top: 8px;
 }
 /* The credit is the lowest-priority line on a plate, so it stays quiet gray
-   (inheriting .stone-credit's dim fg) and only reveals it's a link — clay +
-   underline — on hover, rather than shouting in colour at rest. */
-.stone-credit a {
-    color: inherit;
-    text-decoration: none;
+   and only reveals it's a link — clay — on hover, rather than shouting in
+   colour at rest. GtkLabel links are `link` nodes ("a" never matched), and
+   Pango owns the underline (suppressed in the reader's markup). */
+.stone-credit link {
+    color: @window_fg_color;
 }
-.stone-credit a:hover {
+.stone-credit link:hover {
     color: #a9744f;          /* clay, matching the artifact marker */
-    text-decoration: underline;
 }
 /* Instruction, not a control (the clickable image + pointer + tooltip are the
    real affordance) — so quiet gray, leaving clay/blue for the tappable chips. */

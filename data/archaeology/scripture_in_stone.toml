@@ -121,7 +121,7 @@ place = "Tel Dan, northern Israel"
 date = "9th century BC"
 holding = "Israel Museum, Jerusalem"
 credit = "photo Oren Rozen · CC BY-SA 4.0"
-caption = "A fragmentary basalt victory stele, written in Aramaic, set up by a king of Aram-Damascus. Its lines boast of defeating a 'king of Israel' and a king of the 'House of David' (bytdwd): the earliest reference outside the Bible to David's dynasty, and a witness that the line of David was remembered as a real royal house within about a century and a half of his reign."
+caption = "A fragmentary basalt victory stele, written in Aramaic, set up by a king of Aram-Damascus. Its lines boast of defeating a 'king of Israel' and a king of the 'House of David' (bytdwd). It is the earliest reference outside the Bible to David's dynasty: a witness that the line of David was remembered as a real royal house within about a century and a half of his reign."
 refs = [
   { book = "2 Samuel", chapter = 7, verse = 16 },
   { book = "1 Kings", chapter = 15, verse = 20 },
@@ -192,7 +192,7 @@ refs = [ { book = "1 Kings", chapter = 14, verse = 25 } ]
 [[entry]]
 chapter = "divided"
 image = "mesha.jpg"
-provenance = "Found at Dhiban, 1868 (broken up before recovery)"
+provenance = "Found at Dhiban, 1868; broken up soon after, its text partly preserved in a paper squeeze"
 related = [ "tel_dan.jpg" ]
 lat = 31.51
 lon = 35.78
@@ -242,16 +242,16 @@ provenance = "Excavated at Nimrud by Layard, 1846"
 related = [ "nineveh_lamassu.jpg", "sargon.jpg", "lachish.jpg", "taylor_prism.jpg" ]
 lat = 36.1
 lon = 43.33
-source = "https://commons.wikimedia.org/wiki/File:Jehu_of_the_House_of_Omri_bows_before_the_Assyrian_king_Shalmaneser_III%2C_The_Black_Obelisk..JPG"
+source = "https://commons.wikimedia.org/wiki/File:Neo-Assyrian_Black_Limestone_Obelisk_of_Shalmaneser_III,_Nimrud,_825_BC.jpg"
 title = "The Black Obelisk of Shalmaneser III"
 place = "Nimrud (Kalhu), Assyria"
 date = "c. 825 BC"
 holding = "British Museum, London"
-credit = "photo Osama S. M. Amin · CC BY-SA 4.0"
-caption = "A black limestone monument recording the campaigns of the Assyrian king Shalmaneser III. One register shows a figure bowing to bring tribute, labelled in cuneiform 'Jehu, son of Omri,' an Assyrian formula for a king of the land of Omri, that is, Israel. It is the only known contemporary image of an Israelite monarch, set against the heavy Assyrian pressure the Bible records in Jehu's day."
+credit = "photo Gary Todd · CC0"
+caption = "A black limestone monument recording the campaigns of the Assyrian king Shalmaneser III. One register shows a figure bowing to bring tribute. The cuneiform above names him 'Jehu, son of Omri': in Assyrian usage, a king of the land of Omri, that is, Israel. It is the only known contemporary image of an Israelite monarch, set against the heavy Assyrian pressure the Bible records in Jehu's day."
 refs = [
-  { book = "2 Kings", chapter = 10, verse = 31 },
   { book = "2 Kings", chapter = 9, verse = 2 },
+  { book = "2 Kings", chapter = 10, verse = 31 },
 ]
 
 # ── Judah, Assyria, and Nineveh ──────────────────────────────────────────────
@@ -284,7 +284,7 @@ place = "Khorsabad (Dur-Sharrukin)"
 date = "c. 710 BC"
 holding = "Iraq Museum, Baghdad"
 credit = "photo Osama S. M. Amin · CC BY-SA 4.0"
-caption = "A palace relief of the Assyrian king Sargon II riding to war. Sargon completed the conquest of Samaria and deported the northern kingdom; his reign was so briefly named in the Bible, yet so absent from other records, that his existence was once doubted, until his vast palace at Khorsabad was unearthed. Isaiah names him directly."
+caption = "A palace relief of the Assyrian king Sargon II riding to war. Sargon completed the conquest of Samaria and deported the northern kingdom. Named just once in the Bible and long missing from other records, he was once doubted to have existed at all, until his vast palace at Khorsabad was unearthed. Isaiah names him directly."
 refs = [ { book = "Isaiah", chapter = 20, verse = 1 } ]
 
 [[entry]]
@@ -373,9 +373,25 @@ refs = [ { book = "Isaiah", chapter = 22, verse = 15 } ]
 # ── The Fall and the Exile ───────────────────────────────────────────────────
 [[entry]]
 chapter = "exile"
+image = "ketef_hinnom.jpg"
+provenance = "Excavated in a burial cave at Ketef Hinnom by Gabriel Barkay, 1979"
+related = [ "isaiah_scroll.jpg" ]
+lat = 31.77
+lon = 35.22
+source = "https://commons.wikimedia.org/wiki/File:Ketef_hinom_scrolls.JPG"
+title = "The Ketef Hinnom Silver Scrolls"
+place = "Ketef Hinnom, Jerusalem"
+date = "c. 600 BC"
+holding = "Israel Museum, Jerusalem"
+credit = "photo Bachrach44 · CC BY-SA 3.0"
+caption = "Two tiny strips of silver, rolled up and worn as amulets, from a family tomb on the shoulder of the Hinnom valley. Unrolled, each carried in scratched Hebrew letters the priestly blessing: 'The LORD bless you and keep you.' Written around 600 BC, on the eve of the exile, they are the oldest surviving words of Scripture, older than the Dead Sea Scrolls by four centuries."
+refs = [ { book = "Numbers", chapter = 6, verse = 24 } ]
+
+[[entry]]
+chapter = "exile"
 image = "babylonian_chronicle.jpg"
 provenance = "Acquired from Babylonia (unprovenanced)"
-related = [ "ishtar_gate.jpg", "nabonidus.jpg", "cyrus_cylinder.jpg" ]
+related = [ "lachish_letter.jpg", "ishtar_gate.jpg", "nabonidus.jpg", "cyrus_cylinder.jpg" ]
 lat = 32.54
 lon = 44.42
 source = "https://commons.wikimedia.org/wiki/File:Tablets_with_cuneiform_texts_in_the_British_Museum.jpg"
@@ -386,6 +402,22 @@ holding = "British Museum, London"
 credit = "British Museum · CC BY-SA 4.0"
 caption = "A clay tablet from the Babylonian Chronicles, the year-by-year record of Babylon's kings. One entry notes how Nebuchadnezzar besieged 'the city of Judah,' captured it, seized its king, and appointed another: the fall of Jerusalem in 597 BC and the exile of Jehoiachin, set down in plain Babylonian prose beside the account in Second Kings."
 refs = [ { book = "2 Kings", chapter = 24, verse = 10 } ]
+
+[[entry]]
+chapter = "exile"
+image = "lachish_letter.jpg"
+provenance = "Excavated in the gate-room at Lachish by J. L. Starkey, 1935"
+related = [ "lachish.jpg", "babylonian_chronicle.jpg" ]
+lat = 31.56
+lon = 34.85
+source = "https://commons.wikimedia.org/wiki/File:Lachish,Tell_ed_Duweir,_Letter_4_Wellcome_L0005980.jpg"
+title = "The Lachish Letters"
+place = "Lachish, Judah"
+date = "c. 588 BC"
+holding = "British Museum, London"
+credit = "Wellcome Collection · CC BY 4.0"
+caption = "Military dispatches written in ink on potsherds, found in the burnt guardroom of Lachish's gate, from the weeks when Nebuchadnezzar's army was closing on Judah. In the letter shown here, an officer reports 'we cannot see Azekah': the signal fires of the neighbouring fortress had gone out. Jeremiah names Lachish and Azekah as the last two fortified cities of Judah left standing."
+refs = [ { book = "Jeremiah", chapter = 34, verse = 7 } ]
 
 [[entry]]
 chapter = "exile"
@@ -481,7 +513,7 @@ source = "https://commons.wikimedia.org/wiki/File:John_Hyrcanus.jpg"
 title = "A Coin of John Hyrcanus"
 place = "Judea"
 date = "135–104 BC"
-holding = ""
+holding = "many collections"
 credit = "Classical Numismatic Group · CC BY-SA 3.0"
 caption = "A small bronze coin of the Hasmonean ruler John Hyrcanus, its Hebrew legend naming 'Yehohanan the High Priest and the Council of the Jews,' its reverse a double cornucopia. It is a coin of the priest-kings descended from the Maccabean revolt: the independent Jewish state whose story First Maccabees carries toward the New Testament age."
 refs = [ { book = "1 Maccabees", chapter = 16, verse = 23 } ]
@@ -596,7 +628,7 @@ source = "https://commons.wikimedia.org/wiki/File:Emperor_Tiberius_Denarius_-_Tr
 title = "The Tribute Penny"
 place = "Lugdunum (Lyon) mint"
 date = "AD 14–37"
-holding = ""
+holding = "many collections"
 credit = "photo DrusMAX · CC BY-SA 3.0"
 caption = "A silver denarius of the emperor Tiberius, his portrait on one side, an enthroned figure on the other. A coin exactly like this is the 'tribute penny' of the Gospels: shown such a coin and asked about paying taxes, Jesus answers, 'Render to Caesar the things that are Caesar's, and to God the things that are God's.'"
 refs = [ { book = "Matthew", chapter = 22, verse = 21 } ]
@@ -629,7 +661,7 @@ source = "https://commons.wikimedia.org/wiki/File:Iudaea_capta_reverse_of_Vespas
 title = "The Judaea Capta Coinage"
 place = "Rome"
 date = "AD 71"
-holding = ""
+holding = "many collections"
 credit = "Classical Numismatic Group · CC BY-SA 2.5"
 caption = "A Roman coin struck to celebrate the crushing of the Jewish revolt: a palm tree, a bound captive, a mourning woman, and the words IUDAEA CAPTA, 'Judea captured.' Minted across the empire after AD 70, it is Rome's own monument to the fall of Jerusalem that the Gospels record Jesus foretelling."
 refs = [ { book = "Matthew", chapter = 24, verse = 2 } ]
@@ -640,7 +672,7 @@ refs = [ { book = "Matthew", chapter = 24, verse = 2 } ]
 [[entry]]
 chapter = "apostolic"
 image = "philippi.jpg"
-provenance = "Excavated site"
+provenance = "Excavated by the French School at Athens, from 1914"
 related = [ "areopagus.jpg", "corinth_bema.jpg", "ephesus_theatre.jpg", "artemis.jpg" ]
 lat = 41.01
 lon = 24.29
@@ -665,7 +697,7 @@ lon = 23.72
 source = "https://commons.wikimedia.org/wiki/File:Mars_Hill.jpg"
 title = "The Areopagus (Mars Hill)"
 place = "Athens"
-date = ""
+date = "Paul's visit c. AD 50"
 holding = "in situ"
 credit = "photo Sings83 · CC BY 4.0"
 caption = "The Areopagus, or Mars Hill: the rocky height below the Athenian Acropolis where the city's council met. Acts sets here Paul's address to the philosophers, taking their altar 'to an unknown god' as his starting point for the God who 'made the world and everything in it.'"
@@ -676,7 +708,7 @@ refs = [
 [[entry]]
 chapter = "apostolic"
 image = "corinth_bema.jpg"
-provenance = "Excavated site"
+provenance = "Excavated by the American School of Classical Studies, from 1896"
 related = [ "erastus.jpg", "philippi.jpg", "areopagus.jpg", "ephesus_theatre.jpg" ]
 lat = 37.91
 lon = 22.88
@@ -694,7 +726,7 @@ refs = [
 [[entry]]
 chapter = "apostolic"
 image = "ephesus_theatre.jpg"
-provenance = "Excavated site"
+provenance = "Excavated by the Austrian Archaeological Institute, from 1895"
 related = [ "philippi.jpg", "areopagus.jpg", "corinth_bema.jpg", "artemis.jpg" ]
 lat = 37.94
 lon = 27.34
@@ -712,14 +744,14 @@ refs = [
 [[entry]]
 chapter = "apostolic"
 image = "artemis.jpg"
-provenance = "Excavated site"
+provenance = "Site located by John Turtle Wood, 1869"
 related = [ "philippi.jpg", "areopagus.jpg", "corinth_bema.jpg", "ephesus_theatre.jpg" ]
 lat = 37.95
 lon = 27.36
 source = "https://commons.wikimedia.org/wiki/File:TR.IZ.Selcuk_Ephesus_2011-10-04_Temple-of-Artemis_07_3x2-R_5K.jpg"
 title = "The Temple of Artemis"
 place = "Ephesus"
-date = ""
+date = "rebuilt after 356 BC"
 holding = "in situ"
 credit = "photo Roy Egloff · CC BY-SA 4.0"
 caption = "A single re-erected column marks the temple of Artemis at Ephesus, once counted among the seven wonders of the world. The cult of 'Artemis of the Ephesians,' and the craftsmen who profited from it, form the backdrop to the uproar Paul's preaching stirred in the city."
@@ -748,7 +780,7 @@ refs = [
 [[entry]]
 chapter = "before-israel"
 image = "jericho.jpg"
-provenance = "Excavated site"
+provenance = "Tower excavated by Kathleen Kenyon, 1952–58"
 lat = 31.87
 lon = 35.44
 source = "https://commons.wikimedia.org/wiki/File:Tower_of_Jericho_2018.jpg"
@@ -757,7 +789,7 @@ place = "Tell es-Sultan, Jericho"
 date = "tower c. 8000 BC"
 holding = "in situ"
 credit = "photo Immanuelle · CC BY-SA 4.0"
-caption = "The mound of ancient Jericho (Tell es-Sultan), among the oldest towns on earth; the great stone tower here is Neolithic, millennia older than Joshua. The Bible tells of Jericho's walls falling before Israel; the dating of the site's destruction layers is much debated, one of the harder places where text and trowel meet."
+caption = "The mound of ancient Jericho (Tell es-Sultan), among the oldest towns on earth. The great stone tower here is Neolithic, millennia older than Joshua. The Bible tells of Jericho's walls falling before Israel; the dating of the site's destruction layers is much debated, one of the harder places where text and trowel meet."
 refs = [
   { book = "Joshua", chapter = 6, verse = 20 },
 ]
@@ -765,7 +797,7 @@ refs = [
 [[entry]]
 chapter = "before-israel"
 image = "hazor.jpg"
-provenance = "Excavated site"
+provenance = "Excavated by Yigael Yadin, 1955–58; digs continue"
 related = [ "gezer_gate.jpg", "megiddo.jpg" ]
 lat = 33.02
 lon = 35.57
@@ -783,7 +815,7 @@ refs = [
 [[entry]]
 chapter = "judah"
 image = "megiddo.jpg"
-provenance = "Excavated site"
+provenance = "Excavated by the Oriental Institute of Chicago, 1925–39; digs continue"
 related = [ "gezer_gate.jpg", "hazor.jpg" ]
 lat = 32.58
 lon = 35.18
@@ -802,7 +834,7 @@ refs = [
 [[entry]]
 chapter = "judah"
 image = "tel_arad.jpg"
-provenance = "Excavated site"
+provenance = "Excavated by Yohanan Aharoni, 1962–67"
 lat = 31.28
 lon = 35.13
 source = "https://commons.wikimedia.org/wiki/File:Tel-Arad-865.jpg"
@@ -811,7 +843,7 @@ place = "Tel Arad"
 date = "Iron Age"
 holding = "in situ"
 credit = "photo Bukvoed · CC BY 4.0"
-caption = "The desert fortress of Arad, holding the only Israelite temple yet excavated: a courtyard with a sacrificial altar and a small inner shrine, apparently taken out of use during a religious reform of the kind the Bible credits to Hezekiah, who 'removed the high places' to centre worship on Jerusalem."
+caption = "The desert fortress of Arad, holding one of the very few Israelite temples yet excavated: a courtyard with a sacrificial altar and a small inner shrine, apparently taken out of use during a religious reform of the kind the Bible credits to Hezekiah, who 'removed the high places' to centre worship on Jerusalem."
 refs = [
   { book = "2 Kings", chapter = 18, verse = 4 },
 ]
@@ -865,6 +897,12 @@ parent = "merneptah.jpg"
 image = "merneptah_detail.jpg"
 source = "https://commons.wikimedia.org/wiki/File:Israel_segment.jpg"
 caption = "A closeup of line 27, where the hieroglyphs spell out the name 'Israel.'"
+
+[[detail]]
+parent = "black_obelisk.jpg"
+image = "black_obelisk_jehu.jpg"
+source = "https://commons.wikimedia.org/wiki/File:Jehu_of_the_House_of_Omri_bows_before_the_Assyrian_king_Shalmaneser_III%2C_The_Black_Obelisk..JPG"
+caption = "The tribute panel up close: the figure prostrate before Shalmaneser is labelled 'Jehu, son of Omri,' the only contemporary image of a king of Israel."
 
 [[detail]]
 parent = "mesha.jpg"
@@ -943,7 +981,7 @@ holding = "in situ"
 credit = "photo Tombah · CC BY-SA 4.0"
 lat = 31.78
 lon = 35.13
-caption = """A winepress hewn from the bedrock: an upper floor where grapes were trodden underfoot, and a lower vat where the juice ran down and gathered. Thousands dot the hills of the land. Isaiah's song of the vineyard tells of one being cut, and the treading of the press, juice splashing the treader's garments red, became Scripture's image of both joy and wrath."""
+caption = """A winepress hewn from the bedrock: an upper floor where grapes were trodden underfoot, and a lower vat where the juice ran down and gathered. Thousands dot the hills of the land. Isaiah's song of the vineyard tells of one being cut. The treading of the press, juice splashing the treader's garments red, became Scripture's image of both joy and wrath."""
 refs = [ { book = "Isaiah", chapter = 5, verse = 2 } ]
 
 [[entry]]
@@ -960,7 +998,7 @@ credit = "photo Chamberi · CC BY-SA 3.0"
 lat = 31.78
 lon = 35.0
 caption = """A graded set of polished limestone weights for the balance scale, several inscribed with their value: the shekel and its fractions, the beka, the pim. The standards were never quite uniform, which is why the Law returns so often to honest weights, and why a 'just balance' and a hidden 'bag of deceitful weights' could stand for righteousness and fraud themselves."""
-refs = [ { book = "Proverbs", chapter = 11, verse = 1 }, { book = "Exodus", chapter = 38, verse = 26 } ]
+refs = [ { book = "Exodus", chapter = 38, verse = 26 }, { book = "Proverbs", chapter = 11, verse = 1 } ]
 
 [[entry]]
 chapter = "everyday"
@@ -971,7 +1009,7 @@ source = "https://commons.wikimedia.org/wiki/File:Shiloh-606.jpg"
 title = "A Collared-Rim Storage Jar"
 place = "Shiloh"
 date = "12th–11th century BC"
-holding = ""
+holding = "on display at ancient Shiloh"
 credit = "photo Bukvoed · CC BY 4.0"
 lat = 32.06
 lon = 35.29
@@ -987,11 +1025,11 @@ source = "https://commons.wikimedia.org/wiki/File:Lmlk-seal%20impression-h2d-gg2
 title = "An LMLK Seal Impression"
 place = "Judah"
 date = "c. 700 BC"
-holding = ""
+holding = "many collections"
 credit = "photo Funhistory · public domain"
 lat = 31.6
 lon = 34.9
-caption = """A jar handle stamped before firing with a royal seal: a four-winged beetle, the paleo-Hebrew letters l-m-l-k ('belonging to the king') above, and a town name below. Thousands are known, almost all from the years around Hezekiah's reign: marks of a royal system of storage jars, most likely provisioning Judah's towns against the Assyrian onslaught the Bible records him preparing for."""
+caption = """A jar handle stamped before firing with a royal seal: a four-winged beetle, the paleo-Hebrew letters l-m-l-k ('belonging to the king') above, and a town name below. Thousands are known, almost all from the years around Hezekiah's reign. They mark a royal system of storage jars, most likely provisioning Judah's towns against the Assyrian onslaught the Bible records him preparing for."""
 refs = [ { book = "2 Chronicles", chapter = 32, verse = 28 } ]
 
 [[entry]]
@@ -1003,7 +1041,7 @@ source = "https://commons.wikimedia.org/wiki/File:Oil%20Lamps%2C%20-9-10%20Helle
 title = "A Herodian Oil Lamp"
 place = "Judea"
 date = "1st century BC–AD"
-holding = ""
+holding = "Michael C. Carlos Museum, Atlanta"
 credit = "photo Gary Todd · CC0"
 caption = """The small wheel-made lamp of the New Testament age, with a short nozzle for the wick and a wide hole for the oil. Lamps like this lit the houses of Jesus' day: the lamp set on a stand, not under a basket; the lamp a woman lights to sweep her house in search of one lost coin."""
 refs = [ { book = "Matthew", chapter = 5, verse = 15 }, { book = "Luke", chapter = 15, verse = 8 } ]
@@ -1040,7 +1078,7 @@ definition = "Wedge-shaped script pressed into wet clay with a reed stylus, used
 
 [[term]]
 term = "Ostracon"
-definition = "A potsherd reused as a cheap writing surface for notes, receipts, and letters: the everyday paper of the ancient world."
+definition = "A potsherd reused as a cheap writing surface for notes, receipts, and letters: the everyday paper of the ancient world, as in the Lachish Letters."
 
 [[term]]
 term = "Bulla"
@@ -1052,7 +1090,7 @@ definition = "The study of ancient inscriptions: their script, language, and dat
 
 [[term]]
 term = "Eponym"
-definition = "An Assyrian official after whom a year was named. The surviving eponym lists give Assyrian chronology, and the dates it anchors, their backbone."
+definition = "An Assyrian official after whom a year was named. The surviving eponym lists give Assyrian chronology its backbone, fixing dates like 853 BC for the battle of Qarqar on the Kurkh Monolith."
 
 [[term]]
 term = "Ossuary"

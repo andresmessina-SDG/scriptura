@@ -356,9 +356,15 @@ class ArchaeologyReader:
         if entry.get('provenance'):
             # How the object is known — excavated in context vs. market-bought —
             # is the field's whole point: it shows why a piece earns its place.
-            txt.append(self._label(
-                _('Provenance · {text}').format(text=entry['provenance']),
-                'stone-prov', selectable=True))
+            # The lead word is set as a small-caps eyebrow so the line reads as
+            # a labelled field, not a second meta line.
+            prov = self._label('', 'stone-prov', selectable=True)
+            prov.set_markup(
+                '<span variant="smallcaps" letter_spacing="1024">{lead}</span>'
+                ' · {text}'.format(
+                    lead=GLib.markup_escape_text(_('Provenance')),
+                    text=GLib.markup_escape_text(entry['provenance'])))
+            txt.append(prov)
 
         txt.append(self._label(entry['caption'], 'stone-caption', selectable=True))
 
@@ -469,7 +475,10 @@ class ArchaeologyReader:
         if entry.get('source'):
             text = GLib.markup_escape_text(entry['credit'])
             url = GLib.markup_escape_text(entry['source'])
-            lbl.set_markup(f'<a href="{url}">{text}</a>')   # opens in browser
+            # underline="none": Pango underlines label links itself, outside
+            # CSS reach — the quiet-at-rest styling is in .stone-credit link.
+            lbl.set_markup(f'<a href="{url}"><span underline="none">{text}'
+                           '</span></a>')   # opens in browser
         else:
             lbl.set_text(entry['credit'])
             lbl.set_selectable(True)
