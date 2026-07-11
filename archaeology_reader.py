@@ -122,14 +122,14 @@ class ArchaeologyReader:
         self._contents_btn.set_popover(self._contents_pop)
         self._timeline_btn = Gtk.Button(
             icon_name='scriptura-timeline-symbolic',
-            tooltip_text=_('Timeline — when they date from'))
+            tooltip_text=_('Timeline: when they date from'))
         self._timeline_btn.add_css_class('flat')
         self._timeline_btn.update_property(
             [Gtk.AccessibleProperty.LABEL], [_('Timeline')])
         self._timeline_btn.connect('clicked', lambda *_a: self._open_timeline())
         self._map_btn = Gtk.Button(
             icon_name='mark-location-symbolic',
-            tooltip_text=_('Map — where these were found'))
+            tooltip_text=_('Map: where these were found'))
         self._map_btn.add_css_class('flat')
         self._map_btn.update_property(
             [Gtk.AccessibleProperty.LABEL], [_('Map')])
@@ -339,8 +339,8 @@ class ArchaeologyReader:
         n_views = 1 + len(entry.get('details', []))
         pic.set_tooltip_text(
             _('Click to enlarge') if n_views == 1
-            else ngettext('Click to enlarge — {n} view',
-                          'Click to enlarge — {n} views', n_views).format(n=n_views))
+            else ngettext('Click to enlarge ({n} view)',
+                          'Click to enlarge ({n} views)', n_views).format(n=n_views))
         plate.append(self._clamp(pic, _IMG_W))
 
         txt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -365,8 +365,8 @@ class ArchaeologyReader:
         if entry.get('details'):
             n = len(entry['details'])
             hint = self._label(
-                ngettext('{n} detail closeup — click the image to view',
-                         '{n} detail closeups — click the image to view',
+                ngettext('{n} detail closeup · click the image to view',
+                         '{n} detail closeups · click the image to view',
                          n).format(n=n),
                 'stone-views')
             txt.append(hint)
