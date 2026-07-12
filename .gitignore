@@ -40,6 +40,7 @@ repo/
 public/
 
 # Internal working docs — not for the public repo
+GUIDANCE.md
 SEARCH_RESEARCH.md
 FLATPAK_RESEARCH.md
 OPTIMIZATION_AUDIT.md
