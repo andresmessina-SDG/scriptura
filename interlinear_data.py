@@ -24,6 +24,7 @@ the same at-install pattern as the OpenBible downloads in open_data.py.
 import os
 import re
 import sqlite3
+import threading
 import unicodedata
 import urllib.request
 import zlib
@@ -431,6 +432,10 @@ def remove(name: str) -> None:
 # cross-thread sharing entirely.
 
 _migrated = False
+# Two panes can load Greek chapters concurrently (dual-pane session
+# restore); without the lock both threads pass the flag check and race
+# the ALTER on separate connections — the loser raises OperationalError.
+_migrate_lock = threading.Lock()
 
 
 def _migrate(conn: sqlite3.Connection, name: str) -> None:
@@ -441,20 +446,23 @@ def _migrate(conn: sqlite3.Connection, name: str) -> None:
     global _migrated
     if _migrated or name != GREEK:
         return
-    _migrated = True
-    cols = [r[1] for r in conn.execute('PRAGMA table_info(words)')]
-    if 'in_na' in cols:
-        conn.execute('ALTER TABLE words RENAME COLUMN in_na TO in_stream')
-        conn.commit()
-    dirty = conn.execute(
-        "SELECT 1 FROM words WHERE surface LIKE '%¶%' "
-        "OR surface LIKE '%¬%' LIMIT 1").fetchone()
-    if dirty:
-        conn.execute(
-            "UPDATE words SET surface = TRIM(REPLACE(REPLACE("
-            "surface, '¶', ''), '¬', '')) "
-            "WHERE surface LIKE '%¶%' OR surface LIKE '%¬%'")
-        conn.commit()
+    with _migrate_lock:
+        if _migrated:
+            return
+        cols = [r[1] for r in conn.execute('PRAGMA table_info(words)')]
+        if 'in_na' in cols:
+            conn.execute('ALTER TABLE words RENAME COLUMN in_na TO in_stream')
+            conn.commit()
+        dirty = conn.execute(
+            "SELECT 1 FROM words WHERE surface LIKE '%¶%' "
+            "OR surface LIKE '%¬%' LIMIT 1").fetchone()
+        if dirty:
+            conn.execute(
+                "UPDATE words SET surface = TRIM(REPLACE(REPLACE("
+                "surface, '¶', ''), '¬', '')) "
+                "WHERE surface LIKE '%¶%' OR surface LIKE '%¬%'")
+            conn.commit()
+        _migrated = True
 
 
 def load_chapter(name: str, book: str, chapter: int) -> list[Word]:

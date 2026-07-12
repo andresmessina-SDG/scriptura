@@ -32,6 +32,12 @@ import sword_bridge
 
 _log = logging.getLogger('scriptura.lexicon')
 
+# Cap the word-study rows actually built: GTK ListBox rows aren't
+# virtualized, and a common word (G3588 'the') matches nearly every verse
+# of a book — thousands of rows stall the main loop for seconds. The
+# header still reports the full count; a tail note names the cut.
+_WS_ROW_CAP = 200
+
 
 def _norm_strong(strong):
     """G0746 → G746. Module markup zero-pads to four digits while
@@ -197,6 +203,7 @@ class LexiconPanel(Gtk.Box):
         # to scope its scan. set_context() updates it.
         self._book = None
         self._module = None
+        self._ws_rows = 0        # rows built so far (capped at _WS_ROW_CAP)
 
         # ── Header row ──
         header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -597,30 +604,37 @@ class LexiconPanel(Gtk.Box):
     def _load_word_study(self, strong_num):
         # Clear the list immediately so the user sees the new search start.
         self._clear_ws()
-        self._ws_header.set_text(_('Searching…'))
+        self._ws_rows = 0
 
         # Capture the search context so a late callback after navigation
         # can be discarded.
         book, module = self._book, self._module
         if not book or not module:
+            self._ws_header.set_text('')   # no context — nothing to scan
             return
+        self._ws_header.set_text(_('Searching…'))
 
         # Padding-agnostic: interlinear clicks pass G746 while module
         # markup carries strong:G0746. Compiled once outside the loop.
         pattern = _scan_pattern(strong_num)
 
         def fetch():
-            total = sword_bridge.chapter_count(book)
+            # Whatever happens, reach _ws_finalize — a dead thread would
+            # leave the header saying 'Searching…' forever.
             running = 0
-            for ch in range(1, total + 1):
-                batch = []
-                for v_num, html in sword_bridge.load_chapter(module, book, ch):
-                    if pattern.search(str(html)):
-                        markup = _make_verse_markup(html, strong_num)
-                        batch.append((book, ch, v_num, markup))
-                running += len(batch)
-                GLib.idle_add(self._ws_chapter_done,
-                              strong_num, book, module, batch, ch, total, running)
+            try:
+                total = sword_bridge.chapter_count(book)
+                for ch in range(1, total + 1):
+                    batch = []
+                    for v_num, html in sword_bridge.load_chapter(module, book, ch):
+                        if pattern.search(str(html)):
+                            markup = _make_verse_markup(html, strong_num)
+                            batch.append((book, ch, v_num, markup))
+                    running += len(batch)
+                    GLib.idle_add(self._ws_chapter_done,
+                                  strong_num, book, module, batch, ch, total, running)
+            except Exception:
+                _log.exception('word study scan failed')
             GLib.idle_add(self._ws_finalize, strong_num, book, module, running)
 
         threading.Thread(target=fetch, daemon=True).start()
@@ -643,7 +657,10 @@ class LexiconPanel(Gtk.Box):
             'Searching {book}… {n} matches so far ({ch}/{total})',
             running).format(book=book_label(book), n=running, ch=ch, total=total))
         for ref_book, c, v_num, markup in batch:
+            if self._ws_rows >= _WS_ROW_CAP:
+                break
             self._ws_list.append(self._build_ws_row(ref_book, c, v_num, markup))
+            self._ws_rows += 1
         return GLib.SOURCE_REMOVE
 
     def _ws_finalize(self, strong_num, book, module, running):
@@ -655,6 +672,19 @@ class LexiconPanel(Gtk.Box):
             '{n} occurrence in {book}',
             '{n} occurrences in {book}',
             running).format(n=running, book=book_label(book)))
+        if running > self._ws_rows:
+            # The list stops at the cap; say so rather than look truncated.
+            note = Gtk.Label(
+                label=_('Showing the first {n} verses').format(n=self._ws_rows),
+                xalign=0)
+            note.add_css_class('dim-label')
+            note.set_margin_start(8)
+            note.set_margin_top(6)
+            note.set_margin_bottom(8)
+            row = Gtk.ListBoxRow()
+            row.set_activatable(False)
+            row.set_child(note)
+            self._ws_list.append(row)
         return GLib.SOURCE_REMOVE
 
     def _build_ws_row(self, ref_book, ch, v_num, markup):

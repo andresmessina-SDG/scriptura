@@ -17,6 +17,7 @@ the first screenful paints immediately and navigation can never paint a
 stale chapter, and with line-packed layout the streamed-in tail can never
 move what's already on screen.
 """
+import logging
 import re
 import threading
 
@@ -30,6 +31,9 @@ import settings
 import sword_bridge
 from a11y import set_accessible_label
 from interlinear_flow import WordFlow
+
+_log = logging.getLogger('scriptura.interlinear')
+
 
 def N_(message):
     """No-op gettext marker — the chip labels below are translated at
@@ -167,7 +171,14 @@ class InterlinearReader:
         gen = self._gen
 
         def fetch():
-            words = interlinear_data.load_chapter(module, book, chapter)
+            # A failed load must still reach _show_chapter: a silently dead
+            # thread would leave the previous chapter on screen under the
+            # new navigation state.
+            try:
+                words = interlinear_data.load_chapter(module, book, chapter)
+            except Exception:
+                _log.exception('interlinear chapter load failed')
+                words = []
             GLib.idle_add(self._show_chapter, gen, words, verse)
 
         threading.Thread(target=fetch, daemon=True).start()
@@ -360,6 +371,8 @@ class InterlinearReader:
         adjustment upper — poll until the upper stabilizes and can reach the
         anchor, then set the value once. (Fixed delays lose this race; a
         newer scroll/render supersedes any pending poll via the gen.)"""
+        if not verse:
+            return   # nothing to anchor to — don't spin the poll for 4 s
         self._scroll_gen = getattr(self, '_scroll_gen', 0) + 1
         gen = self._scroll_gen
         state = {'last_upper': -1.0, 'ticks': 0, 'on_target': 0}
