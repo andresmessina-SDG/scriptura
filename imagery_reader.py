@@ -135,7 +135,9 @@ def _place_labels(place, pane=None):
     credit = ' · '.join(
         b for b in (place.get('credit'), place.get('license')) if b)
     if credit:
-        attr = Gtk.Label(label=credit, xalign=0, wrap=True)
+        # LRM prefix: an RTL photographer name would otherwise reorder the
+        # ' · '-joined credit/license line in display.
+        attr = Gtk.Label(label='\u200e' + credit, xalign=0, wrap=True)
         attr.add_css_class('caption')
         attr.add_css_class('imagery-meta')
         out.append(attr)

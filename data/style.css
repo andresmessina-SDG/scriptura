@@ -956,7 +956,7 @@ box.mini-swatch {
     opacity: 0;
 }
 
-/* ── Historical Commentaries (catena) pane ───────────────────────────── */
+/* ── Voices of the Church (catena) pane ──────────────────────────────── */
 
 .catena-header {
     padding: 10px 14px 6px 14px;
@@ -965,29 +965,110 @@ box.mini-swatch {
     padding: 0 12px 8px 12px;
 }
 .catena-list {
-    padding: 4px 12px 12px 12px;
+    padding: 4px 16px 40px 16px;
 }
+/* Era section header — the Stone gallery's chapter voice: accent semibold
+   sans over a one-line italic serif deck. */
 .catena-era {
+    margin: 26px 0 2px;
+}
+.catena-era-title {
+    font-size: 1em;
+    font-weight: 700;
+    letter-spacing: 0.03em;
     color: @accent_color;
+}
+.catena-era-deck {
+    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-style: italic;
+    font-size: 1.02em;
+    opacity: 0.72;
+    line-height: 1.5;
+    margin-top: 4px;
+}
+/* One voice — no card box: voices sit on the window background, separated
+   by vertical rhythm alone (a catena reads as one continuous document). */
+.catena-voice {
+    margin: 14px 0;
+}
+/* Author eyebrow (small-caps via Pango markup) with the year riding after a
+   middle dot; tabular figures so the chronology aligns as you scroll. */
+.catena-eyebrow {
+    font-size: 0.92em;
     font-weight: 600;
-    letter-spacing: 0.05em;
-    margin: 10px 2px 2px 2px;
+    font-feature-settings: "tnum";
 }
-.catena-card {
-    padding: 12px 14px;
+/* Source title — itself the link: quiet gray at rest, clay on hover (the
+   Stone photo-credit treatment; GtkLabel links are `link` CSS nodes, and
+   Pango owns the underline, suppressed in the reader's markup). */
+.catena-source {
+    font-size: 0.9em;
+    opacity: 0.65;
 }
-.catena-card .catena-author {
-    font-weight: bold;
-    font-size: 1.2em;
+.catena-source link {
+    color: @window_fg_color;
 }
+.catena-source link:hover {
+    color: #a9744f;          /* clay, matching the artifact marker */
+}
+/* The reading voice: the same serif as the Stone captions and glossary. */
 .catena-quote {
-    /* The reader's font-size slider doesn't reach these cards, so nudge
-       the quote body up for comfortable reading. */
-    font-size: 1.1em;
-    line-height: 1.35;
+    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-size: 1.08em;
+    line-height: 1.6;
+}
+/* Read more / Show less — typographic, not button chrome. */
+button.catena-more {
+    background-image: none;
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    min-height: 0;
+    color: @accent_color;
+    font-size: 0.95em;
+}
+button.catena-more:hover  { color: shade(@accent_color, 0.8); }
+button.catena-more:active { color: shade(@accent_color, 0.7); }
+/* The per-voice copy action stays a whisper until pointed at. */
+button.catena-copy {
+    min-height: 0;
+    min-width: 0;
+    padding: 2px;
+    opacity: 0.45;
+}
+button.catena-copy:hover { opacity: 1; }
+/* Era filter chips — the app's one outline-chip vocabulary (see .xref-chip):
+   transparent at rest, tinted border, filled only while active. */
+button.catena-chip {
+    min-height: 0;
+    padding: 2px 12px;
+    border-radius: 999px;
+    font-size: 0.9em;
+    color: @accent_color;
+    border: 1px solid alpha(@accent_color, 0.5);
+    background-image: none;
+    background-color: transparent;
+    box-shadow: none;
+}
+button.catena-chip:hover  { background-color: alpha(@window_fg_color, 0.06); }
+button.catena-chip:active { background-color: alpha(@window_fg_color, 0.10); }
+button.catena-chip:checked {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+    border-color: transparent;
+}
+/* Place chips — clay, the house colour for cross-links that leave the
+   current surface (Stone's see-also chips), so the row reads apart from
+   the accent filter chips above it. */
+button.catena-chip-place {
+    color: #a9744f;
+    border-color: alpha(#a9744f, 0.55);
 }
 .catena-meta {
-    /* dim caption row: year + source */
+    /* dim caption bits (the Places chip-row lead) */
     opacity: 0.7;
 }
 

@@ -1629,8 +1629,10 @@ class BiblePane(Gtk.Box):
         if 'text_color'   in kwargs: self._text_color   = kwargs['text_color']
         if 'bg_color'     in kwargs: self._bg_color     = kwargs['bg_color']
         self._update_font_css()
-        # The archaeology document scales with the same reading font size.
+        # The archaeology and catena documents scale with the same reading
+        # font size.
         self._archaeology.apply_font_size(self._font_size)
+        self._catena.apply_font_size(self._font_size)
 
     def set_font_size(self, size):
         self.set_appearance(font_size=size)
