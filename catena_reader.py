@@ -24,30 +24,46 @@ import imagery_bridge
 
 _log = logging.getLogger('scriptura.catena')
 
-# The DB's era values in chronological order, each mapped to a display name
-# and the one-line deck its section header opens with (both translated at
-# display time; the raw era value stays the filter key).
-_ERAS = {
-    'Ante-Nicene': (
-        N_('Ante-Nicene'),
-        N_('The church of the martyrs, before the council of Nicaea.')),
-    'Nicene & Post-Nicene': (
-        N_('Nicene & Post-Nicene'),
-        N_('The great councils and the doctors of the undivided church.')),
-    'Medieval': (
-        N_('Medieval'),
-        N_('Cloister and cathedral school: faith seeking understanding.')),
-    'Reformation': (
-        N_('Reformation'),
-        N_('The sixteenth century returns to the sources.')),
-    'Modern': (
-        N_('Modern'),
-        N_('The same conversation, carried into the modern age.')),
-    'Unknown': (
-        N_('Uncertain date'),
-        N_('Voices whose dates the record does not preserve.')),
+# The pack's father_category values (schema 2), in reading order — each mapped
+# to a display name and the one-line deck its section header opens with (both
+# translated at display time; the raw category value stays the filter key).
+_CATEGORIES = {
+    'Second Temple Judaism': (
+        N_('Second Temple Judaism'),
+        N_('Between the testaments, read for background, not authority.')),
+    'Canonical Scriptures': (
+        N_('Canonical Scriptures'),
+        N_('Scripture interprets Scripture: the New Testament on the Old.')),
+    'Apocrypha, Pseudepigrapha & Early Documents': (
+        N_('Apocrypha & Pseudepigrapha'),
+        N_('Valued by the church as history, never received as canon.')),
+    'Early Fathers (Pre-Nicaea)': (
+        N_('Early Fathers (Pre-Nicaea)'),
+        N_('The church of the martyrs, before the Council of Nicaea.')),
+    'Eastern & Byzantine Theology': (
+        N_('Eastern & Byzantine'),
+        N_('The Greek East of the great christological councils.')),
+    'Syriac & Oriental Theology': (
+        N_('Syriac & Oriental'),
+        N_('The Syriac churches, guarding the gospel east of Antioch.')),
+    'Western & Medieval Theology': (
+        N_('Western & Medieval'),
+        N_('The Latin West, from Augustine to the schoolmen.')),
+    'Reformation & Modern': (
+        N_('Reformation & Modern'),
+        N_("The Reformers' return to the gospel and its sources.")),
+    'Councils & Canons': (
+        N_('Councils & Canons'),
+        N_("The assembled church's judgments, answerable to Scripture.")),
+    'Liturgies & Hymns': (
+        N_('Liturgies & Hymns'),
+        N_('The praying church, her worship confessing her belief.')),
+    'Pseudonymous Works': (
+        N_('Pseudonymous Works'),
+        N_("Writings under a father's name not their own.")),
 }
-_ERA_ORDER = list(_ERAS)
+_CATEGORY_ORDER = list(_CATEGORIES)
+_CATEGORY_RANK = {cat: i for i, cat in enumerate(_CATEGORY_ORDER)}
 
 # Quotes longer than this get a Read more/Show less toggle (the voice shows
 # only a short preview string until expanded) so a 1,000-word Augustine
@@ -67,10 +83,6 @@ _AUTHOR_FILTER_MIN = 6
 # gallery, so the two study surfaces share one column.
 _TEXT_W = 680
 
-# Words kept lowercase when taming an ALL-CAPS source title.
-_TITLE_SMALL_WORDS = {'a', 'an', 'and', 'at', 'by', 'for', 'from', 'in',
-                      'of', 'on', 'or', 'the', 'to', 'with'}
-
 
 class CatenaReader:
     def __init__(self, pane=None):
@@ -79,7 +91,7 @@ class CatenaReader:
         self._chapter = None
         self._verse = None
         self._entries = []
-        self._era_filter = None  # None == "All"
+        self._category_filter = None  # None == "All"
         self._author_query = ''  # per-figure substring filter
         self._show_all = False   # cap rendered voices until the user asks
         self._build_widget()
@@ -162,7 +174,7 @@ class CatenaReader:
     def render_for(self, book, chapter, verse):
         """Show commentary on a verse (driven by the partnered Bible pane)."""
         self._book, self._chapter, self._verse = book, chapter, verse
-        self._era_filter = None
+        self._category_filter = None
         self._show_all = False
         self._author_query = ''
         if self._author_entry.get_text():
@@ -174,6 +186,12 @@ class CatenaReader:
         except Exception:
             _log.exception('catena lookup failed')
             self._entries = []
+        # Group by tradition: the lookup returns entries oldest-first, so a
+        # stable sort by category rank keeps each group's voices chronological
+        # while laying the categories out in reading order.
+        self._entries.sort(
+            key=lambda e: _CATEGORY_RANK.get(e.get('category', ''),
+                                             len(_CATEGORY_RANK)))
         self._rebuild()
         self.apply_font_size(getattr(self._pane, '_font_size', None))
 
@@ -213,12 +231,13 @@ class CatenaReader:
 
         shown = [
             e for e in self._entries
-            if (self._era_filter is None or e['era'] == self._era_filter)
+            if (self._category_filter is None
+                or e['category'] == self._category_filter)
             and (not self._author_query
                  or self._author_query in e['author'].lower())
         ]
 
-        filtering = self._era_filter is not None or bool(self._author_query)
+        filtering = self._category_filter is not None or bool(self._author_query)
         if not n:
             self._header.set_text(ref)
         else:
@@ -247,15 +266,15 @@ class CatenaReader:
         if not shown:
             self._list.append(self._status(
                 _('No voices match this filter'),
-                _('Clear the author filter or choose a different era.')))
+                _('Clear the author filter or choose a different tradition.')))
             return
 
         display = shown if self._show_all else shown[:_VOICE_CAP]
-        prev_era = None
+        prev_cat = None
         for e in display:
-            if e['era'] != prev_era:
-                self._list.append(self._era_header(e['era']))
-                prev_era = e['era']
+            if e['category'] != prev_cat:
+                self._list.append(self._category_header(e['category']))
+                prev_cat = e['category']
             self._list.append(self._voice(e))
 
         if len(shown) > len(display):
@@ -267,18 +286,18 @@ class CatenaReader:
             self._list.append(more)
 
     def _build_chips(self):
-        present = {e['era'] for e in self._entries}
+        present = {e['category'] for e in self._entries}
         if len(present) <= 1:
             self._chip_box.set_visible(False)
             return
         self._chip_box.set_visible(True)
-        ordered = ['All'] + [era for era in _ERA_ORDER if era in present]
+        ordered = ['All'] + [c for c in _CATEGORY_ORDER if c in present]
         for value in ordered:
-            label = _('All') if value == 'All' else _era_name(value)
+            label = _('All') if value == 'All' else _category_name(value)
             chip = Gtk.ToggleButton(label=label)
             chip.add_css_class('catena-chip')
-            active = (value == 'All' and self._era_filter is None) \
-                or (value == self._era_filter)
+            active = (value == 'All' and self._category_filter is None) \
+                or (value == self._category_filter)
             if active:
                 chip.set_active(True)
             chip.connect('toggled', self._on_chip_toggled, value)
@@ -322,14 +341,15 @@ class CatenaReader:
     def _on_chip_toggled(self, chip, value):
         if not chip.get_active():
             # Keep exactly one chip active: re-press if the user untoggled it.
-            current = 'All' if self._era_filter is None else self._era_filter
+            current = ('All' if self._category_filter is None
+                       else self._category_filter)
             if value == current:
                 chip.set_active(True)
             return
         new_filter = None if value == 'All' else value
-        if new_filter == self._era_filter:
+        if new_filter == self._category_filter:
             return
-        self._era_filter = new_filter
+        self._category_filter = new_filter
         self._show_all = False
         self._rebuild()
 
@@ -356,13 +376,13 @@ class CatenaReader:
         self._show_all = False
         self._rebuild()
 
-    def _era_header(self, era):
-        """Era section header — the Stone gallery's chapter voice: accent
+    def _category_header(self, cat):
+        """Tradition section header — the Stone gallery's chapter voice: ink
         semibold sans over a one-line italic serif deck."""
-        name, deck = _ERAS.get(era, (None, None))
+        name, deck = _CATEGORIES.get(cat, (None, None))
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         box.add_css_class('catena-era')
-        title = Gtk.Label(label=_(name) if name else era, xalign=0, wrap=True)
+        title = Gtk.Label(label=_(name) if name else cat, xalign=0, wrap=True)
         title.add_css_class('catena-era-title')
         box.append(title)
         if deck:
@@ -382,17 +402,16 @@ class CatenaReader:
         eyebrow = Gtk.Label(xalign=0, hexpand=True, wrap=True)
         eyebrow.add_css_class('catena-eyebrow')
         name, suffix = _author_parts(e)
-        markup = ('<span variant="smallcaps" letter_spacing="1024">{a}</span>'
-                  .format(a=GLib.markup_escape_text(name)))
-        # The suffix ("(as quoted by Aquinas, AD 1274)") and year are asides,
-        # not the name — they ride dimmed, outside the small caps.
-        dim = [suffix] if suffix else []
+        # The name in plain normal case (bold via .catena-eyebrow) — a person,
+        # not a tracked all-caps label.
+        markup = GLib.markup_escape_text(name)
+        # Only the name and its year ride the eyebrow; the provenance suffix
+        # ("(as quoted by Aquinas, AD 1274)") moves to the source line below,
+        # so a long parenthetical never wraps the eyebrow.
         year = _year_label(e['year'])
         if year:
-            dim.append(f'· {year}')
-        if dim:
-            markup += ' <span alpha="55%">{d}</span>'.format(
-                d=GLib.markup_escape_text(' '.join(dim)))
+            markup += ' <span alpha="55%">· {y}</span>'.format(
+                y=GLib.markup_escape_text(year))
         eyebrow.set_markup(markup)
         head.append(eyebrow)
 
@@ -408,21 +427,28 @@ class CatenaReader:
         head.append(copy)
         box.append(head)
 
-        title = _source_title(e)
-        if title or e.get('source_url'):
+        title = e.get('source_title')
+        if title or e.get('source_url') or suffix:
             src = Gtk.Label(xalign=0, wrap=True)
             src.add_css_class('catena-source')
-            shown = title or _('Source')
-            if e.get('source_url'):
+            shown = title or (_('Source') if e.get('source_url') else '')
+            parts = []
+            if shown and e.get('source_url'):
                 # The title itself is the link — quiet at rest, clay on hover
                 # (.catena-source link). underline="none": Pango underlines
                 # label links itself, outside CSS reach.
-                src.set_markup(
+                parts.append(
                     '<a href="{u}"><span underline="none">{t}</span></a>'
                     .format(u=GLib.markup_escape_text(e['source_url']),
                             t=GLib.markup_escape_text(shown)))
-            else:
-                src.set_text(shown)
+            elif shown:
+                parts.append(GLib.markup_escape_text(shown))
+            # The provenance ("(as quoted by Aquinas, AD 1274)") rides here,
+            # dimmed after the title, rather than crowding the name eyebrow.
+            if suffix:
+                parts.append('<span alpha="55%">{s}</span>'.format(
+                    s=GLib.markup_escape_text(suffix)))
+            src.set_markup(' '.join(parts))
             box.append(src)
 
         quote = Gtk.Label(xalign=0, wrap=True, selectable=True)
@@ -462,7 +488,7 @@ class CatenaReader:
         """Copy the quote citation-ready: the text, then an attribution line
         (author, source, year, reference)."""
         bits = [_author_label(e)]
-        title = _source_title(e)
+        title = e.get('source_title')
         if title:
             bits.append(title)
         attribution = ', '.join(bits)
@@ -507,61 +533,24 @@ def _preview(text):
     return tail if tail.endswith('…') else tail + '…'
 
 
-def _era_name(era):
-    """Display name for a DB era value (translated; raw value on a miss)."""
-    name = _ERAS.get(era, (None, ''))[0]
-    return _(name) if name else era
+def _category_name(cat):
+    """Display name for a DB category value (translated; raw value on a miss)."""
+    name = _CATEGORIES.get(cat, (None, ''))[0]
+    return _(name) if name else cat
 
 
 def _author_parts(e):
-    """(author, display suffix). Suffixes arrive in two shapes: bare verse
-    locators (' 10:23-33') that need parentheses, and ones that carry their
-    own — '(as quoted by Aquinas, AD 1274)', or prose like 'is referenced
-    above by Jerome (AD 420)'. Wrap only when none are present; always strip
-    the stray leading space."""
-    suffix = (e.get('author_suffix') or '').strip()
-    if suffix and '(' not in suffix:
-        suffix = f'({suffix})'
-    return e['author'], suffix
+    """(author, display suffix). The pack normalizes suffixes now — stray
+    whitespace stripped and bare locators parenthesized at build time — so
+    this just reads the stored fields (suffix drives the dimmed eyebrow aside,
+    e.g. '(as quoted by Aquinas, AD 1274)')."""
+    return e['author'], (e.get('author_suffix') or '')
 
 
 def _author_label(e):
     """Author with the suffix, one line — the copy line's attribution."""
     name, suffix = _author_parts(e)
     return f'{name} {suffix}' if suffix else name
-
-
-def _source_title(e):
-    """Display form of an entry's source title: ALL-CAPS tamed, and a leading
-    repeat of the author's name dropped — the pack's titles often embed it
-    ("Irenaeus Against Heresies Book 3" under an IRENAEUS eyebrow)."""
-    title = _display_title(e.get('source_title') or '')
-    author = e['author']
-    if author and title.lower().startswith(author.lower()):
-        rest = title[len(author):].lstrip(' ,:;-–—')
-        if rest:
-            title = rest[0].upper() + rest[1:]
-    return title
-
-
-def _display_title(title):
-    """Tame an ALL-CAPS source title ("FRAGMENTS ON JOHN 12") to title case.
-    Display-time repair until the pack rebuild normalizes titles at build
-    time; a title with any lowercase in it passes through untouched."""
-    if not title or any(c.islower() for c in title):
-        return title
-    words = []
-    for i, w in enumerate(title.split()):
-        lw = w.lower()
-        if i and lw in _TITLE_SMALL_WORDS:
-            words.append(lw)
-        elif re.fullmatch('[IVXLCDM]+', w):
-            words.append(w)          # roman numeral (HOMILY XII)
-        elif any(c.isdigit() for c in w) and not w.isdigit():
-            words.append(w)          # locator token (Q.37.R, XII.3, 215:2)
-        else:
-            words.append(w.capitalize())
-    return ' '.join(words)
 
 
 def _year_label(year):

@@ -29,9 +29,12 @@ _log = logging.getLogger('scriptura.catena')
 MODULE_KEY = 'Historical Commentaries'
 
 # The downloadable pack, hosted as a gzipped SQLite on Codeberg Releases.
-# Replace the tag once the release is published.
+# When a rebuilt pack is published, bump BOTH of these: PACK_URL to the new
+# release asset, and LATEST_BUILT to that pack's pack_meta 'built' date, so an
+# installed-but-older pack surfaces an "update available" nudge (update_available).
 PACK_URL = ('https://codeberg.org/andresmessina/scriptura/releases/'
-            'download/catena-pack-v1/catena.db.gz')
+            'download/catena-pack-v2/catena.db.gz')
+LATEST_BUILT = '2026-07-12'
 
 # Mirrors the build script's sentinel for "date unknown".
 _UNKNOWN_YEAR = 9999
@@ -42,6 +45,7 @@ class CatenaEntry(TypedDict):
     author_suffix: str | None
     year: int | None
     era: str
+    category: str
     source_title: str | None
     source_url: str | None
     wiki_url: str | None
@@ -81,7 +85,23 @@ def _db() -> sqlite3.Connection | None:
         return None
     _conn_local.conn = conn
     _conn_local.gen = gen
+    _conn_local.has_category = None   # recomputed lazily for this connection
     return conn
+
+
+def _has_category(conn: sqlite3.Connection) -> bool:
+    """Whether the installed pack carries the schema-2 `category` column,
+    cached for the life of this thread-local connection."""
+    cached = getattr(_conn_local, 'has_category', None)
+    if cached is not None:
+        return bool(cached)
+    try:
+        cols = {r[1] for r in conn.execute('PRAGMA table_info(quotes)')}
+    except sqlite3.Error:
+        cols = set()
+    has = 'category' in cols
+    _conn_local.has_category = has
+    return has
 
 
 def _reset() -> None:
@@ -129,6 +149,14 @@ def pack_info() -> dict[str, str]:
         return {}
 
 
+def update_available() -> bool:
+    """True when an installed pack predates the one the app now ships against
+    (compares pack_meta 'built', an ISO date that sorts lexicographically).
+    False when nothing is installed — the row offers a Download then."""
+    built = pack_info().get('built', '')
+    return bool(built) and built < LATEST_BUILT
+
+
 def _encode(chapter: int, verse: int) -> int:
     return chapter * 1_000_000 + verse
 
@@ -139,9 +167,12 @@ def lookup(book: str, chapter: int, verse: int) -> list[CatenaEntry]:
     if conn is None:
         return []
     key = _encode(chapter, verse)
+    # `category` arrives with schema 2; an older installed pack lacks the
+    # column, so fall back to selecting a NULL for it until the user updates.
+    cat_col = 'category' if _has_category(conn) else 'NULL AS category'
     try:
         rows = conn.execute(
-            'SELECT author, author_suffix, year, era, source_title, '
+            f'SELECT author, author_suffix, year, era, {cat_col}, source_title, '
             'source_url, wiki_url, text FROM quotes '
             'WHERE book = ? AND loc_start <= ? AND loc_end >= ? '
             'ORDER BY (year IS NULL OR year = ?), year, author',
@@ -152,7 +183,8 @@ def lookup(book: str, chapter: int, verse: int) -> list[CatenaEntry]:
     return [
         CatenaEntry(
             author=r[0], author_suffix=r[1], year=r[2], era=r[3],
-            source_title=r[4], source_url=r[5], wiki_url=r[6], text=r[7])
+            category=r[4] or '', source_title=r[5], source_url=r[6],
+            wiki_url=r[7], text=r[8])
         for r in rows
     ]
 

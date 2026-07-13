@@ -353,7 +353,7 @@ image.module-feature-icon {
 
 /* Dictionary peek: serif headword echoing the app's chapter headings. */
 .dict-headword {
-    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 1.4em;
     font-weight: 600;
@@ -362,7 +362,7 @@ image.module-feature-icon {
 /* Footnote peek — caption stays UI-sans; the note body reads in the serif
  * voice of the page it annotates. */
 .fnote-body {
-    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 1.1em;
 }
@@ -569,7 +569,7 @@ button.menu-theme-toggle {
 /* Stylized "V" (Verse) glyph on the one-verse-per-page toggle, sized to sit
    with the symbolic icons beside it. */
 .present-verse-glyph {
-    font-family: 'Source Serif 4', 'Charter', Georgia, serif;
+    font-family: 'Newsreader', 'Source Serif 4', 'Charter', Georgia, serif;
     font-weight: bold;
     font-size: 15px;
     padding: 0 2px;
@@ -640,7 +640,7 @@ button.menu-theme-toggle {
     padding: 0 3px 5px 1px;
 }
 .interlinear-chap-head {
-    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 19px;
     font-weight: 600;
@@ -967,42 +967,60 @@ box.mini-swatch {
 .catena-list {
     padding: 4px 16px 40px 16px;
 }
-/* Era section header — the Stone gallery's chapter voice: accent semibold
-   sans over a one-line italic serif deck. */
+/* Tradition divider — a quiet kicker, not a headline: a faint hairline, then
+   small tracked ink over a dim one-line serif deck. Blue stays off it (colour
+   belongs to the tappable chips and Read more), and it reads smaller than the
+   quote so the voice itself, not its section label, is the loudest thing in
+   the column. The rule marks the section boundary the kicker alone was too
+   quiet to signal. */
 .catena-era {
-    margin: 26px 0 2px;
+    margin: 22px 0 2px;
+    padding-top: 16px;
+    border-top: 1px solid alpha(@window_fg_color, 0.12);
+}
+/* No rule above the first tradition in the column — a hairline right under the
+   filter chips would read as fencing them off, not as a section break. */
+.catena-list > .catena-era:first-child {
+    margin-top: 8px;
+    padding-top: 0;
+    border-top: none;
 }
 .catena-era-title {
-    font-size: 1em;
+    font-family: 'Roboto', 'Adwaita Sans', 'Inter', sans-serif;
+    font-size: 0.85em;
     font-weight: 700;
-    letter-spacing: 0.03em;
-    color: @accent_color;
+    letter-spacing: 0.04em;
+    color: @window_fg_color;
+    opacity: 0.75;
 }
 .catena-era-deck {
-    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
-                 'Iowan Old Style', 'Georgia', serif;
+    font-family: 'EB Garamond', 'Newsreader', 'Source Serif 4',
+                 'Georgia', serif;
     font-style: italic;
-    font-size: 1.02em;
-    opacity: 0.72;
-    line-height: 1.5;
-    margin-top: 4px;
+    font-size: 0.92em;
+    opacity: 0.6;
+    line-height: 1.4;
+    margin-top: 2px;
 }
 /* One voice — no card box: voices sit on the window background, separated
    by vertical rhythm alone (a catena reads as one continuous document). */
 .catena-voice {
     margin: 14px 0;
 }
-/* Author eyebrow (small-caps via Pango markup) with the year riding after a
-   middle dot; tabular figures so the chronology aligns as you scroll. */
+/* Author eyebrow — the voice's name in UI sans, bold, normal case (a name,
+   not a tracked all-caps label), with the year riding after a middle dot;
+   tabular figures so the chronology aligns as you scroll. */
 .catena-eyebrow {
-    font-size: 0.92em;
-    font-weight: 600;
+    font-family: 'Roboto', 'Adwaita Sans', 'Inter', sans-serif;
+    font-size: 0.95em;
+    font-weight: 700;
     font-feature-settings: "tnum";
 }
 /* Source title — itself the link: quiet gray at rest, clay on hover (the
    Stone photo-credit treatment; GtkLabel links are `link` CSS nodes, and
    Pango owns the underline, suppressed in the reader's markup). */
 .catena-source {
+    font-family: 'Roboto', 'Adwaita Sans', 'Inter', sans-serif;
     font-size: 0.9em;
     opacity: 0.65;
 }
@@ -1012,15 +1030,19 @@ box.mini-swatch {
 .catena-source link:hover {
     color: #a9744f;          /* clay, matching the artifact marker */
 }
-/* The reading voice: the same serif as the Stone captions and glossary. */
+/* The reading voice — the loudest thing in each entry: the same serif as the
+   Stone captions and glossary, a touch tighter than before so a long quote
+   reads as one calm block rather than a wide-spaced ladder. */
 .catena-quote {
-    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
-                 'Iowan Old Style', 'Georgia', serif;
-    font-size: 1.08em;
-    line-height: 1.6;
+    font-family: 'EB Garamond', 'Newsreader', 'Source Serif 4',
+                 'Georgia', serif;
+    font-size: 1.16em;
+    line-height: 1.5;
 }
 /* Read more / Show less — typographic, not button chrome. */
 button.catena-more {
+    font-family: 'EB Garamond', 'Newsreader', 'Source Serif 4',
+                 'Georgia', serif;
     background-image: none;
     background-color: transparent;
     border: none;
@@ -1028,7 +1050,7 @@ button.catena-more {
     padding: 0;
     min-height: 0;
     color: @accent_color;
-    font-size: 0.95em;
+    font-size: 1.02em;
 }
 button.catena-more:hover  { color: shade(@accent_color, 0.8); }
 button.catena-more:active { color: shade(@accent_color, 0.7); }
@@ -1128,7 +1150,7 @@ button.catena-chip-place {
     margin-bottom: 2px;
 }
 .stone-front-sub {
-    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 1.05em;
     opacity: 0.6;
@@ -1136,7 +1158,7 @@ button.catena-chip-place {
     margin-bottom: 14px;
 }
 .stone-front-body {
-    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     line-height: 1.6;
     margin-bottom: 10px;
@@ -1152,7 +1174,7 @@ button.catena-chip-place {
     margin-bottom: 8px;
 }
 .stone-era-intro {
-    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     font-style: italic;
     font-size: 1.02em;
@@ -1189,7 +1211,7 @@ button.catena-chip-place {
     margin-bottom: 2px;
 }
 .stone-caption {
-    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     line-height: 1.6;
     margin-top: 14px;
@@ -1280,7 +1302,7 @@ button.stone-chip-rel {
 }
 .stone-term-def,
 .stone-read-note {
-    font-family: 'Source Serif 4', 'Source Serif Pro', 'Charter',
+    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     opacity: 0.75;
     line-height: 1.55;

@@ -48,6 +48,23 @@ install_data('style.css',   install_dir: pkgdatadir / 'data')
 # Bundled "Scripture in Stone" archaeology document + its images.
 install_subdir('archaeology', install_dir: pkgdatadir / 'data')
 
+# Bundled reading fonts (all OFL) so typography is identical on every machine
+# instead of falling back to whatever serif the host happens to have. The
+# Flatpak runtime's fontconfig scans /app/share/fonts. Newsreader is the
+# editorial serif (Stone, glossary, footnotes); EB Garamond is the Voices
+# column's reading serif with Roboto for its labels; Noto Serif and Noto Serif
+# Hebrew back the interlinear's polytonic Greek and pointed Hebrew.
+install_data(
+  'fonts/Newsreader[opsz,wght].ttf',
+  'fonts/Newsreader-Italic[opsz,wght].ttf',
+  'fonts/EBGaramond[wght].ttf',
+  'fonts/EBGaramond-Italic[wght].ttf',
+  'fonts/Roboto[wdth,wght].ttf',
+  'fonts/NotoSerif[wdth,wght].ttf',
+  'fonts/NotoSerifHebrew[wdth,wght].ttf',
+  install_dir: datadir / 'fonts' / 'scriptura',
+)
+
 desktop_validate = find_program('desktop-file-validate', required: false)
 if desktop_validate.found()
   test('validate-desktop',

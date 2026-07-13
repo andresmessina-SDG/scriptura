@@ -19,21 +19,24 @@ def _seed(path, rows, meta=None):
     conn.executescript("""
         CREATE TABLE quotes (
             book TEXT, loc_start INTEGER, loc_end INTEGER, author TEXT,
-            author_suffix TEXT, year INTEGER, era TEXT, source_title TEXT,
-            source_url TEXT, wiki_url TEXT, text TEXT);
+            author_suffix TEXT, year INTEGER, era TEXT, category TEXT,
+            condemned INTEGER, source_title TEXT, source_url TEXT,
+            wiki_url TEXT, text TEXT);
         CREATE TABLE pack_meta (key TEXT PRIMARY KEY, value TEXT);
     """)
-    conn.executemany('INSERT INTO quotes VALUES (?,?,?,?,?,?,?,?,?,?,?)', rows)
+    conn.executemany(
+        'INSERT INTO quotes VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)', rows)
     if meta:
         conn.executemany('INSERT INTO pack_meta VALUES (?,?)', list(meta.items()))
     conn.commit()
     conn.close()
 
 
-def _q(book, ch, v, author, year, era, *, end=None, text='t'):
+def _q(book, ch, v, author, year, era, *, end=None, text='t',
+       category='Early Fathers (Pre-Nicaea)'):
     e = _enc(ch, v)
     return (book, e, end if end is not None else e, author, None, year, era,
-            None, None, None, text)
+            category, 0, None, None, None, text)
 
 
 @pytest.fixture
@@ -59,6 +62,34 @@ def test_lookup_single_verse(pack):
     assert res[0]['author'] == 'Augustine of Hippo'
     assert res[0]['era'] == 'Nicene & Post-Nicene'
     assert res[0]['text'] == 'For God so loved'
+
+
+def test_lookup_carries_category(pack):
+    _seed(str(pack), [_q('John', 3, 16, 'Origen of Alexandria', 253,
+                         'Ante-Nicene', category='Early Fathers (Pre-Nicaea)')])
+    res = catena_bridge.lookup('John', 3, 16)
+    assert res[0]['category'] == 'Early Fathers (Pre-Nicaea)'
+
+
+def test_lookup_tolerates_schema1_pack_without_category(pack):
+    # A pack built before schema 2 has no `category` column; lookup must still
+    # work, filling an empty category, until the user updates the pack.
+    conn = sqlite3.connect(str(pack))
+    conn.executescript("""
+        CREATE TABLE quotes (book TEXT, loc_start INTEGER, loc_end INTEGER,
+            author TEXT, author_suffix TEXT, year INTEGER, era TEXT,
+            source_title TEXT, source_url TEXT, wiki_url TEXT, text TEXT);
+        CREATE TABLE pack_meta (key TEXT PRIMARY KEY, value TEXT);
+    """)
+    conn.execute("INSERT INTO quotes VALUES ('John',?,?,'Augustine',NULL,430,"
+                 "'Nicene & Post-Nicene',NULL,NULL,NULL,'t')",
+                 (_enc(3, 16), _enc(3, 16)))
+    conn.commit()
+    conn.close()
+    catena_bridge._reset()
+    res = catena_bridge.lookup('John', 3, 16)
+    assert len(res) == 1
+    assert res[0]['category'] == ''
 
 
 def test_lookup_range_containment(pack):
@@ -97,6 +128,22 @@ def test_module_names_and_predicate(pack):
     assert catena_bridge.module_names() == [catena_bridge.MODULE_KEY]
     assert catena_bridge.is_catena_module(catena_bridge.MODULE_KEY)
     assert not catena_bridge.is_catena_module('KJV')
+
+
+def test_update_available_compares_built_date(pack, monkeypatch):
+    monkeypatch.setattr(catena_bridge, 'LATEST_BUILT', '2026-07-12')
+    # nothing installed -> no update (a Download is offered instead)
+    assert catena_bridge.update_available() is False
+    # an older installed pack -> update available
+    _seed(str(pack), [_q('John', 1, 1, 'A', 100, 'Ante-Nicene')],
+          meta={'built': '2026-05-29'})
+    assert catena_bridge.update_available() is True
+    # current pack -> no update
+    catena_bridge.remove_pack()
+    catena_bridge._reset()
+    _seed(str(pack), [_q('John', 1, 1, 'A', 100, 'Ante-Nicene')],
+          meta={'built': '2026-07-12'})
+    assert catena_bridge.update_available() is False
 
 
 def test_pack_info(pack):

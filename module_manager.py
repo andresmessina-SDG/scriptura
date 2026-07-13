@@ -519,13 +519,20 @@ class ModuleManagerWindow(Adw.Window):
                 _('{n} quotations from the church fathers to the Reformers, '
                   'verse by verse').format(n=n) if n else
                 _('Church-history commentary, verse by verse'))
+            if catena_bridge.update_available():
+                up = Gtk.Button(label=_('Update'))
+                up.add_css_class('suggested-action')
+                up.set_valign(Gtk.Align.CENTER)
+                up.set_tooltip_text(_('A newer pack is available'))
+                up.connect('clicked', self._on_catena_update)
+                row.add_suffix(up)
             btn = self._trash_button(
                 lambda: self._confirm_remove_generic(
                     _('Historical Commentaries'), self._do_catena_remove))
         else:
             row.set_subtitle(
                 _('How the church read each verse, from the fathers to the '
-                  'Reformers · ~31 MB download'))
+                  'Reformers · ~33 MB download'))
             btn = Gtk.Button(label=_('Download'))
             btn.add_css_class('suggested-action')
             btn.connect('clicked', self._on_catena_download)
@@ -1298,6 +1305,13 @@ class ModuleManagerWindow(Adw.Window):
             btn.set_label(_('Downloading…'))
 
     def _on_catena_download(self, btn):
+        self._pack_download(
+            btn, _('Historical Commentaries'),
+            lambda p: catena_bridge.download_and_install(on_progress=p))
+
+    def _on_catena_update(self, btn):
+        # Same flow as the first download — the install writes through a temp
+        # file and renames atomically, so it overwrites the older pack in place.
         self._pack_download(
             btn, _('Historical Commentaries'),
             lambda p: catena_bridge.download_and_install(on_progress=p))
