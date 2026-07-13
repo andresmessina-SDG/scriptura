@@ -102,6 +102,23 @@ def _register_icon_search_path():
     theme.add_search_path(icons_dir)
 
 
+def _apply_manual_font_rendering():
+    """Pin GTK to MANUAL font rendering (classic integer-hinted glyph
+    placement) instead of the AUTOMATIC mode's fractional vertical
+    positioning. The automatic path feeds fractional glyph rects into GSK's
+    shared GPU glyph-atlas cache, which shaves the top row off caps and
+    ascenders at certain font sizes on every GPU renderer (gl/ngl/vulkan).
+    MANUAL sidesteps that while keeping GPU acceleration. Needs a display, so
+    it is called from activate/open, not at import. Since GTK 4.16."""
+    settings = Gtk.Settings.get_default()
+    if settings is None:
+        return
+    try:
+        settings.set_property('gtk-font-rendering', Gtk.FontRendering.MANUAL)
+    except (AttributeError, TypeError):
+        pass  # older GTK without the enum/property — nothing to pin, no harm
+
+
 def _scan_argv_for_bible_uri():
     """Return the first bible: ref found in sys.argv, or None.
 
@@ -132,6 +149,7 @@ class BibleApp(Adw.Application):
 
     def _on_activate(self, app):
         _register_icon_search_path()
+        _apply_manual_font_rendering()
         load_app_css()
         self._present_main_or_welcome(app, startup_ref=self._argv_ref)
 
@@ -141,6 +159,7 @@ class BibleApp(Adw.Application):
         preserve custom URI schemes; fall back to Gio.File only if
         argv didn't yield a ref."""
         _register_icon_search_path()
+        _apply_manual_font_rendering()
         load_app_css()
         ref = self._argv_ref
         if not ref:
