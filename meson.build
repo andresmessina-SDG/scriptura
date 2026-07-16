@@ -73,6 +73,7 @@ py_sources = files(
   'study_journal.py',
   'styles.py',
   'sword_bridge.py',
+  'tasks.py',
   'welcome.py',
   'window.py',
 )
