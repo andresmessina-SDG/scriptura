@@ -11,6 +11,7 @@ from gi.repository import Gtk, Adw, GLib, Gdk, Gio, PangoCairo
 from gtk_utils import clear_children
 import sword_bridge
 import settings
+import tasks
 import module_positions
 import onboarding
 import backup
@@ -2216,7 +2217,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._present_bilingual = bool(bi)          # user intent, per session
         # Invalidate any cross/jump load still in flight from a previous present
         # session so it can't clobber the passage we're about to show.
-        self._present_load_gen = getattr(self, '_present_load_gen', 0) + 1
+        tasks.cancel(f'present:{id(self)}')
         # Header is already hidden (reading mode), so the window height minus the
         # surface's own padding is a good pre-allocation viewport estimate — lets
         # the very first page pre-fit instead of flashing an overflow.
@@ -2307,16 +2308,14 @@ class BibleWindow(Adw.ApplicationWindow):
                             focus_verse=None, empty_toast=False):
         """Load a chapter for the presentation surface off the UI thread, then
         show it on the main loop — so a slow module never stalls the projected
-        display mid-roll. A generation counter drops any load a newer navigation
-        (or exiting present mode) has superseded, so rapid arrow-rolls can't
-        paint a stale chapter."""
+        display mid-roll. The tasks runner drops any load a newer navigation
+        has superseded (and _show_present cancels the key on entry), so rapid
+        arrow-rolls can't paint a stale chapter."""
         module = self._present_module
         module_b = (self._present_module_b
                     if getattr(self, '_present_bilingual', False) else None)
-        self._present_load_gen = getattr(self, '_present_load_gen', 0) + 1
-        gen = self._present_load_gen
 
-        def work():
+        def work(_task):
             try:
                 verses = self._load_chapter_verses(module, book, chapter)
             except Exception:
@@ -2333,16 +2332,19 @@ class BibleWindow(Adw.ApplicationWindow):
                 if any(re.sub(r'<[^>]+>', '', str(h)).strip()
                        for _v, h in verses_b):
                     secondary = (sword_bridge.display_name(module_b), verses_b)
-            GLib.idle_add(self._present_load_finish, gen, book, chapter, verses,
-                          translation, secondary, land, focus_verse, empty_toast)
+            return verses, translation, secondary
 
-        threading.Thread(target=work, daemon=True).start()
+        tasks.submit(
+            f'present:{id(self)}', work,
+            lambda res: self._present_load_finish(
+                book, chapter, *res, land, focus_verse, empty_toast),
+            on_error=lambda _exc: self._present_load_finish(
+                book, chapter, [], '', None, land, focus_verse, empty_toast))
 
-    def _present_load_finish(self, gen, book, chapter, verses, translation,
+    def _present_load_finish(self, book, chapter, verses, translation,
                              secondary, land, focus_verse, empty_toast):
-        if (gen != getattr(self, '_present_load_gen', 0)
-                or not getattr(self, '_present_mode', False)):
-            return GLib.SOURCE_REMOVE           # superseded, or present exited
+        if not getattr(self, '_present_mode', False):
+            return GLib.SOURCE_REMOVE           # present exited meanwhile
         if not any(re.sub(r'<[^>]+>', '', str(h)).strip() for _v, h in verses):
             if empty_toast:
                 self._toast(_('%s isn’t in this translation.') % book_label(book))
