@@ -3158,7 +3158,7 @@ class BibleWindow(Adw.ApplicationWindow):
         # arrives via _show_lexicon once the SWORD fetch completes.
         source_pane.show_lexicon_loading(strong_num)
 
-        def fetch():
+        def fetch(_task):
             text = sword_bridge.lookup_strong(strong_num)
             morph = click_morph
             if not morph and verse:
@@ -3166,8 +3166,18 @@ class BibleWindow(Adw.ApplicationWindow):
                     morph = sword_bridge.lookup_morph_for_strong(book, chapter, verse, strong_num)
                 else:
                     morph = sword_bridge.lookup_morph_for_strong_heb(book, chapter, verse, strong_num)
-            GLib.idle_add(self._show_lexicon, source_pane, strong_num, text, morph, phrase)
-        threading.Thread(target=fetch, daemon=True).start()
+            return text, morph
+
+        # Keyed per source pane: rapid word clicks supersede each other's
+        # lookups (latest wins), the two panes' lexicons stay independent,
+        # and a raised lookup lands on the install hint instead of
+        # stranding the panel's loading spinner.
+        tasks.submit(
+            f'lexicon-open:{id(source_pane)}', fetch,
+            lambda res: self._show_lexicon(source_pane, strong_num,
+                                           res[0], res[1], phrase),
+            on_error=lambda _exc: self._show_lexicon(
+                source_pane, strong_num, '', click_morph, phrase))
 
     def _show_lexicon(self, source_pane, strong_num, text, morph, phrase):
         if text:
