@@ -19,6 +19,7 @@ from gi.repository import Gtk, GLib
 from a11y import set_accessible_label
 from gtk_utils import DelayedSpinner
 
+import motion
 import sword_bridge
 import search_query
 import search_controller
@@ -44,6 +45,10 @@ class PaneSearch:
         # apply_highlight can paint that verse's words with the stronger
         # "current match" band. None when navigation isn't a per-pane step.
         self._cur_ref = None
+        # The query the last whole-module (Enter) search ran with — the
+        # live as-you-type pass stands down for it so the two flows don't
+        # fight over the highlights, counter, and steppers.
+        self._last_entered = None
         # Widgets — populated by build_button / build_revealer.
         self._btn = None
         self._rev = None
@@ -83,6 +88,7 @@ class PaneSearch:
         se_row.set_margin_bottom(6)
 
         self._entry = Gtk.SearchEntry(hexpand=True)
+        self._entry.set_search_delay(motion.SEARCH_DEBOUNCE_MS)
         self._entry.set_placeholder_text(_('Search this module…'))
         self._entry.set_tooltip_text(_(
             'Phrase: "living water" · either: bread OR wine · '
@@ -186,6 +192,7 @@ class PaneSearch:
         self._idx = -1
         self._pending_highlight = None
         self._cur_ref = None
+        self._last_entered = None
 
     def step(self, prev=False):
         """F3 / Shift+F3 step-through. Returns True if a navigation
@@ -320,6 +327,7 @@ class PaneSearch:
         self._results = []
         self._idx = -1
         self._cur_ref = None
+        self._last_entered = None
         self._status.set_text('')
         self._prev_btn.set_sensitive(False)
         self._next_btn.set_sensitive(False)
@@ -330,15 +338,59 @@ class PaneSearch:
             self._pane._view.queue_draw()
 
     def _on_search_changed(self, entry):
-        # Only react to an emptied field; a live query is searched on
-        # Enter (see _on_search), not on every keystroke.
-        if not entry.get_text().strip():
+        # Find-in-page as you type: live-highlight the rendered chapter
+        # (buffer regex — instant, no FTS) with a running count. Enter
+        # still runs the whole-module search (see _on_search).
+        q = entry.get_text().strip()
+        if not q:
             self._clear()
+            return
+        if q == self._last_entered and self._results:
+            # The debounced signal trailing an Enter search — that flow
+            # already owns the highlights, counter, and steppers.
+            return
+        # A changed query invalidates the previous Enter search's matches;
+        # stepping resumes after the next Enter (browser convention).
+        self._results = []
+        self._idx = -1
+        self._cur_ref = None
+        self._prev_btn.set_sensitive(False)
+        self._next_btn.set_sensitive(False)
+        self._live_highlight(q)
+
+    def _live_highlight(self, query):
+        """Substring-highlight `query` across the current chapter with a
+        live count. Two-character minimum so a lone letter doesn't paint
+        the whole page. Same painted-band tags as the Enter flow, so the
+        bands persist/clear by the same rules."""
+        buf = self._pane._buffer
+        if self._clear_hl_tags(buf):
+            self._pane._view.queue_draw()
+        if len(query) < 2:
+            self._status.set_text('')
+            return
+        tag_table = buf.get_tag_table()
+        tag = tag_table.lookup('_search_hl') or buf.create_tag('_search_hl')
+        flags = 0 if self._case_btn.get_active() else re.IGNORECASE
+        # get_slice (not get_text) keeps the U+FFFC anchor placeholders so
+        # match offsets and buffer offsets stay aligned (see apply_highlight).
+        text = buf.get_slice(buf.get_start_iter(), buf.get_end_iter(), True)
+        n = 0
+        for m in re.finditer(re.escape(query), text, flags):
+            buf.apply_tag(tag, buf.get_iter_at_offset(m.start()),
+                          buf.get_iter_at_offset(m.end()))
+            n += 1
+        if n:
+            self._pane._view.queue_draw()
+        self._status.set_text(
+            ngettext('{n} in this chapter', '{n} in this chapter', n)
+            .format(n=n))
 
     def _on_search(self, *_a):
         query = self._entry.get_text().strip()
         if not query:
             return
+        self._last_entered = query
         module = self._pane._module
         self._status.set_text(_('Searching…'))
         self._prev_btn.set_sensitive(False)
@@ -368,9 +420,15 @@ class PaneSearch:
                          self._on_done(rows, truncated, module))
 
     def _on_case_toggled(self, _btn):
-        # Re-run if there's a query to reflect the new mode.
-        if self._entry.get_text().strip():
+        # Reflect the new mode in whichever flow is active: re-run an
+        # Enter search, or repaint the live in-chapter highlight.
+        q = self._entry.get_text().strip()
+        if not q:
+            return
+        if q == self._last_entered:
             self._on_search()
+        else:
+            self._live_highlight(q)
 
     def _on_done(self, results, truncated, module):
         # Stale results were already dropped by the runner's generation guard.
