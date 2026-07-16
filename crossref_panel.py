@@ -1,4 +1,3 @@
-import threading
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
@@ -6,6 +5,7 @@ from gi.repository import Gtk, GLib
 from a11y import set_accessible_label
 from gtk_utils import clear_children
 import sword_bridge
+import tasks
 
 
 class CrossRefPanel(Gtk.Box):
@@ -85,11 +85,15 @@ class CrossRefPanel(Gtk.Box):
         spinner.start()
         self._ref_box.append(spinner)
 
-        def fetch():
-            refs = sword_bridge.get_cross_refs(book, chapter, verse)
-            GLib.idle_add(self._show_refs, refs)
-
-        threading.Thread(target=fetch, daemon=True).start()
+        # Latest-wins per panel: stepping verses faster than the TSK lookup
+        # can't let an older verse's refs land over the newer ones, and a
+        # raised lookup clears the spinner via the no-source message
+        # instead of stranding it.
+        tasks.submit(
+            f'crossref:{id(self)}',
+            lambda _t: sword_bridge.get_cross_refs(book, chapter, verse),
+            self._show_refs,
+            on_error=lambda _exc: self._show_refs(None))
 
     def _clear_refs(self):
         clear_children(self._ref_box)
