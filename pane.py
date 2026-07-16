@@ -80,6 +80,23 @@ READING_SERIF_STACK = ("'Noto Serif', 'Source Serif 4', 'Charter', "
 # work).
 _HOVER_JITTER_PX = 8
 
+
+def _gloss_from_strong_entry(text):
+    """Boil a raw lexicon entry down to hovercard size. Classic Strong's
+    entries repeat their number (the caption already carries it) and end
+    in a ':--' KJV usage list — reference-material noise at a glance; the
+    definition proper sits before the delimiter. Richer lexicons
+    (Abbott-Smith) lead with the lemma and have neither, so both trims
+    are conditional; a word-boundary cap backstops everything."""
+    plain = ' '.join(re.sub(r'<[^>]+>', ' ', str(text or '')).split())
+    plain = re.sub(r'^\d+\s+', '', plain)
+    head, sep, _usage = plain.partition(':--')
+    if sep and len(head.strip()) >= 40:
+        plain = head.strip().rstrip(';,') + '.'
+    if len(plain) > 360:
+        plain = plain[:360].rsplit(' ', 1)[0] + '…'
+    return plain
+
 _HIGHLIGHT_RENDER = {
     '#ffff00': 'rgba(226,196,48,0.40)',   # yellow
     '#90ee90': 'rgba(96,180,96,0.40)',    # green
@@ -3633,14 +3650,12 @@ class BiblePane(Gtk.Box):
         start_off, end_off, strong = word
 
         def apply(text):
-            plain = ' '.join(re.sub(r'<[^>]+>', '', str(text or '')).split())
+            gloss = _gloss_from_strong_entry(text)
             cur = self._hover_word
-            if (not plain or cur is None
+            if (not gloss or cur is None
                     or (cur[0], cur[1]) != (start_off, end_off)):
                 return  # nothing to glance at, or the cursor moved on
-            if len(plain) > 360:
-                plain = plain[:360].rsplit(' ', 1)[0] + '…'
-            self._show_hover_gloss(start_off, end_off, strong, plain)
+            self._show_hover_gloss(start_off, end_off, strong, gloss)
 
         # Same key as the click peeks: a click or newer lookup supersedes
         # the gloss fetch. A raised lookup shows nothing — a hovercard

@@ -127,3 +127,37 @@ def test_substitute_markers_skips_tokens_without_bodies():
     assert len(markers) == 1
     assert markers[0][1] == '2'
     assert markers[0][2] == 'a'
+
+
+# ── _gloss_from_strong_entry (hover-preview card text) ───────────────────
+
+def test_gloss_strips_number_and_usage_list():
+    raw = ("7462 ra`ah raw-aw' a primitive root; to tend a flock; i.e. "
+           "pasture it; generally to rule:--X break, companion, keep "
+           "company with, devour, eat up, pastor, + shearing house")
+    from pane import _gloss_from_strong_entry
+    g = _gloss_from_strong_entry(raw)
+    assert g.startswith("ra`ah")          # caption already has the number
+    assert ':--' not in g and 'shearing' not in g
+    assert g.endswith('rule.')
+
+
+def test_gloss_keeps_lemma_led_entries_and_caps():
+    from pane import _gloss_from_strong_entry
+    raw = 'ἀγάπη , -ης, ἡ love, goodwill, esteem. ' + 'scholarly note ' * 60
+    g = _gloss_from_strong_entry(raw)
+    assert g.startswith('ἀγάπη')
+    assert len(g) <= 361 and g.endswith('…')
+
+
+def test_gloss_short_usage_head_keeps_full_text():
+    # A tiny head ('of Hebrew origin') is no glance — keep the whole entry.
+    from pane import _gloss_from_strong_entry
+    g = _gloss_from_strong_entry('3 of Hebrew origin:--Abaddon')
+    assert g == 'of Hebrew origin:--Abaddon'
+
+
+def test_gloss_empty_entry_gives_empty():
+    from pane import _gloss_from_strong_entry
+    assert _gloss_from_strong_entry(None) == ''
+    assert _gloss_from_strong_entry('<b></b>') == ''
