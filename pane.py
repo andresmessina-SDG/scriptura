@@ -18,6 +18,7 @@ import content
 import annotations
 import motion
 import settings
+import tasks
 import module_positions
 from genbook_reader import GenbookReader
 from catena_reader import CatenaReader
@@ -3772,9 +3773,9 @@ class BiblePane(Gtk.Box):
         until-stable machinery and the dismissal paths (Escape, module
         change, new lookup) cover it too."""
         pop = self._ensure_peek_popover(anchor_widget)
-        # Bump the generation so a dictionary fetch already in flight can't
-        # replace this peek's content when it returns.
-        self._dict_gen = getattr(self, '_dict_gen', 0) + 1
+        # A dictionary fetch already in flight can't replace this peek's
+        # content when it returns.
+        tasks.cancel(f'peek:{id(self)}')
         pop.set_position(Gtk.PositionType.BOTTOM)
         pop.set_pointing_to(rect)
         pop.set_child(content)
@@ -3896,9 +3897,9 @@ class BiblePane(Gtk.Box):
             wx, wy, max(1, r.width), r.height)
 
         pop = self._ensure_peek_popover(self._view)
-        # Bump the generation so a dictionary fetch already in flight can't
-        # replace this note's content when it returns.
-        self._dict_gen = getattr(self, '_dict_gen', 0) + 1
+        # A dictionary fetch already in flight can't replace this note's
+        # content when it returns.
+        tasks.cancel(f'peek:{id(self)}')
         pop.set_position(Gtk.PositionType.BOTTOM)
         pop.set_pointing_to(rect)
 
@@ -3945,11 +3946,6 @@ class BiblePane(Gtk.Box):
         # (_on_dict_click), a new lookup, or a module change.
 
         pop = self._ensure_peek_popover(anchor_widget)
-
-        # Stale-result guard: a newer lookup bumps the generation so an
-        # earlier fetch returning late can't overwrite the current content.
-        self._dict_gen = getattr(self, '_dict_gen', 0) + 1
-        gen = self._dict_gen
 
         # Open the peek on whichever side of the word has more room, and cap
         # the definition height so the whole popover *fits* on that side. If it
@@ -4140,9 +4136,6 @@ class BiblePane(Gtk.Box):
             content.append(stack)
 
         def populate(results):
-            # Guard against a later double-click having replaced this popover.
-            if gen != self._dict_gen:
-                return GLib.SOURCE_REMOVE
             _clear()
             if not results:
                 _status('system-search-symbolic', f'No entry for “{word}”',
@@ -4156,30 +4149,32 @@ class BiblePane(Gtk.Box):
                     _add_text(html, source=_short_dict_title(mn, md))
                 else:
                     _build_source_tabs(results)
-            return GLib.SOURCE_REMOVE
 
         def show_no_dicts():
-            if gen != self._dict_gen:
-                return GLib.SOURCE_REMOVE
             _clear()
             _status('dialog-information-symbolic', 'No dictionaries installed',
                     'Add Easton’s or Smith’s Bible Dictionary from the '
                     'Module Manager.')
-            return GLib.SOURCE_REMOVE
 
-        def fetch():
+        def fetch(_task):
             dicts = sword_bridge.installed_dict_modules()
             if not dicts:
-                GLib.idle_add(show_no_dicts)
-                return
+                return None
             results = []
             for mod_name, mod_desc in dicts:
                 html = sword_bridge.lookup_dict_word(mod_name, word)
                 if html:
                     results.append((mod_name, mod_desc, html))
-            GLib.idle_add(populate, results)
+            return results
 
-        threading.Thread(target=fetch, daemon=True).start()
+        # Latest-wins on the shared peek key: a newer lookup, footnote, or
+        # anchored peek supersedes this fetch, so a late return can't
+        # overwrite the popover's current content. A raised lookup lands as
+        # "no entry" instead of stranding the spinner (details in the log).
+        tasks.submit(f'peek:{id(self)}', fetch,
+                     lambda results: (show_no_dicts() if results is None
+                                      else populate(results)),
+                     on_error=lambda _exc: populate([]))
         return GLib.SOURCE_REMOVE
 
     # ── Lexicon panel delegators ─────────────────────────────────────────
