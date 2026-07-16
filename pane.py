@@ -16,6 +16,7 @@ import imagery_bridge
 import archaeology_bridge
 import content
 import annotations
+import motion
 import settings
 import module_positions
 from genbook_reader import GenbookReader
@@ -1327,8 +1328,13 @@ class BiblePane(Gtk.Box):
 
         anim = Adw.TimedAnimation.new(
             self._lex_paned, start, target,
-            280 if self._chrome_revealed else 200,
+            (motion.DURATION_EMPHASIZED if self._chrome_revealed
+             else motion.DURATION_STANDARD),
             Adw.CallbackAnimationTarget.new(frame))
+        # The strip is an on-screen reposition (the card top and the
+        # scroll value travel together), not an enter/exit — symmetric
+        # easing, set explicitly rather than riding the library default.
+        anim.set_easing(motion.EASE_MOVE)
         anim.connect('done', done)
         self._strip_anim = anim
         anim.play()
