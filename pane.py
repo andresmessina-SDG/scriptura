@@ -3474,10 +3474,14 @@ class BiblePane(Gtk.Box):
             self._clear_strg_hover()
             self._hover_track(None, None, x, y)
             return
-        strong = next(
-            ((t.get_property('name') or '')[5:] for t in it.get_tags()
-             if (t.get_property('name') or '').startswith('strg:')),
-            None)
+        # Last strg: tag wins, mirroring the click path — a fused tag
+        # (e.g. 'the synagogue', G3588+G4864) must gloss the same entry
+        # a click would open.
+        strong = None
+        for t in it.get_tags():
+            name = t.get_property('name') or ''
+            if name.startswith('strg:'):
+                strong = name[5:]
         if strong is None:
             self._clear_strg_hover()
             self._hover_track(None, None, x, y)
@@ -3613,6 +3617,12 @@ class BiblePane(Gtk.Box):
         self._hover_timer = 0
         word = self._hover_word
         if word is None or not self._hover_preview:
+            return GLib.SOURCE_REMOVE
+        if self._hover_gloss_range == (word[0], word[1]):
+            # This word's gloss is already up. Reachable when movement
+            # inside the word re-armed the dwell while the first fetch
+            # was in flight — without this, the fire would re-show the
+            # same card (popdown/popup blink) and re-fetch for nothing.
             return GLib.SOURCE_REMOVE
         pop = getattr(self, '_dict_pop', None)
         if (pop is not None and pop.get_visible()
