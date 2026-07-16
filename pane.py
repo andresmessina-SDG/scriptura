@@ -3384,7 +3384,16 @@ class BiblePane(Gtk.Box):
                 stripped = word_plain.strip()
                 idx = verse_text.find(stripped, search_pos)
                 if idx == -1:
-                    continue
+                    # Case-insensitive last resort: the small-caps divine
+                    # name downcases the buffer text ("LORD" → "Lord" —
+                    # the span only *draws* capitals), so the raw segment
+                    # no longer matches exactly and the word would lose
+                    # its Strong's tag. Case transforms preserve length,
+                    # so the offsets stay exact.
+                    idx = verse_text.lower().find(
+                        stripped.lower(), search_pos)
+                    if idx == -1:
+                        continue
                 word_plain = stripped
 
             if not strong_nums:
