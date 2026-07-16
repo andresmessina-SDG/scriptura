@@ -1,8 +1,14 @@
 """Tests for search_controller.py — shared dispatch, truncation parsing, the
-cross-module 'all Bibles' union, and the SearchRunner generation guard.
+cross-module 'all Bibles' union, and the SearchRunner stale-result guard.
 
-The threaded path isn't exercised here (needs a GLib loop); the union logic
-and the stale-result guard — the parts worth protecting — are tested directly."""
+The runner now rides the shared tasks runner (whose semantics have their own
+suite in test_tasks); here the guard is exercised end-to-end through
+SearchRunner's public API, pumping the default GLib main context."""
+
+import threading
+import time
+
+from gi.repository import GLib
 
 import search_controller as sc
 
@@ -47,13 +53,39 @@ def test_search_all_preserves_truncation(monkeypatch):
     assert res[-1][0] == ''     # sentinel preserved for the UI
 
 
+def _pump_until(predicate, timeout_s=3.0):
+    ctx = GLib.MainContext.default()
+    deadline = time.monotonic() + timeout_s
+    while not predicate() and time.monotonic() < deadline:
+        ctx.iteration(False)
+        time.sleep(0.001)
+    return predicate()
+
+
 def test_runner_drops_stale_generation():
     r = sc.SearchRunner()
     got = []
-    r._gen = 5
-    # A delivery tagged with an older generation is dropped.
-    r._deliver(3, [('John', 3, 16, 'x')], lambda rows, t: got.append(rows))
-    assert got == []
-    # The current generation is delivered.
-    r._deliver(5, [('John', 3, 16, 'x')], lambda rows, t: got.append(rows))
-    assert got == [[('John', 3, 16, 'x')]]
+    release = threading.Event()
+
+    def slow_search():
+        release.wait(2)
+        return [('John', 3, 16, 'old')]
+
+    r.run(slow_search, lambda rows, t: got.append(rows))
+    r.run(lambda: [('John', 3, 16, 'new')], lambda rows, t: got.append(rows))
+    release.set()
+    assert _pump_until(lambda: [('John', 3, 16, 'new')] in got)
+    _pump_until(lambda: False, timeout_s=0.06)  # let a wrong 'old' land
+    assert got == [[('John', 3, 16, 'new')]]
+
+
+def test_runner_raised_search_delivers_empty():
+    # A raising search must still reach on_done (empty), never strand the UI.
+    r = sc.SearchRunner()
+    got = []
+
+    def boom():
+        raise RuntimeError('backend failure')
+
+    r.run(boom, lambda rows, t: got.append((rows, t)))
+    assert _pump_until(lambda: got == [([], False)])

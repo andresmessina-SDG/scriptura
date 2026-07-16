@@ -7,13 +7,10 @@ rendering — it hands a search closure to `SearchRunner.run` and renders in
 the `on_done` callback.
 """
 
-import threading
-
-from gi.repository import GLib
-
 import sword_bridge
 import ebible_bridge
 import content
+import tasks
 
 # Sentinel module key for "search every installed Bible" (the window picker's
 # first row). Chosen so it can't collide with a real module name.
@@ -88,32 +85,23 @@ def search_all_bibles(query, case_sensitive, on_indexing_start=None,
 class SearchRunner:
     """Runs a search closure on a background thread with stale-result guarding.
 
-    Each `run` bumps a generation token; a result whose token is no longer
-    current has been superseded by a newer search and is dropped — so fast
-    typing / re-runs never let an older search overwrite a newer one."""
+    A thin per-surface facade over the shared `tasks` runner: each instance
+    is one task key, so a surface's re-run supersedes only its own earlier
+    search — fast typing / re-runs never let an older search overwrite a
+    newer one, and surfaces never cancel each other's."""
 
     def __init__(self):
-        self._gen = 0
+        self._key = f'search:{id(self)}'
 
     def run(self, search_fn, on_done):
         """`search_fn()` runs on a worker thread and returns raw backend rows.
         `on_done(rows, truncated)` runs on the main loop, only if this run is
         still the most recent."""
-        self._gen += 1
-        gen = self._gen
+        def apply(results):
+            rows, truncated = split_truncation(results)
+            on_done(rows, truncated)
 
-        def work():
-            try:
-                results = search_fn()
-            except Exception:
-                results = []
-            GLib.idle_add(self._deliver, gen, results, on_done)
-
-        threading.Thread(target=work, daemon=True).start()
-
-    def _deliver(self, gen, results, on_done):
-        if gen != self._gen:
-            return GLib.SOURCE_REMOVE
-        rows, truncated = split_truncation(results)
-        on_done(rows, truncated)
-        return GLib.SOURCE_REMOVE
+        # A raised search delivers as empty results, so the surface always
+        # leaves its "Searching…" state.
+        tasks.submit(self._key, lambda _task: search_fn(), apply,
+                     on_error=lambda _exc: apply([]))
