@@ -53,7 +53,7 @@ def test_put_then_get(isolated):
 
 
 def test_put_overrides_default(isolated):
-    assert settings.get('reading_width') == 720  # default
+    assert settings.get('reading_width') == 540  # default (~66 CPL)
     settings.put('reading_width', 900)
     assert settings.get('reading_width') == 900
 

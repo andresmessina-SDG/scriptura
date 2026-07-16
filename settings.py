@@ -14,10 +14,20 @@ _FILE: str = paths.settings_path()
 _defaults: dict[str, Any] = {
     'font_size':          12.5,
     'font_family':        'serif',
-    'line_spacing':       1.6,
+    'line_spacing':       1.5,
     'font_bold':          False,
     'font_justify':       False,
-    'reading_width':      720,
+    # ~66 characters per line at the default face/size (measured: 720px
+    # ran ~90 CPL, well past the 45–75 readability band).
+    'reading_width':      540,
+    # Advanced typography (Appearance ▸ Advanced).
+    'smallcaps_divine':   True,
+    'oldstyle_numerals':  True,
+    'poetry_flush':       False,
+    'colored_dropcap':    False,
+    # None = the scheme-aware gold default (illuminated-initial
+    # tradition); a hex string is a user-chosen custom colour.
+    'dropcap_color':      None,
     # Translator-footnote markers in the reading text (the f* header
     # toggle). On by default — markers only appear where notes exist, and
     # the toggle disables on modules that can't show any.

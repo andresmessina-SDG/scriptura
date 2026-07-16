@@ -208,7 +208,7 @@ def _short_dict_title(mod_name, mod_desc):
     return f'{short} {year}' if year else short
 
 
-def _html_to_markup(html, dark, strip=True):
+def _html_to_markup(html, dark, strip=True, divine_smallcaps=False):
     # Ensure we are working with a string
     html = str(html)
     # Strip lone surrogates that SWORD produces from non-UTF-8 module data
@@ -237,6 +237,15 @@ def _html_to_markup(html, dark, strip=True):
     # Inline verse-number superscripts used by MHC: `<hi type="super">N</hi>`
     # marks the start of verse N within a section's continuous prose.
     html = re.sub(r'<hi\s[^>]*type="super"[^>]*>(.*?)</hi>', r'[[SUP_S]]\1[[SUP_E]]', html, flags=re.DOTALL)
+
+    # Divine name (OSIS <divineName>, the LORD/GOD convention) → small
+    # caps. Content is usually mixed-case ("Lord"), which the small-caps
+    # variant renders as L + small ORD; the few all-caps bodies ("LORD",
+    # 6 in KJV) are case-normalized so they don't stay full-size caps.
+    if divine_smallcaps:
+        html = re.sub(r'<divineName[^>]*>(.*?)</divineName>',
+                      lambda m: '[[DN_S]]' + _normalize_divine(m.group(1)) + '[[DN_E]]',
+                      html, flags=re.DOTALL)
 
     # Titles and Headings
     html = re.sub(r'<title>(.*?)</title>', r'[[B_S]]\1[[B_E]]', html)
@@ -271,7 +280,17 @@ def _html_to_markup(html, dark, strip=True):
     # 4. Swap markers back for real Pango Markup
     html = html.replace('[[RED_S]]', f'<span foreground="{red}">').replace('[[RED_E]]', '</span>')
     html = html.replace('[[I_S]]', '<i>').replace('[[I_E]]', '</i>')
-    html = html.replace('[[B_S]]', '\n\n<b>').replace('[[B_E]]', '</b>\n')
+    html = html.replace('[[DN_S]]', '<span variant="small-caps">')
+    html = html.replace('[[DN_E]]', '</span>')
+    # Section titles: a quiet kicker rather than undifferentiated body
+    # bold — slightly smaller than the body, tracked, muted ink; the
+    # blank line above / single newline below keeps more space above
+    # than below (heading hierarchy: chapter > section > body).
+    html = html.replace(
+        '[[B_S]]',
+        '\n\n<span size="90%" weight="bold" letter_spacing="800" '
+        'foreground="gray">')
+    html = html.replace('[[B_E]]', '</span>\n')
     # Inline bold — no surrounding newlines, used for in-paragraph
     # emphasis like commentary verse-number prefixes ("1.", "2."), not
     # block-level headings.
@@ -299,6 +318,177 @@ def _html_to_markup(html, dark, strip=True):
     # before/after a <reference> segment is preserved — otherwise the
     # rendered text reads "Elijah,Rom 11:1-5" with no breathing room.
     return html.strip() if strip else html
+
+
+def _normalize_divine(inner):
+    """Case-normalize a <divineName> body for the small-caps span: an
+    all-caps body ("LORD") would render full-size (small caps only maps
+    lowercase), so lower everything after the first letter. Mixed-case
+    bodies — the overwhelming majority — pass through untouched, as do
+    the rare bodies carrying nested tags."""
+    if '<' not in inner and len(inner) > 1 and inner.isupper():
+        return inner[0] + inner[1:].lower()
+    return inner
+
+
+# The literal fallback for modules that print the divine name as literal
+# capitals with no OSIS markup (BSB, Webster, the eBible KJV). Possessive
+# forms ride inside the span (KJV prints "LORD'S" as part of the name).
+_DIVINE_LITERAL_RE = re.compile(r"\b(LORD|GOD|JEHOVAH)(['’][Ss])?\b")
+_DIVINE_TOKENS = frozenset({'LORD', 'GOD', 'JEHOVAH'})
+_WORD_BEFORE_RE = re.compile(r"([A-Za-z][A-Za-z'’]*)[\s\"“”]*$")
+_WORD_AFTER_RE = re.compile(r"^[\s,;:.!?'’\"“”]*([A-Za-z]+)")
+
+
+def _is_caps_word(word):
+    word = word.replace("'", '').replace('’', '')
+    return len(word) >= 2 and word.isupper()
+
+
+def _smallcap_divine_literals(markup):
+    """Wrap literal all-caps divine names (LORD / GOD / JEHOVAH) in a
+    small-caps span, skipping all-caps inscriptions ("HOLINESS TO THE
+    LORD", "TO THE UNKNOWN GOD") — corpus-swept: a neighboring all-caps
+    word marks an inscription, unless that neighbor is itself a divine
+    name ("LORD GOD", "LORD JEHOVAH" are compound names, not context).
+    Operates on the text runs of final Pango markup; tags pass through."""
+    parts = re.split(r'(<[^>]+>)', markup)
+    for i, part in enumerate(parts):
+        if not part or part.startswith('<'):
+            continue
+
+        def repl(m):
+            name, poss = m.group(1), m.group(2) or ''
+            wb = _WORD_BEFORE_RE.search(m.string[:m.start()])
+            wa = _WORD_AFTER_RE.match(m.string[m.end():])
+            for w in ((wb.group(1) if wb else None),
+                      (wa.group(1) if wa else None)):
+                if w and w.upper() not in _DIVINE_TOKENS and _is_caps_word(w):
+                    return m.group(0)
+            return (f'{name[0]}<span variant="small-caps">'
+                    f'{name[1:].lower()}{poss.lower()}</span>')
+
+        parts[i] = _DIVINE_LITERAL_RE.sub(repl, part)
+    return ''.join(parts)
+
+
+# Drop-cap ink: the illuminated-initial tradition is gold. A user custom
+# colour (stored hex) wins; otherwise a scheme-aware antique gold —
+# deeper on light paper, soft gold leaf on dark.
+DROPCAP_GOLD_LIGHT = '#a5822b'
+DROPCAP_GOLD_DARK = '#d0ac5c'
+
+
+def dropcap_color_hex(dark):
+    """Effective drop-cap colour (shared with the Appearance swatch)."""
+    custom = settings.get('dropcap_color')
+    if custom:
+        return str(custom)
+    return DROPCAP_GOLD_DARK if dark else DROPCAP_GOLD_LIGHT
+
+
+# OSIS poetry-line milestones (<l sID/> … <l eID/>, ASV/BSB/LEB carry
+# level="1..3", ESV marks the indented b-line type="x-indent") become
+# [[PL*]] tokens before the generic tag strip — the same protection
+# pattern as footnote anchors. <lg> stanza-group starts become a gap
+# token; everything else about a group is implicit in its lines.
+_POETRY_TOKEN_RE = re.compile(r'\[\[PL(?:S[123]|E|GS)\]\]')
+
+
+def _poetry_tokens(html):
+    def l_token(m):
+        tag = m.group(0)
+        if 'eID' in tag:
+            return '[[PLE]]'
+        lm = re.search(r'level="(\d+)"', tag)
+        if lm:
+            level = min(max(int(lm.group(1)), 1), 3)
+        elif 'x-indent' in tag:
+            level = 2
+        else:
+            level = 1
+        return f'[[PLS{level}]]'
+    html = re.sub(r'<l(?=[\s/>])[^>]*/>', l_token, html)
+    # Container form (<l>…</l>) for completeness; installed modules all
+    # use milestones, but the OSIS schema allows both.
+    html = re.sub(r'<l(?=[\s>])[^>]*(?<!/)>', l_token, html)
+    html = re.sub(r'</l\s*>', '[[PLE]]', html)
+    html = re.sub(r'<lg(?=[\s/>])[^>]*sID[^>]*/>', '[[PLGS]]', html)
+    html = re.sub(r'<lg(?=[\s/>])[^>]*>|</lg\s*>', '', html)
+    return html
+
+
+def _resolve_poetry_markup(markup, state):
+    """Resolve [[PL*]] tokens to newlines; return (markup, line_levels).
+
+    line_levels maps a line index *within this verse's inserted text*
+    (0 = the line the verse starts on) to its indent level. `state` is
+    the chapter-render carry — poetry lines cross verse boundaries
+    (ASV closes a line and opens the next across the verse break), so
+    `open` (the level of a line left unclosed by the previous verse)
+    and `at_ls` (whether the buffer sits at a fresh line, verse-number
+    prefixes not counting as content) persist across the verse loop.
+    """
+    levels = {}
+    if state['open'] is not None:
+        levels[0] = state['open']
+    if '[[PL' not in markup:
+        # Prose verse: just keep the line-start carry honest.
+        if markup:
+            state['at_ls'] = markup.endswith('\n')
+        return markup, levels
+    out = []
+    nl = 0
+    pos = 0
+    skip_ws = False
+
+    def emit(seg):
+        nonlocal nl, skip_ws
+        if skip_ws:
+            seg = seg.lstrip(' \t')
+            if seg:
+                skip_ws = False
+        if not seg:
+            return
+        out.append(seg)
+        nl += seg.count('\n')
+        tail = re.sub(r'<[^>]+>', '', seg.rsplit('\n', 1)[-1])
+        if tail.strip():
+            state['at_ls'] = False
+        elif '\n' in seg:
+            state['at_ls'] = True
+
+    for m in _POETRY_TOKEN_RE.finditer(markup):
+        emit(markup[pos:m.start()])
+        pos = m.end()
+        tok = m.group(0)
+        if tok == '[[PLE]]':
+            out.append('\n')
+            nl += 1
+            state['open'] = None
+            state['at_ls'] = True
+            skip_ws = True
+        elif tok == '[[PLGS]]':
+            # Stanza gap: one blank line between groups.
+            if not state['at_ls']:
+                out.append('\n\n')
+                nl += 2
+                state['at_ls'] = True
+            elif out:
+                out.append('\n')
+                nl += 1
+            skip_ws = True
+        else:  # [[PLS<n>]]
+            level = int(tok[5])
+            if not state['at_ls']:
+                out.append('\n')
+                nl += 1
+                state['at_ls'] = True
+            levels[nl] = level
+            state['open'] = level
+            skip_ws = True
+    emit(markup[pos:])
+    return ''.join(out), levels
 
 
 def _extract_segments(html):
@@ -359,6 +549,10 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
         # real work to idle) when the viewport height changes, e.g. the
         # lexicon paned opening or a window resize.
         self.on_height_change = None
+        # Same contract, fired when the computed side margins change —
+        # the poetry indent tags mirror the margin (a tag left-margin
+        # REPLACES the view's, so it must track it).
+        self.on_margins_change = None
         self._last_alloc_height = -1
 
     def set_reading_width(self, px):
@@ -392,6 +586,8 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
         if self._view.get_left_margin() != side:
             self._view.set_left_margin(side)
             self._view.set_right_margin(side)
+            if self.on_margins_change is not None:
+                self.on_margins_change()
 
 
 def _printable_ratio(text):
@@ -758,6 +954,18 @@ class BiblePane(Gtk.Box):
         # unlike the lexicon: footnotes are reading content, not a lookup
         # mode, so a reader who wants them wants them every session.
         self._show_footnotes = bool(settings.get('show_footnotes'))
+        # Advanced typography (Appearance ▸ Advanced): small-caps divine
+        # name and old-style figures are reading conventions (on by
+        # default); flush poetry and the tinted drop cap are opt-ins.
+        self._smallcaps_divine = bool(settings.get('smallcaps_divine'))
+        self._oldstyle_nums = bool(settings.get('oldstyle_numerals'))
+        self._poetry_flush = bool(settings.get('poetry_flush'))
+        self._colored_dropcap = bool(settings.get('colored_dropcap'))
+        # Poetry-line paragraph tags, created on first poetry render;
+        # their margin geometry follows the reading column (see
+        # _sync_poetry_tags).
+        self._poetry_tags = None
+        self._poetry_sync_pending = False
         # (verse, marker_index) → (type, body) for the rendered chapter;
         # the fnote: click handler reads the peek content from here.
         self._chapter_footnotes = {}
@@ -1008,8 +1216,9 @@ class BiblePane(Gtk.Box):
         scrolled = _ReadingScrolledWindow(self._view, vexpand=True, hexpand=True)
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.ALWAYS)
         scrolled.set_child(self._view)
-        scrolled.set_reading_width(int(settings.get('reading_width') or 720))
+        scrolled.set_reading_width(int(settings.get('reading_width') or 540))
         scrolled.on_height_change = self._on_viewport_resized
+        scrolled.on_margins_change = self._on_reading_margins_changed
         self._reading_scroll = scrolled
 
         # Auto-hide-on-scroll state for the pane toolbar. Direction-driven with
@@ -1624,6 +1833,8 @@ class BiblePane(Gtk.Box):
             img.set_pixel_size(px)
         just = Gtk.Justification.FILL if self._font_justify else Gtk.Justification.LEFT
         self._view.set_justification(just)
+        # Poetry hang/step distances are em-derived — track the font size.
+        self._sync_poetry_tags()
         # Font size / line spacing changed the layout the highlight bands are
         # measured against — repaint them.
         self._view.queue_draw()
@@ -2337,7 +2548,8 @@ class BiblePane(Gtk.Box):
             # Single trailing newline (not two): line_spacing 1.6 already gives
             # ample separation, and a blank line here left an oversized top gap.
             heading = (f'<span size="x-large" weight="bold" '
-                       f'foreground="{heading_color}" letter_spacing="600">'
+                       f'foreground="{heading_color}" letter_spacing="600"'
+                       f'{self._numeral_ff()}>'
                        f'{GLib.markup_escape_text(f"{book_label(book)} {chapter}")}</span>\n')
             self._buffer.insert_markup(self._buffer.get_end_iter(), heading, -1)
 
@@ -2355,6 +2567,11 @@ class BiblePane(Gtk.Box):
         # Footnote marker letters run a, b, c… through the whole chapter
         # (print-Bible style), not restarting per verse.
         fn_letter_idx = 0
+
+        # Poetry-line carry across the verse loop: OSIS lines cross verse
+        # boundaries (a verse can leave its last line open; the next
+        # verse's text continues it). See _resolve_poetry_markup.
+        poetry_state = {'open': None, 'at_ls': True}
 
         for start_v, end_v, html in iterable:
             plain = re.sub(r'<[^>]+>', '', str(html)).strip()
@@ -2386,7 +2603,9 @@ class BiblePane(Gtk.Box):
                     # blank line of separation between commentary sections.
                     self._buffer.insert(self._buffer.get_end_iter(), '\n')
             else:
-                v_num_markup = f'<span foreground="gray" size="small" weight="bold" rise="2500"> {start_v} </span>'
+                v_num_markup = (f'<span foreground="gray" size="small" '
+                                f'weight="bold" rise="2500"{self._numeral_ff()}>'
+                                f' {start_v} </span>')
                 self._buffer.insert_markup(self._buffer.get_end_iter(), v_num_markup, -1)
 
             text_start_mark = self._buffer.create_mark(None, self._buffer.get_end_iter(), True)
@@ -2415,14 +2634,24 @@ class BiblePane(Gtk.Box):
             else:
                 # Footnote anchors → [[FN_n]] tokens before the generic tag
                 # strip in _html_to_markup (which otherwise removes them —
-                # the markers-off state is exactly that removal).
-                src_html = str(html)
+                # the markers-off state is exactly that removal). Poetry
+                # line milestones get the same token protection.
+                src_html = _poetry_tokens(str(html))
                 vnotes = {}
                 if self._show_footnotes and notes.get(start_v):
                     vnotes = {n: (t, b) for n, t, b in notes[start_v]}
                     src_html = _NOTE_ANCHOR_RE.sub(
                         lambda m: f'[[FN_{m.group(1)}]]', src_html)
-                v_text_markup = _html_to_markup(src_html, dark)
+                v_text_markup = _html_to_markup(
+                    src_html, dark,
+                    divine_smallcaps=self._smallcaps_divine)
+                if self._smallcaps_divine:
+                    v_text_markup = _smallcap_divine_literals(v_text_markup)
+                # Poetry tokens → line breaks + per-line indent levels.
+                # Before the footnote substitution, so the plain-text
+                # offsets it records are final.
+                v_text_markup, poetry_lines = _resolve_poetry_markup(
+                    v_text_markup, poetry_state)
                 # Drop-cap: enlarge the first letter of verse 1 for a
                 # print-Bible feel. Kept even under a highlight — the band is
                 # painted at a uniform height by BibleTextView, so the cap
@@ -2437,8 +2666,12 @@ class BiblePane(Gtk.Box):
                 if start_v == 1:
                     m = re.match(r'((?:<[^>]+>)*)([A-Za-z])', v_text_markup)
                     if m:
+                        cap_attrs = 'size="200%" weight="bold"'
+                        if self._colored_dropcap:
+                            cap_attrs += (
+                                f' foreground="{dropcap_color_hex(dark)}"')
                         v_text_markup = (
-                            f'{m.group(1)}<span size="200%" weight="bold">'
+                            f'{m.group(1)}<span {cap_attrs}>'
                             f'{m.group(2)}</span>{v_text_markup[m.end():]}'
                         )
                 # Tokens → superscript marker letters, after the drop-cap
@@ -2448,14 +2681,20 @@ class BiblePane(Gtk.Box):
                     v_text_markup, fn_markers, fn_letter_idx = (
                         _substitute_footnote_markers(
                             v_text_markup, vnotes, dark, fn_letter_idx))
+                # A verse ending on a closed poetry line already breaks —
+                # the inter-verse space would dangle at the next line start.
+                sep = '' if v_text_markup.endswith('\n') else ' '
                 try:
-                    self._buffer.insert_markup(self._buffer.get_end_iter(), v_text_markup + ' ', -1)
+                    self._buffer.insert_markup(self._buffer.get_end_iter(), v_text_markup + sep, -1)
                 except Exception:
                     self._buffer.insert(self._buffer.get_end_iter(), plain + ' ')
                     fn_markers = []  # fallback text has no marker letters
+                    poetry_lines = {}
                 if fn_markers:
                     self._apply_footnote_tags(
                         start_v, fn_markers, vnotes, text_start_mark)
+                if poetry_lines:
+                    self._apply_poetry_line_tags(text_start_mark, poetry_lines)
                 # Subtle 'related artifact' marker — a small clickable
                 # amphora icon beside any verse a gallery artifact
                 # references. Rare (~34 verses Bible-wide), so it reads as
@@ -2692,18 +2931,119 @@ class BiblePane(Gtk.Box):
             ftype, body = vnotes[n]
             self._chapter_footnotes[(verse, n)] = (ftype, body, label)
 
-    def set_show_footnotes(self, enabled):
-        if self._show_footnotes == bool(enabled):
-            return
-        self._show_footnotes = bool(enabled)
+    def _rerender_keeping_place(self):
+        """Re-render the current chapter, restoring the exact reading locus
+        (pixel anchor; coarse verse fallback) — for toggles whose effect
+        is baked into the rendered markup."""
         if not self._is_verse_navigable():
             return  # flag applies whenever a Bible next renders here
-        # Markers are baked into the rendered markup — re-render, restoring
-        # the exact reading locus (pixel anchor; coarse verse fallback).
         self._restore_anchor = self._capture_scroll_anchor()
         if self._restore_anchor is None:
             self._restore_top_verse = self._find_topmost_visible_verse()
         self._fetch_and_render()
+
+    def set_show_footnotes(self, enabled):
+        if self._show_footnotes == bool(enabled):
+            return
+        self._show_footnotes = bool(enabled)
+        self._rerender_keeping_place()
+
+    def set_divine_smallcaps(self, enabled):
+        if self._smallcaps_divine == bool(enabled):
+            return
+        self._smallcaps_divine = bool(enabled)
+        self._rerender_keeping_place()
+
+    def set_oldstyle_numerals(self, enabled):
+        if self._oldstyle_nums == bool(enabled):
+            return
+        self._oldstyle_nums = bool(enabled)
+        self._rerender_keeping_place()
+
+    def set_colored_dropcap(self, enabled):
+        if self._colored_dropcap == bool(enabled):
+            return
+        self._colored_dropcap = bool(enabled)
+        self._rerender_keeping_place()
+
+    def set_poetry_flush(self, flush):
+        if self._poetry_flush == bool(flush):
+            return
+        self._poetry_flush = bool(flush)
+        # Pure paragraph-geometry change on the existing tags — the
+        # already-rendered lines reflow in place, no re-render.
+        self._sync_poetry_tags()
+
+    def refresh_dropcap_color(self):
+        """The stored drop-cap colour changed; the cap is baked into the
+        rendered markup, so re-render if it's currently shown."""
+        if self._colored_dropcap:
+            self._rerender_keeping_place()
+
+    def _numeral_ff(self):
+        """font_features attribute for verse/chapter numerals. Both states
+        are explicit — some faces (Georgia) default to old-style figures,
+        so OFF must request lining (lnum) rather than request nothing, or
+        the toggle is invisible there. Faces lacking a feature ignore it."""
+        return (' font_features="onum=1"' if self._oldstyle_nums
+                else ' font_features="lnum=1"')
+
+    def _ensure_poetry_tags(self):
+        if self._poetry_tags is None:
+            self._poetry_tags = {
+                lvl: self._buffer.create_tag(f'poetry_l{lvl}')
+                for lvl in (1, 2, 3)}
+            self._sync_poetry_tags()
+
+    def _sync_poetry_tags(self):
+        """Poetry-line paragraph geometry. Level 1 is indent-only (a
+        negative indent hangs wrapped continuations one stop past the
+        column edge, and the paragraph keeps the view's own margin).
+        Levels 2/3 step in — which needs left-margin, and a tag
+        left-margin REPLACES the view's dynamic centering margin
+        (measured), so they track the current margin and re-sync when
+        it, the font size, or the flush toggle changes."""
+        if self._poetry_tags is None:
+            return
+        em = self._font_size * 96.0 / 72.0
+        hang = round(1.5 * em)
+        step = 0 if self._poetry_flush else round(1.5 * em)
+        side = self._view.get_left_margin()
+        self._poetry_tags[1].props.indent = -hang
+        for lvl in (2, 3):
+            self._poetry_tags[lvl].props.left_margin = side + (lvl - 1) * step
+            self._poetry_tags[lvl].props.indent = -hang
+
+    def _on_reading_margins_changed(self):
+        # Fired during size_allocate — defer the tag update (a paragraph-
+        # attribute change invalidates layout, which must not happen
+        # mid-allocation); dedupe against resize storms.
+        if self._poetry_tags is None or self._poetry_sync_pending:
+            return
+        self._poetry_sync_pending = True
+
+        def apply():
+            self._poetry_sync_pending = False
+            self._sync_poetry_tags()
+            return GLib.SOURCE_REMOVE
+
+        GLib.idle_add(apply)
+
+    def _apply_poetry_line_tags(self, text_start_mark, levels):
+        """Tag whole buffer lines (paragraphs) with the poetry indent
+        tags. Keys are line indices relative to the verse's first line;
+        a line continuing across a verse boundary is simply re-tagged
+        from its own line start, so the paragraph attribute covers the
+        verse-number prefix too."""
+        self._ensure_poetry_tags()
+        base = self._buffer.get_iter_at_mark(text_start_mark).get_line()
+        for k, lvl in levels.items():
+            ok, start = self._buffer.get_iter_at_line(base + k)
+            if not ok:
+                continue
+            end = start.copy()
+            end.forward_line()  # start of next line, or buffer end
+            self._buffer.apply_tag(self._poetry_tags[lvl], start, end)
 
     def _scroll_to_verse(self, verse_num):
         self._mark_programmatic_scroll()

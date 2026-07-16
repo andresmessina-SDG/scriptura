@@ -18,7 +18,8 @@ import bookmarks
 import reading_plans
 import annotations
 import search_controller
-from pane import BiblePane, auto_reading_ink
+from pane import (BiblePane, DROPCAP_GOLD_DARK, DROPCAP_GOLD_LIGHT,
+                  auto_reading_ink, dropcap_color_hex)
 from present import PresentView
 from module_manager import ModuleManagerWindow
 from search_panel import SearchPanel
@@ -1474,6 +1475,10 @@ class BibleWindow(Adw.ApplicationWindow):
         previews the whole pairing. The active paper rings it; a custom text or
         paper instead rings the dashed Custom chip, which opens a popover to
         override either colour."""
+        # The drop-cap swatch is scheme-sensitive too (gold default differs
+        # per scheme); it builds after the colour row, hence the guard.
+        if getattr(self, '_dropcap_swatch_css', None) is not None:
+            self._update_dropcap_swatch()
         child = self._paper_box.get_first_child()
         while child:
             nxt = child.get_next_sibling()
@@ -1583,6 +1588,53 @@ class BibleWindow(Adw.ApplicationWindow):
         row.set_child(inner)
         row.connect('clicked', lambda _x: (pop.popdown(), handler(None)))
         return row
+
+    def _update_dropcap_swatch(self):
+        hexcol = dropcap_color_hex(Adw.StyleManager.get_default().get_dark())
+        self._dropcap_swatch_css.load_from_data(
+            f'box.mini-swatch {{ background-color: {hexcol}; }}'.encode())
+
+    def _apply_dropcap_color(self, value):
+        settings.put('dropcap_color', value)
+        self._update_dropcap_swatch()
+        self.pane1.refresh_dropcap_color()
+        self.pane2.refresh_dropcap_color()
+
+    def _on_dropcap_swatch(self, btn):
+        # Same shape as the Custom-colours chip: a small popover of pick
+        # rows; the colour dialog is window-parented so dismissing the
+        # popover can't orphan it.
+        dark = Adw.StyleManager.get_default().get_dark()
+        pop = Gtk.Popover()
+        pop.set_parent(btn)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        for m in ('top', 'bottom', 'start', 'end'):
+            getattr(box, f'set_margin_{m}')(4)
+        gold = DROPCAP_GOLD_DARK if dark else DROPCAP_GOLD_LIGHT
+        box.append(self._custom_pick_row(
+            gold, _('Gold (default)'),
+            lambda _b: self._apply_dropcap_color(None), pop))
+        box.append(self._custom_pick_row(
+            dropcap_color_hex(dark), _('Custom colour…'),
+            self._on_dropcap_custom_clicked, pop))
+        pop.set_child(box)
+        pop.connect('closed', lambda p: GLib.idle_add(p.unparent))
+        pop.popup()
+
+    def _on_dropcap_custom_clicked(self, btn):
+        dialog = Gtk.ColorDialog()
+        dialog.set_title(_('Drop cap colour'))
+        initial = Gdk.RGBA()
+        initial.parse(
+            dropcap_color_hex(Adw.StyleManager.get_default().get_dark()))
+        dialog.choose_rgba(self, initial, None, self._on_dropcap_custom_done)
+
+    def _on_dropcap_custom_done(self, dialog, result):
+        try:
+            rgba = dialog.choose_rgba_finish(result)
+        except GLib.Error:
+            return  # dismissed
+        self._apply_dropcap_color(self._rgba_hex(rgba))
 
     def _on_paper_custom_clicked(self, btn):
         dialog = Gtk.ColorDialog()
@@ -3347,7 +3399,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._width_scale.set_hexpand(True)
         self._width_scale.set_draw_value(False)
         set_accessible_label(self._width_scale, _('Reading column width'))
-        _cur_w = int(settings.get('reading_width') or 720)
+        _cur_w = int(settings.get('reading_width') or 540)
         self._width_scale.set_value(_cur_w)
         self._width_val_lbl = Gtk.Label(label=f'{_cur_w}px')
         self._width_val_lbl.set_size_request(48, -1)
@@ -3371,6 +3423,68 @@ class BibleWindow(Adw.ApplicationWindow):
         self._paper_box.add_css_class('paper-flow')
         card.append(self._paper_box)
         self._rebuild_colour_row()
+
+        # ── Advanced typography toggles ───────────────────────────────────
+        # Reading conventions (small caps, old-style figures) default on;
+        # opt-in taste (flush poetry, tinted drop cap) defaults off. New
+        # toggles slot in as rows without a redesign.
+        card.append(Gtk.Separator())
+        adv = Gtk.Expander(label=_('Advanced'))
+        adv.add_css_class('appearance-advanced')
+        adv_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        adv_box.set_margin_top(6)
+
+        def _adv_apply(key, active, setter_name):
+            settings.put(key, active)
+            for pane in (self.pane1, self.pane2):
+                getattr(pane, setter_name)(active)
+
+        def _adv_switch(label_text, key, setter_name, extra=None):
+            r = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            r.append(Gtk.Label(label=label_text, xalign=0, hexpand=True))
+            if extra is not None:
+                r.append(extra)
+            sw = Gtk.Switch(valign=Gtk.Align.CENTER)
+            sw.set_active(bool(settings.get(key)))
+            set_accessible_label(sw, label_text)
+            sw.connect('notify::active',
+                       lambda s, _p: _adv_apply(key, s.get_active(),
+                                                setter_name))
+            r.append(sw)
+            adv_box.append(r)
+            return sw
+
+        _adv_switch(_('Small caps for the divine name'),
+                    'smallcaps_divine', 'set_divine_smallcaps')
+        _adv_switch(_('Old-style numerals'),
+                    'oldstyle_numerals', 'set_oldstyle_numerals')
+        _adv_switch(_('Flush poetry indents'),
+                    'poetry_flush', 'set_poetry_flush')
+        # Drop-cap row carries a swatch of the effective cap colour (gold
+        # default; popover offers gold / custom), shown only while active.
+        self._dropcap_swatch = Gtk.Button()
+        self._dropcap_swatch.add_css_class('flat')
+        self._dropcap_swatch.set_valign(Gtk.Align.CENTER)
+        self._dropcap_swatch.set_tooltip_text(_('Drop cap colour'))
+        set_accessible_label(self._dropcap_swatch, _('Drop cap colour'))
+        _sw_box = Gtk.Box()
+        _sw_box.add_css_class('mini-swatch')
+        _sw_box.set_size_request(18, 18)
+        self._dropcap_swatch_css = Gtk.CssProvider()
+        _sw_box.get_style_context().add_provider(
+            self._dropcap_swatch_css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        self._dropcap_swatch.set_child(_sw_box)
+        self._dropcap_swatch.set_visible(bool(settings.get('colored_dropcap')))
+        self._dropcap_swatch.connect('clicked', self._on_dropcap_swatch)
+        self._update_dropcap_swatch()
+        cap_sw = _adv_switch(_('Coloured drop cap'),
+                             'colored_dropcap', 'set_colored_dropcap',
+                             extra=self._dropcap_swatch)
+        cap_sw.connect(
+            'notify::active',
+            lambda s, _p: self._dropcap_swatch.set_visible(s.get_active()))
+        adv.set_child(adv_box)
+        card.append(adv)
 
         self._appear_revealer.set_child(card)
         _body.append(self._appear_revealer)
