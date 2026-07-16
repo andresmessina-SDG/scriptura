@@ -3436,10 +3436,11 @@ class BibleWindow(Adw.ApplicationWindow):
         card.append(self._paper_box)
         self._rebuild_colour_row()
 
-        # ── Advanced typography toggles ───────────────────────────────────
+        # ── Advanced reading toggles ──────────────────────────────────────
         # Reading conventions (small caps, old-style figures) default on;
-        # opt-in taste (flush poetry, tinted drop cap) defaults off. New
-        # toggles slot in as rows without a redesign.
+        # opt-in taste (flush poetry, tinted drop cap) and opt-in behavior
+        # (hover preview) default off. New toggles slot in as rows without
+        # a redesign.
         card.append(Gtk.Separator())
         adv = Gtk.Expander(label=_('Advanced'))
         adv.add_css_class('appearance-advanced')
@@ -3495,6 +3496,11 @@ class BibleWindow(Adw.ApplicationWindow):
         cap_sw.connect(
             'notify::active',
             lambda s, _p: self._dropcap_swatch.set_visible(s.get_active()))
+        # Behavior, not typography: dwell on a Strong's word peeks its
+        # gloss without a click. Off by default — the reading surface
+        # stays inert unless the reader opts in.
+        _adv_switch(_('Preview words on hover'),
+                    'hover_preview', 'set_hover_preview')
         adv.set_child(adv_box)
         card.append(adv)
 

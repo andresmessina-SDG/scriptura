@@ -73,6 +73,13 @@ READING_SERIF_STACK = ("'Noto Serif', 'Source Serif 4', 'Charter', "
 # light and dark mode — no black-text foreground tag, which used to race the
 # custom band paint and leave light-on-light highlights (see the band-only
 # note on BibleTextView and _apply_anno_tags).
+# Pointer wobble tolerated while a hover-preview dwell is armed. Wayland
+# compositors hand raw sub-pixel deltas, so "the cursor stopped" must be
+# a radius, not equality — movement inside it keeps the dwell; beyond it
+# re-anchors and restarts (the two-threshold pattern from the auto-hide
+# work).
+_HOVER_JITTER_PX = 8
+
 _HIGHLIGHT_RENDER = {
     '#ffff00': 'rgba(226,196,48,0.40)',   # yellow
     '#90ee90': 'rgba(96,180,96,0.40)',    # green
@@ -962,6 +969,16 @@ class BiblePane(Gtk.Box):
         self._oldstyle_nums = bool(settings.get('oldstyle_numerals'))
         self._poetry_flush = bool(settings.get('poetry_flush'))
         self._colored_dropcap = bool(settings.get('colored_dropcap'))
+        # Hover-to-preview (Appearance ▸ Advanced, off by default): dwell
+        # state for the Strong's gloss hovercard — the candidate word, the
+        # pointer anchor the jitter radius is measured from, the pending
+        # dwell/grace timers, and the word range an open gloss belongs to.
+        self._hover_preview = bool(settings.get('hover_preview'))
+        self._hover_word = None          # (start_off, end_off, strong_num)
+        self._hover_anchor = (0.0, 0.0)
+        self._hover_timer = 0
+        self._hover_grace_timer = 0
+        self._hover_gloss_range = None
         # Poetry-line paragraph tags, created on first poetry render;
         # their margin geometry follows the reading column (see
         # _sync_poetry_tags).
@@ -1386,7 +1403,7 @@ class BiblePane(Gtk.Box):
         self._strg_hover_range = None
         motion = Gtk.EventControllerMotion.new()
         motion.connect('motion', self._on_view_motion)
-        motion.connect('leave', lambda _c: self._clear_strg_hover())
+        motion.connect('leave', lambda _c: self._on_view_leave())
         self._view.add_controller(motion)
 
         # Ctrl+scroll over the reading area adjusts font size. Universal
@@ -3442,22 +3459,28 @@ class BiblePane(Gtk.Box):
 
     def _on_view_motion(self, controller, x, y):
         """Apply a transient hover-underline tag to the Strong's-tagged
-        word under the cursor; clear when the cursor leaves any tagged word."""
+        word under the cursor; clear when the cursor leaves any tagged
+        word. Also feeds the hover-preview dwell tracker (Advanced,
+        default off) — every exit path reports 'not on a word' so a
+        pending dwell can't fire for a word the cursor already left."""
         if not self._lexicon_enabled:
             self._clear_strg_hover()
+            self._hover_track(None, None, x, y)
             return
         bx, by = self._view.window_to_buffer_coords(
             Gtk.TextWindowType.WIDGET, int(x), int(y))
         found, it = self._view.get_iter_at_location(bx, by)
         if not found:
             self._clear_strg_hover()
+            self._hover_track(None, None, x, y)
             return
-        has_strg = any(
-            (t.get_property('name') or '').startswith('strg:')
-            for t in it.get_tags()
-        )
-        if not has_strg:
+        strong = next(
+            ((t.get_property('name') or '')[5:] for t in it.get_tags()
+             if (t.get_property('name') or '').startswith('strg:')),
+            None)
+        if strong is None:
             self._clear_strg_hover()
+            self._hover_track(None, None, x, y)
             return
         # Find the word boundaries around `it` and apply the hover tag there.
         word_start = it.copy()
@@ -3467,6 +3490,9 @@ class BiblePane(Gtk.Box):
         if not word_end.ends_word():
             word_end.forward_word_end()
         new_range = (word_start.get_offset(), word_end.get_offset())
+        # Before the unchanged-range early-out: the dwell detector needs
+        # every motion event to measure whether the cursor has stopped.
+        self._hover_track(new_range, strong, x, y)
         if new_range == self._strg_hover_range:
             return
         self._clear_strg_hover()
@@ -3497,6 +3523,160 @@ class BiblePane(Gtk.Box):
             e = self._buffer.get_iter_at_offset(self._strg_hover_range[1])
             self._buffer.remove_tag(hover_tag, s, e)
         self._strg_hover_range = None
+
+    def _on_view_leave(self):
+        """Cursor left the reading view — possibly into the hover gloss,
+        whose own motion controller cancels the grace on entry."""
+        self._clear_strg_hover()
+        if self._hover_preview:
+            self._hover_cancel_dwell()
+            self._hover_arm_grace()
+
+    # ── Hover-to-preview (Appearance ▸ Advanced, default off) ────────────
+
+    def set_hover_preview(self, enabled):
+        if self._hover_preview == bool(enabled):
+            return
+        self._hover_preview = bool(enabled)
+        if not self._hover_preview:
+            self._hover_cancel_dwell()
+            self._hover_cancel_grace()
+            if self._hover_gloss_range is not None:
+                self.dismiss_dict_peek()
+
+    def _hover_track(self, word_range, strong, x, y):
+        """Dwell detector: intent is the cursor *stopping* on a Strong's
+        word. Wobble inside the jitter radius keeps the dwell armed; real
+        movement re-anchors and restarts it; leaving the word arms the
+        dismissal grace instead of killing an open gloss outright, so the
+        diagonal move onto the card survives."""
+        if not self._hover_preview:
+            return
+        if word_range is None:
+            self._hover_cancel_dwell()
+            self._hover_arm_grace()
+            return
+        if self._hover_gloss_range == word_range:
+            # Back over the word the open gloss belongs to — keep it.
+            self._hover_cancel_grace()
+            self._hover_cancel_dwell()
+            return
+        cur = self._hover_word
+        if cur is None or (cur[0], cur[1]) != word_range:
+            # New candidate word: anchor here and arm the dwell.
+            self._hover_word = (word_range[0], word_range[1], strong)
+            self._hover_anchor = (x, y)
+            self._hover_restart_dwell()
+        else:
+            dx = x - self._hover_anchor[0]
+            dy = y - self._hover_anchor[1]
+            if dx * dx + dy * dy > _HOVER_JITTER_PX ** 2:
+                # The cursor hasn't stopped — re-anchor, restart.
+                self._hover_anchor = (x, y)
+                self._hover_restart_dwell()
+        if (self._hover_gloss_range is not None
+                and word_range != self._hover_gloss_range):
+            # Crossed straight onto another word: the old gloss still
+            # dismisses on grace (a new one needs its own full dwell).
+            self._hover_arm_grace()
+
+    def _hover_restart_dwell(self):
+        if self._hover_timer:
+            GLib.source_remove(self._hover_timer)
+        self._hover_timer = GLib.timeout_add(
+            motion.HOVER_DWELL_MS, self._hover_dwell_fire)
+
+    def _hover_cancel_dwell(self):
+        if self._hover_timer:
+            GLib.source_remove(self._hover_timer)
+            self._hover_timer = 0
+        self._hover_word = None
+
+    def _hover_arm_grace(self):
+        if self._hover_gloss_range is None or self._hover_grace_timer:
+            return
+        self._hover_grace_timer = GLib.timeout_add(
+            motion.HOVER_GRACE_MS, self._hover_grace_fire)
+
+    def _hover_cancel_grace(self):
+        if self._hover_grace_timer:
+            GLib.source_remove(self._hover_grace_timer)
+            self._hover_grace_timer = 0
+
+    def _hover_grace_fire(self):
+        self._hover_grace_timer = 0
+        if self._hover_gloss_range is not None:
+            self.dismiss_dict_peek()
+        return GLib.SOURCE_REMOVE
+
+    def _hover_dwell_fire(self):
+        self._hover_timer = 0
+        word = self._hover_word
+        if word is None or not self._hover_preview:
+            return GLib.SOURCE_REMOVE
+        pop = getattr(self, '_dict_pop', None)
+        if (pop is not None and pop.get_visible()
+                and self._hover_gloss_range is None):
+            # A click-opened peek (dictionary/footnote) is up — a hover
+            # must never replace something the reader asked for.
+            return GLib.SOURCE_REMOVE
+        start_off, end_off, strong = word
+
+        def apply(text):
+            plain = ' '.join(re.sub(r'<[^>]+>', '', str(text or '')).split())
+            cur = self._hover_word
+            if (not plain or cur is None
+                    or (cur[0], cur[1]) != (start_off, end_off)):
+                return  # nothing to glance at, or the cursor moved on
+            if len(plain) > 360:
+                plain = plain[:360].rsplit(' ', 1)[0] + '…'
+            self._show_hover_gloss(start_off, end_off, strong, plain)
+
+        # Same key as the click peeks: a click or newer lookup supersedes
+        # the gloss fetch. A raised lookup shows nothing — a hovercard
+        # either appears whole or not at all.
+        tasks.submit(f'peek:{id(self)}',
+                     lambda _t: sword_bridge.lookup_strong(strong),
+                     apply, on_error=lambda _exc: None)
+        return GLib.SOURCE_REMOVE
+
+    def _show_hover_gloss(self, start_off, end_off, strong, text):
+        """The hovercard: a compact plain-text gloss of the Strong's entry
+        in the shared self-healing peek, anchored at the dwelled word — a
+        glance, not a study; the full lexicon stays one click away."""
+        start = self._buffer.get_iter_at_offset(start_off)
+        end = self._buffer.get_iter_at_offset(end_off)
+        r1 = self._view.get_iter_location(start)
+        r2 = self._view.get_iter_location(end)
+        wx1, wy1 = self._view.buffer_to_window_coords(
+            Gtk.TextWindowType.WIDGET, r1.x, r1.y)
+        wx2, _wy = self._view.buffer_to_window_coords(
+            Gtk.TextWindowType.WIDGET, r2.x, r2.y)
+        rect = Gdk.Rectangle()
+        rect.x, rect.y = wx1, wy1
+        rect.width = max(1, wx2 - wx1) if r2.y == r1.y else max(1, r1.width)
+        rect.height = r1.height
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        cap = Gtk.Label(label=_('Strong’s {num}').format(num=strong),
+                        xalign=0)
+        cap.add_css_class('caption')
+        cap.add_css_class('dim-label')
+        body = Gtk.Label(label=text, xalign=0, wrap=True)
+        body.set_max_width_chars(44)
+        box.append(cap)
+        box.append(body)
+        for m in ('top', 'bottom', 'start', 'end'):
+            getattr(box, f'set_margin_{m}')(12)
+        # The corridor: pointer onto the card cancels the dismissal grace;
+        # leaving the card re-arms it.
+        mc = Gtk.EventControllerMotion()
+        mc.connect('enter', lambda *_a: self._hover_cancel_grace())
+        mc.connect('leave', lambda *_a: self._hover_arm_grace())
+        box.add_controller(mc)
+
+        self.show_anchored_peek(self._view, rect, box)
+        self._hover_gloss_range = (start_off, end_off)
 
     def _on_zoom_scroll(self, controller, _dx, dy):
         """Ctrl+wheel = adjust font size. Without Ctrl, return False so
@@ -3760,6 +3940,7 @@ class BiblePane(Gtk.Box):
         """Close an open dictionary peek. Returns True if one was open — the
         window's Escape handler uses this (the peek is non-focusable, so it
         never sees the key itself)."""
+        self._hover_gloss_range = None  # a dismissed gloss can re-dwell
         pop = getattr(self, '_dict_pop', None)
         if pop is not None and pop.get_visible():
             self._dict_user_closed = True
@@ -3828,6 +4009,10 @@ class BiblePane(Gtk.Box):
         # Guard the self-heal (below) against our own teardown/rebuild: True
         # while we intentionally close or replace the popover.
         self._dict_user_closed = True
+        # Whatever shows next isn't the hover gloss (the gloss path re-sets
+        # this after the show) — so the grace machinery can't dismiss a
+        # click-opened peek.
+        self._hover_gloss_range = None
         pop = getattr(self, '_dict_pop', None)
         if pop is None:
             pop = Gtk.Popover()

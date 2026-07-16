@@ -43,6 +43,19 @@ EASE_FADE = Adw.Easing.LINEAR              # color/opacity: never overshoot
 # gtk_utils.DelayedSpinner.
 SPINNER_DELAY_MS = 500
 
+# Intent times. A rich hover preview fires only after the cursor has
+# *stopped* on the word — 650ms is the Wikipedia-hovercard dwell,
+# conservative enough that crossing a line of text never twitches the
+# reading surface. Dismissal tolerates the diagonal move onto the card
+# with a short grace.
+HOVER_DWELL_MS = 650
+HOVER_GRACE_MS = 300
+
+# Find-as-you-type debounce (Gtk.SearchEntry.set_search_delay): 200ms is
+# the local-search sweet spot — under the ~300ms natural typing pause,
+# above per-keystroke churn.
+SEARCH_DEBOUNCE_MS = 200
+
 
 def should_animate() -> bool:
     """Whether the desktop wants animations (`gtk-enable-animations`).

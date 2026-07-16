@@ -28,6 +28,10 @@ _defaults: dict[str, Any] = {
     # None = the scheme-aware gold default (illuminated-initial
     # tradition); a hex string is a user-chosen custom colour.
     'dropcap_color':      None,
+    # Appearance ▸ Advanced: dwell over a Strong's word peeks its gloss
+    # (no click). Off by default — the reading surface stays inert
+    # unless the reader opts in.
+    'hover_preview':      False,
     # Translator-footnote markers in the reading text (the f* header
     # toggle). On by default — markers only appear where notes exist, and
     # the toggle disables on modules that can't show any.
