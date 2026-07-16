@@ -1035,7 +1035,6 @@ class BiblePane(Gtk.Box):
         self._anchor_apply_pending = False
         # Monotonic id of the newest chapter fetch; _display drops results
         # from superseded fetches (see _fetch_and_render).
-        self._fetch_gen = 0
         self._selected_verse = None
         self._devotional_date = _date.today()
         # Mirrors of the window's current location, kept updated even when
@@ -2319,21 +2318,23 @@ class BiblePane(Gtk.Box):
         # _display can't catch two renders of the SAME chapter (e.g. rapid
         # footnote toggling faster than the fetch): the first consumed the
         # scroll restore, the late one found none and jumped to the chapter
-        # start. Only the most recently requested render may display.
-        self._fetch_gen += 1
-        gen = self._fetch_gen
-
-        def fetch():
+        # start. Only the most recently requested render may display — the
+        # runner's per-pane key carries that; a failed load keeps the
+        # current text (details in the log).
+        def fetch(_task):
             if ebible_bridge.is_ebible_module(module):
                 verses = ebible_bridge.load_chapter(module, book, chapter)
                 notes = ebible_bridge.chapter_footnotes(module, book, chapter)
             else:
                 verses = sword_bridge.load_chapter(module, book, chapter)
                 notes = sword_bridge.chapter_footnotes(module, book, chapter)
-            GLib.idle_add(self._display, verses, book, chapter, module,
-                          notes, gen)
+            return verses, notes
 
-        threading.Thread(target=fetch, daemon=True).start()
+        task = tasks.submit(
+            f'chapter:{id(self)}', fetch,
+            lambda res: self._display(res[0], book, chapter, module,
+                                      res[1], task),
+            on_error=lambda _exc: None)
 
     def _show_status_page(self, icon, title, description, action=None):
         self._cancel_all_flashes()
@@ -2472,10 +2473,10 @@ class BiblePane(Gtk.Box):
                     self, self._book, self._chapter, v))
         self._view.add_child_at_anchor(btn, anchor)
 
-    def _display(self, verses, book, chapter, module, notes=None, gen=None):
+    def _display(self, verses, book, chapter, module, notes=None, task=None):
         if book != self._book or chapter != self._chapter or module != self._module:
             return GLib.SOURCE_REMOVE
-        if gen is not None and gen != self._fetch_gen:
+        if task is not None and not task.is_current():
             return GLib.SOURCE_REMOVE  # superseded by a newer fetch
         # The rebuild collapses and re-grows the adjustment; none of that
         # is the reader scrolling.
