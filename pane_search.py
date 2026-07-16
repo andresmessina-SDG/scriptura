@@ -17,6 +17,7 @@ import re
 
 from gi.repository import Gtk, GLib
 from a11y import set_accessible_label
+from gtk_utils import DelayedSpinner
 
 import sword_bridge
 import search_query
@@ -43,13 +44,13 @@ class PaneSearch:
         # apply_highlight can paint that verse's words with the stronger
         # "current match" band. None when navigation isn't a per-pane step.
         self._cur_ref = None
-        self._hl_timer = None  # GLib source id for the 5 s auto-expire
         # Widgets — populated by build_button / build_revealer.
         self._btn = None
         self._rev = None
         self._entry = None
         self._case_btn = None
         self._spinner = None
+        self._delayed_spinner = None
         self._status = None
         self._prev_btn = None
         self._next_btn = None
@@ -121,6 +122,7 @@ class PaneSearch:
 
         self._spinner = Gtk.Spinner()
         self._spinner.set_visible(False)
+        self._delayed_spinner = DelayedSpinner(self._spinner)
 
         se_row.append(self._entry)
         se_row.append(self._spinner)
@@ -185,18 +187,6 @@ class PaneSearch:
         self._pending_highlight = None
         self._cur_ref = None
 
-    def cancel_hl_timer(self):
-        """Cancel the 5 s auto-expire timer for the search highlight.
-        Called from every chapter-render reset path so the timer
-        doesn't fire and remove a tag from a buffer that's already
-        been re-rendered."""
-        if self._hl_timer is not None:
-            try:
-                GLib.source_remove(self._hl_timer)
-            except Exception:
-                pass
-            self._hl_timer = None
-
     def step(self, prev=False):
         """F3 / Shift+F3 step-through. Returns True if a navigation
         happened."""
@@ -257,9 +247,9 @@ class PaneSearch:
         matches in the rendered buffer and amber-tag them so the user
         can spot what they were searching for. The verse the find bar is
         parked on gets a stronger band so it reads as the current match.
-        Auto-expires after 5 s."""
+        Highlights persist until the query changes or the bar closes
+        (the browser find-in-page convention)."""
         buf = self._pane._buffer
-        self.cancel_hl_timer()
         if self._clear_hl_tags(buf):
             self._pane._view.queue_draw()  # bands are painted from these tags
 
@@ -312,13 +302,6 @@ class PaneSearch:
         if applied:
             self._pane._view.queue_draw()
 
-            def _expire():
-                self._hl_timer = None
-                if self._clear_hl_tags(buf):
-                    self._pane._view.queue_draw()
-                return GLib.SOURCE_REMOVE
-            self._hl_timer = GLib.timeout_add(5000, _expire)
-
     # ── Internal handlers ─────────────────────────────────────────────────
 
     def _on_toggled(self, btn):
@@ -340,6 +323,11 @@ class PaneSearch:
         self._status.set_text('')
         self._prev_btn.set_sensitive(False)
         self._next_btn.set_sensitive(False)
+        self._delayed_spinner.stop()
+        # Highlights die with the query (they otherwise persist — the
+        # browser find-in-page convention).
+        if self._clear_hl_tags(self._pane._buffer):
+            self._pane._view.queue_draw()
 
     def _on_search_changed(self, entry):
         # Only react to an emptied field; a live query is searched on
@@ -355,8 +343,9 @@ class PaneSearch:
         self._status.set_text(_('Searching…'))
         self._prev_btn.set_sensitive(False)
         self._next_btn.set_sensitive(False)
-        self._spinner.set_visible(True)
-        self._spinner.start()
+        # Threshold-gated: an already-indexed FTS query returns fast and
+        # never flashes a spinner; the status text is immediate either way.
+        self._delayed_spinner.start()
 
         def _idx_start():
             GLib.idle_add(self._status.set_text, _('Indexing…'))
@@ -385,8 +374,7 @@ class PaneSearch:
 
     def _on_done(self, results, truncated, module):
         # Stale results were already dropped by the runner's generation guard.
-        self._spinner.stop()
-        self._spinner.set_visible(False)
+        self._delayed_spinner.stop()
         if module != self._pane._module:
             return
         self._results = list(results)

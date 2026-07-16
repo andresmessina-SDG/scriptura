@@ -2336,7 +2336,6 @@ class BiblePane(Gtk.Box):
 
     def _show_status_page(self, icon, title, description, action=None):
         self._cancel_all_flashes()
-        self._search.cancel_hl_timer()
         self._buffer.set_text('')
         self._clear_chapter_scoped_tags()
         self._status_page.set_icon_name(icon)
@@ -2407,7 +2406,6 @@ class BiblePane(Gtk.Box):
             return GLib.SOURCE_REMOVE
         dark = Adw.StyleManager.get_default().get_dark()
         self._cancel_all_flashes()
-        self._search.cancel_hl_timer()
         self._buffer.set_text('')
         self._clear_chapter_scoped_tags()
         if raw:
@@ -2499,7 +2497,6 @@ class BiblePane(Gtk.Box):
         self._artifact_markers = []  # rebuilt below; old ones died with set_text('')
 
         self._cancel_all_flashes()
-        self._search.cancel_hl_timer()
         self._buffer.set_text('')
         self._clear_chapter_scoped_tags()
         self._chapter_footnotes = {}
@@ -3738,8 +3735,24 @@ class BiblePane(Gtk.Box):
     def _dict_reveal(self, pop):
         self._dict_reveal_timer = 0
         if self._dict_pop is pop and not self._dict_user_closed:
-            pop.set_opacity(1.0)
+            self._peek_fade_in(pop)
         return GLib.SOURCE_REMOVE
+
+    def _peek_fade_in(self, pop):
+        """Fade the stable peek up to full opacity (EASE_FADE) instead of a
+        hard flip — the reveal step only; the show-when-stable/self-heal
+        choreography around it is untouched. Adw.TimedAnimation follows
+        gtk-enable-animations, so reduced motion collapses this back to
+        the instant flip."""
+        prev = getattr(self, '_peek_fade', None)
+        if prev is not None:
+            prev.pause()
+        target = Adw.PropertyAnimationTarget.new(pop, 'opacity')
+        anim = Adw.TimedAnimation.new(
+            pop, pop.get_opacity(), 1.0, motion.DURATION_MICRO, target)
+        anim.set_easing(motion.EASE_FADE)
+        self._peek_fade = anim
+        anim.play()
 
     def dismiss_dict_peek(self):
         """Close an open dictionary peek. Returns True if one was open — the
@@ -3827,10 +3840,16 @@ class BiblePane(Gtk.Box):
             # layout goes quiet (the stable state the popover lives in).
             def _on_closed(p):
                 # Cancel a pending reveal — the show was interrupted, so it
-                # wasn't stable; the next reshow re-arms it.
+                # wasn't stable; the next reshow re-arms it. An in-flight
+                # fade is stopped too, or its remaining frames would fight
+                # the reshow's opacity-0.
                 if getattr(self, '_dict_reveal_timer', 0):
                     GLib.source_remove(self._dict_reveal_timer)
                     self._dict_reveal_timer = 0
+                fade = getattr(self, '_peek_fade', None)
+                if fade is not None:
+                    fade.pause()
+                    self._peek_fade = None
                 if (not self._dict_user_closed
                         and self._dict_pop is p
                         and self._dict_retries < 12
@@ -3857,8 +3876,9 @@ class BiblePane(Gtk.Box):
         the clicked marker letter. `key` is '{verse}:{n}' from the fnote:
         tag. Content is already in memory (no fetch), and the click doesn't
         trigger a cross-pane re-render, so unlike the dictionary peek this
-        shows immediately at full opacity — the self-heal machinery stays
-        armed anyway in case some other relayout lands on it."""
+        shows immediately — no stability wait, just the shared fade-in —
+        and the self-heal machinery stays armed anyway in case some other
+        relayout lands on it."""
         try:
             verse_s, n = key.split(':', 1)
             verse = int(verse_s)
@@ -3908,8 +3928,9 @@ class BiblePane(Gtk.Box):
         self._dict_retries = 0
         self._dict_open_at = GLib.get_monotonic_time()
         self._dict_user_closed = False
-        pop.set_opacity(1.0)
+        pop.set_opacity(0.0)
         pop.popup()
+        self._peek_fade_in(pop)
 
     def _show_dict_popup_at(self, word, anchor_widget, rect):
         # A lightweight "Look Up" peek anchored at the double-clicked word,

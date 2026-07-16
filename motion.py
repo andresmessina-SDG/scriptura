@@ -37,6 +37,12 @@ EASE_EXIT = Adw.Easing.EASE_IN_CUBIC       # leaving: accelerate away
 EASE_MOVE = Adw.Easing.EASE_IN_OUT_CUBIC   # on-screen repositioning
 EASE_FADE = Adw.Easing.LINEAR              # color/opacity: never overshoot
 
+# Feedback time (the companion to the transition times above): show a
+# busy indicator only once an operation outlasts this — under ~500ms a
+# flashed spinner distracts more than it informs (Nielsen). Used by
+# gtk_utils.DelayedSpinner.
+SPINNER_DELAY_MS = 500
+
 
 def should_animate() -> bool:
     """Whether the desktop wants animations (`gtk-enable-animations`).

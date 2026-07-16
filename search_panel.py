@@ -5,7 +5,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk, GLib, Pango
 from a11y import set_accessible_label
-from gtk_utils import clear_children
+from gtk_utils import clear_children, DelayedSpinner
 import sword_bridge
 import ebible_bridge
 import paths
@@ -211,6 +211,7 @@ class SearchPanel(Gtk.Box):
 
         self._spinner = Gtk.Spinner()
         self._spinner.set_visible(False)
+        self._delayed_spinner = DelayedSpinner(self._spinner)
         status_row.append(self._spinner)
 
         self.append(status_row)
@@ -328,8 +329,11 @@ class SearchPanel(Gtk.Box):
         self._clear_results()
         self._clear_history_btn.set_visible(False)
         self._count_label.set_text(_('Searching…'))
-        self._spinner.set_visible(True)
-        self._spinner.start()
+        # Threshold-gated: an already-indexed FTS query returns fast and
+        # never flashes a spinner. The indexing path keeps its immediate
+        # spinner + staged text (_update_indexing_status) — genuinely slow
+        # work should announce itself at once.
+        self._delayed_spinner.start()
 
         case = self._case_btn.get_active()
 
@@ -357,8 +361,7 @@ class SearchPanel(Gtk.Box):
 
     def _on_search_done(self, results, truncated, query, module):
         # Stale results were already dropped by the runner's generation guard.
-        self._spinner.stop()
-        self._spinner.set_visible(False)
+        self._delayed_spinner.stop()
         _save_history(query, module)
 
         self._results = results

@@ -186,7 +186,6 @@ class GenbookReader:
             return GLib.SOURCE_REMOVE
         dark = Adw.StyleManager.get_default().get_dark()
         pane._cancel_all_flashes()
-        pane._search.cancel_hl_timer()
         pane._buffer.set_text('')
         pane._clear_chapter_scoped_tags()
 
