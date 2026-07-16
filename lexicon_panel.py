@@ -20,7 +20,6 @@ knowing about its composer.
 
 import logging
 import re
-import threading
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
@@ -29,6 +28,7 @@ from a11y import set_accessible_label
 from gtk_utils import clear_children
 
 import sword_bridge
+import tasks
 
 _log = logging.getLogger('scriptura.lexicon')
 
@@ -175,9 +175,10 @@ class LexiconPanel(Gtk.Box):
         # Verse-peek 'open in Bible pane' button: routed to the window
         # (which owns pane visibility), signature (book, ch, v, module).
         self._on_open_verse = on_open_verse
-        # Bumped by every def-view click and re-render; an in-flight verse
-        # fetch only shows its peek if the generation still matches.
-        self._verse_pop_gen = 0
+        # Cancelled by every def-view click and re-render; an in-flight
+        # verse fetch only shows its peek while it is still the current
+        # submission on this key.
+        self._verse_peek_key = f'versepeek:{id(self)}'
         # Hiding the panel (close button, content-kind switch) takes the
         # def view — the peek's anchor — off screen: dismiss an open peek
         # (deliberately, so the pane's self-heal doesn't fight it) and
@@ -489,7 +490,7 @@ class LexiconPanel(Gtk.Box):
         the LSJ depth view."""
         # Any re-render leaves an open verse peek pointing at stale text —
         # close it, and supersede one whose fetch is still in flight.
-        self._verse_pop_gen += 1
+        tasks.cancel(self._verse_peek_key)
         if self._on_dismiss_peek:
             self._on_dismiss_peek()
         dark = Adw.StyleManager.get_default().get_dark()
@@ -618,26 +619,32 @@ class LexiconPanel(Gtk.Box):
         # markup carries strong:G0746. Compiled once outside the loop.
         pattern = _scan_pattern(strong_num)
 
-        def fetch():
-            # Whatever happens, reach _ws_finalize — a dead thread would
-            # leave the header saying 'Searching…' forever.
+        def fetch(task):
+            # A mid-scan failure still reaches _ws_finalize with the partial
+            # count — a dead scan would leave the header on 'Searching…'
+            # forever. (The runner's on_error backstops the same way.)
             running = 0
             try:
                 total = sword_bridge.chapter_count(book)
                 for ch in range(1, total + 1):
+                    if not task.is_current():
+                        return running  # superseded — stop scanning
                     batch = []
                     for v_num, html in sword_bridge.load_chapter(module, book, ch):
                         if pattern.search(str(html)):
                             markup = _make_verse_markup(html, strong_num)
                             batch.append((book, ch, v_num, markup))
                     running += len(batch)
-                    GLib.idle_add(self._ws_chapter_done,
-                                  strong_num, book, module, batch, ch, total, running)
+                    task.post(self._ws_chapter_done,
+                              strong_num, book, module, batch, ch, total, running)
             except Exception:
                 _log.exception('word study scan failed')
-            GLib.idle_add(self._ws_finalize, strong_num, book, module, running)
+            return running
 
-        threading.Thread(target=fetch, daemon=True).start()
+        tasks.submit(
+            f'wordstudy:{id(self)}', fetch,
+            lambda running: self._ws_finalize(strong_num, book, module, running),
+            on_error=lambda _exc: self._ws_finalize(strong_num, book, module, 0))
 
     def _clear_ws(self):
         clear_children(self._ws_list)
@@ -718,7 +725,7 @@ class LexiconPanel(Gtk.Box):
     # ── Verse peek (clicking a scripture citation) ───────────────────────
 
     def _on_panel_unmap(self, _widget):
-        self._verse_pop_gen += 1
+        tasks.cancel(self._verse_peek_key)
         if self._on_dismiss_peek:
             self._on_dismiss_peek()
 
@@ -783,34 +790,24 @@ class LexiconPanel(Gtk.Box):
         # show the peek once the verse text is in the box — popping up
         # with an empty body and resizing when the text lands reads as
         # flicker. A newer peek (or any dismissing click) supersedes this
-        # one via the generation.
-        gen = self._verse_pop_gen
-
-        def fetch():
+        # one on the task key.
+        def fetch(_task):
             import ebible_bridge
-            text = ''
-            try:
-                if ebible_bridge.is_ebible_module(module):
-                    verses = ebible_bridge.load_chapter(module, book, chapter)
-                else:
-                    verses = sword_bridge.load_chapter(module, book, chapter)
-                for v_num, html in verses:
-                    if v_num == verse:
-                        text = re.sub(r'<[^>]+>', '', str(html)).strip()
-                        break
-            except Exception:
-                _log.exception('verse peek fetch failed')
+            if ebible_bridge.is_ebible_module(module):
+                verses = ebible_bridge.load_chapter(module, book, chapter)
+            else:
+                verses = sword_bridge.load_chapter(module, book, chapter)
+            for v_num, html in verses:
+                if v_num == verse:
+                    return re.sub(r'<[^>]+>', '', str(html)).strip()
+            return ''
 
-            def show():
-                if gen != self._verse_pop_gen:
-                    return GLib.SOURCE_REMOVE
-                body.set_text(text or _('Verse not found in this Bible.'))
-                self._on_show_peek(self._def_view, rect, box)
-                return GLib.SOURCE_REMOVE
+        def show(text):
+            body.set_text(text or _('Verse not found in this Bible.'))
+            self._on_show_peek(self._def_view, rect, box)
 
-            GLib.idle_add(show)
-
-        threading.Thread(target=fetch, daemon=True).start()
+        tasks.submit(self._verse_peek_key, fetch, show,
+                     on_error=lambda _exc: show(''))
 
     # ── In-panel navigation (clicking a cross-reference) ────────────────
 
@@ -823,12 +820,7 @@ class LexiconPanel(Gtk.Box):
         # Within-lexicon navigation isn't anchored to a specific Bible
         # phrase, so clear the phrase suffix from the title.
         self._current_phrase = (None, None)
-
-        def fetch():
-            text = sword_bridge.lookup_strong(strong_num)
-            GLib.idle_add(self._show_content, strong_num, text)
-            GLib.idle_add(self._load_word_study, strong_num)
-        threading.Thread(target=fetch, daemon=True).start()
+        self._fetch_entry(strong_num)
 
     def _on_back(self, _btn):
         if not self._history:
@@ -838,19 +830,27 @@ class LexiconPanel(Gtk.Box):
         self._current_morph = None
         self._current_phrase = (None, None)
         self._back_btn.set_sensitive(bool(self._history))
+        self._fetch_entry(prev)
 
-        def fetch():
-            text = sword_bridge.lookup_strong(prev)
-            GLib.idle_add(self._show_content, prev, text)
-            GLib.idle_add(self._load_word_study, prev)
-        threading.Thread(target=fetch, daemon=True).start()
+    def _fetch_entry(self, strong_num):
+        """Look up a Strong's entry off-thread, then render it and kick the
+        word-study scan. Latest-wins per panel: fast back-to-back
+        navigations render only the newest entry (the older lookup used
+        to race it to the buffer)."""
+        def apply(text):
+            self._show_content(strong_num, text)
+            self._load_word_study(strong_num)
+
+        tasks.submit(f'lexicon:{id(self)}',
+                     lambda _task: sword_bridge.lookup_strong(strong_num),
+                     apply, on_error=lambda _exc: None)
 
     def _on_def_click(self, gesture, n_press, x, y):
         # Any click in the view dismisses an open verse peek (the shared
         # peek is non-autohide, so we close it ourselves) and supersedes
         # a peek whose fetch is still in flight, so it can't pop up after
         # this click moved on. A click on another citation re-peeks below.
-        self._verse_pop_gen += 1
+        tasks.cancel(self._verse_peek_key)
         if self._on_dismiss_peek:
             self._on_dismiss_peek()
         bx, by = self._def_view.window_to_buffer_coords(
