@@ -17,9 +17,7 @@ the first screenful paints immediately and navigation can never paint a
 stale chapter, and with line-packed layout the streamed-in tail can never
 move what's already on screen.
 """
-import logging
 import re
-import threading
 
 import gi
 gi.require_version('Gtk', '4.0')
@@ -29,10 +27,9 @@ from gi.repository import Gtk, GLib, Pango
 import interlinear_data
 import settings
 import sword_bridge
+import tasks
 from a11y import set_accessible_label
 from interlinear_flow import WordFlow
-
-_log = logging.getLogger('scriptura.interlinear')
 
 
 def N_(message):
@@ -66,7 +63,6 @@ class InterlinearReader:
         self._chapter = None
         self._verse_anchors = {}     # verse -> first cell widget (scroll targets)
         self._cells = []             # (cell_box, line_labels dict)
-        self._gen = 0                # invalidates in-flight chunked builds
         self._lines = self._load_line_prefs()
         self._build_widget()
 
@@ -167,24 +163,20 @@ class InterlinearReader:
         self._module = module
         self._rtl = interlinear_data.is_hebrew(module)
         self._book, self._chapter = book, chapter
-        self._gen += 1
-        gen = self._gen
 
-        def fetch():
-            # A failed load must still reach _show_chapter: a silently dead
-            # thread would leave the previous chapter on screen under the
-            # new navigation state.
-            try:
-                words = interlinear_data.load_chapter(module, book, chapter)
-            except Exception:
-                _log.exception('interlinear chapter load failed')
-                words = []
-            GLib.idle_add(self._show_chapter, gen, words, verse)
+        # A failed load must still reach _show_chapter: a silently dead
+        # worker would leave the previous chapter on screen under the new
+        # navigation state. The chunked build keeps polling the task so a
+        # newer chapter cancels it mid-build. (apply/on_error fire from the
+        # main loop, so closing over `task` is race-free here.)
+        task = tasks.submit(
+            f'interlinear:{id(self)}',
+            lambda _t: interlinear_data.load_chapter(module, book, chapter),
+            lambda words: self._show_chapter(task, words, verse),
+            on_error=lambda _exc: self._show_chapter(task, [], verse))
 
-        threading.Thread(target=fetch, daemon=True).start()
-
-    def _show_chapter(self, gen, words, verse):
-        if gen != self._gen:
+    def _show_chapter(self, task, words, verse):
+        if not task.is_current():
             return GLib.SOURCE_REMOVE
         self._flow.remove_all()
         self._cells = []
@@ -207,7 +199,7 @@ class InterlinearReader:
         # Chunked build: append _CHUNK cells per idle tick so the first
         # screenful paints immediately and long chapters never stall input.
         def build(start):
-            if gen != self._gen:
+            if not task.is_current():
                 return GLib.SOURCE_REMOVE
             last_verse = words[start - 1].verse if start else 0
             for w in words[start:start + _CHUNK]:
