@@ -6,12 +6,16 @@
   outer ring, an even-odd ellipse ring for the curved meridians, plus a
   straight axis and equator bar — so GTK4 recolors it reliably on any
   background, like the keyboard symbolic alongside it.
+
+  Weight pass 2026-07-17: ring 1.1 → 1.7, meridian/axis bars 0.9 → ~1.5,
+  toward the GNOME 2px symbolic norm so it no longer reads half-weight
+  beside stock icons (full 2px muddies the inner detail at 16px).
 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
   <g fill="#222">
-    <path fill-rule="evenodd" d="M8 1 A7 7 0 1 0 8 15 A7 7 0 1 0 8 1 Z M8 2.1 A5.9 5.9 0 1 1 8 13.9 A5.9 5.9 0 1 1 8 2.1 Z"/>
-    <path fill-rule="evenodd" d="M8 1.1 A3.5 6.9 0 0 0 8 14.9 A3.5 6.9 0 0 0 8 1.1 Z M8 2.2 A2.45 5.8 0 0 1 8 13.8 A2.45 5.8 0 0 1 8 2.2 Z"/>
-    <rect x="7.55" y="1.2" width="0.9" height="13.6" rx="0.45"/>
-    <rect x="1.4" y="7.55" width="13.2" height="0.9" rx="0.45"/>
+    <path fill-rule="evenodd" d="M8 1 A7 7 0 1 0 8 15 A7 7 0 1 0 8 1 Z M8 2.7 A5.3 5.3 0 1 1 8 13.3 A5.3 5.3 0 1 1 8 2.7 Z"/>
+    <path fill-rule="evenodd" d="M8 1.4 A3.4 6.6 0 0 0 8 14.6 A3.4 6.6 0 0 0 8 1.4 Z M8 2.9 A2.0 5.1 0 0 1 8 13.1 A2.0 5.1 0 0 1 8 2.9 Z"/>
+    <rect x="7.25" y="1.4" width="1.5" height="13.2" rx="0.75"/>
+    <rect x="1.6" y="7.25" width="12.8" height="1.5" rx="0.75"/>
   </g>
 </svg>

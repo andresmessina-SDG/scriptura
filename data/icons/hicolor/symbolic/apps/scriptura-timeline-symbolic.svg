@@ -5,18 +5,21 @@
   distinct from document-open-recent (the "Recent Passages" clock) it used to
   borrow. Bundled, fill-only (#222) so GTK4 recolors it to @accent_color,
   matching the artifact / imagery / commentary / globe symbolics alongside it.
+
+  Weight pass 2026-07-17: stems 0.8 → 1.4, baseline 0.9 → 1.5, dots +0.1,
+  toward the GNOME 2px symbolic norm.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
   <g fill="#222">
     <!-- baseline axis -->
-    <path d="M1.6 11 H14.4 V11.9 H1.6 Z"/>
+    <path d="M1.6 10.8 H14.4 V12.3 H1.6 Z"/>
     <!-- stems -->
-    <path d="M3.7 6.4 H4.5 V11 H3.7 Z"/>
-    <path d="M7.6 4.1 H8.4 V11 H7.6 Z"/>
-    <path d="M11.5 7.2 H12.3 V11 H11.5 Z"/>
+    <path d="M3.4 6.6 H4.8 V10.8 H3.4 Z"/>
+    <path d="M7.3 4.3 H8.7 V10.8 H7.3 Z"/>
+    <path d="M11.2 7.4 H12.6 V10.8 H11.2 Z"/>
     <!-- dot markers -->
-    <circle cx="4.1" cy="5.5" r="1.4"/>
-    <circle cx="8.0" cy="3.2" r="1.5"/>
-    <circle cx="11.9" cy="6.3" r="1.4"/>
+    <circle cx="4.1" cy="5.5" r="1.5"/>
+    <circle cx="8.0" cy="3.2" r="1.6"/>
+    <circle cx="11.9" cy="6.3" r="1.5"/>
   </g>
 </svg>

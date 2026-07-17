@@ -7,10 +7,13 @@
   render blank on a dark/accent background; drawn fill-only with an even-odd
   ring + a solid right semicircle so GTK4 recolors it reliably, like the
   globe and keyboard symbolics alongside it.
+
+  Weight pass 2026-07-17: ring 1.1 → 1.7 — it shares the footer row with
+  the stock help-about symbolic, whose ring is a true 2px.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
   <g fill="#222">
-    <path fill-rule="evenodd" d="M8 1 A7 7 0 1 0 8 15 A7 7 0 1 0 8 1 Z M8 2.1 A5.9 5.9 0 1 1 8 13.9 A5.9 5.9 0 1 1 8 2.1 Z"/>
-    <path d="M8 2.1 A5.9 5.9 0 0 1 8 13.9 Z"/>
+    <path fill-rule="evenodd" d="M8 1 A7 7 0 1 0 8 15 A7 7 0 1 0 8 1 Z M8 2.7 A5.3 5.3 0 1 1 8 13.3 A5.3 5.3 0 1 1 8 2.7 Z"/>
+    <path d="M8 2.7 A5.3 5.3 0 0 1 8 13.3 Z"/>
   </g>
 </svg>
