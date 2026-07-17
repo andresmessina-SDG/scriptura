@@ -16,7 +16,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib
 from a11y import set_accessible_label
-from gtk_utils import clear_children
+from gtk_utils import clear_children, fade_in
 from i18n import N_
 
 import catena_bridge
@@ -212,6 +212,11 @@ class CatenaReader:
         clear_children(box)
 
     def _rebuild(self):
+        # The rebuilt voice column arrives with a soft fade instead of a
+        # pop (verse steps, filter changes); the chip row is chrome and
+        # swaps in place. First frame paints after the rebuild below, so
+        # starting the fade here covers every exit path.
+        fade_in(self._list)
         self._clear(self._list)
         self._clear(self._chip_box)
         self._build_place_chips()

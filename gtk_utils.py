@@ -1,7 +1,8 @@
 """Small GTK helpers shared across the UI."""
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import GLib, Gtk
+gi.require_version('Adw', '1')
+from gi.repository import Adw, GLib, Gtk
 
 import motion
 
@@ -39,6 +40,40 @@ class DelayedSpinner:
             self._timer = 0
         self._spinner.stop()
         self._spinner.set_visible(False)
+
+
+def fade_in(widget: Gtk.Widget) -> None:
+    """Fade freshly swapped panel content up from transparent so it reads
+    as arriving rather than popping (DURATION_MICRO, EASE_FADE) — for the
+    satellite panels' result swaps, never the reading text.
+
+    A fade already playing on the widget is left to finish: rapid swaps
+    (holding a verse-step key) coalesce into one fade instead of pinning
+    the panel at low opacity by restarting from 0 every few frames.
+    Adw.TimedAnimation follows gtk-enable-animations, so reduced motion
+    collapses this to the instant swap.
+    """
+    prev = getattr(widget, '_fade_anim', None)
+    if prev is not None and prev.get_state() == Adw.AnimationState.PLAYING:
+        return
+    widget.set_opacity(0.0)
+    target = Adw.PropertyAnimationTarget.new(widget, 'opacity')
+    anim = Adw.TimedAnimation.new(
+        widget, 0.0, 1.0, motion.DURATION_MICRO, target)
+    anim.set_easing(motion.EASE_FADE)
+    setattr(widget, '_fade_anim', anim)
+    anim.play()
+
+    # Stall-safety (mirrors the chrome strip's force_finish): a frame
+    # clock that never ticks (broadway headless, GUIDANCE §3) would
+    # otherwise pin the content invisible at opacity 0. One timer per
+    # animation — coalesced calls return above without adding more.
+    def _force_done() -> int:
+        if anim.get_state() == Adw.AnimationState.PLAYING:
+            anim.skip()
+        return int(GLib.SOURCE_REMOVE)
+
+    GLib.timeout_add(motion.DURATION_MICRO + 500, _force_done)
 
 
 def clear_children(widget: Gtk.Widget) -> None:

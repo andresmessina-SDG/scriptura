@@ -35,7 +35,7 @@ try:
 except (ValueError, ImportError):   # pragma: no cover — runtime fallback
     Rsvg = None
 from a11y import set_accessible_label
-from gtk_utils import clear_children
+from gtk_utils import clear_children, fade_in
 
 import imagery_bridge
 
@@ -520,6 +520,10 @@ class ImageryReader:
         if (book, chapter, verse) == (self._book, self._chapter, self._verse):
             return
         self._book, self._chapter, self._verse = book, chapter, verse
+        # New verse's imagery arrives with a soft fade instead of a pop
+        # (the redundant-rebuild skip above never re-fades a same-verse
+        # broadcast). First frame paints after the rebuild below.
+        fade_in(self._stack)
         clear_children(self._art_box)
         clear_children(self._where_box)
 

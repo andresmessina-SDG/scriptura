@@ -18,7 +18,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Gio, Gdk, Pango
 from a11y import set_accessible_label
-from gtk_utils import clear_children
+from gtk_utils import clear_children, DelayedSpinner
 import sword_bridge
 import open_data
 import ebible_bridge
@@ -193,6 +193,16 @@ def _fmt_progress(base, done, total):
     else:
         detail = _('{done} MB').format(done=done >> 20)
     return f'{base} {detail}'
+
+
+def _progress_fraction(done, total):
+    """Bar fraction while download bytes flow; None = activity pulse.
+    Pulse covers both a size-unknown download (total 0) and the tail after
+    the last byte (extract/parse/commit, done >= total) — a determinate bar
+    frozen at 100% through the tail would read as hung."""
+    if 0 < done < total:
+        return done / total
+    return None
 
 
 class ModuleManagerWindow(Adw.Window):
@@ -1105,19 +1115,35 @@ class ModuleManagerWindow(Adw.Window):
             self._status_bar.set_visible(False)
         if busy and show_bar:
             self._progress.set_text(status)
+            self._progress.set_fraction(0.0)
             self._progress.set_visible(True)
             if self._pulse_source is None:
                 self._pulse_source = GLib.timeout_add(80, self._pulse)
         else:
             self._progress.set_visible(False)
             self._progress.set_text('')
+            self._progress.set_fraction(0.0)
             if self._pulse_source is not None:
                 GLib.source_remove(self._pulse_source)
                 self._pulse_source = None
 
-    def _set_progress_text(self, text):
-        if not self._closed:
-            self._progress.set_text(text)
+    def _set_progress(self, text, frac=None):
+        """Update the window bar. A known fraction makes it determinate
+        (the pulse stops); None means activity — the pulse resumes, see
+        _progress_fraction."""
+        if self._closed:
+            return GLib.SOURCE_REMOVE
+        self._progress.set_text(text)
+        if frac is None:
+            # Visibility gate: a late idle-queued report arriving after
+            # _set_busy(False) must not restart an orphan pulse timer.
+            if self._pulse_source is None and self._progress.get_visible():
+                self._pulse_source = GLib.timeout_add(80, self._pulse)
+        else:
+            if self._pulse_source is not None:
+                GLib.source_remove(self._pulse_source)
+                self._pulse_source = None
+            self._progress.set_fraction(frac)
         return GLib.SOURCE_REMOVE
 
     def _set_error(self, message, retry=None):
@@ -1150,12 +1176,18 @@ class ModuleManagerWindow(Adw.Window):
 
     def _row_spinner(self, row, button):
         """Swap a row's action button for a spinner while it installs/removes.
-        The list is rebuilt on completion, so the spinner row is transient."""
+        The list is rebuilt on completion, so the spinner row is transient.
+        Delayed past the perception threshold (the button vanishing is the
+        immediate feedback); returns the DelayedSpinner so the caller can
+        stop a pending timer when the operation completes."""
         row.remove(button)
         spinner = Gtk.Spinner()
         spinner.set_valign(Gtk.Align.CENTER)
-        spinner.start()
+        spinner.set_visible(False)
         row.add_suffix(spinner)
+        delayed = DelayedSpinner(spinner)
+        delayed.start()
+        return delayed
 
     def _trash_button(self, on_confirm):
         """A flat trash-icon remove button; `on_confirm` runs when clicked.
@@ -1203,14 +1235,18 @@ class ModuleManagerWindow(Adw.Window):
             if cipher_key:
                 sword_bridge.set_cipher_key(name, cipher_key)
 
+        delayed = None
+
         def done(err):
+            if delayed is not None:
+                delayed.stop()
             self._modules_changed()
             self._populate()
 
         if self._run_async(work, done, show_bar=False,
                            retry=lambda: self._start_install(
                                btn, name, row, cipher_key)):
-            self._row_spinner(row, btn)
+            delayed = self._row_spinner(row, btn)
 
     def _prompt_cipher_install(self, btn, mod, row):
         dialog = Adw.AlertDialog()
@@ -1271,7 +1307,7 @@ class ModuleManagerWindow(Adw.Window):
         def work():
             sword_bridge.refresh_source()
             if wants_ebible:
-                GLib.idle_add(self._set_progress_text,
+                GLib.idle_add(self._set_progress,
                               _('Downloading eBible catalog…'))
                 ebible_bridge.download_catalog_sync()
 
@@ -1291,8 +1327,9 @@ class ModuleManagerWindow(Adw.Window):
         base = _('Downloading {name}…').format(name=name)
 
         def progress(done_b, total):
-            GLib.idle_add(self._set_progress_text,
-                          _fmt_progress(base, done_b, total))
+            GLib.idle_add(self._set_progress,
+                          _fmt_progress(base, done_b, total),
+                          _progress_fraction(done_b, total))
 
         def done(err):
             self._modules_changed()
@@ -1420,7 +1457,7 @@ class ModuleManagerWindow(Adw.Window):
         title = (entry.get('shortTitle') or tid).strip()
 
         def on_status(code):
-            GLib.idle_add(self._set_progress_text,
+            GLib.idle_add(self._set_progress,
                           _(self._EB_STATUS.get(code, code)))
 
         def done(err):

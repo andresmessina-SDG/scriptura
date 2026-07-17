@@ -25,7 +25,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Gdk, GLib, Pango
 from a11y import set_accessible_label
-from gtk_utils import clear_children
+from gtk_utils import clear_children, fade_in, DelayedSpinner
 
 import sword_bridge
 import tasks
@@ -252,9 +252,12 @@ class LexiconPanel(Gtk.Box):
         # take several hundred ms (SWORD initializes its module cache),
         # which previously left the panel blank with no feedback. Lives
         # outside the title scroller so it can't scroll out of view.
+        # Delayed: a warm-cache lookup resolving under the perception
+        # threshold never flashes it.
         self._spinner = Gtk.Spinner()
         self._spinner.set_visible(False)
         header.append(self._spinner)
+        self._delayed_spinner = DelayedSpinner(self._spinner)
 
         close_btn = Gtk.Button(icon_name='window-close-symbolic')
         close_btn.add_css_class('flat')
@@ -375,8 +378,7 @@ class LexiconPanel(Gtk.Box):
         # see stale content from the previous word during the fetch.
         self._clear_ws()
         self._ws_header.set_text('')
-        self._spinner.set_visible(True)
-        self._spinner.start()
+        self._delayed_spinner.start()
         # The previous entry's depth link would be stale for the word now
         # loading — hide until _show_content decides for the new one.
         self._lsj_btn.set_visible(False)
@@ -386,8 +388,7 @@ class LexiconPanel(Gtk.Box):
         """Populate the panel for a Strong's number and reveal it.
         Resets the back history (this is a fresh entry from a
         Bible-text word click, not a navigation within the panel)."""
-        self._spinner.stop()
-        self._spinner.set_visible(False)
+        self._delayed_spinner.stop()
         self._history.clear()
         self._back_btn.set_sensitive(False)
         self._current_strong = strong_num
@@ -422,6 +423,9 @@ class LexiconPanel(Gtk.Box):
         )
 
     def hide(self):
+        # Teardown path (Esc, module change via clear_state): a pending
+        # spinner timer must not fire into a hidden panel.
+        self._delayed_spinner.stop()
         self.set_visible(False)
 
     def init_inner_position(self):
@@ -509,6 +513,10 @@ class LexiconPanel(Gtk.Box):
         if not head_end.ends_line():
             head_end.forward_to_line_end()
         self._def_buf.apply_tag(self._headword_tag, head_start, head_end)
+        # Entry swaps (new word, back-nav, LSJ depth toggle) arrive with a
+        # soft fade instead of a pop; the word-study list streams in rows
+        # and needs none. Never the reading text.
+        fade_in(self._def_view)
 
     def _on_lsj_toggle(self, _btn):
         """Swap the definition area between the brief (Abbott-Smith) entry

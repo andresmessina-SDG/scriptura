@@ -21,7 +21,7 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Gdk
 
 from a11y import set_accessible_label
-from gtk_utils import clear_children
+from gtk_utils import clear_children, DelayedSpinner
 import annotations
 import sword_bridge
 import ebible_bridge
@@ -241,11 +241,15 @@ def compare_translations(pane, verse, popover):
     comp_list.set_margin_top(8)
     comp_list.set_margin_bottom(8)
 
+    # Delayed: cached chapter loads populate the list well under the
+    # perception threshold, so the spinner only appears for a cold fetch.
     spinner = Gtk.Spinner()
-    spinner.start()
+    spinner.set_visible(False)
     spinner.set_margin_top(12)
     spinner.set_margin_bottom(12)
     comp_list.append(spinner)
+    delayed_spinner = DelayedSpinner(spinner)
+    delayed_spinner.start()
 
     scroll.set_child(comp_list)
     outer.append(scroll)
@@ -272,6 +276,7 @@ def compare_translations(pane, verse, popover):
         GLib.idle_add(populate, results)
 
     def populate(results):
+        delayed_spinner.stop()
         if comp.get_parent() is None:
             return GLib.SOURCE_REMOVE
         clear_children(comp_list)

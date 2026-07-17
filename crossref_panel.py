@@ -3,7 +3,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, GLib
 from a11y import set_accessible_label
-from gtk_utils import clear_children
+from gtk_utils import clear_children, DelayedSpinner
 import sword_bridge
 import tasks
 
@@ -51,6 +51,16 @@ class CrossRefPanel(Gtk.Box):
         ref_scroll.set_child(self._ref_box)
         ref_row.append(ref_scroll)
 
+        # Delayed loading indicator: a warm TSK/OpenBible lookup resolves
+        # well under the perception threshold and never flashes it. Lives
+        # beside the close button, not among the chips, so `_clear_refs`
+        # can't sweep it away.
+        self._spinner = Gtk.Spinner()
+        self._spinner.set_visible(False)
+        self._spinner.set_valign(Gtk.Align.CENTER)
+        ref_row.append(self._spinner)
+        self._delayed_spinner = DelayedSpinner(self._spinner)
+
         close_btn = Gtk.Button(icon_name='window-close-symbolic')
         close_btn.add_css_class('flat')
         close_btn.set_valign(Gtk.Align.CENTER)
@@ -80,10 +90,7 @@ class CrossRefPanel(Gtk.Box):
             _('Cross-references · {book} {chapter}:{verse}').format(
                 book=book_label(book), chapter=chapter, verse=verse))
         self._clear_refs()
-
-        spinner = Gtk.Spinner()
-        spinner.start()
-        self._ref_box.append(spinner)
+        self._delayed_spinner.start()
 
         # Latest-wins per panel: stepping verses faster than the TSK lookup
         # can't let an older verse's refs land over the newer ones, and a
@@ -99,6 +106,7 @@ class CrossRefPanel(Gtk.Box):
         clear_children(self._ref_box)
 
     def _show_refs(self, refs):
+        self._delayed_spinner.stop()
         self._clear_refs()
         if refs is None:
             lbl = Gtk.Label(label=_('Install the TSK module or download OpenBible cross-references.'))
