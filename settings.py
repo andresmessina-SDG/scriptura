@@ -40,6 +40,11 @@ _defaults: dict[str, Any] = {
     # Reading-tools cluster). On by default; off keeps the reading surface
     # fully minimal — verse clicks stop summoning the bar.
     'show_crossrefs':     True,
+    # Appearance ▸ Advanced: follow GNOME Night Light and warm/dim the
+    # reading paper in step with the screen (tone only — the text never
+    # moves). Off by default: the paper changing on its own must be an
+    # explicit choice.
+    'evening_paper':      False,
     'text_color_light':   None,
     'text_color_dark':    None,
     'text_color_default': None,

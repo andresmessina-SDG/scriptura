@@ -1228,6 +1228,7 @@ class BiblePane(Gtk.Box):
         self._font_justify = settings.get('font_justify')
         self._text_color   = settings.get(f'text_color_{settings.get("color_scheme") or "default"}')
         self._bg_color     = settings.get(f'reading_bg_{settings.get("color_scheme") or "default"}')
+        self._evening_strength = 0.0   # night-light paper shift (window-fed)
         self._css_provider = Gtk.CssProvider()
         self._view.get_style_context().add_provider(
             self._css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
@@ -1840,6 +1841,15 @@ class BiblePane(Gtk.Box):
             surface = '#f7f4ee'
         else:
             surface = None
+        # Evening paper (opt-in, follows Night Light): warm/dim the resolved
+        # surface. Display-time only — stored paper preferences are never
+        # touched. The dark default (surface=None → @view_bg_color) blends
+        # from its concrete Adwaita value so dark mode shifts too.
+        if self._evening_strength > 0.0:
+            import night_light
+            surface = night_light.dusk_blend(
+                surface or ('#1e1e1e' if dark else '#f7f4ee'),
+                self._evening_strength)
         # Ink: an explicit user choice wins; otherwise auto-derive from the paper
         # (warm-light on dark papers, warm dark sharing the paper's hue on light).
         if self._text_color:
@@ -1872,6 +1882,14 @@ class BiblePane(Gtk.Box):
         # Font size / line spacing changed the layout the highlight bands are
         # measured against — repaint them.
         self._view.queue_draw()
+
+    def set_evening_strength(self, strength):
+        """Evening-paper shift strength (0 = neutral). Tone-only: reloads
+        the font CSS with a blended surface; no re-render, no scroll."""
+        if strength == self._evening_strength:
+            return
+        self._evening_strength = strength
+        self._update_font_css()
 
     def set_appearance(self, **kwargs):
         if 'font_size'    in kwargs: self._font_size    = kwargs['font_size']

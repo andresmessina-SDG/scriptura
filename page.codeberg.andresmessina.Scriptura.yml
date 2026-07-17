@@ -11,6 +11,9 @@ finish-args:
   - --device=dri
   - --share=network
   - --persist=.sword
+  # Evening paper follows GNOME Night Light (read-only property watch);
+  # without this the monitor stays silently inert in the sandbox.
+  - --talk-name=org.gnome.SettingsDaemon.Color
 
 cleanup:
   - /include

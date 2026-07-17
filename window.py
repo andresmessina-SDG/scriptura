@@ -13,6 +13,7 @@ import sword_bridge
 import settings
 import tasks
 import motion
+import night_light
 import module_positions
 import onboarding
 import backup
@@ -135,6 +136,10 @@ class BibleWindow(Adw.ApplicationWindow):
         self._narrow_pane = 1
         self._build_ui()
         self._load_all_panes()
+        # Evening paper (opt-in): follow Night Light once the panes exist.
+        self._night_monitor = None
+        if settings.get('evening_paper'):
+            self._start_evening_paper()
         self.connect('close-request', self._on_close_request)
         if self._startup_devt_module:
             self._startup_navigate_to_devotional_ref(self._startup_devt_module)
@@ -2560,6 +2565,23 @@ class BibleWindow(Adw.ApplicationWindow):
         if not enabled:
             self._hide_crossref()
 
+    # ── Evening paper (follows Night Light) ──────────────────────────────
+
+    def _start_evening_paper(self):
+        if self._night_monitor is None:
+            self._night_monitor = night_light.NightLightMonitor(
+                self._on_evening_strength)
+
+    def _stop_evening_paper(self):
+        if self._night_monitor is not None:
+            self._night_monitor.stop()
+            self._night_monitor = None
+        self._on_evening_strength(0.0)
+
+    def _on_evening_strength(self, strength):
+        for pane in (self.pane1, self.pane2):
+            pane.set_evening_strength(strength)
+
     # ── Reading-tools bloom (the אΩ cluster) ─────────────────────────────
 
     def _tools_bloom(self, *_args):
@@ -3592,6 +3614,25 @@ class BibleWindow(Adw.ApplicationWindow):
         # stays inert unless the reader opts in.
         _adv_switch(_('Preview words on hover'),
                     'hover_preview', 'set_hover_preview')
+        # Evening paper is window-scoped (a Night Light D-Bus monitor), so
+        # it can't use the per-pane setter helper above. Same row idiom.
+        ev_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        ev_row.append(Gtk.Label(label=_('Evening paper (follows Night Light)'),
+                                xalign=0, hexpand=True))
+        ev_sw = Gtk.Switch(valign=Gtk.Align.CENTER)
+        ev_sw.set_active(bool(settings.get('evening_paper')))
+        set_accessible_label(ev_sw, _('Evening paper (follows Night Light)'))
+
+        def _on_evening_switch(s, _p):
+            on = s.get_active()
+            settings.put('evening_paper', on)
+            if on:
+                self._start_evening_paper()
+            else:
+                self._stop_evening_paper()
+        ev_sw.connect('notify::active', _on_evening_switch)
+        ev_row.append(ev_sw)
+        adv_box.append(ev_row)
         adv.set_child(adv_box)
         card.append(adv)
 
