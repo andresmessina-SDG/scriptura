@@ -31,11 +31,34 @@
  *   spacing / padding : multiples of 4 — 4, 8, 12, 16, 24
  *   corner radius     : 4 (inline bars/swatches) · 6 (cards/controls) ·
  *                       10 (chips) · 20 (overlay panels) · 9999 (pills)
- *   motion            : 150ms in-place stacks · 200ms sliding panels/overlays
- *                       (see the transition_duration calls in window.py etc.)
+ *   motion            : named tokens in motion.py (durations 100/150/200/280,
+ *                       enter/exit/move/fade easings) — no new literal durations
  * Accent-tinted chrome uses @accent_* tokens so it follows the user's chosen
  * GNOME accent colour; the highlighter palette below is intentionally fixed
  * (those are semantic content colours, not chrome).
+ */
+
+/* ── Design law (ratified — change these only deliberately) ──────────────
+ * Two-accent law: chrome carries exactly TWO link/action colours.
+ *   @accent_* (follows the GNOME accent)  = "goes to the Bible" / primary
+ *   clay #a9744f (fixed)                  = "leaves the current surface" /
+ *                                           see-also (Stone chips, artifact
+ *                                           marker, catena source links)
+ *   No third chrome colour may be added without an equally clear semantic.
+ *   Do NOT "fix" clay to @accent_color — the blue-goes-to-Bible vs
+ *   clay-leaves-surface distinction is wayfinding, not decoration. The
+ *   highlighter palette is content, not chrome, and stays fixed.
+ * Glyph-vs-icon rule: a typographic glyph used as an icon (f*, אΩ, the serif
+ *   presentation "V") is sanctioned only when the concept is linguistic/
+ *   typographic and no standard metaphor exists; otherwise use a symbolic
+ *   icon. Neither icon-ify the glyphs nor glyph-ify more icons.
+ * Depth scale (three levels, no others):
+ *   0  flat — the continuous reading surface; de-ruled rows, no boxes
+ *   1  hairline panel — opaque bg (@view_bg_color) + alpha(@borders) border,
+ *      never a shadow (Revealer clips shadows — see quirks above)
+ *   2  floating card — border + soft shadow in light, shadow-only in dark
+ *      (the reading page, popover cards)
+ * New surfaces pick a level; they do not invent a fourth.
  */
 
 /* ── Typography ──────────────────────────────────────────────────────────
