@@ -53,6 +53,8 @@ GESTURES: list[tuple[str, list[tuple[str, str]]]] = [
          N_('Open its Strong’s lexicon entry')),
     ]),
     (N_('View'), [
+        (N_('Hover the אΩ mark in the header'),
+         N_('Reading tools bloom out — lexicon, footnotes, cross-references')),
         (N_('Hover the top edge in reading mode'),
          N_('Bring the toolbar back')),
     ]),

@@ -36,6 +36,10 @@ _defaults: dict[str, Any] = {
     # toggle). On by default — markers only appear where notes exist, and
     # the toggle disables on modules that can't show any.
     'show_footnotes':     True,
+    # Cross-reference bar on verse click (the ※ toggle in the header's
+    # Reading-tools cluster). On by default; off keeps the reading surface
+    # fully minimal — verse clicks stop summoning the bar.
+    'show_crossrefs':     True,
     'text_color_light':   None,
     'text_color_dark':    None,
     'text_color_default': None,

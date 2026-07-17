@@ -12,6 +12,7 @@ from gtk_utils import clear_children
 import sword_bridge
 import settings
 import tasks
+import motion
 import module_positions
 import onboarding
 import backup
@@ -342,6 +343,22 @@ class BibleWindow(Adw.ApplicationWindow):
         self.fnote_toggle.set_active(bool(settings.get('show_footnotes')))
         self.fnote_toggle.connect('toggled', self._on_fnote_toggle)
 
+        # Cross-references toggle — print's reference mark (※), third of the
+        # reading-tools glyphs. Persisted like footnotes: whether verse
+        # clicks summon the cross-reference bar is a reading preference.
+        self.xref_toggle = Gtk.ToggleButton()
+        xr_lbl = Gtk.Label()
+        # Single mark scaled to sit flush with the f* pair's cap height.
+        xr_lbl.set_markup('<span size="122%">※</span>')
+        self.xref_toggle.set_child(xr_lbl)
+        self.xref_toggle.add_css_class('flat')
+        self.xref_toggle.add_css_class('scriptura-lex-toggle')
+        self.xref_toggle.set_tooltip_text(
+            _('Cross-references — related verses appear when you tap a verse'))
+        set_accessible_label(self.xref_toggle, _('Cross-references'))
+        self.xref_toggle.set_active(bool(settings.get('show_crossrefs')))
+        self.xref_toggle.connect('toggled', self._on_xref_toggle)
+
         # ── Right: search + bookmarks + view toggle ────────────────────────────
         self._bookmark_btn = Gtk.Button(icon_name='bookmark-new-symbolic')
         self._bookmark_btn.add_css_class('flat')
@@ -429,15 +446,39 @@ class BibleWindow(Adw.ApplicationWindow):
         self._swap_btn.set_sensitive(bool(settings.get('split_pane_mode')))
         header.pack_end(self._swap_btn)
 
-        # Study-marks pair at the inner edge of the right cluster (just
-        # right of the centred passage title), grouped with the reading-view
-        # controls: the אΩ lexicon toggle (the glyph is kept deliberately —
+        # Reading-tools cluster at the inner edge of the right cluster: the
+        # אΩ lexicon toggle is the anchor (the glyph is kept deliberately —
         # it names the two languages it covers, which a generic dictionary
-        # icon would lose) linked with the † footnotes toggle.
+        # icon would lose); the f* footnotes and ※ cross-references toggles
+        # bloom out of a Revealer while the pointer or keyboard focus is on
+        # the cluster, and fold away after a grace period — the full
+        # instrument appears only when summoned. The bloom opens LEFTWARD
+        # (revealer packed before the anchor): the cluster's right edge is
+        # pinned against the swap button, so a rightward bloom would shove
+        # the anchor out from under the hovering pointer. Clicking אΩ still
+        # toggles the lexicon directly; the click's focus also blooms the
+        # cluster, which is the touch/keyboard path to the siblings.
+        self._tools_revealer = Gtk.Revealer()
+        self._tools_revealer.set_transition_type(
+            Gtk.RevealerTransitionType.SLIDE_LEFT)
+        self._tools_revealer.set_transition_duration(motion.DURATION_SHORT)
+        tools_inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        tools_inner.append(self.xref_toggle)
+        tools_inner.append(self.fnote_toggle)
+        self._tools_revealer.set_child(tools_inner)
         self._study_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        self._study_box.add_css_class('linked')
+        self._study_box.append(self._tools_revealer)
         self._study_box.append(self.lex_toggle)
-        self._study_box.append(self.fnote_toggle)
+        set_accessible_label(self._study_box, _('Reading tools'))
+        self._tools_fold_timer = 0
+        self._tools_hover = Gtk.EventControllerMotion.new()
+        self._tools_hover.connect('enter', self._tools_bloom)
+        self._tools_hover.connect('leave', self._tools_arm_fold)
+        self._study_box.add_controller(self._tools_hover)
+        self._tools_focus = Gtk.EventControllerFocus.new()
+        self._tools_focus.connect('enter', self._tools_bloom)
+        self._tools_focus.connect('leave', self._tools_arm_fold)
+        self._study_box.add_controller(self._tools_focus)
         header.pack_end(self._study_box)
 
         # ── Panes ─────────────────────────────────────────────────────────────
@@ -682,11 +723,13 @@ class BibleWindow(Adw.ApplicationWindow):
         # listen for `enter` so the first entry into the hot zone counts,
         # not only subsequent movement.
         self._reading_overlay_for_motion = overlay  # stash for coord remap
-        motion = Gtk.EventControllerMotion.new()
-        motion.connect('motion', self._on_reading_mouse_motion)
-        motion.connect('enter', self._on_reading_mouse_motion)
-        motion.connect('leave', lambda _c: self._reading_hide_exit_btn())
-        self.add_controller(motion)
+        # (named reading_motion, not `motion` — that shadows the motion-tokens
+        # module for this whole function scope)
+        reading_motion = Gtk.EventControllerMotion.new()
+        reading_motion.connect('motion', self._on_reading_mouse_motion)
+        reading_motion.connect('enter', self._on_reading_mouse_motion)
+        reading_motion.connect('leave', lambda _c: self._reading_hide_exit_btn())
+        self.add_controller(reading_motion)
 
         self._toast_overlay = Adw.ToastOverlay()
         self._toast_overlay.set_child(overlay)
@@ -2509,6 +2552,44 @@ class BibleWindow(Adw.ApplicationWindow):
         self.pane1.set_show_footnotes(enabled)
         self.pane2.set_show_footnotes(enabled)
 
+    def _on_xref_toggle(self, _btn):
+        enabled = self.xref_toggle.get_active()
+        settings.put('show_crossrefs', enabled)
+        # Off hides an open bar immediately; on doesn't retro-summon it —
+        # the next verse tap reveals as usual.
+        if not enabled:
+            self._hide_crossref()
+
+    # ── Reading-tools bloom (the אΩ cluster) ─────────────────────────────
+
+    def _tools_bloom(self, *_args):
+        """Pointer or keyboard focus arrived on the cluster: open it and
+        cancel any pending fold."""
+        if self._tools_fold_timer:
+            GLib.source_remove(self._tools_fold_timer)
+            self._tools_fold_timer = 0
+        self._tools_revealer.set_reveal_child(True)
+
+    def _tools_arm_fold(self, *_args):
+        """Pointer or focus left: fold after a grace period. The grace
+        absorbs brush-outs and raw-pointer jitter (wlroots compositors
+        deliver unsmoothed motion — GUIDANCE §3); re-entry cancels it."""
+        if self._tools_fold_timer:
+            GLib.source_remove(self._tools_fold_timer)
+        self._tools_fold_timer = GLib.timeout_add(
+            motion.HOVER_GRACE_MS, self._tools_fold)
+
+    def _tools_fold(self):
+        self._tools_fold_timer = 0
+        # A leave from one controller can race an enter on the other
+        # (Tab away while the pointer still rests on the cluster) — hold
+        # open while either kind of presence remains.
+        if (self._tools_hover.contains_pointer()
+                or self._tools_focus.contains_focus()):
+            return False
+        self._tools_revealer.set_reveal_child(False)
+        return False
+
     def _update_fnote_sensitivity(self):
         """Enable the f* toggle only when a loaded module can actually show
         footnotes, so flipping it never silently does nothing. Disabled (not
@@ -2699,6 +2780,15 @@ class BibleWindow(Adw.ApplicationWindow):
             fn_row.get_child().append(
                 Gtk.Image.new_from_icon_name('object-select-symbolic'))
 
+        xr_glyph = Gtk.Label()
+        xr_glyph.set_markup('<span size="large">※</span>')
+        xr_row = row(xr_glyph, _('Cross-references'),
+                     lambda: self.xref_toggle.set_active(
+                         not self.xref_toggle.get_active()))
+        if self.xref_toggle.get_active():
+            xr_row.get_child().append(
+                Gtk.Image.new_from_icon_name('object-select-symbolic'))
+
         row(Gtk.Image.new_from_icon_name('bookmark-new-symbolic'),
             _('Bookmarks'), lambda: self._show_bookmarks(self._overflow_btn))
 
@@ -2814,7 +2904,8 @@ class BibleWindow(Adw.ApplicationWindow):
         for pane in [self.pane1, self.pane2]:
             if pane is not source_pane:
                 pane.select_verse(verse_num)
-        if source_pane._book and source_pane._chapter:
+        if (source_pane._book and source_pane._chapter
+                and self.xref_toggle.get_active()):
             self._crossref_panel.load(source_pane._book, source_pane._chapter, verse_num)
             self._crossref_revealer.set_reveal_child(True)
         # They've engaged a verse — the moment to reveal the deeper gesture.
