@@ -91,7 +91,8 @@ window {
 .result-ref     { font-weight: bold; }
 /* Search section-histogram rows: drop the button's default min-height so all
    8 sections fit collapsed without scrolling. */
-button.chart-bar { min-height: 0; padding: 1px 4px; }
+button.chart-bar { min-height: 0; padding: 3px 4px; }  /* 3px vertical clears the
+   24px hit floor (rows measured 26px); the label/bar/count ink is unchanged. */
 
 /* ── Recent / Bookmark popovers — flat sibling list rows ─────────────── */
 /* Bookmarks' Add row: flat, accent-tinted (label + symbolic star), not a
@@ -676,7 +677,9 @@ button.menu-theme-toggle {
    definition; accent is allowed on tappables. */
 button.lex-depth-link {
     font-size: 12px;
-    padding: 1px 14px;
+    /* 5px vertical clears the 24px hit floor (25px measured). Flat at rest,
+       so only the invisible hit area and the hover pill grow — no ink cost. */
+    padding: 5px 14px;
     min-height: 0;
     color: @accent_color;
 }
@@ -691,7 +694,9 @@ button.interlinear-chip {
     border: 1px solid alpha(@borders, 0.7);
     border-radius: 999px;
     min-height: 0;
-    padding: 2px 12px;
+    /* 4px vertical clears the 24px hit floor (25px capsule, was 21) —
+       approved visual-weight change, 2026-07-17. */
+    padding: 4px 12px;
     font-size: 12px;
 }
 button.interlinear-chip:hover {
