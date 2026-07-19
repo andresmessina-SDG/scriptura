@@ -38,6 +38,7 @@ py_sources = files(
   'bookmarks.py',
   'catena_bridge.py',
   'catena_reader.py',
+  'church_year.py',
   'content.py',
   'crossref_panel.py',
   'devotional.py',

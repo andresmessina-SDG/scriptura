@@ -190,6 +190,15 @@ class TodayView(Gtk.Box):
         self._eyebrow.add_css_class('today-eyebrow')
         v.append(self._eyebrow)
 
+        # Church-year line (opt-in via the church_calendar setting): a
+        # second whisper under the date, e.g. "The Sixth Sunday after
+        # Trinity". Hidden when the setting is None or nothing applies.
+        self._church = _line(Gtk.Label())
+        self._church.add_css_class('today-church')
+        self._church.set_margin_top(6)
+        self._church.set_visible(False)
+        v.append(self._church)
+
         self._kicker = _line(Gtk.Label())
         self._kicker.add_css_class('today-kicker')
         self._kicker.set_margin_top(30)
@@ -258,14 +267,18 @@ class TodayView(Gtk.Box):
             self._on_choose_plans()
 
     def populate(self, last_position: tuple[str, int] | None,
-                 continue_detail: str | None) -> None:
+                 continue_detail: str | None,
+                 church_line: str | None = None) -> None:
         """Fill the page from the plan store and the given last reading
         position. `continue_detail` is the pane's module name (shown after
-        the reference), or None to omit it."""
+        the reference), or None to omit it. `church_line` is the liturgical
+        designation from church_year (None hides the line)."""
         today = datetime.date.today()
         # Locale day-name and date, composed with the house '·' separator.
         self._eyebrow.set_text('{day} · {date}'.format(
             day=today.strftime('%A'), date=today.strftime('%-d %B %Y')))
+        self._church.set_text(church_line or '')
+        self._church.set_visible(bool(church_line))
 
         plan_id, start_date = reading_plans.get_active()
         days = reading_plans.get_plan_days(plan_id) if plan_id else []

@@ -2637,11 +2637,19 @@ class BibleWindow(Adw.ApplicationWindow):
         last = ((saved_book, saved_chap)
                 if saved_book in BOOKS and isinstance(saved_chap, int)
                 and saved_chap >= 1 else None)
+        church_line = None
+        tradition = settings.get('church_calendar')
+        if tradition:
+            import church_year
+            desig = church_year.day_designation(
+                datetime.date.today(), tradition)
+            if desig:
+                church_line = desig[1]
         # Human-friendly module label — the raw key can be an internal
         # eBible id ("eBible: spabes"); display_name resolves every kind.
         module = settings.get('pane1_module')
         detail = sword_bridge.display_name(module) if module else None
-        self._today_view.populate(last, detail)
+        self._today_view.populate(last, detail, church_line=church_line)
         self._refresh_today_appearance()
         # A System-scheme flip (or Night Light toggling dark) re-papers the
         # page while it's up; disconnected again on dismissal.
@@ -3531,6 +3539,27 @@ class BibleWindow(Adw.ApplicationWindow):
         today_row.add_suffix(today_sw)
         today_row.set_activatable_widget(today_sw)
         nav_group.add(today_row)
+        # Church calendar for the Today page's church-year line. Default
+        # None — the ecumenical silence; each option is a tradition's
+        # historic calendar (labels are drafts — Andres's taxonomy).
+        church_row = Adw.ActionRow(title=_('Church calendar'))
+        church_row.add_prefix(
+            Gtk.Image.new_from_icon_name('x-office-calendar-symbolic'))
+        _church_values = [None, 'anglican', 'roman', 'orthodox']
+        _church_names = [_('None'), _('Anglican (BCP)'),
+                         _('Roman (traditional)'), _('Orthodox (New Calendar)')]
+        church_drop = Gtk.DropDown(model=Gtk.StringList.new(_church_names))
+        church_drop.set_valign(Gtk.Align.CENTER)
+        set_accessible_label(church_drop, _('Church calendar'))
+        cur_trad = settings.get('church_calendar')
+        church_drop.set_selected(
+            _church_values.index(cur_trad) if cur_trad in _church_values else 0)
+        church_drop.connect(
+            'notify::selected',
+            lambda d, _p: settings.put(
+                'church_calendar', _church_values[d.get_selected()]))
+        church_row.add_suffix(church_drop)
+        nav_group.add(church_row)
         _body.append(nav_group)
 
         # ── Appearance: a section header + its own row whose chevron rotates

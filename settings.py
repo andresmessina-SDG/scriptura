@@ -77,6 +77,10 @@ _defaults: dict[str, Any] = {
     # The Today landing page at launch (once per session; Esc or any action
     # dismisses it). Off = straight to the reading surface.
     'open_to_today':      True,
+    # Liturgical calendar for the Today page's church-year line: None (the
+    # ecumenical default — silent), 'anglican', 'roman', or 'orthodox'
+    # (see church_year.py for what each means).
+    'church_calendar':    None,
 }
 _cache: dict[str, Any] | None = None
 _load_failed: bool = False  # Flipped if an existing file failed to parse.
