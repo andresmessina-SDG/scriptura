@@ -44,6 +44,44 @@ Entry = tuple[str, str, int]
 HtmlToMarkup = Callable[..., str]
 
 
+def _strip_restated_title(html: str, leaf: str) -> str:
+    """Drop a leading heading (+ paragraphs) that merely restates the entry's
+    own title. CCEL books re-open the body with the chapter heading (Calvin:
+    ``<h3>CHAPTER 1.</h3><p>THE KNOWLEDGE…</p>`` reconstructs the leaf label);
+    with the leaf now shown as the page title that is a duplicate. Strip ONLY
+    the leading run of heading/paragraph nodes whose combined text EXACTLY
+    reconstructs the leaf, and require the run to begin with a heading — so
+    genuine body prose (Didache's Greek, a plain opening paragraph) is never
+    touched. Comparison ignores case and non-alphanumerics so the leaf's
+    ' - '/punctuation differences from the body don't defeat the match."""
+    def norm(s: str) -> str:
+        return re.sub(r'[^a-z0-9]', '', s.lower())
+
+    target = norm(leaf)
+    if not target:
+        return html
+    node = re.compile(r'\s*<(h[1-6]|title|p)\b[^>]*>(.*?)</\1>',
+                      re.DOTALL | re.IGNORECASE)
+    acc, end, pos, saw_heading = '', 0, 0, False
+    while True:
+        m = node.match(html, pos)
+        if not m:
+            break
+        tag = m.group(1).lower()
+        if tag[0] == 'h' or tag == 'title':
+            saw_heading = True
+        cand = acc + norm(re.sub(r'<[^>]+>', '', m.group(2)))
+        if cand and target.startswith(cand):
+            acc, pos, end = cand, m.end(), m.end()
+            if acc == target:
+                break
+        else:
+            break
+    if saw_heading and end and acc == target:
+        return html[end:]
+    return html
+
+
 class GenbookReader:
     def __init__(self, pane: BiblePane, html_to_markup: HtmlToMarkup) -> None:
         self._pane = pane
@@ -202,22 +240,37 @@ class GenbookReader:
                 f'This generic book has no readable entries.</span>', -1)
             return GLib.SOURCE_REMOVE
 
-        # Breadcrumb title: split the TreeKey path on '/' and join the
-        # segments with ' › '. Long hierarchies get full context
-        # ("Augsburg Confession › Of God › Article 1") rather than
-        # just the leaf name. Underscores in any segment → spaces.
+        # Path → a quiet ancestors breadcrumb (eyebrow) + the leaf as the
+        # entry title. The old rendering set the WHOLE TreeKey path as one
+        # x-large, letter-spaced heading; on deep CCEL trees whose segments
+        # are long all-caps sentences (Calvin) that became a shouting 4-line
+        # wall — the least-useful text (the full path) carrying the most
+        # visual weight. Now the ancestors read as a small dim breadcrumb and
+        # the leaf is a modest bold title, so weight follows information value.
         if entry_path:
             segs = [s.replace('_', ' ') for s in entry_path.split('/') if s]
-            breadcrumb = ' › '.join(segs) if segs else module
         else:
-            breadcrumb = module
-        title_fg = '#7a7066' if not dark else '#8d8278'
+            segs = []
+        leaf = segs[-1] if segs else module
+        ancestors = segs[:-1]
+        eyebrow_fg = '#9a9086' if not dark else '#6f655c'
+        leaf_fg = '#7a7066' if not dark else '#8d8278'
         title_start = pane._buffer.get_end_iter().get_offset()
+        if ancestors:
+            crumb = ' › '.join(ancestors)
+            pane._buffer.insert_markup(
+                pane._buffer.get_end_iter(),
+                f'<span size="x-small" letter_spacing="200" '
+                f'foreground="{eyebrow_fg}">'
+                f'{GLib.markup_escape_text(crumb)}</span>\n',
+                -1)
+        # The leaf label is usually stored all-caps by the module; render it at
+        # a modest size with NO letter-spacing — tracking amplifies caps into a
+        # wall. This is the page's title.
         pane._buffer.insert_markup(
             pane._buffer.get_end_iter(),
-            f'<span size="x-large" weight="bold" foreground="{title_fg}" '
-            f'letter_spacing="400">'
-            f'{GLib.markup_escape_text(breadcrumb)}</span>\n\n',
+            f'<span size="large" weight="bold" foreground="{leaf_fg}">'
+            f'{GLib.markup_escape_text(leaf)}</span>\n\n',
             -1)
         # The view-wide justification (FILL when the user enables "Justified")
         # would stretch a wrapped title into ragged word gaps — headings must
@@ -234,6 +287,10 @@ class GenbookReader:
             pane._buffer.get_end_iter())
 
         if html and re.sub(r'<[^>]+>', '', html).strip():
+            # The leaf now heads the page; drop any leading body heading that
+            # merely restates it (Calvin's chapters do this) so the title
+            # isn't printed twice.
+            html = _strip_restated_title(html, leaf)
             try:
                 markup = self._html_to_markup(html, dark)
                 pane._buffer.insert_markup(

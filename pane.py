@@ -65,6 +65,19 @@ def auto_reading_ink(paper_hex):
 READING_SERIF_STACK = ("'Noto Serif', 'Source Serif 4', 'Charter', "
                        "'Iowan Old Style', 'Georgia', serif")
 
+# Greek runs render in a guaranteed-polytonic serif regardless of the user's
+# Latin reading face: Georgia and many text serifs lack the precomposed
+# "…with varia/perispomeni" glyphs and show a detached spacing grave
+# (καὶ → και`). Mirrors .interlinear-word's Greek stack. A run must BEGIN with
+# a Greek letter, so a stray combining mark sitting on Latin is never captured.
+_GREEK_FONT = 'Noto Serif, DejaVu Serif, Source Serif 4, serif'
+# A Greek/Coptic (U+0370–03FF) or Greek Extended (U+1F00–1FFF) letter, then any
+# run of the same plus combining diacritics (U+0300–036F) for decomposed text.
+# (Escaped codepoints — combining marks are invisible/ambiguous as literals.)
+_GREEK_RUN = re.compile(
+    '[Ͱ-Ͽἀ-῿]'
+    '[Ͱ-Ͽἀ-῿̀-ͯ]*')
+
 # Logical highlight IDs (persisted in annotations.json) → softer rendered tints.
 # Persisted values are unchanged so existing user data still reads correctly;
 # only the on-screen color is muted.
@@ -296,11 +309,31 @@ def _html_to_markup(html, dark, strip=True, divine_smallcaps=False):
     html = re.sub(r'<b>(.*?)</b>', r'[[INLINE_B_S]]\1[[INLINE_B_E]]',
                   html, flags=re.DOTALL | re.IGNORECASE)
 
+    # Flattened footnote anchors: CCEL-sourced Generic Books (Calvin's
+    # Institutes) carry footnote markers as bare digit runs in the "A B AB"
+    # form ("5 3 53", "20 05 205") immediately before a <scripRef> citation —
+    # conversion debris, not prose. Strip only that 3+-group signature sitting
+    # against a scripRef; a lone number there is real ("Greg. Lib. 4
+    # <scripRef>Ep. 76</scripRef>" — a patristic book number) and must survive.
+    html = re.sub(r'(?<=\D)\d+(?: \d+){2,}\s+(?=<scripRef)', ' ', html)
+
     # 2. Strip all other tags (like <w>, <p>, etc.) but keep content
     html = re.sub(r'<[^>]+>', '', html)
 
+    # Decode HTML entities the source already escaped ("&amp;c." → "&c.")
+    # before we Pango-escape below — otherwise the '&' is escaped a second
+    # time and the literal "&amp;c." shows on screen. Mirrors the unescape
+    # the plain-offset path already does.
+    html = _html_mod.unescape(html)
+
     # 3. Escape the raw text so characters like '&' and '<' don't break Pango
     html = GLib.markup_escape_text(html)
+
+    # Collapse runs of horizontal whitespace to a single space — some modules
+    # (Didache) pad ~10 literal spaces between every word, which Pango renders
+    # as gaping holes. Newlines/paragraph breaks are preserved (handled in the
+    # cleanup below); only spaces and tabs collapse.
+    html = re.sub(r'[^\S\n]{2,}', ' ', html)
 
     # 4. Swap markers back for real Pango Markup
     html = html.replace('[[RED_S]]', f'<span foreground="{red}">').replace('[[RED_E]]', '</span>')
@@ -338,6 +371,13 @@ def _html_to_markup(html, dark, strip=True, divine_smallcaps=False):
     # `\n{3,}` collapse misses those because the interleaved space
     # breaks the run of newlines.
     html = re.sub(r'(?:[ \t]*\n){3,}', '\n\n', html)
+
+    # Force Greek into a polytonic serif (see _GREEK_RUN). Applied last, on the
+    # finished markup: runs are plain non-ASCII text and Pango tags are ASCII,
+    # so a match can never land inside a tag name or attribute value.
+    html = _GREEK_RUN.sub(
+        lambda m: f'<span font_family="{_GREEK_FONT}">{m.group(0)}</span>',
+        html)
 
     # Commentary's segmented insertion passes strip=False so the space
     # before/after a <reference> segment is preserved — otherwise the
