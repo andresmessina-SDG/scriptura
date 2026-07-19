@@ -47,6 +47,7 @@ install_data(tips_icon,     install_dir: datadir / 'icons' / 'hicolor' / 'symbol
 install_data(justify_icon,  install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
 install_data(church_icon,   install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
 install_data('style.css',   install_dir: pkgdatadir / 'data')
+install_data('collects.toml', install_dir: pkgdatadir / 'data')
 # Bundled "Scripture in Stone" archaeology document + its images.
 install_subdir('archaeology', install_dir: pkgdatadir / 'data')
 

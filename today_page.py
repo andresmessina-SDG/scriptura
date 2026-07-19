@@ -115,10 +115,13 @@ def parse_epigraph(raw_osis: str, evening: bool = False) -> tuple[str, str] | No
     return quote, ref
 
 
-def fetch_epigraph() -> tuple[str, str] | None:
-    """Today's devotional epigraph from the first installed devotional
-    module: (quote, source_line). Blocking SWORD work — call from a task
-    worker. None when no module or no usable quote."""
+def fetch_epigraph(collect_key: str | None = None
+                   ) -> tuple[str, str, bool] | None:
+    """Today's epigraph: (text, source_line, quoted). A devotional
+    module's quote wins; with none installed (or no usable quote) and a
+    church calendar chosen, the day's collect from the bundled pack takes
+    the slot (`collect_key` is the church_year designation key). Blocking
+    SWORD work — call from a task worker. None when neither yields."""
     import sword_bridge
     evening = datetime.datetime.now().hour >= EVENING_HOUR
     for name in sword_bridge.installed_devotional_modules():
@@ -132,7 +135,12 @@ def fetch_epigraph() -> tuple[str, str] | None:
             # foot line. The reference's own colons are never touched.
             desc = desc.split(':', 1)[0].strip()
             source = f'{ref} — {desc}' if ref else desc
-            return quote, source
+            return quote, source, True
+    if collect_key:
+        import collects
+        found = collects.collect_for(collect_key)
+        if found:
+            return found[0], found[1], False
     return None
 
 
@@ -334,10 +342,13 @@ class TodayView(Gtk.Box):
         else:
             self._continue_btn.set_visible(False)
 
-    def set_epigraph(self, quote: str, source: str) -> None:
+    def set_epigraph(self, quote: str, source: str,
+                     quoted: bool = True) -> None:
         """The devotional foot line — whole or not at all (stays hidden
-        when there's nothing worth setting)."""
-        self._epigraph_verse.set_text(f'“{quote}”')
+        when there's nothing worth setting). `quoted` wraps the text in
+        quotation marks — right for a scripture line, wrong for a prayer
+        (a collect is prayed, not cited)."""
+        self._epigraph_verse.set_text(f'“{quote}”' if quoted else quote)
         self._epigraph_src.set_text(source)
         self._epigraph_box.set_visible(True)
 

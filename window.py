@@ -2638,13 +2638,14 @@ class BibleWindow(Adw.ApplicationWindow):
                 if saved_book in BOOKS and isinstance(saved_chap, int)
                 and saved_chap >= 1 else None)
         church_line = None
+        collect_key = None
         tradition = settings.get('church_calendar')
         if tradition:
             import church_year
             desig = church_year.day_designation(
                 datetime.date.today(), tradition)
             if desig:
-                church_line = desig[1]
+                collect_key, church_line = desig
         # Human-friendly module label — the raw key can be an internal
         # eBible id ("eBible: spabes"); display_name resolves every kind.
         module = settings.get('pane1_module')
@@ -2657,7 +2658,7 @@ class BibleWindow(Adw.ApplicationWindow):
             'notify::dark', lambda *_a: self._refresh_today_appearance())
         tasks.submit(
             key=f'today-epigraph:{id(self)}',
-            work=lambda _t: fetch_epigraph(),
+            work=lambda _t: fetch_epigraph(collect_key),
             apply=self._on_today_epigraph,
             on_error=lambda _e: None)
 

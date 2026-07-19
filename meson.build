@@ -39,6 +39,7 @@ py_sources = files(
   'catena_bridge.py',
   'catena_reader.py',
   'church_year.py',
+  'collects.py',
   'content.py',
   'crossref_panel.py',
   'devotional.py',
