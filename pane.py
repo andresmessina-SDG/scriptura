@@ -1941,10 +1941,14 @@ class BiblePane(Gtk.Box):
         open on the page holding it rather than always at the chapter top."""
         return self._selected_verse
 
-    def reading_appearance(self):
+    def reading_appearance(self, evening_strength=0.0):
         """The effective paper / ink / serif this pane reads with, so the
         presentation surface can mirror it (opaque bg — a fullscreen slide
-        can't fall through to @view_bg_color the way the docked view does)."""
+        can't fall through to @view_bg_color the way the docked view does).
+        `evening_strength` optionally applies the Night Light dusk blend
+        (the Today page follows it; presentation deliberately doesn't) —
+        auto ink then re-derives from the blended paper, matching
+        _update_font_css."""
         dark = Adw.StyleManager.get_default().get_dark()
         if self._bg_color:
             surface = self._bg_color
@@ -1952,6 +1956,9 @@ class BiblePane(Gtk.Box):
             surface = '#f7f4ee'
         else:
             surface = '#1e1e1e'
+        if evening_strength > 0.0:
+            import night_light
+            surface = night_light.dusk_blend(surface, evening_strength)
         ink = self._text_color or auto_reading_ink(surface)
         family = (READING_SERIF_STACK if self._font_family == 'serif'
                   else f"'{self._font_family}', serif")

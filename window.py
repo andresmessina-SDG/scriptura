@@ -24,6 +24,7 @@ import search_controller
 from pane import (BiblePane, DROPCAP_GOLD_DARK, DROPCAP_GOLD_LIGHT,
                   auto_reading_ink, dropcap_color_hex)
 from present import PresentView
+from today_page import TodayView, fetch_epigraph
 from module_manager import ModuleManagerWindow
 from search_panel import SearchPanel
 from study_journal import StudyJournalWindow
@@ -138,11 +139,17 @@ class BibleWindow(Adw.ApplicationWindow):
         self._load_all_panes()
         # Evening paper (opt-in): follow Night Light once the panes exist.
         self._night_monitor = None
+        self._evening_now = 0.0
         if settings.get('evening_paper'):
             self._start_evening_paper()
         self.connect('close-request', self._on_close_request)
         if self._startup_devt_module:
             self._startup_navigate_to_devotional_ref(self._startup_devt_module)
+        # Today page content — after the panes so its paper mirrors pane 1.
+        self._today_suppress = False
+        self._today_dark_handler = None
+        if self._today_view is not None:
+            self._populate_today()
         _scheme_map = {
             'light':   Adw.ColorScheme.FORCE_LIGHT,
             'dark':    Adw.ColorScheme.FORCE_DARK,
@@ -716,6 +723,25 @@ class BibleWindow(Adw.ApplicationWindow):
         overlay.add_overlay(self._present_view)
         self._build_present_controls(overlay)
 
+        # Today page (opt-out via the menu's "Open to Today" switch): a calm
+        # pre-reading landing laid over the panes, shown once per session at
+        # open and dismissed by Esc or any action. Built only when it will
+        # show; a `bible:` URI launch skips it (the user asked for a verse).
+        self._today_view = None
+        self._today_revealer = None
+        if settings.get('open_to_today') and not self._startup_ref:
+            self._today_view = TodayView(
+                on_begin=self._on_today_begin,
+                on_continue=self._on_today_continue,
+                on_choose_plans=self._on_today_choose_plans)
+            self._today_revealer = Gtk.Revealer()
+            self._today_revealer.set_transition_type(
+                Gtk.RevealerTransitionType.SLIDE_DOWN)
+            self._today_revealer.set_transition_duration(motion.DURATION_STANDARD)
+            self._today_revealer.set_child(self._today_view)
+            self._today_revealer.set_reveal_child(True)
+            overlay.add_overlay(self._today_revealer)
+
         # The quick-jump bar sits on top of every other overlay — including the
         # opaque presentation surface — so Ctrl+L is never occluded (added here,
         # after the present view, because Gtk.Overlay z-order follows add order).
@@ -881,6 +907,9 @@ class BibleWindow(Adw.ApplicationWindow):
             if self._menu_split.get_show_sidebar():
                 self._menu_split.set_show_sidebar(False)
                 return True
+            if self._today_revealer is not None:
+                self._dismiss_today()
+                return True
             if getattr(self, '_present_mode', False):
                 self._set_present_mode(False)
                 return True
@@ -1029,6 +1058,11 @@ class BibleWindow(Adw.ApplicationWindow):
     def _go_to(self, book, chapter, verse=None, record=True):
         if book not in BOOKS:
             return
+        # Any navigation is "an action" — it takes the reader in, so the
+        # Today page slides away (unless this is the programmatic startup
+        # devotional auto-nav, which happens beneath it).
+        if not self._today_suppress:
+            self._dismiss_today()
         if record:
             self._push_nav_back(self._current_loc)
             self._nav_fwd.clear()
@@ -1362,12 +1396,21 @@ class BibleWindow(Adw.ApplicationWindow):
         """Background thread: parse today's devotional, navigate pane1 to its passage."""
         import datetime as _dt
         date_obj = _dt.date.today()
+        def go_quiet(book, chapter, verse):
+            # Programmatic — must not dismiss the Today page above it.
+            self._today_suppress = True
+            try:
+                self._go_to(book, chapter, verse, record=False)
+            finally:
+                self._today_suppress = False
+            return GLib.SOURCE_REMOVE
+
         def fetch():
             raw    = sword_bridge.get_devotional_raw(devt_module, date_obj)
             result = sword_bridge.parse_devotional_refs(raw)
             if result:
                 book, chapter, verse = result
-                GLib.idle_add(self._go_to, book, chapter, verse, False)
+                GLib.idle_add(go_quiet, book, chapter, verse)
         threading.Thread(target=fetch, daemon=True).start()
 
     # ── Back / forward ────────────────────────────────────────────────────────
@@ -2101,6 +2144,8 @@ class BibleWindow(Adw.ApplicationWindow):
 
         Presentation mode reuses this chrome-hiding primitive but supplies its
         own messaging, so it calls with ``toast=False``."""
+        if on:
+            self._dismiss_today()   # entering a mode is "an action" too
         self._reading_mode = bool(on)
         self._header.set_visible(not on)
         self.pane1._toolbar.set_visible(not on)
@@ -2579,8 +2624,76 @@ class BibleWindow(Adw.ApplicationWindow):
         self._on_evening_strength(0.0)
 
     def _on_evening_strength(self, strength):
+        self._evening_now = strength
         for pane in (self.pane1, self.pane2):
             pane.set_evening_strength(strength)
+        self._refresh_today_appearance()
+
+    # ── Today page (the Morning Office landing) ──────────────────────────
+
+    def _populate_today(self):
+        saved_book = settings.get('last_book')
+        saved_chap = settings.get('last_chapter')
+        last = ((saved_book, saved_chap)
+                if saved_book in BOOKS and isinstance(saved_chap, int)
+                and saved_chap >= 1 else None)
+        # Human-friendly module label — the raw key can be an internal
+        # eBible id ("eBible: spabes"); display_name resolves every kind.
+        module = settings.get('pane1_module')
+        detail = sword_bridge.display_name(module) if module else None
+        self._today_view.populate(last, detail)
+        self._refresh_today_appearance()
+        # A System-scheme flip (or Night Light toggling dark) re-papers the
+        # page while it's up; disconnected again on dismissal.
+        self._today_dark_handler = Adw.StyleManager.get_default().connect(
+            'notify::dark', lambda *_a: self._refresh_today_appearance())
+        tasks.submit(
+            key=f'today-epigraph:{id(self)}',
+            work=lambda _t: fetch_epigraph(),
+            apply=self._on_today_epigraph,
+            on_error=lambda _e: None)
+
+    def _refresh_today_appearance(self):
+        if self._today_view is not None:
+            self._today_view.set_appearance(
+                self.pane1.reading_appearance(self._evening_now))
+
+    def _on_today_epigraph(self, result):
+        if self._today_view is not None and result:
+            self._today_view.set_epigraph(*result)
+
+    def _dismiss_today(self):
+        """Slide the Today page away. Once per session — there is no way
+        back to it until the next launch."""
+        if self._today_revealer is None:
+            return
+        revealer, self._today_revealer = self._today_revealer, None
+        self._today_view = None
+        if self._today_dark_handler is not None:
+            Adw.StyleManager.get_default().disconnect(self._today_dark_handler)
+            self._today_dark_handler = None
+        tasks.cancel(f'today-epigraph:{id(self)}')
+        # can_target off immediately so the sliding page never eats a click;
+        # fully hidden (and out of the picking/AT tree) after the slide.
+        revealer.set_can_target(False)
+        revealer.set_reveal_child(False)
+        GLib.timeout_add(
+            motion.DURATION_STANDARD + 50,
+            lambda: revealer.set_visible(False) or GLib.SOURCE_REMOVE)
+
+    def _on_today_begin(self, book, chapter):
+        self._go_to(book, chapter)      # navigation dismisses the page
+
+    def _on_today_continue(self, target):
+        # The panes already restored the saved position at startup; navigate
+        # anyway so the page's promise holds even if a startup devotional
+        # auto-nav moved pane 1 meanwhile.
+        if target:
+            self._go_to(target[0], target[1], record=False)
+        self._dismiss_today()
+
+    def _on_today_choose_plans(self):
+        self._toggle_menu(None)         # opening the menu dismisses the page
 
     # ── Reading-tools bloom (the אΩ cluster) ─────────────────────────────
 
@@ -2880,6 +2993,7 @@ class BibleWindow(Adw.ApplicationWindow):
         if self._search_split.get_show_sidebar():
             self._search_split.set_show_sidebar(False)
         else:
+            self._dismiss_today()
             self._close_other_overlays(keep='search')
             # Default to pane1's module — but fall back to a Bible-text module
             # if pane1 is showing a devotional (search doesn't work on devotionals).
@@ -3316,6 +3430,7 @@ class BibleWindow(Adw.ApplicationWindow):
     def _toggle_menu(self, _btn):
         open_ = not self._menu_split.get_show_sidebar()
         if open_:
+            self._dismiss_today()
             self._ensure_menu_panel()
             self._close_other_overlays(keep='menu')
             self._refresh_plan_ui()
@@ -3401,6 +3516,21 @@ class BibleWindow(Adw.ApplicationWindow):
             row.set_activatable(True)
             row.connect('activated', handler)
             nav_group.add(row)
+        # Open-to-Today switch (label is a draft — Andres's taxonomy). Off
+        # restores direct-to-reading at launch; the change applies from the
+        # next launch (the current session's page, if any, is already up).
+        today_row = Adw.ActionRow(title=_('Open to Today'))
+        today_row.add_prefix(
+            Gtk.Image.new_from_icon_name('x-office-calendar-symbolic'))
+        today_sw = Gtk.Switch(valign=Gtk.Align.CENTER)
+        today_sw.set_active(bool(settings.get('open_to_today')))
+        set_accessible_label(today_sw, _('Open to Today'))
+        today_sw.connect(
+            'notify::active',
+            lambda s, _p: settings.put('open_to_today', s.get_active()))
+        today_row.add_suffix(today_sw)
+        today_row.set_activatable_widget(today_sw)
+        nav_group.add(today_row)
         _body.append(nav_group)
 
         # ── Appearance: a section header + its own row whose chevron rotates

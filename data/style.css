@@ -1474,3 +1474,62 @@ button.artifact-marker:hover {
 }
 .module-manager row:hover button.module-row-action,
 .module-manager row:focus-within button.module-row-action { opacity: 1; }
+
+/* ── Today page (the Morning Office landing) ─────────────────────────── */
+/* Pure typography on the reading paper — the landing is a page, not a
+   dashboard. Paper / ink / serif family come from the pane's live
+   appearance via today_page's own provider (evening-blended); only
+   structure and the type voices live here. Fallback bg stays opaque so
+   the surface never flashes transparent before the provider loads. */
+.today-view {
+    background-color: @view_bg_color;
+}
+.today-eyebrow {
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.38;
+}
+.today-kicker {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    opacity: 0.6;
+}
+/* The plan day in the serif hero voice (family set live from the pane). */
+.today-passage {
+    font-size: 42px;
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -0.005em;
+}
+.today-whisper {
+    font-size: 13.5px;
+    opacity: 0.42;
+}
+/* Primary action: accent = "goes to the Bible" (two-accent law). Flat
+   buttons keep their stock hover feedback (§3 trap — no bg override). */
+.today-go {
+    color: @accent_color;
+    font-weight: 650;
+    font-size: 17px;
+}
+.today-quiet {
+    font-size: 14px;
+    opacity: 0.62;
+}
+/* The devotional foot line, set like a printed epigraph. */
+.today-epigraph-verse {
+    font-size: 19px;
+    font-style: italic;
+    line-height: 1.6;
+    opacity: 0.62;
+}
+.today-epigraph-src {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.4;
+}

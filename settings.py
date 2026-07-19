@@ -74,6 +74,9 @@ _defaults: dict[str, Any] = {
     # is the master switch (toggled from the Tips & Gestures dialog).
     'tips_enabled':       True,
     'hints_seen':         [],
+    # The Today landing page at launch (once per session; Esc or any action
+    # dismisses it). Off = straight to the reading surface.
+    'open_to_today':      True,
 }
 _cache: dict[str, Any] | None = None
 _load_failed: bool = False  # Flipped if an existing file failed to parse.

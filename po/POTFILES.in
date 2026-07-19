@@ -22,5 +22,6 @@ pane_search.py
 reading_plans.py
 search_panel.py
 study_journal.py
+today_page.py
 welcome.py
 window.py

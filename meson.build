@@ -75,6 +75,7 @@ py_sources = files(
   'styles.py',
   'sword_bridge.py',
   'tasks.py',
+  'today_page.py',
   'welcome.py',
   'window.py',
 )
