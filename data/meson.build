@@ -33,6 +33,7 @@ timeline_icon = 'icons/hicolor/symbolic/apps/scriptura-timeline-symbolic.svg'
 theme_system_icon = 'icons/hicolor/symbolic/apps/scriptura-theme-system-symbolic.svg'
 tips_icon = 'icons/hicolor/symbolic/apps/scriptura-tips-symbolic.svg'
 justify_icon = 'icons/hicolor/symbolic/apps/scriptura-justify-symbolic.svg'
+church_icon = 'icons/hicolor/symbolic/apps/scriptura-church-symbolic.svg'
 
 install_data(icon_file,     install_dir: datadir / 'icons' / 'hicolor' / 'scalable' / 'apps')
 install_data(symbolic_icon, install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
@@ -44,6 +45,7 @@ install_data(timeline_icon, install_dir: datadir / 'icons' / 'hicolor' / 'symbol
 install_data(theme_system_icon, install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
 install_data(tips_icon,     install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
 install_data(justify_icon,  install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
+install_data(church_icon,   install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
 install_data('style.css',   install_dir: pkgdatadir / 'data')
 # Bundled "Scripture in Stone" archaeology document + its images.
 install_subdir('archaeology', install_dir: pkgdatadir / 'data')

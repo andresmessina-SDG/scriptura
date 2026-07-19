@@ -3544,7 +3544,7 @@ class BibleWindow(Adw.ApplicationWindow):
         # historic calendar (labels are drafts — Andres's taxonomy).
         church_row = Adw.ActionRow(title=_('Church calendar'))
         church_row.add_prefix(
-            Gtk.Image.new_from_icon_name('x-office-calendar-symbolic'))
+            Gtk.Image.new_from_icon_name('scriptura-church-symbolic'))
         _church_values = [None, 'anglican', 'roman', 'orthodox']
         _church_names = [_('None'), _('Anglican (BCP)'),
                          _('Roman (traditional)'), _('Orthodox (New Calendar)')]

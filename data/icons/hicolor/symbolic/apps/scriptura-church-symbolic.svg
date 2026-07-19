@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Church glyph for the menu's "Church calendar" row — a minimalist gabled
+  building with a cross at the ridge and an arched door, so the row stops
+  borrowing x-office-calendar from "Open to Today" beside it. Bundled and
+  drawn fill-only (#222, even-odd outline for the walls and roof) so GTK4
+  recolors it reliably, like the globe / keyboard / timeline symbolics.
+  Strokes sit at 1.7 like the post-weight-pass globe ring (the full GNOME
+  2px norm muddies the gable at 16px; started at 1.5, bumped to match).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g fill="#222">
+    <!-- cross at the ridge (merges into the roof apex) -->
+    <rect x="7.15" y="0.7" width="1.7" height="4.2"/>
+    <rect x="5.9" y="1.65" width="4.2" height="1.7"/>
+    <!-- gabled building: outer pentagon minus inner pentagon -->
+    <path fill-rule="evenodd" d="M8 4.2 L13.4 8.6 V14.6 H2.6 V8.6 Z M8 6.39 L11.7 9.41 V12.9 H4.3 V9.41 Z"/>
+    <!-- arched door, filled, rising from the inner floor -->
+    <path d="M6.95 12.9 V11.0 A1.05 1.05 0 0 1 9.05 11.0 V12.9 Z"/>
+  </g>
+</svg>
