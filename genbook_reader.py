@@ -82,6 +82,67 @@ def _strip_restated_title(html: str, leaf: str) -> str:
     return html
 
 
+_PARA = re.compile(r'<p[^>]*>(.*?)</p>', re.DOTALL | re.IGNORECASE)
+#: The synopsis marker paragraph — CCEL's Institutes writes a bare
+#: ``<p>Sections.</p>`` (one chapter has the singular) ahead of the précis.
+_SYNOPSIS_MARKER = re.compile(r'Sections?\.?', re.IGNORECASE)
+#: A paragraph opening with section number one. Tolerates the transcription
+#: noise measured in the source: an OCR'd lowercase ell for the digit, and a
+#: missing period ("4 Refutation of those who…").
+_SECTION_ONE = re.compile(r'[1l]\.?\s')
+#: Any numbered précis item, for counting them on the disclosure row.
+_SECTION_ITEM = re.compile(r'(?:\d+|l)\.?\s')
+
+
+def _split_synopsis(html: str) -> tuple[str, str]:
+    """Split a chapter's opening synopsis off its body → ``(synopsis, rest)``.
+
+    Calvin's chapters open with apparatus rather than prose: an argument
+    paragraph ("This chapter consists of two parts…"), a ``Sections.``
+    marker, then one short numbered paragraph per section — and only then
+    the body, which restarts the very same numbering at 1. Both halves are
+    ``<p>N. …</p>``, so numbering alone cannot tell them apart; the fence is
+    the marker plus the *restart*. The synopsis runs from the front matter
+    through the last item, and the marker paragraph itself is dropped since
+    the disclosure row names the block.
+
+    Deliberately tolerant in the middle and strict at the edges: empty
+    paragraphs are skipped, and an unnumbered or mis-numbered item never ends
+    the run because only a genuine restart does. The region also starts after
+    any leading heading — in 5 entries the title's footnote cruft defeats
+    `_strip_restated_title`, and absorbing their surviving ``<h3>`` would hide
+    text that is still on screen.
+
+    Verified across all 106 Institutes entries: 80 carry a marker and every
+    one splits with the synopsis averaging shorter paragraphs than its body.
+    Modules without the marker (Concord, Didache, the confessions) return
+    ``('', html)`` and are untouched."""
+    paras = [(m.start(), m.end(), re.sub(r'<[^>]+>', '', m.group(1)).strip())
+             for m in _PARA.finditer(html)]
+    marker = next((i for i, (_s, _e, t) in enumerate(paras)
+                   if _SYNOPSIS_MARKER.fullmatch(t)), None)
+    if marker is None:
+        return '', html
+    run = [p for p in paras[marker + 1:] if p[2]]
+    if not run:
+        return '', html
+    # The first item opens the run whatever its label reads as, so a chapter
+    # whose own "1." was OCR'd as "l." still fences on the body's restart.
+    end = next((i for i, (_s, _e, t) in enumerate(run[1:], 1)
+                if _SECTION_ONE.match(t)), None)
+    if end is None:
+        return '', html
+    heads = [m.end() for m in re.finditer(r'</(?:h[1-6]|title)\s*>', html,
+                                          re.IGNORECASE)
+             if m.end() <= paras[marker][0]]
+    floor = heads[-1] if heads else 0
+    front = next(s for s, _e, _t in paras if s >= floor)
+    # Two slices, so the marker paragraph between them is left behind.
+    synopsis = html[front:paras[marker][0]] + html[run[0][0]:run[end - 1][1]]
+    rest = html[:front] + html[run[end][0]:]
+    return synopsis, rest
+
+
 class GenbookReader:
     def __init__(self, pane: BiblePane, html_to_markup: HtmlToMarkup) -> None:
         self._pane = pane
@@ -291,7 +352,13 @@ class GenbookReader:
             # merely restates it (Calvin's chapters do this) so the title
             # isn't printed twice.
             html = _strip_restated_title(html, leaf)
+            # Calvin's chapter précis is apparatus, not the text: fold it
+            # behind a disclosure so the body starts under the title and the
+            # reader meets prose first.
+            synopsis, html = _split_synopsis(html)
             try:
+                if synopsis:
+                    self._insert_synopsis(synopsis, dark)
                 markup = self._html_to_markup(html, dark)
                 pane._buffer.insert_markup(
                     pane._buffer.get_end_iter(), markup, -1)
@@ -316,6 +383,88 @@ class GenbookReader:
 
         pane._view.get_vadjustment().set_value(0)
         return GLib.SOURCE_REMOVE
+
+    def _insert_synopsis(self, synopsis: str, dark: bool) -> None:
+        """Insert the chapter précis collapsed behind a disclosure row.
+
+        The entry renders as one markup blob into the pane's TextView, so the
+        reveal is a text tag whose `invisible` property the row toggles —
+        not a Gtk.Expander, which cannot wrap a run of buffer text. The row
+        itself is a real widget at a child anchor (the pattern
+        `_insert_artifact_marker` already uses) so it is focusable and
+        clickable. Collapsed on every render: the tag is shared across
+        entries, so an entry left open must not leak its state to the next."""
+        pane = self._pane
+        # Count the numbered items only — the argument paragraph rides along
+        # in the block but is not a section, and the row must not miscount it.
+        items = sum(bool(_SECTION_ITEM.match(re.sub(r'<[^>]+>', '', p).strip()))
+                    for p in re.findall(r'<p[^>]*>.*?</p>', synopsis, re.DOTALL))
+        anchor = pane._buffer.create_child_anchor(pane._buffer.get_end_iter())
+        icon = Gtk.Image.new_from_icon_name('pan-end-symbolic')
+        label = Gtk.Label(label=_('Sections ({n})').format(n=items) if items
+                          else _('Sections'))
+        label.add_css_class('caption')
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        box.append(icon)
+        box.append(label)
+        btn = Gtk.Button(child=box)
+        btn.add_css_class('flat')
+        btn.add_css_class('genbook-synopsis-toggle')
+        btn.set_halign(Gtk.Align.START)
+        set_accessible_label(btn, _('Show the chapter’s section summaries'))
+        pane._view.add_child_at_anchor(btn, anchor)
+        pane._buffer.insert(pane._buffer.get_end_iter(), '\n')
+
+        table = pane._buffer.get_tag_table()
+        tag = table.lookup('gb-synopsis')
+        if tag is None:
+            # Dimmer and a step smaller than the body: even opened, the précis
+            # reads as apparatus the eye can run past.
+            # Set apart by size, ink, spacing and ragged-right rather than by
+            # an indent: a tag's left-margin *replaces* the view's rather than
+            # adding to it, and the view's is recomputed on every resize to
+            # centre the reading column — so any absolute value here drifts
+            # against the body the moment the window changes width.
+            tag = pane._buffer.create_tag(
+                'gb-synopsis', scale=0.88,
+                pixels_above_lines=0, pixels_below_lines=10,
+                justification=Gtk.Justification.LEFT)
+        # Ink and collapsed state are set every render, not just at creation:
+        # the tag outlives the entry, so a theme flip would otherwise leave the
+        # précis in the old palette and a previously-opened block would reopen.
+        tag.set_property('foreground', '#8d8278' if dark else '#7a7066')
+        tag.set_property('invisible', True)
+        start = pane._buffer.get_end_iter().get_offset()
+        try:
+            markup = self._html_to_markup(synopsis, dark)
+            # The converter puts a blank line between paragraphs, which is
+            # right for prose and wrong here: it floats the items apart so
+            # they read as four body paragraphs instead of one list. Close
+            # the block up and let the tag's paragraph spacing separate items.
+            markup = re.sub(r'\n{2,}', '\n', markup)
+            # The source pads every item after the first with a leading space,
+            # which sets their numbers a space right of item 1 and ragged the
+            # left edge of the list. Flush them.
+            markup = re.sub(r'\n[^\S\n]+', '\n', markup).lstrip()
+            pane._buffer.insert_markup(pane._buffer.get_end_iter(), markup, -1)
+        except Exception:
+            pane._buffer.insert(pane._buffer.get_end_iter(),
+                                re.sub(r'<[^>]+>', '', synopsis))
+        # A blank line closes the block off from the body — otherwise the last
+        # item butts straight against section one and the reader cannot see
+        # where the apparatus ends. Both newlines sit inside the tag, so
+        # collapsing takes the separation away with the block.
+        pane._buffer.insert(pane._buffer.get_end_iter(), '\n\n')
+        pane._buffer.apply_tag(tag, pane._buffer.get_iter_at_offset(start),
+                               pane._buffer.get_end_iter())
+
+        def _toggle(_btn: Gtk.Button) -> None:
+            shown = not tag.get_property('invisible')
+            tag.set_property('invisible', shown)
+            icon.set_from_icon_name(
+                'pan-end-symbolic' if shown else 'pan-down-symbolic')
+
+        btn.connect('clicked', _toggle)
 
     # ── Sibling navigation (prev/next entry buttons) ─────────────────────
 

@@ -1375,6 +1375,27 @@ button.artifact-marker:hover {
     background: none;
 }
 
+/* Generic Books: the disclosure that folds a chapter's section précis away
+   (Calvin opens every chapter with one). Sits inline in the reading text, so
+   it stays quiet — no button chrome, dim until pointed at — and reads as
+   apparatus rather than as a control competing with the prose. */
+button.genbook-synopsis-toggle {
+    min-height: 0;
+    padding: 2px 4px;
+    margin: 0;
+    background: none;
+    box-shadow: none;
+    border: none;
+    opacity: 0.6;
+}
+button.genbook-synopsis-toggle:hover {
+    opacity: 1;
+    background: none;
+}
+button.genbook-synopsis-toggle label {
+    letter-spacing: 0.06em;
+}
+
 /* Module Manager catalogue-filter popover lists. Tighter than a plain
    boxed-list and without the scrollbar channel, so the Category/Language
    pickers read as a compact filter rather than a raw data dump. */
