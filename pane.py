@@ -78,6 +78,19 @@ _GREEK_RUN = re.compile(
     '[Ͱ-Ͽἀ-῿]'
     '[Ͱ-Ͽἀ-῿̀-ͯ]*')
 
+# Hebrew has the identical exposure: a Latin reading face carries no niqqud or
+# te'amim mark positioning, so a pointed WLC verse read under Georgia stacks its
+# vowels beside the letter instead of beneath it. Mirrors .interlinear-word-heb.
+_HEBREW_FONT = "Noto Serif Hebrew, SBL Hebrew, Ezra SIL, Taamey Frank CLM, serif"
+# Written as escapes, not literals: Hebrew source characters reorder under the
+# editor's bidi algorithm, which makes a literal range unreadable and easy to
+# mis-edit. Start = a letter (U+05D0–05EA plus the wide/yiddish letters), so a
+# stray mark on Latin is never captured; continue = letters, the full
+# points/accents/punctuation block (U+0591–05C7), and Hebrew presentation forms.
+_HEBREW_RUN = re.compile(
+    '[\u05d0-\u05ea\u05ef-\u05f2\ufb1d-\ufb4f]'
+    '[\u0591-\u05c7\u05d0-\u05ea\u05ef-\u05f4\ufb1d-\ufb4f]*')
+
 # Logical highlight IDs (persisted in annotations.json) → softer rendered tints.
 # Persisted values are unchanged so existing user data still reads correctly;
 # only the on-screen color is muted.
@@ -372,11 +385,15 @@ def _html_to_markup(html, dark, strip=True, divine_smallcaps=False):
     # breaks the run of newlines.
     html = re.sub(r'(?:[ \t]*\n){3,}', '\n\n', html)
 
-    # Force Greek into a polytonic serif (see _GREEK_RUN). Applied last, on the
-    # finished markup: runs are plain non-ASCII text and Pango tags are ASCII,
-    # so a match can never land inside a tag name or attribute value.
+    # Force Greek and Hebrew into faces that cover their diacritics (see
+    # _GREEK_RUN / _HEBREW_RUN). Applied last, on the finished markup: runs are
+    # plain non-ASCII text and Pango tags are ASCII, so a match can never land
+    # inside a tag name or attribute value.
     html = _GREEK_RUN.sub(
         lambda m: f'<span font_family="{_GREEK_FONT}">{m.group(0)}</span>',
+        html)
+    html = _HEBREW_RUN.sub(
+        lambda m: f'<span font_family="{_HEBREW_FONT}">{m.group(0)}</span>',
         html)
 
     # Commentary's segmented insertion passes strip=False so the space
