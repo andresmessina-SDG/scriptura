@@ -48,6 +48,13 @@
  *   Do NOT "fix" clay to @accent_color — the blue-goes-to-Bible vs
  *   clay-leaves-surface distinction is wayfinding, not decoration. The
  *   highlighter palette is content, not chrome, and stays fixed.
+ *   ONE sanctioned exception (2026-07-20): the Today page's primary action
+ *   is set in the reading gold, not the accent. That page is not chrome —
+ *   it is typography on the reading paper — and the accent blue landed on
+ *   it as a control borrowed from somewhere else. The gold is the drop
+ *   cap's, cast from the paper the way the ink is (today_page.
+ *   set_appearance). It is scoped to that page: it does NOT become a third
+ *   chrome colour, and nothing in the chrome may reach for it.
  * Glyph-vs-icon rule: a typographic glyph used as an icon (f*, אΩ, the serif
  *   presentation "V") is sanctioned only when the concept is linguistic/
  *   typographic and no standard metaphor exists; otherwise use a symbolic
@@ -1526,7 +1533,7 @@ button.genbook-synopsis-toggle label {
     font-weight: 700;
     letter-spacing: 0.10em;
     text-transform: uppercase;
-    opacity: 0.75;
+    opacity: 0.68;
 }
 /* The plan day in the serif hero voice (family set live from the pane). */
 .today-passage {
@@ -1548,9 +1555,13 @@ button.genbook-synopsis-toggle label {
     font-weight: 650;
     font-size: 17px;
 }
+/* The fallback action, and deliberately the quieter of the two: it is the
+   longer line of the pair and full of proper nouns, so at the epigraph's
+   weight it out-shouted the primary one and left the gold doing all the work
+   of telling them apart. */
 .today-quiet {
     font-size: 14px;
-    opacity: 0.80;
+    opacity: 0.62;
 }
 /* The devotional foot line, set like a printed epigraph. */
 .today-epigraph-verse {
