@@ -351,6 +351,21 @@ class TestRomanPartial:
         assert collects.collect_for('roman:good_friday') is None
 
 
+class TestSourceLines:
+    def test_no_source_line_is_too_long_to_show(self):
+        # The foot line is one ellipsizing label. Measured in the real window
+        # at 1366px the label gets 672px, where the Orthodox line — which
+        # named the 1906 edition in full, "Service Book of the Holy
+        # Orthodox-Catholic Apostolic Church" — was cut off mid-word. The
+        # longest that fits is the Roman line at 61 characters; 70 leaves a
+        # little room without inviting another title page into the slot.
+        # The full citation for every edition lives in the pack's header.
+        for trad in ('anglican', 'roman', 'orthodox'):
+            pack = collects._pack()[trad]
+            line = f'{pack["kind"]} · {pack["source"]}'
+            assert len(line) <= 70, f'{trad}: {len(line)} chars — {line}'
+
+
 class TestEpigraphFallback:
     def test_collect_fills_empty_devotional_slot(self, monkeypatch):
         import sword_bridge
