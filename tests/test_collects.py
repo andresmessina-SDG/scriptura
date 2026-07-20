@@ -51,7 +51,7 @@ class TestAnglicanCoverage:
 
     def test_unknown_keys_are_none(self):
         assert collects.collect_for('anglican:nonsense') is None
-        assert collects.collect_for('roman:advent1') is None
+        assert collects.collect_for('roman:good_friday') is None
         assert collects.collect_for('') is None
 
 
@@ -252,6 +252,20 @@ class TestRomanPartial:
             'lent1 is not the collect the missal prints under "I. SUNDAY IN LENT."'
         assert len(set(lent.values())) == len(lent)
 
+    def test_advent_is_in_its_printed_order(self):
+        # Advent I and IV open on the same words, because the missal prints
+        # the same Latin incipit over both ("Excita, quaesumus, Domine,
+        # potentiam tuam, et veni"). A one-Sunday shift between them would
+        # therefore look right at a glance. They part at the petition, and
+        # that is what pins them: the First Sunday asks deliverance from the
+        # dangers of our sins, the Fourth succour by God's great might.
+        texts = self._pack()['texts']
+        assert 'imminent dangers' in texts['advent1'], \
+            'advent1 is not the collect under "FIRST SUNDAY OF ADVENT."'
+        assert 'great might' in texts['advent4'], \
+            'advent4 is not the collect under "FOURTH SUNDAY IN ADVENT."'
+        assert len({texts[f'advent{n}'] for n in range(1, 5)}) == 4
+
     def test_source_line(self):
         found = collects.collect_for('roman:easter3')
         assert found is not None
@@ -260,7 +274,10 @@ class TestRomanPartial:
 
     def test_unfilled_days_stay_silent(self):
         # Partial coverage must degrade to silence, never to a wrong prayer.
-        assert collects.collect_for('roman:advent1') is None
+        # Good Friday stands for the days the source cannot give: its prayers
+        # are introduced by "Let us pray", not by a COLLECT rubric, with the
+        # veneration of the Cross between the heading and the Mass.
+        assert collects.collect_for('roman:good_friday') is None
 
 
 class TestEpigraphFallback:
