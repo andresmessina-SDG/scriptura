@@ -235,6 +235,12 @@ class TodayView(Gtk.Box):
         self._begin_btn = Gtk.Button()
         self._begin_btn.add_css_class('flat')
         self._begin_btn.add_css_class('today-go')
+        # Its own provider, like the serif labels below: a provider added to
+        # a widget's style context styles that widget, so a descendant rule
+        # on .today-view would never reach the button.
+        self._go_css = Gtk.CssProvider()
+        self._begin_btn.get_style_context().add_provider(
+            self._go_css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         self._begin_btn.set_halign(Gtk.Align.CENTER)
         self._begin_btn.set_margin_top(24)
         self._begin_btn.connect('clicked', self._on_begin_clicked)
@@ -377,9 +383,22 @@ class TodayView(Gtk.Box):
     def set_appearance(self, appearance: dict) -> None:
         """Mirror the reading pane's paper / ink / serif (already
         evening-blended by the caller — see pane.reading_appearance)."""
+        # The primary action is set in the reading gold — the same antique
+        # gold the drop cap defaults to — rather than the stock blue accent,
+        # and it picks its light or dark cast from the PAPER, the way the ink
+        # does, so a light paper under a dark desktop still gets the deeper
+        # gold. The default is used, not dropcap_color_hex(): a reader who has
+        # tinted their drop caps has made a choice about Scripture's opening
+        # letter, not about what colour this page's buttons are.
+        from pane import (DROPCAP_GOLD_DARK, DROPCAP_GOLD_LIGHT,
+                          is_dark_paper)
+        gold = (DROPCAP_GOLD_DARK if is_dark_paper(appearance['surface'])
+                else DROPCAP_GOLD_LIGHT)
         self._css.load_from_data((
             '.today-view {{ background-color: {surface}; color: {ink}; }}'
             .format(**appearance)).encode())
+        self._go_css.load_from_data(
+            f'.today-go {{ color: {gold}; }}'.encode())
         self._serif_css.load_from_data((
             'label {{ font-family: {family}; }}'
             .format(**appearance)).encode())

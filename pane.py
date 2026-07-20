@@ -36,6 +36,18 @@ from pane_search import PaneSearch
 from a11y import set_accessible_label
 
 
+def is_dark_paper(paper_hex):
+    """Whether a paper colour wants light ink on it.
+
+    The paper decides, not the system scheme: a light paper theme under a
+    dark desktop still needs dark ink, and the gold on the Today page has to
+    choose the same way the ink does."""
+    r = int(paper_hex[1:3], 16) / 255
+    g = int(paper_hex[3:5], 16) / 255
+    b = int(paper_hex[5:7], 16) / 255
+    return 0.299 * r + 0.587 * g + 0.114 * b < 0.5
+
+
 def auto_reading_ink(paper_hex):
     """Derive a comfortable reading ink for a paper colour. Dark papers get a
     warm off-white; light papers get a warm dark ink that *shares the paper's
@@ -45,7 +57,7 @@ def auto_reading_ink(paper_hex):
     r = int(paper_hex[1:3], 16) / 255
     g = int(paper_hex[3:5], 16) / 255
     b = int(paper_hex[5:7], 16) / 255
-    if 0.299 * r + 0.587 * g + 0.114 * b < 0.5:
+    if is_dark_paper(paper_hex):
         return '#e8e0d4'                       # dark paper → warm light ink
     h, _l, s = colorsys.rgb_to_hls(r, g, b)
     if s < 0.06:

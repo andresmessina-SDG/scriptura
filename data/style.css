@@ -1510,7 +1510,7 @@ button.genbook-synopsis-toggle label {
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    opacity: 0.38;
+    opacity: 0.55;
 }
 /* The church-year line: a second whisper under the date, half a step
    louder (it carries meaning; the date is furniture). */
@@ -1519,14 +1519,14 @@ button.genbook-synopsis-toggle label {
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    opacity: 0.5;
+    opacity: 0.68;
 }
 .today-kicker {
     font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.10em;
     text-transform: uppercase;
-    opacity: 0.6;
+    opacity: 0.75;
 }
 /* The plan day in the serif hero voice (family set live from the pane). */
 .today-passage {
@@ -1537,10 +1537,12 @@ button.genbook-synopsis-toggle label {
 }
 .today-whisper {
     font-size: 13.5px;
-    opacity: 0.42;
+    opacity: 0.58;
 }
-/* Primary action: accent = "goes to the Bible" (two-accent law). Flat
-   buttons keep their stock hover feedback (§3 trap — no bg override). */
+/* Primary action: "goes to the Bible" (two-accent law). Set live in the
+   reading gold by today_page.set_appearance, which picks its cast from the
+   paper; the accent here is only what shows before that provider loads.
+   Flat buttons keep their stock hover feedback (§3 trap — no bg override). */
 .today-go {
     color: @accent_color;
     font-weight: 650;
@@ -1548,18 +1550,18 @@ button.genbook-synopsis-toggle label {
 }
 .today-quiet {
     font-size: 14px;
-    opacity: 0.62;
+    opacity: 0.80;
 }
 /* The devotional foot line, set like a printed epigraph. */
 .today-epigraph-verse {
     font-size: 19px;
     font-style: italic;
     line-height: 1.6;
-    opacity: 0.62;
+    opacity: 0.80;
 }
 .today-epigraph-src {
     font-size: 12px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    opacity: 0.4;
+    opacity: 0.58;
 }
