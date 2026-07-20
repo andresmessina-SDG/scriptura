@@ -288,8 +288,20 @@ class TestRomanPartial:
                           ('feast:12-26', 'martyrdom'),
                           ('feast:8-6', 'transfiguration'),
                           ('feast:9-29', 'angels'),
-                          ('feast:11-1', 'all thy saints')]:
+                          ('feast:11-1', 'all thy saints'),
+                          ('feast:6-29', 'Peter and Paul')]:
             assert whom in texts[sub], f'{sub} does not name {whom}'
+
+    def test_the_annunciation_is_the_prayer_it_was_sent_to(self):
+        # The missal prints no collect under the Annunciation: it sends the
+        # reader to the second collect of the first Sunday of Advent, which is
+        # the commemoration of Our Lady. So this text is fetched from the
+        # Advent pages, and the two things worth pinning are that it is the
+        # right prayer — it speaks of the angel's message — and that it did
+        # not come back holding Advent's own collect instead.
+        texts = self._pack()['texts']
+        assert 'angel delivered his message' in texts['feast:3-25']
+        assert texts['feast:3-25'] != texts['advent1']
 
     def test_the_gesima_sundays_are_not_confused(self):
         # Septuagesima and Quinquagesima are both printed under the incipit
