@@ -3566,15 +3566,7 @@ class BibleWindow(Adw.ApplicationWindow):
         # Church calendar for the Today page's church-year line. Default
         # None — the ecumenical silence; each option is a tradition's
         # historic calendar (labels are drafts — Andres's taxonomy).
-        # The subtitle exists because the consequence is otherwise invisible
-        # until the page is next seen: choosing a tradition moves a devotional
-        # module out of the epigraph. "Prayer" rather than "collect" — the
-        # Orthodox pack answers with a troparion.
-        church_row = Adw.ActionRow(
-            title=_('Church calendar'),
-            subtitle=_('The day’s prayer takes the Today epigraph, '
-                       'ahead of a devotional'))
-        church_row.set_subtitle_lines(2)
+        church_row = Adw.ActionRow(title=_('Church calendar'))
         church_row.add_prefix(
             Gtk.Image.new_from_icon_name('scriptura-church-symbolic'))
         _church_values = [None, 'anglican', 'roman', 'orthodox']
