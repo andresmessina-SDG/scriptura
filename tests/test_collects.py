@@ -189,6 +189,11 @@ class TestRomanPartial:
         for sub, text in self._pack()['texts'].items():
             for w in re.findall(r"[A-Za-z']{3,}", text):
                 t = w.lower().strip("'")
+                # A possessive is a noun plus a clitic and no wordlist carries
+                # the joined form; "Son's" once looked like a corruption and
+                # cost Easter Sunday its collect.
+                if t.endswith("'s"):
+                    t = t[:-2]
                 # Archaic verb morphology no wordlist carries. The -y verbs
                 # take -ie- ("purify" -> "purifiest"), which is why the stem
                 # is also tried with its final i restored to y.
