@@ -39,6 +39,16 @@ import paths
 #: directory listing; the publisher's own channel, not a mirror.
 FEED_URL = 'https://feeds.megaphone.fm/morningandevening'
 
+#: "In the Lord I Take Refuge" — Dane Ortlund's daily devotions through the
+#: Psalms, one episode a psalm, from the same publisher. Its titles carry the
+#: psalm number outright ("Psalm 16 - You Will Not Abandon My Soul"), so the
+#: key is the number itself and nothing has to be inferred from position.
+PSALMS_FEED_URL = 'https://feeds.megaphone.fm/CXW8316192394'
+
+#: "Psalm 16 - You Will Not Abandon My Soul". The subtitle is the episode's
+#: own title for the psalm and is kept for display; the number is the key.
+_PSALM_TITLE = re.compile(r'^\s*Psalm\s+(\d{1,3})\s*(?:[-–—]\s*(.*))?$')
+
 #: How long a cached copy of the feed index is trusted. The feed gains two
 #: episodes a day, so a day is ample and keeps the app off the network.
 INDEX_MAX_AGE = datetime.timedelta(hours=20)
@@ -90,8 +100,43 @@ def session_for_hour(hour: int) -> str:
     return 'evening' if hour >= EVENING_HOUR else 'morning'
 
 
-def _index_path() -> str:
-    return os.path.join(paths.cache_dir(), 'devotional_audio_index.json')
+def _index_path(feed: str = FEED_URL) -> str:
+    name = ('psalms' if feed == PSALMS_FEED_URL else 'devotional')
+    return os.path.join(paths.cache_dir(), f'{name}_audio_index.json')
+
+
+def parse_psalms_feed(xml: str) -> dict[str, list[str]]:
+    """{'<psalm number>': [url, subtitle]} for every psalm the feed carries.
+
+    The trailer and the publisher's book previews carry no psalm number and
+    are skipped — an episode whose psalm cannot be read is one the player does
+    not offer.
+    """
+    out: dict[str, list[str]] = {}
+    for block in re.findall(r'<item>(.*?)</item>', xml, re.S):
+        ti = re.search(r'<title[^>]*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>',
+                       block, re.S)
+        url = re.search(r'<enclosure[^>]*url="([^"]+)"', block)
+        if not ti or not url:
+            continue
+        m = _PSALM_TITLE.match(re.sub(r'\s+', ' ', ti.group(1)).strip())
+        if not m:
+            continue
+        n = int(m.group(1))
+        if not 1 <= n <= 150:
+            continue
+        # Later entries win: the feed has run more than one cycle, and the
+        # most recent reading of a psalm is the one at the top.
+        out.setdefault(str(n), [url.group(1), (m.group(2) or '').strip()])
+    return out
+
+
+def psalm_episode_url(number: int) -> tuple[str, str] | None:
+    """(url, the episode's title for this psalm), or None."""
+    got = _load_index(PSALMS_FEED_URL).get(str(number))
+    if isinstance(got, list) and got:
+        return got[0], (got[1] if len(got) > 1 else '')
+    return None
 
 
 def _episode_dir() -> str:
@@ -125,45 +170,45 @@ def parse_feed(xml: str) -> dict[str, str]:
     return out
 
 
-def _load_index() -> dict[str, str]:
+def _load_index(feed: str = FEED_URL):
     try:
-        with open(_index_path(), encoding='utf-8') as fh:
-            episodes = json.load(fh).get('episodes', {})
-        return {str(k): str(v) for k, v in episodes.items()}
+        with open(_index_path(feed), encoding='utf-8') as fh:
+            return json.load(fh).get('episodes', {})
     except (OSError, ValueError):
         return {}
 
 
-def _index_is_fresh() -> bool:
+def _index_is_fresh(feed: str = FEED_URL) -> bool:
     try:
         age = datetime.datetime.now() - datetime.datetime.fromtimestamp(
-            os.path.getmtime(_index_path()))
+            os.path.getmtime(_index_path(feed)))
     except OSError:
         return False
     return age < INDEX_MAX_AGE
 
 
-def refresh_index(force: bool = False) -> dict[str, str]:
+def refresh_index(force: bool = False, feed: str = FEED_URL):
     """The episode index, refetched only when the cached copy has aged out.
 
     Blocking network work — call from a task worker. Returns the cached index
     unchanged if the fetch fails: a feed that cannot be reached should leave
     yesterday's answer standing, not erase it.
     """
-    cached = _load_index()
-    if cached and not force and _index_is_fresh():
+    cached = _load_index(feed)
+    if cached and not force and _index_is_fresh(feed):
         return cached
+    parse = parse_psalms_feed if feed == PSALMS_FEED_URL else parse_feed
     try:
-        req = urllib.request.Request(FEED_URL, headers={'User-Agent': _UA})
+        req = urllib.request.Request(feed, headers={'User-Agent': _UA})
         with urllib.request.urlopen(req, timeout=30) as resp:
-            episodes = parse_feed(resp.read().decode('utf-8', 'replace'))
+            episodes = parse(resp.read().decode('utf-8', 'replace'))
     except Exception:
         return cached
     if not episodes:
         return cached
     try:
-        with open(_index_path(), 'w', encoding='utf-8') as fh:
-            json.dump({'feed': FEED_URL, 'episodes': episodes}, fh)
+        with open(_index_path(feed), 'w', encoding='utf-8') as fh:
+            json.dump({'feed': feed, 'episodes': episodes}, fh)
     except OSError:
         pass
     return episodes

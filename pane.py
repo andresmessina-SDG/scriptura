@@ -1193,6 +1193,27 @@ class BiblePane(Gtk.Box):
         self._copy_chapter_btn.connect('clicked', self._on_copy_chapter)
         toolbar.append(self._copy_chapter_btn)
 
+        # Psalms read aloud. Crossway publish one episode a psalm, titled with
+        # the psalm's own number, so the key is the chapter on screen. The
+        # control lives with the other pane actions and appears only on a
+        # psalm — a Bible pane has no strip of its own to reveal, and adding
+        # one for a hundred and fifty chapters of the canon would be chrome
+        # every other book had to carry.
+        self._psalm_audio = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
+                                    spacing=2)
+        self._psalm_audio.add_css_class('devotional-audio')
+        self._psalm_play_btn = Gtk.Button(
+            icon_name='media-playback-start-symbolic')
+        self._psalm_play_btn.add_css_class('flat')
+        self._psalm_play_btn.add_css_class('pane-action')
+        self._psalm_play_btn.connect('clicked', self._on_psalm_play)
+        self._psalm_audio.append(self._psalm_play_btn)
+        self._psalm_audio.set_visible(False)
+        toolbar.append(self._psalm_audio)
+        self._psalm_player = None
+        self._psalm_tick = None
+        self._psalm_url = None
+
         # Generic Books: prev / next sibling navigation + TOC popover.
         # Visible only when the pane's current module is type
         # "Generic Books". Verse-keyed chrome (lock/note/search/copy)
@@ -1267,6 +1288,21 @@ class BiblePane(Gtk.Box):
         self._toolbar_separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
         self._toolbar_separator.add_css_class('pane-toolbar-separator')
         self._chrome_band.append(self._toolbar_separator)
+
+        # How far through a psalm's reading, drawn on the line the toolbar
+        # already ends at. It keeps its 2px of the chrome band at all times
+        # and is hidden by opacity rather than by visibility: the band's
+        # height is reserved as the reading page's top margin, so a widget
+        # appearing here would push the text down by two pixels the moment
+        # somebody pressed play.
+        self._psalm_progress = Gtk.ProgressBar()
+        self._psalm_progress.add_css_class('reading-progress')
+        # Inset by the reading card's own corner radius, so the line begins
+        # where the card's top edge stops curving. Full width would run past
+        # the corners and read as a seam; anything much shorter stops being a
+        # line and becomes a mark.
+        self._psalm_progress.set_opacity(0.0)
+        self._chrome_band.append(self._psalm_progress)
 
         # Per-pane inline search bar (revealed below toolbar). All
         # widgets + state live inside PaneSearch — see pane_search.py.
@@ -2419,6 +2455,7 @@ class BiblePane(Gtk.Box):
 
     def _fetch_and_render(self):
         self._rendered_verses = None
+        self._sync_psalm_audio()
         self._content_stack.set_visible_child_name(self._content_child())
         if self._is_catena:
             # Follows the global book/chapter picker (and any verse the
@@ -2606,7 +2643,7 @@ class BiblePane(Gtk.Box):
         # it plays. No elapsed time and no scrubber — the page counts nothing
         # else either (see today_page.progress_whisper).
         self._devot_progress = Gtk.ProgressBar()
-        self._devot_progress.add_css_class('devotional-progress')
+        self._devot_progress.add_css_class('reading-progress')
         self._devot_progress.set_visible(False)
         self._devot_session = None
         self._devot_tick = None
@@ -2750,6 +2787,111 @@ class BiblePane(Gtk.Box):
             self._devot_play_btn.set_icon_name('media-playback-start-symbolic')
             self._devot_progress.set_fraction(0.0)
             self._devot_progress.set_visible(False)
+
+    # ── Psalms read aloud ────────────────────────────────────────────────
+
+    def _sync_psalm_audio(self):
+        """Offer the reading for the psalm on screen, or withdraw the control.
+
+        Same rule as the devotional: the control exists when there is
+        something behind it and not otherwise. The index is fetched off the UI
+        thread the first time a psalm is opened, so a cold start shows nothing
+        for a moment rather than a button that cannot yet work.
+        """
+        self._stop_psalm_audio()
+        if self._book != 'Psalms' or not self._is_verse_navigable():
+            self._psalm_audio.set_visible(False)
+            self._psalm_url = None
+            return
+        got = devotional_audio.psalm_episode_url(self._chapter)
+        if got is None:
+            self._psalm_audio.set_visible(False)
+            self._psalm_url = None
+            chapter = self._chapter
+            tasks.submit(
+                key=f'psalm-index:{id(self)}',
+                work=lambda _t: devotional_audio.refresh_index(
+                    feed=devotional_audio.PSALMS_FEED_URL),
+                apply=lambda _i: self._on_psalm_index(chapter),
+                on_error=lambda _e: None)
+            return
+        self._offer_psalm_audio(got)
+
+    def _on_psalm_index(self, chapter):
+        if self._book != 'Psalms' or self._chapter != chapter:
+            return
+        got = devotional_audio.psalm_episode_url(chapter)
+        if got is not None:
+            self._offer_psalm_audio(got)
+
+    def _offer_psalm_audio(self, got):
+        url, subtitle = got
+        self._psalm_url = url
+        self._psalm_audio.set_visible(True)
+        # The publisher's own title for the psalm, which says more than
+        # "play" ever could.
+        self._psalm_play_btn.set_tooltip_text(
+            subtitle or _('Listen to this psalm'))
+        set_accessible_label(self._psalm_play_btn, _('Listen to this psalm'))
+
+    def _on_psalm_play(self, _btn):
+        if self._psalm_player is not None and self._psalm_player.playing:
+            self._psalm_player.pause()
+            self._psalm_play_btn.set_icon_name('media-playback-start-symbolic')
+            return
+        if not self._psalm_url:
+            return
+        self._psalm_play_btn.set_icon_name('media-playback-pause-symbolic')
+        cached = devotional_audio.cached_episode(self._psalm_url)
+        if cached:
+            self._start_psalm_audio(cached)
+            return
+        url = self._psalm_url
+        tasks.submit(
+            key=f'psalm-audio:{id(self)}',
+            work=lambda _t: devotional_audio.fetch_episode(url),
+            apply=self._start_psalm_audio,
+            on_error=lambda _e: self._psalm_play_btn.set_icon_name(
+                'media-playback-start-symbolic'))
+
+    def _start_psalm_audio(self, path):
+        if not path:
+            self._psalm_play_btn.set_icon_name('media-playback-start-symbolic')
+            return
+        if self._psalm_player is None:
+            self._psalm_player = devotional_audio.Player()
+        if not self._psalm_player.play(path):
+            self._psalm_play_btn.set_icon_name('media-playback-start-symbolic')
+            return
+        self._psalm_play_btn.set_icon_name('media-playback-pause-symbolic')
+        if self._psalm_tick is None:
+            self._psalm_tick = GLib.timeout_add(500, self._on_psalm_tick)
+
+    def _on_psalm_tick(self):
+        if self._psalm_player is None:
+            self._psalm_tick = None
+            return GLib.SOURCE_REMOVE
+        if self._psalm_player.ended():
+            self._stop_psalm_audio()
+            return GLib.SOURCE_REMOVE
+        self._psalm_progress.set_fraction(self._psalm_player.progress())
+        self._psalm_progress.set_opacity(1.0)
+        return GLib.SOURCE_CONTINUE
+
+    def _stop_psalm_audio(self):
+        if self._psalm_tick is not None:
+            GLib.source_remove(self._psalm_tick)
+            self._psalm_tick = None
+        if self._psalm_player is not None:
+            self._psalm_player.stop()
+            self._psalm_player = None
+        if getattr(self, '_psalm_play_btn', None) is not None:
+            self._psalm_play_btn.set_icon_name('media-playback-start-symbolic')
+        # Navigating away mid-reading must not leave a fill behind on the
+        # line — the band is shared by every module.
+        if getattr(self, '_psalm_progress', None) is not None:
+            self._psalm_progress.set_fraction(0.0)
+            self._psalm_progress.set_opacity(0.0)
 
     def _go_devotional_day(self, delta, reset=False):
         if reset:
