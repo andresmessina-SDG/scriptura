@@ -214,7 +214,11 @@ class TestRomanPartial:
     def test_texts_look_like_collects(self):
         for sub, text in self._pack()['texts'].items():
             assert 60 < len(text) < 900, sub
-            assert re.search(r'\bO (?:God|Lord|Almighty)|\bAlmighty\b', text), sub
+            # Trinity Sunday is set "O almighty and everlasting God" — the
+            # book does not capitalise the adjective there, and the address is
+            # no less an address for it.
+            assert re.search(r'\bO (?:God|Lord|[Aa]lmighty)|\bAlmighty\b',
+                             text), sub
 
     def test_texts_end_at_the_prayer(self):
         # The missal's printed conclusion ("Thro'." / "Who liveth.") is the
@@ -265,6 +269,16 @@ class TestRomanPartial:
         assert 'great might' in texts['advent4'], \
             'advent4 is not the collect under "FOURTH SUNDAY IN ADVENT."'
         assert len({texts[f'advent{n}'] for n in range(1, 5)}) == 4
+
+    def test_the_gesima_sundays_are_not_confused(self):
+        # Septuagesima and Quinquagesima are both printed under the incipit
+        # "Preces" and both open "Mercifully hear ... we beseech thee, O
+        # Lord", because the Latin differs only in whose prayers are meant:
+        # "preces populi tui" against "preces nostras". That one word is the
+        # whole difference between the two days.
+        texts = self._pack()['texts']
+        assert 'the prayers of thy people' in texts['septuagesima']
+        assert 'Mercifully hear our prayers' in texts['quinquagesima']
 
     def test_source_line(self):
         found = collects.collect_for('roman:easter3')
