@@ -80,8 +80,15 @@ def advent_sunday(year: int) -> datetime.date:
 
 #: Spelled out rather than composed from tens and units. Building "Twenty-
 #: fourth" out of "Twenty" and "fourth" works in English and in very little
-#: else, and the longest series here — the Sundays after Trinity — reaches
-#: only twenty-seven, so the whole range is short enough to write down.
+#: else.
+#:
+#: The table must cover every value _ordinal() is ever asked for, and the
+#: longest series is not the one it looks like: the Sundays after Trinity stop
+#: at twenty-six, but the Orthodox count after Pentecost runs on through the
+#: winter until the Triodion opens, and reaches THIRTY-SEVEN. A sweep of
+#: 1900–2099 asserts the range in tests/test_church_year.py; forty leaves
+#: room. Past the table _ordinal falls back to the bare numeral, which reads
+#: "The 37 Sunday after Pentecost" — correct in no language at all.
 _ORDINALS = [
     '',
     N_('First'), N_('Second'), N_('Third'), N_('Fourth'), N_('Fifth'),
@@ -90,7 +97,11 @@ _ORDINALS = [
     N_('Fifteenth'), N_('Sixteenth'), N_('Seventeenth'), N_('Eighteenth'),
     N_('Nineteenth'), N_('Twentieth'), N_('Twenty-first'), N_('Twenty-second'),
     N_('Twenty-third'), N_('Twenty-fourth'), N_('Twenty-fifth'),
-    N_('Twenty-sixth'), N_('Twenty-seventh'),
+    N_('Twenty-sixth'), N_('Twenty-seventh'), N_('Twenty-eighth'),
+    N_('Twenty-ninth'), N_('Thirtieth'), N_('Thirty-first'),
+    N_('Thirty-second'), N_('Thirty-third'), N_('Thirty-fourth'),
+    N_('Thirty-fifth'), N_('Thirty-sixth'), N_('Thirty-seventh'),
+    N_('Thirty-eighth'), N_('Thirty-ninth'), N_('Fortieth'),
 ]
 
 

@@ -360,6 +360,18 @@ class TodayView(Gtk.Box):
         self._epigraph_src.set_text(source)
         self._epigraph_box.set_visible(True)
 
+    def clear_epigraph(self) -> None:
+        """Empty the foot line.
+
+        Needed because the page can now be rebuilt in place, when the reader
+        changes calendar. Without it a tradition that has nothing for today
+        leaves the previous tradition's prayer standing under the new day's
+        name — the right prayer on the wrong day, arrived at through the
+        interface rather than through the pack."""
+        self._epigraph_verse.set_text('')
+        self._epigraph_src.set_text('')
+        self._epigraph_box.set_visible(False)
+
     # ── Look ─────────────────────────────────────────────────────────────
 
     def set_appearance(self, appearance: dict) -> None:

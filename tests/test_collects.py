@@ -398,6 +398,16 @@ class TestEpigraphFallback:
         assert got[0].startswith('Almighty God, give us grace')
         assert got[2] is False
 
+    def test_an_unfillable_day_yields_nothing_at_all(self, monkeypatch):
+        # With no devotional either, the answer must be None rather than
+        # anything left over. The Today page clears the slot on this, and if
+        # it did not, a reader switching calendars would see the previous
+        # tradition's prayer standing under the new day's name.
+        import sword_bridge
+        monkeypatch.setattr(
+            sword_bridge, 'installed_devotional_modules', lambda: [])
+        assert today_page.fetch_epigraph('roman:good_friday') is None
+
     def test_devotional_covers_a_day_the_calendar_cannot_fill(
             self, monkeypatch):
         # Roman coverage is partial by design. On a day it cannot fill, a

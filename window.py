@@ -2660,6 +2660,10 @@ class BibleWindow(Adw.ApplicationWindow):
             Adw.StyleManager.get_default().disconnect(self._today_dark_handler)
         self._today_dark_handler = Adw.StyleManager.get_default().connect(
             'notify::dark', lambda *_a: self._refresh_today_appearance())
+        # Emptied before the fetch, not after it: on a rebuild the old foot
+        # line is the previous calendar's, and it must not stand under the new
+        # day's name for however long the lookup takes.
+        self._today_view.clear_epigraph()
         tasks.submit(
             key=f'today-epigraph:{id(self)}',
             work=lambda _t: fetch_epigraph(collect_key),
@@ -2672,8 +2676,12 @@ class BibleWindow(Adw.ApplicationWindow):
                 self.pane1.reading_appearance(self._evening_now))
 
     def _on_today_epigraph(self, result):
-        if self._today_view is not None and result:
+        if self._today_view is None:
+            return
+        if result:
             self._today_view.set_epigraph(*result)
+        else:
+            self._today_view.clear_epigraph()
 
     def _set_church_calendar(self, tradition):
         """Change the calendar, and let the Today page say so at once.

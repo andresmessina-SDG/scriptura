@@ -185,3 +185,30 @@ class TestLocalization:
                 assert shown.startswith('<'), (day, trad, shown)
             day += datetime.timedelta(days=1)
         assert 'Christmas Day' in seen
+
+
+class TestOrdinalCoverage:
+    def test_every_ordinal_the_engine_asks_for_has_a_word(self, monkeypatch):
+        # The longest series is not the one it looks like. Trinity stops at
+        # twenty-six, but the Orthodox count after Pentecost runs on through
+        # the winter until the Triodion opens and reaches thirty-seven. A
+        # table that stops short does not fail: it renders "The 37 Sunday
+        # after Pentecost", which is correct in no language at all.
+        asked = set()
+        real = cy._ordinal
+        monkeypatch.setattr(cy, '_ordinal',
+                            lambda n: (asked.add(n) or real(n)))
+        day = D(1900, 1, 1)
+        while day <= D(2099, 12, 31):
+            for trad in cy.TRADITIONS:
+                cy.day_designation(day, trad)
+            day += datetime.timedelta(days=365)
+        # A yearly stride would miss the winter tail, so walk those weeks too.
+        day = D(2024, 11, 1)
+        while day <= D(2027, 3, 1):
+            cy.day_designation(day, 'orthodox')
+            day += datetime.timedelta(days=1)
+        assert asked, 'no ordinals were requested at all'
+        assert max(asked) >= 37, max(asked)
+        for n in asked:
+            assert real(n) != str(n), f'no ordinal word for {n}'
