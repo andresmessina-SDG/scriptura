@@ -292,6 +292,30 @@ class TestRomanPartial:
                           ('feast:6-29', 'Peter and Paul')]:
             assert whom in texts[sub], f'{sub} does not name {whom}'
 
+    def test_all_souls_is_the_only_prayer_for_the_dead(self):
+        # A collect praying for the departed is, on any other day, a sign that
+        # the parse wandered into the burial office — which is how Advent IV
+        # once came to hold it. On the second of November it is the Mass
+        # itself. Both halves are worth pinning: that the day has that prayer,
+        # and that no other day does.
+        texts = self._pack()['texts']
+        assert 'souls of thy servants departed' in texts['feast:11-2']
+        for sub, text in texts.items():
+            if sub == 'feast:11-2':
+                continue
+            assert not re.search(r'pains of hell|carried into paradise'
+                                 r'|souls of thy servants departed', text), sub
+        # All Saints stands the day before, and in the book the two Masses are
+        # a page apart.
+        assert texts['feast:11-1'] != texts['feast:11-2']
+
+    def test_the_purification_is_the_presentation_in_the_temple(self):
+        # Its collect sits nearly six thousand characters from its heading,
+        # with the blessing of the candles in between, so the risk is not a
+        # wrong prayer but a stray one.
+        text = self._pack()['texts']['feast:2-2']
+        assert 'presented in the temple' in text
+
     def test_the_annunciation_is_the_prayer_it_was_sent_to(self):
         # The missal prints no collect under the Annunciation: it sends the
         # reader to the second collect of the first Sunday of Advent, which is
