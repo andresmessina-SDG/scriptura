@@ -224,6 +224,29 @@ class TestRomanPartial:
                                  tail), f'{sub}: conclusion or mark left in'
             assert '|' not in text, f'{sub}: column rule left in'
 
+    def test_no_saints_collect_on_a_temporal_day(self):
+        # These keys are all Proper of Time. Its collects never commemorate a
+        # named saint, so one that does was reached from the Proper of Saints
+        # and is on the wrong day. Quinquagesima once held the collect of St
+        # Andrew Corsini — a real prayer, correctly transcribed, and wrong.
+        for sub, text in self._pack()['texts'].items():
+            assert not re.search(r'\bblessed\s+[A-Z]|\bthy\s+(?:Confessor'
+                                 r'|Martyr|Bishop)\b', text), \
+                f'{sub}: a saint\'s collect on a day of the Proper of Time'
+
+    def test_lent_is_in_its_printed_order(self):
+        # The Lent series once shipped shifted by two, because "FRIDAY before
+        # the I. Sunday in Lent." was read as Lent I's own heading and pushed
+        # every Sunday down. Nothing in the pack looked wrong. Lent I is the
+        # one collect of the four that names the season's yearly observance,
+        # so it pins the series to the missal's printed numerals.
+        texts = self._pack()['texts']
+        lent = {k: v for k, v in texts.items() if re.fullmatch(r'lent\d', k)}
+        assert 'lent1' in lent, 'Lent I is the anchor of the series'
+        assert 'yearly observation of Lent' in lent['lent1'], \
+            'lent1 is not the collect the missal prints under "I. SUNDAY IN LENT."'
+        assert len(set(lent.values())) == len(lent)
+
     def test_source_line(self):
         found = collects.collect_for('roman:easter3')
         assert found is not None
