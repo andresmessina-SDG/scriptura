@@ -167,6 +167,19 @@ class TestRomanPartial:
             assert 60 < len(text) < 900, sub
             assert re.search(r'\bO (?:God|Lord|Almighty)|\bAlmighty\b', text), sub
 
+    def test_texts_end_at_the_prayer(self):
+        # The missal's printed conclusion ("Thro'." / "Who liveth.") is the
+        # collect's right edge; it is dropped as the printing abbreviation it
+        # is, and everything past it is page furniture made of ordinary
+        # English — a rubric, a signature mark, a page cross-reference. The
+        # lexical sweep is blind to that, so it is checked structurally here.
+        for sub, text in self._pack()['texts'].items():
+            assert text.endswith('.'), f'{sub}: no full stop at the edge'
+            tail = re.sub(r'[^A-Za-z ]', '', text.split('.')[-2][-24:])
+            assert not re.search(r'\b(Thro|Thio|Who liveth|Who livest|M m)\b',
+                                 tail), f'{sub}: conclusion or mark left in'
+            assert '|' not in text, f'{sub}: column rule left in'
+
     def test_source_line(self):
         found = collects.collect_for('roman:easter3')
         assert found is not None
