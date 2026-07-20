@@ -175,6 +175,25 @@ source = "Hapgood, Service Book of the Holy Orthodox-Catholic Apostolic Church, 
 "tone7" = """By thy cross thou didst destroy death; thou didst open paradise to the Thief; thou didst change the funeral wail of the Myrrh-bearing Women, and didst command them to announce unto thine Apostles that thou wert risen from the dead, O Christ our God, who bestowest on the world great mercy."""
 "tone8" = """Thou didst descend from on high, O Tender-hearted One; thou didst endure the three-days' burial, that thou mightest free us from our passions, O our Life and Resurrection. Glory, O Lord, to thee."""
 
+# The feasts have proper hymns rather than the week's tone. These are
+# sliced from the same volume's "Special Services", each anchored to the
+# opening words printed under the feast's own label — a canon's troparia
+# read just as plausibly, and the Paschal chapter labels one that is not
+# the Paschal Troparion at all.
+"ascension" = """Thou art ascended up into glory, O Christ our God, having made joyful thy disciples by the promise of thy Holy Spirit, the blessing which was announced unto them. For thou art the Son of God, the Redeemer of the world."""
+"feast:1-6" = """When in Jordan thou wast baptized, O Lord, the worship of the Trinity was made manifest For the voice of the Father bare witness unto thee, calling thee his beloved Son, and the Spirit, in the form of a Dove, confirmed the steadfastness of that word: O Christ our God, who didst manifest thyself, and dost enlighten the world, glory to thee."""
+"feast:11-21" = """To-day is the foreshadowing of the beneficence of God which is to come, and the heralding of man's salvation. The Virgin is clearly manifested in the temple of God, and in anticipation announceth Christ unto all men. Unto her let us, also, cry aloud: Hail, thou who art the fulfilment of the Creator's providence."""
+"feast:12-25" = """Thy Nativity, O Christ our God, hath arisen upon the world as the light of wisdom. For at it, they who worshipped the stars were, by a Star, taught to adore thee, the Sun of Righteousness, and to know thee, the Orient from on high. O Lord, glory to thee."""
+"feast:2-2" = """Hail, O Virgin Birth-giver of God: for from thee hath shone forth the Sun of Righteousness, Christ our God, who giveth light to those who are in darkness. And rejoice, thou aged, righteous man, that didst receive in thine arms the Redeemer of our souls, who giveth unto us resurrection."""
+"feast:3-25" = """To-day is the crown of our salvation, and the manifestation of that mystery which is from ever-lasting: The Son of God becometh the son of a Virgin, and Gabriel announceth the glad tidings of grace. Wherefore let us also cry aloud with him unto the Birth-giver of God: Hail, thou that art full of grace, the Lord is with thee!"""
+"feast:8-15" = """In Birth-giving thou didst preserve thy virginity; in thy Falling-asleep thou hast not forsaken the world, O Birth-giver of God. Thou hast passed over into life, thou who art the Mother of Life, and through thine intercessions dost deliver our souls from death."""
+"feast:8-6" = """Thou wast transfigured upon the Mount, O Christ-God, revealing unto thy disciples thy glory in so far as they were able to bear it. Let thy light everlasting illumine us sinners also; through the prayers of the Birth-giver of God. O Light-giver, glory to thee!"""
+"feast:9-14" = """O Lord, save thy people, and bless thine inheritance, granting victory over enemies unto our Sovereign, N., and through thy Cross preserving thine Estate."""
+"great_friday" = """Thou hast ransomed us from the curse of the law by thy precious blood; when thou wast nailed to the Cross and pierced with a spear, thou didst pour forth immortality for men, O our Saviour: glory to thee."""
+"palm_sunday" = """Thou didst raise Lazarus from the dead, O Christ our God, making certain the universal resurrection, before thy Passion. For which cause we also, like unto the children, bearing the emblems of victory, cry aloud unto thee, the Conqueror of Death: Hosanna in the highest! Blessed is he that cometh in the Name of the Lord."""
+"pascha" = """Christ is risen from the dead, trampling down Death by death, and upon those in the tomb bestowing life."""
+"pentecost" = """Blessed art thou, O Christ our God, who hast revealed fishers most wise, sending down upon them the Holy Spirit, and thereby catching the universe as in a net. O Christ our God, who lovest mankind, glory to thee."""
+
 [roman]
 kind = "The Collect"
 source = "The Roman Missal for the Use of the Laity, 1861"

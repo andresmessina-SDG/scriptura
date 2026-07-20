@@ -58,9 +58,9 @@ class TestAnglicanCoverage:
 class TestOrthodoxTones:
     """The Sundays after Pentecost are keyed by Octoechos tone, not by
     Sunday: the resurrectional Troparion cycles through eight tones, so 36
-    emitted Sunday keys resolve to 8 texts. Feast Tropária are not yet
-    extracted, so this asserts the Sunday cycle only — deliberately not
-    full-year coverage, which would be a false claim."""
+    emitted Sunday keys resolve to 8 texts. The great feasts have proper
+    hymns and are covered separately below — between them the year is still
+    only partly filled, which these tests assert rather than paper over."""
 
     def _sunday_keys(self):
         return sorted(
@@ -85,10 +85,11 @@ class TestOrthodoxTones:
         assert pack['aliases']['pentecost2'] == 'tone1'
         assert pack['aliases']['pentecost10'] == 'tone1'
 
-    def test_eight_distinct_texts(self):
+    def test_eight_distinct_tone_texts(self):
         texts = collects._pack()['orthodox']['texts']
-        assert len(texts) == 8
-        assert len(set(texts.values())) == 8
+        tones = {k: v for k, v in texts.items() if k.startswith('tone')}
+        assert len(tones) == 8
+        assert len(set(tones.values())) == 8
 
     def test_aliases_all_land(self):
         pack = collects._pack()['orthodox']
@@ -109,6 +110,49 @@ class TestOrthodoxTones:
         found = collects.collect_for('orthodox:pentecost7')
         assert found is not None
         assert found[1].startswith('The Troparion · Hapgood')
+
+
+class TestOrthodoxFeasts:
+    """The great feasts carry proper Tropária rather than the week's tone.
+    Hapgood's feast chapters are dense with troparia that are not the day's —
+    a canon has dozens, and the Paschal chapter labels the hymn of the Hours
+    the same way it labels the Paschal Troparion. So these guard the ways a
+    plausible-reading wrong hymn gets in."""
+
+    def _feasts(self):
+        texts = collects._pack()['orthodox']['texts']
+        return {k: v for k, v in texts.items() if not k.startswith('tone')}
+
+    def test_keyed_to_days_the_engine_emits(self):
+        emitted = {k.split(':', 1)[1] for k in _emitted_keys('orthodox')}
+        for sub in self._feasts():
+            assert sub in emitted, f'troparion keyed to a non-existent day: {sub}'
+
+    def test_pascha_is_the_paschal_troparion(self):
+        # The one assignment worth naming: the chapter's labelled troparion is
+        # "In the Grave with the body ...", the hymn of the Paschal Hours. It
+        # reads perfectly and it is the wrong hymn for the day.
+        found = collects.collect_for('orthodox:pascha')
+        assert found is not None
+        assert found[0].startswith('Christ is risen from the dead')
+
+    def test_no_two_feasts_share_a_hymn(self):
+        seen = {}
+        for sub, text in self._feasts().items():
+            assert text[:60] not in seen, f'{sub} duplicates {seen[text[:60]]}'
+            seen[text[:60]] = sub
+
+    def test_hymns_are_whole(self):
+        # A slice that stops short keeps the rubric that follows, or ends
+        # mid-clause; one that runs long swallows the Kondák or the
+        # Velitchánie, which belong to the feast but are not its Troparion.
+        for sub, text in self._feasts().items():
+            assert 90 < len(text) < 900, f'{sub}: implausible length'
+            assert text[-1] in '.!', f'{sub}: ends mid-clause'
+            assert not re.search(r'The Exaltation|Collect-Hymn|Velitch|Kond'
+                                 r'|Thrice|See page', text), f'{sub}: rubric'
+            assert not re.search(r'[\\%_{}|<>^]|Digitized|VjOOQ',
+                                 text), f'{sub}: scan mark'
 
 
 class TestRomanPartial:
