@@ -1,0 +1,327 @@
+"""Spoken audio for Spurgeon's *Morning and Evening*, from the publisher's
+own podcast feed.
+
+Crossway publish the whole devotional as a daily podcast, two episodes per
+calendar day, titled "July 20 | Morning" and "July 20 | Evening". That is a
+(month, day, session) key, which is exactly how the devotional itself is
+organised — so an episode can be matched to the entry on screen without
+guessing at anything. A public podcast feed is published precisely so that
+arbitrary clients may play it; nothing here scrapes a page or depends on
+undocumented internals.
+
+Two decisions worth keeping:
+
+* **Episodes are cached, never streamed.** The app reads offline and keeps no
+  telemetry; streaming would put a request on the publisher's analytics host
+  every time the reader pressed play. One download per episode (~5 MB) is
+  quieter, works on a train, and hands the pipeline a local file.
+* **The pipeline is explicit, not `Gtk.MediaFile`.** GTK's media widget routes
+  through GStreamer's `decodebin3`, which was measured aborting outright on
+  these files (`gstdecodebin3.c: assertion failed: (collection)`) while the
+  same audio decoded cleanly through `mpegaudioparse ! mpg123audiodec`. The
+  format is known — it is always MP3 — so nothing needs to be auto-detected
+  and the fragile path can simply be avoided.
+
+The network is touched only when a devotional this feed actually reads is
+open, and then only to fetch the day's episode once.
+"""
+from __future__ import annotations
+
+import datetime
+import json
+import os
+import re
+import urllib.request
+
+import paths
+
+#: Crossway's feed for the devotional. Resolved from the podcast's public
+#: directory listing; the publisher's own channel, not a mirror.
+FEED_URL = 'https://feeds.megaphone.fm/morningandevening'
+
+#: How long a cached copy of the feed index is trusted. The feed gains two
+#: episodes a day, so a day is ample and keeps the app off the network.
+INDEX_MAX_AGE = datetime.timedelta(hours=20)
+
+#: The hour from which the evening reading is the one meant. NOON, not the
+#: evensong hour the Today page uses for its epigraph: this is a book of two
+#: readings a day, and by any reckoning the afternoon belongs to the second
+#: one. At 16:00 an afternoon reader was handed the morning reading and had to
+#: go looking for the other.
+EVENING_HOUR = 12
+
+_UA = 'Scriptura (Bible reader; +https://codeberg.org/andresmessina/scriptura)'
+
+#: "July 20 | Evening" — the publisher's own title format.
+_TITLE = re.compile(
+    r'^\s*([A-Z][a-z]+)\s+(\d{1,2})\s*\|\s*(Morning|Evening)\s*$')
+
+_MONTHS = {m: i for i, m in enumerate(
+    ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+     'August', 'September', 'October', 'November', 'December'], start=1)}
+
+
+#: SWORD module keys that are this book. "SME" is CrossWire's own key for
+#: Spurgeon's Morning and Evening.
+_KNOWN_KEYS = {'sme'}
+
+
+def covers_module(module_name: str) -> bool:
+    """Whether this feed is a reading of *this* devotional.
+
+    The feed is one publisher reading one book. Offering its audio beside a
+    different devotional would put the wrong words over the right page, so the
+    module has to be the one the feed actually reads.
+
+    The name given is the SWORD module KEY, not the title shown in the header
+    — CrossWire ships this devotional as "SME" while the header reads
+    "Spurgeon — Morning & Evening". Matching only the readable title silently
+    matched nothing at all. The key is checked first; the descriptive test is
+    kept for other packagings of the same book.
+    """
+    n = re.sub(r'[^a-z]', '', (module_name or '').lower())
+    if n in _KNOWN_KEYS:
+        return True
+    return 'spurgeon' in n and 'morning' in n and 'evening' in n
+
+
+def session_for_hour(hour: int) -> str:
+    """Which half of the day an entry means at this hour."""
+    return 'evening' if hour >= EVENING_HOUR else 'morning'
+
+
+def _index_path() -> str:
+    return os.path.join(paths.cache_dir(), 'devotional_audio_index.json')
+
+
+def _episode_dir() -> str:
+    d = os.path.join(paths.cache_dir(), 'devotional_audio')
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def parse_feed(xml: str) -> dict[str, str]:
+    """{'MM-DD:session': enclosure_url} for every episode the feed carries.
+
+    Titles that are not a dated episode — the channel trailer, say — are
+    skipped rather than guessed at. An episode whose title cannot be read is
+    an episode the player does not offer.
+    """
+    out: dict[str, str] = {}
+    for block in re.findall(r'<item>(.*?)</item>', xml, re.S):
+        t = re.search(r'<title[^>]*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>',
+                      block, re.S)
+        url = re.search(r'<enclosure[^>]*url="([^"]+)"', block)
+        if not t or not url:
+            continue
+        m = _TITLE.match(re.sub(r'\s+', ' ', t.group(1)).strip())
+        if not m:
+            continue
+        month = _MONTHS.get(m.group(1))
+        if not month:
+            continue
+        out[f'{month:02d}-{int(m.group(2)):02d}:{m.group(3).lower()}'] = \
+            url.group(1)
+    return out
+
+
+def _load_index() -> dict[str, str]:
+    try:
+        with open(_index_path(), encoding='utf-8') as fh:
+            episodes = json.load(fh).get('episodes', {})
+        return {str(k): str(v) for k, v in episodes.items()}
+    except (OSError, ValueError):
+        return {}
+
+
+def _index_is_fresh() -> bool:
+    try:
+        age = datetime.datetime.now() - datetime.datetime.fromtimestamp(
+            os.path.getmtime(_index_path()))
+    except OSError:
+        return False
+    return age < INDEX_MAX_AGE
+
+
+def refresh_index(force: bool = False) -> dict[str, str]:
+    """The episode index, refetched only when the cached copy has aged out.
+
+    Blocking network work — call from a task worker. Returns the cached index
+    unchanged if the fetch fails: a feed that cannot be reached should leave
+    yesterday's answer standing, not erase it.
+    """
+    cached = _load_index()
+    if cached and not force and _index_is_fresh():
+        return cached
+    try:
+        req = urllib.request.Request(FEED_URL, headers={'User-Agent': _UA})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            episodes = parse_feed(resp.read().decode('utf-8', 'replace'))
+    except Exception:
+        return cached
+    if not episodes:
+        return cached
+    try:
+        with open(_index_path(), 'w', encoding='utf-8') as fh:
+            json.dump({'feed': FEED_URL, 'episodes': episodes}, fh)
+    except OSError:
+        pass
+    return episodes
+
+
+def episode_url(date: datetime.date, session: str,
+                index: dict[str, str] | None = None) -> str | None:
+    """The publisher's URL for one day's morning or evening reading, or None.
+
+    None is the honest answer for a day the feed has not published — the
+    control is simply not offered, rather than offered and broken.
+    """
+    idx = _load_index() if index is None else index
+    return idx.get(f'{date.month:02d}-{date.day:02d}:{session}')
+
+
+def cached_episode(url: str) -> str | None:
+    """The local copy of an episode, if it has already been fetched."""
+    p = os.path.join(_episode_dir(), _cache_name(url))
+    return p if os.path.exists(p) else None
+
+
+def _cache_name(url: str) -> str:
+    base = os.path.basename(url.split('?', 1)[0]) or 'episode'
+    return re.sub(r'[^A-Za-z0-9._-]', '_', base)[-64:]
+
+
+def fetch_episode(url: str) -> str | None:
+    """Download an episode and return its local path (or None).
+
+    Blocking — call from a task worker. Written to a .part file and renamed,
+    so an interrupted download can never be mistaken for a playable one.
+    """
+    have = cached_episode(url)
+    if have:
+        return have
+    dest = os.path.join(_episode_dir(), _cache_name(url))
+    part = dest + '.part'
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': _UA})
+        with urllib.request.urlopen(req, timeout=60) as resp, \
+                open(part, 'wb') as fh:
+            while True:
+                chunk = resp.read(65536)
+                if not chunk:
+                    break
+                fh.write(chunk)
+        os.replace(part, dest)
+        return dest
+    except Exception:
+        try:
+            os.unlink(part)
+        except OSError:
+            pass
+        return None
+
+
+class Player:
+    """One devotional playing at a time, on an explicit GStreamer pipeline.
+
+    Deliberately small: play, pause, stop, and where it has got to. There is
+    no scrubber and no time readout, because this is a devotional being read
+    aloud rather than a media library — see the Today page's own restraint.
+    """
+
+    def __init__(self) -> None:
+        self._pipeline = None
+        self._path: str | None = None
+
+    @staticmethod
+    def _gst():
+        """The Gst module, version-pinned and initialised once.
+
+        Imported here rather than at module scope so that a build without
+        GStreamer still loads the app; pinned every time because an
+        unversioned `from gi.repository import Gst` warns.
+        """
+        import gi
+        gi.require_version('Gst', '1.0')
+        from gi.repository import Gst
+        if not Gst.is_initialized():
+            Gst.init(None)
+        return Gst
+
+    #: Memoised: initialising GStreamer builds its plugin registry and probes
+    #: hardware video drivers, which was measured taking seconds on a cold
+    #: cache. This is asked on every date change, so it must be paid once.
+    _available: bool | None = None
+
+    @staticmethod
+    def available() -> bool:
+        """Whether GStreamer can be used at all in this build.
+
+        Only ever reached when the reader has turned the feature on — the
+        caller checks the setting first, so a default install never
+        initialises GStreamer at all.
+        """
+        if Player._available is None:
+            try:
+                Player._gst()
+                Player._available = True
+            except Exception:
+                Player._available = False
+        return Player._available
+
+    def _build(self, path: str):
+        Gst = self._gst()
+        # Explicit, because the format is known. decodebin3 — which
+        # Gtk.MediaFile uses — was measured aborting on these files.
+        return Gst.parse_launch(
+            f'filesrc location="{path}" ! mpegaudioparse ! mpg123audiodec'
+            ' ! audioconvert ! audioresample ! autoaudiosink')
+
+    def play(self, path: str) -> bool:
+        """Start (or resume) a file. True if the pipeline took it."""
+        Gst = self._gst()
+        if self._pipeline is not None and self._path != path:
+            self.stop()
+        if self._pipeline is None:
+            try:
+                self._pipeline = self._build(path)
+            except Exception:
+                self._pipeline = None
+                return False
+            self._path = path
+        pipeline = self._pipeline
+        if pipeline is None:
+            return False
+        return bool(pipeline.set_state(Gst.State.PLAYING)
+                    != Gst.StateChangeReturn.FAILURE)
+
+    def pause(self) -> None:
+        if self._pipeline is not None:
+            self._pipeline.set_state(self._gst().State.PAUSED)
+
+    def stop(self) -> None:
+        if self._pipeline is not None:
+            self._pipeline.set_state(self._gst().State.NULL)
+        self._pipeline = None
+        self._path = None
+
+    @property
+    def playing(self) -> bool:
+        if self._pipeline is None:
+            return False
+        return self._pipeline.get_state(0)[1] == self._gst().State.PLAYING
+
+    def progress(self) -> float:
+        """How far through, 0.0–1.0. Zero until the pipeline knows."""
+        if self._pipeline is None:
+            return 0.0
+        Gst = self._gst()
+        ok_p, pos = self._pipeline.query_position(Gst.Format.TIME)
+        ok_d, dur = self._pipeline.query_duration(Gst.Format.TIME)
+        if not (ok_p and ok_d) or dur <= 0:
+            return 0.0
+        return max(0.0, min(1.0, pos / dur))
+
+    def ended(self) -> bool:
+        """Whether playback has run to the end of the file."""
+        return self._pipeline is not None and self.progress() >= 0.999

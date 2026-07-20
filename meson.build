@@ -43,6 +43,7 @@ py_sources = files(
   'content.py',
   'crossref_panel.py',
   'devotional.py',
+  'devotional_audio.py',
   'ebible_bridge.py',
   'empty_state.py',
   'genbook_reader.py',

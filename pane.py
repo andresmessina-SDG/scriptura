@@ -2,6 +2,7 @@ import html as _html_mod
 import threading
 import colorsys
 import re
+import datetime
 from datetime import date as _date, timedelta
 import gi
 gi.require_version('Gtk', '4.0')
@@ -30,6 +31,7 @@ from module_picker import ModulePicker
 
 
 import devotional
+import devotional_audio
 import annotation_dialogs
 from lexicon_panel import LexiconPanel
 from pane_search import PaneSearch
@@ -1221,12 +1223,18 @@ class BiblePane(Gtk.Box):
         date_nav.append(self._date_label)
         date_nav.append(today_btn)
         date_nav.append(next_day_btn)
+        date_nav.add_css_class('devotional-date-nav')
         self._date_nav = date_nav
+        self._build_devotional_audio(date_nav)
 
         self._date_nav_revealer = Gtk.Revealer()
         self._date_nav_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
         self._date_nav_revealer.set_transition_duration(200)
-        self._date_nav_revealer.set_child(date_nav)
+        date_nav_stack = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        date_nav_stack.append(date_nav)
+        date_nav_stack.append(self._devot_progress)
+        self._date_nav = date_nav_stack     # measured for the page strip
+        self._date_nav_revealer.set_child(date_nav_stack)
         self._date_nav_revealer.set_reveal_child(False)
 
         # The pane toolbar auto-hides while reading (scroll down to get it
@@ -2524,6 +2532,7 @@ class BiblePane(Gtk.Box):
         module = self._module
         date_obj = self._devotional_date
         self._date_label.set_text(date_obj.strftime('%B %-d, %Y'))
+        self._sync_devotional_audio(date_obj)
 
         def fetch():
             raw = sword_bridge.get_devotional_raw(module, date_obj)
@@ -2548,6 +2557,199 @@ class BiblePane(Gtk.Box):
                 + '</span>', -1)
         self._view.get_vadjustment().set_value(0)
         return GLib.SOURCE_REMOVE
+
+    # ── Devotional audio ─────────────────────────────────────────────────
+    # A published reading of the day's devotional, played from the chrome row
+    # the date navigation already occupies. Two rules shape it:
+    #   * the clock decides which half of the day is meant, exactly as the
+    #     Today page's epigraph does — pressing play in the morning plays the
+    #     morning reading, and nobody has to choose;
+    #   * the other half is reachable but not advertised — it appears on hover
+    #     or on keyboard focus, so the row stays a date navigator with a play
+    #     button rather than becoming a media bar.
+    # The control is built only if the feature is on AND the day actually has
+    # a reading: an absent episode leaves no button, never a dead one.
+
+    def _build_devotional_audio(self, row):
+        self._devot_player = None
+        self._devot_play_btn = Gtk.Button(icon_name='media-playback-start-symbolic')
+        self._devot_play_btn.add_css_class('flat')
+        self._devot_play_btn.add_css_class('devotional-play')
+        self._devot_play_btn.connect('clicked', self._on_devot_play)
+        self._devot_alt_btn = Gtk.Button()
+        self._devot_alt_btn.add_css_class('flat')
+        self._devot_alt_btn.add_css_class('devotional-alt')
+        self._devot_alt_btn.connect('clicked', self._on_devot_alt)
+        # Hidden until the row is pointed at or focused — see the CSS; the
+        # widget stays in the layout so revealing it never shifts the row.
+        audio = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        audio.add_css_class('devotional-audio')
+        # A hairline of its own: listening and moving between days are two
+        # different things, and undivided they read as one undifferentiated
+        # strip with the back arrow pushed out of the place the eye expects.
+        sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+        sep.add_css_class('devotional-audio-rule')
+        audio.append(sep)
+        # The reading in hand is named plainly and always. Without it the
+        # alternate's label was the only word in the row, so "Evening" beside
+        # a pause icon read as what was playing rather than as what was on
+        # offer — the opposite of the truth.
+        self._devot_cur_lbl = Gtk.Label()
+        self._devot_cur_lbl.add_css_class('devotional-current')
+        audio.append(self._devot_play_btn)
+        audio.append(self._devot_cur_lbl)
+        audio.append(self._devot_alt_btn)
+        audio.set_visible(False)
+        row.append(audio)
+        self._devot_audio_row = audio
+        # Where the reading has got to: a hairline under the row, filling as
+        # it plays. No elapsed time and no scrubber — the page counts nothing
+        # else either (see today_page.progress_whisper).
+        self._devot_progress = Gtk.ProgressBar()
+        self._devot_progress.add_css_class('devotional-progress')
+        self._devot_progress.set_visible(False)
+        self._devot_session = None
+        self._devot_tick = None
+
+    def _sync_devotional_audio(self, date_obj):
+        """Offer the player for this day, or withdraw it entirely.
+
+        There is no setting to consult. The control appears when the open
+        module is a devotional this feed actually reads AND the feed has
+        published that day's reading — otherwise there is simply nothing
+        there, which is the honest state and never a dead button.
+        """
+        if self._devot_audio_row is None:
+            return
+        self._stop_devotional_audio()
+        if date_obj is None or not devotional_audio.covers_module(self._module):
+            self._devot_audio_row.set_visible(False)
+            return
+        session = devotional_audio.session_for_hour(
+            datetime.datetime.now().hour)
+        if devotional_audio.episode_url(date_obj, session) is None:
+            # No index yet (or it has aged out). Fetch it off the UI thread
+            # and come back — the control stays absent until it is known to
+            # work, rather than appearing and then failing.
+            self._devot_audio_row.set_visible(False)
+            tasks.submit(
+                key=f'devot-index:{id(self)}',
+                work=lambda _t: devotional_audio.refresh_index(),
+                apply=lambda _idx: self._on_devot_index(date_obj),
+                on_error=lambda _e: None)
+            return
+        self._show_devotional_audio(date_obj, session)
+
+    def _on_devot_index(self, date_obj):
+        """The feed index has arrived; offer the control if it helps."""
+        if self._devot_audio_row is None or self._devotional_date != date_obj:
+            return
+        session = devotional_audio.session_for_hour(
+            datetime.datetime.now().hour)
+        if devotional_audio.episode_url(date_obj, session) is not None:
+            self._show_devotional_audio(date_obj, session)
+
+    def _show_devotional_audio(self, date_obj, session):
+        self._devot_audio_row.set_visible(True)
+        self._devot_session = session
+        self._devot_date = date_obj
+        self._refresh_devot_labels()
+
+    def _on_devot_alt(self, _btn):
+        """Switch to the other reading of this day and start it.
+
+        The alternate always names what it will switch TO, never what is
+        playing — so it has to be relabelled the moment it is used, or it goes
+        on offering the reading you just chose.
+        """
+        self._devot_session = ('evening' if self._devot_session == 'morning'
+                               else 'morning')
+        self._stop_devotional_audio()
+        self._refresh_devot_labels()
+        self._on_devot_play(None)
+
+    def _refresh_devot_labels(self):
+        """Name the current reading on the play button and the other one on
+        the alternate. The play button carries the only statement of which
+        reading is in hand — there is no second line of chrome saying so."""
+        session = self._devot_session
+        other = 'evening' if session == 'morning' else 'morning'
+        current_name = _('Evening') if session == 'evening' else _('Morning')
+        other_name = _('Evening') if other == 'evening' else _('Morning')
+        self._devot_cur_lbl.set_text(current_name)
+        self._devot_alt_btn.set_label(other_name)
+        self._devot_alt_btn.set_visible(
+            devotional_audio.episode_url(self._devot_date, other) is not None)
+        self._devot_play_btn.set_tooltip_text(current_name)
+        self._devot_alt_btn.set_tooltip_text(other_name)
+        set_accessible_label(
+            self._devot_play_btn,
+            _('Play the evening reading') if session == 'evening'
+            else _('Play the morning reading'))
+        set_accessible_label(
+            self._devot_alt_btn,
+            _('Switch to the morning reading') if other == 'morning'
+            else _('Switch to the evening reading'))
+
+    def _on_devot_play(self, _btn):
+        if self._devot_player is not None and self._devot_player.playing:
+            self._devot_player.pause()
+            self._devot_play_btn.set_icon_name('media-playback-start-symbolic')
+            return
+        url = devotional_audio.episode_url(self._devot_date,
+                                           self._devot_session)
+        if not url:
+            return
+        self._devot_play_btn.set_icon_name('media-playback-pause-symbolic')
+        cached = devotional_audio.cached_episode(url)
+        if cached:
+            self._start_devotional_audio(cached)
+            return
+        # Fetched once, then kept: the reading is ~5 MB and this is the only
+        # moment the feature touches the network.
+        tasks.submit(
+            key=f'devot-audio:{id(self)}',
+            work=lambda _t: devotional_audio.fetch_episode(url),
+            apply=self._start_devotional_audio,
+            on_error=lambda _e: self._devot_play_btn.set_icon_name(
+                'media-playback-start-symbolic'))
+
+    def _start_devotional_audio(self, path):
+        if not path:
+            self._devot_play_btn.set_icon_name('media-playback-start-symbolic')
+            return
+        if self._devot_player is None:
+            self._devot_player = devotional_audio.Player()
+        if not self._devot_player.play(path):
+            self._devot_play_btn.set_icon_name('media-playback-start-symbolic')
+            return
+        self._devot_play_btn.set_icon_name('media-playback-pause-symbolic')
+        if self._devot_tick is None:
+            self._devot_tick = GLib.timeout_add(
+                500, self._on_devotional_audio_tick)
+
+    def _on_devotional_audio_tick(self):
+        if self._devot_player is None:
+            self._devot_tick = None
+            return GLib.SOURCE_REMOVE
+        if self._devot_player.ended():
+            self._stop_devotional_audio()
+            return GLib.SOURCE_REMOVE
+        self._devot_progress.set_fraction(self._devot_player.progress())
+        self._devot_progress.set_visible(True)
+        return GLib.SOURCE_CONTINUE
+
+    def _stop_devotional_audio(self):
+        if self._devot_tick is not None:
+            GLib.source_remove(self._devot_tick)
+            self._devot_tick = None
+        if self._devot_player is not None:
+            self._devot_player.stop()
+            self._devot_player = None
+        if self._devot_audio_row is not None:
+            self._devot_play_btn.set_icon_name('media-playback-start-symbolic')
+            self._devot_progress.set_fraction(0.0)
+            self._devot_progress.set_visible(False)
 
     def _go_devotional_day(self, delta, reset=False):
         if reset:

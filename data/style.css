@@ -1503,6 +1503,74 @@ button.genbook-synopsis-toggle label {
 .module-manager row:hover button.module-row-action,
 .module-manager row:focus-within button.module-row-action { opacity: 1; }
 
+/* ── Devotional audio (opt-in) ───────────────────────────────────────── */
+/* The date row gains a play button when the day's devotional has a published
+   reading. Softness comes from a faint tint and the band's own hairline, not
+   from a blur: a blurred control is an unreadable control, and this app's one
+   admitted weakness is accessibility. Depth stays at level 0 — no card, no
+   shadow, no box. */
+.devotional-date-nav {
+    background-color: alpha(@window_fg_color, 0.04);
+    border-radius: 8px;
+    padding: 1px 2px;
+}
+/* The other half of the day is reachable but never advertised: it fades in on
+   hover or on keyboard focus. Opacity, not visibility — the widget keeps its
+   slot, so revealing it cannot shift the row under the pointer. */
+/* The reading in hand: quiet, but always present — it is the only thing
+   telling the reader which of the two is loaded. */
+.devotional-current {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    opacity: 0.75;
+    margin: 0 2px;
+}
+/* Caption weight, so the word sits UNDER the icons rather than beside them
+   as an equal — a text button at full weight next to a symbolic one reads as
+   the louder of the two, which it is not. */
+.devotional-alt {
+    opacity: 0;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    min-height: 0;
+    padding: 1px 7px;
+    transition: opacity 150ms ease-out;
+}
+.devotional-date-nav:hover .devotional-alt,
+.devotional-date-nav:focus-within .devotional-alt {
+    opacity: 0.62;
+}
+.devotional-alt:hover { opacity: 1; }
+/* The rule dividing listening from navigating. Faint, inset, and no taller
+   than the glyphs it stands between. */
+.devotional-audio-rule {
+    background-color: alpha(@borders, 0.55);
+    margin: 5px 6px 5px 2px;
+}
+/* How far through the reading. Neutral ink, not the accent: the accent means
+   "goes to the Bible", and this is neither an action nor navigation. It shows
+   only while something is playing, so the row is unchanged at rest. */
+progressbar.devotional-progress,
+progressbar.devotional-progress > trough,
+progressbar.devotional-progress > trough > progress {
+    min-height: 2px;
+}
+/* The track is faintly drawn, not transparent. Left invisible, an early
+   reading shows as a short dash in the corner with nothing to belong to —
+   it reads as a rendering fault rather than as three minutes barely begun. */
+progressbar.devotional-progress > trough {
+    background-color: alpha(@window_fg_color, 0.09);
+    border: none;
+    border-radius: 2px;
+}
+progressbar.devotional-progress > trough > progress {
+    background-color: alpha(@window_fg_color, 0.35);
+    border: none;
+    border-radius: 2px;
+}
+
 /* ── Today page (the Morning Office landing) ─────────────────────────── */
 /* Pure typography on the reading paper — the landing is a page, not a
    dashboard. Paper / ink / serif family come from the pane's live
