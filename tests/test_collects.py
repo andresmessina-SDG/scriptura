@@ -54,6 +54,62 @@ class TestAnglicanCoverage:
         assert collects.collect_for('') is None
 
 
+class TestOrthodoxTones:
+    """The Sundays after Pentecost are keyed by Octoechos tone, not by
+    Sunday: the resurrectional Troparion cycles through eight tones, so 36
+    emitted Sunday keys resolve to 8 texts. Feast Tropária are not yet
+    extracted, so this asserts the Sunday cycle only — deliberately not
+    full-year coverage, which would be a false claim."""
+
+    def _sunday_keys(self):
+        return sorted(
+            (k for k in _emitted_keys('orthodox')
+             if k.split(':', 1)[1].startswith('pentecost')
+             and k.split(':', 1)[1][9:].isdigit()),
+            key=lambda k: int(k.split(':', 1)[1][9:]))
+
+    def test_every_sunday_after_pentecost_resolves(self):
+        keys = self._sunday_keys()
+        assert len(keys) >= 32, f'expected the full cycle, got {len(keys)}'
+        for key in keys:
+            assert collects.collect_for(key) is not None, key
+
+    def test_tone_cycle_matches_hapgood_rubric(self):
+        # Hapgood: the Second Sunday takes the First Tone, and "on the tenth
+        # Sunday after Pentecost, the First Tone is used again."
+        pack = collects._pack()['orthodox']
+        for n in range(2, 38):
+            expected = f'tone{((n - 1) % 8) or 8}'
+            assert pack['aliases'][f'pentecost{n}'] == expected, n
+        assert pack['aliases']['pentecost2'] == 'tone1'
+        assert pack['aliases']['pentecost10'] == 'tone1'
+
+    def test_eight_distinct_texts(self):
+        texts = collects._pack()['orthodox']['texts']
+        assert len(texts) == 8
+        assert len(set(texts.values())) == 8
+
+    def test_aliases_all_land(self):
+        pack = collects._pack()['orthodox']
+        for alias, target in pack['aliases'].items():
+            assert target in pack['texts'], f'alias to nowhere: {alias}'
+
+    def test_texts_are_clean_of_scan_artifacts(self):
+        # The source is OCR; these are the failure signatures a bad
+        # extraction leaves behind (stray marks, run-on words, page furniture).
+        import re
+        for sub, text in collects._pack()['orthodox']['texts'].items():
+            assert not re.search(r'[\\%_{}|]', text), sub
+            assert 'Digitized' not in text, sub
+            assert 'exultinglyto' not in text, sub
+            assert text[-1] in '.!', sub
+
+    def test_source_line(self):
+        found = collects.collect_for('orthodox:pentecost7')
+        assert found is not None
+        assert found[1].startswith('The Troparion · Hapgood')
+
+
 class TestEpigraphFallback:
     def test_collect_fills_empty_devotional_slot(self, monkeypatch):
         import sword_bridge

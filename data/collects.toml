@@ -6,6 +6,12 @@
 # Anglican section extracted 2026-07-19 from
 # https://www.churchofengland.org/prayer-and-worship/worship-texts-and-resources/book-common-prayer/collects-epistles-and-gospels-0
 # (the Church of England's online 1662 Book of Common Prayer).
+# Orthodox section extracted 2026-07-19 from Hapgood's Service Book (1906),
+# archive.org/details/ServiceBookOfHolyOrthodoxChurchByHapgood, Appendix A
+# "The Eight Tones" (scratchpad build_orthodox.py). Sundays after Pentecost
+# are keyed by Octoechos tone, not by Sunday — see the [orthodox.aliases]
+# note. One OCR correction is recorded in that script; the feast Tropária
+# are not yet extracted.
 
 [anglican]
 kind = "The Collect"
@@ -102,3 +108,61 @@ source = "The Book of Common Prayer, 1662"
 "feast:11-1" = """O Almighty God, who hast knit together thine elect in one communion and fellowship, in the mystical body of thy Son Christ our Lord: Grant us grace so to follow thy blessed Saints in all virtuous and godly living, that we may come to those unspeakable joys, which thou hast prepared for them that unfeignedly love thee; through Jesus Christ our Lord. Amen."""
 "feast:12-28" = """O Almighty God, who out of the mouths of babes and sucklings hast ordained strength, and madest infants to glorify thee by their deaths: Mortify and kill all vices in us, and so strengthen us by thy grace, that by the innocency of our lives, and constancy of our faith, even unto death, we may glorify thy holy Name; through Jesus Christ our Lord. Amen."""
 "ash_wednesday" = """Almighty and everlasting God, who hatest nothing that thou hast made, and dost forgive the sins of all them that are penitent: Create and make in us new and contrite hearts, that we worthily lamenting our sins, and acknowledging our wretchedness, may obtain of thee, the God of all mercy, perfect remission and forgiveness; through Jesus Christ our Lord. Amen."""
+
+[orthodox]
+kind = "The Troparion"
+source = "Hapgood, Service Book of the Holy Orthodox-Catholic Apostolic Church, 1906"
+
+# The Octoechos cycles eight tones through the Sundays after
+# Pentecost, so the resurrectional Troparion of the week is fixed
+# by the tone, not by the Sunday: tone = ((N - 1) mod 8) or 8.
+# Hapgood states the rule (p. xxvi): the Second Sunday takes the
+# First Tone, and "on the tenth Sunday after Pentecost, the First
+# Tone is used again."
+[orthodox.aliases]
+"pentecost2" = "tone1"
+"pentecost3" = "tone2"
+"pentecost4" = "tone3"
+"pentecost5" = "tone4"
+"pentecost6" = "tone5"
+"pentecost7" = "tone6"
+"pentecost8" = "tone7"
+"pentecost9" = "tone8"
+"pentecost10" = "tone1"
+"pentecost11" = "tone2"
+"pentecost12" = "tone3"
+"pentecost13" = "tone4"
+"pentecost14" = "tone5"
+"pentecost15" = "tone6"
+"pentecost16" = "tone7"
+"pentecost17" = "tone8"
+"pentecost18" = "tone1"
+"pentecost19" = "tone2"
+"pentecost20" = "tone3"
+"pentecost21" = "tone4"
+"pentecost22" = "tone5"
+"pentecost23" = "tone6"
+"pentecost24" = "tone7"
+"pentecost25" = "tone8"
+"pentecost26" = "tone1"
+"pentecost27" = "tone2"
+"pentecost28" = "tone3"
+"pentecost29" = "tone4"
+"pentecost30" = "tone5"
+"pentecost31" = "tone6"
+"pentecost32" = "tone7"
+"pentecost33" = "tone8"
+"pentecost34" = "tone1"
+"pentecost35" = "tone2"
+"pentecost36" = "tone3"
+"pentecost37" = "tone4"
+
+[orthodox.texts]
+"tone1" = """While the stone was sealed by the Jews, and soldiers stood on guard over thy body undefiled, thou didst rise on the third day, O Saviour, who givest life unto the world. For which cause the Heavenly Powers cried aloud unto thee, O Giver of Life: Glory to thy resurrection, O Christ! Glory to thy kingdom! Glory to thy providence, O thou who alone lovest mankind!"""
+"tone2" = """When thou didst condescend unto death, O Life Immortal, thou didst slay Hell with the lightning flash of thy divinity. When also thou didst raise up the dead from the subterranean abodes, all the Powers of heaven cried aloud: O Life-giver, Christ our God, glory to thee!"""
+"tone3" = """Let the heavens rejoice and let the earth be glad, for the Lord hath showed strength with his arm; he hath trampled down Death by death; he is become the first-born of the dead; from the womb of Hell hath he delivered us, and unto the world hath he vouchsafed great mercy."""
+"tone4" = """When the Women Disciples of the Lord had learned from the Angels the glad tidings of the Resurrection, and had cast away the condemnation of their forefathers, they spake exultingly to the Apostles: Death is no more; Christ-God is risen, granting unto the world great mercy."""
+"tone5" = """The Word, who with the Father and the Spirit hath no beginning, and who, for our salvation, was born of a Virgin, let us faithful believers hymn and adore. For it was his good pleasure to ascend the cross in the flesh, and to suffer death, and through his own glorious Resurrection to raise the dead."""
+"tone6" = """The Angelic Powers were in thy sepulchre, and the guards became as dead men, and Mary stood by the tomb seeking thy most pure body. Thou didst despoil Hell, yet wert not tempted thereby; thou who art the bestower of life didst come to meet the Woman. Glory to thee, O Lord, who didst rise again from the dead."""
+"tone7" = """By thy cross thou didst destroy death; thou didst open paradise to the Thief; thou didst change the funeral wail of the Myrrh-bearing Women, and didst command them to announce unto thine Apostles that thou wert risen from the dead, O Christ our God, who bestowest on the world great mercy."""
+"tone8" = """Thou didst descend from on high, O Tender-hearted One; thou didst endure the three-days' burial, that thou mightest free us from our passions, O our Life and Resurrection. Glory, O Lord, to thee."""
