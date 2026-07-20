@@ -1549,26 +1549,35 @@ button.genbook-synopsis-toggle label {
     background-color: alpha(@borders, 0.55);
     margin: 5px 6px 5px 2px;
 }
-/* How far through the reading. Neutral ink, not the accent: the accent means
-   "goes to the Bible", and this is neither an action nor navigation. It shows
-   only while something is playing, so the row is unchanged at rest. */
-progressbar.devotional-progress,
-progressbar.devotional-progress > trough,
-progressbar.devotional-progress > trough > progress {
-    min-height: 2px;
+/* How far through a reading — used by both players, the devotional's under
+   its date row and the psalm's under the pane toolbar. Neutral ink, not the
+   accent: the accent means "goes to the Bible", and this is neither an action
+   nor navigation.
+
+   Inset by 16px each side, which is the reading card's own border-radius, so
+   the line runs the width of the card's straight edge and stops short of its
+   corners.
+
+   Shaped after .plan-progress, the app's own meter. `border: none` on the
+   progress node is what made GTK compute a negative min width and warn on
+   every layout pass; the working precedent sets `margin: 0` instead. */
+progressbar.reading-progress,
+progressbar.reading-progress > trough,
+progressbar.reading-progress > trough > progress {
+    min-height: 4px;
 }
-/* The track is faintly drawn, not transparent. Left invisible, an early
-   reading shows as a short dash in the corner with nothing to belong to —
-   it reads as a rendering fault rather than as three minutes barely begun. */
-progressbar.devotional-progress > trough {
+progressbar.reading-progress {
+    margin-left: 16px;
+    margin-right: 16px;
+}
+progressbar.reading-progress > trough {
+    border-radius: 999px;
     background-color: alpha(@window_fg_color, 0.09);
-    border: none;
-    border-radius: 2px;
 }
-progressbar.devotional-progress > trough > progress {
+progressbar.reading-progress > trough > progress {
+    border-radius: 999px;
     background-color: alpha(@window_fg_color, 0.35);
-    border: none;
-    border-radius: 2px;
+    margin: 0;
 }
 
 /* ── Today page (the Morning Office landing) ─────────────────────────── */
