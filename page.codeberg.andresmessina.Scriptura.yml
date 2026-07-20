@@ -10,6 +10,9 @@ finish-args:
   - --share=ipc
   - --device=dri
   - --share=network
+  # Spoken devotional audio (opt-in, off by default). Playback only —
+  # nothing is recorded and no microphone access is requested.
+  - --socket=pulseaudio
   - --persist=.sword
   # Evening paper follows GNOME Night Light (read-only property watch);
   # without this the monitor stays silently inert in the sandbox.
