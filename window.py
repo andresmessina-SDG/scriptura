@@ -11,6 +11,7 @@ from gi.repository import Gtk, Adw, GLib, Gdk, Gio, PangoCairo
 from gtk_utils import clear_children
 import sword_bridge
 import settings
+import devotional_audio
 import tasks
 import motion
 import night_light
@@ -733,7 +734,8 @@ class BibleWindow(Adw.ApplicationWindow):
             self._today_view = TodayView(
                 on_begin=self._on_today_begin,
                 on_continue=self._on_today_continue,
-                on_choose_plans=self._on_today_choose_plans)
+                on_choose_plans=self._on_today_choose_plans,
+                on_listen=self._on_today_listen)
             self._today_revealer = Gtk.Revealer()
             self._today_revealer.set_transition_type(
                 Gtk.RevealerTransitionType.SLIDE_DOWN)
@@ -2664,6 +2666,7 @@ class BibleWindow(Adw.ApplicationWindow):
         # line is the previous calendar's, and it must not stand under the new
         # day's name for however long the lookup takes.
         self._today_view.clear_epigraph()
+        self._sync_today_listen()
         tasks.submit(
             key=f'today-epigraph:{id(self)}',
             work=lambda _t: fetch_epigraph(collect_key),
@@ -2682,6 +2685,94 @@ class BibleWindow(Adw.ApplicationWindow):
             self._today_view.set_epigraph(*result)
         else:
             self._today_view.clear_epigraph()
+
+    # ── Today's spoken devotional ────────────────────────────────────────
+    # Offered only for the current day. Its feed is a rolling thirty-day
+    # window rather than a back catalogue, so any other date is simply absent
+    # — and a control that worked in July and failed in October, for reasons
+    # no reader could see, would be worse than no control at all.
+
+    def _sync_today_listen(self):
+        if self._today_view is None:
+            return
+        today = datetime.date.today()
+        got = devotional_audio.todays_strength(today)
+        if got is not None:
+            self._today_listen = got
+            self._today_view.set_listen(got[1])
+            return
+        self._today_view.clear_listen()
+        tasks.submit(
+            key=f'today-listen:{id(self)}',
+            work=lambda _t: devotional_audio.refresh_index(
+                feed=devotional_audio.DAILY_STRENGTH_FEED_URL),
+            apply=lambda _i: self._on_today_listen_index(today),
+            on_error=lambda _e: None)
+
+    def _on_today_listen_index(self, day):
+        if self._today_view is None or datetime.date.today() != day:
+            return
+        got = devotional_audio.todays_strength(day)
+        if got is not None:
+            self._today_listen = got
+            self._today_view.set_listen(got[1])
+
+    def _on_today_listen(self):
+        player = getattr(self, '_today_player', None)
+        if player is not None and player.playing:
+            player.pause()
+            self._today_view.set_listen(self._today_listen[1])
+            return
+        if not getattr(self, '_today_listen', None):
+            return
+        url, title = self._today_listen
+        self._today_view.set_listen(title, playing=True)
+        cached = devotional_audio.cached_episode(url)
+        if cached:
+            self._start_today_listen(cached)
+            return
+        tasks.submit(
+            key=f'today-audio:{id(self)}',
+            work=lambda _t: devotional_audio.fetch_episode(url),
+            apply=self._start_today_listen,
+            on_error=lambda _e: self._stop_today_listen())
+
+    def _start_today_listen(self, path):
+        if not path or self._today_view is None:
+            self._stop_today_listen()
+            return
+        if getattr(self, '_today_player', None) is None:
+            self._today_player = devotional_audio.Player()
+        if not self._today_player.play(path):
+            self._stop_today_listen()
+            return
+        self._today_view.set_listen(self._today_listen[1], playing=True)
+        if getattr(self, '_today_listen_tick', None) is None:
+            self._today_listen_tick = GLib.timeout_add(
+                500, self._on_today_listen_tick)
+
+    def _on_today_listen_tick(self):
+        player = getattr(self, '_today_player', None)
+        if player is None or self._today_view is None:
+            self._today_listen_tick = None
+            return GLib.SOURCE_REMOVE
+        if player.ended():
+            self._stop_today_listen()
+            return GLib.SOURCE_REMOVE
+        self._today_view.set_listen_progress(player.progress())
+        return GLib.SOURCE_CONTINUE
+
+    def _stop_today_listen(self):
+        if getattr(self, '_today_listen_tick', None) is not None:
+            GLib.source_remove(self._today_listen_tick)
+        self._today_listen_tick = None
+        if getattr(self, '_today_player', None) is not None:
+            self._today_player.stop()
+            self._today_player = None
+        if self._today_view is not None:
+            if getattr(self, '_today_listen', None):
+                self._today_view.set_listen(self._today_listen[1])
+            self._today_view.set_listen_progress(0.0, showing=False)
 
     def _set_church_calendar(self, tradition):
         """Change the calendar, and let the Today page say so at once.
@@ -2705,6 +2796,7 @@ class BibleWindow(Adw.ApplicationWindow):
             Adw.StyleManager.get_default().disconnect(self._today_dark_handler)
             self._today_dark_handler = None
         tasks.cancel(f'today-epigraph:{id(self)}')
+        self._stop_today_listen()
         # can_target off immediately so the sliding page never eats a click;
         # fully hidden (and out of the picking/AT tree) after the slide.
         revealer.set_can_target(False)

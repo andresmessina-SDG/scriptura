@@ -1636,6 +1636,22 @@ progressbar.reading-progress > trough > progress {
    longer line of the pair and full of proper nouns, so at the epigraph's
    weight it out-shouted the primary one and left the gold doing all the work
    of telling them apart. */
+/* Today's spoken devotional: one mark in the margin, not a card. The page is
+   type on paper and the design law puts the reading surface at depth 0 with
+   no boxes; a bounded panel was the only edged object on the whole surface.
+   The disc's fill and the ring's ink are paper-aware and set from
+   today_page.set_appearance — this page's ink is the pane's, not the theme's,
+   and a provider added to the card would never reach the button inside it. */
+button.today-listen-play {
+    min-width: 42px;
+    min-height: 42px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background-image: none;
+    box-shadow: none;
+}
+
 .today-quiet {
     font-size: 14px;
     opacity: 0.62;

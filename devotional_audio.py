@@ -39,6 +39,18 @@ import paths
 #: directory listing; the publisher's own channel, not a mirror.
 FEED_URL = 'https://feeds.megaphone.fm/morningandevening'
 
+#: "Daily Strength: A 365-Day Devotional for Men" — the same publisher, but
+#: its feed is a ROLLING THIRTY-DAY WINDOW rather than a back catalogue, so a
+#: date outside it simply does not exist. Only the current day is ever offered:
+#: today is always in the window, and a control that worked in July and failed
+#: in October for reasons no reader could see would be worse than none.
+DAILY_STRENGTH_FEED_URL = 'https://feeds.megaphone.fm/dailystrength'
+
+#: "July 20 - Discipleship through Discipline" — a date and the day's title.
+_DATED_TITLE = re.compile(
+    r'^\s*([A-Z][a-z]+)\s+(\d{1,2})\s*[-–—]\s*(.+?)\s*$')
+
+
 #: "In the Lord I Take Refuge" — Dane Ortlund's daily devotions through the
 #: Psalms, one episode a psalm, from the same publisher. Its titles carry the
 #: psalm number outright ("Psalm 16 - You Will Not Abandon My Soul"), so the
@@ -101,7 +113,8 @@ def session_for_hour(hour: int) -> str:
 
 
 def _index_path(feed: str = FEED_URL) -> str:
-    name = ('psalms' if feed == PSALMS_FEED_URL else 'devotional')
+    name = {PSALMS_FEED_URL: 'psalms',
+            DAILY_STRENGTH_FEED_URL: 'daily_strength'}.get(feed, 'devotional')
     return os.path.join(paths.cache_dir(), f'{name}_audio_index.json')
 
 
@@ -129,6 +142,38 @@ def parse_psalms_feed(xml: str) -> dict[str, list[str]]:
         # most recent reading of a psalm is the one at the top.
         out.setdefault(str(n), [url.group(1), (m.group(2) or '').strip()])
     return out
+
+
+def parse_dated_feed(xml: str) -> dict[str, list[str]]:
+    """{'MM-DD': [url, title]} for a feed whose episodes are titled by date."""
+    out: dict[str, list[str]] = {}
+    for block in re.findall(r'<item>(.*?)</item>', xml, re.S):
+        ti = re.search(r'<title[^>]*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>',
+                       block, re.S)
+        url = re.search(r'<enclosure[^>]*url="([^"]+)"', block)
+        if not ti or not url:
+            continue
+        m = _DATED_TITLE.match(re.sub(r'\s+', ' ', ti.group(1)).strip())
+        if not m:
+            continue
+        month = _MONTHS.get(m.group(1))
+        if not month:
+            continue
+        out.setdefault(f'{month:02d}-{int(m.group(2)):02d}',
+                       [url.group(1), m.group(3)])
+    return out
+
+
+def todays_strength(date: datetime.date) -> tuple[str, str] | None:
+    """(url, the day's title) for today's reading, or None.
+
+    Today only, by design — see DAILY_STRENGTH_FEED_URL.
+    """
+    got = _load_index(DAILY_STRENGTH_FEED_URL).get(
+        f'{date.month:02d}-{date.day:02d}')
+    if isinstance(got, list) and got:
+        return got[0], (got[1] if len(got) > 1 else '')
+    return None
 
 
 def psalm_episode_url(number: int) -> tuple[str, str] | None:
@@ -197,7 +242,8 @@ def refresh_index(force: bool = False, feed: str = FEED_URL):
     cached = _load_index(feed)
     if cached and not force and _index_is_fresh(feed):
         return cached
-    parse = parse_psalms_feed if feed == PSALMS_FEED_URL else parse_feed
+    parse = {PSALMS_FEED_URL: parse_psalms_feed,
+             DAILY_STRENGTH_FEED_URL: parse_dated_feed}.get(feed, parse_feed)
     try:
         req = urllib.request.Request(feed, headers={'User-Agent': _UA})
         with urllib.request.urlopen(req, timeout=30) as resp:

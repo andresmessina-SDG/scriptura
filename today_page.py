@@ -19,7 +19,7 @@ import re
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, Pango
+from gi.repository import Gdk, Gtk, Adw, Pango
 
 import reading_plans
 from a11y import set_accessible_label
@@ -156,18 +156,21 @@ class TodayView(Gtk.Box):
     """The Morning Office surface. The window owns showing/dismissing it;
     this widget owns its content and look."""
 
-    def __init__(self, on_begin, on_continue, on_choose_plans):
+    def __init__(self, on_begin, on_continue, on_choose_plans,
+                 on_listen=None):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.add_css_class('today-view')
         self._on_begin = on_begin
         self._on_continue = on_continue
         self._on_choose_plans = on_choose_plans
+        self._on_listen = on_listen
         self._begin_target = None      # (book, chapter) for the plan day
         self._continue_target = None   # (book, chapter) for last position
         self._css = Gtk.CssProvider()
         self.get_style_context().add_provider(
             self._css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         self._serif_css = Gtk.CssProvider()
+        self._card_css = Gtk.CssProvider()
 
         clamp = Adw.Clamp(maximum_size=720, tightening_threshold=640,
                           vexpand=True, hexpand=True)
@@ -177,7 +180,14 @@ class TodayView(Gtk.Box):
         v.set_margin_start(24)
         v.set_margin_end(24)
         clamp.set_child(v)
-        self.append(clamp)
+        # The player floats beside the reading column rather than interrupting
+        # it: the page is a single vertical run of type, and a control set into
+        # that run breaks the read. An overlay keeps the column's measure and
+        # centring untouched whether the card is there or not.
+        overlay = Gtk.Overlay()
+        overlay.set_child(clamp)
+        overlay.add_overlay(self._build_listen_card())
+        self.append(overlay)
 
         def _centered(label: Gtk.Label) -> Gtk.Label:
             """Multi-line voice (hero, epigraph verse): wraps at the clamp."""
@@ -197,9 +207,11 @@ class TodayView(Gtk.Box):
             label.set_wrap(False)
             return label
 
-        # Equal spacers above the hero group and below it centre the block
-        # in the space over the epigraph — a title page, not a top-hugging
-        # form with a void beneath.
+        # One spacer above the whole group and one below it, so the page
+        # centres as a single block. Previously the second spacer sat between
+        # the actions and the epigraph, which pinned the epigraph to the foot
+        # and opened a void in the middle — the page read as though it had
+        # been scrolled down from its own centre.
         v.append(Gtk.Box(vexpand=True))
 
         self._eyebrow = _line(Gtk.Label())
@@ -255,10 +267,8 @@ class TodayView(Gtk.Box):
             'clicked', lambda _b: self._on_continue(self._continue_target))
         v.append(self._continue_btn)
 
-        v.append(Gtk.Box(vexpand=True))  # the twin of the spacer above
-
         self._epigraph_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self._epigraph_box.set_margin_top(36)
+        self._epigraph_box.set_margin_top(44)
         self._epigraph_verse = _centered(Gtk.Label())
         self._epigraph_verse.add_css_class('today-epigraph-verse')
         self._epigraph_verse.get_style_context().add_provider(
@@ -279,6 +289,78 @@ class TodayView(Gtk.Box):
         self._epigraph_box.append(self._epigraph_src)
         self._epigraph_box.set_visible(False)
         v.append(self._epigraph_box)
+        v.append(Gtk.Box(vexpand=True))   # the twin of the spacer above
+
+    def _build_listen_card(self):
+        """Today's spoken devotional as a single mark in the margin.
+
+        Not a card. This page is type on paper — the design law puts the
+        reading surface at depth 0, "no boxes" — and a bounded panel was the
+        only edged object on the whole surface, which is why it read as having
+        landed here rather than belonging. A book's margin carries marks, not
+        widgets: one disc, ink-coloured, naming itself only when reached for.
+
+        Progress is a ring around the disc rather than a bar. A bar has to be
+        aligned to something and inset from something; a ring is simply part
+        of the mark.
+        """
+        self._listen_fraction = 0.0
+        self._listen_ink = '#888888'
+
+        self._listen_ring = Gtk.DrawingArea()
+        self._listen_ring.set_content_width(58)
+        self._listen_ring.set_content_height(58)
+        self._listen_ring.set_draw_func(self._draw_listen_ring)
+        self._listen_ring.set_can_target(False)   # the button takes the click
+
+        self._listen_btn = Gtk.Button(
+            icon_name='media-playback-start-symbolic')
+        self._listen_btn.add_css_class('today-listen-play')
+        self._listen_btn.set_halign(Gtk.Align.CENTER)
+        self._listen_btn.set_valign(Gtk.Align.CENTER)
+        self._listen_play_css = Gtk.CssProvider()
+        self._listen_btn.get_style_context().add_provider(
+            self._listen_play_css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        self._listen_btn.connect(
+            'clicked', lambda _b: self._on_listen and self._on_listen())
+
+        mark = Gtk.Overlay()
+        mark.set_child(self._listen_ring)
+        mark.add_overlay(self._listen_btn)
+
+        # The title is the mark's own tooltip rather than a label: a lone disc
+        # keeps the margin empty, and a play glyph has never needed explaining.
+        self._listen_title = Gtk.Label()      # kept for the API below
+
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        card.set_halign(Gtk.Align.END)
+        card.set_valign(Gtk.Align.CENTER)
+        card.set_margin_end(36)
+        card.append(mark)
+        card.set_visible(False)
+        self._listen_card = card
+        return card
+
+    def _draw_listen_ring(self, _area, cr, width, height):
+        """A faint track, and the arc of it that has been read."""
+        import math
+        r = min(width, height) / 2 - 2
+        cx, cy = width / 2, height / 2
+        ink = Gdk.RGBA()
+        ink.parse(self._listen_ink)
+        # The full track, faint. The played arc, brighter and a touch
+        # thicker, so it reads as motion at arm's length while staying
+        # delicate up close — the track alone was legible only at the mark.
+        cr.set_line_width(2.0)
+        cr.set_source_rgba(ink.red, ink.green, ink.blue, 0.15)
+        cr.arc(cx, cy, r, 0, 2 * math.pi)
+        cr.stroke()
+        if self._listen_fraction > 0.0:
+            cr.set_line_width(2.5)
+            cr.set_source_rgba(ink.red, ink.green, ink.blue, 0.7)
+            cr.arc(cx, cy, r, -math.pi / 2,
+                   -math.pi / 2 + 2 * math.pi * self._listen_fraction)
+            cr.stroke()
 
     # ── Content ──────────────────────────────────────────────────────────
 
@@ -366,6 +448,28 @@ class TodayView(Gtk.Box):
         self._epigraph_src.set_text(source)
         self._epigraph_box.set_visible(True)
 
+    def set_listen(self, title: str, playing: bool = False) -> None:
+        """Offer today's spoken devotional under its own title."""
+        self._listen_btn.set_icon_name(
+            'media-playback-pause-symbolic' if playing
+            else 'media-playback-start-symbolic')
+        self._listen_btn.set_tooltip_text(title or None)
+        self._listen_card.set_visible(True)
+        set_accessible_label(
+            self._listen_btn,
+            _('Pause the spoken devotional') if playing
+            else _('Listen to today\'s devotional'))
+
+    def clear_listen(self) -> None:
+        """No reading for today — the invitation is simply not made."""
+        self._listen_card.set_visible(False)
+        self.set_listen_progress(0.0, showing=False)
+
+    def set_listen_progress(self, fraction: float,
+                            showing: bool = True) -> None:
+        self._listen_fraction = fraction if showing else 0.0
+        self._listen_ring.queue_draw()
+
     def clear_epigraph(self) -> None:
         """Empty the foot line.
 
@@ -396,6 +500,22 @@ class TodayView(Gtk.Box):
                 else DROPCAP_GOLD_LIGHT)
         self._css.load_from_data((
             '.today-view {{ background-color: {surface}; color: {ink}; }}'
+            .format(**appearance)).encode())
+        self._listen_play_css.load_from_data((
+            'button.today-listen-play {{'
+            ' background-color: alpha({ink}, 0.13); color: {ink}; }}'
+            'button.today-listen-play:hover {{'
+            ' background-color: alpha({ink}, 0.22); }}'
+            .format(**appearance)).encode())
+        self._listen_ink = appearance['ink']
+        self._listen_ring.queue_draw()
+        # The card's surface is the page's ink at low alpha, not a theme
+        # colour: this page's paper is the pane's, and may be light while the
+        # desktop is dark.
+        self._card_css.load_from_data((
+            '.today-listen-card {{ background-color: transparent; }}'
+
+
             .format(**appearance)).encode())
         self._go_css.load_from_data(
             f'.today-go {{ color: {gold}; }}'.encode())
