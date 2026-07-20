@@ -234,11 +234,16 @@ class TestRomanPartial:
             assert '|' not in text, f'{sub}: column rule left in'
 
     def test_no_saints_collect_on_a_temporal_day(self):
-        # These keys are all Proper of Time. Its collects never commemorate a
-        # named saint, so one that does was reached from the Proper of Saints
-        # and is on the wrong day. Quinquagesima once held the collect of St
-        # Andrew Corsini — a real prayer, correctly transcribed, and wrong.
+        # The Proper of Time's collects never commemorate a named saint, so
+        # one that does was reached from the Proper of Saints and is on the
+        # wrong day. Quinquagesima once held the collect of St Andrew Corsini
+        # — a real prayer, correctly transcribed, and wrong.
+        #
+        # The feast keys are the Proper of Saints itself and are exempt:
+        # naming a saint is what those collects are for.
         for sub, text in self._pack()['texts'].items():
+            if sub.startswith('feast:'):
+                continue
             assert not re.search(r'\bblessed\s+[A-Z]|\bthy\s+(?:Confessor'
                                  r'|Martyr|Bishop)\b', text), \
                 f'{sub}: a saint\'s collect on a day of the Proper of Time'
@@ -269,6 +274,22 @@ class TestRomanPartial:
         assert 'great might' in texts['advent4'], \
             'advent4 is not the collect under "FOURTH SUNDAY IN ADVENT."'
         assert len({texts[f'advent{n}'] for n in range(1, 5)}) == 4
+
+    def test_sanctorale_collects_name_their_own_saint(self):
+        # The Proper of Saints is reached by a different route from the Proper
+        # of Time, and its collects are built on shared formulas — "that what
+        # we cannot obtain by our own weakness may be granted us by his
+        # prayers" serves any number of saints. Whoever the prayer names is
+        # the one thing that cannot be shared, so each keyed feast is pinned
+        # to its own.
+        texts = self._pack()['texts']
+        for sub, whom in [('feast:6-24', 'John the Baptist'),
+                          ('feast:7-25', 'James'),
+                          ('feast:12-26', 'martyrdom'),
+                          ('feast:8-6', 'transfiguration'),
+                          ('feast:9-29', 'angels'),
+                          ('feast:11-1', 'all thy saints')]:
+            assert whom in texts[sub], f'{sub} does not name {whom}'
 
     def test_the_gesima_sundays_are_not_confused(self):
         # Septuagesima and Quinquagesima are both printed under the incipit
