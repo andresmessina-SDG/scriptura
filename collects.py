@@ -3,9 +3,10 @@
 `data/collects.toml` carries the collect (or troparion) for each
 church_year designation key, curated word-for-word from public-domain /
 freely reproducible editions — the pack header names each tradition's
-edition and the extraction provenance. When no devotional module is
-installed and a church calendar is chosen, the day's collect takes the
-epigraph slot (the devotional always wins when present).
+edition and the extraction provenance. With a church calendar chosen, the
+day's collect takes the epigraph slot ahead of any devotional module; a
+devotional answers when no calendar is chosen, and on the days a chosen
+calendar cannot fill.
 
 Each tradition's table: `kind` and `source` (composed into the foot's
 source line), `aliases` (engine keys 1662-style rubrics serve with

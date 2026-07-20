@@ -368,7 +368,7 @@ class TestEpigraphFallback:
             sword_bridge, 'installed_devotional_modules', lambda: [])
         assert today_page.fetch_epigraph(None) is None
 
-    def test_devotional_wins(self, monkeypatch):
+    def _devotional(self, monkeypatch):
         import sword_bridge
         raw = ('<p><hi type="italic">The Lord is my shepherd.</hi> '
                '<reference>Ps. 23:1</reference></p>')
@@ -379,7 +379,33 @@ class TestEpigraphFallback:
         monkeypatch.setattr(
             sword_bridge, 'module_info',
             lambda _n: {'description': 'A Devotional'})
+
+    def test_devotional_takes_the_slot_when_no_calendar_is_chosen(
+            self, monkeypatch):
+        self._devotional(monkeypatch)
+        got = today_page.fetch_epigraph(None)
+        assert got is not None
+        assert got[0] == 'The Lord is my shepherd.'
+        assert got[2] is True
+
+    def test_the_collect_wins_over_an_installed_devotional(self, monkeypatch):
+        # Choosing a calendar is asking to be shown that tradition's day. A
+        # devotional speaks every day of the year, so were it to keep the slot
+        # the collects would never be seen at all.
+        self._devotional(monkeypatch)
         got = today_page.fetch_epigraph('anglican:advent1')
+        assert got is not None
+        assert got[0].startswith('Almighty God, give us grace')
+        assert got[2] is False
+
+    def test_devotional_covers_a_day_the_calendar_cannot_fill(
+            self, monkeypatch):
+        # Roman coverage is partial by design. On a day it cannot fill, a
+        # reader with a devotional installed would rather hear it than
+        # nothing — the silence is only for readers who have neither.
+        self._devotional(monkeypatch)
+        assert collects.collect_for('roman:good_friday') is None
+        got = today_page.fetch_epigraph('roman:good_friday')
         assert got is not None
         assert got[0] == 'The Lord is my shepherd.'
         assert got[2] is True

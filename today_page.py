@@ -117,12 +117,25 @@ def parse_epigraph(raw_osis: str, evening: bool = False) -> tuple[str, str] | No
 
 def fetch_epigraph(collect_key: str | None = None
                    ) -> tuple[str, str, bool] | None:
-    """Today's epigraph: (text, source_line, quoted). A devotional
-    module's quote wins; with none installed (or no usable quote) and a
-    church calendar chosen, the day's collect from the bundled pack takes
-    the slot (`collect_key` is the church_year designation key). Blocking
-    SWORD work — call from a task worker. None when neither yields."""
+    """Today's epigraph: (text, source_line, quoted).
+
+    The day's prayer wins the slot. Choosing a church calendar is a reader
+    asking to be shown their own tradition's day, so it would be odd for a
+    devotional module to go on answering over it — and a devotional speaks
+    every day, which would mean the collects were never seen at all.
+
+    A devotional module takes the slot when no calendar is chosen, and on the
+    days a chosen calendar cannot fill: coverage is partial by design, and a
+    reader who has a devotional installed would rather hear it than nothing.
+    `collect_key` is the church_year designation key. Blocking SWORD work —
+    call from a task worker. None when neither yields.
+    """
     import sword_bridge
+    if collect_key:
+        import collects
+        found = collects.collect_for(collect_key)
+        if found:
+            return found[0], found[1], False
     evening = datetime.datetime.now().hour >= EVENING_HOUR
     for name in sword_bridge.installed_devotional_modules():
         raw = sword_bridge.get_devotional_raw(name)
@@ -136,11 +149,6 @@ def fetch_epigraph(collect_key: str | None = None
             desc = desc.split(':', 1)[0].strip()
             source = f'{ref} — {desc}' if ref else desc
             return quote, source, True
-    if collect_key:
-        import collects
-        found = collects.collect_for(collect_key)
-        if found:
-            return found[0], found[1], False
     return None
 
 
