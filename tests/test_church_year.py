@@ -145,3 +145,43 @@ class TestSweep:
 
     def test_unknown_tradition_is_none(self):
         assert cy.day_designation(D(2026, 7, 18), 'martian') is None
+
+
+class TestLocalization:
+    """The pair this module returns is half key, half prose.
+
+    The key is read by the collects pack and persisted nowhere else; it must
+    stay English in every locale. The display half is the only part a reader
+    sees, and it must follow the UI language. Translating the wrong half would
+    silence every collect in a translated build, and nothing else would look
+    wrong."""
+
+    def _translated(self, monkeypatch, catalog):
+        monkeypatch.setattr(cy, '_', lambda s: catalog.get(s, s))
+
+    def test_display_translates_and_the_key_does_not(self, monkeypatch):
+        self._translated(monkeypatch, {
+            'The {ordinal} Sunday after Trinity': 'Le {ordinal} dimanche',
+            'Seventh': 'septième',
+            'The Annunciation': "L'Annonciation",
+        })
+        key, shown = cy.day_designation(D(2026, 7, 20), 'anglican')
+        assert key == 'anglican:trinity7'
+        assert shown == 'Le septième dimanche'
+        key, shown = cy.day_designation(D(2026, 3, 25), 'anglican')
+        assert key == 'anglican:feast:3-25'
+        assert shown == "L'Annonciation"
+
+    def test_every_designation_passes_through_the_catalog(self, monkeypatch):
+        # A display string that never reaches _() stays English however the
+        # app is translated. Sweeping with a catalog that marks everything it
+        # is asked for finds any that slipped past.
+        seen = []
+        monkeypatch.setattr(cy, '_', lambda s: seen.append(s) or f'<{s}>')
+        day = D(2024, 1, 1)
+        while day <= D(2027, 12, 31):
+            for trad in cy.TRADITIONS:
+                shown = cy.day_designation(day, trad)[1]
+                assert shown.startswith('<'), (day, trad, shown)
+            day += datetime.timedelta(days=1)
+        assert 'Christmas Day' in seen

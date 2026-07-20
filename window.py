@@ -2653,7 +2653,11 @@ class BibleWindow(Adw.ApplicationWindow):
         self._today_view.populate(last, detail, church_line=church_line)
         self._refresh_today_appearance()
         # A System-scheme flip (or Night Light toggling dark) re-papers the
-        # page while it's up; disconnected again on dismissal.
+        # page while it's up; disconnected again on dismissal. Dropped first
+        # so that repopulating — which is what changing the church calendar
+        # does — leaves one handler behind rather than another one.
+        if self._today_dark_handler is not None:
+            Adw.StyleManager.get_default().disconnect(self._today_dark_handler)
         self._today_dark_handler = Adw.StyleManager.get_default().connect(
             'notify::dark', lambda *_a: self._refresh_today_appearance())
         tasks.submit(
@@ -2670,6 +2674,17 @@ class BibleWindow(Adw.ApplicationWindow):
     def _on_today_epigraph(self, result):
         if self._today_view is not None and result:
             self._today_view.set_epigraph(*result)
+
+    def _set_church_calendar(self, tradition):
+        """Change the calendar, and let the Today page say so at once.
+
+        The page is built once at startup, so writing the setting alone left
+        the line — and the day's collect under it — showing the calendar the
+        reader had just changed away from until the next launch.
+        """
+        settings.put('church_calendar', tradition)
+        if self._today_view is not None:
+            self._populate_today()
 
     def _dismiss_today(self):
         """Slide the Today page away. Once per session — there is no way
@@ -3557,8 +3572,8 @@ class BibleWindow(Adw.ApplicationWindow):
             _church_values.index(cur_trad) if cur_trad in _church_values else 0)
         church_drop.connect(
             'notify::selected',
-            lambda d, _p: settings.put(
-                'church_calendar', _church_values[d.get_selected()]))
+            lambda d, _p: self._set_church_calendar(
+                _church_values[d.get_selected()]))
         church_row.add_suffix(church_drop)
         nav_group.add(church_row)
         _body.append(nav_group)

@@ -7,6 +7,7 @@ archaeology_bridge.py
 archaeology_reader.py
 catena_bridge.py
 catena_reader.py
+church_year.py
 content.py
 crossref_panel.py
 devotional.py
