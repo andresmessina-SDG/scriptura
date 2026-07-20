@@ -145,10 +145,21 @@ class TestRomanPartial:
         for sub, text in self._pack()['texts'].items():
             for w in re.findall(r"[A-Za-z']{3,}", text):
                 t = w.lower().strip("'")
-                ok = (t in words or t.rstrip('s') in words
-                      or any(t.endswith(x) and (t[:-len(x)] in words
-                                                or t[:-len(x)] + 'e' in words)
-                             for x in ('eth', 'est', 'edst')))
+                # Archaic verb morphology no wordlist carries. The -y verbs
+                # take -ie- ("purify" -> "purifiest"), which is why the stem
+                # is also tried with its final i restored to y.
+                def archaic(tok):
+                    for x in ('eth', 'est', 'edst'):
+                        if not tok.endswith(x):
+                            continue
+                        stem = tok[:-len(x)]
+                        if (stem in words or stem + 'e' in words
+                                or (stem.endswith('i')
+                                    and stem[:-1] + 'y' in words)):
+                            return True
+                    return False
+
+                ok = t in words or t.rstrip('s') in words or archaic(t)
                 assert ok, f'{sub}: suspect token {w!r}'
 
     def test_texts_look_like_collects(self):
