@@ -3570,9 +3570,26 @@ class BibleWindow(Adw.ApplicationWindow):
         church_row.add_prefix(
             Gtk.Image.new_from_icon_name('scriptura-church-symbolic'))
         _church_values = [None, 'anglican', 'roman', 'orthodox']
-        _church_names = [_('None'), _('Anglican (BCP)'),
-                         _('Roman (traditional)'), _('Orthodox (New Calendar)')]
+        # Two labels per tradition. The pill carries the bare name, because it
+        # sits on the row's own line and grows with whatever it says —
+        # "Orthodox (New Calendar)" pushed the row's title onto two lines. The
+        # popover has the width to name the edition, which is where the
+        # distinction is actually being made.
+        _church_names = [_('None'), _('Anglican'), _('Roman'), _('Orthodox')]
+        _church_editions = [_('None'), _('Anglican (BCP)'),
+                            _('Roman (traditional)'),
+                            _('Orthodox (New Calendar)')]
         church_drop = Gtk.DropDown(model=Gtk.StringList.new(_church_names))
+        _church_list = Gtk.SignalListItemFactory()
+        _church_list.connect(
+            'setup', lambda _f, i: i.set_child(Gtk.Label(xalign=0)))
+        _church_list.connect(
+            'bind',
+            lambda _f, i: i.get_child().set_label(
+                _church_editions[i.get_position()]))
+        # Set only for the popover: with a list-factory in place the plain
+        # factory keeps the button, which is what splits the two labels.
+        church_drop.set_list_factory(_church_list)
         church_drop.set_valign(Gtk.Align.CENTER)
         set_accessible_label(church_drop, _('Church calendar'))
         cur_trad = settings.get('church_calendar')
