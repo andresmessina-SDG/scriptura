@@ -6,6 +6,14 @@
 # Anglican section extracted 2026-07-19 from
 # https://www.churchofengland.org/prayer-and-worship/worship-texts-and-resources/book-common-prayer/collects-epistles-and-gospels-0
 # (the Church of England's online 1662 Book of Common Prayer).
+# Roman section extracted 2026-07-19 from The Roman Missal for the Use of the
+# Laity (Philadelphia: Eugene Cummiskey, 1861), collated word-for-word against
+# a second public-domain witness (Rt Rev Dr England, 1843) to catch OCR
+# corruption, which is random per scan. Coverage is PARTIAL and deliberately
+# so: a key is emitted only when both witnesses attest it, no other key holds
+# the same collect, and the merged text passes a lexical sweep. An unfilled
+# key leaves the silence readers already have; a wrongly filled one would put
+# the right prayer on the wrong day. Tools: ~/scriptura-roman-collation/.
 # Orthodox section extracted 2026-07-19 from Hapgood's Service Book (1906),
 # archive.org/details/ServiceBookOfHolyOrthodoxChurchByHapgood, Appendix A
 # "The Eight Tones" (scratchpad build_orthodox.py). Sundays after Pentecost
@@ -166,3 +174,27 @@ source = "Hapgood, Service Book of the Holy Orthodox-Catholic Apostolic Church, 
 "tone6" = """The Angelic Powers were in thy sepulchre, and the guards became as dead men, and Mary stood by the tomb seeking thy most pure body. Thou didst despoil Hell, yet wert not tempted thereby; thou who art the bestower of life didst come to meet the Woman. Glory to thee, O Lord, who didst rise again from the dead."""
 "tone7" = """By thy cross thou didst destroy death; thou didst open paradise to the Thief; thou didst change the funeral wail of the Myrrh-bearing Women, and didst command them to announce unto thine Apostles that thou wert risen from the dead, O Christ our God, who bestowest on the world great mercy."""
 "tone8" = """Thou didst descend from on high, O Tender-hearted One; thou didst endure the three-days' burial, that thou mightest free us from our passions, O our Life and Resurrection. Glory, O Lord, to thee."""
+
+[roman]
+kind = "The Collect"
+source = "The Roman Missal for the Use of the Laity, 1861"
+
+[roman.texts]
+"ash_wednesday" = """Grant, we beseech thee, O Almighty God, that we, who are justly afflicted according to our demerits, may be relieved by thy comforting grace. Thro’."""
+"easter2" = """O God, who, by the humiliation of thy Son, hast raised up the fallen world: grant to thy people perpetual joy: that they whom thou hast delivered from the danger of everlasting death, may arrive at eternal happiness. Thro’."""
+"easter3" = """O God, who shewest the light of thy truth to such as go astray, that they may return to the way of righteousness: grant that all, who profess the Christian name, may forsake whatever is contrary to that profession, and closely pursue what is agreeable to it. Thro’."""
+"easter4" = """O God, who makest the faithful to be of one mind: grant that thy people may love what thou commandest, and desire what thou promisest: that, amidst the uncertainties of this world, we may place our affections where there are true joys. Thro’."""
+"easter5" = """O God, from whom all that is good proceeds: grant that thy people, by thy inspiration, may resolve on what is right, and by thy direction, put it in practice. Thro’."""
+"epiphany1" = """According to thy divine mercy, O Lord, receive the vows of thy people, who pour forth their prayers to thee; that they may know what their duty requireth of them, and be able to comply with what they know. Thro’. Here, and at the"""
+"lent1" = """O God, who by sin art offended, and pacified by repentance, mercifully regard the prayers of thy people, who make supplication to thee: and turn away the scourges of thy anger, which we deserve for our sins. Thro’."""
+"lent4" = """O God, who seest how destitute we are of all strength, preserve us both within and without, that our bodies may be free from all adversity, and our souls purified from all evil thoughts, Thro’."""
+"low_sunday" = """Grant, we beseech thee, O Almighty God, that we, who have celebrated the solemnity of Easter, may, by the assistance of thy divine grace, ever make the effects thereof manifest in our lives and actions. Thro’."""
+"pentecost10" = """O God, who chiefly manifestest thy Almighty power in pardoning and shewing mercy, increase thy goodness towards us: that having recourse to thy promises, we may be partakers of thy heavenly blessing. Thro’."""
+"pentecost11" = """O Almighty and eternal God, who, in the abundance of thy goodness, exceedest both the merits and requests of thy suppliants; pour forth thy mercy upon us: and both pardon what our consciences dreadeth, and grant such blessings as we dare not presume to ask. Thro’."""
+"pentecost12" = """O Almighty and merciful God, from whose gift it proceedeth that thy people worthily serve thee; grant we beseech thee, that we may run on, without stumbling, to the obtaining the effects of thy promises. ‘Thro’."""
+"pentecost13" = """O Almighty and eternal God, grant us an increase of faith, hope, and charity; and, that we may deserve what thou promisest, make us love what thou commandest. Thro’."""
+"pentecost16" = """May thy grace, O Lord, always prevent and follow us; and make us constantly zealous in the practice of good works. Thro’."""
+"pentecost20" = """Favourably grant, we beseech thee, O Lord, thy servants both pardon and peace; that, being cleansed from the guilt of all their offences, they may serve thee with secure minds. Thi-o’."""
+"pentecost22" = """O God, our refuge and strength, fountain of all goodness, mercifully give ear to the fervent prayers of thy church, and grant, that what we ask with faith, we may effectually obtain. Thro’."""
+"pentecost5" = """O God, who hast prepared invisible good things for those that love thee: pour forth into our hearts an affectionate love for thee: that loving thee in all things, and above all things, we may come to the enjoyment of thy promises, which are above whatever we can desire. Thro’."""
+"pentecost7" = """O God, whose providence is never deceived in what it appointeth: we humbly beseech thee to remove whatever may be prejudicial to us: and grant us whatever may be to the advantage of our souls. Thro’. M m"""

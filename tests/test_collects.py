@@ -2,6 +2,7 @@
 engine can emit resolves to a text), no orphaned pack keys, and the
 epigraph fallback order (devotional wins, collect fills the gap)."""
 import datetime
+import re
 
 import church_year
 import collects
@@ -108,6 +109,62 @@ class TestOrthodoxTones:
         found = collects.collect_for('orthodox:pentecost7')
         assert found is not None
         assert found[1].startswith('The Troparion · Hapgood')
+
+
+class TestRomanPartial:
+    """The Roman section is a VERIFIED SUBSET, not full-year coverage: its
+    source is OCR, and a key ships only when two public-domain witnesses
+    attest it. So these guard the invariants that make a partial pack safe —
+    never that every day resolves, which would be a false claim."""
+
+    def _pack(self):
+        return collects._pack()['roman']
+
+    def test_only_real_keys(self):
+        # A collect on a key the engine never emits is a prayer nobody sees;
+        # worse, it means the extractor invented a day (a "lent6" once did).
+        emitted = {k.split(':', 1)[1] for k in _emitted_keys('roman')}
+        for sub in self._pack()['texts']:
+            assert sub in emitted, f'roman text keyed to a non-existent day: {sub}'
+
+    def test_no_two_days_share_a_collect(self):
+        # A duplicate means a heading was double-counted upstream, which puts
+        # a real prayer on the wrong day — the failure this pack most risks.
+        texts = self._pack()['texts']
+        seen = {}
+        for sub, text in texts.items():
+            key = text[:80]
+            assert key not in seen, f'{sub} duplicates {seen.get(key)}'
+            seen[key] = sub
+
+    def test_texts_are_lexically_clean(self):
+        # Both witnesses are Google OCR, so a corruption present in both never
+        # becomes a divergence. This is the only check that catches it.
+        import re
+        words = {w.strip().lower() for w in open('/usr/share/dict/words')}
+        for sub, text in self._pack()['texts'].items():
+            for w in re.findall(r"[A-Za-z']{3,}", text):
+                t = w.lower().strip("'")
+                ok = (t in words or t.rstrip('s') in words
+                      or any(t.endswith(x) and (t[:-len(x)] in words
+                                                or t[:-len(x)] + 'e' in words)
+                             for x in ('eth', 'est', 'edst')))
+                assert ok, f'{sub}: suspect token {w!r}'
+
+    def test_texts_look_like_collects(self):
+        for sub, text in self._pack()['texts'].items():
+            assert 60 < len(text) < 900, sub
+            assert re.search(r'\bO (?:God|Lord|Almighty)|\bAlmighty\b', text), sub
+
+    def test_source_line(self):
+        found = collects.collect_for('roman:easter3')
+        assert found is not None
+        assert found[1] == ('The Collect · The Roman Missal for the '
+                            'Use of the Laity, 1861')
+
+    def test_unfilled_days_stay_silent(self):
+        # Partial coverage must degrade to silence, never to a wrong prayer.
+        assert collects.collect_for('roman:advent1') is None
 
 
 class TestEpigraphFallback:
