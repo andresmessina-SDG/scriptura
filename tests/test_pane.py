@@ -1,14 +1,14 @@
-"""Tests for the small pure helpers on BiblePane that don't need a live
-widget tree. _resolve_present_verse is called via the class on a stand-in
-`self` so we don't have to construct GTK objects."""
+"""Tests for the small pure helpers that don't need a live widget tree.
+_resolve_present_verse lives on ScrollKeeper (pane_scroll); it reads its
+pane's _present_verses through a proxy, so we build a real ScrollKeeper over
+a stand-in pane rather than constructing GTK objects."""
 
-from pane import BiblePane
+from pane_scroll import ScrollKeeper
 
 
 def _resolve(present, target):
-    obj = type('Stub', (), {})()
-    obj._present_verses = present
-    return BiblePane._resolve_present_verse(obj, target)
+    pane = type('Pane', (), {'_present_verses': present})()
+    return ScrollKeeper(pane)._resolve_present_verse(target)
 
 
 def test_resolve_present_verse_exact_match():
@@ -26,8 +26,8 @@ def test_resolve_present_verse_no_earlier_returns_request():
 
 
 def test_resolve_present_verse_unset_returns_request():
-    obj = type('Stub', (), {})()
-    assert BiblePane._resolve_present_verse(obj, 7) == 7
+    pane = type('Pane', (), {})()   # no _present_verses attribute
+    assert ScrollKeeper(pane)._resolve_present_verse(7) == 7
 
 
 # ── _printable_ratio (wrong-cipher-key detection) ─────────────────────────────
