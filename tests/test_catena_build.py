@@ -10,6 +10,7 @@ _SPEC = importlib.util.spec_from_file_location(
     'build_catena_pack',
     os.path.join(os.path.dirname(__file__), '..', 'tools',
                  'build_catena_pack.py'))
+assert _SPEC is not None and _SPEC.loader is not None  # by-path load must resolve
 bcp = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(bcp)
 
