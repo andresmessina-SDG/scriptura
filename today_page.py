@@ -175,8 +175,8 @@ class TodayView(Gtk.Box):
         clamp = Adw.Clamp(maximum_size=720, tightening_threshold=640,
                           vexpand=True, hexpand=True)
         v = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        v.set_margin_top(56)
-        v.set_margin_bottom(36)
+        v.set_margin_top(40)
+        v.set_margin_bottom(40)
         v.set_margin_start(24)
         v.set_margin_end(24)
         clamp.set_child(v)
@@ -184,10 +184,16 @@ class TodayView(Gtk.Box):
         # it: the page is a single vertical run of type, and a control set into
         # that run breaks the read. An overlay keeps the column's measure and
         # centring untouched whether the card is there or not.
-        overlay = Gtk.Overlay()
+        # vexpand so the overlay fills the view; without it the box packs the
+        # overlay at its natural height and everything inside centres within
+        # that shrunk block, sitting low on the page.
+        overlay = Gtk.Overlay(vexpand=True)
         overlay.set_child(clamp)
         overlay.add_overlay(self._build_listen_card())
+        self._overlay = overlay
         self.append(overlay)
+
+        v.append(Gtk.Box(vexpand=True))   # centres the hero above the foot
 
         def _centered(label: Gtk.Label) -> Gtk.Label:
             """Multi-line voice (hero, epigraph verse): wraps at the clamp."""
@@ -206,13 +212,6 @@ class TodayView(Gtk.Box):
             label.set_halign(Gtk.Align.CENTER)
             label.set_wrap(False)
             return label
-
-        # One spacer above the whole group and one below it, so the page
-        # centres as a single block. Previously the second spacer sat between
-        # the actions and the epigraph, which pinned the epigraph to the foot
-        # and opened a void in the middle — the page read as though it had
-        # been scrolled down from its own centre.
-        v.append(Gtk.Box(vexpand=True))
 
         self._eyebrow = _line(Gtk.Label())
         self._eyebrow.add_css_class('today-eyebrow')
@@ -268,7 +267,6 @@ class TodayView(Gtk.Box):
         v.append(self._continue_btn)
 
         self._epigraph_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self._epigraph_box.set_margin_top(44)
         self._epigraph_verse = _centered(Gtk.Label())
         self._epigraph_verse.add_css_class('today-epigraph-verse')
         self._epigraph_verse.get_style_context().add_provider(
@@ -288,8 +286,9 @@ class TodayView(Gtk.Box):
         self._epigraph_src.set_margin_top(10)
         self._epigraph_box.append(self._epigraph_src)
         self._epigraph_box.set_visible(False)
+        self._epigraph_box.set_margin_top(28)
         v.append(self._epigraph_box)
-        v.append(Gtk.Box(vexpand=True))   # the twin of the spacer above
+        v.append(Gtk.Box(vexpand=True))   # the twin of the top spacer
 
     def _build_listen_card(self):
         """Today's spoken devotional as a single mark in the margin.
