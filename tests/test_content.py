@@ -6,10 +6,76 @@ import content
 import catena_bridge
 import ebible_bridge
 import sword_bridge
+import imagery_bridge
+import archaeology_bridge
+import interlinear_data
 
 
 def test_language_catena():
     assert content.language(catena_bridge.MODULE_KEY) == 'en'
+
+
+# ── Registry routing: every source resolves to its own descriptor, and each
+# router lands on that descriptor (the guard the ladder-per-function lacked). ──
+
+def _reps():
+    """A representative key per registered content type."""
+    return {
+        'catena': catena_bridge.MODULE_KEY,
+        'imagery': imagery_bridge.MODULE_KEY,
+        'archaeology': archaeology_bridge.MODULE_KEY,
+        'interlinear': interlinear_data.GREEK,
+        'ebible': ebible_bridge.PREFIX + 'eng-web',
+        'sword': 'KJV',
+    }
+
+
+def test_every_source_resolves_to_its_own_descriptor():
+    # The membership predicates are disjoint and the SWORD catch-all is last,
+    # so each representative key lands on exactly its own descriptor.
+    for expected_key, name in _reps().items():
+        assert content._type_for(name).key == expected_key
+
+
+def test_registry_covers_every_type_once():
+    keys = [ct.key for ct in content._TYPES]
+    assert keys == ['catena', 'imagery', 'archaeology', 'interlinear',
+                    'ebible', 'sword']
+    assert keys[-1] == 'sword', 'the catch-all must stay last'
+
+
+def test_kind_per_source():
+    reps = _reps()
+    assert content.kind(reps['catena']) == 'commentary'
+    assert content.kind(reps['imagery']) == 'imagery'
+    assert content.kind(reps['archaeology']) == 'books'
+    assert content.kind(reps['interlinear']) == 'bible'
+
+
+def test_every_router_is_total_over_the_registry(monkeypatch):
+    # No router may raise on any registered type — the failure mode the
+    # copy-pasted ladder had (one function missing a branch). Bridge calls
+    # that would touch disk/SQLite are stubbed to harmless values.
+    monkeypatch.setattr(ebible_bridge, 'module_info', lambda n: {})
+    monkeypatch.setattr(ebible_bridge, 'module_language', lambda n: 'en')
+    monkeypatch.setattr(ebible_bridge, 'module_has_footnotes', lambda n: False)
+    monkeypatch.setattr(sword_bridge, 'module_info', lambda n: {})
+    monkeypatch.setattr(sword_bridge, 'module_language', lambda n: 'en')
+    monkeypatch.setattr(sword_bridge, 'module_type', lambda n: 'Biblical Texts')
+    monkeypatch.setattr(sword_bridge, 'is_devotional_module', lambda n: False)
+    monkeypatch.setattr(sword_bridge, 'module_has_footnotes', lambda n: False)
+    monkeypatch.setattr(sword_bridge, 'can_remove_module', lambda n: True)
+    monkeypatch.setattr(catena_bridge, 'pack_info', lambda: {})
+    monkeypatch.setattr(imagery_bridge, 'pack_info', lambda: {})
+    monkeypatch.setattr(archaeology_bridge, 'info', lambda: {})
+    for name in _reps().values():
+        assert content.kind(name) in ('bible', 'commentary', 'imagery', 'books')
+        assert isinstance(content.has_footnotes(name), bool)
+        assert isinstance(content.language(name), str)
+        assert isinstance(content.info(name), dict)
+        assert isinstance(content.can_remove(name), bool)
+        fc = content.feature_card(name)
+        assert fc is None or isinstance(fc, dict)
 
 
 def test_can_remove_catena_and_ebible():

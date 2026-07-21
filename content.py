@@ -6,12 +6,21 @@ catena / eBible / SWORD branch in a half-dozen places. Adding a content
 source (e.g. a future imagery pack) means teaching this one module about
 it rather than hunting down every dispatch site.
 
+The routing is a REGISTRY, not an if/elif ladder re-typed per function.
+`_TYPES` lists one `_ContentType` descriptor per source — its membership
+predicate plus every routed answer (kind, footnote capability, feature
+card, language, info, removability) as a function of the module key. The
+public functions below are one-line lookups over it, so a new source is
+one entry rather than an edit to seven functions in lockstep. (This is
+Step 0 of STRUCTURAL_ANALYSIS.md's T3 — the keystone the pane's future
+content-strategy will resolve against the same table.)
+
 Note: display_name routing already lives in sword_bridge.display_name
 (which delegates eBible keys and the catena / imagery feature packs to
 their bridges), so it is intentionally not duplicated here.
 """
 
-from typing import TypedDict, cast
+from typing import Callable, TypedDict, cast
 
 import sword_bridge
 import ebible_bridge
@@ -43,28 +52,191 @@ def readable_module_names() -> list[str]:
             + interlinear_data.module_names())
 
 
-def kind(name: str) -> str:
-    """Coarse content category for the module picker's tabs.
+# ── The content-type registry ────────────────────────────────────────────────
+# Per-source answers that don't reduce to a one-liner: the two feature packs'
+# info blocks and the SWORD catch-all's kind/footnote logic. Kept as named
+# functions so the descriptor list below stays a table.
 
-    One of: 'bible', 'commentary', 'imagery', 'books'. SWORD generic books
-    and devotionals both fold into 'books'; everything verse-keyed that
-    isn't a commentary is a 'bible'."""
-    if catena_bridge.is_catena_module(name):
-        return 'commentary'
-    if imagery_bridge.is_imagery_module(name):
-        return 'imagery'
-    if archaeology_bridge.is_archaeology_module(name):
-        return 'books'
-    if interlinear_data.is_interlinear_module(name):
-        return 'bible'
-    if ebible_bridge.is_ebible_module(name):
-        return 'bible'
+def _catena_info(name: str) -> dict:
+    meta = catena_bridge.pack_info()
+    return {
+        'description': _('Patristic, medieval, and Reformation commentary '
+                         'keyed to each verse — the church reading '
+                         'Scripture across the centuries.'),
+        'version': meta.get('built', ''),
+        'type': _('{n} quotations').format(n=meta.get('quote_count', '?')),
+        'license': _('Public domain (compiled from public-domain sources)'),
+        'about': _('Compiled from the HistoricalChristianFaith '
+                   'Commentaries Database.'),
+    }
+
+
+def _imagery_info(name: str) -> dict:
+    meta = imagery_bridge.pack_info()
+    return {
+        'description': _('Public-domain illustrations, historical maps, and '
+                         'photographs of the places named in Scripture, '
+                         'shown beside the verse you are reading.'),
+        'version': meta.get('built', ''),
+        'type': _('{n} images').format(n=meta.get('image_count', '?')),
+        'license': _('Public domain & Creative Commons (per-item credits)'),
+        'about': _('Engravings (Doré, Schnorr, Merian), historical maps, and '
+                   'place photography from public-domain and openly-licensed '
+                   'sources.'),
+    }
+
+
+def _interlinear_info(name: str) -> dict:
+    if interlinear_data.is_hebrew(name):
+        return {
+            'description': _('The Hebrew Old Testament word by word — '
+                             'each word with its English gloss, parsing, '
+                             'transliteration, and Strong’s number.'),
+            'type': _('Interlinear'),
+            'license': 'CC BY 4.0',
+            'about': _('Translators Amalgamated Hebrew OT (TAHOT), '
+                       'created by STEPBible at Tyndale House Cambridge '
+                       'from the Leningrad Codex, with Qere readings '
+                       'and English-first verse numbering.'),
+        }
+    return {
+        'description': _('The Greek New Testament word by word — each '
+                         'word with its English gloss, parsing, '
+                         'transliteration, and Strong’s number.'),
+        'type': _('Interlinear'),
+        'license': 'CC BY 4.0',
+        'about': _('Translators Amalgamated Greek NT (TAGNT), created '
+                   'by STEPBible at Tyndale House Cambridge. Follows '
+                   'the Nestle-Aland word stream; variant words from '
+                   'other editions are preserved in the data.'),
+    }
+
+
+def _sword_kind(name: str) -> str:
     mtype = sword_bridge.module_type(name)
     if mtype == 'Commentaries':
         return 'commentary'
     if mtype == 'Generic Books' or sword_bridge.is_devotional_module(name):
         return 'books'
     return 'bible'
+
+
+def _sword_has_footnotes(name: str) -> bool:
+    # Only verse-keyed render paths (Bibles, commentaries) run the marker
+    # pipeline, so a genbook / devotional conf declaring a footnote filter
+    # still counts as False.
+    if _sword_kind(name) not in ('bible', 'commentary'):
+        return False
+    return bool(sword_bridge.module_has_footnotes(name))
+
+
+class _ContentType:
+    """One content source and every routing answer for the keys it owns.
+
+    Each answer is a function of the module key, so answers that vary by key
+    (an eBible's language, an interlinear's testament) live in one place.
+    Trivial answers get a small default; `remove` defaults to the SWORD
+    remover (the path the old ladder's `else` took for the packless types)."""
+
+    def __init__(
+        self, key: str, is_member: Callable[[str], bool],
+        kind: Callable[[str], str], info: Callable[[str], dict], *,
+        feature_card: Callable[[str], dict | None] = lambda name: None,
+        language: Callable[[str], str] = lambda name: 'en',
+        has_footnotes: Callable[[str], bool] = lambda name: False,
+        can_remove: Callable[[str], bool] = lambda name: False,
+        remove: Callable[[str], None] | None = None,
+    ) -> None:
+        self.key = key
+        self.is_member = is_member
+        self.kind = kind
+        self.info = info
+        self.feature_card = feature_card
+        self.language = language
+        self.has_footnotes = has_footnotes
+        self.can_remove = can_remove
+        # Default resolves sword_bridge.remove_module at call time (not by
+        # reference now), so it tracks a monkeypatch and stays the ladder's
+        # old `else` path for the packless types.
+        self.remove: Callable[[str], None] = (
+            remove or (lambda name: sword_bridge.remove_module(name)))
+
+
+# Order: the specific sources first (their predicates are disjoint), then the
+# SWORD catch-all last — its predicate is always True.
+_TYPES: list[_ContentType] = [
+    _ContentType(
+        'catena', catena_bridge.is_catena_module,
+        kind=lambda name: 'commentary', info=_catena_info,
+        feature_card=lambda name: {
+            'icon': 'scriptura-commentary-symbolic',
+            'tagline': _('Fathers, medievals & reformers — per verse')},
+        can_remove=lambda name: True,
+        remove=lambda name: catena_bridge.remove_pack()),
+    _ContentType(
+        'imagery', imagery_bridge.is_imagery_module,
+        kind=lambda name: 'imagery', info=_imagery_info,
+        feature_card=lambda name: {
+            'icon': 'scriptura-imagery-symbolic',
+            'tagline': _('Engravings, maps & place photos')},
+        can_remove=lambda name: True,
+        remove=lambda name: imagery_bridge.remove_pack()),
+    _ContentType(
+        'archaeology', archaeology_bridge.is_archaeology_module,
+        kind=lambda name: 'books',
+        info=lambda name: cast(dict, archaeology_bridge.info()),
+        feature_card=lambda name: {
+            'icon': 'scriptura-artifact-symbolic',
+            'tagline': _('Artifacts of the biblical world')}),
+        # bundled inside the app: can_remove False, and remove never reached.
+    _ContentType(
+        'interlinear', interlinear_data.is_interlinear_module,
+        kind=lambda name: 'bible', info=_interlinear_info,
+        feature_card=lambda name: {
+            'icon': 'font-x-generic-symbolic',
+            'tagline': (_('Hebrew with gloss & parsing, word by word')
+                        if interlinear_data.is_hebrew(name) else
+                        _('Greek with gloss & parsing, word by word'))},
+        language=lambda name: (
+            'hbo' if interlinear_data.is_hebrew(name) else 'grc'),
+        can_remove=lambda name: True,
+        remove=lambda name: interlinear_data.remove(name)),
+    _ContentType(
+        'ebible', ebible_bridge.is_ebible_module,
+        kind=lambda name: 'bible',
+        info=lambda name: cast(dict, ebible_bridge.module_info(name)),
+        language=lambda name: cast(str, ebible_bridge.module_language(name)),
+        has_footnotes=lambda name: bool(
+            ebible_bridge.module_has_footnotes(name)),
+        can_remove=lambda name: True,
+        remove=lambda name: ebible_bridge.remove_module(name)),
+    _ContentType(
+        'sword', lambda name: True,          # catch-all — keep last
+        kind=_sword_kind,
+        info=lambda name: cast(dict, sword_bridge.module_info(name)),
+        language=lambda name: cast(str, sword_bridge.module_language(name)),
+        has_footnotes=_sword_has_footnotes,
+        can_remove=lambda name: cast(
+            bool, sword_bridge.can_remove_module(name))),
+]
+
+
+def _type_for(name: str) -> _ContentType:
+    """The descriptor owning this key. The SWORD catch-all always matches, so
+    the loop cannot fall through."""
+    for ct in _TYPES:
+        if ct.is_member(name):
+            return ct
+    return _TYPES[-1]
+
+
+def kind(name: str) -> str:
+    """Coarse content category for the module picker's tabs.
+
+    One of: 'bible', 'commentary', 'imagery', 'books'. SWORD generic books
+    and devotionals both fold into 'books'; everything verse-keyed that
+    isn't a commentary is a 'bible'."""
+    return _type_for(name).kind(name)
 
 
 def is_text_bible(name: str) -> bool:
@@ -82,108 +254,25 @@ def has_footnotes(name: str) -> bool:
     pane — drives the header f* toggle's sensitivity. Only verse-keyed
     render paths run the marker pipeline, so a genbook/devotional conf
     declaring a footnote filter still counts as False here."""
-    if ebible_bridge.is_ebible_module(name):
-        return bool(ebible_bridge.module_has_footnotes(name))
-    if interlinear_data.is_interlinear_module(name):
-        return False   # glosses are inline; no translator-footnote stream
-    if kind(name) not in ('bible', 'commentary'):
-        return False
-    return bool(sword_bridge.module_has_footnotes(name))
+    return _type_for(name).has_footnotes(name)
 
 
 def feature_card(name: str) -> dict | None:
     """Hero-row presentation for the marquee packs, or None for plain
     modules. The picker renders these with a leading icon and a one-line
     tagline beneath the (curated) title; ordinary modules get a plain row."""
-    if catena_bridge.is_catena_module(name):
-        return {'icon': 'scriptura-commentary-symbolic',
-                'tagline': _('Fathers, medievals & reformers — per verse')}
-    if imagery_bridge.is_imagery_module(name):
-        return {'icon': 'scriptura-imagery-symbolic',
-                'tagline': _('Engravings, maps & place photos')}
-    if archaeology_bridge.is_archaeology_module(name):
-        return {'icon': 'scriptura-artifact-symbolic',
-                'tagline': _('Artifacts of the biblical world')}
-    if interlinear_data.is_interlinear_module(name):
-        return {'icon': 'font-x-generic-symbolic',
-                'tagline': (_('Hebrew with gloss & parsing, word by word')
-                            if interlinear_data.is_hebrew(name) else
-                            _('Greek with gloss & parsing, word by word'))}
-    return None
+    return _type_for(name).feature_card(name)
 
 
 def language(name: str) -> str:
     """ISO language code for a module key (''/unknown when unavailable)."""
-    if catena_bridge.is_catena_module(name):
-        return 'en'
-    if imagery_bridge.is_imagery_module(name):
-        return 'en'
-    if archaeology_bridge.is_archaeology_module(name):
-        return 'en'
-    if interlinear_data.is_interlinear_module(name):
-        return 'hbo' if interlinear_data.is_hebrew(name) else 'grc'
-    if ebible_bridge.is_ebible_module(name):
-        return cast(str, ebible_bridge.module_language(name))
-    return cast(str, sword_bridge.module_language(name))
+    return _type_for(name).language(name)
 
 
 def info(name: str) -> dict:
     """Metadata dict for the picker info page: description, language,
     version, type, copyright, license, about (any subset)."""
-    if catena_bridge.is_catena_module(name):
-        meta = catena_bridge.pack_info()
-        return {
-            'description': _('Patristic, medieval, and Reformation commentary '
-                             'keyed to each verse — the church reading '
-                             'Scripture across the centuries.'),
-            'version': meta.get('built', ''),
-            'type': _('{n} quotations').format(n=meta.get('quote_count', '?')),
-            'license': _('Public domain (compiled from public-domain sources)'),
-            'about': _('Compiled from the HistoricalChristianFaith '
-                       'Commentaries Database.'),
-        }
-    if imagery_bridge.is_imagery_module(name):
-        meta = imagery_bridge.pack_info()
-        return {
-            'description': _('Public-domain illustrations, historical maps, and '
-                             'photographs of the places named in Scripture, '
-                             'shown beside the verse you are reading.'),
-            'version': meta.get('built', ''),
-            'type': _('{n} images').format(n=meta.get('image_count', '?')),
-            'license': _('Public domain & Creative Commons (per-item credits)'),
-            'about': _('Engravings (Doré, Schnorr, Merian), historical maps, and '
-                       'place photography from public-domain and openly-licensed '
-                       'sources.'),
-        }
-    if archaeology_bridge.is_archaeology_module(name):
-        return archaeology_bridge.info()
-    if interlinear_data.is_interlinear_module(name):
-        if interlinear_data.is_hebrew(name):
-            return {
-                'description': _('The Hebrew Old Testament word by word — '
-                                 'each word with its English gloss, parsing, '
-                                 'transliteration, and Strong’s number.'),
-                'type': _('Interlinear'),
-                'license': 'CC BY 4.0',
-                'about': _('Translators Amalgamated Hebrew OT (TAHOT), '
-                           'created by STEPBible at Tyndale House Cambridge '
-                           'from the Leningrad Codex, with Qere readings '
-                           'and English-first verse numbering.'),
-            }
-        return {
-            'description': _('The Greek New Testament word by word — each '
-                             'word with its English gloss, parsing, '
-                             'transliteration, and Strong’s number.'),
-            'type': _('Interlinear'),
-            'license': 'CC BY 4.0',
-            'about': _('Translators Amalgamated Greek NT (TAGNT), created '
-                       'by STEPBible at Tyndale House Cambridge. Follows '
-                       'the Nestle-Aland word stream; variant words from '
-                       'other editions are preserved in the data.'),
-        }
-    if ebible_bridge.is_ebible_module(name):
-        return cast(dict, ebible_bridge.module_info(name))
-    return cast(dict, sword_bridge.module_info(name))
+    return _type_for(name).info(name)
 
 
 def can_remove(name: str) -> bool:
@@ -193,31 +282,12 @@ def can_remove(name: str) -> bool:
     SWORD modules under /usr/share are read-only. Does NOT enforce the
     'keep at least one module' rule — that's the caller's concern since it
     depends on what else a pane has."""
-    if catena_bridge.is_catena_module(name):
-        return True
-    if imagery_bridge.is_imagery_module(name):
-        return True
-    if archaeology_bridge.is_archaeology_module(name):
-        return False  # bundled inside the app; not user-removable
-    if interlinear_data.is_interlinear_module(name):
-        return True
-    if ebible_bridge.is_ebible_module(name):
-        return True
-    return cast(bool, sword_bridge.can_remove_module(name))
+    return _type_for(name).can_remove(name)
 
 
 def remove(name: str) -> None:
     """Delete a module from disk, routed to its owning bridge."""
-    if catena_bridge.is_catena_module(name):
-        catena_bridge.remove_pack()
-    elif imagery_bridge.is_imagery_module(name):
-        imagery_bridge.remove_pack()
-    elif interlinear_data.is_interlinear_module(name):
-        interlinear_data.remove(name)
-    elif ebible_bridge.is_ebible_module(name):
-        ebible_bridge.remove_module(name)
-    else:
-        sword_bridge.remove_module(name)
+    _type_for(name).remove(name)
 
 
 # ── Cross-source editions of the same translation ────────────────────────────
