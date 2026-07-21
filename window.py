@@ -2695,6 +2695,10 @@ class BibleWindow(Adw.ApplicationWindow):
     def _sync_today_listen(self):
         if self._today_view is None:
             return
+        if not settings.get('show_audio'):
+            self._stop_today_listen()
+            self._today_view.clear_listen()
+            return
         today = datetime.date.today()
         got = devotional_audio.todays_strength(today)
         if got is not None:
@@ -2872,8 +2876,16 @@ class BibleWindow(Adw.ApplicationWindow):
             self._narrow_switch_box.set_visible(split)
             self._apply_narrow_pane()
             return
-        self.pane2.set_visible(split)
+        self._set_pane_visible(self.pane2, split)
         self._swap_btn.set_sensitive(split)
+
+    def _set_pane_visible(self, pane, visible):
+        """Show or hide a pane, stopping its audio on a visible→hidden
+        transition. Guarded on the transition so the frequent resize-driven
+        re-runs of _apply_narrow_pane don't silence a still-visible pane."""
+        if not visible and pane.get_visible():
+            pane.stop_audio()
+        pane.set_visible(visible)
 
     def _on_breakpoint_changed(self, *_args):
         """Map the single active breakpoint to the full adaptive state. None =
@@ -2916,8 +2928,8 @@ class BibleWindow(Adw.ApplicationWindow):
         else:
             self._narrow_switch_box.set_visible(False)
             self._view_box.set_visible(True)
-            self.pane1.set_visible(True)
-            self.pane2.set_visible(split)
+            self._set_pane_visible(self.pane1, True)
+            self._set_pane_visible(self.pane2, split)
 
     def _set_ultra_narrow(self, narrow):
         """Stricter desktop-narrow mode: fold the remaining nav/search/switcher
@@ -2957,12 +2969,12 @@ class BibleWindow(Adw.ApplicationWindow):
         """While collapsed, show exactly one pane: pane 1 in single mode, or the
         switcher-selected pane in split mode."""
         if not self._btn_split.get_active():
-            self.pane1.set_visible(True)
-            self.pane2.set_visible(False)
+            self._set_pane_visible(self.pane1, True)
+            self._set_pane_visible(self.pane2, False)
             return
         sel2 = self._narrow_pane == 2
-        self.pane1.set_visible(not sel2)
-        self.pane2.set_visible(sel2)
+        self._set_pane_visible(self.pane1, not sel2)
+        self._set_pane_visible(self.pane2, sel2)
 
     def _on_narrow_switch(self, btn):
         if not btn.get_active():
@@ -3925,6 +3937,26 @@ class BibleWindow(Adw.ApplicationWindow):
         ev_sw.connect('notify::active', _on_evening_switch)
         ev_row.append(ev_sw)
         adv_box.append(ev_row)
+        # Spoken readings span both panes (the devotional strip, the psalm
+        # control) and the Today page (Daily Strength), so they can't use the
+        # per-pane setter helper. On by default; off withdraws every audio
+        # control at once for readers who want none.
+        au_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        au_row.append(Gtk.Label(label=_('Spoken readings'),
+                                xalign=0, hexpand=True))
+        au_sw = Gtk.Switch(valign=Gtk.Align.CENTER)
+        au_sw.set_active(bool(settings.get('show_audio')))
+        set_accessible_label(au_sw, _('Spoken readings'))
+
+        def _on_audio_switch(s, _p):
+            on = s.get_active()
+            settings.put('show_audio', on)
+            for pane in (self.pane1, self.pane2):
+                pane.set_show_audio(on)
+            self._sync_today_listen()
+        au_sw.connect('notify::active', _on_audio_switch)
+        au_row.append(au_sw)
+        adv_box.append(au_row)
         adv.set_child(adv_box)
         card.append(adv)
 

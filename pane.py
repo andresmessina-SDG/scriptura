@@ -2456,6 +2456,13 @@ class BiblePane(Gtk.Box):
     def _fetch_and_render(self):
         self._rendered_verses = None
         self._sync_psalm_audio()
+        # Psalm audio stops above on every render. The devotional player must
+        # too when the pane is no longer a devotional — otherwise Spurgeon's
+        # reading plays on after a switch to a Bible, its controls gone with
+        # the date bar. A devotional render stops/re-offers it below, via
+        # _fetch_and_render_devotional → _sync_devotional_audio.
+        if not self._is_devotional:
+            self._stop_devotional_audio()
         self._content_stack.set_visible_child_name(self._content_child())
         if self._is_catena:
             # Follows the global book/chapter picker (and any verse the
@@ -2651,7 +2658,7 @@ class BiblePane(Gtk.Box):
     def _sync_devotional_audio(self, date_obj):
         """Offer the player for this day, or withdraw it entirely.
 
-        There is no setting to consult. The control appears when the open
+        Absent the Advanced ▸ audio opt-out, the control appears when the open
         module is a devotional this feed actually reads AND the feed has
         published that day's reading — otherwise there is simply nothing
         there, which is the honest state and never a dead button.
@@ -2659,6 +2666,9 @@ class BiblePane(Gtk.Box):
         if self._devot_audio_row is None:
             return
         self._stop_devotional_audio()
+        if not settings.get('show_audio'):
+            self._devot_audio_row.set_visible(False)
+            return
         if date_obj is None or not devotional_audio.covers_module(self._module):
             self._devot_audio_row.set_visible(False)
             return
@@ -2799,6 +2809,10 @@ class BiblePane(Gtk.Box):
         for a moment rather than a button that cannot yet work.
         """
         self._stop_psalm_audio()
+        if not settings.get('show_audio'):
+            self._psalm_audio.set_visible(False)
+            self._psalm_url = None
+            return
         if self._book != 'Psalms' or not self._is_verse_navigable():
             self._psalm_audio.set_visible(False)
             self._psalm_url = None
@@ -2892,6 +2906,21 @@ class BiblePane(Gtk.Box):
         if getattr(self, '_psalm_progress', None) is not None:
             self._psalm_progress.set_fraction(0.0)
             self._psalm_progress.set_opacity(0.0)
+
+    def stop_audio(self):
+        """Silence both spoken-reading players. Called when the pane is hidden
+        (split collapsed, narrow-mode pane switch) so audio never plays on from
+        a surface the reader can no longer see or reach the controls on."""
+        self._stop_psalm_audio()
+        self._stop_devotional_audio()
+
+    def set_show_audio(self, _active):
+        """Re-evaluate both spoken-reading controls after the Advanced toggle.
+        Each sync consults the setting and either offers or withdraws its
+        control for the pane's current content, so re-running them is enough
+        in both directions."""
+        self._sync_psalm_audio()
+        self._sync_devotional_audio(self._devotional_date)
 
     def _go_devotional_day(self, delta, reset=False):
         if reset:

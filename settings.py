@@ -77,6 +77,11 @@ _defaults: dict[str, Any] = {
     # The Today landing page at launch (once per session; Esc or any action
     # dismisses it). Off = straight to the reading surface.
     'open_to_today':      True,
+    # Appearance ▸ Advanced: offer the spoken readings (Spurgeon's morning &
+    # evening, the psalm read aloud, today's Daily Strength) where a feed has
+    # them. On by default — the controls only ever appear where audio exists;
+    # off withdraws them entirely for readers who want none.
+    'show_audio':         True,
     # Liturgical calendar for the Today page's church-year line: None (the
     # ecumenical default — silent), 'anglican', 'roman', or 'orthodox'
     # (see church_year.py for what each means).

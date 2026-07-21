@@ -61,9 +61,17 @@ PSALMS_FEED_URL = 'https://feeds.megaphone.fm/CXW8316192394'
 #: own title for the psalm and is kept for display; the number is the key.
 _PSALM_TITLE = re.compile(r'^\s*Psalm\s+(\d{1,3})\s*(?:[-–—]\s*(.*))?$')
 
-#: How long a cached copy of the feed index is trusted. The feed gains two
-#: episodes a day, so a day is ample and keeps the app off the network.
-INDEX_MAX_AGE = datetime.timedelta(hours=20)
+#: The floor between refetches of a feed index. refresh_index is only ever
+#: called on a miss — a lookup that found no episode for the day (or psalm) on
+#: screen — so a miss should refetch, in case the feed has published since the
+#: cache was written: a new calendar day's reading, or the evening episode that
+#: appears midday. This floor only rate-limits that, so paging across days a
+#: feed hasn't published, or repeated Today syncs, can't hammer the publisher.
+#: An hour is short enough that today's reading appears the first time it is
+#: looked for, and long enough to keep the app off the network the rest of the
+#: time. (An earlier 20-hour "trust" meant a new day's episode stayed invisible
+#: all morning — the cache was still "fresh" but predated the reading.)
+MISS_RETRY_FLOOR = datetime.timedelta(hours=1)
 
 #: The hour from which the evening reading is the one meant. NOON, not the
 #: evensong hour the Today page uses for its epigraph: this is a book of two
@@ -223,24 +231,27 @@ def _load_index(feed: str = FEED_URL):
         return {}
 
 
-def _index_is_fresh(feed: str = FEED_URL) -> bool:
+def _recently_refetched(feed: str = FEED_URL) -> bool:
+    """Whether the index was refetched within the retry floor — in which case a
+    fresh miss is trusted rather than triggering another fetch."""
     try:
         age = datetime.datetime.now() - datetime.datetime.fromtimestamp(
             os.path.getmtime(_index_path(feed)))
     except OSError:
         return False
-    return age < INDEX_MAX_AGE
+    return age < MISS_RETRY_FLOOR
 
 
 def refresh_index(force: bool = False, feed: str = FEED_URL):
-    """The episode index, refetched only when the cached copy has aged out.
+    """The episode index, refetched on a miss unless it was refetched within
+    the last MISS_RETRY_FLOOR.
 
     Blocking network work — call from a task worker. Returns the cached index
     unchanged if the fetch fails: a feed that cannot be reached should leave
     yesterday's answer standing, not erase it.
     """
     cached = _load_index(feed)
-    if cached and not force and _index_is_fresh(feed):
+    if cached and not force and _recently_refetched(feed):
         return cached
     parse = {PSALMS_FEED_URL: parse_psalms_feed,
              DAILY_STRENGTH_FEED_URL: parse_dated_feed}.get(feed, parse_feed)
