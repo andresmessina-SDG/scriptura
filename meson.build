@@ -64,6 +64,7 @@ py_sources = files(
   'onboarding.py',
   'open_data.py',
   'pane.py',
+  'pane_chrome.py',
   'pane_search.py',
   'paths.py',
   'present.py',

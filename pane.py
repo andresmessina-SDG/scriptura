@@ -34,6 +34,7 @@ import devotional
 import devotional_audio
 import annotation_dialogs
 from lexicon_panel import LexiconPanel
+from pane_chrome import ChromeController
 from pane_search import PaneSearch
 from a11y import set_accessible_label
 
@@ -1007,14 +1008,10 @@ def _forward_visible_chars(it, count, limit):
 
 
 class BiblePane(Gtk.Box):
-    # Auto-hide-on-scroll tuning for the pane toolbar (pixels of the reading
-    # scroll). A top dead-zone always shows the bar near the chapter start;
-    # the bar only hides after this much accumulated downward scroll, and
-    # reveals after a smaller upward scroll (reveal is deliberately cheaper —
-    # hidden chrome must always be trivially easy to bring back).
-    _CHROME_TOP_DEADZONE = 64.0
-    _CHROME_HIDE_THRESHOLD = 48.0
-    _CHROME_SHOW_THRESHOLD = 24.0
+    # The auto-hide-on-scroll chrome band lives in ChromeController
+    # (pane_chrome.py) — its reveal state, hysteresis thresholds, and the
+    # strip animation that keeps the reading glyphs screen-fixed. This pane
+    # owns the reading scroll/anchor machinery it collaborates with.
 
     def __init__(self, module_name=None, on_word_click=None,
                  on_click_outside_search=None, on_verse_select=None,
@@ -1133,8 +1130,10 @@ class BiblePane(Gtk.Box):
         self._anchor_capture_id = 0
         self._settle_retries = 0
         self._last_value_change = 0
-        # Running Adw.TimedAnimation for the chrome strip (reveal/hide).
-        self._strip_anim = None
+        # The auto-hiding toolbar band + its strip compensation. Holds a
+        # back-reference to this pane; only stores it now (the widgets it
+        # moves are built later in __init__ and touched at call time).
+        self._chrome = ChromeController(self)
         # True while an anchor re-assert idle is queued (dedupe for
         # per-frame resize storms, e.g. dragging the lexicon divider).
         self._anchor_apply_pending = False
@@ -1376,9 +1375,8 @@ class BiblePane(Gtk.Box):
         # monotonic deadline (µs): adjustment changes before it are treated as
         # programmatic (renders, verse jumps, anchor restores) and never feed
         # the accumulator — chrome reacts to the reader's hand, not to
-        # layout work.
-        self._chrome_revealed = True
-        self._scroll_accum = 0.0
+        # layout work. The revealed flag and the accumulator live on
+        # self._chrome; the pane keeps the last-value tracking the handler needs.
         self._last_scroll_value = 0.0
         scrolled.get_vadjustment().connect('value-changed', self._on_reading_scroll)
 
@@ -1608,103 +1606,22 @@ class BiblePane(Gtk.Box):
         if (GLib.get_monotonic_time() < self._ignore_scroll_until
                 or self._content_child() != 'text'
                 or not self._user_scroll_recent()):
-            self._scroll_accum = 0.0
+            self._chrome.reset_accum()
             return
         # A real user scroll moves the reading locus — the persisted
         # anchor no longer describes it. Re-capture once the motion
         # settles so resizes can keep holding the reader's place.
         self._reading_anchor = None
         self._schedule_anchor_capture()
-        # Always reveal near the top of the chapter.
-        if v <= self._CHROME_TOP_DEADZONE:
-            self._scroll_accum = 0.0
-            self._set_chrome_revealed(True)
-            return
-        # Accumulate motion in the current direction; a reversal resets it.
-        if (delta > 0) != (self._scroll_accum > 0):
-            self._scroll_accum = 0.0
-        self._scroll_accum += delta
-        if self._chrome_revealed and self._scroll_accum > self._CHROME_HIDE_THRESHOLD:
-            self._set_chrome_revealed(False)
-        elif (not self._chrome_revealed
-              and self._scroll_accum < -self._CHROME_SHOW_THRESHOLD):
-            self._set_chrome_revealed(True)
+        # The chrome band reacts to this scroll (reveal near the top, else
+        # accumulate directional motion past the hysteresis thresholds).
+        self._chrome.on_scroll(v, delta)
 
     def _set_chrome_revealed(self, reveal):
-        """Toggle the toolbar revealer, with asymmetric motion timing: exits
-        are brisk (get out of the way), entrances gentler (arrive softly)."""
-        if reveal == self._chrome_revealed:
-            return
-        self._chrome_revealed = reveal
-        self._scroll_accum = 0.0
-        self._toolbar_revealer.set_transition_duration(280 if reveal else 200)
-        self._toolbar_revealer.set_reveal_child(reveal)
-        self._animate_page_strip()
-
-    def _strip_targets(self):
-        """(base, toolbar) strip heights: base chrome that never auto-hides
-        (the devotional date bar) and the auto-hiding toolbar."""
-        base = 0
-        if self._is_devotional:
-            base = self._date_nav.measure(Gtk.Orientation.VERTICAL, -1)[1]
-        return base, self._toolbar.measure(Gtk.Orientation.VERTICAL, -1)[1]
+        self._chrome.set_revealed(reveal)
 
     def _animate_page_strip(self):
-        """Slide the page card's top edge in step with the toolbar,
-        keeping the glyphs screen-fixed: each frame the card top moves by
-        dm and the scroll value moves by dm with it, so hiding the chrome
-        unveils a strip of earlier text (reclaiming the space) instead of
-        dragging the page up — and revealing tucks it back."""
-        base, tb = self._strip_targets()
-        target = base + (tb if self._chrome_revealed else 0)
-        if self._strip_anim is not None:
-            self._strip_anim.pause()
-            self._strip_anim = None
-        start = self._lex_paned.get_margin_top()
-        if start == target:
-            return
-        adj = self._reading_scroll.get_vadjustment()
-        last = {'m': start}
-
-        def frame(value):
-            m = round(value)
-            dm = m - last['m']
-            if dm == 0:
-                return
-            last['m'] = m
-            self._lex_paned.set_margin_top(m)
-            self._mark_programmatic_scroll()
-            adj.set_value(adj.get_value() + dm)
-
-        def done(_anim):
-            self._strip_anim = None
-            # The viewport top edge genuinely moved — the old anchor's
-            # pixel delta no longer describes the reading locus.
-            self._reading_anchor = None
-            self._capture_scroll_anchor()
-
-        anim = Adw.TimedAnimation.new(
-            self._lex_paned, start, target,
-            (motion.DURATION_EMPHASIZED if self._chrome_revealed
-             else motion.DURATION_STANDARD),
-            Adw.CallbackAnimationTarget.new(frame))
-        # The strip is an on-screen reposition (the card top and the
-        # scroll value travel together), not an enter/exit — symmetric
-        # easing, set explicitly rather than riding the library default.
-        anim.set_easing(motion.EASE_MOVE)
-        anim.connect('done', done)
-        self._strip_anim = anim
-        anim.play()
-
-        def force_finish():
-            # A stalled frame clock (headless, hidden window) must not
-            # leave the strip mid-flight and the anchor machinery
-            # suppressed — jump to the end state.
-            if self._strip_anim is anim:
-                anim.skip()
-            return GLib.SOURCE_REMOVE
-
-        GLib.timeout_add(600, force_finish)
+        self._chrome.animate_strip()
 
     def _on_viewport_resized(self):
         """Viewport height changed (lexicon paned, window resize). The
@@ -1716,7 +1633,7 @@ class BiblePane(Gtk.Box):
         is authoritative there, and re-asserting the (stale) anchor
         would fight it. Deduped — a divider drag fires per-frame height
         changes, and each apply spawns its own correction sources."""
-        if (self._strip_anim is None
+        if (not self._chrome.is_animating()
                 and not self._anchor_apply_pending
                 and self._reading_anchor is not None
                 and self._rendered_verses):
@@ -1796,22 +1713,10 @@ class BiblePane(Gtk.Box):
         self._ignore_scroll_until = GLib.get_monotonic_time() + ms * 1000
 
     def _sync_view_top_margin(self):
-        """Reserve the chrome band's current strip height above the
-        reading page, so the page keeps its original below-the-toolbar
-        look — rounded corners, gutter and all. Reveal/hide transitions
-        animate this margin with a compensating scroll (see
-        _animate_page_strip) so the text never rides along."""
-        if self._strip_anim is not None:
-            self._strip_anim.pause()
-            self._strip_anim = None
-        base, tb = self._strip_targets()
-        self._lex_paned.set_margin_top(
-            base + (tb if self._chrome_revealed else 0))
+        self._chrome.sync_view_top_margin()
 
     def _reveal_chrome(self):
-        """Force the pane toolbar back into view (tap, focus, module change)."""
-        self._scroll_accum = 0.0
-        self._set_chrome_revealed(True)
+        self._chrome.reveal()
 
     def _on_copy_clipboard(self, view):
         """Intercept Ctrl+C (and any other path that emits copy-clipboard)
@@ -2301,7 +2206,7 @@ class BiblePane(Gtk.Box):
             # adjustment) — stop steering.
             return (seq != self._anchor_seq
                     or self._scrollbar_held
-                    or self._strip_anim is not None
+                    or self._chrome.is_animating()
                     or self._last_scroll_input != input_t0)
 
         def reassert():
