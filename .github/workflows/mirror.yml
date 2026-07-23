@@ -5,7 +5,7 @@
 #
 # Setup (one-time): create a Codeberg access token with repository write scope
 # (Codeberg -> Settings -> Applications), then add it to this repo as the
-# Actions secret CODEBERG_TOKEN. Until the secret exists, the job skips cleanly.
+# Actions secret CODEBERGMIRROR. Until the secret exists, the job skips cleanly.
 #
 # Plain git only — no third-party action — to keep the mirror path free of
 # supply-chain surface.
@@ -23,7 +23,7 @@ jobs:
     steps:
       - name: Mirror to Codeberg
         env:
-          TOKEN: ${{ secrets.CODEBERG_TOKEN }}
+          TOKEN: ${{ secrets.CODEBERGMIRROR }}
         run: |
           if [ -z "$TOKEN" ]; then
             echo "CODEBERG_TOKEN not set — skipping mirror. Add the secret to enable."
