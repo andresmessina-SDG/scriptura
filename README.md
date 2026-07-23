@@ -96,17 +96,17 @@ own.
 
 ## Install
 
-[![Install as Flatpak](https://img.shields.io/badge/Install-Flatpak-4A86CF?logo=flatpak&logoColor=white)](https://andresmessina-sdg.github.io/scriptura/scriptura.flatpakref)
+[![Install as Flatpak](https://img.shields.io/badge/Install-Flatpak-4A86CF?logo=flatpak&logoColor=white)](https://andresmessina-sdg.github.io/scriptura-flatpak/scriptura.flatpakref)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 The easiest way to run Scriptura (one click, automatic updates):
 
-**[➜ Install Scriptura (Flatpak)](https://andresmessina-sdg.github.io/scriptura/scriptura.flatpakref)**
+**[➜ Install Scriptura (Flatpak)](https://andresmessina-sdg.github.io/scriptura-flatpak/scriptura.flatpakref)**
 
 Or from a terminal:
 
 ```bash
-flatpak install https://andresmessina-sdg.github.io/scriptura/scriptura.flatpakref
+flatpak install https://andresmessina-sdg.github.io/scriptura-flatpak/scriptura.flatpakref
 ```
 
 You'll need [Flatpak](https://flatpak.org/setup/) with the Flathub remote (for

@@ -4,9 +4,9 @@
 #
 # Output is written to ./public/ . Publish that directory's *contents* to
 # GitHub Pages for this repo (the `gh-pages` branch, or a /docs source),
-# served at https://andresmessina-sdg.github.io/scriptura/ . Users then
+# served at https://andresmessina-sdg.github.io/scriptura-flatpak/ . Users then
 # install in one click via
-#   https://andresmessina-sdg.github.io/scriptura/scriptura.flatpakref
+#   https://andresmessina-sdg.github.io/scriptura-flatpak/scriptura.flatpakref
 # and receive updates automatically whenever you re-run this and re-publish.
 #
 # Prerequisites:
@@ -19,7 +19,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."                       # repo root
 
 SIGN_HOME="${SIGN_HOME:-$HOME/.scriptura-flatpak-signing}"
-BASE_URL="${BASE_URL:-https://andresmessina-sdg.github.io/scriptura}"
+BASE_URL="${BASE_URL:-https://andresmessina-sdg.github.io/scriptura-flatpak}"
 HOMEPAGE="https://github.com/andresmessina-SDG/scriptura"
 MANIFEST="io.github.andresmessina_SDG.Scriptura.yml"
 APPID="io.github.andresmessina_SDG.Scriptura"
