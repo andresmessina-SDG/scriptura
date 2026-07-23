@@ -1,0 +1,34 @@
+# Push-mirror GitHub -> Codeberg. GitHub is the source of truth; Codeberg is
+# kept as a faithful read-only mirror. Each run does a full `git clone --mirror`
+# of this repo and `git push --mirror` to Codeberg, so every branch and tag is
+# replicated exactly (including prunes).
+#
+# Setup (one-time): create a Codeberg access token with repository write scope
+# (Codeberg -> Settings -> Applications), then add it to this repo as the
+# Actions secret CODEBERG_TOKEN. Until the secret exists, the job skips cleanly.
+#
+# Plain git only — no third-party action — to keep the mirror path free of
+# supply-chain surface.
+name: Mirror to Codeberg
+
+on:
+  push:
+    branches: ['**']
+    tags: ['**']
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mirror to Codeberg
+        env:
+          TOKEN: ${{ secrets.CODEBERG_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "CODEBERG_TOKEN not set — skipping mirror. Add the secret to enable."
+            exit 0
+          fi
+          git clone --mirror "https://github.com/andresmessina-SDG/scriptura.git" repo.git
+          cd repo.git
+          git push --mirror "https://andresmessina:${TOKEN}@codeberg.org/andresmessina/scriptura.git"
