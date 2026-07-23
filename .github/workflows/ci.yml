@@ -18,11 +18,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # --setopt install_weak_deps=False keeps the layer lean; -y for non-interactive.
+      # gobject-introspection ships cairo-1.0.typelib, which the app's Gtk imports
+      # need at test-collection time (a weak dep skipped by install_weak_deps=False).
       - name: Install deps
         run: >-
           dnf install -y --setopt=install_weak_deps=False
           python3-pytest python3-mypy python3-sword
-          python3-gobject gtk4 libadwaita
+          python3-gobject gobject-introspection gtk4 libadwaita
       - name: Tests
         run: python3 -m pytest -q
       # tools/ are standalone build-time generation scripts (maps, packs), not
