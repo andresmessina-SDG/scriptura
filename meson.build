@@ -7,7 +7,7 @@ project('scriptura',
 python = import('python').find_installation('python3')
 i18n = import('i18n')
 
-app_id = 'page.codeberg.andresmessina.Scriptura'
+app_id = 'io.github.andresmessina_SDG.Scriptura'
 pkgdatadir = get_option('prefix') / get_option('datadir') / meson.project_name()
 bindir = get_option('prefix') / get_option('bindir')
 licensedir = get_option('prefix') / get_option('datadir') / 'licenses' / app_id

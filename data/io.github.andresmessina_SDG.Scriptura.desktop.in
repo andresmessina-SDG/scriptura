@@ -2,12 +2,12 @@
 Name=Scriptura
 GenericName=Bible Study
 Comment=GNOME-native Bible study with SWORD modules, Strong's lexicon, and cross-references
-Exec=page.codeberg.andresmessina.Scriptura %U
-Icon=page.codeberg.andresmessina.Scriptura
+Exec=io.github.andresmessina_SDG.Scriptura %U
+Icon=io.github.andresmessina_SDG.Scriptura
 Categories=Education;Literature;
 Keywords=Bible;Scripture;Study;SWORD;Lexicon;Strong's;
 MimeType=x-scheme-handler/bible;
 Terminal=false
 Type=Application
 StartupNotify=true
-StartupWMClass=page.codeberg.andresmessina.Scriptura
+StartupWMClass=io.github.andresmessina_SDG.Scriptura

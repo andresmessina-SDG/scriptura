@@ -3303,13 +3303,13 @@ class BibleWindow(Adw.ApplicationWindow):
         from _version import __version__
         dlg = Adw.AboutDialog(
             application_name='Scriptura',
-            application_icon='page.codeberg.andresmessina.Scriptura',
+            application_icon='io.github.andresmessina_SDG.Scriptura',
             developer_name='Andres Messina',
             version=__version__,
             comments=_('GNOME-native Bible study with SWORD modules, '
                        'Strong’s lexicon, cross-references, and reading plans.'),
-            website='https://codeberg.org/andresmessina/scriptura',
-            issue_url='https://codeberg.org/andresmessina/scriptura/issues',
+            website='https://github.com/andresmessina-SDG/scriptura',
+            issue_url='https://github.com/andresmessina-SDG/scriptura/issues',
             license_type=Gtk.License.GPL_3_0,
             copyright='© 2026 Andres Messina',
         )

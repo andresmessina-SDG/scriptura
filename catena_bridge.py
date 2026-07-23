@@ -32,7 +32,7 @@ MODULE_KEY = 'Historical Commentaries'
 # When a rebuilt pack is published, bump BOTH of these: PACK_URL to the new
 # release asset, and LATEST_BUILT to that pack's pack_meta 'built' date, so an
 # installed-but-older pack surfaces an "update available" nudge (update_available).
-PACK_URL = ('https://codeberg.org/andresmessina/scriptura/releases/'
+PACK_URL = ('https://github.com/andresmessina-SDG/scriptura/releases/'
             'download/catena-pack-v2/catena.db.gz')
 LATEST_BUILT = '2026-07-12'
 

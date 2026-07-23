@@ -96,17 +96,17 @@ own.
 
 ## Install
 
-[![Install as Flatpak](https://img.shields.io/badge/Install-Flatpak-4A86CF?logo=flatpak&logoColor=white)](https://andresmessina.codeberg.page/scriptura.flatpakref)
+[![Install as Flatpak](https://img.shields.io/badge/Install-Flatpak-4A86CF?logo=flatpak&logoColor=white)](https://andresmessina-sdg.github.io/scriptura/scriptura.flatpakref)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 The easiest way to run Scriptura (one click, automatic updates):
 
-**[➜ Install Scriptura (Flatpak)](https://andresmessina.codeberg.page/scriptura.flatpakref)**
+**[➜ Install Scriptura (Flatpak)](https://andresmessina-sdg.github.io/scriptura/scriptura.flatpakref)**
 
 Or from a terminal:
 
 ```bash
-flatpak install https://andresmessina.codeberg.page/scriptura.flatpakref
+flatpak install https://andresmessina-sdg.github.io/scriptura/scriptura.flatpakref
 ```
 
 You'll need [Flatpak](https://flatpak.org/setup/) with the Flathub remote (for
@@ -157,7 +157,7 @@ the `python3` alias works too.
 The app is plain Python, with no build step:
 
 ```sh
-git clone https://codeberg.org/andresmessina/scriptura.git
+git clone https://github.com/andresmessina-SDG/scriptura.git
 cd scriptura
 python3 main.py
 ```
@@ -342,4 +342,4 @@ bug reports, and translation contributions are all welcome.
 
 ## Repository
 
-[codeberg.org/andresmessina/scriptura](https://codeberg.org/andresmessina/scriptura)
+[github.com/andresmessina-SDG/scriptura](https://github.com/andresmessina-SDG/scriptura)

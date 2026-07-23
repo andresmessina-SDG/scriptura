@@ -35,7 +35,7 @@ from datetime import date
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _UA = ('ScripturaImageryBuilder/1.0 '
-       '(https://codeberg.org/andresmessina/scriptura)')
+       '(https://github.com/andresmessina-SDG/scriptura)')
 
 _SCHEMA = """
 CREATE TABLE imagery (
@@ -834,7 +834,7 @@ def ingest_genmaps(conn, images_dir, width, limit, fetch_images):
                 ('map', 'modern_map', m['title'], None, rng['book'],
                  encode(rng['chapter'], rng['verse']), encode(ce, ve),
                  m.get('passage_label'), rel, size, 'generated_maps',
-                 'https://codeberg.org/andresmessina/scriptura',
+                 'https://github.com/andresmessina-SDG/scriptura',
                  'PD (own work; data: Natural Earth PD, '
                  'OpenBible.info CC BY 4.0)',
                  'Scriptura · map data: Natural Earth (PD), '

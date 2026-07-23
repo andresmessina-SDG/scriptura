@@ -2,11 +2,12 @@
 #
 # Build, sign, and stage the Scriptura Flatpak repository for one-click install.
 #
-# Output is written to ./public/ . Upload that directory's *contents* to the
-# `pages` branch of a Codeberg repo named `pages` (served at the user root,
-# https://andresmessina.codeberg.page/). Users then install in one click via
-#   https://andresmessina.codeberg.page/scriptura.flatpakref
-# and receive updates automatically whenever you re-run this and re-upload.
+# Output is written to ./public/ . Publish that directory's *contents* to
+# GitHub Pages for this repo (the `gh-pages` branch, or a /docs source),
+# served at https://andresmessina-sdg.github.io/scriptura/ . Users then
+# install in one click via
+#   https://andresmessina-sdg.github.io/scriptura/scriptura.flatpakref
+# and receive updates automatically whenever you re-run this and re-publish.
 #
 # Prerequisites:
 #   - flatpak, flatpak-builder, ostree, gpg
@@ -18,10 +19,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."                       # repo root
 
 SIGN_HOME="${SIGN_HOME:-$HOME/.scriptura-flatpak-signing}"
-BASE_URL="${BASE_URL:-https://andresmessina.codeberg.page}"
-HOMEPAGE="https://codeberg.org/andresmessina/scriptura"
-MANIFEST="page.codeberg.andresmessina.Scriptura.yml"
-APPID="page.codeberg.andresmessina.Scriptura"
+BASE_URL="${BASE_URL:-https://andresmessina-sdg.github.io/scriptura}"
+HOMEPAGE="https://github.com/andresmessina-SDG/scriptura"
+MANIFEST="io.github.andresmessina_SDG.Scriptura.yml"
+APPID="io.github.andresmessina_SDG.Scriptura"
 BUILDDIR="flatpak-build"
 OUT="public"
 REPO="$OUT/repo"

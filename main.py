@@ -10,7 +10,7 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Gdk, Gio
 
 
-APP_ID = 'page.codeberg.andresmessina.Scriptura'
+APP_ID = 'io.github.andresmessina_SDG.Scriptura'
 # gettext domain — must match i18n.gettext('scriptura') in po/meson.build and
 # the installed scriptura.mo, or translations won't load.
 GETTEXT_DOMAIN = 'scriptura'

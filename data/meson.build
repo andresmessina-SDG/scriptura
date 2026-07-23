@@ -5,8 +5,8 @@ po_dir = meson.project_source_root() / 'po'
 # Translated .desktop — msgfmt --desktop merges Name/GenericName/Comment/
 # Keywords from the catalogs in po/ into the generated file.
 desktop_file = i18n.merge_file(
-  input: 'page.codeberg.andresmessina.Scriptura.desktop.in',
-  output: 'page.codeberg.andresmessina.Scriptura.desktop',
+  input: 'io.github.andresmessina_SDG.Scriptura.desktop.in',
+  output: 'io.github.andresmessina_SDG.Scriptura.desktop',
   type: 'desktop',
   po_dir: po_dir,
   install: true,
@@ -16,14 +16,14 @@ desktop_file = i18n.merge_file(
 # Translated AppStream metainfo — msgfmt --xml uses gettext's built-in
 # metainfo ITS rules to merge <summary>/<description> translations.
 metainfo_file = i18n.merge_file(
-  input: 'page.codeberg.andresmessina.Scriptura.metainfo.xml.in',
-  output: 'page.codeberg.andresmessina.Scriptura.metainfo.xml',
+  input: 'io.github.andresmessina_SDG.Scriptura.metainfo.xml.in',
+  output: 'io.github.andresmessina_SDG.Scriptura.metainfo.xml',
   type: 'xml',
   po_dir: po_dir,
   install: true,
   install_dir: datadir / 'metainfo',
 )
-icon_file = 'icons/hicolor/scalable/apps/page.codeberg.andresmessina.Scriptura.svg'
+icon_file = 'icons/hicolor/scalable/apps/io.github.andresmessina_SDG.Scriptura.svg'
 symbolic_icon = 'icons/hicolor/symbolic/apps/scriptura-keyboard-symbolic.svg'
 globe_icon = 'icons/hicolor/symbolic/apps/scriptura-globe-symbolic.svg'
 commentary_icon = 'icons/hicolor/symbolic/apps/scriptura-commentary-symbolic.svg'

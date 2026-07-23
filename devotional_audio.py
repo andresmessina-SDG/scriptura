@@ -80,7 +80,7 @@ MISS_RETRY_FLOOR = datetime.timedelta(hours=1)
 #: go looking for the other.
 EVENING_HOUR = 12
 
-_UA = 'Scriptura (Bible reader; +https://codeberg.org/andresmessina/scriptura)'
+_UA = 'Scriptura (Bible reader; +https://github.com/andresmessina-SDG/scriptura)'
 
 #: "July 20 | Evening" — the publisher's own title format.
 _TITLE = re.compile(

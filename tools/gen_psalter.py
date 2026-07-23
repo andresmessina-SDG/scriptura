@@ -44,7 +44,7 @@ import sys
 import urllib.request
 
 _UA = ('ScripturaImageryBuilder/1.0 '
-       '(https://codeberg.org/andresmessina/scriptura)')
+       '(https://github.com/andresmessina-SDG/scriptura)')
 _MANIFEST_V2 = 'https://objects.library.uu.nl/manifest/iiif/v2/1874-284427'
 _MANIFEST_V3 = 'https://objects.library.uu.nl/manifest/iiif/v3/1874-284427'
 

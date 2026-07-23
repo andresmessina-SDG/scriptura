@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>page.codeberg.andresmessina.Scriptura</id>
+  <id>io.github.andresmessina_SDG.Scriptura</id>
 
   <name>Scriptura</name>
   <summary>Read and study the Bible in depth</summary>
@@ -8,7 +8,7 @@
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
 
-  <developer id="page.codeberg.andresmessina">
+  <developer id="io.github.andresmessina_sdg">
     <name>Andres Messina</name>
   </developer>
 
@@ -34,7 +34,7 @@
     </p>
   </description>
 
-  <launchable type="desktop-id">page.codeberg.andresmessina.Scriptura.desktop</launchable>
+  <launchable type="desktop-id">io.github.andresmessina_SDG.Scriptura.desktop</launchable>
 
   <branding>
     <color type="primary" scheme_preference="light">#8B6520</color>
@@ -43,35 +43,35 @@
 
   <screenshots>
     <screenshot type="default">
-      <image>https://codeberg.org/andresmessina/scriptura/raw/branch/main/data/screenshots/01-two-pane-lexicon.png</image>
+      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/01-two-pane-lexicon.png</image>
       <caption>Two-pane reading with the Strong's lexicon open on a Greek word</caption>
     </screenshot>
     <screenshot>
-      <image>https://codeberg.org/andresmessina/scriptura/raw/branch/main/data/screenshots/06-interlinear-greek.png</image>
+      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/06-interlinear-greek.png</image>
       <caption>The Greek New Testament interlinear — gloss, parsing, and Strong's number under every word</caption>
     </screenshot>
     <screenshot>
-      <image>https://codeberg.org/andresmessina/scriptura/raw/branch/main/data/screenshots/02-historical-commentaries.png</image>
+      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/02-historical-commentaries.png</image>
       <caption>The Historical Commentaries pane — the church's voices on a verse, across the centuries</caption>
     </screenshot>
     <screenshot>
-      <image>https://codeberg.org/andresmessina/scriptura/raw/branch/main/data/screenshots/03-study-journal.png</image>
+      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/03-study-journal.png</image>
       <caption>Study Journal — every annotation in one filterable surface</caption>
     </screenshot>
     <screenshot>
-      <image>https://codeberg.org/andresmessina/scriptura/raw/branch/main/data/screenshots/04-reading-plan.png</image>
+      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/04-reading-plan.png</image>
       <caption>Built-in reading plans with day-by-day progress</caption>
     </screenshot>
     <screenshot>
-      <image>https://codeberg.org/andresmessina/scriptura/raw/branch/main/data/screenshots/05-reading-mode-dark.png</image>
+      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/05-reading-mode-dark.png</image>
       <caption>F11 reading mode hides all chrome for distraction-free reading</caption>
     </screenshot>
   </screenshots>
 
-  <url type="homepage">https://codeberg.org/andresmessina/scriptura</url>
-  <url type="bugtracker">https://codeberg.org/andresmessina/scriptura/issues</url>
-  <url type="vcs-browser">https://codeberg.org/andresmessina/scriptura</url>
-  <url type="contribute">https://codeberg.org/andresmessina/scriptura</url>
+  <url type="homepage">https://github.com/andresmessina-SDG/scriptura</url>
+  <url type="bugtracker">https://github.com/andresmessina-SDG/scriptura/issues</url>
+  <url type="vcs-browser">https://github.com/andresmessina-SDG/scriptura</url>
+  <url type="contribute">https://github.com/andresmessina-SDG/scriptura</url>
   <url type="donation">https://ko-fi.com/andresmessina</url>
 
   <categories>

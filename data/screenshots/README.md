@@ -2,7 +2,7 @@
 
 These PNGs are the app's store screenshots. They are referenced by
 the AppStream metainfo
-(`data/page.codeberg.andresmessina.Scriptura.metainfo.xml.in`) and
+(`data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in`) and
 shown by GNOME Software on the app's detail page. The repo README also
 embeds a few of them.
 
@@ -16,7 +16,7 @@ the Flatpak manifest either.
 Each `<image>` URL tracks the `main` branch:
 
 ```
-https://codeberg.org/andresmessina/scriptura/raw/branch/main/data/screenshots/<file>.png
+https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/<file>.png
 ```
 
 Because the URLs follow `branch/main` (not a pinned commit), refreshing

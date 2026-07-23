@@ -73,7 +73,7 @@ scriptura/
 +-- requirements-dev.txt  # pytest + dev tools
 +-- mypy.ini              # gradual strict-typing config (per-module sections)
 +-- meson.build           # install rules (Flatpak builds via meson)
-+-- main.py               # app entry, Adw.Application (page.codeberg.andresmessina.Scriptura)
++-- main.py               # app entry, Adw.Application (io.github.andresmessina_SDG.Scriptura)
 +-- i18n.py               # importable gettext helpers (_ / ngettext / N_ / book_label)
 +-- window.py             # BibleWindow — header, panes, navigation funnels, About dialog
 +-- pane.py               # BiblePane — text rendering, annotations, click handling
@@ -117,7 +117,7 @@ scriptura/
 +-- flatpak/              # manifest patches (e.g. sword-curl-libraries.patch)
 +-- data/
 |   +-- icons/             # app + bundled symbolic icons
-|   +-- page.codeberg.andresmessina.Scriptura.desktop
+|   +-- io.github.andresmessina_SDG.Scriptura.desktop
 |   +-- style.css          # Centralised application stylesheet (loaded by styles.py)
 ```
 
@@ -553,7 +553,7 @@ and `_is_genbook`) showing how the church read each verse across time.
   denormalised `quotes` table (verse keys encoded as
   `chapter*1_000_000 + verse`, so a range row's `[loc_start, loc_end]`
   span surfaces on every verse it covers) plus a `pack_meta` table. It's
-  hosted gzipped (~31 MB) on Codeberg Releases and downloaded on demand —
+  hosted gzipped (~31 MB) on GitHub Releases and downloaded on demand —
   never bundled in the Flatpak.
 - **`catena_bridge.py`** is the read layer: a read-only thread-local
   connection (reopened via a generation counter when the pack is
@@ -582,7 +582,7 @@ narrative **art**, **maps**, and **photos of the places** named in the verse.
   glass, Old Master oils, illuminated manuscripts, OpenBible place photos,
   Hurlbut atlas maps, and modern PD vector SVG journey maps. Verse ranges
   use the catena encoding (`chapter*1_000_000 + verse`, `[loc_start,
-  loc_end]`). Hosted on Codeberg Releases; large pack — downloaded on
+  loc_end]`). Hosted on GitHub Releases; large pack — downloaded on
   demand with multi-part support (`imagery_bridge._resolve_parts`).
 - **`imagery_bridge.py`** is the read layer: read-only thread-local
   connection with a generation counter, `art_for` / `maps_for` /

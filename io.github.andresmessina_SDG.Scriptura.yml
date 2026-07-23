@@ -1,8 +1,8 @@
-app-id: page.codeberg.andresmessina.Scriptura
+app-id: io.github.andresmessina_SDG.Scriptura
 runtime: org.gnome.Platform
 runtime-version: '50'
 sdk: org.gnome.Sdk
-command: page.codeberg.andresmessina.Scriptura
+command: io.github.andresmessina_SDG.Scriptura
 
 finish-args:
   - --socket=wayland

@@ -39,7 +39,7 @@ MODULE_KEY = 'Bible Imagery'
 
 # The downloadable pack (tar.gz so stdlib `tarfile` handles it — no zstd
 # dependency). Hosted on Codeberg Releases; replace the tag once published.
-PACK_URL = ('https://codeberg.org/andresmessina/scriptura/releases/'
+PACK_URL = ('https://github.com/andresmessina-SDG/scriptura/releases/'
             'download/imagery-pack-v1/imagery.tar.gz')
 
 # Illustration kinds shown in the "Art" tab; 'map' goes to "Where".

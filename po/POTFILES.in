@@ -1,7 +1,7 @@
 # List of source files containing translatable strings.
 # Append .py files here as their strings are wrapped in _().
-data/page.codeberg.andresmessina.Scriptura.desktop.in
-data/page.codeberg.andresmessina.Scriptura.metainfo.xml.in
+data/io.github.andresmessina_SDG.Scriptura.desktop.in
+data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
 annotation_dialogs.py
 archaeology_bridge.py
 archaeology_reader.py

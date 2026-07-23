@@ -2,7 +2,7 @@
 
 This directory holds the wrapper script for the Flatpak build. The
 manifest lives at the repo root as
-`page.codeberg.andresmessina.Scriptura.yml`.
+`io.github.andresmessina_SDG.Scriptura.yml`.
 
 ## Prerequisites
 
@@ -50,8 +50,8 @@ From the repo root:
 
 ```sh
 flatpak-builder --user --install --force-clean build-dir \
-    page.codeberg.andresmessina.Scriptura.yml
-flatpak run page.codeberg.andresmessina.Scriptura
+    io.github.andresmessina_SDG.Scriptura.yml
+flatpak run io.github.andresmessina_SDG.Scriptura
 ```
 
 Iterate as needed. `--force-clean` wipes the build dir each run so
@@ -78,7 +78,7 @@ mistakes don't compound.
 Once the manifest builds clean and the screenshots are in place:
 
 1. Fork `flathub/flathub` on GitHub.
-2. Create a branch named `new-pr/page.codeberg.andresmessina.Scriptura`.
+2. Create a branch named `new-pr/io.github.andresmessina_SDG.Scriptura`.
 3. Add the manifest + (optionally) a `flathub.json` config for
    long-term maintenance settings.
 4. Open a PR. Flathub maintainers review.
