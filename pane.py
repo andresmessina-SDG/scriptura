@@ -1038,6 +1038,11 @@ class BiblePane(Gtk.Box):
         # (verse, marker_index) → (type, body) for the rendered chapter;
         # the fnote: click handler reads the peek content from here.
         self._chapter_footnotes = {}
+        # {verse: [section heading, …]} for the rendered chapter. Declared
+        # here, not only in _display: the re-theme path calls _display with
+        # no headings argument, so the attribute has to exist before the
+        # first fetch ever assigns one.
+        self._rendered_headings = {}
         # Per-pane Ctrl+F search subsystem (widgets + state + highlight tag).
         # Constructed eagerly so the toolbar button and revealer can be
         # placed during _build_ui below.

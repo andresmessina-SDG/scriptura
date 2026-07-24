@@ -719,25 +719,6 @@ def chapter_headings(module_name, book, chapter):
         return _headings_cache.get(key, {})
 
 
-def module_has_headings(module_name):
-    """True if the module's conf declares a heading filter — i.e. its
-    markup can carry section titles at all.
-
-    Mirrors module_has_footnotes, including its reason for walking the
-    full config multimap: getConfigEntry returns only the FIRST of a
-    repeated GlobalOptionFilter key. Note this reports what the module
-    *declares*; several modules that declare the filter (KJV, ASV) carry
-    only Psalm superscriptions and no true section headings."""
-    try:
-        mod = mgr().getModule(module_name)
-        if mod is None:
-            return False
-        return any(str(k) == 'GlobalOptionFilter' and 'Headings' in str(v)
-                   for k, v in mod.getConfigMap().items())
-    except Exception:
-        return False
-
-
 def module_type(module_name):
     """Return the SWORD type string for a module: 'Biblical Texts', 'Commentaries', etc."""
     mod = mgr().getModule(module_name)
