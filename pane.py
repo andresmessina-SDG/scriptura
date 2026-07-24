@@ -36,6 +36,7 @@ from lexicon_panel import LexiconPanel
 from pane_chrome import ChromeController
 from pane_scroll import ScrollKeeper
 from pane_search import PaneSearch
+from verse_cursor import VerseCursor
 import a11y
 from a11y import set_accessible_label
 
@@ -1037,6 +1038,8 @@ class BiblePane(Gtk.Box):
         # Constructed eagerly so the toolbar button and revealer can be
         # placed during _build_ui below.
         self._search = PaneSearch(self)
+        # Keyboard access to the verse/word gestures (verse_cursor.py).
+        self._cursor = VerseCursor(self)
 
         self._names = content.readable_module_names()
         if not self._names:
@@ -1312,6 +1315,13 @@ class BiblePane(Gtk.Box):
         a11y.set_role(self._view, Gtk.AccessibleRole.DOCUMENT)
         set_accessible_label(self._view, _('Reading view'))
         self._search.link_view(self._view)
+
+        # Verse cursor keys. BUBBLE phase (the default), so anything the view
+        # itself claims first still wins; the handler returns False for every
+        # key it doesn't own, leaving scrolling and window shortcuts intact.
+        cursor_keys = Gtk.EventControllerKey.new()
+        cursor_keys.connect('key-pressed', self._cursor.on_key)
+        self._view.add_controller(cursor_keys)
 
         # Cap the reading column via dynamic left/right margins on the
         # TextView itself, not Adw.Clamp. TextView stays a direct Scrollable
@@ -3912,6 +3922,8 @@ class BiblePane(Gtk.Box):
             self._selected_verse = verse_num
             self._set_current_verse_indicator(verse_num)
             self._announce_verse_state(verse_num)
+            # Resume keyboard stepping from wherever the pointer just landed.
+            self._cursor.sync_to(verse_num)
         if strong_num and self._on_word_click:
             # Resolve phrase context — the full English phrase text and
             # the full Strong's chain on the source <w> tag — so the
@@ -4715,6 +4727,9 @@ class BiblePane(Gtk.Box):
         # Search results were keyed to the previous module — drop them
         # so F3 doesn't try to step through stale references.
         self._search.clear_state()
+        # Same for the keyboard cursor: its verse and word offsets belong to
+        # the outgoing module's buffer.
+        self._cursor.clear()
         # Dismiss any dict peek since it's tied to a word in the previous
         # module's text. Reused popover — hide it, don't unparent.
         prev_dict = getattr(self, '_dict_pop', None)
@@ -4744,6 +4759,7 @@ class BiblePane(Gtk.Box):
             self._module, self._book, self._chapter, verse_num)
         self._selected_verse = verse_num
         self._set_current_verse_indicator(verse_num)
+        self._cursor.sync_to(verse_num)
         tag = self._buffer.get_tag_table().lookup(f'vnum_{verse_num}')
         if tag:
             self._scroll_to_verse(verse_num)

@@ -85,6 +85,7 @@ py_sources = files(
   'sword_bridge.py',
   'tasks.py',
   'today_page.py',
+  'verse_cursor.py',
   'welcome.py',
   'window.py',
 )

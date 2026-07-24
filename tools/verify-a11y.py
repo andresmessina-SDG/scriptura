@@ -45,7 +45,11 @@ What it asserts (exit 1 if any fail):
      expected messages through the live-region path;
   6. a verse announcement names its annotation state ("… highlighted
      yellow, has note"), which is A3's whole point: the highlight band is
-     painted pixels and otherwise invisible to AT.
+     painted pixels and otherwise invisible to AT;
+  7. the keyboard verse cursor reaches the gestures that used to be
+     pointer-only (WCAG 2.1.1): arrows step verses and words against a real
+     rendered chapter, Enter opens the study menu, and modifier
+     combinations are passed through to the window's own shortcuts.
 
 Usage:  python3 tools/verify-a11y.py
 
@@ -352,6 +356,95 @@ def run_driver() -> int:
                 skip('verse_state_announced', 'no compositor (Broadway)')
                 skip('verse_state_on_view_description',
                      'no compositor (Broadway)')
+
+        # 7. the keyboard verse cursor, against a real rendered chapter.
+        import gi as _gi
+        _gi.require_version('Gdk', '4.0')
+        from gi.repository import Gdk
+
+        cur = getattr(pane, '_cursor', None)
+        if cur is None:
+            add('verse_cursor_present', False)
+        else:
+            def press(keyval, state=0):
+                return cur.on_key(None, keyval, 0, state)
+
+            verses = cur._verses()
+            add('cursor_sees_rendered_verses', len(verses) > 1,
+                count=len(verses))
+
+            cur.clear()
+            placed = press(Gdk.KEY_Down)
+            first = cur.verse
+            add('cursor_places_on_first_press', placed and first is not None,
+                verse=first)
+            press(Gdk.KEY_Down)
+            add('cursor_steps_forward', cur.verse != first,
+                was=first, now=cur.verse)
+            press(Gdk.KEY_Up)
+            add('cursor_steps_back', cur.verse == first, now=cur.verse)
+
+            # Modifiers belong to the window's actions, never to the cursor.
+            add('cursor_releases_alt_arrow',
+                press(Gdk.KEY_Down, Gdk.ModifierType.ALT_MASK) is False)
+            add('cursor_releases_ctrl_f',
+                press(Gdk.KEY_f, Gdk.ModifierType.CONTROL_MASK) is False)
+
+            # Word tier over real rendered text.
+            spans = cur._word_spans()
+            add('cursor_finds_words_in_verse', len(spans) > 1,
+                count=len(spans))
+            # The word tier must not walk out of its verse: a span past the
+            # verse end would let Enter look up a word from the next one.
+            vr = pane._verse_ranges(cur.verse)
+            if vr and spans:
+                lo, hi = vr[1].get_offset(), vr[2].get_offset()
+                stray = [sp for sp in spans if sp[0] < lo or sp[1] > hi]
+                add('cursor_words_stay_inside_the_verse', not stray,
+                    verse_range=[lo, hi], stray=stray[:3],
+                    first=spans[0], last=spans[-1])
+            else:
+                add('cursor_words_stay_inside_the_verse', False)
+            entered = press(Gdk.KEY_Right)
+            add('cursor_enters_word_tier', entered and cur.in_word_tier)
+            first_word = cur._word
+            press(Gdk.KEY_Right)
+            add('cursor_steps_words', cur._word != first_word)
+            add('cursor_escape_leaves_word_tier',
+                press(Gdk.KEY_Escape) and not cur.in_word_tier)
+
+            if can_announce:
+                spoken.clear()
+                press(Gdk.KEY_Down)
+                add('cursor_move_announces_verse', bool(spoken),
+                    spoken=list(spoken))
+                spoken.clear()
+                press(Gdk.KEY_Right)
+                add('cursor_word_announces_action',
+                    any('Enter' in m for m in spoken), spoken=list(spoken))
+                press(Gdk.KEY_Escape)
+            else:
+                skip('cursor_move_announces_verse', 'no compositor (Broadway)')
+                skip('cursor_word_announces_action',
+                     'no compositor (Broadway)')
+
+            # Enter on a verse must reach the study menu — the action that
+            # was right-click-only.
+            def view_children():
+                out, ch = [], pane._view.get_first_child()
+                while ch is not None:
+                    out.append(ch)
+                    ch = ch.get_next_sibling()
+                return out
+
+            before = view_children()
+            opened = press(Gdk.KEY_Return)
+            new = [w for w in view_children() if w not in before]
+            add('cursor_enter_opens_study_menu', opened and bool(new),
+                added=[type(w).__name__ for w in new])
+            for w in new:
+                if isinstance(w, Gtk.Popover):
+                    w.popdown()
 
         # ── measured, never gating ───────────────────────────────────────
         unnamed = []

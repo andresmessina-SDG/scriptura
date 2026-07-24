@@ -2566,6 +2566,13 @@ class BibleWindow(Adw.ApplicationWindow):
             (N_('Last verse of current chapter'), 'accel', 'End'),
             (N_('Cycle chapters with the mouse wheel'), 'literal', N_('Scroll over title')),
         ]),
+        (N_('Reading with the keyboard'), [
+            (N_('Move between verses'), 'accel', 'Up Down'),
+            (N_('Study menu for the current verse'), 'accel', 'Return'),
+            (N_('Step through the words of a verse'), 'accel', 'Left Right'),
+            (N_('Look up the word, or open its footnote'), 'accel', 'Return'),
+            (N_('Back from words to verses'), 'accel', 'Escape'),
+        ]),
         (N_('Panes and view'), [
             (N_('Focus left pane'), 'action', 'focus-pane-1'),
             (N_('Focus right pane'), 'action', 'focus-pane-2'),
