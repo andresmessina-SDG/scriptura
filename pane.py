@@ -1009,6 +1009,10 @@ class BiblePane(Gtk.Box):
         # unlike the lexicon: footnotes are reading content, not a lookup
         # mode, so a reader who wants them wants them every session.
         self._show_footnotes = bool(settings.get('show_footnotes'))
+        # Section headings (Appearance ▸ Advanced). A reading convention —
+        # publisher-supplied structure that SWORD hands over separately from
+        # the verse text — so it defaults on, like small caps.
+        self._show_headings = bool(settings.get('show_headings'))
         # Advanced typography (Appearance ▸ Advanced): small-caps divine
         # name and old-style figures are reading conventions (on by
         # default); flush poetry and the tinted drop cap are opt-ins.
@@ -2090,15 +2094,17 @@ class BiblePane(Gtk.Box):
             if ebible_bridge.is_ebible_module(module):
                 verses = ebible_bridge.load_chapter(module, book, chapter)
                 notes = ebible_bridge.chapter_footnotes(module, book, chapter)
+                heads = {}
             else:
                 verses = sword_bridge.load_chapter(module, book, chapter)
                 notes = sword_bridge.chapter_footnotes(module, book, chapter)
-            return verses, notes
+                heads = sword_bridge.chapter_headings(module, book, chapter)
+            return verses, notes, heads
 
         task = tasks.submit(
             f'chapter:{id(self)}', fetch,
             lambda res: self._display(res[0], book, chapter, module,
-                                      res[1], task),
+                                      res[1], task, headings=res[2]),
             on_error=lambda _exc: None)
 
     def _show_status_page(self, icon, title, description, action=None):
@@ -2559,7 +2565,8 @@ class BiblePane(Gtk.Box):
                     self, self._book, self._chapter, v))
         self._view.add_child_at_anchor(btn, anchor)
 
-    def _display(self, verses, book, chapter, module, notes=None, task=None):
+    def _display(self, verses, book, chapter, module, notes=None, task=None,
+                 headings=None):
         if book != self._book or chapter != self._chapter or module != self._module:
             return GLib.SOURCE_REMOVE
         if task is not None and not task.is_current():
@@ -2568,6 +2575,10 @@ class BiblePane(Gtk.Box):
         # is the reader scrolling.
         self._mark_programmatic_scroll()
         self._rendered_verses = verses
+        if headings is not None:
+            # Kept so a re-theme render (which re-runs _display with no fetch)
+            # doesn't drop the headings the way it would a bare parameter.
+            self._rendered_headings = headings
         # The re-theming path re-calls _display without notes; reuse the
         # set from the original fetch.
         if notes is None:
@@ -2658,6 +2669,11 @@ class BiblePane(Gtk.Box):
         # verse's text continues it). See _resolve_poetry_markup.
         poetry_state = {'open': None, 'at_ls': True}
 
+        # False until a verse block has actually been written, so the first
+        # section heading of a chapter doesn't stack a blank line on top of
+        # the chapter heading's own trailing newline.
+        wrote_a_block = False
+
         for start_v, end_v, html in iterable:
             plain = re.sub(r'<[^>]+>', '', str(html)).strip()
 
@@ -2688,6 +2704,13 @@ class BiblePane(Gtk.Box):
                     # blank line of separation between commentary sections.
                     self._buffer.insert(self._buffer.get_end_iter(), '\n')
             else:
+                # Section heading, where the module supplies one for this
+                # verse. Ahead of the verse number so it opens the block it
+                # titles. Commentaries are excluded: their own "Verse N"
+                # headers already divide the text.
+                if self._show_headings:
+                    for head in self._rendered_headings.get(start_v, ()):
+                        self._insert_section_heading(head, wrote_a_block)
                 v_num_markup = (f'<span foreground="gray" size="small" '
                                 f'weight="bold" rise="2500"{self._numeral_ff()}>'
                                 f' {start_v} </span>')
@@ -2818,6 +2841,7 @@ class BiblePane(Gtk.Box):
 
             self._buffer.delete_mark(start_mark)
             self._buffer.delete_mark(text_start_mark)
+            wrote_a_block = True
 
         if self._target_verse is not None:
             # The target arrives in app-space (KJV) numbering; the rendered
@@ -3026,6 +3050,30 @@ class BiblePane(Gtk.Box):
         if self._restore_anchor is None:
             self._restore_top_verse = self._find_topmost_visible_verse()
         self._fetch_and_render()
+
+    def _insert_section_heading(self, text, lead_blank):
+        """Insert a publisher section heading above the verse it titles.
+
+        Same voice as the section titles _html_to_markup already styles —
+        a quiet tracked kicker, smaller than the body — so a heading that
+        arrives via the entry attributes and one embedded in the markup
+        look identical.
+
+        `lead_blank` is False for the first block of a chapter. The chapter
+        heading above it already ends in a newline and deliberately carries
+        no blank line of its own (see its comment: a blank line there "left
+        an oversized top gap"); adding one here reopens exactly that gap."""
+        lead = '\n\n' if lead_blank else ''
+        markup = (f'{lead}<span size="90%" weight="bold" letter_spacing="800" '
+                  f'foreground="gray">'
+                  f'{GLib.markup_escape_text(text)}</span>\n')
+        self._buffer.insert_markup(self._buffer.get_end_iter(), markup, -1)
+
+    def set_show_headings(self, enabled):
+        if self._show_headings == bool(enabled):
+            return
+        self._show_headings = bool(enabled)
+        self._rerender_keeping_place()
 
     def set_show_footnotes(self, enabled):
         if self._show_footnotes == bool(enabled):

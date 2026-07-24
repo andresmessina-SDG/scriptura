@@ -3093,6 +3093,8 @@ class BibleWindow(Adw.ApplicationWindow):
             adv_box.append(r)
             return sw
 
+        _adv_switch(_('Section headings'),
+                    'show_headings', 'set_show_headings')
         _adv_switch(_('Small caps for the divine name'),
                     'smallcaps_divine', 'set_divine_smallcaps')
         _adv_switch(_('Old-style numerals'),

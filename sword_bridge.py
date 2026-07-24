@@ -1,3 +1,4 @@
+import html as html_mod
 import io
 import logging
 import os
@@ -60,6 +61,11 @@ _cache = OrderedDict()
 # Filled by the same render pass and evicted in lockstep with _cache
 # (every insert goes through _cache_chapter, which writes both).
 _notes_cache = OrderedDict()
+# Section headings for the same chapters: {verse: [heading_html, ...]}.
+# SWORD moves preverse titles out of the rendered text into entry
+# attributes (see _collect_headings), so they ride the same render pass
+# and evict in lockstep, exactly like the footnotes above.
+_headings_cache = OrderedDict()
 # Strong's lookup cache — same shape, smaller cap. A typical chapter
 # references 30–50 unique Strong's numbers; 500 covers many chapters of
 # recent activity before evicting.
@@ -67,16 +73,19 @@ _STRONGS_CACHE_CAP = 500
 _strongs_cache = OrderedDict()
 
 
-def _cache_chapter(key, value, notes):
-    """Insert a chapter render + its footnotes with LRU eviction (the two
-    caches stay in lockstep). Caller holds _lock."""
+def _cache_chapter(key, value, notes, headings):
+    """Insert a chapter render + its footnotes + its section headings with
+    LRU eviction (the three caches stay in lockstep). Caller holds _lock."""
     _cache[key] = value
     _cache.move_to_end(key)
     _notes_cache[key] = notes
     _notes_cache.move_to_end(key)
+    _headings_cache[key] = headings
+    _headings_cache.move_to_end(key)
     if len(_cache) > _CHAPTER_CACHE_CAP:
         _cache.popitem(last=False)
         _notes_cache.popitem(last=False)
+        _headings_cache.popitem(last=False)
 
 
 def _cache_strong(strong_num, value):
@@ -249,6 +258,10 @@ def mgr():
             # turns into a marker or strips. Without this option the
             # filters drop the notes entirely.
             _mgr.setGlobalOption('Footnotes', 'On')
+            # Section headings ride the same mechanism: without this the
+            # heading filters drop preverse titles instead of moving them
+            # into the entry attributes _collect_headings reads back.
+            _mgr.setGlobalOption('Headings', 'On')
         return _mgr
 
 
@@ -258,6 +271,7 @@ def _reset():
         _mgr = None
         _cache.clear()
         _notes_cache.clear()
+        _headings_cache.clear()
         _strongs_cache.clear()
         _book_maps.clear()
     with _indexing_lock:
@@ -566,6 +580,7 @@ def load_chapter(module_name, book, chapter):
 
         results = []
         notes = {}
+        headings = {}
         for v in range(1, verse_max + 1):
             try:
                 vk.setVerse(v)
@@ -576,8 +591,11 @@ def load_chapter(module_name, book, chapter):
             v_notes = _collect_footnotes(mod)
             if v_notes:
                 notes[v] = v_notes
+            v_heads = _collect_headings(mod)
+            if v_heads:
+                headings[v] = v_heads
 
-        _cache_chapter(key, results, notes)
+        _cache_chapter(key, results, notes, headings)
         return results
 
 
@@ -621,6 +639,103 @@ def chapter_footnotes(module_name, book, chapter):
     load_chapter(module_name, book, chapter)
     with _lock:
         return _notes_cache.get(key, {})
+
+
+_TITLE_RE = re.compile(r'<title\b([^>]*)>(.*?)</title>', re.S | re.I)
+# Titles SWORD hands back that are not pericope headings: BSB ships
+# parallel-passage cross references as <title type="parallel">, and the
+# canonical Psalm superscriptions are part of the text, not editorial
+# section divisions. Both would read as headings if rendered as one.
+_SKIP_TITLE_TYPES = frozenset({'parallel', 'psalm', 'acrostic', 'sub'})
+
+
+def _titles_from_raw(raw):
+    """Section heading strings from a preverse attribute blob.
+
+    Split out from _collect_headings so the parsing rules — which title
+    types count as pericope headings, entity unescaping, whitespace
+    collapse — are testable without a live SWORD module."""
+    out = []
+    for attrs, body in _TITLE_RE.findall(raw):
+        kind = re.search(r'type="([^"]+)"', attrs)
+        kind = kind.group(1).lower() if kind else ''
+        if kind in _SKIP_TITLE_TYPES:
+            continue
+        text = re.sub(r'<[^>]+>', '', body)
+        text = html_mod.unescape(text)
+        text = re.sub(r'\s+', ' ', text).strip()
+        if text:
+            out.append(text)
+    return out
+
+
+def _collect_headings(mod):
+    """Section heading text for the verse just rendered, outermost first.
+
+    Must run right after renderText(), like _collect_footnotes: SWORD's
+    heading filters move preverse titles OUT of the rendered text and into
+    the module's entry attributes, where the next setKey replaces them.
+    This is why headings never appear in renderText() output even with
+    Headings=On (GUIDANCE §3).
+
+    Two PyGObject/SWIG traps are paid for here. The attribute maps must be
+    indexed with the key objects yielded by .keys(), never an equal Python
+    string — a str key silently misses and the read comes back empty. And
+    each value must be copied to a Python str immediately; holding a
+    reference into the nested map yields freed memory (garbage bytes).
+    """
+    out = []
+    try:
+        ea = mod.getEntryAttributesMap()
+        for k1 in ea.keys():
+            if str(k1) != 'Heading':
+                continue
+            hmap = ea[k1]
+            for k2 in hmap.keys():
+                if str(k2) != 'Preverse':
+                    continue
+                pmap = hmap[k2]
+                for k3 in pmap.keys():
+                    raw = str(pmap[k3])       # copy out immediately
+                    out.extend(_titles_from_raw(raw))
+    except Exception:
+        _sword_log.exception('heading attribute read failed')
+    return out
+
+
+def chapter_headings(module_name, book, chapter):
+    """{verse: [heading, ...]} for a chapter — the section titles that
+    precede each verse.
+
+    Populated by the same render pass as load_chapter, so a cache hit is
+    free and a miss renders (and caches) the chapter."""
+    key = (module_name, book, chapter)
+    with _lock:
+        if key in _headings_cache:
+            _headings_cache.move_to_end(key)
+            return _headings_cache[key]
+    load_chapter(module_name, book, chapter)
+    with _lock:
+        return _headings_cache.get(key, {})
+
+
+def module_has_headings(module_name):
+    """True if the module's conf declares a heading filter — i.e. its
+    markup can carry section titles at all.
+
+    Mirrors module_has_footnotes, including its reason for walking the
+    full config multimap: getConfigEntry returns only the FIRST of a
+    repeated GlobalOptionFilter key. Note this reports what the module
+    *declares*; several modules that declare the filter (KJV, ASV) carry
+    only Psalm superscriptions and no true section headings."""
+    try:
+        mod = mgr().getModule(module_name)
+        if mod is None:
+            return False
+        return any(str(k) == 'GlobalOptionFilter' and 'Headings' in str(v)
+                   for k, v in mod.getConfigMap().items())
+    except Exception:
+        return False
 
 
 def module_type(module_name):

@@ -36,6 +36,11 @@ _defaults: dict[str, Any] = {
     # toggle). On by default — markers only appear where notes exist, and
     # the toggle disables on modules that can't show any.
     'show_footnotes':     True,
+    # Publisher section headings ("The Baptism of Jesus"). SWORD hands
+    # these over as entry attributes rather than in the verse text, so
+    # they were silently dropped until DR4. A reading convention, not a
+    # taste option — on by default. Modules without the data show none.
+    'show_headings':      True,
     # Cross-reference bar on verse click (the ※ toggle in the header's
     # Reading-tools cluster). On by default; off keeps the reading surface
     # fully minimal — verse clicks stop summoning the bar.
