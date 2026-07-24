@@ -36,6 +36,7 @@ from lexicon_panel import LexiconPanel
 from pane_chrome import ChromeController
 from pane_scroll import ScrollKeeper
 from pane_search import PaneSearch
+import a11y
 from a11y import set_accessible_label
 
 
@@ -976,6 +977,11 @@ class BiblePane(Gtk.Box):
                  on_open_artifact=None, on_module_switched=None,
                  on_hint=None, on_open_verse=None, pane_id=1):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
+        # A landmark, so AT can jump between the two reading panes instead of
+        # walking every control in between.
+        a11y.set_role(self, Gtk.AccessibleRole.REGION)
+        set_accessible_label(
+            self, _('Reading pane {n}').format(n=pane_id))
         self._on_word_click = on_word_click
         self._on_click_outside_search = on_click_outside_search
         self._on_verse_select = on_verse_select
@@ -1096,6 +1102,11 @@ class BiblePane(Gtk.Box):
         # Pane toolbar: module selector
         toolbar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         toolbar.add_css_class('pane-toolbar')
+        # A Box of icon buttons reports as `generic`; naming it a toolbar
+        # lets AT users move to it as one thing instead of stumbling into
+        # a run of unattached buttons.
+        a11y.set_role(toolbar, Gtk.AccessibleRole.TOOLBAR)
+        set_accessible_label(toolbar, _('Pane controls'))
         self._toolbar = toolbar
         toolbar.set_margin_start(10)
         toolbar.set_margin_end(8)
@@ -1293,6 +1304,14 @@ class BiblePane(Gtk.Box):
         self._update_font_css()
 
         self._buffer = self._view.get_buffer()
+
+        # The reading column is the app's main content, not a plain text box:
+        # naming it DOCUMENT tells AT this is prose to be read, and gives the
+        # per-verse state (_announce_verse_state) somewhere to hang. The find
+        # bar's steppers are declared to act on it.
+        a11y.set_role(self._view, Gtk.AccessibleRole.DOCUMENT)
+        set_accessible_label(self._view, _('Reading view'))
+        self._search.link_view(self._view)
 
         # Cap the reading column via dynamic left/right margins on the
         # TextView itself, not Adw.Clamp. TextView stays a direct Scrollable
@@ -3197,6 +3216,50 @@ class BiblePane(Gtk.Box):
         tag.set_priority(table.get_size() - 1)
         self._buffer.apply_tag(tag, vnum_start, vtext_start)
 
+    def _verse_state_text(self, verse_num):
+        """"Jonah 2:3, highlighted yellow, has note" — the reference plus
+        whatever a sighted reader can see painted on the verse.
+
+        The highlight band, the underline, and the note indicator are drawn
+        by BibleTextView (pixels, no semantics), so this is the only way an
+        AT user learns they are there."""
+        parts = [f'{book_label(self._book)} {self._chapter}:{verse_num}']
+        if self._module_type == 'Biblical Texts':
+            annos = annotations.get_annotations(
+                self._module, self._book, self._chapter)
+            anno = (annos or {}).get(str(verse_num), {})
+            if isinstance(anno, str):
+                anno = {'highlight': anno}
+            anno = anno or {}
+            color = annotation_dialogs.highlight_name(anno.get('highlight'))
+            if color:
+                parts.append(_('highlighted {color}').format(
+                    color=color.lower()))
+            elif anno.get('highlight'):
+                parts.append(_('highlighted'))
+            if anno.get('underline'):
+                parts.append(_('underlined'))
+            if anno.get('note'):
+                parts.append(_('has note'))
+            notes = self._chapter_footnotes
+            if any(v == verse_num for v, _n in notes):
+                parts.append(_('has footnotes'))
+        return ', '.join(parts)
+
+    def _announce_verse_state(self, verse_num):
+        """Speak the verse the reader just moved to, and its annotation
+        state, without moving focus.
+
+        The navigation flash and the current-verse indicator are painted
+        cues; this is their AT equivalent. Also parked on the view as its
+        accessible description, so the state is still discoverable after
+        the announcement has passed."""
+        if not verse_num or not self._is_verse_navigable():
+            return
+        text = self._verse_state_text(verse_num)
+        a11y.set_accessible_description(self._view, text)
+        a11y.announce(self._view, text)
+
     def _verse_ranges(self, verse_num):
         """Return (vnum_start, vtext_start, vtext_end) iters for verse_num
         in the current buffer, or None if the verse isn't applied here.
@@ -3318,11 +3381,17 @@ class BiblePane(Gtk.Box):
             self._module, self._book, self._chapter)
         v_anno = (annos or {}).get(str(verse_num), {})
         self._apply_anno_tags(verse_num, v_anno)
+        # Annotating is a user action whose whole result is a painted band —
+        # say what it did, or an AT user gets no confirmation at all.
+        self._announce_verse_state(verse_num)
 
     def _flash_verse(self, verse_num):
         tag = self._buffer.get_tag_table().lookup(f'vnum_{verse_num}')
         if not tag:
             return
+
+        # The flash is the "you arrived here" cue; announce its AT equivalent.
+        self._announce_verse_state(verse_num)
 
         # Find the exact start of this verse's tag range
         start = self._buffer.get_start_iter()
@@ -3829,6 +3898,7 @@ class BiblePane(Gtk.Box):
         if verse_num is not None:
             self._selected_verse = verse_num
             self._set_current_verse_indicator(verse_num)
+            self._announce_verse_state(verse_num)
         if strong_num and self._on_word_click:
             # Resolve phrase context — the full English phrase text and
             # the full Strong's chain on the source <w> tag — so the
@@ -4168,6 +4238,12 @@ class BiblePane(Gtk.Box):
         for m in ('top', 'bottom', 'start', 'end'):
             getattr(content, f'set_margin_{m}')(14)
         pop.set_child(content)
+        # The peek is a transient panel the reader opened deliberately, and
+        # its body never takes focus — announce it, or the note is silent.
+        a11y.set_role(content, Gtk.AccessibleRole.NOTE)
+        set_accessible_label(content, cap_text)
+        a11y.labelled_by(lbl, cap)
+        a11y.announce(self._view, f'{cap_text}. {lbl.get_text()}')
 
         self._dict_retries = 0
         self._dict_open_at = GLib.get_monotonic_time()

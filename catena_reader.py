@@ -15,6 +15,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib
+import a11y
 from a11y import set_accessible_label
 from gtk_utils import clear_children, fade_in
 from i18n import N_
@@ -143,6 +144,9 @@ class CatenaReader:
 
         self._chip_box = Adw.WrapBox(child_spacing=6, line_spacing=6)
         self._chip_box.add_css_class('catena-chips')
+        # One tradition at a time — a radio group, not a pile of toggles.
+        a11y.set_role(self._chip_box, Gtk.AccessibleRole.RADIO_GROUP)
+        set_accessible_label(self._chip_box, _('Filter by tradition'))
         self._root.append(self._clamp(self._chip_box))
 
         # Places named in the verse under commentary (from the imagery pack,
@@ -159,6 +163,8 @@ class CatenaReader:
                              vexpand=True)
         self._list.add_css_class('catena-list')
         self._list.add_css_class('catena-page')
+        a11y.set_role(self._list, Gtk.AccessibleRole.LIST)
+        set_accessible_label(self._list, _('Historical commentary'))
         scroll.set_child(self._clamp(self._list))
         self._root.append(scroll)
 
@@ -258,6 +264,9 @@ class CatenaReader:
                 '{ref} <span alpha="55%">· {count}</span>'.format(
                     ref=GLib.markup_escape_text(ref),
                     count=GLib.markup_escape_text(count)))
+            # The pane repopulates itself when the reader picks a verse or a
+            # tradition chip, never taking focus — announce what arrived.
+            a11y.announce(self._header, f'{ref}, {count}')
 
         self._build_chips()
 
@@ -306,6 +315,10 @@ class CatenaReader:
             if active:
                 chip.set_active(True)
             chip.connect('toggled', self._on_chip_toggled, value)
+            # Each chip filters the commentary list below it; without the
+            # relation AT sees an unattached toggle.
+            a11y.set_role(chip, Gtk.AccessibleRole.RADIO)
+            a11y.controls(chip, self._list)
             self._chip_box.append(chip)
 
     def _build_place_chips(self):

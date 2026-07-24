@@ -30,6 +30,28 @@ import open_data
 _log = logging.getLogger('scriptura.notes')
 
 
+def highlight_swatches():
+    """The four highlight colours as (hex, css class, display name).
+
+    A function rather than a module constant so the names resolve against
+    the live gettext catalogue instead of freezing at import time."""
+    return [('#ffff00', 'hl-yellow', _('Yellow')),
+            ('#90ee90', 'hl-green', _('Green')),
+            ('#add8e6', 'hl-blue', _('Blue')),
+            ('#ffa500', 'hl-orange', _('Orange'))]
+
+
+def highlight_name(color):
+    """Display name for a stored highlight hex, or None if unrecognised.
+
+    Used by the reading pane to say "highlighted yellow" rather than
+    "#ffff00" when it announces a verse's state to AT."""
+    for hex_value, _css, name in highlight_swatches():
+        if hex_value == color:
+            return name
+    return None
+
+
 def _grab_focus_once(widget):
     """idle_add target that focuses `widget` exactly once.
 
@@ -95,10 +117,7 @@ def show_study_menu(pane, verses, x, y):
     # 1. Highlight color picker
     color_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
     color_box.set_halign(Gtk.Align.CENTER)
-    for color, css_cls, name in [('#ffff00', 'hl-yellow', _('Yellow')),
-                                 ('#90ee90', 'hl-green', _('Green')),
-                                 ('#add8e6', 'hl-blue', _('Blue')),
-                                 ('#ffa500', 'hl-orange', _('Orange'))]:
+    for color, css_cls, name in highlight_swatches():
         btn = Gtk.Button()
         btn.set_size_request(28, 28)
         btn.add_css_class(css_cls)

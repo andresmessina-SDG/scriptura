@@ -4,6 +4,7 @@ import threading
 import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk, GLib, Pango
+import a11y
 from a11y import set_accessible_label
 from gtk_utils import clear_children, DelayedSpinner
 import sword_bridge
@@ -115,6 +116,8 @@ class SearchPanel(Gtk.Box):
         self._on_result_clicked = on_result_clicked
         self._on_close = on_close
         self._results = []
+        # Rate limiter for the indexing progress announcements (66 books).
+        self._progress = a11y.ProgressAnnouncer()
         self._filter_book = None
         self._expanded_section = None
         self._populate_gen = 0
@@ -200,6 +203,7 @@ class SearchPanel(Gtk.Box):
 
         self._count_label = Gtk.Label(label='', xalign=0, hexpand=True)
         self._count_label.add_css_class('dim-label')
+        a11y.set_role(self._count_label, Gtk.AccessibleRole.STATUS)
         status_row.append(self._count_label)
 
         self._clear_history_btn = Gtk.Button(label=_('Clear'))
@@ -248,10 +252,20 @@ class SearchPanel(Gtk.Box):
         self._results_list.set_selection_mode(Gtk.SelectionMode.NONE)
         self._results_list.add_css_class('boxed-list')
         self._results_list.connect('row-activated', self._on_row_activated)
+        set_accessible_label(self._results_list, _('Search results'))
         outer.append(self._results_list)
 
         self._results_scroll.set_child(outer)
         self.append(self._results_scroll)
+
+        # Tie the controls to what they act on, and the count to the field it
+        # reports for, so AT can explain the panel instead of listing widgets.
+        a11y.described_by(self._entry, self._count_label)
+        a11y.controls(self._entry, self._results_list)
+        a11y.controls(self._module_drop, self._results_list)
+        set_accessible_label(self._module_drop, _('Module to search'))
+        set_accessible_label(self._chart_box, _('Results by section'))
+        a11y.controls(self._chart_box, self._results_list)
 
     # ── Public ────────────────────────────────────────────────────────────────
 
@@ -292,6 +306,9 @@ class SearchPanel(Gtk.Box):
 
     def _update_indexing_status(self, text, show_spinner):
         self._count_label.set_text(text)
+        # Rate-limited: indexing restates itself once per book (66 of them),
+        # and a screen reader would read every one.
+        self._progress.progress(self._count_label, text)
         if show_spinner:
             self._spinner.set_visible(True)
             self._spinner.start()
@@ -328,7 +345,8 @@ class SearchPanel(Gtk.Box):
         self._chart_scroll.set_visible(False)
         self._clear_results()
         self._clear_history_btn.set_visible(False)
-        self._count_label.set_text(_('Searching…'))
+        a11y.status(self._count_label, _('Searching…'))
+        self._progress.reset()
         # Threshold-gated: an already-indexed FTS query returns fast and
         # never flashes a spinner. The indexing path keeps its immediate
         # spinner + staged text (_update_indexing_status) — genuinely slow
@@ -367,12 +385,15 @@ class SearchPanel(Gtk.Box):
         self._results = results
         self._current_idx = -1
         total = len(results)
+        # The search is over: its result outranks any pending index throttle.
+        self._progress.reset()
         if truncated:
-            self._count_label.set_text(
+            a11y.status(
+                self._count_label,
                 _('Showing first {n} results — try a more specific search.')
                 .format(n=sword_bridge.MAX_SEARCH_RESULTS))
         else:
-            self._count_label.set_text(ngettext(
+            a11y.status(self._count_label, ngettext(
                 '{n} verse found', '{n} verses found', total).format(n=total))
 
         self._rebuild_chart()
@@ -660,6 +681,7 @@ class SearchPanel(Gtk.Box):
         book, ch, v, _text = self._results[self._current_idx]
         self._on_result_clicked(book, ch, v)
         # Update the count label so the user knows where they are
-        self._count_label.set_text(
+        a11y.status(
+            self._count_label,
             _('Result {i} of {n}').format(i=self._current_idx + 1, n=n))
         return True
