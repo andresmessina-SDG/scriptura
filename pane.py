@@ -3834,38 +3834,34 @@ class BiblePane(Gtk.Box):
             self._on_font_size_request(-0.5)
             self._zoom_gesture_accum = scale
 
-    def _on_left_click(self, gesture, n_press, x, y):
-        # Stash press position so _on_left_release can distinguish a true
-        # click (collapse phantom selection) from a drag-select (preserve).
-        self._click_press_pos = (x, y)
-        bx, by = self._view.window_to_buffer_coords(Gtk.TextWindowType.WIDGET, int(x), int(y))
-        found, it = self._view.get_iter_at_location(bx, by)
-        if not found:
-            return
-        verse_num = None
-        strong_num = None
-        morph = None
-        devref = None
-        fnote = None
-        phrase_tag = None
+    def _targets_at_iter(self, it):
+        """What the reading text offers at `it`: the verse it belongs to and
+        any lookup the position carries.
+
+        Returns `(targets, it)` — the iter comes back because a footnote
+        marker re-anchors it (see below). Shared by the click handler and the
+        keyboard verse cursor, so the two can never disagree about what a
+        position means."""
+        targets = {'verse': None, 'strong': None, 'morph': None,
+                   'devref': None, 'fnote': None, 'phrase_tag': None}
         for tag in it.get_tags():
             name = tag.get_property('name')
             if name and name.startswith('strg:'):
-                strong_num = name[5:]
+                targets['strong'] = name[5:]
             elif name and name.startswith('vnum_'):
                 try:
-                    verse_num = int(name.split('_')[1])
+                    targets['verse'] = int(name.split('_')[1])
                 except (ValueError, IndexError):
                     pass
             elif name and name.startswith('morph:'):
-                morph = name[6:]
+                targets['morph'] = name[6:]
             elif name and name.startswith('devref:'):
-                devref = name[7:]
+                targets['devref'] = name[7:]
             elif name and name.startswith('fnote:'):
-                fnote = name[6:]
+                targets['fnote'] = name[6:]
             elif name and name.startswith('phrase:'):
-                phrase_tag = tag
-        if fnote is None:
+                targets['phrase_tag'] = tag
+        if targets['fnote'] is None:
             # A marker is a single narrow superscript glyph, and
             # get_iter_at_location resolves a click on its right half to
             # the NEXT character — so exact-iter tagging misses half the
@@ -3878,11 +3874,28 @@ class BiblePane(Gtk.Box):
                 for tag in p.get_tags():
                     name = tag.get_property('name') or ''
                     if name.startswith('fnote:'):
-                        fnote = name[6:]
+                        targets['fnote'] = name[6:]
                         it = p  # anchor the peek on the marker itself
                         break
-                if fnote:
+                if targets['fnote']:
                     break
+        return targets, it
+
+    def _on_left_click(self, gesture, n_press, x, y):
+        # Stash press position so _on_left_release can distinguish a true
+        # click (collapse phantom selection) from a drag-select (preserve).
+        self._click_press_pos = (x, y)
+        bx, by = self._view.window_to_buffer_coords(Gtk.TextWindowType.WIDGET, int(x), int(y))
+        found, it = self._view.get_iter_at_location(bx, by)
+        if not found:
+            return
+        targets, it = self._targets_at_iter(it)
+        verse_num = targets['verse']
+        strong_num = targets['strong']
+        morph = targets['morph']
+        devref = targets['devref']
+        fnote = targets['fnote']
+        phrase_tag = targets['phrase_tag']
         if n_press > 1:
             return
         if devref:
