@@ -187,7 +187,7 @@ def run_matrix() -> int:
     import gi
     gi.require_version('Gtk', '4.0')
     gi.require_version('Adw', '1')
-    from gi.repository import Gtk, Adw, GLib, Graphene
+    from gi.repository import Gtk, Adw, GLib, Gdk, Graphene
 
     import main
 
@@ -242,6 +242,30 @@ def run_matrix() -> int:
         else:
             row['ok'] = delta <= tol
         REPORT['checks'].append(row)
+
+    def describe_env():
+        """What differs between a workstation and a CI runner. Every
+        hypothesis chased for the intermittent theme-flip failure has been
+        environmental, and this report is the only thing that comes back
+        from a runner — so record the variables rather than guess at them
+        again."""
+        import sword_bridge
+        env = {
+            'gtk': f'{Gtk.get_major_version()}.{Gtk.get_minor_version()}'
+                   f'.{Gtk.get_micro_version()}',
+            'gsk_renderer': os.environ.get('GSK_RENDERER') or 'default',
+            'backend': type(Gdk.Display.get_default()).__name__,
+        }
+        try:
+            mgr = sword_bridge.mgr()
+            for name in REQUIRED_MODULES:
+                mod = mgr.getModule(name)
+                if mod is not None:
+                    env[f'module_{name}'] = str(
+                        mod.getConfigEntry('Version') or '?')
+        except Exception:
+            pass
+        REPORT['env'] = env
 
     app = main.BibleApp()
     S: dict = {}
@@ -399,6 +423,7 @@ def run_matrix() -> int:
         return 'HOLD'
 
     def anchor():
+        describe_env()
         S['v1'] = S['p1']._find_topmost_visible_verse()
         S['v2'] = S['p2']._find_topmost_visible_verse()
         REPORT['probe'] = {'p1': S['v1'], 'p2': S['v2']}
@@ -504,13 +529,30 @@ def run_matrix() -> int:
     # 5. theme flip
     def theme():
         S['a'] = snap(S['p1'], S['v1'])
+        S['theme_pre'] = {
+            'anchor': repr(getattr(S['p1'], '_reading_anchor', None))[:120],
+            'top_text': (top_text(S['p1']) or (None, None))[0],
+        }
         sm = Adw.StyleManager.get_default()
         cur = sm.get_color_scheme()
         sm.set_color_scheme(
             Adw.ColorScheme.FORCE_DARK
             if cur != Adw.ColorScheme.FORCE_DARK
             else Adw.ColorScheme.FORCE_LIGHT)
-        return settle(lambda s: check('theme flip', S['a'], s['p1']))
+        def judge(s):
+            check('theme flip', S['a'], s['p1'])
+            row = REPORT['checks'][-1]
+            if not row['ok']:
+                # A re-render restores the reading locus from the anchor
+                # captured before it. When that lands wrong, these are the
+                # numbers that say why.
+                row['diag'] = {
+                    'pre': S['theme_pre'],
+                    'post_anchor': repr(
+                        getattr(S['p1'], '_reading_anchor', None))[:120],
+                    'post_top_text': (top_text(S['p1']) or (None, None))[0],
+                }
+        return settle(judge)
 
     # 6. lexicon panel first open — judged by the text at the viewport
     # top (off-screen iter positions are estimate-based and unreliable)
