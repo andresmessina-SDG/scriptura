@@ -64,6 +64,7 @@ py_sources = files(
   'night_light.py',
   'onboarding.py',
   'open_data.py',
+  'overlays.py',
   'pane.py',
   'pane_chrome.py',
   'pane_content.py',
