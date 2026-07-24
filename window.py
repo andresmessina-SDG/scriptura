@@ -96,7 +96,6 @@ class _FractionPaned(Gtk.Paned):
 
 
 class BibleWindow(Adw.ApplicationWindow):
-    _NAV_MAX = 100
 
     def __init__(self, **kwargs):
         # bible: URI ref to navigate to once panes are ready (see main.py).
@@ -109,8 +108,16 @@ class BibleWindow(Adw.ApplicationWindow):
         if settings.get('window_maximized'):
             self.maximize()
         self.set_title('Scriptura')  # app name — not translated
-        self._nav_back = []
-        self._nav_fwd = []
+        # The navigation funnel + history + ref/recent popovers live here; the
+        # window keeps thin delegates and forwarding _current_loc/_nav_* props.
+        # Imported lazily: navigation.py imports this module for BOOKS, so a
+        # top-level import here would be a load-order-fragile cycle.
+        from navigation import NavigationController
+        self._nav = NavigationController(self)
+        # Overlay lifecycle (menu / search / jump mutual-exclusion + toggles);
+        # the window keeps thin delegates. Lazy import for the same reason.
+        from overlays import OverlayManager
+        self._overlays = OverlayManager(self)
         # Warm SWORD's one-time versification init (~150 ms, first VerseKey)
         # on a background thread so it overlaps _build_ui instead of running
         # serially before first paint. _load_all_panes joins it before the
@@ -221,11 +228,6 @@ class BibleWindow(Adw.ApplicationWindow):
                 _("Couldn't read {names}.json — using defaults. "
                   "Your file is preserved; rename to recover.").format(names=names))
         return GLib.SOURCE_REMOVE
-
-    def _push_nav_back(self, loc):
-        self._nav_back.append(loc)
-        if len(self._nav_back) > self._NAV_MAX:
-            del self._nav_back[0]
 
     def _build_ui(self):
         toolbar_view = Adw.ToolbarView()
@@ -1012,14 +1014,6 @@ class BibleWindow(Adw.ApplicationWindow):
         # No pane focused yet — go to pane1 by default
         self.pane1._view.grab_focus()
 
-    def _on_ref_btn_scroll(self, _ctrl, _dx, dy):
-        # Vertical scroll: down → next chapter, up → previous chapter.
-        if dy > 0:
-            self._go_next_chapter()
-        elif dy < 0:
-            self._go_prev_chapter()
-        return True
-
     def _step_search_result(self, prev=False):
         """F3 / Shift+F3 — step through results.
         Priority:
@@ -1057,342 +1051,61 @@ class BibleWindow(Adw.ApplicationWindow):
 
     # ── Central navigation ────────────────────────────────────────────────────
 
+    # ── Navigation (delegated to NavigationController; see navigation.py) ─────
+    @property
+    def _current_loc(self):
+        return self._nav._current_loc
+
+    @_current_loc.setter
+    def _current_loc(self, value):
+        self._nav._current_loc = value
+
+    @property
+    def _nav_back(self):
+        return self._nav._nav_back
+
+    @property
+    def _nav_fwd(self):
+        return self._nav._nav_fwd
+
     def _go_to(self, book, chapter, verse=None, record=True):
-        if book not in BOOKS:
-            return
-        # Any navigation is "an action" — it takes the reader in, so the
-        # Today page slides away (unless this is the programmatic startup
-        # devotional auto-nav, which happens beneath it).
-        if not self._today_suppress:
-            self._dismiss_today()
-        if record:
-            self._push_nav_back(self._current_loc)
-            self._nav_fwd.clear()
-            self._update_nav_btns()
+        self._nav._go_to(book, chapter, verse, record)
 
-        self.book_drop.set_selected(BOOKS.index(book))
-        count = sword_bridge.chapter_count(book)
-        # Stale callers (bookmarks, search results from a different
-        # versification) may pass a chapter outside this book's range.
-        chapter = max(1, min(chapter, count))
-        self.chapter_drop.set_model(Gtk.StringList.new([str(i) for i in range(1, count + 1)]))
-        self.chapter_drop.set_selected(chapter - 1)
+    def _go_prev_chapter(self):
+        self._nav._go_prev_chapter()
 
-        self._current_loc = (book, chapter)
-        self._update_ref_label(book, chapter)
+    def _go_next_chapter(self):
+        self._nav._go_next_chapter()
 
-        if record:
-            self._push_recent(book, chapter)
+    def _go_prev_book(self):
+        self._nav._go_prev_book()
 
-        if verse:
-            self.pane1.load_reference_at_verse(book, chapter, verse)
-            self.pane2.load_reference_at_verse(book, chapter, verse)
-        else:
-            self.pane1.load_reference(book, chapter)
-            self.pane2.load_reference(book, chapter)
+    def _go_next_book(self):
+        self._nav._go_next_book()
 
-    def _push_recent(self, book, chapter):
-        """Push a (book, chapter) onto the recent-passages list, dedup so
-        the same passage never appears twice, cap at 10 entries."""
-        cur = settings.get('recent_passages') or []
-        if not isinstance(cur, list):
-            cur = []
-        entry = [book, int(chapter)]
-        cur = [e for e in cur if isinstance(e, list) and e[:2] != entry]
-        cur.insert(0, entry)
-        settings.put('recent_passages', cur[:10])
+    def _on_nav_back(self, btn):
+        self._nav._on_nav_back(btn)
 
-    def _build_recent_popover_content(self):
-        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        outer.set_size_request(220, -1)
-
-        header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        header_box.set_margin_start(10)
-        header_box.set_margin_end(6)
-        header_box.set_margin_top(8)
-        header_box.set_margin_bottom(6)
-        title = Gtk.Label(label=_('Recent'), xalign=0, hexpand=True)
-        title.add_css_class('heading')
-        header_box.append(title)
-        clear_btn = Gtk.Button(icon_name='user-trash-symbolic')
-        clear_btn.add_css_class('flat')
-        clear_btn.set_tooltip_text(_('Clear recent list'))
-        set_accessible_label(clear_btn, _('Clear recent list'))
-        clear_btn.connect('clicked', self._on_recent_clear)
-        header_box.append(clear_btn)
-        outer.append(header_box)
-        # No separator rule — grouped by whitespace, matching the search panel
-        # and the bookmarks popover so the side surfaces read as a set.
-
-        entries = settings.get('recent_passages') or []
-        entries = [e for e in entries if isinstance(e, list) and len(e) >= 2
-                   and e[0] in BOOKS and isinstance(e[1], int)]
-
-        if not entries:
-            empty = Gtk.Label(
-                label=_('No recent passages yet.\nNavigate around — they\'ll show here.'),
-                xalign=0.5, wrap=True)
-            empty.add_css_class('dim-label')
-            empty.set_margin_start(12)
-            empty.set_margin_end(12)
-            empty.set_margin_top(10)
-            empty.set_margin_bottom(12)
-            outer.append(empty)
-        else:
-            scroll = Gtk.ScrolledWindow(vexpand=True)
-            scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-            scroll.set_max_content_height(360)
-            scroll.set_propagate_natural_height(True)
-            listbox = Gtk.ListBox()
-            listbox.add_css_class('navigation-sidebar')
-            for book, ch in entries:
-                row = Gtk.ListBoxRow()
-                row._passage = (book, ch)
-                lbl = Gtk.Label(label=f'{book_label(book)} {ch}', xalign=0)
-                lbl.set_margin_start(12)
-                lbl.set_margin_end(12)
-                lbl.set_margin_top(6)
-                lbl.set_margin_bottom(6)
-                row.set_child(lbl)
-                listbox.append(row)
-            listbox.connect('row-activated', self._on_recent_row_activated)
-            scroll.set_child(listbox)
-            outer.append(scroll)
-
-        self._recent_pop.set_child(outer)
-
-    def _on_back_history(self, gesture, *_args):
-        # Right-click / long-press on the back arrow opens recent passages.
-        # Claim the sequence so a long-press doesn't also fire back navigation.
-        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
-        self._recent_pop.popup()
-
-    def _on_recent_row_activated(self, _lb, row):
-        if not hasattr(row, '_passage'):
-            return
-        self._recent_pop.popdown()
-        book, ch = row._passage
-        self._go_to(book, ch)
-
-    def _on_recent_clear(self, _btn):
-        settings.put('recent_passages', [])
-        self._build_recent_popover_content()
+    def _on_nav_fwd(self, btn):
+        self._nav._on_nav_fwd(btn)
 
     def _load_all_panes(self):
-        # Source of truth at startup is self._current_loc, which was
-        # restored from settings in __init__. Sync the hidden dropdowns
-        # (used by Alt+arrow nav and the chapter-count model) to match.
-        book, chapter = self._current_loc
-        self.book_drop.set_selected(BOOKS.index(book))
-        # First main-thread SWORD call: join the warm-up thread started in
-        # __init__ (a no-op wait by now — _build_ui takes longer than the
-        # init), then clamp the restored chapter, deferred from __init__.
-        sword_bridge.wait_warm()
-        count = sword_bridge.chapter_count(book)
-        chapter = max(1, min(chapter, count))
-        self._current_loc = (book, chapter)
-        self.chapter_drop.set_model(
-            Gtk.StringList.new([str(i) for i in range(1, count + 1)]))
-        self.chapter_drop.set_selected(chapter - 1)
-        self._update_ref_label(book, chapter)
-        # Restore per-module scroll positions via the shared
-        # module_positions store. Setting _restore_top_verse BEFORE
-        # load_reference triggers _fetch_and_render — the render path
-        # consumes the attribute and routes through _scroll_to_verse_silent.
-        v1 = module_positions.get_verse_position(
-            self.pane1._module, book, chapter)
-        v2 = module_positions.get_verse_position(
-            self.pane2._module, book, chapter)
-        if v1:
-            self.pane1._restore_top_verse = v1
-        if v2:
-            self.pane2._restore_top_verse = v2
-        self.pane1.load_reference(book, chapter)
-        self.pane2.load_reference(book, chapter)
+        self._nav._load_all_panes()
 
     def _update_ref_label(self, book, chapter):
-        self._ref_btn.set_label(f'{book_label(book)} {chapter}')
+        self._nav._update_ref_label(book, chapter)
 
     def _build_ref_popover_content(self):
-        """Books on the left; right column flips between a Chapter grid and
-        a Verse grid via a Stack. Left-click on a chapter navigates straight
-        to that chapter; right-click slides the panel over to the verse
-        picker for that chapter."""
-        current_book    = BOOKS[self.book_drop.get_selected()]
-        current_chapter = self.chapter_drop.get_selected() + 1
+        self._nav._build_ref_popover_content()
 
-        outer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        outer.set_size_request(440, 380)
+    def _build_recent_popover_content(self):
+        self._nav._build_recent_popover_content()
 
-        # ── Books (left) ──────────────────────────────────────────────────
-        book_scroll = Gtk.ScrolledWindow(hexpand=True, vexpand=True)
-        book_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        book_list = Gtk.ListBox()
-        book_list.set_selection_mode(Gtk.SelectionMode.BROWSE)
-        book_list.add_css_class('navigation-sidebar')
+    def _on_back_history(self, gesture, *args):
+        self._nav._on_back_history(gesture, *args)
 
-        # ── Right column (header + stack) ─────────────────────────────────
-        right_col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        right_col.set_size_request(190, -1)
-
-        header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-        header_box.set_margin_start(6)
-        header_box.set_margin_end(8)
-        header_box.set_margin_top(6)
-        header_box.set_margin_bottom(4)
-
-        back_btn = Gtk.Button(icon_name='go-previous-symbolic')
-        back_btn.add_css_class('flat')
-        back_btn.set_tooltip_text(_('Back to chapters'))
-        set_accessible_label(back_btn, _('Back to chapters'))
-        back_btn.set_visible(False)
-        header_box.append(back_btn)
-
-        title_lbl = Gtk.Label(label=_('Chapter'), xalign=0, hexpand=True)
-        title_lbl.add_css_class('heading')
-        header_box.append(title_lbl)
-
-        right_col.append(header_box)
-
-        stack = Gtk.Stack()
-        stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
-        stack.set_transition_duration(150)
-        stack.set_vexpand(True)
-
-        # Chapter grid
-        chap_scroll = Gtk.ScrolledWindow(vexpand=True)
-        chap_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        chap_flow = Gtk.FlowBox()
-        chap_flow.set_selection_mode(Gtk.SelectionMode.NONE)
-        chap_flow.set_min_children_per_line(4)
-        chap_flow.set_max_children_per_line(4)
-        chap_flow.set_homogeneous(True)
-        chap_flow.set_valign(Gtk.Align.START)
-        chap_flow.set_margin_start(8)
-        chap_flow.set_margin_end(8)
-        chap_flow.set_margin_top(8)
-        chap_flow.set_margin_bottom(8)
-        chap_flow.set_column_spacing(6)
-        chap_flow.set_row_spacing(6)
-        chap_scroll.set_child(chap_flow)
-        stack.add_named(chap_scroll, 'chapters')
-
-        # Verse grid
-        verse_scroll = Gtk.ScrolledWindow(vexpand=True)
-        verse_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        verse_flow = Gtk.FlowBox()
-        verse_flow.set_selection_mode(Gtk.SelectionMode.NONE)
-        verse_flow.set_min_children_per_line(5)
-        verse_flow.set_max_children_per_line(5)
-        verse_flow.set_homogeneous(True)
-        verse_flow.set_valign(Gtk.Align.START)
-        verse_flow.set_margin_start(8)
-        verse_flow.set_margin_end(8)
-        verse_flow.set_margin_top(8)
-        verse_flow.set_margin_bottom(8)
-        verse_flow.set_column_spacing(4)
-        verse_flow.set_row_spacing(4)
-        verse_scroll.set_child(verse_flow)
-        stack.add_named(verse_scroll, 'verses')
-
-        right_col.append(stack)
-
-        state = {'book': current_book, 'chapter': current_chapter}
-
-        def show_chapters():
-            title_lbl.set_label(_('Chapter'))
-            back_btn.set_visible(False)
-            stack.set_visible_child_name('chapters')
-
-        def show_verses(ch):
-            # Rebuild verse grid for state.book / ch
-            clear_children(verse_flow)
-            try:
-                v_count = sword_bridge.verse_count(state['book'], ch)
-            except Exception:
-                v_count = 1
-            for v in range(1, v_count + 1):
-                vbtn = Gtk.Button(label=str(v))
-                vbtn.add_css_class('nav-cell')
-                vbtn.add_css_class('flat')
-                vbtn.set_valign(Gtk.Align.CENTER)
-                vbtn._verse = v
-                vbtn.connect('clicked', self._on_ref_verse_chosen, state)
-                verse_flow.append(vbtn)
-            state['chapter'] = ch
-            title_lbl.set_label(_('Chapter {n} Verse').format(n=ch))
-            back_btn.set_visible(True)
-            stack.set_visible_child_name('verses')
-
-        def rebuild_chapters():
-            clear_children(chap_flow)
-            try:
-                count = sword_bridge.chapter_count(state['book'])
-            except Exception:
-                count = 1
-            for ch in range(1, count + 1):
-                btn = Gtk.Button(label=str(ch))
-                btn.add_css_class('nav-cell')
-                btn.set_valign(Gtk.Align.CENTER)
-                if state['book'] == current_book and ch == current_chapter:
-                    btn.add_css_class('nav-current')   # filled-accent pill
-                else:
-                    btn.add_css_class('flat')
-                btn.connect('clicked', self._on_ref_chapter_chosen, state)
-                btn._chapter = ch
-                # Right-click → slide to verse picker for this chapter
-                rc = Gtk.GestureClick()
-                rc.set_button(Gdk.BUTTON_SECONDARY)
-                rc.connect('pressed',
-                           lambda g, n, x, y, _c=ch: show_verses(_c))
-                btn.add_controller(rc)
-                chap_flow.append(btn)
-
-        for name in BOOKS:
-            row = Gtk.ListBoxRow()
-            row._book = name
-            lbl = Gtk.Label(label=book_label(name), xalign=0)
-            lbl.set_margin_start(12)
-            lbl.set_margin_end(12)
-            lbl.set_margin_top(6)
-            lbl.set_margin_bottom(6)
-            row.set_child(lbl)
-            book_list.append(row)
-            if name == current_book:
-                book_list.select_row(row)
-
-        def on_book_row(_lb, row):
-            if row is None:
-                return
-            state['book'] = row._book
-            # Switching book resets back to the chapter view.
-            show_chapters()
-            rebuild_chapters()
-
-        book_list.connect('row-selected', on_book_row)
-        back_btn.connect('clicked', lambda _b: show_chapters())
-
-        rebuild_chapters()
-
-        book_scroll.set_child(book_list)
-        outer.append(book_scroll)
-        nav_sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
-        nav_sep.add_css_class('nav-divider')
-        outer.append(nav_sep)
-        outer.append(right_col)
-
-        self._ref_pop.set_child(outer)
-
-        GLib.idle_add(lambda: (book_list.get_selected_row()
-                               and book_list.get_selected_row().grab_focus()) or False)
-
-    def _on_ref_chapter_chosen(self, btn, state):
-        self._ref_pop.popdown()
-        self._go_to(state['book'], btn._chapter)
-
-    def _on_ref_verse_chosen(self, btn, state):
-        self._ref_pop.popdown()
-        self._go_to(state['book'], state['chapter'], btn._verse)
+    def _on_ref_btn_scroll(self, ctrl, dx, dy):
+        return self._nav._on_ref_btn_scroll(ctrl, dx, dy)
 
     def _startup_navigate_to_devotional_ref(self, devt_module):
         """Background thread: parse today's devotional, navigate pane1 to its passage."""
@@ -1414,57 +1127,6 @@ class BibleWindow(Adw.ApplicationWindow):
                 book, chapter, verse = result
                 GLib.idle_add(go_quiet, book, chapter, verse)
         threading.Thread(target=fetch, daemon=True).start()
-
-    # ── Back / forward ────────────────────────────────────────────────────────
-
-    def _on_nav_back(self, _btn):
-        if not self._nav_back:
-            return
-        self._nav_fwd.append(self._current_loc)
-        book, chapter = self._nav_back.pop()
-        self._update_nav_btns()
-        self._go_to(book, chapter, record=False)
-
-    def _on_nav_fwd(self, _btn):
-        if not self._nav_fwd:
-            return
-        self._push_nav_back(self._current_loc)
-        book, chapter = self._nav_fwd.pop()
-        self._update_nav_btns()
-        self._go_to(book, chapter, record=False)
-
-    def _update_nav_btns(self):
-        self._back_btn.set_sensitive(bool(self._nav_back))
-        self._fwd_btn.set_sensitive(bool(self._nav_fwd))
-
-    # ── Keyboard chapter/book navigation ─────────────────────────────────────
-
-    def _go_prev_chapter(self):
-        book    = BOOKS[self.book_drop.get_selected()]
-        chapter = self.chapter_drop.get_selected() + 1
-        if chapter > 1:
-            self._go_to(book, chapter - 1)
-        elif self.book_drop.get_selected() > 0:
-            prev = BOOKS[self.book_drop.get_selected() - 1]
-            self._go_to(prev, sword_bridge.chapter_count(prev))
-
-    def _go_next_chapter(self):
-        book    = BOOKS[self.book_drop.get_selected()]
-        chapter = self.chapter_drop.get_selected() + 1
-        if chapter < sword_bridge.chapter_count(book):
-            self._go_to(book, chapter + 1)
-        elif self.book_drop.get_selected() < len(BOOKS) - 1:
-            self._go_to(BOOKS[self.book_drop.get_selected() + 1], 1)
-
-    def _go_prev_book(self):
-        idx = self.book_drop.get_selected()
-        if idx > 0:
-            self._go_to(BOOKS[idx - 1], 1)
-
-    def _go_next_book(self):
-        idx = self.book_drop.get_selected()
-        if idx < len(BOOKS) - 1:
-            self._go_to(BOOKS[idx + 1], 1)
 
     # ── Font size ─────────────────────────────────────────────────────────────
 
@@ -1826,73 +1488,31 @@ class BibleWindow(Adw.ApplicationWindow):
         self.pane1.set_appearance(font_justify=justify)
         self.pane2.set_appearance(font_justify=justify)
 
-    # ── Quick jump ────────────────────────────────────────────────────────────
-
-    def _close_other_overlays(self, keep=None):
-        """Dismiss any overlay panels other than the one named in `keep`.
-        Only one of menu / search / jump should be visible at a time."""
-        if keep != 'menu':
-            self._menu_split.set_show_sidebar(False)
-        if keep != 'search':
-            self._search_split.set_show_sidebar(False)
-        if keep != 'jump':
-            self._jump_revealer.set_reveal_child(False)
-
+    # ── Overlays (delegated to OverlayManager; see overlays.py) ──────────────
     def _show_jump(self):
-        self._close_other_overlays(keep='jump')
-        self._jump_revealer.set_reveal_child(True)
-        self._jump_entry.grab_focus()
+        self._overlays._show_jump()
 
     def _hide_jump(self):
-        self._jump_revealer.set_reveal_child(False)
-        self._jump_entry.set_text('')
+        self._overlays._hide_jump()
 
     def _on_jump_activate(self, entry):
-        result = self._parse_jump(entry.get_text().strip())
-        if result:
-            book, chapter, verse = result
-            self._hide_jump()
-            if getattr(self, '_present_mode', False):
-                self._present_jump(book, chapter, verse)
-            else:
-                self._go_to(book, chapter, verse)
-        else:
-            entry.add_css_class('error')
-            def clear_err():
-                entry.remove_css_class('error')
-                return GLib.SOURCE_REMOVE
-            GLib.timeout_add(600, clear_err)
+        self._overlays._on_jump_activate(entry)
 
     def _parse_jump(self, text):
-        text = text.strip()
-        if not text:
-            return None
-        # Book name with optional " chapter[:verse]" — a bare book name defaults to ch 1.
-        m = re.match(r'^(.+?)(?:\s+(\d+)(?::(\d+))?)?$', text)
-        if not m:
-            return None
-        try:
-            chapter = int(m.group(2)) if m.group(2) else 1
-            verse   = int(m.group(3)) if m.group(3) else None
-        except ValueError:
-            return None
-        query = m.group(1).strip().lower().replace(' ', '')
-        if not query:
-            return None
-        # Exact match wins over prefix — "Job" must not silently become "Joshua".
-        for b in BOOKS:
-            if b.lower().replace(' ', '') == query:
-                ch_max = sword_bridge.chapter_count(b)
-                return (b, max(1, min(chapter, ch_max)), verse)
-        for b in BOOKS:
-            if b.lower().replace(' ', '').startswith(query):
-                ch_max = sword_bridge.chapter_count(b)
-                return (b, max(1, min(chapter, ch_max)), verse)
-        full = sword_bridge._CROSS_REF_ABBREVS.get(query)
-        if full and full in BOOKS:
-            ch_max = sword_bridge.chapter_count(full)
-            return (full, max(1, min(chapter, ch_max)), verse)
-        return None
+        return self._overlays._parse_jump(text)
+
+    def _ensure_menu_panel(self):
+        return self._overlays._ensure_menu_panel()
+
+    def _toggle_menu(self, btn):
+        self._overlays._toggle_menu(btn)
+
+    def _on_search_clicked(self, btn):
+        self._overlays._on_search_clicked(btn)
+
+    def _hide_search(self):
+        self._overlays._hide_search()
+
 
     # ── Bookmarks ─────────────────────────────────────────────────────────────
 
@@ -3125,27 +2745,6 @@ class BibleWindow(Adw.ApplicationWindow):
 
     # ── Search ────────────────────────────────────────────────────────────────
 
-    def _on_search_clicked(self, _btn):
-        if self._search_split.get_show_sidebar():
-            self._search_split.set_show_sidebar(False)
-        else:
-            self._dismiss_today()
-            self._close_other_overlays(keep='search')
-            # Default to pane1's module — but fall back to a Bible-text module
-            # if pane1 is showing a devotional (search doesn't work on devotionals).
-            mod = self.pane1._module
-            if self.pane1._is_devotional:
-                texts = [m for m in sword_bridge.module_names()
-                         if not sword_bridge.is_internal_use(m)
-                         and sword_bridge.module_type(m) == 'Biblical Texts']
-                if texts:
-                    mod = texts[0]
-            self._search_panel.prepare_for_show(mod)
-            self._search_split.set_show_sidebar(True)
-
-    def _hide_search(self):
-        self._search_split.set_show_sidebar(False)
-
     def _on_search_result(self, book, chapter, verse):
         # Stash the query on any pane whose current module matches the
         # search panel's module, so _apply_search_highlight can paint the
@@ -3553,24 +3152,6 @@ class BibleWindow(Adw.ApplicationWindow):
         return GLib.SOURCE_REMOVE
 
     # ── App menu panel ────────────────────────────────────────────────────────
-
-    def _ensure_menu_panel(self):
-        """Build the menu sidebar on first need. Deferred out of _build_ui
-        so its ~80 ms of widget construction doesn't delay first paint;
-        normally the post-init idle gets here before the user can."""
-        if not self._menu_panel_built:
-            self._menu_panel_built = True
-            self._menu_split.set_sidebar(self._build_menu_panel())
-        return GLib.SOURCE_REMOVE
-
-    def _toggle_menu(self, _btn):
-        open_ = not self._menu_split.get_show_sidebar()
-        if open_:
-            self._dismiss_today()
-            self._ensure_menu_panel()
-            self._close_other_overlays(keep='menu')
-            self._refresh_plan_ui()
-        self._menu_split.set_show_sidebar(open_)
 
     def _build_menu_panel(self):
         # .menu-panel carries the floating-card chrome (opaque background,
