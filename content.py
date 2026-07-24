@@ -230,6 +230,17 @@ def _type_for(name: str) -> _ContentType:
     return _TYPES[-1]
 
 
+def type_key(name: str) -> str:
+    """The registry key of the source that owns this module: one of
+    'catena', 'imagery', 'archaeology', 'interlinear', 'ebible', 'sword'.
+
+    The single source of truth for "which content source is this" — callers
+    that used to re-walk the bridge predicates (is_catena_module …
+    is_ebible_module) resolve membership through here instead, so the
+    classification can't drift from the registry."""
+    return _type_for(name).key
+
+
 def kind(name: str) -> str:
     """Coarse content category for the module picker's tabs.
 

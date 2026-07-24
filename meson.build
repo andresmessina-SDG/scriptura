@@ -65,6 +65,7 @@ py_sources = files(
   'open_data.py',
   'pane.py',
   'pane_chrome.py',
+  'pane_content.py',
   'pane_scroll.py',
   'pane_search.py',
   'paths.py',

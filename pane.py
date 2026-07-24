@@ -12,8 +12,6 @@ from gi.repository import Gtk, Adw, GLib, Gdk, Gsk, Graphene, Pango
 from gtk_utils import clear_children
 import sword_bridge
 import ebible_bridge
-import catena_bridge
-import imagery_bridge
 import archaeology_bridge
 import content
 import annotations
@@ -21,6 +19,7 @@ import motion
 import settings
 import tasks
 import module_positions
+import pane_content
 from genbook_reader import GenbookReader
 from catena_reader import CatenaReader
 from imagery_reader import ImageryReader
@@ -1038,13 +1037,11 @@ class BiblePane(Gtk.Box):
             raise RuntimeError('No SWORD modules installed.')
 
         self._module = module_name if module_name in self._names else self._names[0]
-        self._compute_module_flags()
         # Generic Books rendering, TOC, prev/next/TOC widgets, and entry-
         # path persistence live in GenbookReader. build_toolbar() below
         # attaches the three toolbar widgets; set_module() loads the
         # last-read entry path.
         self._genbook = GenbookReader(self, _html_to_markup)
-        self._genbook.set_module(self._module, self._is_genbook)
         # Historical Commentaries (catena) card view — verse-synced from
         # the partnered Bible pane. Composed into the content stack below.
         self._catena = CatenaReader(self)
@@ -1057,6 +1054,15 @@ class BiblePane(Gtk.Box):
         self._archaeology = ArchaeologyReader(self)
         # Interlinear Greek NT — word-stack cells, verse-synced like a Bible.
         self._interlinear = InterlinearReader(self)
+        # Each content mode is a PaneContent strategy; _compute_module_flags
+        # resolves the active one into self._content, so the render path calls
+        # one object instead of branching on _is_<mode> at every dispatch site.
+        # Card modes (own stack child) are registry-keyed; the text-view modes
+        # depend on the finer flags and are picked during resolution.
+        self._contents = pane_content.build(self)
+        self._text_content = pane_content.build_text(self)
+        self._compute_module_flags()
+        self._genbook.set_module(self._module, self._is_genbook)
         self._book = 'Genesis'
         self._chapter = 1
         self._target_verse = None
@@ -1588,11 +1594,16 @@ class BiblePane(Gtk.Box):
         tree-keyed (TOC + entries). The render path and the toolbar chrome
         (sync / chapter note / search / copy / date-nav) branch on these."""
         m = self._module
-        self._is_catena = catena_bridge.is_catena_module(m)
-        self._is_imagery = imagery_bridge.is_imagery_module(m)
-        self._is_archaeology = archaeology_bridge.is_archaeology_module(m)
-        self._is_interlinear = interlinear_data.is_interlinear_module(m)
-        is_ebible = ebible_bridge.is_ebible_module(m)
+        # One source of truth for "which content source is this": the content
+        # registry (content.py), instead of re-walking each bridge predicate
+        # here. The registry's membership predicates are disjoint, so exactly
+        # one key matches.
+        tk = content.type_key(m)
+        self._is_catena = tk == 'catena'
+        self._is_imagery = tk == 'imagery'
+        self._is_archaeology = tk == 'archaeology'
+        self._is_interlinear = tk == 'interlinear'
+        is_ebible = tk == 'ebible'
         if self._is_catena:
             self._module_type = 'Historical Commentaries'
         elif self._is_imagery:
@@ -1615,18 +1626,24 @@ class BiblePane(Gtk.Box):
             and not self._is_archaeology and not self._is_interlinear
             and not is_ebible
             and self._module_type == 'Generic Books')
+        # The active content strategy. Card modes are registry-keyed; the
+        # text-view modes are picked by the finer flags, in the same order
+        # the render dispatch used to test them.
+        card = self._contents.get(tk)
+        if card is not None:
+            self._content = card
+        elif self._is_devotional:
+            self._content = self._text_content['devotional']
+        elif self._is_genbook:
+            self._content = self._text_content['genbook']
+        elif self._is_verse_navigable():
+            self._content = self._text_content['bible']
+        else:
+            self._content = self._text_content['unsupported']
 
     def _content_child(self):
         """Which content-stack child the current module renders into."""
-        if self._is_catena:
-            return 'catena'
-        if self._is_imagery:
-            return 'imagery'
-        if self._is_archaeology:
-            return 'archaeology'
-        if self._is_interlinear:
-            return 'interlinear'
-        return 'text'
+        return self._content.stack_child
 
     def _is_verse_navigable(self):
         """Verse-based navigation only makes sense for Bibles and commentaries.
@@ -1755,10 +1772,10 @@ class BiblePane(Gtk.Box):
         if 'text_color'   in kwargs: self._text_color   = kwargs['text_color']
         if 'bg_color'     in kwargs: self._bg_color     = kwargs['bg_color']
         self._update_font_css()
-        # The archaeology and catena documents scale with the same reading
-        # font size.
-        self._archaeology.apply_font_size(self._font_size)
-        self._catena.apply_font_size(self._font_size)
+        # The card-mode documents scale with the same reading font size
+        # (only archaeology and catena actually re-scale; the rest no-op).
+        for content_mode in self._contents.values():
+            content_mode.apply_font_size(self._font_size)
 
     def set_font_size(self, size):
         self.set_appearance(font_size=size)
@@ -2023,35 +2040,15 @@ class BiblePane(Gtk.Box):
         if not self._is_devotional:
             self._stop_devotional_audio()
         self._content_stack.set_visible_child_name(self._content_child())
-        if self._is_catena:
-            # Follows the global book/chapter picker (and any verse the
-            # partnered Bible broadcasts); defaults to verse 1 on its own.
-            self._catena.render_for(
-                self._book, self._chapter, self._selected_verse or 1)
-            return
-        if self._is_imagery:
-            self._imagery.render_for(
-                self._book, self._chapter, self._selected_verse or 1)
-            return
-        if self._is_interlinear:
-            self._interlinear.render_for(
-                self._module, self._book, self._chapter,
-                self._selected_verse or 1)
-            return
-        if self._is_archaeology:
-            self._archaeology.render()
-            return
-        if self._is_devotional:
-            self._fetch_and_render_devotional()
-            return
-        if self._is_genbook:
-            self._genbook.fetch_and_render()
-            return
-        if not self._is_verse_navigable():
-            # Lexicons / dictionaries still fall through here — the
-            # dict-popup surface owns those, the pane shows a placeholder.
-            self._display_unsupported_module()
-            return
+        # One dispatch: the active PaneContent renders itself. Card modes
+        # render into their own stack child (verse-synced from the partnered
+        # Bible); the text-view modes (Bible/commentary core, devotional,
+        # generic book, unsupported placeholder) render into 'text'.
+        self._content.render()
+
+    def _render_bible_chapter(self):
+        """Async-load the current verse-keyed chapter (Bible or commentary)
+        and hand the verses + footnotes to _display."""
         book, chapter, module = self._book, self._chapter, self._module
         # Last-write-wins across overlapping fetches. The location guard in
         # _display can't catch two renders of the SAME chapter (e.g. rapid
@@ -4644,20 +4641,13 @@ class BiblePane(Gtk.Box):
 
     def select_verse(self, verse_num):
         """Called by other panes broadcasting a verse selection."""
-        if self._is_archaeology:
-            return  # standalone document — not verse-keyed
-        if self._is_catena:
-            self._selected_verse = verse_num
-            self._catena.render_for(self._book, self._chapter, verse_num)
-            return
-        if self._is_imagery:
-            self._selected_verse = verse_num
-            self._imagery.render_for(self._book, self._chapter, verse_num)
-            return
-        if self._is_interlinear:
-            self._selected_verse = verse_num
-            self._interlinear.select_verse(verse_num)
-            return
+        self._content.on_verse(verse_num)
+
+    def _broadcast_verse_to_text(self, verse_num):
+        """Move the text view's selected-verse indicator to a broadcast verse,
+        scrolling to it when it's on screen. Modes rendering into the text view
+        without matching verse tags (devotionals, generic books) harmlessly
+        find none."""
         # The broadcast speaks app-space; this pane's rendered verse
         # numbers are its module's own — translate before touching tags
         # (no-op for app-keyed modules).

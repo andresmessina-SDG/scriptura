@@ -37,6 +37,13 @@ def test_every_source_resolves_to_its_own_descriptor():
         assert content._type_for(name).key == expected_key
 
 
+def test_type_key_matches_the_owning_descriptor():
+    # type_key is the single membership source the pane's mode flags resolve
+    # against; it must agree with _type_for for every source.
+    for expected_key, name in _reps().items():
+        assert content.type_key(name) == expected_key
+
+
 def test_registry_covers_every_type_once():
     keys = [ct.key for ct in content._TYPES]
     assert keys == ['catena', 'imagery', 'archaeology', 'interlinear',
