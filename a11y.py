@@ -145,18 +145,25 @@ class ProgressAnnouncer:
 
     def __init__(self, interval: float = 5.0) -> None:
         self._interval = interval
-        self._last_at = 0.0
+        # None, not 0.0, means "nothing announced yet". time.monotonic()
+        # counts from an arbitrary epoch — on Linux, boot — so on a machine
+        # that has just started it returns a number smaller than the
+        # interval, and a 0.0 sentinel silently swallowed the FIRST message
+        # of every run. It only ever reproduced on a fresh CI container.
+        self._last_at: float | None = None
         self._last_text = ''
 
     def reset(self) -> None:
         """Forget the throttle so the next message is announced at once."""
-        self._last_at = 0.0
+        self._last_at = None
         self._last_text = ''
 
     def progress(self, widget: Gtk.Widget, message: str) -> None:
         """Announce `message` unless one went out too recently."""
         now = time.monotonic()
-        if message == self._last_text or now - self._last_at < self._interval:
+        if message == self._last_text:
+            return
+        if self._last_at is not None and now - self._last_at < self._interval:
             return
         self._last_at = now
         self._last_text = message

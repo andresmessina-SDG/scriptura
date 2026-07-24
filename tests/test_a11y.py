@@ -65,6 +65,34 @@ def test_progress_announces_the_first_message_immediately():
     assert w.announced == ['Indexing 1/66']
 
 
+def test_first_message_survives_a_freshly_booted_machine(monkeypatch):
+    """time.monotonic() counts from an arbitrary epoch — boot, on Linux.
+
+    A machine up for two seconds returns 2.0, which is less than the
+    throttle interval, so a 0.0 "never announced" sentinel swallowed the
+    first message of every run. It reproduced only on fresh CI containers;
+    a workstation with days of uptime never saw it."""
+    monkeypatch.setattr(a11y.time, 'monotonic', lambda: 2.0)
+    w = FakeAccessible()
+    p = a11y.ProgressAnnouncer(interval=5.0)
+    p.progress(w, 'Indexing 1/66')
+    assert w.announced == ['Indexing 1/66']
+
+
+def test_throttle_still_holds_on_a_freshly_booted_machine(monkeypatch):
+    clock = {'t': 2.0}
+    monkeypatch.setattr(a11y.time, 'monotonic', lambda: clock['t'])
+    w = FakeAccessible()
+    p = a11y.ProgressAnnouncer(interval=5.0)
+    p.progress(w, 'Indexing 1/66')
+    clock['t'] = 3.0                      # within the interval
+    p.progress(w, 'Indexing 2/66')
+    assert w.announced == ['Indexing 1/66']
+    clock['t'] = 9.0                      # past it
+    p.progress(w, 'Indexing 3/66')
+    assert w.announced == ['Indexing 1/66', 'Indexing 3/66']
+
+
 def test_progress_throttles_the_flood():
     # 66 books' worth of progress must not become 66 interruptions.
     w = FakeAccessible()
