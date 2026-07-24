@@ -1824,6 +1824,9 @@ class BibleWindow(Adw.ApplicationWindow):
     def _present_update_controls(self, y):
         self._present._present_update_controls(y)
 
+    def _on_present_menu_clicked(self, row):
+        self._present._on_present_menu_clicked(row)
+
 
     # ── Lexicon toggle ────────────────────────────────────────────────────────
 
