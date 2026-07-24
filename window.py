@@ -751,7 +751,6 @@ class BibleWindow(Adw.ApplicationWindow):
         # after the present view, because Gtk.Overlay z-order follows add order).
         overlay.add_overlay(self._jump_revealer)
 
-        self._reading_hover_timer = None
         # Attach the motion controller to the window itself so that the
         # event reaches us regardless of which child widget (TextView,
         # Paned divider, scrollbars) the cursor is currently over. We also
@@ -1760,44 +1759,22 @@ class BibleWindow(Adw.ApplicationWindow):
             if pane._module == module:
                 pane.force_navigate(pane._book, pane._chapter, None)
 
+    # ── Reading mode (delegated to OverlayManager; see overlays.py) ──────────
+    @property
+    def _reading_mode(self):
+        return self._overlays._reading_mode
+
     def _set_reading_mode(self, on, toast=True):
-        """Distraction-free mode: hide the window header, pane toolbars, and
-        any open overlay panels. Esc / F11 / mouse-to-top-edge to exit.
+        self._overlays._set_reading_mode(on, toast)
 
-        Presentation mode reuses this chrome-hiding primitive but supplies its
-        own messaging, so it calls with ``toast=False``."""
-        if on:
-            self._dismiss_today()   # entering a mode is "an action" too
-        self._reading_mode = bool(on)
-        self._header.set_visible(not on)
-        self.pane1._toolbar.set_visible(not on)
-        self.pane2._toolbar.set_visible(not on)
-        # Slide each page's top edge into (or back out of) the vacated
-        # strip, scroll-compensated so the text itself never moves.
-        # A hidden toolbar measures 0, so the same animation serves both
-        # directions.
-        self.pane1._animate_page_strip()
-        self.pane2._animate_page_strip()
-        if on:
-            # Dismiss anything floating so the text stands alone
-            self._menu_split.set_show_sidebar(False)
-            self._search_split.set_show_sidebar(False)
-            self._jump_revealer.set_reveal_child(False)
-            self._crossref_revealer.set_reveal_child(False)
-            if toast:
-                self._toast(
-                    _('Reading mode — Esc, F11, or hover the top edge to exit'))
-        else:
-            self._reading_hide_exit_btn()
+    def _toggle_reading_mode(self):
+        self._overlays._toggle_reading_mode()
 
-    # Two thresholds (window-relative y in reading mode):
-    #   TRIGGER zone (12px) — must enter this to start the 2s hover timer.
-    #   KEEP-VISIBLE zone (80px) — once the button is revealed, the cursor
-    #     can move down this far without dismissing it, giving the user
-    #     enough room to actually reach the button to click it.
-    _READING_TRIGGER_ZONE_PX = 12
-    _READING_KEEP_ZONE_PX = 80
-    _READING_HOVER_DELAY_MS = 2000
+    def _reading_hide_exit_btn(self):
+        self._overlays._reading_hide_exit_btn()
+
+    def _on_reading_mouse_motion(self, controller, x, y):
+        self._overlays._on_reading_mouse_motion(controller, x, y)
 
     # ── Split drag-grip ──────────────────────────────────────────────────────
     # The divider's centre x = 8px (paned margin-left) + position + 4px (half of
@@ -1815,52 +1792,6 @@ class BibleWindow(Adw.ApplicationWindow):
             self._update_pane_grip()
         self._pane_grip.set_visible(near)
 
-    def _on_reading_mouse_motion(self, _controller, _x, y):
-        if not getattr(self, '_reading_mode', False):
-            return
-        # Presentation mode reuses reading-mode chrome-hiding but has its own
-        # control strip, shown by pointer position (bottom edge), not the
-        # reading exit affordance.
-        if getattr(self, '_present_mode', False):
-            self._present_update_controls(y)
-            return
-        revealed = self._exit_reading_revealer.get_reveal_child()
-
-        if revealed:
-            # Already showing — keep visible while the cursor stays inside
-            # the wide keep zone, hide once it wanders well below.
-            if y > self._READING_KEEP_ZONE_PX:
-                self._reading_hide_exit_btn()
-            return
-
-        # Not yet shown:
-        # - Entering the narrow trigger zone arms the hover timer.
-        # - Once armed, the timer survives small wobbles between the trigger
-        #   zone and the keep zone. Only cancel when the cursor drifts past
-        #   the keep zone entirely. Wayland compositors (Hyprland) report
-        #   raw pointer motion with no smoothing — holding a cursor inside
-        #   a 12 px strip for 2 s is effectively impossible, so the timer
-        #   needs the wider keep zone as its cancel boundary.
-        if y <= self._READING_TRIGGER_ZONE_PX:
-            if self._reading_hover_timer is None:
-                self._reading_hover_timer = GLib.timeout_add(
-                    self._READING_HOVER_DELAY_MS, self._reading_show_exit_btn)
-        elif y > self._READING_KEEP_ZONE_PX:
-            self._reading_hide_exit_btn()
-
-    def _reading_show_exit_btn(self):
-        self._reading_hover_timer = None
-        if getattr(self, '_reading_mode', False):
-            self._exit_reading_revealer.set_reveal_child(True)
-        return GLib.SOURCE_REMOVE
-
-    def _reading_hide_exit_btn(self):
-        if self._reading_hover_timer is not None:
-            GLib.source_remove(self._reading_hover_timer)
-            self._reading_hover_timer = None
-        if hasattr(self, '_exit_reading_revealer'):
-            self._exit_reading_revealer.set_reveal_child(False)
-
     # ── Presentation mode ─────────────────────────────────────────────────────
     # Built on top of reading mode: the same chrome-hiding, plus fullscreen so
     # a single passage fills a projector / mirrored display. Entering remembers
@@ -1869,14 +1800,6 @@ class BibleWindow(Adw.ApplicationWindow):
     # auto-hiding control strip (step 4) layer on from here.
     def _toggle_present_mode(self):
         self._set_present_mode(not getattr(self, '_present_mode', False))
-
-    def _toggle_reading_mode(self):
-        # F11 out of the immersive state: if presenting, leave presentation
-        # entirely rather than half-peeling only the reading chrome.
-        if getattr(self, '_present_mode', False):
-            self._set_present_mode(False)
-            return
-        self._set_reading_mode(not getattr(self, '_reading_mode', False))
 
     def _set_present_mode(self, on):
         on = bool(on)
