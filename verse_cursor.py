@@ -101,6 +101,10 @@ class VerseCursor:
             return self._activate()
         if keyval == Gdk.KEY_Escape:
             return self._leave_word_tier()
+        if keyval == Gdk.KEY_bracketright:
+            return self._step_unit(1)
+        if keyval == Gdk.KEY_bracketleft:
+            return self._step_unit(-1)
         return False
 
     # ── Verse tier ────────────────────────────────────────────────────────
@@ -159,6 +163,63 @@ class VerseCursor:
         # Keep the other pane in step, exactly as a click would.
         if pane._on_verse_select:
             pane._on_verse_select(pane, verse_num)
+
+    # ── Sense-unit tier ───────────────────────────────────────────────────
+
+    def _unit_starts(self):
+        """Verse numbers that open a sense-unit, ascending.
+
+        A unit begins wherever the module supplied a section heading, so the
+        boundaries are the publisher's own — the same data the headings are
+        rendered from, not a division we invented. Intersected with the
+        verses actually rendered, so a heading attached to a verse this
+        chapter didn't render can't strand the cursor."""
+        pane = self._pane
+        if not pane._show_headings:
+            return []
+        rendered = set(self._verses())
+        return sorted(v for v in pane._rendered_headings if v in rendered)
+
+    def _step_unit(self, delta):
+        """[ and ] — move a whole thought at a time rather than a verse.
+
+        Silent on modules that carry no headings: there are no units, so
+        there is nothing to jump between and the key is released (graceful
+        absence, the same rule the headings themselves follow)."""
+        starts = self._unit_starts()
+        if not starts:
+            return False
+        self._word = None
+        here = self._verse or self._pane._selected_verse
+        if here is None:
+            target = starts[0]
+        elif delta > 0:
+            later = [v for v in starts if v > here]
+            if not later:
+                return False   # last unit — release the key
+            target = later[0]
+        else:
+            # Back to the top of the current unit first, the way a "previous
+            # section" control behaves in a document reader; only a second
+            # press leaves for the unit before it.
+            earlier = [v for v in starts if v < here]
+            if not earlier:
+                return False
+            current_start = max((v for v in starts if v <= here), default=None)
+            if current_start is not None and here > current_start:
+                target = current_start
+            else:
+                target = earlier[-1]
+        self._place(target)
+        self._announce_unit(target)
+        return True
+
+    def _announce_unit(self, verse_num):
+        """Lead with the heading — the unit's name is the useful part of
+        arriving, and _place has already announced the bare reference."""
+        heads = self._pane._rendered_headings.get(verse_num) or []
+        if heads:
+            a11y.announce(self._pane._view, heads[0])
 
     # ── Word tier ─────────────────────────────────────────────────────────
 

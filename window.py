@@ -2568,6 +2568,7 @@ class BibleWindow(Adw.ApplicationWindow):
         ]),
         (N_('Reading with the keyboard'), [
             (N_('Move between verses'), 'accel', 'Up Down'),
+            (N_('Move between sense-units'), 'accel', 'bracketleft bracketright'),
             (N_('Study menu for the current verse'), 'accel', 'Return'),
             (N_('Step through the words of a verse'), 'accel', 'Left Right'),
             (N_('Look up the word, or open its footnote'), 'accel', 'Return'),

@@ -38,10 +38,30 @@ class FakeBuffer:
         return self._table
 
 
+class FakeView:
+    """Stands in for the reading view — announcements are posted against it."""
+
+    class _Display:
+        class __gtype__:
+            name = 'GdkWaylandDisplay'
+
+    def __init__(self):
+        self.announced = []
+
+    def get_display(self):
+        return self._Display()
+
+    def announce(self, message, _priority):
+        self.announced.append(message)
+
+
 class FakePane:
     """Records the calls the cursor makes so the order can be asserted."""
 
     def __init__(self, verses=(1, 2, 3, 4, 5), navigable=True, selected=None):
+        self._view = FakeView()
+        self._rendered_headings = {}
+        self._show_headings = True
         self._buffer = FakeBuffer(verses)
         self._navigable = navigable
         self._selected_verse = selected
@@ -168,4 +188,89 @@ def test_clear_drops_state_for_a_module_change():
     press(c, Gdk.KEY_Down)
     c.clear()
     assert c.verse is None
+    assert c.in_word_tier is False
+
+
+# ── sense-unit tier ──────────────────────────────────────────────────────
+
+class UnitPane(FakePane):
+    """A pane whose chapter carries section headings at known verses."""
+
+    def __init__(self, headings, verses=(1, 2, 3, 4, 5, 6, 7, 8, 9), **kw):
+        super().__init__(verses=verses, **kw)
+        self._rendered_headings = headings
+        self._show_headings = True
+
+
+def test_next_unit_jumps_to_the_following_heading():
+    c = VerseCursor(UnitPane({1: ['A'], 4: ['B'], 7: ['C']}, selected=2))
+    assert press(c, Gdk.KEY_bracketright) is True
+    assert c.verse == 4
+
+
+def test_next_unit_at_the_last_unit_releases_the_key():
+    c = VerseCursor(UnitPane({1: ['A'], 4: ['B']}, selected=5))
+    assert press(c, Gdk.KEY_bracketright) is False
+
+
+def test_previous_unit_returns_to_the_top_of_the_current_one_first():
+    # Mid-unit, [ goes to this unit's own start, as a document reader does.
+    c = VerseCursor(UnitPane({1: ['A'], 4: ['B'], 7: ['C']}, selected=6))
+    assert press(c, Gdk.KEY_bracketleft) is True
+    assert c.verse == 4
+
+
+def test_previous_unit_from_a_unit_start_leaves_for_the_one_before():
+    c = VerseCursor(UnitPane({1: ['A'], 4: ['B'], 7: ['C']}, selected=4))
+    press(c, Gdk.KEY_bracketleft)
+    assert c.verse == 1
+
+
+def test_previous_unit_at_the_first_unit_releases_the_key():
+    c = VerseCursor(UnitPane({1: ['A'], 4: ['B']}, selected=1))
+    assert press(c, Gdk.KEY_bracketleft) is False
+
+
+def test_unit_keys_are_silent_without_headings():
+    # Graceful absence: KJV and friends carry no units to jump between.
+    c = VerseCursor(UnitPane({}, selected=3))
+    assert press(c, Gdk.KEY_bracketright) is False
+    assert press(c, Gdk.KEY_bracketleft) is False
+
+
+def test_unit_keys_follow_the_headings_toggle():
+    pane = UnitPane({1: ['A'], 4: ['B']}, selected=2)
+    pane._show_headings = False
+    c = VerseCursor(pane)
+    assert press(c, Gdk.KEY_bracketright) is False
+
+
+def test_unit_jump_ignores_headings_on_unrendered_verses():
+    # A heading pinned to a verse this chapter never rendered must not
+    # become a stop the cursor cannot resolve.
+    c = VerseCursor(UnitPane({1: ['A'], 99: ['ghost']}, selected=1))
+    assert press(c, Gdk.KEY_bracketright) is False
+
+
+def test_unit_jump_places_the_cursor_when_none_is_set():
+    pane = UnitPane({3: ['A'], 6: ['B']})
+    pane._selected_verse = None
+    c = VerseCursor(pane)
+    assert press(c, Gdk.KEY_bracketright) is True
+    assert c.verse == 3
+
+
+def test_unit_jump_scrolls_through_the_pane_path():
+    pane = UnitPane({1: ['A'], 4: ['B']}, selected=1)
+    c = VerseCursor(pane)
+    press(c, Gdk.KEY_bracketright)
+    assert ('scroll', 4) in pane.calls
+    assert ('announce', 4) in pane.calls
+
+
+def test_unit_jump_leaves_the_word_tier():
+    pane = UnitPane({1: ['A'], 4: ['B']}, selected=1)
+    c = VerseCursor(pane)
+    c._word = (0, 3)
+    press(c, Gdk.KEY_bracketright)
     assert c.in_word_tier is False
