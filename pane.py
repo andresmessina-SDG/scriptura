@@ -19,6 +19,7 @@ import motion
 import settings
 import tasks
 import module_positions
+import pane_content
 from genbook_reader import GenbookReader
 from catena_reader import CatenaReader
 from imagery_reader import ImageryReader
@@ -1036,13 +1037,11 @@ class BiblePane(Gtk.Box):
             raise RuntimeError('No SWORD modules installed.')
 
         self._module = module_name if module_name in self._names else self._names[0]
-        self._compute_module_flags()
         # Generic Books rendering, TOC, prev/next/TOC widgets, and entry-
         # path persistence live in GenbookReader. build_toolbar() below
         # attaches the three toolbar widgets; set_module() loads the
         # last-read entry path.
         self._genbook = GenbookReader(self, _html_to_markup)
-        self._genbook.set_module(self._module, self._is_genbook)
         # Historical Commentaries (catena) card view — verse-synced from
         # the partnered Bible pane. Composed into the content stack below.
         self._catena = CatenaReader(self)
@@ -1055,6 +1054,13 @@ class BiblePane(Gtk.Box):
         self._archaeology = ArchaeologyReader(self)
         # Interlinear Greek NT — word-stack cells, verse-synced like a Bible.
         self._interlinear = InterlinearReader(self)
+        # Each already-separate reader mode is a PaneContent strategy keyed to
+        # content.type_key(); _compute_module_flags resolves the active one
+        # into self._content, so the render path calls one object instead of
+        # branching on _is_<mode> at every dispatch site.
+        self._contents = pane_content.build(self)
+        self._compute_module_flags()
+        self._genbook.set_module(self._module, self._is_genbook)
         self._book = 'Genesis'
         self._chapter = 1
         self._target_verse = None
@@ -1618,17 +1624,15 @@ class BiblePane(Gtk.Box):
             and not self._is_archaeology and not self._is_interlinear
             and not is_ebible
             and self._module_type == 'Generic Books')
+        # The active card-mode strategy (imagery / catena / archaeology /
+        # interlinear), or None for the text/devotional core, which still
+        # renders inline. Keyed by the same registry key as the flags above.
+        self._content = self._contents.get(tk)
 
     def _content_child(self):
         """Which content-stack child the current module renders into."""
-        if self._is_catena:
-            return 'catena'
-        if self._is_imagery:
-            return 'imagery'
-        if self._is_archaeology:
-            return 'archaeology'
-        if self._is_interlinear:
-            return 'interlinear'
+        if self._content is not None:
+            return self._content.stack_child
         return 'text'
 
     def _is_verse_navigable(self):
@@ -1758,10 +1762,10 @@ class BiblePane(Gtk.Box):
         if 'text_color'   in kwargs: self._text_color   = kwargs['text_color']
         if 'bg_color'     in kwargs: self._bg_color     = kwargs['bg_color']
         self._update_font_css()
-        # The archaeology and catena documents scale with the same reading
-        # font size.
-        self._archaeology.apply_font_size(self._font_size)
-        self._catena.apply_font_size(self._font_size)
+        # The card-mode documents scale with the same reading font size
+        # (only archaeology and catena actually re-scale; the rest no-op).
+        for content_mode in self._contents.values():
+            content_mode.apply_font_size(self._font_size)
 
     def set_font_size(self, size):
         self.set_appearance(font_size=size)
@@ -2026,23 +2030,12 @@ class BiblePane(Gtk.Box):
         if not self._is_devotional:
             self._stop_devotional_audio()
         self._content_stack.set_visible_child_name(self._content_child())
-        if self._is_catena:
-            # Follows the global book/chapter picker (and any verse the
-            # partnered Bible broadcasts); defaults to verse 1 on its own.
-            self._catena.render_for(
-                self._book, self._chapter, self._selected_verse or 1)
-            return
-        if self._is_imagery:
-            self._imagery.render_for(
-                self._book, self._chapter, self._selected_verse or 1)
-            return
-        if self._is_interlinear:
-            self._interlinear.render_for(
-                self._module, self._book, self._chapter,
-                self._selected_verse or 1)
-            return
-        if self._is_archaeology:
-            self._archaeology.render()
+        if self._content is not None:
+            # The card modes (imagery / catena / archaeology / interlinear)
+            # render into their own stack child; each follows the global
+            # book/chapter and any verse the partnered Bible broadcasts,
+            # defaulting to verse 1 on its own.
+            self._content.render()
             return
         if self._is_devotional:
             self._fetch_and_render_devotional()
@@ -4647,19 +4640,8 @@ class BiblePane(Gtk.Box):
 
     def select_verse(self, verse_num):
         """Called by other panes broadcasting a verse selection."""
-        if self._is_archaeology:
-            return  # standalone document — not verse-keyed
-        if self._is_catena:
-            self._selected_verse = verse_num
-            self._catena.render_for(self._book, self._chapter, verse_num)
-            return
-        if self._is_imagery:
-            self._selected_verse = verse_num
-            self._imagery.render_for(self._book, self._chapter, verse_num)
-            return
-        if self._is_interlinear:
-            self._selected_verse = verse_num
-            self._interlinear.select_verse(verse_num)
+        if self._content is not None:
+            self._content.on_verse(verse_num)
             return
         # The broadcast speaks app-space; this pane's rendered verse
         # numbers are its module's own — translate before touching tags
