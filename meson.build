@@ -73,6 +73,7 @@ py_sources = files(
   'paths.py',
   'present.py',
   'present_align.py',
+  'present_mode.py',
   'present_paging.py',
   'reading_plans.py',
   'search_controller.py',
