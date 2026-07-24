@@ -12,8 +12,6 @@ from gi.repository import Gtk, Adw, GLib, Gdk, Gsk, Graphene, Pango
 from gtk_utils import clear_children
 import sword_bridge
 import ebible_bridge
-import catena_bridge
-import imagery_bridge
 import archaeology_bridge
 import content
 import annotations
@@ -1588,11 +1586,16 @@ class BiblePane(Gtk.Box):
         tree-keyed (TOC + entries). The render path and the toolbar chrome
         (sync / chapter note / search / copy / date-nav) branch on these."""
         m = self._module
-        self._is_catena = catena_bridge.is_catena_module(m)
-        self._is_imagery = imagery_bridge.is_imagery_module(m)
-        self._is_archaeology = archaeology_bridge.is_archaeology_module(m)
-        self._is_interlinear = interlinear_data.is_interlinear_module(m)
-        is_ebible = ebible_bridge.is_ebible_module(m)
+        # One source of truth for "which content source is this": the content
+        # registry (content.py), instead of re-walking each bridge predicate
+        # here. The registry's membership predicates are disjoint, so exactly
+        # one key matches.
+        tk = content.type_key(m)
+        self._is_catena = tk == 'catena'
+        self._is_imagery = tk == 'imagery'
+        self._is_archaeology = tk == 'archaeology'
+        self._is_interlinear = tk == 'interlinear'
+        is_ebible = tk == 'ebible'
         if self._is_catena:
             self._module_type = 'Historical Commentaries'
         elif self._is_imagery:
