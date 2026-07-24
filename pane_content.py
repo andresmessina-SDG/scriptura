@@ -89,12 +89,60 @@ class ArchaeologyContent(PaneContent):
         self._pane._archaeology.apply_font_size(pt)
 
 
+class _TextContent(PaneContent):
+    """A mode that renders into the shared text view. A verse broadcast runs
+    the pane's text-path; modes without matching verse tags (devotionals,
+    generic books) harmlessly find none. Font scaling is the text view's
+    (via the pane's font CSS), so these don't override apply_font_size."""
+
+    stack_child = 'text'
+
+    def on_verse(self, verse_num: int) -> None:
+        self._pane._broadcast_verse_to_text(verse_num)
+
+
+class BibleContent(_TextContent):
+    def render(self) -> None:
+        self._pane._render_bible_chapter()
+
+
+class DevotionalContent(_TextContent):
+    def render(self) -> None:
+        self._pane._fetch_and_render_devotional()
+
+
+class GenbookContent(_TextContent):
+    def render(self) -> None:
+        self._pane._genbook.fetch_and_render()
+
+
+class UnsupportedContent(_TextContent):
+    def render(self) -> None:
+        # Lexicons / dictionaries: the dict-popup surface owns those; the
+        # pane shows a placeholder.
+        self._pane._display_unsupported_module()
+
+
 def build(pane) -> dict:
-    """The registry-keyed content strategies for a pane, one per already-
-    separate reader mode. Keyed to match `content.type_key()`."""
+    """The registry-keyed card-mode strategies for a pane, one per already-
+    separate reader mode. Keyed to match `content.type_key()`; also the set
+    apply_font_size iterates."""
     return {
         'imagery': ImageryContent(pane),
         'catena': CatenaContent(pane),
         'archaeology': ArchaeologyContent(pane),
         'interlinear': InterlinearContent(pane),
+    }
+
+
+def build_text(pane) -> dict:
+    """The text-view content strategies (Bible/commentary core, devotional,
+    generic book, unsupported placeholder). Not registry-keyed: which one a
+    module uses depends on the pane's finer mode flags, resolved in
+    BiblePane._compute_module_flags."""
+    return {
+        'bible': BibleContent(pane),
+        'devotional': DevotionalContent(pane),
+        'genbook': GenbookContent(pane),
+        'unsupported': UnsupportedContent(pane),
     }

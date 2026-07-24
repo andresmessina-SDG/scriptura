@@ -20,6 +20,9 @@ class _Reader:
     def render(self):
         self.calls.append(('render', ()))
 
+    def fetch_and_render(self):
+        self.calls.append(('fetch_and_render', ()))
+
     def select_verse(self, verse):
         self.calls.append(('select_verse', (verse,)))
 
@@ -31,7 +34,12 @@ def _fake_pane():
     p = types.SimpleNamespace(
         _book='John', _chapter=3, _selected_verse=None, _module='TAGNT',
         _catena=_Reader(), _imagery=_Reader(), _archaeology=_Reader(),
-        _interlinear=_Reader())
+        _interlinear=_Reader(), _genbook=_Reader(), pane_calls=[])
+    # Text-view strategies delegate to pane methods; record those calls.
+    for m in ('_render_bible_chapter', '_fetch_and_render_devotional',
+              '_display_unsupported_module', '_broadcast_verse_to_text'):
+        p.__dict__[m] = (lambda name: lambda *a: p.pane_calls.append(
+            (name, a)))(m)
     return p
 
 
@@ -79,6 +87,29 @@ def test_archaeology_is_standalone_not_verse_keyed():
     c.on_verse(5)  # no-op — standalone document
     assert p._archaeology.calls == [('render', ())]
     assert p._selected_verse is None
+
+
+def test_text_modes_render_into_the_text_view_via_pane_methods():
+    p = _fake_pane()
+    t = pane_content.build_text(p)
+    assert {k: c.stack_child for k, c in t.items()} == {
+        'bible': 'text', 'devotional': 'text',
+        'genbook': 'text', 'unsupported': 'text'}
+    t['bible'].render()
+    t['devotional'].render()
+    t['genbook'].render()
+    t['unsupported'].render()
+    assert ('_render_bible_chapter', ()) in p.pane_calls
+    assert p._genbook.calls == [('fetch_and_render', ())]
+    # devotional + unsupported also routed to their pane methods
+    assert ('_fetch_and_render_devotional', ()) in p.pane_calls
+    assert ('_display_unsupported_module', ()) in p.pane_calls
+
+
+def test_text_mode_verse_broadcast_runs_the_shared_text_path():
+    p = _fake_pane()
+    pane_content.build_text(p)['bible'].on_verse(12)
+    assert p.pane_calls == [('_broadcast_verse_to_text', (12,))]
 
 
 def test_font_size_scales_only_the_document_modes():
