@@ -14,6 +14,30 @@ The invariant and its mechanisms are documented in ARCHITECTURE.md
 committed form of the harness that validated that work; run it after
 touching pane.py scroll/render/chrome code or window.py pane sizing.
 
+WHY THIS WAITS THE WAY IT DOES (the flakiness this harness used to have,
+and how not to reintroduce it). GtkTextView validates its lines in an idle
+handler that, in GTK's own words, "runs after redraw" — so a completed
+draw cycle does NOT mean the document has been laid out. Measured on this
+app: immediately after gtk_test_widget_wait_for_draw() returns, the
+scrolled window reports an `upper` of 378 for a document whose real height
+is 72018. A raw adjustment.set_value(2000) in that window gets CLAMPED to
+roughly zero; the pane silently stays at the top, where a commentary shows
+a section header rather than verse text, _find_topmost_visible_verse()
+returns None, and every later check on that pane reports a null offset
+that reads exactly like a 50px jump. Whether that happened depended on
+machine speed, which is why the same commit could pass on one CI runner
+and fail on another. It was never backend-specific: Broadway and a real
+headless Wayland compositor produce identical numbers.
+
+So: `upper` is part of every snapshot and of settle()'s quiet-key,
+scroll_mid() waits for the document height to stop growing and then
+confirms the value actually stuck, and a missing measurement is reported
+as `inconclusive` rather than as a stability failure — those are different
+claims and only one of them is about the app.
+
+See docs.gtk.org GtkTextView.scroll_to_iter ("Line heights are computed in
+an idle handler") and gtktextview.c's `incremental_validate_idle`.
+
 Usage (one command, from anywhere):
 
     python3 tools/verify-scroll-stability.py
@@ -189,17 +213,35 @@ def run_matrix() -> int:
         adj = pane._reading_scroll.get_vadjustment()
         return {'adj': round(adj.get_value(), 1),
                 'page': round(adj.get_page_size(), 1),
+                # `upper` is the one number GtkTextView's incremental
+                # validation keeps changing AFTER a completed draw cycle
+                # ("Idle to revalidate offscreen portions, runs after
+                # redraw" — gtktextview.c). Measured on this app: 378 right
+                # after wait_for_draw returns, 72018 once the idle drains.
+                # Settling without watching it means settling mid-layout.
+                'upper': round(adj.get_upper(), 1),
                 'y': win_y(pane, verse),
                 'top': pane._find_topmost_visible_verse()}
 
     def check(name, before, after, tol=2.0):
+        """Record one stability check.
+
+        A missing measurement is reported as `inconclusive`, NOT as a
+        failure. The two are different claims — "the reading text moved"
+        and "the harness never got a baseline" — and conflating them is
+        what made this matrix cry wolf: a clamped scroll produced null
+        offsets that read exactly like a 50px jump."""
         delta = (None if before['y'] is None or after['y'] is None
                  else abs(after['y'] - before['y']))
-        REPORT['checks'].append({
-            'name': name, 'before': before, 'after': after,
-            'moved_px': delta,
-            'ok': delta is not None and delta <= tol,
-        })
+        row = {'name': name, 'before': before, 'after': after,
+               'moved_px': delta}
+        if delta is None:
+            row['inconclusive'] = True
+            row['why'] = 'no verse offset could be measured in this pane'
+            row['ok'] = False
+        else:
+            row['ok'] = delta <= tol
+        REPORT['checks'].append(row)
 
     app = main.BibleApp()
     S: dict = {}
@@ -227,16 +269,20 @@ def run_matrix() -> int:
         return GLib.SOURCE_REMOVE
 
     def settle(then, panes=('p1',)):
-        """Poll until every named pane's (adj, page, y) is unchanged for
-        QUIET_MS, then call then(snapshots) and resume the step list.
-        A step that calls this must return the value ('HOLD')."""
+        """Poll until every named pane's geometry is unchanged for QUIET_MS,
+        then call then(snapshots) and resume the step list. A step that calls
+        this must return the value ('HOLD').
+
+        `upper` is part of the key: text validation grows it long after the
+        draw completes, and a run that settles before it stops moving is
+        measuring a document whose height is still wrong."""
         nxt = S['_i'] + 1
         state = {'key': None, 'streak': 0,
                  'left': SETTLE_CAP_MS // POLL_MS}
 
         def poll():
             snaps = {p: snap(S[p], S['v' + p[1]]) for p in panes}
-            key = tuple((s['adj'], s['page'], s['y'])
+            key = tuple((s['adj'], s['page'], s['upper'], s['y'])
                         for s in snaps.values())
             state['streak'] = state['streak'] + 1 if key == state['key'] else 0
             state['key'] = key
@@ -297,14 +343,71 @@ def run_matrix() -> int:
         return GLib.SOURCE_REMOVE
 
     def scroll_mid():
+        """Park both panes mid-document, then let them settle.
+
+        A raw set_value() is what this used to do, and it is why the matrix
+        was flaky: until GtkTextView's validation idle has run, `upper` is a
+        small estimate (measured: 378 against a real 72018), so GTK clamps
+        the requested 2000 down to nearly zero. The pane stays at the top,
+        where a commentary shows a section header rather than verse text,
+        _find_topmost_visible_verse returns None, and every later check on
+        that pane reports a null offset.
+
+        So wait for the document height to stop growing first, then scroll,
+        then confirm the value actually stuck. Capped polling throughout —
+        never an open loop."""
+        nxt = S['_i'] + 1
+        pending = {'left': 2}
+
+        def park(p):
+            adj = p._reading_scroll.get_vadjustment()
+            state = {'upper': None, 'streak': 0,
+                     'left': SETTLE_CAP_MS // POLL_MS}
+
+            def poll():
+                upper = round(adj.get_upper(), 1)
+                state['streak'] = (state['streak'] + 1
+                                   if upper == state['upper'] else 0)
+                state['upper'] = upper
+                state['left'] -= 1
+                grown = adj.get_upper() - adj.get_page_size() > 2000.0
+                ready = state['streak'] * POLL_MS >= QUIET_MS and grown
+                if not ready and state['left'] > 0:
+                    return GLib.SOURCE_CONTINUE
+                adj.set_value(2000.0)
+                REPORT.setdefault('scroll_setup', {})[
+                    'p1' if p is S['p1'] else 'p2'] = {
+                        'upper_at_scroll': round(adj.get_upper(), 1),
+                        'page': round(adj.get_page_size(), 1),
+                        'reached': round(adj.get_value(), 1),
+                        'validation_timed_out': state['left'] <= 0,
+                }
+                def done(p=p):
+                    user_scrolled(p)
+                    pending['left'] -= 1
+                    if pending['left'] == 0:
+                        run(nxt)          # resume only once both are parked
+                    return GLib.SOURCE_REMOVE
+
+                GLib.timeout_add(300, done)
+                return GLib.SOURCE_REMOVE
+
+            GLib.timeout_add(POLL_MS, poll)
+
         for p in (S['p1'], S['p2']):
-            p._reading_scroll.get_vadjustment().set_value(2000.0)
-            GLib.timeout_add(300, lambda p=p: user_scrolled(p))
+            park(p)
+        return 'HOLD'
 
     def anchor():
         S['v1'] = S['p1']._find_topmost_visible_verse()
         S['v2'] = S['p2']._find_topmost_visible_verse()
         REPORT['probe'] = {'p1': S['v1'], 'p2': S['v2']}
+        # No baseline verse means every later measurement on that pane is
+        # null. Name it once, here, instead of letting it surface as a
+        # dozen indistinguishable "failures" further down.
+        missing = [n for n in ('p1', 'p2') if S['v' + n[1]] is None]
+        if missing:
+            REPORT['baseline_missing'] = missing
 
     # 1. chrome hide / reveal
     def chrome_pre():
@@ -439,7 +542,7 @@ def run_matrix() -> int:
         })
 
     steps.extend([
-        (nav, 2400), (scroll_mid, 700), (anchor, 200),
+        (nav, 2400), (scroll_mid, 0), (anchor, 200),
         (chrome_pre, 0), (chrome_hide, 0), (chrome_reveal, 0),
         (tap_hide, 0), (tap_click, 0),
         (lex_on, 0), (lex_off, 0),
