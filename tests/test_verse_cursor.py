@@ -58,7 +58,9 @@ class FakeView:
 class FakePane:
     """Records the calls the cursor makes so the order can be asserted."""
 
-    def __init__(self, verses=(1, 2, 3, 4, 5), navigable=True, selected=None):
+    def __init__(self, verses=(1, 2, 3, 4, 5), navigable=True, selected=None,
+                 module_type='Biblical Texts'):
+        self._module_type = module_type
         self._view = FakeView()
         self._rendered_headings = {}
         self._show_headings = True
@@ -274,3 +276,25 @@ def test_unit_jump_leaves_the_word_tier():
     c._word = (0, 3)
     press(c, Gdk.KEY_bracketright)
     assert c.in_word_tier is False
+
+
+def test_unit_keys_do_not_fire_on_commentary_panes():
+    """Commentaries are verse-navigable and their modules carry heading
+    attributes, but no headings are drawn there — MHCC's are per-verse
+    boilerplate. Jumping between them swallowed the key to move one verse
+    with nothing on screen to show for it."""
+    pane = UnitPane({1: ['Chapter Outline'], 2: ['Chapter 14'], 3: ['x']},
+                    selected=1)
+    pane._module_type = 'Commentaries'
+    c = VerseCursor(pane)
+    assert press(c, Gdk.KEY_bracketright) is False
+    assert press(c, Gdk.KEY_bracketleft) is False
+    assert c.verse is None
+
+
+def test_unit_keys_still_fire_on_bible_panes():
+    pane = UnitPane({1: ['A'], 4: ['B']}, selected=1)
+    assert pane._module_type == 'Biblical Texts'
+    c = VerseCursor(pane)
+    assert press(c, Gdk.KEY_bracketright) is True
+    assert c.verse == 4

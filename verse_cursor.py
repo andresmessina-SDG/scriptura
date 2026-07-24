@@ -173,9 +173,16 @@ class VerseCursor:
         boundaries are the publisher's own — the same data the headings are
         rendered from, not a division we invented. Intersected with the
         verses actually rendered, so a heading attached to a verse this
-        chapter didn't render can't strand the cursor."""
+        chapter didn't render can't strand the cursor.
+
+        Bibles only, matching exactly where _display draws headings. A
+        commentary pane is verse-navigable and its module does carry heading
+        attributes, but none of them are drawn there — and MHCC's are
+        per-verse boilerplate ("Chapter Outline") rather than sense-units,
+        so jumping between them would swallow the key to move one verse with
+        nothing on screen to show for it."""
         pane = self._pane
-        if not pane._show_headings:
+        if pane._module_type != 'Biblical Texts' or not pane._show_headings:
             return []
         rendered = set(self._verses())
         return sorted(v for v in pane._rendered_headings if v in rendered)
