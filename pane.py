@@ -2048,6 +2048,11 @@ class BiblePane(Gtk.Box):
             # dict-popup surface owns those, the pane shows a placeholder.
             self._display_unsupported_module()
             return
+        self._render_bible_chapter()
+
+    def _render_bible_chapter(self):
+        """Async-load the current verse-keyed chapter (Bible or commentary)
+        and hand the verses + footnotes to _display."""
         book, chapter, module = self._book, self._chapter, self._module
         # Last-write-wins across overlapping fetches. The location guard in
         # _display can't catch two renders of the SAME chapter (e.g. rapid
@@ -4643,6 +4648,13 @@ class BiblePane(Gtk.Box):
         if self._content is not None:
             self._content.on_verse(verse_num)
             return
+        self._broadcast_verse_to_text(verse_num)
+
+    def _broadcast_verse_to_text(self, verse_num):
+        """Move the text view's selected-verse indicator to a broadcast verse,
+        scrolling to it when it's on screen. Modes rendering into the text view
+        without matching verse tags (devotionals, generic books) harmlessly
+        find none."""
         # The broadcast speaks app-space; this pane's rendered verse
         # numbers are its module's own — translate before touching tags
         # (no-op for app-keyed modules).
