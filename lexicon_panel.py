@@ -24,6 +24,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Gdk, GLib, Pango
+import a11y
 from a11y import set_accessible_label
 from gtk_utils import clear_children, fade_in, DelayedSpinner
 
@@ -165,6 +166,8 @@ class LexiconPanel(Gtk.Box):
         self.add_css_class('lex-panel')
 
         self._on_word_study_navigate = on_word_study_navigate
+        # Rate limiter for the word-study scan's per-chapter progress line.
+        self._ws_progress = a11y.ProgressAnnouncer()
         # Verse-peek plumbing: the composing pane lends us its shared
         # self-healing peek popover (show_anchored_peek) and a dismisser
         # scoped to peeks anchored on our def view. A popover of our own
@@ -325,11 +328,18 @@ class LexiconPanel(Gtk.Box):
         # request when it updates during the word-study scan.
         self._ws_header.set_max_width_chars(32)
         self._ws_header.set_ellipsize(Pango.EllipsizeMode.END)
+        a11y.set_role(self._ws_header, Gtk.AccessibleRole.STATUS)
         ws_box.append(self._ws_header)
 
         self._ws_list = Gtk.ListBox()
         self._ws_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
         self._ws_list.connect('row-activated', self._on_ws_row_activated)
+        set_accessible_label(self._ws_list, _('Word study results'))
+        # The header counts what is in the list — say so, rather than leaving
+        # two unrelated widgets side by side.
+        a11y.labelled_by(self._ws_list, self._ws_header)
+        set_accessible_label(ws_box, _('Word study'))
+        a11y.set_role(ws_box, Gtk.AccessibleRole.GROUP)
 
         ws_scroll = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
         ws_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -474,8 +484,13 @@ class LexiconPanel(Gtk.Box):
 
         if not text:
             self._def_buf.set_text(_('Definition not found.'))
+            a11y.announce(self._title, _('Definition not found.'))
         else:
             self._render_def(text, heuristic_refs=not from_pack)
+            # The panel fills in without taking focus, so an AT user gets no
+            # signal that the lookup landed. Name the entry that arrived.
+            a11y.announce(self._title, _('{entry} loaded').format(
+                entry=self._title.get_text()))
 
         # Depth link: offer the full LSJ article where the scholar's pack
         # carries one for this word.
@@ -621,7 +636,8 @@ class LexiconPanel(Gtk.Box):
         if not book or not module:
             self._ws_header.set_text('')   # no context — nothing to scan
             return
-        self._ws_header.set_text(_('Searching…'))
+        a11y.status(self._ws_header, _('Searching…'))
+        self._ws_progress.reset()
 
         # Padding-agnostic: interlinear clicks pass G746 while module
         # markup carries strong:G0746. Compiled once outside the loop.
@@ -667,10 +683,14 @@ class LexiconPanel(Gtk.Box):
         # Progress header — running count + chapter position. The chapter
         # number gives the user a sense of how much scanning is left
         # without a full progress bar.
-        self._ws_header.set_text(ngettext(
+        progress = ngettext(
             'Searching {book}… {n} match so far ({ch}/{total})',
             'Searching {book}… {n} matches so far ({ch}/{total})',
-            running).format(book=book_label(book), n=running, ch=ch, total=total))
+            running).format(book=book_label(book), n=running, ch=ch, total=total)
+        self._ws_header.set_text(progress)
+        # The header restates itself once per chapter (up to 150 of them);
+        # rate-limit the spoken version.
+        self._ws_progress.progress(self._ws_header, progress)
         for ref_book, c, v_num, markup in batch:
             if self._ws_rows >= _WS_ROW_CAP:
                 break
@@ -683,7 +703,8 @@ class LexiconPanel(Gtk.Box):
                 or self._book != book
                 or self._module != module):
             return GLib.SOURCE_REMOVE
-        self._ws_header.set_text(ngettext(
+        self._ws_progress.reset()
+        a11y.status(self._ws_header, ngettext(
             '{n} occurrence in {book}',
             '{n} occurrences in {book}',
             running).format(n=running, book=book_label(book)))

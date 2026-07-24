@@ -57,3 +57,25 @@ jobs:
           -init -sc -r CrossWire -ri CrossWire KJVA -ri CrossWire MHCC
       - name: Scroll-stability matrix
         run: python3 tools/verify-scroll-stability.py
+
+  # Asserts the accessible tree — roles, relations, and live-region status —
+  # which nothing visible can catch. Separate job for the same reason as
+  # scroll-stability. No `mutter` in the container (it needs a DRM device), so
+  # this falls back to Broadway and the harness skips the announcement checks;
+  # the role/relation half is what CI guards. Run it locally for the full set.
+  accessibility:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: >-
+          dnf install -y --setopt=install_weak_deps=False
+          python3-gobject gobject-introspection gtk4 libadwaita
+          python3-sword sword-utils dejavu-sans-fonts dejavu-serif-fonts
+      - name: Fetch test modules
+        run: >-
+          installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom
+          -init -sc -r CrossWire -ri CrossWire KJVA -ri CrossWire MHCC
+      - name: Accessible-tree checks
+        run: python3 tools/verify-a11y.py

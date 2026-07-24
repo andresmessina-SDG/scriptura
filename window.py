@@ -1824,6 +1824,9 @@ class BibleWindow(Adw.ApplicationWindow):
     def _present_update_controls(self, y):
         self._present._present_update_controls(y)
 
+    def _on_present_menu_clicked(self, row):
+        self._present._on_present_menu_clicked(row)
+
 
     # ── Lexicon toggle ────────────────────────────────────────────────────────
 
@@ -2562,6 +2565,13 @@ class BibleWindow(Adw.ApplicationWindow):
             (N_('First verse of current chapter'), 'accel', 'Home'),
             (N_('Last verse of current chapter'), 'accel', 'End'),
             (N_('Cycle chapters with the mouse wheel'), 'literal', N_('Scroll over title')),
+        ]),
+        (N_('Reading with the keyboard'), [
+            (N_('Move between verses'), 'accel', 'Up Down'),
+            (N_('Study menu for the current verse'), 'accel', 'Return'),
+            (N_('Step through the words of a verse'), 'accel', 'Left Right'),
+            (N_('Look up the word, or open its footnote'), 'accel', 'Return'),
+            (N_('Back from words to verses'), 'accel', 'Escape'),
         ]),
         (N_('Panes and view'), [
             (N_('Focus left pane'), 'action', 'focus-pane-1'),

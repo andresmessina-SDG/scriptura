@@ -16,6 +16,7 @@ Extracted from pane.py as part of the v1.0 polish pass; previously
 import re
 
 from gi.repository import Gtk, GLib
+import a11y
 from a11y import set_accessible_label
 from gtk_utils import DelayedSpinner
 
@@ -59,6 +60,8 @@ class PaneSearch:
         self._status = None
         self._prev_btn = None
         self._next_btn = None
+        # Rate limiter for the indexing progress announcements (66 books).
+        self._progress = a11y.ProgressAnnouncer()
 
     # ── Widget construction ───────────────────────────────────────────────
 
@@ -105,6 +108,10 @@ class PaneSearch:
         self._status.add_css_class('dim-label')
         self._status.add_css_class('caption')
         self._status.set_width_chars(11)
+        # The counter is a status region, and it describes the entry: an AT
+        # user who lands on the field hears the current match count with it.
+        a11y.set_role(self._status, Gtk.AccessibleRole.STATUS)
+        a11y.described_by(self._entry, self._status)
 
         self._prev_btn = Gtk.Button(icon_name='go-up-symbolic')
         self._prev_btn.add_css_class('flat')
@@ -139,12 +146,25 @@ class PaneSearch:
         inner.append(se_row)
         inner.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
 
+        # Without this the whole find bar is a nameless stack of boxes; as a
+        # named toolbar an AT user can tell what they have landed in.
+        a11y.set_role(se_row, Gtk.AccessibleRole.TOOLBAR)
+        set_accessible_label(se_row, _('Find in this module'))
+
         self._rev = Gtk.Revealer()
         self._rev.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
         self._rev.set_transition_duration(200)
         self._rev.set_child(inner)
         self._rev.set_reveal_child(False)
         return self._rev
+
+    def link_view(self, view):
+        """Point the steppers at the reading view they act on.
+
+        Separate from build_revealer because the pane builds its find bar
+        before the TextView exists."""
+        a11y.controls(self._prev_btn, view)
+        a11y.controls(self._next_btn, view)
 
     # ── Public API used by the pane + window ──────────────────────────────
 
@@ -206,8 +226,8 @@ class PaneSearch:
         self._cur_ref = (book, ch, v)
         self.stash_for_self()
         self._pane._on_word_study_navigate(book, ch, v)
-        self._status.set_text(
-            _('{i} of {n}').format(i=idx + 1, n=n))
+        a11y.status(self._status,
+                    _('{i} of {n}').format(i=idx + 1, n=n))
         return True
 
     def _clear_hl_tags(self, buf):
@@ -382,7 +402,8 @@ class PaneSearch:
             n += 1
         if n:
             self._pane._view.queue_draw()
-        self._status.set_text(
+        a11y.status(
+            self._status,
             ngettext('{n} in this chapter', '{n} in this chapter', n)
             .format(n=n))
 
@@ -392,7 +413,8 @@ class PaneSearch:
             return
         self._last_entered = query
         module = self._pane._module
-        self._status.set_text(_('Searching…'))
+        a11y.status(self._status, _('Searching…'))
+        self._progress.reset()
         self._prev_btn.set_sensitive(False)
         self._next_btn.set_sensitive(False)
         # Threshold-gated: an already-indexed FTS query returns fast and
@@ -400,12 +422,17 @@ class PaneSearch:
         self._delayed_spinner.start()
 
         def _idx_start():
-            GLib.idle_add(self._status.set_text, _('Indexing…'))
+            GLib.idle_add(a11y.status, self._status, _('Indexing…'))
 
         def _idx_progress(book_idx, total, book_name):
-            GLib.idle_add(
-                self._status.set_text,
-                _('Indexing {idx}/{total}').format(idx=book_idx, total=total))
+            text = _('Indexing {idx}/{total}').format(idx=book_idx,
+                                                      total=total)
+            # The label tracks every book; the announcement is rate-limited
+            # so 66 of them don't bury a screen-reader user.
+            def _set():
+                self._status.set_text(text)
+                self._progress.progress(self._status, text)
+            GLib.idle_add(_set)
 
         case = self._case_btn.get_active()
 
@@ -441,8 +468,10 @@ class PaneSearch:
         has = n > 0
         self._prev_btn.set_sensitive(has)
         self._next_btn.set_sensitive(has)
+        # The search is over: whatever it says next outranks the throttle.
+        self._progress.reset()
         if not has:
-            self._status.set_text(_('No matches'))
+            a11y.status(self._status, _('No matches'))
             return
         if truncated and self._pane._on_toast:
             self._pane._on_toast(

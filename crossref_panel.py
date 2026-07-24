@@ -2,6 +2,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, GLib
+import a11y
 from a11y import set_accessible_label
 from gtk_utils import clear_children, DelayedSpinner
 import sword_bridge
@@ -48,6 +49,10 @@ class CrossRefPanel(Gtk.Box):
         wheel.connect('scroll', self._on_wheel_scroll)
         ref_scroll.add_controller(wheel)
         self._ref_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        # A bare Box of chips reports as `generic`; as a named group an AT
+        # user hears what the row of references belongs to.
+        a11y.set_role(self._ref_box, Gtk.AccessibleRole.GROUP)
+        a11y.labelled_by(self._ref_box, self._title)
         ref_scroll.set_child(self._ref_box)
         ref_row.append(ref_scroll)
 
@@ -69,6 +74,8 @@ class CrossRefPanel(Gtk.Box):
         close_btn.connect('clicked', lambda _: self._on_close())
         ref_row.append(close_btn)
 
+        a11y.set_role(ref_row, Gtk.AccessibleRole.TOOLBAR)
+        set_accessible_label(ref_row, _('Cross-references'))
         self.append(ref_row)
 
     def set_compact(self, compact):
@@ -109,14 +116,23 @@ class CrossRefPanel(Gtk.Box):
         self._delayed_spinner.stop()
         self._clear_refs()
         if refs is None:
-            lbl = Gtk.Label(label=_('Install the TSK module or download OpenBible cross-references.'))
+            msg = _('Install the TSK module or download OpenBible cross-references.')
+            lbl = Gtk.Label(label=msg)
             lbl.add_css_class('dim-label')
             self._ref_box.append(lbl)
+            a11y.announce(self._title, msg)
         elif not refs:
-            lbl = Gtk.Label(label=_('No cross-references found.'))
+            msg = _('No cross-references found.')
+            lbl = Gtk.Label(label=msg)
             lbl.add_css_class('dim-label')
             self._ref_box.append(lbl)
+            a11y.announce(self._title, msg)
         else:
+            # The chips appear silently beside the reading text; say how many
+            # arrived so the count is not a purely visual fact.
+            a11y.announce(self._title, ngettext(
+                '{n} cross-reference', '{n} cross-references',
+                len(refs)).format(n=len(refs)))
             for ref_book, ref_ch, ref_v, label in refs:
                 btn = Gtk.Button(label=label)
                 btn.add_css_class('xref-chip')
