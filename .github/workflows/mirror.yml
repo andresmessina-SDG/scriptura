@@ -1,7 +1,12 @@
 # Push-mirror GitHub -> Codeberg. GitHub is the source of truth; Codeberg is
 # kept as a faithful read-only mirror. Each run does a full `git clone --mirror`
-# of this repo and `git push --mirror` to Codeberg, so every branch and tag is
-# replicated exactly (including prunes).
+# of this repo, then pushes branches and tags (with pruning) so both are
+# replicated exactly, including deletions.
+#
+# It pushes only refs/heads/* and refs/tags/* — NOT `git push --mirror`. A
+# mirror clone also copies GitHub's hidden pull-request refs (refs/pull/*),
+# which Codeberg refuses ("deny updating a hidden ref"), failing the whole
+# push. Explicit refspecs skip those and mirror what a mirror should.
 #
 # Setup (one-time): create a Codeberg access token with repository write scope
 # (Codeberg -> Settings -> Applications), then add it to this repo as the
@@ -31,4 +36,5 @@ jobs:
           fi
           git clone --mirror "https://github.com/andresmessina-SDG/scriptura.git" repo.git
           cd repo.git
-          git push --mirror "https://andresmessina:${TOKEN}@codeberg.org/andresmessina/scriptura.git"
+          git push --prune "https://andresmessina:${TOKEN}@codeberg.org/andresmessina/scriptura.git" \
+            'refs/heads/*:refs/heads/*' 'refs/tags/*:refs/tags/*'
