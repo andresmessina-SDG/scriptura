@@ -1,18 +1,22 @@
-"""OverlayManager — the in-window overlay lifecycle extracted from BibleWindow
-(STRUCTURAL_ANALYSIS.md T2 / Step 4, part 2).
+"""OverlayManager — the in-window overlay + immersive-mode lifecycle extracted
+from BibleWindow (STRUCTURAL_ANALYSIS.md T2 / Step 4, parts 2-3).
 
 Owns "which overlay is open and how they open, close, and exclude one another":
 the mutual-exclusion rule (only one of menu / search / jump visible at a time),
 the quick-jump bar (show / hide / activate / parse), the menu-sidebar toggle
-(with its deferred first build), and the search-sidebar toggle.
+(with its deferred first build), and the search-sidebar toggle. Part 3 adds
+distraction-free reading mode — the chrome-hiding primitive (hide header + pane
+toolbars + any open overlay) and its top-edge hover exit affordance, which
+presentation mode reuses.
 
-It holds no state of its own — the overlay widgets stay window-owned. It reaches
-them, and the panes / Today / plan / present hooks it coordinates, through the
-small proxy properties below, so the method bodies are the inline originals
-unchanged. The window keeps thin same-named delegates so every action, button,
-key-controller, and idle-callback call site is untouched. OverlayManager is
-imported lazily in BibleWindow.__init__ because this module imports window for
-BOOKS (avoids a load-order cycle).
+The overlay widgets stay window-owned; the only state it owns is reading mode's
+(`_reading_mode`, `_reading_hover_timer`). It reaches the window's widgets, the
+panes, and the Today / plan / present hooks it coordinates through the small
+proxy properties below, so the method bodies are the inline originals unchanged.
+The window keeps thin same-named delegates (and a forwarding `_reading_mode`
+property) so every action, button, key-controller, and idle-callback call site
+is untouched. OverlayManager is imported lazily in BibleWindow.__init__ because
+this module imports window for BOOKS (avoids a load-order cycle).
 """
 import re
 from gi.repository import GLib
@@ -21,8 +25,19 @@ import window
 
 
 class OverlayManager:
+    # Two thresholds (window-relative y in reading mode):
+    #   TRIGGER zone (12px) — must enter this to start the 2s hover timer.
+    #   KEEP-VISIBLE zone (80px) — once the button is revealed, the cursor
+    #     can move down this far without dismissing it, giving the user
+    #     enough room to actually reach the button to click it.
+    _READING_TRIGGER_ZONE_PX = 12
+    _READING_KEEP_ZONE_PX = 80
+    _READING_HOVER_DELAY_MS = 2000
+
     def __init__(self, win):
         self._win = win
+        self._reading_mode = False
+        self._reading_hover_timer = None
 
     # ── Proxy access to window-owned widgets / panes / hooks ─────────────────
     @property
@@ -189,3 +204,119 @@ class OverlayManager:
 
     def _hide_search(self):
         self._search_split.set_show_sidebar(False)
+
+    # ── Reading mode: proxies ────────────────────────────────────────────────
+    @property
+    def _header(self):
+        return self._win._header
+
+    @property
+    def pane2(self):
+        return self._win.pane2
+
+    @property
+    def _crossref_revealer(self):
+        return self._win._crossref_revealer
+
+    @property
+    def _exit_reading_revealer(self):
+        return self._win._exit_reading_revealer
+
+    @property
+    def _toast(self):
+        return self._win._toast
+
+    @property
+    def _present_update_controls(self):
+        return self._win._present_update_controls
+
+    @property
+    def _set_present_mode(self):
+        return self._win._set_present_mode
+
+    # ── Reading mode: distraction-free chrome ────────────────────────────────
+    def _set_reading_mode(self, on, toast=True):
+        """Distraction-free mode: hide the window header, pane toolbars, and
+        any open overlay panels. Esc / F11 / mouse-to-top-edge to exit.
+
+        Presentation mode reuses this chrome-hiding primitive but supplies its
+        own messaging, so it calls with ``toast=False``."""
+        if on:
+            self._dismiss_today()   # entering a mode is "an action" too
+        self._reading_mode = bool(on)
+        self._header.set_visible(not on)
+        self.pane1._toolbar.set_visible(not on)
+        self.pane2._toolbar.set_visible(not on)
+        # Slide each page's top edge into (or back out of) the vacated
+        # strip, scroll-compensated so the text itself never moves.
+        # A hidden toolbar measures 0, so the same animation serves both
+        # directions.
+        self.pane1._animate_page_strip()
+        self.pane2._animate_page_strip()
+        if on:
+            # Dismiss anything floating so the text stands alone
+            self._menu_split.set_show_sidebar(False)
+            self._search_split.set_show_sidebar(False)
+            self._jump_revealer.set_reveal_child(False)
+            self._crossref_revealer.set_reveal_child(False)
+            if toast:
+                self._toast(
+                    _('Reading mode — Esc, F11, or hover the top edge to exit'))
+        else:
+            self._reading_hide_exit_btn()
+
+    def _toggle_reading_mode(self):
+        # F11 out of the immersive state: if presenting, leave presentation
+        # entirely rather than half-peeling only the reading chrome.
+        if getattr(self, '_present_mode', False):
+            self._set_present_mode(False)
+            return
+        self._set_reading_mode(not getattr(self, '_reading_mode', False))
+
+    def _on_reading_mouse_motion(self, _controller, _x, y):
+        if not getattr(self, '_reading_mode', False):
+            return
+        # Presentation mode reuses reading-mode chrome-hiding but has its own
+        # control strip, shown by pointer position (bottom edge), not the
+        # reading exit affordance.
+        if getattr(self, '_present_mode', False):
+            self._present_update_controls(y)
+            return
+        revealed = self._exit_reading_revealer.get_reveal_child()
+
+        if revealed:
+            # Already showing — keep visible while the cursor stays inside
+            # the wide keep zone, hide once it wanders well below.
+            if y > self._READING_KEEP_ZONE_PX:
+                self._reading_hide_exit_btn()
+            return
+
+        # Not yet shown:
+        # - Entering the narrow trigger zone arms the hover timer.
+        # - Once armed, the timer survives small wobbles between the trigger
+        #   zone and the keep zone. Only cancel when the cursor drifts past
+        #   the keep zone entirely. Wayland compositors (Hyprland) report
+        #   raw pointer motion with no smoothing — holding a cursor inside
+        #   a 12 px strip for 2 s is effectively impossible, so the timer
+        #   needs the wider keep zone as its cancel boundary.
+        if y <= self._READING_TRIGGER_ZONE_PX:
+            if self._reading_hover_timer is None:
+                self._reading_hover_timer = GLib.timeout_add(
+                    self._READING_HOVER_DELAY_MS, self._reading_show_exit_btn)
+        elif y > self._READING_KEEP_ZONE_PX:
+            self._reading_hide_exit_btn()
+
+    def _reading_show_exit_btn(self):
+        self._reading_hover_timer = None
+        if getattr(self, '_reading_mode', False):
+            self._exit_reading_revealer.set_reveal_child(True)
+        return GLib.SOURCE_REMOVE
+
+    def _reading_hide_exit_btn(self):
+        if self._reading_hover_timer is not None:
+            GLib.source_remove(self._reading_hover_timer)
+            self._reading_hover_timer = None
+        # Guard preserved from the window original: the revealer is built in
+        # _build_ui, so a very early call (before it exists) is a no-op.
+        if hasattr(self._win, '_exit_reading_revealer'):
+            self._exit_reading_revealer.set_reveal_child(False)
