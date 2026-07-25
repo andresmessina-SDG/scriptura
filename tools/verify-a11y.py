@@ -32,8 +32,11 @@ roles the reading subsystems report — raw material for the next a11y pass.
 
 What it asserts (exit 1 if any fail):
 
-  1. every reading pane is a labelled REGION landmark, and its toolbar a
-     labelled TOOLBAR — not the `generic` a bare Gtk.Box reports;
+  1. every reading pane is a labelled GROUP, and its toolbar a labelled
+     TOOLBAR — not the `generic` a bare Gtk.Box reports. GROUP rather than
+     a landmark because GTK4's AT-SPI backend emits none: REGION, MAIN,
+     NAVIGATION and BANNER all arrive as `filler`, measured against a live
+     AT-SPI tree. GROUP maps to `grouping`;
   2. the reading TextView is a labelled DOCUMENT;
   3. the per-pane find bar is a labelled TOOLBAR whose counter is a STATUS
      region, and the counter DESCRIBES the search entry (the relation
@@ -275,7 +278,9 @@ def run_driver() -> int:
 
         # 1. landmarks + toolbars — the widgets that were `generic` before.
         for i, p in enumerate(panes, 1):
-            has_role(f'pane{i}_is_region', p, R.REGION)
+            # GROUP, not REGION: GTK4 emits no landmark roles — REGION
+            # arrives at AT-SPI as `filler`. Verified against a live tree.
+            has_role(f'pane{i}_is_group', p, R.GROUP)
             has_label(f'pane{i}_named', p)
         has_role('pane_toolbar_is_toolbar', pane._toolbar, R.TOOLBAR)
         has_label('pane_toolbar_named', pane._toolbar)

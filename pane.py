@@ -1086,9 +1086,17 @@ class BiblePane(Gtk.Box):
                  on_open_artifact=None, on_module_switched=None,
                  on_hint=None, on_open_verse=None, pane_id=1):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
-        # A landmark, so AT can jump between the two reading panes instead of
-        # walking every control in between.
-        a11y.set_role(self, Gtk.AccessibleRole.REGION)
+        # GROUP, not REGION — measured, not assumed. GTK4's AT-SPI backend
+        # emits no landmark roles at all: REGION, MAIN, NAVIGATION and BANNER
+        # every one of them arrives at AT-SPI as `filler`, a semantically
+        # empty spacer. `gtk_test_accessible_has_role` passes for REGION
+        # (GTK stores it faithfully), which is exactly why this needed
+        # checking against a live AT-SPI tree rather than the GTK test API.
+        # GROUP maps to `grouping`, a real container role, and the pane's
+        # accessible name survives either way — so Orca says "Reading pane 1"
+        # and now has an honest role to attach it to. Don't "upgrade" this
+        # back to REGION; landmark navigation is not available here.
+        a11y.set_role(self, Gtk.AccessibleRole.GROUP)
         set_accessible_label(
             self, _('Reading pane {n}').format(n=pane_id))
         self._on_word_click = on_word_click
