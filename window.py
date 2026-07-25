@@ -3096,6 +3096,8 @@ class BibleWindow(Adw.ApplicationWindow):
 
         _adv_switch(_('Section headings'),
                     'show_headings', 'set_show_headings')
+        _adv_switch(_('Mark the current sense-unit'),
+                    'mark_current_unit', 'set_mark_current_unit')
         _adv_switch(_('Small caps for the divine name'),
                     'smallcaps_divine', 'set_divine_smallcaps')
         _adv_switch(_('Old-style numerals'),

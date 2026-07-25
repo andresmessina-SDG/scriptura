@@ -41,6 +41,10 @@ _defaults: dict[str, Any] = {
     # they were silently dropped until DR4. A reading convention, not a
     # taste option — on by default. Modules without the data show none.
     'show_headings':      True,
+    # Scroll-driven rule beside the sense-unit you are reading. Opt-in
+    # taste, so off by default — and it is the one element that changes
+    # on screen without the reader doing anything (GUIDANCE §9).
+    'mark_current_unit':  False,
     # Cross-reference bar on verse click (the ※ toggle in the header's
     # Reading-tools cluster). On by default; off keeps the reading surface
     # fully minimal — verse clicks stop summoning the bar.
