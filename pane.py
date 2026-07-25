@@ -276,7 +276,15 @@ def _short_dict_title(mod_name, mod_desc):
     return f'{short} {year}' if year else short
 
 
-def _html_to_markup(html, dark, strip=True, divine_smallcaps=False):
+# Inline <title> kinds that are not section headings, mirroring the rule
+# sword_bridge applies to the attribute-sourced ones: parallel-passage
+# cross references and canonical Psalm superscriptions would both read as
+# headings if rendered as one.
+_SKIP_INLINE_TITLE_TYPES = frozenset({'parallel', 'psalm', 'acrostic', 'sub'})
+
+
+def _html_to_markup(html, dark, strip=True, divine_smallcaps=False,
+                    show_headings=True):
     # Ensure we are working with a string
     html = str(html)
     # Strip lone surrogates that SWORD produces from non-UTF-8 module data
@@ -315,8 +323,28 @@ def _html_to_markup(html, dark, strip=True, divine_smallcaps=False):
                       lambda m: '[[DN_S]]' + _normalize_divine(m.group(1)) + '[[DN_E]]',
                       html, flags=re.DOTALL)
 
-    # Titles and Headings
-    html = re.sub(r'<title>(.*?)</title>', r'[[B_S]]\1[[B_E]]', html)
+    # Titles and Headings. The pattern has to allow attributes: enabling
+    # SWORD's Headings option (needed for the Bible section headings, which
+    # arrive as entry attributes) also lets commentaries emit their own
+    # titles INLINE, and those carry a type — Clarke's are `type="x-s"`,
+    # MHC's `type="x-s3"`. A bare `<title>` pattern missed them, the generic
+    # tag-strip below then removed the tags but not the text, and a heading
+    # like "The Creation. (b. c. 4004.)" landed in the middle of the
+    # commentary's prose as ordinary body text.
+    #
+    # `show_headings=False` drops them entirely rather than rendering them:
+    # they only became visible when that option was turned on, so the
+    # Appearance toggle has to govern them too or turning it off would leave
+    # commentary headings the reader never used to see.
+    def _title_sub(m):
+        attr = re.search(r'type="([^"]+)"', m.group(1) or '')
+        kind = attr.group(1).lower() if attr else ''
+        if not show_headings or kind in _SKIP_INLINE_TITLE_TYPES:
+            return ''
+        return f'[[B_S]]{m.group(2)}[[B_E]]'
+
+    html = re.sub(r'<title([^>]*)>(.*?)</title>', _title_sub, html,
+                  flags=re.DOTALL)
     html = re.sub(r'<h3>(.*?)</h3>', r'[[B_S]]\1[[B_E]]', html)
     html = re.sub(r'<h[1-6]>(.*?)</h[1-6]>', r'[[B_S]]\1[[B_E]]', html)
 
@@ -2851,7 +2879,8 @@ class BiblePane(Gtk.Box):
                         lambda m: f'[[FN_{m.group(1)}]]', src_html)
                 v_text_markup = _html_to_markup(
                     src_html, dark,
-                    divine_smallcaps=self._smallcaps_divine)
+                    divine_smallcaps=self._smallcaps_divine,
+                    show_headings=self._show_headings)
                 if self._smallcaps_divine:
                     v_text_markup = _smallcap_divine_literals(v_text_markup)
                 # Poetry tokens → line breaks + per-line indent levels.
@@ -3065,7 +3094,8 @@ class BiblePane(Gtk.Box):
             # strip=False so a trailing space before the reference
             # ("Elijah, " + ref) isn't swallowed by .strip(), which
             # would render as "Elijah,Rom 11:1-5".
-            markup = _html_to_markup(seg, dark, strip=False)
+            markup = _html_to_markup(seg, dark, strip=False,
+                                     show_headings=self._show_headings)
             if not markup:
                 return
             fn_markers = []
