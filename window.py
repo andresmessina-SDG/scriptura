@@ -2538,6 +2538,7 @@ class BibleWindow(Adw.ApplicationWindow):
             _('OpenBible.info — cross-references and topical tags (CC-BY)'),
             _('Dodson Greek Lexicon — public-domain NT Greek definitions'),
             _('eBible.org — modern translation catalog and texts'),
+            _('Berean Standard Bible audio — chapters read by Bob Souer (CC0)'),
             _('HistoricalChristianFaith Commentaries Database — historical commentary pack'),
         ])
         dlg.add_acknowledgement_section(_('Built with'), [

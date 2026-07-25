@@ -35,6 +35,7 @@ py_sources = files(
   'archaeology_bridge.py',
   'archaeology_reader.py',
   'backup.py',
+  'bible_audio.py',
   'bookmarks.py',
   'catena_bridge.py',
   'catena_reader.py',
