@@ -783,6 +783,13 @@ class BibleTextView(Gtk.TextView):
     # mid-luminance* colour: it tints visibly while leaving the reading text
     # legible whatever its colour — light text in dark mode, dark text in light
     # mode, and the black text of a user highlight a flash happens to land on.
+    # Current sense-unit rule: quiet enough to sit in the periphery, since
+    # it moves as the reader scrolls and must never pull the eye off the
+    # text (GUIDANCE §9 calm technology).
+    _UNIT_RULE_WIDTH = 2.0
+    _UNIT_RULE_INSET = 14.0
+    _UNIT_RULE_LIGHT = 'rgba(176,118,44,0.42)'
+    _UNIT_RULE_DARK = 'rgba(214,150,54,0.36)'
     _SEARCH_COLOR = 'rgba(214,150,40,0.40)'   # amber, search matches
     # The find bar's *current* match — same amber hue, near-opaque so it reads
     # as "you are here" against the soft bands on the other matches (Safari's
@@ -858,6 +865,13 @@ class BibleTextView(Gtk.TextView):
             for s, e in self._tag_ranges(buf, ul, lo, hi):
                 self._draw_band(snapshot, s, e, ucol, asc, desc,
                                 underline=True)
+        # Current sense-unit — a hairline rule in the left margin spanning
+        # the unit. Drawn as a rule rather than a band so it reads as
+        # structure beside the text rather than as a mark ON it, and stays
+        # clear of the highlight bands it may overlap.
+        unit = table.lookup('_cur_unit')
+        if unit is not None:
+            self._draw_unit_rule(snapshot, buf, unit, lo, hi)
         # Lexicon hover — a dotted accent underline ("defined term" affordance).
         if hover is not None:
             hcol = Gdk.RGBA()
@@ -867,6 +881,34 @@ class BibleTextView(Gtk.TextView):
             for s, e in self._tag_ranges(buf, hover, lo, hi):
                 self._draw_band(snapshot, s, e, hcol, asc, desc,
                                 underline=True, dotted=True)
+
+    def _draw_unit_rule(self, snapshot, buf, tag, lo, hi):
+        """Vertical rule beside the sense-unit being read.
+
+        Spans the unit's full height, clipped to the visible rect so a long
+        unit costs the same as a short one. Sits inside the left margin, so
+        it never shifts the reading measure — the text does not move when
+        the mark appears, which is the whole point."""
+        # _tag_ranges is a generator — materialise it before indexing, or
+        # the TypeError vanishes into do_snapshot_layer's paint guard and
+        # the rule simply never appears.
+        ranges = list(self._tag_ranges(buf, tag, lo, hi))
+        if not ranges:
+            return
+        start, end = ranges[0][0], ranges[-1][1]
+        top = self.get_iter_location(start)
+        bot = self.get_iter_location(end)
+        y0 = top.y
+        y1 = bot.y + bot.height
+        if y1 <= y0:
+            return
+        col = Gdk.RGBA()
+        col.parse(self._UNIT_RULE_DARK
+                  if Adw.StyleManager.get_default().get_dark()
+                  else self._UNIT_RULE_LIGHT)
+        x = max(2.0, self.get_left_margin() - self._UNIT_RULE_INSET)
+        snapshot.append_color(
+            col, Graphene.Rect().init(x, y0, self._UNIT_RULE_WIDTH, y1 - y0))
 
     def _draw_tag_layer(self, snapshot, buf, tag, color, lo, hi, asc, desc):
         if tag is None:
@@ -1051,6 +1093,10 @@ class BiblePane(Gtk.Box):
         # publisher-supplied structure that SWORD hands over separately from
         # the verse text — so it defaults on, like small caps.
         self._show_headings = bool(settings.get('show_headings'))
+        self._mark_current_unit = bool(settings.get('mark_current_unit'))
+        # Verse the currently-marked sense-unit starts at, so a scroll that
+        # stays inside one unit costs a comparison and no retagging.
+        self._current_unit = None
         # Advanced typography (Appearance ▸ Advanced): small-caps divine
         # name and old-style figures are reading conventions (on by
         # default); flush poetry and the tinted drop cap are opt-ins.
@@ -1606,6 +1652,9 @@ class BiblePane(Gtk.Box):
 
     def _on_reading_scroll(self, adj):
         self._scroll._on_reading_scroll(adj)
+        # Scroll-driven, so it follows the eye rather than the last click.
+        # Cheap: a comparison unless the unit actually changed.
+        self._update_current_unit()
 
     def _set_chrome_revealed(self, reveal):
         self._chrome.set_revealed(reveal)
@@ -3118,6 +3167,78 @@ class BiblePane(Gtk.Box):
                   f'foreground="gray">'
                   f'{GLib.markup_escape_text(text)}</span>\n')
         self._buffer.insert_markup(self._buffer.get_end_iter(), markup, -1)
+
+    def _unit_bounds(self, verse):
+        """(first_verse, last_verse) of the sense-unit containing `verse`,
+        or None. Units start where the module put a section heading, so
+        they exist only where headings do."""
+        heads = self._rendered_headings
+        if not heads or not self._show_headings:
+            return None
+        rendered = sorted(v for v, _h in (self._rendered_verses or []))
+        if not rendered:
+            return None
+        starts = sorted(v for v in heads if v in set(rendered))
+        if not starts:
+            return None
+        opening = [v for v in starts if v <= verse]
+        if not opening:
+            return None
+        first = opening[-1]
+        later = [v for v in starts if v > first]
+        last = (max(v for v in rendered if v < later[0]) if later
+                else rendered[-1])
+        return first, last
+
+    def _update_current_unit(self):
+        """Follow the reader with the viewport, not with the cursor.
+
+        Driven by scroll position because that is the only source that
+        answers "where am I?" while simply reading — a cursor- or
+        click-driven mark shows where you last acted and then sits there.
+        Retags only when the unit actually changes, so scrolling inside one
+        unit does no buffer work."""
+        if not self._mark_current_unit or self._module_type != 'Biblical Texts':
+            return
+        top = self._find_topmost_visible_verse()
+        if top is None:
+            return
+        bounds = self._unit_bounds(top)
+        if bounds is None or bounds[0] == self._current_unit:
+            return
+        self._current_unit = bounds[0]
+        self._apply_unit_tag(*bounds)
+
+    def _apply_unit_tag(self, first, last):
+        """Mark the unit's whole span with the tag BibleTextView draws the
+        margin rule from."""
+        buf = self._buffer
+        table = buf.get_tag_table()
+        tag = table.lookup('_cur_unit') or buf.create_tag('_cur_unit')
+        buf.remove_tag(tag, buf.get_start_iter(), buf.get_end_iter())
+        first_range = self._verse_ranges(first)
+        last_range = self._verse_ranges(last)
+        if not first_range or not last_range:
+            return
+        buf.apply_tag(tag, first_range[0], last_range[2])
+        self._view.queue_draw()
+
+    def _clear_unit_tag(self):
+        buf = self._buffer
+        tag = buf.get_tag_table().lookup('_cur_unit')
+        if tag is not None:
+            buf.remove_tag(tag, buf.get_start_iter(), buf.get_end_iter())
+            self._view.queue_draw()
+        self._current_unit = None
+
+    def set_mark_current_unit(self, enabled):
+        if self._mark_current_unit == bool(enabled):
+            return
+        self._mark_current_unit = bool(enabled)
+        if self._mark_current_unit:
+            self._update_current_unit()
+        else:
+            self._clear_unit_tag()
 
     def set_show_headings(self, enabled):
         if self._show_headings == bool(enabled):
@@ -4828,6 +4949,7 @@ class BiblePane(Gtk.Box):
         # Same for the keyboard cursor: its verse and word offsets belong to
         # the outgoing module's buffer.
         self._cursor.clear()
+        self._current_unit = None
         # Dismiss any dict peek since it's tied to a word in the previous
         # module's text. Reused popover — hide it, don't unparent.
         prev_dict = getattr(self, '_dict_pop', None)
