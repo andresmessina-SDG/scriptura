@@ -478,6 +478,44 @@ DROPCAP_GOLD_LIGHT = '#a5822b'
 DROPCAP_GOLD_DARK = '#d0ac5c'
 
 
+def _dropcap_split(markup):
+    """Split a verse's markup around the first real letter, for the drop cap.
+
+    Returns (before, letter, after) or None when there is no letter to
+    enlarge. Three things have to be stepped over to find it:
+
+    * markup tags — the red-letter span opens before the text;
+    * opening punctuation — LEB and BSB both begin Matthew 6:1 with a
+      quotation mark, and the old ASCII-letter regex simply gave up there,
+      so those translations silently lost their drop cap;
+    * character entities — `&quot;` contains letters, and capping its "q"
+      would enlarge a piece of the escape rather than the verse.
+
+    The letter test is `str.isalpha`, not `[A-Za-z]`: the old class matched
+    Latin only. RusSynodalLIO appeared to work solely because its text
+    happens to start with a Latin "C" homoglyph rather than a Cyrillic one —
+    genuine Cyrillic, Greek or Hebrew got no cap.
+    """
+    i, n = 0, len(markup)
+    while i < n:
+        ch = markup[i]
+        if ch == '<':                      # markup tag
+            j = markup.find('>', i)
+            if j < 0:
+                return None
+            i = j + 1
+        elif ch == '&':                    # character entity
+            j = markup.find(';', i)
+            if j < 0 or j - i > 12:
+                return None
+            i = j + 1
+        elif ch.isalpha():
+            return markup[:i], ch, markup[i + 1:]
+        else:
+            i += 1                         # quote, bracket, space…
+    return None
+
+
 def dropcap_color_hex(dark):
     """Effective drop-cap colour (shared with the Appearance swatch)."""
     custom = settings.get('dropcap_color')
@@ -2784,15 +2822,15 @@ class BiblePane(Gtk.Box):
                 # above the cap when the user scrolled the chapter back
                 # into view.
                 if start_v == 1:
-                    m = re.match(r'((?:<[^>]+>)*)([A-Za-z])', v_text_markup)
-                    if m:
+                    split = _dropcap_split(v_text_markup)
+                    if split:
+                        before, letter, after = split
                         cap_attrs = 'size="200%" weight="bold"'
                         if self._colored_dropcap:
                             cap_attrs += (
                                 f' foreground="{dropcap_color_hex(dark)}"')
                         v_text_markup = (
-                            f'{m.group(1)}<span {cap_attrs}>'
-                            f'{m.group(2)}</span>{v_text_markup[m.end():]}'
+                            f'{before}<span {cap_attrs}>{letter}</span>{after}'
                         )
                 # Tokens → superscript marker letters, after the drop-cap
                 # transform so the recorded plain-text offsets are final.
