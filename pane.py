@@ -478,6 +478,44 @@ DROPCAP_GOLD_LIGHT = '#a5822b'
 DROPCAP_GOLD_DARK = '#d0ac5c'
 
 
+def _dropcap_split(markup):
+    """Split a verse's markup around the first real letter, for the drop cap.
+
+    Returns (before, letter, after) or None when there is no letter to
+    enlarge. Three things have to be stepped over to find it:
+
+    * markup tags — the red-letter span opens before the text;
+    * opening punctuation — LEB and BSB both begin Matthew 6:1 with a
+      quotation mark, and the old ASCII-letter regex simply gave up there,
+      so those translations silently lost their drop cap;
+    * character entities — `&quot;` contains letters, and capping its "q"
+      would enlarge a piece of the escape rather than the verse.
+
+    The letter test is `str.isalpha`, not `[A-Za-z]`: the old class matched
+    Latin only. RusSynodalLIO appeared to work solely because its text
+    happens to start with a Latin "C" homoglyph rather than a Cyrillic one —
+    genuine Cyrillic, Greek or Hebrew got no cap.
+    """
+    i, n = 0, len(markup)
+    while i < n:
+        ch = markup[i]
+        if ch == '<':                      # markup tag
+            j = markup.find('>', i)
+            if j < 0:
+                return None
+            i = j + 1
+        elif ch == '&':                    # character entity
+            j = markup.find(';', i)
+            if j < 0 or j - i > 12:
+                return None
+            i = j + 1
+        elif ch.isalpha():
+            return markup[:i], ch, markup[i + 1:]
+        else:
+            i += 1                         # quote, bracket, space…
+    return None
+
+
 def dropcap_color_hex(dark):
     """Effective drop-cap colour (shared with the Appearance swatch)."""
     custom = settings.get('dropcap_color')
@@ -2686,6 +2724,20 @@ class BiblePane(Gtk.Box):
             if is_commentary and len(plain) < 20:
                 continue
 
+            # Section heading, where the module supplies one for this verse.
+            # It opens the block it titles, so it is inserted before the verse
+            # number — but ALSO before start_mark, deliberately: the vnum_ tag
+            # spans start_mark→end, and a heading inside that range makes the
+            # heading part of the verse. That put the current-verse indicator
+            # on the heading's first characters, would paint a highlight band
+            # across it, and threw _verse_ranges' offsets (vtext_start lands
+            # len(str(v))+2 chars in, i.e. inside the heading text).
+            # Commentaries are excluded: their own "Verse N" headers already
+            # divide the text.
+            if not is_commentary and self._show_headings:
+                for head in self._rendered_headings.get(start_v, ()):
+                    self._insert_section_heading(head, wrote_a_block)
+
             start_mark = self._buffer.create_mark(None, self._buffer.get_end_iter(), True)
 
             # 1. Verse number — inline for Bibles, bold section header for commentaries
@@ -2709,13 +2761,6 @@ class BiblePane(Gtk.Box):
                     # blank line of separation between commentary sections.
                     self._buffer.insert(self._buffer.get_end_iter(), '\n')
             else:
-                # Section heading, where the module supplies one for this
-                # verse. Ahead of the verse number so it opens the block it
-                # titles. Commentaries are excluded: their own "Verse N"
-                # headers already divide the text.
-                if self._show_headings:
-                    for head in self._rendered_headings.get(start_v, ()):
-                        self._insert_section_heading(head, wrote_a_block)
                 v_num_markup = (f'<span foreground="gray" size="small" '
                                 f'weight="bold" rise="2500"{self._numeral_ff()}>'
                                 f' {start_v} </span>')
@@ -2777,15 +2822,15 @@ class BiblePane(Gtk.Box):
                 # above the cap when the user scrolled the chapter back
                 # into view.
                 if start_v == 1:
-                    m = re.match(r'((?:<[^>]+>)*)([A-Za-z])', v_text_markup)
-                    if m:
+                    split = _dropcap_split(v_text_markup)
+                    if split:
+                        before, letter, after = split
                         cap_attrs = 'size="200%" weight="bold"'
                         if self._colored_dropcap:
                             cap_attrs += (
                                 f' foreground="{dropcap_color_hex(dark)}"')
                         v_text_markup = (
-                            f'{m.group(1)}<span {cap_attrs}>'
-                            f'{m.group(2)}</span>{v_text_markup[m.end():]}'
+                            f'{before}<span {cap_attrs}>{letter}</span>{after}'
                         )
                 # Tokens → superscript marker letters, after the drop-cap
                 # transform so the recorded plain-text offsets are final.
