@@ -2686,6 +2686,20 @@ class BiblePane(Gtk.Box):
             if is_commentary and len(plain) < 20:
                 continue
 
+            # Section heading, where the module supplies one for this verse.
+            # It opens the block it titles, so it is inserted before the verse
+            # number — but ALSO before start_mark, deliberately: the vnum_ tag
+            # spans start_mark→end, and a heading inside that range makes the
+            # heading part of the verse. That put the current-verse indicator
+            # on the heading's first characters, would paint a highlight band
+            # across it, and threw _verse_ranges' offsets (vtext_start lands
+            # len(str(v))+2 chars in, i.e. inside the heading text).
+            # Commentaries are excluded: their own "Verse N" headers already
+            # divide the text.
+            if not is_commentary and self._show_headings:
+                for head in self._rendered_headings.get(start_v, ()):
+                    self._insert_section_heading(head, wrote_a_block)
+
             start_mark = self._buffer.create_mark(None, self._buffer.get_end_iter(), True)
 
             # 1. Verse number — inline for Bibles, bold section header for commentaries
@@ -2709,13 +2723,6 @@ class BiblePane(Gtk.Box):
                     # blank line of separation between commentary sections.
                     self._buffer.insert(self._buffer.get_end_iter(), '\n')
             else:
-                # Section heading, where the module supplies one for this
-                # verse. Ahead of the verse number so it opens the block it
-                # titles. Commentaries are excluded: their own "Verse N"
-                # headers already divide the text.
-                if self._show_headings:
-                    for head in self._rendered_headings.get(start_v, ()):
-                        self._insert_section_heading(head, wrote_a_block)
                 v_num_markup = (f'<span foreground="gray" size="small" '
                                 f'weight="bold" rise="2500"{self._numeral_ff()}>'
                                 f' {start_v} </span>')
