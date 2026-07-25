@@ -2695,6 +2695,12 @@ class BiblePane(Gtk.Box):
         # is the reader scrolling.
         self._mark_programmatic_scroll()
         self._rendered_verses = verses
+        # A new render is a new buffer: the remembered unit refers to the old
+        # one. Without this, moving to a chapter whose first unit starts at
+        # the same verse hits the "unchanged" early-return and the mark is
+        # never applied — and nearly every ESV/LEB chapter opens a unit at
+        # verse 1.
+        self._current_unit = None
         if headings is not None:
             # Kept so a re-theme render (which re-runs _display with no fetch)
             # doesn't drop the headings the way it would a bare parameter.
@@ -3232,7 +3238,19 @@ class BiblePane(Gtk.Box):
             return
         top = self._find_topmost_visible_verse()
         if top is None:
-            return
+            # The viewport top is on a heading or blank line, which carries
+            # no vnum_ tag. Two very different situations share that answer.
+            # At the top of a chapter — the common one now that headings
+            # open most chapters — nothing is marked yet, so fall back to
+            # the first rendered verse or the reader opens a chapter with no
+            # mark at all until they scroll. Mid-chapter, a heading between
+            # units means keep what we have rather than flicker.
+            if self._current_unit is not None:
+                return
+            rendered = sorted(v for v, _h in (self._rendered_verses or []))
+            if not rendered:
+                return
+            top = rendered[0]
         bounds = self._unit_bounds(top)
         if bounds is None or bounds[0] == self._current_unit:
             return
