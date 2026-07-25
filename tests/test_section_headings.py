@@ -73,3 +73,49 @@ def test_mixed_blob_keeps_only_the_heading():
     raw = ('<title type="parallel">(<reference osisRef="Isa.40.1">Isaiah 40</reference>)</title>'
            '<title type="section">John the Baptist Prepares the Way</title>')
     assert _titles_from_raw(raw) == ['John the Baptist Prepares the Way']
+
+
+# ── inline titles in commentaries ────────────────────────────────────────
+# Enabling SWORD's Headings option for the Bible feature also makes
+# commentaries emit their own titles inline, carrying a type attribute.
+
+from pane import _html_to_markup
+
+
+def test_typed_inline_title_becomes_a_heading():
+    # Clarke uses type="x-s", MHC type="x-s3". A bare <title> pattern
+    # missed both, and the generic tag-strip then left the text as
+    # ordinary prose in the middle of the commentary.
+    out = _html_to_markup('<title type="x-s">The Creation.</title>Body text',
+                          True)
+    assert 'The Creation.' in out
+    assert 'letter_spacing="800"' in out
+
+
+def test_untyped_inline_title_still_becomes_a_heading():
+    out = _html_to_markup('<title>Plain Title</title>Body', True)
+    assert 'letter_spacing="800"' in out
+
+
+def test_inline_title_is_dropped_when_headings_are_off():
+    # These only became visible when the Headings option was enabled, so
+    # the Appearance toggle has to govern them too.
+    out = _html_to_markup('<title type="x-s">The Creation.</title>Body text',
+                          True, show_headings=False)
+    assert 'The Creation.' not in out
+    assert 'Body text' in out
+
+
+def test_parallel_reference_title_is_never_a_heading():
+    out = _html_to_markup(
+        '<title type="parallel">(Isaiah 40)</title>Body', True)
+    assert 'Isaiah 40' not in out
+    assert 'Body' in out
+
+
+def test_title_text_never_survives_as_bare_prose():
+    # The bug: tags stripped, text kept, no heading formatting.
+    for kind in ('x-s', 'x-s3', 'section', ''):
+        attr = f' type="{kind}"' if kind else ''
+        out = _html_to_markup(f'<title{attr}>Heading Here</title>Body', True)
+        assert ('letter_spacing="800"' in out) or ('Heading Here' not in out)
