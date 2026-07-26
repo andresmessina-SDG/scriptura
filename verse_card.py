@@ -19,6 +19,8 @@ reading pane, so exporting a card can never disturb the scroll invariant.
 """
 from __future__ import annotations
 
+import io
+
 import cairo
 import gi
 gi.require_version('Pango', '1.0')
@@ -132,7 +134,32 @@ def _fit(ctx, text, width, max_height, start, floor=16):
 def render(path: str, *, text: str, reference: str, translation: str,
            paper: str, ink: str, shape: str = 'square',
            wordmark: bool = False) -> str:
-    """Draw the card and write it to `path` as a PNG.
+    """Draw the card and write it to `path` as a PNG."""
+    _draw(text=text, reference=reference, translation=translation,
+          paper=paper, ink=ink, shape=shape,
+          wordmark=wordmark).write_to_png(path)
+    return path
+
+
+def render_bytes(*, text: str, reference: str, translation: str,
+                 paper: str, ink: str, shape: str = 'square',
+                 wordmark: bool = False) -> bytes:
+    """The same card as PNG bytes, for the clipboard — no file involved.
+
+    A card is more often pasted than filed, and going through the disk to do
+    it would leave a stray PNG behind for every paste.
+    """
+    buffer = io.BytesIO()
+    _draw(text=text, reference=reference, translation=translation,
+          paper=paper, ink=ink, shape=shape,
+          wordmark=wordmark).write_to_png(buffer)
+    return buffer.getvalue()
+
+
+def _draw(*, text: str, reference: str, translation: str,
+          paper: str, ink: str, shape: str = 'square',
+          wordmark: bool = False) -> cairo.ImageSurface:
+    """The card itself.
 
     `reference` and `translation` are both shown, always: the translation is
     the attribution, and a card outlives the app it left.
@@ -176,5 +203,4 @@ def render(path: str, *, text: str, reference: str, translation: str,
         PangoCairo.show_layout(ctx, mark)
         ctx.restore()
 
-    surface.write_to_png(path)
-    return path
+    return surface

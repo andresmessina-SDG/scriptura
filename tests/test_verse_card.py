@@ -97,3 +97,15 @@ def test_the_renderer_touches_no_widget_toolkit(tmp_path):
     assert 'Gtk' not in source
     assert 'gi.repository' in source          # Pango only
     assert _png_size(_card(tmp_path, wordmark=True)) == SHAPES['square']
+
+
+def test_the_clipboard_card_is_the_same_png_without_the_disk(tmp_path):
+    """A card is more often pasted than filed, and going through a file to do
+    it would leave a stray PNG behind for every paste."""
+    from verse_card import render_bytes
+    data = render_bytes(text=VERSE, reference='John 3:16', translation='KJV',
+                        paper='#f7f4ee', ink='#1c1a17', shape='portrait')
+    assert data[:8] == b'\x89PNG\r\n\x1a\n'
+    assert struct.unpack('>II', data[16:24]) == SHAPES['portrait']
+    # Byte-identical to what the file path writes: one drawing, two exits.
+    assert data == open(_card(tmp_path, shape='portrait'), 'rb').read()

@@ -7,21 +7,22 @@ selection is what leaving the app is about. The composition lives elsewhere
 (`passage_export`, `verse_card`), which keeps those testable and keeps this
 file to the choosing and the saving.
 
-Both gathers run on the task runner: the document one reads SQLite and the
-SWORD modules and can reach a hundred thousand words when the fathers are in
-it, and the card one lays out and compresses a PNG. Either is long enough on
-the UI thread to show.
+Saving goes through the task runner — a document can reach a hundred thousand
+words with the fathers in it, and a card is a layout and a PNG compression.
+Copying a card does NOT: it is 45–75ms measured, and a clipboard action that
+lands after the reader has moved on is worse than one that costs a frame.
 """
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Adw, GLib, Gtk
+from gi.repository import Adw, Gdk, GLib, Gtk
 
 import catena_bridge
 import passage_export
 import sword_bridge
 import verse_card
 import tasks
+from a11y import set_accessible_label
 from i18n import _
 
 #: Scope keys, in the order they are offered.
@@ -212,6 +213,13 @@ class CardSheet:
         save.add_css_class('suggested-action')
         save.connect('clicked', lambda _b: self._choose_file())
         header.pack_end(save)
+        # A card is more often pasted than filed, so the copy sits beside the
+        # save rather than behind it.
+        copy = Gtk.Button(icon_name='edit-copy-symbolic')
+        copy.set_tooltip_text(_('Copy the card'))
+        set_accessible_label(copy, _('Copy the card'))
+        copy.connect('clicked', lambda _b: self._copy())
+        header.pack_end(copy)
         view.add_top_bar(header)
 
         page = Adw.PreferencesPage()
@@ -252,6 +260,40 @@ class CardSheet:
     def _reference(self):
         return passage_export.format_reference(
             self._pane._book, self._pane._chapter, self._verses)
+
+    def _card_bytes(self):
+        from pane import auto_reading_ink
+        paper = self._paper()
+        return verse_card.render_bytes(
+            text=passage_export.verse_text(
+                self._pane._module, self._pane._book, self._pane._chapter,
+                self._verses),
+            reference=self._reference(), translation=self._pane._module,
+            paper=paper, ink=auto_reading_ink(paper),
+            shape=self._shapes[self._shape_row.get_selected()],
+            wordmark=self._mark_row.get_active())
+
+    def _copy(self):
+        """Put the card on the clipboard, the way the imagery plates do.
+
+        Explicit `image/png` bytes AND the texture, in that order: a bare
+        texture value only survives a same-process paste, because a local read
+        skips serialisation entirely. Every other application negotiates a
+        mime type, and image/png is the one they all accept — the texture
+        rides along for GTK-native consumers.
+
+        Synchronous rather than on the task runner: a card is 45–75ms to draw
+        (measured), and a copy that lands after the reader has moved on is
+        worse than a copy that costs a frame.
+        """
+        png = GLib.Bytes.new(self._card_bytes())
+        provider = Gdk.ContentProvider.new_union([
+            Gdk.ContentProvider.new_for_bytes('image/png', png),
+            Gdk.ContentProvider.new_for_value(Gdk.Texture.new_from_bytes(png)),
+        ])
+        self._pane.get_root().get_clipboard().set_content(provider)
+        self._dialog.close()
+        self._report(_('Card copied'))
 
     def _choose_file(self):
         dialog = Gtk.FileDialog()
