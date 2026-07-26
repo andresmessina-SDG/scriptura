@@ -1,9 +1,11 @@
-"""Two things `data/style.css` may not say, both learned the hard way on the
-listening pill (2026-07-25): a large corner radius on a popover's `contents`,
-which stops the popover opening at all, and a `min-width` on a progress bar's
-`progress` node, which stops the bar telling the truth. Neither shows up in a
-behavioural test — the widgets are built, wired and reported exactly right, and
-only the rendering is wrong — so they are pinned here, on the stylesheet."""
+"""Three things `data/style.css` may not say, all learned the hard way on the
+listening pill: a large corner radius on a popover's `contents`, which stops
+the popover opening at all; a `min-width` on a progress bar's `progress` node,
+which stops the bar telling the truth (both 2026-07-25); and a child chain
+through `buttoncontent`, which matches nothing (2026-07-26). None of them shows
+up in a behavioural test — the widgets are built, wired and reported exactly
+right, and only the rendering is wrong — so they are pinned here, on the
+stylesheet."""
 
 import re
 from pathlib import Path
@@ -65,6 +67,19 @@ def test_no_popover_contents_carries_a_huge_radius():
                 f'{selector} sets border-radius: {radius} — a popover cannot '
                 f'be given a radius this large without failing to open; name '
                 f'half the height of its contents box instead')
+
+
+def test_nothing_reaches_through_buttoncontent_as_a_child():
+    """An Adw.ButtonContent is `buttoncontent > box > image|label`, and the box
+    is libadwaita's own. So `> buttoncontent > label` names a node that does not
+    exist: it fails silently, exactly as `button.audio-pill-rate` did on the
+    GtkMenuButton, and the switch on the pill kept Adwaita's bold label through
+    two rounds of reading the CSS. Reach past it with a descendant selector."""
+    for selector, _body in _rules():
+        assert not re.search(r'buttoncontent\s*>', selector), (
+            f'{selector} reaches through buttoncontent with a child combinator '
+            f'— there is a box in between, so this matches nothing; write it as '
+            f'a descendant')
 
 
 def test_no_progress_node_carries_a_min_width():

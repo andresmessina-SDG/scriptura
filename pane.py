@@ -1330,6 +1330,17 @@ class BiblePane(Gtk.Box):
         self._reading_reference = ''
         self._reading_length = ''
         self._reading_key = f'reading-audio:{id(self)}'
+        # What the player holds, as (path, reference) — the reading that is
+        # sounding, which is not the chapter on screen once the reader pages
+        # on. None when nothing is open. The pill names this in preference to
+        # the offer, and while it is set the pill may not be put away: it
+        # carries the only pause and the only stop there is.
+        self._sounding = None
+        # The reference of a fetch in flight. The pill's controls act on it
+        # exactly as they act on a sounding reading — the reader pressed play
+        # on that chapter — so it has to be nameable while the file is still
+        # on its way and there is nothing open to ask.
+        self._pending = None
 
         # Generic Books: prev / next sibling navigation + TOC popover.
         # Visible only when the pane's current module is type
@@ -1415,7 +1426,8 @@ class BiblePane(Gtk.Box):
         self._pill = AudioPill(on_play_pause=self._on_reading_play,
                                on_back=self._on_reading_back,
                                on_close=self._on_reading_close,
-                               on_rate=self._on_reading_rate)
+                               on_rate=self._on_reading_rate,
+                               on_switch=self._on_reading_switch)
         self._pill.set_rate(settings.get('reading_rate'))
 
         # Per-pane inline search bar (revealed below toolbar). All
@@ -2624,12 +2636,21 @@ class BiblePane(Gtk.Box):
         translation; their index is fetched off the UI thread the first time a
         psalm is opened, so a cold start shows nothing for a moment rather
         than a button that cannot yet work.
+
+        This changes the offer and never what is sounding. A reading plays on
+        while the reader pages through the text — that is most of the point of
+        naming the chapter on the pill — so the only thing paging does here is
+        re-address the play button. The reader's own "no spoken readings" is
+        different, and does silence it.
         """
-        self._stop_reading_audio()
         self._reading_url = None
         self._reading_audio.set_visible(False)
-        if not settings.get('show_audio') or not self._is_verse_navigable():
+        if not settings.get('show_audio'):
+            self._stop_reading_audio()
             self._pill.dismiss()
+            return
+        if not self._is_verse_navigable():
+            self._dismiss_pill_if_idle()
             return
         if bible_audio.covers_module(self._module):
             url = bible_audio.chapter_url(self._book, self._chapter)
@@ -2639,7 +2660,7 @@ class BiblePane(Gtk.Box):
                     reference=f'{book_label(self._book)} {self._chapter}')
                 return
         if self._book != 'Psalms':
-            self._pill.dismiss()
+            self._dismiss_pill_if_idle()
             return
         got = devotional_audio.psalm_episode_url(self._chapter)
         if got is None:
@@ -2650,9 +2671,51 @@ class BiblePane(Gtk.Box):
                     feed=devotional_audio.PSALMS_FEED_URL),
                 apply=lambda _i: self._on_psalm_index(chapter),
                 on_error=lambda _e: None)
-            self._pill.dismiss()
+            self._dismiss_pill_if_idle()
             return
         self._offer_psalm_audio(got)
+
+    def _reading_is_live(self):
+        """Whether a reading is sounding or on its way to being heard. The
+        pill stays up for as long as this is true, wherever the reader has
+        navigated to: it holds the pause, and closing it is the stop."""
+        return self._sounding is not None or self._reading_fetching
+
+    def _dismiss_pill_if_idle(self):
+        """Put the pill away only if it is not governing a reading. A chapter
+        with nothing to listen to withdraws the toolbar's headphones, but it
+        cannot take the controls of a reading already under way with it."""
+        if not self._reading_is_live():
+            self._pill.dismiss()
+
+    def _live_reference(self):
+        """What the pill's controls are acting on — the reading that is
+        sounding, or the one being fetched — and None when they govern
+        nothing, which is when the chapter on screen is all there is to
+        name."""
+        if self._sounding is not None:
+            return self._sounding[1]
+        return self._pending
+
+    def _restate_pill_reading(self):
+        """Name what the pill governs, and the chapter on screen only when it
+        governs nothing. The two part company the moment the reader pages on,
+        and the live one wins — it is what the controls beside it act on.
+
+        Where they have parted company, the switch appears naming the chapter
+        on screen: it is the only way to start that chapter without first
+        stopping the reading in hand, and it exists in no other state.
+        """
+        live = self._live_reference()
+        if live is not None:
+            self._pill.set_reading(live, self._reading_length)
+        else:
+            self._pill.set_reading(self._reading_reference)
+        on_screen = self._reading_reference if self._reading_url else ''
+        if live is not None and on_screen and on_screen != live:
+            self._pill.set_switch(on_screen)
+        else:
+            self._pill.set_switch('')
 
     def _on_psalm_index(self, chapter):
         if self._book != 'Psalms' or self._chapter != chapter:
@@ -2681,10 +2744,14 @@ class BiblePane(Gtk.Box):
         self._reading_scripture = scripture
         self._reading_audio.set_visible(True)
         self._reading_reference = reference or tooltip
-        self._reading_length = ''
+        if not self._reading_is_live():
+            # The length belongs to the open file, so it may only be cleared
+            # when there is no open file. Clearing it on navigation used to be
+            # safe because navigation stopped the reading.
+            self._reading_length = ''
         self._reading_play_btn.set_tooltip_text(tooltip)
         set_accessible_label(self._reading_play_btn, label or tooltip)
-        self._pill.set_reading(self._reading_reference)
+        self._restate_pill_reading()
 
     def _cached_reading(self, url):
         return (bible_audio.cached_chapter(url) if self._reading_scripture
@@ -2700,7 +2767,7 @@ class BiblePane(Gtk.Box):
         if self._pill.is_shown():
             self._on_reading_close()
             return
-        self._pill.set_reading(self._reading_reference)
+        self._restate_pill_reading()
         self._pill.set_can_seek(self._reading_player is not None)
         self._pill.present()
 
@@ -2734,6 +2801,25 @@ class BiblePane(Gtk.Box):
         if self._reading_player is not None:
             self._reading_player.seek_relative(-15)
 
+    def _on_reading_switch(self):
+        """Read the chapter on screen instead of the one in hand.
+
+        The reading in hand is not paused and set aside: it is stopped, and
+        the reader's place in it is not kept. That is what every player does
+        when a second item is started — the one that was playing is replaced,
+        with no question asked and no queue behind it — and keeping a place
+        the pill has no way to name or return to would be a promise this
+        surface cannot show, let alone honour.
+
+        Stopping first is also what makes this one press rather than two: the
+        play button beside it belongs to what is sounding, and it says so, so
+        it can never be the control that starts something else.
+        """
+        if not self._reading_url:
+            return
+        self._stop_reading_audio()
+        self._on_reading_play()
+
     def _on_reading_play(self):
         if self._reading_fetching:
             # A chapter is six megabytes and can be twenty; a reader who
@@ -2746,11 +2832,20 @@ class BiblePane(Gtk.Box):
             self._reading_player.pause()
             self._pill.set_state('idle')
             return
+        if self._sounding is not None:
+            # Paused, and the reader has since paged on: this button belongs to
+            # the reading it has been showing all along, so it resumes that and
+            # not the chapter that happens to be on screen now. Starting the
+            # new one here would be the pill doing something other than what it
+            # says, and it would lose the reader's place in the old one.
+            path, reference = self._sounding
+            self._start_reading_audio(path, reference)
+            return
         if not self._reading_url:
             return
         cached = self._cached_reading(self._reading_url)
         if cached:
-            self._start_reading_audio(cached)
+            self._start_reading_audio(cached, self._reading_reference)
             return
         # Nothing can be heard until the file is here, so the pause icon at
         # this point would claim playback of a silence — and on a slow line
@@ -2760,19 +2855,31 @@ class BiblePane(Gtk.Box):
         url = self._reading_url
         fetch = (bible_audio.fetch_chapter if self._reading_scripture
                  else devotional_audio.fetch_episode)
-        self._begin_reading_fetch()
+        # Carried, not read again when it lands: the reader may well have paged
+        # on during a twenty-megabyte fetch, and what arrives is the chapter
+        # they pressed play on.
+        reference = self._reading_reference
+        self._begin_reading_fetch(reference)
         tasks.submit(
             key=self._reading_key,
             work=lambda _t: fetch(url),
-            apply=self._finish_reading_fetch,
-            on_error=lambda _e: self._finish_reading_fetch(None))
+            apply=lambda path: self._finish_reading_fetch(path, reference),
+            on_error=lambda _e: self._finish_reading_fetch(None, reference))
 
-    def _begin_reading_fetch(self):
+    def _begin_reading_fetch(self, reference=None):
         """Dress the pill for the wait: a stop, not a playback state. The
         thread pulses once the wait outlasts the threshold — the pill owns
-        that timing itself."""
+        that timing itself.
+
+        `reference` is the chapter being fetched, and the pill names it for as
+        long as the fetch runs: paging on during a twenty-megabyte wait used
+        to leave the pill naming the chapter that had just come on screen
+        while the controls beside it still belonged to the one being fetched.
+        """
         self._reading_fetching = True
+        self._pending = reference
         self._pill.set_state('fetching')
+        self._restate_pill_reading()
         a11y.announce(self._pill, _('Fetching the reading'))
 
     def _end_reading_fetch(self):
@@ -2780,9 +2887,11 @@ class BiblePane(Gtk.Box):
         if not getattr(self, '_reading_fetching', False):
             return
         self._reading_fetching = False
+        self._pending = None
         self._pill.set_state('idle')
+        self._restate_pill_reading()
 
-    def _finish_reading_fetch(self, path):
+    def _finish_reading_fetch(self, path, reference=None):
         self._end_reading_fetch()
         if not path:
             # Named no closer than this on purpose: fetch_episode answers
@@ -2793,7 +2902,7 @@ class BiblePane(Gtk.Box):
             self._report_audio_failure(
                 self._pill, _('Could not fetch the reading'))
             return
-        self._start_reading_audio(path)
+        self._start_reading_audio(path, reference)
 
     def _report_audio_failure(self, button, message):
         """Say what went wrong — for either of the pane's two players.
@@ -2807,7 +2916,14 @@ class BiblePane(Gtk.Box):
         if self._on_toast:
             self._on_toast(message)
 
-    def _start_reading_audio(self, path):
+    def _start_reading_audio(self, path, reference=None):
+        """Play `path`, or resume it where the player already holds it.
+
+        `reference` is what the pill will name until this reading stops, and
+        it is passed in rather than read off the pane: by the time a fetch
+        lands, or a paused reading is resumed, the chapter on screen may be a
+        different one entirely.
+        """
         if not path:
             self._pill.set_state('idle')
             return
@@ -2819,6 +2935,12 @@ class BiblePane(Gtk.Box):
                 self._pill, _('Could not play the reading'))
             return
         self._reading_player.set_rate(sane_rate(settings.get('reading_rate')))
+        if self._sounding is None or self._sounding[0] != path:
+            # A different file: its length is not the last one's, and is not
+            # answerable yet either.
+            self._reading_length = ''
+        self._sounding = (path, reference or self._reading_reference)
+        self._restate_pill_reading()
         self._pill.set_state('playing')
         self._pill.set_can_seek(True)
         # The thread takes over from the fetch's pulse here rather than at the
@@ -2842,8 +2964,7 @@ class BiblePane(Gtk.Box):
             return
         self._reading_length = format_length(self._reading_player.duration())
         if self._reading_length:
-            self._pill.set_reading(self._reading_reference,
-                                   self._reading_length)
+            self._restate_pill_reading()
 
     def _on_reading_tick(self):
         if self._reading_player is None:
@@ -2860,9 +2981,14 @@ class BiblePane(Gtk.Box):
         return GLib.SOURCE_CONTINUE
 
     def _stop_reading_audio(self):
-        # A fetch still in flight belongs to the chapter that was on screen
-        # when play was pressed. Left to land, it would start playing that
-        # chapter after the reader had already moved to another.
+        """Silence the reading and forget it. This is the stop, so it is only
+        ever reached deliberately: closing the pill, hiding the pane, turning
+        spoken readings off, and a chapter running to its end. Paging through
+        the text does not come here.
+
+        A fetch still in flight is cancelled with it — a reader who has just
+        stopped a reading is not waiting to have one start.
+        """
         tasks.cancel(getattr(self, '_reading_key', ''))
         self._end_reading_fetch()
         if self._reading_tick is not None:
@@ -2871,9 +2997,13 @@ class BiblePane(Gtk.Box):
         if self._reading_player is not None:
             self._reading_player.stop()
             self._reading_player = None
-        # Navigating away mid-reading must not leave a fill behind on the
-        # thread — the pill is shared by every module this pane opens.
+        self._sounding = None
+        self._reading_length = ''
+        # Nothing is sounding now, so the pill falls back to naming the chapter
+        # on screen, with no fill left behind on the thread — it is shared by
+        # every module this pane opens.
         if getattr(self, '_pill', None) is not None:
+            self._restate_pill_reading()
             self._pill.set_state('idle')
             self._pill.set_progress(0.0)
             self._pill.set_can_seek(False)

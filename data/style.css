@@ -1747,6 +1747,38 @@ progressbar.audio-pill-thread > trough > progress {
     border-radius: 999px;
     margin: 0;
 }
+/* "Read this one instead", up only while the reading that is sounding and the
+   chapter on screen have parted company. A capsule like everything else here,
+   and tighter on the left than on the right because the triangle carries its
+   own air inside the icon box while the reference ends at its last glyph. */
+button.audio-pill-switch {
+    min-height: 32px;
+    padding: 0 10px 0 6px;
+    border-radius: 9999px;
+    font-size: 12.5px;
+    font-feature-settings: "tnum" 1;
+}
+/* Adwaita sets a button's label bold, which put the chapter on offer in a
+   heavier hand than the chapter being read — the offer out-shouting the
+   subject. The two references are the same kind of thing and are set the same
+   way; only the ink tells them apart. The weight has to be lifted off the
+   label node itself — a `font-weight` on the button loses to the rule that
+   sets it. */
+button.audio-pill-switch label {
+    font-weight: normal;
+}
+/* The triangle sits with the text rather than as a second mark: an
+   Adw.ButtonContent spaces its icon 6px off its label, which at this size
+   reads as two things sharing a capsule rather than one control.
+
+   Descendant selectors, not child chains: the content is
+   `button > buttoncontent > box > image|label`, and the box in the middle is
+   libadwaita's own business — `> buttoncontent > label` matched nothing and
+   failed silently, the same way `button.audio-pill-rate` did above. */
+button.audio-pill-switch image {
+    -gtk-icon-size: 14px;
+    margin-right: -2px;
+}
 /* Speed: named by its value, because no glyph says "one and a quarter
    times". Sized with the pill's other actions; the ink comes from the paper
    like everything else on it.

@@ -13,8 +13,10 @@ hand.
 import pytest
 from gi.repository import GLib
 
+import bible_audio
 import devotional_audio
 import motion
+import pane
 import settings
 import tasks
 from pane import BiblePane
@@ -52,6 +54,7 @@ class FakePill:
         self.fraction = 0.0
         self.reference = ''
         self.length = ''
+        self.switch = ''
         self.visible = False
         self.can_seek = False
         self.rate = 1.0
@@ -65,6 +68,9 @@ class FakePill:
 
     def set_reading(self, reference, length=''):
         self.reference, self.length = reference, length
+
+    def set_switch(self, reference):
+        self.switch = reference
 
     def set_can_seek(self, can_seek):
         self.can_seek = can_seek
@@ -116,8 +122,10 @@ class FakePlayer:
         self.playable = playable
         self.seeks = []
         self.rate = 1.0
+        self.played = []
 
-    def play(self, _path):
+    def play(self, path):
+        self.played.append(path)
         self.playing = self.playable
         return self.playable
 
@@ -195,6 +203,10 @@ class Reading:
     _start_reading_audio = BiblePane._start_reading_audio
     _stop_reading_audio = BiblePane._stop_reading_audio
     _on_reading_tick = BiblePane._on_reading_tick
+    _reading_is_live = BiblePane._reading_is_live
+    _restate_pill_reading = BiblePane._restate_pill_reading
+    _live_reference = BiblePane._live_reference
+    _on_reading_switch = BiblePane._on_reading_switch
 
     def __init__(self, cached=None, player=None):
         self._pill = FakePill()
@@ -206,6 +218,8 @@ class Reading:
         self._reading_reference = 'John 3'
         self._reading_length = ''
         self._reading_key = 'reading-audio:test'
+        self._sounding = None
+        self._pending = None
         self._cached = cached
         self.toasts = []
         self._on_toast = self.toasts.append
@@ -605,11 +619,302 @@ def test_back_fifteen_only_when_there_is_a_player(monkeypatch):
     assert player.seeks == [-15]
 
 
+# ── Paging on while a reading sounds ─────────────────────────────────────────
+# Andres's ruling, 2026-07-26: a reading plays on when the reader navigates
+# away — on the condition that the pause and the stop stay reachable. That
+# condition is the whole reason the pill may not be put away below.
+
+class Paging(Reading):
+    """`Reading`, plus what re-offering a chapter needs. The pane's sync is
+    what used to stop the reading, so it is the thing under test here."""
+
+    _sync_reading_audio = BiblePane._sync_reading_audio
+    _offer_reading_audio = BiblePane._offer_reading_audio
+    _dismiss_pill_if_idle = BiblePane._dismiss_pill_if_idle
+
+    class Item:
+        """The toolbar's headphones and the box holding them: this test cares
+        only whether they are offered, and what they are called."""
+
+        def __init__(self):
+            self.visible, self.tooltip = False, ''
+
+        def set_visible(self, visible):
+            self.visible = visible
+
+        def set_tooltip_text(self, text):
+            self.tooltip = text
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._reading_audio = self.Item()
+        self._reading_play_btn = self.Item()
+        self._module = 'BSB'
+        self._book, self._chapter = 'John', 3
+        self.covered = True
+
+    def _is_verse_navigable(self):
+        return True
+
+
+def _paging(monkeypatch, **kwargs):
+    """A pane whose chapter can be changed, with the two module-level calls
+    `_sync_reading_audio` makes standing in for the real address book."""
+    c = Paging(**kwargs)
+    monkeypatch.setattr(pane, 'set_accessible_label', lambda *a: None)
+    monkeypatch.setattr(bible_audio, 'covers_module', lambda _m: c.covered)
+    monkeypatch.setattr(
+        bible_audio, 'chapter_url',
+        lambda book, chapter: f'https://example.invalid/{book}_{chapter}.mp3')
+    return c
+
+
+def _listening(monkeypatch, **kwargs):
+    """A pane with the pill up and John 3 sounding from the cache."""
+    c = _paging(monkeypatch, cached='/tmp/John_003.mp3', **kwargs)
+    c._sync_reading_audio()
+    c._on_reading_listen(None)
+    c._on_reading_play()
+    return c
+
+
+def test_paging_on_leaves_the_reading_sounding(monkeypatch):
+    """The contradiction this closes: the pill names what is sounding so the
+    reader can page on and still know what they are hearing, and paging on
+    used to be exactly what stopped it."""
+    _runner(monkeypatch)
+    _settings(monkeypatch)
+    player = FakePlayer()
+    c = _listening(monkeypatch, player=player)
+    assert player.playing
+    c._chapter = 4                          # the reader pages on
+    c._sync_reading_audio()
+    assert player.playing
+    assert c._pill.state == 'playing'
+
+
+def test_paging_on_cannot_put_the_pill_away(monkeypatch):
+    """His condition on the ruling. The pill holds the only pause and the only
+    stop, so a chapter with nothing to listen to may withdraw the toolbar's
+    headphones but not the controls of a reading already under way."""
+    _runner(monkeypatch)
+    _settings(monkeypatch)
+    player = FakePlayer()
+    c = _listening(monkeypatch, player=player)
+    c.covered = False                       # a translation with no reading
+    c._book = 'John'                        # and not a psalm either
+    c._sync_reading_audio()
+    assert c._pill.visible                  # the stop is still reachable
+    assert player.playing
+    assert not c._reading_audio.visible     # but nothing is offered here
+
+
+def test_the_same_chapter_puts_the_pill_away_when_nothing_sounds(monkeypatch):
+    """The other half of that rule: with nothing under way there is nothing to
+    keep the pill up for."""
+    _runner(monkeypatch)
+    _settings(monkeypatch)
+    c = _paging(monkeypatch)
+    c._on_reading_listen(None)
+    c.covered = False
+    c._sync_reading_audio()
+    assert not c._pill.visible
+
+
+def test_the_pill_keeps_naming_what_is_sounding(monkeypatch):
+    """Not the chapter on screen. The two part company the moment the reader
+    pages on, and the sounding one wins — it is what the controls act on."""
+    _runner(monkeypatch)
+    _settings(monkeypatch)
+    c = _listening(monkeypatch, player=FakePlayer())
+    c._chapter = 4
+    c._sync_reading_audio()
+    assert c._reading_reference == 'John 4'         # the offer moved
+    assert c._pill.reference == 'John 3'            # the reading did not
+
+
+def test_resuming_after_paging_on_resumes_what_was_sounding(monkeypatch):
+    """Pause, page on, press play: that button has been showing John 3 all
+    along, so it resumes John 3. Starting the chapter now on screen would be
+    the pill doing something other than what it says, and would lose the
+    reader's place in the reading they paused."""
+    _runner(monkeypatch)
+    _settings(monkeypatch)
+    player = FakePlayer()
+    c = _listening(monkeypatch, player=player)
+    c._on_reading_play()                            # pause
+    assert not player.playing
+    c._chapter = 4
+    c._cached = '/tmp/John_004.mp3'
+    c._sync_reading_audio()
+    c._on_reading_play()                            # resume
+    assert player.playing
+    assert player.played[-1] == '/tmp/John_003.mp3'
+    assert c._pill.reference == 'John 3'
+
+
+def test_a_fetch_landing_after_paging_on_names_what_was_asked_for(monkeypatch):
+    """A chapter is six megabytes and can be twenty, so the reader may well
+    have paged on before it arrives. What plays is what they pressed play on,
+    and the pill has to say so."""
+    runner = _runner(monkeypatch)
+    _settings(monkeypatch)
+    c = _paging(monkeypatch, player=FakePlayer())    # nothing cached
+    c._sync_reading_audio()
+    c._on_reading_listen(None)
+    c._on_reading_play()
+    c._chapter = 4
+    c._sync_reading_audio()
+    runner.apply('/tmp/John_003.mp3')
+    assert c._pill.reference == 'John 3'
+    assert c._sounding[0] == '/tmp/John_003.mp3'
+
+
+# ── Reading this one instead ─────────────────────────────────────────────────
+# The affordance that paging on made necessary: with John 3 sounding and John 4
+# on screen there was no way to start John 4 except closing the pill, which
+# stops John 3. Every player puts that control on the item rather than on the
+# transport; this app has no list of items, so it goes on the pill, named after
+# the chapter it would start, and only while there are two references to tell
+# apart.
+
+def test_no_switch_while_the_reader_is_where_the_reading_is(monkeypatch):
+    """The ordinary case. Nothing has parted company, so a control offering to
+    start what is already sounding would be a control that does nothing."""
+    _runner(monkeypatch)
+    _settings(monkeypatch)
+    c = _listening(monkeypatch, player=FakePlayer())
+    assert c._pill.switch == ''
+
+
+def test_paging_on_offers_the_chapter_on_screen(monkeypatch):
+    _runner(monkeypatch)
+    _settings(monkeypatch)
+    c = _listening(monkeypatch, player=FakePlayer())
+    c._chapter = 4
+    c._sync_reading_audio()
+    assert c._pill.reference == 'John 3'         # still in hand
+    assert c._pill.switch == 'John 4'            # and on offer
+
+
+def test_nothing_sounding_offers_nothing(monkeypatch):
+    """The pill is up, the reader is paging: with nothing in hand the play
+    button already starts the chapter on screen, and a second control saying
+    the same thing is one too many."""
+    _runner(monkeypatch)
+    _settings(monkeypatch)
+    c = _paging(monkeypatch)
+    c._on_reading_listen(None)
+    c._chapter = 4
+    c._sync_reading_audio()
+    assert c._pill.switch == ''
+
+
+def test_a_chapter_with_no_reading_is_not_offered(monkeypatch):
+    """A translation the reading does not cover, or a book it has no file for.
+    The pill stays up holding the stop, but there is nothing here to start."""
+    _runner(monkeypatch)
+    _settings(monkeypatch)
+    c = _listening(monkeypatch, player=FakePlayer())
+    c.covered = False
+    c._chapter = 4
+    c._sync_reading_audio()
+    assert c._pill.visible
+    assert c._pill.switch == ''
+
+
+def _reusable(monkeypatch, player):
+    """A switch stops the reading in hand, and a stopped player is dropped —
+    so starting the next chapter builds one. Hand it the same stand-in instead
+    of a real pipeline."""
+    monkeypatch.setattr(devotional_audio, 'Player', lambda: player)
+    return player
+
+
+def test_the_switch_starts_the_chapter_on_screen(monkeypatch):
+    _runner(monkeypatch)
+    _settings(monkeypatch)
+    player = _reusable(monkeypatch, FakePlayer())
+    c = _listening(monkeypatch, player=player)
+    c._chapter = 4
+    c._cached = '/tmp/John_004.mp3'
+    c._sync_reading_audio()
+    c._on_reading_switch()
+    assert player.played[-1] == '/tmp/John_004.mp3'
+    assert player.playing
+    assert c._pill.reference == 'John 4'
+    assert c._pill.switch == ''                  # the two are one again
+
+
+def test_the_switch_abandons_a_fetch_it_replaces(monkeypatch):
+    """Pressed while the chapter in hand is still on its way: that fetch is
+    six megabytes of a reading the reader has just said they do not want."""
+    runner = _runner(monkeypatch)
+    _settings(monkeypatch)
+    c = _paging(monkeypatch,                         # nothing cached
+                player=_reusable(monkeypatch, FakePlayer()))
+    c._sync_reading_audio()
+    c._on_reading_listen(None)
+    c._on_reading_play()
+    c._chapter = 4
+    c._sync_reading_audio()
+    assert c._pill.switch == 'John 4'
+    c._on_reading_switch()
+    assert c._reading_key in runner.cancelled
+    assert c._pill.state == 'fetching'               # now for John 4
+    runner.apply('/tmp/John_004.mp3')
+    assert c._sounding == ('/tmp/John_004.mp3', 'John 4')
+
+
+def test_the_pill_names_the_chapter_being_fetched(monkeypatch):
+    """Not the one that came on screen while the reader waited. The controls
+    beside the name belong to the fetch, so the name has to as well."""
+    _runner(monkeypatch)
+    _settings(monkeypatch)
+    c = _paging(monkeypatch, player=FakePlayer())
+    c._sync_reading_audio()
+    c._on_reading_listen(None)
+    c._on_reading_play()
+    c._chapter = 4
+    c._sync_reading_audio()
+    assert c._pill.reference == 'John 3'
+
+
+def test_a_stopped_fetch_leaves_the_chapter_on_screen_named(monkeypatch):
+    """Once the fetch is abandoned the pill governs nothing, so it goes back
+    to naming what the reader is looking at — with nothing on offer."""
+    _runner(monkeypatch)
+    _settings(monkeypatch)
+    c = _paging(monkeypatch, player=FakePlayer())
+    c._sync_reading_audio()
+    c._on_reading_listen(None)
+    c._on_reading_play()
+    c._chapter = 4
+    c._sync_reading_audio()
+    c._on_reading_play()                             # stop the fetch
+    assert c._pill.reference == 'John 4'
+    assert c._pill.switch == ''
+
+
+def test_turning_spoken_readings_off_silences_a_reading(monkeypatch):
+    """Paging on is not a request for silence; this is. It also puts the pill
+    away, which it may only do because it has stopped the reading first."""
+    _runner(monkeypatch)
+    store = _settings(monkeypatch)
+    player = FakePlayer()
+    c = _listening(monkeypatch, player=player)
+    store['show_audio'] = False
+    c._sync_reading_audio()
+    assert not player.playing
+    assert c._sounding is None
+    assert not c._pill.visible
+
+
 # ── Speed ────────────────────────────────────────────────────────────────────
 
-def _settings(monkeypatch, rate=1.0):
+def _settings(monkeypatch, rate=1.0, show_audio=True):
     """Never the real settings file — the stored rate is faked in memory."""
-    store = {'reading_rate': rate}
+    store = {'reading_rate': rate, 'show_audio': show_audio}
     monkeypatch.setattr(settings, 'get', lambda key: store.get(key))
     monkeypatch.setattr(settings, 'put',
                         lambda key, value: store.__setitem__(key, value))
@@ -662,7 +967,7 @@ def test_the_offered_speeds_and_how_they_are_written():
 # which answers True either way. A display either exists or it does not, and
 # Gdk.Display.get_default() is the one call that reports which.
 
-def _real_pill():
+def _real_pill(on_switch=None):
     import gi
     gi.require_version('Adw', '1')
     from gi.repository import Adw, Gdk
@@ -672,7 +977,8 @@ def _real_pill():
     Adw.init()
     from audio_pill import AudioPill
     return AudioPill(on_play_pause=lambda: None, on_back=lambda: None,
-                     on_close=lambda: None, on_rate=lambda _r: None)
+                     on_close=lambda: None, on_rate=lambda _r: None,
+                     on_switch=on_switch)
 
 
 def test_pausing_does_not_wipe_the_position_off_the_thread():
@@ -703,6 +1009,35 @@ def test_reopening_while_it_is_still_leaving_is_not_swallowed():
     pill.dismiss()
     pill.present()                          # pressed before the fade finished
     assert pill.is_shown()
+
+
+def test_the_switch_is_absent_until_there_are_two_readings_to_tell_apart():
+    """The sixth slot exists in one state only, and the pill starts outside
+    it: five controls, and a name for what is sounding."""
+    pill = _real_pill(on_switch=lambda: None)
+    assert not pill._switch_btn.get_visible()
+    pill.set_switch('John 4')
+    assert pill._switch_btn.get_visible()
+    assert pill._switch_content.get_label() == 'John 4'
+    pill.set_switch('')                     # the reader comes back to it
+    assert not pill._switch_btn.get_visible()
+
+
+def test_the_switch_says_which_chapter_it_would_start():
+    """To a screen reader as well as in the tooltip: "John 4" alone is a
+    label that could as easily mean the one being read."""
+    pill = _real_pill(on_switch=lambda: None)
+    pill.set_switch('John 4')
+    assert 'John 4' in pill._switch_btn.get_tooltip_text()
+    assert 'instead' in pill._switch_btn.get_tooltip_text()
+
+
+def test_a_pill_with_nowhere_to_switch_never_shows_the_control():
+    """The pane always wires it, but the pill is built to stand without one —
+    a control whose press goes nowhere must not be offered."""
+    pill = _real_pill()
+    pill.set_switch('John 4')
+    assert not pill._switch_btn.get_visible()
 
 
 def test_an_edited_setting_cannot_ask_for_an_absurd_speed():

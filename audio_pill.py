@@ -22,6 +22,15 @@ forward skip for the same reason, no volume, no chapter list. The pane *is*
 the chapter list. Volume and remote control belong on the desktop's media bus
 rather than on a reading surface.
 
+A sixth slot exists in one state only: while the reading that is sounding and
+the chapter on screen have parted company, a switch naming the chapter on
+screen appears between the two. It is the one control here that does not act
+on what is sounding — every other player puts that control on the item rather
+than on the transport (tapping a podcast episode replaces what is playing;
+the now-playing bar never retargets itself), and this app has no list of
+items to put it on. So it comes to the pill, named after its target, and only
+while there is a second reading to name.
+
 Speed is here, and it is not a media-player luxury: the narrator reads near
 150 words a minute while silent reading runs at 200-300, so a reader
 following the text at a fixed 1x is being dragged. It is the control that
@@ -101,7 +110,8 @@ class AudioPill(Gtk.Box):
     """The floating player. Owns its own look and its own waiting; the pane
     tells it what is happening and reads nothing back."""
 
-    def __init__(self, on_play_pause, on_back, on_close, on_rate=None):
+    def __init__(self, on_play_pause, on_back, on_close, on_rate=None,
+                 on_switch=None):
         super().__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         self.add_css_class('audio-pill')
         self.set_halign(Gtk.Align.CENTER)
@@ -166,9 +176,31 @@ class AudioPill(Gtk.Box):
         now.append(line)
         now.append(self._thread)
 
+        # "Read this one instead", named after the chapter it would start.
+        # A play triangle and a reference, which is how the item's own control
+        # is written everywhere it exists; a bare glyph here would leave the
+        # reader to guess which of the two chapters it meant, and a bare
+        # reference beside the sounding one would read as a second statement
+        # rather than as a control.
+        self._on_switch = on_switch
+        self._switch_content = Adw.ButtonContent(
+            icon_name='media-playback-start-symbolic')
+        # A second reference is 60px on the pill, and 125px for "1 Chronicles
+        # 13". The pill is an overlay child, so it never widens the pane — it
+        # would simply run past its edge in a narrow split. Let the reference
+        # give way instead; the triangle beside it still says what it does.
+        self._switch_content.set_can_shrink(True)
+        self._switch_btn = Gtk.Button(child=self._switch_content)
+        self._switch_btn.set_valign(Gtk.Align.CENTER)
+        self._switch_btn.add_css_class('flat')
+        self._switch_btn.add_css_class('audio-pill-switch')
+        self._switch_btn.set_visible(False)
+        self._switch_btn.connect('clicked', lambda _b: self._on_switch())
+
         self.append(self._back_btn)
         self.append(self._play_btn)
         self.append(now)
+        self.append(self._switch_btn)
         self.append(self._rate_btn)
         self.append(self._close_btn)
 
@@ -294,8 +326,12 @@ class AudioPill(Gtk.Box):
             f' color: alpha({ink}, 0.86); }}'
             f'.audio-pill-ref {{ color: alpha({ink}, 0.80); }}'
             f'.audio-pill-length {{ color: alpha({ink}, 0.80); }}'
-            f'button.audio-pill-action:hover {{'
+            f'button.audio-pill-action:hover,'
+            f'button.audio-pill-switch:hover {{'
             f' background-color: alpha({ink}, 0.07); }}'
+            # A shade back from the reference it stands beside: it is an offer
+            # the reader may take, and the reading in hand is the subject.
+            f'button.audio-pill-switch {{ color: alpha({ink}, 0.72); }}'
             f'progressbar.audio-pill-thread > trough {{'
             f' background-color: alpha({ink}, 0.11); }}'
             f'progressbar.audio-pill-thread > trough > progress {{'
@@ -340,6 +376,23 @@ class AudioPill(Gtk.Box):
         self._ref_lbl.set_text(reference or '')
         self._len_lbl.set_text(length or '')
         self._len_lbl.set_visible(bool(length))
+
+    def set_switch(self, reference):
+        """Offer to start `reference` instead, or withdraw the offer.
+
+        The pane decides when this applies — it is the only thing that knows
+        what is on screen — and it passes '' for the ordinary case, where the
+        reader is looking at the chapter they are listening to and there is
+        nothing to switch to.
+        """
+        if not reference or self._on_switch is None:
+            self._switch_btn.set_visible(False)
+            return
+        self._switch_content.set_label(reference)
+        label = _('Read {reference} aloud instead').format(reference=reference)
+        self._switch_btn.set_tooltip_text(label)
+        set_accessible_label(self._switch_btn, label)
+        self._switch_btn.set_visible(True)
 
     def set_state(self, state):
         """One of 'idle', 'fetching', 'playing'.
