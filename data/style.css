@@ -1729,6 +1729,19 @@ progressbar.audio-pill-thread > trough,
 progressbar.audio-pill-thread > trough > progress {
     min-height: 3px;
 }
+/* An override, not a preference: a GtkProgressBar asks for 150px of its own
+   accord, which is wider than any reference the line above it holds, so the
+   thread overran its own label by 56px and the column stopped hugging
+   anything. Let it shrink and .audio-pill-now governs.
+
+   The trough and the bar only — never `progress`. That node IS the fill, and
+   a min-width there is not a floor but its width: give it 24px and the thread
+   reads 24px at every fraction, including 1.0. It must be free to be exactly
+   as wide as the fraction it is showing. */
+progressbar.audio-pill-thread,
+progressbar.audio-pill-thread > trough {
+    min-width: 24px;
+}
 progressbar.audio-pill-thread > trough,
 progressbar.audio-pill-thread > trough > progress {
     border-radius: 999px;
@@ -1736,8 +1749,14 @@ progressbar.audio-pill-thread > trough > progress {
 }
 /* Speed: named by its value, because no glyph says "one and a quarter
    times". Sized with the pill's other actions; the ink comes from the paper
-   like everything else on it. */
-button.audio-pill-rate {
+   like everything else on it.
+
+   The selector is the inner button, not the class: a GtkMenuButton is
+   `menubutton > button`, so `button.audio-pill-rate` matches nothing and the
+   speed silently kept Adwaita's own menubutton — square corners, no height
+   cap, the theme's grey when checked, and a label a size larger than the
+   reference beside it. Everything else here writes it this way. */
+menubutton.audio-pill-rate > button {
     min-width: 40px;
     min-height: 32px;
     padding: 0 6px;
@@ -1745,12 +1764,35 @@ button.audio-pill-rate {
     font-size: 12.5px;
     font-feature-settings: "tnum" 1;
 }
+/* A capsule sheet of capsule cells, over a capsule pill: the speeds are the
+   pill's own row of choices, not a sheet of some other stock.
+
+   18px, and NOT the 9999px used everywhere else in this file: GTK reserves a
+   popover's declared corner radius inside the surface it asks GDK to present
+   (18px asks for 118px of height, 100px asks for 280px), so 9999px asks for a
+   surface no display can give and the popover is popped straight back down —
+   it emits `show`, then `closed`, and the speed simply never opens. This is
+   half the contents box, which is the 28px cell plus the 4px above and below
+   it named here: a capsule for as long as those three agree. */
 .audio-rate-popover > contents {
-    padding: 6px;
+    padding: 4px 10px;
+    border-radius: 18px;
 }
+/* Not `linked`: linked squares off every interior corner, so the chosen speed
+   showed as a hard grey rectangle inside a rounded sheet. The floor holds all
+   six cells at one width — sized to content they ran 28px for "1" and 46px
+   for "1.25", which left the commonest speeds the smallest to hit. */
 button.audio-rate-choice {
+    min-width: 30px;
     min-height: 28px;
-    padding: 0 8px;
+    padding: 0 4px;
+    border-radius: 9999px;
     font-size: 12.5px;
     font-feature-settings: "tnum" 1;
+}
+/* The close is a stock 16px glyph with far more air in its box than the ring
+   and the triangle beside it, and it read as the lightest thing on the pill.
+   One step up puts the three marks at one optical weight. */
+button.audio-pill-close {
+    -gtk-icon-size: 18px;
 }

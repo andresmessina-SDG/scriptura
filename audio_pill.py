@@ -123,6 +123,7 @@ class AudioPill(Gtk.Box):
             'media-playback-start-symbolic', _('Play'), on_play_pause)
         self._close_btn = self._button(
             'window-close-symbolic', _('Close the player'), on_close)
+        self._close_btn.add_css_class('audio-pill-close')
 
         # Speed, named by its own value rather than by an icon: no glyph says
         # "one and a quarter times", and the number is the shortest possible
@@ -133,6 +134,7 @@ class AudioPill(Gtk.Box):
         self._rate_lbl = Gtk.Label(label=format_rate(1.0))
         self._rate_btn = Gtk.MenuButton()
         self._rate_btn.set_child(self._rate_lbl)
+        self._rate_btn.set_valign(Gtk.Align.CENTER)   # as the actions, above
         self._rate_btn.add_css_class('flat')
         self._rate_btn.add_css_class('audio-pill-rate')
         self._rate_btn.set_tooltip_text(_('Reading speed'))
@@ -155,7 +157,10 @@ class AudioPill(Gtk.Box):
 
         self._thread = Gtk.ProgressBar()
         self._thread.add_css_class('audio-pill-thread')
-        now = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        # Tight: the thread belongs to the line above it, and a two-row column
+        # centred in the pill hangs its text above the centre line every glyph
+        # beside it sits on — 6px of gap put the reference 4.5px high.
+        now = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         now.add_css_class('audio-pill-now')
         now.set_valign(Gtk.Align.CENTER)
         now.append(line)
@@ -177,13 +182,14 @@ class AudioPill(Gtk.Box):
                                   hide=lambda: None)
 
     def _build_rate_popover(self):
-        """A linked row of the speeds, one pressed.
+        """A row of the speeds, one pressed.
 
         Toggles in a group rather than a menu: they carry radio semantics to
         AT for free, and six values read faster side by side than stacked.
+        Spaced rather than linked — the group is what makes them one choice,
+        and linking only cost the pressed one its corners.
         """
-        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        row.add_css_class('linked')
+        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
         self._rate_choices = {}
         group = None
         for rate in RATES:
@@ -245,6 +251,12 @@ class AudioPill(Gtk.Box):
 
     def _button(self, icon, label, handler):
         btn = Gtk.Button(icon_name=icon)
+        # Centred, not filled: a button left to stretch takes the pill's whole
+        # 48px height, and a 32px-wide background with a capsule radius then
+        # paints as a tall oval touching both edges — the outermost one cut by
+        # the pill's own corner. Centring is what makes the 32px disc the CSS
+        # asks for, with the pill's rim clear of it.
+        btn.set_valign(Gtk.Align.CENTER)
         btn.add_css_class('flat')
         btn.add_css_class('audio-pill-action')
         btn.set_tooltip_text(label)
@@ -288,13 +300,16 @@ class AudioPill(Gtk.Box):
             f' background-color: alpha({ink}, 0.11); }}'
             f'progressbar.audio-pill-thread > trough > progress {{'
             f' background-color: alpha({ink}, 0.38); }}'
-            f'button.audio-pill-rate {{ color: alpha({ink}, 0.86); }}'
-            f'button.audio-pill-rate:hover {{'
+            # `menubutton > button`, not `button.audio-pill-rate`: the class
+            # sits on the GtkMenuButton, whose node is not a button at all.
+            f'menubutton.audio-pill-rate > button {{'
+            f' color: alpha({ink}, 0.86); }}'
+            f'menubutton.audio-pill-rate > button:hover {{'
             f' background-color: alpha({ink}, 0.07); }}'
             # While its popover is open the button is `checked`, and Adwaita
             # fills a checked button with a theme colour — which put the one
             # surface on the pill that had not come from the paper.
-            f'button.audio-pill-rate:checked {{'
+            f'menubutton.audio-pill-rate > button:checked {{'
             f' background-color: alpha({ink}, 0.10); }}'
             f'.audio-rate-popover > contents {{'
             f' background-color: mix({paper}, {ink}, 0.07);'
@@ -304,11 +319,15 @@ class AudioPill(Gtk.Box):
             f'.audio-rate-popover > arrow {{'
             f' background-color: mix({paper}, {ink}, 0.07);'
             f' border: 1px solid alpha({ink}, 0.11); }}'
+            # No rim: the cells sat in a linked row, where the border was the
+            # divider between them. Spaced apart, a rim on each one turns the
+            # row into six outlined boxes and the chosen speed's fill stops
+            # being the only mark that means anything.
             f'button.audio-rate-choice {{'
             f' color: alpha({ink}, 0.86);'
             f' background-image: none;'
             f' background-color: transparent;'
-            f' border-color: alpha({ink}, 0.11); }}'
+            f' border-color: transparent; }}'
             f'button.audio-rate-choice:hover {{'
             f' background-color: alpha({ink}, 0.07); }}'
             f'button.audio-rate-choice:checked {{'
