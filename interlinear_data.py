@@ -81,6 +81,22 @@ class Word(NamedTuple):
     lemma_gloss: str
 
 
+class VariantWord(NamedTuple):
+    """A word as the apparatus sees it: what it says, and who attests it.
+
+    `editions` is TAGNT's own list, `+`-joined — e.g.
+    `NA28+NA27+Tyn+SBL+WH+Treg+TR+Byz` for a word every edition carries, or
+    `Treg+TR+Byz` for one the critical text omits. `in_stream` is whether the
+    reading text renders it.
+    """
+    verse: int
+    pos: int
+    surface: str
+    gloss: str
+    editions: str
+    in_stream: bool
+
+
 class ParsedRow(NamedTuple):
     book: str
     chapter: int
@@ -481,6 +497,30 @@ def load_chapter(name: str, book: str, chapter: int) -> list[Word]:
     finally:
         conn.close()
     return [Word(*r) for r in rows]
+
+
+def chapter_variants(name: str, book: str, chapter: int) -> list[VariantWord]:
+    """Every word of a chapter with the editions that carry it — including
+    the ones the reading stream leaves out.
+
+    `load_chapter` answers with the rendered stream only (`in_stream=1`),
+    which is the right answer for an interlinear: it is the text being read.
+    A textual apparatus is the opposite question — it wants precisely the
+    words the streams disagree about, and half of those are the ones the
+    critical text omits. So this selects the lot, and lets the caller judge.
+    """
+    if not is_installed(name):
+        return []
+    conn = sqlite3.connect(_DB_FILES[name])
+    try:
+        _migrate(conn, name)
+        rows = conn.execute(
+            'SELECT verse, pos, surface, gloss, editions, in_stream '
+            'FROM words WHERE book=? AND chapter=? ORDER BY verse, pos',
+            (book, chapter)).fetchall()
+    finally:
+        conn.close()
+    return [VariantWord(v, p, s, g, e, bool(i)) for v, p, s, g, e, i in rows]
 
 
 def chapter_count(name: str, book: str) -> int:
