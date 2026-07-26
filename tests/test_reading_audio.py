@@ -10,6 +10,7 @@ No display and no network: each state machine is borrowed off its real class
 onto stand-in widgets, and the fetch is the task runner's callbacks called by
 hand.
 """
+import pytest
 from gi.repository import GLib
 
 import devotional_audio
@@ -654,13 +655,20 @@ def test_the_offered_speeds_and_how_they_are_written():
 
 
 # ── The pill itself ──────────────────────────────────────────────────────────
-# Real widgets, no display: constructing them needs Adw initialised, which is
-# all these two regressions require.
+# Real widgets, and these do need a display — the rest of this file does not.
+# `Adw.init()` alone is not enough and does not say so: it returns perfectly
+# well with no display, and then building the pill's own buttons segfaults
+# inside GTK on the Gtk.Box constructor. Nor does Gtk.init_check() catch it,
+# which answers True either way. A display either exists or it does not, and
+# Gdk.Display.get_default() is the one call that reports which.
 
 def _real_pill():
     import gi
     gi.require_version('Adw', '1')
-    from gi.repository import Adw
+    from gi.repository import Adw, Gdk
+    if Gdk.Display.get_default() is None:
+        pytest.skip('needs a display: building real GTK widgets without one '
+                    'segfaults rather than failing')
     Adw.init()
     from audio_pill import AudioPill
     return AudioPill(on_play_pause=lambda: None, on_back=lambda: None,
