@@ -46,6 +46,7 @@ py_sources = files(
   'devotional_audio.py',
   'ebible_bridge.py',
   'empty_state.py',
+  'export_dialog.py',
   'genbook_reader.py',
   'gtk_utils.py',
   'i18n.py',

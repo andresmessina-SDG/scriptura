@@ -11,6 +11,7 @@ church_year.py
 content.py
 crossref_panel.py
 devotional.py
+export_dialog.py
 genbook_reader.py
 imagery_bridge.py
 imagery_reader.py

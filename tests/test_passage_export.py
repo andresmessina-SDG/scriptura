@@ -4,6 +4,8 @@ The citation rules are SBTS/Turabian, from the seminary's own short-form
 guide, and they are the reason this file exists: a reference that a grader
 would mark wrong is a defect, and none of it is visible in the app.
 """
+
+import pytest
 import annotations as annotations_store
 import passage_export
 import sword_bridge
@@ -322,3 +324,70 @@ def test_a_module_with_no_headings_has_no_units_to_invent(monkeypatch):
     is the honest answer; a guessed boundary would not be."""
     _sword(monkeypatch, headings={})
     assert pericope_verses('KJV', 'John', 3, 16) == [15, 16, 17, 18, 19]
+
+
+# ── The export sheet (real widgets; needs a display) ─────────────────────────
+# Same rule as the listening pill's tests: building real GTK widgets with no
+# display segfaults inside GTK rather than failing, and Gdk.Display.get_default
+# is the only thing that reports which you have.
+
+class StubPane:
+    _module, _book, _chapter = 'KJVA', 'John', 3
+    _on_toast = None
+
+    def get_root(self):
+        return None
+
+
+def _sheet(monkeypatch, verses=(16, 17, 18), headings=None):
+    import gi
+    gi.require_version('Adw', '1')
+    from gi.repository import Adw, Gdk
+    if Gdk.Display.get_default() is None:
+        pytest.skip('needs a display: building real GTK widgets without one '
+                    'segfaults rather than failing')
+    Adw.init()
+    import catena_bridge
+    import export_dialog
+    monkeypatch.setattr(sword_bridge, 'chapter_headings',
+                        lambda *_a: dict(headings or {}))
+    monkeypatch.setattr(passage_export, 'interlinear_module_for',
+                        lambda _b: 'InterlinearGreek')
+    monkeypatch.setattr(catena_bridge, 'is_installed', lambda: True)
+    return export_dialog.ExportSheet(StubPane(), list(verses))
+
+
+def test_the_sheet_offers_a_sense_unit_only_where_one_is_marked(monkeypatch):
+    """A module with no section headings would answer the whole chapter, and
+    two rows that do the same thing is not a choice."""
+    assert _sheet(monkeypatch)._scopes == ['selection', 'chapter']
+    assert _sheet(monkeypatch, headings={16: ['A heading']})._scopes == [
+        'selection', 'unit', 'chapter']
+
+
+def test_a_layer_with_nothing_behind_it_is_not_shown(monkeypatch):
+    """An inert switch is a worse answer than silence."""
+    import catena_bridge
+    sheet = _sheet(monkeypatch)
+    assert sorted(sheet._layer_rows) == ['catena', 'interlinear', 'variants']
+    monkeypatch.setattr(passage_export, 'interlinear_module_for',
+                        lambda _b: None)
+    monkeypatch.setattr(catena_bridge, 'is_installed', lambda: False)
+    import export_dialog
+    assert export_dialog.ExportSheet(StubPane(), [16])._layer_rows == {}
+
+
+def test_the_suggested_filename_keeps_a_colon_out_of_it(monkeypatch):
+    """Legal here, a nuisance on the next drive the file is copied to."""
+    sheet = _sheet(monkeypatch)
+    assert sheet._suggested_name() == 'John 3.16-18.md'
+    sheet._scope_row.set_selected(len(sheet._scopes) - 1)   # whole chapter
+    assert sheet._chosen_verses() is None
+    assert sheet._suggested_name() == 'John 3.md'
+
+
+def test_plain_text_changes_the_extension(monkeypatch):
+    sheet = _sheet(monkeypatch)
+    sheet._format_row.set_selected(1)
+    assert not sheet._markdown()
+    assert sheet._suggested_name().endswith('.txt')
