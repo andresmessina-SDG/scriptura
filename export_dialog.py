@@ -1,14 +1,16 @@
-"""The sheet that turns a passage into a document on disk.
+"""The sheets that take a passage out of the app — as a document, or as an
+image.
 
-Reached from the right-click study menu, beside Copy — which is the same act
-at a smaller size, and the reason this belongs there rather than in the header:
-the menu already has the selection in hand, and a selection is what an export
-is about.
+Both are reached from the right-click study menu, beside Copy, which is the
+same act at a smaller size: the menu already has the selection in hand, and a
+selection is what leaving the app is about. The composition lives elsewhere
+(`passage_export`, `verse_card`), which keeps those testable and keeps this
+file to the choosing and the saving.
 
-The composition lives in `passage_export`; this is only the choosing and the
-saving. The gather runs on the task runner because it reads SQLite and the
-SWORD modules, and because a chapter with the fathers' voices in it runs to a
-hundred thousand words — long enough that doing it on the UI thread would show.
+Both gathers run on the task runner: the document one reads SQLite and the
+SWORD modules and can reach a hundred thousand words when the fathers are in
+it, and the card one lays out and compresses a PNG. Either is long enough on
+the UI thread to show.
 """
 import gi
 gi.require_version('Gtk', '4.0')
@@ -18,6 +20,7 @@ from gi.repository import Adw, GLib, Gtk
 import catena_bridge
 import passage_export
 import sword_bridge
+import verse_card
 import tasks
 from i18n import _
 
@@ -175,6 +178,120 @@ class ExportSheet:
                              name=GLib.path_get_basename(path))),
                      on_error=lambda _e: self._report(
                          _('Could not write the file')))
+
+    def _report(self, message):
+        if self._pane._on_toast:
+            self._pane._on_toast(message)
+
+
+def share_as_image(pane, verses, popover):
+    """Open the card sheet for `verses`."""
+    popover.popdown()
+    CardSheet(pane, verses).present(pane.get_root())
+
+
+class CardSheet:
+    """Paper, shape, wordmark — and nothing else.
+
+    The look itself is not offered: there is one house card, and a gallery of
+    templates is how this feature cheapens itself. What a reader chooses here
+    is which of the app's own papers it is cast on and what shape it needs to
+    be for wherever it is going.
+    """
+
+    def __init__(self, pane, verses):
+        self._pane = pane
+        self._verses = list(verses)
+        self._dialog = Adw.Dialog()
+        self._dialog.set_title(_('Share as image'))
+        self._dialog.set_content_width(460)
+
+        view = Adw.ToolbarView()
+        header = Adw.HeaderBar()
+        save = Gtk.Button(label=_('Save…'))
+        save.add_css_class('suggested-action')
+        save.connect('clicked', lambda _b: self._choose_file())
+        header.pack_end(save)
+        view.add_top_bar(header)
+
+        page = Adw.PreferencesPage()
+        group = Adw.PreferencesGroup(title=_('Card'))
+        self._paper_row = Adw.ComboRow(
+            title=_('Paper'),
+            model=Gtk.StringList.new([_(name) for name, _hex
+                                      in verse_card.CARD_PAPERS]))
+        # Opens on the one nearest the reader's own, which for a dark reading
+        # paper is the warm default rather than a nearest — see nearest_paper.
+        appearance = self._pane.reading_appearance()
+        current = verse_card.nearest_paper(appearance.get('surface'))
+        for index, (_name, value) in enumerate(verse_card.CARD_PAPERS):
+            if value == current:
+                self._paper_row.set_selected(index)
+                break
+        group.add(self._paper_row)
+
+        self._shapes = list(verse_card.SHAPES)
+        self._shape_row = Adw.ComboRow(
+            title=_('Shape'),
+            model=Gtk.StringList.new([_('Square'), _('Portrait'), _('Wide')]))
+        group.add(self._shape_row)
+
+        self._mark_row = Adw.SwitchRow(title=_('Show the app’s name'),
+                                       active=False)
+        group.add(self._mark_row)
+        page.add(group)
+        view.set_content(page)
+        self._dialog.set_child(view)
+
+    def present(self, root):
+        self._dialog.present(root)
+
+    def _paper(self):
+        return verse_card.CARD_PAPERS[self._paper_row.get_selected()][1]
+
+    def _reference(self):
+        return passage_export.format_reference(
+            self._pane._book, self._pane._chapter, self._verses)
+
+    def _choose_file(self):
+        dialog = Gtk.FileDialog()
+        dialog.set_title(_('Share as image'))
+        stem = self._reference().replace(':', '.').replace(
+            passage_export.EN_DASH, '-')
+        dialog.set_initial_name(f'{stem}.png')
+        dialog.save(self._pane.get_root(), None, self._on_chosen)
+
+    def _on_chosen(self, dialog, result):
+        try:
+            gfile = dialog.save_finish(result)
+        except GLib.Error:
+            return
+        path = gfile.get_path() if gfile else None
+        if not path:
+            self._report(_('Please choose a location on this computer.'))
+            return
+        self._dialog.close()
+        pane, verses = self._pane, self._verses
+        module, book, chapter = pane._module, pane._book, pane._chapter
+        paper = self._paper()
+        shape = self._shapes[self._shape_row.get_selected()]
+        wordmark = self._mark_row.get_active()
+        reference = self._reference()
+
+        def work(_token):
+            from pane import auto_reading_ink
+            text = passage_export.verse_text(module, book, chapter, verses)
+            return verse_card.render(
+                path, text=text, reference=reference, translation=module,
+                paper=paper, ink=auto_reading_ink(paper), shape=shape,
+                wordmark=wordmark)
+
+        tasks.submit(key=f'verse-card:{id(pane)}', work=work,
+                     apply=lambda _p: self._report(
+                         _('Saved {name}').format(
+                             name=GLib.path_get_basename(path))),
+                     on_error=lambda _e: self._report(
+                         _('Could not write the image')))
 
     def _report(self, message):
         if self._pane._on_toast:

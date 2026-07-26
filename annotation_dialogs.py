@@ -176,7 +176,14 @@ def show_study_menu(pane, verses, x, y):
         lambda b: export_dialog.export_passage(pane, verses, popover))
     box.append(export_btn)
 
-    # 6. Compare translations (single verse only)
+    # 6. Share the verse as an image
+    card_btn = _menu_row('image-x-generic-symbolic', _('Share as image…'))
+    card_btn.connect(
+        'clicked',
+        lambda b: export_dialog.share_as_image(pane, verses, popover))
+    box.append(card_btn)
+
+    # 7. Compare translations (single verse only)
     if len(verses) == 1:
         comp_btn = _menu_row('view-dual-symbolic', _('Compare translations'))
         comp_btn.connect('clicked', lambda b: compare_translations(pane, verses[0], popover))

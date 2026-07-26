@@ -170,6 +170,20 @@ def _md(text: str, markdown: bool) -> str:
     return text.replace('\\', '\\\\').replace('<', '\\<').replace('>', '\\>')
 
 
+def verse_text(module: str, book: str, chapter: int,
+               verses: list[int] | None = None) -> str:
+    """The passage as one run of plain prose, verse numbers left out.
+
+    What a card is set in: a card is a quotation, and a quotation carries its
+    reference underneath rather than numerals through the middle of it.
+    """
+    wanted = set(verses) if verses else None
+    return ' '.join(
+        _plain(html)
+        for verse, html in sword_bridge.load_chapter(module, book, chapter)
+        if wanted is None or verse in wanted).strip()
+
+
 def chapter_verses(module: str, book: str, chapter: int) -> list[int]:
     """Every verse number the module renders for the chapter."""
     return [v for v, _text in sword_bridge.load_chapter(module, book, chapter)]

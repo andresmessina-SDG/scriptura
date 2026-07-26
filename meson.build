@@ -88,6 +88,7 @@ py_sources = files(
   'tasks.py',
   'today_page.py',
   'verse_cursor.py',
+  'verse_card.py',
   'welcome.py',
   'window.py',
 )
