@@ -91,6 +91,12 @@ _defaults: dict[str, Any] = {
     # them. On by default — the controls only ever appear where audio exists;
     # off withdraws them entirely for readers who want none.
     'show_audio':         True,
+    # How fast the spoken chapter is read, as a multiple of the narrator's own
+    # pace. Stored for the app rather than per chapter: a reader following the
+    # text has found the speed they read at, not the speed for John 3. Souer
+    # narrates near 150 words a minute and silent reading runs faster, so
+    # reading along at a fixed 1x means being dragged.
+    'reading_rate':       1.0,
     # Liturgical calendar for the Today page's church-year line: None (the
     # ecumenical default — silent), 'anglican', 'roman', or 'orthodox'
     # (see church_year.py for what each means).

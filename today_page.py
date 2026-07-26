@@ -23,6 +23,7 @@ from gi.repository import Gdk, Gtk, Adw, Pango
 
 import reading_plans
 from a11y import set_accessible_label
+from gtk_utils import DelayedPulse
 from i18n import _, book_label
 
 # Longest epigraph we'll set at the foot — beyond this the quote is cut at a
@@ -305,12 +306,21 @@ class TodayView(Gtk.Box):
         """
         self._listen_fraction = 0.0
         self._listen_ink = '#888888'
+        # Where the fetch's travelling arc has got to, or None when there is
+        # no fetch. The ring says "this reading is working" before it can say
+        # how far through it is.
+        self._listen_sweep = None
 
         self._listen_ring = Gtk.DrawingArea()
         self._listen_ring.set_content_width(58)
         self._listen_ring.set_content_height(58)
         self._listen_ring.set_draw_func(self._draw_listen_ring)
         self._listen_ring.set_can_target(False)   # the button takes the click
+        self._listen_wait = DelayedPulse(
+            show=lambda: setattr(self, '_listen_sweep', 0.0),
+            tick=self._advance_listen_sweep,
+            hide=self._clear_listen_sweep,
+            interval_ms=40)   # an arc travelling, not a bar stepping
 
         self._listen_btn = Gtk.Button(
             icon_name='media-playback-start-symbolic')
@@ -354,12 +364,29 @@ class TodayView(Gtk.Box):
         cr.set_source_rgba(ink.red, ink.green, ink.blue, 0.15)
         cr.arc(cx, cy, r, 0, 2 * math.pi)
         cr.stroke()
-        if self._listen_fraction > 0.0:
+        if self._listen_sweep is not None:
+            # Waiting on the file: a short arc travelling the same track the
+            # reading will later fill, in the same weight, so the ring reads
+            # as one thing doing two jobs rather than two indicators.
+            cr.set_line_width(2.5)
+            cr.set_source_rgba(ink.red, ink.green, ink.blue, 0.7)
+            start = -math.pi / 2 + 2 * math.pi * self._listen_sweep
+            cr.arc(cx, cy, r, start, start + math.pi / 3)
+            cr.stroke()
+        elif self._listen_fraction > 0.0:
             cr.set_line_width(2.5)
             cr.set_source_rgba(ink.red, ink.green, ink.blue, 0.7)
             cr.arc(cx, cy, r, -math.pi / 2,
                    -math.pi / 2 + 2 * math.pi * self._listen_fraction)
             cr.stroke()
+
+    def _advance_listen_sweep(self):
+        self._listen_sweep = ((self._listen_sweep or 0.0) + 0.03) % 1.0
+        self._listen_ring.queue_draw()
+
+    def _clear_listen_sweep(self):
+        self._listen_sweep = None
+        self._listen_ring.queue_draw()
 
     # ── Content ──────────────────────────────────────────────────────────
 
@@ -447,20 +474,39 @@ class TodayView(Gtk.Box):
         self._epigraph_src.set_text(source)
         self._epigraph_box.set_visible(True)
 
-    def set_listen(self, title: str, playing: bool = False) -> None:
-        """Offer today's spoken devotional under its own title."""
-        self._listen_btn.set_icon_name(
-            'media-playback-pause-symbolic' if playing
-            else 'media-playback-start-symbolic')
-        self._listen_btn.set_tooltip_text(title or None)
+    def set_listen(self, title: str, playing: bool = False,
+                   fetching: bool = False) -> None:
+        """Offer today's spoken devotional under its own title.
+
+        Three states, and the middle one is the reason this takes a flag
+        rather than a boolean: the reading has to be fetched before it can
+        be heard, and a pause icon over that wait claims a playback that has
+        not begun. Fetching shows a stop — press it and the fetch is dropped
+        — and the ring sweeps once the wait is long enough to be worth
+        showing.
+        """
+        if fetching:
+            icon, label = ('media-playback-stop-symbolic',
+                           _('Stop fetching the reading'))
+        elif playing:
+            icon, label = ('media-playback-pause-symbolic',
+                           _('Pause the spoken devotional'))
+        else:
+            icon, label = ('media-playback-start-symbolic',
+                           _('Listen to today\'s devotional'))
+        self._listen_btn.set_icon_name(icon)
+        self._listen_btn.set_tooltip_text(
+            label if fetching else (title or None))
         self._listen_card.set_visible(True)
-        set_accessible_label(
-            self._listen_btn,
-            _('Pause the spoken devotional') if playing
-            else _('Listen to today\'s devotional'))
+        set_accessible_label(self._listen_btn, label)
+        if fetching:
+            self._listen_wait.start()
+        else:
+            self._listen_wait.stop()
 
     def clear_listen(self) -> None:
         """No reading for today — the invitation is simply not made."""
+        self._listen_wait.stop()
         self._listen_card.set_visible(False)
         self.set_listen_progress(0.0, showing=False)
 

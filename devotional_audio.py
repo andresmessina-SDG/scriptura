@@ -338,6 +338,7 @@ class Player:
     def __init__(self) -> None:
         self._pipeline = None
         self._path: str | None = None
+        self._rate = 1.0
 
     @staticmethod
     def _gst():
@@ -379,9 +380,12 @@ class Player:
         Gst = self._gst()
         # Explicit, because the format is known. decodebin3 — which
         # Gtk.MediaFile uses — was measured aborting on these files.
+        # scaletempo holds the pitch when the rate is not 1.0 — without it a
+        # faster reading is a chipmunk. It ships in libgstaudiofx.so, which is
+        # in the GNOME runtime already, so this costs no new dependency.
         return Gst.parse_launch(
             f'filesrc location="{path}" ! mpegaudioparse ! mpg123audiodec'
-            ' ! audioconvert ! audioresample ! autoaudiosink')
+            ' ! audioconvert ! scaletempo ! audioresample ! autoaudiosink')
 
     def play(self, path: str) -> bool:
         """Start (or resume) a file. True if the pipeline took it."""
@@ -398,12 +402,72 @@ class Player:
         pipeline = self._pipeline
         if pipeline is None:
             return False
-        return bool(pipeline.set_state(Gst.State.PLAYING)
-                    != Gst.StateChangeReturn.FAILURE)
+        if pipeline.set_state(Gst.State.PLAYING) == Gst.StateChangeReturn.FAILURE:
+            return False
+        # A fresh pipeline starts at 1.0, so a chosen speed has to be asked
+        # for again on every file. Measured: the seek is accepted immediately
+        # after PLAYING, without waiting for the pipeline to preroll.
+        if self._rate != 1.0:
+            self.set_rate(self._rate)
+        return True
+
+    def set_rate(self, rate: float) -> bool:
+        """Play at `rate` times the narrator's own pace, pitch unchanged.
+
+        Remembered even when nothing is open, so the next chapter starts at
+        the speed the reader chose rather than reverting to 1.0. GStreamer
+        changes speed through a seek carrying the rate — there is no property
+        for it — which is why this restates the current position.
+        """
+        Gst = self._gst()
+        self._rate = rate
+        if self._pipeline is None:
+            return False
+        ok, position = self._pipeline.query_position(Gst.Format.TIME)
+        return bool(self._pipeline.seek(
+            rate, Gst.Format.TIME,
+            Gst.SeekFlags.FLUSH | Gst.SeekFlags.KEY_UNIT,
+            Gst.SeekType.SET, position if ok else 0, Gst.SeekType.NONE, 0))
 
     def pause(self) -> None:
         if self._pipeline is not None:
             self._pipeline.set_state(self._gst().State.PAUSED)
+
+    def seek_relative(self, seconds: float) -> bool:
+        """Move the play position by `seconds` (negative goes back).
+
+        Clamped at the start rather than refused, so pressing back twice near
+        the opening lands at the beginning instead of doing nothing the second
+        time. False when the pipeline cannot say where it is — a file still
+        being opened has no position to move.
+        """
+        Gst = self._gst()
+        if self._pipeline is None:
+            return False
+        ok, position = self._pipeline.query_position(Gst.Format.TIME)
+        if not ok:
+            return False
+        target = max(0, position + int(seconds * Gst.SECOND))
+        # seek(), not seek_simple(): the simple form seeks at rate 1.0, so
+        # going back fifteen seconds would quietly undo a chosen speed.
+        return bool(self._pipeline.seek(
+            self._rate, Gst.Format.TIME,
+            Gst.SeekFlags.FLUSH | Gst.SeekFlags.KEY_UNIT,
+            Gst.SeekType.SET, target, Gst.SeekType.NONE, 0))
+
+    def duration(self) -> float | None:
+        """How long the open file runs, in seconds, or None.
+
+        The publisher's chapter files answer this the moment they are opened
+        (they carry the header that makes it knowable); a stream that does not
+        simply has no length to state, and the pill then says nothing rather
+        than guessing.
+        """
+        Gst = self._gst()
+        if self._pipeline is None:
+            return None
+        ok, nanoseconds = self._pipeline.query_duration(Gst.Format.TIME)
+        return nanoseconds / Gst.SECOND if ok and nanoseconds > 0 else None
 
     def stop(self) -> None:
         if self._pipeline is not None:

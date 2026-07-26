@@ -14,13 +14,18 @@ semver-ish — 0.x was the pre-Flathub testing track.
   cards grouped by era, synced to the verse you're studying. Download
   the pack from Module Manager → Open Databases (compiled from the
   public-domain HistoricalChristianFaith Commentaries Database).
-- **Chapters read aloud.** With the Berean Standard Bible open, a play
-  button in the pane toolbar reads the chapter on screen — the whole
-  canon, all 1189 chapters, narrated by Bob Souer and dedicated to the
-  public domain by the translation's own publisher. Chapters are fetched
-  one at a time as you press play and kept for later, so a chapter you
-  have heard stays available offline. Turn it off under Appearance →
-  Advanced → *Spoken readings*.
+- **Chapters read aloud.** With the Berean Standard Bible open, the
+  headphones in the pane toolbar bring up a small player over the page —
+  the whole canon, all 1189 chapters, narrated by Bob Souer and dedicated
+  to the public domain by the translation's own publisher. It carries
+  play, back fifteen seconds, how far through you are, how long the
+  chapter runs, and a reading speed from 0.75× to 2× that holds the
+  narrator's pitch — set it once and every chapter follows. The player is
+  drawn from your own paper and ink, so it belongs to the page rather
+  than sitting on it. Chapters are fetched one at a time as you press
+  play and kept for later, so a chapter you have heard stays available
+  offline; a fetch that fails now says so instead of quietly stopping.
+  Turn it all off under Appearance → Advanced → *Spoken readings*.
 - **Import your own SWORD modules.** A `.zip` you already have on disk
   (a commercial translation, a shared draft, anything CrossWire doesn't
   carry) installs via Module Manager — an import button plus drag-and-

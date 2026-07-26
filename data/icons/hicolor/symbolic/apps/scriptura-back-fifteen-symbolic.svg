@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Back fifteen seconds, for the listening pill.
+
+  Bundled rather than using media-seek-backward-symbolic, which is a tape
+  deck's double triangle: it says "scan backwards", which is not what this
+  button does. An anticlockwise ring says "go back a step" — the metaphor
+  every audiobook player uses — and the button's tooltip and accessible name
+  are where the exact fifteen seconds is stated.
+
+  There is no "15" inside the ring, and that was not for want of trying. Two
+  numerals were drawn as paths (never <text>: an icon that reaches for a font
+  renders differently on every machine) and rasterised at 16, 18, 20, 22 and
+  24px. They resolved at none of them — at the 16px a symbolic button actually
+  carries, "15" is a grey smudge inside the ring and the whole mark reads as a
+  blob. A numeral nobody can read is worse than no numeral: it costs the ring
+  its clarity and buys nothing.
+
+  Drawn fill-only (#222, computed arc geometry rather than eyeballed path
+  data) so GTK4 recolors it reliably, like the church / globe / headphones
+  symbolics beside it. The band is 1.7, the house weight — with the digits
+  gone there is nothing left for it to crowd.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g fill="#222">
+    <!-- the ring, swept clockwise from the upper left, open at the top -->
+    <path d="M 5.99 1.82 A 6.5 6.5 0 1 1 2.37 11.25 L 3.84 10.40 A 4.8 4.8 0 1 0 6.52 3.43 Z"/>
+    <!-- arrowhead at the opening, pointing anticlockwise: going back -->
+    <path d="M 2.92 5.52 L 5.57 0.53 L 6.93 4.72 Z"/>
+  </g>
+</svg>
