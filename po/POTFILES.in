@@ -20,6 +20,7 @@ module_picker.py
 open_data.py
 pane.py
 pane_search.py
+passage_export.py
 reading_plans.py
 search_panel.py
 study_journal.py
