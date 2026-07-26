@@ -189,6 +189,115 @@ def test_the_attribution_names_the_translation_not_its_catalogue_entry():
     assert passage_export._short_name('') == ''
 
 
+# ── The depth layers ─────────────────────────────────────────────────────────
+
+class FakeWord:
+    def __init__(self, verse, surface, translit, gloss, editions, in_stream):
+        self.verse, self.surface, self.translit = verse, surface, translit
+        self.gloss, self.editions, self.in_stream = gloss, editions, in_stream
+
+
+def _layers(monkeypatch, words=(), variants=(), voices=()):
+    import catena_bridge
+    import interlinear_data
+    monkeypatch.setattr(interlinear_data, 'module_names',
+                        lambda: ['InterlinearGreek'])
+    monkeypatch.setattr(interlinear_data, 'is_installed', lambda _n: True)
+    monkeypatch.setattr(interlinear_data, 'chapter_count', lambda *_a: 21)
+    monkeypatch.setattr(interlinear_data, 'load_chapter',
+                        lambda *_a: list(words))
+    monkeypatch.setattr(interlinear_data, 'chapter_variants',
+                        lambda *_a: list(variants))
+    monkeypatch.setattr(catena_bridge, 'is_installed', lambda: True)
+    monkeypatch.setattr(catena_bridge, 'lookup', lambda *_a: list(voices))
+
+
+def test_the_depth_layers_are_absent_unless_asked_for(monkeypatch):
+    """A plain reader gets a clean sheet."""
+    _sword(monkeypatch)
+    _notes(monkeypatch, {})
+    _layers(monkeypatch,
+            words=[FakeWord(16, 'οὕτως', 'houtōs', 'Thus', 'NA28+TR', True)],
+            voices=[{'author': 'Augustine', 'text': 'A voice.'}])
+    doc = build('KJVA', 'John', 3, [16])
+    assert 'Interlinear' not in doc and 'Voices' not in doc
+    assert 'Augustine' not in doc
+
+
+def test_the_interlinear_carries_surface_translit_and_gloss(monkeypatch):
+    _sword(monkeypatch)
+    _notes(monkeypatch, {})
+    _layers(monkeypatch,
+            words=[FakeWord(16, 'θεὸς', 'theos', 'God', 'NA28+TR', True)])
+    doc = build('KJVA', 'John', 3, [16], interlinear=True)
+    assert '## Interlinear' in doc
+    assert 'θεὸς (theos) God' in doc
+
+
+def test_a_supplied_word_survives_being_read_as_markdown(monkeypatch):
+    """TAGNT marks a supplied word `<the>`, and a Markdown reader treats that
+    as an unknown tag and drops it — losing the very words the source went to
+    the trouble of marking."""
+    _sword(monkeypatch)
+    _notes(monkeypatch, {})
+    _layers(monkeypatch,
+            words=[FakeWord(16, 'ὁ', 'ho', '<the>', 'NA28+TR', True)])
+    assert r'\<the\>' in build('KJVA', 'John', 3, [16], interlinear=True)
+    # Plain text has no such reader, so it keeps the source's own convention.
+    assert '<the>' in build('KJVA', 'John', 3, [16],
+                            interlinear=True, markdown=False)
+
+
+def test_only_words_the_editions_disagree_about_are_variants(monkeypatch):
+    """The real case this was measured on: John 3:16's αὐτοῦ is carried by
+    Treg, TR and Byz but not by the critical text."""
+    _sword(monkeypatch)
+    _notes(monkeypatch, {})
+    _layers(monkeypatch, variants=[
+        FakeWord(16, 'θεὸς', 'theos', 'God',
+                 'NA28+NA27+Tyn+SBL+WH+Treg+TR+Byz', True),
+        FakeWord(16, 'αὐτοῦ', 'autou', 'of him', 'Treg+TR+Byz', False),
+    ])
+    doc = build('KJVA', 'John', 3, [16], variants=True)
+    assert 'αὐτοῦ' in doc and 'TR' in doc
+    assert 'θεὸς' not in doc          # every edition carries it
+
+
+def test_a_word_order_marker_is_not_a_presence_variant():
+    """`TR»1` still means TR carries the word. Treating the marker as a
+    different edition would report every re-ordering as an omission."""
+    assert not passage_export.is_variant('NA28+TR»1+Byz»1')
+    assert passage_export.is_variant('NA28+SBL')
+    assert passage_export.is_variant('TR+Byz')
+
+
+def test_the_voices_name_who_is_speaking(monkeypatch):
+    _sword(monkeypatch)
+    _notes(monkeypatch, {})
+    _layers(monkeypatch, voices=[
+        {'author': 'John Chrysostom', 'text': 'Marvel <b>not</b>.'}])
+    doc = build('KJVA', 'John', 3, [16], catena=True)
+    assert '## Voices' in doc
+    assert 'John Chrysostom' in doc
+    assert 'Marvel not.' in doc and '<b>' not in doc
+
+
+def test_a_layer_with_nothing_installed_leaves_no_trace(monkeypatch):
+    """No heading, and no note of absence. The reader knows what they have."""
+    import catena_bridge
+    import interlinear_data
+    _sword(monkeypatch)
+    _notes(monkeypatch, {})
+    monkeypatch.setattr(interlinear_data, 'module_names', lambda: [])
+    monkeypatch.setattr(catena_bridge, 'is_installed', lambda: False)
+    doc = build('KJVA', 'John', 3, [16],
+                interlinear=True, variants=True, catena=True)
+    assert 'Interlinear' not in doc
+    assert 'Textual variants' not in doc
+    assert 'Voices' not in doc
+    assert 'King James Version' in doc     # the sheet is still a sheet
+
+
 # ── Pericope scope (what DR4 made possible) ──────────────────────────────────
 
 def test_a_pericope_runs_from_its_heading_to_the_next(monkeypatch):

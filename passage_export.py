@@ -35,6 +35,8 @@ from __future__ import annotations
 import re
 
 import annotations as annotations_store
+import catena_bridge
+import interlinear_data
 import sword_bridge
 from i18n import _
 
@@ -151,6 +153,23 @@ def _plain(html: str) -> str:
     return re.sub(r'\s+([,.;:!?’”)])', r'\1', text).strip()
 
 
+def _md(text: str, markdown: bool) -> str:
+    """Text that will survive being read as Markdown.
+
+    TAGNT glosses mark a supplied word with angle brackets — `<the>` — and a
+    Markdown reader treats that as an unknown HTML tag and drops it, so the
+    interlinear silently lost exactly the words it had gone to the trouble of
+    marking. Escaped rather than rewritten: the brackets are the source's own
+    convention and mean something.
+
+    Only the characters that change the structure. A `*` in a reader's note
+    will italicise and that is a cosmetic surprise; a swallowed word is not.
+    """
+    if not markdown:
+        return text
+    return text.replace('\\', '\\\\').replace('<', '\\<').replace('>', '\\>')
+
+
 def chapter_verses(module: str, book: str, chapter: int) -> list[int]:
     """Every verse number the module renders for the chapter."""
     return [v for v, _text in sword_bridge.load_chapter(module, book, chapter)]
@@ -176,6 +195,94 @@ def pericope_verses(module: str, book: str, chapter: int,
     after = [v for v in starts if v > first]
     last = (after[0] - 1) if after else verses[-1]
     return [v for v in verses if first <= v <= last]
+
+
+# ── The depth layers ─────────────────────────────────────────────────────────
+# Each is off by default and each degrades to nothing: a reader without the
+# interlinear packs or the catena pack gets a worksheet with no gap in it,
+# rather than a heading over an apology. All three read from disk, so the
+# caller runs `build` off the UI thread (GUIDANCE §7) — this module stays
+# synchronous, which is what keeps it testable.
+
+#: The two editions the tradition actually argues about. A word attested in
+#: one and not the other is what a textual note is for; TAGNT names both in
+#: its own `editions` field, so neither is inferred.
+CRITICAL_EDITION = 'NA28'
+RECEIVED_EDITION = 'TR'
+
+
+def _editions(raw: str) -> set[str]:
+    """The edition list as a set. `TR»1` means TR carries the word in a
+    different position — still TR, so the marker is dropped: this compares
+    presence, and word order is a claim the data would not support here."""
+    return {part.split('»')[0].strip()
+            for part in str(raw).split('+') if part.strip()}
+
+
+def is_variant(editions: str) -> bool:
+    """Whether the critical and received texts disagree about this word."""
+    eds = _editions(editions)
+    return (CRITICAL_EDITION in eds) != (RECEIVED_EDITION in eds)
+
+
+def interlinear_module_for(book: str) -> str | None:
+    """The installed interlinear covering `book`, or None.
+
+    Asked of the data rather than worked out from a testament boundary: a
+    module answers `chapter_count` 0 for a book it does not carry, which is
+    the same question without a table to keep in step.
+    """
+    for name in interlinear_data.module_names():
+        if (interlinear_data.is_installed(name)
+                and interlinear_data.chapter_count(name, book) > 0):
+            return name
+    return None
+
+
+def interlinear_rows(book: str, chapter: int,
+                     verses: list[int] | None = None
+                     ) -> list[tuple[int, list]]:
+    """The original-language words of each verse, in order."""
+    name = interlinear_module_for(book)
+    if name is None:
+        return []
+    wanted = set(verses) if verses else None
+    grouped: dict[int, list] = {}
+    for word in interlinear_data.load_chapter(name, book, chapter):
+        if wanted is None or word.verse in wanted:
+            grouped.setdefault(word.verse, []).append(word)
+    return sorted(grouped.items())
+
+
+def variant_rows(book: str, chapter: int,
+                 verses: list[int] | None = None
+                 ) -> list[tuple[int, list]]:
+    """Only the words the editions disagree about."""
+    name = interlinear_module_for(book)
+    if name is None:
+        return []
+    wanted = set(verses) if verses else None
+    grouped: dict[int, list] = {}
+    for word in interlinear_data.chapter_variants(name, book, chapter):
+        if wanted is not None and word.verse not in wanted:
+            continue
+        if is_variant(word.editions):
+            grouped.setdefault(word.verse, []).append(word)
+    return sorted(grouped.items())
+
+
+def catena_rows(book: str, chapter: int,
+                verses: list[int] | None = None
+                ) -> list[tuple[int, list]]:
+    """The fathers' voices on each verse."""
+    if not catena_bridge.is_installed():
+        return []
+    out = []
+    for verse in (verses or []):
+        entries = catena_bridge.lookup(book, chapter, verse)
+        if entries:
+            out.append((verse, entries))
+    return out
 
 
 def attribution(module: str) -> str:
@@ -235,15 +342,19 @@ def _note_lines(module: str, book: str, chapter: int,
 def build(module: str, book: str, chapter: int,
           verses: list[int] | None = None, *,
           notes: bool = True, markdown: bool = True,
-          version: str | None = None) -> str:
+          version: str | None = None,
+          interlinear: bool = False, variants: bool = False,
+          catena: bool = False) -> str:
     """The document.
 
     `verses` narrows to a selection or a sense-unit; None takes the chapter.
-    `notes` carries the reader's own marks, which are on by default because
-    a worksheet without them is something they could have got anywhere.
-    The deeper layers the research doc lists — interlinear, textual variants,
-    the catena voices — are not gathered here yet; they are off-by-default
-    toggles, and unbuilt. See BACKLOG item 15.
+    `notes` carries the reader's own marks, which are on by default because a
+    worksheet without them is something they could have got anywhere. The
+    three depth layers are off by default: a plain reader gets a clean sheet
+    and a scholar asks for the depth.
+
+    A layer whose data is not installed contributes nothing at all — no
+    heading, no note of absence. The reader knows what they have.
     """
     rendered = sword_bridge.load_chapter(module, book, chapter)
     wanted = set(verses) if verses else None
@@ -274,9 +385,50 @@ def build(module: str, book: str, chapter: int,
             lines.append('')
             for verse, description in marks:
                 ref = format_reference(book, chapter, [verse])
-                lines.append(f'- **{ref}** — {description}' if markdown
+                safe = _md(description, markdown)
+                lines.append(f'- **{ref}** — {safe}' if markdown
                              else f'{ref} — {description}')
             lines.append('')
+
+    def section(title: str, rows: list[tuple[int, list]],
+                render) -> None:
+        if not rows:
+            return
+        lines.append(f'## {title}' if markdown else title)
+        lines.append('')
+        for verse, items in rows:
+            ref = format_reference(book, chapter, [verse])
+            head = f'**{ref}**' if markdown else ref
+            lines.append(f'{head} {render(items)}' if markdown
+                         else f'{ref} {render(items)}')
+            lines.append('')
+
+    if interlinear:
+        section(_('Interlinear'),
+                interlinear_rows(book, chapter, numbers),
+                lambda words: ' · '.join(
+                    _md(f'{w.surface} ({w.translit}) {w.gloss}'.strip(),
+                        markdown)
+                    for w in words))
+
+    if variants:
+        section(_('Textual variants'),
+                variant_rows(book, chapter, numbers),
+                lambda words: ' · '.join(
+                    _md(_('{surface} “{gloss}” — {editions}').format(
+                        surface=w.surface, gloss=w.gloss,
+                        editions=', '.join(sorted(_editions(w.editions)))),
+                        markdown)
+                    for w in words))
+
+    if catena:
+        section(_('Voices'),
+                catena_rows(book, chapter, numbers),
+                lambda entries: '\n\n'.join(
+                    f'*{e["author"]}* — {_md(_plain(e["text"]), markdown)}'
+                    if markdown
+                    else f'{e["author"]} — {_plain(e["text"])}'
+                    for e in entries))
 
     lines.append('---' if markdown else '')
     lines.append(attribution(module))
