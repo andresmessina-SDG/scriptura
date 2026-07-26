@@ -72,6 +72,7 @@ py_sources = files(
   'pane_scroll.py',
   'pane_search.py',
   'passage_export.py',
+  'passage_print.py',
   'paths.py',
   'present.py',
   'present_align.py',

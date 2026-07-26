@@ -22,6 +22,7 @@ open_data.py
 pane.py
 pane_search.py
 passage_export.py
+passage_print.py
 reading_plans.py
 search_panel.py
 study_journal.py

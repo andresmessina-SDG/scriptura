@@ -24,6 +24,7 @@ from a11y import set_accessible_label
 from gtk_utils import clear_children, DelayedSpinner
 import annotations
 import export_dialog
+import passage_print
 import sword_bridge
 import ebible_bridge
 import open_data
@@ -183,7 +184,13 @@ def show_study_menu(pane, verses, x, y):
         lambda b: export_dialog.share_as_image(pane, verses, popover))
     box.append(card_btn)
 
-    # 7. Compare translations (single verse only)
+    # 7. Print — the same composition as the worksheet, set into pages.
+    print_btn = _menu_row('document-print-symbolic', _('Print…'))
+    print_btn.connect(
+        'clicked', lambda b: passage_print.print_passage(pane, verses, popover))
+    box.append(print_btn)
+
+    # 8. Compare translations (single verse only)
     if len(verses) == 1:
         comp_btn = _menu_row('view-dual-symbolic', _('Compare translations'))
         comp_btn.connect('clicked', lambda b: compare_translations(pane, verses[0], popover))
