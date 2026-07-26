@@ -70,6 +70,14 @@ Two Broadway lessons are baked in (relearning them costs a day):
   frame-clock ticks Broadway doesn't deliver unbrowsed). The walk check
   therefore judges its last three settled samples — a ratchet leaves
   none of them near the start, the transient leaves most.
+* A check whose interaction re-renders is judged against a BASELINE, but
+  what the app restores to is the ANCHOR — and the anchor stores a pixel
+  delta bound to the layout at the instant it was captured. Capture it
+  before the layout has settled and the app will faithfully restore to a
+  place the baseline was never taken at: one display line, ~52px here.
+  That was the long-running intermittent theme-flip failure. So re-anchor
+  (`reanchor()`) quiesced and in the same breath as the baseline, and let
+  the report say whether the anchor it replaced had gone stale.
 """
 from __future__ import annotations
 
@@ -85,6 +93,13 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REQUIRED_MODULES = ('KJVA', 'MHCC')
 DISPLAY = 5  # private XDG_RUNTIME_DIR per run, so a fixed number never collides
+
+#: Where the panes park before the checks begin. Sweepable, because this
+#: matrix has now twice turned out to be POSITION-SENSITIVE: a runner whose
+#: metrics differ by a few pixels lands on a different verse (CI reports
+#: probe verse 42 where this workstation reports 40) and only that position
+#: fails. A bug you cannot park on is a bug you cannot measure.
+PARK_PX = float(os.environ.get('SCRIPTURA_PARK_PX', '2000'))
 
 
 # ────────────────────────────────────────────────────────────────────────
@@ -162,12 +177,20 @@ def orchestrate() -> int:
               'installmgr command in this file\'s docstring', file=sys.stderr)
         return 2
 
+    inconclusive = None
     for attempt in range(1 + args.retries):
         if attempt:
             print(f'retrying (attempt {attempt + 1})…', file=sys.stderr)
         report = run_attempt(args.timeout)
         if report is not None and report.get('all_ok'):
             return 0
+        inconclusive = (report or {}).get('inconclusive')
+    # A run that never established its own starting state is an unusable
+    # environment, not a regression — the same exit code as a missing module,
+    # and deliberately not the one that says the reading text moved.
+    if inconclusive:
+        print(f'inconclusive: {inconclusive}', file=sys.stderr)
+        return 2
     return 1
 
 
@@ -271,9 +294,34 @@ def run_matrix() -> int:
     S: dict = {}
     steps: list = []
 
+    def finish():
+        """Judge the run — but only if it ever established the state it set
+        out to measure.
+
+        A park whose validation timed out leaves the pane wherever GTK's
+        estimate allowed (measured under load: 1266px against a requested
+        2000, with `upper` still reading 1932 for a document really ~8900
+        tall). Every later check on that pane is then judged against a
+        document that never finished laying out, and reports differences of
+        a dozen pixels that look exactly like a regression. That is the same
+        confusion the `inconclusive` distinction was introduced for: "the
+        text moved" and "the harness never got the document it was going to
+        measure" are different claims. Only one of them is about the app.
+        """
+        stalled = sorted(k for k, v in REPORT.get('scroll_setup', {}).items()
+                         if v.get('validation_timed_out'))
+        if stalled:
+            REPORT['inconclusive'] = (
+                f'line validation timed out while parking {", ".join(stalled)}'
+                f' — the checks below were judged against a document that had'
+                f' not finished laying out, so they say nothing about the app')
+            REPORT['all_ok'] = False
+            return
+        REPORT['all_ok'] = all(c['ok'] for c in REPORT['checks'])
+
     def run(i=0):
         if i >= len(steps):
-            REPORT['all_ok'] = all(c['ok'] for c in REPORT['checks'])
+            finish()
             print(json.dumps(REPORT, indent=1))
             app.quit()
             return GLib.SOURCE_REMOVE
@@ -366,6 +414,33 @@ def run_matrix() -> int:
         p._capture_scroll_anchor()
         return GLib.SOURCE_REMOVE
 
+    def reanchor(p, where):
+        """Re-anchor to the settled visual state, and report whether the
+        anchor it replaced had gone stale.
+
+        Every check from here on triggers a re-render, and a re-render
+        restores the reading locus from `_reading_anchor`. That anchor stores
+        `delta = adj - iter_location(y)` — a number bound to the layout at the
+        instant it was captured. GtkTextView keeps revalidating line heights
+        after a toggle (and under Broadway the per-frame pin cannot tick
+        unbrowsed, see the header), so an anchor captured before the layout
+        finished settling restores to a *different* pixel once it has: one
+        display line, ~52px at this reading font.
+
+        That is not the app moving the text. It is the app faithfully
+        restoring what it was handed, against a baseline taken somewhere else.
+        Capturing here — quiesced, and in the same breath as the baseline —
+        is what makes the two describe one moment. The `stale` flag records
+        when it mattered, so a run that needed this says so instead of
+        passing silently.
+        """
+        was = repr(getattr(p, '_reading_anchor', None))[:120]
+        user_scrolled(p)
+        now = repr(getattr(p, '_reading_anchor', None))[:120]
+        record = {'at': where, 'was': was, 'now': now, 'stale': was != now}
+        REPORT.setdefault('reanchors', []).append(record)
+        return record
+
     def scroll_mid():
         """Park both panes mid-document, then let them settle.
 
@@ -394,11 +469,11 @@ def run_matrix() -> int:
                                    if upper == state['upper'] else 0)
                 state['upper'] = upper
                 state['left'] -= 1
-                grown = adj.get_upper() - adj.get_page_size() > 2000.0
+                grown = adj.get_upper() - adj.get_page_size() > PARK_PX
                 ready = state['streak'] * POLL_MS >= QUIET_MS and grown
                 if not ready and state['left'] > 0:
                     return GLib.SOURCE_CONTINUE
-                adj.set_value(2000.0)
+                adj.set_value(PARK_PX)
                 REPORT.setdefault('scroll_setup', {})[
                     'p1' if p is S['p1'] else 'p2'] = {
                         'upper_at_scroll': round(adj.get_upper(), 1),
@@ -522,12 +597,21 @@ def run_matrix() -> int:
     # the theme / panel checks would then "fail" on the anchor snapping
     # back. Re-sync anchor to visual state, as a settled user scroll does.
     def resync():
-        user_scrolled(S['p1'])
-        S['v1'] = S['p1']._find_topmost_visible_verse()
-        return settle(lambda s: None)
+        # Settle FIRST, then re-anchor. This used to capture the anchor
+        # immediately and settle afterwards, which is the one ungated capture
+        # in a harness whose every judgment is quiescence-gated — and it is
+        # the anchor the theme flip below restores from.
+        def then(_s):
+            reanchor(S['p1'], 'resync')
+            S['v1'] = S['p1']._find_topmost_visible_verse()
+        return settle(then)
 
     # 5. theme flip
     def theme():
+        # The baseline and the anchor the flip will restore from have to
+        # describe the same moment; 200ms of step delay is enough for the
+        # layout to move under one of them.
+        S['theme_resync'] = reanchor(S['p1'], 'theme')
         S['a'] = snap(S['p1'], S['v1'])
         S['theme_pre'] = {
             'anchor': repr(getattr(S['p1'], '_reading_anchor', None))[:120],
@@ -551,12 +635,17 @@ def run_matrix() -> int:
                     'post_anchor': repr(
                         getattr(S['p1'], '_reading_anchor', None))[:120],
                     'post_top_text': (top_text(S['p1']) or (None, None))[0],
+                    'resync': S['theme_resync'],
                 }
         return settle(judge)
 
     # 6. lexicon panel first open — judged by the text at the viewport
     # top (off-screen iter positions are estimate-based and unreliable)
     def lexpanel():
+        # Same rule as the theme flip: opening the panel re-renders, the
+        # re-render restores the anchor, and the anchor in hand was captured
+        # before the flip above. Re-anchor with the baseline.
+        S['lex_resync'] = reanchor(S['p1'], 'lexpanel')
         S['tt'] = top_text(S['p1'])
         S['p1'].show_lexicon_loading('G2316')
         return settle(lexpanel_judge)
@@ -581,6 +670,7 @@ def run_matrix() -> int:
             'top_text_after': after[0][:40] if after else None,
             'moved_px': dpx,
             'ok': same_text and dpx is not None and dpx <= 44.0,
+            'resync': S['lex_resync'],
         })
 
     steps.extend([

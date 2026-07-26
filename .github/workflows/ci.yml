@@ -55,8 +55,15 @@ jobs:
         run: >-
           installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom
           -init -sc -r CrossWire -ri CrossWire KJVA -ri CrossWire MHCC
+      # Two retries, not the default one. A shared CI runner is slow enough
+      # that GtkTextView's line validation sometimes has not finished when the
+      # harness parks the panes; that run measures a document still being laid
+      # out and can only be thrown away. Exit 2 is the harness saying so — it
+      # never established its own starting state — and it stays a failure
+      # here on purpose: a check that cannot run is a check that is not
+      # guarding anything, and it should be loud rather than quietly green.
       - name: Scroll-stability matrix
-        run: python3 tools/verify-scroll-stability.py
+        run: python3 tools/verify-scroll-stability.py --retries 2
 
   # Asserts the accessible tree — roles, relations, and live-region status —
   # which nothing visible can catch. Separate job for the same reason as
