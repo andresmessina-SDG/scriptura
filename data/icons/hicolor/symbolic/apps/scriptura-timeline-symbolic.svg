@@ -8,18 +8,21 @@
 
   Weight pass 2026-07-17: stems 0.8 → 1.4, baseline 0.9 → 1.5, dots +0.1,
   toward the GNOME 2px symbolic norm.
+
+  Weight pass 2026-07-27: stems and baseline 1.5 → 2.0, dots to r1.7, and
+  the axis run out to the full 14px ink box (was 12.8 wide).
 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
   <g fill="#222">
     <!-- baseline axis -->
-    <path d="M1.6 10.8 H14.4 V12.3 H1.6 Z"/>
+    <path d="M1 10.6 H15 V12.6 H1 Z"/>
     <!-- stems -->
-    <path d="M3.4 6.6 H4.8 V10.8 H3.4 Z"/>
-    <path d="M7.3 4.3 H8.7 V10.8 H7.3 Z"/>
-    <path d="M11.2 7.4 H12.6 V10.8 H11.2 Z"/>
+    <path d="M3.1 6.6 H5.1 V10.6 H3.1 Z"/>
+    <path d="M7 4.3 H9 V10.6 H7 Z"/>
+    <path d="M10.9 7.4 H12.9 V10.6 H10.9 Z"/>
     <!-- dot markers -->
-    <circle cx="4.1" cy="5.5" r="1.5"/>
-    <circle cx="8.0" cy="3.2" r="1.6"/>
-    <circle cx="11.9" cy="6.3" r="1.5"/>
+    <circle cx="4.1" cy="5.4" r="1.7"/>
+    <circle cx="8.0" cy="3.2" r="1.7"/>
+    <circle cx="11.9" cy="6.2" r="1.7"/>
   </g>
 </svg>

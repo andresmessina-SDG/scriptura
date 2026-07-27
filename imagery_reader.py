@@ -253,6 +253,44 @@ class _ZoomViewer(Gtk.ScrolledWindow):
         drag.connect('drag-update', self._on_drag_update)
         self.add_controller(drag)
 
+        # Everything above is pointer-only: pinch, click-drag pan, scroll.
+        # WCAG 2.5.7 wants a single-pointer/keyboard route to the same
+        # thing, so the viewer takes focus and answers the keys every image
+        # viewer uses. The header buttons already cover zoom; panning had
+        # no alternative to dragging at all.
+        self.set_focusable(True)
+        keys = Gtk.EventControllerKey()
+        keys.connect('key-pressed', self._on_key)
+        self.add_controller(keys)
+
+    _PAN_STEP = 64      # px per arrow press, at the current display scale
+
+    def _on_key(self, _controller, keyval, _keycode, state):
+        if state & (Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.ALT_MASK):
+            return False
+        if keyval in (Gdk.KEY_plus, Gdk.KEY_equal, Gdk.KEY_KP_Add):
+            self.zoom_in()
+            return True
+        if keyval in (Gdk.KEY_minus, Gdk.KEY_KP_Subtract):
+            self.zoom_out()
+            return True
+        if keyval in (Gdk.KEY_0, Gdk.KEY_KP_0):
+            self.reset()
+            return True
+        pan = {Gdk.KEY_Left: (-1, 0), Gdk.KEY_Right: (1, 0),
+               Gdk.KEY_Up: (0, -1), Gdk.KEY_Down: (0, 1)}.get(keyval)
+        if pan is None:
+            return False
+        dx, dy = pan
+        for adj, step in ((self.get_hadjustment(), dx * self._PAN_STEP),
+                          (self.get_vadjustment(), dy * self._PAN_STEP)):
+            if not step:
+                continue
+            adj.set_value(min(max(adj.get_value() + step, adj.get_lower()),
+                              max(adj.get_lower(),
+                                  adj.get_upper() - adj.get_page_size())))
+        return True
+
     # ── state ────────────────────────────────────────────────────────────────
 
     def set_changed_cb(self, cb):
