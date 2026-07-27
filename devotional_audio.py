@@ -126,6 +126,33 @@ def _index_path(feed: str = FEED_URL) -> str:
     return os.path.join(paths.cache_dir(), f'{name}_audio_index.json')
 
 
+_ITEM = re.compile(r'<item>(.*?)</item>', re.S)
+_ITEM_TITLE = re.compile(
+    r'<title[^>]*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>', re.S)
+_ITEM_URL = re.compile(r'<enclosure[^>]*url="([^"]+)"')
+
+
+def _feed_items(xml: str):
+    """(title, enclosure url) for every item carrying both, in feed order.
+
+    Feed order is newest-first — the RSS convention, and what these feeds do —
+    so the FIRST item bearing a given key is the most recent recording of it.
+    Every parser below depends on that: they all `setdefault`, so once a feed
+    has run past a full cycle and a date comes round again, the newest reading
+    is kept rather than the one from the previous year.
+
+    (`parse_feed` used to assign instead, which took the LAST match and so
+    would have served the older recording. Morning & Evening began on 1 Jan
+    2026 and carries two episodes a day, so nothing repeats yet — it wraps
+    around the start of 2027.)
+    """
+    for block in _ITEM.findall(xml):
+        title = _ITEM_TITLE.search(block)
+        url = _ITEM_URL.search(block)
+        if title and url:
+            yield re.sub(r'\s+', ' ', title.group(1)).strip(), url.group(1)
+
+
 def parse_psalms_feed(xml: str) -> dict[str, list[str]]:
     """{'<psalm number>': [url, subtitle]} for every psalm the feed carries.
 
@@ -134,41 +161,28 @@ def parse_psalms_feed(xml: str) -> dict[str, list[str]]:
     not offer.
     """
     out: dict[str, list[str]] = {}
-    for block in re.findall(r'<item>(.*?)</item>', xml, re.S):
-        ti = re.search(r'<title[^>]*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>',
-                       block, re.S)
-        url = re.search(r'<enclosure[^>]*url="([^"]+)"', block)
-        if not ti or not url:
-            continue
-        m = _PSALM_TITLE.match(re.sub(r'\s+', ' ', ti.group(1)).strip())
+    for title, url in _feed_items(xml):
+        m = _PSALM_TITLE.match(title)
         if not m:
             continue
         n = int(m.group(1))
         if not 1 <= n <= 150:
             continue
-        # Later entries win: the feed has run more than one cycle, and the
-        # most recent reading of a psalm is the one at the top.
-        out.setdefault(str(n), [url.group(1), (m.group(2) or '').strip()])
+        out.setdefault(str(n), [url, (m.group(2) or '').strip()])
     return out
 
 
 def parse_dated_feed(xml: str) -> dict[str, list[str]]:
     """{'MM-DD': [url, title]} for a feed whose episodes are titled by date."""
     out: dict[str, list[str]] = {}
-    for block in re.findall(r'<item>(.*?)</item>', xml, re.S):
-        ti = re.search(r'<title[^>]*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>',
-                       block, re.S)
-        url = re.search(r'<enclosure[^>]*url="([^"]+)"', block)
-        if not ti or not url:
-            continue
-        m = _DATED_TITLE.match(re.sub(r'\s+', ' ', ti.group(1)).strip())
+    for title, url in _feed_items(xml):
+        m = _DATED_TITLE.match(title)
         if not m:
             continue
         month = _MONTHS.get(m.group(1))
         if not month:
             continue
-        out.setdefault(f'{month:02d}-{int(m.group(2)):02d}',
-                       [url.group(1), m.group(3)])
+        out.setdefault(f'{month:02d}-{int(m.group(2)):02d}', [url, m.group(3)])
     return out
 
 
@@ -206,20 +220,15 @@ def parse_feed(xml: str) -> dict[str, str]:
     an episode the player does not offer.
     """
     out: dict[str, str] = {}
-    for block in re.findall(r'<item>(.*?)</item>', xml, re.S):
-        t = re.search(r'<title[^>]*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>',
-                      block, re.S)
-        url = re.search(r'<enclosure[^>]*url="([^"]+)"', block)
-        if not t or not url:
-            continue
-        m = _TITLE.match(re.sub(r'\s+', ' ', t.group(1)).strip())
+    for title, url in _feed_items(xml):
+        m = _TITLE.match(title)
         if not m:
             continue
         month = _MONTHS.get(m.group(1))
         if not month:
             continue
-        out[f'{month:02d}-{int(m.group(2)):02d}:{m.group(3).lower()}'] = \
-            url.group(1)
+        out.setdefault(
+            f'{month:02d}-{int(m.group(2)):02d}:{m.group(3).lower()}', url)
     return out
 
 

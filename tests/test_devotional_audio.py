@@ -113,3 +113,59 @@ def test_failed_fetch_keeps_the_old_answer(monkeypatch, tmp_path):
     got = da.refresh_index(feed=feed)
 
     assert got == {'07-20': ['old', 'Yesterday']}
+
+
+# ── duplicate keys: the newest recording wins ────────────────────────────
+# RSS is newest-first, so the first item bearing a key is the most recent
+# reading of it. All three parsers must agree — parse_feed used to assign
+# rather than setdefault, and so would have served the older recording once
+# the feed wrapped a full year (Morning & Evening wraps in early 2027).
+
+def _dup_xml(*pairs):
+    items = ''.join(
+        f'<item><title>{t}</title><enclosure url="{u}"/></item>'
+        for t, u in pairs)
+    return f'<rss><channel>{items}</channel></rss>'
+
+
+def test_dated_feed_keeps_the_newest_of_a_repeated_date():
+    xml = _dup_xml(('July 20 | Morning', 'https://example.test/2027.mp3'),
+                   ('July 20 | Morning', 'https://example.test/2026.mp3'))
+    assert da.parse_feed(xml) == {'07-20:morning': 'https://example.test/2027.mp3'}
+
+
+def test_daily_strength_keeps_the_newest_of_a_repeated_date():
+    xml = _dup_xml(('July 20 - New Title', 'https://example.test/2027.mp3'),
+                   ('July 20 - Old Title', 'https://example.test/2026.mp3'))
+    assert da.parse_dated_feed(xml)['07-20'] == [
+        'https://example.test/2027.mp3', 'New Title']
+
+
+def test_psalms_feed_keeps_the_newest_reading_of_a_psalm():
+    xml = _dup_xml(('Psalm 16 - Newer Reading', 'https://example.test/new.mp3'),
+                   ('Psalm 16 - Older Reading', 'https://example.test/old.mp3'))
+    assert da.parse_psalms_feed(xml)['16'] == [
+        'https://example.test/new.mp3', 'Newer Reading']
+
+
+def test_all_three_parsers_agree_on_precedence():
+    """The bug was that they did not: one assigned while two setdefault'd."""
+    dated = da.parse_feed(_dup_xml(
+        ('May 3 | Evening', 'first'), ('May 3 | Evening', 'second')))
+    strength = da.parse_dated_feed(_dup_xml(
+        ('May 3 - A', 'first'), ('May 3 - B', 'second')))
+    psalms = da.parse_psalms_feed(_dup_xml(
+        ('Psalm 3 - A', 'first'), ('Psalm 3 - B', 'second')))
+    assert dated['05-03:evening'] == 'first'
+    assert strength['05-03'][0] == 'first'
+    assert psalms['3'][0] == 'first'
+
+
+def test_items_without_a_title_or_enclosure_are_skipped():
+    xml = ('<rss><channel>'
+           '<item><title>July 20 | Morning</title></item>'
+           '<item><enclosure url="https://example.test/x.mp3"/></item>'
+           '<item><title>July 21 | Morning</title>'
+           '<enclosure url="https://example.test/ok.mp3"/></item>'
+           '</channel></rss>')
+    assert da.parse_feed(xml) == {'07-21:morning': 'https://example.test/ok.mp3'}
