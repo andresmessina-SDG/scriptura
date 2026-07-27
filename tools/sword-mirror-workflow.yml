@@ -1,0 +1,101 @@
+# Weekly refresh of the SWORD module mirror.
+#
+# This file's home is scriptura/tools/sword-mirror-workflow.yml; it is
+# installed into the mirror repository as .github/workflows/refresh.yml by
+# tools/publish-sword-mirror.sh --create. It runs THERE, not in the app
+# repo, so that the mirror's own GITHUB_TOKEN can write the mirror's own
+# releases — no cross-repo personal access token is needed. The builder is
+# read out of the public app repo at run time, so there is one copy of it.
+#
+# The build is incremental against the published manifest: an ordinary week
+# fetches nothing but the 204 KB catalogue. That is deliberate. Pulling half
+# a gigabyte a week from the single machine whose fragility is the reason
+# this mirror exists would be a poor way to repay it.
+
+name: Refresh mirror
+
+on:
+  schedule:
+    # Mondays, 04:17 UTC. Off the hour because scheduled jobs pile up on
+    # the hour and GitHub drops them under load.
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+    inputs:
+      full:
+        description: 'Re-download every module, ignoring the baseline'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  # A slow full rebuild must not overlap the next week's run and race it
+  # uploading assets to the same release.
+  group: refresh-mirror
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out the builder from the app repo
+        uses: actions/checkout@v4
+        with:
+          repository: andresmessina-SDG/scriptura
+          path: scriptura
+          sparse-checkout: tools
+          sparse-checkout-cone-mode: false
+
+      - name: Rebuild against the published manifest
+        env:
+          BASE: https://github.com/${{ github.repository }}/releases/download/current
+        run: |
+          python3 scriptura/tools/build-sword-mirror.py \
+            --out staging --tier 2 --jobs 4 \
+            --baseline "$BASE/manifest.json" \
+            ${{ inputs.full && '--full' || '' }}
+
+      - name: Fail if CrossWire published an unrecognised licence
+        # Never guess at new wording. An unknown licence means the module
+        # is left out and a human decides — loudly, not silently.
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          c = json.load(open('staging/changes.json'))
+          if c['unrecognised']:
+              print('::error::Unrecognised DistributionLicense on: '
+                    + ', '.join(c['unrecognised'])
+                    + ' — update KNOWN_LICENCES in build-sword-mirror.py')
+              sys.exit(1)
+          print(f"{c['unchanged']} unchanged, {len(c['fetched'])} fetched, "
+                f"{len(c['removed'])} withdrawn")
+          PY
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MIRROR_REPO: ${{ github.repository }}
+        run: scriptura/tools/publish-sword-mirror.sh staging
+
+      - name: Summarise
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          try:
+              c = json.load(open('staging/changes.json'))
+              m = json.load(open('staging/manifest.json'))
+          except OSError:
+              print('Build did not complete.'); raise SystemExit
+          mb = sum(e['bytes'] for e in m['modules']) / 1048576
+          print(f"## Mirror refresh\n")
+          print(f"- {len(m['modules'])} modules, {mb:.0f} MB")
+          print(f"- {c['unchanged']} unchanged, "
+                f"{len(c['fetched'])} updated, {len(c['removed'])} withdrawn")
+          if c['fetched']:
+              print(f"- updated: {', '.join(c['fetched'])}")
+          if c['removed']:
+              print(f"- **withdrawn**: {', '.join(c['removed'])}")
+          PY

@@ -11,6 +11,7 @@ church_year.py
 content.py
 crossref_panel.py
 devotional.py
+export_dialog.py
 genbook_reader.py
 imagery_bridge.py
 imagery_reader.py
@@ -20,9 +21,12 @@ module_picker.py
 open_data.py
 pane.py
 pane_search.py
+passage_export.py
+passage_print.py
 reading_plans.py
 search_panel.py
 study_journal.py
 today_page.py
+verse_card.py
 welcome.py
 window.py
