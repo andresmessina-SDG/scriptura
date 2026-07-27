@@ -65,8 +65,15 @@ modules:
       - /lib/libsword.la
       - /include
     sources:
+      # CrossWire's web server and FTP daemon run on one host but fail
+      # independently — in July 2026 the web tier was down for a day while
+      # FTP kept serving. Without the mirror a clean build (or any build
+      # whose download cache has been pruned) cannot get libsword at all.
+      # Same tarball, same sha256, so the checksum still gates both.
       - type: archive
         url: https://crosswire.org/ftpmirror/pub/sword/source/v1.9/sword-1.9.0.tar.gz
+        mirror-urls:
+          - ftp://ftp.crosswire.org/pub/sword/source/v1.9/sword-1.9.0.tar.gz
         sha256: 42409cf3de2faf1108523e2c5ac0745d21f9ed2a5c78ed878ee9dcc303426b8a
 
   # Greg Hellings' standalone Python bindings (ships pre-generated SWIG output).
