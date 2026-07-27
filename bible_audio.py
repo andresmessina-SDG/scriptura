@@ -39,6 +39,10 @@ NARRATOR = 'souer'
 
 BASE_URL = f'https://openbible.com/audio/{NARRATOR}'
 
+#: What a chapter is a reading of, for the desktop's media bus. A proper
+#: name, so it is not translated.
+TRANSLATION = 'Berean Standard Bible'
+
 #: Where the dedication is actually stated. Nothing is in the files themselves
 #: — they carry no artist or copyright frame — so anything crediting this
 #: reading should point here rather than at file metadata.

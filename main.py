@@ -67,6 +67,7 @@ def _setup_gettext():
 
 _setup_gettext()
 
+import mpris  # noqa: E402
 from styles import load_app_css  # noqa: E402
 from window import BibleWindow  # noqa: E402  (after logging setup)
 
@@ -146,6 +147,10 @@ class BibleApp(Adw.Application):
         self._argv_ref = _scan_argv_for_bible_uri()
         self.connect('activate', self._on_activate)
         self.connect('open', self._on_open)
+        # Gives the desktop's media bus something to raise and to quit. It
+        # opens no connection: the bus is only reached once a reading is
+        # actually playing.
+        mpris.attach(self)
 
     def _on_activate(self, app):
         _register_icon_search_path()

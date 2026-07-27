@@ -32,6 +32,7 @@ from module_picker import ModulePicker
 import devotional
 import devotional_audio
 import bible_audio
+import mpris
 import annotation_dialogs
 from lexicon_panel import LexiconPanel
 from audio_pill import AudioPill, format_length, sane_rate
@@ -1341,6 +1342,9 @@ class BiblePane(Gtk.Box):
         # on that chapter — so it has to be nameable while the file is still
         # on its way and there is nothing open to ask.
         self._pending = None
+        # What the desktop's media bus is showing for this pane's reading,
+        # while it is the reading that holds the bus.
+        self._reading_media = None
 
         # Generic Books: prev / next sibling navigation + TOC popover.
         # Visible only when the pane's current module is type
@@ -2396,6 +2400,10 @@ class BiblePane(Gtk.Box):
 
     def _build_devotional_audio(self, row):
         self._devot_player = None
+        # What the desktop's media bus shows for this reading, while it holds
+        # the bus. Both of the pane's players can reach it; the last to start
+        # owns it, as on any desktop.
+        self._devot_media = None
         self._devot_play_btn = Gtk.Button(icon_name='media-playback-start-symbolic')
         self._devot_play_btn.add_css_class('flat')
         self._devot_play_btn.add_css_class('devotional-play')
@@ -2534,6 +2542,7 @@ class BiblePane(Gtk.Box):
         if self._devot_player is not None and self._devot_player.playing:
             self._devot_player.pause()
             self._devot_play_btn.set_icon_name('media-playback-start-symbolic')
+            mpris.update(self._devot_media)
             return
         url = devotional_audio.episode_url(self._devot_date,
                                            self._devot_session)
@@ -2598,6 +2607,7 @@ class BiblePane(Gtk.Box):
                 self._devot_play_btn, _('Could not play the reading'))
             return
         self._devot_play_btn.set_icon_name('media-playback-pause-symbolic')
+        self._publish_devot_media()
         # Straight from the fetch's pulse to the reading's position, so the
         # hairline never blinks out between the two.
         self._devot_progress.set_fraction(self._devot_player.progress())
@@ -2605,6 +2615,24 @@ class BiblePane(Gtk.Box):
         if self._devot_tick is None:
             self._devot_tick = GLib.timeout_add(
                 500, self._on_devotional_audio_tick)
+
+    def _publish_devot_media(self):
+        """Hand the devotional to the desktop. Titled by the half of the day
+        it belongs to, which is the whole of what this reading is — the book
+        beside it says the rest."""
+        title = (_('Evening') if self._devot_session == 'evening'
+                 else _('Morning'))
+        if self._devot_media is None or self._devot_media.title != title:
+            self._devot_media = mpris.Reading(
+                title, devotional_audio.MORNING_EVENING_SERIES,
+                player=self._devot_player,
+                on_play=lambda: self._on_devot_play(None),
+                on_pause=lambda: self._on_devot_play(None),
+                on_stop=self._stop_devotional_audio)
+            mpris.publish(self._devot_media)
+            return
+        self._devot_media.player = self._devot_player
+        mpris.update(self._devot_media)
 
     def _on_devotional_audio_tick(self):
         if self._devot_player is None:
@@ -2629,6 +2657,8 @@ class BiblePane(Gtk.Box):
         if self._devot_player is not None:
             self._devot_player.stop()
             self._devot_player = None
+        mpris.withdraw(self._devot_media)
+        self._devot_media = None
         if self._devot_audio_row is not None:
             self._devot_play_btn.set_icon_name('media-playback-start-symbolic')
             self._devot_progress.set_fraction(0.0)
@@ -2808,6 +2838,7 @@ class BiblePane(Gtk.Box):
         self._pill.set_rate(rate)
         if self._reading_player is not None:
             self._reading_player.set_rate(rate)
+        mpris.update(self._reading_media)
 
     def _on_reading_back(self):
         """Fifteen seconds back. Backward only, because the need that arises
@@ -2845,6 +2876,7 @@ class BiblePane(Gtk.Box):
         if self._reading_player is not None and self._reading_player.playing:
             self._reading_player.pause()
             self._pill.set_state('idle')
+            mpris.update(self._reading_media)
             return
         if self._sounding is not None:
             # Paused, and the reader has since paged on: this button belongs to
@@ -2859,7 +2891,8 @@ class BiblePane(Gtk.Box):
             return
         cached = self._cached_reading(self._reading_url)
         if cached:
-            self._start_reading_audio(cached, self._reading_reference)
+            self._start_reading_audio(cached, self._reading_reference,
+                                      self._reading_series())
             return
         # Nothing can be heard until the file is here, so the pause icon at
         # this point would claim playback of a silence — and on a slow line
@@ -2873,12 +2906,24 @@ class BiblePane(Gtk.Box):
         # on during a twenty-megabyte fetch, and what arrives is the chapter
         # they pressed play on.
         reference = self._reading_reference
+        series = self._reading_series()
         self._begin_reading_fetch(reference)
         tasks.submit(
             key=self._reading_key,
             work=lambda _t: fetch(url),
-            apply=lambda path: self._finish_reading_fetch(path, reference),
-            on_error=lambda _e: self._finish_reading_fetch(None, reference))
+            apply=lambda path: self._finish_reading_fetch(
+                path, reference, series),
+            on_error=lambda _e: self._finish_reading_fetch(
+                None, reference, series))
+
+    def _reading_series(self):
+        """What the reading on offer is a reading OF — the translation for a
+        chapter, the publisher's series for a psalm episode. Read at the
+        moment play is pressed and carried from there: by the time a
+        twenty-megabyte fetch lands, the pane may be showing the other one.
+        """
+        return (bible_audio.TRANSLATION if self._reading_scripture
+                else devotional_audio.PSALMS_SERIES)
 
     def _begin_reading_fetch(self, reference=None):
         """Dress the pill for the wait: a stop, not a playback state. The
@@ -2905,7 +2950,7 @@ class BiblePane(Gtk.Box):
         self._pill.set_state('idle')
         self._restate_pill_reading()
 
-    def _finish_reading_fetch(self, path, reference=None):
+    def _finish_reading_fetch(self, path, reference=None, series=''):
         self._end_reading_fetch()
         if not path:
             # Named no closer than this on purpose: fetch_episode answers
@@ -2916,7 +2961,7 @@ class BiblePane(Gtk.Box):
             self._report_audio_failure(
                 self._pill, _('Could not fetch the reading'))
             return
-        self._start_reading_audio(path, reference)
+        self._start_reading_audio(path, reference, series)
 
     def _report_audio_failure(self, button, message):
         """Say what went wrong — for either of the pane's two players.
@@ -2930,13 +2975,14 @@ class BiblePane(Gtk.Box):
         if self._on_toast:
             self._on_toast(message)
 
-    def _start_reading_audio(self, path, reference=None):
+    def _start_reading_audio(self, path, reference=None, series=''):
         """Play `path`, or resume it where the player already holds it.
 
         `reference` is what the pill will name until this reading stops, and
         it is passed in rather than read off the pane: by the time a fetch
         lands, or a paused reading is resumed, the chapter on screen may be a
-        different one entirely.
+        different one entirely. `series` names what it is a reading of, for
+        the desktop; a resume carries none, because the bus already holds it.
         """
         if not path:
             self._pill.set_state('idle')
@@ -2954,6 +3000,7 @@ class BiblePane(Gtk.Box):
             # answerable yet either.
             self._reading_length = ''
         self._sounding = (path, reference or self._reading_reference)
+        self._publish_reading_media(self._sounding[1], series)
         self._restate_pill_reading()
         self._pill.set_state('playing')
         self._pill.set_can_seek(True)
@@ -2964,6 +3011,31 @@ class BiblePane(Gtk.Box):
         self._show_reading_length()
         if self._reading_tick is None:
             self._reading_tick = GLib.timeout_add(500, self._on_reading_tick)
+
+    def _publish_reading_media(self, title, series=''):
+        """Hand the sounding reading to the desktop, or restate it.
+
+        Replaced rather than restated only when the reading itself has
+        changed: a resume after a pause is the same track, and republishing
+        it would tell every remote a new one had begun.
+
+        The handlers are the pill's own, so the lock screen and the pill can
+        never disagree — a pause from either leaves both showing paused.
+        `on_stop` is the close, which is what the stop means here: the pill
+        carries the only controls there are, so silencing a reading while
+        leaving it up would strand them.
+        """
+        if self._reading_media is None or self._reading_media.title != title:
+            self._reading_media = mpris.Reading(
+                title, series, player=self._reading_player,
+                on_play=self._on_reading_play,
+                on_pause=self._on_reading_play,
+                on_stop=self._on_reading_close,
+                on_rate=self._on_reading_rate)
+            mpris.publish(self._reading_media)
+            return
+        self._reading_media.player = self._reading_player
+        mpris.update(self._reading_media)
 
     def _show_reading_length(self):
         """State how long the reading runs, once that can be known.
@@ -2979,6 +3051,9 @@ class BiblePane(Gtk.Box):
         self._reading_length = format_length(self._reading_player.duration())
         if self._reading_length:
             self._restate_pill_reading()
+            # The desktop states the length as a number rather than as text,
+            # and it could not be asked for until now either.
+            mpris.update(self._reading_media)
 
     def _on_reading_tick(self):
         if self._reading_player is None:
@@ -3012,6 +3087,8 @@ class BiblePane(Gtk.Box):
             self._reading_player.stop()
             self._reading_player = None
         self._sounding = None
+        mpris.withdraw(self._reading_media)
+        self._reading_media = None
         self._reading_length = ''
         # Nothing is sounding now, so the pill falls back to naming the chapter
         # on screen, with no fill left behind on the thread — it is shared by

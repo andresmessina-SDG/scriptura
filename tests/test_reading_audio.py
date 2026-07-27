@@ -16,9 +16,11 @@ from gi.repository import GLib
 import bible_audio
 import devotional_audio
 import motion
+import mpris
 import pane
 import settings
 import tasks
+import window
 from pane import BiblePane
 from window import BibleWindow
 
@@ -169,6 +171,43 @@ class FakeRunner:
         self.cancelled.append(key)
 
 
+class FakeBus:
+    """The desktop's media bus, recording instead of connecting.
+
+    Autoused everywhere below: these tests run on a workstation with a real
+    session bus, and a test suite must not put a media player on it.
+    """
+
+    Reading = mpris.Reading
+
+    def __init__(self):
+        self.published = []
+        self.updated = []
+        self.withdrawn = []
+        self.current = None
+
+    def publish(self, reading):
+        self.published.append(reading)
+        self.current = reading
+
+    def update(self, reading):
+        self.updated.append(reading)
+
+    def withdraw(self, reading):
+        if reading is not None:
+            self.withdrawn.append(reading)
+            if self.current is reading:
+                self.current = None
+
+
+@pytest.fixture(autouse=True)
+def bus(monkeypatch):
+    fake = FakeBus()
+    monkeypatch.setattr(pane, 'mpris', fake)
+    monkeypatch.setattr(window, 'mpris', fake)
+    return fake
+
+
 def _runner(monkeypatch):
     runner = FakeRunner()
     monkeypatch.setattr(tasks, 'submit', runner.submit)
@@ -207,6 +246,8 @@ class Reading:
     _restate_pill_reading = BiblePane._restate_pill_reading
     _live_reference = BiblePane._live_reference
     _on_reading_switch = BiblePane._on_reading_switch
+    _reading_series = BiblePane._reading_series
+    _publish_reading_media = BiblePane._publish_reading_media
 
     def __init__(self, cached=None, player=None):
         self._pill = FakePill()
@@ -220,6 +261,7 @@ class Reading:
         self._reading_key = 'reading-audio:test'
         self._sounding = None
         self._pending = None
+        self._reading_media = None
         self._cached = cached
         self.toasts = []
         self._on_toast = self.toasts.append
@@ -379,6 +421,7 @@ class Devotional:
     _start_devotional_audio = BiblePane._start_devotional_audio
     _stop_devotional_audio = BiblePane._stop_devotional_audio
     _on_devotional_audio_tick = BiblePane._on_devotional_audio_tick
+    _publish_devot_media = BiblePane._publish_devot_media
 
     def __init__(self, player=None, delay_ms=motion.SPINNER_DELAY_MS):
         from gtk_utils import DelayedPulse
@@ -386,6 +429,7 @@ class Devotional:
         self._devot_progress = FakeBar()
         self._devot_audio_row = object()
         self._devot_player = player
+        self._devot_media = None
         self._devot_tick = None
         self._devot_date = None
         self._devot_session = 'morning'
@@ -487,12 +531,14 @@ class Today:
     _start_today_listen = BibleWindow._start_today_listen
     _stop_today_listen = BibleWindow._stop_today_listen
     _on_today_listen_tick = BibleWindow._on_today_listen_tick
+    _publish_today_media = BibleWindow._publish_today_media
 
     def __init__(self, player=None):
         self._today_view = FakeTodayView()
         self._today_listen = ('https://example.invalid/today.mp3',
                               'A Daily Strength')
         self._today_player = player
+        self._today_media = None
         self._today_listen_tick = None
         self._today_fetching = False
         self.toasts = []
@@ -1045,3 +1091,97 @@ def test_an_edited_setting_cannot_ask_for_an_absurd_speed():
     assert sane_rate(1.5) == 1.5
     assert sane_rate(6.0) == 1.0
     assert sane_rate(0) == 1.0
+
+
+# ── What reaches the desktop's media bus ─────────────────────────────────────
+
+def test_a_sounding_chapter_reaches_the_desktop(monkeypatch, bus):
+    """The reading the pill holds is the reading the lock screen names."""
+    c = Reading(cached='/tmp/Gen_001.mp3', player=FakePlayer())
+    _runner(monkeypatch)
+    c._on_reading_play()
+    assert len(bus.published) == 1
+    assert bus.published[0].title == 'John 3'
+    assert bus.published[0].artist == bible_audio.TRANSLATION
+
+
+def test_a_psalm_episode_names_its_own_series(monkeypatch, bus):
+    """Not every reading the pill carries is a chapter of the Bible."""
+    c = Reading(cached='/tmp/psalm.mp3', player=FakePlayer())
+    c._reading_scripture = False
+    _runner(monkeypatch)
+    c._on_reading_play()
+    assert bus.published[0].artist == devotional_audio.PSALMS_SERIES
+
+
+def test_a_resume_is_the_same_track_not_a_new_one(monkeypatch, bus):
+    """Republishing would tell every remote a new reading had begun, and
+    restart the desktop's idea of the track."""
+    player = FakePlayer()
+    c = Reading(cached='/tmp/Gen_001.mp3', player=player)
+    _runner(monkeypatch)
+    c._on_reading_play()
+    c._on_reading_play()                    # pause
+    c._on_reading_play()                    # resume
+    assert len(bus.published) == 1
+    assert bus.updated                      # but the desktop was told
+
+
+def test_stopping_takes_the_reading_off_the_bus(monkeypatch, bus):
+    c = Reading(cached='/tmp/Gen_001.mp3', player=FakePlayer())
+    _runner(monkeypatch)
+    c._on_reading_play()
+    published = bus.published[0]
+    c._stop_reading_audio()
+    assert bus.withdrawn == [published]
+    assert bus.current is None
+
+
+def test_the_desktops_pause_leaves_the_pill_showing_paused(monkeypatch, bus):
+    """The bus acts through the pill's own handlers, so the two can never
+    disagree about what is happening."""
+    c = Reading(cached='/tmp/Gen_001.mp3', player=FakePlayer())
+    _runner(monkeypatch)
+    c._on_reading_play()
+    bus.published[0].on_pause()
+    assert c._pill.state == 'idle'
+
+
+def test_the_desktops_stop_puts_the_player_away(monkeypatch, bus):
+    """Stop means stop: the pill carries the only controls there are, so
+    silencing a reading while leaving it up would strand them."""
+    c = Reading(cached='/tmp/Gen_001.mp3', player=FakePlayer())
+    _runner(monkeypatch)
+    c._on_reading_play()
+    bus.published[0].on_stop()
+    assert c._sounding is None
+    assert not c._pill.visible
+
+
+def test_a_speed_set_from_a_remote_is_the_speed_the_pill_shows(monkeypatch,
+                                                               bus):
+    monkeypatch.setattr(settings, 'put', lambda *_a: None)
+    player = FakePlayer()
+    c = Reading(cached='/tmp/Gen_001.mp3', player=player)
+    _runner(monkeypatch)
+    c._on_reading_play()
+    bus.published[0].on_rate(1.5)
+    assert c._pill.rate == 1.5
+    assert player.rate == 1.5
+
+
+def test_the_devotional_row_reaches_the_desktop_too(monkeypatch, bus):
+    c = _devotional(monkeypatch, cached='/tmp/me.mp3', player=FakePlayer())
+    c._on_devot_play(None)
+    assert bus.published[0].artist == devotional_audio.MORNING_EVENING_SERIES
+    c._stop_devotional_audio()
+    assert bus.current is None
+
+
+def test_the_today_disc_reaches_the_desktop_too(monkeypatch, bus):
+    c = _today(monkeypatch, cached='/tmp/today.mp3', player=FakePlayer())
+    c._on_today_listen()
+    assert bus.published[0].title == 'A Daily Strength'
+    assert bus.published[0].artist == devotional_audio.DAILY_STRENGTH_SERIES
+    c._stop_today_listen()
+    assert bus.current is None

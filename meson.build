@@ -63,6 +63,7 @@ py_sources = files(
   'module_picker.py',
   'module_positions.py',
   'motion.py',
+  'mpris.py',
   'navigation.py',
   'night_light.py',
   'onboarding.py',

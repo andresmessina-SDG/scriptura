@@ -8,6 +8,13 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Added
 
+- **Readings on the desktop's media controls.** Whatever the app is
+  reading aloud — a chapter, a psalm, either devotional — now appears on
+  the media keys, the lock screen and the Shell's media control, named by
+  what it is: "John 3", from the Berean Standard Bible. Play, pause, stop,
+  skip back, reading speed and volume all work from there. There is no
+  next or previous, because a reading stops at the end of its chapter and
+  does not read on.
 - **Historical Commentaries.** An optional church-history commentary
   pane: how the church read each verse across time — the ante-Nicene
   fathers, the medieval doctors, and the Reformers — as chronological
