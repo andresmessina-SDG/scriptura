@@ -69,3 +69,62 @@ def test_stop_is_safe_when_never_started():
     s = FakeSpinner()
     DelayedSpinner(s, delay_ms=20).stop()
     assert not s.visible and not s.spinning
+
+
+# ── DelayedPulse (the same rule, for an indicator the app draws) ─────────────
+
+from gtk_utils import DelayedPulse
+
+
+class FakeBand:
+    """A progress line: shown once, ticked repeatedly, cleared at the end."""
+
+    def __init__(self):
+        self.shown = 0
+        self.ticks = 0
+        self.hidden = 0
+
+    def pulse(self):
+        return DelayedPulse(show=lambda: setattr(self, 'shown', self.shown + 1),
+                            tick=lambda: setattr(self, 'ticks', self.ticks + 1),
+                            hide=lambda: setattr(self, 'hidden',
+                                                 self.hidden + 1),
+                            delay_ms=20, interval_ms=20)
+
+
+def test_fast_op_never_shows_the_band():
+    b = FakeBand()
+    d = b.pulse()
+    d.start()
+    d.stop()
+    _pump(80)
+    assert b.shown == 0 and b.ticks == 0
+
+
+def test_slow_op_shows_the_band_and_keeps_it_moving():
+    b = FakeBand()
+    d = b.pulse()
+    d.start()
+    assert b.shown == 0            # the threshold gates it
+    _pump(90)
+    d.stop()
+    assert b.shown == 1            # shown once…
+    assert b.ticks > 1             # …then kept moving
+    assert b.hidden == 1
+
+
+def test_stopping_leaves_no_timer_behind():
+    b = FakeBand()
+    d = b.pulse()
+    d.start()
+    _pump(60)
+    d.stop()
+    ticks = b.ticks
+    _pump(60)
+    assert b.ticks == ticks
+
+
+def test_pulse_stop_is_safe_when_never_started():
+    b = FakeBand()
+    b.pulse().stop()
+    assert b.shown == 0 and b.hidden == 1

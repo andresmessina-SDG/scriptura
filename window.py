@@ -31,7 +31,7 @@ from study_journal import StudyJournalWindow
 
 _log = logging.getLogger('scriptura.window')
 from crossref_panel import CrossRefPanel
-from a11y import set_accessible_label
+from a11y import announce, set_accessible_label
 
 
 def N_(message):
@@ -1944,7 +1944,13 @@ class BibleWindow(Adw.ApplicationWindow):
         got = devotional_audio.todays_strength(today)
         if got is not None:
             self._today_listen = got
-            self._today_view.set_listen(got[1])
+            # The page is rebuilt in place when the calendar changes; restating
+            # the offer mid-fetch would put a play icon over a fetch that is
+            # still running.
+            player = getattr(self, '_today_player', None)
+            self._today_view.set_listen(
+                got[1], playing=(player is not None and player.playing),
+                fetching=getattr(self, '_today_fetching', False))
             return
         self._today_view.clear_listen()
         tasks.submit(
@@ -1963,6 +1969,12 @@ class BibleWindow(Adw.ApplicationWindow):
             self._today_view.set_listen(got[1])
 
     def _on_today_listen(self):
+        if getattr(self, '_today_fetching', False):
+            # A devotional is a few megabytes; the reader who changes their
+            # mind says so with the same press that started it.
+            self._end_today_fetch()
+            tasks.cancel(f'today-audio:{id(self)}')
+            return
         player = getattr(self, '_today_player', None)
         if player is not None and player.playing:
             player.pause()
@@ -1971,16 +1983,38 @@ class BibleWindow(Adw.ApplicationWindow):
         if not getattr(self, '_today_listen', None):
             return
         url, title = self._today_listen
-        self._today_view.set_listen(title, playing=True)
         cached = devotional_audio.cached_episode(url)
         if cached:
+            self._today_view.set_listen(title, playing=True)
             self._start_today_listen(cached)
             return
+        # Nothing to hear until the file is here — the disc shows the fetch
+        # and turns to pause only when the reading actually starts.
+        self._today_fetching = True
+        self._today_view.set_listen(title, fetching=True)
+        announce(self, _('Fetching the reading'))
         tasks.submit(
             key=f'today-audio:{id(self)}',
             work=lambda _t: devotional_audio.fetch_episode(url),
-            apply=self._start_today_listen,
-            on_error=lambda _e: self._stop_today_listen())
+            apply=self._finish_today_fetch,
+            on_error=lambda _e: self._finish_today_fetch(None))
+
+    def _end_today_fetch(self):
+        """Return the disc to rest — success, failure and cancel alike."""
+        self._today_fetching = False
+        if self._today_view is not None and getattr(self, '_today_listen', None):
+            self._today_view.set_listen(self._today_listen[1])
+
+    def _finish_today_fetch(self, path):
+        self._end_today_fetch()
+        if not path:
+            # fetch_episode answers every failure with None, so this says no
+            # more than it knows.
+            message = _('Could not fetch the reading')
+            announce(self, message, urgent=True)
+            self._toast(message)
+            return
+        self._start_today_listen(path)
 
     def _start_today_listen(self, path):
         if not path or self._today_view is None:
@@ -1990,6 +2024,9 @@ class BibleWindow(Adw.ApplicationWindow):
             self._today_player = devotional_audio.Player()
         if not self._today_player.play(path):
             self._stop_today_listen()
+            message = _('Could not play the reading')
+            announce(self, message, urgent=True)
+            self._toast(message)
             return
         self._today_view.set_listen(self._today_listen[1], playing=True)
         if getattr(self, '_today_listen_tick', None) is None:
@@ -2008,6 +2045,10 @@ class BibleWindow(Adw.ApplicationWindow):
         return GLib.SOURCE_CONTINUE
 
     def _stop_today_listen(self):
+        # A fetch still in flight would start playing after the page had been
+        # dismissed or the reader had asked for silence.
+        tasks.cancel(f'today-audio:{id(self)}')
+        self._today_fetching = False
         if getattr(self, '_today_listen_tick', None) is not None:
             GLib.source_remove(self._today_listen_tick)
         self._today_listen_tick = None
@@ -2538,6 +2579,7 @@ class BibleWindow(Adw.ApplicationWindow):
             _('OpenBible.info — cross-references and topical tags (CC-BY)'),
             _('Dodson Greek Lexicon — public-domain NT Greek definitions'),
             _('eBible.org — modern translation catalog and texts'),
+            _('Berean Standard Bible audio — chapters read by Bob Souer (CC0)'),
             _('HistoricalChristianFaith Commentaries Database — historical commentary pack'),
         ])
         dlg.add_acknowledgement_section(_('Built with'), [

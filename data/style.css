@@ -1669,3 +1669,162 @@ button.today-listen-play {
     text-transform: uppercase;
     opacity: 0.58;
 }
+
+/* ── The listening pill ──────────────────────────────────────────────── */
+/* The player that floats over the reading pane while a chapter is read
+   aloud. Depth 2 (floating card) — it does not invent a fourth level; it is
+   simply a card whose corner radius has gone all the way round.
+
+   Only geometry lives here. Every colour is written per-pane by
+   BiblePane._update_font_css, because the pill is cast from the reader's own
+   paper and ink — the same reason the Today disc's fill comes from
+   today_page.set_appearance rather than from this file. A stock .osd slab
+   would be the one object on the reading surface that did not come from the
+   page.
+
+   NOT inside a Revealer: a Revealer clips its child and would shear the
+   shadow off (see the quirks note at the top of this file). audio_pill.py
+   animates opacity + margin instead. */
+.audio-pill {
+    padding: 0 8px;
+    min-height: 48px;
+    border-radius: 9999px;
+    box-shadow: 0 8px 24px alpha(black, 0.13),
+                0 1px 3px alpha(black, 0.10);
+}
+/* Sized against the house's own icon buttons rather than a touch-target
+   number borrowed from elsewhere: .pane-action is 26px tall with a 7% hover,
+   and a 44px disc beside it read as a slab. 32px keeps a comfortable target
+   while the hover stays a mark on the pill rather than a second surface. */
+button.audio-pill-action {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+    border-radius: 9999px;
+}
+/* The reference and its length share a line; the length is context, not the
+   subject, so it steps back rather than shrinking to illegibility. */
+/* The column hugs its label so the thread ends where the text above it ends
+   — at 128px the line ran wider than "Psalms 1 0:46" and the two read as two
+   things that failed to line up. The floor is only there so a short reference
+   ("Job 3") still leaves a line worth looking at. */
+.audio-pill-now {
+    padding: 0 10px;
+    min-width: 96px;
+}
+.audio-pill-ref {
+    font-size: 12.5px;
+    font-feature-settings: "tnum" 1;
+}
+.audio-pill-length {
+    font-size: 12.5px;
+    opacity: 0.62;
+    font-feature-settings: "tnum" 1;
+}
+/* The thread: what the 4px band under the toolbar used to say, now said
+   where the control is. Thinner than the band was, because here it sits
+   inside a surface rather than ruling one off. */
+progressbar.audio-pill-thread,
+progressbar.audio-pill-thread > trough,
+progressbar.audio-pill-thread > trough > progress {
+    min-height: 3px;
+}
+/* An override, not a preference: a GtkProgressBar asks for 150px of its own
+   accord, which is wider than any reference the line above it holds, so the
+   thread overran its own label by 56px and the column stopped hugging
+   anything. Let it shrink and .audio-pill-now governs.
+
+   The trough and the bar only — never `progress`. That node IS the fill, and
+   a min-width there is not a floor but its width: give it 24px and the thread
+   reads 24px at every fraction, including 1.0. It must be free to be exactly
+   as wide as the fraction it is showing. */
+progressbar.audio-pill-thread,
+progressbar.audio-pill-thread > trough {
+    min-width: 24px;
+}
+progressbar.audio-pill-thread > trough,
+progressbar.audio-pill-thread > trough > progress {
+    border-radius: 999px;
+    margin: 0;
+}
+/* "Read this one instead", up only while the reading that is sounding and the
+   chapter on screen have parted company. A capsule like everything else here,
+   and tighter on the left than on the right because the triangle carries its
+   own air inside the icon box while the reference ends at its last glyph. */
+button.audio-pill-switch {
+    min-height: 32px;
+    padding: 0 10px 0 6px;
+    border-radius: 9999px;
+    font-size: 12.5px;
+    font-feature-settings: "tnum" 1;
+}
+/* Adwaita sets a button's label bold, which put the chapter on offer in a
+   heavier hand than the chapter being read — the offer out-shouting the
+   subject. The two references are the same kind of thing and are set the same
+   way; only the ink tells them apart. The weight has to be lifted off the
+   label node itself — a `font-weight` on the button loses to the rule that
+   sets it. */
+button.audio-pill-switch label {
+    font-weight: normal;
+}
+/* The triangle sits with the text rather than as a second mark: an
+   Adw.ButtonContent spaces its icon 6px off its label, which at this size
+   reads as two things sharing a capsule rather than one control.
+
+   Descendant selectors, not child chains: the content is
+   `button > buttoncontent > box > image|label`, and the box in the middle is
+   libadwaita's own business — `> buttoncontent > label` matched nothing and
+   failed silently, the same way `button.audio-pill-rate` did above. */
+button.audio-pill-switch image {
+    -gtk-icon-size: 14px;
+    margin-right: -2px;
+}
+/* Speed: named by its value, because no glyph says "one and a quarter
+   times". Sized with the pill's other actions; the ink comes from the paper
+   like everything else on it.
+
+   The selector is the inner button, not the class: a GtkMenuButton is
+   `menubutton > button`, so `button.audio-pill-rate` matches nothing and the
+   speed silently kept Adwaita's own menubutton — square corners, no height
+   cap, the theme's grey when checked, and a label a size larger than the
+   reference beside it. Everything else here writes it this way. */
+menubutton.audio-pill-rate > button {
+    min-width: 40px;
+    min-height: 32px;
+    padding: 0 6px;
+    border-radius: 9999px;
+    font-size: 12.5px;
+    font-feature-settings: "tnum" 1;
+}
+/* A capsule sheet of capsule cells, over a capsule pill: the speeds are the
+   pill's own row of choices, not a sheet of some other stock.
+
+   18px, and NOT the 9999px used everywhere else in this file: GTK reserves a
+   popover's declared corner radius inside the surface it asks GDK to present
+   (18px asks for 118px of height, 100px asks for 280px), so 9999px asks for a
+   surface no display can give and the popover is popped straight back down —
+   it emits `show`, then `closed`, and the speed simply never opens. This is
+   half the contents box, which is the 28px cell plus the 4px above and below
+   it named here: a capsule for as long as those three agree. */
+.audio-rate-popover > contents {
+    padding: 4px 10px;
+    border-radius: 18px;
+}
+/* Not `linked`: linked squares off every interior corner, so the chosen speed
+   showed as a hard grey rectangle inside a rounded sheet. The floor holds all
+   six cells at one width — sized to content they ran 28px for "1" and 46px
+   for "1.25", which left the commonest speeds the smallest to hit. */
+button.audio-rate-choice {
+    min-width: 30px;
+    min-height: 28px;
+    padding: 0 4px;
+    border-radius: 9999px;
+    font-size: 12.5px;
+    font-feature-settings: "tnum" 1;
+}
+/* The close is a stock 16px glyph with far more air in its box than the ring
+   and the triangle beside it, and it read as the lightest thing on the pill.
+   One step up puts the three marks at one optical weight. */
+button.audio-pill-close {
+    -gtk-icon-size: 18px;
+}

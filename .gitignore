@@ -40,6 +40,7 @@ repo/
 public/
 
 # Internal working docs — not for the public repo
+BACKLOG.md
 GUIDANCE.md
 BACKLOG.md
 STRUCTURAL_ANALYSIS.md

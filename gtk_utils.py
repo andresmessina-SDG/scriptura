@@ -42,6 +42,53 @@ class DelayedSpinner:
         self._spinner.set_visible(False)
 
 
+class DelayedPulse:
+    """DelayedSpinner's rule for a busy indicator the app draws itself.
+
+    The spoken-reading controls report their fetch on the progress line they
+    already own — a pulsing band under the toolbar, a sweep around the Today
+    disc — so there is no Gtk.Spinner to show and hide. The timing is the
+    same: `show` runs once when an operation outlasts the perception
+    threshold, `tick` follows it immediately and then every `interval_ms`,
+    and `stop()` calls `hide`. An operation that finishes under the threshold
+    leaves the surface untouched.
+
+    The pulse is not suppressed under reduced motion. A busy indicator has no
+    end state to collapse to, and Gtk.Spinner does the same.
+    """
+
+    def __init__(self, show, tick, hide,
+                 delay_ms: int = motion.SPINNER_DELAY_MS,
+                 interval_ms: int = 80) -> None:
+        self._show = show
+        self._tick = tick
+        self._hide = hide
+        self._delay_ms = delay_ms
+        self._interval_ms = interval_ms
+        self._timer = 0
+
+    def start(self) -> None:
+        if self._timer:
+            return  # already armed; don't push the threshold out
+        self._timer = GLib.timeout_add(self._delay_ms, self._begin)
+
+    def _begin(self) -> bool:
+        self._show()
+        self._tick()
+        self._timer = GLib.timeout_add(self._interval_ms, self._pulse)
+        return bool(GLib.SOURCE_REMOVE)
+
+    def _pulse(self) -> bool:
+        self._tick()
+        return bool(GLib.SOURCE_CONTINUE)
+
+    def stop(self) -> None:
+        if self._timer:
+            GLib.source_remove(self._timer)
+            self._timer = 0
+        self._hide()
+
+
 def fade_in(widget: Gtk.Widget) -> None:
     """Fade freshly swapped panel content up from transparent so it reads
     as arriving rather than popping (DURATION_MICRO, EASE_FADE) — for the
