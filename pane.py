@@ -2884,6 +2884,15 @@ class BiblePane(Gtk.Box):
         # the right context to teach that verses are tappable.
         if self._on_hint and self._module_type == 'Biblical Texts':
             self._on_hint('first_render')
+        # Mark the unit the fresh chapter opens on. The render cleared both
+        # the tag and `_current_unit`, and until this the mark waited for a
+        # scroll — so a reader who opened a chapter and read down it saw
+        # nothing marked and nothing quieted. On an idle because the lines
+        # have to be validated before a position can be read back. Applying
+        # the tag cannot move the text: it carries no visual properties, and
+        # the rule and the veil are both painted from it.
+        if self._mark_current_unit or self._focus_unit:
+            GLib.idle_add(self._update_current_unit)
         return GLib.SOURCE_REMOVE
 
     def _bump_overlay_priorities(self):
@@ -3087,16 +3096,27 @@ class BiblePane(Gtk.Box):
                else self._find_topmost_visible_verse())
         if top is None:
             # The viewport top is on a heading or blank line, which carries
-            # no vnum_ tag. Two very different situations share that answer.
-            # At the top of a chapter — the common one now that headings
-            # open most chapters — nothing is marked yet, so fall back to
-            # the first rendered verse or the reader opens a chapter with no
-            # mark at all until they scroll. Mid-chapter, a heading between
-            # units means keep what we have rather than flicker.
-            if self._current_unit is not None:
-                return
+            # no vnum_ tag, and that answer covers several situations: the
+            # top of a chapter, a heading sitting on the viewport's first
+            # row, the gap between two units.
+            #
+            # This used to KEEP the unit it had, on the reasoning that a
+            # heading between units is a moment in passing and re-marking
+            # would flicker. That is defensible for a hairline in the margin
+            # and wrong for anything that dims text: the kept unit scrolls
+            # away, and then either nothing is quieted at all (the veil
+            # cannot find its unit and fails open) or everything is (only a
+            # sliver of the unit is left on screen, so the veil below it
+            # covers the page). Both were measured off real screenshots.
+            #
+            # So look further down the page instead. The first verse the
+            # viewport actually shows is the one the reader is entering —
+            # under a heading at the top, that is the new unit, which is
+            # exactly what should be marked.
+            top = self._first_visible_verse()
+        if top is None:
             rendered = sorted(v for v, _h in (self._rendered_verses or []))
-            if not rendered:
+            if not rendered or self._current_unit is not None:
                 return
             top = rendered[0]
         bounds = self._unit_bounds(top)
@@ -3104,6 +3124,45 @@ class BiblePane(Gtk.Box):
             return
         self._current_unit = bounds[0]
         self._apply_unit_tag(*bounds)
+
+    def _first_visible_verse(self):
+        """The first verse the viewport shows anywhere, not only on its top
+        row.
+
+        Walks down the visible height a line at a time until a `vnum_` tag
+        answers. Only reached when the top row carries none — a heading, a
+        paragraph gap, the chapter title — so the common path still costs one
+        lookup. Deliberately NOT folded into ScrollKeeper's
+        `_find_topmost_visible_verse`: that one feeds the reading anchor and
+        the scroll invariant, and it means the verse at the top edge exactly.
+        """
+        view = self._view
+        if not view.get_realized():
+            return None
+        x = max(40, view.get_left_margin() + 20)
+        height = view.get_visible_rect().height
+        step = max(12, int(self._line_height_hint()))
+        y = 4
+        while y < height:
+            bx, by = view.window_to_buffer_coords(
+                Gtk.TextWindowType.TEXT, x, y)
+            ok, it = view.get_iter_at_location(bx, by)
+            if ok:
+                for tag in it.get_tags():
+                    name = tag.get_property('name') or ''
+                    if name.startswith('vnum_'):
+                        try:
+                            return int(name.split('_', 1)[1])
+                        except (ValueError, IndexError):
+                            pass
+            y += step
+        return None
+
+    def _line_height_hint(self):
+        """Roughly one line, for stepping down the viewport."""
+        metrics = self._view.get_pango_context().get_metrics(None, None)
+        return ((metrics.get_ascent() + metrics.get_descent())
+                / Pango.SCALE) or 20
 
     def _at_chapter_foot(self):
         """Whether the reader has scrolled as far as the chapter goes.

@@ -39,6 +39,9 @@ class Pane:
     def _at_chapter_foot(self):
         return self.at_foot
 
+    def _first_visible_verse(self):
+        return self.first_visible
+
     def __init__(self, rule=False, veil=False):
         self._view = FakeView()
         self._mark_current_unit = rule
@@ -48,6 +51,7 @@ class Pane:
         self._rendered_verses = [(1, 0), (2, 0), (3, 0)]
         self._top = 1
         self.at_foot = False
+        self.first_visible = None
         self.applied = []
         self.cleared = 0
         self.css = 0
@@ -287,3 +291,41 @@ def test_a_chapter_that_fits_the_viewport_is_never_at_its_foot():
 
 def test_nothing_rendered_is_not_the_foot():
     assert not Foot(value=1200.0, upper=2000.0, verses=False)._at_chapter_foot()
+
+
+# ── A viewport whose top row carries no verse ────────────────────────────────
+
+def test_a_heading_on_the_top_row_does_not_freeze_the_mark():
+    """It used to keep the unit it had, which is defensible for a hairline in
+    the margin and fatal for a veil: the kept unit scrolls away, and then
+    either nothing is quieted (the veil fails open) or everything is (only a
+    sliver of the unit is left on screen). Both were measured off real
+    screenshots."""
+    pane = Pane(veil=True)
+    pane._current_unit = 1
+    pane._top = None                    # the top row is a heading
+    pane.first_visible = 3              # the verse under it
+    pane._unit_bounds = lambda v: (3, 15) if v == 3 else None
+    pane._update_current_unit()
+    assert pane._current_unit == 3
+    assert pane.applied == [(3, 15)]
+
+
+def test_an_empty_viewport_keeps_what_it_had():
+    """Nothing visible anywhere is the one case where holding still is
+    right — there is no better answer to move to."""
+    pane = Pane(veil=True)
+    pane._current_unit = 3
+    pane._top = None
+    pane.first_visible = None
+    pane._update_current_unit()
+    assert pane._current_unit == 3
+    assert pane.applied == []
+
+
+def test_an_opening_chapter_with_no_mark_yet_falls_back_to_its_first_verse():
+    pane = Pane(veil=True)
+    pane._top = None
+    pane.first_visible = None
+    pane._update_current_unit()
+    assert pane.applied == [(1, 3)]
