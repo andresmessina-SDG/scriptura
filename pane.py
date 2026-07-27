@@ -779,6 +779,41 @@ def _is_bad_cipher(all_empty, chapter_in_index, ratio):
     return ratio < 0.6
 
 
+def heading_line(buf, start):
+    """The start of the section heading above `start`, or None if there is
+    none.
+
+    Walks back one paragraph from a unit's first verse, past the blank line
+    the heading is separated by. A heading is recognised by what it LACKS:
+    every verse paragraph opens under a `vnum_` tag and nothing else in the
+    reading text does. Modules that carry no headings (KJV, ASV, the
+    Vulgate) answer None, and the veil then starts at the verse itself.
+    """
+    line = start.copy()
+    line.set_line_offset(0)
+    for _ in range(3):
+        if not line.backward_line():
+            return None
+        end = line.copy()
+        if not end.ends_line():
+            end.forward_to_line_end()
+        if not buf.get_text(line, end, False).strip():
+            continue              # the blank line between heading and verse
+        for tag in line.get_tags():
+            if (tag.get_property('name') or '').startswith('vnum_'):
+                return None       # a verse: this unit opens with no heading
+        return line
+    return None
+
+
+#: How far the focus veil quiets the page outside the sense-unit being read
+#: — the paper's own colour laid back over the text at this alpha. Chosen by
+#: eye from rendered candidates; low enough that the quieted text stays
+#: readable if the reader looks at it, which is the difference between a
+#: focus aid and a blindfold.
+FOCUS_DIM = 0.55
+
+
 class BibleTextView(Gtk.TextView):
     """TextView that paints verse highlights itself, as bands of a uniform
     height, instead of relying on tag backgrounds.
@@ -842,6 +877,11 @@ class BibleTextView(Gtk.TextView):
                 self._draw_highlights(snapshot)
             except Exception:
                 pass  # never let a paint glitch blank the reading view
+        elif layer == Gtk.TextViewLayer.ABOVE_TEXT:
+            try:
+                self._draw_focus_veil(snapshot)
+            except Exception:
+                pass
 
     def _metrics(self):
         m = self.get_pango_context().get_metrics(None, None)
@@ -897,7 +937,9 @@ class BibleTextView(Gtk.TextView):
         # structure beside the text rather than as a mark ON it, and stays
         # clear of the highlight bands it may overlap.
         unit = table.lookup('_cur_unit')
-        if unit is not None:
+        if unit is not None and getattr(self, '_show_unit_rule', False):
+            # The tag is shared with the focus veil, which may be running on
+            # its own — so the rule asks the setting, not the tag's presence.
             self._draw_unit_rule(snapshot, buf, unit, lo, hi)
         # Lexicon hover — a dotted accent underline ("defined term" affordance).
         if hover is not None:
@@ -908,6 +950,79 @@ class BibleTextView(Gtk.TextView):
             for s, e in self._tag_ranges(buf, hover, lo, hi):
                 self._draw_band(snapshot, s, e, hcol, asc, desc,
                                 underline=True, dotted=True)
+
+    def set_unit_rule(self, enabled):
+        """Whether to draw the margin rule beside the current unit. Asked
+        separately from the tag, which the focus veil also reads."""
+        self._show_unit_rule = bool(enabled)
+        self.queue_draw()
+
+    def set_focus_paper(self, paper_hex, dim):
+        """The paper the veil is drawn in, and how strongly. `dim` of 0 is
+        off, and is the default — nothing here paints until the reader asks
+        for it."""
+        self._focus_paper = paper_hex
+        self._focus_dim = float(dim)
+        self.queue_draw()
+
+    def _draw_focus_veil(self, snapshot):
+        """Quiet everything but the sense-unit being read.
+
+        A paper-coloured veil over the text ABOVE and BELOW the current unit,
+        drawn on GtkTextView's own ABOVE_TEXT hook. Nothing is retagged and
+        no glyph is recoloured: a foreground tag applied after layout desyncs
+        from the cached glyph rendering (the same trap the highlight bands
+        were written around), and it would be buffer work on every scroll.
+        The veil is paint, so the text cannot move — which is what lets this
+        exist beside the scroll north-star at all.
+
+        The unit itself comes from `_cur_unit`, the tag the margin rule
+        already uses, so the two agree by construction and the reader can run
+        either, both, or neither.
+        """
+        if not getattr(self, '_focus_dim', 0.0):
+            return
+        buf = self.get_buffer()
+        tag = buf.get_tag_table().lookup('_cur_unit')
+        if tag is None:
+            return
+        vr = self.get_visible_rect()
+        _, lo = self.get_iter_at_location(0, vr.y)
+        _, hi = self.get_iter_at_location(0, vr.y + vr.height)
+        hi.forward_line()
+        ranges = list(self._tag_ranges(buf, tag, lo, hi))
+        colour = Gdk.RGBA()
+        if not colour.parse(self._focus_paper or '#ffffff'):
+            return
+        colour.alpha = self._focus_dim
+        width = float(self.get_width())
+        if not ranges:
+            # Nothing of the unit is on screen — which also happens when the
+            # tag is stale or the buffer has just been rebuilt. FAIL OPEN:
+            # veiling the whole viewport here would blank the reading text
+            # over a bookkeeping detail, and unlit paper is never worth a
+            # page the reader cannot read. (It did exactly that once.)
+            return
+        top = self.get_iter_location(ranges[0][0])
+        bottom = self.get_iter_location(ranges[-1][1])
+        # The unit's own heading stays lit with it: it is the title of what is
+        # being read, and quieting it leaves the reader in a passage with its
+        # name greyed out. The heading is not inside the tag — SWORD hands it
+        # over separately from the verse text — so the veil's top is walked
+        # back over it here rather than by widening the tag, which the margin
+        # rule also reads and was approved without it.
+        heading = heading_line(buf, ranges[0][0])
+        self._veil(snapshot, colour, vr.y,
+                   top.y if heading is None
+                   else self.get_iter_location(heading).y, width)
+        self._veil(snapshot, colour, bottom.y + bottom.height,
+                   vr.y + vr.height, width)
+
+    @staticmethod
+    def _veil(snapshot, colour, y0, y1, width):
+        if y1 > y0:
+            snapshot.append_color(
+                colour, Graphene.Rect().init(0, y0, width, y1 - y0))
 
     def _draw_unit_rule(self, snapshot, buf, tag, lo, hi):
         """Vertical rule beside the sense-unit being read.
@@ -1129,6 +1244,10 @@ class BiblePane(Gtk.Box):
         # the verse text — so it defaults on, like small caps.
         self._show_headings = bool(settings.get('show_headings'))
         self._mark_current_unit = bool(settings.get('mark_current_unit'))
+        # Quiet the rest of the page while reading a unit. Shares the
+        # `_cur_unit` tag with the margin rule above, so either, both or
+        # neither can run.
+        self._focus_unit = bool(settings.get('focus_current_unit'))
         # Verse the currently-marked sense-unit starts at, so a scroll that
         # stays inside one unit costs a comparison and no retagging.
         self._current_unit = None
@@ -1388,6 +1507,7 @@ class BiblePane(Gtk.Box):
 
         # Native TextView
         self._view = BibleTextView()
+        self._view.set_unit_rule(self._mark_current_unit)
         self._view.set_editable(False)
         self._view.set_cursor_visible(False)
         self._view.set_wrap_mode(Gtk.WrapMode.WORD)
@@ -1909,6 +2029,11 @@ class BiblePane(Gtk.Box):
         # sibling in the overlay.
         self._audio.pill.set_appearance(
             surface or ('#1e1e1e' if dark else '#f7f4ee'), ink)
+        # The focus veil is the same paper, laid back over the text it quiets,
+        # so it reads as unlit page rather than as a grey wash.
+        self._view.set_focus_paper(
+            surface or ('#1e1e1e' if dark else '#f7f4ee'),
+            FOCUS_DIM if self._focus_unit else 0.0)
         # Resize the embedded artifact markers live with the reading font — no
         # re-render needed (the text reflows via the CSS above on its own).
         px = self._artifact_icon_px()
@@ -2932,7 +3057,15 @@ class BiblePane(Gtk.Box):
             return None
         opening = [v for v in starts if v <= verse]
         if not opening:
-            return None
+            # Before the first heading. That opening passage is a sense-unit
+            # too — the epistolary greeting, the psalm's superscription — it
+            # simply has no title of its own, and returning None here left
+            # BOTH controls silent at the top of every chapter whose first
+            # heading is not verse 1 (2 Peter 1 carries its first at verse 3
+            # in the Synodal and the BSB). That is exactly where a reader
+            # opens a chapter and looks, so the feature read as broken.
+            preface = [v for v in rendered if v < starts[0]]
+            return (rendered[0], preface[-1]) if preface else None
         first = opening[-1]
         later = [v for v in starts if v > first]
         last = (max(v for v in rendered if v < later[0]) if later
@@ -2947,9 +3080,11 @@ class BiblePane(Gtk.Box):
         click-driven mark shows where you last acted and then sits there.
         Retags only when the unit actually changes, so scrolling inside one
         unit does no buffer work."""
-        if not self._mark_current_unit or self._module_type != 'Biblical Texts':
+        if ((not self._mark_current_unit and not self._focus_unit)
+                or self._module_type != 'Biblical Texts'):
             return
-        top = self._find_topmost_visible_verse()
+        top = (self._rendered_verses[-1][0] if self._at_chapter_foot()
+               else self._find_topmost_visible_verse())
         if top is None:
             # The viewport top is on a heading or blank line, which carries
             # no vnum_ tag. Two very different situations share that answer.
@@ -2969,6 +3104,27 @@ class BiblePane(Gtk.Box):
             return
         self._current_unit = bounds[0]
         self._apply_unit_tag(*bounds)
+
+    def _at_chapter_foot(self):
+        """Whether the reader has scrolled as far as the chapter goes.
+
+        The topmost visible verse is the right reading of "where am I?"
+        everywhere except here: at the foot of a chapter the scroll has run
+        out, so a last unit shorter than the viewport can never reach the top
+        and never becomes current — it just sits there quieted while the
+        reader reads it, which is precisely backwards.
+
+        Requires the chapter to actually scroll. A chapter that fits the
+        viewport whole is at its foot from the moment it opens, and there the
+        topmost verse is the honest answer.
+        """
+        if not self._rendered_verses:
+            return False
+        adj = self._reading_scroll.get_vadjustment()
+        page = adj.get_page_size()
+        if adj.get_upper() <= page:
+            return False
+        return adj.get_value() >= adj.get_upper() - page - 2.0
 
     def _apply_unit_tag(self, first, last):
         """Mark the unit's whole span with the tag BibleTextView draws the
@@ -2992,13 +3148,43 @@ class BiblePane(Gtk.Box):
             self._view.queue_draw()
         self._current_unit = None
 
+    def marks_sections(self):
+        """Whether the module this pane is showing supplies section headings
+        at all — the data both sense-unit controls are built on.
+
+        Asked of the module rather than of the chapter on screen: a chapter
+        with no headings of its own is common in a module full of them, and a
+        control that came and went as the reader paged would be worse than
+        one that is honestly absent. eBible modules carry none by
+        construction (the fetch hands back an empty map).
+        """
+        if self._module_type != 'Biblical Texts' or not self._module:
+            return False
+        if ebible_bridge.is_ebible_module(self._module):
+            return False
+        return sword_bridge.module_marks_sections(self._module)
+
     def set_mark_current_unit(self, enabled):
         if self._mark_current_unit == bool(enabled):
             return
         self._mark_current_unit = bool(enabled)
+        self._view.set_unit_rule(self._mark_current_unit)
         if self._mark_current_unit:
             self._update_current_unit()
+        elif not self._focus_unit:
+            # The veil reads the same tag; only the last one out clears it.
+            self._clear_unit_tag()
         else:
+            self._view.queue_draw()
+
+    def set_focus_current_unit(self, enabled):
+        if self._focus_unit == bool(enabled):
+            return
+        self._focus_unit = bool(enabled)
+        self._update_font_css()          # the veil's paper and strength
+        if self._focus_unit:
+            self._update_current_unit()
+        elif not self._mark_current_unit:
             self._clear_unit_tag()
 
     def set_show_headings(self, enabled):

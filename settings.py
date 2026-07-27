@@ -45,6 +45,10 @@ _defaults: dict[str, Any] = {
     # taste, so off by default — and it is the one element that changes
     # on screen without the reader doing anything (GUIDANCE §9).
     'mark_current_unit':  False,
+    # Quiet the rest of the page while you read one sense-unit — the
+    # same scroll-driven unit the rule marks, painted rather than
+    # retagged. Opt-in taste, off by default.
+    'focus_current_unit': False,
     # Cross-reference bar on verse click (the ※ toggle in the header's
     # Reading-tools cluster). On by default; off keeps the reading surface
     # fully minimal — verse clicks stop summoning the bar.

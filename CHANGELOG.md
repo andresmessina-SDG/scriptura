@@ -15,6 +15,12 @@ semver-ish — 0.x was the pre-Flathub testing track.
   skip back, reading speed and volume all work from there. There is no
   next or previous, because a reading stops at the end of its chapter and
   does not read on.
+- **Quiet the rest of the page.** An optional reading focus: the passage
+  you are in stays on lit paper while the rest of the page is laid back
+  under a veil of that same paper — its heading stays with it, and
+  nothing moves. It follows your scrolling, not your cursor, and it
+  needs a translation that marks its own section headings. Appearance →
+  Advanced → *Quiet the rest of the page*, off until you ask for it.
 - **Historical Commentaries.** An optional church-history commentary
   pane: how the church read each verse across time — the ante-Nicene
   fathers, the medieval doctors, and the Reformers — as chronological

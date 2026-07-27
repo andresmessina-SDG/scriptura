@@ -272,6 +272,7 @@ def _reset():
         _cache.clear()
         _notes_cache.clear()
         _headings_cache.clear()
+        _marks_sections.clear()
         _strongs_cache.clear()
         _book_maps.clear()
     with _indexing_lock:
@@ -717,6 +718,42 @@ def chapter_headings(module_name, book, chapter):
     load_chapter(module_name, book, chapter)
     with _lock:
         return _headings_cache.get(key, {})
+
+
+#: Chapters probed to decide whether a module marks its sections at all,
+#: and the answers, cached for the session. Three chapters across both
+#: testaments, each known to carry headings wherever a module supplies them —
+#: a single probe would call LEB heading-less off Psalm 23, which has none.
+_SECTION_PROBE = (('Mark', 4), ('John', 3), ('Genesis', 1))
+_marks_sections = {}
+
+
+def module_marks_sections(module_name):
+    """Whether this module supplies section headings anywhere.
+
+    Measured, because the module's own declaration is worthless: RusSynodal
+    and KJVA both list `GlobalOptionFilter=OSISHeadings` in their config and
+    carry not one heading in the entire canon. The filter says the module may
+    contain heading markup, not that anybody wrote any.
+
+    Asked per module, not per chapter, on purpose — plenty of chapters that
+    do have headings elsewhere have none of their own (Psalm 23 in LEB), and
+    a control that came and went as the reader paged would be worse than one
+    that is simply absent. Costs at most three chapter renders once per
+    module (77 ms measured, worst case), then answers from the cache.
+    """
+    if module_name in _marks_sections:
+        return _marks_sections[module_name]
+    found = False
+    for book, chapter in _SECTION_PROBE:
+        try:
+            if chapter_headings(module_name, book, chapter):
+                found = True
+                break
+        except Exception:
+            continue
+    _marks_sections[module_name] = found
+    return found
 
 
 def module_type(module_name):
