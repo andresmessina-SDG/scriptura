@@ -1,5 +1,5 @@
 project('scriptura',
-  version: '1.3.0',
+  version: '1.4.0',
   meson_version: '>= 0.59.0',
   license: 'GPL-3.0-or-later',
 )
