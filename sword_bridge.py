@@ -1565,6 +1565,19 @@ def catalog_timestamp():
 _CROSSWIRE_HTTPS = 'https://crosswire.org/ftpmirror/pub/sword'
 _CROSSWIRE_FTP = 'ftp://ftp.crosswire.org/pub/sword'
 
+# Both of those daemons run on one machine, so neither survives the host
+# itself going away — which is what happened for nine hours on 26 July
+# 2026, and three times before that since March. This mirror is the last
+# resort: an independent copy of the modules CrossWire's own licence terms
+# allow anyone to redistribute, built by tools/build-sword-mirror.py.
+#
+# It is deliberately a subset. About a fifth of the CrossWire repository is
+# licensed to CrossWire alone, so a fetch for one of those modules gets a
+# 404 here and must fail with an explanation rather than a bare HTTP error.
+# Release assets are a flat namespace, hence the basename mapping.
+_MIRROR_BASE = ('https://github.com/andresmessina-SDG/scriptura-sword-mirror'
+                '/releases/download/current')
+
 
 def _reachable(host, port, timeout=5):
     """Whether a TCP connection to host:port opens within `timeout`.
@@ -1582,8 +1595,28 @@ def _reachable(host, port, timeout=5):
         return False
 
 
+def _fetch_mirror(path, timeout):
+    """Download `path` from Scriptura's mirror of the redistributable subset."""
+    import urllib.error
+    import urllib.request
+
+    _sword_log.info('CrossWire unreachable — falling back to mirror')
+    url = f'{_MIRROR_BASE}/{os.path.basename(path)}'
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as resp:
+            return resp.read()
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404:
+            raise RuntimeError(
+                'CrossWire is unreachable, and this module is not in the '
+                'backup mirror — its licence only permits CrossWire to '
+                'distribute it. Please try again when CrossWire is back.'
+            ) from exc
+        raise
+
+
 def _fetch_crosswire(path, timeout):
-    """Download `path` from CrossWire's sword tree; HTTPS first, then FTP."""
+    """Download `path`; CrossWire over HTTPS, then FTP, then our mirror."""
     # Lazy: pulls in http/ssl/email (~40 ms) — only needed for downloads.
     import urllib.error
     import urllib.request
@@ -1603,9 +1636,20 @@ def _fetch_crosswire(path, timeout):
     else:
         _sword_log.info('CrossWire web server not answering — using FTP')
 
-    with urllib.request.urlopen(
-            f'{_CROSSWIRE_FTP}/{path}', timeout=timeout) as resp:
-        return resp.read()
+    # Probe FTP for the same reason HTTPS is probed: both daemons are on
+    # one host, so when that host is gone this connect would otherwise sit
+    # burning the caller's whole timeout before the mirror is ever tried.
+    if _reachable('ftp.crosswire.org', 21):
+        try:
+            with urllib.request.urlopen(
+                    f'{_CROSSWIRE_FTP}/{path}', timeout=timeout) as resp:
+                return resp.read()
+        except (urllib.error.URLError, OSError) as exc:
+            _sword_log.info('CrossWire FTP failed (%s) — trying mirror', exc)
+    else:
+        _sword_log.info('CrossWire FTP not answering — trying mirror')
+
+    return _fetch_mirror(path, timeout)
 
 
 def refresh_source():

@@ -216,8 +216,14 @@ def test_cannot_remove_absent_module(sword_home):
 def fake_urlopen(monkeypatch):
     """Record fetched URLs and script each one's outcome.
 
-    `outcomes` maps a URL scheme to either bytes (served) or an exception
-    (raised); `calls` records every URL tried, in order.
+    `outcomes` maps a tier name — 'https', 'ftp' or 'mirror' — to either
+    bytes (served) or an exception (raised); `calls` records every URL
+    tried, in order. The mirror needs its own key despite also being an
+    https:// URL, or it would inherit CrossWire's scripted outcome.
+
+    Reachability is scripted per host under 'reachable:<host>', falling
+    back to 'reachable' for both. Per-host matters because CrossWire's two
+    daemons share one machine but fail independently.
     """
     import urllib.request
 
@@ -237,18 +243,26 @@ def fake_urlopen(monkeypatch):
         def __exit__(self, *_exc):
             return False
 
+    def _tier(url):
+        if url.startswith(sword_bridge._MIRROR_BASE):
+            return 'mirror'
+        return url.split(':')[0]
+
     def _fake(url, timeout=None):
         calls.append((url, timeout))
-        result = outcomes[url.split(':')[0]]
+        result = outcomes[_tier(url)]
         if isinstance(result, Exception):
             raise result
         return _Resp(result)
 
+    def _fake_reachable(host, port, timeout=5):
+        return outcomes.get(f'reachable:{host}',
+                            outcomes.get('reachable', True))
+
     monkeypatch.setattr(urllib.request, 'urlopen', _fake)
     # The reachability probe opens a real socket; drive it from the script
     # so no test touches the network.
-    monkeypatch.setattr(sword_bridge, '_reachable',
-                        lambda *_a, **_kw: outcomes.get('reachable', True))
+    monkeypatch.setattr(sword_bridge, '_reachable', _fake_reachable)
     return calls, outcomes
 
 
@@ -292,9 +306,59 @@ def test_fetch_does_not_retry_ftp_on_http_error(fake_urlopen):
 
 def test_fetch_skips_https_when_web_server_is_down(fake_urlopen):
     calls, outcomes = fake_urlopen
-    outcomes['reachable'] = False
+    # The July 2026 shape: httpd gone, FTP still serving from the same box.
+    outcomes['reachable:crosswire.org'] = False
     outcomes['ftp'] = b'over-ftp'
     assert sword_bridge._fetch_crosswire('raw/mods.d.tar.gz', 60) == b'over-ftp'
     # No dead-air wait on a port that is not listening: HTTPS is not dialled.
     assert [c[0] for c in calls] == [
         'ftp://ftp.crosswire.org/pub/sword/raw/mods.d.tar.gz']
+
+
+def test_fetch_falls_back_to_mirror_when_host_is_gone(fake_urlopen):
+    """Neither daemon answers — the whole machine is unreachable."""
+    calls, outcomes = fake_urlopen
+    outcomes['reachable'] = False
+    outcomes['mirror'] = b'from-mirror'
+    got = sword_bridge._fetch_crosswire('packages/rawzip/KJV.zip', 120)
+    assert got == b'from-mirror'
+    # Straight to the mirror: neither dead port is dialled.
+    assert [c[0] for c in calls] == [f'{sword_bridge._MIRROR_BASE}/KJV.zip']
+
+
+def test_mirror_flattens_nested_paths(fake_urlopen):
+    """Release assets are a flat namespace, so raw/… must collapse."""
+    calls, outcomes = fake_urlopen
+    outcomes['reachable'] = False
+    outcomes['mirror'] = b'catalogue'
+    sword_bridge._fetch_crosswire('raw/mods.d.tar.gz', 60)
+    assert [c[0] for c in calls] == [
+        f'{sword_bridge._MIRROR_BASE}/mods.d.tar.gz']
+
+
+def test_fetch_tries_mirror_when_ftp_answers_then_fails(fake_urlopen):
+    """A listening FTP port that then errors must not strand the caller."""
+    import urllib.error
+
+    calls, outcomes = fake_urlopen
+    outcomes['reachable:crosswire.org'] = False
+    outcomes['ftp'] = urllib.error.URLError('connection reset')
+    outcomes['mirror'] = b'from-mirror'
+    got = sword_bridge._fetch_crosswire('packages/rawzip/KJV.zip', 120)
+    assert got == b'from-mirror'
+    assert [c[0] for c in calls] == [
+        'ftp://ftp.crosswire.org/pub/sword/packages/rawzip/KJV.zip',
+        f'{sword_bridge._MIRROR_BASE}/KJV.zip',
+    ]
+
+
+def test_module_absent_from_mirror_explains_the_licence_reason(fake_urlopen):
+    """CrossWire-only licensed modules are absent by design, not by error."""
+    import urllib.error
+
+    calls, outcomes = fake_urlopen
+    outcomes['reachable'] = False
+    outcomes['mirror'] = urllib.error.HTTPError(
+        sword_bridge._MIRROR_BASE, 404, 'Not Found', {}, None)
+    with pytest.raises(RuntimeError, match='not in the backup mirror'):
+        sword_bridge._fetch_crosswire('packages/rawzip/NASB.zip', 120)
