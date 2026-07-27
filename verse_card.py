@@ -121,6 +121,14 @@ def _fit(ctx, text, width, max_height, start, floor=16):
     than the other way round: a long passage simply sets smaller. Stepping
     down rather than solving, because Pango's wrapping is what decides the
     height and it is cheaper to ask it than to model it.
+
+    There is a floor, and past it the type stops shrinking — 16px on a 1080px
+    card is already the smallest that is worth reading. A selection long
+    enough to reach the floor and still not fit is ellipsized rather than
+    allowed to overflow: the layout is centred on the card, so text taller
+    than the box ran off BOTH edges and was silently clipped mid-word (a
+    60-verse selection set 1080px of type into a 1080px card; a whole Psalm
+    119 set 3168px). An ellipsis at least says there is more.
     """
     px = start
     while px > floor:
@@ -128,7 +136,10 @@ def _fit(ctx, text, width, max_height, start, floor=16):
         if layout.get_pixel_size().height <= max_height:
             return layout
         px -= 2
-    return _layout(ctx, text, SERIF, floor, width)
+    layout = _layout(ctx, text, SERIF, floor, width)
+    layout.set_ellipsize(Pango.EllipsizeMode.END)
+    layout.set_height(int(max_height) * Pango.SCALE)
+    return layout
 
 
 def render(path: str, *, text: str, reference: str, translation: str,

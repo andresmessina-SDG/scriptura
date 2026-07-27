@@ -50,6 +50,8 @@ class VerseCursor:
         # Word tier: (start_offset, end_offset) of the stepped word, or None
         # when the cursor is at the verse tier.
         self._word = None
+        # Memoised _verses() for the current buffer; see on_render.
+        self._verses_cache = None
 
     # ── State ─────────────────────────────────────────────────────────────
 
@@ -65,6 +67,22 @@ class VerseCursor:
         """Drop cursor state — for a re-render into different content."""
         self._verse = None
         self._word = None
+        self._verses_cache = None
+
+    def on_render(self):
+        """The buffer was rebuilt — drop what belonged to the old one.
+
+        Word-tier state is buffer OFFSETS, so it cannot outlive the buffer it
+        was measured against. `clear` only runs on a module change, so before
+        this a chapter change kept them: stepping into a word, changing
+        chapter, then pressing Enter resolved last chapter's offsets against
+        the new text and acted on whatever now sat there.
+
+        The verse number is deliberately kept — it is a reference rather than
+        an offset, and `_step_verse` already re-validates it against the new
+        chapter, so the reader stays where they were reading."""
+        self._word = None
+        self._verses_cache = None
 
     def sync_to(self, verse_num):
         """Follow a selection that came from somewhere else (a click, a
@@ -115,7 +133,16 @@ class VerseCursor:
         Read from the buffer's own `vnum_` tags rather than the pane's
         `_rendered_verses` list: the tags are exactly what `_verse_ranges`
         can resolve, so the cursor can never stop on a verse the rest of the
-        machinery cannot find."""
+        machinery cannot find.
+
+        Memoised for the life of the buffer. The walk is a table-wide
+        `foreach` with a Python callback reading a GObject property per tag,
+        and a Strong's-tagged chapter carries thousands of them — measured at
+        5.9 ms, a third of a frame, which every repeat of a held arrow key
+        paid twice over on `[`/`]`. `on_render` drops the cache when the tags
+        are rebuilt, which is the only thing that can change the answer."""
+        if self._verses_cache is not None:
+            return self._verses_cache
         found = []
 
         def collect(tag, _data):
@@ -127,7 +154,8 @@ class VerseCursor:
                     pass
 
         self._pane._buffer.get_tag_table().foreach(collect, None)
-        return sorted(found)
+        self._verses_cache = sorted(found)
+        return self._verses_cache
 
     def _step_verse(self, delta):
         verses = self._verses()

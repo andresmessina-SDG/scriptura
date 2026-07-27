@@ -109,3 +109,48 @@ def test_the_clipboard_card_is_the_same_png_without_the_disk(tmp_path):
     assert struct.unpack('>II', data[16:24]) == SHAPES['portrait']
     # Byte-identical to what the file path writes: one drawing, two exits.
     assert data == open(_card(tmp_path, shape='portrait'), 'rb').read()
+
+
+def test_a_passage_past_the_type_floor_is_ellipsized_not_clipped(tmp_path):
+    """Shrinking has a floor; past it the text must not simply overflow.
+
+    Regression: _fit returned its floor-size layout whether or not it fitted.
+    The layout is centred, so anything taller than the box ran off BOTH edges
+    and was clipped mid-word with nothing to show it had been. A 60-verse
+    selection set 1080px of type into a 1080px card; a whole Psalm 119 set
+    3168px.
+    """
+    import cairo
+    from gi.repository import Pango
+    ctx = cairo.Context(cairo.ImageSurface(cairo.FORMAT_RGB24, 1080, 1080))
+    huge = VERSE * 120
+    layout = verse_card._fit(ctx, huge, 800, 560, 67)
+    assert layout.get_pixel_size().height <= 560
+    # It reached the floor, so it is the ellipsis doing the work, not the size.
+    assert layout.get_font_description().get_size() / Pango.SCALE == 16
+    assert layout.get_ellipsize() != Pango.EllipsizeMode.NONE
+
+
+def test_every_shape_survives_a_passage_past_the_floor(tmp_path):
+    """The card is centred, so an overflow shows up as a negative top — check
+    the composed geometry, not just the verse layout, for all three shapes."""
+    import cairo
+    huge = VERSE * 120
+    for shape, (w, h) in SHAPES.items():
+        ctx = cairo.Context(cairo.ImageSurface(cairo.FORMAT_RGB24, w, h))
+        _margin, column = verse_card._metrics(w, h)
+        verse = verse_card._fit(ctx, huge, column, h * 0.52,
+                                int(min(w, h) * 0.062))
+        ref_px = int(min(w, h) * 0.021)
+        ref = verse_card._layout(ctx, 'Ps 119:1-176  ·  KJV',
+                                 verse_card.SANS, ref_px, column)
+        verse_h = verse.get_pixel_size().height
+        top = int((h - (verse_h + int(h * 0.055)
+                        + ref.get_pixel_size().height)) / 2)
+        assert verse_h <= h * 0.52 + 1, f'{shape} overflows its box'
+        assert top >= 0, f'{shape} clips at the top edge'
+
+
+def test_a_very_long_card_still_writes_a_valid_png(tmp_path):
+    path = _card(tmp_path, text=VERSE * 120)
+    assert _png_size(path) == SHAPES['square']

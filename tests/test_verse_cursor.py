@@ -298,3 +298,110 @@ def test_unit_keys_still_fire_on_bible_panes():
     c = VerseCursor(pane)
     assert press(c, Gdk.KEY_bracketright) is True
     assert c.verse == 4
+
+
+# ── surviving a re-render ────────────────────────────────────────────────
+# `clear` only runs on a MODULE change. A chapter change rebuilds the buffer
+# without it, so anything measured against the old buffer has to be dropped
+# at the render seam instead — see VerseCursor.on_render.
+
+def test_a_rebuilt_buffer_drops_the_word_tier():
+    """Word state is buffer offsets; they mean nothing in the new buffer.
+
+    Regression: stepping into a word, changing chapter, then pressing Enter
+    resolved the OLD chapter's offsets against the new text and acted on
+    whatever happened to sit there — a lexicon or dictionary lookup on a word
+    the reader never selected."""
+    c = VerseCursor(FakePane(selected=2))
+    press(c, Gdk.KEY_Down)
+    # Set directly rather than pressing Right: entering the word tier needs a
+    # live buffer, which is why the word tier is asserted against the real app
+    # by tools/verify-a11y.py. What matters here is the state, not how it got
+    # there — these are offsets into the outgoing buffer.
+    c._word = (10, 14)
+    assert c.in_word_tier is True
+    c.on_render()
+    assert c.in_word_tier is False
+
+
+def test_a_rebuilt_buffer_keeps_the_verse():
+    """The verse is a reference, not an offset, so the reader stays where
+    they were reading; _step_verse re-validates it against the new chapter."""
+    c = VerseCursor(FakePane(selected=3))
+    press(c, Gdk.KEY_Down)
+    assert c.verse == 3
+    c.on_render()
+    assert c.verse == 3
+
+
+def test_a_verse_gone_from_the_new_chapter_is_re_placed():
+    """Keeping the verse across a render must not strand the cursor on a
+    number the new chapter does not have."""
+    pane = FakePane(verses=(1, 2, 3), selected=3)
+    c = VerseCursor(pane)
+    press(c, Gdk.KEY_Down)
+    assert c.verse == 3
+    pane._buffer = FakeBuffer((1, 2))   # shorter chapter
+    c.on_render()
+    press(c, Gdk.KEY_Down)
+    assert c.verse in (1, 2)
+
+
+def test_the_render_seam_resets_the_cursor():
+    """The pane's buffer-rebuild path must actually call on_render.
+
+    Driven through the real BiblePane method over a stand-in self, so the
+    wiring is asserted rather than assumed — the bug above was only reachable
+    because nothing on the render path touched the cursor at all."""
+    import pane as pane_mod
+
+    class StubTable:
+        def foreach(self, fn, data):
+            pass
+
+        def remove(self, tag):
+            pass
+
+    class StubSelf:
+        _CHAPTER_SCOPED_TAG_PREFIXES = \
+            pane_mod.BiblePane._CHAPTER_SCOPED_TAG_PREFIXES
+
+        def __init__(self):
+            self._anchor_seq = 0
+            self._buffer = type('B', (), {
+                'get_tag_table': lambda _s: StubTable()})()
+            self._cursor = VerseCursor(FakePane())
+
+    s = StubSelf()
+    s._cursor._verse = 2
+    s._cursor._word = (10, 14)
+    pane_mod.BiblePane._clear_chapter_scoped_tags(s)
+    assert s._cursor.in_word_tier is False
+    assert s._anchor_seq == 1        # the pre-existing invalidation still runs
+
+
+# ── the verse list is read once per render ───────────────────────────────
+
+def test_the_verse_list_is_not_rewalked_on_every_keypress():
+    """A table-wide foreach with a per-tag GObject property read measured
+    5.9 ms on a Strong's-tagged chapter — a third of a frame, paid on every
+    repeat of a held arrow key."""
+    pane = FakePane(selected=1)
+    walks = []
+    inner = pane._buffer._table.foreach
+    pane._buffer._table.foreach = lambda fn, data: (walks.append(1),
+                                                    inner(fn, data))[1]
+    c = VerseCursor(pane)
+    for _ in range(10):
+        press(c, Gdk.KEY_Down)
+    assert len(walks) == 1
+
+
+def test_a_rebuilt_buffer_makes_the_verse_list_be_read_again():
+    pane = FakePane(selected=1)
+    c = VerseCursor(pane)
+    press(c, Gdk.KEY_Down)
+    pane._buffer = FakeBuffer((7, 8, 9))
+    c.on_render()
+    press(c, Gdk.KEY_Down)
+    assert c.verse in (7, 8, 9)
