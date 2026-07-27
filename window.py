@@ -80,10 +80,50 @@ class _FractionPaned(Gtk.Paned):
         self._applying = False
         self.connect('notify::position', self._record_drag)
 
+    # Keep a pane usable at either extreme: the divider stops before it can
+    # squeeze one column down to its chrome.
+    _MIN_FRACTION = 0.2
+    _MAX_FRACTION = 0.8
+
     def _record_drag(self, *_args):
         w = self.get_width()
         if w > 0 and not self._applying:
             self._fraction = self.get_position() / w
+
+    def nudge_fraction(self, delta):
+        """Move the divider by `delta` of the width, clamped.
+
+        The keyboard alternative to dragging the grip (WCAG 2.5.7).
+        GtkPaned's own arrow bindings move one pixel per press, which is
+        not a usable way to rebalance a reading column.
+
+        Steps from the stored fraction, not from the divider's current
+        position: held-down key repeat delivers many presses within one
+        main-loop turn, and reading the position back would give every one
+        of them the same stale answer — thirty presses would move one
+        step."""
+        self.set_fraction(self._fraction + delta)
+
+    def set_fraction(self, fraction):
+        """Store a clamped fraction and re-run the allocation.
+
+        Clamped against the children's own minimum widths as well as the
+        fixed 20/80 stops, because GtkPaned silently refuses to shrink a
+        child below its minimum. Without that, the stored fraction could
+        run past what the toolkit will honour and the next few presses
+        would move a number nobody can see."""
+        lo, hi = self._MIN_FRACTION, self._MAX_FRACTION
+        width = self.get_width()
+        if width > 0:
+            start, end = self.get_start_child(), self.get_end_child()
+            if start is not None:
+                lo = max(lo, start.measure(
+                    Gtk.Orientation.HORIZONTAL, -1)[0] / width)
+            if end is not None:
+                hi = min(hi, (width - end.measure(
+                    Gtk.Orientation.HORIZONTAL, -1)[0]) / width)
+        self._fraction = min(max(fraction, lo), max(lo, hi))
+        self.queue_allocate()
 
     def do_size_allocate(self, width, height, baseline):
         target = round(width * self._fraction)
@@ -878,6 +918,16 @@ class BibleWindow(Adw.ApplicationWindow):
             ('prev-book', ['<Alt>Up'], self._go_prev_book),
             ('next-book', ['<Alt>Down'], self._go_next_book),
             ('show-help-overlay', ['<Ctrl>question'], self._open_shortcuts_dialog),
+            # The keyboard alternative to dragging the split grip. Ctrl is
+            # free here: the verse cursor hands every Ctrl combination back
+            # to the window, and bare brackets already mean "move by unit",
+            # so Ctrl+brackets reads as moving the boundary itself.
+            ('split-narrow', ['<Ctrl>bracketleft'],
+             lambda: self._nudge_split(-0.05)),
+            ('split-widen', ['<Ctrl>bracketright'],
+             lambda: self._nudge_split(0.05)),
+            ('split-even', ['<Ctrl>backslash'],
+             lambda: self._nudge_split(None)),
         ]
         self._action_accels = {}
         for name, accels, handler in specs:
@@ -890,6 +940,18 @@ class BibleWindow(Adw.ApplicationWindow):
     def _focus_pane2(self):
         if self.pane2.get_visible():
             self.pane2._view.grab_focus()
+
+    def _nudge_split(self, delta):
+        """Step the divider, or even it up when `delta` is None.
+
+        Silent when there is no second pane on screen — there is no
+        boundary to move, and announcing one would be a lie."""
+        if not self.pane2.get_visible():
+            return
+        if delta is None:
+            self._paned.set_fraction(0.5)
+        else:
+            self._paned.nudge_fraction(delta)
 
     def _on_first_map(self, *_args):
         if getattr(self, '_did_initial_focus', False):
@@ -2626,6 +2688,9 @@ class BibleWindow(Adw.ApplicationWindow):
             (N_('Increase font size'), 'action', 'zoom-in'),
             (N_('Decrease font size'), 'action', 'zoom-out'),
             (N_('Zoom font (or pinch on touchpad)'), 'literal', N_('Ctrl + scroll')),
+            (N_('Narrow the left pane'), 'action', 'split-narrow'),
+            (N_('Widen the left pane'), 'action', 'split-widen'),
+            (N_('Even up the split'), 'action', 'split-even'),
             (N_('Reading mode (chrome hidden)'), 'action', 'reading-mode'),
             (N_('Close search, jump bar, or menu'), 'accel', 'Escape'),
         ]),
