@@ -3,7 +3,7 @@
 
 The pack is a directory holding `imagery.sqlite` (the catalog the app's
 `imagery_bridge` reads) plus an `images/` tree, optionally tarred to
-`imagery.tar.gz` for hosting on a Codeberg release.
+`imagery.tar.gz` for hosting on a GitHub release.
 
 Verse ranges use the same encoding as the catena pack — a location is
 `chapter * 1_000_000 + verse`, and a row covers `[loc_start, loc_end]` — so a
@@ -868,7 +868,7 @@ def main():
     ap.add_argument('--split-mb', type=int, default=0,
                     help='split imagery.tar.gz into <=N MB parts (.000, .001, '
                          '…) for hosts that cap release-asset size '
-                         '(e.g. Codeberg = 100). The pack downloader '
+                         '(GitHub allows 2 GB, so this is off by default). '
                          'reassembles the parts automatically.')
     args = ap.parse_args()
 

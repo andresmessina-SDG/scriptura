@@ -86,4 +86,5 @@ EOF
 
 echo
 echo ">> Done. Staged in ./$OUT/ (repo: $(du -sh "$REPO" | cut -f1))."
-echo ">> Next: publish ./$OUT/ to Codeberg Pages — see FLATPAK_RELEASE.md."
+echo ">> Next: cd $OUT && git add -A && git commit && git push origin main"
+echo "   (GitHub Pages serves it — see FLATPAK_RELEASE.md.)"

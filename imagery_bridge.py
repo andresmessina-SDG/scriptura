@@ -38,7 +38,7 @@ _log = logging.getLogger('scriptura.imagery')
 MODULE_KEY = 'Bible Imagery'
 
 # The downloadable pack (tar.gz so stdlib `tarfile` handles it — no zstd
-# dependency). Hosted on Codeberg Releases; replace the tag once published.
+# dependency). Hosted on this repo's GitHub Releases.
 PACK_URL = ('https://github.com/andresmessina-SDG/scriptura/releases/'
             'download/imagery-pack-v1/imagery.tar.gz')
 

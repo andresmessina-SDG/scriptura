@@ -28,7 +28,7 @@ _log = logging.getLogger('scriptura.catena')
 # The single pane-picker module name this bridge contributes.
 MODULE_KEY = 'Historical Commentaries'
 
-# The downloadable pack, hosted as a gzipped SQLite on Codeberg Releases.
+# The downloadable pack, a gzipped SQLite on this repo's GitHub Releases.
 # When a rebuilt pack is published, bump BOTH of these: PACK_URL to the new
 # release asset, and LATEST_BUILT to that pack's pack_meta 'built' date, so an
 # installed-but-older pack surfaces an "update available" nudge (update_available).
