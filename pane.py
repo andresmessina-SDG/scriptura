@@ -2178,6 +2178,10 @@ class BiblePane(Gtk.Box):
         # Every buffer rebuild passes through here — invalidate any
         # in-flight scroll-anchor corrections aimed at the old layout.
         self._anchor_seq += 1
+        # The keyboard cursor holds buffer offsets and a cache of the vnum_
+        # tags being removed just below, both of which describe the outgoing
+        # buffer. Same seam, same reason.
+        self._cursor.on_render()
         table = self._buffer.get_tag_table()
         to_remove = []
 
