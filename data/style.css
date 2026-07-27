@@ -242,7 +242,10 @@ separator.journal-divider { background-color: alpha(@borders, 0.3); }
 }
 
 .tag-chip {
-    padding: 1px 8px;
+    /* 5px vertical clears the 24px hit floor (25px measured, was 17 — the
+       lowest control in the app). These stack in a FlowBox at 2px row
+       spacing, so the spacing exception cannot rescue them. */
+    padding: 5px 8px;
     min-height: 0;
     border-radius: 10px;
     background-color: alpha(@accent_color, 0.13);
@@ -1082,7 +1085,10 @@ button.catena-more {
     background-color: transparent;
     border: none;
     box-shadow: none;
-    padding: 0;
+    /* Vertical only: 2px clears the 24px hit floor (25px measured, was 21)
+       while the horizontal 0 keeps the link flush with the prose it sits
+       under — growing it sideways would shift the text beside it. */
+    padding: 2px 0;
     min-height: 0;
     color: @accent_color;
     font-size: 1.02em;
@@ -1093,7 +1099,10 @@ button.catena-more:active { color: shade(@accent_color, 0.7); }
 button.catena-copy {
     min-height: 0;
     min-width: 0;
-    padding: 2px;
+    /* 4px clears the 24px hit floor on both axes (24x24, was 20x20); the
+       glyph is unchanged and the button is transparent at rest, so only
+       the hover disc grows. */
+    padding: 4px;
     opacity: 0.45;
 }
 button.catena-copy:hover { opacity: 1; }
@@ -1101,7 +1110,9 @@ button.catena-copy:hover { opacity: 1; }
    transparent at rest, tinted border, filled only while active. */
 button.catena-chip {
     min-height: 0;
-    padding: 2px 12px;
+    /* 3px vertical clears the 24px hit floor (24px measured, was 22). The
+       border is visible at rest, so the capsule grows 2px with it. */
+    padding: 3px 12px;
     border-radius: 999px;
     font-size: 0.9em;
     color: @accent_color;
@@ -1265,7 +1276,9 @@ button.catena-chip-place {
    (.stone-chip-rel) jump within the gallery. */
 button.stone-chip {
     min-height: 0;
-    padding: 2px 12px;
+    /* 3px vertical clears the 24px hit floor (24px measured, was 22) —
+       matching .catena-chip, the same capsule grammar. */
+    padding: 3px 12px;
     margin-right: 6px;
     border-radius: 999px;
     font-size: 0.9em;
@@ -1388,7 +1401,9 @@ button.artifact-marker:hover {
    apparatus rather than as a control competing with the prose. */
 button.genbook-synopsis-toggle {
     min-height: 0;
-    padding: 2px 4px;
+    /* 3px vertical clears the 24px hit floor (24px measured, was 22); the
+       button is transparent at rest, so only the hover pill grows. */
+    padding: 3px 4px;
     margin: 0;
     background: none;
     box-shadow: none;

@@ -95,3 +95,59 @@ def test_no_progress_node_carries_a_min_width():
         assert _declaration(body, 'min-width') is None, (
             f'{selector} sets a min-width — the fill must be free to be '
             f'exactly as wide as the fraction it is showing')
+
+
+#: Every control below sat under WCAG 2.5.8's 24px floor and was lifted over
+#: it by vertical padding alone — the ink never moved. The value recorded is
+#: the padding each one needs to clear 24px at the GNOME default UI font,
+#: measured on a real widget under a headless compositor. Two sweeps have now
+#: had to find these (2026-07-17, 2026-07-27), so they are pinned here.
+MIN_VERTICAL_PADDING = {
+    'button.chart-bar': 3,
+    'button.lex-depth-link': 5,
+    'button.interlinear-chip': 4,
+    '.tag-chip': 5,
+    'button.catena-copy': 4,
+    'button.catena-more': 2,
+    'button.catena-chip': 3,
+    'button.stone-chip': 3,
+    'button.genbook-synopsis-toggle': 3,
+}
+
+
+def _vertical_padding(value):
+    """The top padding of a `padding:` shorthand, in px."""
+    parts = value.split()
+    if not parts:
+        return None
+    lengths = _LENGTH.findall(parts[0])
+    return float(lengths[0]) if lengths else None
+
+
+def test_tight_controls_keep_the_padding_that_clears_24px():
+    """These controls all set `min-height: 0` to buy the app's tight visual
+    rhythm, which hands the whole hit target to padding and the font. That is
+    a deliberate trade, but it means a padding value here is not cosmetic —
+    it is the only thing holding the control over the 24px target-size floor
+    (WCAG 2.5.8, Level AA, and legally required under the EAA since
+    2025-06-28). Shrinking one to tighten the look silently breaks that, and
+    nothing on screen says so: the control looks fine and simply becomes
+    harder to hit."""
+    seen = set()
+    for selector, body in _rules():
+        want = MIN_VERTICAL_PADDING.get(selector)
+        if want is None:
+            continue
+        padding = _declaration(body, 'padding')
+        if padding is None:
+            continue
+        seen.add(selector)
+        got = _vertical_padding(padding)
+        assert got is not None and got >= want, (
+            f'{selector} sets padding: {padding} — its vertical padding is '
+            f'the only thing keeping it over the 24px hit-target floor, and '
+            f'it needs at least {want}px')
+    missing = set(MIN_VERTICAL_PADDING) - seen
+    assert not missing, (
+        f'{sorted(missing)} no longer carry a padding declaration — either '
+        f'the selector was renamed or the floor is now unguarded')
