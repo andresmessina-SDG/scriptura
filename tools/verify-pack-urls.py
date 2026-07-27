@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Pre-release check: every downloadable data pack URL actually resolves.
 
-Run this BEFORE tagging a release. The packs are hosted as Codeberg release
-assets and are bumped by hand, independently of the app — so a `PACK_URL`
+Run this BEFORE tagging a release. The packs are hosted as GitHub release
+assets on this repo and are bumped by hand, independently of the app — so a `PACK_URL`
 pointing at a tag that was never published is invisible in the repo, invisible
 in the test suite, and only surfaces when a user clicks Install. That is a
 shipped dead end, and it has happened: `catena-pack-v2` was referenced in code
