@@ -208,3 +208,93 @@ def test_cannot_remove_absent_module(sword_home):
     # Not in the user's ~/.sword (e.g. a system module or unknown) -> not
     # removable through the in-app control.
     assert sword_bridge.can_remove_module('SystemOnly') is False
+
+
+# ── _fetch_crosswire (HTTPS → FTP fallback) ────────────────────────────────────
+
+@pytest.fixture
+def fake_urlopen(monkeypatch):
+    """Record fetched URLs and script each one's outcome.
+
+    `outcomes` maps a URL scheme to either bytes (served) or an exception
+    (raised); `calls` records every URL tried, in order.
+    """
+    import urllib.request
+
+    calls = []
+    outcomes = {}
+
+    class _Resp:
+        def __init__(self, data):
+            self._data = data
+
+        def read(self):
+            return self._data
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return False
+
+    def _fake(url, timeout=None):
+        calls.append((url, timeout))
+        result = outcomes[url.split(':')[0]]
+        if isinstance(result, Exception):
+            raise result
+        return _Resp(result)
+
+    monkeypatch.setattr(urllib.request, 'urlopen', _fake)
+    # The reachability probe opens a real socket; drive it from the script
+    # so no test touches the network.
+    monkeypatch.setattr(sword_bridge, '_reachable',
+                        lambda *_a, **_kw: outcomes.get('reachable', True))
+    return calls, outcomes
+
+
+def test_fetch_prefers_https(fake_urlopen):
+    calls, outcomes = fake_urlopen
+    outcomes['https'] = b'over-https'
+    assert sword_bridge._fetch_crosswire('raw/mods.d.tar.gz', 60) == b'over-https'
+    # FTP is never dialled while the web server answers.
+    assert [c[0] for c in calls] == [
+        'https://crosswire.org/ftpmirror/pub/sword/raw/mods.d.tar.gz']
+    assert calls[0][1] == 60
+
+
+def test_fetch_falls_back_to_ftp_when_https_unreachable(fake_urlopen):
+    import socket
+    import urllib.error
+
+    calls, outcomes = fake_urlopen
+    outcomes['https'] = urllib.error.URLError(socket.timeout('timed out'))
+    outcomes['ftp'] = b'over-ftp'
+    assert sword_bridge._fetch_crosswire('packages/rawzip/KJV.zip', 120) == b'over-ftp'
+    assert [c[0] for c in calls] == [
+        'https://crosswire.org/ftpmirror/pub/sword/packages/rawzip/KJV.zip',
+        'ftp://ftp.crosswire.org/pub/sword/packages/rawzip/KJV.zip',
+    ]
+    assert calls[1][1] == 120
+
+
+def test_fetch_does_not_retry_ftp_on_http_error(fake_urlopen):
+    import urllib.error
+
+    calls, outcomes = fake_urlopen
+    # The web server answered — a 404 is a real answer about a real path,
+    # so FTP would only repeat it. Surface it instead of dialling twice.
+    outcomes['https'] = urllib.error.HTTPError(
+        'https://crosswire.org/', 404, 'Not Found', {}, None)
+    with pytest.raises(urllib.error.HTTPError):
+        sword_bridge._fetch_crosswire('packages/rawzip/Nope.zip', 120)
+    assert len(calls) == 1
+
+
+def test_fetch_skips_https_when_web_server_is_down(fake_urlopen):
+    calls, outcomes = fake_urlopen
+    outcomes['reachable'] = False
+    outcomes['ftp'] = b'over-ftp'
+    assert sword_bridge._fetch_crosswire('raw/mods.d.tar.gz', 60) == b'over-ftp'
+    # No dead-air wait on a port that is not listening: HTTPS is not dialled.
+    assert [c[0] for c in calls] == [
+        'ftp://ftp.crosswire.org/pub/sword/raw/mods.d.tar.gz']
