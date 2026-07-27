@@ -41,6 +41,7 @@ public/
 
 # Internal working docs — not for the public repo
 GUIDANCE.md
+BACKLOG.md
 STRUCTURAL_ANALYSIS.md
 REFINEMENT_RESEARCH.md
 ACCESSIBILITY_RESEARCH.md
