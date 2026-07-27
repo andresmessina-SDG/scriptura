@@ -141,14 +141,17 @@ def parse_catalogue(data):
                    version.group(1).strip() if version else '')
 
 
+# CrossWire's data varies capitalisation on otherwise identical wording, so
+# the exact-match table is backed by a case-folded one. Built once: it was
+# being rebuilt on every miss.
+_FOLDED_LICENCES = {k.casefold(): v for k, v in KNOWN_LICENCES.items()}
+
+
 def _tier_for(licence):
     """Tier number for a licence string, or None if it must not be mirrored."""
     if licence in KNOWN_LICENCES:
         return KNOWN_LICENCES[licence]
-    # CrossWire's data varies capitalisation on otherwise identical
-    # wording; match case-insensitively before giving up.
-    folded = {k.casefold(): v for k, v in KNOWN_LICENCES.items()}
-    return folded.get(licence.casefold())
+    return _FOLDED_LICENCES.get(licence.casefold())
 
 
 def classify(catalogue, max_tier):
@@ -295,7 +298,7 @@ def main():
               f'{len(removed)} to withdraw')
 
     print(f'\nDownloading {len(to_fetch)} modules to {modules_dir}…')
-    done, skipped = list(carried), []
+    done, skipped, fetched = list(carried), [], []
     with concurrent.futures.ThreadPoolExecutor(args.jobs) as pool:
         futures = [pool.submit(download_module, e, modules_dir)
                    for e in to_fetch]
@@ -305,6 +308,7 @@ def main():
                 skipped.append((entry['module'], problem))
             else:
                 done.append(entry)
+                fetched.append(entry['module'])
             if i % 25 == 0 or i == len(to_fetch):
                 print(f'  {i}/{len(to_fetch)}')
 
@@ -322,7 +326,7 @@ def main():
     # Consumed by publish-sword-mirror.sh: what to withdraw, and whether
     # there is anything to publish at all.
     changes = {
-        'fetched': sorted(e['module'] for e in done if e not in carried),
+        'fetched': sorted(fetched),
         'unchanged': len(carried),
         'removed': removed,
         'unrecognised': [n for n, _lic in unknown],

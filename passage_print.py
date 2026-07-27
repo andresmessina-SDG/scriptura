@@ -43,9 +43,8 @@ class PassagePrinter:
     the text for every page.
     """
 
-    def __init__(self, text: str, title: str):
+    def __init__(self, text: str):
         self._text = text
-        self._title = title
         self._layout: Pango.Layout | None = None
         #: The y offset, in points, at which each page starts. Recorded from
         #: the layout's own line extents rather than computed.
@@ -124,7 +123,7 @@ def build_operation(module: str, book: str, chapter: int,
                                 notes=notes, markdown=False)
     title = passage_export.format_reference(book, chapter, verses,
                                             version=module)
-    printer = PassagePrinter(text, title)
+    printer = PassagePrinter(text)
     operation = Gtk.PrintOperation()
     operation.set_job_name(title)
     operation.set_use_full_page(False)

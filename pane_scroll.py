@@ -141,8 +141,9 @@ class ScrollKeeper:
         v = adj.get_value()
         delta = v - self._last_scroll_value
         self._last_scroll_value = v
-        self._last_value_change = GLib.get_monotonic_time()
-        if (GLib.get_monotonic_time() < self._ignore_scroll_until
+        now = GLib.get_monotonic_time()
+        self._last_value_change = now
+        if (now < self._ignore_scroll_until
                 or self._content_child() != 'text'
                 or not self._user_scroll_recent()):
             self._chrome.reset_accum()
