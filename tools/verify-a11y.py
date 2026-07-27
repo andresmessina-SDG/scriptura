@@ -389,6 +389,22 @@ def run_driver() -> int:
             press(Gdk.KEY_Up)
             add('cursor_steps_back', cur.verse == first, now=cur.verse)
 
+            # The keys must actually REACH the cursor. GtkTextView claims the
+            # arrow keys for its own scrolling, so a BUBBLE-phase controller
+            # never saw ↑↓←→ and the verse cursor was dead in the real app
+            # while [ and ] worked — the unit tests missed it because they
+            # call on_key directly. Assert the controller is positioned to
+            # receive them.
+            phases = []
+            ctrl = pane._view.observe_controllers()
+            for i in range(ctrl.get_n_items()):
+                c = ctrl.get_item(i)
+                if isinstance(c, Gtk.EventControllerKey):
+                    phases.append(c.get_propagation_phase())
+            add('cursor_keys_capture_before_the_textview',
+                Gtk.PropagationPhase.CAPTURE in phases,
+                phases=[str(p) for p in phases])
+
             # Modifiers belong to the window's actions, never to the cursor.
             add('cursor_releases_alt_arrow',
                 press(Gdk.KEY_Down, Gdk.ModifierType.ALT_MASK) is False)

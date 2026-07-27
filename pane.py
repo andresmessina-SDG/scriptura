@@ -1445,10 +1445,20 @@ class BiblePane(Gtk.Box):
         set_accessible_label(self._view, _('Reading view'))
         self._search.link_view(self._view)
 
-        # Verse cursor keys. BUBBLE phase (the default), so anything the view
-        # itself claims first still wins; the handler returns False for every
-        # key it doesn't own, leaving scrolling and window shortcuts intact.
+        # Verse cursor keys. CAPTURE phase, and that is the whole point:
+        # GtkTextView claims the arrow keys for its own cursor movement and
+        # scrolling, so on the default BUBBLE phase ↑↓←→ never reached this
+        # handler at all — the verse cursor and the word tier were dead in
+        # the real app while [ and ], which the view does NOT claim, worked
+        # fine. Real Orca found it; the unit tests could not, because they
+        # call VerseCursor.on_key directly and never exercise the controller.
+        #
+        # Capturing is safe because the handler is strict about what it
+        # owns: it returns False for every key it does not handle, and False
+        # again at a chapter edge, so scrolling and every window shortcut
+        # still fall through untouched.
         cursor_keys = Gtk.EventControllerKey.new()
+        cursor_keys.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         cursor_keys.connect('key-pressed', self._cursor.on_key)
         self._view.add_controller(cursor_keys)
 
