@@ -136,6 +136,23 @@
   </content_rating>
 
   <releases>
+    <release version="1.4.0" date="2026-07-27">
+      <description>
+        <p>Chapters read aloud, and passages you can take with you.</p>
+        <ul>
+          <li>Chapters read aloud, in the Berean Standard Bible's own narration. A listening pill sits quietly at the foot of the page: skip back fifteen seconds, set the pace anywhere from 0.75× to 2×, and keep listening as you turn to the next chapter.</li>
+          <li>Spoken devotionals from their publishers' own feeds — Spurgeon's Morning and Evening, the Psalms read one at a time, and the day's Daily Strength reading on the Today page.</li>
+          <li>Take a passage with you. Export it as a study worksheet in Markdown or plain text, carrying your own notes and highlights, with optional interlinear, textual-variant and church-fathers layers. Citations follow the SBTS/Turabian short form.</li>
+          <li>A verse as an image, set in the app's own serif on its own paper — three shapes, saved to a file or copied straight to the clipboard.</li>
+          <li>Print a passage as a study handout, paginated so no line is ever cut in half.</li>
+          <li>The section headings your translation actually ships, which until now were being dropped altogether. Move a whole thought at a time with [ and ], and see at a glance which sense-unit you are reading.</li>
+          <li>The reading pane is reachable from the keyboard throughout: step between verses and words with the arrow keys, open the lexicon, a footnote or the dictionary with Enter, and hear every move announced by a screen reader.</li>
+          <li>Every translation now gets its verse-one drop cap, and commentaries render the inline titles they carry.</li>
+          <li>More of the Roman calendar's collects, and a steadier Today page.</li>
+          <li>Modules keep installing when CrossWire's server is down: the app falls back to FTP, and then to a mirror of everything CrossWire's own licences allow anyone to redistribute.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.3.0" date="2026-07-10">
       <description>
         <p>The original languages, word by word.</p>
