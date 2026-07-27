@@ -1382,7 +1382,6 @@ def _shadow_path():
     return None
 
 
-_CROSSWIRE_HTTP = 'https://crosswire.org/ftpmirror/pub/sword/packages/rawzip'
 _SWORD_PATH = os.path.expanduser('~/.sword')
 
 
@@ -1559,17 +1558,60 @@ def catalog_timestamp():
         return None
 
 
-_CROSSWIRE_CATALOG = 'https://crosswire.org/ftpmirror/pub/sword/raw/mods.d.tar.gz'
+# CrossWire serves one tree over both HTTPS and FTP, from the same host.
+# The two daemons fail independently — in July 2026 the web server went
+# down for a day while FTP stayed up — so a fetch that cannot reach HTTPS
+# retries over FTP rather than failing the refresh or the install.
+_CROSSWIRE_HTTPS = 'https://crosswire.org/ftpmirror/pub/sword'
+_CROSSWIRE_FTP = 'ftp://ftp.crosswire.org/pub/sword'
+
+
+def _reachable(host, port, timeout=5):
+    """Whether a TCP connection to host:port opens within `timeout`.
+
+    Separates "the server is down" from "this download is slow", which
+    urlopen cannot: its timeout covers the whole transfer, so a dead web
+    server would otherwise burn the entire download budget — two minutes
+    on an install — before the FTP retry even starts.
+    """
+    import socket
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
+def _fetch_crosswire(path, timeout):
+    """Download `path` from CrossWire's sword tree; HTTPS first, then FTP."""
+    # Lazy: pulls in http/ssl/email (~40 ms) — only needed for downloads.
+    import urllib.error
+    import urllib.request
+
+    if _reachable('crosswire.org', 443):
+        try:
+            with urllib.request.urlopen(
+                    f'{_CROSSWIRE_HTTPS}/{path}', timeout=timeout) as resp:
+                return resp.read()
+        except urllib.error.HTTPError:
+            # The web server answered: a 404 means the file is genuinely
+            # not there, and FTP would say the same. Report it as-is.
+            raise
+        except urllib.error.URLError as exc:
+            _sword_log.info('CrossWire HTTPS failed (%s) — trying FTP',
+                            exc.reason)
+    else:
+        _sword_log.info('CrossWire web server not answering — using FTP')
+
+    with urllib.request.urlopen(
+            f'{_CROSSWIRE_FTP}/{path}', timeout=timeout) as resp:
+        return resp.read()
 
 
 def refresh_source():
     """Download the CrossWire module catalogue and store in a new shadow dir."""
-    # Lazy: pulls in http/ssl/email (~40 ms) — only needed for downloads.
-    import urllib.request
     from datetime import datetime
-    url = _CROSSWIRE_CATALOG
-    with urllib.request.urlopen(url, timeout=60) as resp:
-        data = resp.read()
+    data = _fetch_crosswire('raw/mods.d.tar.gz', 60)
 
     ts = datetime.now().strftime('%Y%m%d%H%M%S')
     base = os.path.expanduser('~/.sword/InstallMgr')
@@ -1592,10 +1634,7 @@ def refresh_source():
 
 def install_module(module_name):
     """Download module zip from CrossWire and extract into ~/.sword/."""
-    import urllib.request
-    url = f'{_CROSSWIRE_HTTP}/{module_name}.zip'
-    with urllib.request.urlopen(url, timeout=120) as resp:
-        data = resp.read()
+    data = _fetch_crosswire(f'packages/rawzip/{module_name}.zip', 120)
     with zipfile.ZipFile(io.BytesIO(data)) as zf:
         # Extract member-by-member through _safe_extract (rather than
         # extractall) so the network path enforces the same path-escape
