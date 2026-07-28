@@ -1188,3 +1188,66 @@ def test_the_today_disc_reaches_the_desktop_too(monkeypatch, bus):
     c._stop_today_listen()
     assert bus.current is None
 
+# ── The wiring, in a real widget tree ────────────────────────────────────────
+# The tests above stub every widget, which is what makes them fast and what
+# lets them assert behaviour. What they cannot see is whether the surfaces are
+# actually PLUGGED IN: BACKLOG item 24b moved both of them out of BiblePane,
+# and the whole risk of that move sits in the handful of places the pane still
+# has to hand them a parent. A stub answers every append() happily.
+
+def _real_tree():
+    import gi
+    gi.require_version('Adw', '1')
+    from gi.repository import Adw, Gdk
+    if Gdk.Display.get_default() is None:
+        pytest.skip('needs a display: building real GTK widgets without one '
+                    'segfaults rather than failing')
+    Adw.init()
+
+
+class StubPane:
+    """Only what the surfaces read back off the pane."""
+
+    def __init__(self):
+        self._module, self._book, self._chapter = 'BSB', 'John', 3
+        self._devotional_date = None
+        self._on_toast = None
+
+    def _is_verse_navigable(self):
+        return True
+
+
+def test_the_headphones_are_built_into_the_toolbar_it_is_given():
+    _real_tree()
+    from gi.repository import Gtk
+    toolbar = Gtk.Box()
+    audio = ReadingAudio(StubPane(), toolbar)
+    assert toolbar.get_first_child() is audio._reading_audio
+    # Offered only when there is something behind it — the same rule the
+    # stubbed tests assert, here against the real widget.
+    assert not audio._reading_audio.get_visible()
+
+
+def test_the_pill_is_reachable_for_the_overlay_and_the_paper():
+    """The pane adds the pill to its chrome overlay and casts it in the
+    reading paper. Both go through `.pill`, so it has to be a real one."""
+    _real_tree()
+    from gi.repository import Gtk
+    audio = ReadingAudio(StubPane(), Gtk.Box())
+    assert audio.pill is audio._pill
+    Gtk.Overlay().add_overlay(audio.pill)      # what the pane does with it
+    audio.pill.set_appearance('#f7f4ee', '#1a1a1a')
+
+
+def test_the_devotional_controls_are_built_into_the_row_it_is_given():
+    _real_tree()
+    from gi.repository import Gtk
+    row = Gtk.Box()
+    devot = DevotionalAudio(StubPane())
+    devot.build(row)
+    assert row.get_first_child() is devot._devot_audio_row
+    assert not devot._devot_audio_row.get_visible()
+    # The hairline is placed by the PANE, under the row rather than in it, so
+    # it must be reachable and unparented when build() returns.
+    assert devot.progress.get_parent() is None
+    Gtk.Box().append(devot.progress)
