@@ -1243,11 +1243,10 @@ def test_the_devotional_controls_are_built_into_the_row_it_is_given():
     _real_tree()
     from gi.repository import Gtk
     row = Gtk.Box()
-    devot = DevotionalAudio(StubPane())
-    devot.build(row)
+    devot = DevotionalAudio(StubPane(), row)
     assert row.get_first_child() is devot._devot_audio_row
     assert not devot._devot_audio_row.get_visible()
     # The hairline is placed by the PANE, under the row rather than in it, so
-    # it must be reachable and unparented when build() returns.
+    # it must be reachable and unparented once the surface is constructed.
     assert devot.progress.get_parent() is None
     Gtk.Box().append(devot.progress)

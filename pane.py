@@ -1329,8 +1329,7 @@ class BiblePane(Gtk.Box):
         self._date_nav = date_nav
         # The day's reading on the date row lives on DevotionalAudio
         # (audio_surfaces.py); it builds its own controls into this row.
-        self._devot_audio = DevotionalAudio(self)
-        self._devot_audio.build(date_nav)
+        self._devot_audio = DevotionalAudio(self, date_nav)
 
         self._date_nav_revealer = Gtk.Revealer()
         self._date_nav_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)

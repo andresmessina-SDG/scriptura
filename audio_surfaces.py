@@ -115,7 +115,8 @@ class DevotionalAudio(_Surface):
     def _devotional_date(self):
         return self._pane._devotional_date
 
-    def build(self, row):
+    def __init__(self, pane, row):
+        super().__init__(pane)
         self._devot_player = None
         # What the desktop's media bus shows for this reading, while it holds
         # the bus. Both of the pane's players can reach it; the last to start
@@ -177,8 +178,6 @@ class DevotionalAudio(_Surface):
         there, which is the honest state and never a dead button.
         """
         date_obj = self._devotional_date
-        if self._devot_audio_row is None:
-            return
         self.stop()
         if not settings.get('show_audio'):
             self._devot_audio_row.set_visible(False)
@@ -203,7 +202,7 @@ class DevotionalAudio(_Surface):
 
     def _on_devot_index(self, date_obj):
         """The feed index has arrived; offer the control if it helps."""
-        if self._devot_audio_row is None or self._devotional_date != date_obj:
+        if self._devotional_date != date_obj:
             return
         session = devotional_audio.session_for_hour(
             datetime.datetime.now().hour)
@@ -367,7 +366,7 @@ class DevotionalAudio(_Surface):
         # A fetch still in flight belongs to the day and session that were on
         # screen when play was pressed, and would start playing after the
         # reader had moved on.
-        tasks.cancel(getattr(self, '_devot_key', ''))
+        tasks.cancel(self._devot_key)
         self._end_devot_fetch()
         if self._devot_tick is not None:
             GLib.source_remove(self._devot_tick)
@@ -377,10 +376,9 @@ class DevotionalAudio(_Surface):
             self._devot_player = None
         mpris.withdraw(self._devot_media)
         self._devot_media = None
-        if self._devot_audio_row is not None:
-            self._devot_play_btn.set_icon_name('media-playback-start-symbolic')
-            self._devot_progress.set_fraction(0.0)
-            self._devot_progress.set_visible(False)
+        self._devot_play_btn.set_icon_name('media-playback-start-symbolic')
+        self._devot_progress.set_fraction(0.0)
+        self._devot_progress.set_visible(False)
 
 class ReadingAudio(_Surface):
     """The chapter (or psalm) read aloud, and the listening pill that governs
