@@ -2203,14 +2203,14 @@ class BiblePane(Gtk.Box):
 
     def _fetch_and_render(self):
         self._rendered_verses = None
-        self._audio._sync_reading_audio()
+        self._audio.sync()
         # Chapter audio stops above on every render. The devotional player must
         # too when the pane is no longer a devotional — otherwise Spurgeon's
         # reading plays on after a switch to a Bible, its controls gone with
         # the date bar. A devotional render stops/re-offers it below, via
-        # _fetch_and_render_devotional → _sync_devotional_audio.
+        # _fetch_and_render_devotional → the devotional surface's sync.
         if not self._is_devotional:
-            self._devot_audio._stop_devotional_audio()
+            self._devot_audio.stop()
         self._content_stack.set_visible_child_name(self._content_child())
         # One dispatch: the active PaneContent renders itself. Card modes
         # render into their own stack child (verse-synced from the partnered
@@ -2306,7 +2306,7 @@ class BiblePane(Gtk.Box):
         module = self._module
         date_obj = self._devotional_date
         self._date_label.set_text(date_obj.strftime('%B %-d, %Y'))
-        self._devot_audio._sync_devotional_audio(date_obj)
+        self._devot_audio.sync()
 
         def fetch():
             raw = sword_bridge.get_devotional_raw(module, date_obj)
@@ -2336,16 +2336,16 @@ class BiblePane(Gtk.Box):
         """Silence both spoken-reading players. Called when the pane is hidden
         (split collapsed, narrow-mode pane switch) so audio never plays on from
         a surface the reader can no longer see or reach the controls on."""
-        self._audio._stop_reading_audio()
-        self._devot_audio._stop_devotional_audio()
+        self._audio.stop()
+        self._devot_audio.stop()
 
     def set_show_audio(self, _active):
         """Re-evaluate both spoken-reading controls after the Advanced toggle.
         Each sync consults the setting and either offers or withdraws its
         control for the pane's current content, so re-running them is enough
         in both directions."""
-        self._audio._sync_reading_audio()
-        self._devot_audio._sync_devotional_audio(self._devotional_date)
+        self._audio.sync()
+        self._devot_audio.sync()
 
     def _go_devotional_day(self, delta, reset=False):
         if reset:

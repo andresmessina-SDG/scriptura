@@ -41,7 +41,13 @@ from gtk_utils import DelayedPulse
 class _Surface:
     """What both spoken-reading surfaces share: a back-reference to the pane,
     read-only proxies onto the pane state they address, and the one moment
-    either of them has to speak."""
+    either of them has to speak.
+
+    Each subclass answers to `sync()` and `stop()` — offer or withdraw the
+    control for whatever the pane now holds, and fall silent. Those two are
+    the whole of what the pane asks of a surface; everything else here is
+    private to it.
+    """
 
     def __init__(self, pane):
         self._pane = pane
@@ -162,17 +168,18 @@ class DevotionalAudio(_Surface):
             tick=self._devot_progress.pulse,
             hide=self._clear_devot_band)
 
-    def _sync_devotional_audio(self, date_obj):
-        """Offer the player for this day, or withdraw it entirely.
+    def sync(self):
+        """Offer the player for the pane's day, or withdraw it entirely.
 
         Absent the Advanced ▸ audio opt-out, the control appears when the open
         module is a devotional this feed actually reads AND the feed has
         published that day's reading — otherwise there is simply nothing
         there, which is the honest state and never a dead button.
         """
+        date_obj = self._devotional_date
         if self._devot_audio_row is None:
             return
-        self._stop_devotional_audio()
+        self.stop()
         if not settings.get('show_audio'):
             self._devot_audio_row.set_visible(False)
             return
@@ -218,7 +225,7 @@ class DevotionalAudio(_Surface):
         """
         self._devot_session = ('evening' if self._devot_session == 'morning'
                                else 'morning')
-        self._stop_devotional_audio()
+        self.stop()
         self._refresh_devot_labels()
         self._on_devot_play(None)
 
@@ -339,7 +346,7 @@ class DevotionalAudio(_Surface):
                 player=self._devot_player,
                 on_play=lambda: self._on_devot_play(None),
                 on_pause=lambda: self._on_devot_play(None),
-                on_stop=self._stop_devotional_audio)
+                on_stop=self.stop)
             mpris.publish(self._devot_media)
             return
         self._devot_media.player = self._devot_player
@@ -350,13 +357,13 @@ class DevotionalAudio(_Surface):
             self._devot_tick = None
             return GLib.SOURCE_REMOVE
         if self._devot_player.ended():
-            self._stop_devotional_audio()
+            self.stop()
             return GLib.SOURCE_REMOVE
         self._devot_progress.set_fraction(self._devot_player.progress())
         self._devot_progress.set_visible(True)
         return GLib.SOURCE_CONTINUE
 
-    def _stop_devotional_audio(self):
+    def stop(self):
         # A fetch still in flight belongs to the day and session that were on
         # screen when play was pressed, and would start playing after the
         # reader had moved on.
@@ -456,7 +463,7 @@ class ReadingAudio(_Surface):
         casts it in the reading paper; it is governed from here."""
         return self._pill
 
-    def _sync_reading_audio(self):
+    def sync(self):
         """Offer a reading of the chapter on screen, or withdraw the control.
 
         Same rule as the devotional: the control exists when there is
@@ -480,7 +487,7 @@ class ReadingAudio(_Surface):
         self._reading_url = None
         self._reading_audio.set_visible(False)
         if not settings.get('show_audio'):
-            self._stop_reading_audio()
+            self.stop()
             self._pill.dismiss()
             return
         if not self._is_verse_navigable():
@@ -609,7 +616,7 @@ class ReadingAudio(_Surface):
         """Dismiss the pill, and with it whatever it was controlling. Closing
         a player that is still sounding and leaving the sound running would be
         a control the reader can no longer reach."""
-        self._stop_reading_audio()
+        self.stop()
         self._pill.dismiss()
 
     def _on_reading_rate(self, rate):
@@ -652,7 +659,7 @@ class ReadingAudio(_Surface):
         """
         if not self._reading_url:
             return
-        self._stop_reading_audio()
+        self.stop()
         self._on_reading_play()
 
     def _on_reading_play(self):
@@ -841,13 +848,13 @@ class ReadingAudio(_Surface):
             # The reading stops at the end of the chapter and does not read
             # on. Turning the page under a reader is the app moving the text
             # without being asked.
-            self._stop_reading_audio()
+            self.stop()
             return GLib.SOURCE_REMOVE
         self._pill.set_progress(self._reading_player.progress())
         self._show_reading_length()
         return GLib.SOURCE_CONTINUE
 
-    def _stop_reading_audio(self):
+    def stop(self):
         """Silence the reading and forget it. This is the stop, so it is only
         ever reached deliberately: closing the pill, hiding the pane, turning
         spoken readings off, and a chapter running to its end. Paging through

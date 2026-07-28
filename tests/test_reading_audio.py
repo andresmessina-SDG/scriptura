@@ -241,7 +241,7 @@ class Reading:
     _finish_reading_fetch = ReadingAudio._finish_reading_fetch
     _report_audio_failure = _Surface._report_audio_failure
     _start_reading_audio = ReadingAudio._start_reading_audio
-    _stop_reading_audio = ReadingAudio._stop_reading_audio
+    stop = ReadingAudio.stop
     _on_reading_tick = ReadingAudio._on_reading_tick
     _reading_is_live = ReadingAudio._reading_is_live
     _restate_pill_reading = ReadingAudio._restate_pill_reading
@@ -392,7 +392,7 @@ def test_navigating_away_stops_the_fetch(monkeypatch):
     runner = _runner(monkeypatch)
     c = Reading()
     c._on_reading_play()
-    c._stop_reading_audio()                # what _sync_reading_audio calls
+    c.stop()                # what sync calls
     assert runner.cancelled == ['reading-audio:test']
     assert not c._reading_fetching
     assert c.toasts == []
@@ -420,7 +420,7 @@ class Devotional:
     _finish_devot_fetch = DevotionalAudio._finish_devot_fetch
     _report_audio_failure = _Surface._report_audio_failure
     _start_devotional_audio = DevotionalAudio._start_devotional_audio
-    _stop_devotional_audio = DevotionalAudio._stop_devotional_audio
+    stop = DevotionalAudio.stop
     _on_devotional_audio_tick = DevotionalAudio._on_devotional_audio_tick
     _publish_devot_media = DevotionalAudio._publish_devot_media
 
@@ -503,7 +503,7 @@ def test_devotional_second_press_stops_the_fetch(monkeypatch):
 def test_devotional_day_change_stops_the_fetch(monkeypatch):
     c = _devotional(monkeypatch)
     c._on_devot_play(None)
-    c._stop_devotional_audio()             # what _sync_devotional_audio calls
+    c.stop()             # what sync calls
     assert not c._devot_fetching
     assert not c._devot_progress.visible
 
@@ -675,7 +675,7 @@ class Paging(Reading):
     """`Reading`, plus what re-offering a chapter needs. The pane's sync is
     what used to stop the reading, so it is the thing under test here."""
 
-    _sync_reading_audio = ReadingAudio._sync_reading_audio
+    sync = ReadingAudio.sync
     _offer_reading_audio = ReadingAudio._offer_reading_audio
     _dismiss_pill_if_idle = ReadingAudio._dismiss_pill_if_idle
 
@@ -706,7 +706,7 @@ class Paging(Reading):
 
 def _paging(monkeypatch, **kwargs):
     """A pane whose chapter can be changed, with the two module-level calls
-    `_sync_reading_audio` makes standing in for the real address book."""
+    `sync` makes standing in for the real address book."""
     c = Paging(**kwargs)
     monkeypatch.setattr(audio_surfaces, 'set_accessible_label',
                         lambda *a: None)
@@ -720,7 +720,7 @@ def _paging(monkeypatch, **kwargs):
 def _listening(monkeypatch, **kwargs):
     """A pane with the pill up and John 3 sounding from the cache."""
     c = _paging(monkeypatch, cached='/tmp/John_003.mp3', **kwargs)
-    c._sync_reading_audio()
+    c.sync()
     c._on_reading_listen(None)
     c._on_reading_play()
     return c
@@ -736,7 +736,7 @@ def test_paging_on_leaves_the_reading_sounding(monkeypatch):
     c = _listening(monkeypatch, player=player)
     assert player.playing
     c._chapter = 4                          # the reader pages on
-    c._sync_reading_audio()
+    c.sync()
     assert player.playing
     assert c._pill.state == 'playing'
 
@@ -751,7 +751,7 @@ def test_paging_on_cannot_put_the_pill_away(monkeypatch):
     c = _listening(monkeypatch, player=player)
     c.covered = False                       # a translation with no reading
     c._book = 'John'                        # and not a psalm either
-    c._sync_reading_audio()
+    c.sync()
     assert c._pill.visible                  # the stop is still reachable
     assert player.playing
     assert not c._reading_audio.visible     # but nothing is offered here
@@ -765,7 +765,7 @@ def test_the_same_chapter_puts_the_pill_away_when_nothing_sounds(monkeypatch):
     c = _paging(monkeypatch)
     c._on_reading_listen(None)
     c.covered = False
-    c._sync_reading_audio()
+    c.sync()
     assert not c._pill.visible
 
 
@@ -776,7 +776,7 @@ def test_the_pill_keeps_naming_what_is_sounding(monkeypatch):
     _settings(monkeypatch)
     c = _listening(monkeypatch, player=FakePlayer())
     c._chapter = 4
-    c._sync_reading_audio()
+    c.sync()
     assert c._reading_reference == 'John 4'         # the offer moved
     assert c._pill.reference == 'John 3'            # the reading did not
 
@@ -794,7 +794,7 @@ def test_resuming_after_paging_on_resumes_what_was_sounding(monkeypatch):
     assert not player.playing
     c._chapter = 4
     c._cached = '/tmp/John_004.mp3'
-    c._sync_reading_audio()
+    c.sync()
     c._on_reading_play()                            # resume
     assert player.playing
     assert player.played[-1] == '/tmp/John_003.mp3'
@@ -808,11 +808,11 @@ def test_a_fetch_landing_after_paging_on_names_what_was_asked_for(monkeypatch):
     runner = _runner(monkeypatch)
     _settings(monkeypatch)
     c = _paging(monkeypatch, player=FakePlayer())    # nothing cached
-    c._sync_reading_audio()
+    c.sync()
     c._on_reading_listen(None)
     c._on_reading_play()
     c._chapter = 4
-    c._sync_reading_audio()
+    c.sync()
     runner.apply('/tmp/John_003.mp3')
     assert c._pill.reference == 'John 3'
     assert c._sounding[0] == '/tmp/John_003.mp3'
@@ -840,7 +840,7 @@ def test_paging_on_offers_the_chapter_on_screen(monkeypatch):
     _settings(monkeypatch)
     c = _listening(monkeypatch, player=FakePlayer())
     c._chapter = 4
-    c._sync_reading_audio()
+    c.sync()
     assert c._pill.reference == 'John 3'         # still in hand
     assert c._pill.switch == 'John 4'            # and on offer
 
@@ -854,7 +854,7 @@ def test_nothing_sounding_offers_nothing(monkeypatch):
     c = _paging(monkeypatch)
     c._on_reading_listen(None)
     c._chapter = 4
-    c._sync_reading_audio()
+    c.sync()
     assert c._pill.switch == ''
 
 
@@ -866,7 +866,7 @@ def test_a_chapter_with_no_reading_is_not_offered(monkeypatch):
     c = _listening(monkeypatch, player=FakePlayer())
     c.covered = False
     c._chapter = 4
-    c._sync_reading_audio()
+    c.sync()
     assert c._pill.visible
     assert c._pill.switch == ''
 
@@ -886,7 +886,7 @@ def test_the_switch_starts_the_chapter_on_screen(monkeypatch):
     c = _listening(monkeypatch, player=player)
     c._chapter = 4
     c._cached = '/tmp/John_004.mp3'
-    c._sync_reading_audio()
+    c.sync()
     c._on_reading_switch()
     assert player.played[-1] == '/tmp/John_004.mp3'
     assert player.playing
@@ -901,11 +901,11 @@ def test_the_switch_abandons_a_fetch_it_replaces(monkeypatch):
     _settings(monkeypatch)
     c = _paging(monkeypatch,                         # nothing cached
                 player=_reusable(monkeypatch, FakePlayer()))
-    c._sync_reading_audio()
+    c.sync()
     c._on_reading_listen(None)
     c._on_reading_play()
     c._chapter = 4
-    c._sync_reading_audio()
+    c.sync()
     assert c._pill.switch == 'John 4'
     c._on_reading_switch()
     assert c._reading_key in runner.cancelled
@@ -920,11 +920,11 @@ def test_the_pill_names_the_chapter_being_fetched(monkeypatch):
     _runner(monkeypatch)
     _settings(monkeypatch)
     c = _paging(monkeypatch, player=FakePlayer())
-    c._sync_reading_audio()
+    c.sync()
     c._on_reading_listen(None)
     c._on_reading_play()
     c._chapter = 4
-    c._sync_reading_audio()
+    c.sync()
     assert c._pill.reference == 'John 3'
 
 
@@ -934,11 +934,11 @@ def test_a_stopped_fetch_leaves_the_chapter_on_screen_named(monkeypatch):
     _runner(monkeypatch)
     _settings(monkeypatch)
     c = _paging(monkeypatch, player=FakePlayer())
-    c._sync_reading_audio()
+    c.sync()
     c._on_reading_listen(None)
     c._on_reading_play()
     c._chapter = 4
-    c._sync_reading_audio()
+    c.sync()
     c._on_reading_play()                             # stop the fetch
     assert c._pill.reference == 'John 4'
     assert c._pill.switch == ''
@@ -952,7 +952,7 @@ def test_turning_spoken_readings_off_silences_a_reading(monkeypatch):
     player = FakePlayer()
     c = _listening(monkeypatch, player=player)
     store['show_audio'] = False
-    c._sync_reading_audio()
+    c.sync()
     assert not player.playing
     assert c._sounding is None
     assert not c._pill.visible
@@ -1134,7 +1134,7 @@ def test_stopping_takes_the_reading_off_the_bus(monkeypatch, bus):
     _runner(monkeypatch)
     c._on_reading_play()
     published = bus.published[0]
-    c._stop_reading_audio()
+    c.stop()
     assert bus.withdrawn == [published]
     assert bus.current is None
 
@@ -1176,7 +1176,7 @@ def test_the_devotional_row_reaches_the_desktop_too(monkeypatch, bus):
     c = _devotional(monkeypatch, cached='/tmp/me.mp3', player=FakePlayer())
     c._on_devot_play(None)
     assert bus.published[0].artist == devotional_audio.MORNING_EVENING_SERIES
-    c._stop_devotional_audio()
+    c.stop()
     assert bus.current is None
 
 
