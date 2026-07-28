@@ -13,6 +13,7 @@ hand.
 import pytest
 from gi.repository import GLib
 
+import audio_surfaces
 import bible_audio
 import devotional_audio
 import motion
@@ -21,7 +22,7 @@ import pane
 import settings
 import tasks
 import window
-from pane import BiblePane
+from audio_surfaces import DevotionalAudio, ReadingAudio, _Surface
 from window import BibleWindow
 
 
@@ -203,7 +204,7 @@ class FakeBus:
 @pytest.fixture(autouse=True)
 def bus(monkeypatch):
     fake = FakeBus()
-    monkeypatch.setattr(pane, 'mpris', fake)
+    monkeypatch.setattr(audio_surfaces, 'mpris', fake)
     monkeypatch.setattr(window, 'mpris', fake)
     return fake
 
@@ -229,25 +230,25 @@ def _pump(ms):
 class Reading:
     """The chapter-reading control, widgets stubbed out."""
 
-    _on_reading_play = BiblePane._on_reading_play
-    _on_reading_listen = BiblePane._on_reading_listen
-    _on_reading_close = BiblePane._on_reading_close
-    _on_reading_back = BiblePane._on_reading_back
-    _on_reading_rate = BiblePane._on_reading_rate
-    _begin_reading_fetch = BiblePane._begin_reading_fetch
-    _end_reading_fetch = BiblePane._end_reading_fetch
-    _show_reading_length = BiblePane._show_reading_length
-    _finish_reading_fetch = BiblePane._finish_reading_fetch
-    _report_audio_failure = BiblePane._report_audio_failure
-    _start_reading_audio = BiblePane._start_reading_audio
-    _stop_reading_audio = BiblePane._stop_reading_audio
-    _on_reading_tick = BiblePane._on_reading_tick
-    _reading_is_live = BiblePane._reading_is_live
-    _restate_pill_reading = BiblePane._restate_pill_reading
-    _live_reference = BiblePane._live_reference
-    _on_reading_switch = BiblePane._on_reading_switch
-    _reading_series = BiblePane._reading_series
-    _publish_reading_media = BiblePane._publish_reading_media
+    _on_reading_play = ReadingAudio._on_reading_play
+    _on_reading_listen = ReadingAudio._on_reading_listen
+    _on_reading_close = ReadingAudio._on_reading_close
+    _on_reading_back = ReadingAudio._on_reading_back
+    _on_reading_rate = ReadingAudio._on_reading_rate
+    _begin_reading_fetch = ReadingAudio._begin_reading_fetch
+    _end_reading_fetch = ReadingAudio._end_reading_fetch
+    _show_reading_length = ReadingAudio._show_reading_length
+    _finish_reading_fetch = ReadingAudio._finish_reading_fetch
+    _report_audio_failure = _Surface._report_audio_failure
+    _start_reading_audio = ReadingAudio._start_reading_audio
+    _stop_reading_audio = ReadingAudio._stop_reading_audio
+    _on_reading_tick = ReadingAudio._on_reading_tick
+    _reading_is_live = ReadingAudio._reading_is_live
+    _restate_pill_reading = ReadingAudio._restate_pill_reading
+    _live_reference = ReadingAudio._live_reference
+    _on_reading_switch = ReadingAudio._on_reading_switch
+    _reading_series = ReadingAudio._reading_series
+    _publish_reading_media = ReadingAudio._publish_reading_media
 
     def __init__(self, cached=None, player=None):
         self._pill = FakePill()
@@ -412,16 +413,16 @@ def test_a_stopped_fetch_can_be_started_again(monkeypatch):
 class Devotional:
     """The date row's morning/evening player, widgets stubbed out."""
 
-    _on_devot_play = BiblePane._on_devot_play
-    _begin_devot_fetch = BiblePane._begin_devot_fetch
-    _clear_devot_band = BiblePane._clear_devot_band
-    _end_devot_fetch = BiblePane._end_devot_fetch
-    _finish_devot_fetch = BiblePane._finish_devot_fetch
-    _report_audio_failure = BiblePane._report_audio_failure
-    _start_devotional_audio = BiblePane._start_devotional_audio
-    _stop_devotional_audio = BiblePane._stop_devotional_audio
-    _on_devotional_audio_tick = BiblePane._on_devotional_audio_tick
-    _publish_devot_media = BiblePane._publish_devot_media
+    _on_devot_play = DevotionalAudio._on_devot_play
+    _begin_devot_fetch = DevotionalAudio._begin_devot_fetch
+    _clear_devot_band = DevotionalAudio._clear_devot_band
+    _end_devot_fetch = DevotionalAudio._end_devot_fetch
+    _finish_devot_fetch = DevotionalAudio._finish_devot_fetch
+    _report_audio_failure = _Surface._report_audio_failure
+    _start_devotional_audio = DevotionalAudio._start_devotional_audio
+    _stop_devotional_audio = DevotionalAudio._stop_devotional_audio
+    _on_devotional_audio_tick = DevotionalAudio._on_devotional_audio_tick
+    _publish_devot_media = DevotionalAudio._publish_devot_media
 
     def __init__(self, player=None, delay_ms=motion.SPINNER_DELAY_MS):
         from gtk_utils import DelayedPulse
@@ -674,9 +675,9 @@ class Paging(Reading):
     """`Reading`, plus what re-offering a chapter needs. The pane's sync is
     what used to stop the reading, so it is the thing under test here."""
 
-    _sync_reading_audio = BiblePane._sync_reading_audio
-    _offer_reading_audio = BiblePane._offer_reading_audio
-    _dismiss_pill_if_idle = BiblePane._dismiss_pill_if_idle
+    _sync_reading_audio = ReadingAudio._sync_reading_audio
+    _offer_reading_audio = ReadingAudio._offer_reading_audio
+    _dismiss_pill_if_idle = ReadingAudio._dismiss_pill_if_idle
 
     class Item:
         """The toolbar's headphones and the box holding them: this test cares
@@ -707,7 +708,8 @@ def _paging(monkeypatch, **kwargs):
     """A pane whose chapter can be changed, with the two module-level calls
     `_sync_reading_audio` makes standing in for the real address book."""
     c = Paging(**kwargs)
-    monkeypatch.setattr(pane, 'set_accessible_label', lambda *a: None)
+    monkeypatch.setattr(audio_surfaces, 'set_accessible_label',
+                        lambda *a: None)
     monkeypatch.setattr(bible_audio, 'covers_module', lambda _m: c.covered)
     monkeypatch.setattr(
         bible_audio, 'chapter_url',
@@ -1185,3 +1187,4 @@ def test_the_today_disc_reaches_the_desktop_too(monkeypatch, bus):
     assert bus.published[0].artist == devotional_audio.DAILY_STRENGTH_SERIES
     c._stop_today_listen()
     assert bus.current is None
+
