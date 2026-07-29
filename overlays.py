@@ -89,6 +89,10 @@ class OverlayManager:
         return self._win._refresh_plan_ui
 
     @property
+    def _refresh_section_rows(self):
+        return self._win._refresh_section_rows
+
+    @property
     def _present_jump(self):
         return self._win._present_jump
 
@@ -181,6 +185,7 @@ class OverlayManager:
             self._ensure_menu_panel()
             self._close_other_overlays(keep='menu')
             self._refresh_plan_ui()
+            self._refresh_section_rows()
         self._menu_split.set_show_sidebar(open_)
 
     # ── Search sidebar ───────────────────────────────────────────────────────

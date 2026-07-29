@@ -702,6 +702,9 @@ class BibleWindow(Adw.ApplicationWindow):
         # paint — see _ensure_menu_panel; an idle kicks it off so it's
         # ready long before the user can reach the menu button.
         self._menu_panel_built = False
+        # (row, reason label) for the two controls that need a module which
+        # marks its sections; refreshed whenever the menu opens.
+        self._section_rows = []
         GLib.idle_add(self._ensure_menu_panel)
 
         # ── Cross-reference panel ─────────────────────────────────────────────
@@ -3208,9 +3211,27 @@ class BibleWindow(Adw.ApplicationWindow):
             for pane in (self.pane1, self.pane2):
                 getattr(pane, setter_name)(active)
 
-        def _adv_switch(label_text, key, setter_name, extra=None):
+        def _adv_switch(label_text, key, setter_name, extra=None, note=None):
             r = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-            r.append(Gtk.Label(label=label_text, xalign=0, hexpand=True))
+            title = Gtk.Label(label=label_text, xalign=0)
+            if note is None:
+                title.set_hexpand(True)
+                r.append(title)
+            else:
+                # A reason under the title, shown only while the row is
+                # unavailable — a switch that cannot do anything has to say
+                # why, or the reader concludes the app is broken (it reads
+                # exactly like a dead control otherwise).
+                col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+                col.set_hexpand(True)
+                col.append(title)
+                caption = Gtk.Label(label=note, xalign=0, wrap=True)
+                caption.add_css_class('dim-label')
+                caption.add_css_class('caption')
+                caption.set_visible(False)
+                col.append(caption)
+                r.append(col)
+                self._section_rows.append((r, caption))
             if extra is not None:
                 r.append(extra)
             sw = Gtk.Switch(valign=Gtk.Align.CENTER)
@@ -3225,8 +3246,15 @@ class BibleWindow(Adw.ApplicationWindow):
 
         _adv_switch(_('Section headings'),
                     'show_headings', 'set_show_headings')
+        # Both read the sense-units a module marks with section headings.
+        # Plenty of translations mark none (KJV, ASV, the Russian Synodal),
+        # and on those the switches are honestly unavailable rather than
+        # silently inert — see _refresh_section_rows.
+        needs = _('This translation marks no sections')
         _adv_switch(_('Mark the current sense-unit'),
-                    'mark_current_unit', 'set_mark_current_unit')
+                    'mark_current_unit', 'set_mark_current_unit', note=needs)
+        _adv_switch(_('Quiet the rest of the page'),
+                    'focus_current_unit', 'set_focus_current_unit', note=needs)
         _adv_switch(_('Small caps for the divine name'),
                     'smallcaps_divine', 'set_divine_smallcaps')
         _adv_switch(_('Old-style numerals'),
@@ -3533,6 +3561,30 @@ class BibleWindow(Adw.ApplicationWindow):
 
         panel.append(footer)
         return panel
+
+    def _refresh_section_rows(self):
+        """Offer the two sense-unit controls only where they can act.
+
+        A module's own config is no help — RusSynodal and KJVA both declare
+        `OSISHeadings` and carry not one heading — so the panes are asked,
+        and the answer is measured off the text
+        (`sword_bridge.module_marks_sections`). Either pane having the data
+        is enough: the setting is app-wide, and a reader with LEB beside the
+        Synodal is looking at units in one of them.
+
+        The stored setting is never touched. A switch turned on under a
+        translation that marks sections stays on, and simply becomes
+        available again when one is back on screen.
+        """
+        if not self._section_rows:
+            return
+        panes = [self.pane1]
+        if self.pane2 is not None and self.pane2.get_visible():
+            panes.append(self.pane2)
+        usable = any(p.marks_sections() for p in panes)
+        for row, reason in self._section_rows:
+            row.set_sensitive(usable)
+            reason.set_visible(not usable)
 
     def _refresh_plan_ui(self):
         self._updating_plan = True
