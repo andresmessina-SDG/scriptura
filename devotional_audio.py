@@ -82,6 +82,13 @@ EVENING_HOUR = 12
 
 _UA = 'Scriptura (Bible reader; +https://github.com/andresmessina-SDG/scriptura)'
 
+#: What each reading is a reading OF, for the desktop's media bus — the
+#: place a lock screen states the book rather than the passage. The
+#: publishers' own titles, not descriptions of them.
+MORNING_EVENING_SERIES = 'Spurgeon — Morning and Evening'
+PSALMS_SERIES = 'In the Lord I Take Refuge'
+DAILY_STRENGTH_SERIES = 'Daily Strength'
+
 #: "July 20 | Evening" — the publisher's own title format.
 _TITLE = re.compile(
     r'^\s*([A-Z][a-z]+)\s+(\d{1,2})\s*\|\s*(Morning|Evening)\s*$')
@@ -348,6 +355,7 @@ class Player:
         self._pipeline = None
         self._path: str | None = None
         self._rate = 1.0
+        self._volume = 1.0
 
     @staticmethod
     def _gst():
@@ -392,9 +400,13 @@ class Player:
         # scaletempo holds the pitch when the rate is not 1.0 — without it a
         # faster reading is a chipmunk. It ships in libgstaudiofx.so, which is
         # in the GNOME runtime already, so this costs no new dependency.
+        # The named volume element is what the desktop's media bus turns
+        # (mpris.py) — the reading surfaces themselves carry no volume
+        # control, on the argument that volume belongs to the desktop.
         return Gst.parse_launch(
             f'filesrc location="{path}" ! mpegaudioparse ! mpg123audiodec'
-            ' ! audioconvert ! scaletempo ! audioresample ! autoaudiosink')
+            ' ! audioconvert ! volume name=level ! scaletempo'
+            ' ! audioresample ! autoaudiosink')
 
     def play(self, path: str) -> bool:
         """Start (or resume) a file. True if the pipeline took it."""
@@ -418,7 +430,32 @@ class Player:
         # after PLAYING, without waiting for the pipeline to preroll.
         if self._rate != 1.0:
             self.set_rate(self._rate)
+        if self._volume != 1.0:
+            # Same reason as the rate: a fresh pipeline is at full volume, so
+            # a level set from the media bus has to be asked for again.
+            self.volume = self._volume
         return True
+
+    @property
+    def rate(self) -> float:
+        """The speed this is playing at — for the media bus, which has to
+        state it."""
+        return self._rate
+
+    @property
+    def volume(self) -> float:
+        """0.0–1.0. Nothing in the app's own chrome sets this; the desktop
+        does, through MPRIS."""
+        return self._volume
+
+    @volume.setter
+    def volume(self, value: float) -> None:
+        self._volume = max(0.0, min(1.0, float(value)))
+        if self._pipeline is None:
+            return
+        element = self._pipeline.get_by_name('level')
+        if element is not None:
+            element.set_property('volume', self._volume)
 
     def set_rate(self, rate: float) -> bool:
         """Play at `rate` times the narrator's own pace, pitch unchanged.
@@ -442,6 +479,15 @@ class Player:
         if self._pipeline is not None:
             self._pipeline.set_state(self._gst().State.PAUSED)
 
+    def position(self) -> float | None:
+        """Where the reading has got to, in seconds, or None while the
+        pipeline cannot yet say."""
+        Gst = self._gst()
+        if self._pipeline is None:
+            return None
+        ok, position = self._pipeline.query_position(Gst.Format.TIME)
+        return position / Gst.SECOND if ok else None
+
     def seek_relative(self, seconds: float) -> bool:
         """Move the play position by `seconds` (negative goes back).
 
@@ -450,19 +496,23 @@ class Player:
         time. False when the pipeline cannot say where it is — a file still
         being opened has no position to move.
         """
+        position = self.position()
+        if position is None:
+            return False
+        return self.seek_to(position + seconds)
+
+    def seek_to(self, seconds: float) -> bool:
+        """Play from `seconds`, clamped at the start."""
         Gst = self._gst()
         if self._pipeline is None:
             return False
-        ok, position = self._pipeline.query_position(Gst.Format.TIME)
-        if not ok:
-            return False
-        target = max(0, position + int(seconds * Gst.SECOND))
         # seek(), not seek_simple(): the simple form seeks at rate 1.0, so
         # going back fifteen seconds would quietly undo a chosen speed.
         return bool(self._pipeline.seek(
             self._rate, Gst.Format.TIME,
             Gst.SeekFlags.FLUSH | Gst.SeekFlags.KEY_UNIT,
-            Gst.SeekType.SET, target, Gst.SeekType.NONE, 0))
+            Gst.SeekType.SET, max(0, int(seconds * Gst.SECOND)),
+            Gst.SeekType.NONE, 0))
 
     def duration(self) -> float | None:
         """How long the open file runs, in seconds, or None.

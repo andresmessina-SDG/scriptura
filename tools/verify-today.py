@@ -24,7 +24,11 @@ What it asserts (exit 1 if any fail):
      touching the network;
   3. pressing play through the app's own handler reaches a playing state,
      the progress advances, and stopping silences it — the real GStreamer
-     pipeline, in-app, through the GLib loop.
+     pipeline, in-app, through the GLib loop;
+  4. the desktop's media bus (MPRIS) shows that reading as Playing while it
+     sounds and Stopped once it is stopped, asked over the session bus the
+     way a remote would ask. Skipped, not failed, where there is no session
+     bus (CI).
 
 Check 3 needs an MP3 encoder (lamemp3enc, Fedora gstreamer1-plugins-*) to
 synthesise a test tone, because the app's player is MP3-only by design; if
@@ -174,7 +178,7 @@ def run_driver() -> int:
     import gi
     gi.require_version('Gtk', '4.0')
     gi.require_version('Adw', '1')
-    from gi.repository import GLib
+    from gi.repository import Gio, GLib
 
     import main
 
@@ -293,13 +297,53 @@ def run_driver() -> int:
                     progress_samples=S['progress_seen'])
                 add('playback progress advances', advanced,
                     max_progress=max(S['progress_seen'] or [0.0]))
-                win._stop_today_listen()
-                GLib.timeout_add(300, verify_stopped)
+                read_mpris('Playing', 'media bus shows the reading playing',
+                           after_stop=False)
                 return GLib.SOURCE_REMOVE
             return GLib.SOURCE_CONTINUE
         except Exception as e:
             fail('poll_play', e)
             return GLib.SOURCE_REMOVE
+
+    # ── the desktop's media bus, read as a remote would read it ───────────
+    # Asked over the session bus rather than off the module: the point of
+    # the check is that a REMOTE can see the reading, which is a different
+    # claim from the app's own state being right. Asked asynchronously
+    # because the app is answering it — a sync call would block the loop
+    # that has to dispatch our own handler, and deadlock on ourselves.
+    def read_mpris(expect, name, after_stop):
+        import mpris
+        try:
+            connection = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+        except Exception as e:
+            add(name, True, skipped=f'no session bus ({e})')
+            return next_after_mpris(after_stop)
+
+        def answered(conn, result):
+            try:
+                got = conn.call_finish(result).unpack()[0]
+            except Exception as exc:
+                add(name, False, error=str(exc))
+            else:
+                add(name, got == expect, status=got,
+                    bus_name=mpris.BUS_NAME)
+            next_after_mpris(after_stop)
+
+        connection.call(
+            mpris.BUS_NAME, mpris.OBJECT_PATH,
+            'org.freedesktop.DBus.Properties', 'Get',
+            GLib.Variant('(ss)', (mpris.PLAYER_IFACE, 'PlaybackStatus')),
+            GLib.VariantType('(v)'), Gio.DBusCallFlags.NONE, 4000, None,
+            answered)
+
+    def next_after_mpris(after_stop):
+        if after_stop:
+            return verify_stopped()
+        S['win']._stop_today_listen()
+        GLib.timeout_add(300, lambda: read_mpris(
+            'Stopped', 'media bus clears when the reading stops',
+            after_stop=True) or GLib.SOURCE_REMOVE)
+        return GLib.SOURCE_REMOVE
 
     def verify_stopped():
         win = S['win']

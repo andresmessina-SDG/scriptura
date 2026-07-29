@@ -13,13 +13,16 @@ hand.
 import pytest
 from gi.repository import GLib
 
+import audio_surfaces
 import bible_audio
 import devotional_audio
 import motion
+import mpris
 import pane
 import settings
 import tasks
-from pane import BiblePane
+import window
+from audio_surfaces import DevotionalAudio, ReadingAudio, _Surface
 from window import BibleWindow
 
 
@@ -169,6 +172,43 @@ class FakeRunner:
         self.cancelled.append(key)
 
 
+class FakeBus:
+    """The desktop's media bus, recording instead of connecting.
+
+    Autoused everywhere below: these tests run on a workstation with a real
+    session bus, and a test suite must not put a media player on it.
+    """
+
+    Reading = mpris.Reading
+
+    def __init__(self):
+        self.published = []
+        self.updated = []
+        self.withdrawn = []
+        self.current = None
+
+    def publish(self, reading):
+        self.published.append(reading)
+        self.current = reading
+
+    def update(self, reading):
+        self.updated.append(reading)
+
+    def withdraw(self, reading):
+        if reading is not None:
+            self.withdrawn.append(reading)
+            if self.current is reading:
+                self.current = None
+
+
+@pytest.fixture(autouse=True)
+def bus(monkeypatch):
+    fake = FakeBus()
+    monkeypatch.setattr(audio_surfaces, 'mpris', fake)
+    monkeypatch.setattr(window, 'mpris', fake)
+    return fake
+
+
 def _runner(monkeypatch):
     runner = FakeRunner()
     monkeypatch.setattr(tasks, 'submit', runner.submit)
@@ -190,23 +230,25 @@ def _pump(ms):
 class Reading:
     """The chapter-reading control, widgets stubbed out."""
 
-    _on_reading_play = BiblePane._on_reading_play
-    _on_reading_listen = BiblePane._on_reading_listen
-    _on_reading_close = BiblePane._on_reading_close
-    _on_reading_back = BiblePane._on_reading_back
-    _on_reading_rate = BiblePane._on_reading_rate
-    _begin_reading_fetch = BiblePane._begin_reading_fetch
-    _end_reading_fetch = BiblePane._end_reading_fetch
-    _show_reading_length = BiblePane._show_reading_length
-    _finish_reading_fetch = BiblePane._finish_reading_fetch
-    _report_audio_failure = BiblePane._report_audio_failure
-    _start_reading_audio = BiblePane._start_reading_audio
-    _stop_reading_audio = BiblePane._stop_reading_audio
-    _on_reading_tick = BiblePane._on_reading_tick
-    _reading_is_live = BiblePane._reading_is_live
-    _restate_pill_reading = BiblePane._restate_pill_reading
-    _live_reference = BiblePane._live_reference
-    _on_reading_switch = BiblePane._on_reading_switch
+    _on_reading_play = ReadingAudio._on_reading_play
+    _on_reading_listen = ReadingAudio._on_reading_listen
+    _on_reading_close = ReadingAudio._on_reading_close
+    _on_reading_back = ReadingAudio._on_reading_back
+    _on_reading_rate = ReadingAudio._on_reading_rate
+    _begin_reading_fetch = ReadingAudio._begin_reading_fetch
+    _end_reading_fetch = ReadingAudio._end_reading_fetch
+    _show_reading_length = ReadingAudio._show_reading_length
+    _finish_reading_fetch = ReadingAudio._finish_reading_fetch
+    _report_audio_failure = _Surface._report_audio_failure
+    _start_reading_audio = ReadingAudio._start_reading_audio
+    stop = ReadingAudio.stop
+    _on_reading_tick = ReadingAudio._on_reading_tick
+    _reading_is_live = ReadingAudio._reading_is_live
+    _restate_pill_reading = ReadingAudio._restate_pill_reading
+    _live_reference = ReadingAudio._live_reference
+    _on_reading_switch = ReadingAudio._on_reading_switch
+    _reading_series = ReadingAudio._reading_series
+    _publish_reading_media = ReadingAudio._publish_reading_media
 
     def __init__(self, cached=None, player=None):
         self._pill = FakePill()
@@ -220,6 +262,7 @@ class Reading:
         self._reading_key = 'reading-audio:test'
         self._sounding = None
         self._pending = None
+        self._reading_media = None
         self._cached = cached
         self.toasts = []
         self._on_toast = self.toasts.append
@@ -349,7 +392,7 @@ def test_navigating_away_stops_the_fetch(monkeypatch):
     runner = _runner(monkeypatch)
     c = Reading()
     c._on_reading_play()
-    c._stop_reading_audio()                # what _sync_reading_audio calls
+    c.stop()                # what sync calls
     assert runner.cancelled == ['reading-audio:test']
     assert not c._reading_fetching
     assert c.toasts == []
@@ -370,15 +413,16 @@ def test_a_stopped_fetch_can_be_started_again(monkeypatch):
 class Devotional:
     """The date row's morning/evening player, widgets stubbed out."""
 
-    _on_devot_play = BiblePane._on_devot_play
-    _begin_devot_fetch = BiblePane._begin_devot_fetch
-    _clear_devot_band = BiblePane._clear_devot_band
-    _end_devot_fetch = BiblePane._end_devot_fetch
-    _finish_devot_fetch = BiblePane._finish_devot_fetch
-    _report_audio_failure = BiblePane._report_audio_failure
-    _start_devotional_audio = BiblePane._start_devotional_audio
-    _stop_devotional_audio = BiblePane._stop_devotional_audio
-    _on_devotional_audio_tick = BiblePane._on_devotional_audio_tick
+    _on_devot_play = DevotionalAudio._on_devot_play
+    _begin_devot_fetch = DevotionalAudio._begin_devot_fetch
+    _clear_devot_band = DevotionalAudio._clear_devot_band
+    _end_devot_fetch = DevotionalAudio._end_devot_fetch
+    _finish_devot_fetch = DevotionalAudio._finish_devot_fetch
+    _report_audio_failure = _Surface._report_audio_failure
+    _start_devotional_audio = DevotionalAudio._start_devotional_audio
+    stop = DevotionalAudio.stop
+    _on_devotional_audio_tick = DevotionalAudio._on_devotional_audio_tick
+    _publish_devot_media = DevotionalAudio._publish_devot_media
 
     def __init__(self, player=None, delay_ms=motion.SPINNER_DELAY_MS):
         from gtk_utils import DelayedPulse
@@ -386,6 +430,7 @@ class Devotional:
         self._devot_progress = FakeBar()
         self._devot_audio_row = object()
         self._devot_player = player
+        self._devot_media = None
         self._devot_tick = None
         self._devot_date = None
         self._devot_session = 'morning'
@@ -458,7 +503,7 @@ def test_devotional_second_press_stops_the_fetch(monkeypatch):
 def test_devotional_day_change_stops_the_fetch(monkeypatch):
     c = _devotional(monkeypatch)
     c._on_devot_play(None)
-    c._stop_devotional_audio()             # what _sync_devotional_audio calls
+    c.stop()             # what sync calls
     assert not c._devot_fetching
     assert not c._devot_progress.visible
 
@@ -487,12 +532,14 @@ class Today:
     _start_today_listen = BibleWindow._start_today_listen
     _stop_today_listen = BibleWindow._stop_today_listen
     _on_today_listen_tick = BibleWindow._on_today_listen_tick
+    _publish_today_media = BibleWindow._publish_today_media
 
     def __init__(self, player=None):
         self._today_view = FakeTodayView()
         self._today_listen = ('https://example.invalid/today.mp3',
                               'A Daily Strength')
         self._today_player = player
+        self._today_media = None
         self._today_listen_tick = None
         self._today_fetching = False
         self.toasts = []
@@ -628,9 +675,9 @@ class Paging(Reading):
     """`Reading`, plus what re-offering a chapter needs. The pane's sync is
     what used to stop the reading, so it is the thing under test here."""
 
-    _sync_reading_audio = BiblePane._sync_reading_audio
-    _offer_reading_audio = BiblePane._offer_reading_audio
-    _dismiss_pill_if_idle = BiblePane._dismiss_pill_if_idle
+    sync = ReadingAudio.sync
+    _offer_reading_audio = ReadingAudio._offer_reading_audio
+    _dismiss_pill_if_idle = ReadingAudio._dismiss_pill_if_idle
 
     class Item:
         """The toolbar's headphones and the box holding them: this test cares
@@ -659,9 +706,10 @@ class Paging(Reading):
 
 def _paging(monkeypatch, **kwargs):
     """A pane whose chapter can be changed, with the two module-level calls
-    `_sync_reading_audio` makes standing in for the real address book."""
+    `sync` makes standing in for the real address book."""
     c = Paging(**kwargs)
-    monkeypatch.setattr(pane, 'set_accessible_label', lambda *a: None)
+    monkeypatch.setattr(audio_surfaces, 'set_accessible_label',
+                        lambda *a: None)
     monkeypatch.setattr(bible_audio, 'covers_module', lambda _m: c.covered)
     monkeypatch.setattr(
         bible_audio, 'chapter_url',
@@ -672,7 +720,7 @@ def _paging(monkeypatch, **kwargs):
 def _listening(monkeypatch, **kwargs):
     """A pane with the pill up and John 3 sounding from the cache."""
     c = _paging(monkeypatch, cached='/tmp/John_003.mp3', **kwargs)
-    c._sync_reading_audio()
+    c.sync()
     c._on_reading_listen(None)
     c._on_reading_play()
     return c
@@ -688,7 +736,7 @@ def test_paging_on_leaves_the_reading_sounding(monkeypatch):
     c = _listening(monkeypatch, player=player)
     assert player.playing
     c._chapter = 4                          # the reader pages on
-    c._sync_reading_audio()
+    c.sync()
     assert player.playing
     assert c._pill.state == 'playing'
 
@@ -703,7 +751,7 @@ def test_paging_on_cannot_put_the_pill_away(monkeypatch):
     c = _listening(monkeypatch, player=player)
     c.covered = False                       # a translation with no reading
     c._book = 'John'                        # and not a psalm either
-    c._sync_reading_audio()
+    c.sync()
     assert c._pill.visible                  # the stop is still reachable
     assert player.playing
     assert not c._reading_audio.visible     # but nothing is offered here
@@ -717,7 +765,7 @@ def test_the_same_chapter_puts_the_pill_away_when_nothing_sounds(monkeypatch):
     c = _paging(monkeypatch)
     c._on_reading_listen(None)
     c.covered = False
-    c._sync_reading_audio()
+    c.sync()
     assert not c._pill.visible
 
 
@@ -728,7 +776,7 @@ def test_the_pill_keeps_naming_what_is_sounding(monkeypatch):
     _settings(monkeypatch)
     c = _listening(monkeypatch, player=FakePlayer())
     c._chapter = 4
-    c._sync_reading_audio()
+    c.sync()
     assert c._reading_reference == 'John 4'         # the offer moved
     assert c._pill.reference == 'John 3'            # the reading did not
 
@@ -746,7 +794,7 @@ def test_resuming_after_paging_on_resumes_what_was_sounding(monkeypatch):
     assert not player.playing
     c._chapter = 4
     c._cached = '/tmp/John_004.mp3'
-    c._sync_reading_audio()
+    c.sync()
     c._on_reading_play()                            # resume
     assert player.playing
     assert player.played[-1] == '/tmp/John_003.mp3'
@@ -760,11 +808,11 @@ def test_a_fetch_landing_after_paging_on_names_what_was_asked_for(monkeypatch):
     runner = _runner(monkeypatch)
     _settings(monkeypatch)
     c = _paging(monkeypatch, player=FakePlayer())    # nothing cached
-    c._sync_reading_audio()
+    c.sync()
     c._on_reading_listen(None)
     c._on_reading_play()
     c._chapter = 4
-    c._sync_reading_audio()
+    c.sync()
     runner.apply('/tmp/John_003.mp3')
     assert c._pill.reference == 'John 3'
     assert c._sounding[0] == '/tmp/John_003.mp3'
@@ -792,7 +840,7 @@ def test_paging_on_offers_the_chapter_on_screen(monkeypatch):
     _settings(monkeypatch)
     c = _listening(monkeypatch, player=FakePlayer())
     c._chapter = 4
-    c._sync_reading_audio()
+    c.sync()
     assert c._pill.reference == 'John 3'         # still in hand
     assert c._pill.switch == 'John 4'            # and on offer
 
@@ -806,7 +854,7 @@ def test_nothing_sounding_offers_nothing(monkeypatch):
     c = _paging(monkeypatch)
     c._on_reading_listen(None)
     c._chapter = 4
-    c._sync_reading_audio()
+    c.sync()
     assert c._pill.switch == ''
 
 
@@ -818,7 +866,7 @@ def test_a_chapter_with_no_reading_is_not_offered(monkeypatch):
     c = _listening(monkeypatch, player=FakePlayer())
     c.covered = False
     c._chapter = 4
-    c._sync_reading_audio()
+    c.sync()
     assert c._pill.visible
     assert c._pill.switch == ''
 
@@ -838,7 +886,7 @@ def test_the_switch_starts_the_chapter_on_screen(monkeypatch):
     c = _listening(monkeypatch, player=player)
     c._chapter = 4
     c._cached = '/tmp/John_004.mp3'
-    c._sync_reading_audio()
+    c.sync()
     c._on_reading_switch()
     assert player.played[-1] == '/tmp/John_004.mp3'
     assert player.playing
@@ -853,11 +901,11 @@ def test_the_switch_abandons_a_fetch_it_replaces(monkeypatch):
     _settings(monkeypatch)
     c = _paging(monkeypatch,                         # nothing cached
                 player=_reusable(monkeypatch, FakePlayer()))
-    c._sync_reading_audio()
+    c.sync()
     c._on_reading_listen(None)
     c._on_reading_play()
     c._chapter = 4
-    c._sync_reading_audio()
+    c.sync()
     assert c._pill.switch == 'John 4'
     c._on_reading_switch()
     assert c._reading_key in runner.cancelled
@@ -872,11 +920,11 @@ def test_the_pill_names_the_chapter_being_fetched(monkeypatch):
     _runner(monkeypatch)
     _settings(monkeypatch)
     c = _paging(monkeypatch, player=FakePlayer())
-    c._sync_reading_audio()
+    c.sync()
     c._on_reading_listen(None)
     c._on_reading_play()
     c._chapter = 4
-    c._sync_reading_audio()
+    c.sync()
     assert c._pill.reference == 'John 3'
 
 
@@ -886,11 +934,11 @@ def test_a_stopped_fetch_leaves_the_chapter_on_screen_named(monkeypatch):
     _runner(monkeypatch)
     _settings(monkeypatch)
     c = _paging(monkeypatch, player=FakePlayer())
-    c._sync_reading_audio()
+    c.sync()
     c._on_reading_listen(None)
     c._on_reading_play()
     c._chapter = 4
-    c._sync_reading_audio()
+    c.sync()
     c._on_reading_play()                             # stop the fetch
     assert c._pill.reference == 'John 4'
     assert c._pill.switch == ''
@@ -904,7 +952,7 @@ def test_turning_spoken_readings_off_silences_a_reading(monkeypatch):
     player = FakePlayer()
     c = _listening(monkeypatch, player=player)
     store['show_audio'] = False
-    c._sync_reading_audio()
+    c.sync()
     assert not player.playing
     assert c._sounding is None
     assert not c._pill.visible
@@ -1045,3 +1093,160 @@ def test_an_edited_setting_cannot_ask_for_an_absurd_speed():
     assert sane_rate(1.5) == 1.5
     assert sane_rate(6.0) == 1.0
     assert sane_rate(0) == 1.0
+
+
+# ── What reaches the desktop's media bus ─────────────────────────────────────
+
+def test_a_sounding_chapter_reaches_the_desktop(monkeypatch, bus):
+    """The reading the pill holds is the reading the lock screen names."""
+    c = Reading(cached='/tmp/Gen_001.mp3', player=FakePlayer())
+    _runner(monkeypatch)
+    c._on_reading_play()
+    assert len(bus.published) == 1
+    assert bus.published[0].title == 'John 3'
+    assert bus.published[0].artist == bible_audio.TRANSLATION
+
+
+def test_a_psalm_episode_names_its_own_series(monkeypatch, bus):
+    """Not every reading the pill carries is a chapter of the Bible."""
+    c = Reading(cached='/tmp/psalm.mp3', player=FakePlayer())
+    c._reading_scripture = False
+    _runner(monkeypatch)
+    c._on_reading_play()
+    assert bus.published[0].artist == devotional_audio.PSALMS_SERIES
+
+
+def test_a_resume_is_the_same_track_not_a_new_one(monkeypatch, bus):
+    """Republishing would tell every remote a new reading had begun, and
+    restart the desktop's idea of the track."""
+    player = FakePlayer()
+    c = Reading(cached='/tmp/Gen_001.mp3', player=player)
+    _runner(monkeypatch)
+    c._on_reading_play()
+    c._on_reading_play()                    # pause
+    c._on_reading_play()                    # resume
+    assert len(bus.published) == 1
+    assert bus.updated                      # but the desktop was told
+
+
+def test_stopping_takes_the_reading_off_the_bus(monkeypatch, bus):
+    c = Reading(cached='/tmp/Gen_001.mp3', player=FakePlayer())
+    _runner(monkeypatch)
+    c._on_reading_play()
+    published = bus.published[0]
+    c.stop()
+    assert bus.withdrawn == [published]
+    assert bus.current is None
+
+
+def test_the_desktops_pause_leaves_the_pill_showing_paused(monkeypatch, bus):
+    """The bus acts through the pill's own handlers, so the two can never
+    disagree about what is happening."""
+    c = Reading(cached='/tmp/Gen_001.mp3', player=FakePlayer())
+    _runner(monkeypatch)
+    c._on_reading_play()
+    bus.published[0].on_pause()
+    assert c._pill.state == 'idle'
+
+
+def test_the_desktops_stop_puts_the_player_away(monkeypatch, bus):
+    """Stop means stop: the pill carries the only controls there are, so
+    silencing a reading while leaving it up would strand them."""
+    c = Reading(cached='/tmp/Gen_001.mp3', player=FakePlayer())
+    _runner(monkeypatch)
+    c._on_reading_play()
+    bus.published[0].on_stop()
+    assert c._sounding is None
+    assert not c._pill.visible
+
+
+def test_a_speed_set_from_a_remote_is_the_speed_the_pill_shows(monkeypatch,
+                                                               bus):
+    monkeypatch.setattr(settings, 'put', lambda *_a: None)
+    player = FakePlayer()
+    c = Reading(cached='/tmp/Gen_001.mp3', player=player)
+    _runner(monkeypatch)
+    c._on_reading_play()
+    bus.published[0].on_rate(1.5)
+    assert c._pill.rate == 1.5
+    assert player.rate == 1.5
+
+
+def test_the_devotional_row_reaches_the_desktop_too(monkeypatch, bus):
+    c = _devotional(monkeypatch, cached='/tmp/me.mp3', player=FakePlayer())
+    c._on_devot_play(None)
+    assert bus.published[0].artist == devotional_audio.MORNING_EVENING_SERIES
+    c.stop()
+    assert bus.current is None
+
+
+def test_the_today_disc_reaches_the_desktop_too(monkeypatch, bus):
+    c = _today(monkeypatch, cached='/tmp/today.mp3', player=FakePlayer())
+    c._on_today_listen()
+    assert bus.published[0].title == 'A Daily Strength'
+    assert bus.published[0].artist == devotional_audio.DAILY_STRENGTH_SERIES
+    c._stop_today_listen()
+    assert bus.current is None
+
+# ── The wiring, in a real widget tree ────────────────────────────────────────
+# The tests above stub every widget, which is what makes them fast and what
+# lets them assert behaviour. What they cannot see is whether the surfaces are
+# actually PLUGGED IN: BACKLOG item 24b moved both of them out of BiblePane,
+# and the whole risk of that move sits in the handful of places the pane still
+# has to hand them a parent. A stub answers every append() happily.
+
+def _real_tree():
+    import gi
+    gi.require_version('Adw', '1')
+    from gi.repository import Adw, Gdk
+    if Gdk.Display.get_default() is None:
+        pytest.skip('needs a display: building real GTK widgets without one '
+                    'segfaults rather than failing')
+    Adw.init()
+
+
+class StubPane:
+    """Only what the surfaces read back off the pane."""
+
+    def __init__(self):
+        self._module, self._book, self._chapter = 'BSB', 'John', 3
+        self._devotional_date = None
+        self._on_toast = None
+
+    def _is_verse_navigable(self):
+        return True
+
+
+def test_the_headphones_are_built_into_the_toolbar_it_is_given():
+    _real_tree()
+    from gi.repository import Gtk
+    toolbar = Gtk.Box()
+    audio = ReadingAudio(StubPane(), toolbar)
+    assert toolbar.get_first_child() is audio._reading_audio
+    # Offered only when there is something behind it — the same rule the
+    # stubbed tests assert, here against the real widget.
+    assert not audio._reading_audio.get_visible()
+
+
+def test_the_pill_is_reachable_for_the_overlay_and_the_paper():
+    """The pane adds the pill to its chrome overlay and casts it in the
+    reading paper. Both go through `.pill`, so it has to be a real one."""
+    _real_tree()
+    from gi.repository import Gtk
+    audio = ReadingAudio(StubPane(), Gtk.Box())
+    assert audio.pill is audio._pill
+    Gtk.Overlay().add_overlay(audio.pill)      # what the pane does with it
+    audio.pill.set_appearance('#f7f4ee', '#1a1a1a')
+
+
+def test_the_devotional_controls_are_built_into_the_row_it_is_given():
+    _real_tree()
+    from gi.repository import Gtk
+    row = Gtk.Box()
+    devot = DevotionalAudio(StubPane(), row)
+    assert row.get_first_child() is devot._devot_audio_row
+    assert not devot._devot_audio_row.get_visible()
+    # The hairline is placed by the PANE, under the row rather than in it, so
+    # it must be reachable and unparented once the surface is constructed.
+    assert devot.progress.get_parent() is None
+    Gtk.Box().append(devot.progress)

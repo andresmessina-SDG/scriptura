@@ -11,6 +11,7 @@ from gtk_utils import clear_children
 import sword_bridge
 import settings
 import devotional_audio
+import mpris
 import tasks
 import motion
 import night_light
@@ -2041,6 +2042,7 @@ class BibleWindow(Adw.ApplicationWindow):
         if player is not None and player.playing:
             player.pause()
             self._today_view.set_listen(self._today_listen[1])
+            mpris.update(getattr(self, '_today_media', None))
             return
         if not getattr(self, '_today_listen', None):
             return
@@ -2091,9 +2093,27 @@ class BibleWindow(Adw.ApplicationWindow):
             self._toast(message)
             return
         self._today_view.set_listen(self._today_listen[1], playing=True)
+        self._publish_today_media()
         if getattr(self, '_today_listen_tick', None) is None:
             self._today_listen_tick = GLib.timeout_add(
                 500, self._on_today_listen_tick)
+
+    def _publish_today_media(self):
+        """Hand the day's devotional to the desktop's media bus, titled by
+        the publisher's own title for the day."""
+        title = self._today_listen[1]
+        media = getattr(self, '_today_media', None)
+        if media is None or media.title != title:
+            self._today_media = mpris.Reading(
+                title, devotional_audio.DAILY_STRENGTH_SERIES,
+                player=self._today_player,
+                on_play=self._on_today_listen,
+                on_pause=self._on_today_listen,
+                on_stop=self._stop_today_listen)
+            mpris.publish(self._today_media)
+            return
+        media.player = self._today_player
+        mpris.update(media)
 
     def _on_today_listen_tick(self):
         player = getattr(self, '_today_player', None)
@@ -2117,6 +2137,8 @@ class BibleWindow(Adw.ApplicationWindow):
         if getattr(self, '_today_player', None) is not None:
             self._today_player.stop()
             self._today_player = None
+        mpris.withdraw(getattr(self, '_today_media', None))
+        self._today_media = None
         if self._today_view is not None:
             if getattr(self, '_today_listen', None):
                 self._today_view.set_listen(self._today_listen[1])
