@@ -33,8 +33,8 @@ MODULE_KEY = 'Historical Commentaries'
 # release asset, and LATEST_BUILT to that pack's pack_meta 'built' date, so an
 # installed-but-older pack surfaces an "update available" nudge (update_available).
 PACK_URL = ('https://github.com/andresmessina-SDG/scriptura/releases/'
-            'download/catena-pack-v2/catena.db.gz')
-LATEST_BUILT = '2026-07-12'
+            'download/catena-pack-v3/catena.db.gz')
+LATEST_BUILT = '2026-07-29'
 
 # Mirrors the build script's sentinel for "date unknown".
 _UNKNOWN_YEAR = 9999
