@@ -56,6 +56,13 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Fixed
 
+- **Voices of the Church: numbers were losing their thousands.** Four
+  quotes printed figures like "Hezekiah routed 185, of the enemy" — a
+  parser upstream had been dropping the digits after the comma. Fixed at
+  the source and carried in the rebuilt pack, along with Origen on
+  Romans and Jeremiah (+914 quotes), two verses reattributed from Jerome
+  to Pseudo-Jerome, and a commentary wrongly given to Pacian of
+  Barcelona removed. Installed packs will offer the update.
 - Wrong/missing cipher key on an encrypted module now shows a "the
   cipher key may be incorrect" message with an Edit Key action instead
   of rendering gibberish (or nothing).
