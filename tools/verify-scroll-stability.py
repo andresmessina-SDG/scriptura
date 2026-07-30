@@ -178,6 +178,10 @@ def orchestrate() -> int:
         return 2
 
     inconclusive = None
+    # A measured regression in ANY attempt outranks an inconclusive one in
+    # another: retrying is there to survive an unusable environment, not to
+    # give a real failure a second chance to be excused.
+    saw_regression = False
     for attempt in range(1 + args.retries):
         if attempt:
             print(f'retrying (attempt {attempt + 1})…', file=sys.stderr)
@@ -185,10 +189,12 @@ def orchestrate() -> int:
         if report is not None and report.get('all_ok'):
             return 0
         inconclusive = (report or {}).get('inconclusive')
+        if report is not None and not inconclusive:
+            saw_regression = True
     # A run that never established its own starting state is an unusable
     # environment, not a regression — the same exit code as a missing module,
     # and deliberately not the one that says the reading text moved.
-    if inconclusive:
+    if inconclusive and not saw_regression:
         print(f'inconclusive: {inconclusive}', file=sys.stderr)
         return 2
     return 1
@@ -202,6 +208,7 @@ def orchestrate() -> int:
 QUIET_MS = 800        # must exceed the 600ms animation-skip fallback
 POLL_MS = 200
 SETTLE_CAP_MS = 15000  # give up waiting and judge whatever state we have
+RENDER_CAP_MS = 20000  # waiting for the probe chapter's async render to land
 
 
 def run_matrix() -> int:
@@ -317,7 +324,37 @@ def run_matrix() -> int:
                 f' not finished laying out, so they say nothing about the app')
             REPORT['all_ok'] = False
             return
-        REPORT['all_ok'] = all(c['ok'] for c in REPORT['checks'])
+        # A check that never got a measurement is not a check that failed.
+        # `check()` has always marked those rows `inconclusive`, but the run
+        # was judged with `all(c['ok'])`, and an inconclusive row carries
+        # ok=False — so a pane the harness simply could not measure came back
+        # as exit 1, "the reading text moved". Measured at SCRIPTURA_PARK_PX
+        # =1400 under load: the commentary pane parks where no verse is
+        # visible, `baseline_missing: ['p2']` is recorded, two of ten checks
+        # go inconclusive with `moved_px: None` before AND after — and the
+        # run still reported a stability regression.
+        #
+        # This is NOT the disproved "make settle timeouts inconclusive" move.
+        # A settle timeout has real before/after offsets and a real delta;
+        # suppressing it hides movement that did happen. These rows have no
+        # delta at all — there is nothing in them to hide — and a REGRESSION
+        # IN A MEASURED CHECK STILL WINS below, so a genuine failure cannot
+        # be downgraded by an unmeasurable one elsewhere.
+        moved = [c['name'] for c in REPORT['checks']
+                 if not c['ok'] and not c.get('inconclusive')]
+        unmeasured = [c['name'] for c in REPORT['checks']
+                      if c.get('inconclusive')]
+        REPORT['all_ok'] = not moved and not unmeasured
+        if moved:
+            return
+        if unmeasured:
+            where = ', '.join(REPORT.get('baseline_missing') or [])
+            REPORT.setdefault('inconclusive', (
+                f'no verse offset could be measured for {len(unmeasured)} '
+                f'check(s): {", ".join(unmeasured)}'
+                + (f' — no baseline verse in {where}' if where else '')
+                + ' — the text may or may not have moved, this run does not'
+                  ' say'))
 
     def run(i=0):
         if i >= len(steps):
@@ -388,11 +425,55 @@ def run_matrix() -> int:
         return GLib.SOURCE_REMOVE
 
     def nav():
+        """Load the probe chapter — and then WAIT FOR IT, because the render
+        is asynchronous.
+
+        `_fetch_and_render()` hands the chapter fetch to the task runner and
+        returns at once; the pane goes on showing the PREVIOUS chapter until
+        `_display` lands. This step used to be followed by a fixed 2400ms
+        delay. Traced under load, the commentary's Psalms 119 arrived at
+        ~3400ms — so the park ran a second early, against the old document,
+        and everything downstream measured that: `upper` 5687 where the real
+        commentary is 21515, no verse at all where the park landed, and two
+        checks reporting `moved_px: None` which the run then called a
+        stability regression.
+
+        `_rendered_verses` is cleared at the top of the render and set by
+        `_display`, so it is the edge to wait on. A number of milliseconds
+        was never the right thing to wait for — the same mistake, in a
+        different disguise, as the draw-complete wait this harness already
+        learned not to trust."""
+        nxt = S['_i'] + 1
+        started = time.monotonic()
         for p in (S['p1'], S['p2']):
             p._book, p._chapter = 'Psalms', 119
             p._target_verse = None
             p._restore_top_verse = None
             p._fetch_and_render()
+        state = {'left': RENDER_CAP_MS // POLL_MS}
+
+        def poll():
+            landed = [p._rendered_verses is not None
+                      for p in (S['p1'], S['p2'])]
+            waited = round((time.monotonic() - started) * 1000)
+            if all(landed):
+                REPORT['render_wait_ms'] = waited
+                run(nxt)
+                return GLib.SOURCE_REMOVE
+            state['left'] -= 1
+            if state['left'] <= 0:
+                REPORT['render_wait_ms'] = waited
+                REPORT.setdefault('inconclusive', (
+                    f'the probe chapter never finished rendering in '
+                    f'{waited} ms (panes landed: {landed}) — every check '
+                    f'below would have measured whatever chapter was on '
+                    f'screen before, so this run says nothing about the app'))
+                run(nxt)
+                return GLib.SOURCE_REMOVE
+            return GLib.SOURCE_CONTINUE
+
+        GLib.timeout_add(POLL_MS, poll)
+        return 'HOLD'
 
     def top_text(pane):
         """Identity + pixel offset of the text at the visual viewport top —
@@ -674,7 +755,7 @@ def run_matrix() -> int:
         })
 
     steps.extend([
-        (nav, 2400), (scroll_mid, 0), (anchor, 200),
+        (nav, 0), (scroll_mid, 0), (anchor, 200),
         (chrome_pre, 0), (chrome_hide, 0), (chrome_reveal, 0),
         (tap_hide, 0), (tap_click, 0),
         (lex_on, 0), (lex_off, 0),
