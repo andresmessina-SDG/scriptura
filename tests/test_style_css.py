@@ -19,11 +19,11 @@ MAX_POPOVER_RADIUS = 64
 _LENGTH = re.compile(r'(\d+(?:\.\d+)?)px')
 
 
-def _rules():
+def _rules(sheet='style.css'):
     """(selector, declarations) for every rule in the stylesheet, one entry
     per selector in a comma-separated list. GTK CSS has no nesting, so a flat
     scan for `… { … }` is the whole grammar."""
-    text = re.sub(r'/\*.*?\*/', '', (REPO / 'data' / 'style.css').read_text(),
+    text = re.sub(r'/\*.*?\*/', '', (REPO / 'data' / sheet).read_text(),
                   flags=re.DOTALL)
     for selectors, body in re.findall(r'([^{}]+)\{([^{}]*)\}', text):
         for selector in selectors.split(','):
@@ -154,3 +154,40 @@ def test_tight_controls_keep_the_padding_that_clears_24px():
     assert not missing, (
         f'{sorted(missing)} no longer carry a padding declaration — either '
         f'the selector was renamed or the floor is now unguarded')
+
+
+#: The lowest alpha of @window_fg_color that clears WCAG 1.4.11's 3:1 floor in
+#: BOTH colour schemes — 3.21:1 light, 5.75:1 dark, measured on rendered pixels
+#: against the palette the app resolves at runtime. It has to be this high
+#: because @window_fg_color is itself only 80% opaque in light, so a declared
+#: 0.55 composites at 0.44.
+HC_MIN_ALPHA = 0.55
+
+_FG_ALPHA = re.compile(r'alpha\(@window_fg_color,\s*([\d.]+)\)')
+
+
+def test_the_high_contrast_sheet_never_dilutes_below_the_measured_floor():
+    """data/style-hc.css exists to put every border it names over 3:1. A value
+    softened later to make a screenshot look calmer would leave the rule in
+    place, still overriding the base sheet, and quietly fail the thing it was
+    written for."""
+    for selector, body in _rules('style-hc.css'):
+        for value in _FG_ALPHA.findall(body):
+            assert float(value) >= HC_MIN_ALPHA, (
+                f'{selector} draws at alpha(@window_fg_color, {value}) under '
+                f'high contrast — below {HC_MIN_ALPHA} it no longer clears '
+                f'3:1 in light mode, which is the only reason this sheet '
+                f'exists')
+
+
+def test_every_high_contrast_rule_still_names_something_in_the_base_sheet():
+    """An hc rule is a correction to a rule in data/style.css. Rename or drop
+    the original and the correction becomes a no-op that no test, no parse
+    error and no screenshot would report — high contrast simply stops working
+    for that control."""
+    base = {selector for selector, _ in _rules()}
+    for selector, _body in _rules('style-hc.css'):
+        assert selector in base, (
+            f'{selector} is corrected for high contrast but no longer appears '
+            f'in style.css — either it was renamed there, or this rule is '
+            f'now correcting nothing')

@@ -1,0 +1,96 @@
+/* Scriptura — the high-contrast corrections (WCAG 1.4.11, non-text contrast).
+ *
+ * Loaded only while the desktop asks for more contrast: styles.py swaps this
+ * provider in on Adw.StyleManager:high-contrast, one priority step above
+ * data/style.css, so a rule here wins on priority and does not have to
+ * out-specify the rule it is correcting.
+ *
+ * WHY NOT `@media (prefers-contrast: more)`: GTK 4.22 accepts the at-rule from
+ * an application provider without a parse error — it is a known at-rule, not
+ * an unknown one — and then never applies anything inside it. Measured at all
+ * five provider priorities, with `prefers-color-scheme` inert the same way,
+ * and with the query loaded both before and after high contrast was already
+ * on. Only the toolkit's own stylesheet gets the query evaluated, which is why
+ * reading libadwaita's gtk.css makes the feature look available.
+ *
+ * THE ONE NUMBER: `alpha(@window_fg_color, 0.55)`. 1.4.11 asks 3:1 of any
+ * boundary that identifies a control, and 0.55 is the lowest value clearing it
+ * in BOTH modes — 3.21:1 light, 5.75:1 dark, against the palette the app
+ * resolves at runtime. It has to be that high in light because
+ * @window_fg_color is itself only 80% opaque there, so the alpha declared is
+ * not the alpha that lands on the paper: 0.55 composites at 0.44.
+ *
+ * WHY NOT SIMPLY UNDILUTE @borders: the platform does lift it under high
+ * contrast, 0.12 -> 0.40 light and 0.15 -> 0.50 dark (measured), so every
+ * `alpha(@borders, …)` rule in the app improves for free and none of them is
+ * restated here. But 0.40 over light paper is only 2.22:1 — light mode still
+ * misses the floor, so a border the app means to guarantee cannot be left to
+ * the token.
+ *
+ * NOT TOUCHED, deliberately: separators and hairline dividers inside an
+ * already-bounded list or panel (1.4.11 does not ask for them, and driving
+ * every rule in the app to 3:1 is what turns high contrast into a cage), and
+ * the plan-tile state fills, which carry their own text and would go muddy.
+ *
+ * NOT FIXABLE HERE, measured: the reading-progress fill. Taking its alpha from
+ * 0.35 to 0.75 moved the rendered fill only from 215 to 195 against a 232
+ * trough — the 4px bar draws its fill at about a fifth of the coverage the
+ * trough gets, so no colour value reaches 3:1 against the trough beside it.
+ * That wants the bar's geometry changed, which is a look decision, not a
+ * contrast one.
+ */
+
+/* ── Control outlines ────────────────────────────────────────────────────── */
+button.xref-chip,
+button.interlinear-chip,
+.module-chip,
+.hl-swatch,
+button.paper-swatch,
+button.paper-swatch.custom-swatch,
+box.mini-swatch,
+.reading-exit-btn,
+.journal-note-card {
+    border-color: alpha(@window_fg_color, 0.55);
+}
+
+/* The overdue tile is identified BY its outline — it is the one plan tile
+   drawn with no fill — so this is the state, not decoration around it. */
+.plan-grid > button.plan-tile.plan-tile-overdue {
+    border-color: alpha(@window_fg_color, 0.55);
+}
+
+/* ── Surface edges ───────────────────────────────────────────────────────── */
+/* Where a panel begins is the only thing telling a reader which surface they
+   are in, so these are boundaries in 1.4.11's sense rather than rules on a
+   page. */
+.search-panel {
+    border-top-color: alpha(@window_fg_color, 0.55);
+    border-left-color: alpha(@window_fg_color, 0.55);
+    border-bottom-color: alpha(@window_fg_color, 0.55);
+}
+
+.menu-panel { border-right-color: alpha(@window_fg_color, 0.55); }
+.lex-panel  { border-top-color:   alpha(@window_fg_color, 0.55); }
+.ws-panel   { border-left-color:  alpha(@window_fg_color, 0.55); }
+
+.scriptura-header {
+    border-bottom-color: alpha(@window_fg_color, 0.55);
+}
+
+/* The reading card's edge, including the dark mode where the app drops it on
+   purpose: a pale hairline reads as a boxy outline there, and the recessed
+   surface carries the separation on its own. Under high contrast that trade
+   goes the other way — the edge is worth the box. */
+.reading-page,
+.reading-page.reading-page-flush {
+    border-color: alpha(@window_fg_color, 0.55);
+}
+
+/* ── Accent-tinted outlines ──────────────────────────────────────────────── */
+/* These two keep their accent rather than going grey with the rest: at full
+   strength the accent measures 5.84:1 light and 10.01:1 dark, so the tint
+   costs nothing here and the two-accent law stays intact. */
+button.catena-chip,
+button.stone-chip {
+    border-color: @accent_color;
+}

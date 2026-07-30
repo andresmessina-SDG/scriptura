@@ -20,6 +20,12 @@ semver-ish — 0.x was the pre-Flathub testing track.
   reading speed, and the app says so where you choose it — but readers
   who find it easier find it easier all the same. It reads noticeably
   wider than the serif, so expect a longer chapter.
+- **Scriptura follows the desktop's high-contrast setting.** Turn on
+  *Accessibility → Seeing → High Contrast* and the app's own outlines
+  come with it: the chips, swatches, cards, buttons and panel edges it
+  draws are all lifted over the 3:1 contrast the guidelines ask of a
+  control's boundary, in both light and dark. Nothing moves and nothing
+  changes size — only how clearly each edge is drawn.
 - **Readings on the desktop's media controls.** Whatever the app is
   reading aloud — a chapter, a psalm, either devotional — now appears on
   the media keys, the lock screen and the Shell's media control, named by
