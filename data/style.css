@@ -292,6 +292,16 @@ button.scriptura-lex-toggle {
     padding: 4px 8px;
 }
 
+/* Pango centres a label on its glyph ADVANCES; the italic f's right side
+ * bearing and the asterisk's own advance put the f* pair's ink 2.5px left
+ * of the button's centre while the box it sits in is centred correctly.
+ * Shift the content back by trading 3px from the right padding to the
+ * left — same 16px total, so the button keeps its width. */
+button.scriptura-fnote-toggle {
+    padding-left: 11px;
+    padding-right: 5px;
+}
+
 .pane-toolbar {
     background-color: transparent;
 }

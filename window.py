@@ -413,6 +413,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self.fnote_toggle.set_child(fn_lbl)
         self.fnote_toggle.add_css_class('flat')
         self.fnote_toggle.add_css_class('scriptura-lex-toggle')
+        self.fnote_toggle.add_css_class('scriptura-fnote-toggle')
         self.fnote_toggle.set_tooltip_text(
             _("Footnotes — the translation's own notes, marked in the text"))
         set_accessible_label(self.fnote_toggle, _('Footnotes'))
@@ -424,8 +425,11 @@ class BibleWindow(Adw.ApplicationWindow):
         # clicks summon the cross-reference bar is a reading preference.
         self.xref_toggle = Gtk.ToggleButton()
         xr_lbl = Gtk.Label()
-        # Single mark scaled to sit flush with the f* pair's cap height.
-        xr_lbl.set_markup('<span size="122%">※</span>')
+        # 150%: measured, not guessed — ※ is a light, small-on-the-em symbol,
+        # and at the 122% the other two use it inked 11px against אΩ's 13,
+        # reading as a speck rather than a mark. 150% is the size at which
+        # its ink box matches אΩ's.
+        xr_lbl.set_markup('<span size="150%">※</span>')
         self.xref_toggle.set_child(xr_lbl)
         self.xref_toggle.add_css_class('flat')
         self.xref_toggle.add_css_class('scriptura-lex-toggle')
@@ -526,27 +530,65 @@ class BibleWindow(Adw.ApplicationWindow):
         # אΩ lexicon toggle is the anchor (the glyph is kept deliberately —
         # it names the two languages it covers, which a generic dictionary
         # icon would lose); the f* footnotes and ※ cross-references toggles
-        # bloom out of a Revealer while the pointer or keyboard focus is on
-        # the cluster, and fold away after a grace period — the full
-        # instrument appears only when summoned. The bloom opens LEFTWARD
-        # (revealer packed before the anchor): the cluster's right edge is
-        # pinned against the swap button, so a rightward bloom would shove
-        # the anchor out from under the hovering pointer. Clicking אΩ still
-        # toggles the lexicon directly; the click's focus also blooms the
-        # cluster, which is the touch/keyboard path to the siblings.
-        self._tools_revealer = Gtk.Revealer()
-        self._tools_revealer.set_transition_type(
-            Gtk.RevealerTransitionType.SLIDE_LEFT)
-        self._tools_revealer.set_transition_duration(motion.DURATION_SHORT)
-        tools_inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        tools_inner.append(self.xref_toggle)
-        tools_inner.append(self.fnote_toggle)
-        self._tools_revealer.set_child(tools_inner)
+        # bloom out of their own Revealers while the pointer or keyboard
+        # focus is on the cluster, and fold away after a grace period — the
+        # full instrument appears only when summoned. The bloom opens
+        # LEFTWARD (the revealers are packed before the anchor): the
+        # cluster's right edge is pinned against the swap button, so a
+        # rightward bloom would shove the anchor out from under the hovering
+        # pointer. Clicking אΩ still toggles the lexicon directly; the
+        # click's focus also blooms the cluster, which is the touch/keyboard
+        # path to the siblings.
+        #
+        # The fold only takes away what is OFF. Both are persisted settings,
+        # so a session can open with footnote markers already in the text;
+        # hiding the control for them behind the anchor left the reader with
+        # marks and no switch. A tool that is on therefore stays on show —
+        # which says WHICH one, in the tool's own glyph, and needs no badge
+        # on the anchor to stand for it.
+        #
+        # The rule is the pointer's and nothing else's: when the pointer
+        # leaves, the cluster folds. Reaching leftward from אΩ to ※ never
+        # trips it — the cluster is one box, so travelling between its
+        # members never leaves it. Two earlier attempts to hold it open past
+        # that (a click latch released by the next press elsewhere, and an
+        # unconditional hold while focus sat on a bloomed member) both did
+        # the same thing in practice: a click parks focus, the pointer walks
+        # away, and the cluster stays open until something unrelated is
+        # clicked. Keyboard focus is the one exception, below.
+        # Spaced, not linked. The header's other groups (single/split, pane
+        # 1/2) are `.linked` because each is one setting with a chosen
+        # segment; these are three independent toggles, so they stay three
+        # objects. Abutting them looked like neither: the fills touch, and
+        # only the corner radii part, biting a wedge out of the band top and
+        # bottom at each seam. 3px is under the header's own 6px, so the
+        # three still read as one cluster.
+        #
+        # The gap rides on the CHIPS, not on the box: box spacing would be
+        # laid out around a collapsed revealer too, so a folded-away tool
+        # would leave its gap behind and the cluster's rhythm would depend
+        # on which tools happen to be on.
+        self._tools_revealers = []
         self._study_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        self._study_box.append(self._tools_revealer)
+        for toggle in (self.xref_toggle, self.fnote_toggle):
+            toggle.set_margin_end(3)
+            revealer = Gtk.Revealer()
+            revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_LEFT)
+            revealer.set_transition_duration(motion.DURATION_SHORT)
+            revealer.set_child(toggle)
+            # Both of what decides a folded tool's fate, watched at the
+            # source: whether it is on, and whether it can do anything. An
+            # f* that has just gone insensitive stops accounting for the
+            # marks in the text, so it folds away with the rest.
+            toggle.connect('toggled', self._apply_tools_reveal)
+            toggle.connect('notify::sensitive', self._apply_tools_reveal)
+            self._tools_revealers.append(revealer)
+            self._study_box.append(revealer)
         self._study_box.append(self.lex_toggle)
         set_accessible_label(self._study_box, _('Reading tools'))
         self._tools_fold_timer = 0
+        self._tools_bloomed = False
+        self._apply_tools_reveal()
         self._tools_hover = Gtk.EventControllerMotion.new()
         self._tools_hover.connect('enter', self._tools_bloom)
         self._tools_hover.connect('leave', self._tools_arm_fold)
@@ -555,6 +597,14 @@ class BibleWindow(Adw.ApplicationWindow):
         self._tools_focus.connect('enter', self._tools_bloom)
         self._tools_focus.connect('leave', self._tools_arm_fold)
         self._study_box.add_controller(self._tools_focus)
+        # Arrow keys walk the cluster, Tab enters and leaves it whole (the
+        # toolbar idiom). The bloom puts ※ and f* BEFORE the anchor in the
+        # box, so plain Tab order sails forward past the two icons the
+        # anchor's own focus had just revealed — they were reachable only by
+        # Shift+Tab back into a cluster the reader had already left.
+        tools_keys = Gtk.EventControllerKey.new()
+        tools_keys.connect('key-pressed', self._on_tools_key)
+        self._study_box.add_controller(tools_keys)
         header.pack_end(self._study_box)
 
     def _build_panes(self):
@@ -2258,13 +2308,24 @@ class BibleWindow(Adw.ApplicationWindow):
 
     # ── Reading-tools bloom (the אΩ cluster) ─────────────────────────────
 
+    def _apply_tools_reveal(self, *_args):
+        """Show a tool while the cluster is bloomed, or while the tool is on.
+        An active-but-insensitive f* (no loaded translation has notes) puts
+        no markers in the text, so there is nothing for it to account for."""
+        for revealer in self._tools_revealers:
+            toggle = revealer.get_child()
+            revealer.set_reveal_child(
+                self._tools_bloomed
+                or (toggle.get_active() and toggle.get_sensitive()))
+
     def _tools_bloom(self, *_args):
         """Pointer or keyboard focus arrived on the cluster: open it and
         cancel any pending fold."""
         if self._tools_fold_timer:
             GLib.source_remove(self._tools_fold_timer)
             self._tools_fold_timer = 0
-        self._tools_revealer.set_reveal_child(True)
+        self._tools_bloomed = True
+        self._apply_tools_reveal()
 
     def _tools_arm_fold(self, *_args):
         """Pointer or focus left: fold after a grace period. The grace
@@ -2277,13 +2338,67 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _tools_fold(self):
         self._tools_fold_timer = 0
-        # A leave from one controller can race an enter on the other
-        # (Tab away while the pointer still rests on the cluster) — hold
-        # open while either kind of presence remains.
+        # The pointer decides. A leave from one controller can race an enter
+        # on the other (Tab away while the pointer still rests on the
+        # cluster), so pointer presence is checked whichever controller
+        # armed the fold.
+        #
+        # Keyboard focus holds it open only when it is VISIBLE focus — a
+        # reader navigating by keyboard has no pointer to hold it with.
+        # Focus alone is not enough, because a click parks focus on the
+        # button it activated and leaves it there: honouring that is what
+        # used to pin the cluster open until something else was clicked.
         if (self._tools_hover.contains_pointer()
-                or self._tools_focus.contains_focus()):
+                or (self._tools_focus.contains_focus()
+                    and self.get_focus_visible())):
             return False
-        self._tools_revealer.set_reveal_child(False)
+        self._tools_bloomed = False
+        # Folding would unmap a member the click left focused, yanking focus
+        # somewhere arbitrary. Hand it to the anchor first — it stays visible
+        # either way, and it is where the reader's attention already is. A
+        # tool that stays on show through the fold keeps its own focus.
+        focus = self.get_focus()
+        if focus in (self.xref_toggle, self.fnote_toggle) and not (
+                focus.get_active() and focus.get_sensitive()):
+            self.lex_toggle.grab_focus()
+        self._apply_tools_reveal()
+        return False
+
+    def _tools_members(self):
+        """The cluster's focusable members, in visual (left-to-right) order.
+        An insensitive f* (no loaded translation has notes) is not a stop."""
+        return [w for w in (self.xref_toggle, self.fnote_toggle, self.lex_toggle)
+                if w.get_sensitive()]
+
+    def _tools_focus_member(self, widget):
+        """Focus a cluster member, retrying once on idle: a member inside the
+        revealer is unfocusable until the bloom has actually mapped it, and
+        the first arrow press can land inside that 150ms transition."""
+        if widget.grab_focus():
+            return
+        GLib.idle_add(lambda: (widget.grab_focus(), False)[1])
+
+    def _on_tools_key(self, _c, keyval, _kc, state):
+        if state & (Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.ALT_MASK):
+            return False
+        members = self._tools_members()
+        if keyval in (Gdk.KEY_Left, Gdk.KEY_Right):
+            self._tools_bloom()
+            try:
+                i = members.index(self.get_focus())
+            except ValueError:
+                # Focus is on the box rather than a member — enter from the
+                # end the reader is travelling towards.
+                i = len(members) - 1 if keyval == Gdk.KEY_Left else 0
+            else:
+                i += -1 if keyval == Gdk.KEY_Left else 1
+            self._tools_focus_member(members[max(0, min(len(members) - 1, i))])
+            return True
+        if keyval in (Gdk.KEY_Tab, Gdk.KEY_ISO_Left_Tab):
+            # Park focus on the member at the edge Tab is leaving by, then
+            # let GTK's own focus machinery carry it out of the box.
+            self._tools_focus_member(
+                members[0] if keyval == Gdk.KEY_ISO_Left_Tab else members[-1])
         return False
 
     def _update_fnote_sensitivity(self):
