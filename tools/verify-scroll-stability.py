@@ -418,6 +418,27 @@ def run_matrix() -> int:
         if win is None:
             return GLib.SOURCE_CONTINUE
         win.set_default_size(1200, 800)
+        # The app navigates itself at startup, on a thread we cannot join.
+        # `_startup_navigate_to_devotional_ref` parses today's devotional in
+        # the background and idle_adds a `_go_to` onto pane 1; when pane 2
+        # comes up on an installed devotional (it does — SME here), that fires
+        # on every launch. Unloaded it lands before this harness navigates and
+        # is invisible. Under load it lands AFTER, and the matrix then measures
+        # today's devotional passage instead of the probe chapter: measured
+        # 2026-07-30 at load 18, both panes holding Mark 14 (SME's entry for
+        # the day, 72 verses) with `upper` 5416/5687 against Psalms 119's real
+        # 8901/21515. That is what the earlier "incremental validation never
+        # finishes" reading actually was — the document was complete and
+        # validated throughout; it was the WRONG document. Note the failure is
+        # therefore DATE-DEPENDENT, which is worth remembering before trusting
+        # any single day's matrix run.
+        #
+        # No step in this matrix navigates, so the honest fix is to take the
+        # method away: nothing may move the panes except `nav()` below.
+        S['clobbers'] = []
+        def _refuse_nav(*a, **kw):
+            S['clobbers'].append(a[:2])
+        win._go_to = _refuse_nav
         S['p1'], S['p2'] = win.pane1, win.pane2
         S['p1']._apply_module_change(REQUIRED_MODULES[0])
         S['p2']._apply_module_change(REQUIRED_MODULES[1])
@@ -453,21 +474,32 @@ def run_matrix() -> int:
         state = {'left': RENDER_CAP_MS // POLL_MS}
 
         def poll():
+            # `_rendered_verses is not None` alone is not enough: a render
+            # that was already in flight when this step began sets it too,
+            # and that is exactly how the startup devotional navigation used
+            # to be mistaken for the probe chapter (see kickoff). Require the
+            # pane to be ON the probe chapter as well.
             landed = [p._rendered_verses is not None
+                      and (p._book, p._chapter) == ('Psalms', 119)
                       for p in (S['p1'], S['p2'])]
             waited = round((time.monotonic() - started) * 1000)
             if all(landed):
                 REPORT['render_wait_ms'] = waited
+                if S.get('clobbers'):
+                    REPORT['refused_navigations'] = S['clobbers']
                 run(nxt)
                 return GLib.SOURCE_REMOVE
             state['left'] -= 1
             if state['left'] <= 0:
                 REPORT['render_wait_ms'] = waited
+                showing = [f'{p._book} {p._chapter}'
+                           for p in (S['p1'], S['p2'])]
                 REPORT.setdefault('inconclusive', (
                     f'the probe chapter never finished rendering in '
-                    f'{waited} ms (panes landed: {landed}) — every check '
-                    f'below would have measured whatever chapter was on '
-                    f'screen before, so this run says nothing about the app'))
+                    f'{waited} ms (panes landed: {landed}, showing '
+                    f'{showing}) — every check below would have measured '
+                    f'whatever chapter was on screen before, so this run '
+                    f'says nothing about the app'))
                 run(nxt)
                 return GLib.SOURCE_REMOVE
             return GLib.SOURCE_CONTINUE
