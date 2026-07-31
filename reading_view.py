@@ -51,8 +51,6 @@ def heading_line(buf, start):
     return None
 
 
-
-
 def _text_colour(view):
     return view.get_color()
 
@@ -88,22 +86,18 @@ class _Decoration:
 
     `colour` is a callable of the view (not a constant) because the sources
     genuinely differ: a fixed cue colour, the view's own text colour, or the
-    current theme's accent. `wakes` says whether this decoration's presence
-    is enough to make the paint pass run at all — see `_draw_highlights`.
+    current theme's accent.
     """
 
-    __slots__ = ('name', 'layer', 'tag', 'style', 'colour', 'enabled',
-                 'wakes')
+    __slots__ = ('name', 'layer', 'tag', 'style', 'colour', 'enabled')
 
-    def __init__(self, name, layer, tag, style, colour,
-                 enabled=None, wakes=True):
+    def __init__(self, name, layer, tag, style, colour, enabled=None):
         self.name = name
         self.layer = layer
         self.tag = tag
         self.style = style
         self.colour = colour
         self.enabled = enabled
-        self.wakes = wakes
 
     def on(self, view):
         return self.enabled is None or bool(self.enabled(view))
@@ -130,16 +124,17 @@ _DECORATIONS = (
     # The rule and the veil share `_cur_unit` — either can run without the
     # other, so both ask their own setting rather than the tag's presence.
     #
-    # `wakes=False` preserves long-standing behaviour: `_cur_unit` alone has
-    # never woken the paint pass, so on a chapter carrying no highlight,
-    # search, flash, annotation or hover tag, the rule does not draw. That
-    # looks like a latent bug rather than a decision, but changing it is a
-    # visible change to what the reader sees, so it is flagged rather than
-    # quietly fixed here.
+    # `_cur_unit` wakes the paint pass like any other decoration. It did not
+    # until 2026-07-31, and the rule was therefore invisible on a chapter
+    # carrying no highlight, search, flash, annotation or hover tag — the
+    # tags that woke it are all created on demand, and a pane that has not
+    # yet searched or flashed a verse has none of them. Measured on a clean
+    # chapter: 0 rule pixels before, 70 after. The veil paints on the other
+    # layer and was never affected, so the two disagreed about a unit they
+    # read from the same tag.
     _Decoration('sense-unit rule', _BELOW, '_cur_unit', 'rule',
                 _unit_rule_colour,
-                enabled=lambda v: getattr(v, '_show_unit_rule', False),
-                wakes=False),
+                enabled=lambda v: getattr(v, '_show_unit_rule', False)),
     _Decoration('lexicon hover', _BELOW, '_strg_hover', 'dotted',
                 _lexicon_colour),
     _Decoration('focus veil', _ABOVE, '_cur_unit', 'veil', _veil_colour,
@@ -254,7 +249,7 @@ class BibleTextView(Gtk.TextView):
         # The highlight family counts as present when any hl_bg_ tag exists.
         if not any(bool(hl_tags) if d.style == 'highlights'
                    else table.lookup(d.tag) is not None
-                   for d in below if d.wakes):
+                   for d in below):
             return
         vr = self.get_visible_rect()
         _, lo = self.get_iter_at_location(0, vr.y)

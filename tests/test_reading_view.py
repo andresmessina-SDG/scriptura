@@ -52,11 +52,17 @@ def test_rule_and_veil_share_the_unit_tag():
     assert _by_name('focus veil').tag == '_cur_unit'
 
 
-def test_only_the_unit_rule_does_not_wake_the_paint_pass():
-    # Long-standing behaviour, preserved deliberately: `_cur_unit` alone has
-    # never woken _draw_highlights. Flagged, not fixed, in reading_view.
-    assert [d.name for d in rv._DECORATIONS if not d.wakes] == [
-        'sense-unit rule']
+def test_the_unit_tag_wakes_the_paint_pass():
+    """Regression: the sense-unit rule drew nothing on a clean chapter.
+
+    The paint pass returns early unless some decoration's tag exists, and
+    every other tag is created on demand — a pane that has not yet searched,
+    flashed a verse or drawn an annotation has none of them. `_cur_unit` was
+    left out of that check, so the rule was invisible exactly when nothing
+    else was marked. Measured on a clean chapter: 0 rule pixels, 70 after.
+    """
+    below = [d for d in rv._DECORATIONS if d.layer == rv._BELOW]
+    assert '_cur_unit' in [d.tag for d in below]
 
 
 def test_unit_rule_is_off_unless_asked_for():
