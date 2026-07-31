@@ -54,8 +54,9 @@ def _load() -> list[Bookmark]:
         return []
 
 
-def _save(data: list[Bookmark]) -> None:
-    # Atomic write — see annotations.py for the rationale.
+def _save(data: list[Bookmark]) -> bool:
+    """Write the store, reporting whether it reached disk.
+    Atomic write — see annotations.py for the rationale."""
     try:
         tmp = _FILE + '.tmp'
         with open(tmp, 'w', encoding='utf-8') as f:
@@ -70,6 +71,8 @@ def _save(data: list[Bookmark]) -> None:
                 _on_save_error()
             except Exception:
                 _log.exception('save-error handler raised')
+        return False
+    return True
 
 
 def get_all() -> list[Bookmark]:
@@ -111,8 +114,8 @@ def export_raw() -> list[Bookmark]:
     return _load()
 
 
-def replace_all(data: list[Bookmark]) -> None:
+def replace_all(data: list[Bookmark]) -> bool:
     """Swap in a whole list (study-data restore); same entry filtering
-    as _load."""
-    _save([e for e in data
-           if isinstance(e, dict) and 'book' in e and 'chapter' in e])
+    as _load. Returns whether the new list reached disk."""
+    return _save([e for e in data
+                  if isinstance(e, dict) and 'book' in e and 'chapter' in e])

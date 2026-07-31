@@ -78,9 +78,17 @@ def counts(payload: dict[str, Any]) -> dict[str, int]:
     }
 
 
-def restore(payload: dict[str, Any]) -> None:
+def restore(payload: dict[str, Any]) -> list[str]:
     """Replace all three stores with the (validated) payload's contents.
-    Missing sections are treated as empty — the file's state is the truth."""
-    annotations.replace_all(payload.get('annotations', {}))
-    bookmarks.replace_all(payload.get('bookmarks', []))
-    reading_plans.replace_all(payload.get('reading_plans', {}))
+    Missing sections are treated as empty — the file's state is the truth.
+
+    Returns the keys of any sections that did not reach disk. A store whose
+    write failed still holds the restored data in memory, so the app looks
+    right until the next launch: the caller must not report success without
+    checking this.
+    """
+    return [key for key, ok in (
+        ('annotations', annotations.replace_all(payload.get('annotations', {}))),
+        ('bookmarks', bookmarks.replace_all(payload.get('bookmarks', []))),
+        ('reading_plans', reading_plans.replace_all(payload.get('reading_plans', {}))),
+    ) if not ok]
