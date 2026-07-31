@@ -293,13 +293,20 @@ def places_for(book: str, chapter: int, verse: int) -> list[Place]:
 # ── install / remove ─────────────────────────────────────────────────────────
 
 def _safe_extract(tar: tarfile.TarFile, dest: str) -> None:
-    """Extract guarding against path traversal (`../` escapes / absolute paths)."""
-    dest_abs = os.path.abspath(dest)
+    """Extract guarding against path traversal (`../` escapes / absolute paths).
+
+    The name check alone is not enough: a symlink member pointing outside
+    `dest`, followed by a regular member written through it, has an innocent
+    name at every step. `filter='data'` is what actually refuses that, and it
+    is passed explicitly because the runtime we ship (Python 3.13) still
+    defaults to `fully_trusted`.
+    """
+    dest_abs = os.path.realpath(dest)
     for member in tar.getmembers():
-        target = os.path.abspath(os.path.join(dest, member.name))
+        target = os.path.realpath(os.path.join(dest, member.name))
         if target != dest_abs and not target.startswith(dest_abs + os.sep):
             raise ValueError(f'unsafe path in imagery archive: {member.name}')
-    tar.extractall(dest)
+    tar.extractall(dest, filter='data')
 
 
 def _probe(url: str) -> int | None:
