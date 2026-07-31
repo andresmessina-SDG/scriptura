@@ -210,6 +210,15 @@ POLL_MS = 200
 SETTLE_CAP_MS = 15000  # give up waiting and judge whatever state we have
 RENDER_CAP_MS = 20000  # waiting for the probe chapter's async render to land
 
+#: A park that has stopped growing short of its target is not slow, it is
+#: FROZEN — see park()'s recovery block. Both conditions must hold before we
+#: act: enough wall clock AND enough polls. Under heavy contention the main
+#: loop itself starves (measured: consecutive polls 6s apart on this 200ms
+#: timer), and a wall-clock test alone would read that as a freeze.
+FREEZE_MS = 2000
+FREEZE_POLLS = 5
+MAX_PARK_RECOVERIES = 2
+
 
 def run_matrix() -> int:
     sys.path.insert(0, str(REPO_ROOT))
@@ -574,16 +583,55 @@ def run_matrix() -> int:
         def park(p):
             adj = p._reading_scroll.get_vadjustment()
             state = {'upper': None, 'streak': 0,
-                     'left': SETTLE_CAP_MS // POLL_MS}
+                     'left': SETTLE_CAP_MS // POLL_MS,
+                     'changed_at': time.monotonic(), 'since': 0,
+                     'recoveries': 0}
 
             def poll():
                 upper = round(adj.get_upper(), 1)
-                state['streak'] = (state['streak'] + 1
-                                   if upper == state['upper'] else 0)
+                if upper == state['upper']:
+                    state['streak'] += 1
+                    state['since'] += 1
+                else:
+                    state['streak'] = 0
+                    state['since'] = 0
+                    state['changed_at'] = time.monotonic()
                 state['upper'] = upper
                 state['left'] -= 1
                 grown = adj.get_upper() - adj.get_page_size() > PARK_PX
                 ready = state['streak'] * POLL_MS >= QUIET_MS and grown
+
+                # GtkTextView line validation can stop dead: measured 75
+                # polls at a healthy 201ms median across the full 15s cap
+                # with `upper` pinned at a single value (1493 in one run,
+                # 1207 in another, for a document really 21515 tall — the
+                # freeze reproduces, the value it sticks at does not), while
+                # the main loop ran normally the whole time. It
+                # is not slowness, so no cap is long enough to outlast it,
+                # and nothing in the GtkTextView API drives validation from
+                # outside — get_iter_location, get_line_yrange, queue_draw
+                # and scroll_to_iter were each measured under load and none
+                # advances `upper` (they read the btree's ESTIMATED heights
+                # for invalid lines). What does work is to throw the render
+                # away and dispatch it again.
+                frozen = (not grown
+                          and (time.monotonic() - state['changed_at']) * 1000
+                          >= FREEZE_MS
+                          and state['since'] >= FREEZE_POLLS)
+                if frozen and state['recoveries'] < MAX_PARK_RECOVERIES:
+                    state['recoveries'] += 1
+                    REPORT.setdefault('park_recoveries', []).append({
+                        'pane': 'p1' if p is S['p1'] else 'p2',
+                        'attempt': state['recoveries'],
+                        'frozen_upper': upper,
+                        'page': round(adj.get_page_size(), 1),
+                    })
+                    p._fetch_and_render()
+                    state.update(upper=None, streak=0, since=0,
+                                 changed_at=time.monotonic(),
+                                 left=SETTLE_CAP_MS // POLL_MS)
+                    return GLib.SOURCE_CONTINUE
+
                 if not ready and state['left'] > 0:
                     return GLib.SOURCE_CONTINUE
                 adj.set_value(PARK_PX)
@@ -593,6 +641,7 @@ def run_matrix() -> int:
                         'page': round(adj.get_page_size(), 1),
                         'reached': round(adj.get_value(), 1),
                         'validation_timed_out': state['left'] <= 0,
+                        'recoveries': state['recoveries'],
                 }
                 def done(p=p):
                     user_scrolled(p)
