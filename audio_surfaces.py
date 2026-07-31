@@ -428,18 +428,23 @@ class ReadingAudio(_Surface):
         # this is the only thing on screen that can say what is sounding once
         # the reader has moved on to another chapter.
         self._reading_reference = ''
+        # Where that reference points, as (book, chapter). The reference is a
+        # display string built with the reader's own book names, so it is not
+        # something to parse back into a place; the place is kept beside it
+        # and carried the same way.
+        self._reading_location = None
         self._reading_length = ''
         self._reading_key = f'reading-audio:{id(self)}'
-        # What the player holds, as (path, reference) — the reading that is
-        # sounding, which is not the chapter on screen once the reader pages
-        # on. None when nothing is open. The pill names this in preference to
-        # the offer, and while it is set the pill may not be put away: it
-        # carries the only pause and the only stop there is.
+        # What the player holds, as (path, reference, location) — the reading
+        # that is sounding, which is not the chapter on screen once the reader
+        # pages on. None when nothing is open. The pill names this in
+        # preference to the offer, and while it is set the pill may not be put
+        # away: it carries the only pause and the only stop there is.
         self._sounding = None
-        # The reference of a fetch in flight. The pill's controls act on it
-        # exactly as they act on a sounding reading — the reader pressed play
-        # on that chapter — so it has to be nameable while the file is still
-        # on its way and there is nothing open to ask.
+        # The fetch in flight, as (reference, location). The pill's controls
+        # act on it exactly as they act on a sounding reading — the reader
+        # pressed play on that chapter — so it has to be nameable while the
+        # file is still on its way and there is nothing open to ask.
         self._pending = None
         # What the desktop's media bus is showing for this pane's reading,
         # while it is the reading that holds the bus.
@@ -452,7 +457,8 @@ class ReadingAudio(_Surface):
                                on_back=self._on_reading_back,
                                on_close=self._on_reading_close,
                                on_rate=self._on_reading_rate,
-                               on_switch=self._on_reading_switch)
+                               on_switch=self._on_reading_switch,
+                               on_return=self._on_reading_return)
         self._pill.set_rate(settings.get('reading_rate'))
 
     @property
@@ -534,16 +540,26 @@ class ReadingAudio(_Surface):
         name."""
         if self._sounding is not None:
             return self._sounding[1]
-        return self._pending
+        return self._pending[0] if self._pending else None
+
+    def _live_location(self):
+        """Where the pill's controls are acting, as (book, chapter) — the
+        place the reader would be taken back to, and None when the pill
+        governs nothing."""
+        if self._sounding is not None:
+            return self._sounding[2]
+        return self._pending[1] if self._pending else None
 
     def _restate_pill_reading(self):
         """Name what the pill governs, and the chapter on screen only when it
         governs nothing. The two part company the moment the reader pages on,
         and the live one wins — it is what the controls beside it act on.
 
-        Where they have parted company, the switch appears naming the chapter
-        on screen: it is the only way to start that chapter without first
-        stopping the reading in hand, and it exists in no other state.
+        Where they have parted company, two controls appear and in no other
+        state: the switch, naming the chapter on screen, which is the only way
+        to start that chapter without first stopping the reading in hand; and
+        the reference itself, which goes back to the reading. Each sits on the
+        chapter it acts on.
         """
         live = self._live_reference()
         if live is not None:
@@ -551,10 +567,13 @@ class ReadingAudio(_Surface):
         else:
             self._pill.set_reading(self._reading_reference)
         on_screen = self._reading_reference if self._reading_url else ''
-        if live is not None and on_screen and on_screen != live:
-            self._pill.set_switch(on_screen)
-        else:
-            self._pill.set_switch('')
+        parted = live is not None and on_screen and on_screen != live
+        self._pill.set_switch(on_screen if parted else '')
+        # The way back is offered in the same state and no other: while the
+        # two agree, the reference on the pill is the page under it and there
+        # is nowhere for it to lead.
+        self._pill.set_return(
+            live if parted and self._live_location() is not None else '')
 
     def _on_psalm_index(self, chapter):
         if self._book != 'Psalms' or self._chapter != chapter:
@@ -583,6 +602,7 @@ class ReadingAudio(_Surface):
         self._reading_scripture = scripture
         self._reading_audio.set_visible(True)
         self._reading_reference = reference or tooltip
+        self._reading_location = (self._book, self._chapter)
         if not self._reading_is_live():
             # The length belongs to the open file, so it may only be cleared
             # when there is no open file. Clearing it on navigation used to be
@@ -641,6 +661,26 @@ class ReadingAudio(_Surface):
         if self._reading_player is not None:
             self._reading_player.seek_relative(-15)
 
+    def _on_reading_return(self):
+        """Go back to the chapter being read aloud.
+
+        The mirror of the switch beside it, and the more ordinary of the two
+        wants: the reader paged on, wants to follow the reading again, and had
+        nothing to press. Nothing about the reading changes — it is still
+        sounding, at the same place, on the same pill.
+
+        The pane moves, not the window: this reading belongs to this pane, and
+        a cross-reference clicked here moves the same one the same way.
+        """
+        location = self._live_location()
+        # Nowhere to go, or already there: the pill withdraws the offer in
+        # both cases, and the handler says the same thing rather than trusting
+        # that it did.
+        if location is None or location == (self._book, self._chapter):
+            return
+        book, chapter = location
+        self._pane.force_navigate(book, chapter, None)
+
     def _on_reading_switch(self):
         """Read the chapter on screen instead of the one in hand.
 
@@ -679,15 +719,16 @@ class ReadingAudio(_Surface):
             # not the chapter that happens to be on screen now. Starting the
             # new one here would be the pill doing something other than what it
             # says, and it would lose the reader's place in the old one.
-            path, reference = self._sounding
-            self._start_reading_audio(path, reference)
+            path, reference, location = self._sounding
+            self._start_reading_audio(path, reference, location=location)
             return
         if not self._reading_url:
             return
         cached = self._cached_reading(self._reading_url)
         if cached:
             self._start_reading_audio(cached, self._reading_reference,
-                                      self._reading_series())
+                                      self._reading_series(),
+                                      self._reading_location)
             return
         # Nothing can be heard until the file is here, so the pause icon at
         # this point would claim playback of a silence — and on a slow line
@@ -701,15 +742,16 @@ class ReadingAudio(_Surface):
         # on during a twenty-megabyte fetch, and what arrives is the chapter
         # they pressed play on.
         reference = self._reading_reference
+        location = self._reading_location
         series = self._reading_series()
-        self._begin_reading_fetch(reference)
+        self._begin_reading_fetch(reference, location)
         tasks.submit(
             key=self._reading_key,
             work=lambda _t: fetch(url),
             apply=lambda path: self._finish_reading_fetch(
-                path, reference, series),
+                path, reference, series, location),
             on_error=lambda _e: self._finish_reading_fetch(
-                None, reference, series))
+                None, reference, series, location))
 
     def _reading_series(self):
         """What the reading on offer is a reading OF — the translation for a
@@ -720,7 +762,7 @@ class ReadingAudio(_Surface):
         return (bible_audio.TRANSLATION if self._reading_scripture
                 else devotional_audio.PSALMS_SERIES)
 
-    def _begin_reading_fetch(self, reference=None):
+    def _begin_reading_fetch(self, reference=None, location=None):
         """Dress the pill for the wait: a stop, not a playback state. The
         thread pulses once the wait outlasts the threshold — the pill owns
         that timing itself.
@@ -731,7 +773,7 @@ class ReadingAudio(_Surface):
         while the controls beside it still belonged to the one being fetched.
         """
         self._reading_fetching = True
-        self._pending = reference
+        self._pending = (reference, location)
         self._pill.set_state('fetching')
         self._restate_pill_reading()
         a11y.announce(self._pill, _('Fetching the reading'))
@@ -745,7 +787,8 @@ class ReadingAudio(_Surface):
         self._pill.set_state('idle')
         self._restate_pill_reading()
 
-    def _finish_reading_fetch(self, path, reference=None, series=''):
+    def _finish_reading_fetch(self, path, reference=None, series='',
+                              location=None):
         self._end_reading_fetch()
         if not path:
             # Named no closer than this on purpose: fetch_episode answers
@@ -756,9 +799,10 @@ class ReadingAudio(_Surface):
             self._report_audio_failure(
                 self._pill, _('Could not fetch the reading'))
             return
-        self._start_reading_audio(path, reference, series)
+        self._start_reading_audio(path, reference, series, location)
 
-    def _start_reading_audio(self, path, reference=None, series=''):
+    def _start_reading_audio(self, path, reference=None, series='',
+                             location=None):
         """Play `path`, or resume it where the player already holds it.
 
         `reference` is what the pill will name until this reading stops, and
@@ -782,7 +826,8 @@ class ReadingAudio(_Surface):
             # A different file: its length is not the last one's, and is not
             # answerable yet either.
             self._reading_length = ''
-        self._sounding = (path, reference or self._reading_reference)
+        self._sounding = (path, reference or self._reading_reference,
+                          location or self._reading_location)
         self._publish_reading_media(self._sounding[1], series)
         self._restate_pill_reading()
         self._pill.set_state('playing')

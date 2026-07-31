@@ -111,7 +111,7 @@ class AudioPill(Gtk.Box):
     tells it what is happening and reads nothing back."""
 
     def __init__(self, on_play_pause, on_back, on_close, on_rate=None,
-                 on_switch=None):
+                 on_switch=None, on_return=None):
         super().__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         self.add_css_class('audio-pill')
         self.set_halign(Gtk.Align.CENTER)
@@ -159,11 +159,23 @@ class AudioPill(Gtk.Box):
         # in the quieter voice because it is context, not the subject.
         self._ref_lbl = Gtk.Label(xalign=0.0)
         self._ref_lbl.add_css_class('audio-pill-ref')
+        # The reference is also the way back to it, once the reader has paged
+        # on: everywhere else in the app a reference you can press takes you
+        # to it (cross-references, search results), and the pill was the one
+        # place where pressing one did something else. It stays a button in
+        # every state and stops taking the pointer when there is nowhere to
+        # go — disabling it instead would dim the pill's own subject.
+        self._on_return = on_return
+        self._ref_btn = Gtk.Button(child=self._ref_lbl)
+        self._ref_btn.add_css_class('flat')
+        self._ref_btn.add_css_class('audio-pill-return')
+        self._ref_btn.connect('clicked', lambda _b: self._on_return())
         self._len_lbl = Gtk.Label(xalign=0.0)
         self._len_lbl.add_css_class('audio-pill-length')
         line = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        line.append(self._ref_lbl)
+        line.append(self._ref_btn)
         line.append(self._len_lbl)
+        self.set_return('')
 
         self._thread = Gtk.ProgressBar()
         self._thread.add_css_class('audio-pill-thread')
@@ -376,6 +388,29 @@ class AudioPill(Gtk.Box):
         self._ref_lbl.set_text(reference or '')
         self._len_lbl.set_text(length or '')
         self._len_lbl.set_visible(bool(length))
+
+    def set_return(self, reference):
+        """Offer the sounding chapter as a way back to it, or withdraw the
+        offer.
+
+        Withdrawn is the ordinary case — the reader is looking at what they
+        are listening to, and there is nowhere to go. The reference reads the
+        same either way; only the pointer tells them apart, which is why the
+        hover underline is the whole of the affordance.
+        """
+        live = bool(reference) and self._on_return is not None
+        self._ref_btn.set_can_target(live)
+        self._ref_btn.set_focusable(live)
+        self._ref_btn.set_can_focus(live)
+        if live:
+            label = _('Go back to {reference}').format(reference=reference)
+            self._ref_btn.set_tooltip_text(label)
+        else:
+            # Whatever it is currently naming: the pane restates the reading
+            # and this in one breath, so the text is already the right one.
+            label = self._ref_lbl.get_text()
+            self._ref_btn.set_tooltip_text(None)
+        set_accessible_label(self._ref_btn, label)
 
     def set_switch(self, reference):
         """Offer to start `reference` instead, or withdraw the offer.
