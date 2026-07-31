@@ -148,7 +148,7 @@ def _buffer(text, verse_lines):
 
 
 def _heading_text(buf, verse_line):
-    from pane import heading_line
+    from reading_view import heading_line
     got = heading_line(buf, buf.get_iter_at_line(verse_line)[1])
     if got is None:
         return None
