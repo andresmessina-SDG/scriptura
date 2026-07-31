@@ -178,6 +178,10 @@ def orchestrate() -> int:
         return 2
 
     inconclusive = None
+    # A measured regression in ANY attempt outranks an inconclusive one in
+    # another: retrying is there to survive an unusable environment, not to
+    # give a real failure a second chance to be excused.
+    saw_regression = False
     for attempt in range(1 + args.retries):
         if attempt:
             print(f'retrying (attempt {attempt + 1})…', file=sys.stderr)
@@ -185,10 +189,12 @@ def orchestrate() -> int:
         if report is not None and report.get('all_ok'):
             return 0
         inconclusive = (report or {}).get('inconclusive')
+        if report is not None and not inconclusive:
+            saw_regression = True
     # A run that never established its own starting state is an unusable
     # environment, not a regression — the same exit code as a missing module,
     # and deliberately not the one that says the reading text moved.
-    if inconclusive:
+    if inconclusive and not saw_regression:
         print(f'inconclusive: {inconclusive}', file=sys.stderr)
         return 2
     return 1
@@ -202,6 +208,16 @@ def orchestrate() -> int:
 QUIET_MS = 800        # must exceed the 600ms animation-skip fallback
 POLL_MS = 200
 SETTLE_CAP_MS = 15000  # give up waiting and judge whatever state we have
+RENDER_CAP_MS = 20000  # waiting for the probe chapter's async render to land
+
+#: A park that has stopped growing short of its target is not slow, it is
+#: FROZEN — see park()'s recovery block. Both conditions must hold before we
+#: act: enough wall clock AND enough polls. Under heavy contention the main
+#: loop itself starves (measured: consecutive polls 6s apart on this 200ms
+#: timer), and a wall-clock test alone would read that as a freeze.
+FREEZE_MS = 2000
+FREEZE_POLLS = 5
+MAX_PARK_RECOVERIES = 2
 
 
 def run_matrix() -> int:
@@ -317,7 +333,37 @@ def run_matrix() -> int:
                 f' not finished laying out, so they say nothing about the app')
             REPORT['all_ok'] = False
             return
-        REPORT['all_ok'] = all(c['ok'] for c in REPORT['checks'])
+        # A check that never got a measurement is not a check that failed.
+        # `check()` has always marked those rows `inconclusive`, but the run
+        # was judged with `all(c['ok'])`, and an inconclusive row carries
+        # ok=False — so a pane the harness simply could not measure came back
+        # as exit 1, "the reading text moved". Measured at SCRIPTURA_PARK_PX
+        # =1400 under load: the commentary pane parks where no verse is
+        # visible, `baseline_missing: ['p2']` is recorded, two of ten checks
+        # go inconclusive with `moved_px: None` before AND after — and the
+        # run still reported a stability regression.
+        #
+        # This is NOT the disproved "make settle timeouts inconclusive" move.
+        # A settle timeout has real before/after offsets and a real delta;
+        # suppressing it hides movement that did happen. These rows have no
+        # delta at all — there is nothing in them to hide — and a REGRESSION
+        # IN A MEASURED CHECK STILL WINS below, so a genuine failure cannot
+        # be downgraded by an unmeasurable one elsewhere.
+        moved = [c['name'] for c in REPORT['checks']
+                 if not c['ok'] and not c.get('inconclusive')]
+        unmeasured = [c['name'] for c in REPORT['checks']
+                      if c.get('inconclusive')]
+        REPORT['all_ok'] = not moved and not unmeasured
+        if moved:
+            return
+        if unmeasured:
+            where = ', '.join(REPORT.get('baseline_missing') or [])
+            REPORT.setdefault('inconclusive', (
+                f'no verse offset could be measured for {len(unmeasured)} '
+                f'check(s): {", ".join(unmeasured)}'
+                + (f' — no baseline verse in {where}' if where else '')
+                + ' — the text may or may not have moved, this run does not'
+                  ' say'))
 
     def run(i=0):
         if i >= len(steps):
@@ -381,6 +427,27 @@ def run_matrix() -> int:
         if win is None:
             return GLib.SOURCE_CONTINUE
         win.set_default_size(1200, 800)
+        # The app navigates itself at startup, on a thread we cannot join.
+        # `_startup_navigate_to_devotional_ref` parses today's devotional in
+        # the background and idle_adds a `_go_to` onto pane 1; when pane 2
+        # comes up on an installed devotional (it does — SME here), that fires
+        # on every launch. Unloaded it lands before this harness navigates and
+        # is invisible. Under load it lands AFTER, and the matrix then measures
+        # today's devotional passage instead of the probe chapter: measured
+        # 2026-07-30 at load 18, both panes holding Mark 14 (SME's entry for
+        # the day, 72 verses) with `upper` 5416/5687 against Psalms 119's real
+        # 8901/21515. That is what the earlier "incremental validation never
+        # finishes" reading actually was — the document was complete and
+        # validated throughout; it was the WRONG document. Note the failure is
+        # therefore DATE-DEPENDENT, which is worth remembering before trusting
+        # any single day's matrix run.
+        #
+        # No step in this matrix navigates, so the honest fix is to take the
+        # method away: nothing may move the panes except `nav()` below.
+        S['clobbers'] = []
+        def _refuse_nav(*a, **kw):
+            S['clobbers'].append(a[:2])
+        win._go_to = _refuse_nav
         S['p1'], S['p2'] = win.pane1, win.pane2
         S['p1']._apply_module_change(REQUIRED_MODULES[0])
         S['p2']._apply_module_change(REQUIRED_MODULES[1])
@@ -388,11 +455,66 @@ def run_matrix() -> int:
         return GLib.SOURCE_REMOVE
 
     def nav():
+        """Load the probe chapter — and then WAIT FOR IT, because the render
+        is asynchronous.
+
+        `_fetch_and_render()` hands the chapter fetch to the task runner and
+        returns at once; the pane goes on showing the PREVIOUS chapter until
+        `_display` lands. This step used to be followed by a fixed 2400ms
+        delay. Traced under load, the commentary's Psalms 119 arrived at
+        ~3400ms — so the park ran a second early, against the old document,
+        and everything downstream measured that: `upper` 5687 where the real
+        commentary is 21515, no verse at all where the park landed, and two
+        checks reporting `moved_px: None` which the run then called a
+        stability regression.
+
+        `_rendered_verses` is cleared at the top of the render and set by
+        `_display`, so it is the edge to wait on. A number of milliseconds
+        was never the right thing to wait for — the same mistake, in a
+        different disguise, as the draw-complete wait this harness already
+        learned not to trust."""
+        nxt = S['_i'] + 1
+        started = time.monotonic()
         for p in (S['p1'], S['p2']):
             p._book, p._chapter = 'Psalms', 119
             p._target_verse = None
             p._restore_top_verse = None
             p._fetch_and_render()
+        state = {'left': RENDER_CAP_MS // POLL_MS}
+
+        def poll():
+            # `_rendered_verses is not None` alone is not enough: a render
+            # that was already in flight when this step began sets it too,
+            # and that is exactly how the startup devotional navigation used
+            # to be mistaken for the probe chapter (see kickoff). Require the
+            # pane to be ON the probe chapter as well.
+            landed = [p._rendered_verses is not None
+                      and (p._book, p._chapter) == ('Psalms', 119)
+                      for p in (S['p1'], S['p2'])]
+            waited = round((time.monotonic() - started) * 1000)
+            if all(landed):
+                REPORT['render_wait_ms'] = waited
+                if S.get('clobbers'):
+                    REPORT['refused_navigations'] = S['clobbers']
+                run(nxt)
+                return GLib.SOURCE_REMOVE
+            state['left'] -= 1
+            if state['left'] <= 0:
+                REPORT['render_wait_ms'] = waited
+                showing = [f'{p._book} {p._chapter}'
+                           for p in (S['p1'], S['p2'])]
+                REPORT.setdefault('inconclusive', (
+                    f'the probe chapter never finished rendering in '
+                    f'{waited} ms (panes landed: {landed}, showing '
+                    f'{showing}) — every check below would have measured '
+                    f'whatever chapter was on screen before, so this run '
+                    f'says nothing about the app'))
+                run(nxt)
+                return GLib.SOURCE_REMOVE
+            return GLib.SOURCE_CONTINUE
+
+        GLib.timeout_add(POLL_MS, poll)
+        return 'HOLD'
 
     def top_text(pane):
         """Identity + pixel offset of the text at the visual viewport top —
@@ -461,16 +583,55 @@ def run_matrix() -> int:
         def park(p):
             adj = p._reading_scroll.get_vadjustment()
             state = {'upper': None, 'streak': 0,
-                     'left': SETTLE_CAP_MS // POLL_MS}
+                     'left': SETTLE_CAP_MS // POLL_MS,
+                     'changed_at': time.monotonic(), 'since': 0,
+                     'recoveries': 0}
 
             def poll():
                 upper = round(adj.get_upper(), 1)
-                state['streak'] = (state['streak'] + 1
-                                   if upper == state['upper'] else 0)
+                if upper == state['upper']:
+                    state['streak'] += 1
+                    state['since'] += 1
+                else:
+                    state['streak'] = 0
+                    state['since'] = 0
+                    state['changed_at'] = time.monotonic()
                 state['upper'] = upper
                 state['left'] -= 1
                 grown = adj.get_upper() - adj.get_page_size() > PARK_PX
                 ready = state['streak'] * POLL_MS >= QUIET_MS and grown
+
+                # GtkTextView line validation can stop dead: measured 75
+                # polls at a healthy 201ms median across the full 15s cap
+                # with `upper` pinned at a single value (1493 in one run,
+                # 1207 in another, for a document really 21515 tall — the
+                # freeze reproduces, the value it sticks at does not), while
+                # the main loop ran normally the whole time. It
+                # is not slowness, so no cap is long enough to outlast it,
+                # and nothing in the GtkTextView API drives validation from
+                # outside — get_iter_location, get_line_yrange, queue_draw
+                # and scroll_to_iter were each measured under load and none
+                # advances `upper` (they read the btree's ESTIMATED heights
+                # for invalid lines). What does work is to throw the render
+                # away and dispatch it again.
+                frozen = (not grown
+                          and (time.monotonic() - state['changed_at']) * 1000
+                          >= FREEZE_MS
+                          and state['since'] >= FREEZE_POLLS)
+                if frozen and state['recoveries'] < MAX_PARK_RECOVERIES:
+                    state['recoveries'] += 1
+                    REPORT.setdefault('park_recoveries', []).append({
+                        'pane': 'p1' if p is S['p1'] else 'p2',
+                        'attempt': state['recoveries'],
+                        'frozen_upper': upper,
+                        'page': round(adj.get_page_size(), 1),
+                    })
+                    p._fetch_and_render()
+                    state.update(upper=None, streak=0, since=0,
+                                 changed_at=time.monotonic(),
+                                 left=SETTLE_CAP_MS // POLL_MS)
+                    return GLib.SOURCE_CONTINUE
+
                 if not ready and state['left'] > 0:
                     return GLib.SOURCE_CONTINUE
                 adj.set_value(PARK_PX)
@@ -480,6 +641,7 @@ def run_matrix() -> int:
                         'page': round(adj.get_page_size(), 1),
                         'reached': round(adj.get_value(), 1),
                         'validation_timed_out': state['left'] <= 0,
+                        'recoveries': state['recoveries'],
                 }
                 def done(p=p):
                     user_scrolled(p)
@@ -674,7 +836,7 @@ def run_matrix() -> int:
         })
 
     steps.extend([
-        (nav, 2400), (scroll_mid, 0), (anchor, 200),
+        (nav, 0), (scroll_mid, 0), (anchor, 200),
         (chrome_pre, 0), (chrome_hide, 0), (chrome_reveal, 0),
         (tap_hide, 0), (tap_click, 0),
         (lex_on, 0), (lex_off, 0),
