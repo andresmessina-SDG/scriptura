@@ -179,7 +179,8 @@ class BibleWindow(Adw.ApplicationWindow):
         self._updating_plan = False
         self._modules_win = None
         self._journal_win = None
-        # Adaptive layout state, driven by Adw.Breakpoints (see _build_ui).
+        # Adaptive layout state, driven by Adw.Breakpoints (see
+        # _install_breakpoints).
         # _header_narrow: secondary controls folded into the overflow menu.
         # _panes_narrow: collapsed to a single pane; _narrow_pane (1 or 2) is
         # which one shows while collapsed in split mode.
@@ -278,6 +279,17 @@ class BibleWindow(Adw.ApplicationWindow):
         self.set_content(toolbar_view)
         self._toolbar_view = toolbar_view
 
+        self._build_header(toolbar_view)
+        self._build_panes()
+        self._build_side_panels()
+        overlay = self._build_reading_overlay()
+        self._assemble_layout(toolbar_view, overlay)
+        self._install_breakpoints()
+        self._install_window_controllers()
+        self._update_ref_label(*self._current_loc)
+
+    def _build_header(self, toolbar_view):
+        """The header bar: navigation on the left, reading tools on the right."""
         header = Adw.HeaderBar()
         header.add_css_class('scriptura-header')
         # Flat header so it blends into the window background — the toolbar and
@@ -429,8 +441,8 @@ class BibleWindow(Adw.ApplicationWindow):
 
         # Overflow — folds the secondary header controls (lexicon, bookmarks,
         # swap) into one popover when the window is too narrow to show them all.
-        # Hidden at full width; the Adw.Breakpoint swaps it in (see _build_ui
-        # end + _set_header_narrow).
+        # Hidden at full width; the Adw.Breakpoint swaps it in (see
+        # _install_breakpoints + _set_header_narrow).
         self._overflow_btn = Gtk.MenuButton(icon_name='view-more-symbolic')
         self._overflow_btn.add_css_class('flat')
         self._overflow_btn.add_css_class('header-action')
@@ -540,6 +552,8 @@ class BibleWindow(Adw.ApplicationWindow):
         self._study_box.add_controller(self._tools_focus)
         header.pack_end(self._study_box)
 
+    def _build_panes(self):
+        """The two reading panes and the split that holds them."""
         # ── Panes ─────────────────────────────────────────────────────────────
         # Only modules readable in a pane (Bibles, commentaries, devotionals)
         # are valid here — support modules like Strong's lexicons and MorphGNT
@@ -624,7 +638,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._paned.set_start_child(self.pane1)
         self._paned.set_end_child(self.pane2)
         # Apply restored split/single mode to the actual pane visibility.
-        # The toggle button's set_active in _build_ui ran before pane2
+        # The toggle button's set_active in _build_header ran before pane2
         # existed and before its 'toggled' handler was connected, so
         # without this the button would say "single" while pane2 was
         # still showing.
@@ -633,6 +647,9 @@ class BibleWindow(Adw.ApplicationWindow):
         self._paned.set_resize_end_child(True)
         self._paned.set_shrink_start_child(False)
         self._paned.set_shrink_end_child(False)
+
+    def _build_side_panels(self):
+        """The surfaces that slide in over the reading area."""
         # ── Search overlay (Adw.OverlaySplitView, end-side sidebar) ──────────
         # Same permanently-collapsed pattern as the menu split below: the
         # panel overlays the reading area from the right with a scrim and
@@ -718,29 +735,15 @@ class BibleWindow(Adw.ApplicationWindow):
         self._crossref_revealer.set_transition_duration(200)
         self._crossref_revealer.set_child(self._crossref_panel)
 
+    def _build_reading_overlay(self):
+        """The reading area and everything that floats above it."""
         # The paned + side overlays live inside the toast overlay so
         # toasts float above the reading area; the cross-ref bar sits
         # outside the toast overlay so toasts don't paint over it when
         # both are visible.
         overlay = Gtk.Overlay(vexpand=True, hexpand=True)
         overlay.set_child(self._paned)
-        # Floating centered drag-grip for the split. The GtkPaned separator
-        # stays opacity:0 forever (its built-in hairline never shows); this
-        # separate overlay widget is the only visible affordance, fading in on
-        # hover near the divider. can_target=False so drags pass straight
-        # through to the separator beneath it.
-        self._pane_grip = Gtk.Box()
-        self._pane_grip.add_css_class('pane-grip')
-        self._pane_grip.set_halign(Gtk.Align.START)
-        self._pane_grip.set_valign(Gtk.Align.CENTER)
-        self._pane_grip.set_can_target(False)
-        self._pane_grip.set_visible(False)
-        overlay.add_overlay(self._pane_grip)
-        self._paned.connect('notify::position', self._update_pane_grip)
-        grip_motion = Gtk.EventControllerMotion.new()
-        grip_motion.connect('motion', self._on_grip_motion)
-        grip_motion.connect('leave', lambda _c: self._pane_grip.set_visible(False))
-        overlay.add_controller(grip_motion)
+        self._build_pane_grip(overlay)
 
         # ── Exit-reading-mode affordance ─────────────────────────────────────
         # Floats a small circular X at top-center after the cursor hovers in
@@ -811,7 +814,10 @@ class BibleWindow(Adw.ApplicationWindow):
         reading_motion.connect('enter', self._on_reading_mouse_motion)
         reading_motion.connect('leave', lambda _c: self._reading_hide_exit_btn())
         self.add_controller(reading_motion)
+        return overlay
 
+    def _assemble_layout(self, toolbar_view, overlay):
+        """Nest the overlays into the window, one edge per split view."""
         self._toast_overlay = Adw.ToastOverlay()
         self._toast_overlay.set_child(overlay)
 
@@ -826,6 +832,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._menu_split.set_content(self._search_split)
         toolbar_view.set_content(self._menu_split)
 
+    def _install_breakpoints(self):
         # Adaptive layout via two breakpoints (thresholds are easy to tune):
         #  • ≤850px — the full header no longer fits, so fold the secondary
         #    controls (lexicon/bookmark/swap) into the overflow ⋯ menu.
@@ -857,6 +864,8 @@ class BibleWindow(Adw.ApplicationWindow):
         self.add_breakpoint(self._bp_ultra)
         self.connect('notify::current-breakpoint', self._on_breakpoint_changed)
 
+    def _install_window_controllers(self):
+        """Actions, contextual keys, and the two window-state signals."""
         # Global shortcuts are GActions with accelerators (see
         # _install_actions). Their accelerators are dispatched by GTK's
         # global-scope shortcut controller, which fires regardless of which
@@ -888,8 +897,6 @@ class BibleWindow(Adw.ApplicationWindow):
         # it by forcing a relayout; run that same relayout automatically on
         # reactivation. (Shortcuts no longer depend on this — they're actions.)
         self.connect('notify::is-active', self._on_active_changed)
-
-        self._update_ref_label(*self._current_loc)
 
     # ── Keyboard shortcuts ────────────────────────────────────────────────────
 
@@ -1051,7 +1058,8 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _on_active_changed(self, *_args):
         """Flush layout deferred while the frame clock was paused (suspend /
-        resume / long idle). See the connect() comment in _build_ui. This is
+        resume / long idle). See the connect() comment in
+        _install_window_controllers. This is
         what the manual split-view toggle was doing to bring the lexicon
         panel (and the pane's click gestures) back to life."""
         if not self.is_active():
@@ -1846,6 +1854,25 @@ class BibleWindow(Adw.ApplicationWindow):
         self._overlays._on_reading_mouse_motion(controller, x, y)
 
     # ── Split drag-grip ──────────────────────────────────────────────────────
+    def _build_pane_grip(self, overlay):
+        # Floating centered drag-grip for the split. The GtkPaned separator
+        # stays opacity:0 forever (its built-in hairline never shows); this
+        # separate overlay widget is the only visible affordance, fading in on
+        # hover near the divider. can_target=False so drags pass straight
+        # through to the separator beneath it.
+        self._pane_grip = Gtk.Box()
+        self._pane_grip.add_css_class('pane-grip')
+        self._pane_grip.set_halign(Gtk.Align.START)
+        self._pane_grip.set_valign(Gtk.Align.CENTER)
+        self._pane_grip.set_can_target(False)
+        self._pane_grip.set_visible(False)
+        overlay.add_overlay(self._pane_grip)
+        self._paned.connect('notify::position', self._update_pane_grip)
+        grip_motion = Gtk.EventControllerMotion.new()
+        grip_motion.connect('motion', self._on_grip_motion)
+        grip_motion.connect('leave', lambda _c: self._pane_grip.set_visible(False))
+        overlay.add_controller(grip_motion)
+
     # The divider's centre x = 8px (paned margin-left) + position + 4px (half of
     # the 8px separator); the 6px grip is centred on it (−3).
     def _update_pane_grip(self, *_args):
@@ -2924,28 +2951,7 @@ class BibleWindow(Adw.ApplicationWindow):
         panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         panel.add_css_class('menu-panel')
 
-        # ── Header: title + close only. Global utilities (theme, shortcuts,
-        # about) now live in a bottom footer (Apple-sidebar style), which
-        # declutters this strip and anchors the panel's otherwise-empty lower
-        # area. No separator — the panel reads as one calm surface, grouped by
-        # whitespace rather than a stack of rules.
-        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        hbox.set_margin_start(14)
-        hbox.set_margin_end(8)
-        hbox.set_margin_top(10)
-        hbox.set_margin_bottom(8)
-        title = Gtk.Label(label=_('Menu'), hexpand=True)
-        title.set_xalign(0)
-        title.add_css_class('title-4')
-        close_btn = Gtk.Button(icon_name='window-close-symbolic')
-        close_btn.add_css_class('flat')
-        close_btn.add_css_class('menu-utility-action')
-        close_btn.set_tooltip_text(_('Close menu (Esc)'))
-        set_accessible_label(close_btn, _('Close menu'))
-        close_btn.connect('clicked', lambda _: self._menu_split.set_show_sidebar(False))
-        hbox.append(title)
-        hbox.append(close_btn)
-        panel.append(hbox)
+        panel.append(self._build_menu_header())
 
         # Body — a vertical Box inside a ScrolledWindow so the panel can
         # scroll when its content (the expanded appearance card, or a long
@@ -2973,6 +2979,51 @@ class BibleWindow(Adw.ApplicationWindow):
             h.set_margin_bottom(4)
             return h
 
+        _body.append(self._build_menu_nav_group())
+
+        # ── Appearance: a section header + its own row whose chevron rotates
+        # (▸→▾) to expand the inline appearance card just below — a real expander
+        # affordance, not a → arrow that falsely implies push-navigation. ──────
+        _body.append(_section_header(_('Appearance')))
+        _body.append(self._build_appearance_row())
+        _body.append(self._build_appearance_card())
+
+        self._build_plan_section(_body)
+
+        # ── Study data: one-file backup / restore of everything the reader
+        # accumulates by hand (annotations, bookmarks, plan progress) — the
+        # data is otherwise trapped inside the Flatpak datadir. ──────────────
+        _body.append(_section_header(_('Study Data')))
+        _body.append(self._build_study_data_group())
+
+        panel.append(self._build_menu_footer())
+        return panel
+
+    def _build_menu_header(self):
+        # ── Header: title + close only. Global utilities (theme, shortcuts,
+        # about) now live in a bottom footer (Apple-sidebar style), which
+        # declutters this strip and anchors the panel's otherwise-empty lower
+        # area. No separator — the panel reads as one calm surface, grouped by
+        # whitespace rather than a stack of rules.
+        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        hbox.set_margin_start(14)
+        hbox.set_margin_end(8)
+        hbox.set_margin_top(10)
+        hbox.set_margin_bottom(8)
+        title = Gtk.Label(label=_('Menu'), hexpand=True)
+        title.set_xalign(0)
+        title.add_css_class('title-4')
+        close_btn = Gtk.Button(icon_name='window-close-symbolic')
+        close_btn.add_css_class('flat')
+        close_btn.add_css_class('menu-utility-action')
+        close_btn.set_tooltip_text(_('Close menu (Esc)'))
+        set_accessible_label(close_btn, _('Close menu'))
+        close_btn.connect('clicked', lambda _: self._menu_split.set_show_sidebar(False))
+        hbox.append(title)
+        hbox.append(close_btn)
+        return hbox
+
+    def _build_menu_nav_group(self):
         # ── Navigation group (Study Journal / Modules) as coherent list rows
         # (icon + label + chevron), matching the app's Adw idiom rather than
         # plain grey buttons. ────────────────────────────────────────────────
@@ -3047,12 +3098,10 @@ class BibleWindow(Adw.ApplicationWindow):
                 _church_values[d.get_selected()]))
         church_row.add_suffix(church_drop)
         nav_group.add(church_row)
-        _body.append(nav_group)
+        return nav_group
 
-        # ── Appearance: a section header + its own row whose chevron rotates
-        # (▸→▾) to expand the inline appearance card just below — a real expander
-        # affordance, not a → arrow that falsely implies push-navigation. ──────
-        _body.append(_section_header(_('Appearance')))
+    def _build_appearance_row(self):
+        """The row whose chevron expands the card below it."""
         appear_group = Adw.PreferencesGroup()
         appear_group.set_margin_start(12)
         appear_group.set_margin_end(12)
@@ -3065,9 +3114,10 @@ class BibleWindow(Adw.ApplicationWindow):
         self._appear_row.set_activatable(True)
         self._appear_row.connect('activated', self._toggle_appear_card)
         appear_group.add(self._appear_row)
-        _body.append(appear_group)
+        return appear_group
 
-        # ── Appearance card (inline revealer) ─────────────────────────────────
+    def _build_appearance_card(self):
+        """The inline revealer: font, size, colour and the advanced toggles."""
         self._appear_revealer = Gtk.Revealer()
         self._appear_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
         self._appear_revealer.set_transition_duration(200)
@@ -3195,12 +3245,17 @@ class BibleWindow(Adw.ApplicationWindow):
         card.append(self._paper_box)
         self._rebuild_colour_row()
 
+        card.append(Gtk.Separator())
+        card.append(self._build_advanced_toggles())
+        self._appear_revealer.set_child(card)
+        return self._appear_revealer
+
+    def _build_advanced_toggles(self):
         # ── Advanced reading toggles ──────────────────────────────────────
         # Reading conventions (small caps, old-style figures) default on;
         # opt-in taste (flush poetry, tinted drop cap) and opt-in behavior
         # (hover preview) default off. New toggles slot in as rows without
         # a redesign.
-        card.append(Gtk.Separator())
         adv = Gtk.Expander(label=_('Advanced'))
         adv.add_css_class('appearance-advanced')
         adv_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -3329,11 +3384,10 @@ class BibleWindow(Adw.ApplicationWindow):
         au_row.append(au_sw)
         adv_box.append(au_row)
         adv.set_child(adv_box)
-        card.append(adv)
+        return adv
 
-        self._appear_revealer.set_child(card)
-        _body.append(self._appear_revealer)
-
+    def _build_plan_section(self, body):
+        """Appended straight to the body: five siblings, not a group."""
         # ── Reading Plan ──────────────────────────────────────────────────────
         # Header: title + a quiet ⋯ menu. Reset lives in that menu rather than
         # as a loud red button, keeping the destructive action off the calm
@@ -3389,7 +3443,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._plan_menu_pop.set_child(_reset_box)
         self._plan_menu_btn.set_popover(self._plan_menu_pop)
         plan_hdr_box.append(self._plan_menu_btn)
-        _body.append(plan_hdr_box)
+        body.append(plan_hdr_box)
 
         # Quiet plan switcher.
         plans = reading_plans.get_plans()
@@ -3402,7 +3456,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._plan_drop.set_margin_bottom(8)
         self._plan_drop_handler = self._plan_drop.connect(
             'notify::selected', self._on_plan_dropdown_changed)
-        _body.append(self._plan_drop)
+        body.append(self._plan_drop)
 
         # Not-started state: a one-line description + a single Start button.
         self._plan_desc_lbl = Gtk.Label(wrap=True, xalign=0)
@@ -3411,7 +3465,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._plan_desc_lbl.set_margin_bottom(10)
         self._plan_desc_lbl.add_css_class('dim-label')
         self._plan_desc_lbl.add_css_class('caption')
-        _body.append(self._plan_desc_lbl)
+        body.append(self._plan_desc_lbl)
 
         self._plan_start_btn = Gtk.Button(label=_('Start today'))
         self._plan_start_btn.add_css_class('suggested-action')
@@ -3420,7 +3474,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._plan_start_btn.set_margin_end(12)
         self._plan_start_btn.set_margin_bottom(8)
         self._plan_start_btn.connect('clicked', self._on_plan_start)
-        _body.append(self._plan_start_btn)
+        body.append(self._plan_start_btn)
 
         # Active-plan view: a "Today" hero, a slim progress meter, and a
         # tappable month dot-grid (done = accent fill, today = ring,
@@ -3475,12 +3529,9 @@ class BibleWindow(Adw.ApplicationWindow):
         self._plan_grid.set_column_homogeneous(True)
         self._plan_active_box.append(self._plan_grid)
 
-        _body.append(self._plan_active_box)
+        body.append(self._plan_active_box)
 
-        # ── Study data: one-file backup / restore of everything the reader
-        # accumulates by hand (annotations, bookmarks, plan progress) — the
-        # data is otherwise trapped inside the Flatpak datadir. ──────────────
-        _body.append(_section_header(_('Study Data')))
+    def _build_study_data_group(self):
         data_group = Adw.PreferencesGroup()
         data_group.set_margin_start(12)
         data_group.set_margin_end(12)
@@ -3494,8 +3545,9 @@ class BibleWindow(Adw.ApplicationWindow):
             row.set_activatable(True)
             row.connect('activated', handler)
             data_group.add(row)
-        _body.append(data_group)
+        return data_group
 
+    def _build_menu_footer(self):
         # ── Footer: global utilities pinned to the bottom. The scroller above
         # is vexpand, so this stays anchored at the panel's foot — Apple-sidebar
         # placement that also fills the lower void when no plan is active.
@@ -3559,8 +3611,7 @@ class BibleWindow(Adw.ApplicationWindow):
         about_btn.connect('clicked', self._on_about_clicked)
         footer.append(about_btn)
 
-        panel.append(footer)
-        return panel
+        return footer
 
     def _refresh_section_rows(self):
         """Offer the two sense-unit controls only where they can act.
