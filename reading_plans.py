@@ -217,7 +217,9 @@ def _load() -> dict[str, Any]:
     return _cache
 
 
-def _save(d: dict[str, Any]) -> None:
+def _save(d: dict[str, Any]) -> bool:
+    """Write the store, reporting whether it reached disk.
+    The cache is updated either way — see annotations._save."""
     global _cache
     _cache = d
     # Atomic write (tmp + fsync + os.replace) so a crash mid-write can't
@@ -237,6 +239,8 @@ def _save(d: dict[str, Any]) -> None:
                 _on_save_error()
             except Exception:
                 _log.exception('save-error handler raised')
+        return False
+    return True
 
 
 def get_active() -> tuple[str | None, str | None]:
@@ -316,6 +320,7 @@ def export_raw() -> dict[str, Any]:
     return _load()
 
 
-def replace_all(d: dict[str, Any]) -> None:
-    """Swap in a whole progress store (study-data restore)."""
-    _save(dict(d))
+def replace_all(d: dict[str, Any]) -> bool:
+    """Swap in a whole progress store (study-data restore). Returns whether
+    it reached disk."""
+    return _save(dict(d))

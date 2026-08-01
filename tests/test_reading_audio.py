@@ -58,6 +58,7 @@ class FakePill:
         self.reference = ''
         self.length = ''
         self.switch = ''
+        self.back_to = ''
         self.visible = False
         self.can_seek = False
         self.rate = 1.0
@@ -74,6 +75,9 @@ class FakePill:
 
     def set_switch(self, reference):
         self.switch = reference
+
+    def set_return(self, reference):
+        self.back_to = reference
 
     def set_can_seek(self, can_seek):
         self.can_seek = can_seek
@@ -246,7 +250,9 @@ class Reading:
     _reading_is_live = ReadingAudio._reading_is_live
     _restate_pill_reading = ReadingAudio._restate_pill_reading
     _live_reference = ReadingAudio._live_reference
+    _live_location = ReadingAudio._live_location
     _on_reading_switch = ReadingAudio._on_reading_switch
+    _on_reading_return = ReadingAudio._on_reading_return
     _reading_series = ReadingAudio._reading_series
     _publish_reading_media = ReadingAudio._publish_reading_media
 
@@ -258,6 +264,7 @@ class Reading:
         self._reading_tick = None
         self._reading_fetching = False
         self._reading_reference = 'John 3'
+        self._reading_location = ('John', 3)
         self._reading_length = ''
         self._reading_key = 'reading-audio:test'
         self._sounding = None
@@ -704,10 +711,26 @@ class Paging(Reading):
         return True
 
 
+class FakePane:
+    """Just enough pane to be navigated. The real force_navigate re-renders,
+    which is what syncs the surface again — so this does the same, or the
+    pill would never be restated after a return."""
+
+    def __init__(self, surface):
+        self._surface = surface
+        self.navigations = []
+
+    def force_navigate(self, book, chapter, verse):
+        self.navigations.append((book, chapter, verse))
+        self._surface._book, self._surface._chapter = book, chapter
+        self._surface.sync()
+
+
 def _paging(monkeypatch, **kwargs):
     """A pane whose chapter can be changed, with the two module-level calls
     `sync` makes standing in for the real address book."""
     c = Paging(**kwargs)
+    c._pane = FakePane(c)
     monkeypatch.setattr(audio_surfaces, 'set_accessible_label',
                         lambda *a: None)
     monkeypatch.setattr(bible_audio, 'covers_module', lambda _m: c.covered)
@@ -894,6 +917,49 @@ def test_the_switch_starts_the_chapter_on_screen(monkeypatch):
     assert c._pill.switch == ''                  # the two are one again
 
 
+def test_the_reference_goes_back_to_what_is_sounding(monkeypatch):
+    """Item 28: the reader paged on and wants to follow the reading again.
+    Pressing the chapter the pill names takes them there, and the reading
+    itself is untouched."""
+    _runner(monkeypatch)
+    _settings(monkeypatch)
+    player = FakePlayer()
+    c = _listening(monkeypatch, player=player)
+    c._chapter = 4
+    c.sync()
+    assert c._pill.back_to == 'John 3'           # offered only once parted
+    c._on_reading_return()
+    assert c._pane.navigations == [('John', 3, None)]
+    assert player.playing                        # nothing was stopped
+    assert c._pill.back_to == ''                 # the two are one again
+    assert c._pill.switch == ''
+
+
+def test_no_way_back_while_the_reader_is_already_there(monkeypatch):
+    _runner(monkeypatch)
+    _settings(monkeypatch)
+    c = _listening(monkeypatch, player=FakePlayer())
+    assert c._pill.back_to == ''
+    c._on_reading_return()                       # inert, and must not raise
+    assert c._pane.navigations == []
+
+
+def test_the_way_back_leads_to_the_chapter_being_fetched(monkeypatch):
+    """The fetch may outlast the page it was started from, so the offer has
+    to name where the fetch came from, not where the reader now is."""
+    _runner(monkeypatch)
+    _settings(monkeypatch)
+    c = _paging(monkeypatch, player=FakePlayer())    # nothing cached
+    c.sync()
+    c._on_reading_listen(None)
+    c._on_reading_play()
+    c._chapter = 4
+    c.sync()
+    assert c._pill.back_to == 'John 3'
+    c._on_reading_return()
+    assert c._pane.navigations == [('John', 3, None)]
+
+
 def test_the_switch_abandons_a_fetch_it_replaces(monkeypatch):
     """Pressed while the chapter in hand is still on its way: that fetch is
     six megabytes of a reading the reader has just said they do not want."""
@@ -911,7 +977,7 @@ def test_the_switch_abandons_a_fetch_it_replaces(monkeypatch):
     assert c._reading_key in runner.cancelled
     assert c._pill.state == 'fetching'               # now for John 4
     runner.apply('/tmp/John_004.mp3')
-    assert c._sounding == ('/tmp/John_004.mp3', 'John 4')
+    assert c._sounding == ('/tmp/John_004.mp3', 'John 4', ('John', 4))
 
 
 def test_the_pill_names_the_chapter_being_fetched(monkeypatch):

@@ -112,6 +112,9 @@ MIN_VERTICAL_PADDING = {
     'button.catena-chip': 3,
     'button.stone-chip': 3,
     'button.genbook-synopsis-toggle': 3,
+    # The one that also carries a negative margin of the same size, so the
+    # padding is the whole target and none of the layout — see the rule.
+    'button.audio-pill-return': 4,
 }
 
 

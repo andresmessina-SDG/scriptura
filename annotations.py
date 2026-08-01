@@ -66,7 +66,13 @@ def _load() -> Annotations:
     return _cache
 
 
-def _save(data: Annotations) -> None:
+def _save(data: Annotations) -> bool:
+    """Write the store, reporting whether it reached disk.
+
+    The cache is updated either way — the running app must reflect what the
+    user just did — so the return value is the only signal that the file
+    behind it is stale.
+    """
     global _cache
     _cache = data
     # Atomic write: build the file beside the destination, fsync, then
@@ -88,6 +94,8 @@ def _save(data: Annotations) -> None:
                 _on_save_error()
             except Exception:
                 _log.exception('save-error handler raised')
+        return False
+    return True
 
 def get_annotations(module: str, book: str, chapter: int) -> ChapterData:
     data = _load()
@@ -312,7 +320,8 @@ def export_raw() -> Annotations:
     return _load()
 
 
-def replace_all(data: Annotations) -> None:
+def replace_all(data: Annotations) -> bool:
     """Swap in a whole store (study-data restore). Same light validation
-    as _load: keep only chapter entries that are dicts."""
-    _save({str(k): v for k, v in data.items() if isinstance(v, dict)})
+    as _load: keep only chapter entries that are dicts. Returns whether the
+    new store reached disk."""
+    return _save({str(k): v for k, v in data.items() if isinstance(v, dict)})

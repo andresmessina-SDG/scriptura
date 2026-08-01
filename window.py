@@ -1775,7 +1775,7 @@ class BibleWindow(Adw.ApplicationWindow):
     def _on_restore_confirm(self, _dialog, response, payload):
         if response != 'replace':
             return
-        backup.restore(payload)
+        failed = backup.restore(payload)
         # Re-render both panes so restored highlights/notes/indicators
         # appear (the reading anchor keeps the text in place), and rebuild
         # the plan section against the restored progress.
@@ -1787,7 +1787,24 @@ class BibleWindow(Adw.ApplicationWindow):
         # deleting one of those stale rows would silently no-op.
         if self._journal_win is not None and self._journal_win.get_visible():
             self._journal_win._reload()
-        self._toast(_('Study data restored'))
+        if failed:
+            names = {
+                'annotations': _('annotations'),
+                'bookmarks': _('bookmarks'),
+                'reading_plans': _('reading-plan progress'),
+            }
+            # Each failed store also queues its own save-error toast through
+            # GLib.idle_add, and a toast replaces its predecessor — so queue
+            # this one behind them, or the last thing read is the generic
+            # message with the wrong noun.
+            GLib.idle_add(
+                self._toast,
+                _('Some study data could not be written to disk ({sections}) '
+                  '— check disk space or permissions, then restore again.'
+                  ).format(
+                      sections=', '.join(names[k] for k in failed)))
+        else:
+            self._toast(_('Study data restored'))
 
     def _on_cipher_error(self, module):
         """A pane detected unreadable (wrong-key) content for an encrypted

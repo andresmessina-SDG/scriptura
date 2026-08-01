@@ -4,6 +4,7 @@ and a local .tar.gz install. A tmp pack dir with the real schema is seeded
 per test; imagery_dir / imagery_db_path are redirected to it and the
 thread-local connection is reset."""
 
+import io
 import os
 import sqlite3
 import tarfile
@@ -230,6 +231,21 @@ def test_download_and_install_from_local_targz(tmp_path, monkeypatch):
     assert not (dest.parent / '.imagery.tar.gz.part').exists()  # temp cleaned
 
 
+def test_update_offered_only_for_a_pack_older_than_the_published_one(pack,
+                                                                    monkeypatch):
+    """Without this the rebuilt pack reaches nobody who already has one: the
+    row offered Download or Remove and had no third state."""
+    monkeypatch.setattr(imagery_bridge, 'LATEST_BUILT', '2026-07-31')
+    assert imagery_bridge.update_available() is False      # nothing installed
+    _seed(str(pack), imagery=[_img('illustration', 'engraving', 'Ark',
+                                   'Genesis', 6, 14)],
+          meta={'built': '2026-05-31'})
+    assert imagery_bridge.update_available() is True
+    imagery_bridge._reset()
+    monkeypatch.setattr(imagery_bridge, 'LATEST_BUILT', '2026-05-31')
+    assert imagery_bridge.update_available() is False      # already current
+
+
 def test_safe_extract_rejects_traversal(tmp_path, monkeypatch):
     # An archive trying to escape the pack dir must be refused.
     evil = tmp_path / 'evil.tar.gz'
@@ -245,6 +261,33 @@ def test_safe_extract_rejects_traversal(tmp_path, monkeypatch):
     with pytest.raises(ValueError):
         imagery_bridge.download_and_install(url=evil.as_uri())
     assert not (tmp_path / 'escape.txt').exists()
+
+
+def test_safe_extract_rejects_symlink_escape(tmp_path):
+    # Every member name here is innocent: the escape is the symlink the
+    # second member is written through. The runtime we ship (3.13) trusts
+    # archives by default, so the test forces that behaviour rather than
+    # relying on the dev interpreter's stricter default.
+    evil = tmp_path / 'evil.tar.gz'
+    with tarfile.open(evil, 'w:gz') as tar:
+        link = tarfile.TarInfo('link')
+        link.type = tarfile.SYMTYPE
+        link.linkname = '../OUTSIDE'
+        tar.addfile(link)
+        victim = tarfile.TarInfo('link/victim.txt')
+        victim.size = 5
+        tar.addfile(victim, io.BytesIO(b'PWNED'))
+
+    outside = tmp_path / 'OUTSIDE'
+    outside.mkdir()
+    (outside / 'victim.txt').write_text('mine')
+    dest = tmp_path / 'installed'
+    dest.mkdir()
+    with tarfile.open(evil) as tar:
+        tar.extraction_filter = tarfile.fully_trusted_filter
+        with pytest.raises(tarfile.TarError):
+            imagery_bridge._safe_extract(tar, str(dest))
+    assert (outside / 'victim.txt').read_text() == 'mine'
 
 
 def test_resolve_parts_single(monkeypatch):

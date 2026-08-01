@@ -67,7 +67,22 @@ def commons_filepath_url(filename, width):
             f'?width={width}')
 
 
+#: Set from --reuse-images. A rebuild re-downloads every plate — some 700 MB
+#: and the better part of an hour — so a single transient timeout otherwise
+#: costs a whole run to recover, and the run that recovers it may drop a
+#: different plate the same way. With this set, an image already staged is
+#: taken as fetched; the catalog is still built from nothing, so the artifact
+#: stays a clean product of the tool rather than something edited by hand.
+REUSE_IMAGES = False
+
+
 def fetch(url, dest):
+    if REUSE_IMAGES:
+        staged = os.path.exists(dest) and os.path.getsize(dest) > 0
+        if staged:
+            # The size is normally what the download returned; read it back
+            # off disk so a reused file still records its true file_size.
+            return os.path.getsize(dest)
     req = urllib.request.Request(url, headers={'User-Agent': _UA})
     with urllib.request.urlopen(req, timeout=120) as resp:
         data = resp.read()
@@ -863,6 +878,10 @@ def main():
     ap.add_argument('--width', type=int, default=1500, help='thumbnail width px')
     ap.add_argument('--no-fetch', action='store_true',
                     help='write catalog rows only; skip downloading images')
+    ap.add_argument('--reuse-images', action='store_true',
+                    help='keep images already staged in outdir; download only '
+                         'what is missing (recovers a run that lost plates to '
+                         'a transient failure without re-fetching 700 MB)')
     ap.add_argument('--tar', action='store_true',
                     help='also write <outdir>/../imagery.tar.gz')
     ap.add_argument('--split-mb', type=int, default=0,
@@ -871,6 +890,9 @@ def main():
                          '(GitHub allows 2 GB, so this is off by default). '
                          'reassembles the parts automatically.')
     args = ap.parse_args()
+
+    global REUSE_IMAGES
+    REUSE_IMAGES = args.reuse_images
 
     images_dir = os.path.join(args.outdir, 'images')
     os.makedirs(images_dir, exist_ok=True)

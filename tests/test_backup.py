@@ -116,6 +116,24 @@ def test_restore_missing_sections_treated_empty(isolated):
     assert bookmarks.get_all() == []
 
 
+def test_restore_reports_a_store_that_could_not_be_written(isolated):
+    # Point the annotations store at a path that cannot be written: the
+    # write fails, the in-memory cache still shows the restored data, and
+    # restore() must be the thing that says so.
+    unwritable = isolated / 'nodir' / 'annotations.json'
+    annotations.ANNOTATIONS_FILE = str(unwritable)
+    doc = backup.validate({'format': backup.FORMAT, 'version': 1,
+                           'annotations': {'KJVA/John/3': {'notes': {}}},
+                           'bookmarks': [], 'reading_plans': {}})
+    assert backup.restore(doc) == ['annotations']
+    assert not unwritable.exists()
+
+
+def test_restore_reports_nothing_when_all_stores_write(isolated):
+    doc = backup.validate(backup.collect())
+    assert backup.restore(doc) == []
+
+
 def test_counts(isolated):
     _populate()
     c = backup.counts(backup.collect())

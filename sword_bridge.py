@@ -1719,12 +1719,37 @@ def install_module(module_name):
     with zipfile.ZipFile(io.BytesIO(data)) as zf:
         # Extract member-by-member through _safe_extract (rather than
         # extractall) so the network path enforces the same path-escape
-        # guard as the local sideload path.
+        # guard as the local sideload path. The confs are checked first, so
+        # a module whose DataPath points outside ~/.sword leaves nothing
+        # behind for a later removal to act on.
+        for cm in _zip_conf_members(zf.infolist()):
+            _module_data_dir(_parse_conf_lines(
+                zf.read(cm.filename).decode('utf-8-sig', errors='replace').splitlines()))
         for member in zf.infolist():
             if member.is_dir():
                 continue
             _safe_extract(zf, member, _SWORD_PATH)
     _reset()
+
+
+def _module_data_dir(info):
+    """DataPath from a parsed .conf, relative to ~/.sword, or '' if unset.
+
+    Raises ValueError when the path escapes the sword root. `DataPath` is
+    written by whoever built the module, so on the sideload path it is
+    attacker-controlled; it is joined onto _SWORD_PATH by three callers, one
+    of which deletes the result. `lstrip('./')` is not a guard — it strips a
+    character set, so it neutralises a *leading* `..` by accident while
+    `modules/../../../x` passes straight through.
+    """
+    raw = info.get('datapath', '').strip().rstrip('/')
+    if not raw:
+        return ''
+    root = os.path.realpath(_SWORD_PATH)
+    full = os.path.realpath(os.path.join(root, raw))
+    if full == root or not full.startswith(root + os.sep):
+        raise ValueError(f'DataPath escapes the SWORD directory: {raw}')
+    return os.path.relpath(full, root)
 
 
 def remove_module(module_name):
@@ -1737,7 +1762,7 @@ def remove_module(module_name):
             raise RuntimeError(f'{module_name} is a system-installed module and cannot be removed here.')
         raise RuntimeError(f'Module conf not found: {conf}')
     info = _parse_conf(conf)
-    data_path = info.get('datapath', '').lstrip('./')
+    data_path = _module_data_dir(info)
     if data_path:
         full = os.path.join(_SWORD_PATH, data_path)
         if os.path.isdir(full):
@@ -1920,7 +1945,13 @@ def inspect_module_zip(zip_bytes):
             name = info.get('name')
             if not name:
                 continue
-            datapath = info.get('datapath', '').lstrip('./').rstrip('/')
+            try:
+                datapath = _module_data_dir(info)
+            except ValueError:
+                # Still listed — dropping it silently would leave the user
+                # with a file picker that appears to do nothing. Its size
+                # reads 0 and install_module_from_zip refuses it by name.
+                datapath = ''
             size = 0
             if datapath:
                 for i in infos:
@@ -1991,14 +2022,19 @@ def install_module_from_zip(zip_bytes, names, cipher_keys=None):
     wanted = set(names)
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
         infos = zf.infolist()
+        # DataPath is checked for every wanted module first, so one bad conf
+        # refuses the whole import rather than landing on disk beside the
+        # modules extracted before it — where a later removal would act on it.
+        chosen = []
         for cm in _zip_conf_members(infos):
             info = _parse_conf_lines(
                 zf.read(cm.filename).decode('utf-8-sig', errors='replace').splitlines())
             name = info.get('name')
             if name not in wanted:
                 continue
+            chosen.append((cm, name, _module_data_dir(info)))
+        for cm, name, datapath in chosen:
             _safe_extract(zf, cm, _SWORD_PATH)
-            datapath = info.get('datapath', '').lstrip('./').rstrip('/')
             if datapath:
                 for i in infos:
                     if i.is_dir():

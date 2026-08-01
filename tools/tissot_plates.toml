@@ -3988,16 +3988,10 @@ testament = "OT"
 license = "PD"
 attribution = "James Tissot, The Old Testament"
 
-[[plate]]
-n = "TO067"
-file = "Promesses de Dieu à Abram (Genesis 13 16) • invenit James Tissot • pinxit James Tissot • excudit Maurice de Brunoff apud Philip de Vere • praesentat Phillip Medhurst..jpg"
-title = "Promesses de Dieu à Abram"
-book = "Genesis"
-chapter = 13
-verse = 16
-testament = "OT"
-license = "CC-BY-SA-4.0"
-attribution = "James Tissot · Phillip Medhurst Collection · CC BY-SA 4.0"
+# TO067 (Promesses de Dieu à Abram, Genesis 13:16) was removed 2026-08-01:
+# its Commons file is a permanent 404, and the only surviving scan of that
+# watercolour is 445×369 — too small for the 960px zoom. Genesis 13 is filled
+# instead by GAP21 in curated_plates.toml, Hollar's etching of the parting.
 
 [[plate]]
 n = "TO068"

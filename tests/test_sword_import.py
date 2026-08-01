@@ -166,10 +166,11 @@ def test_install_writes_cipher_key(sword_home):
 
 
 def test_install_blocks_path_traversal(sword_home, tmp_path):
+    # The DataPath itself is innocent; the data member under it escapes.
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'w') as z:
-        z.writestr('mods.d/evil.conf', _conf('Evil', datapath='../../../../escape/'))
-        z.writestr('../../../../escape/x', b'pwn')
+        z.writestr('mods.d/evil.conf', _conf('Evil', datapath='./modules/x/'))
+        z.writestr('modules/x/../../../../escape/pwn', b'pwn')
     with pytest.raises(ValueError, match='Unsafe path'):
         sword_bridge.install_module_from_zip(buf.getvalue(), ['Evil'])
     assert not (tmp_path.parent / 'escape').exists()
@@ -208,6 +209,40 @@ def test_cannot_remove_absent_module(sword_home):
     # Not in the user's ~/.sword (e.g. a system module or unknown) -> not
     # removable through the in-app control.
     assert sword_bridge.can_remove_module('SystemOnly') is False
+
+
+# ── remove_module (DataPath containment) ───────────────────────────────────────
+
+def test_remove_module_deletes_its_own_data(sword_home):
+    (sword_home / 'mods.d' / 'kjvx.conf').write_text(_conf('KJVx'))
+    data = sword_home / 'modules/texts/ztext/kjvx'
+    data.mkdir(parents=True)
+    (data / 'ot.bzs').write_bytes(b'x')
+    sword_bridge.remove_module('KJVx')
+    assert not data.exists()
+    assert not (sword_home / 'mods.d' / 'kjvx.conf').exists()
+
+
+def test_remove_module_refuses_datapath_outside_sword(sword_home, tmp_path):
+    # An embedded `..` survives lstrip('./'), so this conf used to resolve
+    # outside ~/.sword and be rmtree'd.
+    victim = tmp_path / 'Documents'
+    victim.mkdir()
+    (victim / 'thesis.odt').write_bytes(b'years of work')
+    (sword_home / 'mods.d' / 'evil.conf').write_text(
+        _conf('Evil', datapath='./modules/texts/../../../Documents'))
+    with pytest.raises(ValueError, match='DataPath'):
+        sword_bridge.remove_module('Evil')
+    assert (victim / 'thesis.odt').exists()
+    # The refusal must come before anything is deleted.
+    assert (sword_home / 'mods.d' / 'evil.conf').exists()
+
+
+def test_install_refuses_datapath_outside_sword(sword_home, tmp_path):
+    z = _make_zip([('Evil', _conf('Evil', datapath='modules/../../../escape'), [])])
+    with pytest.raises(ValueError, match='DataPath'):
+        sword_bridge.install_module_from_zip(z, ['Evil'])
+    assert not (sword_home / 'mods.d' / 'evil.conf').exists()
 
 
 # ── _fetch_crosswire (HTTPS → FTP fallback) ────────────────────────────────────
