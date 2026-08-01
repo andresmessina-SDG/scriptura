@@ -1633,3 +1633,32 @@ artist = "James Tissot"
 year = 1896
 license = "PD"
 attribution = "James Tissot, Malachi (c. 1888–1902) — The Jewish Museum, New York"
+
+# GAP21 replaces Tissot's TO067 (Genesis 13:16), whose Commons file went to a
+# permanent 404 in the 2026-08-01 rebuild — the only surviving scan of that
+# watercolour is 445×369. Genesis 13 was left with no art at all, so this
+# carries the whole chapter rather than the parting alone (13:5–12), which is
+# what it depicts. Approved 2026-08-01.
+#
+# Ruled out while choosing it, so nobody re-treads the ground: de Keyser's
+# "Abraham erblickt das Land Kanaan" (2489×1857, PD) is a MISATTRIBUTED German
+# title — the record reads "Portrait historié of Moses and Aaron beholding the
+# promised land". Moeyaert's "Verheißung" (1628) and Paulus Potter's are both
+# God appearing to Abram at Shechem, Genesis 12:7, already covered. There is no
+# PD image of the 13:14–17 promise itself.
+
+[[plate]]
+n = "GAP21"
+file = "Wenceslas Hollar - Abraham and Lot separating (State 1).jpg"
+title = "Abraham and Lot Separating"
+book = "Genesis"
+chapter = 13
+verse = 1
+chapter_end = 13
+verse_end = 18
+passage_label = "Genesis 13"
+kind = "illustration"
+tradition = "engraving"
+artist = "Wenceslaus Hollar"
+license = "PD"
+attribution = "Wenceslaus Hollar, Abraham and Lot separating — University of Toronto Wenceslaus Hollar Digital Collection"

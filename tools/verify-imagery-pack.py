@@ -198,8 +198,24 @@ def gate_images(rep: Report, conn: sqlite3.Connection, packdir: str) -> None:
     for item in wrong_size[:10]:
         print(f'        {item}')
 
+    # And the other way round. With --reuse-images a staging directory
+    # outlives the run that filled it, so a plate dropped from a TOML leaves
+    # its image behind — shipped, paid for in the download, and reachable
+    # from nothing.
+    referenced = {rel for rel, _s in rows if rel}
+    referenced |= {p for (p,) in conn.execute(
+        'SELECT DISTINCT photo_path FROM places WHERE photo_path IS NOT NULL')}
+    images = os.path.join(packdir, 'images')
+    on_disk = {f'images/{name}' for name in os.listdir(images)}
+    orphans = on_disk - referenced
+    rep.check(not orphans, 'images',
+              f'{len(on_disk)} files on disk, {len(orphans)} reachable from '
+              f'no row')
+    for rel in sorted(orphans)[:10]:
+        print(f'        orphan: {rel}')
 
-def gate_meta(rep: Report, conn: sqlite3.Connection) -> None:
+
+def gate_meta(rep: Report, conn: sqlite3.Connection, packdir: str) -> None:
     print('\n5. pack_meta honest')
     meta = dict(conn.execute('SELECT key, value FROM pack_meta').fetchall())
     print(f'      {meta}')
@@ -211,9 +227,14 @@ def gate_meta(rep: Report, conn: sqlite3.Connection) -> None:
               f"place_count {meta.get('place_count')} == {places} rows")
     # The Update button compares this date against the app's LATEST_BUILT, so
     # a pack older than its own contents is one that never gets offered.
+    # Checked against the catalog's own mtime rather than today's date: a
+    # build that starts in the evening and finishes after midnight is honest,
+    # and `built == today` calls it a liar every time.
     built = meta.get('built', '')
-    rep.check(built == datetime.date.today().isoformat(), 'meta',
-              f'built {built!r} is today')
+    wrote = datetime.date.fromtimestamp(
+        os.path.getmtime(os.path.join(packdir, 'imagery.sqlite'))).isoformat()
+    rep.check(built == wrote, 'meta',
+              f'built {built!r} matches the catalog mtime {wrote!r}')
     # `sources` records the ingests that were RUN, in the CLI's own
     # vocabulary — which is a third naming again, unrelated to the `source`
     # column (CLI `oils` writes rows saying `oldmaster`). What it is worth
@@ -242,7 +263,7 @@ def main() -> int:
     gate_coverage(rep, conn, args.log)
     gate_epistles(rep, conn)
     gate_images(rep, conn, args.packdir)
-    gate_meta(rep, conn)
+    gate_meta(rep, conn, args.packdir)
 
     print()
     if rep.failures:
