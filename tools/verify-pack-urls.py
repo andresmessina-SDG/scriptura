@@ -14,7 +14,8 @@ Checks, per bridge:
   catena  — a single asset; the URL must resolve, and the app-declared
             LATEST_BUILT must be a real date (it gates the Update nudge, so a
             value newer than the published pack means a button that 404s).
-  imagery — a split asset; `_resolve_parts` must enumerate at least one part.
+  imagery — a split asset; `_resolve_parts` must enumerate at least one part,
+            and its LATEST_BUILT gates the same Update nudge as catena's.
             The bare `imagery.tar.gz` 404ing is EXPECTED and not a fault:
             large packs are served as `.000/.001/…` and the resolver probes
             for those first.
@@ -51,7 +52,8 @@ def check_catena() -> tuple[bool, str]:
 def check_imagery() -> tuple[bool, str]:
     parts = imagery_bridge._resolve_parts(imagery_bridge.PACK_URL)
     total = sum(s for _, s in parts)
-    return True, f'{len(parts)} part(s), {total / 1e6:.1f} MB'
+    return True, (f'{len(parts)} part(s), {total / 1e6:.1f} MB, '
+                  f'LATEST_BUILT={imagery_bridge.LATEST_BUILT}')
 
 
 def main() -> int:
