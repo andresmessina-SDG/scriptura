@@ -231,6 +231,21 @@ def test_download_and_install_from_local_targz(tmp_path, monkeypatch):
     assert not (dest.parent / '.imagery.tar.gz.part').exists()  # temp cleaned
 
 
+def test_update_offered_only_for_a_pack_older_than_the_published_one(pack,
+                                                                    monkeypatch):
+    """Without this the rebuilt pack reaches nobody who already has one: the
+    row offered Download or Remove and had no third state."""
+    monkeypatch.setattr(imagery_bridge, 'LATEST_BUILT', '2026-07-31')
+    assert imagery_bridge.update_available() is False      # nothing installed
+    _seed(str(pack), imagery=[_img('illustration', 'engraving', 'Ark',
+                                   'Genesis', 6, 14)],
+          meta={'built': '2026-05-31'})
+    assert imagery_bridge.update_available() is True
+    imagery_bridge._reset()
+    monkeypatch.setattr(imagery_bridge, 'LATEST_BUILT', '2026-05-31')
+    assert imagery_bridge.update_available() is False      # already current
+
+
 def test_safe_extract_rejects_traversal(tmp_path, monkeypatch):
     # An archive trying to escape the pack dir must be refused.
     evil = tmp_path / 'evil.tar.gz'

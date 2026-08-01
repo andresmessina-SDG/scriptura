@@ -588,13 +588,20 @@ class ModuleManagerWindow(Adw.Window):
                 _('{n} illustrations, maps, and place photos, verse by verse').format(n=n)
                 if n else
                 _('Illustrations, maps, and place photos, verse by verse'))
+            if imagery_bridge.update_available():
+                up = Gtk.Button(label=_('Update'))
+                up.add_css_class('suggested-action')
+                up.set_valign(Gtk.Align.CENTER)
+                up.set_tooltip_text(_('A newer pack is available'))
+                up.connect('clicked', self._on_imagery_update)
+                row.add_suffix(up)
             btn = self._trash_button(
                 lambda: self._confirm_remove_generic(
                     _('Bible Imagery'), self._do_imagery_remove))
         else:
             row.set_subtitle(
                 _('Illustrations, historical maps, and photographs of the '
-                  'places named in each verse · large download'))
+                  'places named in each verse · ~520 MB download'))
             btn = Gtk.Button(label=_('Download'))
             btn.add_css_class('suggested-action')
             btn.connect('clicked', self._on_imagery_download)
@@ -1352,6 +1359,13 @@ class ModuleManagerWindow(Adw.Window):
         self._pack_download(
             btn, _('Historical Commentaries'),
             lambda p: catena_bridge.download_and_install(on_progress=p))
+
+    def _on_imagery_update(self, btn):
+        # The same flow as the first download: the install extracts into a
+        # staging directory and swaps it in whole, so an update replaces the
+        # old pack rather than merging with it — plates dropped from the
+        # sources do not survive as orphans.
+        self._on_imagery_download(btn)
 
     def _on_imagery_download(self, btn):
         self._pack_download(

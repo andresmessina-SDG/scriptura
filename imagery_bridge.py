@@ -39,8 +39,16 @@ MODULE_KEY = 'Bible Imagery'
 
 # The downloadable pack (tar.gz so stdlib `tarfile` handles it — no zstd
 # dependency). Hosted on this repo's GitHub Releases.
+#
+# When a rebuilt pack is published, bump LATEST_BUILT to that pack's own
+# pack_meta 'built' date — read out of the artifact, never from the calendar
+# and never from the release page, whose timestamp is when the asset was last
+# uploaded. PACK_URL is a fixed tag, so re-uploading the asset updates every
+# installation in place with no code change; this date is then the only signal
+# that a newer pack exists (update_available).
 PACK_URL = ('https://github.com/andresmessina-SDG/scriptura/releases/'
             'download/imagery-pack-v1/imagery.tar.gz')
+LATEST_BUILT = '2026-05-31'
 
 # Illustration kinds shown in the "Art" tab; 'map' goes to "Where".
 _ART_KINDS = ('illustration', 'painting', 'icon', 'glass')
@@ -185,6 +193,14 @@ def pack_info() -> dict[str, str]:
         return dict(conn.execute('SELECT key, value FROM pack_meta').fetchall())
     except sqlite3.Error:
         return {}
+
+
+def update_available() -> bool:
+    """True when an installed pack predates the one the app now ships against
+    (compares pack_meta 'built', an ISO date that sorts lexicographically).
+    False when nothing is installed — the row offers a Download then."""
+    built = pack_info().get('built', '')
+    return bool(built) and built < LATEST_BUILT
 
 
 def _encode(chapter: int, verse: int) -> int:
