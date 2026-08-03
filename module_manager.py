@@ -601,7 +601,7 @@ class ModuleManagerWindow(Adw.Window):
         else:
             row.set_subtitle(
                 _('Illustrations, historical maps, and photographs of the '
-                  'places named in each verse · ~520 MB download'))
+                  'places named in each verse · ~525 MB download'))
             btn = Gtk.Button(label=_('Download'))
             btn.add_css_class('suggested-action')
             btn.connect('clicked', self._on_imagery_download)
