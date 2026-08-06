@@ -16,9 +16,25 @@ test_focus_unit.
 import gi
 
 gi.require_version('Gtk', '4.0')
-from gi.repository import Gtk  # noqa: E402
+gi.require_version('Gdk', '4.0')
+from gi.repository import Gdk, Gtk  # noqa: E402
 
+import pane as pane_mod  # noqa: E402
 from pane import BiblePane, theme_ink  # noqa: E402
+
+
+def _force_theme(monkeypatch, dark):
+    """Make the pane's own `Adw.StyleManager.get_default().get_dark()` answer
+    `dark`. Returns what it answered before, so a test can prove it moved."""
+    was = pane_mod.Adw.StyleManager.get_default().get_dark()
+
+    class Stub:
+        def get_dark(self):
+            return dark
+
+    monkeypatch.setattr(pane_mod.Adw.StyleManager, 'get_default',
+                        staticmethod(lambda: Stub()))
+    return was
 
 
 class Pane:
@@ -105,6 +121,91 @@ def test_the_inner_span_still_wins_after_adoption():
     assert colour_at(p._buffer, marker) == before
     assert p._buffer.get_tag_table().lookup('_ink_link').get_priority() > \
         p._buffer.get_tag_table().lookup('_ink_redletter').get_priority()
+
+
+class RecolourPane(Pane):
+    """Enough pane to flip the theme on an already-rendered chapter."""
+
+    _CURRENT_VERSE_TAG_NAME = BiblePane._CURRENT_VERSE_TAG_NAME
+    _recolour_for_theme = BiblePane._recolour_for_theme
+    _ensure_current_verse_tag = BiblePane._ensure_current_verse_tag
+    _set_current_verse_indicator = BiblePane._set_current_verse_indicator
+    _verse_ranges = BiblePane._verse_ranges
+
+    def __init__(self, selected=None):
+        super().__init__()
+        self._module, self._book, self._chapter = 'BSB', 'Genesis', 2
+        self._module_type = 'Biblical Texts'
+        self._selected_verse = selected
+        self._view = _View()
+
+
+class _View:
+    def __init__(self):
+        self.draws = 0
+
+    def queue_draw(self):
+        self.draws += 1
+
+
+def _rendered_chapter(dark, selected=None):
+    ink = theme_ink(dark)
+    p = RecolourPane(selected=selected)
+    p._buffer.insert_markup(
+        p._buffer.get_end_iter(),
+        f'<span foreground="{ink["_ink_heading"]}">Genesis 2</span>\n'
+        f'<span foreground="gray"> 1 </span>Thus the heavens'
+        f'<span foreground="{ink["_ink_link"]}">a</span> were completed.',
+        -1)
+    vnum = p._buffer.create_tag('vnum_1')
+    start = p._buffer.get_iter_at_offset(10)
+    p._buffer.apply_tag(vnum, start, p._buffer.get_end_iter())
+    p._adopt_theme_ink(dark)
+    return p
+
+
+def test_a_flip_leaves_no_span_holding_the_old_theme_colour(monkeypatch):
+    monkeypatch.setattr('pane.annotations.get_annotations',
+                        lambda *a, **k: {})
+    was_dark = _force_theme(monkeypatch, dark=True)
+    p = _rendered_chapter(dark=True)
+    _force_theme(monkeypatch, dark=False)
+
+    p._recolour_for_theme()
+
+    light = theme_ink(False)
+    table = p._buffer.get_tag_table()
+    for name, hexcol in light.items():
+        tag = table.lookup(name)
+        if tag is None:      # this chapter had no span of that colour
+            continue
+        want = Gdk.RGBA()
+        want.parse(hexcol)
+        assert tag.get_property('foreground-rgba').equal(want), name
+    assert was_dark is True
+
+
+def test_the_flip_rebuilds_the_current_verse_indicator(monkeypatch):
+    """Its colour is baked at creation, so the tag has to be dropped and
+    remade — and a reader who had a verse selected must still have it."""
+    monkeypatch.setattr('pane.annotations.get_annotations',
+                        lambda *a, **k: {})
+    _force_theme(monkeypatch, dark=True)
+    p = _rendered_chapter(dark=True, selected=1)
+    before = p._buffer.get_tag_table().lookup(p._CURRENT_VERSE_TAG_NAME)
+    assert before is None      # created on demand by the indicator
+    p._set_current_verse_indicator(1)
+    dark_tag = p._buffer.get_tag_table().lookup(p._CURRENT_VERSE_TAG_NAME)
+    dark_fg = dark_tag.get_property('foreground-rgba').to_string()
+
+    _force_theme(monkeypatch, dark=False)
+    p._recolour_for_theme()
+
+    now = p._buffer.get_tag_table().lookup(p._CURRENT_VERSE_TAG_NAME)
+    assert now is not None, 'the indicator vanished with the old theme'
+    assert now.get_property('foreground-rgba').to_string() != dark_fg
+    assert p._selected_verse == 1
+    assert colour_at(p._buffer, 10) is not None
 
 
 def test_every_range_of_a_repeated_colour_is_carried_over():

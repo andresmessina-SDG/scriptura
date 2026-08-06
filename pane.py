@@ -4557,23 +4557,58 @@ class BiblePane(Gtk.Box):
         # detached from its window — avoids touching a destroyed buffer.
         if self.get_root() is None:
             return
-        # The current-verse tag bakes its background color at creation
-        # time. Drop it so the next render re-creates it against the
-        # new theme.
-        table = self._buffer.get_tag_table()
-        cv = table.lookup(self._CURRENT_VERSE_TAG_NAME)
-        if cv is not None:
-            table.remove(cv)
         self._update_font_css()
         self._apply_reading_page_edge()
         if self._is_verse_navigable() and self._rendered_verses is not None:
-            # Same text, new colors — hold the reading locus through the
-            # rebuild (without this a theme flip jumped to the chapter top).
-            self._restore_anchor = self._capture_scroll_anchor()
-            self._display(self._rendered_verses,
-                          self._book, self._chapter, self._module)
+            # Same text, new colours: recolour it where it stands. Rebuilding
+            # the chapter to change four values threw the reading position
+            # away and then spent the whole anchor apparatus recovering it.
+            self._recolour_for_theme()
         else:
             self._fetch_and_render()
+
+    def _recolour_for_theme(self):
+        """Repaint the chapter's theme-dependent colours without a re-render.
+
+        Three kinds of colour live in the buffer, and only these three: the
+        `_ink_*` spans the render adopted, which can simply be set; the tags
+        whose NAME carries the colour (`hl_bg_<rgba>` and the current-verse
+        indicator), which cannot be mutated and are re-applied instead; and
+        the colours BibleTextView resolves at paint time, which need nothing
+        but a redraw.
+        """
+        dark = Adw.StyleManager.get_default().get_dark()
+        ink = theme_ink(dark)
+        table = self._buffer.get_tag_table()
+        for name, hexcol in ink.items():
+            tag = table.lookup(name)
+            if tag is not None:
+                tag.set_property('foreground', hexcol)
+        # Created lazily on first hover and outlives the render, so it is the
+        # one span the adoption pass never sees.
+        hover = table.lookup('_strg_hover')
+        if hover is not None:
+            hover.set_property('foreground', ink['_ink_link'])
+
+        # The highlight band's colour is read back out of its tag name by the
+        # view, and orange is muted in dark mode — so the band a reader put on
+        # a verse has to be re-applied under the other theme's name.
+        annos = annotations.get_annotations(
+            self._module, self._book, self._chapter) or {}
+        for verse, anno in annos.items():
+            try:
+                self._apply_anno_tags(int(verse), anno)
+            except (TypeError, ValueError):
+                continue
+
+        # The indicator bakes its background at creation. Drop the tag so the
+        # re-apply below builds it against the new theme.
+        cv = table.lookup(self._CURRENT_VERSE_TAG_NAME)
+        if cv is not None:
+            table.remove(cv)
+        if self._selected_verse is not None:
+            self._set_current_verse_indicator(self._selected_verse)
+        self._view.queue_draw()
 
     def _apply_reading_page_edge(self):
         """Hairline card border in light mode only — in dark the pale border
