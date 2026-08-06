@@ -544,6 +544,40 @@ def _dropcap_split(markup):
     return None
 
 
+# The cap's size and weight, and nothing else. Its colour is applied as a tag
+# over the same character (`BiblePane._apply_dropcap_tag`) rather than written
+# in here: a colour baked into markup cannot be found again, and both the
+# toggle and the custom-colour picker have to change it without a re-render.
+_DROPCAP_SPAN = '<span size="200%" weight="bold">'
+
+
+def _plain_len(markup):
+    """How many characters `markup` contributes to the buffer.
+
+    Tags contribute none, an entity exactly one, everything else itself. Used
+    to turn the cap span's position in the markup into its offset in the text
+    — the same markup-to-plain-offset move `_substitute_footnote_markers`
+    makes for marker letters.
+    """
+    n = i = 0
+    end = len(markup)
+    while i < end:
+        ch = markup[i]
+        if ch == '<':
+            j = markup.find('>', i)
+            if j < 0:
+                break
+            i = j + 1
+        elif ch == '&':
+            j = markup.find(';', i)
+            n += 1
+            i = i + 1 if (j < 0 or j - i > 12) else j + 1
+        else:
+            n += 1
+            i += 1
+    return n
+
+
 def dropcap_color_hex(dark):
     """Effective drop-cap colour (shared with the Appearance swatch)."""
     custom = settings.get('dropcap_color')
@@ -2375,17 +2409,14 @@ class BiblePane(Gtk.Box):
                 # incremental redraw on scroll left ghost fragments
                 # above the cap when the user scrolled the chapter back
                 # into view.
+                capped = False
                 if start_v == 1:
                     split = _dropcap_split(v_text_markup)
                     if split:
                         before, letter, after = split
-                        cap_attrs = 'size="200%" weight="bold"'
-                        if self._colored_dropcap:
-                            cap_attrs += (
-                                f' foreground="{dropcap_color_hex(dark)}"')
                         v_text_markup = (
-                            f'{before}<span {cap_attrs}>{letter}</span>{after}'
-                        )
+                            f'{before}{_DROPCAP_SPAN}{letter}</span>{after}')
+                        capped = True
                 # Tokens → superscript marker letters, after the drop-cap
                 # transform so the recorded plain-text offsets are final.
                 fn_markers = []
@@ -2393,6 +2424,11 @@ class BiblePane(Gtk.Box):
                     v_text_markup, fn_markers, fn_letter_idx = (
                         _substitute_footnote_markers(
                             v_text_markup, vnotes, dark, fn_letter_idx))
+                # Where the cap landed in the finished text. Measured on the
+                # final markup, after the footnote markers went in, so a
+                # marker ahead of it can't shift the offset out from under us.
+                cap_index = (_plain_len(v_text_markup[:v_text_markup.index(_DROPCAP_SPAN)])
+                             if capped else None)
                 # A verse ending on a closed poetry line already breaks —
                 # the inter-verse space would dangle at the next line start.
                 sep = '' if v_text_markup.endswith('\n') else ' '
@@ -2402,6 +2438,9 @@ class BiblePane(Gtk.Box):
                     self._buffer.insert(self._buffer.get_end_iter(), plain + ' ')
                     fn_markers = []  # fallback text has no marker letters
                     poetry_lines = {}
+                    cap_index = None  # the plain fallback carries no cap
+                if cap_index is not None:
+                    self._apply_dropcap_tag(text_start_mark, cap_index)
                 if fn_markers:
                     self._apply_footnote_tags(
                         start_v, fn_markers, vnotes, text_start_mark)
@@ -2508,6 +2547,7 @@ class BiblePane(Gtk.Box):
         # table.
         self._adopt_theme_ink(dark)
         self._adopt_numerals(self._oldstyle_nums)
+        self._raise_dropcap()
         self._search.apply_highlight()
         # Every verse's body-text spans (created by insert_markup during the
         # render loop) carry an ever-increasing tag priority, which can
@@ -2646,6 +2686,56 @@ class BiblePane(Gtk.Box):
             return False
         tag.set_property('font-features', _numeral_features(self._oldstyle_nums))
         return True
+
+    #: The cap's ink. Same name the `theme_ink` table keys it under, so the
+    #: theme flip already knows how to find it — but unlike the other three
+    #: this tag is applied by the render rather than adopted from the markup,
+    #: because the cap has to keep its size and weight while losing its colour.
+    _DROPCAP_TAG = '_ink_dropcap'
+
+    def _apply_dropcap_tag(self, text_start_mark, index):
+        """Tag the drop-cap character, `index` characters into the verse text."""
+        buf = self._buffer
+        base = buf.get_iter_at_mark(text_start_mark).get_offset()
+        table = buf.get_tag_table()
+        tag = table.lookup(self._DROPCAP_TAG)
+        if tag is None:
+            tag = buf.create_tag(self._DROPCAP_TAG)
+        self._sync_dropcap_ink(tag)
+        buf.apply_tag(tag, buf.get_iter_at_offset(base + index),
+                      buf.get_iter_at_offset(base + index + 1))
+
+    def _sync_dropcap_ink(self, tag=None):
+        """Put the current drop-cap colour on the tag, or take it off.
+
+        `foreground-set` is what carries the toggle: clearing it leaves the
+        cap enlarged and bold, wearing the reading colour like any other
+        letter, which is exactly the uncoloured state. False when there is no
+        cap tag to change, so the caller can fall back to a render.
+        """
+        if tag is None:
+            tag = self._buffer.get_tag_table().lookup(self._DROPCAP_TAG)
+        if tag is None:
+            return False
+        if self._colored_dropcap:
+            dark = Adw.StyleManager.get_default().get_dark()
+            tag.set_property('foreground', dropcap_color_hex(dark))
+        else:
+            tag.set_property('foreground-set', False)
+        return True
+
+    def _raise_dropcap(self):
+        """Put the cap back on top of the body spans.
+
+        The adoptions above re-prioritise `_ink_redletter`, and in a
+        red-letter Bible the cap sits inside the Lord's words — so without
+        this the gold would lose to the red on exactly the chapters where
+        the illuminated initial matters most.
+        """
+        table = self._buffer.get_tag_table()
+        tag = table.lookup(self._DROPCAP_TAG)
+        if tag is not None:
+            tag.set_priority(table.get_size() - 1)
 
     def _tag_ranges(self, tag):
         """(start, end) character offsets of every range `tag` covers."""
@@ -3047,7 +3137,11 @@ class BiblePane(Gtk.Box):
         if self._colored_dropcap == bool(enabled):
             return
         self._colored_dropcap = bool(enabled)
-        self._rerender_keeping_place()
+        # Same text, same cap, one foreground on or off. Anything without a
+        # cap tag (a devotional, a genbook, a chapter whose verse 1 had no
+        # letter to enlarge) falls through to the render.
+        if not self._sync_dropcap_ink():
+            self._rerender_keeping_place()
 
     def set_poetry_flush(self, flush):
         if self._poetry_flush == bool(flush):
@@ -3058,9 +3152,9 @@ class BiblePane(Gtk.Box):
         self._sync_poetry_tags()
 
     def refresh_dropcap_color(self):
-        """The stored drop-cap colour changed; the cap is baked into the
-        rendered markup, so re-render if it's currently shown."""
-        if self._colored_dropcap:
+        """The stored drop-cap colour changed. Nothing to do while the cap is
+        uncoloured — the toggle reads the colour fresh when it turns on."""
+        if self._colored_dropcap and not self._sync_dropcap_ink():
             self._rerender_keeping_place()
 
     def _numeral_ff(self):
@@ -4650,6 +4744,10 @@ class BiblePane(Gtk.Box):
             tag = table.lookup(name)
             if tag is not None:
                 tag.set_property('foreground', hexcol)
+        # The cap is the one entry in that table whose colour is conditional:
+        # the loop above just set a foreground on it, which would light up a
+        # cap the reader has turned off. This has the last word.
+        self._sync_dropcap_ink()
         # Created lazily on first hover and outlives the render, so it is the
         # one span the adoption pass never sees.
         hover = table.lookup('_strg_hover')

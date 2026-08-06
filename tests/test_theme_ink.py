@@ -127,9 +127,11 @@ class RecolourPane(Pane):
     """Enough pane to flip the theme on an already-rendered chapter."""
 
     _CURRENT_VERSE_TAG_NAME = BiblePane._CURRENT_VERSE_TAG_NAME
+    _DROPCAP_TAG = BiblePane._DROPCAP_TAG
     _recolour_for_theme = BiblePane._recolour_for_theme
     _ensure_current_verse_tag = BiblePane._ensure_current_verse_tag
     _set_current_verse_indicator = BiblePane._set_current_verse_indicator
+    _sync_dropcap_ink = BiblePane._sync_dropcap_ink
     _verse_ranges = BiblePane._verse_ranges
 
     def __init__(self, selected=None):
@@ -137,6 +139,7 @@ class RecolourPane(Pane):
         self._module, self._book, self._chapter = 'BSB', 'Genesis', 2
         self._module_type = 'Biblical Texts'
         self._selected_verse = selected
+        self._colored_dropcap = False
         self._view = _View()
 
 
@@ -206,6 +209,26 @@ def test_the_flip_rebuilds_the_current_verse_indicator(monkeypatch):
     assert now.get_property('foreground-rgba').to_string() != dark_fg
     assert p._selected_verse == 1
     assert colour_at(p._buffer, 10) is not None
+
+
+def test_a_flip_does_not_light_a_cap_the_reader_turned_off(monkeypatch):
+    """`_ink_dropcap` is in the theme table like the other three, but its
+    colour is conditional — and setting a foreground also sets
+    `foreground-set`. Without the sync afterwards, flipping the theme would
+    gild a cap nobody asked for."""
+    monkeypatch.setattr('pane.annotations.get_annotations', lambda *a, **k: {})
+    _force_theme(monkeypatch, dark=True)
+    p = _rendered_chapter(dark=True)
+    cap = p._buffer.create_tag(p._DROPCAP_TAG)
+    p._buffer.apply_tag(cap, p._buffer.get_iter_at_offset(13),
+                        p._buffer.get_iter_at_offset(14))
+    assert p._colored_dropcap is False
+
+    _force_theme(monkeypatch, dark=False)
+    p._recolour_for_theme()
+
+    assert cap.get_property('foreground-set') is False
+    assert colour_at(p._buffer, 13) is None
 
 
 def test_every_range_of_a_repeated_colour_is_carried_over():
