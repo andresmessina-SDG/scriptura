@@ -205,7 +205,7 @@ def _substitute_footnote_markers(markup, vnotes, dark, start_idx=0):
     Ordinary letters raised with `rise`, not Unicode superscript glyphs:
     the superscript block has no q (the old glyph set wrapped at 25 with
     q missing), while rise+size renders the full a…z, aa… sequence."""
-    color = '#7fa3c1' if dark else '#5a7fa3'
+    color = theme_ink(dark)['_ink_link']
     out = []
     markers = []
     pos = 0
@@ -292,7 +292,7 @@ def _html_to_markup(html, dark, strip=True, divine_smallcaps=False,
         html = ''.join(c for c in html if not ('\ud800' <= c <= '\udfff'))
 
     # 1. Map SWORD/HTML tags to temporary markers to protect them from escaping
-    red = '#e07070' if dark else '#bb0000'
+    red = theme_ink(dark)['_ink_redletter']
 
     # Red letters (Jesus' words)
     html = re.sub(r'<q [^>]*who="Jesus"[^>]*>(.*?)</q>', r'[[RED_S]]\1[[RED_E]]', html)
@@ -550,6 +550,26 @@ def dropcap_color_hex(dark):
     if custom:
         return str(custom)
     return DROPCAP_GOLD_DARK if dark else DROPCAP_GOLD_LIGHT
+
+
+def theme_ink(dark):
+    """Every foreground a rendered chapter bakes that depends on the theme.
+
+    One table, keyed by the tag name the render adopts each colour into
+    (`BiblePane._adopt_theme_ink`). A colour that is written straight into the
+    markup and nowhere else cannot be found again after the fact, and the
+    recolouring path would go quietly stale the day someone changed one of
+    them — so the markup and the recolouring read the same entry.
+
+    `_ink_link` is the blue shared by footnote markers, commentary
+    cross-references and the lexicon hover; they are one colour by intent.
+    """
+    return {
+        '_ink_heading':   '#8d8278' if dark else '#7a7066',
+        '_ink_link':      '#7fa3c1' if dark else '#5a7fa3',
+        '_ink_redletter': '#e07070' if dark else '#bb0000',
+        '_ink_dropcap':   dropcap_color_hex(dark),
+    }
 
 
 # OSIS poetry-line milestones (<l sID/> … <l eID/>, ASV/BSB/LEB carry
@@ -2206,7 +2226,7 @@ class BiblePane(Gtk.Box):
         # space so a heading there would just mislabel whatever happened
         # to be loaded last.
         if self._module_type == 'Biblical Texts':
-            heading_color = '#8d8278' if dark else '#7a7066'
+            heading_color = theme_ink(dark)['_ink_heading']
             # Single trailing newline (not two): line_spacing 1.6 already gives
             # ample separation, and a blank line here left an oversized top gap.
             heading = (f'<span size="x-large" weight="bold" '
@@ -2473,6 +2493,9 @@ class BiblePane(Gtk.Box):
             self._set_current_verse_indicator(self._selected_verse)
 
         self._update_chapter_note_indicator()
+        # Give the theme-dependent spans one owner apiece before the overlay
+        # bumps below, which must stay at the top of the table.
+        self._adopt_theme_ink(dark)
         self._search.apply_highlight()
         # Every verse's body-text spans (created by insert_markup during the
         # render loop) carry an ever-increasing tag priority, which can
@@ -2496,6 +2519,84 @@ class BiblePane(Gtk.Box):
         if self._mark_current_unit or self._focus_unit:
             GLib.idle_add(self._update_current_unit)
         return GLib.SOURCE_REMOVE
+
+    #: Ascending precedence, and it mirrors how the markup nests: a footnote
+    #: marker sits inside red-letter text, and the drop cap inside both. Later
+    #: application wins, so the innermost span is adopted last.
+    _INK_ORDER = ('_ink_heading', '_ink_redletter', '_ink_dropcap', '_ink_link')
+
+    def _adopt_theme_ink(self, dark):
+        """Move the chapter's theme-coloured spans onto tags of our own.
+
+        `insert_markup` names every span it creates after its own attributes
+        (`foreground_rgba=rgb(141,130,120)`), so recolouring one in place would
+        leave a lying name behind and the next render would mint a second tag
+        for the new colour. Each theme-dependent colour is instead re-applied
+        as a stable `_ink_*` tag over the same ranges and the parser's tag is
+        dropped — which also stops the tag table growing a dead colour tag
+        every time the theme flips.
+
+        Matching is by colour, not by name: the same blue arrives from three
+        render paths (footnote markers, commentary cross-references, the
+        lexicon hover) and all three want one owner.
+        """
+        buf = self._buffer
+        table = buf.get_tag_table()
+        wanted = []
+        for name, hexcol in theme_ink(dark).items():
+            rgba = Gdk.RGBA()
+            if rgba.parse(hexcol):
+                wanted.append((name, rgba))
+
+        found = {}
+
+        def _collect(tag, _user_data=None):
+            name = tag.get_property('name') or ''
+            if name.startswith('_ink_') or not tag.get_property('foreground-set'):
+                return
+            colour = tag.get_property('foreground-rgba')
+            for ink_name, rgba in wanted:
+                if colour.equal(rgba):
+                    found.setdefault(ink_name, []).append(tag)
+                    return
+
+        table.foreach(_collect, None)
+
+        for ink_name in self._INK_ORDER:
+            tags = found.get(ink_name)
+            if not tags:
+                continue
+            ours = table.lookup(ink_name)
+            if ours is None:
+                ours = buf.create_tag(ink_name)
+            ours.set_property('foreground-rgba',
+                              tags[0].get_property('foreground-rgba'))
+            for tag in tags:
+                # Offsets, not iters: the table is mutated below and a
+                # collected range has to survive that.
+                for lo, hi in self._tag_ranges(tag):
+                    buf.apply_tag(ours, buf.get_iter_at_offset(lo),
+                                  buf.get_iter_at_offset(hi))
+                table.remove(tag)
+            # Above the body spans, for the same priority decay
+            # _bump_overlay_priorities exists for.
+            ours.set_priority(table.get_size() - 1)
+
+    def _tag_ranges(self, tag):
+        """(start, end) character offsets of every range `tag` covers."""
+        buf = self._buffer
+        out = []
+        it = buf.get_start_iter()
+        if not it.starts_tag(tag) and not it.forward_to_tag_toggle(tag):
+            return out
+        while True:
+            start = it.get_offset()
+            if not it.forward_to_tag_toggle(tag):
+                out.append((start, buf.get_end_iter().get_offset()))
+                return out
+            out.append((start, it.get_offset()))
+            if not it.forward_to_tag_toggle(tag):
+                return out
 
     def _bump_overlay_priorities(self):
         """Pin the foreground-bearing overlay tags above the chapter's body-text
@@ -2590,7 +2691,7 @@ class BiblePane(Gtk.Box):
         """Insert one cross-reference: styled text + devref: tag over
         the same range, so _on_left_click's existing devref handler
         routes the click to _on_word_study_navigate → _go_to."""
-        color = '#7fa3c1' if dark else '#5a7fa3'
+        color = theme_ink(dark)['_ink_link']
         start_mark = self._buffer.create_mark(
             None, self._buffer.get_end_iter(), True)
         markup = (f'<span foreground="{color}" underline="single">'
@@ -3466,7 +3567,7 @@ class BiblePane(Gtk.Box):
             # reads distinctly from the solid annotation underline.
             hover_tag = self._buffer.create_tag(
                 '_strg_hover',
-                foreground='#7fa3c1' if dark else '#5a7fa3',
+                foreground=theme_ink(dark)['_ink_link'],
             )
         table = self._buffer.get_tag_table()
         hover_tag.set_priority(table.get_size() - 1)
