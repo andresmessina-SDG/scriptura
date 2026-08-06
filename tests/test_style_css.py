@@ -191,3 +191,27 @@ def test_every_high_contrast_rule_still_names_something_in_the_base_sheet():
             f'{selector} is corrected for high contrast but no longer appears '
             f'in style.css — either it was renamed there, or this rule is '
             f'now correcting nothing')
+
+def test_the_footnote_toggle_nudge_keeps_the_button_its_width():
+    """`button.scriptura-fnote-toggle` trades left padding against right to
+    pull the f* pair's ink onto the button's centre — Pango centres a label
+    on glyph advances, and the italic f's side bearing leaves the ink 2.5px
+    left. The trade only works if the two still sum to the base toggle's
+    horizontal padding; changing one alone re-widens the button and breaks
+    the cluster's rhythm, which no behavioural test can see."""
+    base = nudged = None
+    for selector, body in _rules():
+        if selector == 'button.scriptura-lex-toggle':
+            padding = _declaration(body, 'padding')
+            base = 2 * float(_LENGTH.findall(padding)[-1])
+        elif selector == 'button.scriptura-fnote-toggle':
+            nudged = (float(_LENGTH.findall(
+                          _declaration(body, 'padding-left'))[0])
+                      + float(_LENGTH.findall(
+                          _declaration(body, 'padding-right'))[0]))
+    assert base is not None and nudged is not None, (
+        'the reading-tools toggles no longer carry the padding rules the '
+        'f* optical nudge is measured against')
+    assert nudged == base, (
+        f'the f* nudge now sums to {nudged}px against the base toggle\'s '
+        f'{base}px — the button has changed width, not just shifted its ink')
