@@ -40,6 +40,8 @@ def _load() -> list[Bookmark]:
     try:
         with open(_FILE, encoding='utf-8') as f:
             data = json.load(f)
+        if not isinstance(data, list):
+            raise ValueError('bookmarks.json is not an array')
         # Defensive: drop any malformed entries (hand-edited file, version skew).
         # cast() reflects the JSON boundary — the predicate filters to dicts
         # with the required keys, but mypy can't infer Bookmark-shape from
@@ -47,10 +49,16 @@ def _load() -> list[Bookmark]:
         return cast(list[Bookmark],
                     [e for e in data
                      if isinstance(e, dict) and 'book' in e and 'chapter' in e])
-    except Exception:
+    except OSError:
         if not _load_failed:
             _log.exception('load failed, using defaults')
             _load_failed = True
+        return []
+    except ValueError:
+        if not _load_failed:
+            _log.exception('load failed, using defaults')
+            _load_failed = True
+            paths.quarantine_unreadable(_FILE)
         return []
 
 

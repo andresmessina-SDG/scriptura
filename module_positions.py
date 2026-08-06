@@ -54,9 +54,13 @@ def _load() -> None:
             _state = data
     except FileNotFoundError:
         _state = {}
-    except (OSError, ValueError):
+    except OSError:
         _load_failed = True
         _state = {}
+    except ValueError:
+        _load_failed = True
+        _state = {}
+        paths.quarantine_unreadable(_FILE)
 
 
 _load()

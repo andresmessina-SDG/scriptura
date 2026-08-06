@@ -54,15 +54,18 @@ def _load() -> Annotations:
         with open(ANNOTATIONS_FILE, 'r', encoding='utf-8') as f:
             data = json.load(f)
         # Corrupted file producing a non-dict — start over rather than crash.
-        if isinstance(data, dict):
-            _cache = data
-        else:
-            _cache = {}
-            _load_failed = True
-    except Exception:
+        if not isinstance(data, dict):
+            raise ValueError('annotations.json is not an object')
+        _cache = data
+    except OSError:
         _log.exception('load failed, using defaults')
         _cache = {}
         _load_failed = True
+    except ValueError:
+        _log.exception('load failed, using defaults')
+        _cache = {}
+        _load_failed = True
+        paths.quarantine_unreadable(ANNOTATIONS_FILE)
     return _cache
 
 
