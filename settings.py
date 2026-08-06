@@ -17,6 +17,12 @@ _defaults: dict[str, Any] = {
     'line_spacing':       1.5,
     'font_bold':          False,
     'font_justify':       False,
+    # Tracking, as a fraction of the type size, so it survives a size
+    # change — 0.06 stays 0.06 whether the reader is at 10pt or 20pt.
+    # Widening letter spacing is the best-replicating readability lever in
+    # the dyslexia literature, better than any special face. 0 = the
+    # font's own metrics, which is what most readers should stay on.
+    'letter_spacing':     0.0,
     # ~66 characters per line at the default face/size (measured: 720px
     # ran ~90 CPL, well past the 45–75 readability band).
     'reading_width':      540,

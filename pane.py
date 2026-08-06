@@ -1134,6 +1134,7 @@ class BiblePane(Gtk.Box):
         # so they can be resized live when the reading font changes.
         self._artifact_markers = []
         self._line_spacing = settings.get('line_spacing')
+        self._letter_spacing = settings.get('letter_spacing') or 0.0
         self._font_bold    = settings.get('font_bold')
         self._font_justify = settings.get('font_justify')
         self._text_color   = settings.get(f'text_color_{settings.get("color_scheme") or "default"}')
@@ -1615,10 +1616,18 @@ class BiblePane(Gtk.Box):
         # The whole buffer reflows when this loads — adjustment churn from
         # it must not flip the auto-hiding toolbar.
         self._mark_programmatic_scroll()
+        # Tracking in em, not px, so it holds its proportion when the reader
+        # changes size — 0.06em is 0.06em at 10pt and at 20pt, where a px
+        # value would be tight type at one end and loose at the other.
+        # Omitted entirely at 0, so a reader who has not asked for tracking
+        # gets the face exactly as its designer set it.
+        tracking = (f"letter-spacing: {self._letter_spacing:.2f}em; "
+                    if self._letter_spacing else '')
         css = (f"textview {{ font-family: {family_decl}; "
                f"font-size: {self._font_size}pt; "
                f"font-weight: {weight}; "
                f"line-height: {self._line_spacing}; "
+               f"{tracking}"
                f"color: {ink}; }}")
         # Higher specificity than the static .bible-view rule, so when emitted
         # the chosen/derived surface wins.
@@ -1661,6 +1670,7 @@ class BiblePane(Gtk.Box):
         if 'font_size'    in kwargs: self._font_size    = kwargs['font_size']
         if 'font_family'  in kwargs: self._font_family  = kwargs['font_family']
         if 'line_spacing' in kwargs: self._line_spacing = kwargs['line_spacing']
+        if 'letter_spacing' in kwargs: self._letter_spacing = kwargs['letter_spacing']
         if 'font_bold'    in kwargs: self._font_bold    = kwargs['font_bold']
         if 'font_justify' in kwargs: self._font_justify = kwargs['font_justify']
         if 'text_color'   in kwargs: self._text_color   = kwargs['text_color']

@@ -8,6 +8,18 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Added
 
+- **Letter spacing.** Appearance → Advanced now opens the space between
+  letters, from the face's own metrics up to a fifth of the type size.
+  Widening it is the best-supported thing typography can do for a reader
+  who finds text hard going — better than any special typeface — and it
+  is set as a proportion of the size, so it holds when you change how
+  big the text is.
+- **OpenDyslexic is bundled.** The typeface now sits at the top of
+  Appearance → Font, so a reader who wants it does not have to go and
+  install one. It is offered honestly: testing has found no gain in
+  reading speed, and the app says so where you choose it — but readers
+  who find it easier find it easier all the same. It reads noticeably
+  wider than the serif, so expect a longer chapter.
 - **Readings on the desktop's media controls.** Whatever the app is
   reading aloud — a chapter, a psalm, either devotional — now appears on
   the media keys, the lock screen and the Shell's media control, named by

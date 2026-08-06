@@ -31,6 +31,11 @@ from search_panel import SearchPanel
 from study_journal import StudyJournalWindow
 
 _log = logging.getLogger('scriptura.window')
+
+#: The bundled dyslexia-preference face. Its family name is also its Reserved
+#: Font Name under the OFL, so this string is the font, the settings value and
+#: the label all at once — it must never be translated.
+OPEN_DYSLEXIC = 'OpenDyslexic'
 from crossref_panel import CrossRefPanel
 from a11y import announce, set_accessible_label
 
@@ -1230,8 +1235,23 @@ class BibleWindow(Adw.ApplicationWindow):
         idx = drop.get_selected()
         family = self._font_css_names[idx] if idx < len(self._font_css_names) else 'serif'
         settings.put('font_family', family)
+        self._dyslexic_note.set_visible(family == OPEN_DYSLEXIC)
         self.pane1.set_appearance(font_family=family)
         self.pane2.set_appearance(font_family=family)
+
+    @staticmethod
+    def _tracking_label(value):
+        """0 is the face's own metrics rather than a quantity of nothing, so
+        it says so — the other rows in this panel read 12pt, 1.5×, 540px, and
+        '0%' there would look like a setting the reader had turned down."""
+        return _('Normal') if not value else f'{value * 100:.0f}%'
+
+    def _on_appear_letter_spacing(self, scale):
+        val = round(scale.get_value(), 2)
+        settings.put('letter_spacing', val)
+        self._letter_val_lbl.set_text(self._tracking_label(val))
+        self.pane1.set_appearance(letter_spacing=val)
+        self.pane2.set_appearance(letter_spacing=val)
 
     # Curated reading "papers" per resolved appearance: (label, swatch, store).
     # Default stores None (warm paper in light, @view_bg_color in dark). Light
@@ -3154,13 +3174,19 @@ class BibleWindow(Adw.ApplicationWindow):
             r.append(lbl)
             return r
 
-        # Font family — all installed system fonts
+        # Font family — all installed system fonts, with OpenDyslexic promoted.
+        # It is bundled precisely so a reader who wants it does not have to go
+        # and find one, and leaving it in the alphabetical run of every
+        # installed face would waste that: nobody scrolls three hundred names
+        # hoping. Filtered out of the run below so it appears exactly once.
         font_row = _row(_('Font'))
-        _prefix_labels = [_('System Serif'), _('System Sans-Serif')]
-        _prefix_css    = ['serif', 'sans-serif']
+        _prefix_labels = [_('System Serif'), _('System Sans-Serif'),
+                          OPEN_DYSLEXIC]
+        _prefix_css    = ['serif', 'sans-serif', OPEN_DYSLEXIC]
         _installed = sorted(
             f.get_name()
             for f in PangoCairo.FontMap.get_default().list_families()
+            if f.get_name() != OPEN_DYSLEXIC
         )
         self._font_css_names = _prefix_css + _installed
         cur_family = settings.get('font_family') or 'serif'
@@ -3196,6 +3222,22 @@ class BibleWindow(Adw.ApplicationWindow):
         style_box.append(self._justify_btn)
         font_row.append(style_box)
         card.append(font_row)
+
+        # The honest framing rides with the choice rather than sitting in the
+        # UI as a permanent claim: shown only while OpenDyslexic is the
+        # selection. The evidence does not support calling it a remedy (a 2017
+        # Annals of Dyslexia study found no reading-rate gain over Arial or
+        # Times), and readers who prefer it prefer it anyway — both halves have
+        # to be said, or shipping the font makes a promise for it.
+        self._dyslexic_note = Gtk.Label(
+            label=_('A preference, not a remedy: testing has found no gain in '
+                    'reading speed. Readers who find it easier find it easier '
+                    'all the same.'),
+            xalign=0, wrap=True)
+        self._dyslexic_note.add_css_class('dim-label')
+        self._dyslexic_note.add_css_class('caption')
+        self._dyslexic_note.set_visible(cur_family == OPEN_DYSLEXIC)
+        card.append(self._dyslexic_note)
 
         # Font size
         size_row = _row(_('Size'))
@@ -3277,6 +3319,29 @@ class BibleWindow(Adw.ApplicationWindow):
         adv.add_css_class('appearance-advanced')
         adv_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         adv_box.set_margin_top(6)
+
+        # Letter spacing leads Advanced, ahead of the taste toggles. Widening
+        # tracking is the best-replicating readability lever there is — better
+        # than any dyslexia face — and a reader who is struggling should not
+        # have to pass nine typographic preferences to reach it. The scale
+        # runs to 20% so WCAG 1.4.12's 12% is comfortably inside it.
+        letter_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        letter_row.append(Gtk.Label(label=_('Letter spacing'), xalign=0))
+        self._letter_scale = Gtk.Scale.new_with_range(
+            Gtk.Orientation.HORIZONTAL, 0.0, 0.20, 0.01)
+        self._letter_scale.set_hexpand(True)
+        self._letter_scale.set_draw_value(False)
+        set_accessible_label(self._letter_scale, _('Letter spacing'))
+        _cur_tracking = float(settings.get('letter_spacing') or 0.0)
+        self._letter_scale.set_value(_cur_tracking)
+        self._letter_val_lbl = Gtk.Label(
+            label=self._tracking_label(_cur_tracking))
+        self._letter_val_lbl.set_size_request(52, -1)
+        self._letter_scale.connect('value-changed',
+                                   self._on_appear_letter_spacing)
+        letter_row.append(self._letter_scale)
+        letter_row.append(self._letter_val_lbl)
+        adv_box.append(letter_row)
 
         def _adv_apply(key, active, setter_name):
             settings.put(key, active)

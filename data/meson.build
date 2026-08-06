@@ -61,6 +61,12 @@ install_subdir('archaeology', install_dir: pkgdatadir / 'data')
 # editorial serif (Stone, glossary, footnotes); EB Garamond is the Voices
 # column's reading serif with Roboto for its labels; Noto Serif and Noto Serif
 # Hebrew back the interlinear's polytonic Greek and pointed Hebrew.
+#
+# OpenDyslexic is the one a READER chooses rather than the app: it is offered
+# in Appearance ▸ Font. Four static faces, because it ships no variable build —
+# and all four are needed, since the reading text sets bold and italic. Its
+# licence travels with it (OFL clause 1: the licence must accompany the font,
+# and the family name is a Reserved Font Name).
 install_data(
   'fonts/Newsreader[opsz,wght].ttf',
   'fonts/Newsreader-Italic[opsz,wght].ttf',
@@ -69,6 +75,11 @@ install_data(
   'fonts/Roboto[wdth,wght].ttf',
   'fonts/NotoSerif[wdth,wght].ttf',
   'fonts/NotoSerifHebrew[wdth,wght].ttf',
+  'fonts/OpenDyslexic-Regular.otf',
+  'fonts/OpenDyslexic-Bold.otf',
+  'fonts/OpenDyslexic-Italic.otf',
+  'fonts/OpenDyslexic-Bold-Italic.otf',
+  'fonts/OpenDyslexic-OFL.txt',
   install_dir: datadir / 'fonts' / 'scriptura',
 )
 
