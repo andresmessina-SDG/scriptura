@@ -628,6 +628,116 @@ def theme_ink(dark):
     }
 
 
+# ── Per-verse decorations ────────────────────────────────────────────────────
+
+class _VerseRender:
+    """What one verse of the render loop produced, for the marks that follow it.
+
+    The loop fills this in as it writes the verse; `_decorate_verse` then walks
+    `_VERSE_DECORATIONS` over it. Everything a per-verse mark has ever needed
+    is here, so a new mark is an entry in that tuple rather than another branch
+    inside the loop — which is what the loop had become.
+
+    `start_mark` spans the whole block (heading excluded, deliberately);
+    `text_mark` starts at the verse text, after the number. Both are left
+    gravity, so text inserted by an earlier decoration does not drag them.
+    """
+
+    __slots__ = ('start_v', 'end_v', 'html', 'is_commentary', 'anno',
+                 'start_mark', 'text_mark', 'has_artifact',
+                 'cap_index', 'fn_markers', 'vnotes', 'poetry_lines')
+
+    def __init__(self, start_v, end_v, html, is_commentary):
+        self.start_v = start_v
+        self.end_v = end_v
+        self.html = html
+        self.is_commentary = is_commentary
+        self.anno = {}
+        self.start_mark = None
+        self.text_mark = None
+        self.has_artifact = False
+        # Filled in by the Bible branch only; a commentary produces none of
+        # them, and the plain-text fallback resets them to exactly this.
+        self.cap_index = None
+        self.fn_markers = []
+        self.vnotes = {}
+        self.poetry_lines = {}
+
+
+class _VerseDecoration:
+    """One mark applied to a verse as it is rendered.
+
+    Mirrors `reading_view._Decoration`, which does the same job for the marks
+    the view PAINTS; this one is for the marks the render APPLIES. Both answer
+    the same question — what is on this verse and what switches it on — and
+    keeping one shape for both means a reader who has seen one has seen both.
+    """
+
+    __slots__ = ('name', 'apply', 'enabled')
+
+    def __init__(self, name, apply, enabled=None):
+        self.name = name
+        self.apply = apply
+        self.enabled = enabled
+
+    def on(self, pane, r):
+        return self.enabled is None or bool(self.enabled(pane, r))
+
+
+#: Commentaries carry none of the verse-level marks but `vnum`: they render one
+#: block per section, their own `Verse N` header stands in for the number, and
+#: they take no user annotations — hence the `not r.is_commentary` on all but
+#: one entry below.
+#:
+#: In application order, and the order is load-bearing twice over. The artifact
+#: marker INSERTS a character, so it has to land before `vnum` measures the
+#: block's end. And `strong_words` reads the text between `text_mark` and the
+#: end, so it has to come after everything that adds to it.
+_VERSE_DECORATIONS = (
+    _VerseDecoration(
+        'dropcap',
+        lambda p, r: p._apply_dropcap_tag(r.text_mark, r.cap_index),
+        lambda p, r: not r.is_commentary and r.cap_index is not None),
+    _VerseDecoration(
+        'footnotes',
+        lambda p, r: p._apply_footnote_tags(
+            r.start_v, r.fn_markers, r.vnotes, r.text_mark),
+        lambda p, r: not r.is_commentary and bool(r.fn_markers)),
+    _VerseDecoration(
+        'poetry_lines',
+        lambda p, r: p._apply_poetry_line_tags(r.text_mark, r.poetry_lines),
+        lambda p, r: not r.is_commentary and bool(r.poetry_lines)),
+    # Subtle 'related artifact' marker — a small clickable amphora icon beside
+    # any verse a gallery artifact references. Rare (~34 verses Bible-wide), so
+    # it reads as a quiet cue. An embedded icon (not a font glyph) so it always
+    # renders — U+26B1 falls back to tofu in many reading fonts.
+    _VerseDecoration(
+        'artifact_marker',
+        lambda p, r: p._insert_artifact_marker(r.start_v),
+        lambda p, r: not r.is_commentary and r.has_artifact),
+    # The verse anchor navigation resolves against. For a grouped commentary
+    # section every verse in [start_v, end_v] points at the same block, so
+    # navigating to any of them lands on this section. No enable condition:
+    # this one is the reason a block is addressable at all.
+    _VerseDecoration('vnum', lambda p, r: p._apply_vnum_tags(r)),
+    # Highlight / underline / note indicator, applied in place so they can be
+    # changed later without rebuilding the chapter (`_refresh_verse_annotation`).
+    # Skipped for un-annotated verses: on a fresh buffer there is nothing to
+    # clear, and the per-verse call was the chapter render's main scaling cost.
+    _VerseDecoration(
+        'annotations',
+        lambda p, r: p._apply_anno_tags(r.start_v, r.anno, fresh=True),
+        lambda p, r: not r.is_commentary and bool(r.anno)),
+    _VerseDecoration(
+        'strong_words',
+        lambda p, r: p._tag_strong_words(
+            p._buffer.get_iter_at_mark(r.text_mark),
+            p._buffer.get_end_iter(), r.html),
+        lambda p, r: (not r.is_commentary and p._lexicon_enabled
+                      and p._on_word_click)),
+)
+
+
 # OSIS poetry-line milestones (<l sID/> … <l eID/>, ASV/BSB/LEB carry
 # level="1..3", ESV marks the indented b-line type="x-indent") become
 # [[PL*]] tokens before the generic tag strip — the same protection
@@ -2338,6 +2448,10 @@ class BiblePane(Gtk.Box):
                     self._insert_section_heading(head, wrote_a_block)
 
             start_mark = self._buffer.create_mark(None, self._buffer.get_end_iter(), True)
+            r = _VerseRender(start_v, end_v, html, is_commentary)
+            r.start_mark = start_mark
+            r.anno = annos.get(str(start_v), {})
+            r.has_artifact = start_v in art_verses
 
             # 1. Verse number — inline for Bibles, bold section header for commentaries
             if is_commentary:
@@ -2366,9 +2480,9 @@ class BiblePane(Gtk.Box):
                 self._buffer.insert_markup(self._buffer.get_end_iter(), v_num_markup, -1)
 
             text_start_mark = self._buffer.create_mark(None, self._buffer.get_end_iter(), True)
+            r.text_mark = text_start_mark
 
             # 2. Verse text
-            v_anno = annos.get(str(start_v), {})
             if is_commentary:
                 # Commentaries use a segmented insertion so cross-refs
                 # like <reference osisRef="Bible:Phil.3.4">…</reference>
@@ -2451,48 +2565,13 @@ class BiblePane(Gtk.Box):
                     fn_markers = []  # fallback text has no marker letters
                     poetry_lines = {}
                     cap_index = None  # the plain fallback carries no cap
-                if cap_index is not None:
-                    self._apply_dropcap_tag(text_start_mark, cap_index)
-                if fn_markers:
-                    self._apply_footnote_tags(
-                        start_v, fn_markers, vnotes, text_start_mark)
-                if poetry_lines:
-                    self._apply_poetry_line_tags(text_start_mark, poetry_lines)
-                # Subtle 'related artifact' marker — a small clickable
-                # amphora icon beside any verse a gallery artifact
-                # references. Rare (~34 verses Bible-wide), so it reads as
-                # a quiet cue. An embedded icon (not a font glyph) so it
-                # always renders — the U+26B1 codepoint falls back to tofu
-                # in many reading fonts.
-                if start_v in art_verses:
-                    self._insert_artifact_marker(start_v)
+                r.cap_index = cap_index
+                r.fn_markers = fn_markers
+                r.vnotes = vnotes
+                r.poetry_lines = poetry_lines
 
-            # 3. Apply vnum tags. For grouped commentary sections, every
-            # verse in [start_v, end_v] points at the same rendered
-            # block so navigation to any of them lands on this section.
-            start_iter = self._buffer.get_iter_at_mark(start_mark)
-            end_iter = self._buffer.get_end_iter()
-            for v in range(start_v, end_v + 1):
-                tag_name = f'vnum_{v}'
-                tag = self._buffer.get_tag_table().lookup(tag_name)
-                if not tag:
-                    tag = self._buffer.create_tag(tag_name)
-                self._buffer.apply_tag(tag, start_iter, end_iter)
-
-            # 4. Apply persistent annotation tags (highlight/underline/note
-            # indicator) in-place — these can be changed later without a
-            # full re-render via _refresh_verse_annotation. Bibles only;
-            # commentaries don't get user annotations. Skipped entirely for
-            # un-annotated verses: on a fresh buffer there is nothing to
-            # clear, and the per-verse call was the chapter render's main
-            # scaling cost.
-            if not is_commentary and v_anno:
-                self._apply_anno_tags(start_v, v_anno, fresh=True)
-
-            # 5. Strong's word tagging (Bible mode only)
-            if not is_commentary and self._lexicon_enabled and self._on_word_click:
-                t_start = self._buffer.get_iter_at_mark(text_start_mark)
-                self._tag_strong_words(t_start, self._buffer.get_end_iter(), html)
+            # 3. Every mark this verse wears, in one declarative pass.
+            self._decorate_verse(r)
 
             self._buffer.delete_mark(start_mark)
             self._buffer.delete_mark(text_start_mark)
@@ -2583,6 +2662,29 @@ class BiblePane(Gtk.Box):
         if self._mark_current_unit or self._focus_unit:
             GLib.idle_add(self._update_current_unit)
         return GLib.SOURCE_REMOVE
+
+    def _decorate_verse(self, r):
+        """Apply every mark `r`'s verse wears, in `_VERSE_DECORATIONS` order.
+
+        The render loop used to inline these as seven consecutive `if`s, so a
+        new per-verse feature meant another branch in the middle of the loop —
+        the one place in the file where an ordering mistake is hardest to see
+        and most expensive to make.
+        """
+        for dec in _VERSE_DECORATIONS:
+            if dec.on(self, r):
+                dec.apply(self, r)
+
+    def _apply_vnum_tags(self, r):
+        """Tag the whole block with `vnum_N` for every verse it answers to."""
+        buf = self._buffer
+        table = buf.get_tag_table()
+        start = buf.get_iter_at_mark(r.start_mark)
+        end = buf.get_end_iter()
+        for v in range(r.start_v, r.end_v + 1):
+            name = f'vnum_{v}'
+            tag = table.lookup(name) or buf.create_tag(name)
+            buf.apply_tag(tag, start, end)
 
     #: Ascending precedence, and it mirrors how the markup nests: a footnote
     #: marker sits inside red-letter text. Later application wins, so the
