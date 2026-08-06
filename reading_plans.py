@@ -212,7 +212,7 @@ def _load() -> dict[str, Any]:
             _log.exception('load failed, using defaults')
             _cache = {}
             _load_failed = True
-        except ValueError:
+        except paths.UNPARSEABLE:
             _log.exception('load failed, using defaults')
             _cache = {}
             _load_failed = True

@@ -55,6 +55,16 @@ def cache_dir() -> str:
 
 # ── Quarantine for files we can't parse ──────────────────────────────────────
 
+#: What "the bytes are there but they aren't our data" looks like, for the
+#: five stores to catch in step. `json.JSONDecodeError` and a bad encoding are
+#: both `ValueError`; a store that finds valid JSON of the wrong shape raises
+#: one itself. `RecursionError` is the odd one and the reason this is a name
+#: rather than a literal: deeply nested JSON raises it from the C scanner, it
+#: is neither a `ValueError` nor an `OSError`, and left uncaught it turns a
+#: file we would have quarantined into a crash on startup.
+UNPARSEABLE = (ValueError, RecursionError)
+
+
 def quarantine_unreadable(path: str) -> str | None:
     """Move a file whose contents we couldn't parse out of the way.
 

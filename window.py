@@ -267,6 +267,8 @@ class BibleWindow(Adw.ApplicationWindow):
             failed.append(_('bookmarks'))
         if reading_plans.load_failed():
             failed.append(_('reading plans'))
+        if module_positions.load_failed():
+            failed.append(_('reading positions'))
         if failed:
             names = ', '.join(failed)
             self._toast(

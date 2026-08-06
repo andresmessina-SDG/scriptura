@@ -54,7 +54,7 @@ def _load() -> list[Bookmark]:
             _log.exception('load failed, using defaults')
             _load_failed = True
         return []
-    except ValueError:
+    except paths.UNPARSEABLE:
         if not _load_failed:
             _log.exception('load failed, using defaults')
             _load_failed = True

@@ -131,7 +131,7 @@ def _load() -> None:
         _log.exception('load failed, using defaults')
         _cache = {}
         _load_failed = True
-    except ValueError:
+    except paths.UNPARSEABLE:
         _log.exception('load failed, using defaults')
         _cache = {}
         _load_failed = True
