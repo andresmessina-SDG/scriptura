@@ -552,6 +552,16 @@ def dropcap_color_hex(dark):
     return DROPCAP_GOLD_DARK if dark else DROPCAP_GOLD_LIGHT
 
 
+def _numeral_features(oldstyle):
+    """The OpenType feature verse and chapter numerals are set with.
+
+    Both states are explicit — some faces (Georgia) default to old-style
+    figures, so OFF must request lining (lnum) rather than request nothing, or
+    the toggle is invisible there. Faces lacking a feature ignore it.
+    """
+    return 'onum=1' if oldstyle else 'lnum=1'
+
+
 def theme_ink(dark):
     """Every foreground a rendered chapter bakes that depends on the theme.
 
@@ -2493,9 +2503,11 @@ class BiblePane(Gtk.Box):
             self._set_current_verse_indicator(self._selected_verse)
 
         self._update_chapter_note_indicator()
-        # Give the theme-dependent spans one owner apiece before the overlay
-        # bumps below, which must stay at the top of the table.
+        # Give the theme-dependent spans and the numerals one owner apiece
+        # before the overlay bumps below, which must stay at the top of the
+        # table.
         self._adopt_theme_ink(dark)
+        self._adopt_numerals(self._oldstyle_nums)
         self._search.apply_highlight()
         # Every verse's body-text spans (created by insert_markup during the
         # render loop) carry an ever-increasing tag priority, which can
@@ -2581,6 +2593,59 @@ class BiblePane(Gtk.Box):
             # Above the body spans, for the same priority decay
             # _bump_overlay_priorities exists for.
             ours.set_priority(table.get_size() - 1)
+
+    #: The figure style is one OpenType feature on the chapter heading and on
+    #: every verse number. Same adoption as the colours, and for the same
+    #: reason: insert_markup names the tag `font_features=onum=1`, after the
+    #: value it holds.
+    _NUMERAL_TAG = '_numerals'
+
+    def _adopt_numerals(self, oldstyle):
+        """Re-tag the numeral spans with `_NUMERAL_TAG` over the same ranges."""
+        buf = self._buffer
+        table = buf.get_tag_table()
+        want = _numeral_features(oldstyle)
+        victims = []
+
+        def _collect(tag, _user_data=None):
+            if tag.get_property('name') == self._NUMERAL_TAG:
+                return
+            if (tag.get_property('font-features-set')
+                    and tag.get_property('font-features') == want):
+                victims.append(tag)
+
+        table.foreach(_collect, None)
+        if not victims:
+            return
+        ours = table.lookup(self._NUMERAL_TAG)
+        if ours is None:
+            ours = buf.create_tag(self._NUMERAL_TAG)
+        ours.set_property('font-features', want)
+        for tag in victims:
+            for lo, hi in self._tag_ranges(tag):
+                buf.apply_tag(ours, buf.get_iter_at_offset(lo),
+                              buf.get_iter_at_offset(hi))
+            table.remove(tag)
+
+    def _restyle_numerals(self):
+        """Switch the figure style on the rendered chapter without rebuilding
+        it. False when there is nothing adopted to switch, so the caller can
+        fall back to a render.
+
+        No anchor work, and that was measured rather than assumed: swapping
+        the figures moves the reading position 0px on the shipped serif, on
+        Noto Serif and on Georgia — the face `_numeral_features` exists for,
+        whose own default figures are old-style. The numerals sit in a
+        space-padded span of their own, so the new metrics do not reflow the
+        line. Re-asserting the anchor here made it worse, not safer: it
+        applied a locus captured before the toggle and threw the reader
+        2504px up Psalm 119.
+        """
+        tag = self._buffer.get_tag_table().lookup(self._NUMERAL_TAG)
+        if tag is None:
+            return False
+        tag.set_property('font-features', _numeral_features(self._oldstyle_nums))
+        return True
 
     def _tag_ranges(self, tag):
         """(start, end) character offsets of every range `tag` covers."""
@@ -2971,7 +3036,12 @@ class BiblePane(Gtk.Box):
         if self._oldstyle_nums == bool(enabled):
             return
         self._oldstyle_nums = bool(enabled)
-        self._rerender_keeping_place()
+        # Same text, one font feature. Anything without adopted numeral spans
+        # (a devotional, a generic book, a chapter that never rendered) falls
+        # through to the render, which is also what picks the flag up when a
+        # Bible next appears here.
+        if not self._restyle_numerals():
+            self._rerender_keeping_place()
 
     def set_colored_dropcap(self, enabled):
         if self._colored_dropcap == bool(enabled):
@@ -2994,12 +3064,8 @@ class BiblePane(Gtk.Box):
             self._rerender_keeping_place()
 
     def _numeral_ff(self):
-        """font_features attribute for verse/chapter numerals. Both states
-        are explicit — some faces (Georgia) default to old-style figures,
-        so OFF must request lining (lnum) rather than request nothing, or
-        the toggle is invisible there. Faces lacking a feature ignore it."""
-        return (' font_features="onum=1"' if self._oldstyle_nums
-                else ' font_features="lnum=1"')
+        """The markup attribute carrying `_numeral_features`."""
+        return f' font_features="{_numeral_features(self._oldstyle_nums)}"'
 
     def _ensure_poetry_tags(self):
         if self._poetry_tags is None:
