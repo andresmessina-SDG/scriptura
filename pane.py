@@ -578,6 +578,18 @@ def _plain_len(markup):
     return n
 
 
+def _dropcap_index(markup, since):
+    """Where the cap sits in the text `markup` will produce, or None.
+
+    `since` is where the span was before the footnote markers went in. Markers
+    can only push it further right, so searching from there both skips work and
+    rules out an earlier accidental match. None when the span is not there at
+    all — a lost cap is a cosmetic miss, not worth raising over.
+    """
+    at = markup.find(_DROPCAP_SPAN, since)
+    return _plain_len(markup[:at]) if at >= 0 else None
+
+
 def dropcap_color_hex(dark):
     """Effective drop-cap colour (shared with the Appearance swatch)."""
     custom = settings.get('dropcap_color')
@@ -2409,14 +2421,14 @@ class BiblePane(Gtk.Box):
                 # incremental redraw on scroll left ghost fragments
                 # above the cap when the user scrolled the chapter back
                 # into view.
-                capped = False
+                cap_index = None
                 if start_v == 1:
                     split = _dropcap_split(v_text_markup)
                     if split:
                         before, letter, after = split
                         v_text_markup = (
                             f'{before}{_DROPCAP_SPAN}{letter}</span>{after}')
-                        capped = True
+                        cap_index = len(before)   # markup offset for now
                 # Tokens → superscript marker letters, after the drop-cap
                 # transform so the recorded plain-text offsets are final.
                 fn_markers = []
@@ -2424,11 +2436,11 @@ class BiblePane(Gtk.Box):
                     v_text_markup, fn_markers, fn_letter_idx = (
                         _substitute_footnote_markers(
                             v_text_markup, vnotes, dark, fn_letter_idx))
-                # Where the cap landed in the finished text. Measured on the
-                # final markup, after the footnote markers went in, so a
-                # marker ahead of it can't shift the offset out from under us.
-                cap_index = (_plain_len(v_text_markup[:v_text_markup.index(_DROPCAP_SPAN)])
-                             if capped else None)
+                # Where the cap landed in the finished text. Re-found on the
+                # final markup, after the footnote markers went in, so a marker
+                # ahead of it can't shift the offset out from under us.
+                if cap_index is not None:
+                    cap_index = _dropcap_index(v_text_markup, cap_index)
                 # A verse ending on a closed poetry line already breaks —
                 # the inter-verse space would dangle at the next line start.
                 sep = '' if v_text_markup.endswith('\n') else ' '
@@ -2573,9 +2585,15 @@ class BiblePane(Gtk.Box):
         return GLib.SOURCE_REMOVE
 
     #: Ascending precedence, and it mirrors how the markup nests: a footnote
-    #: marker sits inside red-letter text, and the drop cap inside both. Later
-    #: application wins, so the innermost span is adopted last.
-    _INK_ORDER = ('_ink_heading', '_ink_redletter', '_ink_dropcap', '_ink_link')
+    #: marker sits inside red-letter text. Later application wins, so the
+    #: innermost span is adopted last. The drop cap is absent on purpose: its
+    #: colour is never written into the markup (see `_DROPCAP_SPAN`), so it has
+    #: nothing to adopt and `_raise_dropcap` handles its precedence instead.
+    _INK_ORDER = ('_ink_heading', '_ink_redletter', '_ink_link')
+
+    #: What `insert_markup` calls the tags it mints for a `foreground=` span.
+    #: Adoption considers these and nothing else — see `_adopt_theme_ink`.
+    _MARKUP_FG_PREFIX = 'foreground_rgba='
 
     def _adopt_theme_ink(self, dark):
         """Move the chapter's theme-coloured spans onto tags of our own.
@@ -2588,14 +2606,22 @@ class BiblePane(Gtk.Box):
         dropped — which also stops the tag table growing a dead colour tag
         every time the theme flips.
 
-        Matching is by colour, not by name: the same blue arrives from three
-        render paths (footnote markers, commentary cross-references, the
-        lexicon hover) and all three want one owner.
+        Matching is by colour, not by name: the same blue arrives from two
+        render paths (footnote markers and commentary cross-references) and
+        both want one owner. Only tags the markup parser minted are candidates,
+        though — a colour is not proof of ownership. The lexicon hover carries
+        that same blue by intent, and the drop-cap colour is whatever the
+        reader picked in Appearance, so it can collide with any tag we style
+        ourselves; matching on colour alone deleted `_strg_hover` on every
+        render and would take `_note_marker` or the current-verse indicator
+        with it the day someone chose their gold.
         """
         buf = self._buffer
         table = buf.get_tag_table()
         wanted = []
         for name, hexcol in theme_ink(dark).items():
+            if name not in self._INK_ORDER:
+                continue
             rgba = Gdk.RGBA()
             if rgba.parse(hexcol):
                 wanted.append((name, rgba))
@@ -2604,7 +2630,7 @@ class BiblePane(Gtk.Box):
 
         def _collect(tag, _user_data=None):
             name = tag.get_property('name') or ''
-            if name.startswith('_ink_') or not tag.get_property('foreground-set'):
+            if not name.startswith(self._MARKUP_FG_PREFIX):
                 return
             colour = tag.get_property('foreground-rgba')
             for ink_name, rgba in wanted:
@@ -4719,6 +4745,15 @@ class BiblePane(Gtk.Box):
             return
         self._update_font_css()
         self._apply_reading_page_edge()
+        # The indicator bakes its background at creation, and _ensure_current_
+        # verse_tag hands back an existing tag without looking at its colour.
+        # Drop it here rather than on the recolour path alone: a pane showing a
+        # devotional still holds the tag from the Bible it showed before, and
+        # would go back to that Bible wearing the other theme's purple.
+        table = self._buffer.get_tag_table()
+        cv = table.lookup(self._CURRENT_VERSE_TAG_NAME)
+        if cv is not None:
+            table.remove(cv)
         if self._is_verse_navigable() and self._rendered_verses is not None:
             # Same text, new colours: recolour it where it stands. Rebuilding
             # the chapter to change four values threw the reading position
@@ -4765,11 +4800,8 @@ class BiblePane(Gtk.Box):
             except (TypeError, ValueError):
                 continue
 
-        # The indicator bakes its background at creation. Drop the tag so the
-        # re-apply below builds it against the new theme.
-        cv = table.lookup(self._CURRENT_VERSE_TAG_NAME)
-        if cv is not None:
-            table.remove(cv)
+        # `_on_theme_changed` dropped the indicator tag; re-applying mints it
+        # against the new theme.
         if self._selected_verse is not None:
             self._set_current_verse_indicator(self._selected_verse)
         self._view.queue_draw()

@@ -19,7 +19,9 @@ gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk  # noqa: E402
 
 import pane as pane_mod  # noqa: E402
-from pane import BiblePane, _DROPCAP_SPAN, _plain_len, dropcap_color_hex  # noqa: E402
+from pane import (BiblePane, _DROPCAP_SPAN, _dropcap_index,  # noqa: E402
+                  _dropcap_split, _plain_len, _substitute_footnote_markers,
+                  dropcap_color_hex)
 
 
 class Pane:
@@ -81,9 +83,51 @@ def test_the_index_lands_on_the_letter_the_split_capped():
     markup = f'&quot;{_DROPCAP_SPAN}B{"</span>"}eware of practicing'
     buf = Gtk.TextBuffer()
     buf.insert_markup(buf.get_end_iter(), markup, -1)
-    index = _plain_len(markup[:markup.index(_DROPCAP_SPAN)])
+    index = _dropcap_index(markup, 0)
     text = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), False)
     assert text[index] == 'B'
+
+
+def test_a_footnote_marker_ahead_of_the_cap_does_not_move_it():
+    """The markers go in after the cap span and carry letters of their own, so
+    the offset has to be re-taken on the finished markup. Run through the real
+    substitution rather than a hand-written span, so the two stay honest."""
+    capped = f'&quot;{_DROPCAP_SPAN}B{"</span>"}eware[[FN_1]] of practicing'
+    since = capped.index(_DROPCAP_SPAN)
+    # A marker BEFORE the cap is the case that moves it.
+    capped = '[[FN_2]]' + capped
+    final, markers, _ = _substitute_footnote_markers(
+        capped, {'1': ('t', 'body'), '2': ('t', 'body')}, False)
+    assert len(markers) == 2
+
+    buf = Gtk.TextBuffer()
+    buf.insert_markup(buf.get_end_iter(), final, -1)
+    index = _dropcap_index(final, since)
+    text = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), False)
+    assert text[index] == 'B'
+
+
+def test_the_split_and_the_index_agree_on_a_real_verse():
+    """`_dropcap_split` picks the letter, `_dropcap_index` finds it again after
+    the span went in. Nothing in between should be able to disagree."""
+    for html in ('Thus the heavens were completed',
+                 '&quot;Beware of practicing your righteousness',
+                 '<span foreground="#bb0000">Blessed are the poor</span>',
+                 '&#8220;In the beginning'):
+        before, letter, after = _dropcap_split(html)
+        markup = f'{before}{_DROPCAP_SPAN}{letter}</span>{after}'
+        buf = Gtk.TextBuffer()
+        buf.insert_markup(buf.get_end_iter(), markup, -1)
+        index = _dropcap_index(markup, len(before))
+        text = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), False)
+        assert text[index] == letter, html
+
+
+def test_a_cap_that_went_missing_is_reported_rather_than_raised():
+    """The span is put in by us and nothing downstream rewrites it, so this
+    should not happen — but a lost cap must cost the reader a gold letter, not
+    the whole chapter."""
+    assert _dropcap_index('Thus the heavens', 0) is None
 
 
 # ── The ink ─────────────────────────────────────────────────────────────────

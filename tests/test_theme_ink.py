@@ -41,6 +41,7 @@ class Pane:
     """Just enough pane to own a buffer."""
 
     _INK_ORDER = BiblePane._INK_ORDER
+    _MARKUP_FG_PREFIX = BiblePane._MARKUP_FG_PREFIX
     _adopt_theme_ink = BiblePane._adopt_theme_ink
     _tag_ranges = BiblePane._tag_ranges
 
@@ -124,23 +125,48 @@ def test_the_inner_span_still_wins_after_adoption():
 
 
 class RecolourPane(Pane):
-    """Enough pane to flip the theme on an already-rendered chapter."""
+    """Enough pane to flip the theme on an already-rendered chapter.
+
+    Driven through `_on_theme_changed`, not `_recolour_for_theme`: the split
+    between what the entry point does for every pane and what the recolouring
+    path does for a rendered one is itself load-bearing, and testing the inner
+    half alone once let a stale current-verse tag through.
+    """
 
     _CURRENT_VERSE_TAG_NAME = BiblePane._CURRENT_VERSE_TAG_NAME
     _DROPCAP_TAG = BiblePane._DROPCAP_TAG
+    _on_theme_changed = BiblePane._on_theme_changed
     _recolour_for_theme = BiblePane._recolour_for_theme
+    _is_verse_navigable = BiblePane._is_verse_navigable
     _ensure_current_verse_tag = BiblePane._ensure_current_verse_tag
     _set_current_verse_indicator = BiblePane._set_current_verse_indicator
     _sync_dropcap_ink = BiblePane._sync_dropcap_ink
     _verse_ranges = BiblePane._verse_ranges
 
-    def __init__(self, selected=None):
+    def __init__(self, selected=None, module_type='Biblical Texts',
+                 devotional=False, rendered=True):
         super().__init__()
         self._module, self._book, self._chapter = 'BSB', 'Genesis', 2
-        self._module_type = 'Biblical Texts'
+        self._module_type = module_type
+        self._is_devotional = devotional
+        self._rendered_verses = [(1, '')] if rendered else None
         self._selected_verse = selected
         self._colored_dropcap = False
         self._view = _View()
+        self.refetched = 0
+
+    # The three things _on_theme_changed does before the branch.
+    def get_root(self):
+        return self
+
+    def _update_font_css(self):
+        pass
+
+    def _apply_reading_page_edge(self):
+        pass
+
+    def _fetch_and_render(self):
+        self.refetched += 1
 
 
 class _View:
@@ -174,7 +200,7 @@ def test_a_flip_leaves_no_span_holding_the_old_theme_colour(monkeypatch):
     p = _rendered_chapter(dark=True)
     _force_theme(monkeypatch, dark=False)
 
-    p._recolour_for_theme()
+    p._on_theme_changed()
 
     light = theme_ink(False)
     table = p._buffer.get_tag_table()
@@ -202,7 +228,7 @@ def test_the_flip_rebuilds_the_current_verse_indicator(monkeypatch):
     dark_fg = dark_tag.get_property('foreground-rgba').to_string()
 
     _force_theme(monkeypatch, dark=False)
-    p._recolour_for_theme()
+    p._on_theme_changed()
 
     now = p._buffer.get_tag_table().lookup(p._CURRENT_VERSE_TAG_NAME)
     assert now is not None, 'the indicator vanished with the old theme'
@@ -225,7 +251,7 @@ def test_a_flip_does_not_light_a_cap_the_reader_turned_off(monkeypatch):
     assert p._colored_dropcap is False
 
     _force_theme(monkeypatch, dark=False)
-    p._recolour_for_theme()
+    p._on_theme_changed()
 
     assert cap.get_property('foreground-set') is False
     assert colour_at(p._buffer, 13) is None
@@ -250,3 +276,99 @@ def test_every_range_of_a_repeated_colour_is_carried_over():
     assert signature(p._buffer) == before
     ours = p._buffer.get_tag_table().lookup('_ink_link')
     assert len(p._tag_ranges(ours)) == 3
+
+
+# ── Adoption takes the parser's tags and only the parser's tags ──────────
+
+def test_the_parser_still_names_its_colour_tags_the_way_we_expect():
+    """`_MARKUP_FG_PREFIX` is a fact about GTK, not about us. If a GTK release
+    ever renames these, adoption stops finding anything and the theme flip goes
+    stale — so pin it here, where the failure is legible."""
+    p = Pane()
+    p._buffer.insert_markup(p._buffer.get_end_iter(),
+                            '<span foreground="#bb0000">red</span>', -1)
+    assert [n for n in tag_names(p._buffer)
+            if (n or '').startswith(BiblePane._MARKUP_FG_PREFIX)]
+
+
+def test_the_lexicon_hover_survives_a_render():
+    """`_strg_hover` carries the link blue by intent — it is the same colour
+    for the same reason. Adopting by colour alone deleted it from the table on
+    every single render."""
+    p = Pane()
+    p._buffer.insert(p._buffer.get_end_iter(), 'In the beginning')
+    hover = p._buffer.create_tag('_strg_hover',
+                                 foreground=theme_ink(False)['_ink_link'])
+    p._buffer.apply_tag(hover, p._buffer.get_iter_at_offset(3),
+                        p._buffer.get_iter_at_offset(6))
+
+    p._adopt_theme_ink(False)
+
+    assert p._buffer.get_tag_table().lookup('_strg_hover') is not None
+    assert colour_at(p._buffer, 4) is not None
+
+
+def test_a_reader_may_choose_a_drop_cap_colour_we_already_use(monkeypatch):
+    """The custom cap colour is any hex the reader likes, so it can equal a
+    colour we style something else with. The cap's colour is never written into
+    the markup, so a match can only ever be a false positive — and a false
+    positive DELETES the tag it matched, taking its bold weight with it."""
+    monkeypatch.setattr(pane_mod.settings, 'get',
+                        lambda key: '#5b8def' if key == 'dropcap_color' else None)
+    p = Pane()
+    p._buffer.insert_markup(p._buffer.get_end_iter(),
+                            '<span foreground="gray"> 3 </span>plain text', -1)
+    note = p._buffer.create_tag('_note_marker', foreground='#5b8def',
+                                weight=pane_mod.Pango.Weight.BOLD)
+    p._buffer.apply_tag(note, p._buffer.get_start_iter(),
+                        p._buffer.get_iter_at_offset(3))
+
+    p._adopt_theme_ink(False)
+
+    assert p._buffer.get_tag_table().lookup('_note_marker') is not None
+    assert note.get_property('weight') == pane_mod.Pango.Weight.BOLD
+    assert '_ink_dropcap' not in tag_names(p._buffer)
+
+
+def test_the_current_verse_indicator_is_not_adopted(monkeypatch):
+    """Same collision, on the tag whose disappearance is most visible: the
+    indicator is applied during the render, just before adoption runs."""
+    monkeypatch.setattr(pane_mod.settings, 'get',
+                        lambda key: '#7a4dbf' if key == 'dropcap_color' else None)
+    _force_theme(monkeypatch, dark=False)
+    p = RecolourPane(selected=1)
+    p._buffer.insert_markup(p._buffer.get_end_iter(),
+                            '<span foreground="gray"> 1 </span>Thus the heavens',
+                            -1)
+    vnum = p._buffer.create_tag('vnum_1')
+    p._buffer.apply_tag(vnum, p._buffer.get_start_iter(),
+                        p._buffer.get_end_iter())
+    p._set_current_verse_indicator(1)
+
+    p._adopt_theme_ink(False)
+
+    assert p._buffer.get_tag_table().lookup(p._CURRENT_VERSE_TAG_NAME) is not None
+
+
+# ── What the flip owes every pane, not just a rendered chapter ───────────
+
+def test_a_flip_drops_the_indicator_tag_even_with_nothing_to_recolour(monkeypatch):
+    """A pane showing a devotional re-fetches instead of recolouring — but it
+    still holds the indicator tag from the Bible it showed before, and
+    `_ensure_current_verse_tag` hands an existing tag back without looking at
+    its colour. Left behind, that Bible comes back wearing the old theme."""
+    _force_theme(monkeypatch, dark=False)
+    p = RecolourPane(selected=1, module_type='Daily Devotional',
+                     devotional=True)
+    light_tag = p._ensure_current_verse_tag()
+    light_fg = light_tag.get_property('foreground-rgba').to_string()
+
+    _force_theme(monkeypatch, dark=True)
+    p._on_theme_changed()
+
+    assert p.refetched == 1, 'a devotional still has to be re-rendered'
+    assert p._buffer.get_tag_table().lookup(p._CURRENT_VERSE_TAG_NAME) is None
+    # And the Bible it goes back to gets a tag built against the new theme.
+    p._module_type, p._is_devotional = 'Biblical Texts', False
+    assert p._ensure_current_verse_tag().get_property(
+        'foreground-rgba').to_string() != light_fg
