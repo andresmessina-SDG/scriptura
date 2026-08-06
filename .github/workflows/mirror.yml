@@ -8,6 +8,13 @@
 # which Codeberg refuses ("deny updating a hidden ref"), failing the whole
 # push. Explicit refspecs skip those and mirror what a mirror should.
 #
+# The refspecs are forced (the leading +). A rebased branch is not a
+# fast-forward, so a plain push is rejected for that ref and takes the whole
+# job down with it — one rewritten branch stops main mirroring too. Nothing
+# is ever committed on Codeberg, so there is no work here to overwrite, and
+# --prune already deletes refs that leave GitHub: refusing to update a ref
+# while agreeing to delete it is not a safety line.
+#
 # Setup (one-time): create a Codeberg access token with repository write scope
 # (Codeberg -> Settings -> Applications), then add it to this repo as the
 # Actions secret CODEBERGMIRROR. Until the secret exists, the job skips cleanly.
@@ -37,4 +44,4 @@ jobs:
           git clone --mirror "https://github.com/andresmessina-SDG/scriptura.git" repo.git
           cd repo.git
           git push --prune "https://andresmessina:${TOKEN}@codeberg.org/andresmessina/scriptura.git" \
-            'refs/heads/*:refs/heads/*' 'refs/tags/*:refs/tags/*'
+            '+refs/heads/*:refs/heads/*' '+refs/tags/*:refs/tags/*'
