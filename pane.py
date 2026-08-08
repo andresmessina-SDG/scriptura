@@ -874,7 +874,6 @@ class BiblePane(Gtk.Box):
         # their margin geometry follows the reading column (see
         # _sync_poetry_tags).
         self._poetry_tags = None
-        self._poetry_sync_pending = False
         # (verse, marker_index) → (type, body) for the rendered chapter;
         # the fnote: click handler reads the peek content from here.
         self._chapter_footnotes = {}
@@ -2937,19 +2936,17 @@ class BiblePane(Gtk.Box):
             self._poetry_tags[lvl].props.indent = -hang
 
     def _on_reading_margins_changed(self):
-        # Fired during size_allocate — defer the tag update (a paragraph-
-        # attribute change invalidates layout, which must not happen
-        # mid-allocation); dedupe against resize storms.
-        if self._poetry_tags is None or self._poetry_sync_pending:
+        # Synchronous, and it has to be. _apply_margins runs BEFORE the
+        # ScrolledWindow chains up, so mirroring the tags here puts them in
+        # place before the TextView is laid out: the frame paints the indent
+        # and the margin it mirrors together. Deferring cost exactly that —
+        # measured over a split-drag storm, counting PAINTED frames where
+        # the tag margin disagreed with the view's: 26 on an idle, 9 on a
+        # tick callback (which, scheduled from inside the layout phase, has
+        # already missed that frame's update phase), 0 here.
+        if self._poetry_tags is None:
             return
-        self._poetry_sync_pending = True
-
-        def apply():
-            self._poetry_sync_pending = False
-            self._sync_poetry_tags()
-            return GLib.SOURCE_REMOVE
-
-        GLib.idle_add(apply)
+        self._sync_poetry_tags()
 
     def _apply_poetry_line_tags(self, text_start_mark, levels):
         """Tag whole buffer lines (paragraphs) with the poetry indent
