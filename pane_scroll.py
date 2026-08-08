@@ -244,6 +244,27 @@ class ScrollKeeper:
         self._anchor_capture_id = GLib.timeout_add(
             ms, self._settle_capture_anchor)
 
+    def _iter_at_reading_top(self, window_y):
+        """(iter, buffer y) for the text `window_y` px below the viewport
+        top, in the reading column.
+
+        get_iter_at_location reports a MISS whenever the point falls in
+        paragraph spacing rather than on a glyph, and poetry paragraphs
+        leave exactly such a gap at the top of each line. Both probes that
+        hold the reading place used to give up on that miss — the pixel
+        anchor and the coarse top-verse fallback alike — so a single miss
+        lost both, and the render tail's last resort scrolled the reader
+        to the top of the chapter. get_line_at_y always lands on a display
+        line, so use it rather than give up; the capture's snap loop walks
+        from there to the line the probe actually meant."""
+        bx, by = self._view.window_to_buffer_coords(
+            Gtk.TextWindowType.TEXT,
+            max(40, self._view.get_left_margin() + 20), window_y)
+        ok, it = self._view.get_iter_at_location(bx, by)
+        if not ok:
+            it, _line_top = self._view.get_line_at_y(by)
+        return it, by
+
     def _capture_scroll_anchor(self):
         """Pixel-exact reading locus at the viewport top: (verse, char
         offset within the verse's rendered range, px of the anchor line
@@ -259,18 +280,12 @@ class ScrollKeeper:
         if self._reading_anchor is not None:
             return self._reading_anchor
         adj = self._reading_scroll.get_vadjustment()
-        bx, by = self._view.window_to_buffer_coords(
-            Gtk.TextWindowType.TEXT,
-            max(40, self._view.get_left_margin() + 20), 1)
         # by, NOT adj+1: window→buffer conversion subtracts the view's top
         # margin, and the snap below must compare get_iter_location values
         # (same layout frame as by) against the converted probe — mixing
         # frames put the reference more than a line off and made the
         # snap flip-flop.
-        probe_y = by
-        ok, it = self._view.get_iter_at_location(bx, by)
-        if not ok:
-            return None
+        it, probe_y = self._iter_at_reading_top(1)
         # get_iter_at_location can land a display line off when the probe
         # falls into inter-line spacing (pixels_below_lines / CSS
         # line-height). Snap along display lines until the iter's own
@@ -415,14 +430,7 @@ class ScrollKeeper:
     def _find_topmost_visible_verse(self):
         if not self._view.get_realized():
             return None
-        bx, by = self._view.window_to_buffer_coords(
-            Gtk.TextWindowType.TEXT,
-            max(40, self._view.get_left_margin() + 20),
-            4,
-        )
-        ok, it = self._view.get_iter_at_location(bx, by)
-        if not ok:
-            return None
+        it, _by = self._iter_at_reading_top(4)
         for tag in it.get_tags():
             name = tag.get_property('name') or ''
             if name.startswith('vnum_'):
