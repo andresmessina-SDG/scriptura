@@ -736,8 +736,13 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
             self._apply_margins(w)
 
     def do_size_allocate(self, width, height, baseline):
-        Gtk.ScrolledWindow.do_size_allocate(self, width, height, baseline)
+        # Margins first, then chain up. Setting them afterwards re-queued a
+        # resize on the TextView with the parent's allocation already done,
+        # and the overlay scrollbar's trough was then snapshotted with no
+        # allocation of its own ("Trying to snapshot GtkGizmo ..." on every
+        # resize). Applying them first lets one allocation pass do the work.
         self._apply_margins(width)
+        Gtk.ScrolledWindow.do_size_allocate(self, width, height, baseline)
         if height != self._last_alloc_height:
             was_first = self._last_alloc_height < 0
             self._last_alloc_height = height
