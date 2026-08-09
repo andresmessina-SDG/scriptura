@@ -25,8 +25,7 @@ from pane import BiblePane, theme_ink  # noqa: E402
 
 def _force_theme(monkeypatch, dark):
     """Make the pane's own `Adw.StyleManager.get_default().get_dark()` answer
-    `dark`. Returns what it answered before, so a test can prove it moved."""
-    was = pane_mod.Adw.StyleManager.get_default().get_dark()
+    `dark`."""
 
     class Stub:
         def get_dark(self):
@@ -34,7 +33,6 @@ def _force_theme(monkeypatch, dark):
 
     monkeypatch.setattr(pane_mod.Adw.StyleManager, 'get_default',
                         staticmethod(lambda: Stub()))
-    return was
 
 
 class Pane:
@@ -196,22 +194,35 @@ def _rendered_chapter(dark, selected=None):
 def test_a_flip_leaves_no_span_holding_the_old_theme_colour(monkeypatch):
     monkeypatch.setattr('pane.annotations.get_annotations',
                         lambda *a, **k: {})
-    was_dark = _force_theme(monkeypatch, dark=True)
+    _force_theme(monkeypatch, dark=True)
     p = _rendered_chapter(dark=True)
-    _force_theme(monkeypatch, dark=False)
 
+    def ink_matches(want_hex):
+        """Every ink tag the chapter actually has carries `want_hex`."""
+        table = p._buffer.get_tag_table()
+        seen = 0
+        for name, hexcol in want_hex.items():
+            tag = table.lookup(name)
+            if tag is None:      # this chapter had no span of that colour
+                continue
+            seen += 1
+            want = Gdk.RGBA()
+            want.parse(hexcol)
+            if not tag.get_property('foreground-rgba').equal(want):
+                return name
+        assert seen, 'the chapter carried no ink tags at all'
+        return None
+
+    # Prove the flip MOVED: the chapter has to be holding dark ink first.
+    # (Asking the real StyleManager what it said before proves only what
+    # the machine running the test has its desktop set to — True here,
+    # False in a CI container where get_default() is NULL.)
+    assert ink_matches(theme_ink(True)) is None
+
+    _force_theme(monkeypatch, dark=False)
     p._on_theme_changed()
 
-    light = theme_ink(False)
-    table = p._buffer.get_tag_table()
-    for name, hexcol in light.items():
-        tag = table.lookup(name)
-        if tag is None:      # this chapter had no span of that colour
-            continue
-        want = Gdk.RGBA()
-        want.parse(hexcol)
-        assert tag.get_property('foreground-rgba').equal(want), name
-    assert was_dark is True
+    assert ink_matches(theme_ink(False)) is None
 
 
 def test_the_flip_rebuilds_the_current_verse_indicator(monkeypatch):
