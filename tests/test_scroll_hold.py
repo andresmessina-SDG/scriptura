@@ -52,6 +52,7 @@ class FakeAdjustment:
 
 class Hold:
     hold_scroll = _ReadingScrolledWindow.hold_scroll
+    _expire_hold = _ReadingScrolledWindow._expire_hold
     release_scroll_hold = _ReadingScrolledWindow.release_scroll_hold
     _release_hold = _ReadingScrolledWindow._release_hold
     _reassert_held_scroll = _ReadingScrolledWindow._reassert_held_scroll
@@ -63,10 +64,18 @@ class Hold:
         self._hold_handler = None
         self._faked_upper = None
         self._in_hold = False
+        self._hold_gen = 0
+        self.armed = []                   # safety-timer generations, in order
 
     def get_vadjustment(self):
         return self.adj
 
+    def arm(self):
+        """What GLib.timeout_add(HOLD_SAFETY_MS, ...) would queue."""
+        self.armed.append(self._hold_gen)
+
+    def fire_oldest_timer(self):
+        self._expire_hold(self.armed.pop(0))
 
     @property
     def held(self):
@@ -126,3 +135,35 @@ def test_our_own_faked_height_is_never_read_as_the_real_one():
     assert hold.adj.get_upper() == 9773.8 + 663.0
     hold._reassert_held_scroll()          # reads back what it wrote
     assert hold.held
+
+
+def test_an_earlier_toggles_safety_timer_cannot_kill_a_later_hold():
+    """Toggling faster than HOLD_SAFETY_MS crossed the streams: the 2s timer
+    armed by one rebuild released whichever hold was running when it expired,
+    disconnecting the handler mid-rebuild. His log caught it twice — holds at
+    5.882 and 6.082 killed the rebuilds that began at 7.827 and 8.050, each
+    painting the chapter top ~30ms later."""
+    hold = _deep_in_psalm_119()
+    hold.hold_scroll()
+    hold.arm()
+    hold.release_scroll_hold()            # that rebuild's restore landed
+
+    hold.hold_scroll()                    # the next toggle, well inside 2s
+    hold.arm()
+    hold.fire_oldest_timer()              # the FIRST toggle's timer expiring
+    assert hold.held, 'a stale timer tore down a live hold'
+    assert hold.adj.handler is not None
+
+    hold.adj.collapse_to(898.0)           # the collapse it was left holding
+    hold._reassert_held_scroll()
+    assert hold.adj.get_value() == 9773.8
+
+
+def test_a_holds_own_timer_still_ends_it():
+    # The safety net has to keep working: a hold whose restore never arrives
+    # must not pin the scrollbar forever.
+    hold = _deep_in_psalm_119()
+    hold.hold_scroll()
+    hold.arm()
+    hold.fire_oldest_timer()
+    assert not hold.held

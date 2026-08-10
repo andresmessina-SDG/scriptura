@@ -916,6 +916,9 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
         self._hold_handler = None
         self._faked_upper = None
         self._in_hold = False
+        # Bumped by every hold and every release, so a safety timer can tell
+        # whether the hold it was armed for is still the one running.
+        self._hold_gen = 0
 
     def set_reading_width(self, px):
         self._reading_width = max(200, int(px))
@@ -966,15 +969,27 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
         adj = self.get_vadjustment()
         self._hold_value = adj.get_value() or None
         self._faked_upper = None
+        if self._hold_value is None:
+            return
         # The collapse does not wait for an allocation: GtkTextView revises
         # `upper` from its validation idle too, and those frames are painted
         # as well. Ride the adjustment's own signal instead of only the
         # layout pass.
-        if self._hold_value is not None and self._hold_handler is None:
+        if self._hold_handler is None:
             self._hold_handler = adj.connect('changed', self._on_adj_changed)
-            # A hold must never outlive its rebuild, whatever happens to the
-            # restore. Nothing downstream is trusted to end it.
-            GLib.timeout_add(HOLD_SAFETY_MS, self._release_hold)
+        # A hold must never outlive its rebuild, whatever happens to the
+        # restore. Nothing downstream is trusted to end it. The timer is
+        # stamped with the hold it belongs to: an unstamped one expiring 2s
+        # later tore down whichever hold happened to be running by then, which
+        # is how a toggle could still paint the chapter top (measured: holds at
+        # 5.882 and 6.082 killed the rebuilds that began at 7.827 and 8.050).
+        self._hold_gen += 1
+        GLib.timeout_add(HOLD_SAFETY_MS, self._expire_hold, self._hold_gen)
+
+    def _expire_hold(self, gen):
+        if gen == self._hold_gen:
+            self._release_hold()
+        return GLib.SOURCE_REMOVE
 
     def _on_adj_changed(self, _adj):
         if self._in_hold:
@@ -994,6 +1009,9 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
     def _release_hold(self):
         self._hold_value = None
         self._faked_upper = None
+        # Retire this hold's number so its safety timer, still pending, cannot
+        # come back and release a hold taken after it.
+        self._hold_gen += 1
 
         if self._hold_handler is not None:
             self.get_vadjustment().disconnect(self._hold_handler)
