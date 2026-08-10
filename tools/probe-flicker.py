@@ -28,10 +28,17 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 POLL_MS = 100
 SETTLE_POLLS = 4
+#: Milliseconds between toggles. The default lets each rebuild settle, which
+#: is what a reader changing one setting does. PROBE_GAP_MS drives the other
+#: case: toggling faster than HOLD_SAFETY_MS, so one rebuild's safety timer
+#: expires inside a later rebuild. That is the cadence Andres toggles at, and
+#: the only one that reproduced the chapter-top flash.
+GAP_MS = int(os.environ.get('PROBE_GAP_MS', '0'))
+ROUNDS_ENV = int(os.environ.get('PROBE_ROUNDS', '0'))
 CAP_MS = 30000
 DRIVER_TIMEOUT = 240.0
 TOL = 4.0
-ROUNDS = 4
+ROUNDS = ROUNDS_ENV or 4
 
 
 def run_driver() -> int:
@@ -150,10 +157,13 @@ def run_driver() -> int:
                         'adj_distinct': sorted({round(v, 1)
                                                 for v in S['adj_frames']}),
                     })
-                    GLib.timeout_add(500, one_round)
+                    GLib.timeout_add(GAP_MS or 500, one_round)
                     return GLib.SOURCE_REMOVE
                 GLib.timeout_add(300, stop)
-            settle(pane, after)
+            if GAP_MS:
+                GLib.timeout_add(GAP_MS, after, None)
+            else:
+                settle(pane, after)
             return GLib.SOURCE_REMOVE
 
     def wait_arrived():
