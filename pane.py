@@ -2802,8 +2802,10 @@ class BiblePane(Gtk.Box):
 
     def _restyle_numerals(self):
         """Switch the figure style on the rendered chapter without rebuilding
-        it. False when there is nothing adopted to switch, so the caller can
-        fall back to a render.
+        it. False when the tag has never been minted, so the caller can fall
+        back to a render — note that is a weaker test than "this buffer has
+        numerals": the tag is not chapter-scoped and outlives the chapter that
+        adopted it. See `set_oldstyle_numerals` for why that is safe.
 
         No anchor work, and that was measured rather than assumed: swapping
         the figures moves the reading position 0px on the shipped serif, on
@@ -2844,7 +2846,9 @@ class BiblePane(Gtk.Box):
         `foreground-set` is what carries the toggle: clearing it leaves the
         cap enlarged and bold, wearing the reading colour like any other
         letter, which is exactly the uncoloured state. False when there is no
-        cap tag to change, so the caller can fall back to a render.
+        cap tag to change, so the caller can fall back to a render — the tag
+        outlives its chapter, so that means "no cap has ever been rendered
+        here", not "this chapter has none".
         """
         if tag is None:
             tag = self._buffer.get_tag_table().lookup(self._DROPCAP_TAG)
@@ -3259,10 +3263,13 @@ class BiblePane(Gtk.Box):
         if self._oldstyle_nums == bool(enabled):
             return
         self._oldstyle_nums = bool(enabled)
-        # Same text, one font feature. Anything without adopted numeral spans
-        # (a devotional, a generic book, a chapter that never rendered) falls
-        # through to the render, which is also what picks the flag up when a
-        # Bible next appears here.
+        # Same text, one font feature. The fall-through covers a pane that has
+        # never rendered a Bible — the tag is not chapter-scoped, so once one
+        # has, it survives every later render and this path is taken from then
+        # on. Which is right either way: `_numeral_ff` is written by the Bible
+        # render and nothing else, so a devotional or genbook standing in the
+        # pane has no numerals for the mutation to miss, and the render that
+        # brings a Bible back reads the flag afresh.
         if not self._restyle_numerals():
             self._rerender_keeping_place()
 
@@ -3270,9 +3277,12 @@ class BiblePane(Gtk.Box):
         if self._colored_dropcap == bool(enabled):
             return
         self._colored_dropcap = bool(enabled)
-        # Same text, same cap, one foreground on or off. Anything without a
-        # cap tag (a devotional, a genbook, a chapter whose verse 1 had no
-        # letter to enlarge) falls through to the render.
+        # Same text, same cap, one foreground on or off. Same shape as the
+        # numerals above, and the same caveat: the cap tag outlives the chapter
+        # that made it, so the fall-through only ever fires on a pane no cap
+        # has been rendered into. Harmless — the enlarged letter is written by
+        # the Bible render alone, and a chapter whose verse 1 offered no letter
+        # to enlarge would not gain one from a re-render either.
         if not self._sync_dropcap_ink():
             self._rerender_keeping_place()
 
