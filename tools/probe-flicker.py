@@ -34,6 +34,12 @@ SETTLE_POLLS = 4
 #: expires inside a later rebuild. That is the cadence Andres toggles at, and
 #: the only one that reproduced the chapter-top flash.
 GAP_MS = int(os.environ.get('PROBE_GAP_MS', '0'))
+#: Which setting to toggle. Footnotes by default; the others are the rest of
+#: the attribute-only set, whose whole point is that they do not re-render —
+#: so the position must hold across them too.
+TRIGGER = os.environ.get('PROBE_TRIGGER', 'footnotes')
+TRIGGERS = {'footnotes': ('set_show_footnotes', '_show_footnotes'),
+            'headings': ('set_show_headings', '_show_headings')}
 ROUNDS_ENV = int(os.environ.get('PROBE_ROUNDS', '0'))
 CAP_MS = 30000
 DRIVER_TIMEOUT = 240.0
@@ -129,13 +135,20 @@ def run_driver() -> int:
             S['frames'] = []
             S['adj_frames'] = []
             S['recording'] = True
-            cur = bool(pane._show_footnotes)
-            if os.environ.get('PROBE_VIA_BUTTON'):
+            setter, attr = TRIGGERS[TRIGGER]
+            cur = bool(getattr(pane, attr))
+            if TRIGGER != 'footnotes':
+                getattr(pane, setter)(not cur)
+            elif os.environ.get('PROBE_VIA_BUTTON'):
                 # The reader's own path: the f* toolbar button, which also
                 # writes the setting and toggles the second pane.
                 S['win'].fnote_toggle.set_active(not cur)
             else:
                 pane.set_show_footnotes(not cur)
+
+            anchor_before = pane._capture_scroll_anchor()
+            top_verse_before = pane._find_topmost_visible_verse()
+            inline_titles = getattr(pane, '_rendered_inline_titles', None)
 
             def after(_text):
                 # Keep recording a little past the settle, then report.
@@ -156,6 +169,14 @@ def run_driver() -> int:
                             Gtk.TextWindowType.TEXT, 0, 0)[1], 1),
                         'adj_distinct': sorted({round(v, 1)
                                                 for v in S['adj_frames']}),
+                        # For a trigger that legitimately moves the text (a
+                        # heading is two blank lines and a line of type), the
+                        # pixel offset SHOULD change. What must not change is
+                        # which words are at the reading top.
+                        'anchor_before': anchor_before,
+                        'top_verse_before': top_verse_before,
+                        'inline_titles': inline_titles,
+                        'anchor_after': pane._capture_scroll_anchor(),
                     })
                     GLib.timeout_add(GAP_MS or 500, one_round)
                     return GLib.SOURCE_REMOVE
