@@ -884,6 +884,12 @@ def _extract_segments(html):
 
 
 
+#: Longest a rebuild's scroll hold may last (see _ReadingScrolledWindow.
+#: hold_scroll). Generous against a slow render, short enough that a hold
+#: which somehow never released cannot pin the scrollbar for a reader.
+HOLD_SAFETY_MS = 2000
+
+
 class _ReadingScrolledWindow(Gtk.ScrolledWindow):
     """ScrolledWindow that centers a capped-width text column by pushing
     symmetric left/right margins onto its TextView child. Keeps the
@@ -905,6 +911,11 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
         # REPLACES the view's, so it must track it).
         self.on_margins_change = None
         self._last_alloc_height = -1
+        # Set by hold_scroll() for the length of a rebuild; see there.
+        self._hold_value = None
+        self._hold_handler = None
+        self._faked_upper = None
+        self._in_hold = False
 
     def set_reading_width(self, px):
         self._reading_width = max(200, int(px))
@@ -929,11 +940,84 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
         # resize). Applying them first lets one allocation pass do the work.
         self._apply_margins(width)
         Gtk.ScrolledWindow.do_size_allocate(self, width, height, baseline)
+        self._reassert_held_scroll()
         if height != self._last_alloc_height:
             was_first = self._last_alloc_height < 0
             self._last_alloc_height = height
             if not was_first and self.on_height_change is not None:
                 self.on_height_change()
+
+    def hold_scroll(self):
+        """Keep the reading position through a buffer rebuild.
+
+        Emptying the buffer collapses the vadjustment's `upper` to GTK's
+        estimate for the lines it has not validated yet (measured: 16245 ->
+        688 on Psalms 119), and the chain-up above clamps `value` against it.
+        The restore runs on an idle at DEFAULT_IDLE, which loses to
+        GDK_PRIORITY_REDRAW — so the clamped value is what gets PAINTED, and
+        the reader sees the chapter top for two or three frames before the
+        position walks back.
+
+        Held here rather than fixed at the source because GtkTextView offers
+        no way to validate the lines early: get_iter_location, get_line_yrange,
+        queue_draw and scroll_to_iter all read the btree's estimates and leave
+        `upper` where it was (measured for the scroll matrix).
+        """
+        adj = self.get_vadjustment()
+        self._hold_value = adj.get_value() or None
+        self._faked_upper = None
+        # The collapse does not wait for an allocation: GtkTextView revises
+        # `upper` from its validation idle too, and those frames are painted
+        # as well. Ride the adjustment's own signal instead of only the
+        # layout pass.
+        if self._hold_value is not None and self._hold_handler is None:
+            self._hold_handler = adj.connect('changed', self._on_adj_changed)
+            # A hold must never outlive its rebuild, whatever happens to the
+            # restore. Nothing downstream is trusted to end it.
+            GLib.timeout_add(HOLD_SAFETY_MS, self._release_hold)
+
+    def _on_adj_changed(self, _adj):
+        if self._in_hold:
+            return                      # our own set_upper coming back round
+        self._in_hold = True
+        try:
+            self._reassert_held_scroll()
+        finally:
+            self._in_hold = False
+
+    def _release_hold(self):
+        self._hold_value = None
+        self._faked_upper = None
+
+        if self._hold_handler is not None:
+            self.get_vadjustment().disconnect(self._hold_handler)
+            self._hold_handler = None
+        return GLib.SOURCE_REMOVE
+
+    def _reassert_held_scroll(self):
+        """Undo the allocation's clamp, and release the hold once the real
+        document has grown back past the held position — so a hold can never
+        outlive the rebuild that asked for it, even if no restore arrives."""
+        if self._hold_value is None:
+            return
+        adj = self.get_vadjustment()
+        page = adj.get_page_size()
+        upper = adj.get_upper()
+        if upper == self._faked_upper:
+            # Our own height talking back. GTK has revised nothing yet, so
+            # reading this as "tall enough" would release the hold on the
+            # strength of the lie that replaced the collapse.
+            if adj.get_value() != self._hold_value:
+                adj.set_value(self._hold_value)
+            return
+        if upper - page >= self._hold_value:
+            self._release_hold()         # a real height, and it fits
+            return
+        # Lie about the height for exactly as long as the estimate is short.
+        # The alternative is a value of nearly zero, which is the flicker.
+        self._faked_upper = self._hold_value + page
+        adj.set_upper(self._faked_upper)
+        adj.set_value(self._hold_value)
 
     def _apply_margins(self, avail):
         if avail <= 0:
@@ -2362,6 +2446,12 @@ class BiblePane(Gtk.Box):
         self._artifact_markers = []  # rebuilt below; old ones died with set_text('')
 
         self._cancel_all_flashes()
+        # Before the buffer empties: hold the position the allocation's clamp
+        # is about to take. Only where a restore is coming — a navigation
+        # means to land somewhere else, and a hold would fight it.
+        if (self._restore_anchor is not None
+                or self._restore_top_verse is not None):
+            self._reading_scroll.hold_scroll()
         self._buffer.set_text('')
         self._clear_chapter_scoped_tags()
         self._chapter_footnotes = {}
