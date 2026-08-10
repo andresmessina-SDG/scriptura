@@ -985,6 +985,12 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
         finally:
             self._in_hold = False
 
+    def release_scroll_hold(self):
+        """End a hold because the rebuild's restore has run. That is the only
+        honest end signal available — see _reassert_held_scroll for why the
+        adjustment's height cannot serve as one."""
+        self._release_hold()
+
     def _release_hold(self):
         self._hold_value = None
         self._faked_upper = None
@@ -1011,7 +1017,13 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
                 adj.set_value(self._hold_value)
             return
         if upper - page >= self._hold_value:
-            self._release_hold()         # a real height, and it fits
+            # Tall enough to carry the position, so nothing is clamping and
+            # there is nothing to undo. Deliberately NOT a release: `upper`
+            # reads tall both when GTK has finished revalidating and when it
+            # has not yet collapsed at all, and the two are indistinguishable
+            # from here. Releasing on the second reading left the collapse
+            # unguarded four frames later (measured on Psalms 119: released
+            # at upper=27462, painted the chapter top at upper=836).
             return
         # Lie about the height for exactly as long as the estimate is short.
         # The alternative is a value of nearly zero, which is the flicker.
@@ -2478,10 +2490,13 @@ class BiblePane(Gtk.Box):
             if _is_bad_cipher(all_empty, in_index, _printable_ratio(sample)):
                 self._display_cipher_locked()
                 self._on_cipher_error(module)
+                # No restore will run on this path to end the hold for us.
+                self._reading_scroll.release_scroll_hold()
                 return GLib.SOURCE_REMOVE
 
         if all_empty:
             self._display_empty_chapter(book, chapter)
+            self._reading_scroll.release_scroll_hold()
             return GLib.SOURCE_REMOVE
 
         # Verse numbers actually rendered this chapter, for nearest-preceding
@@ -2694,6 +2709,10 @@ class BiblePane(Gtk.Box):
             self._restore_top_verse = None
             self._restore_anchor = None
             self._reading_anchor = None
+            # A navigation that arrived mid-rebuild outranks the restore the
+            # hold was taken for. Let it go now rather than fight the landing
+            # until the safety timer expires.
+            self._reading_scroll.release_scroll_hold()
             # Navigation to a specific verse — mark it as the active
             # verse so the current-verse indicator sits on it after
             # the scroll lands.
@@ -2703,11 +2722,13 @@ class BiblePane(Gtk.Box):
         elif self._restore_anchor is not None:
             anchor = self._restore_anchor
             self._restore_anchor = None
-            GLib.idle_add(self._apply_scroll_anchor, anchor)
+            GLib.idle_add(self._restore_then_release,
+                          self._apply_scroll_anchor, anchor)
         elif self._restore_top_verse is not None:
             v = self._restore_top_verse
             self._restore_top_verse = None
-            GLib.idle_add(self._scroll_to_verse_silent, v)
+            GLib.idle_add(self._restore_then_release,
+                          self._scroll_to_verse_silent, v)
         else:
             # Belt and braces: scroll_to_iter's pending scroll can be
             # dropped during a buffer swap (observed: navigation from a
@@ -3111,6 +3132,16 @@ class BiblePane(Gtk.Box):
             self._buffer.apply_tag(tag, s, e)
             ftype, body = vnotes[n]
             self._chapter_footnotes[(verse, n)] = (ftype, body, label)
+
+    def _restore_then_release(self, restore, arg):
+        """Place the reading position, then end the rebuild's scroll hold.
+
+        Order matters: the hold has to outlive every frame up to and including
+        this one, because GTK's collapse of `upper` can arrive after the
+        painted frames the restore was scheduled behind."""
+        restore(arg)
+        self._reading_scroll.release_scroll_hold()
+        return GLib.SOURCE_REMOVE
 
     def _rerender_keeping_place(self):
         """Re-render the current chapter, restoring the exact reading locus
