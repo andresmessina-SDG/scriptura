@@ -205,7 +205,7 @@ def _substitute_footnote_markers(markup, vnotes, dark, start_idx=0):
     Ordinary letters raised with `rise`, not Unicode superscript glyphs:
     the superscript block has no q (the old glyph set wrapped at 25 with
     q missing), while rise+size renders the full a…z, aa… sequence."""
-    color = '#7fa3c1' if dark else '#5a7fa3'
+    color = theme_ink(dark)['_ink_link']
     out = []
     markers = []
     pos = 0
@@ -292,7 +292,7 @@ def _html_to_markup(html, dark, strip=True, divine_smallcaps=False,
         html = ''.join(c for c in html if not ('\ud800' <= c <= '\udfff'))
 
     # 1. Map SWORD/HTML tags to temporary markers to protect them from escaping
-    red = '#e07070' if dark else '#bb0000'
+    red = theme_ink(dark)['_ink_redletter']
 
     # Red letters (Jesus' words)
     html = re.sub(r'<q [^>]*who="Jesus"[^>]*>(.*?)</q>', r'[[RED_S]]\1[[RED_E]]', html)
@@ -544,12 +544,198 @@ def _dropcap_split(markup):
     return None
 
 
+# The cap's size and weight, and nothing else. Its colour is applied as a tag
+# over the same character (`BiblePane._apply_dropcap_tag`) rather than written
+# in here: a colour baked into markup cannot be found again, and both the
+# toggle and the custom-colour picker have to change it without a re-render.
+_DROPCAP_SPAN = '<span size="200%" weight="bold">'
+
+
+def _plain_len(markup):
+    """How many characters `markup` contributes to the buffer.
+
+    Tags contribute none, an entity exactly one, everything else itself. Used
+    to turn the cap span's position in the markup into its offset in the text
+    — the same markup-to-plain-offset move `_substitute_footnote_markers`
+    makes for marker letters.
+    """
+    n = i = 0
+    end = len(markup)
+    while i < end:
+        ch = markup[i]
+        if ch == '<':
+            j = markup.find('>', i)
+            if j < 0:
+                break
+            i = j + 1
+        elif ch == '&':
+            j = markup.find(';', i)
+            n += 1
+            i = i + 1 if (j < 0 or j - i > 12) else j + 1
+        else:
+            n += 1
+            i += 1
+    return n
+
+
+def _dropcap_index(markup, since):
+    """Where the cap sits in the text `markup` will produce, or None.
+
+    `since` is where the span was before the footnote markers went in. Markers
+    can only push it further right, so searching from there both skips work and
+    rules out an earlier accidental match. None when the span is not there at
+    all — a lost cap is a cosmetic miss, not worth raising over.
+    """
+    at = markup.find(_DROPCAP_SPAN, since)
+    return _plain_len(markup[:at]) if at >= 0 else None
+
+
 def dropcap_color_hex(dark):
     """Effective drop-cap colour (shared with the Appearance swatch)."""
     custom = settings.get('dropcap_color')
     if custom:
         return str(custom)
     return DROPCAP_GOLD_DARK if dark else DROPCAP_GOLD_LIGHT
+
+
+def _numeral_features(oldstyle):
+    """The OpenType feature verse and chapter numerals are set with.
+
+    Both states are explicit — some faces (Georgia) default to old-style
+    figures, so OFF must request lining (lnum) rather than request nothing, or
+    the toggle is invisible there. Faces lacking a feature ignore it.
+    """
+    return 'onum=1' if oldstyle else 'lnum=1'
+
+
+def theme_ink(dark):
+    """Every foreground a rendered chapter bakes that depends on the theme.
+
+    One table, keyed by the tag name the render adopts each colour into
+    (`BiblePane._adopt_theme_ink`). A colour that is written straight into the
+    markup and nowhere else cannot be found again after the fact, and the
+    recolouring path would go quietly stale the day someone changed one of
+    them — so the markup and the recolouring read the same entry.
+
+    `_ink_link` is the blue shared by footnote markers, commentary
+    cross-references and the lexicon hover; they are one colour by intent.
+    """
+    return {
+        '_ink_heading':   '#8d8278' if dark else '#7a7066',
+        '_ink_link':      '#7fa3c1' if dark else '#5a7fa3',
+        '_ink_redletter': '#e07070' if dark else '#bb0000',
+        '_ink_dropcap':   dropcap_color_hex(dark),
+    }
+
+
+# ── Per-verse decorations ────────────────────────────────────────────────────
+
+class _VerseRender:
+    """What one verse of the render loop produced, for the marks that follow it.
+
+    The loop fills this in as it writes the verse; `_decorate_verse` then walks
+    `_VERSE_DECORATIONS` over it. Everything a per-verse mark has ever needed
+    is here, so a new mark is an entry in that tuple rather than another branch
+    inside the loop — which is what the loop had become.
+
+    `start_mark` spans the whole block (heading excluded, deliberately);
+    `text_mark` starts at the verse text, after the number. Both are left
+    gravity, so text inserted by an earlier decoration does not drag them.
+    """
+
+    __slots__ = ('start_v', 'end_v', 'html', 'is_commentary', 'anno',
+                 'start_mark', 'text_mark', 'has_artifact',
+                 'cap_index', 'fn_markers', 'vnotes', 'poetry_lines')
+
+    def __init__(self, start_v, end_v, html, is_commentary):
+        self.start_v = start_v
+        self.end_v = end_v
+        self.html = html
+        self.is_commentary = is_commentary
+        self.anno = {}
+        self.start_mark = None
+        self.text_mark = None
+        self.has_artifact = False
+        # Filled in by the Bible branch only; a commentary produces none of
+        # them, and the plain-text fallback resets them to exactly this.
+        self.cap_index = None
+        self.fn_markers = []
+        self.vnotes = {}
+        self.poetry_lines = {}
+
+
+class _VerseDecoration:
+    """One mark applied to a verse as it is rendered.
+
+    Mirrors `reading_view._Decoration`, which does the same job for the marks
+    the view PAINTS; this one is for the marks the render APPLIES. Both answer
+    the same question — what is on this verse and what switches it on — and
+    keeping one shape for both means a reader who has seen one has seen both.
+    """
+
+    __slots__ = ('name', 'apply', 'enabled')
+
+    def __init__(self, name, apply, enabled=None):
+        self.name = name
+        self.apply = apply
+        self.enabled = enabled
+
+    def on(self, pane, r):
+        return self.enabled is None or bool(self.enabled(pane, r))
+
+
+#: Commentaries carry none of the verse-level marks but `vnum`: they render one
+#: block per section, their own `Verse N` header stands in for the number, and
+#: they take no user annotations — hence the `not r.is_commentary` on all but
+#: one entry below.
+#:
+#: In application order, and the order is load-bearing twice over. The artifact
+#: marker INSERTS a character, so it has to land before `vnum` measures the
+#: block's end. And `strong_words` reads the text between `text_mark` and the
+#: end, so it has to come after everything that adds to it.
+_VERSE_DECORATIONS = (
+    _VerseDecoration(
+        'dropcap',
+        lambda p, r: p._apply_dropcap_tag(r.text_mark, r.cap_index),
+        lambda p, r: not r.is_commentary and r.cap_index is not None),
+    _VerseDecoration(
+        'footnotes',
+        lambda p, r: p._apply_footnote_tags(
+            r.start_v, r.fn_markers, r.vnotes, r.text_mark),
+        lambda p, r: not r.is_commentary and bool(r.fn_markers)),
+    _VerseDecoration(
+        'poetry_lines',
+        lambda p, r: p._apply_poetry_line_tags(r.text_mark, r.poetry_lines),
+        lambda p, r: not r.is_commentary and bool(r.poetry_lines)),
+    # Subtle 'related artifact' marker — a small clickable amphora icon beside
+    # any verse a gallery artifact references. Rare (~34 verses Bible-wide), so
+    # it reads as a quiet cue. An embedded icon (not a font glyph) so it always
+    # renders — U+26B1 falls back to tofu in many reading fonts.
+    _VerseDecoration(
+        'artifact_marker',
+        lambda p, r: p._insert_artifact_marker(r.start_v),
+        lambda p, r: not r.is_commentary and r.has_artifact),
+    # The verse anchor navigation resolves against. For a grouped commentary
+    # section every verse in [start_v, end_v] points at the same block, so
+    # navigating to any of them lands on this section. No enable condition:
+    # this one is the reason a block is addressable at all.
+    _VerseDecoration('vnum', lambda p, r: p._apply_vnum_tags(r)),
+    # Highlight / underline / note indicator, applied in place so they can be
+    # changed later without rebuilding the chapter (`_refresh_verse_annotation`).
+    # Skipped for un-annotated verses: on a fresh buffer there is nothing to
+    # clear, and the per-verse call was the chapter render's main scaling cost.
+    _VerseDecoration(
+        'annotations',
+        lambda p, r: p._apply_anno_tags(r.start_v, r.anno, fresh=True),
+        lambda p, r: not r.is_commentary and bool(r.anno)),
+    _VerseDecoration(
+        'strong_words',
+        lambda p, r: p._tag_strong_words(
+            p._buffer.get_iter_at_mark(r.text_mark),
+            p._buffer.get_end_iter(), r.html),
+        lambda p, r: (not r.is_commentary and p._lexicon_enabled
+                      and p._on_word_click)),
+)
 
 
 # OSIS poetry-line milestones (<l sID/> … <l eID/>, ASV/BSB/LEB carry
@@ -736,8 +922,13 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
             self._apply_margins(w)
 
     def do_size_allocate(self, width, height, baseline):
-        Gtk.ScrolledWindow.do_size_allocate(self, width, height, baseline)
+        # Margins first, then chain up. Setting them afterwards re-queued a
+        # resize on the TextView with the parent's allocation already done,
+        # and the overlay scrollbar's trough was then snapshotted with no
+        # allocation of its own ("Trying to snapshot GtkGizmo ..." on every
+        # resize). Applying them first lets one allocation pass do the work.
         self._apply_margins(width)
+        Gtk.ScrolledWindow.do_size_allocate(self, width, height, baseline)
         if height != self._last_alloc_height:
             was_first = self._last_alloc_height < 0
             self._last_alloc_height = height
@@ -2216,7 +2407,7 @@ class BiblePane(Gtk.Box):
         # space so a heading there would just mislabel whatever happened
         # to be loaded last.
         if self._module_type == 'Biblical Texts':
-            heading_color = '#8d8278' if dark else '#7a7066'
+            heading_color = theme_ink(dark)['_ink_heading']
             # Single trailing newline (not two): line_spacing 1.6 already gives
             # ample separation, and a blank line here left an oversized top gap.
             heading = (f'<span size="x-large" weight="bold" '
@@ -2272,6 +2463,10 @@ class BiblePane(Gtk.Box):
                     self._insert_section_heading(head, wrote_a_block)
 
             start_mark = self._buffer.create_mark(None, self._buffer.get_end_iter(), True)
+            r = _VerseRender(start_v, end_v, html, is_commentary)
+            r.start_mark = start_mark
+            r.anno = annos.get(str(start_v), {})
+            r.has_artifact = start_v in art_verses
 
             # 1. Verse number — inline for Bibles, bold section header for commentaries
             if is_commentary:
@@ -2300,9 +2495,9 @@ class BiblePane(Gtk.Box):
                 self._buffer.insert_markup(self._buffer.get_end_iter(), v_num_markup, -1)
 
             text_start_mark = self._buffer.create_mark(None, self._buffer.get_end_iter(), True)
+            r.text_mark = text_start_mark
 
             # 2. Verse text
-            v_anno = annos.get(str(start_v), {})
             if is_commentary:
                 # Commentaries use a segmented insertion so cross-refs
                 # like <reference osisRef="Bible:Phil.3.4">…</reference>
@@ -2355,17 +2550,14 @@ class BiblePane(Gtk.Box):
                 # incremental redraw on scroll left ghost fragments
                 # above the cap when the user scrolled the chapter back
                 # into view.
+                cap_index = None
                 if start_v == 1:
                     split = _dropcap_split(v_text_markup)
                     if split:
                         before, letter, after = split
-                        cap_attrs = 'size="200%" weight="bold"'
-                        if self._colored_dropcap:
-                            cap_attrs += (
-                                f' foreground="{dropcap_color_hex(dark)}"')
                         v_text_markup = (
-                            f'{before}<span {cap_attrs}>{letter}</span>{after}'
-                        )
+                            f'{before}{_DROPCAP_SPAN}{letter}</span>{after}')
+                        cap_index = len(before)   # markup offset for now
                 # Tokens → superscript marker letters, after the drop-cap
                 # transform so the recorded plain-text offsets are final.
                 fn_markers = []
@@ -2373,6 +2565,11 @@ class BiblePane(Gtk.Box):
                     v_text_markup, fn_markers, fn_letter_idx = (
                         _substitute_footnote_markers(
                             v_text_markup, vnotes, dark, fn_letter_idx))
+                # Where the cap landed in the finished text. Re-found on the
+                # final markup, after the footnote markers went in, so a marker
+                # ahead of it can't shift the offset out from under us.
+                if cap_index is not None:
+                    cap_index = _dropcap_index(v_text_markup, cap_index)
                 # A verse ending on a closed poetry line already breaks —
                 # the inter-verse space would dangle at the next line start.
                 sep = '' if v_text_markup.endswith('\n') else ' '
@@ -2382,46 +2579,14 @@ class BiblePane(Gtk.Box):
                     self._buffer.insert(self._buffer.get_end_iter(), plain + ' ')
                     fn_markers = []  # fallback text has no marker letters
                     poetry_lines = {}
-                if fn_markers:
-                    self._apply_footnote_tags(
-                        start_v, fn_markers, vnotes, text_start_mark)
-                if poetry_lines:
-                    self._apply_poetry_line_tags(text_start_mark, poetry_lines)
-                # Subtle 'related artifact' marker — a small clickable
-                # amphora icon beside any verse a gallery artifact
-                # references. Rare (~34 verses Bible-wide), so it reads as
-                # a quiet cue. An embedded icon (not a font glyph) so it
-                # always renders — the U+26B1 codepoint falls back to tofu
-                # in many reading fonts.
-                if start_v in art_verses:
-                    self._insert_artifact_marker(start_v)
+                    cap_index = None  # the plain fallback carries no cap
+                r.cap_index = cap_index
+                r.fn_markers = fn_markers
+                r.vnotes = vnotes
+                r.poetry_lines = poetry_lines
 
-            # 3. Apply vnum tags. For grouped commentary sections, every
-            # verse in [start_v, end_v] points at the same rendered
-            # block so navigation to any of them lands on this section.
-            start_iter = self._buffer.get_iter_at_mark(start_mark)
-            end_iter = self._buffer.get_end_iter()
-            for v in range(start_v, end_v + 1):
-                tag_name = f'vnum_{v}'
-                tag = self._buffer.get_tag_table().lookup(tag_name)
-                if not tag:
-                    tag = self._buffer.create_tag(tag_name)
-                self._buffer.apply_tag(tag, start_iter, end_iter)
-
-            # 4. Apply persistent annotation tags (highlight/underline/note
-            # indicator) in-place — these can be changed later without a
-            # full re-render via _refresh_verse_annotation. Bibles only;
-            # commentaries don't get user annotations. Skipped entirely for
-            # un-annotated verses: on a fresh buffer there is nothing to
-            # clear, and the per-verse call was the chapter render's main
-            # scaling cost.
-            if not is_commentary and v_anno:
-                self._apply_anno_tags(start_v, v_anno, fresh=True)
-
-            # 5. Strong's word tagging (Bible mode only)
-            if not is_commentary and self._lexicon_enabled and self._on_word_click:
-                t_start = self._buffer.get_iter_at_mark(text_start_mark)
-                self._tag_strong_words(t_start, self._buffer.get_end_iter(), html)
+            # 3. Every mark this verse wears, in one declarative pass.
+            self._decorate_verse(r)
 
             self._buffer.delete_mark(start_mark)
             self._buffer.delete_mark(text_start_mark)
@@ -2483,6 +2648,12 @@ class BiblePane(Gtk.Box):
             self._set_current_verse_indicator(self._selected_verse)
 
         self._update_chapter_note_indicator()
+        # Give the theme-dependent spans and the numerals one owner apiece
+        # before the overlay bumps below, which must stay at the top of the
+        # table.
+        self._adopt_theme_ink(dark)
+        self._adopt_numerals(self._oldstyle_nums)
+        self._raise_dropcap()
         self._search.apply_highlight()
         # Every verse's body-text spans (created by insert_markup during the
         # render loop) carry an ever-increasing tag priority, which can
@@ -2506,6 +2677,224 @@ class BiblePane(Gtk.Box):
         if self._mark_current_unit or self._focus_unit:
             GLib.idle_add(self._update_current_unit)
         return GLib.SOURCE_REMOVE
+
+    def _decorate_verse(self, r):
+        """Apply every mark `r`'s verse wears, in `_VERSE_DECORATIONS` order.
+
+        The render loop used to inline these as seven consecutive `if`s, so a
+        new per-verse feature meant another branch in the middle of the loop —
+        the one place in the file where an ordering mistake is hardest to see
+        and most expensive to make.
+        """
+        for dec in _VERSE_DECORATIONS:
+            if dec.on(self, r):
+                dec.apply(self, r)
+
+    def _apply_vnum_tags(self, r):
+        """Tag the whole block with `vnum_N` for every verse it answers to."""
+        buf = self._buffer
+        table = buf.get_tag_table()
+        start = buf.get_iter_at_mark(r.start_mark)
+        end = buf.get_end_iter()
+        for v in range(r.start_v, r.end_v + 1):
+            name = f'vnum_{v}'
+            tag = table.lookup(name) or buf.create_tag(name)
+            buf.apply_tag(tag, start, end)
+
+    #: Ascending precedence, and it mirrors how the markup nests: a footnote
+    #: marker sits inside red-letter text. Later application wins, so the
+    #: innermost span is adopted last. The drop cap is absent on purpose: its
+    #: colour is never written into the markup (see `_DROPCAP_SPAN`), so it has
+    #: nothing to adopt and `_raise_dropcap` handles its precedence instead.
+    _INK_ORDER = ('_ink_heading', '_ink_redletter', '_ink_link')
+
+    #: What `insert_markup` calls the tags it mints for a `foreground=` span.
+    #: Adoption considers these and nothing else — see `_adopt_theme_ink`.
+    _MARKUP_FG_PREFIX = 'foreground_rgba='
+
+    def _adopt_theme_ink(self, dark):
+        """Move the chapter's theme-coloured spans onto tags of our own.
+
+        `insert_markup` names every span it creates after its own attributes
+        (`foreground_rgba=rgb(141,130,120)`), so recolouring one in place would
+        leave a lying name behind and the next render would mint a second tag
+        for the new colour. Each theme-dependent colour is instead re-applied
+        as a stable `_ink_*` tag over the same ranges and the parser's tag is
+        dropped — which also stops the tag table growing a dead colour tag
+        every time the theme flips.
+
+        Matching is by colour, not by name: the same blue arrives from two
+        render paths (footnote markers and commentary cross-references) and
+        both want one owner. Only tags the markup parser minted are candidates,
+        though — a colour is not proof of ownership. The lexicon hover carries
+        that same blue by intent, and the drop-cap colour is whatever the
+        reader picked in Appearance, so it can collide with any tag we style
+        ourselves; matching on colour alone deleted `_strg_hover` on every
+        render and would take `_note_marker` or the current-verse indicator
+        with it the day someone chose their gold.
+        """
+        buf = self._buffer
+        table = buf.get_tag_table()
+        wanted = []
+        for name, hexcol in theme_ink(dark).items():
+            if name not in self._INK_ORDER:
+                continue
+            rgba = Gdk.RGBA()
+            if rgba.parse(hexcol):
+                wanted.append((name, rgba))
+
+        found = {}
+
+        def _collect(tag, _user_data=None):
+            name = tag.get_property('name') or ''
+            if not name.startswith(self._MARKUP_FG_PREFIX):
+                return
+            colour = tag.get_property('foreground-rgba')
+            for ink_name, rgba in wanted:
+                if colour.equal(rgba):
+                    found.setdefault(ink_name, []).append(tag)
+                    return
+
+        table.foreach(_collect, None)
+
+        for ink_name in self._INK_ORDER:
+            tags = found.get(ink_name)
+            if not tags:
+                continue
+            ours = table.lookup(ink_name)
+            if ours is None:
+                ours = buf.create_tag(ink_name)
+            ours.set_property('foreground-rgba',
+                              tags[0].get_property('foreground-rgba'))
+            for tag in tags:
+                # Offsets, not iters: the table is mutated below and a
+                # collected range has to survive that.
+                for lo, hi in self._tag_ranges(tag):
+                    buf.apply_tag(ours, buf.get_iter_at_offset(lo),
+                                  buf.get_iter_at_offset(hi))
+                table.remove(tag)
+            # Above the body spans, for the same priority decay
+            # _bump_overlay_priorities exists for.
+            ours.set_priority(table.get_size() - 1)
+
+    #: The figure style is one OpenType feature on the chapter heading and on
+    #: every verse number. Same adoption as the colours, and for the same
+    #: reason: insert_markup names the tag `font_features=onum=1`, after the
+    #: value it holds.
+    _NUMERAL_TAG = '_numerals'
+
+    def _adopt_numerals(self, oldstyle):
+        """Re-tag the numeral spans with `_NUMERAL_TAG` over the same ranges."""
+        buf = self._buffer
+        table = buf.get_tag_table()
+        want = _numeral_features(oldstyle)
+        victims = []
+
+        def _collect(tag, _user_data=None):
+            if tag.get_property('name') == self._NUMERAL_TAG:
+                return
+            if (tag.get_property('font-features-set')
+                    and tag.get_property('font-features') == want):
+                victims.append(tag)
+
+        table.foreach(_collect, None)
+        if not victims:
+            return
+        ours = table.lookup(self._NUMERAL_TAG)
+        if ours is None:
+            ours = buf.create_tag(self._NUMERAL_TAG)
+        ours.set_property('font-features', want)
+        for tag in victims:
+            for lo, hi in self._tag_ranges(tag):
+                buf.apply_tag(ours, buf.get_iter_at_offset(lo),
+                              buf.get_iter_at_offset(hi))
+            table.remove(tag)
+
+    def _restyle_numerals(self):
+        """Switch the figure style on the rendered chapter without rebuilding
+        it. False when there is nothing adopted to switch, so the caller can
+        fall back to a render.
+
+        No anchor work, and that was measured rather than assumed: swapping
+        the figures moves the reading position 0px on the shipped serif, on
+        Noto Serif and on Georgia — the face `_numeral_features` exists for,
+        whose own default figures are old-style. The numerals sit in a
+        space-padded span of their own, so the new metrics do not reflow the
+        line. Re-asserting the anchor here made it worse, not safer: it
+        applied a locus captured before the toggle and threw the reader
+        2504px up Psalm 119.
+        """
+        tag = self._buffer.get_tag_table().lookup(self._NUMERAL_TAG)
+        if tag is None:
+            return False
+        tag.set_property('font-features', _numeral_features(self._oldstyle_nums))
+        return True
+
+    #: The cap's ink. Same name the `theme_ink` table keys it under, so the
+    #: theme flip already knows how to find it — but unlike the other three
+    #: this tag is applied by the render rather than adopted from the markup,
+    #: because the cap has to keep its size and weight while losing its colour.
+    _DROPCAP_TAG = '_ink_dropcap'
+
+    def _apply_dropcap_tag(self, text_start_mark, index):
+        """Tag the drop-cap character, `index` characters into the verse text."""
+        buf = self._buffer
+        base = buf.get_iter_at_mark(text_start_mark).get_offset()
+        table = buf.get_tag_table()
+        tag = table.lookup(self._DROPCAP_TAG)
+        if tag is None:
+            tag = buf.create_tag(self._DROPCAP_TAG)
+        self._sync_dropcap_ink(tag)
+        buf.apply_tag(tag, buf.get_iter_at_offset(base + index),
+                      buf.get_iter_at_offset(base + index + 1))
+
+    def _sync_dropcap_ink(self, tag=None):
+        """Put the current drop-cap colour on the tag, or take it off.
+
+        `foreground-set` is what carries the toggle: clearing it leaves the
+        cap enlarged and bold, wearing the reading colour like any other
+        letter, which is exactly the uncoloured state. False when there is no
+        cap tag to change, so the caller can fall back to a render.
+        """
+        if tag is None:
+            tag = self._buffer.get_tag_table().lookup(self._DROPCAP_TAG)
+        if tag is None:
+            return False
+        if self._colored_dropcap:
+            dark = Adw.StyleManager.get_default().get_dark()
+            tag.set_property('foreground', dropcap_color_hex(dark))
+        else:
+            tag.set_property('foreground-set', False)
+        return True
+
+    def _raise_dropcap(self):
+        """Put the cap back on top of the body spans.
+
+        The adoptions above re-prioritise `_ink_redletter`, and in a
+        red-letter Bible the cap sits inside the Lord's words — so without
+        this the gold would lose to the red on exactly the chapters where
+        the illuminated initial matters most.
+        """
+        table = self._buffer.get_tag_table()
+        tag = table.lookup(self._DROPCAP_TAG)
+        if tag is not None:
+            tag.set_priority(table.get_size() - 1)
+
+    def _tag_ranges(self, tag):
+        """(start, end) character offsets of every range `tag` covers."""
+        buf = self._buffer
+        out = []
+        it = buf.get_start_iter()
+        if not it.starts_tag(tag) and not it.forward_to_tag_toggle(tag):
+            return out
+        while True:
+            start = it.get_offset()
+            if not it.forward_to_tag_toggle(tag):
+                out.append((start, buf.get_end_iter().get_offset()))
+                return out
+            out.append((start, it.get_offset()))
+            if not it.forward_to_tag_toggle(tag):
+                return out
 
     def _bump_overlay_priorities(self):
         """Pin the foreground-bearing overlay tags above the chapter's body-text
@@ -2600,7 +2989,7 @@ class BiblePane(Gtk.Box):
         """Insert one cross-reference: styled text + devref: tag over
         the same range, so _on_left_click's existing devref handler
         routes the click to _on_word_study_navigate → _go_to."""
-        color = '#7fa3c1' if dark else '#5a7fa3'
+        color = theme_ink(dark)['_ink_link']
         start_mark = self._buffer.create_mark(
             None, self._buffer.get_end_iter(), True)
         markup = (f'<span foreground="{color}" underline="single">'
@@ -2880,13 +3269,22 @@ class BiblePane(Gtk.Box):
         if self._oldstyle_nums == bool(enabled):
             return
         self._oldstyle_nums = bool(enabled)
-        self._rerender_keeping_place()
+        # Same text, one font feature. Anything without adopted numeral spans
+        # (a devotional, a generic book, a chapter that never rendered) falls
+        # through to the render, which is also what picks the flag up when a
+        # Bible next appears here.
+        if not self._restyle_numerals():
+            self._rerender_keeping_place()
 
     def set_colored_dropcap(self, enabled):
         if self._colored_dropcap == bool(enabled):
             return
         self._colored_dropcap = bool(enabled)
-        self._rerender_keeping_place()
+        # Same text, same cap, one foreground on or off. Anything without a
+        # cap tag (a devotional, a genbook, a chapter whose verse 1 had no
+        # letter to enlarge) falls through to the render.
+        if not self._sync_dropcap_ink():
+            self._rerender_keeping_place()
 
     def set_poetry_flush(self, flush):
         if self._poetry_flush == bool(flush):
@@ -2897,18 +3295,14 @@ class BiblePane(Gtk.Box):
         self._sync_poetry_tags()
 
     def refresh_dropcap_color(self):
-        """The stored drop-cap colour changed; the cap is baked into the
-        rendered markup, so re-render if it's currently shown."""
-        if self._colored_dropcap:
+        """The stored drop-cap colour changed. Nothing to do while the cap is
+        uncoloured — the toggle reads the colour fresh when it turns on."""
+        if self._colored_dropcap and not self._sync_dropcap_ink():
             self._rerender_keeping_place()
 
     def _numeral_ff(self):
-        """font_features attribute for verse/chapter numerals. Both states
-        are explicit — some faces (Georgia) default to old-style figures,
-        so OFF must request lining (lnum) rather than request nothing, or
-        the toggle is invisible there. Faces lacking a feature ignore it."""
-        return (' font_features="onum=1"' if self._oldstyle_nums
-                else ' font_features="lnum=1"')
+        """The markup attribute carrying `_numeral_features`."""
+        return f' font_features="{_numeral_features(self._oldstyle_nums)}"'
 
     def _ensure_poetry_tags(self):
         if self._poetry_tags is None:
@@ -3476,7 +3870,7 @@ class BiblePane(Gtk.Box):
             # reads distinctly from the solid annotation underline.
             hover_tag = self._buffer.create_tag(
                 '_strg_hover',
-                foreground='#7fa3c1' if dark else '#5a7fa3',
+                foreground=theme_ink(dark)['_ink_link'],
             )
         table = self._buffer.get_tag_table()
         hover_tag.set_priority(table.get_size() - 1)
@@ -4466,23 +4860,68 @@ class BiblePane(Gtk.Box):
         # detached from its window — avoids touching a destroyed buffer.
         if self.get_root() is None:
             return
-        # The current-verse tag bakes its background color at creation
-        # time. Drop it so the next render re-creates it against the
-        # new theme.
+        self._update_font_css()
+        self._apply_reading_page_edge()
+        # The indicator bakes its background at creation, and _ensure_current_
+        # verse_tag hands back an existing tag without looking at its colour.
+        # Drop it here rather than on the recolour path alone: a pane showing a
+        # devotional still holds the tag from the Bible it showed before, and
+        # would go back to that Bible wearing the other theme's purple.
         table = self._buffer.get_tag_table()
         cv = table.lookup(self._CURRENT_VERSE_TAG_NAME)
         if cv is not None:
             table.remove(cv)
-        self._update_font_css()
-        self._apply_reading_page_edge()
         if self._is_verse_navigable() and self._rendered_verses is not None:
-            # Same text, new colors — hold the reading locus through the
-            # rebuild (without this a theme flip jumped to the chapter top).
-            self._restore_anchor = self._capture_scroll_anchor()
-            self._display(self._rendered_verses,
-                          self._book, self._chapter, self._module)
+            # Same text, new colours: recolour it where it stands. Rebuilding
+            # the chapter to change four values threw the reading position
+            # away and then spent the whole anchor apparatus recovering it.
+            self._recolour_for_theme()
         else:
             self._fetch_and_render()
+
+    def _recolour_for_theme(self):
+        """Repaint the chapter's theme-dependent colours without a re-render.
+
+        Three kinds of colour live in the buffer, and only these three: the
+        `_ink_*` spans the render adopted, which can simply be set; the tags
+        whose NAME carries the colour (`hl_bg_<rgba>` and the current-verse
+        indicator), which cannot be mutated and are re-applied instead; and
+        the colours BibleTextView resolves at paint time, which need nothing
+        but a redraw.
+        """
+        dark = Adw.StyleManager.get_default().get_dark()
+        ink = theme_ink(dark)
+        table = self._buffer.get_tag_table()
+        for name, hexcol in ink.items():
+            tag = table.lookup(name)
+            if tag is not None:
+                tag.set_property('foreground', hexcol)
+        # The cap is the one entry in that table whose colour is conditional:
+        # the loop above just set a foreground on it, which would light up a
+        # cap the reader has turned off. This has the last word.
+        self._sync_dropcap_ink()
+        # Created lazily on first hover and outlives the render, so it is the
+        # one span the adoption pass never sees.
+        hover = table.lookup('_strg_hover')
+        if hover is not None:
+            hover.set_property('foreground', ink['_ink_link'])
+
+        # The highlight band's colour is read back out of its tag name by the
+        # view, and orange is muted in dark mode — so the band a reader put on
+        # a verse has to be re-applied under the other theme's name.
+        annos = annotations.get_annotations(
+            self._module, self._book, self._chapter) or {}
+        for verse, anno in annos.items():
+            try:
+                self._apply_anno_tags(int(verse), anno)
+            except (TypeError, ValueError):
+                continue
+
+        # `_on_theme_changed` dropped the indicator tag; re-applying mints it
+        # against the new theme.
+        if self._selected_verse is not None:
+            self._set_current_verse_indicator(self._selected_verse)
+        self._view.queue_draw()
 
     def _apply_reading_page_edge(self):
         """Hairline card border in light mode only — in dark the pale border
