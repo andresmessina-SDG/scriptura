@@ -179,3 +179,32 @@ def test_a_second_hold_mid_run_keeps_the_first_position():
     hold.adj.set_value(11533.0)           # an overshoot frame, mid-rebuild
     hold.hold_scroll()
     assert hold._hold_value == 9773.8
+
+
+def test_a_scroll_that_arrives_while_upper_is_tall_is_still_undone():
+    """GtkTextView does not only clamp — it SCROLLS as it revalidates, to hold
+    a visible line steady against corrected heights above it. That arrives when
+    `upper` is already tall enough to carry the hold, so a reassert that treats
+    a tall `upper` as "nothing to undo" lets it through to a painted frame
+    (measured: 11464 -> 12147 at upper=12964, painted 4ms later)."""
+    hold = _deep_in_psalm_119()
+    hold.hold_scroll()
+    hold.adj.collapse_to(836.0)
+    hold._reassert_held_scroll()          # short: fake the height, pin
+
+    hold.adj.set_upper(12964.0)           # GTK revalidating, now tall
+    hold.adj.set_value(12147.0)           # and scrolling as it goes
+    hold._reassert_held_scroll()
+    assert hold.adj.get_value() == 9773.8
+
+
+def test_the_faked_height_is_the_smallest_that_clears_the_clamp():
+    """Reporting the height the document came in with would keep the scrollbar
+    thumb still, but holding `upper` above what GtkTextView has laid out
+    starves its validation and the view paints a BLANK page for the length of
+    the hold. Seen on his screen; the minimal fake is deliberate."""
+    hold = _deep_in_psalm_119()
+    hold.hold_scroll()
+    hold.adj.collapse_to(836.0)
+    hold._reassert_held_scroll()
+    assert hold.adj.get_upper() == 9773.8 + 663.0

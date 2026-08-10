@@ -1024,35 +1024,40 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
         return GLib.SOURCE_REMOVE
 
     def _reassert_held_scroll(self):
-        """Undo the allocation's clamp, and release the hold once the real
-        document has grown back past the held position — so a hold can never
-        outlive the rebuild that asked for it, even if no restore arrives."""
+        """Put the held position back, whatever moved it. Ends only when the
+        rebuild's restore says so — never on the strength of a height, because
+        `upper` reads tall both when GTK has finished revalidating and when it
+        has not yet collapsed at all, and the two are indistinguishable from
+        here (measured: released at upper=27462, painted the chapter top at
+        upper=836 four frames later)."""
         if self._hold_value is None:
             return
         adj = self.get_vadjustment()
         page = adj.get_page_size()
         upper = adj.get_upper()
-        if upper == self._faked_upper:
-            # Our own height talking back. GTK has revised nothing yet, so
-            # reading this as "tall enough" would release the hold on the
-            # strength of the lie that replaced the collapse.
-            if adj.get_value() != self._hold_value:
-                adj.set_value(self._hold_value)
-            return
-        if upper - page >= self._hold_value:
-            # Tall enough to carry the position, so nothing is clamping and
-            # there is nothing to undo. Deliberately NOT a release: `upper`
-            # reads tall both when GTK has finished revalidating and when it
-            # has not yet collapsed at all, and the two are indistinguishable
-            # from here. Releasing on the second reading left the collapse
-            # unguarded four frames later (measured on Psalms 119: released
-            # at upper=27462, painted the chapter top at upper=836).
-            return
-        # Lie about the height for exactly as long as the estimate is short.
-        # The alternative is a value of nearly zero, which is the flicker.
-        self._faked_upper = self._hold_value + page
-        adj.set_upper(self._faked_upper)
-        adj.set_value(self._hold_value)
+        # `_faked_upper` is our own height talking back — GTK has revised
+        # nothing, so it is not evidence the document has grown.
+        if upper != self._faked_upper and upper - page < self._hold_value:
+            # Lie about the height for exactly as long as the estimate is
+            # short, and by the smallest amount that clears the clamp. The
+            # alternative is a value of nearly zero: the flicker.
+            #
+            # It is tempting to report the height the document came in with
+            # instead, so the scrollbar thumb (sized page/upper) does not
+            # twitch. Do not: holding `upper` above what GtkTextView has
+            # actually laid out starves its incremental validation, and the
+            # view paints a BLANK page for the length of the hold. Tried,
+            # seen, reverted. The thumb is GTK's to move; the position is
+            # ours to keep.
+            self._faked_upper = self._hold_value + page
+            adj.set_upper(self._faked_upper)
+        # Pin unconditionally, including while `upper` is tall enough to carry
+        # the position on its own. Nothing is clamping then, but GtkTextView
+        # SCROLLS as it revalidates — holding a visible line steady against
+        # corrected heights above it — and that walked the value 683px
+        # (11464 -> 12147 at upper=12964) into a painted frame.
+        if adj.get_value() != self._hold_value:
+            adj.set_value(self._hold_value)
 
     def _apply_margins(self, avail):
         if avail <= 0:
