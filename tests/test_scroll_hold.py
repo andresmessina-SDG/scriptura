@@ -167,3 +167,15 @@ def test_a_holds_own_timer_still_ends_it():
     hold.arm()
     hold.fire_oldest_timer()
     assert not hold.held
+
+
+def test_a_second_hold_mid_run_keeps_the_first_position():
+    """By the second rebuild of a run the adjustment holds whatever the
+    unfinished first one left — here the restore's overshoot. Capturing that
+    locked the whole run 777px below the reader's place (measured: 12115
+    instead of 11338)."""
+    hold = _deep_in_psalm_119()
+    hold.hold_scroll()
+    hold.adj.set_value(11533.0)           # an overshoot frame, mid-rebuild
+    hold.hold_scroll()
+    assert hold._hold_value == 9773.8

@@ -967,7 +967,12 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
         `upper` where it was (measured for the scroll matrix).
         """
         adj = self.get_vadjustment()
-        self._hold_value = adj.get_value() or None
+        if self._hold_value is None:
+            # Rebuilds can arrive faster than they finish. Only the first of a
+            # run captures: by the second, `value` is whatever the unfinished
+            # first one left behind — a clamp, or the restore's overshoot — and
+            # capturing that locks the run onto the wrong position.
+            self._hold_value = adj.get_value() or None
         self._faked_upper = None
         if self._hold_value is None:
             return
