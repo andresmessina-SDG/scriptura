@@ -177,6 +177,32 @@ _NOTE_ANCHOR_RE = re.compile(
     r'<note\s[^>]*?swordFootnote="(\d+)"[^>]*?(?:/>|>\s*</note>)')
 _FN_TOKEN_RE = re.compile(r'\[\[FN_(\d+)\]\]')
 
+#: Publisher section headings carry this tag, newlines and all, and are always
+#: rendered — the setting only flips its `invisible`, so showing or hiding them
+#: restyles the chapter instead of rebuilding it. Covers the headings that
+#: arrive as entry attributes (_insert_section_heading). Headings embedded in
+#: the markup as <title>/<h1..6> go in through insert_markup with their blank
+#: lines OUTSIDE the span, so they cannot be hidden by one tag; a chapter with
+#: those falls back to a render. Not chapter-scoped: one shared style tag.
+_HEADING_TAG = 'section_heading'
+
+#: Source markup that carries its own headings, which the tag above cannot
+#: govern. Checked per verse so the toggle knows whether it may restyle.
+_INLINE_TITLE_RE = re.compile(r'<title([^>]*)>|<h[1-6]>', re.IGNORECASE)
+
+
+def _renders_inline_title(html):
+    """True when this verse's markup carries a heading _html_to_markup would
+    actually draw. The skipped types (a psalm's superscription, an acrostic
+    letter, a parallel-passage note) never become headings, so a chapter full
+    of them can still be restyled rather than re-rendered."""
+    for m in _INLINE_TITLE_RE.finditer(str(html)):
+        attr = re.search(r'type="([^"]+)"', m.group(1) or '')
+        kind = attr.group(1).lower() if attr else ''
+        if kind not in _SKIP_INLINE_TITLE_TYPES:
+            return True
+    return False
+
 #: Every footnote marker label carries this tag as well as its own
 #: `fnote:{verse}:{n}`. Markers are now always rendered, and the setting only
 #: flips this tag's `invisible` — so turning footnotes on or off restyles the
@@ -1200,6 +1226,7 @@ class BiblePane(Gtk.Box):
         # (verse, marker_index) → (type, body) for the rendered chapter;
         # the fnote: click handler reads the peek content from here.
         self._chapter_footnotes = {}
+        self._rendered_inline_titles = False
         # {verse: [section heading, …]} for the rendered chapter. Declared
         # here, not only in _display: the re-theme path calls _display with
         # no headings argument, so the attribute has to exist before the
@@ -2503,6 +2530,9 @@ class BiblePane(Gtk.Box):
         self._buffer.set_text('')
         self._clear_chapter_scoped_tags()
         self._chapter_footnotes = {}
+        # Whether this chapter carries headings _HEADING_TAG cannot govern.
+        # Set below, per verse, from the source markup.
+        self._rendered_inline_titles = False
 
         # Coverage check — every verse in `verses` may be empty if the
         # module doesn't include this book/chapter (e.g. SBLGNT is NT
@@ -2598,9 +2628,16 @@ class BiblePane(Gtk.Box):
             # len(str(v))+2 chars in, i.e. inside the heading text).
             # Commentaries are excluded: their own "Verse N" headers already
             # divide the text.
-            if not is_commentary and self._show_headings:
+            # Always inserted, whatever the setting says: the headings-off
+            # state is _HEADING_TAG's `invisible`, not their absence, so the
+            # toggle need not re-render. Keeping them in the buffer also keeps
+            # _verse_ranges' offsets identical between the two states.
+            if not is_commentary:
                 for head in self._rendered_headings.get(start_v, ()):
                     self._insert_section_heading(head, wrote_a_block)
+
+            if _renders_inline_title(html):
+                self._rendered_inline_titles = True
 
             start_mark = self._buffer.create_mark(None, self._buffer.get_end_iter(), True)
             r = _VerseRender(start_v, end_v, html, is_commentary)
@@ -3160,6 +3197,17 @@ class BiblePane(Gtk.Box):
         self._buffer.apply_tag(tag, start, end)
         self._buffer.delete_mark(start_mark)
 
+    def _heading_tag(self):
+        """The shared section-heading tag, carrying the current visibility.
+        Headings are rendered whatever the setting says; this decides whether
+        they are drawn."""
+        table = self._buffer.get_tag_table()
+        tag = table.lookup(_HEADING_TAG)
+        if tag is None:
+            tag = self._buffer.create_tag(_HEADING_TAG)
+        tag.set_property('invisible', not self._show_headings)
+        return tag
+
     def _fn_marker_tag(self):
         """The shared marker tag, carrying the current visibility. Markers are
         rendered whatever the setting says; this is what decides whether they
@@ -3225,7 +3273,14 @@ class BiblePane(Gtk.Box):
         markup = (f'{lead}<span size="90%" weight="bold" letter_spacing="800" '
                   f'foreground="gray">'
                   f'{GLib.markup_escape_text(text)}</span>\n')
+        start = self._buffer.get_end_iter().get_offset()
         self._buffer.insert_markup(self._buffer.get_end_iter(), markup, -1)
+        # The surrounding newlines are inside the tagged range on purpose:
+        # hiding the words but leaving their blank line behind would open a
+        # gap where the heading used to be.
+        self._buffer.apply_tag(self._heading_tag(),
+                               self._buffer.get_iter_at_offset(start),
+                               self._buffer.get_end_iter())
 
     def _unit_bounds(self, verse):
         """(first_verse, last_verse) of the sense-unit containing `verse`,
@@ -3426,7 +3481,40 @@ class BiblePane(Gtk.Box):
         if self._show_headings == bool(enabled):
             return
         self._show_headings = bool(enabled)
+        # Attribute-only where it can be — see set_show_footnotes for why that
+        # matters: a rebuild is what the reading position has to be held
+        # through, and holding it is where the jumping comes from.
+        if self._restyle_section_headings():
+            return
         self._rerender_keeping_place()
+
+    def _restyle_section_headings(self):
+        """Show or hide the rendered chapter's section headings without
+        rebuilding it. False when this chapter has headings the tag cannot
+        govern — ones embedded in the source markup, whose blank lines sit
+        outside the span insert_markup tagged — so the caller re-renders."""
+        if self._rendered_inline_titles:
+            return False
+        if self._buffer.get_tag_table().lookup(_HEADING_TAG) is None:
+            return False
+        # Unlike the numerals and the footnote markers, this really does move
+        # the text: every heading above the reading position is two blank lines
+        # and a line of type, and hiding them pulls the page up by that much.
+        # No rebuild means no restore comes for free, so re-apply the locus by
+        # hand — captured BEFORE the flip, applied after the relayout.
+        # Both probes, exactly as _rerender_keeping_place takes them: the pixel
+        # anchor is not always available (the viewport top can fall in the
+        # space between paragraphs, where get_iter_at_location finds nothing),
+        # and without the coarse fallback the page simply keeps the jump.
+        anchor = self._capture_scroll_anchor()
+        top_verse = (self._find_topmost_visible_verse()
+                     if anchor is None else None)
+        self._heading_tag()              # carries the new visibility
+        if anchor is not None:
+            GLib.idle_add(self._apply_scroll_anchor, anchor)
+        elif top_verse is not None:
+            GLib.idle_add(self._scroll_to_verse_silent, top_verse)
+        return True
 
     def set_show_footnotes(self, enabled):
         if self._show_footnotes == bool(enabled):

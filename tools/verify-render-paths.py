@@ -65,13 +65,17 @@ DRIVER_TIMEOUT = 180.0
 #: reading position then has to be held through GTK's re-estimation of the
 #: document height — the flicker the scroll hold exists to fight.
 NO_REBUILD = ('theme flip', 'oldstyle numerals', 'coloured dropcap',
-              'poetry flush', 'footnotes')
+              'poetry flush', 'footnotes', 'section headings')
 
 TRIGGERS = [
     ('theme flip',        None,                     None,                True),
     ('oldstyle numerals', 'set_oldstyle_numerals',  '_oldstyle_nums',    True),
     ('coloured dropcap',  'set_colored_dropcap',    '_colored_dropcap',  True),
     ('poetry flush',      'set_poetry_flush',       '_poetry_flush',     True),
+    # Like footnotes: the text changes — the headings appear — but they are
+    # applied by flipping one tag's `invisible`. A chapter whose headings are
+    # embedded in the source markup still re-renders, so this is checked on a
+    # reference whose headings arrive as entry attributes.
     ('section headings',  'set_show_headings',      '_show_headings',    False),
     # Footnotes change the visible text — the markers appear — but they are
     # applied by flipping one tag's `invisible`, not by re-rendering. So the
