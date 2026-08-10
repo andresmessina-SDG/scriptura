@@ -26,6 +26,36 @@ import search_query
 import search_controller
 
 
+
+def _buffer_slice_without_markers(buf):
+    """The buffer's text with footnote marker labels blanked out.
+
+    get_slice keeps the U+FFFC anchor placeholders so regex offsets and buffer
+    offsets stay aligned; the markers are ordinary letters sitting mid-sentence
+    and would join words that a reader never sees joined. Blanked, not removed,
+    so every offset still lands where it did. Markers are in the buffer whether
+    or not they are shown, so this applies in both states.
+    """
+    text = buf.get_slice(buf.get_start_iter(), buf.get_end_iter(), True)
+    tag = buf.get_tag_table().lookup('fn_marker')
+    if tag is None:
+        return text
+    chars = list(text)
+    it = buf.get_start_iter()
+    if not it.starts_tag(tag):
+        if not it.forward_to_tag_toggle(tag):
+            return text
+    while True:
+        if it.starts_tag(tag):
+            start = it.get_offset()
+            if not it.forward_to_tag_toggle(tag):
+                break
+            for i in range(start, min(it.get_offset(), len(chars))):
+                chars[i] = '\x00'
+        if not it.forward_to_tag_toggle(tag):
+            break
+    return ''.join(chars)
+
 class PaneSearch:
     def __init__(self, pane):
         self._pane = pane
@@ -310,7 +340,7 @@ class PaneSearch:
         # offsets count them — so in a chapter with markers every match after
         # one would be tagged shifted. get_slice keeps the U+FFFC placeholders
         # so regex offsets and buffer offsets stay aligned.
-        text = buf.get_slice(buf.get_start_iter(), buf.get_end_iter(), True)
+        text = _buffer_slice_without_markers(buf)
         applied = False
         try:
             for m in re.finditer(pattern, text, flags):
@@ -392,9 +422,7 @@ class PaneSearch:
         tag_table = buf.get_tag_table()
         tag = tag_table.lookup('_search_hl') or buf.create_tag('_search_hl')
         flags = 0 if self._case_btn.get_active() else re.IGNORECASE
-        # get_slice (not get_text) keeps the U+FFFC anchor placeholders so
-        # match offsets and buffer offsets stay aligned (see apply_highlight).
-        text = buf.get_slice(buf.get_start_iter(), buf.get_end_iter(), True)
+        text = _buffer_slice_without_markers(buf)
         n = 0
         for m in re.finditer(re.escape(query), text, flags):
             buf.apply_tag(tag, buf.get_iter_at_offset(m.start()),

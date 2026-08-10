@@ -177,6 +177,14 @@ _NOTE_ANCHOR_RE = re.compile(
     r'<note\s[^>]*?swordFootnote="(\d+)"[^>]*?(?:/>|>\s*</note>)')
 _FN_TOKEN_RE = re.compile(r'\[\[FN_(\d+)\]\]')
 
+#: Every footnote marker label carries this tag as well as its own
+#: `fnote:{verse}:{n}`. Markers are now always rendered, and the setting only
+#: flips this tag's `invisible` — so turning footnotes on or off restyles the
+#: chapter instead of rebuilding it (see BiblePane.set_show_footnotes). Not in
+#: _CHAPTER_SCOPED_TAG_PREFIXES: it is one shared style tag, not per-chapter
+#: state, and it must survive the rebuild that clears those.
+_FN_MARKER_TAG = 'fn_marker'
+
 
 def _fn_label(idx):
     """0-based marker index → bijective base-26 label: a…z, aa, ab, …
@@ -2638,7 +2646,7 @@ class BiblePane(Gtk.Box):
                 # _html_to_markup so <hi>, <i>, etc. keep working.
                 src_html = str(html)
                 vnotes = {}
-                if self._show_footnotes and notes.get(start_v):
+                if notes.get(start_v):
                     # A grouped section renders one identical block for its
                     # whole verse range, so its anchors — and note bodies —
                     # are the same for every verse; the start verse's set
@@ -2651,12 +2659,14 @@ class BiblePane(Gtk.Box):
                 self._buffer.insert(self._buffer.get_end_iter(), '\n')
             else:
                 # Footnote anchors → [[FN_n]] tokens before the generic tag
-                # strip in _html_to_markup (which otherwise removes them —
-                # the markers-off state is exactly that removal). Poetry
-                # line milestones get the same token protection.
+                # strip in _html_to_markup (which otherwise removes them).
+                # Always substituted, whatever the setting says: the markers-off
+                # state is the shared fn_marker tag's `invisible`, not their
+                # absence, so the toggle need not re-render. Poetry line
+                # milestones get the same token protection.
                 src_html = _poetry_tokens(str(html))
                 vnotes = {}
-                if self._show_footnotes and notes.get(start_v):
+                if notes.get(start_v):
                     vnotes = {n: (t, b) for n, t, b in notes[start_v]}
                     src_html = _NOTE_ANCHOR_RE.sub(
                         lambda m: f'[[FN_{m.group(1)}]]', src_html)
@@ -3146,18 +3156,31 @@ class BiblePane(Gtk.Box):
         self._buffer.apply_tag(tag, start, end)
         self._buffer.delete_mark(start_mark)
 
+    def _fn_marker_tag(self):
+        """The shared marker tag, carrying the current visibility. Markers are
+        rendered whatever the setting says; this is what decides whether they
+        are drawn."""
+        table = self._buffer.get_tag_table()
+        tag = table.lookup(_FN_MARKER_TAG)
+        if tag is None:
+            tag = self._buffer.create_tag(_FN_MARKER_TAG)
+        tag.set_property('invisible', not self._show_footnotes)
+        return tag
+
     def _apply_footnote_tags(self, verse, markers, vnotes, text_start_mark):
         """Tag each marker label with fnote:{verse}:{n} (click → peek) and
         stash (type, body, label) for the handler. Offsets from
         _substitute_footnote_markers are relative to text_start_mark."""
         base = self._buffer.get_iter_at_mark(text_start_mark).get_offset()
         table = self._buffer.get_tag_table()
+        shared = self._fn_marker_tag()
         for off, n, label in markers:
             name = f'fnote:{verse}:{n}'
             tag = table.lookup(name) or self._buffer.create_tag(name)
             s = self._buffer.get_iter_at_offset(base + off)
             e = self._buffer.get_iter_at_offset(base + off + len(label))
             self._buffer.apply_tag(tag, s, e)
+            self._buffer.apply_tag(shared, s, e)
             ftype, body = vnotes[n]
             self._chapter_footnotes[(verse, n)] = (ftype, body, label)
 
@@ -3405,7 +3428,28 @@ class BiblePane(Gtk.Box):
         if self._show_footnotes == bool(enabled):
             return
         self._show_footnotes = bool(enabled)
+        # Attribute-only: the markers are already in the buffer, so this is one
+        # tag property, not a rebuild. That matters beyond speed — a rebuild
+        # empties and refills the buffer, and the reading position has to be
+        # held through GTK's re-estimation of the document height (see
+        # _ReadingScrolledWindow.hold_scroll and the flicker it exists to
+        # fight). Nothing is rebuilt here, so there is nothing to hold.
+        if self._restyle_footnote_markers():
+            return
+        # Nothing adopted to restyle — a chapter rendered before the markers
+        # existed, or a surface that never rendered one. Fall through to the
+        # render, which is also what picks the flag up when a Bible next
+        # appears here.
         self._rerender_keeping_place()
+
+    def _restyle_footnote_markers(self):
+        """Show or hide the rendered chapter's markers without rebuilding it.
+        False when there is nothing tagged to flip, so the caller can fall back
+        to a render."""
+        if self._buffer.get_tag_table().lookup(_FN_MARKER_TAG) is None:
+            return False
+        self._fn_marker_tag()            # carries the new visibility
+        return True
 
     def set_divine_smallcaps(self, enabled):
         if self._smallcaps_divine == bool(enabled):
