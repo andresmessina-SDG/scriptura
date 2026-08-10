@@ -48,6 +48,12 @@ modules KJVA and MHCC installed for the current user, e.g.:
     installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom \
         -init -sc -r CrossWire -ri CrossWire KJVA -ri CrossWire MHCC
 
+Run it a second time over a module that marks poetry lines — the layout
+KJVA never produces, and the one whose paragraph spacing hid a real
+anchor bug from every previous run:
+
+    SCRIPTURA_MATRIX_MODULES=BSB,MHCC python3 tools/verify-scroll-stability.py
+
 The app runs against scratch XDG dirs, so the user's real config and
 study data are never touched (module discovery via ~/.sword still
 applies). Prints a JSON report; exit 0 = all checks passed, 1 = a check
@@ -91,7 +97,17 @@ import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-REQUIRED_MODULES = ('KJVA', 'MHCC')
+#: (bible pane, commentary pane). Overridable because WHICH module the
+#: bible pane reads decides which layout the checks ever see: KJVA marks no
+#: poetry lines in Psalms 119, so the whole poetry paragraph geometry —
+#: where the place-holding probes were found to miss — was invisible to
+#: every run this matrix had ever made. Keep the default installable from
+#: CrossWire (CI fetches it); point the variable at a poetry-carrying
+#: module for the second pass.
+REQUIRED_MODULES = tuple(
+    m.strip() for m
+    in os.environ.get('SCRIPTURA_MATRIX_MODULES', 'KJVA,MHCC').split(',')
+    if m.strip())
 DISPLAY = 5  # private XDG_RUNTIME_DIR per run, so a fixed number never collides
 
 #: Where the panes park before the checks begin. Sweepable, because this
@@ -523,7 +539,12 @@ def run_matrix() -> int:
         bx, by = view.window_to_buffer_coords(Gtk.TextWindowType.TEXT, 60, 1)
         ok, it = view.get_iter_at_location(bx, by)
         if not ok:
-            return None
+            # Same miss the app's own probes had: the point falls in
+            # paragraph spacing, not on a glyph. Returning None here made
+            # a measurable position report as unmeasurable — the harness
+            # crying "no baseline" at exactly the layouts most worth
+            # measuring (poetry). get_line_at_y always lands on a line.
+            it, _line_top = view.get_line_at_y(by)
         loc = view.get_iter_location(it)
         e = it.copy()
         e.forward_chars(40)
@@ -835,6 +856,64 @@ def run_matrix() -> int:
             'resync': S['lex_resync'],
         })
 
+    # 6. The two place-holding probes, swept across the chapter.
+    #
+    # Both `_capture_scroll_anchor` and `_find_topmost_visible_verse` ask
+    # `get_iter_at_location` for the text at the viewport top, and it
+    # reports a MISS when that point falls in paragraph spacing rather
+    # than on a glyph. Poetry paragraphs leave exactly such a gap, so the
+    # miss is real reading positions, not a corner: measured in BSB
+    # Psalms 119, where it cost the pixel anchor and left the coarse
+    # fallback to restore the verse START — 9px, a silent violation of
+    # the 0px invariant this whole matrix exists to hold. When the coarse
+    # probe missed too, the render tail scrolled to the chapter top.
+    #
+    # This sweep is the guard for that class, and it is deliberately
+    # module-agnostic: the failing geometry belongs to poetry, and which
+    # module carries poetry depends on SCRIPTURA_MATRIX_MODULES.
+    SWEEP_FRACTIONS = (0.08, 0.21, 0.34, 0.47, 0.6, 0.73, 0.86)
+
+    def sweep_start():
+        S['sweep'] = list(SWEEP_FRACTIONS)
+        S['sweep_misses'] = []
+        S['sweep_seen'] = 0
+        return None
+
+    def sweep_step():
+        p = S['p1']
+        adj = p._reading_scroll.get_vadjustment()
+        span = max(0.0, adj.get_upper() - adj.get_page_size())
+        S['sweep_at'] = round(span * S['sweep'].pop(0), 1)
+        p._scroll._mark_programmatic_scroll()
+        adj.set_value(S['sweep_at'])
+        return settle(sweep_record)
+
+    def sweep_record(_snaps):
+        p = S['p1']
+        # A stored anchor short-circuits the capture; the probe under test
+        # is the geometric one, so clear it first (and leave it cleared —
+        # the next sweep position re-derives anyway).
+        p._scroll._reading_anchor = None
+        a = p._capture_scroll_anchor()
+        v = p._find_topmost_visible_verse()
+        S['sweep_seen'] += 1
+        if a is None or v is None:
+            S['sweep_misses'].append({
+                'adj': S['sweep_at'],
+                'pixel_anchor': list(a) if a else None,
+                'top_verse': v,
+                'both_missed': a is None and v is None,
+            })
+        if not S['sweep']:
+            REPORT['checks'].append({
+                'name': 'place probes find text at every scroll offset',
+                'positions': S['sweep_seen'],
+                'misses': S['sweep_misses'],
+                # Any miss is a failure: one costs pixel accuracy, both
+                # cost the reader their place entirely.
+                'ok': not S['sweep_misses'],
+            })
+
     steps.extend([
         (nav, 0), (scroll_mid, 0), (anchor, 200),
         (chrome_pre, 0), (chrome_hide, 0), (chrome_reveal, 0),
@@ -848,6 +927,10 @@ def run_matrix() -> int:
         (theme, 0),
         (lexpanel, 0),
     ])
+    # Last: the sweep scrolls the pane away from the parked position every
+    # check above measures against.
+    steps.append((sweep_start, 0))
+    steps.extend([(sweep_step, 0)] * len(SWEEP_FRACTIONS))
 
     GLib.timeout_add(1500, kickoff)
     app.run([])
