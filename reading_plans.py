@@ -205,15 +205,18 @@ def _load() -> dict[str, Any]:
         try:
             with open(_FILE, encoding='utf-8') as f:
                 data = json.load(f)
-            if isinstance(data, dict):
-                _cache = data
-            else:
-                _cache = {}
-                _load_failed = True
-        except Exception:
+            if not isinstance(data, dict):
+                raise ValueError('reading_plans.json is not an object')
+            _cache = data
+        except OSError:
             _log.exception('load failed, using defaults')
             _cache = {}
             _load_failed = True
+        except paths.UNPARSEABLE:
+            _log.exception('load failed, using defaults')
+            _cache = {}
+            _load_failed = True
+            paths.quarantine_unreadable(_FILE)
     return _cache
 
 

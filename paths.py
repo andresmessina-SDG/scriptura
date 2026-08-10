@@ -22,6 +22,7 @@ legacy file is gone we skip.
 import logging
 import os
 import shutil
+import time
 
 from gi.repository import GLib
 
@@ -50,6 +51,46 @@ def cache_dir() -> str:
     p = os.path.join(GLib.get_user_cache_dir(), _APP_NAME)
     os.makedirs(p, exist_ok=True)
     return p
+
+
+# ── Quarantine for files we can't parse ──────────────────────────────────────
+
+#: What "the bytes are there but they aren't our data" looks like, for the
+#: five stores to catch in step. `json.JSONDecodeError` and a bad encoding are
+#: both `ValueError`; a store that finds valid JSON of the wrong shape raises
+#: one itself. `RecursionError` is the odd one and the reason this is a name
+#: rather than a literal: deeply nested JSON raises it from the C scanner, it
+#: is neither a `ValueError` nor an `OSError`, and left uncaught it turns a
+#: file we would have quarantined into a crash on startup.
+UNPARSEABLE = (ValueError, RecursionError)
+
+
+def quarantine_unreadable(path: str) -> str | None:
+    """Move a file whose contents we couldn't parse out of the way.
+
+    Every store here loads into a cache, falls back to an empty one when
+    the parse fails, and later writes that cache back over the file — so
+    without this the first save after a corrupt read destroys the only
+    copy of the user's data. The startup toast already promises the file
+    is preserved; this is what keeps that promise.
+
+    Only for unparseable *contents*. A read that failed for an OSError
+    (permissions, a busy disk) must leave the file alone — the bytes may
+    be perfectly good. Best-effort: returns the new path, or None if
+    nothing moved. A failure here must never stop the app starting.
+    """
+    if not os.path.exists(path):
+        return None
+    dest = path + '.corrupt'
+    if os.path.exists(dest):  # a second corruption; don't clobber the first
+        dest = f'{dest}.{int(time.time())}'
+    try:
+        os.replace(path, dest)
+    except OSError:
+        _log.exception('could not set aside unreadable %s', path)
+        return None
+    _log.warning('unreadable %s set aside as %s', path, dest)
+    return dest
 
 
 # ── Per-file path resolution with one-shot legacy migration ──────────────────

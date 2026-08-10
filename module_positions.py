@@ -50,13 +50,18 @@ def _load() -> None:
     try:
         with open(_FILE, encoding='utf-8') as f:
             data = json.load(f)
-        if isinstance(data, dict):
-            _state = data
+        if not isinstance(data, dict):
+            raise ValueError('module_positions.json is not an object')
+        _state = data
     except FileNotFoundError:
         _state = {}
-    except (OSError, ValueError):
+    except OSError:
         _load_failed = True
         _state = {}
+    except paths.UNPARSEABLE:
+        _load_failed = True
+        _state = {}
+        paths.quarantine_unreadable(_FILE)
 
 
 _load()
