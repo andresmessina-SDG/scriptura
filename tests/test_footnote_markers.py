@@ -135,3 +135,83 @@ def test_a_buffer_that_never_had_markers_is_returned_untouched():
     pane._buffer.set_text('In the beginning God created')
     assert (_buffer_slice_without_markers(pane._buffer)
             == 'In the beginning God created')
+
+
+class Targets:
+    """The click/hover target resolution, with only what it reads."""
+
+    _targets_at_iter = BiblePane._targets_at_iter
+
+    def __init__(self, show):
+        self._show_footnotes = show
+
+
+def _marked_buffer():
+    """'alpha' + a hidden-capable marker + ' beta', tagged as the render does."""
+    pane = Pane(show=True)
+    buf = pane._buffer
+    buf.insert(buf.get_end_iter(), 'alpha')
+    start = buf.get_end_iter().get_offset()
+    buf.insert(buf.get_end_iter(), 'a')
+    tag = buf.create_tag('fnote:1:1')
+    buf.apply_tag(tag, buf.get_iter_at_offset(start),
+                  buf.get_iter_at_offset(start + 1))
+    buf.apply_tag(pane._fn_marker_tag(), buf.get_iter_at_offset(start),
+                  buf.get_iter_at_offset(start + 1))
+    buf.insert(buf.get_end_iter(), ' beta')
+    return buf, start
+
+
+def test_a_marker_beside_the_click_is_a_target_when_shown():
+    buf, start = _marked_buffer()
+    # The letter just before the marker: the probe looks one char each way.
+    targets, _it = Targets(True)._targets_at_iter(
+        buf.get_iter_at_offset(start - 1))
+    assert targets['fnote'] == '1:1'
+
+
+def test_a_hidden_marker_beside_the_click_is_not_a_target():
+    """The markers stay in the buffer when switched off, and the probe looks
+    one character to each side — so a click on the letter beside a hidden
+    marker opened a note the reader had turned off."""
+    buf, start = _marked_buffer()
+    targets, _it = Targets(False)._targets_at_iter(
+        buf.get_iter_at_offset(start - 1))
+    assert targets['fnote'] is None
+
+
+def test_clicking_a_hidden_marker_itself_is_not_a_target():
+    buf, start = _marked_buffer()
+    targets, _it = Targets(False)._targets_at_iter(
+        buf.get_iter_at_offset(start))
+    assert targets['fnote'] is None
+
+
+class Announcer:
+    """The accessible verse-state line, with only what it reads."""
+
+    _verse_state_text = BiblePane._verse_state_text
+
+    def __init__(self, show):
+        self._show_footnotes = show
+        self._book = 'Genesis'
+        self._chapter = 1
+        self._module = 'BSB'
+        self._module_type = 'Biblical Texts'
+        self._chapter_footnotes = {(1, '1'): ('note', 'a body', 'a')}
+
+
+def test_footnotes_are_announced_when_they_are_shown(monkeypatch):
+    import pane
+    monkeypatch.setattr(pane.annotations, 'get_annotations',
+                        lambda *a, **k: {})
+    assert 'has footnotes' in Announcer(True)._verse_state_text(1)
+
+
+def test_footnotes_a_reader_turned_off_are_not_announced(monkeypatch):
+    """The map is populated whether or not the markers are drawn, so this read
+    it and told an AT user about a note they could neither see nor reach."""
+    import pane
+    monkeypatch.setattr(pane.annotations, 'get_annotations',
+                        lambda *a, **k: {})
+    assert 'has footnotes' not in Announcer(False)._verse_state_text(1)

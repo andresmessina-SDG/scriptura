@@ -3672,9 +3672,13 @@ class BiblePane(Gtk.Box):
                 parts.append(_('underlined'))
             if anno.get('note'):
                 parts.append(_('has note'))
-            notes = self._chapter_footnotes
-            if any(v == verse_num for v, _n in notes):
-                parts.append(_('has footnotes'))
+            # Only when they are shown: the map is populated whether or not
+            # the markers are drawn, and announcing a footnote a reader can
+            # neither see nor reach is worse than silence.
+            if self._show_footnotes:
+                notes = self._chapter_footnotes
+                if any(v == verse_num for v, _n in notes):
+                    parts.append(_('has footnotes'))
         return ', '.join(parts)
 
     def _announce_verse_state(self, verse_num):
@@ -4292,7 +4296,14 @@ class BiblePane(Gtk.Box):
                 targets['fnote'] = name[6:]
             elif name and name.startswith('phrase:'):
                 targets['phrase_tag'] = tag
-        if targets['fnote'] is None:
+        if not self._show_footnotes:
+            # The markers are still in the buffer when they are switched off,
+            # merely not drawn — and the probe below deliberately looks one
+            # character to each side, so a click on the letter beside a hidden
+            # marker resolved to it and opened a note the reader had turned
+            # off. Nothing invisible is a click target.
+            targets['fnote'] = None
+        elif targets['fnote'] is None:
             # A marker is a single narrow superscript glyph, and
             # get_iter_at_location resolves a click on its right half to
             # the NEXT character — so exact-iter tagging misses half the
