@@ -4,9 +4,12 @@
 # metadata, so one ingest (ingest_curated) serves all the cycles; future
 # curated one-off additions (Option A gap-fill) land in this same file.
 #
-# LICENSING: every plate is a faithful 2-D reproduction of a pre-1900 work
-# (PD-Art) — license is recorded per plate. `n` keys are unique across the
-# file and become the dest filename (cur_<n>.<ext>).
+# LICENSING: every plate is a faithful 2-D reproduction of a work whose
+# copyright has expired (PD-Art) — license is recorded per plate. Three plates
+# post-date 1900 (NC01 Kuindzhi 1901, NC12/NC13 Tanner 1906/c.1907); both
+# painters died long enough ago (1910, 1937) for the paintings themselves to be
+# public domain. `n` keys are unique across the file and become the dest
+# filename (cur_<n>.<ext>).
 #
 # Cycles in this file:
 #   DUR01–15  Dürer, "The Apocalypse" (1498) — 15 woodcuts covering most of
@@ -20,6 +23,15 @@
 #   RAF01–07  Raphael Cartoons (c. 1515–16) — the seven surviving tapestry
 #             cartoons: two Gospel scenes and five Acts scenes (the canonical
 #             Acts images; previously Acts art was Doré-only).
+#   NC01–24   The nineteenth century (added 2026-08-01; NC19 withdrawn — Hunt's
+#             "Scapegoat" was already here as GAP05, the same Commons file, so
+#             Leviticus 16 showed it twice. Do not re-add it) — the paintings
+#             were entirely Baroque, so a whole school was missing: the Russian
+#             realists (Kramskoi, Ge, Ivanov, Repin, Aivazovsky, Bruni,
+#             Kuindzhi), Tanner, John Martin's sublime, Delacroix, Hunt, Corot,
+#             Gérôme, Bonnat, Munkácsy, Cogniet. They also close Numbers 21,
+#             Joshua 10, Daniel 5–6, Luke 23:44 and John 18:38, which had no
+#             art at all.
 
 # ── Dürer — The Apocalypse (1498) ────────────────────────────────────────────
 
@@ -1662,3 +1674,383 @@ tradition = "engraving"
 artist = "Wenceslaus Hollar"
 license = "PD"
 attribution = "Wenceslaus Hollar, Abraham and Lot separating — University of Toronto Wenceslaus Hollar Digital Collection"
+
+# ── The nineteenth century (2026-08-01) ──────────────────────────────────────
+# Approved from a 35-plate contact sheet; 11 were left out — two further
+# Golgothas and a second Last Supper (both scenes are already the most
+# illustrated in the pack), Repin's Job (Blake's 21 plates own that book),
+# Semiradsky (sentimental), Polenov (only a study is PD; the finished canvas
+# survives on Commons as a CC BY-SA museum photograph), Danby's Deluge (NC16
+# is the better picture), Delacroix's Jacob and Hunt's Finding in the Temple
+# (bad scans; Genesis 32 also has Rembrandt), Moreau's Salome (a vision, not a
+# narrative) and Doré's "Christ Leaving the Praetorium" (the only Commons file
+# of usable size is a photograph of the gallery it hangs in).
+#
+# NC03 is the one compromise: Commons holds Ge's "What is Truth?" only in a
+# tightly cropped framing. Nothing wider exists there.
+
+[[plate]]
+n = "NC01"
+file = "Kuindzhi Jesus Christ 1901.jpg"
+title = "Christ in the Garden of Gethsemane"
+book = "Matthew"
+chapter = 26
+verse = 36
+chapter_end = 26
+verse_end = 46
+kind = "painting"
+tradition = "old_master"
+artist = "Arkhip Kuindzhi"
+year = 1901
+license = "PD"
+attribution = "Arkhip Kuindzhi, Christ in the Garden of Gethsemane (1901)"
+
+[[plate]]
+n = "NC02"
+file = "Ivan Kramskoy - Христос в пустыне - Google Art Project.jpg"
+title = "Christ in the Wilderness"
+book = "Matthew"
+chapter = 4
+verse = 1
+chapter_end = 4
+verse_end = 2
+kind = "painting"
+tradition = "old_master"
+artist = "Ivan Kramskoi"
+year = 1872
+license = "PD"
+attribution = "Ivan Kramskoi, Christ in the Wilderness (1872) — Tretyakov Gallery, Moscow"
+
+[[plate]]
+n = "NC03"
+file = "What is truth.jpg"
+title = "What is Truth? Christ and Pilate"
+book = "John"
+chapter = 18
+verse = 37
+chapter_end = 18
+verse_end = 38
+kind = "painting"
+tradition = "old_master"
+artist = "Nikolai Ge"
+year = 1890
+license = "PD"
+attribution = "Nikolai Ge, What is Truth? (1890) — Tretyakov Gallery, Moscow"
+
+[[plate]]
+n = "NC04"
+file = "Nikolaj Nikolajewitsch Ge 002.jpg"
+title = "Conscience: Judas"
+book = "Matthew"
+chapter = 27
+verse = 3
+chapter_end = 27
+verse_end = 5
+kind = "painting"
+tradition = "old_master"
+artist = "Nikolai Ge"
+year = 1891
+license = "PD"
+attribution = "Nikolai Ge, Conscience: Judas (1891) — Tretyakov Gallery, Moscow"
+
+[[plate]]
+n = "NC05"
+file = "Aleksander Ivanov - The Apparition of Christ to the People (PR).jpg"
+title = "The Appearance of Christ Before the People"
+book = "John"
+chapter = 1
+verse = 29
+kind = "painting"
+tradition = "old_master"
+artist = "Alexander Ivanov"
+year = 1857
+license = "PD"
+attribution = "Alexander Ivanov, The Appearance of Christ Before the People (1837–1857) — Tretyakov Gallery, Moscow"
+
+[[plate]]
+n = "NC06"
+file = "Ilja Jefimowitsch Repin 013.jpg"
+title = "The Raising of Jairus' Daughter"
+book = "Mark"
+chapter = 5
+verse = 41
+chapter_end = 5
+verse_end = 42
+kind = "painting"
+tradition = "old_master"
+artist = "Ilya Repin"
+year = 1871
+license = "PD"
+attribution = "Ilya Repin, The Raising of Jairus' Daughter (1871) — State Russian Museum, St Petersburg"
+
+[[plate]]
+n = "NC07"
+file = "Po vodam 1888.jpg"
+title = "Walking on the Water"
+book = "Matthew"
+chapter = 14
+verse = 25
+chapter_end = 14
+verse_end = 26
+kind = "painting"
+tradition = "old_master"
+artist = "Ivan Aivazovsky"
+year = 1888
+license = "PD"
+attribution = "Ivan Aivazovsky, Walking on the Water (1888) — Museum of the History of Religion, St Petersburg"
+
+[[plate]]
+n = "NC08"
+file = "ФёдорБруни-МедныйЗмий.jpg"
+title = "The Brazen Serpent"
+book = "Numbers"
+chapter = 21
+verse = 8
+chapter_end = 21
+verse_end = 9
+kind = "painting"
+tradition = "old_master"
+artist = "Fyodor Bruni"
+year = 1841
+license = "PD"
+attribution = "Fyodor Bruni, The Brazen Serpent (1841) — State Russian Museum, St Petersburg"
+
+[[plate]]
+n = "NC09"
+# The larger Commons scan of this canvas (4140×2817) photographs the gilt
+# frame with it; this one is cropped to the picture.
+file = "Munkacsy - Christ in front of Pilate.jpg"
+title = "Christ before Pilate"
+book = "Matthew"
+chapter = 27
+verse = 22
+chapter_end = 27
+verse_end = 23
+kind = "painting"
+tradition = "old_master"
+artist = "Mihály Munkácsy"
+year = 1881
+license = "PD"
+attribution = "Mihály Munkácsy, Christ before Pilate (1881) — Déri Museum, Debrecen"
+
+[[plate]]
+n = "NC10"
+file = "Henry Ossawa Tanner, American (active France) - The Annunciation - Google Art Project.jpg"
+title = "The Annunciation"
+book = "Luke"
+chapter = 1
+verse = 26
+chapter_end = 1
+verse_end = 31
+kind = "painting"
+tradition = "old_master"
+artist = "Henry Ossawa Tanner"
+year = 1898
+license = "PD"
+attribution = "Henry Ossawa Tanner, The Annunciation (1898) — Philadelphia Museum of Art"
+
+[[plate]]
+n = "NC11"
+file = "Nicodemus Visiting Jesus, by Henry Ossawa Tanner adjusted.jpg"
+title = "Nicodemus Visiting Jesus"
+book = "John"
+chapter = 3
+verse = 1
+chapter_end = 3
+verse_end = 2
+kind = "painting"
+tradition = "old_master"
+artist = "Henry Ossawa Tanner"
+year = 1899
+license = "PD"
+attribution = "Henry Ossawa Tanner, Nicodemus Visiting Jesus (1899) — Pennsylvania Academy of the Fine Arts"
+
+[[plate]]
+n = "NC12"
+file = "Henry Ossawa Tanner - The Two Disciples at the Tomb - 1906.300 - Art Institute of Chicago.jpg"
+title = "The Two Disciples at the Tomb"
+book = "John"
+chapter = 20
+verse = 3
+chapter_end = 20
+verse_end = 8
+kind = "painting"
+tradition = "old_master"
+artist = "Henry Ossawa Tanner"
+year = 1906
+license = "PD"
+attribution = "Henry Ossawa Tanner, The Two Disciples at the Tomb (c. 1906) — Art Institute of Chicago"
+
+# The 1895 canvas Tanner showed at the 1896 Salon is lost to a poor scan; this
+# is his own later version, which LACMA dates c. 1907–18.
+[[plate]]
+n = "NC13"
+file = "Daniel in the Lions' Den LACMA 22.6.3.jpg"
+title = "Daniel in the Lions' Den"
+book = "Daniel"
+chapter = 6
+verse = 16
+chapter_end = 6
+verse_end = 23
+kind = "painting"
+tradition = "old_master"
+artist = "Henry Ossawa Tanner"
+year = 1907
+license = "PD"
+attribution = "Henry Ossawa Tanner, Daniel in the Lions' Den (c. 1907–18) — Los Angeles County Museum of Art"
+
+[[plate]]
+n = "NC14"
+file = "John Martin - The Great Day of His Wrath - Google Art Project.jpg"
+title = "The Great Day of His Wrath"
+book = "Revelation"
+chapter = 6
+verse = 12
+chapter_end = 6
+verse_end = 17
+kind = "painting"
+tradition = "old_master"
+artist = "John Martin"
+year = 1851
+license = "PD"
+attribution = "John Martin, The Great Day of His Wrath (c. 1851) — Tate, London"
+
+[[plate]]
+n = "NC15"
+file = "John Martin - Belshazzar's Feast - Google Art Project.jpg"
+title = "Belshazzar's Feast"
+book = "Daniel"
+chapter = 5
+verse = 5
+chapter_end = 5
+verse_end = 6
+kind = "painting"
+tradition = "old_master"
+artist = "John Martin"
+year = 1820
+license = "PD"
+attribution = "John Martin, Belshazzar's Feast (1820) — Yale Center for British Art, Paul Mellon Collection"
+
+[[plate]]
+n = "NC16"
+file = "John Martin - The Deluge - Google Art Project.jpg"
+title = "The Deluge"
+book = "Genesis"
+chapter = 7
+verse = 21
+chapter_end = 7
+verse_end = 23
+kind = "painting"
+tradition = "old_master"
+artist = "John Martin"
+year = 1834
+license = "PD"
+attribution = "John Martin, The Deluge (1834) — Yale Center for British Art, Paul Mellon Collection"
+
+[[plate]]
+n = "NC17"
+file = "John Martin - Joshua Commanding the Sun to Stand Still - Google Art Project.jpg"
+title = "Joshua Commanding the Sun to Stand Still"
+book = "Joshua"
+chapter = 10
+verse = 12
+chapter_end = 10
+verse_end = 13
+kind = "painting"
+tradition = "old_master"
+artist = "John Martin"
+year = 1840
+license = "PD"
+attribution = "John Martin, Joshua Commanding the Sun to Stand Still (c. 1840) — Yale Center for British Art, Paul Mellon Collection"
+
+[[plate]]
+n = "NC18"
+file = "Eugène Delacroix - Christ on the Sea of Galilee - Google Art Project (27796212).jpg"
+title = "Christ on the Sea of Galilee"
+book = "Mark"
+chapter = 4
+verse = 37
+chapter_end = 4
+verse_end = 39
+kind = "painting"
+tradition = "old_master"
+artist = "Eugène Delacroix"
+year = 1854
+license = "PD"
+attribution = "Eugène Delacroix, Christ on the Sea of Galilee (1854) — Walters Art Museum, Baltimore"
+
+[[plate]]
+n = "NC20"
+file = "William holman hunt-the shadow of death.jpg"
+title = "The Shadow of Death"
+book = "Mark"
+chapter = 6
+verse = 3
+kind = "painting"
+tradition = "old_master"
+artist = "William Holman Hunt"
+year = 1873
+license = "PD"
+attribution = "William Holman Hunt, The Shadow of Death (1870–73) — Manchester Art Gallery"
+
+[[plate]]
+n = "NC21"
+file = "1835 Corot Hagar in der Wildnis anagoria.JPG"
+title = "Hagar in the Wilderness"
+book = "Genesis"
+chapter = 21
+verse = 15
+chapter_end = 21
+verse_end = 17
+kind = "painting"
+tradition = "old_master"
+artist = "Jean-Baptiste-Camille Corot"
+year = 1835
+license = "PD"
+attribution = "Jean-Baptiste-Camille Corot, Hagar in the Wilderness (1835) — Metropolitan Museum of Art, New York"
+
+[[plate]]
+n = "NC22"
+file = "Jean-Léon Gérôme Consummatum est.jpg"
+title = "Consummatum est"
+book = "Luke"
+chapter = 23
+verse = 44
+chapter_end = 23
+verse_end = 45
+kind = "painting"
+tradition = "old_master"
+artist = "Jean-Léon Gérôme"
+year = 1867
+license = "PD"
+attribution = "Jean-Léon Gérôme, Consummatum est (1867) — Musée d'Orsay, Paris"
+
+[[plate]]
+n = "NC23"
+file = "Léon Bonnat - Job.jpg"
+title = "Job"
+book = "Job"
+chapter = 30
+verse = 30
+kind = "painting"
+tradition = "old_master"
+artist = "Léon Bonnat"
+year = 1880
+license = "PD"
+attribution = "Léon Bonnat, Job (1880) — Musée d'Orsay, Paris"
+
+[[plate]]
+n = "NC24"
+file = "Léon Cogniet - Massacre of the Innocents.jpg"
+title = "Scene of the Massacre of the Innocents"
+book = "Matthew"
+chapter = 2
+verse = 16
+chapter_end = 2
+verse_end = 18
+kind = "painting"
+tradition = "old_master"
+artist = "Léon Cogniet"
+year = 1824
+license = "PD"
+attribution = "Léon Cogniet, Scene of the Massacre of the Innocents (1824) — Musée des Beaux-Arts de Rennes"
