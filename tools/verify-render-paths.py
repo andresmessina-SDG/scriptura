@@ -60,12 +60,22 @@ DRIVER_TIMEOUT = 180.0
 #: (label, pane setter, pane attribute, expected `text_identical`).
 #: True  = attribute-only, an incremental candidate.
 #: False = structural; the text itself changes, leave it re-rendering.
+#: Triggers that must never call `_display`, whatever happens to the text.
+#: A rebuild here is a regression: it empties and refills the buffer, and the
+#: reading position then has to be held through GTK's re-estimation of the
+#: document height — the flicker the scroll hold exists to fight.
+NO_REBUILD = ('theme flip', 'oldstyle numerals', 'coloured dropcap',
+              'poetry flush', 'footnotes')
+
 TRIGGERS = [
     ('theme flip',        None,                     None,                True),
     ('oldstyle numerals', 'set_oldstyle_numerals',  '_oldstyle_nums',    True),
     ('coloured dropcap',  'set_colored_dropcap',    '_colored_dropcap',  True),
     ('poetry flush',      'set_poetry_flush',       '_poetry_flush',     True),
     ('section headings',  'set_show_headings',      '_show_headings',    False),
+    # Footnotes change the visible text — the markers appear — but they are
+    # applied by flipping one tag's `invisible`, not by re-rendering. So the
+    # text is expected to differ while _display must stay at 0; see NO_REBUILD.
     ('footnotes',         'set_show_footnotes',     '_show_footnotes',   False),
     ('divine smallcaps',  'set_divine_smallcaps',   '_smallcaps_divine', False),
 ]
@@ -132,7 +142,10 @@ def run_driver() -> int:
             'text_identical': got,
             'expected_identical': expect,
             'ok': got == expect,
-            'class': 'attribute-only' if got else 'structural',
+            # By whether it REBUILT, not by whether the text moved: footnotes
+            # change the text and still do not re-render.
+            'class': ('attribute-only' if not S['calls']
+                      else 'structural'),
             'char_delta': len(text) - len(before_text),
             'display_calls': len(S['calls']),
             'display_ms': list(S['calls']),
@@ -329,6 +342,11 @@ def present(data: dict) -> int:
         print(f"{t['trigger']:<18} {t['class']:<15} "
               f"{t['display_calls']:>9}  {ms:>7}  "
               f"{'ok' if t['ok'] else 'MISMATCH'}")
+    rebuilt = [t for t in data['triggers']
+               if t['trigger'] in NO_REBUILD and t['display_calls']]
+    for t in rebuilt:
+        print(f"\n{t['trigger']}: must not re-render, but called _display "
+              f"{t['display_calls']}x")
     bad = [t for t in data['triggers'] if not t['ok']]
     for t in bad:
         print(f"\n{t['trigger']}: expected "
@@ -337,6 +355,8 @@ def present(data: dict) -> int:
         fd = t.get('first_diff')
         if fd and 'before' in fd:
             print(f"  before: {fd['before']!r}\n  after:  {fd['after']!r}")
+    if rebuilt:
+        return 1
     if bad:
         print('\nA chapter lacking headings, footnotes or the divine name will '
               'mismatch\nlegitimately — check the reference before the code.')

@@ -177,6 +177,14 @@ _NOTE_ANCHOR_RE = re.compile(
     r'<note\s[^>]*?swordFootnote="(\d+)"[^>]*?(?:/>|>\s*</note>)')
 _FN_TOKEN_RE = re.compile(r'\[\[FN_(\d+)\]\]')
 
+#: Every footnote marker label carries this tag as well as its own
+#: `fnote:{verse}:{n}`. Markers are now always rendered, and the setting only
+#: flips this tag's `invisible` — so turning footnotes on or off restyles the
+#: chapter instead of rebuilding it (see BiblePane.set_show_footnotes). Not in
+#: _CHAPTER_SCOPED_TAG_PREFIXES: it is one shared style tag, not per-chapter
+#: state, and it must survive the rebuild that clears those.
+_FN_MARKER_TAG = 'fn_marker'
+
 
 def _fn_label(idx):
     """0-based marker index → bijective base-26 label: a…z, aa, ab, …
@@ -884,6 +892,12 @@ def _extract_segments(html):
 
 
 
+#: Longest a rebuild's scroll hold may last (see _ReadingScrolledWindow.
+#: hold_scroll). Generous against a slow render, short enough that a hold
+#: which somehow never released cannot pin the scrollbar for a reader.
+HOLD_SAFETY_MS = 2000
+
+
 class _ReadingScrolledWindow(Gtk.ScrolledWindow):
     """ScrolledWindow that centers a capped-width text column by pushing
     symmetric left/right margins onto its TextView child. Keeps the
@@ -905,6 +919,14 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
         # REPLACES the view's, so it must track it).
         self.on_margins_change = None
         self._last_alloc_height = -1
+        # Set by hold_scroll() for the length of a rebuild; see there.
+        self._hold_value = None
+        self._hold_handler = None
+        self._faked_upper = None
+        self._in_hold = False
+        # Bumped by every hold and every release, so a safety timer can tell
+        # whether the hold it was armed for is still the one running.
+        self._hold_gen = 0
 
     def set_reading_width(self, px):
         self._reading_width = max(200, int(px))
@@ -929,11 +951,121 @@ class _ReadingScrolledWindow(Gtk.ScrolledWindow):
         # resize). Applying them first lets one allocation pass do the work.
         self._apply_margins(width)
         Gtk.ScrolledWindow.do_size_allocate(self, width, height, baseline)
+        self._reassert_held_scroll()
         if height != self._last_alloc_height:
             was_first = self._last_alloc_height < 0
             self._last_alloc_height = height
             if not was_first and self.on_height_change is not None:
                 self.on_height_change()
+
+    def hold_scroll(self):
+        """Keep the reading position through a buffer rebuild.
+
+        Emptying the buffer collapses the vadjustment's `upper` to GTK's
+        estimate for the lines it has not validated yet (measured: 16245 ->
+        688 on Psalms 119), and the chain-up above clamps `value` against it.
+        The restore runs on an idle at DEFAULT_IDLE, which loses to
+        GDK_PRIORITY_REDRAW — so the clamped value is what gets PAINTED, and
+        the reader sees the chapter top for two or three frames before the
+        position walks back.
+
+        Held here rather than fixed at the source because GtkTextView offers
+        no way to validate the lines early: get_iter_location, get_line_yrange,
+        queue_draw and scroll_to_iter all read the btree's estimates and leave
+        `upper` where it was (measured for the scroll matrix).
+        """
+        adj = self.get_vadjustment()
+        if self._hold_value is None:
+            # Rebuilds can arrive faster than they finish. Only the first of a
+            # run captures: by the second, `value` is whatever the unfinished
+            # first one left behind — a clamp, or the restore's overshoot — and
+            # capturing that locks the run onto the wrong position.
+            self._hold_value = adj.get_value() or None
+        self._faked_upper = None
+        if self._hold_value is None:
+            return
+        # The collapse does not wait for an allocation: GtkTextView revises
+        # `upper` from its validation idle too, and those frames are painted
+        # as well. Ride the adjustment's own signal instead of only the
+        # layout pass.
+        if self._hold_handler is None:
+            self._hold_handler = adj.connect('changed', self._on_adj_changed)
+        # A hold must never outlive its rebuild, whatever happens to the
+        # restore. Nothing downstream is trusted to end it. The timer is
+        # stamped with the hold it belongs to: an unstamped one expiring 2s
+        # later tore down whichever hold happened to be running by then, which
+        # is how a toggle could still paint the chapter top (measured: holds at
+        # 5.882 and 6.082 killed the rebuilds that began at 7.827 and 8.050).
+        self._hold_gen += 1
+        GLib.timeout_add(HOLD_SAFETY_MS, self._expire_hold, self._hold_gen)
+
+    def _expire_hold(self, gen):
+        if gen == self._hold_gen:
+            self._release_hold()
+        return GLib.SOURCE_REMOVE
+
+    def _on_adj_changed(self, _adj):
+        if self._in_hold:
+            return                      # our own set_upper coming back round
+        self._in_hold = True
+        try:
+            self._reassert_held_scroll()
+        finally:
+            self._in_hold = False
+
+    def release_scroll_hold(self):
+        """End a hold because the rebuild's restore has run. That is the only
+        honest end signal available — see _reassert_held_scroll for why the
+        adjustment's height cannot serve as one."""
+        self._release_hold()
+
+    def _release_hold(self):
+        self._hold_value = None
+        self._faked_upper = None
+        # Retire this hold's number so its safety timer, still pending, cannot
+        # come back and release a hold taken after it.
+        self._hold_gen += 1
+
+        if self._hold_handler is not None:
+            self.get_vadjustment().disconnect(self._hold_handler)
+            self._hold_handler = None
+        return GLib.SOURCE_REMOVE
+
+    def _reassert_held_scroll(self):
+        """Put the held position back, whatever moved it. Ends only when the
+        rebuild's restore says so — never on the strength of a height, because
+        `upper` reads tall both when GTK has finished revalidating and when it
+        has not yet collapsed at all, and the two are indistinguishable from
+        here (measured: released at upper=27462, painted the chapter top at
+        upper=836 four frames later)."""
+        if self._hold_value is None:
+            return
+        adj = self.get_vadjustment()
+        page = adj.get_page_size()
+        upper = adj.get_upper()
+        # `_faked_upper` is our own height talking back — GTK has revised
+        # nothing, so it is not evidence the document has grown.
+        if upper != self._faked_upper and upper - page < self._hold_value:
+            # Lie about the height for exactly as long as the estimate is
+            # short, and by the smallest amount that clears the clamp. The
+            # alternative is a value of nearly zero: the flicker.
+            #
+            # It is tempting to report the height the document came in with
+            # instead, so the scrollbar thumb (sized page/upper) does not
+            # twitch. Do not: holding `upper` above what GtkTextView has
+            # actually laid out starves its incremental validation, and the
+            # view paints a BLANK page for the length of the hold. Tried,
+            # seen, reverted. The thumb is GTK's to move; the position is
+            # ours to keep.
+            self._faked_upper = self._hold_value + page
+            adj.set_upper(self._faked_upper)
+        # Pin unconditionally, including while `upper` is tall enough to carry
+        # the position on its own. Nothing is clamping then, but GtkTextView
+        # SCROLLS as it revalidates — holding a visible line steady against
+        # corrected heights above it — and that walked the value 683px
+        # (11464 -> 12147 at upper=12964) into a painted frame.
+        if adj.get_value() != self._hold_value:
+            adj.set_value(self._hold_value)
 
     def _apply_margins(self, avail):
         if avail <= 0:
@@ -2362,6 +2494,12 @@ class BiblePane(Gtk.Box):
         self._artifact_markers = []  # rebuilt below; old ones died with set_text('')
 
         self._cancel_all_flashes()
+        # Before the buffer empties: hold the position the allocation's clamp
+        # is about to take. Only where a restore is coming — a navigation
+        # means to land somewhere else, and a hold would fight it.
+        if (self._restore_anchor is not None
+                or self._restore_top_verse is not None):
+            self._reading_scroll.hold_scroll()
         self._buffer.set_text('')
         self._clear_chapter_scoped_tags()
         self._chapter_footnotes = {}
@@ -2388,10 +2526,13 @@ class BiblePane(Gtk.Box):
             if _is_bad_cipher(all_empty, in_index, _printable_ratio(sample)):
                 self._display_cipher_locked()
                 self._on_cipher_error(module)
+                # No restore will run on this path to end the hold for us.
+                self._reading_scroll.release_scroll_hold()
                 return GLib.SOURCE_REMOVE
 
         if all_empty:
             self._display_empty_chapter(book, chapter)
+            self._reading_scroll.release_scroll_hold()
             return GLib.SOURCE_REMOVE
 
         # Verse numbers actually rendered this chapter, for nearest-preceding
@@ -2505,7 +2646,7 @@ class BiblePane(Gtk.Box):
                 # _html_to_markup so <hi>, <i>, etc. keep working.
                 src_html = str(html)
                 vnotes = {}
-                if self._show_footnotes and notes.get(start_v):
+                if notes.get(start_v):
                     # A grouped section renders one identical block for its
                     # whole verse range, so its anchors — and note bodies —
                     # are the same for every verse; the start verse's set
@@ -2518,12 +2659,14 @@ class BiblePane(Gtk.Box):
                 self._buffer.insert(self._buffer.get_end_iter(), '\n')
             else:
                 # Footnote anchors → [[FN_n]] tokens before the generic tag
-                # strip in _html_to_markup (which otherwise removes them —
-                # the markers-off state is exactly that removal). Poetry
-                # line milestones get the same token protection.
+                # strip in _html_to_markup (which otherwise removes them).
+                # Always substituted, whatever the setting says: the markers-off
+                # state is the shared fn_marker tag's `invisible`, not their
+                # absence, so the toggle need not re-render. Poetry line
+                # milestones get the same token protection.
                 src_html = _poetry_tokens(str(html))
                 vnotes = {}
-                if self._show_footnotes and notes.get(start_v):
+                if notes.get(start_v):
                     vnotes = {n: (t, b) for n, t, b in notes[start_v]}
                     src_html = _NOTE_ANCHOR_RE.sub(
                         lambda m: f'[[FN_{m.group(1)}]]', src_html)
@@ -2604,6 +2747,10 @@ class BiblePane(Gtk.Box):
             self._restore_top_verse = None
             self._restore_anchor = None
             self._reading_anchor = None
+            # A navigation that arrived mid-rebuild outranks the restore the
+            # hold was taken for. Let it go now rather than fight the landing
+            # until the safety timer expires.
+            self._reading_scroll.release_scroll_hold()
             # Navigation to a specific verse — mark it as the active
             # verse so the current-verse indicator sits on it after
             # the scroll lands.
@@ -2613,11 +2760,13 @@ class BiblePane(Gtk.Box):
         elif self._restore_anchor is not None:
             anchor = self._restore_anchor
             self._restore_anchor = None
-            GLib.idle_add(self._apply_scroll_anchor, anchor)
+            GLib.idle_add(self._restore_then_release,
+                          self._apply_scroll_anchor, anchor)
         elif self._restore_top_verse is not None:
             v = self._restore_top_verse
             self._restore_top_verse = None
-            GLib.idle_add(self._scroll_to_verse_silent, v)
+            GLib.idle_add(self._restore_then_release,
+                          self._scroll_to_verse_silent, v)
         else:
             # Belt and braces: scroll_to_iter's pending scroll can be
             # dropped during a buffer swap (observed: navigation from a
@@ -3011,20 +3160,43 @@ class BiblePane(Gtk.Box):
         self._buffer.apply_tag(tag, start, end)
         self._buffer.delete_mark(start_mark)
 
+    def _fn_marker_tag(self):
+        """The shared marker tag, carrying the current visibility. Markers are
+        rendered whatever the setting says; this is what decides whether they
+        are drawn."""
+        table = self._buffer.get_tag_table()
+        tag = table.lookup(_FN_MARKER_TAG)
+        if tag is None:
+            tag = self._buffer.create_tag(_FN_MARKER_TAG)
+        tag.set_property('invisible', not self._show_footnotes)
+        return tag
+
     def _apply_footnote_tags(self, verse, markers, vnotes, text_start_mark):
         """Tag each marker label with fnote:{verse}:{n} (click → peek) and
         stash (type, body, label) for the handler. Offsets from
         _substitute_footnote_markers are relative to text_start_mark."""
         base = self._buffer.get_iter_at_mark(text_start_mark).get_offset()
         table = self._buffer.get_tag_table()
+        shared = self._fn_marker_tag()
         for off, n, label in markers:
             name = f'fnote:{verse}:{n}'
             tag = table.lookup(name) or self._buffer.create_tag(name)
             s = self._buffer.get_iter_at_offset(base + off)
             e = self._buffer.get_iter_at_offset(base + off + len(label))
             self._buffer.apply_tag(tag, s, e)
+            self._buffer.apply_tag(shared, s, e)
             ftype, body = vnotes[n]
             self._chapter_footnotes[(verse, n)] = (ftype, body, label)
+
+    def _restore_then_release(self, restore, arg):
+        """Place the reading position, then end the rebuild's scroll hold.
+
+        Order matters: the hold has to outlive every frame up to and including
+        this one, because GTK's collapse of `upper` can arrive after the
+        painted frames the restore was scheduled behind."""
+        restore(arg)
+        self._reading_scroll.release_scroll_hold()
+        return GLib.SOURCE_REMOVE
 
     def _rerender_keeping_place(self):
         """Re-render the current chapter, restoring the exact reading locus
@@ -3260,7 +3432,28 @@ class BiblePane(Gtk.Box):
         if self._show_footnotes == bool(enabled):
             return
         self._show_footnotes = bool(enabled)
+        # Attribute-only: the markers are already in the buffer, so this is one
+        # tag property, not a rebuild. That matters beyond speed — a rebuild
+        # empties and refills the buffer, and the reading position has to be
+        # held through GTK's re-estimation of the document height (see
+        # _ReadingScrolledWindow.hold_scroll and the flicker it exists to
+        # fight). Nothing is rebuilt here, so there is nothing to hold.
+        if self._restyle_footnote_markers():
+            return
+        # Nothing adopted to restyle — a chapter rendered before the markers
+        # existed, or a surface that never rendered one. Fall through to the
+        # render, which is also what picks the flag up when a Bible next
+        # appears here.
         self._rerender_keeping_place()
+
+    def _restyle_footnote_markers(self):
+        """Show or hide the rendered chapter's markers without rebuilding it.
+        False when there is nothing tagged to flip, so the caller can fall back
+        to a render."""
+        if self._buffer.get_tag_table().lookup(_FN_MARKER_TAG) is None:
+            return False
+        self._fn_marker_tag()            # carries the new visibility
+        return True
 
     def set_divine_smallcaps(self, enabled):
         if self._smallcaps_divine == bool(enabled):
@@ -3489,9 +3682,13 @@ class BiblePane(Gtk.Box):
                 parts.append(_('underlined'))
             if anno.get('note'):
                 parts.append(_('has note'))
-            notes = self._chapter_footnotes
-            if any(v == verse_num for v, _n in notes):
-                parts.append(_('has footnotes'))
+            # Only when they are shown: the map is populated whether or not
+            # the markers are drawn, and announcing a footnote a reader can
+            # neither see nor reach is worse than silence.
+            if self._show_footnotes:
+                notes = self._chapter_footnotes
+                if any(v == verse_num for v, _n in notes):
+                    parts.append(_('has footnotes'))
         return ', '.join(parts)
 
     def _announce_verse_state(self, verse_num):
@@ -4109,7 +4306,14 @@ class BiblePane(Gtk.Box):
                 targets['fnote'] = name[6:]
             elif name and name.startswith('phrase:'):
                 targets['phrase_tag'] = tag
-        if targets['fnote'] is None:
+        if not self._show_footnotes:
+            # The markers are still in the buffer when they are switched off,
+            # merely not drawn — and the probe below deliberately looks one
+            # character to each side, so a click on the letter beside a hidden
+            # marker resolved to it and opened a note the reader had turned
+            # off. Nothing invisible is a click target.
+            targets['fnote'] = None
+        elif targets['fnote'] is None:
             # A marker is a single narrow superscript glyph, and
             # get_iter_at_location resolves a click on its right half to
             # the NEXT character — so exact-iter tagging misses half the

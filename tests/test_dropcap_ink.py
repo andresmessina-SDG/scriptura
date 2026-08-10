@@ -133,6 +133,13 @@ def test_a_cap_that_went_missing_is_reported_rather_than_raised():
 # ── The ink ─────────────────────────────────────────────────────────────────
 
 def _capped(monkeypatch, dark=False, colored=True):
+    # The gold is the DEFAULT cap colour, and only the default follows the
+    # theme. Without this the suite reads the developer's own settings.json:
+    # a reader who has chosen a custom colour in Appearance makes
+    # `dropcap_color_hex` return that one colour in both schemes, and the
+    # theme test below fails on their machine while CI stays green.
+    monkeypatch.setattr(pane_mod.settings, 'get',
+                        lambda key, *a, **kw: None)
     _force_theme(monkeypatch, dark)
     p = Pane(colored=colored)
     p._buffer.insert_markup(p._buffer.get_end_iter(),
