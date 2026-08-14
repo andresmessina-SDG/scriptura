@@ -260,6 +260,7 @@ class Reading:
         self._pill = FakePill()
         self._reading_url = 'https://example.invalid/BSB_01_Gen_001.mp3'
         self._reading_scripture = True
+        self._reading_translation = bible_audio.READINGS[0].translation
         self._reading_player = player
         self._reading_tick = None
         self._reading_fetching = False
@@ -733,10 +734,13 @@ def _paging(monkeypatch, **kwargs):
     c._pane = FakePane(c)
     monkeypatch.setattr(audio_surfaces, 'set_accessible_label',
                         lambda *a: None)
-    monkeypatch.setattr(bible_audio, 'covers_module', lambda _m: c.covered)
+    monkeypatch.setattr(
+        bible_audio, 'reading_for_module',
+        lambda _m: bible_audio.READINGS[0] if c.covered else None)
     monkeypatch.setattr(
         bible_audio, 'chapter_url',
-        lambda book, chapter: f'https://example.invalid/{book}_{chapter}.mp3')
+        lambda _r, book, chapter:
+            f'https://example.invalid/{book}_{chapter}.mp3')
     return c
 
 
@@ -1170,7 +1174,7 @@ def test_a_sounding_chapter_reaches_the_desktop(monkeypatch, bus):
     c._on_reading_play()
     assert len(bus.published) == 1
     assert bus.published[0].title == 'John 3'
-    assert bus.published[0].artist == bible_audio.TRANSLATION
+    assert bus.published[0].artist == bible_audio.READINGS[0].translation
 
 
 def test_a_psalm_episode_names_its_own_series(monkeypatch, bus):
