@@ -74,6 +74,13 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Fixed
 
+- **A long footnote now opens.** Where a note runs to an essay rather
+  than a line — Straubinger's Spanish Bible writes 2,400 characters of
+  commentary on one verse of Psalm 51 — the note asked for a popover
+  taller than the window, which GTK will not place, so the marker did
+  nothing when clicked while a shorter note two lines below opened first
+  time. The note now opens on whichever side of the marker has more room,
+  and scrolls inside the peek when it is long.
 - **Voices of the Church: numbers were losing their thousands.** Four
   quotes printed figures like "Hezekiah routed 185, of the enemy" — a
   parser upstream had been dropping the digits after the comma. Fixed at
