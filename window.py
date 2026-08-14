@@ -3442,10 +3442,10 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _build_advanced_toggles(self):
         # ── Advanced reading toggles ──────────────────────────────────────
-        # Reading conventions (small caps, old-style figures) default on;
-        # opt-in taste (flush poetry, tinted drop cap) and opt-in behavior
-        # (hover preview) default off. New toggles slot in as rows without
-        # a redesign.
+        # Five ship on: section headings, small caps, the coloured drop cap,
+        # hover preview, spoken readings. Every other toggle ships off. New
+        # toggles slot in as rows without a redesign, and ship off unless
+        # they earn a place in that five.
         adv = Gtk.Expander(label=_('Advanced'))
         adv.add_css_class('appearance-advanced')
         adv_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -3553,8 +3553,7 @@ class BibleWindow(Adw.ApplicationWindow):
             'notify::active',
             lambda s, _p: self._dropcap_swatch.set_visible(s.get_active()))
         # Behavior, not typography: dwell on a Strong's word peeks its
-        # gloss without a click. Off by default — the reading surface
-        # stays inert unless the reader opts in.
+        # gloss without a click.
         _adv_switch(_('Preview words on hover'),
                     'hover_preview', 'set_hover_preview')
         # Evening paper is window-scoped (a Night Light D-Bus monitor), so
