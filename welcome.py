@@ -23,6 +23,7 @@ from gi.repository import Gtk, Adw, GLib, Pango
 import sword_bridge
 import open_data
 import catena_bridge
+import onboarding
 
 
 def N_(message):
@@ -167,6 +168,28 @@ class WelcomeWindow(Adw.ApplicationWindow):
         footnote.set_margin_top(4)
         outer.append(footnote)
 
+        # The one line pointing at the gesture reference. Inside the app that
+        # reference is reachable two ways, and a newcomer may meet neither: an
+        # unlabelled icon in the menu footer, and a button on a hint that fires
+        # once and never again. This is the moment a newcomer is actually
+        # reading the window, so the line names the dialog as well as opening
+        # it — the point is to be re-findable later, not to be read now.
+        # It carries the menu footer's own tips icon, which is where the
+        # reference lives afterwards and is unlabelled there: seeing the mark
+        # once beside its name is what makes it recognisable later.
+        tips_btn = Gtk.Button()
+        tips_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        tips_row.append(Gtk.Image(icon_name='scriptura-tips-symbolic'))
+        tips_row.append(Gtk.Label(
+            label=_('New here? See what the pointer can do — Tips & Gestures')))
+        tips_btn.set_child(tips_row)
+        tips_btn.add_css_class('flat')
+        tips_btn.add_css_class('caption')
+        tips_btn.set_halign(Gtk.Align.CENTER)
+        tips_btn.connect('clicked', self._on_open_tips)
+        outer.append(tips_btn)
+        self._tips_btn = tips_btn
+
         mgr_btn = Gtk.Button(label=_('Choose individual modules instead'))
         mgr_btn.add_css_class('flat')
         mgr_btn.set_halign(Gtk.Align.CENTER)
@@ -247,6 +270,13 @@ class WelcomeWindow(Adw.ApplicationWindow):
         threading.Thread(
             target=self._install_worker, args=(bundle,),
             daemon=True).start()
+
+    def _on_open_tips(self, _btn):
+        # No `on_shortcuts`: that dialog belongs to the reading window, which
+        # does not exist yet, so the row drops out rather than pointing at
+        # nothing. Offered only on the chooser page — once the install starts,
+        # the window closes itself on handoff and would take the dialog with it.
+        onboarding.build_tips_dialog().present(self)
 
     # ── Progress page ────────────────────────────────────────────────────
 
