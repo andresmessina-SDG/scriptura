@@ -41,36 +41,49 @@ HINTS: dict[str, str] = {
 
 # Tips & Gestures reference content: (section, [(gesture, result), ...]).
 # N_-marked for extraction; translated at display time.
+#
+# ONE RULE decides what belongs here: a row teaches something done with the
+# POINTER that leaves no visual trace at rest. Keys are not gestures — every
+# one of them lives in the Keyboard Shortcuts dialog, which builds itself from
+# the action map and so can never drift. This list used to carry six
+# Presentation rows that were keyboard shortcuts already stated there, which
+# is half a reference spent restating another one.
+#
+# The rule is enforced by tests/test_tips_gestures.py, which also fails when a
+# new gesture controller appears anywhere in the app without this list being
+# reconsidered. That tripwire is the closest thing to the action-map tie the
+# shortcuts dialog gets for free: nothing registers gestures centrally, so the
+# only honest anchor is "the app grew a gesture — go look".
 GESTURES: list[tuple[str, list[tuple[str, str]]]] = [
     (N_('Reading'), [
         (N_('Tap a verse'), N_('Show its cross-references')),
         (N_('Right-click a verse'), N_('Highlights, notes, and study tools')),
         (N_('Double-click a word'), N_('Look it up in the dictionary')),
+        (N_('Click a footnote marker'), N_('Read the translator’s note')),
         (N_('Scroll over the chapter title'), N_('Cycle through chapters')),
     ]),
     (N_('Word study'), [
         (N_('Turn on the lexicon, then tap a word'),
          N_('Open its Strong’s lexicon entry')),
+        (N_('With the lexicon on, hover a word'),
+         N_('It underlines where the lexicon has an entry')),
+        # Both halves of the same dwell: the underline says an entry exists,
+        # resting says what it is. Listed only because `hover_preview` ships
+        # ON — a row teaching a toggle the reader has not turned on teaches a
+        # no-op, so if that default ever goes back to off, this row goes too.
+        (N_('Rest on that word a moment longer'),
+         N_('Its meaning previews without a click')),
+    ]),
+    (N_('The two panes'), [
+        (N_('Hover near the divider'),
+         N_('A grip appears — drag it to move the split')),
     ]),
     (N_('View'), [
         (N_('Hover the אΩ mark in the header'),
          N_('Reading tools bloom out — lexicon, footnotes, cross-references')),
         (N_('Hover the top edge in reading mode'),
          N_('Bring the toolbar back')),
-    ]),
-    (N_('Presentation'), [
-        (N_('Press F5, or open the menu'),
-         N_('Present the passage full-screen')),
-        (N_('Arrow keys, Space, or the on-screen controls'),
-         N_('Step through the passage')),
-        (N_('The V key, or the “V” button'),
-         N_('Switch to one verse per slide')),
-        (N_('The P key, or the Parallel button'),
-         N_('Show both open translations side by side')),
-        (N_('Ctrl+L while presenting'),
-         N_('Jump to any passage')),
-        (N_('+ / − keys, or the zoom controls'),
-         N_('Make the text larger or smaller')),
+        (N_('Pinch on the touchpad'), N_('Make the text larger or smaller')),
     ]),
 ]
 
@@ -139,7 +152,11 @@ def build_tips_dialog(on_shortcuts: Callable[[], None] | None = None) -> Adw.Dia
     controls.add(hint_row)
 
     if on_shortcuts is not None:
-        sc_row = Adw.ActionRow(title=_('Keyboard Shortcuts'))
+        # Named as the other half of the pair, not as a related link: this
+        # list deliberately holds no keys, so a reader who came looking for
+        # one has to be told where they all are.
+        sc_row = Adw.ActionRow(title=_('Keyboard Shortcuts'),
+                               subtitle=_('Every key the app answers to'))
         sc_row.add_suffix(Gtk.Image(icon_name='go-next-symbolic'))
         sc_row.set_activatable(True)
         sc_row.connect('activated', lambda _r: on_shortcuts())
