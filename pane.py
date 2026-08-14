@@ -4650,19 +4650,61 @@ class BiblePane(Gtk.Box):
             return True
         return False
 
+    def _peek_room(self, anchor_widget, rect, pop):
+        """Point `pop` at whichever side of `rect` has more room, and return
+        the pixels available on that side.
+
+        A popover taller than the window is never placed: GTK closes it the
+        moment it is shown, the self-heal reshows it, and after twelve rounds
+        the peek is simply unopenable. So every peek whose body can run long
+        measures the room first and caps itself to it (_peek_scroller). Room
+        is measured in the window, where the popover actually lives — it can
+        extend up over the toolbar."""
+        root = anchor_widget.get_root()
+        y, win_h = rect.y, anchor_widget.get_height()
+        if root is not None:
+            ok, pt = anchor_widget.compute_point(
+                root, Graphene.Point().init(float(rect.x), float(rect.y)))
+            if ok:
+                y = pt.y
+            win_h = root.get_height()
+        above, below = y, win_h - (y + rect.height)
+        if above > below:
+            pop.set_position(Gtk.PositionType.TOP)
+            return above
+        pop.set_position(Gtk.PositionType.BOTTOM)
+        return below
+
+    @staticmethod
+    def _peek_scroller(child, avail, chrome=86):
+        """Wrap a peek's body so a long one scrolls inside the popover instead
+        of demanding a height that cannot be placed. `chrome` is what the
+        popover spends around the body — caption, margins, arrow. A short body
+        keeps its natural height and never shows a bar."""
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_propagate_natural_height(True)
+        scroll.set_max_content_height(int(max(140, min(420, avail - chrome))))
+        scroll.set_child(child)
+        return scroll
+
     def show_anchored_peek(self, anchor_widget, rect, content):
         """Show `content` in the shared self-healing peek popover, anchored
         at `rect` in `anchor_widget`. The lexicon panel's verse peek rides
         the same instance as the dictionary/footnote peeks, so the reshow-
         until-stable machinery and the dismissal paths (Escape, module
-        change, new lookup) cover it too."""
+        change, new lookup) cover it too.
+
+        `content` arrives whole (header and body together), so the cap wraps
+        all of it: a long verse or gloss scrolls with its own caption rather
+        than being unopenable."""
         pop = self._ensure_peek_popover(anchor_widget)
         # A dictionary fetch already in flight can't replace this peek's
         # content when it returns.
         tasks.cancel(f'peek:{id(self)}')
-        pop.set_position(Gtk.PositionType.BOTTOM)
+        avail = self._peek_room(anchor_widget, rect, pop)
         pop.set_pointing_to(rect)
-        pop.set_child(content)
+        pop.set_child(self._peek_scroller(content, avail, chrome=40))
         # Invisible until it has survived the post-click relayout churn —
         # the same show-when-stable dance as the dictionary peek.
         self._dict_retries = 0
@@ -4789,28 +4831,12 @@ class BiblePane(Gtk.Box):
         # content when it returns.
         tasks.cancel(f'peek:{id(self)}')
         # Open on whichever side of the marker has more room, and cap the body
-        # to what fits there — the same discipline as the dictionary peek, and
-        # for a sharper reason. A translator's note is one line; a commentator's
+        # to what fits there. A translator's note is one line; a commentator's
         # is an essay (Straubinger writes 2,377 characters on Psalm 51:13), and
-        # a popover taller than the window is never placed at all: GTK closes it
-        # the moment it is shown, the self-heal reshows it, and after twelve
-        # rounds the note is unopenable — while a short note two lines below
-        # opens first time. That is why the failure looked arbitrary.
-        root = self.get_root()
-        marker_y, win_h = rect.y, self._view.get_height()
-        if root is not None:
-            ok, pt = self._view.compute_point(
-                root, Graphene.Point().init(float(rect.x), float(rect.y)))
-            if ok:
-                marker_y = pt.y
-            win_h = root.get_height()
-        room_above, room_below = marker_y, win_h - (marker_y + rect.height)
-        if room_above > room_below:
-            pop.set_position(Gtk.PositionType.TOP)
-            avail = room_above
-        else:
-            pop.set_position(Gtk.PositionType.BOTTOM)
-            avail = room_below
+        # an uncapped peek that tall is unopenable — see _peek_room. That is
+        # why the failure looked arbitrary: a short note two lines below the
+        # unopenable one opened first time.
+        avail = self._peek_room(self._view, rect, pop)
         pop.set_pointing_to(rect)
 
         dark = Adw.StyleManager.get_default().get_dark()
@@ -4831,16 +4857,9 @@ class BiblePane(Gtk.Box):
             lbl.set_markup(_html_to_markup(body, dark))
         except Exception:
             lbl.set_text(re.sub(r'<[^>]+>', '', body))
-        # A note that outgrows the room scrolls inside the peek rather than
-        # demanding a popover that cannot be placed. ~86px covers the caption,
-        # the box margins and the popover's own chrome; a short note keeps its
-        # natural height and never scrolls.
-        scroll = Gtk.ScrolledWindow()
-        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        scroll.set_propagate_natural_height(True)
-        scroll.set_max_content_height(int(max(140, min(420, avail - 86))))
-        scroll.set_child(lbl)
-        content.append(scroll)
+        # The caption stays put and only the note scrolls, so a long note
+        # keeps the letter and verse it belongs to in view.
+        content.append(self._peek_scroller(lbl, avail))
         for m in ('top', 'bottom', 'start', 'end'):
             getattr(content, f'set_margin_{m}')(14)
         pop.set_child(content)

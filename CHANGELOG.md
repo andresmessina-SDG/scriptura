@@ -80,7 +80,9 @@ semver-ish — 0.x was the pre-Flathub testing track.
   taller than the window, which GTK will not place, so the marker did
   nothing when clicked while a shorter note two lines below opened first
   time. The note now opens on whichever side of the marker has more room,
-  and scrolls inside the peek when it is long.
+  and scrolls inside the peek when it is long. The lexicon's verse peek
+  and the Strong's hovercard are held to the same rule, so a long verse
+  or a wordy gloss can no longer be unopenable either.
 - **Voices of the Church: numbers were losing their thousands.** Four
   quotes printed figures like "Hezekiah routed 185, of the enemy" — a
   parser upstream had been dropping the digits after the comma. Fixed at
