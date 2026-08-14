@@ -94,8 +94,10 @@ _defaults: dict[str, Any] = {
     'tips_enabled':       True,
     'hints_seen':         [],
     # The Today landing page at launch (once per session; Esc or any action
-    # dismisses it). Off = straight to the reading surface.
-    'open_to_today':      True,
+    # dismisses it). Off = straight to the reading surface, which is the
+    # default: the first thing a reader meets should be Scripture and its
+    # commentary, not a dashboard in front of them. Opt in from the menu.
+    'open_to_today':      False,
     # Appearance ▸ Advanced: offer the spoken readings (Spurgeon's morning &
     # evening, the psalm read aloud, today's Daily Strength) where a feed has
     # them. On by default — the controls only ever appear where audio exists;

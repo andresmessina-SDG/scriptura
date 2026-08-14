@@ -35,6 +35,13 @@ def N_(message):
 #   'sword'    → sword_bridge.install_module(ident)
 #   'opendata' → open_data.download_source(ident)
 #   'catena'   → catena_bridge.download_and_install()   (ident unused)
+#
+# `opens` is the pair the reading window should start on — (pane 1, pane 2) —
+# written to settings once the bundle is installed. This window is the only
+# place that knows WHY a module is present, so it says so rather than leaving
+# the main window to infer a default from an alphabetical list (which opened
+# the same Bible in both panes, and could open a commentary in pane 1).
+# A None pane 2 means single-pane: showing one text twice is not a split.
 _BUNDLES = [
     {
         'id': 'reading',
@@ -43,8 +50,9 @@ _BUNDLES = [
         'summary': N_('1 Bible'),
         'size': N_('Quick download'),
         'recommended': False,
+        'opens': ('BSB', None),
         'items': [
-            ('sword', 'KJVA', 'King James Bible'),
+            ('sword', 'BSB', 'Berean Standard Bible'),
         ],
     },
     {
@@ -52,10 +60,12 @@ _BUNDLES = [
         'title': N_('Reading + study'),
         'tagline': N_('A few translations, historical commentary, and '
                       'word-study tools.'),
-        'summary': N_('3 Bibles · commentary · lexicon · cross-references'),
+        'summary': N_('4 Bibles · commentary · lexicon · cross-references'),
         'size': N_('Small download'),
         'recommended': True,
+        'opens': ('BSB', 'Historical Commentaries'),
         'items': [
+            ('sword',    'BSB',           'Berean Standard Bible'),
             ('sword',    'KJVA',          'King James Bible'),
             ('sword',    'ASV',           'American Standard Version'),
             ('sword',    'YLT',           "Young's Literal Translation"),
@@ -71,10 +81,12 @@ _BUNDLES = [
         'title': N_('Full library'),
         'tagline': N_('The complete set — more translations and commentaries '
                       'from the start.'),
-        'summary': N_('5 Bibles · 3 commentaries · lexicon · 340k cross-references'),
+        'summary': N_('6 Bibles · 3 commentaries · lexicon · 340k cross-references'),
         'size': N_('Larger download'),
         'recommended': False,
+        'opens': ('BSB', 'Historical Commentaries'),
         'items': [
+            ('sword',    'BSB',           'Berean Standard Bible'),
             ('sword',    'KJVA',          'King James Bible'),
             ('sword',    'ASV',           'American Standard Version'),
             ('sword',    'YLT',           "Young's Literal Translation"),
@@ -233,7 +245,7 @@ class WelcomeWindow(Adw.ApplicationWindow):
         self._status.set_text(_('Starting download…'))
         self._stack.set_visible_child_name('progress')
         threading.Thread(
-            target=self._install_worker, args=(bundle['items'],),
+            target=self._install_worker, args=(bundle,),
             daemon=True).start()
 
     # ── Progress page ────────────────────────────────────────────────────
@@ -267,7 +279,8 @@ class WelcomeWindow(Adw.ApplicationWindow):
 
     # ── Install flow ───────────────────────────────────────────────────────
 
-    def _install_worker(self, items):
+    def _install_worker(self, bundle):
+        items = bundle['items']
         failed = []
         total = len(items)
         for step, (kind, ident, label) in enumerate(items, start=1):
@@ -285,7 +298,7 @@ class WelcomeWindow(Adw.ApplicationWindow):
                         on_progress=self._mk_progress(base))
             except Exception as e:
                 failed.append((label, str(e)))
-        GLib.idle_add(self._finish_install, failed)
+        GLib.idle_add(self._finish_install, failed, bundle)
 
     def _mk_progress(self, base):
         def _progress(done, total):
@@ -302,7 +315,28 @@ class WelcomeWindow(Adw.ApplicationWindow):
         self._status.set_text(msg)
         return GLib.SOURCE_REMOVE
 
-    def _finish_install(self, failed):
+    def _record_opening_pair(self, bundle):
+        """Persist the pair of modules the reading window should open on.
+
+        Only what actually arrived is written: a step can fail and still leave
+        a usable library, and a saved default naming an absent module would
+        send the main window straight back to guessing. When there is no
+        second module to show — the reading-only bundle, or a commentary that
+        failed — the split is turned off rather than filled with a copy of
+        pane 1."""
+        import settings
+        present = set(sword_bridge.module_names()) | set(
+            catena_bridge.module_names())
+        pane1, pane2 = bundle['opens']
+        if pane1 in present:
+            settings.put('pane1_module', pane1)
+        if pane2 is not None and pane2 in present:
+            settings.put('pane2_module', pane2)
+            settings.put('split_pane_mode', True)
+        else:
+            settings.put('split_pane_mode', False)
+
+    def _finish_install(self, failed, bundle):
         # The one hard requirement: a Bible-text module must now exist, or the
         # main window has nothing to open. Everything else is recoverable from
         # the Module Manager later.
@@ -321,6 +355,8 @@ class WelcomeWindow(Adw.ApplicationWindow):
                   'and try again. ({details})').format(details=details))
             self._back_btn.set_visible(True)
             return GLib.SOURCE_REMOVE
+
+        self._record_opening_pair(bundle)
 
         if failed:
             names = ', '.join(n for n, _err in failed)

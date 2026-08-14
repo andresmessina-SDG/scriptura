@@ -632,7 +632,13 @@ class BibleWindow(Adw.ApplicationWindow):
         # reading (see _startup_navigate_to_devotional_ref).
         p1_mod = settings.get('pane1_module')
         if p1_mod not in readable_names:
-            p1_mod = sword_readable[0] if sword_readable else (readable_names[0] if readable_names else None)
+            # Prefer an actual Bible. The candidate list is sorted by name and
+            # holds commentaries as well, so taking its first entry opened the
+            # primary reading pane on whatever sorted first — a commentary,
+            # in any library where one leads the alphabet.
+            bibles = [n for n in sword_readable if content.kind(n) == 'bible']
+            p1_mod = next(iter(bibles or sword_readable or readable_names),
+                          None)
 
         p2_saved = settings.get('pane2_module')
         if p2_saved in readable_names:
@@ -644,7 +650,15 @@ class BibleWindow(Adw.ApplicationWindow):
         else:
             devots = sword_bridge.installed_devotional_modules()
             self._startup_devt_module = devots[0] if devots else None
-            p2_mod = self._startup_devt_module or p1_mod
+            # Then a commentary, so the split opens on two different things.
+            # Mirroring pane 1 is the last resort it was always used as: it
+            # showed the same text twice, which reads as the split being
+            # decorative. Welcome now records this pair outright — this
+            # branch is for libraries built without it.
+            commentary = next(
+                (n for n in readable_names
+                 if n != p1_mod and content.kind(n) == 'commentary'), None)
+            p2_mod = self._startup_devt_module or commentary or p1_mod
 
         # Modules currently showing a cipher-key error toast — avoids
         # stacking duplicates across panes / re-renders.
