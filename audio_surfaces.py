@@ -419,6 +419,10 @@ class ReadingAudio(_Surface):
         # Which source the offered reading came from — it decides which cache
         # the file is fetched into and looked for.
         self._reading_scripture = False
+        # Which reading the chapter audio on offer belongs to, for the media
+        # bus. Set when the offer is made, because there is now more than one
+        # reading and the bus must not name the other one.
+        self._reading_translation = ''
         # The fetch that stands between pressing play and hearing anything:
         # whether one is running, and the button's own idle wording, which
         # the fetch borrows and gives back. What shows the wait is built with
@@ -497,11 +501,20 @@ class ReadingAudio(_Surface):
         if not self._is_verse_navigable():
             self._dismiss_pill_if_idle()
             return
-        if bible_audio.covers_module(self._module):
-            url = bible_audio.chapter_url(self._book, self._chapter)
+        reading = bible_audio.reading_for_module(self._module)
+        if reading is not None:
+            url = bible_audio.chapter_url(reading, self._book, self._chapter)
             if url is not None:
+                # Naming the reader is a condition of some of these licences
+                # and not of others, so it is the record that decides — not a
+                # per-translation branch here. Where a credit is required this
+                # is the point of use, and so the place to give it.
+                tooltip = (_('Listen to this chapter — read by {credit}').format(
+                    credit=reading.credit) if reading.credit
+                    else _('Listen to this chapter'))
+                self._reading_translation = reading.translation
                 self._offer_reading_audio(
-                    url, _('Listen to this chapter'), scripture=True,
+                    url, tooltip, scripture=True,
                     reference=f'{book_label(self._book)} {self._chapter}')
                 return
         if self._book != 'Psalms':
@@ -759,7 +772,7 @@ class ReadingAudio(_Surface):
         moment play is pressed and carried from there: by the time a
         twenty-megabyte fetch lands, the pane may be showing the other one.
         """
-        return (bible_audio.TRANSLATION if self._reading_scripture
+        return (self._reading_translation if self._reading_scripture
                 else devotional_audio.PSALMS_SERIES)
 
     def _begin_reading_fetch(self, reference=None, location=None):

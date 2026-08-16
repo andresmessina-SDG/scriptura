@@ -114,6 +114,32 @@ _BUNDLES = [
             ('sword',    'TSK',           'Treasury of Scripture Knowledge'),
         ],
     },
+    {
+        'id': 'espanol',
+        # Untranslated on purpose: the card's job is to be recognised by a
+        # Spanish speaker whatever locale the app came up in, and a language
+        # names itself. The tagline below does translate.
+        'title': 'En español',
+        'tagline': N_('Spanish Bibles, a spoken reading, and word-study '
+                      'tools.'),
+        'summary': N_('4 Bibles · audio · lexicon · cross-references'),
+        'size': N_('Small download'),
+        'recommended': False,
+        # Modern Spanish beside the historic text: the Reina Valera is the
+        # one carrying Strong's numbers, so word study happens in pane 2.
+        'opens': ('NBLA', 'eBible: spaRV1909'),
+        'items': [
+            ('sword',    'NBLA',          'Nueva Biblia de las Américas'),
+            ('sword',    'LBLA',          'La Biblia de las Américas'),
+            ('ebible',   'spaRV1909',     'Reina Valera 1909'),
+            # Carries the spoken reading — bible_audio binds it to this exact
+            # module, so without it the listening pill has nothing to play.
+            ('ebible',   'spabes',        'Biblia en Español Sencillo'),
+            ('sword',    'StrongsHebrew', "Strong's Hebrew Lexicon"),
+            ('sword',    'StrongsGreek',  "Strong's Greek Lexicon"),
+            ('opendata', 'cross_references', 'OpenBible Cross-References'),
+        ],
+    },
 ]
 
 
@@ -382,8 +408,12 @@ class WelcomeWindow(Adw.ApplicationWindow):
         failed — the split is turned off rather than filled with a copy of
         pane 1."""
         import settings
-        present = set(sword_bridge.module_names()) | set(
-            catena_bridge.module_names())
+        # Every backend that can supply a pane, or a bundle opening on an
+        # eBible text would record nothing and leave the window guessing —
+        # the exact failure this method exists to prevent.
+        present = (set(sword_bridge.module_names())
+                   | set(catena_bridge.module_names())
+                   | set(ebible_bridge.module_names()))
         pane1, pane2 = bundle['opens']
         if pane1 in present:
             settings.put('pane1_module', pane1)

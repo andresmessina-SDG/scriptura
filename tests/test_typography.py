@@ -176,3 +176,60 @@ def test_section_title_quiet_treatment():
     out = _html_to_markup('<title>The Beatitudes</title>after', dark=False)
     assert out.startswith('<span size="90%" weight="bold"')
     assert 'The Beatitudes</span>\nafter' in out
+
+
+# ── footnote-body locators ───────────────────────────────────────────────────
+
+def test_annotate_ref_locator_keeps_the_prefixs_weight():
+    """Straubinger opens each note with its own locator. It is not redundant
+    with the marker beside it — "3 ss." says the note runs from verse 3 on,
+    which a marker on one verse cannot say — so it is kept and weighted, not
+    dropped to bare digits in the run of the prose."""
+    out = _html_to_markup(
+        '<reference type="annotateRef">3 ss. </reference>'
+        '<hi type="italic">¡En la medida de tu misericordia!:</hi> Es como',
+        dark=False)
+    assert out.startswith('<b>3 ss. </b>')
+    assert '<i>¡En la medida de tu misericordia!:</i>' in out
+
+
+def test_a_cross_reference_is_not_treated_as_a_locator():
+    """The commentary path turns `<reference osisRef=…>` into a link. Weighting
+    it here would put bold citations through the middle of every note body
+    LBLA and NBLA carry."""
+    out = _html_to_markup(
+        '<reference osisRef="John.7.50">Juan 7:50</reference>', dark=False)
+    assert out == 'Juan 7:50'
+    assert '<b>' not in out
+
+
+# ── drop cap vs footnote tokens ──────────────────────────────────────────────
+
+def test_dropcap_steps_over_a_leading_footnote_token():
+    """Straubinger anchors a note at the very start of verse 1, so `[[FN_1]]`
+    sits ahead of the first word. Capping the "F" inside it split the token so
+    it could never become a marker: the reader saw a literal `[[FN_1]]` and the
+    note behind it was unreachable."""
+    from pane import _dropcap_split
+    assert _dropcap_split('[[FN_1]]Al maestro de coro.') == (
+        '[[FN_1]]', 'A', 'l maestro de coro.')
+
+
+def test_a_capped_verse_still_yields_its_marker():
+    """The whole round trip: token ahead of the text, drop cap applied, then
+    substitution. The cap lands on the verse's own first letter and the token
+    still becomes a marker."""
+    from pane import _DROPCAP_SPAN, _dropcap_split, _substitute_footnote_markers
+    before, letter, after = _dropcap_split('[[FN_1]]Al maestro de coro.')
+    capped = f'{before}{_DROPCAP_SPAN}{letter}</span>{after}'
+    out, markers, nxt = _substitute_footnote_markers(
+        capped, {'1': ('', 'cuerpo')}, dark=False, start_idx=0)
+    assert '[[FN_' not in out
+    assert markers == [(0, '1', 'a')]
+    assert f'{_DROPCAP_SPAN}A</span>l maestro' in out
+
+
+def test_a_token_with_no_closing_brackets_loses_the_cap_quietly():
+    """A lost cap is a cosmetic miss; capping into a malformed token is not."""
+    from pane import _dropcap_split
+    assert _dropcap_split('[[FN_1 Al maestro') is None

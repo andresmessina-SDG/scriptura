@@ -1,5 +1,6 @@
 import html as html_mod
 import io
+import json
 import logging
 import os
 import re
@@ -1602,6 +1603,30 @@ def catalog_timestamp():
 _CROSSWIRE_HTTPS = 'https://crosswire.org/ftpmirror/pub/sword'
 _CROSSWIRE_FTP = 'ftp://ftp.crosswire.org/pub/sword'
 
+# CrossWire serves several repositories out of that one tree. `raw` is the
+# released one and supplies all but a handful of the app's modules. The
+# Lockman Foundation's is the second one read here: it carries the NASB and,
+# the reason it is read at all, the only two mainstream modern Spanish
+# translations anyone is permitted to hand out — LBLA and NBLA. Every Spanish
+# Bible in the released repository is a Reina-Valera descendant.
+#
+# The two differ in shape, not just in address. The released repository
+# publishes each module as one zip under packages/rawzip/; Lockman's publishes
+# no zips at all, only the mods.d/ and modules/ trees, so a module from it is
+# installed file by file (see _install_raw_module).
+_RELEASED_SOURCE = 'raw'
+_LOCKMAN_SOURCE = 'lockmanraw'
+
+# Ordered: the released repository wins a name collision, so a module that
+# appears in both is installed the ordinary way.
+_CATALOGUE_SOURCES = (_RELEASED_SOURCE, _LOCKMAN_SOURCE)
+
+# Which modules came from a source other than the released one, written
+# beside each refresh's confs. Without it an install has no way to know that
+# a module needs the file-by-file path, and would fetch a zip that is not
+# there.
+_SOURCES_FILE = 'sources.json'
+
 # Both of those daemons run on one machine, so neither survives the host
 # itself going away — which is what happened for nine hours on 26 July
 # 2026, and three times before that since March. This mirror is the last
@@ -1690,20 +1715,41 @@ def _fetch_crosswire(path, timeout):
 
 
 def refresh_source():
-    """Download the CrossWire module catalogue and store in a new shadow dir."""
+    """Download the CrossWire module catalogues and store in a new shadow dir.
+
+    Every source's confs land in one mods.d, because that is what the rest of
+    the app reads and a module's source is not something a reader should have
+    to think about. Only the released repository is required: a second one
+    that cannot be reached leaves the refresh with a slightly shorter list
+    rather than failing it, since losing LBLA is not a reason to lose the
+    other four hundred modules.
+    """
     from datetime import datetime
-    data = _fetch_crosswire('raw/mods.d.tar.gz', 60)
+    data = _fetch_crosswire(f'{_RELEASED_SOURCE}/mods.d.tar.gz', 60)
 
     ts = datetime.now().strftime('%Y%m%d%H%M%S')
     base = os.path.expanduser('~/.sword/InstallMgr')
     mods_d = os.path.join(base, ts, 'mods.d')
     os.makedirs(mods_d, exist_ok=True)
 
-    with tarfile.open(fileobj=io.BytesIO(data), mode='r:gz') as tar:
-        for member in tar.getmembers():
-            if member.name.endswith('.conf') and not member.isdir():
-                member.name = os.path.basename(member.name)
-                tar.extract(member, mods_d)
+    _extract_catalogue(data, mods_d)
+    sources = {}
+    for source in _CATALOGUE_SOURCES[1:]:
+        try:
+            blob = _fetch_crosswire(f'{source}/mods.d.tar.gz', 60)
+            # Unpacking is inside the guard too: a truncated or corrupt
+            # archive is exactly as survivable as a failed download, and
+            # leaving it outside would fail the whole refresh after the
+            # released catalogue had already landed.
+            for name in _extract_catalogue(blob, mods_d, skip_existing=True):
+                sources[name] = source
+        except Exception as exc:            # network, HTTP, or a bad archive
+            _sword_log.warning('Could not read the %s catalogue: %s',
+                               source, exc)
+
+    with open(os.path.join(base, ts, _SOURCES_FILE), 'w',
+              encoding='utf-8') as fh:
+        json.dump(sources, fh)
 
     # Prune superseded shadow dirs — every refresh creates a fresh
     # timestamp dir and _shadow_path only ever reads the newest, so old
@@ -1713,8 +1759,52 @@ def refresh_source():
             shutil.rmtree(os.path.join(base, d), ignore_errors=True)
 
 
+def _extract_catalogue(data, mods_d, skip_existing=False):
+    """Unpack a repository's mods.d.tar.gz into `mods_d`.
+
+    Returns the module names written. `skip_existing` leaves a conf already
+    on disk alone, which is how the released repository wins a name
+    collision — the alternative is a module listed from one repository and
+    fetched from another.
+    """
+    written = []
+    with tarfile.open(fileobj=io.BytesIO(data), mode='r:gz') as tar:
+        for member in tar.getmembers():
+            if not member.name.endswith('.conf') or member.isdir():
+                continue
+            member.name = os.path.basename(member.name)
+            target = os.path.join(mods_d, member.name)
+            if skip_existing and os.path.exists(target):
+                continue
+            tar.extract(member, mods_d)
+            name = _parse_conf(target).get('name')
+            if name:
+                written.append(name)
+    return written
+
+
+def _module_source(module_name):
+    """Which repository a catalogued module came from, or None for the
+    released one (whose modules are the ordinary zip install)."""
+    path = _shadow_path()
+    if not path:
+        return None
+    try:
+        with open(os.path.join(path, _SOURCES_FILE), encoding='utf-8') as fh:
+            return json.load(fh).get(module_name)
+    except (OSError, ValueError):
+        # No file, or an unreadable one: every module is from the released
+        # repository. That is the state every shadow dir written before this
+        # existed is in, and the right answer for all of them.
+        return None
+
+
 def install_module(module_name):
-    """Download module zip from CrossWire and extract into ~/.sword/."""
+    """Download a module from CrossWire and install it into ~/.sword/."""
+    source = _module_source(module_name)
+    if source is not None:
+        _install_raw_module(module_name, source)
+        return
     data = _fetch_crosswire(f'packages/rawzip/{module_name}.zip', 120)
     with zipfile.ZipFile(io.BytesIO(data)) as zf:
         # Extract member-by-member through _safe_extract (rather than
@@ -1729,6 +1819,91 @@ def install_module(module_name):
             if member.is_dir():
                 continue
             _safe_extract(zf, member, _SWORD_PATH)
+    _reset()
+
+
+_HREF_RE = re.compile(r'href="([^"?/][^"]*)"', re.I)
+
+
+def _list_remote_dir(path, timeout=60):
+    """Filenames in one directory of the CrossWire tree.
+
+    A repository that publishes no zips has to be read a file at a time, and
+    the only listing on offer is the web server's own index page. HTTPS only:
+    the FTP daemon answers a directory with a different format entirely, and
+    parsing that as HTML would yield an empty list, which reads as "the module
+    has no files" rather than as the failure it is.
+
+    Only plain filenames are returned — anything with a separator in it is
+    dropped rather than sanitised, since a repository listing is not a place
+    a path should ever need repairing.
+    """
+    import urllib.error
+    import urllib.request
+
+    try:
+        with urllib.request.urlopen(f'{_CROSSWIRE_HTTPS}/{path}/',
+                                    timeout=timeout) as resp:
+            page = resp.read().decode('utf-8', errors='replace')
+    except (urllib.error.URLError, OSError) as exc:
+        # The zip path answers an unreachable CrossWire with an explanation
+        # and a mirror. There is no mirror for these modules — their licence
+        # forbids one — so give the same explanation rather than letting a
+        # socket error reach the reader as the whole story.
+        raise RuntimeError(
+            'CrossWire is unreachable, and this module has no backup mirror '
+            '— its licence only permits CrossWire to distribute it. Please '
+            'try again when CrossWire is back.') from exc
+    entries = [n for n in _HREF_RE.findall(page) if n not in ('.', '..')]
+    # Every module in this repository is a zText, whose data is six flat
+    # files. A nested directory means a driver whose data this cannot fetch,
+    # and quietly skipping it would install a module missing half of itself —
+    # which reads on screen as a Bible with no text rather than as a failure.
+    if any(n.endswith('/') for n in entries):
+        raise RuntimeError(
+            f'{path} has subdirectories; this installer only handles '
+            'modules whose data is a flat directory.')
+    return [n for n in entries if '/' not in n]
+
+
+def _install_raw_module(module_name, source):
+    """Install a module from a repository that publishes no zips.
+
+    The conf is the one already fetched by the refresh, so the remote name of
+    the file never has to be guessed; only the data files are listed and
+    downloaded. Everything is pulled before anything is written, for the same
+    reason the zip path holds the whole archive first: a fetch that dies
+    halfway should leave no half-installed module behind.
+    """
+    shadow = _shadow_path()
+    conf_src = os.path.join(shadow or '', 'mods.d',
+                            f'{module_name.lower()}.conf')
+    if not os.path.exists(conf_src):
+        raise RuntimeError(
+            f'{module_name} is not in the cached module list — '
+            'click Refresh and try again.')
+
+    info = _parse_conf(conf_src)
+    data_dir = _module_data_dir(info)      # raises if the path escapes
+    if not data_dir:
+        raise RuntimeError(f'{module_name} declares no DataPath.')
+
+    names = _list_remote_dir(f'{source}/{data_dir}')
+    if not names:
+        raise RuntimeError(
+            f'No files listed for {module_name} in the {source} repository.')
+    blobs = [(n, _fetch_crosswire(f'{source}/{data_dir}/{n}', 120))
+             for n in names]
+
+    target = os.path.join(_SWORD_PATH, data_dir)
+    os.makedirs(target, exist_ok=True)
+    for name, blob in blobs:
+        with open(os.path.join(target, name), 'wb') as fh:
+            fh.write(blob)
+    conf_dir = os.path.join(_SWORD_PATH, 'mods.d')
+    os.makedirs(conf_dir, exist_ok=True)
+    shutil.copyfile(conf_src, os.path.join(conf_dir,
+                                           f'{module_name.lower()}.conf'))
     _reset()
 
 

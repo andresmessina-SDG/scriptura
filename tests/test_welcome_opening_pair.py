@@ -8,6 +8,7 @@ module globals, never env vars (paths bind at import).
 
 import pytest
 
+import ebible_bridge
 import settings
 import welcome
 
@@ -76,7 +77,14 @@ def test_a_bible_that_failed_to_install_is_not_recorded(isolated, monkeypatch):
 def test_every_bundle_opens_on_something_it_installs(bundle):
     """A bundle that opens on a module it never downloads sends the reader to
     the fallback it was written to avoid."""
-    installed = {ident or label for _kind, ident, label in bundle['items']}
+    # An eBible step names the bare translation id, but a pane names the
+    # module key — the id behind ebible_bridge.PREFIX. Both forms count as
+    # installed, or a bundle opening on an eBible text reads as a typo.
+    installed = set()
+    for kind, ident, label in bundle['items']:
+        installed.add(ident or label)
+        if kind == 'ebible':
+            installed.add(f'{ebible_bridge.PREFIX}{ident}')
     pane1, pane2 = bundle['opens']
     assert pane1 in installed, f'{bundle["id"]} opens pane 1 on {pane1}'
     if pane2 is not None:

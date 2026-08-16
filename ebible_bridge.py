@@ -82,6 +82,7 @@ def _db():
         pass
     conn.execute('''CREATE TABLE IF NOT EXISTS verses (
         translation TEXT, book TEXT, chapter INTEGER, verse INTEGER, text TEXT,
+        markup TEXT,
         PRIMARY KEY (translation, book, chapter, verse))''')
     conn.execute('''CREATE TABLE IF NOT EXISTS translations (
         id TEXT PRIMARY KEY, title TEXT, language TEXT, lang_code TEXT,
@@ -117,8 +118,9 @@ def _db():
     END''')
     # Schema version stamp. v1 = base tables; v2 = FTS index added; v3 =
     # notes table (created above — no data migration, old imports just have
-    # no rows). When the layout changes, bump this and add the migration
-    # steps in an `if ver < N` block so existing user DBs upgrade in place.
+    # no rows); v4 = `markup` column split out of `text`. When the layout
+    # changes, bump this and add the migration steps in an `if ver < N`
+    # block so existing user DBs upgrade in place.
     ver = conn.execute('PRAGMA user_version').fetchone()[0]
     if ver < 1:
         conn.execute('PRAGMA user_version = 1')
@@ -128,6 +130,21 @@ def _db():
         conn.execute('PRAGMA user_version = 2')
     if ver < 3:
         conn.execute('PRAGMA user_version = 3')
+    if ver < 4:
+        # `text` is what the FTS index reads, so it holds the plain reading
+        # text and `markup` holds the tagged form. They were one column, which
+        # meant every tag name was a searchable word: `who` matched all 5,001
+        # red-letter verses through `<q who="Jesus">`. Rows imported before
+        # this keep their markup in `text` and leave `markup` NULL — they read
+        # correctly (COALESCE below) and their index stays as polluted as it
+        # already was, until a re-download rewrites them.
+        # A database created fresh already has the column from CREATE TABLE
+        # above but still stamps 0, so this asks the table rather than the
+        # version — the two disagree exactly once, on first run.
+        cols = {r[1] for r in conn.execute('PRAGMA table_info(verses)')}
+        if 'markup' not in cols:
+            conn.execute('ALTER TABLE verses ADD COLUMN markup TEXT')
+        conn.execute('PRAGMA user_version = 4')
     conn.commit()
     _conn_local.conn = conn
     return conn
@@ -232,7 +249,7 @@ def load_chapter(module_name, book, chapter):
     try:
         conn = _db()
         rows = conn.execute(
-            'SELECT verse, text FROM verses '
+            'SELECT verse, COALESCE(markup, text) FROM verses '
             'WHERE translation=? AND book=? AND chapter=? ORDER BY verse',
             (tid, book, chapter)).fetchall()
         return list(rows)
@@ -366,8 +383,9 @@ def download_translation_sync(tid, entry, on_status=None):
     conn.execute('DELETE FROM notes       WHERE translation=?', (tid,))
     conn.execute('DELETE FROM translations WHERE id=?',         (tid,))
     conn.executemany(
-        'INSERT OR REPLACE INTO verses VALUES (?,?,?,?,?)',
-        [(tid, b, c, v, t) for (b, c, v), t in verses.items() if b])
+        'INSERT OR REPLACE INTO verses '
+        '(translation, book, chapter, verse, text, markup) '
+        'VALUES (?,?,?,?,?,?)', _verse_rows(tid, verses))
     conn.executemany(
         'INSERT OR REPLACE INTO notes VALUES (?,?,?,?,?,?,?)',
         [(tid, b, c, v, n, t, body)
@@ -416,6 +434,70 @@ _RE_SKIP    = re.compile(
     r'|periph|r|mr|sr|rq|va|vp|ca|cd|cp)\b')
 
 
+_TAG_RE = re.compile(r'<[^>]+>')
+
+
+def _plain_text(markup):
+    """Marked-up verse → the reading text alone, for the search index.
+
+    The index is external-content over `verses.text`, so whatever sits in
+    that column is what a reader can match — tag names included. Stripping
+    them here is what keeps `who`, `lemma` and `strong` from behaving as
+    words that appear in thousands of verses.
+    """
+    return _TAG_RE.sub('', markup).strip()
+
+
+def _verse_rows(tid, verses):
+    """Parsed verses → the rows stored for one translation.
+
+    Which column a verse lands in is the whole point of the split, and it
+    sat inline in a network-bound import where no test could reach it, so
+    it lives here instead: `text` always plain, `markup` only when the
+    verse actually carries any.
+    """
+    rows = []
+    for (book, chapter, verse), markup in verses.items():
+        if not book:
+            continue
+        plain = _plain_text(markup)
+        rows.append((tid, book, chapter, verse, plain,
+                     markup if markup != plain else None))
+    return rows
+
+
+_STRONG_ATTR_RE = re.compile(r'strong\s*=\s*"([^"]*)"', re.IGNORECASE)
+_STRONG_NUM_RE = re.compile(r'[GHgh]\d+')
+
+
+def _word_tag(m):
+    r"""One \w…\w* word → `<w lemma="strong:…">word</w>`, or the bare word.
+
+    eBible writes the number zero-padded and comma-joined when one rendered
+    word stands for two originals (`\w nada|strong="G3761,G1520"\w*`); SWORD
+    writes `lemma="strong:G3761 strong:G1520"` unpadded, and that is the form
+    pane._extract_segments splits and the lexicon keys on. Normalising here
+    rather than at lookup keeps every consumer — word tagging, the hover
+    underline, the lexicon panel — on the single existing convention.
+
+    A word carrying no strong attribute keeps only its text: an empty tag
+    would give the lexicon nothing to look up and still cost a segment.
+    """
+    word, _, attrs = m.group(1).partition('|')
+    nums = []
+    for value in _STRONG_ATTR_RE.findall(attrs):
+        for part in value.split(','):
+            part = part.strip()
+            if _STRONG_NUM_RE.fullmatch(part):
+                # G0746 → G746. SWORD does not zero-pad, so a padded number
+                # would miss every lexicon entry while looking well-formed.
+                nums.append(part[0].upper() + (part[1:].lstrip('0') or '0'))
+    if not nums:
+        return word
+    lemma = ' '.join(f'strong:{n}' for n in nums)
+    return f'<w lemma="{lemma}">{word}</w>'
+
+
 def _apply_char(text):
     """
     Convert USFM inline character markers to SWORD-compatible HTML understood
@@ -446,9 +528,8 @@ def _apply_char(text):
     # Divine name, small caps, keyword, ordinal, superscript — keep text
     text = re.sub(r'\\(?:nd|sc|k|ord|sup|fk|fl|fr|ft|fq|fqa)\s(.*?)\\(?:nd|sc|k|ord|sup|fk|fl|fr|ft|fq|fqa)\*',
                   r'\1', text, flags=re.DOTALL)
-    # Strong's word attribute: \w word|strong="G1234" ...\w*  or  \w word\w*
-    text = re.sub(r'\\w\s(.*?)(?:\|[^\\]*)\\w\*', r'\1', text, flags=re.DOTALL)
-    text = re.sub(r'\\w\s(.*?)\\w\*',             r'\1', text, flags=re.DOTALL)
+    # Strong's word attributes → the <w> shape pane._extract_segments reads.
+    text = re.sub(r'\\w\s(.*?)\\w\*', _word_tag, text, flags=re.DOTALL)
     # Quoted book / proper name markup
     text = re.sub(r'\\(?:pn|png|addpn|qt)\s(.*?)\\(?:pn|png|addpn|qt)\*',
                   r'\1', text, flags=re.DOTALL)

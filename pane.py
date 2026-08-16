@@ -344,6 +344,15 @@ def _html_to_markup(html, dark, strip=True, divine_smallcaps=False,
     # Without these the commentary loses all visual hierarchy.
     html = re.sub(r'<hi\s[^>]*type="italic"[^>]*>(.*?)</hi>', r'[[I_S]]\1[[I_E]]', html, flags=re.DOTALL)
     html = re.sub(r'<hi\s[^>]*type="bold"[^>]*>(.*?)</hi>', r'[[INLINE_B_S]]\1[[INLINE_B_E]]', html, flags=re.DOTALL)
+    # Straubinger's notes open with their own locator, which is the same verse
+    # prefix in a different tag: `<reference type="annotateRef">3 ss. </reference>`.
+    # It is not redundant with the marker beside it — "3 ss." says the note
+    # runs from verse 3 on, which a marker on one verse cannot say — so it is
+    # kept and given the prefix's weight rather than dropped to bare digits.
+    # Bounded to annotateRef: a commentary's `<reference osisRef=…>` is a
+    # cross-reference the segmented insertion turns into a link, not a prefix.
+    html = re.sub(r'<reference\s[^>]*type="annotateRef"[^>]*>(.*?)</reference>',
+                  r'[[INLINE_B_S]]\1[[INLINE_B_E]]', html, flags=re.DOTALL)
     # Inline verse-number superscripts used by MHC: `<hi type="super">N</hi>`
     # marks the start of verse N within a section's continuous prose.
     html = re.sub(r'<hi\s[^>]*type="super"[^>]*>(.*?)</hi>', r'[[SUP_S]]\1[[SUP_E]]', html, flags=re.DOTALL)
@@ -557,11 +566,22 @@ def _dropcap_split(markup):
     Latin only. RusSynodalLIO appeared to work solely because its text
     happens to start with a Latin "C" homoglyph rather than a Cyrillic one —
     genuine Cyrillic, Greek or Hebrew got no cap.
+
+    The fourth thing to step over is a footnote token. Modules that anchor a
+    note at the very start of verse 1 — Straubinger does it in every chapter —
+    put `[[FN_1]]` ahead of the first word, and capping the "F" inside it both
+    loses the cap and splits the token so it can never become a marker: the
+    reader sees a literal `[[FN_1]]` and the note behind it is unreachable.
     """
     i, n = 0, len(markup)
     while i < n:
         ch = markup[i]
-        if ch == '<':                      # markup tag
+        if markup.startswith('[[FN_', i):  # footnote token, not text
+            j = markup.find(']]', i)
+            if j < 0:
+                return None
+            i = j + 2
+        elif ch == '<':                    # markup tag
             j = markup.find('>', i)
             if j < 0:
                 return None
@@ -4630,19 +4650,61 @@ class BiblePane(Gtk.Box):
             return True
         return False
 
+    def _peek_room(self, anchor_widget, rect, pop):
+        """Point `pop` at whichever side of `rect` has more room, and return
+        the pixels available on that side.
+
+        A popover taller than the window is never placed: GTK closes it the
+        moment it is shown, the self-heal reshows it, and after twelve rounds
+        the peek is simply unopenable. So every peek whose body can run long
+        measures the room first and caps itself to it (_peek_scroller). Room
+        is measured in the window, where the popover actually lives — it can
+        extend up over the toolbar."""
+        root = anchor_widget.get_root()
+        y, win_h = rect.y, anchor_widget.get_height()
+        if root is not None:
+            ok, pt = anchor_widget.compute_point(
+                root, Graphene.Point().init(float(rect.x), float(rect.y)))
+            if ok:
+                y = pt.y
+            win_h = root.get_height()
+        above, below = y, win_h - (y + rect.height)
+        if above > below:
+            pop.set_position(Gtk.PositionType.TOP)
+            return above
+        pop.set_position(Gtk.PositionType.BOTTOM)
+        return below
+
+    @staticmethod
+    def _peek_scroller(child, avail, chrome=86):
+        """Wrap a peek's body so a long one scrolls inside the popover instead
+        of demanding a height that cannot be placed. `chrome` is what the
+        popover spends around the body — caption, margins, arrow. A short body
+        keeps its natural height and never shows a bar."""
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_propagate_natural_height(True)
+        scroll.set_max_content_height(int(max(140, min(420, avail - chrome))))
+        scroll.set_child(child)
+        return scroll
+
     def show_anchored_peek(self, anchor_widget, rect, content):
         """Show `content` in the shared self-healing peek popover, anchored
         at `rect` in `anchor_widget`. The lexicon panel's verse peek rides
         the same instance as the dictionary/footnote peeks, so the reshow-
         until-stable machinery and the dismissal paths (Escape, module
-        change, new lookup) cover it too."""
+        change, new lookup) cover it too.
+
+        `content` arrives whole (header and body together), so the cap wraps
+        all of it: a long verse or gloss scrolls with its own caption rather
+        than being unopenable."""
         pop = self._ensure_peek_popover(anchor_widget)
         # A dictionary fetch already in flight can't replace this peek's
         # content when it returns.
         tasks.cancel(f'peek:{id(self)}')
-        pop.set_position(Gtk.PositionType.BOTTOM)
+        avail = self._peek_room(anchor_widget, rect, pop)
         pop.set_pointing_to(rect)
-        pop.set_child(content)
+        pop.set_child(self._peek_scroller(content, avail, chrome=40))
         # Invisible until it has survived the post-click relayout churn —
         # the same show-when-stable dance as the dictionary peek.
         self._dict_retries = 0
@@ -4768,7 +4830,13 @@ class BiblePane(Gtk.Box):
         # A dictionary fetch already in flight can't replace this note's
         # content when it returns.
         tasks.cancel(f'peek:{id(self)}')
-        pop.set_position(Gtk.PositionType.BOTTOM)
+        # Open on whichever side of the marker has more room, and cap the body
+        # to what fits there. A translator's note is one line; a commentator's
+        # is an essay (Straubinger writes 2,377 characters on Psalm 51:13), and
+        # an uncapped peek that tall is unopenable — see _peek_room. That is
+        # why the failure looked arbitrary: a short note two lines below the
+        # unopenable one opened first time.
+        avail = self._peek_room(self._view, rect, pop)
         pop.set_pointing_to(rect)
 
         dark = Adw.StyleManager.get_default().get_dark()
@@ -4789,7 +4857,9 @@ class BiblePane(Gtk.Box):
             lbl.set_markup(_html_to_markup(body, dark))
         except Exception:
             lbl.set_text(re.sub(r'<[^>]+>', '', body))
-        content.append(lbl)
+        # The caption stays put and only the note scrolls, so a long note
+        # keeps the letter and verse it belongs to in view.
+        content.append(self._peek_scroller(lbl, avail))
         for m in ('top', 'bottom', 'start', 'end'):
             getattr(content, f'set_margin_{m}')(14)
         pop.set_child(content)

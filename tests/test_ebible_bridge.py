@@ -40,12 +40,40 @@ def test_apply_char_italic_emphasis():
     assert '<i>faith</i>' in eb._apply_char(r'\it faith\it*')
 
 
-def test_apply_char_strong_word_attribute_keeps_text():
-    """USFM \\w word|strong="G1234"\\w* should leave plain word behind."""
+def test_apply_char_strong_word_attribute_becomes_a_w_tag():
+    """USFM \\w word|strong="G1234"\\w* becomes the <w> shape the reading
+    view already reads for SWORD modules.
+
+    This used to strip the number and keep only the word, which is why no
+    eBible translation ever had a lexicon — the tagging was discarded at
+    parse time and never reached the database.
+    """
     out = eb._apply_char(r'\w God|strong="G2316"\w* loves us')
-    assert 'God' in out
-    assert 'strong' not in out
+    assert out == '<w lemma="strong:G2316">God</w> loves us'
     assert '\\' not in out
+
+
+def test_apply_char_unpads_the_strong_number():
+    """eBible zero-pads (G0746), SWORD does not (G746), and the lexicon keys
+    on SWORD's form — a padded number would miss every entry while still
+    looking well-formed."""
+    out = eb._apply_char(r'\w principio|strong="G0746"\w*')
+    assert out == '<w lemma="strong:G746">principio</w>'
+
+
+def test_apply_char_splits_a_word_standing_for_two_originals():
+    """One rendered word can carry two source words; eBible comma-joins them
+    and SWORD space-joins each with its own strong: prefix, which is what
+    pane._extract_segments splits on."""
+    out = eb._apply_char(r'\w nada|strong="G3761,G1520"\w*')
+    assert out == '<w lemma="strong:G3761 strong:G1520">nada</w>'
+
+
+def test_apply_char_leaves_a_word_with_no_number_bare():
+    """An empty <w> would cost the renderer a segment and give the lexicon
+    nothing to look up, so a word carrying other attributes but no strong=
+    keeps only its text."""
+    assert eb._apply_char(r'\w word|lemma="x"\w*') == 'word'
 
 
 def test_apply_char_strong_word_without_attribute_keeps_text():
@@ -272,7 +300,8 @@ def db(tmp_path, monkeypatch):
         'INSERT INTO translations VALUES (?,?,?,?,?,?)',
         ('engwebp', 'WEB', 'English', 'en', '© WEB', 'Public Domain'))
     conn.executemany(
-        'INSERT INTO verses VALUES (?,?,?,?,?)',
+        'INSERT INTO verses (translation, book, chapter, verse, text) '
+        'VALUES (?,?,?,?,?)',
         [('engwebp', 'John', 3, 16, 'For God so loved the world'),
          ('engwebp', 'John', 3, 17, 'For God did not send his Son to condemn'),
          ('engwebp', 'Genesis', 1, 1, 'In the beginning God created'),
@@ -320,7 +349,7 @@ def test_duplicate_titles_get_distinct_keys(db):
     conn = eb._db()
     conn.execute('INSERT INTO translations VALUES (?,?,?,?,?,?)',
                  ('engwebp2', 'WEB', 'English', 'en', '© WEB2', 'PD'))
-    conn.execute('INSERT INTO verses VALUES (?,?,?,?,?)',
+    conn.execute('INSERT INTO verses (translation, book, chapter, verse, text) VALUES (?,?,?,?,?)',
                  ('engwebp2', 'John', 3, 16, 'A different WEB rendering'))
     conn.commit()
     assert set(eb.module_names()) == {'eBible: engwebp', 'eBible: engwebp2'}
@@ -343,7 +372,7 @@ def test_schema_version_stamped(db):
     """A fresh DB carries the current v3 stamp (v1 base tables + v2 FTS
     index + v3 notes), locking in the migration hook."""
     conn = eb._db()
-    assert conn.execute('PRAGMA user_version').fetchone()[0] == 3
+    assert conn.execute('PRAGMA user_version').fetchone()[0] == 4
 
 
 def test_module_language(db):
@@ -407,7 +436,7 @@ def test_search_case_insensitive_non_ascii(db):
     query matches a verse with a capital (accented) initial, which plain
     SQLite LIKE/LOWER (ASCII-only) would miss."""
     conn = eb._db()
-    conn.execute('INSERT INTO verses VALUES (?,?,?,?,?)',
+    conn.execute('INSERT INTO verses (translation, book, chapter, verse, text) VALUES (?,?,?,?,?)',
                  ('engwebp', 'John', 1, 1, 'Ἰησοῦς Χριστός'))
     conn.commit()
     results = eb.search_module('eBible: engwebp', 'ἰησοῦς')
@@ -417,7 +446,7 @@ def test_search_case_insensitive_non_ascii(db):
 def test_search_wildcards_are_literal(db):
     """LIKE/GLOB metacharacters in a query match literally, not as wildcards."""
     conn = eb._db()
-    conn.executemany('INSERT INTO verses VALUES (?,?,?,?,?)',
+    conn.executemany('INSERT INTO verses (translation, book, chapter, verse, text) VALUES (?,?,?,?,?)',
                      [('engwebp', 'Mark', 1, 1, 'gave 100% effort'),
                       ('engwebp', 'Mark', 1, 2, 'gave one hundred percent'),
                       ('engwebp', 'Mark', 1, 3, 'the [Lord] reigns')])
@@ -440,7 +469,7 @@ def test_search_word_boundary_not_substring(db):
     """FTS5 fix: a word query no longer matches inside another word, as the
     old LIKE '%art%' did ('art' must not match 'heart')."""
     conn = eb._db()
-    conn.execute('INSERT INTO verses VALUES (?,?,?,?,?)',
+    conn.execute('INSERT INTO verses (translation, book, chapter, verse, text) VALUES (?,?,?,?,?)',
                  ('engwebp', 'Psalms', 119, 11, 'hidden in my heart'))
     conn.commit()
     assert eb.search_module('eBible: engwebp', 'art') == []
@@ -533,3 +562,78 @@ def test_catalog_entries_handles_utf8_bom(catalog):
     rows = eb.catalog_entries()
     assert 'translationId' in rows[0]
     assert rows[0]['translationId'] == 'engwebp'
+
+
+# ── the markup / text split (schema v4) ──────────────────────────────────────
+
+def _store(conn, tid, book, chapter, verse, text, markup=None):
+    conn.execute(
+        'INSERT OR REPLACE INTO verses '
+        '(translation, book, chapter, verse, text, markup) '
+        'VALUES (?,?,?,?,?,?)', (tid, book, chapter, verse, text, markup))
+    conn.commit()
+
+
+def test_reading_prefers_the_markup_column(db):
+    """`text` feeds the search index and `markup` feeds the reader, so the
+    tagged form has to come back from load_chapter, not the plain one."""
+    conn = eb._db()
+    _store(conn, 'engwebp', 'John', 3, 16, 'God so loved',
+           '<w lemma="strong:G2316">God</w> so loved')
+    assert dict(eb.load_chapter('eBible: engwebp', 'John', 3))[16] == (
+        '<w lemma="strong:G2316">God</w> so loved')
+
+
+def test_reading_falls_back_to_text_for_rows_imported_before_the_split(db):
+    """Translations imported under v3 kept their markup in `text` and have no
+    `markup` at all. They must keep rendering exactly as they did rather than
+    coming back blank."""
+    conn = eb._db()
+    _store(conn, 'engwebp', 'John', 3, 16,
+           '<q who="Jesus">I am</q>', None)
+    assert dict(eb.load_chapter('eBible: engwebp', 'John', 3))[16] == (
+        '<q who="Jesus">I am</q>')
+
+
+def test_search_does_not_match_tag_names(db):
+    """The regression this split exists to prevent. The index is external
+    content over `text`, so markup left in that column made every tag name a
+    word: `who` matched every red-letter verse, and preserving Strong's would
+    have added `lemma` and `strong` — the latter a real word a reader would
+    search for."""
+    conn = eb._db()
+    _store(conn, 'engwebp', 'John', 3, 16, 'God so loved the world',
+           '<q who="Jesus"><w lemma="strong:G2316">God</w></q> so loved '
+           'the world<note swordFootnote="1"/>')
+    for junk in ('who', 'lemma', 'strong', 'swordFootnote', 'note'):
+        assert eb.search_module('eBible: engwebp', junk) == [], junk
+    assert len(eb.search_module('eBible: engwebp', 'loved')) == 1
+
+
+def test_plain_text_strips_every_tag_but_keeps_the_words():
+    markup = ('<q who="Jesus"><w lemma="strong:G26">amor</w></q> de '
+              '<transChange type="added">un</transChange> Dios'
+              '<note swordFootnote="1"/>')
+    assert eb._plain_text(markup) == 'amor de un Dios'
+
+
+def test_import_stores_plain_in_text_and_tags_in_markup():
+    """The decision the split turns on. `text` is what the FTS index reads,
+    so a verse whose tags leaked into it would make every tag name — `who`,
+    `lemma`, `strong` — a searchable word again."""
+    rows = eb._verse_rows('spaRV1909', {
+        ('John', 3, 16): '<w lemma="strong:G2316">Dios</w> amó al mundo',
+        ('John', 3, 17): 'sin marcado ninguno',
+    })
+    by_verse = {r[3]: r for r in rows}
+    assert by_verse[16][4] == 'Dios amó al mundo'          # text: plain
+    assert by_verse[16][5] == '<w lemma="strong:G2316">Dios</w> amó al mundo'
+    # An untagged verse stores no second copy of itself.
+    assert by_verse[17][4] == 'sin marcado ninguno'
+    assert by_verse[17][5] is None
+
+
+def test_import_skips_verses_with_no_book():
+    """A USFM file whose \\id never resolved yields keys with an empty book;
+    they were dropped before the split and must still be."""
+    assert eb._verse_rows('x', {('', 1, 1): 'orphan'}) == []
