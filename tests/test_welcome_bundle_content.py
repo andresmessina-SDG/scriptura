@@ -60,13 +60,35 @@ def test_the_strongs_lexicons_do_not_count_as_a_dictionary():
 _KNOWN_DICTIONARIES = frozenset(['easton', 'smith', 'isbe'])
 
 
-def test_bsb_leads_every_bundle_and_every_opening_pair():
+def test_bsb_leads_every_english_bundle_and_its_opening_pair():
     """His call: the BSB reads more naturally to a newcomer than the KJV,
     and it is the translation with CC0 chapter audio, so the listening pill
-    works from day one."""
+    works from day one. The Spanish bundle answers the same question with
+    its own texts, so it is excluded rather than exempted quietly."""
     for bundle in welcome._BUNDLES:
+        if bundle['id'] == 'espanol':
+            continue
         assert _idents(bundle, 'sword')[0] == 'BSB', bundle['id']
         assert bundle['opens'][0] == 'BSB', bundle['id']
+
+
+def test_the_spanish_bundle_opens_on_spanish_and_can_speak():
+    """The two properties that make it the Spanish equivalent of the English
+    default rather than a list of Spanish files: it opens on a modern Spanish
+    text, and it carries the one module the spoken reading is bound to."""
+    import bible_audio
+
+    es = _bundle('espanol')
+    assert es['opens'] == ('NBLA', 'eBible: spaRV1909')
+    assert _idents(es, 'sword')[0] == 'NBLA'
+
+    spoken = [i for k, i, _l in es['items'] if k == 'ebible']
+    assert 'spabes' in spoken
+    # Asked of the audio table rather than restated: the reading names the
+    # module key it plays against, and a bundle promising audio has to carry
+    # exactly that one.
+    bound = {m for r in bible_audio.READINGS for m in r.modules}
+    assert any(f'ebible{tid}' in bound for tid in spoken)
 
 
 def test_every_step_names_a_kind_the_installer_dispatches():
