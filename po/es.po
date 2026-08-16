@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scriptura\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-16 12:37-0600\n"
+"POT-Creation-Date: 2026-08-16 12:50-0600\n"
 "PO-Revision-Date: 2026-08-16 00:00+0000\n"
 "Last-Translator: Scriptura\n"
 "Language-Team: Spanish\n"
@@ -904,7 +904,7 @@ msgstr[1] "Mostrar las {n} voces"
 
 #: catena_reader.py:310 module_picker.py:212
 msgid "All"
-msgstr "Todas"
+msgstr "Todos"
 
 #: catena_reader.py:336
 msgid "Places"
@@ -2241,12 +2241,12 @@ msgid_plural "updated {m} months ago"
 msgstr[0] "actualizado hace {m} mes"
 msgstr[1] "actualizado hace {m} meses"
 
-#: module_manager.py:191 welcome.py:411
+#: module_manager.py:191 welcome.py:416
 #, python-brace-format
 msgid "{pct}% ({done} of {total} MB)"
 msgstr "{pct} % ({done} de {total} MB)"
 
-#: module_manager.py:194 welcome.py:414
+#: module_manager.py:194 welcome.py:419
 #, python-brace-format
 msgid "{done} MB"
 msgstr "{done} MB"
@@ -3747,7 +3747,7 @@ msgstr ""
 msgid "4 Bibles · commentary · dictionary · lexicon · cross-references"
 msgstr "4 Biblias · comentario · diccionario · léxico · referencias cruzadas"
 
-#: welcome.py:71 welcome.py:126
+#: welcome.py:71 welcome.py:131
 msgid "Small download"
 msgstr "Descarga pequeña"
 
@@ -3777,15 +3777,15 @@ msgstr ""
 "Biblias en español, una lectura hablada y herramientas para el estudio de "
 "palabras."
 
-#: welcome.py:125
-msgid "5 Bibles · notes · audio · lexicon · cross-references"
-msgstr "5 Biblias · notas · audio · léxico · referencias cruzadas"
+#: welcome.py:130
+msgid "5 Bibles · notes · lexicon · cross-references"
+msgstr "5 Biblias · notas · léxico · referencias cruzadas"
 
-#: welcome.py:154 welcome.py:179
+#: welcome.py:159 welcome.py:184
 msgid "Welcome to Scriptura"
 msgstr "Le damos la bienvenida a Scriptura"
 
-#: welcome.py:184
+#: welcome.py:189
 msgid ""
 "Choose a starting point. Pick the shape that fits how you want to work — "
 "this is just a head start."
@@ -3793,49 +3793,49 @@ msgstr ""
 "Elija un punto de partida. Escoja lo que mejor se ajuste a su forma de "
 "trabajar; esto es solo para empezar."
 
-#: welcome.py:204
+#: welcome.py:209
 msgid "You can add or remove anything later from the Module Manager."
 msgstr ""
 "Después puede añadir o quitar lo que quiera desde el gestor de módulos."
 
-#: welcome.py:224
+#: welcome.py:229
 msgid "New here? See what the pointer can do — Tips & Gestures"
 msgstr "¿Es nuevo aquí? Vea lo que puede hacer el puntero: Consejos y gestos"
 
-#: welcome.py:233
+#: welcome.py:238
 msgid "Choose individual modules instead"
 msgstr "Elegir módulos uno a uno"
 
-#: welcome.py:256
+#: welcome.py:261
 msgid "★ Recommended"
 msgstr "★ Recomendado"
 
-#: welcome.py:308
+#: welcome.py:313
 msgid "Starting download…"
 msgstr "Iniciando la descarga…"
 
-#: welcome.py:340
+#: welcome.py:345
 msgid "Back to options"
 msgstr "Volver a las opciones"
 
-#: welcome.py:363
+#: welcome.py:368
 msgid "Reading the module list…"
 msgstr "Leyendo la lista de módulos…"
 
-#: welcome.py:370
+#: welcome.py:375
 msgid "module list"
 msgstr "lista de módulos"
 
-#: welcome.py:374
+#: welcome.py:379
 #, python-brace-format
 msgid "({step}/{total}) Downloading {label}…"
 msgstr "({step}/{total}) Descargando {label}…"
 
-#: welcome.py:458
+#: welcome.py:463
 msgid "unknown error"
 msgstr "error desconocido"
 
-#: welcome.py:462
+#: welcome.py:467
 #, python-brace-format
 msgid ""
 "Couldn’t download a Bible — please check your connection and try again. "
@@ -3844,7 +3844,7 @@ msgstr ""
 "No se pudo descargar ninguna Biblia; compruebe su conexión e inténtelo de "
 "nuevo. ({details})"
 
-#: welcome.py:472
+#: welcome.py:477
 #, python-brace-format
 msgid ""
 "Installed with warnings — these can be retried later from the Module "
@@ -3853,7 +3853,7 @@ msgstr ""
 "Se instaló con advertencias; puede reintentar lo siguiente más tarde desde "
 "el gestor de módulos: {names}"
 
-#: welcome.py:475
+#: welcome.py:480
 msgid "Done. Opening Scriptura…"
 msgstr "Listo. Abriendo Scriptura…"
 

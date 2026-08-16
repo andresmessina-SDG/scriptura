@@ -72,23 +72,30 @@ def test_bsb_leads_every_english_bundle_and_its_opening_pair():
         assert bundle['opens'][0] == 'BSB', bundle['id']
 
 
-def test_the_spanish_bundle_opens_on_spanish_and_can_speak():
-    """The two properties that make it the Spanish equivalent of the English
-    default rather than a list of Spanish files: it opens on a modern Spanish
-    text, and it carries the one module the spoken reading is bound to."""
-    import bible_audio
-
+def test_the_spanish_bundle_opens_on_spanish():
+    """It opens on a modern Spanish text, and pane 2 is the one Spanish text
+    carrying Strong's numbers, so word study has somewhere to happen."""
     es = _bundle('espanol')
     assert es['opens'] == ('NBLA', 'eBible: spaRV1909')
     assert _idents(es, 'sword')[0] == 'NBLA'
 
-    spoken = [i for k, i, _l in es['items'] if k == 'ebible']
-    assert 'spabes' in spoken
-    # Asked of the audio table rather than restated: the reading names the
-    # module key it plays against, and a bundle promising audio has to carry
-    # exactly that one.
-    bound = {m for r in bible_audio.READINGS for m in r.modules}
-    assert any(f'ebible{tid}' in bound for tid in spoken)
+
+def test_a_summary_promises_audio_only_if_a_pane_it_opens_on_has_it():
+    """The listening pill is per-pane and keyed to the module in it, so a
+    bundle can install a spoken reading and still never show the reader a
+    player. The Spanish bundle did exactly that: it downloaded the Español
+    Sencillo reading, opened on NBLA and the Reina Valera, and promised
+    "audio" on a card whose panes could not produce any.
+    """
+    import bible_audio
+
+    for bundle in welcome._BUNDLES:
+        if 'audio' not in bundle['summary'].lower():
+            continue
+        panes = [p for p in bundle['opens'] if p]
+        assert any(bible_audio.reading_for_module(p) for p in panes), (
+            f'{bundle["id"]}: summary promises audio, but neither of '
+            f'{panes} is bound to a reading')
 
 
 def test_every_step_names_a_kind_the_installer_dispatches():

@@ -122,7 +122,12 @@ _BUNDLES = [
         'title': 'En español',
         'tagline': N_('Spanish Bibles, a spoken reading, and word-study '
                       'tools.'),
-        'summary': N_('5 Bibles · notes · audio · lexicon · cross-references'),
+        # No audio claim: the spoken reading is bound to spabes, and neither
+        # opening pane shows it, so a newcomer would not meet the listening
+        # pill however long they read. The reading still installs and works
+        # the moment they switch a pane to it — the card just stops promising
+        # what the English bundles genuinely deliver on their first screen.
+        'summary': N_('5 Bibles · notes · lexicon · cross-references'),
         'size': N_('Small download'),
         'recommended': False,
         # Modern Spanish beside the historic text: the Reina Valera is the
