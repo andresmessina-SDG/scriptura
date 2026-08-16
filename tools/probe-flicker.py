@@ -137,6 +137,12 @@ def run_driver() -> int:
             S['recording'] = True
             setter, attr = TRIGGERS[TRIGGER]
             cur = bool(getattr(pane, attr))
+            # BEFORE the setter. Read after it, these probe a buffer that is
+            # already being rebuilt (`_rendered_verses` is None mid-render),
+            # so they answered None for the harness's own reason and not the
+            # reader's — which is what "both probes return None" once meant.
+            anchor_before = pane._capture_scroll_anchor()
+            top_verse_before = pane._find_topmost_visible_verse()
             if TRIGGER != 'footnotes':
                 getattr(pane, setter)(not cur)
             elif os.environ.get('PROBE_VIA_BUTTON'):
@@ -146,8 +152,12 @@ def run_driver() -> int:
             else:
                 pane.set_show_footnotes(not cur)
 
-            anchor_before = pane._capture_scroll_anchor()
-            top_verse_before = pane._find_topmost_visible_verse()
+            # What the RESTORE path itself captured, on a render-path chapter:
+            # `_rerender_keeping_place` stores these before handing off to the
+            # async fetch, so they are readable here.
+            restore_seen = {'anchor': pane._restore_anchor,
+                            'top_verse': pane._restore_top_verse}
+            probed_after_setter = pane._capture_scroll_anchor()
             inline_titles = getattr(pane, '_rendered_inline_titles', None)
 
             def after(_text):
@@ -175,8 +185,18 @@ def run_driver() -> int:
                         # which words are at the reading top.
                         'anchor_before': anchor_before,
                         'top_verse_before': top_verse_before,
+                        'probed_after_setter': probed_after_setter,
+                        'restore_seen': restore_seen,
                         'inline_titles': inline_titles,
                         'anchor_after': pane._capture_scroll_anchor(),
+                        # Re-DERIVED from geometry. `_capture_scroll_anchor`
+                        # returns the held locus untouched when one is set, so
+                        # the line above reports what the restore intended, not
+                        # where the view actually is — it cannot fail.
+                        'anchor_after_regeom': (
+                            setattr(pane, '_reading_anchor', None)
+                            or pane._capture_scroll_anchor()),
+                        'top_verse_after': pane._find_topmost_visible_verse(),
                     })
                     GLib.timeout_add(GAP_MS or 500, one_round)
                     return GLib.SOURCE_REMOVE

@@ -23,6 +23,8 @@ from gi.repository import Gtk, Adw, GLib, Pango
 import sword_bridge
 import open_data
 import catena_bridge
+import ebible_bridge
+import onboarding
 
 
 def N_(message):
@@ -35,6 +37,17 @@ def N_(message):
 #   'sword'    → sword_bridge.install_module(ident)
 #   'opendata' → open_data.download_source(ident)
 #   'catena'   → catena_bridge.download_and_install()   (ident unused)
+#   'ebible'   → ebible_bridge.download_translation_sync(ident, entry)
+#                where ident is the eBible translationId. Used for texts
+#                CrossWire does not carry at all — the World English Bible
+#                is on eBible only.
+#
+# `opens` is the pair the reading window should start on — (pane 1, pane 2) —
+# written to settings once the bundle is installed. This window is the only
+# place that knows WHY a module is present, so it says so rather than leaving
+# the main window to infer a default from an alphabetical list (which opened
+# the same Bible in both panes, and could open a commentary in pane 1).
+# A None pane 2 means single-pane: showing one text twice is not a split.
 _BUNDLES = [
     {
         'id': 'reading',
@@ -43,8 +56,9 @@ _BUNDLES = [
         'summary': N_('1 Bible'),
         'size': N_('Quick download'),
         'recommended': False,
+        'opens': ('BSB', None),
         'items': [
-            ('sword', 'KJVA', 'King James Bible'),
+            ('sword', 'BSB', 'Berean Standard Bible'),
         ],
     },
     {
@@ -52,14 +66,18 @@ _BUNDLES = [
         'title': N_('Reading + study'),
         'tagline': N_('A few translations, historical commentary, and '
                       'word-study tools.'),
-        'summary': N_('3 Bibles · commentary · lexicon · cross-references'),
+        'summary': N_('4 Bibles · commentary · dictionary · lexicon · '
+                      'cross-references'),
         'size': N_('Small download'),
         'recommended': True,
+        'opens': ('BSB', 'Historical Commentaries'),
         'items': [
+            ('sword',    'BSB',           'Berean Standard Bible'),
+            ('ebible',   'engwebp',       'World English Bible'),
             ('sword',    'KJVA',          'King James Bible'),
             ('sword',    'ASV',           'American Standard Version'),
-            ('sword',    'YLT',           "Young's Literal Translation"),
             ('catena',   '',              'Historical Commentaries'),
+            ('sword',    'Easton',        "Easton's Bible Dictionary"),
             ('sword',    'StrongsHebrew', "Strong's Hebrew Lexicon"),
             ('sword',    'StrongsGreek',  "Strong's Greek Lexicon"),
             ('opendata', 'dodson',        'Dodson Greek Lexicon'),
@@ -71,10 +89,14 @@ _BUNDLES = [
         'title': N_('Full library'),
         'tagline': N_('The complete set — more translations and commentaries '
                       'from the start.'),
-        'summary': N_('5 Bibles · 3 commentaries · lexicon · 340k cross-references'),
+        'summary': N_('7 Bibles · 3 commentaries · dictionary · lexicon · '
+                      '340k cross-references'),
         'size': N_('Larger download'),
         'recommended': False,
+        'opens': ('BSB', 'Historical Commentaries'),
         'items': [
+            ('sword',    'BSB',           'Berean Standard Bible'),
+            ('ebible',   'engwebp',       'World English Bible'),
             ('sword',    'KJVA',          'King James Bible'),
             ('sword',    'ASV',           'American Standard Version'),
             ('sword',    'YLT',           "Young's Literal Translation"),
@@ -83,6 +105,7 @@ _BUNDLES = [
             ('catena',   '',              'Historical Commentaries'),
             ('sword',    'MHCC',          "Matthew Henry's Concise Commentary"),
             ('sword',    'JFB',           'Jamieson-Fausset-Brown Commentary'),
+            ('sword',    'Easton',        "Easton's Bible Dictionary"),
             ('sword',    'StrongsHebrew', "Strong's Hebrew Lexicon"),
             ('sword',    'StrongsGreek',  "Strong's Greek Lexicon"),
             ('opendata', 'dodson',        'Dodson Greek Lexicon'),
@@ -154,6 +177,28 @@ class WelcomeWindow(Adw.ApplicationWindow):
         footnote.add_css_class('dim-label')
         footnote.set_margin_top(4)
         outer.append(footnote)
+
+        # The one line pointing at the gesture reference. Inside the app that
+        # reference is reachable two ways, and a newcomer may meet neither: an
+        # unlabelled icon in the menu footer, and a button on a hint that fires
+        # once and never again. This is the moment a newcomer is actually
+        # reading the window, so the line names the dialog as well as opening
+        # it — the point is to be re-findable later, not to be read now.
+        # It carries the menu footer's own tips icon, which is where the
+        # reference lives afterwards and is unlabelled there: seeing the mark
+        # once beside its name is what makes it recognisable later.
+        tips_btn = Gtk.Button()
+        tips_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        tips_row.append(Gtk.Image(icon_name='scriptura-tips-symbolic'))
+        tips_row.append(Gtk.Label(
+            label=_('New here? See what the pointer can do — Tips & Gestures')))
+        tips_btn.set_child(tips_row)
+        tips_btn.add_css_class('flat')
+        tips_btn.add_css_class('caption')
+        tips_btn.set_halign(Gtk.Align.CENTER)
+        tips_btn.connect('clicked', self._on_open_tips)
+        outer.append(tips_btn)
+        self._tips_btn = tips_btn
 
         mgr_btn = Gtk.Button(label=_('Choose individual modules instead'))
         mgr_btn.add_css_class('flat')
@@ -233,8 +278,15 @@ class WelcomeWindow(Adw.ApplicationWindow):
         self._status.set_text(_('Starting download…'))
         self._stack.set_visible_child_name('progress')
         threading.Thread(
-            target=self._install_worker, args=(bundle['items'],),
+            target=self._install_worker, args=(bundle,),
             daemon=True).start()
+
+    def _on_open_tips(self, _btn):
+        # No `on_shortcuts`: that dialog belongs to the reading window, which
+        # does not exist yet, so the row drops out rather than pointing at
+        # nothing. Offered only on the chooser page — once the install starts,
+        # the window closes itself on handoff and would take the dialog with it.
+        onboarding.build_tips_dialog().present(self)
 
     # ── Progress page ────────────────────────────────────────────────────
 
@@ -267,7 +319,8 @@ class WelcomeWindow(Adw.ApplicationWindow):
 
     # ── Install flow ───────────────────────────────────────────────────────
 
-    def _install_worker(self, items):
+    def _install_worker(self, bundle):
+        items = bundle['items']
         failed = []
         total = len(items)
         for step, (kind, ident, label) in enumerate(items, start=1):
@@ -283,9 +336,26 @@ class WelcomeWindow(Adw.ApplicationWindow):
                 elif kind == 'catena':
                     catena_bridge.download_and_install(
                         on_progress=self._mk_progress(base))
+                elif kind == 'ebible':
+                    self._install_ebible(ident)
             except Exception as e:
                 failed.append((label, str(e)))
-        GLib.idle_add(self._finish_install, failed)
+        GLib.idle_add(self._finish_install, failed, bundle)
+
+    def _install_ebible(self, tid):
+        """Install one eBible translation by id. Unlike the SWORD and
+        open-data steps, the download needs the catalog row alongside the
+        id, so a profile that has never opened the Module Manager has to
+        fetch the catalog first."""
+        entry = next((e for e in ebible_bridge.catalog_entries()
+                      if e.get('translationId') == tid), None)
+        if entry is None:
+            ebible_bridge.download_catalog_sync()
+            entry = next((e for e in ebible_bridge.catalog_entries()
+                          if e.get('translationId') == tid), None)
+        if entry is None:
+            raise LookupError(f'{tid} is not in the eBible catalog')
+        ebible_bridge.download_translation_sync(tid, entry)
 
     def _mk_progress(self, base):
         def _progress(done, total):
@@ -302,7 +372,28 @@ class WelcomeWindow(Adw.ApplicationWindow):
         self._status.set_text(msg)
         return GLib.SOURCE_REMOVE
 
-    def _finish_install(self, failed):
+    def _record_opening_pair(self, bundle):
+        """Persist the pair of modules the reading window should open on.
+
+        Only what actually arrived is written: a step can fail and still leave
+        a usable library, and a saved default naming an absent module would
+        send the main window straight back to guessing. When there is no
+        second module to show — the reading-only bundle, or a commentary that
+        failed — the split is turned off rather than filled with a copy of
+        pane 1."""
+        import settings
+        present = set(sword_bridge.module_names()) | set(
+            catena_bridge.module_names())
+        pane1, pane2 = bundle['opens']
+        if pane1 in present:
+            settings.put('pane1_module', pane1)
+        if pane2 is not None and pane2 in present:
+            settings.put('pane2_module', pane2)
+            settings.put('split_pane_mode', True)
+        else:
+            settings.put('split_pane_mode', False)
+
+    def _finish_install(self, failed, bundle):
         # The one hard requirement: a Bible-text module must now exist, or the
         # main window has nothing to open. Everything else is recoverable from
         # the Module Manager later.
@@ -321,6 +412,8 @@ class WelcomeWindow(Adw.ApplicationWindow):
                   'and try again. ({details})').format(details=details))
             self._back_btn.set_visible(True)
             return GLib.SOURCE_REMOVE
+
+        self._record_opening_pair(bundle)
 
         if failed:
             names = ', '.join(n for n, _err in failed)

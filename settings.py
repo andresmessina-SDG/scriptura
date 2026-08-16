@@ -26,18 +26,19 @@ _defaults: dict[str, Any] = {
     # ~66 characters per line at the default face/size (measured: 720px
     # ran ~90 CPL, well past the 45–75 readability band).
     'reading_width':      540,
-    # Advanced typography (Appearance ▸ Advanced).
+    # Advanced typography (Appearance ▸ Advanced). Five of the Advanced
+    # toggles ship on — section headings, small caps, the coloured drop cap,
+    # hover preview and spoken readings — and every other one ships off.
     'smallcaps_divine':   True,
-    'oldstyle_numerals':  True,
+    'oldstyle_numerals':  False,
     'poetry_flush':       False,
-    'colored_dropcap':    False,
+    'colored_dropcap':    True,
     # None = the scheme-aware gold default (illuminated-initial
     # tradition); a hex string is a user-chosen custom colour.
     'dropcap_color':      None,
     # Appearance ▸ Advanced: dwell over a Strong's word peeks its gloss
-    # (no click). Off by default — the reading surface stays inert
-    # unless the reader opts in.
-    'hover_preview':      False,
+    # (no click).
+    'hover_preview':      True,
     # Translator-footnote markers in the reading text (the f* header
     # toggle). On by default — markers only appear where notes exist, and
     # the toggle disables on modules that can't show any.
@@ -94,8 +95,10 @@ _defaults: dict[str, Any] = {
     'tips_enabled':       True,
     'hints_seen':         [],
     # The Today landing page at launch (once per session; Esc or any action
-    # dismisses it). Off = straight to the reading surface.
-    'open_to_today':      True,
+    # dismisses it). Off = straight to the reading surface, which is the
+    # default: the first thing a reader meets should be Scripture and its
+    # commentary, not a dashboard in front of them. Opt in from the menu.
+    'open_to_today':      False,
     # Appearance ▸ Advanced: offer the spoken readings (Spurgeon's morning &
     # evening, the psalm read aloud, today's Daily Strength) where a feed has
     # them. On by default — the controls only ever appear where audio exists;
