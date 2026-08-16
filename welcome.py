@@ -23,6 +23,7 @@ from gi.repository import Gtk, Adw, GLib, Pango
 import sword_bridge
 import open_data
 import catena_bridge
+import ebible_bridge
 import onboarding
 
 
@@ -36,6 +37,10 @@ def N_(message):
 #   'sword'    → sword_bridge.install_module(ident)
 #   'opendata' → open_data.download_source(ident)
 #   'catena'   → catena_bridge.download_and_install()   (ident unused)
+#   'ebible'   → ebible_bridge.download_translation_sync(ident, entry)
+#                where ident is the eBible translationId. Used for texts
+#                CrossWire does not carry at all — the World English Bible
+#                is on eBible only.
 #
 # `opens` is the pair the reading window should start on — (pane 1, pane 2) —
 # written to settings once the bundle is installed. This window is the only
@@ -61,16 +66,18 @@ _BUNDLES = [
         'title': N_('Reading + study'),
         'tagline': N_('A few translations, historical commentary, and '
                       'word-study tools.'),
-        'summary': N_('4 Bibles · commentary · lexicon · cross-references'),
+        'summary': N_('4 Bibles · commentary · dictionary · lexicon · '
+                      'cross-references'),
         'size': N_('Small download'),
         'recommended': True,
         'opens': ('BSB', 'Historical Commentaries'),
         'items': [
             ('sword',    'BSB',           'Berean Standard Bible'),
+            ('ebible',   'engwebp',       'World English Bible'),
             ('sword',    'KJVA',          'King James Bible'),
             ('sword',    'ASV',           'American Standard Version'),
-            ('sword',    'YLT',           "Young's Literal Translation"),
             ('catena',   '',              'Historical Commentaries'),
+            ('sword',    'Easton',        "Easton's Bible Dictionary"),
             ('sword',    'StrongsHebrew', "Strong's Hebrew Lexicon"),
             ('sword',    'StrongsGreek',  "Strong's Greek Lexicon"),
             ('opendata', 'dodson',        'Dodson Greek Lexicon'),
@@ -82,12 +89,14 @@ _BUNDLES = [
         'title': N_('Full library'),
         'tagline': N_('The complete set — more translations and commentaries '
                       'from the start.'),
-        'summary': N_('6 Bibles · 3 commentaries · lexicon · 340k cross-references'),
+        'summary': N_('7 Bibles · 3 commentaries · dictionary · lexicon · '
+                      '340k cross-references'),
         'size': N_('Larger download'),
         'recommended': False,
         'opens': ('BSB', 'Historical Commentaries'),
         'items': [
             ('sword',    'BSB',           'Berean Standard Bible'),
+            ('ebible',   'engwebp',       'World English Bible'),
             ('sword',    'KJVA',          'King James Bible'),
             ('sword',    'ASV',           'American Standard Version'),
             ('sword',    'YLT',           "Young's Literal Translation"),
@@ -96,6 +105,7 @@ _BUNDLES = [
             ('catena',   '',              'Historical Commentaries'),
             ('sword',    'MHCC',          "Matthew Henry's Concise Commentary"),
             ('sword',    'JFB',           'Jamieson-Fausset-Brown Commentary'),
+            ('sword',    'Easton',        "Easton's Bible Dictionary"),
             ('sword',    'StrongsHebrew', "Strong's Hebrew Lexicon"),
             ('sword',    'StrongsGreek',  "Strong's Greek Lexicon"),
             ('opendata', 'dodson',        'Dodson Greek Lexicon'),
@@ -326,9 +336,26 @@ class WelcomeWindow(Adw.ApplicationWindow):
                 elif kind == 'catena':
                     catena_bridge.download_and_install(
                         on_progress=self._mk_progress(base))
+                elif kind == 'ebible':
+                    self._install_ebible(ident)
             except Exception as e:
                 failed.append((label, str(e)))
         GLib.idle_add(self._finish_install, failed, bundle)
+
+    def _install_ebible(self, tid):
+        """Install one eBible translation by id. Unlike the SWORD and
+        open-data steps, the download needs the catalog row alongside the
+        id, so a profile that has never opened the Module Manager has to
+        fetch the catalog first."""
+        entry = next((e for e in ebible_bridge.catalog_entries()
+                      if e.get('translationId') == tid), None)
+        if entry is None:
+            ebible_bridge.download_catalog_sync()
+            entry = next((e for e in ebible_bridge.catalog_entries()
+                          if e.get('translationId') == tid), None)
+        if entry is None:
+            raise LookupError(f'{tid} is not in the eBible catalog')
+        ebible_bridge.download_translation_sync(tid, entry)
 
     def _mk_progress(self, base):
         def _progress(done, total):

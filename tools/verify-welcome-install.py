@@ -34,7 +34,7 @@ Usage:  python3 tools/verify-welcome-install.py [--bundle reading|study|full]
 
 `reading` is one small Bible — the fast pass, and the only bundle that
 exercises the single-pane branch. `study` is the recommended one and the
-only pass that covers all three install kinds; it downloads ~100 MB.
+only pass that covers all four install kinds; it downloads ~100 MB.
 
 Exit 0 = all checks passed, 1 = a check failed, 2 = the environment is
 unusable. Prints a JSON report.
@@ -283,6 +283,16 @@ def run_driver() -> int:
             missing = [m for m in want_sword if m not in have_sword]
             add('every SWORD module in the bundle installed', not missing,
                 wanted=len(want_sword), missing=missing)
+
+            want_ebible = [i for k, i, _l in bundle['items'] if k == 'ebible']
+            if want_ebible:
+                import ebible_bridge
+                have_ebible = {r[0] for r in
+                               ebible_bridge.installed_translations()}
+                missing_e = [t for t in want_ebible if t not in have_ebible]
+                add('every eBible translation in the bundle installed',
+                    not missing_e,
+                    wanted=len(want_ebible), missing=missing_e)
 
             if any(k == 'catena' for k, _i, _l in bundle['items']):
                 names = catena_bridge.module_names()
