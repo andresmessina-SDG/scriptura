@@ -116,3 +116,66 @@ def test_summaries_count_the_bibles_they_promise():
 _NOT_A_BIBLE = frozenset([
     'strongshebrew', 'strongsgreek', 'tsk', 'mhcc', 'jfb', 'easton',
 ])
+
+
+# ── the catalogue a first run does not have ──────────────────────────────────
+
+def test_a_bundle_with_sword_modules_fetches_the_catalogue_first(monkeypatch):
+    """Which repository a module lives in is recorded in the catalogue, and a
+    fresh profile has none — so install_module falls back to the released
+    repository's zip. That is the wrong place for anything the Lockman repo
+    owns, and it publishes no zips at all, so NBLA and LBLA failed outright
+    and the Spanish bundle opened on the distro KJV instead. Only a real
+    install caught it; this is the cheap guard.
+    """
+    calls = []
+    monkeypatch.setattr(welcome.sword_bridge, 'catalog_timestamp',
+                        lambda: None)
+    monkeypatch.setattr(welcome.sword_bridge, 'refresh_source',
+                        lambda: calls.append('refresh'))
+    monkeypatch.setattr(welcome.sword_bridge, 'install_module',
+                        lambda ident: calls.append(ident))
+    monkeypatch.setattr(welcome.ebible_bridge, 'catalog_entries', lambda: [])
+    monkeypatch.setattr(welcome.open_data, 'download_source',
+                        lambda *a, **k: None)
+    monkeypatch.setattr(welcome.catena_bridge, 'download_and_install',
+                        lambda *a, **k: None)
+
+    win = welcome.WelcomeWindow.__new__(welcome.WelcomeWindow)
+    monkeypatch.setattr(win, '_set_status', lambda *_a: None, raising=False)
+    monkeypatch.setattr(win, '_mk_progress', lambda base: None, raising=False)
+    monkeypatch.setattr(win, '_finish_install', lambda *_a: None,
+                        raising=False)
+    win._install_worker(_bundle('espanol'))
+
+    assert calls and calls[0] == 'refresh', (
+        f'the catalogue must be read before any module install, got {calls[:3]}')
+    assert 'NBLA' in calls
+
+
+def test_the_catalogue_is_not_refetched_when_one_is_cached(monkeypatch):
+    """It is a download; a profile that already has a catalogue should not
+    pay for it on every bundle install."""
+    from datetime import datetime
+
+    calls = []
+    monkeypatch.setattr(welcome.sword_bridge, 'catalog_timestamp',
+                        lambda: datetime(2026, 8, 16))
+    monkeypatch.setattr(welcome.sword_bridge, 'refresh_source',
+                        lambda: calls.append('refresh'))
+    monkeypatch.setattr(welcome.sword_bridge, 'install_module',
+                        lambda ident: calls.append(ident))
+    monkeypatch.setattr(welcome.ebible_bridge, 'catalog_entries', lambda: [])
+    monkeypatch.setattr(welcome.open_data, 'download_source',
+                        lambda *a, **k: None)
+    monkeypatch.setattr(welcome.catena_bridge, 'download_and_install',
+                        lambda *a, **k: None)
+
+    win = welcome.WelcomeWindow.__new__(welcome.WelcomeWindow)
+    monkeypatch.setattr(win, '_set_status', lambda *_a: None, raising=False)
+    monkeypatch.setattr(win, '_mk_progress', lambda base: None, raising=False)
+    monkeypatch.setattr(win, '_finish_install', lambda *_a: None,
+                        raising=False)
+    win._install_worker(_bundle('reading'))
+
+    assert 'refresh' not in calls

@@ -116,8 +116,13 @@ def run_attempt(bundle: str, timeout: float) -> dict | None:
 def orchestrate() -> int:
     parser = argparse.ArgumentParser(
         description='Install a welcome bundle for real and open the window.')
+    # Read the ids from welcome.py rather than listing them: a bundle added
+    # without touching this file would otherwise be the one bundle nobody
+    # could verify, which is exactly when verification matters.
+    sys.path.insert(0, str(REPO_ROOT))
+    from welcome import _BUNDLES
     parser.add_argument('--bundle', default='reading',
-                        choices=('reading', 'study', 'full'),
+                        choices=tuple(b['id'] for b in _BUNDLES),
                         help='which bundle card to click (default: reading)')
     parser.add_argument('--timeout', type=float, default=900,
                         help='wall clock limit in seconds (default: 900)')
