@@ -72,23 +72,30 @@ def test_bsb_leads_every_english_bundle_and_its_opening_pair():
         assert bundle['opens'][0] == 'BSB', bundle['id']
 
 
-def test_the_spanish_bundle_opens_on_spanish_and_can_speak():
-    """The two properties that make it the Spanish equivalent of the English
-    default rather than a list of Spanish files: it opens on a modern Spanish
-    text, and it carries the one module the spoken reading is bound to."""
-    import bible_audio
-
+def test_the_spanish_bundle_opens_on_spanish():
+    """It opens on a modern Spanish text, and pane 2 is the one Spanish text
+    carrying Strong's numbers, so word study has somewhere to happen."""
     es = _bundle('espanol')
     assert es['opens'] == ('NBLA', 'eBible: spaRV1909')
     assert _idents(es, 'sword')[0] == 'NBLA'
 
-    spoken = [i for k, i, _l in es['items'] if k == 'ebible']
-    assert 'spabes' in spoken
-    # Asked of the audio table rather than restated: the reading names the
-    # module key it plays against, and a bundle promising audio has to carry
-    # exactly that one.
-    bound = {m for r in bible_audio.READINGS for m in r.modules}
-    assert any(f'ebible{tid}' in bound for tid in spoken)
+
+def test_a_summary_promises_audio_only_if_a_pane_it_opens_on_has_it():
+    """The listening pill is per-pane and keyed to the module in it, so a
+    bundle can install a spoken reading and still never show the reader a
+    player. The Spanish bundle did exactly that: it downloaded the Español
+    Sencillo reading, opened on NBLA and the Reina Valera, and promised
+    "audio" on a card whose panes could not produce any.
+    """
+    import bible_audio
+
+    for bundle in welcome._BUNDLES:
+        if 'audio' not in bundle['summary'].lower():
+            continue
+        panes = [p for p in bundle['opens'] if p]
+        assert any(bible_audio.reading_for_module(p) for p in panes), (
+            f'{bundle["id"]}: summary promises audio, but neither of '
+            f'{panes} is bound to a reading')
 
 
 def test_every_step_names_a_kind_the_installer_dispatches():
@@ -116,3 +123,66 @@ def test_summaries_count_the_bibles_they_promise():
 _NOT_A_BIBLE = frozenset([
     'strongshebrew', 'strongsgreek', 'tsk', 'mhcc', 'jfb', 'easton',
 ])
+
+
+# ── the catalogue a first run does not have ──────────────────────────────────
+
+def test_a_bundle_with_sword_modules_fetches_the_catalogue_first(monkeypatch):
+    """Which repository a module lives in is recorded in the catalogue, and a
+    fresh profile has none — so install_module falls back to the released
+    repository's zip. That is the wrong place for anything the Lockman repo
+    owns, and it publishes no zips at all, so NBLA and LBLA failed outright
+    and the Spanish bundle opened on the distro KJV instead. Only a real
+    install caught it; this is the cheap guard.
+    """
+    calls = []
+    monkeypatch.setattr(welcome.sword_bridge, 'catalog_timestamp',
+                        lambda: None)
+    monkeypatch.setattr(welcome.sword_bridge, 'refresh_source',
+                        lambda: calls.append('refresh'))
+    monkeypatch.setattr(welcome.sword_bridge, 'install_module',
+                        lambda ident: calls.append(ident))
+    monkeypatch.setattr(welcome.ebible_bridge, 'catalog_entries', lambda: [])
+    monkeypatch.setattr(welcome.open_data, 'download_source',
+                        lambda *a, **k: None)
+    monkeypatch.setattr(welcome.catena_bridge, 'download_and_install',
+                        lambda *a, **k: None)
+
+    win = welcome.WelcomeWindow.__new__(welcome.WelcomeWindow)
+    monkeypatch.setattr(win, '_set_status', lambda *_a: None, raising=False)
+    monkeypatch.setattr(win, '_mk_progress', lambda base: None, raising=False)
+    monkeypatch.setattr(win, '_finish_install', lambda *_a: None,
+                        raising=False)
+    win._install_worker(_bundle('espanol'))
+
+    assert calls and calls[0] == 'refresh', (
+        f'the catalogue must be read before any module install, got {calls[:3]}')
+    assert 'NBLA' in calls
+
+
+def test_the_catalogue_is_not_refetched_when_one_is_cached(monkeypatch):
+    """It is a download; a profile that already has a catalogue should not
+    pay for it on every bundle install."""
+    from datetime import datetime
+
+    calls = []
+    monkeypatch.setattr(welcome.sword_bridge, 'catalog_timestamp',
+                        lambda: datetime(2026, 8, 16))
+    monkeypatch.setattr(welcome.sword_bridge, 'refresh_source',
+                        lambda: calls.append('refresh'))
+    monkeypatch.setattr(welcome.sword_bridge, 'install_module',
+                        lambda ident: calls.append(ident))
+    monkeypatch.setattr(welcome.ebible_bridge, 'catalog_entries', lambda: [])
+    monkeypatch.setattr(welcome.open_data, 'download_source',
+                        lambda *a, **k: None)
+    monkeypatch.setattr(welcome.catena_bridge, 'download_and_install',
+                        lambda *a, **k: None)
+
+    win = welcome.WelcomeWindow.__new__(welcome.WelcomeWindow)
+    monkeypatch.setattr(win, '_set_status', lambda *_a: None, raising=False)
+    monkeypatch.setattr(win, '_mk_progress', lambda base: None, raising=False)
+    monkeypatch.setattr(win, '_finish_install', lambda *_a: None,
+                        raising=False)
+    win._install_worker(_bundle('reading'))
+
+    assert 'refresh' not in calls

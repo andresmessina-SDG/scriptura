@@ -112,6 +112,44 @@ def test_the_catalogue_compiles(catalogue):
     assert r.returncode == 0, f'{lang}: {r.stderr}'
 
 
+def test_no_string_is_left_behind_by_the_source(catalogue, tmp_path):
+    """Re-extract from source and check nothing falls through to English.
+
+    This is the only check that compares a catalogue against the authority
+    rather than against itself. It caught three strings whose msgid carried
+    an escape (`\\n`, `\\"`): the catalogue held a literal backslash-n where
+    the source has a newline, so the ids never matched and those strings
+    silently rendered in English — while msgfmt, and every check written
+    around the catalogue's own idea of its ids, passed happily.
+
+    It fires on drift too: change an English string without updating the
+    translations and this names the language that fell behind.
+    """
+    lang, path = catalogue
+    for tool in ('xgettext', 'msgmerge', 'msgattrib'):
+        if shutil.which(tool) is None:
+            pytest.skip(f'{tool} not installed')
+
+    pot = tmp_path / 'scriptura.pot'
+    r = subprocess.run(
+        ['xgettext', '--files-from=po/POTFILES.in', '--from-code=UTF-8',
+         '--keyword=_', '--keyword=N_', '-o', str(pot)],
+        cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+
+    merged = tmp_path / 'merged.po'
+    subprocess.run(['msgmerge', '--quiet', '--no-fuzzy-matching',
+                    '-o', str(merged), path, str(pot)], check=True)
+    left = subprocess.run(['msgattrib', '--untranslated', str(merged)],
+                          capture_output=True, text=True, check=True).stdout
+
+    stranded = [ln for ln in left.splitlines()
+                if ln.startswith('#:')]
+    assert not stranded, (
+        f'{lang}: {len(stranded)} strings the source has but the catalogue '
+        f'does not translate — {stranded[:5]}')
+
+
 def test_every_book_name_is_translated(catalogue):
     """Book names are the one string set a reader meets on every screen, and
     they are dual-role — English stays the key, this is only the display

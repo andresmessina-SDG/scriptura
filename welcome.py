@@ -122,7 +122,12 @@ _BUNDLES = [
         'title': 'En español',
         'tagline': N_('Spanish Bibles, a spoken reading, and word-study '
                       'tools.'),
-        'summary': N_('4 Bibles · audio · lexicon · cross-references'),
+        # No audio claim: the spoken reading is bound to spabes, and neither
+        # opening pane shows it, so a newcomer would not meet the listening
+        # pill however long they read. The reading still installs and works
+        # the moment they switch a pane to it — the card just stops promising
+        # what the English bundles genuinely deliver on their first screen.
+        'summary': N_('5 Bibles · notes · lexicon · cross-references'),
         'size': N_('Small download'),
         'recommended': False,
         # Modern Spanish beside the historic text: the Reina Valera is the
@@ -135,6 +140,10 @@ _BUNDLES = [
             # Carries the spoken reading — bible_audio binds it to this exact
             # module, so without it the listening pill has nothing to play.
             ('ebible',   'spabes',        'Biblia en Español Sencillo'),
+            # The only Spanish text with notes that carries a licence we could
+            # mirror ourselves — CC BY-SA. LBLA and NBLA are CrossWire-only,
+            # so no mirror may ever hold them.
+            ('ebible',   'spavbl',        'Versión Biblia Libre'),
             ('sword',    'StrongsHebrew', "Strong's Hebrew Lexicon"),
             ('sword',    'StrongsGreek',  "Strong's Greek Lexicon"),
             ('opendata', 'cross_references', 'OpenBible Cross-References'),
@@ -348,6 +357,23 @@ class WelcomeWindow(Adw.ApplicationWindow):
     def _install_worker(self, bundle):
         items = bundle['items']
         failed = []
+        # Which repository a module belongs to is recorded in the catalogue,
+        # and a first run has no catalogue at all — so install_module falls
+        # back to the released repository's zip. That is the wrong place for
+        # anything the Lockman repo owns, and it publishes no zips whatever,
+        # so NBLA and LBLA simply fail. Fetching the catalogue first is what
+        # makes them installable; it also leaves the Module Manager with a
+        # list instead of "no catalogue cached yet".
+        if any(kind == 'sword' for kind, _i, _l in items):
+            GLib.idle_add(self._set_status, _('Reading the module list…'))
+            try:
+                if sword_bridge.catalog_timestamp() is None:
+                    sword_bridge.refresh_source()
+            except Exception as e:
+                # Not fatal: every module in the released repository still
+                # installs by zip without it.
+                failed.append((_('module list'), str(e)))
+
         total = len(items)
         for step, (kind, ident, label) in enumerate(items, start=1):
             base = _('({step}/{total}) Downloading {label}…').format(
