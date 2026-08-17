@@ -20,6 +20,7 @@ Note: display_name routing already lives in sword_bridge.display_name
 their bridges), so it is intentionally not duplicated here.
 """
 
+import re
 from typing import Callable, TypedDict, cast
 
 import sword_bridge
@@ -34,6 +35,10 @@ from i18n import _
 # Lexicons / dictionaries / morphology modules are reached through other
 # surfaces (lexicon panel, dict popup), not read as a pane.
 _SWORD_READABLE_TYPES = ('Biblical Texts', 'Commentaries', 'Generic Books')
+
+# Case-insensitive for the same reason pane._extract_segments is: SpaRV1909
+# writes `Strong:` and the app's parsers read `strong:`.
+_STRONGS_RE = re.compile(r'strong:[GH]\d+', re.IGNORECASE)
 
 
 def readable_module_names() -> list[str]:
@@ -266,6 +271,46 @@ def has_footnotes(name: str) -> bool:
     render paths run the marker pipeline, so a genbook/devotional conf
     declaring a footnote filter still counts as False here."""
     return _type_for(name).has_footnotes(name)
+
+
+#: Chapters probed for Strong's markup, and the answers, cached for the
+#: session. One per testament because plenty of tagged modules are
+#: half-canon: OSHB has no John, MorphGNT no Genesis.
+_STRONGS_PROBE = (('John', 3), ('Genesis', 1))
+_marks_strongs: dict[str, bool] = {}
+
+
+def has_strongs(name: str) -> bool:
+    """Whether tapping a word in this module opens a lexicon entry.
+
+    Measured, because the conf lies in both directions: SpaRV1909 and
+    MorphGNT declare no `Feature` at all and are tagged throughout, while
+    RusVZh declares `Feature=StrongsNumbers` and carries not one number
+    the render path can see. Same lesson as
+    sword_bridge.module_marks_sections — the declaration says the markup
+    is permitted, not that anybody wrote any.
+
+    Costs two chapter loads once per module, into the same cache the
+    reader is about to fill anyway, then answers from `_marks_strongs`.
+    """
+    if name in _marks_strongs:
+        return _marks_strongs[name]
+    if not is_text_bible(name):
+        _marks_strongs[name] = False
+        return False
+    load = (ebible_bridge.load_chapter if type_key(name) == 'ebible'
+            else sword_bridge.load_chapter)
+    found = False
+    for book, chapter in _STRONGS_PROBE:
+        try:
+            if any(_STRONGS_RE.search(str(html))
+                   for _verse, html in load(name, book, chapter)):
+                found = True
+                break
+        except Exception:
+            continue
+    _marks_strongs[name] = found
+    return found
 
 
 def feature_card(name: str) -> dict | None:

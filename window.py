@@ -2031,9 +2031,18 @@ class BibleWindow(Adw.ApplicationWindow):
         self.pane1.set_lexicon_enabled(enabled)
         self.pane2.set_lexicon_enabled(enabled)
         # Strong's words carry no visible mark at rest; on first enabling the
-        # mode, name the gesture that now pays off.
+        # mode, name the gesture that now pays off — but only where it does.
+        # The hint fires once ever, and a reader whose Bibles carry no
+        # Strong's (NBLA and LBLA, the Spanish bundle's own opening pair)
+        # would spend that one firing on "tap any word" over a pane where
+        # tapping does nothing at all.
         if enabled:
-            self._hints.maybe_fire('first_lexicon')
+            import content
+            panes = [self.pane1]
+            if self.pane2 is not None and self.pane2.get_visible():
+                panes.append(self.pane2)
+            if any(content.has_strongs(p._module) for p in panes):
+                self._hints.maybe_fire('first_lexicon')
 
     def _on_fnote_toggle(self, _btn):
         enabled = self.fnote_toggle.get_active()
