@@ -1276,7 +1276,18 @@ _DICT_SKIP = frozenset([
 
 
 def installed_dict_modules():
-    """Return [(name, description)] for installed English dictionary/encyclopedia modules."""
+    """Return [(name, description)] for installed dictionary/encyclopedia modules.
+
+    Deliberately not filtered by language. This used to keep only `en`/`eng`,
+    which hid a dictionary the reader had gone to the Module Manager and
+    installed on purpose — every French, Russian and Spanish one, in an app
+    that ships a Spanish interface. Filtering to the *reading* language would
+    be no better: it would hide Easton's from a reader of the Spanish Bibles,
+    who can still want the entry for "Abraham".
+
+    A dictionary in the wrong language simply has no entry for the word and
+    contributes no tab, so the peek stays clean without the filter doing it.
+    """
     result = []
     for name in module_names():
         if name.lower() in _DICT_SKIP:
@@ -1288,9 +1299,6 @@ def installed_dict_modules():
             continue
         t = str(mod.getType() or '')
         if 'Lexicon' not in t and 'Dict' not in t:
-            continue
-        lang = str(mod.getConfigEntry('Lang') or '').strip().lower()
-        if lang and lang not in ('en', 'eng', 'english'):
             continue
         desc = str(mod.getConfigEntry('Description') or name)
         result.append((name, desc))
