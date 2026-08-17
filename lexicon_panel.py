@@ -87,7 +87,7 @@ def _extract_segments(html):
     self-closing `<w …/>` tags emitted for untranslated source words;
     without explicit handling, the regex would consume them as openers
     and steal text from the next tag (see pane._extract_segments for
-    the full explanation)."""
+    the full explanation, and for why the prefix match ignores case)."""
     html = str(html)
     segments = []
     pos = 0
@@ -99,7 +99,8 @@ def _extract_segments(html):
             pos = m.end()
             continue
         attrs = m.group(1)
-        strong_nums = [s.upper() for s in re.findall(r'strong:([GHgh]\d+)', attrs)]
+        strong_nums = [s.upper() for s in
+                       re.findall(r'strong:([GH]\d+)', attrs, re.IGNORECASE)]
         mm = re.search(r'morph="([^"]+)"', attrs)
         morph = mm.group(1) if mm else None
         segments.append((content, strong_nums, morph))

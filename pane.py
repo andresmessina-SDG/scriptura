@@ -912,7 +912,13 @@ def _extract_segments(html):
     matching it explicitly, the engine would consume the opening `<w …/>`
     as if it were a regular tag opener and then match `</w>` from the
     NEXT tag — swallowing that tag's English text under the wrong
-    Strong's number."""
+    Strong's number.
+
+    The prefix match is case-insensitive because the modules disagree:
+    SpaRV1909 writes `savlm="Strong:H7225"` on nearly every word and the
+    lowercase `strong:` only inside its rare multi-number tags, so a
+    case-sensitive match found 15 of 36 verses in John 3 and none at all
+    in Genesis 1 — a fully tagged Bible whose word study was dead."""
     html = str(html)
     segments = []
     pos = 0
@@ -926,7 +932,8 @@ def _extract_segments(html):
             pos = m.end()
             continue
         attrs = m.group(1)
-        strong_nums = [s.upper() for s in re.findall(r'strong:([GHgh]\d+)', attrs)]
+        strong_nums = [s.upper() for s in
+                       re.findall(r'strong:([GH]\d+)', attrs, re.IGNORECASE)]
         mm = re.search(r'morph="([^"]+)"', attrs)
         morph = mm.group(1) if mm else None
         segments.append((content, strong_nums, morph))
