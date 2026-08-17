@@ -2483,6 +2483,17 @@ msgstr "Bloqueado"
 msgid "Remove module"
 msgstr "Quitar el módulo"
 
+#: module_manager.py:773
+msgid "Imported by an older version — download again for full formatting"
+msgstr ""
+"Importado por una versión anterior: descargarlo de nuevo restaura el formato "
+"completo"
+
+#: module_manager.py:775
+#, python-brace-format
+msgid "eBible.org published a newer text on {date}"
+msgstr "eBible.org publicó un texto más reciente el {date}"
+
 #: module_manager.py:1040 module_manager.py:1069 module_manager.py:1271
 #: module_manager.py:1550 module_manager.py:1582 module_manager.py:1662
 msgid "Install"
@@ -2585,7 +2596,15 @@ msgstr "Analizando el USFM…"
 msgid "Saving…"
 msgstr "Guardando…"
 
-#: module_manager.py:1487
+#: module_manager.py:1505
+msgid "{name} updated"
+msgstr "{name} actualizada"
+
+#: module_manager.py:1513
+msgid "Updating…"
+msgstr "Actualizando…"
+
+#: module_manager.py:1504
 msgid "Installing…"
 msgstr "Instalando…"
 

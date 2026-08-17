@@ -214,7 +214,9 @@ class ModuleManagerWindow(Adw.Window):
         self._all_modules = []
         self._has_catalog = False
         self._eb_catalog = []
+        self._eb_by_id = {}
         self._updates = []
+        self._eb_stale = {}
         self._updating_filters = False
         self._pulse_source = None
         self._op_busy = False
@@ -456,7 +458,10 @@ class ModuleManagerWindow(Adw.Window):
                 for n in sword_bridge.module_names()
             ]
         self._eb_catalog = ebible_bridge.catalog_entries() or []
+        self._eb_by_id = {e.get('translationId', '').strip(): e
+                          for e in self._eb_catalog}
         self._updates = sword_bridge.available_updates() if self._has_catalog else []
+        self._eb_stale = self._eb_stale_reasons()
         for tab_id in self._tabs:
             self._refresh_tab(tab_id, full=True)
 
@@ -762,6 +767,36 @@ class ModuleManagerWindow(Adw.Window):
 
     # ── Updates ───────────────────────────────────────────────────────────────
 
+    # Why an installed eBible text is behind. Kept here rather than in the
+    # (English-free) backend, same i18n boundary as _EB_STATUS.
+    _EB_STALE_REASON = {
+        'parser': N_('Imported by an older version — '
+                     'download again for full formatting'),
+        'source': N_('eBible.org published a newer text on {date}'),
+    }
+
+    def _eb_stale_text(self, tid, reason):
+        text = _(self._EB_STALE_REASON[reason])
+        if reason == 'source':
+            entry = self._eb_by_id.get(tid, {})
+            text = text.format(date=ebible_bridge.source_date(entry))
+        return text
+
+    def _eb_stale_reasons(self):
+        """{tid: reason} for installed eBible texts that would gain from being
+        downloaded again. A text missing from the catalogue is left out: with
+        no entry there is nothing to download and nothing to compare against."""
+        stamps = ebible_bridge.import_stamps()
+        out = {}
+        for tid, stamp in stamps.items():
+            entry = self._eb_by_id.get(tid)
+            if not entry:
+                continue
+            reason = ebible_bridge.update_reason(stamp, entry)
+            if reason:
+                out[tid] = reason
+        return out
+
     def _rebuild_updates(self, t):
         group = t['updates_group']
         # PreferencesGroup has no clear API for rows; track and remove.
@@ -770,12 +805,31 @@ class ModuleManagerWindow(Adw.Window):
         t['update_rows'] = []
         mine = [(m, old) for m, old in self._updates
                 if _tab_of_type(m['type']) == t['spec']['id']]
-        group.set_visible(bool(mine))
-        if not mine:
+        # eBible translations announce themselves in the same group: to a
+        # reader they are Bibles like any other, and which wire they arrived
+        # over is plumbing.
+        eb = sorted(self._eb_stale.items()) if t['spec']['ebible'] else []
+        group.set_visible(bool(mine or eb))
+        if not (mine or eb):
             return
+        n = len(mine) + len(eb)
         group.set_title(ngettext('{n} update available',
-                                 '{n} updates available',
-                                 len(mine)).format(n=len(mine)))
+                                 '{n} updates available', n).format(n=n))
+        for tid, reason in eb:
+            entry = self._eb_by_id.get(tid, {})
+            row = Adw.ActionRow()
+            row.set_title(GLib.markup_escape_text(
+                (entry.get('shortTitle') or tid).strip()))
+            row.set_subtitle(GLib.markup_escape_text(
+                self._eb_stale_text(tid, reason)))
+            btn = Gtk.Button(label=_('Update'))
+            btn.add_css_class('suggested-action')
+            btn.set_valign(Gtk.Align.CENTER)
+            btn.connect('clicked',
+                        lambda b, t_=tid, e=entry: self._on_eb_download(b, t_, e))
+            row.add_suffix(btn)
+            group.add(row)
+            t['update_rows'].append(row)
         for mod, old in mine:
             row = Adw.ActionRow()
             row.set_title(GLib.markup_escape_text(
@@ -810,10 +864,8 @@ class ModuleManagerWindow(Adw.Window):
                             ('sword', mod)))
         if t['spec']['ebible']:
             installed_ids = ebible_bridge.installed_ids()
-            by_id = {e.get('translationId', '').strip(): e
-                     for e in self._eb_catalog}
             for tid in sorted(installed_ids):
-                entry = by_id.get(tid, {})
+                entry = self._eb_by_id.get(tid, {})
                 title = (entry.get('shortTitle') or tid).strip()
                 lang_code = entry.get('languageCode', '').strip()
                 lang_name = entry.get('languageName', '').strip()
@@ -1060,6 +1112,29 @@ class ModuleManagerWindow(Adw.Window):
         row.set_subtitle(GLib.markup_escape_text('  ·  '.join(parts)))
 
         if installed:
+            # An installed translation used to offer nothing but Remove, so
+            # the only way to pick up a re-parse (the Strong's numbers the
+            # USFM parser now keeps) or a corrected upstream text was to
+            # remove it and install it again — losing it in between.
+            # download_translation_sync already deletes its own rows before
+            # re-inserting, so this is the same call, run over itself.
+            #
+            # Offered only while the copy on disk is actually behind. A button
+            # that never goes away says nothing: it stood on every row, before
+            # and after a download alike, so there was no way to tell a text
+            # that needed updating from one that had just been updated.
+            # _eb_stale_reasons() already excludes anything the catalogue has
+            # no entry for — a blank one would rewrite the title and licence
+            # as empty strings.
+            reason = self._eb_stale.get(tid)
+            if reason:
+                upd = Gtk.Button(label=_('Update'))
+                upd.set_valign(Gtk.Align.CENTER)
+                upd.set_tooltip_text(self._eb_stale_text(tid, reason))
+                upd.connect('clicked',
+                            lambda b, t_=tid, e=entry:
+                                self._on_eb_download(b, t_, e))
+                row.add_suffix(upd)
             btn = self._trash_button(
                 lambda t_=tid, ti=title: self._confirm_remove_generic(
                     ti, lambda: self._do_eb_remove(t_)))
@@ -1469,6 +1544,8 @@ class ModuleManagerWindow(Adw.Window):
 
     def _on_eb_download(self, btn, tid, entry):
         title = (entry.get('shortTitle') or tid).strip()
+        # Asked before the download, because afterwards everything is installed.
+        updating = tid in ebible_bridge.installed_ids()
 
         def on_status(code):
             GLib.idle_add(self._set_progress,
@@ -1477,6 +1554,13 @@ class ModuleManagerWindow(Adw.Window):
         def done(err):
             self._modules_changed()
             self._populate()
+            # An install announces itself: the row moves to Installed and the
+            # button turns into a trash can. An update now announces itself
+            # too — the row leaves the updates group and drops its button —
+            # but that is an absence, and an absence is easy to miss on a
+            # window the reader was watching. Name what happened.
+            if updating and not err:
+                self._flash(_('{name} updated').format(name=title))
 
         if self._run_async(
                 lambda: ebible_bridge.download_translation_sync(
@@ -1484,7 +1568,8 @@ class ModuleManagerWindow(Adw.Window):
                 done, busy_msg=_('Downloading {name}…').format(name=title),
                 retry=lambda: self._on_eb_download(btn, tid, entry)):
             btn.set_sensitive(False)
-            btn.set_label(_('Installing…'))
+            # The same call serves both buttons; only the word differs.
+            btn.set_label(_('Updating…') if updating else _('Installing…'))
 
     def _do_eb_remove(self, tid):
         ebible_bridge.remove_translation(tid)
