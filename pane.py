@@ -2405,11 +2405,19 @@ class BiblePane(Gtk.Box):
         """Show a friendly hint when the current module has no content
         for the requested book/chapter — typically NT-only modules
         (SBLGNT, MorphGNT) navigated to an OT passage, or vice versa."""
+        if book in sword_bridge.DEUTEROCANON:
+            # Not a coverage gap: a 66-book Bible is complete on its own
+            # terms, and telling its reader to "pick a Bible with full
+            # coverage" would name the wrong problem.
+            body = _('{module} follows a canon of 66 books, which does not '
+                     'include this one.').format(module=self._module)
+        else:
+            body = _('{module} doesn’t include this passage. Some modules cover '
+                     'only the Old or New Testament — pick a Bible with full '
+                     'coverage.').format(module=self._module)
         self._show_status_page(
             'dialog-information-symbolic', f'{book_label(book)} {chapter}',
-            _('{module} doesn’t include this passage. Some modules cover '
-              'only the Old or New Testament — pick a Bible with full coverage.').format(
-                  module=self._module),
+            body,
             action=(_('Choose another module'),
                     lambda: self._picker.menu_button.popup()))
         self._view.scroll_to_iter(self._buffer.get_start_iter(), 0.0, False, 0, 0)

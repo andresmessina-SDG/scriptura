@@ -650,7 +650,7 @@ class LexiconPanel(Gtk.Box):
             # forever. (The runner's on_error backstops the same way.)
             running = 0
             try:
-                total = sword_bridge.chapter_count(book)
+                total = sword_bridge.chapter_count_in(module, book)
                 for ch in range(1, total + 1):
                     if not task.is_current():
                         return running  # superseded — stop scanning

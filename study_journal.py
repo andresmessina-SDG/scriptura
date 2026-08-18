@@ -542,7 +542,10 @@ class StudyJournalWindow(Adw.Window):
         self._entries = _all_entries()
 
         modules = [_('All modules')] + sorted({e['module'] for e in self._entries})
-        book_keys = [b for b in sword_bridge._ALL_BOOKS
+        # The appendix too, or a note taken in Tobit would be missing from
+        # the filter that is supposed to list every book the journal holds.
+        book_keys = [b for b in (sword_bridge._ALL_BOOKS
+                                 + list(sword_bridge.DEUTEROCANON))
                      if any(e['book'] == b for e in self._entries)]
         all_tags = [_('All tags')] + sorted(
             {t for e in self._entries for t in e.get('tags', [])})

@@ -67,6 +67,33 @@ BOOKS = [
     N_('Jude'), N_('Revelation'),
 ]
 
+# The books outside the 66, offered as an appendix after Revelation when
+# "Show deuterocanonical books" is on. Same names and order as
+# sword_bridge.DEUTEROCANON, which owns the per-module canon check; this
+# copy exists to mark them for translation, exactly as BOOKS does.
+DEUTEROCANON = [
+    N_('Tobit'), N_('Judith'), N_('Additions to Esther'), N_('Wisdom'),
+    N_('Sirach'), N_('Baruch'), N_('Epistle of Jeremiah'),
+    N_('Prayer of Azariah'), N_('Susanna'), N_('Bel and the Dragon'),
+    N_('1 Maccabees'), N_('2 Maccabees'), N_('1 Esdras'),
+    N_('Prayer of Manasseh'), N_('3 Maccabees'), N_('2 Esdras'),
+    N_('4 Maccabees'),
+]
+
+
+def nav_books():
+    """The books navigation offers: the 66, plus the appendix when the
+    setting is on.
+
+    This list is deliberately *not* narrowed to what the open module holds.
+    A dropdown that grew and shrank as the reader switched translations
+    would be more truthful and much worse to use; whether a given module
+    can answer for a given book is sword_bridge.module_has_book's job, and
+    it is asked at the point of navigation."""
+    if settings.get('show_deuterocanon'):
+        return BOOKS + DEUTEROCANON
+    return BOOKS
+
 
 class _FractionPaned(Gtk.Paned):
     """Paned that keeps its divider at a fraction of its own width.
@@ -177,7 +204,8 @@ class BibleWindow(Adw.ApplicationWindow):
         # chapter_count, i.e. the SWORD init warming above).
         saved_book = settings.get('last_book')
         saved_chap = settings.get('last_chapter')
-        if saved_book in BOOKS and isinstance(saved_chap, int) and saved_chap >= 1:
+        if (saved_book in nav_books() and isinstance(saved_chap, int)
+                and saved_chap >= 1):
             self._current_loc = (saved_book, saved_chap)
         else:
             self._current_loc = ('Genesis', 1)
@@ -356,7 +384,7 @@ class BibleWindow(Adw.ApplicationWindow):
         # index — used by Alt+arrow navigation and the quick-jump bar — but
         # are not visible and have no change handlers. All navigation flows
         # through _go_to(), which writes to them.
-        self.book_drop = Gtk.DropDown(model=Gtk.StringList.new(BOOKS))
+        self.book_drop = Gtk.DropDown(model=Gtk.StringList.new(nav_books()))
         self.book_drop.set_visible(False)
         header.pack_start(self.book_drop)
 
@@ -1704,7 +1732,7 @@ class BibleWindow(Adw.ApplicationWindow):
         header.set_margin_bottom(6)
         box.append(header)
 
-        book    = BOOKS[self.book_drop.get_selected()]
+        book    = nav_books()[self.book_drop.get_selected()]
         chapter = self.chapter_drop.get_selected() + 1
         add_content = Adw.ButtonContent(
             icon_name='starred-symbolic',
@@ -2083,7 +2111,7 @@ class BibleWindow(Adw.ApplicationWindow):
         saved_book = settings.get('last_book')
         saved_chap = settings.get('last_chapter')
         last = ((saved_book, saved_chap)
-                if saved_book in BOOKS and isinstance(saved_chap, int)
+                if saved_book in nav_books() and isinstance(saved_chap, int)
                 and saved_chap >= 1 else None)
         church_line = None
         collect_key = None
@@ -3275,7 +3303,36 @@ class BibleWindow(Adw.ApplicationWindow):
                 _church_values[d.get_selected()]))
         church_row.add_suffix(church_drop)
         nav_group.add(church_row)
+        # The books outside the 66, as an appendix after Revelation. Off by
+        # default. Only a few modules carry them (KJVA, the Vulgate,
+        # RusSynodal, Wycliffe, SpaPlatense); on the rest the appendix rows
+        # show dim, which is the honest answer.
+        dc_row = Adw.ActionRow(title=_('Show deuterocanonical books'))
+        dc_row.add_prefix(
+            Gtk.Image.new_from_icon_name('accessories-dictionary-symbolic'))
+        dc_sw = Gtk.Switch(valign=Gtk.Align.CENTER)
+        dc_sw.set_active(bool(settings.get('show_deuterocanon')))
+        set_accessible_label(dc_sw, _('Show deuterocanonical books'))
+        dc_sw.connect('notify::active', self._on_deuterocanon_switch)
+        dc_row.add_suffix(dc_sw)
+        dc_row.set_activatable_widget(dc_sw)
+        nav_group.add(dc_row)
         return nav_group
+
+    def _on_deuterocanon_switch(self, sw, _p):
+        settings.put('show_deuterocanon', sw.get_active())
+        # book_drop is the invisible index holder every navigation writes
+        # to, so its model has to change with the list. Rebuild it around
+        # the book being read — which is always in the 66 or, when the
+        # appendix is going away, needs to be left somewhere valid.
+        books = nav_books()
+        self.book_drop.set_model(Gtk.StringList.new(books))
+        book = self._current_loc[0]
+        if book in books:
+            self.book_drop.set_selected(books.index(book))
+        else:
+            # The appendix just went away under a reader standing in it.
+            self._go_to('Revelation', 1)
 
     def _build_appearance_row(self):
         """The row whose chevron expands the card below it."""

@@ -276,6 +276,7 @@ def _reset():
         _marks_sections.clear()
         _strongs_cache.clear()
         _book_maps.clear()
+        _module_dc.clear()
     with _indexing_lock:
         _indexing_threads.clear()
 
@@ -366,6 +367,12 @@ def chapter_count(book, module_name=None):
             module_name = None
         vk = _verse_key(module_name)
         vk.setText(f'{book} 1:1')
+        # A deuterocanonical book asked of a key that has never heard of it
+        # clamps to the versification's last book, and would answer with
+        # *that* book's chapter count — 22 chapters of Revelation for Tobit,
+        # which has 14. Nothing but the OSIS name catches it.
+        if book in _DC_OSIS and str(vk.getOSISRef()).split('.')[0] != _DC_OSIS[book]:
+            return 1
         return vk.getChapterMax()
     except Exception:
         # Bad book name (typo, deuterocanon outside KJV v11n) — return 1 so
@@ -552,6 +559,15 @@ def load_chapter(module_name, book, chapter):
 
         mod = mgr().getModule(module_name)
         if mod is None:
+            return []
+
+        # A book this module has no answer for. Returning [] here rather
+        # than letting VerseKey clamp is what stops a request for Tobit
+        # reading back Revelation 1 (KJV), 2 Chronicles 1 (MT) or
+        # Laodiceans 1 (Vulg) — silently, under the heading asked for.
+        # Every reader of a chapter comes through here, so this one guard
+        # covers the panes, search, export and presentation alike.
+        if not module_has_book(module_name, book):
             return []
 
         # The caller addresses in app-space (KJV) numbers; translate into
@@ -2254,6 +2270,104 @@ _ALL_BOOKS = [
     'James', '1 Peter', '2 Peter', '1 John', '2 John', '3 John',
     'Jude', 'Revelation',
 ]
+
+
+# ── Deuterocanon ─────────────────────────────────────────────────────────────
+#
+# The books outside the 66, kept out of _ALL_BOOKS because that list and its
+# order are the app's reference space: bookmark keys, annotation keys and the
+# search index are all built from it.
+#
+# Order follows the NRSV apocrypha. 'Laodiceans' is deliberately absent even
+# though the Vulgate carries it: it is the *last* book of the Vulg
+# versification, which is where every unknown name lands (see module_books),
+# so its presence could never be told apart from a miss.
+DEUTEROCANON = [
+    'Tobit', 'Judith', 'Additions to Esther', 'Wisdom', 'Sirach', 'Baruch',
+    'Epistle of Jeremiah', 'Prayer of Azariah', 'Susanna',
+    'Bel and the Dragon', '1 Maccabees', '2 Maccabees', '1 Esdras',
+    'Prayer of Manasseh', '3 Maccabees', '2 Esdras', '4 Maccabees',
+]
+
+# Book name → OSIS name. The OSIS form is the only stable identity a
+# VerseKey hands back: getBookName() renders '1 Maccabees' as 'I Maccabees',
+# so a name round-trip would call every Maccabees book missing.
+_DC_OSIS = {
+    'Tobit': 'Tob', 'Judith': 'Jdt', 'Additions to Esther': 'AddEsth',
+    'Wisdom': 'Wis', 'Sirach': 'Sir', 'Baruch': 'Bar',
+    'Epistle of Jeremiah': 'EpJer', 'Prayer of Azariah': 'PrAzar',
+    'Susanna': 'Sus', 'Bel and the Dragon': 'Bel',
+    '1 Maccabees': '1Macc', '2 Maccabees': '2Macc', '1 Esdras': '1Esd',
+    'Prayer of Manasseh': 'PrMan', '3 Maccabees': '3Macc',
+    '2 Esdras': '2Esd', '4 Maccabees': '4Macc',
+}
+
+_module_dc = {}  # module_name → (books, ...) of deuterocanon it really holds
+
+
+def module_books(module_name):
+    """The deuterocanonical books `module_name` actually holds text for.
+
+    Two separate things have to be true, and neither implies the other.
+
+    A VerseKey *clamps* an unknown book to the last book of its
+    versification instead of failing, so asking for Tobit reads Revelation 1
+    under KJV, 2 Chronicles 1 under MT and Laodiceans 1 under Vulg — a name
+    that resolves is no evidence the book exists. Comparing the OSIS name
+    the key comes back with against _DC_OSIS catches that.
+
+    And a versification knowing a book says nothing about the module:
+    RusSynodalLIO's Synodal key addresses all twelve of them and the module
+    answers every one with an empty string. hasEntry() is the module's own
+    answer.
+    """
+    with _lock:
+        cached = _module_dc.get(module_name)
+    if cached is not None:
+        return cached
+
+    found = []
+    try:
+        # No such SWORD module (an eBible id, say) is a real answer — none —
+        # and worth caching. A raised probe is not: caching it would make one
+        # bad moment permanent for the session.
+        mod = mgr().getModule(module_name)
+        if mod is not None:
+            vk = _verse_key(module_name)
+            for book in DEUTEROCANON:
+                vk.setText(f'{book} 1:1')
+                if str(vk.getOSISRef()).split('.')[0] != _DC_OSIS[book]:
+                    continue  # clamped — this versification has no such book
+                if mod.hasEntry(vk):
+                    found.append(book)
+    except Exception:
+        _sword_log.exception('module_books failed for %s', module_name)
+        return ()
+
+    result = tuple(found)
+    with _lock:
+        _module_dc[module_name] = result
+    return result
+
+
+def chapter_count_in(module_name, book):
+    """chapter_count for a book that may be outside the 66.
+
+    The app-space (KJV) key governs the 66 — that is the space every stored
+    reference is in. An appendix book has no app-space count at all: ask the
+    default key for Tobit and it answers with Revelation's 22 chapters, or,
+    once chapter_count catches that, with 1. It has to be counted against the
+    module that actually holds it."""
+    return chapter_count(book, None if book in _ALL_BOOKS else module_name)
+
+
+def module_has_book(module_name, book):
+    """True when `module_name` can answer for `book`. The 66 are assumed
+    present — every Bible module has them, and the reader who finds one
+    missing has a broken module, not a canon question."""
+    if book in _ALL_BOOKS:
+        return True
+    return book in module_books(module_name)
 
 
 

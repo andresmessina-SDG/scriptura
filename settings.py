@@ -56,6 +56,11 @@ _defaults: dict[str, Any] = {
     # same scroll-driven unit the rule marks, painted rather than
     # retagged. Opt-in taste, off by default.
     'focus_current_unit': False,
+    # The books outside the 66, as an appendix after Revelation in the book
+    # list. Off by default: most readers hold a 66-book canon, and the
+    # books are only reachable at all on the few modules that carry them
+    # (KJVA, the Vulgate, RusSynodal, SpaPlatense, Wycliffe here).
+    'show_deuterocanon':  False,
     # Cross-reference bar on verse click (the ※ toggle in the header's
     # Reading-tools cluster). On by default; off keeps the reading surface
     # fully minimal — verse clicks stop summoning the bar.

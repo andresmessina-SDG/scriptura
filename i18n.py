@@ -29,7 +29,7 @@ def book_label(name: str) -> str:
     The English name stays canonical everywhere it acts as a key — SWORD
     VerseKey text, OSIS mapping, persisted annotation/bookmark/position
     records — and is translated only here, at the point it is shown to the
-    user. The 66 canonical names are marked for extraction with ``N_()`` in
-    window.BOOKS; an unknown name (e.g. an apocryphal book outside that list)
-    has no catalog entry and falls through to English unchanged."""
+    user. The names are marked for extraction with ``N_()`` in window.BOOKS
+    and window.DEUTEROCANON; any other name has no catalog entry and falls
+    through to English unchanged."""
     return _(name)

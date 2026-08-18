@@ -171,21 +171,26 @@ class PresentController:
     def _adjacent_chapter(self, book, chapter, delta):
         """(book, chapter) one chapter forward/back from here, crossing book
         boundaries; None at the very start / end of the canon."""
+        module = self._present_module
+        # Only the books this module can answer for: stepping off Revelation
+        # into an appendix it does not carry would land on a chapter with no
+        # verses and stall the arrow. For a 66-book module this is BOOKS.
+        books = [b for b in window.nav_books()
+                 if sword_bridge.module_has_book(module, b)]
         try:
-            idx = window.BOOKS.index(book)
+            idx = books.index(book)
         except ValueError:
             return None
-        module = self._present_module
         if delta > 0:
             if chapter < sword_bridge.chapter_count(book, module):
                 return (book, chapter + 1)
-            if idx < len(window.BOOKS) - 1:
-                return (window.BOOKS[idx + 1], 1)
+            if idx < len(books) - 1:
+                return (books[idx + 1], 1)
             return None
         if chapter > 1:
             return (book, chapter - 1)
         if idx > 0:
-            prev = window.BOOKS[idx - 1]
+            prev = books[idx - 1]
             return (prev, sword_bridge.chapter_count(prev, module))
         return None
 
@@ -214,7 +219,7 @@ class PresentController:
         without moving the source pane. Opens on the page holding `verse` when
         one is given. A book the presenting module doesn't carry leaves the
         slide unchanged and says so, rather than projecting a blank."""
-        if book not in window.BOOKS:
+        if book not in window.nav_books():
             return
         chapter = max(1, min(chapter,
                              sword_bridge.chapter_count(book,

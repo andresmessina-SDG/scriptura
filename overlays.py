@@ -153,19 +153,26 @@ class OverlayManager:
         query = m.group(1).strip().lower().replace(' ', '')
         if not query:
             return None
+        def hit(b):
+            # Only an appendix book needs to know what is open — it has no
+            # app-space chapter count, so "Tobit 5" would clamp to Tobit 1.
+            # The 66 are counted in app space, which keeps parsing
+            # "John 3:16" independent of the panes.
+            module = None if b in window.BOOKS else self._book_module(b)
+            ch_max = sword_bridge.chapter_count_in(module, b)
+            return (b, max(1, min(chapter, ch_max)), verse)
+
+        books = window.nav_books()
         # Exact match wins over prefix — "Job" must not silently become "Joshua".
-        for b in window.BOOKS:
+        for b in books:
             if b.lower().replace(' ', '') == query:
-                ch_max = sword_bridge.chapter_count(b)
-                return (b, max(1, min(chapter, ch_max)), verse)
-        for b in window.BOOKS:
+                return hit(b)
+        for b in books:
             if b.lower().replace(' ', '').startswith(query):
-                ch_max = sword_bridge.chapter_count(b)
-                return (b, max(1, min(chapter, ch_max)), verse)
+                return hit(b)
         full = sword_bridge._CROSS_REF_ABBREVS.get(query)
-        if full and full in window.BOOKS:
-            ch_max = sword_bridge.chapter_count(full)
-            return (full, max(1, min(chapter, ch_max)), verse)
+        if full and full in books:
+            return hit(full)
         return None
 
     # ── Menu sidebar ─────────────────────────────────────────────────────────
