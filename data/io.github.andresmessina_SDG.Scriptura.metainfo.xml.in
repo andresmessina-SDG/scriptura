@@ -136,6 +136,27 @@
   </content_rating>
 
   <releases>
+    <release version="1.5.0" date="2026-08-19">
+      <description>
+        <p>Scriptura in Spanish, and the books it would not open.</p>
+        <ul>
+          <li>The app itself now reads in Spanish — menus, dialogs, the Module Manager, first run, the reading plans, the liturgical calendar and all 66 book names. Pick the language in the header on the first screen, or from the menu at any time; each is listed in its own name, because the reader who needs it is by definition looking at words they may not read.</li>
+          <li>Spanish Bibles to read in it: La Biblia de las Américas and the Nueva Biblia de las Américas from the Lockman Foundation, the Versión Biblia Libre, and Straubinger's, whose 13,099 footnotes are paragraph-length commentary rather than variant marks.</li>
+          <li>A Spanish reading of the whole Bible — La Biblia en Español Sencillo, all 1,189 chapters, the words on the page and the words in the ear from one publisher.</li>
+          <li>The deuterocanonical books. A translation that carries them now shows them in an appendix after Revelation, so Tobit, Judith, Sirach and the Maccabees open like any other book. Until now asking for one silently handed you Revelation instead.</li>
+          <li>Every dictionary you install now appears, whatever language it is in. So do the Strong's numbers in the Spanish texts that carry them, which the reader could search but never see.</li>
+          <li>The space between letters is yours to open, from the typeface's own metrics up to a fifth of the type size — the best-supported thing typography can do for a reader who finds text hard going. OpenDyslexic is bundled beside it, offered honestly: the evidence for it is weak, and the app says so where you choose it.</li>
+          <li>Turn on the desktop's High Contrast and the app's own edges come with it — chips, swatches, cards, buttons and panel borders all drawn above the contrast the guidelines ask of a control's boundary. Nothing moves and nothing resizes.</li>
+          <li>Quiet the rest of the page: an optional reading focus that keeps the passage you are in on lit paper and lays the rest back under a veil of that same paper. It follows your scrolling, not your cursor.</li>
+          <li>Readings appear on the desktop's media controls — the media keys, the lock screen and the Shell — named by what they are, with play, pause, skip back, speed and volume.</li>
+          <li>The app draws its own icons now, so the toolbar is the same line art on every desktop instead of whatever the local icon theme happened to supply. The window controls are still the desktop's own.</li>
+          <li>First run opens on a Bible and a commentary rather than the same text twice, installs the collection you choose for real, and hands you the gestures reference where the gestures are taught.</li>
+          <li>The page holds still. Flipping the theme, showing footnote markers, switching to old-style figures and lighting the drop cap all recolour the chapter you are reading instead of rebuilding it, and your place is held through the rebuilds that remain — including in poetry, where it used to slip.</li>
+          <li>Nineteenth-century plates join the imagery pack, and an installed pack that has fallen behind now offers its own update.</li>
+          <li>A settings file the app cannot read is set aside rather than overwritten, a backup that did not reach the disk says so, and an archive that tries to write through a symlink is refused.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.4.0" date="2026-07-27">
       <description>
         <p>Chapters read aloud, and passages you can take with you.</p>

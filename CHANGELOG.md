@@ -8,6 +8,31 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Added
 
+- **Scriptura speaks Spanish.** The whole application — menus, dialogs,
+  the Module Manager, first run, the reading plans, the liturgical
+  calendar and all 66 book names. A picker sits in the header of the
+  first screen you meet and in the menu thereafter, each language listed
+  in its own name.
+- **Spanish Bibles, and a Spanish reading.** La Biblia de las Américas
+  and the Nueva Biblia de las Américas (Lockman), the Versión Biblia
+  Libre, and Straubinger's, whose 13,099 footnotes are paragraph-length
+  commentary. La Biblia en Español Sencillo brings text and narration
+  from one publisher, all 1,189 chapters.
+- **The deuterocanonical books.** A translation that carries them shows
+  them in an appendix after Revelation. They were unreachable before:
+  the navigation stopped at 66 books, and asking a versification for a
+  book it has never heard of clamps to its last one, so Tobit read back
+  Revelation without anything looking wrong.
+- **Every dictionary you install now appears**, whatever language it is
+  in. The list had been filtered to English, which hid a dictionary the
+  reader had gone to the Module Manager and installed on purpose.
+- **The app draws its own icons.** The toolbar is the same line art on
+  every desktop instead of whatever the local icon theme supplies — a
+  KDE reader was meeting colour cartoons. The window controls are still
+  the desktop's own.
+- **Nineteenth-century plates** join the imagery pack, and an installed
+  pack that has fallen behind the published one now offers its update.
+
 - **Letter spacing.** Appearance → Advanced now opens the space between
   letters, from the face's own metrics up to a fifth of the type size.
   Widening it is the best-supported thing typography can do for a reader
@@ -73,6 +98,26 @@ semver-ish — 0.x was the pre-Flathub testing track.
   addable or removable later from the Module Manager.
 
 ### Fixed
+
+- **Strong's numbers were invisible in the Spanish texts that carry
+  them.** SpaRV1909 writes `Strong:` and both copies of the renderer
+  read `strong:`, so a fully tagged Bible showed none of its 31 tagged
+  verses in Genesis 1 — while search, which ignored case all along,
+  found what the page refused to mark.
+- **Texts imported from eBible keep their Strong's numbers** instead of
+  discarding them at import, and an eBible translation that has fallen
+  behind its source now offers an Update — the button used to be there
+  whether or not there was anything to update.
+- **The page holds still.** Flipping the theme, showing footnote
+  markers, switching to old-style figures and lighting the drop cap
+  recolour the chapter instead of rebuilding it; where a rebuild remains,
+  your reading place is held through it, including in poetry, where the
+  probe used to land between lines and lose the position.
+- **A settings file the app cannot read is set aside, not overwritten.**
+  A backup that did not reach the disk now says so, and a module archive
+  that tries to write through a symlink is refused.
+- **The lexicon hint no longer fires where tapping a word does nothing** —
+  it is now gated on the text actually carrying Strong's numbers.
 
 - **A long footnote now opens.** Where a note runs to an essay rather
   than a line — Straubinger's Spanish Bible writes 2,400 characters of
