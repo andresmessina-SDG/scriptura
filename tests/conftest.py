@@ -18,3 +18,7 @@ import i18n  # noqa: E402  (after gettext.install so its module-level _ binds)
 # setattr (not `builtins.book_label = …`): the builtins module has no declared
 # book_label attribute, so a direct assignment trips mypy's [attr-defined].
 setattr(builtins, 'book_label', i18n.book_label)
+# C_() disambiguates one English word that needs two Spanish ones (the search
+# panel's heading is a noun, the button that opens it a verb). Same bootstrap,
+# same reason: without it a test that builds such a widget hits NameError.
+setattr(builtins, 'C_', i18n.C_)

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scriptura\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-19 10:55-0600\n"
+"POT-Creation-Date: 2026-08-19 11:32-0600\n"
 "PO-Revision-Date: 2026-08-16 00:00+0000\n"
 "Last-Translator: Scriptura\n"
 "Language-Team: Spanish\n"
@@ -2025,7 +2025,7 @@ msgstr "Se cargó {entry}"
 msgid "Brief entry (Abbott-Smith)"
 msgstr "Entrada breve (Abbott-Smith)"
 
-#: lexicon_panel.py:640 pane_search.py:444 search_panel.py:348
+#: lexicon_panel.py:640 pane_search.py:444 search_panel.py:351
 msgid "Searching…"
 msgstr "Buscando…"
 
@@ -3101,7 +3101,7 @@ msgstr "Referencias cruzadas ({letter}) · versículo {v}"
 msgid "Footnote ({letter}) · verse {v}"
 msgstr "Nota al pie ({letter}) · versículo {v}"
 
-#: pane_search.py:101 pane_search.py:104 search_panel.py:436
+#: pane_search.py:101 pane_search.py:104 search_panel.py:439
 msgid "Search this module"
 msgstr "Buscar en este módulo"
 
@@ -3109,7 +3109,7 @@ msgstr "Buscar en este módulo"
 msgid "Search this module…"
 msgstr "Buscar en este módulo…"
 
-#: pane_search.py:127 search_panel.py:183
+#: pane_search.py:127 search_panel.py:186
 msgid ""
 "Phrase: \"living water\" · either: bread OR wine · exclude: faith -works · "
 "prefix: baptiz*"
@@ -3125,8 +3125,8 @@ msgstr "Coincidencia anterior"
 msgid "Next match"
 msgstr "Coincidencia siguiente"
 
-#: pane_search.py:162 pane_search.py:163 search_panel.py:189
-#: search_panel.py:190
+#: pane_search.py:162 pane_search.py:163 search_panel.py:192
+#: search_panel.py:193
 msgid "Match case"
 msgstr "Distinguir mayúsculas y minúsculas"
 
@@ -3155,7 +3155,7 @@ msgstr "Indexando…"
 msgid "Indexing {idx}/{total}"
 msgstr "Indexando {idx}/{total}"
 
-#: pane_search.py:502 search_panel.py:404 study_journal.py:659
+#: pane_search.py:502 search_panel.py:407 study_journal.py:659
 msgid "No matches"
 msgstr "Sin coincidencias"
 
@@ -3326,80 +3326,81 @@ msgstr "Epístolas paulinas"
 msgid "General Epistles"
 msgstr "Epístolas generales"
 
-#: search_panel.py:151 window.py:510 window.py:2651
+#: search_panel.py:153
+msgctxt "panel heading"
 msgid "Search"
-msgstr "Buscar"
+msgstr "Búsqueda"
 
-#: search_panel.py:157
+#: search_panel.py:160
 msgid "Close search (Esc)"
 msgstr "Cerrar la búsqueda (Esc)"
 
-#: search_panel.py:158
+#: search_panel.py:161
 msgid "Close search"
 msgstr "Cerrar la búsqueda"
 
-#: search_panel.py:174
+#: search_panel.py:177
 msgid "Search one module, or “All Bibles” for every translation at once"
 msgstr ""
 "Busque en un módulo, o en «Todas las Biblias» para hacerlo en todas las "
 "traducciones a la vez"
 
-#: search_panel.py:181
+#: search_panel.py:184
 msgid "Search…"
 msgstr "Buscar…"
 
-#: search_panel.py:209
+#: search_panel.py:212
 msgid "Clear"
 msgstr "Limpiar"
 
-#: search_panel.py:211
+#: search_panel.py:214
 msgid "Clear search history"
 msgstr "Borrar el historial de búsquedas"
 
-#: search_panel.py:255
+#: search_panel.py:258
 msgid "Search results"
 msgstr "Resultados de la búsqueda"
 
-#: search_panel.py:266
+#: search_panel.py:269
 msgid "Module to search"
 msgstr "Módulo en el que buscar"
 
-#: search_panel.py:267
+#: search_panel.py:270
 msgid "Results by section"
 msgstr "Resultados por sección"
 
-#: search_panel.py:283 search_panel.py:460
+#: search_panel.py:286 search_panel.py:463
 msgid "All Bibles"
 msgstr "Todas las Biblias"
 
-#: search_panel.py:296
+#: search_panel.py:299
 msgid "Building search index…"
 msgstr "Construyendo el índice de búsqueda…"
 
-#: search_panel.py:300
+#: search_panel.py:303
 #, python-brace-format
 msgid "Building search index… {book} ({idx}/{total})"
 msgstr "Construyendo el índice de búsqueda… {book} ({idx}/{total})"
 
-#: search_panel.py:393
+#: search_panel.py:396
 #, python-brace-format
 msgid "Showing first {n} results — try a more specific search."
 msgstr ""
 "Se muestran los primeros {n} resultados; pruebe con una búsqueda más "
 "concreta."
 
-#: search_panel.py:397
+#: search_panel.py:400
 #, python-brace-format
 msgid "{n} verse found"
 msgid_plural "{n} verses found"
 msgstr[0] "{n} versículo encontrado"
 msgstr[1] "{n} versículos encontrados"
 
-#: search_panel.py:405
+#: search_panel.py:408
 msgid "Try a different word or phrase, or pick another module."
 msgstr "Pruebe con otra palabra o frase, o elija otro módulo."
 
-#: search_panel.py:437
+#: search_panel.py:440
 msgid ""
 "Type a word or phrase above. The chart shows where matches cluster across "
 "the Bible."
@@ -3407,20 +3408,20 @@ msgstr ""
 "Escriba arriba una palabra o una frase. El gráfico muestra dónde se agrupan "
 "las coincidencias a lo largo de la Biblia."
 
-#: search_panel.py:440
+#: search_panel.py:443
 msgid "Recent searches"
 msgstr "Búsquedas recientes"
 
-#: search_panel.py:473 search_panel.py:474
+#: search_panel.py:476 search_panel.py:477
 msgid "Remove from history"
 msgstr "Quitar del historial"
 
-#: search_panel.py:650
+#: search_panel.py:653
 #, python-brace-format
 msgid "Showing first {cap} of {total}"
 msgstr "Se muestran los primeros {cap} de {total}"
 
-#: search_panel.py:652
+#: search_panel.py:655
 msgid ""
 "F3 walks the full list; narrow the query or use a book filter for fewer "
 "matches."
@@ -3428,7 +3429,7 @@ msgstr ""
 "F3 recorre la lista completa; concrete la consulta o filtre por libro para "
 "obtener menos coincidencias."
 
-#: search_panel.py:686
+#: search_panel.py:689
 #, python-brace-format
 msgid "Result {i} of {n}"
 msgstr "Resultado {i} de {n}"
@@ -4343,6 +4344,10 @@ msgstr "Más acciones"
 #: window.py:509
 msgid "Search (Ctrl+F)"
 msgstr "Buscar (Ctrl+F)"
+
+#: window.py:510 window.py:2651
+msgid "Search"
+msgstr "Buscar"
 
 #: window.py:518 window.py:519
 msgid "Single pane"

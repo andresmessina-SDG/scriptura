@@ -148,7 +148,10 @@ class SearchPanel(Gtk.Box):
         header.set_margin_top(10)
         header.set_margin_bottom(8)
 
-        title = Gtk.Label(label=_('Search'), xalign=0, hexpand=True)
+        # Heading, not an action: a noun in Spanish (Búsqueda), where the
+        # button that opens this panel is a verb (Buscar).
+        title = Gtk.Label(label=C_('panel heading', 'Search'),
+                          xalign=0, hexpand=True)
         title.add_css_class('title-4')
         header.append(title)
 

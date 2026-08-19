@@ -19,6 +19,21 @@ _ = _gettext.gettext
 ngettext = _gettext.ngettext
 
 
+def C_(context: str, message: str) -> str:
+    """Translate `message` in `context`.
+
+    English reuses one word where other languages need two. "Search" is the
+    search panel's heading — a noun, `Búsqueda` — and also the button that
+    opens it, a verb, `Buscar`. One msgid cannot be both, and whichever
+    translation wins, the other place reads wrong in a way no English
+    reader can see. The context splits them.
+
+    Named C_ after the GNOME convention; meson's `glib` gettext preset
+    already extracts it.
+    """
+    return _gettext.pgettext(context, message)
+
+
 #: The UI languages the app can offer, in their own names. A code only
 #: reaches the picker when its compiled catalogue is actually installed
 #: (see available_languages), so this table may name more than a given

@@ -76,6 +76,8 @@ def _setup_gettext():
     import builtins
     import i18n
     builtins.book_label = i18n.book_label
+    # Same reason: the UI modules call it unqualified, like _() and ngettext().
+    builtins.C_ = i18n.C_
 
 
 _setup_gettext()

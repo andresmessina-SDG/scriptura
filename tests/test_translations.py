@@ -66,6 +66,44 @@ def _parse_po(path):
     return entries
 
 
+def _parse_po_contexts(path):
+    """[(msgid, msgctxt|None, [msgstr…])] — _parse_po drops the context,
+    which is exactly what the check below needs to see."""
+    entries, cur, key = [], None, None
+
+    def flush():
+        if cur and cur['id']:
+            entries.append((cur['id'], cur['ctx'], cur['strs']))
+
+    for raw in open(path, encoding='utf-8'):
+        line = raw.rstrip('\n')
+        if not line.strip() or line.startswith('#'):
+            continue
+        if line.startswith('msgctxt '):
+            flush()
+            cur = {'id': '', 'ctx': line[8:].strip()[1:-1], 'strs': []}
+            key = 'ctx'
+        elif line.startswith('msgid '):
+            if key != 'ctx':
+                flush()
+                cur = {'id': '', 'ctx': None, 'strs': []}
+            cur['id'] = line[6:].strip()[1:-1]
+            key = 'id'
+        elif line.startswith('msgstr'):
+            cur['strs'].append(line.split(' ', 1)[1].strip()[1:-1])
+            key = 'str'
+        elif line.startswith('"'):
+            chunk = line.strip()[1:-1]
+            if key == 'id':
+                cur['id'] += chunk
+            elif key == 'ctx':
+                cur['ctx'] += chunk
+            elif key == 'str':
+                cur['strs'][-1] += chunk
+    flush()
+    return entries
+
+
 @pytest.fixture(params=languages())
 def catalogue(request):
     lang = request.param
@@ -133,7 +171,7 @@ def test_no_string_is_left_behind_by_the_source(catalogue, tmp_path):
     pot = tmp_path / 'scriptura.pot'
     r = subprocess.run(
         ['xgettext', '--files-from=po/POTFILES.in', '--from-code=UTF-8',
-         '--keyword=_', '--keyword=N_', '-o', str(pot)],
+         '--keyword=_', '--keyword=N_', '--keyword=C_:1c,2', '-o', str(pot)],
         cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
 
@@ -148,6 +186,27 @@ def test_no_string_is_left_behind_by_the_source(catalogue, tmp_path):
     assert not stranded, (
         f'{lang}: {len(stranded)} strings the source has but the catalogue '
         f'does not translate — {stranded[:5]}')
+
+
+def test_a_context_actually_buys_a_different_translation(catalogue):
+    """A msgid carrying a msgctxt exists only because one English word needs
+    two words in some other language — "Search" is the panel's heading, a
+    noun, and also the button that opens it, a verb. If both entries end up
+    with the same string the context earned nothing, and the most likely
+    cause is a merge that quietly copied one onto the other.
+    """
+    lang, path = catalogue
+    plain, with_ctx = {}, {}
+    for msgid, ctx, strs in _parse_po_contexts(path):
+        if not strs or not strs[0]:
+            continue
+        (with_ctx if ctx else plain).setdefault(msgid, []).append(strs[0])
+
+    collapsed = [msgid for msgid, vals in with_ctx.items()
+                 if msgid in plain and any(v in plain[msgid] for v in vals)]
+    assert not collapsed, (
+        f'{lang}: {collapsed} is translated the same with and without its '
+        f'context, so the context distinguishes nothing')
 
 
 def test_every_book_name_is_translated(catalogue):
