@@ -3364,7 +3364,9 @@ class BibleWindow(Adw.ApplicationWindow):
             'scriptura-globe-symbolic'))
         drop = Gtk.DropDown(
             model=Gtk.StringList.new([n for _c, n in languages]))
-        current = settings.get('ui_language')
+        # The language in effect, which is the desktop's when nothing has
+        # been chosen — see i18n.current_language.
+        current = settings.get('ui_language') or i18n.current_language()
         drop.set_selected(codes.index(current) if current in codes else 0)
         drop.set_valign(Gtk.Align.CENTER)
         set_accessible_label(drop, _('Language'))

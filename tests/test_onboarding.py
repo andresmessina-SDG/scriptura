@@ -161,3 +161,56 @@ def test_lexicon_hint_ignores_a_hidden_second_pane(isolated, monkeypatch):
     win.lex_toggle = type('T', (), {'get_active': lambda self: True})()
     window.BibleWindow._on_lex_toggle(win, None)
     assert shown == []
+
+
+# ── The welcome window's language picker and the install ────────────────────
+
+def test_the_language_picker_locks_once_an_install_starts(monkeypatch):
+    """Switching language rebuilds the window — which, mid-install, threw
+    the reader back to the chooser with the download still running and free
+    to start a second one. Once a bundle is chosen the language choice is
+    spent: the window hands off to the reading window as soon as it lands."""
+    import gi
+    gi.require_version('Gtk', '4.0')
+    from gi.repository import Gtk, Gdk
+    Gtk.init_check()
+    if Gdk.Display.get_default() is None:
+        pytest.skip('builds real widgets; no display here')
+
+    import threading
+    import i18n
+    import welcome
+
+    # A source checkout has no compiled catalogues, so only English is on
+    # offer and the picker is (rightly) not built at all. Give it two.
+    monkeypatch.setattr(i18n, 'available_languages',
+                        lambda: [('en', 'English'), ('es', 'Español')])
+    monkeypatch.setattr(threading, 'Thread',
+                        lambda *a, **k: type('T', (), {'start': lambda s: None})())
+    win = welcome.WelcomeWindow(on_ready=lambda *a: None)
+    assert win._lang_drop.get_sensitive()
+
+    win._on_card_clicked(None, 'reading')
+    assert win._stack.get_visible_child_name() == 'progress'
+    assert not win._lang_drop.get_sensitive(), 'the picker stayed live mid-install'
+
+    win._on_back(None)
+    assert win._lang_drop.get_sensitive(), 'the picker stayed locked after Back'
+
+
+def test_a_rebuild_leaves_the_reader_on_the_page_they_were_on(monkeypatch):
+    """Belt and braces for the same defect: a stack rebuilt from scratch
+    shows its first page unless told otherwise."""
+    import gi
+    gi.require_version('Gtk', '4.0')
+    from gi.repository import Gtk, Gdk
+    Gtk.init_check()
+    if Gdk.Display.get_default() is None:
+        pytest.skip('builds real widgets; no display here')
+
+    import welcome
+
+    win = welcome.WelcomeWindow(on_ready=lambda *a: None)
+    win._stack.set_visible_child_name('progress')
+    win._rebuild()
+    assert win._stack.get_visible_child_name() == 'progress'

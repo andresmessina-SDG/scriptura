@@ -67,6 +67,27 @@ def available_languages() -> list[tuple[str, str]]:
     return out
 
 
+def current_language() -> str:
+    """The language actually in effect — what the reader is looking at.
+
+    Not the same as the `ui_language` setting. With no override the desktop
+    decides, so a picker that preselected the setting would show English to
+    a reader whose Spanish desktop is handing them a Spanish app, and then
+    change nothing when they chose Spanish. Ask gettext which catalogue it
+    resolved; no catalogue means the untranslated source, i.e. English.
+    """
+    import os
+    path = _gettext.find(DOMAIN, localedir())
+    if not path:
+        return 'en'
+    parts = os.path.normpath(path).split(os.sep)
+    if len(parts) < 3:
+        return 'en'
+    # <localedir>/<code>/LC_MESSAGES/<domain>.mo — and a regional code like
+    # es_MX shares this app's es catalogue, so keep the language half.
+    return parts[-3].split('_')[0]
+
+
 def install_language(code: str | None) -> None:
     """Switch the running app's catalogue.
 

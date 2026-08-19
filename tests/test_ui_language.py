@@ -90,3 +90,34 @@ def test_choosing_english_is_not_the_same_as_following_the_desktop():
     away from the reader who most needs it."""
     assert settings._defaults['ui_language'] is None
     assert 'en' in dict(i18n.LANGUAGE_NAMES)
+
+
+def test_the_picker_reports_the_language_actually_in_effect(tmp_path,
+                                                            monkeypatch):
+    """With no override the desktop decides, so preselecting the *setting*
+    showed English to a reader whose Spanish desktop had handed them a
+    Spanish app — and then changed nothing when they chose Spanish."""
+    monkeypatch.setattr(i18n, 'localedir', lambda: str(tmp_path))
+    d = tmp_path / 'es' / 'LC_MESSAGES'
+    d.mkdir(parents=True)
+    (d / 'scriptura.mo').write_bytes(b'')
+    monkeypatch.setenv('LANGUAGE', 'es')
+    assert i18n.current_language() == 'es'
+
+
+def test_a_regional_code_keeps_its_language(tmp_path, monkeypatch):
+    """es_MX reads the same es catalogue, and the picker lists 'es'."""
+    monkeypatch.setattr(i18n, 'localedir', lambda: str(tmp_path))
+    d = tmp_path / 'es_MX' / 'LC_MESSAGES'
+    d.mkdir(parents=True)
+    (d / 'scriptura.mo').write_bytes(b'')
+    monkeypatch.setenv('LANGUAGE', 'es_MX')
+    assert i18n.current_language() == 'es'
+
+
+def test_no_catalogue_means_english(tmp_path, monkeypatch):
+    """English is the source language and ships no catalogue, so 'gettext
+    found nothing' is the same statement as 'the app is in English'."""
+    monkeypatch.setattr(i18n, 'localedir', lambda: str(tmp_path))
+    monkeypatch.setenv('LANGUAGE', 'en')
+    assert i18n.current_language() == 'en'

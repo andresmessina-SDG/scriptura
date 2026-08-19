@@ -205,7 +205,10 @@ class WelcomeWindow(Adw.ApplicationWindow):
         if len(self._languages) < 2:
             return None
         codes = [c for c, _n in self._languages]
-        current = settings.get('ui_language')
+        # What is on screen right now, not merely what was chosen: with no
+        # override the desktop decides, and a picker claiming English over a
+        # Spanish page is worse than no picker.
+        current = settings.get('ui_language') or i18n.current_language()
         drop = Gtk.DropDown(
             model=Gtk.StringList.new([n for _c, n in self._languages]))
         drop.set_selected(codes.index(current) if current in codes else 0)
@@ -213,6 +216,8 @@ class WelcomeWindow(Adw.ApplicationWindow):
         drop.set_tooltip_text(_('Language'))
         set_accessible_label(drop, _('Language'))
         drop.connect('notify::selected', self._on_language_chosen)
+        drop.set_sensitive(not getattr(self, '_installing', False))
+        self._lang_drop = drop
         return drop
 
     def _on_language_chosen(self, drop, _param):
@@ -228,6 +233,7 @@ class WelcomeWindow(Adw.ApplicationWindow):
         self._rebuild()
 
     def _rebuild(self):
+        page = self._stack.get_visible_child_name()
         self.set_title(_('Welcome to Scriptura'))
         toolbar_view = Adw.ToolbarView()
         toolbar_view.add_top_bar(self._build_header())
@@ -238,6 +244,8 @@ class WelcomeWindow(Adw.ApplicationWindow):
         self._stack.add_named(self._build_progress(), 'progress')
         toolbar_view.set_content(self._stack)
         self.set_content(toolbar_view)
+        if page:
+            self._stack.set_visible_child_name(page)
 
     # ── Chooser page ───────────────────────────────────────────────────────
 
@@ -380,6 +388,9 @@ class WelcomeWindow(Adw.ApplicationWindow):
         return card
 
     def _on_card_clicked(self, _btn, bundle):
+        self._installing = True
+        if getattr(self, '_lang_drop', None) is not None:
+            self._lang_drop.set_sensitive(False)
         self._back_btn.set_visible(False)
         self._spinner.set_visible(True)
         self._spinner.start()
@@ -423,6 +434,9 @@ class WelcomeWindow(Adw.ApplicationWindow):
         return box
 
     def _on_back(self, _btn):
+        self._installing = False
+        if getattr(self, '_lang_drop', None) is not None:
+            self._lang_drop.set_sensitive(True)
         self._stack.set_visible_child_name('choose')
 
     # ── Install flow ───────────────────────────────────────────────────────
