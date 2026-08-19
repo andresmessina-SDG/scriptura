@@ -180,7 +180,6 @@ def present_place_dialog(root, place):
         pic.set_can_shrink(True)
         pic.set_alternative_text(
             imagery_bridge.place_display_name(place['ancient_name']))
-        pic.add_css_class('imagery-pic')
         pic.set_size_request(-1, 280)
         box.append(pic)
 
@@ -769,7 +768,6 @@ class ImageryReader:
         pic.set_can_shrink(True)
         pic.set_hexpand(True)
         pic.set_alternative_text(alt or '')
-        pic.add_css_class('imagery-pic')
         # Gtk.Picture under-requests its height, so in a verse with several
         # cards the images get squeezed to slivers (worse the more cards
         # share the pane). Reserve a definite height from the image's aspect

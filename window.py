@@ -3538,7 +3538,6 @@ class BibleWindow(Adw.ApplicationWindow):
         card.append(colour_cap)
         self._paper_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
                                   spacing=8, homogeneous=True, hexpand=True)
-        self._paper_box.add_css_class('paper-flow')
         card.append(self._paper_box)
         self._rebuild_colour_row()
 
@@ -3554,7 +3553,6 @@ class BibleWindow(Adw.ApplicationWindow):
         # toggles slot in as rows without a redesign, and ship off unless
         # they earn a place in that five.
         adv = Gtk.Expander(label=_('Advanced'))
-        adv.add_css_class('appearance-advanced')
         adv_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         adv_box.set_margin_top(6)
 

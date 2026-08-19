@@ -344,7 +344,6 @@ class ArchaeologyReader:
         plate.append(self._clamp(pic, _IMG_W))
 
         txt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        txt.add_css_class('stone-text')
         txt.append(self._label(entry['title'], 'stone-title', selectable=True))
 
         meta_bits = [b for b in (entry['place'], entry['date'],

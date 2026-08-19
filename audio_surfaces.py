@@ -124,7 +124,6 @@ class DevotionalAudio(_Surface):
         self._devot_media = None
         self._devot_play_btn = Gtk.Button(icon_name='scriptura-media-playback-start-symbolic')
         self._devot_play_btn.add_css_class('flat')
-        self._devot_play_btn.add_css_class('devotional-play')
         self._devot_play_btn.connect('clicked', self._on_devot_play)
         self._devot_alt_btn = Gtk.Button()
         self._devot_alt_btn.add_css_class('flat')
@@ -133,7 +132,6 @@ class DevotionalAudio(_Surface):
         # Hidden until the row is pointed at or focused — see the CSS; the
         # widget stays in the layout so revealing it never shifts the row.
         audio = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
-        audio.add_css_class('devotional-audio')
         # A hairline of its own: listening and moving between days are two
         # different things, and undivided they read as one undifferentiated
         # strip with the back arrow pushed out of the place the eye expects.
@@ -394,7 +392,6 @@ class ReadingAudio(_Surface):
         super().__init__(pane)
         self._reading_audio = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
                                       spacing=2)
-        self._reading_audio.add_css_class('devotional-audio')
         # Headphones, not a play glyph: this opens the listening surface, and
         # the play control lives on that surface. It is the split Kindle and
         # Substack both make — headphones mean "there is a reading of this",
