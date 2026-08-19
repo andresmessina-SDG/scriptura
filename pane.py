@@ -2406,11 +2406,19 @@ class BiblePane(Gtk.Box):
         for the requested book/chapter — typically NT-only modules
         (SBLGNT, MorphGNT) navigated to an OT passage, or vice versa."""
         if book in sword_bridge.DEUTEROCANON:
-            # Not a coverage gap: a 66-book Bible is complete on its own
-            # terms, and telling its reader to "pick a Bible with full
-            # coverage" would name the wrong problem.
-            body = _('{module} follows a canon of 66 books, which does not '
-                     'include this one.').format(module=self._module)
+            if sword_bridge.module_has_book(self._module, book):
+                # The module carries the book but prints nothing here.
+                # KJVA's Additions to Esther 1-9 are the case: single-verse
+                # '…' placeholders, because that material is set inside
+                # Esther itself.
+                body = _('{module} has no text under this chapter.').format(
+                    module=self._module)
+            else:
+                # Not a coverage gap. Saying the module "follows a canon of
+                # 66 books" was worse than vague — it is false of Wycliffe,
+                # which carries nine of these books and simply lacks this
+                # one. Name the book, not the canon.
+                body = _('%s isn’t in this translation.') % book_label(book)
         else:
             body = _('{module} doesn’t include this passage. Some modules cover '
                      'only the Old or New Testament — pick a Bible with full '
@@ -2574,8 +2582,14 @@ class BiblePane(Gtk.Box):
         # only; navigating to Psalms returns the right verse_max but
         # all empty content). Show a friendly empty state instead of
         # rendering a chapter heading + bare verse numbers.
+        # KJVA marks material printed elsewhere with a bare '…' — every
+        # verse of Additions to Esther 1-9 is one, because those additions
+        # are set inside Esther. Stripping it here is what keeps the reader
+        # from meeting a chapter heading over a single ellipsis. Individual
+        # '…' verses inside a real chapter (Additions to Esther 10) are
+        # untouched; only a chapter that is nothing else counts as empty.
         all_empty = not any(
-            re.sub(r'<[^>]+>', '', str(h)).strip() for _, h in verses)
+            re.sub(r'<[^>]+>', '', str(h)).strip(' \t\r\n…') for _, h in verses)
 
         # Wrong/missing cipher key on an encrypted module. Two shapes:
         # uncompressed modules decrypt to gibberish; compressed modules

@@ -175,7 +175,7 @@ class PresentController:
         # Only the books this module can answer for: stepping off Revelation
         # into an appendix it does not carry would land on a chapter with no
         # verses and stall the arrow. For a 66-book module this is BOOKS.
-        books = [b for b in window.nav_books()
+        books = [b for b in window.nav_books([module])
                  if sword_bridge.module_has_book(module, b)]
         try:
             idx = books.index(book)
@@ -219,7 +219,7 @@ class PresentController:
         without moving the source pane. Opens on the page holding `verse` when
         one is given. A book the presenting module doesn't carry leaves the
         slide unchanged and says so, rather than projecting a blank."""
-        if book not in window.nav_books():
+        if book not in window.nav_books([self._present_module]):
             return
         chapter = max(1, min(chapter,
                              sword_bridge.chapter_count(book,

@@ -52,6 +52,14 @@ class OverlayManager:
     def _jump_revealer(self):
         return self._win._jump_revealer
 
+    # The book list the jump bar parses against follows the modules in the
+    # open panes, so it has to be asked for each time, not captured.
+    def nav_books(self):
+        return self._win.nav_books()
+
+    def _book_module(self, book):
+        return self._win._book_module(book)
+
     @property
     def _jump_entry(self):
         return self._win._jump_entry
@@ -162,7 +170,7 @@ class OverlayManager:
             ch_max = sword_bridge.chapter_count_in(module, b)
             return (b, max(1, min(chapter, ch_max)), verse)
 
-        books = window.nav_books()
+        books = self.nav_books()
         # Exact match wins over prefix — "Job" must not silently become "Joshua".
         for b in books:
             if b.lower().replace(' ', '') == query:

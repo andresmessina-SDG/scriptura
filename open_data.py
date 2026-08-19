@@ -202,6 +202,8 @@ def get_cross_refs(book, chapter, verse):
     _load_xref()
     if not _xref:
         return None
+    if book not in _BOOK_IDX:
+        return None          # outside the 66 — _vid has no number for it
     refs = _xref.get(_vid(book, chapter, verse), [])
     return [(b, c, v, f'{b} {c}:{v}') for b, c, v in refs]
 

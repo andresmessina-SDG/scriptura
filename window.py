@@ -81,16 +81,24 @@ DEUTEROCANON = [
 ]
 
 
-def nav_books():
-    """The books navigation offers: the 66, plus the appendix when the
-    setting is on.
+def nav_books(modules, current_book=None):
+    """The books navigation offers, given the modules in use.
 
-    This list is deliberately *not* narrowed to what the open module holds.
-    A dropdown that grew and shrank as the reader switched translations
-    would be more truthful and much worse to use; whether a given module
-    can answer for a given book is sword_bridge.module_has_book's job, and
-    it is asked at the point of navigation."""
-    if settings.get('show_deuterocanon'):
+    The 66 always. The appendix only when one of `modules` actually carries
+    at least one of those books — a reader whose Bibles are all 66-book
+    never meets them, and a reader who opens the KJV with Apocrypha finds
+    them without having to know a setting exists.
+
+    `current_book` keeps the appendix listed while the reader is standing
+    in one of its books. Without it, switching that pane to the ESV would
+    take the list out from under them mid-read; with it they simply get
+    told the ESV has not got this book, and the section leaves once they
+    move back into the 66.
+    """
+    if any(sword_bridge.module_has_book(m, b)
+           for m in modules for b in DEUTEROCANON):
+        return BOOKS + DEUTEROCANON
+    if current_book in DEUTEROCANON:
         return BOOKS + DEUTEROCANON
     return BOOKS
 
@@ -204,8 +212,8 @@ class BibleWindow(Adw.ApplicationWindow):
         # chapter_count, i.e. the SWORD init warming above).
         saved_book = settings.get('last_book')
         saved_chap = settings.get('last_chapter')
-        if (saved_book in nav_books() and isinstance(saved_chap, int)
-                and saved_chap >= 1):
+        if (saved_book in BOOKS + DEUTEROCANON
+                and isinstance(saved_chap, int) and saved_chap >= 1):
             self._current_loc = (saved_book, saved_chap)
         else:
             self._current_loc = ('Genesis', 1)
@@ -384,7 +392,7 @@ class BibleWindow(Adw.ApplicationWindow):
         # index — used by Alt+arrow navigation and the quick-jump bar — but
         # are not visible and have no change handlers. All navigation flows
         # through _go_to(), which writes to them.
-        self.book_drop = Gtk.DropDown(model=Gtk.StringList.new(nav_books()))
+        self.book_drop = Gtk.DropDown(model=Gtk.StringList.new(BOOKS))
         self.book_drop.set_visible(False)
         header.pack_start(self.book_drop)
 
@@ -708,7 +716,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_edit_cipher=self._show_edit_cipher_key,
                                on_modules_changed=self._on_modules_changed,
                                on_open_artifact=self._on_open_artifact,
-                               on_module_switched=self._update_fnote_sensitivity,
+                               on_module_switched=self._on_pane_module_switched,
                                on_hint=self._hints.maybe_fire,
                                on_open_verse=self._open_verse_in_pane2,
                                pane_id=1)
@@ -723,7 +731,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_edit_cipher=self._show_edit_cipher_key,
                                on_modules_changed=self._on_modules_changed,
                                on_open_artifact=self._on_open_artifact,
-                               on_module_switched=self._update_fnote_sensitivity,
+                               on_module_switched=self._on_pane_module_switched,
                                on_hint=self._hints.maybe_fire,
                                on_open_verse=self._open_verse_in_pane2,
                                pane_id=2)
@@ -1147,7 +1155,8 @@ class BibleWindow(Adw.ApplicationWindow):
                     target_v = 1
                 else:
                     try:
-                        target_v = sword_bridge.verse_count(book, ch)
+                        target_v = sword_bridge.verse_count_in(
+                            self._book_module(book), book, ch)
                     except Exception:
                         target_v = 1
                 self._go_to(book, ch, target_v, record=False)
@@ -1242,6 +1251,15 @@ class BibleWindow(Adw.ApplicationWindow):
     @property
     def _nav_fwd(self):
         return self._nav._nav_fwd
+
+    def nav_books(self):
+        return self._nav.nav_books()
+
+    def _sync_nav_books(self):
+        self._nav._sync_nav_books()
+
+    def _book_module(self, book):
+        return self._nav._book_module(book)
 
     def _go_to(self, book, chapter, verse=None, record=True):
         self._nav._go_to(book, chapter, verse, record)
@@ -1732,7 +1750,7 @@ class BibleWindow(Adw.ApplicationWindow):
         header.set_margin_bottom(6)
         box.append(header)
 
-        book    = nav_books()[self.book_drop.get_selected()]
+        book    = self.nav_books()[self.book_drop.get_selected()]
         chapter = self.chapter_drop.get_selected() + 1
         add_content = Adw.ButtonContent(
             icon_name='starred-symbolic',
@@ -2111,7 +2129,7 @@ class BibleWindow(Adw.ApplicationWindow):
         saved_book = settings.get('last_book')
         saved_chap = settings.get('last_chapter')
         last = ((saved_book, saved_chap)
-                if saved_book in nav_books() and isinstance(saved_chap, int)
+                if saved_book in self.nav_books() and isinstance(saved_chap, int)
                 and saved_chap >= 1 else None)
         church_line = None
         collect_key = None
@@ -2454,6 +2472,11 @@ class BibleWindow(Adw.ApplicationWindow):
                 members[0] if keyval == Gdk.KEY_ISO_Left_Tab else members[-1])
         return False
 
+    def _on_pane_module_switched(self):
+        """Everything the window re-derives when a pane changes module."""
+        self._update_fnote_sensitivity()
+        self._sync_nav_books()
+
     def _update_fnote_sensitivity(self):
         """Enable the f* toggle only when a loaded module can actually show
         footnotes, so flipping it never silently does nothing. Disabled (not
@@ -2758,8 +2781,17 @@ class BibleWindow(Adw.ApplicationWindow):
                 pane.select_verse(verse_num)
         if (source_pane._book and source_pane._chapter
                 and self.xref_toggle.get_active()):
-            self._crossref_panel.load(source_pane._book, source_pane._chapter, verse_num)
-            self._crossref_revealer.set_reveal_child(True)
+            if source_pane._book in BOOKS:
+                self._crossref_panel.load(
+                    source_pane._book, source_pane._chapter, verse_num)
+                self._crossref_revealer.set_reveal_child(True)
+            else:
+                # Neither TSK nor OpenBible indexes the books outside the 66,
+                # and the panel reads "no refs" as "no source installed" — so
+                # a verse in Wisdom drew a bar telling the reader to install
+                # TSK, which would not cover Wisdom either. Withdraw the bar
+                # instead, and take any stale one with it.
+                self._crossref_revealer.set_reveal_child(False)
         # They've engaged a verse — the moment to reveal the deeper gesture.
         self._hints.maybe_fire('first_verse_click')
 
@@ -3303,36 +3335,7 @@ class BibleWindow(Adw.ApplicationWindow):
                 _church_values[d.get_selected()]))
         church_row.add_suffix(church_drop)
         nav_group.add(church_row)
-        # The books outside the 66, as an appendix after Revelation. Off by
-        # default. Only a few modules carry them (KJVA, the Vulgate,
-        # RusSynodal, Wycliffe, SpaPlatense); on the rest the appendix rows
-        # show dim, which is the honest answer.
-        dc_row = Adw.ActionRow(title=_('Show deuterocanonical books'))
-        dc_row.add_prefix(
-            Gtk.Image.new_from_icon_name('accessories-dictionary-symbolic'))
-        dc_sw = Gtk.Switch(valign=Gtk.Align.CENTER)
-        dc_sw.set_active(bool(settings.get('show_deuterocanon')))
-        set_accessible_label(dc_sw, _('Show deuterocanonical books'))
-        dc_sw.connect('notify::active', self._on_deuterocanon_switch)
-        dc_row.add_suffix(dc_sw)
-        dc_row.set_activatable_widget(dc_sw)
-        nav_group.add(dc_row)
         return nav_group
-
-    def _on_deuterocanon_switch(self, sw, _p):
-        settings.put('show_deuterocanon', sw.get_active())
-        # book_drop is the invisible index holder every navigation writes
-        # to, so its model has to change with the list. Rebuild it around
-        # the book being read — which is always in the 66 or, when the
-        # appendix is going away, needs to be left somewhere valid.
-        books = nav_books()
-        self.book_drop.set_model(Gtk.StringList.new(books))
-        book = self._current_loc[0]
-        if book in books:
-            self.book_drop.set_selected(books.index(book))
-        else:
-            # The appendix just went away under a reader standing in it.
-            self._go_to('Revelation', 1)
 
     def _build_appearance_row(self):
         """The row whose chevron expands the card below it."""

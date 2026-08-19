@@ -388,9 +388,20 @@ def verse_count(book, chapter, module_name=None):
                 book, chapter = mapped
         vk = _verse_key(module_name)
         vk.setText(f'{book} {chapter}:1')
+        # Same clamp chapter_count guards against: without this the verse
+        # grid for Tobit 5 is Revelation 5's, one verse per button.
+        if book in _DC_OSIS and str(vk.getOSISRef()).split('.')[0] != _DC_OSIS[book]:
+            return 1
         return vk.getVerseMax()
     except Exception:
         return 1
+
+
+def verse_count_in(module_name, book, chapter):
+    """verse_count for a book that may be outside the 66 — see
+    chapter_count_in for why the module has to be named."""
+    return verse_count(book, chapter,
+                       None if book in _ALL_BOOKS else module_name)
 
 
 # ── Cross-versification mapping ──────────────────────────────────────────────
@@ -2601,6 +2612,13 @@ def _parse_cross_ref_text(text):
 
 def get_cross_refs(book, chapter, verse):
     """Return [(book, chapter, verse, label), ...]. Uses OpenBible if downloaded, else TSK."""
+    # Neither source indexes the books outside the 66, and both answer for
+    # them anyway if asked: OpenBible's numeric verse id raises KeyError,
+    # and TSK's VerseKey clamps Baruch 5:4 to Revelation and hands back
+    # Revelation's cross-references under a Baruch label.
+    if book not in _ALL_BOOKS:
+        return None
+
     import open_data
     ob = open_data.get_cross_refs(book, chapter, verse)
     if ob is not None:
