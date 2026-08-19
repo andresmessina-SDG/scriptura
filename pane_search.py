@@ -97,7 +97,7 @@ class PaneSearch:
 
     def build_button(self):
         """Construct + return the toolbar toggle button."""
-        self._btn = Gtk.ToggleButton(icon_name='system-search-symbolic')
+        self._btn = Gtk.ToggleButton(icon_name='scriptura-system-search-symbolic')
         set_accessible_label(self._btn, _('Search this module'))
         self._btn.add_css_class('flat')
         self._btn.add_css_class('pane-action')
@@ -143,14 +143,14 @@ class PaneSearch:
         a11y.set_role(self._status, Gtk.AccessibleRole.STATUS)
         a11y.described_by(self._entry, self._status)
 
-        self._prev_btn = Gtk.Button(icon_name='go-up-symbolic')
+        self._prev_btn = Gtk.Button(icon_name='scriptura-go-up-symbolic')
         self._prev_btn.add_css_class('flat')
         self._prev_btn.set_tooltip_text(_('Previous match'))
         set_accessible_label(self._prev_btn, _('Previous match'))
         self._prev_btn.set_sensitive(False)
         self._prev_btn.connect('clicked', lambda _b: self.step(prev=True))
 
-        self._next_btn = Gtk.Button(icon_name='go-down-symbolic')
+        self._next_btn = Gtk.Button(icon_name='scriptura-go-down-symbolic')
         self._next_btn.add_css_class('flat')
         self._next_btn.set_tooltip_text(_('Next match'))
         set_accessible_label(self._next_btn, _('Next match'))

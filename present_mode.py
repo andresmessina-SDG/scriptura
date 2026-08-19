@@ -299,13 +299,13 @@ class PresentController:
             return btn
 
         self._present_prev_btn = icon_button(
-            'go-previous-symbolic', _('Previous'),
+            'scriptura-go-previous-symbolic', _('Previous'),
             lambda _b: self._present_step(self._present_view.step_prev))
         self._present_next_btn = icon_button(
-            'go-next-symbolic', _('Next'),
+            'scriptura-go-next-symbolic', _('Next'),
             lambda _b: self._present_step(self._present_view.step_next))
         self._present_numbers_btn = icon_button(
-            'view-list-ordered-symbolic', _('Verse numbers'),
+            'scriptura-view-list-ordered-symbolic', _('Verse numbers'),
             lambda b: self._present_view.set_show_numbers(b.get_active()),
             toggle=True)
         # A stylized "V" (Verse) reads better here than any stock icon — the
@@ -323,17 +323,17 @@ class PresentController:
         # Parallel (bilingual) toggle — only meaningful, and only shown, when a
         # second translation is loaded (see _sync_present_controls).
         self._present_parallel_btn = icon_button(
-            'view-dual-symbolic', _('Parallel — both translations'),
+            'scriptura-view-dual-symbolic', _('Parallel — both translations'),
             lambda b: self._present_toggle_parallel(b.get_active()),
             toggle=True)
         self._present_zoom_out_btn = icon_button(
-            'zoom-out-symbolic', _('Smaller text'),
+            'scriptura-zoom-out-symbolic', _('Smaller text'),
             lambda _b: self._present_view.bump_size(-1))
         self._present_zoom_in_btn = icon_button(
-            'zoom-in-symbolic', _('Larger text'),
+            'scriptura-zoom-in-symbolic', _('Larger text'),
             lambda _b: self._present_view.bump_size(1))
         self._present_exit_btn = icon_button(
-            'window-close-symbolic', _('Exit presentation'),
+            'scriptura-window-close-symbolic', _('Exit presentation'),
             lambda _b: self._set_present_mode(False))
 
         strip = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)

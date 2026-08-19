@@ -215,7 +215,7 @@ class CardSheet:
         header.pack_end(save)
         # A card is more often pasted than filed, so the copy sits beside the
         # save rather than behind it.
-        copy = Gtk.Button(icon_name='edit-copy-symbolic')
+        copy = Gtk.Button(icon_name='scriptura-edit-copy-symbolic')
         copy.set_tooltip_text(_('Copy the card'))
         set_accessible_label(copy, _('Copy the card'))
         copy.connect('clicked', lambda _b: self._copy())

@@ -157,7 +157,7 @@ def build_tips_dialog(on_shortcuts: Callable[[], None] | None = None) -> Adw.Dia
         # one has to be told where they all are.
         sc_row = Adw.ActionRow(title=_('Keyboard Shortcuts'),
                                subtitle=_('Every key the app answers to'))
-        sc_row.add_suffix(Gtk.Image(icon_name='go-next-symbolic'))
+        sc_row.add_suffix(Gtk.Image(icon_name='scriptura-go-next-symbolic'))
         sc_row.set_activatable(True)
         sc_row.connect('activated', lambda _r: on_shortcuts())
         controls.add(sc_row)

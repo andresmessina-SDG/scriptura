@@ -122,7 +122,7 @@ class DevotionalAudio(_Surface):
         # the bus. Both of the pane's players can reach it; the last to start
         # owns it, as on any desktop.
         self._devot_media = None
-        self._devot_play_btn = Gtk.Button(icon_name='media-playback-start-symbolic')
+        self._devot_play_btn = Gtk.Button(icon_name='scriptura-media-playback-start-symbolic')
         self._devot_play_btn.add_css_class('flat')
         self._devot_play_btn.add_css_class('devotional-play')
         self._devot_play_btn.connect('clicked', self._on_devot_play)
@@ -258,7 +258,7 @@ class DevotionalAudio(_Surface):
             return
         if self._devot_player is not None and self._devot_player.playing:
             self._devot_player.pause()
-            self._devot_play_btn.set_icon_name('media-playback-start-symbolic')
+            self._devot_play_btn.set_icon_name('scriptura-media-playback-start-symbolic')
             mpris.update(self._devot_media)
             return
         url = devotional_audio.episode_url(self._devot_date,
@@ -283,7 +283,7 @@ class DevotionalAudio(_Surface):
     def _begin_devot_fetch(self):
         self._devot_fetching = True
         stop = _('Stop fetching the reading')
-        self._devot_play_btn.set_icon_name('media-playback-stop-symbolic')
+        self._devot_play_btn.set_icon_name('scriptura-media-playback-stop-symbolic')
         self._devot_play_btn.set_tooltip_text(stop)
         set_accessible_label(self._devot_play_btn, stop)
         a11y.announce(self._devot_play_btn, _('Fetching the reading'))
@@ -298,7 +298,7 @@ class DevotionalAudio(_Surface):
             return
         self._devot_fetching = False
         self._devot_wait.stop()
-        self._devot_play_btn.set_icon_name('media-playback-start-symbolic')
+        self._devot_play_btn.set_icon_name('scriptura-media-playback-start-symbolic')
         # The button's own wording is Morning or Evening, which is a fact
         # about the day rather than about this control — so it is restated
         # from the day, not remembered here.
@@ -314,16 +314,16 @@ class DevotionalAudio(_Surface):
 
     def _start_devotional_audio(self, path):
         if not path:
-            self._devot_play_btn.set_icon_name('media-playback-start-symbolic')
+            self._devot_play_btn.set_icon_name('scriptura-media-playback-start-symbolic')
             return
         if self._devot_player is None:
             self._devot_player = devotional_audio.Player()
         if not self._devot_player.play(path):
-            self._devot_play_btn.set_icon_name('media-playback-start-symbolic')
+            self._devot_play_btn.set_icon_name('scriptura-media-playback-start-symbolic')
             self._report_audio_failure(
                 self._devot_play_btn, _('Could not play the reading'))
             return
-        self._devot_play_btn.set_icon_name('media-playback-pause-symbolic')
+        self._devot_play_btn.set_icon_name('scriptura-media-playback-pause-symbolic')
         self._publish_devot_media()
         # Straight from the fetch's pulse to the reading's position, so the
         # hairline never blinks out between the two.
@@ -376,7 +376,7 @@ class DevotionalAudio(_Surface):
             self._devot_player = None
         mpris.withdraw(self._devot_media)
         self._devot_media = None
-        self._devot_play_btn.set_icon_name('media-playback-start-symbolic')
+        self._devot_play_btn.set_icon_name('scriptura-media-playback-start-symbolic')
         self._devot_progress.set_fraction(0.0)
         self._devot_progress.set_visible(False)
 

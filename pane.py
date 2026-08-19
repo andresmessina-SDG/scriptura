@@ -1350,7 +1350,7 @@ class BiblePane(Gtk.Box):
 
         toolbar.append(Gtk.Box(hexpand=True))
 
-        self._sync_btn = Gtk.ToggleButton(icon_name='changes-allow-symbolic')
+        self._sync_btn = Gtk.ToggleButton(icon_name='scriptura-changes-allow-symbolic')
         self._sync_btn.add_css_class('flat')
         self._sync_btn.add_css_class('pane-action')
         self._sync_btn.set_tooltip_text(_('Following navigation'))
@@ -1358,7 +1358,7 @@ class BiblePane(Gtk.Box):
         self._sync_btn.connect('notify::active', self._on_sync_toggled)
         toolbar.append(self._sync_btn)
 
-        self._chapter_note_btn = Gtk.Button(icon_name='document-edit-symbolic')
+        self._chapter_note_btn = Gtk.Button(icon_name='scriptura-document-edit-symbolic')
         self._chapter_note_btn.add_css_class('flat')
         self._chapter_note_btn.add_css_class('pane-action')
         self._chapter_note_btn.set_tooltip_text(_('Chapter note'))
@@ -1369,7 +1369,7 @@ class BiblePane(Gtk.Box):
 
         toolbar.append(self._search.build_button())
 
-        self._copy_chapter_btn = Gtk.Button(icon_name='edit-copy-symbolic')
+        self._copy_chapter_btn = Gtk.Button(icon_name='scriptura-edit-copy-symbolic')
         self._copy_chapter_btn.add_css_class('flat')
         self._copy_chapter_btn.add_css_class('pane-action')
         self._copy_chapter_btn.set_tooltip_text(_('Copy chapter'))
@@ -1403,14 +1403,14 @@ class BiblePane(Gtk.Box):
         date_nav.set_margin_start(8)
         date_nav.set_margin_end(8)
         date_nav.set_margin_bottom(4)
-        prev_day_btn = Gtk.Button(icon_name='go-previous-symbolic')
+        prev_day_btn = Gtk.Button(icon_name='scriptura-go-previous-symbolic')
         prev_day_btn.add_css_class('flat')
         prev_day_btn.set_tooltip_text(_('Previous day'))
         set_accessible_label(prev_day_btn, _('Previous day'))
         prev_day_btn.connect('clicked', lambda _: self._go_devotional_day(-1))
         self._date_label = Gtk.Label(label='', xalign=0.5, hexpand=True)
         self._date_label.add_css_class('heading')
-        next_day_btn = Gtk.Button(icon_name='go-next-symbolic')
+        next_day_btn = Gtk.Button(icon_name='scriptura-go-next-symbolic')
         next_day_btn.add_css_class('flat')
         next_day_btn.set_tooltip_text(_('Next day'))
         set_accessible_label(next_day_btn, _('Next day'))
@@ -2157,7 +2157,7 @@ class BiblePane(Gtk.Box):
 
     def _on_sync_toggled(self, btn, _param):
         locked = btn.get_active()
-        btn.set_icon_name('changes-prevent-symbolic' if locked else 'changes-allow-symbolic')
+        btn.set_icon_name('scriptura-changes-prevent-symbolic' if locked else 'scriptura-changes-allow-symbolic')
         btn.set_tooltip_text(_('Locked — not following navigation') if locked
                              else _('Following navigation'))
         # When re-enabling "Following navigation", catch up to wherever the rest
@@ -2383,7 +2383,7 @@ class BiblePane(Gtk.Box):
 
     def _display_unsupported_module(self):
         self._show_status_page(
-            'dialog-information-symbolic', self._module,
+            'scriptura-dialog-information-symbolic', self._module,
             _('This module isn’t organized by book and chapter, so it can’t be '
               'read in this pane. Pick a Bible or commentary to read here.'),
             action=(_('Choose another module'),
@@ -2396,7 +2396,7 @@ class BiblePane(Gtk.Box):
         action = ((_('Edit Key'), lambda: self._on_edit_cipher(self._module))
                   if self._on_edit_cipher is not None else None)
         self._show_status_page(
-            'dialog-password-symbolic', self._module,
+            'scriptura-dialog-password-symbolic', self._module,
             _('This module’s content isn’t readable — the cipher key may be '
               'incorrect.'),
             action=action)
@@ -2424,7 +2424,7 @@ class BiblePane(Gtk.Box):
                      'only the Old or New Testament — pick a Bible with full '
                      'coverage.').format(module=self._module)
         self._show_status_page(
-            'dialog-information-symbolic', f'{book_label(book)} {chapter}',
+            'scriptura-dialog-information-symbolic', f'{book_label(book)} {chapter}',
             body,
             action=(_('Choose another module'),
                     lambda: self._picker.menu_button.popup()))
@@ -5111,7 +5111,7 @@ class BiblePane(Gtk.Box):
         def populate(results):
             _clear()
             if not results:
-                _status('system-search-symbolic', f'No entry for “{word}”',
+                _status('scriptura-system-search-symbolic', f'No entry for “{word}”',
                         'Bible dictionaries index proper nouns and key terms '
                         '— try a word like “covenant,” “Abraham,” or '
                         '“atonement.”')
@@ -5125,7 +5125,7 @@ class BiblePane(Gtk.Box):
 
         def show_no_dicts():
             _clear()
-            _status('dialog-information-symbolic', 'No dictionaries installed',
+            _status('scriptura-dialog-information-symbolic', 'No dictionaries installed',
                     'Add Easton’s or Smith’s Bible Dictionary from the '
                     'Module Manager.')
 

@@ -198,7 +198,7 @@ _TYPES: list[_ContentType] = [
         'interlinear', interlinear_data.is_interlinear_module,
         kind=lambda name: 'bible', info=_interlinear_info,
         feature_card=lambda name: {
-            'icon': 'font-x-generic-symbolic',
+            'icon': 'scriptura-font-x-generic-symbolic',
             'tagline': (_('Hebrew with gloss & parsing, word by word')
                         if interlinear_data.is_hebrew(name) else
                         _('Greek with gloss & parsing, word by word'))},

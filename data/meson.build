@@ -23,33 +23,17 @@ metainfo_file = i18n.merge_file(
   install: true,
   install_dir: datadir / 'metainfo',
 )
-icon_file = 'icons/hicolor/scalable/apps/io.github.andresmessina_SDG.Scriptura.svg'
-symbolic_icon = 'icons/hicolor/symbolic/apps/scriptura-keyboard-symbolic.svg'
-globe_icon = 'icons/hicolor/symbolic/apps/scriptura-globe-symbolic.svg'
-commentary_icon = 'icons/hicolor/symbolic/apps/scriptura-commentary-symbolic.svg'
-imagery_icon = 'icons/hicolor/symbolic/apps/scriptura-imagery-symbolic.svg'
-artifact_icon = 'icons/hicolor/symbolic/apps/scriptura-artifact-symbolic.svg'
-timeline_icon = 'icons/hicolor/symbolic/apps/scriptura-timeline-symbolic.svg'
-theme_system_icon = 'icons/hicolor/symbolic/apps/scriptura-theme-system-symbolic.svg'
-tips_icon = 'icons/hicolor/symbolic/apps/scriptura-tips-symbolic.svg'
-justify_icon = 'icons/hicolor/symbolic/apps/scriptura-justify-symbolic.svg'
-church_icon = 'icons/hicolor/symbolic/apps/scriptura-church-symbolic.svg'
-headphones_icon = 'icons/hicolor/symbolic/apps/scriptura-headphones-symbolic.svg'
-back15_icon = 'icons/hicolor/symbolic/apps/scriptura-back-fifteen-symbolic.svg'
+# Icons. The whole tree installs at once rather than file by file: the app
+# now ships its own copy of every symbolic icon it draws (see the NOTICE in
+# data/icons), which is far too many to list, and a list is the kind of
+# thing that silently falls behind — a named-but-unshipped icon draws as a
+# blank square. tests/test_icon_names.py holds that line instead.
+# NOTICE is excluded: install_dir here is the SHARED icon namespace that
+# every package writes into, and a bare NOTICE file there would collide.
+# It ships under the app's own data directory instead.
+install_subdir('icons', install_dir: datadir, exclude_files: ['NOTICE'])
+install_data('icons/NOTICE', install_dir: pkgdatadir / 'data' / 'icons')
 
-install_data(icon_file,     install_dir: datadir / 'icons' / 'hicolor' / 'scalable' / 'apps')
-install_data(symbolic_icon, install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
-install_data(globe_icon,    install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
-install_data(commentary_icon, install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
-install_data(imagery_icon,  install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
-install_data(artifact_icon, install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
-install_data(timeline_icon, install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
-install_data(theme_system_icon, install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
-install_data(tips_icon,     install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
-install_data(justify_icon,  install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
-install_data(church_icon,   install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
-install_data(headphones_icon, install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
-install_data(back15_icon, install_dir: datadir / 'icons' / 'hicolor' / 'symbolic' / 'apps')
 install_data('style.css',   install_dir: pkgdatadir / 'data')
 install_data('style-hc.css', install_dir: pkgdatadir / 'data')
 install_data('collects.toml', install_dir: pkgdatadir / 'data')

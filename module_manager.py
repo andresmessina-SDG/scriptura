@@ -237,7 +237,7 @@ class ModuleManagerWindow(Adw.Window):
         header = Adw.HeaderBar()
         toolbar_view.add_top_bar(header)
 
-        self._import_btn = Gtk.Button(icon_name='folder-download-symbolic')
+        self._import_btn = Gtk.Button(icon_name='scriptura-folder-download-symbolic')
         self._import_btn.set_tooltip_text(_('Import module from file'))
         set_accessible_label(self._import_btn, _('Import module from file'))
         self._import_btn.connect('clicked', self._on_import_clicked)
@@ -361,7 +361,7 @@ class ModuleManagerWindow(Adw.Window):
         t['chip'].add_css_class('flat')
         t['chip'].set_popover(popover)
         set_accessible_label(t['chip'], _('Filter by language'))
-        t['chip_clear'] = Gtk.Button(icon_name='window-close-symbolic')
+        t['chip_clear'] = Gtk.Button(icon_name='scriptura-window-close-symbolic')
         t['chip_clear'].add_css_class('flat')
         t['chip_clear'].set_tooltip_text(_('Show all languages'))
         set_accessible_label(t['chip_clear'], _('Show all languages'))
@@ -408,7 +408,7 @@ class ModuleManagerWindow(Adw.Window):
         t['updates_group'] = Adw.PreferencesGroup()
         t['updates_group'].set_visible(False)
 
-        t['refresh'] = Gtk.Button(icon_name='view-refresh-symbolic')
+        t['refresh'] = Gtk.Button(icon_name='scriptura-view-refresh-symbolic')
         t['refresh'].add_css_class('flat')
         t['refresh'].set_valign(Gtk.Align.CENTER)
         t['refresh'].set_tooltip_text(_('Refresh the catalogue'))
@@ -695,7 +695,7 @@ class ModuleManagerWindow(Adw.Window):
             # popover wide; full text on hover.
             lbl.set_ellipsize(Pango.EllipsizeMode.END)
             lbl.set_tooltip_text(text)
-            check = Gtk.Image.new_from_icon_name('object-select-symbolic')
+            check = Gtk.Image.new_from_icon_name('scriptura-object-select-symbolic')
             check.set_visible(code == t['lang_sel'])
             box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
             box.set_margin_top(4); box.set_margin_bottom(4)
@@ -989,7 +989,7 @@ class ModuleManagerWindow(Adw.Window):
                 _('Load more — showing the first {shown} of {total}').format(
                     shown=f"{t['shown']:,}", total=f"{len(t['filtered']):,}"))
             footer.set_activatable(True)
-            footer.add_prefix(Gtk.Image.new_from_icon_name('view-more-symbolic'))
+            footer.add_prefix(Gtk.Image.new_from_icon_name('scriptura-view-more-symbolic'))
             footer.connect('activated', lambda _r: self._on_more(t))
             group.add(footer)
             t['browse_rows'].append(footer)
@@ -1274,7 +1274,7 @@ class ModuleManagerWindow(Adw.Window):
     def _trash_button(self, on_confirm):
         """A flat trash-icon remove button; `on_confirm` runs when clicked.
         Hover-revealed (`.module-row-action`) per the house row-action rule."""
-        btn = Gtk.Button(icon_name='user-trash-symbolic')
+        btn = Gtk.Button(icon_name='scriptura-user-trash-symbolic')
         btn.add_css_class('flat')
         btn.add_css_class('module-row-action')
         btn.set_valign(Gtk.Align.CENTER)

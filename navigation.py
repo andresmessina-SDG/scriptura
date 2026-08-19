@@ -211,7 +211,7 @@ class NavigationController:
         title = Gtk.Label(label=_('Recent'), xalign=0, hexpand=True)
         title.add_css_class('heading')
         header_box.append(title)
-        clear_btn = Gtk.Button(icon_name='user-trash-symbolic')
+        clear_btn = Gtk.Button(icon_name='scriptura-user-trash-symbolic')
         clear_btn.add_css_class('flat')
         clear_btn.set_tooltip_text(_('Clear recent list'))
         set_accessible_label(clear_btn, _('Clear recent list'))
@@ -341,7 +341,7 @@ class NavigationController:
         header_box.set_margin_top(6)
         header_box.set_margin_bottom(4)
 
-        back_btn = Gtk.Button(icon_name='go-previous-symbolic')
+        back_btn = Gtk.Button(icon_name='scriptura-go-previous-symbolic')
         back_btn.add_css_class('flat')
         back_btn.set_tooltip_text(_('Back to chapters'))
         set_accessible_label(back_btn, _('Back to chapters'))

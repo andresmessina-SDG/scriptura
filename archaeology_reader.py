@@ -112,7 +112,7 @@ class ArchaeologyReader:
         self._search.set_max_width_chars(28)
         self._search.connect('search-changed', self._on_search)
         self._contents_btn = Gtk.MenuButton(
-            icon_name='view-list-symbolic', tooltip_text=_('Contents'))
+            icon_name='scriptura-view-list-symbolic', tooltip_text=_('Contents'))
         self._contents_btn.add_css_class('flat')
         # Icon-only buttons need an explicit accessible name — a tooltip is
         # not a reliable AT-SPI label for Orca/screen readers.
@@ -128,7 +128,7 @@ class ArchaeologyReader:
             [Gtk.AccessibleProperty.LABEL], [_('Timeline')])
         self._timeline_btn.connect('clicked', lambda *_a: self._open_timeline())
         self._map_btn = Gtk.Button(
-            icon_name='mark-location-symbolic',
+            icon_name='scriptura-mark-location-symbolic',
             tooltip_text=_('Map: where these were found'))
         self._map_btn.add_css_class('flat')
         self._map_btn.update_property(

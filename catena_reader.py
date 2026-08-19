@@ -121,7 +121,7 @@ class CatenaReader:
         # The author filter hides behind this toggle: at rest the pane opens
         # with header, chips, first voice — the full-width entry appears only
         # when asked for.
-        self._search_btn = Gtk.ToggleButton(icon_name='system-search-symbolic')
+        self._search_btn = Gtk.ToggleButton(icon_name='scriptura-system-search-symbolic')
         self._search_btn.add_css_class('flat')
         self._search_btn.set_valign(Gtk.Align.CENTER)
         self._search_btn.set_visible(False)
@@ -434,7 +434,7 @@ class CatenaReader:
         head.append(eyebrow)
 
         text = html.unescape(e['text']).strip()
-        copy = Gtk.Button(icon_name='edit-copy-symbolic')
+        copy = Gtk.Button(icon_name='scriptura-edit-copy-symbolic')
         copy.add_css_class('flat')
         copy.add_css_class('circular')
         copy.add_css_class('catena-copy')
@@ -518,16 +518,16 @@ class CatenaReader:
             attribution=attribution, ref=ref)
         btn.get_clipboard().set(f'{text}\n{line}')
         # Quiet confirmation: the icon flips to a check for a moment.
-        btn.set_icon_name('object-select-symbolic')
+        btn.set_icon_name('scriptura-object-select-symbolic')
 
         def _restore():
-            btn.set_icon_name('edit-copy-symbolic')
+            btn.set_icon_name('scriptura-edit-copy-symbolic')
             return GLib.SOURCE_REMOVE
         GLib.timeout_add(1200, _restore)
 
     def _status(self, title, detail):
         page = Adw.StatusPage()
-        page.set_icon_name('accessories-dictionary-symbolic')
+        page.set_icon_name('scriptura-accessories-dictionary-symbolic')
         page.set_title(title)
         page.set_description(detail)
         page.set_vexpand(True)

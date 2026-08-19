@@ -130,9 +130,9 @@ class AudioPill(Gtk.Box):
             'scriptura-back-fifteen-symbolic', _('Back fifteen seconds'),
             on_back)
         self._play_btn = self._button(
-            'media-playback-start-symbolic', _('Play'), on_play_pause)
+            'scriptura-media-playback-start-symbolic', _('Play'), on_play_pause)
         self._close_btn = self._button(
-            'window-close-symbolic', _('Close the player'), on_close)
+            'scriptura-window-close-symbolic', _('Close the player'), on_close)
         self._close_btn.add_css_class('audio-pill-close')
 
         # Speed, named by its own value rather than by an icon: no glyph says
@@ -196,7 +196,7 @@ class AudioPill(Gtk.Box):
         # rather than as a control.
         self._on_switch = on_switch
         self._switch_content = Adw.ButtonContent(
-            icon_name='media-playback-start-symbolic')
+            icon_name='scriptura-media-playback-start-symbolic')
         # A second reference is 60px on the pill, and 125px for "1 Chronicles
         # 13". The pill is an overlay child, so it never widens the pane — it
         # would simply run past its edge in a narrow split. Let the reference
@@ -441,7 +441,7 @@ class AudioPill(Gtk.Box):
         was_fetching = self._state == 'fetching'
         self._state = state
         if state == 'fetching':
-            self._play_btn.set_icon_name('media-playback-stop-symbolic')
+            self._play_btn.set_icon_name('scriptura-media-playback-stop-symbolic')
             self._label_play(_('Stop fetching the reading'))
             self._wait.start()
             return
@@ -453,10 +453,10 @@ class AudioPill(Gtk.Box):
             # the thread each time they pressed pause.
             self._thread.set_fraction(0.0)
         if state == 'playing':
-            self._play_btn.set_icon_name('media-playback-pause-symbolic')
+            self._play_btn.set_icon_name('scriptura-media-playback-pause-symbolic')
             self._label_play(_('Pause'))
         else:
-            self._play_btn.set_icon_name('media-playback-start-symbolic')
+            self._play_btn.set_icon_name('scriptura-media-playback-start-symbolic')
             self._label_play(_('Play'))
 
     def _label_play(self, label):

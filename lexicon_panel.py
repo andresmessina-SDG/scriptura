@@ -216,7 +216,7 @@ class LexiconPanel(Gtk.Box):
         # so the header surface is full-bleed and joins the occurrences header.
         header.add_css_class('lex-header')
 
-        self._back_btn = Gtk.Button(icon_name='go-previous-symbolic')
+        self._back_btn = Gtk.Button(icon_name='scriptura-go-previous-symbolic')
         self._back_btn.add_css_class('flat')
         self._back_btn.set_sensitive(False)
         self._back_btn.set_tooltip_text(_('Back to previous definition'))
@@ -263,7 +263,7 @@ class LexiconPanel(Gtk.Box):
         header.append(self._spinner)
         self._delayed_spinner = DelayedSpinner(self._spinner)
 
-        close_btn = Gtk.Button(icon_name='window-close-symbolic')
+        close_btn = Gtk.Button(icon_name='scriptura-window-close-symbolic')
         close_btn.add_css_class('flat')
         close_btn.set_tooltip_text(_('Close lexicon'))
         set_accessible_label(close_btn, _('Close lexicon'))
@@ -788,7 +788,7 @@ class LexiconPanel(Gtk.Box):
         cap.add_css_class('dim-label')
         head.append(cap)
         if self._on_open_verse and module:
-            open_btn = Gtk.Button(icon_name='go-next-symbolic')
+            open_btn = Gtk.Button(icon_name='scriptura-go-next-symbolic')
             open_btn.add_css_class('flat')
             open_btn.set_valign(Gtk.Align.CENTER)
             open_btn.set_tooltip_text(_('Open in Bible pane'))
