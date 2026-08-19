@@ -152,7 +152,7 @@ class SearchPanel(Gtk.Box):
         title.add_css_class('title-4')
         header.append(title)
 
-        close_btn = Gtk.Button(icon_name='window-close-symbolic')
+        close_btn = Gtk.Button(icon_name='scriptura-window-close-symbolic')
         close_btn.add_css_class('flat')
         close_btn.set_tooltip_text(_('Close search (Esc)'))
         set_accessible_label(close_btn, _('Close search'))
@@ -410,7 +410,7 @@ class SearchPanel(Gtk.Box):
         row.set_activatable(False)
         # Shared compact empty state (see empty_state.py) — keeps the search,
         # journal, and tag-list empties visually identical.
-        body = compact_empty_state('system-search-symbolic', title, description)
+        body = compact_empty_state('scriptura-system-search-symbolic', title, description)
         row.set_child(body)
         return row
 
@@ -450,7 +450,7 @@ class SearchPanel(Gtk.Box):
             box.set_margin_top(8)
             box.set_margin_bottom(8)
 
-            icon = Gtk.Image.new_from_icon_name('document-open-recent-symbolic')
+            icon = Gtk.Image.new_from_icon_name('scriptura-document-open-recent-symbolic')
             icon.add_css_class('dim-label')
             box.append(icon)
 
@@ -466,7 +466,7 @@ class SearchPanel(Gtk.Box):
             text_box.append(mod_lbl)
             box.append(text_box)
 
-            del_btn = Gtk.Button(icon_name='window-close-symbolic')
+            del_btn = Gtk.Button(icon_name='scriptura-window-close-symbolic')
             del_btn.add_css_class('flat')
             del_btn.add_css_class('circular')
             del_btn.set_valign(Gtk.Align.CENTER)

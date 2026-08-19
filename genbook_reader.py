@@ -165,7 +165,7 @@ class GenbookReader:
         """Create and append prev / next / TOC widgets to the pane toolbar.
         All three start hidden — `update_visibility(True)` reveals them
         when the active module is a Generic Book."""
-        self._prev_btn = Gtk.Button(icon_name='go-previous-symbolic')
+        self._prev_btn = Gtk.Button(icon_name='scriptura-go-previous-symbolic')
         self._prev_btn.add_css_class('flat')
         self._prev_btn.add_css_class('pane-action')
         self._prev_btn.set_tooltip_text(_('Previous entry'))
@@ -174,7 +174,7 @@ class GenbookReader:
         self._prev_btn.connect('clicked', lambda _b: self.step(-1))
         toolbar.append(self._prev_btn)
 
-        self._next_btn = Gtk.Button(icon_name='go-next-symbolic')
+        self._next_btn = Gtk.Button(icon_name='scriptura-go-next-symbolic')
         self._next_btn.add_css_class('flat')
         self._next_btn.add_css_class('pane-action')
         self._next_btn.set_tooltip_text(_('Next entry'))
@@ -184,7 +184,7 @@ class GenbookReader:
         toolbar.append(self._next_btn)
 
         self._toc_btn = Gtk.MenuButton(
-            icon_name='view-list-bullet-symbolic')
+            icon_name='scriptura-view-list-bullet-symbolic')
         self._toc_btn.add_css_class('flat')
         self._toc_btn.add_css_class('pane-action')
         self._toc_btn.set_tooltip_text(_('Table of contents'))
@@ -400,7 +400,7 @@ class GenbookReader:
         items = sum(bool(_SECTION_ITEM.match(re.sub(r'<[^>]+>', '', p).strip()))
                     for p in re.findall(r'<p[^>]*>.*?</p>', synopsis, re.DOTALL))
         anchor = pane._buffer.create_child_anchor(pane._buffer.get_end_iter())
-        icon = Gtk.Image.new_from_icon_name('pan-end-symbolic')
+        icon = Gtk.Image.new_from_icon_name('scriptura-pan-end-symbolic')
         label = Gtk.Label(label=_('Sections ({n})').format(n=items) if items
                           else _('Sections'))
         label.add_css_class('caption')
@@ -462,7 +462,7 @@ class GenbookReader:
             shown = not tag.get_property('invisible')
             tag.set_property('invisible', shown)
             icon.set_from_icon_name(
-                'pan-end-symbolic' if shown else 'pan-down-symbolic')
+                'scriptura-pan-end-symbolic' if shown else 'scriptura-pan-down-symbolic')
 
         btn.connect('clicked', _toggle)
 

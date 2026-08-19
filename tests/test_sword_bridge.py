@@ -481,3 +481,46 @@ def test_map_verse_to_app_merged_chapter_stays_put(v11n_mods):
     """App ch 9 renders merged Vulg 9; its deep verses reverse to KJV Ps
     10 — a cross-chapter broadcast would desync panes, so fall back."""
     assert sword_bridge.map_verse_to_app('FakeVulg', 'Psalms', 9, 25) == 25
+
+
+# ── installed_dict_modules: no language filter ───────────────────────────────
+
+class _FakeDictMod:
+    """SWModule stand-in for the dictionary scan: type plus conf entries."""
+    def __init__(self, mtype, entries):
+        self._type, self._entries = mtype, entries
+
+    def getType(self):
+        return self._type
+
+    def getConfigEntry(self, key):
+        return self._entries.get(key)
+
+
+def test_installed_dict_modules_keeps_every_language(monkeypatch):
+    """The scan used to keep only en/eng, which hid a dictionary the reader
+    had installed on purpose — every French, Russian and Spanish one, in an
+    app that ships a Spanish interface."""
+    mods = {
+        'Easton': _FakeDictMod('Lexicons / Dictionaries',
+                               {'Lang': 'en', 'Description': "Easton's"}),
+        'FreDAW': _FakeDictMod('Lexicons / Dictionaries',
+                               {'Lang': 'fr', 'Description': 'Westphal'}),
+        'EsWik':  _FakeDictMod('Lexicons / Dictionaries',
+                               {'Lang': 'es', 'Description': 'Wikcionario'}),
+    }
+    _patch_mgr(monkeypatch, mods)
+    monkeypatch.setattr(sword_bridge, 'module_names', lambda: list(mods))
+    monkeypatch.setattr(sword_bridge, 'is_devotional_module', lambda n: False)
+    assert sorted(n for n, _d in sword_bridge.installed_dict_modules()) == \
+        ['Easton', 'EsWik', 'FreDAW']
+
+
+def test_installed_dict_modules_still_rejects_non_dictionaries(monkeypatch):
+    """Dropping the language filter must not widen the type filter with it."""
+    mods = {'KJV':    _FakeDictMod('Biblical Texts', {'Lang': 'en'}),
+            'Easton': _FakeDictMod('Lexicons / Dictionaries', {'Lang': 'en'})}
+    _patch_mgr(monkeypatch, mods)
+    monkeypatch.setattr(sword_bridge, 'module_names', lambda: list(mods))
+    monkeypatch.setattr(sword_bridge, 'is_devotional_module', lambda n: False)
+    assert [n for n, _d in sword_bridge.installed_dict_modules()] == ['Easton']

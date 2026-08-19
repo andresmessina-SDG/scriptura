@@ -136,7 +136,7 @@ def show_study_menu(pane, verses, x, y):
     box.append(color_box)
     # Only offer "Clear Highlight" when something is actually highlighted.
     if any_highlighted:
-        clear_btn = _menu_row('edit-clear-symbolic', _('Clear Highlight'))
+        clear_btn = _menu_row('scriptura-edit-clear-symbolic', _('Clear Highlight'))
         clear_btn.connect('clicked',
                           lambda b: apply_highlight(pane, verses, None, popover))
         box.append(clear_btn)
@@ -144,7 +144,7 @@ def show_study_menu(pane, verses, x, y):
     # 2. Underline toggle
     all_underlined = all(_verse_anno(v).get('underline', False) for v in verses)
     und_lbl = _('Remove Underline') if all_underlined else _('Underline')
-    und_btn = _menu_row('format-text-underline-symbolic', und_lbl)
+    und_btn = _menu_row('scriptura-format-text-underline-symbolic', und_lbl)
     und_btn.set_margin_top(8)   # whitespace gap to the highlight group above
     und_btn.connect('clicked',
                     lambda b: toggle_underline(pane, verses, not all_underlined, popover))
@@ -156,7 +156,7 @@ def show_study_menu(pane, verses, x, y):
         note_text = anno.get('note', '')
         current_tags = anno.get('tags', [])
         has_study = bool(note_text or current_tags)
-        note_btn = _menu_row('document-edit-symbolic',
+        note_btn = _menu_row('scriptura-document-edit-symbolic',
                              _('Edit Note & Tags') if has_study else _('Note & Tags'))
         note_btn.connect('clicked',
                          lambda b: _edit_note(pane, verses[0], note_text, current_tags, popover))
@@ -164,35 +164,35 @@ def show_study_menu(pane, verses, x, y):
 
     # 4. Copy verse(s)
     copy_lbl = _('Copy verses') if len(verses) > 1 else _('Copy verse')
-    copy_btn = _menu_row('edit-copy-symbolic', copy_lbl)
+    copy_btn = _menu_row('scriptura-edit-copy-symbolic', copy_lbl)
     copy_btn.set_margin_top(8)   # whitespace gap to the annotate group above
     copy_btn.connect('clicked', lambda b: copy_verse(pane, verses, popover))
     box.append(copy_btn)
 
     # 5. Export the passage — Copy's larger cousin, and next to it for that
     # reason: both take what is selected and put it somewhere else.
-    export_btn = _menu_row('document-save-symbolic', _('Export passage…'))
+    export_btn = _menu_row('scriptura-document-save-symbolic', _('Export passage…'))
     export_btn.connect(
         'clicked',
         lambda b: export_dialog.export_passage(pane, verses, popover))
     box.append(export_btn)
 
     # 6. Share the verse as an image
-    card_btn = _menu_row('image-x-generic-symbolic', _('Share as image…'))
+    card_btn = _menu_row('scriptura-image-x-generic-symbolic', _('Share as image…'))
     card_btn.connect(
         'clicked',
         lambda b: export_dialog.share_as_image(pane, verses, popover))
     box.append(card_btn)
 
     # 7. Print — the same composition as the worksheet, set into pages.
-    print_btn = _menu_row('document-print-symbolic', _('Print…'))
+    print_btn = _menu_row('scriptura-document-print-symbolic', _('Print…'))
     print_btn.connect(
         'clicked', lambda b: passage_print.print_passage(pane, verses, popover))
     box.append(print_btn)
 
     # 8. Compare translations (single verse only)
     if len(verses) == 1:
-        comp_btn = _menu_row('view-dual-symbolic', _('Compare translations'))
+        comp_btn = _menu_row('scriptura-view-dual-symbolic', _('Compare translations'))
         comp_btn.connect('clicked', lambda b: compare_translations(pane, verses[0], popover))
         box.append(comp_btn)
 

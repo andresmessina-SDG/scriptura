@@ -215,3 +215,69 @@ def test_the_footnote_toggle_nudge_keeps_the_button_its_width():
     assert nudged == base, (
         f'the f* nudge now sums to {nudged}px against the base toggle\'s '
         f'{base}px — the button has changed width, not just shifted its ink')
+
+
+def test_every_css_class_the_code_adds_is_defined_somewhere():
+    """A class added in Python but defined in no sheet styles nothing — and
+    looks exactly like one that does. No parse error, no warning, just a
+    control quietly wearing the default while the code claims otherwise.
+
+    Seven of these had accumulated (appearance-advanced, devotional-audio,
+    devotional-play, imagery-pic, paper-flow, present-grid, stone-text) and
+    were removed together. This keeps the count at zero: the reverse case,
+    a rule nobody uses, is only dead weight, but this direction is a
+    control that does not look the way the code says it does.
+    """
+    import os
+    import re
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    defined = set()
+    for sheet in ('style.css', 'style-hc.css'):
+        with open(os.path.join(root, 'data', sheet), encoding='utf-8') as f:
+            defined.update(re.findall(r'\.([a-z][a-z0-9-]*)', f.read()))
+    # Some rules are built at runtime and handed to a CssProvider rather
+    # than living in a sheet — catena_reader's page styling, for one. A
+    # class defined that way is defined.
+    rule = re.compile(r'\.([a-z][a-z0-9-]*)\s*\{')
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames
+                       if d not in {'flatpak-build', 'test-build-dir',
+                                    '__pycache__', '.git'}]
+        for fn in filenames:
+            if not fn.endswith('.py'):
+                continue
+            with open(os.path.join(dirpath, fn), encoding='utf-8') as f:
+                text = f.read()
+            if 'CssProvider' in text or 'load_from_data' in text:
+                defined.update(rule.findall(text))
+
+    # GTK and libadwaita supply a large stock vocabulary; only the classes
+    # this project coins are this project's to define.
+    stock = {
+        'flat', 'suggested-action', 'destructive-action', 'pill', 'circular',
+        'dim-label', 'heading', 'caption', 'caption-heading', 'title-1',
+        'title-2', 'title-3', 'title-4', 'body', 'monospace', 'numeric',
+        'linked', 'osd', 'card', 'toolbar', 'accent', 'error', 'warning',
+        'success', 'boxed-list', 'navigation-sidebar', 'view', 'frame',
+        'background', 'large-title', 'inline', 'raised', 'opaque',
+        'compact', 'spacer', 'menu', 'horizontal', 'vertical',
+        'image-button', 'text-button', 'selection-mode', 'devel', 'sidebar',
+        'header',
+    }
+
+    used = set()
+    pat = re.compile(r"add_css_class\(\s*['\"]([a-z][a-z0-9-]*)['\"]")
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames
+                       if d not in {'flatpak-build', 'test-build-dir',
+                                    '__pycache__', '.git', 'tests', 'tools'}]
+        for fn in filenames:
+            if fn.endswith('.py'):
+                with open(os.path.join(dirpath, fn), encoding='utf-8') as f:
+                    used.update(pat.findall(f.read()))
+
+    undefined = sorted(used - defined - stock)
+    assert not undefined, (
+        f'{len(undefined)} css classes are added in Python but defined in no '
+        f'sheet, so they style nothing: {undefined}')

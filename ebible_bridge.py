@@ -27,6 +27,17 @@ _USFM_URL   = 'https://ebible.org/Scriptures/{id}_usfm.zip'
 
 PREFIX = 'eBible: '
 
+# What the importer produced, stamped on each translation at download time.
+# 1 = anything imported before the USFM parser kept Strong's numbers and split
+#     markup out of the searchable text. Those rows were never stamped, so a
+#     NULL reads as 1.
+# 2 = the current parser.
+# Bump this whenever a parser change means an already-installed translation
+# would gain something by being downloaded again — that is the whole point of
+# the stamp: it is what lets the Module Manager offer Update only where an
+# update would do something.
+IMPORT_VERSION = 2
+
 # ── USFM book-code → canonical name ──────────────────────────────────────────
 
 _BOOK = {
@@ -86,7 +97,8 @@ def _db():
         PRIMARY KEY (translation, book, chapter, verse))''')
     conn.execute('''CREATE TABLE IF NOT EXISTS translations (
         id TEXT PRIMARY KEY, title TEXT, language TEXT, lang_code TEXT,
-        copyright TEXT, license TEXT)''')
+        copyright TEXT, license TEXT,
+        source_date TEXT, import_version INTEGER)''')
     # Translator footnotes (\f…\f* in the USFM source). n is the 1-based
     # per-verse index matching the <note swordFootnote="n"/> anchor left in
     # the verse text — the same anchor shape SWORD's footnote filters emit,
@@ -118,7 +130,8 @@ def _db():
     END''')
     # Schema version stamp. v1 = base tables; v2 = FTS index added; v3 =
     # notes table (created above — no data migration, old imports just have
-    # no rows); v4 = `markup` column split out of `text`. When the layout
+    # no rows); v4 = `markup` column split out of `text`; v5 = the
+    # `source_date` / `import_version` stamps on translations. When the layout
     # changes, bump this and add the migration steps in an `if ver < N`
     # block so existing user DBs upgrade in place.
     ver = conn.execute('PRAGMA user_version').fetchone()[0]
@@ -145,6 +158,19 @@ def _db():
         if 'markup' not in cols:
             conn.execute('ALTER TABLE verses ADD COLUMN markup TEXT')
         conn.execute('PRAGMA user_version = 4')
+    if ver < 5:
+        # Two stamps recording what a translation was imported from and by.
+        # Existing rows leave both NULL, which reads as "imported by an older
+        # parser, from an unknown upstream date" — true, and exactly the state
+        # update_reason() reports as stale. Same first-run disagreement as v4:
+        # a fresh DB already has the columns from CREATE TABLE but stamps 0.
+        cols = {r[1] for r in conn.execute('PRAGMA table_info(translations)')}
+        if 'source_date' not in cols:
+            conn.execute('ALTER TABLE translations ADD COLUMN source_date TEXT')
+        if 'import_version' not in cols:
+            conn.execute(
+                'ALTER TABLE translations ADD COLUMN import_version INTEGER')
+        conn.execute('PRAGMA user_version = 5')
     conn.commit()
     _conn_local.conn = conn
     return conn
@@ -242,6 +268,54 @@ def installed_ids():
         return {r[0] for r in rows}
     except Exception:
         return set()
+
+_RE_ISO_DATE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+
+
+def source_date(entry):
+    """The catalogue's publication date for one translation, as an ISO
+    string, or ''. UpdateDate is when eBible.org last rebuilt the download;
+    sourceDate (when the translators last revised it) stands in when the
+    first is missing. Anything not plain YYYY-MM-DD is dropped rather than
+    compared — the file is a third party's CSV, and a date that cannot be
+    ordered is worse than no date."""
+    for key in ('UpdateDate', 'sourceDate'):
+        value = (entry.get(key) or '').strip()
+        if _RE_ISO_DATE.match(value):
+            return value
+    return ''
+
+
+def import_stamps():
+    """{tid: (source_date, import_version)} for every installed translation.
+    One query, because the Module Manager asks about every row at once."""
+    try:
+        conn = _db()
+        rows = conn.execute(
+            'SELECT id, source_date, import_version FROM translations'
+        ).fetchall()
+        return {r[0]: (r[1] or '', r[2] or 1) for r in rows}
+    except Exception:
+        return {}
+
+
+def update_reason(stamp, entry):
+    """Why an installed translation would gain from being downloaded again:
+    'parser', 'source', or None when it is current.
+
+    'parser' comes first because a copy imported by an older parser is behind
+    whatever the catalogue says, and its own source date was never recorded —
+    there is nothing to compare. Downloading fixes both at once."""
+    if not stamp:
+        return None
+    installed_date, version = stamp
+    if (version or 1) < IMPORT_VERSION:
+        return 'parser'
+    catalog_date = source_date(entry or {})
+    if catalog_date and installed_date and catalog_date > installed_date:
+        return 'source'
+    return None
+
 
 def load_chapter(module_name, book, chapter):
     """Returns [(verse_num, html_text)] — same shape as sword_bridge.load_chapter()."""
@@ -377,6 +451,7 @@ def download_translation_sync(tid, entry, on_status=None):
     lang_code = (entry.get('languageCode') or '').strip()
     copyright_= (entry.get('copyrightStatement') or '').strip()
     license_  = (entry.get('licenseType') or '').strip()
+    src_date  = source_date(entry)
 
     conn = _db()
     conn.execute('DELETE FROM verses      WHERE translation=?', (tid,))
@@ -391,8 +466,14 @@ def download_translation_sync(tid, entry, on_status=None):
         [(tid, b, c, v, n, t, body)
          for (b, c, v), lst in notes.items() if b
          for n, t, body in lst])
-    conn.execute('INSERT OR REPLACE INTO translations VALUES (?,?,?,?,?,?)',
-                 (tid, title, language, lang_code, copyright_, license_))
+    # Named columns, not positional: the stamps were added after this table
+    # shipped, and a bare VALUES (?,?,?,?,?,?) silently breaks on the next one.
+    conn.execute(
+        'INSERT OR REPLACE INTO translations '
+        '(id, title, language, lang_code, copyright, license, '
+        ' source_date, import_version) VALUES (?,?,?,?,?,?,?,?)',
+        (tid, title, language, lang_code, copyright_, license_,
+         src_date, IMPORT_VERSION))
     conn.commit()
 
 def remove_translation(tid):

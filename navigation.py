@@ -80,8 +80,71 @@ class NavigationController:
         return self._win._dismiss_today
 
     # ── The navigation funnel ────────────────────────────────────────────────
+    def _open_panes(self):
+        """The panes actually on screen — pane 2 only when it is open."""
+        panes = [self.pane1]
+        if self.pane2 is not None and self.pane2.get_visible():
+            panes.append(self.pane2)
+        return panes
+
+    def nav_books(self):
+        """The book list navigation offers, for the modules now on screen."""
+        return window.nav_books([p._module for p in self._open_panes()],
+                                current_book=self._current_loc[0])
+
+    def _sync_nav_books(self):
+        """Keep book_drop's model on the list navigation is offering.
+
+        book_drop is the invisible index holder every navigation reads and
+        writes, so a model that disagrees with nav_books() puts an index on
+        the wrong book or off the end. The list moves for two reasons — a
+        pane changed module, or the reader stepped into or out of the
+        appendix — so this runs on both."""
+        books = self.nav_books()
+        model = self.book_drop.get_model()
+        if [model.get_string(i) for i in range(model.get_n_items())] == books:
+            return
+        book = self._current_loc[0]
+        self.book_drop.set_model(Gtk.StringList.new(books))
+        if book in books:
+            self.book_drop.set_selected(books.index(book))
+
+    def _book_module(self, book):
+        """A module on screen that can answer for `book`, or None.
+
+        Every module answers for the 66. An appendix book is another
+        matter: ask a 66-book module for Tobit and its VerseKey clamps to
+        the last book it knows — Revelation under KJV — so the reader would
+        get Revelation 1 under a Tobit heading with nothing to say so."""
+        for p in self._open_panes():
+            if sword_bridge.module_has_book(p._module, book):
+                return p._module
+        return None
+
+    def _step_book(self, book, delta):
+        """The next/previous book the open modules can answer for, or None.
+
+        Stepping has to skip rather than stop: the Vulgate carries Baruch
+        and 1 Maccabees but not the three books listed between them, so a
+        plain +1 would leave next-book dead on Baruch with half the
+        appendix still ahead. Every one of the 66 is answerable, so this
+        walks exactly one step there."""
+        books = self.nav_books()
+        try:
+            i = books.index(book) + delta
+        except ValueError:
+            return None
+        while 0 <= i < len(books):
+            if self._book_module(books[i]) is not None:
+                return books[i]
+            i += delta
+        return None
+
     def _go_to(self, book, chapter, verse=None, record=True):
-        if book not in window.BOOKS:
+        if book not in self.nav_books():
+            return
+        holder = self._book_module(book)
+        if holder is None:
             return
         # Any navigation is "an action" — it takes the reader in, so the
         # Today page slides away (unless this is the programmatic startup
@@ -93,8 +156,11 @@ class NavigationController:
             self._nav_fwd.clear()
             self._update_nav_btns()
 
-        self.book_drop.set_selected(window.BOOKS.index(book))
-        count = sword_bridge.chapter_count(book)
+        self.book_drop.set_selected(self.nav_books().index(book))
+        # Appendix books are counted against the module that holds them:
+        # the app-space (KJV) key has no Tobit and would answer with
+        # Revelation's 22 chapters instead of Tobit's 14.
+        count = sword_bridge.chapter_count_in(holder, book)
         # Stale callers (bookmarks, search results from a different
         # versification) may pass a chapter outside this book's range.
         chapter = max(1, min(chapter, count))
@@ -102,6 +168,9 @@ class NavigationController:
         self.chapter_drop.set_selected(chapter - 1)
 
         self._current_loc = (book, chapter)
+        # Leaving the appendix can take it out of the list (nav_books keeps
+        # it only while the reader stands in it), so resync after the move.
+        self._sync_nav_books()
         self._update_ref_label(book, chapter)
 
         if record:
@@ -142,7 +211,7 @@ class NavigationController:
         title = Gtk.Label(label=_('Recent'), xalign=0, hexpand=True)
         title.add_css_class('heading')
         header_box.append(title)
-        clear_btn = Gtk.Button(icon_name='user-trash-symbolic')
+        clear_btn = Gtk.Button(icon_name='scriptura-user-trash-symbolic')
         clear_btn.add_css_class('flat')
         clear_btn.set_tooltip_text(_('Clear recent list'))
         set_accessible_label(clear_btn, _('Clear recent list'))
@@ -154,7 +223,7 @@ class NavigationController:
 
         entries = settings.get('recent_passages') or []
         entries = [e for e in entries if isinstance(e, list) and len(e) >= 2
-                   and e[0] in window.BOOKS and isinstance(e[1], int)]
+                   and e[0] in self.nav_books() and isinstance(e[1], int)]
 
         if not entries:
             empty = Gtk.Label(
@@ -211,12 +280,15 @@ class NavigationController:
         # restored from settings in __init__. Sync the hidden dropdowns
         # (used by Alt+arrow nav and the chapter-count model) to match.
         book, chapter = self._current_loc
-        self.book_drop.set_selected(window.BOOKS.index(book))
+        # book_drop was built on the bare 66 — the panes did not exist yet,
+        # so nothing could know whether the appendix belonged. They do now.
+        self._sync_nav_books()
+        self.book_drop.set_selected(self.nav_books().index(book))
         # First main-thread SWORD call: join the warm-up thread started in
         # __init__ (a no-op wait by now — _build_ui takes longer than the
         # init), then clamp the restored chapter, deferred from __init__.
         sword_bridge.wait_warm()
-        count = sword_bridge.chapter_count(book)
+        count = sword_bridge.chapter_count_in(self._book_module(book), book)
         chapter = max(1, min(chapter, count))
         self._current_loc = (book, chapter)
         self.chapter_drop.set_model(
@@ -246,7 +318,7 @@ class NavigationController:
         a Verse grid via a Stack. Left-click on a chapter navigates straight
         to that chapter; right-click slides the panel over to the verse
         picker for that chapter."""
-        current_book    = window.BOOKS[self.book_drop.get_selected()]
+        current_book    = self.nav_books()[self.book_drop.get_selected()]
         current_chapter = self.chapter_drop.get_selected() + 1
 
         outer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
@@ -269,7 +341,7 @@ class NavigationController:
         header_box.set_margin_top(6)
         header_box.set_margin_bottom(4)
 
-        back_btn = Gtk.Button(icon_name='go-previous-symbolic')
+        back_btn = Gtk.Button(icon_name='scriptura-go-previous-symbolic')
         back_btn.add_css_class('flat')
         back_btn.set_tooltip_text(_('Back to chapters'))
         set_accessible_label(back_btn, _('Back to chapters'))
@@ -336,7 +408,8 @@ class NavigationController:
             # Rebuild verse grid for state.book / ch
             clear_children(verse_flow)
             try:
-                v_count = sword_bridge.verse_count(state['book'], ch)
+                v_count = sword_bridge.verse_count_in(
+                    self._book_module(state['book']), state['book'], ch)
             except Exception:
                 v_count = 1
             for v in range(1, v_count + 1):
@@ -355,7 +428,8 @@ class NavigationController:
         def rebuild_chapters():
             clear_children(chap_flow)
             try:
-                count = sword_bridge.chapter_count(state['book'])
+                count = sword_bridge.chapter_count_in(
+                    self._book_module(state['book']), state['book'])
             except Exception:
                 count = 1
             for ch in range(1, count + 1):
@@ -376,7 +450,7 @@ class NavigationController:
                 btn.add_controller(rc)
                 chap_flow.append(btn)
 
-        for name in window.BOOKS:
+        def add_book_row(name):
             row = Gtk.ListBoxRow()
             row._book = name
             lbl = Gtk.Label(label=book_label(name), xalign=0)
@@ -385,9 +459,36 @@ class NavigationController:
             lbl.set_margin_top(6)
             lbl.set_margin_bottom(6)
             row.set_child(lbl)
+            # The appendix keeps its full length whatever is open, so the
+            # list never grows and shrinks under the reader's hand; a book
+            # the open modules cannot answer for goes dim instead, which
+            # says which Bible is missing it rather than hiding the book.
+            if self._book_module(name) is None:
+                row.set_sensitive(False)
+                row.set_tooltip_text(
+                    _('%s isn’t in this translation.') % book_label(name))
             book_list.append(row)
             if name == current_book:
                 book_list.select_row(row)
+
+        for name in window.BOOKS:
+            add_book_row(name)
+
+        if len(self.nav_books()) > len(window.BOOKS):
+            head = Gtk.ListBoxRow()
+            head.set_selectable(False)
+            head.set_activatable(False)
+            head_lbl = Gtk.Label(label=_('Deuterocanon'), xalign=0)
+            head_lbl.add_css_class('dim-label')
+            head_lbl.add_css_class('caption-heading')
+            head_lbl.set_margin_start(12)
+            head_lbl.set_margin_end(12)
+            head_lbl.set_margin_top(12)
+            head_lbl.set_margin_bottom(4)
+            head.set_child(head_lbl)
+            book_list.append(head)
+            for name in window.DEUTEROCANON:
+                add_book_row(name)
 
         def on_book_row(_lb, row):
             if row is None:
@@ -453,28 +554,34 @@ class NavigationController:
 
     # ── Keyboard chapter/book navigation ─────────────────────────────────────
     def _go_prev_chapter(self):
-        book    = window.BOOKS[self.book_drop.get_selected()]
+        book    = self.nav_books()[self.book_drop.get_selected()]
         chapter = self.chapter_drop.get_selected() + 1
         if chapter > 1:
             self._go_to(book, chapter - 1)
-        elif self.book_drop.get_selected() > 0:
-            prev = window.BOOKS[self.book_drop.get_selected() - 1]
-            self._go_to(prev, sword_bridge.chapter_count(prev))
+            return
+        prev = self._step_book(book, -1)
+        if prev:
+            self._go_to(prev, sword_bridge.chapter_count_in(
+                self._book_module(prev), prev))
 
     def _go_next_chapter(self):
-        book    = window.BOOKS[self.book_drop.get_selected()]
+        book    = self.nav_books()[self.book_drop.get_selected()]
         chapter = self.chapter_drop.get_selected() + 1
-        if chapter < sword_bridge.chapter_count(book):
+        if chapter < sword_bridge.chapter_count_in(self._book_module(book), book):
             self._go_to(book, chapter + 1)
-        elif self.book_drop.get_selected() < len(window.BOOKS) - 1:
-            self._go_to(window.BOOKS[self.book_drop.get_selected() + 1], 1)
+            return
+        nxt = self._step_book(book, 1)
+        if nxt:
+            self._go_to(nxt, 1)
 
     def _go_prev_book(self):
-        idx = self.book_drop.get_selected()
-        if idx > 0:
-            self._go_to(window.BOOKS[idx - 1], 1)
+        prev = self._step_book(
+            self.nav_books()[self.book_drop.get_selected()], -1)
+        if prev:
+            self._go_to(prev, 1)
 
     def _go_next_book(self):
-        idx = self.book_drop.get_selected()
-        if idx < len(window.BOOKS) - 1:
-            self._go_to(window.BOOKS[idx + 1], 1)
+        nxt = self._step_book(
+            self.nav_books()[self.book_drop.get_selected()], 1)
+        if nxt:
+            self._go_to(nxt, 1)

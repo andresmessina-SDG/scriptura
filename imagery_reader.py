@@ -180,7 +180,6 @@ def present_place_dialog(root, place):
         pic.set_can_shrink(True)
         pic.set_alternative_text(
             imagery_bridge.place_display_name(place['ancient_name']))
-        pic.add_css_class('imagery-pic')
         pic.set_size_request(-1, 280)
         box.append(pic)
 
@@ -523,9 +522,9 @@ class ImageryReader:
         self._art_box, art_scroll = self._scrolling_list()
         self._where_box, where_scroll = self._scrolling_list()
         self._stack.add_titled_with_icon(
-            art_scroll, 'art', _('Art'), 'image-x-generic-symbolic')
+            art_scroll, 'art', _('Art'), 'scriptura-image-x-generic-symbolic')
         self._stack.add_titled_with_icon(
-            where_scroll, 'where', _('Where'), 'find-location-symbolic')
+            where_scroll, 'where', _('Where'), 'scriptura-find-location-symbolic')
 
     def _scrolling_list(self):
         scroll = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
@@ -569,7 +568,7 @@ class ImageryReader:
             self._header.set_text(_('Bible Imagery'))
             self._switcher.set_visible(False)
             self._art_box.append(self._status(
-                'image-x-generic-symbolic',
+                'scriptura-image-x-generic-symbolic',
                 _('Open a Bible alongside this pane'),
                 _('Navigate there to see illustrations, maps, and photos of the '
                   'places named in each verse.')))
@@ -600,7 +599,7 @@ class ImageryReader:
     def _build_art(self, items):
         if not items:
             self._art_box.append(self._status(
-                'image-x-generic-symbolic', _('No illustration for this verse'),
+                'scriptura-image-x-generic-symbolic', _('No illustration for this verse'),
                 _('Try a neighbouring verse, or a scene the artists depicted '
                   'more often. The Where tab may still have a map or places.')))
             return
@@ -647,7 +646,7 @@ class ImageryReader:
     def _build_where(self, maps, places):
         if not maps and not places:
             self._where_box.append(self._status(
-                'find-location-symbolic', _('No places mapped for this verse'),
+                'scriptura-find-location-symbolic', _('No places mapped for this verse'),
                 _('Not every verse names a place. The Art tab may still have an '
                   'illustration.')))
             return
@@ -769,7 +768,6 @@ class ImageryReader:
         pic.set_can_shrink(True)
         pic.set_hexpand(True)
         pic.set_alternative_text(alt or '')
-        pic.add_css_class('imagery-pic')
         # Gtk.Picture under-requests its height, so in a verse with several
         # cards the images get squeezed to slivers (worse the more cards
         # share the pane). Reserve a definite height from the image's aspect
@@ -850,7 +848,7 @@ class ImageryReader:
             credit_btn.connect('clicked', _copy_credit)
             header.pack_end(credit_btn)
         if texture is not None:
-            copy_btn = Gtk.Button(icon_name='edit-copy-symbolic')
+            copy_btn = Gtk.Button(icon_name='scriptura-edit-copy-symbolic')
             copy_btn.set_tooltip_text(_('Copy image'))
             set_accessible_label(copy_btn, _('Copy image'))
             copy_btn.connect('clicked', _copy_image)
@@ -896,13 +894,13 @@ class ImageryReader:
             era_btn.connect('toggled', _on_era)
             header.pack_end(era_btn)
 
-        out_btn = Gtk.Button(icon_name='zoom-out-symbolic')
+        out_btn = Gtk.Button(icon_name='scriptura-zoom-out-symbolic')
         out_btn.set_tooltip_text(_('Zoom out'))
         set_accessible_label(out_btn, _('Zoom out'))
-        in_btn = Gtk.Button(icon_name='zoom-in-symbolic')
+        in_btn = Gtk.Button(icon_name='scriptura-zoom-in-symbolic')
         in_btn.set_tooltip_text(_('Zoom in'))
         set_accessible_label(in_btn, _('Zoom in'))
-        fit_btn = Gtk.Button(icon_name='zoom-fit-best-symbolic')
+        fit_btn = Gtk.Button(icon_name='scriptura-zoom-fit-best-symbolic')
         fit_btn.set_tooltip_text(_('Fit to window'))
         set_accessible_label(fit_btn, _('Fit to window'))
         out_btn.connect('clicked', lambda *_a: viewer.zoom_out())

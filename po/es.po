@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scriptura\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-16 12:50-0600\n"
+"POT-Creation-Date: 2026-08-19 09:01-0600\n"
 "PO-Revision-Date: 2026-08-16 00:00+0000\n"
 "Last-Translator: Scriptura\n"
 "Language-Team: Spanish\n"
@@ -424,7 +424,7 @@ msgstr ""
 msgid "Yellow"
 msgstr "Amarillo"
 
-#: annotation_dialogs.py:41 study_journal.py:56 verse_card.py:39 window.py:1333
+#: annotation_dialogs.py:41 study_journal.py:56 verse_card.py:39 window.py:1379
 msgid "Green"
 msgstr "Verde"
 
@@ -454,8 +454,8 @@ msgstr "Quitar el resaltado"
 msgid "Remove Underline"
 msgstr "Quitar el subrayado"
 
-#: annotation_dialogs.py:146 study_journal.py:483 study_journal.py:802
-#: study_journal.py:1076
+#: annotation_dialogs.py:146 study_journal.py:483 study_journal.py:805
+#: study_journal.py:1079
 msgid "Underline"
 msgstr "Subrayar"
 
@@ -491,7 +491,7 @@ msgstr "Imprimir…"
 msgid "Compare translations"
 msgstr "Comparar traducciones"
 
-#: annotation_dialogs.py:236 pane.py:2148
+#: annotation_dialogs.py:236 pane.py:2155
 #, python-brace-format
 msgid "Copied {ref}"
 msgstr "Se copió {ref}"
@@ -501,7 +501,7 @@ msgstr "Se copió {ref}"
 msgid "{ref} — Translations"
 msgstr "{ref} — Traducciones"
 
-#: annotation_dialogs.py:367 annotation_dialogs.py:530 window.py:1920
+#: annotation_dialogs.py:367 annotation_dialogs.py:530 window.py:1966
 msgid "Save"
 msgstr "Guardar"
 
@@ -517,8 +517,8 @@ msgstr "p. ej. Salvación, Oración, Profecía"
 msgid "Suggested"
 msgstr "Sugeridos"
 
-#: annotation_dialogs.py:520 study_journal.py:764 study_journal.py:878
-#: study_journal.py:1068
+#: annotation_dialogs.py:520 study_journal.py:767 study_journal.py:881
+#: study_journal.py:1071
 #, python-brace-format
 msgid "{ref} — Chapter Note"
 msgstr "{ref} — Nota del capítulo"
@@ -713,15 +713,15 @@ msgstr "Cambiar a la lectura de la mañana"
 msgid "Switch to the evening reading"
 msgstr "Cambiar a la lectura de la tarde"
 
-#: audio_surfaces.py:289 audio_surfaces.py:792 window.py:2192
+#: audio_surfaces.py:289 audio_surfaces.py:792 window.py:2247
 msgid "Fetching the reading"
 msgstr "Obteniendo la lectura"
 
-#: audio_surfaces.py:311 audio_surfaces.py:813 window.py:2210
+#: audio_surfaces.py:311 audio_surfaces.py:813 window.py:2265
 msgid "Could not fetch the reading"
 msgstr "No se pudo obtener la lectura"
 
-#: audio_surfaces.py:324 audio_surfaces.py:835 window.py:2224
+#: audio_surfaces.py:324 audio_surfaces.py:835 window.py:2279
 msgid "Could not play the reading"
 msgstr "No se pudo reproducir la lectura"
 
@@ -848,8 +848,8 @@ msgstr "Filtrar por tradición"
 msgid "Historical commentary"
 msgstr "Comentario histórico"
 
-#: catena_reader.py:231 module_manager.py:525 module_manager.py:541
-#: module_manager.py:1353 module_manager.py:1360
+#: catena_reader.py:231 module_manager.py:530 module_manager.py:546
+#: module_manager.py:1428 module_manager.py:1435
 msgid "Historical Commentaries"
 msgstr "Comentarios históricos"
 
@@ -1500,7 +1500,7 @@ msgstr "Domingo de los Padres del Primer Concilio"
 msgid "The Sunday of All Saints"
 msgstr "El Domingo de Todos los Santos"
 
-#: content.py:63
+#: content.py:68
 msgid ""
 "Patristic, medieval, and Reformation commentary keyed to each verse — the "
 "church reading Scripture across the centuries."
@@ -1508,21 +1508,21 @@ msgstr ""
 "Comentario patrístico, medieval y de la Reforma ligado a cada versículo: la "
 "Iglesia leyendo la Escritura a lo largo de los siglos."
 
-#: content.py:67
+#: content.py:72
 #, python-brace-format
 msgid "{n} quotations"
 msgstr "{n} citas"
 
-#: content.py:68
+#: content.py:73
 msgid "Public domain (compiled from public-domain sources)"
 msgstr "Dominio público (recopilado de fuentes en dominio público)"
 
-#: content.py:69
+#: content.py:74
 msgid "Compiled from the HistoricalChristianFaith Commentaries Database."
 msgstr ""
 "Recopilado de la base de datos de comentarios HistoricalChristianFaith."
 
-#: content.py:77
+#: content.py:82
 msgid ""
 "Public-domain illustrations, historical maps, and photographs of the places "
 "named in Scripture, shown beside the verse you are reading."
@@ -1530,16 +1530,16 @@ msgstr ""
 "Ilustraciones en dominio público, mapas históricos y fotografías de los "
 "lugares que nombra la Escritura, junto al versículo que está leyendo."
 
-#: content.py:81
+#: content.py:86
 #, python-brace-format
 msgid "{n} images"
 msgstr "{n} imágenes"
 
-#: content.py:82
+#: content.py:87
 msgid "Public domain & Creative Commons (per-item credits)"
 msgstr "Dominio público y Creative Commons (créditos por pieza)"
 
-#: content.py:83
+#: content.py:88
 msgid ""
 "Engravings (Doré, Schnorr, Merian), historical maps, and place photography "
 "from public-domain and openly-licensed sources."
@@ -1547,7 +1547,7 @@ msgstr ""
 "Grabados (Doré, Schnorr, Merian), mapas históricos y fotografía de lugares, "
 "de fuentes en dominio público y con licencia abierta."
 
-#: content.py:92
+#: content.py:97
 msgid ""
 "The Hebrew Old Testament word by word — each word with its English gloss, "
 "parsing, transliteration, and Strong’s number."
@@ -1555,11 +1555,11 @@ msgstr ""
 "El Antiguo Testamento hebreo palabra por palabra: cada palabra con su glosa "
 "en inglés, su análisis, su transliteración y su número de Strong."
 
-#: content.py:95 content.py:106 export_dialog.py:102 passage_export.py:421
+#: content.py:100 content.py:111 export_dialog.py:102 passage_export.py:421
 msgid "Interlinear"
 msgstr "Interlineal"
 
-#: content.py:97
+#: content.py:102
 msgid ""
 "Translators Amalgamated Hebrew OT (TAHOT), created by STEPBible at Tyndale "
 "House Cambridge from the Leningrad Codex, with Qere readings and English-"
@@ -1569,7 +1569,7 @@ msgstr ""
 "House Cambridge a partir del Códice de Leningrado, con lecturas Qere y "
 "numeración de versículos según el uso inglés."
 
-#: content.py:103
+#: content.py:108
 msgid ""
 "The Greek New Testament word by word — each word with its English gloss, "
 "parsing, transliteration, and Strong’s number."
@@ -1577,7 +1577,7 @@ msgstr ""
 "El Nuevo Testamento griego palabra por palabra: cada palabra con su glosa en "
 "inglés, su análisis, su transliteración y su número de Strong."
 
-#: content.py:108
+#: content.py:113
 msgid ""
 "Translators Amalgamated Greek NT (TAGNT), created by STEPBible at Tyndale "
 "House Cambridge. Follows the Nestle-Aland word stream; variant words from "
@@ -1587,23 +1587,23 @@ msgstr ""
 "House Cambridge. Sigue el texto de Nestle-Aland; las variantes de otras "
 "ediciones se conservan en los datos."
 
-#: content.py:173
+#: content.py:178
 msgid "Fathers, medievals & reformers — per verse"
 msgstr "Padres, medievales y reformadores, versículo a versículo"
 
-#: content.py:181
+#: content.py:186
 msgid "Engravings, maps & place photos"
 msgstr "Grabados, mapas y fotografías de lugares"
 
-#: content.py:190
+#: content.py:195
 msgid "Artifacts of the biblical world"
 msgstr "Objetos del mundo bíblico"
 
-#: content.py:197
+#: content.py:202
 msgid "Hebrew with gloss & parsing, word by word"
 msgstr "Hebreo con glosa y análisis, palabra por palabra"
 
-#: content.py:199
+#: content.py:204
 msgid "Greek with gloss & parsing, word by word"
 msgstr "Griego con glosa y análisis, palabra por palabra"
 
@@ -1611,7 +1611,7 @@ msgstr "Griego con glosa y análisis, palabra por palabra"
 msgid "Hide cross-references"
 msgstr "Ocultar las referencias cruzadas"
 
-#: crossref_panel.py:78 window.py:440 window.py:2620
+#: crossref_panel.py:78 window.py:476 window.py:2680
 msgid "Cross-references"
 msgstr "Referencias cruzadas"
 
@@ -1701,7 +1701,7 @@ msgstr "Markdown"
 msgid "Plain text"
 msgstr "Texto sin formato"
 
-#: export_dialog.py:158 export_dialog.py:313 study_journal.py:1063
+#: export_dialog.py:158 export_dialog.py:313 study_journal.py:1066
 msgid "Please choose a location on this computer."
 msgstr "Elija una ubicación en este equipo."
 
@@ -1726,7 +1726,7 @@ msgstr "Copiar la tarjeta"
 msgid "Card"
 msgstr "Tarjeta"
 
-#: export_dialog.py:228 verse_card.py:36 window.py:1330
+#: export_dialog.py:228 verse_card.py:36 window.py:1376
 msgid "Paper"
 msgstr "Papel"
 
@@ -1841,8 +1841,8 @@ msgstr "Arte"
 msgid "Where"
 msgstr "Dónde"
 
-#: imagery_reader.py:569 module_manager.py:584 module_manager.py:600
-#: module_manager.py:1372
+#: imagery_reader.py:569 module_manager.py:589 module_manager.py:605
+#: module_manager.py:1447
 msgid "Bible Imagery"
 msgstr "Imágenes bíblicas"
 
@@ -1912,7 +1912,7 @@ msgstr "Copiar el título, el autor y la fuente de la obra"
 msgid "Copy image"
 msgstr "Copiar la imagen"
 
-#: imagery_reader.py:893 pane.py:1411
+#: imagery_reader.py:893 pane.py:1418
 msgid "Today"
 msgstr "Hoy"
 
@@ -1932,11 +1932,11 @@ msgstr "Acercar"
 msgid "Fit to window"
 msgstr "Ajustar a la ventana"
 
-#: interlinear_data.py:312 module_manager.py:555 module_manager.py:1415
+#: interlinear_data.py:312 module_manager.py:560 module_manager.py:1490
 msgid "Interlinear — Hebrew OT"
 msgstr "Interlineal: AT hebreo"
 
-#: interlinear_data.py:313 module_manager.py:556 module_manager.py:1417
+#: interlinear_data.py:313 module_manager.py:561 module_manager.py:1492
 msgid "Interlinear — Greek NT"
 msgstr "Interlineal: NT griego"
 
@@ -1972,91 +1972,91 @@ msgstr "El Antiguo Testamento hebreo termina en Malaquías."
 msgid "The Greek New Testament begins at Matthew."
 msgstr "El Nuevo Testamento griego empieza en Mateo."
 
-#: lexicon_panel.py:221 lexicon_panel.py:222
+#: lexicon_panel.py:222 lexicon_panel.py:223
 msgid "Back to previous definition"
 msgstr "Volver a la definición anterior"
 
-#: lexicon_panel.py:235
+#: lexicon_panel.py:236
 msgid "Strong's Lexicon"
 msgstr "Léxico de Strong"
 
-#: lexicon_panel.py:267 lexicon_panel.py:268
+#: lexicon_panel.py:268 lexicon_panel.py:269
 msgid "Close lexicon"
 msgstr "Cerrar el léxico"
 
-#: lexicon_panel.py:304 lexicon_panel.py:309 lexicon_panel.py:499
-#: lexicon_panel.py:544
+#: lexicon_panel.py:305 lexicon_panel.py:310 lexicon_panel.py:500
+#: lexicon_panel.py:545
 msgid "Full LSJ entry"
 msgstr "Entrada completa del LSJ"
 
-#: lexicon_panel.py:337
+#: lexicon_panel.py:338
 msgid "Word study results"
 msgstr "Resultados del estudio de palabras"
 
-#: lexicon_panel.py:341 onboarding.py:65
+#: lexicon_panel.py:342 onboarding.py:65
 msgid "Word study"
 msgstr "Estudio de palabras"
 
-#: lexicon_panel.py:415
+#: lexicon_panel.py:416
 #, python-brace-format
 msgid "Strong's {num}"
 msgstr "Strong {num}"
 
-#: lexicon_panel.py:422
+#: lexicon_panel.py:423
 #, python-brace-format
 msgid "in “{text}”"
 msgstr "en «{text}»"
 
-#: lexicon_panel.py:425
+#: lexicon_panel.py:426
 #, python-brace-format
 msgid "with {strongs}"
 msgstr "con {strongs}"
 
-#: lexicon_panel.py:486 lexicon_panel.py:487
+#: lexicon_panel.py:487 lexicon_panel.py:488
 msgid "Definition not found."
 msgstr "No se encontró la definición."
 
-#: lexicon_panel.py:492
+#: lexicon_panel.py:493
 #, python-brace-format
 msgid "{entry} loaded"
 msgstr "Se cargó {entry}"
 
-#: lexicon_panel.py:551
+#: lexicon_panel.py:552
 msgid "Brief entry (Abbott-Smith)"
 msgstr "Entrada breve (Abbott-Smith)"
 
-#: lexicon_panel.py:639 pane_search.py:444 search_panel.py:348
+#: lexicon_panel.py:640 pane_search.py:444 search_panel.py:348
 msgid "Searching…"
 msgstr "Buscando…"
 
-#: lexicon_panel.py:687
+#: lexicon_panel.py:688
 #, python-brace-format
 msgid "Searching {book}… {n} match so far ({ch}/{total})"
 msgid_plural "Searching {book}… {n} matches so far ({ch}/{total})"
 msgstr[0] "Buscando en {book}… {n} coincidencia hasta ahora ({ch}/{total})"
 msgstr[1] "Buscando en {book}… {n} coincidencias hasta ahora ({ch}/{total})"
 
-#: lexicon_panel.py:708
+#: lexicon_panel.py:709
 #, python-brace-format
 msgid "{n} occurrence in {book}"
 msgid_plural "{n} occurrences in {book}"
 msgstr[0] "{n} aparición en {book}"
 msgstr[1] "{n} apariciones en {book}"
 
-#: lexicon_panel.py:714
+#: lexicon_panel.py:715
 #, python-brace-format
 msgid "Showing the first {n} verses"
 msgstr "Se muestran los primeros {n} versículos"
 
-#: lexicon_panel.py:793 lexicon_panel.py:794
+#: lexicon_panel.py:794 lexicon_panel.py:795
 msgid "Open in Bible pane"
 msgstr "Abrir en el panel de la Biblia"
 
-#: lexicon_panel.py:814
+#: lexicon_panel.py:815
 msgid "No Bible installed."
 msgstr "No hay ninguna Biblia instalada."
 
-#: lexicon_panel.py:835
+#: lexicon_panel.py:836
 msgid "Verse not found in this Bible."
 msgstr "No se encontró el versículo en esta Biblia."
 
@@ -2241,12 +2241,12 @@ msgid_plural "updated {m} months ago"
 msgstr[0] "actualizado hace {m} mes"
 msgstr[1] "actualizado hace {m} meses"
 
-#: module_manager.py:191 welcome.py:416
+#: module_manager.py:191 welcome.py:489
 #, python-brace-format
 msgid "{pct}% ({done} of {total} MB)"
 msgstr "{pct} % ({done} de {total} MB)"
 
-#: module_manager.py:194 welcome.py:419
+#: module_manager.py:194 welcome.py:492
 #, python-brace-format
 msgid "{done} MB"
 msgstr "{done} MB"
@@ -2255,59 +2255,59 @@ msgstr "{done} MB"
 msgid "Module Manager"
 msgstr "Gestor de módulos"
 
-#: module_manager.py:239 module_manager.py:240
+#: module_manager.py:241 module_manager.py:242
 msgid "Import module from file"
 msgstr "Importar un módulo desde un archivo"
 
-#: module_manager.py:258
+#: module_manager.py:260
 msgid "Retry"
 msgstr "Reintentar"
 
-#: module_manager.py:297
+#: module_manager.py:299
 msgid "Search installed and catalogue…"
 msgstr "Buscar en lo instalado y el catálogo…"
 
-#: module_manager.py:320
+#: module_manager.py:322
 msgid "Filter languages…"
 msgstr "Filtrar idiomas…"
 
-#: module_manager.py:361 module_picker.py:120 module_picker.py:121
+#: module_manager.py:363 module_picker.py:120 module_picker.py:121
 msgid "Filter by language"
 msgstr "Filtrar por idioma"
 
-#: module_manager.py:364 module_manager.py:365
+#: module_manager.py:366 module_manager.py:367
 msgid "Show all languages"
 msgstr "Mostrar todos los idiomas"
 
-#: module_manager.py:383 module_manager.py:1019
+#: module_manager.py:385 module_manager.py:1071
 msgid "Strong's"
 msgstr "Strong"
 
-#: module_manager.py:385 module_manager.py:386
+#: module_manager.py:387 module_manager.py:388
 msgid "Only modules with Strong's numbers"
 msgstr "Solo los módulos con números de Strong"
 
-#: module_manager.py:412 module_manager.py:413
+#: module_manager.py:414 module_manager.py:415
 msgid "Refresh the catalogue"
 msgstr "Actualizar el catálogo"
 
-#: module_manager.py:418
+#: module_manager.py:420
 msgid "Browse catalogue"
 msgstr "Explorar el catálogo"
 
-#: module_manager.py:483 module_manager.py:498 module_manager.py:508
+#: module_manager.py:488 module_manager.py:503 module_manager.py:513
 msgid "Curated for Scriptura"
 msgstr "Seleccionados para Scriptura"
 
-#: module_manager.py:485
+#: module_manager.py:490
 msgid "Hand-assembled companions, built for this app."
 msgstr "Complementos preparados a mano para esta aplicación."
 
-#: module_manager.py:513
+#: module_manager.py:518
 msgid "Open databases"
 msgstr "Bases de datos abiertas"
 
-#: module_manager.py:515
+#: module_manager.py:520
 msgid ""
 "Open-access data behind the word-study features — cross-references, Hebrew "
 "and Greek lexicons, and grammatical parsing."
@@ -2315,27 +2315,27 @@ msgstr ""
 "Datos de acceso abierto que sustentan el estudio de palabras: referencias "
 "cruzadas, léxicos hebreo y griego, y análisis gramatical."
 
-#: module_manager.py:529
+#: module_manager.py:534
 #, python-brace-format
 msgid "{n} quotations from the church fathers to the Reformers, verse by verse"
 msgstr ""
 "{n} citas, de los padres de la Iglesia a los reformadores, versículo por "
 "versículo"
 
-#: module_manager.py:531
+#: module_manager.py:536
 msgid "Church-history commentary, verse by verse"
 msgstr "Comentario de historia de la Iglesia, versículo por versículo"
 
-#: module_manager.py:533 module_manager.py:592 module_manager.py:786
-#: module_manager.py:1670
+#: module_manager.py:538 module_manager.py:597 module_manager.py:825
+#: module_manager.py:840 module_manager.py:1131 module_manager.py:1755
 msgid "Update"
 msgstr "Actualizar"
 
-#: module_manager.py:536 module_manager.py:595
+#: module_manager.py:541 module_manager.py:600
 msgid "A newer pack is available"
 msgstr "Hay un paquete más reciente disponible"
 
-#: module_manager.py:544
+#: module_manager.py:549
 msgid ""
 "How the church read each verse, from the fathers to the Reformers · ~33 MB "
 "download"
@@ -2343,26 +2343,26 @@ msgstr ""
 "Cómo leyó la Iglesia cada versículo, de los padres a los reformadores · "
 "descarga de ~33 MB"
 
-#: module_manager.py:546 module_manager.py:575 module_manager.py:605
-#: module_manager.py:636 module_manager.py:1397
+#: module_manager.py:551 module_manager.py:580 module_manager.py:610
+#: module_manager.py:641 module_manager.py:1472
 msgid "Download"
 msgstr "Descargar"
 
-#: module_manager.py:561
+#: module_manager.py:566
 msgid ""
 "Every OT word with gloss, parsing, and Strong’s — Tyndale House data (CC BY)"
 msgstr ""
 "Cada palabra del AT con glosa, análisis y número de Strong; datos de Tyndale "
 "House (CC BY)"
 
-#: module_manager.py:563
+#: module_manager.py:568
 msgid ""
 "Every NT word with gloss, parsing, and Strong’s — Tyndale House data (CC BY)"
 msgstr ""
 "Cada palabra del NT con glosa, análisis y número de Strong; datos de Tyndale "
 "House (CC BY)"
 
-#: module_manager.py:570
+#: module_manager.py:575
 msgid ""
 "The Hebrew Old Testament word by word — gloss, parsing, and Strong’s under "
 "each word · ~16 MB download"
@@ -2370,7 +2370,7 @@ msgstr ""
 "El Antiguo Testamento hebreo palabra por palabra: glosa, análisis y número "
 "de Strong bajo cada palabra · descarga de ~16 MB"
 
-#: module_manager.py:573
+#: module_manager.py:578
 msgid ""
 "The Greek New Testament word by word — gloss, parsing, and Strong’s under "
 "each word · ~7 MB download"
@@ -2378,17 +2378,17 @@ msgstr ""
 "El Nuevo Testamento griego palabra por palabra: glosa, análisis y número de "
 "Strong bajo cada palabra · descarga de ~7 MB"
 
-#: module_manager.py:588
+#: module_manager.py:593
 #, python-brace-format
 msgid "{n} illustrations, maps, and place photos, verse by verse"
 msgstr ""
 "{n} ilustraciones, mapas y fotografías de lugares, versículo por versículo"
 
-#: module_manager.py:590
+#: module_manager.py:595
 msgid "Illustrations, maps, and place photos, verse by verse"
 msgstr "Ilustraciones, mapas y fotografías de lugares, versículo por versículo"
 
-#: module_manager.py:603
+#: module_manager.py:608
 msgid ""
 "Illustrations, historical maps, and photographs of the places named in each "
 "verse · ~525 MB download"
@@ -2396,7 +2396,7 @@ msgstr ""
 "Ilustraciones, mapas históricos y fotografías de los lugares que nombra cada "
 "versículo · descarga de ~525 MB"
 
-#: module_manager.py:618
+#: module_manager.py:623
 msgid ""
 "Artifacts, inscriptions, and excavated places in biblical sequence — open it "
 "from any pane’s module picker"
@@ -2404,104 +2404,115 @@ msgstr ""
 "Objetos, inscripciones y yacimientos excavados en orden bíblico; ábralo "
 "desde el selector de módulos de cualquier panel"
 
-#: module_manager.py:620
+#: module_manager.py:625
 msgid "Included"
 msgstr "Incluido"
 
-#: module_manager.py:687 module_manager.py:756 module_picker.py:224
+#: module_manager.py:692 module_manager.py:761 module_picker.py:224
 msgid "All languages"
 msgstr "Todos los idiomas"
 
-#: module_manager.py:776
+#: module_manager.py:773
+msgid "Imported by an older version — download again for full formatting"
+msgstr ""
+"Importado por una versión anterior: descargarlo de nuevo restaura el formato "
+"completo"
+
+#: module_manager.py:775
+#, python-brace-format
+msgid "eBible.org published a newer text on {date}"
+msgstr "eBible.org publicó un texto más reciente el {date}"
+
+#: module_manager.py:816
 #, python-brace-format
 msgid "{n} update available"
 msgid_plural "{n} updates available"
 msgstr[0] "{n} actualización disponible"
 msgstr[1] "{n} actualizaciones disponibles"
 
-#: module_manager.py:784 module_manager.py:1670
+#: module_manager.py:838 module_manager.py:1755
 #, python-brace-format
 msgid "Update from v{old} to v{new}"
 msgstr "Actualizar de la v{old} a la v{new}"
 
-#: module_manager.py:830
+#: module_manager.py:882
 msgid "Installed"
 msgstr "Instalados"
 
-#: module_manager.py:833
+#: module_manager.py:885
 msgid "No installed modules match your search."
 msgstr "Ningún módulo instalado coincide con su búsqueda."
 
-#: module_manager.py:834
+#: module_manager.py:886
 msgid "Nothing yet — install something from the catalogue below."
 msgstr "Todavía no hay nada: instale algo del catálogo de abajo."
 
-#: module_manager.py:845
+#: module_manager.py:897
 #, python-brace-format
 msgid "{n} CrossWire module"
 msgid_plural "{n} CrossWire modules"
 msgstr[0] "{n} módulo de CrossWire"
 msgstr[1] "{n} módulos de CrossWire"
 
-#: module_manager.py:850
+#: module_manager.py:902
 #, python-brace-format
 msgid "{n} eBible translation"
 msgid_plural "{n} eBible translations"
 msgstr[0] "{n} traducción de eBible"
 msgstr[1] "{n} traducciones de eBible"
 
-#: module_manager.py:856
+#: module_manager.py:908
 msgid "searching all languages"
 msgstr "buscando en todos los idiomas"
 
-#: module_manager.py:907
+#: module_manager.py:959
 msgid "No modules match your filters"
 msgstr "Ningún módulo coincide con sus filtros"
 
-#: module_manager.py:910
+#: module_manager.py:962
 msgid "No catalogue cached yet — refresh to download the module list."
 msgstr ""
 "Aún no hay catálogo guardado: actualice para descargar la lista de módulos."
 
-#: module_manager.py:937
+#: module_manager.py:989
 #, python-brace-format
 msgid "Load more — showing the first {shown} of {total}"
 msgstr "Cargar más: se muestran los primeros {shown} de {total}"
 
-#: module_manager.py:998
+#: module_manager.py:1050
 #, python-brace-format
 msgid "{n} edition"
 msgid_plural "{n} editions"
 msgstr[0] "{n} edición"
 msgstr[1] "{n} ediciones"
 
-#: module_manager.py:1021 module_manager.py:1623
+#: module_manager.py:1073 module_manager.py:1708
 msgid "Locked"
 msgstr "Bloqueado"
 
-#: module_manager.py:1037 module_manager.py:1038 module_picker.py:196
+#: module_manager.py:1089 module_manager.py:1090 module_picker.py:196
 msgid "Remove module"
 msgstr "Quitar el módulo"
 
-#: module_manager.py:1040 module_manager.py:1069 module_manager.py:1271
-#: module_manager.py:1550 module_manager.py:1582 module_manager.py:1662
+#: module_manager.py:1092 module_manager.py:1144 module_manager.py:1346
+#: module_manager.py:1635 module_manager.py:1667 module_manager.py:1747
 msgid "Install"
 msgstr "Instalar"
 
-#: module_manager.py:1088
+#: module_manager.py:1163
 msgid "Waiting for the current operation to finish…"
 msgstr "Esperando a que termine la operación en curso…"
 
-#: module_manager.py:1206 module_manager.py:1207 module_manager.py:1290
-#: module_manager.py:1450 module_picker.py:519 study_journal.py:236
+#: module_manager.py:1281 module_manager.py:1282 module_manager.py:1365
+#: module_manager.py:1525 module_picker.py:519 study_journal.py:236
 msgid "Remove"
 msgstr "Quitar"
 
-#: module_manager.py:1260 window.py:1912
+#: module_manager.py:1335 window.py:1958
 msgid "Unlock Module"
 msgstr "Desbloquear el módulo"
 
-#: module_manager.py:1262
+#: module_manager.py:1337
 #, python-brace-format
 msgid ""
 "“{name}” is enciphered. Enter the unlock key from the publisher to install "
@@ -2510,21 +2521,21 @@ msgstr ""
 "«{name}» está cifrado. Introduzca la clave de desbloqueo del editor para "
 "instalarlo."
 
-#: module_manager.py:1268 module_manager.py:1649
+#: module_manager.py:1343 module_manager.py:1734
 msgid "Paste the unlock key from the publisher"
 msgstr "Pegue la clave de desbloqueo del editor"
 
-#: module_manager.py:1270 module_manager.py:1289 module_manager.py:1449
-#: module_manager.py:1547 module_picker.py:518 study_journal.py:211
-#: study_journal.py:235 window.py:1852 window.py:1919
+#: module_manager.py:1345 module_manager.py:1364 module_manager.py:1524
+#: module_manager.py:1632 module_picker.py:518 study_journal.py:211
+#: study_journal.py:235 window.py:1898 window.py:1965
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: module_manager.py:1285
+#: module_manager.py:1360
 msgid "Remove module?"
 msgstr "¿Quitar el módulo?"
 
-#: module_manager.py:1287
+#: module_manager.py:1362
 #, python-brace-format
 msgid ""
 "“{name}” will be removed from your library. You can reinstall it from the "
@@ -2533,34 +2544,34 @@ msgstr ""
 "«{name}» se quitará de su biblioteca. Puede volver a instalarlo después "
 "desde el catálogo."
 
-#: module_manager.py:1318
+#: module_manager.py:1393
 msgid "Downloading eBible catalog…"
 msgstr "Descargando el catálogo de eBible…"
 
-#: module_manager.py:1326
+#: module_manager.py:1401
 msgid "Downloading module list from CrossWire…"
 msgstr "Descargando la lista de módulos de CrossWire…"
 
-#: module_manager.py:1334 module_manager.py:1484
+#: module_manager.py:1409 module_manager.py:1568
 #, python-brace-format
 msgid "Downloading {name}…"
 msgstr "Descargando {name}…"
 
-#: module_manager.py:1349 module_manager.py:1465
+#: module_manager.py:1424 module_manager.py:1540
 msgid "Downloading…"
 msgstr "Descargando…"
 
-#: module_manager.py:1385 module_manager.py:1392 module_manager.py:1406
+#: module_manager.py:1460 module_manager.py:1467 module_manager.py:1481
 msgid "Scholar’s Greek Lexicon"
 msgstr "Léxico griego académico"
 
-#: module_manager.py:1388
+#: module_manager.py:1463
 msgid "Abbott-Smith + full Liddell-Scott-Jones — Tyndale House data (CC BY)"
 msgstr ""
 "Abbott-Smith y el Liddell-Scott-Jones completo; datos de Tyndale House (CC "
 "BY)"
 
-#: module_manager.py:1395
+#: module_manager.py:1470
 msgid ""
 "Upgrade Greek definitions to Abbott-Smith, with the full Liddell-Scott-Jones "
 "one click deeper · ~7 MB download"
@@ -2568,77 +2579,86 @@ msgstr ""
 "Mejore las definiciones griegas con Abbott-Smith y el Liddell-Scott-Jones "
 "completo a un clic de distancia · descarga de ~7 MB"
 
-#: module_manager.py:1445
+#: module_manager.py:1520
 msgid "Remove?"
 msgstr "¿Quitar?"
 
-#: module_manager.py:1447
+#: module_manager.py:1522
 #, python-brace-format
 msgid "“{name}” will be removed. You can download it again later."
 msgstr "«{name}» se quitará. Puede volver a descargarlo más adelante."
 
-#: module_manager.py:1466
+#: module_manager.py:1541
 msgid "Parsing USFM…"
 msgstr "Analizando el USFM…"
 
-#: module_manager.py:1467
+#: module_manager.py:1542
 msgid "Saving…"
 msgstr "Guardando…"
 
-#: module_manager.py:1487
+#: module_manager.py:1563
+#, python-brace-format
+msgid "{name} updated"
+msgstr "{name} actualizada"
+
+#: module_manager.py:1572
+msgid "Updating…"
+msgstr "Actualizando…"
+
+#: module_manager.py:1572
 msgid "Installing…"
 msgstr "Instalando…"
 
-#: module_manager.py:1498
+#: module_manager.py:1583
 msgid "Import SWORD Module"
 msgstr "Importar un módulo SWORD"
 
-#: module_manager.py:1500
+#: module_manager.py:1585
 msgid "SWORD module (.zip)"
 msgstr "Módulo SWORD (.zip)"
 
-#: module_manager.py:1519
+#: module_manager.py:1604
 msgid "Drop a SWORD module .zip file to import it."
 msgstr "Suelte aquí un archivo .zip de módulo SWORD para importarlo."
 
-#: module_manager.py:1536
+#: module_manager.py:1621
 msgid "Reading module file…"
 msgstr "Leyendo el archivo del módulo…"
 
-#: module_manager.py:1541
+#: module_manager.py:1626
 msgid "Import Module"
 msgstr "Importar módulo"
 
-#: module_manager.py:1667 module_manager.py:1672
+#: module_manager.py:1752 module_manager.py:1757
 msgid "Reinstall"
 msgstr "Reinstalar"
 
-#: module_manager.py:1667
+#: module_manager.py:1752
 msgid "Already installed"
 msgstr "Ya está instalado"
 
-#: module_manager.py:1672
+#: module_manager.py:1757
 #, python-brace-format
 msgid "Already installed (v{old})"
 msgstr "Ya está instalado (v{old})"
 
-#: module_manager.py:1673 window.py:1853
+#: module_manager.py:1758 window.py:1899
 msgid "Replace"
 msgstr "Reemplazar"
 
-#: module_manager.py:1673
+#: module_manager.py:1758
 #, python-brace-format
 msgid "Replace v{old} with older v{new}"
 msgstr "Reemplazar la v{old} por la v{new}, más antigua"
 
-#: module_manager.py:1685
+#: module_manager.py:1770
 #, python-brace-format
 msgid "{n} module"
 msgid_plural "{n} modules"
 msgstr[0] "{n} módulo"
 msgstr[1] "{n} módulos"
 
-#: module_manager.py:1696
+#: module_manager.py:1781
 #, python-brace-format
 msgid "Installing {label}…"
 msgstr "Instalando {label}…"
@@ -2683,7 +2703,8 @@ msgstr "Información del módulo"
 msgid "Description"
 msgstr "Descripción"
 
-#: module_picker.py:482
+#: module_picker.py:482 welcome.py:213 welcome.py:214 window.py:3361
+#: window.py:3370
 msgid "Language"
 msgstr "Idioma"
 
@@ -2734,15 +2755,15 @@ msgstr "No se pudo quitar {name}: {error}"
 msgid "Removed {name}"
 msgstr "Se quitó {name}"
 
-#: navigation.py:142
+#: navigation.py:211
 msgid "Recent"
 msgstr "Recientes"
 
-#: navigation.py:147 navigation.py:148
+#: navigation.py:216 navigation.py:217
 msgid "Clear recent list"
 msgstr "Borrar la lista de recientes"
 
-#: navigation.py:161
+#: navigation.py:230
 msgid ""
 "No recent passages yet.\n"
 "Navigate around — they'll show here."
@@ -2750,18 +2771,27 @@ msgstr ""
 "Todavía no hay pasajes recientes.\n"
 "Navegue un poco y aparecerán aquí."
 
-#: navigation.py:274 navigation.py:275
+#: navigation.py:346 navigation.py:347
 msgid "Back to chapters"
 msgstr "Volver a los capítulos"
 
-#: navigation.py:279 navigation.py:331
+#: navigation.py:351 navigation.py:403
 msgid "Chapter"
 msgstr "Capítulo"
 
-#: navigation.py:351
+#: navigation.py:424
 #, python-brace-format
 msgid "Chapter {n} Verse"
 msgstr "Capítulo {n}, versículo"
+
+#: navigation.py:469 pane.py:2421 present_mode.py:273
+#, python-format
+msgid "%s isn’t in this translation."
+msgstr "%s no está en esta traducción."
+
+#: navigation.py:481
+msgid "Deuterocanon"
+msgstr "Deuterocanónicos"
 
 #: onboarding.py:35
 msgid "Tip: tap a verse to open its cross-references."
@@ -2907,87 +2937,87 @@ msgstr "Atajos de teclado"
 msgid "Every key the app answers to"
 msgstr "Todas las teclas a las que responde la aplicación"
 
-#: open_data.py:330
+#: open_data.py:332
 msgid "OpenBible Cross-References"
 msgstr "Referencias cruzadas de OpenBible"
 
-#: open_data.py:331
+#: open_data.py:333
 msgid "340,000 cross-references — 5× more than TSK"
 msgstr "340 000 referencias cruzadas: 5 veces más que TSK"
 
-#: open_data.py:337
+#: open_data.py:339
 msgid "OpenBible Topics"
 msgstr "Temas de OpenBible"
 
-#: open_data.py:338
+#: open_data.py:340
 msgid "700+ topical tags for every verse"
 msgstr "Más de 700 etiquetas temáticas para cada versículo"
 
-#: open_data.py:344
+#: open_data.py:346
 msgid "Dodson Greek Lexicon"
 msgstr "Léxico griego de Dodson"
 
-#: open_data.py:345
+#: open_data.py:347
 msgid "Readable NT Greek definitions keyed to Strong's numbers"
 msgstr "Definiciones claras del griego del NT ligadas a los números de Strong"
 
-#: overlays.py:269
+#: overlays.py:284
 msgid "Reading mode — Esc, F11, or hover the top edge to exit"
 msgstr ""
 "Modo lectura: pulse Esc o F11, o acerque el puntero al borde superior para "
 "salir"
 
-#: pane.py:1186
+#: pane.py:1193
 #, python-brace-format
 msgid "Reading pane {n}"
 msgstr "Panel de lectura {n}"
 
-#: pane.py:1330
+#: pane.py:1337
 msgid "Pane controls"
 msgstr "Controles del panel"
 
-#: pane.py:1349 pane.py:2155
+#: pane.py:1356 pane.py:2162
 msgid "Following navigation"
 msgstr "Sigue la navegación"
 
-#: pane.py:1350
+#: pane.py:1357
 msgid "Follow navigation"
 msgstr "Seguir la navegación"
 
-#: pane.py:1357 pane.py:1358
+#: pane.py:1364 pane.py:1365
 msgid "Chapter note"
 msgstr "Nota del capítulo"
 
-#: pane.py:1368 pane.py:1369
+#: pane.py:1375 pane.py:1376
 msgid "Copy chapter"
 msgstr "Copiar el capítulo"
 
-#: pane.py:1401 pane.py:1402
+#: pane.py:1408 pane.py:1409
 msgid "Previous day"
 msgstr "Día anterior"
 
-#: pane.py:1408 pane.py:1409
+#: pane.py:1415 pane.py:1416
 msgid "Next day"
 msgstr "Día siguiente"
 
-#: pane.py:1524
+#: pane.py:1531
 msgid "Reading view"
 msgstr "Vista de lectura"
 
-#: pane.py:2120
+#: pane.py:2127
 msgid "Copy chapter works on Bibles and commentaries only"
 msgstr "Copiar el capítulo solo funciona con Biblias y comentarios"
 
-#: pane.py:2133
+#: pane.py:2140
 #, python-brace-format
 msgid "Couldn't load chapter — {error}"
 msgstr "No se pudo cargar el capítulo: {error}"
 
-#: pane.py:2154
+#: pane.py:2161
 msgid "Locked — not following navigation"
 msgstr "Fijado: no sigue la navegación"
 
-#: pane.py:2380
+#: pane.py:2387
 msgid ""
 "This module isn’t organized by book and chapter, so it can’t be read in this "
 "pane. Pick a Bible or commentary to read here."
@@ -2995,21 +3025,26 @@ msgstr ""
 "Este módulo no está organizado por libro y capítulo, así que no se puede "
 "leer en este panel. Elija una Biblia o un comentario para leer aquí."
 
-#: pane.py:2382 pane.py:2406
+#: pane.py:2389 pane.py:2429
 msgid "Choose another module"
 msgstr "Elegir otro módulo"
 
-#: pane.py:2389 window.py:1905
+#: pane.py:2396 window.py:1951
 msgid "Edit Key"
 msgstr "Editar la clave"
 
-#: pane.py:2393
+#: pane.py:2400
 msgid "This module’s content isn’t readable — the cipher key may be incorrect."
 msgstr ""
 "El contenido de este módulo no se puede leer; puede que la clave de "
 "descifrado sea incorrecta."
 
-#: pane.py:2403
+#: pane.py:2414
+#, python-brace-format
+msgid "{module} has no text under this chapter."
+msgstr "{module} no trae texto en este capítulo."
+
+#: pane.py:2423
 #, python-brace-format
 msgid ""
 "{module} doesn’t include this passage. Some modules cover only the Old or "
@@ -3018,50 +3053,50 @@ msgstr ""
 "{module} no incluye este pasaje. Algunos módulos abarcan solo el Antiguo o "
 "el Nuevo Testamento; elija una Biblia completa."
 
-#: pane.py:2435
+#: pane.py:2458
 msgid "No entry found for this date."
 msgstr "No se encontró ninguna entrada para esta fecha."
 
-#: pane.py:2498
+#: pane.py:2521
 msgid "Related artifact — open in Scripture in Stone"
 msgstr "Objeto relacionado: abrir en La Escritura en piedra"
 
-#: pane.py:2499
+#: pane.py:2522
 msgid "Related artifact"
 msgstr "Objeto relacionado"
 
-#: pane.py:3785
+#: pane.py:3814
 #, python-brace-format
 msgid "highlighted {color}"
 msgstr "resaltado en {color}"
 
-#: pane.py:3788
+#: pane.py:3817
 msgid "highlighted"
 msgstr "resaltado"
 
-#: pane.py:3790
+#: pane.py:3819
 msgid "underlined"
 msgstr "subrayado"
 
-#: pane.py:3792
+#: pane.py:3821
 msgid "has note"
 msgstr "tiene una nota"
 
-#: pane.py:3799
+#: pane.py:3828
 msgid "has footnotes"
 msgstr "tiene notas al pie"
 
-#: pane.py:4340
+#: pane.py:4369
 #, python-brace-format
 msgid "Strong’s {num}"
 msgstr "Strong {num}"
 
-#: pane.py:4845
+#: pane.py:4874
 #, python-brace-format
 msgid "Cross-references ({letter}) · verse {v}"
 msgstr "Referencias cruzadas ({letter}) · versículo {v}"
 
-#: pane.py:4847
+#: pane.py:4876
 #, python-brace-format
 msgid "Footnote ({letter}) · verse {v}"
 msgstr "Nota al pie ({letter}) · versículo {v}"
@@ -3120,7 +3155,7 @@ msgstr "Indexando…"
 msgid "Indexing {idx}/{total}"
 msgstr "Indexando {idx}/{total}"
 
-#: pane_search.py:502 search_panel.py:404 study_journal.py:656
+#: pane_search.py:502 search_panel.py:404 study_journal.py:659
 msgid "No matches"
 msgstr "Sin coincidencias"
 
@@ -3177,40 +3212,35 @@ msgstr ""
 msgid "Open a Bible passage to present it."
 msgstr "Abra un pasaje bíblico para presentarlo."
 
-#: present_mode.py:268
-#, python-format
-msgid "%s isn’t in this translation."
-msgstr "%s no está en esta traducción."
-
-#: present_mode.py:297
+#: present_mode.py:302
 msgid "Previous"
 msgstr "Anterior"
 
-#: present_mode.py:300
+#: present_mode.py:305
 msgid "Next"
 msgstr "Siguiente"
 
-#: present_mode.py:303
+#: present_mode.py:308
 msgid "Verse numbers"
 msgstr "Números de versículo"
 
-#: present_mode.py:313 present_mode.py:314 window.py:2923
+#: present_mode.py:318 present_mode.py:319 window.py:2992
 msgid "One verse per page"
 msgstr "Un versículo por página"
 
-#: present_mode.py:321
+#: present_mode.py:326
 msgid "Parallel — both translations"
 msgstr "Paralelo: las dos traducciones"
 
-#: present_mode.py:325
+#: present_mode.py:330
 msgid "Smaller text"
 msgstr "Texto más pequeño"
 
-#: present_mode.py:328
+#: present_mode.py:333
 msgid "Larger text"
 msgstr "Texto más grande"
 
-#: present_mode.py:331 window.py:2926
+#: present_mode.py:336 window.py:2995
 msgid "Exit presentation"
 msgstr "Salir de la presentación"
 
@@ -3296,7 +3326,7 @@ msgstr "Epístolas paulinas"
 msgid "General Epistles"
 msgstr "Epístolas generales"
 
-#: search_panel.py:151 window.py:474 window.py:2591
+#: search_panel.py:151 window.py:510 window.py:2651
 msgid "Search"
 msgstr "Buscar"
 
@@ -3459,8 +3489,8 @@ msgstr ""
 "Esto quita la etiqueta de todas las anotaciones en que aparece. Las notas y "
 "los resaltados se quedan donde están."
 
-#: study_journal.py:265 study_journal.py:306 study_journal.py:1065
-#: window.py:3204
+#: study_journal.py:265 study_journal.py:306 study_journal.py:1068
+#: window.py:3273
 msgid "Study Journal"
 msgstr "Diario de estudio"
 
@@ -3496,15 +3526,15 @@ msgstr "Resaltados"
 msgid "Underlines"
 msgstr "Subrayados"
 
-#: study_journal.py:366 study_journal.py:547 study_journal.py:599
+#: study_journal.py:366 study_journal.py:550 study_journal.py:602
 msgid "All tags"
 msgstr "Todas las etiquetas"
 
-#: study_journal.py:371 study_journal.py:544 study_journal.py:598
+#: study_journal.py:371 study_journal.py:544 study_journal.py:601
 msgid "All modules"
 msgstr "Todos los módulos"
 
-#: study_journal.py:380 study_journal.py:559
+#: study_journal.py:380 study_journal.py:562
 msgid "All books"
 msgstr "Todos los libros"
 
@@ -3516,7 +3546,7 @@ msgstr "No hay ninguna entrada seleccionada"
 msgid "Pick an annotation from the list to view or edit it."
 msgstr "Elija una anotación de la lista para verla o editarla."
 
-#: study_journal.py:453 study_journal.py:796 study_journal.py:1074
+#: study_journal.py:453 study_journal.py:799 study_journal.py:1077
 msgid "Highlight"
 msgstr "Resaltar"
 
@@ -3532,7 +3562,7 @@ msgstr "Etiquetas (separadas por comas)"
 msgid "e.g. prayer, faith, covenant"
 msgstr "p. ej. oración, fe, pacto"
 
-#: study_journal.py:501 study_journal.py:803
+#: study_journal.py:501 study_journal.py:806
 msgid "Note"
 msgstr "Nota"
 
@@ -3544,68 +3574,68 @@ msgstr "Ir al versículo"
 msgid "Save note & tags"
 msgstr "Guardar la nota y las etiquetas"
 
-#: study_journal.py:646
+#: study_journal.py:649
 #, python-brace-format
 msgid "{n} entry"
 msgid_plural "{n} entries"
 msgstr[0] "{n} entrada"
 msgstr[1] "{n} entradas"
 
-#: study_journal.py:653
+#: study_journal.py:656
 msgid "No annotations yet"
 msgstr "Todavía no hay anotaciones"
 
-#: study_journal.py:654
+#: study_journal.py:657
 msgid "Right-click a verse to highlight it or add a note."
 msgstr ""
 "Pulse un versículo con el botón derecho para resaltarlo o añadir una nota."
 
-#: study_journal.py:657
+#: study_journal.py:660
 msgid "Try a different search or filter."
 msgstr "Pruebe con otra búsqueda u otro filtro."
 
-#: study_journal.py:723
+#: study_journal.py:726
 #, python-brace-format
 msgid "Show {n} more"
 msgid_plural "Show {n} more"
 msgstr[0] "Mostrar {n} más"
 msgstr[1] "Mostrar {n} más"
 
-#: study_journal.py:833
+#: study_journal.py:836
 #, python-brace-format
 msgid "Filter by #{tag}"
 msgstr "Filtrar por #{tag}"
 
-#: study_journal.py:847 study_journal.py:848
+#: study_journal.py:850 study_journal.py:851
 msgid "Delete annotation"
 msgstr "Eliminar la anotación"
 
-#: study_journal.py:981
+#: study_journal.py:984
 msgid "Saved"
 msgstr "Guardado"
 
-#: study_journal.py:1015
+#: study_journal.py:1018
 msgid "Note deleted"
 msgstr "Nota eliminada"
 
-#: study_journal.py:1016
+#: study_journal.py:1019
 msgid "Annotation deleted"
 msgstr "Anotación eliminada"
 
-#: study_journal.py:1017 window.py:1779
+#: study_journal.py:1020 window.py:1825
 msgid "Undo"
 msgstr "Deshacer"
 
-#: study_journal.py:1051
+#: study_journal.py:1054
 msgid "Export Study Journal"
 msgstr "Exportar el diario de estudio"
 
-#: study_journal.py:1082
+#: study_journal.py:1085
 #, python-brace-format
 msgid "Tags: {tags}"
 msgstr "Etiquetas: {tags}"
 
-#: study_journal.py:1090
+#: study_journal.py:1093
 #, python-brace-format
 msgid ""
 "Could not write to {path}:\n"
@@ -3614,11 +3644,11 @@ msgstr ""
 "No se pudo escribir en {path}:\n"
 "{error}"
 
-#: study_journal.py:1093
+#: study_journal.py:1096
 msgid "Export failed"
 msgstr "Falló la exportación"
 
-#: study_journal.py:1094
+#: study_journal.py:1097
 msgid "OK"
 msgstr "Aceptar"
 
@@ -3659,7 +3689,7 @@ msgstr "los últimos días"
 msgid "{plan} — day {n}"
 msgstr "{plan} — día {n}"
 
-#: today_page.py:428 window.py:3911
+#: today_page.py:428 window.py:4018
 msgid "Plan complete"
 msgstr "Plan completado"
 
@@ -3697,11 +3727,11 @@ msgstr "Pausar el devocional hablado"
 msgid "Listen to today's devotional"
 msgstr "Escuchar el devocional de hoy"
 
-#: verse_card.py:37 window.py:1331
+#: verse_card.py:37 window.py:1377
 msgid "White"
 msgstr "Blanco"
 
-#: verse_card.py:38 window.py:1332
+#: verse_card.py:38 window.py:1378
 msgid "Sepia"
 msgstr "Sepia"
 
@@ -3717,75 +3747,75 @@ msgstr "pulse Intro para consultarla"
 msgid "press Enter for the dictionary"
 msgstr "pulse Intro para el diccionario"
 
-#: welcome.py:54
+#: welcome.py:57
 msgid "Just reading"
 msgstr "Solo leer"
 
-#: welcome.py:55
+#: welcome.py:58
 msgid "Open a Bible and start reading right away."
 msgstr "Abra una Biblia y empiece a leer de inmediato."
 
-#: welcome.py:56
+#: welcome.py:59
 msgid "1 Bible"
 msgstr "1 Biblia"
 
-#: welcome.py:57
-msgid "Quick download"
-msgstr "Descarga rápida"
+#: welcome.py:60
+msgid "Smallest download"
+msgstr "Descarga mínima"
 
-#: welcome.py:66
+#: welcome.py:69
 msgid "Reading + study"
 msgstr "Lectura y estudio"
 
-#: welcome.py:67
+#: welcome.py:70
 msgid "A few translations, historical commentary, and word-study tools."
 msgstr ""
 "Varias traducciones, comentario histórico y herramientas para el estudio de "
 "palabras."
 
-#: welcome.py:69
+#: welcome.py:72
 msgid "4 Bibles · commentary · dictionary · lexicon · cross-references"
 msgstr "4 Biblias · comentario · diccionario · léxico · referencias cruzadas"
 
-#: welcome.py:71 welcome.py:131
+#: welcome.py:74 welcome.py:134
 msgid "Small download"
 msgstr "Descarga pequeña"
 
-#: welcome.py:89
+#: welcome.py:92
 msgid "Full library"
 msgstr "Biblioteca completa"
 
-#: welcome.py:90
+#: welcome.py:93
 msgid "The complete set — more translations and commentaries from the start."
 msgstr ""
 "El conjunto completo: más traducciones y comentarios desde el principio."
 
-#: welcome.py:92
+#: welcome.py:95
 msgid ""
 "7 Bibles · 3 commentaries · dictionary · lexicon · 340k cross-references"
 msgstr ""
 "7 Biblias · 3 comentarios · diccionario · léxico · 340 000 referencias "
 "cruzadas"
 
-#: welcome.py:94
+#: welcome.py:97
 msgid "Larger download"
 msgstr "Descarga grande"
 
-#: welcome.py:123
+#: welcome.py:126
 msgid "Spanish Bibles, a spoken reading, and word-study tools."
 msgstr ""
 "Biblias en español, una lectura hablada y herramientas para el estudio de "
 "palabras."
 
-#: welcome.py:130
+#: welcome.py:133
 msgid "5 Bibles · notes · lexicon · cross-references"
 msgstr "5 Biblias · notas · léxico · referencias cruzadas"
 
-#: welcome.py:159 welcome.py:184
+#: welcome.py:162 welcome.py:231 welcome.py:252
 msgid "Welcome to Scriptura"
 msgstr "Le damos la bienvenida a Scriptura"
 
-#: welcome.py:189
+#: welcome.py:257
 msgid ""
 "Choose a starting point. Pick the shape that fits how you want to work — "
 "this is just a head start."
@@ -3793,49 +3823,49 @@ msgstr ""
 "Elija un punto de partida. Escoja lo que mejor se ajuste a su forma de "
 "trabajar; esto es solo para empezar."
 
-#: welcome.py:209
+#: welcome.py:277
 msgid "You can add or remove anything later from the Module Manager."
 msgstr ""
 "Después puede añadir o quitar lo que quiera desde el gestor de módulos."
 
-#: welcome.py:229
+#: welcome.py:302
 msgid "New here? See what the pointer can do — Tips & Gestures"
 msgstr "¿Es nuevo aquí? Vea lo que puede hacer el puntero: Consejos y gestos"
 
-#: welcome.py:238
+#: welcome.py:311
 msgid "Choose individual modules instead"
 msgstr "Elegir módulos uno a uno"
 
-#: welcome.py:261
+#: welcome.py:334
 msgid "★ Recommended"
 msgstr "★ Recomendado"
 
-#: welcome.py:313
+#: welcome.py:386
 msgid "Starting download…"
 msgstr "Iniciando la descarga…"
 
-#: welcome.py:345
+#: welcome.py:418
 msgid "Back to options"
 msgstr "Volver a las opciones"
 
-#: welcome.py:368
+#: welcome.py:441
 msgid "Reading the module list…"
 msgstr "Leyendo la lista de módulos…"
 
-#: welcome.py:375
+#: welcome.py:448
 msgid "module list"
 msgstr "lista de módulos"
 
-#: welcome.py:379
+#: welcome.py:452
 #, python-brace-format
 msgid "({step}/{total}) Downloading {label}…"
 msgstr "({step}/{total}) Descargando {label}…"
 
-#: welcome.py:463
+#: welcome.py:536
 msgid "unknown error"
 msgstr "error desconocido"
 
-#: welcome.py:467
+#: welcome.py:540
 #, python-brace-format
 msgid ""
 "Couldn’t download a Bible — please check your connection and try again. "
@@ -3844,7 +3874,7 @@ msgstr ""
 "No se pudo descargar ninguna Biblia; compruebe su conexión e inténtelo de "
 "nuevo. ({details})"
 
-#: welcome.py:477
+#: welcome.py:550
 #, python-brace-format
 msgid ""
 "Installed with warnings — these can be retried later from the Module "
@@ -3853,7 +3883,7 @@ msgstr ""
 "Se instaló con advertencias; puede reintentar lo siguiente más tarde desde "
 "el gestor de módulos: {names}"
 
-#: welcome.py:480
+#: welcome.py:553
 msgid "Done. Opening Scriptura…"
 msgstr "Listo. Abriendo Scriptura…"
 
@@ -4121,7 +4151,75 @@ msgstr "Judas"
 msgid "Revelation"
 msgstr "Apocalipsis"
 
-#: window.py:236
+#: window.py:75
+msgid "Tobit"
+msgstr "Tobías"
+
+#: window.py:75
+msgid "Judith"
+msgstr "Judit"
+
+#: window.py:75
+msgid "Additions to Esther"
+msgstr "Adiciones a Ester"
+
+#: window.py:75
+msgid "Wisdom"
+msgstr "Sabiduría"
+
+#: window.py:76
+msgid "Sirach"
+msgstr "Eclesiástico"
+
+#: window.py:76
+msgid "Baruch"
+msgstr "Baruc"
+
+#: window.py:76
+msgid "Epistle of Jeremiah"
+msgstr "Carta de Jeremías"
+
+#: window.py:77
+msgid "Prayer of Azariah"
+msgstr "Oración de Azarías"
+
+#: window.py:77
+msgid "Susanna"
+msgstr "Susana"
+
+#: window.py:77
+msgid "Bel and the Dragon"
+msgstr "Bel y el dragón"
+
+#: window.py:78
+msgid "1 Maccabees"
+msgstr "1 Macabeos"
+
+#: window.py:78
+msgid "2 Maccabees"
+msgstr "2 Macabeos"
+
+#: window.py:78
+msgid "1 Esdras"
+msgstr "1 Esdras"
+
+#: window.py:79
+msgid "Prayer of Manasseh"
+msgstr "Oración de Manasés"
+
+#: window.py:79
+msgid "3 Maccabees"
+msgstr "3 Macabeos"
+
+#: window.py:79
+msgid "2 Esdras"
+msgstr "2 Esdras"
+
+#: window.py:80
+msgid "4 Maccabees"
+msgstr "4 Macabeos"
+
+#: window.py:272
 msgid ""
 "Couldn't save your annotation — check disk space or permissions. The change "
 "may be lost when you quit."
@@ -4129,7 +4227,7 @@ msgstr ""
 "No se pudo guardar su anotación; compruebe el espacio en disco o los "
 "permisos. El cambio podría perderse al salir."
 
-#: window.py:243
+#: window.py:279
 msgid ""
 "Couldn't save your bookmark — check disk space or permissions. The change "
 "may be lost when you quit."
@@ -4137,7 +4235,7 @@ msgstr ""
 "No se pudo guardar su marcador; compruebe el espacio en disco o los "
 "permisos. El cambio podría perderse al salir."
 
-#: window.py:248
+#: window.py:284
 msgid ""
 "Couldn't save reading-plan progress — check disk space or permissions. The "
 "change may be lost when you quit."
@@ -4145,27 +4243,27 @@ msgstr ""
 "No se pudo guardar el avance del plan de lectura; compruebe el espacio en "
 "disco o los permisos. El cambio podría perderse al salir."
 
-#: window.py:268
+#: window.py:304
 msgid "settings"
 msgstr "ajustes"
 
-#: window.py:270 window.py:1878
+#: window.py:306 window.py:1924
 msgid "annotations"
 msgstr "anotaciones"
 
-#: window.py:272 window.py:1879
+#: window.py:308 window.py:1925
 msgid "bookmarks"
 msgstr "marcadores"
 
-#: window.py:274
+#: window.py:310
 msgid "reading plans"
 msgstr "planes de lectura"
 
-#: window.py:276
+#: window.py:312
 msgid "reading positions"
 msgstr "posiciones de lectura"
 
-#: window.py:280
+#: window.py:316
 #, python-brace-format
 msgid ""
 "Couldn't read {names}.json — using defaults. Your file is preserved; rename "
@@ -4174,217 +4272,217 @@ msgstr ""
 "No se pudo leer {names}.json; se usarán los valores predeterminados. Su "
 "archivo se conserva: renómbrelo para recuperarlo."
 
-#: window.py:310 window.py:311 window.py:3181
+#: window.py:346 window.py:347 window.py:3250
 msgid "Menu"
 msgstr "Menú"
 
-#: window.py:318
+#: window.py:354
 msgid "Go back (Alt+←)"
 msgstr "Atrás (Alt+←)"
 
-#: window.py:319 window.py:2585
+#: window.py:355 window.py:2645
 msgid "Go back"
 msgstr "Atrás"
 
-#: window.py:327
+#: window.py:363
 msgid "Go forward (Alt+→)"
 msgstr "Adelante (Alt+→)"
 
-#: window.py:328 window.py:2588
+#: window.py:364 window.py:2648
 msgid "Go forward"
 msgstr "Adelante"
 
-#: window.py:345
+#: window.py:381
 msgid "Go back (Alt+←) · right-click or hold for recent passages"
 msgstr ""
 "Atrás (Alt+←) · pulse con el botón derecho o mantenga pulsado para ver los "
 "pasajes recientes"
 
-#: window.py:374
+#: window.py:410
 msgid "Choose passage (Ctrl+L)"
 msgstr "Elegir pasaje (Ctrl+L)"
 
-#: window.py:375
+#: window.py:411
 msgid "Choose passage"
 msgstr "Elegir pasaje"
 
-#: window.py:395
+#: window.py:431
 msgid "Greek / Hebrew lexicon — click words for definitions"
 msgstr "Léxico griego/hebreo: pulse una palabra para ver su definición"
 
-#: window.py:397 window.py:2598
+#: window.py:433 window.py:2658
 msgid "Greek / Hebrew lexicon"
 msgstr "Léxico griego/hebreo"
 
-#: window.py:420 window.py:2430
+#: window.py:456 window.py:2490
 msgid "Footnotes — the translation's own notes, marked in the text"
 msgstr "Notas al pie: las notas de la propia traducción, marcadas en el texto"
 
-#: window.py:421 window.py:2610
+#: window.py:457 window.py:2670
 msgid "Footnotes"
 msgstr "Notas al pie"
 
-#: window.py:439
+#: window.py:475
 msgid "Cross-references — related verses appear when you tap a verse"
 msgstr ""
 "Referencias cruzadas: los versículos relacionados aparecen al pulsar un "
 "versículo"
 
-#: window.py:448 window.py:449 window.py:1699 window.py:2628
+#: window.py:484 window.py:485 window.py:1745 window.py:2688
 msgid "Bookmarks"
 msgstr "Marcadores"
 
-#: window.py:460
+#: window.py:496
 msgid "More"
 msgstr "Más"
 
-#: window.py:461
+#: window.py:497
 msgid "More actions"
 msgstr "Más acciones"
 
-#: window.py:473
+#: window.py:509
 msgid "Search (Ctrl+F)"
 msgstr "Buscar (Ctrl+F)"
 
-#: window.py:482 window.py:483
+#: window.py:518 window.py:519
 msgid "Single pane"
 msgstr "Un panel"
 
-#: window.py:486 window.py:487
+#: window.py:522 window.py:523
 msgid "Split pane"
 msgstr "Panel dividido"
 
-#: window.py:507 window.py:508 window.py:2637
+#: window.py:543 window.py:544 window.py:2697
 msgid "Show pane 1"
 msgstr "Mostrar el panel 1"
 
-#: window.py:511 window.py:512 window.py:2639
+#: window.py:547 window.py:548 window.py:2699
 msgid "Show pane 2"
 msgstr "Mostrar el panel 2"
 
-#: window.py:525 window.py:526 window.py:2631
+#: window.py:561 window.py:562 window.py:2691
 msgid "Swap pane modules"
 msgstr "Intercambiar los módulos de los paneles"
 
-#: window.py:590
+#: window.py:626
 msgid "Reading tools"
 msgstr "Herramientas de lectura"
 
-#: window.py:748
+#: window.py:784
 msgid "Go to… (e.g. John 3:16)"
 msgstr "Ir a… (p. ej. Juan 3:16)"
 
-#: window.py:826 window.py:827
+#: window.py:862 window.py:863
 msgid "Exit reading mode"
 msgstr "Salir del modo lectura"
 
-#: window.py:1197
+#: window.py:1234
 msgid "No active search — Ctrl+F to search"
 msgstr "No hay ninguna búsqueda activa; pulse Ctrl+F para buscar"
 
-#: window.py:1313
+#: window.py:1359
 msgid "Normal"
 msgstr "Normal"
 
-#: window.py:1336
+#: window.py:1382
 msgid "Slate"
 msgstr "Pizarra"
 
-#: window.py:1337
+#: window.py:1383
 msgid "Charcoal"
 msgstr "Carbón"
 
-#: window.py:1338
+#: window.py:1384
 msgid "Black"
 msgstr "Negro"
 
-#: window.py:1424 window.py:1431
+#: window.py:1470 window.py:1477
 msgid "Custom"
 msgstr "Personalizado"
 
-#: window.py:1425 window.py:1432
+#: window.py:1471 window.py:1478
 msgid "Custom colours"
 msgstr "Colores personalizados"
 
-#: window.py:1470
+#: window.py:1516
 msgid "Aa"
 msgstr "Aa"
 
-#: window.py:1481
+#: window.py:1527
 msgid "Text colour"
 msgstr "Color del texto"
 
-#: window.py:1483
+#: window.py:1529
 msgid "Paper colour"
 msgstr "Color del papel"
 
-#: window.py:1533
+#: window.py:1579
 msgid "Gold (default)"
 msgstr "Dorado (predeterminado)"
 
-#: window.py:1536
+#: window.py:1582
 msgid "Custom colour…"
 msgstr "Color personalizado…"
 
-#: window.py:1544 window.py:3537 window.py:3538
+#: window.py:1590 window.py:3644 window.py:3645
 msgid "Drop cap colour"
 msgstr "Color de la capitular"
 
-#: window.py:1559
+#: window.py:1605
 msgid "Custom background colour"
 msgstr "Color de fondo personalizado"
 
-#: window.py:1576
+#: window.py:1622
 msgid "Custom text colour"
 msgstr "Color de texto personalizado"
 
-#: window.py:1711
+#: window.py:1757
 #, python-brace-format
 msgid "Add {ref}"
 msgstr "Añadir {ref}"
 
-#: window.py:1748 window.py:1749
+#: window.py:1794 window.py:1795
 msgid "Remove bookmark"
 msgstr "Quitar el marcador"
 
-#: window.py:1762
+#: window.py:1808
 #, python-brace-format
 msgid "Bookmarked {ref}"
 msgstr "Se añadió {ref} a los marcadores"
 
-#: window.py:1778
+#: window.py:1824
 msgid "Bookmark removed"
 msgstr "Marcador quitado"
 
-#: window.py:1795
+#: window.py:1841
 msgid "Tips"
 msgstr "Consejos"
 
-#: window.py:1807
+#: window.py:1853
 msgid "Back Up Study Data"
 msgstr "Copia de seguridad de los datos de estudio"
 
-#: window.py:1822
+#: window.py:1868
 msgid "Could not write the backup file"
 msgstr "No se pudo escribir el archivo de copia de seguridad"
 
-#: window.py:1824
+#: window.py:1870
 msgid "Study data backed up"
 msgstr "Se hizo una copia de seguridad de los datos de estudio"
 
-#: window.py:1828
+#: window.py:1874
 msgid "Restore Study Data"
 msgstr "Restaurar los datos de estudio"
 
-#: window.py:1841
+#: window.py:1887
 msgid "Not a Scriptura study-data file"
 msgstr "No es un archivo de datos de estudio de Scriptura"
 
-#: window.py:1845
+#: window.py:1891
 msgid "Replace study data?"
 msgstr "¿Reemplazar los datos de estudio?"
 
-#: window.py:1846
+#: window.py:1892
 #, python-brace-format
 msgid ""
 "The file contains {a} annotation entries, {b} bookmarks and {p} plan days "
@@ -4395,11 +4493,11 @@ msgstr ""
 "marcados como leídos. Se reemplazarán sus anotaciones, marcadores y el "
 "avance de sus planes de lectura."
 
-#: window.py:1880
+#: window.py:1926
 msgid "reading-plan progress"
 msgstr "avance del plan de lectura"
 
-#: window.py:1888
+#: window.py:1934
 #, python-brace-format
 msgid ""
 "Some study data could not be written to disk ({sections}) — check disk space "
@@ -4408,18 +4506,18 @@ msgstr ""
 "No se pudieron escribir en disco algunos datos de estudio ({sections}); "
 "compruebe el espacio o los permisos y vuelva a restaurar."
 
-#: window.py:1893
+#: window.py:1939
 msgid "Study data restored"
 msgstr "Datos de estudio restaurados"
 
-#: window.py:1902
+#: window.py:1948
 #, python-brace-format
 msgid "{module}: content isn’t readable — the cipher key may be incorrect."
 msgstr ""
 "{module}: el contenido no se puede leer; puede que la clave de descifrado "
 "sea incorrecta."
 
-#: window.py:1913
+#: window.py:1959
 #, python-brace-format
 msgid ""
 "Enter the cipher key for {module}. Keys are issued by the module’s publisher "
@@ -4429,40 +4527,40 @@ msgstr ""
 "editor del módulo (por ejemplo, donde lo compró); Scriptura no las "
 "proporciona."
 
-#: window.py:1917
+#: window.py:1963
 msgid "Paste the unlock key"
 msgstr "Pegue la clave de desbloqueo"
 
-#: window.py:2432
+#: window.py:2492
 msgid "Footnotes — the open translations don't include any"
 msgstr "Notas al pie: las traducciones abiertas no incluyen ninguna"
 
-#: window.py:2655
+#: window.py:2715
 #, python-brace-format
 msgid "Swapped: {a} ↔ {b}"
 msgstr "Intercambiados: {a} ↔ {b}"
 
-#: window.py:2763
+#: window.py:2832
 msgid "Open in Pane 1"
 msgstr "Abrir en el panel 1"
 
-#: window.py:2767
+#: window.py:2836
 msgid "Pane 1 is not showing a Bible or commentary"
 msgstr "El panel 1 no está mostrando una Biblia ni un comentario"
 
-#: window.py:2773
+#: window.py:2842
 msgid "Open in Pane 2"
 msgstr "Abrir en el panel 2"
 
-#: window.py:2777
+#: window.py:2846
 msgid "Switch to split view to use Pane 2"
 msgstr "Cambie a la vista dividida para usar el panel 2"
 
-#: window.py:2780
+#: window.py:2849
 msgid "Pane 2 is not showing a Bible or commentary"
 msgstr "El panel 2 no está mostrando una Biblia ni un comentario"
 
-#: window.py:2852
+#: window.py:2921
 msgid ""
 "GNOME-native Bible study with SWORD modules, Strong’s lexicon, cross-"
 "references, and reading plans."
@@ -4470,300 +4568,304 @@ msgstr ""
 "Estudio bíblico nativo de GNOME con módulos SWORD, léxico de Strong, "
 "referencias cruzadas y planes de lectura."
 
-#: window.py:2859
+#: window.py:2928
 msgid "Data"
 msgstr "Datos"
 
-#: window.py:2860
+#: window.py:2929
 msgid "SWORD Project (CrossWire Bible Society) — modules and data layer"
 msgstr "Proyecto SWORD (CrossWire Bible Society): módulos y capa de datos"
 
-#: window.py:2861
+#: window.py:2930
 msgid "OpenBible.info — cross-references and topical tags (CC-BY)"
 msgstr "OpenBible.info: referencias cruzadas y etiquetas temáticas (CC-BY)"
 
-#: window.py:2862
+#: window.py:2931
 msgid "Dodson Greek Lexicon — public-domain NT Greek definitions"
 msgstr ""
 "Léxico griego de Dodson: definiciones del griego del NT en dominio público"
 
-#: window.py:2863
+#: window.py:2932
 msgid "eBible.org — modern translation catalog and texts"
 msgstr "eBible.org: catálogo y textos de traducciones modernas"
 
-#: window.py:2864
+#: window.py:2933
 msgid "Berean Standard Bible audio — chapters read by Bob Souer (CC0)"
 msgstr ""
 "Audio de la Berean Standard Bible: capítulos leídos por Bob Souer (CC0)"
 
-#: window.py:2865
+#: window.py:2934
 msgid ""
 "HistoricalChristianFaith Commentaries Database — historical commentary pack"
 msgstr ""
 "Base de datos de comentarios HistoricalChristianFaith: paquete de "
 "comentarios históricos"
 
-#: window.py:2867
+#: window.py:2936
 msgid "Built with"
 msgstr "Construido con"
 
-#: window.py:2883
+#: window.py:2952
 msgid "Navigation"
 msgstr "Navegación"
 
-#: window.py:2884
+#: window.py:2953
 msgid "Quick jump to any reference (e.g. John 3:16)"
 msgstr "Salto rápido a cualquier referencia (p. ej. Juan 3:16)"
 
-#: window.py:2885
+#: window.py:2954
 msgid "Previous chapter"
 msgstr "Capítulo anterior"
 
-#: window.py:2886
+#: window.py:2955
 msgid "Next chapter"
 msgstr "Capítulo siguiente"
 
-#: window.py:2887
+#: window.py:2956
 msgid "Previous book"
 msgstr "Libro anterior"
 
-#: window.py:2888
+#: window.py:2957
 msgid "Next book"
 msgstr "Libro siguiente"
 
-#: window.py:2889
+#: window.py:2958
 msgid "First verse of current chapter"
 msgstr "Primer versículo del capítulo actual"
 
-#: window.py:2890
+#: window.py:2959
 msgid "Last verse of current chapter"
 msgstr "Último versículo del capítulo actual"
 
-#: window.py:2891
+#: window.py:2960
 msgid "Cycle chapters with the mouse wheel"
 msgstr "Recorrer los capítulos con la rueda del ratón"
 
-#: window.py:2891
+#: window.py:2960
 msgid "Scroll over title"
 msgstr "Desplazar sobre el título"
 
-#: window.py:2893
+#: window.py:2962
 msgid "Reading with the keyboard"
 msgstr "Leer con el teclado"
 
-#: window.py:2894
+#: window.py:2963
 msgid "Move between verses"
 msgstr "Moverse entre versículos"
 
-#: window.py:2895
+#: window.py:2964
 msgid "Move between sense-units"
 msgstr "Moverse entre unidades de sentido"
 
-#: window.py:2896
+#: window.py:2965
 msgid "Study menu for the current verse"
 msgstr "Menú de estudio del versículo actual"
 
-#: window.py:2897
+#: window.py:2966
 msgid "Step through the words of a verse"
 msgstr "Recorrer las palabras de un versículo"
 
-#: window.py:2898
+#: window.py:2967
 msgid "Look up the word, or open its footnote"
 msgstr "Consultar la palabra o abrir su nota al pie"
 
-#: window.py:2899
+#: window.py:2968
 msgid "Back from words to verses"
 msgstr "Volver de las palabras a los versículos"
 
-#: window.py:2901
+#: window.py:2970
 msgid "Panes and view"
 msgstr "Paneles y vista"
 
-#: window.py:2902
+#: window.py:2971
 msgid "Focus left pane"
 msgstr "Enfocar el panel izquierdo"
 
-#: window.py:2903
+#: window.py:2972
 msgid "Focus right pane"
 msgstr "Enfocar el panel derecho"
 
-#: window.py:2904
+#: window.py:2973
 msgid "Cycle between panes"
 msgstr "Alternar entre paneles"
 
-#: window.py:2905
+#: window.py:2974
 msgid "Open / close search panel"
 msgstr "Abrir o cerrar el panel de búsqueda"
 
-#: window.py:2906
+#: window.py:2975
 msgid "Next search result"
 msgstr "Resultado siguiente"
 
-#: window.py:2907
+#: window.py:2976
 msgid "Previous search result"
 msgstr "Resultado anterior"
 
-#: window.py:2908
+#: window.py:2977
 msgid "Increase font size"
 msgstr "Aumentar el tamaño de la letra"
 
-#: window.py:2909
+#: window.py:2978
 msgid "Decrease font size"
 msgstr "Reducir el tamaño de la letra"
 
-#: window.py:2910
+#: window.py:2979
 msgid "Zoom font (or pinch on touchpad)"
 msgstr "Ampliar la letra (o pellizcar en el panel táctil)"
 
-#: window.py:2910
+#: window.py:2979
 msgid "Ctrl + scroll"
 msgstr "Ctrl + rueda"
 
-#: window.py:2911
+#: window.py:2980
 msgid "Narrow the left pane"
 msgstr "Estrechar el panel izquierdo"
 
-#: window.py:2912
+#: window.py:2981
 msgid "Widen the left pane"
 msgstr "Ensanchar el panel izquierdo"
 
-#: window.py:2913
+#: window.py:2982
 msgid "Even up the split"
 msgstr "Igualar la división"
 
-#: window.py:2914
+#: window.py:2983
 msgid "Reading mode (chrome hidden)"
 msgstr "Modo lectura (sin controles a la vista)"
 
-#: window.py:2915
+#: window.py:2984
 msgid "Close search, jump bar, or menu"
 msgstr "Cerrar la búsqueda, la barra de salto o el menú"
 
-#: window.py:2917 window.py:3206
+#: window.py:2986 window.py:3275
 msgid "Presentation"
 msgstr "Presentación"
 
-#: window.py:2918
+#: window.py:2987
 msgid "Present the passage full-screen"
 msgstr "Presentar el pasaje a pantalla completa"
 
-#: window.py:2919
+#: window.py:2988
 msgid "Next page"
 msgstr "Página siguiente"
 
-#: window.py:2920
+#: window.py:2989
 msgid "Previous page"
 msgstr "Página anterior"
 
-#: window.py:2921
+#: window.py:2990
 msgid "First page"
 msgstr "Primera página"
 
-#: window.py:2922
+#: window.py:2991
 msgid "Last page"
 msgstr "Última página"
 
-#: window.py:2924
+#: window.py:2993
 msgid "Larger / smaller text"
 msgstr "Texto más grande o más pequeño"
 
-#: window.py:2925
+#: window.py:2994
 msgid "Jump to a passage"
 msgstr "Saltar a un pasaje"
 
-#: window.py:2928
+#: window.py:2997
 msgid "General"
 msgstr "General"
 
-#: window.py:2929
+#: window.py:2998
 msgid "Copy selection with reference"
 msgstr "Copiar la selección con la referencia"
 
-#: window.py:2930 window.py:3813 window.py:3814
+#: window.py:2999 window.py:3920 window.py:3921
 msgid "Keyboard shortcuts"
 msgstr "Atajos de teclado"
 
-#: window.py:3106
+#: window.py:3175
 msgid "Install StrongsGreek or StrongsHebrew from the Module Manager."
 msgstr "Instale StrongsGreek o StrongsHebrew desde el gestor de módulos."
 
-#: window.py:3155 window.py:3276
+#: window.py:3224 window.py:3383
 msgid "Appearance"
 msgstr "Apariencia"
 
-#: window.py:3164
+#: window.py:3233
 msgid "Study Data"
 msgstr "Datos de estudio"
 
-#: window.py:3187
+#: window.py:3256
 msgid "Close menu (Esc)"
 msgstr "Cerrar el menú (Esc)"
 
-#: window.py:3188
+#: window.py:3257
 msgid "Close menu"
 msgstr "Cerrar el menú"
 
-#: window.py:3205
+#: window.py:3274
 msgid "Modules"
 msgstr "Módulos"
 
-#: window.py:3219 window.py:3224
+#: window.py:3288 window.py:3293
 msgid "Open to Today"
 msgstr "Abrir en Hoy"
 
-#: window.py:3234 window.py:3259
+#: window.py:3303 window.py:3328
 msgid "Church calendar"
 msgstr "Calendario litúrgico"
 
-#: window.py:3243 window.py:3244
+#: window.py:3312 window.py:3313
 msgid "None"
 msgstr "Ninguno"
 
-#: window.py:3243
+#: window.py:3312
 msgid "Anglican"
 msgstr "Anglicano"
 
-#: window.py:3243
+#: window.py:3312
 msgid "Roman"
 msgstr "Romano"
 
-#: window.py:3243
+#: window.py:3312
 msgid "Orthodox"
 msgstr "Ortodoxo"
 
-#: window.py:3244
+#: window.py:3313
 msgid "Anglican (BCP)"
 msgstr "Anglicano (BCP)"
 
-#: window.py:3245
+#: window.py:3314
 msgid "Roman (traditional)"
 msgstr "Romano (tradicional)"
 
-#: window.py:3246
+#: window.py:3315
 msgid "Orthodox (New Calendar)"
 msgstr "Ortodoxo (calendario nuevo)"
 
-#: window.py:3313
+#: window.py:3362
+msgid "Applies next time you open Scriptura"
+msgstr "Se aplicará la próxima vez que abra Scriptura"
+
+#: window.py:3420
 msgid "Font"
 msgstr "Tipografía"
 
-#: window.py:3314
+#: window.py:3421
 msgid "System Serif"
 msgstr "Serif del sistema"
 
-#: window.py:3314
+#: window.py:3421
 msgid "System Sans-Serif"
 msgstr "Sans-serif del sistema"
 
-#: window.py:3343 window.py:3344
+#: window.py:3450 window.py:3451
 msgid "Bold"
 msgstr "Negrita"
 
-#: window.py:3348 window.py:3349
+#: window.py:3455 window.py:3456
 msgid "Justified"
 msgstr "Justificado"
 
-#: window.py:3364
+#: window.py:3471
 msgid ""
 "A preference, not a remedy: testing has found no gain in reading speed. "
 "Readers who find it easier find it easier all the same."
@@ -4772,164 +4874,179 @@ msgstr ""
 "la velocidad de lectura. Aun así, a quien le resulta más cómodo, le resulta "
 "más cómodo."
 
-#: window.py:3374
+#: window.py:3481
 msgid "Size"
 msgstr "Tamaño"
 
-#: window.py:3379
+#: window.py:3486
 msgid "Font size"
 msgstr "Tamaño de la letra"
 
-#: window.py:3391
+#: window.py:3498
 msgid "Spacing"
 msgstr "Espaciado"
 
-#: window.py:3396
+#: window.py:3503
 msgid "Line spacing"
 msgstr "Interlineado"
 
-#: window.py:3407
+#: window.py:3514
 msgid "Width"
 msgstr "Anchura"
 
-#: window.py:3412
+#: window.py:3519
 msgid "Reading column width"
 msgstr "Anchura de la columna de lectura"
 
-#: window.py:3429
+#: window.py:3536
 msgid "Colour"
 msgstr "Color"
 
-#: window.py:3449
+#: window.py:3556
 msgid "Advanced"
 msgstr "Avanzado"
 
-#: window.py:3460 window.py:3465
+#: window.py:3567 window.py:3572
 msgid "Letter spacing"
 msgstr "Espaciado entre letras"
 
-#: window.py:3515
+#: window.py:3622
 msgid "Section headings"
 msgstr "Títulos de sección"
 
-#: window.py:3521
+#: window.py:3628
 msgid "This translation marks no sections"
 msgstr "Esta traducción no marca ninguna sección"
 
-#: window.py:3522
+#: window.py:3629
 msgid "Mark the current sense-unit"
 msgstr "Marcar la unidad de sentido actual"
 
-#: window.py:3524
+#: window.py:3631
 msgid "Quiet the rest of the page"
 msgstr "Atenuar el resto de la página"
 
-#: window.py:3526
+#: window.py:3633
 msgid "Small caps for the divine name"
 msgstr "Versalitas para el nombre divino"
 
-#: window.py:3528
+#: window.py:3635
 msgid "Old-style numerals"
 msgstr "Números elzevirianos"
 
-#: window.py:3530
+#: window.py:3637
 msgid "Flush poetry indents"
 msgstr "Alinear las sangrías de la poesía"
 
-#: window.py:3549
+#: window.py:3656
 msgid "Coloured drop cap"
 msgstr "Capitular en color"
 
-#: window.py:3557
+#: window.py:3664
 msgid "Preview words on hover"
 msgstr "Vista previa de las palabras al pasar el puntero"
 
-#: window.py:3562 window.py:3566
+#: window.py:3669 window.py:3673
 msgid "Evening paper (follows Night Light)"
 msgstr "Papel de noche (sigue a la luz nocturna)"
 
-#: window.py:3583 window.py:3587
+#: window.py:3690 window.py:3694
 msgid "Spoken readings"
 msgstr "Lecturas habladas"
 
-#: window.py:3619
+#: window.py:3726
 msgid "Show or hide the reading plan"
 msgstr "Mostrar u ocultar el plan de lectura"
 
-#: window.py:3621
+#: window.py:3728
 msgid "Reading Plan"
 msgstr "Plan de lectura"
 
-#: window.py:3636 window.py:3637
+#: window.py:3743 window.py:3744
 msgid "Reading plan options"
 msgstr "Opciones del plan de lectura"
 
-#: window.py:3644
+#: window.py:3751
 msgid "Catch up to today"
 msgstr "Ponerse al día"
 
-#: window.py:3650
+#: window.py:3757
 msgid "Reset progress"
 msgstr "Reiniciar el avance"
 
-#: window.py:3682
+#: window.py:3789
 msgid "Start today"
 msgstr "Empezar hoy"
 
-#: window.py:3711
+#: window.py:3818
 msgid "Open"
 msgstr "Abrir"
 
-#: window.py:3715 window.py:4018
+#: window.py:3822 window.py:4125
 msgid "Mark done"
 msgstr "Marcar como leído"
 
-#: window.py:3752
+#: window.py:3859
 msgid "Back Up…"
 msgstr "Copia de seguridad…"
 
-#: window.py:3753
+#: window.py:3860
 msgid "Restore…"
 msgstr "Restaurar…"
 
-#: window.py:3776 window.py:3777
+#: window.py:3883 window.py:3884
 msgid "Light theme"
 msgstr "Tema claro"
 
-#: window.py:3779 window.py:3780
+#: window.py:3886 window.py:3887
 msgid "Dark theme"
 msgstr "Tema oscuro"
 
-#: window.py:3787 window.py:3788
+#: window.py:3894 window.py:3895
 msgid "Follow system theme"
 msgstr "Seguir el tema del sistema"
 
-#: window.py:3805 window.py:3806
+#: window.py:3912 window.py:3913
 msgid "Tips & gestures"
 msgstr "Consejos y gestos"
 
-#: window.py:3821 window.py:3822
+#: window.py:3928 window.py:3929
 msgid "About Scriptura"
 msgstr "Acerca de Scriptura"
 
-#: window.py:3912
+#: window.py:4019
 #, python-brace-format
 msgid "Day {n} · Today"
 msgstr "Día {n} · Hoy"
 
-#: window.py:3928
+#: window.py:4035
 #, python-brace-format
 msgid "{done} of {total} day read · tap a day to read"
 msgid_plural "{done} of {total} days read · tap a day to read"
 msgstr[0] "{done} de {total} día leído · pulse un día para leerlo"
 msgstr[1] "{done} de {total} días leídos · pulse un día para leerlo"
 
-#: window.py:3990
+#: window.py:4097
 #, python-brace-format
 msgid "Day {n} · {passages}"
 msgstr "Día {n} · {passages}"
 
-#: window.py:4004
+#: window.py:4111
 #, python-brace-format
 msgid "Day {n}"
 msgstr "Día {n}"
+
+#~ msgid "Quick download"
+#~ msgstr "Descarga rápida"
+
+#~ msgid "Show deuterocanonical books"
+#~ msgstr "Mostrar libros deuterocanónicos"
+
+#, python-brace-format
+#~ msgid ""
+#~ "{module} follows a canon of 66 books, which does not include this one."
+#~ msgstr "{module} sigue un canon de 66 libros, que no incluye este."
+
+#, fuzzy
+#~ msgid "Not in this translation"
+#~ msgstr "%s no está en esta traducción."

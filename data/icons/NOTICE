@@ -1,0 +1,30 @@
+Bundled icons
+=============
+
+`hicolor/symbolic/apps/scriptura-*.svg` are this app's own icon set. Most are
+copied unchanged from the GNOME Adwaita icon theme and renamed with a
+`scriptura-` prefix; a handful were drawn for this app.
+
+Why they are copied rather than looked up by their usual names: an icon name
+like `starred-symbolic` resolves out of whatever icon theme the user happens
+to run, so the same button is flat line art on one desktop and a coloured
+cartoon on another. A name nothing else claims always resolves to ours, on
+every desktop and across icon-theme releases. The app pins its icon theme as
+well (see `_pin_icon_theme` in main.py) — that covers GTK's own lookups, which
+renaming cannot reach — but the copies are what make the app's own iconography
+independent of both the user's theme and of Adwaita's future renamings.
+
+Window controls are deliberately NOT bundled. `window-close-symbolic` and its
+siblings stay with the desktop, so the button that closes this window is the
+one that closes every other window on the user's screen.
+
+Provenance and licence
+----------------------
+
+Source:  GNOME adwaita-icon-theme
+Licence: LGPL-3.0-only OR CC-BY-SA-3.0
+
+This application is GPL-3.0-or-later, with which LGPL-3.0-only is compatible.
+The icons are unmodified but for their filenames.
+
+Upstream: https://gitlab.gnome.org/GNOME/adwaita-icon-theme

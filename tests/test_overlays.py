@@ -28,9 +28,15 @@ class _Revealer:
 
 
 def _mgr():
+    # _parse_ref reads the window's book list, which follows the modules in
+    # the open panes — a 66-book pair here, which is what these cases are
+    # about. _book_module answers for the appendix only.
+    import window
     win = types.SimpleNamespace(
         _menu_split=_Split(), _search_split=_Split(),
-        _jump_revealer=_Revealer())
+        _jump_revealer=_Revealer(),
+        nav_books=lambda: window.BOOKS,
+        _book_module=lambda _b: None)
     return overlays.OverlayManager(win)
 
 

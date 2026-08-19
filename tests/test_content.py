@@ -139,3 +139,53 @@ def test_edition_table_is_consistent():
     for source in ('sword', 'ebible'):
         keys = [k for w in content.EDITION_WORKS for k in w[source]]
         assert len(keys) == len(set(keys))
+
+
+# ── has_strongs: measured, never declared ────────────────────────────────────
+# The conf lies in both directions, so the answer comes from the markup.
+# SpaRV1909 and MorphGNT declare no Feature at all and are tagged throughout;
+# RusVZh declares Feature=StrongsNumbers and renders nothing the app can read.
+
+def _probe_stub(monkeypatch, markup):
+    """Point both loaders at one fixed verse of markup and clear the cache."""
+    monkeypatch.setattr(content, '_marks_strongs', {})
+    monkeypatch.setattr(sword_bridge, 'load_chapter',
+                        lambda n, b, c: [(1, markup)])
+    monkeypatch.setattr(ebible_bridge, 'load_chapter',
+                        lambda n, b, c: [(1, markup)])
+
+
+def test_has_strongs_reads_the_markup_not_the_conf(monkeypatch):
+    _probe_stub(monkeypatch, '<w lemma="strong:G2316">God</w> loves us')
+    assert content.has_strongs('KJV') is True
+    _probe_stub(monkeypatch, 'En el principio creó Dios')
+    assert content.has_strongs('NBLA') is False
+
+
+def test_has_strongs_accepts_the_capitalised_prefix(monkeypatch):
+    """SpaRV1909 writes savlm="Strong:H7225" on nearly every word. Reading
+    only the lowercase form called a fully tagged Bible untagged."""
+    _probe_stub(monkeypatch, '<w savlm="Strong:H7225">EN el principio</w>')
+    assert content.has_strongs('SpaRV1909') is True
+
+
+def test_has_strongs_is_false_for_non_bibles(monkeypatch):
+    """A commentary or dictionary is never word-study ground, and asking
+    must not cost it a chapter load."""
+    def explode(n, b, c):
+        raise AssertionError('probed a non-Bible')
+    monkeypatch.setattr(content, '_marks_strongs', {})
+    monkeypatch.setattr(sword_bridge, 'load_chapter', explode)
+    monkeypatch.setattr(sword_bridge, 'module_type', lambda n: 'Commentaries')
+    assert content.has_strongs('MHCC') is False
+
+
+def test_has_strongs_caches_per_module(monkeypatch):
+    calls = []
+    monkeypatch.setattr(content, '_marks_strongs', {})
+    monkeypatch.setattr(sword_bridge, 'load_chapter',
+                        lambda n, b, c: (calls.append(n),
+                                         [(1, '<w lemma="strong:G1">a</w>')])[1])
+    content.has_strongs('KJV')
+    content.has_strongs('KJV')
+    assert calls == ['KJV']

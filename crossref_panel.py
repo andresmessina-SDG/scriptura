@@ -66,7 +66,7 @@ class CrossRefPanel(Gtk.Box):
         ref_row.append(self._spinner)
         self._delayed_spinner = DelayedSpinner(self._spinner)
 
-        close_btn = Gtk.Button(icon_name='window-close-symbolic')
+        close_btn = Gtk.Button(icon_name='scriptura-window-close-symbolic')
         close_btn.add_css_class('flat')
         close_btn.set_valign(Gtk.Align.CENTER)
         close_btn.set_tooltip_text(_('Hide cross-references'))

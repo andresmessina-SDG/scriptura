@@ -297,7 +297,9 @@ def db(tmp_path, monkeypatch):
     # Seed: one translation with a handful of verses.
     conn = eb._db()
     conn.execute(
-        'INSERT INTO translations VALUES (?,?,?,?,?,?)',
+        'INSERT INTO translations '
+        '(id, title, language, lang_code, copyright, license) '
+        'VALUES (?,?,?,?,?,?)',
         ('engwebp', 'WEB', 'English', 'en', '© WEB', 'Public Domain'))
     conn.executemany(
         'INSERT INTO verses (translation, book, chapter, verse, text) '
@@ -347,7 +349,9 @@ def test_duplicate_titles_get_distinct_keys(db):
     distinct (keyed on the id), or one would shadow the other in
     loading, search, and annotations."""
     conn = eb._db()
-    conn.execute('INSERT INTO translations VALUES (?,?,?,?,?,?)',
+    conn.execute('INSERT INTO translations '
+                 '(id, title, language, lang_code, copyright, license) '
+                 'VALUES (?,?,?,?,?,?)',
                  ('engwebp2', 'WEB', 'English', 'en', '© WEB2', 'PD'))
     conn.execute('INSERT INTO verses (translation, book, chapter, verse, text) VALUES (?,?,?,?,?)',
                  ('engwebp2', 'John', 3, 16, 'A different WEB rendering'))
@@ -369,10 +373,116 @@ def test_installed_ids(db):
 
 
 def test_schema_version_stamped(db):
-    """A fresh DB carries the current v3 stamp (v1 base tables + v2 FTS
-    index + v3 notes), locking in the migration hook."""
+    """A fresh DB carries the current v5 stamp (v1 base tables + v2 FTS
+    index + v3 notes + v4 markup column + v5 import stamps), locking in the
+    migration hook."""
     conn = eb._db()
-    assert conn.execute('PRAGMA user_version').fetchone()[0] == 4
+    assert conn.execute('PRAGMA user_version').fetchone()[0] == 5
+
+
+# ── Import stamps: what makes an installed translation stale ────────────────
+
+def test_an_old_import_reads_as_version_one(db):
+    """The fixture seeds a row the way every pre-stamp install left one —
+    both columns NULL. That has to read as the older parser, not as current,
+    or the texts this was built for would never be offered an update."""
+    assert eb.import_stamps() == {'engwebp': ('', 1)}
+
+
+def test_a_download_stamps_what_it_imported(db, monkeypatch):
+    """The stamp is written by the same call that writes the text, so a
+    finished download is the only thing that can clear a stale row."""
+    import io as _io
+    import urllib.request
+    import zipfile as _zipfile
+
+    buf = _io.BytesIO()
+    with _zipfile.ZipFile(buf, 'w') as z:
+        z.writestr('01-GENengwebp.usfm',
+                   '\\id GEN\n\\c 1\n\\v 1 In the beginning\n')
+
+    class _Response:
+        def read(self):
+            return buf.getvalue()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    monkeypatch.setattr(urllib.request, 'urlopen',
+                        lambda req, timeout=None: _Response())
+    eb.download_translation_sync(
+        'engwebp', {'translationId': 'engwebp', 'shortTitle': 'WEB',
+                    'UpdateDate': '2026-08-08'})
+    assert eb.import_stamps() == {'engwebp': ('2026-08-08', eb.IMPORT_VERSION)}
+
+
+def test_source_date_prefers_the_update_date():
+    assert eb.source_date({'UpdateDate': '2026-08-08',
+                           'sourceDate': '2020-10-09'}) == '2026-08-08'
+    assert eb.source_date({'sourceDate': '2020-10-09'}) == '2020-10-09'
+
+
+def test_source_date_drops_what_it_cannot_order():
+    """A third party's CSV; a date that cannot be compared is worse than no
+    date, because comparing it would give a confident wrong answer."""
+    assert eb.source_date({'UpdateDate': 'Aug 2026'}) == ''
+    assert eb.source_date({'UpdateDate': ''}) == ''
+    assert eb.source_date({}) == ''
+
+
+def test_update_reason_older_parser():
+    assert eb.update_reason(('2026-08-08', 1),
+                            {'UpdateDate': '2026-08-08'}) == 'parser'
+
+
+def test_update_reason_newer_upstream():
+    assert eb.update_reason(('2026-05-16', eb.IMPORT_VERSION),
+                            {'UpdateDate': '2026-08-08'}) == 'source'
+
+
+def test_update_reason_current():
+    assert eb.update_reason(('2026-08-08', eb.IMPORT_VERSION),
+                            {'UpdateDate': '2026-08-08'}) is None
+    # An older upstream date than the copy on disk is not an update.
+    assert eb.update_reason(('2026-08-08', eb.IMPORT_VERSION),
+                            {'UpdateDate': '2026-05-16'}) is None
+
+
+def test_update_reason_undatable_catalogue_entry():
+    """With no date to compare, a current import stays current — a missing
+    date must not read as 'newer'."""
+    assert eb.update_reason(('2026-08-08', eb.IMPORT_VERSION), {}) is None
+
+
+def test_stamps_migrate_onto_a_v4_database(tmp_path, monkeypatch):
+    """A user's existing DB has the six-column table and stamps 4. Opening it
+    must add the columns in place, keep the rows, and read them as stale."""
+    import sqlite3
+    path = str(tmp_path / 'ebible.db')
+    conn = sqlite3.connect(path)
+    conn.execute('''CREATE TABLE translations (
+        id TEXT PRIMARY KEY, title TEXT, language TEXT, lang_code TEXT,
+        copyright TEXT, license TEXT)''')
+    conn.execute('INSERT INTO translations VALUES (?,?,?,?,?,?)',
+                 ('latVUC', 'Vulgate', 'Latin', 'la', '', 'PD'))
+    conn.execute('PRAGMA user_version = 4')
+    conn.commit()
+    conn.close()
+
+    monkeypatch.setattr(eb, '_DB', path)
+    if hasattr(eb._conn_local, 'conn'):
+        eb._conn_local.conn.close()
+        del eb._conn_local.conn
+    try:
+        assert eb.import_stamps() == {'latVUC': ('', 1)}
+        assert eb._db().execute(
+            'PRAGMA user_version').fetchone()[0] == 5
+    finally:
+        eb._conn_local.conn.close()
+        del eb._conn_local.conn
 
 
 def test_module_language(db):

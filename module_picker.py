@@ -67,7 +67,7 @@ class ModulePicker:
         self._label.add_css_class('pane-module-title')
         label_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         label_box.append(self._label)
-        label_box.append(Gtk.Image.new_from_icon_name('pan-down-symbolic'))
+        label_box.append(Gtk.Image.new_from_icon_name('scriptura-pan-down-symbolic'))
         self._button.set_child(label_box)
         self._popover = self._build_popover()
         self._button.set_popover(self._popover)
@@ -166,7 +166,7 @@ class ModulePicker:
         info_page.set_margin_bottom(8)
 
         info_header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        back_btn = Gtk.Button(icon_name='go-previous-symbolic')
+        back_btn = Gtk.Button(icon_name='scriptura-go-previous-symbolic')
         back_btn.add_css_class('flat')
         back_btn.set_tooltip_text(_('Back to list'))
         set_accessible_label(back_btn, _('Back to list'))
@@ -193,7 +193,7 @@ class ModulePicker:
         # pane's last remaining module.
         self._remove_btn = Gtk.Button()
         self._remove_btn.set_child(Adw.ButtonContent(
-            icon_name='user-trash-symbolic', label=_('Remove module')))
+            icon_name='scriptura-user-trash-symbolic', label=_('Remove module')))
         self._remove_btn.add_css_class('destructive-action')
         self._remove_btn.set_margin_top(4)
         self._remove_btn.connect('clicked', self._on_remove_clicked)
@@ -305,7 +305,7 @@ class ModulePicker:
             lbl = Gtk.Label(
                 label=_(self._LANG_NAMES.get(v, v)), xalign=0, hexpand=True)
             hb.append(lbl)
-            tick = Gtk.Image.new_from_icon_name('object-select-symbolic')
+            tick = Gtk.Image.new_from_icon_name('scriptura-object-select-symbolic')
             tick.set_visible(v == self._lang)
             hb.append(tick)
             row.set_child(hb)
@@ -382,7 +382,7 @@ class ModulePicker:
         return row
 
     def _info_button(self, name):
-        btn = Gtk.Button(icon_name='dialog-information-symbolic')
+        btn = Gtk.Button(icon_name='scriptura-dialog-information-symbolic')
         btn.add_css_class('flat')
         btn.add_css_class('circular')
         # Ghosted until the row is hovered/focused (see CSS) so the list

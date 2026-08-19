@@ -67,6 +67,41 @@ BOOKS = [
     N_('Jude'), N_('Revelation'),
 ]
 
+# The books outside the 66, offered as an appendix after Revelation when
+# "Show deuterocanonical books" is on. Same names and order as
+# sword_bridge.DEUTEROCANON, which owns the per-module canon check; this
+# copy exists to mark them for translation, exactly as BOOKS does.
+DEUTEROCANON = [
+    N_('Tobit'), N_('Judith'), N_('Additions to Esther'), N_('Wisdom'),
+    N_('Sirach'), N_('Baruch'), N_('Epistle of Jeremiah'),
+    N_('Prayer of Azariah'), N_('Susanna'), N_('Bel and the Dragon'),
+    N_('1 Maccabees'), N_('2 Maccabees'), N_('1 Esdras'),
+    N_('Prayer of Manasseh'), N_('3 Maccabees'), N_('2 Esdras'),
+    N_('4 Maccabees'),
+]
+
+
+def nav_books(modules, current_book=None):
+    """The books navigation offers, given the modules in use.
+
+    The 66 always. The appendix only when one of `modules` actually carries
+    at least one of those books — a reader whose Bibles are all 66-book
+    never meets them, and a reader who opens the KJV with Apocrypha finds
+    them without having to know a setting exists.
+
+    `current_book` keeps the appendix listed while the reader is standing
+    in one of its books. Without it, switching that pane to the ESV would
+    take the list out from under them mid-read; with it they simply get
+    told the ESV has not got this book, and the section leaves once they
+    move back into the 66.
+    """
+    if any(sword_bridge.module_has_book(m, b)
+           for m in modules for b in DEUTEROCANON):
+        return BOOKS + DEUTEROCANON
+    if current_book in DEUTEROCANON:
+        return BOOKS + DEUTEROCANON
+    return BOOKS
+
 
 class _FractionPaned(Gtk.Paned):
     """Paned that keeps its divider at a fraction of its own width.
@@ -177,7 +212,8 @@ class BibleWindow(Adw.ApplicationWindow):
         # chapter_count, i.e. the SWORD init warming above).
         saved_book = settings.get('last_book')
         saved_chap = settings.get('last_chapter')
-        if saved_book in BOOKS and isinstance(saved_chap, int) and saved_chap >= 1:
+        if (saved_book in BOOKS + DEUTEROCANON
+                and isinstance(saved_chap, int) and saved_chap >= 1):
             self._current_loc = (saved_book, saved_chap)
         else:
             self._current_loc = ('Genesis', 1)
@@ -306,7 +342,7 @@ class BibleWindow(Adw.ApplicationWindow):
         toolbar_view.add_top_bar(header)
 
         # ── Left: burger + back/forward + navigation ──────────────────────────
-        burger_btn = Gtk.Button(icon_name='open-menu-symbolic')
+        burger_btn = Gtk.Button(icon_name='scriptura-open-menu-symbolic')
         burger_btn.set_tooltip_text(_('Menu'))
         set_accessible_label(burger_btn, _('Menu'))
         burger_btn.add_css_class('flat')
@@ -314,7 +350,7 @@ class BibleWindow(Adw.ApplicationWindow):
         burger_btn.connect('clicked', self._toggle_menu)
         header.pack_start(burger_btn)
 
-        self._back_btn = Gtk.Button(icon_name='go-previous-symbolic')
+        self._back_btn = Gtk.Button(icon_name='scriptura-go-previous-symbolic')
         self._back_btn.set_tooltip_text(_('Go back (Alt+←)'))
         set_accessible_label(self._back_btn, _('Go back'))
         self._back_btn.add_css_class('flat')
@@ -323,7 +359,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._back_btn.connect('clicked', self._on_nav_back)
         header.pack_start(self._back_btn)
 
-        self._fwd_btn = Gtk.Button(icon_name='go-next-symbolic')
+        self._fwd_btn = Gtk.Button(icon_name='scriptura-go-next-symbolic')
         self._fwd_btn.set_tooltip_text(_('Go forward (Alt+→)'))
         set_accessible_label(self._fwd_btn, _('Go forward'))
         self._fwd_btn.add_css_class('flat')
@@ -442,7 +478,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self.xref_toggle.connect('toggled', self._on_xref_toggle)
 
         # ── Right: search + bookmarks + view toggle ────────────────────────────
-        self._bookmark_btn = Gtk.Button(icon_name='bookmark-new-symbolic')
+        self._bookmark_btn = Gtk.Button(icon_name='scriptura-bookmark-new-symbolic')
         self._bookmark_btn.add_css_class('flat')
         self._bookmark_btn.add_css_class('header-action')
         self._bookmark_btn.set_tooltip_text(_('Bookmarks'))
@@ -454,7 +490,7 @@ class BibleWindow(Adw.ApplicationWindow):
         # swap) into one popover when the window is too narrow to show them all.
         # Hidden at full width; the Adw.Breakpoint swaps it in (see
         # _install_breakpoints + _set_header_narrow).
-        self._overflow_btn = Gtk.MenuButton(icon_name='view-more-symbolic')
+        self._overflow_btn = Gtk.MenuButton(icon_name='scriptura-view-more-symbolic')
         self._overflow_btn.add_css_class('flat')
         self._overflow_btn.add_css_class('header-action')
         self._overflow_btn.set_tooltip_text(_('More'))
@@ -467,7 +503,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._overflow_btn.set_visible(False)
         header.pack_end(self._overflow_btn)
 
-        self._search_btn = search_btn = Gtk.Button(icon_name='system-search-symbolic')
+        self._search_btn = search_btn = Gtk.Button(icon_name='scriptura-system-search-symbolic')
         search_btn.add_css_class('flat')
         search_btn.add_css_class('header-action')
         search_btn.set_tooltip_text(_('Search (Ctrl+F)'))
@@ -477,11 +513,11 @@ class BibleWindow(Adw.ApplicationWindow):
 
         self._view_box = view_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         view_box.add_css_class('linked')
-        self._btn_single = Gtk.ToggleButton(icon_name='view-paged-symbolic')
+        self._btn_single = Gtk.ToggleButton(icon_name='scriptura-view-paged-symbolic')
         self._btn_single.add_css_class('header-action')
         self._btn_single.set_tooltip_text(_('Single pane'))
         set_accessible_label(self._btn_single, _('Single pane'))
-        self._btn_split = Gtk.ToggleButton(icon_name='view-dual-symbolic')
+        self._btn_split = Gtk.ToggleButton(icon_name='scriptura-view-dual-symbolic')
         self._btn_split.add_css_class('header-action')
         self._btn_split.set_tooltip_text(_('Split pane'))
         set_accessible_label(self._btn_split, _('Split pane'))
@@ -519,7 +555,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._narrow_switch_box.set_visible(False)
         header.pack_end(self._narrow_switch_box)
 
-        self._swap_btn = Gtk.Button(icon_name='object-flip-horizontal-symbolic')
+        self._swap_btn = Gtk.Button(icon_name='scriptura-object-flip-horizontal-symbolic')
         self._swap_btn.add_css_class('flat')
         self._swap_btn.add_css_class('header-action')
         self._swap_btn.set_tooltip_text(_('Swap pane modules'))
@@ -680,7 +716,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_edit_cipher=self._show_edit_cipher_key,
                                on_modules_changed=self._on_modules_changed,
                                on_open_artifact=self._on_open_artifact,
-                               on_module_switched=self._update_fnote_sensitivity,
+                               on_module_switched=self._on_pane_module_switched,
                                on_hint=self._hints.maybe_fire,
                                on_open_verse=self._open_verse_in_pane2,
                                pane_id=1)
@@ -695,7 +731,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_edit_cipher=self._show_edit_cipher_key,
                                on_modules_changed=self._on_modules_changed,
                                on_open_artifact=self._on_open_artifact,
-                               on_module_switched=self._update_fnote_sensitivity,
+                               on_module_switched=self._on_pane_module_switched,
                                on_hint=self._hints.maybe_fire,
                                on_open_verse=self._open_verse_in_pane2,
                                pane_id=2)
@@ -820,7 +856,7 @@ class BibleWindow(Adw.ApplicationWindow):
         # Floats a small circular X at top-center after the cursor hovers in
         # the top "hot zone" for 2s while reading mode is on. Gives users an
         # obvious way out without relying on remembering Esc / F11.
-        self._exit_reading_btn = Gtk.Button(icon_name='window-close-symbolic')
+        self._exit_reading_btn = Gtk.Button(icon_name='scriptura-window-close-symbolic')
         self._exit_reading_btn.add_css_class('circular')
         self._exit_reading_btn.add_css_class('reading-exit-btn')
         self._exit_reading_btn.set_tooltip_text(_('Exit reading mode'))
@@ -1119,7 +1155,8 @@ class BibleWindow(Adw.ApplicationWindow):
                     target_v = 1
                 else:
                     try:
-                        target_v = sword_bridge.verse_count(book, ch)
+                        target_v = sword_bridge.verse_count_in(
+                            self._book_module(book), book, ch)
                     except Exception:
                         target_v = 1
                 self._go_to(book, ch, target_v, record=False)
@@ -1215,6 +1252,15 @@ class BibleWindow(Adw.ApplicationWindow):
     def _nav_fwd(self):
         return self._nav._nav_fwd
 
+    def nav_books(self):
+        return self._nav.nav_books()
+
+    def _sync_nav_books(self):
+        self._nav._sync_nav_books()
+
+    def _book_module(self, book):
+        return self._nav._book_module(book)
+
     def _go_to(self, book, chapter, verse=None, record=True):
         self._nav._go_to(book, chapter, verse, record)
 
@@ -1295,7 +1341,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._appear_revealer.set_reveal_child(open_)
         # Chevron rotates ▸ → ▾ to signal the inline expansion.
         self._appear_arrow.set_from_icon_name(
-            'pan-down-symbolic' if open_ else 'pan-end-symbolic')
+            'scriptura-pan-down-symbolic' if open_ else 'scriptura-pan-end-symbolic')
 
     def _on_appear_font(self, drop, _):
         idx = drop.get_selected()
@@ -1704,10 +1750,10 @@ class BibleWindow(Adw.ApplicationWindow):
         header.set_margin_bottom(6)
         box.append(header)
 
-        book    = BOOKS[self.book_drop.get_selected()]
+        book    = self.nav_books()[self.book_drop.get_selected()]
         chapter = self.chapter_drop.get_selected() + 1
         add_content = Adw.ButtonContent(
-            icon_name='starred-symbolic',
+            icon_name='scriptura-starred-symbolic',
             label=_('Add {ref}').format(ref=f'{book_label(book)} {chapter}'))
         add_content.set_halign(Gtk.Align.START)
         add_btn = Gtk.Button(child=add_content)
@@ -1740,7 +1786,7 @@ class BibleWindow(Adw.ApplicationWindow):
                 lbl.set_margin_top(6)
                 lbl.set_margin_bottom(6)
                 rb.append(lbl)
-                del_btn = Gtk.Button(icon_name='edit-delete-symbolic')
+                del_btn = Gtk.Button(icon_name='scriptura-edit-delete-symbolic')
                 del_btn.add_css_class('flat')
                 del_btn.add_css_class('bookmark-del')
                 del_btn.set_valign(Gtk.Align.CENTER)
@@ -2031,9 +2077,18 @@ class BibleWindow(Adw.ApplicationWindow):
         self.pane1.set_lexicon_enabled(enabled)
         self.pane2.set_lexicon_enabled(enabled)
         # Strong's words carry no visible mark at rest; on first enabling the
-        # mode, name the gesture that now pays off.
+        # mode, name the gesture that now pays off — but only where it does.
+        # The hint fires once ever, and a reader whose Bibles carry no
+        # Strong's (NBLA and LBLA, the Spanish bundle's own opening pair)
+        # would spend that one firing on "tap any word" over a pane where
+        # tapping does nothing at all.
         if enabled:
-            self._hints.maybe_fire('first_lexicon')
+            import content
+            panes = [self.pane1]
+            if self.pane2 is not None and self.pane2.get_visible():
+                panes.append(self.pane2)
+            if any(content.has_strongs(p._module) for p in panes):
+                self._hints.maybe_fire('first_lexicon')
 
     def _on_fnote_toggle(self, _btn):
         enabled = self.fnote_toggle.get_active()
@@ -2074,7 +2129,7 @@ class BibleWindow(Adw.ApplicationWindow):
         saved_book = settings.get('last_book')
         saved_chap = settings.get('last_chapter')
         last = ((saved_book, saved_chap)
-                if saved_book in BOOKS and isinstance(saved_chap, int)
+                if saved_book in self.nav_books() and isinstance(saved_chap, int)
                 and saved_chap >= 1 else None)
         church_line = None
         collect_key = None
@@ -2417,6 +2472,11 @@ class BibleWindow(Adw.ApplicationWindow):
                 members[0] if keyval == Gdk.KEY_ISO_Left_Tab else members[-1])
         return False
 
+    def _on_pane_module_switched(self):
+        """Everything the window re-derives when a pane changes module."""
+        self._update_fnote_sensitivity()
+        self._sync_nav_books()
+
     def _update_fnote_sensitivity(self):
         """Enable the f* toggle only when a loaded module can actually show
         footnotes, so flipping it never silently does nothing. Disabled (not
@@ -2581,13 +2641,13 @@ class BibleWindow(Adw.ApplicationWindow):
         # Ultra-narrow: nav + search fold in here too (they stay in the header
         # at the wider narrow band).
         if self._ultra_narrow:
-            row(Gtk.Image.new_from_icon_name('go-previous-symbolic'),
+            row(Gtk.Image.new_from_icon_name('scriptura-go-previous-symbolic'),
                 _('Go back'), lambda: self._on_nav_back(None),
                 sensitive=bool(self._nav_back))
-            row(Gtk.Image.new_from_icon_name('go-next-symbolic'),
+            row(Gtk.Image.new_from_icon_name('scriptura-go-next-symbolic'),
                 _('Go forward'), lambda: self._on_nav_fwd(None),
                 sensitive=bool(self._nav_fwd))
-            row(Gtk.Image.new_from_icon_name('system-search-symbolic'),
+            row(Gtk.Image.new_from_icon_name('scriptura-system-search-symbolic'),
                 _('Search'), lambda: self._on_search_clicked(None))
 
         # Lexicon — leading glyph mirrors the header toggle (אΩ); a check marks
@@ -2600,7 +2660,7 @@ class BibleWindow(Adw.ApplicationWindow):
                           not self.lex_toggle.get_active()))
         if self.lex_toggle.get_active():
             lex_row.get_child().append(
-                Gtk.Image.new_from_icon_name('object-select-symbolic'))
+                Gtk.Image.new_from_icon_name('scriptura-object-select-symbolic'))
 
         fn_glyph = Gtk.Label()
         # Same italic-f + asterisk as the header toggle, a step smaller to
@@ -2613,7 +2673,7 @@ class BibleWindow(Adw.ApplicationWindow):
                      sensitive=self.fnote_toggle.get_sensitive())
         if self.fnote_toggle.get_active():
             fn_row.get_child().append(
-                Gtk.Image.new_from_icon_name('object-select-symbolic'))
+                Gtk.Image.new_from_icon_name('scriptura-object-select-symbolic'))
 
         xr_glyph = Gtk.Label()
         xr_glyph.set_markup('<span size="large">※</span>')
@@ -2622,12 +2682,12 @@ class BibleWindow(Adw.ApplicationWindow):
                          not self.xref_toggle.get_active()))
         if self.xref_toggle.get_active():
             xr_row.get_child().append(
-                Gtk.Image.new_from_icon_name('object-select-symbolic'))
+                Gtk.Image.new_from_icon_name('scriptura-object-select-symbolic'))
 
-        row(Gtk.Image.new_from_icon_name('bookmark-new-symbolic'),
+        row(Gtk.Image.new_from_icon_name('scriptura-bookmark-new-symbolic'),
             _('Bookmarks'), lambda: self._show_bookmarks(self._overflow_btn))
 
-        row(Gtk.Image.new_from_icon_name('object-flip-horizontal-symbolic'),
+        row(Gtk.Image.new_from_icon_name('scriptura-object-flip-horizontal-symbolic'),
             _('Swap pane modules'), lambda: self._on_swap_clicked(None),
             sensitive=self._btn_split.get_active())
 
@@ -2721,8 +2781,17 @@ class BibleWindow(Adw.ApplicationWindow):
                 pane.select_verse(verse_num)
         if (source_pane._book and source_pane._chapter
                 and self.xref_toggle.get_active()):
-            self._crossref_panel.load(source_pane._book, source_pane._chapter, verse_num)
-            self._crossref_revealer.set_reveal_child(True)
+            if source_pane._book in BOOKS:
+                self._crossref_panel.load(
+                    source_pane._book, source_pane._chapter, verse_num)
+                self._crossref_revealer.set_reveal_child(True)
+            else:
+                # Neither TSK nor OpenBible indexes the books outside the 66,
+                # and the panel reads "no refs" as "no source installed" — so
+                # a verse in Wisdom drew a bar telling the reader to install
+                # TSK, which would not cover Wisdom either. Withdraw the bar
+                # instead, and take any stale one with it.
+                self._crossref_revealer.set_reveal_child(False)
         # They've engaged a verse — the moment to reveal the deeper gesture.
         self._hints.maybe_fire('first_verse_click')
 
@@ -3181,7 +3250,7 @@ class BibleWindow(Adw.ApplicationWindow):
         title = Gtk.Label(label=_('Menu'), hexpand=True)
         title.set_xalign(0)
         title.add_css_class('title-4')
-        close_btn = Gtk.Button(icon_name='window-close-symbolic')
+        close_btn = Gtk.Button(icon_name='scriptura-window-close-symbolic')
         close_btn.add_css_class('flat')
         close_btn.add_css_class('menu-utility-action')
         close_btn.set_tooltip_text(_('Close menu (Esc)'))
@@ -3201,13 +3270,13 @@ class BibleWindow(Adw.ApplicationWindow):
         nav_group.set_margin_top(6)
         nav_group.set_margin_bottom(14)
         for icon, label, handler in [
-            ('accessories-text-editor-symbolic', _('Study Journal'), self._on_journal_clicked),
-            ('application-x-addon-symbolic',     _('Modules'),       self._on_modules_clicked),
-            ('view-fullscreen-symbolic',         _('Presentation'),  self._on_present_menu_clicked),
+            ('scriptura-accessories-text-editor-symbolic', _('Study Journal'), self._on_journal_clicked),
+            ('scriptura-application-x-addon-symbolic',     _('Modules'),       self._on_modules_clicked),
+            ('scriptura-view-fullscreen-symbolic',         _('Presentation'),  self._on_present_menu_clicked),
         ]:
             row = Adw.ActionRow(title=label)
             row.add_prefix(Gtk.Image.new_from_icon_name(icon))
-            chevron = Gtk.Image.new_from_icon_name('go-next-symbolic')
+            chevron = Gtk.Image.new_from_icon_name('scriptura-go-next-symbolic')
             chevron.add_css_class('dim-label')
             row.add_suffix(chevron)
             row.set_activatable(True)
@@ -3218,7 +3287,7 @@ class BibleWindow(Adw.ApplicationWindow):
         # next launch (the current session's page, if any, is already up).
         today_row = Adw.ActionRow(title=_('Open to Today'))
         today_row.add_prefix(
-            Gtk.Image.new_from_icon_name('x-office-calendar-symbolic'))
+            Gtk.Image.new_from_icon_name('scriptura-x-office-calendar-symbolic'))
         today_sw = Gtk.Switch(valign=Gtk.Align.CENTER)
         today_sw.set_active(bool(settings.get('open_to_today')))
         set_accessible_label(today_sw, _('Open to Today'))
@@ -3266,7 +3335,45 @@ class BibleWindow(Adw.ApplicationWindow):
                 _church_values[d.get_selected()]))
         church_row.add_suffix(church_drop)
         nav_group.add(church_row)
+        lang_row = self._build_language_row()
+        if lang_row is not None:
+            nav_group.add(lang_row)
         return nav_group
+
+    def _build_language_row(self):
+        """The UI language, for a reader whose desktop is not in the
+        language they read the app in. None when this install has only
+        English — a picker with one entry is furniture, not a choice.
+
+        Unlike the welcome window's copy, this one takes effect on the next
+        launch, and says so. Every string on screen was translated when its
+        widget was built, so switching now would mean rebuilding the whole
+        window — panes, positions, playing audio and all — to change words
+        the reader can already read. The welcome flow can afford that; this
+        cannot, and a half-translated window would be worse than a clear
+        wait.
+        """
+        import i18n
+        languages = i18n.available_languages()
+        if len(languages) < 2:
+            return None
+        codes = [c for c, _n in languages]
+        row = Adw.ActionRow(title=_('Language'))
+        row.set_subtitle(_('Applies next time you open Scriptura'))
+        row.add_prefix(Gtk.Image.new_from_icon_name(
+            'scriptura-globe-symbolic'))
+        drop = Gtk.DropDown(
+            model=Gtk.StringList.new([n for _c, n in languages]))
+        current = settings.get('ui_language')
+        drop.set_selected(codes.index(current) if current in codes else 0)
+        drop.set_valign(Gtk.Align.CENTER)
+        set_accessible_label(drop, _('Language'))
+        drop.connect(
+            'notify::selected',
+            lambda d, _p: settings.put('ui_language', codes[d.get_selected()]))
+        row.add_suffix(drop)
+        row.set_activatable_widget(drop)
+        return row
 
     def _build_appearance_row(self):
         """The row whose chevron expands the card below it."""
@@ -3275,8 +3382,8 @@ class BibleWindow(Adw.ApplicationWindow):
         appear_group.set_margin_end(12)
         self._appear_row = Adw.ActionRow(title=_('Appearance'))
         self._appear_row.add_prefix(
-            Gtk.Image.new_from_icon_name('applications-graphics-symbolic'))
-        self._appear_arrow = Gtk.Image.new_from_icon_name('pan-end-symbolic')
+            Gtk.Image.new_from_icon_name('scriptura-applications-graphics-symbolic'))
+        self._appear_arrow = Gtk.Image.new_from_icon_name('scriptura-pan-end-symbolic')
         self._appear_arrow.add_css_class('dim-label')
         self._appear_row.add_suffix(self._appear_arrow)
         self._appear_row.set_activatable(True)
@@ -3339,7 +3446,7 @@ class BibleWindow(Adw.ApplicationWindow):
         style_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         style_box.add_css_class('linked')
         style_box.add_css_class('appear-style-toggles')
-        self._bold_btn = Gtk.ToggleButton(icon_name='format-text-bold-symbolic')
+        self._bold_btn = Gtk.ToggleButton(icon_name='scriptura-format-text-bold-symbolic')
         self._bold_btn.set_tooltip_text(_('Bold'))
         set_accessible_label(self._bold_btn, _('Bold'))
         self._bold_btn.set_active(bool(settings.get('font_bold')))
@@ -3431,7 +3538,6 @@ class BibleWindow(Adw.ApplicationWindow):
         card.append(colour_cap)
         self._paper_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
                                   spacing=8, homogeneous=True, hexpand=True)
-        self._paper_box.add_css_class('paper-flow')
         card.append(self._paper_box)
         self._rebuild_colour_row()
 
@@ -3447,7 +3553,6 @@ class BibleWindow(Adw.ApplicationWindow):
         # toggles slot in as rows without a redesign, and ship off unless
         # they earn a place in that five.
         adv = Gtk.Expander(label=_('Advanced'))
-        adv.add_css_class('appearance-advanced')
         adv_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         adv_box.set_margin_top(6)
 
@@ -3621,13 +3726,13 @@ class BibleWindow(Adw.ApplicationWindow):
         plan_hdr = Gtk.Label(label=_('Reading Plan'), xalign=0)
         plan_hdr.add_css_class('menu-section-header')
         _hdr_inner.append(plan_hdr)
-        self._plan_chevron = Gtk.Image.new_from_icon_name('pan-down-symbolic')
+        self._plan_chevron = Gtk.Image.new_from_icon_name('scriptura-pan-down-symbolic')
         self._plan_chevron.add_css_class('dim-label')
         _hdr_inner.append(self._plan_chevron)
         self._plan_collapse_btn.set_child(_hdr_inner)
         self._plan_collapse_btn.connect('clicked', self._on_plan_toggle_collapse)
         plan_hdr_box.append(self._plan_collapse_btn)
-        self._plan_menu_btn = Gtk.MenuButton(icon_name='view-more-symbolic')
+        self._plan_menu_btn = Gtk.MenuButton(icon_name='scriptura-view-more-symbolic')
         self._plan_menu_btn.add_css_class('flat')
         self._plan_menu_btn.add_css_class('menu-utility-action')
         self._plan_menu_btn.set_valign(Gtk.Align.CENTER)
@@ -3749,8 +3854,8 @@ class BibleWindow(Adw.ApplicationWindow):
         data_group.set_margin_end(12)
         data_group.set_margin_bottom(8)
         for icon, label, handler in [
-            ('document-save-symbolic', _('Back Up…'), self._on_backup_clicked),
-            ('document-open-symbolic', _('Restore…'), self._on_restore_clicked),
+            ('scriptura-document-save-symbolic', _('Back Up…'), self._on_backup_clicked),
+            ('scriptura-document-open-symbolic', _('Restore…'), self._on_restore_clicked),
         ]:
             row = Adw.ActionRow(title=label)
             row.add_prefix(Gtk.Image.new_from_icon_name(icon))
@@ -3772,10 +3877,10 @@ class BibleWindow(Adw.ApplicationWindow):
 
         theme_picker = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
         theme_picker.add_css_class('linked')
-        self._theme_light = Gtk.ToggleButton(icon_name='weather-clear-symbolic')
+        self._theme_light = Gtk.ToggleButton(icon_name='scriptura-weather-clear-symbolic')
         self._theme_light.set_tooltip_text(_('Light theme'))
         set_accessible_label(self._theme_light, _('Light theme'))
-        self._theme_dark = Gtk.ToggleButton(icon_name='weather-clear-night-symbolic')
+        self._theme_dark = Gtk.ToggleButton(icon_name='scriptura-weather-clear-night-symbolic')
         self._theme_dark.set_tooltip_text(_('Dark theme'))
         set_accessible_label(self._theme_dark, _('Dark theme'))
         # Bundled half-filled "auto" disc — light half + dark half = "follow
@@ -3815,7 +3920,7 @@ class BibleWindow(Adw.ApplicationWindow):
         hotkeys_btn.connect('clicked', self._on_hotkeys_clicked)
         footer.append(hotkeys_btn)
 
-        about_btn = Gtk.Button(icon_name='help-about-symbolic')
+        about_btn = Gtk.Button(icon_name='scriptura-help-about-symbolic')
         about_btn.add_css_class('flat')
         about_btn.add_css_class('menu-utility-action')
         about_btn.set_tooltip_text(_('About Scriptura'))
@@ -3859,7 +3964,7 @@ class BibleWindow(Adw.ApplicationWindow):
         sel_id = self._plan_ids[self._plan_drop.get_selected()]
 
         self._plan_chevron.set_from_icon_name(
-            'pan-end-symbolic' if self._plan_collapsed else 'pan-down-symbolic')
+            'scriptura-pan-end-symbolic' if self._plan_collapsed else 'scriptura-pan-down-symbolic')
         if self._plan_collapsed:
             # Folded: only the header row shows.
             for w in (self._plan_drop, self._plan_desc_lbl,

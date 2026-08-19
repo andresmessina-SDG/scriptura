@@ -25,6 +25,9 @@ import open_data
 import catena_bridge
 import ebible_bridge
 import onboarding
+import settings
+import i18n
+from a11y import set_accessible_label
 
 
 def N_(message):
@@ -54,7 +57,7 @@ _BUNDLES = [
         'title': N_('Just reading'),
         'tagline': N_('Open a Bible and start reading right away.'),
         'summary': N_('1 Bible'),
-        'size': N_('Quick download'),
+        'size': N_('Smallest download'),
         'recommended': False,
         'opens': ('BSB', None),
         'items': [
@@ -160,7 +163,7 @@ class WelcomeWindow(Adw.ApplicationWindow):
         self.set_default_size(900, 600)
 
         toolbar_view = Adw.ToolbarView()
-        toolbar_view.add_top_bar(Adw.HeaderBar())
+        toolbar_view.add_top_bar(self._build_header())
         self.set_content(toolbar_view)
 
         # Two pages: the bundle chooser, and the install-progress view.
@@ -170,6 +173,71 @@ class WelcomeWindow(Adw.ApplicationWindow):
         self._stack.add_named(self._build_choose(), 'choose')
         self._stack.add_named(self._build_progress(), 'progress')
         toolbar_view.set_content(self._stack)
+
+    def _build_header(self):
+        """Bar with the language picker and no title.
+
+        The page below carries the greeting in large type, so a title here
+        would put the same sentence on screen twice, forty pixels apart —
+        and the bar is now somewhere the eye goes, because there is a
+        control in it.
+        """
+        header = Adw.HeaderBar()
+        header.set_show_title(False)
+        lang_btn = self._build_language_button()
+        if lang_btn is not None:
+            header.pack_end(lang_btn)
+        return header
+
+    # ── Language ───────────────────────────────────────────────────────────
+
+    def _build_language_button(self):
+        """The language chooser, in the header where a first run expects it.
+
+        Returns None when this install has only English to offer — a picker
+        with one entry is furniture, not a choice.
+
+        Each language is listed in its own name, because the reader who
+        needs this control is by definition looking at words they may not
+        read. It is the first thing on the first screen for the same reason.
+        """
+        self._languages = i18n.available_languages()
+        if len(self._languages) < 2:
+            return None
+        codes = [c for c, _n in self._languages]
+        current = settings.get('ui_language')
+        drop = Gtk.DropDown(
+            model=Gtk.StringList.new([n for _c, n in self._languages]))
+        drop.set_selected(codes.index(current) if current in codes else 0)
+        drop.set_valign(Gtk.Align.CENTER)
+        drop.set_tooltip_text(_('Language'))
+        set_accessible_label(drop, _('Language'))
+        drop.connect('notify::selected', self._on_language_chosen)
+        return drop
+
+    def _on_language_chosen(self, drop, _param):
+        code = self._languages[drop.get_selected()][0]
+        if code == settings.get('ui_language'):
+            return
+        settings.put('ui_language', code)
+        i18n.install_language(code)
+        # Every string on screen was translated when its widget was built,
+        # so the window has to be built again to speak the new language.
+        # It is two pages and no reading state, which is exactly why the
+        # choice is offered here and not in the main window.
+        self._rebuild()
+
+    def _rebuild(self):
+        self.set_title(_('Welcome to Scriptura'))
+        toolbar_view = Adw.ToolbarView()
+        toolbar_view.add_top_bar(self._build_header())
+        self._stack = Gtk.Stack()
+        self._stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
+        self._stack.set_transition_duration(150)
+        self._stack.add_named(self._build_choose(), 'choose')
+        self._stack.add_named(self._build_progress(), 'progress')
+        toolbar_view.set_content(self._stack)
+        self.set_content(toolbar_view)
 
     # ── Chooser page ───────────────────────────────────────────────────────
 
@@ -224,7 +292,12 @@ class WelcomeWindow(Adw.ApplicationWindow):
         # once beside its name is what makes it recognisable later.
         tips_btn = Gtk.Button()
         tips_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        tips_row.append(Gtk.Image(icon_name='scriptura-tips-symbolic'))
+        # Rounded and set on a disc: a 16px outline glyph sitting left of a
+        # label is the exact shape of an unchecked checkbox, and this one
+        # opens a dialog rather than toggling anything.
+        tips_icon = Gtk.Image(icon_name='scriptura-tips-symbolic')
+        tips_icon.add_css_class('welcome-tips-mark')
+        tips_row.append(tips_icon)
         tips_row.append(Gtk.Label(
             label=_('New here? See what the pointer can do — Tips & Gestures')))
         tips_btn.set_child(tips_row)

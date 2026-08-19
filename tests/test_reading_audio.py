@@ -28,7 +28,7 @@ from window import BibleWindow
 
 class FakeButton:
     def __init__(self):
-        self.icon = 'media-playback-start-symbolic'
+        self.icon = 'scriptura-media-playback-start-symbolic'
         self.tooltip = None
         self.label = None
         self.announced = []
@@ -470,7 +470,7 @@ def _devotional(monkeypatch, cached=None, player=None):
 def test_devotional_fetch_never_shows_the_pause_icon(monkeypatch):
     c = _devotional(monkeypatch)
     c._on_devot_play(None)
-    assert c._devot_play_btn.icon == 'media-playback-stop-symbolic'
+    assert c._devot_play_btn.icon == 'scriptura-media-playback-stop-symbolic'
     assert c._devot_fetching
     c._end_devot_fetch()
 
@@ -480,7 +480,7 @@ def test_devotional_failure_explains_itself(monkeypatch):
     c._on_devot_play(None)
     c._finish_devot_fetch(None)
     assert c.toasts == ['Could not fetch the reading']
-    assert c._devot_play_btn.icon == 'media-playback-start-symbolic'
+    assert c._devot_play_btn.icon == 'scriptura-media-playback-start-symbolic'
     assert c._devot_play_btn.announced[-1] == 'Could not fetch the reading'
     assert c.relabelled == 1               # Morning/Evening restated
 
@@ -490,7 +490,7 @@ def test_devotional_cached_episode_plays_at_once(monkeypatch):
                     player=FakePlayer())
     c._on_devot_play(None)
     assert not c._devot_fetching
-    assert c._devot_play_btn.icon == 'media-playback-pause-symbolic'
+    assert c._devot_play_btn.icon == 'scriptura-media-playback-pause-symbolic'
     assert c._devot_progress.visible
 
 

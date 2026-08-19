@@ -97,3 +97,67 @@ def test_unknown_key_never_fires(isolated):
 
 def test_enabled_by_default(isolated):
     assert onboarding.HintController.enabled() is True
+
+
+# ── The lexicon hint only fires where tapping pays off ───────────────────────
+
+def test_lexicon_hint_is_silent_without_strongs(isolated, monkeypatch):
+    """"Tap any word" fires once ever. A reader whose Bibles carry no
+    Strong's — NBLA and LBLA, the Spanish bundle's own opening pair —
+    would spend that one firing on a pane where tapping does nothing."""
+    import content
+    import window
+
+    ctrl, shown = _controller()
+    monkeypatch.setattr(content, 'has_strongs', lambda name: name == 'KJV')
+
+    class _Pane:
+        def __init__(self, module, visible=True):
+            self._module = module
+            self._visible = visible
+
+        def get_visible(self):
+            return self._visible
+
+        def set_lexicon_enabled(self, on):
+            pass
+
+    def fire(p1, p2):
+        win = window.BibleWindow.__new__(window.BibleWindow)
+        win.pane1, win.pane2 = p1, p2
+        win._hints = ctrl
+        win.lex_toggle = type('T', (), {'get_active': lambda self: True})()
+        window.BibleWindow._on_lex_toggle(win, None)
+        return len(shown)
+
+    # Neither pane tagged: silent.
+    assert fire(_Pane('NBLA'), _Pane('LBLA')) == 0
+    # Pane 2 tagged and visible: word study works there, so the hint earns
+    # its one firing.
+    assert fire(_Pane('NBLA'), _Pane('KJV')) == 1
+
+
+def test_lexicon_hint_ignores_a_hidden_second_pane(isolated, monkeypatch):
+    """A closed split is not a place the reader can tap."""
+    import content
+    import window
+
+    ctrl, shown = _controller()
+    monkeypatch.setattr(content, 'has_strongs', lambda name: name == 'KJV')
+
+    class _Pane:
+        def __init__(self, module, visible=True):
+            self._module, self._visible = module, visible
+
+        def get_visible(self):
+            return self._visible
+
+        def set_lexicon_enabled(self, on):
+            pass
+
+    win = window.BibleWindow.__new__(window.BibleWindow)
+    win.pane1, win.pane2 = _Pane('NBLA'), _Pane('KJV', visible=False)
+    win._hints = ctrl
+    win.lex_toggle = type('T', (), {'get_active': lambda self: True})()
+    window.BibleWindow._on_lex_toggle(win, None)
+    assert shown == []

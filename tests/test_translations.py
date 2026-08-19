@@ -158,7 +158,8 @@ def test_every_book_name_is_translated(catalogue):
 
     lang, path = catalogue
     have = {msgid: strs[0] for msgid, _p, strs in _parse_po(path) if strs}
-    missing = [b for b in window.BOOKS if not have.get(b)]
+    books = window.BOOKS + window.DEUTEROCANON
+    missing = [b for b in books if not have.get(b)]
     assert not missing, f'{lang}: untranslated books {missing}'
 
 
@@ -169,5 +170,6 @@ def test_book_names_stay_distinct(catalogue):
 
     lang, path = catalogue
     have = {msgid: strs[0] for msgid, _p, strs in _parse_po(path) if strs}
-    names = [have[b] for b in window.BOOKS if have.get(b)]
+    books = window.BOOKS + window.DEUTEROCANON
+    names = [have[b] for b in books if have.get(b)]
     assert len(set(names)) == len(names), f'{lang}: duplicate book names'

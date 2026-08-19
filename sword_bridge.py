@@ -276,6 +276,7 @@ def _reset():
         _marks_sections.clear()
         _strongs_cache.clear()
         _book_maps.clear()
+        _module_dc.clear()
     with _indexing_lock:
         _indexing_threads.clear()
 
@@ -366,6 +367,12 @@ def chapter_count(book, module_name=None):
             module_name = None
         vk = _verse_key(module_name)
         vk.setText(f'{book} 1:1')
+        # A deuterocanonical book asked of a key that has never heard of it
+        # clamps to the versification's last book, and would answer with
+        # *that* book's chapter count — 22 chapters of Revelation for Tobit,
+        # which has 14. Nothing but the OSIS name catches it.
+        if book in _DC_OSIS and str(vk.getOSISRef()).split('.')[0] != _DC_OSIS[book]:
+            return 1
         return vk.getChapterMax()
     except Exception:
         # Bad book name (typo, deuterocanon outside KJV v11n) — return 1 so
@@ -381,9 +388,20 @@ def verse_count(book, chapter, module_name=None):
                 book, chapter = mapped
         vk = _verse_key(module_name)
         vk.setText(f'{book} {chapter}:1')
+        # Same clamp chapter_count guards against: without this the verse
+        # grid for Tobit 5 is Revelation 5's, one verse per button.
+        if book in _DC_OSIS and str(vk.getOSISRef()).split('.')[0] != _DC_OSIS[book]:
+            return 1
         return vk.getVerseMax()
     except Exception:
         return 1
+
+
+def verse_count_in(module_name, book, chapter):
+    """verse_count for a book that may be outside the 66 — see
+    chapter_count_in for why the module has to be named."""
+    return verse_count(book, chapter,
+                       None if book in _ALL_BOOKS else module_name)
 
 
 # ── Cross-versification mapping ──────────────────────────────────────────────
@@ -552,6 +570,15 @@ def load_chapter(module_name, book, chapter):
 
         mod = mgr().getModule(module_name)
         if mod is None:
+            return []
+
+        # A book this module has no answer for. Returning [] here rather
+        # than letting VerseKey clamp is what stops a request for Tobit
+        # reading back Revelation 1 (KJV), 2 Chronicles 1 (MT) or
+        # Laodiceans 1 (Vulg) — silently, under the heading asked for.
+        # Every reader of a chapter comes through here, so this one guard
+        # covers the panes, search, export and presentation alike.
+        if not module_has_book(module_name, book):
             return []
 
         # The caller addresses in app-space (KJV) numbers; translate into
@@ -1276,7 +1303,18 @@ _DICT_SKIP = frozenset([
 
 
 def installed_dict_modules():
-    """Return [(name, description)] for installed English dictionary/encyclopedia modules."""
+    """Return [(name, description)] for installed dictionary/encyclopedia modules.
+
+    Deliberately not filtered by language. This used to keep only `en`/`eng`,
+    which hid a dictionary the reader had gone to the Module Manager and
+    installed on purpose — every French, Russian and Spanish one, in an app
+    that ships a Spanish interface. Filtering to the *reading* language would
+    be no better: it would hide Easton's from a reader of the Spanish Bibles,
+    who can still want the entry for "Abraham".
+
+    A dictionary in the wrong language simply has no entry for the word and
+    contributes no tab, so the peek stays clean without the filter doing it.
+    """
     result = []
     for name in module_names():
         if name.lower() in _DICT_SKIP:
@@ -1288,9 +1326,6 @@ def installed_dict_modules():
             continue
         t = str(mod.getType() or '')
         if 'Lexicon' not in t and 'Dict' not in t:
-            continue
-        lang = str(mod.getConfigEntry('Lang') or '').strip().lower()
-        if lang and lang not in ('en', 'eng', 'english'):
             continue
         desc = str(mod.getConfigEntry('Description') or name)
         result.append((name, desc))
@@ -2248,6 +2283,104 @@ _ALL_BOOKS = [
 ]
 
 
+# ── Deuterocanon ─────────────────────────────────────────────────────────────
+#
+# The books outside the 66, kept out of _ALL_BOOKS because that list and its
+# order are the app's reference space: bookmark keys, annotation keys and the
+# search index are all built from it.
+#
+# Order follows the NRSV apocrypha. 'Laodiceans' is deliberately absent even
+# though the Vulgate carries it: it is the *last* book of the Vulg
+# versification, which is where every unknown name lands (see module_books),
+# so its presence could never be told apart from a miss.
+DEUTEROCANON = [
+    'Tobit', 'Judith', 'Additions to Esther', 'Wisdom', 'Sirach', 'Baruch',
+    'Epistle of Jeremiah', 'Prayer of Azariah', 'Susanna',
+    'Bel and the Dragon', '1 Maccabees', '2 Maccabees', '1 Esdras',
+    'Prayer of Manasseh', '3 Maccabees', '2 Esdras', '4 Maccabees',
+]
+
+# Book name → OSIS name. The OSIS form is the only stable identity a
+# VerseKey hands back: getBookName() renders '1 Maccabees' as 'I Maccabees',
+# so a name round-trip would call every Maccabees book missing.
+_DC_OSIS = {
+    'Tobit': 'Tob', 'Judith': 'Jdt', 'Additions to Esther': 'AddEsth',
+    'Wisdom': 'Wis', 'Sirach': 'Sir', 'Baruch': 'Bar',
+    'Epistle of Jeremiah': 'EpJer', 'Prayer of Azariah': 'PrAzar',
+    'Susanna': 'Sus', 'Bel and the Dragon': 'Bel',
+    '1 Maccabees': '1Macc', '2 Maccabees': '2Macc', '1 Esdras': '1Esd',
+    'Prayer of Manasseh': 'PrMan', '3 Maccabees': '3Macc',
+    '2 Esdras': '2Esd', '4 Maccabees': '4Macc',
+}
+
+_module_dc = {}  # module_name → (books, ...) of deuterocanon it really holds
+
+
+def module_books(module_name):
+    """The deuterocanonical books `module_name` actually holds text for.
+
+    Two separate things have to be true, and neither implies the other.
+
+    A VerseKey *clamps* an unknown book to the last book of its
+    versification instead of failing, so asking for Tobit reads Revelation 1
+    under KJV, 2 Chronicles 1 under MT and Laodiceans 1 under Vulg — a name
+    that resolves is no evidence the book exists. Comparing the OSIS name
+    the key comes back with against _DC_OSIS catches that.
+
+    And a versification knowing a book says nothing about the module:
+    RusSynodalLIO's Synodal key addresses all twelve of them and the module
+    answers every one with an empty string. hasEntry() is the module's own
+    answer.
+    """
+    with _lock:
+        cached = _module_dc.get(module_name)
+    if cached is not None:
+        return cached
+
+    found = []
+    try:
+        # No such SWORD module (an eBible id, say) is a real answer — none —
+        # and worth caching. A raised probe is not: caching it would make one
+        # bad moment permanent for the session.
+        mod = mgr().getModule(module_name)
+        if mod is not None:
+            vk = _verse_key(module_name)
+            for book in DEUTEROCANON:
+                vk.setText(f'{book} 1:1')
+                if str(vk.getOSISRef()).split('.')[0] != _DC_OSIS[book]:
+                    continue  # clamped — this versification has no such book
+                if mod.hasEntry(vk):
+                    found.append(book)
+    except Exception:
+        _sword_log.exception('module_books failed for %s', module_name)
+        return ()
+
+    result = tuple(found)
+    with _lock:
+        _module_dc[module_name] = result
+    return result
+
+
+def chapter_count_in(module_name, book):
+    """chapter_count for a book that may be outside the 66.
+
+    The app-space (KJV) key governs the 66 — that is the space every stored
+    reference is in. An appendix book has no app-space count at all: ask the
+    default key for Tobit and it answers with Revelation's 22 chapters, or,
+    once chapter_count catches that, with 1. It has to be counted against the
+    module that actually holds it."""
+    return chapter_count(book, None if book in _ALL_BOOKS else module_name)
+
+
+def module_has_book(module_name, book):
+    """True when `module_name` can answer for `book`. The 66 are assumed
+    present — every Bible module has them, and the reader who finds one
+    missing has a broken module, not a canon question."""
+    if book in _ALL_BOOKS:
+        return True
+    return book in module_books(module_name)
+
+
 
 
 
@@ -2479,6 +2612,13 @@ def _parse_cross_ref_text(text):
 
 def get_cross_refs(book, chapter, verse):
     """Return [(book, chapter, verse, label), ...]. Uses OpenBible if downloaded, else TSK."""
+    # Neither source indexes the books outside the 66, and both answer for
+    # them anyway if asked: OpenBible's numeric verse id raises KeyError,
+    # and TSK's VerseKey clamps Baruch 5:4 to Revelation and hands back
+    # Revelation's cross-references under a Baruch label.
+    if book not in _ALL_BOOKS:
+        return None
+
     import open_data
     ob = open_data.get_cross_refs(book, chapter, verse)
     if ob is not None:

@@ -158,7 +158,7 @@ class TagManagerWindow(Adw.Window):
         counts = annotations.get_tag_counts()
         if not counts:
             empty = compact_empty_state(
-                icon_name='view-list-bullet-symbolic',
+                icon_name='scriptura-view-list-bullet-symbolic',
                 title=_('No tags yet'),
                 description=_('Tag annotations from the note editor to see them here.'),
             )
@@ -180,7 +180,7 @@ class TagManagerWindow(Adw.Window):
         row.set_subtitle(ngettext(
             '{n} annotation', '{n} annotations', count).format(n=count))
 
-        rename_btn = Gtk.Button(icon_name='document-edit-symbolic')
+        rename_btn = Gtk.Button(icon_name='scriptura-document-edit-symbolic')
         rename_btn.add_css_class('flat')
         rename_btn.set_valign(Gtk.Align.CENTER)
         rename_btn.set_tooltip_text(_('Rename or merge into another tag'))
@@ -188,7 +188,7 @@ class TagManagerWindow(Adw.Window):
         rename_btn.connect('clicked', self._on_rename_tag, tag)
         row.add_suffix(rename_btn)
 
-        del_btn = Gtk.Button(icon_name='user-trash-symbolic')
+        del_btn = Gtk.Button(icon_name='scriptura-user-trash-symbolic')
         del_btn.add_css_class('flat')
         del_btn.set_valign(Gtk.Align.CENTER)
         del_btn.set_tooltip_text(_('Remove tag from all annotations'))
@@ -282,21 +282,21 @@ class StudyJournalWindow(Adw.Window):
         sidebar_header = Adw.HeaderBar()
         sidebar_tv.add_top_bar(sidebar_header)
 
-        refresh_btn = Gtk.Button(icon_name='view-refresh-symbolic')
+        refresh_btn = Gtk.Button(icon_name='scriptura-view-refresh-symbolic')
         refresh_btn.set_tooltip_text(_('Refresh'))
         set_accessible_label(refresh_btn, _('Refresh'))
         refresh_btn.add_css_class('flat')
         refresh_btn.connect('clicked', lambda _: self._reload())
         sidebar_header.pack_start(refresh_btn)
 
-        tag_mgr_btn = Gtk.Button(icon_name='view-list-bullet-symbolic')
+        tag_mgr_btn = Gtk.Button(icon_name='scriptura-view-list-bullet-symbolic')
         tag_mgr_btn.set_tooltip_text(_('Manage tags'))
         set_accessible_label(tag_mgr_btn, _('Manage tags'))
         tag_mgr_btn.add_css_class('flat')
         tag_mgr_btn.connect('clicked', self._on_open_tag_manager)
         sidebar_header.pack_start(tag_mgr_btn)
 
-        export_btn = Gtk.Button(icon_name='document-save-symbolic')
+        export_btn = Gtk.Button(icon_name='scriptura-document-save-symbolic')
         export_btn.set_tooltip_text(_('Export to text file'))
         set_accessible_label(export_btn, _('Export to text file'))
         export_btn.connect('clicked', self._on_export)
@@ -425,7 +425,7 @@ class StudyJournalWindow(Adw.Window):
         self._detail_stack.set_transition_duration(150)
 
         empty = Adw.StatusPage(
-            icon_name='document-edit-symbolic',
+            icon_name='scriptura-document-edit-symbolic',
             title=_('No entry selected'),
             description=_('Pick an annotation from the list to view or edit it.'),
         )
@@ -472,7 +472,7 @@ class StudyJournalWindow(Adw.Window):
             swatch_box.append(btn)
             self._hl_buttons[stored_color] = btn
 
-        clear_btn = Gtk.Button(icon_name='edit-clear-symbolic')
+        clear_btn = Gtk.Button(icon_name='scriptura-edit-clear-symbolic')
         clear_btn.add_css_class('flat')
         clear_btn.set_tooltip_text(_('Clear highlight'))
         set_accessible_label(clear_btn, _('Clear highlight'))
@@ -542,7 +542,10 @@ class StudyJournalWindow(Adw.Window):
         self._entries = _all_entries()
 
         modules = [_('All modules')] + sorted({e['module'] for e in self._entries})
-        book_keys = [b for b in sword_bridge._ALL_BOOKS
+        # The appendix too, or a note taken in Tobit would be missing from
+        # the filter that is supposed to list every book the journal holds.
+        book_keys = [b for b in (sword_bridge._ALL_BOOKS
+                                 + list(sword_bridge.DEUTEROCANON))
                      if any(e['book'] == b for e in self._entries)]
         all_tags = [_('All tags')] + sorted(
             {t for e in self._entries for t in e.get('tags', [])})
@@ -656,7 +659,7 @@ class StudyJournalWindow(Adw.Window):
                 title = _('No matches')
                 desc = _('Try a different search or filter.')
             empty = compact_empty_state(
-                icon_name='document-edit-symbolic',
+                icon_name='scriptura-document-edit-symbolic',
                 title=title,
                 description=desc,
             )
@@ -839,7 +842,7 @@ class StudyJournalWindow(Adw.Window):
         outer.append(content)
 
         # Trash button
-        del_btn = Gtk.Button(icon_name='user-trash-symbolic')
+        del_btn = Gtk.Button(icon_name='scriptura-user-trash-symbolic')
         del_btn.add_css_class('flat')
         del_btn.add_css_class('journal-del')
         del_btn.set_valign(Gtk.Align.CENTER)

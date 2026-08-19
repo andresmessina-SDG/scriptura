@@ -323,7 +323,7 @@ class TodayView(Gtk.Box):
             interval_ms=40)   # an arc travelling, not a bar stepping
 
         self._listen_btn = Gtk.Button(
-            icon_name='media-playback-start-symbolic')
+            icon_name='scriptura-media-playback-start-symbolic')
         self._listen_btn.add_css_class('today-listen-play')
         self._listen_btn.set_halign(Gtk.Align.CENTER)
         self._listen_btn.set_valign(Gtk.Align.CENTER)
@@ -486,13 +486,13 @@ class TodayView(Gtk.Box):
         showing.
         """
         if fetching:
-            icon, label = ('media-playback-stop-symbolic',
+            icon, label = ('scriptura-media-playback-stop-symbolic',
                            _('Stop fetching the reading'))
         elif playing:
-            icon, label = ('media-playback-pause-symbolic',
+            icon, label = ('scriptura-media-playback-pause-symbolic',
                            _('Pause the spoken devotional'))
         else:
-            icon, label = ('media-playback-start-symbolic',
+            icon, label = ('scriptura-media-playback-start-symbolic',
                            _('Listen to today\'s devotional'))
         self._listen_btn.set_icon_name(icon)
         self._listen_btn.set_tooltip_text(

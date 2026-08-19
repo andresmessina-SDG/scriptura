@@ -64,7 +64,6 @@ class PresentView(Gtk.Box):
         # visibility with _text, so the fit/measure engine measures whichever is
         # showing (a hidden widget contributes 0 to the size request).
         self._grid = Gtk.Grid()
-        self._grid.add_css_class('present-grid')
         self._grid.set_column_spacing(22)
         self._grid.set_row_spacing(14)
         self._grid.set_hexpand(True)
