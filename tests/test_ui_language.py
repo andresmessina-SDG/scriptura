@@ -12,7 +12,6 @@ name to show — rather than about widget layout.
 
 import os
 
-import pytest
 
 import i18n
 import settings

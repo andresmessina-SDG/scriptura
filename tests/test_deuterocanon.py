@@ -11,7 +11,6 @@ the thing under test) and a fake module for the module's own answer, so
 nothing here depends on which modules are installed.
 """
 
-import pytest
 
 import settings
 import sword_bridge
