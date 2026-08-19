@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" width="1254" height="1254">
+<!-- 512 is flatpak's ceiling for an exported icon, and it validates the
+     declared size, not the drawing. The viewBox keeps every coordinate
+     below in the 1254 space it was drawn in. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" width="512" height="512">
   <defs>
     <clipPath id="rounded">
       <rect width="1254" height="1254" rx="325" ry="325"/>
