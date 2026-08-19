@@ -56,6 +56,11 @@ _defaults: dict[str, Any] = {
     # same scroll-driven unit the rule marks, painted rather than
     # retagged. Opt-in taste, off by default.
     'focus_current_unit': False,
+    # UI language. None follows the desktop, which is what most readers
+    # want and never have to think about; a code ('en', 'es') overrides it
+    # for readers whose desktop is in a language they do not read the app
+    # in. Only codes with an installed catalogue are ever offered.
+    'ui_language':        None,
     # Cross-reference bar on verse click (the ※ toggle in the header's
     # Reading-tools cluster). On by default; off keeps the reading surface
     # fully minimal — verse clicks stop summoning the bar.

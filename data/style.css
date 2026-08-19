@@ -1155,6 +1155,15 @@ button.catena-chip-place {
 .welcome-card-recommended {
     border: 2px solid @accent_color;
 }
+/* The Tips glyph on the welcome page. Without the disc it is a pale
+   rounded square immediately left of a label — an unchecked checkbox to
+   every eye — on a button that opens a dialog. */
+.welcome-tips-mark {
+    background-color: alpha(currentColor, 0.12);
+    border-radius: 9999px;
+    padding: 4px;
+}
+
 .welcome-badge {
     background-color: @accent_bg_color;
     color: @accent_fg_color;

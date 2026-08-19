@@ -10,10 +10,89 @@ gettext.textdomain()).
 """
 import gettext as _gettext
 
+#: The app's gettext domain, shared by main's bootstrap and the switcher.
+DOMAIN = 'scriptura'
+
 #: Translate a message via the current (scriptura) text domain.
 _ = _gettext.gettext
 #: Plural-aware translation.
 ngettext = _gettext.ngettext
+
+
+#: The UI languages the app can offer, in their own names. A code only
+#: reaches the picker when its compiled catalogue is actually installed
+#: (see available_languages), so this table may name more than a given
+#: install can use. English is the source language and needs no catalogue.
+LANGUAGE_NAMES = {
+    'en': 'English',
+    'es': 'Español',
+}
+
+
+def localedir() -> str:
+    """Where the compiled catalogues live.
+
+    Resolved relative to this file — installed at {prefix}/share/scriptura/,
+    catalogues at {prefix}/share/locale — which is the same __file__-relative
+    trick main.py uses for the icon search path. A source checkout has no
+    such directory, so a run from the repo offers English only; verify
+    anything about translation from the meson install tree.
+    """
+    import os
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        '..', 'locale')
+
+
+def available_languages() -> list[tuple[str, str]]:
+    """[(code, native name)] for every language this install can show.
+
+    Read from the disk rather than from po/LINGUAS: a catalogue that was
+    never compiled, or a partial install, would otherwise be offered and
+    then quietly do nothing. English is always first — it is the source
+    language, so it needs no catalogue and is always available.
+    """
+    import os
+    out = [('en', LANGUAGE_NAMES['en'])]
+    base = localedir()
+    try:
+        codes = sorted(os.listdir(base))
+    except OSError:
+        return out
+    for code in codes:
+        if code == 'en':
+            continue
+        mo = os.path.join(base, code, 'LC_MESSAGES', 'scriptura.mo')
+        if os.path.isfile(mo):
+            out.append((code, LANGUAGE_NAMES.get(code, code)))
+    return out
+
+
+def install_language(code: str | None) -> None:
+    """Switch the running app's catalogue.
+
+    Only the welcome flow uses this. Everywhere else the language is read
+    once at startup, because `_()` resolves when a widget is built: the
+    strings already on screen were translated at construction and no
+    re-binding reaches back to change them. The welcome window can do it
+    because it rebuilds itself afterwards.
+
+    The builtins have to be re-installed, not just re-bound: gettext.install
+    binds `_` to one translation object, and that object does not notice a
+    later change of language. i18n's own `_` is gettext.gettext, which
+    re-reads the environment per call, so it needs nothing.
+    """
+    import os
+    if code:
+        os.environ['LANGUAGE'] = code
+    else:
+        os.environ.pop('LANGUAGE', None)
+    base = localedir()
+    try:
+        _gettext.bindtextdomain(DOMAIN, base)
+        _gettext.textdomain(DOMAIN)
+        _gettext.install(DOMAIN, base, names=['ngettext'])
+    except OSError:
+        return
 
 
 def N_(message: str) -> str:

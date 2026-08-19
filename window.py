@@ -3335,7 +3335,45 @@ class BibleWindow(Adw.ApplicationWindow):
                 _church_values[d.get_selected()]))
         church_row.add_suffix(church_drop)
         nav_group.add(church_row)
+        lang_row = self._build_language_row()
+        if lang_row is not None:
+            nav_group.add(lang_row)
         return nav_group
+
+    def _build_language_row(self):
+        """The UI language, for a reader whose desktop is not in the
+        language they read the app in. None when this install has only
+        English — a picker with one entry is furniture, not a choice.
+
+        Unlike the welcome window's copy, this one takes effect on the next
+        launch, and says so. Every string on screen was translated when its
+        widget was built, so switching now would mean rebuilding the whole
+        window — panes, positions, playing audio and all — to change words
+        the reader can already read. The welcome flow can afford that; this
+        cannot, and a half-translated window would be worse than a clear
+        wait.
+        """
+        import i18n
+        languages = i18n.available_languages()
+        if len(languages) < 2:
+            return None
+        codes = [c for c, _n in languages]
+        row = Adw.ActionRow(title=_('Language'))
+        row.set_subtitle(_('Applies next time you open Scriptura'))
+        row.add_prefix(Gtk.Image.new_from_icon_name(
+            'scriptura-globe-symbolic'))
+        drop = Gtk.DropDown(
+            model=Gtk.StringList.new([n for _c, n in languages]))
+        current = settings.get('ui_language')
+        drop.set_selected(codes.index(current) if current in codes else 0)
+        drop.set_valign(Gtk.Align.CENTER)
+        set_accessible_label(drop, _('Language'))
+        drop.connect(
+            'notify::selected',
+            lambda d, _p: settings.put('ui_language', codes[d.get_selected()]))
+        row.add_suffix(drop)
+        row.set_activatable_widget(drop)
+        return row
 
     def _build_appearance_row(self):
         """The row whose chevron expands the card below it."""

@@ -40,8 +40,21 @@ def _setup_gettext():
     {prefix}/share/locale — same __file__-relative trick as the icon search
     path). A missing localedir is fine: gettext falls back to the untranslated
     strings. Done before importing the UI so module-level strings translate."""
-    localedir = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), '..', 'locale')
+    import i18n
+    localedir = i18n.localedir()
+    # A reader's chosen UI language, when they have overridden the desktop.
+    # LANGUAGE is the GNU gettext override and outranks LC_MESSAGES, so it
+    # steers the catalogue while leaving dates, numbers and sorting on the
+    # desktop's locale — which is what a Spanish reader on an English system
+    # actually wants. Must be set before the domain is bound below: gettext
+    # resolves the catalogue once, at install time.
+    try:
+        import settings
+        chosen = settings.get('ui_language')
+    except Exception:
+        chosen = None
+    if chosen:
+        os.environ['LANGUAGE'] = chosen
     try:
         locale.setlocale(locale.LC_ALL, '')
         locale.bindtextdomain(GETTEXT_DOMAIN, localedir)
