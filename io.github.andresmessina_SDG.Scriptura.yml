@@ -4,6 +4,13 @@ runtime-version: '50'
 sdk: org.gnome.Sdk
 command: io.github.andresmessina_SDG.Scriptura
 
+# Keep the catalogues in the app instead of splitting them into a .Locale
+# extension. flatpak installs only the languages the host is configured for,
+# so on an English desktop the extension arrives empty — and the reader the
+# language picker exists for is precisely the one whose desktop is not in the
+# language they want to read. Two catalogues weigh a few dozen kilobytes.
+separate-locales: false
+
 finish-args:
   - --socket=wayland
   - --socket=fallback-x11

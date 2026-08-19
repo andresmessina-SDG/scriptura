@@ -37,3 +37,20 @@ def test_meson_installs_the_full_import_closure():
     missing = sorted(closure - listed)
     assert not missing, (
         f'imported by the app but not installed by meson.build: {missing}')
+
+
+def test_the_flatpak_ships_its_catalogues_rather_than_an_extension():
+    """The language picker offers a language only when its compiled
+    catalogue is installed, so packaging decides what the picker can show.
+
+    flatpak-builder splits /app/share/locale into a .Locale extension by
+    default, and flatpak installs only the languages the host is set up
+    for. On an English desktop the extension arrives empty — 512 bytes,
+    measured on a real install of 1.5.0 — and the picker offers English
+    alone. That is exactly backwards: the reader the picker exists for is
+    the one whose desktop is not in the language they want to read in.
+    """
+    manifest = (REPO / 'io.github.andresmessina_SDG.Scriptura.yml').read_text()
+    assert re.search(r'^separate-locales:\s*false\s*$', manifest, re.M), (
+        'the manifest must set separate-locales: false, or the Spanish '
+        'catalogue ships in an extension the reader who needs it will not have')
