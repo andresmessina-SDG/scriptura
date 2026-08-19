@@ -354,9 +354,42 @@ class BibleApp(Adw.Application):
         ).present()
 
 
+# Whether to start again once this run has finished. Kept in the
+# environment rather than in a module global on purpose: run as
+# `python main.py`, this file exists TWICE — as `__main__` and as the
+# `main` that window.py imports — so a global set through one copy is
+# invisible to the `main()` running in the other, and the app would quit
+# without ever coming back. The environment belongs to the process, not
+# to a module object. (The installed launcher imports main, so there it
+# is one copy and a global would have worked; that is luck, not design.)
+_RELAUNCH_ENV = 'SCRIPTURA_RELAUNCH'
+
+
+def request_relaunch():
+    """Ask for the app to start again once this run has finished.
+
+    Used by the language picker: a running window cannot change language,
+    because every string on it was translated when its widget was built.
+    """
+    os.environ[_RELAUNCH_ENV] = '1'
+
+
+def relaunch_requested():
+    return bool(os.environ.get(_RELAUNCH_ENV))
+
+
 def main():
     app = BibleApp()
     app.run()
+    # Re-exec here rather than from the button's handler: by now
+    # GApplication has shut down and released its bus name, so the new
+    # process starts as itself instead of handing straight back to the one
+    # it is replacing.
+    if os.environ.pop(_RELAUNCH_ENV, None):
+        import settings
+        # The debounced writer may still be holding the new language.
+        settings._save_now()
+        os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
 if __name__ == '__main__':

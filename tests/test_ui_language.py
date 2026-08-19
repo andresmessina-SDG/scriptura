@@ -121,3 +121,86 @@ def test_no_catalogue_means_english(tmp_path, monkeypatch):
     monkeypatch.setattr(i18n, 'localedir', lambda: str(tmp_path))
     monkeypatch.setenv('LANGUAGE', 'en')
     assert i18n.current_language() == 'en'
+
+
+# ── The offer to reopen ─────────────────────────────────────────────────────
+
+class _Overlay:
+    def __init__(self):
+        self.toasts = []
+
+    def add_toast(self, t):
+        self.toasts.append(t)
+
+
+class _Drop:
+    def __init__(self, i):
+        self.i = i
+
+    def get_selected(self):
+        return self.i
+
+
+def _pick(language_in_effect, chosen, monkeypatch):
+    """Run the menu picker's handler with a stub window."""
+    import window
+    monkeypatch.setattr(i18n, 'current_language', lambda: language_in_effect)
+    written = {}
+    monkeypatch.setattr(settings, 'put',
+                        lambda k, v: written.__setitem__(k, v))
+    langs = [('en', 'English'), ('es', 'Español')]
+    codes = [c for c, _n in langs]
+
+    win = window.BibleWindow.__new__(window.BibleWindow)
+    win._toast_overlay = _Overlay()
+    window.BibleWindow._on_language_selected(
+        win, codes, langs, _Drop(codes.index(chosen)))
+    return written, win._toast_overlay.toasts
+
+
+def test_choosing_a_new_language_offers_to_reopen(monkeypatch):
+    """The window cannot change language where it stands, so the honest
+    options are to wait or to start again. The toast says the first and
+    offers the second."""
+    written, toasts = _pick('en', 'es', monkeypatch)
+    assert written == {'ui_language': 'es'}
+    assert len(toasts) == 1
+    assert 'Español' in toasts[0].get_title()
+    assert toasts[0].get_button_label()
+
+
+def test_choosing_the_language_already_running_offers_nothing(monkeypatch):
+    """Reopening would change nothing, and an offer that does nothing is
+    worse than no offer."""
+    written, toasts = _pick('es', 'es', monkeypatch)
+    assert written == {'ui_language': 'es'}
+    assert toasts == []
+
+
+def test_a_relaunch_request_reaches_the_copy_of_main_that_is_running():
+    """Run as `python main.py`, this file exists twice — as `__main__` and
+    as the `main` window.py imports. A module global set through one copy
+    is invisible to the main() running in the other, so the app quit and
+    never came back. The flag lives in the environment, which belongs to
+    the process rather than to a module object.
+
+    Loading a second, independent copy of the module is the whole test:
+    under a global it fails, under the environment it cannot.
+    """
+    import importlib.util
+    import os
+    import main
+
+    os.environ.pop(main._RELAUNCH_ENV, None)
+    spec = importlib.util.spec_from_file_location('main_other', main.__file__)
+    other = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(other)
+    assert other is not main
+
+    other.request_relaunch()
+    try:
+        assert main.relaunch_requested(), (
+            'the request did not reach the other copy of main')
+    finally:
+        os.environ.pop(main._RELAUNCH_ENV, None)
+    assert not main.relaunch_requested()

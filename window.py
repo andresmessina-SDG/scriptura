@@ -3370,12 +3370,42 @@ class BibleWindow(Adw.ApplicationWindow):
         drop.set_selected(codes.index(current) if current in codes else 0)
         drop.set_valign(Gtk.Align.CENTER)
         set_accessible_label(drop, _('Language'))
-        drop.connect(
-            'notify::selected',
-            lambda d, _p: settings.put('ui_language', codes[d.get_selected()]))
+        drop.connect('notify::selected',
+                     lambda d, _p: self._on_language_selected(codes, languages, d))
         row.add_suffix(drop)
         row.set_activatable_widget(drop)
         return row
+
+    def _on_language_selected(self, codes, languages, drop):
+        """Record the choice, then offer the one thing that can carry it out.
+
+        The window cannot change language where it stands — its strings were
+        translated as its widgets were built — so the honest options are to
+        wait or to start again. A toast offers the second without insisting:
+        it says what will happen anyway, and the button is there for a
+        reader who would rather not wait.
+        """
+        import i18n
+        code = codes[drop.get_selected()]
+        settings.put('ui_language', code)
+        if code == i18n.current_language():
+            return          # already reading in it; nothing to relaunch for
+        name = dict(languages).get(code, code)
+        toast = Adw.Toast.new(
+            _('Scriptura will be in {language} when it reopens').format(language=name))
+        # Longer than a hint: this one asks a question, and the answer is a
+        # button rather than an acknowledgement.
+        toast.set_timeout(8)
+        toast.set_button_label(_('Reopen now'))
+        toast.connect('button-clicked', lambda _t: self._relaunch_now())
+        self._toast_overlay.add_toast(toast)
+
+    def _relaunch_now(self):
+        import main as _main
+        _main.request_relaunch()
+        app = self.get_application()
+        if app is not None:
+            app.quit()
 
     def _build_appearance_row(self):
         """The row whose chevron expands the card below it."""

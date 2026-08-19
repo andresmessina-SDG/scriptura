@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scriptura\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-19 09:01-0600\n"
+"POT-Creation-Date: 2026-08-19 10:55-0600\n"
 "PO-Revision-Date: 2026-08-16 00:00+0000\n"
 "Last-Translator: Scriptura\n"
 "Language-Team: Spanish\n"
@@ -592,11 +592,11 @@ msgstr "Copiar"
 msgid "Select All"
 msgstr "Seleccionar todo"
 
-#: archaeology_reader.py:298 archaeology_reader.py:559
+#: archaeology_reader.py:298 archaeology_reader.py:558
 msgid "Glossary"
 msgstr "Glosario"
 
-#: archaeology_reader.py:311 archaeology_reader.py:560
+#: archaeology_reader.py:311 archaeology_reader.py:559
 msgid "Sources & further reading"
 msgstr "Fuentes y lecturas adicionales"
 
@@ -611,45 +611,45 @@ msgid_plural "Click to enlarge ({n} views)"
 msgstr[0] "Pulse para ampliar ({n} vista)"
 msgstr[1] "Pulse para ampliar ({n} vistas)"
 
-#: archaeology_reader.py:365
+#: archaeology_reader.py:364
 msgid "Provenance"
 msgstr "Procedencia"
 
-#: archaeology_reader.py:374
+#: archaeology_reader.py:373
 #, python-brace-format
 msgid "{n} detail closeup · click the image to view"
 msgid_plural "{n} detail closeups · click the image to view"
 msgstr[0] "{n} primer plano · pulse la imagen para verlo"
 msgstr[1] "{n} primeros planos · pulse la imagen para verlos"
 
-#: archaeology_reader.py:386
+#: archaeology_reader.py:385
 msgid "Attests"
 msgstr "Atestigua"
 
-#: archaeology_reader.py:396
+#: archaeology_reader.py:395
 msgid "See also"
 msgstr "Véase también"
 
-#: archaeology_reader.py:418
+#: archaeology_reader.py:417
 #, python-brace-format
 msgid "Go to {title}"
 msgstr "Ir a {title}"
 
-#: archaeology_reader.py:493 imagery_reader.py:756 imagery_reader.py:758
+#: archaeology_reader.py:492 imagery_reader.py:755 imagery_reader.py:757
 #, python-brace-format
 msgid "Open {ref} in the Bible pane"
 msgstr "Abrir {ref} en el panel de la Biblia"
 
-#: archaeology_reader.py:666 archaeology_reader.py:674
+#: archaeology_reader.py:665 archaeology_reader.py:673
 msgid "Where they were found"
 msgstr "Dónde se hallaron"
 
-#: archaeology_reader.py:669
+#: archaeology_reader.py:668
 #, python-brace-format
 msgid "Reading: {title}"
 msgstr "Lectura: {title}"
 
-#: archaeology_reader.py:989
+#: archaeology_reader.py:988
 msgid "When they date from"
 msgstr "De cuándo datan"
 
@@ -679,7 +679,7 @@ msgstr "Volver a {reference}"
 msgid "Read {reference} aloud instead"
 msgstr "Leer en voz alta {reference}"
 
-#: audio_pill.py:445 audio_surfaces.py:285 today_page.py:490
+#: audio_pill.py:445 audio_surfaces.py:283 today_page.py:490
 msgid "Stop fetching the reading"
 msgstr "Dejar de obtener la lectura"
 
@@ -687,54 +687,54 @@ msgstr "Dejar de obtener la lectura"
 msgid "Pause"
 msgstr "Pausar"
 
-#: audio_surfaces.py:237 audio_surfaces.py:238 audio_surfaces.py:340
+#: audio_surfaces.py:235 audio_surfaces.py:236 audio_surfaces.py:338
 #: devotional.py:66
 msgid "Evening"
 msgstr "Tarde"
 
-#: audio_surfaces.py:237 audio_surfaces.py:238 audio_surfaces.py:341
+#: audio_surfaces.py:235 audio_surfaces.py:236 audio_surfaces.py:339
 #: devotional.py:66
 msgid "Morning"
 msgstr "Mañana"
 
-#: audio_surfaces.py:247
+#: audio_surfaces.py:245
 msgid "Play the evening reading"
 msgstr "Reproducir la lectura de la tarde"
 
-#: audio_surfaces.py:248
+#: audio_surfaces.py:246
 msgid "Play the morning reading"
 msgstr "Reproducir la lectura de la mañana"
 
-#: audio_surfaces.py:251
+#: audio_surfaces.py:249
 msgid "Switch to the morning reading"
 msgstr "Cambiar a la lectura de la mañana"
 
-#: audio_surfaces.py:252
+#: audio_surfaces.py:250
 msgid "Switch to the evening reading"
 msgstr "Cambiar a la lectura de la tarde"
 
-#: audio_surfaces.py:289 audio_surfaces.py:792 window.py:2247
+#: audio_surfaces.py:287 audio_surfaces.py:789 window.py:2247
 msgid "Fetching the reading"
 msgstr "Obteniendo la lectura"
 
-#: audio_surfaces.py:311 audio_surfaces.py:813 window.py:2265
+#: audio_surfaces.py:309 audio_surfaces.py:810 window.py:2265
 msgid "Could not fetch the reading"
 msgstr "No se pudo obtener la lectura"
 
-#: audio_surfaces.py:324 audio_surfaces.py:835 window.py:2279
+#: audio_surfaces.py:322 audio_surfaces.py:832 window.py:2279
 msgid "Could not play the reading"
 msgstr "No se pudo reproducir la lectura"
 
-#: audio_surfaces.py:512
+#: audio_surfaces.py:509
 #, python-brace-format
 msgid "Listen to this chapter — read by {credit}"
 msgstr "Escuche este capítulo, leído por {credit}"
 
-#: audio_surfaces.py:514
+#: audio_surfaces.py:511
 msgid "Listen to this chapter"
 msgstr "Escuchar este capítulo"
 
-#: audio_surfaces.py:606 audio_surfaces.py:608
+#: audio_surfaces.py:603 audio_surfaces.py:605
 msgid "Listen to this psalm"
 msgstr "Escuchar este salmo"
 
@@ -853,7 +853,7 @@ msgstr "Comentario histórico"
 msgid "Historical Commentaries"
 msgstr "Comentarios históricos"
 
-#: catena_reader.py:234 imagery_reader.py:573
+#: catena_reader.py:234 imagery_reader.py:572
 msgid "Open a Bible alongside this pane"
 msgstr "Abra una Biblia junto a este panel"
 
@@ -1833,20 +1833,20 @@ msgstr "{ancient} · hoy {modern}"
 msgid "Traditional / uncertain identification"
 msgstr "Identificación tradicional o incierta"
 
-#: imagery_reader.py:526
+#: imagery_reader.py:525
 msgid "Art"
 msgstr "Arte"
 
-#: imagery_reader.py:528
+#: imagery_reader.py:527
 msgid "Where"
 msgstr "Dónde"
 
-#: imagery_reader.py:569 module_manager.py:589 module_manager.py:605
+#: imagery_reader.py:568 module_manager.py:589 module_manager.py:605
 #: module_manager.py:1447
 msgid "Bible Imagery"
 msgstr "Imágenes bíblicas"
 
-#: imagery_reader.py:574
+#: imagery_reader.py:573
 msgid ""
 "Navigate there to see illustrations, maps, and photos of the places named in "
 "each verse."
@@ -1854,11 +1854,11 @@ msgstr ""
 "Vaya allí para ver ilustraciones, mapas y fotografías de los lugares que "
 "nombra cada versículo."
 
-#: imagery_reader.py:603
+#: imagery_reader.py:602
 msgid "No illustration for this verse"
 msgstr "No hay ninguna ilustración para este versículo"
 
-#: imagery_reader.py:604
+#: imagery_reader.py:603
 msgid ""
 "Try a neighbouring verse, or a scene the artists depicted more often. The "
 "Where tab may still have a map or places."
@@ -1866,69 +1866,69 @@ msgstr ""
 "Pruebe con un versículo vecino o con una escena que los artistas "
 "representaran más. La pestaña Dónde puede tener un mapa o lugares."
 
-#: imagery_reader.py:619
+#: imagery_reader.py:618
 #, python-brace-format
 msgid "See this scene in other traditions ({n})"
 msgid_plural "See this scene in other traditions ({n})"
 msgstr[0] "Ver esta escena en otras tradiciones ({n})"
 msgstr[1] "Ver esta escena en otras tradiciones ({n})"
 
-#: imagery_reader.py:650
+#: imagery_reader.py:649
 msgid "No places mapped for this verse"
 msgstr "No hay lugares situados para este versículo"
 
-#: imagery_reader.py:651
+#: imagery_reader.py:650
 msgid ""
 "Not every verse names a place. The Art tab may still have an illustration."
 msgstr ""
 "No todos los versículos nombran un lugar. La pestaña Arte puede tener una "
 "ilustración."
 
-#: imagery_reader.py:665
+#: imagery_reader.py:664
 msgid "Places in this verse"
 msgstr "Lugares de este versículo"
 
-#: imagery_reader.py:798
+#: imagery_reader.py:796
 msgid "Image"
 msgstr "Imagen"
 
-#: imagery_reader.py:839
+#: imagery_reader.py:837
 msgid "Image copied"
 msgstr "Imagen copiada"
 
-#: imagery_reader.py:843
+#: imagery_reader.py:841
 msgid "Credit copied"
 msgstr "Crédito copiado"
 
-#: imagery_reader.py:846
+#: imagery_reader.py:844
 msgid "Copy credit"
 msgstr "Copiar el crédito"
 
-#: imagery_reader.py:849
+#: imagery_reader.py:847
 msgid "Copy the artwork's title, artist, and source"
 msgstr "Copiar el título, el autor y la fuente de la obra"
 
-#: imagery_reader.py:854 imagery_reader.py:855
+#: imagery_reader.py:852 imagery_reader.py:853
 msgid "Copy image"
 msgstr "Copiar la imagen"
 
-#: imagery_reader.py:893 pane.py:1418
+#: imagery_reader.py:891 pane.py:1418
 msgid "Today"
 msgstr "Hoy"
 
-#: imagery_reader.py:895
+#: imagery_reader.py:893
 msgid "Switch between Bible-time and present-day names"
 msgstr "Alternar entre los nombres bíblicos y los actuales"
 
-#: imagery_reader.py:900 imagery_reader.py:901
+#: imagery_reader.py:898 imagery_reader.py:899
 msgid "Zoom out"
 msgstr "Alejar"
 
-#: imagery_reader.py:903 imagery_reader.py:904
+#: imagery_reader.py:901 imagery_reader.py:902
 msgid "Zoom in"
 msgstr "Acercar"
 
-#: imagery_reader.py:906 imagery_reader.py:907
+#: imagery_reader.py:904 imagery_reader.py:905
 msgid "Fit to window"
 msgstr "Ajustar a la ventana"
 
@@ -2241,12 +2241,12 @@ msgid_plural "updated {m} months ago"
 msgstr[0] "actualizado hace {m} mes"
 msgstr[1] "actualizado hace {m} meses"
 
-#: module_manager.py:191 welcome.py:489
+#: module_manager.py:191 welcome.py:503
 #, python-brace-format
 msgid "{pct}% ({done} of {total} MB)"
 msgstr "{pct} % ({done} de {total} MB)"
 
-#: module_manager.py:194 welcome.py:492
+#: module_manager.py:194 welcome.py:506
 #, python-brace-format
 msgid "{done} MB"
 msgstr "{done} MB"
@@ -2703,8 +2703,8 @@ msgstr "Información del módulo"
 msgid "Description"
 msgstr "Descripción"
 
-#: module_picker.py:482 welcome.py:213 welcome.py:214 window.py:3361
-#: window.py:3370
+#: module_picker.py:482 welcome.py:216 welcome.py:217 window.py:3361
+#: window.py:3372
 msgid "Language"
 msgstr "Idioma"
 
@@ -3689,7 +3689,7 @@ msgstr "los últimos días"
 msgid "{plan} — day {n}"
 msgstr "{plan} — día {n}"
 
-#: today_page.py:428 window.py:4018
+#: today_page.py:428 window.py:4048
 msgid "Plan complete"
 msgstr "Plan completado"
 
@@ -3811,11 +3811,11 @@ msgstr ""
 msgid "5 Bibles · notes · lexicon · cross-references"
 msgstr "5 Biblias · notas · léxico · referencias cruzadas"
 
-#: welcome.py:162 welcome.py:231 welcome.py:252
+#: welcome.py:162 welcome.py:237 welcome.py:260
 msgid "Welcome to Scriptura"
 msgstr "Le damos la bienvenida a Scriptura"
 
-#: welcome.py:257
+#: welcome.py:265
 msgid ""
 "Choose a starting point. Pick the shape that fits how you want to work — "
 "this is just a head start."
@@ -3823,49 +3823,49 @@ msgstr ""
 "Elija un punto de partida. Escoja lo que mejor se ajuste a su forma de "
 "trabajar; esto es solo para empezar."
 
-#: welcome.py:277
+#: welcome.py:285
 msgid "You can add or remove anything later from the Module Manager."
 msgstr ""
 "Después puede añadir o quitar lo que quiera desde el gestor de módulos."
 
-#: welcome.py:302
+#: welcome.py:310
 msgid "New here? See what the pointer can do — Tips & Gestures"
 msgstr "¿Es nuevo aquí? Vea lo que puede hacer el puntero: Consejos y gestos"
 
-#: welcome.py:311
+#: welcome.py:319
 msgid "Choose individual modules instead"
 msgstr "Elegir módulos uno a uno"
 
-#: welcome.py:334
+#: welcome.py:342
 msgid "★ Recommended"
 msgstr "★ Recomendado"
 
-#: welcome.py:386
+#: welcome.py:397
 msgid "Starting download…"
 msgstr "Iniciando la descarga…"
 
-#: welcome.py:418
+#: welcome.py:429
 msgid "Back to options"
 msgstr "Volver a las opciones"
 
-#: welcome.py:441
+#: welcome.py:455
 msgid "Reading the module list…"
 msgstr "Leyendo la lista de módulos…"
 
-#: welcome.py:448
+#: welcome.py:462
 msgid "module list"
 msgstr "lista de módulos"
 
-#: welcome.py:452
+#: welcome.py:466
 #, python-brace-format
 msgid "({step}/{total}) Downloading {label}…"
 msgstr "({step}/{total}) Descargando {label}…"
 
-#: welcome.py:536
+#: welcome.py:550
 msgid "unknown error"
 msgstr "error desconocido"
 
-#: welcome.py:540
+#: welcome.py:554
 #, python-brace-format
 msgid ""
 "Couldn’t download a Bible — please check your connection and try again. "
@@ -3874,7 +3874,7 @@ msgstr ""
 "No se pudo descargar ninguna Biblia; compruebe su conexión e inténtelo de "
 "nuevo. ({details})"
 
-#: welcome.py:550
+#: welcome.py:564
 #, python-brace-format
 msgid ""
 "Installed with warnings — these can be retried later from the Module "
@@ -3883,7 +3883,7 @@ msgstr ""
 "Se instaló con advertencias; puede reintentar lo siguiente más tarde desde "
 "el gestor de módulos: {names}"
 
-#: welcome.py:553
+#: welcome.py:567
 msgid "Done. Opening Scriptura…"
 msgstr "Listo. Abriendo Scriptura…"
 
@@ -4424,7 +4424,7 @@ msgstr "Dorado (predeterminado)"
 msgid "Custom colour…"
 msgstr "Color personalizado…"
 
-#: window.py:1590 window.py:3644 window.py:3645
+#: window.py:1590 window.py:3674 window.py:3675
 msgid "Drop cap colour"
 msgstr "Color de la capitular"
 
@@ -4777,7 +4777,7 @@ msgstr "General"
 msgid "Copy selection with reference"
 msgstr "Copiar la selección con la referencia"
 
-#: window.py:2999 window.py:3920 window.py:3921
+#: window.py:2999 window.py:3950 window.py:3951
 msgid "Keyboard shortcuts"
 msgstr "Atajos de teclado"
 
@@ -4785,7 +4785,7 @@ msgstr "Atajos de teclado"
 msgid "Install StrongsGreek or StrongsHebrew from the Module Manager."
 msgstr "Instale StrongsGreek o StrongsHebrew desde el gestor de módulos."
 
-#: window.py:3224 window.py:3383
+#: window.py:3224 window.py:3415
 msgid "Appearance"
 msgstr "Apariencia"
 
@@ -4845,27 +4845,36 @@ msgstr "Ortodoxo (calendario nuevo)"
 msgid "Applies next time you open Scriptura"
 msgstr "Se aplicará la próxima vez que abra Scriptura"
 
-#: window.py:3420
+#: window.py:3395
+#, python-brace-format
+msgid "Scriptura will be in {language} when it reopens"
+msgstr "Scriptura estará en {language} la próxima vez que se abra"
+
+#: window.py:3399
+msgid "Reopen now"
+msgstr "Abrir de nuevo"
+
+#: window.py:3452
 msgid "Font"
 msgstr "Tipografía"
 
-#: window.py:3421
+#: window.py:3453
 msgid "System Serif"
 msgstr "Serif del sistema"
 
-#: window.py:3421
+#: window.py:3453
 msgid "System Sans-Serif"
 msgstr "Sans-serif del sistema"
 
-#: window.py:3450 window.py:3451
+#: window.py:3482 window.py:3483
 msgid "Bold"
 msgstr "Negrita"
 
-#: window.py:3455 window.py:3456
+#: window.py:3487 window.py:3488
 msgid "Justified"
 msgstr "Justificado"
 
-#: window.py:3471
+#: window.py:3503
 msgid ""
 "A preference, not a remedy: testing has found no gain in reading speed. "
 "Readers who find it easier find it easier all the same."
@@ -4874,164 +4883,164 @@ msgstr ""
 "la velocidad de lectura. Aun así, a quien le resulta más cómodo, le resulta "
 "más cómodo."
 
-#: window.py:3481
+#: window.py:3513
 msgid "Size"
 msgstr "Tamaño"
 
-#: window.py:3486
+#: window.py:3518
 msgid "Font size"
 msgstr "Tamaño de la letra"
 
-#: window.py:3498
+#: window.py:3530
 msgid "Spacing"
 msgstr "Espaciado"
 
-#: window.py:3503
+#: window.py:3535
 msgid "Line spacing"
 msgstr "Interlineado"
 
-#: window.py:3514
+#: window.py:3546
 msgid "Width"
 msgstr "Anchura"
 
-#: window.py:3519
+#: window.py:3551
 msgid "Reading column width"
 msgstr "Anchura de la columna de lectura"
 
-#: window.py:3536
+#: window.py:3568
 msgid "Colour"
 msgstr "Color"
 
-#: window.py:3556
+#: window.py:3587
 msgid "Advanced"
 msgstr "Avanzado"
 
-#: window.py:3567 window.py:3572
+#: window.py:3597 window.py:3602
 msgid "Letter spacing"
 msgstr "Espaciado entre letras"
 
-#: window.py:3622
+#: window.py:3652
 msgid "Section headings"
 msgstr "Títulos de sección"
 
-#: window.py:3628
+#: window.py:3658
 msgid "This translation marks no sections"
 msgstr "Esta traducción no marca ninguna sección"
 
-#: window.py:3629
+#: window.py:3659
 msgid "Mark the current sense-unit"
 msgstr "Marcar la unidad de sentido actual"
 
-#: window.py:3631
+#: window.py:3661
 msgid "Quiet the rest of the page"
 msgstr "Atenuar el resto de la página"
 
-#: window.py:3633
+#: window.py:3663
 msgid "Small caps for the divine name"
 msgstr "Versalitas para el nombre divino"
 
-#: window.py:3635
+#: window.py:3665
 msgid "Old-style numerals"
 msgstr "Números elzevirianos"
 
-#: window.py:3637
+#: window.py:3667
 msgid "Flush poetry indents"
 msgstr "Alinear las sangrías de la poesía"
 
-#: window.py:3656
+#: window.py:3686
 msgid "Coloured drop cap"
 msgstr "Capitular en color"
 
-#: window.py:3664
+#: window.py:3694
 msgid "Preview words on hover"
 msgstr "Vista previa de las palabras al pasar el puntero"
 
-#: window.py:3669 window.py:3673
+#: window.py:3699 window.py:3703
 msgid "Evening paper (follows Night Light)"
 msgstr "Papel de noche (sigue a la luz nocturna)"
 
-#: window.py:3690 window.py:3694
+#: window.py:3720 window.py:3724
 msgid "Spoken readings"
 msgstr "Lecturas habladas"
 
-#: window.py:3726
+#: window.py:3756
 msgid "Show or hide the reading plan"
 msgstr "Mostrar u ocultar el plan de lectura"
 
-#: window.py:3728
+#: window.py:3758
 msgid "Reading Plan"
 msgstr "Plan de lectura"
 
-#: window.py:3743 window.py:3744
+#: window.py:3773 window.py:3774
 msgid "Reading plan options"
 msgstr "Opciones del plan de lectura"
 
-#: window.py:3751
+#: window.py:3781
 msgid "Catch up to today"
 msgstr "Ponerse al día"
 
-#: window.py:3757
+#: window.py:3787
 msgid "Reset progress"
 msgstr "Reiniciar el avance"
 
-#: window.py:3789
+#: window.py:3819
 msgid "Start today"
 msgstr "Empezar hoy"
 
-#: window.py:3818
+#: window.py:3848
 msgid "Open"
 msgstr "Abrir"
 
-#: window.py:3822 window.py:4125
+#: window.py:3852 window.py:4155
 msgid "Mark done"
 msgstr "Marcar como leído"
 
-#: window.py:3859
+#: window.py:3889
 msgid "Back Up…"
 msgstr "Copia de seguridad…"
 
-#: window.py:3860
+#: window.py:3890
 msgid "Restore…"
 msgstr "Restaurar…"
 
-#: window.py:3883 window.py:3884
+#: window.py:3913 window.py:3914
 msgid "Light theme"
 msgstr "Tema claro"
 
-#: window.py:3886 window.py:3887
+#: window.py:3916 window.py:3917
 msgid "Dark theme"
 msgstr "Tema oscuro"
 
-#: window.py:3894 window.py:3895
+#: window.py:3924 window.py:3925
 msgid "Follow system theme"
 msgstr "Seguir el tema del sistema"
 
-#: window.py:3912 window.py:3913
+#: window.py:3942 window.py:3943
 msgid "Tips & gestures"
 msgstr "Consejos y gestos"
 
-#: window.py:3928 window.py:3929
+#: window.py:3958 window.py:3959
 msgid "About Scriptura"
 msgstr "Acerca de Scriptura"
 
-#: window.py:4019
+#: window.py:4049
 #, python-brace-format
 msgid "Day {n} · Today"
 msgstr "Día {n} · Hoy"
 
-#: window.py:4035
+#: window.py:4065
 #, python-brace-format
 msgid "{done} of {total} day read · tap a day to read"
 msgid_plural "{done} of {total} days read · tap a day to read"
 msgstr[0] "{done} de {total} día leído · pulse un día para leerlo"
 msgstr[1] "{done} de {total} días leídos · pulse un día para leerlo"
 
-#: window.py:4097
+#: window.py:4127
 #, python-brace-format
 msgid "Day {n} · {passages}"
 msgstr "Día {n} · {passages}"
 
-#: window.py:4111
+#: window.py:4141
 #, python-brace-format
 msgid "Day {n}"
 msgstr "Día {n}"
