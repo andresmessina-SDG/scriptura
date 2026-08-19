@@ -31,14 +31,27 @@ def test_tail_after_last_byte_pulses():
 # re-parse (the Strong's numbers the USFM parser now keeps) meant deleting
 # the text and fetching it again.
 
+import pytest                                        # noqa: E402
 import gi                                             # noqa: E402
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw                     # noqa: E402
+from gi.repository import Gtk, Adw, Gdk                # noqa: E402
 
 from module_manager import ModuleManagerWindow         # noqa: E402
 
-Adw.init()
+# These build real widgets, and a libadwaita widget built without a display
+# does not raise — it SEGFAULTS, taking the whole pytest process with it and
+# every test after it. CI runs in a container with no display, so the guard
+# has to come before Adw.init(), not inside the tests.
+# Gtk.init_check() is NOT a display check: with no display at all it still
+# returns True while Gdk.Display.get_default() is None. Ask for the display.
+Gtk.init_check()
+_HAVE_DISPLAY = Gdk.Display.get_default() is not None
+if _HAVE_DISPLAY:
+    Adw.init()
+
+needs_display = pytest.mark.skipif(
+    not _HAVE_DISPLAY, reason='builds real widgets; no display here')
 
 _ENTRY = {'translationId': 'spaRV1909', 'shortTitle': 'Reina Valera 1909',
           'languageCode': 'spa', 'languageName': 'Spanish',
@@ -66,11 +79,13 @@ def _row_buttons(entry, installed, stale=None):
     return walk(row)
 
 
+@needs_display
 def test_a_stale_installed_row_offers_an_update():
     assert _row_buttons(_ENTRY, installed=True,
                         stale={'spaRV1909': 'parser'}) == ['Update', 'Remove']
 
 
+@needs_display
 def test_a_current_installed_row_offers_only_remove():
     """The button used to stand on every installed row, before and after a
     download alike, so it could not tell a text that needed updating from one
@@ -78,10 +93,12 @@ def test_a_current_installed_row_offers_only_remove():
     assert _row_buttons(_ENTRY, installed=True) == ['Remove']
 
 
+@needs_display
 def test_browse_row_offers_only_install():
     assert _row_buttons(_ENTRY, installed=False) == ['Install']
 
 
+@needs_display
 def test_the_button_explains_why_it_is_there():
     """The tooltip carries the reason, so the row says what an update would
     win rather than just offering the verb."""
@@ -167,6 +184,7 @@ def _run_download(already_installed, err=None):
     return flashed
 
 
+@needs_display
 def test_a_finished_update_says_so():
     """_populate rebuilds the row, so a finished update and one that never
     ran look exactly alike — the only difference the reader can see."""
@@ -174,11 +192,13 @@ def test_a_finished_update_says_so():
         ['Clementine Vulgate 1598 updated']
 
 
+@needs_display
 def test_a_fresh_install_stays_quiet():
     """An install announces itself: the row moves to Installed and the button
     turns into a trash can. A flash on top of that would be noise."""
     assert _run_download(already_installed=False) == []
 
 
+@needs_display
 def test_a_failed_update_does_not_claim_success():
     assert _run_download(already_installed=True, err='HTTP 500') == []

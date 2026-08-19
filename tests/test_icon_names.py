@@ -99,7 +99,11 @@ def test_every_icon_name_resolves_in_the_pinned_theme():
     import gi
     gi.require_version('Gtk', '4.0')
     from gi.repository import Gtk, Gdk
-    if not Gtk.init_check():
+    # init_check() returns True even with no display at all, while
+    # Gdk.Display.get_default() is None — and looking an icon up on a null
+    # display is a segfault, not an exception.
+    Gtk.init_check()
+    if Gdk.Display.get_default() is None:
         pytest.skip('no display — icon lookup needs one')
     import main
 
