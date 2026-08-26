@@ -111,7 +111,7 @@ def test_the_install_page_carries_no_route(monkeypatch):
     # The window closes itself on handoff and would take an open dialog with
     # it, so the line lives only where the reader is still deciding.
     win = _window(monkeypatch)
-    bundle = welcome._BUNDLES[0]
+    bundle = welcome.bundles_for('en')[0]
     win._on_card_clicked(None, bundle)
 
     assert win._stack.get_visible_child_name() == 'progress'

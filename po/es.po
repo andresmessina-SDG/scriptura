@@ -4073,8 +4073,8 @@ msgstr ""
 #. the moment they switch a pane to it — the card just stops promising
 #. what the English bundles genuinely deliver on their first screen.
 #: welcome.py:133
-msgid "5 Bibles · notes · lexicon · cross-references"
-msgstr "5 Biblias · notas · léxico · referencias cruzadas"
+msgid "5 Bibles · notes · dictionary · lexicon · cross-references"
+msgstr "5 Biblias · notas · diccionario · léxico · referencias cruzadas"
 
 #: welcome.py:162 welcome.py:237 welcome.py:260
 msgid "Welcome to Scriptura"

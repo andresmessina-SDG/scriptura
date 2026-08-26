@@ -36,7 +36,7 @@ def N_(message):
     return message
 
 
-# Each step is (kind, ident, label):
+# Each step is (kind, ident, label, facet):
 #   'sword'    → sword_bridge.install_module(ident)
 #   'opendata' → open_data.download_source(ident)
 #   'catena'   → catena_bridge.download_and_install()   (ident unused)
@@ -45,114 +45,230 @@ def N_(message):
 #                CrossWire does not carry at all — the World English Bible
 #                is on eBible only.
 #
+# `facet` is what the module IS to a reader, and the card's summary line is
+# counted from it rather than written by hand. The hand-written version drifted
+# — a card promised four Bibles and installed five — and every new language
+# would have been one more summary to keep in step.
+_BIBLE = 'bible'
+_COMMENTARY = 'commentary'
+_DICTIONARY = 'dictionary'
+_LEXICON = 'lexicon'
+_NOTES = 'notes'
+_XREF = 'cross-references'
+_TOPICS = 'topics'
+#: Installed and useful, but deliberately absent from the summary: the
+#: listening pill is per-pane and keyed to its module, so a card that
+#: promises audio while opening on two silent texts promises what the
+#: reader's first screen cannot deliver.
+_AUDIO = 'audio'
+
+
+# The three shapes a starting library can take. Defined once, in prose that
+# stays true whatever a language's catalogue holds: no tier may name a
+# commentary or a dictionary here, because whether one exists is a fact about
+# the language, and the summary line below says so per card.
+_TIERS = (
+    {
+        'id': 'reading',
+        'title': N_('Just reading'),
+        'tagline': N_('Open a Bible and start reading right away.'),
+        'size': N_('Smallest download'),
+        'recommended': False,
+    },
+    {
+        'id': 'study',
+        'title': N_('Reading + study'),
+        'tagline': N_('A few translations, and the tools for looking '
+                      'closely at a word.'),
+        'size': N_('Small download'),
+        'recommended': True,
+    },
+    {
+        'id': 'full',
+        'title': N_('Full library'),
+        'tagline': N_('Everything this language has, from the start.'),
+        'size': N_('Larger download'),
+        'recommended': False,
+    },
+)
+
+
+# What fills those shapes, per language. Adding a language is one entry here
+# — the tier titles, taglines and summaries are already translated through
+# po/, so nothing new has to be written to give a new language three cards.
+#
 # `opens` is the pair the reading window should start on — (pane 1, pane 2) —
 # written to settings once the bundle is installed. This window is the only
 # place that knows WHY a module is present, so it says so rather than leaving
 # the main window to infer a default from an alphabetical list (which opened
 # the same Bible in both panes, and could open a commentary in pane 1).
 # A None pane 2 means single-pane: showing one text twice is not a split.
-_BUNDLES = [
-    {
-        'id': 'reading',
-        'title': N_('Just reading'),
-        'tagline': N_('Open a Bible and start reading right away.'),
-        'summary': N_('1 Bible'),
-        'size': N_('Smallest download'),
-        'recommended': False,
-        'opens': ('BSB', None),
-        'items': [
-            ('sword', 'BSB', 'Berean Standard Bible'),
-        ],
+_CATALOGUE = {
+    'en': {
+        'reading': {
+            'opens': ('BSB', None),
+            'items': [
+                ('sword', 'BSB', 'Berean Standard Bible', _BIBLE),
+            ],
+        },
+        'study': {
+            'opens': ('BSB', 'Historical Commentaries'),
+            'items': [
+                ('sword',    'BSB',           'Berean Standard Bible', _BIBLE),
+                ('ebible',   'engwebp',       'World English Bible', _BIBLE),
+                ('sword',    'KJVA',          'King James Bible', _BIBLE),
+                ('sword',    'ASV',           'American Standard Version', _BIBLE),
+                ('catena',   '',              'Historical Commentaries', _COMMENTARY),
+                ('sword',    'Easton',        "Easton's Bible Dictionary", _DICTIONARY),
+                ('sword',    'StrongsHebrew', "Strong's Hebrew Lexicon", _LEXICON),
+                ('sword',    'StrongsGreek',  "Strong's Greek Lexicon", _LEXICON),
+                ('opendata', 'dodson',        'Dodson Greek Lexicon', _LEXICON),
+                ('sword',    'TSK',           'Treasury of Scripture Knowledge', _XREF),
+            ],
+        },
+        'full': {
+            'opens': ('BSB', 'Historical Commentaries'),
+            'items': [
+                ('sword',    'BSB',           'Berean Standard Bible', _BIBLE),
+                ('ebible',   'engwebp',       'World English Bible', _BIBLE),
+                ('sword',    'KJVA',          'King James Bible', _BIBLE),
+                ('sword',    'ASV',           'American Standard Version', _BIBLE),
+                ('sword',    'YLT',           "Young's Literal Translation", _BIBLE),
+                ('sword',    'Geneva1599',    'Geneva Bible (1599)', _BIBLE),
+                ('sword',    'Webster',       "Webster's Bible", _BIBLE),
+                ('catena',   '',              'Historical Commentaries', _COMMENTARY),
+                ('sword',    'MHCC',          "Matthew Henry's Concise Commentary", _COMMENTARY),
+                ('sword',    'JFB',           'Jamieson-Fausset-Brown Commentary', _COMMENTARY),
+                ('sword',    'Easton',        "Easton's Bible Dictionary", _DICTIONARY),
+                ('sword',    'StrongsHebrew', "Strong's Hebrew Lexicon", _LEXICON),
+                ('sword',    'StrongsGreek',  "Strong's Greek Lexicon", _LEXICON),
+                ('opendata', 'dodson',        'Dodson Greek Lexicon', _LEXICON),
+                ('opendata', 'cross_references', 'OpenBible Cross-References', _XREF),
+                ('opendata', 'topics',        'OpenBible Topics', _TOPICS),
+                ('sword',    'TSK',           'Treasury of Scripture Knowledge', _XREF),
+            ],
+        },
     },
-    {
-        'id': 'study',
-        'title': N_('Reading + study'),
-        'tagline': N_('A few translations, historical commentary, and '
-                      'word-study tools.'),
-        'summary': N_('4 Bibles · commentary · dictionary · lexicon · '
-                      'cross-references'),
-        'size': N_('Small download'),
-        'recommended': True,
-        'opens': ('BSB', 'Historical Commentaries'),
-        'items': [
-            ('sword',    'BSB',           'Berean Standard Bible'),
-            ('ebible',   'engwebp',       'World English Bible'),
-            ('sword',    'KJVA',          'King James Bible'),
-            ('sword',    'ASV',           'American Standard Version'),
-            ('catena',   '',              'Historical Commentaries'),
-            ('sword',    'Easton',        "Easton's Bible Dictionary"),
-            ('sword',    'StrongsHebrew', "Strong's Hebrew Lexicon"),
-            ('sword',    'StrongsGreek',  "Strong's Greek Lexicon"),
-            ('opendata', 'dodson',        'Dodson Greek Lexicon'),
-            ('sword',    'TSK',           'Treasury of Scripture Knowledge'),
-        ],
-    },
-    {
-        'id': 'full',
-        'title': N_('Full library'),
-        'tagline': N_('The complete set — more translations and commentaries '
-                      'from the start.'),
-        'summary': N_('7 Bibles · 3 commentaries · dictionary · lexicon · '
-                      '340k cross-references'),
-        'size': N_('Larger download'),
-        'recommended': False,
-        'opens': ('BSB', 'Historical Commentaries'),
-        'items': [
-            ('sword',    'BSB',           'Berean Standard Bible'),
-            ('ebible',   'engwebp',       'World English Bible'),
-            ('sword',    'KJVA',          'King James Bible'),
-            ('sword',    'ASV',           'American Standard Version'),
-            ('sword',    'YLT',           "Young's Literal Translation"),
-            ('sword',    'Geneva1599',    'Geneva Bible (1599)'),
-            ('sword',    'Webster',       "Webster's Bible"),
-            ('catena',   '',              'Historical Commentaries'),
-            ('sword',    'MHCC',          "Matthew Henry's Concise Commentary"),
-            ('sword',    'JFB',           'Jamieson-Fausset-Brown Commentary'),
-            ('sword',    'Easton',        "Easton's Bible Dictionary"),
-            ('sword',    'StrongsHebrew', "Strong's Hebrew Lexicon"),
-            ('sword',    'StrongsGreek',  "Strong's Greek Lexicon"),
-            ('opendata', 'dodson',        'Dodson Greek Lexicon'),
-            ('opendata', 'cross_references', 'OpenBible Cross-References'),
-            ('opendata', 'topics',        'OpenBible Topics'),
-            ('sword',    'TSK',           'Treasury of Scripture Knowledge'),
-        ],
-    },
-    {
-        'id': 'espanol',
-        # Untranslated on purpose: the card's job is to be recognised by a
-        # Spanish speaker whatever locale the app came up in, and a language
-        # names itself. The tagline below does translate.
-        'title': 'En español',
-        'tagline': N_('Spanish Bibles, a spoken reading, and word-study '
-                      'tools.'),
-        # No audio claim: the spoken reading is bound to spabes, and neither
-        # opening pane shows it, so a newcomer would not meet the listening
-        # pill however long they read. The reading still installs and works
-        # the moment they switch a pane to it — the card just stops promising
-        # what the English bundles genuinely deliver on their first screen.
-        'summary': N_('5 Bibles · notes · lexicon · cross-references'),
-        'size': N_('Small download'),
-        'recommended': False,
+    'es': {
         # Modern Spanish beside the historic text: the Reina Valera is the
         # one carrying Strong's numbers, so word study happens in pane 2.
-        'opens': ('NBLA', 'eBible: spaRV1909'),
-        'items': [
-            ('sword',    'NBLA',          'Nueva Biblia de las Américas'),
-            ('sword',    'LBLA',          'La Biblia de las Américas'),
-            ('ebible',   'spaRV1909',     'Reina Valera 1909'),
-            # Carries the spoken reading — bible_audio binds it to this exact
-            # module, so without it the listening pill has nothing to play.
-            ('ebible',   'spabes',        'Biblia en Español Sencillo'),
-            # The only Spanish text with notes that carries a licence we could
-            # mirror ourselves — CC BY-SA. LBLA and NBLA are CrossWire-only,
-            # so no mirror may ever hold them.
-            ('ebible',   'spavbl',        'Versión Biblia Libre'),
-            ('sword',    'StrongsHebrew', "Strong's Hebrew Lexicon"),
-            ('sword',    'StrongsGreek',  "Strong's Greek Lexicon"),
-            ('opendata', 'cross_references', 'OpenBible Cross-References'),
-        ],
+        'reading': {
+            'opens': ('NBLA', None),
+            'items': [
+                ('sword', 'NBLA', 'Nueva Biblia de las Américas', _BIBLE),
+            ],
+        },
+        'study': {
+            'opens': ('NBLA', 'eBible: spaRV1909'),
+            'items': [
+                ('sword',    'NBLA',          'Nueva Biblia de las Américas', _BIBLE),
+                ('ebible',   'spaRV1909',     'Reina Valera 1909', _BIBLE),
+                # The one dictionary a Spanish reader can have. Every
+                # dictionary CrossWire and its friends distribute is English,
+                # French, Russian or Portuguese, so double-clicking a word —
+                # one of the three gestures onboarding teaches — did nothing
+                # on this bundle's profiles. Scriptura builds this one from
+                # the Spanish Wiktionary and serves it from its own release.
+                ('sword',    'Wikcionario',   'Wikcionario', _DICTIONARY),
+                ('sword',    'StrongsHebrew', "Strong's Hebrew Lexicon", _LEXICON),
+                ('sword',    'StrongsGreek',  "Strong's Greek Lexicon", _LEXICON),
+                ('opendata', 'cross_references', 'OpenBible Cross-References', _XREF),
+            ],
+        },
+        # No commentary tier: every Spanish commentary that exists is either
+        # in copyright or a modern translation carrying its own, so the full
+        # card grows by texts and notes instead — and its summary says so
+        # rather than promising a shape the catalogue cannot fill.
+        'full': {
+            'opens': ('NBLA', 'eBible: spaRV1909'),
+            'items': [
+                ('sword',    'NBLA',          'Nueva Biblia de las Américas', _BIBLE),
+                ('sword',    'LBLA',          'La Biblia de las Américas', _BIBLE),
+                ('ebible',   'spaRV1909',     'Reina Valera 1909', _BIBLE),
+                # Carries the spoken reading — bible_audio binds it to this
+                # exact module, so without it the listening pill has nothing
+                # to play.
+                ('ebible',   'spabes',        'Biblia en Español Sencillo', _AUDIO),
+                # The only Spanish text with notes that carries a licence we
+                # could mirror ourselves — CC BY-SA. LBLA and NBLA are
+                # CrossWire-only, so no mirror may ever hold them.
+                ('ebible',   'spavbl',        'Versión Biblia Libre', _NOTES),
+                ('sword',    'Wikcionario',   'Wikcionario', _DICTIONARY),
+                ('sword',    'StrongsHebrew', "Strong's Hebrew Lexicon", _LEXICON),
+                ('sword',    'StrongsGreek',  "Strong's Greek Lexicon", _LEXICON),
+                ('opendata', 'cross_references', 'OpenBible Cross-References', _XREF),
+            ],
+        },
     },
-]
+}
+
+#: The language a first run falls back to when the desktop asks for one this
+#: install has no catalogue for.
+_DEFAULT_LANG = 'en'
+
+
+def catalogue_languages():
+    """Codes that can offer a starting library, in `available_languages` order.
+
+    The intersection of two lists that are not the same: a language can have
+    a compiled UI catalogue and no modules curated for it, and a language can
+    have modules long before anyone translates the interface. Only the
+    overlap belongs on the first screen, because it is the only set where
+    picking a card leads somewhere. The rest stay reachable from the header
+    picker and the Module Manager.
+    """
+    return [(code, name) for code, name in i18n.available_languages()
+            if code in _CATALOGUE]
+
+
+def _summarise(items):
+    """The card's contents line, counted from the items themselves.
+
+    Written by hand this drifted — a card promised four Bibles and installed
+    five — and with a table per language there would be one more of them to
+    keep in step for every language added.
+    """
+    facets = [f for _k, _i, _l, f in items]
+    parts = []
+    bibles = facets.count(_BIBLE)
+    if bibles:
+        parts.append(ngettext('{n} Bible', '{n} Bibles', bibles).format(
+            n=bibles))
+    commentaries = facets.count(_COMMENTARY)
+    if commentaries:
+        parts.append(ngettext('{n} commentary', '{n} commentaries',
+                              commentaries).format(n=commentaries)
+                     if commentaries > 1 else _('commentary'))
+    if _NOTES in facets:
+        parts.append(_('notes'))
+    if _DICTIONARY in facets:
+        parts.append(_('dictionary'))
+    if _LEXICON in facets:
+        parts.append(_('lexicon'))
+    if _XREF in facets:
+        parts.append(_('cross-references'))
+    return ' · '.join(parts)
+
+
+def bundles_for(language):
+    """The cards to offer a reader of `language`, in tier order.
+
+    A tier a language has nothing for is dropped rather than shown empty —
+    the shapes are an offer, not a promise every catalogue can keep.
+    """
+    table = _CATALOGUE.get(language) or _CATALOGUE[_DEFAULT_LANG]
+    out = []
+    for tier in _TIERS:
+        entry = table.get(tier['id'])
+        if entry is None:
+            continue
+        bundle = dict(tier)
+        bundle['language'] = language
+        bundle['opens'] = entry['opens']
+        bundle['items'] = entry['items']
+        bundle['summary'] = _summarise(entry['items'])
+        out.append(bundle)
+    return out
 
 
 class WelcomeWindow(Adw.ApplicationWindow):
@@ -162,17 +278,33 @@ class WelcomeWindow(Adw.ApplicationWindow):
         self.set_title(_('Welcome to Scriptura'))
         self.set_default_size(900, 600)
 
+        # Which language's library is on offer. The desktop's answer is the
+        # starting point; the first page changes it when this install has
+        # more than one to give.
+        self._languages = catalogue_languages()
+        current = settings.get('ui_language') or i18n.current_language()
+        self._language = (current if current in _CATALOGUE else _DEFAULT_LANG)
+
         toolbar_view = Adw.ToolbarView()
         toolbar_view.add_top_bar(self._build_header())
         self.set_content(toolbar_view)
 
-        # Two pages: the bundle chooser, and the install-progress view.
+        # Three pages: the language, the bundle chooser it decides, and the
+        # install-progress view. The first is skipped when there is only one
+        # language to offer — a choice of one is furniture.
         self._stack = Gtk.Stack()
         self._stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
         self._stack.set_transition_duration(150)
+        if self._offers_a_language_choice():
+            self._stack.add_named(self._build_language_page(), 'language')
         self._stack.add_named(self._build_choose(), 'choose')
         self._stack.add_named(self._build_progress(), 'progress')
+        self._stack.connect('notify::visible-child-name',
+                            self._sync_back_button)
         toolbar_view.set_content(self._stack)
+        if self._offers_a_language_choice():
+            self._stack.set_visible_child_name('language')
+        self._sync_back_button()
 
     def _build_header(self):
         """Bar with the language picker and no title.
@@ -187,7 +319,136 @@ class WelcomeWindow(Adw.ApplicationWindow):
         lang_btn = self._build_language_button()
         if lang_btn is not None:
             header.pack_end(lang_btn)
+        # Getting back to the language is a back arrow in the bar rather than
+        # a link in the page: the reader who needs it is one who cannot read
+        # the page, and the bar is where a way back always is.
+        if self._offers_a_language_choice():
+            back = Gtk.Button(icon_name='scriptura-go-previous-symbolic')
+            back.add_css_class('flat')
+            back.set_tooltip_text(_('Language'))
+            set_accessible_label(back, _('Back to language'))
+            back.set_visible(False)
+            back.connect('clicked', self._on_back_to_language)
+            header.pack_start(back)
+            self._back_to_lang = back
         return header
+
+    def _sync_back_button(self, *_a):
+        back = getattr(self, '_back_to_lang', None)
+        if back is not None:
+            back.set_visible(
+                self._stack.get_visible_child_name() == 'choose')
+
+    def _on_back_to_language(self, _btn):
+        self._stack.set_visible_child_name('language')
+
+    # ── Language page ──────────────────────────────────────────────────────
+
+    def _build_language_page(self):
+        """The first screen: which language this reader reads in.
+
+        One choice, two effects — it is the language the interface comes up
+        in and the language the offered library is in. They were separate
+        before, and a Spanish reader met four cards of which three were
+        English and one was not, with the interface in whatever the desktop
+        had decided: a language was a kind of bundle rather than the question
+        above them.
+
+        Each language is written in its own name. The reader who needs this
+        page is by definition looking at words they may not read, so the
+        one thing on it they must recognise cannot be translated.
+        """
+        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
+        outer.set_margin_top(20)
+        outer.set_margin_bottom(24)
+        outer.set_margin_start(28)
+        outer.set_margin_end(28)
+        outer.set_valign(Gtk.Align.CENTER)
+
+        title = Gtk.Label(label=_('Welcome to Scriptura'))
+        title.add_css_class('title-1')
+        outer.append(title)
+
+        subtitle = Gtk.Label(
+            label=_('Choose your language. It sets the interface, and the '
+                    'Bibles offered on the next screen.'))
+        subtitle.set_wrap(True)
+        subtitle.set_wrap_mode(Pango.WrapMode.WORD)
+        subtitle.set_justify(Gtk.Justification.CENTER)
+        subtitle.add_css_class('dim-label')
+        outer.append(subtitle)
+
+        # A flow rather than a row: the third language to arrive should wrap
+        # onto a second line, not squeeze the first two.
+        flow = Gtk.FlowBox()
+        flow.set_selection_mode(Gtk.SelectionMode.NONE)
+        flow.set_halign(Gtk.Align.CENTER)
+        flow.set_max_children_per_line(4)
+        flow.set_row_spacing(14)
+        flow.set_column_spacing(14)
+        flow.set_margin_top(8)
+        current_card = None
+        for code, name in self._languages:
+            card = self._make_language_card(code, name)
+            flow.append(card)
+            if code == self._language:
+                current_card = card
+        outer.append(flow)
+
+        footnote = Gtk.Label(
+            label=_('You can change this later, and add texts in any '
+                    'language from the Module Manager.'))
+        footnote.add_css_class('caption')
+        footnote.add_css_class('dim-label')
+        footnote.set_margin_top(4)
+        outer.append(footnote)
+
+        if current_card is not None:
+            self.set_default_widget(current_card)
+            current_card.connect('map', lambda w: w.grab_focus())
+        return outer
+
+    def _make_language_card(self, code, name):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        box.set_margin_top(22)
+        box.set_margin_bottom(22)
+        box.set_margin_start(28)
+        box.set_margin_end(28)
+
+        label = Gtk.Label(label=name)
+        label.add_css_class('title-3')
+        box.append(label)
+
+        card = Gtk.Button()
+        card.set_child(box)
+        card.add_css_class('card')
+        set_accessible_label(card, name)
+        card.connect('clicked', self._on_language_card, code)
+        return card
+
+    def _on_language_card(self, _btn, code):
+        if code != self._language or \
+                settings.get('ui_language') != code:
+            settings.put('ui_language', code)
+            i18n.install_language(code)
+            self._language = code
+            # Every string on screen was translated when its widget was
+            # built, so the window has to be built again to speak the new
+            # language — and the cards behind this page are a different set
+            # now, not merely different words.
+            self._rebuild(page='choose')
+            return
+        self._stack.set_visible_child_name('choose')
+
+    def _offers_a_language_choice(self):
+        """Whether the language page has anything to decide.
+
+        Counted from the catalogue, not from the compiled translations: an
+        install can speak three languages and hold modules for one, and a
+        page of cards that all lead to the same library is a step the reader
+        pays for and gains nothing from.
+        """
+        return len(self._languages) > 1
 
     # ── Language ───────────────────────────────────────────────────────────
 
@@ -201,9 +462,16 @@ class WelcomeWindow(Adw.ApplicationWindow):
         needs this control is by definition looking at words they may not
         read. It is the first thing on the first screen for the same reason.
         """
-        self._languages = i18n.available_languages()
-        if len(self._languages) < 2:
+        # The first page is the picker when there is a choice to make, and
+        # two controls for one decision on one screen is one too many. The
+        # bar keeps it only where the page is skipped — an install with a
+        # translation but no catalogue for it can still switch interface.
+        if self._offers_a_language_choice():
             return None
+        self._languages_ui = i18n.available_languages()
+        if len(self._languages_ui) < 2:
+            return None
+        self._languages = self._languages_ui
         codes = [c for c, _n in self._languages]
         # What is on screen right now, not merely what was chosen: with no
         # override the desktop decides, and a picker claiming English over a
@@ -232,20 +500,25 @@ class WelcomeWindow(Adw.ApplicationWindow):
         # choice is offered here and not in the main window.
         self._rebuild()
 
-    def _rebuild(self):
-        page = self._stack.get_visible_child_name()
+    def _rebuild(self, page=None):
+        page = page or self._stack.get_visible_child_name()
         self.set_title(_('Welcome to Scriptura'))
         toolbar_view = Adw.ToolbarView()
         toolbar_view.add_top_bar(self._build_header())
         self._stack = Gtk.Stack()
         self._stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
         self._stack.set_transition_duration(150)
+        if self._offers_a_language_choice():
+            self._stack.add_named(self._build_language_page(), 'language')
         self._stack.add_named(self._build_choose(), 'choose')
         self._stack.add_named(self._build_progress(), 'progress')
+        self._stack.connect('notify::visible-child-name',
+                            self._sync_back_button)
         toolbar_view.set_content(self._stack)
         self.set_content(toolbar_view)
-        if page:
+        if page and self._stack.get_child_by_name(page) is not None:
             self._stack.set_visible_child_name(page)
+        self._sync_back_button()
 
     # ── Chooser page ───────────────────────────────────────────────────────
 
@@ -274,7 +547,7 @@ class WelcomeWindow(Adw.ApplicationWindow):
         cards.set_homogeneous(True)
         cards.set_margin_top(8)
         default_card = None
-        for bundle in _BUNDLES:
+        for bundle in bundles_for(self._language):
             card = self._make_card(bundle)
             cards.append(card)
             if bundle['recommended']:
@@ -391,6 +664,10 @@ class WelcomeWindow(Adw.ApplicationWindow):
         self._installing = True
         if getattr(self, '_lang_drop', None) is not None:
             self._lang_drop.set_sensitive(False)
+        # Changing language mid-download would swap the catalogue under the
+        # worker thread and leave half of one library beside half of another.
+        if getattr(self, '_back_to_lang', None) is not None:
+            self._back_to_lang.set_sensitive(False)
         self._back_btn.set_visible(False)
         self._spinner.set_visible(True)
         self._spinner.start()
@@ -437,6 +714,8 @@ class WelcomeWindow(Adw.ApplicationWindow):
         self._installing = False
         if getattr(self, '_lang_drop', None) is not None:
             self._lang_drop.set_sensitive(True)
+        if getattr(self, '_back_to_lang', None) is not None:
+            self._back_to_lang.set_sensitive(True)
         self._stack.set_visible_child_name('choose')
 
     # ── Install flow ───────────────────────────────────────────────────────
@@ -451,10 +730,20 @@ class WelcomeWindow(Adw.ApplicationWindow):
         # so NBLA and LBLA simply fail. Fetching the catalogue first is what
         # makes them installable; it also leaves the Module Manager with a
         # list instead of "no catalogue cached yet".
-        if any(kind == 'sword' for kind, _i, _l in items):
+        wanted = [i for kind, i, _l, _f in items if kind == 'sword']
+        if wanted:
             GLib.idle_add(self._set_status, _('Reading the module list…'))
             try:
-                if sword_bridge.catalog_timestamp() is None:
+                # A cached catalogue is not necessarily a current one. A
+                # profile that read the list before a module was published
+                # has no row for it, install_module falls back to the
+                # released repository where it has never been, and the
+                # download 404s for something that exists — which is how the
+                # Spanish dictionary failed to arrive on every profile that
+                # had ever opened the Module Manager.
+                if (sword_bridge.catalog_timestamp() is None
+                        or not all(sword_bridge.catalogue_has(m)
+                                   for m in wanted)):
                     sword_bridge.refresh_source()
             except Exception as e:
                 # Not fatal: every module in the released repository still
@@ -462,7 +751,8 @@ class WelcomeWindow(Adw.ApplicationWindow):
                 failed.append((_('module list'), str(e)))
 
         total = len(items)
-        for step, (kind, ident, label) in enumerate(items, start=1):
+        for step, (kind, ident, label, _facet) in enumerate(
+                items, start=1):
             base = _('({step}/{total}) Downloading {label}…').format(
                 step=step, total=total, label=label)
             GLib.idle_add(self._set_status, base)

@@ -17,12 +17,18 @@ import sword_bridge
 import welcome
 
 
-def _bundle(bundle_id):
-    return next(b for b in welcome._BUNDLES if b['id'] == bundle_id)
+def _bundle(bundle_id, language='en'):
+    return next(b for b in welcome.bundles_for(language)
+                if b['id'] == bundle_id)
+
+
+def _every_bundle():
+    for language in welcome._CATALOGUE:
+        yield from welcome.bundles_for(language)
 
 
 def _idents(bundle, kind):
-    return [i for k, i, _label in bundle['items'] if k == kind]
+    return [i for k, i, _l, _f in bundle['items'] if k == kind]
 
 
 def _teaches_the_dictionary():
@@ -40,12 +46,17 @@ def test_tips_still_teaches_the_dictionary():
     assert _teaches_the_dictionary()
 
 
-def test_study_and_full_install_a_dictionary():
-    for bundle_id in ('study', 'full'):
-        sword = _idents(_bundle(bundle_id), 'sword')
-        assert any(m.lower() not in sword_bridge._DICT_SKIP
-                   and m.lower() in _KNOWN_DICTIONARIES
-                   for m in sword), bundle_id
+def test_every_language_puts_a_dictionary_in_its_study_tiers():
+    """Not just English. A Spanish reader met the same two taught gestures
+    and had no dictionary to reach, because none existed until Scriptura
+    built one — so this is per language, and a new language's table fails
+    here until it names one too."""
+    for language in welcome._CATALOGUE:
+        for bundle_id in ('study', 'full'):
+            sword = _idents(_bundle(bundle_id, language), 'sword')
+            assert any(m.lower() not in sword_bridge._DICT_SKIP
+                       and m.lower() in _KNOWN_DICTIONARIES
+                       for m in sword), f'{language}/{bundle_id}'
 
 
 def test_the_strongs_lexicons_do_not_count_as_a_dictionary():
@@ -57,7 +68,8 @@ def test_the_strongs_lexicons_do_not_count_as_a_dictionary():
 
 # Dictionary/encyclopedia modules the peek accepts, by CrossWire module name.
 # Named here rather than probed, so the test needs no installed library.
-_KNOWN_DICTIONARIES = frozenset(['easton', 'smith', 'isbe'])
+_KNOWN_DICTIONARIES = frozenset(['easton', 'smith', 'isbe',
+                                 'wikcionario'])
 
 
 def test_bsb_leads_every_english_bundle_and_its_opening_pair():
@@ -65,19 +77,20 @@ def test_bsb_leads_every_english_bundle_and_its_opening_pair():
     and it is the translation with CC0 chapter audio, so the listening pill
     works from day one. The Spanish bundle answers the same question with
     its own texts, so it is excluded rather than exempted quietly."""
-    for bundle in welcome._BUNDLES:
-        if bundle['id'] == 'espanol':
-            continue
+    for bundle in welcome.bundles_for('en'):
         assert _idents(bundle, 'sword')[0] == 'BSB', bundle['id']
         assert bundle['opens'][0] == 'BSB', bundle['id']
 
 
-def test_the_spanish_bundle_opens_on_spanish():
-    """It opens on a modern Spanish text, and pane 2 is the one Spanish text
-    carrying Strong's numbers, so word study has somewhere to happen."""
-    es = _bundle('espanol')
-    assert es['opens'] == ('NBLA', 'eBible: spaRV1909')
-    assert _idents(es, 'sword')[0] == 'NBLA'
+def test_the_spanish_bundles_open_on_spanish():
+    """Every Spanish tier opens on a modern Spanish text, and where there is
+    a second pane it is the one Spanish text carrying Strong's numbers, so
+    word study has somewhere to happen."""
+    for bundle in welcome.bundles_for('es'):
+        assert _idents(bundle, 'sword')[0] == 'NBLA', bundle['id']
+        assert bundle['opens'][0] == 'NBLA', bundle['id']
+        if bundle['opens'][1] is not None:
+            assert bundle['opens'][1] == 'eBible: spaRV1909', bundle['id']
 
 
 def test_a_summary_promises_audio_only_if_a_pane_it_opens_on_has_it():
@@ -89,7 +102,7 @@ def test_a_summary_promises_audio_only_if_a_pane_it_opens_on_has_it():
     """
     import bible_audio
 
-    for bundle in welcome._BUNDLES:
+    for bundle in _every_bundle():
         if 'audio' not in bundle['summary'].lower():
             continue
         panes = [p for p in bundle['opens'] if p]
@@ -102,26 +115,43 @@ def test_every_step_names_a_kind_the_installer_dispatches():
     """A bundle step whose kind has no branch installs nothing and reports
     no failure — it is simply skipped, silently."""
     dispatched = {'sword', 'opendata', 'catena', 'ebible'}
-    for bundle in welcome._BUNDLES:
-        for kind, _ident, label in bundle['items']:
+    for bundle in _every_bundle():
+        for kind, _ident, label, _facet in bundle['items']:
             assert kind in dispatched, f'{bundle["id"]}: {label}'
 
 
 def test_summaries_count_the_bibles_they_promise():
     """The card's summary is the only place a reader learns what they are
-    about to download, and it was hand-maintained against the item list."""
-    for bundle in welcome._BUNDLES:
-        bibles = (len(_idents(bundle, 'ebible'))
-                  + sum(1 for m in _idents(bundle, 'sword')
-                        if m.lower() not in _NOT_A_BIBLE))
-        promised = int(bundle['summary'].split()[0]) if \
-            bundle['summary'][0].isdigit() else 1
+    about to download. It used to be hand-maintained against the item list
+    and drifted; it is now counted from the items, and this holds the count
+    to the facets the table actually declares."""
+    for bundle in _every_bundle():
+        bibles = sum(1 for _k, _i, _l, f in bundle['items']
+                     if f == welcome._BIBLE)
+        promised = int(bundle['summary'].split()[0])
         assert bibles == promised, f'{bundle["id"]}: {bundle["summary"]}'
+
+
+def test_a_facet_the_table_does_not_declare_is_not_promised():
+    """The Spanish catalogue has no commentary in it — none exists that is
+    both Spanish and free — so no Spanish card may offer one."""
+    for bundle in welcome.bundles_for('es'):
+        assert 'commentar' not in bundle['summary'].lower(), bundle['id']
+
+
+def test_the_spoken_reading_installs_without_being_promised():
+    """Audio is a facet the summary deliberately never prints: the listening
+    pill is per-pane, so a card promising it while opening on two silent
+    texts promises what the first screen cannot deliver."""
+    full = _bundle('full', 'es')
+    assert any(f == welcome._AUDIO for _k, _i, _l, f in full['items'])
+    assert 'audio' not in full['summary'].lower()
 
 
 # Bundle members that are not Bible texts, so the summary must not count them.
 _NOT_A_BIBLE = frozenset([
     'strongshebrew', 'strongsgreek', 'tsk', 'mhcc', 'jfb', 'easton',
+    'wikcionario',
 ])
 
 
@@ -153,7 +183,7 @@ def test_a_bundle_with_sword_modules_fetches_the_catalogue_first(monkeypatch):
     monkeypatch.setattr(win, '_mk_progress', lambda base: None, raising=False)
     monkeypatch.setattr(win, '_finish_install', lambda *_a: None,
                         raising=False)
-    win._install_worker(_bundle('espanol'))
+    win._install_worker(_bundle('study', 'es'))
 
     assert calls and calls[0] == 'refresh', (
         f'the catalogue must be read before any module install, got {calls[:3]}')
@@ -168,6 +198,8 @@ def test_the_catalogue_is_not_refetched_when_one_is_cached(monkeypatch):
     calls = []
     monkeypatch.setattr(welcome.sword_bridge, 'catalog_timestamp',
                         lambda: datetime(2026, 8, 16))
+    monkeypatch.setattr(welcome.sword_bridge, 'catalogue_has',
+                        lambda _name: True)
     monkeypatch.setattr(welcome.sword_bridge, 'refresh_source',
                         lambda: calls.append('refresh'))
     monkeypatch.setattr(welcome.sword_bridge, 'install_module',
@@ -186,3 +218,38 @@ def test_the_catalogue_is_not_refetched_when_one_is_cached(monkeypatch):
     win._install_worker(_bundle('reading'))
 
     assert 'refresh' not in calls
+
+
+def test_a_catalogue_older_than_the_module_is_refetched(monkeypatch):
+    """The cached list is a snapshot. A profile that read it before a module
+    was published has no row for it, `install_module` falls back to the
+    released repository where a module Scriptura publishes itself has never
+    been, and the download 404s for something that exists. Every profile that
+    had ever opened the Module Manager was in that state when the Spanish
+    dictionary shipped, and nothing ages the catalogue out on its own.
+    """
+    from datetime import datetime
+
+    calls = []
+    monkeypatch.setattr(welcome.sword_bridge, 'catalog_timestamp',
+                        lambda: datetime(2026, 8, 17))
+    monkeypatch.setattr(welcome.sword_bridge, 'catalogue_has',
+                        lambda name: name != 'Wikcionario')
+    monkeypatch.setattr(welcome.sword_bridge, 'refresh_source',
+                        lambda: calls.append('refresh'))
+    monkeypatch.setattr(welcome.sword_bridge, 'install_module',
+                        lambda ident: calls.append(ident))
+    monkeypatch.setattr(welcome.ebible_bridge, 'catalog_entries', lambda: [])
+    monkeypatch.setattr(welcome.open_data, 'download_source',
+                        lambda *a, **k: None)
+
+    win = welcome.WelcomeWindow.__new__(welcome.WelcomeWindow)
+    monkeypatch.setattr(win, '_set_status', lambda *_a: None, raising=False)
+    monkeypatch.setattr(win, '_mk_progress', lambda base: None, raising=False)
+    monkeypatch.setattr(win, '_finish_install', lambda *_a: None,
+                        raising=False)
+    win._install_worker(_bundle('study', 'es'))
+
+    assert calls and calls[0] == 'refresh', (
+        f'a catalogue with no row for Wikcionario was used as-is: {calls[:3]}')
+    assert 'Wikcionario' in calls

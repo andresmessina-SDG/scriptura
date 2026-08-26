@@ -188,14 +188,20 @@ def test_the_language_picker_locks_once_an_install_starts(monkeypatch):
     monkeypatch.setattr(threading, 'Thread',
                         lambda *a, **k: type('T', (), {'start': lambda s: None})())
     win = welcome.WelcomeWindow(on_ready=lambda *a: None)
-    assert win._lang_drop.get_sensitive()
+    # The picker is the first page now, and the way back to it is the arrow
+    # in the bar — so that is what must not be live mid-download. Changing
+    # language then would swap the catalogue under the worker thread and
+    # leave half of one library beside half of another.
+    assert win._back_to_lang.get_sensitive()
 
     win._on_card_clicked(None, 'reading')
     assert win._stack.get_visible_child_name() == 'progress'
-    assert not win._lang_drop.get_sensitive(), 'the picker stayed live mid-install'
+    assert not win._back_to_lang.get_sensitive(), \
+        'the way back stayed live mid-install'
 
     win._on_back(None)
-    assert win._lang_drop.get_sensitive(), 'the picker stayed locked after Back'
+    assert win._back_to_lang.get_sensitive(), \
+        'the way back stayed locked after Back'
 
 
 def test_a_rebuild_leaves_the_reader_on_the_page_they_were_on(monkeypatch):
