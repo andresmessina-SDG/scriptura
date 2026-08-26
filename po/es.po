@@ -3338,12 +3338,13 @@ msgstr "Sin entrada para «%s»"
 msgid ""
 "Searched %s. Another dictionary may carry it — the Module Manager lists more."
 msgstr ""
-"Se buscó en %s. Otro diccionario podría tenerla: el Gestor de módulos ofrece "
-"más."
+"Se buscó en %s. Otro diccionario podría tener esta palabra; el Gestor de "
+"módulos ofrece más."
 
 #: pane.py:5147
 msgid "Another dictionary may carry it — the Module Manager lists more."
-msgstr "Otro diccionario podría tenerla: el Gestor de módulos ofrece más."
+msgstr ""
+"Otro diccionario podría tener esta palabra; el Gestor de módulos ofrece más."
 
 #: pane.py:5160
 msgid "No dictionaries installed"
