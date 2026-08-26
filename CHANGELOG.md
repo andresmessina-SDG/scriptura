@@ -6,6 +6,17 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+### Internal
+
+- Flatpak packaging: the catalogues ship with the app rather than in a
+  locale extension that arrives empty on a host set to another language,
+  and the icon is one flatpak will export past a validator that can read
+  SVG.
+
+## [1.5.0] — 2026-08-19
+
+Scriptura in Spanish, and the books it would not open.
+
 ### Added
 
 - **Scriptura speaks Spanish.** The whole application — menus, dialogs,
@@ -32,7 +43,6 @@ semver-ish — 0.x was the pre-Flathub testing track.
   the desktop's own.
 - **Nineteenth-century plates** join the imagery pack, and an installed
   pack that has fallen behind the published one now offers its update.
-
 - **Letter spacing.** Appearance → Advanced now opens the space between
   letters, from the face's own metrics up to a fifth of the type size.
   Widening it is the best-supported thing typography can do for a reader
@@ -64,38 +74,9 @@ semver-ish — 0.x was the pre-Flathub testing track.
   nothing moves. It follows your scrolling, not your cursor, and it
   needs a translation that marks its own section headings. Appearance →
   Advanced → *Quiet the rest of the page*, off until you ask for it.
-- **Historical Commentaries.** An optional church-history commentary
-  pane: how the church read each verse across time — the ante-Nicene
-  fathers, the medieval doctors, and the Reformers — as chronological
-  cards grouped by era, synced to the verse you're studying. Download
-  the pack from Module Manager → Open Databases (compiled from the
-  public-domain HistoricalChristianFaith Commentaries Database).
-- **Chapters read aloud.** With the Berean Standard Bible open, the
-  headphones in the pane toolbar bring up a small player over the page —
-  the whole canon, all 1189 chapters, narrated by Bob Souer and dedicated
-  to the public domain by the translation's own publisher. It carries
-  play, back fifteen seconds, how far through you are, how long the
-  chapter runs, and a reading speed from 0.75× to 2× that holds the
-  narrator's pitch — set it once and every chapter follows. The player is
-  drawn from your own paper and ink, so it belongs to the page rather
-  than sitting on it. Chapters are fetched one at a time as you press
-  play and kept for later, so a chapter you have heard stays available
-  offline; a fetch that fails now says so instead of quietly stopping.
-  Turn it all off under Appearance → Advanced → *Spoken readings*.
-- **Import your own SWORD modules.** A `.zip` you already have on disk
-  (a commercial translation, a shared draft, anything CrossWire doesn't
-  carry) installs via Module Manager — an import button plus drag-and-
-  drop, with a preview sheet and support for cipher-locked modules.
-- **Remove a module from the pane picker.** The picker's info page now
-  has a "Remove module" action, behind a confirmation.
-- **Manage search history.** Each recent search has a remove button, a
-  "Clear" button wipes the list, and searching an empty field returns
-  to the recent-searches view.
-- **Guided first run.** The welcome screen now offers three curated
-  starting points — *Just reading*, *Reading + study* (recommended), and
-  *Full library* — framed by what you get rather than by SWORD module
-  names, so a newcomer can pick one and start reading. Everything stays
-  addable or removable later from the Module Manager.
+- **First run opens on a Bible and a commentary** rather than the same
+  text twice, installs the collection you choose for real, and hands you
+  the gestures reference where the gestures are taught.
 
 ### Fixed
 
@@ -118,7 +99,6 @@ semver-ish — 0.x was the pre-Flathub testing track.
   that tries to write through a symlink is refused.
 - **The lexicon hint no longer fires where tapping a word does nothing** —
   it is now gated on the text actually carrying Strong's numbers.
-
 - **A long footnote now opens.** Where a note runs to an essay rather
   than a line — Straubinger's Spanish Bible writes 2,400 characters of
   commentary on one verse of Psalm 51 — the note asked for a popover
@@ -135,6 +115,130 @@ semver-ish — 0.x was the pre-Flathub testing track.
   Romans and Jeremiah (+914 quotes), two verses reattributed from Jerome
   to Pseudo-Jerome, and a commentary wrongly given to Pacian of
   Barcelona removed. Installed packs will offer the update.
+
+## [1.4.0] — 2026-07-27
+
+Chapters read aloud, and passages you can take with you.
+
+### Added
+
+- **Chapters read aloud.** With the Berean Standard Bible open, the
+  headphones in the pane toolbar bring up a small player over the page —
+  the whole canon, all 1189 chapters, narrated by Bob Souer and dedicated
+  to the public domain by the translation's own publisher. It carries
+  play, back fifteen seconds, how far through you are, how long the
+  chapter runs, and a reading speed from 0.75× to 2× that holds the
+  narrator's pitch — set it once and every chapter follows. The player is
+  drawn from your own paper and ink, so it belongs to the page rather
+  than sitting on it. Chapters are fetched one at a time as you press
+  play and kept for later, so a chapter you have heard stays available
+  offline; a fetch that fails now says so instead of quietly stopping.
+  Turn it all off under Appearance → Advanced → *Spoken readings*.
+- **Spoken devotionals** from their publishers' own feeds — Spurgeon's
+  Morning and Evening, the Psalms read one at a time, and the day's
+  Daily Strength reading on the Today page.
+- **Take a passage with you.** Export it as a study worksheet in Markdown
+  or plain text, carrying your own notes and highlights, with optional
+  interlinear, textual-variant and church-fathers layers. Citations
+  follow the SBTS/Turabian short form.
+- **A verse as an image**, set in the app's own serif on its own paper —
+  three shapes, saved to a file or copied straight to the clipboard.
+- **Print a passage** as a study handout, paginated so no line is ever
+  cut in half.
+- **The section headings your translation ships.** Until now they were
+  dropped altogether. Move a whole thought at a time with `[` and `]`,
+  and see at a glance which sense-unit you are reading.
+- **The reading pane from the keyboard, throughout.** Step between verses
+  and words with the arrow keys, open the lexicon, a footnote or the
+  dictionary with Enter, and hear every move announced by a screen
+  reader.
+- **More of the Roman calendar's collects**, and a steadier Today page.
+
+### Fixed
+
+- **Modules keep installing when CrossWire's server is down.** The app
+  falls back to FTP, and then to a mirror of everything CrossWire's own
+  licences allow anyone to redistribute.
+- Every translation now gets its verse-one drop cap, and commentaries
+  render the inline titles they carry.
+
+## [1.3.0] — 2026-07-10
+
+The original languages, word by word.
+
+### Added
+
+- **Two interlinear reading surfaces** — the Greek New Testament and the
+  Hebrew Old Testament (Tyndale House data). Every word carries its
+  English gloss and parsing, with transliteration and Strong's numbers a
+  chip away and the lexicon a click away. A Hebrew Accents chip calms the
+  cantillation marks.
+- **A Scholar's Greek Lexicon pack.** Abbott-Smith becomes the brief
+  Greek entry, with the full Liddell-Scott-Jones one click deeper.
+  Scripture citations inside entries are live — click one to peek the
+  verse in place, or send it to the other pane.
+- **Presentation mode.** Press F5 to project the current passage
+  full-screen for a projector or mirrored display, with paging through
+  chapters, a verse-per-page toggle, live type-size control, and a
+  side-by-side parallel view of two translations.
+- **Passage chips on the maps.** A map in Scripture in Art carries its
+  passage as a chip — click it to drive the partnered Bible pane there.
+  The Historical Commentaries pane shows place chips for the verse under
+  commentary: click one for the place's photo and identification, without
+  displacing what you're reading.
+
+### Fixed
+
+- Greek in the reading panes now renders with correctly composed accents
+  on systems where the default serif drew them detached.
+
+## [1.2.0] — 2026-07-05
+
+Getting started, made discoverable.
+
+### Added
+
+- **Tips & Gestures.** A guide in the menu gathering every reading
+  gesture in one place.
+- **Gentle one-time tips** point out a hidden gesture — tapping a verse
+  for its cross-references — the first time it is useful, then never
+  again. You can turn them off at any time.
+
+## [1.1.0] — 2026-06-28
+
+Customizable reading appearance.
+
+### Added
+
+- **A reading appearance you choose.** A new Appearance panel: pick the
+  paper — Paper, White, Sepia, Green, or a colour of your own — with ink
+  that adapts to the page, a warm one on sepia and so on.
+- **Reading plans redesigned** around a Today view and a month calendar
+  of your progress.
+- **Historical Commentaries.** An optional church-history commentary
+  pane: how the church read each verse across time — the ante-Nicene
+  fathers, the medieval doctors, and the Reformers — as chronological
+  cards grouped by era, synced to the verse you're studying. Download
+  the pack from Module Manager → Open Databases (compiled from the
+  public-domain HistoricalChristianFaith Commentaries Database).
+- **Import your own SWORD modules.** A `.zip` you already have on disk
+  (a commercial translation, a shared draft, anything CrossWire doesn't
+  carry) installs via Module Manager — an import button plus drag-and-
+  drop, with a preview sheet and support for cipher-locked modules.
+- **Remove a module from the pane picker.** The picker's info page now
+  has a "Remove module" action, behind a confirmation.
+- **Manage search history.** Each recent search has a remove button, a
+  "Clear" button wipes the list, and searching an empty field returns
+  to the recent-searches view.
+- **Guided first run.** The welcome screen now offers three curated
+  starting points — *Just reading*, *Reading + study* (recommended), and
+  *Full library* — framed by what you get rather than by SWORD module
+  names, so a newcomer can pick one and start reading. Everything stays
+  addable or removable later from the Module Manager.
+
+### Fixed
+
+- Faint text trails when scrolling the reading view under Flatpak.
 - Wrong/missing cipher key on an encrypted module now shows a "the
   cipher key may be incorrect" message with an Edit Key action instead
   of rendering gibberish (or nothing).
@@ -151,6 +255,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Changed
 
+- Bold and justified move to compact controls beside the font, and the
+  menu's sections gain a clearer, calmer layout.
 - **Empty placeholders are now actionable.** The “can’t read this module
   here” and “passage isn’t in this module” pages offer a *Choose another
   module* button (it opens the module picker), and a locked module offers
@@ -160,7 +266,7 @@ semver-ish — 0.x was the pre-Flathub testing track.
   toggle regrouped with the reading-view controls rather than the
   navigation buttons.
 
-### Internal (v1.1)
+### Internal
 
 - **Shared empty-state widget** (`empty_state.py`) deduplicates the compact
   placeholder used by the search panel and study journal; `style.css` now
@@ -186,6 +292,20 @@ semver-ish — 0.x was the pre-Flathub testing track.
   zero-visual marker tags `hl_bg_<hex>` / `_search_hl` / `_flash`); GTK tag
   backgrounds hug line metrics and broke on the drop cap and small verse
   numbers. Anchored to the display-line start so adjacent bands can't drift.
+
+## [1.0.1] — 2026-05-28
+
+Packaging fixes.
+
+### Changed
+
+- The build moved to meson, for a cleaner Flatpak install.
+
+### Fixed
+
+- SWORD's CMake now links libcurl properly (upstream bug API-263). It
+  had been substituting a deprecated singular variable that modern CMake
+  no longer sets, so the link silently pulled in nothing.
 
 ### Internal (post-1.0 cleanup)
 
