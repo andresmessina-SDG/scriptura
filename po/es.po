@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scriptura\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-20 09:39-0600\n"
+"POT-Creation-Date: 2026-08-26 07:41-0600\n"
 "PO-Revision-Date: 2026-08-16 00:00+0000\n"
 "Last-Translator: Scriptura\n"
 "Language-Team: Spanish\n"
@@ -659,7 +659,7 @@ msgstr "Imprimir…"
 msgid "Compare translations"
 msgstr "Comparar traducciones"
 
-#: annotation_dialogs.py:236 pane.py:2155
+#: annotation_dialogs.py:236 pane.py:2181
 #, python-brace-format
 msgid "Copied {ref}"
 msgstr "Se copió {ref}"
@@ -2099,7 +2099,7 @@ msgstr "Copiar el título, el autor y la fuente de la obra"
 msgid "Copy image"
 msgstr "Copiar la imagen"
 
-#: imagery_reader.py:891 pane.py:1418
+#: imagery_reader.py:891 pane.py:1444
 msgid "Today"
 msgstr "Hoy"
 
@@ -2445,12 +2445,12 @@ msgid_plural "updated {m} months ago"
 msgstr[0] "actualizado hace {m} mes"
 msgstr[1] "actualizado hace {m} meses"
 
-#: module_manager.py:191 welcome.py:503
+#: module_manager.py:191 welcome.py:866
 #, python-brace-format
 msgid "{pct}% ({done} of {total} MB)"
 msgstr "{pct} % ({done} de {total} MB)"
 
-#: module_manager.py:194 welcome.py:506
+#: module_manager.py:194 welcome.py:869
 #, python-brace-format
 msgid "{done} MB"
 msgstr "{done} MB"
@@ -2915,8 +2915,8 @@ msgstr "Información del módulo"
 msgid "Description"
 msgstr "Descripción"
 
-#: module_picker.py:482 welcome.py:216 welcome.py:217 window.py:3361
-#: window.py:3372
+#: module_picker.py:482 welcome.py:356 welcome.py:557 welcome.py:558
+#: window.py:3361 window.py:3372
 msgid "Language"
 msgstr "Idioma"
 
@@ -3000,7 +3000,7 @@ msgstr "Capítulo {n}, versículo"
 #. 66 books" was worse than vague — it is false of Wycliffe,
 #. which carries nine of these books and simply lacks this
 #. one. Name the book, not the canon.
-#: navigation.py:469 pane.py:2421 present_mode.py:273
+#: navigation.py:469 pane.py:2447 present_mode.py:273
 #, python-format
 msgid "%s isn’t in this translation."
 msgstr "%s no está en esta traducción."
@@ -3190,57 +3190,57 @@ msgstr ""
 "Modo lectura: pulse Esc o F11, o acerque el puntero al borde superior para "
 "salir"
 
-#: pane.py:1193
+#: pane.py:1219
 #, python-brace-format
 msgid "Reading pane {n}"
 msgstr "Panel de lectura {n}"
 
-#: pane.py:1337
+#: pane.py:1363
 msgid "Pane controls"
 msgstr "Controles del panel"
 
-#: pane.py:1356 pane.py:2162
+#: pane.py:1382 pane.py:2188
 msgid "Following navigation"
 msgstr "Sigue la navegación"
 
-#: pane.py:1357
+#: pane.py:1383
 msgid "Follow navigation"
 msgstr "Seguir la navegación"
 
-#: pane.py:1364 pane.py:1365
+#: pane.py:1390 pane.py:1391
 msgid "Chapter note"
 msgstr "Nota del capítulo"
 
-#: pane.py:1375 pane.py:1376
+#: pane.py:1401 pane.py:1402
 msgid "Copy chapter"
 msgstr "Copiar el capítulo"
 
-#: pane.py:1408 pane.py:1409
+#: pane.py:1434 pane.py:1435
 msgid "Previous day"
 msgstr "Día anterior"
 
-#: pane.py:1415 pane.py:1416
+#: pane.py:1441 pane.py:1442
 msgid "Next day"
 msgstr "Día siguiente"
 
-#: pane.py:1531
+#: pane.py:1557
 msgid "Reading view"
 msgstr "Vista de lectura"
 
-#: pane.py:2127
+#: pane.py:2153
 msgid "Copy chapter works on Bibles and commentaries only"
 msgstr "Copiar el capítulo solo funciona con Biblias y comentarios"
 
-#: pane.py:2140
+#: pane.py:2166
 #, python-brace-format
 msgid "Couldn't load chapter — {error}"
 msgstr "No se pudo cargar el capítulo: {error}"
 
-#: pane.py:2161
+#: pane.py:2187
 msgid "Locked — not following navigation"
 msgstr "Fijado: no sigue la navegación"
 
-#: pane.py:2387
+#: pane.py:2413
 msgid ""
 "This module isn’t organized by book and chapter, so it can’t be read in this "
 "pane. Pick a Bible or commentary to read here."
@@ -3248,15 +3248,15 @@ msgstr ""
 "Este módulo no está organizado por libro y capítulo, así que no se puede "
 "leer en este panel. Elija una Biblia o un comentario para leer aquí."
 
-#: pane.py:2389 pane.py:2429
+#: pane.py:2415 pane.py:2455
 msgid "Choose another module"
 msgstr "Elegir otro módulo"
 
-#: pane.py:2396 window.py:1951
+#: pane.py:2422 window.py:1951
 msgid "Edit Key"
 msgstr "Editar la clave"
 
-#: pane.py:2400
+#: pane.py:2426
 msgid "This module’s content isn’t readable — the cipher key may be incorrect."
 msgstr ""
 "El contenido de este módulo no se puede leer; puede que la clave de "
@@ -3266,12 +3266,12 @@ msgstr ""
 #. KJVA's Additions to Esther 1-9 are the case: single-verse
 #. '…' placeholders, because that material is set inside
 #. Esther itself.
-#: pane.py:2414
+#: pane.py:2440
 #, python-brace-format
 msgid "{module} has no text under this chapter."
 msgstr "{module} no trae texto en este capítulo."
 
-#: pane.py:2423
+#: pane.py:2449
 #, python-brace-format
 msgid ""
 "{module} doesn’t include this passage. Some modules cover only the Old or "
@@ -3280,76 +3280,82 @@ msgstr ""
 "{module} no incluye este pasaje. Algunos módulos abarcan solo el Antiguo o "
 "el Nuevo Testamento; elija una Biblia completa."
 
-#: pane.py:2458
+#: pane.py:2484
 msgid "No entry found for this date."
 msgstr "No se encontró ninguna entrada para esta fecha."
 
-#: pane.py:2521
+#: pane.py:2547
 msgid "Related artifact — open in Scripture in Stone"
 msgstr "Objeto relacionado: abrir en La Escritura en piedra"
 
-#: pane.py:2522
+#: pane.py:2548
 msgid "Related artifact"
 msgstr "Objeto relacionado"
 
-#: pane.py:3814
+#: pane.py:3840
 #, python-brace-format
 msgid "highlighted {color}"
 msgstr "resaltado en {color}"
 
-#: pane.py:3817
+#: pane.py:3843
 msgid "highlighted"
 msgstr "resaltado"
 
-#: pane.py:3819
+#: pane.py:3845
 msgid "underlined"
 msgstr "subrayado"
 
-#: pane.py:3821
+#: pane.py:3847
 msgid "has note"
 msgstr "tiene una nota"
 
-#: pane.py:3828
+#: pane.py:3854
 msgid "has footnotes"
 msgstr "tiene notas al pie"
 
-#: pane.py:4369
+#: pane.py:4395
 #, python-brace-format
 msgid "Strong’s {num}"
 msgstr "Strong {num}"
 
-#: pane.py:4874
+#: pane.py:4900
 #, python-brace-format
 msgid "Cross-references ({letter}) · verse {v}"
 msgstr "Referencias cruzadas ({letter}) · versículo {v}"
 
-#: pane.py:4876
+#: pane.py:4902
 #, python-brace-format
 msgid "Footnote ({letter}) · verse {v}"
 msgstr "Nota al pie ({letter}) · versículo {v}"
 
-#: pane.py:5115
+#: pane.py:5143
 #, python-format
 msgid "No entry for “%s”"
 msgstr "Sin entrada para «%s»"
 
-#: pane.py:5116
+#: pane.py:5144
+#, python-format
 msgid ""
-"Bible dictionaries index proper nouns and key terms — try a word like "
-"“covenant,” “Abraham,” or “atonement.”"
+"Searched %s. Another dictionary may carry it — the Module Manager lists more."
 msgstr ""
-"Los diccionarios bíblicos recogen nombres propios y términos clave: pruebe "
-"con una palabra como «pacto», «Abraham» o «expiación»."
+"Se buscó en %s. Otro diccionario podría tenerla: el Gestor de módulos ofrece "
+"más."
 
-#: pane.py:5130
+#: pane.py:5147
+msgid "Another dictionary may carry it — the Module Manager lists more."
+msgstr "Otro diccionario podría tenerla: el Gestor de módulos ofrece más."
+
+#: pane.py:5160
 msgid "No dictionaries installed"
 msgstr "No hay diccionarios instalados"
 
-#: pane.py:5131
-msgid "Add Easton’s or Smith’s Bible Dictionary from the Module Manager."
+#. Named two English dictionaries by name, which is the
+#. wrong advice for a reader who reads in Spanish.
+#: pane.py:5163
+msgid "Add one from the Module Manager, then double-click the word again."
 msgstr ""
-"Añada el diccionario bíblico de Easton o el de Smith desde el Gestor de "
-"módulos."
+"Añada uno desde el Gestor de módulos y vuelva a hacer doble clic en la "
+"palabra."
 
 #: pane_search.py:101 pane_search.py:104 search_panel.py:439
 msgid "Search this module"
@@ -4007,80 +4013,106 @@ msgstr "pulse Intro para consultarla"
 msgid "press Enter for the dictionary"
 msgstr "pulse Intro para el diccionario"
 
-#: welcome.py:57
+#: welcome.py:73
 msgid "Just reading"
 msgstr "Solo leer"
 
-#: welcome.py:58
+#: welcome.py:74
 msgid "Open a Bible and start reading right away."
 msgstr "Abra una Biblia y empiece a leer de inmediato."
 
-#: welcome.py:59
-msgid "1 Bible"
-msgstr "1 Biblia"
-
-#: welcome.py:60
+#: welcome.py:75
 msgid "Smallest download"
 msgstr "Descarga mínima"
 
-#: welcome.py:69
+#: welcome.py:80
 msgid "Reading + study"
 msgstr "Lectura y estudio"
 
-#: welcome.py:70
-msgid "A few translations, historical commentary, and word-study tools."
+#: welcome.py:81
+msgid "A few translations, and the tools for looking closely at a word."
 msgstr ""
-"Varias traducciones, comentario histórico y herramientas para el estudio de "
-"palabras."
+"Varias traducciones y las herramientas para mirar de cerca una palabra."
 
-#: welcome.py:72
-msgid "4 Bibles · commentary · dictionary · lexicon · cross-references"
-msgstr "4 Biblias · comentario · diccionario · léxico · referencias cruzadas"
-
-#: welcome.py:74 welcome.py:134
+#: welcome.py:83
 msgid "Small download"
 msgstr "Descarga pequeña"
 
-#: welcome.py:92
+#: welcome.py:88
 msgid "Full library"
 msgstr "Biblioteca completa"
 
-#: welcome.py:93
-msgid "The complete set — more translations and commentaries from the start."
-msgstr ""
-"El conjunto completo: más traducciones y comentarios desde el principio."
+#: welcome.py:89
+msgid "Everything this language has, from the start."
+msgstr "Todo lo que hay en este idioma, desde el principio."
 
-#: welcome.py:95
-msgid ""
-"7 Bibles · 3 commentaries · dictionary · lexicon · 340k cross-references"
-msgstr ""
-"7 Biblias · 3 comentarios · diccionario · léxico · 340 000 referencias "
-"cruzadas"
-
-#: welcome.py:97
+#: welcome.py:90
 msgid "Larger download"
 msgstr "Descarga grande"
 
-#: welcome.py:126
-msgid "Spanish Bibles, a spoken reading, and word-study tools."
-msgstr ""
-"Biblias en español, una lectura hablada y herramientas para el estudio de "
-"palabras."
+#: welcome.py:243
+#, python-brace-format
+msgid "{n} Bible"
+msgid_plural "{n} Bibles"
+msgstr[0] "{n} Biblia"
+msgstr[1] "{n} Biblias"
 
-#. No audio claim: the spoken reading is bound to spabes, and neither
-#. opening pane shows it, so a newcomer would not meet the listening
-#. pill however long they read. The reading still installs and works
-#. the moment they switch a pane to it — the card just stops promising
-#. what the English bundles genuinely deliver on their first screen.
-#: welcome.py:133
-msgid "5 Bibles · notes · dictionary · lexicon · cross-references"
-msgstr "5 Biblias · notas · diccionario · léxico · referencias cruzadas"
+#: welcome.py:247
+#, python-brace-format
+msgid "{n} commentary"
+msgid_plural "{n} commentaries"
+msgstr[0] "{n} comentario"
+msgstr[1] "{n} comentarios"
 
-#: welcome.py:162 welcome.py:237 welcome.py:260
+#: welcome.py:249
+msgid "commentary"
+msgstr "comentario"
+
+#: welcome.py:251
+msgid "notes"
+msgstr "notas"
+
+#: welcome.py:253
+msgid "dictionary"
+msgstr "diccionario"
+
+#: welcome.py:255
+msgid "lexicon"
+msgstr "léxico"
+
+#: welcome.py:257
+msgid "cross-references"
+msgstr "referencias cruzadas"
+
+#: welcome.py:306 welcome.py:396 welcome.py:578 welcome.py:606
 msgid "Welcome to Scriptura"
 msgstr "Le damos la bienvenida a Scriptura"
 
-#: welcome.py:265
+#: welcome.py:357
+msgid "Back to language"
+msgstr "Volver al idioma"
+
+#: welcome.py:401
+msgid ""
+"Choose your language. It sets the interface, and the Bibles offered on the "
+"next screen."
+msgstr ""
+"Elija su idioma. Define la interfaz y las Biblias que se ofrecen en la "
+"pantalla siguiente."
+
+#: welcome.py:430
+msgid ""
+"You can change this later, and add texts in any language from the Module "
+"Manager."
+msgstr ""
+"Puede cambiarlo más adelante y añadir textos en cualquier idioma desde el "
+"Gestor de módulos."
+
+#: welcome.py:464
+msgid "Detected"
+msgstr "Detectado"
+
+#: welcome.py:611
 msgid ""
 "Choose a starting point. Pick the shape that fits how you want to work — "
 "this is just a head start."
@@ -4088,51 +4120,51 @@ msgstr ""
 "Elija un punto de partida. Escoja lo que mejor se ajuste a su forma de "
 "trabajar; esto es solo para empezar."
 
-#: welcome.py:285
+#: welcome.py:631
 msgid "You can add or remove anything later from the Module Manager."
 msgstr ""
 "Después puede añadir o quitar lo que quiera desde el gestor de módulos."
 
-#: welcome.py:310
+#: welcome.py:656
 msgid "New here? See what the pointer can do — Tips & Gestures"
 msgstr "¿Es nuevo aquí? Vea lo que puede hacer el puntero: Consejos y gestos"
 
-#: welcome.py:319
+#: welcome.py:665
 msgid "Choose individual modules instead"
 msgstr "Elegir módulos uno a uno"
 
-#: welcome.py:342
+#: welcome.py:688
 msgid "★ Recommended"
 msgstr "★ Recomendado"
 
-#: welcome.py:397
+#: welcome.py:747
 msgid "Starting download…"
 msgstr "Iniciando la descarga…"
 
-#: welcome.py:429
+#: welcome.py:779
 msgid "Back to options"
 msgstr "Volver a las opciones"
 
-#: welcome.py:455
+#: welcome.py:808
 msgid "Reading the module list…"
 msgstr "Leyendo la lista de módulos…"
 
 #. Not fatal: every module in the released repository still
 #. installs by zip without it.
-#: welcome.py:462
+#: welcome.py:824
 msgid "module list"
 msgstr "lista de módulos"
 
-#: welcome.py:466
+#: welcome.py:829
 #, python-brace-format
 msgid "({step}/{total}) Downloading {label}…"
 msgstr "({step}/{total}) Descargando {label}…"
 
-#: welcome.py:550
+#: welcome.py:913
 msgid "unknown error"
 msgstr "error desconocido"
 
-#: welcome.py:554
+#: welcome.py:917
 #, python-brace-format
 msgid ""
 "Couldn’t download a Bible — please check your connection and try again. "
@@ -4141,7 +4173,7 @@ msgstr ""
 "No se pudo descargar ninguna Biblia; compruebe su conexión e inténtelo de "
 "nuevo. ({details})"
 
-#: welcome.py:564
+#: welcome.py:927
 #, python-brace-format
 msgid ""
 "Installed with warnings — these can be retried later from the Module "
@@ -4150,7 +4182,7 @@ msgstr ""
 "Se instaló con advertencias; puede reintentar lo siguiente más tarde desde "
 "el gestor de módulos: {names}"
 
-#: welcome.py:567
+#: welcome.py:930
 msgid "Done. Opening Scriptura…"
 msgstr "Listo. Abriendo Scriptura…"
 
@@ -5359,78 +5391,3 @@ msgstr "Día {n} · {passages}"
 #, python-brace-format
 msgid "Day {n}"
 msgstr "Día {n}"
-
-#~ msgid "Quick download"
-#~ msgstr "Descarga rápida"
-
-#~ msgid "Show deuterocanonical books"
-#~ msgstr "Mostrar libros deuterocanónicos"
-
-#, python-brace-format
-#~ msgid ""
-#~ "{module} follows a canon of 66 books, which does not include this one."
-#~ msgstr "{module} sigue un canon de 66 libros, que no incluye este."
-
-#, fuzzy
-#~ msgid "Not in this translation"
-#~ msgstr "%s no está en esta traducción."
-
-#: welcome.py
-msgid "A few translations, and the tools for looking closely at a word."
-msgstr "Varias traducciones y las herramientas para mirar de cerca una palabra."
-
-#: welcome.py
-msgid "Everything this language has, from the start."
-msgstr "Todo lo que hay en este idioma, desde el principio."
-
-#: welcome.py
-msgid "{n} Bible"
-msgid_plural "{n} Bibles"
-msgstr[0] "{n} Biblia"
-msgstr[1] "{n} Biblias"
-
-#: welcome.py
-msgid "{n} commentary"
-msgid_plural "{n} commentaries"
-msgstr[0] "{n} comentario"
-msgstr[1] "{n} comentarios"
-
-#: welcome.py
-msgid "commentary"
-msgstr "comentario"
-
-#: welcome.py
-msgid "notes"
-msgstr "notas"
-
-#: welcome.py
-msgid "dictionary"
-msgstr "diccionario"
-
-#: welcome.py
-msgid "lexicon"
-msgstr "léxico"
-
-#: welcome.py
-msgid "cross-references"
-msgstr "referencias cruzadas"
-
-#: welcome.py
-msgid "Back to language"
-msgstr "Volver al idioma"
-
-#: welcome.py
-msgid ""
-"Choose your language. It sets the interface, and the Bibles offered on the "
-"next screen."
-msgstr ""
-"Elige tu idioma. Define la interfaz y las Biblias que se ofrecen en la "
-"pantalla siguiente."
-
-#: welcome.py
-msgid ""
-"You can change this later, and add texts in any language from the Module "
-"Manager."
-msgstr ""
-"Puedes cambiarlo más adelante y añadir textos en cualquier idioma desde el "
-"Gestor de módulos."

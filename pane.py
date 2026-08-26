@@ -5132,11 +5132,20 @@ class BiblePane(Gtk.Box):
         def populate(results):
             _clear()
             if not results:
+                # Names what was actually searched rather than describing what
+                # dictionaries hold. The old line taught that they "index
+                # proper nouns and key terms" and offered “covenant,”
+                # “Abraham,” “atonement” — true of Easton's, false of the
+                # general dictionary the Spanish reader has (Wikcionario
+                # answers ordinary vocabulary), and the English examples were
+                # the wrong words to try in any case.
                 _status('scriptura-system-search-symbolic',
                         _('No entry for “%s”') % word,
-                        _('Bible dictionaries index proper nouns and key '
-                          'terms — try a word like “covenant,” “Abraham,” '
-                          'or “atonement.”'))
+                        (_('Searched %s. Another dictionary may carry it — '
+                           'the Module Manager lists more.')
+                         % ', '.join(searched)) if searched else
+                        _('Another dictionary may carry it — the Module '
+                          'Manager lists more.'))
             else:
                 content.append(_headword_title(word))
                 if len(results) == 1:
@@ -5149,13 +5158,19 @@ class BiblePane(Gtk.Box):
             _clear()
             _status('scriptura-dialog-information-symbolic',
                     _('No dictionaries installed'),
-                    _('Add Easton’s or Smith’s Bible Dictionary from the '
-                      'Module Manager.'))
+                    # Named two English dictionaries by name, which is the
+                    # wrong advice for a reader who reads in Spanish.
+                    _('Add one from the Module Manager, then double-click '
+                      'the word again.'))
+
+        # Filled by `fetch` so the empty state can name what it looked in.
+        searched: list = []
 
         def fetch(_task):
             dicts = sword_bridge.installed_dict_modules()
             if not dicts:
                 return None
+            searched[:] = [_short_dict_title(mn, md) for mn, md in dicts]
             # Which tab opens matters more than which tabs exist. Two things
             # decide it, in this order:
             #

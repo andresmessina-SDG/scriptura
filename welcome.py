@@ -221,33 +221,61 @@ def catalogue_languages():
             if code in _CATALOGUE]
 
 
-def _summarise(items):
+def _summarise(items, gt=None, ngt=None):
     """The card's contents line, counted from the items themselves.
 
     Written by hand this drifted — a card promised four Bibles and installed
     five — and with a table per language there would be one more of them to
     keep in step for every language added.
+
+    `gt`/`ngt` translate into a language that is not the one the app is
+    running in, which is what the language page's cards need: each says what
+    it holds in its own words. They default to the running language.
+    (Named for their job and not `_`, which would shadow the builtin for the
+    whole function and leave every string here untranslated.)
     """
+    gt = gt or _
+    ngt = ngt or ngettext
     facets = [f for _k, _i, _l, f in items]
     parts = []
     bibles = facets.count(_BIBLE)
     if bibles:
-        parts.append(ngettext('{n} Bible', '{n} Bibles', bibles).format(
+        parts.append(ngt('{n} Bible', '{n} Bibles', bibles).format(
             n=bibles))
     commentaries = facets.count(_COMMENTARY)
     if commentaries:
-        parts.append(ngettext('{n} commentary', '{n} commentaries',
-                              commentaries).format(n=commentaries)
-                     if commentaries > 1 else _('commentary'))
+        parts.append(ngt('{n} commentary', '{n} commentaries',
+                         commentaries).format(n=commentaries)
+                     if commentaries > 1 else gt('commentary'))
     if _NOTES in facets:
-        parts.append(_('notes'))
+        parts.append(gt('notes'))
     if _DICTIONARY in facets:
-        parts.append(_('dictionary'))
+        parts.append(gt('dictionary'))
     if _LEXICON in facets:
-        parts.append(_('lexicon'))
+        parts.append(gt('lexicon'))
     if _XREF in facets:
-        parts.append(_('cross-references'))
+        parts.append(gt('cross-references'))
     return ' · '.join(parts)
+
+
+def language_summary(code):
+    """What `code` has to offer, written in `code` — e.g. for Spanish under
+    an English interface, "3 Biblias · notas · diccionario".
+
+    The largest tier, because this line is the ceiling of what choosing that
+    language leads to, not what any one card installs. Counted from the same
+    facets as the bundle cards, so a language added to `_CATALOGUE` describes
+    itself with no prose written for it.
+    """
+    table = _CATALOGUE.get(code)
+    if not table:
+        return ''
+    for tier in reversed(_TIERS):
+        entry = table.get(tier['id'])
+        if entry is not None:
+            gt, ngt = i18n.translator_for(code)
+            return _summarise(entry['items'], gt, ngt)
+    return ''
 
 
 def bundles_for(language):
@@ -383,7 +411,14 @@ class WelcomeWindow(Adw.ApplicationWindow):
         flow = Gtk.FlowBox()
         flow.set_selection_mode(Gtk.SelectionMode.NONE)
         flow.set_halign(Gtk.Align.CENTER)
-        flow.set_max_children_per_line(4)
+        # A flow box reserves room for `max_children_per_line` whatever it
+        # holds, so a fixed 4 left two cards sitting off-centre in the space
+        # of four. It is the count until there are enough to want a second
+        # row.
+        flow.set_max_children_per_line(min(len(self._languages), 4) or 1)
+        # Equal cards: only one of them carries the "Detected" badge, and
+        # without this that card is taller than the language beside it.
+        flow.set_homogeneous(True)
         flow.set_row_spacing(14)
         flow.set_column_spacing(14)
         flow.set_margin_top(8)
@@ -409,19 +444,61 @@ class WelcomeWindow(Adw.ApplicationWindow):
         return outer
 
     def _make_language_card(self, code, name):
+        """One language, and what choosing it leads to.
+
+        A card holding nothing but a name was two buttons in a large empty
+        window, and gave a reader no way to tell a language with a library
+        behind it from a bare interface translation. The line beneath the
+        name is counted from that language's own catalogue and written in
+        that language, so it needs no prose per language and cannot promise
+        what the next screen will not deliver.
+        """
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        box.set_margin_top(22)
-        box.set_margin_bottom(22)
-        box.set_margin_start(28)
-        box.set_margin_end(28)
+        box.set_valign(Gtk.Align.START)
+        box.set_margin_top(18)
+        box.set_margin_bottom(18)
+        box.set_margin_start(20)
+        box.set_margin_end(20)
+
+        # The badge says why this card holds the focus: the desktop already
+        # answered this question, and the reader is being shown the answer
+        # rather than asked to find it. In its own language, like the name.
+        if code == self._language:
+            gt, _ngt = i18n.translator_for(code)
+            badge = Gtk.Label(label=gt('Detected'))
+            badge.add_css_class('welcome-badge')
+            badge.set_halign(Gtk.Align.START)
+            badge.set_margin_bottom(2)
+            box.append(badge)
 
         label = Gtk.Label(label=name)
-        label.add_css_class('title-3')
+        label.add_css_class('title-2')
+        label.set_xalign(0)
         box.append(label)
+
+        summary = language_summary(code)
+        if summary:
+            line = Gtk.Label(label=summary)
+            line.set_wrap(True)
+            line.set_wrap_mode(Pango.WrapMode.WORD)
+            line.set_xalign(0)
+            line.set_max_width_chars(24)
+            line.add_css_class('caption')
+            line.add_css_class('dim-label')
+            box.append(line)
 
         card = Gtk.Button()
         card.set_child(box)
         card.add_css_class('card')
+        # Two cards side by side should read as a deliberate pair rather than
+        # two buttons that happen to be near each other; a third wraps under
+        # them at the same width.
+        card.set_size_request(260, -1)
+        card.set_valign(Gtk.Align.FILL)
+        if code == self._language:
+            card.add_css_class('welcome-card-recommended')
+        # The name is already the label; the summary is in a language the
+        # screen reader is not speaking, so it is not read out.
         set_accessible_label(card, name)
         card.connect('clicked', self._on_language_card, code)
         return card

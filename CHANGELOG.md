@@ -30,6 +30,20 @@ semver-ish — 0.x was the pre-Flathub testing track.
   own contents, so it can no longer promise a commentary the language
   has none of.
 
+### Changed
+
+- **The language cards say what each language holds**, counted from that
+  language's own catalogue and written in that language — "3 Biblias · notas
+  · diccionario" under Español whatever language the interface is in. The one
+  your desktop already asked for is marked, so the screen shows you its answer
+  rather than making you find it.
+- **The dictionary peek stopped describing dictionaries and started naming
+  yours.** Where a word has no entry it used to say that Bible dictionaries
+  index proper nouns and key terms and suggest trying "covenant" or
+  "atonement" — advice written when the only dictionaries were English Bible
+  dictionaries, and false for the Spanish reader whose dictionary answers
+  ordinary vocabulary. It now says which dictionaries were searched.
+
 ### Fixed
 
 - **A first-run download that failed for a module that exists.** The

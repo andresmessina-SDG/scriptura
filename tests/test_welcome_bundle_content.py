@@ -148,6 +148,35 @@ def test_the_spoken_reading_installs_without_being_promised():
     assert 'audio' not in full['summary'].lower()
 
 
+def test_a_language_card_counts_the_largest_tier():
+    """The language page's line is the ceiling of what choosing that language
+    leads to, not what any one card installs — so it counts the last tier the
+    language has, and it is counted, never written."""
+    for code in welcome._CATALOGUE:
+        largest = next(b for b in reversed(welcome.bundles_for(code)))
+        assert welcome.language_summary(code) == largest['summary']
+
+
+def test_a_language_card_speaks_its_own_language(monkeypatch):
+    """Both cards are on screen at once, so each has to answer in its own
+    language rather than in the one the app is running in. `_()` cannot do
+    that, and a later simplification back to it would leave a Spanish card
+    reading "3 Bibles · notes" under an English interface — wrong for exactly
+    the reader who needs the page and cannot read the rest of it."""
+    asked = []
+
+    def fake_translator_for(code):
+        asked.append(code)
+        return (lambda m: f'<{code}:{m}>',
+                lambda s, p, n: f'<{code}:{p if n != 1 else s}>')
+
+    monkeypatch.setattr(welcome.i18n, 'translator_for', fake_translator_for)
+    line = welcome.language_summary('es')
+    assert asked == ['es']
+    assert line.startswith('<es:')
+    assert '<es:dictionary>' in line
+
+
 # Bundle members that are not Bible texts, so the summary must not count them.
 _NOT_A_BIBLE = frozenset([
     'strongshebrew', 'strongsgreek', 'tsk', 'mhcc', 'jfb', 'easton',

@@ -9,6 +9,7 @@ translate identically (gettext.gettext honours the domain set with
 gettext.textdomain()).
 """
 import gettext as _gettext
+from collections.abc import Callable
 
 #: The app's gettext domain, shared by main's bootstrap and the switcher.
 DOMAIN = 'scriptura'
@@ -80,6 +81,25 @@ def available_languages() -> list[tuple[str, str]]:
         if os.path.isfile(mo):
             out.append((code, LANGUAGE_NAMES.get(code, code)))
     return out
+
+
+def translator_for(
+        code: str) -> tuple[Callable[[str], str],
+                            Callable[[str, str, int], str]]:
+    """`(gettext, ngettext)` that translate into `code`, whatever is installed.
+
+    The welcome window's language cards each have to speak their own language
+    at the same moment — a Spanish card under an English interface says
+    "3 Biblias", because a reader who needs that page is choosing between
+    words they may not read. `_()` cannot do that: it answers in the one
+    language the app is running in.
+
+    Falls back to the untranslated source (English) for a code with no
+    compiled catalogue, which is what a run from a source checkout gets.
+    """
+    tr = _gettext.translation(DOMAIN, localedir(), languages=[code],
+                              fallback=True)
+    return tr.gettext, tr.ngettext
 
 
 def current_language() -> str:
