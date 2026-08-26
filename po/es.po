@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scriptura\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-19 13:37-0600\n"
+"POT-Creation-Date: 2026-08-20 09:39-0600\n"
 "PO-Revision-Date: 2026-08-16 00:00+0000\n"
 "Last-Translator: Scriptura\n"
 "Language-Team: Spanish\n"
@@ -630,6 +630,7 @@ msgstr "Editar la nota y las etiquetas"
 msgid "Note & Tags"
 msgstr "Nota y etiquetas"
 
+#. 4. Copy verse(s)
 #: annotation_dialogs.py:166
 msgid "Copy verses"
 msgstr "Copiar los versículos"
@@ -638,14 +639,18 @@ msgstr "Copiar los versículos"
 msgid "Copy verse"
 msgstr "Copiar el versículo"
 
+#. 5. Export the passage — Copy's larger cousin, and next to it for that
+#. reason: both take what is selected and put it somewhere else.
 #: annotation_dialogs.py:174
 msgid "Export passage…"
 msgstr "Exportar el pasaje…"
 
+#. 6. Share the verse as an image
 #: annotation_dialogs.py:181
 msgid "Share as image…"
 msgstr "Compartir como imagen…"
 
+#. 7. Print — the same composition as the worksheet, set into pages.
 #: annotation_dialogs.py:188
 msgid "Print…"
 msgstr "Imprimir…"
@@ -789,6 +794,8 @@ msgstr[1] "{n} primeros planos · pulse la imagen para verlos"
 msgid "Attests"
 msgstr "Atestigua"
 
+#. "See also" — jump to a thematically related artifact in the gallery
+#. (a wrapping flow, since titles are long). Turns the list into a web.
 #: archaeology_reader.py:395
 msgid "See also"
 msgstr "Véase también"
@@ -880,6 +887,8 @@ msgstr "Cambiar a la lectura de la tarde"
 msgid "Fetching the reading"
 msgstr "Obteniendo la lectura"
 
+#. fetch_episode answers every failure with None, so this says no
+#. more than it knows.
 #: audio_surfaces.py:309 audio_surfaces.py:810 window.py:2265
 msgid "Could not fetch the reading"
 msgstr "No se pudo obtener la lectura"
@@ -888,6 +897,10 @@ msgstr "No se pudo obtener la lectura"
 msgid "Could not play the reading"
 msgstr "No se pudo reproducir la lectura"
 
+#. Naming the reader is a condition of some of these licences
+#. and not of others, so it is the record that decides — not a
+#. per-translation branch here. Where a credit is required this
+#. is the point of use, and so the place to give it.
 #: audio_surfaces.py:509
 #, python-brace-format
 msgid "Listen to this chapter — read by {credit}"
@@ -897,10 +910,14 @@ msgstr "Escuche este capítulo, leído por {credit}"
 msgid "Listen to this chapter"
 msgstr "Escuchar este capítulo"
 
+#. The publisher's own title for the psalm, which says more than
+#. "play" ever could.
 #: audio_surfaces.py:603 audio_surfaces.py:605
 msgid "Listen to this psalm"
 msgstr "Escuchar este salmo"
 
+#. Curated feature name shown in the UI. MODULE_KEY ('Historical
+#. Commentaries') remains the on-disk identity used everywhere else.
 #: catena_bridge.py:123
 msgid "Voices of the Church"
 msgstr "Voces de la Iglesia"
@@ -1065,6 +1082,9 @@ msgid_plural "Show all {n} voices"
 msgstr[0] "Mostrar {n} voz"
 msgstr[1] "Mostrar las {n} voces"
 
+#. ── list page ──────────────────────────────────────────────────────────────
+#. Kind tabs, in display order. The picker shows 'All' plus only the
+#. kinds actually installed.
 #: catena_reader.py:310 module_picker.py:212
 msgid "All"
 msgstr "Todos"
@@ -1273,6 +1293,7 @@ msgstr "Cuadragésimo"
 msgid "The Circumcision of Christ"
 msgstr "La Circuncisión de Cristo"
 
+#. Epiphany itself fell on this Sunday; its feast serves the week.
 #: church_year.py:119 church_year.py:235
 msgid "The Epiphany"
 msgstr "La Epifanía"
@@ -1505,6 +1526,7 @@ msgstr "La Ascensión"
 msgid "The Sunday after Christmas Day"
 msgstr "El Domingo después de Navidad"
 
+#. Christmas on a Sunday: its week is Christmastide, not Advent.
 #: church_year.py:221
 msgid "Christmastide"
 msgstr "Tiempo de Navidad"
@@ -1955,6 +1977,8 @@ msgstr "Mostrar los resúmenes de sección del capítulo"
 msgid "No entries in this book."
 msgstr "No hay entradas en este libro."
 
+#. Curated feature name shown in the UI. MODULE_KEY ('Bible Imagery')
+#. remains the on-disk identity used everywhere else.
 #: imagery_bridge.py:158
 msgid "Scripture in Art"
 msgstr "La Escritura en el arte"
@@ -2119,6 +2143,9 @@ msgstr "Glosa"
 msgid "Parsing"
 msgstr "Análisis"
 
+#. Cantillation toggle — Hebrew only (shown/hidden per module). Not a
+#. stacked line: it transforms the word text itself, so it has its
+#. own handler rather than the visibility one above.
 #: interlinear_view.py:97
 msgid "Accents"
 msgstr "Acentos"
@@ -2139,6 +2166,15 @@ msgstr "El Nuevo Testamento griego empieza en Mateo."
 msgid "Back to previous definition"
 msgstr "Volver a la definición anterior"
 
+#. Title + morphology share a horizontal scroller: in a narrow pane
+#. the full Strong's heading and morphology stay reachable by
+#. scrolling instead of vanishing into an ellipsis. The scroller
+#. also serves the purpose the old max-width-chars + ellipsize caps
+#. had — a ScrolledWindow doesn't propagate its child's natural
+#. width, so a long title (e.g. `Strong's H3068 · in "the LORD"`)
+#. can't combine with _ws_header below through the inner h_paned
+#. (shrink=False on both children) to push the lexicon — and
+#. therefore pane 1 — wider than its allocation when content loads.
 #: lexicon_panel.py:236
 msgid "Strong's Lexicon"
 msgstr "Léxico de Strong"
@@ -2147,6 +2183,9 @@ msgstr "Léxico de Strong"
 msgid "Close lexicon"
 msgstr "Cerrar el léxico"
 
+#. Depth bar: when the scholar's lexicon pack is installed and the
+#. entry has a full LSJ article, one quiet link swaps the brief
+#. Abbott-Smith entry for it (and back). Hidden otherwise.
 #: lexicon_panel.py:305 lexicon_panel.py:310 lexicon_panel.py:500
 #: lexicon_panel.py:545
 msgid "Full LSJ entry"
@@ -2179,6 +2218,8 @@ msgstr "con {strongs}"
 msgid "Definition not found."
 msgstr "No se encontró la definición."
 
+#. The panel fills in without taking focus, so an AT user gets no
+#. signal that the lookup landed. Name the entry that arrived.
 #: lexicon_panel.py:493
 #, python-brace-format
 msgid "{entry} loaded"
@@ -2442,6 +2483,9 @@ msgstr "Filtrar por idioma"
 msgid "Show all languages"
 msgstr "Mostrar todos los idiomas"
 
+#. Strong's as its own toggle chip — a useful refinement was
+#. buried as a checkbox at the popover's foot; as a chip it is
+#. discoverable and speaks the same capsule grammar.
 #: module_manager.py:385 module_manager.py:1071
 msgid "Strong's"
 msgstr "Strong"
@@ -2571,6 +2615,7 @@ msgstr ""
 msgid "Included"
 msgstr "Incluido"
 
+#. ancient Hebrew folds into Hebrew
 #: module_manager.py:692 module_manager.py:761 module_picker.py:224
 msgid "All languages"
 msgstr "Todos los idiomas"
@@ -2657,6 +2702,8 @@ msgstr "Bloqueado"
 msgid "Remove module"
 msgstr "Quitar el módulo"
 
+#. Same verb as the CrossWire rows — the user is installing a
+#. module either way; which wire it arrives over is plumbing.
 #: module_manager.py:1092 module_manager.py:1144 module_manager.py:1346
 #: module_manager.py:1635 module_manager.py:1667 module_manager.py:1747
 msgid "Install"
@@ -2764,6 +2811,7 @@ msgstr "Guardando…"
 msgid "{name} updated"
 msgstr "{name} actualizada"
 
+#. The same call serves both buttons; only the word differs.
 #: module_manager.py:1572
 msgid "Updating…"
 msgstr "Actualizando…"
@@ -2792,6 +2840,7 @@ msgstr "Leyendo el archivo del módulo…"
 msgid "Import Module"
 msgstr "Importar módulo"
 
+#. Can't compare meaningfully — treat as a plain reinstall.
 #: module_manager.py:1752 module_manager.py:1757
 msgid "Reinstall"
 msgstr "Reinstalar"
@@ -2947,6 +2996,10 @@ msgstr "Capítulo"
 msgid "Chapter {n} Verse"
 msgstr "Capítulo {n}, versículo"
 
+#. Not a coverage gap. Saying the module "follows a canon of
+#. 66 books" was worse than vague — it is false of Wycliffe,
+#. which carries nine of these books and simply lacks this
+#. one. Name the book, not the canon.
 #: navigation.py:469 pane.py:2421 present_mode.py:273
 #, python-format
 msgid "%s isn’t in this translation."
@@ -3030,6 +3083,10 @@ msgstr "Con el léxico activo, pase el puntero sobre una palabra"
 msgid "It underlines where the lexicon has an entry"
 msgstr "Se subraya allí donde el léxico tiene una entrada"
 
+#. Both halves of the same dwell: the underline says an entry exists,
+#. resting says what it is. Listed only because `hover_preview` ships
+#. ON — a row teaching a toggle the reader has not turned on teaches a
+#. no-op, so if that default ever goes back to off, this row goes too.
 #: onboarding.py:74
 msgid "Rest on that word a moment longer"
 msgstr "Deténgase un momento más sobre esa palabra"
@@ -3092,6 +3149,9 @@ msgstr "Mostrar consejos sobre la marcha"
 msgid "One-time hints for hidden gestures"
 msgstr "Avisos únicos sobre los gestos ocultos"
 
+#. Named as the other half of the pair, not as a related link: this
+#. list deliberately holds no keys, so a reader who came looking for
+#. one has to be told where they all are.
 #: onboarding.py:158
 msgid "Keyboard Shortcuts"
 msgstr "Atajos de teclado"
@@ -3202,6 +3262,10 @@ msgstr ""
 "El contenido de este módulo no se puede leer; puede que la clave de "
 "descifrado sea incorrecta."
 
+#. The module carries the book but prints nothing here.
+#. KJVA's Additions to Esther 1-9 are the case: single-verse
+#. '…' placeholders, because that material is set inside
+#. Esther itself.
 #: pane.py:2414
 #, python-brace-format
 msgid "{module} has no text under this chapter."
@@ -3263,6 +3327,29 @@ msgstr "Referencias cruzadas ({letter}) · versículo {v}"
 #, python-brace-format
 msgid "Footnote ({letter}) · verse {v}"
 msgstr "Nota al pie ({letter}) · versículo {v}"
+
+#: pane.py:5115
+#, python-format
+msgid "No entry for “%s”"
+msgstr "Sin entrada para «%s»"
+
+#: pane.py:5116
+msgid ""
+"Bible dictionaries index proper nouns and key terms — try a word like "
+"“covenant,” “Abraham,” or “atonement.”"
+msgstr ""
+"Los diccionarios bíblicos recogen nombres propios y términos clave: pruebe "
+"con una palabra como «pacto», «Abraham» o «expiación»."
+
+#: pane.py:5130
+msgid "No dictionaries installed"
+msgstr "No hay diccionarios instalados"
+
+#: pane.py:5131
+msgid "Add Easton’s or Smith’s Bible Dictionary from the Module Manager."
+msgstr ""
+"Añada el diccionario bíblico de Easton o el de Smith desde el Gestor de "
+"módulos."
 
 #: pane_search.py:101 pane_search.py:104 search_panel.py:439
 msgid "Search this module"
@@ -3489,6 +3576,8 @@ msgstr "Epístolas paulinas"
 msgid "General Epistles"
 msgstr "Epístolas generales"
 
+#. Heading, not an action: a noun in Spanish (Búsqueda), where the
+#. button that opens this panel is a verb (Buscar).
 #: search_panel.py:153
 msgctxt "panel heading"
 msgid "Search"
@@ -3508,6 +3597,9 @@ msgstr ""
 "Busque en un módulo, o en «Todas las Biblias» para hacerlo en todas las "
 "traducciones a la vez"
 
+#. SearchEntry gives the leading magnifier + a clear-✕ for free. Enter
+#. runs the search (we deliberately do NOT search-as-you-type — it
+#. indexes); clearing the field returns to the recent-searches view.
 #: search_panel.py:184
 msgid "Search…"
 msgstr "Buscar…"
@@ -3718,6 +3810,7 @@ msgstr "Resaltar"
 msgid "Clear highlight"
 msgstr "Quitar el resaltado"
 
+#. Tags
 #: study_journal.py:492
 msgid "Tags (comma-separated)"
 msgstr "Etiquetas (separadas por comas)"
@@ -3726,6 +3819,7 @@ msgstr "Etiquetas (separadas por comas)"
 msgid "e.g. prayer, faith, covenant"
 msgstr "p. ej. oración, fe, pacto"
 
+#. Note text
 #: study_journal.py:501 study_journal.py:806
 msgid "Note"
 msgstr "Nota"
@@ -3778,6 +3872,8 @@ msgstr "Eliminar la anotación"
 msgid "Saved"
 msgstr "Guardado"
 
+#. Deletion is otherwise irreversible — offer an undo while the
+#. toast lasts (default timeout, unlike _toast's quick 2s).
 #: study_journal.py:1018
 msgid "Note deleted"
 msgstr "Nota eliminada"
@@ -3971,6 +4067,11 @@ msgstr ""
 "Biblias en español, una lectura hablada y herramientas para el estudio de "
 "palabras."
 
+#. No audio claim: the spoken reading is bound to spabes, and neither
+#. opening pane shows it, so a newcomer would not meet the listening
+#. pill however long they read. The reading still installs and works
+#. the moment they switch a pane to it — the card just stops promising
+#. what the English bundles genuinely deliver on their first screen.
 #: welcome.py:133
 msgid "5 Bibles · notes · lexicon · cross-references"
 msgstr "5 Biblias · notas · léxico · referencias cruzadas"
@@ -4016,6 +4117,8 @@ msgstr "Volver a las opciones"
 msgid "Reading the module list…"
 msgstr "Leyendo la lista de módulos…"
 
+#. Not fatal: every module in the released repository still
+#. installs by zip without it.
 #: welcome.py:462
 msgid "module list"
 msgstr "lista de módulos"
@@ -4474,6 +4577,7 @@ msgstr "Elegir pasaje"
 msgid "Greek / Hebrew lexicon — click words for definitions"
 msgstr "Léxico griego/hebreo: pulse una palabra para ver su definición"
 
+#. The visible child is decorative glyphs (אΩ); give AT a real name.
 #: window.py:433 window.py:2658
 msgid "Greek / Hebrew lexicon"
 msgstr "Léxico griego/hebreo"
@@ -4492,6 +4596,8 @@ msgstr ""
 "Referencias cruzadas: los versículos relacionados aparecen al pulsar un "
 "versículo"
 
+#. Header — a quiet title so the popover rhymes with the Recent popover
+#. (title + flat list, no separator rule).
 #: window.py:484 window.py:485 window.py:1745 window.py:2688
 msgid "Bookmarks"
 msgstr "Marcadores"
@@ -4544,6 +4650,9 @@ msgstr "Ir a… (p. ej. Juan 3:16)"
 msgid "Exit reading mode"
 msgstr "Salir del modo lectura"
 
+#. No cached results at all — surface a hint so the user knows F3
+#. fired but had nothing to step through (also useful for debugging:
+#. if you see this toast, the key reached the handler).
 #: window.py:1234
 msgid "No active search — Ctrl+F to search"
 msgstr "No hay ninguna búsqueda activa; pulse Ctrl+F para buscar"
@@ -4618,6 +4727,8 @@ msgstr "Quitar el marcador"
 msgid "Bookmarked {ref}"
 msgstr "Se añadió {ref} a los marcadores"
 
+#. Default (longer) timeout, not _toast's 2s — the user needs time
+#. to reach the Undo button.
 #: window.py:1824
 msgid "Bookmark removed"
 msgstr "Marcador quitado"
@@ -4953,10 +5064,16 @@ msgstr "Atajos de teclado"
 msgid "Install StrongsGreek or StrongsHebrew from the Module Manager."
 msgstr "Instale StrongsGreek o StrongsHebrew desde el gestor de módulos."
 
+#. ── Appearance: a section header + its own row whose chevron rotates
+#. (▸→▾) to expand the inline appearance card just below — a real expander
+#. affordance, not a → arrow that falsely implies push-navigation. ──────
 #: window.py:3224 window.py:3415
 msgid "Appearance"
 msgstr "Apariencia"
 
+#. ── Study data: one-file backup / restore of everything the reader
+#. accumulates by hand (annotations, bookmarks, plan progress) — the
+#. data is otherwise trapped inside the Flatpak datadir. ──────────────
 #: window.py:3233
 msgid "Study Data"
 msgstr "Datos de estudio"
@@ -4973,14 +5090,25 @@ msgstr "Cerrar el menú"
 msgid "Modules"
 msgstr "Módulos"
 
+#. Open-to-Today switch (label is a draft — Andres's taxonomy). Off
+#. restores direct-to-reading at launch; the change applies from the
+#. next launch (the current session's page, if any, is already up).
 #: window.py:3288 window.py:3293
 msgid "Open to Today"
 msgstr "Abrir en Hoy"
 
+#. Church calendar for the Today page's church-year line. Default
+#. None — the ecumenical silence; each option is a tradition's
+#. historic calendar (labels are drafts — Andres's taxonomy).
 #: window.py:3303 window.py:3328
 msgid "Church calendar"
 msgstr "Calendario litúrgico"
 
+#. Two labels per tradition. The pill carries the bare name, because it
+#. sits on the row's own line and grows with whatever it says —
+#. "Orthodox (New Calendar)" pushed the row's title onto two lines. The
+#. popover has the width to name the edition, which is where the
+#. distinction is actually being made.
 #: window.py:3312 window.py:3313
 msgid "None"
 msgstr "Ninguno"
@@ -5022,6 +5150,11 @@ msgstr "Scriptura estará en {language} la próxima vez que se abra"
 msgid "Reopen now"
 msgstr "Abrir de nuevo"
 
+#. Font family — all installed system fonts, with OpenDyslexic promoted.
+#. It is bundled precisely so a reader who wants it does not have to go
+#. and find one, and leaving it in the alphabetical run of every
+#. installed face would waste that: nobody scrolls three hundred names
+#. hoping. Filtered out of the run below so it appears exactly once.
 #: window.py:3452
 msgid "Font"
 msgstr "Tipografía"
@@ -5051,6 +5184,7 @@ msgstr ""
 "la velocidad de lectura. Aun así, a quien le resulta más cómodo, le resulta "
 "más cómodo."
 
+#. Font size
 #: window.py:3513
 msgid "Size"
 msgstr "Tamaño"
@@ -5059,6 +5193,7 @@ msgstr "Tamaño"
 msgid "Font size"
 msgstr "Tamaño de la letra"
 
+#. Line spacing
 #: window.py:3530
 msgid "Spacing"
 msgstr "Espaciado"
@@ -5067,6 +5202,7 @@ msgstr "Espaciado"
 msgid "Line spacing"
 msgstr "Interlineado"
 
+#. Reading column width — wider monitors benefit from a wider column.
 #: window.py:3546
 msgid "Width"
 msgstr "Anchura"
@@ -5079,6 +5215,11 @@ msgstr "Anchura de la columna de lectura"
 msgid "Colour"
 msgstr "Color"
 
+#. ── Advanced reading toggles ──────────────────────────────────────
+#. Five ship on: section headings, small caps, the coloured drop cap,
+#. hover preview, spoken readings. Every other toggle ships off. New
+#. toggles slot in as rows without a redesign, and ship off unless
+#. they earn a place in that five.
 #: window.py:3587
 msgid "Advanced"
 msgstr "Avanzado"
@@ -5091,6 +5232,10 @@ msgstr "Espaciado entre letras"
 msgid "Section headings"
 msgstr "Títulos de sección"
 
+#. Both read the sense-units a module marks with section headings.
+#. Plenty of translations mark none (KJV, ASV, the Russian Synodal),
+#. and on those the switches are honestly unavailable rather than
+#. silently inert — see _refresh_section_rows.
 #: window.py:3658
 msgid "This translation marks no sections"
 msgstr "Esta traducción no marca ninguna sección"
@@ -5119,6 +5264,8 @@ msgstr "Alinear las sangrías de la poesía"
 msgid "Coloured drop cap"
 msgstr "Capitular en color"
 
+#. Behavior, not typography: dwell on a Strong's word peeks its
+#. gloss without a click.
 #: window.py:3694
 msgid "Preview words on hover"
 msgstr "Vista previa de las palabras al pasar el puntero"
@@ -5227,3 +5374,63 @@ msgstr "Día {n}"
 #, fuzzy
 #~ msgid "Not in this translation"
 #~ msgstr "%s no está en esta traducción."
+
+#: welcome.py
+msgid "A few translations, and the tools for looking closely at a word."
+msgstr "Varias traducciones y las herramientas para mirar de cerca una palabra."
+
+#: welcome.py
+msgid "Everything this language has, from the start."
+msgstr "Todo lo que hay en este idioma, desde el principio."
+
+#: welcome.py
+msgid "{n} Bible"
+msgid_plural "{n} Bibles"
+msgstr[0] "{n} Biblia"
+msgstr[1] "{n} Biblias"
+
+#: welcome.py
+msgid "{n} commentary"
+msgid_plural "{n} commentaries"
+msgstr[0] "{n} comentario"
+msgstr[1] "{n} comentarios"
+
+#: welcome.py
+msgid "commentary"
+msgstr "comentario"
+
+#: welcome.py
+msgid "notes"
+msgstr "notas"
+
+#: welcome.py
+msgid "dictionary"
+msgstr "diccionario"
+
+#: welcome.py
+msgid "lexicon"
+msgstr "léxico"
+
+#: welcome.py
+msgid "cross-references"
+msgstr "referencias cruzadas"
+
+#: welcome.py
+msgid "Back to language"
+msgstr "Volver al idioma"
+
+#: welcome.py
+msgid ""
+"Choose your language. It sets the interface, and the Bibles offered on the "
+"next screen."
+msgstr ""
+"Elige tu idioma. Define la interfaz y las Biblias que se ofrecen en la "
+"pantalla siguiente."
+
+#: welcome.py
+msgid ""
+"You can change this later, and add texts in any language from the Module "
+"Manager."
+msgstr ""
+"Puedes cambiarlo más adelante y añadir textos en cualquier idioma desde el "
+"Gestor de módulos."

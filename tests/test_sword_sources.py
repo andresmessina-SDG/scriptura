@@ -289,6 +289,7 @@ def test_a_corrupt_second_catalogue_does_not_lose_the_first(tmp_path,
             return good
         return b'not a gzip archive at all'
     monkeypatch.setattr(sword_bridge, '_fetch_crosswire', _fetch)
+    monkeypatch.setattr(sword_bridge, '_fetch_scriptura', _no_network)
 
     sword_bridge.refresh_source()          # must not raise
 
@@ -308,3 +309,92 @@ def test_an_unreachable_crosswire_explains_itself(monkeypatch):
     monkeypatch.setattr('urllib.request.urlopen', _boom)
     with pytest.raises(RuntimeError, match='no backup mirror'):
         sword_bridge._list_remote_dir('lockmanraw/x')
+
+
+# ── Scriptura's own repository ───────────────────────────────────────────────
+#
+# The Spanish dictionary is built by tools/build_spanish_dict.py and exists
+# nowhere else, so it is served from Scriptura's own release rather than from
+# CrossWire or from the mirror. What matters is the same thing the two
+# CrossWire repositories are tested for: that a module is fetched from the
+# repository it was listed from.
+
+
+def _no_network(*_a, **_k):
+    raise AssertionError('a test reached the network')
+
+
+def test_our_catalogue_is_recorded_against_our_source(tmp_path, monkeypatch):
+    home = tmp_path / 'home'
+    (home / '.sword' / 'InstallMgr').mkdir(parents=True)
+    monkeypatch.setattr(os.path, 'expanduser',
+                        lambda p: p.replace('~', str(home)))
+    monkeypatch.setattr(
+        sword_bridge, '_fetch_crosswire',
+        lambda path, _t: _catalogue({'sparv.conf': _conf('SpaRV')}))
+    monkeypatch.setattr(
+        sword_bridge, '_fetch_scriptura',
+        lambda name, _t: _catalogue({'wikcionario.conf': _conf('Wikcionario')}))
+
+    sword_bridge.refresh_source()
+
+    shadow = next((home / '.sword' / 'InstallMgr').iterdir())
+    sources = json.loads((shadow / sword_bridge._SOURCES_FILE).read_text())
+    assert sources == {'Wikcionario': sword_bridge._SCRIPTURA_SOURCE}
+    assert (shadow / 'mods.d' / 'wikcionario.conf').exists()
+    assert (shadow / 'mods.d' / 'sparv.conf').exists()
+
+
+def test_our_repository_being_unreachable_does_not_lose_the_refresh(
+        tmp_path, monkeypatch):
+    """A reader whose network reached CrossWire but not GitHub keeps the four
+    hundred modules they just catalogued."""
+    home = tmp_path / 'home'
+    (home / '.sword' / 'InstallMgr').mkdir(parents=True)
+    monkeypatch.setattr(os.path, 'expanduser',
+                        lambda p: p.replace('~', str(home)))
+    monkeypatch.setattr(
+        sword_bridge, '_fetch_crosswire',
+        lambda path, _t: _catalogue({'sparv.conf': _conf('SpaRV')}))
+
+    def _down(_name, _t):
+        raise OSError('github unreachable')
+    monkeypatch.setattr(sword_bridge, '_fetch_scriptura', _down)
+
+    sword_bridge.refresh_source()          # must not raise
+
+    shadow = next((home / '.sword' / 'InstallMgr').iterdir())
+    assert (shadow / 'mods.d' / 'sparv.conf').exists()
+    assert json.loads((shadow / sword_bridge._SOURCES_FILE).read_text()) == {}
+
+
+def test_install_fetches_our_module_from_our_release(shadow, monkeypatch):
+    calls = []
+    monkeypatch.setattr(sword_bridge, '_module_source',
+                        lambda _n: sword_bridge._SCRIPTURA_SOURCE)
+    monkeypatch.setattr(sword_bridge, '_fetch_crosswire', _no_network)
+    monkeypatch.setattr(sword_bridge, '_fetch_scriptura',
+                        lambda name, _t: calls.append(name) or _stub_zip())
+    monkeypatch.setattr(sword_bridge, '_reset', lambda: None)
+    monkeypatch.setattr(sword_bridge, '_safe_extract', lambda *a: None)
+    monkeypatch.setattr(sword_bridge, '_zip_conf_members', lambda _i: [])
+
+    sword_bridge.install_module('Wikcionario')
+
+    assert calls == ['Wikcionario.zip']
+
+
+def test_our_module_never_takes_the_file_by_file_path(shadow, monkeypatch):
+    """`_install_raw_module` is for a repository that publishes no zips.
+    Ours publishes one per module, and sending it down that path would walk
+    a directory listing that does not exist."""
+    monkeypatch.setattr(sword_bridge, '_module_source',
+                        lambda _n: sword_bridge._SCRIPTURA_SOURCE)
+    monkeypatch.setattr(sword_bridge, '_install_raw_module', _no_network)
+    monkeypatch.setattr(sword_bridge, '_fetch_scriptura',
+                        lambda _n, _t: _stub_zip())
+    monkeypatch.setattr(sword_bridge, '_reset', lambda: None)
+    monkeypatch.setattr(sword_bridge, '_safe_extract', lambda *a: None)
+    monkeypatch.setattr(sword_bridge, '_zip_conf_members', lambda _i: [])
+
+    sword_bridge.install_module('Wikcionario')      # must not raise

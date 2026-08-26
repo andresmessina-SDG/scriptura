@@ -274,12 +274,17 @@ _DICT_SHORT_NAMES = {
     'Naves':        "Nave's",
     'Torreys':      "Torrey's",
     'WebstersDict': "Webster's 1913",
+    'Wikcionario':  'Wikcionario',
 }
 
 _DICT_FLUFF_WORDS = {
     'dictionary', 'encyclopedia', 'revised', 'unabridged',
     'concise', 'of', 'the', 'english', 'language', 'bible',
     'topical', 'textbook', 'a', 'an',
+    # Spanish — the app ships a Spanish interface and now a Spanish
+    # dictionary, whose Description is generic in exactly the same way.
+    'diccionario', 'enciclopedia', 'general', 'español', 'española',
+    'lengua',
 }
 
 
@@ -301,6 +306,11 @@ def _short_dict_title(mod_name, mod_desc):
         if re.fullmatch(r'\d{4}', clean):
             year = clean
             continue
+        # A dash or bullet separating the name from its blurb is not a word:
+        # counting it as one spent half the two-word budget and left the
+        # label trailing a dangling em dash ("Wikcionario —").
+        if not re.search(r'\w', clean):
+            continue
         if clean.lower() in _DICT_FLUFF_WORDS:
             break
         words.append(clean)
@@ -308,6 +318,22 @@ def _short_dict_title(mod_name, mod_desc):
             break
     short = ' '.join(words) if words else mod_name
     return f'{short} {year}' if year else short
+
+
+def _strip_leading_headword(html, word):
+    """Drop a leading headword that duplicates the peek's serif title (plus
+    any indent the SWORD HTML carries). Best-effort: if nothing matches, the
+    body is returned unchanged.
+    """
+    stripped = re.sub(
+        r'^\s*(?:<[^>]+>\s*)*' + re.escape(word)
+        # A middle dot means the word heads a compound label
+        # ("dios · Sustantivo masculino"), where dropping the word
+        # alone would strand the separator. Leave those whole.
+        + r'(?!\s*·)'
+        + r'(?:\s*</[^>]+>)*\s*(?:<br\s*/?>|[—:.\-,])?\s*',
+        '', html, count=1, flags=re.IGNORECASE)
+    return re.sub(r'^(?:\s| |&nbsp;)+', '', stripped)
 
 
 # Inline <title> kinds that are not section headings, mirroring the rule
@@ -5013,14 +5039,7 @@ class BiblePane(Gtk.Box):
             return lbl
 
         def _strip_headword(html):
-            # Drop a leading headword that duplicates the serif title (plus any
-            # indent the SWORD HTML carries). Best-effort: if nothing matches,
-            # the body is returned unchanged.
-            stripped = re.sub(
-                r'^\s*(?:<[^>]+>\s*)*' + re.escape(word)
-                + r'(?:\s*</[^>]+>)*\s*(?:<br\s*/?>|[—:.\-,])?\s*',
-                '', html, count=1, flags=re.IGNORECASE)
-            return re.sub(r'^(?:\s| |&nbsp;)+', '', stripped)
+            return _strip_leading_headword(html, word)
 
         def _add_text(html, box=None, source=None):
             if box is None:
@@ -5093,7 +5112,9 @@ class BiblePane(Gtk.Box):
                     if k != mn and b.get_active():
                         b.set_active(False)
 
-            ordered = sorted(results, key=lambda r: r[1].lower())
+            # Already ranked by `fetch` — re-sorting here by description
+            # is what put Webster's 1913 in front of Wikcionario.
+            ordered = results
             for mn, md, html in ordered:
                 page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
                 _add_text(html, page)
@@ -5111,10 +5132,11 @@ class BiblePane(Gtk.Box):
         def populate(results):
             _clear()
             if not results:
-                _status('scriptura-system-search-symbolic', f'No entry for “{word}”',
-                        'Bible dictionaries index proper nouns and key terms '
-                        '— try a word like “covenant,” “Abraham,” or '
-                        '“atonement.”')
+                _status('scriptura-system-search-symbolic',
+                        _('No entry for “%s”') % word,
+                        _('Bible dictionaries index proper nouns and key '
+                          'terms — try a word like “covenant,” “Abraham,” '
+                          'or “atonement.”'))
             else:
                 content.append(_headword_title(word))
                 if len(results) == 1:
@@ -5125,20 +5147,38 @@ class BiblePane(Gtk.Box):
 
         def show_no_dicts():
             _clear()
-            _status('scriptura-dialog-information-symbolic', 'No dictionaries installed',
-                    'Add Easton’s or Smith’s Bible Dictionary from the '
-                    'Module Manager.')
+            _status('scriptura-dialog-information-symbolic',
+                    _('No dictionaries installed'),
+                    _('Add Easton’s or Smith’s Bible Dictionary from the '
+                      'Module Manager.'))
 
         def fetch(_task):
             dicts = sword_bridge.installed_dict_modules()
             if not dicts:
                 return None
+            # Which tab opens matters more than which tabs exist. Two things
+            # decide it, in this order:
+            #
+            #   * an exact hit beats a de-inflected one. The de-inflection is
+            #     English, so it strips the `s` from Spanish `pues` and finds
+            #     Webster's `Pue` — "to make a low whistling sound; to chirp,
+            #     as birds" — a confident answer to a question nobody asked.
+            #   * then the reading module's own language. A reader in a
+            #     Spanish Bible should not have to click past French to
+            #     reach Spanish.
+            #
+            # Everything still gets a tab; this only chooses which one is
+            # already open.
+            lang = sword_bridge.module_language(self._module)
             results = []
             for mod_name, mod_desc in dicts:
-                html = sword_bridge.lookup_dict_word(mod_name, word)
+                html, exact = sword_bridge.lookup_dict_entry(mod_name, word)
                 if html:
-                    results.append((mod_name, mod_desc, html))
-            return results
+                    same = bool(lang) and \
+                        sword_bridge.module_language(mod_name) == lang
+                    results.append((mod_name, mod_desc, html, exact, same))
+            results.sort(key=lambda r: (not r[3], not r[4], r[1].lower()))
+            return [(mn, md, html) for mn, md, html, _e, _s in results]
 
         # Latest-wins on the shared peek key: a newer lookup, footnote, or
         # anchored peek supersedes this fetch, so a late return can't
