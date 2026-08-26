@@ -6,6 +6,43 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+### Added
+
+- **A Spanish dictionary, where there was none.** Every one of the 168
+  dictionaries the SWORD repositories distribute is English, French,
+  Russian or Portuguese, so for a reader of the Spanish Bibles the
+  double-click this app teaches on first run did nothing. Scriptura now
+  builds one and serves it from its own release: a million keys from the
+  Spanish Wiktionary, with the 2,691 entries of W. W. Rand's
+  *Diccionario de la Santa Biblia* of 1890 laid over them, so *Moisés*
+  opens on the prophet rather than on a wicker carrycot and
+  *circuncisión* on the covenant rather than the surgery. Looking a word
+  up follows Spanish too: the accents the 1909 spellings do not carry
+  are ignored, and *alegróse* reaches *alegrar*.
+- **First run asks which language you read in, and the answer leads.**
+  Spanish used to be a fourth card beside three English ones, which made
+  a language a kind of collection rather than the question above them: a
+  Spanish reader met four choices of which three were the wrong
+  language, with the interface in whatever the desktop had decided. The
+  first screen now asks the language and sets both the interface and the
+  library offered on the second, where the same three collections are
+  filled from what that language actually has — and each card counts its
+  own contents, so it can no longer promise a commentary the language
+  has none of.
+
+### Fixed
+
+- **A first-run download that failed for a module that exists.** The
+  list of available modules is cached and nothing aged it out, so a
+  profile that had read the list before a module was published had no
+  row for it; the install fell back to a repository that module had
+  never been in, and the download 404'd. Every profile that had ever
+  opened the Module Manager was in that state when the Spanish
+  dictionary shipped — the collection installed, reported a warning, and
+  opened a reading window with nothing behind the double-click the same
+  screen had just taught. The list is refetched now whenever it has no
+  row for something the collection asks for.
+
 ### Internal
 
 - Flatpak packaging: the catalogues ship with the app rather than in a
