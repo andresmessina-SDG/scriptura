@@ -39,6 +39,7 @@ from pane_search import PaneSearch
 from verse_cursor import VerseCursor
 import a11y
 from a11y import set_accessible_label
+from i18n import _, book_label
 
 
 def is_dark_paper(paper_hex):
@@ -4398,6 +4399,16 @@ class BiblePane(Gtk.Box):
         cap.add_css_class('dim-label')
         body = Gtk.Label(label=text, xalign=0, wrap=True)
         body.set_max_width_chars(44)
+        # A CAP is not a FLOOR. With only the cap set, a wrapping label's
+        # minimum width is its longest word, so anchored near a window edge
+        # the card collapsed to a column two words wide — "Christos {khris-
+        # tos} from 5548;" down the screen. The dictionary peek has always
+        # asked for a width; this asks for the same one, capped the same way
+        # so a narrow window still fits it.
+        _root = self.get_root()
+        _win_w = _root.get_width() if _root is not None else 0
+        box.set_size_request(
+            320 if _win_w <= 0 else max(240, min(320, _win_w - 24)), -1)
         box.append(cap)
         box.append(body)
         for m in ('top', 'bottom', 'start', 'end'):
