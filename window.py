@@ -717,6 +717,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_edit_cipher=self._show_edit_cipher_key,
                                on_modules_changed=self._on_modules_changed,
                                on_open_artifact=self._on_open_artifact,
+                               on_open_lineage=self._on_open_lineage,
                                on_module_switched=self._on_pane_module_switched,
                                on_hint=self._hints.maybe_fire,
                                on_open_verse=self._open_verse_in_pane2,
@@ -732,6 +733,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_edit_cipher=self._show_edit_cipher_key,
                                on_modules_changed=self._on_modules_changed,
                                on_open_artifact=self._on_open_artifact,
+                               on_open_lineage=self._on_open_lineage,
                                on_module_switched=self._on_pane_module_switched,
                                on_hint=self._hints.maybe_fire,
                                on_open_verse=self._open_verse_in_pane2,
@@ -3115,6 +3117,36 @@ class BibleWindow(Adw.ApplicationWindow):
         gallery = self._ensure_artifacts_visible(source_pane)
         if gallery is not None:
             gallery._archaeology.scroll_to_verse(book, chapter, verse)
+
+    def _on_open_lineage(self, source_pane, book, chapter, verse):
+        """A lineage marker beside a Bible verse was clicked: show The Book of
+        Generations in the other pane, opened at the chart that draws the
+        people this verse names."""
+        import genealogy_bridge
+        reader = self._ensure_lineage_visible(source_pane)
+        if reader is None:
+            return
+        people = genealogy_bridge.people_in_verse(book, chapter, verse)
+        for pid in people:
+            cid = genealogy_bridge.chart_containing(pid, book)
+            if cid:
+                reader._genealogy.scroll_to(cid)
+                return
+
+    def _ensure_lineage_visible(self, source_pane):
+        """A pane showing The Book of Generations, loading it opposite the
+        Bible we clicked from if it isn't open. Mirrors
+        _ensure_artifacts_visible."""
+        import genealogy_bridge
+        for p in (self.pane1, self.pane2):
+            if p.get_visible() and p._is_genealogy:
+                return p
+        other = self.pane2 if source_pane is self.pane1 else self.pane1
+        if not other.get_visible():
+            self._btn_split.set_active(True)
+        if not other._is_genealogy:
+            other._apply_module_change(genealogy_bridge.MODULE_KEY)
+        return other
 
     def _ensure_artifacts_visible(self, source_pane):
         """Return a pane showing Scripture in Stone, loading it into the pane

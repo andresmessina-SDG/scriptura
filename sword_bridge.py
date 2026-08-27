@@ -1007,6 +1007,9 @@ def display_name(name):
     import interlinear_data
     if interlinear_data.is_interlinear_module(name):
         return interlinear_data.display_name(name)
+    import genealogy_bridge
+    if genealogy_bridge.is_genealogy_module(name):
+        return genealogy_bridge.display_name(name)
     return native_name(name) or DISPLAY_NAMES.get(name, name)
 
 

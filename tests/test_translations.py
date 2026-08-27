@@ -205,6 +205,8 @@ def test_a_context_actually_buys_a_different_translation(catalogue):
     with the same string the context earned nothing, and the most likely
     cause is a merge that quietly copied one onto the other.
     """
+    import window
+
     lang, path = catalogue
     plain, with_ctx = {}, {}
     for msgid, ctx, strs in _parse_po_contexts(path):
@@ -212,8 +214,17 @@ def test_a_context_actually_buys_a_different_translation(catalogue):
             continue
         (with_ctx if ctx else plain).setdefault(msgid, []).append(strs[0])
 
+    # Six books are named after the person the genealogy charts also draw, so
+    # `Ruth` is a book msgid and a `person` one and both are "Rut". That is the
+    # structure of the canon, not a merge that copied one entry onto another:
+    # the context still earns its keep in a language that declines a title
+    # differently from a name, and dropping it would make the person name
+    # collide with the navigation key. Every other context must still differ.
+    named_for_a_person = set(window.BOOKS) | set(window.DEUTEROCANON)
+
     collapsed = [msgid for msgid, vals in with_ctx.items()
-                 if msgid in plain and any(v in plain[msgid] for v in vals)]
+                 if msgid in plain and any(v in plain[msgid] for v in vals)
+                 and msgid not in named_for_a_person]
     assert not collapsed, (
         f'{lang}: {collapsed} is translated the same with and without its '
         f'context, so the context distinguishes nothing')

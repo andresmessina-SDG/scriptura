@@ -1902,3 +1902,104 @@ button.audio-rate-choice {
 button.audio-pill-close {
     -gtk-icon-size: 18px;
 }
+
+/* ── The Book of Generations (genealogy module) ───────────────────────────
+   Same document grammar as Scripture in Stone — sans for every structural
+   voice, serif for anything read continuously — but its own class block, so
+   the two can be tuned apart. The charts themselves are painted by
+   genealogy_reader from genealogy_svg.PALETTE and take no colour from here:
+   a chart is a drawing, not a styled widget, and one palette is enough.
+
+   The band colours a chart uses are the highlighter palette above. Those are
+   CONTENT colours, the same standing a highlight has, so a mother band or a
+   tradition marker adds no third chrome accent under the two-accent law. */
+.gen-page {
+    padding: 8px 20px 48px;
+}
+.gen-front {
+    margin: 12px 0 8px;
+}
+.gen-hero {
+    font-family: "Adwaita Sans", "Inter", sans-serif;
+    font-size: 1.5em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 2px;
+}
+.gen-deck {
+    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-size: 1.05em;
+    opacity: 0.6;
+    line-height: 1.6;
+}
+.gen-intro {
+    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    line-height: 1.6;
+    opacity: 0.85;
+}
+/* The passage kicker over a chart — the one place a genealogy section says
+   which text it is drawing, so it carries the accent that means "Bible". */
+.gen-kicker {
+    font-size: 0.8em;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: @accent_color;
+    margin-bottom: 4px;
+}
+.gen-title {
+    font-family: "Adwaita Sans", "Inter", sans-serif;
+    font-size: 1.25em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+.gen-subhead {
+    font-family: "Adwaita Sans", "Inter", sans-serif;
+    font-size: 1.02em;
+    font-weight: 700;
+    letter-spacing: -0.005em;
+    margin-bottom: 2px;
+}
+.gen-section {
+    margin-bottom: 12px;
+}
+/* A classical reading of a disagreement the app does not resolve. Indented
+   behind a quiet rule so it reads as commentary ON the chart rather than as
+   more of the chart — and so three of them in a row stay distinguishable. */
+.gen-reading {
+    border-left: 2px solid alpha(@borders, 0.5);
+    padding-left: 14px;
+}
+.gen-attribution {
+    font-size: 0.85em;
+    opacity: 0.6;
+}
+/* Clay, not accent: a caveat points away from the answer it qualifies. */
+.gen-caveat {
+    font-size: 0.85em;
+    color: #a9744f;
+    opacity: 0.9;
+}
+
+/* The lineage fragment inside the double-click peek. Deliberately plain —
+   it shares a 260-360px popover with a dictionary entry, and anything that
+   grows the popover's natural height can bring back the arrow-flip that
+   _dict_max_body exists to prevent. */
+.peek-lineage {
+    margin-bottom: 4px;
+}
+.peek-lineage-row {
+    font-size: 0.92em;
+}
+.peek-lineage-note {
+    font-size: 0.85em;
+    opacity: 0.6;
+}
+button.peek-lineage-link {
+    min-height: 0;
+    padding: 2px 8px;
+    margin-top: 2px;
+    font-size: 0.88em;
+    color: @accent_color;
+}

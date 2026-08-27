@@ -46,7 +46,8 @@ def test_type_key_matches_the_owning_descriptor():
 
 def test_registry_covers_every_type_once():
     keys = [ct.key for ct in content._TYPES]
-    assert keys == ['catena', 'imagery', 'archaeology', 'interlinear',
+    assert keys == ['catena', 'imagery', 'archaeology', 'genealogy',
+                    'interlinear',
                     'ebible', 'sword']
     assert keys[-1] == 'sword', 'the catch-all must stay last'
 

@@ -40,6 +40,10 @@ install_data('collects.toml', install_dir: pkgdatadir / 'data')
 # Bundled "Scripture in Stone" archaeology document + its images.
 install_subdir('archaeology', install_dir: pkgdatadir / 'data')
 
+# Bundled "Book of Generations" genealogy table. One TOML: the charts are
+# computed from it at draw time, so there are no plate files to ship.
+install_subdir('genealogy', install_dir: pkgdatadir / 'data')
+
 # Bundled reading fonts (all OFL) so typography is identical on every machine
 # instead of falling back to whatever serif the host happens to have. The
 # Flatpak runtime's fontconfig scans /app/share/fonts. Newsreader is the

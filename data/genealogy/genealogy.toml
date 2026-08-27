@@ -1,0 +1,1672 @@
+# genealogy.toml — the curated table behind the genealogy charts.
+#
+# EVERY edge carries the verse it comes from. Nothing here is parsed out
+# of prose at run time and nothing is supplied from memory: the citations
+# were read off the KJV on disk, and the identities were checked by hand.
+# A drafting regex offered "David the king begat Solomon" as an edge from
+# a person named "king"; that is why this file is curated and not derived.
+#
+# Strings marked translatable: person `name`, `meaning`, `note`, edge
+# `note`, and everything under [meta] and [[chart]]. tools/
+# gen_genealogy_strings.py mirrors them into genealogy_strings.py so
+# xgettext can see them; tests/test_genealogy.py fails when the two
+# drift apart.
+
+[meta]
+title = "The Book of Generations"
+subtitle = "The lines the Bible keeps, drawn so they can be held"
+body = """
+Scripture keeps lists of names, and readers skip them. They are not
+filler: they are the spine the rest of the book hangs on, and the
+writers put them where they did on purpose.
+
+Every line below is drawn from the text and cites it. Where a
+genealogy leaves generations out, the gap is drawn as a gap. Where two
+writers disagree, both are shown and neither is quietly corrected.
+"""
+
+[[person]]
+id = "adam"
+name = "Adam"
+meaning = "man; earth"
+note = "The first man, and the head Luke traces the line back to."
+
+[[person]]
+id = "seth"
+name = "Seth"
+meaning = "appointed"
+note = "Given in place of Abel; the line of promise runs through him."
+
+[[person]]
+id = "enosh"
+name = "Enos"
+meaning = "mortal man"
+note = "In his days men began to call on the name of the LORD."
+
+[[person]]
+id = "kenan"
+name = "Cainan"
+also = ["Kenan"]
+meaning = "meaning uncertain"
+note = "Not the 'gotten' of Cain: the two names are different words."
+
+[[person]]
+id = "mahalalel"
+name = "Mahalaleel"
+also = ["Maleleel"]
+meaning = "praise of God"
+
+[[person]]
+id = "jared"
+name = "Jared"
+meaning = "descent"
+
+[[person]]
+id = "enoch"
+name = "Enoch"
+meaning = "dedicated"
+note = "He walked with God, and did not die."
+
+[[person]]
+id = "methuselah"
+name = "Methuselah"
+also = ["Mathusala"]
+meaning = "man of the dart"
+note = "The longest life recorded; it ends the year of the flood."
+
+[[person]]
+id = "lamech"
+name = "Lamech"
+meaning = "meaning uncertain"
+note = "His own name is uncertain; the one he gave his son is not. He named Noah for the comfort he hoped for."
+
+[[person]]
+id = "noah"
+name = "Noah"
+also = ["Noe"]
+meaning = "rest; comfort"
+note = "The flood divides the chapter, and the ages, at him."
+
+[[person]]
+id = "shem"
+name = "Shem"
+also = ["Sem"]
+meaning = "name; renown"
+note = "The line of promise continues through him."
+
+[[person]]
+id = "ham"
+name = "Ham"
+
+[[person]]
+id = "japheth"
+name = "Japheth"
+
+[[person]]
+id = "arphaxad"
+name = "Arphaxad"
+
+[[person]]
+id = "shelah"
+name = "Salah"
+also = ["Sala"]
+
+[[person]]
+id = "eber"
+name = "Eber"
+also = ["Heber"]
+meaning = "the region beyond"
+note = "The name behind \"Hebrew\"."
+
+[[person]]
+id = "peleg"
+name = "Peleg"
+also = ["Phalec"]
+meaning = "division"
+note = "In his days the earth was divided."
+
+[[person]]
+id = "reu"
+name = "Reu"
+also = ["Ragau"]
+
+[[person]]
+id = "serug"
+name = "Serug"
+also = ["Saruch"]
+
+[[person]]
+id = "nahor"
+name = "Nahor"
+also = ["Nachor"]
+
+[[person]]
+id = "terah"
+name = "Terah"
+also = ["Thara"]
+note = "Left Ur for Canaan and stopped at Haran."
+
+[[person]]
+id = "abraham"
+name = "Abraham"
+meaning = "father of a multitude"
+note = "The promise begins here; Matthew opens with him."
+also = ["Abram"]
+
+[[person]]
+id = "isaac"
+name = "Isaac"
+meaning = "laughter"
+note = "The son of the promise."
+
+[[person]]
+id = "jacob"
+name = "Jacob"
+meaning = "supplanter"
+note = "Renamed Israel; his twelve sons are the tribes."
+also = ["Israel"]
+
+[[person]]
+id = "leah"
+name = "Leah"
+note = "Six of the twelve are hers."
+
+[[person]]
+id = "rachel"
+name = "Rachel"
+note = "Joseph and Benjamin."
+
+[[person]]
+id = "bilhah"
+name = "Bilhah"
+note = "Rachel's handmaid."
+
+[[person]]
+id = "zilpah"
+name = "Zilpah"
+note = "Leah's handmaid."
+
+[[person]]
+id = "reuben"
+name = "Reuben"
+
+[[person]]
+id = "simeon"
+name = "Simeon"
+
+[[person]]
+id = "levi"
+name = "Levi"
+
+[[person]]
+id = "issachar"
+name = "Issachar"
+
+[[person]]
+id = "zebulun"
+name = "Zebulun"
+
+[[person]]
+id = "joseph"
+name = "Joseph"
+
+[[person]]
+id = "benjamin"
+name = "Benjamin"
+
+[[person]]
+id = "dan"
+name = "Dan"
+
+[[person]]
+id = "naphtali"
+name = "Naphtali"
+
+[[person]]
+id = "gad"
+name = "Gad"
+
+[[person]]
+id = "asher"
+name = "Asher"
+
+[[person]]
+id = "judah"
+name = "Judah"
+also = ["Juda", "Judas"]
+meaning = "praise"
+note = "The royal line runs through him, not through the firstborn."
+
+[[person]]
+id = "perez"
+name = "Phares"
+meaning = "a breach"
+note = "Born of Tamar; his twin's hand came out first, and he was born first anyway."
+also = ["Pharez", "Perez"]
+
+[[person]]
+id = "hezron"
+name = "Esrom"
+also = ["Hezron"]
+
+[[person]]
+id = "ram"
+name = "Aram"
+also = ["Ram"]
+
+[[person]]
+id = "amminadab"
+name = "Aminadab"
+also = ["Amminadab"]
+
+[[person]]
+id = "nahshon"
+name = "Naasson"
+also = ["Nahshon"]
+
+[[person]]
+id = "salmon"
+name = "Salmon"
+
+[[person]]
+id = "boaz"
+name = "Booz"
+note = "Redeemed Ruth, and so stands in the line."
+also = ["Boaz"]
+
+[[person]]
+id = "obed"
+name = "Obed"
+
+[[person]]
+id = "jesse"
+name = "Jesse"
+
+[[person]]
+id = "david"
+name = "David"
+note = "Both genealogies run through him, and part immediately after."
+
+[[person]]
+id = "tamar"
+name = "Thamar"
+note = "Matthew names her first of the four women."
+also = ["Tamar"]
+
+[[person]]
+id = "rahab"
+name = "Rachab"
+note = "Taken since the early church for Rahab of Jericho, though Matthew does not say so; he puts her in the line of the Messiah."
+also = ["Rahab"]
+
+[[person]]
+id = "ruth"
+name = "Ruth"
+note = "A Moabitess; her book exists to end on this genealogy."
+
+[[person]]
+id = "bathsheba"
+name = "the wife of Uriah"
+also = ["Bathsheba", "Bath-sheba", "the wife of Urias"]
+note = "Matthew will not give her name here — he names the wrong that was done to her."
+
+[[person]]
+id = "mary"
+name = "Mary"
+note = "The line breaks its own grammar at her: Jesus is born of her, not begotten."
+
+[[person]]
+id = "solomon"
+name = "Solomon"
+
+[[person]]
+id = "rehoboam"
+name = "Roboam"
+
+[[person]]
+id = "abijah"
+name = "Abia"
+
+[[person]]
+id = "asa"
+name = "Asa"
+
+[[person]]
+id = "jehoshaphat"
+name = "Josaphat"
+
+[[person]]
+id = "joram"
+name = "Joram"
+note = "Matthew jumps three generations after him."
+
+[[person]]
+id = "uzziah"
+name = "Ozias"
+also = ["Uzziah", "Azariah"]
+note = "Called Azariah in 1 Chr 3:12 — one man, two names."
+
+[[person]]
+id = "jotham"
+name = "Joatham"
+
+[[person]]
+id = "ahaz"
+name = "Achaz"
+
+[[person]]
+id = "hezekiah"
+name = "Ezekias"
+
+[[person]]
+id = "manasseh"
+name = "Manasses"
+
+[[person]]
+id = "amon"
+name = "Amon"
+
+[[person]]
+id = "josiah"
+name = "Josias"
+also = ["Josiah"]
+note = "Matthew skips his son Jehoiakim."
+
+[[person]]
+id = "jeconiah"
+name = "Jechonias"
+also = ["Jeconiah", "Jehoiachin", "Coniah"]
+note = "The exile falls in his lifetime."
+
+[[person]]
+id = "shealtiel"
+name = "Salathiel"
+note = "Matthew and Luke give him different fathers."
+
+[[person]]
+id = "zerubbabel"
+name = "Zorobabel"
+note = "The last name the two lists share before Joseph."
+
+[[person]]
+id = "abiud"
+name = "Abiud"
+
+[[person]]
+id = "eliakim_m"
+name = "Eliakim"
+
+[[person]]
+id = "azor"
+name = "Azor"
+
+[[person]]
+id = "zadok"
+name = "Sadoc"
+
+[[person]]
+id = "achim"
+name = "Achim"
+
+[[person]]
+id = "eliud"
+name = "Eliud"
+
+[[person]]
+id = "eleazar"
+name = "Eleazar"
+
+[[person]]
+id = "matthan"
+name = "Matthan"
+
+[[person]]
+id = "ahaziah"
+name = "Ahaziah"
+note = "Named by 1 Chr 3, passed over by Matthew."
+
+[[person]]
+id = "joash"
+name = "Joash"
+note = "Named by 1 Chr 3, passed over by Matthew."
+
+[[person]]
+id = "amaziah"
+name = "Amaziah"
+note = "Named by 1 Chr 3, passed over by Matthew."
+
+[[person]]
+id = "jehoiakim"
+name = "Jehoiakim"
+note = "Named by 1 Chr 3, passed over by Matthew."
+
+[[person]]
+id = "jacob_f"
+name = "Jacob"
+note = "Matthew's name for Joseph's father."
+
+[[person]]
+id = "joseph_h"
+name = "Joseph"
+note = "Matthew traces the line to him; Luke names a different father."
+
+[[person]]
+id = "jesus"
+name = "Jesus"
+
+[[person]]
+id = "heli"
+name = "Heli"
+note = "Luke's name for Joseph's father."
+
+[[person]]
+id = "nathan"
+name = "Nathan"
+note = "Luke leaves the throne line here and follows him."
+
+[[person]]
+id = "lk_joseph_0"
+name = "Joseph"
+
+[[person]]
+id = "lk_matthat_2"
+name = "Matthat"
+
+[[person]]
+id = "lk_levi_3"
+name = "Levi"
+
+[[person]]
+id = "lk_melchi_4"
+name = "Melchi"
+
+[[person]]
+id = "lk_janna_5"
+name = "Janna"
+
+[[person]]
+id = "lk_joseph_6"
+name = "Joseph"
+
+[[person]]
+id = "lk_mattathias_7"
+name = "Mattathias"
+
+[[person]]
+id = "lk_amos_8"
+name = "Amos"
+
+[[person]]
+id = "lk_naum_9"
+name = "Naum"
+
+[[person]]
+id = "lk_esli_10"
+name = "Esli"
+
+[[person]]
+id = "lk_nagge_11"
+name = "Nagge"
+
+[[person]]
+id = "lk_maath_12"
+name = "Maath"
+
+[[person]]
+id = "lk_mattathias_13"
+name = "Mattathias"
+
+[[person]]
+id = "lk_semei_14"
+name = "Semei"
+
+[[person]]
+id = "lk_joseph_15"
+name = "Joseph"
+
+[[person]]
+id = "lk_juda_16"
+name = "Juda"
+
+[[person]]
+id = "lk_joanna_17"
+name = "Joanna"
+
+[[person]]
+id = "lk_rhesa_18"
+name = "Rhesa"
+
+[[person]]
+id = "lk_neri_21"
+name = "Neri"
+
+[[person]]
+id = "lk_melchi_22"
+name = "Melchi"
+
+[[person]]
+id = "lk_addi_23"
+name = "Addi"
+
+[[person]]
+id = "lk_cosam_24"
+name = "Cosam"
+
+[[person]]
+id = "lk_elmodam_25"
+name = "Elmodam"
+
+[[person]]
+id = "lk_er_26"
+name = "Er"
+
+[[person]]
+id = "lk_jose_27"
+name = "Jose"
+
+[[person]]
+id = "lk_eliezer_28"
+name = "Eliezer"
+
+[[person]]
+id = "lk_jorim_29"
+name = "Jorim"
+
+[[person]]
+id = "lk_matthat_30"
+name = "Matthat"
+
+[[person]]
+id = "lk_levi_31"
+name = "Levi"
+
+[[person]]
+id = "lk_simeon_32"
+name = "Simeon"
+
+[[person]]
+id = "lk_juda_33"
+name = "Juda"
+
+[[person]]
+id = "lk_joseph_34"
+name = "Joseph"
+
+[[person]]
+id = "lk_jonan_35"
+name = "Jonan"
+
+[[person]]
+id = "lk_eliakim_36"
+name = "Eliakim"
+
+[[person]]
+id = "lk_melea_37"
+name = "Melea"
+
+[[person]]
+id = "lk_menan_38"
+name = "Menan"
+
+[[person]]
+id = "lk_mattatha_39"
+name = "Mattatha"
+
+[[person]]
+id = "cainan_lk"
+name = "Cainan"
+note = "Luke names a Cainan the Hebrew of Genesis 11 does not; the Septuagint does."
+
+[[person]]
+id = "god"
+name = "God"
+
+[[edge]]
+parent = "adam"
+child = "seth"
+ref = "Genesis 5:3"
+
+[[edge]]
+parent = "seth"
+child = "enosh"
+ref = "Genesis 5:6"
+
+[[edge]]
+parent = "enosh"
+child = "kenan"
+ref = "Genesis 5:9"
+
+[[edge]]
+parent = "kenan"
+child = "mahalalel"
+ref = "Genesis 5:12"
+
+[[edge]]
+parent = "mahalalel"
+child = "jared"
+ref = "Genesis 5:15"
+
+[[edge]]
+parent = "jared"
+child = "enoch"
+ref = "Genesis 5:18"
+
+[[edge]]
+parent = "enoch"
+child = "methuselah"
+ref = "Genesis 5:21"
+
+[[edge]]
+parent = "methuselah"
+child = "lamech"
+ref = "Genesis 5:25"
+
+[[edge]]
+parent = "lamech"
+child = "noah"
+ref = "Genesis 5:29"
+
+[[edge]]
+parent = "noah"
+child = "shem"
+ref = "Genesis 5:32"
+
+[[edge]]
+parent = "noah"
+child = "ham"
+ref = "Genesis 5:32"
+
+[[edge]]
+parent = "noah"
+child = "japheth"
+ref = "Genesis 5:32"
+
+[[edge]]
+parent = "shem"
+child = "arphaxad"
+ref = "Genesis 11:10"
+
+[[edge]]
+parent = "arphaxad"
+child = "shelah"
+ref = "Genesis 11:12"
+
+[[edge]]
+parent = "shelah"
+child = "eber"
+ref = "Genesis 11:14"
+
+[[edge]]
+parent = "eber"
+child = "peleg"
+ref = "Genesis 11:16"
+
+[[edge]]
+parent = "peleg"
+child = "reu"
+ref = "Genesis 11:18"
+
+[[edge]]
+parent = "reu"
+child = "serug"
+ref = "Genesis 11:20"
+
+[[edge]]
+parent = "serug"
+child = "nahor"
+ref = "Genesis 11:22"
+
+[[edge]]
+parent = "nahor"
+child = "terah"
+ref = "Genesis 11:24"
+
+[[edge]]
+parent = "terah"
+child = "abraham"
+ref = "Genesis 11:26"
+
+[[edge]]
+parent = "jacob"
+child = "reuben"
+ref = "Genesis 35:23"
+mother = "leah"
+
+[[edge]]
+parent = "jacob"
+child = "simeon"
+ref = "Genesis 35:23"
+mother = "leah"
+
+[[edge]]
+parent = "jacob"
+child = "levi"
+ref = "Genesis 35:23"
+mother = "leah"
+
+[[edge]]
+parent = "jacob"
+child = "judah"
+ref = "Genesis 35:23"
+mother = "leah"
+
+[[edge]]
+parent = "jacob"
+child = "issachar"
+ref = "Genesis 35:23"
+mother = "leah"
+
+[[edge]]
+parent = "jacob"
+child = "zebulun"
+ref = "Genesis 35:23"
+mother = "leah"
+
+[[edge]]
+parent = "jacob"
+child = "joseph"
+ref = "Genesis 35:24"
+mother = "rachel"
+
+[[edge]]
+parent = "jacob"
+child = "benjamin"
+ref = "Genesis 35:24"
+mother = "rachel"
+
+[[edge]]
+parent = "jacob"
+child = "dan"
+ref = "Genesis 35:25"
+mother = "bilhah"
+
+[[edge]]
+parent = "jacob"
+child = "naphtali"
+ref = "Genesis 35:25"
+mother = "bilhah"
+
+[[edge]]
+parent = "jacob"
+child = "gad"
+ref = "Genesis 35:26"
+mother = "zilpah"
+
+[[edge]]
+parent = "jacob"
+child = "asher"
+ref = "Genesis 35:26"
+mother = "zilpah"
+
+[[edge]]
+parent = "abraham"
+child = "isaac"
+ref = "Genesis 21:3"
+
+[[edge]]
+parent = "abraham"
+child = "isaac"
+ref = "Matthew 1:2"
+
+[[edge]]
+parent = "isaac"
+child = "jacob"
+ref = "Matthew 1:2"
+
+[[edge]]
+parent = "jacob"
+child = "judah"
+ref = "Matthew 1:2"
+
+[[edge]]
+parent = "judah"
+child = "perez"
+ref = "Matthew 1:3"
+mother = "tamar"
+
+[[edge]]
+parent = "perez"
+child = "hezron"
+ref = "Matthew 1:3"
+
+[[edge]]
+parent = "hezron"
+child = "ram"
+ref = "Matthew 1:3"
+
+[[edge]]
+parent = "ram"
+child = "amminadab"
+ref = "Matthew 1:4"
+
+[[edge]]
+parent = "amminadab"
+child = "nahshon"
+ref = "Matthew 1:4"
+
+[[edge]]
+parent = "nahshon"
+child = "salmon"
+ref = "Matthew 1:4"
+
+[[edge]]
+parent = "salmon"
+child = "boaz"
+ref = "Matthew 1:5"
+mother = "rahab"
+
+[[edge]]
+parent = "boaz"
+child = "obed"
+ref = "Matthew 1:5"
+mother = "ruth"
+
+[[edge]]
+parent = "obed"
+child = "jesse"
+ref = "Matthew 1:5"
+
+[[edge]]
+parent = "jesse"
+child = "david"
+ref = "Matthew 1:6"
+
+[[edge]]
+parent = "david"
+child = "solomon"
+ref = "Matthew 1:6"
+mother = "bathsheba"
+
+[[edge]]
+parent = "solomon"
+child = "rehoboam"
+ref = "Matthew 1:7"
+
+[[edge]]
+parent = "rehoboam"
+child = "abijah"
+ref = "Matthew 1:7"
+
+[[edge]]
+parent = "abijah"
+child = "asa"
+ref = "Matthew 1:7"
+
+[[edge]]
+parent = "asa"
+child = "jehoshaphat"
+ref = "Matthew 1:8"
+
+[[edge]]
+parent = "jehoshaphat"
+child = "joram"
+ref = "Matthew 1:8"
+
+[[edge]]
+parent = "joram"
+child = "uzziah"
+ref = "Matthew 1:8"
+kind = "descends"
+omits = 3
+cross = "1 Chronicles 3:11-12"
+note = "Ahaziah, Joash and Amaziah stand between them in Chronicles."
+
+[[edge]]
+parent = "uzziah"
+child = "jotham"
+ref = "Matthew 1:9"
+
+[[edge]]
+parent = "jotham"
+child = "ahaz"
+ref = "Matthew 1:9"
+
+[[edge]]
+parent = "ahaz"
+child = "hezekiah"
+ref = "Matthew 1:9"
+
+[[edge]]
+parent = "hezekiah"
+child = "manasseh"
+ref = "Matthew 1:10"
+
+[[edge]]
+parent = "manasseh"
+child = "amon"
+ref = "Matthew 1:10"
+
+[[edge]]
+parent = "amon"
+child = "josiah"
+ref = "Matthew 1:10"
+
+[[edge]]
+parent = "josiah"
+child = "jeconiah"
+ref = "Matthew 1:11"
+kind = "descends"
+omits = 1
+cross = "1 Chronicles 3:15-16"
+note = "Chronicles puts Jehoiakim between them."
+
+[[edge]]
+parent = "jeconiah"
+child = "shealtiel"
+ref = "Matthew 1:12"
+
+[[edge]]
+parent = "shealtiel"
+child = "zerubbabel"
+ref = "Matthew 1:12"
+
+[[edge]]
+parent = "zerubbabel"
+child = "abiud"
+ref = "Matthew 1:13"
+
+[[edge]]
+parent = "abiud"
+child = "eliakim_m"
+ref = "Matthew 1:13"
+
+[[edge]]
+parent = "eliakim_m"
+child = "azor"
+ref = "Matthew 1:13"
+
+[[edge]]
+parent = "azor"
+child = "zadok"
+ref = "Matthew 1:14"
+
+[[edge]]
+parent = "zadok"
+child = "achim"
+ref = "Matthew 1:14"
+
+[[edge]]
+parent = "achim"
+child = "eliud"
+ref = "Matthew 1:14"
+
+[[edge]]
+parent = "eliud"
+child = "eleazar"
+ref = "Matthew 1:15"
+
+[[edge]]
+parent = "eleazar"
+child = "matthan"
+ref = "Matthew 1:15"
+
+[[edge]]
+parent = "matthan"
+child = "jacob_f"
+ref = "Matthew 1:15"
+
+[[edge]]
+parent = "jacob_f"
+child = "joseph_h"
+ref = "Matthew 1:16"
+
+[[edge]]
+parent = "mary"
+child = "jesus"
+ref = "Matthew 1:16"
+kind = "born_of"
+note = "Matthew stops saying \"begat\": Jesus is born of Mary, not begotten of Joseph."
+
+[[edge]]
+parent = "joseph_h"
+child = "mary"
+ref = "Matthew 1:16"
+kind = "husband"
+
+[[edge]]
+parent = "joram"
+child = "ahaziah"
+ref = "1 Chronicles 3:11"
+
+[[edge]]
+parent = "ahaziah"
+child = "joash"
+ref = "1 Chronicles 3:11"
+
+[[edge]]
+parent = "joash"
+child = "amaziah"
+ref = "1 Chronicles 3:12"
+
+[[edge]]
+parent = "amaziah"
+child = "uzziah"
+ref = "1 Chronicles 3:12"
+
+[[edge]]
+parent = "josiah"
+child = "jehoiakim"
+ref = "1 Chronicles 3:15"
+
+[[edge]]
+parent = "jehoiakim"
+child = "jeconiah"
+ref = "1 Chronicles 3:16"
+
+[[edge]]
+parent = "lk_joseph_0"
+child = "jesus"
+ref = "Luke 3:23"
+kind = "supposed"
+note = "Luke writes \"as was supposed\", and the chart keeps the qualifier."
+
+[[edge]]
+parent = "heli"
+child = "lk_joseph_0"
+ref = "Luke 3:23"
+
+[[edge]]
+parent = "lk_matthat_2"
+child = "heli"
+ref = "Luke 3:24"
+
+[[edge]]
+parent = "lk_levi_3"
+child = "lk_matthat_2"
+ref = "Luke 3:24"
+
+[[edge]]
+parent = "lk_melchi_4"
+child = "lk_levi_3"
+ref = "Luke 3:24"
+
+[[edge]]
+parent = "lk_janna_5"
+child = "lk_melchi_4"
+ref = "Luke 3:24"
+
+[[edge]]
+parent = "lk_joseph_6"
+child = "lk_janna_5"
+ref = "Luke 3:24"
+
+[[edge]]
+parent = "lk_mattathias_7"
+child = "lk_joseph_6"
+ref = "Luke 3:25"
+
+[[edge]]
+parent = "lk_amos_8"
+child = "lk_mattathias_7"
+ref = "Luke 3:25"
+
+[[edge]]
+parent = "lk_naum_9"
+child = "lk_amos_8"
+ref = "Luke 3:25"
+
+[[edge]]
+parent = "lk_esli_10"
+child = "lk_naum_9"
+ref = "Luke 3:25"
+
+[[edge]]
+parent = "lk_nagge_11"
+child = "lk_esli_10"
+ref = "Luke 3:25"
+
+[[edge]]
+parent = "lk_maath_12"
+child = "lk_nagge_11"
+ref = "Luke 3:26"
+
+[[edge]]
+parent = "lk_mattathias_13"
+child = "lk_maath_12"
+ref = "Luke 3:26"
+
+[[edge]]
+parent = "lk_semei_14"
+child = "lk_mattathias_13"
+ref = "Luke 3:26"
+
+[[edge]]
+parent = "lk_joseph_15"
+child = "lk_semei_14"
+ref = "Luke 3:26"
+
+[[edge]]
+parent = "lk_juda_16"
+child = "lk_joseph_15"
+ref = "Luke 3:26"
+
+[[edge]]
+parent = "lk_joanna_17"
+child = "lk_juda_16"
+ref = "Luke 3:27"
+
+[[edge]]
+parent = "lk_rhesa_18"
+child = "lk_joanna_17"
+ref = "Luke 3:27"
+
+[[edge]]
+parent = "zerubbabel"
+child = "lk_rhesa_18"
+ref = "Luke 3:27"
+
+[[edge]]
+parent = "shealtiel"
+child = "zerubbabel"
+ref = "Luke 3:27"
+
+[[edge]]
+parent = "lk_neri_21"
+child = "shealtiel"
+ref = "Luke 3:27"
+
+[[edge]]
+parent = "lk_melchi_22"
+child = "lk_neri_21"
+ref = "Luke 3:28"
+
+[[edge]]
+parent = "lk_addi_23"
+child = "lk_melchi_22"
+ref = "Luke 3:28"
+
+[[edge]]
+parent = "lk_cosam_24"
+child = "lk_addi_23"
+ref = "Luke 3:28"
+
+[[edge]]
+parent = "lk_elmodam_25"
+child = "lk_cosam_24"
+ref = "Luke 3:28"
+
+[[edge]]
+parent = "lk_er_26"
+child = "lk_elmodam_25"
+ref = "Luke 3:28"
+
+[[edge]]
+parent = "lk_jose_27"
+child = "lk_er_26"
+ref = "Luke 3:29"
+
+[[edge]]
+parent = "lk_eliezer_28"
+child = "lk_jose_27"
+ref = "Luke 3:29"
+
+[[edge]]
+parent = "lk_jorim_29"
+child = "lk_eliezer_28"
+ref = "Luke 3:29"
+
+[[edge]]
+parent = "lk_matthat_30"
+child = "lk_jorim_29"
+ref = "Luke 3:29"
+
+[[edge]]
+parent = "lk_levi_31"
+child = "lk_matthat_30"
+ref = "Luke 3:29"
+
+[[edge]]
+parent = "lk_simeon_32"
+child = "lk_levi_31"
+ref = "Luke 3:30"
+
+[[edge]]
+parent = "lk_juda_33"
+child = "lk_simeon_32"
+ref = "Luke 3:30"
+
+[[edge]]
+parent = "lk_joseph_34"
+child = "lk_juda_33"
+ref = "Luke 3:30"
+
+[[edge]]
+parent = "lk_jonan_35"
+child = "lk_joseph_34"
+ref = "Luke 3:30"
+
+[[edge]]
+parent = "lk_eliakim_36"
+child = "lk_jonan_35"
+ref = "Luke 3:30"
+
+[[edge]]
+parent = "lk_melea_37"
+child = "lk_eliakim_36"
+ref = "Luke 3:31"
+
+[[edge]]
+parent = "lk_menan_38"
+child = "lk_melea_37"
+ref = "Luke 3:31"
+
+[[edge]]
+parent = "lk_mattatha_39"
+child = "lk_menan_38"
+ref = "Luke 3:31"
+
+[[edge]]
+parent = "nathan"
+child = "lk_mattatha_39"
+ref = "Luke 3:31"
+
+[[edge]]
+parent = "david"
+child = "nathan"
+ref = "Luke 3:31"
+
+[[edge]]
+parent = "jesse"
+child = "david"
+ref = "Luke 3:32"
+
+[[edge]]
+parent = "obed"
+child = "jesse"
+ref = "Luke 3:32"
+
+[[edge]]
+parent = "boaz"
+child = "obed"
+ref = "Luke 3:32"
+
+[[edge]]
+parent = "salmon"
+child = "boaz"
+ref = "Luke 3:32"
+
+[[edge]]
+parent = "nahshon"
+child = "salmon"
+ref = "Luke 3:32"
+
+[[edge]]
+parent = "amminadab"
+child = "nahshon"
+ref = "Luke 3:33"
+
+[[edge]]
+parent = "ram"
+child = "amminadab"
+ref = "Luke 3:33"
+
+[[edge]]
+parent = "hezron"
+child = "ram"
+ref = "Luke 3:33"
+
+[[edge]]
+parent = "perez"
+child = "hezron"
+ref = "Luke 3:33"
+
+[[edge]]
+parent = "judah"
+child = "perez"
+ref = "Luke 3:33"
+
+[[edge]]
+parent = "jacob"
+child = "judah"
+ref = "Luke 3:34"
+
+[[edge]]
+parent = "isaac"
+child = "jacob"
+ref = "Luke 3:34"
+
+[[edge]]
+parent = "abraham"
+child = "isaac"
+ref = "Luke 3:34"
+
+[[edge]]
+parent = "terah"
+child = "abraham"
+ref = "Luke 3:34"
+
+[[edge]]
+parent = "nahor"
+child = "terah"
+ref = "Luke 3:34"
+
+[[edge]]
+parent = "serug"
+child = "nahor"
+ref = "Luke 3:35"
+
+[[edge]]
+parent = "reu"
+child = "serug"
+ref = "Luke 3:35"
+
+[[edge]]
+parent = "peleg"
+child = "reu"
+ref = "Luke 3:35"
+
+[[edge]]
+parent = "eber"
+child = "peleg"
+ref = "Luke 3:35"
+
+[[edge]]
+parent = "shelah"
+child = "eber"
+ref = "Luke 3:35"
+
+[[edge]]
+parent = "cainan_lk"
+child = "shelah"
+ref = "Luke 3:36"
+
+[[edge]]
+parent = "arphaxad"
+child = "cainan_lk"
+ref = "Luke 3:36"
+
+[[edge]]
+parent = "shem"
+child = "arphaxad"
+ref = "Luke 3:36"
+
+[[edge]]
+parent = "noah"
+child = "shem"
+ref = "Luke 3:36"
+
+[[edge]]
+parent = "lamech"
+child = "noah"
+ref = "Luke 3:36"
+
+[[edge]]
+parent = "methuselah"
+child = "lamech"
+ref = "Luke 3:37"
+
+[[edge]]
+parent = "enoch"
+child = "methuselah"
+ref = "Luke 3:37"
+
+[[edge]]
+parent = "jared"
+child = "enoch"
+ref = "Luke 3:37"
+
+[[edge]]
+parent = "mahalalel"
+child = "jared"
+ref = "Luke 3:37"
+
+[[edge]]
+parent = "kenan"
+child = "mahalalel"
+ref = "Luke 3:37"
+
+[[edge]]
+parent = "enosh"
+child = "kenan"
+ref = "Luke 3:38"
+
+[[edge]]
+parent = "seth"
+child = "enosh"
+ref = "Luke 3:38"
+
+[[edge]]
+parent = "adam"
+child = "seth"
+ref = "Luke 3:38"
+
+[[edge]]
+parent = "god"
+child = "adam"
+ref = "Luke 3:38"
+kind = "of_god"
+note = "Luke ends not at a patriarch but at God; it is a claim, not a link."
+
+[[edge]]
+parent = "perez"
+child = "hezron"
+ref = "Ruth 4:18"
+
+[[edge]]
+parent = "hezron"
+child = "ram"
+ref = "Ruth 4:19"
+
+[[edge]]
+parent = "ram"
+child = "amminadab"
+ref = "Ruth 4:19"
+
+[[edge]]
+parent = "amminadab"
+child = "nahshon"
+ref = "Ruth 4:20"
+
+[[edge]]
+parent = "nahshon"
+child = "salmon"
+ref = "Ruth 4:20"
+
+[[edge]]
+parent = "salmon"
+child = "boaz"
+ref = "Ruth 4:21"
+
+[[edge]]
+parent = "boaz"
+child = "obed"
+ref = "Ruth 4:21"
+
+[[edge]]
+parent = "obed"
+child = "jesse"
+ref = "Ruth 4:22"
+
+[[edge]]
+parent = "jesse"
+child = "david"
+ref = "Ruth 4:22"
+
+[[lifespan]]
+person = "adam"
+tradition = "mt"
+begat = 130
+total = 930
+ref = "Genesis 5:3"
+death_ref = "Genesis 5:5"
+
+[[lifespan]]
+person = "seth"
+tradition = "mt"
+begat = 105
+total = 912
+ref = "Genesis 5:6"
+death_ref = "Genesis 5:8"
+
+[[lifespan]]
+person = "enosh"
+tradition = "mt"
+begat = 90
+total = 905
+ref = "Genesis 5:9"
+death_ref = "Genesis 5:11"
+
+[[lifespan]]
+person = "kenan"
+tradition = "mt"
+begat = 70
+total = 910
+ref = "Genesis 5:12"
+death_ref = "Genesis 5:14"
+
+[[lifespan]]
+person = "mahalalel"
+tradition = "mt"
+begat = 65
+total = 895
+ref = "Genesis 5:15"
+death_ref = "Genesis 5:17"
+
+[[lifespan]]
+person = "jared"
+tradition = "mt"
+begat = 162
+total = 962
+ref = "Genesis 5:18"
+death_ref = "Genesis 5:20"
+
+[[lifespan]]
+person = "enoch"
+tradition = "mt"
+begat = 65
+total = 365
+ref = "Genesis 5:21"
+death_ref = "Genesis 5:23"
+
+[[lifespan]]
+person = "methuselah"
+tradition = "mt"
+begat = 187
+total = 969
+ref = "Genesis 5:25"
+death_ref = "Genesis 5:27"
+
+[[lifespan]]
+person = "lamech"
+tradition = "mt"
+begat = 182
+total = 777
+ref = "Genesis 5:28"
+death_ref = "Genesis 5:31"
+
+[[lifespan]]
+person = "noah"
+tradition = "mt"
+begat = 500
+total = 950
+ref = "Genesis 5:32"
+death_ref = "Genesis 9:29"
+
+# ── charts ──────────────────────────────────────────────────────────────
+# `structure` picks the drawing: spine · household · lifespan · witnesses.
+# `register` adds the banded-generation overlay (only Matthew counts himself).
+
+[[chart]]
+id = "gen5"
+structure = "spine"
+title = "From Adam to Noah"
+subtitle = "The ten before the flood"
+passage = "Genesis 5"
+root = "adam"
+leaf = "noah"
+intro = "One name a generation for ten generations, each with a number attached. Read as a list it is inert; read as a field of overlapping lives it is astonishing."
+companion = "gen5_lives"
+
+[[chart]]
+id = "gen5_lives"
+structure = "lifespan"
+title = "Ten lives, laid on one axis"
+subtitle = "Genesis 5, reckoned in years from Adam"
+passage = "Genesis 5"
+tradition = "mt"
+intro = "Every figure here is arithmetic on Genesis 5:3–32, and the arithmetic assumes what the text does not state: that the ten follow one another with no gap. Read that way, two things fall out that no list can show — these ten lives overlap almost completely, and Methuselah's nine hundred and sixty-nine years run out in the year the flood comes. The years are a reckoning, not a date the Bible gives."
+
+[[chart]]
+id = "gen11"
+structure = "spine"
+title = "From Shem to Abraham"
+subtitle = "The ten after the flood"
+passage = "Genesis 11:10–26"
+root = "shem"
+leaf = "abraham"
+intro = "The same shape as Genesis 5, and the lifespans fall away as it runs — from Shem's six hundred years to Terah's two hundred and five."
+
+[[chart]]
+id = "house_jacob"
+structure = "household"
+title = "The house of Jacob"
+subtitle = "Four mothers, twelve sons"
+passage = "Genesis 35:23–26"
+root = "jacob"
+intro = "Drawn father-only, this is a list of twelve names. Drawn with the mothers, it is the reason the tribes are grouped the way they are for the rest of the Bible."
+
+[[chart]]
+id = "ruth"
+structure = "spine"
+title = "The line Ruth ends on"
+subtitle = "Ten names, from Perez to David"
+passage = "Ruth 4:18–22"
+root = "perez"
+leaf = "david"
+intro = "The book of Ruth exists to arrive here. The same ten men appear in Matthew 1 under their Greek names — Perez is Phares, Hezron is Esrom, Boaz is Booz."
+
+[[chart]]
+id = "matthew"
+structure = "spine"
+title = "Matthew's genealogy"
+subtitle = "Abraham to the Christ, in three sets of fourteen"
+passage = "Matthew 1:1–17"
+root = "abraham"
+leaf = "jesus"
+register = true
+intro = "Matthew counts his own list out loud in 1:17, and his list also passes over four kings Chronicles names. Both facts are drawn here — the bands are his count, the dashed edges are the omissions — and the chart does not say the one caused the other. Ancient genealogy omits generations as a matter of course, and \"begat\" can span them; the fourteens are also read as a mnemonic, and as the numerical value of David's name."
+
+[[chart]]
+id = "luke"
+structure = "spine"
+title = "Luke's genealogy"
+subtitle = "Jesus back to Adam, and past him"
+passage = "Luke 3:23–38"
+root = "god"
+leaf = "jesus"
+intro = "Luke runs the other way — from Jesus backwards — and does not stop at Abraham. He ends at Adam, and then at God, which is a claim rather than a link. Luke gives the older names in their Greek forms — Saruch for Serug, Ragau for Reu, Noe for Noah; one spelling is kept per man here so the two lists can be laid side by side, and either form finds him."
+
+[[chart]]
+id = "witnesses"
+structure = "witnesses"
+title = "Matthew and Luke, side by side"
+subtitle = "Where the two lists touch, and where they part"
+passage = "Matthew 1:1–17"
+passage_b = "Luke 3:23–38"
+left = "matthew"
+right = "luke"
+intro = "Both trace Jesus through David. They agree at David, at Shealtiel and Zerubbabel, and at Joseph — and nowhere in between. This chart states that and stops; the classical answers are set out below it, and none of them is chosen here."
+
+# ── the three classical readings of the Matthew/Luke difference ──────────
+# Attributed, not adjudicated. Same discipline as a contested site on a map.
+
+[[reading]]
+chart = "witnesses"
+title = "Luke gives Mary's line"
+body = "On this reading Matthew traces Joseph's descent and Luke traces Mary's, with Heli as her father and Joseph named as his son by marriage. It accounts for the two fathers of Joseph directly."
+attribution = "Annius of Viterbo (1490s); widely held since, and the common answer in modern evangelical commentary."
+caveat = "Luke's text names Joseph, not Mary, and the reading has to supply the step."
+
+[[reading]]
+chart = "witnesses"
+title = "Levirate marriage"
+body = "A man dying childless had his brother raise up offspring in his name (Deut 25:5–6), so one man can have a legal father and a biological one. Africanus has Heli and Jacob as half-brothers by one mother: Heli died childless, Jacob raised up seed to him, and Joseph is son of Jacob by nature and of Heli by law."
+attribution = "Julius Africanus, in a letter preserved by Eusebius, Church History I.7 (3rd century)."
+caveat = "It requires a levirate marriage the text nowhere records."
+
+[[reading]]
+chart = "witnesses"
+title = "Legal throne versus natural descent"
+body = "Matthew follows the royal succession — who held or had claim to the throne — while Luke follows physical descent. The two diverge after David because a throne passes by law and blood passes by birth."
+attribution = "Widely held among Protestant interpreters; set out at length by J. Gresham Machen, The Virgin Birth of Christ (1930)."
+caveat = "It explains the shape of the difference better than it explains the two named fathers."

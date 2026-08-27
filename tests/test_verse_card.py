@@ -189,7 +189,8 @@ def test_the_reading_serif_is_a_family_list_ending_in_a_generic():
     family, which on this machine is a SANS face — so a Russian verse card
     came out in the wrong voice entirely, and so did the printed handout."""
     import passage_print
-    for module in (verse_card, passage_print):
+    import genealogy_reader
+    for module in (verse_card, passage_print, genealogy_reader):
         chain = [f.strip() for f in module.SERIF.split(',')]
         assert chain[0] == 'Newsreader', module.__name__
         assert chain[-1] == 'serif', module.__name__
@@ -202,7 +203,8 @@ def test_cyrillic_falls_through_the_chain_to_a_serif():
     generic `serif` resolves to, since the Flatpak runtime ships none of
     Georgia, Charter or Source Serif 4."""
     import passage_print
-    for module in (verse_card, passage_print):
+    import genealogy_reader
+    for module in (verse_card, passage_print, genealogy_reader):
         named = {f.strip().strip("'\"") for f in module.SERIF.split(',')}
         family = _resolved_family(CYRILLIC, module.SERIF)
         assert family in named or 'serif' in family.lower(), (

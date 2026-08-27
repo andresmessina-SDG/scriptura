@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Descent glyph for "The Book of Generations" — three nodes on a vertical
+  spine with one branch, which is the shape of the feature's own lead chart
+  (genealogy_layout.spine) rather than a generic family-tree fan. Distinct
+  from the amphora (archaeology), the picture frame (imagery) and the book
+  glyphs. Bundled, fill-only (#222) so GTK4 recolors it to @accent_color
+  reliably, matching the symbolics alongside it.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g fill="#222">
+    <!-- the spine -->
+    <path d="M4.9 3.2 H6.1 V12.8 H4.9 Z"/>
+    <!-- the one branch, at the middle generation -->
+    <path d="M6.1 7.4 H10.6 V8.6 H6.1 Z"/>
+    <!-- three generations -->
+    <circle cx="5.5" cy="3.0" r="1.9"/>
+    <circle cx="5.5" cy="8.0" r="1.9"/>
+    <circle cx="5.5" cy="13.0" r="1.9"/>
+    <!-- the branch's own node, drawn smaller: a side line, not the line -->
+    <circle cx="11.7" cy="8.0" r="1.5"/>
+  </g>
+</svg>

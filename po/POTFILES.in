@@ -15,6 +15,10 @@ crossref_panel.py
 devotional.py
 export_dialog.py
 genbook_reader.py
+genealogy_bridge.py
+genealogy_layout.py
+genealogy_reader.py
+genealogy_strings.py
 imagery_bridge.py
 imagery_reader.py
 interlinear_data.py
