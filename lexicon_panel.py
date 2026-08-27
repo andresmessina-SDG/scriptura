@@ -462,12 +462,12 @@ class LexiconPanel(Gtk.Box):
         """
         w = self._h_paned.get_allocated_width()
         if w <= 100:
-            # Bounded, because an idle handler that returns CONTINUE runs on
-            # every idle iteration: a panel revealed and hidden again in the
-            # same frame would never be allocated, and this would spin for
-            # the life of the process. Two seconds of frames is far more than
-            # a first allocation takes, and `notify::max-position` catches
-            # anything slower.
+            # Retried on a timer, not on idle. An idle handler returning
+            # CONTINUE re-runs the moment the loop is idle, many times per
+            # frame — it would burn a core waiting for a layout it cannot
+            # hurry, and a bound counted in iterations could expire before
+            # the first allocation ever arrived. 120 × 16ms is two seconds
+            # of frames, and `notify::max-position` catches anything slower.
             self._position_tries += 1
             return (GLib.SOURCE_REMOVE if self._position_tries > 120
                     else GLib.SOURCE_CONTINUE)
@@ -607,7 +607,7 @@ class LexiconPanel(Gtk.Box):
             self._on_first_show()
         self.set_visible(True)
         self._position_tries = 0
-        GLib.idle_add(self.init_inner_position)
+        GLib.timeout_add(16, self.init_inner_position)
 
     def _tag_refs(self, heuristic=True):
         """Find and tag cross-reference numbers in the definition body so
