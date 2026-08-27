@@ -8,6 +8,22 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Added
 
+- **The Book of Generations.** Scripture keeps lists of names and readers
+  skip them, so Scriptura draws them: eight charts, from Adam to Noah through
+  to Matthew and Luke laid side by side, with the ten lifespans of Genesis 5
+  on one axis so you can see that Methuselah's years run out in the flood
+  year. They are live, not pictures — a folded run of ten generations opens
+  in place, a name opens the person, a chip opens the verse — and the same
+  geometry writes printable plates, so what prints and what is on screen
+  cannot disagree. Where a genealogy leaves generations out the gap is drawn
+  as a gap, says how many, and cites who does name them. Where Matthew and
+  Luke disagree both are shown as their writers give them, with the three
+  classical answers set out below and attributed, and none of them chosen.
+  Every one of the 165 lines carries the verse it comes from; the build reads
+  all 186 citations back against the text and fails if one of them does not
+  name the people it is drawn from. In English, Spanish and Russian, with the
+  names in each read off the Bibles themselves.
+
 - **Scriptura reads in Russian.** The whole interface — 1,134 strings,
   every one of them, with the three plural forms Russian needs — plus the
   Synodal book names it expects: 1 Kings is 3-я Царств. Names are said the
