@@ -900,6 +900,11 @@ DISPLAY_NAMES = {
     'ItaRive':       'Riveduta Bible (1927)',
     'SpaRV1909':     'Reina-Valera (1909)',
     'RusSynodal':    'Russian Synodal Bible',
+    # Named here or the pane header reads "RusOpenBible" — a module id, not
+    # a title. English, like every other entry in this table; NATIVE_NAMES
+    # below answers the reader who is running the app in Russian.
+    'RusOpenBible':  'Russian Open Bible',
+    'RussianBibleWords': 'Russian Bible Dictionary',
     # Commentaries
     'MHC':           'Matthew Henry (Complete)',
     'MHCC':          'Matthew Henry (Concise)',
@@ -951,6 +956,35 @@ DISPLAY_NAMES = {
 }
 
 
+#: What a module calls itself, for the reader running the app in that same
+#: language. DISPLAY_NAMES is an English table by convention — "Luther Bible
+#: (German)", "Reina-Valera (1909)" — which is right for an English reader
+#: meeting a foreign text and wrong for the reader it was translated for: a
+#: Russian split headed "Russian Open Bible | Russian Synodal Bible" names
+#: two Russian Bibles in the one language the reader did not choose.
+#:
+#: The language is declared here rather than read from the module's `Lang`,
+#: because `display_name` is called for every row of the module manager and
+#: every pane header, and a SWORD config read per call is not free.
+NATIVE_NAMES = {
+    'RusOpenBible':      ('ru', 'Русский открытый перевод'),
+    'RusSynodal':        ('ru', 'Синодальный перевод'),
+    'RusSynodalLIO':     ('ru', 'Синодальный перевод (Licht im Osten)'),
+    'RussianBibleWords': ('ru', 'Библейский словарь'),
+}
+
+
+def native_name(name):
+    """The module's own-language title, or '' when it has none for the
+    language in effect."""
+    entry = NATIVE_NAMES.get(name)
+    if not entry:
+        return ''
+    import i18n
+    lang, native = entry
+    return native if i18n.current_language() == lang else ''
+
+
 def display_name(name):
     """Return the human-friendly label for any module key. SWORD modules
     map through the curated name table; eBible keys (PREFIX + id) are
@@ -973,7 +1007,7 @@ def display_name(name):
     import interlinear_data
     if interlinear_data.is_interlinear_module(name):
         return interlinear_data.display_name(name)
-    return DISPLAY_NAMES.get(name, name)
+    return native_name(name) or DISPLAY_NAMES.get(name, name)
 
 
 # ── Generic Books ────────────────────────────────────────────────────────────

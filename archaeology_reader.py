@@ -997,9 +997,14 @@ class ArchaeologyReader:
 
     @staticmethod
     def _year_label(yv):
+        # Translated, because the axis of a chart is interface, not content:
+        # a Russian reader writes «1400 до н. э.», and the era goes AFTER the
+        # year in Russian and BEFORE it in English — which only a whole
+        # format string can express. catena_reader has always done this; this
+        # axis was the one place left writing the era in English by hand.
         if yv < 0:
-            return f'{-yv} BC'
-        return f'AD {yv}' if yv > 0 else 'AD 1'
+            return _('{year} BC').format(year=-yv)
+        return _('AD {year}').format(year=yv if yv > 0 else 1)
 
     def _draw_timeline(self, _area, cr, w, h, _data):
         items = self._tl_points

@@ -134,6 +134,17 @@ class CrossRefPanel(Gtk.Box):
                 '{n} cross-reference', '{n} cross-references',
                 len(refs)).format(n=len(refs)))
             for ref_book, ref_ch, ref_v, label in refs:
+                # The label arrives already written — "Genesis 12:3" from
+                # OpenBible, "Ge 1:2" from TSK — and both are English, because
+                # both are built in a data layer that has no business knowing
+                # the interface language. Under a Russian interface a chip
+                # read "Genesis 12:3" beside «Бытие 1» in the pane. Rebuilt
+                # here, at the point of display, and only when the catalogue
+                # actually translates the name — so an English run keeps TSK's
+                # compact abbreviations exactly as before.
+                shown = book_label(ref_book)
+                if shown != ref_book:
+                    label = f'{shown} {ref_ch}:{ref_v}'
                 btn = Gtk.Button(label=label)
                 btn.add_css_class('xref-chip')
                 btn.connect('clicked', self._make_handler(ref_book, ref_ch, ref_v))

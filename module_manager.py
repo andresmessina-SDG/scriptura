@@ -10,7 +10,6 @@ and a search query widens back to every language so the default can
 never dead-end a search.
 """
 import logging
-import os
 import threading
 from datetime import datetime
 import gi
@@ -28,6 +27,7 @@ import archaeology_bridge
 import interlinear_data
 import lexicon_data
 import content
+from i18n import _, ngettext
 
 _log = logging.getLogger('scriptura.modules')
 
@@ -91,13 +91,21 @@ def _eb_lang_display(lang_code, lang_name):
 
 
 def _ui_lang():
-    """The user's interface language code ('en', 'es', …) — the default
-    browse-list language filter."""
-    for var in ('LC_ALL', 'LC_MESSAGES', 'LANG'):
-        val = os.environ.get(var)
-        if val:
-            return val.split('.')[0].split('_')[0].lower() or 'en'
-    return 'en'
+    """The language the app is actually running in — the default browse-list
+    language filter, and the test for whether a module needs its language
+    said out loud.
+
+    Asked of gettext, not of the environment. This read `LC_ALL`/`LANG`, and
+    the in-app picker sets `LANGUAGE`: a reader who chose Русский on the
+    welcome screen of an English desktop got the whole interface in Russian
+    and a Module Manager filtered to «Английский (en)» — the catalogue of
+    the one language they had just said they did not want. `LANGUAGE` is
+    what gettext resolves the catalogue from, so asking which catalogue
+    answered gives the same result for a desktop-chosen language and an
+    app-chosen one.
+    """
+    import i18n
+    return i18n.current_language()
 
 
 # ── Tabs: the user's content kinds, each fed by every capable source ────────

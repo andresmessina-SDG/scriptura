@@ -653,3 +653,44 @@ def test_no_cached_catalogue_knows_nothing(monkeypatch):
     import sword_bridge
     monkeypatch.setattr(sword_bridge, '_shadow_path', lambda: None)
     assert not sword_bridge.catalogue_has('NBLA')
+
+
+def test_a_module_is_named_in_its_own_language_only_to_that_reader(monkeypatch):
+    """DISPLAY_NAMES is an English table by convention — "Luther Bible
+    (German)", "Reina-Valera (1909)" — which is right for an English reader
+    meeting a foreign text and wrong for the reader it was translated for. A
+    Russian split headed "Russian Open Bible | Russian Synodal Bible" named
+    two Russian Bibles in the one language the reader had not chosen."""
+    import i18n
+    import sword_bridge
+
+    monkeypatch.setattr(i18n, 'current_language', lambda: 'ru')
+    assert sword_bridge.display_name('RusOpenBible') == 'Русский открытый перевод'
+    assert sword_bridge.display_name('RusSynodal') == 'Синодальный перевод'
+
+    monkeypatch.setattr(i18n, 'current_language', lambda: 'en')
+    assert sword_bridge.display_name('RusOpenBible') == 'Russian Open Bible'
+    assert sword_bridge.display_name('RusSynodal') == 'Russian Synodal Bible'
+
+
+def test_a_native_name_never_swallows_a_module_it_does_not_name(monkeypatch):
+    """The fallback chain still ends where it did: an unlisted module keeps
+    its curated English name, and one in neither table keeps its own key."""
+    import i18n
+    import sword_bridge
+
+    monkeypatch.setattr(i18n, 'current_language', lambda: 'ru')
+    assert sword_bridge.display_name('BSB') == 'Berean Standard Bible'
+    assert sword_bridge.display_name('NoSuchModule') == 'NoSuchModule'
+
+
+def test_every_native_name_declares_a_language(monkeypatch):
+    """The language is declared in the table rather than read from the
+    module's `Lang`, because display_name runs for every pane header and
+    every module-manager row. A malformed entry would silently never fire."""
+    import sword_bridge
+    for key, entry in sword_bridge.NATIVE_NAMES.items():
+        assert isinstance(entry, tuple) and len(entry) == 2, key
+        lang, native = entry
+        assert lang and lang.isalpha() and lang == lang.lower(), key
+        assert native and native != key, key

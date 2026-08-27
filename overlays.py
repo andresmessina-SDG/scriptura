@@ -171,12 +171,35 @@ class OverlayManager:
             return (b, max(1, min(chapter, ch_max)), verse)
 
         books = self.nav_books()
+
+        def keys(b):
+            """What the reader might type for book `b`.
+
+            Both the canonical English name and the name the app is showing
+            them. This matched English only, so the jump bar answered
+            «Бытие 3» — the very name in the book picker two inches away —
+            with a red flash, in every language but English.
+            """
+            shown = book_label(b)
+            out = [b.lower().replace(' ', '')]
+            if shown != b:
+                out.append(shown.lower().replace(' ', ''))
+            return out
+
         # Exact match wins over prefix — "Job" must not silently become "Joshua".
         for b in books:
-            if b.lower().replace(' ', '') == query:
+            if query in keys(b):
                 return hit(b)
         for b in books:
-            if b.lower().replace(' ', '').startswith(query):
+            if any(k.startswith(query) for k in keys(b)):
+                return hit(b)
+        # Contains, last and localized-only: Russian names the Gospels «От
+        # Иоанна» and the reader types «Иоанна», which is a prefix of nothing.
+        # Canonical order decides the winner, so «Иоанна» reaches the Gospel
+        # before the epistles and «Царств» the first of the four.
+        for b in books:
+            shown = book_label(b)
+            if shown != b and query in shown.lower().replace(' ', ''):
                 return hit(b)
         full = sword_bridge._CROSS_REF_ABBREVS.get(query)
         if full and full in books:
