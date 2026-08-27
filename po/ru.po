@@ -2187,7 +2187,7 @@ msgstr "Тагальский"
 
 #: module_manager.py:112 module_picker.py:212
 msgid "Bibles"
-msgstr "Переводы Библии"
+msgstr "Библии"
 
 #: module_manager.py:115
 msgid "Commentaries"
@@ -2195,11 +2195,11 @@ msgstr "Комментарии"
 
 #: module_manager.py:118
 msgid "Study Tools"
-msgstr "Средства изучения"
+msgstr "Инструменты"
 
 #: module_manager.py:121
 msgid "Books & More"
-msgstr "Книги и прочее"
+msgstr "Книги и др."
 
 #: module_manager.py:177
 msgid "updated less than an hour ago"

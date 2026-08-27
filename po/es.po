@@ -2414,7 +2414,7 @@ msgstr "Comentarios"
 
 #: module_manager.py:117
 msgid "Study Tools"
-msgstr "Herramientas de estudio"
+msgstr "Herramientas"
 
 #: module_manager.py:120
 msgid "Books & More"

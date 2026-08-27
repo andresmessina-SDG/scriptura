@@ -285,6 +285,46 @@ def _chip_label_width(text):
     return layout.get_pixel_size().width
 
 
+#: Four tabs share the Module Manager's 688px header, so a label has about
+#: this much before Adw ellipsizes it. English asks for 102 at its widest.
+_TAB_LABEL_PX = 110
+
+
+def _ui_label_width(text):
+    """How wide `text` sets in the interface font, measured."""
+    import cairo
+    import gi
+    gi.require_version('Pango', '1.0')
+    gi.require_version('PangoCairo', '1.0')
+    from gi.repository import Pango, PangoCairo
+
+    ctx = cairo.Context(cairo.ImageSurface(cairo.FORMAT_ARGB32, 400, 60))
+    layout = PangoCairo.create_layout(ctx)
+    desc = Pango.FontDescription('Adwaita Sans')
+    desc.set_absolute_size(14.7 * Pango.SCALE)
+    layout.set_font_description(desc)
+    layout.set_text(text, -1)
+    return layout.get_pixel_size().width
+
+
+def test_no_module_manager_tab_outgrows_its_strip(catalogue):
+    """A tab that does not fit is not wrong, it is cut: «Переводы Библии»
+    showed as "Переводы Б…" and «Herramientas de estudio» as
+    "Herramientas…", which is the one place a reader is choosing between
+    four words. The English labels are terse — "Bibles", "Study Tools" — and
+    a translation that spells them out stops being a tab."""
+    lang, path = catalogue
+    titles = {'Bibles', 'Commentaries', 'Study Tools', 'Books & More'}
+    over = []
+    for msgid, _plural, strs in _parse_po(path):
+        if msgid not in titles or not strs or not strs[0]:
+            continue
+        width = _ui_label_width(strs[0])
+        if width > _TAB_LABEL_PX:
+            over.append(f'{msgid} → {strs[0]!r} is {width}px')
+    assert not over, f'{lang}: tab labels too wide: ' + '; '.join(over)
+
+
 def test_no_paper_name_overflows_its_chip(catalogue):
     """A paper chip shows its name *inside* the circle, in that paper's own
     ink — the chip previews the whole pairing. A name too long for the circle
