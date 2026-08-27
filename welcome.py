@@ -163,6 +163,10 @@ _CATALOGUE = {
             'items': [
                 ('sword',    'NBLA',          'Nueva Biblia de las Américas', _BIBLE),
                 ('ebible',   'spaRV1909',     'Reina Valera 1909', _BIBLE),
+                # CC BY-SA 4.0 from Biblica's own Open programme, so unlike
+                # NBLA and LBLA a mirror of ours may hold it: the tier keeps a
+                # modern Spanish Bible even when CrossWire is unreachable.
+                ('ebible',   'spaonbv',       'Nueva Biblia Viva', _BIBLE),
                 # The one dictionary a Spanish reader can have. Every
                 # dictionary CrossWire and its friends distribute is English,
                 # French, Russian or Portuguese, so double-clicking a word —
@@ -193,10 +197,58 @@ _CATALOGUE = {
                 # could mirror ourselves — CC BY-SA. LBLA and NBLA are
                 # CrossWire-only, so no mirror may ever hold them.
                 ('ebible',   'spavbl',        'Versión Biblia Libre', _NOTES),
+                ('ebible',   'spaonbv',       'Nueva Biblia Viva', _BIBLE),
                 ('sword',    'Wikcionario',   'Wikcionario', _DICTIONARY),
                 ('sword',    'StrongsHebrew', "Strong's Hebrew Lexicon", _LEXICON),
                 ('sword',    'StrongsGreek',  "Strong's Greek Lexicon", _LEXICON),
                 ('opendata', 'cross_references', 'OpenBible Cross-References', _XREF),
+            ],
+        },
+    },
+    'ru': {
+        # Two tiers, not three. Russian's catalogue is seven Bibles and
+        # three glossaries before the two Scriptura adds — measured
+        # 2026-08-26, not assumed — with no commentary in it at all, so a
+        # `full` card could only repeat `study` with a second Synodal beside
+        # the first. A tier a language cannot fill is dropped rather than
+        # padded.
+        #
+        # The modern text leads. Every Russian Bible anyone distributes is
+        # the 1876 Synodal or a revision of it, except the Central Asian
+        # CARS translations, which are written in Muslim idiom (Иса, Юнус,
+        # Якуб) and would puzzle the reader who asked for Russian. Scriptura
+        # builds the one way out and serves it from its own release.
+        'reading': {
+            'opens': ('RusOpenBible', None),
+            'items': [
+                ('sword', 'RusOpenBible', 'Русский открытый перевод', _BIBLE),
+            ],
+        },
+        'study': {
+            'opens': ('RusOpenBible', 'RusSynodal'),
+            'items': [
+                ('sword', 'RusOpenBible', 'Русский открытый перевод', _BIBLE),
+                ('sword', 'RusSynodal',   'Синодальный перевод', _BIBLE),
+                # The first dictionary of any kind a Russian reader has had
+                # here: CrossWire's four Russian lexicons are all glossaries
+                # of the CARS translations' own terms. Scriptura builds this
+                # one from Door43's Translation Words, so double-clicking a
+                # word — one of the three gestures onboarding teaches —
+                # answers with something.
+                ('sword', 'RussianBibleWords', 'Библейский словарь',
+                 _DICTIONARY),
+                # The Open Bible carries Strong's through 23 of its 66 books
+                # — the Gospels, Acts, most of Paul, Genesis and Exodus — and
+                # the Synodal carries none anywhere, which is the other
+                # reason the modern text leads: the lexicons have something
+                # to be keyed on in pane 1. They are in English, the same
+                # compromise the Spanish tiers make — no Russian Strong's
+                # lexicon exists to install instead.
+                ('sword', 'StrongsHebrew', "Strong's Hebrew Lexicon",
+                 _LEXICON),
+                ('sword', 'StrongsGreek', "Strong's Greek Lexicon", _LEXICON),
+                ('opendata', 'cross_references', 'OpenBible Cross-References',
+                 _XREF),
             ],
         },
     },

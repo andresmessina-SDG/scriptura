@@ -52,7 +52,14 @@ def test_every_language_puts_a_dictionary_in_its_study_tiers():
     built one — so this is per language, and a new language's table fails
     here until it names one too."""
     for language in welcome._CATALOGUE:
+        offered = {b['id'] for b in welcome.bundles_for(language)}
         for bundle_id in ('study', 'full'):
+            # A tier a language does not offer is not a broken promise — the
+            # rule is that a study/full card must reach a dictionary, not that
+            # every language must have those cards. Russian offers no full
+            # tier because its catalogue holds no commentary to fill one.
+            if bundle_id not in offered:
+                continue
             sword = _idents(_bundle(bundle_id, language), 'sword')
             assert any(m.lower() not in sword_bridge._DICT_SKIP
                        and m.lower() in _KNOWN_DICTIONARIES
@@ -69,7 +76,7 @@ def test_the_strongs_lexicons_do_not_count_as_a_dictionary():
 # Dictionary/encyclopedia modules the peek accepts, by CrossWire module name.
 # Named here rather than probed, so the test needs no installed library.
 _KNOWN_DICTIONARIES = frozenset(['easton', 'smith', 'isbe',
-                                 'wikcionario'])
+                                 'wikcionario', 'russianbiblewords'])
 
 
 def test_bsb_leads_every_english_bundle_and_its_opening_pair():
@@ -91,6 +98,26 @@ def test_the_spanish_bundles_open_on_spanish():
         assert bundle['opens'][0] == 'NBLA', bundle['id']
         if bundle['opens'][1] is not None:
             assert bundle['opens'][1] == 'eBible: spaRV1909', bundle['id']
+
+
+def test_the_russian_bundles_open_on_the_modern_text():
+    """The modern text leads, not the Synodal beside it. Every Russian Bible
+    that exists is the 1876 Synodal or a revision of it, and RusOpenBible is
+    the only one carrying Strong's numbers — so it is both the readable text
+    and the one pane 1 needs for the lexicons to key on."""
+    for bundle in welcome.bundles_for('ru'):
+        assert _idents(bundle, 'sword')[0] == 'RusOpenBible', bundle['id']
+        assert bundle['opens'][0] == 'RusOpenBible', bundle['id']
+
+
+def test_no_russian_tier_offers_the_central_asian_translations():
+    """RusCARS and its two siblings are Russian by language tag and Muslim in
+    idiom — Иса for Jesus, Юнус for Jonah — so a reader who asked for Russian
+    would meet names they did not expect on a card that never said so. They
+    stay in the Module Manager, where the description explains them."""
+    for bundle in welcome.bundles_for('ru'):
+        for ident in _idents(bundle, 'sword'):
+            assert not ident.lower().startswith('ruscars'), bundle['id']
 
 
 def test_a_summary_promises_audio_only_if_a_pane_it_opens_on_has_it():
