@@ -80,11 +80,13 @@ semver-ish — 0.x was the pre-Flathub testing track.
   search result's chart, were built where the English name is the key and
   never translated on the way out — so «Большие пророки» opened onto
   "Isaiah / Jeremiah / Ezekiel" with «Исаия 1:2» in the results beneath.
-- **The paper chips overflowed their circles.** A chip shows its paper's
-  name inside the ring, and the ring is a fixed 56px; «Грифельный» ran
-  through it and lost its Г, and the Spanish *Personalizado* had been
-  spilling since Spanish shipped. The names are shorter now, and a test
-  measures every one of them in every catalogue.
+- **Translated labels overflowed the places that hold them.** A paper
+  chip draws its name inside a fixed 56px ring, so «Грифельный» ran
+  through it and lost its Г — and the Spanish *Personalizado* had been
+  spilling since Spanish shipped. The Module Manager's four tabs share
+  one header, and both translations were cut mid-word in the one place
+  you are choosing between four of them. The names are shorter now, and
+  two tests measure every one of them in every catalogue, in pixels.
 - **The menu's cards lost their right-hand corners.** The panel reserves a
   gutter for its scrollbar, and the content underneath it had a minimum
   width equal to the whole panel — one long font name in the appearance
