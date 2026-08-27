@@ -8,6 +8,29 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Added
 
+- **Scriptura reads in Russian.** The whole interface — 1,134 strings,
+  every one of them, with the three plural forms Russian needs — plus the
+  Synodal book names it expects: 1 Kings is 3-я Царств. Names are said the
+  way Russian Bible software says them: the references beside a verse are
+  «Параллельные места», the interlinear is «Подстрочник», and a module is
+  named in its own language to the reader running the app in it. Two fonts
+  were set in the wrong voice, because the reading serif carries no Cyrillic
+  and nobody had asked it to; the verse card and the printed handout now fall
+  through to one that does.
+- **A modern Russian Bible, and the first Russian dictionary.** Every
+  Russian Bible anyone distributes is the 1876 Synodal or a revision of it,
+  and the four Russian lexicons in the SWORD repositories are glossaries of
+  the Central Asian translations' own terms — so a Russian reader had
+  archaic prose and nothing at all behind the double-click. Scriptura now
+  builds two modules and serves them from its own release. The Russian Open
+  Bible is a modern text from the Door43 community, complete in 66 books, and
+  23 of them — the Gospels, Acts, most of Paul, Genesis and Exodus among them
+  — carry a Strong's number, lemma and morphological parse on every word,
+  167,212 in all, so word study works in Russian for the first time. The
+  Bible dictionary holds 1,018 articles on the terms, names and ideas of
+  Scripture. Russian's first run now offers two collections instead of one,
+  and the reading window opens on the modern text with the Synodal beside
+  it.
 - **A Spanish dictionary, where there was none.** Every one of the 168
   dictionaries the SWORD repositories distribute is English, French,
   Russian or Portuguese, so for a reader of the Spanish Bibles the
@@ -46,6 +69,27 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Fixed
 
+- **Jumping to a reference took English book names only.** Typing
+  «Бытие 3» — the name the book picker two inches away was showing —
+  flashed the box red, and had done the same to *Génesis 3* since Spanish
+  shipped. The jump bar now takes the name you are reading as well as the
+  canonical one, including the part of it you would actually type: Russian
+  calls the Gospel «От Иоанна» and a reader types «Иоанна».
+- **Book names sat in English inside a translated interface.** The
+  cross-reference chips under a verse, and the per-book bars inside a
+  search result's chart, were built where the English name is the key and
+  never translated on the way out — so «Большие пророки» opened onto
+  "Isaiah / Jeremiah / Ezekiel" with «Исаия 1:2» in the results beneath.
+- **The paper chips overflowed their circles.** A chip shows its paper's
+  name inside the ring, and the ring is a fixed 56px; «Грифельный» ran
+  through it and lost its Г, and the Spanish *Personalizado* had been
+  spilling since Spanish shipped. The names are shorter now, and a test
+  measures every one of them in every catalogue.
+- **The menu's cards lost their right-hand corners.** The panel reserves a
+  gutter for its scrollbar, and the content underneath it had a minimum
+  width equal to the whole panel — one long font name in the appearance
+  card was setting it — so the overflow came off the right edge in every
+  language. Opening Advanced made the whole panel jump wider, too.
 - **A first-run download that failed for a module that exists.** The
   list of available modules is cached and nothing aged it out, so a
   profile that had read the list before a module was published had no
