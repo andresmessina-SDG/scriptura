@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scriptura\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-26 00:00+0000\n"
+"POT-Creation-Date: 2026-08-27 12:50-0600\n"
 "PO-Revision-Date: 2026-08-26 00:00+0000\n"
 "Last-Translator: Scriptura\n"
 "Language-Team: Russian\n"
@@ -10,8 +10,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 #: data/io.github.andresmessina_SDG.Scriptura.desktop.in:2
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:5
@@ -26,7 +26,9 @@ msgstr "Изучение Библии"
 msgid ""
 "GNOME-native Bible study with SWORD modules, Strong's lexicon, and cross-"
 "references"
-msgstr "Изучение Библии в среде GNOME: модули SWORD, словарь Стронга и перекрёстные ссылки"
+msgstr ""
+"Изучение Библии в среде GNOME: модули SWORD, словарь Стронга и перекрёстные "
+"ссылки"
 
 #: data/io.github.andresmessina_SDG.Scriptura.desktop.in:8
 msgid "Bible;Scripture;Study;SWORD;Lexicon;Strong's;"
@@ -45,7 +47,10 @@ msgid ""
 "Scriptura is a focused Bible study application for the Linux desktop. A "
 "calm, two-pane reading view sits at its center, with a full study library "
 "never more than a click away."
-msgstr "Scriptura — сосредоточенное приложение для изучения Библии на рабочем столе Linux. В центре — спокойное чтение в две панели, а полная библиотека для изучения всегда в одном щелчке."
+msgstr ""
+"Scriptura — сосредоточенное приложение для изучения Библии на рабочем столе "
+"Linux. В центре — спокойное чтение в две панели, а полная библиотека для "
+"изучения всегда в одном щелчке."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:21
 msgid "It brings together:"
@@ -55,41 +60,55 @@ msgstr "Оно объединяет:"
 msgid ""
 "Side-by-side reading of two translations with synchronized scrolling, plus a "
 "distraction-free reading mode."
-msgstr "Чтение двух переводов рядом с синхронной прокруткой и режим чтения без отвлекающих элементов."
+msgstr ""
+"Чтение двух переводов рядом с синхронной прокруткой и режим чтения без "
+"отвлекающих элементов."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:24
 msgid ""
 "Original-language word study — click any word for its Hebrew or Greek root, "
 "its grammar, and every other place it appears."
-msgstr "Изучение слов на языке оригинала — щёлкните любое слово, чтобы увидеть его еврейский или греческий корень, грамматику и все другие места, где оно встречается."
+msgstr ""
+"Изучение слов на языке оригинала — щёлкните любое слово, чтобы увидеть его "
+"еврейский или греческий корень, грамматику и все другие места, где оно "
+"встречается."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:25
 msgid "A database of 340,000 cross-references linking related passages."
-msgstr "База из 340 000 перекрёстных ссылок, связывающих родственные места Писания."
+msgstr ""
+"База из 340 000 перекрёстных ссылок, связывающих родственные места Писания."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:26
 msgid ""
 "Highlights, notes, and topical tags, all gathered into one searchable study "
 "journal."
-msgstr "Выделения, заметки и тематические метки, собранные в один дневник изучения с поиском."
+msgstr ""
+"Выделения, заметки и тематические метки, собранные в один дневник изучения с "
+"поиском."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:27
 msgid ""
 "Full-text search across any installed text, and reading plans that track "
 "your progress day by day."
-msgstr "Полнотекстовый поиск по любому установленному тексту и планы чтения, отмечающие ваш путь день за днём."
+msgstr ""
+"Полнотекстовый поиск по любому установленному тексту и планы чтения, "
+"отмечающие ваш путь день за днём."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:28
 msgid ""
 "A large, installable library of modern and classic Bibles, commentaries, "
 "devotionals, and reference works."
-msgstr "Большая библиотека современных и классических переводов Библии, комментариев, размышлений и справочных трудов, доступных для установки."
+msgstr ""
+"Большая библиотека современных и классических переводов Библии, "
+"комментариев, размышлений и справочных трудов, доступных для установки."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:30
 msgid ""
 "Everything is stored on your computer with no telemetry. Scriptura connects "
 "to the network only to download the texts and reference data you choose."
-msgstr "Всё хранится на вашем компьютере, без сбора данных. Scriptura обращается к сети только чтобы загрузить тексты и справочные данные, которые вы выбрали."
+msgstr ""
+"Всё хранится на вашем компьютере, без сбора данных. Scriptura обращается к "
+"сети только чтобы загрузить тексты и справочные данные, которые вы выбрали."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:47
 msgid "Two-pane reading with the Strong's lexicon open on a Greek word"
@@ -99,7 +118,9 @@ msgstr "Чтение в две панели с открытым словарём
 msgid ""
 "The Greek New Testament interlinear — gloss, parsing, and Strong's number "
 "under every word"
-msgstr "Подстрочник греческого Нового Завета — перевод, разбор и номер Стронга под каждым словом"
+msgstr ""
+"Подстрочник греческого Нового Завета — перевод, разбор и номер Стронга под "
+"каждым словом"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:55
 msgid ""
@@ -159,7 +180,12 @@ msgid ""
 "Pick the language in the header on the first screen, or from the menu at any "
 "time; each is listed in its own name, because the reader who needs it is by "
 "definition looking at words they may not read."
-msgstr "Само приложение теперь говорит по-испански — меню, диалоги, менеджер модулей, первый запуск, планы чтения, церковный календарь и все 66 названий книг. Выберите язык в заголовке первого экрана или в меню в любое время; каждый назван на своём языке, ведь читатель, которому это нужно, по определению смотрит на слова, которых может не понимать."
+msgstr ""
+"Само приложение теперь говорит по-испански — меню, диалоги, менеджер "
+"модулей, первый запуск, планы чтения, церковный календарь и все 66 названий "
+"книг. Выберите язык в заголовке первого экрана или в меню в любое время; "
+"каждый назван на своём языке, ведь читатель, которому это нужно, по "
+"определению смотрит на слова, которых может не понимать."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:144
 msgid ""
@@ -167,14 +193,20 @@ msgid ""
 "de las Américas from the Lockman Foundation, the Versión Biblia Libre, and "
 "Straubinger's, whose 13,099 footnotes are paragraph-length commentary rather "
 "than variant marks."
-msgstr "Испанские переводы, чтобы читать на нём: La Biblia de las Américas и Nueva Biblia de las Américas от Lockman Foundation, Versión Biblia Libre и перевод Штраубингера, чьи 13 099 сносок — это комментарий длиной в абзац, а не пометки о разночтениях."
+msgstr ""
+"Испанские переводы, чтобы читать на нём: La Biblia de las Américas и Nueva "
+"Biblia de las Américas от Lockman Foundation, Versión Biblia Libre и перевод "
+"Штраубингера, чьи 13 099 сносок — это комментарий длиной в абзац, а не "
+"пометки о разночтениях."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:145
 msgid ""
 "A Spanish reading of the whole Bible — La Biblia en Español Sencillo, all "
 "1,189 chapters, the words on the page and the words in the ear from one "
 "publisher."
-msgstr "Испанское чтение всей Библии — La Biblia en Español Sencillo, все 1189 глав: слова на странице и слова в ухе от одного издателя."
+msgstr ""
+"Испанское чтение всей Библии — La Biblia en Español Sencillo, все 1189 глав: "
+"слова на странице и слова в ухе от одного издателя."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:146
 msgid ""
@@ -182,14 +214,21 @@ msgid ""
 "in an appendix after Revelation, so Tobit, Judith, Sirach and the Maccabees "
 "open like any other book. Until now asking for one silently handed you "
 "Revelation instead."
-msgstr "Второканонические книги. Перевод, который их содержит, теперь показывает их в приложении после Откровения, так что Товит, Иудифь, Сирах и Маккавейские книги открываются как любые другие. Прежде запрос такой книги молча выдавал Откровение."
+msgstr ""
+"Второканонические книги. Перевод, который их содержит, теперь показывает их "
+"в приложении после Откровения, так что Товит, Иудифь, Сирах и Маккавейские "
+"книги открываются как любые другие. Прежде запрос такой книги молча выдавал "
+"Откровение."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:147
 msgid ""
 "Every dictionary you install now appears, whatever language it is in. So do "
 "the Strong's numbers in the Spanish texts that carry them, which the reader "
 "could search but never see."
-msgstr "Теперь появляется каждый установленный словарь, на каком бы языке он ни был. И номера Стронга в испанских текстах, которые их несут, — читатель мог искать по ним, но никогда их не видел."
+msgstr ""
+"Теперь появляется каждый установленный словарь, на каком бы языке он ни был. "
+"И номера Стронга в испанских текстах, которые их несут, — читатель мог "
+"искать по ним, но никогда их не видел."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:148
 msgid ""
@@ -198,7 +237,12 @@ msgid ""
 "for a reader who finds text hard going. OpenDyslexic is bundled beside it, "
 "offered honestly: the evidence for it is weak, and the app says so where you "
 "choose it."
-msgstr "Расстояние между буквами теперь в ваших руках: от собственных метрик шрифта до пятой части кегля — лучшее, что типографика подтверждённо может сделать для читателя, которому текст даётся трудно. Рядом с этим предлагается OpenDyslexic, и предлагается честно: доказательства его пользы слабы, и приложение прямо говорит об этом там, где вы его выбираете."
+msgstr ""
+"Расстояние между буквами теперь в ваших руках: от собственных метрик шрифта "
+"до пятой части кегля — лучшее, что типографика подтверждённо может сделать "
+"для читателя, которому текст даётся трудно. Рядом с этим предлагается "
+"OpenDyslexic, и предлагается честно: доказательства его пользы слабы, и "
+"приложение прямо говорит об этом там, где вы его выбираете."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:149
 msgid ""
@@ -206,35 +250,52 @@ msgid ""
 "chips, swatches, cards, buttons and panel borders all drawn above the "
 "contrast the guidelines ask of a control's boundary. Nothing moves and "
 "nothing resizes."
-msgstr "Включите высокую контрастность рабочего стола — и собственные края приложения последуют за ней: метки, образцы цвета, карточки, кнопки и границы панелей отрисованы с контрастом выше того, которого рекомендации требуют от границы элемента управления. Ничто не сдвигается и не меняет размер."
+msgstr ""
+"Включите высокую контрастность рабочего стола — и собственные края "
+"приложения последуют за ней: метки, образцы цвета, карточки, кнопки и "
+"границы панелей отрисованы с контрастом выше того, которого рекомендации "
+"требуют от границы элемента управления. Ничто не сдвигается и не меняет "
+"размер."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:150
 msgid ""
 "Quiet the rest of the page: an optional reading focus that keeps the passage "
 "you are in on lit paper and lays the rest back under a veil of that same "
 "paper. It follows your scrolling, not your cursor."
-msgstr "Приглушите остальную страницу: необязательный фокус чтения оставляет отрывок, который вы читаете, на освещённой бумаге, а остальное укладывает под вуаль из той же бумаги. Он следует за вашей прокруткой, а не за курсором."
+msgstr ""
+"Приглушите остальную страницу: необязательный фокус чтения оставляет "
+"отрывок, который вы читаете, на освещённой бумаге, а остальное укладывает "
+"под вуаль из той же бумаги. Он следует за вашей прокруткой, а не за курсором."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:151
 msgid ""
 "Readings appear on the desktop's media controls — the media keys, the lock "
 "screen and the Shell — named by what they are, with play, pause, skip back, "
 "speed and volume."
-msgstr "Чтения появляются в мультимедийных элементах рабочего стола — на мультимедийных клавишах, экране блокировки и в оболочке — названные по существу, с воспроизведением, паузой, возвратом, скоростью и громкостью."
+msgstr ""
+"Чтения появляются в мультимедийных элементах рабочего стола — на "
+"мультимедийных клавишах, экране блокировки и в оболочке — названные по "
+"существу, с воспроизведением, паузой, возвратом, скоростью и громкостью."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:152
 msgid ""
 "The app draws its own icons now, so the toolbar is the same line art on "
 "every desktop instead of whatever the local icon theme happened to supply. "
 "The window controls are still the desktop's own."
-msgstr "Приложение теперь рисует собственные значки, поэтому панель инструментов выглядит одинаково на любом рабочем столе, а не так, как случится в местной теме значков. Кнопки управления окном по-прежнему принадлежат рабочему столу."
+msgstr ""
+"Приложение теперь рисует собственные значки, поэтому панель инструментов "
+"выглядит одинаково на любом рабочем столе, а не так, как случится в местной "
+"теме значков. Кнопки управления окном по-прежнему принадлежат рабочему столу."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:153
 msgid ""
 "First run opens on a Bible and a commentary rather than the same text twice, "
 "installs the collection you choose for real, and hands you the gestures "
 "reference where the gestures are taught."
-msgstr "Первый запуск открывает Библию и комментарий, а не один и тот же текст дважды, по-настоящему устанавливает выбранное вами собрание и даёт справочник жестов там, где этим жестам учат."
+msgstr ""
+"Первый запуск открывает Библию и комментарий, а не один и тот же текст "
+"дважды, по-настоящему устанавливает выбранное вами собрание и даёт "
+"справочник жестов там, где этим жестам учат."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:154
 msgid ""
@@ -243,20 +304,29 @@ msgid ""
 "chapter you are reading instead of rebuilding it, and your place is held "
 "through the rebuilds that remain — including in poetry, where it used to "
 "slip."
-msgstr "Страница стоит на месте. Смена темы, показ значков сносок, переход на старостильные цифры и подсветка буквицы теперь перекрашивают читаемую главу, а не перестраивают её, и ваше место сохраняется при тех перестроениях, что остались, — в том числе в поэзии, где оно прежде терялось."
+msgstr ""
+"Страница стоит на месте. Смена темы, показ значков сносок, переход на "
+"старостильные цифры и подсветка буквицы теперь перекрашивают читаемую главу, "
+"а не перестраивают её, и ваше место сохраняется при тех перестроениях, что "
+"остались, — в том числе в поэзии, где оно прежде терялось."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:155
 msgid ""
 "Nineteenth-century plates join the imagery pack, and an installed pack that "
 "has fallen behind now offers its own update."
-msgstr "К набору изображений добавились гравюры XIX века, а установленный набор, который отстал, теперь сам предлагает обновление."
+msgstr ""
+"К набору изображений добавились гравюры XIX века, а установленный набор, "
+"который отстал, теперь сам предлагает обновление."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
 msgid ""
 "A settings file the app cannot read is set aside rather than overwritten, a "
 "backup that did not reach the disk says so, and an archive that tries to "
 "write through a symlink is refused."
-msgstr "Файл настроек, который приложение не может прочитать, откладывается в сторону, а не переписывается; резервная копия, не дошедшая до диска, говорит об этом; архив, пытающийся писать через символическую ссылку, отклоняется."
+msgstr ""
+"Файл настроек, который приложение не может прочитать, откладывается в "
+"сторону, а не переписывается; резервная копия, не дошедшая до диска, говорит "
+"об этом; архив, пытающийся писать через символическую ссылку, отклоняется."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
 msgid "Chapters read aloud, and passages you can take with you."
@@ -268,14 +338,20 @@ msgid ""
 "listening pill sits quietly at the foot of the page: skip back fifteen "
 "seconds, set the pace anywhere from 0.75× to 2×, and keep listening as you "
 "turn to the next chapter."
-msgstr "Главы, читаемые вслух, в собственной начитке Berean Standard Bible. Внизу страницы тихо ждёт капсула прослушивания: вернуться на пятнадцать секунд, задать темп от 0,75× до 2× и слушать дальше, переходя к следующей главе."
+msgstr ""
+"Главы, читаемые вслух, в собственной начитке Berean Standard Bible. Внизу "
+"страницы тихо ждёт капсула прослушивания: вернуться на пятнадцать секунд, "
+"задать темп от 0,75× до 2× и слушать дальше, переходя к следующей главе."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
 msgid ""
 "Spoken devotionals from their publishers' own feeds — Spurgeon's Morning and "
 "Evening, the Psalms read one at a time, and the day's Daily Strength reading "
 "on the Today page."
-msgstr "Озвученные размышления из собственных лент их издателей — «Утро и вечер» Сперджена, псалмы по одному и сегодняшнее чтение Daily Strength на странице «Сегодня»."
+msgstr ""
+"Озвученные размышления из собственных лент их издателей — «Утро и вечер» "
+"Сперджена, псалмы по одному и сегодняшнее чтение Daily Strength на странице "
+"«Сегодня»."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
 msgid ""
@@ -283,49 +359,70 @@ msgid ""
 "text, carrying your own notes and highlights, with optional interlinear, "
 "textual-variant and church-fathers layers. Citations follow the SBTS/"
 "Turabian short form."
-msgstr "Возьмите отрывок с собой. Выгрузите его как рабочий лист для изучения в Markdown или простом тексте, вместе с вашими заметками и выделениями, при желании со слоями подстрочника, разночтений и отцов Церкви. Ссылки оформлены по краткой форме SBTS/Turabian."
+msgstr ""
+"Возьмите отрывок с собой. Выгрузите его как рабочий лист для изучения в "
+"Markdown или простом тексте, вместе с вашими заметками и выделениями, при "
+"желании со слоями подстрочника, разночтений и отцов Церкви. Ссылки оформлены "
+"по краткой форме SBTS/Turabian."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:167
 msgid ""
 "A verse as an image, set in the app's own serif on its own paper — three "
 "shapes, saved to a file or copied straight to the clipboard."
-msgstr "Стих как изображение, набранный собственной антиквой приложения на его собственной бумаге, — три формата, сохраняются в файл или копируются прямо в буфер обмена."
+msgstr ""
+"Стих как изображение, набранный собственной антиквой приложения на его "
+"собственной бумаге, — три формата, сохраняются в файл или копируются прямо в "
+"буфер обмена."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:168
 msgid ""
 "Print a passage as a study handout, paginated so no line is ever cut in half."
-msgstr "Напечатайте отрывок как раздаточный лист для изучения, разбитый на страницы так, что ни одна строка не окажется разрезанной пополам."
+msgstr ""
+"Напечатайте отрывок как раздаточный лист для изучения, разбитый на страницы "
+"так, что ни одна строка не окажется разрезанной пополам."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:169
 msgid ""
 "The section headings your translation actually ships, which until now were "
 "being dropped altogether. Move a whole thought at a time with [ and ], and "
 "see at a glance which sense-unit you are reading."
-msgstr "Заголовки разделов, которые действительно есть в вашем переводе, а прежде просто отбрасывались. Переходите целой мыслью с помощью [ и ] и с одного взгляда видьте, какую смысловую единицу читаете."
+msgstr ""
+"Заголовки разделов, которые действительно есть в вашем переводе, а прежде "
+"просто отбрасывались. Переходите целой мыслью с помощью [ и ] и с одного "
+"взгляда видьте, какую смысловую единицу читаете."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:170
 msgid ""
 "The reading pane is reachable from the keyboard throughout: step between "
 "verses and words with the arrow keys, open the lexicon, a footnote or the "
 "dictionary with Enter, and hear every move announced by a screen reader."
-msgstr "Панель чтения теперь целиком доступна с клавиатуры: переходите между стихами и словами клавишами со стрелками, открывайте словарь, сноску или толковый словарь по Enter и слушайте, как экранный диктор объявляет каждый шаг."
+msgstr ""
+"Панель чтения теперь целиком доступна с клавиатуры: переходите между стихами "
+"и словами клавишами со стрелками, открывайте словарь, сноску или толковый "
+"словарь по Enter и слушайте, как экранный диктор объявляет каждый шаг."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:171
 msgid ""
 "Every translation now gets its verse-one drop cap, and commentaries render "
 "the inline titles they carry."
-msgstr "Каждый перевод теперь получает буквицу в первом стихе, а комментарии отрисовывают встроенные заголовки, которые в них есть."
+msgstr ""
+"Каждый перевод теперь получает буквицу в первом стихе, а комментарии "
+"отрисовывают встроенные заголовки, которые в них есть."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:172
 msgid "More of the Roman calendar's collects, and a steadier Today page."
-msgstr "Больше молитв римского календаря и более устойчивая страница «Сегодня»."
+msgstr ""
+"Больше молитв римского календаря и более устойчивая страница «Сегодня»."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:173
 msgid ""
 "Modules keep installing when CrossWire's server is down: the app falls back "
 "to FTP, and then to a mirror of everything CrossWire's own licences allow "
 "anyone to redistribute."
-msgstr "Модули продолжают устанавливаться, даже когда сервер CrossWire недоступен: приложение переходит на FTP, а затем на зеркало всего, что собственные лицензии CrossWire разрешают распространять кому угодно."
+msgstr ""
+"Модули продолжают устанавливаться, даже когда сервер CrossWire недоступен: "
+"приложение переходит на FTP, а затем на зеркало всего, что собственные "
+"лицензии CrossWire разрешают распространять кому угодно."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:179
 msgid "The original languages, word by word."
@@ -337,7 +434,11 @@ msgid ""
 "Old Testament (Tyndale House data): every word carries its English gloss and "
 "parsing, with transliteration and Strong's numbers a chip away and the "
 "lexicon a click away. A Hebrew Accents chip calms the cantillation marks."
-msgstr "Две подстрочные панели чтения — греческий Новый Завет и еврейский Ветхий Завет (данные Tyndale House): каждое слово несёт английский перевод и разбор, транслитерация и номера Стронга — в одной метке, а словарь — в одном щелчке. Метка «Знаки кантилляции» успокаивает еврейскую акцентуацию."
+msgstr ""
+"Две подстрочные панели чтения — греческий Новый Завет и еврейский Ветхий "
+"Завет (данные Tyndale House): каждое слово несёт английский перевод и "
+"разбор, транслитерация и номера Стронга — в одной метке, а словарь — в одном "
+"щелчке. Метка «Знаки кантилляции» успокаивает еврейскую акцентуацию."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:182
 msgid ""
@@ -345,7 +446,11 @@ msgid ""
 "with the full Liddell-Scott-Jones one click deeper. Scripture citations "
 "inside entries are live — click one to peek the verse in place, or send it "
 "to the other pane."
-msgstr "Набор «Научный греческий словарь»: Abbott-Smith становится кратким греческим определением, а полный Лиддел-Скотт-Джонс — на щелчок глубже. Библейские ссылки внутри статей живые: щёлкните, чтобы заглянуть в стих на месте, или отправьте его в другую панель."
+msgstr ""
+"Набор «Научный греческий словарь»: Abbott-Smith становится кратким греческим "
+"определением, а полный Лиддел-Скотт-Джонс — на щелчок глубже. Библейские "
+"ссылки внутри статей живые: щёлкните, чтобы заглянуть в стих на месте, или "
+"отправьте его в другую панель."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:183
 msgid ""
@@ -353,7 +458,11 @@ msgid ""
 "projector or mirrored display, with paging through chapters, a verse-per-"
 "page toggle, live type-size control, and a side-by-side parallel view of two "
 "translations."
-msgstr "Режим презентации: нажмите F5, чтобы вывести текущий отрывок на весь экран для проектора или зеркального дисплея, с перелистыванием глав, режимом «стих на страницу», живой настройкой кегля и параллельным просмотром двух переводов рядом."
+msgstr ""
+"Режим презентации: нажмите F5, чтобы вывести текущий отрывок на весь экран "
+"для проектора или зеркального дисплея, с перелистыванием глав, режимом «стих "
+"на страницу», живой настройкой кегля и параллельным просмотром двух "
+"переводов рядом."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:184
 msgid ""
@@ -361,13 +470,19 @@ msgid ""
 "drive the partnered Bible pane there. And the Historical Commentaries pane "
 "shows place chips for the verse under commentary: click one for the place's "
 "photo and identification, without displacing what you're reading."
-msgstr "Карты в «Писании в искусстве» теперь несут свой отрывок как метку — щёлкните, чтобы направить туда связанную библейскую панель. А панель исторических комментариев показывает метки мест для стиха: щёлкните одну, чтобы увидеть фотографию и определение места, не сдвигая то, что вы читаете."
+msgstr ""
+"Карты в «Писании в искусстве» теперь несут свой отрывок как метку — "
+"щёлкните, чтобы направить туда связанную библейскую панель. А панель "
+"исторических комментариев показывает метки мест для стиха: щёлкните одну, "
+"чтобы увидеть фотографию и определение места, не сдвигая то, что вы читаете."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:185
 msgid ""
 "Greek in the reading panes now renders with correctly composed accents on "
 "systems where the default serif drew them detached."
-msgstr "Греческий текст в панелях чтения теперь отрисовывается с правильно составленными ударениями там, где стандартная антиква рисовала их отдельно."
+msgstr ""
+"Греческий текст в панелях чтения теперь отрисовывается с правильно "
+"составленными ударениями там, где стандартная антиква рисовала их отдельно."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:191
 msgid "Getting started, made discoverable."
@@ -377,14 +492,19 @@ msgstr "Начало работы, которое легко найти."
 msgid ""
 "A new Tips & Gestures guide, reachable from the menu, gathers every reading "
 "gesture in one place."
-msgstr "Новое руководство «Советы и жесты», доступное из меню, собирает все жесты чтения в одном месте."
+msgstr ""
+"Новое руководство «Советы и жесты», доступное из меню, собирает все жесты "
+"чтения в одном месте."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:194
 msgid ""
 "Gentle one-time tips point out hidden gestures — like tapping a verse for "
 "its cross-references — the first time each is useful, then never again. You "
 "can turn them off any time."
-msgstr "Ненавязчивые однократные подсказки указывают на скрытые жесты — например, касание стиха ради параллельных мест — в тот первый раз, когда каждый из них пригодится, и больше никогда. Их можно отключить в любой момент."
+msgstr ""
+"Ненавязчивые однократные подсказки указывают на скрытые жесты — например, "
+"касание стиха ради параллельных мест — в тот первый раз, когда каждый из них "
+"пригодится, и больше никогда. Их можно отключить в любой момент."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:200
 msgid "Customizable reading appearance."
@@ -395,23 +515,31 @@ msgid ""
 "New Appearance panel: pick a reading paper — Paper, White, Sepia, Green, or "
 "a custom colour — with text colour that adapts to the page (a warm ink on "
 "sepia, and so on)."
-msgstr "Новая панель «Оформление»: выберите бумагу для чтения — «Бумага», «Белая», «Сепия», «Зелёная» или свой цвет — с цветом текста, который подстраивается под страницу (тёплые чернила на сепии и так далее)."
+msgstr ""
+"Новая панель «Оформление»: выберите бумагу для чтения — «Бумага», «Белая», "
+"«Сепия», «Зелёная» или свой цвет — с цветом текста, который подстраивается "
+"под страницу (тёплые чернила на сепии и так далее)."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:203
 msgid ""
 "Bold and justified text move to compact controls beside the font, and the "
 "menu's sections gain a clearer, calmer layout."
-msgstr "Жирное начертание и выключка по формату переехали к компактным элементам рядом со шрифтом, а разделы меню получили более ясную и спокойную раскладку."
+msgstr ""
+"Жирное начертание и выключка по формату переехали к компактным элементам "
+"рядом со шрифтом, а разделы меню получили более ясную и спокойную раскладку."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:204
 msgid ""
 "Redesigned reading plans with a Today view and a month calendar of your "
 "progress."
-msgstr "Обновлённые планы чтения с видом «Сегодня» и календарём месяца, показывающим ваш путь."
+msgstr ""
+"Обновлённые планы чтения с видом «Сегодня» и календарём месяца, показывающим "
+"ваш путь."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:205
 msgid "Fixed faint text trails when scrolling the reading view under Flatpak."
-msgstr "Исправлены бледные следы текста при прокрутке панели чтения во Flatpak."
+msgstr ""
+"Исправлены бледные следы текста при прокрутке панели чтения во Flatpak."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:211
 msgid "Packaging fixes."
@@ -423,7 +551,8 @@ msgstr "Перевод сборки на meson ради более чистой 
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:214
 msgid "Patch SWORD's CMake to properly link libcurl (upstream bug API-263)."
-msgstr "Правка CMake в SWORD для корректной компоновки с libcurl (ошибка API-263)."
+msgstr ""
+"Правка CMake в SWORD для корректной компоновки с libcurl (ошибка API-263)."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:220
 msgid ""
@@ -431,13 +560,17 @@ msgid ""
 "original Hebrew and Greek behind any word, follow cross-references between "
 "passages, and keep your highlights and notes together in one searchable "
 "place — all on your own computer, offline."
-msgstr "Первый выпуск Scriptura. Читайте два перевода рядом, изучайте еврейский и греческий за любым словом, следуйте параллельным местам между отрывками и держите выделения и заметки вместе в одном месте с поиском — всё на вашем компьютере, без сети."
+msgstr ""
+"Первый выпуск Scriptura. Читайте два перевода рядом, изучайте еврейский и "
+"греческий за любым словом, следуйте параллельным местам между отрывками и "
+"держите выделения и заметки вместе в одном месте с поиском — всё на вашем "
+"компьютере, без сети."
 
 #: annotation_dialogs.py:40 study_journal.py:55
 msgid "Yellow"
 msgstr "Жёлтый"
 
-#: annotation_dialogs.py:41 study_journal.py:56 verse_card.py:39 window.py:1380
+#: annotation_dialogs.py:41 study_journal.py:56 verse_card.py:39 window.py:1397
 msgid "Green"
 msgstr "Зелёный"
 
@@ -504,7 +637,7 @@ msgstr "Печать…"
 msgid "Compare translations"
 msgstr "Сравнить переводы"
 
-#: annotation_dialogs.py:236 pane.py:2182
+#: annotation_dialogs.py:236 pane.py:2203
 #, python-brace-format
 msgid "Copied {ref}"
 msgstr "Скопировано: {ref}"
@@ -514,7 +647,7 @@ msgstr "Скопировано: {ref}"
 msgid "{ref} — Translations"
 msgstr "{ref} — переводы"
 
-#: annotation_dialogs.py:367 annotation_dialogs.py:530 window.py:1967
+#: annotation_dialogs.py:367 annotation_dialogs.py:530 window.py:1984
 msgid "Save"
 msgstr "Сохранить"
 
@@ -549,7 +682,10 @@ msgid ""
 "Artifacts of the biblical world — inscriptions, monuments, and objects that "
 "touch the people, places, and events named in Scripture, in historical "
 "sequence."
-msgstr "Артефакты библейского мира — надписи, памятники и предметы, связанные с людьми, местами и событиями, названными в Писании, в исторической последовательности."
+msgstr ""
+"Артефакты библейского мира — надписи, памятники и предметы, связанные с "
+"людьми, местами и событиями, названными в Писании, в исторической "
+"последовательности."
 
 #: archaeology_bridge.py:227
 #, python-brace-format
@@ -558,14 +694,18 @@ msgstr "Артефактов: {n}"
 
 #: archaeology_bridge.py:228
 msgid "Public-domain objects; photographs CC BY-SA (per-item credit)"
-msgstr "Предметы в общественном достоянии; фотографии CC BY-SA (указание для каждого)"
+msgstr ""
+"Предметы в общественном достоянии; фотографии CC BY-SA (указание для каждого)"
 
 #: archaeology_bridge.py:229
 msgid ""
 "A curated, measured gallery: each artifact links to the passage it attests. "
 "Forgeries and disputed objects are excluded; genuine scholarly doubt is "
 "noted."
-msgstr "Выверенное, измеренное собрание: каждый артефакт связан с отрывком, который он подтверждает. Подделки и спорные предметы исключены; добросовестные научные сомнения отмечены."
+msgstr ""
+"Выверенное, измеренное собрание: каждый артефакт связан с отрывком, который "
+"он подтверждает. Подделки и спорные предметы исключены; добросовестные "
+"научные сомнения отмечены."
 
 #: archaeology_reader.py:109
 msgid "Search artifacts"
@@ -662,6 +802,16 @@ msgstr "Читается: {title}"
 msgid "When they date from"
 msgstr "Чем они датируются"
 
+#: archaeology_reader.py:1006
+#, python-brace-format
+msgid "{year} BC"
+msgstr "{year} до н. э."
+
+#: archaeology_reader.py:1007
+#, python-brace-format
+msgid "AD {year}"
+msgstr "{year} н. э."
+
 #: audio_pill.py:130
 msgid "Back fifteen seconds"
 msgstr "Назад на пятнадцать секунд"
@@ -722,15 +872,15 @@ msgstr "Перейти к утреннему чтению"
 msgid "Switch to the evening reading"
 msgstr "Перейти к вечернему чтению"
 
-#: audio_surfaces.py:287 audio_surfaces.py:789 window.py:2248
+#: audio_surfaces.py:287 audio_surfaces.py:789 window.py:2265
 msgid "Fetching the reading"
 msgstr "Загружается чтение"
 
-#: audio_surfaces.py:309 audio_surfaces.py:810 window.py:2266
+#: audio_surfaces.py:309 audio_surfaces.py:810 window.py:2283
 msgid "Could not fetch the reading"
 msgstr "Не удалось загрузить чтение"
 
-#: audio_surfaces.py:322 audio_surfaces.py:832 window.py:2280
+#: audio_surfaces.py:322 audio_surfaces.py:832 window.py:2297
 msgid "Could not play the reading"
 msgstr "Не удалось воспроизвести чтение"
 
@@ -855,8 +1005,8 @@ msgstr "Фильтр по традиции"
 msgid "Historical commentary"
 msgstr "Исторический комментарий"
 
-#: catena_reader.py:231 module_manager.py:531 module_manager.py:547
-#: module_manager.py:1429 module_manager.py:1436
+#: catena_reader.py:231 module_manager.py:538 module_manager.py:554
+#: module_manager.py:1436 module_manager.py:1443
 msgid "Historical Commentaries"
 msgstr "Исторические толкования"
 
@@ -1505,93 +1655,114 @@ msgstr "Неделя отцов Первого Вселенского собор
 msgid "The Sunday of All Saints"
 msgstr "Неделя всех святых"
 
-#: content.py:68
+#: content.py:70
 msgid ""
 "Patristic, medieval, and Reformation commentary keyed to each verse — the "
 "church reading Scripture across the centuries."
-msgstr "Святоотеческий, средневековый и реформатский комментарий к каждому стиху — Церковь, читающая Писание через века."
+msgstr ""
+"Святоотеческий, средневековый и реформатский комментарий к каждому стиху — "
+"Церковь, читающая Писание через века."
 
-#: content.py:72
+#: content.py:74
 #, python-brace-format
 msgid "{n} quotations"
 msgstr "Цитат: {n}"
 
-#: content.py:73
+#: content.py:75
 msgid "Public domain (compiled from public-domain sources)"
-msgstr "Общественное достояние (составлено из источников в общественном достоянии)"
+msgstr ""
+"Общественное достояние (составлено из источников в общественном достоянии)"
 
-#: content.py:74
+#: content.py:76
 msgid "Compiled from the HistoricalChristianFaith Commentaries Database."
 msgstr "Составлено по базе комментариев HistoricalChristianFaith."
 
-#: content.py:82
+#: content.py:84
 msgid ""
 "Public-domain illustrations, historical maps, and photographs of the places "
 "named in Scripture, shown beside the verse you are reading."
-msgstr "Иллюстрации в общественном достоянии, исторические карты и фотографии мест, названных в Писании, рядом со стихом, который вы читаете."
+msgstr ""
+"Иллюстрации в общественном достоянии, исторические карты и фотографии мест, "
+"названных в Писании, рядом со стихом, который вы читаете."
 
-#: content.py:86
+#: content.py:88
 #, python-brace-format
 msgid "{n} images"
 msgstr "Изображений: {n}"
 
-#: content.py:87
+#: content.py:89
 msgid "Public domain & Creative Commons (per-item credits)"
 msgstr "Общественное достояние и Creative Commons (указание для каждого)"
 
-#: content.py:88
+#: content.py:90
 msgid ""
 "Engravings (Doré, Schnorr, Merian), historical maps, and place photography "
 "from public-domain and openly-licensed sources."
-msgstr "Гравюры (Доре, Шнорр, Мериан), исторические карты и фотографии мест из источников в общественном достоянии и под свободными лицензиями."
+msgstr ""
+"Гравюры (Доре, Шнорр, Мериан), исторические карты и фотографии мест из "
+"источников в общественном достоянии и под свободными лицензиями."
 
-#: content.py:97
+#: content.py:99
 msgid ""
 "The Hebrew Old Testament word by word — each word with its English gloss, "
 "parsing, transliteration, and Strong’s number."
-msgstr "Еврейский Ветхий Завет слово за словом — каждое слово с английским переводом, разбором, транслитерацией и номером Стронга."
+msgstr ""
+"Еврейский Ветхий Завет слово за словом — каждое слово с английским "
+"переводом, разбором, транслитерацией и номером Стронга."
 
-#: content.py:100 content.py:111 export_dialog.py:102 passage_export.py:421
+#: content.py:102 content.py:113 export_dialog.py:102 passage_export.py:421
 msgid "Interlinear"
 msgstr "Подстрочник"
 
-#: content.py:102
+#: content.py:104
 msgid ""
 "Translators Amalgamated Hebrew OT (TAHOT), created by STEPBible at Tyndale "
 "House Cambridge from the Leningrad Codex, with Qere readings and English-"
 "first verse numbering."
-msgstr "Translators Amalgamated Hebrew OT (TAHOT), созданный STEPBible в Tyndale House (Кембридж) на основе Ленинградского кодекса, с чтениями кере и нумерацией стихов по английской традиции."
+msgstr ""
+"Translators Amalgamated Hebrew OT (TAHOT), созданный STEPBible в Tyndale "
+"House (Кембридж) на основе Ленинградского кодекса, с чтениями кере и "
+"нумерацией стихов по английской традиции."
 
-#: content.py:108
+#: content.py:110
 msgid ""
 "The Greek New Testament word by word — each word with its English gloss, "
 "parsing, transliteration, and Strong’s number."
-msgstr "Греческий Новый Завет слово за словом — каждое слово с английским переводом, разбором, транслитерацией и номером Стронга."
+msgstr ""
+"Греческий Новый Завет слово за словом — каждое слово с английским переводом, "
+"разбором, транслитерацией и номером Стронга."
 
-#: content.py:113
+#: content.py:115
 msgid ""
 "Translators Amalgamated Greek NT (TAGNT), created by STEPBible at Tyndale "
 "House Cambridge. Follows the Nestle-Aland word stream; variant words from "
 "other editions are preserved in the data."
-msgstr "Translators Amalgamated Greek NT (TAGNT), созданный STEPBible в Tyndale House (Кембридж). Следует последовательности слов Нестле-Аланда; слова-разночтения из других изданий сохранены в данных."
+msgstr ""
+"Translators Amalgamated Greek NT (TAGNT), созданный STEPBible в Tyndale "
+"House (Кембридж). Следует последовательности слов Нестле-Аланда; слова-"
+"разночтения из других изданий сохранены в данных."
 
-#: content.py:178
+#: content.py:180
 msgid "Fathers, medievals & reformers — per verse"
 msgstr "Отцы, средневековые авторы и реформаторы — к каждому стиху"
 
-#: content.py:186
+#: content.py:188
 msgid "Engravings, maps & place photos"
 msgstr "Гравюры, карты и фотографии мест"
 
-#: content.py:195
+#: content.py:197
 msgid "Artifacts of the biblical world"
 msgstr "Артефакты библейского мира"
 
-#: content.py:202
+#: content.py:205
+msgid "The lines of descent, drawn"
+msgstr "Линии родства, начерченные"
+
+#: content.py:212
 msgid "Hebrew with gloss & parsing, word by word"
 msgstr "Еврейский с переводом и разбором, слово за словом"
 
-#: content.py:204
+#: content.py:214
 msgid "Greek with gloss & parsing, word by word"
 msgstr "Греческий с переводом и разбором, слово за словом"
 
@@ -1599,7 +1770,7 @@ msgstr "Греческий с переводом и разбором, слово
 msgid "Hide cross-references"
 msgstr "Скрыть параллельные места"
 
-#: crossref_panel.py:78 window.py:477 window.py:2681
+#: crossref_panel.py:78 window.py:477 window.py:2698
 msgid "Cross-references"
 msgstr "Параллельные места"
 
@@ -1714,7 +1885,7 @@ msgstr "Копировать карточку"
 msgid "Card"
 msgstr "Карточка"
 
-#: export_dialog.py:228 verse_card.py:36 window.py:1377
+#: export_dialog.py:228 verse_card.py:36 window.py:1394
 msgid "Paper"
 msgstr "Бумага"
 
@@ -1780,6 +1951,1498 @@ msgstr "Показывать краткое содержание раздело�
 msgid "No entries in this book."
 msgstr "В этой книге нет статей."
 
+#: genealogy_bridge.py:42 genealogy_strings.py:26
+msgid "The Book of Generations"
+msgstr "Книга родословий"
+
+#: genealogy_bridge.py:63
+msgid "son of"
+msgstr "сын"
+
+#: genealogy_bridge.py:64
+msgid "descended from"
+msgstr "потомок"
+
+#: genealogy_bridge.py:65
+msgid "born of"
+msgstr "рождён от"
+
+#: genealogy_bridge.py:66
+msgid "husband of"
+msgstr "муж"
+
+#: genealogy_bridge.py:67
+msgid "son, as was supposed, of"
+msgstr "сын, как думали"
+
+#: genealogy_bridge.py:68
+msgid "of God"
+msgstr "Божий"
+
+#: genealogy_bridge.py:649
+msgid "Masoretic Text"
+msgstr "Масоретский текст"
+
+#: genealogy_bridge.py:650
+msgid "Septuagint"
+msgstr "Септуагинта"
+
+#: genealogy_bridge.py:651
+msgid "Samaritan Pentateuch"
+msgstr "Самаритянское Пятикнижие"
+
+#: genealogy_bridge.py:658
+msgid ""
+"The genealogies of Scripture, drawn: who descends from whom, what the names "
+"mean, and a route back to the passage each line comes from."
+msgstr ""
+"Родословия Писания в рисунках: кто от кого происходит, что означают имена и "
+"путь обратно к тому месту, откуда взята каждая линия."
+
+#: genealogy_bridge.py:661
+#, python-brace-format
+msgid "{people} people, {charts} charts"
+msgstr "{people} человек, {charts} диаграмм"
+
+#: genealogy_bridge.py:664
+msgid "Curated from the biblical text; public domain"
+msgstr "Составлено по библейскому тексту; общественное достояние"
+
+#: genealogy_bridge.py:665
+msgid ""
+"Every line carries the verse it is drawn from. Where a genealogy leaves "
+"generations out, the gap is drawn as a gap; where two writers disagree, both "
+"are shown and neither is silently corrected."
+msgstr ""
+"Каждая линия несёт стих, из которого она взята. Где родословие опускает "
+"поколения, пропуск нарисован как пропуск; где два писателя расходятся, "
+"показаны оба и ни один не исправлен молча."
+
+#: genealogy_layout.py:158
+#, python-format
+msgid "mother: %s"
+msgstr "мать: %s"
+
+#: genealogy_layout.py:160
+#, python-format
+msgid "%(n)d generations omitted here; %(where)s names them."
+msgstr "Здесь опущено поколений: %(n)d; их называет %(where)s."
+
+#: genealogy_layout.py:266 genealogy_layout.py:577
+#, python-format
+msgid "%(n)d written, %(claim)d claimed"
+msgstr "записано %(n)d, заявлено %(claim)d"
+
+#: genealogy_layout.py:346
+#, python-format
+msgid "%d generation, collapsed"
+msgid_plural "%d generations, collapsed"
+msgstr[0] "%d поколение, свёрнуто"
+msgstr[1] "%d поколения, свёрнуто"
+msgstr[2] "%d поколений, свёрнуто"
+
+#: genealogy_layout.py:369
+#, python-format
+msgid "%d generation omitted"
+msgid_plural "%d generations omitted"
+msgstr[0] "опущено %d поколение"
+msgstr[1] "опущено %d поколения"
+msgstr[2] "опущено %d поколений"
+
+#: genealogy_layout.py:557
+msgid "Abraham to David"
+msgstr "От Авраама до Давида"
+
+#: genealogy_layout.py:557
+msgid "David to the exile"
+msgstr "От Давида до переселения"
+
+#: genealogy_layout.py:558
+msgid "The exile to the Christ"
+msgstr "От переселения до Христа"
+
+#: genealogy_layout.py:579
+#, python-format
+msgid "%d name"
+msgid_plural "%d names"
+msgstr[0] "%d имя"
+msgstr[1] "%d имени"
+msgstr[2] "%d имён"
+
+#: genealogy_layout.py:626
+#, python-format
+msgid "also %s"
+msgstr "он же %s"
+
+#: genealogy_layout.py:640 genealogy_layout.py:676 genealogy_layout.py:735
+msgid "no mother named"
+msgstr "мать не названа"
+
+#: genealogy_layout.py:716 genealogy_layout.py:721
+msgid "the line continues here"
+msgstr "здесь линия продолжается"
+
+#: genealogy_layout.py:727
+#, python-format
+msgid "Grouping and order from %s"
+msgstr "Группировка и порядок: %s"
+
+#: genealogy_layout.py:781
+msgid "greyed: no such text installed"
+msgstr "серым: такой текст не установлен"
+
+#: genealogy_layout.py:825
+#, python-format
+msgid "AM %d"
+msgstr "AM %d"
+
+#: genealogy_layout.py:838
+#, python-format
+msgid "the flood · AM %d"
+msgstr "потоп · AM %d"
+
+#: genealogy_layout.py:872
+msgid "dies in the flood year"
+msgstr "умирает в год потопа"
+
+#: genealogy_layout.py:890
+#, python-format
+msgid "Reckoned under the %s."
+msgstr "Исчислено по: %s."
+
+#: genealogy_layout.py:893
+#, python-format
+msgid "%(who)s: born AM %(b)d, lived %(t)d years, died AM %(d)d (%(ref)s)"
+msgstr "%(who)s: род. AM %(b)d, прожил лет: %(t)d, умер AM %(d)d (%(ref)s)"
+
+#: genealogy_layout.py:936
+msgid "each names a different step"
+msgstr "каждый называет своё звено"
+
+#: genealogy_layout.py:937
+msgid "one man, two fathers"
+msgstr "один человек, два отца"
+
+#: genealogy_layout.py:968
+msgid "both agree"
+msgstr "оба согласны"
+
+#: genealogy_layout.py:1008
+msgid "reads upward in the text; inverted here to align"
+msgstr "в тексте — снизу вверх; здесь перевёрнуто"
+
+#: genealogy_layout.py:1035
+#, python-format
+msgid "%d further name"
+msgid_plural "%d further names"
+msgstr[0] "ещё %d имя"
+msgstr[1] "ещё %d имени"
+msgstr[2] "ещё %d имён"
+
+#: genealogy_layout.py:1043
+msgid "no name in common"
+msgstr "ни одного общего имени"
+
+#: genealogy_layout.py:1044
+#, python-format
+msgid "%d shared"
+msgstr "общих: %d"
+
+#: genealogy_layout.py:1066
+#, python-format
+msgid "%d more name in common"
+msgid_plural "%d more names in common"
+msgstr[0] "ещё %d общее имя"
+msgstr[1] "ещё %d общих имени"
+msgstr[2] "ещё %d общих имён"
+
+#: genealogy_layout.py:1094
+#, python-format
+msgid ""
+"%(a)s and %(b)s trace the same descent and agree at %(n)d names: %(who)s. "
+"Everywhere else they differ, and this chart does not resolve the difference."
+msgstr ""
+"%(a)s и %(b)s прослеживают одно и то же родство и совпадают в именах "
+"(%(n)d): %(who)s. Во всём остальном они расходятся, и эта диаграмма не "
+"разрешает расхождение."
+
+#: genealogy_reader.py:332
+msgid "Charts"
+msgstr "Диаграммы"
+
+#: genealogy_reader.py:493
+#, python-format
+msgid "Against it: %s"
+msgstr "Против: %s"
+
+#: genealogy_strings.py:27
+msgid "The lines the Bible keeps, drawn so they can be held"
+msgstr ""
+"Родословия, которые ведёт Библия, — начерченные так, чтобы их запомнить"
+
+#: genealogy_strings.py:36
+msgctxt "person"
+msgid "Adam"
+msgstr "Адам"
+
+#: genealogy_strings.py:37
+msgid "man; earth"
+msgstr "человек; земля"
+
+#: genealogy_strings.py:38
+msgid "The first man, and the head Luke traces the line back to."
+msgstr "Первый человек — и тот, к кому Лука возводит родословие."
+
+#: genealogy_strings.py:39
+msgctxt "person"
+msgid "Seth"
+msgstr "Сиф"
+
+#: genealogy_strings.py:40
+msgid "appointed"
+msgstr "назначенный"
+
+#: genealogy_strings.py:41
+msgid "Given in place of Abel; the line of promise runs through him."
+msgstr "Дан вместо Авеля; через него идёт линия обетования."
+
+#: genealogy_strings.py:42
+msgctxt "person"
+msgid "Enos"
+msgstr "Енос"
+
+#: genealogy_strings.py:43
+msgid "mortal man"
+msgstr "смертный человек"
+
+#: genealogy_strings.py:44
+msgid "In his days men began to call on the name of the LORD."
+msgstr "В его дни начали призывать имя Господа."
+
+#: genealogy_strings.py:45
+msgctxt "person"
+msgid "Cainan"
+msgstr "Каинан"
+
+#: genealogy_strings.py:46
+msgctxt "person"
+msgid "Kenan"
+msgstr "Каинан"
+
+#: genealogy_strings.py:47
+msgid "meaning uncertain"
+msgstr "значение неизвестно"
+
+#: genealogy_strings.py:48
+msgid "Not the 'gotten' of Cain: the two names are different words."
+msgstr "Это не «приобрела» Каина: два имени — разные слова."
+
+#: genealogy_strings.py:49
+msgctxt "person"
+msgid "Mahalaleel"
+msgstr "Малелеил"
+
+#: genealogy_strings.py:50
+msgctxt "person"
+msgid "Maleleel"
+msgstr "Малелеил"
+
+#: genealogy_strings.py:51
+msgid "praise of God"
+msgstr "хвала Богу"
+
+#: genealogy_strings.py:52
+msgctxt "person"
+msgid "Jared"
+msgstr "Иаред"
+
+#: genealogy_strings.py:53
+msgid "descent"
+msgstr "нисхождение"
+
+#: genealogy_strings.py:54
+msgctxt "person"
+msgid "Enoch"
+msgstr "Енох"
+
+#: genealogy_strings.py:55
+msgid "dedicated"
+msgstr "посвящённый"
+
+#: genealogy_strings.py:56
+msgid "He walked with God, and did not die."
+msgstr "Ходил пред Богом и не умер."
+
+#: genealogy_strings.py:57
+msgctxt "person"
+msgid "Methuselah"
+msgstr "Мафусал"
+
+#: genealogy_strings.py:58
+msgctxt "person"
+msgid "Mathusala"
+msgstr "Мафусал"
+
+#: genealogy_strings.py:59
+msgid "man of the dart"
+msgstr "муж стрелы"
+
+#: genealogy_strings.py:60
+msgid "The longest life recorded; it ends the year of the flood."
+msgstr "Самая долгая записанная жизнь; она кончается в год потопа."
+
+#: genealogy_strings.py:61
+msgctxt "person"
+msgid "Lamech"
+msgstr "Ламех"
+
+#: genealogy_strings.py:62
+msgid ""
+"His own name is uncertain; the one he gave his son is not. He named Noah for "
+"the comfort he hoped for."
+msgstr ""
+"Его собственное имя неизвестно по значению, а имя, которое он дал сыну, — "
+"известно. Он назвал сына Ноем ради утешения, на которое надеялся."
+
+#: genealogy_strings.py:63
+msgctxt "person"
+msgid "Noah"
+msgstr "Ной"
+
+#: genealogy_strings.py:64
+msgctxt "person"
+msgid "Noe"
+msgstr "Ной"
+
+#: genealogy_strings.py:65
+msgid "rest; comfort"
+msgstr "покой; утешение"
+
+#: genealogy_strings.py:66
+msgid "The flood divides the chapter, and the ages, at him."
+msgstr "На нём потоп делит и главу, и эпохи."
+
+#: genealogy_strings.py:67
+msgctxt "person"
+msgid "Shem"
+msgstr "Сим"
+
+#: genealogy_strings.py:68
+msgctxt "person"
+msgid "Sem"
+msgstr "Сим"
+
+#: genealogy_strings.py:69
+msgid "name; renown"
+msgstr "имя; слава"
+
+#: genealogy_strings.py:70
+msgid "The line of promise continues through him."
+msgstr "Через него продолжается линия обетования."
+
+#: genealogy_strings.py:71
+msgctxt "person"
+msgid "Ham"
+msgstr "Хам"
+
+#: genealogy_strings.py:72
+msgctxt "person"
+msgid "Japheth"
+msgstr "Иафет"
+
+#: genealogy_strings.py:73
+msgctxt "person"
+msgid "Arphaxad"
+msgstr "Арфаксад"
+
+#: genealogy_strings.py:74
+msgctxt "person"
+msgid "Salah"
+msgstr "Сала"
+
+#: genealogy_strings.py:75
+msgctxt "person"
+msgid "Sala"
+msgstr "Сала"
+
+#: genealogy_strings.py:76
+msgctxt "person"
+msgid "Eber"
+msgstr "Евер"
+
+#: genealogy_strings.py:77
+msgctxt "person"
+msgid "Heber"
+msgstr "Евер"
+
+#: genealogy_strings.py:78
+msgid "the region beyond"
+msgstr "земля по ту сторону"
+
+#: genealogy_strings.py:79
+msgid "The name behind \"Hebrew\"."
+msgstr "Имя, стоящее за словом «еврей»."
+
+#: genealogy_strings.py:80
+msgctxt "person"
+msgid "Peleg"
+msgstr "Фалек"
+
+#: genealogy_strings.py:81
+msgctxt "person"
+msgid "Phalec"
+msgstr "Фалек"
+
+#: genealogy_strings.py:82
+msgid "division"
+msgstr "разделение"
+
+#: genealogy_strings.py:83
+msgid "In his days the earth was divided."
+msgstr "В его дни разделилась земля."
+
+#: genealogy_strings.py:84
+msgctxt "person"
+msgid "Reu"
+msgstr "Рагав"
+
+#: genealogy_strings.py:85
+msgctxt "person"
+msgid "Ragau"
+msgstr "Рагав"
+
+#: genealogy_strings.py:86
+msgctxt "person"
+msgid "Serug"
+msgstr "Серух"
+
+#: genealogy_strings.py:87
+msgctxt "person"
+msgid "Saruch"
+msgstr "Серух"
+
+#: genealogy_strings.py:88
+msgctxt "person"
+msgid "Nahor"
+msgstr "Нахор"
+
+#: genealogy_strings.py:89
+msgctxt "person"
+msgid "Nachor"
+msgstr "Нахор"
+
+#: genealogy_strings.py:90
+msgctxt "person"
+msgid "Terah"
+msgstr "Фарра"
+
+#: genealogy_strings.py:91
+msgctxt "person"
+msgid "Thara"
+msgstr "Фарра"
+
+#: genealogy_strings.py:92
+msgid "Left Ur for Canaan and stopped at Haran."
+msgstr "Вышел из Ура в Ханаан и остановился в Харране."
+
+#: genealogy_strings.py:93
+msgctxt "person"
+msgid "Abraham"
+msgstr "Авраам"
+
+#: genealogy_strings.py:94
+msgctxt "person"
+msgid "Abram"
+msgstr "Аврам"
+
+#: genealogy_strings.py:95
+msgid "father of a multitude"
+msgstr "отец множества"
+
+#: genealogy_strings.py:96
+msgid "The promise begins here; Matthew opens with him."
+msgstr "Здесь начинается обетование; с него начинает Матфей."
+
+#: genealogy_strings.py:97
+msgctxt "person"
+msgid "Isaac"
+msgstr "Исаак"
+
+#: genealogy_strings.py:98
+msgid "laughter"
+msgstr "смех"
+
+#: genealogy_strings.py:99
+msgid "The son of the promise."
+msgstr "Сын обетования."
+
+#: genealogy_strings.py:100
+msgctxt "person"
+msgid "Jacob"
+msgstr "Иаков"
+
+#: genealogy_strings.py:101
+msgctxt "person"
+msgid "Israel"
+msgstr "Израиль"
+
+#: genealogy_strings.py:102
+msgid "supplanter"
+msgstr "запинающий"
+
+#: genealogy_strings.py:103
+msgid "Renamed Israel; his twelve sons are the tribes."
+msgstr "Переименован в Израиля; его двенадцать сыновей — колена."
+
+#: genealogy_strings.py:104
+msgctxt "person"
+msgid "Leah"
+msgstr "Лия"
+
+#: genealogy_strings.py:105
+msgid "Six of the twelve are hers."
+msgstr "Шестеро из двенадцати — её."
+
+#: genealogy_strings.py:106
+msgctxt "person"
+msgid "Rachel"
+msgstr "Рахиль"
+
+#: genealogy_strings.py:107
+msgid "Joseph and Benjamin."
+msgstr "Иосиф и Вениамин."
+
+#: genealogy_strings.py:108
+msgctxt "person"
+msgid "Bilhah"
+msgstr "Валла"
+
+#: genealogy_strings.py:109
+msgid "Rachel's handmaid."
+msgstr "Служанка Рахили."
+
+#: genealogy_strings.py:110
+msgctxt "person"
+msgid "Zilpah"
+msgstr "Зелфа"
+
+#: genealogy_strings.py:111
+msgid "Leah's handmaid."
+msgstr "Служанка Лии."
+
+#: genealogy_strings.py:112
+msgctxt "person"
+msgid "Reuben"
+msgstr "Рувим"
+
+#: genealogy_strings.py:113
+msgctxt "person"
+msgid "Simeon"
+msgstr "Симеон"
+
+#: genealogy_strings.py:114
+msgctxt "person"
+msgid "Levi"
+msgstr "Левий"
+
+#: genealogy_strings.py:115
+msgctxt "person"
+msgid "Issachar"
+msgstr "Иссахар"
+
+#: genealogy_strings.py:116
+msgctxt "person"
+msgid "Zebulun"
+msgstr "Завулон"
+
+#: genealogy_strings.py:117
+msgctxt "person"
+msgid "Joseph"
+msgstr "Иосиф"
+
+#: genealogy_strings.py:118
+msgctxt "person"
+msgid "Benjamin"
+msgstr "Вениамин"
+
+#: genealogy_strings.py:119
+msgctxt "person"
+msgid "Dan"
+msgstr "Дан"
+
+#: genealogy_strings.py:120
+msgctxt "person"
+msgid "Naphtali"
+msgstr "Неффалим"
+
+#: genealogy_strings.py:121
+msgctxt "person"
+msgid "Gad"
+msgstr "Гад"
+
+#: genealogy_strings.py:122
+msgctxt "person"
+msgid "Asher"
+msgstr "Асир"
+
+#: genealogy_strings.py:123
+msgctxt "person"
+msgid "Judah"
+msgstr "Иуда"
+
+#: genealogy_strings.py:124
+msgctxt "person"
+msgid "Juda"
+msgstr "Иуда"
+
+#: genealogy_strings.py:125
+msgctxt "person"
+msgid "Judas"
+msgstr "Иуда"
+
+#: genealogy_strings.py:126
+msgid "praise"
+msgstr "хвала"
+
+#: genealogy_strings.py:127
+msgid "The royal line runs through him, not through the firstborn."
+msgstr "Царская линия идёт через него, а не через первенца."
+
+#: genealogy_strings.py:128
+msgctxt "person"
+msgid "Phares"
+msgstr "Фарес"
+
+#: genealogy_strings.py:129
+msgctxt "person"
+msgid "Pharez"
+msgstr "Фарес"
+
+#: genealogy_strings.py:130
+msgctxt "person"
+msgid "Perez"
+msgstr "Фарес"
+
+#: genealogy_strings.py:131
+msgid "a breach"
+msgstr "пролом"
+
+#: genealogy_strings.py:132
+msgid ""
+"Born of Tamar; his twin's hand came out first, and he was born first anyway."
+msgstr ""
+"Рождён от Фамари; рука его брата-близнеца показалась первой, а родился "
+"первым он."
+
+#: genealogy_strings.py:133
+msgctxt "person"
+msgid "Esrom"
+msgstr "Есром"
+
+#: genealogy_strings.py:134
+msgctxt "person"
+msgid "Hezron"
+msgstr "Есром"
+
+#: genealogy_strings.py:135
+msgctxt "person"
+msgid "Aram"
+msgstr "Арам"
+
+#: genealogy_strings.py:136
+msgctxt "person"
+msgid "Ram"
+msgstr "Арам"
+
+#: genealogy_strings.py:137
+msgctxt "person"
+msgid "Aminadab"
+msgstr "Аминадав"
+
+#: genealogy_strings.py:138
+msgctxt "person"
+msgid "Amminadab"
+msgstr "Аминадав"
+
+#: genealogy_strings.py:139
+msgctxt "person"
+msgid "Naasson"
+msgstr "Наассон"
+
+#: genealogy_strings.py:140
+msgctxt "person"
+msgid "Nahshon"
+msgstr "Наассон"
+
+#: genealogy_strings.py:141
+msgctxt "person"
+msgid "Salmon"
+msgstr "Салмон"
+
+#: genealogy_strings.py:142
+msgctxt "person"
+msgid "Booz"
+msgstr "Вооз"
+
+#: genealogy_strings.py:143
+msgctxt "person"
+msgid "Boaz"
+msgstr "Вооз"
+
+#: genealogy_strings.py:144
+msgid "Redeemed Ruth, and so stands in the line."
+msgstr "Выкупил Руфь — и потому стоит в этой линии."
+
+#: genealogy_strings.py:145
+msgctxt "person"
+msgid "Obed"
+msgstr "Овид"
+
+#: genealogy_strings.py:146
+msgctxt "person"
+msgid "Jesse"
+msgstr "Иессей"
+
+#: genealogy_strings.py:147
+msgctxt "person"
+msgid "David"
+msgstr "Давид"
+
+#: genealogy_strings.py:148
+msgid "Both genealogies run through him, and part immediately after."
+msgstr "Оба родословия проходят через него и сразу после расходятся."
+
+#: genealogy_strings.py:149
+msgctxt "person"
+msgid "Thamar"
+msgstr "Фамарь"
+
+#: genealogy_strings.py:150
+msgctxt "person"
+msgid "Tamar"
+msgstr "Фамарь"
+
+#: genealogy_strings.py:151
+msgid "Matthew names her first of the four women."
+msgstr "Матфей называет её первой из четырёх женщин."
+
+#: genealogy_strings.py:152
+msgctxt "person"
+msgid "Rachab"
+msgstr "Рахава"
+
+#: genealogy_strings.py:153
+msgctxt "person"
+msgid "Rahab"
+msgstr "Рахава"
+
+#: genealogy_strings.py:154
+msgid ""
+"Taken since the early church for Rahab of Jericho, though Matthew does not "
+"say so; he puts her in the line of the Messiah."
+msgstr ""
+"С древности её отождествляют с Раав Иерихонской, хотя Матфей этого не "
+"говорит; он ставит её в родословие Мессии."
+
+#: genealogy_strings.py:155
+msgctxt "person"
+msgid "Ruth"
+msgstr "Руфь"
+
+#: genealogy_strings.py:156
+msgid "A Moabitess; her book exists to end on this genealogy."
+msgstr "Моавитянка; её книга и написана, чтобы окончиться этим родословием."
+
+#: genealogy_strings.py:157
+msgctxt "person"
+msgid "the wife of Uriah"
+msgstr "бывшая за Уриею"
+
+#: genealogy_strings.py:158
+msgctxt "person"
+msgid "Bathsheba"
+msgstr "Вирсавия"
+
+#: genealogy_strings.py:159
+msgctxt "person"
+msgid "Bath-sheba"
+msgstr "Вирсавия"
+
+#: genealogy_strings.py:160
+msgctxt "person"
+msgid "the wife of Urias"
+msgstr "бывшая за Уриею"
+
+#: genealogy_strings.py:161
+msgid ""
+"Matthew will not give her name here — he names the wrong that was done to "
+"her."
+msgstr "Матфей не называет здесь её имени — он называет причинённое ей зло."
+
+#: genealogy_strings.py:162
+msgctxt "person"
+msgid "Mary"
+msgstr "Мария"
+
+#: genealogy_strings.py:163
+msgid ""
+"The line breaks its own grammar at her: Jesus is born of her, not begotten."
+msgstr ""
+"На ней родословие ломает собственную грамматику: Иисус рождён от неё, а не "
+"«родил»."
+
+#: genealogy_strings.py:164
+msgctxt "person"
+msgid "Solomon"
+msgstr "Соломон"
+
+#: genealogy_strings.py:165
+msgctxt "person"
+msgid "Roboam"
+msgstr "Ровоам"
+
+#: genealogy_strings.py:166
+msgctxt "person"
+msgid "Abia"
+msgstr "Авия"
+
+#: genealogy_strings.py:167
+msgctxt "person"
+msgid "Asa"
+msgstr "Аса"
+
+#: genealogy_strings.py:168
+msgctxt "person"
+msgid "Josaphat"
+msgstr "Иосафат"
+
+#: genealogy_strings.py:169
+msgctxt "person"
+msgid "Joram"
+msgstr "Иорам"
+
+#: genealogy_strings.py:170
+msgid "Matthew jumps three generations after him."
+msgstr "После него Матфей перескакивает через три поколения."
+
+#: genealogy_strings.py:171
+msgctxt "person"
+msgid "Ozias"
+msgstr "Озия"
+
+#: genealogy_strings.py:172
+msgctxt "person"
+msgid "Uzziah"
+msgstr "Озия"
+
+#: genealogy_strings.py:173
+msgctxt "person"
+msgid "Azariah"
+msgstr "Азария"
+
+#: genealogy_strings.py:174
+msgid "Called Azariah in 1 Chr 3:12 — one man, two names."
+msgstr "В 1 Пар 3:12 назван Азарией — один человек, два имени."
+
+#: genealogy_strings.py:175
+msgctxt "person"
+msgid "Joatham"
+msgstr "Иоафам"
+
+#: genealogy_strings.py:176
+msgctxt "person"
+msgid "Achaz"
+msgstr "Ахаз"
+
+#: genealogy_strings.py:177
+msgctxt "person"
+msgid "Ezekias"
+msgstr "Езекия"
+
+#: genealogy_strings.py:178
+msgctxt "person"
+msgid "Manasses"
+msgstr "Манассия"
+
+#: genealogy_strings.py:179
+msgctxt "person"
+msgid "Amon"
+msgstr "Амон"
+
+#: genealogy_strings.py:180
+msgctxt "person"
+msgid "Josias"
+msgstr "Иосия"
+
+#: genealogy_strings.py:181
+msgctxt "person"
+msgid "Josiah"
+msgstr "Иосия"
+
+#: genealogy_strings.py:182
+msgid "Matthew skips his son Jehoiakim."
+msgstr "Матфей пропускает его сына Иоакима."
+
+#: genealogy_strings.py:183
+msgctxt "person"
+msgid "Jechonias"
+msgstr "Иехония"
+
+#: genealogy_strings.py:184
+msgctxt "person"
+msgid "Jeconiah"
+msgstr "Иехония"
+
+#: genealogy_strings.py:185
+msgctxt "person"
+msgid "Jehoiachin"
+msgstr "Иехония"
+
+#: genealogy_strings.py:186
+msgctxt "person"
+msgid "Coniah"
+msgstr "Иехония"
+
+#: genealogy_strings.py:187
+msgid "The exile falls in his lifetime."
+msgstr "На его жизнь приходится переселение."
+
+#: genealogy_strings.py:188
+msgctxt "person"
+msgid "Salathiel"
+msgstr "Салафииль"
+
+#: genealogy_strings.py:189
+msgid "Matthew and Luke give him different fathers."
+msgstr "Матфей и Лука дают ему разных отцов."
+
+#: genealogy_strings.py:190
+msgctxt "person"
+msgid "Zorobabel"
+msgstr "Зоровавель"
+
+#: genealogy_strings.py:191
+msgid "The last name the two lists share before Joseph."
+msgstr "Последнее имя, общее для обоих списков до Иосифа."
+
+#: genealogy_strings.py:192
+msgctxt "person"
+msgid "Abiud"
+msgstr "Авиуд"
+
+#: genealogy_strings.py:193
+msgctxt "person"
+msgid "Eliakim"
+msgstr "Елиаким"
+
+#: genealogy_strings.py:194
+msgctxt "person"
+msgid "Azor"
+msgstr "Азор"
+
+#: genealogy_strings.py:195
+msgctxt "person"
+msgid "Sadoc"
+msgstr "Садок"
+
+#: genealogy_strings.py:196
+msgctxt "person"
+msgid "Achim"
+msgstr "Ахим"
+
+#: genealogy_strings.py:197
+msgctxt "person"
+msgid "Eliud"
+msgstr "Елиуд"
+
+#: genealogy_strings.py:198
+msgctxt "person"
+msgid "Eleazar"
+msgstr "Елеазар"
+
+#: genealogy_strings.py:199
+msgctxt "person"
+msgid "Matthan"
+msgstr "Матфан"
+
+#: genealogy_strings.py:200
+msgctxt "person"
+msgid "Ahaziah"
+msgstr "Охозия"
+
+#: genealogy_strings.py:201
+msgid "Named by 1 Chr 3, passed over by Matthew."
+msgstr "Назван в 1 Пар 3, пропущен Матфеем."
+
+#: genealogy_strings.py:202
+msgctxt "person"
+msgid "Joash"
+msgstr "Иоас"
+
+#: genealogy_strings.py:203
+msgctxt "person"
+msgid "Amaziah"
+msgstr "Амасия"
+
+#: genealogy_strings.py:204
+msgctxt "person"
+msgid "Jehoiakim"
+msgstr "Иоаким"
+
+#: genealogy_strings.py:205
+msgid "Matthew's name for Joseph's father."
+msgstr "Имя, которое Матфей даёт отцу Иосифа."
+
+#: genealogy_strings.py:206
+msgid "Matthew traces the line to him; Luke names a different father."
+msgstr "Матфей доводит линию до него; Лука называет другого отца."
+
+#: genealogy_strings.py:207
+msgctxt "person"
+msgid "Jesus"
+msgstr "Иисус"
+
+#: genealogy_strings.py:208
+msgctxt "person"
+msgid "Heli"
+msgstr "Илий"
+
+#: genealogy_strings.py:209
+msgid "Luke's name for Joseph's father."
+msgstr "Имя, которое Лука даёт отцу Иосифа."
+
+#: genealogy_strings.py:210
+msgctxt "person"
+msgid "Nathan"
+msgstr "Нафан"
+
+#: genealogy_strings.py:211
+msgid "Luke leaves the throne line here and follows him."
+msgstr "Здесь Лука оставляет линию престола и идёт за ним."
+
+#: genealogy_strings.py:212
+msgctxt "person"
+msgid "Matthat"
+msgstr "Матфат"
+
+#: genealogy_strings.py:213
+msgctxt "person"
+msgid "Melchi"
+msgstr "Мелхий"
+
+#: genealogy_strings.py:214
+msgctxt "person"
+msgid "Janna"
+msgstr "Ианнай"
+
+#: genealogy_strings.py:215
+msgctxt "person"
+msgid "Mattathias"
+msgstr "Маттафий"
+
+#: genealogy_strings.py:216
+msgctxt "person"
+msgid "Amos"
+msgstr "Амос"
+
+#: genealogy_strings.py:217
+msgctxt "person"
+msgid "Naum"
+msgstr "Наум"
+
+#: genealogy_strings.py:218
+msgctxt "person"
+msgid "Esli"
+msgstr "Еслим"
+
+#: genealogy_strings.py:219
+msgctxt "person"
+msgid "Nagge"
+msgstr "Наггей"
+
+#: genealogy_strings.py:220
+msgctxt "person"
+msgid "Maath"
+msgstr "Мааф"
+
+#: genealogy_strings.py:221
+msgctxt "person"
+msgid "Semei"
+msgstr "Семеий"
+
+#: genealogy_strings.py:222
+msgctxt "person"
+msgid "Joanna"
+msgstr "Иоаннан"
+
+#: genealogy_strings.py:223
+msgctxt "person"
+msgid "Rhesa"
+msgstr "Рисай"
+
+#: genealogy_strings.py:224
+msgctxt "person"
+msgid "Neri"
+msgstr "Нирий"
+
+#: genealogy_strings.py:225
+msgctxt "person"
+msgid "Addi"
+msgstr "Аддий"
+
+#: genealogy_strings.py:226
+msgctxt "person"
+msgid "Cosam"
+msgstr "Косам"
+
+#: genealogy_strings.py:227
+msgctxt "person"
+msgid "Elmodam"
+msgstr "Елмодам"
+
+#: genealogy_strings.py:228
+msgctxt "person"
+msgid "Er"
+msgstr "Ир"
+
+#: genealogy_strings.py:229
+msgctxt "person"
+msgid "Jose"
+msgstr "Иосий"
+
+#: genealogy_strings.py:230
+msgctxt "person"
+msgid "Eliezer"
+msgstr "Елиезер"
+
+#: genealogy_strings.py:231
+msgctxt "person"
+msgid "Jorim"
+msgstr "Иорим"
+
+#: genealogy_strings.py:232
+msgctxt "person"
+msgid "Jonan"
+msgstr "Ионан"
+
+#: genealogy_strings.py:233
+msgctxt "person"
+msgid "Melea"
+msgstr "Мелеай"
+
+#: genealogy_strings.py:234
+msgctxt "person"
+msgid "Menan"
+msgstr "Маинан"
+
+#: genealogy_strings.py:235
+msgctxt "person"
+msgid "Mattatha"
+msgstr "Маттафай"
+
+#: genealogy_strings.py:236
+msgid ""
+"Luke names a Cainan the Hebrew of Genesis 11 does not; the Septuagint does."
+msgstr ""
+"Лука называет Каинана, которого нет в еврейском тексте Бытия 11; в "
+"Септуагинте он есть."
+
+#: genealogy_strings.py:237
+msgctxt "person"
+msgid "God"
+msgstr "Бог"
+
+#: genealogy_strings.py:238
+msgid "Ahaziah, Joash and Amaziah stand between them in Chronicles."
+msgstr "В Паралипоменон между ними стоят Охозия, Иоас и Амасия."
+
+#: genealogy_strings.py:239
+msgid "Chronicles puts Jehoiakim between them."
+msgstr "Паралипоменон ставит между ними Иоакима."
+
+#: genealogy_strings.py:240
+msgid ""
+"Matthew stops saying \"begat\": Jesus is born of Mary, not begotten of "
+"Joseph."
+msgstr ""
+"Матфей перестаёт говорить «родил»: Иисус рождён от Марии, а не рождён от "
+"Иосифа."
+
+#: genealogy_strings.py:241
+msgid "Luke writes \"as was supposed\", and the chart keeps the qualifier."
+msgstr "Лука пишет «как думали», и диаграмма сохраняет эту оговорку."
+
+#: genealogy_strings.py:242
+msgid "Luke ends not at a patriarch but at God; it is a claim, not a link."
+msgstr "Лука кончает не патриархом, а Богом; это утверждение, а не звено."
+
+#: genealogy_strings.py:243
+msgid "From Adam to Noah"
+msgstr "От Адама до Ноя"
+
+#: genealogy_strings.py:244
+msgid "The ten before the flood"
+msgstr "Десять до потопа"
+
+#: genealogy_strings.py:245
+msgid ""
+"One name a generation for ten generations, each with a number attached. Read "
+"as a list it is inert; read as a field of overlapping lives it is "
+"astonishing."
+msgstr ""
+"По одному имени на поколение, десять поколений, и при каждом — число. Как "
+"список это мертво; как поле пересекающихся жизней — поразительно."
+
+#: genealogy_strings.py:246
+msgid "Genesis 5"
+msgstr "Бытие 5"
+
+#: genealogy_strings.py:247
+msgid "Ten lives, laid on one axis"
+msgstr "Десять жизней на одной оси"
+
+#: genealogy_strings.py:248
+msgid "Genesis 5, reckoned in years from Adam"
+msgstr "Бытие 5, в годах от Адама"
+
+#: genealogy_strings.py:249
+msgid ""
+"Every figure here is arithmetic on Genesis 5:3–32, and the arithmetic "
+"assumes what the text does not state: that the ten follow one another with "
+"no gap. Read that way, two things fall out that no list can show — these ten "
+"lives overlap almost completely, and Methuselah's nine hundred and sixty-"
+"nine years run out in the year the flood comes. The years are a reckoning, "
+"not a date the Bible gives."
+msgstr ""
+"Каждое число здесь — арифметика по Бытию 5:3–32, и эта арифметика допускает "
+"то, чего текст не утверждает: что десять следуют друг за другом без "
+"пропусков. При таком чтении видно то, чего не показывает список: эти десять "
+"жизней почти полностью пересекаются, а девятьсот шестьдесят девять лет "
+"Мафусала истекают в год потопа. Годы здесь — вычисление, а не дата, которую "
+"даёт Библия."
+
+#: genealogy_strings.py:250
+msgid "From Shem to Abraham"
+msgstr "От Сима до Авраама"
+
+#: genealogy_strings.py:251
+msgid "The ten after the flood"
+msgstr "Десять после потопа"
+
+#: genealogy_strings.py:252
+msgid ""
+"The same shape as Genesis 5, and the lifespans fall away as it runs — from "
+"Shem's six hundred years to Terah's two hundred and five."
+msgstr ""
+"Та же форма, что и в Бытии 5, но сроки жизни падают по ходу — от шестисот "
+"лет Сима до двухсот пяти Фарры."
+
+#: genealogy_strings.py:253
+msgid "Genesis 11:10–26"
+msgstr "Бытие 11:10–26"
+
+#: genealogy_strings.py:254
+msgid "The house of Jacob"
+msgstr "Дом Иакова"
+
+#: genealogy_strings.py:255
+msgid "Four mothers, twelve sons"
+msgstr "Четыре матери, двенадцать сыновей"
+
+#: genealogy_strings.py:256
+msgid ""
+"Drawn father-only, this is a list of twelve names. Drawn with the mothers, "
+"it is the reason the tribes are grouped the way they are for the rest of the "
+"Bible."
+msgstr ""
+"Нарисованное только по отцам, это список из двенадцати имён. Нарисованное с "
+"матерями, это причина, по которой колена сгруппированы так во всей остальной "
+"Библии."
+
+#: genealogy_strings.py:257
+msgid "Genesis 35:23–26"
+msgstr "Бытие 35:23–26"
+
+#: genealogy_strings.py:258
+msgid "The line Ruth ends on"
+msgstr "Линия, которой кончается книга Руфи"
+
+#: genealogy_strings.py:259
+msgid "Ten names, from Perez to David"
+msgstr "Десять имён, от Фареса до Давида"
+
+#: genealogy_strings.py:260
+msgid ""
+"The book of Ruth exists to arrive here. The same ten men appear in Matthew 1 "
+"under their Greek names — Perez is Phares, Hezron is Esrom, Boaz is Booz."
+msgstr ""
+"Книга Руфи и написана, чтобы прийти сюда. Те же десять человек стоят в "
+"Матфея 1 под греческими формами имён — Фарес, Есром, Вооз."
+
+#: genealogy_strings.py:261
+msgid "Ruth 4:18–22"
+msgstr "Руфь 4:18–22"
+
+#: genealogy_strings.py:262
+msgid "Matthew's genealogy"
+msgstr "Родословие по Матфею"
+
+#: genealogy_strings.py:263
+msgid "Abraham to the Christ, in three sets of fourteen"
+msgstr "От Авраама до Христа, тремя рядами по четырнадцать"
+
+#: genealogy_strings.py:264
+msgid ""
+"Matthew counts his own list out loud in 1:17, and his list also passes over "
+"four kings Chronicles names. Both facts are drawn here — the bands are his "
+"count, the dashed edges are the omissions — and the chart does not say the "
+"one caused the other. Ancient genealogy omits generations as a matter of "
+"course, and \"begat\" can span them; the fourteens are also read as a "
+"mnemonic, and as the numerical value of David's name."
+msgstr ""
+"Матфей сам вслух считает свой список в 1:17, и этот же список обходит "
+"четырёх царей, которых называет Паралипоменон. Здесь показано и то и другое "
+"— полосы это его счёт, пунктирные связи это пропуски — и схема не "
+"утверждает, что одно вызвано другим. Древнее родословие опускает поколения "
+"как нечто обычное, и «родил» может охватывать несколько; четырнадцать читают "
+"и как приём для памяти, и как числовое значение имени Давида."
+
+#: genealogy_strings.py:265
+msgid "Matthew 1:1–17"
+msgstr "Матфея 1:1–17"
+
+#: genealogy_strings.py:266
+msgid "Luke's genealogy"
+msgstr "Родословие по Луке"
+
+#: genealogy_strings.py:267
+msgid "Jesus back to Adam, and past him"
+msgstr "От Иисуса до Адама — и дальше"
+
+#: genealogy_strings.py:268
+msgid ""
+"Luke runs the other way — from Jesus backwards — and does not stop at "
+"Abraham. He ends at Adam, and then at God, which is a claim rather than a "
+"link. Luke gives the older names in their Greek forms — Saruch for Serug, "
+"Ragau for Reu, Noe for Noah; one spelling is kept per man here so the two "
+"lists can be laid side by side, and either form finds him."
+msgstr ""
+"Лука идёт в обратную сторону — от Иисуса назад — и не останавливается на "
+"Аврааме. Он доходит до Адама, а затем до Бога, и это утверждение, а не "
+"звено. Древние имена Лука даёт в греческих формах; здесь за каждым человеком "
+"оставлено одно написание, чтобы два списка можно было положить рядом, и "
+"найти его можно по любой форме."
+
+#: genealogy_strings.py:269
+msgid "Luke 3:23–38"
+msgstr "Луки 3:23–38"
+
+#: genealogy_strings.py:270
+msgid "Matthew and Luke, side by side"
+msgstr "Матфей и Лука рядом"
+
+#: genealogy_strings.py:271
+msgid "Where the two lists touch, and where they part"
+msgstr "Где два списка сходятся и где расходятся"
+
+#: genealogy_strings.py:272
+msgid ""
+"Both trace Jesus through David. They agree at David, at Shealtiel and "
+"Zerubbabel, and at Joseph — and nowhere in between. This chart states that "
+"and stops; the classical answers are set out below it, and none of them is "
+"chosen here."
+msgstr ""
+"Оба возводят Иисуса через Давида. Они совпадают на Давиде, на Салафииле и "
+"Зоровавеле и на Иосифе — и больше нигде. Диаграмма это констатирует и "
+"останавливается; классические ответы изложены ниже, и ни один из них здесь "
+"не выбран."
+
+#: genealogy_strings.py:273
+msgid "Luke gives Mary's line"
+msgstr "Лука даёт родословие Марии"
+
+#: genealogy_strings.py:274
+msgid ""
+"On this reading Matthew traces Joseph's descent and Luke traces Mary's, with "
+"Heli as her father and Joseph named as his son by marriage. It accounts for "
+"the two fathers of Joseph directly."
+msgstr ""
+"При таком чтении Матфей прослеживает происхождение Иосифа, а Лука — Марии, "
+"где Илий её отец, а Иосиф назван его сыном по браку. Это прямо объясняет "
+"двух отцов Иосифа."
+
+#: genealogy_strings.py:275
+msgid ""
+"Annius of Viterbo (1490s); widely held since, and the common answer in "
+"modern evangelical commentary."
+msgstr ""
+"Анний из Витербо (1490-е); с тех пор широко принято и обычно для современных "
+"евангельских комментариев."
+
+#: genealogy_strings.py:276
+msgid ""
+"Luke's text names Joseph, not Mary, and the reading has to supply the step."
+msgstr ""
+"Текст Луки называет Иосифа, а не Марию, и это чтение вынуждено добавлять "
+"звено."
+
+#: genealogy_strings.py:277
+msgid "Levirate marriage"
+msgstr "Левиратный брак"
+
+#: genealogy_strings.py:278
+msgid ""
+"A man dying childless had his brother raise up offspring in his name (Deut "
+"25:5–6), so one man can have a legal father and a biological one. Africanus "
+"has Heli and Jacob as half-brothers by one mother: Heli died childless, "
+"Jacob raised up seed to him, and Joseph is son of Jacob by nature and of "
+"Heli by law."
+msgstr ""
+"Умершему бездетным брат восставлял потомство на его имя (Втор 25:5–6), так "
+"что у одного человека может быть отец по закону и отец по природе. У "
+"Африкана Илий и Иаков — братья по матери: Илий умер бездетным, Иаков "
+"восставил ему семя, и Иосиф — сын Иакова по природе и Илия по закону."
+
+#: genealogy_strings.py:279
+msgid ""
+"Julius Africanus, in a letter preserved by Eusebius, Church History I.7 (3rd "
+"century)."
+msgstr ""
+"Юлий Африкан, в письме, сохранённом Евсевием, «Церковная история» I.7 (III "
+"век)."
+
+#: genealogy_strings.py:280
+msgid "It requires a levirate marriage the text nowhere records."
+msgstr "Оно требует левиратного брака, о котором текст нигде не сообщает."
+
+#: genealogy_strings.py:281
+msgid "Legal throne versus natural descent"
+msgstr "Право на престол против природного родства"
+
+#: genealogy_strings.py:282
+msgid ""
+"Matthew follows the royal succession — who held or had claim to the throne — "
+"while Luke follows physical descent. The two diverge after David because a "
+"throne passes by law and blood passes by birth."
+msgstr ""
+"Матфей идёт по царской преемственности — кто владел престолом или имел на "
+"него право, — а Лука по кровному родству. После Давида они расходятся, "
+"потому что престол переходит по закону, а кровь — по рождению."
+
+#: genealogy_strings.py:283
+msgid ""
+"Widely held among Protestant interpreters; set out at length by J. Gresham "
+"Machen, The Virgin Birth of Christ (1930)."
+msgstr ""
+"Широко принято среди протестантских толкователей; подробно изложено у Дж. "
+"Грешема Мейчена, The Virgin Birth of Christ (1930)."
+
+#: genealogy_strings.py:284
+msgid ""
+"It explains the shape of the difference better than it explains the two "
+"named fathers."
+msgstr "Оно объясняет форму расхождения лучше, чем двух названных отцов."
+
 #: imagery_bridge.py:158
 msgid "Scripture in Art"
 msgstr "Писание в искусстве"
@@ -1829,8 +3492,8 @@ msgstr "Искусство"
 msgid "Where"
 msgstr "Где"
 
-#: imagery_reader.py:568 module_manager.py:590 module_manager.py:606
-#: module_manager.py:1448
+#: imagery_reader.py:568 module_manager.py:597 module_manager.py:613
+#: module_manager.py:1455
 msgid "Bible Imagery"
 msgstr "Библейские изображения"
 
@@ -1838,7 +3501,9 @@ msgstr "Библейские изображения"
 msgid ""
 "Navigate there to see illustrations, maps, and photos of the places named in "
 "each verse."
-msgstr "Перейдите туда, чтобы увидеть иллюстрации, карты и фотографии мест, названных в каждом стихе."
+msgstr ""
+"Перейдите туда, чтобы увидеть иллюстрации, карты и фотографии мест, "
+"названных в каждом стихе."
 
 #: imagery_reader.py:602
 msgid "No illustration for this verse"
@@ -1848,7 +3513,9 @@ msgstr "Нет иллюстрации к этому стиху"
 msgid ""
 "Try a neighbouring verse, or a scene the artists depicted more often. The "
 "Where tab may still have a map or places."
-msgstr "Попробуйте соседний стих или сцену, которую художники изображали чаще. На вкладке «Где» всё ещё может быть карта или места."
+msgstr ""
+"Попробуйте соседний стих или сцену, которую художники изображали чаще. На "
+"вкладке «Где» всё ещё может быть карта или места."
 
 #: imagery_reader.py:618
 #, python-brace-format
@@ -1865,7 +3532,9 @@ msgstr "Для этого стиха нет мест на карте"
 #: imagery_reader.py:650
 msgid ""
 "Not every verse names a place. The Art tab may still have an illustration."
-msgstr "Не каждый стих называет место. На вкладке «Искусство» всё ещё может быть иллюстрация."
+msgstr ""
+"Не каждый стих называет место. На вкладке «Искусство» всё ещё может быть "
+"иллюстрация."
 
 #: imagery_reader.py:664
 msgid "Places in this verse"
@@ -1895,7 +3564,7 @@ msgstr "Копировать название работы, автора и ис
 msgid "Copy image"
 msgstr "Копировать изображение"
 
-#: imagery_reader.py:891 pane.py:1445
+#: imagery_reader.py:891 pane.py:1460
 msgid "Today"
 msgstr "Сегодня"
 
@@ -1915,11 +3584,11 @@ msgstr "Приблизить"
 msgid "Fit to window"
 msgstr "Вместить в окно"
 
-#: interlinear_data.py:312 module_manager.py:561 module_manager.py:1491
+#: interlinear_data.py:312 module_manager.py:568 module_manager.py:1498
 msgid "Interlinear — Hebrew OT"
 msgstr "Подстрочник — еврейский ВЗ"
 
-#: interlinear_data.py:313 module_manager.py:562 module_manager.py:1493
+#: interlinear_data.py:313 module_manager.py:569 module_manager.py:1500
 msgid "Interlinear — Greek NT"
 msgstr "Подстрочник — греческий НЗ"
 
@@ -1967,8 +3636,8 @@ msgstr "Словарь Стронга"
 msgid "Close lexicon"
 msgstr "Закрыть словарь"
 
-#: lexicon_panel.py:305 lexicon_panel.py:310 lexicon_panel.py:500
-#: lexicon_panel.py:545
+#: lexicon_panel.py:305 lexicon_panel.py:310 lexicon_panel.py:540
+#: lexicon_panel.py:585
 msgid "Full LSJ entry"
 msgstr "Полная статья LSJ"
 
@@ -1980,39 +3649,39 @@ msgstr "Результаты изучения слова"
 msgid "Word study"
 msgstr "Изучение слова"
 
-#: lexicon_panel.py:416
+#: lexicon_panel.py:422
 #, python-brace-format
 msgid "Strong's {num}"
 msgstr "Стронг {num}"
 
-#: lexicon_panel.py:423
+#: lexicon_panel.py:429
 #, python-brace-format
 msgid "in “{text}”"
 msgstr "в «{text}»"
 
-#: lexicon_panel.py:426
+#: lexicon_panel.py:432
 #, python-brace-format
 msgid "with {strongs}"
 msgstr "с {strongs}"
 
-#: lexicon_panel.py:487 lexicon_panel.py:488
+#: lexicon_panel.py:527 lexicon_panel.py:528
 msgid "Definition not found."
 msgstr "Определение не найдено."
 
-#: lexicon_panel.py:493
+#: lexicon_panel.py:533
 #, python-brace-format
 msgid "{entry} loaded"
 msgstr "{entry} загружено"
 
-#: lexicon_panel.py:552
+#: lexicon_panel.py:592
 msgid "Brief entry (Abbott-Smith)"
 msgstr "Краткая статья (Abbott-Smith)"
 
-#: lexicon_panel.py:640 pane_search.py:444 search_panel.py:352
+#: lexicon_panel.py:681 pane_search.py:444 search_panel.py:352
 msgid "Searching…"
 msgstr "Поиск…"
 
-#: lexicon_panel.py:688
+#: lexicon_panel.py:729
 #, python-brace-format
 msgid "Searching {book}… {n} match so far ({ch}/{total})"
 msgid_plural "Searching {book}… {n} matches so far ({ch}/{total})"
@@ -2020,7 +3689,7 @@ msgstr[0] "Поиск в книге {book}… пока {n} совпадение 
 msgstr[1] "Поиск в книге {book}… пока {n} совпадения ({ch}/{total})"
 msgstr[2] "Поиск в книге {book}… пока {n} совпадений ({ch}/{total})"
 
-#: lexicon_panel.py:709
+#: lexicon_panel.py:750
 #, python-brace-format
 msgid "{n} occurrence in {book}"
 msgid_plural "{n} occurrences in {book}"
@@ -2028,184 +3697,184 @@ msgstr[0] "{n} вхождение в книге {book}"
 msgstr[1] "{n} вхождения в книге {book}"
 msgstr[2] "{n} вхождений в книге {book}"
 
-#: lexicon_panel.py:715
+#: lexicon_panel.py:756
 #, python-brace-format
 msgid "Showing the first {n} verses"
 msgstr "Показаны первые {n} стихов"
 
-#: lexicon_panel.py:794 lexicon_panel.py:795
+#: lexicon_panel.py:835 lexicon_panel.py:836
 msgid "Open in Bible pane"
 msgstr "Открыть в библейской панели"
 
-#: lexicon_panel.py:815
+#: lexicon_panel.py:856
 msgid "No Bible installed."
 msgstr "Ни одна Библия не установлена."
 
-#: lexicon_panel.py:836
+#: lexicon_panel.py:877
 msgid "Verse not found in this Bible."
 msgstr "Стих не найден в этой Библии."
 
-#: module_manager.py:43 module_picker.py:224
+#: module_manager.py:42 module_picker.py:224
 msgid "English"
 msgstr "Английский"
 
-#: module_manager.py:43 module_picker.py:227
+#: module_manager.py:42 module_picker.py:227
 msgid "German"
 msgstr "Немецкий"
 
-#: module_manager.py:43 module_picker.py:227
+#: module_manager.py:42 module_picker.py:227
 msgid "French"
 msgstr "Французский"
 
-#: module_manager.py:43 module_picker.py:225
+#: module_manager.py:42 module_picker.py:225
 msgid "Spanish"
 msgstr "Испанский"
 
-#: module_manager.py:44
+#: module_manager.py:43
 msgid "Italian"
 msgstr "Итальянский"
 
-#: module_manager.py:44
+#: module_manager.py:43
 msgid "Portuguese"
 msgstr "Португальский"
 
-#: module_manager.py:44
+#: module_manager.py:43
 msgid "Dutch"
 msgstr "Нидерландский"
 
-#: module_manager.py:44 module_picker.py:226
+#: module_manager.py:43 module_picker.py:226
 msgid "Russian"
 msgstr "Русский"
 
-#: module_manager.py:45 module_picker.py:226
+#: module_manager.py:44 module_picker.py:226
 msgid "Greek"
 msgstr "Греческий"
 
-#: module_manager.py:45 module_picker.py:227
+#: module_manager.py:44 module_picker.py:227
 msgid "Hebrew"
 msgstr "Еврейский"
 
-#: module_manager.py:45 module_picker.py:226
+#: module_manager.py:44 module_picker.py:226
 msgid "Latin"
 msgstr "Латинский"
 
-#: module_manager.py:45
+#: module_manager.py:44
 msgid "Arabic"
 msgstr "Арабский"
 
-#: module_manager.py:46
+#: module_manager.py:45
 msgid "Chinese"
 msgstr "Китайский"
 
-#: module_manager.py:46
+#: module_manager.py:45
 msgid "Japanese"
 msgstr "Японский"
 
-#: module_manager.py:46
+#: module_manager.py:45
 msgid "Korean"
 msgstr "Корейский"
 
-#: module_manager.py:46
+#: module_manager.py:45
 msgid "Swedish"
 msgstr "Шведский"
 
-#: module_manager.py:47
+#: module_manager.py:46
 msgid "Finnish"
 msgstr "Финский"
 
-#: module_manager.py:47
+#: module_manager.py:46
 msgid "Danish"
 msgstr "Датский"
 
-#: module_manager.py:47
+#: module_manager.py:46
 msgid "Norwegian"
 msgstr "Норвежский"
 
-#: module_manager.py:47
+#: module_manager.py:46
 msgid "Polish"
 msgstr "Польский"
 
-#: module_manager.py:48
+#: module_manager.py:47
 msgid "Czech"
 msgstr "Чешский"
 
-#: module_manager.py:48
+#: module_manager.py:47
 msgid "Slovak"
 msgstr "Словацкий"
 
-#: module_manager.py:48
+#: module_manager.py:47
 msgid "Hungarian"
 msgstr "Венгерский"
 
-#: module_manager.py:48
+#: module_manager.py:47
 msgid "Romanian"
 msgstr "Румынский"
 
-#: module_manager.py:49
+#: module_manager.py:48
 msgid "Ukrainian"
 msgstr "Украинский"
 
-#: module_manager.py:49
+#: module_manager.py:48
 msgid "Bulgarian"
 msgstr "Болгарский"
 
-#: module_manager.py:49
+#: module_manager.py:48
 msgid "Croatian"
 msgstr "Хорватский"
 
-#: module_manager.py:49
+#: module_manager.py:48
 msgid "Serbian"
 msgstr "Сербский"
 
-#: module_manager.py:50
+#: module_manager.py:49
 msgid "Afrikaans"
 msgstr "Африкаанс"
 
-#: module_manager.py:50
+#: module_manager.py:49
 msgid "Persian"
 msgstr "Персидский"
 
-#: module_manager.py:50
+#: module_manager.py:49
 msgid "Turkish"
 msgstr "Турецкий"
 
-#: module_manager.py:50
+#: module_manager.py:49
 msgid "Vietnamese"
 msgstr "Вьетнамский"
 
-#: module_manager.py:51
+#: module_manager.py:50
 msgid "Indonesian"
 msgstr "Индонезийский"
 
-#: module_manager.py:51
+#: module_manager.py:50
 msgid "Swahili"
 msgstr "Суахили"
 
-#: module_manager.py:51
+#: module_manager.py:50
 msgid "Tagalog"
 msgstr "Тагальский"
 
-#: module_manager.py:112 module_picker.py:212
+#: module_manager.py:119 module_picker.py:212
 msgid "Bibles"
 msgstr "Библии"
 
-#: module_manager.py:115
+#: module_manager.py:122
 msgid "Commentaries"
 msgstr "Комментарии"
 
-#: module_manager.py:118
+#: module_manager.py:125
 msgid "Study Tools"
 msgstr "Инструменты"
 
-#: module_manager.py:121
+#: module_manager.py:128
 msgid "Books & More"
 msgstr "Книги и др."
 
-#: module_manager.py:177
+#: module_manager.py:184
 msgid "updated less than an hour ago"
 msgstr "обновлено меньше часа назад"
 
-#: module_manager.py:180
+#: module_manager.py:187
 #, python-brace-format
 msgid "updated {h} hour ago"
 msgid_plural "updated {h} hours ago"
@@ -2213,7 +3882,7 @@ msgstr[0] "обновлено {h} час назад"
 msgstr[1] "обновлено {h} часа назад"
 msgstr[2] "обновлено {h} часов назад"
 
-#: module_manager.py:183
+#: module_manager.py:190
 #, python-brace-format
 msgid "updated {d} day ago"
 msgid_plural "updated {d} days ago"
@@ -2221,7 +3890,7 @@ msgstr[0] "обновлено {d} день назад"
 msgstr[1] "обновлено {d} дня назад"
 msgstr[2] "обновлено {d} дней назад"
 
-#: module_manager.py:185
+#: module_manager.py:192
 #, python-brace-format
 msgid "updated {m} month ago"
 msgid_plural "updated {m} months ago"
@@ -2229,168 +3898,184 @@ msgstr[0] "обновлено {m} месяц назад"
 msgstr[1] "обновлено {m} месяца назад"
 msgstr[2] "обновлено {m} месяцев назад"
 
-#: module_manager.py:192 welcome.py:870
+#: module_manager.py:199 welcome.py:922
 #, python-brace-format
 msgid "{pct}% ({done} of {total} MB)"
 msgstr "{pct}% ({done} из {total} МБ)"
 
-#: module_manager.py:195 welcome.py:873
+#: module_manager.py:202 welcome.py:925
 #, python-brace-format
 msgid "{done} MB"
 msgstr "{done} МБ"
 
-#: module_manager.py:212
+#: module_manager.py:219
 msgid "Module Manager"
 msgstr "Менеджер модулей"
 
-#: module_manager.py:242 module_manager.py:243
+#: module_manager.py:249 module_manager.py:250
 msgid "Import module from file"
 msgstr "Импортировать модуль из файла"
 
-#: module_manager.py:261
+#: module_manager.py:268
 msgid "Retry"
 msgstr "Повторить"
 
-#: module_manager.py:300
+#: module_manager.py:307
 msgid "Search installed and catalogue…"
 msgstr "Поиск среди установленных и в каталоге…"
 
-#: module_manager.py:323
+#: module_manager.py:330
 msgid "Filter languages…"
 msgstr "Отбор языков…"
 
-#: module_manager.py:364 module_picker.py:120 module_picker.py:121
+#: module_manager.py:371 module_picker.py:120 module_picker.py:121
 msgid "Filter by language"
 msgstr "Отбор по языку"
 
-#: module_manager.py:367 module_manager.py:368
+#: module_manager.py:374 module_manager.py:375
 msgid "Show all languages"
 msgstr "Показать все языки"
 
-#: module_manager.py:386 module_manager.py:1072
+#: module_manager.py:393 module_manager.py:1079
 msgid "Strong's"
 msgstr "Стронг"
 
-#: module_manager.py:388 module_manager.py:389
+#: module_manager.py:395 module_manager.py:396
 msgid "Only modules with Strong's numbers"
 msgstr "Только модули с номерами Стронга"
 
-#: module_manager.py:415 module_manager.py:416
+#: module_manager.py:422 module_manager.py:423
 msgid "Refresh the catalogue"
 msgstr "Обновить каталог"
 
-#: module_manager.py:421
+#: module_manager.py:428
 msgid "Browse catalogue"
 msgstr "Обзор каталога"
 
-#: module_manager.py:489 module_manager.py:504 module_manager.py:514
+#: module_manager.py:496 module_manager.py:511 module_manager.py:521
 msgid "Curated for Scriptura"
 msgstr "Отобрано для Scriptura"
 
-#: module_manager.py:491
+#: module_manager.py:498
 msgid "Hand-assembled companions, built for this app."
 msgstr "Собранные вручную спутники, созданные для этого приложения."
 
-#: module_manager.py:519
+#: module_manager.py:526
 msgid "Open databases"
 msgstr "Открытые базы данных"
 
-#: module_manager.py:521
+#: module_manager.py:528
 msgid ""
 "Open-access data behind the word-study features — cross-references, Hebrew "
 "and Greek lexicons, and grammatical parsing."
-msgstr "Открытые данные, на которых держится изучение слов, — перекрёстные ссылки, еврейский и греческий словари и грамматический разбор."
+msgstr ""
+"Открытые данные, на которых держится изучение слов, — перекрёстные ссылки, "
+"еврейский и греческий словари и грамматический разбор."
 
-#: module_manager.py:535
+#: module_manager.py:542
 #, python-brace-format
 msgid "{n} quotations from the church fathers to the Reformers, verse by verse"
 msgstr "{n} цитат от отцов Церкви до реформаторов, стих за стихом"
 
-#: module_manager.py:537
+#: module_manager.py:544
 msgid "Church-history commentary, verse by verse"
 msgstr "Комментарий из истории Церкви, стих за стихом"
 
-#: module_manager.py:539 module_manager.py:598 module_manager.py:826
-#: module_manager.py:841 module_manager.py:1132 module_manager.py:1756
+#: module_manager.py:546 module_manager.py:605 module_manager.py:833
+#: module_manager.py:848 module_manager.py:1139 module_manager.py:1763
 msgid "Update"
 msgstr "Обновить"
 
-#: module_manager.py:542 module_manager.py:601
+#: module_manager.py:549 module_manager.py:608
 msgid "A newer pack is available"
 msgstr "Доступен более новый набор"
 
-#: module_manager.py:550
+#: module_manager.py:557
 msgid ""
 "How the church read each verse, from the fathers to the Reformers · ~33 MB "
 "download"
-msgstr "Как Церковь читала каждый стих, от отцов до реформаторов · загрузка ~33 МБ"
+msgstr ""
+"Как Церковь читала каждый стих, от отцов до реформаторов · загрузка ~33 МБ"
 
-#: module_manager.py:552 module_manager.py:581 module_manager.py:611
-#: module_manager.py:642 module_manager.py:1473
+#: module_manager.py:559 module_manager.py:588 module_manager.py:618
+#: module_manager.py:649 module_manager.py:1480
 msgid "Download"
 msgstr "Загрузить"
 
-#: module_manager.py:567
+#: module_manager.py:574
 msgid ""
 "Every OT word with gloss, parsing, and Strong’s — Tyndale House data (CC BY)"
-msgstr "Каждое слово ВЗ со значением, разбором и номером Стронга — данные Tyndale House (CC BY)"
-
-#: module_manager.py:569
-msgid ""
-"Every NT word with gloss, parsing, and Strong’s — Tyndale House data (CC BY)"
-msgstr "Каждое слово НЗ со значением, разбором и номером Стронга — данные Tyndale House (CC BY)"
+msgstr ""
+"Каждое слово ВЗ со значением, разбором и номером Стронга — данные Tyndale "
+"House (CC BY)"
 
 #: module_manager.py:576
 msgid ""
+"Every NT word with gloss, parsing, and Strong’s — Tyndale House data (CC BY)"
+msgstr ""
+"Каждое слово НЗ со значением, разбором и номером Стронга — данные Tyndale "
+"House (CC BY)"
+
+#: module_manager.py:583
+msgid ""
 "The Hebrew Old Testament word by word — gloss, parsing, and Strong’s under "
 "each word · ~16 MB download"
-msgstr "Еврейский Ветхий Завет слово за словом — значение, разбор и номер Стронга под каждым словом · загрузка ~16 МБ"
+msgstr ""
+"Еврейский Ветхий Завет слово за словом — значение, разбор и номер Стронга "
+"под каждым словом · загрузка ~16 МБ"
 
-#: module_manager.py:579
+#: module_manager.py:586
 msgid ""
 "The Greek New Testament word by word — gloss, parsing, and Strong’s under "
 "each word · ~7 MB download"
-msgstr "Греческий Новый Завет слово за словом — значение, разбор и номер Стронга под каждым словом · загрузка ~7 МБ"
+msgstr ""
+"Греческий Новый Завет слово за словом — значение, разбор и номер Стронга под "
+"каждым словом · загрузка ~7 МБ"
 
-#: module_manager.py:594
+#: module_manager.py:601
 #, python-brace-format
 msgid "{n} illustrations, maps, and place photos, verse by verse"
 msgstr "{n} иллюстраций, карт и фотографий мест, стих за стихом"
 
-#: module_manager.py:596
+#: module_manager.py:603
 msgid "Illustrations, maps, and place photos, verse by verse"
 msgstr "Иллюстрации, карты и фотографии мест, стих за стихом"
 
-#: module_manager.py:609
+#: module_manager.py:616
 msgid ""
 "Illustrations, historical maps, and photographs of the places named in each "
 "verse · ~525 MB download"
-msgstr "Иллюстрации, исторические карты и фотографии мест, названных в каждом стихе · загрузка ~525 МБ"
+msgstr ""
+"Иллюстрации, исторические карты и фотографии мест, названных в каждом стихе "
+"· загрузка ~525 МБ"
 
-#: module_manager.py:624
+#: module_manager.py:631
 msgid ""
 "Artifacts, inscriptions, and excavated places in biblical sequence — open it "
 "from any pane’s module picker"
-msgstr "Артефакты, надписи и раскопанные места в библейской последовательности — откройте из выбора модулей любой панели"
+msgstr ""
+"Артефакты, надписи и раскопанные места в библейской последовательности — "
+"откройте из выбора модулей любой панели"
 
-#: module_manager.py:626
+#: module_manager.py:633
 msgid "Included"
 msgstr "Входит в комплект"
 
-#: module_manager.py:693 module_manager.py:762 module_picker.py:224
+#: module_manager.py:700 module_manager.py:769 module_picker.py:224
 msgid "All languages"
 msgstr "Все языки"
 
-#: module_manager.py:774
+#: module_manager.py:781
 msgid "Imported by an older version — download again for full formatting"
-msgstr "Импортировано старой версией — загрузите заново ради полного оформления"
+msgstr ""
+"Импортировано старой версией — загрузите заново ради полного оформления"
 
-#: module_manager.py:776
+#: module_manager.py:783
 #, python-brace-format
 msgid "eBible.org published a newer text on {date}"
 msgstr "eBible.org опубликовал более новый текст {date}"
 
-#: module_manager.py:817
+#: module_manager.py:824
 #, python-brace-format
 msgid "{n} update available"
 msgid_plural "{n} updates available"
@@ -2398,24 +4083,24 @@ msgstr[0] "{n} доступное обновление"
 msgstr[1] "{n} доступных обновления"
 msgstr[2] "{n} доступных обновлений"
 
-#: module_manager.py:839 module_manager.py:1756
+#: module_manager.py:846 module_manager.py:1763
 #, python-brace-format
 msgid "Update from v{old} to v{new}"
 msgstr "Обновление с v{old} до v{new}"
 
-#: module_manager.py:883
+#: module_manager.py:890
 msgid "Installed"
 msgstr "Установлено"
 
-#: module_manager.py:886
+#: module_manager.py:893
 msgid "No installed modules match your search."
 msgstr "Ни один установленный модуль не подходит под ваш запрос."
 
-#: module_manager.py:887
+#: module_manager.py:894
 msgid "Nothing yet — install something from the catalogue below."
 msgstr "Пока ничего — установите что-нибудь из каталога ниже."
 
-#: module_manager.py:898
+#: module_manager.py:905
 #, python-brace-format
 msgid "{n} CrossWire module"
 msgid_plural "{n} CrossWire modules"
@@ -2423,7 +4108,7 @@ msgstr[0] "{n} модуль CrossWire"
 msgstr[1] "{n} модуля CrossWire"
 msgstr[2] "{n} модулей CrossWire"
 
-#: module_manager.py:903
+#: module_manager.py:910
 #, python-brace-format
 msgid "{n} eBible translation"
 msgid_plural "{n} eBible translations"
@@ -2431,24 +4116,24 @@ msgstr[0] "{n} перевод eBible"
 msgstr[1] "{n} перевода eBible"
 msgstr[2] "{n} переводов eBible"
 
-#: module_manager.py:909
+#: module_manager.py:916
 msgid "searching all languages"
 msgstr "поиск по всем языкам"
 
-#: module_manager.py:960
+#: module_manager.py:967
 msgid "No modules match your filters"
 msgstr "Ни один модуль не подходит под ваши условия"
 
-#: module_manager.py:963
+#: module_manager.py:970
 msgid "No catalogue cached yet — refresh to download the module list."
 msgstr "Каталог ещё не загружен — обновите, чтобы получить список модулей."
 
-#: module_manager.py:990
+#: module_manager.py:997
 #, python-brace-format
 msgid "Load more — showing the first {shown} of {total}"
 msgstr "Показать ещё — показаны первые {shown} из {total}"
 
-#: module_manager.py:1051
+#: module_manager.py:1058
 #, python-brace-format
 msgid "{n} edition"
 msgid_plural "{n} editions"
@@ -2456,164 +4141,170 @@ msgstr[0] "{n} издание"
 msgstr[1] "{n} издания"
 msgstr[2] "{n} изданий"
 
-#: module_manager.py:1074 module_manager.py:1709
+#: module_manager.py:1081 module_manager.py:1716
 msgid "Locked"
 msgstr "Заблокирован"
 
-#: module_manager.py:1090 module_manager.py:1091 module_picker.py:196
+#: module_manager.py:1097 module_manager.py:1098 module_picker.py:196
 msgid "Remove module"
 msgstr "Удалить модуль"
 
-#: module_manager.py:1093 module_manager.py:1145 module_manager.py:1347
-#: module_manager.py:1636 module_manager.py:1668 module_manager.py:1748
+#: module_manager.py:1100 module_manager.py:1152 module_manager.py:1354
+#: module_manager.py:1643 module_manager.py:1675 module_manager.py:1755
 msgid "Install"
 msgstr "Установить"
 
-#: module_manager.py:1164
+#: module_manager.py:1171
 msgid "Waiting for the current operation to finish…"
 msgstr "Ожидание завершения текущей операции…"
 
-#: module_manager.py:1282 module_manager.py:1283 module_manager.py:1366
-#: module_manager.py:1526 module_picker.py:519 study_journal.py:236
+#: module_manager.py:1289 module_manager.py:1290 module_manager.py:1373
+#: module_manager.py:1533 module_picker.py:519 study_journal.py:236
 msgid "Remove"
 msgstr "Удалить"
 
-#: module_manager.py:1336 window.py:1959
+#: module_manager.py:1343 window.py:1976
 msgid "Unlock Module"
 msgstr "Разблокировать модуль"
 
-#: module_manager.py:1338
+#: module_manager.py:1345
 #, python-brace-format
 msgid ""
 "“{name}” is enciphered. Enter the unlock key from the publisher to install "
 "it."
-msgstr "Модуль «{name}» зашифрован. Введите ключ от издателя, чтобы установить его."
+msgstr ""
+"Модуль «{name}» зашифрован. Введите ключ от издателя, чтобы установить его."
 
-#: module_manager.py:1344 module_manager.py:1735
+#: module_manager.py:1351 module_manager.py:1742
 msgid "Paste the unlock key from the publisher"
 msgstr "Вставьте ключ разблокировки от издателя"
 
-#: module_manager.py:1346 module_manager.py:1365 module_manager.py:1525
-#: module_manager.py:1633 module_picker.py:518 study_journal.py:211
-#: study_journal.py:235 window.py:1899 window.py:1966
+#: module_manager.py:1353 module_manager.py:1372 module_manager.py:1532
+#: module_manager.py:1640 module_picker.py:518 study_journal.py:211
+#: study_journal.py:235 window.py:1916 window.py:1983
 msgid "Cancel"
 msgstr "Отмена"
 
-#: module_manager.py:1361
+#: module_manager.py:1368
 msgid "Remove module?"
 msgstr "Удалить модуль?"
 
-#: module_manager.py:1363
+#: module_manager.py:1370
 #, python-brace-format
 msgid ""
 "“{name}” will be removed from your library. You can reinstall it from the "
 "catalogue later."
-msgstr "Модуль «{name}» будет удалён из вашей библиотеки. Позже его можно установить из каталога заново."
+msgstr ""
+"Модуль «{name}» будет удалён из вашей библиотеки. Позже его можно установить "
+"из каталога заново."
 
-#: module_manager.py:1394
+#: module_manager.py:1401
 msgid "Downloading eBible catalog…"
 msgstr "Загружается каталог eBible…"
 
-#: module_manager.py:1402
+#: module_manager.py:1409
 msgid "Downloading module list from CrossWire…"
 msgstr "Загружается список модулей с CrossWire…"
 
-#: module_manager.py:1410 module_manager.py:1569
+#: module_manager.py:1417 module_manager.py:1576
 #, python-brace-format
 msgid "Downloading {name}…"
 msgstr "Загружается {name}…"
 
-#: module_manager.py:1425 module_manager.py:1541
+#: module_manager.py:1432 module_manager.py:1548
 msgid "Downloading…"
 msgstr "Загрузка…"
 
-#: module_manager.py:1461 module_manager.py:1468 module_manager.py:1482
+#: module_manager.py:1468 module_manager.py:1475 module_manager.py:1489
 msgid "Scholar’s Greek Lexicon"
 msgstr "Научный греческий словарь"
 
-#: module_manager.py:1464
-msgid "Abbott-Smith + full Liddell-Scott-Jones — Tyndale House data (CC BY)"
-msgstr "Abbott-Smith и полный Лиддел-Скотт-Джонс — данные Tyndale House (CC BY)"
-
 #: module_manager.py:1471
+msgid "Abbott-Smith + full Liddell-Scott-Jones — Tyndale House data (CC BY)"
+msgstr ""
+"Abbott-Smith и полный Лиддел-Скотт-Джонс — данные Tyndale House (CC BY)"
+
+#: module_manager.py:1478
 msgid ""
 "Upgrade Greek definitions to Abbott-Smith, with the full Liddell-Scott-Jones "
 "one click deeper · ~7 MB download"
-msgstr "Заменить греческие определения на Abbott-Smith, с полным Лиддел-Скотт-Джонсом на щелчок глубже · загрузка ~7 МБ"
+msgstr ""
+"Заменить греческие определения на Abbott-Smith, с полным Лиддел-Скотт-"
+"Джонсом на щелчок глубже · загрузка ~7 МБ"
 
-#: module_manager.py:1521
+#: module_manager.py:1528
 msgid "Remove?"
 msgstr "Удалить?"
 
-#: module_manager.py:1523
+#: module_manager.py:1530
 #, python-brace-format
 msgid "“{name}” will be removed. You can download it again later."
 msgstr "«{name}» будет удалён. Позже его можно загрузить снова."
 
-#: module_manager.py:1542
+#: module_manager.py:1549
 msgid "Parsing USFM…"
 msgstr "Разбор USFM…"
 
-#: module_manager.py:1543
+#: module_manager.py:1550
 msgid "Saving…"
 msgstr "Сохранение…"
 
-#: module_manager.py:1564
+#: module_manager.py:1571
 #, python-brace-format
 msgid "{name} updated"
 msgstr "{name} обновлён"
 
-#: module_manager.py:1573
+#: module_manager.py:1580
 msgid "Updating…"
 msgstr "Обновление…"
 
-#: module_manager.py:1573
+#: module_manager.py:1580
 msgid "Installing…"
 msgstr "Установка…"
 
-#: module_manager.py:1584
+#: module_manager.py:1591
 msgid "Import SWORD Module"
 msgstr "Импорт модуля SWORD"
 
-#: module_manager.py:1586
+#: module_manager.py:1593
 msgid "SWORD module (.zip)"
 msgstr "Модуль SWORD (.zip)"
 
-#: module_manager.py:1605
+#: module_manager.py:1612
 msgid "Drop a SWORD module .zip file to import it."
 msgstr "Перетащите ZIP-файл модуля SWORD, чтобы импортировать его."
 
-#: module_manager.py:1622
+#: module_manager.py:1629
 msgid "Reading module file…"
 msgstr "Чтение файла модуля…"
 
-#: module_manager.py:1627
+#: module_manager.py:1634
 msgid "Import Module"
 msgstr "Импортировать модуль"
 
-#: module_manager.py:1753 module_manager.py:1758
+#: module_manager.py:1760 module_manager.py:1765
 msgid "Reinstall"
 msgstr "Установить заново"
 
-#: module_manager.py:1753
+#: module_manager.py:1760
 msgid "Already installed"
 msgstr "Уже установлен"
 
-#: module_manager.py:1758
+#: module_manager.py:1765
 #, python-brace-format
 msgid "Already installed (v{old})"
 msgstr "Уже установлен (v{old})"
 
-#: module_manager.py:1759 window.py:1900
+#: module_manager.py:1766 window.py:1917
 msgid "Replace"
 msgstr "Заменить"
 
-#: module_manager.py:1759
+#: module_manager.py:1766
 #, python-brace-format
 msgid "Replace v{old} with older v{new}"
 msgstr "Заменить v{old} более старой v{new}"
 
-#: module_manager.py:1771
+#: module_manager.py:1778
 #, python-brace-format
 msgid "{n} module"
 msgid_plural "{n} modules"
@@ -2621,7 +4312,7 @@ msgstr[0] "{n} модуль"
 msgstr[1] "{n} модуля"
 msgstr[2] "{n} модулей"
 
-#: module_manager.py:1782
+#: module_manager.py:1789
 #, python-brace-format
 msgid "Installing {label}…"
 msgstr "Установка: {label}…"
@@ -2666,8 +4357,8 @@ msgstr "Сведения о модуле"
 msgid "Description"
 msgstr "Описание"
 
-#: module_picker.py:482 welcome.py:356 welcome.py:561 welcome.py:562
-#: window.py:3362 window.py:3373
+#: module_picker.py:482 welcome.py:408 welcome.py:613 welcome.py:614
+#: window.py:3409 window.py:3420
 msgid "Language"
 msgstr "Язык"
 
@@ -2704,7 +4395,9 @@ msgstr "Удалить «{name}»?"
 msgid ""
 "This deletes the module from your library. You can re-download or re-import "
 "it later from the Module Manager."
-msgstr "Модуль будет удалён из вашей библиотеки. Позже его можно снова загрузить или импортировать через менеджер модулей."
+msgstr ""
+"Модуль будет удалён из вашей библиотеки. Позже его можно снова загрузить или "
+"импортировать через менеджер модулей."
 
 #: module_picker.py:535
 #, python-brace-format
@@ -2728,7 +4421,9 @@ msgstr "Очистить список недавних"
 msgid ""
 "No recent passages yet.\n"
 "Navigate around — they'll show here."
-msgstr "Пока нет недавних отрывков.\nПоходите по тексту — они появятся здесь."
+msgstr ""
+"Пока нет недавних отрывков.\n"
+"Походите по тексту — они появятся здесь."
 
 #: navigation.py:346 navigation.py:347
 msgid "Back to chapters"
@@ -2743,7 +4438,7 @@ msgstr "Глава"
 msgid "Chapter {n} Verse"
 msgstr "Глава {n}, стих"
 
-#: navigation.py:469 pane.py:2448 present_mode.py:273
+#: navigation.py:469 pane.py:2469 present_mode.py:273
 #, python-format
 msgid "%s isn’t in this translation."
 msgstr "%s нет в этом переводе."
@@ -2758,7 +4453,9 @@ msgstr "Совет: коснитесь стиха, чтобы открыть п�
 
 #: onboarding.py:36
 msgid "Tip: right-click a verse for highlights, notes, and study tools."
-msgstr "Совет: щёлкните стих правой кнопкой ради выделений, заметок и средств изучения."
+msgstr ""
+"Совет: щёлкните стих правой кнопкой ради выделений, заметок и средств "
+"изучения."
 
 #: onboarding.py:38
 msgid "Tip: tap any word to open its lexicon entry."
@@ -2916,158 +4613,197 @@ msgstr "Греческий словарь Додсона"
 msgid "Readable NT Greek definitions keyed to Strong's numbers"
 msgstr "Понятные определения греческого НЗ по номерам Стронга"
 
-#: overlays.py:284
+#: overlays.py:308
 msgid "Reading mode — Esc, F11, or hover the top edge to exit"
 msgstr "Режим чтения — Esc, F11 или наведите на верхний край для выхода"
 
-#: pane.py:1220
+#: pane.py:1230
 #, python-brace-format
 msgid "Reading pane {n}"
 msgstr "Панель чтения {n}"
 
-#: pane.py:1364
+#: pane.py:1379
 msgid "Pane controls"
 msgstr "Управление панелью"
 
-#: pane.py:1383 pane.py:2189
+#: pane.py:1398 pane.py:2210
 msgid "Following navigation"
 msgstr "Следует за навигацией"
 
-#: pane.py:1384
+#: pane.py:1399
 msgid "Follow navigation"
 msgstr "Следовать за навигацией"
 
-#: pane.py:1391 pane.py:1392
+#: pane.py:1406 pane.py:1407
 msgid "Chapter note"
 msgstr "Заметка к главе"
 
-#: pane.py:1402 pane.py:1403
+#: pane.py:1417 pane.py:1418
 msgid "Copy chapter"
 msgstr "Копировать главу"
 
-#: pane.py:1435 pane.py:1436
+#: pane.py:1450 pane.py:1451
 msgid "Previous day"
 msgstr "Предыдущий день"
 
-#: pane.py:1442 pane.py:1443
+#: pane.py:1457 pane.py:1458
 msgid "Next day"
 msgstr "Следующий день"
 
-#: pane.py:1558
+#: pane.py:1573
 msgid "Reading view"
 msgstr "Вид чтения"
 
-#: pane.py:2154
+#: pane.py:2175
 msgid "Copy chapter works on Bibles and commentaries only"
 msgstr "Копирование главы работает только для Библий и комментариев"
 
-#: pane.py:2167
+#: pane.py:2188
 #, python-brace-format
 msgid "Couldn't load chapter — {error}"
 msgstr "Не удалось загрузить главу — {error}"
 
-#: pane.py:2188
+#: pane.py:2209
 msgid "Locked — not following navigation"
 msgstr "Закреплено — не следует за навигацией"
 
-#: pane.py:2414
+#: pane.py:2435
 msgid ""
 "This module isn’t organized by book and chapter, so it can’t be read in this "
 "pane. Pick a Bible or commentary to read here."
-msgstr "Этот модуль не разбит по книгам и главам, поэтому его нельзя читать в этой панели. Выберите Библию или комментарий."
+msgstr ""
+"Этот модуль не разбит по книгам и главам, поэтому его нельзя читать в этой "
+"панели. Выберите Библию или комментарий."
 
-#: pane.py:2416 pane.py:2456
+#: pane.py:2437 pane.py:2477
 msgid "Choose another module"
 msgstr "Выбрать другой модуль"
 
-#: pane.py:2423 window.py:1952
+#: pane.py:2444 window.py:1969
 msgid "Edit Key"
 msgstr "Изменить ключ"
 
-#: pane.py:2427
+#: pane.py:2448
 msgid "This module’s content isn’t readable — the cipher key may be incorrect."
-msgstr "Содержимое этого модуля не читается — возможно, неверный ключ шифрования."
+msgstr ""
+"Содержимое этого модуля не читается — возможно, неверный ключ шифрования."
 
-#: pane.py:2441
+#: pane.py:2462
 #, python-brace-format
 msgid "{module} has no text under this chapter."
 msgstr "В модуле {module} нет текста для этой главы."
 
-#: pane.py:2450
+#: pane.py:2471
 #, python-brace-format
 msgid ""
 "{module} doesn’t include this passage. Some modules cover only the Old or "
 "New Testament — pick a Bible with full coverage."
-msgstr "Модуль {module} не содержит этого отрывка. Некоторые модули охватывают только Ветхий или только Новый Завет — выберите Библию с полным охватом."
+msgstr ""
+"Модуль {module} не содержит этого отрывка. Некоторые модули охватывают "
+"только Ветхий или только Новый Завет — выберите Библию с полным охватом."
 
-#: pane.py:2485
+#: pane.py:2506
 msgid "No entry found for this date."
 msgstr "На эту дату записей нет."
 
-#: pane.py:2548
+#: pane.py:2569
 msgid "Related artifact — open in Scripture in Stone"
 msgstr "Связанный артефакт — открыть в «Писании в камне»"
 
-#: pane.py:2549
+#: pane.py:2570
 msgid "Related artifact"
 msgstr "Связанный артефакт"
 
-#: pane.py:3841
+#: pane.py:2593
+msgid "This line is drawn — open The Book of Generations"
+msgstr "Эта линия начерчена — открыть «Книгу родословий»"
+
+#: pane.py:2595
+msgid "Line of descent"
+msgstr "Линия родства"
+
+#: pane.py:3893
 #, python-brace-format
 msgid "highlighted {color}"
 msgstr "выделено, цвет {color}"
 
-#: pane.py:3844
+#: pane.py:3896
 msgid "highlighted"
 msgstr "выделено"
 
-#: pane.py:3846
+#: pane.py:3898
 msgid "underlined"
 msgstr "подчёркнуто"
 
-#: pane.py:3848
+#: pane.py:3900
 msgid "has note"
 msgstr "есть заметка"
 
-#: pane.py:3855
+#: pane.py:3907
 msgid "has footnotes"
 msgstr "есть сноски"
 
-#: pane.py:4396
+#: pane.py:4448
 #, python-brace-format
 msgid "Strong’s {num}"
 msgstr "Стронг {num}"
 
-#: pane.py:4901
+#: pane.py:4981
 #, python-brace-format
 msgid "Cross-references ({letter}) · verse {v}"
 msgstr "Параллельные места ({letter}) · стих {v}"
 
-#: pane.py:4903
+#: pane.py:4983
 #, python-brace-format
 msgid "Footnote ({letter}) · verse {v}"
 msgstr "Сноска ({letter}) · стих {v}"
 
-#: pane.py:5144
+#: pane.py:5249
+msgid "Parents"
+msgstr "Родители"
+
+#: pane.py:5251
+msgid "Mother"
+msgstr "Мать"
+
+#: pane.py:5253
+msgid "Children"
+msgstr "Дети"
+
+#: pane.py:5266
+#, python-format
+msgid "%d other person carries this name"
+msgid_plural "%d other people carry this name"
+msgstr[0] "это имя носит ещё %d человек"
+msgstr[1] "это имя носят ещё %d человека"
+msgstr[2] "это имя носят ещё %d человек"
+
+#: pane.py:5271
+msgid "See the whole line"
+msgstr "Посмотреть всю линию"
+
+#: pane.py:5300
 #, python-format
 msgid "No entry for “%s”"
 msgstr "Нет статьи для «%s»"
 
-#: pane.py:5145
+#: pane.py:5301
 #, python-format
 msgid ""
 "Searched %s. Another dictionary may carry it — the Module Manager lists more."
-msgstr "Искали в: %s. Слово может быть в другом словаре — в менеджере модулей их больше."
+msgstr ""
+"Искали в: %s. Слово может быть в другом словаре — в менеджере модулей их "
+"больше."
 
-#: pane.py:5148
+#: pane.py:5304
 msgid "Another dictionary may carry it — the Module Manager lists more."
 msgstr "Слово может быть в другом словаре — в менеджере модулей их больше."
 
-#: pane.py:5161
+#: pane.py:5325
 msgid "No dictionaries installed"
 msgstr "Словари не установлены"
 
-#: pane.py:5164
+#: pane.py:5328
 msgid "Add one from the Module Manager, then double-click the word again."
 msgstr "Добавьте словарь в менеджере модулей и дважды щёлкните слово снова."
 
@@ -3083,7 +4819,9 @@ msgstr "Искать в этом модуле…"
 msgid ""
 "Phrase: \"living water\" · either: bread OR wine · exclude: faith -works · "
 "prefix: baptiz*"
-msgstr "Фраза: \\\"живая вода\\\" · любое из: хлеб OR вино · исключить: вера -дела · начало слова: крест*"
+msgstr ""
+"Фраза: \\\"живая вода\\\" · любое из: хлеб OR вино · исключить: вера -дела · "
+"начало слова: крест*"
 
 #: pane_search.py:148 pane_search.py:149
 msgid "Previous match"
@@ -3166,7 +4904,7 @@ msgstr "{surface} «{gloss}» — {editions}"
 msgid "Voices"
 msgstr "Голоса"
 
-#: passage_print.py:159
+#: passage_print.py:163
 msgid "Could not print the passage"
 msgstr "Не удалось напечатать отрывок"
 
@@ -3190,7 +4928,7 @@ msgstr "Вперёд"
 msgid "Verse numbers"
 msgstr "Номера стихов"
 
-#: present_mode.py:318 present_mode.py:319 window.py:2993
+#: present_mode.py:318 present_mode.py:319 window.py:3010
 msgid "One verse per page"
 msgstr "По одному стиху на страницу"
 
@@ -3206,7 +4944,7 @@ msgstr "Мельче текст"
 msgid "Larger text"
 msgstr "Крупнее текст"
 
-#: present_mode.py:336 window.py:2996
+#: present_mode.py:336 window.py:3013
 msgid "Exit presentation"
 msgstr "Выйти из показа"
 
@@ -3224,7 +4962,8 @@ msgstr "Библия за год — смешанный план"
 
 #: reading_plans.py:127
 msgid "Four daily readings: OT history, OT prophecy, NT, and Psalms/Proverbs."
-msgstr "Четыре чтения в день: история ВЗ, пророки ВЗ, НЗ и Псалтирь с Притчами."
+msgstr ""
+"Четыре чтения в день: история ВЗ, пророки ВЗ, НЗ и Псалтирь с Притчами."
 
 #: reading_plans.py:132
 msgid "Old Testament in a Year"
@@ -3305,7 +5044,9 @@ msgstr "Закрыть поиск"
 
 #: search_panel.py:178
 msgid "Search one module, or “All Bibles” for every translation at once"
-msgstr "Ищите в одном модуле или выберите «Все Библии», чтобы искать сразу во всех переводах"
+msgstr ""
+"Ищите в одном модуле или выберите «Все Библии», чтобы искать сразу во всех "
+"переводах"
 
 #: search_panel.py:185
 msgid "Search…"
@@ -3365,7 +5106,9 @@ msgstr "Попробуйте другое слово или фразу либо 
 msgid ""
 "Type a word or phrase above. The chart shows where matches cluster across "
 "the Bible."
-msgstr "Введите слово или фразу выше. На диаграмме видно, где совпадения сгущаются по Библии."
+msgstr ""
+"Введите слово или фразу выше. На диаграмме видно, где совпадения сгущаются "
+"по Библии."
 
 #: search_panel.py:444
 msgid "Recent searches"
@@ -3375,18 +5118,20 @@ msgstr "Недавние запросы"
 msgid "Remove from history"
 msgstr "Убрать из истории"
 
-#: search_panel.py:654
+#: search_panel.py:661
 #, python-brace-format
 msgid "Showing first {cap} of {total}"
 msgstr "Показаны первые {cap} из {total}"
 
-#: search_panel.py:656
+#: search_panel.py:663
 msgid ""
 "F3 walks the full list; narrow the query or use a book filter for fewer "
 "matches."
-msgstr "F3 проходит весь список; уточните запрос или отберите книги, чтобы совпадений было меньше."
+msgstr ""
+"F3 проходит весь список; уточните запрос или отберите книги, чтобы "
+"совпадений было меньше."
 
-#: search_panel.py:690
+#: search_panel.py:697
 #, python-brace-format
 msgid "Result {i} of {n}"
 msgstr "Результат {i} из {n}"
@@ -3427,7 +5172,9 @@ msgstr "Переименовать «{tag}»"
 #: study_journal.py:204
 msgid ""
 "Type the new name. If it matches an existing tag, the two will be merged."
-msgstr "Введите новое имя. Если оно совпадёт с существующей меткой, обе будут объединены."
+msgstr ""
+"Введите новое имя. Если оно совпадёт с существующей меткой, обе будут "
+"объединены."
 
 #: study_journal.py:212
 msgid "Rename"
@@ -3442,10 +5189,12 @@ msgstr "Убрать «{tag}»?"
 msgid ""
 "This removes the tag from every annotation it appears on. Notes and "
 "highlights stay where they are."
-msgstr "Метка будет убрана со всех пометок, где она стоит. Заметки и выделения останутся на месте."
+msgstr ""
+"Метка будет убрана со всех пометок, где она стоит. Заметки и выделения "
+"останутся на месте."
 
 #: study_journal.py:265 study_journal.py:306 study_journal.py:1068
-#: window.py:3274
+#: window.py:3321
 msgid "Study Journal"
 msgstr "Дневник изучения"
 
@@ -3578,7 +5327,7 @@ msgstr "Заметка удалена"
 msgid "Annotation deleted"
 msgstr "Пометка удалена"
 
-#: study_journal.py:1020 window.py:1826
+#: study_journal.py:1020 window.py:1843
 msgid "Undo"
 msgstr "Отменить"
 
@@ -3643,7 +5392,7 @@ msgstr "последние дни"
 msgid "{plan} — day {n}"
 msgstr "{plan} — день {n}"
 
-#: today_page.py:428 window.py:4049
+#: today_page.py:428 window.py:4147
 msgid "Plan complete"
 msgstr "План пройден"
 
@@ -3681,11 +5430,11 @@ msgstr "Приостановить озвученное размышление"
 msgid "Listen to today's devotional"
 msgstr "Послушать сегодняшнее размышление"
 
-#: verse_card.py:37 window.py:1378
+#: verse_card.py:37 window.py:1395
 msgid "White"
 msgstr "Белая"
 
-#: verse_card.py:38 window.py:1379
+#: verse_card.py:38 window.py:1396
 msgid "Sepia"
 msgstr "Сепия"
 
@@ -3737,88 +5486,139 @@ msgstr "Всё, что есть на этом языке, с самого нач
 msgid "Larger download"
 msgstr "Загрузка побольше"
 
-#: welcome.py:306 welcome.py:396 welcome.py:582 welcome.py:610
+#: welcome.py:295
+#, python-brace-format
+msgid "{n} Bible"
+msgid_plural "{n} Bibles"
+msgstr[0] "{n} Библия"
+msgstr[1] "{n} Библии"
+msgstr[2] "{n} Библий"
+
+#: welcome.py:299
+#, python-brace-format
+msgid "{n} commentary"
+msgid_plural "{n} commentaries"
+msgstr[0] "{n} комментарий"
+msgstr[1] "{n} комментария"
+msgstr[2] "{n} комментариев"
+
+#: welcome.py:301
+msgid "commentary"
+msgstr "комментарий"
+
+#: welcome.py:303
+msgid "notes"
+msgstr "примечания"
+
+#: welcome.py:305
+msgid "dictionary"
+msgstr "словарь"
+
+#: welcome.py:307
+msgid "lexicon"
+msgstr "словарь Стронга"
+
+#: welcome.py:309
+msgid "cross-references"
+msgstr "перекрёстные ссылки"
+
+#: welcome.py:358 welcome.py:448 welcome.py:634 welcome.py:662
 msgid "Welcome to Scriptura"
 msgstr "Добро пожаловать в Scriptura"
 
-#: welcome.py:357
+#: welcome.py:409
 msgid "Back to language"
 msgstr "Назад к выбору языка"
 
-#: welcome.py:401
+#: welcome.py:453
 msgid ""
 "Choose your language. It sets the interface, and the Bibles offered on the "
 "next screen."
-msgstr "Выберите язык. Он задаёт интерфейс и переводы Библии, предлагаемые на следующем экране."
+msgstr ""
+"Выберите язык. Он задаёт интерфейс и переводы Библии, предлагаемые на "
+"следующем экране."
 
-#: welcome.py:434
+#: welcome.py:486
 msgid ""
 "You can change this later, and add texts in any language from the Module "
 "Manager."
-msgstr "Это можно изменить позже, а тексты на любом языке добавить через менеджер модулей."
+msgstr ""
+"Это можно изменить позже, а тексты на любом языке добавить через менеджер "
+"модулей."
 
-#: welcome.py:615
+#: welcome.py:520
+msgid "Detected"
+msgstr "Определён"
+
+#: welcome.py:667
 msgid ""
 "Choose a starting point. Pick the shape that fits how you want to work — "
 "this is just a head start."
-msgstr "Выберите, с чего начать. Возьмите то, что подходит вашему способу работы, — это лишь первый шаг."
+msgstr ""
+"Выберите, с чего начать. Возьмите то, что подходит вашему способу работы, — "
+"это лишь первый шаг."
 
-#: welcome.py:635
+#: welcome.py:687
 msgid "You can add or remove anything later from the Module Manager."
 msgstr "Позже что угодно можно добавить или убрать через менеджер модулей."
 
-#: welcome.py:660
+#: welcome.py:712
 msgid "New here? See what the pointer can do — Tips & Gestures"
-msgstr "Впервые здесь? Посмотрите, что умеет указатель мыши, — «Советы и жесты»"
+msgstr ""
+"Впервые здесь? Посмотрите, что умеет указатель мыши, — «Советы и жесты»"
 
-#: welcome.py:669
+#: welcome.py:721
 msgid "Choose individual modules instead"
 msgstr "Выбрать отдельные модули вместо этого"
 
-#: welcome.py:692
+#: welcome.py:744
 msgid "★ Recommended"
 msgstr "★ Рекомендуется"
 
-#: welcome.py:751
+#: welcome.py:803
 msgid "Starting download…"
 msgstr "Начинается загрузка…"
 
-#: welcome.py:783
+#: welcome.py:835
 msgid "Back to options"
 msgstr "Назад к вариантам"
 
-#: welcome.py:812
+#: welcome.py:864
 msgid "Reading the module list…"
 msgstr "Читается список модулей…"
 
-#: welcome.py:828
+#: welcome.py:880
 msgid "module list"
 msgstr "список модулей"
 
-#: welcome.py:833
+#: welcome.py:885
 #, python-brace-format
 msgid "({step}/{total}) Downloading {label}…"
 msgstr "({step}/{total}) Загружается {label}…"
 
-#: welcome.py:917
+#: welcome.py:969
 msgid "unknown error"
 msgstr "неизвестная ошибка"
 
-#: welcome.py:921
+#: welcome.py:973
 #, python-brace-format
 msgid ""
 "Couldn’t download a Bible — please check your connection and try again. "
 "({details})"
-msgstr "Не удалось загрузить Библию — проверьте соединение и попробуйте снова. ({details})"
+msgstr ""
+"Не удалось загрузить Библию — проверьте соединение и попробуйте снова. "
+"({details})"
 
-#: welcome.py:931
+#: welcome.py:983
 #, python-brace-format
 msgid ""
 "Installed with warnings — these can be retried later from the Module "
 "Manager: {names}"
-msgstr "Установлено с предупреждениями — позже можно повторить через менеджер модулей: {names}"
+msgstr ""
+"Установлено с предупреждениями — позже можно повторить через менеджер "
+"модулей: {names}"
 
-#: welcome.py:934
+#: welcome.py:986
 msgid "Done. Opening Scriptura…"
 msgstr "Готово. Открывается Scriptura…"
 
@@ -4158,29 +5958,35 @@ msgstr "4-я Маккавейская"
 msgid ""
 "Couldn't save your annotation — check disk space or permissions. The change "
 "may be lost when you quit."
-msgstr "Не удалось сохранить вашу пометку — проверьте место на диске или права доступа. При выходе изменение может пропасть."
+msgstr ""
+"Не удалось сохранить вашу пометку — проверьте место на диске или права "
+"доступа. При выходе изменение может пропасть."
 
 #: window.py:280
 msgid ""
 "Couldn't save your bookmark — check disk space or permissions. The change "
 "may be lost when you quit."
-msgstr "Не удалось сохранить вашу закладку — проверьте место на диске или права доступа. При выходе изменение может пропасть."
+msgstr ""
+"Не удалось сохранить вашу закладку — проверьте место на диске или права "
+"доступа. При выходе изменение может пропасть."
 
 #: window.py:285
 msgid ""
 "Couldn't save reading-plan progress — check disk space or permissions. The "
 "change may be lost when you quit."
-msgstr "Не удалось сохранить ход плана чтения — проверьте место на диске или права доступа. При выходе изменение может пропасть."
+msgstr ""
+"Не удалось сохранить ход плана чтения — проверьте место на диске или права "
+"доступа. При выходе изменение может пропасть."
 
 #: window.py:305
 msgid "settings"
 msgstr "настройки"
 
-#: window.py:307 window.py:1925
+#: window.py:307 window.py:1942
 msgid "annotations"
 msgstr "пометки"
 
-#: window.py:309 window.py:1926
+#: window.py:309 window.py:1943
 msgid "bookmarks"
 msgstr "закладки"
 
@@ -4197,9 +6003,11 @@ msgstr "места чтения"
 msgid ""
 "Couldn't read {names}.json — using defaults. Your file is preserved; rename "
 "to recover."
-msgstr "Не удалось прочитать {names}.json — используются значения по умолчанию. Ваш файл сохранён; переименуйте его, чтобы восстановить."
+msgstr ""
+"Не удалось прочитать {names}.json — используются значения по умолчанию. Ваш "
+"файл сохранён; переименуйте его, чтобы восстановить."
 
-#: window.py:347 window.py:348 window.py:3251
+#: window.py:347 window.py:348 window.py:3298
 msgid "Menu"
 msgstr "Меню"
 
@@ -4207,7 +6015,7 @@ msgstr "Меню"
 msgid "Go back (Alt+←)"
 msgstr "Назад (Alt+←)"
 
-#: window.py:356 window.py:2646
+#: window.py:356 window.py:2663
 msgid "Go back"
 msgstr "Назад"
 
@@ -4215,13 +6023,15 @@ msgstr "Назад"
 msgid "Go forward (Alt+→)"
 msgstr "Вперёд (Alt+→)"
 
-#: window.py:365 window.py:2649
+#: window.py:365 window.py:2666
 msgid "Go forward"
 msgstr "Вперёд"
 
 #: window.py:382
 msgid "Go back (Alt+←) · right-click or hold for recent passages"
-msgstr "Назад (Alt+←) · щёлкните правой кнопкой или удержите, чтобы увидеть недавние отрывки"
+msgstr ""
+"Назад (Alt+←) · щёлкните правой кнопкой или удержите, чтобы увидеть недавние "
+"отрывки"
 
 #: window.py:411
 msgid "Choose passage (Ctrl+L)"
@@ -4235,15 +6045,15 @@ msgstr "Выбрать отрывок"
 msgid "Greek / Hebrew lexicon — click words for definitions"
 msgstr "Греческий и еврейский словарь — щёлкайте слова ради определений"
 
-#: window.py:434 window.py:2659
+#: window.py:434 window.py:2676
 msgid "Greek / Hebrew lexicon"
 msgstr "Греческий и еврейский словарь"
 
-#: window.py:457 window.py:2491
+#: window.py:457 window.py:2508
 msgid "Footnotes — the translation's own notes, marked in the text"
 msgstr "Сноски — собственные примечания перевода, отмеченные в тексте"
 
-#: window.py:458 window.py:2671
+#: window.py:458 window.py:2688
 msgid "Footnotes"
 msgstr "Сноски"
 
@@ -4251,7 +6061,7 @@ msgstr "Сноски"
 msgid "Cross-references — related verses appear when you tap a verse"
 msgstr "Параллельные места — родственные стихи появляются при касании стиха"
 
-#: window.py:485 window.py:486 window.py:1746 window.py:2689
+#: window.py:485 window.py:486 window.py:1763 window.py:2706
 msgid "Bookmarks"
 msgstr "Закладки"
 
@@ -4267,7 +6077,7 @@ msgstr "Другие действия"
 msgid "Search (Ctrl+F)"
 msgstr "Искать (Ctrl+F)"
 
-#: window.py:511 window.py:2652
+#: window.py:511 window.py:2669
 msgid "Search"
 msgstr "Искать"
 
@@ -4279,15 +6089,15 @@ msgstr "Одна панель"
 msgid "Split pane"
 msgstr "Разделить на две панели"
 
-#: window.py:544 window.py:545 window.py:2698
+#: window.py:544 window.py:545 window.py:2715
 msgid "Show pane 1"
 msgstr "Показать панель 1"
 
-#: window.py:548 window.py:549 window.py:2700
+#: window.py:548 window.py:549 window.py:2717
 msgid "Show pane 2"
 msgstr "Показать панель 2"
 
-#: window.py:562 window.py:563 window.py:2692
+#: window.py:562 window.py:563 window.py:2709
 msgid "Swap pane modules"
 msgstr "Поменять модули панелей местами"
 
@@ -4295,648 +6105,662 @@ msgstr "Поменять модули панелей местами"
 msgid "Reading tools"
 msgstr "Средства чтения"
 
-#: window.py:785
+#: window.py:787
 msgid "Go to… (e.g. John 3:16)"
 msgstr "Перейти к… (например, От Иоанна 3:16)"
 
-#: window.py:863 window.py:864
+#: window.py:880 window.py:881
 msgid "Exit reading mode"
 msgstr "Выйти из режима чтения"
 
-#: window.py:1235
+#: window.py:1252
 msgid "No active search — Ctrl+F to search"
 msgstr "Поиск не идёт — Ctrl+F, чтобы искать"
 
-#: window.py:1360
+#: window.py:1377
 msgid "Normal"
 msgstr "Обычный"
 
-#: window.py:1383
+#: window.py:1400
 msgid "Slate"
 msgstr "Сланец"
 
-#: window.py:1384
+#: window.py:1401
 msgid "Charcoal"
 msgstr "Уголь"
 
-#: window.py:1385
+#: window.py:1402
 msgid "Black"
 msgstr "Чёрный"
 
-#: window.py:1471 window.py:1478
+#: window.py:1488 window.py:1495
 msgid "Custom"
 msgstr "Свой"
 
-#: window.py:1472 window.py:1479
+#: window.py:1489 window.py:1496
 msgid "Custom colours"
 msgstr "Свои цвета"
 
-#: window.py:1517
+#: window.py:1534
 msgid "Aa"
 msgstr "Аа"
 
-#: window.py:1528
+#: window.py:1545
 msgid "Text colour"
 msgstr "Цвет текста"
 
-#: window.py:1530
+#: window.py:1547
 msgid "Paper colour"
 msgstr "Цвет бумаги"
 
-#: window.py:1580
+#: window.py:1597
 msgid "Gold (default)"
 msgstr "Золотой (по умолчанию)"
 
-#: window.py:1583
+#: window.py:1600
 msgid "Custom colour…"
 msgstr "Свой цвет…"
 
-#: window.py:1591 window.py:3675 window.py:3676
+#: window.py:1608 window.py:3770 window.py:3771
 msgid "Drop cap colour"
 msgstr "Цвет буквицы"
 
-#: window.py:1606
+#: window.py:1623
 msgid "Custom background colour"
 msgstr "Свой цвет фона"
 
-#: window.py:1623
+#: window.py:1640
 msgid "Custom text colour"
 msgstr "Свой цвет текста"
 
-#: window.py:1758
+#: window.py:1775
 #, python-brace-format
 msgid "Add {ref}"
 msgstr "Добавить {ref}"
 
-#: window.py:1795 window.py:1796
+#: window.py:1812 window.py:1813
 msgid "Remove bookmark"
 msgstr "Убрать закладку"
 
-#: window.py:1809
+#: window.py:1826
 #, python-brace-format
 msgid "Bookmarked {ref}"
 msgstr "Закладка на {ref}"
 
-#: window.py:1825
+#: window.py:1842
 msgid "Bookmark removed"
 msgstr "Закладка убрана"
 
-#: window.py:1842
+#: window.py:1859
 msgid "Tips"
 msgstr "Советы"
 
-#: window.py:1854
+#: window.py:1871
 msgid "Back Up Study Data"
 msgstr "Резервная копия данных изучения"
 
-#: window.py:1869
+#: window.py:1886
 msgid "Could not write the backup file"
 msgstr "Не удалось записать файл резервной копии"
 
-#: window.py:1871
+#: window.py:1888
 msgid "Study data backed up"
 msgstr "Данные изучения сохранены"
 
-#: window.py:1875
+#: window.py:1892
 msgid "Restore Study Data"
 msgstr "Восстановить данные изучения"
 
-#: window.py:1888
+#: window.py:1905
 msgid "Not a Scriptura study-data file"
 msgstr "Это не файл данных изучения Scriptura"
 
-#: window.py:1892
+#: window.py:1909
 msgid "Replace study data?"
 msgstr "Заменить данные изучения?"
 
-#: window.py:1893
+#: window.py:1910
 #, python-brace-format
 msgid ""
 "The file contains {a} annotation entries, {b} bookmarks and {p} plan days "
 "marked read. Your current annotations, bookmarks and reading-plan progress "
 "will be replaced."
-msgstr "Файл содержит {a} пометок, {b} закладок и {p} дней плана, отмеченных прочитанными. Ваши нынешние пометки, закладки и ход планов чтения будут заменены."
+msgstr ""
+"Файл содержит {a} пометок, {b} закладок и {p} дней плана, отмеченных "
+"прочитанными. Ваши нынешние пометки, закладки и ход планов чтения будут "
+"заменены."
 
-#: window.py:1927
+#: window.py:1944
 msgid "reading-plan progress"
 msgstr "ход плана чтения"
 
-#: window.py:1935
+#: window.py:1952
 #, python-brace-format
 msgid ""
 "Some study data could not be written to disk ({sections}) — check disk space "
 "or permissions, then restore again."
-msgstr "Часть данных изучения не удалось записать на диск ({sections}) — проверьте место на диске или права доступа и восстановите снова."
+msgstr ""
+"Часть данных изучения не удалось записать на диск ({sections}) — проверьте "
+"место на диске или права доступа и восстановите снова."
 
-#: window.py:1940
+#: window.py:1957
 msgid "Study data restored"
 msgstr "Данные изучения восстановлены"
 
-#: window.py:1949
+#: window.py:1966
 #, python-brace-format
 msgid "{module}: content isn’t readable — the cipher key may be incorrect."
 msgstr "{module}: содержимое не читается — возможно, неверный ключ шифрования."
 
-#: window.py:1960
+#: window.py:1977
 #, python-brace-format
 msgid ""
 "Enter the cipher key for {module}. Keys are issued by the module’s publisher "
 "(e.g. where you purchased it); Scriptura does not provide them."
-msgstr "Введите ключ шифрования для модуля {module}. Ключи выдаёт издатель модуля (например, там, где вы его приобрели); Scriptura их не предоставляет."
+msgstr ""
+"Введите ключ шифрования для модуля {module}. Ключи выдаёт издатель модуля "
+"(например, там, где вы его приобрели); Scriptura их не предоставляет."
 
-#: window.py:1964
+#: window.py:1981
 msgid "Paste the unlock key"
 msgstr "Вставьте ключ разблокировки"
 
-#: window.py:2493
+#: window.py:2510
 msgid "Footnotes — the open translations don't include any"
 msgstr "Сноски — в открытых переводах их нет"
 
-#: window.py:2716
+#: window.py:2733
 #, python-brace-format
 msgid "Swapped: {a} ↔ {b}"
 msgstr "Поменяно местами: {a} ↔ {b}"
 
-#: window.py:2833
+#: window.py:2850
 msgid "Open in Pane 1"
 msgstr "Открыть в панели 1"
 
-#: window.py:2837
+#: window.py:2854
 msgid "Pane 1 is not showing a Bible or commentary"
 msgstr "В панели 1 не открыта Библия или комментарий"
 
-#: window.py:2843
+#: window.py:2860
 msgid "Open in Pane 2"
 msgstr "Открыть в панели 2"
 
-#: window.py:2847
+#: window.py:2864
 msgid "Switch to split view to use Pane 2"
 msgstr "Перейдите к двум панелям, чтобы использовать панель 2"
 
-#: window.py:2850
+#: window.py:2867
 msgid "Pane 2 is not showing a Bible or commentary"
 msgstr "В панели 2 не открыта Библия или комментарий"
 
-#: window.py:2922
+#: window.py:2939
 msgid ""
 "GNOME-native Bible study with SWORD modules, Strong’s lexicon, cross-"
 "references, and reading plans."
-msgstr "Изучение Библии в среде GNOME: модули SWORD, словарь Стронга, перекрёстные ссылки и планы чтения."
+msgstr ""
+"Изучение Библии в среде GNOME: модули SWORD, словарь Стронга, перекрёстные "
+"ссылки и планы чтения."
 
-#: window.py:2929
+#: window.py:2946
 msgid "Data"
 msgstr "Данные"
 
-#: window.py:2930
+#: window.py:2947
 msgid "SWORD Project (CrossWire Bible Society) — modules and data layer"
 msgstr "SWORD Project (CrossWire Bible Society) — модули и слой данных"
 
-#: window.py:2931
+#: window.py:2948
 msgid "OpenBible.info — cross-references and topical tags (CC-BY)"
 msgstr "OpenBible.info — перекрёстные ссылки и тематические метки (CC-BY)"
 
-#: window.py:2932
+#: window.py:2949
 msgid "Dodson Greek Lexicon — public-domain NT Greek definitions"
-msgstr "Греческий словарь Додсона — определения греческого НЗ в общественном достоянии"
+msgstr ""
+"Греческий словарь Додсона — определения греческого НЗ в общественном "
+"достоянии"
 
-#: window.py:2933
+#: window.py:2950
 msgid "eBible.org — modern translation catalog and texts"
 msgstr "eBible.org — каталог современных переводов и тексты"
 
-#: window.py:2934
+#: window.py:2951
 msgid "Berean Standard Bible audio — chapters read by Bob Souer (CC0)"
 msgstr "Аудио Berean Standard Bible — главы читает Боб Соуэр (CC0)"
 
-#: window.py:2935
+#: window.py:2952
 msgid ""
 "HistoricalChristianFaith Commentaries Database — historical commentary pack"
-msgstr "База комментариев HistoricalChristianFaith — набор исторических комментариев"
+msgstr ""
+"База комментариев HistoricalChristianFaith — набор исторических комментариев"
 
-#: window.py:2937
+#: window.py:2954
 msgid "Built with"
 msgstr "Создано с помощью"
 
-#: window.py:2953
+#: window.py:2970
 msgid "Navigation"
 msgstr "Навигация"
 
-#: window.py:2954
+#: window.py:2971
 msgid "Quick jump to any reference (e.g. John 3:16)"
 msgstr "Быстрый переход к любой ссылке (например, От Иоанна 3:16)"
 
-#: window.py:2955
+#: window.py:2972
 msgid "Previous chapter"
 msgstr "Предыдущая глава"
 
-#: window.py:2956
+#: window.py:2973
 msgid "Next chapter"
 msgstr "Следующая глава"
 
-#: window.py:2957
+#: window.py:2974
 msgid "Previous book"
 msgstr "Предыдущая книга"
 
-#: window.py:2958
+#: window.py:2975
 msgid "Next book"
 msgstr "Следующая книга"
 
-#: window.py:2959
+#: window.py:2976
 msgid "First verse of current chapter"
 msgstr "Первый стих текущей главы"
 
-#: window.py:2960
+#: window.py:2977
 msgid "Last verse of current chapter"
 msgstr "Последний стих текущей главы"
 
-#: window.py:2961
+#: window.py:2978
 msgid "Cycle chapters with the mouse wheel"
 msgstr "Листать главы колесом мыши"
 
-#: window.py:2961
+#: window.py:2978
 msgid "Scroll over title"
 msgstr "Прокрутка над заголовком"
 
-#: window.py:2963
+#: window.py:2980
 msgid "Reading with the keyboard"
 msgstr "Чтение с клавиатуры"
 
-#: window.py:2964
+#: window.py:2981
 msgid "Move between verses"
 msgstr "Переход между стихами"
 
-#: window.py:2965
+#: window.py:2982
 msgid "Move between sense-units"
 msgstr "Переход между смысловыми единицами"
 
-#: window.py:2966
+#: window.py:2983
 msgid "Study menu for the current verse"
 msgstr "Меню изучения для текущего стиха"
 
-#: window.py:2967
+#: window.py:2984
 msgid "Step through the words of a verse"
 msgstr "Переход по словам стиха"
 
-#: window.py:2968
+#: window.py:2985
 msgid "Look up the word, or open its footnote"
 msgstr "Посмотреть слово или открыть его сноску"
 
-#: window.py:2969
+#: window.py:2986
 msgid "Back from words to verses"
 msgstr "От слов обратно к стихам"
 
-#: window.py:2971
+#: window.py:2988
 msgid "Panes and view"
 msgstr "Панели и вид"
 
-#: window.py:2972
+#: window.py:2989
 msgid "Focus left pane"
 msgstr "Фокус на левой панели"
 
-#: window.py:2973
+#: window.py:2990
 msgid "Focus right pane"
 msgstr "Фокус на правой панели"
 
-#: window.py:2974
+#: window.py:2991
 msgid "Cycle between panes"
 msgstr "Переключаться между панелями"
 
-#: window.py:2975
+#: window.py:2992
 msgid "Open / close search panel"
 msgstr "Открыть или закрыть панель поиска"
 
-#: window.py:2976
+#: window.py:2993
 msgid "Next search result"
 msgstr "Следующий результат поиска"
 
-#: window.py:2977
+#: window.py:2994
 msgid "Previous search result"
 msgstr "Предыдущий результат поиска"
 
-#: window.py:2978
+#: window.py:2995
 msgid "Increase font size"
 msgstr "Увеличить кегль"
 
-#: window.py:2979
+#: window.py:2996
 msgid "Decrease font size"
 msgstr "Уменьшить кегль"
 
-#: window.py:2980
+#: window.py:2997
 msgid "Zoom font (or pinch on touchpad)"
 msgstr "Менять кегль (или свести пальцы на тачпаде)"
 
-#: window.py:2980
+#: window.py:2997
 msgid "Ctrl + scroll"
 msgstr "Ctrl + прокрутка"
 
-#: window.py:2981
+#: window.py:2998
 msgid "Narrow the left pane"
 msgstr "Сузить левую панель"
 
-#: window.py:2982
+#: window.py:2999
 msgid "Widen the left pane"
 msgstr "Расширить левую панель"
 
-#: window.py:2983
+#: window.py:3000
 msgid "Even up the split"
 msgstr "Выровнять панели"
 
-#: window.py:2984
+#: window.py:3001
 msgid "Reading mode (chrome hidden)"
 msgstr "Режим чтения (без лишних элементов)"
 
-#: window.py:2985
+#: window.py:3002
 msgid "Close search, jump bar, or menu"
 msgstr "Закрыть поиск, строку перехода или меню"
 
-#: window.py:2987 window.py:3276
+#: window.py:3004 window.py:3323
 msgid "Presentation"
 msgstr "Презентация"
 
-#: window.py:2988
+#: window.py:3005
 msgid "Present the passage full-screen"
 msgstr "Показать отрывок на весь экран"
 
-#: window.py:2989
+#: window.py:3006
 msgid "Next page"
 msgstr "Следующая страница"
 
-#: window.py:2990
+#: window.py:3007
 msgid "Previous page"
 msgstr "Предыдущая страница"
 
-#: window.py:2991
+#: window.py:3008
 msgid "First page"
 msgstr "Первая страница"
 
-#: window.py:2992
+#: window.py:3009
 msgid "Last page"
 msgstr "Последняя страница"
 
-#: window.py:2994
+#: window.py:3011
 msgid "Larger / smaller text"
 msgstr "Крупнее / мельче текст"
 
-#: window.py:2995
+#: window.py:3012
 msgid "Jump to a passage"
 msgstr "Перейти к отрывку"
 
-#: window.py:2998
+#: window.py:3015
 msgid "General"
 msgstr "Общее"
 
-#: window.py:2999
+#: window.py:3016
 msgid "Copy selection with reference"
 msgstr "Копировать выделенное со ссылкой"
 
-#: window.py:3000 window.py:3951 window.py:3952
+#: window.py:3017 window.py:4049 window.py:4050
 msgid "Keyboard shortcuts"
 msgstr "Сочетания клавиш"
 
-#: window.py:3176
+#: window.py:3223
 msgid "Install StrongsGreek or StrongsHebrew from the Module Manager."
 msgstr "Установите StrongsGreek или StrongsHebrew через менеджер модулей."
 
-#: window.py:3225 window.py:3416
+#: window.py:3272 window.py:3463
 msgid "Appearance"
 msgstr "Оформление"
 
-#: window.py:3234
+#: window.py:3281
 msgid "Study Data"
 msgstr "Данные изучения"
 
-#: window.py:3257
+#: window.py:3304
 msgid "Close menu (Esc)"
 msgstr "Закрыть меню (Esc)"
 
-#: window.py:3258
+#: window.py:3305
 msgid "Close menu"
 msgstr "Закрыть меню"
 
-#: window.py:3275
+#: window.py:3322
 msgid "Modules"
 msgstr "Модули"
 
-#: window.py:3289 window.py:3294
+#: window.py:3336 window.py:3341
 msgid "Open to Today"
 msgstr "Открывать на «Сегодня»"
 
-#: window.py:3304 window.py:3329
+#: window.py:3351 window.py:3376
 msgid "Church calendar"
 msgstr "Церковный календарь"
 
-#: window.py:3313 window.py:3314
+#: window.py:3360 window.py:3361
 msgid "None"
 msgstr "Нет"
 
-#: window.py:3313
+#: window.py:3360
 msgid "Anglican"
 msgstr "Англиканский"
 
-#: window.py:3313
+#: window.py:3360
 msgid "Roman"
 msgstr "Римский"
 
-#: window.py:3313
+#: window.py:3360
 msgid "Orthodox"
 msgstr "Православный"
 
-#: window.py:3314
+#: window.py:3361
 msgid "Anglican (BCP)"
 msgstr "Англиканский (BCP)"
 
-#: window.py:3315
+#: window.py:3362
 msgid "Roman (traditional)"
 msgstr "Римский (традиционный)"
 
-#: window.py:3316
+#: window.py:3363
 msgid "Orthodox (New Calendar)"
 msgstr "Православный (новый стиль)"
 
-#: window.py:3363
+#: window.py:3410
 msgid "Applies next time you open Scriptura"
 msgstr "Вступит в силу при следующем открытии Scriptura"
 
-#: window.py:3396
+#: window.py:3443
 #, python-brace-format
 msgid "Scriptura will be in {language} when it reopens"
 msgstr "Scriptura откроется на языке: {language}"
 
-#: window.py:3400
+#: window.py:3447
 msgid "Reopen now"
 msgstr "Открыть заново"
 
-#: window.py:3453
+#: window.py:3500
 msgid "Font"
 msgstr "Шрифт"
 
-#: window.py:3454
+#: window.py:3501
 msgid "System Serif"
 msgstr "С засечками"
 
-#: window.py:3454
+#: window.py:3501
 msgid "System Sans-Serif"
 msgstr "Без засечек"
 
-#: window.py:3483 window.py:3484
+#: window.py:3565 window.py:3566
 msgid "Bold"
 msgstr "Полужирный"
 
-#: window.py:3488 window.py:3489
+#: window.py:3570 window.py:3571
 msgid "Justified"
 msgstr "По ширине"
 
-#: window.py:3504
+#: window.py:3586
 msgid ""
 "A preference, not a remedy: testing has found no gain in reading speed. "
 "Readers who find it easier find it easier all the same."
-msgstr "Предпочтение, а не средство: испытания не нашли выигрыша в скорости чтения. Кому так легче — тому легче всё равно."
+msgstr ""
+"Предпочтение, а не средство: испытания не нашли выигрыша в скорости чтения. "
+"Кому так легче — тому легче всё равно."
 
-#: window.py:3514
+#: window.py:3596
 msgid "Size"
 msgstr "Кегль"
 
-#: window.py:3519
+#: window.py:3601
 msgid "Font size"
 msgstr "Размер шрифта"
 
-#: window.py:3531
+#: window.py:3613
 msgid "Spacing"
 msgstr "Интерлиньяж"
 
-#: window.py:3536
+#: window.py:3618
 msgid "Line spacing"
 msgstr "Междустрочный интервал"
 
-#: window.py:3547
+#: window.py:3629
 msgid "Width"
 msgstr "Ширина"
 
-#: window.py:3552
+#: window.py:3634
 msgid "Reading column width"
 msgstr "Ширина колонки чтения"
 
-#: window.py:3569
+#: window.py:3651
 msgid "Colour"
 msgstr "Цвет"
 
-#: window.py:3588
+#: window.py:3670
 msgid "Advanced"
 msgstr "Дополнительно"
 
-#: window.py:3598 window.py:3603
+#: window.py:3680 window.py:3685
 msgid "Letter spacing"
 msgstr "Межбуквенный интервал"
 
-#: window.py:3653
+#: window.py:3748
 msgid "Section headings"
 msgstr "Заголовки разделов"
 
-#: window.py:3659
+#: window.py:3754
 msgid "This translation marks no sections"
 msgstr "В этом переводе разделы не отмечены"
 
-#: window.py:3660
+#: window.py:3755
 msgid "Mark the current sense-unit"
 msgstr "Отмечать текущую смысловую единицу"
 
-#: window.py:3662
+#: window.py:3757
 msgid "Quiet the rest of the page"
 msgstr "Приглушать остальную страницу"
 
-#: window.py:3664
+#: window.py:3759
 msgid "Small caps for the divine name"
 msgstr "Капитель для имени Божия"
 
-#: window.py:3666
+#: window.py:3761
 msgid "Old-style numerals"
 msgstr "Старостильные цифры"
 
-#: window.py:3668
+#: window.py:3763
 msgid "Flush poetry indents"
 msgstr "Убрать отступы в поэзии"
 
-#: window.py:3687
+#: window.py:3782
 msgid "Coloured drop cap"
 msgstr "Цветная буквица"
 
-#: window.py:3695
+#: window.py:3790
 msgid "Preview words on hover"
 msgstr "Показывать значение при наведении"
 
-#: window.py:3700 window.py:3704
+#: window.py:3795 window.py:3802
 msgid "Evening paper (follows Night Light)"
 msgstr "Вечерняя бумага (следует за ночной подсветкой)"
 
-#: window.py:3721 window.py:3725
+#: window.py:3819 window.py:3823
 msgid "Spoken readings"
 msgstr "Озвученные чтения"
 
-#: window.py:3757
+#: window.py:3855
 msgid "Show or hide the reading plan"
 msgstr "Показать или скрыть план чтения"
 
-#: window.py:3759
+#: window.py:3857
 msgid "Reading Plan"
 msgstr "План чтения"
 
-#: window.py:3774 window.py:3775
+#: window.py:3872 window.py:3873
 msgid "Reading plan options"
 msgstr "Параметры плана чтения"
 
-#: window.py:3782
+#: window.py:3880
 msgid "Catch up to today"
 msgstr "Догнать до сегодня"
 
-#: window.py:3788
+#: window.py:3886
 msgid "Reset progress"
 msgstr "Сбросить ход"
 
-#: window.py:3820
+#: window.py:3918
 msgid "Start today"
 msgstr "Начать сегодня"
 
-#: window.py:3849
+#: window.py:3947
 msgid "Open"
 msgstr "Открыть"
 
-#: window.py:3853 window.py:4156
+#: window.py:3951 window.py:4254
 msgid "Mark done"
 msgstr "Отметить прочитанным"
 
-#: window.py:3890
+#: window.py:3988
 msgid "Back Up…"
 msgstr "Резервная копия…"
 
-#: window.py:3891
+#: window.py:3989
 msgid "Restore…"
 msgstr "Восстановить…"
 
-#: window.py:3914 window.py:3915
+#: window.py:4012 window.py:4013
 msgid "Light theme"
 msgstr "Светлая тема"
 
-#: window.py:3917 window.py:3918
+#: window.py:4015 window.py:4016
 msgid "Dark theme"
 msgstr "Тёмная тема"
 
-#: window.py:3925 window.py:3926
+#: window.py:4023 window.py:4024
 msgid "Follow system theme"
 msgstr "Следовать теме системы"
 
-#: window.py:3943 window.py:3944
+#: window.py:4041 window.py:4042
 msgid "Tips & gestures"
 msgstr "Советы и жесты"
 
-#: window.py:3959 window.py:3960
+#: window.py:4057 window.py:4058
 msgid "About Scriptura"
 msgstr "О программе Scriptura"
 
-#: window.py:4050
+#: window.py:4148
 #, python-brace-format
 msgid "Day {n} · Today"
 msgstr "День {n} · сегодня"
 
-#: window.py:4066
+#: window.py:4164
 #, python-brace-format
 msgid "{done} of {total} day read · tap a day to read"
 msgid_plural "{done} of {total} days read · tap a day to read"
@@ -4944,61 +6768,84 @@ msgstr[0] "Прочитан {done} день из {total} · коснитесь �
 msgstr[1] "Прочитано {done} дня из {total} · коснитесь дня, чтобы читать"
 msgstr[2] "Прочитано {done} дней из {total} · коснитесь дня, чтобы читать"
 
-#: window.py:4128
+#: window.py:4226
 #, python-brace-format
 msgid "Day {n} · {passages}"
 msgstr "День {n} · {passages}"
 
-#: window.py:4142
+#: window.py:4240
 #, python-brace-format
 msgid "Day {n}"
 msgstr "День {n}"
 
-#: welcome.py:257
-#, python-brace-format
-msgid "{n} Bible"
-msgid_plural "{n} Bibles"
-msgstr[0] "{n} Библия"
-msgstr[1] "{n} Библии"
-msgstr[2] "{n} Библий"
+#~ msgid ""
+#~ "The meaning of his name is not agreed; it is not the 'gotten' of Cain."
+#~ msgstr "Значение его имени не установлено; это не «приобрела» Каина."
 
-#: welcome.py:261
-#, python-brace-format
-msgid "{n} commentary"
-msgid_plural "{n} commentaries"
-msgstr[0] "{n} комментарий"
-msgstr[1] "{n} комментария"
-msgstr[2] "{n} комментариев"
+#~ msgid ""
+#~ "His own name's meaning is not agreed; the one he gave his son is. He "
+#~ "named Noah for the comfort he hoped for."
+#~ msgstr ""
+#~ "Значение его собственного имени не установлено, а имени, которое он дал "
+#~ "сыну, — установлено. Он назвал сына Ноем ради утешения, на которое "
+#~ "надеялся."
 
-#: welcome.py:263
-msgid "commentary"
-msgstr "комментарий"
+#~ msgid "possessor"
+#~ msgstr "обладатель"
 
-#: welcome.py:265
-msgid "notes"
-msgstr "примечания"
+#~ msgid "powerful"
+#~ msgstr "могучий"
 
-#: welcome.py:267
-msgid "dictionary"
-msgstr "словарь"
+#~ msgid "Named Noah for the comfort he hoped for."
+#~ msgstr "Назвал сына Ноем в надежде на утешение."
 
-#: welcome.py:269
-msgid "lexicon"
-msgstr "словарь Стронга"
+#~ msgid "Born of Tamar; the royal line runs through the younger twin."
+#~ msgstr "Рождён от Фамари; царская линия идёт через младшего близнеца."
 
-#: welcome.py:271
-msgid "cross-references"
-msgstr "перекрёстные ссылки"
+#~ msgid "Of Jericho; Matthew puts her in the line of the Messiah."
+#~ msgstr "Из Иерихона; Матфей ставит её в линию Мессии."
 
-#: welcome.py:482
-msgid "Detected"
-msgstr "Определён"
+#~ msgid ""
+#~ "Every figure here is arithmetic on Genesis 5:3–32. Two things fall out of "
+#~ "it that no list can show: these ten lives overlap almost completely, and "
+#~ "Methuselah's nine hundred and sixty-nine years run out in the year the "
+#~ "flood comes."
+#~ msgstr ""
+#~ "Каждое число здесь — арифметика по Бытию 5:3–32. Отсюда следуют две вещи, "
+#~ "которых не покажет никакой список: эти десять жизней почти полностью "
+#~ "перекрываются, и девятьсот шестьдесят девять лет Мафусала истекают в год "
+#~ "потопа."
 
+#~ msgid ""
+#~ "Matthew counts his own list out loud in 1:17, and to make the count come "
+#~ "out he leaves generations out. Both facts are drawn here: the bands are "
+#~ "his structure, the dashed edges are his omissions."
+#~ msgstr ""
+#~ "В 1:17 Матфей вслух пересчитывает собственный список, а чтобы счёт "
+#~ "сошёлся, опускает поколения. Здесь нарисовано и то и другое: полосы — его "
+#~ "структура, пунктир — его пропуски."
 
-#: archaeology_reader.py:1006
-msgid "{year} BC"
-msgstr "{year} до н. э."
+#~ msgid ""
+#~ "Luke runs the other way — from Jesus backwards — and does not stop at "
+#~ "Abraham. He ends at Adam, and then at God, which is a claim rather than a "
+#~ "link."
+#~ msgstr ""
+#~ "Лука идёт в обратную сторону — от Иисуса назад — и не останавливается на "
+#~ "Аврааме. Он кончает Адамом, а затем Богом, и это утверждение, а не звено."
 
-#: archaeology_reader.py:1008
-msgid "AD {year}"
-msgstr "{year} н. э."
+#~ msgid ""
+#~ "A man dying childless had his brother raise up offspring in his name "
+#~ "(Deut 25:5–6), so one man can have a legal father and a biological one. "
+#~ "Joseph would then be son of Jacob by nature and of Heli by law, or the "
+#~ "reverse."
+#~ msgstr ""
+#~ "За умершего бездетным брат восставлял потомство на его имя (Втор 25:5–6), "
+#~ "так что у человека может быть отец по закону и отец по природе. Тогда "
+#~ "Иосиф — сын Иакова по природе и Илия по закону, или наоборот."
+
+#~ msgid ""
+#~ "A standard reading since the Reformation; set out at length by J. Gresham "
+#~ "Machen, The Virgin Birth of Christ (1930)."
+#~ msgstr ""
+#~ "Обычное чтение со времён Реформации; подробно изложено у Дж. Грешема "
+#~ "Мейчена, «The Virgin Birth of Christ» (1930)."
