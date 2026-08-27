@@ -42,6 +42,7 @@ def C_(context: str, message: str) -> str:
 LANGUAGE_NAMES = {
     'en': 'English',
     'es': 'Español',
+    'ru': 'Русский',
 }
 
 

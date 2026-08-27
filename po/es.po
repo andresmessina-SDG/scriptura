@@ -4708,7 +4708,7 @@ msgstr "Negro"
 
 #: window.py:1470 window.py:1477
 msgid "Custom"
-msgstr "Personalizado"
+msgstr "Propio"
 
 #: window.py:1471 window.py:1478
 msgid "Custom colours"
@@ -5198,7 +5198,7 @@ msgstr "Serif del sistema"
 
 #: window.py:3453
 msgid "System Sans-Serif"
-msgstr "Sans-serif del sistema"
+msgstr "Sin serifa"
 
 #: window.py:3482 window.py:3483
 msgid "Bold"
@@ -5392,3 +5392,11 @@ msgstr "Día {n} · {passages}"
 #, python-brace-format
 msgid "Day {n}"
 msgstr "Día {n}"
+
+#: archaeology_reader.py:1006
+msgid "{year} BC"
+msgstr "{year} a. C."
+
+#: archaeology_reader.py:1008
+msgid "AD {year}"
+msgstr "{year} d. C."

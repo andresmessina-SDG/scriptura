@@ -171,7 +171,17 @@ def test_no_string_is_left_behind_by_the_source(catalogue, tmp_path):
     pot = tmp_path / 'scriptura.pot'
     r = subprocess.run(
         ['xgettext', '--files-from=po/POTFILES.in', '--from-code=UTF-8',
-         '--keyword=_', '--keyword=N_', '--keyword=C_:1c,2', '-o', str(pot)],
+         '--keyword=_', '--keyword=N_', '--keyword=C_:1c,2',
+         # welcome._summarise takes its translators as `gt`/`ngt` arguments so
+         # the language cards can each speak their own language, and naming
+         # them `_` would shadow the builtin for that whole function. xgettext
+         # cannot guess an alias: without these two the eight strings of the
+         # welcome contents line ("{n} Bible", "dictionary", "Detected"…) are
+         # invisible to this check, and a catalogue can be short by exactly
+         # those eight while this test stays green. Russian shipped that way
+         # until a screenshot showed "1 Bible" in English on a Russian card.
+         '--keyword=gt', '--keyword=ngt:1,2',
+         '-o', str(pot)],
         cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
 
@@ -232,3 +242,69 @@ def test_book_names_stay_distinct(catalogue):
     books = window.BOOKS + window.DEUTEROCANON
     names = [have[b] for b in books if have.get(b)]
     assert len(set(names)) == len(names), f'{lang}: duplicate book names'
+
+
+def test_the_module_filter_follows_the_language_the_app_is_running_in(monkeypatch):
+    """The in-app picker sets `LANGUAGE`; `LC_ALL`/`LANG` keep whatever the
+    desktop said. Reading the environment meant a reader who chose Русский on
+    an English desktop got a Russian interface over a Module Manager filtered
+    to «Английский (en)» — the one catalogue they had just declined."""
+    import i18n
+    import module_manager
+
+    monkeypatch.setenv('LANG', 'en_US.UTF-8')
+    monkeypatch.setenv('LC_ALL', 'en_US.UTF-8')
+    monkeypatch.setattr(i18n, 'current_language', lambda: 'ru')
+    assert module_manager._ui_lang() == 'ru'
+
+    monkeypatch.setattr(i18n, 'current_language', lambda: 'es')
+    assert module_manager._ui_lang() == 'es'
+
+
+#: The paper chip is a fixed 56px circle (`_make_swatch`), its label set at
+#: 0.74em and semibold, with the theme's padding zeroed so the text cannot
+#: inflate it. Two borders and a little air leave about this much room.
+_CHIP_INNER_PX = 50
+
+
+def _chip_label_width(text):
+    """How wide `text` sets in the paper chip's own font, measured."""
+    import cairo
+    import gi
+    gi.require_version('Pango', '1.0')
+    gi.require_version('PangoCairo', '1.0')
+    from gi.repository import Pango, PangoCairo
+
+    ctx = cairo.Context(cairo.ImageSurface(cairo.FORMAT_ARGB32, 200, 60))
+    layout = PangoCairo.create_layout(ctx)
+    desc = Pango.FontDescription('Adwaita Sans')
+    desc.set_weight(Pango.Weight.SEMIBOLD)
+    desc.set_absolute_size(0.74 * 14.7 * Pango.SCALE)
+    layout.set_font_description(desc)
+    layout.set_text(text, -1)
+    return layout.get_pixel_size().width
+
+
+def test_no_paper_name_overflows_its_chip(catalogue):
+    """A paper chip shows its name *inside* the circle, in that paper's own
+    ink — the chip previews the whole pairing. A name too long for the circle
+    does not ellipsize, it spills: Russian «Грифельный» ran 69px through a
+    50px opening and lost its Г, and Spanish «Personalizado» ran 75px and had
+    been doing so since Spanish shipped, unnoticed.
+
+    English fits with nothing to spare — "Charcoal" is 47px — so this is a
+    real constraint on the translation, not a cushion. A language that cannot
+    say it short enough needs a shorter word, the way Slate became «Сланец».
+    """
+    lang, path = catalogue
+    names = {'Paper', 'White', 'Sepia', 'Green',
+             'Slate', 'Charcoal', 'Black', 'Custom'}
+    over = []
+    for msgid, _plural, strs in _parse_po(path):
+        if msgid not in names or not strs or not strs[0]:
+            continue
+        width = _chip_label_width(strs[0])
+        if width > _CHIP_INNER_PX:
+            over.append(f'{msgid} → {strs[0]!r} is {width}px')
+    assert not over, (
+        f'{lang}: paper names too wide for the 56px chip: ' + '; '.join(over))
