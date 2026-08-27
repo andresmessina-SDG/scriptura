@@ -5194,7 +5194,7 @@ msgstr "Tipografía"
 
 #: window.py:3453
 msgid "System Serif"
-msgstr "Serif del sistema"
+msgstr "Con serifa"
 
 #: window.py:3453
 msgid "System Sans-Serif"
