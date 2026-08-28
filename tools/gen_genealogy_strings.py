@@ -121,17 +121,22 @@ def render(entries: list[tuple[str, str, str]]) -> str:
 def _pyquote(text: str) -> str:
     """A Python literal xgettext can parse.
 
-    Multi-line bodies become one implicit-concatenation block rather than a
-    triple-quoted string: xgettext handles both, but the concatenated form
-    keeps the msgid's newlines explicit and survives reflowing."""
+    Multi-line bodies become an implicit-concatenation block rather than a
+    triple-quoted string, which keeps the msgid's newlines explicit and
+    survives reflowing. The pieces are the call's argument directly, with no
+    parentheses of their own: xgettext reads `N_('a' 'b')` and does NOT read
+    `N_(('a' 'b'))` — it walks past the parenthesised group without a word,
+    and the string is simply absent from the catalogue. That form hid the
+    Book of Generations' opening paragraph from every translator, so the
+    Russian and Spanish readers met the one page of English in the book."""
     if '\n' not in text:
         return _one(text)
     parts = text.split('\n')
-    out = ['(']
+    out = []
     for i, part in enumerate(parts):
         tail = '\\n' if i < len(parts) - 1 else ''
-        out.append('\n     ' + _one(part + '') [:-1] + tail + "'")
-    out.append(')')
+        lit = _one(part)[:-1] + tail + "'"
+        out.append(lit if i == 0 else '\n       ' + lit)
     return ''.join(out)
 
 

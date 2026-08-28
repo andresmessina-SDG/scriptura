@@ -25,14 +25,13 @@ def C_(context: str, message: str) -> str:
 _STRINGS = [
     N_('The Book of Generations'),
     N_('The lines the Bible keeps, drawn so they can be held'),
-    N_((
-     'Scripture keeps lists of names, and readers skip them. They are not\n'
-     'filler: they are the spine the rest of the book hangs on, and the\n'
-     'writers put them where they did on purpose.\n'
-     '\n'
-     'Every line below is drawn from the text and cites it. Where a\n'
-     'genealogy leaves generations out, the gap is drawn as a gap. Where two\n'
-     'writers disagree, both are shown and neither is quietly corrected.')),
+    N_('Scripture keeps lists of names, and readers skip them. They are not\n'
+       'filler: they are the spine the rest of the book hangs on, and the\n'
+       'writers put them where they did on purpose.\n'
+       '\n'
+       'Every line below is drawn from the text and cites it. Where a\n'
+       'genealogy leaves generations out, the gap is drawn as a gap. Where two\n'
+       'writers disagree, both are shown and neither is quietly corrected.'),
     C_('person', 'Adam'),
     N_('man; earth'),
     N_('The first man, and the head Luke traces the line back to.'),

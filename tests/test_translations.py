@@ -7,6 +7,8 @@ English tests all pass. These checks read every catalogue in LINGUAS, so a
 future language is covered the moment it is added.
 """
 
+import ast
+import importlib.util
 import os
 import re
 import shutil
@@ -359,3 +361,58 @@ def test_no_paper_name_overflows_its_chip(catalogue):
             over.append(f'{msgid} → {strs[0]!r} is {width}px')
     assert not over, (
         f'{lang}: paper names too wide for the 56px chip: ' + '; '.join(over))
+
+
+def _pot_msgids(path):
+    """Every msgid in a .pot, unescaped — the ids a translator will see."""
+    ids, buf, reading = set(), [], False
+    with open(path, encoding='utf-8') as f:
+        for line in f:
+            line = line.rstrip('\n')
+            if line.startswith('msgid '):
+                reading, buf = True, [line[len('msgid '):]]
+            elif reading and line.startswith('"'):
+                buf.append(line)
+            elif reading:
+                ids.add(''.join(ast.literal_eval(p) for p in buf))
+                reading, buf = False, []
+    if reading:
+        ids.add(''.join(ast.literal_eval(p) for p in buf))
+    return ids
+
+
+def test_every_genealogy_string_reaches_the_extractor(tmp_path):
+    """The mirror file exists to be read by xgettext, and xgettext is fussy
+    about how the marker is written: it reads `N_('a' 'b')` and walks past
+    `N_(('a' 'b'))` without a word. The generator emitted the second form for
+    any string with a newline, so the Book of Generations' opening paragraph
+    was in no .pot and no catalogue, and Russian and Spanish readers met one
+    page of English at the front of the book.
+
+    Nothing else could see it. `test_no_string_is_left_behind_by_the_source`
+    compares the catalogue against a fresh extraction, and the string was
+    missing from both sides, so it passed. This asks the other question: does
+    every string the app will hand to `_()` survive extraction at all?
+    """
+    if shutil.which('xgettext') is None:
+        pytest.skip('xgettext not installed')
+
+    spec = importlib.util.spec_from_file_location(
+        'gen_genealogy_strings',
+        os.path.join(ROOT, 'tools', 'gen_genealogy_strings.py'))
+    gen = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gen)
+
+    pot = tmp_path / 'scriptura.pot'
+    r = subprocess.run(
+        ['xgettext', '--files-from=po/POTFILES.in', '--from-code=UTF-8',
+         '--keyword=_', '--keyword=N_', '--keyword=C_:1c,2',
+         '--keyword=gt', '--keyword=ngt:1,2', '-o', str(pot)],
+        cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+
+    ids = _pot_msgids(pot)
+    missing = [m for _kind, _ctx, m in gen.collect() if m not in ids]
+    assert not missing, (
+        f'{len(missing)} genealogy strings are invisible to xgettext — '
+        f'{[m[:60] for m in missing[:3]]}')
