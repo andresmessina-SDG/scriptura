@@ -25,7 +25,7 @@
 # reasons. This file mixes licences with the CC BY-SA text around it, so an
 # entry nobody can trace is one nobody can ship. And a Bible dictionary is a
 # doctrinal document: entries come from a public-domain work or from a named
-# author, never from an LLM's recollection of one.
+# author, and never from memory or paraphrase of one.
 #
 # tools/build_spanish_dict.py prints how many overrides it applied; the
 # ranked list of words still needing one is curation-worklist.tsv, ordered by

@@ -67,3 +67,6 @@ FLATPAK_RELEASE.md
 
 # Local promotion plan — keep private
 PROMOTION.md
+
+# Local agent/session scratch — never part of the project.
+.claude/
