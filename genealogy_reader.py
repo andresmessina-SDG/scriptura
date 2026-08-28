@@ -86,6 +86,11 @@ class ChartArea(Gtk.DrawingArea):
         #: margin; a figure sits in the middle of its page, not against the
         #: left edge of it.
         self._ox = 0.0
+        #: How much of this widget the reader can actually see, which stops
+        #: being its allocation the moment it sits in a scroller that scrolls
+        #: sideways. Pushed in from outside; 0 means nobody has said, and the
+        #: allocation is then the honest answer.
+        self._viewport_w = 0.0
         self._reading_pt = 0.0
         self._cache: dict[tuple[str, float, str], float] = {}
         self._pending = 0
@@ -175,6 +180,30 @@ class ChartArea(Gtk.DrawingArea):
                  if p.kind in ('text', 'chip') and p.text.strip()]
         return self.MIN_TYPE_PX / min(sizes) if sizes else 1.0
 
+    def set_viewport_width(self, w: float) -> None:
+        """Tell the chart how much of it is on screen.
+
+        A widget inside a horizontally scrolling viewport is allocated its
+        CONTENT width, not the width the reader can see — so a chart that
+        asked its own allocation how much room it had was answered with the
+        room it had just requested. That is a loop, and it ran: at a 420px
+        pane the chart fitted itself to its own 600px allocation, stopped
+        asking for the extra width, was squeezed back to 420, asked again.
+        The scrollbar flickered between the two states several times a second
+        and could not be grabbed.
+
+        The scroller knows the real number and passes it here.
+        """
+        w = float(w)
+        if w > 0 and abs(w - self._viewport_w) >= 1:
+            self._viewport_w = w
+            self._refresh()
+
+    def _visible(self, allocated: float) -> float:
+        """The width the reader sees: what the scroller said, or the
+        allocation before it has said anything."""
+        return self._viewport_w or allocated
+
     def _reading_scale(self) -> float:
         """How much bigger than its drawn size this chart wants to be, from
         the reading size alone. The pane has no say here — `_lay_out` fits
@@ -229,14 +258,17 @@ class ChartArea(Gtk.DrawingArea):
         """Rebuild unconditionally: the callers are the things that change a
         plate without changing its width — the reading size, an opened fold,
         another textual tradition."""
-        w = self._layout_width or float(self.get_width())
+        w = self._visible(self._layout_width or float(self.get_width()))
         if w <= 0:
             return
         self._lay_out(w)
         self.queue_draw()
 
     def _on_resize(self, _area, width, _height):
-        w = float(width)
+        # The allocation, resolved to what the reader can actually see: while
+        # the chart is scrolling sideways the two differ, and reacting to the
+        # allocation is how the loop in `set_viewport_width` started.
+        w = self._visible(float(width))
         if w <= 0 or abs(w - self._layout_width) < 1:
             return
         self._layout_width = w
@@ -267,8 +299,8 @@ class ChartArea(Gtk.DrawingArea):
         # widget was handed: a resize sets the second one frames before the
         # first, and comparing the wrong one paints the previous step's chart
         # inside the current step's pane for every frame of a window drag.
-        if self._plate is None or abs(width - self._laid_at) > 1:
-            self._lay_out(float(width))
+        if self._plate is None or abs(self._visible(width) - self._laid_at) > 1:
+            self._lay_out(self._visible(float(width)))
         dark = Adw.StyleManager.get_default().get_dark()
         cr.save()
         cr.translate(self._ox, 0)
@@ -326,20 +358,31 @@ class ChartArea(Gtk.DrawingArea):
                 cr.set_line_width(1.0)
                 cr.stroke()
                 cr.set_source_rgb(r, g, b)
-            self._text(cr, p.text, p.x + p.w / 2, p.y + p.h / 2 - p.size * 0.72,
-                       p.size, p.weight or 'semibold', 'middle', False, False)
+            self._text(cr, p.text, p.x + p.w / 2, p.y, p.size,
+                       p.weight or 'semibold', 'middle', False, False,
+                       box_h=p.h)
         elif p.kind == 'text':
             self._text(cr, p.text, p.x, p.y - p.size, p.size, p.weight,
                        p.anchor, p.style == 'italic', p.serif)
 
-    def _text(self, cr, text, x, y, size, weight, anchor, italic, serif):
+    def _text(self, cr, text, x, y, size, weight, anchor, italic, serif,
+              box_h: float = 0.0):
+        """`y` is the layout's top, or the top of a box to centre it in.
+
+        Centring a chip's label on `p.size * 0.72` was three pixels out: it
+        left 6.1px of air above the ink of an 11pt label and 2.9 below, in
+        every verse pill on every chart, which reads as type that has slipped
+        down inside its pill. The font knows its own height; ask it.
+        """
         lay = self.create_pango_layout(text)
         lay.set_font_description(_font(size, weight, italic, serif))
-        w, _h = lay.get_pixel_size()
+        w, h = lay.get_pixel_size()
         if anchor == 'middle':
             x -= w / 2
         elif anchor == 'end':
             x -= w
+        if box_h:
+            y += (box_h - h) / 2
         cr.move_to(x, y)
         PangoCairo.show_layout(cr, lay)
 
@@ -737,6 +780,15 @@ class GenealogyReader:
         side = Gtk.ScrolledWindow()
         side.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
         side.set_child(area)
+        # The chart cannot read its own visible width from in here — inside a
+        # sideways scroller the allocation IS the content width — so the
+        # adjustment's page size, which is exactly the viewport, is pushed to
+        # it. Without this the two numbers chase each other and the scrollbar
+        # flickers between them.
+        hadj = side.get_hadjustment()
+        hadj.connect('notify::page-size',
+                     lambda a, _p, ar=area: ar.set_viewport_width(
+                         a.get_page_size()))
         return side
 
     def _reading(self, r) -> Gtk.Widget:

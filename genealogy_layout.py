@@ -357,14 +357,21 @@ def spine(cid: str, measure: Measure = estimate, width: float = 720,
             # the gloss one under it — but its budget subtracted the chip
             # anyway, leaving 110px for a 430px sentence: thirteen of the
             # Matthew chart's fifty-two strings came out cut, in English,
-            # before any translation. The 4px drop is what buys that: at +14
-            # the gloss's cap height reached into the chip's bottom edge,
-            # which is why the chip was being subtracted in the first place.
-            lines = _wrap(gloss, right - PAD - spine_x - NODE_GAP, 13.0,
-                          measure, max_lines=3)
+            # before any translation.
+            #
+            # The chip is subtracted from the FIRST line alone, which is the
+            # only one level with it. "at +14 the gloss's cap height reached
+            # into the chip's bottom edge" was the old note here, and +18
+            # cleared it by exactly nothing: measured in ink, «Left Ur for
+            # Canaan and stopped» touched the bottom of Genesis 11:26 along
+            # 91px of its length, and the Matthew and Ruth charts did the
+            # same. A caption may not run under a filled pill; the lines
+            # below it, which the pill does not reach, keep the full width.
+            avail = right - PAD - spine_x - NODE_GAP
+            lines = _wrap(gloss, avail, 13.0, measure, max_lines=3)
             for n, line in enumerate(lines):
                 p.append(Prim('text', 'muted', x=spine_x + NODE_GAP,
-                              y=y + 18 + n * 17, text=line,
+                              y=y + 23 + n * 17, text=line,
                               size=13.0, style='italic', serif=True))
             extra[0] = 17.0 * (len(lines) - 1)
         if mother:
@@ -461,8 +468,11 @@ def spine(cid: str, measure: Measure = estimate, width: float = 720,
                 note_lines = _wrap(_(e['note']), full, 12.5, measure,
                                    max_lines=3)
                 for n, line in enumerate(note_lines):
+                    # +47, not +42: with the cross-reference chip sitting
+                    # beside the count the note's first line passed 2.5px
+                    # under it, the same near-touch the person rows had.
                     p.append(Prim('text', 'omit', x=spine_x + NODE_GAP,
-                                  y=top + 42 + n * 17, text=line,
+                                  y=top + 47 + n * 17, text=line,
                                   size=12.5, style='italic', serif=True))
             grown = 17 * max(0, len(note_lines) - 1)
             if cross and not beside:
@@ -470,10 +480,10 @@ def spine(cid: str, measure: Measure = estimate, width: float = 720,
                 # chip was drawn through the descenders of the line above it
                 # whenever the note ran to two lines, which in Russian is
                 # every width from 700 to 900.
-                _chip(p, h, spine_x + NODE_GAP, top + 54 + grown, cross,
+                _chip(p, h, spine_x + NODE_GAP, top + 59 + grown, cross,
                       'omit', measure, _payload_text(e['cross']))
                 grown += 34
-            y = top + 54 + ROW - 14 + grown
+            y = top + 59 + ROW - 14 + grown
         elif e['kind'] in ('husband', 'born_of', 'supposed'):
             # Not a begetting, and the chart says so on the line itself.
             top = y - ROW + 16
@@ -568,8 +578,11 @@ _trimmed: set[str] = set()
 
 
 def _wrap(text: str, avail: float, size: float, measure: Measure,
-          max_lines: int = 2) -> list[str]:
+          max_lines: int = 2, first: float = 0.0) -> list[str]:
     """Break a caption over at most `max_lines`, ellipsizing only the last.
+
+    `first` narrows the FIRST line alone, for a caption that starts level
+    with something solid — a verse chip — and clears it further down.
 
     One line was the whole vocabulary here, and it cost the ends of sentences:
     "The line breaks its own grammar at her: Jesus is bor…" needs 611px and the
@@ -580,12 +593,14 @@ def _wrap(text: str, avail: float, size: float, measure: Measure,
     if avail <= 0:
         _trimmed.add(text)
         return []
-    if measure(text, size, 'normal') <= avail:
+    if measure(text, size, 'normal') <= (first or avail):
         return [text]
-    words, lines, cur = text.split(' '), [], ''
+    words, cur = text.split(' '), ''
+    lines: list[str] = []
     for w in words:
         trial = (cur + ' ' + w).strip()
-        if cur and measure(trial, size, 'normal') > avail:
+        budget = first if (first and not lines) else avail
+        if cur and measure(trial, size, 'normal') > budget:
             lines.append(cur)
             cur = w
             if len(lines) == max_lines:

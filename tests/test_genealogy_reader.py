@@ -416,3 +416,38 @@ def test_prose_captions_are_not_cut_mid_sentence():
                if p.kind == 'text' and p.text.endswith('\u2026')
                and ' \u00b7 ' not in p.text]
         assert not cut, f'{chart["id"]}: {cut}'
+
+
+def test_a_scrolling_chart_does_not_chase_its_own_allocation():
+    """The flicker his narrow pane showed, made into a check.
+
+    A widget inside a horizontally scrolling viewport is allocated its
+    CONTENT width, not the width the reader can see. Asking its own
+    allocation how much room it had answered it with the room it had just
+    requested, and the three states chased each other several times a
+    second: allocated 420 it asked for 600, allocated 600 it asked for 700,
+    allocated 700 it fitted and asked for nothing, and was squeezed back to
+    420. The scrollbar could not be grabbed.
+    """
+    area = gr.ChartArea('matthew')
+    area.set_viewport_width(420)
+    first = (area._scale, area.get_content_width())
+    assert first[1] > 420, 'a chart at the floor must ask for its own width'
+    # Feed the allocation back the way GTK does. Nothing may move.
+    for _round in range(6):
+        area._on_resize(None, max(420, area.get_content_width()), 0)
+        if area._pending:
+            GLib.source_remove(area._pending)
+            area._pending = 0
+            area._refresh_idle()
+        assert (area._scale, area.get_content_width()) == first
+
+
+def test_the_viewport_not_the_allocation_decides_the_scale():
+    """The narrow half of the same rule: what the reader can see is what the
+    chart is fitted to, whatever width the widget has been handed."""
+    area = gr.ChartArea('gen5')
+    area.set_viewport_width(900)
+    wide = area._scale
+    area._lay_out(2000.0)          # an allocation far past the viewport
+    assert area._scale == wide
