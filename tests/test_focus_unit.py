@@ -329,3 +329,28 @@ def test_an_opening_chapter_with_no_mark_yet_falls_back_to_its_first_verse():
     pane.first_visible = None
     pane._update_current_unit()
     assert pane.applied == [(1, 3)]
+
+
+def test_a_unit_that_begins_mid_paragraph_has_no_heading_of_its_own():
+    """Why the focus veil only ever dimmed BELOW the unit.
+
+    In continuous prose a paragraph is one buffer line, so a unit that does
+    not open the paragraph shares it with the verses before. Walking back a
+    line from such a unit leaves it entirely and lands on the paragraph
+    above — in practice the CHAPTER TITLE, a dozen lines up. The veil took
+    that as its top edge, `_veil` draws nothing when its bottom is above its
+    top, and every verse between the title and the unit stayed lit.
+
+    Measured in the app on Genesis 5: the unit at verse 3 sits at y=189 and
+    was handed a heading at y=5.
+    """
+    buf = _buffer('Genesis 5\n\nThis is the book 2 Male and female 3 When Adam\n',
+                  [2])
+    line = buf.get_iter_at_line(2)[1]
+    mid = line.copy()
+    mid.forward_chars(20)                     # inside the paragraph
+    assert not mid.starts_line()
+    from reading_view import heading_line
+    assert heading_line(buf, mid) is None
+    # …and a unit that DOES open its paragraph still keeps its heading.
+    assert _heading_text(buf, 2) == 'Genesis 5'

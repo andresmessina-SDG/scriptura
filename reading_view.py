@@ -63,6 +63,15 @@ def heading_line(buf, start):
     reading text does. Modules that carry no headings (KJV, ASV, the
     Vulgate) answer None, and the veil then starts at the verse itself.
     """
+    # A unit that begins mid-paragraph has no heading of its own. Without
+    # this the walk left the unit's own line and found the paragraph's — in
+    # continuous prose, the CHAPTER TITLE a dozen lines above — and the veil
+    # then took that as its top edge. `_veil` draws nothing when its bottom
+    # is above its top, so every verse between the title and the unit stayed
+    # lit: the veil only ever dimmed BELOW. Verse 1 of a chapter starts its
+    # line and keeps its heading, which is the case this was written for.
+    if not start.starts_line():
+        return None
     line = start.copy()
     line.set_line_offset(0)
     for _ in range(3):
