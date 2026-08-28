@@ -4756,6 +4756,37 @@ class BiblePane(Gtk.Box):
         self._peek_fade = anim
         anim.play()
 
+    def grab_content_focus(self) -> bool:
+        """Put the keyboard on whatever this pane is SHOWING.
+
+        `_view` is the Bible text view and it stays in the content stack when
+        another reader is on top of it — visible, but not mapped. GTK grants
+        `grab_focus` to such a widget, so "Focus left pane" landed the caret
+        on something the reader cannot see: arrow keys moved through hidden
+        text, and the genealogy chart — which is focusable and carries the
+        chart's text equivalent for a screen reader — never got the focus at
+        all. The same held for every reader that is not a Bible.
+        """
+        if self._view.get_mapped():
+            return self._view.grab_focus()
+        shown = self._content_stack.get_visible_child()
+        if shown is None:
+            return self._view.grab_focus()
+
+        def first_focusable(w):
+            if w.get_focusable() and w.get_mapped():
+                return w
+            child = w.get_first_child()
+            while child is not None:
+                got = first_focusable(child)
+                if got is not None:
+                    return got
+                child = child.get_next_sibling()
+            return None
+
+        target = first_focusable(shown)
+        return target.grab_focus() if target is not None else False
+
     def dismiss_dict_peek(self):
         """Close an open dictionary peek. Returns True if one was open — the
         window's Escape handler uses this (the peek is non-focusable, so it

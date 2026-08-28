@@ -1046,7 +1046,7 @@ class BibleWindow(Adw.ApplicationWindow):
             ('search-prev', ['<Shift>F3'], lambda: self._step_search_result(prev=True)),
             ('reading-mode', ['F11'], self._toggle_reading_mode),
             ('present-mode', ['F5'], self._toggle_present_mode),
-            ('focus-pane-1', ['<Ctrl>1'], lambda: self.pane1._view.grab_focus()),
+            ('focus-pane-1', ['<Ctrl>1'], self.pane1.grab_content_focus),
             ('focus-pane-2', ['<Ctrl>2'], self._focus_pane2),
             ('focus-other-pane', ['<Ctrl>Tab'], self._focus_other_pane),
             ('prev-chapter', ['<Alt>Left'], self._go_prev_chapter),
@@ -1075,7 +1075,7 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _focus_pane2(self):
         if self.pane2.get_visible():
-            self.pane2._view.grab_focus()
+            self.pane2.grab_content_focus()
 
     def _nudge_split(self, delta):
         """Step the divider, or even it up when `delta` is None.
@@ -1207,14 +1207,14 @@ class BibleWindow(Adw.ApplicationWindow):
         while f is not None:
             if f is self.pane1:
                 target = self.pane2 if self.pane2.get_visible() else self.pane1
-                target._view.grab_focus()
+                target.grab_content_focus()
                 return
             if f is self.pane2:
-                self.pane1._view.grab_focus()
+                self.pane1.grab_content_focus()
                 return
             f = f.get_parent()
         # No pane focused yet — go to pane1 by default
-        self.pane1._view.grab_focus()
+        self.pane1.grab_content_focus()
 
     def _step_search_result(self, prev=False):
         """F3 / Shift+F3 — step through results.
