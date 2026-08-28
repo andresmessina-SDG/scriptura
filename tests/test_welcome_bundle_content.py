@@ -102,9 +102,10 @@ def test_the_spanish_bundles_open_on_spanish():
 
 def test_the_russian_bundles_open_on_the_modern_text():
     """The modern text leads, not the Synodal beside it. Every Russian Bible
-    that exists is the 1876 Synodal or a revision of it, and RusOpenBible is
-    the only one carrying Strong's numbers — so it is both the readable text
-    and the one pane 1 needs for the lexicons to key on."""
+    that exists is the 1876 Synodal or a revision of it, so RusOpenBible is
+    the one text a reader meets in today's language — and pane 2's Synodal
+    is the Licht im Osten edition, which carries the Strong's numbers the
+    lexicons key on in all 66 books."""
     for bundle in welcome.bundles_for('ru'):
         assert _idents(bundle, 'sword')[0] == 'RusOpenBible', bundle['id']
         assert bundle['opens'][0] == 'RusOpenBible', bundle['id']

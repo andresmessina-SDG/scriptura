@@ -900,6 +900,7 @@ DISPLAY_NAMES = {
     'ItaRive':       'Riveduta Bible (1927)',
     'SpaRV1909':     'Reina-Valera (1909)',
     'RusSynodal':    'Russian Synodal Bible',
+    'RusSynodalLIO': 'Russian Synodal Bible (Licht im Osten)',
     # Named here or the pane header reads "RusOpenBible" — a module id, not
     # a title. English, like every other entry in this table; NATIVE_NAMES
     # below answers the reader who is running the app in Russian.

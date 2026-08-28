@@ -155,7 +155,13 @@ _CATALOGUE = {
         'reading': {
             'opens': ('NBLA', None),
             'items': [
-                ('sword', 'NBLA', 'Nueva Biblia de las Américas', _BIBLE),
+                ('sword',  'NBLA',    'Nueva Biblia de las Américas', _BIBLE),
+                # NBLA is Lockman's and reaches us through CrossWire alone —
+                # no mirror of ours may hold it — so the smallest Spanish tier
+                # was the one tier in any language that had nothing to fall
+                # back on: a CrossWire outage met the reader with "Couldn't
+                # download a Bible" on their first screen. CC BY-SA, 1.5 MB.
+                ('ebible', 'spaonbv', 'Nueva Biblia Viva', _BIBLE),
             ],
         },
         'study': {
@@ -167,6 +173,12 @@ _CATALOGUE = {
                 # NBLA and LBLA a mirror of ours may hold it: the tier keeps a
                 # modern Spanish Bible even when CrossWire is unreachable.
                 ('ebible',   'spaonbv',       'Nueva Biblia Viva', _BIBLE),
+                # The spoken reading. bible_audio binds the pill to this
+                # exact module, so a study profile without it had no audio
+                # anywhere — the one tier of the three that could not play
+                # a chapter, in the language where the reader is least
+                # likely to go looking for why.
+                ('ebible',   'spabes',        'Biblia en Español Sencillo', _AUDIO),
                 # The one dictionary a Spanish reader can have. Every
                 # dictionary CrossWire and its friends distribute is English,
                 # French, Russian or Portuguese, so double-clicking a word —
@@ -225,10 +237,19 @@ _CATALOGUE = {
             ],
         },
         'study': {
-            'opens': ('RusOpenBible', 'RusSynodal'),
+            'opens': ('RusOpenBible', 'RusSynodalLIO'),
             'items': [
                 ('sword', 'RusOpenBible', 'Русский открытый перевод', _BIBLE),
-                ('sword', 'RusSynodal',   'Синодальный перевод', _BIBLE),
+                # Licht im Osten's edition of the Synodal, not CrossWire's
+                # plain one: the same 1876 text — measured verse by verse,
+                # they differ in capitalisation and commas — carrying
+                # Strong's numbers and morphology in all 66 books where the
+                # plain edition carries none. Like NBLA and LBLA its licence
+                # is a permission to CrossWire, so no mirror of ours may
+                # hold it; the tier's fallback is RusOpenBible, which we
+                # serve ourselves.
+                ('sword', 'RusSynodalLIO',
+                 'Синодальный перевод (Licht im Osten)', _BIBLE),
                 # The first dictionary of any kind a Russian reader has had
                 # here: CrossWire's four Russian lexicons are all glossaries
                 # of the CARS translations' own terms. Scriptura builds this
@@ -237,13 +258,13 @@ _CATALOGUE = {
                 # answers with something.
                 ('sword', 'RussianBibleWords', 'Библейский словарь',
                  _DICTIONARY),
-                # The Open Bible carries Strong's through 23 of its 66 books
-                # — the Gospels, Acts, most of Paul, Genesis and Exodus — and
-                # the Synodal carries none anywhere, which is the other
-                # reason the modern text leads: the lexicons have something
-                # to be keyed on in pane 1. They are in English, the same
-                # compromise the Spanish tiers make — no Russian Strong's
-                # lexicon exists to install instead.
+                # Keyed on by both panes. The Open Bible carries Strong's
+                # through 23 of its 66 books — the Gospels, Acts, most of
+                # Paul, Genesis and Exodus — so on its own a double-click in
+                # Psalms or Isaiah answered with nothing; the Licht im Osten
+                # Synodal beside it covers all 66. The lexicons are in
+                # English, the same compromise the Spanish tiers make — no
+                # Russian Strong's lexicon exists to install instead.
                 ('sword', 'StrongsHebrew', "Strong's Hebrew Lexicon",
                  _LEXICON),
                 ('sword', 'StrongsGreek', "Strong's Greek Lexicon", _LEXICON),
