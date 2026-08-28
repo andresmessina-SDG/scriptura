@@ -9,11 +9,15 @@ semver-ish — 0.x was the pre-Flathub testing track.
 ### Added
 
 - **The Book of Generations.** Scripture keeps lists of names and readers
-  skip them, so Scriptura draws them: eight charts, from Adam to Noah through
-  to Matthew and Luke laid side by side, with the ten lifespans of Genesis 5
-  on one axis so you can see that Methuselah's years run out in the flood
-  year. They are live, not pictures — a folded run of ten generations opens
-  in place, a name opens the person, a chip opens the verse — and the same
+  skip them, so Scriptura draws them, and binds them as a book: one genealogy
+  to a page, turned by the arrows in the running foot, from Adam to Noah
+  through to Matthew and Luke laid side by side, with the ten lifespans of
+  Genesis 5 on one axis so you can see that Methuselah's years run out in the
+  flood year. A table of contents lists the eight pages and marks the one you
+  are on, and each page keeps its place, so turning away and back returns you
+  to the line you left. The charts are live, not pictures — a folded run of
+  ten generations opens in place, a name opens the person, a chip opens the
+  verse — and the same
   geometry writes printable plates, so what prints and what is on screen
   cannot disagree. Where a genealogy leaves generations out the gap is drawn
   as a gap, says how many, and cites who does name them. Where Matthew and
