@@ -635,3 +635,29 @@ def test_a_name_leads_where_its_own_row_says():
                 if h.kind == 'person'}
         for pid, ref in expect.items():
             assert hits.get(pid) == ref, (cid, pid, hits.get(pid))
+
+
+def test_the_covenant_thread_never_crosses_a_brothers_name():
+    """The gold line leaves the House of Jacob through Judah and drops two
+    rows to its label, so it runs down the column past his brothers. Its x
+    came off a guessed 88px floor, which cleared no language: it struck
+    through Issachar in English by a pixel, and Иссахар and Завулон in
+    Russian by five and two. How wide a brother's name is, is a fact about
+    the language, so this measures with a measurer wider than any real face
+    rather than trusting the one the chart was drawn in."""
+    wide = lambda t, s, w='normal': gl.estimate(t, s, w) * 1.6   # noqa: E731
+    for width in (560.0, 760.0, 1040.0):
+        plate = gl.build('house_jacob', wide, width)
+        lines = [p for p in plate.prims
+                 if p.kind == 'line' and p.role == 'thread']
+        assert lines, 'the covenant thread did not draw'
+        names = [p for p in plate.prims if p.kind == 'text'
+                 and p.role in ('ink', 'ink-soft') and p.size == 14.5]
+        for ln in lines:
+            for t in names:
+                # Only the rows the line actually runs beside — a name two
+                # columns over shares no pixels with it.
+                if t.y - 14 > ln.y2 or t.y + 6 < ln.y:
+                    continue
+                right = t.x + wide(t.text, t.size, t.weight)
+                assert right <= ln.x, (width, t.text, right, ln.x)

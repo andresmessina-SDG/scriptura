@@ -916,13 +916,21 @@ def household(cid: str, measure: Measure = estimate,
               'link', measure, _ref_payload(groups[m][0]['ref']))
 
         yy = bus_y + 118 + drop
+        # The gold mark hangs off the right edge of Judah's wash, and its
+        # line drops two rows past it — so the wash has to clear the widest
+        # name in the column, not just his own. A guessed floor of 88 drew
+        # the line THROUGH Issachar in English (by a pixel) and through
+        # Иссахар and Завулон in Russian (by five and two), because how wide
+        # a brother's name is, is a fact about the language.
+        widest = max(measure(gb.person_name(e['child']), 14.5, 'normal')
+                     for e in groups[m])
         for e in groups[m]:
             nm = gb.person_name(e['child'])
             thread = e['child'] == 'judah'      # the line the rest hangs on
+            wash_w = max(measure(nm, 14.5, 'semibold') + 24, widest + 24, 88)
             if thread:
                 p.append(Prim('rect', 'thread-wash', x=x - 8, y=yy - 16,
-                              w=max(measure(nm, 14.5, 'semibold') + 24, 88),
-                              h=22, r=6))
+                              w=wash_w, h=22, r=6))
             p.append(Prim('text', 'ink' if thread else 'ink-soft', x=x, y=yy,
                           text=nm, size=14.5,
                           weight='semibold' if thread else 'normal',
@@ -932,7 +940,7 @@ def household(cid: str, measure: Measure = estimate,
             if thread:
                 # The covenant thread leaves this figure through Judah; the
                 # gold says the two structures are one system.
-                dx = x + max(measure(nm, 14.5, 'semibold') + 24, 88) - 12
+                dx = x + wash_w - 12
                 p.append(Prim('dot', 'thread', x=dx, y=yy - 5, r=4.5))
                 p.append(Prim('line', 'thread', x=dx, y=yy - 5, x2=dx,
                               y2=yy + 44))
