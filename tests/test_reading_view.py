@@ -144,3 +144,109 @@ def test_the_decorations_never_map_an_x_to_a_byte_index_while_painting():
     src = inspect.getsource(rv._visible_lines)
     assert 'get_line_at_y' in src.split('"""')[-1], \
         '_visible_lines must ask for the line, not a position in it'
+
+
+# ── Highlight bands across a wrap ───────────────────────────────────────────
+
+class _FakeIter:
+    """Enough of a GtkTextIter for `_clamp_to_line`: a position in a string
+    laid out over lines of fixed length."""
+
+    def __init__(self, text, pos, per_line):
+        self.text, self.pos, self.per_line = text, pos, per_line
+
+    def copy(self):
+        return _FakeIter(self.text, self.pos, self.per_line)
+
+    def compare(self, other):
+        return (self.pos > other.pos) - (self.pos < other.pos)
+
+    def backward_char(self):
+        if self.pos <= 0:
+            return False
+        self.pos -= 1
+        return True
+
+    def forward_char(self):
+        if self.pos >= len(self.text):
+            return False
+        self.pos += 1
+        return True
+
+    def get_char(self):
+        return self.text[self.pos] if self.pos < len(self.text) else ''
+
+
+class _FakeView:
+    """A view whose display lines are `per_line` characters wide."""
+
+    def __init__(self, text, per_line):
+        self.text, self.per_line = text, per_line
+
+    def get_iter_location(self, it):
+        class R:
+            pass
+        r = R()
+        r.y = (it.pos // self.per_line) * 20
+        r.x = (it.pos % self.per_line) * 10
+        r.width = 10
+        return r
+
+    # Bound at call time, not at class-definition time: referencing the
+    # real methods here makes a missing one a COLLECTION error, which reads
+    # as a broken test file rather than as the rule being broken.
+    @property
+    def _BAND_WS(self):
+        return rv.BibleTextView._BAND_WS
+
+    def _trim_ws_end(self, start, end):
+        return rv.BibleTextView._trim_ws_end(self, start, end)
+
+
+def test_a_band_segment_is_pulled_back_onto_one_display_line():
+    """The 1px ticks in his screenshots.
+
+    A verse highlight spanning three lines banded only the LAST of them and
+    left a one-pixel orange tick standing in each of the others. A segment
+    ran past the soft wrap, so its right edge was measured on the following
+    display line, the width came out negative — -538px in one measured case
+    — and a `max(1.0, ...)` floor drew that as a mark.
+    """
+    text = 'abcdefghij' + 'klmnopqrst'      # two display lines of ten
+    view = _FakeView(text, 10)
+    cur = _FakeIter(text, 2, 10)            # 'c', on the first line
+    over = _FakeIter(text, 15, 10)          # on the SECOND line
+    clamp = getattr(rv.BibleTextView, '_clamp_to_line', None)
+    assert clamp is not None, 'a band segment is no longer clamped to a line'
+    seg_last, seg_end = clamp(view, cur, over, over)
+    assert seg_last.pos <= 10, 'the segment still crosses the wrap'
+    assert seg_last.pos > cur.pos, 'the whole segment was thrown away'
+    # And the caller resumes from the clip, so the rest still gets a band.
+    assert seg_end.pos == seg_last.pos
+
+
+def test_a_segment_already_on_one_line_is_left_alone():
+    text = 'abcdefghij' + 'klmnopqrst'
+    view = _FakeView(text, 10)
+    cur = _FakeIter(text, 2, 10)
+    end = _FakeIter(text, 8, 10)
+    clamp = getattr(rv.BibleTextView, '_clamp_to_line', None)
+    assert clamp is not None, 'a band segment is no longer clamped to a line'
+    seg_last, seg_end = clamp(view, cur, end, end)
+    assert (seg_last.pos, seg_end.pos) == (8, 8)
+
+
+def test_a_band_with_no_width_is_not_painted():
+    """The floor that turned a collapsed segment into a visible mark."""
+    import ast
+    import inspect
+    src = inspect.getsource(rv.BibleTextView._draw_band)
+    tree = ast.parse(src.lstrip().replace('\n    ', '\n'))
+    assigns = [n for n in ast.walk(tree)
+               if isinstance(n, ast.Assign)
+               and any(getattr(t, 'id', '') == 'seg_w' for t in n.targets)]
+    assert assigns, 'seg_w is gone; this rule needs rewriting'
+    for a in assigns:
+        assert not (isinstance(a.value, ast.Call)
+                    and getattr(a.value.func, 'id', '') == 'max'), \
+            'a segment with no width must be dropped, not floored to 1px'
