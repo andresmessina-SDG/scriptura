@@ -450,6 +450,26 @@ class BibleTextView(Gtk.TextView):
                 break
         return it
 
+    def _segment_left(self, cur, r0):
+        """Where this segment's first glyph is actually drawn.
+
+        GTK will not say, at a SOFT wrap: ask it for the first character of a
+        continuation line and it answers 47 while drawing the glyph at 26 —
+        the view's own left margin. That is the same unreliability as the
+        right edge, at the other end of the wrap.
+
+        Only at a soft wrap, though, and the test is whether the display line
+        begins in the middle of a BUFFER line. A line of poetry is its own
+        buffer line and its indent is real — GTK says 58 and means it — so
+        taking the margin there dragged every band on every psalm 32px to the
+        left, out from under the indent. The first version of this rule did
+        exactly that.
+        """
+        line_start = cur.copy()
+        self.backward_display_line_start(line_start)
+        soft_wrap = line_start.compare(cur) == 0 and not cur.starts_line()
+        return self.get_left_margin() if soft_wrap else int(r0.x)
+
     def _line_right_edge(self, cur, seg_last, y0):
         """The rightmost ink of this segment on its own display line.
 
@@ -529,17 +549,7 @@ class BibleTextView(Gtk.TextView):
             if seg_last.compare(cur) > 0:
                 r0 = self.get_iter_location(cur)
                 right = self._line_right_edge(cur, seg_last, int(r0.y))
-                # Where the line actually starts, which GTK will not say. Ask
-                # it for the first character of a soft-wrapped line and it
-                # answers 47 while drawing the glyph at 26 — the view's own
-                # left margin. It is the same unreliability as the right edge,
-                # at the other end of the wrap. A segment that begins the
-                # display line therefore takes the margin; one that begins
-                # mid-line (at a verse number, say) is reported correctly and
-                # keeps what it is told.
-                line_start = cur.copy()
-                self.backward_display_line_start(line_start)
-                starts_line = line_start.compare(cur) == 0
+
                 # Anchor the band's top to the display line's *start* so a verse
                 # that begins mid-line with the small raised number shares one
                 # top with its neighbours. (GTK lays text at the line-box top
@@ -549,7 +559,7 @@ class BibleTextView(Gtk.TextView):
                 self.backward_display_line_start(ls)
                 # snapshot_layer draws in buffer coordinates, so use the iter
                 # locations directly — GTK applies the scroll/viewport offset.
-                wx0 = self.get_left_margin() if starts_line else int(r0.x)
+                wx0 = self._segment_left(cur, r0)
                 wy = int(self.get_iter_location(ls).y - pad)
                 wx1 = wx0 if right is None else right
                 seg_w = float(wx1 - wx0)

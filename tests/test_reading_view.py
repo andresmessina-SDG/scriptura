@@ -274,3 +274,62 @@ def test_a_band_with_no_width_is_not_painted():
         assert not (isinstance(a.value, ast.Call)
                     and getattr(a.value.func, 'id', '') == 'max'), \
             'a segment with no width must be dropped, not floored to 1px'
+
+
+class _LineIter:
+    """A position that knows whether it opens a buffer line."""
+
+    def __init__(self, pos, starts, line_start_pos):
+        self.pos, self._starts, self._ls = pos, starts, line_start_pos
+
+    def copy(self):
+        return _LineIter(self.pos, self._starts, self._ls)
+
+    def compare(self, other):
+        return (self.pos > other.pos) - (self.pos < other.pos)
+
+    def starts_line(self):
+        return self._starts
+
+
+class _MarginView:
+    LEFT = 26
+
+    def get_left_margin(self):
+        return self.LEFT
+
+    def backward_display_line_start(self, it):
+        it.pos = it._ls
+
+    def _segment_left(self, cur, r0):
+        return rv.BibleTextView._segment_left(self, cur, r0)
+
+
+class _R:
+    def __init__(self, x):
+        self.x = x
+
+
+def test_a_soft_wrapped_line_takes_the_margin_gtk_will_not_admit_to():
+    view = _MarginView()
+    # Opens its display line, but NOT a buffer line: a continuation.
+    cur = _LineIter(pos=10, starts=False, line_start_pos=10)
+    assert view._segment_left(cur, _R(47)) == 26
+
+
+def test_an_indented_line_of_poetry_keeps_the_indent_it_is_drawn_with():
+    """The regression the first version of this rule caused.
+
+    A line of poetry is its own buffer line and its indent is real — GTK
+    says 58 and means it. Taking the margin there dragged every band on
+    every psalm 32px to the left, out from under the indent.
+    """
+    view = _MarginView()
+    cur = _LineIter(pos=10, starts=True, line_start_pos=10)
+    assert view._segment_left(cur, _R(58)) == 58
+
+
+def test_a_segment_starting_mid_line_keeps_what_gtk_reports():
+    view = _MarginView()
+    cur = _LineIter(pos=40, starts=False, line_start_pos=10)
+    assert view._segment_left(cur, _R(441)) == 441
