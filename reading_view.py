@@ -24,6 +24,35 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Gdk, Gsk, Graphene, Pango
 
 
+def _visible_lines(view, vr):
+    """The first and last buffer lines the viewport shows.
+
+    `get_line_at_y`, never `get_iter_at_location`. Both are called from
+    inside `snapshot`, and `get_iter_at_location` maps an X coordinate to a
+    byte index WITHIN the line it lands on — a step this code has no use for,
+    since it wants the line and passes x=0. That step is also what crashed
+    the app: navigating to a shorter chapter while the reading view had
+    focus left the visible rect reaching past the end of the new text, and
+    GTK aborted the process from inside its own paint —
+
+        Gtk-ERROR: Byte index 1435 is off the end of the line
+        #4  iter_set_from_byte_offset
+        #5  gtk_text_iter_set_visible_line_index
+        #7  gtk_text_layout_get_iter_at_position
+        #8  gtk_text_view_get_iter_at_location   ← ours
+        #19 draw_text                            ← inside GtkTextView's paint
+
+    `get_line_at_y` answers with the line and asks nothing about X, so the
+    aborting path is not reached. The pointer-driven callers elsewhere do
+    want a character and are not called during a paint; they keep what they
+    have.
+    """
+    lo, _top = view.get_line_at_y(vr.y)
+    hi, _bot = view.get_line_at_y(vr.y + vr.height)
+    hi.forward_line()
+    return lo, hi
+
+
 def heading_line(buf, start):
     """The start of the section heading above `start`, or None if there is
     none.
@@ -252,9 +281,7 @@ class BibleTextView(Gtk.TextView):
                    for d in below):
             return
         vr = self.get_visible_rect()
-        _, lo = self.get_iter_at_location(0, vr.y)
-        _, hi = self.get_iter_at_location(0, vr.y + vr.height)
-        hi.forward_line()
+        lo, hi = _visible_lines(self, vr)
         asc, desc = self._metrics()
         for dec in below:
             if not dec.on(self):
@@ -314,9 +341,7 @@ class BibleTextView(Gtk.TextView):
         """
         buf = self.get_buffer()
         vr = self.get_visible_rect()
-        _, lo = self.get_iter_at_location(0, vr.y)
-        _, hi = self.get_iter_at_location(0, vr.y + vr.height)
-        hi.forward_line()
+        lo, hi = _visible_lines(self, vr)
         ranges = list(self._tag_ranges(buf, tag, lo, hi))
         width = float(self.get_width())
         if not ranges:

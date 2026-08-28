@@ -95,3 +95,52 @@ def test_decorations_with_a_fixed_colour_resolve_without_a_display():
                  'navigation flash'):
         dec = _by_name(name)
         assert isinstance(dec.colour(rv.BibleTextView), str)
+
+
+# ── What may be called from inside a paint ──────────────────────────────────
+
+def test_the_decorations_never_map_an_x_to_a_byte_index_while_painting():
+    """The crash his session hit, kept out by a rule on the source.
+
+    `_draw_highlights` and the focus veil run inside `snapshot`, and both
+    asked `get_iter_at_location(0, y)` for the first and last visible lines.
+    That call maps an X coordinate to a byte index WITHIN the line it lands
+    on — a step neither one wants, since both pass x=0 and use the answer as
+    a line bound. It is also the step that aborted the process:
+
+        Gtk-ERROR: Byte index 1435 is off the end of the line
+        #4  iter_set_from_byte_offset
+        #8  gtk_text_view_get_iter_at_location   ← ours
+        #19 draw_text                            ← inside GtkTextView's paint
+
+    Navigating to a shorter chapter with the reading view focused leaves the
+    visible rect reaching past the end of the new text, and GTK aborts from
+    inside its own paint. It crashed four runs in six.
+
+    A race cannot be caught by a test that runs it once, so this guards the
+    call. Read from the parse tree and not the text: the first version of
+    this test searched the source for a name that its own docstring
+    contains, and passed against the very line it was written to forbid.
+
+    The pointer-driven callers in `pane.py` do want a character and do not
+    run during a paint; they are not covered here.
+    """
+    import ast
+    import inspect
+    tree = ast.parse(inspect.getsource(rv))
+    painting = {'_visible_lines', '_draw_highlights', '_draw_veil'}
+    seen = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.FunctionDef) or node.name not in painting:
+            continue
+        seen.add(node.name)
+        called = {c.func.attr for c in ast.walk(node)
+                  if isinstance(c, ast.Call)
+                  and isinstance(c.func, ast.Attribute)}
+        assert 'get_iter_at_location' not in called, \
+            '%s runs during a paint and must not map an x to a byte index' \
+            % node.name
+    assert '_visible_lines' in seen, 'the helper this rule is about is gone'
+    src = inspect.getsource(rv._visible_lines)
+    assert 'get_line_at_y' in src.split('"""')[-1], \
+        '_visible_lines must ask for the line, not a position in it'
