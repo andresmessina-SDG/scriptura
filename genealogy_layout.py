@@ -345,6 +345,15 @@ def spine(cid: str, measure: Measure = estimate, width: float = 720,
     # by the caller: a two-line gloss has to push everything below it down.
     extra = [0.0]
 
+    #: The lowest ink the last person row put on the page. The three blocks
+    #: below — a collapsed run, an omission, a non-begetting step — all start
+    #: by backing up 44px into the row above, which is right when that row is
+    #: a bare name and wrong when it carries a gloss. Opening the fold before
+    #: Joram put "Matthew jumps three generations after him." straight under
+    #: the "1 Chronicles 3:11-12" chip, in all three languages. Nothing caught
+    #: it because no check had ever built a chart with a fold OPEN.
+    row_bottom = [0.0]
+
     def _person_row(pid: str, ref_label: str, ref_payload: str,
                     major: bool, gloss: str, mother: str,
                     birth_ref: str = '') -> None:
@@ -382,6 +391,9 @@ def spine(cid: str, measure: Measure = estimate, width: float = 720,
                               y=y + 23 + n * 17, text=line,
                               size=13.0, style='italic', serif=True))
             extra[0] = 17.0 * (len(lines) - 1)
+            row_bottom[0] = y + 27 + 17.0 * (len(lines) - 1)
+        else:
+            row_bottom[0] = y + 6
         if mother:
             mn = _ellipsize(gb.person_name(mother), spine_x - PAD - 52,
                             12.5, measure)
@@ -419,7 +431,7 @@ def spine(cid: str, measure: Measure = estimate, width: float = 720,
         if ri is not None and ri not in open_runs:
             s0, e0 = runs[ri]
             n = e0 - s0
-            top = y - ROW + 12
+            top = max(y - ROW + 12, row_bottom[0] + 10)
             p.append(Prim('line', 'thread', x=spine_x, y=top,
                           x2=spine_x, y2=top + 60))
             for k in range(2):
@@ -448,7 +460,7 @@ def spine(cid: str, measure: Measure = estimate, width: float = 720,
 
         # A telescoped edge: the writer's own omission.
         if e['kind'] == 'descends' and e['omits']:
-            top = y - ROW + 14
+            top = max(y - ROW + 14, row_bottom[0] + 10)
             p.append(Prim('line', 'omit', x=spine_x, y=top,
                           x2=spine_x, y2=top + 54, dash=(5, 6)))
             label = ngettext('%d generation omitted',
@@ -498,7 +510,7 @@ def spine(cid: str, measure: Measure = estimate, width: float = 720,
             y = top + 59 + ROW - 14 + grown
         elif e['kind'] in ('husband', 'born_of', 'supposed'):
             # Not a begetting, and the chart says so on the line itself.
-            top = y - ROW + 16
+            top = max(y - ROW + 16, row_bottom[0] + 10)
             p.append(Prim('line', 'muted', x=spine_x, y=top,
                           x2=spine_x, y2=top + 40, dash=(2, 4)))
             p.append(Prim('text', 'muted', x=spine_x + NODE_GAP, y=top + 24,

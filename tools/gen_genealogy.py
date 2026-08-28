@@ -345,36 +345,67 @@ def audit_collisions(lang: str, ink, measure: gl.Measure) -> None:
     """
     for width in COLLISION_WIDTHS:
         for c in gb.charts():
-            plate = gl.build(c['id'], measure, width)
-            boxes = []
-            for n, p in enumerate(plate.prims):
-                if p.kind == 'text' and p.text.strip():
-                    boxes.append((ink(p), 'text', p.text[:34], n))
-                elif p.kind == 'chip':
-                    boxes.append(((p.x, p.y, p.w, p.h), 'chip', p.text[:34], n))
-                elif p.kind == 'line' and abs(p.x2 - p.x) < 0.5:
-                    boxes.append(((p.x - 0.7, min(p.y, p.y2), 1.4,
-                                   abs(p.y2 - p.y)), 'rule', p.role, n))
-            for i, (a, ka, ta, na) in enumerate(boxes):
-                for b, kb, tb, nb in boxes[i + 1:]:
-                    ox = min(a[0] + a[2], b[0] + b[2]) - max(a[0], b[0])
-                    oy = min(a[1] + a[3], b[1] + b[3]) - max(a[1], b[1])
-                    if ox <= 0.5 or oy <= 0.5:
-                        continue
-                    if 'rule' in (ka, kb):
-                        # A vertical rule against a word: what matters is how
-                        # much of the word's height it crosses, not the sliver
-                        # of the rule it happens to be — and whether the rule
-                        # is painted over the word or under it.
-                        other, on_top = ((a, nb > na) if kb == 'rule'
-                                         else (b, na > nb))
-                        if ka == kb or not on_top or oy / other[3] <= 0.34:
-                            continue
-                    elif ('chip' not in (ka, kb)
-                            and oy / min(a[3], b[3]) <= 0.25):
-                        continue
-                    warn('[%s] chart %r at %.0fpx: %r is drawn over %r '
-                         '(%.0fpx)' % (lang, c['id'], width, ta, tb, oy))
+            for expanded in _expansions(c['id'], measure):
+                _collisions_in(gl.build(c['id'], measure, width,
+                                        expanded=expanded),
+                               ink, lang, c['id'], width, expanded)
+
+
+def _expansions(cid: str, measure: gl.Measure) -> "list":
+    """The fold states a chart can be read in: shut, all open, each alone.
+
+    Every audit and every guard called `gl.build` with the default
+    `expanded`, so these charts were only ever measured SHUT. Opening the run
+    before Joram put his gloss under the '1 Chronicles 3:11-12' chip in all
+    three languages, and nothing had ever looked.
+
+    The estimate cannot stand in for Pango here: under a measure 1.6x wide the
+    gloss wraps further and the chip falls a hundred pixels clear, so a pytest
+    guard written on the same rule passed against the broken layout. This is
+    the only place a fold state is checked.
+    """
+    runs = len({h.payload for h in gl.build(cid, measure, 900.0).hits
+                if h.kind == 'expand'})
+    if not runs:
+        return [None]
+    return [None, set(range(runs))] + [{i} for i in range(runs)]
+
+
+def _collisions_in(plate, ink, lang, cid, width, expanded) -> None:
+    """Report anything drawn on top of anything, on one built plate."""
+    boxes = []
+    for n, p in enumerate(plate.prims):
+        if p.kind == 'text' and p.text.strip():
+            boxes.append((ink(p), 'text', p.text[:34], n))
+        elif p.kind == 'chip':
+            boxes.append(((p.x, p.y, p.w, p.h), 'chip', p.text[:34], n))
+        elif p.kind == 'line' and abs(p.x2 - p.x) < 0.5:
+            boxes.append(((p.x - 0.7, min(p.y, p.y2), 1.4,
+                           abs(p.y2 - p.y)), 'rule', p.role, n))
+    for i, (a, ka, ta, na) in enumerate(boxes):
+        for b, kb, tb, nb in boxes[i + 1:]:
+            ox = min(a[0] + a[2], b[0] + b[2]) - max(a[0], b[0])
+            oy = min(a[1] + a[3], b[1] + b[3]) - max(a[1], b[1])
+            if ox <= 0.5 or oy <= 0.5:
+                continue
+            if 'rule' in (ka, kb):
+                # A vertical rule against a word: what matters is how
+                # much of the word's height it crosses, not the sliver
+                # of the rule it happens to be — and whether the rule
+                # is painted over the word or under it.
+                other, on_top = ((a, nb > na) if kb == 'rule'
+                                 else (b, na > nb))
+                if ka == kb or not on_top or oy / other[3] <= 0.34:
+                    continue
+            elif ('chip' not in (ka, kb)
+                    and oy / min(a[3], b[3]) <= 0.25):
+                continue
+            warn('[%s] chart %r%s at %.0fpx: %r is drawn over %r '
+                 '(%.0fpx)'
+                 % (lang, cid,
+                    '' if expanded is None
+                    else ' (folds %s open)' % sorted(expanded),
+                    width, ta, tb, oy))
 
 
 def audit_names(lang: str, measure: gl.Measure) -> None:
