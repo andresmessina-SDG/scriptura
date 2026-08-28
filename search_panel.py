@@ -536,7 +536,7 @@ class SearchPanel(Gtk.Box):
                     # `book_label`, not the bare name: the section above it is
                     # translated, so an untranslated book under it read
                     # "Isaiah / Jeremiah / Ezekiel" indented beneath
-                    # «Большие пророки», with «Исаия 1:2» in the results below.
+                    # «Великие пророки», with «Исаия 1:2» in the results below.
                     # The English name stays the key — it is what the click
                     # handler filters on — and is translated only here, where
                     # it is shown.

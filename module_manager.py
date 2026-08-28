@@ -167,6 +167,28 @@ def _fmt_size(raw):
     return ''
 
 
+def _friendly_name(mod):
+    """The title for a CrossWire row: our curated name where there is one,
+    the module's own Description otherwise.
+
+    A SWORD `Description` is written by whoever packaged the module, and
+    not for a list of titles. RusSynodal calls itself «Синодального
+    Перевода Библии» — a genitive fragment, correct only as the tail of a
+    sentence — and KJVA's runs to a hundred characters. The curated tables
+    in sword_bridge exist for exactly this, including the native-language
+    names a Russian or Spanish reader should see.
+
+    Most of the catalogue is uncurated, though, and there `display_name`
+    returns the bare module key. The Description is the only readable
+    thing such a row has, so it stays the fallback.
+    """
+    key = mod['name']
+    curated = sword_bridge.display_name(key)
+    if curated != key:
+        return curated
+    return mod.get('description') or key
+
+
 def _short_license(text):
     """Trim a DistributionLicense string to something subtitle-sized."""
     if not text:
@@ -840,8 +862,7 @@ class ModuleManagerWindow(Adw.Window):
             t['update_rows'].append(row)
         for mod, old in mine:
             row = Adw.ActionRow()
-            row.set_title(GLib.markup_escape_text(
-                (mod.get('description') or mod['name'])[:80]))
+            row.set_title(GLib.markup_escape_text(_friendly_name(mod)[:80]))
             row.set_subtitle(GLib.markup_escape_text(
                 _('Update from v{old} to v{new}').format(
                     old=old, new=mod['version'])))
@@ -858,7 +879,8 @@ class ModuleManagerWindow(Adw.Window):
 
     def _matches(self, mod, query):
         return (query in mod['name'].lower()
-                or query in mod.get('description', '').lower())
+                or query in mod.get('description', '').lower()
+                or query in _friendly_name(mod).lower())
 
     def _rebuild_installed(self, t):
         clear_children(t['installed_box'])
@@ -868,7 +890,7 @@ class ModuleManagerWindow(Adw.Window):
         for mod in self._tab_sword_modules(t, installed=True):
             if query and not self._matches(mod, query):
                 continue
-            entries.append(((mod.get('description') or mod['name']).lower(),
+            entries.append((_friendly_name(mod).lower(),
                             ('sword', mod)))
         if t['spec']['ebible']:
             installed_ids = ebible_bridge.installed_ids()
@@ -937,7 +959,7 @@ class ModuleManagerWindow(Adw.Window):
                 continue
             if query and not self._matches(mod, query):
                 continue
-            merged.append(((mod.get('description') or mod['name']).lower(),
+            merged.append((_friendly_name(mod).lower(),
                            ('sword', mod)))
         if t['spec']['ebible']:
             if not (t.get('strongs') and t['strongs'].get_active()):
@@ -1065,7 +1087,7 @@ class ModuleManagerWindow(Adw.Window):
     def _make_sword_row(self, mod, installed):
         row = Adw.ActionRow()
         key = mod['name']
-        friendly = mod.get('description') or key
+        friendly = _friendly_name(mod)
         row.set_title(GLib.markup_escape_text(friendly[:80]))
 
         meta = []
@@ -1344,7 +1366,7 @@ class ModuleManagerWindow(Adw.Window):
         dialog.set_body(
             _('“{name}” is enciphered. Enter the unlock key from the '
               'publisher to install it.').format(
-                name=mod.get('description') or mod['name']))
+                name=_friendly_name(mod)))
         entry = Gtk.PasswordEntry()
         entry.set_show_peek_icon(True)
         entry.set_property('placeholder-text',

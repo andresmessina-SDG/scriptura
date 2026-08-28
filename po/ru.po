@@ -5011,7 +5011,7 @@ msgstr "Учительные книги"
 
 #: search_panel.py:82
 msgid "Major Prophets"
-msgstr "Большие пророки"
+msgstr "Великие пророки"
 
 #: search_panel.py:83
 msgid "Minor Prophets"
@@ -6372,7 +6372,7 @@ msgstr "Последний стих текущей главы"
 
 #: window.py:2978
 msgid "Cycle chapters with the mouse wheel"
-msgstr "Листать главы колесом мыши"
+msgstr "Прокрутка глав колесиком мыши"
 
 #: window.py:2978
 msgid "Scroll over title"
