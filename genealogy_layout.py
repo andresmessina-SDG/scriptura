@@ -254,7 +254,14 @@ def spine(cid: str, measure: Measure = estimate, width: float = 720,
         if e['mother']:
             mother_w = max(mother_w,
                            measure(gb.person_name(e['mother']), 12.5, 'normal'))
-    gutter = max(SPINE_X, PAD + mother_w + 52)
+    # A chart with no mothers to name does not reserve the column for them.
+    # `SPINE_X` was a floor for every spine, so Genesis 5, Genesis 11, Ruth
+    # and Luke each carried 128px of gutter holding nothing. It hid inside a
+    # 700px plate; once a plate is only as wide as its content it is the
+    # largest thing on the page, and it pushed the whole figure right of the
+    # prose it sits under.
+    gutter = (max(SPINE_X, PAD + mother_w + 52) if mother_w
+              else PAD + DOT_R_MAJOR)
 
     # Matthew's register rail lives outside the verse chips; without the
     # reservation the band labels printed straight through them. Reserved
@@ -893,12 +900,18 @@ def household(cid: str, measure: Measure = estimate,
                 # three columns have long run out, and `w - 40` cut it to
                 # "the line contin…" in English at any ordinary pane width.
                 room = width - PAD - (dx + 10)
+                note = _ellipsize(_('the line continues here'), room,
+                                  11.5, measure)
                 p.append(Prim('text', 'thread', x=dx + 10, y=yy + 46,
-                              text=_ellipsize(_('the line continues here'),
-                                              room, 11.5, measure),
-                              size=11.5, weight='semibold'))
-                h.append(Hit(dx - 6, yy - 12, room, 60, 'chart',
-                             gb.chart_containing('judah', 'Matthew'),
+                              text=note, size=11.5, weight='semibold'))
+                # Sized to the mark and its label. `room` is the ellipsize
+                # BUDGET — the distance to the plate edge — and using it as a
+                # width gave this one target 566px by 60: hovering the label
+                # lit a band across three of Leah's sons and half the empty
+                # paper beside them.
+                h.append(Hit(dx - 6, yy - 12,
+                             measure(note, 11.5, 'semibold') + 22, 60,
+                             'chart', gb.chart_containing('judah', 'Matthew'),
                              _('the line continues here')))
             yy += 26
         x += w

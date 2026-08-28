@@ -385,7 +385,8 @@ def test_a_scaled_chart_is_still_clickable_where_it_is_drawn():
     s = area._scale
     assert s > 1.0
     hit = [h for h in area._plate.hits if h.kind == 'person'][0]
-    got = area._hit((hit.x + hit.w / 2) * s, (hit.y + hit.h / 2) * s)
+    got = area._hit(area._ox + (hit.x + hit.w / 2) * s,
+                    (hit.y + hit.h / 2) * s)
     assert got is not None and got.payload == hit.payload
 
 
