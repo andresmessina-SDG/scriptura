@@ -289,6 +289,26 @@ def spine(cid: str, measure: Measure = estimate, width: float = 720,
     # the one thing on this chart that must not be cut.
     width = max(width, need, gutter / 0.36)
 
+    # And no wider than the chart can use. A pane wider than the chart used
+    # to widen the chart, because the verse chips are placed from the right
+    # edge and the names from the left: on Genesis 5 at a 1040px pane the
+    # citation stood 615px from the name it belongs to, across empty paper
+    # with nothing to carry the eye. The plate stops growing where the last
+    # thing on it stops gaining — the widest a collapsed run's preview can
+    # spend, on the charts that have runs, and `need` on the charts that do
+    # not. `genealogy_reader` centres a plate narrower than its pane.
+    # `need` is a floor — the width at which nothing collides — and a chart
+    # sitting exactly on it reads as crowded: the name and its chip clear
+    # each other by one NAME_GAP and no more. The cap gets a gutter's worth
+    # of air on top, so the pair reads as a pair.
+    roomy = need + 2 * NAME_GAP
+    for s0, e0 in (_collapsible(edges) if collapse else []):
+        roomy = max(roomy, gutter + NODE_GAP + PAD + rail_w
+                    + measure(NAME_SEP.join(gb.person_name(edges[k]['child'])
+                                            for k in range(s0, e0)),
+                              12.5, 'normal'))
+    width = min(width, max(roomy, gutter / 0.36))
+
     # Capped so a mother label long enough to need half the plate ellipsizes
     # rather than pushing the whole chart off the right edge. The cap is the
     # last resort, not the everyday case: «la que fue mujer de Urías» is the
@@ -384,11 +404,13 @@ def spine(cid: str, measure: Measure = estimate, width: float = 720,
                              '%d generations, collapsed', n) % n
             p.append(Prim('text', 'muted', x=spine_x + NODE_GAP, y=top + 26,
                           text=label, size=12.5, weight='semibold'))
-            names = ' · '.join(gb.person_name(edges[k]['child'])
-                               for k in range(s0, e0))
+            run_names = [gb.person_name(edges[k]['child'])
+                         for k in range(s0, e0)]
+            names = NAME_SEP.join(run_names)
             p.append(Prim('text', 'muted', x=spine_x + NODE_GAP, y=top + 44,
-                          text=_ellipsize(names, right - spine_x - NODE_GAP - PAD,
-                                          12.5, measure),
+                          text=_ellipsize_names(
+                              run_names, right - spine_x - NODE_GAP - PAD,
+                              12.5, measure),
                           size=12.5, style='italic', serif=True))
             h.append(Hit(spine_x + NODE_GAP, top + 12,
                          max(measure(label, 12.5, 'semibold'),
@@ -571,6 +593,44 @@ def _wrap(text: str, avail: float, size: float, measure: Measure,
     lines[-1] = _ellipsize((lines[-1] + ' ' + rest).strip(), avail, size,
                            measure)
     return lines
+
+
+#: What joins the names in a collapsed run's preview.
+NAME_SEP = ' · '
+
+
+def _ellipsize_names(names: list[str], avail: float, size: float,
+                     measure: Measure) -> str:
+    """Join names to fit, dropping whole names — never half of one.
+
+    `_ellipsize` trims by character, which is right for a sentence and wrong
+    for this. A chart whose whole subject is who was called what shipped
+    "Naasson" as `Naasso…`, "Cosam" as `Cosa…` and "Noah" as `N…`; in Spanish
+    `Josafa…`, in Russian `Авраа…`. Two thirds of the previews on the Matthew,
+    Luke and side-by-side charts ended mid-name, in every language and at
+    every width. A reader cannot tell a trimmed name from a misspelt one, and
+    on these charts that is the one thing they must be able to tell.
+
+    So the ellipsis stands where a name would be, not inside one. At least
+    one name is always kept: a preview reading only `…` says nothing that the
+    count above it has not already said.
+    """
+    if not names:
+        return ''
+    text = NAME_SEP.join(names)
+    if avail <= 0:
+        _trimmed.add(text)
+        return ''
+    if measure(text, size, 'normal') <= avail:
+        return text
+    _trimmed.add(text)
+    keep = 1
+    for n in range(len(names) - 1, 0, -1):
+        if measure(NAME_SEP.join(names[:n]) + NAME_SEP + '…', size,
+                   'normal') <= avail:
+            keep = n
+            break
+    return NAME_SEP.join(names[:keep]) + NAME_SEP + '…'
 
 
 def _ellipsize(text: str, avail: float, size: float, measure: Measure) -> str:
@@ -1092,6 +1152,44 @@ def _tie_row(p: list[Prim], h: list[Hit], lx: float, rx: float, width: float,
     return y + 44
 
 
+def _rail(p: list[Prim], x: float, y0: float, y1: float,
+          role: str = 'muted') -> None:
+    """A vertical rail down a column, broken around whatever it would cross.
+
+    The two rails on the side-by-side chart were appended last and drawn as
+    single lines, so they were painted straight through the middle of every
+    label centred on their column: `Jech|onias`, `Ne|ri`, `Mar|y`, `Jos|eph`,
+    «Иехо|ния». Dark mode made it worse — the rail is lighter than the paper
+    there, so it read as a scratch across the word.
+
+    Reordering alone would not fix it. A 1.4px rule under a name still runs
+    through the name; a printed chart breaks the rule instead, which is what
+    this does. Every text centred on this column, and every band sitting on
+    it, punches a gap in the rail, and the segments between are what gets
+    drawn.
+
+    Called after the rows are laid out, because only then is it known what
+    the rail has to miss.
+    """
+    stops: list[tuple[float, float]] = []
+    for q in p:
+        if q.kind == 'text' and q.anchor == 'middle' and abs(q.x - x) <= 24:
+            # A layout is drawn with its top at `y - size`; 3px of air on
+            # each side keeps the rail off the ascenders and descenders.
+            stops.append((q.y - q.size - 3, q.y + 3))
+        elif q.kind in ('band', 'rect') and q.x - 2 <= x <= q.x + q.w + 2:
+            stops.append((q.y - 2, q.y + q.h + 2))
+    at = y0
+    for lo, hi in sorted(stops):
+        if hi <= at or lo >= y1:
+            continue
+        if lo - at > 2:
+            p.append(Prim('line', role, x=x, y=at, x2=x, y2=min(lo, y1)))
+        at = max(at, hi)
+    if y1 - at > 2:
+        p.append(Prim('line', role, x=x, y=at, x2=x, y2=y1))
+
+
 def witnesses(cid: str, measure: Measure = estimate,
               width: float = 700) -> Plate:
     """Structure D. Two lists of one descent, tied where they agree.
@@ -1219,9 +1317,9 @@ def witnesses(cid: str, measure: Measure = estimate,
                                         '%d more names in common', n) % n,
                           size=12.5, anchor='middle', weight='semibold'))
             p.append(Prim('text', 'muted', x=width / 2, y=y + 14,
-                          text=_ellipsize(
-                              ' · '.join(gb.person_name(s0)
-                                         for s0 in shared[k + 1:run]),
+                          text=_ellipsize_names(
+                              [gb.person_name(s0)
+                               for s0 in shared[k + 1:run]],
                               (rx - lx) - 24, 11.5, measure),
                           size=11.5, anchor='middle', style='italic',
                           serif=True))
@@ -1236,8 +1334,8 @@ def witnesses(cid: str, measure: Measure = estimate,
         li, ri = lseq.index(pid, li) + 1, rseq.index(pid, ri) + 1
         k += 1
 
-    p.append(Prim('line', 'muted', x=lx, y=rows_top - 8, x2=lx, y2=y - 30))
-    p.append(Prim('line', 'muted', x=rx, y=rows_top - 8, x2=rx, y2=y - 30))
+    _rail(p, lx, rows_top - 8, y - 30)
+    _rail(p, rx, rows_top - 8, y - 30)
 
     plate = Plate(width, y + 12, p, h,
                   title=_(c['title']), subtitle=_(c['subtitle']))

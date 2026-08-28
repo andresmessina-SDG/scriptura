@@ -386,8 +386,13 @@ def test_a_chart_takes_the_width_it_needs():
     squeezed one with the chip on top of the name."""
     wide = lambda t, s, w='normal': gl.estimate(t, s, w) * 1.6   # noqa: E731
     assert gl.build('matthew', wide, 500.0).width > 500.0
-    # And it does not inflate a plate that already fits.
-    assert gl.build('matthew', wide, 2000.0).width == 2000.0
+    # And it does not inflate a plate past what the chart can use. The verse
+    # chips are placed from the right edge and the names from the left, so a
+    # pane wider than the chart used to pull them apart: Genesis 5 put its
+    # citation 615px from the name it belongs to at 1040px.
+    capped = gl.build('gen5', wide, 1040.0).width
+    assert capped < 1040.0
+    assert gl.build('gen5', wide, 2000.0).width == capped
 
 
 def test_the_register_rail_reserves_room_for_its_widest_label():
@@ -539,3 +544,54 @@ def test_the_display_name_router_knows_this_module():
     for name in gb.module_names():
         assert sword_bridge.display_name(name) == gb.display_name()
         assert sword_bridge.display_name(name) != name
+
+
+# ── What is drawn on top of what ────────────────────────────────────────────
+# Two defects the checks above could not see, because one only compared
+# chips against names and the other only asked whether text stayed inside
+# the plate. Both shipped.
+
+@pytest.mark.parametrize('cid', [c['id'] for c in gb.charts()])
+def test_no_rule_is_drawn_through_a_name(cid):
+    """A rule painted after the text it crosses is a strike-through.
+
+    The two column rails on the side-by-side chart were appended last and
+    drawn as single lines, so they ran through the middle of every label
+    centred on their column — `Jech|onias`, `Ne|ri`, `Mar|y`, `Jos|eph`,
+    «Иехо|ния» — in both themes and all three languages. Paint order is the
+    test: the lifespan chart's axis gridlines also cross three labels, but
+    they are drawn first and the text is on top of them.
+    """
+    wide = lambda t, s, w='normal': gl.estimate(t, s, w) * 1.6   # noqa: E731
+    for width in (560.0, 700.0, 1040.0):
+        prims = gl.build(cid, wide, width).prims
+        rules = [(n, p) for n, p in enumerate(prims)
+                 if p.kind == 'line' and abs(p.x2 - p.x) < 0.5]
+        for n, p in enumerate(prims):
+            if p.kind != 'text' or not p.text.strip():
+                continue
+            w = wide(p.text, p.size, p.weight)
+            x0 = (p.x if p.anchor == 'start' else
+                  p.x - w / 2 if p.anchor == 'middle' else p.x - w)
+            for rn, r in rules:
+                if rn < n:          # painted under the word: the word wins
+                    continue
+                lo, hi = min(r.y, r.y2), max(r.y, r.y2)
+                across = min(hi, p.y) - max(lo, p.y - p.size)
+                assert not (x0 + 2 < r.x < x0 + w - 2 and across > 0), \
+                    (cid, width, 'rule through', p.text)
+
+
+@pytest.mark.parametrize('cid', [c['id'] for c in gb.charts()])
+def test_a_collapsed_run_never_cuts_a_name_in_half(cid):
+    """`Naasso…`, `Cosa…`, `N…`, «Авраа…», `Josafa…` — two thirds of the
+    previews, in every language and at every width. A trimmed name cannot be
+    told from a misspelt one, and on these charts that is the distinction
+    that matters most."""
+    wide = lambda t, s, w='normal': gl.estimate(t, s, w) * 1.6   # noqa: E731
+    for width in (560.0, 700.0, 900.0, 1040.0):
+        for p in gl.build(cid, wide, width).prims:
+            if (p.kind == 'text' and p.text.endswith('…')
+                    and gl.NAME_SEP in p.text):
+                assert p.text.endswith(gl.NAME_SEP + '…'), \
+                    (cid, width, p.text)

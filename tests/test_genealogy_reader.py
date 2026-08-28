@@ -200,7 +200,10 @@ def test_a_name_on_the_chart_is_clickable_where_it_is_drawn():
     people = [h for h in area._plate.hits if h.kind == 'person']
     assert people, 'the spine drew no clickable name'
     hit = people[0]
-    got = area._hit(hit.x + hit.w / 2, hit.y + hit.h / 2)
+    # Plate space to widget space, the way the paint does it: a chart
+    # narrower than its pane is centred, so the two stopped coinciding.
+    got = area._hit(area._ox + (hit.x + hit.w / 2) * area._scale,
+                    (hit.y + hit.h / 2) * area._scale)
     assert got is not None and got.payload == hit.payload
 
 
@@ -267,7 +270,8 @@ def test_the_chart_never_loses_text_to_gain_size():
         area._reading_pt = pt
         for pane in (760.0, 820.0, 1040.0):
             plate = gl.build('matthew', area._measure,
-                             pane / area._scale_for(pane))
+                             max(pane / area._reading_scale(),
+                                 area.MIN_LAYOUT_PX))
             cut = [p.text for p in plate.prims
                    if p.kind == 'text' and p.text.endswith('\u2026')
                    and ' \u00b7 ' not in p.text]
@@ -328,9 +332,36 @@ def test_a_chart_that_refuses_a_narrow_pane_is_painted_down():
     plate the chart needs, painted down — never a squeezed plate with the
     verse chip on top of the name."""
     area = gr.ChartArea('matthew')
+    # Wide enough that the readability floor below does not bind, narrow
+    # enough that the chart still refuses it.
+    area._lay_out(620.0)
+    assert area._plate.width > 620.0, 'the chart accepted a width it cannot draw'
+    assert area._scale == pytest.approx(620.0 / area._plate.width)
+
+
+def test_a_chart_stops_shrinking_before_it_stops_being_readable():
+    """Painting down is right up to a point. At 420px the old scale put the
+    Matthew glosses at 6.3px — past the size where shrinking is a way of
+    reading the chart at all. It stops at the floor and scrolls sideways."""
+    area = gr.ChartArea('matthew')
+    area._lay_out(420.0)
+    smallest = min(p.size for p in area._plate.prims
+                   if p.kind in ('text', 'chip') and p.text.strip())
+    assert smallest * area._scale >= gr.ChartArea.MIN_TYPE_PX - 0.01
+    # And what will not fit asks for the room it needs, so the scroller
+    # beside it can offer it rather than clipping the chart.
+    assert area.get_content_width() > 420
+
+
+def test_a_chart_narrower_than_its_pane_keeps_its_size():
+    """Genesis 5 is a 421px plate. It used to be shrunk to 74% on a 520px
+    pane it fits in twice over, because the scale was worked out from a fixed
+    700px floor before anything was built."""
+    area = gr.ChartArea('gen5')
     area._lay_out(520.0)
-    assert area._plate.width > 520.0, 'the chart accepted a width it cannot draw'
-    assert area._scale == pytest.approx(520.0 / area._plate.width)
+    assert area._plate.width <= 520.0
+    assert area._scale == pytest.approx(1.0)
+    assert area._ox > 0, 'a chart narrower than its pane is centred in it'
     assert area.get_content_height() == int(area._plate.height * area._scale)
 
 

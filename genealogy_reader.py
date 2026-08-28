@@ -81,6 +81,11 @@ class ChartArea(Gtk.DrawingArea):
         self._hover: gl.Hit | None = None
         self._layout_width = 0.0
         self._scale = 1.0
+        #: Where the plate starts inside the widget. A chart is as wide as
+        #: its content and no wider, so a pane wider than the chart leaves
+        #: margin; a figure sits in the middle of its page, not against the
+        #: left edge of it.
+        self._ox = 0.0
         self._reading_pt = 0.0
         self._cache: dict[tuple[str, float, str], float] = {}
         self._pending = 0
@@ -148,56 +153,73 @@ class ChartArea(Gtk.DrawingArea):
     #: three languages, and below it they start being cut.
     MIN_LAYOUT_PX = 700.0
 
+    #: The smallest any text on a chart may be painted. Painting a chart down
+    #: to fit its pane is right up to a point, and past that point it is not:
+    #: a two-pane split gave the Matthew chart 420px, where the scale put its
+    #: glosses at 6.3px — small enough that shrinking had stopped being a way
+    #: to read the chart at all. The plates carry 10.5–11px type at their
+    #: drawn size, so the floor bites only on the four charts that genuinely
+    #: need 700px, and those scroll sideways instead of vanishing.
+    MIN_TYPE_PX = 9.0
+
     def set_reading_size(self, pt: float) -> None:
         if pt and pt != self._reading_pt:
             self._reading_pt = pt
             self._refresh()
 
-    def _scale_for(self, width: float) -> float:
-        """The paint scale for this width — and the chart is never laid out
-        narrower than `MIN_LAYOUT_PX`.
+    def _floor_scale(self, plate: gl.Plate) -> float:
+        """The scale below which this plate's smallest text stops being
+        readable. Read off the plate rather than fixed, because the charts do
+        not all carry the same smallest size."""
+        sizes = [p.size for p in plate.prims
+                 if p.kind in ('text', 'chip') and p.text.strip()]
+        return self.MIN_TYPE_PX / min(sizes) if sizes else 1.0
 
-        Both directions come out of the same number. Above the minimum the
-        scale grows the type with the reading size, capped so the chart never
-        loses text to gain size: at 23pt an uncapped scale gave each chart
-        446px and cut sixteen captions mid-word.
-
-        Below the minimum it shrinks instead, and that is the half his narrow
-        screenshots demanded. These are figures with a fixed number of columns
-        — a name, its gloss, a verse chip, sometimes a mother out to the left
-        and a register rail out to the right — and squeezing them does not
-        reflow anything: the chip is placed from the right edge, so it lands
-        on top of the name. Laying out at the minimum and painting it down
-        keeps every proportion the chart was designed with. Small and right
-        beats full-size and overlapping.
-
-        This is the floor for the PROSE — 700px is where the captions stop
-        being cut. What a chart's own columns need is a second floor, wider
-        in Spanish and Russian than in English, and the layout measures that
-        for itself; `_lay_out` picks up whichever plate comes back.
-        """
-        if width <= 0:
-            return 1.0
-        if width < self.MIN_LAYOUT_PX:
-            return width / self.MIN_LAYOUT_PX
+    def _reading_scale(self) -> float:
+        """How much bigger than its drawn size this chart wants to be, from
+        the reading size alone. The pane has no say here — `_lay_out` fits
+        the plate afterwards."""
         if not self._reading_pt:
             return 1.0
-        wanted = max(0.85, self._reading_pt / self.BASE_PT)
-        return max(0.85, min(wanted, width / self.MIN_LAYOUT_PX))
+        return max(0.85, self._reading_pt / self.BASE_PT)
 
     def _lay_out(self, w: float) -> gl.Plate:
         """The plate for a pane this wide, the scale that paints it, and the
-        text a screen reader gets instead. The one place a plate is built."""
+        text a screen reader gets instead. The one place a plate is built.
+
+        Two numbers, in order. The chart is laid out at the width it would
+        have on a comfortable pane — never below `MIN_LAYOUT_PX`, which is
+        where the captions start being cut — and the plate comes back at
+        whatever width its own columns actually need. Only then is it fitted:
+        a chart wider than the pane is painted down, and one narrower keeps
+        its size and is centred.
+
+        The order matters, and getting it wrong is what made a chart on a
+        narrow pane unreadable. The scale used to be computed from
+        `MIN_LAYOUT_PX` before anything was built, so Genesis 5 — a plate
+        421px wide — was shrunk to 74% on a 520px pane it fitted in twice
+        over, painting its glosses at 8px. Nothing is painted down now except
+        what genuinely does not fit.
+        """
         self._layout_width = self._laid_at = w
-        self._scale = self._scale_for(w)
-        self._plate = plate = self._build(w)
+        want = self._reading_scale()
+        self._plate = plate = self._build(max(w / want, self.MIN_LAYOUT_PX)
+                                          * want)
         # A chart is allowed to refuse the width it was given. Its columns
         # are fixed — mother, thread, name, verse chip, register rail — and
         # narrowing the plate does not reflow them, it drops the chip onto
         # the name, so the layout measures what it needs and hands back a
         # wider plate. Paint that one down to the pane it has.
-        if plate.width > w / self._scale + 0.5:
-            self._scale = w / plate.width
+        self._scale = (want if plate.width * want <= w + 0.5
+                       else w / plate.width) if plate.width > 0 else want
+        # …but never so far down that the chart stops being readable. Below
+        # the floor the pane is simply too narrow for this figure, and the
+        # honest answer is a chart at a legible size that scrolls sideways,
+        # not an illegible one that fits.
+        self._scale = max(self._scale, self._floor_scale(plate))
+        painted = plate.width * self._scale
+        self.set_content_width(int(painted) if painted > w + 0.5 else 0)
+        self._ox = max(0.0, (w - painted) / 2)
         self.set_content_height(int(plate.height * self._scale))
         self.update_property([Gtk.AccessibleProperty.LABEL],
                              [plate.alt or plate.title])
@@ -249,6 +271,7 @@ class ChartArea(Gtk.DrawingArea):
             self._lay_out(float(width))
         dark = Adw.StyleManager.get_default().get_dark()
         cr.save()
+        cr.translate(self._ox, 0)
         cr.scale(self._scale, self._scale)
         for prim in self._plate.prims:
             self._paint(cr, prim, dark)
@@ -327,7 +350,7 @@ class ChartArea(Gtk.DrawingArea):
         # Pointer coordinates are widget-space; hit regions are plate-space,
         # which the paint scales up. Divide, or every target moves away from
         # its own name the moment the reading size leaves the default.
-        x, y = x / self._scale, y / self._scale
+        x, y = (x - self._ox) / self._scale, y / self._scale
         # Last match wins: hits are appended in paint order, so the topmost
         # region is the one the reader can see.
         found = None
@@ -699,12 +722,22 @@ class GenealogyReader:
         return box
 
     def _chart_area(self, cid: str) -> Gtk.Widget:
+        """A chart, in a scroller that only ever scrolls sideways.
+
+        The page scrolls down and never across, which is right for prose and
+        wrong for a figure: below `ChartArea.MIN_TYPE_PX` the chart stops
+        shrinking, and without this it would be clipped instead. Vertical
+        policy stays NEVER so the chart cannot grow a second vertical
+        scrollbar inside the page's own."""
         area = ChartArea(cid, on_verse=self._go_to_verse,
                          on_person=self._show_person,
                          on_chart=self.open_chart)
         area.set_margin_top(8)
         self._areas.append(area)
-        return area
+        side = Gtk.ScrolledWindow()
+        side.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+        side.set_child(area)
+        return side
 
     def _reading(self, r) -> Gtk.Widget:
         """One classical explanation, attributed and unranked.
@@ -850,7 +883,7 @@ class GenealogyReader:
         document was large type around 13pt charts.
 
         Each chart works out its own scale from its own allocated width —
-        see `ChartArea._scale_for` — because at this point none of them has
+        see `ChartArea._lay_out` — because at this point none of them has
         been allocated yet.
         """
         if not pt or self._font_pt == pt:

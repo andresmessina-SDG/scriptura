@@ -329,27 +329,73 @@ def audit_collisions(lang: str, ink, measure: gl.Measure) -> None:
     of a wrapped caption, where a descender may pass an ascender and no reader
     sees a collision. A chip is never exempt: it is a filled shape, and
     anything under it is gone.
+
+    Rules count too, and for three weeks they did not. This compared text
+    against text and text against chips, so the one thing it could not see
+    was a line drawn through a word — which is exactly what shipped: the two
+    column rails on the side-by-side chart were struck through `Jechonias`,
+    `Neri`, `Mary`, `Joseph` and «Иехония» in every language and both themes.
+    A rule is thin, so only a line that crosses a glyph box by more than a
+    third of its height is reported — and only a rule painted AFTER the text
+    it crosses, because that is what a strike-through is. The lifespan
+    chart's axis gridlines cross three of its labels and are drawn before
+    them, so the text is on top and nothing is struck; the two column rails
+    were appended last, which is precisely how they came to be drawn through
+    every name on their column.
     """
     for width in COLLISION_WIDTHS:
         for c in gb.charts():
             plate = gl.build(c['id'], measure, width)
             boxes = []
-            for p in plate.prims:
+            for n, p in enumerate(plate.prims):
                 if p.kind == 'text' and p.text.strip():
-                    boxes.append((ink(p), 'text', p.text[:34]))
+                    boxes.append((ink(p), 'text', p.text[:34], n))
                 elif p.kind == 'chip':
-                    boxes.append(((p.x, p.y, p.w, p.h), 'chip', p.text[:34]))
-            for i, (a, ka, ta) in enumerate(boxes):
-                for b, kb, tb in boxes[i + 1:]:
+                    boxes.append(((p.x, p.y, p.w, p.h), 'chip', p.text[:34], n))
+                elif p.kind == 'line' and abs(p.x2 - p.x) < 0.5:
+                    boxes.append(((p.x - 0.7, min(p.y, p.y2), 1.4,
+                                   abs(p.y2 - p.y)), 'rule', p.role, n))
+            for i, (a, ka, ta, na) in enumerate(boxes):
+                for b, kb, tb, nb in boxes[i + 1:]:
                     ox = min(a[0] + a[2], b[0] + b[2]) - max(a[0], b[0])
                     oy = min(a[1] + a[3], b[1] + b[3]) - max(a[1], b[1])
                     if ox <= 0.5 or oy <= 0.5:
                         continue
-                    if ('chip' not in (ka, kb)
+                    if 'rule' in (ka, kb):
+                        # A vertical rule against a word: what matters is how
+                        # much of the word's height it crosses, not the sliver
+                        # of the rule it happens to be — and whether the rule
+                        # is painted over the word or under it.
+                        other, on_top = ((a, nb > na) if kb == 'rule'
+                                         else (b, na > nb))
+                        if ka == kb or not on_top or oy / other[3] <= 0.34:
+                            continue
+                    elif ('chip' not in (ka, kb)
                             and oy / min(a[3], b[3]) <= 0.25):
                         continue
                     warn('[%s] chart %r at %.0fpx: %r is drawn over %r '
                          '(%.0fpx)' % (lang, c['id'], width, ta, tb, oy))
+
+
+def audit_names(lang: str, measure: gl.Measure) -> None:
+    """No preview of a collapsed run may end inside a name.
+
+    These charts exist to say who was called what, so a name trimmed to
+    `Naasso…` is worse than no name: a reader cannot tell it from a
+    misspelling, and two thirds of the previews on the Matthew, Luke and
+    side-by-side charts ended that way, in all three languages and at every
+    width. The ellipsis stands where a name would be, not inside one.
+    """
+    for width in COLLISION_WIDTHS:
+        for c in gb.charts():
+            plate = gl.build(c['id'], measure, width)
+            for p in plate.prims:
+                if (p.kind != 'text' or not p.text.endswith('…')
+                        or gl.NAME_SEP not in p.text):
+                    continue
+                if not p.text.endswith(gl.NAME_SEP + '…'):
+                    warn('[%s] chart %r at %.0fpx: a name is cut in half — '
+                         '%r' % (lang, c['id'], width, p.text[-30:]))
 
 
 def audit_plates(width: float, lang: str = 'en',
@@ -486,6 +532,7 @@ def audit_every_language(width: float) -> None:
             gl._trimmed.clear()
             audit_plates(width, code, measure)
             trimmed[code] = _as_msgids(gl._trimmed)
+            audit_names(code, measure or gl.estimate)
             if ink is not None:
                 audit_collisions(code, ink, measure or gl.estimate)
             done.append(code)
