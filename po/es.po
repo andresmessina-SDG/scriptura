@@ -6510,6 +6510,10 @@ msgstr "Presentación"
 msgid "Present the passage full-screen"
 msgstr "Presentar el pasaje a pantalla completa"
 
+#: genealogy_reader.py:725
+msgid "%(page)d of %(total)d"
+msgstr "%(page)d de %(total)d"
+
 #: window.py:3006
 msgid "Next page"
 msgstr "Página siguiente"

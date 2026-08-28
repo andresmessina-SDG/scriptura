@@ -339,6 +339,72 @@ def test_wider_names_widen_the_layout_not_overflow_it():
                     (c['id'], p.text)
 
 
+def _boxes(plate, measure):
+    """What each drawable covers, the way the widget paints it: a layout's
+    top edge sits at `y - size`, and a chip is its own rectangle."""
+    out = []
+    for p in plate.prims:
+        if p.kind == 'text' and p.text.strip():
+            w = measure(p.text, p.size, p.weight)
+            x = (p.x if p.anchor == 'start' else
+                 p.x - w / 2 if p.anchor == 'middle' else p.x - w)
+            out.append((x, p.y - p.size, w, p.size * 1.2, p.text))
+        elif p.kind == 'chip':
+            out.append((p.x, p.y, p.w, p.h, p.text))
+    return out
+
+
+@pytest.mark.parametrize('cid', [c['id'] for c in gb.charts()])
+def test_no_chip_is_drawn_over_a_name(cid):
+    """His narrow screenshots, made into a check.
+
+    A chip is placed from the right edge and a name from the left, and nothing
+    reflows between them: squeeze the plate and the verse lands on the person.
+    It shipped in Spanish and Russian at 700px and cleared the English by six
+    pixels, which is [[i18n-width-traps]] once more — so this measures with a
+    measurer wider than any real face rather than trusting one language's
+    metrics."""
+    wide = lambda t, s, w='normal': gl.estimate(t, s, w) * 1.6   # noqa: E731
+    for width in (560.0, 700.0, 1040.0):
+        boxes = _boxes(gl.build(cid, wide, width), wide)
+        chips = [b for b in boxes if b[3] == gl.CHIP_H]
+        for c in chips:
+            mid = c[1] + c[3] / 2
+            for b in boxes:
+                # Only what shares the chip's line: this is the column rule,
+                # and a caption on the line below is a separate question the
+                # build audit measures in ink.
+                if b is c or abs(b[1] + b[3] / 2 - mid) > 6:
+                    continue
+                assert min(c[0] + c[2], b[0] + b[2]) - max(c[0], b[0]) <= 0.5, \
+                    (cid, width, c[4], 'over', b[4])
+
+
+def test_a_chart_takes_the_width_it_needs():
+    """A chart is allowed to refuse a pane. Its columns are fixed, so the
+    honest answer to a narrow pane is a wider plate painted down — not a
+    squeezed one with the chip on top of the name."""
+    wide = lambda t, s, w='normal': gl.estimate(t, s, w) * 1.6   # noqa: E731
+    assert gl.build('matthew', wide, 500.0).width > 500.0
+    # And it does not inflate a plate that already fits.
+    assert gl.build('matthew', wide, 2000.0).width == 2000.0
+
+
+def test_the_register_rail_reserves_room_for_its_widest_label():
+    """The reservation was one specimen count string; the band labels beside
+    it are wider — «От переселения до Христа» by thirty pixels, and even the
+    English by eight — so the rail printed into the verse chips."""
+    wide = lambda t, s, w='normal': gl.estimate(t, s, w) * 1.6   # noqa: E731
+    plate = gl.build('matthew', wide, 900.0)
+    labels = {gl._(lab) for lab in gl.REGISTER_LABELS}
+    rail = [p for p in plate.prims if p.kind == 'text' and p.text in labels]
+    assert rail, 'the register rail did not draw'
+    chips = [p for p in plate.prims if p.kind == 'chip']
+    assert chips
+    left_edge = min(p.x - wide(p.text, p.size, p.weight) for p in rail)
+    assert max(c.x + c.w for c in chips) <= left_edge
+
+
 def test_the_covenant_thread_is_gold_on_every_structure():
     """The thread is what makes the charts one system rather than several
     drawings; it must not be a per-chart decision."""

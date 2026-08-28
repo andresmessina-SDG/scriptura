@@ -260,6 +260,98 @@ def pango_measure() -> gl.Measure | None:
     return measure
 
 
+def pango_ink() -> "object | None":
+    """The box a string actually inks, not the box its line box claims.
+
+    The overlap check needs this and the width alone will not do it: a line
+    box carries the font's leading above and below the glyphs, and two wrapped
+    lines of a caption 17px apart have line boxes that touch while nothing a
+    reader can see does. Ink extents are what is on the paper.
+    """
+    try:
+        import gi
+        gi.require_version('Pango', '1.0')
+        gi.require_version('PangoCairo', '1.0')
+        from gi.repository import Pango, PangoCairo
+        import cairo
+        from genealogy_reader import SERIF, _SANS
+    except (ImportError, ValueError):
+        return None
+
+    layout = PangoCairo.create_layout(cairo.Context(
+        cairo.ImageSurface(cairo.FORMAT_ARGB32, 8, 8)))
+    weights = {'bold': Pango.Weight.BOLD, 'semibold': Pango.Weight.SEMIBOLD}
+    cache: dict[tuple, tuple[float, float, float, float]] = {}
+
+    def ink(p: gl.Prim) -> tuple[float, float, float, float]:
+        key = (p.text, p.size, p.weight, p.style, p.serif)
+        got = cache.get(key)
+        if got is None:
+            desc = Pango.FontDescription.from_string(
+                '%s %.1f' % (SERIF if p.serif else _SANS, p.size))
+            desc.set_weight(weights.get(p.weight, Pango.Weight.NORMAL))
+            if p.style == 'italic':
+                desc.set_style(Pango.Style.ITALIC)
+            layout.set_font_description(desc)
+            layout.set_text(p.text, -1)
+            box, _log = layout.get_pixel_extents()
+            got = cache[key] = (float(box.x), float(box.y), float(box.width),
+                                float(box.height),
+                                float(layout.get_pixel_size().width))
+        ox, oy, w, h, line_w = got
+        # The widget draws a layout with its TOP at `y - size`, and anchors it
+        # by the line width, not the ink width.
+        x = (p.x if p.anchor == 'start' else
+             p.x - line_w / 2 if p.anchor == 'middle' else p.x - line_w)
+        return (x + ox, p.y - p.size + oy, w, h)
+
+    return ink
+
+
+#: The widths the reader can hand a chart. Its floor is `MIN_LAYOUT_PX`; below
+#: that it lays out at the floor and paints the plate down, and above it the
+#: pane and the reading size decide. Charts are checked across the range
+#: because every defect his screenshots found lived at one end of it.
+COLLISION_WIDTHS = (700.0, 760.0, 820.0, 900.0, 1040.0)
+
+
+def audit_collisions(lang: str, ink, measure: gl.Measure) -> None:
+    """Nothing a plate draws may be drawn on top of anything else.
+
+    The check that was missing, and the one his narrow screenshots made
+    obvious: the plate audit asked only whether text stayed inside the plate,
+    which a verse chip sitting squarely on top of a name does. These figures
+    have a fixed set of columns and narrowing them reflows nothing, so a
+    translated name — or an English one at 700px, six pixels from touching —
+    ran straight into the chip beside it.
+
+    Two boxes that share space are reported unless they are consecutive lines
+    of a wrapped caption, where a descender may pass an ascender and no reader
+    sees a collision. A chip is never exempt: it is a filled shape, and
+    anything under it is gone.
+    """
+    for width in COLLISION_WIDTHS:
+        for c in gb.charts():
+            plate = gl.build(c['id'], measure, width)
+            boxes = []
+            for p in plate.prims:
+                if p.kind == 'text' and p.text.strip():
+                    boxes.append((ink(p), 'text', p.text[:34]))
+                elif p.kind == 'chip':
+                    boxes.append(((p.x, p.y, p.w, p.h), 'chip', p.text[:34]))
+            for i, (a, ka, ta) in enumerate(boxes):
+                for b, kb, tb in boxes[i + 1:]:
+                    ox = min(a[0] + a[2], b[0] + b[2]) - max(a[0], b[0])
+                    oy = min(a[1] + a[3], b[1] + b[3]) - max(a[1], b[1])
+                    if ox <= 0.5 or oy <= 0.5:
+                        continue
+                    if ('chip' not in (ka, kb)
+                            and oy / min(a[3], b[3]) <= 0.25):
+                        continue
+                    warn('[%s] chart %r at %.0fpx: %r is drawn over %r '
+                         '(%.0fpx)' % (lang, c['id'], width, ta, tb, oy))
+
+
 def audit_plates(width: float, lang: str = 'en',
                  measure: gl.Measure | None = None) -> None:
     """Nothing a plate draws may fall outside it.
@@ -373,6 +465,7 @@ def audit_every_language(width: float) -> None:
 
     tree = _locale_tree()
     measure = pango_measure()
+    ink = pango_ink()
     if measure is None:
         print('  no PangoCairo — measuring with the layout estimate, which '
               'under-measures; treat a clean run as provisional')
@@ -393,6 +486,8 @@ def audit_every_language(width: float) -> None:
             gl._trimmed.clear()
             audit_plates(width, code, measure)
             trimmed[code] = _as_msgids(gl._trimmed)
+            if ink is not None:
+                audit_collisions(code, ink, measure or gl.estimate)
             done.append(code)
     finally:
         if before is None:
@@ -400,9 +495,10 @@ def audit_every_language(width: float) -> None:
         else:
             os.environ['LANGUAGE'] = before
         i18n._catalogue()
-    print('  plates audited in: %s (%s)'
+    print('  plates audited in: %s (%s)%s'
           % (', '.join(done),
-             'Pango' if measure else 'estimate'))
+             'Pango' if measure else 'estimate',
+             '' if ink is not None else '; no overlap check without PangoCairo'))
 
     # A sentence cut mid-word is the defect a reader actually sees, and until
     # his screenshots nothing here looked for it: the audit only asked whether

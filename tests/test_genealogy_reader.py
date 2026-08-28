@@ -10,10 +10,12 @@ import struct
 
 import cairo
 import pytest
+from gi.repository import GLib
 
 import genealogy_bridge as gb
 import genealogy_layout as gl
 import genealogy_reader as gr
+from i18n import _
 
 WIDTH = 820
 
@@ -48,6 +50,134 @@ def test_paint_puts_ink_on_the_surface(chart_id):
     _area, surface = _draw(chart_id)
     data = bytes(surface.get_data())
     assert len(set(data[i:i + 4] for i in range(0, len(data), 4))) > 4, chart_id
+
+
+# ── the book ───────────────────────────────────────────────────────────────
+
+def _book():
+    """The reader, rendered. Offscreen: nothing here needs a window."""
+    reader = gr.GenealogyReader()
+    reader.ensure_built()
+    return reader
+
+
+def _drawn_charts():
+    doc = gb.document()
+    return [c['id'] for c in doc['charts']
+            if not any(o['companion'] == c['id'] for o in doc['charts'])]
+
+
+def test_the_book_has_a_title_page_and_one_page_per_chart():
+    """Eight charts on one scroll made the reader do the finding. A chart is
+    a figure to be looked at, and the page is the unit."""
+    reader = _book()
+    assert reader._pages == [''] + _drawn_charts()
+    for cid in reader._pages:
+        assert reader._stack.get_child_by_name(cid or gr._FRONT) is not None
+
+
+def test_the_foot_turns_the_page_and_stops_at_the_ends():
+    """A book does not wrap: the first page has no previous and the last has
+    no next, and the arrows say so rather than doing nothing when pressed."""
+    reader = _book()
+    last = len(reader._pages) - 1
+    assert reader._at == 0
+    assert not reader._prev.get_sensitive() and reader._next.get_sensitive()
+    reader.turn(1)
+    assert reader._at == 1
+    assert reader._prev.get_sensitive()
+    reader.turn(-1)
+    assert reader._at == 0
+    reader.turn(-1)                      # off the front: stays put
+    assert reader._at == 0
+    reader._show(last)
+    assert not reader._next.get_sensitive()
+    reader.turn(1)
+    assert reader._at == last
+
+
+def test_the_foot_says_which_page_this_is():
+    reader = _book()
+    reader._show(0)
+    assert reader._foot_title.get_label() == '', \
+        'a book prints no running head on its title page'
+    assert '1' in reader._foot_count.get_label()
+    reader._show(1)
+    assert reader._foot_title.get_label() == _(gb.chart(reader._pages[1])['title'])
+    assert '2' in reader._foot_count.get_label()
+    assert str(len(reader._pages)) in reader._foot_count.get_label()
+
+
+def test_the_contents_lists_every_page_but_the_title_page():
+    """A book's contents does not list itself, and it numbers the pages of
+    the book — page 2 is the second page, not the second chart."""
+    reader = _book()
+    assert len(reader._toc_rows) == len(reader._pages) - 1
+    reader._pick(3)
+    assert reader._at == 3
+    assert 'gen-toc-current' in reader._toc_rows[2].get_css_classes()
+    assert 'gen-toc-current' not in reader._toc_rows[0].get_css_classes()
+
+
+def test_a_name_carries_the_reader_to_the_chart_that_draws_it():
+    """The cross-chart hop is the one navigation a printed plate cannot do,
+    and paging must not have cost it."""
+    reader = _book()
+    reader.open_chart('luke')
+    assert reader._pages[reader._at] == 'luke'
+    assert reader._stack.get_visible_child_name() == 'luke'
+
+
+def test_the_lineage_hop_works_on_a_book_nobody_has_opened_yet():
+    """The marker beside a verse loads this module into the other pane and
+    asks for a chart in the same breath. A reader with no pages yet has
+    nothing to turn to, and the link would look dead."""
+    reader = gr.GenealogyReader()          # deliberately not built
+    reader.open_chart('matthew')
+    assert reader._pages[reader._at] == 'matthew'
+
+
+def test_a_companion_chart_opens_the_page_it_is_drawn_on():
+    """Genesis 5's field of lives has no page of its own — it is drawn under
+    the list it belongs to, and asking for it must not fall through."""
+    reader = _book()
+    reader._show(0)
+    reader.open_chart('gen5_lives')
+    assert reader._pages[reader._at] == 'gen5'
+
+
+def test_every_page_keeps_its_own_scroll():
+    """Turning away and back returns the reader to the line they left; a
+    single shared adjustment would put them at the top of a chart they were
+    halfway down."""
+    reader = _book()
+    assert len({id(sw) for sw in reader._scrolls}) == len(reader._pages)
+
+
+def test_everything_the_app_calls_on_the_reader_exists():
+    """A tripwire, and it exists because renaming one method broke a feature
+    nothing tested.
+
+    The lineage marker beside a Bible verse opens the other pane on the chart
+    that draws those people, and window.py reaches the reader by name to do
+    it. When the paged rewrite turned `scroll_to` into `open_chart` that call
+    kept compiling and died at the click — which no test and no import check
+    would ever have said."""
+    import ast
+    import pathlib
+    root = pathlib.Path(__file__).resolve().parents[1]
+    wanted = set()
+    for name in ('window.py', 'pane.py', 'pane_content.py'):
+        tree = ast.parse((root / name).read_text(encoding='utf-8'))
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Attribute)
+                    and isinstance(node.value, ast.Attribute)
+                    and node.value.attr == '_genealogy'):
+                wanted.add(node.attr)
+    assert wanted, 'nothing was found to check — the scan stopped working'
+    missing = [a for a in sorted(wanted)
+               if not hasattr(gr.GenealogyReader, a)]
+    assert not missing, f'the app calls {missing} on a reader that has none'
 
 
 def test_pango_measures_wider_than_the_estimator_guesses_for_some_string():
@@ -142,6 +272,77 @@ def test_the_chart_never_loses_text_to_gain_size():
                    if p.kind == 'text' and p.text.endswith('\u2026')
                    and ' \u00b7 ' not in p.text]
             assert not cut, f'{pt}pt in {pane}px: {cut}'
+
+
+def test_a_resize_lays_the_chart_out_on_the_next_frame():
+    """Not inside the allocation, which is where it used to happen.
+
+    A chart's height is a function of its width, so laying out sets the
+    content height — and doing that mid-allocation asks the parent to resize
+    during the pass that is resizing it. A ScrolledWindow absorbs that request
+    instead of passing it on, and with one chart to a page the page kept the
+    height it had while the chart was empty: the chart was clipped to nothing.
+    """
+    area = gr.ChartArea('gen5')
+    area._on_resize(None, 800, 0)
+    assert area._plate is None, 'the chart laid itself out inside the allocation'
+    assert area._pending
+    ctx = GLib.MainContext.default()
+    for _tick in range(64):        # never `_`: it shadows gettext
+        if not ctx.pending():
+            break
+        ctx.iteration(False)
+    assert area._plate is not None
+    assert area.get_content_height() > 0
+
+
+def test_a_paint_never_shows_the_previous_width_s_chart():
+    """The plate is measured against the width it was CUT for.
+
+    A resize sets the width the widget was handed a frame before the new
+    plate exists, so a paint that compares itself to that number draws the
+    previous step's chart inside the current step's pane — for every frame of
+    a window drag. And once the paint has laid the new width out, the idle
+    behind it must not build the same thing again."""
+    area = gr.ChartArea('gen5')
+    area._lay_out(800.0)
+    stale = area._plate
+    area._on_resize(None, 700, 0)
+    assert area._plate is stale, 'the allocation laid out on the spot'
+    surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, 700, 40)
+    area._draw(None, cairo.Context(surface), 700, 40)
+    assert area._plate is not stale, 'painted a plate cut for another width'
+    assert area._laid_at == 700
+    fresh = area._plate
+    ctx = GLib.MainContext.default()
+    for _tick in range(64):               # never `_`: it shadows gettext
+        if not ctx.pending():
+            break
+        ctx.iteration(False)
+    assert area._plate is fresh, 'the idle built the same width twice'
+
+
+def test_a_chart_that_refuses_a_narrow_pane_is_painted_down():
+    """The other half of the scale, and the one his narrow screenshots asked
+    for. A chart's columns are fixed, so a pane too narrow for them gets the
+    plate the chart needs, painted down — never a squeezed plate with the
+    verse chip on top of the name."""
+    area = gr.ChartArea('matthew')
+    area._lay_out(520.0)
+    assert area._plate.width > 520.0, 'the chart accepted a width it cannot draw'
+    assert area._scale == pytest.approx(520.0 / area._plate.width)
+    assert area.get_content_height() == int(area._plate.height * area._scale)
+
+
+def test_a_chart_painted_down_is_still_clickable_where_it_is_drawn():
+    """The scale is undone on the way in whichever direction it went."""
+    area = gr.ChartArea('matthew')
+    area._lay_out(520.0)
+    assert area._scale < 1.0
+    hit = [h for h in area._plate.hits if h.kind == 'verse'][0]
+    got = area._hit((hit.x + hit.w / 2) * area._scale,
+                    (hit.y + hit.h / 2) * area._scale)
+    assert got is not None and got.payload == hit.payload
 
 
 def test_a_scaled_chart_is_still_clickable_where_it_is_drawn():

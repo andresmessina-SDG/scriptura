@@ -3130,7 +3130,7 @@ class BibleWindow(Adw.ApplicationWindow):
         for pid in people:
             cid = genealogy_bridge.chart_containing(pid, book)
             if cid:
-                reader._genealogy.scroll_to(cid)
+                reader._genealogy.open_chart(cid)
                 return
 
     def _ensure_lineage_visible(self, source_pane):

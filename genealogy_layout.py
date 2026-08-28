@@ -47,6 +47,7 @@ ROW = 56              # generation pitch on a spine
 ROW_TIGHT = 32        # pitch inside a collapsed run
 SPINE_X = 128         # the thread's column
 NODE_GAP = 22         # thread to name
+NAME_GAP = 16         # name to the verse chip on its row
 CHIP_H = 20
 DOT_R = 5.5
 DOT_R_MAJOR = 7
@@ -253,19 +254,49 @@ def spine(cid: str, measure: Measure = estimate, width: float = 720,
         if e['mother']:
             mother_w = max(mother_w,
                            measure(gb.person_name(e['mother']), 12.5, 'normal'))
-    # Capped: a mother label long enough to need half the plate has to
-    # ellipsize instead of pushing the whole chart off the right edge.
-    # The cap, not the mother label, is what binds: «la que fue mujer de
-    # Urías» is the Reina-Valera's own phrase for Matt 1:6 and wants 187px,
-    # and at 0.34 of a 760-wide plate it lost its last word. 0.36 fits it and
-    # still leaves the names two thirds of the plate.
-    spine_x = min(max(SPINE_X, PAD + mother_w + 52), width * 0.36)
+    gutter = max(SPINE_X, PAD + mother_w + 52)
+
     # Matthew's register rail lives outside the verse chips; without the
-    # reservation the band labels printed straight through them.
+    # reservation the band labels printed straight through them. Reserved
+    # from the widest label the rail will actually draw, in this language:
+    # one specimen count string stood for all of them, and «От переселения
+    # до Христа» is 30px wider than it — in English the widest band label
+    # already overhung its own reservation by eight.
+    rail_w = (max([measure(_(lab), 10.5, 'semibold')
+                   for lab in REGISTER_LABELS]
+                  + [measure(_('%(n)d written, %(claim)d claimed')
+                             % {'n': 88, 'claim': 88}, 10.5, 'normal')]) + 27
+              if c['register'] else 0.0)
+
+    # The width this chart cannot be drawn below, measured before anything is
+    # placed. A spine has a fixed set of columns — mother, thread, name, verse
+    # chip, register rail — and narrowing the plate does not reflow them: the
+    # chip is placed from the right edge and lands on top of the name. At 700
+    # the Spanish and Russian Matthew both did exactly that, and the English
+    # cleared it by six pixels, which is the whole [[i18n-width-traps]] story
+    # over again. So the plate takes the width it needs and the reader paints
+    # it down to the pane instead of squeezing it.
+    drawn = [c['root']] + [e['child'] for e in edges]
+    refs = [e['ref'] for e in edges]
+    if edges:
+        refs.append(_own_ref(edges[-1]['child'], edges[-1]['ref']))
+    need = (gutter + NODE_GAP + NAME_GAP + PAD + rail_w
+            + max([measure(gb.person_name(pid), 16.5, 'bold')
+                   for pid in drawn] + [0.0])
+            + max([measure(gb.ref_label(r), 11.0, 'normal') + 20
+                   for r in refs] + [0.0]))
+    # …and wide enough that the mother-label cap below never binds. A name is
+    # the one thing on this chart that must not be cut.
+    width = max(width, need, gutter / 0.36)
+
+    # Capped so a mother label long enough to need half the plate ellipsizes
+    # rather than pushing the whole chart off the right edge. The cap is the
+    # last resort, not the everyday case: «la que fue mujer de Urías» is the
+    # Reina-Valera's own phrase for Matt 1:6 and wants 187px, and the width
+    # above is chosen so it fits whole.
+    spine_x = min(gutter, width * 0.36)
     rail_x = width - PAD - 5
-    right = (rail_x - measure(_('%(n)d written, %(claim)d claimed')
-                              % {'n': 88, 'claim': 88}, 10.5, 'normal') - 24
-             if c['register'] else width)
+    right = width - rail_w if c['register'] else width
     expanded = expanded or set()
     runs = _collapsible(edges) if collapse else []
     open_runs = {i for i, _r in enumerate(runs) if i in expanded}
@@ -406,9 +437,13 @@ def spine(cid: str, measure: Measure = estimate, width: float = 720,
                                   size=12.5, style='italic', serif=True))
             grown = 17 * max(0, len(note_lines) - 1)
             if cross and not beside:
-                _chip(p, h, spine_x + NODE_GAP, top + 46 + grown, cross,
+                # Clear of the note's LAST line, not of its first: at +46 the
+                # chip was drawn through the descenders of the line above it
+                # whenever the note ran to two lines, which in Russian is
+                # every width from 700 to 900.
+                _chip(p, h, spine_x + NODE_GAP, top + 54 + grown, cross,
                       'omit', measure, _payload_text(e['cross']))
-                grown += 26
+                grown += 34
             y = top + 54 + ROW - 14 + grown
         elif e['kind'] in ('husband', 'born_of', 'supposed'):
             # Not a begetting, and the chart says so on the line itself.
@@ -599,6 +634,18 @@ def register_sets(root: str, edges: list[gb.Edge]) -> list[tuple[str, int]]:
 #: What Matthew claims for each set (Matt 1:17).
 REGISTER_CLAIM = 14
 
+#: The rail's three band labels. Module-level because the spine has to
+#: reserve room for them before `_register_bands` draws them, and a copy of
+#: the list in each place is a copy that drifts.
+#:
+#: `N_`, not a marker of our own: xgettext is told `--keyword=N_` and knows
+#: nothing about any other name. A layout-local `N_ID` marked these three for
+#: a tool that never looked, so `_(labels[i])` resolved a msgid the catalogue
+#: had never heard of and Matthew's three bands stayed in English on a
+#: Spanish plate.
+REGISTER_LABELS = [N_('Abraham to David'), N_('David to the exile'),
+                   N_('The exile to the Christ')]
+
 
 def _register_bands(p: list[Prim], h: list[Hit],
                     rows: list[tuple[float, float, str, int]],
@@ -613,13 +660,7 @@ def _register_bands(p: list[Prim], h: list[Hit],
     shortfall; it does not renumber to make the claim come out."""
     sets = register_sets(root, edges)
     by_pid = {pid: y for (y, _y2, pid, _i) in rows}
-    # `N_`, not a local marker of our own: xgettext is told `--keyword=N_`
-    # and knows nothing about any other name. A layout-local `N_ID` marked
-    # these three for a tool that never looked, so `_(labels[i])` resolved a
-    # msgid the catalogue had never heard of and Matthew's three bands stayed
-    # in English on a Spanish plate.
-    labels = [N_('Abraham to David'), N_('David to the exile'),
-              N_('The exile to the Christ')]
+    labels = REGISTER_LABELS
     top = rows[0][0] if rows else 0.0
     bottom = rows[-1][0] if rows else 0.0
     edgesy = [top]
@@ -672,6 +713,34 @@ def household(cid: str, measure: Measure = estimate,
             groups[m] = []
         groups[m].append(e)
 
+    # Columns sized to their widest member, so a long translated name widens
+    # its own column instead of running into the next one.
+    def _note(pid: str) -> str:
+        rec = gb.document()['people'].get(pid)
+        return _(rec['note']) if rec and rec['note'] else ''
+
+    col_w: list[float] = []
+    for m in order:
+        widest = measure(gb.person_name(m) if m else _('no mother named'),
+                         14.5, 'semibold')
+        for e in groups[m]:
+            widest = max(widest, measure(gb.person_name(e['child']), 14.5,
+                                         'normal'))
+        # The mother's note sets a floor, not the width: it is the longest
+        # string in the column and letting it drive the layout would give
+        # Leah four times Zilpah's width for a caption.
+        widest = max(widest, measure(gb.ref_label(groups[m][0]['ref']),
+                                     11.0, 'normal') + 20)
+        col_w.append(widest + 28)
+    total = sum(col_w)
+    # Sized before anything is placed, because the columns are what the plate
+    # is: squeezing four of them into a narrow pane put Reuben's verse chip on
+    # top of Simeon's. The plate takes the width its own columns need and the
+    # reader paints it down.
+    width = max(width, total + 2 * PAD)
+    avail = width - 2 * PAD
+    col_w = [w + (avail - total) / len(col_w) for w in col_w]
+
     p: list[Prim] = []
     h: list[Hit] = []
 
@@ -693,31 +762,6 @@ def household(cid: str, measure: Measure = estimate,
     bus_y = PAD + 52
     p.append(Prim('line', 'muted', x=cx, y=PAD + 36, x2=cx, y2=bus_y))
 
-    # Columns sized to their widest member, so a long translated name widens
-    # its own column instead of running into the next one.
-    def _note(pid: str) -> str:
-        rec = gb.document()['people'].get(pid)
-        return _(rec['note']) if rec and rec['note'] else ''
-
-    col_w: list[float] = []
-    for m in order:
-        widest = measure(gb.person_name(m) if m else _('no mother named'),
-                         14.5, 'semibold')
-        for e in groups[m]:
-            widest = max(widest, measure(gb.person_name(e['child']), 14.5,
-                                         'normal'))
-        # The mother's note sets a floor, not the width: it is the longest
-        # string in the column and letting it drive the layout would give
-        # Leah four times Zilpah's width for a caption.
-        widest = max(widest, measure(gb.ref_label(groups[m][0]['ref']),
-                                     11.0, 'normal') + 20)
-        col_w.append(widest + 28)
-    total = sum(col_w)
-    avail = width - 2 * PAD
-    if total < avail:                      # spread the slack, don't clump left
-        col_w = [w + (avail - total) / len(col_w) for w in col_w]
-    else:
-        col_w = [w * avail / total for w in col_w]
     x0: float = PAD
 
     # The horizontal bus, drawn between the first and last column centres —
@@ -1076,6 +1120,28 @@ def witnesses(cid: str, measure: Measure = estimate,
     # Luke is written Jesus-first; both sequences are put in descent order so
     # the columns can be aligned at all. This is the reversal named above.
     shared = [pid for pid in lseq if pid in set(rseq)]
+
+    # The two columns sit at fixed fractions of the width, so everything on
+    # this plate is centred on a point that moves when the plate narrows —
+    # and the column labels then run into the note between them. At 700 the
+    # Spanish «20 nombres más» and «ningún nombre en común» overlapped by
+    # eleven pixels. The plate takes the width its own labels need instead.
+    # The one row with no fallback: a "n further names" count on each side and
+    # the note between them share a line. (The tie rows' headline has one —
+    # it drops to its own line when the side labels reach it — so it does not
+    # bind here.) A column label is centred at 0.28 of the width and the note
+    # at 0.5, so the air between them is 0.22 of the width less half of each.
+    counted = measure(ngettext('%d further name', '%d further names', 88)
+                      % 88, 13.5, 'normal')
+    middle = max(measure(_('no name in common'), 11.5, 'semibold'),
+                 measure(_('%d shared') % 88, 11.5, 'semibold'))
+    # Nothing centred on a column may reach the plate edge either.
+    wide = max([measure(gb.person_name(pid), 15.0, 'bold')
+                for pid in set(lseq) | set(rseq)]
+               + [measure(_(left_c['passage']), 14.0, 'bold'),
+                  measure(_(right_c['passage']), 14.0, 'bold'), counted])
+    width = max(width, (counted + middle + 32) / 0.44,
+                (wide / 2 + PAD) / 0.28)
 
     p: list[Prim] = []
     h: list[Hit] = []

@@ -1982,6 +1982,57 @@ button.audio-pill-close {
     opacity: 0.9;
 }
 
+/* The running foot. One chart to a page, so the book needs a way to turn:
+   arrows at the ends, the running title across the middle and the page
+   number in the outer corner, where a printed book puts it. A hairline over
+   it and nothing else — depth level 1, and the page above must read as the
+   surface, not as a panel between two bars. */
+.gen-foot {
+    padding: 2px 6px;
+    border-top: 1px solid alpha(@borders, 0.3);
+}
+.gen-foot-title {
+    font-size: 0.9em;
+    opacity: 0.75;
+}
+.gen-foot-count {
+    font-size: 0.85em;
+    opacity: 0.5;
+    /* Lining figures: the count changes on every turn and must not jitter. */
+    font-feature-settings: "tnum" 1;
+    margin: 0 4px;
+}
+/* The table of contents. A de-ruled flat row per page — title, the text it
+   draws, and the page number — and the row for the page you are on is the
+   finger in the book. */
+.gen-toc {
+    padding: 4px 8px;
+}
+.gen-toc-title {
+    font-weight: 600;
+}
+.gen-toc-passage {
+    font-size: 0.82em;
+    opacity: 0.55;
+}
+.gen-toc-page {
+    font-size: 0.85em;
+    opacity: 0.5;
+    font-feature-settings: "tnum" 1;
+}
+/* "You are here" is the page number in a filled accent pill — the same
+   iOS-calendar mark `button.nav-current` puts on today's cell in the
+   chapter picker, and for the same reason. NOT accent text: in this app an
+   accent word means "this goes somewhere", and every row here does, so
+   colouring one of them would say the others were not links. */
+.gen-toc-current .gen-toc-page {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+    border-radius: 999px;
+    padding: 1px 7px;
+    opacity: 1;
+}
+
 /* The lineage fragment inside the double-click peek. Deliberately plain —
    it shares a 260-360px popover with a dictionary entry, and anything that
    grows the popover's natural height can bring back the arrow-flip that

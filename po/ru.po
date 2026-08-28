@@ -6478,6 +6478,10 @@ msgstr "Презентация"
 msgid "Present the passage full-screen"
 msgstr "Показать отрывок на весь экран"
 
+#: genealogy_reader.py:725
+msgid "%(page)d of %(total)d"
+msgstr "%(page)d из %(total)d"
+
 #: window.py:3006
 msgid "Next page"
 msgstr "Следующая страница"
