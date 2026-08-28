@@ -86,6 +86,12 @@ class Hit:
     kind: Literal['person', 'verse', 'expand', 'tradition', 'chart']
     payload: str
     label: str = ''
+    #: For a person: the verse this row cites, so a click on the name lands
+    #: where the row's own chip lands. Derived from the person instead, it
+    #: disagreed with the chip beside it — Peleg's row cites Genesis 11:18,
+    #: the verse where he begets Reu, while the edge that has him as a child
+    #: is 11:16; and Obed on the Ruth chart resolved to Matthew 1:5.
+    ref: str = ''
 
 
 @dataclass
@@ -340,7 +346,8 @@ def spine(cid: str, measure: Measure = estimate, width: float = 720,
     extra = [0.0]
 
     def _person_row(pid: str, ref_label: str, ref_payload: str,
-                    major: bool, gloss: str, mother: str) -> None:
+                    major: bool, gloss: str, mother: str,
+                    birth_ref: str = '') -> None:
         extra[0] = 0.0
         p.append(Prim('dot', 'thread', x=spine_x, y=y,
                       r=DOT_R_MAJOR if major else DOT_R))
@@ -350,7 +357,8 @@ def spine(cid: str, measure: Measure = estimate, width: float = 720,
                       text=name, size=size,
                       weight='bold' if major else 'semibold'))
         nw = measure(name, size, 'bold' if major else 'semibold')
-        h.append(Hit(spine_x + NODE_GAP, y - 16, nw, 22, 'person', pid, name))
+        h.append(Hit(spine_x + NODE_GAP, y - 16, nw, 22, 'person', pid, name,
+                     ref=ref_payload))
         if gloss:
             # The gloss gets the whole width and up to two lines. It always
             # was on its own line — the name sits on the chip's baseline and
@@ -382,8 +390,12 @@ def spine(cid: str, measure: Measure = estimate, width: float = 720,
                           x2=spine_x - 36, y2=y))
             p.append(Prim('text', 'omit', x=spine_x - 44, y=y + 4,
                           text=mn, size=12.5, anchor='end'))
+            # Her own verse, not the row's chip. A row cites where its
+            # person begets the NEXT one — Solomon's says Matthew 1:7 — and
+            # the wife of Uriah is named in 1:6, the begetting she is part of.
             h.append(Hit(spine_x - 44 - mw, y - 10, mw, 20,
-                         'person', mother, mn))
+                         'person', mother, mn,
+                         ref=birth_ref or ref_payload))
         if ref_label:
             cw = measure(ref_label, 11.0, 'normal') + 20
             _chip(p, h, right - PAD - cw, y - CHIP_H / 2 - 3,
@@ -509,7 +521,8 @@ def spine(cid: str, measure: Measure = estimate, width: float = 720,
                     _ref_payload(own),
                     major=e['child'] in (c['leaf'], 'david', 'abraham'),
                     gloss=_gloss(e['child']),
-                    mother=e['mother'])
+                    mother=e['mother'],
+                    birth_ref=_ref_payload(e['ref']))
         band_rows.append((y, y, e['child'], i))
         y += ROW + extra[0]
         i += 1
@@ -878,7 +891,8 @@ def household(cid: str, measure: Measure = estimate,
                       size=14.5, weight='semibold'))
         if m:
             mw = measure(label, 14.5, 'semibold')
-            h.append(Hit(x, bus_y + 32, mw, 20, 'person', m, label))
+            h.append(Hit(x, bus_y + 32, mw, 20, 'person', m, label,
+                         ref=_ref_payload(groups[m][0]['ref'])))
             for n, line in enumerate(_note_lines(gi, m)):
                 p.append(Prim('text', 'muted', x=x, y=bus_y + 62 + n * 17,
                               text=line, size=11.5))

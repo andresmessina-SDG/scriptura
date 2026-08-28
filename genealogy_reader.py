@@ -438,7 +438,9 @@ class ChartArea(Gtk.DrawingArea):
             if len(parts) == 3:
                 self._on_verse(parts[0], int(parts[1]), int(parts[2]))
         elif hit.kind == 'person' and self._on_person:
-            self._on_person(hit.payload)
+            # The chart this name was clicked on, so the reader can tell a
+            # cross-reference from a click on the page you are already on.
+            self._on_person(hit.payload, self._cid, hit.ref)
         elif hit.kind == 'chart' and self._on_chart and hit.payload:
             self._on_chart(hit.payload)
 
@@ -913,11 +915,52 @@ class GenealogyReader:
         if callable(cb):
             cb(book, chapter, verse)
 
-    def _show_person(self, pid: str):
-        """Open the chart that draws this person, when it is not this one."""
+    def _page_index(self, cid: str) -> int:
+        """The page a chart is drawn on, companions resolved to their host.
+        -1 when nothing draws it."""
+        if cid in self._pages:
+            return self._pages.index(cid)
+        host = next((c['id'] for c in gb.document()['charts']
+                     if c['companion'] == cid), '')
+        return self._pages.index(host) if host in self._pages else -1
+
+    def _show_person(self, pid: str, from_cid: str = '', ref: str = ''):
+        """A name goes to the chart that draws this person; failing that, to
+        the verse that names them.
+
+        The fallback is the whole of it. `chart_containing` answers with the
+        best chart for a person, which for most people is the one they are
+        already being looked at on — so the click resolved to the page it was
+        made on and `open_chart` did nothing. Sixty-three of the ninety-nine
+        names on these charts were inert, and on Genesis 5, Genesis 11 and
+        Ruth it was every name on the page: they lit up under the pointer,
+        showed a tooltip, and answered a click with nothing at all.
+
+        A name always has somewhere to go, because a name always has the
+        verse it stands in — the same place the row's own chip leads, which
+        is the answer to "show me this in the text".
+
+        The row hands over its own citation, and that matters: derived from
+        the person instead, the verse disagreed with the chip printed beside
+        it. Peleg's row cites Genesis 11:18, where he begets Reu, while the
+        edge that has Peleg as a child is 11:16 — and Obed, read on the Ruth
+        chart, resolved to Matthew 1:5.
+        """
         cid = gb.chart_containing(pid)
-        if cid:
+        here = self._page_index(from_cid) if from_cid else -2
+        if cid and self._page_index(cid) != here:
             self.open_chart(cid)
+            return
+        if ref:
+            parts = ref.split('|')
+            if len(parts) == 3:
+                self._go_to_verse(parts[0], int(parts[1]), int(parts[2]))
+                return
+        edges = (gb.parents_of(pid) or gb.births_named(pid)
+                 or gb.children_of(pid))
+        if edges:
+            r = edges[0]['ref']
+            self._go_to_verse(r['book'], r['chapter'], r['verse'])
 
     def render(self):
         """The PaneContent protocol's entry point. Builds on first show and

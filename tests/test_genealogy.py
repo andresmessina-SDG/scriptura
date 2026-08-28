@@ -595,3 +595,43 @@ def test_a_collapsed_run_never_cuts_a_name_in_half(cid):
                     and gl.NAME_SEP in p.text):
                 assert p.text.endswith(gl.NAME_SEP + '…'), \
                     (cid, width, p.text)
+
+
+@pytest.mark.parametrize('cid', [c['id'] for c in gb.charts()])
+def test_every_name_a_reader_can_click_goes_somewhere(cid):
+    """A name lights up under the pointer and shows a tooltip, so it promises
+    a destination. Sixty-three of the ninety-nine did not have one: they
+    resolved to the chart they were already being read on, and on Genesis 5,
+    Genesis 11 and Ruth that was every name on the page.
+
+    A name always has the verse that names it, which is what the fallback is
+    for — including a mother, who is neither the parent nor the child of any
+    edge but a field on one.
+    """
+    wide = lambda t, s, w='normal': gl.estimate(t, s, w) * 1.6   # noqa: E731
+    for hit in gl.build(cid, wide, 900.0).hits:
+        if hit.kind != 'person':
+            continue
+        pid = hit.payload
+        elsewhere = gb.chart_containing(pid) not in ('', cid)
+        verse = (gb.parents_of(pid) or gb.births_named(pid)
+                 or gb.children_of(pid))
+        assert elsewhere or verse, (cid, hit.label, 'leads nowhere')
+
+
+def test_a_name_leads_where_its_own_row_says():
+    """Derived from the person rather than carried by the row, the verse
+    disagreed with the chip printed beside it: Peleg's row cites Genesis
+    11:18, where he begets Reu, while the edge that has him as a child is
+    11:16. Obed read on the Ruth chart resolved to Matthew 1:5."""
+    wide = lambda t, s, w='normal': gl.estimate(t, s, w) * 1.6   # noqa: E731
+    for cid, expect in (('gen11', {'peleg': 'Genesis|11|18'}),
+                        ('ruth', {'obed': 'Ruth|4|22'}),
+                        # A mother is named in the begetting she is part of,
+                        # not in the verse where her son begets the next man.
+                        ('matthew', {'bathsheba': 'Matthew|1|6',
+                                     'tamar': 'Matthew|1|3'})):
+        hits = {h.payload: h.ref for h in gl.build(cid, wide, 900.0).hits
+                if h.kind == 'person'}
+        for pid, ref in expect.items():
+            assert hits.get(pid) == ref, (cid, pid, hits.get(pid))

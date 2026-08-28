@@ -344,6 +344,19 @@ def children_of(pid: str) -> list[Edge]:
     return [e for e in _by_parent.get(pid, []) if e['kind'] != 'husband']
 
 
+def births_named(pid: str) -> list[Edge]:
+    """Edges where this person is the mother.
+
+    A mother is not the parent or the child of any edge — she is a field on
+    one — so `parents_of` and `children_of` both answer nothing for Leah,
+    Thamar or the wife of Uriah, and a click on her name had nowhere to go.
+    The verse that names her is the verse of the birth she is named in.
+    """
+    if _by_child is None:
+        _build_indexes()
+    return [e for e in document()['edges'] if e['mother'] == pid]
+
+
 def verses_with_people(book: str, chapter: int) -> set[int]:
     """Verse numbers in this chapter that the curated table draws a line from.
 
