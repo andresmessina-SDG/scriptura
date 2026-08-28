@@ -147,16 +147,25 @@ def test_the_decorations_never_map_an_x_to_a_byte_index_while_painting():
 
 
 # ── Highlight bands across a wrap ───────────────────────────────────────────
+# GTK cannot be trusted about x within a character of a soft wrap, at either
+# end. Measured on a wrapped line of the reading view:
+#
+#     '0'  x= 26 y=221 w=11   ← the line's LAST glyph, reported on the next
+#     '3'  x=638 y=189 w= 0
+#     '1'  x=625 y=189 w=13   → x+w = 638, the true right edge
+#
+# and at the other end, the first glyph of a continuation line is reported at
+# x=47 while GTK draws it at 26, the view's own left margin.
+
 
 class _FakeIter:
-    """Enough of a GtkTextIter for `_clamp_to_line`: a position in a string
-    laid out over lines of fixed length."""
+    """Enough of a GtkTextIter to walk a string."""
 
-    def __init__(self, text, pos, per_line):
-        self.text, self.pos, self.per_line = text, pos, per_line
+    def __init__(self, text, pos):
+        self.text, self.pos = text, pos
 
     def copy(self):
-        return _FakeIter(self.text, self.pos, self.per_line)
+        return _FakeIter(self.text, self.pos)
 
     def compare(self, other):
         return (self.pos > other.pos) - (self.pos < other.pos)
@@ -177,63 +186,78 @@ class _FakeIter:
         return self.text[self.pos] if self.pos < len(self.text) else ''
 
 
-class _FakeView:
-    """A view whose display lines are `per_line` characters wide."""
+class _WrapView:
+    """A view whose reports lie at the wrap exactly as GTK's do: the last
+    glyph of a display line is reported on the NEXT line."""
 
-    def __init__(self, text, per_line):
-        self.text, self.per_line = text, per_line
+    PER_LINE = 10
+
+    def __init__(self, text):
+        self.text = text
 
     def get_iter_location(self, it):
         class R:
             pass
         r = R()
-        r.y = (it.pos // self.per_line) * 20
-        r.x = (it.pos % self.per_line) * 10
-        r.width = 10
+        line, col = divmod(it.pos, self.PER_LINE)
+        if col == self.PER_LINE - 1:        # the lie
+            r.y, r.x, r.width = (line + 1) * 20, 0, 10
+        else:
+            r.y, r.x, r.width = line * 20, col * 10, 10
         return r
 
-    # Bound at call time, not at class-definition time: referencing the
-    # real methods here makes a missing one a COLLECTION error, which reads
-    # as a broken test file rather than as the rule being broken.
     @property
     def _BAND_WS(self):
         return rv.BibleTextView._BAND_WS
 
-    def _trim_ws_end(self, start, end):
-        return rv.BibleTextView._trim_ws_end(self, start, end)
+    def _line_right_edge(self, cur, seg_last, y0):
+        return rv.BibleTextView._line_right_edge(self, cur, seg_last, y0)
+
+    def _skip_ws_fwd(self, start, end):
+        return rv.BibleTextView._skip_ws_fwd(self, start, end)
+
+    def _resume_after(self, seg_end, cur, end):
+        return rv.BibleTextView._resume_after(self, seg_end, cur, end)
 
 
-def test_a_band_segment_is_pulled_back_onto_one_display_line():
-    """The 1px ticks in his screenshots.
-
-    A verse highlight spanning three lines banded only the LAST of them and
-    left a one-pixel orange tick standing in each of the others. A segment
-    ran past the soft wrap, so its right edge was measured on the following
-    display line, the width came out negative — -538px in one measured case
-    — and a `max(1.0, ...)` floor drew that as a mark.
-    """
-    text = 'abcdefghij' + 'klmnopqrst'      # two display lines of ten
-    view = _FakeView(text, 10)
-    cur = _FakeIter(text, 2, 10)            # 'c', on the first line
-    over = _FakeIter(text, 15, 10)          # on the SECOND line
-    clamp = getattr(rv.BibleTextView, '_clamp_to_line', None)
-    assert clamp is not None, 'a band segment is no longer clamped to a line'
-    seg_last, seg_end = clamp(view, cur, over, over)
-    assert seg_last.pos <= 10, 'the segment still crosses the wrap'
-    assert seg_last.pos > cur.pos, 'the whole segment was thrown away'
-    # And the caller resumes from the clip, so the rest still gets a band.
-    assert seg_end.pos == seg_last.pos
-
-
-def test_a_segment_already_on_one_line_is_left_alone():
+def test_the_right_edge_ignores_what_wrapped_onto_the_next_line():
+    """A band's width came out NEGATIVE — -538px in one measured case — and a
+    `max(1.0, ...)` floor drew that as a 1px tick standing in the line above
+    the band. A verse over three display lines got one band and two ticks."""
     text = 'abcdefghij' + 'klmnopqrst'
-    view = _FakeView(text, 10)
-    cur = _FakeIter(text, 2, 10)
-    end = _FakeIter(text, 8, 10)
-    clamp = getattr(rv.BibleTextView, '_clamp_to_line', None)
-    assert clamp is not None, 'a band segment is no longer clamped to a line'
-    seg_last, seg_end = clamp(view, cur, end, end)
-    assert (seg_last.pos, seg_end.pos) == (8, 8)
+    view = _WrapView(text)
+    cur = _FakeIter(text, 2)
+    seg_last = _FakeIter(text, 10)          # one past the line's last glyph
+    right = view._line_right_edge(cur, seg_last, 0)
+    assert right == 90, right               # 'i' at x=80 + its width
+    assert right > 2 * 10, 'the band would have no width at all'
+
+
+def test_a_segment_with_nothing_on_its_line_reports_no_edge():
+    text = 'abcdefghij' + 'klmnopqrst'
+    view = _WrapView(text)
+    cur = _FakeIter(text, 9)                # the lying glyph itself
+    assert view._line_right_edge(cur, _FakeIter(text, 10), 0) is None
+
+
+def test_the_next_segment_resumes_without_skipping_a_letter():
+    """A `forward_char()` used to stand in the advance to step over the
+    newline a segment ended on. It stepped over a real LETTER when the
+    segment ended at a soft wrap, taking the opening glyph off every
+    continuation line: «ars old» where the verse says «years old»."""
+    text = 'abcdefghij' + 'klmnopqrst'
+    view = _WrapView(text)
+    end = _FakeIter(text, 20)
+    nxt = view._resume_after(_FakeIter(text, 10), _FakeIter(text, 2), end)
+    assert nxt is not None and nxt.pos == 10, 'a character was skipped'
+
+
+def test_whitespace_between_segments_is_still_skipped():
+    text = 'abcdefghi ' + 'klmnopqrst'
+    view = _WrapView(text)
+    end = _FakeIter(text, 20)
+    nxt = view._resume_after(_FakeIter(text, 9), _FakeIter(text, 2), end)
+    assert nxt is not None and nxt.pos == 10
 
 
 def test_a_band_with_no_width_is_not_painted():
