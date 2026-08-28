@@ -451,3 +451,45 @@ def test_the_viewport_not_the_allocation_decides_the_scale():
     wide = area._scale
     area._lay_out(2000.0)          # an allocation far past the viewport
     assert area._scale == wide
+
+
+def test_a_verse_chip_and_a_name_actually_reach_the_bible_pane():
+    """The whole feature was wired to a callback that does not exist.
+
+    The pane offers `_on_word_study_navigate`; `_on_word_study_nav` is the
+    WINDOW's method of that name, and that is what this file asked the pane
+    for. `getattr(pane, name, None)` returned None every time and the click
+    was dropped in silence, so every verse chip and every name on every chart
+    had been dead since the feature was built. Nothing caught it because
+    nothing followed a click past the widget.
+
+    So this drives one of each all the way to the other pane, and checks the
+    name against the real `BiblePane` rather than against a stand-in that
+    would happily answer to a misspelling.
+    """
+    import pane as pane_mod
+    assert ('_on_word_study_navigate'
+            in pane_mod.BiblePane.__init__.__code__.co_names)
+
+    class Recording:
+        def __init__(self):
+            self.went = []
+
+        def _on_word_study_navigate(self, book, chapter, verse):
+            self.went.append((book, chapter, verse))
+
+    pane = Recording()
+    reader = gr.GenealogyReader(pane)
+    reader.ensure_built()
+    area = [a for a in reader._areas if a._cid == 'gen11'][0]
+    area._lay_out(700.0)
+
+    chip = next(h for h in area._plate.hits if h.kind == 'verse')
+    book, chapter, verse = chip.payload.split('|')
+    area._on_verse(book, int(chapter), int(verse))
+    assert pane.went == [(book, int(chapter), int(verse))]
+
+    name = next(h for h in area._plate.hits
+                if h.kind == 'person' and h.payload == 'peleg')
+    area._on_person(name.payload, area._cid, name.ref)
+    assert pane.went[-1] == ('Genesis', 11, 18)

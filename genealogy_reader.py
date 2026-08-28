@@ -906,12 +906,21 @@ class GenealogyReader:
         return GLib.SOURCE_REMOVE
 
     def _go_to_verse(self, book: str, chapter: int, verse: int):
-        """Drive the partnered Bible pane, the same channel a Strong's link
-        uses (window._go_to)."""
+        """Drive the partnered Bible pane, the same channel a Strong’s link
+        uses.
+
+        The callback on the pane is `_on_word_study_navigate`.
+        `_on_word_study_nav` is the WINDOW’s method of that name, and asking
+        the pane for it returned None every time — so every verse chip and
+        every name on every one of these charts has been dead since the
+        feature was built, and silently, because the lookup guards itself
+        with a default. `archaeology_reader` and `imagery_reader` both reach
+        for the right one; this was the odd file out.
+        """
         pane = self._pane
         if pane is None:
             return
-        cb = getattr(pane, '_on_word_study_nav', None)
+        cb = getattr(pane, '_on_word_study_navigate', None)
         if callable(cb):
             cb(book, chapter, verse)
 
