@@ -1030,7 +1030,7 @@ msgid ""
 "granted: its homes and lamps, its presses and weights, its household gods."
 msgstr ""
 "Под царями и империями лежал обычный мир, который Библия принимает как "
-"данность: её дома и светильники, её давильни и гири, её домашние боги."
+"данность: его дома и светильники, его давильни и гири, его домашние боги."
 
 #: archaeology_strings.py:41
 msgid "The Amarna Letter of Abdi-Heba"
@@ -1345,7 +1345,7 @@ msgstr "Нимруд (Кальху), Ассирия"
 
 #: archaeology_strings.py:96
 msgid "9th–8th century BC"
-msgstr "IX–VIII век до н. э."
+msgstr "IX–VIII века до н. э."
 
 #: archaeology_strings.py:97
 msgid "Metropolitan Museum of Art"
@@ -1407,7 +1407,7 @@ msgstr "Ниневия (Мосул), Ирак"
 
 #: archaeology_strings.py:106
 msgid "8th–7th century BC"
-msgstr "VIII–VII век до н. э."
+msgstr "VIII–VII века до н. э."
 
 #: archaeology_strings.py:107
 msgid "in situ (destroyed 2016)"
@@ -2595,7 +2595,7 @@ msgstr "Силом"
 
 #: archaeology_strings.py:304
 msgid "12th–11th century BC"
-msgstr "XII–XI век до н. э."
+msgstr "XII–XI века до н. э."
 
 #: archaeology_strings.py:305
 msgid "on display at ancient Shiloh"
