@@ -139,6 +139,17 @@ def _t(text: str) -> str:
     return _(text.strip()) if text.strip() else text
 
 
+def _credit(text: str) -> str:
+    """A photo credit, with the one word of it that is ours translated.
+
+    The attribution itself stands exactly as the licence asks. `photo` is
+    not part of it — we put it there to introduce the photographer — and it
+    was the last English word left on 47 of the 56 translated cards.
+    """
+    head, sep, rest = text.partition(' ')
+    return _('photo') + sep + rest if head == 'photo' else text
+
+
 def document() -> Document:
     """The parsed gallery: intro + chapters (in declared order), each with its
     entries (in declared order). Cached after first load."""
@@ -175,15 +186,15 @@ def document() -> Document:
                       f'{r["chapter"]}:{r["verse"]}'}
             for r in e.get('refs', [])
         ]
-        # `credit` is not translated: the licences these photographs carry
-        # ask us to reproduce the attribution as given.
+        # The attribution inside `credit` is not translated: the licences
+        # these photographs carry ask us to reproduce it as given.
         chap['entries'].append({
             'image': e['image'], 'source': e.get('source', ''),
             'title': _(e['title']), 'place': _t(e.get('place', '')),
             'date': _t(e.get('date', '')), 'date_key': e.get('date', ''),
             'holding': _t(e.get('holding', '')),
             'provenance': _t(e.get('provenance', '')),
-            'credit': e.get('credit', ''),
+            'credit': _credit(e.get('credit', '')),
             'caption': _t(e.get('caption', '')),
             'lat': e.get('lat'), 'lon': e.get('lon'),
             'refs': refs, 'details': [], 'related': [],

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scriptura\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-01 07:21-0600\n"
+"POT-Creation-Date: 2026-09-01 10:52-0600\n"
 "PO-Revision-Date: 2026-08-26 00:00+0000\n"
 "Last-Translator: Scriptura\n"
 "Language-Team: Russian\n"
@@ -682,7 +682,11 @@ msgstr "например: творение, завет"
 msgid "Scripture in Stone"
 msgstr "Писание в камне"
 
-#: archaeology_bridge.py:254
+#: archaeology_bridge.py:150
+msgid "photo"
+msgstr "фото"
+
+#: archaeology_bridge.py:270
 msgid ""
 "Artifacts of the biblical world — inscriptions, monuments, and objects that "
 "touch the people, places, and events named in Scripture, in historical "
@@ -692,17 +696,17 @@ msgstr ""
 "людьми, местами и событиями, названными в Писании, в исторической "
 "последовательности."
 
-#: archaeology_bridge.py:257
+#: archaeology_bridge.py:273
 #, python-brace-format
 msgid "{n} artifacts"
 msgstr "Артефактов: {n}"
 
-#: archaeology_bridge.py:258
+#: archaeology_bridge.py:274
 msgid "Public-domain objects; photographs CC BY-SA (per-item credit)"
 msgstr ""
 "Предметы в общественном достоянии; фотографии CC BY-SA (указание для каждого)"
 
-#: archaeology_bridge.py:259
+#: archaeology_bridge.py:275
 msgid ""
 "A curated, measured gallery: each artifact links to the passage it attests. "
 "Forgeries and disputed objects are excluded; genuine scholarly doubt is "
@@ -849,16 +853,16 @@ msgstr "Где они были найдены"
 msgid "Reading: {title}"
 msgstr "Читается: {title}"
 
-#: archaeology_reader.py:994
+#: archaeology_reader.py:1017
 msgid "When they date from"
 msgstr "Чем они датируются"
 
-#: archaeology_reader.py:1012
+#: archaeology_reader.py:1035
 #, python-brace-format
 msgid "{year} BC"
 msgstr "{year} до н. э."
 
-#: archaeology_reader.py:1013
+#: archaeology_reader.py:1036
 #, python-brace-format
 msgid "AD {year}"
 msgstr "{year} н. э."
@@ -1180,7 +1184,7 @@ msgstr "X век до н. э. (спорно)"
 
 #: archaeology_strings.py:68
 msgid "in situ"
-msgstr "на месте"
+msgstr "in situ"
 
 #: archaeology_strings.py:69
 msgid "Excavated in situ at Gezer"
@@ -1297,7 +1301,7 @@ msgstr ""
 "Победная стела из чёрного базальта, поставленная Мешей, царём Моавитским, о "
 "его восстании против Израиля. Она называет «Амврия, царя Израильского» и его "
 "династию, а Бога Израилева — именем ЯХВЕ; по спорному чтению в ней может "
-"стоять и «дом Давидов». О том же восстании Меши, со стороны Израиля, "
+"стоять и «дом Давидов». О том же восстании Месы, со стороны Израиля, "
 "рассказывает Четвёртая книга Царств."
 
 #: archaeology_strings.py:88
@@ -1411,7 +1415,7 @@ msgstr "VIII–VII века до н. э."
 
 #: archaeology_strings.py:107
 msgid "in situ (destroyed 2016)"
-msgstr "на месте (уничтожены в 2016)"
+msgstr "in situ (уничтожены в 2016)"
 
 #: archaeology_strings.py:108
 msgid "Excavated in situ at Nineveh"
@@ -2127,7 +2131,7 @@ msgstr ""
 
 #: archaeology_strings.py:226
 msgid "The Forum of Philippi"
-msgstr "Форум Филипп"
+msgstr "Форум в Филиппах"
 
 #: archaeology_strings.py:227
 msgid "Philippi, Macedonia"
@@ -2926,11 +2930,11 @@ msgstr ""
 
 #: archaeology_strings.py:357
 msgid ""
-"Catalogue entries, with photographs and bibliography, for many of the "
-"objects shown here."
+"Their online collections: catalogue entries, with photographs and "
+"bibliography, for many of the objects shown here."
 msgstr ""
-"Каталожные статьи с фотографиями и библиографией для многих из показанных "
-"здесь предметов."
+"Их электронные собрания: каталожные статьи с фотографиями и библиографией "
+"для многих из показанных здесь предметов."
 
 #: audio_pill.py:130
 msgid "Back fifteen seconds"

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scriptura\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-01 07:21-0600\n"
+"POT-Creation-Date: 2026-09-01 10:52-0600\n"
 "PO-Revision-Date: 2026-08-16 00:00+0000\n"
 "Last-Translator: Scriptura\n"
 "Language-Team: Spanish\n"
@@ -699,7 +699,11 @@ msgstr "p. ej. Creación, Pacto"
 msgid "Scripture in Stone"
 msgstr "La Escritura en piedra"
 
-#: archaeology_bridge.py:254
+#: archaeology_bridge.py:150
+msgid "photo"
+msgstr "foto"
+
+#: archaeology_bridge.py:270
 msgid ""
 "Artifacts of the biblical world — inscriptions, monuments, and objects that "
 "touch the people, places, and events named in Scripture, in historical "
@@ -709,16 +713,16 @@ msgstr ""
 "las personas, los lugares y los hechos que nombra la Escritura, en orden "
 "histórico."
 
-#: archaeology_bridge.py:257
+#: archaeology_bridge.py:273
 #, python-brace-format
 msgid "{n} artifacts"
 msgstr "{n} objetos"
 
-#: archaeology_bridge.py:258
+#: archaeology_bridge.py:274
 msgid "Public-domain objects; photographs CC BY-SA (per-item credit)"
 msgstr "Objetos en dominio público; fotografías CC BY-SA (crédito por pieza)"
 
-#: archaeology_bridge.py:259
+#: archaeology_bridge.py:275
 msgid ""
 "A curated, measured gallery: each artifact links to the passage it attests. "
 "Forgeries and disputed objects are excluded; genuine scholarly doubt is "
@@ -863,16 +867,16 @@ msgstr "Dónde se hallaron"
 msgid "Reading: {title}"
 msgstr "Lectura: {title}"
 
-#: archaeology_reader.py:994
+#: archaeology_reader.py:1017
 msgid "When they date from"
 msgstr "De cuándo datan"
 
-#: archaeology_reader.py:1012
+#: archaeology_reader.py:1035
 #, python-brace-format
 msgid "{year} BC"
 msgstr "{year} a. C."
 
-#: archaeology_reader.py:1013
+#: archaeology_reader.py:1036
 #, python-brace-format
 msgid "AD {year}"
 msgstr "{year} d. C."
@@ -2046,7 +2050,7 @@ msgstr "Jerusalén (Monte del Templo)"
 
 #: archaeology_strings.py:209
 msgid "1st century BC–AD"
-msgstr "siglos I a. C.-I d. C."
+msgstr "siglos I a. C. – I d. C."
 
 #: archaeology_strings.py:210
 msgid "Found in Jerusalem, 1871"
@@ -2341,7 +2345,7 @@ msgstr "Tel Hazor"
 
 #: archaeology_strings.py:257
 msgid "Bronze–Iron Age"
-msgstr "Edad del Bronce-Edad del Hierro"
+msgstr "Edad del Bronce – Edad del Hierro"
 
 #: archaeology_strings.py:258
 msgid "Excavated by Yigael Yadin, 1955–58; digs continue"
@@ -2574,7 +2578,7 @@ msgstr "Montes de Judea, cerca de Jerusalén"
 
 #: archaeology_strings.py:296
 msgid "Iron Age–Roman"
-msgstr "Edad del Hierro-época romana"
+msgstr "Edad del Hierro – época romana"
 
 #: archaeology_strings.py:297
 msgid "Rock-cut installation, Judean hills"
@@ -2975,11 +2979,11 @@ msgstr ""
 
 #: archaeology_strings.py:357
 msgid ""
-"Catalogue entries, with photographs and bibliography, for many of the "
-"objects shown here."
+"Their online collections: catalogue entries, with photographs and "
+"bibliography, for many of the objects shown here."
 msgstr ""
-"Fichas de catálogo, con fotografías y bibliografía, de muchos de los objetos "
-"que se muestran aquí."
+"Sus colecciones en línea: fichas de catálogo, con fotografías y "
+"bibliografía, de muchos de los objetos que se muestran aquí."
 
 #: audio_pill.py:130
 msgid "Back fifteen seconds"

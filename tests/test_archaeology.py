@@ -11,6 +11,7 @@ three fields deliberately left in the original stay that way.
 
 import importlib.util
 import os
+import tomllib
 
 import pytest
 
@@ -75,9 +76,28 @@ def test_the_attribution_and_the_bibliography_are_left_as_printed(loud):
     the Bible" is what a reader would type into a library catalogue —
     translating it would hide the book."""
     entry = loud['chapters'][0]['entries'][0]
-    assert not entry['credit'].isupper()
-    assert 'CC BY-SA' in entry['credit']
+    assert entry['credit'].endswith('Osama S. M. Amin \u00b7 CC BY-SA 4.0')
     assert not loud['reading'][0]['title'].isupper()
+
+
+def test_only_the_word_that_introduces_a_credit_is_translated(loud):
+    """`photo` is ours, not the photographer's, and it was the last English
+    word on 47 of the 56 translated cards. The name and licence beside it are
+    what the attribution actually is, and stay exactly as printed."""
+    with open(ab._DOC_FILE, 'rb') as fh:
+        raw = tomllib.load(fh)
+    shown = {e['title']: e['credit'] for c in loud['chapters']
+             for e in c['entries']}
+    prefixed = 0
+    for entry in raw['entry']:
+        printed = entry['credit']
+        rendered = shown[entry['title'].upper()]
+        if printed.startswith('photo '):
+            prefixed += 1
+            assert rendered == 'PHOTO ' + printed[len('photo '):]
+        else:
+            assert rendered == printed
+    assert prefixed == 47
 
 
 def test_an_empty_field_stays_empty():

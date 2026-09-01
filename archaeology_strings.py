@@ -354,5 +354,5 @@ _STRINGS = [
     N_('A brief, even-handed entry point to the field and its methods.'),
     N_('A wide-ranging scholarly case for the Old Testament\'s standing as history.'),
     N_('The influential minimalist challenge, which redates much of the tradition; worth knowing and weighing against the evidence above.'),
-    N_('Catalogue entries, with photographs and bibliography, for many of the objects shown here.'),
+    N_('Their online collections: catalogue entries, with photographs and bibliography, for many of the objects shown here.'),
 ]
