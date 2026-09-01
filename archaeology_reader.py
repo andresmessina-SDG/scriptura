@@ -30,6 +30,7 @@ gi.require_version('GdkPixbuf', '2.0')
 from gi.repository import Gtk, Adw, GLib, Gio, Gdk, Graphene, GdkPixbuf
 
 import archaeology_bridge
+from i18n import N_
 
 _log = logging.getLogger('scriptura.archaeology')
 
@@ -48,22 +49,26 @@ _MAP_BOUNDS = (11.0, 50.0, 24.0, 43.0)   # lon_min, lon_max, lat_min, lat_max
 # Faint orientation labels on the find-spot map (lat, lon, text). Seas are set
 # in italic, land regions in spaced uppercase, key cities in plain small caps —
 # enough to read the geography at a glance without competing with the markers.
+# Marked here and translated at draw time: a module-level constant is built
+# once, before the language is known, and the map is redrawn on every frame.
 _SEA_LABELS = [
-    (34.0, 18.5, 'Mediterranean Sea'),
-    (25.6, 35.2, 'Red Sea'),
-    (28.4, 48.6, 'Persian Gulf'),
+    (34.0, 18.5, N_('Mediterranean Sea')),
+    (25.6, 35.2, N_('Red Sea')),
+    (28.4, 48.6, N_('Persian Gulf')),
 ]
 _REGION_LABELS = [
-    (27.2, 30.0, 'EGYPT'),
-    (25.8, 44.0, 'ARABIA'),
-    (39.2, 32.5, 'ASIA  MINOR'),
-    (39.6, 21.8, 'GREECE'),
-    (35.6, 41.2, 'MESOPOTAMIA'),
+    (27.2, 30.0, N_('EGYPT')),
+    (25.8, 44.0, N_('ARABIA')),
+    (39.2, 32.5, N_('ASIA  MINOR')),
+    (39.6, 21.8, N_('GREECE')),
+    (35.6, 41.2, N_('MESOPOTAMIA')),
 ]
+# The three cities are also find-spots in the gallery, so they share their
+# msgids with the `place` field rather than adding three of their own.
 _CITY_LABELS = [
-    (31.78, 35.23, 'Jerusalem'),
-    (36.36, 43.15, 'Nineveh'),
-    (32.54, 44.42, 'Babylon'),
+    (31.78, 35.23, N_('Jerusalem')),
+    (36.36, 43.15, N_('Nineveh')),
+    (32.54, 44.42, N_('Babylon')),
 ]
 
 
@@ -745,8 +750,15 @@ class ArchaeologyReader:
 
     @staticmethod
     def _stroked_text(cr, x, y, text, size, *, italic=False, bold=False,
-                      align='left', alpha=1.0):
-        """Draw legible text over any background: a dark halo then light glyphs."""
+                      align='left', alpha=1.0, bounds=None):
+        """Draw legible text over any background: a dark halo then light glyphs.
+
+        `bounds` is (left, right) in device pixels: a label anchored near the
+        edge of the map is pulled back inside it rather than running off the
+        plate. The anchors are geographic and the words are not — «Персидский
+        залив» is half again the width of "Persian Gulf" and hung off the
+        right edge of the map at every size.
+        """
         slant = cairo_italic if italic else cairo_normal
         weight = cairo_bold if bold else cairo_book
         cr.select_font_face('sans-serif', slant, weight)
@@ -756,6 +768,16 @@ class ArchaeologyReader:
             x -= ext.width / 2 + ext.x_bearing
         elif align == 'right':
             x -= ext.width + ext.x_bearing
+        if bounds is not None:
+            # The halo is drawn a pixel out on each side, so it is part of
+            # what has to fit.
+            lo, hi = bounds
+            over = (x + ext.x_bearing + ext.width + 1) - hi
+            if over > 0:
+                x -= over
+            under = lo - (x + ext.x_bearing - 1)
+            if under > 0:
+                x += under
         cr.set_source_rgba(0, 0, 0, 0.55 * alpha)
         for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
             cr.move_to(x + dx, y + dy)
@@ -794,21 +816,23 @@ class ArchaeologyReader:
         cr.restore()
 
         # Orientation labels (drawn under the markers).
+        inside = (ox + 6, ox + dw - 6)
         for lat, lon, text in _SEA_LABELS:
             px, py = self._project(lon, lat, ox, oy, dw, dh)
-            self._stroked_text(cr, px, py, text, 13, italic=True,
-                               align='center', alpha=0.75)
+            self._stroked_text(cr, px, py, _(text), 13, italic=True,
+                               align='center', alpha=0.75, bounds=inside)
         for lat, lon, text in _REGION_LABELS:
             px, py = self._project(lon, lat, ox, oy, dw, dh)
-            self._stroked_text(cr, px, py, text, 13, bold=True,
-                               align='center', alpha=0.7)
+            self._stroked_text(cr, px, py, _(text), 13, bold=True,
+                               align='center', alpha=0.7, bounds=inside)
         # City labels as legible pills above their (often dense) swarm, with the
         # nearby find-count folded in so a busy spot reads as "Jerusalem · 14".
         for lat, lon, name in _CITY_LABELS:
             px, py = self._project(lon, lat, ox, oy, dw, dh)
             n = self._nearby_count(lat, lon)
+            name = _(name)
             text = f'{name} · {n}' if n >= 3 else name
-            self._pill_label(cr, px, py - 30, text)
+            self._pill_label(cr, px, py - 30, text, bounds=inside)
 
         # Markers.
         self._map_screen = []
@@ -874,13 +898,18 @@ class ArchaeologyReader:
             cr.move_to(cx + 11, cy + 35)
             cr.show_text(place)
 
-    def _pill_label(self, cr, cx, cy, text):
+    def _pill_label(self, cr, cx, cy, text, bounds=None):
         """A small dark rounded pill centred at (cx, cy) with light text — reads
-        cleanly over a busy marker swarm where plain stroked text would not."""
+        cleanly over a busy marker swarm where plain stroked text would not.
+
+        `bounds` keeps it on the plate, as in `_stroked_text`."""
         cr.select_font_face('sans-serif', cairo_normal, cairo_bold)
         cr.set_font_size(11.5)
         ext = cr.text_extents(text)
         pw, ph = ext.width + 16, 20
+        if bounds is not None:
+            cx = min(max(cx, bounds[0] + pw / 2),
+                     max(bounds[0] + pw / 2, bounds[1] - pw / 2))
         self._rounded_rect(cr, cx - pw / 2, cy - ph / 2, pw, ph, 9)
         cr.set_source_rgba(0.12, 0.10, 0.09, 0.82)
         cr.fill()
@@ -964,7 +993,7 @@ class ArchaeologyReader:
         items = []
         for c in archaeology_bridge.document()['chapters']:
             for e in c['entries']:
-                y = self._parse_year(e['date'])
+                y = self._parse_year(e['date_key'])
                 if y is not None and -1450 <= y <= 150:   # keep to the biblical era
                     items.append((y, e))
         items.sort(key=lambda t: t[0])

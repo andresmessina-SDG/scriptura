@@ -5,6 +5,7 @@ data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
 annotation_dialogs.py
 archaeology_bridge.py
 archaeology_reader.py
+archaeology_strings.py
 audio_pill.py
 audio_surfaces.py
 catena_bridge.py

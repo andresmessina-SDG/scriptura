@@ -15,6 +15,7 @@ import os
 import tomllib
 from typing import TypedDict
 
+import i18n
 from i18n import _, N_
 
 _log = logging.getLogger('scriptura.archaeology')
@@ -54,6 +55,10 @@ class Entry(TypedDict):
     title: str
     place: str
     date: str
+    #: The same date as curated, untranslated. `date` is prose a reader sees
+    #: — «XIV век до н. э.» — and the timeline places an artifact by reading
+    #: the era token out of it, which only the English has.
+    date_key: str
     holding: str
     provenance: str
     credit: str
@@ -92,6 +97,10 @@ class Document(TypedDict):
 
 
 _doc: Document | None = None
+#: The language `_doc` was built in. Every string in it has been through
+#: `_()` already, so a document cached under one language is wrong under
+#: the next — and the header picker rebuilds the window inside one run.
+_doc_lang: str | None = None
 
 
 def is_archaeology_module(name: str) -> bool:
@@ -118,11 +127,24 @@ def map_path() -> str:
     return os.path.join(_DATA_DIR, 'map', 'biblical_world.jpg')
 
 
+def _t(text: str) -> str:
+    """Translate a curated field, leaving an empty one empty.
+
+    `_('')` returns the catalogue's own header — the whole PO metadata block —
+    which is what a bare `_()` on an optional field would put on the page.
+    Stripped first, because the mirror the translators work from is stripped:
+    the gallery's opening body ends in a newline the TOML's own syntax adds,
+    and an id off by that one character finds nothing.
+    """
+    return _(text.strip()) if text.strip() else text
+
+
 def document() -> Document:
     """The parsed gallery: intro + chapters (in declared order), each with its
     entries (in declared order). Cached after first load."""
-    global _doc
-    if _doc is not None:
+    global _doc, _doc_lang
+    lang = i18n.current_language()
+    if _doc is not None and _doc_lang == lang:
         return _doc
 
     with open(_DOC_FILE, 'rb') as f:
@@ -131,7 +153,7 @@ def document() -> Document:
     intro = raw.get('intro', {})
     # Preserve declared chapter order; bucket entries into their chapter.
     chapters: list[Chapter] = [
-        {'id': c['id'], 'title': c['title'], 'intro': c.get('intro', ''),
+        {'id': c['id'], 'title': _(c['title']), 'intro': _t(c.get('intro', '')),
          'entries': []}
         for c in raw.get('chapter', [])
     ]
@@ -143,17 +165,26 @@ def document() -> Document:
             _log.warning('entry %r references unknown chapter %r',
                          e.get('title'), e.get('chapter'))
             continue
+        # The book stays English — it is the key the Bible pane is driven
+        # with — and only the chip's label is localized, through the one
+        # function that translates book names anywhere in the app. Written
+        # out in full, the chips read "Joshua 10:1" under a Russian UI.
         refs: list[Ref] = [
             {'book': r['book'], 'chapter': r['chapter'], 'verse': r['verse'],
-             'label': f'{r["book"]} {r["chapter"]}:{r["verse"]}'}
+             'label': f'{i18n.book_label(r["book"])} '
+                      f'{r["chapter"]}:{r["verse"]}'}
             for r in e.get('refs', [])
         ]
+        # `credit` is not translated: the licences these photographs carry
+        # ask us to reproduce the attribution as given.
         chap['entries'].append({
             'image': e['image'], 'source': e.get('source', ''),
-            'title': e['title'], 'place': e.get('place', ''),
-            'date': e.get('date', ''), 'holding': e.get('holding', ''),
-            'provenance': e.get('provenance', ''),
-            'credit': e.get('credit', ''), 'caption': e.get('caption', ''),
+            'title': _(e['title']), 'place': _t(e.get('place', '')),
+            'date': _t(e.get('date', '')), 'date_key': e.get('date', ''),
+            'holding': _t(e.get('holding', '')),
+            'provenance': _t(e.get('provenance', '')),
+            'credit': e.get('credit', ''),
+            'caption': _t(e.get('caption', '')),
             'lat': e.get('lat'), 'lon': e.get('lon'),
             'refs': refs, 'details': [], 'related': [],
         })
@@ -168,7 +199,7 @@ def document() -> Document:
             continue
         parent['details'].append({
             'image': d['image'], 'source': d.get('source', ''),
-            'caption': d.get('caption', ''),
+            'caption': _t(d.get('caption', '')),
         })
 
     # Resolve cross-links ("see also") to {image, title} once all entries exist.
@@ -181,16 +212,20 @@ def document() -> Document:
             if tgt is not None:
                 entry['related'].append({'image': other, 'title': tgt['title']})
 
+    # A reading's `title` is a bibliography — "Amihai Mazar, Archaeology of
+    # the Land of the Bible" is what a reader would type into a library
+    # catalogue — so it stays as printed; the note under it is prose.
     _doc = {
-        'title': intro.get('title', DISPLAY_NAME),
-        'subtitle': intro.get('subtitle', ''),
-        'body': intro.get('body', '').strip(),
+        'title': _(intro.get('title', DISPLAY_NAME)),
+        'subtitle': _t(intro.get('subtitle', '')),
+        'body': _t(intro.get('body', '').strip()),
         'chapters': chapters,
-        'terms': [{'term': t['term'], 'definition': t['definition']}
+        'terms': [{'term': _(t['term']), 'definition': _(t['definition'])}
                   for t in raw.get('term', [])],
-        'reading': [{'title': r['title'], 'note': r.get('note', '')}
+        'reading': [{'title': r['title'], 'note': _t(r.get('note', ''))}
                     for r in raw.get('reading', [])],
     }
+    _doc_lang = lang
     return _doc
 
 

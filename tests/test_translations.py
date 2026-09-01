@@ -200,6 +200,19 @@ def test_no_string_is_left_behind_by_the_source(catalogue, tmp_path):
         f'does not translate — {stranded[:5]}')
 
 
+def _gallery_places():
+    """Place names curated in the Scripture in Stone gallery.
+
+    Read from the TOML rather than through the bridge, which would hand back
+    whatever language happened to be installed."""
+    import tomllib
+    path = os.path.join(ROOT, 'data', 'archaeology',
+                        'scripture_in_stone.toml')
+    with open(path, 'rb') as f:
+        raw = tomllib.load(f)
+    return {e['place'].strip() for e in raw.get('entry', []) if e.get('place')}
+
+
 def test_a_context_actually_buys_a_different_translation(catalogue):
     """A msgid carrying a msgctxt exists only because one English word needs
     two words in some other language — "Search" is the panel's heading, a
@@ -217,12 +230,16 @@ def test_a_context_actually_buys_a_different_translation(catalogue):
         (with_ctx if ctx else plain).setdefault(msgid, []).append(strs[0])
 
     # Six books are named after the person the genealogy charts also draw, so
-    # `Ruth` is a book msgid and a `person` one and both are "Rut". That is the
-    # structure of the canon, not a merge that copied one entry onto another:
-    # the context still earns its keep in a language that declines a title
-    # differently from a name, and dropping it would make the person name
-    # collide with the navigation key. Every other context must still differ.
-    named_for_a_person = set(window.BOOKS) | set(window.DEUTEROCANON)
+    # `Ruth` is a book msgid and a `person` one and both are "Rut". The
+    # Scripture in Stone gallery adds the other half of the same phenomenon:
+    # its artifacts are found in Judah, and Judah is a man on the charts. That
+    # is the structure of the canon, not a merge that copied one entry onto
+    # another: the context still earns its keep in a language that declines a
+    # title differently from a name — Russian has «Иудея» for the region and
+    # «Иуда» for the man — and dropping it would make the person name collide
+    # with the navigation key. Every other context must still differ.
+    named_for_a_person = (set(window.BOOKS) | set(window.DEUTEROCANON)
+                          | _gallery_places())
 
     collapsed = [msgid for msgid, vals in with_ctx.items()
                  if msgid in plain and any(v in plain[msgid] for v in vals)
@@ -381,8 +398,10 @@ def _pot_msgids(path):
     return ids
 
 
-def test_every_genealogy_string_reaches_the_extractor(tmp_path):
-    """The mirror file exists to be read by xgettext, and xgettext is fussy
+@pytest.mark.parametrize('generator', ['gen_genealogy_strings',
+                                       'gen_archaeology_strings'])
+def test_every_curated_string_reaches_the_extractor(generator, tmp_path):
+    """The mirror files exist to be read by xgettext, and xgettext is fussy
     about how the marker is written: it reads `N_('a' 'b')` and walks past
     `N_(('a' 'b'))` without a word. The generator emitted the second form for
     any string with a newline, so the Book of Generations' opening paragraph
@@ -398,8 +417,7 @@ def test_every_genealogy_string_reaches_the_extractor(tmp_path):
         pytest.skip('xgettext not installed')
 
     spec = importlib.util.spec_from_file_location(
-        'gen_genealogy_strings',
-        os.path.join(ROOT, 'tools', 'gen_genealogy_strings.py'))
+        generator, os.path.join(ROOT, 'tools', generator + '.py'))
     gen = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(gen)
 
@@ -412,7 +430,10 @@ def test_every_genealogy_string_reaches_the_extractor(tmp_path):
     assert r.returncode == 0, r.stderr
 
     ids = _pot_msgids(pot)
-    missing = [m for _kind, _ctx, m in gen.collect() if m not in ids]
+    # One generator yields (kind, context, msgid) triples and the other bare
+    # msgids; both are asking the same question of the same extraction.
+    collected = [e[-1] if isinstance(e, tuple) else e for e in gen.collect()]
+    missing = [m for m in collected if m not in ids]
     assert not missing, (
-        f'{len(missing)} genealogy strings are invisible to xgettext — '
+        f'{generator}: {len(missing)} strings are invisible to xgettext — '
         f'{[m[:60] for m in missing[:3]]}')

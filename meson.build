@@ -34,6 +34,7 @@ py_sources = files(
   'annotations.py',
   'archaeology_bridge.py',
   'archaeology_reader.py',
+  'archaeology_strings.py',
   'audio_pill.py',
   'audio_surfaces.py',
   'backup.py',

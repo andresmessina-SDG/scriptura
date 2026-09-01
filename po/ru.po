@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scriptura\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-27 12:50-0600\n"
+"POT-Creation-Date: 2026-09-01 07:21-0600\n"
 "PO-Revision-Date: 2026-08-26 00:00+0000\n"
 "Last-Translator: Scriptura\n"
 "Language-Team: Russian\n"
@@ -613,6 +613,7 @@ msgstr "Изменить заметку и метки"
 msgid "Note & Tags"
 msgstr "Заметка и метки"
 
+#. 4. Copy verse(s)
 #: annotation_dialogs.py:166
 msgid "Copy verses"
 msgstr "Копировать стихи"
@@ -621,14 +622,18 @@ msgstr "Копировать стихи"
 msgid "Copy verse"
 msgstr "Копировать стих"
 
+#. 5. Export the passage — Copy's larger cousin, and next to it for that
+#. reason: both take what is selected and put it somewhere else.
 #: annotation_dialogs.py:174
 msgid "Export passage…"
 msgstr "Выгрузить отрывок…"
 
+#. 6. Share the verse as an image
 #: annotation_dialogs.py:181
 msgid "Share as image…"
 msgstr "Поделиться изображением…"
 
+#. 7. Print — the same composition as the worksheet, set into pages.
 #: annotation_dialogs.py:188
 msgid "Print…"
 msgstr "Печать…"
@@ -673,11 +678,11 @@ msgstr "{ref} — заметка к главе"
 msgid "e.g. Creation, Covenant"
 msgstr "например: творение, завет"
 
-#: archaeology_bridge.py:24
+#: archaeology_bridge.py:25 archaeology_strings.py:14
 msgid "Scripture in Stone"
 msgstr "Писание в камне"
 
-#: archaeology_bridge.py:224
+#: archaeology_bridge.py:254
 msgid ""
 "Artifacts of the biblical world — inscriptions, monuments, and objects that "
 "touch the people, places, and events named in Scripture, in historical "
@@ -687,17 +692,17 @@ msgstr ""
 "людьми, местами и событиями, названными в Писании, в исторической "
 "последовательности."
 
-#: archaeology_bridge.py:227
+#: archaeology_bridge.py:257
 #, python-brace-format
 msgid "{n} artifacts"
 msgstr "Артефактов: {n}"
 
-#: archaeology_bridge.py:228
+#: archaeology_bridge.py:258
 msgid "Public-domain objects; photographs CC BY-SA (per-item credit)"
 msgstr ""
 "Предметы в общественном достоянии; фотографии CC BY-SA (указание для каждого)"
 
-#: archaeology_bridge.py:229
+#: archaeology_bridge.py:259
 msgid ""
 "A curated, measured gallery: each artifact links to the passage it attests. "
 "Forgeries and disputed objects are excluded; genuine scholarly doubt is "
@@ -707,51 +712,95 @@ msgstr ""
 "он подтверждает. Подделки и спорные предметы исключены; добросовестные "
 "научные сомнения отмечены."
 
-#: archaeology_reader.py:109
+#: archaeology_reader.py:55
+msgid "Mediterranean Sea"
+msgstr "Средиземное море"
+
+#: archaeology_reader.py:56
+msgid "Red Sea"
+msgstr "Красное море"
+
+#: archaeology_reader.py:57
+msgid "Persian Gulf"
+msgstr "Персидский залив"
+
+#: archaeology_reader.py:60
+msgid "EGYPT"
+msgstr "ЕГИПЕТ"
+
+#: archaeology_reader.py:61
+msgid "ARABIA"
+msgstr "АРАВИЯ"
+
+#: archaeology_reader.py:62
+msgid "ASIA  MINOR"
+msgstr "МАЛАЯ  АЗИЯ"
+
+#: archaeology_reader.py:63
+msgid "GREECE"
+msgstr "ГРЕЦИЯ"
+
+#: archaeology_reader.py:64
+msgid "MESOPOTAMIA"
+msgstr "МЕСОПОТАМИЯ"
+
+#: archaeology_reader.py:69 archaeology_strings.py:196
+msgid "Jerusalem"
+msgstr "Иерусалим"
+
+#: archaeology_reader.py:70 archaeology_strings.py:122
+msgid "Nineveh"
+msgstr "Ниневия"
+
+#: archaeology_reader.py:71 archaeology_strings.py:146
+msgid "Babylon"
+msgstr "Вавилон"
+
+#: archaeology_reader.py:114
 msgid "Search artifacts"
 msgstr "Искать артефакты"
 
-#: archaeology_reader.py:115 archaeology_reader.py:120
+#: archaeology_reader.py:120 archaeology_reader.py:125 genealogy_reader.py:538
 msgid "Contents"
 msgstr "Содержание"
 
-#: archaeology_reader.py:125
+#: archaeology_reader.py:130
 msgid "Timeline: when they date from"
 msgstr "Хронология: чем они датируются"
 
-#: archaeology_reader.py:128
+#: archaeology_reader.py:133
 msgid "Timeline"
 msgstr "Хронология"
 
-#: archaeology_reader.py:132
+#: archaeology_reader.py:137
 msgid "Map: where these were found"
 msgstr "Карта: где они найдены"
 
-#: archaeology_reader.py:135
+#: archaeology_reader.py:140
 msgid "Map"
 msgstr "Карта"
 
-#: archaeology_reader.py:172
+#: archaeology_reader.py:177
 msgid "Copy"
 msgstr "Копировать"
 
-#: archaeology_reader.py:173
+#: archaeology_reader.py:178
 msgid "Select All"
 msgstr "Выделить всё"
 
-#: archaeology_reader.py:298 archaeology_reader.py:558
+#: archaeology_reader.py:303 archaeology_reader.py:563
 msgid "Glossary"
 msgstr "Глоссарий"
 
-#: archaeology_reader.py:311 archaeology_reader.py:559
+#: archaeology_reader.py:316 archaeology_reader.py:564
 msgid "Sources & further reading"
 msgstr "Источники и что читать дальше"
 
-#: archaeology_reader.py:341
+#: archaeology_reader.py:346
 msgid "Click to enlarge"
 msgstr "Щёлкните, чтобы увеличить"
 
-#: archaeology_reader.py:342
+#: archaeology_reader.py:347
 #, python-brace-format
 msgid "Click to enlarge ({n} view)"
 msgid_plural "Click to enlarge ({n} views)"
@@ -759,11 +808,11 @@ msgstr[0] "Щёлкните, чтобы увеличить ({n} вид)"
 msgstr[1] "Щёлкните, чтобы увеличить ({n} вида)"
 msgstr[2] "Щёлкните, чтобы увеличить ({n} видов)"
 
-#: archaeology_reader.py:364
+#: archaeology_reader.py:369 archaeology_strings.py:327
 msgid "Provenance"
 msgstr "Происхождение"
 
-#: archaeology_reader.py:373
+#: archaeology_reader.py:378
 #, python-brace-format
 msgid "{n} detail closeup · click the image to view"
 msgid_plural "{n} detail closeups · click the image to view"
@@ -771,46 +820,2117 @@ msgstr[0] "{n} крупный план · щёлкните изображени�
 msgstr[1] "{n} крупных плана · щёлкните изображение, чтобы посмотреть"
 msgstr[2] "{n} крупных планов · щёлкните изображение, чтобы посмотреть"
 
-#: archaeology_reader.py:385
+#: archaeology_reader.py:390
 msgid "Attests"
 msgstr "Свидетельствует о"
 
-#: archaeology_reader.py:395
+#. "See also" — jump to a thematically related artifact in the gallery
+#. (a wrapping flow, since titles are long). Turns the list into a web.
+#: archaeology_reader.py:400
 msgid "See also"
 msgstr "См. также"
 
-#: archaeology_reader.py:417
+#: archaeology_reader.py:422
 #, python-brace-format
 msgid "Go to {title}"
 msgstr "Перейти к «{title}»"
 
-#: archaeology_reader.py:492 imagery_reader.py:755 imagery_reader.py:757
+#: archaeology_reader.py:497 imagery_reader.py:755 imagery_reader.py:757
 #, python-brace-format
 msgid "Open {ref} in the Bible pane"
 msgstr "Открыть {ref} в библейской панели"
 
-#: archaeology_reader.py:665 archaeology_reader.py:673
+#: archaeology_reader.py:670 archaeology_reader.py:678
 msgid "Where they were found"
 msgstr "Где они были найдены"
 
-#: archaeology_reader.py:668
+#: archaeology_reader.py:673
 #, python-brace-format
 msgid "Reading: {title}"
 msgstr "Читается: {title}"
 
-#: archaeology_reader.py:988
+#: archaeology_reader.py:994
 msgid "When they date from"
 msgstr "Чем они датируются"
 
-#: archaeology_reader.py:1006
+#: archaeology_reader.py:1012
 #, python-brace-format
 msgid "{year} BC"
 msgstr "{year} до н. э."
 
-#: archaeology_reader.py:1007
+#: archaeology_reader.py:1013
 #, python-brace-format
 msgid "AD {year}"
 msgstr "{year} н. э."
+
+#: archaeology_strings.py:15
+msgid "The Bible and the archaeological record"
+msgstr "Библия и археологические свидетельства"
+
+#: archaeology_strings.py:16
+msgid ""
+"Scripture was written in a real world of kings, empires, and cities, and "
+"that world left traces in the ground. This gallery gathers artifacts that "
+"touch the people, places, and events named in the Bible: a victory stele "
+"that mentions the house of David, an Assyrian monument that pictures a king "
+"of Israel, a Persian cylinder, a stone bearing Pilate's name.\n"
+"\n"
+"A note on method. The aim here is evidence, not argument. Each entry "
+"describes what the object is and what it attests, and stops there; an "
+"inscription can confirm that a king reigned or a governor held office "
+"without settling everything the Bible says about him. Objects of doubtful "
+"authenticity are left out, and where serious scholars disagree, the "
+"disagreement is named. Read in this spirit, these stones are not proofs but "
+"witnesses: fragments of the historical ground on which the text stands."
+msgstr ""
+"Писание писалось в реальном мире царей, империй и городов, и этот мир "
+"оставил следы в земле. Эта галерея собирает предметы, которые касаются "
+"людей, мест и событий, названных в Библии: победную стелу, где упомянут дом "
+"Давида, ассирийский монумент с изображением царя Израиля, персидский "
+"цилиндр, камень с именем Пилата.\n"
+"\n"
+"О методе. Цель здесь — свидетельства, а не спор. Каждая статья описывает, "
+"что представляет собой предмет и о чём он свидетельствует, и на этом "
+"останавливается: надпись может подтвердить, что царь правил или что "
+"наместник занимал должность, не решая всего, что говорит о нём Библия. "
+"Предметы сомнительной подлинности сюда не вошли, а там, где серьёзные учёные "
+"расходятся, разногласие названо. Прочитанные в таком духе, эти камни — не "
+"доказательства, а свидетели: обломки той исторической почвы, на которой "
+"стоит текст."
+
+#: archaeology_strings.py:19
+msgid "Before the Kingdom"
+msgstr "До царства"
+
+#: archaeology_strings.py:20
+msgid ""
+"Before there was an Israel for the records to name, its neighbours were "
+"already writing, and a few of their words reach across to touch its earliest "
+"story."
+msgstr ""
+"Ещё прежде чем появился Израиль, который эти записи могли бы назвать, его "
+"соседи уже писали, и несколько их слов дотягиваются до самой ранней его "
+"истории."
+
+#: archaeology_strings.py:21
+msgid "The United Monarchy"
+msgstr "Единое царство"
+
+#: archaeology_strings.py:22
+msgid ""
+"From the centuries the Bible assigns to Saul, David, and Solomon: the first "
+"inscriptions, and the first monumental stones of a kingdom."
+msgstr ""
+"Из веков, которые Библия отводит Саулу, Давиду и Соломону: первые надписи и "
+"первые монументальные камни царства."
+
+#: archaeology_strings.py:23
+msgid "The Kingdom Divided"
+msgstr "Разделённое царство"
+
+#: archaeology_strings.py:24
+msgid ""
+"One kingdom had become two, Israel and Judah, as the great powers to the "
+"east began to write their names into the record."
+msgstr ""
+"Одно царство стало двумя, Израилем и Иудеей, а великие державы на востоке "
+"начали вписывать свои имена в летопись."
+
+#: archaeology_strings.py:25
+msgid "Judah, Assyria, and Nineveh"
+msgstr "Иудея, Ассирия и Ниневия"
+
+#: archaeology_strings.py:26
+msgid ""
+"Judah alone now, in the lengthening shadow of Assyria: a clash of empires "
+"and a single besieged city, set down from both sides."
+msgstr ""
+"Теперь одна Иудея — в удлиняющейся тени Ассирии: столкновение империй и один "
+"осаждённый город, описанные с обеих сторон."
+
+#: archaeology_strings.py:27
+msgid "The Fall and the Exile"
+msgstr "Падение и плен"
+
+#: archaeology_strings.py:28
+msgid ""
+"Babylon's rise and Jerusalem's fall, and the long captivity by the rivers of "
+"a foreign land."
+msgstr ""
+"Возвышение Вавилона и падение Иерусалима, и долгий плен при реках чужой "
+"земли."
+
+#: archaeology_strings.py:29
+msgid "Return under Persia"
+msgstr "Возвращение при персах"
+
+#: archaeology_strings.py:30
+msgid ""
+"Under the kings of Persia, the road home, and the royal policy that let a "
+"scattered people return to rebuild."
+msgstr ""
+"При персидских царях — дорога домой и царская политика, позволившая "
+"рассеянному народу вернуться и отстроиться."
+
+#: archaeology_strings.py:31
+msgid "Between the Testaments"
+msgstr "Между Заветами"
+
+#: archaeology_strings.py:32
+msgid ""
+"The centuries between the Testaments, which were not silent at all: Greek "
+"kings, the Maccabees, and the scrolls of a waiting people."
+msgstr ""
+"Века между Заветами, которые вовсе не были безмолвными: греческие цари, "
+"Маккавеи и свитки ожидающего народа."
+
+#: archaeology_strings.py:33
+msgid "The World of Jesus"
+msgstr "Мир Иисуса"
+
+#: archaeology_strings.py:34
+msgid ""
+"The Judea of the Gospels brought down to its stones: a governor's name, a "
+"high priest's bones, the pools and pavements of the city."
+msgstr ""
+"Иудея Евангелий, сведённая к её камням: имя наместника, кости "
+"первосвященника, купальни и мостовые города."
+
+#: archaeology_strings.py:35
+msgid "The Apostolic World"
+msgstr "Апостольский мир"
+
+#: archaeology_strings.py:36
+msgid ""
+"Out from Jerusalem into the wider world: the cities, courts, and crowds the "
+"apostles met across the Roman East."
+msgstr ""
+"Из Иерусалима — в широкий мир: города, суды и толпы, которые апостолы "
+"встретили на римском Востоке."
+
+#: archaeology_strings.py:37
+msgid "The Fall of Jerusalem"
+msgstr "Падение Иерусалима"
+
+#: archaeology_strings.py:38
+msgid ""
+"The great revolt and its end, and the monuments Rome itself raised over the "
+"destruction of Jerusalem in AD 70."
+msgstr ""
+"Великое восстание и его конец, и памятники, которые сам Рим воздвиг над "
+"разрушением Иерусалима в 70 году н. э."
+
+#: archaeology_strings.py:39
+msgid "Everyday Life"
+msgstr "Повседневная жизнь"
+
+#: archaeology_strings.py:40
+msgid ""
+"Beneath the kings and the empires lay the ordinary world the Bible takes for "
+"granted: its homes and lamps, its presses and weights, its household gods."
+msgstr ""
+"Под царями и империями лежал обычный мир, который Библия принимает как "
+"данность: её дома и светильники, её давильни и гири, её домашние боги."
+
+#: archaeology_strings.py:41
+msgid "The Amarna Letter of Abdi-Heba"
+msgstr "Амарнское письмо Абди-Хебы"
+
+#: archaeology_strings.py:42
+msgid "Tell el-Amarna, Egypt"
+msgstr "Телль-эль-Амарна, Египет"
+
+#: archaeology_strings.py:43
+msgid "14th century BC"
+msgstr "XIV век до н. э."
+
+#: archaeology_strings.py:44
+msgid "Vorderasiatisches Museum, Berlin"
+msgstr "Переднеазиатский музей, Берлин"
+
+#: archaeology_strings.py:45
+msgid "Found at Tell el-Amarna, 1887"
+msgstr "Найдено в Телль-эль-Амарне, 1887"
+
+#: archaeology_strings.py:46
+msgid ""
+"A cuneiform letter from Abdi-Heba, the ruler of Jerusalem, to the Egyptian "
+"pharaoh, written generations before David. It is among the earliest "
+"references to Jerusalem (as 'Urusalim'), and shows the city as a small "
+"Canaanite kingdom under Egyptian oversight: the world into which Israel "
+"would later come."
+msgstr ""
+"Клинописное письмо Абди-Хебы, правителя Иерусалима, египетскому фараону, "
+"написанное за поколения до Давида. Это одно из самых ранних упоминаний "
+"Иерусалима (как «Урусалим»); город предстаёт малым ханаанским царством под "
+"египетским надзором — тот мир, в который позже придёт Израиль."
+
+#: archaeology_strings.py:47
+msgid "The Merneptah Stele"
+msgstr "Стела Мернептаха"
+
+#: archaeology_strings.py:48
+msgid "Thebes, Egypt"
+msgstr "Фивы, Египет"
+
+#: archaeology_strings.py:49
+msgid "c. 1208 BC"
+msgstr "ок. 1208 до н. э."
+
+#: archaeology_strings.py:50
+msgid "Egyptian Museum, Cairo"
+msgstr "Египетский музей, Каир"
+
+#: archaeology_strings.py:51
+msgid "Excavated at Thebes by Flinders Petrie, 1896"
+msgstr "Раскопана в Фивах Флиндерсом Питри, 1896"
+
+#: archaeology_strings.py:52
+msgid ""
+"A victory stele of the pharaoh Merneptah, listing peoples his armies claimed "
+"to have defeated in Canaan. Among them, in hieroglyphs, is the name "
+"'Israel,' marked as a people rather than a place. It is the earliest mention "
+"of Israel found outside the Bible, placing the people in the land in the era "
+"of the Judges."
+msgstr ""
+"Победная стела фараона Мернептаха, перечисляющая народы, которые его войска "
+"объявили побеждёнными в Ханаане. Среди них иероглифами стоит имя «Израиль», "
+"помеченное как народ, а не как местность. Это самое раннее упоминание "
+"Израиля вне Библии; оно помещает народ в этой земле в эпоху Судей."
+
+#: archaeology_strings.py:53
+msgid "The Tel Dan Stele"
+msgstr "Стела из Тель-Дана"
+
+#: archaeology_strings.py:54
+msgid "Tel Dan, northern Israel"
+msgstr "Тель-Дан, северный Израиль"
+
+#: archaeology_strings.py:55
+msgid "9th century BC"
+msgstr "IX век до н. э."
+
+#: archaeology_strings.py:56
+msgid "Israel Museum, Jerusalem"
+msgstr "Музей Израиля, Иерусалим"
+
+#: archaeology_strings.py:57
+msgid "Excavated in situ at Tel Dan, 1993–94"
+msgstr "Раскопана на месте в Тель-Дане, 1993–94"
+
+#: archaeology_strings.py:58
+msgid ""
+"A fragmentary basalt victory stele, written in Aramaic, set up by a king of "
+"Aram-Damascus. Its lines boast of defeating a 'king of Israel' and a king of "
+"the 'House of David' (bytdwd). It is the earliest reference outside the "
+"Bible to David's dynasty: a witness that the line of David was remembered as "
+"a real royal house within about a century and a half of his reign."
+msgstr ""
+"Обломки базальтовой победной стелы на арамейском языке, поставленной царём "
+"Арам-Дамаска. Её строки хвалятся победой над «царём Израиля» и над царём "
+"«дома Давидова» (bytdwd). Это самое раннее упоминание династии Давида вне "
+"Библии: свидетельство того, что род Давида помнили как настоящий царский дом "
+"уже через полтора века после его правления."
+
+#: archaeology_strings.py:59
+msgid "The Eshbaal Inscription"
+msgstr "Надпись Ешбаала"
+
+#: archaeology_strings.py:60
+msgid "Khirbet Qeiyafa, Judah"
+msgstr "Хирбет-Кейяфа, Иудея"
+
+#: archaeology_strings.py:61
+msgid "c. 1000 BC"
+msgstr "ок. 1000 до н. э."
+
+#: archaeology_strings.py:62
+msgid "Israel Antiquities Authority"
+msgstr "Управление древностей Израиля"
+
+#: archaeology_strings.py:63
+msgid "Excavated at Khirbet Qeiyafa, 2012"
+msgstr "Раскопан в Хирбет-Кейяфе, 2012"
+
+#: archaeology_strings.py:64
+msgid ""
+"A large storage jar from a fortified Judahite town, incised before firing "
+"with the name 'Eshbaal son of Beda' in early alphabetic script. Eshbaal is a "
+"rare name (its only biblical bearer is a son of King Saul), and the "
+"inscription shows it in use, and Judahites writing, in the very era the "
+"Bible assigns to Saul and David."
+msgstr ""
+"Большой сосуд для припасов из укреплённого иудейского городка, с "
+"процарапанным до обжига именем «Ешбаал, сын Беды», написанным ранним "
+"алфавитным письмом. Ешбаал — редкое имя (единственный его носитель в Библии "
+"— сын царя Саула), и надпись показывает и это имя в употреблении, и иудеев "
+"пишущими — в ту самую эпоху, которую Библия отводит Саулу и Давиду."
+
+#: archaeology_strings.py:65
+msgid "The Six-Chambered Gate at Gezer"
+msgstr "Шестикамерные ворота в Гезере"
+
+#: archaeology_strings.py:66
+msgid "Tel Gezer"
+msgstr "Тель-Гезер"
+
+#: archaeology_strings.py:67
+msgid "10th century BC (debated)"
+msgstr "X век до н. э. (спорно)"
+
+#: archaeology_strings.py:68
+msgid "in situ"
+msgstr "на месте"
+
+#: archaeology_strings.py:69
+msgid "Excavated in situ at Gezer"
+msgstr "Раскопаны на месте в Гезере"
+
+#: archaeology_strings.py:70
+msgid ""
+"A monumental city gate at Gezer, one of three nearly identical gates (with "
+"Hazor and Megiddo) long linked to a single royal building programme: the "
+"cities First Kings says Solomon fortified. The dating is debated, some "
+"placing the gates a little later, but they attest a kingdom building on a "
+"substantial, centralised scale."
+msgstr ""
+"Монументальные городские ворота в Гезере, одни из трёх почти одинаковых "
+"(вместе с Асором и Мегиддо), которые давно связывают с единой царской "
+"строительной программой — с городами, укреплёнными, по словам Третьей книги "
+"Царств, Соломоном. Датировка спорна, и некоторые относят ворота к более "
+"позднему времени, но они свидетельствуют о царстве, строившем крупно и по "
+"единому замыслу."
+
+#: archaeology_strings.py:71
+msgid "The Gezer Calendar"
+msgstr "Гезерский календарь"
+
+#: archaeology_strings.py:72
+msgid "Gezer"
+msgstr "Гезер"
+
+#: archaeology_strings.py:73
+msgid "10th century BC"
+msgstr "X век до н. э."
+
+#: archaeology_strings.py:74
+msgid "Istanbul Archaeology Museums"
+msgstr "Стамбульские археологические музеи"
+
+#: archaeology_strings.py:75
+msgid "Excavated at Gezer, 1908"
+msgstr "Раскопан в Гезере, 1908"
+
+#: archaeology_strings.py:76
+msgid ""
+"A small limestone tablet inscribed with a list of the agricultural year: "
+"months of sowing, harvest, and pruning. Written in early Hebrew letters, it "
+"is among the oldest known texts in the language of the Bible, from the "
+"century the Scriptures assign to Solomon, who is said to have rebuilt Gezer."
+msgstr ""
+"Небольшая известняковая табличка с перечнем земледельческого года: месяцы "
+"сева, жатвы и обрезки лозы. Написанная ранними еврейскими буквами, она "
+"принадлежит к древнейшим известным текстам на языке Библии — из того века, "
+"который Писание отводит Соломону, о котором сказано, что он отстроил Гезер."
+
+#: archaeology_strings.py:77
+msgid "The Campaign Relief of Shishak"
+msgstr "Рельеф о походе Сусакима"
+
+#: archaeology_strings.py:78
+msgid "Karnak, Egypt"
+msgstr "Карнак, Египет"
+
+#: archaeology_strings.py:79
+msgid "c. 925 BC"
+msgstr "ок. 925 до н. э."
+
+#: archaeology_strings.py:80
+msgid "Standing temple relief, Karnak"
+msgstr "Рельеф на стене храма, Карнак"
+
+#: archaeology_strings.py:81
+msgid ""
+"On the temple wall at Karnak, the pharaoh Sheshonq I left a relief of his "
+"campaign into Canaan, with a long list of the towns his army claimed. "
+"Sheshonq is widely identified with the biblical Shishak, who, the Bible "
+"says, marched against Jerusalem in the fifth year of Rehoboam and carried "
+"off the treasures of the Temple."
+msgstr ""
+"На стене храма в Карнаке фараон Шешонк I оставил рельеф о своём походе в "
+"Ханаан с длинным списком городов, взятых, по его словам, его войском. "
+"Шешонка обычно отождествляют с библейским Сусакимом, который, по словам "
+"Библии, пошёл на Иерусалим в пятый год Ровоама и унёс сокровища Храма."
+
+#: archaeology_strings.py:82
+msgid "The Mesha Stele"
+msgstr "Стела Меши"
+
+#: archaeology_strings.py:83
+msgid "Dibon, Moab"
+msgstr "Дивон, Моав"
+
+#: archaeology_strings.py:84
+msgid "c. 840 BC"
+msgstr "ок. 840 до н. э."
+
+#: archaeology_strings.py:85
+msgid "Louvre, Paris"
+msgstr "Лувр, Париж"
+
+#: archaeology_strings.py:86
+msgid ""
+"Found at Dhiban, 1868; broken up soon after, its text partly preserved in a "
+"paper squeeze"
+msgstr ""
+"Найдена в Дибане, 1868; вскоре разбита, её текст отчасти сохранён в бумажном "
+"эстампаже"
+
+#: archaeology_strings.py:87
+msgid ""
+"A black basalt victory stele set up by Mesha, king of Moab, recounting his "
+"rebellion against Israel. It names 'Omri king of Israel' and his dynasty, "
+"and the God of Israel by the name YHWH; by a contested reading it may also "
+"name the 'House of David.' Second Kings tells the same revolt of Mesha from "
+"Israel's side."
+msgstr ""
+"Победная стела из чёрного базальта, поставленная Мешей, царём Моавитским, о "
+"его восстании против Израиля. Она называет «Амврия, царя Израильского» и его "
+"династию, а Бога Израилева — именем ЯХВЕ; по спорному чтению в ней может "
+"стоять и «дом Давидов». О том же восстании Меши, со стороны Израиля, "
+"рассказывает Четвёртая книга Царств."
+
+#: archaeology_strings.py:88
+msgid "The Kurkh Monolith of Shalmaneser III"
+msgstr "Курхский монолит Салманасара III"
+
+#: archaeology_strings.py:89
+msgid "Üçtepe (Diyarbakır), Turkey"
+msgstr "Ючтепе (Диярбакыр), Турция"
+
+#: archaeology_strings.py:90
+msgid "c. 853 BC"
+msgstr "ок. 853 до н. э."
+
+#: archaeology_strings.py:91
+msgid "British Museum, London"
+msgstr "Британский музей, Лондон"
+
+#: archaeology_strings.py:92
+msgid "Found at Üçtepe, 1861"
+msgstr "Найден в Ючтепе, 1861"
+
+#: archaeology_strings.py:93
+msgid ""
+"A monument of the Assyrian king Shalmaneser III recording his campaigns, "
+"including the battle of Qarqar in 853 BC against a coalition of western "
+"kings. Among the allies it lists 'Ahab the Israelite,' credited with two "
+"thousand chariots: the earliest Assyrian mention of a named king of Israel, "
+"who reigns through much of First Kings."
+msgstr ""
+"Монумент ассирийского царя Салманасара III с описанием его походов, в том "
+"числе битвы при Каркаре в 853 году до н. э. против коалиции западных царей. "
+"Среди союзников он перечисляет «Ахава израильтянина», которому приписывает "
+"две тысячи колесниц: это самое раннее ассирийское упоминание израильского "
+"царя по имени — царя, который правит на протяжении большей части Третьей "
+"книги Царств."
+
+#: archaeology_strings.py:94
+msgid "A Nimrud Ivory"
+msgstr "Нимрудская слоновая кость"
+
+#: archaeology_strings.py:95
+msgid "Nimrud (Kalhu), Assyria"
+msgstr "Нимруд (Кальху), Ассирия"
+
+#: archaeology_strings.py:96
+msgid "9th–8th century BC"
+msgstr "IX–VIII век до н. э."
+
+#: archaeology_strings.py:97
+msgid "Metropolitan Museum of Art"
+msgstr "Метрополитен-музей"
+
+#: archaeology_strings.py:98
+msgid "Excavated at Nimrud"
+msgstr "Раскопана в Нимруде"
+
+#: archaeology_strings.py:99
+msgid ""
+"A finely carved ivory furniture inlay from the Assyrian palaces at Nimrud, "
+"where such pieces (much of it Phoenician work, gathered as tribute) survive "
+"by the hundred. Ivories like these give substance to the Bible's notice of "
+"the 'house of ivory' that Ahab built, and the prophets' rebukes of those who "
+"lounged on 'beds of ivory.'"
+msgstr ""
+"Тонко резанная накладка из слоновой кости для мебели из ассирийских дворцов "
+"в Нимруде, где такие вещи (в большинстве финикийской работы, собранные как "
+"дань) сохранились сотнями. Такие кости придают плоть библейскому упоминанию "
+"«дома из слоновой кости», построенного Ахавом, и обличениям пророков в адрес "
+"тех, кто нежился на «ложах из слоновой кости»."
+
+#: archaeology_strings.py:100
+msgid "The Black Obelisk of Shalmaneser III"
+msgstr "Чёрный обелиск Салманасара III"
+
+#: archaeology_strings.py:101
+msgid "c. 825 BC"
+msgstr "ок. 825 до н. э."
+
+#: archaeology_strings.py:102
+msgid "Excavated at Nimrud by Layard, 1846"
+msgstr "Раскопан в Нимруде Лэйардом, 1846"
+
+#: archaeology_strings.py:103
+msgid ""
+"A black limestone monument recording the campaigns of the Assyrian king "
+"Shalmaneser III. One register shows a figure bowing to bring tribute. The "
+"cuneiform above names him 'Jehu, son of Omri': in Assyrian usage, a king of "
+"the land of Omri, that is, Israel. It is the only known contemporary image "
+"of an Israelite monarch, set against the heavy Assyrian pressure the Bible "
+"records in Jehu's day."
+msgstr ""
+"Монумент из чёрного известняка с описанием походов ассирийского царя "
+"Салманасара III. На одном из поясов изображён человек, склонившийся с данью. "
+"Клинопись над ним называет его «Ииуй, сын Амврия»: по ассирийскому обычаю — "
+"царь земли Амврия, то есть Израиля. Это единственное известное прижизненное "
+"изображение израильского царя, на фоне тяжёлого ассирийского давления, о "
+"котором Библия говорит во дни Ииуя."
+
+#: archaeology_strings.py:104
+msgid "The Gate of Nineveh"
+msgstr "Ворота Ниневии"
+
+#: archaeology_strings.py:105
+msgid "Nineveh (Mosul), Iraq"
+msgstr "Ниневия (Мосул), Ирак"
+
+#: archaeology_strings.py:106
+msgid "8th–7th century BC"
+msgstr "VIII–VII век до н. э."
+
+#: archaeology_strings.py:107
+msgid "in situ (destroyed 2016)"
+msgstr "на месте (уничтожены в 2016)"
+
+#: archaeology_strings.py:108
+msgid "Excavated in situ at Nineveh"
+msgstr "Раскопаны на месте в Ниневии"
+
+#: archaeology_strings.py:109
+msgid ""
+"A reconstructed gate of Nineveh, flanked by the colossal human-headed winged "
+"bulls (lamassu) that guarded the Assyrian capital. Nineveh looms large in "
+"Scripture: the city Jonah was sent to, and whose violence Nahum condemned. "
+"The ancient gate and its bulls were destroyed in 2016; this records them as "
+"they stood."
+msgstr ""
+"Восстановленные ворота Ниневии с колоссальными крылатыми быками с "
+"человеческими головами (ламассу), охранявшими ассирийскую столицу. Ниневия "
+"велика в Писании: это город, в который был послан Иона и чьё насилие обличал "
+"Наум. Древние ворота и их быки были уничтожены в 2016 году; этот снимок "
+"сохраняет их такими, какими они стояли."
+
+#: archaeology_strings.py:110
+msgid "Sargon II in His Chariot"
+msgstr "Саргон II на колеснице"
+
+#: archaeology_strings.py:111
+msgid "Khorsabad (Dur-Sharrukin)"
+msgstr "Хорсабад (Дур-Шаррукин)"
+
+#: archaeology_strings.py:112
+msgid "c. 710 BC"
+msgstr "ок. 710 до н. э."
+
+#: archaeology_strings.py:113
+msgid "Iraq Museum, Baghdad"
+msgstr "Иракский музей, Багдад"
+
+#: archaeology_strings.py:114
+msgid "Excavated at Khorsabad, 1840s"
+msgstr "Раскопан в Хорсабаде, 1840-е"
+
+#: archaeology_strings.py:115
+msgid ""
+"A palace relief of the Assyrian king Sargon II riding to war. Sargon "
+"completed the conquest of Samaria and deported the northern kingdom. Named "
+"just once in the Bible and long missing from other records, he was once "
+"doubted to have existed at all, until his vast palace at Khorsabad was "
+"unearthed. Isaiah names him directly."
+msgstr ""
+"Дворцовый рельеф ассирийского царя Саргона II, едущего на войну. Саргон "
+"завершил завоевание Самарии и увёл в плен северное царство. Названный в "
+"Библии лишь однажды и долго отсутствовавший в других источниках, он когда-то "
+"считался вовсе не существовавшим — пока не откопали его огромный дворец в "
+"Хорсабаде. Исаия называет его прямо."
+
+#: archaeology_strings.py:116
+msgid "The Lachish Reliefs"
+msgstr "Рельефы из Лахиса"
+
+#: archaeology_strings.py:117
+msgid "Palace of Sennacherib, Nineveh"
+msgstr "Дворец Сеннахирима, Ниневия"
+
+#: archaeology_strings.py:118
+msgid "c. 700–692 BC"
+msgstr "ок. 700–692 до н. э."
+
+#: archaeology_strings.py:119
+msgid "Excavated at Nineveh by Layard, 1840s"
+msgstr "Раскопаны в Ниневии Лэйардом, 1840-е"
+
+#: archaeology_strings.py:120
+msgid ""
+"Carved gypsum panels from Sennacherib's palace, depicting in documentary "
+"detail the Assyrian siege and capture of the Judahite fortress city of "
+"Lachish in 701 BC: siege ramps, archers, and files of captives carrying "
+"their belongings into exile. The Bible records the same campaign, when "
+"Sennacherib 'came up against all the fortified cities of Judah and took "
+"them.'"
+msgstr ""
+"Резные гипсовые плиты из дворца Сеннахирима, с документальной подробностью "
+"изображающие ассирийскую осаду и взятие иудейской крепости Лахис в 701 году "
+"до н. э.: осадные насыпи, лучники и вереницы пленных, уносящих свой скарб в "
+"плен. Библия говорит о том же походе, когда Сеннахирим «пошёл против всех "
+"укреплённых городов Иудеи и взял их»."
+
+#: archaeology_strings.py:121
+msgid "The Taylor Prism of Sennacherib"
+msgstr "Призма Тейлора Сеннахирима"
+
+#: archaeology_strings.py:123
+msgid "c. 691 BC"
+msgstr "ок. 691 до н. э."
+
+#: archaeology_strings.py:124
+msgid "Acquired at Nineveh, 1830"
+msgstr "Приобретена в Ниневии, 1830"
+
+#: archaeology_strings.py:125
+msgid ""
+"A six-sided clay prism inscribed with the annals of Sennacherib. It records "
+"his campaign of 701 BC against Judah, boasting that he shut up Hezekiah "
+"'like a bird in a cage' in Jerusalem, yet tellingly it never claims to have "
+"taken the city. Second Kings tells of the same siege, and of Jerusalem's "
+"deliverance."
+msgstr ""
+"Шестигранная глиняная призма с анналами Сеннахирима. Она сообщает о его "
+"походе 701 года до н. э. против Иудеи и хвалится тем, что он запер Езекию в "
+"Иерусалиме «как птицу в клетке» — но, что показательно, нигде не заявляет, "
+"что взял город. О той же осаде и об избавлении Иерусалима рассказывает "
+"Четвёртая книга Царств."
+
+#: archaeology_strings.py:126
+msgid "The Siloam Inscription"
+msgstr "Силоамская надпись"
+
+#: archaeology_strings.py:127
+msgid "Jerusalem (Siloam tunnel)"
+msgstr "Иерусалим (Силоамский туннель)"
+
+#: archaeology_strings.py:128
+msgid "c. 701 BC"
+msgstr "ок. 701 до н. э."
+
+#: archaeology_strings.py:129
+msgid "Found in situ in the Siloam tunnel, 1880"
+msgstr "Найдена на месте, в Силоамском туннеле, 1880"
+
+#: archaeology_strings.py:130
+msgid ""
+"An inscription carved in the wall of a water tunnel beneath Jerusalem, "
+"describing the moment two teams of diggers, working from opposite ends, met "
+"in the middle. The tunnel carried water from the Gihon spring inside the "
+"city walls: the engineering work the Bible credits to King Hezekiah as he "
+"prepared for the Assyrian siege."
+msgstr ""
+"Надпись, высеченная в стене водного туннеля под Иерусалимом, о том "
+"мгновении, когда две артели землекопов, шедшие с противоположных концов, "
+"встретились посередине. Туннель провёл воду источника Гихон внутрь городских "
+"стен: инженерная работа, которую Библия приписывает царю Езекии, "
+"готовившемуся к ассирийской осаде."
+
+#: archaeology_strings.py:131
+msgid "The Bulla of Hezekiah"
+msgstr "Булла Езекии"
+
+#: archaeology_strings.py:132
+msgid "Jerusalem (Ophel)"
+msgstr "Иерусалим (Офел)"
+
+#: archaeology_strings.py:133
+msgid "c. 700 BC"
+msgstr "ок. 700 до н. э."
+
+#: archaeology_strings.py:134
+msgid "Excavated at the Ophel, Jerusalem, 2009"
+msgstr "Раскопана на Офеле, Иерусалим, 2009"
+
+#: archaeology_strings.py:135
+msgid ""
+"A clay sealing once pressed over the cord of a document, stamped with the "
+"royal seal of 'Hezekiah son of Ahaz, king of Judah,' above a winged sun-"
+"disk. Recovered in controlled excavation near the Temple Mount, it is a "
+"personal impression from the administration of the reforming king of "
+"Hezekiah's chapters."
+msgstr ""
+"Глиняный оттиск, некогда наложенный на шнур документа, с царской печатью "
+"«Езекии, сына Ахаза, царя Иудейского» над крылатым солнечным диском. "
+"Найденный при научных раскопках близ Храмовой горы, это личный оттиск из "
+"канцелярии царя-реформатора, о котором говорят главы о Езекии."
+
+#: archaeology_strings.py:136
+msgid "The Royal Steward Inscription"
+msgstr "Надпись царского домоправителя"
+
+#: archaeology_strings.py:137
+msgid "Silwan, Jerusalem"
+msgstr "Сильван, Иерусалим"
+
+#: archaeology_strings.py:138
+msgid "Found in situ at Silwan, 1870"
+msgstr "Найдена на месте в Сильване, 1870"
+
+#: archaeology_strings.py:139
+msgid ""
+"The carved lintel of a rock-cut tomb in Silwan, opposite the City of David, "
+"bearing a Hebrew inscription that warns against disturbing the bones of a "
+"royal steward. The official's name is broken away, but its surviving ending "
+"and his office fit Shebna, the steward whom Isaiah rebukes for hewing "
+"himself just such a showy tomb."
+msgstr ""
+"Резная притолока вырубленной в скале гробницы в Сильване, напротив Града "
+"Давидова, с еврейской надписью, предостерегающей тревожить кости царского "
+"домоправителя. Имя сановника отбито, но уцелевшее окончание и его должность "
+"подходят Севне — домоправителю, которого Исаия обличает за то, что тот "
+"вытесал себе как раз такую броскую гробницу."
+
+#: archaeology_strings.py:140
+msgid "The Ketef Hinnom Silver Scrolls"
+msgstr "Серебряные свитки из Кетеф-Хиннома"
+
+#: archaeology_strings.py:141
+msgid "Ketef Hinnom, Jerusalem"
+msgstr "Кетеф-Хинном, Иерусалим"
+
+#: archaeology_strings.py:142
+msgid "c. 600 BC"
+msgstr "ок. 600 до н. э."
+
+#: archaeology_strings.py:143
+msgid "Excavated in a burial cave at Ketef Hinnom by Gabriel Barkay, 1979"
+msgstr ""
+"Раскопаны в погребальной пещере в Кетеф-Хинноме Габриэлем Баркаем, 1979"
+
+#: archaeology_strings.py:144
+msgid ""
+"Two tiny strips of silver, rolled up and worn as amulets, from a family tomb "
+"on the shoulder of the Hinnom valley. Unrolled, each carried in scratched "
+"Hebrew letters the priestly blessing: 'The LORD bless you and keep you.' "
+"Written around 600 BC, on the eve of the exile, they are the oldest "
+"surviving words of Scripture, older than the Dead Sea Scrolls by four "
+"centuries."
+msgstr ""
+"Две крошечные серебряные полоски, свёрнутые и носимые как амулеты, из "
+"семейной гробницы на склоне долины Енном. Развёрнутые, они несли "
+"процарапанными еврейскими буквами священническое благословение: «Да "
+"благословит тебя Господь и сохранит тебя». Написанные около 600 года до н. "
+"э., накануне плена, это древнейшие уцелевшие слова Писания — на четыре века "
+"старше свитков Мёртвого моря."
+
+#: archaeology_strings.py:145
+msgid "The Babylonian Chronicle"
+msgstr "Вавилонская хроника"
+
+#: archaeology_strings.py:147
+msgid "c. 550 BC"
+msgstr "ок. 550 до н. э."
+
+#: archaeology_strings.py:148
+msgid "Acquired from Babylonia (unprovenanced)"
+msgstr "Приобретена в Вавилонии (без документированного происхождения)"
+
+#: archaeology_strings.py:149
+msgid ""
+"A clay tablet from the Babylonian Chronicles, the year-by-year record of "
+"Babylon's kings. One entry notes how Nebuchadnezzar besieged 'the city of "
+"Judah,' captured it, seized its king, and appointed another: the fall of "
+"Jerusalem in 597 BC and the exile of Jehoiachin, set down in plain "
+"Babylonian prose beside the account in Second Kings."
+msgstr ""
+"Глиняная табличка из Вавилонских хроник — погодной записи о царях Вавилона. "
+"Одна запись сообщает, как Навуходоносор осадил «город Иудеи», взял его, "
+"захватил его царя и поставил другого: падение Иерусалима в 597 году до н. э. "
+"и пленение Иехонии, изложенные сухой вавилонской прозой рядом с рассказом "
+"Четвёртой книги Царств."
+
+#: archaeology_strings.py:150
+msgid "The Lachish Letters"
+msgstr "Лахисские письма"
+
+#: archaeology_strings.py:151
+msgid "Lachish, Judah"
+msgstr "Лахис, Иудея"
+
+#: archaeology_strings.py:152
+msgid "c. 588 BC"
+msgstr "ок. 588 до н. э."
+
+#: archaeology_strings.py:153
+msgid "Excavated in the gate-room at Lachish by J. L. Starkey, 1935"
+msgstr "Раскопаны в надвратной комнате Лахиса Дж. Л. Старки, 1935"
+
+#: archaeology_strings.py:154
+msgid ""
+"Military dispatches written in ink on potsherds, found in the burnt "
+"guardroom of Lachish's gate, from the weeks when Nebuchadnezzar's army was "
+"closing on Judah. In the letter shown here, an officer reports 'we cannot "
+"see Azekah': the signal fires of the neighbouring fortress had gone out. "
+"Jeremiah names Lachish and Azekah as the last two fortified cities of Judah "
+"left standing."
+msgstr ""
+"Военные донесения, написанные чернилами на черепках и найденные в сгоревшей "
+"караульне лахисских ворот, — из тех недель, когда войско Навуходоносора "
+"подступало к Иудее. В показанном здесь письме офицер доносит: «мы не видим "
+"Азеки» — сигнальные огни соседней крепости погасли. Иеремия называет Лахис и "
+"Азеку последними двумя укреплёнными городами Иудеи, что ещё держались."
+
+#: archaeology_strings.py:155
+msgid "The Ishtar Gate of Babylon"
+msgstr "Ворота Иштар в Вавилоне"
+
+#: archaeology_strings.py:156
+msgid "6th century BC"
+msgstr "VI век до н. э."
+
+#: archaeology_strings.py:157
+msgid "Pergamon Museum, Berlin"
+msgstr "Пергамский музей, Берлин"
+
+#: archaeology_strings.py:158
+msgid "Excavated at Babylon by Koldewey, 1902–14"
+msgstr "Раскопаны в Вавилоне Кольдевеем, 1902–14"
+
+#: archaeology_strings.py:159
+msgid ""
+"A dragon of the god Marduk, in glazed and moulded brick from the Ishtar Gate "
+"of Babylon: the dazzling capital Nebuchadnezzar rebuilt, and to which Judah "
+"was carried into exile. In the book of Daniel the king surveys it in pride: "
+"'Is not this great Babylon, which I have built?'"
+msgstr ""
+"Дракон бога Мардука, из глазурованного формованного кирпича с Ворот Иштар в "
+"Вавилоне: ослепительной столицы, отстроенной Навуходоносором, куда Иудея "
+"была уведена в плен. В книге Даниила царь оглядывает её с гордостью: «Это ли "
+"не величественный Вавилон, который построил я?»"
+
+#: archaeology_strings.py:160
+msgid "The Nabonidus Cylinder"
+msgstr "Цилиндр Набонида"
+
+#: archaeology_strings.py:161
+msgid "Ur"
+msgstr "Ур"
+
+#: archaeology_strings.py:162
+msgid "c. 540 BC"
+msgstr "ок. 540 до н. э."
+
+#: archaeology_strings.py:163
+msgid "Excavated at Ur"
+msgstr "Раскопан в Уре"
+
+#: archaeology_strings.py:164
+msgid ""
+"A clay cylinder of Nabonidus, last king of Babylon, recording his building "
+"works and a prayer for his son. That son is Bel-shar-usur (Belshazzar), who "
+"in the book of Daniel holds the feast on the night Babylon falls. The "
+"cylinder explains a long-doubted detail: Belshazzar ruled as regent in his "
+"father's absence, which is why Daniel could be offered only 'third' place in "
+"the kingdom."
+msgstr ""
+"Глиняный цилиндр Набонида, последнего царя Вавилона, с записью о его "
+"строительных работах и молитвой о сыне. Этот сын — Бел-шар-уцур (Валтасар), "
+"который в книге Даниила устраивает пир в ночь падения Вавилона. Цилиндр "
+"объясняет давно оспариваемую подробность: Валтасар правил как соправитель в "
+"отсутствие отца — потому Даниилу и могли предложить лишь «третье» место в "
+"царстве."
+
+#: archaeology_strings.py:165
+msgid "The Cyrus Cylinder"
+msgstr "Цилиндр Кира"
+
+#: archaeology_strings.py:166
+msgid "after 539 BC"
+msgstr "после 539 до н. э."
+
+#: archaeology_strings.py:167
+msgid "Excavated at Babylon by Rassam, 1879"
+msgstr "Раскопан в Вавилоне Рассамом, 1879"
+
+#: archaeology_strings.py:168
+msgid ""
+"A clay cylinder inscribed in Babylonian cuneiform after Cyrus the Great of "
+"Persia took Babylon. It proclaims his policy of returning displaced peoples "
+"and restoring their sanctuaries: the same imperial outlook that, in the "
+"biblical account, let the exiles of Judah return from Babylon and rebuild "
+"the Temple. The cylinder names no Jews in particular; it attests the policy, "
+"not the specific decree."
+msgstr ""
+"Глиняный цилиндр с вавилонской клинописью, составленный после того, как Кир "
+"Великий Персидский взял Вавилон. Он провозглашает его политику возвращения "
+"переселённых народов и восстановления их святынь: тот самый имперский "
+"взгляд, который, по библейскому рассказу, позволил пленникам Иудеи вернуться "
+"из Вавилона и отстроить Храм. Цилиндр не называет иудеев особо; он "
+"свидетельствует о политике, а не о самом указе."
+
+#: archaeology_strings.py:169
+msgid "The Behistun Inscription"
+msgstr "Бехистунская надпись"
+
+#: archaeology_strings.py:170
+msgid "Behistun, Iran"
+msgstr "Бехистун, Иран"
+
+#: archaeology_strings.py:171
+msgid "c. 520 BC"
+msgstr "ок. 520 до н. э."
+
+#: archaeology_strings.py:172
+msgid "Standing cliff monument, Iran"
+msgstr "Скальный монумент на месте, Иран"
+
+#: archaeology_strings.py:173
+msgid ""
+"High on a cliff in western Iran, Darius the Great proclaimed his rise to "
+"power in three languages: the trilingual key that finally let scholars read "
+"cuneiform. Darius authorised the rebuilding of the Temple in Jerusalem; this "
+"monument shows the very king whose decree, in the book of Ezra, sent the "
+"work forward."
+msgstr ""
+"Высоко на скале в западном Иране Дарий Великий провозгласил своё восшествие "
+"к власти на трёх языках: трёхъязычный ключ, который наконец позволил учёным "
+"читать клинопись. Дарий разрешил отстроить Храм в Иерусалиме; этот монумент "
+"показывает того самого царя, чей указ, по книге Ездры, двинул работу вперёд."
+
+#: archaeology_strings.py:174
+msgid "The Heliodorus Stele"
+msgstr "Стела Гелиодора"
+
+#: archaeology_strings.py:175
+msgid "Maresha, Israel"
+msgstr "Мареша, Израиль"
+
+#: archaeology_strings.py:176
+msgid "178 BC"
+msgstr "178 до н. э."
+
+#: archaeology_strings.py:177
+msgid "Unprovenanced; matched to fragments excavated at Maresha"
+msgstr ""
+"Без документированного происхождения; сопоставлена с обломками, раскопанными "
+"в Мареше"
+
+#: archaeology_strings.py:178
+msgid ""
+"A limestone stele inscribed with letters of the Seleucid king Seleucus IV "
+"and his minister Heliodorus, appointing officials over the temples of the "
+"realm. Heliodorus is remembered in Second Maccabees as the agent sent to "
+"seize the treasures of the Temple in Jerusalem, and miraculously driven back."
+msgstr ""
+"Известняковая стела с письмами селевкидского царя Селевка IV и его министра "
+"Гелиодора о назначении надзирателей над храмами державы. Гелиодора помнят по "
+"Второй книге Маккавейской как посланного захватить сокровища Храма в "
+"Иерусалиме и чудесно отражённого."
+
+#: archaeology_strings.py:179
+msgid "A Coin of John Hyrcanus"
+msgstr "Монета Иоанна Гиркана"
+
+#: archaeology_strings.py:180
+msgid "Judea"
+msgstr "Иудея"
+
+#: archaeology_strings.py:181
+msgid "135–104 BC"
+msgstr "135–104 до н. э."
+
+#: archaeology_strings.py:182
+msgid "many collections"
+msgstr "многие собрания"
+
+#: archaeology_strings.py:183
+msgid "Hasmonean coinage (many examples known)"
+msgstr "Хасмонейская чеканка (известно много образцов)"
+
+#: archaeology_strings.py:184
+msgid ""
+"A small bronze coin of the Hasmonean ruler John Hyrcanus, its Hebrew legend "
+"naming 'Yehohanan the High Priest and the Council of the Jews,' its reverse "
+"a double cornucopia. It is a coin of the priest-kings descended from the "
+"Maccabean revolt: the independent Jewish state whose story First Maccabees "
+"carries toward the New Testament age."
+msgstr ""
+"Маленькая бронзовая монета хасмонейского правителя Иоанна Гиркана: еврейская "
+"надпись называет «Иоханана первосвященника и совет иудеев», на обороте — "
+"двойной рог изобилия. Это монета священников-царей, вышедших из "
+"Маккавейского восстания, — независимого иудейского государства, чью историю "
+"Первая книга Маккавейская доводит до эпохи Нового Завета."
+
+#: archaeology_strings.py:185
+msgid "The Great Isaiah Scroll"
+msgstr "Большой свиток Исаии"
+
+#: archaeology_strings.py:186
+msgid "Qumran, Cave 1"
+msgstr "Кумран, пещера 1"
+
+#: archaeology_strings.py:187
+msgid "c. 125 BC"
+msgstr "ок. 125 до н. э."
+
+#: archaeology_strings.py:188
+msgid "Found at Qumran, Cave 1, 1947"
+msgstr "Найден в Кумране, пещера 1, 1947"
+
+#: archaeology_strings.py:189
+msgid ""
+"A column of the Great Isaiah Scroll from Qumran: here the song of the "
+"suffering servant, 'he was wounded for our transgressions.' Found among the "
+"Dead Sea Scrolls in 1947, it is a thousand years older than the previously "
+"oldest Hebrew copies of Isaiah, and matches them closely: a witness to how "
+"faithfully the text was handed down."
+msgstr ""
+"Столбец Большого свитка Исаии из Кумрана: здесь песнь о страдающем рабе — "
+"«Он изъязвлен был за грехи наши». Найденный среди свитков Мёртвого моря в "
+"1947 году, он на тысячу лет старше прежде древнейших еврейских списков Исаии "
+"и близко с ними совпадает: свидетельство того, как верно передавался текст."
+
+#: archaeology_strings.py:190
+msgid "The Pilate Stone"
+msgstr "Камень Пилата"
+
+#: archaeology_strings.py:191
+msgid "Caesarea Maritima"
+msgstr "Кесария Приморская"
+
+#: archaeology_strings.py:192
+msgid "c. AD 26–36"
+msgstr "ок. 26–36 н. э."
+
+#: archaeology_strings.py:193
+msgid "Excavated in situ at Caesarea, 1961"
+msgstr "Раскопан на месте в Кесарии, 1961"
+
+#: archaeology_strings.py:194
+msgid ""
+"A limestone block, later reused in the theatre at Caesarea, bearing a Latin "
+"dedication that names '[Pon]tius Pilatus, [Praef]ectus Iuda[ea]e': Pontius "
+"Pilate, prefect of Judea. Found in 1961, it is the only inscription naming "
+"Pilate from his own province and time, confirming both his name and his "
+"exact title in the years of Jesus' ministry and trial."
+msgstr ""
+"Известняковый блок, позже использованный вторично в театре Кесарии, с "
+"латинским посвящением, называющим «[Пон]тия Пилата, [преф]екта Иуде[и]». "
+"Найденный в 1961 году, это единственная надпись, называющая Пилата, из его "
+"собственной провинции и его времени: она подтверждает и имя, и точный титул "
+"в годы служения и суда над Иисусом."
+
+#: archaeology_strings.py:195
+msgid "The Caiaphas Ossuary"
+msgstr "Оссуарий Каиафы"
+
+#: archaeology_strings.py:197
+msgid "1st century AD"
+msgstr "I век н. э."
+
+#: archaeology_strings.py:198
+msgid "Excavated in a Jerusalem tomb, 1990"
+msgstr "Раскопан в иерусалимской гробнице, 1990"
+
+#: archaeology_strings.py:199
+msgid ""
+"An ornately carved limestone ossuary (a box for reburied bones) found in a "
+"Jerusalem tomb in 1990. Twice inscribed 'Yehosef bar Qayafa' (Joseph, son of "
+"Caiaphas), it is widely identified with the high priest before whom, in the "
+"Gospels, Jesus was brought for trial. A minority of scholars question the "
+"identification; the name and the priestly family, however, are firmly "
+"attested."
+msgstr ""
+"Богато украшенный известняковый оссуарий (ящик для перезахоронения костей), "
+"найденный в иерусалимской гробнице в 1990 году. Дважды надписанный «Йехосеф "
+"бар Каяфа» (Иосиф, сын Каиафы), он широко отождествляется с "
+"первосвященником, перед которым, по Евангелиям, был приведён на суд Иисус. "
+"Меньшинство учёных оспаривает отождествление; само имя и священнический род, "
+"однако, засвидетельствованы твёрдо."
+
+#: archaeology_strings.py:200
+msgid "The Pool of Bethesda"
+msgstr "Купальня Вифезда"
+
+#: archaeology_strings.py:201
+msgid "Excavated in situ, Jerusalem"
+msgstr "Раскопана на месте, Иерусалим"
+
+#: archaeology_strings.py:202
+msgid ""
+"The excavated remains of a large twin pool, ringed by porticoes, on the "
+"north side of Jerusalem's Temple area. John's Gospel describes the healing "
+"of a paralysed man at the pool of Bethesda 'which has five roofed "
+"colonnades': a precise detail, once thought merely symbolic, that the "
+"archaeology of the twin pool and its surrounding porches bears out."
+msgstr ""
+"Раскопанные остатки большой двойной купальни, окружённой портиками, к северу "
+"от храмовой площади Иерусалима. Евангелие от Иоанна описывает исцеление "
+"расслабленного при купальне Вифезда, «при которой было пять крытых ходов»: "
+"точная подробность, которую когда-то считали лишь символической и которую "
+"подтверждает археология двойной купальни с её портиками."
+
+#: archaeology_strings.py:203
+msgid "The Pool of Siloam"
+msgstr "Купальня Силоам"
+
+#: archaeology_strings.py:204
+msgid "Jerusalem (City of David)"
+msgstr "Иерусалим (Град Давидов)"
+
+#: archaeology_strings.py:205
+msgid "Excavated in situ, Jerusalem, 2004"
+msgstr "Раскопана на месте, Иерусалим, 2004"
+
+#: archaeology_strings.py:206
+msgid ""
+"The stepped stone edge of the Pool of Siloam, uncovered in 2004 at the foot "
+"of the City of David: the pool fed by Hezekiah's tunnel. In John's Gospel "
+"Jesus sends a man born blind to wash here, and he returns seeing; these are "
+"the steps on which that man, and countless pilgrims, once stood."
+msgstr ""
+"Ступенчатый каменный край купальни Силоам, открытый в 2004 году у подножия "
+"Града Давидова: купальни, которую питал туннель Езекии. В Евангелии от "
+"Иоанна Иисус посылает сюда умыться слепорождённого, и тот возвращается "
+"зрячим; это те самые ступени, на которых он — и бесчисленные паломники — "
+"некогда стояли."
+
+#: archaeology_strings.py:207
+msgid "The Temple Warning Inscription"
+msgstr "Храмовая надпись-предупреждение"
+
+#: archaeology_strings.py:208
+msgid "Jerusalem (Temple Mount)"
+msgstr "Иерусалим (Храмовая гора)"
+
+#: archaeology_strings.py:209
+msgid "1st century BC–AD"
+msgstr "I век до н. э. — I век н. э."
+
+#: archaeology_strings.py:210
+msgid "Found in Jerusalem, 1871"
+msgstr "Найдена в Иерусалиме, 1871"
+
+#: archaeology_strings.py:211
+msgid ""
+"A limestone block carved with a Greek warning that forbade Gentiles, on pain "
+"of death, from passing the barrier into the inner courts of the Temple. It "
+"is the very 'dividing wall' Paul was accused of breaching when he was seized "
+"in the Temple, and the image the letter to the Ephesians turns around, "
+"declaring that Christ has broken it down."
+msgstr ""
+"Известняковый блок с греческим предупреждением, под страхом смерти "
+"запрещавшим язычникам переступать ограду во внутренние дворы Храма. Это та "
+"самая «преграда», в нарушении которой обвинили Павла, когда его схватили в "
+"Храме, и тот самый образ, который переворачивает Послание к Ефесянам, "
+"объявляя, что Христос разрушил её."
+
+#: archaeology_strings.py:212
+msgid "The Tribute Penny"
+msgstr "Динарий кесаря"
+
+#: archaeology_strings.py:213
+msgid "Lugdunum (Lyon) mint"
+msgstr "Монетный двор Лугдуна (Лион)"
+
+#: archaeology_strings.py:214
+msgid "AD 14–37"
+msgstr "14–37 н. э."
+
+#: archaeology_strings.py:215
+msgid "Roman imperial coinage (many examples known)"
+msgstr "Римская императорская чеканка (известно много образцов)"
+
+#: archaeology_strings.py:216
+msgid ""
+"A silver denarius of the emperor Tiberius, his portrait on one side, an "
+"enthroned figure on the other. A coin exactly like this is the 'tribute "
+"penny' of the Gospels: shown such a coin and asked about paying taxes, Jesus "
+"answers, 'Render to Caesar the things that are Caesar's, and to God the "
+"things that are God's.'"
+msgstr ""
+"Серебряный денарий императора Тиверия: на одной стороне его портрет, на "
+"другой — восседающая фигура. Точно такая монета и есть «динарий» Евангелий: "
+"когда Иисусу показали её и спросили о подати, Он ответил: «отдавайте "
+"кесарево кесарю, а Божие Богу»."
+
+#: archaeology_strings.py:217
+msgid "The Arch of Titus"
+msgstr "Арка Тита"
+
+#: archaeology_strings.py:218
+msgid "Rome (Forum)"
+msgstr "Рим (Форум)"
+
+#: archaeology_strings.py:219
+msgid "c. AD 81"
+msgstr "ок. 81 н. э."
+
+#: archaeology_strings.py:220
+msgid "Standing monument, Rome"
+msgstr "Стоящий монумент, Рим"
+
+#: archaeology_strings.py:221
+msgid ""
+"On the Arch of Titus in Rome, a relief shows soldiers carrying the spoils of "
+"the Jerusalem Temple in triumph (the seven-branched menorah, the table of "
+"showbread, the silver trumpets) after the city's destruction in AD 70. It is "
+"the Temple's own furniture, paraded as plunder, in the years after Jesus "
+"foretold that not one stone would be left upon another."
+msgstr ""
+"На арке Тита в Риме рельеф изображает воинов, несущих в триумфе добычу "
+"иерусалимского Храма (семисвечную менору, стол хлебов предложения, "
+"серебряные трубы) после разрушения города в 70 году н. э. Это собственная "
+"утварь Храма, проносимая как трофей, — в годы после того, как Иисус "
+"предсказал, что не останется камня на камне."
+
+#: archaeology_strings.py:222
+msgid "The Judaea Capta Coinage"
+msgstr "Монеты Judaea Capta"
+
+#: archaeology_strings.py:223
+msgid "Rome"
+msgstr "Рим"
+
+#: archaeology_strings.py:224
+msgid "AD 71"
+msgstr "71 н. э."
+
+#: archaeology_strings.py:225
+msgid ""
+"A Roman coin struck to celebrate the crushing of the Jewish revolt: a palm "
+"tree, a bound captive, a mourning woman, and the words IUDAEA CAPTA, 'Judea "
+"captured.' Minted across the empire after AD 70, it is Rome's own monument "
+"to the fall of Jerusalem that the Gospels record Jesus foretelling."
+msgstr ""
+"Римская монета, отчеканенная в честь подавления иудейского восстания: "
+"пальма, связанный пленник, скорбящая женщина и слова IUDAEA CAPTA — «Иудея "
+"пленена». Чеканенная по всей империи после 70 года н. э., это собственный "
+"памятник Рима падению Иерусалима, которое, по Евангелиям, предсказал Иисус."
+
+#: archaeology_strings.py:226
+msgid "The Forum of Philippi"
+msgstr "Форум Филипп"
+
+#: archaeology_strings.py:227
+msgid "Philippi, Macedonia"
+msgstr "Филиппы, Македония"
+
+#: archaeology_strings.py:228
+msgid "Roman era"
+msgstr "Римская эпоха"
+
+#: archaeology_strings.py:229
+msgid "Excavated by the French School at Athens, from 1914"
+msgstr "Раскопан Французской школой в Афинах, с 1914"
+
+#: archaeology_strings.py:230
+msgid ""
+"The forum of Philippi, the Roman colony in Macedonia where Paul founded his "
+"first church on European soil. Acts tells of his arrival, the conversion of "
+"Lydia by the riverside, and a night in the city jail: the gospel's first "
+"steps into Europe."
+msgstr ""
+"Форум Филипп — римской колонии в Македонии, где Павел основал первую церковь "
+"на европейской земле. Деяния рассказывают о его приходе, об обращении Лидии "
+"у реки и о ночи в городской темнице: первые шаги Евангелия в Европе."
+
+#: archaeology_strings.py:231
+msgid "The Areopagus (Mars Hill)"
+msgstr "Ареопаг (холм Марса)"
+
+#: archaeology_strings.py:232
+msgid "Athens"
+msgstr "Афины"
+
+#: archaeology_strings.py:233
+msgid "Paul's visit c. AD 50"
+msgstr "посещение Павла ок. 50 н. э."
+
+#: archaeology_strings.py:234
+msgid "Standing site, Athens"
+msgstr "Сохранившееся место, Афины"
+
+#: archaeology_strings.py:235
+msgid ""
+"The Areopagus, or Mars Hill: the rocky height below the Athenian Acropolis "
+"where the city's council met. Acts sets here Paul's address to the "
+"philosophers, taking their altar 'to an unknown god' as his starting point "
+"for the God who 'made the world and everything in it.'"
+msgstr ""
+"Ареопаг, или холм Марса: скалистая высота под афинским Акрополем, где "
+"собирался совет города. Деяния помещают сюда речь Павла к философам, который "
+"взял их жертвенник «неведомому Богу» отправной точкой для Бога, "
+"«сотворившего мир и всё, что в нём»."
+
+#: archaeology_strings.py:236
+msgid "The Bema at Corinth"
+msgstr "Бема в Коринфе"
+
+#: archaeology_strings.py:237
+msgid "Ancient Corinth"
+msgstr "Древний Коринф"
+
+#: archaeology_strings.py:238
+msgid "Excavated by the American School of Classical Studies, from 1896"
+msgstr "Раскопан Американской школой классических исследований, с 1896"
+
+#: archaeology_strings.py:239
+msgid ""
+"The forum of ancient Corinth, with the bema, the raised platform from which "
+"Roman officials gave judgment. It was before this seat, Acts records, that "
+"the proconsul Gallio dismissed the charge brought against Paul. Gallio's "
+"term of office, dated by an inscription at Delphi, is the firmest anchor for "
+"the chronology of Paul's mission."
+msgstr ""
+"Форум древнего Коринфа с бемой — возвышением, с которого римские должностные "
+"лица выносили приговор. Именно перед этим седалищем, по Деяниям, проконсул "
+"Галлион отклонил обвинение против Павла. Срок должности Галлиона, "
+"датированный надписью в Дельфах, — самая твёрдая опора для хронологии миссии "
+"Павла."
+
+#: archaeology_strings.py:240
+msgid "The Great Theatre of Ephesus"
+msgstr "Большой театр Эфеса"
+
+#: archaeology_strings.py:241
+msgid "Ephesus"
+msgstr "Эфес"
+
+#: archaeology_strings.py:242
+msgid "Excavated by the Austrian Archaeological Institute, from 1895"
+msgstr "Раскопан Австрийским археологическим институтом, с 1895"
+
+#: archaeology_strings.py:243
+msgid ""
+"The great theatre of Ephesus, which held some 25,000 people. Acts sets here "
+"the riot of the silversmiths, who feared Paul's preaching would ruin the "
+"trade in silver shrines of Artemis and filled the theatre with the chant, "
+"'Great is Artemis of the Ephesians!'"
+msgstr ""
+"Большой театр Эфеса, вмещавший около 25 000 человек. Деяния помещают сюда "
+"мятеж серебряников, которые боялись, что проповедь Павла погубит торговлю "
+"серебряными храмиками Артемиды, и наполнили театр криком: «велика Артемида "
+"Ефесская!»"
+
+#: archaeology_strings.py:244
+msgid "The Temple of Artemis"
+msgstr "Храм Артемиды"
+
+#: archaeology_strings.py:245
+msgid "rebuilt after 356 BC"
+msgstr "отстроен после 356 до н. э."
+
+#: archaeology_strings.py:246
+msgid "Site located by John Turtle Wood, 1869"
+msgstr "Место найдено Джоном Тертлом Вудом, 1869"
+
+#: archaeology_strings.py:247
+msgid ""
+"A single re-erected column marks the temple of Artemis at Ephesus, once "
+"counted among the seven wonders of the world. The cult of 'Artemis of the "
+"Ephesians,' and the craftsmen who profited from it, form the backdrop to the "
+"uproar Paul's preaching stirred in the city."
+msgstr ""
+"Одна заново поднятая колонна отмечает храм Артемиды в Эфесе, некогда "
+"причисленный к семи чудесам света. Культ «Артемиды Ефесской» и ремесленники, "
+"кормившиеся от него, — фон того возмущения, которое подняла в городе "
+"проповедь Павла."
+
+#: archaeology_strings.py:248
+msgid "The Erastus Inscription"
+msgstr "Надпись Ераста"
+
+#: archaeology_strings.py:249
+msgid "Excavated in situ at Corinth"
+msgstr "Раскопана на месте в Коринфе"
+
+#: archaeology_strings.py:250
+msgid ""
+"A paving stone by the theatre of Corinth, its bronze letters lost but their "
+"cut sockets still legible: 'Erastus, in return for his aedileship, laid this "
+"at his own expense.' Many identify this magistrate with the Erastus, 'the "
+"city treasurer,' whom Paul names sending greetings from Corinth, though the "
+"identification is not certain."
+msgstr ""
+"Плита мостовой у театра в Коринфе: её бронзовые буквы утрачены, но "
+"вырубленные гнёзда всё ещё читаются: «Ераст в благодарность за эдильство "
+"вымостил это на свои средства». Многие отождествляют этого магистрата с "
+"Ерастом, «городским казнохранителем», от которого Павел передаёт приветствие "
+"из Коринфа, хотя отождествление и не бесспорно."
+
+#: archaeology_strings.py:251
+msgid "Ancient Jericho"
+msgstr "Древний Иерихон"
+
+#: archaeology_strings.py:252
+msgid "Tell es-Sultan, Jericho"
+msgstr "Телль-эс-Султан, Иерихон"
+
+#: archaeology_strings.py:253
+msgid "tower c. 8000 BC"
+msgstr "башня ок. 8000 до н. э."
+
+#: archaeology_strings.py:254
+msgid "Tower excavated by Kathleen Kenyon, 1952–58"
+msgstr "Башня раскопана Кэтлин Кеньон, 1952–58"
+
+#: archaeology_strings.py:255
+msgid ""
+"The mound of ancient Jericho (Tell es-Sultan), among the oldest towns on "
+"earth. The great stone tower here is Neolithic, millennia older than Joshua. "
+"The Bible tells of Jericho's walls falling before Israel; the dating of the "
+"site's destruction layers is much debated, one of the harder places where "
+"text and trowel meet."
+msgstr ""
+"Холм древнего Иерихона (Телль-эс-Султан) — один из древнейших городов на "
+"земле. Большая каменная башня здесь — неолитическая, на тысячелетия старше "
+"Иисуса Навина. Библия рассказывает о падении стен Иерихона перед Израилем; "
+"датировка слоёв разрушения на этом городище горячо обсуждается — одно из "
+"самых трудных мест встречи текста и лопаты."
+
+#: archaeology_strings.py:256
+msgid "Tel Hazor"
+msgstr "Тель-Асор"
+
+#: archaeology_strings.py:257
+msgid "Bronze–Iron Age"
+msgstr "Бронзовый — железный век"
+
+#: archaeology_strings.py:258
+msgid "Excavated by Yigael Yadin, 1955–58; digs continue"
+msgstr "Раскопан Игаэлем Ядином, 1955–58; раскопки продолжаются"
+
+#: archaeology_strings.py:259
+msgid ""
+"The vast mound of Hazor, the largest tel in the land: in the Bible 'the head "
+"of all those kingdoms,' the Canaanite city Joshua is said to have burned. "
+"Excavators have found a destroyed Canaanite city beneath a later Israelite "
+"one, fortified with a monumental gate of the type the Bible links to Solomon."
+msgstr ""
+"Огромный холм Асора, самый большой телль в стране: в Библии «глава всех "
+"царств сих», ханаанский город, который, как сказано, сжёг Иисус Навин. "
+"Археологи нашли разрушенный ханаанский город под более поздним израильским, "
+"укреплённым монументальными воротами того типа, что Библия связывает с "
+"Соломоном."
+
+#: archaeology_strings.py:260
+msgid "The Gate of Megiddo"
+msgstr "Ворота Мегиддо"
+
+#: archaeology_strings.py:261
+msgid "Tel Megiddo"
+msgstr "Тель-Мегиддо"
+
+#: archaeology_strings.py:262
+msgid "10th c. BC and later"
+msgstr "X в. до н. э. и позже"
+
+#: archaeology_strings.py:263
+msgid "Excavated by the Oriental Institute of Chicago, 1925–39; digs continue"
+msgstr ""
+"Раскопаны Восточным институтом Чикагского университета, 1925–39; раскопки "
+"продолжаются"
+
+#: archaeology_strings.py:264
+msgid ""
+"The chambered gate of Megiddo, the fortress city guarding the pass into the "
+"Jezreel Valley. Here King Josiah fell facing Pharaoh Necho; and the city's "
+"hill, Har Megiddo, gives its name to Armageddon, the gathering-place of "
+"Revelation's final battle."
+msgstr ""
+"Камерные ворота Мегиддо — крепости, стерегущей проход в Изреельскую долину. "
+"Здесь пал царь Иосия, вышедший против фараона Нехао; а холм этого города, "
+"Хар-Мегиддо, дал имя Армагеддону — месту сбора для последней битвы "
+"Откровения."
+
+#: archaeology_strings.py:265
+msgid "The Sanctuary at Arad"
+msgstr "Святилище в Араде"
+
+#: archaeology_strings.py:266
+msgid "Tel Arad"
+msgstr "Тель-Арад"
+
+#: archaeology_strings.py:267
+msgid "Iron Age"
+msgstr "Железный век"
+
+#: archaeology_strings.py:268
+msgid "Excavated by Yohanan Aharoni, 1962–67"
+msgstr "Раскопано Йохананом Ахарони, 1962–67"
+
+#: archaeology_strings.py:269
+msgid ""
+"The desert fortress of Arad, holding one of the very few Israelite temples "
+"yet excavated: a courtyard with a sacrificial altar and a small inner "
+"shrine, apparently taken out of use during a religious reform of the kind "
+"the Bible credits to Hezekiah, who 'removed the high places' to centre "
+"worship on Jerusalem."
+msgstr ""
+"Пустынная крепость Арад, где сохранился один из очень немногих раскопанных "
+"израильских храмов: двор с жертвенником и малое внутреннее святилище, по "
+"всей видимости выведенное из употребления при религиозной реформе того рода, "
+"какую Библия приписывает Езекии, который «отменил высоты», чтобы "
+"сосредоточить поклонение в Иерусалиме."
+
+#: archaeology_strings.py:270
+msgid "The Herodian Temple Stones"
+msgstr "Камни Иродова Храма"
+
+#: archaeology_strings.py:271
+msgid "1st century BC"
+msgstr "I век до н. э."
+
+#: archaeology_strings.py:272
+msgid "Standing site, Jerusalem"
+msgstr "Сохранившееся место, Иерусалим"
+
+#: archaeology_strings.py:273
+msgid ""
+"The massive Herodian ashlars of the Western Wall, part of the retaining wall "
+"Herod the Great raised to enlarge the Temple platform. These are the kind of "
+"stones behind a disciple's awe, 'what wonderful stones and what wonderful "
+"buildings,' and Jesus' reply that not one would be left upon another."
+msgstr ""
+"Огромные иродовы тёсаные блоки Западной стены — часть подпорной стены, "
+"которую Ирод Великий возвёл, расширяя храмовую площадь. Это те самые камни, "
+"что стоят за изумлением ученика: «какие камни и какие здания!» — и за "
+"ответом Иисуса, что не останется камня на камне."
+
+#: archaeology_strings.py:274
+msgid "The Synagogue at Capernaum"
+msgstr "Синагога в Капернауме"
+
+#: archaeology_strings.py:275
+msgid "Capernaum, Galilee"
+msgstr "Капернаум, Галилея"
+
+#: archaeology_strings.py:276
+msgid "synagogue 4th–5th c. AD"
+msgstr "синагога IV–V вв. н. э."
+
+#: archaeology_strings.py:277
+msgid "Excavated in situ, Capernaum"
+msgstr "Раскопана на месте, Капернаум"
+
+#: archaeology_strings.py:278
+msgid ""
+"The white limestone synagogue of Capernaum, the lakeside town that was the "
+"base of Jesus' Galilean ministry. This building is later (4th–5th century), "
+"but it rests on the black basalt foundations of the 1st-century synagogue "
+"where, the Gospels say, Jesus taught and healed."
+msgstr ""
+"Синагога Капернаума из белого известняка — в приозёрном городке, который был "
+"опорой галилейского служения Иисуса. Это здание более позднее (IV–V век), но "
+"оно стоит на чёрных базальтовых основаниях синагоги I века, где, по "
+"Евангелиям, Иисус учил и исцелял."
+
+#: archaeology_strings.py:279
+msgid "A Judean Pillar Figurine"
+msgstr "Иудейская столбовидная статуэтка"
+
+#: archaeology_strings.py:280
+msgid "Judah"
+msgstr "Иудея"
+
+#: archaeology_strings.py:281
+msgid "Excavated; common in Judahite homes"
+msgstr "Раскопаны; обычны в иудейских домах"
+
+#: archaeology_strings.py:282
+msgid ""
+"Small clay figurines of a woman supporting her breasts, mass-produced and "
+"found by the hundreds in ordinary Judahite houses. Their exact meaning is "
+"debated (fertility, protection, a goddess), but they put a face on the "
+"popular household religion the prophets kept condemning, when even in "
+"Jerusalem families baked cakes for 'the queen of heaven.'"
+msgstr ""
+"Небольшие глиняные статуэтки женщины, поддерживающей груди, — изготовленные "
+"во множестве и найденные сотнями в обычных иудейских домах. Их точный смысл "
+"спорен (плодородие, защита, богиня), но они дают лицо той домашней народной "
+"религии, которую не переставали обличать пророки, когда даже в Иерусалиме "
+"семьи пекли пирожки «богине неба»."
+
+#: archaeology_strings.py:283
+msgid "An Israelite Oil Lamp"
+msgstr "Израильский масляный светильник"
+
+#: archaeology_strings.py:284
+msgid "Levant"
+msgstr "Левант"
+
+#: archaeology_strings.py:285
+msgid "c. 900 BC"
+msgstr "ок. 900 до н. э."
+
+#: archaeology_strings.py:286
+msgid "Metropolitan Museum (acc. 1934); findspot unrecorded"
+msgstr "Метрополитен-музей (поступление 1934); место находки не записано"
+
+#: archaeology_strings.py:287
+msgid ""
+"A simple wheel-made saucer with one edge pinched into a spout to hold the "
+"wick: the lamp that lit every Israelite house, burning a little olive oil "
+"through the night. Plain and everywhere, it is the lamp of the Psalmist's "
+"'lamp unto my feet, and a light unto my path.'"
+msgstr ""
+"Простое блюдце, сделанное на круге, с одним защипнутым краем-носиком для "
+"фитиля: светильник, освещавший каждый израильский дом и всю ночь сжигавший "
+"немного оливкового масла. Незатейливый и повсеместный, это светильник "
+"псалмопевца: «светильник ноге моей и свет стезе моей»."
+
+#: archaeology_strings.py:288
+msgid "The Four-Room House"
+msgstr "Четырёхкомнатный дом"
+
+#: archaeology_strings.py:289
+msgid "(modern reconstruction)"
+msgstr "(современная реконструкция)"
+
+#: archaeology_strings.py:290
+msgid "Iron Age type"
+msgstr "Тип железного века"
+
+#: archaeology_strings.py:291
+msgid "Harvard Semitic Museum"
+msgstr "Гарвардский семитский музей"
+
+#: archaeology_strings.py:292
+msgid "Modern full-scale reconstruction (Harvard Semitic Museum)"
+msgstr ""
+"Современная реконструкция в натуральную величину (Гарвардский семитский "
+"музей)"
+
+#: archaeology_strings.py:293
+msgid ""
+"A full-scale modern reconstruction of the 'four-room house,' the standard "
+"Israelite dwelling of the Iron Age: a broad rear room behind three long "
+"spaces, the ground floor for animals and storage, the family living above. "
+"This is the house behind countless biblical scenes: the home whose doorposts "
+"were to carry the words of the Law."
+msgstr ""
+"Современная реконструкция в натуральную величину «четырёхкомнатного дома» — "
+"обычного израильского жилища железного века: широкая задняя комната за тремя "
+"длинными помещениями, первый этаж для скота и припасов, семья живёт наверху. "
+"Это дом, стоящий за бесчисленными библейскими сценами, — тот, на косяках "
+"которого надлежало написать слова Закона."
+
+#: archaeology_strings.py:294
+msgid "A Rock-Cut Winepress"
+msgstr "Давильня, вырубленная в скале"
+
+#: archaeology_strings.py:295
+msgid "Judean hills, near Jerusalem"
+msgstr "Иудейские горы, близ Иерусалима"
+
+#: archaeology_strings.py:296
+msgid "Iron Age–Roman"
+msgstr "Железный век — римское время"
+
+#: archaeology_strings.py:297
+msgid "Rock-cut installation, Judean hills"
+msgstr "Установка, вырубленная в скале, Иудейские горы"
+
+#: archaeology_strings.py:298
+msgid ""
+"A winepress hewn from the bedrock: an upper floor where grapes were trodden "
+"underfoot, and a lower vat where the juice ran down and gathered. Thousands "
+"dot the hills of the land. Isaiah's song of the vineyard tells of one being "
+"cut. The treading of the press, juice splashing the treader's garments red, "
+"became Scripture's image of both joy and wrath."
+msgstr ""
+"Давильня, высеченная в материковой скале: верхняя площадка, где виноград "
+"топтали ногами, и нижний чан, куда стекал и собирался сок. Тысячи таких "
+"усеивают горы этой земли. Песнь Исаии о винограднике рассказывает, как "
+"высекали одну из них. Топтание точила, когда сок багрит одежды топчущего, "
+"стало в Писании образом и радости, и гнева."
+
+#: archaeology_strings.py:299
+msgid "Judean Scale Weights"
+msgstr "Иудейские весовые гирьки"
+
+#: archaeology_strings.py:300
+msgid "Excavated, Judahite sites"
+msgstr "Раскопаны на иудейских городищах"
+
+#: archaeology_strings.py:301
+msgid ""
+"A graded set of polished limestone weights for the balance scale, several "
+"inscribed with their value: the shekel and its fractions, the beka, the pim. "
+"The standards were never quite uniform, which is why the Law returns so "
+"often to honest weights, and why a 'just balance' and a hidden 'bag of "
+"deceitful weights' could stand for righteousness and fraud themselves."
+msgstr ""
+"Набор ступенчатых полированных известняковых гирек для весов, на нескольких "
+"обозначен их вес: сикль и его доли, бека, пим. Стандарты никогда не были "
+"вполне единообразны — вот почему Закон так часто возвращается к честным "
+"весам и почему «верные весы» и припрятанная «сума с обманчивыми гирями» "
+"могли означать саму праведность и сам обман."
+
+#: archaeology_strings.py:302
+msgid "A Collared-Rim Storage Jar"
+msgstr "Сосуд с воротничковым венчиком"
+
+#: archaeology_strings.py:303
+msgid "Shiloh"
+msgstr "Силом"
+
+#: archaeology_strings.py:304
+msgid "12th–11th century BC"
+msgstr "XII–XI век до н. э."
+
+#: archaeology_strings.py:305
+msgid "on display at ancient Shiloh"
+msgstr "выставлен в древнем Силоме"
+
+#: archaeology_strings.py:306
+msgid "Excavated at Shiloh"
+msgstr "Раскопан в Силоме"
+
+#: archaeology_strings.py:307
+msgid ""
+"A large collared-rim storage jar: the heavy pithos, named for the ridge at "
+"its neck, that became a hallmark of the new highland villages of the early "
+"Iron Age, the world of the settlement and the judges. This one comes from "
+"Shiloh, where the tabernacle stood and the boy Samuel served; jars like it "
+"held the grain, oil, and wine of a household's year."
+msgstr ""
+"Большой сосуд для припасов с воротничковым венчиком: тяжёлый пифос, "
+"названный по валику на горле, ставший приметой новых нагорных селений "
+"раннего железного века — мира заселения земли и судей. Этот происходит из "
+"Силома, где стояла скиния и служил отрок Самуил; в таких сосудах держали "
+"зерно, масло и вино на год для целого дома."
+
+#: archaeology_strings.py:308
+msgid "An LMLK Seal Impression"
+msgstr "Оттиск печати LMLK"
+
+#: archaeology_strings.py:309
+msgid "Excavated; thousands known across Judah"
+msgstr "Раскопаны; известны тысячи по всей Иудее"
+
+#: archaeology_strings.py:310
+msgid ""
+"A jar handle stamped before firing with a royal seal: a four-winged beetle, "
+"the paleo-Hebrew letters l-m-l-k ('belonging to the king') above, and a town "
+"name below. Thousands are known, almost all from the years around Hezekiah's "
+"reign. They mark a royal system of storage jars, most likely provisioning "
+"Judah's towns against the Assyrian onslaught the Bible records him preparing "
+"for."
+msgstr ""
+"Ручка сосуда, оттиснутая до обжига царской печатью: четырёхкрылый жук, над "
+"ним палеоеврейские буквы l-m-l-k («принадлежит царю»), под ним — название "
+"города. Известны тысячи, почти все из лет около царствования Езекии. Они "
+"отмечают царскую систему сосудов-хранилищ, скорее всего снабжавшую города "
+"Иудеи перед ассирийским натиском, к которому, по Библии, Езекия готовился."
+
+#: archaeology_strings.py:311
+msgid "A Herodian Oil Lamp"
+msgstr "Иродианский масляный светильник"
+
+#: archaeology_strings.py:312
+msgid "Michael C. Carlos Museum, Atlanta"
+msgstr "Музей Майкла Карлоса, Атланта"
+
+#: archaeology_strings.py:313
+msgid "Common Herodian-period type"
+msgstr "Обычный тип иродианского времени"
+
+#: archaeology_strings.py:314
+msgid ""
+"The small wheel-made lamp of the New Testament age, with a short nozzle for "
+"the wick and a wide hole for the oil. Lamps like this lit the houses of "
+"Jesus' day: the lamp set on a stand, not under a basket; the lamp a woman "
+"lights to sweep her house in search of one lost coin."
+msgstr ""
+"Маленький светильник новозаветной поры, сделанный на круге, с коротким "
+"носиком для фитиля и широким отверстием для масла. Такие светильники "
+"освещали дома времён Иисуса: светильник, который ставят на подсвечнике, а не "
+"под сосудом; светильник, который зажигает женщина, чтобы мести дом в поисках "
+"одной потерянной монеты."
+
+#: archaeology_strings.py:315
+msgid ""
+"A drawing of the inscription's letters; line 9 carries the phrase bytdwd, "
+"'House of David.'"
+msgstr "Прорисовка букв надписи; в 9-й строке стоит bytdwd — «дом Давидов»."
+
+#: archaeology_strings.py:316
+msgid ""
+"A closeup of line 27, where the hieroglyphs spell out the name 'Israel.'"
+msgstr "Крупным планом строка 27, где иероглифы выписывают имя «Израиль»."
+
+#: archaeology_strings.py:317
+msgid ""
+"The tribute panel up close: the figure prostrate before Shalmaneser is "
+"labelled 'Jehu, son of Omri,' the only contemporary image of a king of "
+"Israel."
+msgstr ""
+"Пояс с данью вблизи: фигура, простёртая перед Салманасаром, подписана «Ииуй, "
+"сын Амврия» — единственное прижизненное изображение царя Израиля."
+
+#: archaeology_strings.py:318
+msgid ""
+"Line 18 (circled), naming YHWH, the God of Israel, among the spoils Mesha "
+"carried off."
+msgstr ""
+"Строка 18 (обведена), называющая ЯХВЕ, Бога Израилева, среди добычи, которую "
+"унёс Меша."
+
+#: archaeology_strings.py:319
+msgid ""
+"Another panel of the same relief: Assyrian siege-ramps and engines storming "
+"the walls of Lachish."
+msgstr ""
+"Другая плита того же рельефа: ассирийские осадные насыпи и машины штурмуют "
+"стены Лахиса."
+
+#: archaeology_strings.py:320
+msgid ""
+"The letters read closely: '[E]RASTVS PRO AED[ILITATE] S[VA] P[ECVNIA] "
+"STRAVIT,' Erastus paving it at his own expense."
+msgstr ""
+"Буквы вблизи: «[E]RASTVS PRO AED[ILITATE] S[VA] P[ECVNIA] STRAVIT» — Ераст "
+"вымостил это на свои средства."
+
+#: archaeology_strings.py:321
+msgid "Tell (tel)"
+msgstr "Телль (тель)"
+
+#: archaeology_strings.py:322
+msgid ""
+"A mound built up over centuries as a town was rebuilt on its own ruins, "
+"layer upon layer: the characteristic site of Near Eastern archaeology."
+msgstr ""
+"Холм, наросший за века оттого, что город отстраивали на его же развалинах, "
+"слой за слоем: характерный памятник ближневосточной археологии."
+
+#: archaeology_strings.py:323
+msgid "Stratum"
+msgstr "Слой (стратум)"
+
+#: archaeology_strings.py:324
+msgid ""
+"A single layer of occupation within a tell. Reading the layers in order "
+"(stratigraphy) is how a site and the objects in it are dated."
+msgstr ""
+"Отдельный слой обитания внутри телля. Чтение слоёв по порядку (стратиграфия) "
+"— это и есть способ датировать памятник и найденные в нём предметы."
+
+#: archaeology_strings.py:325
+msgid "In situ"
+msgstr "In situ"
+
+#: archaeology_strings.py:326
+msgid ""
+"Found in its original place, in a documented archaeological context, as "
+"opposed to an object that surfaced on the antiquities market."
+msgstr ""
+"Найдено на своём первоначальном месте, в документированном археологическом "
+"контексте — в отличие от предмета, всплывшего на рынке древностей."
+
+#: archaeology_strings.py:328
+msgid ""
+"The recorded history of where an object was found and how it reached its "
+"present home. A secure provenance is what separates evidence from a possible "
+"forgery."
+msgstr ""
+"Задокументированная история того, где предмет был найден и как он попал "
+"туда, где находится теперь. Надёжное происхождение — это то, что отделяет "
+"свидетельство от возможной подделки."
+
+#: archaeology_strings.py:329
+msgid "Stele"
+msgstr "Стела"
+
+#: archaeology_strings.py:330
+msgid ""
+"An upright stone slab carved with an inscription or relief and set up as a "
+"monument, often to mark a victory or a boundary."
+msgstr ""
+"Поставленная стоймя каменная плита с надписью или рельефом, воздвигнутая как "
+"памятник — часто в знак победы или как межевой знак."
+
+#: archaeology_strings.py:331
+msgid "Relief"
+msgstr "Рельеф"
+
+#: archaeology_strings.py:332
+msgid ""
+"A carving raised from a flat background, as on the palace walls and "
+"monuments of Assyria and Egypt."
+msgstr ""
+"Резьба, выступающая над плоским фоном, как на дворцовых стенах и монументах "
+"Ассирии и Египта."
+
+#: archaeology_strings.py:333
+msgid "Cuneiform"
+msgstr "Клинопись"
+
+#: archaeology_strings.py:334
+msgid ""
+"Wedge-shaped script pressed into wet clay with a reed stylus, used across "
+"Mesopotamia for Akkadian, Sumerian, and other languages."
+msgstr ""
+"Клиновидное письмо, вдавливаемое в сырую глину тростниковой палочкой; "
+"применялось по всей Месопотамии для аккадского, шумерского и других языков."
+
+#: archaeology_strings.py:335
+msgid "Ostracon"
+msgstr "Остракон"
+
+#: archaeology_strings.py:336
+msgid ""
+"A potsherd reused as a cheap writing surface for notes, receipts, and "
+"letters: the everyday paper of the ancient world, as in the Lachish Letters."
+msgstr ""
+"Черепок, использованный вторично как дешёвая поверхность для записок, "
+"расписок и писем: повседневная бумага древнего мира, как в Лахисских письмах."
+
+#: archaeology_strings.py:337
+msgid "Bulla"
+msgstr "Булла"
+
+#: archaeology_strings.py:338
+msgid ""
+"A lump of clay pressed over the cord of a rolled document and stamped with a "
+"seal, preserving the owner's name in miniature."
+msgstr ""
+"Комок глины, наложенный на шнур свёрнутого документа и оттиснутый печатью, "
+"сохраняющий имя владельца в миниатюре."
+
+#: archaeology_strings.py:339
+msgid "Epigraphy"
+msgstr "Эпиграфика"
+
+#: archaeology_strings.py:340
+msgid "The study of ancient inscriptions: their script, language, and dating."
+msgstr "Наука о древних надписях: их письме, языке и датировке."
+
+#: archaeology_strings.py:341
+msgid "Eponym"
+msgstr "Эпоним"
+
+#: archaeology_strings.py:342
+msgid ""
+"An Assyrian official after whom a year was named. The surviving eponym lists "
+"give Assyrian chronology its backbone, fixing dates like 853 BC for the "
+"battle of Qarqar on the Kurkh Monolith."
+msgstr ""
+"Ассирийский сановник, по имени которого назывался год. Уцелевшие списки "
+"эпонимов дают ассирийской хронологии её костяк, закрепляя такие даты, как "
+"853 год до н. э. для битвы при Каркаре на Курхском монолите."
+
+#: archaeology_strings.py:343
+msgid "Ossuary"
+msgstr "Оссуарий"
+
+#: archaeology_strings.py:344
+msgid ""
+"A stone box for the reburied bones of the dead, common in and around "
+"Jerusalem in the first century AD."
+msgstr ""
+"Каменный ящик для перезахороненных костей умершего; был обычен в Иерусалиме "
+"и вокруг него в I веке н. э."
+
+#: archaeology_strings.py:345
+msgid "Ashlar"
+msgstr "Тёсаный блок"
+
+#: archaeology_strings.py:346
+msgid ""
+"A large building stone squared and finely dressed on its faces, as in the "
+"Herodian masonry of the Temple platform."
+msgstr ""
+"Крупный строительный камень, обтёсанный под прямой угол и тонко обработанный "
+"по граням, как в иродовой кладке храмовой площади."
+
+#: archaeology_strings.py:347
+msgid "Bema"
+msgstr "Бема"
+
+#: archaeology_strings.py:348
+msgid ""
+"A raised platform from which a Roman magistrate gave public judgment, as at "
+"Corinth."
+msgstr ""
+"Возвышение, с которого римский магистрат выносил приговор при народе, как в "
+"Коринфе."
+
+#: archaeology_strings.py:349
+msgid "Squeeze"
+msgstr "Эстампаж"
+
+#: archaeology_strings.py:350
+msgid ""
+"A paper impression pressed onto an inscription to record its text. The Mesha "
+"Stele is partly known from a squeeze taken before the stone was broken."
+msgstr ""
+"Бумажный оттиск, снятый с надписи, чтобы сохранить её текст. Стела Меши "
+"отчасти известна по эстампажу, снятому до того, как камень был разбит."
+
+#: archaeology_strings.py:351
+msgid ""
+"The standard sourcebook: the inscriptions gathered here, in scholarly "
+"translation."
+msgstr ""
+"Стандартный сборник источников: надписи, собранные здесь в научном переводе."
+
+#: archaeology_strings.py:352
+msgid ""
+"The careful catalogue behind the lists of biblical figures named in the "
+"epigraphic record."
+msgstr ""
+"Тщательный каталог, стоящий за списками библейских лиц, названных в "
+"эпиграфических памятниках."
+
+#: archaeology_strings.py:353
+msgid ""
+"A standard survey of the archaeology of ancient Israel and its neighbours."
+msgstr "Стандартный обзор археологии древнего Израиля и его соседей."
+
+#: archaeology_strings.py:354
+msgid "A brief, even-handed entry point to the field and its methods."
+msgstr "Краткое и беспристрастное введение в эту область и её методы."
+
+#: archaeology_strings.py:355
+msgid ""
+"A wide-ranging scholarly case for the Old Testament's standing as history."
+msgstr "Обширная научная защита исторической достоверности Ветхого Завета."
+
+#: archaeology_strings.py:356
+msgid ""
+"The influential minimalist challenge, which redates much of the tradition; "
+"worth knowing and weighing against the evidence above."
+msgstr ""
+"Влиятельный минималистский вызов, передатирующий значительную часть "
+"предания; стоит знать и взвешивать рядом с приведёнными выше свидетельствами."
+
+#: archaeology_strings.py:357
+msgid ""
+"Catalogue entries, with photographs and bibliography, for many of the "
+"objects shown here."
+msgstr ""
+"Каталожные статьи с фотографиями и библиографией для многих из показанных "
+"здесь предметов."
 
 #: audio_pill.py:130
 msgid "Back fifteen seconds"
@@ -876,6 +2996,8 @@ msgstr "Перейти к вечернему чтению"
 msgid "Fetching the reading"
 msgstr "Загружается чтение"
 
+#. fetch_episode answers every failure with None, so this says no
+#. more than it knows.
 #: audio_surfaces.py:309 audio_surfaces.py:810 window.py:2283
 msgid "Could not fetch the reading"
 msgstr "Не удалось загрузить чтение"
@@ -884,6 +3006,10 @@ msgstr "Не удалось загрузить чтение"
 msgid "Could not play the reading"
 msgstr "Не удалось воспроизвести чтение"
 
+#. Naming the reader is a condition of some of these licences
+#. and not of others, so it is the record that decides — not a
+#. per-translation branch here. Where a credit is required this
+#. is the point of use, and so the place to give it.
 #: audio_surfaces.py:509
 #, python-brace-format
 msgid "Listen to this chapter — read by {credit}"
@@ -893,10 +3019,14 @@ msgstr "Послушать эту главу — читает {credit}"
 msgid "Listen to this chapter"
 msgstr "Послушать эту главу"
 
+#. The publisher's own title for the psalm, which says more than
+#. "play" ever could.
 #: audio_surfaces.py:603 audio_surfaces.py:605
 msgid "Listen to this psalm"
 msgstr "Послушать этот псалом"
 
+#. Curated feature name shown in the UI. MODULE_KEY ('Historical
+#. Commentaries') remains the on-disk identity used everywhere else.
 #: catena_bridge.py:123
 msgid "Voices of the Church"
 msgstr "Голоса Церкви"
@@ -1005,8 +3135,8 @@ msgstr "Фильтр по традиции"
 msgid "Historical commentary"
 msgstr "Исторический комментарий"
 
-#: catena_reader.py:231 module_manager.py:538 module_manager.py:554
-#: module_manager.py:1436 module_manager.py:1443
+#: catena_reader.py:231 module_manager.py:560 module_manager.py:576
+#: module_manager.py:1458 module_manager.py:1465
 msgid "Historical Commentaries"
 msgstr "Исторические толкования"
 
@@ -1057,6 +3187,9 @@ msgstr[0] "Показать все {n} голос"
 msgstr[1] "Показать все {n} голоса"
 msgstr[2] "Показать все {n} голосов"
 
+#. ── list page ──────────────────────────────────────────────────────────────
+#. Kind tabs, in display order. The picker shows 'All' plus only the
+#. kinds actually installed.
 #: catena_reader.py:310 module_picker.py:212
 msgid "All"
 msgstr "Все"
@@ -1265,6 +3398,7 @@ msgstr "Сороковое"
 msgid "The Circumcision of Christ"
 msgstr "Обрезание Христово"
 
+#. Epiphany itself fell on this Sunday; its feast serves the week.
 #: church_year.py:119 church_year.py:235
 msgid "The Epiphany"
 msgstr "Богоявление"
@@ -1497,6 +3631,7 @@ msgstr "Вознесение"
 msgid "The Sunday after Christmas Day"
 msgstr "Воскресенье после Рождества"
 
+#. Christmas on a Sunday: its week is Christmastide, not Advent.
 #: church_year.py:221
 msgid "Christmastide"
 msgstr "Святки"
@@ -1979,19 +4114,19 @@ msgstr "сын, как думали"
 msgid "of God"
 msgstr "Божий"
 
-#: genealogy_bridge.py:649
+#: genealogy_bridge.py:653
 msgid "Masoretic Text"
 msgstr "Масоретский текст"
 
-#: genealogy_bridge.py:650
+#: genealogy_bridge.py:654
 msgid "Septuagint"
 msgstr "Септуагинта"
 
-#: genealogy_bridge.py:651
+#: genealogy_bridge.py:655
 msgid "Samaritan Pentateuch"
 msgstr "Самаритянское Пятикнижие"
 
-#: genealogy_bridge.py:658
+#: genealogy_bridge.py:662
 msgid ""
 "The genealogies of Scripture, drawn: who descends from whom, what the names "
 "mean, and a route back to the passage each line comes from."
@@ -1999,16 +4134,16 @@ msgstr ""
 "Родословия Писания в рисунках: кто от кого происходит, что означают имена и "
 "путь обратно к тому месту, откуда взята каждая линия."
 
-#: genealogy_bridge.py:661
+#: genealogy_bridge.py:665
 #, python-brace-format
 msgid "{people} people, {charts} charts"
 msgstr "{people} человек, {charts} диаграмм"
 
-#: genealogy_bridge.py:664
+#: genealogy_bridge.py:668
 msgid "Curated from the biblical text; public domain"
 msgstr "Составлено по библейскому тексту; общественное достояние"
 
-#: genealogy_bridge.py:665
+#: genealogy_bridge.py:669
 msgid ""
 "Every line carries the verse it is drawn from. Where a genealogy leaves "
 "generations out, the gap is drawn as a gap; where two writers disagree, both "
@@ -2018,22 +4153,22 @@ msgstr ""
 "поколения, пропуск нарисован как пропуск; где два писателя расходятся, "
 "показаны оба и ни один не исправлен молча."
 
-#: genealogy_layout.py:158
+#: genealogy_layout.py:165
 #, python-format
 msgid "mother: %s"
 msgstr "мать: %s"
 
-#: genealogy_layout.py:160
+#: genealogy_layout.py:167
 #, python-format
 msgid "%(n)d generations omitted here; %(where)s names them."
 msgstr "Здесь опущено поколений: %(n)d; их называет %(where)s."
 
-#: genealogy_layout.py:266 genealogy_layout.py:577
+#: genealogy_layout.py:280 genealogy_layout.py:789
 #, python-format
 msgid "%(n)d written, %(claim)d claimed"
 msgstr "записано %(n)d, заявлено %(claim)d"
 
-#: genealogy_layout.py:346
+#: genealogy_layout.py:441
 #, python-format
 msgid "%d generation, collapsed"
 msgid_plural "%d generations, collapsed"
@@ -2041,7 +4176,7 @@ msgstr[0] "%d поколение, свёрнуто"
 msgstr[1] "%d поколения, свёрнуто"
 msgstr[2] "%d поколений, свёрнуто"
 
-#: genealogy_layout.py:369
+#: genealogy_layout.py:466
 #, python-format
 msgid "%d generation omitted"
 msgid_plural "%d generations omitted"
@@ -2049,19 +4184,28 @@ msgstr[0] "опущено %d поколение"
 msgstr[1] "опущено %d поколения"
 msgstr[2] "опущено %d поколений"
 
-#: genealogy_layout.py:557
+#. : The rail's three band labels. Module-level because the spine has to
+#. : reserve room for them before `_register_bands` draws them, and a copy of
+#. : the list in each place is a copy that drifts.
+#. :
+#. : `N_`, not a marker of our own: xgettext is told `--keyword=N_` and knows
+#. : nothing about any other name. A layout-local `N_ID` marked these three for
+#. : a tool that never looked, so `_(labels[i])` resolved a msgid the catalogue
+#. : had never heard of and Matthew's three bands stayed in English on a
+#. : Spanish plate.
+#: genealogy_layout.py:753
 msgid "Abraham to David"
 msgstr "От Авраама до Давида"
 
-#: genealogy_layout.py:557
+#: genealogy_layout.py:753
 msgid "David to the exile"
 msgstr "От Давида до переселения"
 
-#: genealogy_layout.py:558
+#: genealogy_layout.py:754
 msgid "The exile to the Christ"
 msgstr "От переселения до Христа"
 
-#: genealogy_layout.py:579
+#: genealogy_layout.py:791
 #, python-format
 msgid "%d name"
 msgid_plural "%d names"
@@ -2069,69 +4213,87 @@ msgstr[0] "%d имя"
 msgstr[1] "%d имени"
 msgstr[2] "%d имён"
 
-#: genealogy_layout.py:626
+#: genealogy_layout.py:831 genealogy_layout.py:901 genealogy_layout.py:979
+msgid "no mother named"
+msgstr "мать не названа"
+
+#: genealogy_layout.py:866
 #, python-format
 msgid "also %s"
 msgstr "он же %s"
 
-#: genealogy_layout.py:640 genealogy_layout.py:676 genealogy_layout.py:735
-msgid "no mother named"
-msgstr "мать не названа"
-
-#: genealogy_layout.py:716 genealogy_layout.py:721
+#: genealogy_layout.py:952 genealogy_layout.py:964
 msgid "the line continues here"
 msgstr "здесь линия продолжается"
 
-#: genealogy_layout.py:727
+#: genealogy_layout.py:971
 #, python-format
 msgid "Grouping and order from %s"
 msgstr "Группировка и порядок: %s"
 
-#: genealogy_layout.py:781
+#. Beside the chips when they leave room for it, on its own line when
+#. they do not. Three chips reading «Масоретский текст», «Септуагинта»
+#. and «Самаритянское Пятикнижие» leave 104px of a 238px note, and the
+#. note explains what the greyed chip means — cutting it to «серым:»
+#. would leave the reader with the question and none of the answer.
+#. (`_ellipsize` returns the string untouched for a non-positive
+#. budget, which once put this note 400px off the right edge.)
+#: genealogy_layout.py:1025
 msgid "greyed: no such text installed"
 msgstr "серым: такой текст не установлен"
 
-#: genealogy_layout.py:825
+#: genealogy_layout.py:1069
 #, python-format
 msgid "AM %d"
 msgstr "AM %d"
 
-#: genealogy_layout.py:838
+#. The flood line sits near the right edge by construction — it is late
+#. in the reckoning — so its label goes on whichever side has room.
+#: genealogy_layout.py:1082
 #, python-format
 msgid "the flood · AM %d"
 msgstr "потоп · AM %d"
 
-#: genealogy_layout.py:872
+#. Put the callout on whichever side of the bar it fits. At the
+#. flood line there are barely a hundred pixels of plate left, and
+#. the first render clipped this label mid-word.
+#: genealogy_layout.py:1116
 msgid "dies in the flood year"
 msgstr "умирает в год потопа"
 
-#: genealogy_layout.py:890
+#: genealogy_layout.py:1134
 #, python-format
 msgid "Reckoned under the %s."
 msgstr "Исчислено по: %s."
 
-#: genealogy_layout.py:893
+#: genealogy_layout.py:1137
 #, python-format
 msgid "%(who)s: born AM %(b)d, lived %(t)d years, died AM %(d)d (%(ref)s)"
 msgstr "%(who)s: род. AM %(b)d, прожил лет: %(t)d, умер AM %(d)d (%(ref)s)"
 
-#: genealogy_layout.py:936
+#: genealogy_layout.py:1180
 msgid "each names a different step"
 msgstr "каждый называет своё звено"
 
-#: genealogy_layout.py:937
+#: genealogy_layout.py:1181
 msgid "one man, two fathers"
 msgstr "один человек, два отца"
 
-#: genealogy_layout.py:968
+#: genealogy_layout.py:1212
 msgid "both agree"
 msgstr "оба согласны"
 
-#: genealogy_layout.py:1008
-msgid "reads upward in the text; inverted here to align"
-msgstr "в тексте — снизу вверх; здесь перевёрнуто"
-
-#: genealogy_layout.py:1035
+#. The two columns sit at fixed fractions of the width, so everything on
+#. this plate is centred on a point that moves when the plate narrows —
+#. and the column labels then run into the note between them. At 700 the
+#. Spanish «20 nombres más» and «ningún nombre en común» overlapped by
+#. eleven pixels. The plate takes the width its own labels need instead.
+#. The one row with no fallback: a "n further names" count on each side and
+#. the note between them share a line. (The tie rows' headline has one —
+#. it drops to its own line when the side labels reach it — so it does not
+#. bind here.) A column label is centred at 0.28 of the width and the note
+#. at 0.5, so the air between them is 0.22 of the width less half of each.
+#: genealogy_layout.py:1294 genealogy_layout.py:1347
 #, python-format
 msgid "%d further name"
 msgid_plural "%d further names"
@@ -2139,16 +4301,20 @@ msgstr[0] "ещё %d имя"
 msgstr[1] "ещё %d имени"
 msgstr[2] "ещё %d имён"
 
-#: genealogy_layout.py:1043
+#: genealogy_layout.py:1296 genealogy_layout.py:1355
 msgid "no name in common"
 msgstr "ни одного общего имени"
 
-#: genealogy_layout.py:1044
+#: genealogy_layout.py:1297 genealogy_layout.py:1356
 #, python-format
 msgid "%d shared"
 msgstr "общих: %d"
 
-#: genealogy_layout.py:1066
+#: genealogy_layout.py:1313
+msgid "reads upward in the text; inverted here to align"
+msgstr "в тексте — снизу вверх; здесь перевёрнуто"
+
+#: genealogy_layout.py:1378
 #, python-format
 msgid "%d more name in common"
 msgid_plural "%d more names in common"
@@ -2156,7 +4322,7 @@ msgstr[0] "ещё %d общее имя"
 msgstr[1] "ещё %d общих имени"
 msgstr[2] "ещё %d общих имён"
 
-#: genealogy_layout.py:1094
+#: genealogy_layout.py:1406
 #, python-format
 msgid ""
 "%(a)s and %(b)s trace the same descent and agree at %(n)d names: %(who)s. "
@@ -2166,14 +4332,23 @@ msgstr ""
 "(%(n)d): %(who)s. Во всём остальном они расходятся, и эта диаграмма не "
 "разрешает расхождение."
 
-#: genealogy_reader.py:332
-msgid "Charts"
-msgstr "Диаграммы"
+#: genealogy_reader.py:577 window.py:3007
+msgid "Previous page"
+msgstr "Предыдущая страница"
 
-#: genealogy_reader.py:493
+#: genealogy_reader.py:579 window.py:3006
+msgid "Next page"
+msgstr "Следующая страница"
+
+#: genealogy_reader.py:820
 #, python-format
 msgid "Against it: %s"
 msgstr "Против: %s"
+
+#: genealogy_reader.py:850
+#, python-format
+msgid "%(page)d of %(total)d"
+msgstr "%(page)d из %(total)d"
 
 #: genealogy_strings.py:27
 msgid "The lines the Bible keeps, drawn so they can be held"
@@ -2191,130 +4366,130 @@ msgid ""
 "writers disagree, both are shown and neither is quietly corrected."
 msgstr ""
 "Писание хранит списки имён, и читатели их пропускают. Это не пустое место: "
-"это хребет, на котором держится вся остальная книга, и писатели поместили "
-"их там, где поместили, намеренно.\n"
+"это хребет, на котором держится вся остальная книга, и писатели поместили их "
+"там, где поместили, намеренно.\n"
 "\n"
 "Каждая линия ниже взята из текста и ссылается на него. Где родословие "
 "опускает поколения, пропуск нарисован как пропуск. Где два писателя "
 "расходятся, показаны оба и ни один не исправлен молча."
 
-#: genealogy_strings.py:36
+#: genealogy_strings.py:35
 msgctxt "person"
 msgid "Adam"
 msgstr "Адам"
 
-#: genealogy_strings.py:37
+#: genealogy_strings.py:36
 msgid "man; earth"
 msgstr "человек; земля"
 
-#: genealogy_strings.py:38
+#: genealogy_strings.py:37
 msgid "The first man, and the head Luke traces the line back to."
 msgstr "Первый человек — и тот, к кому Лука возводит родословие."
 
-#: genealogy_strings.py:39
+#: genealogy_strings.py:38
 msgctxt "person"
 msgid "Seth"
 msgstr "Сиф"
 
-#: genealogy_strings.py:40
+#: genealogy_strings.py:39
 msgid "appointed"
 msgstr "назначенный"
 
-#: genealogy_strings.py:41
+#: genealogy_strings.py:40
 msgid "Given in place of Abel; the line of promise runs through him."
 msgstr "Дан вместо Авеля; через него идёт линия обетования."
 
-#: genealogy_strings.py:42
+#: genealogy_strings.py:41
 msgctxt "person"
 msgid "Enos"
 msgstr "Енос"
 
-#: genealogy_strings.py:43
+#: genealogy_strings.py:42
 msgid "mortal man"
 msgstr "смертный человек"
 
-#: genealogy_strings.py:44
+#: genealogy_strings.py:43
 msgid "In his days men began to call on the name of the LORD."
 msgstr "В его дни начали призывать имя Господа."
 
-#: genealogy_strings.py:45
+#: genealogy_strings.py:44
 msgctxt "person"
 msgid "Cainan"
 msgstr "Каинан"
 
-#: genealogy_strings.py:46
+#: genealogy_strings.py:45
 msgctxt "person"
 msgid "Kenan"
 msgstr "Каинан"
 
-#: genealogy_strings.py:47
+#: genealogy_strings.py:46
 msgid "meaning uncertain"
 msgstr "значение неизвестно"
 
-#: genealogy_strings.py:48
+#: genealogy_strings.py:47
 msgid "Not the 'gotten' of Cain: the two names are different words."
 msgstr "Это не «приобрела» Каина: два имени — разные слова."
 
-#: genealogy_strings.py:49
+#: genealogy_strings.py:48
 msgctxt "person"
 msgid "Mahalaleel"
 msgstr "Малелеил"
 
-#: genealogy_strings.py:50
+#: genealogy_strings.py:49
 msgctxt "person"
 msgid "Maleleel"
 msgstr "Малелеил"
 
-#: genealogy_strings.py:51
+#: genealogy_strings.py:50
 msgid "praise of God"
 msgstr "хвала Богу"
 
-#: genealogy_strings.py:52
+#: genealogy_strings.py:51
 msgctxt "person"
 msgid "Jared"
 msgstr "Иаред"
 
-#: genealogy_strings.py:53
+#: genealogy_strings.py:52
 msgid "descent"
 msgstr "нисхождение"
 
-#: genealogy_strings.py:54
+#: genealogy_strings.py:53
 msgctxt "person"
 msgid "Enoch"
 msgstr "Енох"
 
-#: genealogy_strings.py:55
+#: genealogy_strings.py:54
 msgid "dedicated"
 msgstr "посвящённый"
 
-#: genealogy_strings.py:56
+#: genealogy_strings.py:55
 msgid "He walked with God, and did not die."
 msgstr "Ходил пред Богом и не умер."
 
-#: genealogy_strings.py:57
+#: genealogy_strings.py:56
 msgctxt "person"
 msgid "Methuselah"
 msgstr "Мафусал"
 
-#: genealogy_strings.py:58
+#: genealogy_strings.py:57
 msgctxt "person"
 msgid "Mathusala"
 msgstr "Мафусал"
 
-#: genealogy_strings.py:59
+#: genealogy_strings.py:58
 msgid "man of the dart"
 msgstr "муж стрелы"
 
-#: genealogy_strings.py:60
+#: genealogy_strings.py:59
 msgid "The longest life recorded; it ends the year of the flood."
 msgstr "Самая долгая записанная жизнь; она кончается в год потопа."
 
-#: genealogy_strings.py:61
+#: genealogy_strings.py:60
 msgctxt "person"
 msgid "Lamech"
 msgstr "Ламех"
 
-#: genealogy_strings.py:62
+#: genealogy_strings.py:61
 msgid ""
 "His own name is uncertain; the one he gave his son is not. He named Noah for "
 "the comfort he hoped for."
@@ -2322,439 +4497,439 @@ msgstr ""
 "Его собственное имя неизвестно по значению, а имя, которое он дал сыну, — "
 "известно. Он назвал сына Ноем ради утешения, на которое надеялся."
 
-#: genealogy_strings.py:63
+#: genealogy_strings.py:62
 msgctxt "person"
 msgid "Noah"
 msgstr "Ной"
 
-#: genealogy_strings.py:64
+#: genealogy_strings.py:63
 msgctxt "person"
 msgid "Noe"
 msgstr "Ной"
 
-#: genealogy_strings.py:65
+#: genealogy_strings.py:64
 msgid "rest; comfort"
 msgstr "покой; утешение"
 
-#: genealogy_strings.py:66
+#: genealogy_strings.py:65
 msgid "The flood divides the chapter, and the ages, at him."
 msgstr "На нём потоп делит и главу, и эпохи."
 
-#: genealogy_strings.py:67
+#: genealogy_strings.py:66
 msgctxt "person"
 msgid "Shem"
 msgstr "Сим"
 
-#: genealogy_strings.py:68
+#: genealogy_strings.py:67
 msgctxt "person"
 msgid "Sem"
 msgstr "Сим"
 
-#: genealogy_strings.py:69
+#: genealogy_strings.py:68
 msgid "name; renown"
 msgstr "имя; слава"
 
-#: genealogy_strings.py:70
+#: genealogy_strings.py:69
 msgid "The line of promise continues through him."
 msgstr "Через него продолжается линия обетования."
 
-#: genealogy_strings.py:71
+#: genealogy_strings.py:70
 msgctxt "person"
 msgid "Ham"
 msgstr "Хам"
 
-#: genealogy_strings.py:72
+#: genealogy_strings.py:71
 msgctxt "person"
 msgid "Japheth"
 msgstr "Иафет"
 
-#: genealogy_strings.py:73
+#: genealogy_strings.py:72
 msgctxt "person"
 msgid "Arphaxad"
 msgstr "Арфаксад"
 
-#: genealogy_strings.py:74
+#: genealogy_strings.py:73
 msgctxt "person"
 msgid "Salah"
 msgstr "Сала"
 
-#: genealogy_strings.py:75
+#: genealogy_strings.py:74
 msgctxt "person"
 msgid "Sala"
 msgstr "Сала"
 
-#: genealogy_strings.py:76
+#: genealogy_strings.py:75
 msgctxt "person"
 msgid "Eber"
 msgstr "Евер"
 
-#: genealogy_strings.py:77
+#: genealogy_strings.py:76
 msgctxt "person"
 msgid "Heber"
 msgstr "Евер"
 
-#: genealogy_strings.py:78
+#: genealogy_strings.py:77
 msgid "the region beyond"
 msgstr "земля по ту сторону"
 
-#: genealogy_strings.py:79
+#: genealogy_strings.py:78
 msgid "The name behind \"Hebrew\"."
 msgstr "Имя, стоящее за словом «еврей»."
 
-#: genealogy_strings.py:80
+#: genealogy_strings.py:79
 msgctxt "person"
 msgid "Peleg"
 msgstr "Фалек"
 
-#: genealogy_strings.py:81
+#: genealogy_strings.py:80
 msgctxt "person"
 msgid "Phalec"
 msgstr "Фалек"
 
-#: genealogy_strings.py:82
+#: genealogy_strings.py:81
 msgid "division"
 msgstr "разделение"
 
-#: genealogy_strings.py:83
+#: genealogy_strings.py:82
 msgid "In his days the earth was divided."
 msgstr "В его дни разделилась земля."
 
-#: genealogy_strings.py:84
+#: genealogy_strings.py:83
 msgctxt "person"
 msgid "Reu"
 msgstr "Рагав"
 
-#: genealogy_strings.py:85
+#: genealogy_strings.py:84
 msgctxt "person"
 msgid "Ragau"
 msgstr "Рагав"
 
-#: genealogy_strings.py:86
+#: genealogy_strings.py:85
 msgctxt "person"
 msgid "Serug"
 msgstr "Серух"
 
-#: genealogy_strings.py:87
+#: genealogy_strings.py:86
 msgctxt "person"
 msgid "Saruch"
 msgstr "Серух"
 
-#: genealogy_strings.py:88
+#: genealogy_strings.py:87
 msgctxt "person"
 msgid "Nahor"
 msgstr "Нахор"
 
-#: genealogy_strings.py:89
+#: genealogy_strings.py:88
 msgctxt "person"
 msgid "Nachor"
 msgstr "Нахор"
 
-#: genealogy_strings.py:90
+#: genealogy_strings.py:89
 msgctxt "person"
 msgid "Terah"
 msgstr "Фарра"
 
-#: genealogy_strings.py:91
+#: genealogy_strings.py:90
 msgctxt "person"
 msgid "Thara"
 msgstr "Фарра"
 
-#: genealogy_strings.py:92
+#: genealogy_strings.py:91
 msgid "Left Ur for Canaan and stopped at Haran."
 msgstr "Вышел из Ура в Ханаан и остановился в Харране."
 
-#: genealogy_strings.py:93
+#: genealogy_strings.py:92
 msgctxt "person"
 msgid "Abraham"
 msgstr "Авраам"
 
-#: genealogy_strings.py:94
+#: genealogy_strings.py:93
 msgctxt "person"
 msgid "Abram"
 msgstr "Аврам"
 
-#: genealogy_strings.py:95
+#: genealogy_strings.py:94
 msgid "father of a multitude"
 msgstr "отец множества"
 
-#: genealogy_strings.py:96
+#: genealogy_strings.py:95
 msgid "The promise begins here; Matthew opens with him."
 msgstr "Здесь начинается обетование; с него начинает Матфей."
 
-#: genealogy_strings.py:97
+#: genealogy_strings.py:96
 msgctxt "person"
 msgid "Isaac"
 msgstr "Исаак"
 
-#: genealogy_strings.py:98
+#: genealogy_strings.py:97
 msgid "laughter"
 msgstr "смех"
 
-#: genealogy_strings.py:99
+#: genealogy_strings.py:98
 msgid "The son of the promise."
 msgstr "Сын обетования."
 
-#: genealogy_strings.py:100
+#: genealogy_strings.py:99
 msgctxt "person"
 msgid "Jacob"
 msgstr "Иаков"
 
-#: genealogy_strings.py:101
+#: genealogy_strings.py:100
 msgctxt "person"
 msgid "Israel"
 msgstr "Израиль"
 
-#: genealogy_strings.py:102
+#: genealogy_strings.py:101
 msgid "supplanter"
 msgstr "запинающий"
 
-#: genealogy_strings.py:103
+#: genealogy_strings.py:102
 msgid "Renamed Israel; his twelve sons are the tribes."
 msgstr "Переименован в Израиля; его двенадцать сыновей — колена."
 
-#: genealogy_strings.py:104
+#: genealogy_strings.py:103
 msgctxt "person"
 msgid "Leah"
 msgstr "Лия"
 
-#: genealogy_strings.py:105
+#: genealogy_strings.py:104
 msgid "Six of the twelve are hers."
 msgstr "Шестеро из двенадцати — её."
 
-#: genealogy_strings.py:106
+#: genealogy_strings.py:105
 msgctxt "person"
 msgid "Rachel"
 msgstr "Рахиль"
 
-#: genealogy_strings.py:107
+#: genealogy_strings.py:106
 msgid "Joseph and Benjamin."
 msgstr "Иосиф и Вениамин."
 
-#: genealogy_strings.py:108
+#: genealogy_strings.py:107
 msgctxt "person"
 msgid "Bilhah"
 msgstr "Валла"
 
-#: genealogy_strings.py:109
+#: genealogy_strings.py:108
 msgid "Rachel's handmaid."
 msgstr "Служанка Рахили."
 
-#: genealogy_strings.py:110
+#: genealogy_strings.py:109
 msgctxt "person"
 msgid "Zilpah"
 msgstr "Зелфа"
 
-#: genealogy_strings.py:111
+#: genealogy_strings.py:110
 msgid "Leah's handmaid."
 msgstr "Служанка Лии."
 
-#: genealogy_strings.py:112
+#: genealogy_strings.py:111
 msgctxt "person"
 msgid "Reuben"
 msgstr "Рувим"
 
-#: genealogy_strings.py:113
+#: genealogy_strings.py:112
 msgctxt "person"
 msgid "Simeon"
 msgstr "Симеон"
 
-#: genealogy_strings.py:114
+#: genealogy_strings.py:113
 msgctxt "person"
 msgid "Levi"
 msgstr "Левий"
 
-#: genealogy_strings.py:115
+#: genealogy_strings.py:114
 msgctxt "person"
 msgid "Issachar"
 msgstr "Иссахар"
 
-#: genealogy_strings.py:116
+#: genealogy_strings.py:115
 msgctxt "person"
 msgid "Zebulun"
 msgstr "Завулон"
 
-#: genealogy_strings.py:117
+#: genealogy_strings.py:116
 msgctxt "person"
 msgid "Joseph"
 msgstr "Иосиф"
 
-#: genealogy_strings.py:118
+#: genealogy_strings.py:117
 msgctxt "person"
 msgid "Benjamin"
 msgstr "Вениамин"
 
-#: genealogy_strings.py:119
+#: genealogy_strings.py:118
 msgctxt "person"
 msgid "Dan"
 msgstr "Дан"
 
-#: genealogy_strings.py:120
+#: genealogy_strings.py:119
 msgctxt "person"
 msgid "Naphtali"
 msgstr "Неффалим"
 
-#: genealogy_strings.py:121
+#: genealogy_strings.py:120
 msgctxt "person"
 msgid "Gad"
 msgstr "Гад"
 
-#: genealogy_strings.py:122
+#: genealogy_strings.py:121
 msgctxt "person"
 msgid "Asher"
 msgstr "Асир"
 
-#: genealogy_strings.py:123
+#: genealogy_strings.py:122
 msgctxt "person"
 msgid "Judah"
 msgstr "Иуда"
 
-#: genealogy_strings.py:124
+#: genealogy_strings.py:123
 msgctxt "person"
 msgid "Juda"
 msgstr "Иуда"
 
-#: genealogy_strings.py:125
+#: genealogy_strings.py:124
 msgctxt "person"
 msgid "Judas"
 msgstr "Иуда"
 
-#: genealogy_strings.py:126
+#: genealogy_strings.py:125
 msgid "praise"
 msgstr "хвала"
 
-#: genealogy_strings.py:127
+#: genealogy_strings.py:126
 msgid "The royal line runs through him, not through the firstborn."
 msgstr "Царская линия идёт через него, а не через первенца."
 
-#: genealogy_strings.py:128
+#: genealogy_strings.py:127
 msgctxt "person"
 msgid "Phares"
 msgstr "Фарес"
 
-#: genealogy_strings.py:129
+#: genealogy_strings.py:128
 msgctxt "person"
 msgid "Pharez"
 msgstr "Фарес"
 
-#: genealogy_strings.py:130
+#: genealogy_strings.py:129
 msgctxt "person"
 msgid "Perez"
 msgstr "Фарес"
 
-#: genealogy_strings.py:131
+#: genealogy_strings.py:130
 msgid "a breach"
 msgstr "пролом"
 
-#: genealogy_strings.py:132
+#: genealogy_strings.py:131
 msgid ""
 "Born of Tamar; his twin's hand came out first, and he was born first anyway."
 msgstr ""
 "Рождён от Фамари; рука его брата-близнеца показалась первой, а родился "
 "первым он."
 
-#: genealogy_strings.py:133
+#: genealogy_strings.py:132
 msgctxt "person"
 msgid "Esrom"
 msgstr "Есром"
 
-#: genealogy_strings.py:134
+#: genealogy_strings.py:133
 msgctxt "person"
 msgid "Hezron"
 msgstr "Есром"
 
-#: genealogy_strings.py:135
+#: genealogy_strings.py:134
 msgctxt "person"
 msgid "Aram"
 msgstr "Арам"
 
-#: genealogy_strings.py:136
+#: genealogy_strings.py:135
 msgctxt "person"
 msgid "Ram"
 msgstr "Арам"
 
-#: genealogy_strings.py:137
+#: genealogy_strings.py:136
 msgctxt "person"
 msgid "Aminadab"
 msgstr "Аминадав"
 
-#: genealogy_strings.py:138
+#: genealogy_strings.py:137
 msgctxt "person"
 msgid "Amminadab"
 msgstr "Аминадав"
 
-#: genealogy_strings.py:139
+#: genealogy_strings.py:138
 msgctxt "person"
 msgid "Naasson"
 msgstr "Наассон"
 
-#: genealogy_strings.py:140
+#: genealogy_strings.py:139
 msgctxt "person"
 msgid "Nahshon"
 msgstr "Наассон"
 
-#: genealogy_strings.py:141
+#: genealogy_strings.py:140
 msgctxt "person"
 msgid "Salmon"
 msgstr "Салмон"
 
-#: genealogy_strings.py:142
+#: genealogy_strings.py:141
 msgctxt "person"
 msgid "Booz"
 msgstr "Вооз"
 
-#: genealogy_strings.py:143
+#: genealogy_strings.py:142
 msgctxt "person"
 msgid "Boaz"
 msgstr "Вооз"
 
-#: genealogy_strings.py:144
+#: genealogy_strings.py:143
 msgid "Redeemed Ruth, and so stands in the line."
 msgstr "Выкупил Руфь — и потому стоит в этой линии."
 
-#: genealogy_strings.py:145
+#: genealogy_strings.py:144
 msgctxt "person"
 msgid "Obed"
 msgstr "Овид"
 
-#: genealogy_strings.py:146
+#: genealogy_strings.py:145
 msgctxt "person"
 msgid "Jesse"
 msgstr "Иессей"
 
-#: genealogy_strings.py:147
+#: genealogy_strings.py:146
 msgctxt "person"
 msgid "David"
 msgstr "Давид"
 
-#: genealogy_strings.py:148
+#: genealogy_strings.py:147
 msgid "Both genealogies run through him, and part immediately after."
 msgstr "Оба родословия проходят через него и сразу после расходятся."
 
-#: genealogy_strings.py:149
+#: genealogy_strings.py:148
 msgctxt "person"
 msgid "Thamar"
 msgstr "Фамарь"
 
-#: genealogy_strings.py:150
+#: genealogy_strings.py:149
 msgctxt "person"
 msgid "Tamar"
 msgstr "Фамарь"
 
-#: genealogy_strings.py:151
+#: genealogy_strings.py:150
 msgid "Matthew names her first of the four women."
 msgstr "Матфей называет её первой из четырёх женщин."
 
-#: genealogy_strings.py:152
+#: genealogy_strings.py:151
 msgctxt "person"
 msgid "Rachab"
 msgstr "Рахава"
 
-#: genealogy_strings.py:153
+#: genealogy_strings.py:152
 msgctxt "person"
 msgid "Rahab"
 msgstr "Рахава"
 
-#: genealogy_strings.py:154
+#: genealogy_strings.py:153
 msgid ""
 "Taken since the early church for Rahab of Jericho, though Matthew does not "
 "say so; he puts her in the line of the Messiah."
@@ -2762,423 +4937,423 @@ msgstr ""
 "С древности её отождествляют с Раав Иерихонской, хотя Матфей этого не "
 "говорит; он ставит её в родословие Мессии."
 
-#: genealogy_strings.py:155
+#: genealogy_strings.py:154
 msgctxt "person"
 msgid "Ruth"
 msgstr "Руфь"
 
-#: genealogy_strings.py:156
+#: genealogy_strings.py:155
 msgid "A Moabitess; her book exists to end on this genealogy."
 msgstr "Моавитянка; её книга и написана, чтобы окончиться этим родословием."
 
-#: genealogy_strings.py:157
+#: genealogy_strings.py:156
 msgctxt "person"
 msgid "the wife of Uriah"
 msgstr "бывшая за Уриею"
 
-#: genealogy_strings.py:158
+#: genealogy_strings.py:157
 msgctxt "person"
 msgid "Bathsheba"
 msgstr "Вирсавия"
 
-#: genealogy_strings.py:159
+#: genealogy_strings.py:158
 msgctxt "person"
 msgid "Bath-sheba"
 msgstr "Вирсавия"
 
-#: genealogy_strings.py:160
+#: genealogy_strings.py:159
 msgctxt "person"
 msgid "the wife of Urias"
 msgstr "бывшая за Уриею"
 
-#: genealogy_strings.py:161
+#: genealogy_strings.py:160
 msgid ""
 "Matthew will not give her name here — he names the wrong that was done to "
 "her."
 msgstr "Матфей не называет здесь её имени — он называет причинённое ей зло."
 
-#: genealogy_strings.py:162
+#: genealogy_strings.py:161
 msgctxt "person"
 msgid "Mary"
 msgstr "Мария"
 
-#: genealogy_strings.py:163
+#: genealogy_strings.py:162
 msgid ""
 "The line breaks its own grammar at her: Jesus is born of her, not begotten."
 msgstr ""
 "На ней родословие ломает собственную грамматику: Иисус рождён от неё, а не "
 "«родил»."
 
-#: genealogy_strings.py:164
+#: genealogy_strings.py:163
 msgctxt "person"
 msgid "Solomon"
 msgstr "Соломон"
 
-#: genealogy_strings.py:165
+#: genealogy_strings.py:164
 msgctxt "person"
 msgid "Roboam"
 msgstr "Ровоам"
 
-#: genealogy_strings.py:166
+#: genealogy_strings.py:165
 msgctxt "person"
 msgid "Abia"
 msgstr "Авия"
 
-#: genealogy_strings.py:167
+#: genealogy_strings.py:166
 msgctxt "person"
 msgid "Asa"
 msgstr "Аса"
 
-#: genealogy_strings.py:168
+#: genealogy_strings.py:167
 msgctxt "person"
 msgid "Josaphat"
 msgstr "Иосафат"
 
-#: genealogy_strings.py:169
+#: genealogy_strings.py:168
 msgctxt "person"
 msgid "Joram"
 msgstr "Иорам"
 
-#: genealogy_strings.py:170
+#: genealogy_strings.py:169
 msgid "Matthew jumps three generations after him."
 msgstr "После него Матфей перескакивает через три поколения."
 
-#: genealogy_strings.py:171
+#: genealogy_strings.py:170
 msgctxt "person"
 msgid "Ozias"
 msgstr "Озия"
 
-#: genealogy_strings.py:172
+#: genealogy_strings.py:171
 msgctxt "person"
 msgid "Uzziah"
 msgstr "Озия"
 
-#: genealogy_strings.py:173
+#: genealogy_strings.py:172
 msgctxt "person"
 msgid "Azariah"
 msgstr "Азария"
 
-#: genealogy_strings.py:174
+#: genealogy_strings.py:173
 msgid "Called Azariah in 1 Chr 3:12 — one man, two names."
 msgstr "В 1 Пар 3:12 назван Азарией — один человек, два имени."
 
-#: genealogy_strings.py:175
+#: genealogy_strings.py:174
 msgctxt "person"
 msgid "Joatham"
 msgstr "Иоафам"
 
-#: genealogy_strings.py:176
+#: genealogy_strings.py:175
 msgctxt "person"
 msgid "Achaz"
 msgstr "Ахаз"
 
-#: genealogy_strings.py:177
+#: genealogy_strings.py:176
 msgctxt "person"
 msgid "Ezekias"
 msgstr "Езекия"
 
-#: genealogy_strings.py:178
+#: genealogy_strings.py:177
 msgctxt "person"
 msgid "Manasses"
 msgstr "Манассия"
 
-#: genealogy_strings.py:179
+#: genealogy_strings.py:178
 msgctxt "person"
 msgid "Amon"
 msgstr "Амон"
 
-#: genealogy_strings.py:180
+#: genealogy_strings.py:179
 msgctxt "person"
 msgid "Josias"
 msgstr "Иосия"
 
-#: genealogy_strings.py:181
+#: genealogy_strings.py:180
 msgctxt "person"
 msgid "Josiah"
 msgstr "Иосия"
 
-#: genealogy_strings.py:182
+#: genealogy_strings.py:181
 msgid "Matthew skips his son Jehoiakim."
 msgstr "Матфей пропускает его сына Иоакима."
 
-#: genealogy_strings.py:183
+#: genealogy_strings.py:182
 msgctxt "person"
 msgid "Jechonias"
 msgstr "Иехония"
 
-#: genealogy_strings.py:184
+#: genealogy_strings.py:183
 msgctxt "person"
 msgid "Jeconiah"
 msgstr "Иехония"
 
-#: genealogy_strings.py:185
+#: genealogy_strings.py:184
 msgctxt "person"
 msgid "Jehoiachin"
 msgstr "Иехония"
 
-#: genealogy_strings.py:186
+#: genealogy_strings.py:185
 msgctxt "person"
 msgid "Coniah"
 msgstr "Иехония"
 
-#: genealogy_strings.py:187
+#: genealogy_strings.py:186
 msgid "The exile falls in his lifetime."
 msgstr "На его жизнь приходится переселение."
 
-#: genealogy_strings.py:188
+#: genealogy_strings.py:187
 msgctxt "person"
 msgid "Salathiel"
 msgstr "Салафииль"
 
-#: genealogy_strings.py:189
+#: genealogy_strings.py:188
 msgid "Matthew and Luke give him different fathers."
 msgstr "Матфей и Лука дают ему разных отцов."
 
-#: genealogy_strings.py:190
+#: genealogy_strings.py:189
 msgctxt "person"
 msgid "Zorobabel"
 msgstr "Зоровавель"
 
-#: genealogy_strings.py:191
+#: genealogy_strings.py:190
 msgid "The last name the two lists share before Joseph."
 msgstr "Последнее имя, общее для обоих списков до Иосифа."
 
-#: genealogy_strings.py:192
+#: genealogy_strings.py:191
 msgctxt "person"
 msgid "Abiud"
 msgstr "Авиуд"
 
-#: genealogy_strings.py:193
+#: genealogy_strings.py:192
 msgctxt "person"
 msgid "Eliakim"
 msgstr "Елиаким"
 
-#: genealogy_strings.py:194
+#: genealogy_strings.py:193
 msgctxt "person"
 msgid "Azor"
 msgstr "Азор"
 
-#: genealogy_strings.py:195
+#: genealogy_strings.py:194
 msgctxt "person"
 msgid "Sadoc"
 msgstr "Садок"
 
-#: genealogy_strings.py:196
+#: genealogy_strings.py:195
 msgctxt "person"
 msgid "Achim"
 msgstr "Ахим"
 
-#: genealogy_strings.py:197
+#: genealogy_strings.py:196
 msgctxt "person"
 msgid "Eliud"
 msgstr "Елиуд"
 
-#: genealogy_strings.py:198
+#: genealogy_strings.py:197
 msgctxt "person"
 msgid "Eleazar"
 msgstr "Елеазар"
 
-#: genealogy_strings.py:199
+#: genealogy_strings.py:198
 msgctxt "person"
 msgid "Matthan"
 msgstr "Матфан"
 
-#: genealogy_strings.py:200
+#: genealogy_strings.py:199
 msgctxt "person"
 msgid "Ahaziah"
 msgstr "Охозия"
 
-#: genealogy_strings.py:201
+#: genealogy_strings.py:200
 msgid "Named by 1 Chr 3, passed over by Matthew."
 msgstr "Назван в 1 Пар 3, пропущен Матфеем."
 
-#: genealogy_strings.py:202
+#: genealogy_strings.py:201
 msgctxt "person"
 msgid "Joash"
 msgstr "Иоас"
 
-#: genealogy_strings.py:203
+#: genealogy_strings.py:202
 msgctxt "person"
 msgid "Amaziah"
 msgstr "Амасия"
 
-#: genealogy_strings.py:204
+#: genealogy_strings.py:203
 msgctxt "person"
 msgid "Jehoiakim"
 msgstr "Иоаким"
 
-#: genealogy_strings.py:205
+#: genealogy_strings.py:204
 msgid "Matthew's name for Joseph's father."
 msgstr "Имя, которое Матфей даёт отцу Иосифа."
 
-#: genealogy_strings.py:206
+#: genealogy_strings.py:205
 msgid "Matthew traces the line to him; Luke names a different father."
 msgstr "Матфей доводит линию до него; Лука называет другого отца."
 
-#: genealogy_strings.py:207
+#: genealogy_strings.py:206
 msgctxt "person"
 msgid "Jesus"
 msgstr "Иисус"
 
-#: genealogy_strings.py:208
+#: genealogy_strings.py:207
 msgctxt "person"
 msgid "Heli"
 msgstr "Илий"
 
-#: genealogy_strings.py:209
+#: genealogy_strings.py:208
 msgid "Luke's name for Joseph's father."
 msgstr "Имя, которое Лука даёт отцу Иосифа."
 
-#: genealogy_strings.py:210
+#: genealogy_strings.py:209
 msgctxt "person"
 msgid "Nathan"
 msgstr "Нафан"
 
-#: genealogy_strings.py:211
+#: genealogy_strings.py:210
 msgid "Luke leaves the throne line here and follows him."
 msgstr "Здесь Лука оставляет линию престола и идёт за ним."
 
-#: genealogy_strings.py:212
+#: genealogy_strings.py:211
 msgctxt "person"
 msgid "Matthat"
 msgstr "Матфат"
 
-#: genealogy_strings.py:213
+#: genealogy_strings.py:212
 msgctxt "person"
 msgid "Melchi"
 msgstr "Мелхий"
 
-#: genealogy_strings.py:214
+#: genealogy_strings.py:213
 msgctxt "person"
 msgid "Janna"
 msgstr "Ианнай"
 
-#: genealogy_strings.py:215
+#: genealogy_strings.py:214
 msgctxt "person"
 msgid "Mattathias"
 msgstr "Маттафий"
 
-#: genealogy_strings.py:216
+#: genealogy_strings.py:215
 msgctxt "person"
 msgid "Amos"
 msgstr "Амос"
 
-#: genealogy_strings.py:217
+#: genealogy_strings.py:216
 msgctxt "person"
 msgid "Naum"
 msgstr "Наум"
 
-#: genealogy_strings.py:218
+#: genealogy_strings.py:217
 msgctxt "person"
 msgid "Esli"
 msgstr "Еслим"
 
-#: genealogy_strings.py:219
+#: genealogy_strings.py:218
 msgctxt "person"
 msgid "Nagge"
 msgstr "Наггей"
 
-#: genealogy_strings.py:220
+#: genealogy_strings.py:219
 msgctxt "person"
 msgid "Maath"
 msgstr "Мааф"
 
-#: genealogy_strings.py:221
+#: genealogy_strings.py:220
 msgctxt "person"
 msgid "Semei"
 msgstr "Семеий"
 
-#: genealogy_strings.py:222
+#: genealogy_strings.py:221
 msgctxt "person"
 msgid "Joanna"
 msgstr "Иоаннан"
 
-#: genealogy_strings.py:223
+#: genealogy_strings.py:222
 msgctxt "person"
 msgid "Rhesa"
 msgstr "Рисай"
 
-#: genealogy_strings.py:224
+#: genealogy_strings.py:223
 msgctxt "person"
 msgid "Neri"
 msgstr "Нирий"
 
-#: genealogy_strings.py:225
+#: genealogy_strings.py:224
 msgctxt "person"
 msgid "Addi"
 msgstr "Аддий"
 
-#: genealogy_strings.py:226
+#: genealogy_strings.py:225
 msgctxt "person"
 msgid "Cosam"
 msgstr "Косам"
 
-#: genealogy_strings.py:227
+#: genealogy_strings.py:226
 msgctxt "person"
 msgid "Elmodam"
 msgstr "Елмодам"
 
-#: genealogy_strings.py:228
+#: genealogy_strings.py:227
 msgctxt "person"
 msgid "Er"
 msgstr "Ир"
 
-#: genealogy_strings.py:229
+#: genealogy_strings.py:228
 msgctxt "person"
 msgid "Jose"
 msgstr "Иосий"
 
-#: genealogy_strings.py:230
+#: genealogy_strings.py:229
 msgctxt "person"
 msgid "Eliezer"
 msgstr "Елиезер"
 
-#: genealogy_strings.py:231
+#: genealogy_strings.py:230
 msgctxt "person"
 msgid "Jorim"
 msgstr "Иорим"
 
-#: genealogy_strings.py:232
+#: genealogy_strings.py:231
 msgctxt "person"
 msgid "Jonan"
 msgstr "Ионан"
 
-#: genealogy_strings.py:233
+#: genealogy_strings.py:232
 msgctxt "person"
 msgid "Melea"
 msgstr "Мелеай"
 
-#: genealogy_strings.py:234
+#: genealogy_strings.py:233
 msgctxt "person"
 msgid "Menan"
 msgstr "Маинан"
 
-#: genealogy_strings.py:235
+#: genealogy_strings.py:234
 msgctxt "person"
 msgid "Mattatha"
 msgstr "Маттафай"
 
-#: genealogy_strings.py:236
+#: genealogy_strings.py:235
 msgid ""
 "Luke names a Cainan the Hebrew of Genesis 11 does not; the Septuagint does."
 msgstr ""
 "Лука называет Каинана, которого нет в еврейском тексте Бытия 11; в "
 "Септуагинте он есть."
 
-#: genealogy_strings.py:237
+#: genealogy_strings.py:236
 msgctxt "person"
 msgid "God"
 msgstr "Бог"
 
-#: genealogy_strings.py:238
+#: genealogy_strings.py:237
 msgid "Ahaziah, Joash and Amaziah stand between them in Chronicles."
 msgstr "В Паралипоменон между ними стоят Охозия, Иоас и Амасия."
 
-#: genealogy_strings.py:239
+#: genealogy_strings.py:238
 msgid "Chronicles puts Jehoiakim between them."
 msgstr "Паралипоменон ставит между ними Иоакима."
 
-#: genealogy_strings.py:240
+#: genealogy_strings.py:239
 msgid ""
 "Matthew stops saying \"begat\": Jesus is born of Mary, not begotten of "
 "Joseph."
@@ -3186,23 +5361,23 @@ msgstr ""
 "Матфей перестаёт говорить «родил»: Иисус рождён от Марии, а не рождён от "
 "Иосифа."
 
-#: genealogy_strings.py:241
+#: genealogy_strings.py:240
 msgid "Luke writes \"as was supposed\", and the chart keeps the qualifier."
 msgstr "Лука пишет «как думали», и диаграмма сохраняет эту оговорку."
 
-#: genealogy_strings.py:242
+#: genealogy_strings.py:241
 msgid "Luke ends not at a patriarch but at God; it is a claim, not a link."
 msgstr "Лука кончает не патриархом, а Богом; это утверждение, а не звено."
 
-#: genealogy_strings.py:243
+#: genealogy_strings.py:242
 msgid "From Adam to Noah"
 msgstr "От Адама до Ноя"
 
-#: genealogy_strings.py:244
+#: genealogy_strings.py:243
 msgid "The ten before the flood"
 msgstr "Десять до потопа"
 
-#: genealogy_strings.py:245
+#: genealogy_strings.py:244
 msgid ""
 "One name a generation for ten generations, each with a number attached. Read "
 "as a list it is inert; read as a field of overlapping lives it is "
@@ -3211,19 +5386,19 @@ msgstr ""
 "По одному имени на поколение, десять поколений, и при каждом — число. Как "
 "список это мертво; как поле пересекающихся жизней — поразительно."
 
-#: genealogy_strings.py:246
+#: genealogy_strings.py:245
 msgid "Genesis 5"
 msgstr "Бытие 5"
 
-#: genealogy_strings.py:247
+#: genealogy_strings.py:246
 msgid "Ten lives, laid on one axis"
 msgstr "Десять жизней на одной оси"
 
-#: genealogy_strings.py:248
+#: genealogy_strings.py:247
 msgid "Genesis 5, reckoned in years from Adam"
 msgstr "Бытие 5, в годах от Адама"
 
-#: genealogy_strings.py:249
+#: genealogy_strings.py:248
 msgid ""
 "Every figure here is arithmetic on Genesis 5:3–32, and the arithmetic "
 "assumes what the text does not state: that the ten follow one another with "
@@ -3239,15 +5414,15 @@ msgstr ""
 "Мафусала истекают в год потопа. Годы здесь — вычисление, а не дата, которую "
 "даёт Библия."
 
-#: genealogy_strings.py:250
+#: genealogy_strings.py:249
 msgid "From Shem to Abraham"
 msgstr "От Сима до Авраама"
 
-#: genealogy_strings.py:251
+#: genealogy_strings.py:250
 msgid "The ten after the flood"
 msgstr "Десять после потопа"
 
-#: genealogy_strings.py:252
+#: genealogy_strings.py:251
 msgid ""
 "The same shape as Genesis 5, and the lifespans fall away as it runs — from "
 "Shem's six hundred years to Terah's two hundred and five."
@@ -3255,19 +5430,19 @@ msgstr ""
 "Та же форма, что и в Бытии 5, но сроки жизни падают по ходу — от шестисот "
 "лет Сима до двухсот пяти Фарры."
 
-#: genealogy_strings.py:253
+#: genealogy_strings.py:252
 msgid "Genesis 11:10–26"
 msgstr "Бытие 11:10–26"
 
-#: genealogy_strings.py:254
+#: genealogy_strings.py:253
 msgid "The house of Jacob"
 msgstr "Дом Иакова"
 
-#: genealogy_strings.py:255
+#: genealogy_strings.py:254
 msgid "Four mothers, twelve sons"
 msgstr "Четыре матери, двенадцать сыновей"
 
-#: genealogy_strings.py:256
+#: genealogy_strings.py:255
 msgid ""
 "Drawn father-only, this is a list of twelve names. Drawn with the mothers, "
 "it is the reason the tribes are grouped the way they are for the rest of the "
@@ -3277,19 +5452,19 @@ msgstr ""
 "матерями, это причина, по которой колена сгруппированы так во всей остальной "
 "Библии."
 
-#: genealogy_strings.py:257
+#: genealogy_strings.py:256
 msgid "Genesis 35:23–26"
 msgstr "Бытие 35:23–26"
 
-#: genealogy_strings.py:258
+#: genealogy_strings.py:257
 msgid "The line Ruth ends on"
 msgstr "Линия, которой кончается книга Руфи"
 
-#: genealogy_strings.py:259
+#: genealogy_strings.py:258
 msgid "Ten names, from Perez to David"
 msgstr "Десять имён, от Фареса до Давида"
 
-#: genealogy_strings.py:260
+#: genealogy_strings.py:259
 msgid ""
 "The book of Ruth exists to arrive here. The same ten men appear in Matthew 1 "
 "under their Greek names — Perez is Phares, Hezron is Esrom, Boaz is Booz."
@@ -3297,19 +5472,19 @@ msgstr ""
 "Книга Руфи и написана, чтобы прийти сюда. Те же десять человек стоят в "
 "Матфея 1 под греческими формами имён — Фарес, Есром, Вооз."
 
-#: genealogy_strings.py:261
+#: genealogy_strings.py:260
 msgid "Ruth 4:18–22"
 msgstr "Руфь 4:18–22"
 
-#: genealogy_strings.py:262
+#: genealogy_strings.py:261
 msgid "Matthew's genealogy"
 msgstr "Родословие по Матфею"
 
-#: genealogy_strings.py:263
+#: genealogy_strings.py:262
 msgid "Abraham to the Christ, in three sets of fourteen"
 msgstr "От Авраама до Христа, тремя рядами по четырнадцать"
 
-#: genealogy_strings.py:264
+#: genealogy_strings.py:263
 msgid ""
 "Matthew counts his own list out loud in 1:17, and his list also passes over "
 "four kings Chronicles names. Both facts are drawn here — the bands are his "
@@ -3325,19 +5500,19 @@ msgstr ""
 "как нечто обычное, и «родил» может охватывать несколько; четырнадцать читают "
 "и как приём для памяти, и как числовое значение имени Давида."
 
-#: genealogy_strings.py:265
+#: genealogy_strings.py:264
 msgid "Matthew 1:1–17"
 msgstr "Матфея 1:1–17"
 
-#: genealogy_strings.py:266
+#: genealogy_strings.py:265
 msgid "Luke's genealogy"
 msgstr "Родословие по Луке"
 
-#: genealogy_strings.py:267
+#: genealogy_strings.py:266
 msgid "Jesus back to Adam, and past him"
 msgstr "От Иисуса до Адама — и дальше"
 
-#: genealogy_strings.py:268
+#: genealogy_strings.py:267
 msgid ""
 "Luke runs the other way — from Jesus backwards — and does not stop at "
 "Abraham. He ends at Adam, and then at God, which is a claim rather than a "
@@ -3351,19 +5526,19 @@ msgstr ""
 "оставлено одно написание, чтобы два списка можно было положить рядом, и "
 "найти его можно по любой форме."
 
-#: genealogy_strings.py:269
+#: genealogy_strings.py:268
 msgid "Luke 3:23–38"
 msgstr "Луки 3:23–38"
 
-#: genealogy_strings.py:270
+#: genealogy_strings.py:269
 msgid "Matthew and Luke, side by side"
 msgstr "Матфей и Лука рядом"
 
-#: genealogy_strings.py:271
+#: genealogy_strings.py:270
 msgid "Where the two lists touch, and where they part"
 msgstr "Где два списка сходятся и где расходятся"
 
-#: genealogy_strings.py:272
+#: genealogy_strings.py:271
 msgid ""
 "Both trace Jesus through David. They agree at David, at Shealtiel and "
 "Zerubbabel, and at Joseph — and nowhere in between. This chart states that "
@@ -3375,11 +5550,11 @@ msgstr ""
 "останавливается; классические ответы изложены ниже, и ни один из них здесь "
 "не выбран."
 
-#: genealogy_strings.py:273
+#: genealogy_strings.py:272
 msgid "Luke gives Mary's line"
 msgstr "Лука даёт родословие Марии"
 
-#: genealogy_strings.py:274
+#: genealogy_strings.py:273
 msgid ""
 "On this reading Matthew traces Joseph's descent and Luke traces Mary's, with "
 "Heli as her father and Joseph named as his son by marriage. It accounts for "
@@ -3389,7 +5564,7 @@ msgstr ""
 "где Илий её отец, а Иосиф назван его сыном по браку. Это прямо объясняет "
 "двух отцов Иосифа."
 
-#: genealogy_strings.py:275
+#: genealogy_strings.py:274
 msgid ""
 "Annius of Viterbo (1490s); widely held since, and the common answer in "
 "modern evangelical commentary."
@@ -3397,18 +5572,18 @@ msgstr ""
 "Анний из Витербо (1490-е); с тех пор широко принято и обычно для современных "
 "евангельских комментариев."
 
-#: genealogy_strings.py:276
+#: genealogy_strings.py:275
 msgid ""
 "Luke's text names Joseph, not Mary, and the reading has to supply the step."
 msgstr ""
 "Текст Луки называет Иосифа, а не Марию, и это чтение вынуждено добавлять "
 "звено."
 
-#: genealogy_strings.py:277
+#: genealogy_strings.py:276
 msgid "Levirate marriage"
 msgstr "Левиратный брак"
 
-#: genealogy_strings.py:278
+#: genealogy_strings.py:277
 msgid ""
 "A man dying childless had his brother raise up offspring in his name (Deut "
 "25:5–6), so one man can have a legal father and a biological one. Africanus "
@@ -3421,7 +5596,7 @@ msgstr ""
 "Африкана Илий и Иаков — братья по матери: Илий умер бездетным, Иаков "
 "восставил ему семя, и Иосиф — сын Иакова по природе и Илия по закону."
 
-#: genealogy_strings.py:279
+#: genealogy_strings.py:278
 msgid ""
 "Julius Africanus, in a letter preserved by Eusebius, Church History I.7 (3rd "
 "century)."
@@ -3429,15 +5604,15 @@ msgstr ""
 "Юлий Африкан, в письме, сохранённом Евсевием, «Церковная история» I.7 (III "
 "век)."
 
-#: genealogy_strings.py:280
+#: genealogy_strings.py:279
 msgid "It requires a levirate marriage the text nowhere records."
 msgstr "Оно требует левиратного брака, о котором текст нигде не сообщает."
 
-#: genealogy_strings.py:281
+#: genealogy_strings.py:280
 msgid "Legal throne versus natural descent"
 msgstr "Право на престол против природного родства"
 
-#: genealogy_strings.py:282
+#: genealogy_strings.py:281
 msgid ""
 "Matthew follows the royal succession — who held or had claim to the throne — "
 "while Luke follows physical descent. The two diverge after David because a "
@@ -3447,7 +5622,7 @@ msgstr ""
 "него право, — а Лука по кровному родству. После Давида они расходятся, "
 "потому что престол переходит по закону, а кровь — по рождению."
 
-#: genealogy_strings.py:283
+#: genealogy_strings.py:282
 msgid ""
 "Widely held among Protestant interpreters; set out at length by J. Gresham "
 "Machen, The Virgin Birth of Christ (1930)."
@@ -3455,12 +5630,14 @@ msgstr ""
 "Широко принято среди протестантских толкователей; подробно изложено у Дж. "
 "Грешема Мейчена, The Virgin Birth of Christ (1930)."
 
-#: genealogy_strings.py:284
+#: genealogy_strings.py:283
 msgid ""
 "It explains the shape of the difference better than it explains the two "
 "named fathers."
 msgstr "Оно объясняет форму расхождения лучше, чем двух названных отцов."
 
+#. Curated feature name shown in the UI. MODULE_KEY ('Bible Imagery')
+#. remains the on-disk identity used everywhere else.
 #: imagery_bridge.py:158
 msgid "Scripture in Art"
 msgstr "Писание в искусстве"
@@ -3510,8 +5687,8 @@ msgstr "Искусство"
 msgid "Where"
 msgstr "Где"
 
-#: imagery_reader.py:568 module_manager.py:597 module_manager.py:613
-#: module_manager.py:1455
+#: imagery_reader.py:568 module_manager.py:619 module_manager.py:635
+#: module_manager.py:1477
 msgid "Bible Imagery"
 msgstr "Библейские изображения"
 
@@ -3602,11 +5779,11 @@ msgstr "Приблизить"
 msgid "Fit to window"
 msgstr "Вместить в окно"
 
-#: interlinear_data.py:312 module_manager.py:568 module_manager.py:1498
+#: interlinear_data.py:312 module_manager.py:590 module_manager.py:1520
 msgid "Interlinear — Hebrew OT"
 msgstr "Подстрочник — еврейский ВЗ"
 
-#: interlinear_data.py:313 module_manager.py:569 module_manager.py:1500
+#: interlinear_data.py:313 module_manager.py:591 module_manager.py:1522
 msgid "Interlinear — Greek NT"
 msgstr "Подстрочник — греческий НЗ"
 
@@ -3626,6 +5803,9 @@ msgstr "Значение"
 msgid "Parsing"
 msgstr "Разбор"
 
+#. Cantillation toggle — Hebrew only (shown/hidden per module). Not a
+#. stacked line: it transforms the word text itself, so it has its
+#. own handler rather than the visibility one above.
 #: interlinear_view.py:97
 msgid "Accents"
 msgstr "Знаки"
@@ -3646,6 +5826,15 @@ msgstr "Греческий Новый Завет начинается с Мат�
 msgid "Back to previous definition"
 msgstr "Назад к предыдущему определению"
 
+#. Title + morphology share a horizontal scroller: in a narrow pane
+#. the full Strong's heading and morphology stay reachable by
+#. scrolling instead of vanishing into an ellipsis. The scroller
+#. also serves the purpose the old max-width-chars + ellipsize caps
+#. had — a ScrolledWindow doesn't propagate its child's natural
+#. width, so a long title (e.g. `Strong's H3068 · in "the LORD"`)
+#. can't combine with _ws_header below through the inner h_paned
+#. (shrink=False on both children) to push the lexicon — and
+#. therefore pane 1 — wider than its allocation when content loads.
 #: lexicon_panel.py:236
 msgid "Strong's Lexicon"
 msgstr "Словарь Стронга"
@@ -3654,6 +5843,9 @@ msgstr "Словарь Стронга"
 msgid "Close lexicon"
 msgstr "Закрыть словарь"
 
+#. Depth bar: when the scholar's lexicon pack is installed and the
+#. entry has a full LSJ article, one quiet link swaps the brief
+#. Abbott-Smith entry for it (and back). Hidden otherwise.
 #: lexicon_panel.py:305 lexicon_panel.py:310 lexicon_panel.py:540
 #: lexicon_panel.py:585
 msgid "Full LSJ entry"
@@ -3686,6 +5878,8 @@ msgstr "с {strongs}"
 msgid "Definition not found."
 msgstr "Определение не найдено."
 
+#. The panel fills in without taking focus, so an AT user gets no
+#. signal that the lookup landed. Name the entry that arrived.
 #: lexicon_panel.py:533
 #, python-brace-format
 msgid "{entry} loaded"
@@ -3888,11 +6082,11 @@ msgstr "Инструменты"
 msgid "Books & More"
 msgstr "Книги и др."
 
-#: module_manager.py:184
+#: module_manager.py:206
 msgid "updated less than an hour ago"
 msgstr "обновлено меньше часа назад"
 
-#: module_manager.py:187
+#: module_manager.py:209
 #, python-brace-format
 msgid "updated {h} hour ago"
 msgid_plural "updated {h} hours ago"
@@ -3900,7 +6094,7 @@ msgstr[0] "обновлено {h} час назад"
 msgstr[1] "обновлено {h} часа назад"
 msgstr[2] "обновлено {h} часов назад"
 
-#: module_manager.py:190
+#: module_manager.py:212
 #, python-brace-format
 msgid "updated {d} day ago"
 msgid_plural "updated {d} days ago"
@@ -3908,7 +6102,7 @@ msgstr[0] "обновлено {d} день назад"
 msgstr[1] "обновлено {d} дня назад"
 msgstr[2] "обновлено {d} дней назад"
 
-#: module_manager.py:192
+#: module_manager.py:214
 #, python-brace-format
 msgid "updated {m} month ago"
 msgid_plural "updated {m} months ago"
@@ -3916,73 +6110,76 @@ msgstr[0] "обновлено {m} месяц назад"
 msgstr[1] "обновлено {m} месяца назад"
 msgstr[2] "обновлено {m} месяцев назад"
 
-#: module_manager.py:199 welcome.py:922
+#: module_manager.py:221 welcome.py:943
 #, python-brace-format
 msgid "{pct}% ({done} of {total} MB)"
 msgstr "{pct}% ({done} из {total} МБ)"
 
-#: module_manager.py:202 welcome.py:925
+#: module_manager.py:224 welcome.py:946
 #, python-brace-format
 msgid "{done} MB"
 msgstr "{done} МБ"
 
-#: module_manager.py:219
+#: module_manager.py:241
 msgid "Module Manager"
 msgstr "Менеджер модулей"
 
-#: module_manager.py:249 module_manager.py:250
+#: module_manager.py:271 module_manager.py:272
 msgid "Import module from file"
 msgstr "Импортировать модуль из файла"
 
-#: module_manager.py:268
+#: module_manager.py:290
 msgid "Retry"
 msgstr "Повторить"
 
-#: module_manager.py:307
+#: module_manager.py:329
 msgid "Search installed and catalogue…"
 msgstr "Поиск среди установленных и в каталоге…"
 
-#: module_manager.py:330
+#: module_manager.py:352
 msgid "Filter languages…"
 msgstr "Отбор языков…"
 
-#: module_manager.py:371 module_picker.py:120 module_picker.py:121
+#: module_manager.py:393 module_picker.py:120 module_picker.py:121
 msgid "Filter by language"
 msgstr "Отбор по языку"
 
-#: module_manager.py:374 module_manager.py:375
+#: module_manager.py:396 module_manager.py:397
 msgid "Show all languages"
 msgstr "Показать все языки"
 
-#: module_manager.py:393 module_manager.py:1079
+#. Strong's as its own toggle chip — a useful refinement was
+#. buried as a checkbox at the popover's foot; as a chip it is
+#. discoverable and speaks the same capsule grammar.
+#: module_manager.py:415 module_manager.py:1101
 msgid "Strong's"
 msgstr "Стронг"
 
-#: module_manager.py:395 module_manager.py:396
+#: module_manager.py:417 module_manager.py:418
 msgid "Only modules with Strong's numbers"
 msgstr "Только модули с номерами Стронга"
 
-#: module_manager.py:422 module_manager.py:423
+#: module_manager.py:444 module_manager.py:445
 msgid "Refresh the catalogue"
 msgstr "Обновить каталог"
 
-#: module_manager.py:428
+#: module_manager.py:450
 msgid "Browse catalogue"
 msgstr "Обзор каталога"
 
-#: module_manager.py:496 module_manager.py:511 module_manager.py:521
+#: module_manager.py:518 module_manager.py:533 module_manager.py:543
 msgid "Curated for Scriptura"
 msgstr "Отобрано для Scriptura"
 
-#: module_manager.py:498
+#: module_manager.py:520
 msgid "Hand-assembled companions, built for this app."
 msgstr "Собранные вручную спутники, созданные для этого приложения."
 
-#: module_manager.py:526
+#: module_manager.py:548
 msgid "Open databases"
 msgstr "Открытые базы данных"
 
-#: module_manager.py:528
+#: module_manager.py:550
 msgid ""
 "Open-access data behind the word-study features — cross-references, Hebrew "
 "and Greek lexicons, and grammatical parsing."
@@ -3990,51 +6187,51 @@ msgstr ""
 "Открытые данные, на которых держится изучение слов, — перекрёстные ссылки, "
 "еврейский и греческий словари и грамматический разбор."
 
-#: module_manager.py:542
+#: module_manager.py:564
 #, python-brace-format
 msgid "{n} quotations from the church fathers to the Reformers, verse by verse"
 msgstr "{n} цитат от отцов Церкви до реформаторов, стих за стихом"
 
-#: module_manager.py:544
+#: module_manager.py:566
 msgid "Church-history commentary, verse by verse"
 msgstr "Комментарий из истории Церкви, стих за стихом"
 
-#: module_manager.py:546 module_manager.py:605 module_manager.py:833
-#: module_manager.py:848 module_manager.py:1139 module_manager.py:1763
+#: module_manager.py:568 module_manager.py:627 module_manager.py:855
+#: module_manager.py:869 module_manager.py:1161 module_manager.py:1785
 msgid "Update"
 msgstr "Обновить"
 
-#: module_manager.py:549 module_manager.py:608
+#: module_manager.py:571 module_manager.py:630
 msgid "A newer pack is available"
 msgstr "Доступен более новый набор"
 
-#: module_manager.py:557
+#: module_manager.py:579
 msgid ""
 "How the church read each verse, from the fathers to the Reformers · ~33 MB "
 "download"
 msgstr ""
 "Как Церковь читала каждый стих, от отцов до реформаторов · загрузка ~33 МБ"
 
-#: module_manager.py:559 module_manager.py:588 module_manager.py:618
-#: module_manager.py:649 module_manager.py:1480
+#: module_manager.py:581 module_manager.py:610 module_manager.py:640
+#: module_manager.py:671 module_manager.py:1502
 msgid "Download"
 msgstr "Загрузить"
 
-#: module_manager.py:574
+#: module_manager.py:596
 msgid ""
 "Every OT word with gloss, parsing, and Strong’s — Tyndale House data (CC BY)"
 msgstr ""
 "Каждое слово ВЗ со значением, разбором и номером Стронга — данные Tyndale "
 "House (CC BY)"
 
-#: module_manager.py:576
+#: module_manager.py:598
 msgid ""
 "Every NT word with gloss, parsing, and Strong’s — Tyndale House data (CC BY)"
 msgstr ""
 "Каждое слово НЗ со значением, разбором и номером Стронга — данные Tyndale "
 "House (CC BY)"
 
-#: module_manager.py:583
+#: module_manager.py:605
 msgid ""
 "The Hebrew Old Testament word by word — gloss, parsing, and Strong’s under "
 "each word · ~16 MB download"
@@ -4042,7 +6239,7 @@ msgstr ""
 "Еврейский Ветхий Завет слово за словом — значение, разбор и номер Стронга "
 "под каждым словом · загрузка ~16 МБ"
 
-#: module_manager.py:586
+#: module_manager.py:608
 msgid ""
 "The Greek New Testament word by word — gloss, parsing, and Strong’s under "
 "each word · ~7 MB download"
@@ -4050,16 +6247,16 @@ msgstr ""
 "Греческий Новый Завет слово за словом — значение, разбор и номер Стронга под "
 "каждым словом · загрузка ~7 МБ"
 
-#: module_manager.py:601
+#: module_manager.py:623
 #, python-brace-format
 msgid "{n} illustrations, maps, and place photos, verse by verse"
 msgstr "{n} иллюстраций, карт и фотографий мест, стих за стихом"
 
-#: module_manager.py:603
+#: module_manager.py:625
 msgid "Illustrations, maps, and place photos, verse by verse"
 msgstr "Иллюстрации, карты и фотографии мест, стих за стихом"
 
-#: module_manager.py:616
+#: module_manager.py:638
 msgid ""
 "Illustrations, historical maps, and photographs of the places named in each "
 "verse · ~525 MB download"
@@ -4067,7 +6264,7 @@ msgstr ""
 "Иллюстрации, исторические карты и фотографии мест, названных в каждом стихе "
 "· загрузка ~525 МБ"
 
-#: module_manager.py:631
+#: module_manager.py:653
 msgid ""
 "Artifacts, inscriptions, and excavated places in biblical sequence — open it "
 "from any pane’s module picker"
@@ -4075,25 +6272,26 @@ msgstr ""
 "Артефакты, надписи и раскопанные места в библейской последовательности — "
 "откройте из выбора модулей любой панели"
 
-#: module_manager.py:633
+#: module_manager.py:655
 msgid "Included"
 msgstr "Входит в комплект"
 
-#: module_manager.py:700 module_manager.py:769 module_picker.py:224
+#. ancient Hebrew folds into Hebrew
+#: module_manager.py:722 module_manager.py:791 module_picker.py:224
 msgid "All languages"
 msgstr "Все языки"
 
-#: module_manager.py:781
+#: module_manager.py:803
 msgid "Imported by an older version — download again for full formatting"
 msgstr ""
 "Импортировано старой версией — загрузите заново ради полного оформления"
 
-#: module_manager.py:783
+#: module_manager.py:805
 #, python-brace-format
 msgid "eBible.org published a newer text on {date}"
 msgstr "eBible.org опубликовал более новый текст {date}"
 
-#: module_manager.py:824
+#: module_manager.py:846
 #, python-brace-format
 msgid "{n} update available"
 msgid_plural "{n} updates available"
@@ -4101,24 +6299,24 @@ msgstr[0] "{n} доступное обновление"
 msgstr[1] "{n} доступных обновления"
 msgstr[2] "{n} доступных обновлений"
 
-#: module_manager.py:846 module_manager.py:1763
+#: module_manager.py:867 module_manager.py:1785
 #, python-brace-format
 msgid "Update from v{old} to v{new}"
 msgstr "Обновление с v{old} до v{new}"
 
-#: module_manager.py:890
+#: module_manager.py:912
 msgid "Installed"
 msgstr "Установлено"
 
-#: module_manager.py:893
+#: module_manager.py:915
 msgid "No installed modules match your search."
 msgstr "Ни один установленный модуль не подходит под ваш запрос."
 
-#: module_manager.py:894
+#: module_manager.py:916
 msgid "Nothing yet — install something from the catalogue below."
 msgstr "Пока ничего — установите что-нибудь из каталога ниже."
 
-#: module_manager.py:905
+#: module_manager.py:927
 #, python-brace-format
 msgid "{n} CrossWire module"
 msgid_plural "{n} CrossWire modules"
@@ -4126,7 +6324,7 @@ msgstr[0] "{n} модуль CrossWire"
 msgstr[1] "{n} модуля CrossWire"
 msgstr[2] "{n} модулей CrossWire"
 
-#: module_manager.py:910
+#: module_manager.py:932
 #, python-brace-format
 msgid "{n} eBible translation"
 msgid_plural "{n} eBible translations"
@@ -4134,24 +6332,24 @@ msgstr[0] "{n} перевод eBible"
 msgstr[1] "{n} перевода eBible"
 msgstr[2] "{n} переводов eBible"
 
-#: module_manager.py:916
+#: module_manager.py:938
 msgid "searching all languages"
 msgstr "поиск по всем языкам"
 
-#: module_manager.py:967
+#: module_manager.py:989
 msgid "No modules match your filters"
 msgstr "Ни один модуль не подходит под ваши условия"
 
-#: module_manager.py:970
+#: module_manager.py:992
 msgid "No catalogue cached yet — refresh to download the module list."
 msgstr "Каталог ещё не загружен — обновите, чтобы получить список модулей."
 
-#: module_manager.py:997
+#: module_manager.py:1019
 #, python-brace-format
 msgid "Load more — showing the first {shown} of {total}"
 msgstr "Показать ещё — показаны первые {shown} из {total}"
 
-#: module_manager.py:1058
+#: module_manager.py:1080
 #, python-brace-format
 msgid "{n} edition"
 msgid_plural "{n} editions"
@@ -4159,33 +6357,35 @@ msgstr[0] "{n} издание"
 msgstr[1] "{n} издания"
 msgstr[2] "{n} изданий"
 
-#: module_manager.py:1081 module_manager.py:1716
+#: module_manager.py:1103 module_manager.py:1738
 msgid "Locked"
 msgstr "Заблокирован"
 
-#: module_manager.py:1097 module_manager.py:1098 module_picker.py:196
+#: module_manager.py:1119 module_manager.py:1120 module_picker.py:196
 msgid "Remove module"
 msgstr "Удалить модуль"
 
-#: module_manager.py:1100 module_manager.py:1152 module_manager.py:1354
-#: module_manager.py:1643 module_manager.py:1675 module_manager.py:1755
+#. Same verb as the CrossWire rows — the user is installing a
+#. module either way; which wire it arrives over is plumbing.
+#: module_manager.py:1122 module_manager.py:1174 module_manager.py:1376
+#: module_manager.py:1665 module_manager.py:1697 module_manager.py:1777
 msgid "Install"
 msgstr "Установить"
 
-#: module_manager.py:1171
+#: module_manager.py:1193
 msgid "Waiting for the current operation to finish…"
 msgstr "Ожидание завершения текущей операции…"
 
-#: module_manager.py:1289 module_manager.py:1290 module_manager.py:1373
-#: module_manager.py:1533 module_picker.py:519 study_journal.py:236
+#: module_manager.py:1311 module_manager.py:1312 module_manager.py:1395
+#: module_manager.py:1555 module_picker.py:519 study_journal.py:236
 msgid "Remove"
 msgstr "Удалить"
 
-#: module_manager.py:1343 window.py:1976
+#: module_manager.py:1365 window.py:1976
 msgid "Unlock Module"
 msgstr "Разблокировать модуль"
 
-#: module_manager.py:1345
+#: module_manager.py:1367
 #, python-brace-format
 msgid ""
 "“{name}” is enciphered. Enter the unlock key from the publisher to install "
@@ -4193,21 +6393,21 @@ msgid ""
 msgstr ""
 "Модуль «{name}» зашифрован. Введите ключ от издателя, чтобы установить его."
 
-#: module_manager.py:1351 module_manager.py:1742
+#: module_manager.py:1373 module_manager.py:1764
 msgid "Paste the unlock key from the publisher"
 msgstr "Вставьте ключ разблокировки от издателя"
 
-#: module_manager.py:1353 module_manager.py:1372 module_manager.py:1532
-#: module_manager.py:1640 module_picker.py:518 study_journal.py:211
+#: module_manager.py:1375 module_manager.py:1394 module_manager.py:1554
+#: module_manager.py:1662 module_picker.py:518 study_journal.py:211
 #: study_journal.py:235 window.py:1916 window.py:1983
 msgid "Cancel"
 msgstr "Отмена"
 
-#: module_manager.py:1368
+#: module_manager.py:1390
 msgid "Remove module?"
 msgstr "Удалить модуль?"
 
-#: module_manager.py:1370
+#: module_manager.py:1392
 #, python-brace-format
 msgid ""
 "“{name}” will be removed from your library. You can reinstall it from the "
@@ -4216,33 +6416,33 @@ msgstr ""
 "Модуль «{name}» будет удалён из вашей библиотеки. Позже его можно установить "
 "из каталога заново."
 
-#: module_manager.py:1401
+#: module_manager.py:1423
 msgid "Downloading eBible catalog…"
 msgstr "Загружается каталог eBible…"
 
-#: module_manager.py:1409
+#: module_manager.py:1431
 msgid "Downloading module list from CrossWire…"
 msgstr "Загружается список модулей с CrossWire…"
 
-#: module_manager.py:1417 module_manager.py:1576
+#: module_manager.py:1439 module_manager.py:1598
 #, python-brace-format
 msgid "Downloading {name}…"
 msgstr "Загружается {name}…"
 
-#: module_manager.py:1432 module_manager.py:1548
+#: module_manager.py:1454 module_manager.py:1570
 msgid "Downloading…"
 msgstr "Загрузка…"
 
-#: module_manager.py:1468 module_manager.py:1475 module_manager.py:1489
+#: module_manager.py:1490 module_manager.py:1497 module_manager.py:1511
 msgid "Scholar’s Greek Lexicon"
 msgstr "Научный греческий словарь"
 
-#: module_manager.py:1471
+#: module_manager.py:1493
 msgid "Abbott-Smith + full Liddell-Scott-Jones — Tyndale House data (CC BY)"
 msgstr ""
 "Abbott-Smith и полный Лиддел-Скотт-Джонс — данные Tyndale House (CC BY)"
 
-#: module_manager.py:1478
+#: module_manager.py:1500
 msgid ""
 "Upgrade Greek definitions to Abbott-Smith, with the full Liddell-Scott-Jones "
 "one click deeper · ~7 MB download"
@@ -4250,79 +6450,81 @@ msgstr ""
 "Заменить греческие определения на Abbott-Smith, с полным Лиддел-Скотт-"
 "Джонсом на щелчок глубже · загрузка ~7 МБ"
 
-#: module_manager.py:1528
+#: module_manager.py:1550
 msgid "Remove?"
 msgstr "Удалить?"
 
-#: module_manager.py:1530
+#: module_manager.py:1552
 #, python-brace-format
 msgid "“{name}” will be removed. You can download it again later."
 msgstr "«{name}» будет удалён. Позже его можно загрузить снова."
 
-#: module_manager.py:1549
+#: module_manager.py:1571
 msgid "Parsing USFM…"
 msgstr "Разбор USFM…"
 
-#: module_manager.py:1550
+#: module_manager.py:1572
 msgid "Saving…"
 msgstr "Сохранение…"
 
-#: module_manager.py:1571
+#: module_manager.py:1593
 #, python-brace-format
 msgid "{name} updated"
 msgstr "{name} обновлён"
 
-#: module_manager.py:1580
+#. The same call serves both buttons; only the word differs.
+#: module_manager.py:1602
 msgid "Updating…"
 msgstr "Обновление…"
 
-#: module_manager.py:1580
+#: module_manager.py:1602
 msgid "Installing…"
 msgstr "Установка…"
 
-#: module_manager.py:1591
+#: module_manager.py:1613
 msgid "Import SWORD Module"
 msgstr "Импорт модуля SWORD"
 
-#: module_manager.py:1593
+#: module_manager.py:1615
 msgid "SWORD module (.zip)"
 msgstr "Модуль SWORD (.zip)"
 
-#: module_manager.py:1612
+#: module_manager.py:1634
 msgid "Drop a SWORD module .zip file to import it."
 msgstr "Перетащите ZIP-файл модуля SWORD, чтобы импортировать его."
 
-#: module_manager.py:1629
+#: module_manager.py:1651
 msgid "Reading module file…"
 msgstr "Чтение файла модуля…"
 
-#: module_manager.py:1634
+#: module_manager.py:1656
 msgid "Import Module"
 msgstr "Импортировать модуль"
 
-#: module_manager.py:1760 module_manager.py:1765
+#. Can't compare meaningfully — treat as a plain reinstall.
+#: module_manager.py:1782 module_manager.py:1787
 msgid "Reinstall"
 msgstr "Установить заново"
 
-#: module_manager.py:1760
+#: module_manager.py:1782
 msgid "Already installed"
 msgstr "Уже установлен"
 
-#: module_manager.py:1765
+#: module_manager.py:1787
 #, python-brace-format
 msgid "Already installed (v{old})"
 msgstr "Уже установлен (v{old})"
 
-#: module_manager.py:1766 window.py:1917
+#: module_manager.py:1788 window.py:1917
 msgid "Replace"
 msgstr "Заменить"
 
-#: module_manager.py:1766
+#: module_manager.py:1788
 #, python-brace-format
 msgid "Replace v{old} with older v{new}"
 msgstr "Заменить v{old} более старой v{new}"
 
-#: module_manager.py:1778
+#: module_manager.py:1800
 #, python-brace-format
 msgid "{n} module"
 msgid_plural "{n} modules"
@@ -4330,7 +6532,7 @@ msgstr[0] "{n} модуль"
 msgstr[1] "{n} модуля"
 msgstr[2] "{n} модулей"
 
-#: module_manager.py:1789
+#: module_manager.py:1811
 #, python-brace-format
 msgid "Installing {label}…"
 msgstr "Установка: {label}…"
@@ -4375,7 +6577,7 @@ msgstr "Сведения о модуле"
 msgid "Description"
 msgstr "Описание"
 
-#: module_picker.py:482 welcome.py:408 welcome.py:613 welcome.py:614
+#: module_picker.py:482 welcome.py:429 welcome.py:634 welcome.py:635
 #: window.py:3409 window.py:3420
 msgid "Language"
 msgstr "Язык"
@@ -4456,6 +6658,10 @@ msgstr "Глава"
 msgid "Chapter {n} Verse"
 msgstr "Глава {n}, стих"
 
+#. Not a coverage gap. Saying the module "follows a canon of
+#. 66 books" was worse than vague — it is false of Wycliffe,
+#. which carries nine of these books and simply lacks this
+#. one. Name the book, not the canon.
 #: navigation.py:469 pane.py:2469 present_mode.py:273
 #, python-format
 msgid "%s isn’t in this translation."
@@ -4539,6 +6745,10 @@ msgstr "При включённом словаре наведите на сло�
 msgid "It underlines where the lexicon has an entry"
 msgstr "Оно подчёркивается там, где у словаря есть статья"
 
+#. Both halves of the same dwell: the underline says an entry exists,
+#. resting says what it is. Listed only because `hover_preview` ships
+#. ON — a row teaching a toggle the reader has not turned on teaches a
+#. no-op, so if that default ever goes back to off, this row goes too.
 #: onboarding.py:74
 msgid "Rest on that word a moment longer"
 msgstr "Задержитесь на слове ещё немного"
@@ -4599,6 +6809,9 @@ msgstr "Показывать советы по ходу дела"
 msgid "One-time hints for hidden gestures"
 msgstr "Однократные подсказки о скрытых жестах"
 
+#. Named as the other half of the pair, not as a related link: this
+#. list deliberately holds no keys, so a reader who came looking for
+#. one has to be told where they all are.
 #: onboarding.py:158
 msgid "Keyboard Shortcuts"
 msgstr "Сочетания клавиш"
@@ -4706,6 +6919,10 @@ msgid "This module’s content isn’t readable — the cipher key may be incorr
 msgstr ""
 "Содержимое этого модуля не читается — возможно, неверный ключ шифрования."
 
+#. The module carries the book but prints nothing here.
+#. KJVA's Additions to Esther 1-9 are the case: single-verse
+#. '…' placeholders, because that material is set inside
+#. Esther itself.
 #: pane.py:2462
 #, python-brace-format
 msgid "{module} has no text under this chapter."
@@ -4766,29 +6983,29 @@ msgstr "есть сноски"
 msgid "Strong’s {num}"
 msgstr "Стронг {num}"
 
-#: pane.py:4981
+#: pane.py:5012
 #, python-brace-format
 msgid "Cross-references ({letter}) · verse {v}"
 msgstr "Параллельные места ({letter}) · стих {v}"
 
-#: pane.py:4983
+#: pane.py:5014
 #, python-brace-format
 msgid "Footnote ({letter}) · verse {v}"
 msgstr "Сноска ({letter}) · стих {v}"
 
-#: pane.py:5249
+#: pane.py:5280
 msgid "Parents"
 msgstr "Родители"
 
-#: pane.py:5251
+#: pane.py:5282
 msgid "Mother"
 msgstr "Мать"
 
-#: pane.py:5253
+#: pane.py:5284
 msgid "Children"
 msgstr "Дети"
 
-#: pane.py:5266
+#: pane.py:5297
 #, python-format
 msgid "%d other person carries this name"
 msgid_plural "%d other people carry this name"
@@ -4796,16 +7013,16 @@ msgstr[0] "это имя носит ещё %d человек"
 msgstr[1] "это имя носят ещё %d человека"
 msgstr[2] "это имя носят ещё %d человек"
 
-#: pane.py:5271
+#: pane.py:5302
 msgid "See the whole line"
 msgstr "Посмотреть всю линию"
 
-#: pane.py:5300
+#: pane.py:5331
 #, python-format
 msgid "No entry for “%s”"
 msgstr "Нет статьи для «%s»"
 
-#: pane.py:5301
+#: pane.py:5332
 #, python-format
 msgid ""
 "Searched %s. Another dictionary may carry it — the Module Manager lists more."
@@ -4813,15 +7030,17 @@ msgstr ""
 "Искали в: %s. Слово может быть в другом словаре — в менеджере модулей их "
 "больше."
 
-#: pane.py:5304
+#: pane.py:5335
 msgid "Another dictionary may carry it — the Module Manager lists more."
 msgstr "Слово может быть в другом словаре — в менеджере модулей их больше."
 
-#: pane.py:5325
+#: pane.py:5356
 msgid "No dictionaries installed"
 msgstr "Словари не установлены"
 
-#: pane.py:5328
+#. Named two English dictionaries by name, which is the
+#. wrong advice for a reader who reads in Spanish.
+#: pane.py:5359
 msgid "Add one from the Module Manager, then double-click the word again."
 msgstr "Добавьте словарь в менеджере модулей и дважды щёлкните слово снова."
 
@@ -5047,6 +7266,8 @@ msgstr "Послания Павла"
 msgid "General Epistles"
 msgstr "Соборные послания"
 
+#. Heading, not an action: a noun in Spanish (Búsqueda), where the
+#. button that opens this panel is a verb (Buscar).
 #: search_panel.py:154
 msgctxt "panel heading"
 msgid "Search"
@@ -5066,6 +7287,9 @@ msgstr ""
 "Ищите в одном модуле или выберите «Все Библии», чтобы искать сразу во всех "
 "переводах"
 
+#. SearchEntry gives the leading magnifier + a clear-✕ for free. Enter
+#. runs the search (we deliberately do NOT search-as-you-type — it
+#. indexes); clearing the field returns to the recent-searches view.
 #: search_panel.py:185
 msgid "Search…"
 msgstr "Искать…"
@@ -5276,6 +7500,7 @@ msgstr "Выделить"
 msgid "Clear highlight"
 msgstr "Убрать выделение"
 
+#. Tags
 #: study_journal.py:492
 msgid "Tags (comma-separated)"
 msgstr "Метки (через запятую)"
@@ -5284,6 +7509,7 @@ msgstr "Метки (через запятую)"
 msgid "e.g. prayer, faith, covenant"
 msgstr "например: молитва, вера, завет"
 
+#. Note text
 #: study_journal.py:501 study_journal.py:806
 msgid "Note"
 msgstr "Заметка"
@@ -5337,6 +7563,8 @@ msgstr "Удалить пометку"
 msgid "Saved"
 msgstr "Сохранено"
 
+#. Deletion is otherwise irreversible — offer an undo while the
+#. toast lasts (default timeout, unlike _toast's quick 2s).
 #: study_journal.py:1018
 msgid "Note deleted"
 msgstr "Заметка удалена"
@@ -5504,51 +7732,15 @@ msgstr "Всё, что есть на этом языке, с самого нач
 msgid "Larger download"
 msgstr "Загрузка побольше"
 
-#: welcome.py:295
-#, python-brace-format
-msgid "{n} Bible"
-msgid_plural "{n} Bibles"
-msgstr[0] "{n} Библия"
-msgstr[1] "{n} Библии"
-msgstr[2] "{n} Библий"
-
-#: welcome.py:299
-#, python-brace-format
-msgid "{n} commentary"
-msgid_plural "{n} commentaries"
-msgstr[0] "{n} комментарий"
-msgstr[1] "{n} комментария"
-msgstr[2] "{n} комментариев"
-
-#: welcome.py:301
-msgid "commentary"
-msgstr "комментарий"
-
-#: welcome.py:303
-msgid "notes"
-msgstr "примечания"
-
-#: welcome.py:305
-msgid "dictionary"
-msgstr "словарь"
-
-#: welcome.py:307
-msgid "lexicon"
-msgstr "словарь Стронга"
-
-#: welcome.py:309
-msgid "cross-references"
-msgstr "перекрёстные ссылки"
-
-#: welcome.py:358 welcome.py:448 welcome.py:634 welcome.py:662
+#: welcome.py:379 welcome.py:469 welcome.py:655 welcome.py:683
 msgid "Welcome to Scriptura"
 msgstr "Добро пожаловать в Scriptura"
 
-#: welcome.py:409
+#: welcome.py:430
 msgid "Back to language"
 msgstr "Назад к выбору языка"
 
-#: welcome.py:453
+#: welcome.py:474
 msgid ""
 "Choose your language. It sets the interface, and the Bibles offered on the "
 "next screen."
@@ -5556,7 +7748,7 @@ msgstr ""
 "Выберите язык. Он задаёт интерфейс и переводы Библии, предлагаемые на "
 "следующем экране."
 
-#: welcome.py:486
+#: welcome.py:507
 msgid ""
 "You can change this later, and add texts in any language from the Module "
 "Manager."
@@ -5564,11 +7756,7 @@ msgstr ""
 "Это можно изменить позже, а тексты на любом языке добавить через менеджер "
 "модулей."
 
-#: welcome.py:520
-msgid "Detected"
-msgstr "Определён"
-
-#: welcome.py:667
+#: welcome.py:688
 msgid ""
 "Choose a starting point. Pick the shape that fits how you want to work — "
 "this is just a head start."
@@ -5576,49 +7764,51 @@ msgstr ""
 "Выберите, с чего начать. Возьмите то, что подходит вашему способу работы, — "
 "это лишь первый шаг."
 
-#: welcome.py:687
+#: welcome.py:708
 msgid "You can add or remove anything later from the Module Manager."
 msgstr "Позже что угодно можно добавить или убрать через менеджер модулей."
 
-#: welcome.py:712
+#: welcome.py:733
 msgid "New here? See what the pointer can do — Tips & Gestures"
 msgstr ""
 "Впервые здесь? Посмотрите, что умеет указатель мыши, — «Советы и жесты»"
 
-#: welcome.py:721
+#: welcome.py:742
 msgid "Choose individual modules instead"
 msgstr "Выбрать отдельные модули вместо этого"
 
-#: welcome.py:744
+#: welcome.py:765
 msgid "★ Recommended"
 msgstr "★ Рекомендуется"
 
-#: welcome.py:803
+#: welcome.py:824
 msgid "Starting download…"
 msgstr "Начинается загрузка…"
 
-#: welcome.py:835
+#: welcome.py:856
 msgid "Back to options"
 msgstr "Назад к вариантам"
 
-#: welcome.py:864
+#: welcome.py:885
 msgid "Reading the module list…"
 msgstr "Читается список модулей…"
 
-#: welcome.py:880
+#. Not fatal: every module in the released repository still
+#. installs by zip without it.
+#: welcome.py:901
 msgid "module list"
 msgstr "список модулей"
 
-#: welcome.py:885
+#: welcome.py:906
 #, python-brace-format
 msgid "({step}/{total}) Downloading {label}…"
 msgstr "({step}/{total}) Загружается {label}…"
 
-#: welcome.py:969
+#: welcome.py:990
 msgid "unknown error"
 msgstr "неизвестная ошибка"
 
-#: welcome.py:973
+#: welcome.py:994
 #, python-brace-format
 msgid ""
 "Couldn’t download a Bible — please check your connection and try again. "
@@ -5627,7 +7817,7 @@ msgstr ""
 "Не удалось загрузить Библию — проверьте соединение и попробуйте снова. "
 "({details})"
 
-#: welcome.py:983
+#: welcome.py:1004
 #, python-brace-format
 msgid ""
 "Installed with warnings — these can be retried later from the Module "
@@ -5636,7 +7826,7 @@ msgstr ""
 "Установлено с предупреждениями — позже можно повторить через менеджер "
 "модулей: {names}"
 
-#: welcome.py:986
+#: welcome.py:1007
 msgid "Done. Opening Scriptura…"
 msgstr "Готово. Открывается Scriptura…"
 
@@ -6063,6 +8253,7 @@ msgstr "Выбрать отрывок"
 msgid "Greek / Hebrew lexicon — click words for definitions"
 msgstr "Греческий и еврейский словарь — щёлкайте слова ради определений"
 
+#. The visible child is decorative glyphs (אΩ); give AT a real name.
 #: window.py:434 window.py:2676
 msgid "Greek / Hebrew lexicon"
 msgstr "Греческий и еврейский словарь"
@@ -6079,6 +8270,8 @@ msgstr "Сноски"
 msgid "Cross-references — related verses appear when you tap a verse"
 msgstr "Параллельные места — родственные стихи появляются при касании стиха"
 
+#. Header — a quiet title so the popover rhymes with the Recent popover
+#. (title + flat list, no separator rule).
 #: window.py:485 window.py:486 window.py:1763 window.py:2706
 msgid "Bookmarks"
 msgstr "Закладки"
@@ -6131,6 +8324,9 @@ msgstr "Перейти к… (например, От Иоанна 3:16)"
 msgid "Exit reading mode"
 msgstr "Выйти из режима чтения"
 
+#. No cached results at all — surface a hint so the user knows F3
+#. fired but had nothing to step through (also useful for debugging:
+#. if you see this toast, the key reached the handler).
 #: window.py:1252
 msgid "No active search — Ctrl+F to search"
 msgstr "Поиск не идёт — Ctrl+F, чтобы искать"
@@ -6205,6 +8401,8 @@ msgstr "Убрать закладку"
 msgid "Bookmarked {ref}"
 msgstr "Закладка на {ref}"
 
+#. Default (longer) timeout, not _toast's 2s — the user needs time
+#. to reach the Undo button.
 #: window.py:1842
 msgid "Bookmark removed"
 msgstr "Закладка убрана"
@@ -6496,18 +8694,6 @@ msgstr "Презентация"
 msgid "Present the passage full-screen"
 msgstr "Показать отрывок на весь экран"
 
-#: genealogy_reader.py:725
-msgid "%(page)d of %(total)d"
-msgstr "%(page)d из %(total)d"
-
-#: window.py:3006
-msgid "Next page"
-msgstr "Следующая страница"
-
-#: window.py:3007
-msgid "Previous page"
-msgstr "Предыдущая страница"
-
 #: window.py:3008
 msgid "First page"
 msgstr "Первая страница"
@@ -6540,10 +8726,16 @@ msgstr "Сочетания клавиш"
 msgid "Install StrongsGreek or StrongsHebrew from the Module Manager."
 msgstr "Установите StrongsGreek или StrongsHebrew через менеджер модулей."
 
+#. ── Appearance: a section header + its own row whose chevron rotates
+#. (▸→▾) to expand the inline appearance card just below — a real expander
+#. affordance, not a → arrow that falsely implies push-navigation. ──────
 #: window.py:3272 window.py:3463
 msgid "Appearance"
 msgstr "Оформление"
 
+#. ── Study data: one-file backup / restore of everything the reader
+#. accumulates by hand (annotations, bookmarks, plan progress) — the
+#. data is otherwise trapped inside the Flatpak datadir. ──────────────
 #: window.py:3281
 msgid "Study Data"
 msgstr "Данные изучения"
@@ -6560,14 +8752,25 @@ msgstr "Закрыть меню"
 msgid "Modules"
 msgstr "Модули"
 
+#. Open-to-Today switch (label is a draft — Andres's taxonomy). Off
+#. restores direct-to-reading at launch; the change applies from the
+#. next launch (the current session's page, if any, is already up).
 #: window.py:3336 window.py:3341
 msgid "Open to Today"
 msgstr "Открывать на «Сегодня»"
 
+#. Church calendar for the Today page's church-year line. Default
+#. None — the ecumenical silence; each option is a tradition's
+#. historic calendar (labels are drafts — Andres's taxonomy).
 #: window.py:3351 window.py:3376
 msgid "Church calendar"
 msgstr "Церковный календарь"
 
+#. Two labels per tradition. The pill carries the bare name, because it
+#. sits on the row's own line and grows with whatever it says —
+#. "Orthodox (New Calendar)" pushed the row's title onto two lines. The
+#. popover has the width to name the edition, which is where the
+#. distinction is actually being made.
 #: window.py:3360 window.py:3361
 msgid "None"
 msgstr "Нет"
@@ -6609,6 +8812,11 @@ msgstr "Scriptura откроется на языке: {language}"
 msgid "Reopen now"
 msgstr "Открыть заново"
 
+#. Font family — all installed system fonts, with OpenDyslexic promoted.
+#. It is bundled precisely so a reader who wants it does not have to go
+#. and find one, and leaving it in the alphabetical run of every
+#. installed face would waste that: nobody scrolls three hundred names
+#. hoping. Filtered out of the run below so it appears exactly once.
 #: window.py:3500
 msgid "Font"
 msgstr "Шрифт"
@@ -6637,6 +8845,7 @@ msgstr ""
 "Предпочтение, а не средство: испытания не нашли выигрыша в скорости чтения. "
 "Кому так легче — тому легче всё равно."
 
+#. Font size
 #: window.py:3596
 msgid "Size"
 msgstr "Кегль"
@@ -6645,6 +8854,7 @@ msgstr "Кегль"
 msgid "Font size"
 msgstr "Размер шрифта"
 
+#. Line spacing
 #: window.py:3613
 msgid "Spacing"
 msgstr "Интерлиньяж"
@@ -6653,6 +8863,7 @@ msgstr "Интерлиньяж"
 msgid "Line spacing"
 msgstr "Междустрочный интервал"
 
+#. Reading column width — wider monitors benefit from a wider column.
 #: window.py:3629
 msgid "Width"
 msgstr "Ширина"
@@ -6665,6 +8876,11 @@ msgstr "Ширина колонки чтения"
 msgid "Colour"
 msgstr "Цвет"
 
+#. ── Advanced reading toggles ──────────────────────────────────────
+#. Five ship on: section headings, small caps, the coloured drop cap,
+#. hover preview, spoken readings. Every other toggle ships off. New
+#. toggles slot in as rows without a redesign, and ship off unless
+#. they earn a place in that five.
 #: window.py:3670
 msgid "Advanced"
 msgstr "Дополнительно"
@@ -6677,6 +8893,10 @@ msgstr "Межбуквенный интервал"
 msgid "Section headings"
 msgstr "Заголовки разделов"
 
+#. Both read the sense-units a module marks with section headings.
+#. Plenty of translations mark none (KJV, ASV, the Russian Synodal),
+#. and on those the switches are honestly unavailable rather than
+#. silently inert — see _refresh_section_rows.
 #: window.py:3754
 msgid "This translation marks no sections"
 msgstr "В этом переводе разделы не отмечены"
@@ -6705,6 +8925,8 @@ msgstr "Убрать отступы в поэзии"
 msgid "Coloured drop cap"
 msgstr "Цветная буквица"
 
+#. Behavior, not typography: dwell on a Strong's word peeks its
+#. gloss without a click.
 #: window.py:3790
 msgid "Preview words on hover"
 msgstr "Показывать значение при наведении"
@@ -6799,6 +9021,41 @@ msgstr "День {n} · {passages}"
 #, python-brace-format
 msgid "Day {n}"
 msgstr "День {n}"
+
+#~ msgid "Charts"
+#~ msgstr "Диаграммы"
+
+#, python-brace-format
+#~ msgid "{n} Bible"
+#~ msgid_plural "{n} Bibles"
+#~ msgstr[0] "{n} Библия"
+#~ msgstr[1] "{n} Библии"
+#~ msgstr[2] "{n} Библий"
+
+#, python-brace-format
+#~ msgid "{n} commentary"
+#~ msgid_plural "{n} commentaries"
+#~ msgstr[0] "{n} комментарий"
+#~ msgstr[1] "{n} комментария"
+#~ msgstr[2] "{n} комментариев"
+
+#~ msgid "commentary"
+#~ msgstr "комментарий"
+
+#~ msgid "notes"
+#~ msgstr "примечания"
+
+#~ msgid "dictionary"
+#~ msgstr "словарь"
+
+#~ msgid "lexicon"
+#~ msgstr "словарь Стронга"
+
+#~ msgid "cross-references"
+#~ msgstr "перекрёстные ссылки"
+
+#~ msgid "Detected"
+#~ msgstr "Определён"
 
 #~ msgid ""
 #~ "The meaning of his name is not agreed; it is not the 'gotten' of Cain."
