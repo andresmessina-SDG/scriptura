@@ -195,3 +195,43 @@ def test_the_displayed_date_is_translated_and_its_key_is_not(loud):
     entry = loud['chapters'][0]['entries'][0]
     assert entry['date'].isupper()
     assert not entry['date_key'].isupper()
+
+
+def test_the_three_bands_a_photograph_can_be_in():
+    """Load, hold, drop — and a gap between the last two.
+
+    Without the gap a plate resting on the edge is decoded, dropped and
+    decoded again as the reader nudges the scrollbar, which is worse than
+    either answer on its own.
+    """
+    import archaeology_reader as ar
+    page, top = 1000.0, 5000.0
+    # In view.
+    assert ar._band(5200, 5620, top, page) == (True, False)
+    # Just past the load margin: not worth decoding, not yet worth dropping.
+    assert ar._band(7100, 7520, top, page) == (False, False)
+    # Far below, and far above.
+    assert ar._band(9500, 9920, top, page) == (False, True)
+    assert ar._band(100, 520, top, page) == (False, True)
+
+
+def test_render_decodes_no_photographs():
+    """56 plates are built up front — a Box does not virtualise — and each
+    `set_filename` decodes its file there and then: 383ms and 126MB to open a
+    pane showing two of them. Rendering must leave every one of them empty
+    and let the viewport ask for what it needs."""
+    import gi
+    gi.require_version('Adw', '1')
+    from gi.repository import Adw, Gdk
+    if Gdk.Display.get_default() is None:
+        pytest.skip('needs a display: building real GTK widgets without one '
+                    'segfaults rather than failing')
+    Adw.init()
+    import archaeology_reader as ar
+    reader = ar.ArchaeologyReader()
+    reader.render()
+    assert len(reader._lazy) == 56
+    assert not [pic for _plate, pic, _path in reader._lazy
+                if pic.get_paintable() is not None]
+    # The paths are still there to load from, and they exist on disk.
+    assert all(os.path.exists(path) for _plate, _pic, path in reader._lazy)

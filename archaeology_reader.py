@@ -72,6 +72,29 @@ _CITY_LABELS = [
 ]
 
 
+#: How far outside the viewport a photograph is worth decoding, and how far
+#: it is worth holding on to, both in page-sizes. Two bands rather than one,
+#: so a plate resting on the edge is not decoded, dropped and decoded again
+#: as the reader nudges the scrollbar: LOAD is what to have ready, KEEP is
+#: what not to throw away yet.
+_LOAD_MARGIN = 1.0
+_KEEP_MARGIN = 3.0
+
+
+def _band(y0, y1, top, page):
+    """`(near, far)` for a plate spanning [y0, y1) against a viewport of
+    `page` starting at `top` — worth decoding, and worth letting go of.
+
+    Between the two answers is the band where nothing happens: a plate there
+    keeps whatever state it has, which is what stops a nudge of the scrollbar
+    from decoding and dropping the same file over and over.
+    """
+    bottom = top + page
+    near = y1 > top - page * _LOAD_MARGIN and y0 < bottom + page * _LOAD_MARGIN
+    far = y1 < top - page * _KEEP_MARGIN or y0 > bottom + page * _KEEP_MARGIN
+    return near, far
+
+
 class ArchaeologyReader:
     def __init__(self, pane=None):
         self._pane = pane
@@ -80,6 +103,9 @@ class ArchaeologyReader:
         self._verse_anchors: dict[tuple, Gtk.Widget] = {}
         self._entry_anchors: dict[str, Gtk.Widget] = {}
         self._sections: list[tuple] = []     # (divider, [(plate, search_text)])
+        self._lazy: list[tuple] = []         # (plate, picture, image path)
+        self._to_load: list[tuple] = []      # queued for the idle loader
+        self._load_source = 0
         self._apparatus: list[Gtk.Widget] = []  # glossary / further-reading
         self._front = None
         self._scroll_target = None
@@ -152,6 +178,14 @@ class ArchaeologyReader:
         self._page.add_css_class('stone-page')
         self._scroller.set_child(self._page)
         self._root.append(self._scroller)
+
+        # Both signals, because they answer different questions: `value-changed`
+        # is the reader scrolling, `changed` is the page itself getting an
+        # allocation — which is when the first plates learn where they are, and
+        # so the only moment the top of the gallery can be filled in at all.
+        adj = self._scroller.get_vadjustment()
+        adj.connect('value-changed', lambda *_a: self._pump_images())
+        adj.connect('changed', lambda *_a: self._pump_images())
 
         # Font scaling: the .stone-* sizes are em-relative, so one base
         # font-size on .stone-page scales the whole document. Driven by the
@@ -273,6 +307,10 @@ class ArchaeologyReader:
         self._build_contents(doc)
         self.apply_font_size(getattr(self._pane, '_font_size', None))
         self._built = True
+        # The adjustment's `changed` covers the normal path; this covers a
+        # reader rendered into a pane that is already laid out, where nothing
+        # about the scroller is about to change.
+        GLib.idle_add(lambda: (self._pump_images(), False)[1])
 
     def _frontispiece(self, doc):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -329,7 +367,6 @@ class ArchaeologyReader:
         plate.add_css_class('stone-plate')
 
         pic = Gtk.Picture()
-        pic.set_filename(archaeology_bridge.image_path(entry['image']))
         pic.set_content_fit(Gtk.ContentFit.CONTAIN)
         pic.set_can_shrink(True)
         pic.set_hexpand(True)
@@ -347,6 +384,8 @@ class ArchaeologyReader:
             else ngettext('Click to enlarge ({n} view)',
                           'Click to enlarge ({n} views)', n_views).format(n=n_views))
         plate.append(self._clamp(pic, _IMG_W))
+        self._lazy.append(
+            (plate, pic, archaeology_bridge.image_path(entry['image'])))
 
         txt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         txt.append(self._label(entry['title'], 'stone-title', selectable=True))
@@ -572,6 +611,58 @@ class ArchaeologyReader:
             btn.connect('clicked', lambda _b, c=cid: self._jump(c))
             box.append(btn)
         self._contents_pop.set_child(box)
+
+    # ── photographs, decoded only where the reader can see them ───────────
+    def _pump_images(self):
+        """Load the plates in view, drop the ones long out of it.
+
+        Every plate is built up front — a Box does not virtualise — and
+        `set_filename` decodes its file there and then. All 56 of them cost
+        383ms and 126MB to open a pane showing two. The band each picture
+        sits in is a fixed 420px whatever arrives in it, so a photograph
+        appearing late moves nothing and the scroll position is safe.
+        """
+        adj = self._scroller.get_vadjustment()
+        page = adj.get_page_size()
+        if page <= 0:                 # not laid out yet; `changed` will call
+            return
+        top = adj.get_value()
+        middle = top + page / 2
+        want = []
+        for plate, pic, path in self._lazy:
+            ok, rect = plate.compute_bounds(self._page)
+            if not ok:
+                continue
+            y0 = rect.get_y()
+            y1 = y0 + rect.get_height()
+            near, far = _band(y0, y1, top, page)
+            loaded = pic.get_paintable() is not None
+            if near and not loaded:
+                want.append((abs((y0 + y1) / 2 - middle), pic, path))
+            elif far and loaded:
+                pic.set_paintable(None)   # frees the texture; the file stays
+        # Nearest the middle of the view first, so what the reader is looking
+        # at arrives before what is merely close.
+        want.sort(key=lambda w: w[0])
+        self._to_load = [(pic, path) for _d, pic, path in want]
+        if self._to_load and self._load_source == 0:
+            self._load_source = GLib.idle_add(self._load_one)
+
+    def _load_one(self):
+        """One photograph per turn of the main loop.
+
+        Decoding is ~7ms a file, and `value-changed` fires many times through
+        a flick: doing the whole band inline cost 23ms in one callback, which
+        is a dropped frame in the middle of a scroll. An idle hands the frame
+        back between files, so the gallery fills in while it moves.
+        """
+        while self._to_load:
+            pic, path = self._to_load.pop(0)
+            if pic.get_paintable() is None:
+                pic.set_filename(path)
+                return True
+        self._load_source = 0
+        return False
 
     def _jump(self, chapter_id):
         self._contents_pop.popdown()
