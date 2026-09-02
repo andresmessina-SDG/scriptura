@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<component type="desktop-application">
+<component type="desktop-application"
+           xmlns:its="http://www.w3.org/2005/11/its" its:version="2.0">
   <id>io.github.andresmessina_SDG.Scriptura</id>
 
   <name>Scriptura</name>
@@ -136,6 +137,18 @@
   </content_rating>
 
   <releases>
+    <release version="1.6.1" date="2026-09-02">
+      <!-- English only, by his call: a patch release's notes are not
+           worth stranding two catalogues at 99%. its:translate="no" is what
+           keeps xgettext out of them. -->
+      <description its:translate="no">
+        <p>Two fixes from the first days of reading in 1.6.0.</p>
+        <ul>
+          <li>The right-click study menu did not open in the middle of the page. It was placed below the pointer, flipped above when it would not fit there, and when neither fitted it was not shown at all — so on a smaller window a band across the middle of the column answered nothing.</li>
+          <li>The Book of Generations opened at its own type size rather than yours, and jumped to yours the first time you changed it.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.6.0" date="2026-09-02">
       <description>
         <p>Scriptura in Russian, and the lists of names drawn as a book.</p>
