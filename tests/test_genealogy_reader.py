@@ -3,14 +3,28 @@
 `genealogy_layout` is pure geometry and is tested without GTK next door in
 test_genealogy.py. This file covers the half that file cannot: the Cairo
 drawing path, the Pango measurement the charts are laid out against, and the
-hit list a click resolves through. All of it runs offscreen onto an image
-surface — no display, no window.
+hit list a click resolves through. Nothing here is ever shown — the widgets
+are built, drawn onto an image surface and walked, never presented.
+
+A display is still needed to build them: `Gtk.DrawingArea()` is a GTK widget,
+and constructing one without a display SEGFAULTS the interpreter rather than
+raising, which took the whole suite down in CI (where the test job is
+deliberately headless) the first time this branch was pushed.
 """
 import struct
 
 import cairo
 import pytest
-from gi.repository import GLib
+from gi.repository import GLib, Gdk, Gtk
+
+# init_check() opens the default display if there is one; it is not the test,
+# because it returns True with no display at all (GUIDANCE §4). What actually
+# answers the question is whether a display object exists afterwards.
+Gtk.init_check()
+if Gdk.Display.get_default() is None:
+    pytest.skip('needs a display: building real GTK widgets without one '
+                'segfaults rather than failing',
+                allow_module_level=True)
 
 import genealogy_bridge as gb
 import genealogy_layout as gl
