@@ -407,6 +407,12 @@ class WelcomeWindow(Adw.ApplicationWindow):
             self._stack.set_visible_child_name('language')
         self._sync_back_button()
 
+        # The download runs on a daemon thread with no cancellation point, so
+        # closing the window mid-install ends the process with part of a
+        # library on disk, no opening pair recorded, and nothing said about
+        # it. Ask first.
+        self.connect('close-request', self._on_close_request)
+
     def _build_header(self):
         """Bar with the language picker and no title.
 
@@ -860,6 +866,36 @@ class WelcomeWindow(Adw.ApplicationWindow):
         box.append(self._back_btn)
         return box
 
+    def _on_close_request(self, _win):
+        if not getattr(self, '_installing', False):
+            return False
+        self._ask_stop_install()
+        return True
+
+    def _ask_stop_install(self):
+        dialog = Adw.AlertDialog(
+            heading=_('Stop setting up?'),
+            body=_('The download hasn’t finished. Whatever has arrived '
+                   'is kept, and the rest can be downloaded later from the '
+                   'Module Manager.'),
+        )
+        dialog.add_response('keep', _('Keep Downloading'))
+        dialog.add_response('stop', _('Stop'))
+        dialog.set_response_appearance(
+            'stop', Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.set_default_response('keep')
+        dialog.set_close_response('keep')
+        dialog.connect('response', self._on_stop_confirm)
+        dialog.present(self)
+
+    def _on_stop_confirm(self, _dialog, response):
+        if response != 'stop':
+            return
+        # Clearing the flag first, or close() would ask the same question
+        # again. The worker thread is a daemon and dies with the process.
+        self._installing = False
+        self.close()
+
     def _on_back(self, _btn):
         self._installing = False
         if getattr(self, '_lang_drop', None) is not None:
@@ -977,6 +1013,9 @@ class WelcomeWindow(Adw.ApplicationWindow):
             settings.put('split_pane_mode', False)
 
     def _finish_install(self, failed, bundle):
+        # Downloading is over either way, so the close guard comes off here:
+        # the error page and the handoff both close the window normally.
+        self._installing = False
         # The one hard requirement: a Bible-text module must now exist, or the
         # main window has nothing to open. Everything else is recoverable from
         # the Module Manager later.
