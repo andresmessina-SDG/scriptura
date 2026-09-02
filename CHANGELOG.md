@@ -147,6 +147,14 @@ semver-ish — 0.x was the pre-Flathub testing track.
   the app with some of the collection on disk, no record of what to open
   on, and nothing said about either. It asks now: whatever has arrived is
   kept, and it says where the rest can be downloaded later.
+- **Russian was set in whichever serif the machine happened to own.** The
+  app's reading serif carries no Cyrillic, so every Russian word fell out
+  of the chain to a face nobody chose: Georgia on one machine, DejaVu
+  Serif on the next. The widest of them was struck through by the
+  genealogy charts' own column rails, which broke around a name by the
+  size of the type rather than the size of the ink. Russian now sets in a
+  serif the app ships with, the same one everywhere, and a rail breaks
+  around what is actually on the paper.
 
 ### Internal
 
