@@ -4,6 +4,21 @@ All notable changes to Scriptura. Format roughly follows
 [Keep a Changelog](https://keepachangelog.com/). Versioning is
 semver-ish — 0.x was the pre-Flathub testing track.
 
+## [1.6.1] — 2026-09-02
+
+### Fixed
+
+- **The right-click study menu did not open in the middle of the page.** It
+  is placed below the pointer, flipped above when it will not fit there,
+  and when neither fits it was not shown at all — so on a window shorter
+  than about 1,100px a band across the middle of the column answered
+  nothing, while the same verse answered a line higher or lower. The menu
+  can now be smaller than it would like: it keeps its full height wherever
+  there is room and scrolls where there is not.
+- **The Book of Generations opened at its own type size rather than
+  yours**, then jumped to yours the moment you changed it. It takes the
+  reading size when it is built, as the other document readers do.
+
 ## [1.6.0] — 2026-09-02
 
 ### Added
