@@ -4,7 +4,7 @@ All notable changes to Scriptura. Format roughly follows
 [Keep a Changelog](https://keepachangelog.com/). Versioning is
 semver-ish — 0.x was the pre-Flathub testing track.
 
-## [Unreleased]
+## [1.6.0] — 2026-09-02
 
 ### Added
 
@@ -86,6 +86,12 @@ semver-ish — 0.x was the pre-Flathub testing track.
   "atonement" — advice written when the only dictionaries were English Bible
   dictionaries, and false for the Spanish reader whose dictionary answers
   ordinary vocabulary. It now says which dictionaries were searched.
+- **Scripture in Stone opens as soon as you ask for it.** The gallery
+  decoded all 56 of its photographs before it would appear — 485ms of
+  waiting, and 126MB of texture held for as long as it stayed open, to
+  show you the two plates that fit on screen. The pictures now load as
+  they come into view and are dropped once they are well past it: 102ms
+  to open, 31MB held, and nothing moves under you as they arrive.
 
 ### Fixed
 
@@ -100,6 +106,19 @@ semver-ish — 0.x was the pre-Flathub testing track.
   search result's chart, were built where the English name is the key and
   never translated on the way out — so «Большие пророки» opened onto
   "Isaiah / Jeremiah / Ezekiel" with «Исаия 1:2» in the results beneath.
+- **Scripture in Stone was English in every language.** The gallery is
+  curated in TOML, which the string extractor cannot read, so none of its
+  342 strings had ever reached a catalogue: a Russian reader opened
+  «Писание в камне» onto a page headed "Scripture in Stone" and read 62
+  captions, 11 introductions and a 15-entry glossary in a language they
+  had not chosen. They are translated now at the one place every display
+  site reads from, which covers the page, the artifact dialog and the
+  search index together. Three things stay as printed, because a
+  photographer's credit, a library catalogue and a verse chip each need
+  the words they were given. Two Spanish cards also quoted a Bible no
+  Spanish collection installs — every Spanish Bible here has «¡Grande es
+  Diana de los efesios!» where the cards said «Artemisa», so the chip
+  beside the sentence opened a verse naming someone else.
 - **Translated labels overflowed the places that hold them.** A paper
   chip draws its name inside a fixed 56px ring, so «Грифельный» ran
   through it and lost its Г — and the Spanish *Personalizado* had been
@@ -122,6 +141,12 @@ semver-ish — 0.x was the pre-Flathub testing track.
   opened a reading window with nothing behind the double-click the same
   screen had just taught. The list is refetched now whenever it has no
   row for something the collection asks for.
+- **Closing the first-run window mid-download left part of a library.**
+  The install runs in the background and the titlebar close button stayed
+  live through all of it, so closing at the fourth module of eight ended
+  the app with some of the collection on disk, no record of what to open
+  on, and nothing said about either. It asks now: whatever has arrived is
+  kept, and it says where the rest can be downloaded later.
 
 ### Internal
 

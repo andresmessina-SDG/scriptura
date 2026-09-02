@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scriptura\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-02 07:36-0600\n"
+"POT-Creation-Date: 2026-09-02 08:59-0600\n"
 "PO-Revision-Date: 2026-08-16 00:00+0000\n"
 "Last-Translator: Scriptura\n"
 "Language-Team: Spanish\n"
@@ -175,10 +175,175 @@ msgid "Commentary"
 msgstr "Comentario"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:141
+msgid "Scriptura in Russian, and the lists of names drawn as a book."
+msgstr "Scriptura en ruso, y las listas de nombres dibujadas como un libro."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:143
+msgid ""
+"The app reads in Russian — every menu, dialog and hint, with the three "
+"plural forms Russian needs and the Synodal book names it expects: 1 Kings is "
+"3-я Царств. The names are the ones Russian Bible software uses, not "
+"translations of the English."
+msgstr ""
+"La aplicación se lee en ruso: cada menú, cada diálogo y cada aviso, con "
+"las tres formas de plural que el ruso necesita y los nombres sinodales "
+"de los libros que espera: 1 Reyes es 3-я Царств. Los términos son los "
+"que usa el software bíblico ruso, no traducciones del inglés."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:144
+msgid ""
+"Russian texts to read in it: a modern Russian Bible under a free licence, "
+"and the first Russian dictionary this app has ever offered, so a double-"
+"click on a Russian word answers."
+msgstr ""
+"Textos rusos para leer en ella: una Biblia rusa moderna con licencia "
+"libre y el primer diccionario ruso que esta aplicación ha ofrecido, de "
+"modo que el doble clic sobre una palabra rusa por fin responde."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:145
+msgid ""
+"The Book of Generations. Scripture keeps lists of names and readers skip "
+"them, so Scriptura draws them and binds them as a book: one genealogy to a "
+"page, from Adam to Noah through to Matthew and Luke side by side, with the "
+"ten lifespans of Genesis 5 on one axis. The charts are live — a folded run "
+"of generations opens in place, a name opens the person, a chip opens the "
+"verse — and the same geometry prints. Where a genealogy leaves generations "
+"out, the gap is drawn as a gap and cites who does name them; where Matthew "
+"and Luke disagree, both are given as their writers wrote them, with the "
+"three classical answers set out and none of them chosen."
+msgstr ""
+"El libro de las generaciones. La Escritura guarda listas de nombres y el "
+"lector las salta, así que Scriptura las dibuja y las encuaderna como un "
+"libro: una genealogía por página, de Adán a Noé y hasta Mateo y Lucas "
+"uno junto al otro, con las diez vidas de Génesis 5 sobre un mismo eje. "
+"Los diagramas están vivos —un tramo plegado de generaciones se abre en "
+"su sitio, un nombre abre a la persona, una ficha abre el versículo— y la "
+"misma geometría se imprime. Donde una genealogía omite generaciones, el "
+"hueco se dibuja como hueco y cita a quien sí los nombra; donde Mateo y "
+"Lucas discrepan, se dan ambos tal como los escribieron sus autores, con "
+"las tres respuestas clásicas expuestas y ninguna elegida."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:146
+msgid ""
+"First run asks which language you read in, and the answer leads: it sets the "
+"interface and offers that language's own Bibles, dictionary and study tools, "
+"each collection described in the language it is for."
+msgstr ""
+"El primer arranque pregunta en qué idioma lee, y la respuesta manda: "
+"fija la interfaz y ofrece las Biblias, el diccionario y las herramientas "
+"de estudio de ese idioma, y describe cada colección en el idioma al que "
+"sirve."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:147
+msgid ""
+"A Spanish dictionary, where there was none. Of the 168 dictionaries the "
+"SWORD repositories carry, not one was in Spanish; this one is, and it "
+"answers ordinary vocabulary rather than proper nouns alone."
+msgstr ""
+"Un diccionario en español, donde no había ninguno. De los 168 "
+"diccionarios que llevan los repositorios SWORD, ni uno estaba en "
+"español; este sí, y responde al vocabulario corriente y no solo a los "
+"nombres propios."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:148
+msgid ""
+"Scripture in Stone reads in your language. The gallery is curated data "
+"rather than interface text, so all 342 of its captions, introductions and "
+"glossary entries had stayed English whatever language you chose. A "
+"photographer's credit, a bibliography entry and a verse chip still read as "
+"printed, because a licence, a library catalogue and a Bible reference each "
+"need the words they were given."
+msgstr ""
+"La Escritura en piedra se lee en su idioma. La galería es contenido "
+"preparado y no texto de interfaz, así que sus 342 pies de foto, "
+"introducciones y entradas del glosario seguían en inglés cualquiera que "
+"fuese el idioma elegido. El crédito del fotógrafo, la entrada "
+"bibliográfica y la ficha del versículo se leen tal como están impresos, "
+"porque una licencia, un catálogo de biblioteca y una referencia bíblica "
+"necesitan cada uno las palabras que se les dieron."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:149
+msgid ""
+"Scripture in Stone opens as soon as you ask for it: it used to decode all 56 "
+"of its photographs before it would appear, and now loads them as they come "
+"into view."
+msgstr ""
+"La Escritura en piedra se abre en cuanto la pide: antes descodificaba "
+"sus 56 fotografías antes de aparecer, y ahora las carga a medida que "
+"entran en pantalla."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:150
+msgid ""
+"The collection cards say what each language holds, counted from that "
+"language's own catalogue and written in that language."
+msgstr ""
+"Las tarjetas de las colecciones dicen lo que tiene cada idioma, contado "
+"desde su propio catálogo y escrito en ese idioma."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:151
+msgid ""
+"The dictionary peek says which dictionaries were searched, instead of advice "
+"written when every dictionary was an English one."
+msgstr ""
+"La consulta del diccionario dice en qué diccionarios se buscó, en lugar "
+"del consejo escrito cuando todos los diccionarios eran ingleses."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:152
+msgid ""
+"Jumping to a reference takes the book name you are reading. «Бытие 3» and "
+"Génesis 3 — the names the book picker two inches away was showing — used to "
+"flash the box red."
+msgstr ""
+"Ir a una referencia acepta el nombre del libro que está leyendo. «Бытие "
+"3» y Génesis 3 —los nombres que mostraba el selector de libros a dos "
+"dedos de distancia— hacían parpadear el campo en rojo."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:153
+msgid ""
+"Book names no longer sit in English inside a translated interface: the cross-"
+"reference chips under a verse and the per-book bars in a search chart are "
+"translated on the way out."
+msgstr ""
+"Los nombres de los libros ya no aparecen en inglés dentro de una "
+"interfaz traducida: las fichas de referencias cruzadas bajo un versículo "
+"y las barras por libro del gráfico de búsqueda se traducen al salir."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:154
+msgid ""
+"Translated labels stay inside the places that hold them — the paper chips "
+"and the Module Manager's tabs were cut mid-word in both translations — and "
+"the menu's cards keep their right-hand corners in every language."
+msgstr ""
+"Las etiquetas traducidas caben donde van —los nombres del papel y las "
+"pestañas del Gestor de módulos se cortaban a media palabra en ambas "
+"traducciones— y las tarjetas del menú conservan su borde derecho en "
+"todos los idiomas."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:155
+msgid ""
+"A first-run download that failed for a module that exists: the cached list "
+"of available modules is refetched now whenever it has no row for something "
+"your collection asks for."
+msgstr ""
+"Una descarga del primer arranque que fallaba con un módulo que sí "
+"existe: la lista guardada de módulos disponibles se vuelve a pedir "
+"siempre que no tenga una fila para algo que pide su colección."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
+msgid ""
+"Closing the window during the first-run download no longer leaves part of a "
+"library behind. It asks, keeps whatever has arrived, and says where the rest "
+"can be found."
+msgstr ""
+"Cerrar la ventana durante la descarga del primer arranque ya no deja "
+"media biblioteca. Ahora pregunta, conserva lo que haya llegado y dice "
+"dónde encontrar el resto."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
 msgid "Scriptura in Spanish, and the books it would not open."
 msgstr "Scriptura en español, y los libros que no abría."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:143
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
 msgid ""
 "The app itself now reads in Spanish — menus, dialogs, the Module Manager, "
 "first run, the reading plans, the liturgical calendar and all 66 book names. "
@@ -193,7 +358,7 @@ msgstr ""
 "aparece en su propio nombre, porque quien lo necesita está, por definición, "
 "mirando palabras que quizá no lee."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:144
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
 msgid ""
 "Spanish Bibles to read in it: La Biblia de las Américas and the Nueva Biblia "
 "de las Américas from the Lockman Foundation, the Versión Biblia Libre, and "
@@ -205,7 +370,7 @@ msgstr ""
 "la de Straubinger, cuyas 13.099 notas son comentario de un párrafo entero y "
 "no marcas de variantes."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:145
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
 msgid ""
 "A Spanish reading of the whole Bible — La Biblia en Español Sencillo, all "
 "1,189 chapters, the words on the page and the words in the ear from one "
@@ -215,7 +380,7 @@ msgstr ""
 "1189 capítulos, con las palabras de la página y las del oído salidas de un "
 "mismo editor."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:146
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:167
 msgid ""
 "The deuterocanonical books. A translation that carries them now shows them "
 "in an appendix after Revelation, so Tobit, Judith, Sirach and the Maccabees "
@@ -227,7 +392,7 @@ msgstr ""
 "Eclesiástico y los Macabeos se abren como cualquier otro libro. Hasta ahora, "
 "pedir uno le entregaba el Apocalipsis sin decir nada."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:147
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:168
 msgid ""
 "Every dictionary you install now appears, whatever language it is in. So do "
 "the Strong's numbers in the Spanish texts that carry them, which the reader "
@@ -237,7 +402,7 @@ msgstr ""
 "los números Strong de los textos en español que los llevan, que el lector "
 "podía buscar pero nunca ver."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:148
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:169
 msgid ""
 "The space between letters is yours to open, from the typeface's own metrics "
 "up to a fifth of the type size — the best-supported thing typography can do "
@@ -251,7 +416,7 @@ msgstr ""
 "incluida a su lado, ofrecida con honradez: la evidencia a su favor es débil, "
 "y la aplicación lo dice allí donde usted la elige."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:149
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:170
 msgid ""
 "Turn on the desktop's High Contrast and the app's own edges come with it — "
 "chips, swatches, cards, buttons and panel borders all drawn above the "
@@ -264,7 +429,7 @@ msgstr ""
 "que las pautas piden para el límite de un control. Nada se mueve y nada "
 "cambia de tamaño."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:150
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:171
 msgid ""
 "Quiet the rest of the page: an optional reading focus that keeps the passage "
 "you are in on lit paper and lays the rest back under a veil of that same "
@@ -274,7 +439,7 @@ msgstr ""
 "el pasaje en el que va sobre papel iluminado y recuesta lo demás bajo un "
 "velo de ese mismo papel. Sigue su desplazamiento, no su cursor."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:151
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:172
 msgid ""
 "Readings appear on the desktop's media controls — the media keys, the lock "
 "screen and the Shell — named by what they are, with play, pause, skip back, "
@@ -284,7 +449,7 @@ msgstr ""
 "de medios, la pantalla de bloqueo y el Shell— con el nombre de lo que son, y "
 "con reproducir, pausar, retroceder, velocidad y volumen."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:152
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:173
 msgid ""
 "The app draws its own icons now, so the toolbar is the same line art on "
 "every desktop instead of whatever the local icon theme happened to supply. "
@@ -295,7 +460,7 @@ msgstr ""
 "el tema de iconos de cada uno. Los controles de la ventana siguen siendo los "
 "del escritorio."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:153
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:174
 msgid ""
 "First run opens on a Bible and a commentary rather than the same text twice, "
 "installs the collection you choose for real, and hands you the gestures "
@@ -305,7 +470,7 @@ msgstr ""
 "mismo texto dos veces, instala de verdad la colección que usted elija y le "
 "entrega la referencia de gestos allí donde los gestos se enseñan."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:154
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:175
 msgid ""
 "The page holds still. Flipping the theme, showing footnote markers, "
 "switching to old-style figures and lighting the drop cap all recolour the "
@@ -318,7 +483,7 @@ msgstr ""
 "capítulo que está leyendo en vez de rehacerlo, y su sitio se conserva en las "
 "reconstrucciones que quedan, también en la poesía, donde antes se perdía."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:155
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:176
 msgid ""
 "Nineteenth-century plates join the imagery pack, and an installed pack that "
 "has fallen behind now offers its own update."
@@ -326,7 +491,7 @@ msgstr ""
 "Las láminas del siglo XIX se suman al paquete de imágenes, y un paquete ya "
 "instalado que se haya quedado atrás ofrece ahora su propia actualización."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:177
 msgid ""
 "A settings file the app cannot read is set aside rather than overwritten, a "
 "backup that did not reach the disk says so, and an archive that tries to "
@@ -337,11 +502,11 @@ msgstr ""
 "archivo comprimido que intenta escribir a través de un enlace simbólico se "
 "rechaza."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:183
 msgid "Chapters read aloud, and passages you can take with you."
 msgstr "Capítulos leídos en voz alta, y pasajes que puede llevarse consigo."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:185
 msgid ""
 "Chapters read aloud, in the Berean Standard Bible's own narration. A "
 "listening pill sits quietly at the foot of the page: skip back fifteen "
@@ -353,7 +518,7 @@ msgstr ""
 "retroceda quince segundos, ajuste la velocidad entre 0,75× y 2×, y siga "
 "escuchando al pasar al capítulo siguiente."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:186
 msgid ""
 "Spoken devotionals from their publishers' own feeds — Spurgeon's Morning and "
 "Evening, the Psalms read one at a time, and the day's Daily Strength reading "
@@ -363,7 +528,7 @@ msgstr ""
 "tarde de Spurgeon, los Salmos leídos de uno en uno y la lectura del día de "
 "Daily Strength en la página Hoy."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:187
 msgid ""
 "Take a passage with you. Export it as a study worksheet in Markdown or plain "
 "text, carrying your own notes and highlights, with optional interlinear, "
@@ -375,7 +540,7 @@ msgstr ""
 "opcionales de interlineal, variantes textuales y padres de la Iglesia. Las "
 "citas siguen la forma breve SBTS/Turabian."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:167
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:188
 msgid ""
 "A verse as an image, set in the app's own serif on its own paper — three "
 "shapes, saved to a file or copied straight to the clipboard."
@@ -384,14 +549,14 @@ msgstr ""
 "sobre su propio papel: tres formas, que puede guardar en un archivo o copiar "
 "directamente al portapapeles."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:168
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:189
 msgid ""
 "Print a passage as a study handout, paginated so no line is ever cut in half."
 msgstr ""
 "Imprima un pasaje como material de estudio, paginado de modo que ninguna "
 "línea quede partida."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:169
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:190
 msgid ""
 "The section headings your translation actually ships, which until now were "
 "being dropped altogether. Move a whole thought at a time with [ and ], and "
@@ -401,7 +566,7 @@ msgstr ""
 "descartaban por completo. Avance de una idea entera cada vez con [ y ], y "
 "vea de un vistazo qué unidad de sentido está leyendo."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:170
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:191
 msgid ""
 "The reading pane is reachable from the keyboard throughout: step between "
 "verses and words with the arrow keys, open the lexicon, a footnote or the "
@@ -412,7 +577,7 @@ msgstr ""
 "diccionario con Intro, y oiga cada movimiento anunciado por un lector de "
 "pantalla."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:171
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:192
 msgid ""
 "Every translation now gets its verse-one drop cap, and commentaries render "
 "the inline titles they carry."
@@ -420,11 +585,11 @@ msgstr ""
 "Ahora todas las traducciones reciben su capitular en el versículo uno, y los "
 "comentarios representan los títulos que llevan en línea."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:172
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:193
 msgid "More of the Roman calendar's collects, and a steadier Today page."
 msgstr "Más colectas del calendario romano y una página Hoy más estable."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:173
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:194
 msgid ""
 "Modules keep installing when CrossWire's server is down: the app falls back "
 "to FTP, and then to a mirror of everything CrossWire's own licences allow "
@@ -434,11 +599,11 @@ msgstr ""
 "la aplicación recurre a FTP y después a un espejo de todo lo que las propias "
 "licencias de CrossWire permiten redistribuir."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:179
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:200
 msgid "The original languages, word by word."
 msgstr "Las lenguas originales, palabra por palabra."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:181
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:202
 msgid ""
 "Two interlinear reading surfaces — the Greek New Testament and the Hebrew "
 "Old Testament (Tyndale House data): every word carries its English gloss and "
@@ -451,7 +616,7 @@ msgstr ""
 "Strong a un botón de distancia y el léxico a un clic. Un botón de acentos "
 "hebreos atenúa los signos de cantilación."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:182
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:203
 msgid ""
 "A Scholar's Greek Lexicon pack: Abbott-Smith becomes the brief Greek entry, "
 "with the full Liddell-Scott-Jones one click deeper. Scripture citations "
@@ -463,7 +628,7 @@ msgstr ""
 "bíblicas dentro de las entradas están vivas: pulse una para ver el versículo "
 "allí mismo o enviarlo al otro panel."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:183
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:204
 msgid ""
 "Presentation mode: press F5 to project the current passage full-screen for a "
 "projector or mirrored display, with paging through chapters, a verse-per-"
@@ -475,7 +640,7 @@ msgstr ""
 "un ajuste de un versículo por página, control del tamaño de letra en vivo y "
 "una vista paralela de dos traducciones."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:184
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:205
 msgid ""
 "Maps in Scripture in Art now carry their passage as a chip — click it to "
 "drive the partnered Bible pane there. And the Historical Commentaries pane "
@@ -488,7 +653,7 @@ msgstr ""
 "pulse uno para ver la fotografía y la identificación del lugar, sin "
 "desplazar lo que está leyendo."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:185
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:206
 msgid ""
 "Greek in the reading panes now renders with correctly composed accents on "
 "systems where the default serif drew them detached."
@@ -497,11 +662,11 @@ msgstr ""
 "correctamente compuestos en los sistemas donde la tipografía serif "
 "predeterminada los dibujaba separados."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:191
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:212
 msgid "Getting started, made discoverable."
 msgstr "Los primeros pasos, ahora fáciles de encontrar."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:193
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:214
 msgid ""
 "A new Tips & Gestures guide, reachable from the menu, gathers every reading "
 "gesture in one place."
@@ -509,7 +674,7 @@ msgstr ""
 "Una nueva guía de consejos y gestos, accesible desde el menú, reúne en un "
 "solo lugar todos los gestos de lectura."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:194
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:215
 msgid ""
 "Gentle one-time tips point out hidden gestures — like tapping a verse for "
 "its cross-references — the first time each is useful, then never again. You "
@@ -519,11 +684,11 @@ msgstr ""
 "versículo para ver sus referencias cruzadas— la primera vez que cada uno "
 "resulta útil, y nunca más. Puede desactivarlos cuando quiera."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:200
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:221
 msgid "Customizable reading appearance."
 msgstr "Apariencia de lectura personalizable."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:202
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:223
 msgid ""
 "New Appearance panel: pick a reading paper — Paper, White, Sepia, Green, or "
 "a custom colour — with text colour that adapts to the page (a warm ink on "
@@ -533,7 +698,7 @@ msgstr ""
 "Verde o un color personalizado— con un color de texto que se adapta a la "
 "página (una tinta cálida sobre el sepia, por ejemplo)."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:203
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:224
 msgid ""
 "Bold and justified text move to compact controls beside the font, and the "
 "menu's sections gain a clearer, calmer layout."
@@ -542,7 +707,7 @@ msgstr ""
 "la tipografía, y las secciones del menú ganan una disposición más clara y "
 "serena."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:204
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:225
 msgid ""
 "Redesigned reading plans with a Today view and a month calendar of your "
 "progress."
@@ -550,28 +715,28 @@ msgstr ""
 "Planes de lectura rediseñados, con una vista Hoy y un calendario mensual de "
 "su avance."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:205
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:226
 msgid "Fixed faint text trails when scrolling the reading view under Flatpak."
 msgstr ""
 "Se corrigieron los rastros tenues de texto al desplazar la vista de lectura "
 "en Flatpak."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:211
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:232
 msgid "Packaging fixes."
 msgstr "Correcciones de empaquetado."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:213
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:234
 msgid "Convert the build to meson for a cleaner Flatpak install."
 msgstr ""
 "Se pasó la compilación a meson para una instalación de Flatpak más limpia."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:214
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:235
 msgid "Patch SWORD's CMake to properly link libcurl (upstream bug API-263)."
 msgstr ""
 "Se parcheó el CMake de SWORD para enlazar libcurl correctamente (error "
 "API-263 en el proyecto original)."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:220
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:241
 msgid ""
 "Scriptura's first release. Read two translations side by side, study the "
 "original Hebrew and Greek behind any word, follow cross-references between "
@@ -7797,8 +7962,8 @@ msgid ""
 "The download hasn’t finished. Whatever has arrived is kept, and the rest can "
 "be downloaded later from the Module Manager."
 msgstr ""
-"La descarga no ha terminado. Lo que ya llegó se conserva, y el resto "
-"puede descargarse más tarde desde el Gestor de módulos."
+"La descarga no ha terminado. Lo que ya llegó se conserva, y el resto puede "
+"descargarse más tarde desde el Gestor de módulos."
 
 #: welcome.py:882
 msgid "Keep Downloading"
