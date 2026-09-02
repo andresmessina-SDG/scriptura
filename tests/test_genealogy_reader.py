@@ -507,3 +507,20 @@ def test_a_verse_chip_and_a_name_actually_reach_the_bible_pane():
                 if h.kind == 'person' and h.payload == 'peleg')
     area._on_person(name.payload, area._cid, name.ref)
     assert pane.went[-1] == ('Genesis', 11, 18)
+
+
+def test_the_book_opens_at_the_pane_s_reading_size():
+    """A reader at 23pt met a book set at the paint default and, the first
+    time they pressed Ctrl+plus, watched every chart jump twelve points at
+    once. The pane pushes `apply_font_size` only when the size CHANGES, so a
+    book that does not take the size at build time has the wrong one until
+    something else moves — the archaeology and catena readers both read it
+    off the pane at the end of their build, and this one did not."""
+    class _Pane:
+        _font_size = 23
+
+    reader = gr.GenealogyReader(_Pane())
+    reader.ensure_built()
+    assert reader._font_pt == 23
+    assert reader._areas, 'no charts were built, so this proves nothing'
+    assert {a._reading_pt for a in reader._areas} == {23}

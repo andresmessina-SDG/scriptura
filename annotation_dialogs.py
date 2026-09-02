@@ -85,6 +85,16 @@ def show_study_menu(pane, verses, x, y):
     """Right-click annotation menu — highlight colors, underline, note,
     copy, compare translations. Single-verse-only actions (note, compare)
     are omitted when multiple verses are selected."""
+    build_study_menu(pane, verses, x, y).popup()
+
+
+def build_study_menu(pane, verses, x, y):
+    """The menu itself, built and parented but not yet shown.
+
+    Split from the showing so its size can be measured without a window:
+    `popup()` on a popover whose parent has no root segfaults, and what
+    tests/test_study_menu_fit.py needs to know is how small this can be
+    made, not what it looks like on screen."""
     popover = Gtk.Popover()
     popover.set_parent(pane._view)
     popover.connect('closed', lambda p: p.unparent())
@@ -196,8 +206,22 @@ def show_study_menu(pane, verses, x, y):
         comp_btn.connect('clicked', lambda b: compare_translations(pane, verses[0], popover))
         box.append(comp_btn)
 
-    popover.set_child(box)
-    popover.popup()
+    # A popover that fits nowhere is not shown at all. GTK places this one
+    # below the pointer, flips it above when that will not fit, and if
+    # neither fits it pops straight back down without a word — so in a short
+    # window the menu simply did not open for a right-click anywhere in the
+    # middle of the column. Measured on his 686x709 window: 498px of menu in
+    # a 607px view, dead from y=180 to y=340, working above and below it.
+    # Inside a scroller the menu's MINIMUM height is one row, so GTK can fit
+    # it into whatever room there is and scroll the remainder; the natural
+    # height still wins wherever there is space for it.
+    scroller = Gtk.ScrolledWindow()
+    scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+    scroller.set_propagate_natural_height(True)
+    scroller.set_max_content_height(560)
+    scroller.set_child(box)
+    popover.set_child(scroller)
+    return popover
 
 
 # ── Annotation save handlers — in-place tag refresh, no re-render ───────────
