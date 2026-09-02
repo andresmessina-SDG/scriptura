@@ -52,9 +52,14 @@ SHAPES: dict[str, tuple[int, int]] = {
 #: clutter threshold is three.
 #: A family LIST, not one family: Pango falls through it per-glyph, and
 #: Newsreader carries no Cyrillic — a bare 'Newsreader' sends Russian to
-#: whatever fontconfig picks, which here is a SANS face. The chain matches
-#: data/style.css so the card and the page set in the same serif.
-SERIF = 'Newsreader, Source Serif 4, Charter, Georgia, serif'
+#: whatever fontconfig picks, which here is a SANS face. Noto Serif comes
+#: second because it is BUNDLED and covers Cyrillic: every Russian glyph
+#: lands there, on every machine, instead of on whichever serif the machine
+#: happens to own — Georgia here, DejaVu Serif on a host without it, three
+#: different Russian faces for three readers. The rest are Latin stand-ins
+#: for a run with no bundled fonts. The chain matches data/style.css so the
+#: card and the page set in the same serif.
+SERIF = 'Newsreader, Noto Serif, Source Serif 4, Charter, Georgia, serif'
 SANS = 'Roboto'
 
 
