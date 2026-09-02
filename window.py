@@ -6,7 +6,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 gi.require_version('PangoCairo', '1.0')
 import datetime
-from gi.repository import Gtk, Adw, GLib, Gdk, Gio, PangoCairo
+from gi.repository import Gtk, Adw, GLib, Gdk, Gio, Pango, PangoCairo
 from gtk_utils import clear_children
 import sword_bridge
 import settings
@@ -38,6 +38,7 @@ _log = logging.getLogger('scriptura.window')
 OPEN_DYSLEXIC = 'OpenDyslexic'
 from crossref_panel import CrossRefPanel
 from a11y import announce, set_accessible_label
+from i18n import _, ngettext, book_label
 
 
 def N_(message):
@@ -716,6 +717,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_edit_cipher=self._show_edit_cipher_key,
                                on_modules_changed=self._on_modules_changed,
                                on_open_artifact=self._on_open_artifact,
+                               on_open_lineage=self._on_open_lineage,
                                on_module_switched=self._on_pane_module_switched,
                                on_hint=self._hints.maybe_fire,
                                on_open_verse=self._open_verse_in_pane2,
@@ -731,6 +733,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_edit_cipher=self._show_edit_cipher_key,
                                on_modules_changed=self._on_modules_changed,
                                on_open_artifact=self._on_open_artifact,
+                               on_open_lineage=self._on_open_lineage,
                                on_module_switched=self._on_pane_module_switched,
                                on_hint=self._hints.maybe_fire,
                                on_open_verse=self._open_verse_in_pane2,
@@ -821,6 +824,21 @@ class BibleWindow(Adw.ApplicationWindow):
         self._menu_split.set_collapsed(True)
         self._menu_split.set_show_sidebar(False)
         self._menu_split.set_min_sidebar_width(340)
+        # This width has to clear the panel's content minimum PLUS the
+        # scrollbar's gutter — the body scrolls with `overlay_scrolling(False)`,
+        # so the scrollbar takes ~24px of its own and the viewport is handed
+        # the rest. It did not clear it: the body's minimum was exactly 400,
+        # the viewport got 384, and the overflow came off the right edge —
+        # every card in this panel lost its right rounded corners and sat
+        # flush against the gutter, in EVERY language, for as long as the
+        # gutter has been reserved. The left corners stayed round, which is
+        # what made it read as a clipping bug rather than a width one.
+        #
+        # Fixed at the other end: the font DropDown's label now ellipsizes, so
+        # the body's minimum is 342 and the viewport's 395 has room to spare.
+        # If a row ever pushes that minimum past ~375 again, the corners are
+        # the first thing to go — and the measurement, not the look, is what
+        # tells you: viewport allocation against viewport minimum.
         self._menu_split.set_max_sidebar_width(400)
         # The panel itself (~80 ms of widgets) is built lazily after first
         # paint — see _ensure_menu_panel; an idle kicks it off so it's
@@ -1028,7 +1046,7 @@ class BibleWindow(Adw.ApplicationWindow):
             ('search-prev', ['<Shift>F3'], lambda: self._step_search_result(prev=True)),
             ('reading-mode', ['F11'], self._toggle_reading_mode),
             ('present-mode', ['F5'], self._toggle_present_mode),
-            ('focus-pane-1', ['<Ctrl>1'], lambda: self.pane1._view.grab_focus()),
+            ('focus-pane-1', ['<Ctrl>1'], self.pane1.grab_content_focus),
             ('focus-pane-2', ['<Ctrl>2'], self._focus_pane2),
             ('focus-other-pane', ['<Ctrl>Tab'], self._focus_other_pane),
             ('prev-chapter', ['<Alt>Left'], self._go_prev_chapter),
@@ -1057,7 +1075,7 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _focus_pane2(self):
         if self.pane2.get_visible():
-            self.pane2._view.grab_focus()
+            self.pane2.grab_content_focus()
 
     def _nudge_split(self, delta):
         """Step the divider, or even it up when `delta` is None.
@@ -1189,14 +1207,14 @@ class BibleWindow(Adw.ApplicationWindow):
         while f is not None:
             if f is self.pane1:
                 target = self.pane2 if self.pane2.get_visible() else self.pane1
-                target._view.grab_focus()
+                target.grab_content_focus()
                 return
             if f is self.pane2:
-                self.pane1._view.grab_focus()
+                self.pane1.grab_content_focus()
                 return
             f = f.get_parent()
         # No pane focused yet — go to pane1 by default
-        self.pane1._view.grab_focus()
+        self.pane1.grab_content_focus()
 
     def _step_search_result(self, prev=False):
         """F3 / Shift+F3 — step through results.
@@ -3100,6 +3118,36 @@ class BibleWindow(Adw.ApplicationWindow):
         if gallery is not None:
             gallery._archaeology.scroll_to_verse(book, chapter, verse)
 
+    def _on_open_lineage(self, source_pane, book, chapter, verse):
+        """A lineage marker beside a Bible verse was clicked: show The Book of
+        Generations in the other pane, opened at the chart that draws the
+        people this verse names."""
+        import genealogy_bridge
+        reader = self._ensure_lineage_visible(source_pane)
+        if reader is None:
+            return
+        people = genealogy_bridge.people_in_verse(book, chapter, verse)
+        for pid in people:
+            cid = genealogy_bridge.chart_containing(pid, book)
+            if cid:
+                reader._genealogy.open_chart(cid)
+                return
+
+    def _ensure_lineage_visible(self, source_pane):
+        """A pane showing The Book of Generations, loading it opposite the
+        Bible we clicked from if it isn't open. Mirrors
+        _ensure_artifacts_visible."""
+        import genealogy_bridge
+        for p in (self.pane1, self.pane2):
+            if p.get_visible() and p._is_genealogy:
+                return p
+        other = self.pane2 if source_pane is self.pane1 else self.pane1
+        if not other.get_visible():
+            self._btn_split.set_active(True)
+        if not other._is_genealogy:
+            other._apply_module_change(genealogy_bridge.MODULE_KEY)
+        return other
+
     def _ensure_artifacts_visible(self, source_pane):
         """Return a pane showing Scripture in Stone, loading it into the pane
         opposite the source (the Bible we clicked from) if it isn't open —
@@ -3471,6 +3519,41 @@ class BibleWindow(Adw.ApplicationWindow):
         self._font_drop.set_expression(
             Gtk.PropertyExpression.new(Gtk.StringObject, None, 'string'))
         self._font_drop.set_selected(font_idx)
+        # Ellipsize the button's own label. Without a factory the DropDown's
+        # minimum width is the name it is showing, and this model holds every
+        # installed family — so one long font name set the minimum width of
+        # the appearance card, and through it of the whole menu panel. The
+        # list factory is left alone: the popover has room to spell names out,
+        # and that is where you are choosing between them.
+        _font_btn_factory = Gtk.SignalListItemFactory()
+        _font_btn_factory.connect(
+            'setup', lambda _f, i: i.set_child(
+                Gtk.Label(xalign=0, hexpand=True,
+                          ellipsize=Pango.EllipsizeMode.END,
+                          max_width_chars=18)))
+        _font_btn_factory.connect(
+            'bind', lambda _f, i: i.get_child().set_label(
+                i.get_item().get_string()))
+        self._font_drop.set_factory(_font_btn_factory)
+        # A plain factory answers for BOTH the button and the popover rows, so
+        # the popover needs its own or the names ellipsize there too — the one
+        # place they must not (church_drop above splits the two the same way).
+        _font_list_factory = Gtk.SignalListItemFactory()
+        _font_list_factory.connect(
+            'setup', lambda _f, i: i.set_child(Gtk.Label(xalign=0)))
+        _font_list_factory.connect(
+            'bind', lambda _f, i: i.get_child().set_label(
+                i.get_item().get_string()))
+        self._font_drop.set_list_factory(_font_list_factory)
+        # The truncated name in full, on hover. "System Sans-Serif" is 130px
+        # in the ~118px the button has for its label, so English truncates
+        # here too — this is not a translation problem, it is a row that
+        # carries a label, a dropdown and two toggles in one line.
+        def _font_tip(drop, *_a):
+            item = drop.get_selected_item()
+            drop.set_tooltip_text(item.get_string() if item else None)
+        self._font_drop.connect('notify::selected', _font_tip)
+        _font_tip(self._font_drop)
         self._font_drop.connect('notify::selected', self._on_appear_font)
         font_row.append(self._font_drop)
         # Bold + Justify ride the Font row as compact icon toggles (linked pair),
@@ -3619,6 +3702,19 @@ class BibleWindow(Adw.ApplicationWindow):
         def _adv_switch(label_text, key, setter_name, extra=None, note=None):
             r = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
             title = Gtk.Label(label=label_text, xalign=0)
+            # Wrap, and cap the natural width, or a long row title decides how
+            # wide the whole menu is. The panel takes its width from its
+            # content (see _build_menu_panel), so under Russian — where
+            # "Evening paper (follows Night Light)" becomes «Вечерняя бумага
+            # (следует за ночной подсветкой)» — opening Advanced shoved the
+            # entire sidebar ~65px wider, and closing it snapped back.
+            #
+            # 30 is measured, not guessed: at 30 chars the widest English row
+            # still sets on one line (244px, its natural width) while the
+            # widest Russian one drops from 360px to 269px. A tighter cap
+            # starts wrapping English rows for no gain.
+            title.set_wrap(True)
+            title.set_max_width_chars(30)
             if note is None:
                 title.set_hexpand(True)
                 r.append(title)
@@ -3696,8 +3792,11 @@ class BibleWindow(Adw.ApplicationWindow):
         # Evening paper is window-scoped (a Night Light D-Bus monitor), so
         # it can't use the per-pane setter helper above. Same row idiom.
         ev_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        ev_row.append(Gtk.Label(label=_('Evening paper (follows Night Light)'),
-                                xalign=0, hexpand=True))
+        _ev_lbl = Gtk.Label(label=_('Evening paper (follows Night Light)'),
+                            xalign=0, hexpand=True)
+        _ev_lbl.set_wrap(True)          # same width rule as the rows above
+        _ev_lbl.set_max_width_chars(30)
+        ev_row.append(_ev_lbl)
         ev_sw = Gtk.Switch(valign=Gtk.Align.CENTER)
         ev_sw.set_active(bool(settings.get('evening_paper')))
         set_accessible_label(ev_sw, _('Evening paper (follows Night Light)'))

@@ -42,7 +42,11 @@ public/
 # Internal working docs — not for the public repo
 BACKLOG.md
 GUIDANCE.md
-BACKLOG.md
+GUIDANCE_ARCHIVE.md
+# Checks the internal docs above against the repo, and reads the memory
+# directory by an absolute path that carries the same token the
+# 2026-07-12 filter-repo purge scrubbed. Kept out for that reason alone.
+tools/verify-docs.py
 STRUCTURAL_ANALYSIS.md
 REFINEMENT_RESEARCH.md
 ACCESSIBILITY_RESEARCH.md
@@ -63,3 +67,6 @@ FLATPAK_RELEASE.md
 
 # Local promotion plan — keep private
 PROMOTION.md
+
+# Local agent/session scratch — never part of the project.
+.claude/

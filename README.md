@@ -53,6 +53,18 @@ Built on GNOME with GTK4 + libadwaita, in Python, GPL-3.0.
 - **Scripture in Stone.** A bundled archaeology gallery: excavated
   artifacts that touch the biblical text, with photographs,
   provenance, and the passages they illuminate.
+- **The Book of Generations.** Scripture's lists of names, drawn and
+  bound as a book: one genealogy to a page, from Adam to Noah through
+  to Matthew and Luke side by side, with the ten lifespans of Genesis 5
+  on one axis. The charts are live — a name opens the person, a chip
+  opens the verse — and the same geometry prints. Every line carries
+  the verse it comes from; where a genealogy leaves generations out,
+  the gap is drawn as a gap.
+- **Read in your own language.** The interface is complete in English,
+  Spanish and Russian — menus, dialogs, plurals and all 66 book names,
+  in the terms each language's Bible software uses. First run asks
+  which language you read in, then offers that language's own Bibles,
+  dictionary and study tools.
 - **Cross-references.** OpenBible.info's 340,000-reference database
   is one click away (Module Manager → Study Tools). TSK is the
   fallback when you're offline.

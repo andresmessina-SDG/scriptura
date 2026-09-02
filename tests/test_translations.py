@@ -7,6 +7,8 @@ English tests all pass. These checks read every catalogue in LINGUAS, so a
 future language is covered the moment it is added.
 """
 
+import ast
+import importlib.util
 import os
 import re
 import shutil
@@ -171,7 +173,17 @@ def test_no_string_is_left_behind_by_the_source(catalogue, tmp_path):
     pot = tmp_path / 'scriptura.pot'
     r = subprocess.run(
         ['xgettext', '--files-from=po/POTFILES.in', '--from-code=UTF-8',
-         '--keyword=_', '--keyword=N_', '--keyword=C_:1c,2', '-o', str(pot)],
+         '--keyword=_', '--keyword=N_', '--keyword=C_:1c,2',
+         # welcome._summarise takes its translators as `gt`/`ngt` arguments so
+         # the language cards can each speak their own language, and naming
+         # them `_` would shadow the builtin for that whole function. xgettext
+         # cannot guess an alias: without these two the eight strings of the
+         # welcome contents line ("{n} Bible", "dictionary", "Detected"…) are
+         # invisible to this check, and a catalogue can be short by exactly
+         # those eight while this test stays green. Russian shipped that way
+         # until a screenshot showed "1 Bible" in English on a Russian card.
+         '--keyword=gt', '--keyword=ngt:1,2',
+         '-o', str(pot)],
         cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
 
@@ -188,6 +200,19 @@ def test_no_string_is_left_behind_by_the_source(catalogue, tmp_path):
         f'does not translate — {stranded[:5]}')
 
 
+def _gallery_places():
+    """Place names curated in the Scripture in Stone gallery.
+
+    Read from the TOML rather than through the bridge, which would hand back
+    whatever language happened to be installed."""
+    import tomllib
+    path = os.path.join(ROOT, 'data', 'archaeology',
+                        'scripture_in_stone.toml')
+    with open(path, 'rb') as f:
+        raw = tomllib.load(f)
+    return {e['place'].strip() for e in raw.get('entry', []) if e.get('place')}
+
+
 def test_a_context_actually_buys_a_different_translation(catalogue):
     """A msgid carrying a msgctxt exists only because one English word needs
     two words in some other language — "Search" is the panel's heading, a
@@ -195,6 +220,8 @@ def test_a_context_actually_buys_a_different_translation(catalogue):
     with the same string the context earned nothing, and the most likely
     cause is a merge that quietly copied one onto the other.
     """
+    import window
+
     lang, path = catalogue
     plain, with_ctx = {}, {}
     for msgid, ctx, strs in _parse_po_contexts(path):
@@ -202,8 +229,21 @@ def test_a_context_actually_buys_a_different_translation(catalogue):
             continue
         (with_ctx if ctx else plain).setdefault(msgid, []).append(strs[0])
 
+    # Six books are named after the person the genealogy charts also draw, so
+    # `Ruth` is a book msgid and a `person` one and both are "Rut". The
+    # Scripture in Stone gallery adds the other half of the same phenomenon:
+    # its artifacts are found in Judah, and Judah is a man on the charts. That
+    # is the structure of the canon, not a merge that copied one entry onto
+    # another: the context still earns its keep in a language that declines a
+    # title differently from a name — Russian has «Иудея» for the region and
+    # «Иуда» for the man — and dropping it would make the person name collide
+    # with the navigation key. Every other context must still differ.
+    named_for_a_person = (set(window.BOOKS) | set(window.DEUTEROCANON)
+                          | _gallery_places())
+
     collapsed = [msgid for msgid, vals in with_ctx.items()
-                 if msgid in plain and any(v in plain[msgid] for v in vals)]
+                 if msgid in plain and any(v in plain[msgid] for v in vals)
+                 and msgid not in named_for_a_person]
     assert not collapsed, (
         f'{lang}: {collapsed} is translated the same with and without its '
         f'context, so the context distinguishes nothing')
@@ -232,3 +272,168 @@ def test_book_names_stay_distinct(catalogue):
     books = window.BOOKS + window.DEUTEROCANON
     names = [have[b] for b in books if have.get(b)]
     assert len(set(names)) == len(names), f'{lang}: duplicate book names'
+
+
+def test_the_module_filter_follows_the_language_the_app_is_running_in(monkeypatch):
+    """The in-app picker sets `LANGUAGE`; `LC_ALL`/`LANG` keep whatever the
+    desktop said. Reading the environment meant a reader who chose Русский on
+    an English desktop got a Russian interface over a Module Manager filtered
+    to «Английский (en)» — the one catalogue they had just declined."""
+    import i18n
+    import module_manager
+
+    monkeypatch.setenv('LANG', 'en_US.UTF-8')
+    monkeypatch.setenv('LC_ALL', 'en_US.UTF-8')
+    monkeypatch.setattr(i18n, 'current_language', lambda: 'ru')
+    assert module_manager._ui_lang() == 'ru'
+
+    monkeypatch.setattr(i18n, 'current_language', lambda: 'es')
+    assert module_manager._ui_lang() == 'es'
+
+
+#: The paper chip is a fixed 56px circle (`_make_swatch`), its label set at
+#: 0.74em and semibold, with the theme's padding zeroed so the text cannot
+#: inflate it. Two borders and a little air leave about this much room.
+_CHIP_INNER_PX = 50
+
+
+def _chip_label_width(text):
+    """How wide `text` sets in the paper chip's own font, measured."""
+    import cairo
+    import gi
+    gi.require_version('Pango', '1.0')
+    gi.require_version('PangoCairo', '1.0')
+    from gi.repository import Pango, PangoCairo
+
+    ctx = cairo.Context(cairo.ImageSurface(cairo.FORMAT_ARGB32, 200, 60))
+    layout = PangoCairo.create_layout(ctx)
+    desc = Pango.FontDescription('Adwaita Sans')
+    desc.set_weight(Pango.Weight.SEMIBOLD)
+    desc.set_absolute_size(0.74 * 14.7 * Pango.SCALE)
+    layout.set_font_description(desc)
+    layout.set_text(text, -1)
+    return layout.get_pixel_size().width
+
+
+#: Four tabs share the Module Manager's 688px header, so a label has about
+#: this much before Adw ellipsizes it. English asks for 102 at its widest.
+_TAB_LABEL_PX = 110
+
+
+def _ui_label_width(text):
+    """How wide `text` sets in the interface font, measured."""
+    import cairo
+    import gi
+    gi.require_version('Pango', '1.0')
+    gi.require_version('PangoCairo', '1.0')
+    from gi.repository import Pango, PangoCairo
+
+    ctx = cairo.Context(cairo.ImageSurface(cairo.FORMAT_ARGB32, 400, 60))
+    layout = PangoCairo.create_layout(ctx)
+    desc = Pango.FontDescription('Adwaita Sans')
+    desc.set_absolute_size(14.7 * Pango.SCALE)
+    layout.set_font_description(desc)
+    layout.set_text(text, -1)
+    return layout.get_pixel_size().width
+
+
+def test_no_module_manager_tab_outgrows_its_strip(catalogue):
+    """A tab that does not fit is not wrong, it is cut: «Переводы Библии»
+    showed as "Переводы Б…" and «Herramientas de estudio» as
+    "Herramientas…", which is the one place a reader is choosing between
+    four words. The English labels are terse — "Bibles", "Study Tools" — and
+    a translation that spells them out stops being a tab."""
+    lang, path = catalogue
+    titles = {'Bibles', 'Commentaries', 'Study Tools', 'Books & More'}
+    over = []
+    for msgid, _plural, strs in _parse_po(path):
+        if msgid not in titles or not strs or not strs[0]:
+            continue
+        width = _ui_label_width(strs[0])
+        if width > _TAB_LABEL_PX:
+            over.append(f'{msgid} → {strs[0]!r} is {width}px')
+    assert not over, f'{lang}: tab labels too wide: ' + '; '.join(over)
+
+
+def test_no_paper_name_overflows_its_chip(catalogue):
+    """A paper chip shows its name *inside* the circle, in that paper's own
+    ink — the chip previews the whole pairing. A name too long for the circle
+    does not ellipsize, it spills: Russian «Грифельный» ran 69px through a
+    50px opening and lost its Г, and Spanish «Personalizado» ran 75px and had
+    been doing so since Spanish shipped, unnoticed.
+
+    English fits with nothing to spare — "Charcoal" is 47px — so this is a
+    real constraint on the translation, not a cushion. A language that cannot
+    say it short enough needs a shorter word, the way Slate became «Сланец».
+    """
+    lang, path = catalogue
+    names = {'Paper', 'White', 'Sepia', 'Green',
+             'Slate', 'Charcoal', 'Black', 'Custom'}
+    over = []
+    for msgid, _plural, strs in _parse_po(path):
+        if msgid not in names or not strs or not strs[0]:
+            continue
+        width = _chip_label_width(strs[0])
+        if width > _CHIP_INNER_PX:
+            over.append(f'{msgid} → {strs[0]!r} is {width}px')
+    assert not over, (
+        f'{lang}: paper names too wide for the 56px chip: ' + '; '.join(over))
+
+
+def _pot_msgids(path):
+    """Every msgid in a .pot, unescaped — the ids a translator will see."""
+    ids, buf, reading = set(), [], False
+    with open(path, encoding='utf-8') as f:
+        for line in f:
+            line = line.rstrip('\n')
+            if line.startswith('msgid '):
+                reading, buf = True, [line[len('msgid '):]]
+            elif reading and line.startswith('"'):
+                buf.append(line)
+            elif reading:
+                ids.add(''.join(ast.literal_eval(p) for p in buf))
+                reading, buf = False, []
+    if reading:
+        ids.add(''.join(ast.literal_eval(p) for p in buf))
+    return ids
+
+
+@pytest.mark.parametrize('generator', ['gen_genealogy_strings',
+                                       'gen_archaeology_strings'])
+def test_every_curated_string_reaches_the_extractor(generator, tmp_path):
+    """The mirror files exist to be read by xgettext, and xgettext is fussy
+    about how the marker is written: it reads `N_('a' 'b')` and walks past
+    `N_(('a' 'b'))` without a word. The generator emitted the second form for
+    any string with a newline, so the Book of Generations' opening paragraph
+    was in no .pot and no catalogue, and Russian and Spanish readers met one
+    page of English at the front of the book.
+
+    Nothing else could see it. `test_no_string_is_left_behind_by_the_source`
+    compares the catalogue against a fresh extraction, and the string was
+    missing from both sides, so it passed. This asks the other question: does
+    every string the app will hand to `_()` survive extraction at all?
+    """
+    if shutil.which('xgettext') is None:
+        pytest.skip('xgettext not installed')
+
+    spec = importlib.util.spec_from_file_location(
+        generator, os.path.join(ROOT, 'tools', generator + '.py'))
+    gen = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gen)
+
+    pot = tmp_path / 'scriptura.pot'
+    r = subprocess.run(
+        ['xgettext', '--files-from=po/POTFILES.in', '--from-code=UTF-8',
+         '--keyword=_', '--keyword=N_', '--keyword=C_:1c,2',
+         '--keyword=gt', '--keyword=ngt:1,2', '-o', str(pot)],
+        cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+
+    ids = _pot_msgids(pot)
+    # One generator yields (kind, context, msgid) triples and the other bare
+    # msgids; both are asking the same question of the same extraction.
+    collected = [e[-1] if isinstance(e, tuple) else e for e in gen.collect()]
+    missing = [m for m in collected if m not in ids]
+    assert not missing, (
+        f'{generator}: {len(missing)} strings are invisible to xgettext — '
+        f'{[m[:60] for m in missing[:3]]}')

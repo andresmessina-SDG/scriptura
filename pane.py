@@ -12,6 +12,7 @@ from gtk_utils import clear_children
 import sword_bridge
 import ebible_bridge
 import archaeology_bridge
+import genealogy_bridge
 import content
 import annotations
 import motion
@@ -23,6 +24,7 @@ from genbook_reader import GenbookReader
 from catena_reader import CatenaReader
 from imagery_reader import ImageryReader
 from archaeology_reader import ArchaeologyReader
+from genealogy_reader import GenealogyReader
 from interlinear_view import InterlinearReader
 import interlinear_data
 from module_picker import ModulePicker
@@ -39,6 +41,7 @@ from pane_search import PaneSearch
 from verse_cursor import VerseCursor
 import a11y
 from a11y import set_accessible_label
+from i18n import _, ngettext, book_label
 
 
 def is_dark_paper(paper_hex):
@@ -274,12 +277,17 @@ _DICT_SHORT_NAMES = {
     'Naves':        "Nave's",
     'Torreys':      "Torrey's",
     'WebstersDict': "Webster's 1913",
+    'Wikcionario':  'Wikcionario',
 }
 
 _DICT_FLUFF_WORDS = {
     'dictionary', 'encyclopedia', 'revised', 'unabridged',
     'concise', 'of', 'the', 'english', 'language', 'bible',
     'topical', 'textbook', 'a', 'an',
+    # Spanish — the app ships a Spanish interface and now a Spanish
+    # dictionary, whose Description is generic in exactly the same way.
+    'diccionario', 'enciclopedia', 'general', 'español', 'española',
+    'lengua',
 }
 
 
@@ -301,6 +309,11 @@ def _short_dict_title(mod_name, mod_desc):
         if re.fullmatch(r'\d{4}', clean):
             year = clean
             continue
+        # A dash or bullet separating the name from its blurb is not a word:
+        # counting it as one spent half the two-word budget and left the
+        # label trailing a dangling em dash ("Wikcionario —").
+        if not re.search(r'\w', clean):
+            continue
         if clean.lower() in _DICT_FLUFF_WORDS:
             break
         words.append(clean)
@@ -308,6 +321,22 @@ def _short_dict_title(mod_name, mod_desc):
             break
     short = ' '.join(words) if words else mod_name
     return f'{short} {year}' if year else short
+
+
+def _strip_leading_headword(html, word):
+    """Drop a leading headword that duplicates the peek's serif title (plus
+    any indent the SWORD HTML carries). Best-effort: if nothing matches, the
+    body is returned unchanged.
+    """
+    stripped = re.sub(
+        r'^\s*(?:<[^>]+>\s*)*' + re.escape(word)
+        # A middle dot means the word heads a compound label
+        # ("dios · Sustantivo masculino"), where dropping the word
+        # alone would strand the separator. Leave those whole.
+        + r'(?!\s*·)'
+        + r'(?:\s*</[^>]+>)*\s*(?:<br\s*/?>|[—:.\-,])?\s*',
+        '', html, count=1, flags=re.IGNORECASE)
+    return re.sub(r'^(?:\s| |&nbsp;)+', '', stripped)
 
 
 # Inline <title> kinds that are not section headings, mirroring the rule
@@ -698,7 +727,7 @@ class _VerseRender:
     """
 
     __slots__ = ('start_v', 'end_v', 'html', 'is_commentary', 'anno',
-                 'start_mark', 'text_mark', 'has_artifact',
+                 'start_mark', 'text_mark', 'has_artifact', 'has_lineage',
                  'cap_index', 'fn_markers', 'vnotes', 'poetry_lines')
 
     def __init__(self, start_v, end_v, html, is_commentary):
@@ -710,6 +739,7 @@ class _VerseRender:
         self.start_mark = None
         self.text_mark = None
         self.has_artifact = False
+        self.has_lineage = False
         # Filled in by the Bible branch only; a commentary produces none of
         # them, and the plain-text fallback resets them to exactly this.
         self.cap_index = None
@@ -769,6 +799,13 @@ _VERSE_DECORATIONS = (
         'artifact_marker',
         lambda p, r: p._insert_artifact_marker(r.start_v),
         lambda p, r: not r.is_commentary and r.has_artifact),
+    # The same quiet cue for a verse the genealogy table draws a line from.
+    # `marker_verses` has already thinned a genealogy chapter down to one
+    # marker — without that, Matthew 1 carries fifteen of these.
+    _VerseDecoration(
+        'lineage_marker',
+        lambda p, r: p._insert_lineage_marker(r.start_v),
+        lambda p, r: not r.is_commentary and r.has_lineage),
     # The verse anchor navigation resolves against. For a grouped commentary
     # section every verse in [start_v, end_v] points at the same block, so
     # navigating to any of them lands on this section. No enable condition:
@@ -1175,7 +1212,7 @@ class BiblePane(Gtk.Box):
                  on_word_study_navigate=None, on_toast=None,
                  on_font_size_request=None, on_cipher_error=None,
                  on_edit_cipher=None, on_modules_changed=None,
-                 on_open_artifact=None, on_module_switched=None,
+                 on_open_artifact=None, on_open_lineage=None, on_module_switched=None,
                  on_hint=None, on_open_verse=None, pane_id=1):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         # GROUP, not REGION — measured, not assumed. GTK4's AT-SPI backend
@@ -1196,6 +1233,7 @@ class BiblePane(Gtk.Box):
         self._on_verse_select = on_verse_select
         self._on_word_study_navigate = on_word_study_navigate
         self._on_open_artifact = on_open_artifact
+        self._on_open_lineage = on_open_lineage
         self._on_toast = on_toast
         self._on_font_size_request = on_font_size_request
         self._on_cipher_error = on_cipher_error
@@ -1286,6 +1324,10 @@ class BiblePane(Gtk.Box):
         # NOT verse-synced; it renders once and its verse chips drive the
         # partnered Bible pane.
         self._archaeology = ArchaeologyReader(self)
+        # The Book of Generations — a standalone, bundled genealogy document.
+        # Like Scripture in Stone it is NOT verse-synced: it renders once and
+        # its verse chips drive the partnered Bible pane.
+        self._genealogy = GenealogyReader(self)
         # Interlinear Greek NT — word-stack cells, verse-synced like a Bible.
         self._interlinear = InterlinearReader(self)
         # Each content mode is a PaneContent strategy; _compute_module_flags
@@ -1637,6 +1679,7 @@ class BiblePane(Gtk.Box):
         self._content_stack.add_named(self._catena.widget, 'catena')
         self._content_stack.add_named(self._imagery.widget, 'imagery')
         self._content_stack.add_named(self._archaeology.widget, 'archaeology')
+        self._content_stack.add_named(self._genealogy.widget, 'genealogy')
         self._content_stack.add_named(self._interlinear.widget, 'interlinear')
         # Full-pane placeholder for "can't show content here" states
         # (unsupported module, wrong cipher key, passage not in this module).
@@ -1774,7 +1817,7 @@ class BiblePane(Gtk.Box):
         elif self._is_genbook:
             GLib.idle_add(self._genbook.fetch_and_render)
         elif (self._is_catena or self._is_imagery or self._is_archaeology
-                or self._is_interlinear):
+                or self._is_genealogy or self._is_interlinear):
             GLib.idle_add(self._fetch_and_render)
 
     def _on_pane_click(self, gesture, n_press, x, y):
@@ -1863,6 +1906,7 @@ class BiblePane(Gtk.Box):
         self._is_catena = tk == 'catena'
         self._is_imagery = tk == 'imagery'
         self._is_archaeology = tk == 'archaeology'
+        self._is_genealogy = tk == 'genealogy'
         self._is_interlinear = tk == 'interlinear'
         is_ebible = tk == 'ebible'
         if self._is_catena:
@@ -1871,6 +1915,8 @@ class BiblePane(Gtk.Box):
             self._module_type = 'Bible Imagery'
         elif self._is_archaeology:
             self._module_type = 'Scripture in Stone'
+        elif self._is_genealogy:
+            self._module_type = 'The Book of Generations'
         elif self._is_interlinear:
             self._module_type = 'Interlinear'
         elif is_ebible:
@@ -1879,12 +1925,14 @@ class BiblePane(Gtk.Box):
             self._module_type = sword_bridge.module_type(m)
         self._is_devotional = (
             not self._is_catena and not self._is_imagery
-            and not self._is_archaeology and not self._is_interlinear
+            and not self._is_archaeology and not self._is_genealogy
+            and not self._is_interlinear
             and not is_ebible
             and sword_bridge.is_devotional_module(m))
         self._is_genbook = (
             not self._is_catena and not self._is_imagery
-            and not self._is_archaeology and not self._is_interlinear
+            and not self._is_archaeology and not self._is_genealogy
+            and not self._is_interlinear
             and not is_ebible
             and self._module_type == 'Generic Books')
         # The active content strategy. Card modes are registry-keyed; the
@@ -2527,6 +2575,31 @@ class BiblePane(Gtk.Box):
                     self, self._book, self._chapter, v))
         self._view.add_child_at_anchor(btn, anchor)
 
+    def _insert_lineage_marker(self, verse):
+        """A small clickable mark beside a verse whose people the genealogy
+        charts draw, opening The Book of Generations at that line. Same shape
+        and same machinery as the artifact marker — an embedded icon rather
+        than a font glyph, so it renders in every reading font."""
+        self._buffer.insert(self._buffer.get_end_iter(), ' ')
+        anchor = self._buffer.create_child_anchor(self._buffer.get_end_iter())
+        img = Gtk.Image.new_from_icon_name('scriptura-genealogy-symbolic')
+        img.set_pixel_size(self._artifact_icon_px())
+        self._artifact_markers.append(img)
+        btn = Gtk.Button(child=img)
+        btn.add_css_class('flat')
+        btn.add_css_class('artifact-marker')
+        btn.set_can_focus(True)
+        btn.set_valign(Gtk.Align.CENTER)
+        btn.set_tooltip_text(_('This line is drawn — open The Book of '
+                               'Generations'))
+        set_accessible_label(btn, _('Line of descent'))
+        if self._on_open_lineage:
+            btn.connect(
+                'clicked',
+                lambda *_a, v=verse: self._on_open_lineage(
+                    self, self._book, self._chapter, v))
+        self._view.add_child_at_anchor(btn, anchor)
+
     def _display(self, verses, book, chapter, module, notes=None, task=None,
                  headings=None):
         if book != self._book or chapter != self._chapter or module != self._module:
@@ -2561,6 +2634,11 @@ class BiblePane(Gtk.Box):
         # so we can drop a subtle clickable marker beside them (Bibles only).
         art_verses = (set() if is_commentary
                       else archaeology_bridge.verses_with_artifacts(book, chapter))
+        # Verses whose people the genealogy table draws a line from. The mark
+        # goes on the VERSE, never on each name: in Genesis 5 or Matthew 1 a
+        # mark per name marks every line on the page, which is noise.
+        gen_verses = (set() if is_commentary
+                      else genealogy_bridge.marker_verses(book, chapter))
         self._artifact_markers = []  # rebuilt below; old ones died with set_text('')
 
         self._cancel_all_flashes()
@@ -2693,6 +2771,7 @@ class BiblePane(Gtk.Box):
             r.start_mark = start_mark
             r.anno = annos.get(str(start_v), {})
             r.has_artifact = start_v in art_verses
+            r.has_lineage = start_v in gen_verses
 
             # 1. Verse number — inline for Bibles, bold section header for commentaries
             if is_commentary:
@@ -4372,6 +4451,16 @@ class BiblePane(Gtk.Box):
         cap.add_css_class('dim-label')
         body = Gtk.Label(label=text, xalign=0, wrap=True)
         body.set_max_width_chars(44)
+        # A CAP is not a FLOOR. With only the cap set, a wrapping label's
+        # minimum width is its longest word, so anchored near a window edge
+        # the card collapsed to a column two words wide — "Christos {khris-
+        # tos} from 5548;" down the screen. The dictionary peek has always
+        # asked for a width; this asks for the same one, capped the same way
+        # so a narrow window still fits it.
+        _root = self.get_root()
+        _win_w = _root.get_width() if _root is not None else 0
+        box.set_size_request(
+            320 if _win_w <= 0 else max(240, min(320, _win_w - 24)), -1)
         box.append(cap)
         box.append(body)
         for m in ('top', 'bottom', 'start', 'end'):
@@ -4667,6 +4756,37 @@ class BiblePane(Gtk.Box):
         self._peek_fade = anim
         anim.play()
 
+    def grab_content_focus(self) -> bool:
+        """Put the keyboard on whatever this pane is SHOWING.
+
+        `_view` is the Bible text view and it stays in the content stack when
+        another reader is on top of it — visible, but not mapped. GTK grants
+        `grab_focus` to such a widget, so "Focus left pane" landed the caret
+        on something the reader cannot see: arrow keys moved through hidden
+        text, and the genealogy chart — which is focusable and carries the
+        chart's text equivalent for a screen reader — never got the focus at
+        all. The same held for every reader that is not a Bible.
+        """
+        if self._view.get_mapped():
+            return self._view.grab_focus()
+        shown = self._content_stack.get_visible_child()
+        if shown is None:
+            return self._view.grab_focus()
+
+        def first_focusable(w):
+            if w.get_focusable() and w.get_mapped():
+                return w
+            child = w.get_first_child()
+            while child is not None:
+                got = first_focusable(child)
+                if got is not None:
+                    return got
+                child = child.get_next_sibling()
+            return None
+
+        target = first_focusable(shown)
+        return target.grab_focus() if target is not None else False
+
     def dismiss_dict_peek(self):
         """Close an open dictionary peek. Returns True if one was open — the
         window's Escape handler uses this (the peek is non-focusable, so it
@@ -4753,9 +4873,27 @@ class BiblePane(Gtk.Box):
             self._dict_user_closed = True
             pop.popdown()
 
+    def _verse_at_offset(self, offset):
+        """The verse number a buffer offset falls in, or 0.
+
+        The genealogy table disambiguates on the verse — one name covers many
+        people, and "this Jacob" means the one this verse is about. The
+        `vnum_` tags are already on the text; the right-click menu reads them
+        the same way."""
+        it = self._buffer.get_iter_at_offset(offset)
+        for tag in it.get_tags():
+            name = tag.get_property('name') or ''
+            if name.startswith('vnum_'):
+                try:
+                    return int(name.split('_')[1])
+                except (ValueError, IndexError):
+                    return 0
+        return 0
+
     def _show_dict_popup(self, word, word_offset):
         # TextView entry point: compute the word's rectangle in the view's
         # widget coords, then hand off to the shared peek anchored on the view.
+        self._peek_verse = self._verse_at_offset(word_offset)
         start = self._buffer.get_iter_at_offset(word_offset)
         end = start.copy()
         if not end.ends_word():
@@ -5013,14 +5151,7 @@ class BiblePane(Gtk.Box):
             return lbl
 
         def _strip_headword(html):
-            # Drop a leading headword that duplicates the serif title (plus any
-            # indent the SWORD HTML carries). Best-effort: if nothing matches,
-            # the body is returned unchanged.
-            stripped = re.sub(
-                r'^\s*(?:<[^>]+>\s*)*' + re.escape(word)
-                + r'(?:\s*</[^>]+>)*\s*(?:<br\s*/?>|[—:.\-,])?\s*',
-                '', html, count=1, flags=re.IGNORECASE)
-            return re.sub(r'^(?:\s| |&nbsp;)+', '', stripped)
+            return _strip_leading_headword(html, word)
 
         def _add_text(html, box=None, source=None):
             if box is None:
@@ -5093,7 +5224,9 @@ class BiblePane(Gtk.Box):
                     if k != mn and b.get_active():
                         b.set_active(False)
 
-            ordered = sorted(results, key=lambda r: r[1].lower())
+            # Already ranked by `fetch` — re-sorting here by description
+            # is what put Webster's 1913 in front of Wikcionario.
+            ordered = results
             for mn, md, html in ordered:
                 page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
                 _add_text(html, page)
@@ -5108,13 +5241,99 @@ class BiblePane(Gtk.Box):
             content.append(tabs)
             content.append(stack)
 
+        def _lineage_fragment():
+            """The compact 'who were their parents and children' answer, for a
+            word the curated genealogy table knows.
+
+            Text, not a drawing. The peek is a 260-360px popover with its body
+            capped between 140 and 320px; a chart does not fit there, and
+            anything that changes the popover's natural height can bring back
+            the arrow-flip the cap exists to prevent. So the fragment's own
+            measured height is taken OFF the dictionary body's cap below,
+            leaving the whole peek exactly as tall as it was."""
+            frag = genealogy_bridge.fragment_for(
+                word, self._book, self._chapter,
+                getattr(self, '_peek_verse', 0) or 0)
+            if frag is None:
+                return None
+            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+            box.add_css_class('peek-lineage')
+            box.set_margin_start(18)
+            box.set_margin_end(18)
+            box.set_margin_top(2)
+            box.set_margin_bottom(8)
+
+            def _row(label, people, muted):
+                if not people:
+                    return
+                r = Gtk.Label(xalign=0)
+                r.add_css_class('peek-lineage-row')
+                if muted:
+                    r.add_css_class('dim-label')
+                names = ', '.join(GLib.markup_escape_text(n)
+                                  for _pid, n, _ref in people)
+                r.set_markup('<b>%s</b>  %s'
+                             % (GLib.markup_escape_text(label), names))
+                r.set_wrap(True)
+                box.append(r)
+
+            _row(_('Parents'), frag['parents'], True)
+            if frag['mother']:
+                _row(_('Mother'), [(frag['mother'][0], frag['mother'][1], '')],
+                     True)
+            _row(_('Children'), frag['children'], True)
+            if frag['note']:
+                nl = Gtk.Label(label=frag['note'], xalign=0)
+                nl.add_css_class('peek-lineage-note')
+                nl.set_wrap(True)
+                box.append(nl)
+            if frag['ambiguous']:
+                # Never silently pick a Zechariah: say that the name covers
+                # more than one person and let the reader open the chart.
+                amb = Gtk.Label(xalign=0)
+                amb.add_css_class('peek-lineage-note')
+                amb.set_wrap(True)
+                amb.set_markup(GLib.markup_escape_text(
+                    ngettext('%d other person carries this name',
+                             '%d other people carry this name',
+                             len(frag['ambiguous'])) % len(frag['ambiguous'])))
+                box.append(amb)
+            if frag['chart'] and self._on_open_lineage:
+                link = Gtk.Button(label=_('See the whole line'))
+                link.add_css_class('flat')
+                link.add_css_class('peek-lineage-link')
+                link.set_halign(Gtk.Align.START)
+                link.connect('clicked', lambda *_a: self._on_open_lineage(
+                    self, self._book, self._chapter,
+                    getattr(self, '_peek_verse', 0) or 1))
+                box.append(link)
+            return box
+
         def populate(results):
             _clear()
+            frag = _lineage_fragment()
+            if frag is not None:
+                content.append(frag)
+                # Re-measure, do not assume: the ~130px chrome constant was
+                # measured for title + tabs and knows nothing about this box.
+                _min, nat = frag.measure(Gtk.Orientation.VERTICAL, -1)[:2]
+                self._dict_max_body = max(
+                    100, self._dict_max_body - max(nat, _min))
             if not results:
-                _status('scriptura-system-search-symbolic', f'No entry for “{word}”',
-                        'Bible dictionaries index proper nouns and key terms '
-                        '— try a word like “covenant,” “Abraham,” or '
-                        '“atonement.”')
+                # Names what was actually searched rather than describing what
+                # dictionaries hold. The old line taught that they "index
+                # proper nouns and key terms" and offered “covenant,”
+                # “Abraham,” “atonement” — true of Easton's, false of the
+                # general dictionary the Spanish reader has (Wikcionario
+                # answers ordinary vocabulary), and the English examples were
+                # the wrong words to try in any case.
+                _status('scriptura-system-search-symbolic',
+                        _('No entry for “%s”') % word,
+                        (_('Searched %s. Another dictionary may carry it — '
+                           'the Module Manager lists more.')
+                         % ', '.join(searched)) if searched else
+                        _('Another dictionary may carry it — the Module '
+                          'Manager lists more.'))
             else:
                 content.append(_headword_title(word))
                 if len(results) == 1:
@@ -5125,20 +5344,52 @@ class BiblePane(Gtk.Box):
 
         def show_no_dicts():
             _clear()
-            _status('scriptura-dialog-information-symbolic', 'No dictionaries installed',
-                    'Add Easton’s or Smith’s Bible Dictionary from the '
-                    'Module Manager.')
+            frag = _lineage_fragment()
+            if frag is not None:
+                # The table answers even with no dictionary installed, which is
+                # the common case in a language whose only dictionary is a
+                # general one.
+                content.append(_headword_title(word))
+                content.append(frag)
+                return
+            _status('scriptura-dialog-information-symbolic',
+                    _('No dictionaries installed'),
+                    # Named two English dictionaries by name, which is the
+                    # wrong advice for a reader who reads in Spanish.
+                    _('Add one from the Module Manager, then double-click '
+                      'the word again.'))
+
+        # Filled by `fetch` so the empty state can name what it looked in.
+        searched: list = []
 
         def fetch(_task):
             dicts = sword_bridge.installed_dict_modules()
             if not dicts:
                 return None
+            searched[:] = [_short_dict_title(mn, md) for mn, md in dicts]
+            # Which tab opens matters more than which tabs exist. Two things
+            # decide it, in this order:
+            #
+            #   * an exact hit beats a de-inflected one. The de-inflection is
+            #     English, so it strips the `s` from Spanish `pues` and finds
+            #     Webster's `Pue` — "to make a low whistling sound; to chirp,
+            #     as birds" — a confident answer to a question nobody asked.
+            #   * then the reading module's own language. A reader in a
+            #     Spanish Bible should not have to click past French to
+            #     reach Spanish.
+            #
+            # Everything still gets a tab; this only chooses which one is
+            # already open.
+            lang = sword_bridge.module_language(self._module)
             results = []
             for mod_name, mod_desc in dicts:
-                html = sword_bridge.lookup_dict_word(mod_name, word)
+                html, exact = sword_bridge.lookup_dict_entry(mod_name, word)
                 if html:
-                    results.append((mod_name, mod_desc, html))
-            return results
+                    same = bool(lang) and \
+                        sword_bridge.module_language(mod_name) == lang
+                    results.append((mod_name, mod_desc, html, exact, same))
+            results.sort(key=lambda r: (not r[3], not r[4], r[1].lower()))
+            return [(mn, md, html) for mn, md, html, _e, _s in results]
 
         # Latest-wins on the shared peek key: a newer lookup, footnote, or
         # anchored peek supersedes this fetch, so a late return can't

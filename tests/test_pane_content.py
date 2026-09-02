@@ -34,7 +34,8 @@ def _fake_pane():
     p = types.SimpleNamespace(
         _book='John', _chapter=3, _selected_verse=None, _module='TAGNT',
         _catena=_Reader(), _imagery=_Reader(), _archaeology=_Reader(),
-        _interlinear=_Reader(), _genbook=_Reader(), pane_calls=[])
+        _interlinear=_Reader(), _genbook=_Reader(),
+        _genealogy=_Reader(), pane_calls=[])
     # Text-view strategies delegate to pane methods; record those calls.
     for m in ('_render_bible_chapter', '_fetch_and_render_devotional',
               '_display_unsupported_module', '_broadcast_verse_to_text'):
@@ -46,8 +47,10 @@ def _fake_pane():
 def test_build_keys_match_the_registry_card_modes():
     p = _fake_pane()
     contents = pane_content.build(p)
-    assert set(contents) == {'imagery', 'catena', 'archaeology', 'interlinear'}
+    assert set(contents) == {'imagery', 'catena', 'archaeology',
+                             'genealogy', 'interlinear'}
     assert {k: c.stack_child for k, c in contents.items()} == {
+        'genealogy': 'genealogy',
         'imagery': 'imagery', 'catena': 'catena',
         'archaeology': 'archaeology', 'interlinear': 'interlinear'}
 

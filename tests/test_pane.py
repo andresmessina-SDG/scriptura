@@ -161,3 +161,43 @@ def test_gloss_empty_entry_gives_empty():
     from pane import _gloss_from_strong_entry
     assert _gloss_from_strong_entry(None) == ''
     assert _gloss_from_strong_entry('<b></b>') == ''
+
+
+# ── The dictionary peek's two label helpers ─────────────────────────────────
+
+
+def test_short_dict_title_does_not_spend_a_word_on_a_separator():
+    """A Description of the form "Name — blurb" gave "Wikcionario —": the
+    dash counted as one of the two words the heuristic keeps, so the label
+    ended on a dangling em dash."""
+    from pane import _short_dict_title
+    assert _short_dict_title(
+        'EsWik', 'Ejemplo — diccionario general en español') == 'Ejemplo'
+
+
+def test_short_dict_title_prefers_the_hand_tuned_name():
+    from pane import _short_dict_title
+    assert _short_dict_title(
+        'Wikcionario', 'Wikcionario — diccionario general') == 'Wikcionario'
+
+
+def test_short_dict_title_still_keeps_two_real_words_and_a_year():
+    from pane import _short_dict_title
+    assert _short_dict_title(
+        'X', "Webster's 1913 Revised Unabridged Dictionary") == \
+        "Webster's 1913"
+
+
+def test_strip_leading_headword_drops_a_plain_duplicate():
+    from pane import _strip_leading_headword
+    assert _strip_leading_headword('<b>Abraham</b> — father of a multitude',
+                                   'Abraham') == 'father of a multitude'
+
+
+def test_strip_leading_headword_keeps_a_middle_dot_label():
+    """Wikcionario writes "dios · Sustantivo masculino" to tell one spelling
+    of a case-insensitive key from another. Dropping the word alone left the
+    entry opening on a bare "·"."""
+    from pane import _strip_leading_headword
+    body = '<b>dios · Sustantivo masculino y femenino</b><br />1. Entidad…'
+    assert _strip_leading_headword(body, 'Dios') == body

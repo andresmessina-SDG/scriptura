@@ -30,6 +30,7 @@ gi.require_version('GdkPixbuf', '2.0')
 from gi.repository import Gtk, Adw, GLib, Gio, Gdk, Graphene, GdkPixbuf
 
 import archaeology_bridge
+from i18n import N_
 
 _log = logging.getLogger('scriptura.archaeology')
 
@@ -48,23 +49,50 @@ _MAP_BOUNDS = (11.0, 50.0, 24.0, 43.0)   # lon_min, lon_max, lat_min, lat_max
 # Faint orientation labels on the find-spot map (lat, lon, text). Seas are set
 # in italic, land regions in spaced uppercase, key cities in plain small caps —
 # enough to read the geography at a glance without competing with the markers.
+# Marked here and translated at draw time: a module-level constant is built
+# once, before the language is known, and the map is redrawn on every frame.
 _SEA_LABELS = [
-    (34.0, 18.5, 'Mediterranean Sea'),
-    (25.6, 35.2, 'Red Sea'),
-    (28.4, 48.6, 'Persian Gulf'),
+    (34.0, 18.5, N_('Mediterranean Sea')),
+    (25.6, 35.2, N_('Red Sea')),
+    (28.4, 48.6, N_('Persian Gulf')),
 ]
 _REGION_LABELS = [
-    (27.2, 30.0, 'EGYPT'),
-    (25.8, 44.0, 'ARABIA'),
-    (39.2, 32.5, 'ASIA  MINOR'),
-    (39.6, 21.8, 'GREECE'),
-    (35.6, 41.2, 'MESOPOTAMIA'),
+    (27.2, 30.0, N_('EGYPT')),
+    (25.8, 44.0, N_('ARABIA')),
+    (39.2, 32.5, N_('ASIA  MINOR')),
+    (39.6, 21.8, N_('GREECE')),
+    (35.6, 41.2, N_('MESOPOTAMIA')),
 ]
+# The three cities are also find-spots in the gallery, so they share their
+# msgids with the `place` field rather than adding three of their own.
 _CITY_LABELS = [
-    (31.78, 35.23, 'Jerusalem'),
-    (36.36, 43.15, 'Nineveh'),
-    (32.54, 44.42, 'Babylon'),
+    (31.78, 35.23, N_('Jerusalem')),
+    (36.36, 43.15, N_('Nineveh')),
+    (32.54, 44.42, N_('Babylon')),
 ]
+
+
+#: How far outside the viewport a photograph is worth decoding, and how far
+#: it is worth holding on to, both in page-sizes. Two bands rather than one,
+#: so a plate resting on the edge is not decoded, dropped and decoded again
+#: as the reader nudges the scrollbar: LOAD is what to have ready, KEEP is
+#: what not to throw away yet.
+_LOAD_MARGIN = 1.0
+_KEEP_MARGIN = 3.0
+
+
+def _band(y0, y1, top, page):
+    """`(near, far)` for a plate spanning [y0, y1) against a viewport of
+    `page` starting at `top` — worth decoding, and worth letting go of.
+
+    Between the two answers is the band where nothing happens: a plate there
+    keeps whatever state it has, which is what stops a nudge of the scrollbar
+    from decoding and dropping the same file over and over.
+    """
+    bottom = top + page
+    near = y1 > top - page * _LOAD_MARGIN and y0 < bottom + page * _LOAD_MARGIN
+    far = y1 < top - page * _KEEP_MARGIN or y0 > bottom + page * _KEEP_MARGIN
+    return near, far
 
 
 class ArchaeologyReader:
@@ -75,6 +103,9 @@ class ArchaeologyReader:
         self._verse_anchors: dict[tuple, Gtk.Widget] = {}
         self._entry_anchors: dict[str, Gtk.Widget] = {}
         self._sections: list[tuple] = []     # (divider, [(plate, search_text)])
+        self._lazy: list[tuple] = []         # (plate, picture, image path)
+        self._to_load: list[tuple] = []      # queued for the idle loader
+        self._load_source = 0
         self._apparatus: list[Gtk.Widget] = []  # glossary / further-reading
         self._front = None
         self._scroll_target = None
@@ -147,6 +178,14 @@ class ArchaeologyReader:
         self._page.add_css_class('stone-page')
         self._scroller.set_child(self._page)
         self._root.append(self._scroller)
+
+        # Both signals, because they answer different questions: `value-changed`
+        # is the reader scrolling, `changed` is the page itself getting an
+        # allocation — which is when the first plates learn where they are, and
+        # so the only moment the top of the gallery can be filled in at all.
+        adj = self._scroller.get_vadjustment()
+        adj.connect('value-changed', lambda *_a: self._pump_images())
+        adj.connect('changed', lambda *_a: self._pump_images())
 
         # Font scaling: the .stone-* sizes are em-relative, so one base
         # font-size on .stone-page scales the whole document. Driven by the
@@ -268,6 +307,10 @@ class ArchaeologyReader:
         self._build_contents(doc)
         self.apply_font_size(getattr(self._pane, '_font_size', None))
         self._built = True
+        # The adjustment's `changed` covers the normal path; this covers a
+        # reader rendered into a pane that is already laid out, where nothing
+        # about the scroller is about to change.
+        GLib.idle_add(lambda: (self._pump_images(), False)[1])
 
     def _frontispiece(self, doc):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -324,7 +367,6 @@ class ArchaeologyReader:
         plate.add_css_class('stone-plate')
 
         pic = Gtk.Picture()
-        pic.set_filename(archaeology_bridge.image_path(entry['image']))
         pic.set_content_fit(Gtk.ContentFit.CONTAIN)
         pic.set_can_shrink(True)
         pic.set_hexpand(True)
@@ -342,6 +384,8 @@ class ArchaeologyReader:
             else ngettext('Click to enlarge ({n} view)',
                           'Click to enlarge ({n} views)', n_views).format(n=n_views))
         plate.append(self._clamp(pic, _IMG_W))
+        self._lazy.append(
+            (plate, pic, archaeology_bridge.image_path(entry['image'])))
 
         txt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         txt.append(self._label(entry['title'], 'stone-title', selectable=True))
@@ -568,6 +612,58 @@ class ArchaeologyReader:
             box.append(btn)
         self._contents_pop.set_child(box)
 
+    # ── photographs, decoded only where the reader can see them ───────────
+    def _pump_images(self):
+        """Load the plates in view, drop the ones long out of it.
+
+        Every plate is built up front — a Box does not virtualise — and
+        `set_filename` decodes its file there and then. All 56 of them cost
+        383ms and 126MB to open a pane showing two. The band each picture
+        sits in is a fixed 420px whatever arrives in it, so a photograph
+        appearing late moves nothing and the scroll position is safe.
+        """
+        adj = self._scroller.get_vadjustment()
+        page = adj.get_page_size()
+        if page <= 0:                 # not laid out yet; `changed` will call
+            return
+        top = adj.get_value()
+        middle = top + page / 2
+        want = []
+        for plate, pic, path in self._lazy:
+            ok, rect = plate.compute_bounds(self._page)
+            if not ok:
+                continue
+            y0 = rect.get_y()
+            y1 = y0 + rect.get_height()
+            near, far = _band(y0, y1, top, page)
+            loaded = pic.get_paintable() is not None
+            if near and not loaded:
+                want.append((abs((y0 + y1) / 2 - middle), pic, path))
+            elif far and loaded:
+                pic.set_paintable(None)   # frees the texture; the file stays
+        # Nearest the middle of the view first, so what the reader is looking
+        # at arrives before what is merely close.
+        want.sort(key=lambda w: w[0])
+        self._to_load = [(pic, path) for _d, pic, path in want]
+        if self._to_load and self._load_source == 0:
+            self._load_source = GLib.idle_add(self._load_one)
+
+    def _load_one(self):
+        """One photograph per turn of the main loop.
+
+        Decoding is ~7ms a file, and `value-changed` fires many times through
+        a flick: doing the whole band inline cost 23ms in one callback, which
+        is a dropped frame in the middle of a scroll. An idle hands the frame
+        back between files, so the gallery fills in while it moves.
+        """
+        while self._to_load:
+            pic, path = self._to_load.pop(0)
+            if pic.get_paintable() is None:
+                pic.set_filename(path)
+                return True
+        self._load_source = 0
+        return False
+
     def _jump(self, chapter_id):
         self._contents_pop.popdown()
         anchor = self._chapter_anchors.get(chapter_id)
@@ -745,8 +841,15 @@ class ArchaeologyReader:
 
     @staticmethod
     def _stroked_text(cr, x, y, text, size, *, italic=False, bold=False,
-                      align='left', alpha=1.0):
-        """Draw legible text over any background: a dark halo then light glyphs."""
+                      align='left', alpha=1.0, bounds=None):
+        """Draw legible text over any background: a dark halo then light glyphs.
+
+        `bounds` is (left, right) in device pixels: a label anchored near the
+        edge of the map is pulled back inside it rather than running off the
+        plate. The anchors are geographic and the words are not — «Персидский
+        залив» is half again the width of "Persian Gulf" and hung off the
+        right edge of the map at every size.
+        """
         slant = cairo_italic if italic else cairo_normal
         weight = cairo_bold if bold else cairo_book
         cr.select_font_face('sans-serif', slant, weight)
@@ -756,6 +859,16 @@ class ArchaeologyReader:
             x -= ext.width / 2 + ext.x_bearing
         elif align == 'right':
             x -= ext.width + ext.x_bearing
+        if bounds is not None:
+            # The halo is drawn a pixel out on each side, so it is part of
+            # what has to fit.
+            lo, hi = bounds
+            over = (x + ext.x_bearing + ext.width + 1) - hi
+            if over > 0:
+                x -= over
+            under = lo - (x + ext.x_bearing - 1)
+            if under > 0:
+                x += under
         cr.set_source_rgba(0, 0, 0, 0.55 * alpha)
         for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
             cr.move_to(x + dx, y + dy)
@@ -794,21 +907,23 @@ class ArchaeologyReader:
         cr.restore()
 
         # Orientation labels (drawn under the markers).
+        inside = (ox + 6, ox + dw - 6)
         for lat, lon, text in _SEA_LABELS:
             px, py = self._project(lon, lat, ox, oy, dw, dh)
-            self._stroked_text(cr, px, py, text, 13, italic=True,
-                               align='center', alpha=0.75)
+            self._stroked_text(cr, px, py, _(text), 13, italic=True,
+                               align='center', alpha=0.75, bounds=inside)
         for lat, lon, text in _REGION_LABELS:
             px, py = self._project(lon, lat, ox, oy, dw, dh)
-            self._stroked_text(cr, px, py, text, 13, bold=True,
-                               align='center', alpha=0.7)
+            self._stroked_text(cr, px, py, _(text), 13, bold=True,
+                               align='center', alpha=0.7, bounds=inside)
         # City labels as legible pills above their (often dense) swarm, with the
         # nearby find-count folded in so a busy spot reads as "Jerusalem · 14".
         for lat, lon, name in _CITY_LABELS:
             px, py = self._project(lon, lat, ox, oy, dw, dh)
             n = self._nearby_count(lat, lon)
+            name = _(name)
             text = f'{name} · {n}' if n >= 3 else name
-            self._pill_label(cr, px, py - 30, text)
+            self._pill_label(cr, px, py - 30, text, bounds=inside)
 
         # Markers.
         self._map_screen = []
@@ -874,13 +989,18 @@ class ArchaeologyReader:
             cr.move_to(cx + 11, cy + 35)
             cr.show_text(place)
 
-    def _pill_label(self, cr, cx, cy, text):
+    def _pill_label(self, cr, cx, cy, text, bounds=None):
         """A small dark rounded pill centred at (cx, cy) with light text — reads
-        cleanly over a busy marker swarm where plain stroked text would not."""
+        cleanly over a busy marker swarm where plain stroked text would not.
+
+        `bounds` keeps it on the plate, as in `_stroked_text`."""
         cr.select_font_face('sans-serif', cairo_normal, cairo_bold)
         cr.set_font_size(11.5)
         ext = cr.text_extents(text)
         pw, ph = ext.width + 16, 20
+        if bounds is not None:
+            cx = min(max(cx, bounds[0] + pw / 2),
+                     max(bounds[0] + pw / 2, bounds[1] - pw / 2))
         self._rounded_rect(cr, cx - pw / 2, cy - ph / 2, pw, ph, 9)
         cr.set_source_rgba(0.12, 0.10, 0.09, 0.82)
         cr.fill()
@@ -964,7 +1084,7 @@ class ArchaeologyReader:
         items = []
         for c in archaeology_bridge.document()['chapters']:
             for e in c['entries']:
-                y = self._parse_year(e['date'])
+                y = self._parse_year(e['date_key'])
                 if y is not None and -1450 <= y <= 150:   # keep to the biblical era
                     items.append((y, e))
         items.sort(key=lambda t: t[0])
@@ -997,9 +1117,14 @@ class ArchaeologyReader:
 
     @staticmethod
     def _year_label(yv):
+        # Translated, because the axis of a chart is interface, not content:
+        # a Russian reader writes «1400 до н. э.», and the era goes AFTER the
+        # year in Russian and BEFORE it in English — which only a whole
+        # format string can express. catena_reader has always done this; this
+        # axis was the one place left writing the era in English by hand.
         if yv < 0:
-            return f'{-yv} BC'
-        return f'AD {yv}' if yv > 0 else 'AD 1'
+            return _('{year} BC').format(year=-yv)
+        return _('AD {year}').format(year=yv if yv > 0 else 1)
 
     def _draw_timeline(self, _area, cr, w, h, _data):
         items = self._tl_points

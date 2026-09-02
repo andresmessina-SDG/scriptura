@@ -356,6 +356,12 @@ class LexiconPanel(Gtk.Box):
         self._h_paned.set_resize_end_child(True)
         self._h_paned.set_shrink_start_child(False)
         self._h_paned.set_shrink_end_child(False)
+        self._position_tries = 0
+        # `max-position` changes with every allocation, so this is the paned
+        # telling us it has been resized — the moment to notice a collapsed
+        # divider, whether the pane grew, shrank or split.
+        self._h_paned.connect('notify::max-position',
+                              self._keep_the_definition_readable)
 
         # No separator rule — the soft .lex-panel top border is the only divider
         # from the reading area; the header below is flat, grouped by whitespace.
@@ -442,9 +448,43 @@ class LexiconPanel(Gtk.Box):
     def init_inner_position(self):
         """Set the horizontal paned's divider — 67% to the definition,
         33% to the word study. Called by the composer once the panel
-        has been laid out (allocated_width is meaningful)."""
+        has been laid out (allocated_width is meaningful).
+
+        Returns True while the allocation is not meaningful yet, so an
+        idle_add caller is re-run instead of giving up. That mattered: on a
+        first reveal the width can still be 0, the one-shot bailed, and
+        GtkPaned kept the position it defaults to with
+        `shrink_start_child(False)` — the start child's MINIMUM, which for a
+        wrapping label is its longest word. The definition read
+        "776 'erets eh'-rets from" one word per line down a 60px column, and
+        stayed that way for the rest of the session however the pane was
+        resized.
+        """
         w = self._h_paned.get_allocated_width()
-        if w > 100:
+        if w <= 100:
+            # Retried on a timer, not on idle. An idle handler returning
+            # CONTINUE re-runs the moment the loop is idle, many times per
+            # frame — it would burn a core waiting for a layout it cannot
+            # hurry, and a bound counted in iterations could expire before
+            # the first allocation ever arrived. 120 × 16ms is two seconds
+            # of frames, and `notify::max-position` catches anything slower.
+            self._position_tries += 1
+            return (GLib.SOURCE_REMOVE if self._position_tries > 120
+                    else GLib.SOURCE_CONTINUE)
+        self._position_tries = 0
+        self._h_paned.set_position(int(w * 0.67))
+        return GLib.SOURCE_REMOVE
+
+    def _keep_the_definition_readable(self, *_a):
+        """Re-widen a divider that has collapsed to nothing.
+
+        Not a fight with the reader: 120px cannot be a deliberate choice —
+        it is narrower than the word `'erets` sets — so the only thing that
+        lands there is a layout that never got a real allocation. A divider
+        the reader has dragged anywhere usable is left alone.
+        """
+        w = self._h_paned.get_allocated_width()
+        if w > 100 and self._h_paned.get_position() < 120:
             self._h_paned.set_position(int(w * 0.67))
 
     def clear_state(self):
@@ -566,7 +606,8 @@ class LexiconPanel(Gtk.Box):
         if self._on_first_show:
             self._on_first_show()
         self.set_visible(True)
-        GLib.idle_add(self.init_inner_position)
+        self._position_tries = 0
+        GLib.timeout_add(16, self.init_inner_position)
 
     def _tag_refs(self, heuristic=True):
         """Find and tag cross-reference numbers in the definition body so

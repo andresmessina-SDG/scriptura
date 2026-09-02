@@ -4,6 +4,8 @@ not touch the SWORD library (OSIS parsing, TSK cross-ref text parsing,
 `Sword` Python binding to be installed, but no SWMgr is created during
 these tests."""
 
+import types
+
 import pytest
 
 import sword_bridge
@@ -524,3 +526,171 @@ def test_installed_dict_modules_still_rejects_non_dictionaries(monkeypatch):
     monkeypatch.setattr(sword_bridge, 'module_names', lambda: list(mods))
     monkeypatch.setattr(sword_bridge, 'is_devotional_module', lambda n: False)
     assert [n for n, _d in sword_bridge.installed_dict_modules()] == ['Easton']
+
+
+# ── Exact vs de-inflected hits ──────────────────────────────────────────────
+#
+# Which dictionary tab opens is decided by whether the module held the word as
+# written. Without that signal the peek ranked by description, and Webster's
+# 1913 answered the Spanish `pues` with its entry for `Pue` — "to make a low
+# whistling sound; to chirp, as birds" — in front of the Spanish entry.
+
+
+def test_candidate_tiers_keep_the_guesses_out_of_the_exact_list():
+    exact, extra = sword_bridge._dict_candidate_tiers('pues')
+    assert 'pues' in exact and 'Pues' in exact
+    assert 'pue' not in exact          # the English plural strip is a guess
+    assert 'pue' in extra
+
+
+def test_candidate_tiers_still_compose_the_old_flat_list():
+    for word in ('pues', 'Abraham', 'alegróse', 'prophecies'):
+        exact, extra = sword_bridge._dict_candidate_tiers(word)
+        assert sword_bridge._dict_candidates(word) == exact + extra
+
+
+class _FakeLexicon:
+    """A lexicon holding exactly the keys given, case-insensitively."""
+
+    def __init__(self, keys):
+        self._keys = {k.lower(): k for k in keys}
+        self._key = ''
+
+    def setKeyText(self, text):
+        self._key = self._keys.get(text.lower(), text)
+
+    def getKeyText(self):
+        return self._key
+
+    def getRawEntry(self):
+        return 'entry' if self._key.lower() in self._keys else ''
+
+
+def _patch_lexicon(monkeypatch, keys):
+    fake = _FakeLexicon(keys)
+    monkeypatch.setattr(sword_bridge.Sword, 'SWMgr',
+                        lambda: types.SimpleNamespace(
+                            getModule=lambda _n: fake))
+
+
+def test_lookup_reports_an_exact_hit(monkeypatch):
+    _patch_lexicon(monkeypatch, ['pues'])
+    assert sword_bridge.lookup_dict_entry('EsWik', 'pues') == ('entry', True)
+
+
+def test_lookup_reports_a_de_inflected_hit_as_inexact(monkeypatch):
+    """Webster's holds `Pue`, not `pues`; the English plural strip found it."""
+    _patch_lexicon(monkeypatch, ['Pue'])
+    html, exact = sword_bridge.lookup_dict_entry('Webster1913', 'pues')
+    assert html == 'entry' and exact is False
+
+
+def test_lookup_reports_a_de_accented_hit_as_inexact(monkeypatch):
+    """`destituídos` reaches `destituidos` only by dropping an accent."""
+    _patch_lexicon(monkeypatch, ['destituidos'])
+    assert sword_bridge.lookup_dict_entry('EsWik', 'destituídos')[1] is False
+
+
+def test_lookup_on_a_miss_is_empty_and_inexact(monkeypatch):
+    _patch_lexicon(monkeypatch, [])
+    assert sword_bridge.lookup_dict_entry('EsWik', 'zzz') == ('', False)
+
+
+def test_lookup_dict_word_still_returns_bare_html(monkeypatch):
+    _patch_lexicon(monkeypatch, ['pues'])
+    assert sword_bridge.lookup_dict_word('EsWik', 'pues') == 'entry'
+
+
+# ── De-inflection is language-bound ─────────────────────────────────────────
+
+
+def test_the_english_plural_strip_stays_out_of_a_spanish_lexicon():
+    """Dropping the `s` from `pues` lands on `pue`, a real but unrelated
+    Spanish word — so the reader got a confident entry for something they
+    did not click, this time from inside the Spanish dictionary itself."""
+    assert 'pue' not in sword_bridge._dict_candidates('pues', 'es')
+    assert 'pue' in sword_bridge._dict_candidates('pues', 'en')
+
+
+def test_spanish_repairs_stay_out_of_an_english_lexicon():
+    assert 'alegro' not in sword_bridge._dict_candidates('alegróse', 'en')
+    assert 'alegro' in sword_bridge._dict_candidates('alegróse', 'es')
+
+
+def test_an_unknown_language_still_tries_everything():
+    """A module with no Lang set should lose no reach it had before."""
+    both = sword_bridge._dict_candidates('alegróse', None)
+    assert 'alegro' in both
+
+
+def test_english_de_inflection_is_untouched_for_english():
+    for word, stem in (('sins', 'sin'), ('prophecies', 'prophecy'),
+                       ('loaves', 'loaf'), ('praying', 'pray')):
+        assert stem in sword_bridge._dict_candidates(word, 'en'), word
+
+
+def test_exact_forms_survive_in_every_language():
+    for lang in ('es', 'en', None):
+        assert 'Pues' in sword_bridge._dict_candidates('pues', lang)
+
+
+def test_a_catalogue_snapshot_knows_only_what_it_held(tmp_path, monkeypatch):
+    """`catalogue_has` is what tells a stale module list from a current one:
+    the cached list is a snapshot, and one taken before a module was
+    published has no conf for it."""
+    import sword_bridge
+    shadow = tmp_path / '20260817100347'
+    (shadow / 'mods.d').mkdir(parents=True)
+    (shadow / 'mods.d' / 'nbla.conf').write_text('[NBLA]\n')
+    monkeypatch.setattr(sword_bridge, '_shadow_path', lambda: str(shadow))
+
+    assert sword_bridge.catalogue_has('NBLA')
+    assert sword_bridge.catalogue_has('nbla'), 'the lookup is case-insensitive'
+    assert not sword_bridge.catalogue_has('Wikcionario')
+
+
+def test_no_cached_catalogue_knows_nothing(monkeypatch):
+    import sword_bridge
+    monkeypatch.setattr(sword_bridge, '_shadow_path', lambda: None)
+    assert not sword_bridge.catalogue_has('NBLA')
+
+
+def test_a_module_is_named_in_its_own_language_only_to_that_reader(monkeypatch):
+    """DISPLAY_NAMES is an English table by convention — "Luther Bible
+    (German)", "Reina-Valera (1909)" — which is right for an English reader
+    meeting a foreign text and wrong for the reader it was translated for. A
+    Russian split headed "Russian Open Bible | Russian Synodal Bible" named
+    two Russian Bibles in the one language the reader had not chosen."""
+    import i18n
+    import sword_bridge
+
+    monkeypatch.setattr(i18n, 'current_language', lambda: 'ru')
+    assert sword_bridge.display_name('RusOpenBible') == 'Русский открытый перевод'
+    assert sword_bridge.display_name('RusSynodal') == 'Синодальный перевод'
+
+    monkeypatch.setattr(i18n, 'current_language', lambda: 'en')
+    assert sword_bridge.display_name('RusOpenBible') == 'Russian Open Bible'
+    assert sword_bridge.display_name('RusSynodal') == 'Russian Synodal Bible'
+
+
+def test_a_native_name_never_swallows_a_module_it_does_not_name(monkeypatch):
+    """The fallback chain still ends where it did: an unlisted module keeps
+    its curated English name, and one in neither table keeps its own key."""
+    import i18n
+    import sword_bridge
+
+    monkeypatch.setattr(i18n, 'current_language', lambda: 'ru')
+    assert sword_bridge.display_name('BSB') == 'Berean Standard Bible'
+    assert sword_bridge.display_name('NoSuchModule') == 'NoSuchModule'
+
+
+def test_every_native_name_declares_a_language(monkeypatch):
+    """The language is declared in the table rather than read from the
+    module's `Lang`, because display_name runs for every pane header and
+    every module-manager row. A malformed entry would silently never fire."""
+    import sword_bridge
+    for key, entry in sword_bridge.NATIVE_NAMES.items():
+        assert isinstance(entry, tuple) and len(entry) == 2, key
+        lang, native = entry
+        assert lang and lang.isalpha() and lang == lang.lower(), key
+        assert native and native != key, key

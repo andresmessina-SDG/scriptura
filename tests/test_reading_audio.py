@@ -18,7 +18,6 @@ import bible_audio
 import devotional_audio
 import motion
 import mpris
-import pane
 import settings
 import tasks
 import window

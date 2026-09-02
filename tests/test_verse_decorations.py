@@ -50,6 +50,9 @@ class Pane:
     def _insert_artifact_marker(self, *a):
         self.fired.append('artifact_marker')
 
+    def _insert_lineage_marker(self, *a):
+        self.fired.append('lineage_marker')
+
     def _apply_anno_tags(self, *a, **k):
         self.fired.append('annotations')
 
@@ -67,6 +70,7 @@ def _loaded(pane, commentary=False):
         None, pane._buffer.get_iter_at_offset(3), True)
     r.anno = {'highlight': 'yellow'}
     r.has_artifact = True
+    r.has_lineage = True
     r.cap_index = 0
     r.fn_markers = [(4, '1', 'a')]
     r.vnotes = {'1': ('t', 'body')}
@@ -75,11 +79,18 @@ def _loaded(pane, commentary=False):
 
 
 ORDER = ('dropcap', 'footnotes', 'poetry_lines', 'artifact_marker',
-         'vnum', 'annotations', 'strong_words')
+         'lineage_marker', 'vnum', 'annotations', 'strong_words')
 
 
 def test_the_registry_is_the_order_the_loop_applied():
     assert tuple(d.name for d in _VERSE_DECORATIONS) == ORDER
+
+
+def test_the_lineage_marker_also_lands_before_vnum():
+    """Same reason as the artifact marker below: it INSERTS a character, and
+    a chapter can carry both."""
+    names = [d.name for d in _VERSE_DECORATIONS]
+    assert names.index('lineage_marker') < names.index('vnum')
 
 
 def test_the_artifact_marker_lands_before_vnum_measures_the_block():
@@ -118,6 +129,7 @@ def test_every_entry_but_the_anchor_excludes_commentaries():
     forgets the gate fails here even if nothing exercises it yet."""
     r = _VerseRender(1, 1, '', is_commentary=True)
     r.has_artifact = True
+    r.has_lineage = True
     r.cap_index = 0
     r.fn_markers = [(0, '1', 'a')]
     r.poetry_lines = {0: 1}

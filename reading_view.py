@@ -24,6 +24,35 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Gdk, Gsk, Graphene, Pango
 
 
+def _visible_lines(view, vr):
+    """The first and last buffer lines the viewport shows.
+
+    `get_line_at_y`, never `get_iter_at_location`. Both are called from
+    inside `snapshot`, and `get_iter_at_location` maps an X coordinate to a
+    byte index WITHIN the line it lands on — a step this code has no use for,
+    since it wants the line and passes x=0. That step is also what crashed
+    the app: navigating to a shorter chapter while the reading view had
+    focus left the visible rect reaching past the end of the new text, and
+    GTK aborted the process from inside its own paint —
+
+        Gtk-ERROR: Byte index 1435 is off the end of the line
+        #4  iter_set_from_byte_offset
+        #5  gtk_text_iter_set_visible_line_index
+        #7  gtk_text_layout_get_iter_at_position
+        #8  gtk_text_view_get_iter_at_location   ← ours
+        #19 draw_text                            ← inside GtkTextView's paint
+
+    `get_line_at_y` answers with the line and asks nothing about X, so the
+    aborting path is not reached. The pointer-driven callers elsewhere do
+    want a character and are not called during a paint; they keep what they
+    have.
+    """
+    lo, _top = view.get_line_at_y(vr.y)
+    hi, _bot = view.get_line_at_y(vr.y + vr.height)
+    hi.forward_line()
+    return lo, hi
+
+
 def heading_line(buf, start):
     """The start of the section heading above `start`, or None if there is
     none.
@@ -34,6 +63,15 @@ def heading_line(buf, start):
     reading text does. Modules that carry no headings (KJV, ASV, the
     Vulgate) answer None, and the veil then starts at the verse itself.
     """
+    # A unit that begins mid-paragraph has no heading of its own. Without
+    # this the walk left the unit's own line and found the paragraph's — in
+    # continuous prose, the CHAPTER TITLE a dozen lines above — and the veil
+    # then took that as its top edge. `_veil` draws nothing when its bottom
+    # is above its top, so every verse between the title and the unit stayed
+    # lit: the veil only ever dimmed BELOW. Verse 1 of a chapter starts its
+    # line and keeps its heading, which is the case this was written for.
+    if not start.starts_line():
+        return None
     line = start.copy()
     line.set_line_offset(0)
     for _ in range(3):
@@ -252,9 +290,7 @@ class BibleTextView(Gtk.TextView):
                    for d in below):
             return
         vr = self.get_visible_rect()
-        _, lo = self.get_iter_at_location(0, vr.y)
-        _, hi = self.get_iter_at_location(0, vr.y + vr.height)
-        hi.forward_line()
+        lo, hi = _visible_lines(self, vr)
         asc, desc = self._metrics()
         for dec in below:
             if not dec.on(self):
@@ -314,9 +350,7 @@ class BibleTextView(Gtk.TextView):
         """
         buf = self.get_buffer()
         vr = self.get_visible_rect()
-        _, lo = self.get_iter_at_location(0, vr.y)
-        _, hi = self.get_iter_at_location(0, vr.y + vr.height)
-        hi.forward_line()
+        lo, hi = _visible_lines(self, vr)
         ranges = list(self._tag_ranges(buf, tag, lo, hi))
         width = float(self.get_width())
         if not ranges:
@@ -416,6 +450,76 @@ class BibleTextView(Gtk.TextView):
                 break
         return it
 
+    def _segment_left(self, cur, r0):
+        """Where this segment's first glyph is actually drawn.
+
+        GTK will not say, at a SOFT wrap: ask it for the first character of a
+        continuation line and it answers 47 while drawing the glyph at 26 —
+        the view's own left margin. That is the same unreliability as the
+        right edge, at the other end of the wrap.
+
+        Only at a soft wrap, though, and the test is whether the display line
+        begins in the middle of a BUFFER line. A line of poetry is its own
+        buffer line and its indent is real — GTK says 58 and means it — so
+        taking the margin there dragged every band on every psalm 32px to the
+        left, out from under the indent. The first version of this rule did
+        exactly that.
+        """
+        line_start = cur.copy()
+        self.backward_display_line_start(line_start)
+        soft_wrap = line_start.compare(cur) == 0 and not cur.starts_line()
+        return self.get_left_margin() if soft_wrap else int(r0.x)
+
+    def _line_right_edge(self, cur, seg_last, y0):
+        """The rightmost ink of this segment on its own display line.
+
+        Neither the iter past the last glyph nor the last glyph itself can be
+        trusted at a soft wrap: GTK reports both on the FOLLOWING line, so the
+        band's width came out negative — -538px in one measured case — and the
+        `max(1.0, …)` floor drew that as a 1px tick standing in the line above
+        the band. A verse over three display lines got one band and two ticks.
+
+        Measured on a wrapped line, the tail reads:
+
+            '0'  x= 26 y=221 w=11     ← the last glyph, on the NEXT line
+            '3'  x=638 y=189 w= 0
+            '1'  x=625 y=189 w=13     → x+w = 638, the true right edge
+
+        So take the maximum over the segment rather than its last member, and
+        ignore whatever claims to be on another line. Clamping the TEXT back
+        onto the line instead — the first attempt — was wrong and showed it:
+        it cut the closing glyph off every wrapped line and, with the skip
+        below, the opening one off the next.
+        """
+        right = None
+        probe = cur.copy()
+        while probe.compare(seg_last) < 0:
+            r = self.get_iter_location(probe)
+            if int(r.y) == y0:
+                edge = int(r.x + r.width) if r.width else int(r.x)
+                right = edge if right is None else max(right, edge)
+            if not probe.forward_char():
+                break
+        return right
+
+    def _resume_after(self, seg_end, cur, end):
+        """Where the next segment starts, or None when there is no more.
+
+        Exactly at `seg_end`, past any whitespace. A `forward_char()` used to
+        stand here to step over the newline a segment ended on — and it
+        stepped over a real LETTER when the segment ended at a soft wrap
+        instead, which took the opening glyph off every continuation line:
+        «ars old» where the verse says «years old».
+        """
+        nxt = self._skip_ws_fwd(seg_end.copy(), end)
+        if nxt.compare(cur) > 0:
+            return nxt
+        nxt = seg_end.copy()
+        if not nxt.forward_char():
+            return None
+        nxt = self._skip_ws_fwd(nxt, end)
+        return nxt if nxt.compare(cur) > 0 else None
+
     def _draw_band(self, snapshot, start, end, rgba, asc, desc,
                    underline=False, dotted=False):
         pad = self._HL_PAD
@@ -444,7 +548,8 @@ class BibleTextView(Gtk.TextView):
             seg_last = self._trim_ws_end(cur, seg_end)
             if seg_last.compare(cur) > 0:
                 r0 = self.get_iter_location(cur)
-                r1 = self.get_iter_location(seg_last)
+                right = self._line_right_edge(cur, seg_last, int(r0.y))
+
                 # Anchor the band's top to the display line's *start* so a verse
                 # that begins mid-line with the small raised number shares one
                 # top with its neighbours. (GTK lays text at the line-box top
@@ -454,10 +559,18 @@ class BibleTextView(Gtk.TextView):
                 self.backward_display_line_start(ls)
                 # snapshot_layer draws in buffer coordinates, so use the iter
                 # locations directly — GTK applies the scroll/viewport offset.
-                wx0 = int(r0.x)
+                wx0 = self._segment_left(cur, r0)
                 wy = int(self.get_iter_location(ls).y - pad)
-                wx1 = int(r1.x)
-                seg_w = max(1.0, wx1 - wx0)
+                wx1 = wx0 if right is None else right
+                seg_w = float(wx1 - wx0)
+                if seg_w <= 0:
+                    # Nothing to draw. This used to be floored at 1px, which
+                    # is how a segment with no width became a visible mark.
+                    nxt = self._resume_after(seg_end, cur, end)
+                    if nxt is None:
+                        break
+                    cur = nxt
+                    continue
                 if underline:
                     # Thin line at a fixed offset below the body baseline —
                     # asc is the uniform font ascent, so the line sits at the
@@ -499,7 +612,7 @@ class BibleTextView(Gtk.TextView):
                     snapshot.pop()
             # Advance past this segment, then skip whitespace / blank lines so
             # the next segment starts on real text.
-            cur = seg_end.copy()
-            if not cur.forward_char():
+            nxt = self._resume_after(seg_end, cur, end)
+            if nxt is None:
                 break
-            cur = self._skip_ws_fwd(cur, end)
+            cur = nxt

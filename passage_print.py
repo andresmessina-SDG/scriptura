@@ -30,7 +30,11 @@ BODY_PT = 11.0
 #: Margin in points — 0.75in, the width a ring binder and a thumb both want.
 MARGIN_PT = 54.0
 #: The reading serif, so a handout looks like the app it came from.
-SERIF = 'Newsreader'
+#: A family LIST, not one family: Pango falls through it per-glyph, and
+#: Newsreader carries no Cyrillic — a bare 'Newsreader' sends Russian to
+#: whatever fontconfig picks, which here is a SANS face. The chain matches
+#: data/style.css so the card and the page set in the same serif.
+SERIF = 'Newsreader, Source Serif 4, Charter, Georgia, serif'
 
 
 class PassagePrinter:

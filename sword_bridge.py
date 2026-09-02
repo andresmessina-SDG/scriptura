@@ -8,6 +8,7 @@ import shutil
 import sqlite3
 import tarfile
 import threading
+import unicodedata
 import zipfile
 from collections import OrderedDict
 import Sword
@@ -899,6 +900,12 @@ DISPLAY_NAMES = {
     'ItaRive':       'Riveduta Bible (1927)',
     'SpaRV1909':     'Reina-Valera (1909)',
     'RusSynodal':    'Russian Synodal Bible',
+    'RusSynodalLIO': 'Russian Synodal Bible (Licht im Osten)',
+    # Named here or the pane header reads "RusOpenBible" — a module id, not
+    # a title. English, like every other entry in this table; NATIVE_NAMES
+    # below answers the reader who is running the app in Russian.
+    'RusOpenBible':  'Russian Open Bible',
+    'RussianBibleWords': 'Russian Bible Dictionary',
     # Commentaries
     'MHC':           'Matthew Henry (Complete)',
     'MHCC':          'Matthew Henry (Concise)',
@@ -950,6 +957,35 @@ DISPLAY_NAMES = {
 }
 
 
+#: What a module calls itself, for the reader running the app in that same
+#: language. DISPLAY_NAMES is an English table by convention — "Luther Bible
+#: (German)", "Reina-Valera (1909)" — which is right for an English reader
+#: meeting a foreign text and wrong for the reader it was translated for: a
+#: Russian split headed "Russian Open Bible | Russian Synodal Bible" names
+#: two Russian Bibles in the one language the reader did not choose.
+#:
+#: The language is declared here rather than read from the module's `Lang`,
+#: because `display_name` is called for every row of the module manager and
+#: every pane header, and a SWORD config read per call is not free.
+NATIVE_NAMES = {
+    'RusOpenBible':      ('ru', 'Русский открытый перевод'),
+    'RusSynodal':        ('ru', 'Синодальный перевод'),
+    'RusSynodalLIO':     ('ru', 'Синодальный перевод (Licht im Osten)'),
+    'RussianBibleWords': ('ru', 'Библейский словарь'),
+}
+
+
+def native_name(name):
+    """The module's own-language title, or '' when it has none for the
+    language in effect."""
+    entry = NATIVE_NAMES.get(name)
+    if not entry:
+        return ''
+    import i18n
+    lang, native = entry
+    return native if i18n.current_language() == lang else ''
+
+
 def display_name(name):
     """Return the human-friendly label for any module key. SWORD modules
     map through the curated name table; eBible keys (PREFIX + id) are
@@ -972,7 +1008,10 @@ def display_name(name):
     import interlinear_data
     if interlinear_data.is_interlinear_module(name):
         return interlinear_data.display_name(name)
-    return DISPLAY_NAMES.get(name, name)
+    import genealogy_bridge
+    if genealogy_bridge.is_genealogy_module(name):
+        return genealogy_bridge.display_name(name)
+    return native_name(name) or DISPLAY_NAMES.get(name, name)
 
 
 # ── Generic Books ────────────────────────────────────────────────────────────
@@ -1332,8 +1371,62 @@ def installed_dict_modules():
     return result
 
 
-def _dict_candidates(word):
+# Pronouns Spanish attaches to the end of a verb, longest first so `selo`
+# is stripped whole rather than leaving a stray `se`.
+_ENCLITICS = ('selos', 'selas', 'melos', 'melas', 'noslo', 'nosla',
+              'telos', 'telas', 'oslos', 'oslas',
+              'selo', 'sela', 'melo', 'mela', 'telo', 'tela',
+              'nos', 'les', 'las', 'los', 'os',
+              'se', 'le', 'la', 'lo', 'me', 'te')
+
+
+def _strip_accents(word):
+    return ''.join(c for c in unicodedata.normalize('NFD', word)
+                   if unicodedata.category(c) != 'Mn')
+
+
+def _spanish_variants(w):
+    """De-accented and enclitic-stripped forms of a lowercased word.
+
+    The `+ 'r'` forms are for infinitives: `amarte` strips to `amar`, but
+    `salvarnos` strips to `salva`, whose entry is the noun — the verb the
+    reader is looking at is `salvar`.
+    """
+    out = []
+    plain = _strip_accents(w)
+    if plain != w:
+        out.append(plain)
+    for clitic in _ENCLITICS:
+        if w.endswith(clitic) and len(w) > len(clitic) + 2:
+            stem = w[:-len(clitic)]
+            bare = _strip_accents(stem)
+            for cand in (stem, bare, stem + 'r', bare + 'r'):
+                if cand not in out:
+                    out.append(cand)
+            break
+    return out
+
+
+def _dict_candidates(word, lang=None):
     """Return lookup key variants: exact case forms first, then de-inflected singular forms."""
+    exact, extra = _dict_candidate_tiers(word, lang)
+    return exact + extra
+
+
+def _dict_candidate_tiers(word, lang=None):
+    """The same variants, split into (exact, de-inflected).
+
+    Callers that rank several dictionaries against each other need to know
+    which tier answered: a module holding the word as written is a better
+    answer than one reached by guessing a stem.
+
+    `lang` is the dictionary's own language, and it decides which
+    de-inflection rules can apply at all. Without it the English plural strip
+    runs against a Spanish lexicon, where dropping the `s` from `pues` lands
+    on `pue` — a real but unrelated Spanish word, so the reader gets a
+    confident entry for something they did not click. The rules are only
+    sound within the language that motivated them.
+    """
     w = word.lower()
     exact = []
     seen = set()
@@ -1343,20 +1436,21 @@ def _dict_candidates(word):
             seen.add(v)
 
     stems = []
-    if w.endswith('ies') and len(w) > 4:
-        stems.append(w[:-3] + 'y')       # prophecies → prophecy
-    if w.endswith('ves') and len(w) > 4:
-        stems.append(w[:-3] + 'f')       # loaves → loaf
-    if w.endswith('es') and len(w) > 4:
-        stems.append(w[:-2])             # churches → church
-    if w.endswith('s') and len(w) > 3 and not w.endswith('ss'):
-        stems.append(w[:-1])             # sins → sin
-    if w.endswith('ing') and len(w) > 5:
-        stems.append(w[:-3])             # praying → pray
-        stems.append(w[:-3] + 'e')       # loving → love
-    if w.endswith('ed') and len(w) > 4:
-        stems.append(w[:-2])             # prayed → pray
-        stems.append(w[:-1])             # loved → love
+    if lang != 'es':                     # English de-inflection
+        if w.endswith('ies') and len(w) > 4:
+            stems.append(w[:-3] + 'y')   # prophecies → prophecy
+        if w.endswith('ves') and len(w) > 4:
+            stems.append(w[:-3] + 'f')   # loaves → loaf
+        if w.endswith('es') and len(w) > 4:
+            stems.append(w[:-2])         # churches → church
+        if w.endswith('s') and len(w) > 3 and not w.endswith('ss'):
+            stems.append(w[:-1])         # sins → sin
+        if w.endswith('ing') and len(w) > 5:
+            stems.append(w[:-3])         # praying → pray
+            stems.append(w[:-3] + 'e')   # loving → love
+        if w.endswith('ed') and len(w) > 4:
+            stems.append(w[:-2])         # prayed → pray
+            stems.append(w[:-1])         # loved → love
 
     extra = []
     for s in stems:
@@ -1364,11 +1458,42 @@ def _dict_candidates(word):
             if v not in seen:
                 extra.append(v)
                 seen.add(v)
-    return exact + extra
+
+    # Spanish, appended last so an English lookup still hits on its second
+    # variant and pays nothing for these. Two things in the Reina-Valera
+    # 1909 put a word out of a modern dictionary's reach, and between them
+    # they account for 226 of the 324 misses measured over 3,979 distinct
+    # words of it:
+    #
+    #   * its orthography predates 1959 — `dió`, `destituídos`, `aquéllos`
+    #     carry accents modern Spanish drops, and `carcel` lacks one it now
+    #     takes. Comparing without accents covers both directions at once.
+    #   * it attaches pronouns to the verb — `alegróse`, `afirmóla`,
+    #     `alcancélos`. The stem is a real word; the clitic is not.
+    if lang in (None, 'es'):
+        for v in _spanish_variants(w):
+            if v not in seen:
+                extra.append(v)
+                extra.append(v.upper())
+                seen.add(v)
+    return exact, extra
 
 
 def lookup_dict_word(module_name, word):
     """Look up word in a SWORD dictionary module. Returns raw HTML or '' on miss."""
+    return lookup_dict_entry(module_name, word)[0]
+
+
+def lookup_dict_entry(module_name, word):
+    """As `lookup_dict_word`, but returns (html, exact).
+
+    `exact` is True when the module held the word as written (in some case),
+    False when only a de-inflected or de-accented guess reached it. On a miss
+    it is ('', False).
+    """
+    lang = module_language(module_name)
+    exact_variants, _extra = _dict_candidate_tiers(word, lang)
+    exact_keys = {v.lower() for v in exact_variants}
     with _lock:
         # Fresh SWMgr per call: a failed setKeyText corrupts the module's key
         # state and prevents subsequent lookups in the same module object.
@@ -1376,11 +1501,11 @@ def lookup_dict_word(module_name, word):
             fresh_mgr = Sword.SWMgr()
         except Exception:
             _sword_log.exception('SWMgr init failed in lookup_dict_word')
-            return ''
+            return '', False
         mod = fresh_mgr.getModule(module_name)
         if mod is None:
-            return ''
-        for variant in _dict_candidates(word):
+            return '', False
+        for variant in _dict_candidates(word, lang):
             try:
                 mod.setKeyText(variant)
                 actual = str(mod.getKeyText()).strip()
@@ -1389,10 +1514,10 @@ def lookup_dict_word(module_name, word):
                 # (e.g. 'CHRIST' after 'Christ' fails) to reposition correctly.
                 text = str(mod.getRawEntry()).strip()
                 if actual.lower() == variant.lower() and text:
-                    return text
+                    return text, variant.lower() in exact_keys
             except Exception:
                 pass
-    return ''
+    return '', False
 
 
 def load_devotional(module_name, date_obj=None):
@@ -1675,6 +1800,21 @@ _SOURCES_FILE = 'sources.json'
 _MIRROR_BASE = ('https://github.com/andresmessina-SDG/scriptura-sword-mirror'
                 '/releases/download/current')
 
+# Modules Scriptura builds itself, served from its own release. The first is
+# the Spanish dictionary: there is no Spanish Bible dictionary anywhere — all
+# 168 that CrossWire and its friends distribute are English, French, Russian
+# or Portuguese — and the app teaches double-clicking a word as one of its
+# three launch hints, a gesture that for a reader of the Spanish Bibles did
+# nothing at all.
+#
+# This is a repository in its own right, not a tier of the mirror: the mirror
+# is a copy of somebody else's modules and answers a CrossWire outage, while
+# these exist nowhere else and are the only copy there is. Mixing them would
+# make "what the mirror holds" mean two different things.
+_SCRIPTURA_SOURCE = 'scriptura'
+_SCRIPTURA_BASE = ('https://github.com/andresmessina-SDG/scriptura'
+                   '/releases/download/sword-modules')
+
 
 def _reachable(host, port, timeout=5):
     """Whether a TCP connection to host:port opens within `timeout`.
@@ -1710,6 +1850,20 @@ def _fetch_mirror(path, timeout):
                 'distribute it. Please try again when CrossWire is back.'
             ) from exc
         raise
+
+
+def _fetch_scriptura(name, timeout):
+    """Download one file from Scriptura's own module release.
+
+    No fallback tier: unlike a CrossWire module there is no second host that
+    has this, so a failure here is a failure, and saying so beats retrying
+    somewhere it was never published.
+    """
+    import urllib.request
+
+    with urllib.request.urlopen(f'{_SCRIPTURA_BASE}/{name}',
+                                timeout=timeout) as resp:
+        return resp.read()
 
 
 def _fetch_crosswire(path, timeout):
@@ -1782,6 +1936,16 @@ def refresh_source():
             _sword_log.warning('Could not read the %s catalogue: %s',
                                source, exc)
 
+    # Ours last, and guarded the same way: a reader whose network reached
+    # CrossWire but not GitHub keeps the four hundred modules they just
+    # catalogued rather than losing the refresh over our own handful.
+    try:
+        blob = _fetch_scriptura('mods.d.tar.gz', 60)
+        for name in _extract_catalogue(blob, mods_d, skip_existing=True):
+            sources[name] = _SCRIPTURA_SOURCE
+    except Exception as exc:
+        _sword_log.warning('Could not read the Scriptura catalogue: %s', exc)
+
     with open(os.path.join(base, ts, _SOURCES_FILE), 'w',
               encoding='utf-8') as fh:
         json.dump(sources, fh)
@@ -1818,6 +1982,31 @@ def _extract_catalogue(data, mods_d, skip_existing=False):
     return written
 
 
+def catalogue_has(module_name):
+    """Whether the cached module list knows this module at all.
+
+    A profile's catalogue is a snapshot, and one taken before a module was
+    published has no row for it. `install_module` then finds no source
+    recorded, falls back to the released CrossWire repository — where a
+    module Scriptura publishes itself has never been — and fails with a 404
+    for something that exists and is installable. Every profile older than a
+    new module is in that state, and nothing ages the catalogue out on its
+    own, so the caller has to ask.
+    """
+    path = _shadow_path()
+    if not path:
+        return False
+    mods_d = os.path.join(path, 'mods.d')
+    if os.path.isfile(os.path.join(mods_d, f'{module_name.lower()}.conf')):
+        return True
+    # CrossWire names its confs in lower case, but nothing enforces it.
+    try:
+        wanted = f'{module_name.lower()}.conf'
+        return any(f.lower() == wanted for f in os.listdir(mods_d))
+    except OSError:
+        return False
+
+
 def _module_source(module_name):
     """Which repository a catalogued module came from, or None for the
     released one (whose modules are the ordinary zip install)."""
@@ -1835,12 +2024,20 @@ def _module_source(module_name):
 
 
 def install_module(module_name):
-    """Download a module from CrossWire and install it into ~/.sword/."""
+    """Download a module and install it into ~/.sword/."""
     source = _module_source(module_name)
+    if source == _SCRIPTURA_SOURCE:
+        _extract_module_zip(_fetch_scriptura(f'{module_name}.zip', 300))
+        return
     if source is not None:
         _install_raw_module(module_name, source)
         return
-    data = _fetch_crosswire(f'packages/rawzip/{module_name}.zip', 120)
+    _extract_module_zip(
+        _fetch_crosswire(f'packages/rawzip/{module_name}.zip', 120))
+
+
+def _extract_module_zip(data):
+    """Unpack a module zip into ~/.sword/."""
     with zipfile.ZipFile(io.BytesIO(data)) as zf:
         # Extract member-by-member through _safe_extract (rather than
         # extractall) so the network path enforces the same path-escape

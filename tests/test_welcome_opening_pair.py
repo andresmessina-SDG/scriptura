@@ -72,8 +72,13 @@ def test_a_bible_that_failed_to_install_is_not_recorded(isolated, monkeypatch):
     assert settings.get('pane2_module') == 'Historical Commentaries'
 
 
-@pytest.mark.parametrize('bundle', welcome._BUNDLES,
-                         ids=[b['id'] for b in welcome._BUNDLES])
+_ALL_BUNDLES = [b for lang in welcome._CATALOGUE
+                for b in welcome.bundles_for(lang)]
+
+
+@pytest.mark.parametrize('bundle', _ALL_BUNDLES,
+                         ids=[f'{b["language"]}-{b["id"]}'
+                              for b in _ALL_BUNDLES])
 def test_every_bundle_opens_on_something_it_installs(bundle):
     """A bundle that opens on a module it never downloads sends the reader to
     the fallback it was written to avoid."""
@@ -81,7 +86,7 @@ def test_every_bundle_opens_on_something_it_installs(bundle):
     # module key — the id behind ebible_bridge.PREFIX. Both forms count as
     # installed, or a bundle opening on an eBible text reads as a typo.
     installed = set()
-    for kind, ident, label in bundle['items']:
+    for kind, ident, label, _facet in bundle['items']:
         installed.add(ident or label)
         if kind == 'ebible':
             installed.add(f'{ebible_bridge.PREFIX}{ident}')

@@ -1,0 +1,73 @@
+# Hand-curated dictionary entries, layered over the Spanish Wiktionary text
+# by tools/build_spanish_dict.py --overrides.
+#
+# WHY THIS FILE EXISTS
+#
+# Wiktionary is a general dictionary, and on the words a Bible reader actually
+# double-clicks it answers as one. Measured over the whole Reina-Valera 1909:
+#
+#   moisés   (842 occurrences)  "Cuna portátil hecha con mimbre"
+#   corazón  (871)              "Órgano ... que se ocupa de bombear la sangre"
+#   hombre  (1229)              "mamífero primate dotado de inteligencia"
+#   israel  (2562)              "Nombre de pila de varón. País de Asia..."
+#
+# Two mechanical repairs were tried and both damaged the words that matter
+# most. Scoring senses by how much of their wording Scripture itself uses
+# picks "persona con un talento extraordinario" for `dios`. Promoting
+# Wiktionary's own religion tag replaces the Hebrews 11:1 sense of `fe`
+# ("la convicción de lo que no se ve") with "sistema de creencias de una
+# religión". Neither is safe to apply across the board, so quality goes here
+# instead — one word at a time, from a named source.
+#
+# THE SOURCE RULE
+#
+# `source` is required on every entry and the build fails without it. Two
+# reasons. This file mixes licences with the CC BY-SA text around it, so an
+# entry nobody can trace is one nobody can ship. And a Bible dictionary is a
+# doctrinal document: entries come from a public-domain work or from a named
+# author, and never from memory or paraphrase of one.
+#
+# tools/build_spanish_dict.py prints how many overrides it applied; the
+# ranked list of words still needing one is curation-worklist.tsv, ordered by
+# how often each word occurs in the Reina-Valera.
+#
+# SHAPE
+#
+#   [word]                    the headword, lowercase unless a proper noun
+#   pos = "..."               the bold label above the senses
+#   senses = ["...", "..."]   numbered automatically when there is more
+#   source = "..."            work, author, year, licence
+#
+# Example (not a live entry — fill from a source, then delete this comment):
+#
+#   [circuncisión]
+#   pos = "Sustantivo femenino"
+#   senses = [
+#     "…",
+#   ]
+#   source = "…, dominio público"
+
+# ── Transcription corrections ───────────────────────────────────────────────
+#
+# The scan glues two words into one often enough to be visible and not often
+# enough to detect: "El amor es el atributo" came through as "El amores el
+# atributo", and `amores` is itself a Spanish word, so no lexicon check can
+# find it. Corrections go here one at a time, against the printed page.
+
+[amor]
+senses = [
+  "“Dios es amor, y el que vive en amor vive en Dios, y Dios en él,” 1 Juan 4:16. El amor es el atributo principal de Jehová, cuya longitud, anchura, altura y profundidad están fuera de nuestra comprensión, porque son infinitas, Efes. 3:18, 19.",
+]
+label = "Diccionario de la Santa Biblia, 1890"
+source = "Rand, W. W., «Diccionario de la Santa Biblia», Sociedad Americana de Tratados, Nueva York, 1890 — dominio público"
+
+# The scan renders the Greek of an etymology as Latin lookalikes — JUAN's
+# Greek form arrives as "’I uávvrjc". Supplying the Greek would mean writing
+# it from memory rather than from the page, so the unreadable run is dropped
+# instead. One entry in 2,732.
+[Juan]
+senses = [
+  "en hebreo Johanan, gracioso don de Dios. El Bautista, es decir, el que bautiza, noble de carácter y preeminente por su gran misión como precursor de Nuestro Señor Jesucristo.",
+]
+label = "Diccionario de la Santa Biblia, 1890"
+source = "Rand, W. W., «Diccionario de la Santa Biblia», Sociedad Americana de Tratados, Nueva York, 1890 — dominio público"

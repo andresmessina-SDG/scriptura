@@ -460,7 +460,6 @@ def test_update_reason_undatable_catalogue_entry():
 def test_stamps_migrate_onto_a_v4_database(tmp_path, monkeypatch):
     """A user's existing DB has the six-column table and stamps 4. Opening it
     must add the columns in place, keep the rows, and read them as stale."""
-    import sqlite3
     path = str(tmp_path / 'ebible.db')
     conn = sqlite3.connect(path)
     conn.execute('''CREATE TABLE translations (

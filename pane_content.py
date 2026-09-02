@@ -1,6 +1,6 @@
 """pane_content.py — per-mode content strategies for BiblePane.
 
-The already-separate reader modes (imagery, catena, archaeology,
+The already-separate reader modes (imagery, catena, archaeology, genealogy,
 interlinear) each render into their own content-stack child and answer the
 same handful of questions the pane's render path asks: which stack child to
 show, how to render the current position, how to react to a verse broadcast
@@ -89,6 +89,19 @@ class ArchaeologyContent(PaneContent):
         self._pane._archaeology.apply_font_size(pt)
 
 
+class GenealogyContent(PaneContent):
+    stack_child = 'genealogy'
+
+    def render(self) -> None:
+        self._pane._genealogy.render()
+
+    def on_verse(self, verse_num: int) -> None:
+        return  # standalone document — not verse-keyed
+
+    def apply_font_size(self, pt: int) -> None:
+        self._pane._genealogy.apply_font_size(pt)
+
+
 class _TextContent(PaneContent):
     """A mode that renders into the shared text view. A verse broadcast runs
     the pane's text-path; modes without matching verse tags (devotionals,
@@ -131,6 +144,7 @@ def build(pane) -> dict:
         'imagery': ImageryContent(pane),
         'catena': CatenaContent(pane),
         'archaeology': ArchaeologyContent(pane),
+        'genealogy': GenealogyContent(pane),
         'interlinear': InterlinearContent(pane),
     }
 

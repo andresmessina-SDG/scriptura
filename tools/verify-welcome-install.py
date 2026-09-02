@@ -31,6 +31,13 @@ without it the app correctly skips welcome and there is nothing to drive.
 That flag only chooses the window; it changes no part of the install path.
 
 Usage:  python3 tools/verify-welcome-install.py [--bundle reading|study|full]
+                                        [--language en|es]
+
+The first screen is the language, and its cards are built from the compiled
+catalogues on disk. A source checkout has none, so only English is offered
+there and `--language es` reaches the Spanish tiers by setting the window's
+language directly — reported as `language_forced`. Run it from the meson
+install tree to exercise the click itself.
 
 `reading` is one small Bible — the fast pass, and the only bundle that
 exercises the single-pane branch. `study` is the recommended one and the
@@ -59,7 +66,7 @@ DISPLAY = 7  # private XDG_RUNTIME_DIR per run, so a fixed number never collides
 # Orchestrator: scratch HOME + scratch XDG + broadwayd
 # ────────────────────────────────────────────────────────────────────────
 
-def run_attempt(bundle: str, timeout: float) -> dict | None:
+def run_attempt(bundle: str, language: str, timeout: float) -> dict | None:
     # Deliberately not the scratchpad dir: XDG_RUNTIME_DIR holds the Broadway
     # socket and a long prefix blows the 108-byte AF_UNIX path limit.
     with tempfile.TemporaryDirectory(prefix='scriptura-welcome-') as scratch:
@@ -78,6 +85,7 @@ def run_attempt(bundle: str, timeout: float) -> dict | None:
         env['BROADWAY_DISPLAY'] = f':{DISPLAY}'
         env['BIBLE_READER_FORCE_WELCOME'] = '1'
         env['SCRIPTURA_WELCOME_BUNDLE'] = bundle
+        env['SCRIPTURA_WELCOME_LANGUAGE'] = language
         # The driver gives up a little before the orchestrator does, so a slow
         # download reports what it managed rather than dying without a word.
         env['SCRIPTURA_INSTALL_CAP_S'] = str(max(30.0, timeout - 45))
@@ -120,10 +128,13 @@ def orchestrate() -> int:
     # without touching this file would otherwise be the one bundle nobody
     # could verify, which is exactly when verification matters.
     sys.path.insert(0, str(REPO_ROOT))
-    from welcome import _BUNDLES
+    from welcome import _CATALOGUE, _TIERS
     parser.add_argument('--bundle', default='reading',
-                        choices=tuple(b['id'] for b in _BUNDLES),
+                        choices=tuple(t['id'] for t in _TIERS),
                         help='which bundle card to click (default: reading)')
+    parser.add_argument('--language', default='en',
+                        choices=tuple(_CATALOGUE),
+                        help='whose catalogue to install (default: en)')
     parser.add_argument('--timeout', type=float, default=900,
                         help='wall clock limit in seconds (default: 900)')
     args = parser.parse_args()
@@ -136,7 +147,7 @@ def orchestrate() -> int:
         print('gtk4-broadwayd not found (Fedora package gtk4)', file=sys.stderr)
         return 2
 
-    report = run_attempt(args.bundle, args.timeout)
+    report = run_attempt(args.bundle, args.language, args.timeout)
     if report is None:
         return 1
     return 0 if report.get('all_ok') else 1
@@ -163,12 +174,20 @@ def _card_for(win, title, Gtk):
     """The real card button for a bundle, found by its title label.
 
     Clicking the button the user clicks — rather than calling the handler —
-    keeps the chooser's own wiring inside the test.
+    keeps the chooser's own wiring inside the test. The label on screen is
+    translated, so both forms are accepted: picking Spanish is the one case
+    where the card the harness must find is not named in the source.
     """
+    import builtins
+    wanted = {title}
+    translate = getattr(builtins, '_', None)
+    if callable(translate):
+        wanted.add(translate(title))
     for w in _walk(win):
         if isinstance(w, Gtk.Button) and w.has_css_class('card'):
             for inner in _walk(w):
-                if isinstance(inner, Gtk.Label) and inner.get_text() == title:
+                if isinstance(inner, Gtk.Label) and \
+                        inner.get_text() in wanted:
                     return w
     return None
 
@@ -181,15 +200,16 @@ def run_driver() -> int:
     from gi.repository import GLib, Gtk
 
     import main
-    from welcome import WelcomeWindow, _BUNDLES
+    from welcome import WelcomeWindow, bundles_for
 
     bundle_id = os.environ.get('SCRIPTURA_WELCOME_BUNDLE', 'reading')
-    bundle = next(b for b in _BUNDLES if b['id'] == bundle_id)
+    language = os.environ.get('SCRIPTURA_WELCOME_LANGUAGE', 'en')
+    bundle = next(b for b in bundles_for(language) if b['id'] == bundle_id)
     cap_s = float(os.environ.get('SCRIPTURA_INSTALL_CAP_S', '855'))
     want1, want2 = bundle['opens']
 
-    REPORT: dict = {'bundle': bundle_id, 'checks': [], 'measured': {},
-                    'progress': []}
+    REPORT: dict = {'bundle': bundle_id, 'language': language,
+                    'checks': [], 'measured': {}, 'progress': []}
     S: dict = {'started': time.monotonic()}
     app = main.BibleApp()
 
@@ -223,10 +243,35 @@ def run_driver() -> int:
         if not welcome:
             return finish('no-welcome')
         S['welcome'] = win
-        GLib.idle_add(click_card)
+        GLib.idle_add(choose_language)
         return GLib.SOURCE_REMOVE
 
-    # ── 2. click the card the user would click ────────────────────────────
+    # ── 2. the language, which decides which cards step 3 offers ──────────
+    def choose_language():
+        win = S['welcome']
+        try:
+            on_language = win._stack.get_visible_child_name() == 'language'
+            REPORT['measured']['language_page'] = on_language
+            if on_language:
+                native = dict(win._languages).get(language)
+                card = _card_for(win, native, Gtk) if native else None
+                add(f'the {language} language card exists', card is not None,
+                    offered=[c for c, _n in win._languages])
+                if card is None:
+                    return finish('no-language-card')
+                card.emit('clicked')
+            elif language != win._language:
+                # A source checkout compiles no catalogues, so the page has
+                # nothing to offer and the click cannot be the real one.
+                REPORT['measured']['language_forced'] = True
+                win._language = language
+                win._rebuild(page='choose')
+            GLib.idle_add(click_card)
+        except Exception as e:
+            return fail('language', e)
+        return GLib.SOURCE_REMOVE
+
+    # ── 3. click the card the user would click ────────────────────────────
     def click_card():
         try:
             card = _card_for(S['welcome'], bundle['title'], Gtk)
@@ -283,13 +328,13 @@ def run_driver() -> int:
             add('the install completes and hands off', True)
 
             # What arrived, asked of the bridge that owns each kind.
-            want_sword = [i for k, i, _l in bundle['items'] if k == 'sword']
+            want_sword = [i for k, i, _l, _f in bundle['items'] if k == 'sword']
             have_sword = set(sword_bridge.module_names())
             missing = [m for m in want_sword if m not in have_sword]
             add('every SWORD module in the bundle installed', not missing,
                 wanted=len(want_sword), missing=missing)
 
-            want_ebible = [i for k, i, _l in bundle['items'] if k == 'ebible']
+            want_ebible = [i for k, i, _l, _f in bundle['items'] if k == 'ebible']
             if want_ebible:
                 import ebible_bridge
                 have_ebible = {r[0] for r in
@@ -299,15 +344,27 @@ def run_driver() -> int:
                     not missing_e,
                     wanted=len(want_ebible), missing=missing_e)
 
-            if any(k == 'catena' for k, _i, _l in bundle['items']):
+            if any(k == 'catena' for k, _i, _l, _f in bundle['items']):
                 names = catena_bridge.module_names()
                 add('the commentary pack installed', bool(names), names=names)
+
+            # A module arriving is not the same as the peek accepting it.
+            # `_DICT_SKIP` drops the Strong's lexicons by name and the type
+            # filter wants Lexicon/Dict, so a bundle could install something
+            # it calls a dictionary and still leave the taught double-click
+            # gesture doing nothing — which is exactly what every bundle did
+            # until the onboarding audit went looking.
+            if 'dictionary' in bundle['summary'].lower() or \
+                    'diccionario' in bundle['summary'].lower():
+                dicts = [n for n, _d in sword_bridge.installed_dict_modules()]
+                add('the summary promises a dictionary and the peek has one',
+                    bool(dicts), dictionaries=dicts)
 
             probes = {'dodson': open_data.has_dodson,
                       'cross_references': open_data.has_cross_refs,
                       'topics': open_data.has_topics}
-            for _k, ident, label in [i for i in bundle['items']
-                                     if i[0] == 'opendata']:
+            for _k, ident, label, _f in [i for i in bundle['items']
+                                         if i[0] == 'opendata']:
                 probe = probes.get(ident)
                 if probe is not None:
                     add(f'open data installed: {label}', probe())

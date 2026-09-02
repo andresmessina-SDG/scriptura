@@ -31,6 +31,11 @@ EXPECTED_GESTURE_SITES = {
     'annotation_dialogs.py': 1,
     'archaeology_reader.py': 6,
     'crossref_panel.py': 2,
+    # The genealogy charts take a click and a motion controller each. Both
+    # are VISIBLE affordances — the cursor becomes a pointer and a tooltip
+    # names the target — so they teach themselves and need no Tips row, which
+    # is the whole distinction this file's anchor exists to force.
+    'genealogy_reader.py': 2,
     'imagery_reader.py': 4,
     'interlinear_view.py': 1,
     'lexicon_panel.py': 1,

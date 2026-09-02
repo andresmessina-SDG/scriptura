@@ -136,6 +136,27 @@
   </content_rating>
 
   <releases>
+    <release version="1.6.0" date="2026-09-02">
+      <description>
+        <p>Scriptura in Russian, and the lists of names drawn as a book.</p>
+        <ul>
+          <li>The app reads in Russian — every menu, dialog and hint, with the three plural forms Russian needs and the Synodal book names it expects: 1 Kings is 3-я Царств. The names are the ones Russian Bible software uses, not translations of the English.</li>
+          <li>Russian texts to read in it: a modern Russian Bible under a free licence, and the first Russian dictionary this app has ever offered, so a double-click on a Russian word answers.</li>
+          <li>The Book of Generations. Scripture keeps lists of names and readers skip them, so Scriptura draws them and binds them as a book: one genealogy to a page, from Adam to Noah through to Matthew and Luke side by side, with the ten lifespans of Genesis 5 on one axis. The charts are live — a folded run of generations opens in place, a name opens the person, a chip opens the verse — and the same geometry prints. Where a genealogy leaves generations out, the gap is drawn as a gap and cites who does name them; where Matthew and Luke disagree, both are given as their writers wrote them, with the three classical answers set out and none of them chosen.</li>
+          <li>First run asks which language you read in, and the answer leads: it sets the interface and offers that language's own Bibles, dictionary and study tools, each collection described in the language it is for.</li>
+          <li>A Spanish dictionary, where there was none. Of the 168 dictionaries the SWORD repositories carry, not one was in Spanish; this one is, and it answers ordinary vocabulary rather than proper nouns alone.</li>
+          <li>Scripture in Stone reads in your language. The gallery is curated data rather than interface text, so all 342 of its captions, introductions and glossary entries had stayed English whatever language you chose. A photographer's credit, a bibliography entry and a verse chip still read as printed, because a licence, a library catalogue and a Bible reference each need the words they were given.</li>
+          <li>Scripture in Stone opens as soon as you ask for it: it used to decode all 56 of its photographs before it would appear, and now loads them as they come into view.</li>
+          <li>The collection cards say what each language holds, counted from that language's own catalogue and written in that language.</li>
+          <li>The dictionary peek says which dictionaries were searched, instead of advice written when every dictionary was an English one.</li>
+          <li>Jumping to a reference takes the book name you are reading. «Бытие 3» and Génesis 3 — the names the book picker two inches away was showing — used to flash the box red.</li>
+          <li>Book names no longer sit in English inside a translated interface: the cross-reference chips under a verse and the per-book bars in a search chart are translated on the way out.</li>
+          <li>Translated labels stay inside the places that hold them — the paper chips and the Module Manager's tabs were cut mid-word in both translations — and the menu's cards keep their right-hand corners in every language.</li>
+          <li>A first-run download that failed for a module that exists: the cached list of available modules is refetched now whenever it has no row for something your collection asks for.</li>
+          <li>Closing the window during the first-run download no longer leaves part of a library behind. It asks, keeps whatever has arrived, and says where the rest can be found.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.5.0" date="2026-08-19">
       <description>
         <p>Scriptura in Spanish, and the books it would not open.</p>

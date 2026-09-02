@@ -1,7 +1,6 @@
 """Tests for open_data.py — OSIS reference parsing and OpenBible / Dodson
 file loaders. No GTK / SWORD dependency."""
 
-import os
 import pytest
 
 import open_data

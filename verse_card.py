@@ -50,7 +50,11 @@ SHAPES: dict[str, tuple[int, int]] = {
 
 #: The reading serif and the label sans — the app's two voices, and the
 #: clutter threshold is three.
-SERIF = 'Newsreader'
+#: A family LIST, not one family: Pango falls through it per-glyph, and
+#: Newsreader carries no Cyrillic — a bare 'Newsreader' sends Russian to
+#: whatever fontconfig picks, which here is a SANS face. The chain matches
+#: data/style.css so the card and the page set in the same serif.
+SERIF = 'Newsreader, Source Serif 4, Charter, Georgia, serif'
 SANS = 'Roboto'
 
 

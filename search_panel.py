@@ -12,6 +12,7 @@ import ebible_bridge
 import paths
 import search_controller
 from empty_state import compact_empty_state
+from i18n import _, ngettext, book_label, C_
 
 _HISTORY_FILE = paths.search_history_path()
 # Searches run on worker threads, so overlapping searches (fast typing) can
@@ -495,7 +496,7 @@ class SearchPanel(Gtk.Box):
 
     def _section_counts(self):
         counts = {sec: 0 for sec, _ in SECTIONS}
-        for book, *_ in self._results:
+        for book, *_rest in self._results:
             sec = _BOOK_TO_SECTION.get(book)
             if sec:
                 counts[sec] += 1
@@ -503,7 +504,7 @@ class SearchPanel(Gtk.Box):
 
     def _book_counts(self, books):
         counts = {b: 0 for b in books}
-        for book, *_ in self._results:
+        for book, *_rest in self._results:
             if book in counts:
                 counts[book] += 1
         return counts
@@ -532,7 +533,14 @@ class SearchPanel(Gtk.Box):
                     bc = book_counts[book]
                     if bc == 0:
                         continue
-                    bb = self._bar_button(book, bc, sub_max, sub=True,
+                    # `book_label`, not the bare name: the section above it is
+                    # translated, so an untranslated book under it read
+                    # "Isaiah / Jeremiah / Ezekiel" indented beneath
+                    # «Великие пророки», with «Исаия 1:2» in the results below.
+                    # The English name stays the key — it is what the click
+                    # handler filters on — and is translated only here, where
+                    # it is shown.
+                    bb = self._bar_button(book_label(book), bc, sub_max, sub=True,
                                           active=(book == self._filter_book))
                     bb.connect('clicked', self._on_book_clicked, book)
                     sub_box.append(bb)

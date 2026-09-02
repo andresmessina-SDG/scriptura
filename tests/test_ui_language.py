@@ -11,6 +11,7 @@ name to show — rather than about widget layout.
 """
 
 import os
+import subprocess
 
 
 import i18n
@@ -204,3 +205,42 @@ def test_a_relaunch_request_reaches_the_copy_of_main_that_is_running():
     finally:
         os.environ.pop(main._RELAUNCH_ENV, None)
     assert not main.relaunch_requested()
+
+
+def test_the_catalogue_cache_still_answers_the_environment(tmp_path, monkeypatch):
+    """The catalogue is resolved once per language instead of once per
+    string — 30µs of stat calls a string became 3. The saving is only safe
+    while the cache still notices a language change, which is the whole
+    contract `install_language` relies on."""
+    import i18n
+
+    monkeypatch.setattr(i18n, 'localedir', lambda: str(tmp_path))
+    for code, word in (('es', 'Buscar'), ('ru', 'Искать')):
+        d = tmp_path / code / 'LC_MESSAGES'
+        d.mkdir(parents=True)
+        po = tmp_path / f'{code}.po'
+        po.write_text(
+            'msgid ""\nmsgstr "Content-Type: text/plain; charset=UTF-8\\n"\n\n'
+            f'msgid "Search"\nmsgstr "{word}"\n', encoding='utf-8')
+        subprocess.run(['msgfmt', '-o', str(d / 'scriptura.mo'), str(po)],
+                       check=True)
+
+    monkeypatch.setenv('LANGUAGE', 'es')
+    assert i18n._('Search') == 'Buscar'
+    monkeypatch.setenv('LANGUAGE', 'ru')
+    assert i18n._('Search') == 'Искать', 'the cache went stale on a switch'
+    assert i18n.current_language() == 'ru'
+
+
+def test_an_unreadable_catalogue_falls_back_to_english(tmp_path, monkeypatch):
+    """`fallback=True` covers a catalogue that is absent, not one that is
+    present and truncated — that raises out of the parser. English is the
+    right answer to a corrupt .mo; taking the app down with it is not."""
+    import i18n
+
+    monkeypatch.setattr(i18n, 'localedir', lambda: str(tmp_path))
+    d = tmp_path / 'es' / 'LC_MESSAGES'
+    d.mkdir(parents=True)
+    (d / 'scriptura.mo').write_bytes(b'not a catalogue')
+    monkeypatch.setenv('LANGUAGE', 'es')
+    assert i18n._('Search') == 'Search'

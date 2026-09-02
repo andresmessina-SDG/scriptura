@@ -154,3 +154,64 @@ def test_every_shape_survives_a_passage_past_the_floor(tmp_path):
 def test_a_very_long_card_still_writes_a_valid_png(tmp_path):
     path = _card(tmp_path, text=VERSE * 120)
     assert _png_size(path) == SHAPES['square']
+
+# ── The serif is a chain, and Russian is why ─────────────────────────────
+
+CYRILLIC = 'В начале Бог создал небо и землю'
+
+
+def _resolved_family(text, family):
+    """The family Pango actually casts `text` in — not the one we asked for.
+
+    A family list resolves per glyph, so asking is not knowing: `Newsreader`
+    carries no Cyrillic, and the interesting question is what catches the
+    fall.
+    """
+    import gi
+    gi.require_version('PangoCairo', '1.0')
+    from gi.repository import Pango, PangoCairo
+    import cairo
+
+    surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, 400, 200)
+    layout = PangoCairo.create_layout(cairo.Context(surface))
+    desc = Pango.FontDescription()
+    desc.set_family(family)
+    desc.set_absolute_size(20 * Pango.SCALE)
+    layout.set_font_description(desc)
+    layout.set_text(text, -1)
+    run = layout.get_iter().get_run_readonly()
+    return run.item.analysis.font.describe().get_family()
+
+
+def test_the_reading_serif_is_a_family_list_ending_in_a_generic():
+    """Both surfaces cast in a chain, not in one family. A bare 'Newsreader'
+    sends every Cyrillic glyph to whatever fontconfig picks for an unknown
+    family, which on this machine is a SANS face — so a Russian verse card
+    came out in the wrong voice entirely, and so did the printed handout."""
+    import passage_print
+    import genealogy_reader
+    for module in (verse_card, passage_print, genealogy_reader):
+        chain = [f.strip() for f in module.SERIF.split(',')]
+        assert chain[0] == 'Newsreader', module.__name__
+        assert chain[-1] == 'serif', module.__name__
+        assert len(chain) > 2, module.__name__
+
+
+def test_cyrillic_falls_through_the_chain_to_a_serif():
+    """The functional half: the fallback has to be a serif, or the chain is
+    decorative. Named families in the chain count; so does anything the
+    generic `serif` resolves to, since the Flatpak runtime ships none of
+    Georgia, Charter or Source Serif 4."""
+    import passage_print
+    import genealogy_reader
+    for module in (verse_card, passage_print, genealogy_reader):
+        named = {f.strip().strip("'\"") for f in module.SERIF.split(',')}
+        family = _resolved_family(CYRILLIC, module.SERIF)
+        assert family in named or 'serif' in family.lower(), (
+            f'{module.__name__}: Cyrillic fell to {family!r}')
+
+
+def test_latin_still_reads_in_newsreader():
+    """The guard on the guard: a chain that fixed Russian by giving up the
+    app's own serif for English would be a regression, not a fix."""
+    assert _resolved_family('In the beginning', verse_card.SERIF) == 'Newsreader'
