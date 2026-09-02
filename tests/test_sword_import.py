@@ -4,7 +4,6 @@ key writing, and the zip path-traversal guard. None of these touch the
 SWORD library; _SWORD_PATH is redirected to a tmp dir per test."""
 
 import io
-import os
 import zipfile
 
 import pytest

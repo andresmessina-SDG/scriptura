@@ -22,7 +22,6 @@ import os
 import subprocess
 import sys
 import tempfile
-import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -52,7 +51,7 @@ def run_driver() -> int:
     import gi
     gi.require_version('Gtk', '4.0')
     gi.require_version('Adw', '1')
-    from gi.repository import GLib, Gtk, Gdk, Gsk, Graphene
+    from gi.repository import GLib, Gtk, Gsk
     import cairo
 
     import main
