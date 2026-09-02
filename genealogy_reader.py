@@ -632,6 +632,13 @@ class GenealogyReader:
                 continue
             self._add_page(c['id'], _(c['title']), self._section(c, doc))
         self._contents.set_popover(self._build_contents(doc))
+        # Take the pane's size now, the way the archaeology and catena
+        # readers do at the end of their build. The pane pushes
+        # apply_font_size only when the reader CHANGES the size, so a book
+        # built without this opened at the default and then leapt to the
+        # reader's own size — twelve points in one step — the first time
+        # they pressed Ctrl+plus.
+        self.apply_font_size(getattr(self._pane, '_font_size', None))
         self._show(0)
 
     def _add_page(self, cid: str, title: str, body: Gtk.Widget) -> None:
