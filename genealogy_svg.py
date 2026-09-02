@@ -64,9 +64,10 @@ PALETTE: dict[str, tuple[str, str]] = {
 _SANS = ('"Adwaita Sans","Inter",-apple-system,"Segoe UI",'
          'system-ui,sans-serif')
 #: The reader's chain, written the way CSS wants it. Newsreader first so a
-#: plate and the live chart set in one face; Source Serif 4 next because
-#: Newsreader has no Cyrillic and a Russian plate must not fall to a sans.
-_SERIF = ('Newsreader,"Source Serif 4",Charter,Georgia,'
+#: plate and the live chart set in one face; Noto Serif next because
+#: Newsreader has no Cyrillic, it ships with the app, and a Russian plate
+#: must fall neither to a sans nor to whichever serif the machine owns.
+_SERIF = ('Newsreader,"Noto Serif","Source Serif 4",Charter,Georgia,'
           '"Times New Roman",serif')
 
 _WEIGHTS = {'normal': '400', 'semibold': '600', 'bold': '700'}

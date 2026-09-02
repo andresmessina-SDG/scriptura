@@ -397,7 +397,7 @@ image.module-feature-icon {
 
 /* Dictionary peek: serif headword echoing the app's chapter headings. */
 .dict-headword {
-    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 1.4em;
     font-weight: 600;
@@ -406,7 +406,7 @@ image.module-feature-icon {
 /* Footnote peek — caption stays UI-sans; the note body reads in the serif
  * voice of the page it annotates. */
 .fnote-body {
-    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 1.1em;
 }
@@ -613,7 +613,7 @@ button.menu-theme-toggle {
 /* Stylized "V" (Verse) glyph on the one-verse-per-page toggle, sized to sit
    with the symbolic icons beside it. */
 .present-verse-glyph {
-    font-family: 'Newsreader', 'Source Serif 4', 'Charter', Georgia, serif;
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter', Georgia, serif;
     font-weight: bold;
     font-size: 15px;
     padding: 0 2px;
@@ -684,7 +684,7 @@ button.menu-theme-toggle {
     padding: 0 3px 5px 1px;
 }
 .interlinear-chap-head {
-    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 19px;
     font-weight: 600;
@@ -1042,7 +1042,7 @@ box.mini-swatch {
     opacity: 0.75;
 }
 .catena-era-deck {
-    font-family: 'EB Garamond', 'Newsreader', 'Source Serif 4',
+    font-family: 'EB Garamond', 'Newsreader', 'Noto Serif', 'Source Serif 4',
                  'Georgia', serif;
     font-style: italic;
     font-size: 0.92em;
@@ -1082,14 +1082,14 @@ box.mini-swatch {
    Stone captions and glossary, a touch tighter than before so a long quote
    reads as one calm block rather than a wide-spaced ladder. */
 .catena-quote {
-    font-family: 'EB Garamond', 'Newsreader', 'Source Serif 4',
+    font-family: 'EB Garamond', 'Newsreader', 'Noto Serif', 'Source Serif 4',
                  'Georgia', serif;
     font-size: 1.16em;
     line-height: 1.5;
 }
 /* Read more / Show less — typographic, not button chrome. */
 button.catena-more {
-    font-family: 'EB Garamond', 'Newsreader', 'Source Serif 4',
+    font-family: 'EB Garamond', 'Newsreader', 'Noto Serif', 'Source Serif 4',
                  'Georgia', serif;
     background-image: none;
     background-color: transparent;
@@ -1215,7 +1215,7 @@ button.catena-chip-place {
     margin-bottom: 2px;
 }
 .stone-front-sub {
-    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 1.05em;
     opacity: 0.6;
@@ -1223,7 +1223,7 @@ button.catena-chip-place {
     margin-bottom: 14px;
 }
 .stone-front-body {
-    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     line-height: 1.6;
     margin-bottom: 10px;
@@ -1239,7 +1239,7 @@ button.catena-chip-place {
     margin-bottom: 8px;
 }
 .stone-era-intro {
-    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     font-style: italic;
     font-size: 1.02em;
@@ -1276,7 +1276,7 @@ button.catena-chip-place {
     margin-bottom: 2px;
 }
 .stone-caption {
-    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     line-height: 1.6;
     margin-top: 14px;
@@ -1369,7 +1369,7 @@ button.stone-chip-rel {
 }
 .stone-term-def,
 .stone-read-note {
-    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     opacity: 0.75;
     line-height: 1.55;
@@ -1927,14 +1927,14 @@ button.audio-pill-close {
     margin-bottom: 2px;
 }
 .gen-deck {
-    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 1.05em;
     opacity: 0.6;
     line-height: 1.6;
 }
 .gen-intro {
-    font-family: 'Newsreader', 'Source Serif 4', 'Charter',
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     line-height: 1.6;
     opacity: 0.85;

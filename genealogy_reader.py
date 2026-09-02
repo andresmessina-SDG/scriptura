@@ -49,9 +49,13 @@ _SANS = 'Adwaita Sans, Inter, sans-serif'
 #: Newsreader carries no Cyrillic, so a bare 'Newsreader' would send every
 #: Russian name on these charts to whatever fontconfig picks for an unknown
 #: family — a sans face — while the English rows stayed in the reading serif.
+#: Noto Serif is second because it ships with the app and covers Cyrillic:
+#: before it was named, a Russian chart set in Georgia here, DejaVu Serif on
+#: a machine without Georgia and Noto Serif in a container — and the widest
+#: of the three was struck through by the column rail.
 #: Same chain as verse_card, passage_print and data/style.css, guarded by
 #: tests/test_verse_card.py so a fourth surface cannot drift off it.
-SERIF = 'Newsreader, Source Serif 4, Charter, Georgia, serif'
+SERIF = 'Newsreader, Noto Serif, Source Serif 4, Charter, Georgia, serif'
 
 
 def _rgba(hex_or_role: str, dark: bool) -> tuple[float, float, float]:
