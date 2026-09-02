@@ -1236,9 +1236,17 @@ def _rail(p: list[Prim], x: float, y0: float, y1: float,
     stops: list[tuple[float, float]] = []
     for q in p:
         if q.kind == 'text' and q.anchor == 'middle' and abs(q.x - x) <= 24:
-            # A layout is drawn with its top at `y - size`; 3px of air on
-            # each side keeps the rail off the ascenders and descenders.
-            stops.append((q.y - q.size - 3, q.y + 3))
+            # A layout is drawn with its top at `y - size`, but `size` is
+            # points and the ink is pixels: at 96dpi the em is already a
+            # third taller, and a face standing in for one that has no
+            # Cyrillic is taller still. Measured on «ещё 14 имён» at 13.5:
+            # Georgia inks 17px, Noto Serif 18px and runs 10px BELOW `y`,
+            # so a 3px skirt let the rail cross the word by 8 — on every
+            # machine without Georgia, which includes the Flatpak runtime
+            # and every CI container. The gap is proportional and generous
+            # rather than exact, because this side of the layout has widths
+            # to measure with and no ink.
+            stops.append((q.y - q.size * 1.3 - 3, q.y + q.size * 0.9 + 3))
         elif q.kind in ('band', 'rect') and q.x - 2 <= x <= q.x + q.w + 2:
             stops.append((q.y - 2, q.y + q.h + 2))
     at = y0
