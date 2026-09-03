@@ -1269,17 +1269,67 @@ _OSIS_BOOKS = {
 }
 
 
+#: English month abbreviations, written out rather than read from strftime.
+#: A devotional key is a MODULE key, not display text: `%b` follows LC_TIME,
+#: so on a Spanish or Russian desktop the app was asking these modules for
+#: "sep 2" and «сен 2» — keys no devotional was ever written with.
+_MONTH_ABBR = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
+
+#: How a devotional key writes a date. Modules disagree, so every shape is
+#: tried in turn — see `_devotional_key_is` for why the first hit is not
+#: automatically the answer.
+_DEVOTIONAL_KEY_RE = re.compile(
+    r'^\s*(?:(\d{1,2})\s*[./-]\s*(\d{1,2})'
+    r'|([A-Za-z]{3,9})\.?\s+(\d{1,2})'
+    r'|(\d{1,2})\s+([A-Za-z]{3,9}))\s*$')
+
+
+def _devotional_keys(date_obj):
+    """The key shapes a devotional module might file `date_obj` under."""
+    day = date_obj.day
+    mon = _MONTH_ABBR[date_obj.month - 1]
+    return [date_obj.strftime('%m.%d'),        # "09.02" — SME / OSIS style
+            f'{mon} {day}', f'{mon}. {day}',   # "Sep 2", "Sep. 2"
+            date_obj.strftime('%m/%d'),        # "09/02"
+            f'{date_obj.month}/{day}']         # "9/2"
+
+
+def _devotional_key_is(actual, date_obj):
+    """Did SWORD land on the entry for `date_obj`?
+
+    `setKeyText` does not fail on a key a module does not use — it snaps to
+    some other entry and `getRawEntry` returns it, at full length. So the
+    old "accept anything longer than 20 characters" took the FIRST format
+    tried whatever it returned: ask SME for "Sep 2" and it hands back
+    December 31, ask for "9/2" and it hands back January 1. The dictionary
+    lookup has compared the key SWORD came back with since its own version
+    of this bug; this is that check, for a key that may be written five
+    ways.
+
+    A key this cannot read at all returns True: an unrecognised shape is no
+    evidence of a miss, and refusing it would silence a module that works.
+    """
+    m = _DEVOTIONAL_KEY_RE.match(str(actual or ''))
+    if not m:
+        return True
+    if m.group(1):
+        month, day = int(m.group(1)), int(m.group(2))
+    else:
+        name = (m.group(3) or m.group(6)).lower()[:3].capitalize()
+        if name not in _MONTH_ABBR:
+            return True
+        month = _MONTH_ABBR.index(name) + 1
+        day = int(m.group(4) or m.group(5))
+    return (month, day) == (date_obj.month, date_obj.day)
+
+
 def get_devotional_raw(module_name, date_obj=None):
     """Return raw OSIS XML for a devotional entry (uses getRawEntry). Returns '' if not found."""
     from datetime import date as _date
     if date_obj is None:
         date_obj = _date.today()
-    day = date_obj.day
-    mon = date_obj.strftime('%b')
-    fmts = [date_obj.strftime('%m.%d'),
-            f'{mon} {day}', f'{mon}. {day}',
-            date_obj.strftime('%m/%d'),
-            f'{date_obj.month}/{day}']
+    fmts = _devotional_keys(date_obj)
     with _lock:
         # Fresh SWMgr per call: a failed setKeyText on one format corrupts the
         # module key state for subsequent attempts (same bug as lookup_dict_word).
@@ -1294,8 +1344,12 @@ def get_devotional_raw(module_name, date_obj=None):
         for fmt in fmts:
             try:
                 mod.setKeyText(fmt)
+                # getRawEntry() unconditionally: it clears SWORD's error state
+                # after a key the module does not hold, so the next format
+                # still repositions (same reason as lookup_dict_entry).
                 text = str(mod.getRawEntry()).strip()
-                if len(text) > 20:
+                if len(text) > 20 and _devotional_key_is(mod.getKeyText(),
+                                                         date_obj):
                     return text
             except Exception:
                 pass
@@ -1525,12 +1579,7 @@ def load_devotional(module_name, date_obj=None):
     from datetime import date as _date
     if date_obj is None:
         date_obj = _date.today()
-    day = date_obj.day
-    mon = date_obj.strftime('%b')
-    fmts = [date_obj.strftime('%m.%d'),        # "05.09" — SME / OSIS style
-            f'{mon} {day}', f'{mon}. {day}',   # "May 9", "May. 9"
-            date_obj.strftime('%m/%d'),         # "05/09"
-            f'{date_obj.month}/{day}']         # "5/9"
+    fmts = _devotional_keys(date_obj)
     with _lock:
         # Fresh SWMgr per call: see get_devotional_raw for the same bug.
         try:
@@ -1545,7 +1594,8 @@ def load_devotional(module_name, date_obj=None):
             try:
                 mod.setKeyText(fmt)
                 text = str(mod.renderText()).strip()
-                if len(text) > 20:
+                if len(text) > 20 and _devotional_key_is(mod.getKeyText(),
+                                                         date_obj):
                     return text
             except Exception:
                 pass

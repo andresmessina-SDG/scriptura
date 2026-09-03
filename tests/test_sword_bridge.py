@@ -694,3 +694,62 @@ def test_every_native_name_declares_a_language(monkeypatch):
         lang, native = entry
         assert lang and lang.isalpha() and lang == lang.lower(), key
         assert native and native != key, key
+
+
+# ── Devotional keys ──────────────────────────────────────────────────────────
+
+def test_devotional_keys_name_the_month_in_english_whatever_the_locale():
+    """A devotional key is a module key, not display text. `%b` follows
+    LC_TIME, so a Spanish or Russian desktop was asking for "sep 2" and
+    «сен 2» — keys no module is written with."""
+    import datetime
+    import locale
+
+    import sword_bridge
+
+    day = datetime.date(2026, 9, 2)
+    expected = ['09.02', 'Sep 2', 'Sep. 2', '09/02', '9/2']
+    assert sword_bridge._devotional_keys(day) == expected
+    try:
+        locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
+    except locale.Error:
+        pytest.skip('es_ES.UTF-8 not built on this machine')
+    try:
+        assert day.strftime('%b') != 'Sep'      # the locale really did change
+        assert sword_bridge._devotional_keys(day) == expected
+    finally:
+        locale.setlocale(locale.LC_ALL, 'C')
+
+
+def test_a_key_the_module_does_not_hold_is_not_this_day_s_entry():
+    """`setKeyText` does not fail on a key a module does not use — it snaps
+    to another entry and returns it at full length. Ask SME for "Sep 2" and
+    it answers with December 31."""
+    import datetime
+
+    import sword_bridge
+
+    day = datetime.date(2026, 9, 2)
+    assert sword_bridge._devotional_key_is('09.02', day)
+    assert sword_bridge._devotional_key_is('Sep 2', day)
+    assert sword_bridge._devotional_key_is('Sep. 2', day)
+    assert sword_bridge._devotional_key_is('September 2', day)
+    assert sword_bridge._devotional_key_is('2 Sep', day)
+    assert sword_bridge._devotional_key_is('9/2', day)
+    assert not sword_bridge._devotional_key_is('12.31', day)
+    assert not sword_bridge._devotional_key_is('09.30', day)
+    assert not sword_bridge._devotional_key_is('01.01', day)
+    assert not sword_bridge._devotional_key_is('Sep 3', day)
+
+
+def test_a_key_shape_this_cannot_read_is_given_the_benefit_of_the_doubt():
+    """An unrecognised key is no evidence of a miss, and refusing it would
+    silence a module that works."""
+    import datetime
+
+    import sword_bridge
+
+    day = datetime.date(2026, 9, 2)
+    assert sword_bridge._devotional_key_is('', day)
+    assert sword_bridge._devotional_key_is('Week 36', day)
+    assert sword_bridge._devotional_key_is('Nonesuch 2', day)
