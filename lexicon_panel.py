@@ -868,8 +868,11 @@ class LexiconPanel(Gtk.Box):
                 verses = ebible_bridge.load_chapter(module, book, chapter)
             else:
                 verses = sword_bridge.load_chapter(module, book, chapter)
+            # App-space in, module numbering out — same translation the
+            # comparison list and pane_search make (see map_target_verse).
+            want = sword_bridge.map_target_verse(module, book, chapter, verse)
             for v_num, html in verses:
-                if v_num == verse:
+                if v_num == want:
                     return re.sub(r'<[^>]+>', '', str(html)).strip()
             return ''
 

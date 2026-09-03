@@ -353,6 +353,15 @@ def _verse_key(module_name=None):
         try:
             mod = mgr().getModule(module_name)
             v11n = mod.getConfigEntry('Versification') if mod else None
+            # A name the manager does not hold is an eBible module (or a
+            # typo). eBible carries no config entry to read; its
+            # versification is inferred, and _module_v11n is where that
+            # lives for both backends. Without this the verse grid for a
+            # Synodal psalm was counted against the KJV — 31 buttons for a
+            # chapter holding six verses. Asked only when `mod` is None, so
+            # the SWORD path pays nothing.
+            if mod is None:
+                v11n = _module_v11n(module_name)
             if v11n:
                 vk.setVersificationSystem(v11n)
         except Exception:
@@ -434,7 +443,23 @@ _book_maps = {}  # (module_name, book) → {app_chapter: (m_book, m_chapter)} | 
 
 def _module_v11n(module_name):
     """The module's versification system, or None when it matches the
-    app space (KJV, or its KJVA superset — identical for the 66 books)."""
+    app space (KJV, or its KJVA superset — identical for the 66 books).
+
+    eBible translations are asked their own way: an eBible download has no
+    Versification field to read, so ebible_bridge infers one from the
+    imported text. Answering for both backends here is what lets the rest
+    of this section — the chapter maps, map_target_verse, map_verse_to_app
+    and their callers in the pane and the window — serve an eBible module
+    without knowing it is one. The import is lazy for the same reason as
+    display_name's below: sword_bridge must load without it."""
+    try:
+        import ebible_bridge
+        if ebible_bridge.is_ebible_module(module_name):
+            return ebible_bridge.module_v11n(module_name)
+    except Exception:
+        # Falling through rather than returning: a broken eBible import
+        # must not take the SWORD modules' versification down with it.
+        pass
     try:
         mod = mgr().getModule(module_name)
         v11n = str(mod.getConfigEntry('Versification') or '') if mod else ''
@@ -540,6 +565,21 @@ def map_verse_to_app(module_name, book, chapter, verse):
             and ref[1] == chapter:
         return ref[2]
     return verse
+
+
+def module_ref_to_app(module_name, book, chapter, verse):
+    """A whole module-space reference → app-space (KJV), unchanged when the
+    module is app-keyed or the tables cannot place it.
+
+    map_verse_to_app answers a narrower question — it is given the pane's
+    app-space chapter and translates one verse number inside it. This one
+    is given nothing but the module's own numbering, which is what a search
+    hit read straight out of an eBible translation carries."""
+    v11n = _module_v11n(module_name)
+    if v11n is None:
+        return book, chapter, verse
+    ref = _map_ref_reverse(v11n, book, chapter, verse)
+    return ref if ref is not None else (book, chapter, verse)
 
 
 def map_target_verse(module_name, book, chapter, verse):
