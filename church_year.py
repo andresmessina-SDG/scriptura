@@ -1,6 +1,6 @@
 """The church year — liturgical day designations for the Today page.
 
-Three traditions, chosen by the `church_calendar` setting (default None —
+Four calendars, chosen by the `church_calendar` setting (default None —
 the app stays ecumenical by staying silent until asked):
 
 - ``anglican``  — the historic BCP (1662/1928) calendar: Advent → Christmas
@@ -12,7 +12,20 @@ the app stays ecumenical by staying silent until asked):
 - ``orthodox``  — the Byzantine year on the New (Revised Julian) calendar:
   the Triodion and Pentecostarion cycles around Pascha (which stays on
   the *Julian* reckoning even for New-Calendar churches) and the Great
-  Feasts on their fixed dates.
+  Feasts on their fixed dates. Kept by Constantinople, Greece, Romania,
+  Bulgaria, Antioch and the OCA.
+- ``orthodox_old`` — the same year on the Old (Julian) calendar, which is
+  what the Russian, Serbian, Georgian and Jerusalem Churches keep, along
+  with Athos: Nativity on 7 January, Theophany on 19 January, Dormition on
+  28 August. Between them these are most of the world's Orthodox
+  Christians, and until this existed the app could not name their year.
+
+  Only the *fixed* feasts move. Pascha is reckoned on the Julian computus
+  by both calendars, so the whole movable cycle that hangs off it — the
+  Triodion, Holy Week, the Pentecostarion, the Sundays after Pentecost —
+  is already shared, and the two differ on nothing else. The designation
+  key stays ``orthodox:`` under either, because the feast is the same
+  feast; the calendar decides only which civil day it lands on.
 
 Deliberately principal-only: seasons, Sundays, and the major feasts — no
 full sanctorale, and no precedence/transfer rules (a fixed feast simply
@@ -38,7 +51,12 @@ from i18n import _, N_
 
 Designation = tuple[str, str]   # (stable key for the collects pack, display)
 
-TRADITIONS = ('anglican', 'roman', 'orthodox')
+TRADITIONS = ('anglican', 'roman', 'orthodox', 'orthodox_old')
+
+#: Days by which the Gregorian civil calendar runs ahead of the Julian.
+#: Holds from 1 March 1900 to 28 February 2100, which is the range the
+#: paschalion below is already documented for; both uses share the bound.
+_JULIAN_OFFSET = datetime.timedelta(days=13)
 
 
 # ── Computus ─────────────────────────────────────────────────────────────────
@@ -67,7 +85,7 @@ def pascha_gregorian(year: int) -> datetime.date:
     e = (2 * a + 4 * b - d + 34) % 7
     month, day = divmod(d + e + 114, 31)
     julian = datetime.date(year, month, day + 1)
-    return julian + datetime.timedelta(days=13)
+    return julian + _JULIAN_OFFSET
 
 
 def advent_sunday(year: int) -> datetime.date:
@@ -343,9 +361,19 @@ def day_designation(date: datetime.date, tradition: str) -> Designation | None:
     day names its exact date; a principal fixed feast names its civil day;
     every other day carries its week's Sunday designation, the way the
     Sunday collect serves the week. Returns None for unknown traditions.
+
+    `orthodox_old` is the same Byzantine year read on the Julian calendar.
+    It answers with `orthodox:` keys, because a Russian and a Greek keep the
+    same Nativity — they keep it thirteen days apart. Only the fixed-feast
+    lookup moves: the civil date is converted to its Julian equivalent
+    first, so 7 January asks the table for 25 December and is told the
+    Nativity. The movable cycle is untouched, being Julian-reckoned in both.
     """
     if tradition not in TRADITIONS:
         return None
+    julian_fixed = tradition == 'orthodox_old'
+    if julian_fixed:
+        tradition = 'orthodox'
     if tradition == 'orthodox':
         movables = _orthodox_movables(pascha_gregorian(date.year))
     else:
@@ -354,9 +382,10 @@ def day_designation(date: datetime.date, tradition: str) -> Designation | None:
     if date in movables:
         key, name = movables[date]
         return f'{tradition}:{key}', _(name)
-    feast = _FEASTS[tradition].get((date.month, date.day))
+    fixed = date - _JULIAN_OFFSET if julian_fixed else date
+    feast = _FEASTS[tradition].get((fixed.month, fixed.day))
     if feast:
-        return f'{tradition}:feast:{date.month}-{date.day}', _(feast)
+        return f'{tradition}:feast:{fixed.month}-{fixed.day}', _(feast)
     sunday = date - datetime.timedelta(days=(date.weekday() + 1) % 7)
     if tradition == 'orthodox':
         key, name = _orthodox_sunday(sunday)

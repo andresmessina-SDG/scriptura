@@ -9295,3 +9295,12 @@ msgstr "{day} {month} {year} г."
 msgctxt "date, month first"
 msgid "{month} {day}, {year}"
 msgstr "{day} {month} {year} г."
+
+msgid "Orthodox (New)"
+msgstr "Нов. стиль"
+
+msgid "Orthodox (Old)"
+msgstr "Ст. стиль"
+
+msgid "Orthodox (Old Calendar)"
+msgstr "Православный (старый стиль)"

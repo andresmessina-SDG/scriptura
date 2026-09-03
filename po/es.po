@@ -9368,3 +9368,12 @@ msgstr "{day} de {month} de {year}"
 msgctxt "date, month first"
 msgid "{month} {day}, {year}"
 msgstr "{day} de {month} de {year}"
+
+msgid "Orthodox (New)"
+msgstr "Ortod. (nuevo)"
+
+msgid "Orthodox (Old)"
+msgstr "Ortod. (ant.)"
+
+msgid "Orthodox (Old Calendar)"
+msgstr "Ortodoxo (calendario antiguo)"

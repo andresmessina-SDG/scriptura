@@ -504,3 +504,18 @@ class TestChurchSlavonicTroparia:
         pack = collects._pack()['orthodox']
         assert not set(pack['texts']) - set(pack['ru']['texts'])
 
+    def test_the_old_calendar_finds_the_same_slavonic_texts(self):
+        """The payoff for a Russian reader: the Nativity troparion on
+        7 January, which is the day their church keeps it. The Old Calendar
+        answers with `orthodox:` keys precisely so this needs no second
+        section in the pack."""
+        for civil, opening in (
+                (datetime.date(2027, 1, 7), 'Рождество́ Твое́, Христе́'),
+                (datetime.date(2026, 1, 19), 'Во Иорда́не креща́ющуся'),
+                (datetime.date(2026, 8, 28), 'В рождестве́ де́вство'),
+                (datetime.date(2026, 9, 21), 'Рождество́ Твое́, Богоро́дице')):
+            key = church_year.day_designation(civil, 'orthodox_old')[0]
+            found = collects.collect_for(key, 'ru')
+            assert found is not None, civil
+            assert found[0].startswith(opening), (civil, found[0][:40])
+
