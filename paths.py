@@ -83,7 +83,16 @@ def quarantine_unreadable(path: str) -> str | None:
         return None
     dest = path + '.corrupt'
     if os.path.exists(dest):  # a second corruption; don't clobber the first
-        dest = f'{dest}.{int(time.time())}'
+        # The timestamp alone is not enough: it has one-second resolution,
+        # so a third corruption in the same second landed on the second
+        # one's name and os.replace overwrote it without a word. Counting
+        # up from there is what actually keeps the promise above.
+        stem = f'{dest}.{int(time.time())}'
+        dest = stem
+        n = 2
+        while os.path.exists(dest) and n < 1000:
+            dest = f'{stem}-{n}'
+            n += 1
     try:
         os.replace(path, dest)
     except OSError:
