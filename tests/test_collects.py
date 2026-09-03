@@ -434,3 +434,73 @@ class TestEpigraphFallback:
         assert got is not None
         assert got[0] == 'The Lord is my shepherd.'
         assert got[2] is True
+
+
+class TestChurchSlavonicTroparia:
+    """The Russian reader's side of the Orthodox tradition. English is the
+    source language and lives at the top level; a language that carries its
+    own text answers from a sub-table named by its code."""
+
+    def test_a_russian_reader_is_never_worse_off_than_an_english_one(self):
+        """Orthodox coverage is partial by design — 24 of the 73 keys the
+        engine emits have no text in any language, and those days fall
+        through to a devotional. The invariant that matters is one-way: no
+        day answers in English for a Russian reader. The reverse is allowed
+        and happens once — feast:9-8 is in the Slavonic section and not in
+        Hapgood's, whose extraction skipped it."""
+        for key in sorted(_emitted_keys('orthodox')):
+            en = collects.collect_for(key, 'en')
+            ru = collects.collect_for(key, 'ru')
+            if en is not None:
+                assert ru is not None, key
+                assert ru[0] != en[0], f'{key} still reads English'
+
+    def test_the_text_is_church_slavonic_not_the_english(self):
+        ru = collects.collect_for('orthodox:tone1', 'ru')
+        en = collects.collect_for('orthodox:tone1', 'en')
+        assert ru is not None and en is not None
+        assert ru[0] != en[0]
+        assert ru[0].startswith('Ка')
+        assert not re.search(r'[A-Za-z]', ru[0])
+
+    def test_the_source_line_travels_with_the_text(self):
+        """A troparion in Church Slavonic is not "The Troparion · Hapgood's
+        Service Book, 1906" — the whole triple moves or none of it does."""
+        found = collects.collect_for('orthodox:pascha', 'ru')
+        assert found is not None
+        assert found[1] == 'Тропарь · Октоих, Праздничная Минея и Триодь'
+
+    def test_an_alias_resolves_before_the_language_is_chosen(self):
+        """Aliases are calendar rubrics, the same in any language: the 5th
+        Sunday after Pentecost is tone 4 whoever is reading."""
+        assert (collects.collect_for('orthodox:pentecost5', 'ru')
+                == collects.collect_for('orthodox:tone4', 'ru'))
+
+    def test_a_language_with_no_section_gets_the_english(self):
+        assert (collects.collect_for('orthodox:tone1', 'es')
+                == collects.collect_for('orthodox:tone1', 'en'))
+
+    def test_stress_marks_survive_the_pack(self):
+        """Church Slavonic is unreadable aloud without them, and a TOML
+        round-trip or a stray NFC pass is exactly what would drop them."""
+        text = collects.collect_for('orthodox:tone1', 'ru')[0]
+        assert '\u0301' in text
+
+    def test_no_site_line_marks_leaked_in(self):
+        """`/` and `//` are the source sites' typesetting, not the text."""
+        for sub, text in collects._pack()['orthodox']['ru']['texts'].items():
+            assert '/' not in text, sub
+
+    def test_no_translation_or_kontakion_got_glued_on(self):
+        """Both source pages print the troparion, then a modern-Russian
+        gloss, then the kontakion. Scraping caught all three the first time."""
+        for sub, text in collects._pack()['orthodox']['ru']['texts'].items():
+            for stray in ('Перевод', 'Кондак', 'Величание', 'Аудио'):
+                assert stray not in text, f'{sub}: {stray}'
+
+    def test_the_russian_section_covers_the_english_one(self):
+        """A per-key fallback means a gap is survivable, not invisible. If
+        this ever fails, some day is silently reading English again."""
+        pack = collects._pack()['orthodox']
+        assert not set(pack['texts']) - set(pack['ru']['texts'])
+

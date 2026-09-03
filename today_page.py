@@ -134,7 +134,11 @@ def fetch_epigraph(collect_key: str | None = None
     import sword_bridge
     if collect_key:
         import collects
-        found = collects.collect_for(collect_key)
+        import i18n
+        # The collect is read in whatever language the reader has the app in
+        # — a tradition that carries its own text answers, and English
+        # stands in per key where it does not.
+        found = collects.collect_for(collect_key, i18n.current_language())
         if found:
             return found[0], found[1], False
     evening = datetime.datetime.now().hour >= EVENING_HOUR
