@@ -414,6 +414,24 @@ def verse_count_in(module_name, book, chapter):
                        None if book in _ALL_BOOKS else module_name)
 
 
+def plain_text(html: object) -> str:
+    """Rendered verse markup → the words alone.
+
+    Tags become a space rather than nothing, because a Strong's-tagged
+    module marks up individual words and joining them would run the text
+    together — `<w>loved</w><w>the</w>` must not become `lovedthe`.
+
+    That space then has to be taken back off in front of punctuation. KJVA
+    puts its tags *between* the word and the comma, so a straight strip
+    gives "For God so loved the world , that he gave" — and it did, on the
+    Today epigraph, in the devotional pane and down every cross-reference,
+    because three call sites each wrote the first half of this and only the
+    exporter wrote the second.
+    """
+    text = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', str(html or '')))
+    return re.sub(r'\s+([,.;:!?’”)])', r'\1', text).strip()
+
+
 # ── Cross-versification mapping ──────────────────────────────────────────────
 #
 # App-space references — window navigation, pane-to-pane sync, bookmarks,
@@ -2926,9 +2944,7 @@ def get_cross_refs(book, chapter, verse):
         mod.setKey(vk)
         raw = str(mod.renderText())
 
-    plain = re.sub(r'<[^>]+>', ' ', raw)
-    plain = re.sub(r'\s+', ' ', plain).strip()
-    return _parse_cross_ref_text(plain)
+    return _parse_cross_ref_text(plain_text(raw))
 
 
 _HEB_POS = {

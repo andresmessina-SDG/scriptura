@@ -67,8 +67,11 @@ def passage_display(readings: list[reading_plans.Reading]) -> str:
 
 
 def _strip_tags(fragment: str) -> str:
-    text = re.sub(r'<[^>]+>', ' ', fragment)
-    return re.sub(r'\s+', ' ', text).strip()
+    # sword_bridge.plain_text, not a local strip: a bare one leaves the
+    # space its tag stood in sitting before the comma, and the epigraph
+    # read "loved the world , that he gave".
+    import sword_bridge
+    return sword_bridge.plain_text(fragment)
 
 
 # Hour from which the epigraph takes a two-section devotional's *evening*

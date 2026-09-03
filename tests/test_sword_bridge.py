@@ -753,3 +753,43 @@ def test_a_key_shape_this_cannot_read_is_given_the_benefit_of_the_doubt():
     assert sword_bridge._devotional_key_is('', day)
     assert sword_bridge._devotional_key_is('Week 36', day)
     assert sword_bridge._devotional_key_is('Nonesuch 2', day)
+
+
+# ── plain_text ──────────────────────────────────────────────────────────────
+
+TAGGED = ('<w savlm="strong:G25">loved</w> <w savlm="strong:G3588">the</w> '
+          '<w savlm="strong:G2889">world</w>, <w savlm="strong:G3754">that'
+          '</w> he gave.')
+
+
+def test_a_tag_between_a_word_and_its_comma_leaves_no_gap():
+    """The defect this exists for. A Strong's-tagged module marks up single
+    words, so tags must strip to a SPACE or the words weld together — and
+    KJVA puts the tag between the word and the comma, so the space then has
+    to come back off. Three call sites wrote the first half and only the
+    exporter wrote the second: the Today epigraph, the devotional pane and
+    every cross-reference read "loved the world , that he gave"."""
+    out = sword_bridge.plain_text(TAGGED)
+    assert out == 'loved the world, that he gave.'
+
+
+def test_words_in_adjacent_tags_do_not_weld():
+    assert sword_bridge.plain_text(
+        '<w>loved</w><w>the</w><w>world</w>') == 'loved the world'
+
+
+def test_it_closes_up_before_every_closing_mark():
+    for mark in ',.;:!?’”)':
+        assert sword_bridge.plain_text(f'<w>word</w>{mark}') == f'word{mark}'
+
+
+def test_it_survives_nothing_at_all():
+    for empty in ('', None, '<w/>', '   '):
+        assert sword_bridge.plain_text(empty) == ''
+
+
+def test_an_opening_bracket_keeps_its_space():
+    """Only *closing* marks close up. A tag before an opening bracket is
+    still a word boundary."""
+    assert sword_bridge.plain_text('<w>word</w> (aside)') == 'word (aside)'
+

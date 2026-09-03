@@ -134,7 +134,7 @@ def _gloss_from_strong_entry(text):
     definition proper sits before the delimiter. Richer lexicons
     (Abbott-Smith) lead with the lemma and have neither, so both trims
     are conditional; a word-boundary cap backstops everything."""
-    plain = ' '.join(re.sub(r'<[^>]+>', ' ', str(text or '')).split())
+    plain = sword_bridge.plain_text(text)
     plain = re.sub(r'^\d+\s+', '', plain)
     head, sep, _usage = plain.partition(':--')
     if sep and len(head.strip()) >= 40:

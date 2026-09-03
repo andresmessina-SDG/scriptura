@@ -149,8 +149,8 @@ def _plain(html: str) -> str:
     puts its tags between the word and the comma, so a straight strip gives
     "loved the world , that he gave" the whole way down a worksheet.
     """
-    text = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', str(html)))
-    return re.sub(r'\s+([,.;:!?’”)])', r'\1', text).strip()
+    import sword_bridge
+    return sword_bridge.plain_text(html)
 
 
 def _md(text: str, markdown: bool) -> str:

@@ -43,8 +43,8 @@ def render_osis(buffer, raw, dark):
             buffer.insert_markup(
                 buffer.get_end_iter(),
                 f'<b><big>{GLib.markup_escape_text(title)}</big></b>\n\n', -1)
-        plain = re.sub(r'<[^>]+>', ' ', raw).strip()
-        buffer.insert(buffer.get_end_iter(), re.sub(r'\s+', ' ', plain))
+        import sword_bridge
+        buffer.insert(buffer.get_end_iter(), sword_bridge.plain_text(raw))
         return
 
     if title:
