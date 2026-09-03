@@ -116,8 +116,9 @@ _defaults: dict[str, Any] = {
     # reading along at a fixed 1x means being dragged.
     'reading_rate':       1.0,
     # Liturgical calendar for the Today page's church-year line: None (the
-    # ecumenical default — silent), 'anglican', 'roman', or 'orthodox'
-    # (see church_year.py for what each means).
+    # ecumenical default — silent), 'anglican', 'roman', 'orthodox' (New
+    # Calendar) or 'orthodox_old' (Julian — see church_year.py for what
+    # each means).
     'church_calendar':    None,
 }
 _cache: dict[str, Any] | None = None

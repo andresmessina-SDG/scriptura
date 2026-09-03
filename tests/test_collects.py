@@ -44,6 +44,18 @@ class TestAnglicanCoverage:
             assert text.endswith('Amen.'), sub
             assert 100 < len(text) < 900, sub
 
+    def test_no_space_floats_before_a_comma(self):
+        """The extractor replaced each HTML tag with a space, and the source
+        sets the vocative in small caps — `O <span class="vlcaps">Lord</span>,`
+        became `O Lord ,`. It read that way on the Today page in 34 of the 82
+        collects, every one of them at the opening address."""
+        for trad, data in collects._pack().items():
+            sections = [data] + [v for v in data.values()
+                                 if isinstance(v, dict) and 'texts' in v]
+            for sec in sections:
+                for sub, text in sec.get('texts', {}).items():
+                    assert not re.search(r'\s[,.;:]', text), f'{trad}:{sub}'
+
     def test_source_line(self):
         found = collects.collect_for('anglican:trinity7')
         assert found is not None
@@ -445,9 +457,9 @@ class TestChurchSlavonicTroparia:
         """Orthodox coverage is partial by design — 24 of the 73 keys the
         engine emits have no text in any language, and those days fall
         through to a devotional. The invariant that matters is one-way: no
-        day answers in English for a Russian reader. The reverse is allowed
-        and happens once — feast:9-8 is in the Slavonic section and not in
-        Hapgood's, whose extraction skipped it."""
+        day answers in English for a Russian reader. The reverse stays
+        allowed — a language may cover a day the source language does not —
+        though as of feast:9-8 landing in both, nothing does."""
         for key in sorted(_emitted_keys('orthodox')):
             en = collects.collect_for(key, 'en')
             ru = collects.collect_for(key, 'ru')
@@ -518,4 +530,25 @@ class TestChurchSlavonicTroparia:
             found = collects.collect_for(key, 'ru')
             assert found is not None, civil
             assert found[0].startswith(opening), (civil, found[0][:40])
+
+
+class TestGreatFeastCoverage:
+    def test_all_twelve_great_feasts_have_a_text_in_both_languages(self):
+        """The Twelve are the fixed points of the Byzantine year; a reader
+        who opens the app on one and is told only which Sunday it is has
+        been let down on the day it matters most. feast:9-8, the Nativity of
+        the Theotokos, was missing from the English side for a year.
+
+        Nine are fixed-date; Palm Sunday, Ascension and Pentecost are
+        movable and keyed by name.
+        """
+        fixed = ['9-8', '9-14', '11-21', '12-25', '1-6', '2-2', '3-25',
+                 '8-6', '8-15']
+        keys = [f'orthodox:feast:{d}' for d in fixed] + [
+            'orthodox:palm_sunday', 'orthodox:ascension',
+            'orthodox:pentecost']
+        assert len(keys) == 12
+        for lang in ('en', 'ru'):
+            missing = [k for k in keys if collects.collect_for(k, lang) is None]
+            assert not missing, f'{lang}: {missing}'
 
