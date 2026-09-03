@@ -437,3 +437,81 @@ def test_every_curated_string_reaches_the_extractor(generator, tmp_path):
     assert not missing, (
         f'{generator}: {len(missing)} strings are invisible to xgettext — '
         f'{[m[:60] for m in missing[:3]]}')
+
+
+# ── Dates ───────────────────────────────────────────────────────────────────
+
+_MONTHS_EN = ('January', 'February', 'March', 'April', 'May', 'June', 'July',
+              'August', 'September', 'October', 'November', 'December')
+_ABBR_EN = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
+_DAYS_EN = ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
+            'Saturday', 'Sunday')
+
+
+def test_every_month_and_weekday_is_translated(catalogue):
+    """The app writes dates from the catalogue because strftime cannot: the
+    Flatpak runtime carries only the host's locales, so a Russian install on
+    an English host has no ru_RU to fall back to and printed the day and
+    month in English under a Russian interface. A missing entry here puts
+    that back, in one language, on the page a reader opens first."""
+    _lang, path = catalogue
+    have = {(ctx, mid) for mid, ctx, strs in _parse_po_contexts(path)
+            if strs and strs[0]}
+    missing = [(c, m) for c, m in
+               [('month, in a date', m) for m in _MONTHS_EN]
+               + [('month abbreviation', a) for a in _ABBR_EN]
+               + [(None, d) for d in _DAYS_EN]
+               + [('date, day first', '{day} {month} {year}'),
+                  ('date, month first', '{month} {day}, {year}')]
+               if (c, m) not in have]
+    assert not missing, f'untranslated date strings: {missing}'
+
+
+def test_the_month_abbreviation_context_is_doing_work(catalogue):
+    """May is the reason the abbreviations carry a context at all: English
+    spells the full name and the short form the same, so one msgid would
+    have to serve `mayo` and `may` at once."""
+    _lang, path = catalogue
+    by_key = {(ctx, mid): strs[0] for mid, ctx, strs
+              in _parse_po_contexts(path) if strs}
+    full = by_key.get(('month, in a date', 'May'))
+    abbr = by_key.get(('month abbreviation', 'May'))
+    assert full and abbr
+    assert len(abbr) <= len(full)
+
+
+def test_a_translated_date_keeps_all_three_of_its_parts(catalogue):
+    """Word order is the translator's; the pieces are not. A format that
+    drops {year} loses it silently, and one that invents a placeholder
+    raises KeyError in front of the reader."""
+    _lang, path = catalogue
+    by_key = {(ctx, mid): strs[0] for mid, ctx, strs
+              in _parse_po_contexts(path) if strs}
+    for ctx, mid in (('date, day first', '{day} {month} {year}'),
+                     ('date, month first', '{month} {day}, {year}')):
+        fmt = by_key[(ctx, mid)]
+        assert set(BRACE.findall(fmt)) == {'{day}', '{month}', '{year}'}, fmt
+
+
+def test_dates_render_without_the_system_locale(catalogue):
+    """The whole point, exercised end to end: format a date with LC_ALL=C,
+    which is all a Flatpak sandbox built on an English host offers."""
+    lang, _path = catalogue
+    mo = os.path.join(ROOT, 'po', f'{lang}.po')
+    assert os.path.exists(mo)
+    script = (
+        'import datetime, gettext, i18n\n'
+        'i18n._catalogue_cache = None\n'
+        'print(i18n.format_date(datetime.date(2026, 9, 2)))\n'
+        'print(i18n.weekday_name(2))\n'
+        'print(i18n.month_abbr(9))\n')
+    env = dict(os.environ, LANGUAGE=lang, LC_ALL='C', PYTHONPATH=ROOT)
+    out = subprocess.run(['python3', '-c', script], env=env, cwd=ROOT,
+                         capture_output=True, text=True)
+    assert out.returncode == 0, out.stderr
+    # Source checkouts have no compiled catalogue (i18n.localedir() points
+    # outside the tree), so this asserts the mechanism, not the language:
+    # three non-empty lines and no locale error.
+    assert len([ln for ln in out.stdout.splitlines() if ln.strip()]) == 3
+

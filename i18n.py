@@ -8,6 +8,7 @@ Both paths use the 'scriptura' domain bound in _setup_gettext, so they
 translate identically (gettext.gettext honours the domain set with
 gettext.textdomain()).
 """
+import datetime as _dt
 import gettext as _gettext
 from collections.abc import Callable
 
@@ -234,6 +235,94 @@ def N_(message: str) -> str:
     translating at definition time (module-level data tables), then translated
     at display via _()."""
     return message
+
+
+# ── Dates ───────────────────────────────────────────────────────────────────
+#
+# Dates are written here rather than handed to strftime. `%A`, `%B` and `%b`
+# follow LC_TIME, which the app deliberately leaves on the desktop's setting
+# so that a Spanish reader on an English system keeps their own number and
+# sort order (see main._setup_gettext). That reasoning holds on a host with
+# the locales installed and fails completely where the app actually ships:
+# the Flatpak runtime's locale extension is subsetted to the host's own
+# languages, and a sandbox built on an English host carries 35 locales, every
+# one of them en_*, C or POSIX. setlocale to es_ES or ru_RU there does not
+# fall back — it raises. So the Today page read "WEDNESDAY · 2 SEPTEMBER
+# 2026" above a Russian heading, in every language, on every install.
+#
+# Translating the names moves the problem into the catalogue, where the app
+# already controls it. The order moves with them: a format string per surface
+# rather than a hard-coded one, because a language that writes the day first
+# should not have to accept English word order to get its own month names.
+
+#: Weekday names, indexed by `date.weekday()` — Monday is 0. Standalone
+#: text, so the plain nominative is what every language wants here.
+_WEEKDAYS = (N_('Monday'), N_('Tuesday'), N_('Wednesday'), N_('Thursday'),
+             N_('Friday'), N_('Saturday'), N_('Sunday'))
+
+
+def month_name(month: int) -> str:
+    """The month's name as it is written *inside a date*, 1-based.
+
+    The context is not decoration. Russian declines the month when a day
+    stands before it — 2 сентября, not 2 сентябрь — so the string a date
+    needs is not the string a standalone month header would need. Naming
+    that in the msgid is what stops a translator supplying one and the app
+    using it for the other; a nominative set can be added beside this one
+    if a surface ever wants it.
+    """
+    return (C_('month, in a date', 'January'),
+            C_('month, in a date', 'February'),
+            C_('month, in a date', 'March'),
+            C_('month, in a date', 'April'),
+            C_('month, in a date', 'May'),
+            C_('month, in a date', 'June'),
+            C_('month, in a date', 'July'),
+            C_('month, in a date', 'August'),
+            C_('month, in a date', 'September'),
+            C_('month, in a date', 'October'),
+            C_('month, in a date', 'November'),
+            C_('month, in a date', 'December'))[month - 1]
+
+
+def weekday_name(weekday: int) -> str:
+    """The weekday's name, as `date.weekday()` numbers them (Monday = 0)."""
+    return _(_WEEKDAYS[weekday])
+
+
+def month_abbr(month: int) -> str:
+    """The month's short form, 1-based, for the calendar tiles.
+
+    The literals sit inside the call so xgettext can see them, and carry a
+    context because English collides with itself: `May` is both the full
+    name and the abbreviation, one msgid for two translations — `mayo` and
+    `may` in Spanish. Twelve pgettext lookups a call, at 0.06µs each.
+    """
+    return (C_('month abbreviation', 'Jan'), C_('month abbreviation', 'Feb'),
+            C_('month abbreviation', 'Mar'), C_('month abbreviation', 'Apr'),
+            C_('month abbreviation', 'May'), C_('month abbreviation', 'Jun'),
+            C_('month abbreviation', 'Jul'), C_('month abbreviation', 'Aug'),
+            C_('month abbreviation', 'Sep'), C_('month abbreviation', 'Oct'),
+            C_('month abbreviation', 'Nov'), C_('month abbreviation', 'Dec')
+            )[month - 1]
+
+
+def format_date(date: _dt.date) -> str:
+    """A full date the way the Today page writes it — `2 September 2026`.
+
+    The order is the translator's: Spanish and Russian put the day first and
+    lower-case the month, which no rearrangement of English can produce.
+    """
+    return C_('date, day first', '{day} {month} {year}').format(
+        day=date.day, month=month_name(date.month), year=date.year)
+
+
+def format_date_heading(date: _dt.date) -> str:
+    """A full date the way the devotional heads its reading —
+    `September 2, 2026`. Separate from format_date because the two surfaces
+    print the date differently in English and need not agree elsewhere."""
+    return C_('date, month first', '{month} {day}, {year}').format(
+        day=date.day, month=month_name(date.month), year=date.year)
 
 
 def book_label(name: str) -> str:

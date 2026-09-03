@@ -24,7 +24,7 @@ from gi.repository import Gdk, Gtk, Adw, Pango
 import reading_plans
 from a11y import set_accessible_label
 from gtk_utils import DelayedPulse
-from i18n import _, book_label
+from i18n import _, book_label, format_date, weekday_name
 
 # Longest epigraph we'll set at the foot — beyond this the quote is cut at a
 # word boundary. Devotional opening quotes are a verse line, almost always
@@ -404,9 +404,12 @@ class TodayView(Gtk.Box):
         the reference), or None to omit it. `church_line` is the liturgical
         designation from church_year (None hides the line)."""
         today = datetime.date.today()
-        # Locale day-name and date, composed with the house '·' separator.
+        # Day name and date, composed with the house '·' separator. Both come
+        # from the catalogue rather than strftime — see i18n's Dates section
+        # for why LC_TIME cannot answer where the app ships.
         self._eyebrow.set_text('{day} · {date}'.format(
-            day=today.strftime('%A'), date=today.strftime('%-d %B %Y')))
+            day=weekday_name(today.weekday()),
+            date=format_date(today)))
         self._church.set_text(church_line or '')
         self._church.set_visible(bool(church_line))
 

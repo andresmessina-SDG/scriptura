@@ -38,7 +38,7 @@ _log = logging.getLogger('scriptura.window')
 OPEN_DYSLEXIC = 'OpenDyslexic'
 from crossref_panel import CrossRefPanel
 from a11y import announce, set_accessible_label
-from i18n import _, ngettext, book_label
+from i18n import _, ngettext, book_label, month_abbr
 
 
 def N_(message):
@@ -4204,7 +4204,7 @@ class BibleWindow(Adw.ApplicationWindow):
     def _format_plan_month(self, date):
         """Localized month header, e.g. 'Jun' — with the year once the plan
         crosses into a different calendar year than its start."""
-        label = date.strftime('%b')
+        label = month_abbr(date.month)
         if date.year != self._plan_start_date.year:
             label = f'{label} {date.year}'
         return label

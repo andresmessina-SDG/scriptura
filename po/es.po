@@ -9243,3 +9243,128 @@ msgstr "Día {n}"
 #~ msgstr ""
 #~ "Lectura habitual desde la Reforma; expuesta con amplitud por J. Gresham "
 #~ "Machen, The Virgin Birth of Christ (1930)."
+
+msgctxt "month, in a date"
+msgid "January"
+msgstr "enero"
+
+msgctxt "month, in a date"
+msgid "February"
+msgstr "febrero"
+
+msgctxt "month, in a date"
+msgid "March"
+msgstr "marzo"
+
+msgctxt "month, in a date"
+msgid "April"
+msgstr "abril"
+
+msgctxt "month, in a date"
+msgid "May"
+msgstr "mayo"
+
+msgctxt "month, in a date"
+msgid "June"
+msgstr "junio"
+
+msgctxt "month, in a date"
+msgid "July"
+msgstr "julio"
+
+msgctxt "month, in a date"
+msgid "August"
+msgstr "agosto"
+
+msgctxt "month, in a date"
+msgid "September"
+msgstr "septiembre"
+
+msgctxt "month, in a date"
+msgid "October"
+msgstr "octubre"
+
+msgctxt "month, in a date"
+msgid "November"
+msgstr "noviembre"
+
+msgctxt "month, in a date"
+msgid "December"
+msgstr "diciembre"
+
+msgid "Monday"
+msgstr "lunes"
+
+msgid "Tuesday"
+msgstr "martes"
+
+msgid "Wednesday"
+msgstr "miércoles"
+
+msgid "Thursday"
+msgstr "jueves"
+
+msgid "Friday"
+msgstr "viernes"
+
+msgid "Saturday"
+msgstr "sábado"
+
+msgid "Sunday"
+msgstr "domingo"
+
+msgctxt "month abbreviation"
+msgid "Jan"
+msgstr "ene"
+
+msgctxt "month abbreviation"
+msgid "Feb"
+msgstr "feb"
+
+msgctxt "month abbreviation"
+msgid "Mar"
+msgstr "mar"
+
+msgctxt "month abbreviation"
+msgid "Apr"
+msgstr "abr"
+
+msgctxt "month abbreviation"
+msgid "May"
+msgstr "may"
+
+msgctxt "month abbreviation"
+msgid "Jun"
+msgstr "jun"
+
+msgctxt "month abbreviation"
+msgid "Jul"
+msgstr "jul"
+
+msgctxt "month abbreviation"
+msgid "Aug"
+msgstr "ago"
+
+msgctxt "month abbreviation"
+msgid "Sep"
+msgstr "sep"
+
+msgctxt "month abbreviation"
+msgid "Oct"
+msgstr "oct"
+
+msgctxt "month abbreviation"
+msgid "Nov"
+msgstr "nov"
+
+msgctxt "month abbreviation"
+msgid "Dec"
+msgstr "dic"
+
+msgctxt "date, day first"
+msgid "{day} {month} {year}"
+msgstr "{day} de {month} de {year}"
+
+msgctxt "date, month first"
+msgid "{month} {day}, {year}"
+msgstr "{day} de {month} de {year}"
