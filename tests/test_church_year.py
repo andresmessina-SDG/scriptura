@@ -1,9 +1,14 @@
 """Golden-date tests for the church-year engine."""
 import datetime
+import json
+import os
+
+import pytest
 
 import church_year as cy
 
 D = datetime.date
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class TestComputus:
@@ -101,7 +106,10 @@ class TestRoman:
 
 class TestOrthodox:
     def test_after_pentecost(self):
-        assert name(D(2026, 7, 18), 'orthodox') == 'The Sixth Sunday after Pentecost'
+        # No article: the Orthodox heading is its own string, and the OCA's
+        # service texts write "6th Sunday after Pentecost". The Roman line
+        # above keeps its "The".
+        assert name(D(2026, 7, 18), 'orthodox') == 'Sixth Sunday after Pentecost'
 
     def test_triodion(self):
         # Pascha 2026 (Julian) = 12 Apr Gregorian.
@@ -249,7 +257,8 @@ class TestOrdinalCoverage:
         asked = set()
         real = cy._ordinal
         monkeypatch.setattr(cy, '_ordinal',
-                            lambda n: (asked.add(n) or real(n)))
+                            lambda n, church=False:
+                                (asked.add(n) or real(n, church)))
         day = D(1900, 1, 1)
         while day <= D(2099, 12, 31):
             for trad in cy.TRADITIONS:
@@ -264,3 +273,85 @@ class TestOrdinalCoverage:
         assert max(asked) >= 37, max(asked)
         for n in asked:
             assert real(n) != str(n), f'no ordinal word for {n}'
+
+
+# ── The Orthodox line is its own register ──────────────────────────────────
+
+def _designate(lang, day, tradition, part='label'):
+    """day_designation under `lang`, in a child so the catalogue is bound
+    from a clean environment rather than from this process's."""
+    import subprocess
+    import sys
+    script = (
+        'import datetime, church_year, json\n'
+        f'k, s = church_year.day_designation('
+        f'datetime.date({day.year}, {day.month}, {day.day}), "{tradition}")\n'
+        'print(json.dumps({"key": k, "label": s}))\n')
+    r = subprocess.run([sys.executable, '-c', script],
+                       env=dict(os.environ, LANGUAGE=lang, PYTHONPATH=_ROOT),
+                       cwd=_ROOT, capture_output=True, text=True,
+                       encoding='utf-8')
+    assert r.returncode == 0, r.stderr
+    return json.loads(r.stdout)[part]
+
+
+def _has(lang):
+    import i18n
+    return lang in dict(i18n.available_languages())
+
+
+class TestOrthodoxReckoning:
+    """The church does not count Sundays the way the civil calendar does.
+
+    Under one msgid a Russian reader was given «Тринадцатое воскресенье
+    после Пятидесятницы» beneath a Russian church line — the civil form, and
+    one no Orthodox calendar prints. azbyka's calendar for 30 August 2026
+    reads «Неделя 13-я по Пятидесятнице»: `неделя` is the church word for
+    Sunday (a week is `седмица`), it is `по` rather than `после`, and the
+    ordinal is a numeral agreeing with «Неделя», not the spelt-out neuter.
+
+    The wording checks need a compiled catalogue, which a checkout only has
+    once `tools/build-locale.py` has run and CI never does; the key and the
+    English are asserted unconditionally.
+    """
+
+    DAY = D(2026, 9, 3)
+
+    def test_the_key_is_untouched_by_the_wording(self):
+        """The collect is looked up by key. A change to how a day is NAMED
+        must not change what it resolves to."""
+        for lang in ('en', 'ru'):
+            assert _designate(lang, self.DAY, 'orthodox_old', part='key') \
+                == 'orthodox:pentecost13'
+
+    def test_english_drops_the_article_the_orthodox_heading_never_has(self):
+        """The OCA's own service texts head these "13th Sunday after
+        Pentecost". The Western traditions keep their article."""
+        assert _designate('en', self.DAY, 'orthodox_old') == \
+            'Thirteenth Sunday after Pentecost'
+        assert _designate('en', self.DAY, 'anglican') == \
+            'The Thirteenth Sunday after Trinity'
+
+    @pytest.mark.skipif(not _has('ru'), reason='ru catalogue not compiled')
+    def test_the_orthodox_line_reads_as_the_church_prints_it(self):
+        assert _designate('ru', self.DAY, 'orthodox_old') == \
+            'Неделя 13-я по Пятидесятнице'
+
+    @pytest.mark.skipif(not _has('ru'), reason='ru catalogue not compiled')
+    def test_the_western_traditions_keep_the_civil_wording(self):
+        """The split is a context, not a rewording: «воскресенье после» is
+        right for the Anglican and Roman calendars and must not move."""
+        out = _designate('ru', self.DAY, 'anglican')
+        assert 'воскресенье после' in out, out
+        assert 'Неделя' not in out, out
+
+    @pytest.mark.skipif(not _has('es'), reason='es catalogue not compiled')
+    def test_a_catalogue_without_the_context_keeps_its_own_words(self):
+        """The load-bearing one. pgettext answers with the msgid when it
+        finds nothing, so adopting that answer would drop a Spanish reader
+        from «Decimotercer Domingo» to raw English — a regression caused
+        entirely by a change made for Russian. Spanish has no contexted
+        string and must be untouched."""
+        out = _designate('es', self.DAY, 'orthodox_old')
+        assert out == 'Decimotercer Domingo después de Pentecostés', out
+        assert '{n}' not in out and 'Thirteenth' not in out, out

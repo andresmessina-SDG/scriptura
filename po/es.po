@@ -3913,6 +3913,19 @@ msgstr "El Último Domingo después de Pentecostés"
 msgid "The {ordinal} Sunday after Pentecost"
 msgstr "El {ordinal} Domingo después de Pentecostés"
 
+#. The Orthodox line carries its own register in languages that have one.
+#. Spanish is not recorded as having a separate church wording here, so it
+#. reads as the civil calendar does.
+msgid "{ordinal} Sunday after Pentecost"
+msgstr "{ordinal} Domingo después de Pentecostés"
+
+#. The ordinal as a numeral, for a church that prints one (Russian:
+#. «Неделя 13-я»). Left as the bare "{n}" to keep the spelt-out Spanish
+#. ordinal — that is what an unchanged "{n}" means here.
+msgctxt "Orthodox reckoning"
+msgid "{n}"
+msgstr "{n}"
+
 #: church_year.py:279
 msgid "The Sunday next before Advent"
 msgstr "El Domingo anterior al Adviento"

@@ -3857,6 +3857,22 @@ msgstr "Последнее воскресенье после Пятидесят�
 msgid "The {ordinal} Sunday after Pentecost"
 msgstr "{ordinal} воскресенье после Пятидесятницы"
 
+#. The Orthodox register, not the civil one: the church counts
+#. «Неделя 13-я по Пятидесятнице». `неделя` is the church word for Sunday —
+#. a week is `седмица` — and it is `по`, not `после`.
+#: church_year.py:369
+msgid "{ordinal} Sunday after Pentecost"
+msgstr "Неделя {ordinal} по Пятидесятнице"
+
+#. The ordinal as the church prints it: a numeral with the feminine ending
+#. that agrees with «Неделя», not the spelt-out «Тринадцатое». A language
+#. whose church spells the ordinal out leaves this as the bare "{n}" and
+#. keeps the word it already has.
+#: church_year.py:143
+msgctxt "Orthodox reckoning"
+msgid "{n}"
+msgstr "{n}-я"
+
 #: church_year.py:279
 msgid "The Sunday next before Advent"
 msgstr "Воскресенье перед Адвентом"
