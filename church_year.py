@@ -47,7 +47,7 @@ template, since there is one per season.
 
 import datetime
 
-from i18n import _, N_
+from i18n import _, C_, N_
 
 Designation = tuple[str, str]   # (stable key for the collects pack, display)
 
@@ -123,11 +123,33 @@ _ORDINALS = [
 ]
 
 
-def _ordinal(n: int) -> str:
-    """The ordinal word for `n`, translated; the bare numeral past the table."""
-    if 0 < n < len(_ORDINALS):
-        return _(_ORDINALS[n])
-    return str(n)
+def _ordinal(n: int, church: bool = False) -> str:
+    """The ordinal word for `n`, translated; the bare numeral past the table.
+
+    `church` is for a tradition that counts in numerals rather than words.
+    Russian church usage writes «Неделя 13-я по Пятидесятнице» — the numeral
+    with a feminine ending, agreeing with «Неделя» — where the same Sunday
+    in the Western calendar is «Тринадцатое воскресенье». One contexted
+    template rather than forty contexted ordinals: the shape is `{n}` plus
+    whatever the language appends, so a catalogue writes it once.
+
+    A language that has not written one keeps the word it already had.
+    pgettext answers with the msgid when it finds nothing, and returning
+    that would drop a Spanish reader from «Decimotercer» to "{n}" because
+    of a change made for Russian.
+
+    The context and the msgid are spelt out here rather than passed in:
+    xgettext reads literals, and a `C_(ctx, msg)` on two variables extracts
+    as nothing at all — the catalogue would hold a string the build could
+    no longer find.
+    """
+    if not 0 < n < len(_ORDINALS):
+        return str(n)
+    if church:
+        numeral = C_('Orthodox reckoning', '{n}')
+        if numeral != '{n}':
+            return numeral.format(n=n)
+    return _(_ORDINALS[n])
 
 
 # ── Principal fixed feasts (month, day) → (key suffix, display) ──────────────
@@ -347,9 +369,23 @@ def _orthodox_sunday(s: datetime.date) -> Designation:
         return 'pentecost', _('Pentecost')
     if n == 8:
         return 'all_saints', _('The Sunday of All Saints')
+    # The Orthodox line is its own register, not a translation of the Western
+    # one. The church counts «Неделя 13-я по Пятидесятнице»: `неделя` is the
+    # church word for Sunday (a week is `седмица`) and it is `по`, not
+    # `после`. Under one msgid the Russian reader was given the civil form,
+    # «Тринадцатое воскресенье после Пятидесятницы», which no Orthodox
+    # calendar prints. The Western traditions keep the civil wording, which
+    # is right for them, so the split is a context and not a rewording.
+    # Its own msgid rather than a context on the Western one. A context has
+    # to buy a different translation in every catalogue that carries it —
+    # the suite checks that — and Spanish is not recorded as having a church
+    # register distinct from its civil one; a separate string lets it read
+    # as it always did while Russian says what the church says. The article
+    # goes with it: the OCA's own service texts head these "13th Sunday
+    # after Pentecost", never "The Thirteenth".
     return (f'pentecost{n - 7}',
-            _('The {ordinal} Sunday after Pentecost')
-                .format(ordinal=_ordinal(n - 7)))
+            _('{ordinal} Sunday after Pentecost')
+                .format(ordinal=_ordinal(n - 7, church=True)))
 
 
 # ── Public API ───────────────────────────────────────────────────────────────

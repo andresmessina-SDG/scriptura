@@ -179,10 +179,21 @@ def test_the_spoken_reading_installs_without_being_promised():
 def test_a_language_card_counts_the_largest_tier():
     """The language page's line is the ceiling of what choosing that language
     leads to, not what any one card installs — so it counts the last tier the
-    language has, and it is counted, never written."""
+    language has, and it is counted, never written.
+
+    Summarised through the language's own translator, because that is what
+    `language_summary` does and the two are not comparable otherwise: the
+    card speaks its own language while `bundles_for` speaks the running one.
+    Comparing the finished strings passed only while no catalogue was
+    compiled and both fell back to English — which is every source checkout,
+    and was every run of this suite until `locale/` existed.
+    """
+    import i18n
     for code in welcome._CATALOGUE:
         largest = next(b for b in reversed(welcome.bundles_for(code)))
-        assert welcome.language_summary(code) == largest['summary']
+        gt, ngt = i18n.translator_for(code)
+        assert welcome.language_summary(code) == welcome._summarise(
+            largest['items'], gt, ngt)
 
 
 def test_a_language_card_speaks_its_own_language(monkeypatch):

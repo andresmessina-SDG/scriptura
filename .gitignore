@@ -70,3 +70,6 @@ PROMOTION.md
 
 # Local agent/session scratch — never part of the project.
 .claude/
+
+# Catalogues built by tools/build-locale.py for a source run.
+locale/

@@ -21,6 +21,33 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gdk, Gtk, Adw, Pango
 
+# Slavonic and Greek carry their accents as COMBINING marks, and a mark is
+# only drawn over its letter when the font gives it zero advance. Georgia —
+# a reading face the picker offers, and one people choose — does not: at 19px
+# the acute takes 13px of its own, wider than the letter it belongs to, so
+# «Све́тлую» draws as "Све ́тлую" with the mark stranded after the vowel. The
+# reading pane already guards Greek and Hebrew this way (pane._GREEK_FONT);
+# the Today epigraph takes the reader's chosen family too, and until the
+# Orthodox tradition began carrying Church Slavonic there was nothing
+# accented for it to render.
+#
+# A Pango attribute rather than a CSS class: it does not depend on winning a
+# cascade against the family this label is given live, and it is measurable —
+# with it the acute's advance goes from 13px to 0 in roman and italic alike.
+_MARK_SAFE_SERIF = 'Noto Serif, DejaVu Serif, Source Serif 4, serif'
+_COMBINING_MARK = re.compile('[\u0300-\u036f]')
+
+
+def _mark_safe_attrs(text: str) -> 'Pango.AttrList | None':
+    """A font attribute for text whose marks must sit on their letters, or
+    None when there are none and the reader's own face should stand."""
+    if not _COMBINING_MARK.search(text):
+        return None
+    attrs = Pango.AttrList()
+    attrs.insert(Pango.attr_family_new(_MARK_SAFE_SERIF))
+    return attrs
+
+
 import reading_plans
 from a11y import set_accessible_label
 from gtk_utils import DelayedPulse
@@ -480,7 +507,9 @@ class TodayView(Gtk.Box):
         when there's nothing worth setting). `quoted` wraps the text in
         quotation marks — right for a scripture line, wrong for a prayer
         (a collect is prayed, not cited)."""
-        self._epigraph_verse.set_text(f'“{quote}”' if quoted else quote)
+        shown = f'“{quote}”' if quoted else quote
+        self._epigraph_verse.set_text(shown)
+        self._epigraph_verse.set_attributes(_mark_safe_attrs(shown))
         self._epigraph_src.set_text(source)
         self._epigraph_box.set_visible(True)
 

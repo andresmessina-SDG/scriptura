@@ -507,11 +507,20 @@ def test_dates_render_without_the_system_locale(catalogue):
         'print(i18n.weekday_name(2))\n'
         'print(i18n.month_abbr(9))\n')
     env = dict(os.environ, LANGUAGE=lang, LC_ALL='C', PYTHONPATH=ROOT)
+    # utf-8 explicitly: the child's output encoding is not the parent's
+    # business, and `text=True` would otherwise decode with whatever locale
+    # the test process happens to be in by then.
     out = subprocess.run(['python3', '-c', script], env=env, cwd=ROOT,
-                         capture_output=True, text=True)
+                         capture_output=True, text=True, encoding='utf-8')
     assert out.returncode == 0, out.stderr
-    # Source checkouts have no compiled catalogue (i18n.localedir() points
-    # outside the tree), so this asserts the mechanism, not the language:
-    # three non-empty lines and no locale error.
-    assert len([ln for ln in out.stdout.splitlines() if ln.strip()]) == 3
+    lines = [ln for ln in out.stdout.splitlines() if ln.strip()]
+    assert len(lines) == 3
+    # With `tools/build-locale.py` run, a checkout has the catalogues and this
+    # reaches the translated path it was written for; without it the fallback
+    # is English and only the mechanism is proven. Both are worth having, so
+    # assert what holds either way — three parts, rendered, no locale error —
+    # and the language itself only when the catalogue is actually there.
+    import i18n
+    if lang in dict(i18n.available_languages()):
+        assert any(not ln.isascii() for ln in lines), lines
 
