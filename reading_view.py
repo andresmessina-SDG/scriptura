@@ -21,7 +21,7 @@ import gi
 
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, Gdk, Gsk, Graphene, Pango
+from gi.repository import Gtk, Adw, Gdk, GLib, Gsk, Graphene, Pango
 
 
 def _visible_lines(view, vr):
@@ -278,6 +278,86 @@ class BibleTextView(Gtk.TextView):
         table.foreach(collect, None)
         return out
 
+    # A fresh render leaves GtkTextView's layout still moving: heights and
+    # wrap points settle over the frames — and, measured on a cold start, over
+    # the whole first second — after the first paint. The bands are measured
+    # from that layout, so ones painted before it settles land beside the text
+    # they belong to, and nothing invalidates the view when it does settle: on
+    # a cold start they stayed wrong until the pointer entered the pane and
+    # something else asked for a redraw. So the view watches its own
+    # measurements after a layout change, paints nothing while they are still
+    # moving, and asks for the frame that paints them itself.
+    _SETTLE_MS = 33                  # about two frames
+    _SETTLE_WINDOW_US = 3_000_000    # how long to keep watching after a move
+    _SETTLE_MAX_TICKS = 300          # a layout that never holds still stops here
+
+    def _layout_stamp(self):
+        """What the bands are measured against, as one comparable value.
+
+        Scroll is deliberately not in it: `snapshot_layer` draws in buffer
+        coordinates, so scrolling moves every band without changing a number
+        here, and a stamp that followed the scroll would put a timer on the
+        frame clock for every frame of every scroll.
+        """
+        buf = self.get_buffer()
+        # The last line and one in the middle: the end alone would miss a
+        # reflow that moved text about without changing the document's
+        # height, and a band lands beside its text either way.
+        mid = buf.get_iter_at_line(buf.get_line_count() // 2)[1]
+        return (self.get_width(), self.get_left_margin(),
+                self.get_right_margin(), buf.get_char_count(),
+                self.get_line_yrange(mid),
+                self.get_line_yrange(buf.get_end_iter()),
+                self._metrics())
+
+    def _layout_settled(self):
+        """Whether this frame may paint — and arm the watch if it may not.
+
+        A frame is trusted once the measurements have held still since they
+        were last read. The first frame after a render therefore paints no
+        bands at all; the watch asks for the next one, about two frames
+        later, which does. A wrong band is a defect; a highlight arriving a
+        frame after its text is not.
+        """
+        stamp = self._layout_stamp()
+        settled = stamp == getattr(self, '_stamp', None)
+        self._stamp = stamp
+        if not settled:
+            self._settle_until = (GLib.get_monotonic_time()
+                                  + self._SETTLE_WINDOW_US)
+            self._settle_ticks = 0
+            if getattr(self, '_settle_id', None) is None:
+                self._settle_id = GLib.timeout_add(self._SETTLE_MS,
+                                                   self._settle_tick)
+        else:
+            self._drawn_stamp = stamp
+        return settled
+
+    def _settle_tick(self):
+        """One look at the layout, off the frame clock.
+
+        Asks for a redraw whenever what is on screen was drawn against
+        different measurements than the ones now in force — which covers
+        both the move that has just happened and the frame this watch
+        skipped. The window is generous because the layout was measured
+        still moving a second after a cold start; it closes on its own, and
+        `_SETTLE_MAX_TICKS` ends a layout that somehow never holds still
+        rather than leaving a 30fps loop behind.
+        """
+        stamp = self._layout_stamp()
+        if stamp != self._stamp:
+            self._stamp = stamp
+            self._settle_until = (GLib.get_monotonic_time()
+                                  + self._SETTLE_WINDOW_US)
+        if stamp != getattr(self, '_drawn_stamp', None):
+            self.queue_draw()
+        self._settle_ticks += 1
+        if (GLib.get_monotonic_time() >= self._settle_until
+                or self._settle_ticks >= self._SETTLE_MAX_TICKS):
+            self._settle_id = None
+            return GLib.SOURCE_REMOVE
+        return GLib.SOURCE_CONTINUE
+
     def _draw_highlights(self, snapshot):
         buf = self.get_buffer()
         table = buf.get_tag_table()
@@ -288,6 +368,8 @@ class BibleTextView(Gtk.TextView):
         if not any(bool(hl_tags) if d.style == 'highlights'
                    else table.lookup(d.tag) is not None
                    for d in below):
+            return
+        if not self._layout_settled():
             return
         vr = self.get_visible_rect()
         lo, hi = _visible_lines(self, vr)
