@@ -1,5 +1,13 @@
 """Unit tests for the Today page's pure helpers (whisper + epigraph)."""
+import os
+
+import pytest
+
 import today_page
+
+_DATA_COLLECTS = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    'data', 'collects.toml')
 
 
 class TestProgressWhisper:
@@ -105,3 +113,68 @@ class TestParseEpigraph:
         assert len(quote) <= today_page._EPIGRAPH_MAX + 1
         assert quote.endswith('…')
         assert ' word…' in quote or quote.startswith('word')
+
+
+class TestAccentedEpigraph:
+    """Church Slavonic carries its accents as combining marks, and a mark
+    only sits over its letter when the font gives it zero advance.
+
+    Georgia does not. Measured at 19px the acute takes 13px of its own —
+    wider than the letter it belongs to — so «Све́тлую» drew as "Све ́тлую"
+    with the mark stranded after the vowel, in both roman and italic. It is
+    a face the picker offers and one people choose, and the Today epigraph
+    takes the reader's chosen family, so the Orthodox troparia landed in it.
+
+    The earlier check that "Georgia shapes the accented text in a single
+    run" was counting runs, which one font with a detached mark passes.
+    """
+
+    SLAVONIC = ('Све́тлую воскресе́ния про́поведь от А́нгела уве́девша '
+                'Госпо́дни учени́цы')
+
+    def test_accented_text_gets_a_mark_safe_face(self):
+        assert today_page._mark_safe_attrs(self.SLAVONIC) is not None
+
+    def test_unaccented_text_keeps_the_reader_s_own_face(self):
+        """The override is for the text that needs it and nothing else — an
+        English or Spanish collect stays in the face the reader chose."""
+        assert today_page._mark_safe_attrs(
+            'Almighty God, who hast given us thy Son') is None
+        assert today_page._mark_safe_attrs('Dios todopoderoso') is None
+
+    def test_every_shipped_slavonic_collect_is_covered(self):
+        """A new troparion must not be able to slip in unguarded."""
+        import tomllib
+        with open(_DATA_COLLECTS, 'rb') as fh:
+            texts = tomllib.load(fh)['orthodox']['ru']['texts']
+        assert len(texts) >= 22
+        bare = [k for k, v in texts.items()
+                if today_page._mark_safe_attrs(v) is None]
+        assert not bare, f'no accents at all in {bare}'
+
+    def test_the_mark_actually_stops_taking_space(self):
+        """The measurement the run count could not make. Without the
+        attribute the acute advances 13px under Georgia; with it, none."""
+        import gi
+        gi.require_version('Pango', '1.0')
+        gi.require_version('PangoCairo', '1.0')
+        from gi.repository import Pango, PangoCairo
+
+        ctx = PangoCairo.font_map_get_default().create_context()
+        desc = Pango.FontDescription.from_string('Georgia 19')
+        if desc.get_family().lower() != 'georgia':
+            pytest.skip('Georgia not installed')
+
+        def acute_advance(attrs):
+            lay = Pango.Layout(ctx)
+            lay.set_font_description(desc)
+            if attrs is not None:
+                lay.set_attributes(attrs)
+            lay.set_text('е', -1)
+            plain = lay.get_size()[0]
+            lay.set_text('е́', -1)
+            return (lay.get_size()[0] - plain) / Pango.SCALE
+
+        if acute_advance(None) == 0:
+            pytest.skip('this Georgia already attaches the mark')
+        assert acute_advance(today_page._mark_safe_attrs('е́')) == 0
