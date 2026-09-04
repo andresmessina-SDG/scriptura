@@ -710,6 +710,12 @@ def test_devotional_keys_name_the_month_in_english_whatever_the_locale():
     day = datetime.date(2026, 9, 2)
     expected = ['09.02', 'Sep 2', 'Sep. 2', '09/02', '9/2']
     assert sword_bridge._devotional_keys(day) == expected
+    # setlocale is process-global and outlives the test, so put back what was
+    # there rather than a plausible-looking 'C'. Restoring to 'C' left
+    # locale.getpreferredencoding at ASCII for every later test, and
+    # subprocess(text=True) decodes with it: the moment a subprocess printed
+    # a translated date, an unrelated test failed on 'ANSI_X3.4-1968'.
+    was = locale.setlocale(locale.LC_ALL)
     try:
         locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
     except locale.Error:
@@ -718,7 +724,7 @@ def test_devotional_keys_name_the_month_in_english_whatever_the_locale():
         assert day.strftime('%b') != 'Sep'      # the locale really did change
         assert sword_bridge._devotional_keys(day) == expected
     finally:
-        locale.setlocale(locale.LC_ALL, 'C')
+        locale.setlocale(locale.LC_ALL, was)
 
 
 def test_a_key_the_module_does_not_hold_is_not_this_day_s_entry():
