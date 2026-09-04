@@ -129,8 +129,8 @@ msgid ""
 msgstr "Панель исторических комментариев — голоса Церкви о стихе, через века"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:59
-msgid "Study Journal — every annotation in one filterable surface"
-msgstr "Дневник изучения — все пометки на одной странице с фильтрами"
+msgid "Annotations — every mark you have made in one filterable surface"
+msgstr "Пометки — всё, что вы отметили, на одной странице с фильтрами"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:63
 msgid "Built-in reading plans with day-by-day progress"
@@ -743,6 +743,22 @@ msgstr "Синий"
 #: annotation_dialogs.py:43 study_journal.py:58
 msgid "Orange"
 msgstr "Оранжевый"
+
+msgctxt "highlight swatch cue letter"
+msgid "Y"
+msgstr "Ж"
+
+msgctxt "highlight swatch cue letter"
+msgid "G"
+msgstr "З"
+
+msgctxt "highlight swatch cue letter"
+msgid "B"
+msgstr "С"
+
+msgctxt "highlight swatch cue letter"
+msgid "O"
+msgstr "О"
 
 #: annotation_dialogs.py:101
 #, python-brace-format
@@ -7517,8 +7533,8 @@ msgstr ""
 
 #: study_journal.py:265 study_journal.py:306 study_journal.py:1068
 #: window.py:3321
-msgid "Study Journal"
-msgstr "Дневник изучения"
+msgid "Annotations"
+msgstr "Пометки"
 
 #: study_journal.py:286 study_journal.py:287
 msgid "Refresh"
@@ -7557,8 +7573,8 @@ msgid "All tags"
 msgstr "Все метки"
 
 #: study_journal.py:371 study_journal.py:544 study_journal.py:601
-msgid "All modules"
-msgstr "Все модули"
+msgid "Canonical order"
+msgstr "В каноническом порядке"
 
 #: study_journal.py:380 study_journal.py:562
 msgid "All books"
@@ -7654,8 +7670,8 @@ msgid "Undo"
 msgstr "Отменить"
 
 #: study_journal.py:1054
-msgid "Export Study Journal"
-msgstr "Выгрузка дневника изучения"
+msgid "Export Annotations"
+msgstr "Экспорт пометок"
 
 #: study_journal.py:1085
 #, python-brace-format
@@ -9320,3 +9336,9 @@ msgstr "Ст. стиль"
 
 msgid "Orthodox (Old Calendar)"
 msgstr "Православный (старый стиль)"
+
+msgid "Recently edited"
+msgstr "Недавно изменённые"
+
+msgid "Edited {date}"
+msgstr "Изменено {date}"

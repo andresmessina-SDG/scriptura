@@ -133,8 +133,8 @@ msgstr ""
 "versículo, a lo largo de los siglos"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:59
-msgid "Study Journal — every annotation in one filterable surface"
-msgstr "Diario de estudio: todas las anotaciones en una sola vista filtrable"
+msgid "Annotations — every mark you have made in one filterable surface"
+msgstr "Anotaciones: todas tus marcas en una sola vista filtrable"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:63
 msgid "Built-in reading plans with day-by-day progress"
@@ -763,6 +763,22 @@ msgstr "Azul"
 #: annotation_dialogs.py:43 study_journal.py:58
 msgid "Orange"
 msgstr "Naranja"
+
+msgctxt "highlight swatch cue letter"
+msgid "Y"
+msgstr "Y"
+
+msgctxt "highlight swatch cue letter"
+msgid "G"
+msgstr "G"
+
+msgctxt "highlight swatch cue letter"
+msgid "B"
+msgstr "B"
+
+msgctxt "highlight swatch cue letter"
+msgid "O"
+msgstr "O"
 
 #: annotation_dialogs.py:101
 #, python-brace-format
@@ -7578,8 +7594,8 @@ msgstr ""
 
 #: study_journal.py:265 study_journal.py:306 study_journal.py:1068
 #: window.py:3321
-msgid "Study Journal"
-msgstr "Diario de estudio"
+msgid "Annotations"
+msgstr "Anotaciones"
 
 #: study_journal.py:286 study_journal.py:287
 msgid "Refresh"
@@ -7618,8 +7634,8 @@ msgid "All tags"
 msgstr "Todas las etiquetas"
 
 #: study_journal.py:371 study_journal.py:544 study_journal.py:601
-msgid "All modules"
-msgstr "Todos los módulos"
+msgid "Canonical order"
+msgstr "Orden canónico"
 
 #: study_journal.py:380 study_journal.py:562
 msgid "All books"
@@ -7714,8 +7730,8 @@ msgid "Undo"
 msgstr "Deshacer"
 
 #: study_journal.py:1054
-msgid "Export Study Journal"
-msgstr "Exportar el diario de estudio"
+msgid "Export Annotations"
+msgstr "Exportar anotaciones"
 
 #: study_journal.py:1085
 #, python-brace-format
@@ -9390,3 +9406,9 @@ msgstr "Ortod. (ant.)"
 
 msgid "Orthodox (Old Calendar)"
 msgstr "Ortodoxo (calendario antiguo)"
+
+msgid "Recently edited"
+msgstr "Editado recientemente"
+
+msgid "Edited {date}"
+msgstr "Editado el {date}"

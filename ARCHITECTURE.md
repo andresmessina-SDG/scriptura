@@ -101,7 +101,7 @@ scriptura/
 +-- module_positions.py   # Per-module scroll/entry-path memory shared across panes
 +-- reading_plans.py      # Built-in plans + progress
 +-- search_panel.py       # Search overlay (right-side revealer)
-+-- study_journal.py      # Study Journal window (master-detail) + TagManagerWindow
++-- annotations_window.py # Annotations window (master-detail) + TagManagerWindow
 +-- crossref_panel.py     # Cross-reference bar (slim single row)
 +-- module_manager.py     # Module Manager (kind tabs: Bibles / Commentaries / Study Tools / Books & More, all sources merged per tab)
 +-- module_picker.py      # ModulePicker — pane's module selector (MenuButton popover, info, remove)

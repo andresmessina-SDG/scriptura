@@ -3,6 +3,7 @@
 data/io.github.andresmessina_SDG.Scriptura.desktop.in
 data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
 annotation_dialogs.py
+annotations_window.py
 archaeology_bridge.py
 archaeology_reader.py
 archaeology_strings.py
@@ -39,7 +40,6 @@ passage_print.py
 present_mode.py
 reading_plans.py
 search_panel.py
-study_journal.py
 today_page.py
 verse_card.py
 verse_cursor.py
