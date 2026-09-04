@@ -22,6 +22,25 @@ import sword_bridge
 
 
 @pytest.fixture
+def display():
+    """Skip a test that builds the real Annotations window when there is no
+    display to build it on — CI has none, and `Adw.Window.__init__` raises
+    there (other GTK paths segfault outright, which is why the check is
+    `Gdk.Display.get_default()` and never `Gtk.init_check()`, whose True
+    means nothing; GUIDANCE §4).
+
+    A fixture rather than this file's module-level skip: almost everything
+    here is dict- and mapping-level and must go on running on CI. Only the
+    four window tests need a screen.
+    """
+    from gi.repository import Gdk, Gtk
+    Gtk.init_check()
+    if Gdk.Display.get_default() is None:
+        pytest.skip('needs a display: the Annotations window is a real '
+                    'Adw.Window')
+
+
+@pytest.fixture
 def isolated(tmp_path, monkeypatch):
     monkeypatch.setattr(annotations, 'ANNOTATIONS_FILE',
                         str(tmp_path / 'annotations.json'))
@@ -316,7 +335,7 @@ def test_the_real_tables_cannot_map_verse_zero_back(isolated):
 
 # ── The window keeps what is open when the list is rebuilt ───────────────────
 
-def test_a_re_sort_does_not_close_the_open_entry(isolated):
+def test_a_re_sort_does_not_close_the_open_entry(isolated, display):
     """Reordering the list is not a change of what you are reading. Emptying
     the list emits row-selected(None), which used to drop the open entry and
     put the detail pane back to "No entry selected"."""
@@ -340,7 +359,8 @@ def test_a_re_sort_does_not_close_the_open_entry(isolated):
         win.destroy()
 
 
-def test_a_filter_that_excludes_the_open_entry_still_clears_it(isolated):
+def test_a_filter_that_excludes_the_open_entry_still_clears_it(
+        isolated, display):
     import annotations_window
     annotations.save_note('KJVA', 'Genesis', 1, 1, 'a note')
     annotations.save_highlight('KJVA', 'John', 3, 16, '#ffff00')
@@ -411,7 +431,7 @@ def test_a_language_with_no_list_defers_to_the_reading_module(monkeypatch):
 
 
 def test_a_verse_the_preferred_module_cannot_render_falls_back(
-        isolated, monkeypatch):
+        isolated, monkeypatch, display):
     """BSB carries no deuterocanon. A note on Sirach must not come up blank
     while the reader can plainly see the words in the pane behind it."""
     annotations.save_note('KJVA', 'Sirach', 1, 1, 'a note')
@@ -437,7 +457,8 @@ def test_a_verse_the_preferred_module_cannot_render_falls_back(
         win.destroy()
 
 
-def test_the_reading_module_is_not_asked_twice(isolated, monkeypatch):
+def test_the_reading_module_is_not_asked_twice(isolated, monkeypatch,
+                                               display):
     """When the preferred module IS the one in the pane, and it renders
     nothing, one miss is one miss — not two."""
     annotations.save_note('KJVA', 'Genesis', 1, 1, 'a note')
