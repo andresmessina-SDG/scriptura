@@ -35,7 +35,13 @@
 # т. II for Pascha) and ortox.ru for Great Friday, against ru.wikisource.org
 # Типикон Глава 53. Stress marks are kept — standard in every edition and no
 # one site's invention; the `/` line marks are the sites' own and are
-# dropped. Witness B does NOT survive contact and must not be adopted: it
+# dropped. They are COMBINING marks, and a font that gives one an advance
+# draws it beside the letter rather than over it: Georgia does, by 13px at
+# 19px type, so today_page forces a mark-safe serif for any text carrying
+# one. This note used to say the fonts "shape the accented text in a single
+# run" and take that as proof the marks were safe. Both halves were true and
+# unrelated — one run and a detached mark are perfectly compatible.
+# Witness B does NOT survive contact and must not be adopted: it
 # labels tone 7 «глас 6» (two «глас 6», no «глас 7»), drops letters
 # (`воскрел`, `воскреснию`, `воскресния`), and is marked «Непроверенная».
 # One real edition variant: tone 4 reads the Slavonic dual (`уведевша`,
