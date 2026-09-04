@@ -470,7 +470,7 @@ class BibleTextView(Gtk.TextView):
         soft_wrap = line_start.compare(cur) == 0 and not cur.starts_line()
         return self.get_left_margin() if soft_wrap else int(r0.x)
 
-    def _line_right_edge(self, cur, seg_last, y0):
+    def _line_right_edge(self, cur, seg_last):
         """The rightmost ink of this segment on its own display line.
 
         Neither the iter past the last glyph nor the last glyph itself can be
@@ -486,16 +486,37 @@ class BibleTextView(Gtk.TextView):
             '1'  x=625 y=189 w=13     → x+w = 638, the true right edge
 
         So take the maximum over the segment rather than its last member, and
-        ignore whatever claims to be on another line. Clamping the TEXT back
-        onto the line instead — the first attempt — was wrong and showed it:
-        it cut the closing glyph off every wrapped line and, with the skip
-        below, the opening one off the next.
+        ignore whatever claims to be on another line.
+
+        "Another line" is the whole difficulty. It used to mean `y != the y of
+        the segment's FIRST character`, and within one line that is wrong:
+        runs of different size do not share a y. A verse begins with its small
+        raised number, and measured on Genesis 47:2 that number sat at y=224
+        while the body text beside it on the same display line sat at 223. The
+        equality matched the number and nothing else, so the band was painted
+        over " 2 " and stopped dead — every verse that began mid-line lost the
+        rest of that line, which at a comfortable measure is most of them.
+
+        The two cases are far apart and that is what tells them apart: another
+        size on this line is a pixel or two down, another LINE is a whole line
+        height down. So the cut is halfway to where the next display line
+        starts, measured from where THIS one starts — never from `cur`, which
+        may be the raised number, or the lying glyph itself.
         """
+        ls = cur.copy()
+        self.backward_display_line_start(ls)
+        top = self.get_iter_location(ls).y
+        nxt = cur.copy()
+        limit = None
+        if self.forward_display_line(nxt):
+            span = self.get_iter_location(nxt).y - top
+            if span > 0:
+                limit = top + span / 2
         right = None
         probe = cur.copy()
         while probe.compare(seg_last) < 0:
             r = self.get_iter_location(probe)
-            if int(r.y) == y0:
+            if limit is None or r.y < limit:
                 edge = int(r.x + r.width) if r.width else int(r.x)
                 right = edge if right is None else max(right, edge)
             if not probe.forward_char():
@@ -548,7 +569,7 @@ class BibleTextView(Gtk.TextView):
             seg_last = self._trim_ws_end(cur, seg_end)
             if seg_last.compare(cur) > 0:
                 r0 = self.get_iter_location(cur)
-                right = self._line_right_edge(cur, seg_last, int(r0.y))
+                right = self._line_right_edge(cur, seg_last)
 
                 # Anchor the band's top to the display line's *start* so a verse
                 # that begins mid-line with the small raised number shares one

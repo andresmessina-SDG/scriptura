@@ -38,7 +38,7 @@ _log = logging.getLogger('scriptura.window')
 OPEN_DYSLEXIC = 'OpenDyslexic'
 from crossref_panel import CrossRefPanel
 from a11y import announce, set_accessible_label
-from i18n import _, ngettext, book_label
+from i18n import _, ngettext, book_label, month_abbr
 
 
 def N_(message):
@@ -3351,17 +3351,43 @@ class BibleWindow(Adw.ApplicationWindow):
         church_row = Adw.ActionRow(title=_('Church calendar'))
         church_row.add_prefix(
             Gtk.Image.new_from_icon_name('scriptura-church-symbolic'))
-        _church_values = [None, 'anglican', 'roman', 'orthodox']
-        # Two labels per tradition. The pill carries the bare name, because it
-        # sits on the row's own line and grows with whatever it says —
+        _church_values = [None, 'anglican', 'roman', 'orthodox',
+                          'orthodox_old']
+        # Two labels per tradition. The pill carries the short name, because
+        # it sits on the row's own line and grows with whatever it says —
         # "Orthodox (New Calendar)" pushed the row's title onto two lines. The
         # popover has the width to name the edition, which is where the
         # distinction is actually being made.
-        _church_names = [_('None'), _('Anglican'), _('Roman'), _('Orthodox')]
+        #
+        # Orthodoxy is the one tradition here that keeps two calendars, and
+        # the pill has to say which: with both rows reading "Orthodox" a
+        # reader could not tell from the closed row what they had chosen.
+        # Short forms, and in Russian the ones that language actually uses —
+        # «н. ст.» and «ст. ст.», new style and old style.
+        _church_names = [_('None'), _('Anglican'), _('Roman'),
+                         _('Orthodox (New)'), _('Orthodox (Old)')]
         _church_editions = [_('None'), _('Anglican (BCP)'),
                             _('Roman (traditional)'),
-                            _('Orthodox (New Calendar)')]
+                            _('Orthodox (New Calendar)'),
+                            _('Orthodox (Old Calendar)')]
         church_drop = Gtk.DropDown(model=Gtk.StringList.new(_church_names))
+        # Ellipsize the button's own label, the way the font row below does
+        # and for the same reason: without a factory the DropDown's minimum
+        # width is its widest entry, so naming two Orthodox calendars set the
+        # minimum width of this row — and the title, «Церковный календарь» or
+        # «Calendario litúrgico», had nowhere left to go but a second line.
+        # Measured: Spanish went from one line to two the moment the second
+        # entry appeared, and Russian was over the edge already.
+        _church_btn = Gtk.SignalListItemFactory()
+        _church_btn.connect(
+            'setup', lambda _f, i: i.set_child(
+                Gtk.Label(xalign=0, hexpand=True,
+                          ellipsize=Pango.EllipsizeMode.END,
+                          max_width_chars=14)))
+        _church_btn.connect(
+            'bind', lambda _f, i: i.get_child().set_label(
+                _church_names[i.get_position()]))
+        church_drop.set_factory(_church_btn)
         _church_list = Gtk.SignalListItemFactory()
         _church_list.connect(
             'setup', lambda _f, i: i.set_child(Gtk.Label(xalign=0)))
@@ -3369,8 +3395,8 @@ class BibleWindow(Adw.ApplicationWindow):
             'bind',
             lambda _f, i: i.get_child().set_label(
                 _church_editions[i.get_position()]))
-        # Set only for the popover: with a list-factory in place the plain
-        # factory keeps the button, which is what splits the two labels.
+        # The popover gets its own factory so the editions are spelled out
+        # there — the one place they must not be cut.
         church_drop.set_list_factory(_church_list)
         church_drop.set_valign(Gtk.Align.CENTER)
         set_accessible_label(church_drop, _('Church calendar'))
@@ -4204,7 +4230,7 @@ class BibleWindow(Adw.ApplicationWindow):
     def _format_plan_month(self, date):
         """Localized month header, e.g. 'Jun' — with the year once the plan
         crosses into a different calendar year than its start."""
-        label = date.strftime('%b')
+        label = month_abbr(date.month)
         if date.year != self._plan_start_date.year:
             label = f'{label} {date.year}'
         return label

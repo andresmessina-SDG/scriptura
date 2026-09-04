@@ -694,3 +694,102 @@ def test_every_native_name_declares_a_language(monkeypatch):
         lang, native = entry
         assert lang and lang.isalpha() and lang == lang.lower(), key
         assert native and native != key, key
+
+
+# ── Devotional keys ──────────────────────────────────────────────────────────
+
+def test_devotional_keys_name_the_month_in_english_whatever_the_locale():
+    """A devotional key is a module key, not display text. `%b` follows
+    LC_TIME, so a Spanish or Russian desktop was asking for "sep 2" and
+    «сен 2» — keys no module is written with."""
+    import datetime
+    import locale
+
+    import sword_bridge
+
+    day = datetime.date(2026, 9, 2)
+    expected = ['09.02', 'Sep 2', 'Sep. 2', '09/02', '9/2']
+    assert sword_bridge._devotional_keys(day) == expected
+    try:
+        locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
+    except locale.Error:
+        pytest.skip('es_ES.UTF-8 not built on this machine')
+    try:
+        assert day.strftime('%b') != 'Sep'      # the locale really did change
+        assert sword_bridge._devotional_keys(day) == expected
+    finally:
+        locale.setlocale(locale.LC_ALL, 'C')
+
+
+def test_a_key_the_module_does_not_hold_is_not_this_day_s_entry():
+    """`setKeyText` does not fail on a key a module does not use — it snaps
+    to another entry and returns it at full length. Ask SME for "Sep 2" and
+    it answers with December 31."""
+    import datetime
+
+    import sword_bridge
+
+    day = datetime.date(2026, 9, 2)
+    assert sword_bridge._devotional_key_is('09.02', day)
+    assert sword_bridge._devotional_key_is('Sep 2', day)
+    assert sword_bridge._devotional_key_is('Sep. 2', day)
+    assert sword_bridge._devotional_key_is('September 2', day)
+    assert sword_bridge._devotional_key_is('2 Sep', day)
+    assert sword_bridge._devotional_key_is('9/2', day)
+    assert not sword_bridge._devotional_key_is('12.31', day)
+    assert not sword_bridge._devotional_key_is('09.30', day)
+    assert not sword_bridge._devotional_key_is('01.01', day)
+    assert not sword_bridge._devotional_key_is('Sep 3', day)
+
+
+def test_a_key_shape_this_cannot_read_is_given_the_benefit_of_the_doubt():
+    """An unrecognised key is no evidence of a miss, and refusing it would
+    silence a module that works."""
+    import datetime
+
+    import sword_bridge
+
+    day = datetime.date(2026, 9, 2)
+    assert sword_bridge._devotional_key_is('', day)
+    assert sword_bridge._devotional_key_is('Week 36', day)
+    assert sword_bridge._devotional_key_is('Nonesuch 2', day)
+
+
+# ── plain_text ──────────────────────────────────────────────────────────────
+
+TAGGED = ('<w savlm="strong:G25">loved</w> <w savlm="strong:G3588">the</w> '
+          '<w savlm="strong:G2889">world</w>, <w savlm="strong:G3754">that'
+          '</w> he gave.')
+
+
+def test_a_tag_between_a_word_and_its_comma_leaves_no_gap():
+    """The defect this exists for. A Strong's-tagged module marks up single
+    words, so tags must strip to a SPACE or the words weld together — and
+    KJVA puts the tag between the word and the comma, so the space then has
+    to come back off. Three call sites wrote the first half and only the
+    exporter wrote the second: the Today epigraph, the devotional pane and
+    every cross-reference read "loved the world , that he gave"."""
+    out = sword_bridge.plain_text(TAGGED)
+    assert out == 'loved the world, that he gave.'
+
+
+def test_words_in_adjacent_tags_do_not_weld():
+    assert sword_bridge.plain_text(
+        '<w>loved</w><w>the</w><w>world</w>') == 'loved the world'
+
+
+def test_it_closes_up_before_every_closing_mark():
+    for mark in ',.;:!?’”)':
+        assert sword_bridge.plain_text(f'<w>word</w>{mark}') == f'word{mark}'
+
+
+def test_it_survives_nothing_at_all():
+    for empty in ('', None, '<w/>', '   '):
+        assert sword_bridge.plain_text(empty) == ''
+
+
+def test_an_opening_bracket_keeps_its_space():
+    """Only *closing* marks close up. A tag before an opening bracket is
+    still a word boundary."""
+    assert sword_bridge.plain_text('<w>word</w> (aside)') == 'word (aside)'
+

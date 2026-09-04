@@ -210,8 +210,20 @@ class _WrapView:
     def _BAND_WS(self):
         return rv.BibleTextView._BAND_WS
 
-    def _line_right_edge(self, cur, seg_last, y0):
-        return rv.BibleTextView._line_right_edge(self, cur, seg_last, y0)
+    def forward_display_line(self, it):
+        """Move `it` to the start of the next display line, GTK-style."""
+        nxt = (it.pos // self.PER_LINE + 1) * self.PER_LINE
+        if nxt >= len(self.text):
+            return False
+        it.pos = nxt
+        return True
+
+    def backward_display_line_start(self, it):
+        it.pos = it.pos // self.PER_LINE * self.PER_LINE
+        return True
+
+    def _line_right_edge(self, cur, seg_last):
+        return rv.BibleTextView._line_right_edge(self, cur, seg_last)
 
     def _skip_ws_fwd(self, start, end):
         return rv.BibleTextView._skip_ws_fwd(self, start, end)
@@ -228,7 +240,7 @@ def test_the_right_edge_ignores_what_wrapped_onto_the_next_line():
     view = _WrapView(text)
     cur = _FakeIter(text, 2)
     seg_last = _FakeIter(text, 10)          # one past the line's last glyph
-    right = view._line_right_edge(cur, seg_last, 0)
+    right = view._line_right_edge(cur, seg_last)
     assert right == 90, right               # 'i' at x=80 + its width
     assert right > 2 * 10, 'the band would have no width at all'
 
@@ -237,7 +249,46 @@ def test_a_segment_with_nothing_on_its_line_reports_no_edge():
     text = 'abcdefghij' + 'klmnopqrst'
     view = _WrapView(text)
     cur = _FakeIter(text, 9)                # the lying glyph itself
-    assert view._line_right_edge(cur, _FakeIter(text, 10), 0) is None
+    assert view._line_right_edge(cur, _FakeIter(text, 10)) is None
+
+
+class _RaisedNumberView(_WrapView):
+    """One display line, two run heights — which is every verse in the app.
+
+    The verse number is set smaller and raised, and GTK gives a run its own
+    y: measured on Genesis 47:2 the number sat at y=224 and the body text
+    beside it on the SAME line at 223.
+    """
+
+    def get_iter_location(self, it):
+        r = super().get_iter_location(it)
+        if it.pos % self.PER_LINE < 3:      # the " 2 " chip
+            r.y += 1
+        return r
+
+
+def test_a_raised_verse_number_does_not_cut_the_band_short():
+    """The band was painted over the verse number and stopped there, leaving
+    the rest of that display line bare — every verse that began mid-line.
+    The old test matched y exactly against the segment's first character,
+    which is the number, so it could never have caught this."""
+    text = 'abcdefghij' + 'klmnopqrst'
+    view = _RaisedNumberView(text)
+    cur = _FakeIter(text, 0)                # the raised number
+    seg_last = _FakeIter(text, 10)
+    right = view._line_right_edge(cur, seg_last)
+    assert right == 90, right               # the line's true right edge
+    assert right > 30, 'the band stopped after the verse number'
+
+
+def test_the_raised_number_still_excludes_the_wrap_liar():
+    """Widening the test must not let the next line's glyph back in."""
+    text = 'abcdefghij' + 'klmnopqrst'
+    view = _RaisedNumberView(text)
+    liar = view.get_iter_location(_FakeIter(text, 9))
+    assert liar.y == 20, 'the harness must still lie at the wrap'
+    assert view._line_right_edge(_FakeIter(text, 9),
+                                 _FakeIter(text, 10)) is None
 
 
 def test_the_next_segment_resumes_without_skipping_a_letter():

@@ -9170,3 +9170,137 @@ msgstr "День {n}"
 #~ msgstr ""
 #~ "Обычное чтение со времён Реформации; подробно изложено у Дж. Грешема "
 #~ "Мейчена, «The Virgin Birth of Christ» (1930)."
+
+msgctxt "month, in a date"
+msgid "January"
+msgstr "января"
+
+msgctxt "month, in a date"
+msgid "February"
+msgstr "февраля"
+
+msgctxt "month, in a date"
+msgid "March"
+msgstr "марта"
+
+msgctxt "month, in a date"
+msgid "April"
+msgstr "апреля"
+
+msgctxt "month, in a date"
+msgid "May"
+msgstr "мая"
+
+msgctxt "month, in a date"
+msgid "June"
+msgstr "июня"
+
+msgctxt "month, in a date"
+msgid "July"
+msgstr "июля"
+
+msgctxt "month, in a date"
+msgid "August"
+msgstr "августа"
+
+msgctxt "month, in a date"
+msgid "September"
+msgstr "сентября"
+
+msgctxt "month, in a date"
+msgid "October"
+msgstr "октября"
+
+msgctxt "month, in a date"
+msgid "November"
+msgstr "ноября"
+
+msgctxt "month, in a date"
+msgid "December"
+msgstr "декабря"
+
+msgid "Monday"
+msgstr "понедельник"
+
+msgid "Tuesday"
+msgstr "вторник"
+
+msgid "Wednesday"
+msgstr "среда"
+
+msgid "Thursday"
+msgstr "четверг"
+
+msgid "Friday"
+msgstr "пятница"
+
+msgid "Saturday"
+msgstr "суббота"
+
+msgid "Sunday"
+msgstr "воскресенье"
+
+msgctxt "month abbreviation"
+msgid "Jan"
+msgstr "янв"
+
+msgctxt "month abbreviation"
+msgid "Feb"
+msgstr "фев"
+
+msgctxt "month abbreviation"
+msgid "Mar"
+msgstr "мар"
+
+msgctxt "month abbreviation"
+msgid "Apr"
+msgstr "апр"
+
+msgctxt "month abbreviation"
+msgid "May"
+msgstr "май"
+
+msgctxt "month abbreviation"
+msgid "Jun"
+msgstr "июн"
+
+msgctxt "month abbreviation"
+msgid "Jul"
+msgstr "июл"
+
+msgctxt "month abbreviation"
+msgid "Aug"
+msgstr "авг"
+
+msgctxt "month abbreviation"
+msgid "Sep"
+msgstr "сен"
+
+msgctxt "month abbreviation"
+msgid "Oct"
+msgstr "окт"
+
+msgctxt "month abbreviation"
+msgid "Nov"
+msgstr "ноя"
+
+msgctxt "month abbreviation"
+msgid "Dec"
+msgstr "дек"
+
+msgctxt "date, day first"
+msgid "{day} {month} {year}"
+msgstr "{day} {month} {year} г."
+
+msgctxt "date, month first"
+msgid "{month} {day}, {year}"
+msgstr "{day} {month} {year} г."
+
+msgid "Orthodox (New)"
+msgstr "Нов. стиль"
+
+msgid "Orthodox (Old)"
+msgstr "Ст. стиль"
+
+msgid "Orthodox (Old Calendar)"
+msgstr "Православный (старый стиль)"

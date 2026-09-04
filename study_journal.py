@@ -89,6 +89,16 @@ def _all_entries():
             entries.append({
                 'module': module, 'book': book,
                 'chapter': chapter, 'verse': verse,
+                # `verse` is the number the MODULE renders, because that is
+                # what the store is keyed by and what the write-backs below
+                # must hand back. It is not a reference: on a Synodal or
+                # Vulgate psalter the module's verse 1 is the superscription,
+                # which is app-space verse 0. Every place this entry leaves
+                # its module — the reference it is labelled with, the sort,
+                # the jump — speaks app space, so carry it. A no-op for a
+                # module in the app's own versification, which is most.
+                'app_verse': sword_bridge.map_verse_to_app(
+                    module, book, chapter, verse),
                 'highlight': h, 'underline': u, 'note': n,
                 'tags': tgs, 'is_chapter_note': False,
             })
@@ -103,13 +113,13 @@ def _all_entries():
             if cn_text.strip() or cn_tags:
                 entries.append({
                     'module': module, 'book': book,
-                    'chapter': chapter, 'verse': None,
+                    'chapter': chapter, 'verse': None, 'app_verse': None,
                     'highlight': None, 'underline': False,
                     'note': cn_text, 'tags': cn_tags,
                     'is_chapter_note': True,
                 })
     entries.sort(key=lambda e: (
-        _BOOK_ORDER.get(e['book'], 999), e['chapter'], e['verse'] or 0
+        _BOOK_ORDER.get(e['book'], 999), e['chapter'], e['app_verse'] or 0
     ))
     return entries
 
@@ -622,7 +632,7 @@ class StudyJournalWindow(Adw.Window):
             if q:
                 disp_book = book_label(e['book'])
                 ref = (f'{disp_book} {e["chapter"]}' if e.get('is_chapter_note')
-                       else f'{disp_book} {e["chapter"]}:{e["verse"]}')
+                       else f'{disp_book} {e["chapter"]}:{e["app_verse"]}')
                 haystack = ' '.join([
                     e['module'].lower(),
                     e['book'].lower(),
@@ -767,7 +777,7 @@ class StudyJournalWindow(Adw.Window):
             ref_text = _('{ref} — Chapter Note').format(
                 ref=f'{book_label(entry["book"])} {entry["chapter"]}')
         else:
-            ref_text = f'{book_label(entry["book"])} {entry["chapter"]}:{entry["verse"]}'
+            ref_text = f'{book_label(entry["book"])} {entry["chapter"]}:{entry["app_verse"]}'
         ref = Gtk.Label(label=ref_text, xalign=0, hexpand=True)
         ref.set_ellipsize(Pango.EllipsizeMode.END)
         ref.add_css_class('heading')
@@ -881,7 +891,7 @@ class StudyJournalWindow(Adw.Window):
             ref = _('{ref} — Chapter Note').format(
                 ref=f'{book_label(entry["book"])} {entry["chapter"]}')
         else:
-            ref = f'{book_label(entry["book"])} {entry["chapter"]}:{entry["verse"]}'
+            ref = f'{book_label(entry["book"])} {entry["chapter"]}:{entry["app_verse"]}'
         self._detail_title.set_title(ref)
         self._detail_title.set_subtitle(entry.get('module', ''))
 
@@ -990,7 +1000,7 @@ class StudyJournalWindow(Adw.Window):
         if not e:
             return
         self._on_navigate(e['module'], e['book'], e['chapter'],
-                          e['verse'] or 1)
+                          e['app_verse'] or 1)
 
     def _toast(self, msg):
         toast = Adw.Toast.new(msg)
@@ -1035,7 +1045,7 @@ class StudyJournalWindow(Adw.Window):
         if hasattr(row, '_entry'):
             e = row._entry
             self._on_navigate(e['module'], e['book'], e['chapter'],
-                              e['verse'] or 1)
+                              e['app_verse'] or 1)
 
     def _on_open_tag_manager(self, _btn):
         if (getattr(self, '_tag_mgr_win', None)
@@ -1071,7 +1081,7 @@ class StudyJournalWindow(Adw.Window):
                 lines.append(_('{ref} — Chapter Note').format(
                     ref=f'{book_label(e["book"])} {e["chapter"]}') + f'  ({e["module"]})')
             else:
-                lines.append(f'{book_label(e["book"])} {e["chapter"]}:{e["verse"]}  ({e["module"]})')
+                lines.append(f'{book_label(e["book"])} {e["chapter"]}:{e["app_verse"]}  ({e["module"]})')
                 types = []
                 if e['highlight']:
                     types.append(_('Highlight'))

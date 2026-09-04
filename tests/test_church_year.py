@@ -131,6 +131,58 @@ class TestOrthodox:
         assert name(D(2026, 1, 6), 'orthodox') == 'Theophany'
 
 
+class TestOrthodoxOldCalendar:
+    """The Julian reckoning the Russian, Serbian, Georgian and Jerusalem
+    Churches keep — most of the world's Orthodox Christians, and until this
+    existed the app named their feasts on another church's days."""
+
+    def test_the_great_feasts_fall_thirteen_days_later(self):
+        # The dates a Russian parish actually keeps.
+        assert name(D(2027, 1, 7), 'orthodox_old') == 'The Nativity of Christ'
+        assert name(D(2026, 1, 19), 'orthodox_old') == 'Theophany'
+        assert name(D(2026, 8, 28), 'orthodox_old') == 'The Dormition of the Theotokos'
+        assert name(D(2026, 9, 21), 'orthodox_old') == 'The Nativity of the Theotokos'
+        assert name(D(2026, 9, 27), 'orthodox_old') == 'The Exaltation of the Holy Cross'
+        assert name(D(2026, 8, 19), 'orthodox_old') == 'The Transfiguration'
+
+    def test_the_new_calendar_dates_are_no_longer_feasts(self):
+        """The other half of the same claim: 25 December is an ordinary day
+        on the Old Calendar, and a test that only checked 7 January would
+        pass on an engine that answered for both."""
+        for civil in (D(2026, 12, 25), D(2026, 1, 6), D(2026, 8, 15)):
+            assert 'Sunday' in name(civil, 'orthodox_old'), civil
+
+    def test_the_movable_cycle_is_identical(self):
+        """Pascha is Julian-reckoned under both calendars, so everything
+        hanging off it — Triodion, Holy Week, Pentecostarion, the Sundays
+        after Pentecost — must agree day for day. Only fixed feasts move."""
+        day = D(2026, 1, 1)
+        differ = []
+        while day.year == 2026:
+            a = cy.day_designation(day, 'orthodox')
+            b = cy.day_designation(day, 'orthodox_old')
+            if a != b:
+                differ.append(day)
+            day += datetime.timedelta(days=1)
+        # Every difference is a fixed feast on one calendar or the other,
+        # never a movable one.
+        for d in differ:
+            keys = {cy.day_designation(d, t)[0]
+                    for t in ('orthodox', 'orthodox_old')}
+            assert any(':feast:' in k for k in keys), d
+
+    def test_the_designation_key_does_not_fork(self):
+        """A Russian and a Greek keep the same Nativity, thirteen days
+        apart. One key, so the collects pack needs no second section."""
+        key, _n = cy.day_designation(D(2027, 1, 7), 'orthodox_old')
+        assert key == 'orthodox:feast:12-25'
+        assert cy.day_designation(D(2026, 12, 25), 'orthodox')[0] == key
+
+    def test_it_is_offered_as_a_tradition(self):
+        assert 'orthodox_old' in cy.TRADITIONS
+        assert cy.day_designation(D(2026, 6, 1), 'orthodox_older') is None
+
+
 class TestSweep:
     def test_every_day_designates_across_years(self):
         # Corpus sweep: every day of 2024–2030 yields a non-empty

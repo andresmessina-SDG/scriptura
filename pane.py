@@ -41,7 +41,7 @@ from pane_search import PaneSearch
 from verse_cursor import VerseCursor
 import a11y
 from a11y import set_accessible_label
-from i18n import _, ngettext, book_label
+from i18n import _, ngettext, book_label, format_date_heading
 
 
 def is_dark_paper(paper_hex):
@@ -134,7 +134,7 @@ def _gloss_from_strong_entry(text):
     definition proper sits before the delimiter. Richer lexicons
     (Abbott-Smith) lead with the lemma and have neither, so both trims
     are conditional; a word-boundary cap backstops everything."""
-    plain = ' '.join(re.sub(r'<[^>]+>', ' ', str(text or '')).split())
+    plain = sword_bridge.plain_text(text)
     plain = re.sub(r'^\d+\s+', '', plain)
     head, sep, _usage = plain.partition(':--')
     if sep and len(head.strip()) >= 40:
@@ -2481,7 +2481,7 @@ class BiblePane(Gtk.Box):
     def _fetch_and_render_devotional(self):
         module = self._module
         date_obj = self._devotional_date
-        self._date_label.set_text(date_obj.strftime('%B %-d, %Y'))
+        self._date_label.set_text(format_date_heading(date_obj))
         self._devot_audio.sync()
 
         def fetch():

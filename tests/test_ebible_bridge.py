@@ -285,6 +285,9 @@ def db(tmp_path, monkeypatch):
     """Point _DB at a tmp file and clear the thread-local connection
     cache so the next _db() call opens against the new path."""
     monkeypatch.setattr(eb, '_DB', str(tmp_path / 'ebible.db'))
+    # Versification is detected from the stored text and memoised by id, so
+    # a detection made against a previous tmp DB would answer for this one.
+    eb._forget_v11n()
     # _conn_local is threading.local() — clear any cached conn so the
     # new test gets a fresh DB pointing at the tmp path.
     if hasattr(eb._conn_local, 'conn'):
@@ -746,3 +749,127 @@ def test_import_skips_verses_with_no_book():
     """A USFM file whose \\id never resolved yields keys with an empty book;
     they were dropped before the split and must still be."""
     assert eb._verse_rows('x', {('', 1, 1): 'orphan'}) == []
+
+
+# ── Versification ───────────────────────────────────────────────────────────
+
+def _seed_psalter(v11n, tid, text='verse'):
+    """Insert a Psalms-only translation numbered the way `v11n` numbers it.
+
+    The chapter ends come from SWORD's own tables, which is what makes the
+    fixture worth having: the detector is asked to recognise a real
+    versification, not one invented to match it."""
+    ends = eb._verse_max_profile(v11n)
+    conn = eb._db()
+    conn.execute('INSERT INTO translations (id, title, language, lang_code, '
+                 'copyright, license) VALUES (?,?,?,?,?,?)',
+                 (tid, tid, 'Test', 'xx', '', 'Public Domain'))
+    conn.executemany(
+        'INSERT INTO verses (translation, book, chapter, verse, text) '
+        'VALUES (?,?,?,?,?)',
+        [(tid, 'Psalms', ch, v, f'{text} {ch}:{v}')
+         for (book, ch), mx in ends.items() if book == 'Psalms'
+         for v in range(1, mx + 1)])
+    conn.commit()
+    return ends
+
+
+def test_the_two_psalters_really_do_disagree():
+    """The premise everything below rests on, stated as a fact rather than
+    assumed: a Synodal psalm 9 swallows the Hebrew psalm 10."""
+    assert eb._verse_max_profile('KJV')[('Psalms', 9)] == 20
+    assert eb._verse_max_profile('Synodal')[('Psalms', 9)] == 39
+
+
+def test_a_kjv_shaped_translation_stays_app_keyed(db):
+    _seed_psalter('KJV', 'engkjvish')
+    assert eb.module_v11n(eb.PREFIX + 'engkjvish') is None
+
+
+def test_a_synodal_psalter_is_detected(db):
+    _seed_psalter('Synodal', 'russynish')
+    assert eb.module_v11n(eb.PREFIX + 'russynish') == 'Synodal'
+
+
+def test_a_vulgate_psalter_is_detected(db):
+    _seed_psalter('Vulg', 'latvulgish')
+    assert eb.module_v11n(eb.PREFIX + 'latvulgish') == 'Vulg'
+
+
+def test_app_space_psalm_23_reads_the_module_s_psalm_22(db):
+    """The defect this was built for. A Synodal text files the shepherd
+    psalm under 22; asked for app-space 23 it used to hand back its own
+    23, which is the Hebrew psalm 24."""
+    _seed_psalter('Synodal', 'russynish', text='shepherd')
+    rows = eb.load_chapter(eb.PREFIX + 'russynish', 'Psalms', 23)
+    assert rows and rows[0][1].startswith('shepherd 22:')
+    # Verse numbers stay the module's own, as they do for a mapped SWORD
+    # module — the pane translates at the tag level.
+    assert [v for v, _ in rows] == list(range(1, len(rows) + 1))
+
+
+def test_an_app_keyed_translation_is_read_exactly_as_before(db):
+    _seed_psalter('KJV', 'engkjvish', text='plain')
+    rows = eb.load_chapter(eb.PREFIX + 'engkjvish', 'Psalms', 23)
+    assert rows[0][1] == 'plain 23:1'
+
+
+def test_a_translation_missing_a_disputed_verse_stays_app_keyed(db):
+    """The margin guard. Dropping a verse here and there is ordinary
+    editorial variation, not a different versification, and adopting one
+    on that evidence would renumber a book nobody asked to renumber."""
+    _seed_psalter('KJV', 'engpatchy')
+    conn = eb._db()
+    conn.execute('DELETE FROM verses WHERE translation=? AND book="Psalms" '
+                 'AND chapter IN (12, 43, 88) AND verse > 3', ('engpatchy',))
+    conn.commit()
+    assert eb.module_v11n(eb.PREFIX + 'engpatchy') is None
+
+
+def test_a_translation_with_no_verses_at_all_stays_app_keyed(db):
+    conn = eb._db()
+    conn.execute('INSERT INTO translations (id, title, language, lang_code, '
+                 'copyright, license) VALUES (?,?,?,?,?,?)',
+                 ('empty', 'Empty', 'Test', 'xx', '', ''))
+    conn.commit()
+    assert eb.module_v11n(eb.PREFIX + 'empty') is None
+
+
+def test_search_hands_back_app_space_references(db):
+    """Stored rows carry the module's numbering; the result list, the pane
+    and the cross-reference panel all speak app space."""
+    _seed_psalter('Synodal', 'russynish', text='shepherd')
+    hits = eb.search_module(eb.PREFIX + 'russynish', 'shepherd')
+    by_text = {t: (b, c, v) for b, c, v, t in hits}
+    assert by_text['shepherd 22:2'] == ('Psalms', 23, 2)
+
+
+def test_a_re_import_forgets_the_previous_detection(db):
+    _seed_psalter('Synodal', 'shifty')
+    assert eb.module_v11n(eb.PREFIX + 'shifty') == 'Synodal'
+    eb.remove_translation('shifty')
+    _seed_psalter('KJV', 'shifty')
+    assert eb.module_v11n(eb.PREFIX + 'shifty') is None
+
+
+def test_picking_one_verse_out_of_a_mapped_chapter_needs_the_mapped_number(db):
+    """The contract the verse peek and the comparison list depend on.
+
+    A Synodal psalter counts the superscription, so its psalm 3 verse 1 is
+    the note about Absalom and the KJV's verse 1 is its verse 2. Both
+    surfaces used to match the app number straight against the rows and
+    show the reader the wrong line — on 670 of 1650 psalm probes.
+    """
+    import sword_bridge
+    _seed_psalter('Synodal', 'russynish', text='line')
+    module = eb.PREFIX + 'russynish'
+    rows = dict(eb.load_chapter(module, 'Psalms', 3))
+    want = sword_bridge.map_target_verse(module, 'Psalms', 3, 1)
+    assert want == 2
+    assert rows[want] == 'line 3:2'
+    # An app-keyed translation is unmoved, which is why the call is safe
+    # to make unconditionally at both sites.
+    _seed_psalter('KJV', 'engkjvish')
+    assert sword_bridge.map_target_verse(
+        eb.PREFIX + 'engkjvish', 'Psalms', 3, 1) == 1
+

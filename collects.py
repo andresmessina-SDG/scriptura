@@ -35,14 +35,31 @@ def _pack() -> dict[str, Any]:
         return {}
 
 
-def collect_for(key: str) -> tuple[str, str] | None:
+def collect_for(key: str, lang: str = 'en') -> tuple[str, str] | None:
     """(text, source_line) for a church_year designation key
-    ("anglican:trinity7"), or None when the pack has nothing for it."""
+    ("anglican:trinity7"), or None when the pack has nothing for it.
+
+    `lang` is the language the reader is looking at. A tradition may carry
+    its texts in more than one, in a sub-table named by the code; English is
+    the source language and lives at the top level. The whole triple — text,
+    kind and source line — moves together, because a troparion in Church
+    Slavonic is not "The Troparion · Hapgood's Service Book, 1906".
+
+    Falling back per key rather than per language: a translated section may
+    cover fewer days than the English one, and a reader is better served by
+    the English collect on a day their own section is missing than by
+    silence. Aliases come from the tradition, not the section — they are
+    calendar rubrics, the same in any language.
+    """
     tradition, _, sub = key.partition(':')
     data = _pack().get(tradition)
     if not data or not sub:
         return None
     sub = data.get('aliases', {}).get(sub, sub)
+    section = data.get(lang)
+    if isinstance(section, dict) and section.get('texts', {}).get(sub):
+        return (section['texts'][sub],
+                f'{section["kind"]} · {section["source"]}')
     text = data.get('texts', {}).get(sub)
     if not text:
         return None

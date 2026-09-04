@@ -335,7 +335,12 @@ def compare_translations(pane, verse, popover):
                 vs = ebible_bridge.load_chapter(mod, book, chapter)
             else:
                 vs = sword_bridge.load_chapter(mod, book, chapter)
-            v_html = next((h for vn, h in vs if vn == verse), '')
+            # `verse` is app-space; the rows carry the module's own
+            # numbering, which on a Synodal or Vulgate psalter counts the
+            # superscription. Without this the comparison showed «Псалом
+            # Давида, когда он бежал…» where the KJV column shows verse 1.
+            want = sword_bridge.map_target_verse(mod, book, chapter, verse)
+            v_html = next((h for vn, h in vs if vn == want), '')
             plain = re.sub(r'<[^>]+>', '', str(v_html)).strip()
             if plain:
                 results.append((mod, plain))

@@ -353,6 +353,15 @@ def _verse_key(module_name=None):
         try:
             mod = mgr().getModule(module_name)
             v11n = mod.getConfigEntry('Versification') if mod else None
+            # A name the manager does not hold is an eBible module (or a
+            # typo). eBible carries no config entry to read; its
+            # versification is inferred, and _module_v11n is where that
+            # lives for both backends. Without this the verse grid for a
+            # Synodal psalm was counted against the KJV — 31 buttons for a
+            # chapter holding six verses. Asked only when `mod` is None, so
+            # the SWORD path pays nothing.
+            if mod is None:
+                v11n = _module_v11n(module_name)
             if v11n:
                 vk.setVersificationSystem(v11n)
         except Exception:
@@ -405,6 +414,24 @@ def verse_count_in(module_name, book, chapter):
                        None if book in _ALL_BOOKS else module_name)
 
 
+def plain_text(html: object) -> str:
+    """Rendered verse markup → the words alone.
+
+    Tags become a space rather than nothing, because a Strong's-tagged
+    module marks up individual words and joining them would run the text
+    together — `<w>loved</w><w>the</w>` must not become `lovedthe`.
+
+    That space then has to be taken back off in front of punctuation. KJVA
+    puts its tags *between* the word and the comma, so a straight strip
+    gives "For God so loved the world , that he gave" — and it did, on the
+    Today epigraph, in the devotional pane and down every cross-reference,
+    because three call sites each wrote the first half of this and only the
+    exporter wrote the second.
+    """
+    text = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', str(html or '')))
+    return re.sub(r'\s+([,.;:!?’”)])', r'\1', text).strip()
+
+
 # ── Cross-versification mapping ──────────────────────────────────────────────
 #
 # App-space references — window navigation, pane-to-pane sync, bookmarks,
@@ -434,7 +461,23 @@ _book_maps = {}  # (module_name, book) → {app_chapter: (m_book, m_chapter)} | 
 
 def _module_v11n(module_name):
     """The module's versification system, or None when it matches the
-    app space (KJV, or its KJVA superset — identical for the 66 books)."""
+    app space (KJV, or its KJVA superset — identical for the 66 books).
+
+    eBible translations are asked their own way: an eBible download has no
+    Versification field to read, so ebible_bridge infers one from the
+    imported text. Answering for both backends here is what lets the rest
+    of this section — the chapter maps, map_target_verse, map_verse_to_app
+    and their callers in the pane and the window — serve an eBible module
+    without knowing it is one. The import is lazy for the same reason as
+    display_name's below: sword_bridge must load without it."""
+    try:
+        import ebible_bridge
+        if ebible_bridge.is_ebible_module(module_name):
+            return ebible_bridge.module_v11n(module_name)
+    except Exception:
+        # Falling through rather than returning: a broken eBible import
+        # must not take the SWORD modules' versification down with it.
+        pass
     try:
         mod = mgr().getModule(module_name)
         v11n = str(mod.getConfigEntry('Versification') or '') if mod else ''
@@ -540,6 +583,21 @@ def map_verse_to_app(module_name, book, chapter, verse):
             and ref[1] == chapter:
         return ref[2]
     return verse
+
+
+def module_ref_to_app(module_name, book, chapter, verse):
+    """A whole module-space reference → app-space (KJV), unchanged when the
+    module is app-keyed or the tables cannot place it.
+
+    map_verse_to_app answers a narrower question — it is given the pane's
+    app-space chapter and translates one verse number inside it. This one
+    is given nothing but the module's own numbering, which is what a search
+    hit read straight out of an eBible translation carries."""
+    v11n = _module_v11n(module_name)
+    if v11n is None:
+        return book, chapter, verse
+    ref = _map_ref_reverse(v11n, book, chapter, verse)
+    return ref if ref is not None else (book, chapter, verse)
 
 
 def map_target_verse(module_name, book, chapter, verse):
@@ -1269,17 +1327,67 @@ _OSIS_BOOKS = {
 }
 
 
+#: English month abbreviations, written out rather than read from strftime.
+#: A devotional key is a MODULE key, not display text: `%b` follows LC_TIME,
+#: so on a Spanish or Russian desktop the app was asking these modules for
+#: "sep 2" and «сен 2» — keys no devotional was ever written with.
+_MONTH_ABBR = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
+
+#: How a devotional key writes a date. Modules disagree, so every shape is
+#: tried in turn — see `_devotional_key_is` for why the first hit is not
+#: automatically the answer.
+_DEVOTIONAL_KEY_RE = re.compile(
+    r'^\s*(?:(\d{1,2})\s*[./-]\s*(\d{1,2})'
+    r'|([A-Za-z]{3,9})\.?\s+(\d{1,2})'
+    r'|(\d{1,2})\s+([A-Za-z]{3,9}))\s*$')
+
+
+def _devotional_keys(date_obj):
+    """The key shapes a devotional module might file `date_obj` under."""
+    day = date_obj.day
+    mon = _MONTH_ABBR[date_obj.month - 1]
+    return [date_obj.strftime('%m.%d'),        # "09.02" — SME / OSIS style
+            f'{mon} {day}', f'{mon}. {day}',   # "Sep 2", "Sep. 2"
+            date_obj.strftime('%m/%d'),        # "09/02"
+            f'{date_obj.month}/{day}']         # "9/2"
+
+
+def _devotional_key_is(actual, date_obj):
+    """Did SWORD land on the entry for `date_obj`?
+
+    `setKeyText` does not fail on a key a module does not use — it snaps to
+    some other entry and `getRawEntry` returns it, at full length. So the
+    old "accept anything longer than 20 characters" took the FIRST format
+    tried whatever it returned: ask SME for "Sep 2" and it hands back
+    December 31, ask for "9/2" and it hands back January 1. The dictionary
+    lookup has compared the key SWORD came back with since its own version
+    of this bug; this is that check, for a key that may be written five
+    ways.
+
+    A key this cannot read at all returns True: an unrecognised shape is no
+    evidence of a miss, and refusing it would silence a module that works.
+    """
+    m = _DEVOTIONAL_KEY_RE.match(str(actual or ''))
+    if not m:
+        return True
+    if m.group(1):
+        month, day = int(m.group(1)), int(m.group(2))
+    else:
+        name = (m.group(3) or m.group(6)).lower()[:3].capitalize()
+        if name not in _MONTH_ABBR:
+            return True
+        month = _MONTH_ABBR.index(name) + 1
+        day = int(m.group(4) or m.group(5))
+    return (month, day) == (date_obj.month, date_obj.day)
+
+
 def get_devotional_raw(module_name, date_obj=None):
     """Return raw OSIS XML for a devotional entry (uses getRawEntry). Returns '' if not found."""
     from datetime import date as _date
     if date_obj is None:
         date_obj = _date.today()
-    day = date_obj.day
-    mon = date_obj.strftime('%b')
-    fmts = [date_obj.strftime('%m.%d'),
-            f'{mon} {day}', f'{mon}. {day}',
-            date_obj.strftime('%m/%d'),
-            f'{date_obj.month}/{day}']
+    fmts = _devotional_keys(date_obj)
     with _lock:
         # Fresh SWMgr per call: a failed setKeyText on one format corrupts the
         # module key state for subsequent attempts (same bug as lookup_dict_word).
@@ -1294,8 +1402,12 @@ def get_devotional_raw(module_name, date_obj=None):
         for fmt in fmts:
             try:
                 mod.setKeyText(fmt)
+                # getRawEntry() unconditionally: it clears SWORD's error state
+                # after a key the module does not hold, so the next format
+                # still repositions (same reason as lookup_dict_entry).
                 text = str(mod.getRawEntry()).strip()
-                if len(text) > 20:
+                if len(text) > 20 and _devotional_key_is(mod.getKeyText(),
+                                                         date_obj):
                     return text
             except Exception:
                 pass
@@ -1525,12 +1637,7 @@ def load_devotional(module_name, date_obj=None):
     from datetime import date as _date
     if date_obj is None:
         date_obj = _date.today()
-    day = date_obj.day
-    mon = date_obj.strftime('%b')
-    fmts = [date_obj.strftime('%m.%d'),        # "05.09" — SME / OSIS style
-            f'{mon} {day}', f'{mon}. {day}',   # "May 9", "May. 9"
-            date_obj.strftime('%m/%d'),         # "05/09"
-            f'{date_obj.month}/{day}']         # "5/9"
+    fmts = _devotional_keys(date_obj)
     with _lock:
         # Fresh SWMgr per call: see get_devotional_raw for the same bug.
         try:
@@ -1545,7 +1652,8 @@ def load_devotional(module_name, date_obj=None):
             try:
                 mod.setKeyText(fmt)
                 text = str(mod.renderText()).strip()
-                if len(text) > 20:
+                if len(text) > 20 and _devotional_key_is(mod.getKeyText(),
+                                                         date_obj):
                     return text
             except Exception:
                 pass
@@ -2836,9 +2944,7 @@ def get_cross_refs(book, chapter, verse):
         mod.setKey(vk)
         raw = str(mod.renderText())
 
-    plain = re.sub(r'<[^>]+>', ' ', raw)
-    plain = re.sub(r'\s+', ' ', plain).strip()
-    return _parse_cross_ref_text(plain)
+    return _parse_cross_ref_text(plain_text(raw))
 
 
 _HEB_POS = {

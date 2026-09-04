@@ -43,6 +43,22 @@ def test_quarantine_does_not_clobber_an_earlier_corruption(tmp_path):
     assert open(dest).read() == CORRUPT
 
 
+def test_a_third_corruption_in_the_same_second_keeps_the_second(tmp_path):
+    """The timestamp suffix has one-second resolution. The test above only
+    ever proved the promise for two corruptions; the third landed on the
+    second's name and os.replace overwrote it silently."""
+    f = tmp_path / 'store.json'
+    kept = []
+    for i in range(4):
+        f.write_text(f'corruption {i}')
+        dest = paths.quarantine_unreadable(str(f))
+        assert dest is not None
+        kept.append(dest)
+    assert len(set(kept)) == 4, kept
+    for i, dest in enumerate(kept):
+        assert open(dest).read() == f'corruption {i}', dest
+
+
 def test_quarantine_of_a_missing_file_is_a_no_op(tmp_path):
     assert paths.quarantine_unreadable(str(tmp_path / 'nope.json')) is None
 

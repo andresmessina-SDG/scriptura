@@ -317,9 +317,163 @@ def update_reason(stamp, entry):
     return None
 
 
-def load_chapter(module_name, book, chapter):
-    """Returns [(verse_num, html_text)] — same shape as sword_bridge.load_chapter()."""
+# ── Versification ────────────────────────────────────────────────────────────
+# App-space references are KJV-shaped (GUIDANCE invariant 3). eBible ships
+# whole versifications that are not: the Clementine Vulgate and the Russian
+# Synodal both merge Hebrew Psalms 9 and 10 into one psalm, so every psalm
+# from there to 147 sits one number behind, and app-space Psalm 23 rendered
+# the text of Hebrew Psalm 24. Unlike a SWORD module, an eBible download
+# carries no Versification field to read — the catalogue has no such column —
+# so the system is inferred from the imported text itself.
+#
+# The fingerprint is the verse count of every chapter. Two versifications
+# that number the same text differently disagree about where chapters end,
+# and SWORD publishes its own tables to compare against: the Vulgate's
+# Psalm 9 runs to 39 verses where the KJV's stops at 20. Measured over the
+# five installed translations the split is unambiguous — the three KJV texts
+# match KJV exactly, latVUC fits Vulg at 0.994 against 0.842 for its nearest
+# non-Synodal rival, russyn fits Synodal at 0.998.
+#
+# Detection costs one grouped query and a KJV table walk (~12 ms), and only
+# builds the other sixteen tables when a translation fails to be KJV. It is
+# memoised per process rather than stored: no schema change, no migration,
+# and a re-import cannot leave a stale answer behind.
+
+#: Candidate systems in preference order. KJV leads so that a text matching
+#: several equally well — NRSV is identical across the 66 books, and a
+#: New-Testament-only translation matches nearly everything — stays app-keyed.
+_V11N_CANDIDATES = ('KJV', 'Synodal', 'Vulg', 'SynodalProt', 'Catholic',
+                    'Catholic2', 'German', 'LXX', 'Leningrad', 'Luther',
+                    'MT', 'NRSV', 'NRSVA', 'Orthodox', 'Segond', 'Calvin',
+                    'DarbyFr')
+
+#: How far a rival must beat KJV before its numbering is adopted. The real
+#: cases clear this by 0.14; a translation that merely drops a disputed verse
+#: or two does not, and keeps today's behaviour.
+_V11N_MARGIN = 0.02
+
+_v11n_cache = {}          # tid → versification name | None
+_verse_max_cache = {}     # versification name → {(book, chapter): max verse}
+
+
+def _canonical_books():
+    """The canonical book names, in canonical order, without duplicates —
+    _BOOK maps several USFM codes onto some of them."""
+    seen = []
+    for name in _BOOK.values():
+        if name not in seen:
+            seen.append(name)
+    return seen
+
+
+def _verse_max_profile(v11n):
+    """{(book, chapter): last verse number} for one versification system.
+    Books the system does not hold are absent rather than guessed at."""
+    if v11n in _verse_max_cache:
+        return _verse_max_cache[v11n]
+    import Sword
+    out = {}
+    for book in _canonical_books():
+        try:
+            vk = Sword.VerseKey()
+            vk.setVersificationSystem(v11n)
+            vk.setText(f'{book} 1:1')
+            if str(vk.getBookName()).lower() != book.lower():
+                continue
+            for ch in range(1, vk.getChapterMax() + 1):
+                vk.setChapter(ch)
+                out[(book, ch)] = vk.getVerseMax()
+        except Exception:
+            continue
+    _verse_max_cache[v11n] = out
+    return out
+
+
+def _chapter_ends(tid):
+    """{(book, chapter): last verse number} as actually imported."""
+    try:
+        conn = _db()
+        return {(b, ch): mx for b, ch, mx in conn.execute(
+            'SELECT book, chapter, MAX(verse) FROM verses '
+            'WHERE translation=? GROUP BY book, chapter', (tid,))}
+    except Exception:
+        return {}
+
+
+def _fit(observed, v11n):
+    """What fraction of this translation's chapters end where `v11n` says
+    they should, or None when the two share no chapter."""
+    table = _verse_max_profile(v11n)
+    shared = [k for k in observed if k in table]
+    if not shared:
+        return None
+    return sum(1 for k in shared if observed[k] == table[k]) / len(shared)
+
+
+def _detect_v11n(tid):
+    """The versification `tid` was numbered in, or None for app-keyed."""
+    observed = _chapter_ends(tid)
+    if not observed:
+        return None
+    kjv = _fit(observed, 'KJV')
+    if kjv is None or kjv == 1.0:
+        return None
+    best, score = None, kjv
+    for name in _V11N_CANDIDATES[1:]:
+        fit = _fit(observed, name)
+        if fit is not None and fit > score:
+            best, score = name, fit
+    if best is None or score - kjv < _V11N_MARGIN:
+        return None
+    _log.info('%s numbered in %s (fit %.3f, KJV %.3f)', tid, best, score, kjv)
+    return best
+
+
+def module_v11n(module_name):
+    """The versification an eBible module is numbered in, or None when it
+    matches the app space. Same contract as sword_bridge._module_v11n,
+    which delegates here so that one mapping layer serves both backends."""
     tid = _tid(module_name)
+    if tid not in _v11n_cache:
+        try:
+            _v11n_cache[tid] = _detect_v11n(tid)
+        except Exception:
+            _log.exception('versification detection failed for %s', tid)
+            _v11n_cache[tid] = None
+    return _v11n_cache[tid]
+
+
+def _forget_v11n(tid=None):
+    """Drop cached detections — one translation's, or all of them. A
+    re-import can change the numbering under us."""
+    if tid is None:
+        _v11n_cache.clear()
+    else:
+        _v11n_cache.pop(tid, None)
+
+
+def _module_ref(module_name, book, chapter):
+    """App-space (book, chapter) → the (book, chapter) this module files
+    that text under. The lazy import is sword_bridge's own: the mapping
+    tables belong to the SWORD engine, and only a mapped module pays for
+    reaching them."""
+    if module_v11n(module_name) is None:
+        return book, chapter
+    import sword_bridge
+    return sword_bridge.mapped_chapter(module_name, book, chapter) \
+        or (book, chapter)
+
+
+def load_chapter(module_name, book, chapter):
+    """Returns [(verse_num, html_text)] — same shape as sword_bridge.load_chapter().
+
+    `book`/`chapter` arrive in app space; a Vulgate or Synodal translation
+    files the same text one psalm back, so the reference is mapped before
+    the query. Verse numbers inside the chapter stay the module's own, as
+    they do for a mapped SWORD module — a Vulgate psalter shows its printed
+    numbering, and the pane translates at the tag level."""
+    tid = _tid(module_name)
+    book, chapter = _module_ref(module_name, book, chapter)
     try:
         conn = _db()
         rows = conn.execute(
@@ -333,8 +487,12 @@ def load_chapter(module_name, book, chapter):
 def chapter_footnotes(module_name, book, chapter):
     """{verse: [(marker_index, type, body_html), …]} — same shape as
     sword_bridge.chapter_footnotes. marker_index is the string matching
-    the swordFootnote="N" anchor in the stored verse text."""
+    the swordFootnote="N" anchor in the stored verse text.
+
+    Mapped the same way as load_chapter, or the notes would belong to a
+    different chapter than the text they annotate."""
     tid = _tid(module_name)
+    book, chapter = _module_ref(module_name, book, chapter)
     try:
         conn = _db()
         rows = conn.execute(
@@ -369,7 +527,13 @@ def search_module(module_name, query, case_sensitive=False, **_kwargs):
     insensitive, so 'art' no longer matches 'heart' and a query matches across
     Greek/Hebrew pointing. case_sensitive=True post-filters the matched text
     for the original-case terms. Returns [(book, ch, v, text)], with a
-    truncation sentinel row when the result set is capped."""
+    truncation sentinel row when the result set is capped.
+
+    Stored rows carry the translation's own numbering; the refs handed back
+    are app-space, matching what the SWORD index stores and what the result
+    list, the pane and the cross-reference panel all speak. Mapping happens
+    here rather than in the index so that a translation whose versification
+    is only recognised later needs no rebuild."""
     match = search_query.build_match(query)
     if match is None:
         return []
@@ -382,6 +546,10 @@ def search_module(module_name, query, case_sensitive=False, **_kwargs):
             '(SELECT rowid FROM verses_fts WHERE verses_fts MATCH ?) '
             'ORDER BY v.rowid', (tid, match)).fetchall()
         result = list(rows)
+        if module_v11n(module_name) is not None:
+            import sword_bridge
+            result = [(*sword_bridge.module_ref_to_app(
+                module_name, b, ch, v), text) for b, ch, v, text in result]
         if case_sensitive:
             terms = search_query.plain_terms(query)
             result = [r for r in result
@@ -475,8 +643,10 @@ def download_translation_sync(tid, entry, on_status=None):
         (tid, title, language, lang_code, copyright_, license_,
          src_date, IMPORT_VERSION))
     conn.commit()
+    _forget_v11n(tid)
 
 def remove_translation(tid):
+    _forget_v11n(tid)
     conn = _db()
     conn.execute('DELETE FROM verses      WHERE translation=?', (tid,))
     conn.execute('DELETE FROM notes       WHERE translation=?', (tid,))

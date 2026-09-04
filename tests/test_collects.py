@@ -44,6 +44,18 @@ class TestAnglicanCoverage:
             assert text.endswith('Amen.'), sub
             assert 100 < len(text) < 900, sub
 
+    def test_no_space_floats_before_a_comma(self):
+        """The extractor replaced each HTML tag with a space, and the source
+        sets the vocative in small caps — `O <span class="vlcaps">Lord</span>,`
+        became `O Lord ,`. It read that way on the Today page in 34 of the 82
+        collects, every one of them at the opening address."""
+        for trad, data in collects._pack().items():
+            sections = [data] + [v for v in data.values()
+                                 if isinstance(v, dict) and 'texts' in v]
+            for sec in sections:
+                for sub, text in sec.get('texts', {}).items():
+                    assert not re.search(r'\s[,.;:]', text), f'{trad}:{sub}'
+
     def test_source_line(self):
         found = collects.collect_for('anglican:trinity7')
         assert found is not None
@@ -434,3 +446,109 @@ class TestEpigraphFallback:
         assert got is not None
         assert got[0] == 'The Lord is my shepherd.'
         assert got[2] is True
+
+
+class TestChurchSlavonicTroparia:
+    """The Russian reader's side of the Orthodox tradition. English is the
+    source language and lives at the top level; a language that carries its
+    own text answers from a sub-table named by its code."""
+
+    def test_a_russian_reader_is_never_worse_off_than_an_english_one(self):
+        """Orthodox coverage is partial by design — 24 of the 73 keys the
+        engine emits have no text in any language, and those days fall
+        through to a devotional. The invariant that matters is one-way: no
+        day answers in English for a Russian reader. The reverse stays
+        allowed — a language may cover a day the source language does not —
+        though as of feast:9-8 landing in both, nothing does."""
+        for key in sorted(_emitted_keys('orthodox')):
+            en = collects.collect_for(key, 'en')
+            ru = collects.collect_for(key, 'ru')
+            if en is not None:
+                assert ru is not None, key
+                assert ru[0] != en[0], f'{key} still reads English'
+
+    def test_the_text_is_church_slavonic_not_the_english(self):
+        ru = collects.collect_for('orthodox:tone1', 'ru')
+        en = collects.collect_for('orthodox:tone1', 'en')
+        assert ru is not None and en is not None
+        assert ru[0] != en[0]
+        assert ru[0].startswith('Ка')
+        assert not re.search(r'[A-Za-z]', ru[0])
+
+    def test_the_source_line_travels_with_the_text(self):
+        """A troparion in Church Slavonic is not "The Troparion · Hapgood's
+        Service Book, 1906" — the whole triple moves or none of it does."""
+        found = collects.collect_for('orthodox:pascha', 'ru')
+        assert found is not None
+        assert found[1] == 'Тропарь · Октоих, Праздничная Минея и Триодь'
+
+    def test_an_alias_resolves_before_the_language_is_chosen(self):
+        """Aliases are calendar rubrics, the same in any language: the 5th
+        Sunday after Pentecost is tone 4 whoever is reading."""
+        assert (collects.collect_for('orthodox:pentecost5', 'ru')
+                == collects.collect_for('orthodox:tone4', 'ru'))
+
+    def test_a_language_with_no_section_gets_the_english(self):
+        assert (collects.collect_for('orthodox:tone1', 'es')
+                == collects.collect_for('orthodox:tone1', 'en'))
+
+    def test_stress_marks_survive_the_pack(self):
+        """Church Slavonic is unreadable aloud without them, and a TOML
+        round-trip or a stray NFC pass is exactly what would drop them."""
+        text = collects.collect_for('orthodox:tone1', 'ru')[0]
+        assert '\u0301' in text
+
+    def test_no_site_line_marks_leaked_in(self):
+        """`/` and `//` are the source sites' typesetting, not the text."""
+        for sub, text in collects._pack()['orthodox']['ru']['texts'].items():
+            assert '/' not in text, sub
+
+    def test_no_translation_or_kontakion_got_glued_on(self):
+        """Both source pages print the troparion, then a modern-Russian
+        gloss, then the kontakion. Scraping caught all three the first time."""
+        for sub, text in collects._pack()['orthodox']['ru']['texts'].items():
+            for stray in ('Перевод', 'Кондак', 'Величание', 'Аудио'):
+                assert stray not in text, f'{sub}: {stray}'
+
+    def test_the_russian_section_covers_the_english_one(self):
+        """A per-key fallback means a gap is survivable, not invisible. If
+        this ever fails, some day is silently reading English again."""
+        pack = collects._pack()['orthodox']
+        assert not set(pack['texts']) - set(pack['ru']['texts'])
+
+    def test_the_old_calendar_finds_the_same_slavonic_texts(self):
+        """The payoff for a Russian reader: the Nativity troparion on
+        7 January, which is the day their church keeps it. The Old Calendar
+        answers with `orthodox:` keys precisely so this needs no second
+        section in the pack."""
+        for civil, opening in (
+                (datetime.date(2027, 1, 7), 'Рождество́ Твое́, Христе́'),
+                (datetime.date(2026, 1, 19), 'Во Иорда́не креща́ющуся'),
+                (datetime.date(2026, 8, 28), 'В рождестве́ де́вство'),
+                (datetime.date(2026, 9, 21), 'Рождество́ Твое́, Богоро́дице')):
+            key = church_year.day_designation(civil, 'orthodox_old')[0]
+            found = collects.collect_for(key, 'ru')
+            assert found is not None, civil
+            assert found[0].startswith(opening), (civil, found[0][:40])
+
+
+class TestGreatFeastCoverage:
+    def test_all_twelve_great_feasts_have_a_text_in_both_languages(self):
+        """The Twelve are the fixed points of the Byzantine year; a reader
+        who opens the app on one and is told only which Sunday it is has
+        been let down on the day it matters most. feast:9-8, the Nativity of
+        the Theotokos, was missing from the English side for a year.
+
+        Nine are fixed-date; Palm Sunday, Ascension and Pentecost are
+        movable and keyed by name.
+        """
+        fixed = ['9-8', '9-14', '11-21', '12-25', '1-6', '2-2', '3-25',
+                 '8-6', '8-15']
+        keys = [f'orthodox:feast:{d}' for d in fixed] + [
+            'orthodox:palm_sunday', 'orthodox:ascension',
+            'orthodox:pentecost']
+        assert len(keys) == 12
+        for lang in ('en', 'ru'):
+            missing = [k for k in keys if collects.collect_for(k, lang) is None]
+            assert not missing, f'{lang}: {missing}'
+
