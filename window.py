@@ -28,7 +28,7 @@ from present import PresentView
 from today_page import TodayView, fetch_epigraph
 from module_manager import ModuleManagerWindow
 from search_panel import SearchPanel
-from study_journal import StudyJournalWindow
+from annotations_window import AnnotationsWindow
 
 _log = logging.getLogger('scriptura.window')
 
@@ -220,7 +220,7 @@ class BibleWindow(Adw.ApplicationWindow):
             self._current_loc = ('Genesis', 1)
         self._updating_plan = False
         self._modules_win = None
-        self._journal_win = None
+        self._annotations_win = None
         # Adaptive layout state, driven by Adw.Breakpoints (see
         # _install_breakpoints).
         # _header_narrow: secondary controls folded into the overflow menu.
@@ -1933,10 +1933,10 @@ class BibleWindow(Adw.ApplicationWindow):
             pane._fetch_and_render()
         if self._menu_panel_built:
             self._refresh_plan_ui()
-        # An open Study Journal still lists the replaced annotations —
+        # An open Annotations window still lists the replaced marks —
         # deleting one of those stale rows would silently no-op.
-        if self._journal_win is not None and self._journal_win.get_visible():
-            self._journal_win._reload()
+        if self._annotations_win is not None and self._annotations_win.get_visible():
+            self._annotations_win._reload()
         if failed:
             names = {
                 'annotations': _('annotations'),
@@ -2876,36 +2876,40 @@ class BibleWindow(Adw.ApplicationWindow):
     def _hide_crossref(self):
         self._crossref_revealer.set_reveal_child(False)
 
-    # ── Journal ───────────────────────────────────────────────────────────────
+    # ── Annotations ───────────────────────────────────────────────────────────
 
-    def _on_journal_clicked(self, _btn):
-        if self._journal_win is not None and self._journal_win.get_visible():
-            self._journal_win.present()
+    def _on_annotations_clicked(self, _btn):
+        if self._annotations_win is not None and self._annotations_win.get_visible():
+            self._annotations_win.present()
             return
-        self._journal_win = StudyJournalWindow(
-            on_navigate=self._on_journal_navigate,
+        self._annotations_win = AnnotationsWindow(
+            on_navigate=self._on_annotations_navigate,
             on_annotation_changed=self._refresh_panes,
+            reading_module=lambda: self.pane1._module,
             transient_for=self,
             modal=False,
         )
-        self._attach_esc_close(self._journal_win, '_journal_win')
-        self._journal_win.present()
+        self._attach_esc_close(self._annotations_win, '_annotations_win')
+        self._annotations_win.present()
 
-    def _refresh_panes(self, module, book, chapter, verse):
-        """Called by Study Journal when an annotation is deleted there.
+    def _refresh_panes(self, book, chapter, verse):
+        """Called by the Annotations window when a mark changes there.
         Surgical: refresh only the affected verse on whichever pane(s) are
-        currently showing the same module/book/chapter. No full re-render,
-        no scroll movement."""
+        showing that chapter. No full re-render, no scroll movement.
+
+        `verse` is app space — the store's — so each pane is asked for its own
+        number before the refresh, or a Synodal psalter would repaint the
+        wrong line."""
         for pane in (self.pane1, self.pane2):
-            if (pane._module == module
-                and pane._book == book
-                and pane._chapter == chapter):
+            if pane._book == book and pane._chapter == chapter:
                 if verse is None:
                     pane._update_chapter_note_indicator()
                 else:
-                    pane._refresh_verse_annotation(verse)
+                    pane._refresh_verse_annotation(
+                        annotations.module_verse(
+                            pane._module, book, chapter, verse))
 
-    def _on_journal_navigate(self, module, book, chapter, verse):
+    def _on_annotations_navigate(self, book, chapter, verse):
         self._go_to(book, chapter, verse)
 
     # ── Modules ───────────────────────────────────────────────────────────────
@@ -3309,7 +3313,7 @@ class BibleWindow(Adw.ApplicationWindow):
         return hbox
 
     def _build_menu_nav_group(self):
-        # ── Navigation group (Study Journal / Modules) as coherent list rows
+        # ── Navigation group (Annotations / Modules) as coherent list rows
         # (icon + label + chevron), matching the app's Adw idiom rather than
         # plain grey buttons. ────────────────────────────────────────────────
         nav_group = Adw.PreferencesGroup()
@@ -3318,7 +3322,7 @@ class BibleWindow(Adw.ApplicationWindow):
         nav_group.set_margin_top(6)
         nav_group.set_margin_bottom(14)
         for icon, label, handler in [
-            ('scriptura-accessories-text-editor-symbolic', _('Study Journal'), self._on_journal_clicked),
+            ('scriptura-accessories-text-editor-symbolic', _('Annotations'), self._on_annotations_clicked),
             ('scriptura-application-x-addon-symbolic',     _('Modules'),       self._on_modules_clicked),
             ('scriptura-view-fullscreen-symbolic',         _('Presentation'),  self._on_present_menu_clicked),
         ]:

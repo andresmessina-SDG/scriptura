@@ -18,12 +18,13 @@ import threading
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, GLib, Gdk
+from gi.repository import Gtk, Adw, GLib, Gdk, Pango
 
 from a11y import set_accessible_label
 from gtk_utils import clear_children, DelayedSpinner
 import annotations
 import export_dialog
+import passage_export
 import passage_print
 import sword_bridge
 import ebible_bridge
@@ -41,6 +42,28 @@ def highlight_swatches():
             ('#90ee90', 'hl-green', _('Green')),
             ('#add8e6', 'hl-blue', _('Blue')),
             ('#ffa500', 'hl-orange', _('Orange'))]
+
+
+def highlight_letter(color):
+    """The muted initial on a swatch: the non-hue cue for a reader who cannot
+    tell the four colours apart, or '' for an unrecognised hex.
+
+    Its own translatable string per colour rather than the first letter of the
+    colour name, because in Spanish *Amarillo* and *Azul* both begin with A
+    and the cue then said nothing. po/es keeps the English letters; po/ru uses
+    its own initials (Ж З С О), which are distinct.
+
+    Both halves are spelt out at every call: xgettext reads literals, so a
+    `C_(ctx, msg)` on variables extracts as nothing at all and the catalogue
+    would hold a string the build could no longer find. The same arrangement
+    `church_year.ordinal` and `i18n.month_abbr` need.
+    """
+    return {
+        '#ffff00': C_('highlight swatch cue letter', 'Y'),
+        '#90ee90': C_('highlight swatch cue letter', 'G'),
+        '#add8e6': C_('highlight swatch cue letter', 'B'),
+        '#ffa500': C_('highlight swatch cue letter', 'O'),
+    }.get(color, '')
 
 
 def highlight_name(color):
@@ -133,9 +156,9 @@ def build_study_menu(pane, verses, x, y):
         btn = Gtk.Button()
         btn.set_size_request(28, 28)
         btn.add_css_class(css_cls)
-        # Muted initial as a non-hue (colorblind-safe) cue; first letter of the
-        # localized color name so it tracks the tooltip/accessible name.
-        letter = Gtk.Label(label=name[:1])
+        # Muted initial as a non-hue (colorblind-safe) cue — its own string
+        # per language, not the colour name's first letter (see _HL_LETTERS).
+        letter = Gtk.Label(label=highlight_letter(color))
         letter.add_css_class('hl-letter')
         btn.set_child(letter)
         # Icon-/color-only control: give AT the color name (no visible change).
@@ -403,6 +426,27 @@ def _show_note_window(pane, verse, current_note, current_tags):
     box.set_margin_top(12)
     box.set_margin_bottom(14)
     toolbar_view.set_content(box)
+
+    # The verse itself, above the field. A note is written about words, and
+    # the editor should carry them rather than send the reader back for them.
+    try:
+        quoted = passage_export.verse_text(
+            pane._module, pane._book, pane._chapter, [verse])
+    except Exception:
+        _log.exception('verse text for the note editor failed')
+        quoted = ''
+    if quoted:
+        quote = Gtk.Label(label=quoted, xalign=0)
+        quote.set_wrap(True)
+        # Capped at four lines: Esther 8:9 wants 169px of this 360px dialog and
+        # would squeeze the note field it sits above. The whole verse is on the
+        # page behind the dialog, and one hover away here.
+        quote.set_lines(4)
+        quote.set_ellipsize(Pango.EllipsizeMode.END)
+        quote.set_tooltip_text(quoted)
+        set_accessible_label(quote, quoted)
+        quote.add_css_class('journal-verse')
+        box.append(quote)
 
     scrolled = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
     scrolled.set_min_content_height(160)

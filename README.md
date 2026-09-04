@@ -71,9 +71,11 @@ Built on GNOME with GTK4 + libadwaita, in Python, GPL-3.0.
 - **Full-text search.** Fast per-module SQLite FTS5 index with phrase,
   AND/OR, exclude, and prefix queries; a distribution chart across the
   canon, case-sensitive option, and F3 step-through.
-- **Study Journal.** Every annotation, across every module, in one
-  filterable surface. Search free-text, filter by tag or module or
-  book, click a row to jump back to the verse.
+- **Annotations.** Every mark you have made, in one filterable
+  surface — and every mark follows the reference, so a note written in
+  one translation is there in all of them. Search free-text, filter by
+  type, tag or book, sort by what you edited last, click a row to jump
+  back to the verse.
 - **Reading plans.** Six built-in: Bible in a Year (straight or
   blended four-stream), the Old Testament in a year, the New
   Testament in 90 days, Psalms in 30 days, Proverbs in 31 days.
@@ -101,8 +103,8 @@ own.
 |:---:|:---:|
 | ![The Greek New Testament interlinear: gloss, parsing, and Strong's number under every word](data/screenshots/06-interlinear-greek.png) | ![The Historical Commentaries pane: the church's voices on a verse, across the centuries](data/screenshots/02-historical-commentaries.png) |
 | _Greek NT interlinear_ | _Historical Commentaries_ |
-| ![Study Journal: every annotation across every module in one filterable view](data/screenshots/03-study-journal.png) | ![Distraction-free reading mode in dark theme](data/screenshots/05-reading-mode-dark.png) |
-| _Study Journal_ | _Reading mode (dark)_ |
+| ![Annotations: every mark you have made in one filterable view](data/screenshots/03-study-journal.png) | ![Distraction-free reading mode in dark theme](data/screenshots/05-reading-mode-dark.png) |
+| _Annotations_ | _Reading mode (dark)_ |
 
 ---
 
@@ -210,13 +212,13 @@ Mutter (GNOME) floats child windows above their parent automatically.
 Tiling compositors need a hint. For Hyprland:
 
 ```hyprlang
-windowrulev2 = float, title:^(Module Manager|Study Journal|Tag Manager|Keyboard Shortcuts)$
+windowrulev2 = float, title:^(Module Manager|Annotations|Tag Manager|Keyboard Shortcuts)$
 windowrulev2 = float, title:^(Save .*|Export .*|Rename .*|Remove .*)$
 windowrulev2 = float, title:^(Scriptura)$, floating:1
 ```
 
 `xdg-desktop-portal-gtk` (or `-hyprland`) needs to be installed
-for the Export Study Journal file picker to work:
+for the Export Annotations file picker to work:
 
 ```sh
 # Fedora

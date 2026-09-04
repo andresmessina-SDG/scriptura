@@ -4,6 +4,50 @@ All notable changes to Scriptura. Format roughly follows
 [Keep a Changelog](https://keepachangelog.com/). Versioning is
 semver-ish — 0.x was the pre-Flathub testing track.
 
+## [Unreleased]
+
+### Changed
+
+- **The Study Journal is now called Annotations.** It lists the marks you
+  have made — highlights, underlines, notes, tags — and it was never a
+  journal. Nothing about it moved; it goes by its own name.
+- **A mark now belongs to the verse, not to the translation you were
+  reading.** Highlights, underlines, notes and tags were filed under the
+  module they were made in, so a note written in the KJV did not exist in
+  the RVR60 and a new translation opened an unmarked Bible. They are filed
+  under the reference now and appear in every translation, each one
+  numbering them its own way — a Synodal or Vulgate psalter numbers the
+  superscription, and its marks stay on the line they were put on. Existing
+  marks are migrated on first launch, and the old file is kept beside the
+  new one. Two translations marked on the same verse are merged, keeping
+  both notes.
+- **The Annotations list can be sorted by what you edited last.** The
+  module filter is gone — marks are no longer per module — and the sort
+  takes its place.
+
+### Added
+
+- **The verse itself, above the note.** The note editor and the Annotations
+  detail pane quote the words the note is about. The note editor reads them
+  out of the translation you have open; the Annotations window, where a
+  mark belongs to no translation in particular, reads them in the one that
+  fits the language the app is in — the Berean Standard Bible in English,
+  the Nueva Biblia de las Américas in Spanish, the Русский открытый перевод
+  in Russian — and falls back to whatever you have open when that one is
+  not installed. Long verses are shown four lines deep — the whole verse is
+  one hover away, and the note field keeps its room.
+- **Marks record when they were made and last changed**, shown on the row
+  and in the detail header. Marks made before this have no date and sort
+  last.
+
+### Fixed
+
+- **Two highlight colours wore the same letter in Spanish.** The swatches
+  carry a letter as well as a colour, so hue is never the only cue — and it
+  was the first letter of the colour's name, which made *Amarillo* and
+  *Azul* both **A**. The letters are their own translation now: Spanish
+  keeps the English Y G B O, Russian uses Ж З С О.
+
 ## [1.6.1] — 2026-09-02
 
 ### Fixed

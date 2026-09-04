@@ -46,7 +46,7 @@ def test_multiple_attributes_coexist(isolated):
     annotations.save_note('KJVA', 'Genesis', 1, 1, 'creation')
     annotations.save_tags('KJVA', 'Genesis', 1, 1, ['origin', 'doctrine'])
     a = annotations.get_annotations('KJVA', 'Genesis', 1)['1']
-    assert a == {
+    assert {k: a[k] for k in ('highlight', 'underline', 'note', 'tags')} == {
         'highlight': '#90ee90',
         'underline': True,
         'note': 'creation',
@@ -252,7 +252,8 @@ def test_delete_returns_payload_and_restore_undoes(isolated):
     annotations.save_highlight('KJVA', 'John', 3, 16, '#ffff00')
     annotations.save_note('KJVA', 'John', 3, 16, 'so loved')
     payload = annotations.delete_annotation('KJVA', 'John', 3, 16)
-    assert payload == {'highlight': '#ffff00', 'note': 'so loved'}
+    assert payload['highlight'] == '#ffff00'
+    assert payload['note'] == 'so loved'
     assert annotations.get_annotations('KJVA', 'John', 3) == {}
 
     annotations.restore_annotation('KJVA', 'John', 3, 16, payload)

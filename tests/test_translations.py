@@ -249,6 +249,31 @@ def test_a_context_actually_buys_a_different_translation(catalogue):
         f'context, so the context distinguishes nothing')
 
 
+def test_the_swatch_cue_letters_stay_distinct(catalogue):
+    """The highlight swatches carry a letter because hue alone is not a cue.
+
+    It used to be the first letter of the translated colour name, which in
+    Spanish gave *Amarillo* and *Azul* the same **A** — the cue said nothing
+    to the reader it exists for. They are their own strings now, so a
+    catalogue is free to pick letters that differ; this is the check that it
+    did. Russian uses its own initials (Ж З С О); Spanish keeps the English
+    ones, and that is a translation, not an omission.
+    """
+    lang, path = catalogue
+    ctx = 'highlight swatch cue letter'
+    letters = {msgid: strs[0]
+               for msgid, msgctxt, strs in _parse_po_contexts(path)
+               if msgctxt == ctx and strs}
+    assert set(letters) == {'Y', 'G', 'B', 'O'}, (
+        f'{lang}: the four swatch letters are {sorted(letters)}')
+    assert all(letters.values()), f'{lang}: a swatch letter is empty'
+    assert len(set(letters.values())) == 4, (
+        f'{lang}: {sorted(letters.values())} — two swatches wear the same '
+        f'letter, which is the defect this string set exists to fix')
+    assert all(len(v) == 1 for v in letters.values()), (
+        f'{lang}: {letters} — a cue is one character, the swatch is 28px')
+
+
 def test_every_book_name_is_translated(catalogue):
     """Book names are the one string set a reader meets on every screen, and
     they are dual-role — English stays the key, this is only the display

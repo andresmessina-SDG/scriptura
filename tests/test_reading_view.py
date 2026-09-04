@@ -384,3 +384,114 @@ def test_a_segment_starting_mid_line_keeps_what_gtk_reports():
     view = _MarginView()
     cur = _LineIter(pos=40, starts=False, line_start_pos=10)
     assert view._segment_left(cur, _R(441)) == 441
+
+
+# ── The layout watch ─────────────────────────────────────────────────────
+#
+# A fresh render leaves GtkTextView's layout still settling — measured on a
+# cold start, for the whole first second — and nothing invalidates the view
+# when it finishes: the bands measured in that first frame stayed wrong until
+# the pointer entered the pane. These guard the watch that paints nothing
+# until the measurements hold still and then asks for the frame itself — and,
+# just as much, that it stands down rather than redrawing forever.
+
+class _SettleView:
+    """Just enough view to run the watch, with a scripted layout."""
+
+    _SETTLE_MS = rv.BibleTextView._SETTLE_MS
+    _SETTLE_WINDOW_US = rv.BibleTextView._SETTLE_WINDOW_US
+    _SETTLE_MAX_TICKS = rv.BibleTextView._SETTLE_MAX_TICKS
+    _layout_settled = rv.BibleTextView._layout_settled
+    _settle_tick = rv.BibleTextView._settle_tick
+
+    def __init__(self, stamp=0):
+        self.stamp = stamp
+        self.redraws = 0
+
+    def _layout_stamp(self):
+        return self.stamp
+
+    def queue_draw(self):
+        self.redraws += 1
+
+
+def _armed(monkeypatch, clock=None):
+    """Record the timeouts the watch asks for instead of running a loop."""
+    armed = []
+    monkeypatch.setattr(rv.GLib, 'timeout_add',
+                        lambda ms, fn: armed.append((ms, fn)) or len(armed))
+    if clock is not None:
+        monkeypatch.setattr(rv.GLib, 'get_monotonic_time', lambda: clock[0])
+    return armed
+
+
+def test_the_first_frame_after_a_render_paints_no_bands(monkeypatch):
+    armed = _armed(monkeypatch)
+    view = _SettleView(stamp=('mid-render',))
+    assert view._layout_settled() is False
+    assert armed, 'nothing would ever ask for the corrected frame'
+
+
+def test_the_frame_the_watch_asks_for_is_the_one_that_paints(monkeypatch):
+    _armed(monkeypatch)
+    view = _SettleView(stamp=('settled',))
+    view._layout_settled()                  # the skipped frame
+    view._settle_tick()                     # measurements held still
+    assert view.redraws == 1
+    assert view._layout_settled() is True   # so this frame paints
+    assert view._drawn_stamp == ('settled',)
+
+
+def test_a_layout_that_moves_after_the_paint_asks_for_another_frame(monkeypatch):
+    clock = [0]
+    _armed(monkeypatch, clock)
+    view = _SettleView(stamp=('before',))
+    view._layout_settled()
+    view._settle_tick()
+    view._layout_settled()                  # painted against 'before'
+    view.redraws = 0
+    clock[0] = 1_000_000                    # a second later, the layout moves
+    view.stamp = ('after',)
+    assert view._settle_tick() == rv.GLib.SOURCE_CONTINUE
+    assert view.redraws == 1
+    assert view._layout_settled() is True   # and that frame paints 'after'
+
+
+def test_the_watch_stands_down_once_the_layout_has_been_still_a_while(monkeypatch):
+    clock = [0]
+    _armed(monkeypatch, clock)
+    view = _SettleView(stamp=('steady',))
+    view._layout_settled()
+    assert view._settle_tick() == rv.GLib.SOURCE_CONTINUE
+    view._layout_settled()
+    clock[0] = rv.BibleTextView._SETTLE_WINDOW_US
+    assert view._settle_tick() == rv.GLib.SOURCE_REMOVE
+    assert view._settle_id is None
+    assert view.redraws == 1                # only the frame it had skipped
+
+
+def test_a_layout_that_never_holds_still_is_not_a_permanent_loop(monkeypatch):
+    clock = [0]
+    _armed(monkeypatch, clock)
+    view = _SettleView(stamp=0)
+    view._layout_settled()
+    ticks = 0
+    while view._settle_tick() == rv.GLib.SOURCE_CONTINUE:
+        ticks += 1
+        clock[0] += rv.BibleTextView._SETTLE_MS * 1000
+        view.stamp += 1                     # moving again on every look
+        assert ticks < 1000, 'the watch never stood down'
+    assert ticks + 1 == rv.BibleTextView._SETTLE_MAX_TICKS
+
+
+def test_a_scroll_does_not_arm_the_watch(monkeypatch):
+    armed = _armed(monkeypatch)
+    view = _SettleView(stamp=('one document',))
+    view._layout_settled()
+    view._settle_tick()
+    view._layout_settled()
+    view._settle_id = None                  # the watch has stood down
+    armed.clear()
+    for _ in range(20):                     # frame after frame of scrolling
+        assert view._layout_settled() is True
+    assert not armed

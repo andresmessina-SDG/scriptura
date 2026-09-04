@@ -1,17 +1,27 @@
+import logging
+from datetime import datetime
+
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Pango
 from a11y import set_accessible_label
+from i18n import current_language, format_date
 from gtk_utils import clear_children
+import annotation_dialogs
 import annotations
+import ebible_bridge
+import passage_export
 import sword_bridge
 from empty_state import compact_empty_state
 
+_log = logging.getLogger('scriptura.annotations_window')
+
 _BOOK_ORDER = {book: i for i, book in enumerate(sword_bridge._ALL_BOOKS)}
 
-# Strip / swatch / journal-card / tag-chip CSS rules are defined in
-# data/style.css and loaded once at app startup by styles.load_app_css().
+# Strip / swatch / note-card / tag-chip CSS rules are defined in data/style.css
+# (the `journal-*` class names predate the rename) and loaded once at app
+# startup by styles.load_app_css().
 
 _HIGHLIGHT_CLASS = {
     '#ffff00': 'strip-yellow',
@@ -38,8 +48,8 @@ _HL_DOT_CLASS = {
 
 _HL_COLORS = ['#ffff00', '#90ee90', '#add8e6', '#ffa500']
 
-# Cap the synchronous list build so a large journal doesn't rebuild every
-# rich row on each filter keystroke; a footer pulls the next slice on demand.
+# Cap the synchronous list build so a large store doesn't rebuild every rich
+# row on each filter keystroke; a footer pulls the next slice on demand.
 _RENDER_CAP = 200
 
 
@@ -59,19 +69,82 @@ _HL_NAMES = {
 }
 
 
+#: The translation a quoted verse is set in, per interface language; first
+#: one installed wins. A mark belongs to a place in scripture rather than to
+#: a module, so the words it is quoted with follow the language the reader
+#: has the app in — not whichever pane happens to be open, which quoted a
+#: Russian reader's note back at them in the English text beside it.
+#:
+#: Each list opens with what that language's welcome bundle installs and
+#: opens on, so a reader who took the bundle is quoted the text they were
+#: given: BSB, NBLA, and the Russian Open Bible (welcome.py opens the Russian
+#: tiers on it because CrossWire's other modern Russian editions are the
+#: Muslim-idiom CARS texts). The rest are what a reader who declined the
+#: bundle is likely to have instead, ending with the eBible import of the
+#: same language. None of them installed falls back to the reading module.
+_QUOTE_MODULES = {
+    'en': ('BSB', 'ASV', 'KJV', 'eBible: engwebp'),
+    'es': ('NBLA', 'LBLA', 'SpaRV1909',
+           'eBible: spaRV1909', 'eBible: spaonbv'),
+    'ru': ('RusOpenBible', 'RusSynodalLIO', 'RusSynodal', 'eBible: russyn'),
+}
+
+
+def quote_module():
+    """The module the detail pane quotes from, or None to use the reading one.
+
+    Costs one `module_names()` and one `installed_ids()` per detail selection,
+    and only until the first hit — which for a reader who took their welcome
+    bundle is the first name in the list.
+    """
+    prefs = _QUOTE_MODULES.get(current_language(), ())
+    if not prefs:
+        return None
+    sword = ebible = None
+    for name in prefs:
+        if name.startswith(ebible_bridge.PREFIX):
+            if ebible is None:
+                ebible = ebible_bridge.installed_ids()
+            if name[len(ebible_bridge.PREFIX):] in ebible:
+                return name
+        else:
+            if sword is None:
+                sword = set(sword_bridge.module_names())
+            if name in sword:
+                return name
+    return None
+
+
+def verse_quote(module, book, chapter, verse):
+    """The verse's own words out of one module, or '' if it cannot render it.
+
+    `verse` is app space, as everything leaving the store is; the module is
+    asked for its own number first, or a Synodal psalter quotes the line
+    above the one the note is on.
+    """
+    try:
+        target = annotations.module_verse(module, book, chapter, verse)
+        return passage_export.verse_text(module, book, chapter, [target])
+    except Exception:
+        _log.exception('verse text for the annotation detail failed')
+        return ''
+
+
 def _all_entries():
     data = annotations._load()
     entries = []
     for key, verses in data.items():
-        parts = key.split('/', 2)
-        if len(parts) != 3:
+        parts = key.split('/')
+        if len(parts) != 2:
             continue
-        module, book, chapter_str = parts
+        book, chapter_str = parts
         try:
             chapter = int(chapter_str)
         except ValueError:
             continue
         for verse_str, anno in verses.items():
+            if verse_str == 'chapter_note':
+                continue
             try:
                 verse = int(verse_str)
             except ValueError:
@@ -87,46 +160,62 @@ def _all_entries():
             if not (h or u or n or tgs):
                 continue
             entries.append({
-                'module': module, 'book': book,
-                'chapter': chapter, 'verse': verse,
-                # `verse` is the number the MODULE renders, because that is
-                # what the store is keyed by and what the write-backs below
-                # must hand back. It is not a reference: on a Synodal or
-                # Vulgate psalter the module's verse 1 is the superscription,
-                # which is app-space verse 0. Every place this entry leaves
-                # its module — the reference it is labelled with, the sort,
-                # the jump — speaks app space, so carry it. A no-op for a
-                # module in the app's own versification, which is most.
-                'app_verse': sword_bridge.map_verse_to_app(
-                    module, book, chapter, verse),
+                # `verse` is app space, which is what the store now holds and
+                # what every reference, sort and jump below speaks. Writes go
+                # back through annotations.* with module=None — no lens, the
+                # number is already the one the store wants.
+                'book': book, 'chapter': chapter, 'verse': verse,
                 'highlight': h, 'underline': u, 'note': n,
                 'tags': tgs, 'is_chapter_note': False,
+                'created': anno.get('created'),
+                'modified': anno.get('modified'),
             })
         chapter_note = verses.get('chapter_note')
         if chapter_note:
             if isinstance(chapter_note, str):
-                cn_text, cn_tags = chapter_note, []
+                cn_text, cn_tags, cn_mod = chapter_note, [], None
             elif isinstance(chapter_note, dict):
-                cn_text, cn_tags = chapter_note.get('note', ''), chapter_note.get('tags', [])
+                cn_text = chapter_note.get('note', '')
+                cn_tags = chapter_note.get('tags', [])
+                cn_mod = chapter_note.get('modified')
             else:
-                cn_text, cn_tags = '', []
+                cn_text, cn_tags, cn_mod = '', [], None
             if cn_text.strip() or cn_tags:
                 entries.append({
-                    'module': module, 'book': book,
-                    'chapter': chapter, 'verse': None, 'app_verse': None,
+                    'book': book, 'chapter': chapter, 'verse': None,
                     'highlight': None, 'underline': False,
                     'note': cn_text, 'tags': cn_tags,
                     'is_chapter_note': True,
+                    'created': (chapter_note.get('created')
+                                if isinstance(chapter_note, dict) else None),
+                    'modified': cn_mod,
                 })
     entries.sort(key=lambda e: (
-        _BOOK_ORDER.get(e['book'], 999), e['chapter'], e['app_verse'] or 0
+        _BOOK_ORDER.get(e['book'], 999), e['chapter'], e['verse'] or 0
     ))
     return entries
 
 
 def _entry_key(e):
-    return (e['module'], e['book'], e['chapter'],
+    return (e['book'], e['chapter'],
             None if e.get('is_chapter_note') else e['verse'])
+
+
+def _edited_label(entry):
+    """"Edited <date>" for an entry that carries a timestamp, else ''.
+
+    Set the way the Today page sets a date, not with a numeric format: the
+    order is the translator's, and Spanish and Russian put the day first.
+    Marks made before the store recorded dates simply have none.
+    """
+    stamp = entry.get('modified') or entry.get('created')
+    if not isinstance(stamp, str) or not stamp:
+        return ''
+    try:
+        when = datetime.fromisoformat(stamp).date()
+    except ValueError:
+        return ''
+    return _('Edited {date}').format(date=format_date(when))
 
 
 class TagManagerWindow(Adw.Window):
@@ -259,11 +348,16 @@ class TagManagerWindow(Adw.Window):
         dlg.present(self)
 
 
-class StudyJournalWindow(Adw.Window):
-    def __init__(self, on_navigate, on_annotation_changed=None, **kwargs):
+class AnnotationsWindow(Adw.Window):
+    def __init__(self, on_navigate, on_annotation_changed=None,
+                 reading_module=None, **kwargs):
         super().__init__(**kwargs)
         self._on_navigate = on_navigate
         self._on_annotation_changed = on_annotation_changed
+        # A callable returning the module the reader is in, so the detail pane
+        # can quote the verse. Marks no longer belong to a module, so the
+        # window has to be told which one to read the words out of.
+        self._reading_module = reading_module
         self._entries = []
         self._filtered = []
         self._updating = False
@@ -272,7 +366,7 @@ class StudyJournalWindow(Adw.Window):
         self._preserve = None
         self._more_row = None
         self._shown = 0
-        self.set_title(_('Study Journal'))
+        self.set_title(_('Annotations'))
         self.set_default_size(1080, 720)
 
         self._build_ui()
@@ -313,7 +407,7 @@ class StudyJournalWindow(Adw.Window):
         sidebar_header.pack_end(export_btn)
 
         sidebar_tv.set_content(self._build_sidebar())
-        sidebar_page = Adw.NavigationPage(title=_('Study Journal'))
+        sidebar_page = Adw.NavigationPage(title=_('Annotations'))
         sidebar_page.set_child(sidebar_tv)
         self._split_view.set_sidebar(sidebar_page)
 
@@ -378,10 +472,13 @@ class StudyJournalWindow(Adw.Window):
             'notify::selected', lambda *_: self._apply_filter())
         grid.attach(self._tag_drop, 1, 0, 1, 1)
 
-        self._mod_drop = Gtk.DropDown(model=Gtk.StringList.new([_('All modules')]))
-        self._mod_drop.connect(
+        self._sort_drop = Gtk.DropDown(
+            model=Gtk.StringList.new(
+                [_('Canonical order'), _('Recently edited')])
+        )
+        self._sort_drop.connect(
             'notify::selected', lambda *_: self._apply_filter())
-        grid.attach(self._mod_drop, 0, 1, 1, 1)
+        grid.attach(self._sort_drop, 0, 1, 1, 1)
 
         # The book dropdown shows localized names but filters by the canonical
         # English key; _book_keys holds those keys parallel to the model rows
@@ -453,8 +550,21 @@ class StudyJournalWindow(Adw.Window):
         box.set_margin_top(16)
         box.set_margin_bottom(16)
 
-        # The verse ref + module now live in the content page's header
-        # (self._detail_title); the body starts straight at the highlight row.
+        # The reference and the date live in the content page's header
+        # (self._detail_title). The body opens with the verse itself: a note
+        # about words you cannot see is a note you have to go and look up.
+        self._verse_label = Gtk.Label(xalign=0)
+        self._verse_label.set_wrap(True)
+        # Four lines, then an ellipsis. Measured: Esther 8:9, the longest verse
+        # in the canon, wants 218px of this pane when the window is collapsed —
+        # it would push the note field, which is the thing being written in,
+        # off the bottom. Capped it is a steady 70px at every width, and the
+        # whole verse stays one hover (and one screen-reader stop) away.
+        self._verse_label.set_lines(4)
+        self._verse_label.set_ellipsize(Pango.EllipsizeMode.END)
+        self._verse_label.add_css_class('journal-verse')
+        self._verse_label.set_visible(False)
+        box.append(self._verse_label)
 
         # Highlight + underline row (hidden for chapter notes). A WrapBox so the
         # controls wrap to a second line on a narrow window instead of forcing
@@ -472,8 +582,10 @@ class StudyJournalWindow(Adw.Window):
             btn.add_css_class('hl-swatch')
             btn.add_css_class(_HL_SWATCH_CLASS[stored_color])
             name = _(_HL_NAMES[stored_color])
-            # Muted initial as a non-hue (colorblind-safe) cue — see .hl-letter.
-            letter = Gtk.Label(label=name[:1])
+            # Muted initial as a non-hue (colorblind-safe) cue — its own string
+            # per language, not the name's first letter (see highlight_letter).
+            letter = Gtk.Label(label=annotation_dialogs.highlight_letter(
+                stored_color))
             letter.add_css_class('hl-letter')
             btn.set_child(letter)
             btn.set_tooltip_text(name)
@@ -551,9 +663,8 @@ class StudyJournalWindow(Adw.Window):
         self._updating = True
         self._entries = _all_entries()
 
-        modules = [_('All modules')] + sorted({e['module'] for e in self._entries})
         # The appendix too, or a note taken in Tobit would be missing from
-        # the filter that is supposed to list every book the journal holds.
+        # the filter that is supposed to list every book the store holds.
         book_keys = [b for b in (sword_bridge._ALL_BOOKS
                                  + list(sword_bridge.DEUTEROCANON))
                      if any(e['book'] == b for e in self._entries)]
@@ -562,17 +673,14 @@ class StudyJournalWindow(Adw.Window):
 
         # Preserve current dropdown selections so a save doesn't reset filters
         prev_type = self._type_drop.get_selected()
-        prev_mod_text = self._dropdown_text(self._mod_drop)
         prev_book_key = self._selected_book_key()
         prev_tag_text = self._dropdown_text(self._tag_drop)
 
-        self._mod_drop.set_model(Gtk.StringList.new(modules))
         self._book_keys = book_keys
         self._book_drop.set_model(Gtk.StringList.new(
             [_('All books')] + [book_label(b) for b in book_keys]))
         self._tag_drop.set_model(Gtk.StringList.new(all_tags))
 
-        self._select_by_text(self._mod_drop, modules, prev_mod_text)
         self._book_drop.set_selected(
             book_keys.index(prev_book_key) + 1 if prev_book_key in book_keys else 0)
         self._select_by_text(self._tag_drop, all_tags, prev_tag_text)
@@ -608,17 +716,13 @@ class StudyJournalWindow(Adw.Window):
         type_map = {0: 'all', 1: 'notes', 2: 'highlights', 3: 'underlines'}
         tf = type_map.get(self._type_drop.get_selected(), 'all')
 
-        all_modules = _('All modules')
         all_tags = _('All tags')
-        mf = self._dropdown_text(self._mod_drop) or all_modules
         bf_key = self._selected_book_key()
         tag_filter = self._dropdown_text(self._tag_drop) or all_tags
         q = self._search_entry.get_text().strip().lower()
 
         result = []
         for e in self._entries:
-            if mf != all_modules and e['module'] != mf:
-                continue
             if bf_key is not None and e['book'] != bf_key:
                 continue
             if tf == 'notes' and not e['note']:
@@ -632,9 +736,8 @@ class StudyJournalWindow(Adw.Window):
             if q:
                 disp_book = book_label(e['book'])
                 ref = (f'{disp_book} {e["chapter"]}' if e.get('is_chapter_note')
-                       else f'{disp_book} {e["chapter"]}:{e["app_verse"]}')
+                       else f'{disp_book} {e["chapter"]}:{e["verse"]}')
                 haystack = ' '.join([
-                    e['module'].lower(),
                     e['book'].lower(),
                     ref.lower(),
                     (e['note'] or '').lower(),
@@ -643,12 +746,27 @@ class StudyJournalWindow(Adw.Window):
                 if q not in haystack:
                     continue
             result.append(e)
+
+        if self._sort_drop.get_selected() == 1:
+            # Most recently touched first. Entries made before the store kept
+            # dates have none, and sort to the bottom rather than to 1970.
+            result.sort(key=lambda e: (e.get('modified')
+                                       or e.get('created') or ''),
+                        reverse=True)
         return result
 
     def _apply_filter(self):
         if self._updating:
             return
         self._filtered = self._filtered_entries()
+
+        # Whatever is open stays open if the new list still holds it. Read it
+        # BEFORE the clear below: emptying the list emits row-selected(None),
+        # which drops _current_entry. Without this, reordering the list or
+        # narrowing a filter that still contains the open entry closes it —
+        # and a re-sort is not a change of what you are reading.
+        open_key = (_entry_key(self._current_entry)
+                    if self._current_entry is not None else None)
 
         # Clear existing rows (also drops any prior footer).
         clear_children(self._list)
@@ -660,6 +778,9 @@ class StudyJournalWindow(Adw.Window):
 
         self._preserve = self._preserve_select
         self._preserve_select = None
+        if self._preserve is None and open_key is not None and any(
+                _entry_key(e) == open_key for e in self._filtered):
+            self._preserve = open_key
 
         if not self._filtered:
             if not self._entries:
@@ -688,10 +809,10 @@ class StudyJournalWindow(Adw.Window):
         # appears so the edited row stays selected after the reload.
         preserve_present = self._preserve is not None and any(
             _entry_key(e) == self._preserve for e in self._filtered)
-        target_row = self._append_journal_rows()
+        target_row = self._append_rows()
         while (target_row is None and preserve_present
                and self._shown < len(self._filtered)):
-            target_row = self._append_journal_rows()
+            target_row = self._append_rows()
 
         if target_row is not None:
             self._list.select_row(target_row)
@@ -706,7 +827,7 @@ class StudyJournalWindow(Adw.Window):
             self._clear_detail_title()
             self._detail_stack.set_visible_child_name('empty')
 
-    def _append_journal_rows(self):
+    def _append_rows(self):
         """Append the next _RENDER_CAP slice of self._filtered, then a
         Show-more footer if rows remain. Returns the row matching the
         preserved entry key if it lands in this slice, else None."""
@@ -738,7 +859,7 @@ class StudyJournalWindow(Adw.Window):
         btn.set_halign(Gtk.Align.CENTER)
         btn.set_margin_top(4)
         btn.set_margin_bottom(4)
-        btn.connect('clicked', lambda _b: self._append_journal_rows())
+        btn.connect('clicked', lambda _b: self._append_rows())
         row.set_child(btn)
         return row
 
@@ -771,22 +892,24 @@ class StudyJournalWindow(Adw.Window):
         content.set_margin_top(8)
         content.set_margin_bottom(8)
 
-        # Reference + module
+        # Reference + when it was last touched
         top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         if entry.get('is_chapter_note'):
             ref_text = _('{ref} — Chapter Note').format(
                 ref=f'{book_label(entry["book"])} {entry["chapter"]}')
         else:
-            ref_text = f'{book_label(entry["book"])} {entry["chapter"]}:{entry["app_verse"]}'
+            ref_text = f'{book_label(entry["book"])} {entry["chapter"]}:{entry["verse"]}'
         ref = Gtk.Label(label=ref_text, xalign=0, hexpand=True)
         ref.set_ellipsize(Pango.EllipsizeMode.END)
         ref.add_css_class('heading')
         top.append(ref)
 
-        mod_lbl = Gtk.Label(label=entry['module'], xalign=1)
-        mod_lbl.add_css_class('dim-label')
-        mod_lbl.add_css_class('caption')
-        top.append(mod_lbl)
+        edited = _edited_label(entry)
+        if edited:
+            edit_lbl = Gtk.Label(label=edited, xalign=1)
+            edit_lbl.add_css_class('dim-label')
+            edit_lbl.add_css_class('caption')
+            top.append(edit_lbl)
         content.append(top)
 
         # Type badges — a hue dot coloured to the highlight (the name beside it
@@ -891,9 +1014,10 @@ class StudyJournalWindow(Adw.Window):
             ref = _('{ref} — Chapter Note').format(
                 ref=f'{book_label(entry["book"])} {entry["chapter"]}')
         else:
-            ref = f'{book_label(entry["book"])} {entry["chapter"]}:{entry["app_verse"]}'
+            ref = f'{book_label(entry["book"])} {entry["chapter"]}:{entry["verse"]}'
         self._detail_title.set_title(ref)
-        self._detail_title.set_subtitle(entry.get('module', ''))
+        self._detail_title.set_subtitle(_edited_label(entry))
+        self._show_verse_text(entry)
 
         self._hl_row.set_visible(not is_cn)
         if not is_cn:
@@ -911,12 +1035,45 @@ class StudyJournalWindow(Adw.Window):
         self._tags_entry.set_text(', '.join(entry.get('tags', []) or []))
         self._note_view.get_buffer().set_text(entry.get('note') or '')
 
+    def _show_verse_text(self, entry):
+        """Quote the verse the note is about, in the translation that fits the
+        interface language (see `_QUOTE_MODULES`).
+
+        Falls back to the module the reader has open — when none of the
+        preferred ones is installed, and when the one that is cannot render
+        this verse: BSB carries no deuterocanon, so a note on Sirach would
+        otherwise say nothing where the reader can plainly see the words. A
+        chapter note has no single verse; the label just stays hidden.
+        """
+        self._verse_label.set_visible(False)
+        if entry.get('is_chapter_note'):
+            return
+        reading = None
+        if self._reading_module is not None:
+            try:
+                reading = self._reading_module()
+            except Exception:
+                reading = None
+        book, chapter, verse = entry['book'], entry['chapter'], entry['verse']
+        text = ''
+        for module in dict.fromkeys(
+                m for m in (quote_module(), reading) if m):
+            text = verse_quote(module, book, chapter, verse)
+            if text:
+                break
+        if not text:
+            return
+        self._verse_label.set_text(text)
+        self._verse_label.set_tooltip_text(text)
+        set_accessible_label(self._verse_label, text)
+        self._verse_label.set_visible(True)
+
     def _on_hl_click(self, _btn, color):
         e = self._current_entry
         if not e or e.get('is_chapter_note'):
             return
         annotations.save_highlight(
-            e['module'], e['book'], e['chapter'], e['verse'], color)
+            None, e['book'], e['chapter'], e['verse'], color)
         e['highlight'] = color
         # Swatch selected styling
         for c, btn in self._hl_buttons.items():
@@ -935,7 +1092,7 @@ class StudyJournalWindow(Adw.Window):
                 row._strip_class = new_class
         if self._on_annotation_changed:
             self._on_annotation_changed(
-                e['module'], e['book'], e['chapter'], e['verse'])
+                e['book'], e['chapter'], e['verse'])
 
     def _on_ul_toggled(self, btn):
         e = self._current_entry
@@ -943,11 +1100,11 @@ class StudyJournalWindow(Adw.Window):
             return
         enabled = btn.get_active()
         annotations.save_underline(
-            e['module'], e['book'], e['chapter'], e['verse'], enabled)
+            None, e['book'], e['chapter'], e['verse'], enabled)
         e['underline'] = enabled
         if self._on_annotation_changed:
             self._on_annotation_changed(
-                e['module'], e['book'], e['chapter'], e['verse'])
+                e['book'], e['chapter'], e['verse'])
 
     def _filter_by_tag(self, tag):
         """Set the Tag filter dropdown to `tag` (no-op if not in the model)."""
@@ -978,18 +1135,18 @@ class StudyJournalWindow(Adw.Window):
 
         if e.get('is_chapter_note'):
             annotations.save_chapter_note(
-                e['module'], e['book'], e['chapter'], text or '')
+                None, e['book'], e['chapter'], text or '')
             annotations.save_chapter_note_tags(
-                e['module'], e['book'], e['chapter'], raw_tags)
+                None, e['book'], e['chapter'], raw_tags)
         else:
             annotations.save_note(
-                e['module'], e['book'], e['chapter'], e['verse'], text)
+                None, e['book'], e['chapter'], e['verse'], text)
             annotations.save_tags(
-                e['module'], e['book'], e['chapter'], e['verse'], raw_tags)
+                None, e['book'], e['chapter'], e['verse'], raw_tags)
 
         if self._on_annotation_changed:
             v = None if e.get('is_chapter_note') else e['verse']
-            self._on_annotation_changed(e['module'], e['book'], e['chapter'], v)
+            self._on_annotation_changed(e['book'], e['chapter'], v)
 
         self._toast(_('Saved'))
         self._preserve_select = _entry_key(e)
@@ -999,8 +1156,7 @@ class StudyJournalWindow(Adw.Window):
         e = self._current_entry
         if not e:
             return
-        self._on_navigate(e['module'], e['book'], e['chapter'],
-                          e['app_verse'] or 1)
+        self._on_navigate(e['book'], e['chapter'], e['verse'] or 1)
 
     def _toast(self, msg):
         toast = Adw.Toast.new(msg)
@@ -1012,7 +1168,7 @@ class StudyJournalWindow(Adw.Window):
     def _on_delete_entry(self, _btn, entry):
         verse = None if entry.get('is_chapter_note') else entry['verse']
         removed = annotations.delete_annotation(
-            entry['module'], entry['book'], entry['chapter'], verse
+            None, entry['book'], entry['chapter'], verse
         )
         # If we just deleted the currently-selected entry, the detail pane
         # will reset to empty when _reload finds no matching row to restore.
@@ -1020,7 +1176,7 @@ class StudyJournalWindow(Adw.Window):
         self._reload()
         if self._on_annotation_changed:
             self._on_annotation_changed(
-                entry['module'], entry['book'], entry['chapter'], verse)
+                entry['book'], entry['chapter'], verse)
         if removed is None:
             return
         # Deletion is otherwise irreversible — offer an undo while the
@@ -1034,18 +1190,17 @@ class StudyJournalWindow(Adw.Window):
 
     def _on_undo_delete(self, _toast, entry, verse, removed):
         annotations.restore_annotation(
-            entry['module'], entry['book'], entry['chapter'], verse, removed)
+            None, entry['book'], entry['chapter'], verse, removed)
         self._preserve_select = _entry_key(entry)
         self._reload()
         if self._on_annotation_changed:
             self._on_annotation_changed(
-                entry['module'], entry['book'], entry['chapter'], verse)
+                entry['book'], entry['chapter'], verse)
 
     def _on_row_activated(self, _listbox, row):
         if hasattr(row, '_entry'):
             e = row._entry
-            self._on_navigate(e['module'], e['book'], e['chapter'],
-                              e['app_verse'] or 1)
+            self._on_navigate(e['book'], e['chapter'], e['verse'] or 1)
 
     def _on_open_tag_manager(self, _btn):
         if (getattr(self, '_tag_mgr_win', None)
@@ -1061,8 +1216,8 @@ class StudyJournalWindow(Adw.Window):
 
     def _on_export(self, _btn):
         dialog = Gtk.FileDialog()
-        dialog.set_title(_('Export Study Journal'))
-        dialog.set_initial_name('study_journal.txt')
+        dialog.set_title(_('Export Annotations'))
+        dialog.set_initial_name('annotations.txt')
         dialog.save(self, None, self._on_export_finish)
 
     def _on_export_finish(self, dialog, result):
@@ -1075,13 +1230,13 @@ class StudyJournalWindow(Adw.Window):
             self._show_export_error(
                 _('Please choose a location on this computer.'))
             return
-        lines = [_('Study Journal'), '=' * 40, '']
+        lines = [_('Annotations'), '=' * 40, '']
         for e in self._filtered_entries():
             if e.get('is_chapter_note'):
                 lines.append(_('{ref} — Chapter Note').format(
-                    ref=f'{book_label(e["book"])} {e["chapter"]}') + f'  ({e["module"]})')
+                    ref=f'{book_label(e["book"])} {e["chapter"]}'))
             else:
-                lines.append(f'{book_label(e["book"])} {e["chapter"]}:{e["app_verse"]}  ({e["module"]})')
+                lines.append(f'{book_label(e["book"])} {e["chapter"]}:{e["verse"]}')
                 types = []
                 if e['highlight']:
                     types.append(_('Highlight'))

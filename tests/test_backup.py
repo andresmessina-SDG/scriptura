@@ -41,7 +41,7 @@ def test_collect_document_shape(isolated):
     doc = backup.collect()
     assert doc['format'] == backup.FORMAT
     assert doc['version'] == backup.VERSION
-    assert doc['annotations']['KJVA/Genesis/1']['1']['highlight'] == '#ffff00'
+    assert doc['annotations']['Genesis/1']['1']['highlight'] == '#ffff00'
     assert len(doc['bookmarks']) == 2
     assert doc['reading_plans']['completed']['canonical'] == [0, 1]
 
