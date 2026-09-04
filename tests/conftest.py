@@ -8,6 +8,28 @@ a no-catalog gettext here resolves them to identity (English) output.
 """
 import builtins
 import gettext
+import os
+import tempfile
+
+# ── The suite must not read, or write, the tester's own settings ───────────
+# `main._setup_gettext()` runs at main.py's module level, and two test files
+# import main. It reads the saved `ui_language` and, if there is one, writes
+# it into os.environ['LANGUAGE'] and rebinds the builtins `_` through
+# gettext.install — process-wide, and past any monkeypatch. So on a machine
+# where the app is set to Russian the whole suite switched language the
+# moment `import main` first ran: 20 tests in test_reading_audio asserting
+# "John 3" and getting «От Иоанна 3», in whatever file happened to follow.
+#
+# It could not show until a checkout had compiled catalogues to switch into
+# (tools/build-locale.py), which is why it stood for so long — and it made
+# the result depend on a file outside the repo either way. A scratch file,
+# set before anything imports settings, closes both: nothing is read from
+# ~/.config, and no test can write there.
+import settings as _settings  # noqa: E402
+
+_settings._FILE = os.path.join(tempfile.mkdtemp(prefix='scriptura-tests-'),
+                               'settings.json')
+_settings._cache = None
 
 gettext.install('scriptura', names=['ngettext'])
 
