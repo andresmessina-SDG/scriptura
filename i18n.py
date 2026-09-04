@@ -116,15 +116,23 @@ def localedir() -> str:
 
     Resolved relative to this file — installed at {prefix}/share/scriptura/,
     catalogues at {prefix}/share/locale — which is the same __file__-relative
-    trick main.py uses for the icon search path. A source checkout has no
-    such directory, so a run from the repo offers English only; verify
-    anything about translation from the meson install tree.
+    trick main.py uses for the icon search path.
+
+    A source checkout has no such directory, and used to offer English only
+    for that reason: the language picker hides itself below two languages,
+    so running from the repo silently lost a shipped feature and anything
+    reached through it. So fall back to a `locale/` beside this file, which
+    `tools/build-locale.py` fills from `po/`. The fallback is only ever
+    consulted when the installed path is absent, so it cannot shadow a real
+    install, and it is gitignored.
     """
     global _localedir_cache
     if _localedir_cache is None:
         import os
-        _localedir_cache = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), '..', 'locale')
+        here = os.path.dirname(os.path.abspath(__file__))
+        installed = os.path.join(here, '..', 'locale')
+        _localedir_cache = (installed if os.path.isdir(installed)
+                            else os.path.join(here, 'locale'))
     return _localedir_cache
 
 

@@ -244,3 +244,40 @@ def test_an_unreadable_catalogue_falls_back_to_english(tmp_path, monkeypatch):
     (d / 'scriptura.mo').write_bytes(b'not a catalogue')
     monkeypatch.setenv('LANGUAGE', 'es')
     assert i18n._('Search') == 'Search'
+
+
+# ── Where the catalogues are looked for ────────────────────────────────────
+
+def _localedir_from(tmp_path, monkeypatch, layout):
+    """Resolve localedir() as if i18n.py lived at `layout`, cache cleared."""
+    fake = tmp_path / layout
+    fake.parent.mkdir(parents=True, exist_ok=True)
+    fake.write_text('')
+    monkeypatch.setattr(i18n, '_localedir_cache', None)
+    monkeypatch.setattr(i18n, '__file__', str(fake))
+    return os.path.normpath(i18n.localedir())
+
+
+def test_an_install_uses_the_catalogues_beside_it(tmp_path, monkeypatch):
+    """{prefix}/share/scriptura/i18n.py → {prefix}/share/locale, which is
+    where meson puts them."""
+    (tmp_path / 'share' / 'locale').mkdir(parents=True)
+    got = _localedir_from(tmp_path, monkeypatch, 'share/scriptura/i18n.py')
+    assert got == str(tmp_path / 'share' / 'locale')
+
+
+def test_a_source_checkout_falls_back_to_its_own_locale_dir(tmp_path,
+                                                            monkeypatch):
+    """A repo run has no {prefix}/share/locale, and used to answer English
+    alone — which hid the picker, since it will not show one language."""
+    got = _localedir_from(tmp_path, monkeypatch, 'repo/i18n.py')
+    assert got == str(tmp_path / 'repo' / 'locale')
+
+
+def test_the_fallback_never_shadows_a_real_install(tmp_path, monkeypatch):
+    """The whole safety of the fallback is that it is consulted only when
+    the installed directory is absent. Build both and the install wins."""
+    (tmp_path / 'share' / 'locale').mkdir(parents=True)
+    (tmp_path / 'share' / 'scriptura' / 'locale').mkdir(parents=True)
+    got = _localedir_from(tmp_path, monkeypatch, 'share/scriptura/i18n.py')
+    assert got == str(tmp_path / 'share' / 'locale')
