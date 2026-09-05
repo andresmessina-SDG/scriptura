@@ -302,6 +302,44 @@ def is_text_bible(name: str) -> bool:
             and not interlinear_data.is_interlinear_module(name))
 
 
+# eBible uses ISO 639-3 codes ('eng', 'spa'), SWORD mostly 639-1 ('en',
+# 'es'). Anything comparing one source's language against another's needs one
+# canonical key or the comparison silently never matches: the module manager's
+# merged language filter would drop a whole source, and the reading pane's
+# dictionary tabs would stop opening on the reader's own language. Majors map
+# to two-letter; everything else passes through unchanged.
+_ISO3TO2 = {
+    'eng': 'en', 'spa': 'es', 'deu': 'de', 'ger': 'de', 'fra': 'fr',
+    'fre': 'fr', 'ita': 'it', 'por': 'pt', 'nld': 'nl', 'dut': 'nl',
+    'rus': 'ru', 'ell': 'el', 'gre': 'el', 'heb': 'he', 'lat': 'la',
+    'ara': 'ar', 'zho': 'zh', 'chi': 'zh', 'jpn': 'ja', 'kor': 'ko',
+    'swe': 'sv', 'fin': 'fi', 'dan': 'da', 'nor': 'no', 'nob': 'no',
+    'nno': 'no', 'pol': 'pl', 'ces': 'cs', 'cze': 'cs', 'slk': 'sk',
+    'slo': 'sk', 'hun': 'hu', 'ron': 'ro', 'rum': 'ro', 'ukr': 'uk',
+    'bul': 'bg', 'hrv': 'hr', 'srp': 'sr', 'afr': 'af', 'fas': 'fa',
+    'per': 'fa', 'tur': 'tr', 'vie': 'vi', 'ind': 'id', 'swh': 'sw',
+    'swa': 'sw', 'tgl': 'tl',
+}
+
+
+def normalise_language(code: str | None) -> str:
+    """One language code in, the canonical two-letter form out."""
+    code = (code or '').strip().lower()
+    return _ISO3TO2.get(code, code)
+
+
+def language_code(name: str) -> str:
+    """This module's language as a canonical two-letter code, whichever
+    source it came from — `''` when the source does not say.
+
+    `language` gives each source's own spelling; this is the one to compare
+    two modules with. Reaching for `sword_bridge.module_language` instead
+    answers `''` for every eBible translation, which is what stopped the
+    dictionary tabs opening on the language a reader was actually reading.
+    """
+    return normalise_language(language(name))
+
+
 def text_bible_names() -> list[str]:
     """Every installed module that is a readable Bible, across all sources.
 

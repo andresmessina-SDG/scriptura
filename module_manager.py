@@ -50,27 +50,11 @@ _LANG_NAMES = {
     'id': N_('Indonesian'), 'sw': N_('Swahili'), 'tl': N_('Tagalog'),
 }
 
-# eBible uses ISO 639-3 codes ('eng', 'spa'), SWORD mostly 639-1 ('en',
-# 'es'); a merged language filter needs one canonical key or the default
-# silently excludes a whole source. Majors map to two-letter; everything
-# else passes through unchanged.
-_ISO3TO2 = {
-    'eng': 'en', 'spa': 'es', 'deu': 'de', 'ger': 'de', 'fra': 'fr',
-    'fre': 'fr', 'ita': 'it', 'por': 'pt', 'nld': 'nl', 'dut': 'nl',
-    'rus': 'ru', 'ell': 'el', 'gre': 'el', 'heb': 'he', 'lat': 'la',
-    'ara': 'ar', 'zho': 'zh', 'chi': 'zh', 'jpn': 'ja', 'kor': 'ko',
-    'swe': 'sv', 'fin': 'fi', 'dan': 'da', 'nor': 'no', 'nob': 'no',
-    'nno': 'no', 'pol': 'pl', 'ces': 'cs', 'cze': 'cs', 'slk': 'sk',
-    'slo': 'sk', 'hun': 'hu', 'ron': 'ro', 'rum': 'ro', 'ukr': 'uk',
-    'bul': 'bg', 'hrv': 'hr', 'srp': 'sr', 'afr': 'af', 'fas': 'fa',
-    'per': 'fa', 'tur': 'tr', 'vie': 'vi', 'ind': 'id', 'swh': 'sw',
-    'swa': 'sw', 'tgl': 'tl',
-}
-
-
 def _norm_lang(code):
-    code = (code or '').strip().lower()
-    return _ISO3TO2.get(code, code)
+    """The canonical two-letter language code. Lives in `content` now — the
+    reading pane needs the same answer to order the dictionary tabs, and two
+    copies of the table is how the two surfaces would drift apart."""
+    return content.normalise_language(code)
 
 
 def _lang_label(code):

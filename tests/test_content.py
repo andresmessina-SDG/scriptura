@@ -277,3 +277,29 @@ def test_a_dictionary_is_not_a_bible(monkeypatch):
     assert content.kind('Easton') == 'bible'          # the catch-all
     assert 'Easton' not in content.text_bible_names()
     assert 'KJV' in content.text_bible_names()
+
+
+# ── Language codes ───────────────────────────────────────────────────────────
+
+def test_language_code_normalises_across_sources(monkeypatch):
+    """eBible spells it 'spa', SWORD spells it 'es'. Comparing the raw codes
+    never matches, which is what stopped the dictionary tabs opening on the
+    language the reader was actually reading."""
+    key = ebible_bridge.PREFIX + 'spaonbv'
+    monkeypatch.setattr(ebible_bridge, 'module_language', lambda n: 'spa')
+    monkeypatch.setattr(sword_bridge, 'module_language', lambda n: 'es')
+    assert content.language_code(key) == 'es'
+    assert content.language_code('NBLA') == 'es'
+    assert content.language_code(key) == content.language_code('NBLA')
+
+
+def test_language_code_is_empty_when_the_source_does_not_say(monkeypatch):
+    monkeypatch.setattr(sword_bridge, 'module_language', lambda n: '')
+    assert content.language_code('Wikcionario') == ''
+
+
+def test_normalise_language_passes_unknown_codes_through():
+    assert content.normalise_language('rus') == 'ru'
+    assert content.normalise_language(' ENG ') == 'en'
+    assert content.normalise_language('cop') == 'cop'
+    assert content.normalise_language(None) == ''

@@ -5376,13 +5376,20 @@ class BiblePane(Gtk.Box):
             #
             # Everything still gets a tab; this only chooses which one is
             # already open.
-            lang = sword_bridge.module_language(self._module)
+            #
+            # Through content, and normalised: sword_bridge.module_language
+            # answers '' for every eBible translation, so a reader on the
+            # Nueva Biblia Viva — the Spanish reading tier's own Bible — had
+            # no language to match and got the tabs alphabetically, English
+            # first. The codes are normalised because eBible spells the
+            # language 'spa' where SWORD spells it 'es'.
+            lang = content.language_code(self._module)
             results = []
             for mod_name, mod_desc in dicts:
                 html, exact = sword_bridge.lookup_dict_entry(mod_name, word)
                 if html:
                     same = bool(lang) and \
-                        sword_bridge.module_language(mod_name) == lang
+                        content.language_code(mod_name) == lang
                     results.append((mod_name, mod_desc, html, exact, same))
             results.sort(key=lambda r: (not r[3], not r[4], r[1].lower()))
             return [(mn, md, html) for mn, md, html, _e, _s in results]
