@@ -300,6 +300,22 @@ def catena_rows(book: str, chapter: int,
     return out
 
 
+def version_label(module: str) -> str:
+    """The name a citation gives this text.
+
+    A SWORD key is already the version abbreviation a citation wants —
+    `John 1:29 ESV` is the seminary's own example — so it stands as it is.
+    An eBible key is not: `eBible: russyn` is an internal id behind a
+    prefix, and it was reaching the reader on the exported worksheet, the
+    printed sheet and the share card. Those get the translation's own
+    title, which is what a citation falls back to when a text has no
+    settled abbreviation.
+    """
+    if content.type_key(module) == 'ebible':
+        return sword_bridge.display_name(module) or module
+    return module
+
+
 def attribution(module: str) -> str:
     """The line every export carries, naming the text it is quoting.
 
@@ -307,10 +323,15 @@ def attribution(module: str) -> str:
     it left, and the translation's name is the only thing travelling with it
     that says whose words these are.
     """
+    label = version_label(module)
+    if content.type_key(module) == 'ebible':
+        # An eBible download carries no SWORD Description to tame; its title
+        # is the name, and repeating it as the key too says nothing.
+        return _('Text from {module}.').format(module=label)
     info = sword_bridge.module_info(module) or {}
     name = _short_name(info.get('description') or '')
-    return (_('Text from {name} ({module}).').format(name=name, module=module)
-            if name else _('Text from {module}.').format(module=module))
+    return (_('Text from {name} ({module}).').format(name=name, module=label)
+            if name else _('Text from {module}.').format(module=label))
 
 
 def _short_name(description: str) -> str:
@@ -377,7 +398,7 @@ def build(module: str, book: str, chapter: int,
             if wanted is None or v in wanted]
     numbers = [v for v, _t in rows]
     heading = format_reference(book, chapter, verses if wanted else None,
-                               version=version or module)
+                               version=version or version_label(module))
 
     lines: list[str] = []
     if markdown:

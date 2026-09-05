@@ -268,7 +268,8 @@ class CardSheet:
             text=passage_export.verse_text(
                 self._pane._module, self._pane._book, self._pane._chapter,
                 self._verses),
-            reference=self._reference(), translation=self._pane._module,
+            reference=self._reference(),
+            translation=passage_export.version_label(self._pane._module),
             paper=paper, ink=auto_reading_ink(paper),
             shape=self._shapes[self._shape_row.get_selected()],
             wordmark=self._mark_row.get_active())
@@ -324,7 +325,8 @@ class CardSheet:
             from pane import auto_reading_ink
             text = passage_export.verse_text(module, book, chapter, verses)
             return verse_card.render(
-                path, text=text, reference=reference, translation=module,
+                path, text=text, reference=reference,
+                translation=passage_export.version_label(module),
                 paper=paper, ink=auto_reading_ink(paper), shape=shape,
                 wordmark=wordmark)
 

@@ -391,3 +391,24 @@ def test_plain_text_changes_the_extension(monkeypatch):
     sheet._format_row.set_selected(1)
     assert not sheet._markdown()
     assert sheet._suggested_name().endswith('.txt')
+
+
+# ── The name a citation gives the text ───────────────────────────────────────
+
+def test_a_sword_key_is_its_own_version_abbreviation():
+    """`John 1:29 ESV` is the seminary's own example, and a SWORD key already
+    reads that way — this must not start spelling them out."""
+    assert passage_export.version_label('KJVA') == 'KJVA'
+    assert passage_export.version_label('NBLA') == 'NBLA'
+
+
+def test_an_ebible_key_cites_the_translation_not_the_id(monkeypatch):
+    """`eBible: russyn` is an internal id behind a prefix. It was reaching the
+    reader on the worksheet, the printed sheet and the share card."""
+    import ebible_bridge
+    key = ebible_bridge.PREFIX + 'russyn'
+    monkeypatch.setattr(sword_bridge, 'display_name',
+                        lambda n: 'Russian Synodal Bible')
+    assert passage_export.version_label(key) == 'Russian Synodal Bible'
+    assert passage_export.attribution(key) == \
+        'Text from Russian Synodal Bible.'
