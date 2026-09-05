@@ -190,3 +190,41 @@ def test_has_strongs_caches_per_module(monkeypatch):
     content.has_strongs('KJV')
     content.has_strongs('KJV')
     assert calls == ['KJV']
+
+
+# ── load_chapter routing ─────────────────────────────────────────────────────
+#
+# The bug this guards: every caller holding an arbitrary reading module used to
+# repeat `if is_ebible_module(...)` itself, and half of them forgot. SWORD's
+# load_chapter answers [] for a key it does not own without raising, so an
+# eBible translation — the World English Bible the English welcome bundle
+# installs is one — exported, printed, shared and copied as an empty page, and
+# the reader's own highlights were mapped inward and never mapped back out.
+
+def test_load_chapter_routes_an_ebible_key_to_the_ebible_bridge(monkeypatch):
+    monkeypatch.setattr(ebible_bridge, 'load_chapter',
+                        lambda n, b, c: [(1, 'from eBible')])
+    monkeypatch.setattr(sword_bridge, 'load_chapter',
+                        lambda n, b, c: [(1, 'from SWORD')])
+    assert content.load_chapter(ebible_bridge.PREFIX + 'eng-web', 'John', 3) \
+        == [(1, 'from eBible')]
+    assert content.load_chapter('KJV', 'John', 3) == [(1, 'from SWORD')]
+
+
+def test_no_module_loads_a_chapter_straight_off_a_bridge():
+    """content.load_chapter is the only way in. A direct
+    `sword_bridge.load_chapter` in a module that can hold any reading module
+    is the defect above, re-introduced."""
+    import pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    offenders = []
+    for path in sorted(root.glob('*.py')):
+        if path.name in ('content.py', 'ebible_bridge.py', 'sword_bridge.py'):
+            continue
+        text = path.read_text(encoding='utf-8')
+        for bridge in ('sword_bridge.load_chapter', 'ebible_bridge.load_chapter'):
+            if bridge + '(' in text:
+                offenders.append(f'{path.name}: {bridge}')
+    assert offenders == [], (
+        'call content.load_chapter instead — it routes to the bridge that '
+        'owns the key: ' + ', '.join(offenders))

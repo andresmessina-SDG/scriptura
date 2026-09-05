@@ -2178,10 +2178,7 @@ class BiblePane(Gtk.Box):
 
         def fetch():
             try:
-                if ebible_bridge.is_ebible_module(module):
-                    verses = ebible_bridge.load_chapter(module, book, chapter)
-                else:
-                    verses = sword_bridge.load_chapter(module, book, chapter)
+                verses = content.load_chapter(module, book, chapter)
             except Exception as e:
                 if self._on_toast:
                     GLib.idle_add(self._on_toast,
@@ -2390,12 +2387,11 @@ class BiblePane(Gtk.Box):
         # runner's per-pane key carries that; a failed load keeps the
         # current text (details in the log).
         def fetch(_task):
+            verses = content.load_chapter(module, book, chapter)
             if ebible_bridge.is_ebible_module(module):
-                verses = ebible_bridge.load_chapter(module, book, chapter)
                 notes = ebible_bridge.chapter_footnotes(module, book, chapter)
                 heads = {}
             else:
-                verses = sword_bridge.load_chapter(module, book, chapter)
                 notes = sword_bridge.chapter_footnotes(module, book, chapter)
                 heads = sword_bridge.chapter_headings(module, book, chapter)
             return verses, notes, heads

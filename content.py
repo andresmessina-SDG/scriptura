@@ -153,6 +153,7 @@ class _ContentType:
         has_footnotes: Callable[[str], bool] = lambda name: False,
         can_remove: Callable[[str], bool] = lambda name: False,
         remove: Callable[[str], None] | None = None,
+        load_chapter: Callable[[str, str, int], list] | None = None,
     ) -> None:
         self.key = key
         self.is_member = is_member
@@ -167,6 +168,13 @@ class _ContentType:
         # old `else` path for the packless types.
         self.remove: Callable[[str], None] = (
             remove or (lambda name: sword_bridge.remove_module(name)))
+        # Same late resolution as `remove`, and the same default: every
+        # verse-keyed source that is not eBible reads through SWORD, and a
+        # source that carries no verse text answers [] there anyway.
+        self.load_chapter: Callable[[str, str, int], list] = (
+            load_chapter
+            or (lambda name, book, chapter:
+                sword_bridge.load_chapter(name, book, chapter)))
 
 
 # Order: the specific sources first (their predicates are disjoint), then the
@@ -224,7 +232,9 @@ _TYPES: list[_ContentType] = [
         has_footnotes=lambda name: bool(
             ebible_bridge.module_has_footnotes(name)),
         can_remove=lambda name: True,
-        remove=lambda name: ebible_bridge.remove_module(name)),
+        remove=lambda name: ebible_bridge.remove_module(name),
+        load_chapter=lambda name, book, chapter:
+            cast(list, ebible_bridge.load_chapter(name, book, chapter))),
     _ContentType(
         'sword', lambda name: True,          # catch-all — keep last
         kind=_sword_kind,
@@ -255,6 +265,22 @@ def type_key(name: str) -> str:
     is_ebible_module) resolve membership through here instead, so the
     classification can't drift from the registry."""
     return _type_for(name).key
+
+
+def load_chapter(name: str, book: str, chapter: int) -> list:
+    """The chapter's [(verse number, markup)] out of whichever source owns
+    this key — app-space `book`/`chapter` in, the module's own verse
+    numbering out, exactly as both bridges answer.
+
+    Every caller that holds an arbitrary reading module comes through here.
+    Calling `sword_bridge.load_chapter` directly instead is what left the
+    export, the share card, the printed sheet, Copy verse and the reader's
+    own highlights blank or misplaced on an eBible translation — that
+    function answers [] for a key it does not own, without raising, and the
+    World English Bible the English welcome bundle installs is one.
+    `test_content.py` holds the module list to this.
+    """
+    return _type_for(name).load_chapter(name, book, chapter)
 
 
 def kind(name: str) -> str:
@@ -309,13 +335,11 @@ def has_strongs(name: str) -> bool:
     if not is_text_bible(name):
         _marks_strongs[name] = False
         return False
-    load = (ebible_bridge.load_chapter if type_key(name) == 'ebible'
-            else sword_bridge.load_chapter)
     found = False
     for book, chapter in _STRONGS_PROBE:
         try:
             if any(_STRONGS_RE.search(str(html))
-                   for _verse, html in load(name, book, chapter)):
+                   for _verse, html in load_chapter(name, book, chapter)):
                 found = True
                 break
         except Exception:

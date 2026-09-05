@@ -689,6 +689,7 @@ class LexiconPanel(Gtk.Box):
             # A mid-scan failure still reaches _ws_finalize with the partial
             # count — a dead scan would leave the header on 'Searching…'
             # forever. (The runner's on_error backstops the same way.)
+            import content
             running = 0
             try:
                 total = sword_bridge.chapter_count_in(module, book)
@@ -696,7 +697,7 @@ class LexiconPanel(Gtk.Box):
                     if not task.is_current():
                         return running  # superseded — stop scanning
                     batch = []
-                    for v_num, html in sword_bridge.load_chapter(module, book, ch):
+                    for v_num, html in content.load_chapter(module, book, ch):
                         if pattern.search(str(html)):
                             markup = _make_verse_markup(html, strong_num)
                             batch.append((book, ch, v_num, markup))
@@ -863,11 +864,8 @@ class LexiconPanel(Gtk.Box):
         # flicker. A newer peek (or any dismissing click) supersedes this
         # one on the task key.
         def fetch(_task):
-            import ebible_bridge
-            if ebible_bridge.is_ebible_module(module):
-                verses = ebible_bridge.load_chapter(module, book, chapter)
-            else:
-                verses = sword_bridge.load_chapter(module, book, chapter)
+            import content
+            verses = content.load_chapter(module, book, chapter)
             # App-space in, module numbering out — same translation the
             # comparison list and pane_search make (see map_target_verse).
             want = sword_bridge.map_target_verse(module, book, chapter, verse)

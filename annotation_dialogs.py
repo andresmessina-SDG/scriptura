@@ -23,6 +23,7 @@ from gi.repository import Gtk, Adw, GLib, Gdk, Pango
 from a11y import set_accessible_label
 from gtk_utils import clear_children, DelayedSpinner
 import annotations
+import content
 import export_dialog
 import passage_export
 import passage_print
@@ -269,7 +270,7 @@ def toggle_underline(pane, verses, enabled, popover):
 
 def copy_verse(pane, verses, popover):
     popover.popdown()
-    chapter_verses = sword_bridge.load_chapter(pane._module, pane._book, pane._chapter)
+    chapter_verses = content.load_chapter(pane._module, pane._book, pane._chapter)
     verse_map = {v: html for v, html in chapter_verses}
     lines = []
     for v in verses:
@@ -354,10 +355,7 @@ def compare_translations(pane, verse, popover):
         names += ebible_bridge.module_names()
         results = []
         for mod in names:
-            if ebible_bridge.is_ebible_module(mod):
-                vs = ebible_bridge.load_chapter(mod, book, chapter)
-            else:
-                vs = sword_bridge.load_chapter(mod, book, chapter)
+            vs = content.load_chapter(mod, book, chapter)
             # `verse` is app-space; the rows carry the module's own
             # numbering, which on a Synodal or Vulgate psalter counts the
             # superscription. Without this the comparison showed «Псалом

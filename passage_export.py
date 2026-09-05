@@ -36,6 +36,7 @@ import re
 
 import annotations as annotations_store
 import catena_bridge
+import content
 import interlinear_data
 import sword_bridge
 from i18n import _
@@ -180,13 +181,13 @@ def verse_text(module: str, book: str, chapter: int,
     wanted = set(verses) if verses else None
     return ' '.join(
         _plain(html)
-        for verse, html in sword_bridge.load_chapter(module, book, chapter)
+        for verse, html in content.load_chapter(module, book, chapter)
         if wanted is None or verse in wanted).strip()
 
 
 def chapter_verses(module: str, book: str, chapter: int) -> list[int]:
     """Every verse number the module renders for the chapter."""
-    return [v for v, _text in sword_bridge.load_chapter(module, book, chapter)]
+    return [v for v, _text in content.load_chapter(module, book, chapter)]
 
 
 def pericope_verses(module: str, book: str, chapter: int,
@@ -370,7 +371,7 @@ def build(module: str, book: str, chapter: int,
     A layer whose data is not installed contributes nothing at all — no
     heading, no note of absence. The reader knows what they have.
     """
-    rendered = sword_bridge.load_chapter(module, book, chapter)
+    rendered = content.load_chapter(module, book, chapter)
     wanted = set(verses) if verses else None
     rows = [(v, _plain(t)) for v, t in rendered
             if wanted is None or v in wanted]
