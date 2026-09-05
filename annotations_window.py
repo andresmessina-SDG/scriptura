@@ -145,9 +145,12 @@ def _all_entries():
         for verse_str, anno in verses.items():
             if verse_str == 'chapter_note':
                 continue
-            try:
-                verse = int(verse_str)
-            except ValueError:
+            # `verse_str` is the store key, which for a line two versifications
+            # print differently carries an OSIS sub-verse letter (`1!b`). The
+            # key is what writes and deletes address; the app verse under it is
+            # what a reference, a sort and a jump speak.
+            app_verse = annotations._base_verse(verse_str)
+            if app_verse is None:
                 continue
             if isinstance(anno, str):
                 anno = {'highlight': anno, 'underline': False, 'note': None}
@@ -164,7 +167,8 @@ def _all_entries():
                 # what every reference, sort and jump below speaks. Writes go
                 # back through annotations.* with module=None — no lens, the
                 # number is already the one the store wants.
-                'book': book, 'chapter': chapter, 'verse': verse,
+                'book': book, 'chapter': chapter,
+                'verse': verse_str, 'app_verse': app_verse,
                 'highlight': h, 'underline': u, 'note': n,
                 'tags': tgs, 'is_chapter_note': False,
                 'created': anno.get('created'),
@@ -182,7 +186,8 @@ def _all_entries():
                 cn_text, cn_tags, cn_mod = '', [], None
             if cn_text.strip() or cn_tags:
                 entries.append({
-                    'book': book, 'chapter': chapter, 'verse': None,
+                    'book': book, 'chapter': chapter,
+                    'verse': None, 'app_verse': None,
                     'highlight': None, 'underline': False,
                     'note': cn_text, 'tags': cn_tags,
                     'is_chapter_note': True,
@@ -191,7 +196,7 @@ def _all_entries():
                     'modified': cn_mod,
                 })
     entries.sort(key=lambda e: (
-        _BOOK_ORDER.get(e['book'], 999), e['chapter'], e['verse'] or 0
+        _BOOK_ORDER.get(e['book'], 999), e['chapter'], e['app_verse'] or 0
     ))
     return entries
 
@@ -736,7 +741,7 @@ class AnnotationsWindow(Adw.Window):
             if q:
                 disp_book = book_label(e['book'])
                 ref = (f'{disp_book} {e["chapter"]}' if e.get('is_chapter_note')
-                       else f'{disp_book} {e["chapter"]}:{e["verse"]}')
+                       else f'{disp_book} {e["chapter"]}:{e["app_verse"]}')
                 haystack = ' '.join([
                     e['book'].lower(),
                     ref.lower(),
@@ -898,7 +903,8 @@ class AnnotationsWindow(Adw.Window):
             ref_text = _('{ref} — Chapter Note').format(
                 ref=f'{book_label(entry["book"])} {entry["chapter"]}')
         else:
-            ref_text = f'{book_label(entry["book"])} {entry["chapter"]}:{entry["verse"]}'
+            ref_text = (f'{book_label(entry["book"])} {entry["chapter"]}'
+                        f':{entry["app_verse"]}')
         ref = Gtk.Label(label=ref_text, xalign=0, hexpand=True)
         ref.set_ellipsize(Pango.EllipsizeMode.END)
         ref.add_css_class('heading')
@@ -1014,7 +1020,8 @@ class AnnotationsWindow(Adw.Window):
             ref = _('{ref} — Chapter Note').format(
                 ref=f'{book_label(entry["book"])} {entry["chapter"]}')
         else:
-            ref = f'{book_label(entry["book"])} {entry["chapter"]}:{entry["verse"]}'
+            ref = (f'{book_label(entry["book"])} {entry["chapter"]}'
+                   f':{entry["app_verse"]}')
         self._detail_title.set_title(ref)
         self._detail_title.set_subtitle(_edited_label(entry))
         self._show_verse_text(entry)
@@ -1156,7 +1163,7 @@ class AnnotationsWindow(Adw.Window):
         e = self._current_entry
         if not e:
             return
-        self._on_navigate(e['book'], e['chapter'], e['verse'] or 1)
+        self._on_navigate(e['book'], e['chapter'], e['app_verse'] or 1)
 
     def _toast(self, msg):
         toast = Adw.Toast.new(msg)
@@ -1200,7 +1207,7 @@ class AnnotationsWindow(Adw.Window):
     def _on_row_activated(self, _listbox, row):
         if hasattr(row, '_entry'):
             e = row._entry
-            self._on_navigate(e['book'], e['chapter'], e['verse'] or 1)
+            self._on_navigate(e['book'], e['chapter'], e['app_verse'] or 1)
 
     def _on_open_tag_manager(self, _btn):
         if (getattr(self, '_tag_mgr_win', None)
@@ -1236,7 +1243,8 @@ class AnnotationsWindow(Adw.Window):
                 lines.append(_('{ref} — Chapter Note').format(
                     ref=f'{book_label(e["book"])} {e["chapter"]}'))
             else:
-                lines.append(f'{book_label(e["book"])} {e["chapter"]}:{e["verse"]}')
+                lines.append(f'{book_label(e["book"])} {e["chapter"]}'
+                             f':{e["app_verse"]}')
                 types = []
                 if e['highlight']:
                     types.append(_('Highlight'))
