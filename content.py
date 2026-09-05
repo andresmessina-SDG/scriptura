@@ -302,6 +302,21 @@ def is_text_bible(name: str) -> bool:
             and not interlinear_data.is_interlinear_module(name))
 
 
+def text_bible_names() -> list[str]:
+    """Every installed module that is a readable Bible, across all sources.
+
+    The answer to "does this library hold a Bible at all", and to "give me
+    one". Asking `sword_bridge.module_names()` instead is what let the
+    welcome window declare a first run failed while the eBible Bible its own
+    bundle had just installed sat there unread — the Spanish reading tier
+    carries one for precisely the CrossWire outage that makes its SWORD text
+    fail. `readable_module_names` drops the internal-use morphology modules
+    and the SWORD dictionaries before `is_text_bible` ever sees them, which
+    is why the two must be composed rather than either used alone.
+    """
+    return [name for name in readable_module_names() if is_text_bible(name)]
+
+
 def has_footnotes(name: str) -> bool:
     """Whether the module can surface translator footnotes in a reading
     pane — drives the header f* toggle's sensitivity. Only verse-keyed

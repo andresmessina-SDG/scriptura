@@ -228,3 +228,52 @@ def test_no_module_loads_a_chapter_straight_off_a_bridge():
     assert offenders == [], (
         'call content.load_chapter instead — it routes to the bridge that '
         'owns the key: ' + ', '.join(offenders))
+
+
+# ── Which modules are a readable Bible ───────────────────────────────────────
+#
+# The bug this guards: the welcome window asked `sword_bridge.module_names()`
+# alone, so a first run whose Bible arrived as an eBible download — three
+# bundle tiers do exactly that, and the Spanish reading tier carries one for
+# the CrossWire outage that makes its SWORD text fail — was told no Bible had
+# been downloaded and handed a Back button.
+
+def test_text_bible_names_sees_every_source(monkeypatch):
+    monkeypatch.setattr(content, 'readable_module_names',
+                        lambda: ['KJV', ebible_bridge.PREFIX + 'spaonbv'])
+    monkeypatch.setattr(content, '_marks_strongs', {})
+    monkeypatch.setattr(sword_bridge, 'module_type', lambda n: 'Biblical Texts')
+    assert content.text_bible_names() == ['KJV',
+                                          ebible_bridge.PREFIX + 'spaonbv']
+
+
+def test_a_library_of_only_ebible_bibles_still_holds_a_bible(monkeypatch):
+    """The welcome window's one hard requirement. NBLA fails, the eBible
+    fallback installs, and the reader has a Bible."""
+    monkeypatch.setattr(content, 'readable_module_names',
+                        lambda: [ebible_bridge.PREFIX + 'spaonbv'])
+    assert bool(content.text_bible_names())
+
+
+def test_text_bible_names_is_empty_when_nothing_is_installed(monkeypatch):
+    monkeypatch.setattr(content, 'readable_module_names', lambda: [])
+    assert content.text_bible_names() == []
+
+
+def test_a_dictionary_is_not_a_bible(monkeypatch):
+    """`kind` calls a SWORD dictionary 'bible' — its catch-all return, since
+    only commentaries, genbooks and devotionals are named above it. What keeps
+    Easton's out of All-Bibles search and out of the welcome window's Bible
+    count is readable_module_names dropping it first, so the two must stay
+    composed and neither may be used alone."""
+    monkeypatch.setattr(sword_bridge, 'module_names',
+                        lambda: ['KJV', 'Easton'])
+    monkeypatch.setattr(sword_bridge, 'is_internal_use', lambda n: False)
+    monkeypatch.setattr(sword_bridge, 'is_devotional_module', lambda n: False)
+    monkeypatch.setattr(sword_bridge, 'module_type',
+                        lambda n: ('Lexicons / Dictionaries' if n == 'Easton'
+                                   else 'Biblical Texts'))
+    monkeypatch.setattr(ebible_bridge, 'module_names', lambda: [])
+    assert content.kind('Easton') == 'bible'          # the catch-all
+    assert 'Easton' not in content.text_bible_names()
+    assert 'KJV' in content.text_bible_names()
