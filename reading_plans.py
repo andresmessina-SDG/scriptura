@@ -124,7 +124,8 @@ _PLANS: list[Plan] = [
     {
         'id': 'blended_1_year',
         'name': N_('Bible in a Year — Blended'),
-        'description': N_('Four daily readings: OT history, OT prophecy, NT, and Psalms/Proverbs.'),
+        'description': N_(
+            'Four streams spread across 365 days — OT history, OT prophecy, NT, Psalms/Proverbs. Most days draw on two or three.'),
         'days': _make_blended(),
     },
     {

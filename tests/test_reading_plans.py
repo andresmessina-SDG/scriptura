@@ -269,3 +269,15 @@ def test_reset_progress_clears_start_and_completed(isolated_plans):
     _, start = reading_plans.get_active()
     assert start is None                                   # un-started
     assert reading_plans.get_completed('nt_90_days') == set()  # progress wiped
+
+
+def test_the_blended_description_promises_only_what_it_delivers():
+    """Psalms/Proverbs is 181 chapters over 365 days, so _spread leaves
+    that stream silent on 184 of them and all four speak on 95. The
+    description used to say "Four daily readings", which was the promise
+    readers picked the plan for."""
+    desc = next(p['description'] for p in reading_plans.get_plans()
+                if p['id'] == 'blended_1_year')
+    days = reading_plans.get_plan_days('blended_1_year')
+    assert min(len(d) for d in days) < 4      # the promise cannot hold
+    assert 'Four daily readings' not in desc
