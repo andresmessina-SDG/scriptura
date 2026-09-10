@@ -137,6 +137,30 @@
   </content_rating>
 
   <releases>
+    <release version="1.6.2" date="2026-09-10">
+      <!-- English only, by his call, as 1.6.1 shipped: its:translate="no"
+           is what keeps xgettext out of them and both catalogues at 100%. -->
+      <description its:translate="no">
+        <p>Two sweeps of fixes, and marks that follow the verse instead of the translation.</p>
+        <ul>
+          <li>A highlight, underline, note or tag now belongs to the verse rather than to the translation you made it in. A note written in the King James existed nowhere else; open another translation and the Bible was unmarked. Marks appear in every translation now, each numbering them its own way, and existing ones are migrated on first launch with the old file kept beside the new. The Study Journal, which was never a journal, is called Annotations, quotes the verse above the note, and records when each mark was made.</li>
+          <li>Exporting, printing, sharing or copying from a translation downloaded from eBible gave a blank page — the World English Bible the English starting library installs is one — and highlights and notes made in one landed on the wrong line, 1,126 verses of the Russian Synodal text among them.</li>
+          <li>Two eBible psalters were numbered against the wrong text: the Clementine Vulgate and the Russian Synodal merge two Hebrew psalms, so every psalm after them sat one number behind. 138 of 150 disagreed with the same texts read through SWORD; all 150 agree now.</li>
+          <li>“Match case” turned an OR search into an AND search. <code>Jesus OR Christ</code> returned 258 verses of the 1,217 it finds with the box unticked.</li>
+          <li>A link to a book your Bible has not got did nothing at all — no movement and no message. Cross-references, Strong's links, search results carried over from another translation, bookmarks and the Scripture in Stone citations all refused in silence. Any of them now says which book is missing.</li>
+          <li>The Old Calendar, kept by the Russian, Serbian, Georgian and Jerusalem Churches and by Athos, is offered beside the New. Their feasts were being named on another church's days.</li>
+          <li>The Orthodox troparion is in Church Slavonic, where a Russian reader used to be given a 1906 American translation of it in English. Stress marks are kept, and they now sit over their letters in Georgia rather than beside them.</li>
+          <li>Dates read in English whatever language the app was in, because a Flatpak carries only the languages the desktop is set up for. They come from the app's own catalogue now, in each language's own word order. The Russian church line uses the church's wording rather than the civil one.</li>
+          <li>The devotional could show any day of the year as today's reading: a devotional does not refuse a date it has not got, it answers with some other entry.</li>
+          <li>A stray space before a comma — “For God so loved the world , that he gave” — in the Today epigraph, the devotional pane, every cross-reference and every dictionary gloss, and in 34 of the 82 Anglican collects.</li>
+          <li>A highlight covered the verse number and stopped, and a freshly drawn chapter could paint its highlights beside the text they belong to until something else redrew the page.</li>
+          <li>A first run could report that no Bible was downloaded when one was, and the dictionary opened on the wrong language, both on translations that came from eBible. Exports cited such a translation by its internal id — <code>eBible: russyn</code> rather than Russian Synodal Bible.</li>
+          <li>“Bible in a Year — Blended” said four daily readings and gives four on 95 days of the 365. The plan is unchanged — no reader's schedule moves — and its description now says what it delivers.</li>
+          <li>Two highlight colours wore the same letter in Spanish, which took the cue away from the reader it exists for.</li>
+          <li>A third unreadable settings file destroyed the second instead of being set aside beside it.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.6.1" date="2026-09-02">
       <!-- English only, by his call: a patch release's notes are not
            worth stranding two catalogues at 99%. its:translate="no" is what

@@ -6,6 +6,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+## [1.6.2] — 2026-09-10
+
 ### Changed
 
 - **The Study Journal is now called Annotations.** It lists the marks you
@@ -39,6 +41,22 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - **Marks record when they were made and last changed**, shown on the row
   and in the detail header. Marks made before this have no date and sort
   last.
+- **The Old Calendar, which is most of Orthodoxy.** The Orthodox option
+  kept the New (Revised Julian) calendar and only that, so a reader whose
+  parish keeps the Nativity on 7 January was shown it on 25 December, and
+  Theophany on the 6th rather than the 19th. Both calendars are offered
+  now. Only the fixed feasts move between them — Pascha is reckoned the
+  same way under each, so Holy Week, the Pentecostarion and the Sundays
+  after Pentecost were always shared.
+- **The Orthodox collects are in Church Slavonic.** Under a Russian
+  interface the day's troparion was printed from a 1906 American service
+  book, in English, beneath a Russian church line. The tradition now
+  carries its own text — Slavonic rather than modern Russian, because that
+  is what is sung and what a Russian prayer book prints — with the stress
+  marks kept, since it is barely readable aloud without them. Where a
+  Slavonic text is missing for a day the English one is still shown, rather
+  than nothing. The Nativity of the Theotokos, one of the Twelve Great
+  Feasts, had been left out altogether and is now there in both languages.
 
 ### Fixed
 
@@ -105,6 +123,68 @@ semver-ish — 0.x was the pre-Flathub testing track.
   was the first letter of the colour's name, which made *Amarillo* and
   *Azul* both **A**. The letters are their own translation now: Spanish
   keeps the English Y G B O, Russian uses Ж З С О.
+- **Two eBible psalters were numbered against the wrong text.** The
+  Clementine Vulgate and the Russian Synodal text downloaded from eBible
+  both merge the Hebrew psalms 9 and 10, so every psalm from there to 147
+  sits one number behind — asking for Psalm 23 rendered «Господня земля»,
+  which is Psalm 24. Measured against the same two texts as SWORD editions,
+  138 of the 150 psalms disagreed; they agree on all 150 now. Three things
+  followed from it: the verse grid offered 31 buttons for a chapter holding
+  six, the comparison column and the dictionary's verse peek showed a
+  psalm's superscription where the other column showed verse 1, and a
+  chapter's footnotes could belong to a different chapter than the text
+  above them.
+- **The devotional could show the wrong day.** Asking a devotional for a
+  date was tried in five key shapes and the first answer longer than twenty
+  characters was accepted — but a devotional does not refuse a date it has
+  not got; it snaps to some other entry and answers with that, at full
+  length. The reading shown as today's could be any day of the year. The
+  answer's own key is now compared against the date asked for. On a Spanish
+  or Russian desktop the app was also asking for «sep 2» and «сен 2», which
+  no devotional is written with.
+- **Dates read in English whatever language the app was in.** The Today
+  page headed a Russian church line with “THURSDAY · 3 SEPTEMBER 2026”.
+  Month and weekday names were taken from the system, and a Flatpak carries
+  only the languages the desktop itself is set up for — on an English
+  machine, only English ones. They come from the app's own catalogue now,
+  and the order of the parts moves with them, so a language that writes the
+  day first is not made to accept English order to get its own month names.
+- **The Russian church line used the civil wording.** It read «Тринадцатое
+  воскресенье после Пятидесятницы»; no Orthodox calendar prints that. The
+  church counts «Неделя 13-я по Пятидесятнице» — its own word for Sunday,
+  its own preposition, and a numeral rather than the spelt-out ordinal. The
+  Western traditions keep the civil wording, which is right for them.
+- **Slavonic stress marks stood beside their letters in Georgia.** A
+  combining accent is drawn over its letter only when the font gives it no
+  width of its own. Georgia gives it 13 pixels at reading size, so
+  «Све́тлую» came out as “Све ́тлую” — and Georgia is a face the font picker
+  offers, so any Orthodox troparion landed in it for the readers who choose
+  it.
+- **A floating space before a comma, in four places at once.** Verse markup
+  is stripped by replacing each tag with a space, which is right between two
+  tagged words and wrong in front of punctuation — and the KJV with
+  Apocrypha puts its tags between the word and the comma. “For God so loved
+  the world , that he gave his only begotten Son ,” is what the Today
+  epigraph, the devotional pane, every cross-reference and every dictionary
+  gloss were showing. One routine does the stripping now. Thirty-four of the
+  eighty-two Anglican collects carried the same space, from the same cause
+  in the tool that extracted them; the words are untouched.
+- **A highlight stopped at the verse number.** A highlight over a verse
+  that begins mid-line covered the number and one space and went no
+  further, leaving the rest of the line bare — which at a comfortable
+  measure is most verses. The verse number is set smaller and raised, and
+  that was enough for the rest of the line to be read as belonging to
+  another line.
+- **Highlights could load beside the text they belong to.** A freshly drawn
+  chapter is still settling for up to a second, and the bands were measured
+  from it as it moved, then left where they landed until something else
+  asked the page to redraw. Bands are now drawn only once the layout has
+  stopped moving.
+- **A third corrupt settings file destroyed the second.** A file that
+  cannot be read is set aside rather than overwritten, with a timestamp
+  added when one is already there — but the timestamp counts whole seconds,
+  so the third copy in the same second took the second copy's name. Four
+  bad files in a row left two.
 
 ## [1.6.1] — 2026-09-02
 
