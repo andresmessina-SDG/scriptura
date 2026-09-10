@@ -42,6 +42,64 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Fixed
 
+- **Exporting, printing, sharing or copying from an eBible translation gave
+  a blank page.** The World English Bible the English welcome bundle
+  installs is one, as are the Nueva Biblia Viva, the Reina Valera 1909 and
+  the Biblia en Español Sencillo in the Spanish ones. Export passage, Print,
+  Share as image and Copy verse each asked the SWORD library for a chapter
+  it does not hold, and it answered with nothing rather than an error, so
+  the reference and the attribution line came out with no words between
+  them. The Annotations window's quoted verse was blank for the same
+  reason. Every one of them now asks whichever source owns the translation.
+- **Highlights and notes made in an eBible translation landed on the wrong
+  line.** In the Russian Synodal text 1,126 verses were affected, in the
+  Clementine Vulgate 1,113 — mostly the Psalms, where a mark on the first
+  line of Psalm 3 was filed above the psalm and one on the second line
+  painted on the superscription instead.
+- **A note could destroy another note in a Vulgate or Synodal psalter.**
+  Where those texts print a psalm title as two lines, both are one verse in
+  the King James numbering the marks are filed under, so the second note
+  written overwrote the first and the second highlight painted on the first
+  line. The two lines are told apart now, and a translation that prints
+  them as one shows both marks together.
+- **“Match case” turned OR searches into AND searches.** Searching
+  `Jesus OR Christ` with Match case on returned 258 verses of the 1,217 the
+  same search finds with it off — it quietly required *both* words, and
+  threw away every verse that carried only one, cased exactly as typed.
+  `bread OR wine OR oil` came back with four verses instead of 661.
+- **A first run could report that no Bible was downloaded when one was.**
+  Three welcome bundles install their Bible as an eBible download, and the
+  smallest Spanish bundle carries one specifically so that a bad day at
+  CrossWire still leaves the reader with a Spanish Bible. The check that
+  asks whether a Bible arrived counted only the other kind, so on exactly
+  that bad day it met the reader with “Couldn’t download a Bible” and a
+  Back button, with the Nueva Biblia Viva installed and ready behind it.
+- **The dictionary opened on the wrong language.** Double-clicking a word
+  offers every dictionary you have and opens the one in the language you
+  are reading. On a Bible that came from eBible — the World English Bible,
+  the Nueva Biblia Viva, the Reina Valera 1909 — it had no language to go
+  on and opened them in alphabetical order instead, which in Spanish means
+  Easton’s before the Wikcionario.
+- **Search could fall back to no Bible at all.** Opening search while a
+  devotional is in the pane picks a Bible to search instead; it looked
+  only at one kind, so a library whose Bibles all came from eBible left it
+  searching the devotional.
+- **Exports cited the translation by its internal id.** A worksheet or a
+  share card made from an eBible translation was signed `eBible: russyn`
+  rather than *Russian Synodal Bible*.
+- **A link to a book your Bible has not got did nothing at all.** The
+  Scripture in Stone gallery cites 2 Maccabees for the Heliodorus Stele and
+  1 Maccabees for the coin of John Hyrcanus; on the 66-book Bible the
+  English welcome bundle installs, pressing “Open in the Bible pane” moved
+  nothing and said nothing. Cross-reference links, Strong's links, search
+  results carried over from another translation and bookmarks all refused
+  the same way. Any of them now says which book is missing, in the same
+  words the book list uses when it dims one.
+- **“Bible in a Year — Blended” promised more than it gives.** It said
+  “Four daily readings”, but Psalms and Proverbs are 181 chapters spread
+  over 365 days, so that stream is silent on 184 of them and all four speak
+  on only 95. The plan is unchanged — no reader's schedule moves — and its
+  description now says what it delivers.
 - **Two highlight colours wore the same letter in Spanish.** The swatches
   carry a letter as well as a colour, so hue is never the only cue — and it
   was the first letter of the colour's name, which made *Amarillo* and

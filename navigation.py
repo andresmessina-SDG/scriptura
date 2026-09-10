@@ -140,11 +140,27 @@ class NavigationController:
             i += delta
         return None
 
-    def _go_to(self, book, chapter, verse=None, record=True):
-        if book not in self.nav_books():
+    def _say_book_missing(self, book):
+        """Say why a navigation was refused, instead of ignoring it.
+
+        Navigation's own callers can only name a book already on the list,
+        but everything else funnels through `_go_to` too — a Scripture in
+        Stone link to 2 Maccabees, a Strong's or cross-reference link, a
+        search result carried over from another module, a bookmark. On a
+        66-book library those all refused in silence, which reads as a
+        dead button. The wording is the nav list's own, which dims such a
+        book and says exactly this.
+
+        Programmatic navigation stays quiet: the startup devotional moves
+        pane 1 beneath the Today page and the reader asked for nothing."""
+        if self._today_suppress:
             return
+        self._win._toast(_('%s isn’t in this translation.') % book_label(book))
+
+    def _go_to(self, book, chapter, verse=None, record=True):
         holder = self._book_module(book)
-        if holder is None:
+        if holder is None or book not in self.nav_books():
+            self._say_book_missing(book)
             return
         # Any navigation is "an action" — it takes the reader in, so the
         # Today page slides away (unless this is the programmatic startup

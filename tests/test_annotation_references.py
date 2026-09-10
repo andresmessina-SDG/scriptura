@@ -45,7 +45,7 @@ def isolated(tmp_path, monkeypatch):
     monkeypatch.setattr(annotations, 'ANNOTATIONS_FILE',
                         str(tmp_path / 'annotations.json'))
     monkeypatch.setattr(annotations, '_cache', None)
-    monkeypatch.setattr(annotations, '_outward_maps', {})
+    monkeypatch.setattr(annotations, '_verse_map_cache', {})
     return tmp_path
 
 
@@ -120,7 +120,7 @@ def test_a_chapter_note_crosses_modules_too(isolated):
 def test_an_app_keyed_module_is_left_alone(isolated):
     annotations.save_highlight('KJVA', 'Psalms', 3, 1, '#ffff00')
     assert annotations._load()['Psalms/3']['1']['highlight'] == '#ffff00'
-    assert _only_entry()['verse'] == 1
+    assert _only_entry()['app_verse'] == 1
 
 
 def test_a_mapped_module_writes_the_app_space_verse(
@@ -128,7 +128,7 @@ def test_a_mapped_module_writes_the_app_space_verse(
     annotations.save_highlight('SuperscribedPsalter', 'Psalms', 3, 1, '#ffff00')
     assert list(annotations._load()['Psalms/3']) == ['0'], \
         'module verse 1 is the superscription — app-space verse 0'
-    assert _only_entry()['verse'] == 0
+    assert _only_entry()['app_verse'] == 0
 
 
 def test_the_module_reads_back_its_own_numbering(
@@ -169,7 +169,7 @@ def test_the_sort_orders_by_the_app_space_verse(
     rather than beside it."""
     annotations.save_highlight('KJVA', 'Psalms', 3, 1, '#ffff00')
     annotations.save_highlight('SuperscribedPsalter', 'Psalms', 3, 1, '#ffff00')
-    assert [e['verse'] for e in annotations_window._all_entries()] == [0, 1]
+    assert [e['app_verse'] for e in annotations_window._all_entries()] == [0, 1]
 
 
 def test_delete_reaches_the_verse_the_module_is_showing(
@@ -477,3 +477,97 @@ def test_the_reading_module_is_not_asked_twice(isolated, monkeypatch,
         assert not win._verse_label.get_visible()
     finally:
         win.destroy()
+
+
+# ── Sub-verse keys: two module lines on one app verse ────────────────────────
+#
+# SWORD's own Vulg→KJV table sends both Vulg Ps 3:1 (the superscription) and
+# 3:2 (the psalm's first line) to KJV Ps 3:1, and the Synodal table does the
+# same with its two-line titles — 128 verses in the Vulgate, 58 in the Synodal.
+# One slot for two lines meant the second mark painted on the first line and a
+# note written on one destroyed the note on the other.
+
+@pytest.fixture
+def two_lines_on_one_verse(monkeypatch):
+    """A psalter whose first two lines are both app verse 1 — the shape the
+    real Vulgate tables have, without needing the module installed."""
+    real_to_app = sword_bridge.map_verse_to_app
+    real_mapped = sword_bridge.mapped_chapter
+    real_load = sword_bridge.load_chapter
+    fake = 'FoldedPsalter'
+
+    monkeypatch.setattr(sword_bridge, 'map_verse_to_app',
+                        lambda m, b, c, v: (max(v - 1, 1) if m == fake and v
+                                            else real_to_app(m, b, c, v)))
+    monkeypatch.setattr(sword_bridge, 'mapped_chapter',
+                        lambda m, b, c: ((b, c) if m == fake
+                                         else real_mapped(m, b, c)))
+    monkeypatch.setattr(sword_bridge, 'load_chapter',
+                        lambda m, b, c: ([(v, f'line {v}') for v in range(1, 6)]
+                                         if m == fake else real_load(m, b, c)))
+    return fake
+
+
+def test_two_folded_lines_get_two_keys(isolated, two_lines_on_one_verse):
+    annotations.save_note(two_lines_on_one_verse, 'Psalms', 3, 1, 'the title')
+    annotations.save_note(two_lines_on_one_verse, 'Psalms', 3, 2, 'the first line')
+    assert annotations._load()['Psalms/3']['1']['note'] == 'the title'
+    assert annotations._load()['Psalms/3']['1!b']['note'] == 'the first line'
+
+
+def test_neither_note_destroys_the_other(isolated, two_lines_on_one_verse):
+    """The defect exactly: one slot for two lines lost whichever was written
+    first, with no warning and no way back."""
+    annotations.save_note(two_lines_on_one_verse, 'Psalms', 3, 1, 'the title')
+    annotations.save_note(two_lines_on_one_verse, 'Psalms', 3, 2, 'the first line')
+    read = annotations.get_annotations(two_lines_on_one_verse, 'Psalms', 3)
+    assert read['1']['note'] == 'the title'
+    assert read['2']['note'] == 'the first line'
+
+
+def test_a_mark_stays_on_the_line_it_was_made_on(isolated, two_lines_on_one_verse):
+    annotations.save_highlight(two_lines_on_one_verse, 'Psalms', 3, 2, '#ffff00')
+    read = annotations.get_annotations(two_lines_on_one_verse, 'Psalms', 3)
+    assert [k for k, v in read.items() if v.get('highlight')] == ['2']
+
+
+def test_a_module_printing_them_as_one_sees_both(isolated, two_lines_on_one_verse):
+    """The KJV has one verse where the psalter has two lines, so it shows the
+    marks merged rather than showing one and hiding the other."""
+    annotations.save_note(two_lines_on_one_verse, 'Psalms', 3, 1, 'the title')
+    annotations.save_note(two_lines_on_one_verse, 'Psalms', 3, 2, 'the first line')
+    read = annotations.get_annotations('KJVA', 'Psalms', 3)
+    assert list(read) == ['1']
+    assert read['1']['note'] == 'the title\n\nthe first line'
+
+
+def test_clearing_the_shared_line_clears_the_whole_fold(
+        isolated, two_lines_on_one_verse):
+    """A reader can only be clearing what they were shown. Clearing the base
+    key alone put the highlight straight back on the next render."""
+    annotations.save_highlight(two_lines_on_one_verse, 'Psalms', 3, 2, '#ffff00')
+    annotations.save_highlight('KJVA', 'Psalms', 3, 1, None)
+    assert not any(v.get('highlight')
+                   for v in annotations._load()['Psalms/3'].values())
+
+
+def test_the_window_carries_the_key_and_the_app_verse(
+        isolated, two_lines_on_one_verse):
+    """The list writes back by store key and cites by app verse; reading the
+    key as an int dropped the sub-verse row from the window entirely."""
+    annotations.save_note(two_lines_on_one_verse, 'Psalms', 3, 2, 'the first line')
+    entry = _only_entry()
+    assert (entry['verse'], entry['app_verse']) == ('1!b', 1)
+
+
+def test_a_migrated_store_keeps_both_lines(isolated, two_lines_on_one_verse):
+    """The v1 store was module-keyed, so it could hold both lines already.
+    Migrating them into one app slot would have destroyed one on first launch."""
+    with open(annotations.ANNOTATIONS_FILE, 'w', encoding='utf-8') as f:
+        json.dump({f'{two_lines_on_one_verse}/Psalms/3': {
+            '1': {'note': 'the title'},
+            '2': {'note': 'the first line'}}}, f)
+    annotations._cache = None
+    read = annotations.get_annotations(two_lines_on_one_verse, 'Psalms', 3)
+    assert read['1']['note'] == 'the title'
+    assert read['2']['note'] == 'the first line'

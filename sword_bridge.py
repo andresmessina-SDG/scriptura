@@ -2765,9 +2765,8 @@ def search_module(module_name, query, on_indexing_start=None,
     # For a case-sensitive match we post-filter the stored verbatim content
     # for the original-case terms (shared with the eBible backend).
     if case_sensitive:
-        cs_words = search_query.plain_terms(query)
         formatted = [r for r in formatted
-                     if all(w in (r[3] or '') for w in cs_words)]
+                     if search_query.case_matches(query, r[3])]
     if truncated:
         # Sentinel row the panel detects and replaces with its own translated
         # message, so this backend stays English-free.

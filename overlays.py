@@ -20,6 +20,7 @@ this module imports window for BOOKS (avoids a load-order cycle).
 """
 import re
 from gi.repository import GLib
+import content
 import sword_bridge
 import window
 
@@ -238,9 +239,9 @@ class OverlayManager:
             # if pane1 is showing a devotional (search doesn't work on devotionals).
             mod = self.pane1._module
             if self.pane1._is_devotional:
-                texts = [m for m in sword_bridge.module_names()
-                         if not sword_bridge.is_internal_use(m)
-                         and sword_bridge.module_type(m) == 'Biblical Texts']
+                # Every source, or a library whose Bibles all came from eBible
+                # falls back to nothing and opens search on the devotional.
+                texts = content.text_bible_names()
                 if texts:
                     mod = texts[0]
             self._search_panel.prepare_for_show(mod)

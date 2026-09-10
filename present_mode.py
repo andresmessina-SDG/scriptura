@@ -195,10 +195,8 @@ class PresentController:
         return None
 
     def _load_chapter_verses(self, module, book, chapter):
-        import ebible_bridge
-        if ebible_bridge.is_ebible_module(module):
-            return ebible_bridge.load_chapter(module, book, chapter)
-        return sword_bridge.load_chapter(module, book, chapter)
+        import content
+        return content.load_chapter(module, book, chapter)
 
     def _present_cross(self, delta):
         """Load the chapter `delta` away into the presentation surface, landing

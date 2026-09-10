@@ -7359,10 +7359,8 @@ msgid "Bible in a Year — Blended"
 msgstr "La Biblia en un año: combinada"
 
 #: reading_plans.py:127
-msgid "Four daily readings: OT history, OT prophecy, NT, and Psalms/Proverbs."
-msgstr ""
-"Cuatro lecturas diarias: historia del AT, profecía del AT, NT y Salmos/"
-"Proverbios."
+msgid "Four streams spread across 365 days — OT history, OT prophecy, NT, Psalms/Proverbs. Most days draw on two or three."
+msgstr "Cuatro recorridos repartidos en 365 días: historia del AT, profecía del AT, NT y Salmos/Proverbios. La mayoría de los días trae dos o tres."
 
 #: reading_plans.py:132
 msgid "Old Testament in a Year"

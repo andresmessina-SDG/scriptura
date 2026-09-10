@@ -99,6 +99,44 @@ def build_match(query):
     return expr
 
 
+def case_groups(query):
+    """The positive terms grouped the way FTS5 evaluates them: a list of
+    AND-groups joined by OR. `bread OR wine water` → [['bread'],
+    ['wine', 'water']].
+
+    Measured against SQLite rather than assumed: FTS5 binds AND tighter than
+    OR, so `a OR b AND c` matches `a` alone and `b c` together, not `(a OR b)
+    AND c`.
+    """
+    positives, _neg, connectors = _parse(query or '')
+    groups = []
+    for i, (_fts, plain) in enumerate(positives):
+        words = [w for w in plain.split() if w]
+        if not words:
+            continue
+        if not groups or connectors[i] == 'OR':
+            groups.append(list(words))
+        else:
+            groups[-1].extend(words)
+    return groups
+
+
+def case_matches(query, text):
+    """Whether `text` carries the query's positive terms in the case they were
+    typed — the post-filter both backends run for "Match case".
+
+    Honours the connectors, which is the whole reason it is not a bare
+    `all(word in text)`: that read `Jesus OR Christ` as `Jesus AND Christ` and
+    threw away 959 of the KJV's 1,217 hits, every one of them cased exactly as
+    asked. A query with no usable positive term filters nothing.
+    """
+    groups = case_groups(query)
+    if not groups:
+        return True
+    body = text or ''
+    return any(all(word in body for word in group) for group in groups)
+
+
 def plain_terms(query):
     """Positive search words in original case, phrases split into their words.
 

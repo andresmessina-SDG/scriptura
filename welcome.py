@@ -23,6 +23,7 @@ from gi.repository import Gtk, Adw, GLib, Pango
 import sword_bridge
 import open_data
 import catena_bridge
+import content
 import ebible_bridge
 import onboarding
 import settings
@@ -1019,10 +1020,13 @@ class WelcomeWindow(Adw.ApplicationWindow):
         # The one hard requirement: a Bible-text module must now exist, or the
         # main window has nothing to open. Everything else is recoverable from
         # the Module Manager later.
-        installed = sword_bridge.module_names()
-        has_bible = any(
-            sword_bridge.module_type(m) == 'Biblical Texts' for m in installed
-        )
+        #
+        # Across every source, not just SWORD. Three tiers install their Bible
+        # as an eBible download, and the Spanish reading tier carries one for
+        # exactly the CrossWire outage that makes its SWORD text fail — so
+        # counting SWORD alone showed the reader "Couldn't download a Bible"
+        # on their first screen while the fallback sat installed and unread.
+        has_bible = bool(content.text_bible_names())
 
         if not has_bible:
             details = ('; '.join(f'{n}: {e}' for n, e in failed)

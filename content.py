@@ -153,6 +153,7 @@ class _ContentType:
         has_footnotes: Callable[[str], bool] = lambda name: False,
         can_remove: Callable[[str], bool] = lambda name: False,
         remove: Callable[[str], None] | None = None,
+        load_chapter: Callable[[str, str, int], list] | None = None,
     ) -> None:
         self.key = key
         self.is_member = is_member
@@ -167,6 +168,13 @@ class _ContentType:
         # old `else` path for the packless types.
         self.remove: Callable[[str], None] = (
             remove or (lambda name: sword_bridge.remove_module(name)))
+        # Same late resolution as `remove`, and the same default: every
+        # verse-keyed source that is not eBible reads through SWORD, and a
+        # source that carries no verse text answers [] there anyway.
+        self.load_chapter: Callable[[str, str, int], list] = (
+            load_chapter
+            or (lambda name, book, chapter:
+                sword_bridge.load_chapter(name, book, chapter)))
 
 
 # Order: the specific sources first (their predicates are disjoint), then the
@@ -224,7 +232,9 @@ _TYPES: list[_ContentType] = [
         has_footnotes=lambda name: bool(
             ebible_bridge.module_has_footnotes(name)),
         can_remove=lambda name: True,
-        remove=lambda name: ebible_bridge.remove_module(name)),
+        remove=lambda name: ebible_bridge.remove_module(name),
+        load_chapter=lambda name, book, chapter:
+            cast(list, ebible_bridge.load_chapter(name, book, chapter))),
     _ContentType(
         'sword', lambda name: True,          # catch-all — keep last
         kind=_sword_kind,
@@ -257,6 +267,22 @@ def type_key(name: str) -> str:
     return _type_for(name).key
 
 
+def load_chapter(name: str, book: str, chapter: int) -> list:
+    """The chapter's [(verse number, markup)] out of whichever source owns
+    this key — app-space `book`/`chapter` in, the module's own verse
+    numbering out, exactly as both bridges answer.
+
+    Every caller that holds an arbitrary reading module comes through here.
+    Calling `sword_bridge.load_chapter` directly instead is what left the
+    export, the share card, the printed sheet, Copy verse and the reader's
+    own highlights blank or misplaced on an eBible translation — that
+    function answers [] for a key it does not own, without raising, and the
+    World English Bible the English welcome bundle installs is one.
+    `test_content.py` holds the module list to this.
+    """
+    return _type_for(name).load_chapter(name, book, chapter)
+
+
 def kind(name: str) -> str:
     """Coarse content category for the module picker's tabs.
 
@@ -274,6 +300,59 @@ def is_text_bible(name: str) -> bool:
     window's default-Bible pick) filter through here."""
     return (kind(name) == 'bible'
             and not interlinear_data.is_interlinear_module(name))
+
+
+# eBible uses ISO 639-3 codes ('eng', 'spa'), SWORD mostly 639-1 ('en',
+# 'es'). Anything comparing one source's language against another's needs one
+# canonical key or the comparison silently never matches: the module manager's
+# merged language filter would drop a whole source, and the reading pane's
+# dictionary tabs would stop opening on the reader's own language. Majors map
+# to two-letter; everything else passes through unchanged.
+_ISO3TO2 = {
+    'eng': 'en', 'spa': 'es', 'deu': 'de', 'ger': 'de', 'fra': 'fr',
+    'fre': 'fr', 'ita': 'it', 'por': 'pt', 'nld': 'nl', 'dut': 'nl',
+    'rus': 'ru', 'ell': 'el', 'gre': 'el', 'heb': 'he', 'lat': 'la',
+    'ara': 'ar', 'zho': 'zh', 'chi': 'zh', 'jpn': 'ja', 'kor': 'ko',
+    'swe': 'sv', 'fin': 'fi', 'dan': 'da', 'nor': 'no', 'nob': 'no',
+    'nno': 'no', 'pol': 'pl', 'ces': 'cs', 'cze': 'cs', 'slk': 'sk',
+    'slo': 'sk', 'hun': 'hu', 'ron': 'ro', 'rum': 'ro', 'ukr': 'uk',
+    'bul': 'bg', 'hrv': 'hr', 'srp': 'sr', 'afr': 'af', 'fas': 'fa',
+    'per': 'fa', 'tur': 'tr', 'vie': 'vi', 'ind': 'id', 'swh': 'sw',
+    'swa': 'sw', 'tgl': 'tl',
+}
+
+
+def normalise_language(code: str | None) -> str:
+    """One language code in, the canonical two-letter form out."""
+    code = (code or '').strip().lower()
+    return _ISO3TO2.get(code, code)
+
+
+def language_code(name: str) -> str:
+    """This module's language as a canonical two-letter code, whichever
+    source it came from — `''` when the source does not say.
+
+    `language` gives each source's own spelling; this is the one to compare
+    two modules with. Reaching for `sword_bridge.module_language` instead
+    answers `''` for every eBible translation, which is what stopped the
+    dictionary tabs opening on the language a reader was actually reading.
+    """
+    return normalise_language(language(name))
+
+
+def text_bible_names() -> list[str]:
+    """Every installed module that is a readable Bible, across all sources.
+
+    The answer to "does this library hold a Bible at all", and to "give me
+    one". Asking `sword_bridge.module_names()` instead is what let the
+    welcome window declare a first run failed while the eBible Bible its own
+    bundle had just installed sat there unread — the Spanish reading tier
+    carries one for precisely the CrossWire outage that makes its SWORD text
+    fail. `readable_module_names` drops the internal-use morphology modules
+    and the SWORD dictionaries before `is_text_bible` ever sees them, which
+    is why the two must be composed rather than either used alone.
+    """
+    return [name for name in readable_module_names() if is_text_bible(name)]
 
 
 def has_footnotes(name: str) -> bool:
@@ -309,13 +388,11 @@ def has_strongs(name: str) -> bool:
     if not is_text_bible(name):
         _marks_strongs[name] = False
         return False
-    load = (ebible_bridge.load_chapter if type_key(name) == 'ebible'
-            else sword_bridge.load_chapter)
     found = False
     for book, chapter in _STRONGS_PROBE:
         try:
             if any(_STRONGS_RE.search(str(html))
-                   for _verse, html in load(name, book, chapter)):
+                   for _verse, html in load_chapter(name, book, chapter)):
                 found = True
                 break
         except Exception:

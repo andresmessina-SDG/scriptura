@@ -74,6 +74,19 @@ def _sword() -> Any:
         return None
 
 
+def _content() -> Any:
+    """content, or None. Lazy and defensive for the same reason as _sword():
+    the backup and test paths load this module and must not drag the bridges
+    in. It is content, not sword_bridge, because an eBible translation renders
+    its own chapters — asking SWORD for one returns [] without raising, which
+    is what silently flattened the map below to the identity."""
+    try:
+        import content
+        return content
+    except Exception:
+        return None
+
+
 def _is_mapped(module: str | None, book: str, chapter: int) -> bool:
     """Whether this module numbers this chapter differently from app space.
     False for KJV/KJVA and every module without versification tables, which
@@ -104,60 +117,145 @@ def _to_app(module: str | None, book: str, chapter: int,
     return mapped
 
 
-# {(module, book, chapter): {app verse: module verse}} — see _outward_map.
-_outward_maps: dict[tuple[str, str, int], dict[int, int]] = {}
+# ── Sub-verse keys ───────────────────────────────────────────────────────────
+#
+# App space cannot always tell two of a module's lines apart. SWORD's own
+# Vulg→KJV table sends both Vulg Ps 3:1 (the superscription) and 3:2 (the
+# first line of the psalm) to KJV Ps 3:1, and the Synodal table does the same
+# with its two-line psalm titles. A store keyed on the app verse alone
+# therefore has one slot for two lines: the second mark landed on the first
+# line, and a note written on one destroyed the note on the other.
+#
+# So a key is the app verse, plus an OSIS sub-verse letter for the second and
+# later lines folded into it — `1`, `1!b`, `1!c`, the notation OSIS and USFM
+# already use for exactly this. 128 verses in the Vulgate need one, 58 in the
+# Synodal, none at all in a KJV-keyed module.
+#
+# A module that prints those lines as one still sees one mark: `get_annotations`
+# folds the sub-keys it has no line for into the line that carries their app
+# verse, merging losslessly. Marking that line writes the base key; CLEARING it
+# clears the whole fold, because a reader can only be clearing what they were
+# shown.
+
+_SUB = '!'
 
 
-def _outward_map(module: str, book: str, chapter: int) -> dict[int, int]:
-    """{app verse: the number this module renders for it}, built by asking
-    the module about each verse it renders and inverting the answers.
+def _base_verse(key: str) -> int | None:
+    """The app verse a store key belongs to — `1!b` → 1 — or None if the key
+    is not a verse key at all."""
+    try:
+        return int(key.split(_SUB, 1)[0])
+    except ValueError:
+        return None
 
-    Built by inversion rather than mapped in reverse because app space cannot
-    express every module verse. A Synodal psalter numbers the superscription,
-    so its Psalm 3:1 is app verse 0 — and a KJV VerseKey has no verse 0 to map
-    back from, which would strand every mark on a superscription.
+
+def _store_key(app: int, nth: int) -> str:
+    """The key for the `nth` module line folded into app verse `app`, counting
+    from 0. Beyond `z` the index is spelt out, which no real table reaches —
+    the worst case in any installed versification is two."""
+    if nth == 0:
+        return str(app)
+    return (f'{app}{_SUB}{chr(ord("b") + nth - 1)}' if nth <= 25
+            else f'{app}{_SUB}{nth}')
+
+
+# {(module, book, chapter): ({module verse: store key}, {store key: module verse})}
+_verse_map_cache: dict[tuple[str, str, int], tuple[dict[int, str], dict[str, int]]] = {}
+
+
+def _verse_maps(module: str, book: str, chapter: int
+                ) -> tuple[dict[int, str], dict[str, int]]:
+    """({module verse: store key}, {store key: module verse}) for a mapped
+    module, built by asking it which verses it renders and mapping each inward.
+
+    Built by walking the module's own lines rather than mapping app space
+    outward because app space cannot express every module verse: a Synodal
+    psalter numbers the superscription, so its Psalm 3:1 is app verse 0, and a
+    KJV VerseKey has no verse 0 to map back from. Walking the lines also gives
+    the collision its answer — the second line to claim an app verse takes the
+    next sub-key rather than overwriting the first.
+
+    load_chapter is cached and the pane is about to call it anyway.
     """
     key = (module, book, chapter)
-    cached = _outward_maps.get(key)
+    cached = _verse_map_cache.get(key)
     if cached is not None:
         return cached
-    out: dict[int, int] = {}
-    sb = _sword()
-    if sb is not None:
+    inward: dict[int, str] = {}
+    outward: dict[str, int] = {}
+    sb, ct = _sword(), _content()
+    if sb is not None and ct is not None:
         try:
-            # The verses the module actually renders, not a count taken from
-            # app space: a mapped psalter has one more line in the chapter
-            # than the KJV does, and it is the one most likely to be marked.
-            # load_chapter is cached, and the pane is about to call it anyway.
-            for mverse, _html in sb.load_chapter(module, book, chapter):
+            seen: dict[int, int] = {}
+            for mverse, _html in ct.load_chapter(module, book, chapter):
                 app = sb.map_verse_to_app(module, book, chapter, mverse)
-                out.setdefault(app, mverse)
+                skey = _store_key(app, seen.get(app, 0))
+                seen[app] = seen.get(app, 0) + 1
+                inward[mverse] = skey
+                outward[skey] = mverse
         except Exception:
-            _log.exception('could not map %s %s %s outward',
-                           module, book, chapter)
-            out = {}
-    _outward_maps[key] = out
-    return out
+            _log.exception('could not map %s %s %s', module, book, chapter)
+            inward, outward = {}, {}
+    _verse_map_cache[key] = (inward, outward)
+    return inward, outward
+
+
+def _write_key(module: str | None, book: str, chapter: int, verse: int) -> str:
+    """The store key a mark on this module's `verse` is written to."""
+    if not module or not _is_mapped(module, book, chapter):
+        return str(_to_app(module, book, chapter, verse))
+    inward, _outward = _verse_maps(module, book, chapter)
+    return inward.get(verse) or str(_to_app(module, book, chapter, verse))
+
+
+def _fold_keys(module: str | None, book: str, chapter: int,
+               verse: int) -> list[str]:
+    """Every store key shown on the line this module renders as `verse`.
+
+    More than one only when the store holds a sub-key this module has no line
+    of its own for — a mark a Vulgate reader made on the second half of a
+    superscription, read in the KJV, which prints the two as one verse.
+    """
+    own = _write_key(module, book, chapter, verse)
+    base = _base_verse(own)
+    if base is None:
+        return [own]
+    outward = (_verse_maps(module, book, chapter)[1]
+               if module and _is_mapped(module, book, chapter) else {})
+    chap = _load().get(_chapter_key(book, chapter), {})
+    extra = sorted(k for k in chap
+                   if k != 'chapter_note' and k != own
+                   and _base_verse(k) == base and k not in outward)
+    return [own] + extra
 
 
 def _to_module(module: str | None, book: str, chapter: int,
-               verse: int | None) -> int | None:
-    """An app-space verse → the number this module renders for it."""
-    if verse is None or not module:
-        return verse
-    return _outward_map(module, book, chapter).get(verse, verse)
+               verse: int | str | None) -> int | None:
+    """A store key (or app verse) → the number this module renders for it."""
+    if verse is None:
+        return None
+    if not module:
+        return _base_verse(str(verse))
+    inward, outward = _verse_maps(module, book, chapter)
+    if str(verse) in outward:
+        return outward[str(verse)]
+    base = _base_verse(str(verse))
+    if base is None:
+        return None
+    # A key this module has no line of its own for falls onto the line that
+    # carries its app verse — the same fold get_annotations reads with.
+    return outward.get(str(base), base)
 
 
 def module_verse(module: str | None, book: str, chapter: int,
-                 verse: int | None) -> int | None:
-    """The number `module` renders for an app-space verse.
+                 verse: int | str | None) -> int | None:
+    """The number `module` renders for a store key.
 
-    Public because callers outside this file hold app-space verses now — the
-    window repainting a pane, the detail pane quoting the verse — and they
-    must not reach for `sword_bridge.map_target_verse` to do it. That one maps
-    through a KJV VerseKey, which has no verse 0, so a mark on a psalter's
-    superscription comes back unchanged and lands on the wrong line. See
-    _outward_map.
+    Public because callers outside this file hold store keys now — the window
+    repainting a pane, the detail pane quoting the verse — and they must not
+    reach for `sword_bridge.map_target_verse` to do it. That one maps through a
+    KJV VerseKey, which has no verse 0, so a mark on a psalter's superscription
+    comes back unchanged and lands on the wrong line. See _verse_maps.
     """
     return _to_module(module, book, chapter, verse)
 
@@ -263,7 +361,7 @@ def _migrate(data: Annotations) -> tuple[Annotations, bool]:
                 anno = {'highlight': anno}
             if not isinstance(anno, dict):
                 continue
-            app_key = str(_to_app(module, book, chapter, verse))
+            app_key = _write_key(module, book, chapter, verse)
             dest[app_key] = (_merge_entry(dest[app_key], anno)
                              if app_key in dest else anno)
     return out, True
@@ -344,25 +442,41 @@ def _save(data: Annotations) -> bool:
     return True
 
 
+def _fold_into(out: ChapterData, key: str, anno: Any) -> None:
+    """Add one mark to a rendered line, merging if the line already carries
+    one. Reached only where two store keys share a line — see _fold_keys."""
+    if key in out and isinstance(out[key], dict) and isinstance(anno, dict):
+        out[key] = _merge_entry(out[key], anno)
+    else:
+        out.setdefault(key, anno)
+
+
 def get_annotations(module: str, book: str, chapter: int) -> ChapterData:
     """This chapter's marks, keyed by the verse numbers `module` renders.
 
     The store speaks app space; the caller is about to index this with the
-    numbers it read out of the module, so the translation happens here.
+    numbers it read out of the module, so the translation happens here. A
+    sub-verse key this module prints as part of another line folds into that
+    line rather than disappearing — a KJV reader sees the mark a Vulgate
+    reader made on the second half of a superscription.
     """
     chap = _load().get(_chapter_key(book, chapter), {})
-    if not chap or not _is_mapped(module, book, chapter):
+    if not chap:
         return chap
+    mapped = _is_mapped(module, book, chapter)
+    if not mapped and not any(_SUB in k for k in chap):
+        return chap                       # the common path: no lens, no folds
     out: ChapterData = {}
     for vkey, anno in chap.items():
         if vkey == 'chapter_note':
             out[vkey] = anno
             continue
-        try:
-            verse = int(vkey)
-        except ValueError:
+        if _base_verse(vkey) is None:
             continue
-        out[str(_to_module(module, book, chapter, verse))] = anno
+        target = _to_module(module, book, chapter, vkey)
+        if target is None:
+            continue
+        _fold_into(out, str(target), anno)
     return out
 
 
@@ -375,37 +489,69 @@ def _ensure_verse_dict(data: Annotations, key: str, vkey: str) -> None:
 
 
 def _verse_slot(module: str | None, book: str, chapter: int,
-                verse: int) -> tuple[Annotations, str, str]:
-    """(store, chapter key, app-space verse key) ready to be written into."""
+                verse: int | str) -> tuple[Annotations, str, str]:
+    """(store, chapter key, store key) ready to be written into.
+
+    A caller with no module (the Annotations window, writing back a row it
+    read out of this store) already holds the store key and passes it through.
+    """
     data = _load()
     key = _chapter_key(book, chapter)
-    vkey = str(_to_app(module, book, chapter, verse))
+    vkey = (str(verse) if module is None
+            else _write_key(module, book, chapter, int(verse)))
     _ensure_verse_dict(data, key, vkey)
     return data, key, vkey
 
 
-def save_highlight(module: str | None, book: str, chapter: int, verse: int, color: str | None) -> None:
+def _clear_folded(data: Annotations, module: str | None, book: str,
+                  chapter: int, verse: int | str, field: str,
+                  empty: Any) -> None:
+    """Clearing a line clears every mark shown on it.
+
+    Only bites where this module prints two store keys as one line: the reader
+    can only be clearing what they were shown, and leaving the sibling set
+    would put the highlight straight back on the next render.
+    """
+    if module is None:
+        return
+    key = _chapter_key(book, chapter)
+    for vkey in _fold_keys(module, book, chapter, int(verse))[1:]:
+        slot = data.get(key, {}).get(vkey)
+        if isinstance(slot, dict) and slot.get(field) not in (None, False):
+            slot[field] = empty
+            _stamp(slot)
+
+
+def save_highlight(module: str | None, book: str, chapter: int,
+                   verse: int | str, color: str | None) -> None:
     data, key, vkey = _verse_slot(module, book, chapter, verse)
     data[key][vkey]['highlight'] = color
     _stamp(data[key][vkey])
+    if color is None:
+        _clear_folded(data, module, book, chapter, verse, 'highlight', None)
     _save(data)
 
 
-def save_underline(module: str | None, book: str, chapter: int, verse: int, enabled: bool) -> None:
+def save_underline(module: str | None, book: str, chapter: int,
+                   verse: int | str, enabled: bool) -> None:
     data, key, vkey = _verse_slot(module, book, chapter, verse)
     data[key][vkey]['underline'] = enabled
     _stamp(data[key][vkey])
+    if not enabled:
+        _clear_folded(data, module, book, chapter, verse, 'underline', False)
     _save(data)
 
 
-def save_note(module: str | None, book: str, chapter: int, verse: int, text: str | None) -> None:
+def save_note(module: str | None, book: str, chapter: int,
+              verse: int | str, text: str | None) -> None:
     data, key, vkey = _verse_slot(module, book, chapter, verse)
     data[key][vkey]['note'] = text
     _stamp(data[key][vkey])
     _save(data)
 
 
-def save_tags(module: str | None, book: str, chapter: int, verse: int, tags: list[str]) -> None:
+def save_tags(module: str | None, book: str, chapter: int,
+              verse: int | str, tags: list[str]) -> None:
     data, key, vkey = _verse_slot(module, book, chapter, verse)
     # Coerce to strings before stripping — defensive against None / non-string
     # entries that can sneak in from corrupt JSON or tests.
@@ -545,7 +691,8 @@ def save_chapter_note_tags(module: str | None, book: str, chapter: int, tags: li
                         existing['note'] if existing else '', tags)
 
 
-def delete_annotation(module: str | None, book: str, chapter: int, verse: int | None) -> Any:
+def delete_annotation(module: str | None, book: str, chapter: int,
+                      verse: int | str | None) -> Any:
     """Remove all annotation data for a verse. verse=None removes the chapter
     note. Returns the removed payload so the caller can offer an undo
     (see restore_annotation), or None if there was nothing to remove."""
@@ -556,21 +703,24 @@ def delete_annotation(module: str | None, book: str, chapter: int, verse: int | 
     if verse is None:
         removed = data[key].pop('chapter_note', None)
     else:
-        removed = data[key].pop(str(_to_app(module, book, chapter, verse)), None)
+        removed = data[key].pop(
+            str(verse) if module is None
+            else _write_key(module, book, chapter, int(verse)), None)
     if removed is not None:
         _save(data)
     return removed
 
 
-def restore_annotation(module: str | None, book: str, chapter: int, verse: int | None,
-                       payload: Any) -> None:
+def restore_annotation(module: str | None, book: str, chapter: int,
+                       verse: int | str | None, payload: Any) -> None:
     """Reinstate a payload returned by delete_annotation — the undo half."""
     if payload is None:
         return
     data = _load()
     key = _chapter_key(book, chapter)
     vkey = ('chapter_note' if verse is None
-            else str(_to_app(module, book, chapter, verse)))
+            else str(verse) if module is None
+            else _write_key(module, book, chapter, int(verse)))
     data.setdefault(key, {})[vkey] = payload
     _save(data)
 

@@ -551,9 +551,8 @@ def search_module(module_name, query, case_sensitive=False, **_kwargs):
             result = [(*sword_bridge.module_ref_to_app(
                 module_name, b, ch, v), text) for b, ch, v, text in result]
         if case_sensitive:
-            terms = search_query.plain_terms(query)
             result = [r for r in result
-                      if all(w in (r[3] or '') for w in terms)]
+                      if search_query.case_matches(query, r[3])]
         if len(result) > 5000:
             result = result[:5000]
             result.append(('', 0, 0,

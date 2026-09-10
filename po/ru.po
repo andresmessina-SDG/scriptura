@@ -7299,9 +7299,8 @@ msgid "Bible in a Year — Blended"
 msgstr "Библия за год — смешанный план"
 
 #: reading_plans.py:127
-msgid "Four daily readings: OT history, OT prophecy, NT, and Psalms/Proverbs."
-msgstr ""
-"Четыре чтения в день: история ВЗ, пророки ВЗ, НЗ и Псалтирь с Притчами."
+msgid "Four streams spread across 365 days — OT history, OT prophecy, NT, Psalms/Proverbs. Most days draw on two or three."
+msgstr "Четыре потока, распределённые на 365 дней: история ВЗ, пророки ВЗ, НЗ и Псалтирь с Притчами. В большинстве дней выпадают два или три."
 
 #: reading_plans.py:132
 msgid "Old Testament in a Year"

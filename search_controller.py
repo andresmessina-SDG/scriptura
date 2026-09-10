@@ -48,8 +48,7 @@ def bible_modules():
     """Every Bible-type module key (excludes commentaries, devotionals,
     generic books, and the interlinear pseudo-module, which has no FTS
     backend) — the set 'All Bibles' searches over."""
-    return [m for m in content.readable_module_names()
-            if content.is_text_bible(m)]
+    return content.text_bible_names()
 
 
 def search_all_bibles(query, case_sensitive, on_indexing_start=None,

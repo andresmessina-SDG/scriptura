@@ -190,3 +190,116 @@ def test_has_strongs_caches_per_module(monkeypatch):
     content.has_strongs('KJV')
     content.has_strongs('KJV')
     assert calls == ['KJV']
+
+
+# ── load_chapter routing ─────────────────────────────────────────────────────
+#
+# The bug this guards: every caller holding an arbitrary reading module used to
+# repeat `if is_ebible_module(...)` itself, and half of them forgot. SWORD's
+# load_chapter answers [] for a key it does not own without raising, so an
+# eBible translation — the World English Bible the English welcome bundle
+# installs is one — exported, printed, shared and copied as an empty page, and
+# the reader's own highlights were mapped inward and never mapped back out.
+
+def test_load_chapter_routes_an_ebible_key_to_the_ebible_bridge(monkeypatch):
+    monkeypatch.setattr(ebible_bridge, 'load_chapter',
+                        lambda n, b, c: [(1, 'from eBible')])
+    monkeypatch.setattr(sword_bridge, 'load_chapter',
+                        lambda n, b, c: [(1, 'from SWORD')])
+    assert content.load_chapter(ebible_bridge.PREFIX + 'eng-web', 'John', 3) \
+        == [(1, 'from eBible')]
+    assert content.load_chapter('KJV', 'John', 3) == [(1, 'from SWORD')]
+
+
+def test_no_module_loads_a_chapter_straight_off_a_bridge():
+    """content.load_chapter is the only way in. A direct
+    `sword_bridge.load_chapter` in a module that can hold any reading module
+    is the defect above, re-introduced."""
+    import pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    offenders = []
+    for path in sorted(root.glob('*.py')):
+        if path.name in ('content.py', 'ebible_bridge.py', 'sword_bridge.py'):
+            continue
+        text = path.read_text(encoding='utf-8')
+        for bridge in ('sword_bridge.load_chapter', 'ebible_bridge.load_chapter'):
+            if bridge + '(' in text:
+                offenders.append(f'{path.name}: {bridge}')
+    assert offenders == [], (
+        'call content.load_chapter instead — it routes to the bridge that '
+        'owns the key: ' + ', '.join(offenders))
+
+
+# ── Which modules are a readable Bible ───────────────────────────────────────
+#
+# The bug this guards: the welcome window asked `sword_bridge.module_names()`
+# alone, so a first run whose Bible arrived as an eBible download — three
+# bundle tiers do exactly that, and the Spanish reading tier carries one for
+# the CrossWire outage that makes its SWORD text fail — was told no Bible had
+# been downloaded and handed a Back button.
+
+def test_text_bible_names_sees_every_source(monkeypatch):
+    monkeypatch.setattr(content, 'readable_module_names',
+                        lambda: ['KJV', ebible_bridge.PREFIX + 'spaonbv'])
+    monkeypatch.setattr(content, '_marks_strongs', {})
+    monkeypatch.setattr(sword_bridge, 'module_type', lambda n: 'Biblical Texts')
+    assert content.text_bible_names() == ['KJV',
+                                          ebible_bridge.PREFIX + 'spaonbv']
+
+
+def test_a_library_of_only_ebible_bibles_still_holds_a_bible(monkeypatch):
+    """The welcome window's one hard requirement. NBLA fails, the eBible
+    fallback installs, and the reader has a Bible."""
+    monkeypatch.setattr(content, 'readable_module_names',
+                        lambda: [ebible_bridge.PREFIX + 'spaonbv'])
+    assert bool(content.text_bible_names())
+
+
+def test_text_bible_names_is_empty_when_nothing_is_installed(monkeypatch):
+    monkeypatch.setattr(content, 'readable_module_names', lambda: [])
+    assert content.text_bible_names() == []
+
+
+def test_a_dictionary_is_not_a_bible(monkeypatch):
+    """`kind` calls a SWORD dictionary 'bible' — its catch-all return, since
+    only commentaries, genbooks and devotionals are named above it. What keeps
+    Easton's out of All-Bibles search and out of the welcome window's Bible
+    count is readable_module_names dropping it first, so the two must stay
+    composed and neither may be used alone."""
+    monkeypatch.setattr(sword_bridge, 'module_names',
+                        lambda: ['KJV', 'Easton'])
+    monkeypatch.setattr(sword_bridge, 'is_internal_use', lambda n: False)
+    monkeypatch.setattr(sword_bridge, 'is_devotional_module', lambda n: False)
+    monkeypatch.setattr(sword_bridge, 'module_type',
+                        lambda n: ('Lexicons / Dictionaries' if n == 'Easton'
+                                   else 'Biblical Texts'))
+    monkeypatch.setattr(ebible_bridge, 'module_names', lambda: [])
+    assert content.kind('Easton') == 'bible'          # the catch-all
+    assert 'Easton' not in content.text_bible_names()
+    assert 'KJV' in content.text_bible_names()
+
+
+# ── Language codes ───────────────────────────────────────────────────────────
+
+def test_language_code_normalises_across_sources(monkeypatch):
+    """eBible spells it 'spa', SWORD spells it 'es'. Comparing the raw codes
+    never matches, which is what stopped the dictionary tabs opening on the
+    language the reader was actually reading."""
+    key = ebible_bridge.PREFIX + 'spaonbv'
+    monkeypatch.setattr(ebible_bridge, 'module_language', lambda n: 'spa')
+    monkeypatch.setattr(sword_bridge, 'module_language', lambda n: 'es')
+    assert content.language_code(key) == 'es'
+    assert content.language_code('NBLA') == 'es'
+    assert content.language_code(key) == content.language_code('NBLA')
+
+
+def test_language_code_is_empty_when_the_source_does_not_say(monkeypatch):
+    monkeypatch.setattr(sword_bridge, 'module_language', lambda n: '')
+    assert content.language_code('Wikcionario') == ''
+
+
+def test_normalise_language_passes_unknown_codes_through():
+    assert content.normalise_language('rus') == 'ru'
+    assert content.normalise_language(' ENG ') == 'en'
+    assert content.normalise_language('cop') == 'cop'
+    assert content.normalise_language(None) == ''

@@ -130,3 +130,53 @@ def test_word_boundary_not_substring(fts):
     rows = fts.execute('SELECT content FROM t WHERE t MATCH ?',
                        (sq.build_match('lever'),)).fetchall()
     assert rows == []           # "lever" must NOT match "clever"
+
+
+# ── The case-sensitive post-filter ───────────────────────────────────────────
+#
+# Both backends run it over the matched text, because FTS5's unicode61
+# tokenizer folds case at index time. It has to honour the connectors: reading
+# `Jesus OR Christ` as `Jesus AND Christ` threw away 959 of the KJV's 1,217
+# hits, every one of them cased exactly as the reader asked.
+
+def test_case_groups_splits_at_or():
+    assert sq.case_groups('bread OR wine') == [['bread'], ['wine']]
+    assert sq.case_groups('living water') == [['living', 'water']]
+    assert sq.case_groups('"living water"') == [['living', 'water']]
+
+
+def test_case_groups_binds_and_tighter_than_or():
+    """Measured against SQLite, not assumed: FTS5 reads `a OR b AND c` as
+    `a OR (b AND c)`, so the groups must too."""
+    assert sq.case_groups('God OR LORD saith') == \
+        [['God'], ['LORD', 'saith']]
+
+
+def test_case_groups_ignores_exclusions():
+    """FTS5 has already dropped the excluded verses; re-testing them here
+    would only reject on case."""
+    assert sq.case_groups('faith -Works') == [['faith']]
+
+
+def test_an_or_query_keeps_either_side():
+    assert sq.case_matches('Jesus OR Christ',
+                                     'the Christ of God') is True
+    assert sq.case_matches('Jesus OR Christ',
+                                     'Jesus wept') is True
+    assert sq.case_matches('Jesus OR Christ',
+                                     'the LORD of hosts') is False
+
+
+def test_an_and_query_still_needs_every_word():
+    assert sq.case_matches('Jesus Christ', 'Jesus Christ') is True
+    assert sq.case_matches('Jesus Christ', 'the Christ') is False
+
+
+def test_the_case_must_match():
+    assert sq.case_matches('LORD', 'the LORD said') is True
+    assert sq.case_matches('LORD', 'the Lord said') is False
+
+
+def test_a_query_with_no_positive_term_filters_nothing():
+    assert sq.case_matches('', 'anything') is True
+    assert sq.case_matches('-works', 'anything') is True
