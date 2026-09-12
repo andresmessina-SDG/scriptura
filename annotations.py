@@ -33,11 +33,17 @@ _load_failed: bool = False  # Set if an existing file failed to parse; the
 # cache before writing, so without this the change would persist for the
 # session and silently vanish on the next launch.
 _on_save_error: Callable[[], None] | None = None
+# Reported once per run of failures, not once per write. Autosave
+# writes on a timer, so an unwritable store would otherwise stack a
+# toast every time the reader paused typing. Cleared by the next
+# write that succeeds, so a disk that frees up says so again.
+_save_error_reported = False
 
 
 def set_save_error_handler(handler: Callable[[], None]) -> None:
-    global _on_save_error
+    global _on_save_error, _save_error_reported
     _on_save_error = handler
+    _save_error_reported = False
 
 
 def load_failed() -> bool:
@@ -260,6 +266,19 @@ def module_verse(module: str | None, book: str, chapter: int,
     return _to_module(module, book, chapter, verse)
 
 
+def app_verse(module: str | None, book: str, chapter: int,
+              verse: int | None) -> int | None:
+    """The app-space verse for a number `module` is rendering — the twin of
+    `module_verse`, and the door anything WRITING a reference goes through.
+
+    A journal anchor is app space for the same reason a mark's key is: it
+    belongs to a place in Scripture, not to whichever module was open. The
+    save_* functions do this conversion themselves from a module verse, so
+    only a caller building a reference by hand needs this.
+    """
+    return _to_app(module, book, chapter, verse)
+
+
 # ── Timestamps ───────────────────────────────────────────────────────────────
 
 def _now() -> str:
@@ -417,7 +436,7 @@ def _save(data: Annotations) -> bool:
     user just did — so the return value is the only signal that the file
     behind it is stale.
     """
-    global _cache
+    global _cache, _save_error_reported
     _cache = data
     # Atomic write: build the file beside the destination, fsync, then
     # os.replace (atomic on POSIX). A crash mid-write leaves the
@@ -433,12 +452,14 @@ def _save(data: Annotations) -> bool:
         os.replace(tmp, ANNOTATIONS_FILE)
     except Exception:
         _log.exception('Failed to save')
-        if _on_save_error is not None:
+        if _on_save_error is not None and not _save_error_reported:
+            _save_error_reported = True
             try:
                 _on_save_error()
             except Exception:
                 _log.exception('save-error handler raised')
         return False
+    _save_error_reported = False
     return True
 
 

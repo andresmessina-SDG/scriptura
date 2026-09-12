@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Blockquote glyph for the journal editor's formatting row: the indent rule
+  and the lines it governs, which is what the button does to the paragraph
+  and what the rendering then shows. Fill-only (#222).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g fill="#222">
+    <rect x="2.6" y="3.0" width="1.7" height="10.0" rx="0.8"/>
+    <rect x="6.0" y="3.6" width="7.4" height="1.4" rx="0.7"/>
+    <rect x="6.0" y="7.3" width="6.2" height="1.4" rx="0.7"/>
+    <rect x="6.0" y="11.0" width="7.0" height="1.4" rx="0.7"/>
+  </g>
+</svg>

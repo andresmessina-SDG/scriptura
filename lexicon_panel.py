@@ -263,6 +263,16 @@ class LexiconPanel(Gtk.Box):
         header.append(self._spinner)
         self._delayed_spinner = DelayedSpinner(self._spinner)
 
+        # Into the sermon being written. Hidden unless there is a sermon to
+        # add to AND an entry on screen to add — a button that is always
+        # there and usually inert is a button that teaches nothing.
+        self._collect_btn = Gtk.Button(
+            icon_name='scriptura-sermons-symbolic')
+        self._collect_btn.add_css_class('flat')
+        self._collect_btn.set_visible(False)
+        self._collect_btn.connect('clicked', self._on_collect)
+        header.append(self._collect_btn)
+
         close_btn = Gtk.Button(icon_name='scriptura-window-close-symbolic')
         close_btn.add_css_class('flat')
         close_btn.set_tooltip_text(_('Close lexicon'))
@@ -542,7 +552,51 @@ class LexiconPanel(Gtk.Box):
             bool(text) and strong_num.startswith('G')
             and lexicon_data.has_lsj(strong_num))
 
+        self._sync_collect_button(bool(text))
         self._reveal_if_hidden()
+
+    def _sync_collect_button(self, have_entry):
+        import sermons
+        target = sermons.most_recent() if have_entry else None
+        self._collect_target = target['id'] if target else None
+        self._collect_btn.set_visible(target is not None)
+        if target is None:
+            return
+        label = _('Add to “{title}”').format(
+            title=target['title'] or _('Untitled sermon'))
+        self._collect_btn.set_tooltip_text(label)
+        set_accessible_label(self._collect_btn, label)
+
+    def collected_gloss(self):
+        """The entry as one line of a manuscript: the headword, its Strong's
+        number, and as much of the definition as makes a sentence.
+
+        A preacher wants the gloss, not the article — the whole entry pasted
+        into a sermon is a page of somebody else's prose in the middle of
+        their own, and the panel is one click away for the rest of it.
+        """
+        text = self._def_buf.get_text(*self._def_buf.get_bounds(), False)
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
+        if not lines:
+            return ''
+        headword = lines[0]
+        rest = ' '.join(lines[1:])
+        gloss = rest.split('. ')[0].strip(' .')
+        if len(gloss) > 200:
+            gloss = gloss[:200].rsplit(' ', 1)[0] + '…'
+        number = self._current_strong or ''
+        head = f'{headword} ({number})' if number else headword
+        return f'{head} — {gloss}' if gloss else head
+
+    def _on_collect(self, _btn):
+        if not getattr(self, '_collect_target', None):
+            return
+        root = self.get_root()
+        if root is None or not hasattr(root, 'collect_into_sermon'):
+            return
+        gloss = self.collected_gloss()
+        if gloss:
+            root.collect_into_sermon(self._collect_target, gloss)
 
     def _render_def(self, text, heuristic_refs=True):
         """Render a definition (panel-dialect HTML) into the buffer with

@@ -380,6 +380,79 @@ def test_no_module_manager_tab_outgrows_its_strip(catalogue):
     assert not over, f'{lang}: tab labels too wide: ' + '; '.join(over)
 
 
+#: A half-width cell in the Annotations filter grid. The sidebar's minimum
+#: is 340px with 8px margins either side and 6px between the columns, so a
+#: cell is (340 - 16 - 6) / 2 = 159px; a dropdown spends ~28px of that on its
+#: chevron and ~18px on padding.
+_FILTER_CELL_PX = 113
+
+
+#: The page tabs are centred in the sidebar at its 340px minimum, less 8px
+#: margins either side and 2px between them. Two tabs, and a third (sermon
+#: manuscripts) is planned — so each is measured against a third of it.
+_TAB_PAGE_PX = 104
+
+
+def test_the_page_tabs_fit_the_narrow_sidebar(catalogue):
+    """The window's pages are named by underline tabs across the sidebar.
+
+    Measured against a THIRD of the width, not a half: a sermon manuscript
+    page is planned, and a name that only fits while there are two tabs is a
+    name that breaks the day the third arrives.
+    """
+    lang, path = catalogue
+    names = {'Annotations', 'Journal'}
+    over = []
+    for msgid, _plural, strs in _parse_po(path):
+        if msgid not in names or not strs or not strs[0]:
+            continue
+        width = _ui_label_width(strs[0])
+        if width > _TAB_PAGE_PX:
+            over.append(f'{msgid} → {strs[0]!r} is {width}px')
+    assert not over, (
+        f'{lang}: page tabs too wide for {_TAB_PAGE_PX}px: ' + '; '.join(over))
+
+
+def test_the_journal_filter_value_fits_its_half_cell(catalogue):
+    """The type dropdown gained a fifth value for the journal, and it shares
+    a row at the sidebar's narrowest — so the word chosen for it has to fit.
+
+    Scoped to that one value on purpose. Measuring the whole grid shows the
+    facet dropdowns ALREADY overflow this cell in both languages — «Todas las
+    etiquetas» is 136px, «В каноническом порядке» 184px — which has been true
+    since those languages shipped, ellipsizes rather than spills, and is not
+    this feature's to fix. What is this feature's is not making it worse.
+    """
+    lang, path = catalogue
+    for msgid, _plural, strs in _parse_po(path):
+        if msgid != 'Journal' or not strs or not strs[0]:
+            continue
+        width = _ui_label_width(strs[0])
+        assert width <= _FILTER_CELL_PX, (
+            f'{lang}: {strs[0]!r} is {width}px, over the '
+            f'{_FILTER_CELL_PX}px half cell')
+
+
+def test_the_journal_strings_are_actually_translated(catalogue):
+    """The strings the journal added, held in both catalogues.
+
+    Not a formality: they reached the .po and still rendered in English in
+    the running app, because `locale/` is a build artifact and had not been
+    rebuilt. The catalogue half is what this can check; `tools/build-locale.py`
+    is the other half and belongs in the same commit.
+    """
+    lang, path = catalogue
+    wanted = {'Journal', 'No passage', 'Untitled entry', 'New journal entry',
+              'Any time', 'This week', 'This month', 'This year',
+              'Delete entry', 'Entry deleted', '{ref} +{n} more'}
+    seen = {msgid: strs[0] for msgid, _p, strs in _parse_po(path)
+            if msgid in wanted and strs}
+    missing = sorted(m for m in wanted if not seen.get(m))
+    assert not missing, f'{lang}: untranslated journal strings {missing}'
+    english = sorted(m for m in wanted if seen.get(m) == m)
+    assert not english, f'{lang}: left in English {english}'
+
+
 def test_no_paper_name_overflows_its_chip(catalogue):
     """A paper chip shows its name *inside* the circle, in that paper's own
     ink — the chip previews the whole pairing. A name too long for the circle

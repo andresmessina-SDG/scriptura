@@ -1,17 +1,23 @@
 """One-file backup and restore of the user's study data.
 
-Bundles the three stores a reader accumulates by hand — annotations
-(highlights, underlines, notes, tags), bookmarks, and reading-plan
-progress — into a single JSON document the user can keep anywhere.
-Settings and downloaded content are deliberately excluded: preferences
-are device-local, and modules/packs are re-downloadable from Module
-Manager.
+Bundles the five stores a reader accumulates by hand — annotations
+(highlights, underlines, notes, tags), journal entries, sermon manuscripts,
+bookmarks, and reading-plan progress — into a single JSON document the user
+can keep anywhere. Settings and downloaded content are deliberately excluded:
+preferences are device-local, and modules/packs are re-downloadable from
+Module Manager.
 
-Restore replaces the three stores wholesale. That is the honest
+Restore replaces the five stores wholesale. That is the honest
 semantic for the primary use case (bringing your study life to a new
 machine); merging two divergent annotation histories has no right
 answer, so we don't pretend to do it. The window confirms with the
 incoming counts before calling restore().
+
+VERSION 2 added the journal, VERSION 3 the sermons. An older file restores
+with that section empty, which is exactly right — it was written by a
+Scriptura that had none. The bump is for the other direction: validate()
+refuses a payload from a newer version, so an older Scriptura declines the
+file rather than silently dropping the writing in it.
 """
 
 import datetime
@@ -19,10 +25,12 @@ from typing import Any
 
 import annotations
 import bookmarks
+import journal
 import reading_plans
+import sermons
 
 FORMAT = 'scriptura-study-data'
-VERSION = 1
+VERSION = 3
 
 
 def collect() -> dict[str, Any]:
@@ -32,6 +40,8 @@ def collect() -> dict[str, Any]:
         'version': VERSION,
         'exported': datetime.date.today().isoformat(),
         'annotations': annotations.export_raw(),
+        'journal': journal.export_raw(),
+        'sermons': sermons.export_raw(),
         'bookmarks': bookmarks.export_raw(),
         'reading_plans': reading_plans.export_raw(),
     }
@@ -44,7 +54,8 @@ def validate(payload: Any) -> dict[str, Any]:
         raise ValueError('not a Scriptura study-data file')
     if not isinstance(payload.get('version'), int) or payload['version'] > VERSION:
         raise ValueError('made by a newer version of Scriptura')
-    for key, typ in (('annotations', dict), ('bookmarks', list),
+    for key, typ in (('annotations', dict), ('journal', dict),
+                     ('sermons', dict), ('bookmarks', list),
                      ('reading_plans', dict)):
         if not isinstance(payload.get(key, typ()), typ):
             raise ValueError('file is damaged')
@@ -62,24 +73,31 @@ def validate(payload: Any) -> dict[str, Any]:
 
 def counts(payload: dict[str, Any]) -> dict[str, int]:
     """Entry counts for the restore confirmation dialog:
-    verse annotations + chapter notes, bookmarks, plan days marked read."""
+    verse annotations + chapter notes, journal entries, sermons, bookmarks,
+    plan days marked read."""
     n_annotations = 0
     for chapter_data in payload.get('annotations', {}).values():
         if isinstance(chapter_data, dict):
             n_annotations += len(chapter_data)
+    entries = payload.get('journal', {}).get('entries', {})
+    n_journal = len(entries) if isinstance(entries, dict) else 0
+    preached = payload.get('sermons', {}).get('sermons', {})
+    n_sermons = len(preached) if isinstance(preached, dict) else 0
     n_days = 0
     completed = payload.get('reading_plans', {}).get('completed', {})
     if isinstance(completed, dict):
         n_days = sum(len(v) for v in completed.values() if isinstance(v, list))
     return {
         'annotations': n_annotations,
+        'journal': n_journal,
+        'sermons': n_sermons,
         'bookmarks': len(payload.get('bookmarks', [])),
         'plan_days': n_days,
     }
 
 
 def restore(payload: dict[str, Any]) -> list[str]:
-    """Replace all three stores with the (validated) payload's contents.
+    """Replace all five stores with the (validated) payload's contents.
     Missing sections are treated as empty — the file's state is the truth.
 
     Returns the keys of any sections that did not reach disk. A store whose
@@ -89,6 +107,8 @@ def restore(payload: dict[str, Any]) -> list[str]:
     """
     return [key for key, ok in (
         ('annotations', annotations.replace_all(payload.get('annotations', {}))),
+        ('journal', journal.replace_all(payload.get('journal', {}))),
+        ('sermons', sermons.replace_all(payload.get('sermons', {}))),
         ('bookmarks', bookmarks.replace_all(payload.get('bookmarks', []))),
         ('reading_plans', reading_plans.replace_all(payload.get('reading_plans', {}))),
     ) if not ok]

@@ -56,6 +56,22 @@ HOVER_GRACE_MS = 300
 # above per-keystroke churn.
 SEARCH_DEBOUNCE_MS = 200
 
+# Write-behind debounce for a field the reader is typing in. Far longer
+# than the search one, because the cost is different at both ends: a
+# store write is a whole-file fsync + rename, and nothing on screen waits
+# for it. 900ms sits above a sentence-level pause, so ordinary writing
+# saves between thoughts rather than between words. Used by
+# gtk_utils.Autosave.
+AUTOSAVE_DELAY_MS = 900
+
+# Restyle debounce for work too heavy to do per keystroke. Scanning a body
+# for scripture references means matching ~134 book spellings at every
+# position: 0.8ms on a page, but 10ms on a sermon-length entry — over half a
+# frame, paid on every letter. Emphasis and headings stay instant (0.12ms at
+# the same length); the references settle a beat later, which is what they
+# are, not feedback you need per keystroke.
+RESTYLE_DELAY_MS = 300
+
 
 def should_animate() -> bool:
     """Whether the desktop wants animations (`gtk-enable-animations`).

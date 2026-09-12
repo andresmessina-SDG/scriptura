@@ -49,9 +49,6 @@ button.paper-swatch,
 button.paper-swatch.custom-swatch,
 box.mini-swatch,
 .reading-exit-btn,
-.journal-note-card {
-    border-color: alpha(@window_fg_color, 0.55);
-}
 
 /* The overdue tile is identified BY its outline — it is the one plan tile
    drawn with no fill — so this is the state, not decoration around it. */

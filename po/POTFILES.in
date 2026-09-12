@@ -3,6 +3,7 @@
 data/io.github.andresmessina_SDG.Scriptura.desktop.in
 data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
 annotation_dialogs.py
+annotation_editors.py
 annotations_window.py
 archaeology_bridge.py
 archaeology_reader.py

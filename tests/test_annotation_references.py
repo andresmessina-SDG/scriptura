@@ -18,6 +18,7 @@ import pytest
 
 import annotations
 import annotations_window
+import journal
 import sword_bridge
 
 
@@ -46,6 +47,10 @@ def isolated(tmp_path, monkeypatch):
                         str(tmp_path / 'annotations.json'))
     monkeypatch.setattr(annotations, '_cache', None)
     monkeypatch.setattr(annotations, '_verse_map_cache', {})
+    # The window lists entries as well as marks now, so a test that counts
+    # what it shows has to isolate both stores or it counts someone else's.
+    monkeypatch.setattr(journal, 'JOURNAL_FILE', str(tmp_path / 'journal.json'))
+    monkeypatch.setattr(journal, '_cache', None)
     return tmp_path
 
 
@@ -451,8 +456,8 @@ def test_a_verse_the_preferred_module_cannot_render_falls_back(
             row = row.get_next_sibling()
         win._list.select_row(row)
         assert asked == ['BSB', 'KJVA']
-        assert win._verse_label.get_visible()
-        assert 'wisdom' in win._verse_label.get_text()
+        assert win._mark_editor._verse.get_visible()
+        assert 'wisdom' in win._mark_editor._verse.get_text()
     finally:
         win.destroy()
 
@@ -474,7 +479,7 @@ def test_the_reading_module_is_not_asked_twice(isolated, monkeypatch,
             row = row.get_next_sibling()
         win._list.select_row(row)
         assert asked == ['KJVA']
-        assert not win._verse_label.get_visible()
+        assert not win._mark_editor._verse.get_visible()
     finally:
         win.destroy()
 

@@ -128,3 +128,71 @@ def test_pulse_stop_is_safe_when_never_started():
     b = FakeBand()
     b.pulse().stop()
     assert b.shown == 0 and b.hidden == 1
+
+
+# ── Autosave ────────────────────────────────────────────────────────────────
+# The reader never presses Save, so the question each of these answers is
+# "which keystrokes reach the store, and how many times is it written".
+
+from gtk_utils import Autosave  # noqa: E402
+
+
+def test_a_scheduled_write_happens_after_the_pause():
+    writes = []
+    auto = Autosave(lambda: writes.append(1), delay_ms=20)
+    auto.schedule()
+    assert writes == []          # not yet — the reader may still be typing
+    _pump(60)
+    assert writes == [1]
+
+
+def test_typing_coalesces_into_one_write():
+    """The point of the debounce: a store write is a whole-file fsync, and
+    a sentence must not pay for it once per letter."""
+    writes = []
+    auto = Autosave(lambda: writes.append(1), delay_ms=40)
+    for _ in range(5):
+        auto.schedule()
+        _pump(10)                # keystrokes closer together than the delay
+    assert writes == []
+    _pump(80)
+    assert writes == [1]
+
+
+def test_flush_writes_at_once_and_disarms_the_timer():
+    writes = []
+    auto = Autosave(lambda: writes.append(1), delay_ms=1000)
+    auto.schedule()
+    auto.flush()
+    assert writes == [1]
+    _pump(30)
+    assert writes == [1]         # the timer did not fire a second one
+
+
+def test_flush_with_nothing_pending_writes_nothing():
+    """Focus handlers call flush freely; tabbing through an untouched field
+    must not rewrite the store."""
+    writes = []
+    auto = Autosave(lambda: writes.append(1), delay_ms=20)
+    auto.flush()
+    assert writes == []
+
+
+def test_cancel_drops_the_write():
+    """What deleting the thing being edited needs: the queued write must not
+    resurrect what the reader just removed."""
+    writes = []
+    auto = Autosave(lambda: writes.append(1), delay_ms=20)
+    auto.schedule()
+    auto.cancel()
+    _pump(60)
+    assert writes == []
+
+
+def test_pending_reports_whether_a_write_is_queued():
+    auto = Autosave(lambda: None, delay_ms=20)
+    assert not auto.pending
+    auto.schedule()
+    assert auto.pending
+    auto.flush()
+    assert not auto.pending

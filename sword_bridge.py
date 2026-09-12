@@ -1327,6 +1327,85 @@ _OSIS_BOOKS = {
 }
 
 
+# ── Localized book abbreviations ─────────────────────────────────────────────
+#
+# SWORD ships a curated abbreviation table per language in its locale files:
+# a `[Book Abbrevs]` section mapping an UPPERCASED spelling to an OSIS book
+# id — «1 ИН.» → 1John, "GN" → Gen. That is the table the journal's reference
+# parser needed and the repo did not have; the alternative was inventing
+# abbreviations for two languages, which is a curation job nobody here is
+# qualified to do from memory.
+#
+# Read from the .conf directly rather than through the SWORD API: the C++
+# LocaleMgr resolves an abbreviation one at a time against whatever locale is
+# current, and what the parser needs is the whole table for one language.
+
+_LOCALE_DIRS = (
+    os.path.join(os.environ.get('SWORD_PATH', ''), 'locales.d'),
+    os.path.expanduser('~/.sword/locales.d'),
+    '/app/share/sword/locales.d',          # the Flatpak's own copy
+    '/usr/share/sword/locales.d',
+)
+
+_ABBREV_CACHE: dict[str, dict[str, str]] = {}
+
+
+def _locale_files(lang):
+    """The locale .conf files that might carry `lang`'s abbreviations.
+
+    UTF-8 first: the legacy encodings ship the same table in cp1251 or
+    koi8-r, and reading one of those as UTF-8 yields mojibake that would
+    quietly become a spelling the parser then never matches.
+    """
+    names = (f'{lang}-utf8.conf', f'{lang}.conf',
+             f'{lang}_{lang.upper()}-utf8.conf')
+    for directory in _LOCALE_DIRS:
+        if not directory or not os.path.isdir(directory):
+            continue
+        for name in names:
+            path = os.path.join(directory, name)
+            if os.path.isfile(path):
+                yield path
+
+
+def book_abbreviations(lang):
+    """{abbreviation: English book name} for `lang`, as SWORD curates it.
+
+    Empty when the language has no locale file, which is the honest answer:
+    the parser then recognises full names only, exactly as before.
+    """
+    if lang in _ABBREV_CACHE:
+        return _ABBREV_CACHE[lang]
+    found: dict[str, str] = {}
+    for path in _locale_files(lang):
+        section = ''
+        try:
+            with open(path, encoding='utf-8') as handle:
+                for line in handle:
+                    line = line.strip()
+                    if line.startswith('['):
+                        section = line
+                        continue
+                    if section != '[Book Abbrevs]' or '=' not in line:
+                        continue
+                    if line.startswith('#'):
+                        continue
+                    abbrev, _sep, osis = line.partition('=')
+                    book = _OSIS_BOOKS.get(osis.strip())
+                    if book and abbrev.strip():
+                        found[abbrev.strip()] = book
+        except (OSError, UnicodeDecodeError):
+            # A locale in an encoding we did not expect, or a file we cannot
+            # read: the parser is better off with full names than with
+            # half a table of mojibake.
+            _log.debug('could not read sword locale %s', path, exc_info=True)
+            continue
+        if found:
+            break
+    _ABBREV_CACHE[lang] = found
+    return found
+
+
 #: English month abbreviations, written out rather than read from strftime.
 #: A devotional key is a MODULE key, not display text: `%b` follows LC_TIME,
 #: so on a Spanish or Russian desktop the app was asking these modules for

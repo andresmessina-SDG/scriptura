@@ -192,13 +192,14 @@ class TodayView(Gtk.Box):
     this widget owns its content and look."""
 
     def __init__(self, on_begin, on_continue, on_choose_plans,
-                 on_listen=None):
+                 on_listen=None, on_write=None):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.add_css_class('today-view')
         self._on_begin = on_begin
         self._on_continue = on_continue
         self._on_choose_plans = on_choose_plans
         self._on_listen = on_listen
+        self._on_write = on_write
         self._begin_target = None      # (book, chapter) for the plan day
         self._continue_target = None   # (book, chapter) for last position
         self._css = Gtk.CssProvider()
@@ -300,6 +301,24 @@ class TodayView(Gtk.Box):
         self._continue_btn.connect(
             'clicked', lambda _b: self._on_continue(self._continue_target))
         v.append(self._continue_btn)
+
+        # The journal door. A third line in the same quiet voice as Continue,
+        # not a card: this page is a single vertical run of type, and its own
+        # design law puts the reading surface at depth 0 with no boxes on it.
+        # Everything the entry needs — the day's readings, the plan day, the
+        # church-year designation — is already resolved above, so the door is
+        # the cheapest thing on the page and the reason the rest was built.
+        self._write_btn = Gtk.Button()
+        self._write_btn.add_css_class('flat')
+        self._write_btn.add_css_class('today-quiet')
+        self._write_btn.set_halign(Gtk.Align.CENTER)
+        self._write_btn.set_margin_top(16)
+        self._write_btn.set_label(_('Write about today'))
+        set_accessible_label(self._write_btn, _('Write about today'))
+        self._write_btn.connect(
+            'clicked', lambda _b: self._on_write() if self._on_write else None)
+        self._write_btn.set_visible(on_write is not None)
+        v.append(self._write_btn)
 
         self._epigraph_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self._epigraph_verse = _centered(Gtk.Label())

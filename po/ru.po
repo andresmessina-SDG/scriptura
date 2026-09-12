@@ -80,11 +80,12 @@ msgstr ""
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:26
 msgid ""
-"Highlights, notes, and topical tags, all gathered into one searchable study "
-"journal."
+"Highlights, underlines, notes, and topical tags — one searchable set of "
+"annotations that belongs to the verse and appears in every translation."
 msgstr ""
-"Выделения, заметки и тематические метки, собранные в один дневник изучения с "
-"поиском."
+"Выделения, подчёркивания, заметки и тематические метки — единый набор "
+"пометок с поиском, который принадлежит стиху и виден в любом "
+"переводе."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:27
 msgid ""
@@ -7553,7 +7554,7 @@ msgstr "Пометка"
 
 #: study_journal.py:350
 msgid "Search notes, tags, references…"
-msgstr "Искать по заметкам, меткам, ссылкам…"
+msgstr "Заметки, метки, ссылки…"
 
 #: study_journal.py:360
 msgid "All types"
@@ -8319,6 +8320,14 @@ msgstr ""
 "Не удалось сохранить вашу пометку — проверьте место на диске или права "
 "доступа. При выходе изменение может пропасть."
 
+#: window.py:281
+msgid ""
+"Couldn't save your journal entry — check disk space or permissions. The "
+"change may be lost when you quit."
+msgstr ""
+"Не удалось сохранить запись дневника — проверьте место на диске или права "
+"доступа. При выходе изменение может пропасть."
+
 #: window.py:280
 msgid ""
 "Couldn't save your bookmark — check disk space or permissions. The change "
@@ -8342,6 +8351,10 @@ msgstr "настройки"
 #: window.py:307 window.py:1942
 msgid "annotations"
 msgstr "пометки"
+
+#: window.py
+msgid "journal"
+msgstr "дневник"
 
 #: window.py:309 window.py:1943
 msgid "bookmarks"
@@ -8579,13 +8592,13 @@ msgstr "Заменить данные изучения?"
 #: window.py:1910
 #, python-brace-format
 msgid ""
-"The file contains {a} annotation entries, {b} bookmarks and {p} plan days "
-"marked read. Your current annotations, bookmarks and reading-plan progress "
-"will be replaced."
+"The file contains {a} annotation entries, {j} journal entries, {b} bookmarks "
+"and {p} plan days marked read. Your current annotations, journal, bookmarks "
+"and reading-plan progress will be replaced."
 msgstr ""
-"Файл содержит {a} пометок, {b} закладок и {p} дней плана, отмеченных "
-"прочитанными. Ваши нынешние пометки, закладки и ход планов чтения будут "
-"заменены."
+"Файл содержит {a} пометок, {j} записей дневника, {b} закладок и {p} дней "
+"плана, отмеченных прочитанными. Ваши нынешние пометки, дневник, закладки и "
+"ход планов чтения будут заменены."
 
 #: window.py:1944
 msgid "reading-plan progress"
@@ -9341,3 +9354,382 @@ msgstr "Недавно изменённые"
 
 msgid "Edited {date}"
 msgstr "Изменено {date}"
+
+#: annotations_window.py
+msgid "Any time"
+msgstr "За всё время"
+
+#: annotations_window.py
+msgid "This week"
+msgstr "За эту неделю"
+
+#: annotations_window.py
+msgid "This month"
+msgstr "За этот месяц"
+
+#: annotations_window.py
+msgid "This year"
+msgstr "За этот год"
+
+#: annotations_window.py
+msgid "Journal"
+msgstr "Дневник"
+
+#: annotations_window.py
+msgid "No passage"
+msgstr "Без отрывка"
+
+#: annotations_window.py
+msgid "Untitled entry"
+msgstr "Запись без названия"
+
+#: annotations_window.py
+msgid "New journal entry"
+msgstr "Новая запись дневника"
+
+#: annotations_window.py
+msgid "Delete entry"
+msgstr "Удалить запись"
+
+#: annotations_window.py
+msgid "Entry deleted"
+msgstr "Запись удалена"
+
+#: annotations_window.py
+#, python-brace-format
+msgid "Go to {ref}"
+msgstr "Перейти к {ref}"
+
+#: annotations_window.py
+#, python-brace-format
+msgid "{ref} +{n} more"
+msgstr "{ref} и ещё {n}"
+
+#: annotations_window.py
+msgid "Tag an annotation or a journal entry to see it here."
+msgstr "Добавьте метку к пометке или записи дневника, чтобы увидеть её здесь."
+
+#: window.py
+msgid "Write about today"
+msgstr "Написать о сегодняшнем дне"
+
+#: window.py
+msgid "Write an entry"
+msgstr "Написать запись"
+
+#: window.py
+msgid "Annotations and journal"
+msgstr "Пометки и дневник"
+
+#: window.py
+msgid "Write a journal entry about this chapter"
+msgstr "Написать запись дневника об этой главе"
+
+#: annotations_window.py
+msgid "Print"
+msgstr "Печать"
+
+#: annotations_window.py
+msgid "Could not print"
+msgstr "Не удалось напечатать"
+
+#: annotations_window.py
+msgid "Export to a Markdown file"
+msgstr "Экспорт в файл Markdown"
+
+#: annotations_window.py
+msgid "No translation is installed to quote from."
+msgstr "Не установлено ни одного перевода, из которого можно цитировать."
+
+#: annotations_window.py
+msgid "Ctrl+click to go to this passage"
+msgstr "Ctrl+щелчок — перейти к этому отрывку"
+
+#: annotations_window.py
+#, python-brace-format
+msgid "Used {n} time"
+msgid_plural "Used {n} times"
+msgstr[0] "Использована {n} раз"
+msgstr[1] "Использована {n} раза"
+msgstr[2] "Использована {n} раз"
+
+#: search_panel.py
+msgid "Your notes"
+msgstr "Ваши заметки"
+
+#: search_panel.py
+msgid "Your journal"
+msgstr "Ваш дневник"
+
+#: annotations_window.py
+msgid "All entries"
+msgstr "Все записи"
+
+#: annotations_window.py
+msgid "With a passage"
+msgstr "С отрывком"
+
+#: annotations_window.py
+msgid "Without a passage"
+msgstr "Без отрывка"
+
+#: annotations_window.py
+msgid "Search entries, tags, references…"
+msgstr "Записи, метки, ссылки…"
+
+#: annotations_window.py
+msgid "No journal entries yet"
+msgstr "В дневнике пока нет записей"
+
+#: annotations_window.py
+msgid "Write about a passage, a sermon, or the day — the pencil above starts one."
+msgstr "Напишите об отрывке, о проповеди или о дне — карандаш выше начнёт запись."
+
+#: annotations_window.py
+msgid "Filters"
+msgstr "Фильтры"
+
+#: annotation_editors.py
+msgid "Italic"
+msgstr "Курсив"
+
+#: annotation_editors.py
+msgid "Heading"
+msgstr "Заголовок"
+
+#: annotation_editors.py
+msgid "Quote"
+msgstr "Цитата"
+
+#: annotation_editors.py
+msgid "Bullet list"
+msgstr "Маркированный список"
+
+#: annotation_editors.py
+msgid "Bold (Ctrl+B)"
+msgstr "Полужирный (Ctrl+B)"
+
+#: annotation_editors.py
+msgid "Italic (Ctrl+I)"
+msgstr "Курсив (Ctrl+I)"
+
+#: annotation_editors.py
+msgid "Write your entry…"
+msgstr "Напишите свою запись…"
+
+#: annotation_editors.py
+msgid "Add"
+msgstr "Добавить"
+
+#: annotation_editors.py
+msgid "Add passage"
+msgstr "Добавить отрывок"
+
+#: annotation_editors.py
+msgid "e.g. {ref}"
+msgstr "например: {ref}"
+
+#: annotation_editors.py
+msgid "Remove {ref}"
+msgstr "Убрать {ref}"
+
+#: annotation_editors.py
+msgid "Numbered list"
+msgstr "Нумерованный список"
+
+#: annotation_editors.py
+msgid "{n} word"
+msgid_plural "{n} words"
+msgstr[0] "{n} слово"
+msgstr[1] "{n} слова"
+msgstr[2] "{n} слов"
+
+#: annotations_window.py
+msgid "entry"
+msgstr "запись"
+
+#: annotations_window.py
+msgid "Export and import"
+msgstr "Экспорт и импорт"
+
+#: annotations_window.py
+msgid "Export {page}…"
+msgstr "Выгрузить: {page}…"
+
+#: annotations_window.py
+msgid "Export this entry…"
+msgstr "Выгрузить эту запись…"
+
+#: annotations_window.py
+msgid "Export this annotation…"
+msgstr "Выгрузить эту пометку…"
+
+#: annotations_window.py
+msgid "Import entries…"
+msgstr "Импорт записей…"
+
+#: annotations_window.py
+msgid "Import entries"
+msgstr "Импорт записей"
+
+#: annotations_window.py
+msgid "Text and Markdown files"
+msgstr "Текстовые файлы и Markdown"
+
+#: annotations_window.py
+msgid "Imported {n} entry"
+msgid_plural "Imported {n} entries"
+msgstr[0] "Импортирована {n} запись"
+msgstr[1] "Импортировано {n} записи"
+msgstr[2] "Импортировано {n} записей"
+
+#: annotations_window.py
+msgid "{n} file could not be read"
+msgid_plural "{n} files could not be read"
+msgstr[0] "Не удалось прочитать {n} файл"
+msgstr[1] "Не удалось прочитать {n} файла"
+msgstr[2] "Не удалось прочитать {n} файлов"
+
+#: annotation_dialogs.py
+msgid "{n} entry on this chapter"
+msgid_plural "{n} entries on this chapter"
+msgstr[0] "{n} запись об этой главе"
+msgstr[1] "{n} записи об этой главе"
+msgstr[2] "{n} записей об этой главе"
+
+# ── Sermons (the manuscript page) ───────────────────────────
+
+msgid "Add to “{title}”"
+msgstr "Добавить в «{title}»"
+
+msgid "Untitled sermon"
+msgstr "Проповедь без названия"
+
+msgid "Write your sermon…"
+msgstr "Напишите свою проповедь…"
+
+msgid "e.g. grace, kingdom, advent"
+msgstr "например: благодать, царство, адвент"
+
+msgid "Sermon"
+msgstr "Проповедь"
+
+msgid "What is this sermon saying, in one sentence?"
+msgstr "О чём эта проповедь — в одном предложении?"
+
+msgid "Series"
+msgstr "Цикл"
+
+msgid "Existing series"
+msgstr "Существующие циклы"
+
+msgid "Part"
+msgstr "Часть"
+
+msgid "Preached"
+msgstr "Произнесена"
+
+msgid "No series yet"
+msgstr "Циклов пока нет"
+
+msgid "Not yet preached"
+msgstr "Ещё не произнесена"
+
+msgid "Remove {date}"
+msgstr "Убрать {date}"
+
+msgid "Add a date"
+msgstr "Добавить дату"
+
+msgid "Written for {day}"
+msgstr "Написана к дню: {day}"
+
+msgid "Sermons"
+msgstr "Проповеди"
+
+msgid "All sermons"
+msgstr "Все проповеди"
+
+msgid "Search sermons, series, tags…"
+msgstr "Проповеди, циклы, метки…"
+
+msgid "By series"
+msgstr "По циклам"
+
+msgid "Recently preached"
+msgstr "Недавно произнесённые"
+
+msgid "Write about a passage or about the day — the pencil above starts one."
+msgstr "Напишите об отрывке или о дне — карандаш выше начнёт запись."
+
+msgid "No sermons yet"
+msgstr "Проповедей пока нет"
+
+msgid "Write a manuscript here, and collect verses into it from the reading page."
+msgstr "Пишите здесь текст проповеди и собирайте в него стихи со страницы чтения."
+
+msgid "No series"
+msgstr "Без цикла"
+
+msgid "Delete sermon"
+msgstr "Удалить проповедь"
+
+msgid "Sermon deleted"
+msgstr "Проповедь удалена"
+
+msgid "New sermon"
+msgstr "Новая проповедь"
+
+msgid "Added to “{title}”"
+msgstr "Добавлено в «{title}»"
+
+msgid "Export this sermon…"
+msgstr "Выгрузить эту проповедь…"
+
+msgid "{series}, part {n}"
+msgstr "{series}, часть {n}"
+
+msgid "Your sermons"
+msgstr "Ваши проповеди"
+
+msgid "Couldn't save your sermon — check disk space or permissions. The change may be lost when you quit."
+msgstr "Не удалось сохранить проповедь — проверьте место на диске и права доступа. Изменение может быть потеряно при выходе."
+
+msgid "sermons"
+msgstr "проповеди"
+
+msgid "The file contains {a} annotation entries, {j} journal entries, {s} sermons, {b} bookmarks and {p} plan days marked read. Your current annotations, journal, sermons, bookmarks and reading-plan progress will be replaced."
+msgstr "В файле {a} пометок, {j} записей дневника, {s} проповедей, {b} закладок и {p} прочитанных дней плана. Ваши пометки, дневник, проповеди, закладки и ход чтения по плану будут заменены."
+
+msgid "Start a sermon on this chapter"
+msgstr "Начать проповедь по этой главе"
+
+msgid "{n} sermon"
+msgid_plural "{n} sermons"
+msgstr[0] "{n} проповедь"
+msgstr[1] "{n} проповеди"
+msgstr[2] "{n} проповедей"
+
+msgid "{series} · part {n}"
+msgstr "{series} · часть {n}"
+
+msgid "No sermon selected"
+msgstr "Проповедь не выбрана"
+
+msgid "Pick a sermon from the list to write in it."
+msgstr "Выберите проповедь из списка, чтобы писать в ней."
+
+msgid "Pick an entry from the list to view or edit it."
+msgstr "Выберите запись из списка, чтобы посмотреть или изменить её."
+
+msgid "Preached {date}"
+msgstr "Произнесена {date}"
+
+msgid "Show the list"
+msgstr "Показать список"
+
+msgid "Show the list (F9)"
+msgstr "Показать список (F9)"
+
+msgid "Writing mode — Esc, F11, or hover the top edge to leave"
+msgstr "Режим письма — Esc, F11 или наведите указатель на верхний край, чтобы выйти"

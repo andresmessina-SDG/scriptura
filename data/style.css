@@ -207,7 +207,13 @@ separator.nav-divider { background-color: alpha(@borders, 0.3); }
 .journal-list, .journal-list > row { background-color: transparent; }
 .journal-list > row { border-bottom: 1px solid alpha(@borders, 0.3); }
 .journal-list > row:last-child { border-bottom: none; }
-.journal-list > row:hover { background-color: alpha(@window_fg_color, 0.04); }
+/* `.activatable` and not plain `row`: GTK prelights a row built with
+ * activatable=False too, so the section headings lit a 45px band over
+ * their own rule. GTK tags the real rows with the class; the headings
+ * carry none, so the class is what tells them apart. */
+.journal-list > row.activatable:hover {
+    background-color: alpha(@window_fg_color, 0.04);
+}
 .journal-list > row:selected {
     background-color: alpha(@accent_color, 0.14);
     color: @window_fg_color;
@@ -247,11 +253,189 @@ separator.journal-divider { background-color: alpha(@borders, 0.3); }
     opacity: 0.85;
 }
 
-.journal-note-card {
-    background-color: @view_bg_color;
-    border: 1px solid alpha(@borders, 0.6);
-    border-radius: 6px;
+/* ── Journal entries in the annotations list ─────────────────────────── */
+
+/* A journal row has no strip. On the Annotations page the strip IS the
+ * highlight hue — the one thing a mark row says at a glance — so a strip
+ * that is identical on every row of a page carries nothing. The 5px is
+ * still spent, to keep both pages' text on the same left edge. */
+.strip-none { background-color: transparent; }
+
+/* An entry's row leads with its TITLE in the serif, where a mark's row leads
+ * with its reference in the sans .heading. Sans is structure, serif is the
+ * reader's own prose — the app's type system telling the two apart, so
+ * neither needs a badge. The family LIST matters: Newsreader carries no
+ * Cyrillic, and Noto Serif is second because it ships with the app, so every
+ * Russian glyph lands there rather than on whatever the machine owns. */
+.journal-entry-title, .journal-entry-heading, .journal-entry-body {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
 }
+.journal-entry-title { font-size: 1.05em; font-weight: 600; }
+
+/* The title field is not a form field: no frame, a step above body size,
+ * type on paper — the reading page's law one room over. */
+.journal-entry-heading {
+    font-size: 1.35em;
+    font-weight: 600;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+}
+/* `:focus-within`, not `:focus`: focus lands on the entry's inner `text`
+ * node, so a GtkEntry never matches `:focus` and libadwaita's own
+ * `entry:focus-within` won — painting an accent ring 1px off the caps of
+ * a field with zero padding. The caret is the cue here; the title is not
+ * a form field. */
+.journal-entry-heading:focus-within {
+    background: none;
+    box-shadow: none;
+    outline: none;
+}
+
+/* The big idea: a standfirst under the title, in the same serif and a step
+ * DOWN from it — a claim is not a second heading. Dimmed rather than boxed,
+ * because it is optional and must not read as a field left blank. */
+.sermon-idea {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-size: 1.1em;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    opacity: 0.85;
+}
+.sermon-idea:focus-within {
+    background: none;
+    box-shadow: none;
+    outline: none;
+    opacity: 1;
+}
+
+/* The body sits ON the sheet, so it draws no background of its own — the
+ * .journal-paper under it is the paper. */
+.journal-entry-body { font-size: 1.05em; background: none; }
+.journal-entry-body text { background: none; }
+
+/* The sheet. A page of writing needs an edge: without one there was nothing
+ * to say where the writing goes, and a pane holding only type on window
+ * background reads as unfinished rather than quiet. One step lighter than
+ * the window, the formatting row at its head. (For READING the app still
+ * refuses the box — that rule was never about the surface you write on.) */
+.journal-paper {
+    background-color: @view_bg_color;
+    border: 1px solid alpha(@borders, 0.7);
+    border-radius: 10px;
+}
+.journal-paper > separator { background-color: alpha(@borders, 0.55); }
+
+/* Flat square buttons at the head of the sheet: they belong to the page, so
+ * they carry no chrome of their own until the pointer is on them. */
+.journal-tools { padding: 3px 4px; }
+.journal-tools button {
+    min-width: 28px;
+    min-height: 28px;
+    padding: 2px;
+    border-radius: 7px;
+}
+.journal-tools button:hover { background-color: alpha(@window_fg_color, 0.09); }
+
+/* The page switcher at the head of the sidebar. Adwaita's toggle group
+ * already draws the segment and slides it; this only gives it room.
+ *
+ * The child node is `toggle`, NOT `button` — a rule written for `button`
+ * matches nothing here, which is how the first cut shipped with no padding
+ * at all: the word ran to the edge of its own pill and the glyph sat on the
+ * other edge. The group's stock padding is zero, so all the breathing room
+ * inside a segment is this rule. */
+.page-switcher { margin-top: 2px; margin-bottom: 6px; }
+.page-switcher > toggle {
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+/* Reference chips are OUTLINED where a tag chip is filled: filled means your
+ * word, outlined means Scripture's place. Same geometry as .tag-chip,
+ * including the 5px vertical that clears the 24px hit floor. */
+.ref-chip {
+    padding: 5px 8px;
+    min-height: 0;
+    border-radius: 10px;
+    background: none;
+    border: 1px solid alpha(@borders, 0.6);
+    color: alpha(@window_fg_color, 0.8);
+    font-size: smaller;
+}
+.ref-chip:hover { background-color: alpha(@window_fg_color, 0.06); }
+
+/* A chip you can leave. The name still goes to the passage in one click and
+ * the ✕ takes the passage off the entry; the two are drawn as a single
+ * outlined object, with the radii meeting in the middle. The ✕ is quiet
+ * until the pointer is on the chip but never invisible — an unseeable
+ * target that removes something is worse than a visible one nobody needs. */
+.chip-pair .chip-leading {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right-width: 0;
+}
+.chip-pair .chip-trailing {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    padding-left: 4px;
+    padding-right: 6px;
+}
+/* The opacity goes on the ICON, never on the button: on a filled chip it
+ * dimmed the background too, and the pair read as two blocks of different
+ * colour — exactly what the meeting radii are drawn to prevent. */
+.chip-pair .chip-trailing image { opacity: 0.45; }
+.chip-pair:hover .chip-trailing image,
+.chip-pair:focus-within .chip-trailing image { opacity: 1; }
+
+/* The way to add one: the same outline, dashed — a slot, not a passage. */
+.add-chip > button {
+    padding: 5px 8px;
+    min-height: 0;
+    border-radius: 10px;
+    background: none;
+    border: 1px dashed alpha(@borders, 0.8);
+    color: alpha(@window_fg_color, 0.7);
+    font-size: smaller;
+}
+.add-chip > button:hover {
+    background-color: alpha(@window_fg_color, 0.06);
+    color: @window_fg_color;
+}
+
+/* The one line of facts under the title: the series, the days it was
+ * preached, the passages. They used to be three rows and 125px of the room
+ * that belongs to the writing.
+ *
+ * The groups on it are told apart by space alone (see `_Editor.META_GAP`):
+ * every glyph tried as a divider ended up in the left margin, because at the
+ * width he writes at each group takes a line of its own. */
+.entry-meta { margin-top: 2px; }
+
+/* A mark's note field, on the same sheet as the entry body beside it — two
+ * fields you write in should not be two idioms. */
+.journal-note-field { background: none; }
+.journal-note-field text { background: none; }
+
+/* The tags line closes a page of writing whose title and big idea are
+ * frameless, and a full-width filled box was the last loud thing left in it.
+ * The caption above and the placeholder inside already say what it holds, so
+ * the frame was saying nothing twice. Focus is the caret, as it is above. */
+.journal-tags-field {
+    padding-left: 0;
+    padding-right: 0;
+    background: none;
+    box-shadow: none;
+}
+.journal-tags-field:focus-within {
+    background: none;
+    box-shadow: none;
+    outline: none;
+}
+
 
 .tag-chip {
     /* 5px vertical clears the 24px hit floor (25px measured, was 17 — the
@@ -817,6 +1001,23 @@ progressbar.plan-progress > trough > progress {
 .plan-grid > button.plan-tile.plan-tile-today.plan-tile-done {
     box-shadow: inset 0 0 0 2px @accent_fg_color;
 }
+/* A day that was written about carries a dot under its number. Honest, not
+   a score: it records that something happened, never how well — the same
+   refusal the plan's catch-up design already makes. Drawn as a background
+   image rather than a second widget, so the grid stays 365 plain buttons.
+   The done tile's fill is the accent, so its dot flips to the accent's own
+   foreground or it would be ink on ink. */
+.plan-grid > button.plan-tile.plan-tile-written {
+    background-image: radial-gradient(circle at 50% 85%,
+        alpha(@window_fg_color, 0.8) 0, alpha(@window_fg_color, 0.8) 1.6px,
+        transparent 1.8px);
+}
+.plan-grid > button.plan-tile.plan-tile-done.plan-tile-written {
+    background-image: radial-gradient(circle at 50% 85%,
+        alpha(@accent_fg_color, 0.9) 0, alpha(@accent_fg_color, 0.9) 1.6px,
+        transparent 1.8px);
+}
+
 .plan-grid > button.plan-tile:hover {
     background-color: alpha(@window_fg_color, 0.30);
 }

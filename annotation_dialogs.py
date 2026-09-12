@@ -21,9 +21,11 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Gdk, Pango
 
 from a11y import set_accessible_label
-from gtk_utils import clear_children, DelayedSpinner
+from gtk_utils import Autosave, clear_children, DelayedSpinner
 import annotations
 import content
+import journal
+import sermons
 import export_dialog
 import passage_export
 import passage_print
@@ -195,6 +197,45 @@ def build_study_menu(pane, verses, x, y):
         note_btn.connect('clicked',
                          lambda b: _edit_note(pane, verses[0], note_text, current_tags, popover))
         box.append(note_btn)
+
+    # 3b. Write an entry. Beside the note row on purpose: the distinction —
+    # a mark is a margin, an entry is a page — has to be legible right here,
+    # in two menu rows, or it is not legible anywhere.
+    entry_btn = _menu_row('scriptura-document-edit-symbolic',
+                          _('Write an entry'))
+    entry_btn.connect('clicked', lambda b: _write_entry(pane, verses, popover))
+    box.append(entry_btn)
+
+    # 3b-ii. Into the sermon being written. The row names the manuscript it
+    # will add to, so it can never be wrong about where the words went, and
+    # it is absent entirely when there is no sermon to add to — the same
+    # rule the row below it follows.
+    target = sermons.most_recent()
+    if target is not None:
+        collect_btn = _menu_row(
+            'scriptura-sermons-symbolic',
+            _('Add to “{title}”').format(
+                title=target['title'] or _('Untitled sermon')))
+        collect_btn.connect(
+            'clicked',
+            lambda b: _collect_verses(pane, verses, target['id'], popover))
+        box.append(collect_btn)
+
+    # 3c. What has already been written about this chapter — and nothing at
+    # all when nothing has. §6.6: no second cue on the verse number, which is
+    # already carrying the note marker, and no badge on a page where the
+    # writing belongs to the day rather than to the glyph. A row that appears
+    # only when there is something to say is the smallest honest version.
+    written = journal.entries_on(pane._book, pane._chapter)
+    if written:
+        seen_btn = _menu_row(
+            'scriptura-journal-symbolic',
+            ngettext('{n} entry on this chapter',
+                     '{n} entries on this chapter',
+                     len(written)).format(n=len(written)))
+        seen_btn.connect('clicked',
+                         lambda b: _open_journal_on(pane, popover))
+        box.append(seen_btn)
 
     # 4. Copy verse(s)
     copy_lbl = _('Copy verses') if len(verses) > 1 else _('Copy verse')
@@ -392,6 +433,82 @@ def compare_translations(pane, verse, popover):
     threading.Thread(target=fetch, daemon=True).start()
 
 
+def _open_journal_on(pane, parent_popover):
+    """Open the journal on this chapter's entries.
+
+    Same teardown dance as the other doors: the window is built on the next
+    idle, after the study menu has finished closing.
+    """
+    parent_popover.popdown()
+    root = pane._view.get_root()
+    if root is None or not hasattr(root, '_open_journal_on'):
+        return
+    book, chapter = pane._book, pane._chapter
+    GLib.idle_add(lambda: root._open_journal_on(book, chapter)
+                  or GLib.SOURCE_REMOVE)
+
+
+def collected_quote(pane, verses):
+    """(markdown, anchor) for the verses selected in `pane`.
+
+    The form a collected passage takes in a manuscript: the words as a
+    blockquote, then the reference — which the body's own parser turns back
+    into a link, because it is spelled the way the reader's language spells
+    it.
+
+    App space for the anchor, the module's own numbering for the text: the
+    pane speaks its module, and a Synodal psalter's verse 1 is app verse 0.
+    """
+    chapter_verses = content.load_chapter(pane._module, pane._book,
+                                          pane._chapter)
+    verse_map = {v: html for v, html in chapter_verses}
+    words = ' '.join(
+        re.sub(r'<[^>]+>', '', str(verse_map.get(v, ''))).strip()
+        for v in verses).strip()
+    ref = f'{book_label(pane._book)} {pane._chapter}:{verses[0]}'
+    if len(verses) > 1:
+        ref = f'{ref}\u2013{verses[-1]}'
+    app = [annotations.app_verse(pane._module, pane._book, pane._chapter, v)
+           for v in verses]
+    anchor = {'book': pane._book, 'chapter': pane._chapter,
+              'verses': [v for v in app if v is not None]}
+    text = f'> {words} — {ref}' if words else ref
+    return text, anchor
+
+
+def _collect_verses(pane, verses, sermon_id, parent_popover):
+    """Add the selected verses to a sermon, from the reading page."""
+    parent_popover.popdown()
+    text, anchor = collected_quote(pane, verses)
+    root = pane._view.get_root()
+    if root is None or not hasattr(root, 'collect_into_sermon'):
+        return
+    # The window toasts: the reader is looking at the reading page and
+    # nothing visible moved, and every collecting door owes the same words.
+    root.collect_into_sermon(sermon_id, text, anchor)
+
+
+def _write_entry(pane, verses, parent_popover):
+    """Start a journal entry on the selected verse or verses.
+
+    Closes the study menu first and opens on the next idle, the same as the
+    note editor: a window built while the parent popover is still tearing
+    down races the Wayland surface lifecycle.
+    """
+    parent_popover.popdown()
+    # App space, because that is what an anchor holds — the pane speaks its
+    # module's numbering, and a Synodal psalter's verse 1 is app verse 0.
+    app = [annotations.app_verse(pane._module, pane._book, pane._chapter, v)
+           for v in verses]
+    anchors = [{'book': pane._book, 'chapter': pane._chapter,
+                'verses': [v for v in app if v is not None]}]
+    root = pane._view.get_root()
+    if root is None or not hasattr(root, '_open_annotations'):
+        return
+    GLib.idle_add(lambda: root._open_annotations({'anchors': anchors})
+                  or GLib.SOURCE_REMOVE)
+
+
 # ── Note editor (Adw.Window) ─────────────────────────────────────────────────
 
 def _edit_note(pane, verse, current_note, current_tags, parent_popover):
@@ -414,10 +531,8 @@ def _show_note_window(pane, verse, current_note, current_tags):
     header = Adw.HeaderBar()
     toolbar_view.add_top_bar(header)
 
-    save_btn = Gtk.Button(label=_('Save'))
-    save_btn.add_css_class('suggested-action')
-    header.pack_end(save_btn)
-
+    # No Save button: the note writes itself once typing pauses, and again
+    # when the dialog closes. See gtk_utils.Autosave.
     box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
     box.set_margin_start(14)
     box.set_margin_end(14)
@@ -483,22 +598,27 @@ def _show_note_window(pane, verse, current_note, current_tags):
     except Exception:
         _log.exception('suggested topics failed')
 
-    save_btn.connect('clicked',
-                     lambda b: _save_note_window(pane, verse, note_buf, tags_entry, dialog))
+    # Connected after the fields are filled above: set_text() emits
+    # `changed`, and connecting first would queue a write for every editor
+    # merely opened.
+    auto = Autosave(
+        lambda: _save_note_window(pane, verse, note_buf, tags_entry))
+    note_buf.connect('changed', lambda _b: auto.schedule())
+    tags_entry.connect('changed', lambda _e: auto.schedule())
+    dialog.connect('closed', lambda _d: auto.flush())
 
     dialog.present(root)
     GLib.idle_add(_grab_focus_once, entry)
     return GLib.SOURCE_REMOVE
 
 
-def _save_note_window(pane, verse, note_buf, tags_entry, dialog):
+def _save_note_window(pane, verse, note_buf, tags_entry):
     start, end = note_buf.get_bounds()
     annotations.save_note(pane._module, pane._book, pane._chapter, verse,
                            note_buf.get_text(start, end, True))
     raw = tags_entry.get_text().strip()
     tags = [t.strip() for t in raw.split(',') if t.strip()] if raw else []
     annotations.save_tags(pane._module, pane._book, pane._chapter, verse, tags)
-    dialog.close()
     pane._refresh_verse_annotation(verse)
 
 
@@ -598,10 +718,7 @@ def show_chapter_note(pane):
     header = Adw.HeaderBar()
     toolbar_view.add_top_bar(header)
 
-    save_btn = Gtk.Button(label=_('Save'))
-    save_btn.add_css_class('suggested-action')
-    header.pack_end(save_btn)
-
+    # No Save button — see the verse note editor above.
     box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
     box.set_margin_start(14)
     box.set_margin_end(14)
@@ -636,14 +753,16 @@ def show_chapter_note(pane):
     tags_entry.set_placeholder_text(_('e.g. Creation, Covenant'))
     box.append(tags_entry)
 
-    save_btn.connect('clicked',
-                     lambda b: _save_chapter_note(pane, buf, tags_entry, dialog))
+    auto = Autosave(lambda: _save_chapter_note(pane, buf, tags_entry))
+    buf.connect('changed', lambda _b: auto.schedule())
+    tags_entry.connect('changed', lambda _e: auto.schedule())
+    dialog.connect('closed', lambda _d: auto.flush())
 
     dialog.present(root)
     GLib.idle_add(_grab_focus_once, tv)
 
 
-def _save_chapter_note(pane, buf, tags_entry, dialog):
+def _save_chapter_note(pane, buf, tags_entry):
     start, end = buf.get_bounds()
     annotations.save_chapter_note(
         pane._module, pane._book, pane._chapter,
@@ -652,5 +771,4 @@ def _save_chapter_note(pane, buf, tags_entry, dialog):
     tags = [t.strip() for t in raw.split(',') if t.strip()] if raw else []
     annotations.save_chapter_note_tags(
         pane._module, pane._book, pane._chapter, tags)
-    dialog.close()
     pane._update_chapter_note_indicator()

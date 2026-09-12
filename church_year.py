@@ -428,3 +428,36 @@ def day_designation(date: datetime.date, tradition: str) -> Designation | None:
     else:
         key, name = _western_sunday(sunday, tradition == 'roman')
     return f'{tradition}:{key}', name
+
+
+#: {tradition: {key: name}} — built once per tradition, on demand.
+_NAMES: dict[str, dict[str, str]] = {}
+
+
+def name_for(key: str) -> str | None:
+    """The display name for a designation key ("anglican:sexagesima"), or
+    None when no tradition here answers to it.
+
+    A stored key has no date attached to it — a sermon carries which Sunday
+    it was written for, not when — so the name is found by walking a year of
+    that tradition's own calendar and reading the keys off it. The names do
+    not vary by year (the ordinal is in the key), so one year answers for
+    all, and the walk is ~15ms, done once per tradition per run.
+    """
+    tradition = key.partition(':')[0]
+    if tradition not in TRADITIONS:
+        return None
+    names = _NAMES.get(tradition)
+    if names is None:
+        names = {}
+        # From a January so the walk covers a whole Gregorian year, which is
+        # what the fixed feasts are keyed by; 400 days so the movable cycle
+        # is crossed wherever Easter falls.
+        day = datetime.date(datetime.date.today().year, 1, 1)
+        for offset in range(400):
+            found = day_designation(day + datetime.timedelta(days=offset),
+                                    tradition)
+            if found:
+                names.setdefault(found[0], found[1])
+        _NAMES[tradition] = names
+    return names.get(key)

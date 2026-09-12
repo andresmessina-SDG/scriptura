@@ -6,6 +6,183 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+### Added
+
+- **The Annotations window now has pages** — *Annotations*, *Journal* and
+  *Sermons* — chosen by a switcher at the top of the list, each with its own
+  name and glyph. Your marks and your writing are different things to be looking for,
+  and the search field, the type filter and the empty state follow whichever
+  page you are on.
+- **A journal.** An entry is a page where a note is a margin: it has a title,
+  a date it is *about* rather than the day it was typed, and none, one or
+  several passages. It lives in the list you already have, in canonical
+  order — the canon leads here as everywhere else in Scriptura. Entries about no passage at all (a sermon, a conversation, a
+  season) are perfectly legal and group at the end, newest first. The type
+  filter narrows to entries with a passage or without one, a date-range
+  filter finds what you wrote when you can only remember roughly when, and
+  tags are one vocabulary across marks and entries together.
+
+  **An entry's passages can be changed after it is written.** Each one is a
+  chip you can leave — the name goes to the passage, the ✕ takes it off — and
+  *Add passage* takes a reference typed the way you would write it anywhere
+  else in the app: *Romans 5*, *Juan 3:16*, *John 3:16-18*. An entry that
+  began about nothing can be filed later, which is what a sermon usually
+  needs.
+
+  There are four ways in. **Today** offers *Write about today* under the
+  day's reading: the entry arrives already anchored to that day's passages
+  and quietly records which plan day and which Sunday of the church year it
+  came from — provenance you cannot reconstruct later. Right-clicking a verse
+  offers *Write an entry* beside *Edit Note & Tags*. **Ctrl+J** opens
+  Annotations and **Ctrl+Shift+J** starts an entry on the chapter you are
+  reading. Or the pencil in the Annotations header, for writing that is not
+  about a passage at all. Nothing is saved until you have written something,
+  so starting one and changing your mind leaves no trace.
+
+  An entry is written on a sheet with its tools at the head: **bold**,
+  *italic*, heading, quotation and list, with Ctrl+B and Ctrl+I. Every button
+  types what you could have typed yourself — a little **Markdown**:
+  `**bold**`, `*emphasis*`, `# a heading`, `> a quotation`, and `- a list` —
+  so an entry written by hand and one written by button are the same entry.
+  The marks you type stay where you typed them — dimmed, so they recede —
+  and what they enclose takes the styling as you write. **A reference typed in the body becomes a link**:
+  write *John 3:16*, or *Juan 3:16* in Spanish, and clicking it goes there.
+  Book names are recognised in the language the app is in, and by their
+  standard English abbreviations.
+
+- **Sermons.** A manuscript is a third kind of writing, with a page of its
+  own. It has a title, a **big idea** — one line saying what the sermon is
+  saying — however many passages it was written against, a **series** with a
+  part number, and the days it was **preached**, which may be none: a sermon
+  you have not preached yet is simply one the list marks as such, and nothing
+  ever asks you for a date. There is no "date written": a sermon is written
+  across a span and preached on days of its own.
+
+  The list leads with the series. Each one is a heading, its sermons in the
+  order they were preached — part 2 above part 3 even when the passages run
+  the other way, which is what a preacher working backwards through a book
+  needs. Sermons in no series fall to the end in canonical order. The type
+  filter asks the one question a manuscript answers — preached, or not yet —
+  the date filter reads the day it was last preached, and the sort offers
+  *By series*, *Recently preached* and *Recently edited*.
+
+  The body is the journal's: the same Markdown, the same live formatting, the
+  same reference links. **Ctrl+Shift+M** starts a sermon on the chapter you
+  are reading, the pencil in the header starts one from nothing, and either
+  way it quietly records which Sunday of the church year it was begun for.
+
+- **Verses, cross-references, lexicon entries and your own notes can be
+  collected into the sermon you are writing.** Right-clicking a verse offers
+  *Add to "The Sower Went Forth"* — the manuscript is named, so it can never
+  be wrong about where the words went — and drops the verse in as a quotation
+  with its reference. A cross-reference adds its reference; a Strong's entry
+  adds its headword and gloss; a note you made adds the verse and what you
+  wrote under it. Every one of them adds the passage to the sermon's own, so
+  a manuscript is never quoting something it is not filed under. The sermon
+  collected into is the one you last wrote in, and the row disappears when
+  there is no sermon to add to.
+
+- **Tags suggest themselves.** Both editors offer the tags you already use —
+  marks and entries together, since they share one vocabulary — as you type.
+  It is the same list the tag manager cleans up; this is what stops *prayer*,
+  *prayers* and *Prayer* being three tags in the first place.
+
+- **The reading page says what you have written about a chapter.** Nothing on
+  the verse — the verse number already carries the note marker — and a row in
+  the study menu that appears only when there is something to say: *3 entries
+  on this chapter*, which opens them.
+
+- **Entries can be imported.** *Import entries…* takes Markdown or text
+  files, one file per entry: front matter if a file has it, the opening
+  heading as the title if not, the file name if not that, and the date from
+  the front matter, the file name or the file itself. Nothing is anchored on
+  the way in — an entry should not claim a passage its writer did not give
+  it — and passages can now be added in a click.
+
+- **Export can take just the entry you are looking at**, and export and
+  import share one menu in the header.
+
+- **Numbered lists, and a word count.** The list button numbers from 1 and
+  renumbers a range someone else numbered badly. The count sits by the tags
+  caption and appears only once there are words.
+
+- **References in an entry now link by their usual abbreviations.** *Jn 3:16*
+  in English, *Jn*/*Gn* in Spanish, «Ин. 3:16» in Russian — read from
+  SWORD's own per-language abbreviation tables rather than invented here.
+
+- **Search finds your own words.** Searching now answers with **Your notes**,
+  **Your journal** and **Your sermons** above the scripture results — your
+  marks, entries and manuscripts whose words match, whatever translation you
+  are searching. A note leads to its verse; an entry or a sermon opens in
+  Annotations. F3 still steps through scripture
+  alone.
+- **A day you wrote about carries a dot** on the reading plan's calendar.
+  It records that something happened, not how well: no count, no chain, no
+  streak.
+- **The list folds away, and the window can be given over to writing.** The
+  button at the head of the editor — or **F9** — hides the list and gives the
+  whole window to what you are writing. It works at every width, where the
+  back button it replaces appeared only when the window was narrow. **F11**
+  goes further and takes everything: the list, the header, the series and
+  dates and passages, the formatting row, the tags. What is left is the title
+  and the page. Escape, F11, or moving the pointer to the top edge brings the
+  window back — the same key and the same way out as reading mode on the
+  reading page.
+
+- **Export and print carry the text with them.** The Annotations export is
+  now Markdown and includes the verse each mark or entry is about, an SBL
+  citation naming the translation, and the attribution line every export in
+  Scriptura carries. It writes what the list is showing, so the filters
+  choose the scope — one entry, a season, the lot. There is a Print button
+  beside it, setting the same serif on the same margins as a printed
+  passage.
+
+### Changed
+
+- **An entry's or a sermon's facts share one line.** The series and its part,
+  the days it was preached, the passages it is filed under and the Sunday it
+  was begun for each took a row of their own between the title and the first
+  line you could write on — more of the window was about the writing than was
+  the writing. They sit on one line now, wrapping onto a second only when
+  they must, and the sheet gets the room back.
+
+- **The Annotations window folds to one pane sooner** — under 810 pixels
+  rather than 660. Between those two widths it kept both panes and squeezed
+  them instead, which cut a sermon's quoted verse and its text off mid-word.
+
+- **The Annotations export was plain text and carried no attribution.** It
+  listed references and notes with neither the words they were about nor the
+  name of the translation they came from — the one thing that must travel
+  with a quotation. It is Markdown now, through the same path every other
+  export in Scriptura uses.
+- **Study-data backup files are now version 3.** They carry your journal and
+  your sermons alongside annotations, bookmarks and plan progress. An older
+  file still restores, with that section empty — it was written by a
+  Scriptura that had none. An older Scriptura will decline a newer file
+  rather than restore it and quietly drop what is in it.
+- **Notes and tags save themselves.** The Save button is gone from the note
+  editor, the chapter-note editor and the Annotations detail pane: what you
+  write is written once you pause, when you leave the field, and when you
+  close the editor. The highlight and the underline beside them already
+  worked this way, so the pane had two save models and now has one. **Escape
+  now closes the editor rather than cancelling it** — to take words back, use
+  Undo (Ctrl+Z) while the editor is open. A store that cannot be written now
+  says so once per run of failures instead of once per write.
+
+### Fixed
+
+- **The search box in Annotations was cut off in Spanish and Russian.**
+  «Искать по заметкам, меткам, ссылкам…» and *Buscar en notas, etiquetas y
+  referencias…* ran past the end of the field at every width the list can
+  take, on all three pages, and the English one on the Sermons page did too.
+  All of them fit now, and none of them lost anything they name.
+
+- **The store description still advertised the Study Journal.** 1.6.2 renamed
+  it to Annotations and said so in its own release notes, but the feature list
+  above them was missed, in English, Spanish and Russian. It now names
+  Annotations, and says the thing that actually changed: a mark belongs to the
+  verse and appears in every translation.
+
 ## [1.6.2] — 2026-09-10
 
 ### Changed

@@ -33,6 +33,7 @@ carries its name with it wherever it goes next.
 from __future__ import annotations
 
 import re
+from typing import Any
 
 import annotations as annotations_store
 import catena_bridge
@@ -469,3 +470,170 @@ def build(module: str, book: str, chapter: int,
     lines.append('---' if markdown else '')
     lines.append(attribution(module))
     return '\n'.join(lines).rstrip() + '\n'
+
+
+def build_annotations(rows: list[dict[str, Any]], module: str, *,
+                      markdown: bool = True, title: str | None = None) -> str:
+    """A document of the reader's own marks, journal entries and sermons.
+
+    `rows` are the flat dicts `annotations_window._all_entries()` produces,
+    already filtered and in the order the window shows them — so the export
+    says exactly what is on screen, and the window's own date range and type
+    filter ARE the scopes (one entry, a season, the lot) rather than a second
+    scope picker saying the same thing twice.
+
+    It lives here, and not in the window, because this file is where the
+    citation and the attribution stamp are decided. A hand-rolled exporter is
+    how the previous one came to carry neither.
+
+    `module` is the translation the verse text is quoted from. The stamp is
+    appended only when something was actually quoted: a document with no
+    scripture in it must not claim to carry someone's text.
+    """
+    lines: list[str] = []
+    # Named by the page it came from: a document of journal entries headed
+    # "Annotations" tells the reader the wrong thing about what is in it.
+    title = title or _('Annotations')
+    lines.append(f'# {title}' if markdown else title)
+    lines.append('')
+    quoted = False
+    # Resolved once: an eBible key sends this through content.type_key and
+    # sword_bridge.display_name, and a long export cites hundreds of rows.
+    version = version_label(module)
+
+    for row in rows:
+        is_sermon = row.get('kind') == 'sermon'
+        is_entry = row.get('kind') in ('entry', 'sermon')
+        anchors = row.get('anchors') or []
+        if is_entry:
+            heading = row.get('title') or (
+                _('Untitled sermon') if is_sermon else _('Untitled entry'))
+            refs = [format_reference(a['book'], a['chapter'],
+                                     a.get('verses') or None,
+                                     version=version)
+                    for a in anchors]
+            cite = join_references(refs)
+        elif row.get('is_chapter_note'):
+            heading = _('{ref} — Chapter Note').format(
+                ref=format_reference(row['book'], row['chapter'],
+                                     version=version))
+            cite = ''
+        else:
+            heading = format_reference(row['book'], row['chapter'],
+                                       [row['app_verse']],
+                                       version=version)
+            cite = ''
+
+        lines.append(f'## {_md(heading, markdown)}' if markdown else heading)
+        # The big idea reads as the standfirst it is, under the title and
+        # above the citation. Only a sermon has one.
+        idea = row.get('idea') if is_sermon else ''
+        if idea:
+            lines.append('')
+            lines.append(f'**{_md(idea, markdown)}**' if markdown else idea)
+        series = (row.get('series') or {}) if is_sermon else {}
+        if series.get('name'):
+            part = series.get('part')
+            named = (_('{series}, part {n}').format(series=series['name'],
+                                                    n=part)
+                     if isinstance(part, int) else series['name'])
+            lines.append('')
+            lines.append(_md(named, markdown))
+        if cite:
+            lines.append('')
+            lines.append(f'*{_md(cite, markdown)}*' if markdown else cite)
+        if is_sermon:
+            # What a sermon is dated by is the day it was preached, and a
+            # manuscript not yet preached is dated by nothing — the day it
+            # happened to be typed is not a fact about the sermon.
+            preached = row.get('preached') or []
+            when = preached[-1] if preached else ''
+        elif is_entry:
+            when = row.get('date')
+        else:
+            when = row.get('modified') or row.get('created') or ''
+        if when:
+            lines.append('')
+            lines.append(_md(when[:10], markdown))
+        lines.append('')
+
+        # The words the reader marked, so the document stands on its own.
+        # The numbers stored are APP space; `module_verse` is the door out of
+        # it. Handing them to verse_text raw would quote a Synodal psalter's
+        # superscription in place of the line the mark is actually on — the
+        # app-verse-0 trap the store was keyed to avoid in the first place.
+        for book, chapter, verses in _quotable(row):
+            outward = [n for n in
+                       (annotations_store.module_verse(module, book, chapter, v)
+                        for v in verses) if n is not None]
+            text = verse_text(module, book, chapter, outward) if outward else ''
+            if not text:
+                continue
+            quoted = True
+            lines.append(f'> {_md(text, markdown)}' if markdown else text)
+            lines.append('')
+
+        if not is_entry:
+            kinds = [name for present, name in
+                     ((row.get('highlight'), _('Highlight')),
+                      (row.get('underline'), _('Underline'))) if present]
+            if kinds:
+                lines.append(f'*{", ".join(kinds)}*' if markdown
+                             else f'[{", ".join(kinds)}]')
+                lines.append('')
+
+        body = row.get('body') if is_entry else row.get('note')
+        if body:
+            # An entry's body is already Markdown — it is what the reader
+            # typed — so it passes through rather than being escaped into
+            # literal asterisks. Its headings are pushed below the entry's
+            # own, or a '# ' typed inside an entry outranks the entry it is
+            # inside and the document's outline comes out inverted.
+            lines.append(_demote_headings(body) if (is_entry and markdown)
+                         else _md(body, markdown))
+            lines.append('')
+
+        tags = row.get('tags') or []
+        if tags:
+            joined = ', '.join('#' + t for t in tags)
+            lines.append(_('Tags: {tags}').format(tags=_md(joined, markdown)))
+            lines.append('')
+
+    if quoted:
+        lines.append('---' if markdown else '')
+        lines.append(attribution(module))
+    return '\n'.join(lines).rstrip() + '\n'
+
+
+def _demote_headings(body: str, under: int = 2) -> str:
+    """Push a body's ATX headings below the level its entry sits at.
+
+    The document heads at `#` and each entry at `##`, so a reader's own
+    `# The collect` has to become `### The collect` to nest rather than to
+    outrank the entry containing it. Capped at six, which is as deep as
+    Markdown goes; a line that is only hashes is not a heading and is left
+    alone.
+    """
+    out = []
+    for line in body.split('\n'):
+        m = re.match(r'^(#{1,6})(\s+\S)', line)
+        if m:
+            level = min(len(m.group(1)) + under, 6)
+            line = '#' * level + line[len(m.group(1)):]
+        out.append(line)
+    return '\n'.join(out)
+
+
+def _quotable(row: dict[str, Any]) -> list[tuple[str, int, list[int]]]:
+    """(book, chapter, verses) for every passage a row can quote.
+
+    A chapter note has no single verse and a whole-chapter anchor has no
+    verse list — neither is quoted, because quoting a whole chapter into a
+    list of notes is not an export, it is a Bible.
+    """
+    if row.get('kind') in ('entry', 'sermon'):
+        return [(a['book'], a['chapter'], a['verses'])
+                for a in (row.get('anchors') or []) if a.get('verses')]
+    if row.get('is_chapter_note') or row.get('app_verse') is None:
+        return []
+    return [(row['book'], row['chapter'], [row['app_verse']])]

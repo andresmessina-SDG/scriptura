@@ -29,6 +29,37 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 #: this list exists to catch are the other kind.
 EXPECTED_GESTURE_SITES = {
     'annotation_dialogs.py': 1,
+    # One motion controller, and it is the exit from writing mode (F11): with
+    # the header bar gone the window has no close button and nothing to drag
+    # by, so the header comes back while the pointer is at the top edge and
+    # folds again when it leaves. Not a Tips row — the toast that opens the
+    # mode names all three ways out, which is the same bargain the reading
+    # mode in the main window strikes.
+    'annotations_window.py': 1,
+    # Two, and they moved here with the editors they belong to. One focus
+    # controller, reused across the note, tags, title and body fields,
+    # flushing a pending autosave when the reader leaves one — invisible by
+    # design and discoverable by nobody, because there is nothing to
+    # discover: not having to press Save is the absence of an affordance.
+    # The other is the Ctrl+click that follows a reference typed in a
+    # journal entry, and that one IS visible — it carries the accent ink and
+    # the underline the app uses for every other link — so it teaches itself
+    # and needs no Tips row, the same call the genealogy charts got.
+    #
+    # Two more came with tag completion: a key controller on the tags field
+    # (Tab or ↓ takes the first suggestion, Esc dismisses) and a focus
+    # controller that closes the list when the field is left. Neither wants a
+    # Tips row. The suggestions themselves are VISIBLE the moment you type,
+    # and every one of them can be clicked — the keys are the convention a
+    # completion list carries everywhere, offered to the hands already on the
+    # keyboard, not the only way in.
+    #
+    # The fifth is a focus controller on the sermon's Series and Part fields:
+    # leaving either one re-groups the list, so a sermon just given a series
+    # stops sitting under "No series". Nothing to discover — the reader typed
+    # the series and the list agrees with them; the controller only decides
+    # when, so the rebuild does not fire on every keystroke.
+    'annotation_editors.py': 5,
     'archaeology_reader.py': 6,
     'crossref_panel.py': 2,
     # The genealogy charts take a click and a motion controller each. Both

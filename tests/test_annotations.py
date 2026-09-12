@@ -275,3 +275,43 @@ def test_delete_nothing_returns_none(isolated):
 def test_restore_none_payload_is_noop(isolated):
     annotations.restore_annotation('KJVA', 'John', 3, 16, None)
     assert annotations.get_annotations('KJVA', 'John', 3) == {}
+
+
+# ── The save-error handler is latched ───────────────────────────────────────
+# Autosave writes on a timer, so an unwritable store would otherwise raise a
+# toast every time the reader paused typing.
+
+@pytest.fixture
+def unwritable(isolated, monkeypatch):
+    """Point the store at a path that cannot be written, and count reports."""
+    reports = []
+    previous = annotations._on_save_error
+    monkeypatch.setattr(annotations, '_save_error_reported', False)
+    monkeypatch.setattr(annotations, 'ANNOTATIONS_FILE',
+                        str(isolated / 'no-such-dir' / 'annotations.json'))
+    annotations.set_save_error_handler(lambda: reports.append(1))
+    yield reports
+    annotations._on_save_error = previous
+
+
+def test_a_run_of_failed_writes_is_reported_once(unwritable):
+    for verse in range(1, 6):
+        assert not annotations.save_note('KJVA', 'Genesis', 1, verse, 'x')
+    assert unwritable == [1]
+
+
+def test_a_write_that_succeeds_re_arms_the_report(unwritable, isolated,
+                                                  monkeypatch):
+    """A disk that frees up says so again the next time it fills."""
+    annotations.save_note('KJVA', 'Genesis', 1, 1, 'x')
+    assert unwritable == [1]
+
+    monkeypatch.setattr(annotations, 'ANNOTATIONS_FILE',
+                        str(isolated / 'annotations.json'))
+    annotations.save_note('KJVA', 'Genesis', 1, 2, 'y')
+    assert annotations._save_error_reported is False
+
+    monkeypatch.setattr(annotations, 'ANNOTATIONS_FILE',
+                        str(isolated / 'no-such-dir' / 'annotations.json'))
+    annotations.save_note('KJVA', 'Genesis', 1, 3, 'z')
+    assert unwritable == [1, 1]

@@ -147,6 +147,18 @@ def annotations_path() -> str:
     return _migrated_file(data_dir(), 'annotations.json')
 
 
+def journal_path() -> str:
+    """The journal's entries. Data, not config, and beside annotations for
+    the same reason: both are the reader's own writing, not a preference."""
+    return _migrated_file(data_dir(), 'journal.json')
+
+
+def sermons_path() -> str:
+    """Sermon manuscripts. Data, not config, beside the journal and the
+    annotations: all three are the reader's own writing."""
+    return _migrated_file(data_dir(), 'sermons.json')
+
+
 def ebible_db_path() -> str:
     """eBible SQLite database. SQLite manages db-shm / db-wal sidecars
     relative to this path; migrate them alongside the main file so any

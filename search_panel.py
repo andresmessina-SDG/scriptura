@@ -9,6 +9,7 @@ from a11y import set_accessible_label
 from gtk_utils import clear_children, DelayedSpinner
 import sword_bridge
 import ebible_bridge
+import journal_markup
 import paths
 import search_controller
 from empty_state import compact_empty_state
@@ -112,11 +113,20 @@ def _searchable_modules():
     return keep
 
 class SearchPanel(Gtk.Box):
-    def __init__(self, on_result_clicked, on_close):
+    def __init__(self, on_result_clicked, on_close, on_open_entry=None,
+                 on_open_sermon=None):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self._on_result_clicked = on_result_clicked
         self._on_close = on_close
+        #: Opens one journal entry in the Annotations window. None simply
+        #: leaves the journal out of the results.
+        self._on_open_entry = on_open_entry
+        self._on_open_sermon = on_open_sermon
         self._results = []
+        #: The reader's own matches for the current query, kept apart from
+        #: `_results` so F3 keeps stepping through scripture alone — a
+        #: verse-less journal entry has nowhere to step to.
+        self._own = []
         # Rate limiter for the indexing progress announcements (66 books).
         self._progress = a11y.ProgressAnnouncer()
         self._filter_book = None
@@ -400,10 +410,11 @@ class SearchPanel(Gtk.Box):
             a11y.status(self._count_label, ngettext(
                 '{n} verse found', '{n} verses found', total).format(n=total))
 
+        self._own = self._own_matches(query)
         self._rebuild_chart()
         self._chart_scroll.set_visible(bool(self._results))
         self._populate_results(self._results)
-        if not self._results and not truncated:
+        if not self._results and not self._own and not truncated:
             self._results_list.append(self._make_empty_row(
                 _('No matches'),
                 _('Try a different word or phrase, or pick another module.')))
@@ -423,6 +434,7 @@ class SearchPanel(Gtk.Box):
         # Typing does NOT auto-search — indexing is too costly; Enter searches.
         if not entry.get_text().strip():
             self._results = []
+            self._own = []
             self._current_idx = -1
             self._filter_book = None
             self._expanded_section = None
@@ -603,6 +615,129 @@ class SearchPanel(Gtk.Box):
             return [r for r in self._results if r[0] in sec_books]
         return self._results
 
+    # ── The reader's own words ───────────────────────────────────────────────
+    #
+    # §6.6: a plain in-memory substring pass over a list that is already
+    # loaded. No FTS index work, and deliberately none — the deuterocanon
+    # index problem stays well clear of this, and a reader's own notes are
+    # counted in hundreds, not in hundreds of thousands.
+
+    #: Enough to answer "where did I write that", not enough to bury the
+    #: scripture results underneath it.
+    _OWN_CAP = 30
+
+    def _own_matches(self, query):
+        """The marks, entries and sermons whose words contain `query`."""
+        q = query.strip().lower()
+        if not q:
+            return []
+        # Imported here rather than at module level: this is the only path
+        # that needs it, and search must not pull a window module in on the
+        # way to its first scripture result.
+        import annotations_window
+        out = []
+        for row in annotations_window._all_entries():
+            hay = ' '.join([
+                (row.get('note') or ''),
+                (row.get('title') or ''),
+                (row.get('idea') or ''),
+                ((row.get('series') or {}).get('name') or ''),
+                (row.get('body') or ''),
+                ' '.join(row.get('tags') or []),
+            ]).lower()
+            if q in hay:
+                out.append(row)
+                if len(out) >= self._OWN_CAP:
+                    break
+        return out
+
+    def _make_section_row(self, title):
+        row = Gtk.ListBoxRow()
+        row.set_selectable(False)
+        row.set_activatable(False)
+        label = Gtk.Label(label=title, xalign=0)
+        label.add_css_class('dim-label')
+        label.add_css_class('caption')
+        label.set_margin_start(8)
+        label.set_margin_top(10)
+        label.set_margin_bottom(2)
+        row.set_child(label)
+        return row
+
+    def _make_own_row(self, entry):
+        kind = entry.get('kind')
+        is_entry = kind in ('entry', 'sermon')
+        row = Gtk.ListBoxRow()
+        if kind == 'sermon':
+            row._sermon_id = entry['id']
+            head = entry.get('title') or _('Untitled sermon')
+            # The big idea, where an entry previews its body: it is the one
+            # line that says what the manuscript argues.
+            snippet = (entry.get('idea')
+                       or journal_markup.preview(entry.get('body') or ''))
+        elif is_entry:
+            row._entry_id = entry['id']
+            head = entry.get('title') or _('Untitled entry')
+            # Joined and stripped of its notation: a two-line cap counts
+            # SOFT wraps, so a paragraphed entry drew every paragraph and
+            # one result filled the panel. Same call the list row makes.
+            snippet = journal_markup.preview(entry.get('body') or '')
+        else:
+            row._nav = (entry['book'], entry['chapter'],
+                        entry.get('app_verse') or 1)
+            head = (f'{book_label(entry["book"])} {entry["chapter"]}'
+                    if entry.get('is_chapter_note') else
+                    f'{book_label(entry["book"])} {entry["chapter"]}'
+                    f':{entry["app_verse"]}')
+            snippet = ' '.join((entry.get('note') or '').split())
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        box.set_margin_start(8)
+        box.set_margin_end(8)
+        box.set_margin_top(6)
+        box.set_margin_bottom(6)
+        ref = Gtk.Label(label=head, xalign=0)
+        ref.set_ellipsize(Pango.EllipsizeMode.END)
+        ref.add_css_class('result-ref')
+        box.append(ref)
+        if snippet:
+            body = Gtk.Label(label=snippet[:200], xalign=0, wrap=True)
+            body.set_lines(2)
+            body.set_ellipsize(Pango.EllipsizeMode.END)
+            body.add_css_class('dim-label')
+            box.append(body)
+        row.set_child(box)
+        return row
+
+    def _append_own(self, results):
+        """The reader's own matches, above the scripture ones.
+
+        A section per kind, because a note, an entry and a sermon are
+        different objects and the window they open into treats them so. A
+        section whose door was never wired is not offered at all, rather
+        than offering a row that cannot be followed.
+        """
+        notes = [e for e in self._own if e.get('kind') == 'mark']
+        entries = [e for e in self._own if e.get('kind') == 'entry']
+        sermons_found = [e for e in self._own if e.get('kind') == 'sermon']
+        if self._on_open_entry is None:
+            entries = []
+        if self._on_open_sermon is None:
+            sermons_found = []
+        own = notes + entries + sermons_found
+        for title, rows in ((_('Your notes'), notes),
+                            (_('Your journal'), entries),
+                            (_('Your sermons'), sermons_found)):
+            if not rows:
+                continue
+            self._results_list.append(self._make_section_row(title))
+            for entry in rows:
+                self._results_list.append(self._make_own_row(entry))
+        # `results` and not `self._results`: with a book filter on, the
+        # scripture half can be empty while the unfiltered search was not,
+        # and a "Scripture" heading over nothing is a heading that lies.
+        if own and results:
+            self._results_list.append(self._make_section_row(_('Scripture')))
+
     # ── Results ───────────────────────────────────────────────────────────────
 
     def _clear_results(self):
@@ -638,6 +773,7 @@ class SearchPanel(Gtk.Box):
 
     def _populate_results(self, results):
         self._clear_results()
+        self._append_own(results)
         gen = self._populate_gen
         total = len(results)
         pending = list(results[:self._DISPLAY_CAP])
@@ -667,7 +803,13 @@ class SearchPanel(Gtk.Box):
         GLib.idle_add(add_batch)
 
     def _on_row_activated(self, _listbox, row):
-        if hasattr(row, '_nav'):
+        if hasattr(row, '_sermon_id'):
+            self._on_open_sermon(row._sermon_id)
+            self._on_close()
+        elif hasattr(row, '_entry_id'):
+            self._on_open_entry(row._entry_id)
+            self._on_close()
+        elif hasattr(row, '_nav'):
             book, ch, v = row._nav
             self._on_result_clicked(book, ch, v)
             self._on_close()
