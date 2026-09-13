@@ -336,9 +336,10 @@ if __name__ == '__main__':
     if '--driver' in sys.argv:
         sys.exit(driver())
     try:
-        import gi  # noqa: F401
-    except ImportError:
-        print('python3-gobject not installed', file=sys.stderr)
+        import gi
+        gi.require_version('Gtk', '4.0')
+    except (ImportError, ValueError):
+        print('python3-gobject / GTK 4 not installed', file=sys.stderr)
         sys.exit(2)
     report = run()
     if report is None:

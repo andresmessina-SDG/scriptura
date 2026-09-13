@@ -76,6 +76,20 @@ Built on GNOME with GTK4 + libadwaita, in Python, GPL-3.0.
   one translation is there in all of them. Search free-text, filter by
   type, tag or book, sort by what you edited last, click a row to jump
   back to the verse.
+- **A journal.** An entry is a page where a note is a margin: a title,
+  the day it is *about* rather than the day you typed it, and none, one
+  or several passages, added or dropped after the fact. Write from
+  Today's reading, from a verse, or from nothing at all. It is written
+  in a little Markdown on a sheet with its tools at the head — Enter
+  carries a list on, and a reference you type becomes a link in the
+  language you spelled it in.
+- **Sermons.** A manuscript is its own thing: a big idea in one line, a
+  series and which part of it, and the days it was preached, which may
+  be none. Verses, cross-references, lexicon entries and your own notes
+  are collected into the sermon you are writing, each one filing the
+  passage it came from; and from inside the manuscript you can ask what
+  you have already marked or written on those passages. The caption says
+  how long it runs.
 - **Reading plans.** Six built-in: Bible in a Year (straight or
   blended four-stream), the Old Testament in a year, the New
   Testament in 90 days, Psalms in 30 days, Proverbs in 31 days.

@@ -89,6 +89,16 @@ msgstr ""
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:27
 msgid ""
+"A journal and a sermon manuscript beside your marks — a page for the day's "
+"reading, and a manuscript with its series, its preaching days, and the "
+"passages it was written from."
+msgstr ""
+"Un diario y un manuscrito de sermón junto a sus anotaciones: una página para "
+"la lectura del día, y un manuscrito con su serie, los días en que se predicó "
+"y los pasajes desde los que se escribió."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:27
+msgid ""
 "Full-text search across any installed text, and reading plans that track "
 "your progress day by day."
 msgstr ""

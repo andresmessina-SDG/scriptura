@@ -760,7 +760,6 @@ def test_the_store_answers_from_the_passage(isolated, display):
 # ── A series can be renamed ─────────────────────────────────────────────────
 
 def _heading_buttons(win):
-    from gi.repository import Gtk
     out = []
     row = win._list.get_first_child()
     while row is not None:
