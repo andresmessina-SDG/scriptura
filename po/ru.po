@@ -9801,3 +9801,21 @@ msgstr "Изображением…"
 
 msgid "Written on this chapter"
 msgstr "Написано об этой главе"
+
+msgid "Passage actions"
+msgstr "Действия с отрывком"
+
+msgid "Choose a verse to compare"
+msgstr "Выберите стих для сравнения"
+
+msgid "Study menu (context-menu key)"
+msgstr "Меню изучения (клавиша контекстного меню)"
+
+msgid "Print the passage"
+msgstr "Печать отрывка"
+
+msgid "Export the passage"
+msgstr "Выгрузить отрывок"
+
+msgid "Compare translations of this verse"
+msgstr "Сравнить переводы этого стиха"

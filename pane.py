@@ -1419,6 +1419,21 @@ class BiblePane(Gtk.Box):
         self._copy_chapter_btn.connect('clicked', self._on_copy_chapter)
         toolbar.append(self._copy_chapter_btn)
 
+        # The visible door to the study menu. Everything in that menu used to
+        # be reachable one way only — by right-clicking a verse — and four of
+        # its actions (export, the verse card, print, compare) existed nowhere
+        # else in the app at all: a reader who never right-clicks could not
+        # print a passage. A context menu is a shortcut, never the only path.
+        # Same menu, same code, so the two doors can never say different
+        # things.
+        self._passage_btn = Gtk.Button(icon_name='scriptura-view-more-symbolic')
+        self._passage_btn.add_css_class('flat')
+        self._passage_btn.add_css_class('pane-action')
+        self._passage_btn.set_tooltip_text(_('Passage actions'))
+        set_accessible_label(self._passage_btn, _('Passage actions'))
+        self._passage_btn.connect('clicked', self._on_passage_actions)
+        toolbar.append(self._passage_btn)
+
         # The chapter on screen, read aloud. Two sources feed this one
         # control: the Berean Standard Bible's own public-domain reading,
         # which covers every chapter of the canon, and Crossway's psalm
@@ -5512,6 +5527,46 @@ class BiblePane(Gtk.Box):
         if not verses:
             return
         annotation_dialogs.show_study_menu(self, verses, x, y)
+
+    def current_verses(self):
+        """The verses the reader is on, for a door that is not a right-click.
+
+        The selection first — it is the one unambiguous statement of intent —
+        then the keyboard verse cursor, then the verse the pane last landed
+        on. Empty when the pane is showing something without numbered verses,
+        which is the caller's cue to fall back to the whole chapter.
+        """
+        if not self._is_verse_navigable():
+            return []
+        if self._buffer.get_has_selection():
+            start, end = self._buffer.get_selection_bounds()
+            verses = self._verses_in_range(start, end)
+            if verses:
+                return verses
+        for verse in (self._cursor.verse, self._selected_verse):
+            if verse and self._verse_ranges(verse):
+                return [verse]
+        return []
+
+    def _on_passage_actions(self, _btn):
+        """The toolbar's ⋮ — the study menu, opened from the chrome.
+
+        Anchored to the button rather than to a click point, and given the
+        whole chapter's first verse when nothing is selected, so the menu
+        always has something to be about.
+        """
+        verses = self.current_verses()
+        if not verses:
+            # `_rendered_verses` is (number, html) pairs, and a chapter can
+            # open on a verse the buffer never tagged, so take the first one
+            # this buffer can actually resolve.
+            verses = next(
+                ([v] for v, _html in (self._rendered_verses or [])
+                 if self._verse_ranges(v)), [])
+            if not verses:
+                return
+        annotation_dialogs.build_study_menu(
+            self, verses, 0, 0, anchor=self._passage_btn).popup()
 
     def _update_chapter_note_indicator(self):
         if annotations.get_chapter_note(self._module, self._book, self._chapter):

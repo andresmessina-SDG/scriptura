@@ -24,6 +24,9 @@ import reading_plans
 import sermons
 import annotations
 import search_controller
+import annotation_dialogs
+import export_dialog
+import passage_print
 from pane import (BiblePane, DROPCAP_GOLD_DARK, DROPCAP_GOLD_LIGHT,
                   auto_reading_ink, dropcap_color_hex)
 from present import PresentView
@@ -1072,6 +1075,13 @@ class BibleWindow(Adw.ApplicationWindow):
             ('next-chapter', ['<Alt>Right'], self._go_next_chapter),
             ('prev-book', ['<Alt>Up'], self._go_prev_book),
             ('next-book', ['<Alt>Down'], self._go_next_book),
+            # The passage actions. Everything here also sits in the study
+            # menu, which until now was the only way to reach any of it —
+            # right-click a verse or do without. These three are the ones a
+            # reader arrives at the keyboard already expecting.
+            ('print-passage', ['<Ctrl>p'], self._print_passage),
+            ('export-passage', ['<Ctrl>e'], self._export_passage),
+            ('compare-verse', ['<Ctrl><Shift>c'], self._compare_verse),
             ('annotations', ['<Ctrl>j'], self._open_annotations),
             ('write-entry', ['<Ctrl><Shift>j'], self._write_about_here),
             ('write-sermon', ['<Ctrl><Shift>m'], self._sermon_about_here),
@@ -3086,6 +3096,35 @@ class BibleWindow(Adw.ApplicationWindow):
         self._open_annotations({'anchors': anchors, 'plan': plan,
                                 'collect': collect})
 
+    # ── The passage actions, from the keyboard ────────────────────────────
+    # Each takes the reader's selection, else the verse they are on, else
+    # the whole chapter — and each calls exactly the function the study menu
+    # calls, so the two doors can never drift apart.
+
+    def _print_passage(self):
+        pane = self._pane_in_view()
+        if pane is None or not pane._book:
+            return
+        passage_print.print_passage(pane, pane.current_verses())
+
+    def _export_passage(self):
+        pane = self._pane_in_view()
+        if pane is None or not pane._book:
+            return
+        export_dialog.export_passage(pane, pane.current_verses())
+
+    def _compare_verse(self):
+        """One verse, so the selection's first is what it compares."""
+        pane = self._pane_in_view()
+        if pane is None or not pane._book:
+            return
+        verses = pane.current_verses()
+        if not verses:
+            if pane._on_toast:
+                pane._on_toast(_('Choose a verse to compare'))
+            return
+        annotation_dialogs.compare_translations(pane, verses[0])
+
     def _write_about_here(self):
         """The keyboard door: an entry on the passage in view.
 
@@ -3192,6 +3231,7 @@ class BibleWindow(Adw.ApplicationWindow):
             (N_('Move between verses'), 'accel', 'Up Down'),
             (N_('Move between sense-units'), 'accel', 'bracketleft bracketright'),
             (N_('Study menu for the current verse'), 'accel', 'Return'),
+            (N_('Study menu (context-menu key)'), 'accel', '<Shift>F10'),
             (N_('Step through the words of a verse'), 'accel', 'Left Right'),
             (N_('Look up the word, or open its footnote'), 'accel', 'Return'),
             (N_('Back from words to verses'), 'accel', 'Escape'),
@@ -3229,6 +3269,10 @@ class BibleWindow(Adw.ApplicationWindow):
              'write-entry'),
             (N_('Start a sermon on this chapter'), 'action', 'write-sermon'),
             (N_('Copy selection with reference'), 'accel', '<Ctrl>c'),
+            (N_('Print the passage'), 'action', 'print-passage'),
+            (N_('Export the passage'), 'action', 'export-passage'),
+            (N_('Compare translations of this verse'), 'action',
+             'compare-verse'),
             (N_('Keyboard shortcuts'), 'action', 'show-help-overlay'),
         ]),
     ]

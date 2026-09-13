@@ -8,6 +8,15 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Added
 
+- **The passage actions are no longer behind a right-click only.** Export,
+  the verse card, printing and Compare translations lived in the verse menu
+  and nowhere else in the app, so a reader who never right-clicked a verse
+  could not print a passage at all. The pane toolbar now carries a **⋮** that
+  opens that same menu, and **Ctrl+P**, **Ctrl+E** and **Ctrl+Shift+C** print,
+  export and compare directly — each acting on your selection, else the verse
+  you are on, else the whole chapter. **Shift+F10** opens the verse menu from
+  the keyboard, which is the context-menu key on a laptop with no Menu key.
+
 - **The Annotations window now has pages** — *Annotations*, *Journal* and
   *Sermons* — chosen by a switcher at the top of the list, each with its own
   name and glyph. Your marks and your writing are different things to be looking for,
@@ -159,6 +168,28 @@ semver-ish — 0.x was the pre-Flathub testing track.
   preacher carries into the pulpit is not the archive it lives in.
 
 ### Changed
+
+- **The verse menu says which verse it is about, over the middle of it.** The
+  reference was a small dim caption pushed against the left edge of the rows
+  and read as a row that had lost its icon.
+
+- **A submenu in the verse menu opens at its own height.** *Share* and
+  *Written on this chapter* used to open as their two or three rows above a
+  few hundred pixels of empty menu, because the page stack kept asking for
+  the tallest page's height whichever page was showing.
+
+- **One thing written on a chapter is a row, not a submenu.** If you have
+  entries on the chapter but no sermon, or a sermon and no entries, that
+  single line now sits in the menu instead of behind *Written on this
+  chapter ▸* — the same height, one click fewer. Two of them still earn the
+  slide.
+
+- **Writing an entry is a row in the verse menu again, not a slide.** The
+  `Write` submenu held a single item until you had saved a sermon, and two
+  ever after — a whole extra click for the commonest thing to do with a verse
+  after marking it. *Write an entry* sits on the first page, and *Add to
+  “…”* joins *Written on this chapter* in the last group, where the rest of
+  what you have written already lives.
 
 - **The right-click menu is grouped, and half the height.** It had grown to
   twelve flat rows — 540px for a reader with marks, entries and a sermon

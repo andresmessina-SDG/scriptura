@@ -148,16 +148,21 @@ def _menu_row(icon_name, label, submenu=False):
     return btn
 
 
-def _menu_caption(text):
-    """A section's name, aligned with the LABELS and not with the glyphs —
-    the gutter is a gutter, and a caption that starts in it reads as a row
-    that lost its icon."""
-    lbl = Gtk.Label(label=text, xalign=0)
-    lbl.add_css_class('dim-label')
-    lbl.add_css_class('caption')
-    lbl.set_margin_start(_ICON + _GUTTER + _ROW_PAD)
+def _menu_title(text):
+    """What the menu is about, over the middle of it.
+
+    It began as a dim `caption` set against the labels' left edge, and read
+    as a row that had lost its icon rather than as the menu's name. A title
+    belongs to the whole popover, not to the column of rows under it: it is
+    centred, and set in `heading` like the compare popover's own title, so
+    the menu opens saying which verse it is holding.
+    """
+    lbl = Gtk.Label(label=text)
+    lbl.set_halign(Gtk.Align.CENTER)
+    lbl.add_css_class('heading')
+    lbl.set_ellipsize(Pango.EllipsizeMode.END)
     lbl.set_margin_top(4)
-    lbl.set_margin_bottom(2)
+    lbl.set_margin_bottom(4)
     return lbl
 
 
@@ -291,7 +296,7 @@ def show_study_menu(pane, verses, x, y):
     build_study_menu(pane, verses, x, y).popup()
 
 
-def build_study_menu(pane, verses, x, y):
+def build_study_menu(pane, verses, x, y, anchor=None):
     """The menu itself, built and parented but not yet shown.
 
     Split from the showing so its size can be measured without a window:
@@ -303,21 +308,32 @@ def build_study_menu(pane, verses, x, y):
     and 540px of them for a reader a year in — past the 498px that once made
     this menu fit nowhere and silently not open at all — and five of those
     rows were conditional, so the row a reader reached for moved as their own
-    writing accumulated. Now the three things done oftenest are at the head,
-    the occasional ones are one slide deep behind the verb they belong to,
-    and everything that can appear or vanish is inside a page or last. Same
-    menu on day one as a year in; 276px against 540.
+    writing accumulated. Now the things done oftenest are at the head, the
+    occasional ones are one slide deep behind the verb they belong to, and
+    everything that can appear or vanish is last. Same menu on day one as a
+    year in.
+
+    **Depth only where what it hides is rare.** `Share ▸` earns its slide:
+    three items, all occasional, all one shape of one act. `Write ▸` did
+    not — it held a single row until a reader had saved a manuscript — so
+    `Write an entry` is a row on this page and `Add to “…”` sits in the last
+    group with the rest of the reader's own writing.
 
     The pages slide inside one popover rather than flying out sideways: a
     flyout needs room beside the menu, and this menu's history is precisely
     about not having room.
     """
+    # `anchor` is the toolbar's ⋮ — the visible door to this same menu. It
+    # is parented to the button and left to point at the button itself; a
+    # click point belongs to the text, and there is none when the menu was
+    # not opened over a verse.
     popover = Gtk.Popover(accessible_role=Gtk.AccessibleRole.MENU)
-    popover.set_parent(pane._view)
+    popover.set_parent(anchor if anchor is not None else pane._view)
     popover.connect('closed', lambda p: p.unparent())
-    rect = Gdk.Rectangle()
-    rect.x, rect.y, rect.width, rect.height = int(x), int(y), 1, 1
-    popover.set_pointing_to(rect)
+    if anchor is None:
+        rect = Gdk.Rectangle()
+        rect.x, rect.y, rect.width, rect.height = int(x), int(y), 1, 1
+        popover.set_pointing_to(rect)
 
     # Load this chapter's annotations once — drives the underline label, the
     # note prefill, and whether the clear chip is live.
@@ -342,13 +358,20 @@ def build_study_menu(pane, verses, x, y):
     # height is not, so a short page is not padded out to the tall one.
     stack.set_hhomogeneous(True)
     stack.set_vhomogeneous(False)
-    stack.set_interpolate_size(True)
+    # **No `interpolate-size`.** `GtkPopoverMenu` sets it and gets away with
+    # it; here it left the stack asking for the TALLEST page's height on
+    # every page, so a submenu opened as its two or three rows over three
+    # hundred pixels of empty popover. Measured on 4.22.5: with it on the
+    # stack requests 393px whichever page shows; with it off it requests
+    # 393 / 165 / 93, which is the three pages' own heights. The slide is
+    # unaffected — only the height animation during it is gone.
+    stack.set_interpolate_size(False)
 
     main = _menu_page()
     stack.add_named(main, 'main')
 
     # ── What this verse is marked with ──────────────────────────────────
-    main.append(_menu_caption(
+    main.append(_menu_title(
         _('Verse {v}').format(v=verses[0]) if single
         else _('Verses {first}–{last}').format(first=verses[0],
                                                last=verses[-1])))
@@ -378,31 +401,19 @@ def build_study_menu(pane, verses, x, y):
     # ── What it can become ──────────────────────────────────────────────
     main.append(_menu_separator())
 
-    write_page = _submenu_page(stack, 'write', _('Write'),
-                               'scriptura-accessories-text-editor-symbolic')
+    # **No `Write ▸`.** It was a submenu holding ONE row until the reader
+    # had written a sermon, and two ever after — under the three-to-six a
+    # submenu wants, and squarely inside the rule that hiding one or two
+    # actions behind a disclosure saves no space and costs discoverability.
+    # Depth is only free where what it buries is rare, and writing an entry
+    # from a verse is the verb this whole arc was built for. It is a row.
+    #
     # The journal glyph, not the pencil the note row carries: a mark is a
     # margin and an entry is a page, and two rows under one glyph said they
     # were the same thing.
     entry = _menu_row('scriptura-journal-symbolic', _('Write an entry'))
     entry.connect('clicked', lambda b: _write_entry(pane, verses, popover))
-    write_page.append(entry)
-    sermon = sermons.most_recent()
-    if sermon is not None:
-        # Named, so it can never be wrong about where the words went. On the
-        # page, so a manuscript's title cannot lengthen the row a reader
-        # opens over a verse.
-        collect = _menu_row(
-            'scriptura-sermons-symbolic',
-            _('Add to “{title}”').format(
-                title=_short(sermon['title']) or _('Untitled sermon')))
-        collect.connect('clicked', lambda b: _collect_verses(
-            pane, verses, sermon['id'], popover))
-        write_page.append(collect)
-    # The page glyph, not the pencil beside Note & Tags: no two rows on one
-    # page may share an icon, which is the rule the old menu broke twice.
-    main.append(_opens(stack, 'write')(_menu_row(
-        'scriptura-accessories-text-editor-symbolic', _('Write'),
-        submenu=True)))
+    main.append(entry)
 
     share_page = _submenu_page(stack, 'share', _('Share'),
                                'scriptura-document-save-symbolic')
@@ -433,33 +444,66 @@ def build_study_menu(pane, verses, x, y):
                                                        popover))
         main.append(compare)
 
-    # ── What is already here ────────────────────────────────────────────
-    # Last, and absent when there is nothing to say — so the one part of this
-    # menu that grows with a reader's own writing can never move a row they
-    # were reaching for.
+    # ── Your own writing ────────────────────────────────────────────────
+    # Everything above this separator is the same on day one as a year in.
+    # Everything below it exists only because the reader has written
+    # something, so it is all last, where appearing can move nothing anyone
+    # was reaching for — the rule the twelve-row menu broke five times over.
+    #
+    # `Add to “…”` lives here rather than beside `Write an entry` for that
+    # reason alone: grouped with the entry it would push Share and Compare
+    # down the day a reader saved their first manuscript. Here it is in the
+    # company it belongs to anyway — this group is the reader's own work on
+    # this passage, collected.
+    sermon = sermons.most_recent()
     written = journal.entries_on(pane._book, pane._chapter)
     preached = sermons.sermons_on(pane._book, pane._chapter)
-    if written or preached:
+    if sermon is not None or written or preached:
+        main.append(_menu_separator())
+
+    if sermon is not None:
+        # Named, so it can never be wrong about where the words went, and
+        # capped so one long manuscript title cannot widen the menu.
+        collect = _menu_row(
+            'scriptura-sermons-symbolic',
+            _('Add to “{title}”').format(
+                title=_short(sermon['title']) or _('Untitled sermon')))
+        collect.connect('clicked', lambda b: _collect_verses(
+            pane, verses, sermon['id'], popover))
+        main.append(collect)
+
+    recall = []
+    if written:
+        recall.append((
+            'scriptura-journal-symbolic',
+            ngettext('{n} entry on this chapter',
+                     '{n} entries on this chapter',
+                     len(written)).format(n=len(written)),
+            lambda b: _open_journal_on(pane, popover)))
+    if preached:
+        recall.append((
+            'scriptura-sermons-symbolic',
+            ngettext('{n} sermon on this chapter',
+                     '{n} sermons on this chapter',
+                     len(preached)).format(n=len(preached)),
+            lambda b: _open_sermons_on(pane, popover)))
+
+    # One row costs the same inline as the submenu row that would hide it,
+    # so hiding it buys nothing and charges a click — which is the rule
+    # `Write ▸` broke. Two rows are worth the slide, and only two are
+    # possible: entries and sermons.
+    if len(recall) == 1:
+        icon, label, act = recall[0]
+        row = _menu_row(icon, label)
+        row.connect('clicked', act)
+        main.append(row)
+    elif recall:
         here = _submenu_page(stack, 'here', _('Written on this chapter'),
                              'scriptura-annotations-symbolic')
-        if written:
-            seen = _menu_row(
-                'scriptura-journal-symbolic',
-                ngettext('{n} entry on this chapter',
-                         '{n} entries on this chapter',
-                         len(written)).format(n=len(written)))
-            seen.connect('clicked', lambda b: _open_journal_on(pane, popover))
-            here.append(seen)
-        if preached:
-            sermon_row = _menu_row(
-                'scriptura-sermons-symbolic',
-                ngettext('{n} sermon on this chapter',
-                         '{n} sermons on this chapter',
-                         len(preached)).format(n=len(preached)))
-            sermon_row.connect('clicked',
-                               lambda b: _open_sermons_on(pane, popover))
-            here.append(sermon_row)
-        main.append(_menu_separator())
+        for icon, label, act in recall:
+            row = _menu_row(icon, label)
+            row.connect('clicked', act)
+            here.append(row)
         main.append(_opens(stack, 'here')(_menu_row(
             'scriptura-annotations-symbolic', _('Written on this chapter'),
             submenu=True)))
@@ -520,22 +564,39 @@ def copy_verse(pane, verses, popover):
 
 # ── Compare translations popover ─────────────────────────────────────────────
 
-def compare_translations(pane, verse, popover):
+def _verse_rect(pane, verse):
+    """A 1px rectangle on the verse itself, in `pane._view` coordinates.
+
+    What a popover points at when nobody clicked anything — the keyboard and
+    the toolbar's ⋮ both arrive here with no pointer position, and a fixed
+    corner of the view would put the card somewhere the verse is not.
+    """
+    rect = Gdk.Rectangle()
+    rect.x, rect.y, rect.width, rect.height = 160, 80, 1, 1
+    ranges = pane._verse_ranges(verse)
+    if ranges:
+        location = pane._view.get_iter_location(ranges[1])
+        rect.x, rect.y = pane._view.buffer_to_window_coords(
+            Gtk.TextWindowType.WIDGET, location.x, location.y)
+    return rect
+
+
+def compare_translations(pane, verse, popover=None):
     # Reuse the study menu's anchor (the click point) so the compare popover
     # opens where the user clicked, like the menu it replaces — both are
     # parented to pane._view, so the rect is in the same coordinate space.
-    ok, src_rect = popover.get_pointing_to()
-    popover.popdown()
+    # Opened from the toolbar the menu is parented to a button instead, and
+    # its rect would mean nothing here; the verse's own position is used.
+    ok, src_rect = (False, None)
+    if popover is not None:
+        if popover.get_parent() is pane._view:
+            ok, src_rect = popover.get_pointing_to()
+        popover.popdown()
 
     comp = Gtk.Popover()
     comp.set_parent(pane._view)
     comp.connect('closed', lambda p: p.unparent())
-    if ok:
-        comp.set_pointing_to(src_rect)
-    else:
-        rect = Gdk.Rectangle()
-        rect.x, rect.y, rect.width, rect.height = 160, 80, 1, 1
-        comp.set_pointing_to(rect)
+    comp.set_pointing_to(src_rect if ok else _verse_rect(pane, verse))
 
     outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
 

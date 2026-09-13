@@ -29,9 +29,15 @@ from i18n import _
 SELECTION, UNIT, CHAPTER = 'selection', 'unit', 'chapter'
 
 
-def export_passage(pane, verses, popover):
-    """Open the sheet for `verses`, which the study menu already resolved."""
-    popover.popdown()
+def export_passage(pane, verses, popover=None):
+    """Open the sheet for `verses`, which the study menu already resolved.
+
+    `popover` is None when the door was the keyboard or the toolbar rather
+    than the study menu, and `verses` may be empty with it — the sheet drops
+    its selection scope and exports the chapter.
+    """
+    if popover is not None:
+        popover.popdown()
     ExportSheet(pane, verses).present(pane.get_root())
 
 
@@ -68,12 +74,17 @@ class ExportSheet:
     # ── The choices ──────────────────────────────────────────────────────
     def _passage_group(self):
         group = Adw.PreferencesGroup(title=_('Passage'))
-        self._scopes = [SELECTION]
-        labels = [_('The selected verses')]
+        # No selection — the sheet was opened from the toolbar or a
+        # shortcut, not over a verse. Offering "the selected verses" then
+        # would export nothing at all.
+        self._scopes = [SELECTION] if self._verses else []
+        labels = [_('The selected verses')] if self._verses else []
         # A sense-unit is only offered where the module actually marks them.
         # Modules without section headings would answer with the whole
         # chapter, and two rows that do the same thing is not a choice.
-        if sword_bridge.chapter_headings(
+        # It also needs a verse to be the unit AROUND, so it goes with the
+        # selection when there is none.
+        if self._verses and sword_bridge.chapter_headings(
                 self._pane._module, self._pane._book, self._pane._chapter):
             self._scopes.append(UNIT)
             labels.append(_('This sense-unit'))
@@ -185,9 +196,10 @@ class ExportSheet:
             self._pane._on_toast(message)
 
 
-def share_as_image(pane, verses, popover):
+def share_as_image(pane, verses, popover=None):
     """Open the card sheet for `verses`."""
-    popover.popdown()
+    if popover is not None:
+        popover.popdown()
     CardSheet(pane, verses).present(pane.get_root())
 
 

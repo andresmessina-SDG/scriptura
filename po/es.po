@@ -9863,3 +9863,21 @@ msgstr "Como imagen…"
 
 msgid "Written on this chapter"
 msgstr "Escrito sobre este capítulo"
+
+msgid "Passage actions"
+msgstr "Acciones del pasaje"
+
+msgid "Choose a verse to compare"
+msgstr "Elige un versículo para comparar"
+
+msgid "Study menu (context-menu key)"
+msgstr "Menú de estudio (tecla de menú contextual)"
+
+msgid "Print the passage"
+msgstr "Imprimir el pasaje"
+
+msgid "Export the passage"
+msgstr "Exportar el pasaje"
+
+msgid "Compare translations of this verse"
+msgstr "Comparar traducciones de este versículo"

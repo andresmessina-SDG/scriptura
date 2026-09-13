@@ -176,24 +176,28 @@ def test_the_menu_is_the_same_shape_a_year_in(stores):
     full = _level_one(Gtk, annotation_dialogs.build_study_menu(
         pane, [16], 100, 100))
 
-    # One row is added — the recall submenu — and it is the LAST one, so
-    # nothing a reader was aiming at has moved. The note row is allowed to
-    # say `Edit Note & Tags` once there is a note: a label that changes in
-    # place moves nothing.
+    # Two rows are added — `Add to “…”` and the recall submenu — and they
+    # are the LAST two, so nothing a reader was aiming at has moved. The
+    # note row is allowed to say `Edit Note & Tags` once there is a note: a
+    # label that changes in place moves nothing.
     def same(labels):
         return [t.removeprefix('Edit ') for t in labels]
 
     assert same(full[:len(bare)]) == same(bare), (bare, full)
-    assert len(full) - len(bare) == 1
+    assert len(full) - len(bare) == 2
+    assert full[-2].startswith('Add to'), full
     assert 'chapter' in full[-1]
 
 
 def test_a_sermons_title_cannot_stretch_the_menu(stores):
-    """`Add to “…”` carries a manuscript's title, and inline it set the
-    width of the whole menu. Inside the Write submenu it cannot."""
+    """`Add to “…”` carries a manuscript's title, and untruncated it set the
+    width of the whole menu — 270px to 390px, measured. `_TITLE_CAP` is why
+    it cannot, and the row is on the first page now, where it would show.
+    """
     Gtk = _gtk()
     _annotations, _journal, sermons = stores
     pane = _pane(Gtk)
+    sermons.save('s1', title='Ruth')
     narrow = annotation_dialogs.build_study_menu(pane, [16], 100, 100)
     narrow_w = narrow.get_child().measure(Gtk.Orientation.HORIZONTAL, -1)[1]
     sermons.save('s1', title='A Very Long Sermon Title Indeed, On The Sower')
@@ -273,7 +277,7 @@ def test_every_row_on_a_page_carries_its_own_glyph(stores):
     sermons.save('s1', title='a sermon',
                  anchors=[{'book': 'John', 'chapter': 3, 'verses': []}])
     popover = annotation_dialogs.build_study_menu(_pane(Gtk), [16], 100, 100)
-    for page in ('main', 'write', 'share', 'here'):
+    for page in ('main', 'share', 'here'):
         icons = []
         for label, row in _rows(Gtk, popover, page).items():
             child = row.get_child().get_first_child()
@@ -303,8 +307,107 @@ def test_a_submenu_row_opens_its_page_and_comes_back(stores):
     popover = annotation_dialogs.build_study_menu(_pane(Gtk), [16], 100, 100)
     stack = _stack(Gtk, popover)
     assert stack.get_visible_child_name() == 'main'
-    _rows(Gtk, popover)['Write'].emit('clicked')
-    assert stack.get_visible_child_name() == 'write'
+    _rows(Gtk, popover)['Share'].emit('clicked')
+    assert stack.get_visible_child_name() == 'share'
     # The back row names the page it is on, as GTK's own submenus do.
-    _rows(Gtk, popover, 'write')['Write'].emit('clicked')
+    _rows(Gtk, popover, 'share')['Share'].emit('clicked')
     assert stack.get_visible_child_name() == 'main'
+
+
+# ── The writing verb is a row, not a slide ───────────────────────────────────
+
+def test_writing_an_entry_is_not_hidden_behind_a_submenu(stores):
+    """`Write ▸` held ONE row until a reader had saved a manuscript, and two
+    ever after — under the three-to-six a submenu wants, and squarely inside
+    the rule that hiding one or two actions behind a disclosure saves no
+    space and costs discoverability. Depth is only free where what it hides
+    is rare, and this is the verb the journal was built for."""
+    Gtk = _gtk()
+    labels = _level_one(Gtk, annotation_dialogs.build_study_menu(
+        _pane(Gtk), [16], 100, 100))
+    assert 'Write an entry' in labels, labels
+    assert 'Write' not in labels, labels
+
+
+@pytest.mark.parametrize('seed', ['entry', 'sermon', 'both'])
+def test_every_submenu_left_is_worth_the_slide(stores, seed):
+    """The other half of the same rule: a page that opens must have enough
+    on it to be worth opening.
+
+    Parametrised because the first version of this guard seeded BOTH an
+    entry and a sermon and so never saw the case his own screen showed —
+    one sermon on the chapter and nothing else, behind a submenu holding a
+    single row. One row costs the same inline as the row that hides it.
+    """
+    Gtk = _gtk()
+    _a, journal, sermons = stores
+    if seed in ('entry', 'both'):
+        journal.save('j1', title='one',
+                     anchors=[{'book': 'John', 'chapter': 3,
+                               'verses': [16]}])
+    if seed in ('sermon', 'both'):
+        sermons.save('s1', title='a sermon',
+                     anchors=[{'book': 'John', 'chapter': 3, 'verses': []}])
+    popover = annotation_dialogs.build_study_menu(_pane(Gtk), [16], 100, 100)
+    stack = _stack(Gtk, popover)
+    pages = [p.get_name() for p in stack.get_pages()]
+    assert 'write' not in pages, pages
+    # One thing written here goes inline; only two earn the recall page.
+    assert ('here' in pages) == (seed == 'both'), (seed, pages)
+    # Every page but `main` carries a back row, which is not an action.
+    for page in (p for p in pages if p != 'main'):
+        actions = len(_rows(Gtk, popover, page)) - 1
+        assert actions >= 2, (page, actions)
+
+
+def test_a_submenu_asks_for_its_own_height(stores):
+    """A submenu opened as its three rows over three hundred pixels of empty
+    popover. `interpolate-size` left the stack asking for the TALLEST page's
+    height on every page — measured 393px for a 93px page."""
+    Gtk = _gtk()
+    _a, journal, sermons = stores
+    journal.save('j1', title='one',
+                 anchors=[{'book': 'John', 'chapter': 3, 'verses': [16]}])
+    sermons.save('s1', title='a sermon',
+                 anchors=[{'book': 'John', 'chapter': 3, 'verses': []}])
+    popover = annotation_dialogs.build_study_menu(_pane(Gtk), [16], 100, 100)
+    stack = _stack(Gtk, popover)
+    assert not stack.get_interpolate_size()
+    tall = stack.get_child_by_name('main').measure(
+        Gtk.Orientation.VERTICAL, -1)[1]
+    for page in ('share', 'here'):
+        stack.set_visible_child_name(page)
+        own = stack.get_child_by_name(page).measure(
+            Gtk.Orientation.VERTICAL, -1)[1]
+        asked = stack.measure(Gtk.Orientation.VERTICAL, -1)[1]
+        assert asked == own, (page, asked, own)
+        assert asked < tall, (page, asked, tall)
+
+
+def test_the_menu_has_a_second_door(stores):
+    """Export, the verse card, print and compare existed nowhere else in the
+    app: a reader who never right-clicked a verse could not print a passage.
+    The pane's ⋮ opens the same menu, built by the same function."""
+    Gtk = _gtk()
+    pane = _pane(Gtk)
+    button = Gtk.Button()
+    popover = annotation_dialogs.build_study_menu(
+        pane, [16], 0, 0, anchor=button)
+    assert popover.get_parent() is button
+    assert 'Share' in _rows(Gtk, popover), _rows(Gtk, popover).keys()
+    popover.unparent()
+
+
+def test_the_title_is_over_the_middle_of_the_menu(stores):
+    """It was a dim caption against the labels' left edge and read as a row
+    that had lost its icon. A title belongs to the popover, not to the
+    column of rows under it."""
+    Gtk = _gtk()
+    popover = annotation_dialogs.build_study_menu(_pane(Gtk), [16], 100, 100)
+    page = _stack(Gtk, popover).get_child_by_name('main')
+    title = page.get_first_child()
+    assert isinstance(title, Gtk.Label), title
+    assert title.get_text() == 'Verse 16', title.get_text()
+    assert title.get_halign() == Gtk.Align.CENTER
+    assert title.get_margin_start() == 0, title.get_margin_start()
+    assert 'heading' in title.get_css_classes()
