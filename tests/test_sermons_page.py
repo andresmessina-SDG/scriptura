@@ -16,7 +16,15 @@ import sermons
 
 @pytest.fixture
 def display():
-    """Skip when there is no screen — the window is a real Adw.Window."""
+    """Skip when there is no screen.
+
+    Every test that CONSTRUCTS a widget needs this, not only the ones that
+    open a window: `Gtk.init_check()` returns True with no display and the
+    build then **segfaults** rather than failing, taking the whole run with
+    it. CI has no display, and the two search tests below reached it first —
+    they build a real `SearchPanel` to read its own matches. Reproduce
+    locally with `GDK_BACKEND=nonexistent-backend` and no DISPLAY.
+    """
     from gi.repository import Gdk, Gtk
     Gtk.init_check()
     if Gdk.Display.get_default() is None:
@@ -445,7 +453,7 @@ def test_deleting_a_sermon_can_be_undone(isolated, display):
 
 # ── Search ──────────────────────────────────────────────────────────────────
 
-def test_app_search_finds_a_sermon_by_its_big_idea(isolated):
+def test_app_search_finds_a_sermon_by_its_big_idea(isolated, display):
     import search_panel
     _sower()
     panel = search_panel.SearchPanel(
@@ -455,7 +463,7 @@ def test_app_search_finds_a_sermon_by_its_big_idea(isolated):
     assert [r['kind'] for r in found] == ['sermon']
 
 
-def test_the_sermon_section_is_not_offered_without_a_door(isolated):
+def test_the_sermon_section_is_not_offered_without_a_door(isolated, display):
     """A row that cannot be followed is worse than no row."""
     import search_panel
     _sower()
