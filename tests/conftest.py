@@ -76,3 +76,37 @@ setattr(builtins, 'book_label', i18n.book_label)
 # panel's heading is a noun, the button that opens it a verb). Same bootstrap,
 # same reason: without it a test that builds such a widget hits NameError.
 setattr(builtins, 'C_', i18n.C_)
+
+# ── No test may put a file chooser on the tester's screen ──────────────────
+# Gtk.FileDialog's save() and open() are the calls that present one. A test
+# that reaches a handler ending in either of those throws a real chooser onto
+# the desktop, parented to a real window, where it sits until the test
+# destroys that window — which is how the Annotations single-entry export
+# test came to flash "Export — Journal" on every run of the suite.
+#
+# CI can never catch this: it has no screen, so the dialog is a no-op there
+# and the test passes. The floor has to be here.
+#
+# A test that means to exercise such a handler stubs the call itself, and its
+# monkeypatch wins over this one for the length of that test. This only
+# refuses the calls nobody asked for, and names the method so the failure
+# says what to do about it.
+import gi  # noqa: E402
+
+gi.require_version('Gtk', '4.0')
+from gi.repository import Gtk  # noqa: E402
+
+
+def _refuse_to_present(method):
+    def refused(self, *args, **kwargs):
+        raise AssertionError(
+            f'Gtk.FileDialog.{method}() would put a file chooser on the '
+            f'screen. Stub it in this test:\n'
+            f"    monkeypatch.setattr(Gtk.FileDialog, '{method}',\n"
+            f'                        lambda self, parent, cancellable, cb: '
+            f'None)')
+    return refused
+
+
+for _method in ('save', 'open', 'select_folder'):
+    setattr(Gtk.FileDialog, _method, _refuse_to_present(_method))

@@ -815,15 +815,29 @@ def test_an_untitled_entry_is_named_for_its_passage(isolated, display):
 
 
 def test_a_cancelled_single_export_does_not_narrow_the_next_print(isolated,
-                                                                  display):
+                                                                  display,
+                                                                  monkeypatch):
     """The one-entry scope rides in its own callback. Parked on the window,
-    a cancelled save would have left the next print showing one entry."""
+    a cancelled save would have left the next print showing one entry.
+
+    save() is stubbed because it is the call that puts a real file chooser
+    on the screen. Unstubbed, every run of the suite threw a save dialog
+    onto the desktop and left it there until the window was destroyed —
+    invisible in CI, which has no screen, and unmissable on a workstation.
+    """
+    from gi.repository import Gtk
+    asked = []
+    monkeypatch.setattr(
+        Gtk.FileDialog, 'save',
+        lambda self, parent, cancellable, cb: asked.append(self))
+
     journal.save('j1', title='The first', body='one')
     journal.save('j2', title='The second', body='two')
     win = _open_journal()
     try:
         win._list.select_row(next(_rows(win)))
-        win._on_export_one(None)          # opens a dialog nobody answers
+        win._on_export_one(None)          # a save nobody answers
+        assert asked                      # the handler did ask for one
         doc = win._document()
         assert 'The first' in doc and 'The second' in doc
     finally:

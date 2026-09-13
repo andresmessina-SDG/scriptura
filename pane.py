@@ -191,7 +191,7 @@ _HEADING_TAG = 'section_heading'
 
 #: Source markup that carries its own headings, which the tag above cannot
 #: govern. Checked per verse so the toggle knows whether it may restyle.
-_INLINE_TITLE_RE = re.compile(r'<title([^>]*)>|<h[1-6]>', re.IGNORECASE)
+_INLINE_TITLE_RE = re.compile(r'<title([^>]*)>|<h[1-6]\b[^>]*>', re.IGNORECASE)
 
 
 def _renders_inline_title(html):
@@ -417,8 +417,7 @@ def _html_to_markup(html, dark, strip=True, divine_smallcaps=False,
 
     html = re.sub(r'<title([^>]*)>(.*?)</title>', _title_sub, html,
                   flags=re.DOTALL)
-    html = re.sub(r'<h3>(.*?)</h3>', r'[[B_S]]\1[[B_E]]', html)
-    html = re.sub(r'<h[1-6]>(.*?)</h[1-6]>', r'[[B_S]]\1[[B_E]]', html)
+    html = re.sub(r'<h[1-6]\b[^>]*>(.*?)</h[1-6]>', r'[[B_S]]\1[[B_E]]', html)
 
     # Paragraph + section markers used by Clarke and other long-form
     # commentaries: self-closing `<div sID="…" type="x-p"/>` brackets
