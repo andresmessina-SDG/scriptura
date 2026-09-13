@@ -9796,3 +9796,60 @@ msgstr "Mostrar la lista (F9)"
 
 msgid "Writing mode — Esc, F11, or hover the top edge to leave"
 msgstr "Modo de escritura: Esc, F11 o acerque el puntero al borde superior para salir"
+
+# ── The manuscript refinements ──────────────────────────────
+
+msgid "Print this sermon…"
+msgstr "Imprimir este sermón…"
+
+msgid "Print this entry…"
+msgstr "Imprimir esta entrada…"
+
+msgid "Print this annotation…"
+msgstr "Imprimir esta anotación…"
+
+msgid "{n} sermon on this chapter"
+msgid_plural "{n} sermons on this chapter"
+msgstr[0] "{n} sermón sobre este capítulo"
+msgstr[1] "{n} sermones sobre este capítulo"
+
+msgid "Rename “{series}”"
+msgstr "Renombrar «{series}»"
+
+msgid "Every sermon in this series is renamed. If the name matches another series, the two are joined."
+msgstr "Se renombran todos los sermones de esta serie. Si el nombre coincide con el de otra serie, las dos se unen."
+
+msgid "≈ {n} min"
+msgstr "≈ {n} min"
+
+msgid "About {n} words a minute, read aloud"
+msgstr "Unas {n} palabras por minuto, leídas en voz alta"
+
+msgid "From your study"
+msgstr "De su estudio"
+
+msgid "What you have already marked or written on these passages"
+msgstr "Lo que ya ha marcado o escrito sobre estos pasajes"
+
+msgid "Nothing written on this passage yet"
+msgstr "Todavía no hay nada escrito sobre este pasaje"
+
+msgid "Written on this passage"
+msgstr "Escrito sobre este pasaje"
+
+msgid "Note on {ref}"
+msgstr "Nota sobre {ref}"
+
+# ── The study menu, grouped ─────────────────────────────────
+
+msgid "Write"
+msgstr "Escribir"
+
+msgid "Share"
+msgstr "Compartir"
+
+msgid "As an image…"
+msgstr "Como imagen…"
+
+msgid "Written on this chapter"
+msgstr "Escrito sobre este capítulo"

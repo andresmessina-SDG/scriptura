@@ -407,6 +407,7 @@ def test_the_word_count_follows_the_writing(isolated, display):
     try:
         ed = _editor(win)
         _set(ed, 'one two three')
+        ed._restyle.flush()      # the count rides the reference debounce
         assert '3' in ed._words.get_text()
         assert ed._words.get_visible()
     finally:
@@ -420,6 +421,247 @@ def test_an_empty_entry_is_not_told_it_has_no_words(isolated, display):
     try:
         ed = _editor(win)
         _set(ed, '')
+        ed._restyle.flush()
         assert not ed._words.get_visible()
+    finally:
+        win.destroy()
+
+
+# ── Enter, inside a list ─────────────────────────────────────────────────────
+#
+# Pressed for real: the newline goes into the buffer the way the key puts it
+# there, so these test the path the reader uses and not a handler called by
+# name.
+
+def _enter(editor, at=None):
+    """Press Enter — at `at`, or at the end of the body."""
+    buf = editor.body.get_buffer()
+    buf.place_cursor(buf.get_end_iter() if at is None
+                     else buf.get_iter_at_offset(at))
+    buf.insert_at_cursor('\n')
+
+
+def test_enter_continues_a_bullet_list(isolated, display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '- one')
+        _enter(ed)
+        assert _text(ed) == '- one\n- '
+    finally:
+        win.destroy()
+
+
+def test_enter_numbers_the_next_item(isolated, display):
+    """The reported defect: the numbered-list button, an item, Enter — and
+    the list stopped."""
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '1. one')
+        _enter(ed)
+        assert _text(ed) == '1. one\n2. '
+        ed.body.get_buffer().insert_at_cursor('two')
+        _enter(ed)
+        assert _text(ed) == '1. one\n2. two\n3. '
+    finally:
+        win.destroy()
+
+
+def test_enter_continues_a_quote(isolated, display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '> quoted')
+        _enter(ed)
+        assert _text(ed) == '> quoted\n> '
+    finally:
+        win.destroy()
+
+
+def test_a_heading_is_one_line(isolated, display):
+    """A second heading conjured under the first is never what Enter meant."""
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '# Sermon')
+        _enter(ed)
+        assert _text(ed) == '# Sermon\n'
+    finally:
+        win.destroy()
+
+
+def test_enter_in_prose_is_still_a_plain_newline(isolated, display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, 'a paragraph')
+        _enter(ed)
+        assert _text(ed) == 'a paragraph\n'
+    finally:
+        win.destroy()
+
+
+def test_an_empty_item_ends_the_list(isolated, display):
+    """Enter twice is how every editor says done."""
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '- one')
+        _enter(ed)
+        _enter(ed)
+        assert _text(ed) == '- one\n'
+    finally:
+        win.destroy()
+
+
+def test_an_empty_numbered_item_ends_the_list(isolated, display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '1. one\n2. ')
+        _enter(ed)
+        assert _text(ed) == '1. one\n'
+    finally:
+        win.destroy()
+
+
+def test_the_caret_lands_after_the_new_marker(isolated, display):
+    """A marker the reader has to walk past by hand is worse than none."""
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '- one')
+        _enter(ed)
+        buf = ed.body.get_buffer()
+        at = buf.get_iter_at_mark(buf.get_insert())
+        assert at.get_offset() == len('- one\n- ')
+    finally:
+        win.destroy()
+
+
+def test_splitting_an_item_renumbers_the_rest(isolated, display):
+    """1. 2. 2. 3. is a list that has to be retyped by hand."""
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '1. one\n2. two\n3. three')
+        _enter(ed, len('1. one'))
+        assert _text(ed) == '1. one\n2. \n3. two\n4. three'
+    finally:
+        win.destroy()
+
+
+def test_a_run_that_starts_high_keeps_its_own_first_number(isolated, display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '3. three\n4. four')
+        _enter(ed, len('3. three'))
+        assert _text(ed) == '3. three\n4. \n5. four'
+    finally:
+        win.destroy()
+
+
+def test_a_caret_inside_the_marker_gets_a_plain_newline(isolated, display):
+    """Splitting the marker itself is not making an item."""
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '- one')
+        _enter(ed, 1)
+        assert _text(ed) == '-\n one'
+    finally:
+        win.destroy()
+
+
+def test_continuing_a_list_is_one_undo(isolated, display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        buf = ed.body.get_buffer()
+        _set(ed, '1. one\n2. two')
+        _enter(ed, len('1. one'))
+        buf.undo()
+        assert _text(ed) == '1. one\n2. two'
+    finally:
+        win.destroy()
+
+
+def test_opening_an_entry_does_not_continue_anything(isolated, display):
+    """`populate` sets a body full of newlines; none of them is a keystroke."""
+    win = _open()
+    try:
+        ed = _editor(win)
+        ed.populate({'kind': 'entry', 'id': 'x', 'title': 't',
+                     'body': '- one\n- two\n', 'date': '2026-09-12',
+                     'anchors': [], 'tags': []})
+        assert _text(ed) == '- one\n- two\n'
+    finally:
+        win.destroy()
+
+
+# ── One line, one marker ─────────────────────────────────────────────────────
+
+def test_a_bullet_replaces_a_number(isolated, display):
+    """'- 1. one' is a bullet whose text reads '1. one'."""
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '1. one')
+        ed._prefix('- ')
+        assert _text(ed) == '- one'
+    finally:
+        win.destroy()
+
+
+def test_numbering_replaces_a_bullet(isolated, display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '- one\n- two', 0, 11)
+        ed._number()
+        assert _text(ed) == '1. one\n2. two'
+    finally:
+        win.destroy()
+
+
+def test_a_heading_replaces_a_quote(isolated, display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '> one')
+        ed._prefix('# ')
+        assert _text(ed) == '# one'
+    finally:
+        win.destroy()
+
+
+def test_a_selection_ending_at_a_line_start_leaves_that_line_alone(
+        isolated, display):
+    """A drag that stops at the head of a line has not reached into it."""
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, 'one\ntwo', 0, 4)
+        ed._prefix('- ')
+        assert _text(ed) == '- one\ntwo'
+    finally:
+        win.destroy()
+
+
+# ── A pair has to close against a word ───────────────────────────────────────
+
+def test_bold_ignores_the_space_a_drag_took_with_it(isolated, display):
+    """'**word **' is notation the renderer does not read back, so the press
+    would have done nothing the reader could see."""
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, 'the word here', 4, 9)
+        ed._wrap('**')
+        assert _text(ed) == 'the **word** here'
+        assert 'md-strong' in {t for _a, _b, t
+                               in journal_markup.spans(_text(ed))}
     finally:
         win.destroy()

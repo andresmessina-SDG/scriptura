@@ -178,64 +178,94 @@ def _all_entries():
             chapter = int(chapter_str)
         except ValueError:
             continue
-        for verse_str, anno in verses.items():
-            if verse_str == 'chapter_note':
-                continue
-            # `verse_str` is the store key, which for a line two versifications
-            # print differently carries an OSIS sub-verse letter (`1!b`). The
-            # key is what writes and deletes address; the app verse under it is
-            # what a reference, a sort and a jump speak.
-            app_verse = annotations._base_verse(verse_str)
-            if app_verse is None:
-                continue
-            if isinstance(anno, str):
-                anno = {'highlight': anno, 'underline': False, 'note': None}
-            if not isinstance(anno, dict):
-                continue
-            h = anno.get('highlight')
-            u = anno.get('underline', False)
-            n = anno.get('note')
-            tgs = anno.get('tags', [])
-            if not (h or u or n or tgs):
-                continue
-            entries.append({
-                'kind': 'mark',
-                # `verse` is app space, which is what the store now holds and
-                # what every reference, sort and jump below speaks. Writes go
-                # back through annotations.* with module=None — no lens, the
-                # number is already the one the store wants.
-                'book': book, 'chapter': chapter,
-                'verse': verse_str, 'app_verse': app_verse,
-                'highlight': h, 'underline': u, 'note': n,
-                'tags': tgs, 'is_chapter_note': False,
-                'created': anno.get('created'),
-                'modified': anno.get('modified'),
-            })
-        chapter_note = verses.get('chapter_note')
-        if chapter_note:
-            if isinstance(chapter_note, str):
-                cn_text, cn_tags, cn_mod = chapter_note, [], None
-            elif isinstance(chapter_note, dict):
-                cn_text = chapter_note.get('note', '')
-                cn_tags = chapter_note.get('tags', [])
-                cn_mod = chapter_note.get('modified')
-            else:
-                cn_text, cn_tags, cn_mod = '', [], None
-            if cn_text.strip() or cn_tags:
-                entries.append({
-                    'kind': 'mark',
-                    'book': book, 'chapter': chapter,
-                    'verse': None, 'app_verse': None,
-                    'highlight': None, 'underline': False,
-                    'note': cn_text, 'tags': cn_tags,
-                    'is_chapter_note': True,
-                    'created': (chapter_note.get('created')
-                                if isinstance(chapter_note, dict) else None),
-                    'modified': cn_mod,
-                })
+        entries.extend(_marks_in_chapter(book, chapter, verses))
     entries.extend(_journal_rows())
     entries.extend(_sermon_rows())
     return _in_reading_order(entries)
+
+
+def marks_on(book, chapter):
+    """Every mark and chapter note on one chapter, in verse order.
+
+    The whole chapter, not only the verses a sermon is anchored to: a
+    manuscript on Matthew 13:1-9 will happily use the note left on 13:23,
+    and a door that hid it would be answering a narrower question than the
+    one the reader asked.
+    """
+    verses = annotations._load().get(annotations._chapter_key(book, chapter))
+    if not verses:
+        return []
+    rows = _marks_in_chapter(book, chapter, verses)
+    # Chapter notes first — what is true of the whole passage stands above
+    # what is true of one line of it — then by verse.
+    return sorted(rows, key=lambda r: (not r['is_chapter_note'],
+                                       r['app_verse'] or 0))
+
+
+def _marks_in_chapter(book, chapter, verses):
+    """The marks stored under one chapter key, as list rows.
+
+    Pulled out of `_all_entries` when the sermon editor needed the same rows
+    for one chapter: the shape a mark takes in this window is decided in one
+    place, or the two readers of the store disagree about what a mark is.
+    """
+    entries = []
+    for verse_str, anno in verses.items():
+        if verse_str == 'chapter_note':
+            continue
+        # `verse_str` is the store key, which for a line two versifications
+        # print differently carries an OSIS sub-verse letter (`1!b`). The
+        # key is what writes and deletes address; the app verse under it is
+        # what a reference, a sort and a jump speak.
+        app_verse = annotations._base_verse(verse_str)
+        if app_verse is None:
+            continue
+        if isinstance(anno, str):
+            anno = {'highlight': anno, 'underline': False, 'note': None}
+        if not isinstance(anno, dict):
+            continue
+        h = anno.get('highlight')
+        u = anno.get('underline', False)
+        n = anno.get('note')
+        tgs = anno.get('tags', [])
+        if not (h or u or n or tgs):
+            continue
+        entries.append({
+            'kind': 'mark',
+            # `verse` is app space, which is what the store now holds and
+            # what every reference, sort and jump below speaks. Writes go
+            # back through annotations.* with module=None — no lens, the
+            # number is already the one the store wants.
+            'book': book, 'chapter': chapter,
+            'verse': verse_str, 'app_verse': app_verse,
+            'highlight': h, 'underline': u, 'note': n,
+            'tags': tgs, 'is_chapter_note': False,
+            'created': anno.get('created'),
+            'modified': anno.get('modified'),
+        })
+    chapter_note = verses.get('chapter_note')
+    if chapter_note:
+        if isinstance(chapter_note, str):
+            cn_text, cn_tags, cn_mod = chapter_note, [], None
+        elif isinstance(chapter_note, dict):
+            cn_text = chapter_note.get('note', '')
+            cn_tags = chapter_note.get('tags', [])
+            cn_mod = chapter_note.get('modified')
+        else:
+            cn_text, cn_tags, cn_mod = '', [], None
+        if cn_text.strip() or cn_tags:
+            entries.append({
+                'kind': 'mark',
+                'book': book, 'chapter': chapter,
+                'verse': None, 'app_verse': None,
+                'highlight': None, 'underline': False,
+                'note': cn_text, 'tags': cn_tags,
+                'is_chapter_note': True,
+                'created': (chapter_note.get('created')
+                            if isinstance(chapter_note, dict) else None),
+                'modified': cn_mod,
+            })
+    return entries
 
 
 def _journal_rows():
@@ -1122,6 +1152,7 @@ class AnnotationsWindow(Adw.Window):
             reading_module=self._reading_module,
             quote=verse_quote,
             on_collect=self._collect_from_editor,
+            on_open_entry=self.select_entry,
         )
         self._mark_editor = annotation_editors.MarkEditor(**common)
         self._entry_editor = annotation_editors.EntryEditor(**common)
@@ -1439,7 +1470,7 @@ class AnnotationsWindow(Adw.Window):
                 if name != self._series_shown:
                     self._series_shown = name
                     self._list.append(self._make_group_row(
-                        name or _('No series')))
+                        name or _('No series'), series=name))
             # The list is already ordered with the verse-less entries last,
             # so one flag is enough: the header goes in ahead of the first of
             # them, wherever the render cap happens to have got to.
@@ -1464,26 +1495,86 @@ class AnnotationsWindow(Adw.Window):
         appear and reappear down the list."""
         return self._mode == 'sermons' and self._sort_drop.get_selected() == 0
 
-    def _make_group_row(self, title):
+    def _make_group_row(self, title, series=None):
         """A section rule in a printed index, not a GTK header: a dim caption
-        under a hairline, no box and no fill."""
+        under a hairline, no box and no fill.
+
+        A named series carries one more thing: the way to rename it. The
+        heading IS the series — nothing else in the window names it twice —
+        so the misspelling is read here, and until now correcting it meant
+        opening every sermon in the series and retyping the field.
+        """
         row = Gtk.ListBoxRow()
         row.set_selectable(False)
         row.set_activatable(False)
+        row._series = series or None
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         rule = Gtk.Separator()
         rule.add_css_class('journal-divider')
         rule.set_margin_bottom(8)
         box.append(rule)
+        line = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
         lbl = Gtk.Label(label=title, xalign=0)
         lbl.add_css_class('dim-label')
         lbl.add_css_class('caption')
         lbl.set_margin_start(10)
         lbl.set_margin_bottom(4)
-        box.append(lbl)
+        lbl.set_hexpand(True)
+        lbl.set_ellipsize(Pango.EllipsizeMode.END)
+        line.append(lbl)
+        if series:
+            rename = Gtk.Button(icon_name='scriptura-document-edit-symbolic')
+            rename.add_css_class('flat')
+            rename.add_css_class('dim-label')
+            rename.set_valign(Gtk.Align.CENTER)
+            tip = _('Rename “{series}”').format(series=series)
+            rename.set_tooltip_text(tip)
+            set_accessible_label(rename, tip)
+            rename.connect('clicked', self._on_rename_series, series)
+            line.append(rename)
+        box.append(line)
         box.set_margin_top(10)
         row.set_child(box)
         return row
+
+    def _on_rename_series(self, _btn, series):
+        """Rename a series across every sermon in it.
+
+        A merge as well as a rename, exactly as the tag manager's is: typing
+        a name already in use joins the two groups, which is the shape of the
+        mistake — the same series entered twice, spelled differently.
+        """
+        self._autosave.flush()
+        dlg = Adw.AlertDialog(
+            heading=_('Rename “{series}”').format(series=series),
+            body=_('Every sermon in this series is renamed. If the name '
+                   'matches another series, the two are joined.'),
+        )
+        entry = Gtk.Entry()
+        entry.set_text(series)
+        entry.set_activates_default(True)
+        dlg.set_extra_child(entry)
+        dlg.add_response('cancel', _('Cancel'))
+        dlg.add_response('rename', _('Rename'))
+        dlg.set_response_appearance('rename', Adw.ResponseAppearance.SUGGESTED)
+        dlg.set_default_response('rename')
+
+        dlg.connect('response', lambda _d, response: (
+            self._rename_series(series, entry.get_text().strip())
+            if response == 'rename' else None))
+        dlg.present(self)
+
+    def _rename_series(self, old, new):
+        """Do it, and put the list back together around it."""
+        if not new or new == old:
+            return
+        sermons.rename_series(old, new)
+        # The open sermon's row is stale the moment the store changed — it
+        # carries the old name in `series` — so the editor is repopulated
+        # from what the reload found, under the same selection.
+        self._preserve_select = (_entry_key(self._current_entry)
+                                 if self._current_entry is not None else None)
+        self._reload()
 
     def _make_more_row(self):
         remaining = len(self._filtered) - self._shown
@@ -2001,6 +2092,33 @@ class AnnotationsWindow(Adw.Window):
         self._apply_filter()
         self._sync_filter_disclosure()
 
+    def show_sermons_on(self, book, chapter):
+        """Open the sermons page on what has been preached from one chapter.
+
+        The journal's door one page over, filter for filter — the book
+        narrows the list and the first sermon anchored on the chapter is
+        selected. What it answers is the question an archive exists for: you
+        are standing in this passage, and you have been here before.
+        """
+        self._autosave.flush()
+        self.set_mode('sermons')
+        self._updating = True
+        self._search_entry.set_text('')
+        for drop in (self._type_drop, self._tag_drop, self._date_drop):
+            drop.set_selected(0)
+        self._book_drop.set_selected(
+            self._book_keys.index(book) + 1 if book in self._book_keys else 0)
+        self._updating = False
+        for entry in self._entries:
+            if entry.get('kind') != 'sermon':
+                continue
+            if any(a['book'] == book and a['chapter'] == chapter
+                   for a in entry.get('anchors') or []):
+                self._preserve_select = _entry_key(entry)
+                break
+        self._apply_filter()
+        self._sync_filter_disclosure()
+
     def _label_new_button(self):
         """The pencil starts whatever the page is for. On the Annotations
         page there is nothing to start — a mark is made at a verse — so it
@@ -2210,20 +2328,25 @@ class AnnotationsWindow(Adw.Window):
                 reading = None
         return quote_module() or reading
 
-    def _document(self, markdown=True, rows=None):
+    def _document(self, markdown=True, rows=None, title=None):
         """A document from `rows`, or from the filtered list.
 
         The filters ARE the scopes — one entry, a season, the lot — so there
         is no second scope picker saying the same thing twice. `rows` is the
         one exception: exporting the entry already open should not make the
         reader build a filter to describe it.
+
+        A document of one sermon is headed by that sermon. Headed "Sermons"
+        it would name the shelf over a page that is plainly one manuscript,
+        and the one printed sheet a preacher carries wants its own name at
+        the top.
         """
         module = self._export_module()
         if not module:
             return None
         return passage_export.build_annotations(
             self._filtered_entries() if rows is None else rows,
-            module, markdown=markdown, title=self._page_name())
+            module, markdown=markdown, title=title or self._page_name())
 
     def _build_transfer_menu(self):
         """Built on show, because what it offers depends on the page and on
@@ -2254,6 +2377,23 @@ class AnnotationsWindow(Adw.Window):
         one.set_sensitive(self._current_entry is not None)
         one.connect('clicked', self._on_export_one)
         box.append(one)
+
+        # Print, twice, for the same reason export is offered twice: the
+        # header's own print button is the LIST, and the one thing a preacher
+        # prints is the single manuscript they are about to carry into the
+        # pulpit — not the archive it is filed in.
+        print_one = Gtk.Button()
+        print_one.add_css_class('flat')
+        if self._mode == 'sermons':
+            print_label = _('Print this sermon…')
+        elif self._mode == 'journal':
+            print_label = _('Print this entry…')
+        else:
+            print_label = _('Print this annotation…')
+        print_one.set_child(Gtk.Label(label=print_label, xalign=0))
+        print_one.set_sensitive(self._current_entry is not None)
+        print_one.connect('clicked', self._on_print_one)
+        box.append(print_one)
 
         if self._mode == 'journal':
             box.append(Gtk.Separator(
@@ -2288,7 +2428,9 @@ class AnnotationsWindow(Adw.Window):
             self._show_export_error(
                 _('Please choose a location on this computer.'))
             return
-        text = self._document(rows=rows)
+        text = self._document(
+            rows=rows,
+            title=self._one_document_name(rows[0]) if rows else None)
         if text is None:
             self._show_export_error(
                 _('No translation is installed to quote from.'))
@@ -2339,13 +2481,35 @@ class AnnotationsWindow(Adw.Window):
 
     def _on_print(self, _btn):
         """Print what the list is showing, on the same paper as a passage."""
+        self._print(None)
+
+    def _on_print_one(self, _btn):
+        """The open sermon on its own — the copy that goes to the pulpit.
+
+        Named for what is in it, as the exported file is: a print queue
+        showing "Sermons" three times over says nothing about which of them
+        is the one to collect.
+        """
+        if self._current_entry is None:
+            return
+        self._transfer_pop.popdown()
+        entry = self._current_entry
+        self._print([entry], self._one_document_name(entry))
+
+    def _one_document_name(self, entry):
+        """What one entry's own document is called."""
+        return ((entry.get('title') or '').strip()
+                or _anchor_label(entry) or self._page_name())
+
+    def _print(self, rows, job_name=None):
+        """Print `rows` (or the whole filtered list), on a passage's paper."""
         self._autosave.flush()
-        text = self._document(markdown=False)
+        text = self._document(markdown=False, rows=rows, title=job_name)
         if not text:
             self._show_export_error(
                 _('No translation is installed to quote from.'))
             return
-        operation = passage_print.build_text_operation(text, self._page_name())
+        operation = passage_print.build_text_operation(text, job_name)
         try:
             operation.run(Gtk.PrintOperationAction.PRINT_DIALOG, self)
         except Exception:

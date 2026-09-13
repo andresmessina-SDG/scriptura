@@ -20,7 +20,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Gdk, Pango
 
-from a11y import set_accessible_label
+from a11y import set_accessible_label, set_role
 from gtk_utils import Autosave, clear_children, DelayedSpinner
 import annotations
 import content
@@ -95,16 +95,193 @@ def _grab_focus_once(widget):
 
 # ── Right-click study menu ───────────────────────────────────────────────────
 
-def _menu_row(icon_name, label):
-    """A flat, left-aligned menu row: leading symbolic icon + label. Gives the
-    items menu-like structure/affordance without the heavy filled-button look."""
+#: How much of a manuscript's title a menu row carries. The pages share one
+#: width — the stack is homogeneous, so the longest label anywhere, including
+#: a slide away, sets how wide the menu opens over the verse. Measured: an
+#: untruncated title took it from 270px to 390px.
+_TITLE_CAP = 24
+
+
+def _short(title):
+    """`title`, capped so one long sermon name cannot widen the whole menu."""
+    title = ' '.join((title or '').split())
+    return title if len(title) <= _TITLE_CAP \
+        else title[:_TITLE_CAP].rstrip() + '…'
+
+
+#: The icon gutter: glyph, then the gap to the words. Every row in the menu
+#: measures its label from the same x, and so does every section caption —
+#: three ragged left edges (caption, label, swatches) is what made his live
+#: screenshot read as crooked before anything else did.
+_ICON = 16
+_GUTTER = 10
+_ROW_PAD = 6
+
+
+def _menu_row(icon_name, label, submenu=False):
+    """A flat menu row: leading glyph, label, and a chevron when it leads to
+    a page rather than doing something.
+
+    Hand-built, and it has to be. `GtkPopoverMenu` gives menu semantics for
+    free but **cannot show an icon** — measured under GTK 4.22: a model
+    item's `icon` attribute is ignored and setting `GtkModelButton:icon`
+    leaves the image hidden, because that image is only drawn for `iconic`
+    (icon-only) buttons. The app draws its own line art and the menu is where
+    a reader meets most of it, so the rows are ours and the semantics are put
+    on by hand — see `_menu_page`.
+    """
     btn = Gtk.Button()
     btn.add_css_class('flat')
-    content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-    content.append(Gtk.Image.new_from_icon_name(icon_name))
-    content.append(Gtk.Label(label=label, xalign=0, hexpand=True))
+    set_role(btn, Gtk.AccessibleRole.MENU_ITEM)
+    content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=_GUTTER)
+    image = Gtk.Image.new_from_icon_name(icon_name)
+    image.set_pixel_size(_ICON)
+    content.append(image)
+    text = Gtk.Label(label=label, xalign=0, hexpand=True)
+    text.set_ellipsize(Pango.EllipsizeMode.END)
+    content.append(text)
+    if submenu:
+        chevron = Gtk.Image.new_from_icon_name('scriptura-pan-end-symbolic')
+        chevron.add_css_class('dim-label')
+        content.append(chevron)
     btn.set_child(content)
     return btn
+
+
+def _menu_caption(text):
+    """A section's name, aligned with the LABELS and not with the glyphs —
+    the gutter is a gutter, and a caption that starts in it reads as a row
+    that lost its icon."""
+    lbl = Gtk.Label(label=text, xalign=0)
+    lbl.add_css_class('dim-label')
+    lbl.add_css_class('caption')
+    lbl.set_margin_start(_ICON + _GUTTER + _ROW_PAD)
+    lbl.set_margin_top(4)
+    lbl.set_margin_bottom(2)
+    return lbl
+
+
+def _menu_page():
+    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+    box.set_margin_start(_ROW_PAD)
+    box.set_margin_end(_ROW_PAD)
+    box.set_margin_top(_ROW_PAD)
+    box.set_margin_bottom(_ROW_PAD)
+    set_role(box, Gtk.AccessibleRole.GROUP)
+    return box
+
+
+def _menu_separator():
+    rule = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+    rule.set_margin_top(4)
+    rule.set_margin_bottom(4)
+    return rule
+
+
+def _hue_row(pane, verses, popover, any_highlighted):
+    """The four hues and the way off them, as one row of five equal chips.
+
+    `Clear` is the fifth chip and not a row of its own. As a row it appeared
+    and vanished with the verse under the pointer, moving everything below
+    it; as a small flat button at the end of the row it read as something
+    that had fallen off the end. Empty, bordered, the same box as the
+    colours: it is the same act — setting the hue to none.
+    """
+    row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+    row.set_homogeneous(True)
+    row.set_margin_start(_ROW_PAD)
+    row.set_margin_end(_ROW_PAD)
+    row.set_margin_top(2)
+    row.set_margin_bottom(4)
+    for color, css_cls, name in highlight_swatches():
+        btn = Gtk.Button()
+        btn.set_size_request(-1, 28)
+        btn.add_css_class(css_cls)
+        # Muted initial as a non-hue (colorblind-safe) cue — its own string
+        # per language, not the colour name's first letter (see _HL_LETTERS).
+        letter = Gtk.Label(label=highlight_letter(color))
+        letter.add_css_class('hl-letter')
+        btn.set_child(letter)
+        # Icon-/color-only control: give AT the color name (no visible change).
+        set_accessible_label(btn, name)
+        # A chip is a menu item like any other row: it acts and the menu
+        # closes. Left as a plain `button` it was the one thing in here a
+        # screen reader announced differently from its neighbours.
+        set_role(btn, Gtk.AccessibleRole.MENU_ITEM)
+        btn.connect('clicked',
+                    lambda b, c=color: apply_highlight(pane, verses, c,
+                                                       popover))
+        row.append(btn)
+    clear = Gtk.Button(icon_name='scriptura-edit-clear-symbolic')
+    clear.set_size_request(-1, 28)
+    clear.add_css_class('hl-clear')
+    clear.set_tooltip_text(_('Clear Highlight'))
+    set_accessible_label(clear, _('Clear Highlight'))
+    set_role(clear, Gtk.AccessibleRole.MENU_ITEM)
+    # Always drawn, so the row never changes shape; live only when there is
+    # a highlight to take off.
+    clear.set_sensitive(any_highlighted)
+    clear.connect('clicked',
+                  lambda b: apply_highlight(pane, verses, None, popover))
+    row.append(clear)
+    return row
+
+
+def _slide(stack, name, back_to=None):
+    """Show one page and put the keyboard on it.
+
+    The focus move is the whole reason a submenu is usable without a mouse:
+    without it the caret stays on the row that opened the page, and the next
+    Down goes to the row under it on a page nobody can see.
+    """
+    stack.set_visible_child_name(name)
+    page = stack.get_child_by_name(name)
+    first = page.get_first_child()
+    while first is not None and not isinstance(first, Gtk.Button):
+        first = first.get_next_sibling()
+    if first is not None:
+        first.grab_focus()
+    return back_to
+
+
+def _submenu_page(stack, name, title, icon):
+    """A page, with the way back at the head of it.
+
+    A back row rather than a back button in a header: it is the first thing
+    the keyboard lands on, Left and Escape reach it too, and it names where
+    it returns to instead of pointing at nothing.
+    """
+    page = _menu_page()
+    back = _menu_row('scriptura-go-previous-symbolic', title)
+    back.connect('clicked', lambda b: _slide(stack, 'main'))
+    page.append(back)
+    page.append(_menu_separator())
+    keys = Gtk.EventControllerKey()
+
+    def on_key(_c, keyval, _code, _state):
+        if keyval in (Gdk.KEY_Left, Gdk.KEY_Escape):
+            _slide(stack, 'main')
+            return True
+        return False
+
+    keys.connect('key-pressed', on_key)
+    page.add_controller(keys)
+    stack.add_named(page, name)
+    return page
+
+
+def _opens(stack, name):
+    """A row that leads to a page: click, Enter, or Right."""
+    def wire(row):
+        row.connect('clicked', lambda b: _slide(stack, name))
+        keys = Gtk.EventControllerKey()
+        keys.connect('key-pressed',
+                     lambda _c, keyval, _code, _s: (
+                         _slide(stack, name) or True)
+                     if keyval == Gdk.KEY_Right else False)
+        row.add_controller(keys)
+        return row
+    return wire
 
 
 def show_study_menu(pane, verses, x, y):
@@ -120,30 +297,30 @@ def build_study_menu(pane, verses, x, y):
     Split from the showing so its size can be measured without a window:
     `popup()` on a popover whose parent has no root segfaults, and what
     tests/test_study_menu_fit.py needs to know is how small this can be
-    made, not what it looks like on screen."""
-    popover = Gtk.Popover()
+    made, not what it looks like on screen.
+
+    **Grouped by verb, and the size of it fixed.** It was twelve flat rows
+    and 540px of them for a reader a year in — past the 498px that once made
+    this menu fit nowhere and silently not open at all — and five of those
+    rows were conditional, so the row a reader reached for moved as their own
+    writing accumulated. Now the three things done oftenest are at the head,
+    the occasional ones are one slide deep behind the verb they belong to,
+    and everything that can appear or vanish is inside a page or last. Same
+    menu on day one as a year in; 276px against 540.
+
+    The pages slide inside one popover rather than flying out sideways: a
+    flyout needs room beside the menu, and this menu's history is precisely
+    about not having room.
+    """
+    popover = Gtk.Popover(accessible_role=Gtk.AccessibleRole.MENU)
     popover.set_parent(pane._view)
     popover.connect('closed', lambda p: p.unparent())
     rect = Gdk.Rectangle()
     rect.x, rect.y, rect.width, rect.height = int(x), int(y), 1, 1
     popover.set_pointing_to(rect)
 
-    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-    box.set_margin_start(6)
-    box.set_margin_end(6)
-    box.set_margin_top(6)
-    box.set_margin_bottom(6)
-
-    title = (_('Verse {v}').format(v=verses[0])
-             if len(verses) == 1
-             else _('Verses {first}–{last}').format(
-                 first=verses[0], last=verses[-1]))
-    lbl = Gtk.Label(label=title)
-    lbl.add_css_class('dim-label')
-    box.append(lbl)
-
     # Load this chapter's annotations once — drives the underline label, the
-    # note prefill, and whether a "Clear Highlight" row is worth showing.
+    # note prefill, and whether the clear chip is live.
     annos = annotations.get_annotations(pane._module, pane._book, pane._chapter)
 
     def _verse_anno(v):
@@ -151,125 +328,141 @@ def build_study_menu(pane, verses, x, y):
         return {'highlight': a} if isinstance(a, str) else (a or {})
 
     any_highlighted = any(_verse_anno(v).get('highlight') for v in verses)
+    all_underlined = all(_verse_anno(v).get('underline', False)
+                         for v in verses)
+    single = len(verses) == 1
+    anno = _verse_anno(verses[0]) if single else {}
+    note_text = anno.get('note', '')
+    current_tags = anno.get('tags', [])
 
-    # 1. Highlight color picker
-    color_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-    color_box.set_halign(Gtk.Align.CENTER)
-    for color, css_cls, name in highlight_swatches():
-        btn = Gtk.Button()
-        btn.set_size_request(28, 28)
-        btn.add_css_class(css_cls)
-        # Muted initial as a non-hue (colorblind-safe) cue — its own string
-        # per language, not the colour name's first letter (see _HL_LETTERS).
-        letter = Gtk.Label(label=highlight_letter(color))
-        letter.add_css_class('hl-letter')
-        btn.set_child(letter)
-        # Icon-/color-only control: give AT the color name (no visible change).
-        set_accessible_label(btn, name)
-        btn.connect('clicked',
-                    lambda b, c=color: apply_highlight(pane, verses, c, popover))
-        color_box.append(btn)
-    box.append(color_box)
-    # Only offer "Clear Highlight" when something is actually highlighted.
-    if any_highlighted:
-        clear_btn = _menu_row('scriptura-edit-clear-symbolic', _('Clear Highlight'))
-        clear_btn.connect('clicked',
-                          lambda b: apply_highlight(pane, verses, None, popover))
-        box.append(clear_btn)
+    stack = Gtk.Stack()
+    stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
+    stack.set_transition_duration(140)
+    # The width is shared so the menu never jumps sideways mid-slide; the
+    # height is not, so a short page is not padded out to the tall one.
+    stack.set_hhomogeneous(True)
+    stack.set_vhomogeneous(False)
+    stack.set_interpolate_size(True)
 
-    # 2. Underline toggle
-    all_underlined = all(_verse_anno(v).get('underline', False) for v in verses)
-    und_lbl = _('Remove Underline') if all_underlined else _('Underline')
-    und_btn = _menu_row('scriptura-format-text-underline-symbolic', und_lbl)
-    und_btn.set_margin_top(8)   # whitespace gap to the highlight group above
-    und_btn.connect('clicked',
-                    lambda b: toggle_underline(pane, verses, not all_underlined, popover))
-    box.append(und_btn)
+    main = _menu_page()
+    stack.add_named(main, 'main')
 
-    # 3. Note & Tags (single verse only)
-    if len(verses) == 1:
-        anno = _verse_anno(verses[0])
-        note_text = anno.get('note', '')
-        current_tags = anno.get('tags', [])
-        has_study = bool(note_text or current_tags)
-        note_btn = _menu_row('scriptura-document-edit-symbolic',
-                             _('Edit Note & Tags') if has_study else _('Note & Tags'))
-        note_btn.connect('clicked',
-                         lambda b: _edit_note(pane, verses[0], note_text, current_tags, popover))
-        box.append(note_btn)
+    # ── What this verse is marked with ──────────────────────────────────
+    main.append(_menu_caption(
+        _('Verse {v}').format(v=verses[0]) if single
+        else _('Verses {first}–{last}').format(first=verses[0],
+                                               last=verses[-1])))
+    main.append(_hue_row(pane, verses, popover, any_highlighted))
 
-    # 3b. Write an entry. Beside the note row on purpose: the distinction —
-    # a mark is a margin, an entry is a page — has to be legible right here,
-    # in two menu rows, or it is not legible anywhere.
-    entry_btn = _menu_row('scriptura-document-edit-symbolic',
-                          _('Write an entry'))
-    entry_btn.connect('clicked', lambda b: _write_entry(pane, verses, popover))
-    box.append(entry_btn)
+    underline = _menu_row(
+        'scriptura-format-text-underline-symbolic',
+        _('Remove Underline') if all_underlined else _('Underline'))
+    underline.connect('clicked', lambda b: toggle_underline(
+        pane, verses, not all_underlined, popover))
+    main.append(underline)
 
-    # 3b-ii. Into the sermon being written. The row names the manuscript it
-    # will add to, so it can never be wrong about where the words went, and
-    # it is absent entirely when there is no sermon to add to — the same
-    # rule the row below it follows.
-    target = sermons.most_recent()
-    if target is not None:
-        collect_btn = _menu_row(
+    if single:
+        note = _menu_row(
+            'scriptura-document-edit-symbolic',
+            _('Edit Note & Tags') if (note_text or current_tags)
+            else _('Note & Tags'))
+        note.connect('clicked', lambda b: _edit_note(
+            pane, verses[0], note_text, current_tags, popover))
+        main.append(note)
+
+    copy = _menu_row('scriptura-edit-copy-symbolic',
+                     _('Copy verse') if single else _('Copy verses'))
+    copy.connect('clicked', lambda b: copy_verse(pane, verses, popover))
+    main.append(copy)
+
+    # ── What it can become ──────────────────────────────────────────────
+    main.append(_menu_separator())
+
+    write_page = _submenu_page(stack, 'write', _('Write'),
+                               'scriptura-accessories-text-editor-symbolic')
+    # The journal glyph, not the pencil the note row carries: a mark is a
+    # margin and an entry is a page, and two rows under one glyph said they
+    # were the same thing.
+    entry = _menu_row('scriptura-journal-symbolic', _('Write an entry'))
+    entry.connect('clicked', lambda b: _write_entry(pane, verses, popover))
+    write_page.append(entry)
+    sermon = sermons.most_recent()
+    if sermon is not None:
+        # Named, so it can never be wrong about where the words went. On the
+        # page, so a manuscript's title cannot lengthen the row a reader
+        # opens over a verse.
+        collect = _menu_row(
             'scriptura-sermons-symbolic',
             _('Add to “{title}”').format(
-                title=target['title'] or _('Untitled sermon')))
-        collect_btn.connect(
-            'clicked',
-            lambda b: _collect_verses(pane, verses, target['id'], popover))
-        box.append(collect_btn)
+                title=_short(sermon['title']) or _('Untitled sermon')))
+        collect.connect('clicked', lambda b: _collect_verses(
+            pane, verses, sermon['id'], popover))
+        write_page.append(collect)
+    # The page glyph, not the pencil beside Note & Tags: no two rows on one
+    # page may share an icon, which is the rule the old menu broke twice.
+    main.append(_opens(stack, 'write')(_menu_row(
+        'scriptura-accessories-text-editor-symbolic', _('Write'),
+        submenu=True)))
 
-    # 3c. What has already been written about this chapter — and nothing at
-    # all when nothing has. §6.6: no second cue on the verse number, which is
-    # already carrying the note marker, and no badge on a page where the
-    # writing belongs to the day rather than to the glyph. A row that appears
-    # only when there is something to say is the smallest honest version.
+    share_page = _submenu_page(stack, 'share', _('Share'),
+                               'scriptura-document-save-symbolic')
+    export = _menu_row('scriptura-document-save-symbolic',
+                       _('Export passage…'))
+    export.connect('clicked', lambda b: export_dialog.export_passage(
+        pane, verses, popover))
+    share_page.append(export)
+    # "As an image…" and not "Share as image…": the parent already says
+    # share, and a page that repeats its own parent reads as a mistake. The
+    # sheet it opens is still titled Share as image.
+    card = _menu_row('scriptura-image-x-generic-symbolic', _('As an image…'))
+    card.connect('clicked', lambda b: export_dialog.share_as_image(
+        pane, verses, popover))
+    share_page.append(card)
+    printing = _menu_row('scriptura-document-print-symbolic', _('Print…'))
+    printing.connect('clicked', lambda b: passage_print.print_passage(
+        pane, verses, popover))
+    share_page.append(printing)
+    main.append(_opens(stack, 'share')(_menu_row(
+        'scriptura-document-save-symbolic', _('Share'), submenu=True)))
+
+    if single:
+        compare = _menu_row('scriptura-view-dual-symbolic',
+                            _('Compare translations'))
+        compare.connect('clicked',
+                        lambda b: compare_translations(pane, verses[0],
+                                                       popover))
+        main.append(compare)
+
+    # ── What is already here ────────────────────────────────────────────
+    # Last, and absent when there is nothing to say — so the one part of this
+    # menu that grows with a reader's own writing can never move a row they
+    # were reaching for.
     written = journal.entries_on(pane._book, pane._chapter)
-    if written:
-        seen_btn = _menu_row(
-            'scriptura-journal-symbolic',
-            ngettext('{n} entry on this chapter',
-                     '{n} entries on this chapter',
-                     len(written)).format(n=len(written)))
-        seen_btn.connect('clicked',
-                         lambda b: _open_journal_on(pane, popover))
-        box.append(seen_btn)
-
-    # 4. Copy verse(s)
-    copy_lbl = _('Copy verses') if len(verses) > 1 else _('Copy verse')
-    copy_btn = _menu_row('scriptura-edit-copy-symbolic', copy_lbl)
-    copy_btn.set_margin_top(8)   # whitespace gap to the annotate group above
-    copy_btn.connect('clicked', lambda b: copy_verse(pane, verses, popover))
-    box.append(copy_btn)
-
-    # 5. Export the passage — Copy's larger cousin, and next to it for that
-    # reason: both take what is selected and put it somewhere else.
-    export_btn = _menu_row('scriptura-document-save-symbolic', _('Export passage…'))
-    export_btn.connect(
-        'clicked',
-        lambda b: export_dialog.export_passage(pane, verses, popover))
-    box.append(export_btn)
-
-    # 6. Share the verse as an image
-    card_btn = _menu_row('scriptura-image-x-generic-symbolic', _('Share as image…'))
-    card_btn.connect(
-        'clicked',
-        lambda b: export_dialog.share_as_image(pane, verses, popover))
-    box.append(card_btn)
-
-    # 7. Print — the same composition as the worksheet, set into pages.
-    print_btn = _menu_row('scriptura-document-print-symbolic', _('Print…'))
-    print_btn.connect(
-        'clicked', lambda b: passage_print.print_passage(pane, verses, popover))
-    box.append(print_btn)
-
-    # 8. Compare translations (single verse only)
-    if len(verses) == 1:
-        comp_btn = _menu_row('scriptura-view-dual-symbolic', _('Compare translations'))
-        comp_btn.connect('clicked', lambda b: compare_translations(pane, verses[0], popover))
-        box.append(comp_btn)
+    preached = sermons.sermons_on(pane._book, pane._chapter)
+    if written or preached:
+        here = _submenu_page(stack, 'here', _('Written on this chapter'),
+                             'scriptura-annotations-symbolic')
+        if written:
+            seen = _menu_row(
+                'scriptura-journal-symbolic',
+                ngettext('{n} entry on this chapter',
+                         '{n} entries on this chapter',
+                         len(written)).format(n=len(written)))
+            seen.connect('clicked', lambda b: _open_journal_on(pane, popover))
+            here.append(seen)
+        if preached:
+            sermon_row = _menu_row(
+                'scriptura-sermons-symbolic',
+                ngettext('{n} sermon on this chapter',
+                         '{n} sermons on this chapter',
+                         len(preached)).format(n=len(preached)))
+            sermon_row.connect('clicked',
+                               lambda b: _open_sermons_on(pane, popover))
+            here.append(sermon_row)
+        main.append(_menu_separator())
+        main.append(_opens(stack, 'here')(_menu_row(
+            'scriptura-annotations-symbolic', _('Written on this chapter'),
+            submenu=True)))
 
     # A popover that fits nowhere is not shown at all. GTK places this one
     # below the pointer, flips it above when that will not fit, and if
@@ -284,7 +477,7 @@ def build_study_menu(pane, verses, x, y):
     scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
     scroller.set_propagate_natural_height(True)
     scroller.set_max_content_height(560)
-    scroller.set_child(box)
+    scroller.set_child(stack)
     popover.set_child(scroller)
     return popover
 
@@ -445,6 +638,21 @@ def _open_journal_on(pane, parent_popover):
         return
     book, chapter = pane._book, pane._chapter
     GLib.idle_add(lambda: root._open_journal_on(book, chapter)
+                  or GLib.SOURCE_REMOVE)
+
+
+def _open_sermons_on(pane, parent_popover):
+    """Open the sermons page on this chapter's manuscripts.
+
+    Same teardown dance as the journal door beside it: the window is built
+    on the next idle, after the study menu has finished closing.
+    """
+    parent_popover.popdown()
+    root = pane._view.get_root()
+    if root is None or not hasattr(root, '_open_sermons_on'):
+        return
+    book, chapter = pane._book, pane._chapter
+    GLib.idle_add(lambda: root._open_sermons_on(book, chapter)
                   or GLib.SOURCE_REMOVE)
 
 

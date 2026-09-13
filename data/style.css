@@ -190,6 +190,16 @@ separator.nav-divider { background-color: alpha(@borders, 0.3); }
 .hl-swatch-orange { background-color: #c8a575; }
 .hl-swatch-clear  { background-color: transparent; }
 
+/* The fifth chip in the study menu's hue row. The same box as the four
+ * colours, drawn empty: "no highlight" is the same act as setting one, and
+ * as a small flat icon button at the end of the row it read as something
+ * that had fallen off it. */
+button.hl-clear {
+    background-color: transparent;
+    border: 1px solid alpha(@borders, 0.8);
+}
+button.hl-clear:disabled { border-color: alpha(@borders, 0.35); }
+
 /* Colorblind-safe initial centred in each highlight swatch: a muted letter
  * so hue isn't the only cue distinguishing the four palette colors. Dark,
  * low-opacity ink reads on both the popover pastels and the journal mid-tones. */

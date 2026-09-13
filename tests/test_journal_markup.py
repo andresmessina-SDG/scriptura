@@ -211,6 +211,21 @@ def test_sword_carries_a_curated_abbreviation_table():
     assert table['GN'] == 'Genesis'
 
 
+def test_an_unreadable_locale_file_is_survived(tmp_path, monkeypatch):
+    """The recovery path itself raised. It logged through `_log`, which this
+    module does not have — so a locale in an unexpected encoding turned a
+    handled read error into a NameError, out through the reference parser and
+    into the restyle timer that calls it. Every reference link in the entry
+    being written stops appearing, and nothing on screen says why.
+    """
+    import sword_bridge
+    bad = tmp_path / 'bad.conf'
+    bad.write_bytes(b'[Book Abbrevs]\nJN=John\n\xff\xfe not utf-8\n')
+    monkeypatch.setattr(sword_bridge, '_locale_files', lambda lang: [bad])
+    monkeypatch.setattr(sword_bridge, '_ABBREV_CACHE', {})
+    assert sword_bridge.book_abbreviations('xx') == {}
+
+
 def test_a_russian_abbreviation_reaches_the_matcher():
     import sword_bridge
     if not sword_bridge.book_abbreviations('ru'):
@@ -223,3 +238,56 @@ def test_a_russian_abbreviation_reaches_the_matcher():
 def test_an_unknown_language_keeps_the_full_names():
     import sword_bridge
     assert sword_bridge.book_abbreviations('zz-not-a-language') == {}
+
+
+# ── What Enter carries on ────────────────────────────────────────────────────
+
+def test_list_marker_reads_the_three_that_continue():
+    assert md.list_marker('- one') == '- '
+    assert md.list_marker('* one') == '* '
+    assert md.list_marker('1. one') == '1. '
+    assert md.list_marker('12) one') == '12) '
+    assert md.list_marker('> quoted') == '> '
+
+
+def test_a_heading_opens_no_run():
+    assert md.list_marker('# Sermon') == ''
+    assert md.list_marker('plain prose') == ''
+
+
+def test_line_marker_reads_the_heading_too():
+    """What a new marker has to replace, rather than sit in front of."""
+    assert md.line_marker('## Point one') == '## '
+    assert md.line_marker('1. one') == '1. '
+    assert md.line_marker('plain prose') == ''
+
+
+def test_the_next_marker_counts_on():
+    assert md.next_marker('1. one') == '2. '
+    assert md.next_marker('9. nine') == '10. '
+    assert md.next_marker('3) three') == '4) '
+    assert md.next_marker('- one') == '- '
+    assert md.next_marker('# Sermon') == ''
+
+
+def test_renumber_closes_the_gap_an_inserted_item_left():
+    assert md.renumber(['1. one', '2. ', '2. two', '3. three']) == \
+        ['1. one', '2. ', '3. two', '4. three']
+
+
+def test_renumber_keeps_the_run_s_own_first_number():
+    assert md.renumber(['3. three', '4. ', '4. four']) == \
+        ['3. three', '4. ', '5. four']
+
+
+def test_renumber_never_numbers_a_line_that_was_not():
+    assert md.renumber(['1. one', 'prose']) == ['1. one', 'prose']
+
+
+def test_what_enter_writes_is_notation_the_renderer_reads():
+    """A marker the subset cannot read back would leave the reader looking
+    at a literal '2.' in the middle of a list."""
+    for line in ('- one', '1. one', '> quoted'):
+        made = md.next_marker(line) + 'next'
+        assert 'md-bullet' in {t for _a, _b, t in md.spans(made)} or \
+            'md-quote' in {t for _a, _b, t in md.spans(made)}

@@ -115,7 +115,7 @@ class _Editor(Gtk.Box):
 
     def __init__(self, *, on_edited, on_store_changed, on_navigate,
                  on_title, on_flush, on_row_changed, on_regroup,
-                 reading_module, quote, on_collect=None):
+                 reading_module, quote, on_collect=None, on_open_entry=None):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         self._edited_cb = on_edited
         self._on_store_changed = on_store_changed
@@ -133,6 +133,10 @@ class _Editor(Gtk.Box):
         #: window owns the decision of whether that goes through the open
         #: editor or the store.
         self._on_collect = on_collect
+        #: Open one journal entry by id. The study door lists the entries
+        #: written on the sermon's passages, and an entry is a page: it is
+        #: opened, never poured into the manuscript.
+        self._on_open_entry = on_open_entry
         self._reading_module = reading_module
         #: `annotations_window.verse_quote`, injected rather than imported —
         #: it resolves the interface language's preferred module, which is
@@ -332,6 +336,34 @@ class _Editor(Gtk.Box):
         btn.connect('clicked',
                     lambda _b: self._on_navigate(book, chapter, verse))
         return btn
+
+    def _mark_as_prose(self, e):
+        """(text, anchor) for one mark, as a manuscript quotes it.
+
+        The verse's own words, the reader's note under them, then the
+        reference — which the body's parser turns back into a link, because
+        it is spelled the way the reader's language spells it. Shared,
+        because a mark pushed in from the reading page and the same mark
+        pulled in from the sermon's own study door must arrive identical.
+        """
+        is_cn = bool(e.get('is_chapter_note'))
+        ref = f'{book_label(e["book"])} {e["chapter"]}'
+        if not is_cn:
+            ref = f'{ref}:{e["app_verse"]}'
+        parts = []
+        words = '' if is_cn else self._verse_text(
+            e['book'], e['chapter'], e['verse'])
+        if words:
+            parts.append(f'> {words} — {ref}')
+        note = ' '.join((e.get('note') or '').split())
+        if note:
+            parts.append(note if words else f'{note} — {ref}')
+        if not parts:
+            parts.append(ref)
+        anchor = {'book': e['book'], 'chapter': e['chapter'],
+                  'verses': [] if is_cn or e.get('app_verse') is None
+                  else [e['app_verse']]}
+        return '\n\n'.join(parts), anchor
 
     @staticmethod
     def _show_quote(label, text):
@@ -541,30 +573,11 @@ class MarkEditor(_Editor):
             set_accessible_label(self._collect_btn, label)
 
     def _on_collect_clicked(self, _btn):
-        """The mark, as a manuscript quotes it: the verse's own words, then
-        the reader's note under them, then the reference — which the body's
-        parser turns back into a link."""
         e = self.row
         if not e or not getattr(self, '_collect_target', None):
             return
-        is_cn = bool(e.get('is_chapter_note'))
-        ref = f'{book_label(e["book"])} {e["chapter"]}'
-        if not is_cn:
-            ref = f'{ref}:{e["app_verse"]}'
-        parts = []
-        words = '' if is_cn else self._verse_text(
-            e['book'], e['chapter'], e['verse'])
-        if words:
-            parts.append(f'> {words} — {ref}')
-        note = ' '.join((e.get('note') or '').split())
-        if note:
-            parts.append(note if words else f'{note} — {ref}')
-        if not parts:
-            parts.append(ref)
-        anchor = {'book': e['book'], 'chapter': e['chapter'],
-                  'verses': [] if is_cn or e.get('app_verse') is None
-                  else [e['app_verse']]}
-        self._on_collect(self._collect_target, '\n\n'.join(parts), anchor)
+        text, anchor = self._mark_as_prose(e)
+        self._on_collect(self._collect_target, text, anchor)
 
     def _show_verse(self, entry):
         """Quote the verse the note is about.
@@ -774,6 +787,10 @@ class _ProseEditor(_Editor):
         self.body.add_css_class('journal-entry-body')
         self.body.get_buffer().connect('changed', self._edited)
         self.body.get_buffer().connect('changed', self._restyle_body)
+        #: Set while the list continuation writes its own newline, so that
+        #: write is not read as another Enter.
+        self._continuing = False
+        self.body.get_buffer().connect('insert-text', self._on_body_insert)
         self._watch_focus(self.body)
         self._install_markup_tags(self.body.get_buffer())
         click = Gtk.GestureClick()
@@ -829,6 +846,7 @@ class _ProseEditor(_Editor):
         self._words.add_css_class('dim-label')
         self._words.add_css_class('caption')
         self._words.set_visible(False)
+        self._describe_length(self._words)
         caption.append(self._words)
         box.append(caption)
         self.tags = Gtk.Entry()
@@ -846,6 +864,10 @@ class _ProseEditor(_Editor):
         Facts go into `self._meta_row`, which is already built; only something
         that has to hold a line of its own belongs on `box`.
         """
+
+    def _describe_length(self, label):
+        """Say what the length caption means, where it means anything more
+        than a count."""
 
     def _build_meta_tail(self):
         """Anything that belongs on the metadata line AFTER the passages.
@@ -934,6 +956,14 @@ class _ProseEditor(_Editor):
             buf.get_iter_at_mark(buf.get_insert()),)
         start, end = a.get_offset(), b.get_offset()
         text = buf.get_text(a, b, False)
+        # A drag takes the space after a word with it more often than not, and
+        # '**word **' is notation the renderer will not read back: the pair
+        # has to close against a non-space. So the markers go around what was
+        # selected LESS its outer space, and the press does something.
+        if text.strip():
+            start += len(text) - len(text.lstrip())
+            end -= len(text) - len(text.rstrip())
+            text = text.strip()
         n = len(marker)
         # One press, one undo. Without the grouping the two inserts below
         # are two steps, and Ctrl+Z leaves half a pair of markers behind.
@@ -980,18 +1010,17 @@ class _ProseEditor(_Editor):
         bounds = buf.get_selection_bounds()
         a, b = bounds if bounds else 2 * (
             buf.get_iter_at_mark(buf.get_insert()),)
-        first, last = a.get_line(), b.get_line()
+        first, last = self._selected_lines(a, b)
         adding = not all(self._line_text(buf, n).startswith(marker)
                          for n in range(first, last + 1))
         # One press, one undo — four lines marked is not four steps back.
         buf.begin_user_action()
         # Backwards, so a line's own offset is still good when it comes up.
         for n in range(last, first - 1, -1):
-            at = buf.get_iter_at_line(n)[1]
             if adding:
-                if not self._line_text(buf, n).startswith(marker):
-                    buf.insert(at, marker)
+                self._set_marker(buf, n, marker)
             else:
+                at = buf.get_iter_at_line(n)[1]
                 stop = buf.get_iter_at_line(n)[1]
                 stop.forward_chars(len(marker))
                 buf.delete(at, stop)
@@ -1017,24 +1046,121 @@ class _ProseEditor(_Editor):
         bounds = buf.get_selection_bounds()
         a, b = bounds if bounds else 2 * (
             buf.get_iter_at_mark(buf.get_insert()),)
-        first, last = a.get_line(), b.get_line()
+        first, last = self._selected_lines(a, b)
         lines = [self._line_text(buf, n) for n in range(first, last + 1)]
         numbered = [journal_markup.numbered_marker(line) for line in lines]
         adding = not all(numbered)
         buf.begin_user_action()
-        for offset, line in reversed(list(enumerate(lines))):
+        for offset in reversed(range(len(lines))):
             n = first + offset
-            at = buf.get_iter_at_line(n)[1]
-            existing = numbered[offset]
-            if existing:
-                stop = buf.get_iter_at_line(n)[1]
-                stop.forward_chars(len(existing))
-                buf.delete(at, stop)
-                at = buf.get_iter_at_line(n)[1]
             if adding:
-                buf.insert(at, f'{offset + 1}. ')
+                self._set_marker(buf, n, f'{offset + 1}. ')
+            else:
+                at = buf.get_iter_at_line(n)[1]
+                stop = buf.get_iter_at_line(n)[1]
+                stop.forward_chars(len(numbered[offset]))
+                buf.delete(at, stop)
         buf.end_user_action()
         self.body.grab_focus()
+
+    @staticmethod
+    def _selected_lines(a, b):
+        """The lines a selection actually touches.
+
+        A drag that ends at the START of a line has not reached into it, and
+        a line that marks itself a list while nothing in it looks selected is
+        a press the reader undoes rather than keeps.
+        """
+        first, last = a.get_line(), b.get_line()
+        if last > first and b.get_line_offset() == 0:
+            last -= 1
+        return first, last
+
+    def _set_marker(self, buf, line, marker):
+        """Open `line` with `marker`, in place of any it already carries.
+
+        A line holds one whole-line role. Left to stack, the bullet pressed on
+        a numbered line wrote '- 1. one' — a bullet whose text reads '1. one',
+        which is not what either button was asked for.
+        """
+        existing = journal_markup.line_marker(self._line_text(buf, line))
+        if existing == marker:
+            return
+        at = buf.get_iter_at_line(line)[1]
+        if existing:
+            stop = buf.get_iter_at_line(line)[1]
+            stop.forward_chars(len(existing))
+            buf.delete(at, stop)
+            at = buf.get_iter_at_line(line)[1]
+        buf.insert(at, marker)
+
+    # ── Enter, inside a list ─────────────────────────────────────────────
+    #
+    # The one keystroke the notation cannot teach by being visible. A reader
+    # who presses the numbered-list button and types an item expects the next
+    # line to be the next item — every editor they have ever used does this —
+    # and what they got was a bare line, the list broken, and the numbering
+    # left to them. The marker the toolbar writes is the marker Enter carries
+    # on.
+    #
+    # Hooked on the BUFFER and not on a key. A key controller on the view
+    # would have to outrun the view's own — and, before it, the input
+    # method's — to be sure of seeing Return at all; a newline arriving in
+    # the buffer is the same event with none of that racing, whoever made it.
+
+    def _on_body_insert(self, buf, at, text, _length):
+        """Continue the list the newline was typed in.
+
+        `insert-text` is RUN_LAST, so this runs BEFORE the newline goes in:
+        stopping the emission leaves the line exactly as the reader sees it,
+        and what is written instead is the newline plus the next marker, as
+        one undo step.
+        """
+        if self._loading or self._continuing or text != '\n':
+            return
+        line_no, column = at.get_line(), at.get_line_offset()
+        line = self._line_text(buf, line_no)
+        marker = journal_markup.list_marker(line)
+        if not marker or column < len(marker):
+            return          # not a list, or the caret is inside the marker
+        buf.stop_emission_by_name('insert-text')
+        self._continuing = True
+        buf.begin_user_action()
+        try:
+            if line[len(marker):].strip():
+                buf.insert(at, '\n' + journal_markup.next_marker(line))
+                self._renumber(buf, line_no)
+            else:
+                # An empty item ends the list. Pressing Enter twice is how
+                # every editor says "done", and a marker on a line nobody
+                # wrote in is litter the reader has to clear by hand.
+                start = buf.get_iter_at_line(line_no)[1]
+                buf.delete(start, buf.get_iter_at_offset(
+                    start.get_offset() + len(line)))
+        finally:
+            buf.end_user_action()
+            self._continuing = False
+
+    def _renumber(self, buf, line_no):
+        """Renumber the run of numbered lines `line_no` belongs to.
+
+        Only the numbers change, and only where they are wrong, so the caret
+        on the line just made keeps its place.
+        """
+        if not journal_markup.numbered_marker(self._line_text(buf, line_no)):
+            return
+        first, last, total = line_no, line_no, buf.get_line_count()
+        while first > 0 and journal_markup.numbered_marker(
+                self._line_text(buf, first - 1)):
+            first -= 1
+        while last + 1 < total and journal_markup.numbered_marker(
+                self._line_text(buf, last + 1)):
+            last += 1
+        lines = [self._line_text(buf, n) for n in range(first, last + 1)]
+        for n, wanted in zip(range(first, last + 1),
+                             journal_markup.renumber(lines)):
+            self._set_marker(buf, n,
+                             journal_markup.numbered_marker(wanted))
 
     def _select(self, start, end):
         buf = self.body.get_buffer()
@@ -1128,12 +1254,25 @@ class _ProseEditor(_Editor):
         `str.split()` rather than a word-boundary regex: it counts runs of
         non-space, which is what a preacher timing a manuscript means by a
         word, and it does not disagree with itself across languages.
+
+        The notation is taken off first. A '- ' and a '1. ' and a '**' pair
+        are not words — measured on a list-heavy 1,080-word manuscript the
+        raw split read 1,140, which is half a minute of preaching that is
+        not there. `plain` is the same pass the list previews use, so the
+        count can never disagree with the styling about what is notation;
+        it costs 0.5ms on that manuscript, which is why this rides the
+        reference debounce and not the keystroke.
         """
-        words = len(buf.get_text(*buf.get_bounds(), False).split())
+        text = buf.get_text(*buf.get_bounds(), False)
+        words = len(journal_markup.plain(text).split())
         self._words.set_visible(bool(words))
         if words:
-            self._words.set_text(
-                ngettext('{n} word', '{n} words', words).format(n=words))
+            self._words.set_text(self._length_label(words))
+
+    @staticmethod
+    def _length_label(words):
+        """What the caption says about a body that long."""
+        return ngettext('{n} word', '{n} words', words).format(n=words)
 
     def _restyle_body(self, buf):
         """Re-apply the subset across the whole body.
@@ -1145,7 +1284,6 @@ class _ProseEditor(_Editor):
         regex per keystroke — measured well under a frame.
         """
         self._body_hint.set_visible(buf.get_char_count() == 0)
-        self._count_words(buf)
         self._dim_markers(buf)
         start, end = buf.get_bounds()
         for tag in ('md-strong', 'md-emphasis', 'md-heading', 'md-quote',
@@ -1170,6 +1308,7 @@ class _ProseEditor(_Editor):
         keystroke path with the rest of the styling.
         """
         buf = self.body.get_buffer()
+        self._count_words(buf)
         start, end = buf.get_bounds()
         buf.remove_tag_by_name('md-ref', start, end)
         text = buf.get_text(start, end, False)
@@ -1268,7 +1407,11 @@ class _ProseEditor(_Editor):
             self._anchor_box.append(self._anchor_chip(anchor, index))
         self._add_anchor_btn = self._add_anchor_chip()
         self._anchor_box.append(self._add_anchor_btn)
+        self._anchor_row_tail()
         self._anchor_box.set_visible(True)
+
+    def _anchor_row_tail(self):
+        """Anything that belongs after the passages, on their own row."""
 
     @staticmethod
     def anchor_label(anchor):
@@ -1511,6 +1654,28 @@ class SermonEditor(_ProseEditor):
     tags_example = N_('e.g. grace, kingdom, advent')
     header_fallback = N_('Sermon')
 
+    #: Words a minute, read aloud from a manuscript. The unit a preacher
+    #: actually asks in is minutes — a manuscript is written against the time
+    #: it is given — and every dedicated sermon tool in the survey ships this.
+    #: 130 is the middle of the ordinary spoken range; the caption says
+    #: "about", and the tooltip says the rate, because a number this soft
+    #: must not pretend to be a measurement.
+    SPOKEN_WPM = 130
+
+    def _describe_length(self, label):
+        label.set_tooltip_text(_('About {n} words a minute, read aloud')
+                               .format(n=self.SPOKEN_WPM))
+
+    def _length_label(self, words):
+        minutes = words // self.SPOKEN_WPM
+        if minutes < 1:
+            # Below a minute the estimate says nothing the word count does
+            # not, and "≈ 0 min" under the first sentence reads as a scold.
+            return super()._length_label(words)
+        return '{words} · {time}'.format(
+            words=super()._length_label(words),
+            time=_('≈ {n} min').format(n=minutes))
+
     def _build_head(self, box):
         # ── The big idea ────────────────────────────────────────────────
         # One line, in the reading serif, under the title where a standfirst
@@ -1591,6 +1756,180 @@ class SermonEditor(_ProseEditor):
         self._day.add_css_class('caption')
         self._day.set_valign(Gtk.Align.CENTER)
         self._day.set_visible(False)
+
+    # ── What you already have on this passage ────────────────────────────
+    #
+    # Every collecting door in the app runs one way: from the reading page
+    # INTO the manuscript. Nothing ran the other way, though the study is in
+    # the same file and, in this window, one tab over. MANUSCRIPT_RESEARCH
+    # §2.9 says no tool in the survey models the exegetical→homiletical move
+    # at all. This is the smallest honest version of it: the sermon asks what
+    # you already saw in this passage, and puts it where you are writing.
+
+    def _anchor_row_tail(self):
+        # Cleared first: the editor is reused row to row, and a button left
+        # on the attribute after the rebuild dropped it would say a door is
+        # there when it is not.
+        self._study_btn = None
+        if not (self.row or {}).get('anchors'):
+            return              # a door to nowhere is worse than no door
+        button = Gtk.MenuButton()
+        button.set_child(Gtk.Label(label=_('From your study')))
+        button.add_css_class('add-chip')
+        tip = _('What you have already marked or written on these passages')
+        button.set_tooltip_text(tip)
+        set_accessible_label(button, tip)
+        popover = Gtk.Popover()
+        # Built on show, not on populate: the marks are a live store, and a
+        # note taken in the other window five minutes ago belongs in here.
+        popover.connect('show', lambda _p: popover.set_child(
+            self._study_menu()))
+        button.set_popover(popover)
+        self._study_pop = popover
+        self._study_btn = button
+        self._anchor_box.append(button)
+
+    def _study_menu(self):
+        """Everything the reader has on this sermon's passages.
+
+        A scroller, not a column: a chapter worked over for a fortnight has
+        more marks than a popover can be tall, and a popover that fits
+        neither above nor below its button is silently not shown at all.
+        """
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        box.set_margin_start(4)
+        box.set_margin_end(4)
+        box.set_margin_top(4)
+        box.set_margin_bottom(4)
+        chapters = []
+        for anchor in (self.row or {}).get('anchors') or []:
+            key = (anchor['book'], anchor['chapter'])
+            if key not in chapters:
+                chapters.append(key)
+        found = False
+        for book, chapter in chapters:
+            found = self._study_section(box, book, chapter,
+                                        len(chapters) > 1) or found
+        if not found:
+            empty = Gtk.Label(label=_('Nothing written on this passage yet'),
+                              xalign=0)
+            empty.add_css_class('dim-label')
+            empty.set_margin_start(8)
+            empty.set_margin_end(8)
+            empty.set_margin_top(4)
+            empty.set_margin_bottom(4)
+            box.append(empty)
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_propagate_natural_height(True)
+        scroll.set_propagate_natural_width(True)
+        scroll.set_max_content_height(360)
+        scroll.set_child(box)
+        return scroll
+
+    def _study_section(self, box, book, chapter, name_it):
+        """One chapter's marks and entries. True if it had anything."""
+        from annotations_window import marks_on
+        marks = marks_on(book, chapter)
+        entries = journal.entries_on(book, chapter)
+        if not marks and not entries:
+            return False
+        if name_it:
+            box.append(self._study_caption(
+                f'{book_label(book)} {chapter}'))
+        for mark in marks:
+            box.append(self._study_row(
+                self._mark_ref(mark), self._mark_preview(mark),
+                lambda _b, m=mark: self._insert_mark(m)))
+        if entries:
+            # Opened, never inserted. An entry is a page — pouring one into
+            # a manuscript would be quoting yourself at length — and the row
+            # that says it exists is the study menu's own idiom.
+            box.append(self._study_caption(_('Written on this passage')))
+            for entry in entries:
+                box.append(self._study_row(
+                    entry['title'] or _('Untitled entry'),
+                    journal_markup.preview(entry['body']),
+                    lambda _b, e=entry: self._open_entry(e['id']),
+                    enabled=self._on_open_entry is not None))
+        return True
+
+    @staticmethod
+    def _study_caption(text):
+        lbl = Gtk.Label(label=text, xalign=0)
+        lbl.add_css_class('dim-label')
+        lbl.add_css_class('caption')
+        lbl.set_margin_start(8)
+        lbl.set_margin_top(6)
+        return lbl
+
+    @staticmethod
+    def _study_row(head, preview, on_click, enabled=True):
+        """A reference over what was written under it, as one flat button."""
+        btn = Gtk.Button()
+        btn.add_css_class('flat')
+        btn.set_sensitive(enabled)
+        inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        ref = Gtk.Label(label=head, xalign=0)
+        ref.add_css_class('caption-heading')
+        ref.set_ellipsize(Pango.EllipsizeMode.END)
+        inner.append(ref)
+        if preview:
+            words = Gtk.Label(label=preview, xalign=0)
+            words.add_css_class('dim-label')
+            words.add_css_class('caption')
+            words.set_ellipsize(Pango.EllipsizeMode.END)
+            words.set_max_width_chars(34)
+            inner.append(words)
+        btn.set_child(inner)
+        btn.connect('clicked', on_click)
+        return btn
+
+    def _mark_ref(self, mark):
+        if mark.get('is_chapter_note'):
+            return _('Note on {ref}').format(
+                ref=f'{book_label(mark["book"])} {mark["chapter"]}')
+        return f'{book_label(mark["book"])} {mark["chapter"]}:' \
+               f'{mark["app_verse"]}'
+
+    def _mark_preview(self, mark):
+        """The reader's own note if there is one, else the verse's words.
+
+        The note leads because it is the thing being looked for: the mark is
+        a place, the note is what was seen there.
+        """
+        note = ' '.join((mark.get('note') or '').split())
+        if note:
+            return note
+        if mark.get('is_chapter_note'):
+            return ''
+        return self._verse_text(mark['book'], mark['chapter'], mark['verse'])
+
+    def _insert_mark(self, mark):
+        """Put one mark into the manuscript where the caret is.
+
+        Where the caret is, and not at the end as a collected passage from
+        the reading page arrives: the reader is inside this editor, writing
+        at a place they chose.
+        """
+        self._study_pop.popdown()
+        text, _anchor = self._mark_as_prose(mark)
+        buf = self.body.get_buffer()
+        at = buf.get_iter_at_mark(buf.get_insert())
+        here = self._line_text(buf, at.get_line())
+        lead = '' if not here.strip() else '\n\n'
+        buf.begin_user_action()
+        buf.insert_at_cursor(f'{lead}{text}\n\n')
+        buf.end_user_action()
+        self.body.grab_focus()
+        # Collected rather than typed, as on every other collecting door:
+        # the write lands now.
+        self._on_flush()
+
+    def _open_entry(self, entry_id):
+        self._study_pop.popdown()
+        if self._on_open_entry is not None:
+            self._on_open_entry(entry_id)
 
     @staticmethod
     def _caption(text):

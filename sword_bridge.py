@@ -1398,7 +1398,8 @@ def book_abbreviations(lang):
             # A locale in an encoding we did not expect, or a file we cannot
             # read: the parser is better off with full names than with
             # half a table of mojibake.
-            _log.debug('could not read sword locale %s', path, exc_info=True)
+            _sword_log.debug('could not read sword locale %s', path,
+                             exc_info=True)
             continue
         if found:
             break

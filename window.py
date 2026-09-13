@@ -3050,6 +3050,12 @@ class BibleWindow(Adw.ApplicationWindow):
         self._open_annotations()
         self._annotations_win.show_entries_on(book, chapter)
 
+    def _open_sermons_on(self, book, chapter):
+        """Show what has been preached from one chapter — the study menu's
+        other backward-looking door."""
+        self._open_annotations()
+        self._annotations_win.show_sermons_on(book, chapter)
+
     def _write_about_today(self):
         """The Today door — the reason the journal is worth building.
 

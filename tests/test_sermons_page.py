@@ -65,13 +65,19 @@ def _headings(win):
     row = win._list.get_first_child()
     while row is not None:
         if not hasattr(row, '_entry'):
-            box = row.get_child()
-            if isinstance(box, Gtk.Box):
-                child = box.get_first_child()
+            # Labels nest: a named series heading carries its rename button
+            # on a line of its own inside the caption box.
+            def walk(widget):
+                child = widget.get_first_child()
                 while child is not None:
                     if isinstance(child, Gtk.Label):
                         found.append(child.get_text())
+                    elif isinstance(child, Gtk.Box):
+                        walk(child)
                     child = child.get_next_sibling()
+            box = row.get_child()
+            if isinstance(box, Gtk.Box):
+                walk(box)
         row = row.get_next_sibling()
     return found
 
@@ -658,3 +664,292 @@ def test_the_top_edge_reveals_the_header_only_in_writing_mode(isolated,
         assert not win._content_tv.get_reveal_top_bars()
     finally:
         win.destroy()
+
+
+def test_the_manuscript_continues_a_list_too(isolated, display):
+    """The prose editor is shared, and the sermon page is where the lists
+    are: points, sub-points, an order of service."""
+    win = _open_sermons()
+    try:
+        buf = win._sermon_editor.body.get_buffer()
+        buf.set_text('1. First point')
+        buf.place_cursor(buf.get_end_iter())
+        buf.insert_at_cursor('\n')
+        assert buf.get_text(*buf.get_bounds(), False) == '1. First point\n2. '
+    finally:
+        win.destroy()
+
+
+# ── The pulpit copy ─────────────────────────────────────────────────────────
+
+def _menu_labels(box):
+    """Every label in a built menu, in order."""
+    from gi.repository import Gtk
+    out = []
+
+    def walk(widget):
+        child = widget.get_first_child()
+        while child is not None:
+            if isinstance(child, Gtk.Label):
+                out.append(child.get_text())
+            else:
+                walk(child)
+            child = child.get_next_sibling()
+
+    walk(box)
+    return out
+
+
+def test_the_open_sermon_can_be_printed_on_its_own(isolated, display):
+    """The header's print button is the LIST. What a preacher prints is the
+    one manuscript they are about to carry into the pulpit."""
+    win = _open_sermons()
+    try:
+        win.start_sermon()
+        win._sermon_editor.title.set_text('The Sower Went Forth')
+        win._autosave.flush()
+        labels = _menu_labels(win._build_transfer_menu())
+        assert 'Print this sermon…' in labels
+    finally:
+        win.destroy()
+
+
+def test_printing_one_sermon_prints_only_that_sermon(isolated, display):
+    win = _open_sermons()
+    try:
+        sermons.save('s1', title='Elsewhere', body='not this one')
+        row = win.start_sermon()
+        win._sermon_editor.title.set_text('The Sower Went Forth')
+        win._autosave.flush()
+        rows = [e for e in win._entries if e.get('id') == row['id']]
+        doc = win._document(markdown=False, rows=rows,
+                            title=win._one_document_name(rows[0]))
+        if doc is None:
+            pytest.skip('no translation installed to quote from')
+        assert 'Elsewhere' not in doc
+        # Headed by the sermon, not by the shelf it is filed on.
+        assert doc.splitlines()[0] == 'The Sower Went Forth'
+    finally:
+        win.destroy()
+
+
+# ── The chapter door, backwards ─────────────────────────────────────────────
+
+def test_the_chapter_door_opens_the_sermon_it_promised(isolated, display):
+    sermons.save('s1', title='elsewhere', anchors=[_anchor('Genesis', 1, 1)])
+    sermons.save('s2', title='here', anchors=[_anchor('Matthew', 13, 1)])
+    win = _open_sermons()
+    try:
+        win.show_sermons_on('Matthew', 13)
+        assert win._mode == 'sermons'
+        assert win._current_entry is not None
+        assert win._current_entry['id'] == 's2'
+        assert win._selected_book_key() == 'Matthew'
+    finally:
+        win.destroy()
+
+
+def test_the_store_answers_from_the_passage(isolated, display):
+    """`sermons_on` was written for this door and had no caller at all."""
+    sermons.save('s1', title='a', anchors=[_anchor('Matthew', 13),
+                                           _anchor('Isaiah', 6, 8)])
+    assert [s['id'] for s in sermons.sermons_on('Isaiah', 6)] == ['s1']
+    assert sermons.sermons_on('Isaiah', 7) == []
+
+
+# ── A series can be renamed ─────────────────────────────────────────────────
+
+def _heading_buttons(win):
+    from gi.repository import Gtk
+    out = []
+    row = win._list.get_first_child()
+    while row is not None:
+        if not hasattr(row, '_entry') and getattr(row, '_series', None):
+            out.append(row._series)
+        row = row.get_next_sibling()
+    return out
+
+
+def test_a_named_series_heading_offers_a_rename(isolated, display):
+    sermons.save('s1', title='a', series={'name': 'Advent 2025', 'part': 1})
+    sermons.save('s2', title='b')
+    win = _open_sermons()
+    try:
+        # The No-series heading is a caption and nothing else: there is no
+        # series there to rename.
+        assert _heading_buttons(win) == ['Advent 2025']
+    finally:
+        win.destroy()
+
+
+def test_renaming_a_series_carries_every_sermon_in_it(isolated, display):
+    sermons.save('s1', title='a', series={'name': 'Advent 2025', 'part': 1})
+    sermons.save('s2', title='b', series={'name': 'Advent 2025', 'part': 2})
+    sermons.save('s3', title='c', series={'name': 'Lent', 'part': 1})
+    win = _open_sermons()
+    try:
+        win._rename_series('Advent 2025', 'Advent')
+        assert {s['id']: s['series']['name'] for s in sermons.all_sermons()} \
+            == {'s1': 'Advent', 's2': 'Advent', 's3': 'Lent'}
+        assert 'Advent' in _heading_buttons(win)
+    finally:
+        win.destroy()
+
+
+def test_renaming_into_an_existing_series_joins_the_two(isolated, display):
+    """The shape of the mistake is the same series entered twice, spelled
+    differently — so the rename has to double as a merge."""
+    sermons.save('s1', title='a', series={'name': 'Advent 2025', 'part': 1})
+    sermons.save('s2', title='b', series={'name': 'Advent', 'part': 2})
+    win = _open_sermons()
+    try:
+        win._rename_series('Advent 2025', 'Advent')
+        assert sermons.all_series() == ['Advent']
+        assert _heading_buttons(win) == ['Advent']
+    finally:
+        win.destroy()
+
+
+# ── How long it runs ────────────────────────────────────────────────────────
+
+def _count(editor, body):
+    editor.body.get_buffer().set_text(body)
+    editor._restyle.flush()
+    return editor._words.get_text()
+
+
+def test_the_notation_is_not_counted_as_words(isolated, display):
+    """A '- ' and a '1. ' are not words: on a list-heavy manuscript the raw
+    split read half a minute of preaching that is not there."""
+    win = _open_sermons()
+    try:
+        win.start_sermon()
+        assert '3' in _count(win._sermon_editor, '- one\n- two\n- **three**')
+    finally:
+        win.destroy()
+
+
+def test_a_manuscript_says_how_long_it_runs(isolated, display):
+    win = _open_sermons()
+    try:
+        win.start_sermon()
+        editor = win._sermon_editor
+        label = _count(editor, ' '.join(['word'] * (editor.SPOKEN_WPM * 9)))
+        assert 'min' in label and '9' in label
+    finally:
+        win.destroy()
+
+
+def test_under_a_minute_says_nothing_about_minutes(isolated, display):
+    """"≈ 0 min" under the first sentence reads as a scold."""
+    win = _open_sermons()
+    try:
+        win.start_sermon()
+        assert 'min' not in _count(win._sermon_editor, 'one two three')
+    finally:
+        win.destroy()
+
+
+def test_a_journal_entry_is_not_timed(isolated, display):
+    """An entry is read, not preached; the minutes belong to the manuscript."""
+    win = _open_sermons()
+    try:
+        win.set_mode('journal')
+        win.start_entry()
+        editor = win._entry_editor
+        assert 'min' not in _count(editor, ' '.join(['word'] * 600))
+    finally:
+        win.destroy()
+
+
+# ── What you already have on this passage ───────────────────────────────────
+
+def test_the_study_door_is_absent_with_no_passage(isolated, display):
+    """A door to nowhere is worse than no door."""
+    win = _open_sermons()
+    try:
+        win.start_sermon(anchors=[_anchor('Matthew', 13, 1)])
+        assert win._sermon_editor._study_btn is not None
+        # The same editor, a row with no passage: the door has to go away
+        # again, and say so.
+        win.start_sermon()
+        assert win._sermon_editor._study_btn is None
+    finally:
+        win.destroy()
+
+
+def test_the_study_door_appears_once_there_is_a_passage(isolated, display):
+    win = _open_sermons()
+    try:
+        win.start_sermon(anchors=[_anchor('Matthew', 13, 1)])
+        assert win._sermon_editor._study_btn.get_parent() is not None
+    finally:
+        win.destroy()
+
+
+def test_a_mark_on_the_passage_goes_in_where_the_caret_is(isolated, display):
+    """The quote the reading page pushes in and the one the sermon pulls in
+    must be the same words."""
+    annotations.save_note(None, 'Matthew', 13, 23, 'The soil is the hearer.')
+    win = _open_sermons()
+    try:
+        win.start_sermon(anchors=[_anchor('Matthew', 13, 1)])
+        editor = win._sermon_editor
+        buf = editor.body.get_buffer()
+        buf.set_text('Opening line.')
+        buf.place_cursor(buf.get_end_iter())
+        marks = annotations_window.marks_on('Matthew', 13)
+        assert len(marks) == 1
+        editor._insert_mark(marks[0])
+        body = buf.get_text(*buf.get_bounds(), False)
+        assert body.startswith('Opening line.\n\n')
+        assert 'The soil is the hearer.' in body
+        assert 'Matthew 13:23' in body
+    finally:
+        win.destroy()
+
+
+def test_the_study_door_lists_the_marks_and_the_entries(isolated, display):
+    annotations.save_note(None, 'Matthew', 13, 23, 'The soil is the hearer.')
+    journal.save('j1', title='Sowing in Galilee',
+                 anchors=[{'book': 'Matthew', 'chapter': 13, 'verses': []}])
+    win = _open_sermons()
+    try:
+        win.start_sermon(anchors=[_anchor('Matthew', 13, 1)])
+        labels = _menu_labels(win._sermon_editor._study_menu())
+        assert any('Matthew 13:23' in t for t in labels)
+        assert 'Sowing in Galilee' in labels
+        assert 'Written on this passage' in labels
+    finally:
+        win.destroy()
+
+
+def test_the_study_door_says_so_when_there_is_nothing(isolated, display):
+    win = _open_sermons()
+    try:
+        win.start_sermon(anchors=[_anchor('Habakkuk', 2, 4)])
+        labels = _menu_labels(win._sermon_editor._study_menu())
+        assert 'Nothing written on this passage yet' in labels
+    finally:
+        win.destroy()
+
+
+def test_the_study_menu_says_what_was_preached_here(isolated, display,
+                                                    monkeypatch):
+    """The row the journal has had all along, on the page a preacher stands
+    on: you are in this passage, and you have been here before."""
+    from gi.repository import Gtk
+    import annotation_dialogs
+    monkeypatch.setattr(annotation_dialogs.annotations, 'get_annotations',
+                        lambda *a: {})
+    sermons.save('s1', title='The Sower Went Forth',
+                 anchors=[_anchor('Matthew', 13, 1)])
+
+    class _Pane:
+        _module, _book, _chapter = 'KJV', 'Matthew', 13
+        _view = Gtk.TextView()
+        _buffer = _view.get_buffer()
+
+    popover = annotation_dialogs.build_study_menu(_Pane(), [1], 10, 10)
+    labels = _menu_labels(popover.get_child())
+    assert '1 sermon on this chapter' in labels

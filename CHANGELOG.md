@@ -45,7 +45,10 @@ semver-ish — 0.x was the pre-Flathub testing track.
   `**bold**`, `*emphasis*`, `# a heading`, `> a quotation`, and `- a list` —
   so an entry written by hand and one written by button are the same entry.
   The marks you type stay where you typed them — dimmed, so they recede —
-  and what they enclose takes the styling as you write. **A reference typed in the body becomes a link**:
+  and what they enclose takes the styling as you write. **Enter carries a
+  list on**: the next bullet or the next number is already there, an item
+  added in the middle renumbers the ones under it, and an empty item ends
+  the list. **A reference typed in the body becomes a link**:
   write *John 3:16*, or *Juan 3:16* in Spanish, and clicking it goes there.
   Book names are recognised in the language the app is in, and by their
   standard English abbreviations.
@@ -70,6 +73,13 @@ semver-ish — 0.x was the pre-Flathub testing track.
   same reference links. **Ctrl+Shift+M** starts a sermon on the chapter you
   are reading, the pencil in the header starts one from nothing, and either
   way it quietly records which Sunday of the church year it was begun for.
+  The caption under the sheet says how long it runs — *421 words · ≈ 3 min*,
+  at about 130 words a minute read aloud — because a manuscript is written
+  against the time it is given.
+
+  **A series can be renamed from its own heading**, which renames every
+  sermon in it; type a name already in use and the two series are joined,
+  the way the tag manager merges tags.
 
 - **Verses, cross-references, lexicon entries and your own notes can be
   collected into the sermon you are writing.** Right-clicking a verse offers
@@ -82,15 +92,24 @@ semver-ish — 0.x was the pre-Flathub testing track.
   collected into is the one you last wrote in, and the row disappears when
   there is no sermon to add to.
 
+- **And the manuscript can ask what you already have.** *From your study*,
+  beside the sermon's passages, lists every mark and note you have left on
+  them and every journal entry written about them. A note goes in where you
+  are writing — the verse, then what you saw in it, then the reference — and
+  an entry opens, because an entry is a page and not a quotation. Every other
+  door in the app carries writing *into* the manuscript; this is the one that
+  fetches.
+
 - **Tags suggest themselves.** Both editors offer the tags you already use —
   marks and entries together, since they share one vocabulary — as you type.
   It is the same list the tag manager cleans up; this is what stops *prayer*,
   *prayers* and *Prayer* being three tags in the first place.
 
-- **The reading page says what you have written about a chapter.** Nothing on
-  the verse — the verse number already carries the note marker — and a row in
-  the study menu that appears only when there is something to say: *3 entries
-  on this chapter*, which opens them.
+- **The reading page says what you have written about a chapter, and what
+  you have preached from it.** Nothing on the verse — the verse number already
+  carries the note marker — and rows in the study menu that appear only when
+  there is something to say: *3 entries on this chapter* and *1 sermon on this
+  chapter*, each of which opens them.
 
 - **Entries can be imported.** *Import entries…* takes Markdown or text
   files, one file per entry: front matter if a file has it, the opening
@@ -135,9 +154,34 @@ semver-ish — 0.x was the pre-Flathub testing track.
   Scriptura carries. It writes what the list is showing, so the filters
   choose the scope — one entry, a season, the lot. There is a Print button
   beside it, setting the same serif on the same margins as a printed
-  passage.
+  passage. **The open sermon can be exported or printed on its own**, headed
+  by its own title rather than by the page it is filed on — the one sheet a
+  preacher carries into the pulpit is not the archive it lives in.
 
 ### Changed
+
+- **The right-click menu is grouped, and half the height.** It had grown to
+  twelve flat rows — 540px for a reader with marks, entries and a sermon
+  behind them, against 388px on a fresh install — and five of those rows
+  appeared in the middle as your own writing accumulated, so the row you
+  reached for moved with use. The three things done oftenest stay where they
+  were: the highlight colours — with *Clear* now a fifth chip in the row, the
+  same size and shape as the four, instead of a small button stranded at the
+  end of it — *Underline*, *Note & Tags* and *Copy verse*. The occasional
+  ones are one slide deep behind the verb they belong to — **Write** (an
+  entry, or into the sermon you are writing), **Share** (export, as an image,
+  print) — with *Compare translations* beside them, and what you have already
+  written on the chapter is last, so nothing above it can move. 353px now,
+  and the same menu on day one as a year in.
+
+  The pages slide in place behind a back row rather than flying out
+  sideways, so the menu never needs room it does not have, and the keyboard
+  walks it: arrows move, Right opens a page, Left and Escape come back. A
+  screen reader hears menu items in a menu, where before it heard a dozen
+  plain buttons in a box. Every row keeps its glyph, and no two rows on a
+  page share one — the pencil beside *Note & Tags* and the one beside
+  *Write* used to be the same drawing, on the one distinction that most
+  needed to be legible.
 
 - **An entry's or a sermon's facts share one line.** The series and its part,
   the days it was preached, the passages it is filed under and the Sunday it
@@ -170,6 +214,23 @@ semver-ish — 0.x was the pre-Flathub testing track.
   says so once per run of failures instead of once per write.
 
 ### Fixed
+
+- **Double-clicking a word said "No entry" with dictionaries installed.** The
+  dictionary peek has been dead since 1.6.2 — every lookup raised inside the
+  background task, and a failed lookup is reported as an empty one, so the
+  peek looked like a dictionary with nothing to say rather than a broken one.
+  The cause was a name: the method that builds the popover calls its box
+  `content`, which is also the module the lookup asks for the reading
+  language, so the call reached the box. The box is called `body` now, the
+  lookup moved out to where nothing can shadow it, and a check across the
+  whole repo makes sure no other local is standing in front of a module its
+  own scope calls into.
+
+- **A reference typed in an entry could stop linking.** The parser reads
+  SWORD's own abbreviation tables, and its recovery path for a locale file it
+  cannot decode logged through a name that module does not have — so a handled
+  read error became a crash, out through the reference scan and into the timer
+  that runs it. Whichever entry was open lost its links, and nothing said why.
 
 - **The search box in Annotations was cut off in Spanish and Russian.**
   «Искать по заметкам, меткам, ссылкам…» and *Buscar en notas, etiquetas y

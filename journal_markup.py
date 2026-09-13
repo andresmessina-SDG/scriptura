@@ -189,6 +189,64 @@ def numbered_marker(line: str) -> str:
     return match.group(1) if match else ''
 
 
+def list_marker(line: str) -> str:
+    """The bullet, number or quote marker `line` opens with, or ''.
+
+    A heading is deliberately not one of them: it opens no run, and a second
+    heading conjured under the first is never what pressing Enter meant.
+    """
+    for pattern in (_QUOTE, _BULLET, _NUMBER):
+        match = pattern.match(line)
+        if match:
+            return match.group(1)
+    return ''
+
+
+def line_marker(line: str) -> str:
+    """Any whole-line marker `line` opens with, heading included, or ''.
+
+    What a new marker has to REPLACE rather than sit in front of: '- 1. one'
+    is a bullet whose text reads '1. one', which is not what pressing the
+    bullet on a numbered line asks for.
+    """
+    match = _HEADING.match(line)
+    return match.group(1) if match else list_marker(line)
+
+
+def next_marker(line: str) -> str:
+    """What a new line under `line` opens with — the same bullet or quote,
+    the next number, or '' when `line` opens no list."""
+    match = _NUMBER.match(line)
+    if match:
+        return _with_number(match.group(1), int(match.group(1)[:-2]) + 1)
+    return list_marker(line)
+
+
+def _with_number(marker: str, n: int) -> str:
+    """`marker` carrying `n` instead of its own number, its separator kept —
+    ('3) ', 7) gives '7) '."""
+    return f'{n}{marker[-2]} '
+
+
+def renumber(lines: list[str]) -> list[str]:
+    """A run of numbered lines, counting from the first one's own number.
+
+    Continuing a list is not enough by itself: an item inserted in the middle
+    leaves every number below it one short, and 1. 2. 2. 3. is a list that has
+    to be retyped by hand. A run that does not start at 1 keeps its own first
+    number — the reader put it there.
+
+    Returns the lines unchanged unless every one of them is numbered: this
+    renumbers, and never numbers a line that was not already.
+    """
+    markers = [numbered_marker(line) for line in lines]
+    if not all(markers):
+        return list(lines)
+    base = int(markers[0][:-2])
+    return [_with_number(marker, base + i) + line[len(marker):]
+            for i, (line, marker) in enumerate(zip(lines, markers))]
+
+
 def plain(text: str) -> str:
     """`text` with its notation taken off and its lines joined into one.
 

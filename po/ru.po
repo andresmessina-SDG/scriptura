@@ -9733,3 +9733,61 @@ msgstr "Показать список (F9)"
 
 msgid "Writing mode — Esc, F11, or hover the top edge to leave"
 msgstr "Режим письма — Esc, F11 или наведите указатель на верхний край, чтобы выйти"
+
+# ── The manuscript refinements ──────────────────────────────
+
+msgid "Print this sermon…"
+msgstr "Напечатать эту проповедь…"
+
+msgid "Print this entry…"
+msgstr "Напечатать эту запись…"
+
+msgid "Print this annotation…"
+msgstr "Напечатать эту пометку…"
+
+msgid "{n} sermon on this chapter"
+msgid_plural "{n} sermons on this chapter"
+msgstr[0] "{n} проповедь по этой главе"
+msgstr[1] "{n} проповеди по этой главе"
+msgstr[2] "{n} проповедей по этой главе"
+
+msgid "Rename “{series}”"
+msgstr "Переименовать «{series}»"
+
+msgid "Every sermon in this series is renamed. If the name matches another series, the two are joined."
+msgstr "Будут переименованы все проповеди этой серии. Если имя совпадёт с именем другой серии, они объединятся."
+
+msgid "≈ {n} min"
+msgstr "≈ {n} мин"
+
+msgid "About {n} words a minute, read aloud"
+msgstr "Около {n} слов в минуту при чтении вслух"
+
+msgid "From your study"
+msgstr "Из ваших заметок"
+
+msgid "What you have already marked or written on these passages"
+msgstr "Что вы уже пометили или написали об этих отрывках"
+
+msgid "Nothing written on this passage yet"
+msgstr "Об этом отрывке пока ничего не написано"
+
+msgid "Written on this passage"
+msgstr "Написано об этом отрывке"
+
+msgid "Note on {ref}"
+msgstr "Заметка к {ref}"
+
+# ── The study menu, grouped ─────────────────────────────────
+
+msgid "Write"
+msgstr "Написать"
+
+msgid "Share"
+msgstr "Поделиться"
+
+msgid "As an image…"
+msgstr "Изображением…"
+
+msgid "Written on this chapter"
+msgstr "Написано об этой главе"

@@ -28,7 +28,11 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 #: focus reveals, wheel forwarding) and rightly appear in no list. The ones
 #: this list exists to catch are the other kind.
 EXPECTED_GESTURE_SITES = {
-    'annotation_dialogs.py': 1,
+    # One click gesture, plus the two key controllers the study menu's pages
+    # need: Right opens a page, Left and Escape come back. Standard menu
+    # keys, and the chevron on the row says the page is there — nothing a
+    # reader has to be told, so onboarding.GESTURES is unchanged.
+    'annotation_dialogs.py': 3,
     # One motion controller, and it is the exit from writing mode (F11): with
     # the header bar gone the window has no close button and nothing to drag
     # by, so the header comes back while the pointer is at the top edge and
