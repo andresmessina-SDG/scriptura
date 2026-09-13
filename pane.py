@@ -5077,20 +5077,20 @@ class BiblePane(Gtk.Box):
         self._dict_max_body = int(max(140, min(320, avail - 130)))
         pop.set_pointing_to(rect)
 
-        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         # Cap to the window width so the popover doesn't overflow a narrow
         # window; 360 is the comfortable width when there's room.
         _root = self.get_root()
         _win_w = _root.get_width() if _root is not None else 0
-        content.set_size_request(
+        body.set_size_request(
             360 if _win_w <= 0 else max(260, min(360, _win_w - 24)), -1)
-        pop.set_child(content)
+        pop.set_child(body)
         spinner = Gtk.Spinner()
         spinner.start()
         spinner.set_margin_top(28)
         spinner.set_margin_bottom(28)
         spinner.set_halign(Gtk.Align.CENTER)
-        content.append(spinner)
+        body.append(spinner)
         # Arm the self-heal, then show *invisibly*: the relayout cascade may
         # unmap the popover a few times before the layout settles. Opacity 0
         # until it has stayed up briefly (see _dict_arm_reveal) hides that
@@ -5105,7 +5105,7 @@ class BiblePane(Gtk.Box):
         self._dict_arm_reveal(pop)
 
         def _clear():
-            clear_children(content)
+            clear_children(body)
 
         def _status(icon, title, desc):
             # Hand-built (not Adw.StatusPage): StatusPage is vexpand and
@@ -5132,7 +5132,7 @@ class BiblePane(Gtk.Box):
             d.set_justify(Gtk.Justification.CENTER)
             d.set_max_width_chars(34)
             box.append(d)
-            content.append(box)
+            body.append(box)
 
         def _headword_title(text):
             # Serif title echoing the app's chapter headings, so the peek
@@ -5151,7 +5151,7 @@ class BiblePane(Gtk.Box):
 
         def _add_text(html, box=None, source=None):
             if box is None:
-                box = content
+                box = body
             dark = Adw.StyleManager.get_default().get_dark()
             # Source attribution for the single-dictionary case (the tabs carry
             # it when there are several).
@@ -5234,8 +5234,8 @@ class BiblePane(Gtk.Box):
             first = ordered[0][0]
             btns[first].set_active(True)
             stack.set_visible_child_name(first)
-            content.append(tabs)
-            content.append(stack)
+            body.append(tabs)
+            body.append(stack)
 
         def _lineage_fragment():
             """The compact 'who were their parents and children' answer, for a
@@ -5309,7 +5309,7 @@ class BiblePane(Gtk.Box):
             _clear()
             frag = _lineage_fragment()
             if frag is not None:
-                content.append(frag)
+                body.append(frag)
                 # Re-measure, do not assume: the ~130px chrome constant was
                 # measured for title + tabs and knows nothing about this box.
                 _min, nat = frag.measure(Gtk.Orientation.VERTICAL, -1)[:2]
@@ -5331,7 +5331,7 @@ class BiblePane(Gtk.Box):
                         _('Another dictionary may carry it — the Module '
                           'Manager lists more.'))
             else:
-                content.append(_headword_title(word))
+                body.append(_headword_title(word))
                 if len(results) == 1:
                     mn, md, html = results[0]
                     _add_text(html, source=_short_dict_title(mn, md))
@@ -5345,8 +5345,8 @@ class BiblePane(Gtk.Box):
                 # The table answers even with no dictionary installed, which is
                 # the common case in a language whose only dictionary is a
                 # general one.
-                content.append(_headword_title(word))
-                content.append(frag)
+                body.append(_headword_title(word))
+                body.append(frag)
                 return
             _status('scriptura-dialog-information-symbolic',
                     _('No dictionaries installed'),
@@ -5363,36 +5363,7 @@ class BiblePane(Gtk.Box):
             if not dicts:
                 return None
             searched[:] = [_short_dict_title(mn, md) for mn, md in dicts]
-            # Which tab opens matters more than which tabs exist. Two things
-            # decide it, in this order:
-            #
-            #   * an exact hit beats a de-inflected one. The de-inflection is
-            #     English, so it strips the `s` from Spanish `pues` and finds
-            #     Webster's `Pue` — "to make a low whistling sound; to chirp,
-            #     as birds" — a confident answer to a question nobody asked.
-            #   * then the reading module's own language. A reader in a
-            #     Spanish Bible should not have to click past French to
-            #     reach Spanish.
-            #
-            # Everything still gets a tab; this only chooses which one is
-            # already open.
-            #
-            # Through content, and normalised: sword_bridge.module_language
-            # answers '' for every eBible translation, so a reader on the
-            # Nueva Biblia Viva — the Spanish reading tier's own Bible — had
-            # no language to match and got the tabs alphabetically, English
-            # first. The codes are normalised because eBible spells the
-            # language 'spa' where SWORD spells it 'es'.
-            lang = content.language_code(self._module)
-            results = []
-            for mod_name, mod_desc in dicts:
-                html, exact = sword_bridge.lookup_dict_entry(mod_name, word)
-                if html:
-                    same = bool(lang) and \
-                        content.language_code(mod_name) == lang
-                    results.append((mod_name, mod_desc, html, exact, same))
-            results.sort(key=lambda r: (not r[3], not r[4], r[1].lower()))
-            return [(mn, md, html) for mn, md, html, _e, _s in results]
+            return self._dict_results(word, dicts)
 
         # Latest-wins on the shared peek key: a newer lookup, footnote, or
         # anchored peek supersedes this fetch, so a late return can't
@@ -5405,6 +5376,48 @@ class BiblePane(Gtk.Box):
         return GLib.SOURCE_REMOVE
 
     # ── Lexicon panel delegators ─────────────────────────────────────────
+
+    def _dict_results(self, word, dicts):
+        """Every dictionary that answers `word`, in the order the tabs open.
+
+        Which tab opens matters more than which tabs exist. Two things decide
+        it, in this order:
+
+          * an exact hit beats a de-inflected one. The de-inflection is
+            English, so it strips the `s` from Spanish `pues` and finds
+            Webster's `Pue` — "to make a low whistling sound; to chirp, as
+            birds" — a confident answer to a question nobody asked.
+          * then the reading module's own language. A reader in a Spanish
+            Bible should not have to click past French to reach Spanish.
+
+        Everything still gets a tab; this only chooses which one is already
+        open.
+
+        Through content, and normalised: `sword_bridge.module_language`
+        answers '' for every eBible translation, so a reader on the Nueva
+        Biblia Viva — the Spanish reading tier's own Bible — had no language
+        to match and got the tabs alphabetically, English first. The codes
+        are normalised because eBible spells the language 'spa' where SWORD
+        spells it 'es'.
+
+        **It lives out here, and not in the closure that calls it, because
+        the closure could not see the `content` module at all.** Its enclosing
+        method binds a local `content` (the popover's box, now `body`), so
+        `content.language_code` resolved to a `Gtk.Box` and every double-click
+        raised `AttributeError` inside the task worker — which the peek
+        reports as "no entry", so the dictionary looked empty rather than
+        broken. At method scope there is nothing to shadow it, and the sort
+        is reachable by a test that needs no display.
+        """
+        lang = content.language_code(self._module)
+        results = []
+        for mod_name, mod_desc in dicts:
+            html, exact = sword_bridge.lookup_dict_entry(mod_name, word)
+            if html:
+                same = bool(lang) and content.language_code(mod_name) == lang
+                results.append((mod_name, mod_desc, html, exact, same))
+        results.sort(key=lambda r: (not r[3], not r[4], r[1].lower()))
+        return [(mn, md, html) for mn, md, html, _e, _s in results]
 
     def _lex_scan_module(self):
         """Module the lexicon panel's word-study scan reads. The interlinear
