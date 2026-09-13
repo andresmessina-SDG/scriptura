@@ -84,7 +84,7 @@ scriptura/
 +-- archaeology_reader.py # ArchaeologyReader — Scripture in Stone bundled gallery
 +-- styles.py             # Loads data/style.css once at startup; per-pane dynamic CSS stays in pane.py
 +-- lexicon_panel.py      # LexiconPanel — definition view + word study (own class)
-+-- annotation_dialogs.py # Right-click study menu, note editor, chapter note, compare translations
++-- annotation_dialogs.py # Verse study menu (right-click, Shift+F10, pane ⋮), note editor, chapter note, compare translations
 +-- devotional.py         # Devotional OSIS rendering (Spurgeon-style multi-section labels)
 +-- sword_bridge.py       # SWORD library wrapper + FTS5 indexing
 +-- search_query.py       # Shared user-query → FTS5 MATCH grammar translator
@@ -457,9 +457,25 @@ code or window.py pane sizing.
   - `Home` / `End` — first / last verse of current chapter (gated on
     `_focus_is_text_input()` so typing in entries still works)
   - `Ctrl+1` / `Ctrl+2` / `Ctrl+Tab` — focus pane / cycle panes
+  - `Ctrl+[` / `Ctrl+]` / `Ctrl+\` — narrow / widen / even up the split
+  - `Ctrl+J` — Annotations; `Ctrl+Shift+J` — a journal entry on this
+    chapter; `Ctrl+Shift+M` — a sermon on this chapter
+  - `Ctrl+P` / `Ctrl+E` / `Ctrl+Shift+C` — print, export, compare
+    translations. The passage actions, added because each of them lived
+    only in the verse menu and so was reachable only by right-clicking.
+    Each resolves its target through `BiblePane.current_verses()` — the
+    selection, else the verse cursor's verse, else the pane's last verse,
+    and an empty answer means the whole chapter (which
+    `passage_export.build` already reads as `None`).
+  - `Shift+F10` — the verse study menu from the keyboard, beside `Return`
+    and `Menu` (`verse_cursor.on_key`). It is the context-menu key on a
+    keyboard with no Menu key, which is most laptops.
   - Mouse wheel over the Book/Chapter title button — cycle chapters
   - `Esc` — dismiss jump bar, search panel, menu panel, or exit reading mode
-  - `F11` — reading mode
+  - `F5` — presentation mode; `F11` — reading mode
+  - `Ctrl+?` — the shortcuts dialog (`Adw.ShortcutsDialog`, built from
+    `_SHORTCUT_SECTIONS` against `_action_accels`, so the dialog and the
+    dispatch cannot drift)
 - **Book/Chapter popover** with right-click verse picker. The right
   column is a `Gtk.Stack(SLIDE_LEFT_RIGHT, 180ms)` flipping between a
   chapter FlowBox and a verse FlowBox. Left-click on a chapter still
