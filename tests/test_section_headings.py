@@ -119,3 +119,21 @@ def test_title_text_never_survives_as_bare_prose():
         attr = f' type="{kind}"' if kind else ''
         out = _html_to_markup(f'<title{attr}>Heading Here</title>Body', True)
         assert ('letter_spacing="800"' in out) or ('Heading Here' not in out)
+
+
+def test_attributed_h_tag_is_a_heading():
+    # Concord's title page centres its headings — <h1 style="…"> — and the
+    # bare <h1..6> pattern matched none of them, so the generic tag-strip
+    # left "CONCORDIA" sitting in the prose as ordinary body text.
+    out = _html_to_markup(
+        '<h1 style="text-align:center">CONCORDIA</h1>Body', True)
+    assert 'CONCORDIA' in out
+    assert 'letter_spacing="800"' in out
+
+
+def test_attributed_h_tag_counts_as_an_inline_title():
+    # The heading toggle asks this before deciding it may restyle the
+    # chapter instead of rebuilding it; a heading it cannot see is one the
+    # shared tag cannot hide.
+    from pane import _renders_inline_title
+    assert _renders_inline_title('<h3 style="text-align:center">X</h3>')
