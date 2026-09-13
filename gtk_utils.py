@@ -135,3 +135,56 @@ def clear_children(widget: Gtk.Widget) -> None:
         nxt = child.get_next_sibling()
         widget.remove(child)
         child = nxt
+
+
+class Autosave:
+    """Debounced write-behind for a field the reader is typing in.
+
+    The reader never presses Save. Every edit calls `schedule()`, which
+    restarts a single timer; the write happens once typing pauses. Leaving
+    the field, closing the editor and closing the window all `flush()`,
+    so the last few keystrokes are never the ones that go missing.
+
+    Debouncing is not a nicety here. A store write is a whole-file
+    json.dump + fsync + os.replace, and saving per keystroke would pay
+    that for every letter. `motion.AUTOSAVE_DELAY_MS` is the pause it
+    waits for.
+
+    `flush()` writes only when a write is actually pending, so the focus
+    handlers can call it freely — a reader tabbing through a form they
+    did not edit rewrites nothing. `cancel()` drops a pending write
+    without performing it, which is what deleting the thing being edited
+    wants.
+    """
+
+    def __init__(self, save, delay_ms: int = motion.AUTOSAVE_DELAY_MS):
+        self._save = save
+        self._delay = delay_ms
+        self._source: int | None = None
+
+    @property
+    def pending(self) -> bool:
+        return self._source is not None
+
+    def schedule(self) -> None:
+        """Note an edit: (re)start the timer."""
+        self.cancel()
+        self._source = GLib.timeout_add(self._delay, self._fire)
+
+    def _fire(self) -> int:
+        self._source = None
+        self._save()
+        return int(GLib.SOURCE_REMOVE)
+
+    def flush(self) -> None:
+        """Write now if a write is pending; otherwise do nothing."""
+        if self._source is None:
+            return
+        self.cancel()
+        self._save()
+
+    def cancel(self) -> None:
+        """Drop a pending write without performing it."""
+        if self._source is not None:
+            GLib.source_remove(self._source)
+            self._source = None

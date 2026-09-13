@@ -19,9 +19,14 @@ import module_positions
 import onboarding
 import backup
 import bookmarks
+import journal
 import reading_plans
+import sermons
 import annotations
 import search_controller
+import annotation_dialogs
+import export_dialog
+import passage_print
 from pane import (BiblePane, DROPCAP_GOLD_DARK, DROPCAP_GOLD_LIGHT,
                   auto_reading_ink, dropcap_color_hex)
 from present import PresentView
@@ -274,6 +279,16 @@ class BibleWindow(Adw.ApplicationWindow):
                   "permissions. The change may be lost when you quit.")))
         # Same treatment for the other user-authored stores: a dropped write
         # should be visible, not a silent loss on next launch.
+        journal.set_save_error_handler(
+            lambda: GLib.idle_add(
+                self._toast,
+                _("Couldn't save your journal entry — check disk space or "
+                  "permissions. The change may be lost when you quit.")))
+        sermons.set_save_error_handler(
+            lambda: GLib.idle_add(
+                self._toast,
+                _("Couldn't save your sermon — check disk space or "
+                  "permissions. The change may be lost when you quit.")))
         bookmarks.set_save_error_handler(
             lambda: GLib.idle_add(
                 self._toast,
@@ -305,6 +320,10 @@ class BibleWindow(Adw.ApplicationWindow):
             failed.append(_('settings'))
         if annotations.load_failed():
             failed.append(_('annotations'))
+        if journal.load_failed():
+            failed.append(_('journal'))
+        if sermons.load_failed():
+            failed.append(_('sermons'))
         if bookmarks.load_failed():
             failed.append(_('bookmarks'))
         if reading_plans.load_failed():
@@ -770,6 +789,8 @@ class BibleWindow(Adw.ApplicationWindow):
         self._search_panel = SearchPanel(
             on_result_clicked=self._on_search_result,
             on_close=self._hide_search,
+            on_open_entry=self._open_journal_entry,
+            on_open_sermon=self._open_sermon,
         )
         self._search_split = Adw.OverlaySplitView()
         # .search-split scopes the scrim-base + gizmo-silencing CSS (the
@@ -912,7 +933,8 @@ class BibleWindow(Adw.ApplicationWindow):
                 on_begin=self._on_today_begin,
                 on_continue=self._on_today_continue,
                 on_choose_plans=self._on_today_choose_plans,
-                on_listen=self._on_today_listen)
+                on_listen=self._on_today_listen,
+                on_write=self._write_about_today)
             self._today_revealer = Gtk.Revealer()
             self._today_revealer.set_transition_type(
                 Gtk.RevealerTransitionType.SLIDE_DOWN)
@@ -1053,6 +1075,16 @@ class BibleWindow(Adw.ApplicationWindow):
             ('next-chapter', ['<Alt>Right'], self._go_next_chapter),
             ('prev-book', ['<Alt>Up'], self._go_prev_book),
             ('next-book', ['<Alt>Down'], self._go_next_book),
+            # The passage actions. Everything here also sits in the study
+            # menu, which until now was the only way to reach any of it —
+            # right-click a verse or do without. These three are the ones a
+            # reader arrives at the keyboard already expecting.
+            ('print-passage', ['<Ctrl>p'], self._print_passage),
+            ('export-passage', ['<Ctrl>e'], self._export_passage),
+            ('compare-verse', ['<Ctrl><Shift>c'], self._compare_verse),
+            ('annotations', ['<Ctrl>j'], self._open_annotations),
+            ('write-entry', ['<Ctrl><Shift>j'], self._write_about_here),
+            ('write-sermon', ['<Ctrl><Shift>m'], self._sermon_about_here),
             ('show-help-overlay', ['<Ctrl>question'], self._open_shortcuts_dialog),
             # The keyboard alternative to dragging the split grip. Ctrl is
             # free here: the verse cursor hands every Ctrl combination back
@@ -1201,6 +1233,19 @@ class BibleWindow(Adw.ApplicationWindow):
         if isinstance(f, Gtk.TextView) and f.get_editable():
             return True
         return False
+
+    def _pane_in_view(self):
+        """Whichever pane the reader is in, or pane1 when nothing is focused.
+
+        The same focus walk `_focus_other_pane` does — a pane is not the
+        focused widget itself, the text view inside it is.
+        """
+        f = self.get_focus()
+        while f is not None:
+            if f is self.pane1 or f is self.pane2:
+                return f
+            f = f.get_parent()
+        return self.pane1
 
     def _focus_other_pane(self):
         f = self.get_focus()
@@ -1907,10 +1952,12 @@ class BibleWindow(Adw.ApplicationWindow):
         c = backup.counts(payload)
         confirm = Adw.AlertDialog(
             heading=_('Replace study data?'),
-            body=_('The file contains {a} annotation entries, {b} bookmarks '
-                   'and {p} plan days marked read. Your current annotations, '
+            body=_('The file contains {a} annotation entries, {j} journal '
+                   'entries, {s} sermons, {b} bookmarks and {p} plan days '
+                   'marked read. Your current annotations, journal, sermons, '
                    'bookmarks and reading-plan progress will be replaced.'
-                   ).format(a=c['annotations'], b=c['bookmarks'],
+                   ).format(a=c['annotations'], j=c['journal'],
+                            s=c['sermons'], b=c['bookmarks'],
                             p=c['plan_days']),
         )
         confirm.add_response('cancel', _('Cancel'))
@@ -1940,6 +1987,8 @@ class BibleWindow(Adw.ApplicationWindow):
         if failed:
             names = {
                 'annotations': _('annotations'),
+                'journal': _('journal'),
+                'sermons': _('sermons'),
                 'bookmarks': _('bookmarks'),
                 'reading_plans': _('reading-plan progress'),
             }
@@ -2870,8 +2919,41 @@ class BibleWindow(Adw.ApplicationWindow):
                                                self.pane2.force_navigate(book, chapter, verse)))
         box.append(btn2)
 
+        # Into the sermon being written, when there is one. A cross-reference
+        # is the commonest thing to want in a manuscript and the slowest to
+        # retype, and the row names the sermon so it cannot be wrong about
+        # where it went.
+        import sermons
+        target = sermons.most_recent()
+        if target is not None:
+            title = target['title'] or _('Untitled sermon')
+            add = Gtk.Button(label=_('Add to “{title}”').format(title=title))
+            add.add_css_class('flat')
+            add.connect('clicked', lambda _b: (
+                popover.popdown(),
+                self._collect_reference(target['id'], book, chapter, verse)))
+            box.append(Gtk.Separator())
+            box.append(add)
+
         popover.set_child(box)
         popover.popup()
+
+    def _collect_reference(self, sermon_id, book, chapter, verse):
+        """Put one reference into a sermon — the cross-reference door.
+
+        The reference alone, not the verse text: a cross-reference is a
+        pointer the preacher follows while writing, and the body's own parser
+        turns the line into a link because it is spelled the way the reader's
+        language spells it.
+        """
+        import annotations as annotations_store
+        app = annotations_store.app_verse(self.pane1._module, book, chapter,
+                                          verse)
+        anchor = {'book': book, 'chapter': chapter,
+                  'verses': [app] if app is not None else []}
+        self.collect_into_sermon(sermon_id,
+                                 f'{book_label(book)} {chapter}:{verse}',
+                                 anchor)
 
     def _hide_crossref(self):
         self._crossref_revealer.set_reveal_child(False)
@@ -2879,18 +2961,182 @@ class BibleWindow(Adw.ApplicationWindow):
     # ── Annotations ───────────────────────────────────────────────────────────
 
     def _on_annotations_clicked(self, _btn):
+        self._open_annotations()
+
+    def _open_annotations(self, new_entry=None, new_sermon=None):
+        """Show the Annotations window, optionally starting a journal entry
+        or a sermon.
+
+        An already-open window is reused rather than replaced — a second one
+        would show the same store twice and autosave from both.
+        """
         if self._annotations_win is not None and self._annotations_win.get_visible():
             self._annotations_win.present()
+            if new_entry is not None:
+                self._annotations_win.start_entry(**new_entry)
+            if new_sermon is not None:
+                self._annotations_win.start_sermon(**new_sermon)
             return
         self._annotations_win = AnnotationsWindow(
             on_navigate=self._on_annotations_navigate,
             on_annotation_changed=self._refresh_panes,
             reading_module=lambda: self.pane1._module,
+            new_entry=new_entry,
+            new_sermon=new_sermon,
             transient_for=self,
             modal=False,
         )
         self._attach_esc_close(self._annotations_win, '_annotations_win')
+        # The plan's tiles carry a dot for a day that was written about, and
+        # nothing else rebuilds that grid within a session — so an entry
+        # written just now would not show until the plan changed.
+        self._annotations_win.connect(
+            'close-request', lambda _w: self._refresh_plan_dots() or False)
         self._annotations_win.present()
+
+    def _today_collect(self):
+        """Today's liturgical designation key, or None when the reader keeps
+        no calendar. Provenance for a page of writing begun now: which Sunday
+        it was written for cannot be recovered afterwards."""
+        tradition = settings.get('church_calendar')
+        if not tradition:
+            return None
+        import church_year
+        desig = church_year.day_designation(datetime.date.today(), tradition)
+        return desig[0] if desig else None
+
+    def _sermon_about_here(self):
+        """The keyboard door to a sermon on the passage in view.
+
+        Anchored to the chapter, as the journal's own keyboard door is: this
+        is the shortcut you reach for having read something, and a sermon is
+        rarely on one verse.
+        """
+        pane = self._pane_in_view()
+        anchors = []
+        if pane is not None and pane._book:
+            anchors = [{'book': pane._book, 'chapter': pane._chapter,
+                        'verses': []}]
+        self._open_annotations(new_sermon={
+            'anchors': anchors, 'collect': self._today_collect()})
+
+    def _open_sermon(self, sermon_id):
+        """Show one sermon — where a search result for a manuscript leads."""
+        self._open_annotations()
+        self._annotations_win.select_sermon(sermon_id)
+
+    def collect_into_sermon(self, sermon_id, text, anchor=None):
+        """Put collected text into a sermon from anywhere in the reading UI.
+
+        Goes through the open Annotations window when there is one, because a
+        sermon open in its editor owns its buffer; otherwise straight to the
+        store. Returns whether it landed.
+
+        The toast is here rather than at each door: the reader is looking at
+        the reading page and nothing visible moved, so every door owes them
+        the same confirmation, naming the manuscript it went into.
+        """
+        import sermons
+        win = self._annotations_win
+        if win is not None and win.get_visible():
+            landed = win.collect_into(sermon_id, text, anchor)
+        else:
+            landed = sermons.append(sermon_id, text, anchor) is not None
+        if landed:
+            sermon = sermons.get(sermon_id)
+            self._toast(_('Added to “{title}”').format(
+                title=(sermon or {}).get('title') or _('Untitled sermon')))
+        return landed
+
+    def _open_journal_entry(self, entry_id):
+        """Show one journal entry — where a search result for the reader's
+        own writing leads."""
+        self._open_annotations()
+        self._annotations_win.select_entry(entry_id)
+
+    def _open_journal_on(self, book, chapter):
+        """Show what has been written about one chapter — the door from the
+        reading page's study menu."""
+        self._open_annotations()
+        self._annotations_win.show_entries_on(book, chapter)
+
+    def _open_sermons_on(self, book, chapter):
+        """Show what has been preached from one chapter — the study menu's
+        other backward-looking door."""
+        self._open_annotations()
+        self._annotations_win.show_sermons_on(book, chapter)
+
+    def _write_about_today(self):
+        """The Today door — the reason the journal is worth building.
+
+        The day's readings are already on screen, the plan day is already
+        counted and the church-year designation is already resolved, so the
+        entry arrives anchored and stamped with nothing typed for the reader.
+        A plan day's readings are whole chapters, which is why the anchors
+        carry no verses.
+        """
+        anchors, plan = [], None
+        plan_id, start_date = reading_plans.get_active()
+        if plan_id and start_date:
+            days = reading_plans.get_plan_days(plan_id)
+            if days:
+                idx = max(0, min(reading_plans.today_index(start_date),
+                                 len(days) - 1))
+                anchors = [{'book': book, 'chapter': chapter, 'verses': []}
+                           for book, chapter in days[idx]]
+                plan = {'id': plan_id, 'day': idx}
+        collect = None
+        tradition = settings.get('church_calendar')
+        if tradition:
+            import church_year
+            desig = church_year.day_designation(
+                datetime.date.today(), tradition)
+            if desig:
+                collect = desig[0]
+        self._open_annotations({'anchors': anchors, 'plan': plan,
+                                'collect': collect})
+
+    # ── The passage actions, from the keyboard ────────────────────────────
+    # Each takes the reader's selection, else the verse they are on, else
+    # the whole chapter — and each calls exactly the function the study menu
+    # calls, so the two doors can never drift apart.
+
+    def _print_passage(self):
+        pane = self._pane_in_view()
+        if pane is None or not pane._book:
+            return
+        passage_print.print_passage(pane, pane.current_verses())
+
+    def _export_passage(self):
+        pane = self._pane_in_view()
+        if pane is None or not pane._book:
+            return
+        export_dialog.export_passage(pane, pane.current_verses())
+
+    def _compare_verse(self):
+        """One verse, so the selection's first is what it compares."""
+        pane = self._pane_in_view()
+        if pane is None or not pane._book:
+            return
+        verses = pane.current_verses()
+        if not verses:
+            if pane._on_toast:
+                pane._on_toast(_('Choose a verse to compare'))
+            return
+        annotation_dialogs.compare_translations(pane, verses[0])
+
+    def _write_about_here(self):
+        """The keyboard door: an entry on the passage in view.
+
+        Anchored to the chapter rather than to a verse — this is the shortcut
+        you reach for having read something, and a verse-level anchor is what
+        the study menu's own entry is for.
+        """
+        pane = self._pane_in_view()
+        if pane is None or not pane._book:
+            return
+        self._open_annotations({'anchors': [
+            {'book': pane._book, 'chapter': pane._chapter, 'verses': []}]})
 
     def _refresh_panes(self, book, chapter, verse):
         """Called by the Annotations window when a mark changes there.
@@ -2985,6 +3231,7 @@ class BibleWindow(Adw.ApplicationWindow):
             (N_('Move between verses'), 'accel', 'Up Down'),
             (N_('Move between sense-units'), 'accel', 'bracketleft bracketright'),
             (N_('Study menu for the current verse'), 'accel', 'Return'),
+            (N_('Study menu (context-menu key)'), 'accel', '<Shift>F10'),
             (N_('Step through the words of a verse'), 'accel', 'Left Right'),
             (N_('Look up the word, or open its footnote'), 'accel', 'Return'),
             (N_('Back from words to verses'), 'accel', 'Escape'),
@@ -3017,7 +3264,15 @@ class BibleWindow(Adw.ApplicationWindow):
             (N_('Exit presentation'), 'accel', 'Escape'),
         ]),
         (N_('General'), [
+            (N_('Annotations and journal'), 'action', 'annotations'),
+            (N_('Write a journal entry about this chapter'), 'action',
+             'write-entry'),
+            (N_('Start a sermon on this chapter'), 'action', 'write-sermon'),
             (N_('Copy selection with reference'), 'accel', '<Ctrl>c'),
+            (N_('Print the passage'), 'action', 'print-passage'),
+            (N_('Export the passage'), 'action', 'export-passage'),
+            (N_('Compare translations of this verse'), 'action',
+             'compare-verse'),
             (N_('Keyboard shortcuts'), 'action', 'show-help-overlay'),
         ]),
     ]
@@ -4198,6 +4453,10 @@ class BibleWindow(Adw.ApplicationWindow):
     def _build_plan_grid(self):
         clear_children(self._plan_grid)
         self._plan_cells = {}
+        # The days that were written about. Gathered once for the whole grid
+        # rather than per tile: a year plan draws 365 of them.
+        self._plan_written = {e['date'] for e in journal.all_entries()
+                              if e['date']}
         cols = 7
         row = col = 0
         prev_month = None
@@ -4241,8 +4500,18 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _style_plan_cell(self, cell, idx):
         for c in ('plan-tile-done', 'plan-tile-today',
-                  'plan-tile-overdue', 'plan-tile-ahead'):
+                  'plan-tile-overdue', 'plan-tile-ahead',
+                  'plan-tile-written'):
             cell.remove_css_class(c)
+        # A dot on a day that was written about. This is the one surface in
+        # the app where a dated thing already lives, and the dot is honest:
+        # it records that something happened, not how well. No count, no
+        # chain, no streak — the plan's catch-up design already refused to
+        # score the reader and this refuses the same thing for the same
+        # reason.
+        day = (self._plan_start_date + datetime.timedelta(days=idx)).isoformat()
+        if day in getattr(self, '_plan_written', ()):
+            cell.add_css_class('plan-tile-written')
         if idx in self._plan_completed:
             cell.add_css_class('plan-tile-done')
         elif idx < self._plan_today_idx:
@@ -4251,6 +4520,19 @@ class BibleWindow(Adw.ApplicationWindow):
             cell.add_css_class('plan-tile-ahead')
         if idx == self._plan_today_idx:
             cell.add_css_class('plan-tile-today')    # ring; composes with the fill
+
+    def _refresh_plan_dots(self):
+        """Re-read which days were written about and restyle the tiles.
+
+        Cheaper than `_refresh_plan_ui`, which rebuilds all 365 buttons and
+        their month headers; nothing here changes the grid's shape.
+        """
+        if not getattr(self, '_plan_cells', None):
+            return
+        self._plan_written = {e['date'] for e in journal.all_entries()
+                              if e['date']}
+        for idx, cell in self._plan_cells.items():
+            self._style_plan_cell(cell, idx)
 
     def _plan_day_summary(self, idx):
         return _('Day {n} · {passages}').format(

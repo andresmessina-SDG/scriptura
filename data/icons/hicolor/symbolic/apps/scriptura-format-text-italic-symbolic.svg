@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Italic glyph for the journal editor's formatting row. Adwaita ships one,
+  but the app bundles every icon it asks for under its own name so no user
+  theme can shadow it (see NOTICE). Fill-only (#222).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g fill="#222">
+    <rect x="6.8" y="2.4" width="6.0" height="1.5" rx="0.5"/>
+    <rect x="3.2" y="12.1" width="6.0" height="1.5" rx="0.5"/>
+    <path d="M9.0 2.4 H11.0 L7.0 13.6 H5.0 Z"/>
+  </g>
+</svg>

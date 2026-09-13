@@ -132,6 +132,16 @@ def build_operation(module: str, book: str, chapter: int,
                                 notes=notes, markdown=False)
     title = passage_export.format_reference(book, chapter, verses,
                                             version=module)
+    return build_text_operation(text, title)
+
+
+def build_text_operation(text: str, title: str) -> Gtk.PrintOperation:
+    """The same paper for any text this app prints.
+
+    Split out of `build_operation` when the journal needed printing: a page
+    of annotations sets in the same serif, on the same margins, as a page of
+    scripture, and there is no reason for a second set of either.
+    """
     printer = PassagePrinter(text)
     operation = Gtk.PrintOperation()
     operation.set_job_name(title)

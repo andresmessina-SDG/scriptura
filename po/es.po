@@ -80,11 +80,22 @@ msgstr ""
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:26
 msgid ""
-"Highlights, notes, and topical tags, all gathered into one searchable study "
-"journal."
+"Highlights, underlines, notes, and topical tags — one searchable set of "
+"annotations that belongs to the verse and appears in every translation."
 msgstr ""
-"Resaltados, notas y etiquetas temáticas, reunidos en un diario de estudio en "
-"el que se puede buscar."
+"Resaltados, subrayados, notas y etiquetas temáticas: un conjunto de "
+"anotaciones en el que se puede buscar, que pertenece al versículo y aparece "
+"en todas las traducciones."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:27
+msgid ""
+"A journal and a sermon manuscript beside your marks — a page for the day's "
+"reading, and a manuscript with its series, its preaching days, and the "
+"passages it was written from."
+msgstr ""
+"Un diario y un manuscrito de sermón junto a sus anotaciones: una página para "
+"la lectura del día, y un manuscrito con su serie, los días en que se predicó "
+"y los pasajes desde los que se escribió."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:27
 msgid ""
@@ -7613,7 +7624,7 @@ msgstr "Anotación"
 
 #: study_journal.py:350
 msgid "Search notes, tags, references…"
-msgstr "Buscar en notas, etiquetas y referencias…"
+msgstr "Notas, etiquetas, referencias…"
 
 #: study_journal.py:360
 msgid "All types"
@@ -8379,6 +8390,14 @@ msgstr ""
 "No se pudo guardar su anotación; compruebe el espacio en disco o los "
 "permisos. El cambio podría perderse al salir."
 
+#: window.py:281
+msgid ""
+"Couldn't save your journal entry — check disk space or permissions. The "
+"change may be lost when you quit."
+msgstr ""
+"No se pudo guardar su entrada del diario; compruebe el espacio en disco o "
+"los permisos. El cambio podría perderse al salir."
+
 #: window.py:280
 msgid ""
 "Couldn't save your bookmark — check disk space or permissions. The change "
@@ -8402,6 +8421,10 @@ msgstr "ajustes"
 #: window.py:307 window.py:1942
 msgid "annotations"
 msgstr "anotaciones"
+
+#: window.py
+msgid "journal"
+msgstr "diario"
 
 #: window.py:309 window.py:1943
 msgid "bookmarks"
@@ -8641,13 +8664,13 @@ msgstr "¿Reemplazar los datos de estudio?"
 #: window.py:1910
 #, python-brace-format
 msgid ""
-"The file contains {a} annotation entries, {b} bookmarks and {p} plan days "
-"marked read. Your current annotations, bookmarks and reading-plan progress "
-"will be replaced."
+"The file contains {a} annotation entries, {j} journal entries, {b} bookmarks "
+"and {p} plan days marked read. Your current annotations, journal, bookmarks "
+"and reading-plan progress will be replaced."
 msgstr ""
-"El archivo contiene {a} anotaciones, {b} marcadores y {p} días de plan "
-"marcados como leídos. Se reemplazarán sus anotaciones, marcadores y el "
-"avance de sus planes de lectura."
+"El archivo contiene {a} anotaciones, {j} entradas del diario, {b} marcadores "
+"y {p} días de plan marcados como leídos. Se reemplazarán sus anotaciones, su "
+"diario, sus marcadores y el avance de sus planes de lectura."
 
 #: window.py:1944
 msgid "reading-plan progress"
@@ -9410,3 +9433,451 @@ msgstr "Editado recientemente"
 
 msgid "Edited {date}"
 msgstr "Editado el {date}"
+
+#: annotations_window.py
+msgid "Any time"
+msgstr "En cualquier momento"
+
+#: annotations_window.py
+msgid "This week"
+msgstr "Esta semana"
+
+#: annotations_window.py
+msgid "This month"
+msgstr "Este mes"
+
+#: annotations_window.py
+msgid "This year"
+msgstr "Este año"
+
+#: annotations_window.py
+msgid "Journal"
+msgstr "Diario"
+
+#: annotations_window.py
+msgid "No passage"
+msgstr "Sin pasaje"
+
+#: annotations_window.py
+msgid "Untitled entry"
+msgstr "Entrada sin título"
+
+#: annotations_window.py
+msgid "New journal entry"
+msgstr "Nueva entrada del diario"
+
+#: annotations_window.py
+msgid "Delete entry"
+msgstr "Eliminar la entrada"
+
+#: annotations_window.py
+msgid "Entry deleted"
+msgstr "Entrada eliminada"
+
+#: annotations_window.py
+#, python-brace-format
+msgid "Go to {ref}"
+msgstr "Ir a {ref}"
+
+#: annotations_window.py
+#, python-brace-format
+msgid "{ref} +{n} more"
+msgstr "{ref} y {n} más"
+
+#: annotations_window.py
+msgid "Tag an annotation or a journal entry to see it here."
+msgstr "Etiquete una anotación o una entrada del diario para verla aquí."
+
+#: window.py
+msgid "Write about today"
+msgstr "Escribir sobre hoy"
+
+#: window.py
+msgid "Write an entry"
+msgstr "Escribir una entrada"
+
+#: window.py
+msgid "Annotations and journal"
+msgstr "Anotaciones y diario"
+
+#: window.py
+msgid "Write a journal entry about this chapter"
+msgstr "Escribir una entrada del diario sobre este capítulo"
+
+#: annotations_window.py
+msgid "Print"
+msgstr "Imprimir"
+
+#: annotations_window.py
+msgid "Could not print"
+msgstr "No se pudo imprimir"
+
+#: annotations_window.py
+msgid "Export to a Markdown file"
+msgstr "Exportar a un archivo Markdown"
+
+#: annotations_window.py
+msgid "No translation is installed to quote from."
+msgstr "No hay ninguna traducción instalada de la que citar."
+
+#: annotations_window.py
+msgid "Ctrl+click to go to this passage"
+msgstr "Ctrl+clic para ir a este pasaje"
+
+#: annotations_window.py
+#, python-brace-format
+msgid "Used {n} time"
+msgid_plural "Used {n} times"
+msgstr[0] "Usada {n} vez"
+msgstr[1] "Usada {n} veces"
+
+#: search_panel.py
+msgid "Your notes"
+msgstr "Sus notas"
+
+#: search_panel.py
+msgid "Your journal"
+msgstr "Su diario"
+
+#: annotations_window.py
+msgid "All entries"
+msgstr "Todas las entradas"
+
+#: annotations_window.py
+msgid "With a passage"
+msgstr "Con pasaje"
+
+#: annotations_window.py
+msgid "Without a passage"
+msgstr "Sin pasaje"
+
+#: annotations_window.py
+msgid "Search entries, tags, references…"
+msgstr "Entradas, etiquetas, referencias…"
+
+#: annotations_window.py
+msgid "No journal entries yet"
+msgstr "Todavía no hay entradas en el diario"
+
+#: annotations_window.py
+msgid "Write about a passage, a sermon, or the day — the pencil above starts one."
+msgstr "Escriba sobre un pasaje, un sermón o el día: el lápiz de arriba empieza una."
+
+#: annotations_window.py
+msgid "Filters"
+msgstr "Filtros"
+
+#: annotation_editors.py
+msgid "Italic"
+msgstr "Cursiva"
+
+#: annotation_editors.py
+msgid "Heading"
+msgstr "Encabezado"
+
+#: annotation_editors.py
+msgid "Quote"
+msgstr "Cita"
+
+#: annotation_editors.py
+msgid "Bullet list"
+msgstr "Lista con viñetas"
+
+#: annotation_editors.py
+msgid "Bold (Ctrl+B)"
+msgstr "Negrita (Ctrl+B)"
+
+#: annotation_editors.py
+msgid "Italic (Ctrl+I)"
+msgstr "Cursiva (Ctrl+I)"
+
+#: annotation_editors.py
+msgid "Write your entry…"
+msgstr "Escriba su entrada…"
+
+#: annotation_editors.py
+msgid "Add"
+msgstr "Añadir"
+
+#: annotation_editors.py
+msgid "Add passage"
+msgstr "Añadir pasaje"
+
+#: annotation_editors.py
+msgid "e.g. {ref}"
+msgstr "p. ej. {ref}"
+
+#: annotation_editors.py
+msgid "Remove {ref}"
+msgstr "Quitar {ref}"
+
+#: annotation_editors.py
+msgid "Numbered list"
+msgstr "Lista numerada"
+
+#: annotation_editors.py
+msgid "{n} word"
+msgid_plural "{n} words"
+msgstr[0] "{n} palabra"
+msgstr[1] "{n} palabras"
+
+#: annotations_window.py
+msgid "entry"
+msgstr "entrada"
+
+#: annotations_window.py
+msgid "Export and import"
+msgstr "Exportar e importar"
+
+#: annotations_window.py
+msgid "Export {page}…"
+msgstr "Exportar {page}…"
+
+#: annotations_window.py
+msgid "Export this entry…"
+msgstr "Exportar esta entrada…"
+
+#: annotations_window.py
+msgid "Export this annotation…"
+msgstr "Exportar esta anotación…"
+
+#: annotations_window.py
+msgid "Import entries…"
+msgstr "Importar entradas…"
+
+#: annotations_window.py
+msgid "Import entries"
+msgstr "Importar entradas"
+
+#: annotations_window.py
+msgid "Text and Markdown files"
+msgstr "Archivos de texto y Markdown"
+
+#: annotations_window.py
+msgid "Imported {n} entry"
+msgid_plural "Imported {n} entries"
+msgstr[0] "Se importó {n} entrada"
+msgstr[1] "Se importaron {n} entradas"
+
+#: annotations_window.py
+msgid "{n} file could not be read"
+msgid_plural "{n} files could not be read"
+msgstr[0] "No se pudo leer {n} archivo"
+msgstr[1] "No se pudieron leer {n} archivos"
+
+#: annotation_dialogs.py
+msgid "{n} entry on this chapter"
+msgid_plural "{n} entries on this chapter"
+msgstr[0] "{n} entrada sobre este capítulo"
+msgstr[1] "{n} entradas sobre este capítulo"
+
+# ── Sermons (the manuscript page) ───────────────────────────
+
+msgid "Add to “{title}”"
+msgstr "Añadir a «{title}»"
+
+msgid "Untitled sermon"
+msgstr "Sermón sin título"
+
+msgid "Write your sermon…"
+msgstr "Escriba su sermón…"
+
+msgid "e.g. grace, kingdom, advent"
+msgstr "p. ej. gracia, reino, adviento"
+
+msgid "Sermon"
+msgstr "Sermón"
+
+msgid "What is this sermon saying, in one sentence?"
+msgstr "¿Qué dice este sermón, en una sola frase?"
+
+msgid "Series"
+msgstr "Serie"
+
+msgid "Existing series"
+msgstr "Series existentes"
+
+msgid "Part"
+msgstr "Parte"
+
+msgid "Preached"
+msgstr "Predicado"
+
+msgid "No series yet"
+msgstr "Todavía no hay series"
+
+msgid "Not yet preached"
+msgstr "Todavía sin predicar"
+
+msgid "Remove {date}"
+msgstr "Quitar {date}"
+
+msgid "Add a date"
+msgstr "Añadir una fecha"
+
+msgid "Written for {day}"
+msgstr "Escrito para {day}"
+
+msgid "Sermons"
+msgstr "Sermones"
+
+msgid "All sermons"
+msgstr "Todos los sermones"
+
+msgid "Search sermons, series, tags…"
+msgstr "Sermones, series, etiquetas…"
+
+msgid "By series"
+msgstr "Por serie"
+
+msgid "Recently preached"
+msgstr "Predicado recientemente"
+
+msgid "Write about a passage or about the day — the pencil above starts one."
+msgstr "Escriba sobre un pasaje o sobre el día: el lápiz de arriba empieza una."
+
+msgid "No sermons yet"
+msgstr "Todavía no hay sermones"
+
+msgid "Write a manuscript here, and collect verses into it from the reading page."
+msgstr "Escriba aquí un manuscrito y recoja versículos en él desde la página de lectura."
+
+msgid "No series"
+msgstr "Sin serie"
+
+msgid "Delete sermon"
+msgstr "Eliminar el sermón"
+
+msgid "Sermon deleted"
+msgstr "Sermón eliminado"
+
+msgid "New sermon"
+msgstr "Nuevo sermón"
+
+msgid "Added to “{title}”"
+msgstr "Añadido a «{title}»"
+
+msgid "Export this sermon…"
+msgstr "Exportar este sermón…"
+
+msgid "{series}, part {n}"
+msgstr "{series}, parte {n}"
+
+msgid "Your sermons"
+msgstr "Sus sermones"
+
+msgid "Couldn't save your sermon — check disk space or permissions. The change may be lost when you quit."
+msgstr "No se pudo guardar su sermón: compruebe el espacio en disco o los permisos. El cambio puede perderse al salir."
+
+msgid "sermons"
+msgstr "sermones"
+
+msgid "The file contains {a} annotation entries, {j} journal entries, {s} sermons, {b} bookmarks and {p} plan days marked read. Your current annotations, journal, sermons, bookmarks and reading-plan progress will be replaced."
+msgstr "El archivo contiene {a} anotaciones, {j} entradas del diario, {s} sermones, {b} marcadores y {p} días del plan marcados como leídos. Se reemplazarán sus anotaciones, su diario, sus sermones, sus marcadores y su progreso en el plan de lectura."
+
+msgid "Start a sermon on this chapter"
+msgstr "Empezar un sermón sobre este capítulo"
+
+msgid "{n} sermon"
+msgid_plural "{n} sermons"
+msgstr[0] "{n} sermón"
+msgstr[1] "{n} sermones"
+
+msgid "{series} · part {n}"
+msgstr "{series} · parte {n}"
+
+msgid "No sermon selected"
+msgstr "Ningún sermón seleccionado"
+
+msgid "Pick a sermon from the list to write in it."
+msgstr "Elija un sermón de la lista para escribir en él."
+
+msgid "Pick an entry from the list to view or edit it."
+msgstr "Elija una entrada de la lista para verla o editarla."
+
+msgid "Preached {date}"
+msgstr "Predicado el {date}"
+
+msgid "Show the list"
+msgstr "Mostrar la lista"
+
+msgid "Show the list (F9)"
+msgstr "Mostrar la lista (F9)"
+
+msgid "Writing mode — Esc, F11, or hover the top edge to leave"
+msgstr "Modo de escritura: Esc, F11 o acerque el puntero al borde superior para salir"
+
+# ── The manuscript refinements ──────────────────────────────
+
+msgid "Print this sermon…"
+msgstr "Imprimir este sermón…"
+
+msgid "Print this entry…"
+msgstr "Imprimir esta entrada…"
+
+msgid "Print this annotation…"
+msgstr "Imprimir esta anotación…"
+
+msgid "{n} sermon on this chapter"
+msgid_plural "{n} sermons on this chapter"
+msgstr[0] "{n} sermón sobre este capítulo"
+msgstr[1] "{n} sermones sobre este capítulo"
+
+msgid "Rename “{series}”"
+msgstr "Renombrar «{series}»"
+
+msgid "Every sermon in this series is renamed. If the name matches another series, the two are joined."
+msgstr "Se renombran todos los sermones de esta serie. Si el nombre coincide con el de otra serie, las dos se unen."
+
+msgid "≈ {n} min"
+msgstr "≈ {n} min"
+
+msgid "About {n} words a minute, read aloud"
+msgstr "Unas {n} palabras por minuto, leídas en voz alta"
+
+msgid "From your study"
+msgstr "De su estudio"
+
+msgid "What you have already marked or written on these passages"
+msgstr "Lo que ya ha marcado o escrito sobre estos pasajes"
+
+msgid "Nothing written on this passage yet"
+msgstr "Todavía no hay nada escrito sobre este pasaje"
+
+msgid "Written on this passage"
+msgstr "Escrito sobre este pasaje"
+
+msgid "Note on {ref}"
+msgstr "Nota sobre {ref}"
+
+# ── The study menu, grouped ─────────────────────────────────
+
+msgid "Write"
+msgstr "Escribir"
+
+msgid "Share"
+msgstr "Compartir"
+
+msgid "As an image…"
+msgstr "Como imagen…"
+
+msgid "Written on this chapter"
+msgstr "Escrito sobre este capítulo"
+
+msgid "Passage actions"
+msgstr "Acciones del pasaje"
+
+msgid "Choose a verse to compare"
+msgstr "Elige un versículo para comparar"
+
+msgid "Study menu (context-menu key)"
+msgstr "Menú de estudio (tecla de menú contextual)"
+
+msgid "Print the passage"
+msgstr "Imprimir el pasaje"
+
+msgid "Export the passage"
+msgstr "Exportar el pasaje"
+
+msgid "Compare translations of this verse"
+msgstr "Comparar traducciones de este versículo"

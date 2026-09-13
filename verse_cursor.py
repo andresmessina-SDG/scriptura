@@ -117,6 +117,12 @@ class VerseCursor:
             return self._step_word(-1)
         if keyval in (Gdk.KEY_Return, Gdk.KEY_KP_Enter, Gdk.KEY_Menu):
             return self._activate()
+        # Shift+F10 is the context-menu key everywhere — GTK, Qt, Windows,
+        # the web — and on a laptop it is usually the ONLY one, because
+        # there is no Menu key to press. The Ctrl/Alt guard above lets it
+        # through: Shift is not in it.
+        if keyval == Gdk.KEY_F10 and state & Gdk.ModifierType.SHIFT_MASK:
+            return self._activate()
         if keyval == Gdk.KEY_Escape:
             return self._leave_word_tier()
         if keyval == Gdk.KEY_bracketright:

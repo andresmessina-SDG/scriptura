@@ -7,3 +7,12 @@ pytest>=7
 # mypy is scoped to the persistence layer today (see mypy.ini); widens
 # module-by-module as more files gain annotations. Run with:  mypy .
 mypy>=1.10
+
+# pyflakes finds what the suite cannot: a name used and never defined, in a
+# branch no test takes. It found a logger typo inside an `except` that turned
+# a handled read error into a crash. Filter its four false positives — `_`,
+# `ngettext`, `book_label` and `C_` are installed on builtins by
+# main._setup_gettext — and everything left is real:
+#   python3 -m pyflakes *.py tests/*.py tools/*.py |
+#       grep -vE "undefined name '(_|ngettext|book_label|C_)'"
+pyflakes>=3

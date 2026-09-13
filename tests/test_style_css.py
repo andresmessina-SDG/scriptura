@@ -263,7 +263,7 @@ def test_every_css_class_the_code_adds_is_defined_somewhere():
         'background', 'large-title', 'inline', 'raised', 'opaque',
         'compact', 'spacer', 'menu', 'horizontal', 'vertical',
         'image-button', 'text-button', 'selection-mode', 'devel', 'sidebar',
-        'header',
+        'header', 'round',
     }
 
     used = set()

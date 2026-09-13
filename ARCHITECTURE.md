@@ -84,7 +84,7 @@ scriptura/
 +-- archaeology_reader.py # ArchaeologyReader — Scripture in Stone bundled gallery
 +-- styles.py             # Loads data/style.css once at startup; per-pane dynamic CSS stays in pane.py
 +-- lexicon_panel.py      # LexiconPanel — definition view + word study (own class)
-+-- annotation_dialogs.py # Right-click study menu, note editor, chapter note, compare translations
++-- annotation_dialogs.py # Verse study menu (right-click, Shift+F10, pane ⋮), note editor, chapter note, compare translations
 +-- devotional.py         # Devotional OSIS rendering (Spurgeon-style multi-section labels)
 +-- sword_bridge.py       # SWORD library wrapper + FTS5 indexing
 +-- search_query.py       # Shared user-query → FTS5 MATCH grammar translator
@@ -102,17 +102,31 @@ scriptura/
 +-- reading_plans.py      # Built-in plans + progress
 +-- search_panel.py       # Search overlay (right-side revealer)
 +-- annotations_window.py # Annotations window (master-detail) + TagManagerWindow
++-- annotation_editors.py # The three editors the window shows: mark, entry, sermon
++-- journal.py           # journal.json — entries (a page, where a note is a margin)
++-- sermons.py           # sermons.json — manuscripts, series, preaching days
++-- journal_markup.py    # the Markdown subset + reference parser (pure, no GTK)
++-- journal_import.py    # Markdown/text files in as entries
++-- church_year.py       # liturgical calendar: seasons, collects, designations
++-- gtk_utils.py         # Autosave (no Save button anywhere), clear_children, spinners
++-- tasks.py             # background work off the UI thread, newest-wins per key
++-- motion.py            # the app's animation and debounce timings, in one place
 +-- crossref_panel.py     # Cross-reference bar (slim single row)
 +-- module_manager.py     # Module Manager (kind tabs: Bibles / Commentaries / Study Tools / Books & More, all sources merged per tab)
 +-- module_picker.py      # ModulePicker — pane's module selector (MenuButton popover, info, remove)
 +-- welcome.py            # First-run welcome: 3 curated bundle choices (reading / study / full)
 +-- empty_state.py        # Shared compact empty-state widget
-+-- a11y.py               # set_accessible_label helper
++-- a11y.py               # accessible names, roles, relations, announcements
 +-- po/                   # gettext scaffolding (LINGUAS, POTFILES.in)
-+-- tools/                # offline pack builders (dev-only, not shipped)
++-- tools/                # pack builders and headless harnesses (dev-only, not shipped)
 |   +-- build_catena_pack.py   # HCF database -> catena pack
 |   +-- build_imagery_pack.py  # ten ingest sources -> imagery pack (see *_plates.toml)
 |   +-- gen_tissot.py          # Tissot plate-list generator
+|   +-- verify-scroll-stability.py # the "reading text never moves" matrix (in CI)
+|   +-- verify-a11y.py         # the accessible tree: roles, relations, live regions (in CI)
+|   +-- verify-live-paths.py   # drives the real app and fails on anything the log calls
+|   |                          #   an error — 21 paths only a live window can reach
+|   +-- verify-docs.py         # the docs against the repo (stale claims, line counts)
 +-- tests/                # Pytest suite for the pure-Python bridges + helpers
 +-- flatpak/              # manifest patches (e.g. sword-curl-libraries.patch)
 +-- data/
@@ -278,8 +292,8 @@ holds the top-of-viewport text to 0px; footnote toggling 10× cumulative
 drift is 0px. The committed regression matrix is
 `tools/verify-scroll-stability.py` — one command, spawns its own
 broadwayd, quiescence-gated judgments, retry-once for Broadway flakiness
-— and CI runs it on every push (the `scroll-stability` step in
-`.woodpecker.yml`). Run it after touching pane.py scroll/render/chrome
+— and CI runs it on every push (the `scroll-stability` job in
+`.github/workflows/ci.yml`). Run it after touching pane.py scroll/render/chrome
 code or window.py pane sizing.
 
 ### Strong's hover model
@@ -443,9 +457,25 @@ code or window.py pane sizing.
   - `Home` / `End` — first / last verse of current chapter (gated on
     `_focus_is_text_input()` so typing in entries still works)
   - `Ctrl+1` / `Ctrl+2` / `Ctrl+Tab` — focus pane / cycle panes
+  - `Ctrl+[` / `Ctrl+]` / `Ctrl+\` — narrow / widen / even up the split
+  - `Ctrl+J` — Annotations; `Ctrl+Shift+J` — a journal entry on this
+    chapter; `Ctrl+Shift+M` — a sermon on this chapter
+  - `Ctrl+P` / `Ctrl+E` / `Ctrl+Shift+C` — print, export, compare
+    translations. The passage actions, added because each of them lived
+    only in the verse menu and so was reachable only by right-clicking.
+    Each resolves its target through `BiblePane.current_verses()` — the
+    selection, else the verse cursor's verse, else the pane's last verse,
+    and an empty answer means the whole chapter (which
+    `passage_export.build` already reads as `None`).
+  - `Shift+F10` — the verse study menu from the keyboard, beside `Return`
+    and `Menu` (`verse_cursor.on_key`). It is the context-menu key on a
+    keyboard with no Menu key, which is most laptops.
   - Mouse wheel over the Book/Chapter title button — cycle chapters
   - `Esc` — dismiss jump bar, search panel, menu panel, or exit reading mode
-  - `F11` — reading mode
+  - `F5` — presentation mode; `F11` — reading mode
+  - `Ctrl+?` — the shortcuts dialog (`Adw.ShortcutsDialog`, built from
+    `_SHORTCUT_SECTIONS` against `_action_accels`, so the dialog and the
+    dispatch cannot drift)
 - **Book/Chapter popover** with right-click verse picker. The right
   column is a `Gtk.Stack(SLIDE_LEFT_RIGHT, 180ms)` flipping between a
   chapter FlowBox and a verse FlowBox. Left-click on a chapter still
@@ -453,8 +483,8 @@ code or window.py pane sizing.
   that chapter. Title flips from "Chapter" to "Chapter N Verse"; a back
   button appears in the verse view. Uses `sword_bridge.verse_count`
   (wraps `VerseKey.getVerseMax()`).
-- **Menu panel (left overlay)** — burger button opens. Contains: Study
-  Journal button, Modules button, Text Appearance toggle (font family, size,
+- **Menu panel (left overlay)** — burger button opens. Contains: Annotations
+  button (the marks, the journal and the sermons), Modules button, Text Appearance toggle (font family, size,
   line spacing, bold, justify, color, **reading column width**),
   Hotkeys reference, Reading Plan selector + day list with progress.
 
@@ -682,7 +712,16 @@ Run: `mypy .` (uses `mypy.ini`; excludes `build-dir/`).
 ## annotations.py
 
 Per-verse study data persisted in `annotations.json`. Key format:
-`"{module}/{book}/{chapter}"` → `{"{verse}": {...}, "chapter_note": {...}}`.
+`"{book}/{chapter}"` → `{"{verse}": {...}, "chapter_note": {...}}`.
+
+**A mark belongs to the reference, not to the module.** The key carried the
+module until 1.6.2, so a note written in the KJV did not exist in the RVR60 —
+nobody in the reference class does that. Verse numbers are **app space** (KJV
+numbering); the module is a lens, and every number is translated inward on
+write and outward on read (`module_verse` / `app_verse`). A line two
+versifications print differently keeps a sub-verse key (`1!b`), which folds
+into the line the reading module actually renders. Migrates on first `_load()`
+and keeps `annotations.json.v1.bak`.
 
 Per-verse value shape:
 ```
@@ -690,12 +729,47 @@ Per-verse value shape:
   "highlight": "#ffff00" | null,   # stored colors (mapped to soft tints at render time)
   "underline": bool,
   "note": "text" | null,
-  "tags": ["topic1", "topic2", ...]
+  "tags": ["topic1", "topic2", ...],
+  "created": "2026-09-12T08:30:00-06:00",
+  "modified": "2026-09-12T08:41:00-06:00"
 }
 ```
 
 Chapter note: same shape (note + tags) under the `"chapter_note"` key.
 Includes migration logic for old single-color string format.
+
+## Writing — journal.py, sermons.py, and the editors
+
+Three kinds of thing live in the Annotations window, and the difference is
+the whole design: **a mark is a margin, an entry is a page, a manuscript is
+written across a span and preached on days of its own.** Each has its own
+store, and none of them is a `kind` flag on another.
+
+```
+journal.py     # journal.json  — entries: title, body, the day it is ABOUT,
+               #   anchors, tags, and the plan day / collect it came from
+sermons.py     # sermons.json  — manuscripts: title, big idea, body, series
+               #   (+ part), the days preached, anchors, tags. No `date`:
+               #   `created` orders the archive until a preaching day exists,
+               #   and a write re-files the sermon at the END of the store, so
+               #   the file's own order answers `most_recent()`
+journal_markup.py  # the Markdown subset, pure: text in, spans out, no GTK.
+               #   Emphasis, one heading level, quote, lists, reference links,
+               #   plus what Enter carries on (`next_marker`, `renumber`)
+journal_import.py  # Markdown/text files in, one file per entry
+annotation_editors.py  # MarkEditor + _ProseEditor → EntryEditor, SermonEditor
+annotations_window.py  # the three pages, the list, the filters, TagManager
+```
+
+Anchors and mark keys are app space everywhere; `annotations.module_verse()`
+is the door a number goes back out through.
+
+**The body is a live buffer, not a rendered view.** There is no Save button
+anywhere in the feature — `gtk_utils.Autosave` writes on a pause and on
+losing focus — so there is no view/edit split to render into: the Markdown
+subset is applied to the editable buffer in place, markers dimmed and left
+where they were typed. Enter continues a list from the buffer's `insert-text`
+rather than from a key, because a newline is a newline whoever made it.
 
 ## Critical SWORD Python binding quirks
 
