@@ -799,3 +799,61 @@ def test_an_opening_bracket_keeps_its_space():
     still a word boundary."""
     assert sword_bridge.plain_text('<w>word</w> (aside)') == 'word (aside)'
 
+
+
+# ── generic-book walk: popError is a character, not a flag ───────────────────
+
+def test_no_error_does_not_end_the_walk():
+    # SWORD answers a healthy position with '\x00', which Python counts as
+    # true. `if mod.popError()` therefore broke the walk immediately.
+    assert sword_bridge._walk_ended('\x00') is False
+
+
+def test_running_off_the_end_ends_the_walk():
+    assert sword_bridge._walk_ended('\x01') is True
+
+
+def test_an_empty_answer_does_not_end_the_walk():
+    assert sword_bridge._walk_ended('') is False
+
+
+def test_a_binding_answering_with_an_int_still_works():
+    assert sword_bridge._walk_ended(0) is False
+    assert sword_bridge._walk_ended(1) is True
+
+
+class _FlatModule:
+    """A Generic Book with no TreeKey, walked by increment() alone."""
+
+    def __init__(self, paths):
+        self._paths = paths
+        self._i = -1
+
+    def setKeyText(self, text):
+        self._i = -1
+
+    def increment(self):
+        self._i += 1
+
+    def popError(self):
+        return '\x00' if 0 <= self._i < len(self._paths) else '\x01'
+
+    def getKeyText(self):
+        return self._paths[self._i] if 0 <= self._i < len(self._paths) else ''
+
+
+def test_flat_fallback_collects_every_entry(monkeypatch):
+    """The fallback is what a binding without TreeKey access gets. It had
+    been returning nothing at all."""
+    mod = _FlatModule(['/Preface', '/Book I', '/Book I/Chapter 1'])
+    monkeypatch.setattr(sword_bridge, 'mgr',
+                        lambda: types.SimpleNamespace(getModule=lambda n: mod))
+    monkeypatch.setattr(sword_bridge, '_genbook_tree_key', lambda m: None)
+    sword_bridge._GENBOOK_TOC_CACHE.pop('Flat', None)
+
+    entries = sword_bridge.list_genbook_entries('Flat')
+
+    assert entries == [('/Preface', 'Preface', 0),
+                       ('/Book I', 'Book I', 0),
+                       ('/Book I/Chapter 1', 'Chapter 1', 1)]
+    sword_bridge._GENBOOK_TOC_CACHE.pop('Flat', None)

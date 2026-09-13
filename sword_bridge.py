@@ -1134,6 +1134,19 @@ def _genbook_tree_key(mod):
     return None
 
 
+def _walk_ended(err):
+    """Whether a popError() result says the walk ran off the end.
+
+    popError() answers with a character, not a flag: '\x00' is success. Every
+    non-empty Python string is truthy, so a bare `if mod.popError()` is true
+    when nothing at all went wrong — it ended the flat walk below on its
+    first pass and left the module with no table of contents.
+    """
+    if isinstance(err, str):
+        return bool(err) and err[0] != '\x00'
+    return bool(err)
+
+
 def list_genbook_entries(module_name, max_entries=4000):
     """Walk the Generic Book's TreeKey in document order and return a flat
     list of (path, label, depth) tuples — path is the full TreeKey string
@@ -1263,7 +1276,7 @@ def list_genbook_entries(module_name, max_entries=4000):
                     except Exception:
                         break
                     try:
-                        if mod.popError():
+                        if _walk_ended(mod.popError()):
                             break
                     except Exception:
                         pass
