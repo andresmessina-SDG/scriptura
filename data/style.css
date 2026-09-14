@@ -80,6 +80,30 @@ window {
     font-feature-settings: "cv05", "calt", "kern";
 }
 
+/* ── line-height is NOT an em multiple ───────────────────────────────────
+ * GTK4 multiplies the FONT's own line height, not the em, and every face
+ * brings a different one. Measured as the pitch a real label renders, two
+ * lines minus one:
+ *
+ *     Newsreader 1.07   Georgia 1.14   Adwaita Sans 1.21
+ *     EB Garamond 1.31   Noto Serif 1.36   Noto Serif Hebrew 1.19
+ *
+ * (Each wobbles about 0.03 with the size, from pixel rounding.)
+ *
+ * So `line-height: 1.6` on the reading serif sets 2.16em, not 1.6em, and
+ * the same 1.6 on Newsreader sets 1.70em. Fourteen rules in this file were
+ * written as if the number were the em value; all fourteen are now the
+ * FACTOR, with the em each was measured to render in a comment beside it.
+ *
+ * Writing a new one: pick the em you want, divide by the face's number
+ * above, and record the em. The measuring script is the pitch probe in
+ * ~/today-renders/_scripts/pitch.py.
+ *
+ * NOT a bug in the reading pane's own `line-height: {line_spacing}` (see
+ * BiblePane._update_font_css): that one is the reader's Spacing slider,
+ * labelled "1.5x" and set by eye, so a multiple of the face's natural
+ * leading is exactly what it should mean. */
+
 /* ── Search panel (end-side OverlaySplitView sidebar) ────────────────────
    The rounded opaque card; its split view's scrim-base + gizmo rules live
    with the .menu-split block further down (same two-layer trick). */
@@ -839,7 +863,7 @@ button.menu-theme-toggle {
     margin-bottom: 28px;
 }
 .present-text {
-    line-height: 1.4;
+    line-height: 1.02;   /* ~1.37em on the reading serif, live from the pane */
 }
 /* Parallel (bilingual) mode: the dimmed verse-number "spine" between the two
    language columns. Quiet enough not to compete, tabular so it reads as a
@@ -1315,7 +1339,7 @@ box.mini-swatch {
     font-style: italic;
     font-size: 0.92em;
     opacity: 0.6;
-    line-height: 1.4;
+    line-height: 1.10;   /* ~1.44em on EB Garamond */
     margin-top: 2px;
 }
 /* One voice — no card box: voices sit on the window background, separated
@@ -1353,7 +1377,7 @@ box.mini-swatch {
     font-family: 'EB Garamond', 'Newsreader', 'Noto Serif', 'Source Serif 4',
                  'Georgia', serif;
     font-size: 1.16em;
-    line-height: 1.5;
+    line-height: 1.14;   /* ~1.50em on EB Garamond */
 }
 /* Read more / Show less — typographic, not button chrome. */
 button.catena-more {
@@ -1487,13 +1511,13 @@ button.catena-chip-place {
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 1.05em;
     opacity: 0.6;
-    line-height: 1.6;
+    line-height: 1.52;   /* ~1.60em on Newsreader */
     margin-bottom: 14px;
 }
 .stone-front-body {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
-    line-height: 1.6;
+    line-height: 1.52;   /* ~1.63em on Newsreader */
     margin-bottom: 10px;
 }
 .stone-era {
@@ -1512,7 +1536,7 @@ button.catena-chip-place {
     font-style: italic;
     font-size: 1.02em;
     opacity: 0.72;
-    line-height: 1.5;
+    line-height: 1.43;   /* ~1.53em on Newsreader */
     margin-top: 8px;
 }
 .stone-plate {
@@ -1546,7 +1570,7 @@ button.catena-chip-place {
 .stone-caption {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
-    line-height: 1.6;
+    line-height: 1.50;   /* ~1.60em on Newsreader */
     margin-top: 14px;
 }
 .stone-chips {
@@ -1640,7 +1664,7 @@ button.stone-chip-rel {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     opacity: 0.75;
-    line-height: 1.55;
+    line-height: 1.46;   /* ~1.56em on Newsreader */
 }
 .stone-read-title {
     font-style: italic;
@@ -1924,7 +1948,7 @@ progressbar.reading-progress > trough > progress {
 .today-passage {
     font-size: 42px;
     font-weight: 500;
-    line-height: 1.2;
+    line-height: 0.88;   /* ~1.19em on the reading serif at 42px */
     letter-spacing: -0.005em;
 }
 /* Set in the reading serif (family live from the pane) and italic: a phrase
@@ -1973,20 +1997,18 @@ button.today-mark {
    serif (family set live from the pane), one step below the epigraph's size
    so that the page's Scripture and the page's footnote cannot be confused
    for each other, and roman: these are the day's own words, not a citation. */
-/* line-height is a factor of the FONT's own line height in GTK4, not of the
-   em: measured on the reading serif, 1.0 already gives 1.37em, so the 1.55
-   this asked for was setting 2.12em and the foot of the page sprawled. 1.13
-   is the ~1.55em it meant. */
+/* The 1.55 this asked for was setting 2.12em and the foot of the page
+   sprawled — see the line-height note at the top of this file. */
 .today-antiphon {
     font-size: 20px;
-    line-height: 1.13;
+    line-height: 1.13;   /* ~1.55em on the reading serif */
     opacity: 0.88;
 }
 /* The devotional foot line, set like a printed epigraph. */
 .today-epigraph-verse {
     font-size: 17.5px;
     font-style: italic;
-    line-height: 1.15;   /* ~1.58em — see .today-antiphon */
+    line-height: 1.15;   /* ~1.54em on the reading serif */
     opacity: 0.80;
 }
 /* A collect is prayed, not quoted — set roman, and without the quotation
@@ -2028,7 +2050,7 @@ button.today-mark {
 }
 .today-rail-church {
     opacity: 0.68;
-    line-height: 1.45;
+    line-height: 1.16;   /* ~1.42em on Adwaita Sans */
 }
 
 /* ── The listening pill ──────────────────────────────────────────────── */
@@ -2258,12 +2280,12 @@ button.audio-pill-close {
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 1.05em;
     opacity: 0.6;
-    line-height: 1.6;
+    line-height: 1.52;   /* ~1.60em on Newsreader */
 }
 .gen-intro {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
-    line-height: 1.6;
+    line-height: 1.52;   /* ~1.63em on Newsreader */
     opacity: 0.85;
 }
 /* The passage kicker over a chart — the one place a genealogy section says

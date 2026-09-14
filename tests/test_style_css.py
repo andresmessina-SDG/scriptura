@@ -281,3 +281,41 @@ def test_every_css_class_the_code_adds_is_defined_somewhere():
     assert not undefined, (
         f'{len(undefined)} css classes are added in Python but defined in no '
         f'sheet, so they style nothing: {undefined}')
+
+
+def test_every_line_height_records_the_em_it_renders():
+    """GTK4's line-height is a factor of the FONT's line height, not the em.
+
+    Fourteen rules in this sheet were written as if the number were the em
+    value, so `line-height: 1.6` on the reading serif was setting 2.16em.
+    They are all factors now, each with the em it was measured to render
+    beside it — and the annotation is the point: a bare number here looks
+    exactly like the em it is not, which is how all fourteen were written.
+
+    The reading pane's own dynamic `line-height: {line_spacing}` is exempt
+    and lives in pane.py, not here: that one is the reader's Spacing slider,
+    labelled "1.5x", where a multiple of the face's leading is the meaning.
+    """
+    lines = (REPO / 'data' / 'style.css').read_text().split('\n')
+    bare = [f'{n}: {l.strip()}' for n, l in enumerate(lines, 1)
+            if re.search(r'^\s*line-height:', l)
+            and not re.search(r'/\*[^*]*\d(?:\.\d+)?em\b', l)]
+    assert not bare, (
+        'every line-height must record the em it renders, e.g. '
+        '"line-height: 1.52;   /* ~1.60em on Newsreader */" — '
+        f'these do not: {bare}')
+
+
+def test_no_line_height_is_written_as_if_it_were_an_em_multiple():
+    """The tell: a factor at or above the loosest face's own leading.
+
+    Noto Serif is 1.36, so any factor >= 1.36 on a serif rule renders 1.85em
+    or more, which no reading surface in this app wants. Newsreader is 1.07,
+    so its rules legitimately sit near 1.5 — hence the check is against the
+    em recorded in the comment, not against the factor.
+    """
+    text = (REPO / 'data' / 'style.css').read_text()
+    loose = [m.group(0) for m in
+             re.finditer(r'line-height:[^;]+;\s*/\*\s*~([\d.]+)em[^*]*\*/', text)
+             if float(m.group(1)) > 1.8]
+    assert not loose, f'these render looser than 1.8em: {loose}'
