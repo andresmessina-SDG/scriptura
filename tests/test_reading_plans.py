@@ -134,6 +134,10 @@ def test_format_passages_empty_returns_empty_string():
     assert reading_plans.format_passages([]) == ''
 
 
+def _days_ago(n):
+    return (datetime.date.today() - datetime.timedelta(days=n)).isoformat()
+
+
 # ── today_index: date arithmetic ─────────────────────────────────────────────
 
 def test_today_index_for_today():
@@ -281,3 +285,50 @@ def test_the_blended_description_promises_only_what_it_delivers():
     days = reading_plans.get_plan_days('blended_1_year')
     assert min(len(d) for d in days) < 4      # the promise cannot hold
     assert 'Four daily readings' not in desc
+
+
+# ── plan_anchor: which day is it, once ───────────────────────────────────────
+# One definition shared by the Today page and the plan panel. They disagreed:
+# a plan whose dates had run out read "Plan complete" over "2 of 30 days read".
+
+def test_anchor_inside_the_schedule_is_the_date_s_own_day(isolated_plans):
+    reading_plans.set_start_date('psalms_30_days',
+                                 _days_ago(4))
+    assert reading_plans.plan_anchor('psalms_30_days', _days_ago(4), 30) == (4, False)
+
+
+def test_anchor_inside_the_schedule_ignores_what_was_read(isolated_plans):
+    reading_plans.set_day_done('psalms_30_days', 0, True)
+    reading_plans.set_day_done('psalms_30_days', 4, True)
+    # The day is the day: a reader keeping up sees the date's reading whether
+    # or not it is already ticked.
+    assert reading_plans.plan_anchor('psalms_30_days', _days_ago(4), 30) == (4, False)
+
+
+def test_a_lapsed_schedule_offers_the_earliest_unread_day(isolated_plans):
+    for day in (0, 1):
+        reading_plans.set_day_done('psalms_30_days', day, True)
+    anchor, finished = reading_plans.plan_anchor(
+        'psalms_30_days', _days_ago(56), 30)
+    assert (anchor, finished) == (2, False)
+
+
+def test_a_lapsed_schedule_picks_up_at_the_gap(isolated_plans):
+    for day in (0, 1, 5, 6):
+        reading_plans.set_day_done('psalms_30_days', day, True)
+    assert reading_plans.plan_anchor('psalms_30_days', _days_ago(56), 30)[0] == 2
+
+
+def test_finished_means_read_not_expired(isolated_plans):
+    for day in range(30):
+        reading_plans.set_day_done('psalms_30_days', day, True)
+    assert reading_plans.plan_anchor('psalms_30_days', _days_ago(56), 30) == (29, True)
+
+
+def test_a_plan_not_yet_begun_anchors_on_its_first_day(isolated_plans):
+    future = (datetime.date.today() + datetime.timedelta(days=5)).isoformat()
+    assert reading_plans.plan_anchor('psalms_30_days', future, 30) == (0, False)
+
+
+def test_an_empty_plan_is_never_finished(isolated_plans):
+    assert reading_plans.plan_anchor('psalms_30_days', _days_ago(1), 0) == (0, False)

@@ -1851,10 +1851,16 @@ progressbar.reading-progress > trough > progress {
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    opacity: 0.55;
+    opacity: 0.52;
 }
-/* The church-year line: a second whisper under the date, half a step
-   louder (it carries meaning; the date is furniture). */
+/* The three tracked caps voices — date, designation, plan kicker — are one
+   size and one weight, and separate by OPACITY and by the space around them
+   alone. The kicker used to be 14px against their 12.5, so the head of the
+   page read as building up to it rather than as a quiet block of its own,
+   and the hero lost the only large voice above the fold.
+   The church-year line is the loudest of the three: it carries meaning,
+   where the date is furniture and the plan label is answered by the hero
+   directly beneath it. */
 .today-church {
     font-size: 12.5px;
     font-weight: 700;
@@ -1863,11 +1869,11 @@ progressbar.reading-progress > trough > progress {
     opacity: 0.68;
 }
 .today-kicker {
-    font-size: 14px;
+    font-size: 12.5px;
     font-weight: 700;
     letter-spacing: 0.10em;
     text-transform: uppercase;
-    opacity: 0.68;
+    opacity: 0.62;
 }
 /* The plan day in the serif hero voice (family set live from the pane). */
 .today-passage {
@@ -1876,9 +1882,13 @@ progressbar.reading-progress > trough > progress {
     line-height: 1.2;
     letter-spacing: -0.005em;
 }
+/* Set in the reading serif (family live from the pane) and italic: a phrase
+   about the reading belongs to the page's reading voice, not to its
+   furniture. */
 .today-whisper {
-    font-size: 13.5px;
-    opacity: 0.58;
+    font-size: 14px;
+    font-style: italic;
+    opacity: 0.55;
 }
 /* Primary action: "goes to the Bible" (two-accent law). Set live in the
    reading gold by today_page.set_appearance, which picks its cast from the
@@ -1893,13 +1903,14 @@ progressbar.reading-progress > trough > progress {
    longer line of the pair and full of proper nouns, so at the epigraph's
    weight it out-shouted the primary one and left the gold doing all the work
    of telling them apart. */
-/* Today's spoken devotional: one mark in the margin, not a card. The page is
-   type on paper and the design law puts the reading surface at depth 0 with
-   no boxes; a bounded panel was the only edged object on the whole surface.
-   The disc's fill and the ring's ink are paper-aware and set from
-   today_page.set_appearance — this page's ink is the pane's, not the theme's,
-   and a provider added to the card would never reach the button inside it. */
-button.today-listen-play {
+/* The two marks in the page's margins — the spoken devotional and the
+   journal door. Marks, not cards: the page is type on paper and the design
+   law puts the reading surface at depth 0 with no boxes; a bounded panel was
+   the only edged object on the whole surface. Their fill and the ring's ink
+   are paper-aware and set from today_page.set_appearance — this page's ink is
+   the pane's, not the theme's, and a provider added to the holder would never
+   reach the button inside it. */
+button.today-mark {
     min-width: 42px;
     min-height: 42px;
     padding: 0;
@@ -1913,18 +1924,66 @@ button.today-listen-play {
     font-size: 14px;
     opacity: 0.62;
 }
+/* The day's opening line, under the reference that names it. The reading
+   serif (family set live from the pane), one step below the epigraph's size
+   so that the page's Scripture and the page's footnote cannot be confused
+   for each other, and roman: these are the day's own words, not a citation. */
+/* line-height is a factor of the FONT's own line height in GTK4, not of the
+   em: measured on the reading serif, 1.0 already gives 1.37em, so the 1.55
+   this asked for was setting 2.12em and the foot of the page sprawled. 1.13
+   is the ~1.55em it meant. */
+.today-antiphon {
+    font-size: 20px;
+    line-height: 1.13;
+    opacity: 0.88;
+}
 /* The devotional foot line, set like a printed epigraph. */
 .today-epigraph-verse {
-    font-size: 19px;
+    font-size: 17.5px;
     font-style: italic;
-    line-height: 1.6;
+    line-height: 1.15;   /* ~1.58em — see .today-antiphon */
     opacity: 0.80;
+}
+/* A collect is prayed, not quoted — set roman, and without the quotation
+   marks set_epigraph already withholds from it. */
+.today-prayer {
+    font-style: normal;
 }
 .today-epigraph-src {
     font-size: 12px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     opacity: 0.58;
+}
+
+/* The page answers the width it is given (Adw.Breakpoints in today_page,
+   read off the PANE's allocation — on a split screen this surface is a
+   column, not a window). Only the hero moves: the caps voices are already
+   at the size a caps voice wants, and growing them would turn furniture
+   into hierarchy. */
+.today-narrow .today-passage {
+    font-size: 32px;
+}
+.today-wide .today-passage {
+    font-size: 54px;
+}
+/* At wide widths the date and the day's designation leave the column and
+   stand in the left margin as a Kalendar heading — the only place on this
+   page where a caps voice is set left and allowed to wrap, so the tracking
+   eases to 0.08em (at 0.12em a Spanish designation overran 176px). */
+.today-rail-date,
+.today-rail-church {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.today-rail-date {
+    opacity: 0.55;
+}
+.today-rail-church {
+    opacity: 0.68;
+    line-height: 1.45;
 }
 
 /* ── The listening pill ──────────────────────────────────────────────── */

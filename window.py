@@ -30,7 +30,7 @@ import passage_print
 from pane import (BiblePane, DROPCAP_GOLD_DARK, DROPCAP_GOLD_LIGHT,
                   auto_reading_ink, dropcap_color_hex)
 from present import PresentView
-from today_page import TodayView, fetch_epigraph
+from today_page import TodayView, fetch_antiphon, fetch_epigraph
 from module_manager import ModuleManagerWindow
 from search_panel import SearchPanel
 from annotations_window import AnnotationsWindow
@@ -2225,17 +2225,42 @@ class BibleWindow(Adw.ApplicationWindow):
         # line is the previous calendar's, and it must not stand under the new
         # day's name for however long the lookup takes.
         self._today_view.clear_epigraph()
+        self._today_view.clear_antiphon()
         self._sync_today_listen()
         tasks.submit(
             key=f'today-epigraph:{id(self)}',
             work=lambda _t: fetch_epigraph(collect_key),
             apply=self._on_today_epigraph,
             on_error=lambda _e: None)
+        # The day's opening line, read out of the reader's own Bible. After
+        # populate, which is what resolves which chapter today opens at.
+        #
+        # _first_bible_module, not pane 1's: a reader whose first pane holds a
+        # commentary or a confession would have had Abbott's note on John 1,
+        # or the front matter of the 1689, standing on the page as though it
+        # were Scripture.
+        bible = self._first_bible_module()
+        target = self._today_view.antiphon_target()
+        if bible and target:
+            book, chapter = target
+            tasks.submit(
+                key=f'today-antiphon:{id(self)}',
+                work=lambda _t: fetch_antiphon(bible, book, chapter),
+                apply=self._on_today_antiphon,
+                on_error=lambda _e: None)
 
     def _refresh_today_appearance(self):
         if self._today_view is not None:
             self._today_view.set_appearance(
                 self.pane1.reading_appearance(self._evening_now))
+
+    def _on_today_antiphon(self, text):
+        if self._today_view is None:
+            return
+        if text:
+            self._today_view.set_antiphon(text)
+        else:
+            self._today_view.clear_antiphon()
 
     def _on_today_epigraph(self, result):
         if self._today_view is None:
@@ -2410,22 +2435,39 @@ class BibleWindow(Adw.ApplicationWindow):
         if self._today_view is not None:
             self._populate_today()
 
-    def _dismiss_today(self):
+    def _dismiss_today(self, animate=True):
         """Slide the Today page away. Once per session — there is no way
-        back to it until the next launch."""
+        back to it until the next launch.
+
+        `animate=False` for a caller that is opening a sidebar over the same
+        area. Measured: the page slid away while the split view slid IN, so
+        it was re-laid out at a new width on every frame of the other
+        animation — 0.83s of frames lost on a 1366px window, which is what
+        made opening the menu feel stuck. Dismissed instantly the same toggle
+        loses nothing. Nobody watches a page leave while a panel arrives.
+        """
         if self._today_revealer is None:
             return
         revealer, self._today_revealer = self._today_revealer, None
+        if not animate:
+            revealer.set_transition_duration(0)
         self._today_view = None
         if self._today_dark_handler is not None:
             Adw.StyleManager.get_default().disconnect(self._today_dark_handler)
             self._today_dark_handler = None
         tasks.cancel(f'today-epigraph:{id(self)}')
+        tasks.cancel(f'today-antiphon:{id(self)}')
         self._stop_today_listen()
         # can_target off immediately so the sliding page never eats a click;
         # fully hidden (and out of the picking/AT tree) after the slide.
         revealer.set_can_target(False)
         revealer.set_reveal_child(False)
+        if not animate:
+            # Out of the layout at once. With no slide to wait for there is
+            # nothing to keep it mapped, and leaving it mapped means its whole
+            # tree is still measured through every frame of the sidebar's.
+            revealer.set_visible(False)
+            return
         GLib.timeout_add(
             motion.DURATION_STANDARD + 50,
             lambda: revealer.set_visible(False) or GLib.SOURCE_REMOVE)
@@ -4422,12 +4464,13 @@ class BibleWindow(Adw.ApplicationWindow):
         self._plan_total = total
         self._plan_completed = set(reading_plans.get_completed(plan_id))
         self._plan_today_idx = reading_plans.today_index(start_date)
-        # Clamp the hero day into range so a finished or not-yet-due plan
-        # still shows a real day.
-        self._plan_anchor = (max(0, min(self._plan_today_idx, total - 1))
-                             if total else 0)
-
-        finished = bool(total) and self._plan_today_idx >= total
+        # The hero day and whether the plan is over — the same call the Today
+        # page makes, so the two surfaces can never disagree again. They did:
+        # this panel showed "Plan complete" directly above its own
+        # "2 of 30 days read", because the calendar had run past the plan's
+        # length while 28 of its days were still unread.
+        self._plan_anchor, finished = reading_plans.plan_anchor(
+            plan_id, start_date, total)
         self._plan_today_eyebrow.set_text(
             _('Plan complete') if finished
             else _('Day {n} · Today').format(n=self._plan_anchor + 1))
@@ -4518,7 +4561,11 @@ class BibleWindow(Adw.ApplicationWindow):
             cell.add_css_class('plan-tile-overdue')  # a scheduled day went unread
         else:
             cell.add_css_class('plan-tile-ahead')
-        if idx == self._plan_today_idx:
+        if idx == self._plan_anchor:
+            # The ring follows the day the hero is OFFERING, which is the
+            # date's own day while the schedule holds and the earliest unread
+            # one once it has lapsed. Ringing the raw date index left no tile
+            # marked at all on a lapsed plan, while the hero named a day.
             cell.add_css_class('plan-tile-today')    # ring; composes with the fill
 
     def _refresh_plan_dots(self):

@@ -123,7 +123,7 @@ def _reading_mgr():
         _menu_split=_Reveal(), _search_split=_Reveal(),
         _jump_revealer=_Reveal(), _crossref_revealer=_Reveal(),
         _exit_reading_revealer=_Reveal(), _present_mode=False,
-        _dismiss_today=lambda: calls.append('dismiss_today'),
+        _dismiss_today=lambda animate=True: calls.append('dismiss_today'),
         _toast=lambda msg: calls.append(('toast', msg)),
         _present_update_controls=lambda y: calls.append(('present_ctrl', y)),
         _set_present_mode=lambda on: calls.append(('present_mode', on)))

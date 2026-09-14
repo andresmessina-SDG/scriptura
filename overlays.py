@@ -221,7 +221,10 @@ class OverlayManager:
     def _toggle_menu(self, _btn):
         open_ = not self._menu_split.get_show_sidebar()
         if open_:
-            self._dismiss_today()
+            # Not animated: this sidebar's own slide changes the width the
+            # Today page is laid out at, and the two animations together cost
+            # most of a second of dropped frames (see _dismiss_today).
+            self._dismiss_today(animate=False)
             self._ensure_menu_panel()
             self._close_other_overlays(keep='menu')
             self._refresh_plan_ui()
@@ -233,7 +236,7 @@ class OverlayManager:
         if self._search_split.get_show_sidebar():
             self._search_split.set_show_sidebar(False)
         else:
-            self._dismiss_today()
+            self._dismiss_today(animate=False)   # as in _toggle_menu
             self._close_other_overlays(keep='search')
             # Default to pane1's module — but fall back to a Bible-text module
             # if pane1 is showing a devotional (search doesn't work on devotionals).
@@ -287,7 +290,10 @@ class OverlayManager:
         Presentation mode reuses this chrome-hiding primitive but supplies its
         own messaging, so it calls with ``toast=False``."""
         if on:
-            self._dismiss_today()   # entering a mode is "an action" too
+            # Not animated, as in _toggle_menu: this hides the header and
+            # the toolbars, so the page would slide away while the area it
+            # sits in is still resizing under it.
+            self._dismiss_today(animate=False)
         self._reading_mode = bool(on)
         self._header.set_visible(not on)
         self.pane1._toolbar.set_visible(not on)

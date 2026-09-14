@@ -7760,6 +7760,14 @@ msgstr "Выбрать план чтения →"
 msgid "Choose a reading plan"
 msgstr "Выбрать план чтения"
 
+#: today_page.py
+msgid "Choose another reading plan →"
+msgstr "Выбрать другой план чтения →"
+
+#: today_page.py
+msgid "Choose another reading plan"
+msgstr "Выбрать другой план чтения"
+
 #: today_page.py:460
 #, python-brace-format
 msgid "Or continue where you left off — {ref}"
