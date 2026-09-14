@@ -359,6 +359,12 @@ class BibleWindow(Adw.ApplicationWindow):
         # the two pane headers read as one calm band (Apple-Books style).
         header.add_css_class('flat')
         self._header = header
+        # Its own provider, for the Today dress below. Above the app's own
+        # sheet, which sets .scriptura-header at APPLICATION priority.
+        self._header_css = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(), self._header_css,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
         toolbar_view.add_top_bar(header)
 
         # ── Left: burger + back/forward + navigation ──────────────────────────
@@ -2251,8 +2257,63 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _refresh_today_appearance(self):
         if self._today_view is not None:
-            self._today_view.set_appearance(
-                self.pane1.reading_appearance(self._evening_now))
+            appearance = self.pane1.reading_appearance(self._evening_now)
+            self._today_view.set_appearance(appearance)
+            self._dress_header_for_today(appearance['ink'])
+
+    # ── The header while the Today page is up ────────────────────────────
+
+    def _dress_header_for_today(self, ink):
+        """Give the page the top edge, and leave the header its controls.
+
+        The header is `.flat`, so it wears @window_bg_color — the DESKTOP's
+        colour — while the paper is the READER's. The two are set
+        independently and cannot be made to agree: measured across the seven
+        papers the seam runs dE 0.6 (White, the only one that matches) to
+        15.7 (Green) against its own-theme header, and dE 79-98 whenever the
+        desktop theme does not follow the paper, which nothing makes it do.
+
+        The reading view never shows this, because there the paper is painted
+        on textview.bible-view — a column inside a @window_bg_color shell,
+        which is what the header matches. Today paints edge to edge in its
+        own do_snapshot, so its paper meets the chrome directly. Today did
+        not cause the seam; it is the only surface that exposes it.
+
+        So there is no second colour to reconcile: the content is extended to
+        the top edge and the header keeps nothing but its controls, struck in
+        the page's own ink the way the margin marks are. The page also gets
+        the header's height back — its tailpiece was being cut off.
+        """
+        self._toolbar_view.set_extend_content_to_top_edge(True)
+        self._header.add_css_class('today-chrome')
+        # The passage button is the window's title, and over this page it
+        # repeated one: "Psalms 146" sat centred above the page's own
+        # "Psalms 11-15" hero, two titles competing for the same glance.
+        self._ref_btn.set_visible(False)
+        # Only the ink is dynamic; everything structural is in style.css
+        # under .today-chrome, where the class-coverage test can see it.
+        self._header_css.load_from_data(f"""
+            headerbar.today-chrome,
+            headerbar.today-chrome > windowhandle,
+            headerbar.today-chrome button,
+            headerbar.today-chrome windowcontrols > button {{
+                color: {ink};
+            }}
+        """.encode())
+
+    def _undress_header(self):
+        """Put the chrome back. Called at the START of the dismissal, not at
+        the end of it: while the content is extended the reading panes
+        underneath are allocated with their first 46px behind the header, and
+        restoring that after the slide would drop the text down a header's
+        height in full view. Restoring it as the page begins to leave hides
+        the one re-allocation under the page that is going anyway."""
+        if not self._header.has_css_class('today-chrome'):
+            return
+        self._toolbar_view.set_extend_content_to_top_edge(False)
+        self._header.remove_css_class('today-chrome')
+        self._ref_btn.set_visible(True)
+        self._header_css.load_from_data(b'')
 
     def _on_today_antiphon(self, text):
         if self._today_view is None:
@@ -2448,6 +2509,7 @@ class BibleWindow(Adw.ApplicationWindow):
         """
         if self._today_revealer is None:
             return
+        self._undress_header()
         revealer, self._today_revealer = self._today_revealer, None
         if not animate:
             revealer.set_transition_duration(0)

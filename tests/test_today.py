@@ -1,5 +1,6 @@
 """Unit tests for the Today page's pure helpers (whisper + epigraph)."""
 import os
+from pathlib import Path
 
 import pytest
 
@@ -453,6 +454,90 @@ class TestTheGround:
         for w in range(200, 260):
             scribal_field.sheet(w, 100, *self.DARK)
         assert len(scribal_field._cache) <= 4
+
+
+class TestTheHeaderOverToday:
+    """The chrome gets out of the page's way, and comes back."""
+
+    @pytest.fixture
+    def stand(self, display):
+        """Everything BibleWindow's two dress methods touch, and no more —
+        the real methods are called against this, so what is under test is
+        the shipped rule set and not a copy of it."""
+        from gi.repository import Adw, Gdk, Gtk
+
+        class Stand:
+            pass
+
+        s = Stand()
+        s._toolbar_view = Adw.ToolbarView()
+        s._header = Adw.HeaderBar()
+        s._header.add_css_class('scriptura-header')
+        s._ref_btn = Gtk.MenuButton()
+        s._header.set_title_widget(s._ref_btn)
+        s._toolbar_view.add_top_bar(s._header)
+        s._header_css = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(), s._header_css,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
+        return s
+
+    def test_the_page_is_given_the_top_edge(self, stand):
+        import window
+        window.BibleWindow._dress_header_for_today(stand, '#d8d2c7')
+        assert stand._toolbar_view.get_extend_content_to_top_edge()
+        assert stand._header.has_css_class('today-chrome')
+
+    def test_the_header_stops_repeating_the_page_s_title(self, stand):
+        # "Psalms 146" sat centred above the page's own "Psalms 11-15".
+        import window
+        window.BibleWindow._dress_header_for_today(stand, '#d8d2c7')
+        assert not stand._ref_btn.get_visible()
+
+    def test_the_chrome_comes_back_whole(self, stand):
+        import window
+        window.BibleWindow._dress_header_for_today(stand, '#d8d2c7')
+        window.BibleWindow._undress_header(stand)
+        assert not stand._toolbar_view.get_extend_content_to_top_edge()
+        assert not stand._header.has_css_class('today-chrome')
+        assert stand._ref_btn.get_visible()
+
+    def test_undressing_twice_is_harmless(self, stand):
+        # _dismiss_today can be reached by more than one route.
+        import window
+        window.BibleWindow._dress_header_for_today(stand, '#d8d2c7')
+        window.BibleWindow._undress_header(stand)
+        window.BibleWindow._undress_header(stand)
+        assert stand._ref_btn.get_visible()
+
+    def test_undressing_a_header_that_was_never_dressed_does_nothing(self, stand):
+        import window
+        stand._ref_btn.set_visible(False)     # hidden by something else
+        window.BibleWindow._undress_header(stand)
+        assert not stand._ref_btn.get_visible()
+
+    def test_the_controls_are_struck_in_the_page_s_ink(self, stand):
+        import window
+        window.BibleWindow._dress_header_for_today(stand, '#3a2f22')
+        # to_string() normalises: #3a2f22 comes back as rgb(58,47,34) and
+        # `transparent` as rgba(0,0,0,0).
+        css = stand._header_css.to_string()
+        assert 'rgb(58,47,34)' in css
+        assert 'windowcontrols > button' in css
+
+    def test_the_bar_itself_stops_painting(self):
+        """The structural half lives in style.css, not in a built string.
+
+        The painting node is headerbar > windowhandle, not the widget the
+        class sits on, and the control chip is on the button's IMAGE, not the
+        button — Adwaita paints `windowcontrols > button > image`. Targeting
+        only the obvious node left the bar and three grey blobs still on the
+        paper, twice.
+        """
+        css = (Path(__file__).resolve().parents[1]
+               / 'data' / 'style.css').read_text()
+        assert 'headerbar.today-chrome > windowhandle' in css
+        assert 'headerbar.today-chrome windowcontrols > button > image' in css
 
 
 class TestTheFinishedPlan:

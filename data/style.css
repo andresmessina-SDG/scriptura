@@ -470,6 +470,51 @@ separator.journal-divider { background-color: alpha(@borders, 0.3); }
     border-bottom-color: alpha(@borders, 0.45);
 }
 
+/* The header while the Today page is up. That page paints its paper edge to
+ * edge, and the header is `.flat`, so it wears @window_bg_color — the
+ * DESKTOP's colour against the READER's paper. Measured across the seven
+ * papers the seam runs dE 0.6 (White, the only one that ever matches) to
+ * 15.7 (Green), and dE 79-98 whenever the desktop theme does not follow the
+ * paper. The reading view never shows it, because there the paper is painted
+ * on textview.bible-view, a column inside a @window_bg_color shell.
+ *
+ * So the bar stops painting and the content is extended to the top edge
+ * (Adw.ToolbarView.extend-content-to-top-edge); only the controls remain,
+ * and window.py's own provider strikes those in the page's ink. Everything
+ * that does NOT depend on the ink lives here rather than in a built string.
+ *
+ * The painting node is headerbar > windowhandle, not the widget the class
+ * sits on — transparency has to reach both. */
+headerbar.today-chrome,
+headerbar.today-chrome > windowhandle {
+    background: none;
+    background-color: transparent;
+    box-shadow: none;
+    border-bottom-color: transparent;
+}
+
+/* The minimise/maximise/close chips are painted on the button's IMAGE, not
+ * on the button: `windowcontrols > button > image` at `currentColor 10%` in
+ * the shipped Adwaita sheet (extracted with gresource, the way the
+ * focus-ring claim was settled). Targeting the button alone left three grey
+ * blobs sitting on the paper. Undressed they are glyphs on the page, like
+ * its own margin marks; the chip returns under the pointer so the control
+ * still answers. */
+headerbar.today-chrome windowcontrols > button > image {
+    background-color: transparent;
+    opacity: 0.55;
+}
+
+headerbar.today-chrome windowcontrols > button:hover > image {
+    background-color: alpha(currentColor, 0.15);
+    opacity: 1;
+}
+
+headerbar.today-chrome windowcontrols > button:active > image {
+    background-color: alpha(currentColor, 0.3);
+    opacity: 1;
+}
+
 button.header-action,
 menubutton.header-action > button {
     min-width: 34px;
