@@ -622,8 +622,16 @@ class TodayView(Gtk.Box):
         colour quads.
         """
         w, h = self.get_width(), self.get_height()
-        if w > 0 and h > 0:
-            self._snapshot_paper(snapshot, w, h)
+        try:
+            if w > 0 and h > 0:
+                self._snapshot_paper(snapshot, w, h)
+        except Exception:
+            # The ground is decoration and the page is not. When the sheet
+            # raised here the exception left do_snapshot before the line
+            # below, so the whole page painted NOTHING — a widget briefly
+            # reporting a size cairo will not take cost the reader the words.
+            # Nothing under here is ever worth that, so it is caught whole.
+            pass
         Gtk.Box.do_snapshot(self, snapshot)
 
     def _ink_rgb(self):
@@ -655,8 +663,8 @@ class TodayView(Gtk.Box):
         # and blitted after. Drawing it costs ~43ms at 1366x733 and the page
         # repaints on every frame of an animation — the menu sliding in
         # while this page slides away — so it can never be drawn per frame.
-        sheet = scribal_field.sheet(int(w), int(h), self._paper_rgb(),
-                                    self._ink_rgb())
+        sheet = scribal_field.sheet(int(w), int(h), self.get_scale_factor(),
+                                    self._paper_rgb(), self._ink_rgb())
         if sheet is not None:
             snapshot.append_texture(sheet, Graphene.Rect().init(0, 0, w, h))
 

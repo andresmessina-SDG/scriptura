@@ -444,16 +444,59 @@ class TestTheGround:
         # It costs ~43ms to draw and the page repaints on every frame of an
         # animation, so a second ask for the same page must not redraw it.
         scribal_field.forget()
-        first = scribal_field.sheet(300, 200, *self.DARK)
+        first = scribal_field.sheet(300, 200, 1, *self.DARK)
         assert first is not None
-        assert scribal_field.sheet(300, 200, *self.DARK) is first
-        assert scribal_field.sheet(300, 200, *self.LIGHT) is not first
+        assert scribal_field.sheet(300, 200, 1, *self.DARK) is first
+        assert scribal_field.sheet(300, 200, 1, *self.LIGHT) is not first
 
     def test_a_resized_window_cannot_grow_the_cache_without_bound(self):
         scribal_field.forget()
         for w in range(200, 260):
-            scribal_field.sheet(w, 100, *self.DARK)
+            scribal_field.sheet(w, 100, 1, *self.DARK)
         assert len(scribal_field._cache) <= 4
+
+    @pytest.mark.parametrize('w,h', [(0, 200), (300, 0), (-1, 200), (300, -1),
+                                     (40000, 200), (300, 40000),
+                                     (20000, 20000)])
+    def test_a_size_cairo_will_not_take_yields_no_sheet(self, w, h):
+        # A widget reports a size outside this while it is being allocated,
+        # and cairo raises CAIRO_STATUS_INVALID_SIZE past 32767 a side. The
+        # ground is the one thing on the page that may simply not be drawn.
+        scribal_field.forget()
+        assert scribal_field.sheet(w, h, 1, *self.DARK) is None
+
+    def test_the_scale_factor_can_push_a_fine_size_over_the_edge(self):
+        scribal_field.forget()
+        assert scribal_field.sheet(4000, 3000, 1, *self.DARK) is not None
+        assert scribal_field.sheet(4000, 3000, 3, *self.DARK) is None
+
+    def test_the_sheet_is_struck_at_the_device_resolution(self):
+        # Drawn at the logical size it would be a small texture stretched
+        # over a HiDPI screen, and the letters would blur.
+        scribal_field.forget()
+        one = scribal_field.sheet(200, 100, 1, *self.DARK)
+        two = scribal_field.sheet(200, 100, 2, *self.DARK)
+        assert (one.get_width(), one.get_height()) == (200, 100)
+        assert (two.get_width(), two.get_height()) == (400, 200)
+
+    def test_the_ground_is_never_worth_the_page(self, view, monkeypatch):
+        # When the sheet raised, the exception left do_snapshot before the
+        # box's own children were drawn, so the page painted NOTHING.
+        from gi.repository import Gtk
+        def boom(*_a, **_k):
+            raise RuntimeError('no sheet today')
+        monkeypatch.setattr(scribal_field, 'sheet', boom)
+        view.set_appearance({'surface': '#1e1e1e', 'ink': '#d8d2c7',
+                             'family': 'serif', 'bold': False,
+                             'font_size': 19})
+        win = Gtk.Window()
+        win.set_default_size(800, 600)
+        win.set_child(view)
+        _settle()
+        snapshot = Gtk.Snapshot()
+        view.do_snapshot(snapshot)      # must not raise
+        win.set_child(None)
+        win.destroy()
 
 
 class TestTheHeaderOverToday:

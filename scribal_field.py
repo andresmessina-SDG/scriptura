@@ -349,19 +349,44 @@ def draw_abecedary(cr, w: float, h: float,
 # repaint is one texture and the drawing never runs during an animation.
 _cache: dict[tuple, Gdk.Texture] = {}
 
+# cairo's own ceiling is 32767 a side; the pixel budget is the far tighter
+# limit in practice, since the sheet is drawn stroke by stroke and held whole
+# in memory. 24 megapixels covers a 5K window at scale 1 and a 4K one at 2.
+_MAX_SIDE = 32767
+_MAX_PIXELS = 24_000_000
 
-def sheet(width: int, height: int, paper: tuple[float, float, float],
+
+def sheet(width: int, height: int, scale: int,
+          paper: tuple[float, float, float],
           ink: tuple[float, float, float]) -> 'Gdk.Texture | None':
-    """The whole ground as one texture, cached."""
-    if width <= 0 or height <= 0:
+    """The whole ground as one texture, cached. None when there is no sheet
+    to draw — the page then paints without it, which is the right answer for
+    a background and the only safe one inside do_snapshot.
+
+    `width` and `height` are the widget's own logical size; `scale` is its
+    scale factor, and the sheet is struck at the device resolution so the
+    letters are not a logical-size texture stretched over a HiDPI screen.
+    """
+    dev_w, dev_h = int(width * scale), int(height * scale)
+    # cairo image surfaces stop at 32767 a side, and the whole sheet has to
+    # fit in memory besides. A widget briefly reports a size outside this
+    # while it is being allocated, and raising there kills the page's paint:
+    # the ground is the one thing on the page that may simply not be drawn.
+    if (width <= 0 or height <= 0
+            or not 0 < dev_w <= _MAX_SIDE or not 0 < dev_h <= _MAX_SIDE
+            or dev_w * dev_h > _MAX_PIXELS):
         return None
-    key = (width, height,
+    key = (dev_w, dev_h,
            tuple(round(c, 4) for c in paper), tuple(round(c, 4) for c in ink))
     hit = _cache.get(key)
     if hit is not None:
         return hit
-    surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
+    try:
+        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, dev_w, dev_h)
+    except (cairo.Error, MemoryError):     # pragma: no cover - belt and brace
+        return None
     cr = cairo.Context(surface)
+    cr.scale(scale, scale)
     draw_parchment(cr, width, height, ink,
                    alpha_for(paper, ink, WEIGHT_GROUND) * 0.58)
     draw_abecedary(cr, width, height, ink, alpha_for(paper, ink))
@@ -369,7 +394,7 @@ def sheet(width: int, height: int, paper: tuple[float, float, float],
     # Straight from the cairo buffer: a GdkPixbuf round trip would copy the
     # sheet twice and unpremultiply it on the way through for nothing.
     texture = Gdk.MemoryTexture.new(
-        width, height, Gdk.MemoryFormat.B8G8R8A8_PREMULTIPLIED,
+        dev_w, dev_h, Gdk.MemoryFormat.B8G8R8A8_PREMULTIPLIED,
         GLib.Bytes.new(bytes(surface.get_data())), surface.get_stride())
     # One sheet in hand and one on the way out: a window being resized would
     # otherwise grow the cache without bound.
