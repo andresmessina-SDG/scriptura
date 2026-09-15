@@ -9433,7 +9433,7 @@ msgstr "Написать о сегодняшнем дне"
 
 #: window.py
 msgid "Write an entry"
-msgstr "Написать запись"
+msgstr "Новая запись в дневнике"
 
 #: window.py
 msgid "Annotations and journal"
