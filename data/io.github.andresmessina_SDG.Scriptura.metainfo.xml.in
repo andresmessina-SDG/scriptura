@@ -138,6 +138,32 @@
   </content_rating>
 
   <releases>
+    <release version="1.7.0" date="2026-09-14">
+      <!-- English only, by his call, as 1.6.1 and 1.6.2 shipped:
+           its:translate="no" is what keeps xgettext out of them and both
+           catalogues at 100%. -->
+      <description its:translate="no">
+        <p>A place to write: a journal, sermon manuscripts, and a Today page you would want to open.</p>
+        <ul>
+          <li>A journal. An entry is a page where a note is a margin: it has a title, a date it is about rather than the day it was typed, and none, one or several passages. Entries about no passage at all — a sermon, a conversation, a season — are perfectly legal. An entry's passages can be changed after it is written, so one that began about nothing can be filed later.</li>
+          <li>Sermons. A manuscript is a third kind of writing, with a page of its own: a text, a series and its part, the occasion, and the places it has been preached. The open sermon can be exported or printed on its own, headed by its own title rather than by the page it is filed on — the sheet a preacher carries into the pulpit is not the archive it lives in.</li>
+          <li>The manuscript can ask what you already have. From your study gathers your own notes, your highlights and your entries on the passage you are writing about, and verses, cross-references and lexicon entries can be collected into it as you read.</li>
+          <li>The Annotations window now has pages — Annotations, Journal and Sermons — each with its own name, search, filter and empty state. Your marks and your writing are different things to be looking for.</li>
+          <li>The list folds away and the window can be given over to writing, and a formatting row carries bold, italic, heading, quotation and list. Enter carries a list on to the next line. Numbered lists number themselves, and there is a word count.</li>
+          <li>The passage actions are no longer behind a right-click only. Export, the verse card, printing and Compare translations lived in the verse menu and nowhere else, so a reader who never right-clicked could not print a passage at all. The pane toolbar now carries a ⋮, and Ctrl+P, Ctrl+E and Ctrl+Shift+C print, export and compare directly.</li>
+          <li>The Today page opens with Scripture. It had none on it — the day's reading was named and offered, but not a word of it shown. The first verse of the day's first appointed chapter now stands under the reference.</li>
+          <li>The Today page is written on. Its surface was laid paper, which is the stock of a printed Bible and nothing older. It is now prepared skin, with the alphabet written down both margins the way a scribe practised it: the twenty-two Hebrew letters in order, every fourth line in Greek, with the older Paleo-Hebrew and Aramaic hands surfacing inside it, roughly in the proportion the canon itself is written in. The whole ground is struck in your own ink, so it follows your paper.</li>
+          <li>The header steps aside on that page. A header bar wears the desktop's colour and the page wears yours, and only one of the seven papers ever matched. The page now runs to the top edge and the bar stops painting, leaving only its controls.</li>
+          <li>Search finds your own words, answering with Your notes beside the Scripture results, and a day you wrote about carries a dot on the reading plan's calendar. Tags are one vocabulary across marks and entries together, and both editors offer the tags you already use.</li>
+          <li>Entries can be imported from Markdown or text, and export and print carry the text of the passage with them, with attribution.</li>
+          <li>The right-click menu is grouped and half the height, says which verse it is about over the middle of it, and a submenu opens at its own height instead of the parent's.</li>
+          <li>Double-clicking a word said “No entry” with dictionaries installed. The dictionary peek had been dead since 1.6.2 — every lookup raised on its first line, and a failed background task is reported the way an empty one is, so it looked like a dictionary with nothing to say rather than a broken one.</li>
+          <li>A reading plan could say it was finished while the panel underneath disagreed: a thirty-day plan begun ten weeks ago reported “Plan complete” while the plan panel said two of thirty days read. Both surfaces had let the calendar decide.</li>
+          <li>Opening the menu over the Today page felt stuck — the page slid away while the sidebar slid in, so it was re-laid out on every frame of the other animation, losing most of a second of frames.</li>
+          <li>A module's centred headings were read as ordinary prose: an h tag carrying any attribute at all was not recognised, so Concord's title page sat in the body copy. A space could open after a quotation mark in some translations. Leading was corrected across Scripture in Stone, the catena, the genealogy pages and the projected presentation text, which were all set looser than intended. Notes and tags save themselves, and study-data backups are now version 3.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.6.2" date="2026-09-10">
       <!-- English only, by his call, as 1.6.1 shipped: its:translate="no"
            is what keeps xgettext out of them and both catalogues at 100%. -->

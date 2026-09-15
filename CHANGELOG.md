@@ -4,7 +4,7 @@ All notable changes to Scriptura. Format roughly follows
 [Keep a Changelog](https://keepachangelog.com/). Versioning is
 semver-ish — 0.x was the pre-Flathub testing track.
 
-## [Unreleased]
+## [1.7.0] — 2026-09-14
 
 ### Added
 
@@ -296,6 +296,14 @@ semver-ish — 0.x was the pre-Flathub testing track.
   opening mark outside the tagged word, which left "say to me: " Flee like a
   bird". French guillemets are untouched — they are set with a space by
   design.
+
+- **A module's centred headings were read as ordinary prose.** Concord
+  centres its title page, and both the pattern that draws inline headings and
+  the one that detects them matched only a bare `<h1>`–`<h6>` — an `h` tag
+  carrying any attribute at all was not recognised. The tag was stripped and
+  the text left behind, so "CONCORDIA" and eight more on that one page sat in
+  the body copy, and the headings toggle rebuilt nothing because it could see
+  no title to rebuild.
 
 - **Double-clicking a word said "No entry" with dictionaries installed.** The
   dictionary peek has been dead since 1.6.2 — every lookup raised inside the
