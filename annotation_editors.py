@@ -2132,7 +2132,23 @@ class SermonEditor(_ProseEditor):
         now = self._series_value()
         self._group_at_focus = now
         if now != was and not self._loading and self.row is not None:
+            # After the focus change, never inside it. Leaving this field is
+            # usually a click landing somewhere else — often in the body —
+            # and _on_regroup rebuilds the list, which re-populates the body
+            # buffer. Rewriting that buffer while GTK is still dispatching
+            # the click leaves the TextView's own gesture holding iters into
+            # text that is no longer there: two real_set_mark criticals and
+            # a segfault in the btree. An idle runs once the event is done.
+            if getattr(self, '_regroup_id', None) is None:
+                self._regroup_id = GLib.idle_add(self._regroup_now)
+
+    def _regroup_now(self):
+        self._regroup_id = None
+        # The window can be shut between the field being left and this
+        # running; there is no list left to regroup then.
+        if self.get_root() is not None:
             self._on_regroup()
+        return GLib.SOURCE_REMOVE
 
     def populate(self, entry):
         super().populate(entry)
