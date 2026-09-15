@@ -4,6 +4,32 @@ All notable changes to Scriptura. Format roughly follows
 [Keep a Changelog](https://keepachangelog.com/). Versioning is
 semver-ish — 0.x was the pre-Flathub testing track.
 
+## [1.7.1] — 2026-09-15
+
+### Fixed
+
+- **Giving a sermon manuscript a series could close the app.** With a
+  manuscript open on the Sermons page, typing a series name or a part and
+  then clicking into the text lost the whole window — and, because the
+  autosave had already run, it came back with the words but without the
+  series. Leaving those two fields re-sorted the list while the click that
+  moved the keyboard was still being handled, which pulled the manuscript
+  out from under the text you were clicking into. The re-sort now waits
+  until the click is finished.
+- **Typing in a long manuscript no longer slows down as it grows.** Every
+  keystroke re-read the whole text to decide what was bold, quoted or a
+  heading — fine for a journal entry, but a sermon of several thousand
+  words was spending over half of each frame on it before a single letter
+  appeared. Only the lines you are actually editing are re-read now, and
+  what is on the page is identical.
+
+### Changed
+
+- **Russian: the verse menu's *Write an entry* is now «Новая запись в
+  дневнике».** It had read as an offer to add a bookmark — which is a
+  different feature — and the alternatives suggested each named something
+  else already in that same menu.
+
 ## [1.7.0] — 2026-09-14
 
 ### Added

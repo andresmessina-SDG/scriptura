@@ -665,3 +665,76 @@ def test_bold_ignores_the_space_a_drag_took_with_it(isolated, display):
                                in journal_markup.spans(_text(ed))}
     finally:
         win.destroy()
+
+
+# ── The restyle is local, and must still be exact ────────────────────────────
+#
+# Every span the subset knows is decided inside one line, so an edit can only
+# change the styling of the lines it touched and `_restyle_body` re-reads only
+# those. That is worth a great deal on a sermon manuscript — the whole-body
+# pass cost 9.3ms of every keystroke at 8,000 words — but it is only safe
+# while it tags *identically* to reading the whole body.
+
+_TAGS = ('md-strong', 'md-emphasis', 'md-heading', 'md-quote', 'md-bullet',
+         'md-marker')
+
+
+def _merge(spans):
+    """Adjacent ranges of one tag are a single run once applied to a buffer.
+
+    `**` yields two abutting `md-marker` spans; GTK stores them as one. Both
+    sides of the comparison have to say so or they never agree.
+    """
+    out = []
+    for a, b, name in sorted(spans, key=lambda t: (t[2], t[0], t[1])):
+        if out and out[-1][2] == name and out[-1][1] == a:
+            out[-1] = (out[-1][0], b, name)
+        else:
+            out.append((a, b, name))
+    return sorted(out)
+
+
+def _tags_on(buf):
+    """The spans actually carried by the buffer, read back off the tags."""
+    out, table = [], buf.get_tag_table()
+    for name in _TAGS:
+        tag = table.lookup(name)
+        it = buf.get_start_iter()
+        open_at = [0] if it.starts_tag(tag) else []
+        while it.forward_to_tag_toggle(tag):
+            if it.starts_tag(tag):
+                open_at.append(it.get_offset())
+            else:
+                out.append((open_at.pop(), it.get_offset(), name))
+    return _merge(out)
+
+
+def test_editing_tags_exactly_as_a_whole_body_pass_would(isolated, display):
+    """Edit all over a body and the tags must match a full re-read every time.
+
+    Insertions, deletions that swallow a line break, and an edit far from the
+    caret's last position — the three ways a local pass could leave a stale
+    tag behind.
+    """
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '# Title\n\nSome **bold** and *italic*.\n> quoted\n- one\n')
+        buf = ed.body.get_buffer()
+        edits = [
+            (0, '*'), (3, '**x** '), (30, '\n> new quote\n'),
+            (1, ''), (12, '1. numbered\n'), (5, '\n\n'),
+        ]
+        for offset, text in edits:
+            at = min(offset, buf.get_char_count())
+            buf.insert(buf.get_iter_at_offset(at), text)
+            assert _tags_on(buf) == _merge(journal_markup.spans(_text(ed))), (
+                f'stale tags after inserting {text!r} at {at}')
+        for a, b in ((4, 18), (0, 3), (9, 25)):
+            a = min(a, buf.get_char_count())
+            b = min(b, buf.get_char_count())
+            buf.delete(buf.get_iter_at_offset(a), buf.get_iter_at_offset(b))
+            assert _tags_on(buf) == _merge(journal_markup.spans(_text(ed))), (
+                f'stale tags after deleting {a}..{b}')
+    finally:
+        win.destroy()

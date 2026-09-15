@@ -138,6 +138,19 @@
   </content_rating>
 
   <releases>
+    <release version="1.7.1" date="2026-09-15">
+      <!-- English only, by his call, as 1.6.1 and 1.6.2 shipped:
+           its:translate="no" is what keeps xgettext out of them and both
+           catalogues at 100%. -->
+      <description its:translate="no">
+        <p>Fixes for writing a sermon manuscript.</p>
+        <ul>
+          <li>Giving a manuscript a series could close the app. Typing a series name or a part and then clicking into the text lost the window, and it came back with the words but without the series.</li>
+          <li>Typing in a long manuscript no longer slows down as it grows. Only the lines being edited are restyled, instead of the whole text on every keystroke.</li>
+          <li>Russian: the verse menu's entry action had read as an offer to add a bookmark, which is a different feature.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.7.0" date="2026-09-14">
       <!-- English only, by his call, as 1.6.1 and 1.6.2 shipped:
            its:translate="no" is what keeps xgettext out of them and both

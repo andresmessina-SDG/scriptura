@@ -214,6 +214,38 @@ def test_an_unnumbered_sermon_sits_after_the_numbered_ones(isolated, display):
         win.destroy()
 
 
+def test_leaving_the_series_field_regroups_after_the_click_not_inside_it(
+        isolated, display):
+    """The regroup must happen once the event is over, never during it.
+
+    Leaving the series entry is usually a click landing somewhere else --
+    most often in the body -- and the regroup rebuilds the list, which
+    re-populates the body buffer. Run inside GTK's dispatch of that click it
+    left the TextView's own gesture holding iters into text that was no
+    longer there: two `real_set_mark` criticals and a segfault in the btree.
+    """
+    from gi.repository import GLib
+    win = _open_sermons()
+    try:
+        win.start_sermon()
+        editor = win._sermon_editor
+        editor.series.set_text('Parables of the Kingdom')
+        assert _headings(win) == ['No series']
+
+        editor._regroup_if_moved()          # what leaving the field does
+        assert _headings(win) == ['No series'], (
+            'the list was rebuilt inside the focus change')
+
+        ctx = GLib.MainContext.default()
+        for _ in range(50):
+            if _headings(win) != ['No series']:
+                break
+            ctx.iteration(False)
+        assert _headings(win) == ['Parables of the Kingdom']
+    finally:
+        win.destroy()
+
+
 def test_the_series_headings_are_not_drawn_when_sorting_by_date(isolated,
                                                                display):
     """Out of series order a heading would appear and reappear down the
