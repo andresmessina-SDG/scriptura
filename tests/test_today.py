@@ -499,6 +499,82 @@ class TestTheGround:
         win.destroy()
 
 
+class TestTheGroundWhileThePageMoves:
+    """A sheet costs ~43ms; the page's size changes every frame of a drag."""
+
+    def _view(self, display):
+        v = today_page.TodayView(lambda *a: None, lambda *a: None,
+                                 lambda *a: None, on_listen=lambda: None,
+                                 on_write=lambda: None)
+        v.set_appearance({'surface': '#1e1e1e', 'ink': '#d8d2c7',
+                          'family': 'serif', 'bold': False, 'font_size': 19})
+        return v
+
+    def test_a_size_change_reuses_the_last_sheet_instead_of_redrawing(
+            self, display, monkeypatch):
+        # Measured before the fix: a twenty-step drag drew twenty sheets,
+        # 0.511s of cairo. A cache keyed on size cannot help — every frame
+        # is a new key.
+        v = self._view(display)
+        ink, paper = (0.847, 0.824, 0.780), (0.118, 0.118, 0.118)
+        v._sheet = scribal_field.sheet(800, 600, 1, paper, ink)
+        v._sheet_for = (800, 600, 1, '#1e1e1e', '#d8d2c7')
+        struck = []
+        real = scribal_field.sheet
+        monkeypatch.setattr(scribal_field, 'sheet',
+                            lambda *a: struck.append(a[:3]) or real(*a))
+        armed = []
+        monkeypatch.setattr(v, '_arm_sheet', lambda: armed.append(1))
+        monkeypatch.setattr(v, 'get_width', lambda: 780)
+        monkeypatch.setattr(v, 'get_height', lambda: 600)
+        from gi.repository import Gtk
+        v._snapshot_paper(Gtk.Snapshot(), 780, 600)
+        assert struck == [], 'a moving page must not redraw its ground'
+        assert armed == [1], 'it must arm the settle instead'
+
+    def test_the_first_sheet_is_struck_at_once(self, display, monkeypatch):
+        # Nothing to stretch yet: the page would open with no ground and
+        # pop one in 120ms later.
+        v = self._view(display)
+        armed = []
+        monkeypatch.setattr(v, '_arm_sheet', lambda: armed.append(1))
+        monkeypatch.setattr(v, 'get_width', lambda: 300)
+        monkeypatch.setattr(v, 'get_height', lambda: 200)
+        from gi.repository import Gtk
+        v._snapshot_paper(Gtk.Snapshot(), 300, 200)
+        assert armed == []
+        assert v._sheet is not None
+
+    def test_the_settle_does_not_fire_onto_a_page_on_its_way_out(
+            self, display, monkeypatch):
+        # The timeout holds a reference to its own widget, so it outlives
+        # the dismissal — and a 43ms strike landing inside the slide is the
+        # per-frame cost this whole arrangement exists to avoid.
+        v = self._view(display)
+        struck = []
+        monkeypatch.setattr(v, '_strike_sheet',
+                            lambda: struck.append(1) or True)
+        monkeypatch.setattr(v, 'get_mapped', lambda: False)
+        v._on_sheet_settled()
+        assert struck == []
+
+    def test_a_changed_paper_restrikes_rather_than_stretching(
+            self, display, monkeypatch):
+        # The ink is not a size: stretching the old sheet would keep the
+        # previous paper's ground under the new one.
+        v = self._view(display)
+        v._sheet = scribal_field.sheet(300, 200, 1, (0.118,)*3, (0.85,)*3)
+        v._sheet_for = (300, 200, 1, '#1e1e1e', '#d8d2c7')
+        armed = []
+        monkeypatch.setattr(v, '_arm_sheet', lambda: armed.append(1))
+        monkeypatch.setattr(v, 'get_width', lambda: 300)
+        monkeypatch.setattr(v, 'get_height', lambda: 200)
+        v._surface, v._ink = '#f7f4ee', '#2b2622'
+        from gi.repository import Gtk
+        v._snapshot_paper(Gtk.Snapshot(), 300, 200)
+        assert armed == [1]
+
+
 class TestTheHeaderOverToday:
     """The chrome gets out of the page's way, and comes back."""
 

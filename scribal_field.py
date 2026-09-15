@@ -376,7 +376,12 @@ def sheet(width: int, height: int, scale: int,
             or not 0 < dev_w <= _MAX_SIDE or not 0 < dev_h <= _MAX_SIDE
             or dev_w * dev_h > _MAX_PIXELS):
         return None
-    key = (dev_w, dev_h,
+    # `scale` is in the key, not just the device size it produces: a 400px
+    # page at scale 2 and an 800px one at scale 1 are both 800 device pixels
+    # and are NOT the same drawing — the letters are 17 logical px either
+    # way, so they cover twice as much of the first. A window dragged between
+    # monitors of different scale would otherwise be handed the wrong sheet.
+    key = (dev_w, dev_h, scale,
            tuple(round(c, 4) for c in paper), tuple(round(c, 4) for c in ink))
     hit = _cache.get(key)
     if hit is not None:
