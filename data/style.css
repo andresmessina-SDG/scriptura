@@ -80,6 +80,30 @@ window {
     font-feature-settings: "cv05", "calt", "kern";
 }
 
+/* ── line-height is NOT an em multiple ───────────────────────────────────
+ * GTK4 multiplies the FONT's own line height, not the em, and every face
+ * brings a different one. Measured as the pitch a real label renders, two
+ * lines minus one:
+ *
+ *     Newsreader 1.07   Georgia 1.14   Adwaita Sans 1.21
+ *     EB Garamond 1.31   Noto Serif 1.36   Noto Serif Hebrew 1.19
+ *
+ * (Each wobbles about 0.03 with the size, from pixel rounding.)
+ *
+ * So `line-height: 1.6` on the reading serif sets 2.16em, not 1.6em, and
+ * the same 1.6 on Newsreader sets 1.70em. Fourteen rules in this file were
+ * written as if the number were the em value; all fourteen are now the
+ * FACTOR, with the em each was measured to render in a comment beside it.
+ *
+ * Writing a new one: pick the em you want, divide by the face's number
+ * above, and record the em. The measuring script is the pitch probe in
+ * ~/today-renders/_scripts/pitch.py.
+ *
+ * NOT a bug in the reading pane's own `line-height: {line_spacing}` (see
+ * BiblePane._update_font_css): that one is the reader's Spacing slider,
+ * labelled "1.5x" and set by eye, so a multiple of the face's natural
+ * leading is exactly what it should mean. */
+
 /* ── Search panel (end-side OverlaySplitView sidebar) ────────────────────
    The rounded opaque card; its split view's scrim-base + gizmo rules live
    with the .menu-split block further down (same two-layer trick). */
@@ -470,6 +494,51 @@ separator.journal-divider { background-color: alpha(@borders, 0.3); }
     border-bottom-color: alpha(@borders, 0.45);
 }
 
+/* The header while the Today page is up. That page paints its paper edge to
+ * edge, and the header is `.flat`, so it wears @window_bg_color — the
+ * DESKTOP's colour against the READER's paper. Measured across the seven
+ * papers the seam runs dE 0.6 (White, the only one that ever matches) to
+ * 15.7 (Green), and dE 79-98 whenever the desktop theme does not follow the
+ * paper. The reading view never shows it, because there the paper is painted
+ * on textview.bible-view, a column inside a @window_bg_color shell.
+ *
+ * So the bar stops painting and the content is extended to the top edge
+ * (Adw.ToolbarView.extend-content-to-top-edge); only the controls remain,
+ * and window.py's own provider strikes those in the page's ink. Everything
+ * that does NOT depend on the ink lives here rather than in a built string.
+ *
+ * The painting node is headerbar > windowhandle, not the widget the class
+ * sits on — transparency has to reach both. */
+headerbar.today-chrome,
+headerbar.today-chrome > windowhandle {
+    background: none;
+    background-color: transparent;
+    box-shadow: none;
+    border-bottom-color: transparent;
+}
+
+/* The minimise/maximise/close chips are painted on the button's IMAGE, not
+ * on the button: `windowcontrols > button > image` at `currentColor 10%` in
+ * the shipped Adwaita sheet (extracted with gresource, the way the
+ * focus-ring claim was settled). Targeting the button alone left three grey
+ * blobs sitting on the paper. Undressed they are glyphs on the page, like
+ * its own margin marks; the chip returns under the pointer so the control
+ * still answers. */
+headerbar.today-chrome windowcontrols > button > image {
+    background-color: transparent;
+    opacity: 0.55;
+}
+
+headerbar.today-chrome windowcontrols > button:hover > image {
+    background-color: alpha(currentColor, 0.15);
+    opacity: 1;
+}
+
+headerbar.today-chrome windowcontrols > button:active > image {
+    background-color: alpha(currentColor, 0.3);
+    opacity: 1;
+}
+
 button.header-action,
 menubutton.header-action > button {
     min-width: 34px;
@@ -794,7 +863,7 @@ button.menu-theme-toggle {
     margin-bottom: 28px;
 }
 .present-text {
-    line-height: 1.4;
+    line-height: 1.02;   /* ~1.37em on the reading serif, live from the pane */
 }
 /* Parallel (bilingual) mode: the dimmed verse-number "spine" between the two
    language columns. Quiet enough not to compete, tabular so it reads as a
@@ -1270,7 +1339,7 @@ box.mini-swatch {
     font-style: italic;
     font-size: 0.92em;
     opacity: 0.6;
-    line-height: 1.4;
+    line-height: 1.10;   /* ~1.44em on EB Garamond */
     margin-top: 2px;
 }
 /* One voice — no card box: voices sit on the window background, separated
@@ -1308,7 +1377,7 @@ box.mini-swatch {
     font-family: 'EB Garamond', 'Newsreader', 'Noto Serif', 'Source Serif 4',
                  'Georgia', serif;
     font-size: 1.16em;
-    line-height: 1.5;
+    line-height: 1.14;   /* ~1.50em on EB Garamond */
 }
 /* Read more / Show less — typographic, not button chrome. */
 button.catena-more {
@@ -1442,13 +1511,13 @@ button.catena-chip-place {
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 1.05em;
     opacity: 0.6;
-    line-height: 1.6;
+    line-height: 1.52;   /* ~1.60em on Newsreader */
     margin-bottom: 14px;
 }
 .stone-front-body {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
-    line-height: 1.6;
+    line-height: 1.52;   /* ~1.63em on Newsreader */
     margin-bottom: 10px;
 }
 .stone-era {
@@ -1467,7 +1536,7 @@ button.catena-chip-place {
     font-style: italic;
     font-size: 1.02em;
     opacity: 0.72;
-    line-height: 1.5;
+    line-height: 1.43;   /* ~1.53em on Newsreader */
     margin-top: 8px;
 }
 .stone-plate {
@@ -1501,7 +1570,7 @@ button.catena-chip-place {
 .stone-caption {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
-    line-height: 1.6;
+    line-height: 1.50;   /* ~1.60em on Newsreader */
     margin-top: 14px;
 }
 .stone-chips {
@@ -1595,7 +1664,7 @@ button.stone-chip-rel {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     opacity: 0.75;
-    line-height: 1.55;
+    line-height: 1.46;   /* ~1.56em on Newsreader */
 }
 .stone-read-title {
     font-style: italic;
@@ -1851,10 +1920,16 @@ progressbar.reading-progress > trough > progress {
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    opacity: 0.55;
+    opacity: 0.52;
 }
-/* The church-year line: a second whisper under the date, half a step
-   louder (it carries meaning; the date is furniture). */
+/* The three tracked caps voices — date, designation, plan kicker — are one
+   size and one weight, and separate by OPACITY and by the space around them
+   alone. The kicker used to be 14px against their 12.5, so the head of the
+   page read as building up to it rather than as a quiet block of its own,
+   and the hero lost the only large voice above the fold.
+   The church-year line is the loudest of the three: it carries meaning,
+   where the date is furniture and the plan label is answered by the hero
+   directly beneath it. */
 .today-church {
     font-size: 12.5px;
     font-weight: 700;
@@ -1863,22 +1938,26 @@ progressbar.reading-progress > trough > progress {
     opacity: 0.68;
 }
 .today-kicker {
-    font-size: 14px;
+    font-size: 12.5px;
     font-weight: 700;
     letter-spacing: 0.10em;
     text-transform: uppercase;
-    opacity: 0.68;
+    opacity: 0.62;
 }
 /* The plan day in the serif hero voice (family set live from the pane). */
 .today-passage {
     font-size: 42px;
     font-weight: 500;
-    line-height: 1.2;
+    line-height: 0.88;   /* ~1.19em on the reading serif at 42px */
     letter-spacing: -0.005em;
 }
+/* Set in the reading serif (family live from the pane) and italic: a phrase
+   about the reading belongs to the page's reading voice, not to its
+   furniture. */
 .today-whisper {
-    font-size: 13.5px;
-    opacity: 0.58;
+    font-size: 14px;
+    font-style: italic;
+    opacity: 0.55;
 }
 /* Primary action: "goes to the Bible" (two-accent law). Set live in the
    reading gold by today_page.set_appearance, which picks its cast from the
@@ -1893,13 +1972,14 @@ progressbar.reading-progress > trough > progress {
    longer line of the pair and full of proper nouns, so at the epigraph's
    weight it out-shouted the primary one and left the gold doing all the work
    of telling them apart. */
-/* Today's spoken devotional: one mark in the margin, not a card. The page is
-   type on paper and the design law puts the reading surface at depth 0 with
-   no boxes; a bounded panel was the only edged object on the whole surface.
-   The disc's fill and the ring's ink are paper-aware and set from
-   today_page.set_appearance — this page's ink is the pane's, not the theme's,
-   and a provider added to the card would never reach the button inside it. */
-button.today-listen-play {
+/* The two marks in the page's margins — the spoken devotional and the
+   journal door. Marks, not cards: the page is type on paper and the design
+   law puts the reading surface at depth 0 with no boxes; a bounded panel was
+   the only edged object on the whole surface. Their fill and the ring's ink
+   are paper-aware and set from today_page.set_appearance — this page's ink is
+   the pane's, not the theme's, and a provider added to the holder would never
+   reach the button inside it. */
+button.today-mark {
     min-width: 42px;
     min-height: 42px;
     padding: 0;
@@ -1913,18 +1993,64 @@ button.today-listen-play {
     font-size: 14px;
     opacity: 0.62;
 }
+/* The day's opening line, under the reference that names it. The reading
+   serif (family set live from the pane), one step below the epigraph's size
+   so that the page's Scripture and the page's footnote cannot be confused
+   for each other, and roman: these are the day's own words, not a citation. */
+/* The 1.55 this asked for was setting 2.12em and the foot of the page
+   sprawled — see the line-height note at the top of this file. */
+.today-antiphon {
+    font-size: 20px;
+    line-height: 1.13;   /* ~1.55em on the reading serif */
+    opacity: 0.88;
+}
 /* The devotional foot line, set like a printed epigraph. */
 .today-epigraph-verse {
-    font-size: 19px;
+    font-size: 17.5px;
     font-style: italic;
-    line-height: 1.6;
+    line-height: 1.15;   /* ~1.54em on the reading serif */
     opacity: 0.80;
+}
+/* A collect is prayed, not quoted — set roman, and without the quotation
+   marks set_epigraph already withholds from it. */
+.today-prayer {
+    font-style: normal;
 }
 .today-epigraph-src {
     font-size: 12px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     opacity: 0.58;
+}
+
+/* The page answers the width it is given (Adw.Breakpoints in today_page,
+   read off the PANE's allocation — on a split screen this surface is a
+   column, not a window). Only the hero moves: the caps voices are already
+   at the size a caps voice wants, and growing them would turn furniture
+   into hierarchy. */
+.today-narrow .today-passage {
+    font-size: 32px;
+}
+.today-wide .today-passage {
+    font-size: 54px;
+}
+/* At wide widths the date and the day's designation leave the column and
+   stand in the left margin as a Kalendar heading — the only place on this
+   page where a caps voice is set left and allowed to wrap, so the tracking
+   eases to 0.08em (at 0.12em a Spanish designation overran 176px). */
+.today-rail-date,
+.today-rail-church {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.today-rail-date {
+    opacity: 0.55;
+}
+.today-rail-church {
+    opacity: 0.68;
+    line-height: 1.16;   /* ~1.42em on Adwaita Sans */
 }
 
 /* ── The listening pill ──────────────────────────────────────────────── */
@@ -2154,12 +2280,12 @@ button.audio-pill-close {
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 1.05em;
     opacity: 0.6;
-    line-height: 1.6;
+    line-height: 1.52;   /* ~1.60em on Newsreader */
 }
 .gen-intro {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
-    line-height: 1.6;
+    line-height: 1.52;   /* ~1.63em on Newsreader */
     opacity: 0.85;
 }
 /* The passage kicker over a chart — the one place a genealogy section says

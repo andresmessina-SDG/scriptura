@@ -167,7 +167,41 @@ semver-ish — 0.x was the pre-Flathub testing track.
   by its own title rather than by the page it is filed on — the one sheet a
   preacher carries into the pulpit is not the archive it lives in.
 
+- **The Today page opens with Scripture.** It had none on it: the day's
+  reading was named and offered, but not a word of it was shown. The first
+  verse of the day's first appointed chapter now stands under the reference,
+  in the reading voice — the passage, and then a taste of it.
+
+- **The Today page is written on.** Its surface used to be laid paper, the
+  wire marks of a paper mould — which is the stock of a *printed* Bible and
+  nothing older. It is now prepared skin, with the alphabet written down both
+  margins the way a scribe practised it and the way Psalm 119, Lamentations
+  and Proverbs 31 are built: the twenty-two Hebrew letters in order, every
+  fourth line in Greek, with the older Paleo-Hebrew and Aramaic hands
+  surfacing inside it — roughly in the proportion the canon itself is written
+  in. The letters run in order, so nothing spells anything. The reading
+  column stands on clean skin, as a written block does inside a ruled margin,
+  and the whole ground is struck in your own ink, so it follows your paper
+  through sepia, the dark papers and the evening blend.
+
+- **At a wide window the date and the day leave the column** and stand in the
+  left margin as a Kalendar heading, so a wide screen carries something
+  instead of stretching.
+
 ### Changed
+
+- **The header steps aside on the Today page.** A header bar wears the
+  desktop's colour and the page wears yours, and only one of the seven papers
+  ever matched — under a dark desktop a light paper met a near-black bar
+  across the top of the page. While the Today page is up the page now runs to
+  the top edge and the bar stops painting, leaving only its controls, drawn
+  in the page's own ink. The page gets that height back with it, and the
+  header no longer repeats a title the page has already given you.
+
+- **Leading is corrected across the app.** Scripture in Stone, the catena,
+  the genealogy pages and the projected presentation text were all set looser
+  than intended — the projected text at nearly two full lines of space per
+  line. They now sit at the spacing they were designed for.
 
 - **The verse menu says which verse it is about, over the middle of it.** The
   reference was a small dim caption pushed against the left edge of the rows
@@ -245,6 +279,23 @@ semver-ish — 0.x was the pre-Flathub testing track.
   says so once per run of failures instead of once per write.
 
 ### Fixed
+
+- **A reading plan could say it was finished while the panel underneath said
+  otherwise.** A thirty-day plan begun ten weeks ago reported "Plan complete"
+  on the Today page while the plan panel said two of thirty days read. Both
+  surfaces had let the calendar decide. Inside the schedule the day is the
+  day; once the schedule has run out, the day offered is the earliest one you
+  have not read; and a plan is finished only when every day of it is.
+
+- **Opening the menu over the Today page felt stuck.** The page slid away
+  while the sidebar slid in, so it was re-laid out at a new width on every
+  frame of the other animation — most of a second of dropped frames. Anything
+  that opens over the same area now dismisses the page at once instead.
+
+- **A space could open after a quotation mark.** Some translations set the
+  opening mark outside the tagged word, which left "say to me: " Flee like a
+  bird". French guillemets are untouched — they are set with a space by
+  design.
 
 - **Double-clicking a word said "No entry" with dictionaries installed.** The
   dictionary peek has been dead since 1.6.2 — every lookup raised inside the

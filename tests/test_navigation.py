@@ -116,7 +116,7 @@ def test_a_navigation_that_lands_does_not_toast():
     nav._sync_nav_books = lambda: None
     nav._update_ref_label = lambda *a: None
     nav._push_recent = lambda *a: None
-    win._dismiss_today = lambda: None
+    win._dismiss_today = lambda animate=True: None
     nav._update_nav_btns = lambda: None
     win.book_drop = types.SimpleNamespace(set_selected=lambda i: None)
     win.chapter_drop = types.SimpleNamespace(set_model=lambda m: None,

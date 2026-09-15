@@ -427,9 +427,16 @@ def plain_text(html: object) -> str:
     Today epigraph, in the devotional pane and down every cross-reference,
     because three call sites each wrote the first half of this and only the
     exporter wrote the second.
+
+    And off AFTER an opening mark, which is the same fault mirrored: the
+    Berean puts its quotation mark outside the tagged word, `“<w>Flee</w>`,
+    so the tag's space landed inside the quotation — "say to me: “ Flee like
+    a bird". Guillemets are left alone: French sets them with a space by
+    design.
     """
     text = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', str(html or '')))
-    return re.sub(r'\s+([,.;:!?’”)])', r'\1', text).strip()
+    text = re.sub(r'\s+([,.;:!?’”)])', r'\1', text)
+    return re.sub(r'([“‘(¿¡])\s+', r'\1', text).strip()
 
 
 # ── Cross-versification mapping ──────────────────────────────────────────────

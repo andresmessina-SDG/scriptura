@@ -30,7 +30,7 @@ import passage_print
 from pane import (BiblePane, DROPCAP_GOLD_DARK, DROPCAP_GOLD_LIGHT,
                   auto_reading_ink, dropcap_color_hex)
 from present import PresentView
-from today_page import TodayView, fetch_epigraph
+from today_page import TodayView, fetch_antiphon, fetch_epigraph
 from module_manager import ModuleManagerWindow
 from search_panel import SearchPanel
 from annotations_window import AnnotationsWindow
@@ -359,6 +359,12 @@ class BibleWindow(Adw.ApplicationWindow):
         # the two pane headers read as one calm band (Apple-Books style).
         header.add_css_class('flat')
         self._header = header
+        # Its own provider, for the Today dress below. Above the app's own
+        # sheet, which sets .scriptura-header at APPLICATION priority.
+        self._header_css = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(), self._header_css,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
         toolbar_view.add_top_bar(header)
 
         # ── Left: burger + back/forward + navigation ──────────────────────────
@@ -2225,17 +2231,97 @@ class BibleWindow(Adw.ApplicationWindow):
         # line is the previous calendar's, and it must not stand under the new
         # day's name for however long the lookup takes.
         self._today_view.clear_epigraph()
+        self._today_view.clear_antiphon()
         self._sync_today_listen()
         tasks.submit(
             key=f'today-epigraph:{id(self)}',
             work=lambda _t: fetch_epigraph(collect_key),
             apply=self._on_today_epigraph,
             on_error=lambda _e: None)
+        # The day's opening line, read out of the reader's own Bible. After
+        # populate, which is what resolves which chapter today opens at.
+        #
+        # _first_bible_module, not pane 1's: a reader whose first pane holds a
+        # commentary or a confession would have had Abbott's note on John 1,
+        # or the front matter of the 1689, standing on the page as though it
+        # were Scripture.
+        bible = self._first_bible_module()
+        target = self._today_view.antiphon_target()
+        if bible and target:
+            book, chapter = target
+            tasks.submit(
+                key=f'today-antiphon:{id(self)}',
+                work=lambda _t: fetch_antiphon(bible, book, chapter),
+                apply=self._on_today_antiphon,
+                on_error=lambda _e: None)
 
     def _refresh_today_appearance(self):
         if self._today_view is not None:
-            self._today_view.set_appearance(
-                self.pane1.reading_appearance(self._evening_now))
+            appearance = self.pane1.reading_appearance(self._evening_now)
+            self._today_view.set_appearance(appearance)
+            self._dress_header_for_today(appearance['ink'])
+
+    # ── The header while the Today page is up ────────────────────────────
+
+    def _dress_header_for_today(self, ink):
+        """Give the page the top edge, and leave the header its controls.
+
+        The header is `.flat`, so it wears @window_bg_color — the DESKTOP's
+        colour — while the paper is the READER's. The two are set
+        independently and cannot be made to agree: measured across the seven
+        papers the seam runs dE 0.6 (White, the only one that matches) to
+        15.7 (Green) against its own-theme header, and dE 79-98 whenever the
+        desktop theme does not follow the paper, which nothing makes it do.
+
+        The reading view never shows this, because there the paper is painted
+        on textview.bible-view — a column inside a @window_bg_color shell,
+        which is what the header matches. Today paints edge to edge in its
+        own do_snapshot, so its paper meets the chrome directly. Today did
+        not cause the seam; it is the only surface that exposes it.
+
+        So there is no second colour to reconcile: the content is extended to
+        the top edge and the header keeps nothing but its controls, struck in
+        the page's own ink the way the margin marks are. The page also gets
+        the header's height back — its tailpiece was being cut off.
+        """
+        self._toolbar_view.set_extend_content_to_top_edge(True)
+        self._header.add_css_class('today-chrome')
+        # The passage button is the window's title, and over this page it
+        # repeated one: "Psalms 146" sat centred above the page's own
+        # "Psalms 11-15" hero, two titles competing for the same glance.
+        self._ref_btn.set_visible(False)
+        # Only the ink is dynamic; everything structural is in style.css
+        # under .today-chrome, where the class-coverage test can see it.
+        self._header_css.load_from_data(f"""
+            headerbar.today-chrome,
+            headerbar.today-chrome > windowhandle,
+            headerbar.today-chrome button,
+            headerbar.today-chrome windowcontrols > button {{
+                color: {ink};
+            }}
+        """.encode())
+
+    def _undress_header(self):
+        """Put the chrome back. Called at the START of the dismissal, not at
+        the end of it: while the content is extended the reading panes
+        underneath are allocated with their first 46px behind the header, and
+        restoring that after the slide would drop the text down a header's
+        height in full view. Restoring it as the page begins to leave hides
+        the one re-allocation under the page that is going anyway."""
+        if not self._header.has_css_class('today-chrome'):
+            return
+        self._toolbar_view.set_extend_content_to_top_edge(False)
+        self._header.remove_css_class('today-chrome')
+        self._ref_btn.set_visible(True)
+        self._header_css.load_from_data(b'')
+
+    def _on_today_antiphon(self, text):
+        if self._today_view is None:
+            return
+        if text:
+            self._today_view.set_antiphon(text)
+        else:
+            self._today_view.clear_antiphon()
 
     def _on_today_epigraph(self, result):
         if self._today_view is None:
@@ -2410,22 +2496,40 @@ class BibleWindow(Adw.ApplicationWindow):
         if self._today_view is not None:
             self._populate_today()
 
-    def _dismiss_today(self):
+    def _dismiss_today(self, animate=True):
         """Slide the Today page away. Once per session — there is no way
-        back to it until the next launch."""
+        back to it until the next launch.
+
+        `animate=False` for a caller that is opening a sidebar over the same
+        area. Measured: the page slid away while the split view slid IN, so
+        it was re-laid out at a new width on every frame of the other
+        animation — 0.83s of frames lost on a 1366px window, which is what
+        made opening the menu feel stuck. Dismissed instantly the same toggle
+        loses nothing. Nobody watches a page leave while a panel arrives.
+        """
         if self._today_revealer is None:
             return
+        self._undress_header()
         revealer, self._today_revealer = self._today_revealer, None
+        if not animate:
+            revealer.set_transition_duration(0)
         self._today_view = None
         if self._today_dark_handler is not None:
             Adw.StyleManager.get_default().disconnect(self._today_dark_handler)
             self._today_dark_handler = None
         tasks.cancel(f'today-epigraph:{id(self)}')
+        tasks.cancel(f'today-antiphon:{id(self)}')
         self._stop_today_listen()
         # can_target off immediately so the sliding page never eats a click;
         # fully hidden (and out of the picking/AT tree) after the slide.
         revealer.set_can_target(False)
         revealer.set_reveal_child(False)
+        if not animate:
+            # Out of the layout at once. With no slide to wait for there is
+            # nothing to keep it mapped, and leaving it mapped means its whole
+            # tree is still measured through every frame of the sidebar's.
+            revealer.set_visible(False)
+            return
         GLib.timeout_add(
             motion.DURATION_STANDARD + 50,
             lambda: revealer.set_visible(False) or GLib.SOURCE_REMOVE)
@@ -4422,12 +4526,13 @@ class BibleWindow(Adw.ApplicationWindow):
         self._plan_total = total
         self._plan_completed = set(reading_plans.get_completed(plan_id))
         self._plan_today_idx = reading_plans.today_index(start_date)
-        # Clamp the hero day into range so a finished or not-yet-due plan
-        # still shows a real day.
-        self._plan_anchor = (max(0, min(self._plan_today_idx, total - 1))
-                             if total else 0)
-
-        finished = bool(total) and self._plan_today_idx >= total
+        # The hero day and whether the plan is over — the same call the Today
+        # page makes, so the two surfaces can never disagree again. They did:
+        # this panel showed "Plan complete" directly above its own
+        # "2 of 30 days read", because the calendar had run past the plan's
+        # length while 28 of its days were still unread.
+        self._plan_anchor, finished = reading_plans.plan_anchor(
+            plan_id, start_date, total)
         self._plan_today_eyebrow.set_text(
             _('Plan complete') if finished
             else _('Day {n} · Today').format(n=self._plan_anchor + 1))
@@ -4518,7 +4623,11 @@ class BibleWindow(Adw.ApplicationWindow):
             cell.add_css_class('plan-tile-overdue')  # a scheduled day went unread
         else:
             cell.add_css_class('plan-tile-ahead')
-        if idx == self._plan_today_idx:
+        if idx == self._plan_anchor:
+            # The ring follows the day the hero is OFFERING, which is the
+            # date's own day while the schedule holds and the earliest unread
+            # one once it has lapsed. Ringing the raw date index left no tile
+            # marked at all on a lapsed plan, while the hero named a day.
             cell.add_css_class('plan-tile-today')    # ring; composes with the fill
 
     def _refresh_plan_dots(self):

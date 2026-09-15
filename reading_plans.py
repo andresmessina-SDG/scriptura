@@ -318,6 +318,33 @@ def today_index(start_date_str: str) -> int:
         return 0
 
 
+def plan_anchor(plan_id: str, start_date_str: str,
+                total: int) -> tuple[int, bool]:
+    """(day index to show today, whether the plan is finished).
+
+    The one definition of "which day is it", shared by the Today page and the
+    plan panel — they disagreed once and a reader saw "Plan complete" over
+    "2 of 30 days read".
+
+    A plan is finished when its days have been READ, not when the calendar
+    has run past its length. A reader who starts a thirty-day plan, reads two
+    days and comes back in September has not finished it; the schedule has
+    simply lapsed, and the day to offer is the earliest one still unread —
+    catch-up, which the house rule says is shame-free and silent.
+
+    Inside the schedule nothing changes: the day is the day, read or not, so
+    a reader who is keeping up sees the date's own reading.
+    """
+    if total <= 0:
+        return 0, False
+    done = get_completed(plan_id)
+    finished = len(done) >= total
+    idx = today_index(start_date_str)
+    if idx >= total and not finished:
+        return min(set(range(total)) - done), False
+    return max(0, min(idx, total - 1)), finished
+
+
 def export_raw() -> dict[str, Any]:
     """The whole progress store (active plan, start dates, completed days)
     in its on-disk shape, for study-data backup. Treat as read-only."""

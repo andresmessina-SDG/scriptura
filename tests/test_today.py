@@ -1,8 +1,11 @@
 """Unit tests for the Today page's pure helpers (whisper + epigraph)."""
 import os
+from pathlib import Path
 
 import pytest
 
+import reading_plans
+import scribal_field
 import today_page
 
 _DATA_COLLECTS = os.path.join(
@@ -178,3 +181,505 @@ class TestAccentedEpigraph:
         if acute_advance(None) == 0:
             pytest.skip('this Georgia already attaches the mark')
         assert acute_advance(today_page._mark_safe_attrs('е́')) == 0
+
+
+@pytest.fixture
+def display():
+    """Skip when there is no screen — TodayView is a real widget tree.
+
+    `Gdk.Display.get_default()`, never `Gtk.init_check()`, whose True means
+    nothing (GUIDANCE §4).
+    """
+    from gi.repository import Gdk, Gtk
+    Gtk.init_check()
+    if Gdk.Display.get_default() is None:
+        pytest.skip('needs a display: TodayView builds real widgets')
+
+
+def _settle():
+    """Run the idles the page defers its widget moves onto (a breakpoint may
+    not reparent from inside size-allocate — see TodayView._place_marks)."""
+    from gi.repository import GLib
+    ctx = GLib.MainContext.default()
+    for _i in range(20):
+        if not ctx.iteration(False):
+            break
+
+
+@pytest.fixture
+def view(display):
+    v = today_page.TodayView(lambda *a: None, lambda *a: None, lambda *a: None,
+                             on_listen=lambda: None, on_write=lambda: None)
+    v.populate(('John', 3), 'KJV', church_line='The Second Sunday in Advent')
+    return v
+
+
+class TestAdaptiveLayout:
+    """The page answers the width it is given. These hold the two moves that
+    a later refactor could silently undo."""
+
+    def test_the_listen_mark_leaves_the_margin_when_there_is_none(self, view):
+        # The whole point of the narrow mode: at 640px and under the disc
+        # used to be drawn on top of the line beneath it.
+        view.set_listen('Today’s reading')
+        assert view._listen_mark.get_parent() is view._listen_card
+        view._set_mode('narrow')
+        _settle()
+        assert view._listen_mark.get_parent() is view._listen_slot
+        assert view._listen_slot.get_visible()
+        assert not view._listen_card.get_visible()
+        view._set_mode('')
+        _settle()
+        assert view._listen_mark.get_parent() is view._listen_card
+
+    def test_a_mark_that_was_never_offered_stays_unoffered(self, view):
+        # The journal door is always there, so the narrow slot still stands;
+        # what must not appear is a play disc for a reading nobody has.
+        view.clear_listen()
+        view._set_mode('narrow')
+        _settle()
+        assert not view._listen_mark.get_visible()
+        assert view._write_mark.get_visible()
+        assert not view._listen_card.get_visible()
+
+    def test_the_journal_door_is_a_mark_not_a_line_in_the_column(self, view):
+        # It was a third centred link under Continue; it is now the left-hand
+        # mark, and the column carries only the day and its two reading doors.
+        assert view._write_btn.get_parent() is not None
+        assert view._write_mark.get_parent() is view._write_holder
+        assert view._write_btn.get_label() is None
+
+    def test_a_page_with_no_journal_door_keeps_its_margins(self, display):
+        # The margins are structural: without the pair the column would sit
+        # off the page's centre whenever one mark was missing.
+        v = today_page.TodayView(lambda *a: None, lambda *a: None,
+                                 lambda *a: None, on_listen=lambda: None)
+        assert not v._write_holder.get_visible()
+        assert (v._margin_left.get_size_request().width
+                == v._margin_right.get_size_request().width)
+
+    def test_the_date_lines_move_to_the_rail_and_back(self, view):
+        assert view._eyebrow.get_visible() and not view._rail.get_visible()
+        view._set_mode('wide')
+        _settle()
+        assert view._rail.get_visible()
+        assert not view._eyebrow.get_visible()
+        assert not view._church.get_visible()
+        assert view._rail_date.get_text() == view._eyebrow.get_text()
+        assert view._rail_church.get_text() == view._church.get_text()
+        # The margins hold their width on both sides, so the column stays on
+        # the page's own centre whether or not a mark is in them.
+        assert (view._margin_left.get_size_request().width
+                == view._margin_right.get_size_request().width)
+        view._set_mode('')
+        _settle()
+        assert view._eyebrow.get_visible() and view._church.get_visible()
+        assert not view._rail.get_visible()
+
+    def test_a_day_with_no_designation_leaves_the_rail_line_empty(self, view):
+        view.populate(('John', 3), 'KJV', church_line=None)
+        view._set_mode('wide')
+        _settle()
+        assert not view._rail_church.get_visible()
+        view._set_mode('')
+        _settle()
+        assert not view._church.get_visible()
+
+
+class TestAntiphon:
+    """The day's opening line — the page's only guaranteed Scripture."""
+
+    @pytest.fixture
+    def chapter(self, monkeypatch):
+        import content
+        rows: list = []
+
+        def fake(_name, _book, _chapter):
+            return rows
+
+        monkeypatch.setattr(content, 'load_chapter', fake)
+        return rows
+
+    def test_the_day_opens_at_verse_one(self, chapter):
+        # Verse 0 is a Psalm superscription where a module carries one, and
+        # a day does not open at "A Psalm of David".
+        chapter.extend([(0, 'A Psalm of David'), (1, 'The LORD is my shepherd')])
+        assert (today_page.fetch_antiphon('KJV', 'Psalms', 23)
+                == 'The LORD is my shepherd')
+
+    def test_a_chapter_that_is_all_preamble_still_answers(self, chapter):
+        chapter.append((0, 'A Song of degrees'))
+        assert today_page.fetch_antiphon('KJV', 'Psalms', 120) == 'A Song of degrees'
+
+    def test_a_chapter_the_module_cannot_answer_is_silent(self, chapter):
+        assert today_page.fetch_antiphon('KJV', 'Psalms', 23) is None
+
+    def test_a_long_verse_is_cut_at_a_word(self, chapter):
+        chapter.append((1, 'word ' * 60))
+        got = today_page.fetch_antiphon('KJV', 'Esther', 8)
+        assert got is not None
+        assert got.endswith('…')
+        assert len(got) <= today_page._ANTIPHON_MAX + 1
+        assert 'wor…' not in got          # never mid-word
+
+    def test_the_target_is_the_plan_day_then_the_last_place(self, view):
+        assert view.antiphon_target() == view._begin_target or \
+            view.antiphon_target() == ('John', 3)
+        view._begin_target = None
+        view._continue_target = ('Romans', 2)
+        assert view.antiphon_target() == ('Romans', 2)
+        view._continue_target = None
+        assert view.antiphon_target() is None
+
+
+class TestTheFootLine:
+    """A prayer is not a quotation, and the page says a thing once."""
+
+    def test_a_collect_is_set_roman(self, view):
+        view.set_epigraph('Almighty God, give us grace', 'Book of Common Prayer',
+                          quoted=False)
+        assert view._epigraph_verse.has_css_class('today-prayer')
+        assert '“' not in view._epigraph_verse.get_text()
+
+    def test_a_cited_verse_keeps_the_italic_and_the_marks(self, view):
+        view.set_epigraph('For God so loved the world', 'John 3:16', quoted=True)
+        assert not view._epigraph_verse.has_css_class('today-prayer')
+        assert view._epigraph_verse.get_text().startswith('“')
+
+    def test_the_face_changes_back(self, view):
+        view.set_epigraph('Almighty God', 'BCP', quoted=False)
+        view.set_epigraph('For God so loved', 'John 3:16', quoted=True)
+        assert not view._epigraph_verse.has_css_class('today-prayer')
+
+    def test_the_days_name_is_not_printed_twice(self, view):
+        view.populate(('John', 3), 'KJV',
+                      church_line='The First Sunday in Advent')
+        view.set_epigraph(
+            'Almighty God, give us grace',
+            'The First Sunday in Advent — Book of Common Prayer', quoted=False)
+        assert view._epigraph_src.get_text() == 'Book of Common Prayer'
+
+    def test_a_source_that_is_not_the_days_name_is_left_alone(self, view):
+        view.populate(('John', 3), 'KJV',
+                      church_line='The First Sunday in Advent')
+        view.set_epigraph('For God so loved', 'John 3:16 — Daily Strength')
+        assert view._epigraph_src.get_text() == 'John 3:16 — Daily Strength'
+
+    def test_no_calendar_leaves_every_source_whole(self, view):
+        view.populate(('John', 3), 'KJV', church_line=None)
+        view.set_epigraph('x', 'The First Sunday in Advent — BCP', quoted=False)
+        assert view._epigraph_src.get_text().startswith('The First Sunday')
+
+
+class TestTheGround:
+    """Parchment, with the alphabet written in the margins."""
+
+    DARK = ((0.118, 0.118, 0.118), (0.847, 0.824, 0.780))
+    LIGHT = ((0.969, 0.957, 0.933), (0.169, 0.149, 0.133))
+    SEPIA = ((0.957, 0.925, 0.847), (0.227, 0.184, 0.133))
+
+    def test_the_letters_run_in_order_so_nothing_spells_anything(self):
+        # An abecedary, not a scatter: a reader of Hebrew must find a
+        # familiar object, and no run of letters can land on the Name.
+        assert scribal_field._ALEF == sorted(scribal_field._ALEF)
+        # Twenty-two, not the block's twenty-seven: the five final forms are
+        # positional variants, not letters of the alphabet.
+        assert len(scribal_field._ALEF) == 22
+        assert not set(scribal_field._ALEF) & set(scribal_field._FINALS)
+        # Greek is twenty-four, with no second sigma.
+        assert len(scribal_field._ALPHA) == 24
+
+    def test_no_greek_letter_can_be_read_as_latin(self):
+        # Half the Greek capitals are Latin homographs and with no word
+        # around them a capital beta simply reads as a B.
+        assert not set(scribal_field._ALPHA) & set(
+            'ABEZHIKMNOPTYXΑΒΕΖΗΙΚΜΝΟΡΤΥΧ')
+
+    def test_the_ink_is_weighed_against_the_paper_not_fixed(self):
+        # The bug this replaced: a flat alpha, scaled DOWN for light paper,
+        # left the field invisible there. Light and sepia need MORE ink than
+        # the dark page, not less.
+        dark = scribal_field.alpha_for(*self.DARK)
+        assert scribal_field.alpha_for(*self.LIGHT) > dark
+        assert scribal_field.alpha_for(*self.SEPIA) > dark
+
+    @pytest.mark.parametrize('paper,ink', [DARK, LIGHT, SEPIA,
+                                           ((0.0, 0.0, 0.0), (0.8, 0.8, 0.8))])
+    def test_every_paper_lands_at_one_perceived_weight(self, paper, ink):
+        a = scribal_field.alpha_for(paper, ink)
+        mixed = tuple(paper[k] * (1 - a) + ink[k] * a for k in range(3))
+        got = abs(scribal_field._lstar(scribal_field._luminance(mixed))
+                  - scribal_field._lstar(scribal_field._luminance(paper)))
+        assert abs(got - scribal_field.WEIGHT_FIELD) < 0.05
+
+    def test_the_type_column_never_stands_on_letters(self):
+        w = 1366.0
+        band, fade = scribal_field._margin_band(w)
+        assert scribal_field._margin_weight(w / 2, w, band, fade) == 0.0
+        assert scribal_field._margin_weight(4.0, w, band, fade) == 1.0
+
+    def test_a_narrow_page_stands_on_bare_skin(self):
+        # Below about 906px there is no margin left to write in, and two
+        # cramped strips of letters read worse than none.
+        assert scribal_field._margin_band(900.0) == (0.0, 0.0)
+        assert scribal_field._margin_band(1100.0)[0] > 0
+        widths = [scribal_field._margin_band(float(w))[0]
+                  for w in range(960, 1920, 40)]
+        assert widths == sorted(widths)
+
+    def test_the_sheet_is_the_same_every_time_it_is_drawn(self):
+        # A random one would reshuffle the moment anything repainted.
+        import cairo
+        out = []
+        for _i in range(2):
+            surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, 400, 200)
+            cr = cairo.Context(surf)
+            scribal_field.draw_parchment(cr, 400, 200, self.DARK[1], 0.02)
+            scribal_field.draw_abecedary(cr, 400, 200, self.DARK[1], 0.04)
+            surf.flush()
+            out.append(bytes(surf.get_data()))
+        assert out[0] == out[1]
+
+    def test_the_sheet_is_struck_once_and_then_blitted(self):
+        # It costs ~43ms to draw and the page repaints on every frame of an
+        # animation, so a second ask for the same page must not redraw it.
+        scribal_field.forget()
+        first = scribal_field.sheet(300, 200, 1, *self.DARK)
+        assert first is not None
+        assert scribal_field.sheet(300, 200, 1, *self.DARK) is first
+        assert scribal_field.sheet(300, 200, 1, *self.LIGHT) is not first
+
+    def test_a_resized_window_cannot_grow_the_cache_without_bound(self):
+        scribal_field.forget()
+        for w in range(200, 260):
+            scribal_field.sheet(w, 100, 1, *self.DARK)
+        assert len(scribal_field._cache) <= 4
+
+    @pytest.mark.parametrize('w,h', [(0, 200), (300, 0), (-1, 200), (300, -1),
+                                     (40000, 200), (300, 40000),
+                                     (20000, 20000)])
+    def test_a_size_cairo_will_not_take_yields_no_sheet(self, w, h):
+        # A widget reports a size outside this while it is being allocated,
+        # and cairo raises CAIRO_STATUS_INVALID_SIZE past 32767 a side. The
+        # ground is the one thing on the page that may simply not be drawn.
+        scribal_field.forget()
+        assert scribal_field.sheet(w, h, 1, *self.DARK) is None
+
+    def test_the_scale_factor_can_push_a_fine_size_over_the_edge(self):
+        scribal_field.forget()
+        assert scribal_field.sheet(4000, 3000, 1, *self.DARK) is not None
+        assert scribal_field.sheet(4000, 3000, 3, *self.DARK) is None
+
+    def test_the_sheet_is_struck_at_the_device_resolution(self):
+        # Drawn at the logical size it would be a small texture stretched
+        # over a HiDPI screen, and the letters would blur.
+        scribal_field.forget()
+        one = scribal_field.sheet(200, 100, 1, *self.DARK)
+        two = scribal_field.sheet(200, 100, 2, *self.DARK)
+        assert (one.get_width(), one.get_height()) == (200, 100)
+        assert (two.get_width(), two.get_height()) == (400, 200)
+
+    def test_the_ground_is_never_worth_the_page(self, view, monkeypatch):
+        # When the sheet raised, the exception left do_snapshot before the
+        # box's own children were drawn, so the page painted NOTHING.
+        from gi.repository import Gtk
+        def boom(*_a, **_k):
+            raise RuntimeError('no sheet today')
+        monkeypatch.setattr(scribal_field, 'sheet', boom)
+        view.set_appearance({'surface': '#1e1e1e', 'ink': '#d8d2c7',
+                             'family': 'serif', 'bold': False,
+                             'font_size': 19})
+        win = Gtk.Window()
+        win.set_default_size(800, 600)
+        win.set_child(view)
+        _settle()
+        snapshot = Gtk.Snapshot()
+        view.do_snapshot(snapshot)      # must not raise
+        win.set_child(None)
+        win.destroy()
+
+
+class TestTheHeaderOverToday:
+    """The chrome gets out of the page's way, and comes back."""
+
+    @pytest.fixture
+    def stand(self, display):
+        """Everything BibleWindow's two dress methods touch, and no more —
+        the real methods are called against this, so what is under test is
+        the shipped rule set and not a copy of it."""
+        from gi.repository import Adw, Gdk, Gtk
+
+        class Stand:
+            pass
+
+        s = Stand()
+        s._toolbar_view = Adw.ToolbarView()
+        s._header = Adw.HeaderBar()
+        s._header.add_css_class('scriptura-header')
+        s._ref_btn = Gtk.MenuButton()
+        s._header.set_title_widget(s._ref_btn)
+        s._toolbar_view.add_top_bar(s._header)
+        s._header_css = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(), s._header_css,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
+        return s
+
+    def test_the_page_is_given_the_top_edge(self, stand):
+        import window
+        window.BibleWindow._dress_header_for_today(stand, '#d8d2c7')
+        assert stand._toolbar_view.get_extend_content_to_top_edge()
+        assert stand._header.has_css_class('today-chrome')
+
+    def test_the_header_stops_repeating_the_page_s_title(self, stand):
+        # "Psalms 146" sat centred above the page's own "Psalms 11-15".
+        import window
+        window.BibleWindow._dress_header_for_today(stand, '#d8d2c7')
+        assert not stand._ref_btn.get_visible()
+
+    def test_the_chrome_comes_back_whole(self, stand):
+        import window
+        window.BibleWindow._dress_header_for_today(stand, '#d8d2c7')
+        window.BibleWindow._undress_header(stand)
+        assert not stand._toolbar_view.get_extend_content_to_top_edge()
+        assert not stand._header.has_css_class('today-chrome')
+        assert stand._ref_btn.get_visible()
+
+    def test_undressing_twice_is_harmless(self, stand):
+        # _dismiss_today can be reached by more than one route.
+        import window
+        window.BibleWindow._dress_header_for_today(stand, '#d8d2c7')
+        window.BibleWindow._undress_header(stand)
+        window.BibleWindow._undress_header(stand)
+        assert stand._ref_btn.get_visible()
+
+    def test_undressing_a_header_that_was_never_dressed_does_nothing(self, stand):
+        import window
+        stand._ref_btn.set_visible(False)     # hidden by something else
+        window.BibleWindow._undress_header(stand)
+        assert not stand._ref_btn.get_visible()
+
+    def test_the_controls_are_struck_in_the_page_s_ink(self, stand):
+        import window
+        window.BibleWindow._dress_header_for_today(stand, '#3a2f22')
+        # to_string() normalises: #3a2f22 comes back as rgb(58,47,34) and
+        # `transparent` as rgba(0,0,0,0).
+        css = stand._header_css.to_string()
+        assert 'rgb(58,47,34)' in css
+        assert 'windowcontrols > button' in css
+
+    def test_the_bar_itself_stops_painting(self):
+        """The structural half lives in style.css, not in a built string.
+
+        The painting node is headerbar > windowhandle, not the widget the
+        class sits on, and the control chip is on the button's IMAGE, not the
+        button — Adwaita paints `windowcontrols > button > image`. Targeting
+        only the obvious node left the bar and three grey blobs still on the
+        paper, twice.
+        """
+        css = (Path(__file__).resolve().parents[1]
+               / 'data' / 'style.css').read_text()
+        assert 'headerbar.today-chrome > windowhandle' in css
+        assert 'headerbar.today-chrome windowcontrols > button > image' in css
+
+
+class TestTheFinishedPlan:
+    """The page must not offer an alternative to nothing."""
+
+    @pytest.fixture
+    def plan(self, monkeypatch):
+        state = {'day': 12, 'total': 30, 'done': set()}
+        monkeypatch.setattr(reading_plans, 'get_active',
+                            lambda: ('p', '2026-01-01'))
+        monkeypatch.setattr(reading_plans, 'today_index',
+                            lambda _s: state['day'])
+        monkeypatch.setattr(reading_plans, 'get_plan_days',
+                            lambda _p: [[('Psalms', 111)]] * state['total'])
+        monkeypatch.setattr(reading_plans, 'get_plans',
+                            lambda: [{'id': 'p', 'name': 'Psalms in 30 Days'}])
+        # Patched too, or the anchor reads the real plan file.
+        monkeypatch.setattr(reading_plans, 'get_completed',
+                            lambda _p: set(state['done']))
+        return state
+
+    def test_a_running_plan_makes_continue_the_alternative(self, view, plan):
+        view.populate(('Romans', 2), 'KJV')
+        assert view._begin_btn.get_visible()
+        assert view._continue_btn.get_label().startswith('Or ')
+
+    def test_a_finished_plan_still_offers_a_way_forward(self, view, plan):
+        plan['day'] = 30                       # past the last day
+        plan['done'] = set(range(30))          # and every day of it read
+        view.populate(('Romans', 2), 'KJV')
+        assert view._begin_btn.get_visible()
+        assert 'plan' in view._begin_btn.get_label().lower()
+        assert view._begin_target is None      # the door goes to the plans
+
+    def test_a_finished_plan_stops_counting_days(self, view, plan):
+        plan['day'] = 99
+        plan['done'] = set(range(30))
+        view.populate(('Romans', 2), 'KJV')
+        # The plan's own name, whose words are its own — what must be gone
+        # is the running count ("— day 30") the plan page appends.
+        assert view._kicker.get_text() == 'Psalms in 30 Days'
+        assert '—' not in view._kicker.get_text()
+
+    def test_a_day_with_nothing_appointed_offers_continue_plainly(
+            self, view, plan, monkeypatch):
+        # The only state left where the page has no primary door: the "Or"
+        # must not stand alone above it.
+        monkeypatch.setattr(reading_plans, 'get_plan_days',
+                            lambda _p: [[]] * plan['total'])
+        view.populate(('Romans', 2), 'KJV')
+        assert not view._begin_btn.get_visible()
+        assert not view._continue_btn.get_label().startswith('Or ')
+
+    def test_the_verse_falls_back_to_the_place_left_off(self, view, plan):
+        plan['day'] = 30
+        plan['done'] = set(range(30))
+        view.populate(('Romans', 2), 'KJV')
+        assert view.antiphon_target() == ('Romans', 2)
+
+
+class TestALapsedSchedule:
+    """A plan whose dates have run out but whose days have not been read.
+
+    His: Psalms in 30 Days started 2026-07-19, two days read, opened on
+    2026-09-13 — day index 56 of 30. The page said "Plan complete" over a
+    panel that said "2 of 30 days read".
+    """
+
+    @pytest.fixture
+    def lapsed(self, monkeypatch):
+        state = {'day': 56, 'total': 30, 'done': {0, 1}}
+        monkeypatch.setattr(reading_plans, 'get_active',
+                            lambda: ('p', '2026-07-19'))
+        monkeypatch.setattr(reading_plans, 'today_index',
+                            lambda _s: state['day'])
+        monkeypatch.setattr(reading_plans, 'get_plan_days',
+                            lambda _p: [[('Psalms', 100 + i)]
+                                        for i in range(state['total'])])
+        monkeypatch.setattr(reading_plans, 'get_plans',
+                            lambda: [{'id': 'p', 'name': 'Psalms in 30 Days'}])
+        monkeypatch.setattr(reading_plans, 'get_completed',
+                            lambda _p: set(state['done']))
+        return state
+
+    def test_it_is_not_called_complete(self, view, lapsed):
+        view.populate(('Romans', 2), 'KJV')
+        assert view._passage.get_text() != 'Plan complete'
+
+    def test_it_offers_the_earliest_unread_day(self, view, lapsed):
+        view.populate(('Romans', 2), 'KJV')
+        assert 'day 3' in view._kicker.get_text()      # days 1 and 2 are read
+        assert view._begin_target == ('Psalms', 102)
+
+    def test_a_gap_is_picked_up_at_the_gap(self, view, lapsed):
+        lapsed['done'] = {0, 1, 5, 6}
+        view.populate(('Romans', 2), 'KJV')
+        assert view._begin_target == ('Psalms', 102)   # day 3, not day 8
+
+    def test_every_day_read_is_complete_whatever_the_date(self, view, lapsed):
+        lapsed['done'] = set(range(30))
+        view.populate(('Romans', 2), 'KJV')
+        assert view._passage.get_text() == 'Plan complete'

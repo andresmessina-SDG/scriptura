@@ -857,3 +857,23 @@ def test_flat_fallback_collects_every_entry(monkeypatch):
                        ('/Book I', 'Book I', 0),
                        ('/Book I/Chapter 1', 'Chapter 1', 1)]
     sword_bridge._GENBOOK_TOC_CACHE.pop('Flat', None)
+
+
+def test_a_tag_after_an_opening_quote_leaves_no_gap():
+    """The mirror of the comma defect, found on the Today page's antiphon.
+    The Berean sets its quotation mark outside the tagged word — `“<w>Flee`
+    — so the tag's space landed inside the quotation: "say to me: “ Flee
+    like a bird to your mountain"."""
+    assert sword_bridge.plain_text(
+        'say to me: “<w savlm="strong:H5110">Flee</w> like a bird'
+    ) == 'say to me: “Flee like a bird'
+
+
+def test_it_closes_up_after_every_opening_mark():
+    for mark in '“‘(¿¡':
+        assert sword_bridge.plain_text(f'{mark}<w>word</w>') == f'{mark}word'
+
+
+def test_a_guillemet_keeps_its_space():
+    """French sets « » with a space by design — that one is not a defect."""
+    assert sword_bridge.plain_text('« <w>mot</w> »') == '« mot »'
