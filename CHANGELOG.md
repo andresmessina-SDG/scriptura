@@ -280,6 +280,12 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Fixed
 
+- **Resizing the window with the Today page up dragged heavily.** The page's
+  ground was redrawn from scratch on every frame the window moved — a
+  twenty-step drag struck twenty of them — because it was cached by size and
+  every frame of a resize is a new size. The ground now follows the page
+  while it moves and is redrawn once it settles.
+
 - **A reading plan could say it was finished while the panel underneath said
   otherwise.** A thirty-day plan begun ten weeks ago reported "Plan complete"
   on the Today page while the plan panel said two of thirty days read. Both
