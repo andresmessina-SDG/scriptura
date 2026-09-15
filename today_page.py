@@ -120,6 +120,15 @@ _MARK_GAP = 16     # between the marks when they share the column at narrow
 # to the window and the rounded corner cut it.
 _GUTTER = _MARK_SIZE + 2 * _MARK_GAP
 
+# How long the page's size must hold still before its ground is struck
+# again. A sheet costs ~43ms and the page is re-sized on every frame of a
+# window drag and of its own slide, so redrawing per size is exactly the
+# per-frame cost the sheet was made to avoid — and a size-keyed cache cannot
+# help, because every frame is a new key. The last sheet is stretched over
+# the new size meanwhile, which nothing can see on a cloud and on letters at
+# three per cent ink.
+_SHEET_SETTLE_MS = 120
+
 _RAIL_WIDTH = 268
 _RAIL_MARGIN = 36
 _RAIL_CHARS = 34
@@ -337,6 +346,9 @@ class TodayView(Gtk.Box):
         self._card_css = Gtk.CssProvider()
         self._ink = '#888888'
         self._surface = '#ffffff'
+        self._sheet = None          # the ground, struck once and kept
+        self._sheet_for = None      # what it was struck for
+        self._sheet_timer = 0
 
         # No vexpand: the row takes the height of its type and the page's
         # spacers place it. With it the clamp swallowed the page's slack and
@@ -659,20 +671,58 @@ class TodayView(Gtk.Box):
         clear = Gdk.RGBA()
         clear.red = clear.green = clear.blue = clear.alpha = 0.0
 
-        # The skin and the writing on it, struck once per (size, paper, ink)
-        # and blitted after. Drawing it costs ~43ms at 1366x733 and the page
-        # repaints on every frame of an animation — the menu sliding in
-        # while this page slides away — so it can never be drawn per frame.
-        sheet = scribal_field.sheet(int(w), int(h), self.get_scale_factor(),
-                                    self._paper_rgb(), self._ink_rgb())
-        if sheet is not None:
-            snapshot.append_texture(sheet, Graphene.Rect().init(0, 0, w, h))
+        # The skin and the writing on it. Drawing it costs ~43ms at
+        # 1366x733, so it is struck once and blitted after — see
+        # _SHEET_SETTLE_MS for why a size-keyed cache is not enough on its
+        # own, and why a stale sheet is stretched rather than redrawn while
+        # the page is still moving.
+        key = (int(w), int(h), self.get_scale_factor(),
+               self._surface, self._ink)
+        if key != self._sheet_for:
+            if self._sheet is None:
+                self._strike_sheet()        # nothing to stretch yet
+            else:
+                self._arm_sheet()
+        if self._sheet is not None:
+            snapshot.append_texture(self._sheet,
+                                    Graphene.Rect().init(0, 0, w, h))
 
         radius = math.hypot(w, h) / 2
         snapshot.append_radial_gradient(
             Graphene.Rect().init(0, 0, w, h),
             Graphene.Point().init(w / 2, h / 2), radius, radius, 0.45, 1.0,
             [_stop(0.0, clear), _stop(1.0, shadow)])
+
+    def _strike_sheet(self):
+        """Draw the ground for the page's size as it stands now."""
+        w, h = self.get_width(), self.get_height()
+        scale = self.get_scale_factor()
+        texture = scribal_field.sheet(int(w), int(h), scale,
+                                      self._paper_rgb(), self._ink_rgb())
+        if texture is None:
+            return False
+        self._sheet = texture
+        self._sheet_for = (int(w), int(h), scale, self._surface, self._ink)
+        return True
+
+    def _arm_sheet(self):
+        """Strike it again once the page has held still."""
+        if self._sheet_timer:
+            GLib.source_remove(self._sheet_timer)
+        self._sheet_timer = GLib.timeout_add(_SHEET_SETTLE_MS,
+                                             self._on_sheet_settled)
+
+    def _on_sheet_settled(self):
+        self._sheet_timer = 0
+        # Not while the page is on its way out. The timer outlives the
+        # dismissal — a timeout holds a reference to its own widget — and a
+        # 43ms strike landing inside the slide is the per-frame cost this
+        # whole arrangement exists to keep off the animation.
+        if not self.get_mapped():
+            return GLib.SOURCE_REMOVE
+        if self._strike_sheet():
+            self.queue_draw()
+        return GLib.SOURCE_REMOVE
 
     def _build_ornament(self, draw_func, width, height):
         area = Gtk.DrawingArea()
