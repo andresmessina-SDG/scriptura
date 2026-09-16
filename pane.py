@@ -20,6 +20,7 @@ import settings
 import tasks
 import module_positions
 import pane_content
+import passage_export
 from genbook_reader import GenbookReader
 from catena_reader import CatenaReader
 from imagery_reader import ImageryReader
@@ -1900,7 +1901,8 @@ class BiblePane(Gtk.Box):
         ref = f'{book_label(self._book)} {self._chapter}:{first_v}'
         if last_v > first_v:
             ref += f'-{last_v}'
-        enriched = f'{ref} ({self._module})\n{text}'
+        version = passage_export.version_label(self._module)
+        enriched = f'{ref} ({version})\n{text}'
         view.get_clipboard().set(enriched)
         view.stop_emission_by_name('copy-clipboard')
 

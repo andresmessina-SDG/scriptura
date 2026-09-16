@@ -556,7 +556,8 @@ def copy_verse(pane, verses, popover):
         lines.append(f'{book_label(pane._book)} {pane._chapter}:{v}  {plain}')
     ref = (f'{book_label(pane._book)} {pane._chapter}:{verses[0]}–{verses[-1]}'
            if len(verses) > 1 else f'{book_label(pane._book)} {pane._chapter}:{verses[0]}')
-    text = f'{ref} ({pane._module})\n' + '\n'.join(lines)
+    version = passage_export.version_label(pane._module)
+    text = f'{ref} ({version})\n' + '\n'.join(lines)
     pane._view.get_clipboard().set(text)
     if pane._on_toast:
         pane._on_toast(_('Copied {ref}').format(ref=ref))
