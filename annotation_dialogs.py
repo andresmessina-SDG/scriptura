@@ -328,7 +328,7 @@ def build_study_menu(pane, verses, x, y, anchor=None):
     # click point belongs to the text, and there is none when the menu was
     # not opened over a verse.
     popover = Gtk.Popover(accessible_role=Gtk.AccessibleRole.MENU)
-    popover.set_parent(anchor if anchor is not None else pane._view)
+    popover.set_parent(anchor if anchor is not None else pane.view)
     popover.connect('closed', lambda p: p.unparent())
     if anchor is None:
         rect = Gdk.Rectangle()
@@ -337,7 +337,7 @@ def build_study_menu(pane, verses, x, y, anchor=None):
 
     # Load this chapter's annotations once — drives the underline label, the
     # note prefill, and whether the clear chip is live.
-    annos = annotations.get_annotations(pane._module, pane._book, pane._chapter)
+    annos = annotations.get_annotations(pane.module, pane.book, pane.chapter)
 
     def _verse_anno(v):
         a = annos.get(str(v), {})
@@ -456,8 +456,8 @@ def build_study_menu(pane, verses, x, y, anchor=None):
     # company it belongs to anyway — this group is the reader's own work on
     # this passage, collected.
     sermon = sermons.most_recent()
-    written = journal.entries_on(pane._book, pane._chapter)
-    preached = sermons.sermons_on(pane._book, pane._chapter)
+    written = journal.entries_on(pane.book, pane.chapter)
+    preached = sermons.sermons_on(pane.book, pane.chapter)
     if sermon is not None or written or preached:
         main.append(_menu_separator())
 
@@ -530,7 +530,7 @@ def build_study_menu(pane, verses, x, y, anchor=None):
 
 def apply_highlight(pane, verses, color, popover):
     for v in verses:
-        annotations.save_highlight(pane._module, pane._book, pane._chapter, v, color)
+        annotations.save_highlight(pane.module, pane.book, pane.chapter, v, color)
     popover.popdown()
     for v in verses:
         pane._refresh_verse_annotation(v)
@@ -538,7 +538,7 @@ def apply_highlight(pane, verses, color, popover):
 
 def toggle_underline(pane, verses, enabled, popover):
     for v in verses:
-        annotations.save_underline(pane._module, pane._book, pane._chapter, v, enabled)
+        annotations.save_underline(pane.module, pane.book, pane.chapter, v, enabled)
     popover.popdown()
     for v in verses:
         pane._refresh_verse_annotation(v)
@@ -548,17 +548,17 @@ def toggle_underline(pane, verses, enabled, popover):
 
 def copy_verse(pane, verses, popover):
     popover.popdown()
-    chapter_verses = content.load_chapter(pane._module, pane._book, pane._chapter)
+    chapter_verses = content.load_chapter(pane.module, pane.book, pane.chapter)
     verse_map = {v: html for v, html in chapter_verses}
     lines = []
     for v in verses:
         plain = re.sub(r'<[^>]+>', '', str(verse_map.get(v, ''))).strip()
-        lines.append(f'{book_label(pane._book)} {pane._chapter}:{v}  {plain}')
-    ref = (f'{book_label(pane._book)} {pane._chapter}:{verses[0]}–{verses[-1]}'
-           if len(verses) > 1 else f'{book_label(pane._book)} {pane._chapter}:{verses[0]}')
-    version = passage_export.version_label(pane._module)
+        lines.append(f'{book_label(pane.book)} {pane.chapter}:{v}  {plain}')
+    ref = (f'{book_label(pane.book)} {pane.chapter}:{verses[0]}–{verses[-1]}'
+           if len(verses) > 1 else f'{book_label(pane.book)} {pane.chapter}:{verses[0]}')
+    version = passage_export.version_label(pane.module)
     text = f'{ref} ({version})\n' + '\n'.join(lines)
-    pane._view.get_clipboard().set(text)
+    pane.view.get_clipboard().set(text)
     if pane._on_toast:
         pane._on_toast(_('Copied {ref}').format(ref=ref))
 
@@ -576,8 +576,8 @@ def _verse_rect(pane, verse):
     rect.x, rect.y, rect.width, rect.height = 160, 80, 1, 1
     ranges = pane._verse_ranges(verse)
     if ranges:
-        location = pane._view.get_iter_location(ranges[1])
-        rect.x, rect.y = pane._view.buffer_to_window_coords(
+        location = pane.view.get_iter_location(ranges[1])
+        rect.x, rect.y = pane.view.buffer_to_window_coords(
             Gtk.TextWindowType.WIDGET, location.x, location.y)
     return rect
 
@@ -590,12 +590,12 @@ def compare_translations(pane, verse, popover=None):
     # its rect would mean nothing here; the verse's own position is used.
     ok, src_rect = (False, None)
     if popover is not None:
-        if popover.get_parent() is pane._view:
+        if popover.get_parent() is pane.view:
             ok, src_rect = popover.get_pointing_to()
         popover.popdown()
 
     comp = Gtk.Popover()
-    comp.set_parent(pane._view)
+    comp.set_parent(pane.view)
     comp.connect('closed', lambda p: p.unparent())
     comp.set_pointing_to(src_rect if ok else _verse_rect(pane, verse))
 
@@ -603,7 +603,7 @@ def compare_translations(pane, verse, popover=None):
 
     title = Gtk.Label(
         label=_('{ref} — Translations').format(
-            ref=f'{book_label(pane._book)} {pane._chapter}:{verse}'),
+            ref=f'{book_label(pane.book)} {pane.chapter}:{verse}'),
         xalign=0)
     title.add_css_class('heading')
     title.set_margin_start(12)
@@ -642,7 +642,7 @@ def compare_translations(pane, verse, popover=None):
     comp.set_child(outer)
     comp.popup()
 
-    book, chapter = pane._book, pane._chapter
+    book, chapter = pane.book, pane.chapter
 
     def fetch():
         names = [m for m in sword_bridge.module_names()
@@ -695,10 +695,10 @@ def _open_journal_on(pane, parent_popover):
     idle, after the study menu has finished closing.
     """
     parent_popover.popdown()
-    root = pane._view.get_root()
+    root = pane.view.get_root()
     if root is None or not hasattr(root, '_open_journal_on'):
         return
-    book, chapter = pane._book, pane._chapter
+    book, chapter = pane.book, pane.chapter
     GLib.idle_add(lambda: root._open_journal_on(book, chapter)
                   or GLib.SOURCE_REMOVE)
 
@@ -710,10 +710,10 @@ def _open_sermons_on(pane, parent_popover):
     on the next idle, after the study menu has finished closing.
     """
     parent_popover.popdown()
-    root = pane._view.get_root()
+    root = pane.view.get_root()
     if root is None or not hasattr(root, '_open_sermons_on'):
         return
-    book, chapter = pane._book, pane._chapter
+    book, chapter = pane.book, pane.chapter
     GLib.idle_add(lambda: root._open_sermons_on(book, chapter)
                   or GLib.SOURCE_REMOVE)
 
@@ -729,18 +729,18 @@ def collected_quote(pane, verses):
     App space for the anchor, the module's own numbering for the text: the
     pane speaks its module, and a Synodal psalter's verse 1 is app verse 0.
     """
-    chapter_verses = content.load_chapter(pane._module, pane._book,
-                                          pane._chapter)
+    chapter_verses = content.load_chapter(pane.module, pane.book,
+                                          pane.chapter)
     verse_map = {v: html for v, html in chapter_verses}
     words = ' '.join(
         re.sub(r'<[^>]+>', '', str(verse_map.get(v, ''))).strip()
         for v in verses).strip()
-    ref = f'{book_label(pane._book)} {pane._chapter}:{verses[0]}'
+    ref = f'{book_label(pane.book)} {pane.chapter}:{verses[0]}'
     if len(verses) > 1:
         ref = f'{ref}\u2013{verses[-1]}'
-    app = [annotations.app_verse(pane._module, pane._book, pane._chapter, v)
+    app = [annotations.app_verse(pane.module, pane.book, pane.chapter, v)
            for v in verses]
-    anchor = {'book': pane._book, 'chapter': pane._chapter,
+    anchor = {'book': pane.book, 'chapter': pane.chapter,
               'verses': [v for v in app if v is not None]}
     text = f'> {words} — {ref}' if words else ref
     return text, anchor
@@ -750,7 +750,7 @@ def _collect_verses(pane, verses, sermon_id, parent_popover):
     """Add the selected verses to a sermon, from the reading page."""
     parent_popover.popdown()
     text, anchor = collected_quote(pane, verses)
-    root = pane._view.get_root()
+    root = pane.view.get_root()
     if root is None or not hasattr(root, 'collect_into_sermon'):
         return
     # The window toasts: the reader is looking at the reading page and
@@ -768,11 +768,11 @@ def _write_entry(pane, verses, parent_popover):
     parent_popover.popdown()
     # App space, because that is what an anchor holds — the pane speaks its
     # module's numbering, and a Synodal psalter's verse 1 is app verse 0.
-    app = [annotations.app_verse(pane._module, pane._book, pane._chapter, v)
+    app = [annotations.app_verse(pane.module, pane.book, pane.chapter, v)
            for v in verses]
-    anchors = [{'book': pane._book, 'chapter': pane._chapter,
+    anchors = [{'book': pane.book, 'chapter': pane.chapter,
                 'verses': [v for v in app if v is not None]}]
-    root = pane._view.get_root()
+    root = pane.view.get_root()
     if root is None or not hasattr(root, '_open_annotations'):
         return
     GLib.idle_add(lambda: root._open_annotations({'anchors': anchors})
@@ -790,9 +790,9 @@ def _edit_note(pane, verse, current_note, current_tags, parent_popover):
 
 
 def _show_note_window(pane, verse, current_note, current_tags):
-    root = pane._view.get_root()
+    root = pane.view.get_root()
     dialog = Adw.Dialog()
-    dialog.set_title(f'{book_label(pane._book)} {pane._chapter}:{verse}')
+    dialog.set_title(f'{book_label(pane.book)} {pane.chapter}:{verse}')
     dialog.set_content_width(420)
     dialog.set_content_height(360)
 
@@ -814,7 +814,7 @@ def _show_note_window(pane, verse, current_note, current_tags):
     # the editor should carry them rather than send the reader back for them.
     try:
         quoted = passage_export.verse_text(
-            pane._module, pane._book, pane._chapter, [verse])
+            pane.module, pane.book, pane.chapter, [verse])
     except Exception:
         _log.exception('verse text for the note editor failed')
         quoted = ''
@@ -863,7 +863,7 @@ def _show_note_window(pane, verse, current_note, current_tags):
     box.append(tags_entry)
 
     try:
-        suggested = build_suggested_topics(pane._book, pane._chapter, verse, tags_entry)
+        suggested = build_suggested_topics(pane.book, pane.chapter, verse, tags_entry)
         box.append(suggested)
     except Exception:
         _log.exception('suggested topics failed')
@@ -884,11 +884,11 @@ def _show_note_window(pane, verse, current_note, current_tags):
 
 def _save_note_window(pane, verse, note_buf, tags_entry):
     start, end = note_buf.get_bounds()
-    annotations.save_note(pane._module, pane._book, pane._chapter, verse,
+    annotations.save_note(pane.module, pane.book, pane.chapter, verse,
                            note_buf.get_text(start, end, True))
     raw = tags_entry.get_text().strip()
     tags = [t.strip() for t in raw.split(',') if t.strip()] if raw else []
-    annotations.save_tags(pane._module, pane._book, pane._chapter, verse, tags)
+    annotations.save_tags(pane.module, pane.book, pane.chapter, verse, tags)
     pane._refresh_verse_annotation(verse)
 
 
@@ -972,14 +972,14 @@ def show_chapter_note(pane):
     An Adw.Dialog (not a popover): a TextView inside an autohide popover
     doesn't reliably receive keyboard input on Wayland, so this mirrors the
     verse note editor's dialog pattern."""
-    data = annotations.get_chapter_note_data(pane._module, pane._book, pane._chapter)
+    data = annotations.get_chapter_note_data(pane.module, pane.book, pane.chapter)
     note = data['note'] if data else ''
     tags = data['tags'] if data else []
 
-    root = pane._view.get_root()
+    root = pane.view.get_root()
     dialog = Adw.Dialog()
     dialog.set_title(_('{ref} — Chapter Note').format(
-        ref=f'{book_label(pane._book)} {pane._chapter}'))
+        ref=f'{book_label(pane.book)} {pane.chapter}'))
     dialog.set_content_width(420)
     dialog.set_content_height(360)
 
@@ -1035,10 +1035,10 @@ def show_chapter_note(pane):
 def _save_chapter_note(pane, buf, tags_entry):
     start, end = buf.get_bounds()
     annotations.save_chapter_note(
-        pane._module, pane._book, pane._chapter,
+        pane.module, pane.book, pane.chapter,
         buf.get_text(start, end, True))
     raw = tags_entry.get_text().strip()
     tags = [t.strip() for t in raw.split(',') if t.strip()] if raw else []
     annotations.save_chapter_note_tags(
-        pane._module, pane._book, pane._chapter, tags)
+        pane.module, pane.book, pane.chapter, tags)
     pane._update_chapter_note_indicator()

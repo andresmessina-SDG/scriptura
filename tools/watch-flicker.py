@@ -40,7 +40,7 @@ SHOTS = os.environ.get('FLICKER_SHOTS')
 
 def install(win, log):
     pane = win.pane1
-    view = pane._view
+    view = pane.view
     adj = pane._reading_scroll.get_vadjustment()
     t0 = time.perf_counter()
     state = {'last': None, 'display_at': None}

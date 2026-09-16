@@ -985,9 +985,9 @@ def test_the_study_menu_says_what_was_preached_here(isolated, display,
                  anchors=[_anchor('Matthew', 13, 1)])
 
     class _Pane:
-        _module, _book, _chapter = 'KJV', 'Matthew', 13
-        _view = Gtk.TextView()
-        _buffer = _view.get_buffer()
+        module, book, chapter = 'KJV', 'Matthew', 13
+        view = Gtk.TextView()
+        _buffer = view.get_buffer()
 
     popover = annotation_dialogs.build_study_menu(_Pane(), [1], 10, 10)
     labels = _menu_labels(popover.get_child())

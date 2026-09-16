@@ -260,7 +260,7 @@ class VerseCursor:
         arriving, and _place has already announced the bare reference."""
         heads = self._pane._rendered_headings.get(verse_num) or []
         if heads:
-            a11y.announce(self._pane._view, heads[0])
+            a11y.announce(self._pane.view, heads[0])
 
     # ── Word tier ─────────────────────────────────────────────────────────
 
@@ -343,7 +343,7 @@ class VerseCursor:
             hint = _('press Enter to look up')
         else:
             hint = _('press Enter for the dictionary')
-        a11y.announce(pane._view, f'{word}, {hint}')
+        a11y.announce(pane.view, f'{word}, {hint}')
 
     # ── Activation ────────────────────────────────────────────────────────
 
@@ -386,7 +386,7 @@ class VerseCursor:
 
     def _view_coords(self, it):
         """Widget coordinates for a buffer iter, for anchoring a popover."""
-        view = self._pane._view
+        view = self._pane.view
         rect = view.get_iter_location(it)
         return view.buffer_to_window_coords(
             Gtk.TextWindowType.WIDGET, rect.x, rect.y)

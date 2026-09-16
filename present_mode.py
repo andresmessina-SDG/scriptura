@@ -123,15 +123,15 @@ class PresentController:
             return None
         if (p1[0], p1[1]) != (p2[0], p2[1]):        # same book & chapter
             return None
-        if self.pane1._module == self.pane2._module:  # two views of one text
+        if self.pane1.module == self.pane2.module:  # two views of one text
             return None
         return (self.pane1, self.pane2)
 
     def _show_present(self):
         bi = self._present_bilingual_source()
         pane = bi[0] if bi else self._present_source_pane()
-        self._present_module = pane._module
-        self._present_module_b = bi[1]._module if bi else None
+        self._present_module = pane.module
+        self._present_module_b = bi[1].module if bi else None
         self._present_bilingual = bool(bi)          # user intent, per session
         # Invalidate any cross/jump load still in flight from a previous present
         # session so it can't clobber the passage we're about to show.

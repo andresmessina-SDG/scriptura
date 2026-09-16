@@ -107,7 +107,7 @@ class ScrollKeeper:
 
     @property
     def _view(self):
-        return self._pane._view
+        return self._pane.view
 
     @property
     def _buffer(self):

@@ -206,7 +206,7 @@ class OverlayManager:
             self._close_other_overlays(keep='search')
             # Default to pane1's module — but fall back to a Bible-text module
             # if pane1 is showing a devotional (search doesn't work on devotionals).
-            mod = self.pane1._module
+            mod = self.pane1.module
             if self.pane1._is_devotional:
                 # Every source, or a library whose Bibles all came from eBible
                 # falls back to nothing and opens search on the devotional.

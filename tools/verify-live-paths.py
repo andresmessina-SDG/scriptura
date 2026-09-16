@@ -183,7 +183,7 @@ def driver() -> int:
         import annotation_dialogs as ad
         pane = state['pane']
         pop = Gtk.Popover()
-        pop.set_parent(pane._view)
+        pop.set_parent(pane.view)
         try:
             ad.toggle_underline(pane, [16], True, pop)
             ad.toggle_underline(pane, [16], False, pop)
@@ -197,8 +197,8 @@ def driver() -> int:
     def mark_and_note_a_verse(win):
         import annotations
         pane = state['pane']
-        annotations.save_highlight(pane._module, 'John', 3, 16, '#ffff00')
-        annotations.save_note(pane._module, 'John', 3, 16,
+        annotations.save_highlight(pane.module, 'John', 3, 16, '#ffff00')
+        annotations.save_note(pane.module, 'John', 3, 16,
                               'The hinge of the chapter.')
         win._refresh_panes('John', 3, 16)
 

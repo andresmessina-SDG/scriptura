@@ -14,7 +14,7 @@ class _Pane:
     def __init__(self, passage, visible=True, module='KJV'):
         self._passage = passage
         self._visible = visible
-        self._module = module
+        self.module = module
 
     def current_passage(self):
         return self._passage

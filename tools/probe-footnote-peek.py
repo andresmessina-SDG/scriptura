@@ -140,7 +140,7 @@ def run_driver() -> int:
         return len(entry[1]) if entry else None
 
     def click(pane, run, then):
-        buf, view = pane._buffer, pane._view
+        buf, view = pane._buffer, pane.view
         view.scroll_to_iter(buf.get_iter_at_offset(run['offset']),
                             0.3, True, 0.0, 0.4)
 

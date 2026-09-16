@@ -1207,6 +1207,25 @@ class BiblePane(Gtk.Box):
     # strip animation that keeps the reading glyphs screen-fixed. This pane
     # owns the reading scroll/anchor machinery it collaborates with.
 
+    # What the pane is showing, for code outside it. Read-only: the pane
+    # moves them itself, through navigation and the render funnel, so a
+    # caller that set one would leave the text and the chrome disagreeing.
+    @property
+    def book(self):
+        return self._book
+
+    @property
+    def chapter(self):
+        return self._chapter
+
+    @property
+    def module(self):
+        return self._module
+
+    @property
+    def view(self):
+        return self._view
+
     def __init__(self, module_name=None, on_word_click=None,
                  on_click_outside_search=None, on_verse_select=None,
                  on_word_study_navigate=None, on_toast=None,

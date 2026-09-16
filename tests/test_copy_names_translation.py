@@ -44,11 +44,11 @@ def test_the_verse_menu_copy_names_the_translation(monkeypatch):
     _name_it(monkeypatch)
     monkeypatch.setattr(content, 'load_chapter',
                         lambda *a: [(16, 'For God so loved the world')])
-    fake = types.SimpleNamespace(_module=KEY, _book='John', _chapter=3,
-                                 _view=_View(), _on_toast=None)
+    fake = types.SimpleNamespace(module=KEY, book='John', chapter=3,
+                                 view=_View(), _on_toast=None)
     popover = types.SimpleNamespace(popdown=lambda: None)
     annotation_dialogs.copy_verse(fake, [16], popover)
-    first = fake._view.clipboard.text.splitlines()[0]
+    first = fake.view.clipboard.text.splitlines()[0]
     assert first.endswith('(World English Bible)') and 'eBible' not in first
 
 

@@ -61,7 +61,7 @@ class ModulePicker:
         self._button.add_css_class('flat')
         self._button.add_css_class('pane-module-button')
         self._label = Gtk.Label(
-            label=sword_bridge.display_name(self._pane._module), xalign=0)
+            label=sword_bridge.display_name(self._pane.module), xalign=0)
         self._label.set_ellipsize(Pango.EllipsizeMode.END)
         self._label.set_max_width_chars(32)
         self._label.add_css_class('pane-module-title')
@@ -407,7 +407,7 @@ class ModulePicker:
         hb.set_margin_bottom(2)
         lbl = Gtk.Label(label=sword_bridge.display_name(name), xalign=0, hexpand=True)
         lbl.set_ellipsize(Pango.EllipsizeMode.END)
-        if name == self._pane._module:
+        if name == self._pane.module:
             lbl.add_css_class('accent')
         hb.append(lbl)
         hb.append(self._info_button(name))
@@ -433,7 +433,7 @@ class ModulePicker:
         title = Gtk.Label(label=sword_bridge.display_name(name), xalign=0)
         title.set_ellipsize(Pango.EllipsizeMode.END)
         title.add_css_class('module-feature-title')
-        if name == self._pane._module:
+        if name == self._pane.module:
             title.add_css_class('accent')
         text.append(title)
         sub = Gtk.Label(label=card['tagline'], xalign=0)
@@ -451,7 +451,7 @@ class ModulePicker:
             return
         name = row._module_name
         self._popover.popdown()
-        if name != self._pane._module:
+        if name != self._pane.module:
             self._pane._apply_module_change(name)
 
     # ── info page + removal ────────────────────────────────────────────────────

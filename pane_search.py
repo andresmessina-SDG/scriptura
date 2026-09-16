@@ -283,11 +283,11 @@ class PaneSearch:
         # Guard against a stale ref: only single out the verse if the render
         # we're highlighting is actually its chapter (vnum tags are recreated
         # per chapter, so a same-numbered verse elsewhere could collide).
-        if (book, ch) != (self._pane._book, self._pane._chapter):
+        if (book, ch) != (self._pane.book, self._pane.chapter):
             return None
         # Index refs are app-space (FTS v3); the buffer's vnum tags carry
         # the module's own numbering — translate (no-op for app-keyed).
-        v = sword_bridge.map_target_verse(self._pane._module, book, ch, v)
+        v = sword_bridge.map_target_verse(self._pane.module, book, ch, v)
         tag = buf.get_tag_table().lookup(f'vnum_{v}')
         if not tag:
             return None
@@ -308,7 +308,7 @@ class PaneSearch:
         (the browser find-in-page convention)."""
         buf = self._pane._buffer
         if self._clear_hl_tags(buf):
-            self._pane._view.queue_draw()  # bands are painted from these tags
+            self._pane.view.queue_draw()  # bands are painted from these tags
 
         pending = self._pending_highlight
         self._pending_highlight = None
@@ -357,7 +357,7 @@ class PaneSearch:
             return
 
         if applied:
-            self._pane._view.queue_draw()
+            self._pane.view.queue_draw()
 
     # ── Internal handlers ─────────────────────────────────────────────────
 
@@ -385,7 +385,7 @@ class PaneSearch:
         # Highlights die with the query (they otherwise persist — the
         # browser find-in-page convention).
         if self._clear_hl_tags(self._pane._buffer):
-            self._pane._view.queue_draw()
+            self._pane.view.queue_draw()
 
     def _on_search_changed(self, entry):
         # Find-in-page as you type: live-highlight the rendered chapter
@@ -415,7 +415,7 @@ class PaneSearch:
         bands persist/clear by the same rules."""
         buf = self._pane._buffer
         if self._clear_hl_tags(buf):
-            self._pane._view.queue_draw()
+            self._pane.view.queue_draw()
         if len(query) < 2:
             self._status.set_text('')
             return
@@ -429,7 +429,7 @@ class PaneSearch:
                           buf.get_iter_at_offset(m.end()))
             n += 1
         if n:
-            self._pane._view.queue_draw()
+            self._pane.view.queue_draw()
         a11y.status(
             self._status,
             ngettext('{n} in this chapter', '{n} in this chapter', n)
@@ -440,7 +440,7 @@ class PaneSearch:
         if not query:
             return
         self._last_entered = query
-        module = self._pane._module
+        module = self._pane.module
         a11y.status(self._status, _('Searching…'))
         self._progress.reset()
         self._prev_btn.set_sensitive(False)
@@ -488,7 +488,7 @@ class PaneSearch:
     def _on_done(self, results, truncated, module):
         # Stale results were already dropped by the runner's generation guard.
         self._delayed_spinner.stop()
-        if module != self._pane._module:
+        if module != self._pane.module:
             return
         self._results = list(results)
         self._idx = -1

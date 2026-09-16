@@ -47,7 +47,7 @@ class ImageryContent(PaneContent):
 
     def render(self) -> None:
         p = self._pane
-        p._imagery.render_for(p._book, p._chapter, p._selected_verse or 1)
+        p._imagery.render_for(p.book, p.chapter, p._selected_verse or 1)
 
 
 class CatenaContent(PaneContent):
@@ -55,7 +55,7 @@ class CatenaContent(PaneContent):
 
     def render(self) -> None:
         p = self._pane
-        p._catena.render_for(p._book, p._chapter, p._selected_verse or 1)
+        p._catena.render_for(p.book, p.chapter, p._selected_verse or 1)
 
     def apply_font_size(self, pt: int) -> None:
         self._pane._catena.apply_font_size(pt)
@@ -67,7 +67,7 @@ class InterlinearContent(PaneContent):
     def render(self) -> None:
         p = self._pane
         p._interlinear.render_for(
-            p._module, p._book, p._chapter, p._selected_verse or 1)
+            p.module, p.book, p.chapter, p._selected_verse or 1)
 
     def on_verse(self, verse_num: int) -> None:
         # Lighter than a full re-render: just move the selection highlight.

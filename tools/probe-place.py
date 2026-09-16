@@ -86,7 +86,7 @@ def run_driver() -> int:
         it: the iter the reading top resolves to, whether GTK's own
         coordinate lookup answered there, and how far a walk has to go to
         reach a verse tag (the capture gives up after 32 hops)."""
-        view = pane._view
+        view = pane.view
         scroll = pane._scroll
         x = max(40, view.get_left_margin() + 20)
         bx, by = view.window_to_buffer_coords(Gtk.TextWindowType.TEXT, x, 1)
@@ -113,7 +113,7 @@ def run_driver() -> int:
     def sweep():
         pane = S['pane']
         adj = S['adj']
-        view = pane._view
+        view = pane.view
         parks = S['parks']
 
         def one():

@@ -85,7 +85,7 @@ class ExportSheet:
         # It also needs a verse to be the unit AROUND, so it goes with the
         # selection when there is none.
         if self._verses and sword_bridge.chapter_headings(
-                self._pane._module, self._pane._book, self._pane._chapter):
+                self._pane.module, self._pane.book, self._pane.chapter):
             self._scopes.append(UNIT)
             labels.append(_('This sense-unit'))
         self._scopes.append(CHAPTER)
@@ -108,7 +108,7 @@ class ExportSheet:
         group.add(self._notes_row)
         self._layer_rows = {}
         has_interlinear = passage_export.interlinear_module_for(
-            self._pane._book) is not None
+            self._pane.book) is not None
         for key, title, available in (
                 ('interlinear', _('Interlinear'), has_interlinear),
                 ('variants', _('Textual variants'), has_interlinear),
@@ -136,7 +136,7 @@ class ExportSheet:
             return None
         if scope == UNIT:
             return passage_export.pericope_verses(
-                self._pane._module, self._pane._book, self._pane._chapter,
+                self._pane.module, self._pane.book, self._pane.chapter,
                 self._verses[0])
         return self._verses
 
@@ -148,7 +148,7 @@ class ExportSheet:
         colon is legal here and a nuisance on any drive the file is copied
         to next."""
         ref = passage_export.format_reference(
-            self._pane._book, self._pane._chapter, self._chosen_verses())
+            self._pane.book, self._pane.chapter, self._chosen_verses())
         stem = ref.replace(':', '.').replace(passage_export.EN_DASH, '-')
         return f'{stem}.{"md" if self._markdown() else "txt"}'
 
@@ -170,7 +170,7 @@ class ExportSheet:
             return
         self._dialog.close()
         pane, verses = self._pane, self._chosen_verses()
-        module, book, chapter = pane._module, pane._book, pane._chapter
+        module, book, chapter = pane.module, pane.book, pane.chapter
         notes = self._notes_row.get_active()
         layers = {key: row.get_active()
                   for key, row in self._layer_rows.items()}
@@ -271,17 +271,17 @@ class CardSheet:
 
     def _reference(self):
         return passage_export.format_reference(
-            self._pane._book, self._pane._chapter, self._verses)
+            self._pane.book, self._pane.chapter, self._verses)
 
     def _card_bytes(self):
         from pane import auto_reading_ink
         paper = self._paper()
         return verse_card.render_bytes(
             text=passage_export.verse_text(
-                self._pane._module, self._pane._book, self._pane._chapter,
+                self._pane.module, self._pane.book, self._pane.chapter,
                 self._verses),
             reference=self._reference(),
-            translation=passage_export.version_label(self._pane._module),
+            translation=passage_export.version_label(self._pane.module),
             paper=paper, ink=auto_reading_ink(paper),
             shape=self._shapes[self._shape_row.get_selected()],
             wordmark=self._mark_row.get_active())
@@ -327,7 +327,7 @@ class CardSheet:
             return
         self._dialog.close()
         pane, verses = self._pane, self._verses
-        module, book, chapter = pane._module, pane._book, pane._chapter
+        module, book, chapter = pane.module, pane.book, pane.chapter
         paper = self._paper()
         shape = self._shapes[self._shape_row.get_selected()]
         wordmark = self._mark_row.get_active()

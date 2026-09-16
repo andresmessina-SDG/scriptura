@@ -166,7 +166,7 @@ def print_passage(pane, verses, popover=None) -> None:
     Print portal, which is why no dialog is constructed here by hand."""
     if popover is not None:
         popover.popdown()
-    operation = build_operation(pane._module, pane._book, pane._chapter,
+    operation = build_operation(pane.module, pane.book, pane.chapter,
                                list(verses))
     try:
         operation.run(Gtk.PrintOperationAction.PRINT_DIALOG, pane.get_root())

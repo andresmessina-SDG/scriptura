@@ -113,7 +113,7 @@ def test_lexicon_hint_is_silent_without_strongs(isolated, monkeypatch):
 
     class _Pane:
         def __init__(self, module, visible=True):
-            self._module = module
+            self.module = module
             self._visible = visible
 
         def get_visible(self):
@@ -147,7 +147,7 @@ def test_lexicon_hint_ignores_a_hidden_second_pane(isolated, monkeypatch):
 
     class _Pane:
         def __init__(self, module, visible=True):
-            self._module, self._visible = module, visible
+            self.module, self._visible = module, visible
 
         def get_visible(self):
             return self._visible

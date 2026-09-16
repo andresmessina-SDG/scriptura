@@ -126,7 +126,7 @@ def run_driver() -> int:
             return GLib.SOURCE_CONTINUE
         GLib.timeout_add(POLL_MS, wait_grown)
 
-        view = pane._view
+        view = pane.view
 
         def go():
             target = view.window_to_buffer_coords(
@@ -224,7 +224,7 @@ def run_driver() -> int:
             # Record the vadjustment on every PAINTED frame.
             clock = S['win'].get_frame_clock()
 
-            view = pane._view
+            view = pane.view
 
             def painted_y():
                 """What the TextView is actually SHOWING, not what the
