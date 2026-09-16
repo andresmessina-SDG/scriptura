@@ -28,6 +28,7 @@ imagery_reader.py
 interlinear_data.py
 interlinear_view.py
 lexicon_panel.py
+manuscript_find.py
 module_manager.py
 module_picker.py
 navigation.py

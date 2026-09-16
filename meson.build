@@ -71,6 +71,7 @@ py_sources = files(
   'journal_markup.py',
   'lexicon_data.py',
   'lexicon_panel.py',
+  'manuscript_find.py',
   'module_manager.py',
   'module_picker.py',
   'module_positions.py',

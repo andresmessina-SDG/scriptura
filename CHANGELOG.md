@@ -8,6 +8,10 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Added
 
+- **Find and replace in journal entries and sermons.** Ctrl+F, or the
+  search button at the head of the page, finds a word without regard to
+  case and steps through every use of it; Ctrl+H adds a replace field.
+  *Replace All* is a single undo.
 - **Ctrl+D bookmarks the chapter you are reading.** Until now the header
   button was the only way.
 - **Back and forward from the keyboard and mouse.** Alt+[ and Alt+], or a

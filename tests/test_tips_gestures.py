@@ -74,6 +74,9 @@ EXPECTED_GESTURE_SITES = {
     'imagery_reader.py': 4,
     'interlinear_view.py': 1,
     'lexicon_panel.py': 1,
+    # The find bar's field takes Shift+Enter for the previous match. A key,
+    # not a gesture, and named in the button's tooltip.
+    'manuscript_find.py': 1,
     'navigation.py': 1,
     'pane.py': 15,
     # Two of them are the mouse's back and forward buttons: invisible, so

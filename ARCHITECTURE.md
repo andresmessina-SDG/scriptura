@@ -103,6 +103,7 @@ scriptura/
 +-- search_panel.py       # Search overlay (right-side revealer)
 +-- annotations_window.py # Annotations window (master-detail) + TagManagerWindow
 +-- annotation_editors.py # The three editors the window shows: mark, entry, sermon
++-- manuscript_find.py   # Find and replace in an entry or sermon body (Ctrl+F / Ctrl+H)
 +-- journal.py           # journal.json — entries (a page, where a note is a margin)
 +-- sermons.py           # sermons.json — manuscripts, series, preaching days
 +-- journal_markup.py    # the Markdown subset + reference parser (pure, no GTK)
@@ -761,6 +762,7 @@ journal_markup.py  # the Markdown subset, pure: text in, spans out, no GTK.
                #   plus what Enter carries on (`next_marker`, `renumber`)
 journal_import.py  # Markdown/text files in, one file per entry
 annotation_editors.py  # MarkEditor + _ProseEditor → EntryEditor, SermonEditor
+manuscript_find.py  # the find/replace bar on a prose editor's sheet
 annotations_window.py  # the three pages, the list, the filters, TagManager
 ```
 

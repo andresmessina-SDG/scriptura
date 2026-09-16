@@ -9898,3 +9898,41 @@ msgstr "Comparar traducciones de este versículo"
 
 msgid "Bookmark this chapter"
 msgstr "Añadir este capítulo a marcadores"
+
+msgid "Find and replace (Ctrl+F)"
+msgstr "Buscar y reemplazar (Ctrl+F)"
+
+msgid "Find and replace"
+msgstr "Buscar y reemplazar"
+
+msgid "Replace (Ctrl+H)"
+msgstr "Reemplazar (Ctrl+H)"
+
+msgid "Find in this page"
+msgstr "Buscar en esta página"
+
+msgid "Previous match (Shift+Enter)"
+msgstr "Coincidencia anterior (Mayús+Intro)"
+
+msgid "Next match (Enter)"
+msgstr "Coincidencia siguiente (Intro)"
+
+msgid "Close (Esc)"
+msgstr "Cerrar (Esc)"
+
+msgid "Close"
+msgstr "Cerrar"
+
+msgid "Replace with"
+msgstr "Reemplazar por"
+
+msgid "Replace All"
+msgstr "Reemplazar todo"
+
+msgid "{current} of {total}"
+msgstr "{current} de {total}"
+
+msgid "Replaced {n} match"
+msgid_plural "Replaced {n} matches"
+msgstr[0] "Se reemplazó {n} coincidencia"
+msgstr[1] "Se reemplazaron {n} coincidencias"

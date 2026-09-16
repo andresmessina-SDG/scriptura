@@ -9836,3 +9836,42 @@ msgstr "Сравнить переводы этого стиха"
 
 msgid "Bookmark this chapter"
 msgstr "Добавить главу в закладки"
+
+msgid "Find and replace (Ctrl+F)"
+msgstr "Найти и заменить (Ctrl+F)"
+
+msgid "Find and replace"
+msgstr "Найти и заменить"
+
+msgid "Replace (Ctrl+H)"
+msgstr "Заменить (Ctrl+H)"
+
+msgid "Find in this page"
+msgstr "Найти на этой странице"
+
+msgid "Previous match (Shift+Enter)"
+msgstr "Предыдущее совпадение (Shift+Enter)"
+
+msgid "Next match (Enter)"
+msgstr "Следующее совпадение (Enter)"
+
+msgid "Close (Esc)"
+msgstr "Закрыть (Esc)"
+
+msgid "Close"
+msgstr "Закрыть"
+
+msgid "Replace with"
+msgstr "Заменить на"
+
+msgid "Replace All"
+msgstr "Заменить все"
+
+msgid "{current} of {total}"
+msgstr "{current} из {total}"
+
+msgid "Replaced {n} match"
+msgid_plural "Replaced {n} matches"
+msgstr[0] "Заменено {n} совпадение"
+msgstr[1] "Заменено {n} совпадения"
+msgstr[2] "Заменено {n} совпадений"
