@@ -6905,6 +6905,12 @@ msgstr "Desplace sobre el título del capítulo"
 msgid "Cycle through chapters"
 msgstr "Recorre los capítulos"
 
+msgid "Press the back or forward button on your mouse"
+msgstr "Pulsa el botón de atrás o adelante del ratón"
+
+msgid "Go back through the passages you visited"
+msgstr "Vuelve por los pasajes que visitaste"
+
 #: onboarding.py:66
 msgid "Turn on the lexicon, then tap a word"
 msgstr "Active el léxico y pulse una palabra"
@@ -9889,3 +9895,6 @@ msgstr "Exportar el pasaje"
 
 msgid "Compare translations of this verse"
 msgstr "Comparar traducciones de este versículo"
+
+msgid "Bookmark this chapter"
+msgstr "Añadir este capítulo a marcadores"

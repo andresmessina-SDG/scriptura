@@ -592,7 +592,6 @@ class BibleWindow(Adw.ApplicationWindow):
         self._swap_btn.set_tooltip_text(_('Swap pane modules'))
         set_accessible_label(self._swap_btn, _('Swap pane modules'))
         self._swap_btn.connect('clicked', self._on_swap_clicked)
-        self._swap_btn.set_sensitive(bool(settings.get('split_pane_mode')))
         header.pack_end(self._swap_btn)
 
         # Reading-tools cluster at the inner edge of the right cluster: the
@@ -783,6 +782,7 @@ class BibleWindow(Adw.ApplicationWindow):
         # without this the button would say "single" while pane2 was
         # still showing.
         self.pane2.set_visible(self._btn_split.get_active())
+        self._show_split_controls(self._btn_split.get_active())
         self._paned.set_resize_start_child(True)
         self._paned.set_resize_end_child(True)
         self._paned.set_shrink_start_child(False)
@@ -1043,6 +1043,15 @@ class BibleWindow(Adw.ApplicationWindow):
         key_controller.connect('key-pressed', self._on_key_press)
         self.add_controller(key_controller)
 
+        # A mouse's side buttons go back and forward through history, as in
+        # a browser or Files. One gesture per button, so no other click is
+        # ever looked at.
+        for button in (self._MOUSE_BACK, self._MOUSE_FORWARD):
+            side = Gtk.GestureClick(button=button)
+            side.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+            side.connect('pressed', self._on_side_button)
+            self.add_controller(side)
+
         # Start with the reading view focused so the contextual keys above
         # work from launch (and the app opens in a sensible state) rather
         # than only after the user's first click. One-shot on first map.
@@ -1093,6 +1102,7 @@ class BibleWindow(Adw.ApplicationWindow):
             ('print-passage', ['<Ctrl>p'], self._print_passage),
             ('export-passage', ['<Ctrl>e'], self._export_passage),
             ('compare-verse', ['<Ctrl><Shift>c'], self._compare_verse),
+            ('bookmark', ['<Ctrl>d'], self._bookmark_here),
             ('annotations', ['<Ctrl>j'], self._open_annotations),
             ('write-entry', ['<Ctrl><Shift>j'], self._write_about_here),
             ('write-sermon', ['<Ctrl><Shift>m'], self._sermon_about_here),
@@ -1349,6 +1359,16 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _go_next_book(self):
         self._nav._go_next_book()
+
+    _MOUSE_BACK = 8
+    _MOUSE_FORWARD = 9
+
+    def _on_side_button(self, gesture, *_args):
+        if gesture.get_current_button() == self._MOUSE_BACK:
+            self._on_nav_back(None)
+        else:
+            self._on_nav_fwd(None)
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
 
     def _on_nav_back(self, btn):
         self._nav._on_nav_back(btn)
@@ -1877,8 +1897,15 @@ class BibleWindow(Adw.ApplicationWindow):
         return box
 
     def _add_bookmark(self, _btn, book, chapter, popover):
-        bookmarks.add(book, chapter)
         popover.popdown()
+        self._save_bookmark(book, chapter)
+
+    def _bookmark_here(self):
+        self._save_bookmark(self.nav_books()[self.book_drop.get_selected()],
+                            self.chapter_drop.get_selected() + 1)
+
+    def _save_bookmark(self, book, chapter):
+        bookmarks.add(book, chapter)
         self._toast(_('Bookmarked {ref}').format(ref=f'{book_label(book)} {chapter}'))
 
     def _on_bookmark_row_activated(self, _lb, row, popover):
@@ -2673,11 +2700,19 @@ class BibleWindow(Adw.ApplicationWindow):
         if self._panes_narrow:
             # View toggle is hidden while collapsed; the switcher only matters
             # in split mode (two distinct panes to flip between).
+            self._show_split_controls(split)
             self._narrow_switch_box.set_visible(split)
             self._apply_narrow_pane()
             return
         self._set_pane_visible(self.pane2, split)
-        self._swap_btn.set_sensitive(split)
+        self._show_split_controls(split)
+
+    def _show_split_controls(self, split):
+        """Controls that only mean something with two panes go away with
+        the second pane, rather than staying on screen dimmed."""
+        self._swap_btn.set_visible(split and not self._header_narrow)
+        for pane in (self.pane1, self.pane2):
+            pane.set_alone(not split)
 
     def _set_pane_visible(self, pane, visible):
         """Show or hide a pane, stopping its audio on a visible→hidden
@@ -2703,8 +2738,10 @@ class BibleWindow(Adw.ApplicationWindow):
         if narrow == self._header_narrow:
             return
         self._header_narrow = narrow
-        for w in (self._study_box, self._bookmark_btn, self._swap_btn):
+        for w in (self._study_box, self._bookmark_btn):
             w.set_visible(not narrow)
+        self._swap_btn.set_visible(
+            not narrow and self._btn_split.get_active())
         self._overflow_btn.set_visible(narrow)
 
     def _set_panes_narrow(self, narrow):
@@ -2863,9 +2900,10 @@ class BibleWindow(Adw.ApplicationWindow):
         row(Gtk.Image.new_from_icon_name('scriptura-bookmark-new-symbolic'),
             _('Bookmarks'), lambda: self._show_bookmarks(self._overflow_btn))
 
-        row(Gtk.Image.new_from_icon_name('scriptura-object-flip-horizontal-symbolic'),
-            _('Swap pane modules'), lambda: self._on_swap_clicked(None),
-            sensitive=self._btn_split.get_active())
+        if self._btn_split.get_active():
+            row(Gtk.Image.new_from_icon_name(
+                    'scriptura-object-flip-horizontal-symbolic'),
+                _('Swap pane modules'), lambda: self._on_swap_clicked(None))
 
         # Ultra-narrow: the 1/2 pane switcher folds in here too (it's hidden
         # from the header at this width).
@@ -3382,6 +3420,7 @@ class BibleWindow(Adw.ApplicationWindow):
             (N_('Export the passage'), 'action', 'export-passage'),
             (N_('Compare translations of this verse'), 'action',
              'compare-verse'),
+            (N_('Bookmark this chapter'), 'action', 'bookmark'),
             (N_('Keyboard shortcuts'), 'action', 'show-help-overlay'),
         ]),
     ]

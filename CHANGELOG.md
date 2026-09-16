@@ -6,6 +6,20 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+### Added
+
+- **Ctrl+D bookmarks the chapter you are reading.** Until now the header
+  button was the only way.
+- **A mouse's back and forward buttons go back and forward** through the
+  passages you visited, as in a browser.
+
+### Changed
+
+- **Single-pane view no longer shows controls for two panes.** The pane
+  lock and the swap button are hidden until there is a second pane. A lock
+  that is on stays in sight, so a pane that isn't following navigation still
+  says so.
+
 ### Fixed
 
 - **Two copies of the app could erase each other's notes.** Opening

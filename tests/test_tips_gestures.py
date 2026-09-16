@@ -76,7 +76,9 @@ EXPECTED_GESTURE_SITES = {
     'lexicon_panel.py': 1,
     'navigation.py': 1,
     'pane.py': 15,
-    'window.py': 10,
+    # Two of them are the mouse's back and forward buttons: invisible, so
+    # they have a Reading row.
+    'window.py': 11,
 }
 
 _GESTURE_CALL = re.compile(

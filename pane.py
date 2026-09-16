@@ -1817,9 +1817,7 @@ class BiblePane(Gtk.Box):
         is_chapter_keyed = self._is_verse_navigable()
         # The catena pane follows the partnered Bible (book/chapter + verse),
         # so it keeps the sync button but none of the verse-text chrome.
-        self._sync_btn.set_visible(
-            is_chapter_keyed or self._is_catena or self._is_imagery
-            or self._is_interlinear)
+        self._update_sync_visible()
         self._chapter_note_btn.set_visible(is_chapter_keyed)
         self._search.button.set_visible(is_chapter_keyed)
         self._copy_chapter_btn.set_visible(is_chapter_keyed)
@@ -2216,11 +2214,28 @@ class BiblePane(Gtk.Box):
             self._on_toast(_('Copied {ref}').format(ref=f'{book_label(book)} {chapter}'))
         return GLib.SOURCE_REMOVE
 
+    #: True while this is the only pane on screen (single-pane view).
+    _alone = False
+
+    def set_alone(self, alone):
+        self._alone = alone
+        self._update_sync_visible()
+
+    def _update_sync_visible(self):
+        """The lock only means something beside another pane, so a pane on
+        its own hides it — unless it is on, when hiding it would leave the
+        pane ignoring navigation with no way to see why or undo it."""
+        kind = (self._is_verse_navigable() or self._is_catena
+                or self._is_imagery or self._is_interlinear)
+        self._sync_btn.set_visible(
+            kind and (not self._alone or self._sync_btn.get_active()))
+
     def _on_sync_toggled(self, btn, _param):
         locked = btn.get_active()
         btn.set_icon_name('scriptura-changes-prevent-symbolic' if locked else 'scriptura-changes-allow-symbolic')
         btn.set_tooltip_text(_('Locked — not following navigation') if locked
                              else _('Following navigation'))
+        self._update_sync_visible()
         # When re-enabling "Following navigation", catch up to wherever the rest
         # of the app has navigated to since the lock was applied.
         if not locked and getattr(self, '_window_book', None):
@@ -5697,9 +5712,7 @@ class BiblePane(Gtk.Box):
         # Sync / chapter-note / per-pane search are only meaningful when
         # the pane is rendering a verse-keyed chapter. Devotionals get
         # date navigation instead; Generic Books get the TOC button.
-        self._sync_btn.set_visible(
-            is_chapter_keyed or self._is_catena or self._is_imagery
-            or self._is_interlinear)
+        self._update_sync_visible()
         self._chapter_note_btn.set_visible(is_chapter_keyed)
         self._search.button.set_visible(is_chapter_keyed)
         self._copy_chapter_btn.set_visible(is_chapter_keyed)

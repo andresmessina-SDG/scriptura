@@ -61,6 +61,8 @@ GESTURES: list[tuple[str, list[tuple[str, str]]]] = [
         (N_('Double-click a word'), N_('Look it up in the dictionary')),
         (N_('Click a footnote marker'), N_('Read the translator’s note')),
         (N_('Scroll over the chapter title'), N_('Cycle through chapters')),
+        (N_('Press the back or forward button on your mouse'),
+         N_('Go back through the passages you visited')),
     ]),
     (N_('Word study'), [
         (N_('Turn on the lexicon, then tap a word'),

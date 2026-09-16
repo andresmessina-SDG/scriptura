@@ -186,3 +186,24 @@ def test_restore_clamps_index(isolated):
     bookmarks.restore(99, {'book': 'Genesis', 'chapter': 1,
                            'verse': None, 'label': 'Genesis 1'})
     assert [b['book'] for b in bookmarks.get_all()] == ['John', 'Genesis']
+
+
+# ── Ctrl+D ──────────────────────────────────────────────────────────────────
+
+def test_the_shortcut_bookmarks_the_chapter_on_screen(isolated):
+    """The header button was the only way in. Ctrl+D saves the same thing
+    the button's Add row does: the chapter the navigation shows."""
+    import types
+    from window import BibleWindow
+
+    toasts = []
+    fake = types.SimpleNamespace(
+        nav_books=lambda: ['Genesis', 'Exodus'],
+        book_drop=types.SimpleNamespace(get_selected=lambda: 1),
+        chapter_drop=types.SimpleNamespace(get_selected=lambda: 19),
+        _toast=toasts.append)
+    fake._save_bookmark = lambda b, c: BibleWindow._save_bookmark(fake, b, c)
+    BibleWindow._bookmark_here(fake)
+    assert [(b['book'], b['chapter']) for b in bookmarks.get_all()] == [
+        ('Exodus', 20)]
+    assert toasts == ['Bookmarked Exodus 20']

@@ -6854,6 +6854,12 @@ msgstr "Прокрутите над названием главы"
 msgid "Cycle through chapters"
 msgstr "Листать главы"
 
+msgid "Press the back or forward button on your mouse"
+msgstr "Нажмите кнопку «назад» или «вперёд» на мыши"
+
+msgid "Go back through the passages you visited"
+msgstr "Вернитесь к отрывкам, которые вы открывали"
+
 #: onboarding.py:66
 msgid "Turn on the lexicon, then tap a word"
 msgstr "Включите словарь и коснитесь слова"
@@ -9827,3 +9833,6 @@ msgstr "Выгрузить отрывок"
 
 msgid "Compare translations of this verse"
 msgstr "Сравнить переводы этого стиха"
+
+msgid "Bookmark this chapter"
+msgstr "Добавить главу в закладки"
