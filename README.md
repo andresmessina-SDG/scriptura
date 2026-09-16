@@ -16,96 +16,23 @@ Built on GNOME with GTK4 + libadwaita, in Python, GPL-3.0.
 
 ## What it does
 
-- **Read two translations side by side.** Each pane has its own
-  module picker; lock one in place while you navigate in the other.
-- **Strong's lexicon at a click.** Click any tagged Hebrew or Greek
-  word for the original lexeme, its morphology, and a word-study
-  list of every verse in the current book that uses the same Strong's
-  number.
-- **Greek and Hebrew interlinears.** Choose an interlinear in either
-  pane and read the Greek New Testament or the Hebrew Old Testament
-  word by word: a context-sensitive English gloss and parsing under
-  every word, transliteration and Strong's numbers a chip away, the
-  full parse on hover, the lexicon a click away. Word data from
-  Tyndale House, Cambridge (STEPBible).
-- **A scholar's Greek lexicon.** An optional pack pairs Abbott-Smith's
-  manual lexicon with the complete Liddell-Scott-Jones, one click
-  apart. Scripture citations inside an entry are live: click one to
-  peek the verse in place, or send it to the other pane.
-- **Commentaries, devotionals, and confessions.** Matthew Henry,
-  Calvin, Clarke, Spurgeon's Morning & Evening, the Westminster
-  Confession, the Augsburg Confession, the Didache, the Apostolic
-  Fathers, and anything else CrossWire packages in SWORD format.
-- **Annotate your study.** Four highlight colors, underlines, notes
-  with topical tags, chapter-level notes. Everything you mark lives
-  in plain JSON in your XDG config directory, yours to back up,
-  sync, or migrate.
-- **The church through the centuries.** An optional Historical
-  Commentaries pack shows how the church read each verse across time:
-  the ante-Nicene fathers, the medieval doctors, and the Reformers,
-  a chorus of voices synced to the verse you're studying, from
-  Irenaeus to Calvin.
-- **Scripture in Art.** An optional imagery pack matched to the
-  passage you're reading: Schnorr von Carolsfeld and Doré engravings,
-  Tissot watercolours, Old Master paintings, Byzantine icons, stained
-  glass, and illuminated manuscripts, alongside journey maps whose
-  passage chips drive the Bible pane to the verses they cover.
-- **Scripture in Stone.** A bundled archaeology gallery: excavated
-  artifacts that touch the biblical text, with photographs,
-  provenance, and the passages they illuminate.
-- **The Book of Generations.** Scripture's lists of names, drawn and
-  bound as a book: one genealogy to a page, from Adam to Noah through
-  to Matthew and Luke side by side, with the ten lifespans of Genesis 5
-  on one axis. The charts are live — a name opens the person, a chip
-  opens the verse — and the same geometry prints. Every line carries
-  the verse it comes from; where a genealogy leaves generations out,
-  the gap is drawn as a gap.
-- **Read in your own language.** The interface is complete in English,
-  Spanish and Russian — menus, dialogs, plurals and all 66 book names,
-  in the terms each language's Bible software uses. First run asks
-  which language you read in, then offers that language's own Bibles,
-  dictionary and study tools.
-- **Cross-references.** OpenBible.info's 340,000-reference database
-  is one click away (Module Manager → Study Tools). TSK is the
-  fallback when you're offline.
-- **Full-text search.** Fast per-module SQLite FTS5 index with phrase,
-  AND/OR, exclude, and prefix queries; a distribution chart across the
-  canon, case-sensitive option, and F3 step-through.
-- **Annotations.** Every mark you have made, in one filterable
-  surface — and every mark follows the reference, so a note written in
-  one translation is there in all of them. Search free-text, filter by
-  type, tag or book, sort by what you edited last, click a row to jump
-  back to the verse.
-- **A journal.** An entry is a page where a note is a margin: a title,
-  the day it is *about* rather than the day you typed it, and none, one
-  or several passages, added or dropped after the fact. Write from
-  Today's reading, from a verse, or from nothing at all. It is written
-  in a little Markdown on a sheet with its tools at the head — Enter
-  carries a list on, and a reference you type becomes a link in the
-  language you spelled it in.
-- **Sermons.** A manuscript is its own thing: a big idea in one line, a
-  series and which part of it, and the days it was preached, which may
-  be none. Verses, cross-references, lexicon entries and your own notes
-  are collected into the sermon you are writing, each one filing the
-  passage it came from; and from inside the manuscript you can ask what
-  you have already marked or written on those passages. The caption says
-  how long it runs.
-- **Reading plans.** Six built-in: Bible in a Year (straight or
-  blended four-stream), the Old Testament in a year, the New
-  Testament in 90 days, Psalms in 30 days, Proverbs in 31 days.
-- **Modern translations.** LEB, BSB, ASV, and the rest of the
-  eBible.org catalog: translations SWORD doesn't carry, fetched on
-  demand into a local SQLite store.
-- **Bring your own modules.** Already have a SWORD module on disk (a
-  translation you bought, a draft a colleague shared, something
-  CrossWire no longer hosts)? Drag the `.zip` onto the Module Manager
-  (or use the import button) and it's installed. Locked commercial
-  modules ask for their publisher's key.
-- **F11 reading mode, F5 presentation mode.** F11 makes the chrome
-  disappear for reading. F5 projects the current passage full screen
-  for a projector or mirrored display, with paging across chapters, a
-  verse-per-page toggle, live type-size control, and a side-by-side
-  view of two translations.
+- **Read two translations side by side**, from CrossWire's SWORD
+  library or eBible.org, or a module you already have on disk.
+- **Study the Greek and Hebrew.** Click a word for its Strong's entry,
+  or read an interlinear with the meaning and grammar under every word.
+- **Commentaries, devotionals and confessions**, plus an optional pack
+  of how the church read each verse, from Irenaeus to Calvin.
+- **Cross-references and search.** 340,000 cross-references, and fast
+  search across a whole Bible.
+- **Mark and write.** Highlights, notes and tags that show in every
+  translation, a journal, and sermon manuscripts.
+- **Reading plans** and a Today page with the day's reading.
+- **Art, archaeology and genealogies.** Paintings and maps for the
+  passage you read, a gallery of finds from the ground, and the
+  Bible's family lists drawn as charts.
+- **Listen.** Chapters and devotionals read aloud.
+- **Present.** F5 shows a passage full screen on a projector.
+- **In English, Spanish and Russian.**
 
 Scriptura runs entirely on your computer. There is no telemetry,
 no account, no background phone-home. The only time the app uses the
@@ -200,26 +127,6 @@ Module Manager.
 
 ---
 
-## A few quiet design choices
-
-- **No web view.** The Bible text renders in a native `GtkTextView`
-  with Pango markup: it starts faster, scrolls smoother, and inherits
-  your system fonts and theme without us hardcoding anything.
-- **Annotations apply in place.** Highlighting a verse doesn't reload
-  the chapter or jump your scroll position. The mark just appears
-  where the verse is.
-- **Soft palette.** Highlight colors render as muted pastels at view
-  time even though stored as their familiar yellow / green / blue /
-  orange; easier on the eyes for long sessions.
-- **The reading column has a cap.** On wide monitors the verse text
-  stays at a comfortable reading width; the scrollbar lives at the
-  pane edge, not inside the column. Adjustable via the Width slider
-  in the menu panel.
-- **F11 hides everything.** Chrome, toolbars, panels: just the
-  Word.
-
----
-
 ## Tiling compositors (Hyprland, sway, river)
 
 Mutter (GNOME) floats child windows above their parent automatically.
@@ -250,8 +157,8 @@ sudo pacman -S xdg-desktop-portal-gtk
 The pytest suite covers the pure-Python layers (`sword_bridge`,
 `open_data`, `annotations`, `reading_plans`, `paths`, `bookmarks`,
 `settings`, `ebible_bridge`, etc.) and a growing GTK layer (panes,
-the lexicon panel, interlinear and presentation paging): 509 tests,
-around fifteen seconds.
+the lexicon panel, interlinear and presentation paging): about
+2,000 tests, under a minute.
 
 ```sh
 # Fedora
