@@ -14,11 +14,11 @@
 
 [meta]
 title = "The Book of Generations"
-subtitle = "The lines the Bible keeps, drawn so they can be held"
+subtitle = "The family lines the Bible records, drawn as charts"
 body = """
 Scripture keeps lists of names, and readers skip them. They are not
-filler: they are the spine the rest of the book hangs on, and the
-writers put them where they did on purpose.
+filler. They carry the story from one age to the next, and the writers
+placed them with care.
 
 Every line below is drawn from the text and cites it. Where a
 genealogy leaves generations out, the gap is drawn as a gap. Where two
@@ -48,7 +48,7 @@ id = "kenan"
 name = "Cainan"
 also = ["Kenan"]
 meaning = "meaning uncertain"
-note = "Not the 'gotten' of Cain: the two names are different words."
+note = "Close to Cain in spelling, but a different man in a different line."
 
 [[person]]
 id = "mahalalel"
@@ -72,13 +72,13 @@ id = "methuselah"
 name = "Methuselah"
 also = ["Mathusala"]
 meaning = "man of the dart"
-note = "The longest life recorded; it ends the year of the flood."
+note = "The longest life recorded. By the reckoning of Genesis 5, it ends in the year of the flood."
 
 [[person]]
 id = "lamech"
 name = "Lamech"
 meaning = "meaning uncertain"
-note = "His own name is uncertain; the one he gave his son is not. He named Noah for the comfort he hoped for."
+note = "The meaning of his own name is uncertain; the one he gave his son is not. He named Noah for the comfort he hoped for."
 
 [[person]]
 id = "noah"
@@ -302,13 +302,13 @@ also = ["Rahab"]
 [[person]]
 id = "ruth"
 name = "Ruth"
-note = "A Moabitess; her book exists to end on this genealogy."
+note = "A Moabitess; her book ends on this genealogy."
 
 [[person]]
 id = "bathsheba"
 name = "the wife of Uriah"
 also = ["Bathsheba", "Bath-sheba", "the wife of Urias"]
-note = "Matthew will not give her name here — he names the wrong that was done to her."
+note = "Matthew does not give her name. He calls her the wife of Uriah, which recalls David's sin."
 
 [[person]]
 id = "mary"
@@ -344,7 +344,7 @@ note = "Matthew jumps three generations after him."
 id = "uzziah"
 name = "Ozias"
 also = ["Uzziah", "Azariah"]
-note = "Called Azariah in 1 Chr 3:12 — one man, two names."
+note = "Called Azariah in 1 Chr 3:12: one man, two names."
 
 [[person]]
 id = "jotham"
@@ -1574,7 +1574,7 @@ subtitle = "The ten before the flood"
 passage = "Genesis 5"
 root = "adam"
 leaf = "noah"
-intro = "One name a generation for ten generations, each with a number attached. Read as a list it is inert; read as a field of overlapping lives it is astonishing."
+intro = "One name a generation for ten generations, each with a number attached. Read as a list it is easy to pass over. Laid out as lives, it shows how far they overlap."
 companion = "gen5_lives"
 
 [[chart]]
@@ -1584,7 +1584,7 @@ title = "Ten lives, laid on one axis"
 subtitle = "Genesis 5, reckoned in years from Adam"
 passage = "Genesis 5"
 tradition = "mt"
-intro = "Every figure here is arithmetic on Genesis 5:3–32, and the arithmetic assumes what the text does not state: that the ten follow one another with no gap. Read that way, two things fall out that no list can show — these ten lives overlap almost completely, and Methuselah's nine hundred and sixty-nine years run out in the year the flood comes. The years are a reckoning, not a date the Bible gives."
+intro = "Every figure here is arithmetic on Genesis 5:3–32, and the arithmetic assumes what the text does not state: that the ten follow one another with no gap. Read that way, the chart shows two things a list cannot: these ten lives overlap far more than a list suggests, with Adam dying only 126 years before Noah is born, and Methuselah's nine hundred and sixty-nine years run out in the year the flood comes. The years are a reckoning, not a date the Bible gives."
 
 [[chart]]
 id = "gen11"
@@ -1594,7 +1594,7 @@ subtitle = "The ten after the flood"
 passage = "Genesis 11:10–26"
 root = "shem"
 leaf = "abraham"
-intro = "The same shape as Genesis 5, and the lifespans fall away as it runs — from Shem's six hundred years to Terah's two hundred and five."
+intro = "The same shape as Genesis 5, and the lifespans fall away as it runs, from Shem's six hundred years to Terah's two hundred and five."
 
 [[chart]]
 id = "house_jacob"
@@ -1603,7 +1603,7 @@ title = "The house of Jacob"
 subtitle = "Four mothers, twelve sons"
 passage = "Genesis 35:23–26"
 root = "jacob"
-intro = "Drawn father-only, this is a list of twelve names. Drawn with the mothers, it is the reason the tribes are grouped the way they are for the rest of the Bible."
+intro = "Drawn father-only, this is a list of twelve names. Drawn with the mothers, it shows the grouping by mother that several later lists of the tribes follow."
 
 [[chart]]
 id = "ruth"
@@ -1613,7 +1613,7 @@ subtitle = "Ten names, from Perez to David"
 passage = "Ruth 4:18–22"
 root = "perez"
 leaf = "david"
-intro = "The book of Ruth exists to arrive here. The same ten men appear in Matthew 1 under their Greek names — Perez is Phares, Hezron is Esrom, Boaz is Booz."
+intro = "The book of Ruth ends here. The same ten men appear in Matthew 1 under their Greek names: Perez is Phares, Hezron is Esrom, Boaz is Booz."
 
 [[chart]]
 id = "matthew"
@@ -1624,7 +1624,7 @@ passage = "Matthew 1:1–17"
 root = "abraham"
 leaf = "jesus"
 register = true
-intro = "Matthew counts his own list out loud in 1:17, and his list also passes over four kings Chronicles names. Both facts are drawn here — the bands are his count, the dashed edges are the omissions — and the chart does not say the one caused the other. Ancient genealogy omits generations as a matter of course, and \"begat\" can span them; the fourteens are also read as a mnemonic, and as the numerical value of David's name."
+intro = "Matthew counts his own list out loud in 1:17, and his list also passes over four kings Chronicles names. Both facts are drawn here (the bands are his count, the dashed edges the omissions), and the chart does not say the one caused the other. Ancient genealogy omits generations as a matter of course, and \"begat\" can span them; the fourteens are also read as a mnemonic, and as the numerical value of David's name."
 
 [[chart]]
 id = "luke"
@@ -1634,7 +1634,7 @@ subtitle = "Jesus back to Adam, and past him"
 passage = "Luke 3:23–38"
 root = "god"
 leaf = "jesus"
-intro = "Luke runs the other way — from Jesus backwards — and does not stop at Abraham. He ends at Adam, and then at God, which is a claim rather than a link. Luke gives the older names in their Greek forms — Saruch for Serug, Ragau for Reu, Noe for Noah; one spelling is kept per man here so the two lists can be laid side by side, and either form finds him."
+intro = "Luke runs the other way, from Jesus backwards, and does not stop at Abraham. He ends at Adam, and then at God, which is a claim rather than a link. Luke gives the older names in their Greek forms: Saruch for Serug, Ragau for Reu, Noe for Noah. One spelling is kept per man here so the two lists can be laid side by side, and either form finds him."
 
 [[chart]]
 id = "witnesses"
@@ -1645,7 +1645,7 @@ passage = "Matthew 1:1–17"
 passage_b = "Luke 3:23–38"
 left = "matthew"
 right = "luke"
-intro = "Both trace Jesus through David. They agree at David, at Shealtiel and Zerubbabel, and at Joseph — and nowhere in between. This chart states that and stops; the classical answers are set out below it, and none of them is chosen here."
+intro = "Both trace Jesus through David. From Abraham to David they run almost name for name. After David they meet only at Shealtiel and Zerubbabel, and again at Joseph. This chart states that and stops; the classical answers are set out below it, and none of them is chosen here."
 
 # ── the three classical readings of the Matthew/Luke difference ──────────
 # Attributed, not adjudicated. Same discipline as a contested site on a map.
@@ -1667,6 +1667,6 @@ caveat = "It requires a levirate marriage the text nowhere records."
 [[reading]]
 chart = "witnesses"
 title = "Legal throne versus natural descent"
-body = "Matthew follows the royal succession — who held or had claim to the throne — while Luke follows physical descent. The two diverge after David because a throne passes by law and blood passes by birth."
+body = "Matthew follows the royal succession, those who held or had a claim to the throne, while Luke follows physical descent. The two diverge after David because a throne passes by law and blood passes by birth."
 attribution = "Widely held among Protestant interpreters; set out at length by J. Gresham Machen, The Virgin Birth of Christ (1930)."
 caveat = "It explains the shape of the difference better than it explains the two named fathers."
