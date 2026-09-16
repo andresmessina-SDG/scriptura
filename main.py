@@ -82,6 +82,7 @@ def _setup_gettext():
 
 _setup_gettext()
 
+import backup  # noqa: E402
 import mpris  # noqa: E402
 from styles import load_app_css  # noqa: E402
 from window import BibleWindow  # noqa: E402  (after logging setup)
@@ -413,6 +414,9 @@ def relaunch_requested():
 
 def main():
     app = BibleApp(unique=True)
+    # `startup` fires only in the copy that owns the window, never in a
+    # launch that hands off to it, and before any store is changed.
+    app.connect('startup', lambda _app: backup.daily_copy())
     app.run()
     # Re-exec here rather than from the button's handler: by now
     # GApplication has shut down and released its bus name, so the new

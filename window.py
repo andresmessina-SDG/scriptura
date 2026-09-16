@@ -18,6 +18,7 @@ import night_light
 import module_positions
 import onboarding
 import backup
+import paths
 import bookmarks
 import journal
 import reading_plans
@@ -1977,9 +1978,20 @@ class BibleWindow(Adw.ApplicationWindow):
             return
         self._toast(_('Study data backed up'))
 
+    def _on_daily_copies_clicked(self, _row):
+        newest = backup.newest_daily_copy()
+        if newest is None:
+            self._toast(_('No daily copy yet'))
+            return
+        # Open the folder with the newest copy selected. The portal behind
+        # this reaches the host file manager from inside the Flatpak.
+        Gtk.FileLauncher.new(Gio.File.new_for_path(newest)).open_containing_folder(
+            self, None, None)
+
     def _on_restore_clicked(self, _row):
         dialog = Gtk.FileDialog()
         dialog.set_title(_('Restore Study Data'))
+        dialog.set_initial_folder(Gio.File.new_for_path(paths.backups_dir()))
         dialog.open(self, None, self._on_restore_open)
 
     def _on_restore_open(self, dialog, result):
@@ -4435,6 +4447,18 @@ class BibleWindow(Adw.ApplicationWindow):
             row.set_activatable(True)
             row.connect('activated', handler)
             data_group.add(row)
+        # The copies main() makes at launch. Opening their folder is the
+        # whole feature: Restore… already reads any of them.
+        daily = Adw.ActionRow(
+            title=_('Daily Copies'),
+            subtitle=ngettext('The last {n} day, kept on this device',
+                              'The last {n} days, kept on this device',
+                              backup.DAILY_KEEP).format(n=backup.DAILY_KEEP))
+        daily.add_prefix(Gtk.Image.new_from_icon_name(
+            'scriptura-document-open-recent-symbolic'))
+        daily.set_activatable(True)
+        daily.connect('activated', self._on_daily_copies_clicked)
+        data_group.add(daily)
         return data_group
 
     def _build_menu_footer(self):

@@ -9936,3 +9936,14 @@ msgid "Replaced {n} match"
 msgid_plural "Replaced {n} matches"
 msgstr[0] "Se reemplazó {n} coincidencia"
 msgstr[1] "Se reemplazaron {n} coincidencias"
+
+msgid "Daily Copies"
+msgstr "Copias diarias"
+
+msgid "The last {n} day, kept on this device"
+msgid_plural "The last {n} days, kept on this device"
+msgstr[0] "El último {n} día, guardadas en este dispositivo"
+msgstr[1] "Los últimos {n} días, guardadas en este dispositivo"
+
+msgid "No daily copy yet"
+msgstr "Todavía no hay ninguna copia diaria"

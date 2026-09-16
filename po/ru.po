@@ -9875,3 +9875,15 @@ msgid_plural "Replaced {n} matches"
 msgstr[0] "Заменено {n} совпадение"
 msgstr[1] "Заменено {n} совпадения"
 msgstr[2] "Заменено {n} совпадений"
+
+msgid "Daily Copies"
+msgstr "Ежедневные копии"
+
+msgid "The last {n} day, kept on this device"
+msgid_plural "The last {n} days, kept on this device"
+msgstr[0] "За последний {n} день, хранятся на этом устройстве"
+msgstr[1] "За последние {n} дня, хранятся на этом устройстве"
+msgstr[2] "За последние {n} дней, хранятся на этом устройстве"
+
+msgid "No daily copy yet"
+msgstr "Ежедневных копий пока нет"

@@ -47,6 +47,14 @@ def data_dir() -> str:
     return p
 
 
+def backups_dir() -> str:
+    """The daily copies of the reader's study data, beside the stores they
+    copy. Kept on this device only."""
+    p = os.path.join(data_dir(), 'backups')
+    os.makedirs(p, exist_ok=True)
+    return p
+
+
 def cache_dir() -> str:
     p = os.path.join(GLib.get_user_cache_dir(), _APP_NAME)
     os.makedirs(p, exist_ok=True)

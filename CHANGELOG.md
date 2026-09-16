@@ -16,6 +16,10 @@ semver-ish — 0.x was the pre-Flathub testing track.
   button was the only way.
 - **Back and forward from the keyboard and mouse.** Alt+[ and Alt+], or a
   mouse's back and forward buttons, move through the passages you visited.
+- **A daily copy of your study data.** Each day the app is first opened, it
+  saves your annotations, journal, sermons, bookmarks and plan progress to a
+  folder on this device and keeps the last 14 copies. *Daily Copies* in the
+  menu opens that folder, and *Restore…* starts there.
 
 ### Changed
 
