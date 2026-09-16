@@ -4,6 +4,23 @@ All notable changes to Scriptura. Format roughly follows
 [Keep a Changelog](https://keepachangelog.com/). Versioning is
 semver-ish — 0.x was the pre-Flathub testing track.
 
+## [Unreleased]
+
+### Fixed
+
+- **Two copies of the app could erase each other's notes.** Opening
+  Scriptura a second time, or clicking a `bible:` link while it was open,
+  started a second copy, and whichever saved last wiped out what the other
+  had written to your notes, journal and sermons. A second launch now
+  brings forward the window already open, and a link opens there.
+- **Copying from an eBible translation named its internal id.** A copied
+  verse read "John 3:16 (eBible: engwebp)"; it now names the translation,
+  as exports have since 1.6.2.
+- **With footnotes hidden, underlines and highlights sat one word late.**
+  In a chapter with footnotes, an underline on John 3:16 began at "God"
+  and ran on under the number 17. Search matches and the flash on a verse
+  you jump to were off the same way. They now sit on their words.
+
 ## [1.7.1] — 2026-09-15
 
 ### Fixed
