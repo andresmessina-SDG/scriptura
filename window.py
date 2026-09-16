@@ -302,10 +302,15 @@ class BibleWindow(Adw.ApplicationWindow):
         # If launched via `bible:John+3:16` URI, navigate now that the
         # panes are loaded. Bad refs silently no-op.
         if self._startup_ref:
-            result = self._parse_jump(self._startup_ref)
-            if result:
-                book, chapter, verse = result
-                GLib.idle_add(lambda: self._go_to(book, chapter, verse) or False)
+            self.open_reference(self._startup_ref)
+
+    def open_reference(self, ref):
+        """Go to a reference sent from outside — a `bible:` link, at launch
+        or while the window is already open. Bad refs silently no-op."""
+        result = self._parse_jump(ref)
+        if result:
+            book, chapter, verse = result
+            GLib.idle_add(lambda: self._go_to(book, chapter, verse) or False)
 
     def _prewarm_cross_refs(self):
         import open_data

@@ -24,8 +24,8 @@ Measured rather than assumed (2026-07-27, inside the installed Flatpak): the
 sandbox grants an app its own `org.mpris.MediaPlayer2.<app-id>` name with no
 `--own-name` in finish-args, in both the plain and the `.instance<pid>` form.
 No manifest permission was needed and none was added. The instance form is the
-one used, because the app runs NON_UNIQUE and two windows must not fight over
-one name.
+one used, because a development run or a verify tool can sit beside the
+installed app, and two copies must not fight over one name.
 """
 from __future__ import annotations
 
