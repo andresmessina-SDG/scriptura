@@ -7552,10 +7552,6 @@ msgstr ""
 msgid "Annotations"
 msgstr "Пометки"
 
-#: study_journal.py:286 study_journal.py:287
-msgid "Refresh"
-msgstr "Обновить"
-
 #: study_journal.py:293 study_journal.py:294
 msgid "Manage tags"
 msgstr "Управление метками"

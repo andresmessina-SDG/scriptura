@@ -7612,10 +7612,6 @@ msgstr ""
 msgid "Annotations"
 msgstr "Anotaciones"
 
-#: study_journal.py:286 study_journal.py:287
-msgid "Refresh"
-msgstr "Actualizar"
-
 #: study_journal.py:293 study_journal.py:294
 msgid "Manage tags"
 msgstr "Gestionar las etiquetas"
