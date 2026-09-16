@@ -156,3 +156,16 @@ def test_the_mouse_side_buttons_go_back_and_forward():
         BibleWindow._on_side_button(fake, gesture, 1, 0.0, 0.0)
     assert calls == ['back', 'forward']
     assert states == [Gtk.EventSequenceState.CLAIMED] * 2
+
+
+def test_back_and_forward_keys_are_not_taken_by_gnome():
+    """Ctrl+Alt+arrows were the first choice, but GNOME switches workspaces
+    on them and the window never sees the press. Alt+arrows already change
+    chapter. The tooltips said Alt+←/→ for months."""
+    import re
+    import pathlib
+    src = (pathlib.Path(__file__).resolve().parents[1] / 'window.py').read_text()
+    assert "('go-back', ['<Alt>bracketleft']" in src
+    assert "('go-forward', ['<Alt>bracketright']" in src
+    assert not re.search(r'<Ctrl><Alt>(Left|Right)', src)
+    assert 'Alt+←' not in src and 'Alt+→' not in src

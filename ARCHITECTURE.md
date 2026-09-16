@@ -454,6 +454,9 @@ code or window.py pane sizing.
     re-revealing a closed panel if results are still in memory).
   - `Alt+←/→` — prev/next chapter (wraps across books)
   - `Alt+↑/↓` — prev/next book
+  - `Alt+[` / `Alt+]` and mouse buttons 8/9 — back / forward through
+    history. Not `Ctrl+Alt+←/→`: GNOME switches workspaces on those.
+  - `Ctrl+D` — bookmark the chapter on screen
   - `Home` / `End` — first / last verse of current chapter (gated on
     `_focus_is_text_input()` so typing in entries still works)
   - `Ctrl+1` / `Ctrl+2` / `Ctrl+Tab` — focus pane / cycle panes

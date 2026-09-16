@@ -382,7 +382,7 @@ class BibleWindow(Adw.ApplicationWindow):
         header.pack_start(burger_btn)
 
         self._back_btn = Gtk.Button(icon_name='scriptura-go-previous-symbolic')
-        self._back_btn.set_tooltip_text(_('Go back (Alt+←)'))
+        self._back_btn.set_tooltip_text(_('Go back (Alt+[)'))
         set_accessible_label(self._back_btn, _('Go back'))
         self._back_btn.add_css_class('flat')
         self._back_btn.add_css_class('header-action')
@@ -391,7 +391,7 @@ class BibleWindow(Adw.ApplicationWindow):
         header.pack_start(self._back_btn)
 
         self._fwd_btn = Gtk.Button(icon_name='scriptura-go-next-symbolic')
-        self._fwd_btn.set_tooltip_text(_('Go forward (Alt+→)'))
+        self._fwd_btn.set_tooltip_text(_('Go forward (Alt+])'))
         set_accessible_label(self._fwd_btn, _('Go forward'))
         self._fwd_btn.add_css_class('flat')
         self._fwd_btn.add_css_class('header-action')
@@ -409,7 +409,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._recent_pop.connect(
             'show', lambda _p: self._build_recent_popover_content())
         self._back_btn.set_tooltip_text(
-            _('Go back (Alt+←) · right-click or hold for recent passages'))
+            _('Go back (Alt+[) · right-click or hold for recent passages'))
 
         recent_click = Gtk.GestureClick()
         recent_click.set_button(3)  # secondary (right) button
@@ -1091,6 +1091,13 @@ class BibleWindow(Adw.ApplicationWindow):
             ('focus-pane-1', ['<Ctrl>1'], self.pane1.grab_content_focus),
             ('focus-pane-2', ['<Ctrl>2'], self._focus_pane2),
             ('focus-other-pane', ['<Ctrl>Tab'], self._focus_other_pane),
+            # Not Ctrl+Alt+arrows: GNOME takes those for switching
+            # workspaces, so the app would never see them. Alt+arrows are
+            # the chapter keys below; brackets are this view's other
+            # "move" family (bare: sense-unit, Ctrl: the split).
+            ('go-back', ['<Alt>bracketleft'], lambda: self._on_nav_back(None)),
+            ('go-forward', ['<Alt>bracketright'],
+             lambda: self._on_nav_fwd(None)),
             ('prev-chapter', ['<Alt>Left'], self._go_prev_chapter),
             ('next-chapter', ['<Alt>Right'], self._go_next_chapter),
             ('prev-book', ['<Alt>Up'], self._go_prev_book),
@@ -3366,6 +3373,8 @@ class BibleWindow(Adw.ApplicationWindow):
     _SHORTCUT_SECTIONS = [
         (N_('Navigation'), [
             (N_('Quick jump to any reference (e.g. John 3:16)'), 'action', 'goto'),
+            (N_('Go back'), 'action', 'go-back'),
+            (N_('Go forward'), 'action', 'go-forward'),
             (N_('Previous chapter'), 'action', 'prev-chapter'),
             (N_('Next chapter'), 'action', 'next-chapter'),
             (N_('Previous book'), 'action', 'prev-book'),

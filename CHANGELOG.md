@@ -10,8 +10,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 - **Ctrl+D bookmarks the chapter you are reading.** Until now the header
   button was the only way.
-- **A mouse's back and forward buttons go back and forward** through the
-  passages you visited, as in a browser.
+- **Back and forward from the keyboard and mouse.** Alt+[ and Alt+], or a
+  mouse's back and forward buttons, move through the passages you visited.
 
 ### Changed
 
@@ -22,6 +22,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Fixed
 
+- **The back and forward buttons named the wrong keys.** Their tooltips
+  said Alt+← and Alt+→, which change chapter.
 - **Two copies of the app could erase each other's notes.** Opening
   Scriptura a second time, or clicking a `bible:` link while it was open,
   started a second copy, and whichever saved last wiped out what the other

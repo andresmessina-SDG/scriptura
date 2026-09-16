@@ -8406,25 +8406,25 @@ msgid "Menu"
 msgstr "Меню"
 
 #: window.py:355
-msgid "Go back (Alt+←)"
-msgstr "Назад (Alt+←)"
+msgid "Go back (Alt+[)"
+msgstr "Назад (Alt+[)"
 
 #: window.py:356 window.py:2663
 msgid "Go back"
 msgstr "Назад"
 
 #: window.py:364
-msgid "Go forward (Alt+→)"
-msgstr "Вперёд (Alt+→)"
+msgid "Go forward (Alt+])"
+msgstr "Вперёд (Alt+])"
 
 #: window.py:365 window.py:2666
 msgid "Go forward"
 msgstr "Вперёд"
 
 #: window.py:382
-msgid "Go back (Alt+←) · right-click or hold for recent passages"
+msgid "Go back (Alt+[) · right-click or hold for recent passages"
 msgstr ""
-"Назад (Alt+←) · щёлкните правой кнопкой или удержите, чтобы увидеть недавние "
+"Назад (Alt+[) · щёлкните правой кнопкой или удержите, чтобы увидеть недавние "
 "отрывки"
 
 #: window.py:411

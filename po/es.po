@@ -8466,25 +8466,25 @@ msgid "Menu"
 msgstr "Menú"
 
 #: window.py:355
-msgid "Go back (Alt+←)"
-msgstr "Atrás (Alt+←)"
+msgid "Go back (Alt+[)"
+msgstr "Atrás (Alt+[)"
 
 #: window.py:356 window.py:2663
 msgid "Go back"
 msgstr "Atrás"
 
 #: window.py:364
-msgid "Go forward (Alt+→)"
-msgstr "Adelante (Alt+→)"
+msgid "Go forward (Alt+])"
+msgstr "Adelante (Alt+])"
 
 #: window.py:365 window.py:2666
 msgid "Go forward"
 msgstr "Adelante"
 
 #: window.py:382
-msgid "Go back (Alt+←) · right-click or hold for recent passages"
+msgid "Go back (Alt+[) · right-click or hold for recent passages"
 msgstr ""
-"Atrás (Alt+←) · pulse con el botón derecho o mantenga pulsado para ver los "
+"Atrás (Alt+[) · pulse con el botón derecho o mantenga pulsado para ver los "
 "pasajes recientes"
 
 #: window.py:411
