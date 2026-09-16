@@ -78,6 +78,7 @@ scriptura/
 +-- window.py             # BibleWindow — header, panes, navigation funnels, About dialog
 +-- pane.py               # BiblePane — text rendering, annotations, click handling
 +-- pane_search.py        # PaneSearch — per-pane Ctrl+F bar + match highlight
++-- pane_peek.py          # PeekController — the double-click dictionary, footnote and verse peek
 +-- genbook_reader.py     # GenbookReader — Generic Books (TreeKey) subsystem extracted from pane.py
 +-- catena_reader.py      # CatenaReader — verse-synced commentary card view (pane subsystem)
 +-- imagery_reader.py     # ImageryReader — Art/Where tabs, traditions expander, zoom viewer

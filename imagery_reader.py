@@ -128,7 +128,7 @@ def _place_labels(place, pane=None):
         cap.add_css_class('caption')
         cap.add_css_class('imagery-meta')
         if pane is not None:
-            pane._attach_dict_to_label(cap)
+            pane.attach_dict_to_label(cap)
         out.append(cap)
 
     # Photo credit + license — required for the CC/PD Commons photos.

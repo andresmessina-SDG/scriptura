@@ -370,7 +370,7 @@ class VerseCursor:
         start, _end = self._word_iters()
         targets, it = pane._targets_at_iter(start)
         if targets['fnote']:
-            pane._show_footnote_peek(targets['fnote'], it)
+            pane._peek.show_footnote_peek(targets['fnote'], it)
             return True
         if targets['strong'] and pane._on_word_click:
             # The window reads display context off the pane rather than from
@@ -381,7 +381,7 @@ class VerseCursor:
             return True
         word = pane._buffer.get_text(*self._word_iters(), False).strip()
         if word:
-            pane._show_dict_popup(word, self._word[0])
+            pane._peek.show_dict_popup(word, self._word[0])
         return True
 
     def _view_coords(self, it):

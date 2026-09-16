@@ -166,7 +166,7 @@ def driver() -> int:
         if at < 0:
             at, word = text.find('God'), 'God'
         assert at >= 0, 'the chapter rendered no word to look up'
-        pane._show_dict_popup(word, at)
+        pane._peek.show_dict_popup(word, at)
 
     @step
     def dismiss_the_peek(win):

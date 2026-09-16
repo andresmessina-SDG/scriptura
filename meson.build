@@ -85,6 +85,7 @@ py_sources = files(
   'pane.py',
   'pane_chrome.py',
   'pane_content.py',
+  'pane_peek.py',
   'pane_scroll.py',
   'pane_search.py',
   'passage_export.py',
