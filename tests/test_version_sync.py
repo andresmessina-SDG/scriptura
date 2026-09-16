@@ -58,3 +58,20 @@ def test_releases_are_newest_first():
     versions = [r.get('version')
                 for r in ET.parse(METAINFO).getroot().find('releases')]
     assert versions == sorted(versions, key=key, reverse=True), versions
+
+
+def test_release_notes_stay_short():
+    """GNOME Software shows these under "What's new", and 1.7.0 shipped
+    sixteen long items that read as a wall of text. Each release gets at
+    most ten items, in plain words, with no em-dashes. The full record
+    belongs in CHANGELOG.md."""
+    for release in ET.parse(METAINFO).getroot().find('releases'):
+        version = release.get('version')
+        description = release.find('description')
+        if description is None:
+            continue
+        items = description.findall('.//li')
+        assert len(items) <= 10, (
+            f'{version}: {len(items)} items; keep the ten that matter most')
+        text = ''.join(description.itertext())
+        assert '—' not in text, f'{version}: release notes use an em-dash'

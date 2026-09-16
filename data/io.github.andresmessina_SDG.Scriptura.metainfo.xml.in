@@ -15,24 +15,25 @@
 
   <description>
     <p>
-      Scriptura is a focused Bible study application for the Linux
-      desktop. A calm, two-pane reading view sits at its center, with a
-      full study library never more than a click away.
+      Scriptura is a Bible study app for the Linux desktop. Read two
+      translations side by side, with a full study library a click away.
     </p>
     <p>It brings together:</p>
     <ul>
-      <li>Side-by-side reading of two translations with synchronized scrolling, plus a distraction-free reading mode.</li>
-      <li>Original-language word study — click any word for its Hebrew or Greek root, its grammar, and every other place it appears.</li>
-      <li>A database of 340,000 cross-references linking related passages.</li>
-      <li>Highlights, underlines, notes, and topical tags — one searchable set of annotations that belongs to the verse and appears in every translation.</li>
-      <li>A journal and a sermon manuscript beside your marks — a page for the day's reading, and a manuscript with its series, its preaching days, and the passages it was written from.</li>
-      <li>Full-text search across any installed text, and reading plans that track your progress day by day.</li>
-      <li>A large, installable library of modern and classic Bibles, commentaries, devotionals, and reference works.</li>
+      <li>Two translations side by side that move together, a reading mode with nothing else on screen, and a full-screen mode for a projector.</li>
+      <li>The Greek and Hebrew behind the text: click a word for its meaning and grammar, or read an interlinear word by word.</li>
+      <li>Commentaries, devotionals and confessions, and how the church read each verse from the early fathers to the Reformers.</li>
+      <li>340,000 cross-references, and fast search across any text you install.</li>
+      <li>Highlights, notes and tags that show in every translation.</li>
+      <li>A journal and sermon manuscripts, with your notes on the passage close at hand.</li>
+      <li>Reading plans, and a Today page with the day's reading.</li>
+      <li>Chapters and devotionals read aloud.</li>
+      <li>Paintings, maps and archaeology for the passage you read, and the Bible's family lists drawn as charts.</li>
+      <li>English, Spanish and Russian, with Bibles and dictionaries in each.</li>
     </ul>
     <p>
-      Everything is stored on your computer with no telemetry. Scriptura
-      connects to the network only to download the texts and reference
-      data you choose.
+      Everything stays on your computer, with no account and no tracking.
+      Scriptura goes online only to download the texts you choose.
     </p>
   </description>
 
@@ -50,15 +51,15 @@
     </screenshot>
     <screenshot>
       <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/06-interlinear-greek.png</image>
-      <caption>The Greek New Testament interlinear — gloss, parsing, and Strong's number under every word</caption>
+      <caption>The Greek New Testament interlinear, with meaning, grammar and Strong's number under every word</caption>
     </screenshot>
     <screenshot>
       <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/02-historical-commentaries.png</image>
-      <caption>The Historical Commentaries pane — the church's voices on a verse, across the centuries</caption>
+      <caption>Historical Commentaries: how the church read a verse across the centuries</caption>
     </screenshot>
     <screenshot>
       <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/03-study-journal.png</image>
-      <caption>Annotations — every mark you have made in one filterable surface</caption>
+      <caption>Annotations: every mark you have made, in one place</caption>
     </screenshot>
     <screenshot>
       <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/04-reading-plan.png</image>
@@ -66,7 +67,7 @@
     </screenshot>
     <screenshot>
       <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/05-reading-mode-dark.png</image>
-      <caption>F11 reading mode hides all chrome for distraction-free reading</caption>
+      <caption>Reading mode hides everything but the text</caption>
     </screenshot>
   </screenshots>
 
@@ -138,16 +139,21 @@
   </content_rating>
 
   <releases>
+    <!-- Release notes are what GNOME Software shows under "What's new".
+         Keep each one short: at most ten items, the ones a reader will
+         notice most, in plain words and short sentences, with no em-dashes.
+         The full record belongs in CHANGELOG.md, not here.
+         tests/test_version_sync.py holds every release to this. -->
     <release version="1.7.1" date="2026-09-15">
       <!-- English only, by his call, as 1.6.1 and 1.6.2 shipped:
            its:translate="no" is what keeps xgettext out of them and both
            catalogues at 100%. -->
       <description its:translate="no">
-        <p>Fixes for writing a sermon manuscript.</p>
+        <p>Fixes for writing sermons.</p>
         <ul>
-          <li>Giving a manuscript a series could close the app. Typing a series name or a part and then clicking into the text lost the window, and it came back with the words but without the series.</li>
-          <li>Typing in a long manuscript no longer slows down as it grows. Only the lines being edited are restyled, instead of the whole text on every keystroke.</li>
-          <li>Russian: the verse menu's entry action had read as an offer to add a bookmark, which is a different feature.</li>
+          <li>Giving a sermon a series could close the app. This is fixed.</li>
+          <li>Typing in a long sermon no longer gets slower as the text grows.</li>
+          <li>Russian: the verse menu item for a new journal entry no longer reads as “add a bookmark”.</li>
         </ul>
       </description>
     </release>
@@ -156,24 +162,18 @@
            its:translate="no" is what keeps xgettext out of them and both
            catalogues at 100%. -->
       <description its:translate="no">
-        <p>A place to write: a journal, sermon manuscripts, and a Today page you would want to open.</p>
+        <p>A place to write: a journal, sermons, and a new Today page.</p>
         <ul>
-          <li>A journal. An entry is a page where a note is a margin: it has a title, a date it is about rather than the day it was typed, and none, one or several passages. Entries about no passage at all — a sermon, a conversation, a season — are perfectly legal. An entry's passages can be changed after it is written, so one that began about nothing can be filed later.</li>
-          <li>Sermons. A manuscript is a third kind of writing, with a page of its own: a text, a series and its part, the occasion, and the places it has been preached. The open sermon can be exported or printed on its own, headed by its own title rather than by the page it is filed on — the sheet a preacher carries into the pulpit is not the archive it lives in.</li>
-          <li>The manuscript can ask what you already have. From your study gathers your own notes, your highlights and your entries on the passage you are writing about, and verses, cross-references and lexicon entries can be collected into it as you read.</li>
-          <li>The Annotations window now has pages — Annotations, Journal and Sermons — each with its own name, search, filter and empty state. Your marks and your writing are different things to be looking for.</li>
-          <li>The list folds away and the window can be given over to writing, and a formatting row carries bold, italic, heading, quotation and list. Enter carries a list on to the next line. Numbered lists number themselves, and there is a word count.</li>
-          <li>The passage actions are no longer behind a right-click only. Export, the verse card, printing and Compare translations lived in the verse menu and nowhere else, so a reader who never right-clicked could not print a passage at all. The pane toolbar now carries a ⋮, and Ctrl+P, Ctrl+E and Ctrl+Shift+C print, export and compare directly.</li>
-          <li>The Today page opens with Scripture. It had none on it — the day's reading was named and offered, but not a word of it shown. The first verse of the day's first appointed chapter now stands under the reference.</li>
-          <li>The Today page is written on. Its surface was laid paper, which is the stock of a printed Bible and nothing older. It is now prepared skin, with the alphabet written down both margins the way a scribe practised it: the twenty-two Hebrew letters in order, every fourth line in Greek, with the older Paleo-Hebrew and Aramaic hands surfacing inside it, roughly in the proportion the canon itself is written in. The whole ground is struck in your own ink, so it follows your paper.</li>
-          <li>The header steps aside on that page. A header bar wears the desktop's colour and the page wears yours, and only one of the seven papers ever matched. The page now runs to the top edge and the bar stops painting, leaving only its controls.</li>
-          <li>Search finds your own words, answering with Your notes beside the Scripture results, and a day you wrote about carries a dot on the reading plan's calendar. Tags are one vocabulary across marks and entries together, and both editors offer the tags you already use.</li>
-          <li>Entries can be imported from Markdown or text, and export and print carry the text of the passage with them, with attribution.</li>
-          <li>The right-click menu is grouped and half the height, says which verse it is about over the middle of it, and a submenu opens at its own height instead of the parent's.</li>
-          <li>Double-clicking a word said “No entry” with dictionaries installed. The dictionary peek had been dead since 1.6.2 — every lookup raised on its first line, and a failed background task is reported the way an empty one is, so it looked like a dictionary with nothing to say rather than a broken one.</li>
-          <li>A reading plan could say it was finished while the panel underneath disagreed: a thirty-day plan begun ten weeks ago reported “Plan complete” while the plan panel said two of thirty days read. Both surfaces had let the calendar decide.</li>
-          <li>Opening the menu over the Today page felt stuck — the page slid away while the sidebar slid in, so it was re-laid out on every frame of the other animation, losing most of a second of frames.</li>
-          <li>A module's centred headings were read as ordinary prose: an h tag carrying any attribute at all was not recognised, so Concord's title page sat in the body copy. A space could open after a quotation mark in some translations. Leading was corrected across Scripture in Stone, the catena, the genealogy pages and the projected presentation text, which were all set looser than intended. Notes and tags save themselves, and study-data backups are now version 3.</li>
+          <li>A journal. Write an entry about one passage, several, or none, and add or remove passages later.</li>
+          <li>Sermons. Keep each sermon with its passages, its main idea, its series and the days you preached it. Print or export it on its own.</li>
+          <li>While you write a sermon, bring in your notes, highlights, verses, cross-references and word studies on the passage.</li>
+          <li>The Annotations window has three pages: Annotations, Journal and Sermons, each with its own search and filters.</li>
+          <li>Room to write, with buttons for bold, italic, headings, quotes and lists, and a word count.</li>
+          <li>Print, export and compare translations from the new ⋮ button, or with Ctrl+P, Ctrl+E and Ctrl+Shift+C. Before, they were only in the right-click menu.</li>
+          <li>The Today page shows the first verse of the day's reading, on a new parchment background.</li>
+          <li>Search finds your own notes and entries as well as Bible verses.</li>
+          <li>The right-click menu is shorter and grouped.</li>
+          <li>Fixed: double-clicking a word said “No entry” even with dictionaries installed, and a reading plan could say it was done when it was not.</li>
         </ul>
       </description>
     </release>
@@ -181,23 +181,18 @@
       <!-- English only, by his call, as 1.6.1 shipped: its:translate="no"
            is what keeps xgettext out of them and both catalogues at 100%. -->
       <description its:translate="no">
-        <p>Two sweeps of fixes, and marks that follow the verse instead of the translation.</p>
+        <p>Your marks now show in every translation, and many fixes.</p>
         <ul>
-          <li>A highlight, underline, note or tag now belongs to the verse rather than to the translation you made it in. A note written in the King James existed nowhere else; open another translation and the Bible was unmarked. Marks appear in every translation now, each numbering them its own way, and existing ones are migrated on first launch with the old file kept beside the new. The Study Journal, which was never a journal, is called Annotations, quotes the verse above the note, and records when each mark was made.</li>
-          <li>Exporting, printing, sharing or copying from a translation downloaded from eBible gave a blank page — the World English Bible the English starting library installs is one — and highlights and notes made in one landed on the wrong line, 1,126 verses of the Russian Synodal text among them.</li>
-          <li>Two eBible psalters were numbered against the wrong text: the Clementine Vulgate and the Russian Synodal merge two Hebrew psalms, so every psalm after them sat one number behind. 138 of 150 disagreed with the same texts read through SWORD; all 150 agree now.</li>
-          <li>“Match case” turned an OR search into an AND search. <code>Jesus OR Christ</code> returned 258 verses of the 1,217 it finds with the box unticked.</li>
-          <li>A link to a book your Bible has not got did nothing at all — no movement and no message. Cross-references, Strong's links, search results carried over from another translation, bookmarks and the Scripture in Stone citations all refused in silence. Any of them now says which book is missing.</li>
-          <li>The Old Calendar, kept by the Russian, Serbian, Georgian and Jerusalem Churches and by Athos, is offered beside the New. Their feasts were being named on another church's days.</li>
-          <li>The Orthodox troparion is in Church Slavonic, where a Russian reader used to be given a 1906 American translation of it in English. Stress marks are kept, and they now sit over their letters in Georgia rather than beside them.</li>
-          <li>Dates read in English whatever language the app was in, because a Flatpak carries only the languages the desktop is set up for. They come from the app's own catalogue now, in each language's own word order. The Russian church line uses the church's wording rather than the civil one.</li>
-          <li>The devotional could show any day of the year as today's reading: a devotional does not refuse a date it has not got, it answers with some other entry.</li>
-          <li>A stray space before a comma — “For God so loved the world , that he gave” — in the Today epigraph, the devotional pane, every cross-reference and every dictionary gloss, and in 34 of the 82 Anglican collects.</li>
-          <li>A highlight covered the verse number and stopped, and a freshly drawn chapter could paint its highlights beside the text they belong to until something else redrew the page.</li>
-          <li>A first run could report that no Bible was downloaded when one was, and the dictionary opened on the wrong language, both on translations that came from eBible. Exports cited such a translation by its internal id — <code>eBible: russyn</code> rather than Russian Synodal Bible.</li>
-          <li>“Bible in a Year — Blended” said four daily readings and gives four on 95 days of the 365. The plan is unchanged — no reader's schedule moves — and its description now says what it delivers.</li>
-          <li>Two highlight colours wore the same letter in Spanish, which took the cue away from the reader it exists for.</li>
-          <li>A third unreadable settings file destroyed the second instead of being set aside beside it.</li>
+          <li>Highlights, underlines, notes and tags now show in every translation, not only the one you made them in. The Study Journal is now called Annotations.</li>
+          <li>Export, print and copy work for Bibles from eBible, and marks made in them land on the right verse.</li>
+          <li>Psalm numbers are right in the Clementine Vulgate and the Russian Synodal Bible from eBible.</li>
+          <li>“Match case” no longer turns an OR search into an AND search.</li>
+          <li>A link to a book your Bible does not have now tells you which book is missing, instead of doing nothing.</li>
+          <li>The Orthodox Old Calendar is offered beside the New Calendar.</li>
+          <li>Russian readers get the Orthodox troparion in Church Slavonic, not in English.</li>
+          <li>Dates show in the app's language, not always in English.</li>
+          <li>A stray space before commas is gone from the Today page, devotionals, cross-references, dictionaries and collects.</li>
+          <li>Highlights cover the whole verse and stay beside the right text.</li>
         </ul>
       </description>
     </release>
@@ -206,52 +201,44 @@
            worth stranding two catalogues at 99%. its:translate="no" is what
            keeps xgettext out of them. -->
       <description its:translate="no">
-        <p>Two fixes from the first days of reading in 1.6.0.</p>
+        <p>Two fixes for 1.6.0.</p>
         <ul>
-          <li>The right-click study menu did not open in the middle of the page. It was placed below the pointer, flipped above when it would not fit there, and when neither fitted it was not shown at all — so on a smaller window a band across the middle of the column answered nothing.</li>
-          <li>The Book of Generations opened at its own type size rather than yours, and jumped to yours the first time you changed it.</li>
+          <li>The right-click menu now opens in the middle of the page on small windows.</li>
+          <li>The Book of Generations opens at the text size you chose.</li>
         </ul>
       </description>
     </release>
     <release version="1.6.0" date="2026-09-02">
       <description>
-        <p>Scriptura in Russian, and the lists of names drawn as a book.</p>
+        <p>Scriptura in Russian, and the Bible's lists of names drawn as charts.</p>
         <ul>
-          <li>The app reads in Russian — every menu, dialog and hint, with the three plural forms Russian needs and the Synodal book names it expects: 1 Kings is 3-я Царств. The names are the ones Russian Bible software uses, not translations of the English.</li>
-          <li>Russian texts to read in it: a modern Russian Bible under a free licence, and the first Russian dictionary this app has ever offered, so a double-click on a Russian word answers.</li>
-          <li>The Book of Generations. Scripture keeps lists of names and readers skip them, so Scriptura draws them and binds them as a book: one genealogy to a page, from Adam to Noah through to Matthew and Luke side by side, with the ten lifespans of Genesis 5 on one axis. The charts are live — a folded run of generations opens in place, a name opens the person, a chip opens the verse — and the same geometry prints. Where a genealogy leaves generations out, the gap is drawn as a gap and cites who does name them; where Matthew and Luke disagree, both are given as their writers wrote them, with the three classical answers set out and none of them chosen.</li>
-          <li>First run asks which language you read in, and the answer leads: it sets the interface and offers that language's own Bibles, dictionary and study tools, each collection described in the language it is for.</li>
-          <li>A Spanish dictionary, where there was none. Of the 168 dictionaries the SWORD repositories carry, not one was in Spanish; this one is, and it answers ordinary vocabulary rather than proper nouns alone.</li>
-          <li>Scripture in Stone reads in your language. The gallery is curated data rather than interface text, so all 342 of its captions, introductions and glossary entries had stayed English whatever language you chose. A photographer's credit, a bibliography entry and a verse chip still read as printed, because a licence, a library catalogue and a Bible reference each need the words they were given.</li>
-          <li>Scripture in Stone opens as soon as you ask for it: it used to decode all 56 of its photographs before it would appear, and now loads them as they come into view.</li>
-          <li>The collection cards say what each language holds, counted from that language's own catalogue and written in that language.</li>
-          <li>The dictionary peek says which dictionaries were searched, instead of advice written when every dictionary was an English one.</li>
-          <li>Jumping to a reference takes the book name you are reading. «Бытие 3» and Génesis 3 — the names the book picker two inches away was showing — used to flash the box red.</li>
-          <li>Book names no longer sit in English inside a translated interface: the cross-reference chips under a verse and the per-book bars in a search chart are translated on the way out.</li>
-          <li>Translated labels stay inside the places that hold them — the paper chips and the Module Manager's tabs were cut mid-word in both translations — and the menu's cards keep their right-hand corners in every language.</li>
-          <li>A first-run download that failed for a module that exists: the cached list of available modules is refetched now whenever it has no row for something your collection asks for.</li>
-          <li>Closing the window during the first-run download no longer leaves part of a library behind. It asks, keeps whatever has arrived, and says where the rest can be found.</li>
+          <li>The app is now in Russian, with the book names Russian readers expect.</li>
+          <li>A modern Russian Bible under a free licence, and the first Russian dictionary.</li>
+          <li>The Book of Generations draws the Bible's family lists as charts, one to a page. Click a name to learn about the person, or a verse to read it.</li>
+          <li>On first run you pick your language, and the app offers Bibles, a dictionary and study tools in it.</li>
+          <li>A Spanish dictionary, the first in any SWORD source.</li>
+          <li>Scripture in Stone is in your language, and opens at once instead of loading every photo first.</li>
+          <li>Go to a passage with book names in your own language, such as «Бытие 3» or Génesis 3.</li>
+          <li>Book names on cross-references and search charts are translated.</li>
+          <li>Translated labels are no longer cut off.</li>
+          <li>First-run downloads are more reliable, and closing the window during one no longer leaves half a library behind.</li>
         </ul>
       </description>
     </release>
     <release version="1.5.0" date="2026-08-19">
       <description>
-        <p>Scriptura in Spanish, and the books it would not open.</p>
+        <p>Scriptura in Spanish, and books it could not open before.</p>
         <ul>
-          <li>The app itself now reads in Spanish — menus, dialogs, the Module Manager, first run, the reading plans, the liturgical calendar and all 66 book names. Pick the language in the header on the first screen, or from the menu at any time; each is listed in its own name, because the reader who needs it is by definition looking at words they may not read.</li>
-          <li>Spanish Bibles to read in it: La Biblia de las Américas and the Nueva Biblia de las Américas from the Lockman Foundation, the Versión Biblia Libre, and Straubinger's, whose 13,099 footnotes are paragraph-length commentary rather than variant marks.</li>
-          <li>A Spanish reading of the whole Bible — La Biblia en Español Sencillo, all 1,189 chapters, the words on the page and the words in the ear from one publisher.</li>
-          <li>The deuterocanonical books. A translation that carries them now shows them in an appendix after Revelation, so Tobit, Judith, Sirach and the Maccabees open like any other book. Until now asking for one silently handed you Revelation instead.</li>
-          <li>Every dictionary you install now appears, whatever language it is in. So do the Strong's numbers in the Spanish texts that carry them, which the reader could search but never see.</li>
-          <li>The space between letters is yours to open, from the typeface's own metrics up to a fifth of the type size — the best-supported thing typography can do for a reader who finds text hard going. OpenDyslexic is bundled beside it, offered honestly: the evidence for it is weak, and the app says so where you choose it.</li>
-          <li>Turn on the desktop's High Contrast and the app's own edges come with it — chips, swatches, cards, buttons and panel borders all drawn above the contrast the guidelines ask of a control's boundary. Nothing moves and nothing resizes.</li>
-          <li>Quiet the rest of the page: an optional reading focus that keeps the passage you are in on lit paper and lays the rest back under a veil of that same paper. It follows your scrolling, not your cursor.</li>
-          <li>Readings appear on the desktop's media controls — the media keys, the lock screen and the Shell — named by what they are, with play, pause, skip back, speed and volume.</li>
-          <li>The app draws its own icons now, so the toolbar is the same line art on every desktop instead of whatever the local icon theme happened to supply. The window controls are still the desktop's own.</li>
-          <li>First run opens on a Bible and a commentary rather than the same text twice, installs the collection you choose for real, and hands you the gestures reference where the gestures are taught.</li>
-          <li>The page holds still. Flipping the theme, showing footnote markers, switching to old-style figures and lighting the drop cap all recolour the chapter you are reading instead of rebuilding it, and your place is held through the rebuilds that remain — including in poetry, where it used to slip.</li>
-          <li>Nineteenth-century plates join the imagery pack, and an installed pack that has fallen behind now offers its own update.</li>
-          <li>A settings file the app cannot read is set aside rather than overwritten, a backup that did not reach the disk says so, and an archive that tries to write through a symlink is refused.</li>
+          <li>The app is now in Spanish. Pick the language on the first screen or from the menu.</li>
+          <li>Spanish Bibles: LBLA, NBLA, the Versión Biblia Libre, and Straubinger's with its long notes.</li>
+          <li>The whole Bible read aloud in Spanish, from La Biblia en Español Sencillo.</li>
+          <li>Books such as Tobit, Judith, Sirach and Maccabees now open. Before, asking for one showed Revelation.</li>
+          <li>Every dictionary you install now shows, in any language, and so do Strong's numbers in Spanish Bibles.</li>
+          <li>Set wider spacing between letters, or use the OpenDyslexic font.</li>
+          <li>The app follows the desktop's High Contrast setting.</li>
+          <li>An optional reading focus dims all but the passage you are reading.</li>
+          <li>Audio shows on your desktop's media controls and media keys.</li>
+          <li>The page no longer jumps when you change the theme and other display settings.</li>
         </ul>
       </description>
     </release>
@@ -259,16 +246,16 @@
       <description>
         <p>Chapters read aloud, and passages you can take with you.</p>
         <ul>
-          <li>Chapters read aloud, in the Berean Standard Bible's own narration. A listening pill sits quietly at the foot of the page: skip back fifteen seconds, set the pace anywhere from 0.75× to 2×, and keep listening as you turn to the next chapter.</li>
-          <li>Spoken devotionals from their publishers' own feeds — Spurgeon's Morning and Evening, the Psalms read one at a time, and the day's Daily Strength reading on the Today page.</li>
-          <li>Take a passage with you. Export it as a study worksheet in Markdown or plain text, carrying your own notes and highlights, with optional interlinear, textual-variant and church-fathers layers. Citations follow the SBTS/Turabian short form.</li>
-          <li>A verse as an image, set in the app's own serif on its own paper — three shapes, saved to a file or copied straight to the clipboard.</li>
-          <li>Print a passage as a study handout, paginated so no line is ever cut in half.</li>
-          <li>The section headings your translation actually ships, which until now were being dropped altogether. Move a whole thought at a time with [ and ], and see at a glance which sense-unit you are reading.</li>
-          <li>The reading pane is reachable from the keyboard throughout: step between verses and words with the arrow keys, open the lexicon, a footnote or the dictionary with Enter, and hear every move announced by a screen reader.</li>
-          <li>Every translation now gets its verse-one drop cap, and commentaries render the inline titles they carry.</li>
-          <li>More of the Roman calendar's collects, and a steadier Today page.</li>
-          <li>Modules keep installing when CrossWire's server is down: the app falls back to FTP, and then to a mirror of everything CrossWire's own licences allow anyone to redistribute.</li>
+          <li>Listen to chapters of the Berean Standard Bible read aloud. Skip back, change the speed, and keep listening into the next chapter.</li>
+          <li>Listen to devotionals: Spurgeon's Morning and Evening, the Psalms, and Daily Strength on the Today page.</li>
+          <li>Export a passage as a study sheet with your notes and highlights.</li>
+          <li>Save or copy a verse as an image.</li>
+          <li>Print a passage as a study handout.</li>
+          <li>Section headings from your Bible now show. Press [ and ] to move between sections.</li>
+          <li>Use the reading pane from the keyboard, with screen reader support.</li>
+          <li>Every Bible opens each chapter with a large first letter, and commentaries show their titles.</li>
+          <li>More prayers from the Roman calendar, and a steadier Today page.</li>
+          <li>Modules still install when CrossWire's server is down.</li>
         </ul>
       </description>
     </release>
@@ -276,31 +263,31 @@
       <description>
         <p>The original languages, word by word.</p>
         <ul>
-          <li>Two interlinear reading surfaces — the Greek New Testament and the Hebrew Old Testament (Tyndale House data): every word carries its English gloss and parsing, with transliteration and Strong's numbers a chip away and the lexicon a click away. A Hebrew Accents chip calms the cantillation marks.</li>
-          <li>A Scholar's Greek Lexicon pack: Abbott-Smith becomes the brief Greek entry, with the full Liddell-Scott-Jones one click deeper. Scripture citations inside entries are live — click one to peek the verse in place, or send it to the other pane.</li>
-          <li>Presentation mode: press F5 to project the current passage full-screen for a projector or mirrored display, with paging through chapters, a verse-per-page toggle, live type-size control, and a side-by-side parallel view of two translations.</li>
-          <li>Maps in Scripture in Art now carry their passage as a chip — click it to drive the partnered Bible pane there. And the Historical Commentaries pane shows place chips for the verse under commentary: click one for the place's photo and identification, without displacing what you're reading.</li>
-          <li>Greek in the reading panes now renders with correctly composed accents on systems where the default serif drew them detached.</li>
+          <li>Read the Greek New Testament and the Hebrew Old Testament word by word, each word with its English meaning and grammar.</li>
+          <li>A Greek lexicon pack with Abbott-Smith and Liddell-Scott-Jones. Click a verse in an entry to read it.</li>
+          <li>Press F5 to show a passage full screen on a projector, alone or beside a second translation.</li>
+          <li>Maps link to their passages, and commentaries show the places a verse names.</li>
+          <li>Greek accents now display correctly.</li>
         </ul>
       </description>
     </release>
     <release version="1.2.0" date="2026-07-05">
       <description>
-        <p>Getting started, made discoverable.</p>
+        <p>Getting started is easier.</p>
         <ul>
-          <li>A new Tips &amp; Gestures guide, reachable from the menu, gathers every reading gesture in one place.</li>
-          <li>Gentle one-time tips point out hidden gestures — like tapping a verse for its cross-references — the first time each is useful, then never again. You can turn them off any time.</li>
+          <li>A new Tips &amp; Gestures guide in the menu lists every reading gesture.</li>
+          <li>One-time tips show hidden gestures when you first need them. You can turn them off.</li>
         </ul>
       </description>
     </release>
     <release version="1.1.0" date="2026-06-28">
       <description>
-        <p>Customizable reading appearance.</p>
+        <p>Choose how your reading page looks.</p>
         <ul>
-          <li>New Appearance panel: pick a reading paper — Paper, White, Sepia, Green, or a custom colour — with text colour that adapts to the page (a warm ink on sepia, and so on).</li>
-          <li>Bold and justified text move to compact controls beside the font, and the menu's sections gain a clearer, calmer layout.</li>
-          <li>Redesigned reading plans with a Today view and a month calendar of your progress.</li>
-          <li>Fixed faint text trails when scrolling the reading view under Flatpak.</li>
+          <li>A new Appearance panel: choose a paper colour, and the text colour follows it.</li>
+          <li>Bold and justified text are small buttons beside the font.</li>
+          <li>Reading plans have a Today view and a month calendar.</li>
+          <li>Fixed faint trails left behind when scrolling.</li>
         </ul>
       </description>
     </release>
@@ -317,10 +304,9 @@
       <description>
         <p>
           Scriptura's first release. Read two translations side by side,
-          study the original Hebrew and Greek behind any word, follow
-          cross-references between passages, and keep your highlights and
-          notes together in one searchable place — all on your own
-          computer, offline.
+          study the Hebrew and Greek behind any word, follow
+          cross-references, and keep your highlights and notes in one
+          searchable place, all offline on your own computer.
         </p>
       </description>
     </release>
