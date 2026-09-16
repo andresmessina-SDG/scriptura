@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=io.github.andresmessina_SDG.Scriptura
+Exec=@bindir@/io.github.andresmessina_SDG.Scriptura --gapplication-service

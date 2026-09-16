@@ -23,6 +23,21 @@ metainfo_file = i18n.merge_file(
   install: true,
   install_dir: datadir / 'metainfo',
 )
+# Verse lookup from the GNOME Shell's search (search_provider.py). The .ini
+# tells the Shell where to ask; the service file lets it start the app,
+# windowless, when it is not already running.
+install_data('io.github.andresmessina_SDG.Scriptura.search-provider.ini',
+  install_dir: datadir / 'gnome-shell' / 'search-providers')
+service_conf = configuration_data()
+service_conf.set('bindir', bindir)
+configure_file(
+  input: 'io.github.andresmessina_SDG.Scriptura.service.in',
+  output: 'io.github.andresmessina_SDG.Scriptura.service',
+  configuration: service_conf,
+  install: true,
+  install_dir: datadir / 'dbus-1' / 'services',
+)
+
 # Icons. The whole tree installs at once rather than file by file: the app
 # now ships its own copy of every symbolic icon it draws (see the NOTICE in
 # data/icons), which is far too many to list, and a list is the kind of

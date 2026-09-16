@@ -84,6 +84,7 @@ _setup_gettext()
 
 import backup  # noqa: E402
 import mpris  # noqa: E402
+import search_provider  # noqa: E402
 from styles import load_app_css  # noqa: E402
 from window import BibleWindow  # noqa: E402  (after logging setup)
 
@@ -319,6 +320,15 @@ class BibleApp(Adw.Application):
         # opens no connection: the bus is only reached once a reading is
         # actually playing.
         mpris.attach(self)
+        self._search_provider = search_provider.SearchProvider(self)
+
+    def do_dbus_register(self, connection, object_path):
+        self._search_provider.register(connection)
+        return Adw.Application.do_dbus_register(self, connection, object_path)
+
+    def do_dbus_unregister(self, connection, object_path):
+        self._search_provider.unregister(connection)
+        Adw.Application.do_dbus_unregister(self, connection, object_path)
 
     def _raise_open_window(self, ref=None):
         """Bring the open window forward, moved to `ref` when one was sent.
@@ -412,12 +422,22 @@ def relaunch_requested():
     return bool(os.environ.get(_RELAUNCH_ENV))
 
 
-def main():
-    app = BibleApp(unique=True)
+def _on_startup(app):
     # `startup` fires only in the copy that owns the window, never in a
     # launch that hands off to it, and before any store is changed.
-    app.connect('startup', lambda _app: backup.daily_copy())
-    app.run()
+    backup.daily_copy()
+    # Started by the desktop's search, with no window: stay up between
+    # keystrokes, then quit once the reader has stopped typing.
+    if app.get_flags() & Gio.ApplicationFlags.IS_SERVICE:
+        app.set_inactivity_timeout(10000)
+
+
+def main():
+    app = BibleApp(unique=True)
+    app.connect('startup', _on_startup)
+    # argv carries `--gapplication-service` when the desktop's search starts
+    # the app, and a `bible:` link to hand on to a copy already open.
+    app.run(sys.argv)
     # Re-exec here rather than from the button's handler: by now
     # GApplication has shut down and released its bus name, so the new
     # process starts as itself instead of handing straight back to the one

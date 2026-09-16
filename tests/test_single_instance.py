@@ -80,3 +80,26 @@ def test_the_first_launchs_own_link_is_spent_on_its_first_window(monkeypatch):
     monkeypatch.setattr(app, 'get_windows', lambda: [win])
     app._on_open(app, [Gio.File.new_for_uri('bible:John+3:16')], 1, '')
     assert win.refs == ['John 3:16']
+
+
+def test_main_hands_argv_to_gapplication(monkeypatch):
+    """Without argv, GApplication never sees the command line: a second
+    launch's `bible:` link reached the open window as a bare activate and was
+    dropped, and `--gapplication-service` from the desktop's search started a
+    window instead of a service."""
+    seen = {}
+
+    class _App:
+        def __init__(self, unique=False):
+            pass
+
+        def connect(self, *_args):
+            pass
+
+        def run(self, argv=None):
+            seen['argv'] = argv
+
+    monkeypatch.setattr(main, 'BibleApp', _App)
+    monkeypatch.setattr(main.sys, 'argv', ['scriptura', 'bible:John+3:16'])
+    main.main()
+    assert seen['argv'] == ['scriptura', 'bible:John+3:16']

@@ -171,42 +171,8 @@ class OverlayManager:
             ch_max = sword_bridge.chapter_count_in(module, b)
             return (b, max(1, min(chapter, ch_max)), verse)
 
-        books = self.nav_books()
-
-        # What the reader might type for each book: the canonical English
-        # name and the name the app is showing them. This matched English
-        # only, so the jump bar answered «Бытие 3» — the very name in the
-        # book picker two inches away — with a red flash, in every language
-        # but English.
-        #
-        # Built once rather than per pass: three passes over ~80 books was
-        # 240 translations of the same names to answer one keystroke.
-        def norm(name):
-            return name.lower().replace(' ', '')
-
-        candidates = []
-        for b in books:
-            shown = book_label(b)
-            candidates.append((b, norm(b), norm(shown) if shown != b else None))
-
-        # Exact match wins over prefix — "Job" must not silently become "Joshua".
-        for b, eng, loc in candidates:
-            if query == eng or query == loc:
-                return hit(b)
-        for b, eng, loc in candidates:
-            if eng.startswith(query) or (loc and loc.startswith(query)):
-                return hit(b)
-        # Contains, last and localized-only: Russian names the Gospels «От
-        # Иоанна» and the reader types «Иоанна», which is a prefix of nothing.
-        # Canonical order decides the winner, so «Иоанна» reaches the Gospel
-        # before the epistles and «Царств» the first of the four.
-        for b, _eng, loc in candidates:
-            if loc and query in loc:
-                return hit(b)
-        full = sword_bridge._CROSS_REF_ABBREVS.get(query)
-        if full and full in books:
-            return hit(full)
-        return None
+        book = match_book(query, self.nav_books())
+        return hit(book) if book else None
 
     # ── Menu sidebar ─────────────────────────────────────────────────────────
     def _ensure_menu_panel(self):
@@ -371,3 +337,43 @@ class OverlayManager:
         # _build_ui, so a very early call (before it exists) is a no-op.
         if hasattr(self._win, '_exit_reading_revealer'):
             self._exit_reading_revealer.set_reveal_child(False)
+
+
+def match_book(query, books):
+    """The book in `books` that `query` names, or None. `query` is lowered
+    with its spaces taken out. Shared by the jump bar and the desktop search
+    provider, which has no window to ask."""
+    # What the reader might type for each book: the canonical English
+    # name and the name the app is showing them. This matched English
+    # only, so the jump bar answered «Бытие 3» — the very name in the
+    # book picker two inches away — with a red flash, in every language
+    # but English.
+    #
+    # Built once rather than per pass: three passes over ~80 books was
+    # 240 translations of the same names to answer one keystroke.
+    def norm(name):
+        return name.lower().replace(' ', '')
+
+    candidates = []
+    for b in books:
+        shown = book_label(b)
+        candidates.append((b, norm(b), norm(shown) if shown != b else None))
+
+    # Exact match wins over prefix — "Job" must not silently become "Joshua".
+    for b, eng, loc in candidates:
+        if query == eng or query == loc:
+            return b
+    for b, eng, loc in candidates:
+        if eng.startswith(query) or (loc and loc.startswith(query)):
+            return b
+    # Contains, last and localized-only: Russian names the Gospels «От
+    # Иоанна» and the reader types «Иоанна», which is a prefix of nothing.
+    # Canonical order decides the winner, so «Иоанна» reaches the Gospel
+    # before the epistles and «Царств» the first of the four.
+    for b, _eng, loc in candidates:
+        if loc and query in loc:
+            return b
+    full = sword_bridge._CROSS_REF_ABBREVS.get(query)
+    if full and full in books:
+        return full
+    return None

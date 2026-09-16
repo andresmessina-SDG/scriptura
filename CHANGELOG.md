@@ -20,6 +20,10 @@ semver-ish — 0.x was the pre-Flathub testing track.
   saves your annotations, journal, sermons, bookmarks and plan progress to a
   folder on this device and keeps the last 14 copies. *Daily Copies* in the
   menu opens that folder, and *Restore…* starts there.
+- **Look up a verse from the GNOME search.** Type a reference such as
+  "John 3:16" in Activities to see the verse in the translation you last
+  read; Enter opens Scriptura there. A book name alone is not enough, so
+  other searches are left alone.
 
 ### Changed
 

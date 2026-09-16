@@ -99,6 +99,7 @@ py_sources = files(
   'reading_view.py',
   'search_controller.py',
   'search_panel.py',
+  'search_provider.py',
   'search_query.py',
   'sermons.py',
   'settings.py',
