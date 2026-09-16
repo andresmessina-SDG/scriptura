@@ -2,6 +2,7 @@
 annotations, journal, sermons, bookmarks, and reading-plan stores. No GTK /
 SWORD dependency."""
 
+import datetime
 import json
 import pytest
 
@@ -250,3 +251,50 @@ def test_a_damaged_sermons_section_is_refused(isolated):
            'journal': {}, 'sermons': [], 'bookmarks': [], 'reading_plans': {}}
     with pytest.raises(ValueError):
         backup.validate(doc)
+
+
+# ── daily copies ─────────────────────────────────────────────────────────────
+
+def _day(n):
+    return datetime.date(2026, 9, 1) + datetime.timedelta(days=n)
+
+
+def test_daily_copy_restores_like_a_backup(isolated):
+    _populate()
+    folder = isolated / 'backups'
+    folder.mkdir()
+    path = backup.daily_copy(str(folder), _day(0))
+    with open(path, encoding='utf-8') as f:
+        doc = backup.validate(json.load(f))
+    assert doc['exported'] == '2026-09-01'
+    assert backup.counts(doc)['sermons'] == 1
+
+
+def test_daily_copy_writes_once_a_day(isolated):
+    folder = isolated / 'backups'
+    folder.mkdir()
+    assert backup.daily_copy(str(folder), _day(0)) is not None
+    bookmarks.add('John', 1)
+    # A second launch the same day keeps the morning's copy.
+    assert backup.daily_copy(str(folder), _day(0)) is None
+    with open(backup.newest_daily_copy(str(folder)), encoding='utf-8') as f:
+        assert json.load(f)['bookmarks'] == []
+
+
+def test_daily_copy_keeps_the_newest(isolated):
+    folder = isolated / 'backups'
+    folder.mkdir()
+    (folder / 'notes.txt').write_text('not ours')
+    for n in range(backup.DAILY_KEEP + 3):
+        backup.daily_copy(str(folder), _day(n))
+    names = sorted(p.name for p in folder.iterdir())
+    assert 'notes.txt' in names
+    copies = [n for n in names if n.endswith('.json')]
+    assert len(copies) == backup.DAILY_KEEP
+    assert copies[0] == f'scriptura-study-data-{_day(3).isoformat()}.json'
+    assert backup.newest_daily_copy(str(folder)).endswith(
+        f'{_day(backup.DAILY_KEEP + 2).isoformat()}.json')
+
+
+def test_daily_copy_never_raises(isolated):
+    assert backup.daily_copy(str(isolated / 'missing'), _day(0)) is None

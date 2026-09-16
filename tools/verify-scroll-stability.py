@@ -257,10 +257,10 @@ def run_matrix() -> int:
         if not it.has_tag(tag):
             if not it.forward_to_tag_toggle(tag):
                 return None
-        loc = pane._view.get_iter_location(it)
-        wx, wy = pane._view.buffer_to_window_coords(
+        loc = pane.view.get_iter_location(it)
+        wx, wy = pane.view.buffer_to_window_coords(
             Gtk.TextWindowType.TEXT, loc.x, loc.y)
-        ok, p = pane._view.compute_point(pane.get_root(),
+        ok, p = pane.view.compute_point(pane.get_root(),
                                          Graphene.Point().init(0, wy))
         return round(p.y, 1) if ok else None
 
@@ -505,7 +505,7 @@ def run_matrix() -> int:
             # to be mistaken for the probe chapter (see kickoff). Require the
             # pane to be ON the probe chapter as well.
             landed = [p._rendered_verses is not None
-                      and (p._book, p._chapter) == ('Psalms', 119)
+                      and (p.book, p.chapter) == ('Psalms', 119)
                       for p in (S['p1'], S['p2'])]
             waited = round((time.monotonic() - started) * 1000)
             if all(landed):
@@ -517,7 +517,7 @@ def run_matrix() -> int:
             state['left'] -= 1
             if state['left'] <= 0:
                 REPORT['render_wait_ms'] = waited
-                showing = [f'{p._book} {p._chapter}'
+                showing = [f'{p.book} {p.chapter}'
                            for p in (S['p1'], S['p2'])]
                 REPORT.setdefault('inconclusive', (
                     f'the probe chapter never finished rendering in '
@@ -535,7 +535,7 @@ def run_matrix() -> int:
     def top_text(pane):
         """Identity + pixel offset of the text at the visual viewport top —
         the reader-level ground truth, independent of off-screen estimates."""
-        view = pane._view
+        view = pane.view
         bx, by = view.window_to_buffer_coords(Gtk.TextWindowType.TEXT, 60, 1)
         ok, it = view.get_iter_at_location(bx, by)
         if not ok:

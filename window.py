@@ -18,6 +18,7 @@ import night_light
 import module_positions
 import onboarding
 import backup
+import paths
 import bookmarks
 import journal
 import reading_plans
@@ -302,10 +303,15 @@ class BibleWindow(Adw.ApplicationWindow):
         # If launched via `bible:John+3:16` URI, navigate now that the
         # panes are loaded. Bad refs silently no-op.
         if self._startup_ref:
-            result = self._parse_jump(self._startup_ref)
-            if result:
-                book, chapter, verse = result
-                GLib.idle_add(lambda: self._go_to(book, chapter, verse) or False)
+            self.open_reference(self._startup_ref)
+
+    def open_reference(self, ref):
+        """Go to a reference sent from outside — a `bible:` link, at launch
+        or while the window is already open. Bad refs silently no-op."""
+        result = self._parse_jump(ref)
+        if result:
+            book, chapter, verse = result
+            GLib.idle_add(lambda: self._go_to(book, chapter, verse) or False)
 
     def _prewarm_cross_refs(self):
         import open_data
@@ -377,7 +383,7 @@ class BibleWindow(Adw.ApplicationWindow):
         header.pack_start(burger_btn)
 
         self._back_btn = Gtk.Button(icon_name='scriptura-go-previous-symbolic')
-        self._back_btn.set_tooltip_text(_('Go back (Alt+←)'))
+        self._back_btn.set_tooltip_text(_('Go back (Alt+[)'))
         set_accessible_label(self._back_btn, _('Go back'))
         self._back_btn.add_css_class('flat')
         self._back_btn.add_css_class('header-action')
@@ -386,7 +392,7 @@ class BibleWindow(Adw.ApplicationWindow):
         header.pack_start(self._back_btn)
 
         self._fwd_btn = Gtk.Button(icon_name='scriptura-go-next-symbolic')
-        self._fwd_btn.set_tooltip_text(_('Go forward (Alt+→)'))
+        self._fwd_btn.set_tooltip_text(_('Go forward (Alt+])'))
         set_accessible_label(self._fwd_btn, _('Go forward'))
         self._fwd_btn.add_css_class('flat')
         self._fwd_btn.add_css_class('header-action')
@@ -404,7 +410,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._recent_pop.connect(
             'show', lambda _p: self._build_recent_popover_content())
         self._back_btn.set_tooltip_text(
-            _('Go back (Alt+←) · right-click or hold for recent passages'))
+            _('Go back (Alt+[) · right-click or hold for recent passages'))
 
         recent_click = Gtk.GestureClick()
         recent_click.set_button(3)  # secondary (right) button
@@ -587,7 +593,6 @@ class BibleWindow(Adw.ApplicationWindow):
         self._swap_btn.set_tooltip_text(_('Swap pane modules'))
         set_accessible_label(self._swap_btn, _('Swap pane modules'))
         self._swap_btn.connect('clicked', self._on_swap_clicked)
-        self._swap_btn.set_sensitive(bool(settings.get('split_pane_mode')))
         header.pack_end(self._swap_btn)
 
         # Reading-tools cluster at the inner edge of the right cluster: the
@@ -778,6 +783,7 @@ class BibleWindow(Adw.ApplicationWindow):
         # without this the button would say "single" while pane2 was
         # still showing.
         self.pane2.set_visible(self._btn_split.get_active())
+        self._show_split_controls(self._btn_split.get_active())
         self._paned.set_resize_start_child(True)
         self._paned.set_resize_end_child(True)
         self._paned.set_shrink_start_child(False)
@@ -1038,6 +1044,15 @@ class BibleWindow(Adw.ApplicationWindow):
         key_controller.connect('key-pressed', self._on_key_press)
         self.add_controller(key_controller)
 
+        # A mouse's side buttons go back and forward through history, as in
+        # a browser or Files. One gesture per button, so no other click is
+        # ever looked at.
+        for button in (self._MOUSE_BACK, self._MOUSE_FORWARD):
+            side = Gtk.GestureClick(button=button)
+            side.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+            side.connect('pressed', self._on_side_button)
+            self.add_controller(side)
+
         # Start with the reading view focused so the contextual keys above
         # work from launch (and the app opens in a sensible state) rather
         # than only after the user's first click. One-shot on first map.
@@ -1077,6 +1092,13 @@ class BibleWindow(Adw.ApplicationWindow):
             ('focus-pane-1', ['<Ctrl>1'], self.pane1.grab_content_focus),
             ('focus-pane-2', ['<Ctrl>2'], self._focus_pane2),
             ('focus-other-pane', ['<Ctrl>Tab'], self._focus_other_pane),
+            # Not Ctrl+Alt+arrows: GNOME takes those for switching
+            # workspaces, so the app would never see them. Alt+arrows are
+            # the chapter keys below; brackets are this view's other
+            # "move" family (bare: sense-unit, Ctrl: the split).
+            ('go-back', ['<Alt>bracketleft'], lambda: self._on_nav_back(None)),
+            ('go-forward', ['<Alt>bracketright'],
+             lambda: self._on_nav_fwd(None)),
             ('prev-chapter', ['<Alt>Left'], self._go_prev_chapter),
             ('next-chapter', ['<Alt>Right'], self._go_next_chapter),
             ('prev-book', ['<Alt>Up'], self._go_prev_book),
@@ -1088,6 +1110,7 @@ class BibleWindow(Adw.ApplicationWindow):
             ('print-passage', ['<Ctrl>p'], self._print_passage),
             ('export-passage', ['<Ctrl>e'], self._export_passage),
             ('compare-verse', ['<Ctrl><Shift>c'], self._compare_verse),
+            ('bookmark', ['<Ctrl>d'], self._bookmark_here),
             ('annotations', ['<Ctrl>j'], self._open_annotations),
             ('write-entry', ['<Ctrl><Shift>j'], self._write_about_here),
             ('write-sermon', ['<Ctrl><Shift>m'], self._sermon_about_here),
@@ -1131,7 +1154,7 @@ class BibleWindow(Adw.ApplicationWindow):
         if getattr(self, '_did_initial_focus', False):
             return
         self._did_initial_focus = True
-        self.pane1._view.grab_focus()
+        self.pane1.view.grab_focus()
 
     def _on_key_press(self, controller, keyval, keycode, state):
         alt  = bool(state & Gdk.ModifierType.ALT_MASK)
@@ -1344,6 +1367,16 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _go_next_book(self):
         self._nav._go_next_book()
+
+    _MOUSE_BACK = 8
+    _MOUSE_FORWARD = 9
+
+    def _on_side_button(self, gesture, *_args):
+        if gesture.get_current_button() == self._MOUSE_BACK:
+            self._on_nav_back(None)
+        else:
+            self._on_nav_fwd(None)
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
 
     def _on_nav_back(self, btn):
         self._nav._on_nav_back(btn)
@@ -1872,8 +1905,15 @@ class BibleWindow(Adw.ApplicationWindow):
         return box
 
     def _add_bookmark(self, _btn, book, chapter, popover):
-        bookmarks.add(book, chapter)
         popover.popdown()
+        self._save_bookmark(book, chapter)
+
+    def _bookmark_here(self):
+        self._save_bookmark(self.nav_books()[self.book_drop.get_selected()],
+                            self.chapter_drop.get_selected() + 1)
+
+    def _save_bookmark(self, book, chapter):
+        bookmarks.add(book, chapter)
         self._toast(_('Bookmarked {ref}').format(ref=f'{book_label(book)} {chapter}'))
 
     def _on_bookmark_row_activated(self, _lb, row, popover):
@@ -1938,9 +1978,20 @@ class BibleWindow(Adw.ApplicationWindow):
             return
         self._toast(_('Study data backed up'))
 
+    def _on_daily_copies_clicked(self, _row):
+        newest = backup.newest_daily_copy()
+        if newest is None:
+            self._toast(_('No daily copy yet'))
+            return
+        # Open the folder with the newest copy selected. The portal behind
+        # this reaches the host file manager from inside the Flatpak.
+        Gtk.FileLauncher.new(Gio.File.new_for_path(newest)).open_containing_folder(
+            self, None, None)
+
     def _on_restore_clicked(self, _row):
         dialog = Gtk.FileDialog()
         dialog.set_title(_('Restore Study Data'))
+        dialog.set_initial_folder(Gio.File.new_for_path(paths.backups_dir()))
         dialog.open(self, None, self._on_restore_open)
 
     def _on_restore_open(self, dialog, result):
@@ -2055,8 +2106,8 @@ class BibleWindow(Adw.ApplicationWindow):
         """Re-render any pane currently showing `module` (e.g. after the
         cipher key changed)."""
         for pane in (self.pane1, self.pane2):
-            if pane._module == module:
-                pane.force_navigate(pane._book, pane._chapter, None)
+            if pane.module == module:
+                pane.force_navigate(pane.book, pane.chapter, None)
 
     # ── Reading mode (delegated to OverlayManager; see overlays.py) ──────────
     @property
@@ -2160,7 +2211,7 @@ class BibleWindow(Adw.ApplicationWindow):
             panes = [self.pane1]
             if self.pane2 is not None and self.pane2.get_visible():
                 panes.append(self.pane2)
-            if any(content.has_strongs(p._module) for p in panes):
+            if any(content.has_strongs(p.module) for p in panes):
                 self._hints.maybe_fire('first_lexicon')
 
     def _on_fnote_toggle(self, _btn):
@@ -2654,7 +2705,7 @@ class BibleWindow(Adw.ApplicationWindow):
         hidden) with an explanatory tooltip — the header layout stays put.
         Runs on every pane module switch and after module installs."""
         import content
-        capable = any(content.has_footnotes(p._module)
+        capable = any(content.has_footnotes(p.module)
                       for p in (self.pane1, self.pane2))
         self.fnote_toggle.set_sensitive(capable)
         self.fnote_toggle.set_tooltip_text(
@@ -2668,11 +2719,19 @@ class BibleWindow(Adw.ApplicationWindow):
         if self._panes_narrow:
             # View toggle is hidden while collapsed; the switcher only matters
             # in split mode (two distinct panes to flip between).
+            self._show_split_controls(split)
             self._narrow_switch_box.set_visible(split)
             self._apply_narrow_pane()
             return
         self._set_pane_visible(self.pane2, split)
-        self._swap_btn.set_sensitive(split)
+        self._show_split_controls(split)
+
+    def _show_split_controls(self, split):
+        """Controls that only mean something with two panes go away with
+        the second pane, rather than staying on screen dimmed."""
+        self._swap_btn.set_visible(split and not self._header_narrow)
+        for pane in (self.pane1, self.pane2):
+            pane.set_alone(not split)
 
     def _set_pane_visible(self, pane, visible):
         """Show or hide a pane, stopping its audio on a visible→hidden
@@ -2698,8 +2757,10 @@ class BibleWindow(Adw.ApplicationWindow):
         if narrow == self._header_narrow:
             return
         self._header_narrow = narrow
-        for w in (self._study_box, self._bookmark_btn, self._swap_btn):
+        for w in (self._study_box, self._bookmark_btn):
             w.set_visible(not narrow)
+        self._swap_btn.set_visible(
+            not narrow and self._btn_split.get_active())
         self._overflow_btn.set_visible(narrow)
 
     def _set_panes_narrow(self, narrow):
@@ -2858,9 +2919,10 @@ class BibleWindow(Adw.ApplicationWindow):
         row(Gtk.Image.new_from_icon_name('scriptura-bookmark-new-symbolic'),
             _('Bookmarks'), lambda: self._show_bookmarks(self._overflow_btn))
 
-        row(Gtk.Image.new_from_icon_name('scriptura-object-flip-horizontal-symbolic'),
-            _('Swap pane modules'), lambda: self._on_swap_clicked(None),
-            sensitive=self._btn_split.get_active())
+        if self._btn_split.get_active():
+            row(Gtk.Image.new_from_icon_name(
+                    'scriptura-object-flip-horizontal-symbolic'),
+                _('Swap pane modules'), lambda: self._on_swap_clicked(None))
 
         # Ultra-narrow: the 1/2 pane switcher folds in here too (it's hidden
         # from the header at this width).
@@ -2872,8 +2934,8 @@ class BibleWindow(Adw.ApplicationWindow):
         return box
 
     def _on_swap_clicked(self, _btn):
-        a = self.pane1._module
-        b = self.pane2._module
+        a = self.pane1.module
+        b = self.pane2.module
         if a == b:
             return
         # No explicit position transfer needed: each _apply_module_change
@@ -2902,8 +2964,8 @@ class BibleWindow(Adw.ApplicationWindow):
             book, chapter = self._current_loc
             settings.put('last_book', book)
             settings.put('last_chapter', int(chapter))
-            settings.put('pane1_module', self.pane1._module)
-            settings.put('pane2_module', self.pane2._module)
+            settings.put('pane1_module', self.pane1.module)
+            settings.put('pane2_module', self.pane2.module)
             # Snapshot both panes' current positions into the shared
             # module_positions store so each module reopens where it
             # was last viewed regardless of which pane shows it next.
@@ -2932,7 +2994,7 @@ class BibleWindow(Adw.ApplicationWindow):
             # each pane is showing; otherwise only the matching module's pane.
             all_bibles = target_mod == search_controller.ALL_BIBLES
             for pane in (self.pane1, self.pane2):
-                if all_bibles or pane._module == target_mod:
+                if all_bibles or pane.module == target_mod:
                     pane._pending_search_highlight = (query, case)
         self._go_to(book, chapter, verse)
 
@@ -2945,16 +3007,16 @@ class BibleWindow(Adw.ApplicationWindow):
         # pane and the (KJV-keyed) cross-reference panel both receive the
         # one shared reference space; select_verse maps back per receiver.
         verse_num = sword_bridge.map_verse_to_app(
-            source_pane._module, source_pane._book, source_pane._chapter,
+            source_pane.module, source_pane.book, source_pane.chapter,
             verse_num)
         for pane in [self.pane1, self.pane2]:
             if pane is not source_pane:
                 pane.select_verse(verse_num)
-        if (source_pane._book and source_pane._chapter
+        if (source_pane.book and source_pane.chapter
                 and self.xref_toggle.get_active()):
-            if source_pane._book in BOOKS:
+            if source_pane.book in BOOKS:
                 self._crossref_panel.load(
-                    source_pane._book, source_pane._chapter, verse_num)
+                    source_pane.book, source_pane.chapter, verse_num)
                 self._crossref_revealer.set_reveal_child(True)
             else:
                 # Neither TSK nor OpenBible indexes the books outside the 66,
@@ -3051,7 +3113,7 @@ class BibleWindow(Adw.ApplicationWindow):
         language spells it.
         """
         import annotations as annotations_store
-        app = annotations_store.app_verse(self.pane1._module, book, chapter,
+        app = annotations_store.app_verse(self.pane1.module, book, chapter,
                                           verse)
         anchor = {'book': book, 'chapter': chapter,
                   'verses': [app] if app is not None else []}
@@ -3084,7 +3146,7 @@ class BibleWindow(Adw.ApplicationWindow):
         self._annotations_win = AnnotationsWindow(
             on_navigate=self._on_annotations_navigate,
             on_annotation_changed=self._refresh_panes,
-            reading_module=lambda: self.pane1._module,
+            reading_module=lambda: self.pane1.module,
             new_entry=new_entry,
             new_sermon=new_sermon,
             transient_for=self,
@@ -3118,8 +3180,8 @@ class BibleWindow(Adw.ApplicationWindow):
         """
         pane = self._pane_in_view()
         anchors = []
-        if pane is not None and pane._book:
-            anchors = [{'book': pane._book, 'chapter': pane._chapter,
+        if pane is not None and pane.book:
+            anchors = [{'book': pane.book, 'chapter': pane.chapter,
                         'verses': []}]
         self._open_annotations(new_sermon={
             'anchors': anchors, 'collect': self._today_collect()})
@@ -3207,20 +3269,20 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _print_passage(self):
         pane = self._pane_in_view()
-        if pane is None or not pane._book:
+        if pane is None or not pane.book:
             return
         passage_print.print_passage(pane, pane.current_verses())
 
     def _export_passage(self):
         pane = self._pane_in_view()
-        if pane is None or not pane._book:
+        if pane is None or not pane.book:
             return
         export_dialog.export_passage(pane, pane.current_verses())
 
     def _compare_verse(self):
         """One verse, so the selection's first is what it compares."""
         pane = self._pane_in_view()
-        if pane is None or not pane._book:
+        if pane is None or not pane.book:
             return
         verses = pane.current_verses()
         if not verses:
@@ -3237,10 +3299,10 @@ class BibleWindow(Adw.ApplicationWindow):
         the study menu's own entry is for.
         """
         pane = self._pane_in_view()
-        if pane is None or not pane._book:
+        if pane is None or not pane.book:
             return
         self._open_annotations({'anchors': [
-            {'book': pane._book, 'chapter': pane._chapter, 'verses': []}]})
+            {'book': pane.book, 'chapter': pane.chapter, 'verses': []}]})
 
     def _refresh_panes(self, book, chapter, verse):
         """Called by the Annotations window when a mark changes there.
@@ -3251,13 +3313,13 @@ class BibleWindow(Adw.ApplicationWindow):
         number before the refresh, or a Synodal psalter would repaint the
         wrong line."""
         for pane in (self.pane1, self.pane2):
-            if pane._book == book and pane._chapter == chapter:
+            if pane.book == book and pane.chapter == chapter:
                 if verse is None:
                     pane._update_chapter_note_indicator()
                 else:
                     pane._refresh_verse_annotation(
                         annotations.module_verse(
-                            pane._module, book, chapter, verse))
+                            pane.module, book, chapter, verse))
 
     def _on_annotations_navigate(self, book, chapter, verse):
         self._go_to(book, chapter, verse)
@@ -3323,6 +3385,8 @@ class BibleWindow(Adw.ApplicationWindow):
     _SHORTCUT_SECTIONS = [
         (N_('Navigation'), [
             (N_('Quick jump to any reference (e.g. John 3:16)'), 'action', 'goto'),
+            (N_('Go back'), 'action', 'go-back'),
+            (N_('Go forward'), 'action', 'go-forward'),
             (N_('Previous chapter'), 'action', 'prev-chapter'),
             (N_('Next chapter'), 'action', 'next-chapter'),
             (N_('Previous book'), 'action', 'prev-book'),
@@ -3377,6 +3441,7 @@ class BibleWindow(Adw.ApplicationWindow):
             (N_('Export the passage'), 'action', 'export-passage'),
             (N_('Compare translations of this verse'), 'action',
              'compare-verse'),
+            (N_('Bookmark this chapter'), 'action', 'bookmark'),
             (N_('Keyboard shortcuts'), 'action', 'show-help-overlay'),
         ]),
     ]
@@ -3462,7 +3527,7 @@ class BibleWindow(Adw.ApplicationWindow):
         import content
         if not self._btn_split.get_active():
             self._btn_split.set_active(True)  # → _on_view_mode reveals pane2
-        if not content.is_text_bible(self.pane2._module):
+        if not content.is_text_bible(self.pane2.module):
             fallback = module or self._first_bible_module()
             if not fallback:
                 return
@@ -3541,8 +3606,8 @@ class BibleWindow(Adw.ApplicationWindow):
         return None
 
     def _on_word_click(self, source_pane, strong_num):
-        book    = source_pane._book
-        chapter = source_pane._chapter
+        book    = source_pane.book
+        chapter = source_pane.chapter
         verse   = source_pane._selected_verse
         # Snapshot the click's display context on the main thread and thread it
         # through to the async display. Reading the pane's live _current_morph /
@@ -4382,6 +4447,18 @@ class BibleWindow(Adw.ApplicationWindow):
             row.set_activatable(True)
             row.connect('activated', handler)
             data_group.add(row)
+        # The copies main() makes at launch. Opening their folder is the
+        # whole feature: Restore… already reads any of them.
+        daily = Adw.ActionRow(
+            title=_('Daily Copies'),
+            subtitle=ngettext('The last {n} day, kept on this device',
+                              'The last {n} days, kept on this device',
+                              backup.DAILY_KEEP).format(n=backup.DAILY_KEEP))
+        daily.add_prefix(Gtk.Image.new_from_icon_name(
+            'scriptura-document-open-recent-symbolic'))
+        daily.set_activatable(True)
+        daily.connect('activated', self._on_daily_copies_clicked)
+        data_group.add(daily)
         return data_group
 
     def _build_menu_footer(self):

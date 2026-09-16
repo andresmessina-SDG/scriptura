@@ -61,7 +61,7 @@ class FakePane:
     def __init__(self, verses=(1, 2, 3, 4, 5), navigable=True, selected=None,
                  module_type='Biblical Texts'):
         self._module_type = module_type
-        self._view = FakeView()
+        self._view = self.view = FakeView()
         self._rendered_headings = {}
         self._show_headings = True
         self._buffer = FakeBuffer(verses)

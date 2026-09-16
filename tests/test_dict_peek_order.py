@@ -12,8 +12,7 @@ it shipped that way in 1.6.2.
 The lookup lives at method scope now, where nothing shadows the module — and
 where a test can reach it without a display.
 
-No widgets: the pane's own method is borrowed onto a stand-in, as in
-test_footnote_markers.
+No widgets: the pane's peek is built over a stand-in pane.
 """
 import gi
 
@@ -21,16 +20,14 @@ gi.require_version('Gtk', '4.0')
 
 import content  # noqa: E402
 import sword_bridge  # noqa: E402
-from pane import BiblePane  # noqa: E402
+import types  # noqa: E402
+
+from pane_peek import PeekController  # noqa: E402
 
 
-class Pane:
-    """Enough pane to look a word up."""
-
-    _dict_results = BiblePane._dict_results
-
-    def __init__(self, module):
-        self._module = module
+def Pane(module):
+    """Enough pane to look a word up: its peek, over a reading module."""
+    return PeekController(types.SimpleNamespace(module=module))
 
 
 _DICTS = [('Easton', "Easton's Bible Dictionary"),
@@ -52,7 +49,7 @@ def test_the_lookup_runs_at_all(monkeypatch):
     every double-click, and the peek said "no entry"."""
     _stub(monkeypatch, hits={'Easton': ('<p>love</p>', True)},
           languages={'KJV': 'en', 'Easton': 'en'})
-    results = Pane('KJV')._dict_results('love', _DICTS)
+    results = Pane('KJV').dict_results('love', _DICTS)
     assert [mod for mod, _desc, _html in results] == ['Easton']
 
 
@@ -62,7 +59,7 @@ def test_the_reading_language_opens_first(monkeypatch):
           hits={'Easton': ('<p>en</p>', True),
                 'Wikcionario': ('<p>es</p>', True)},
           languages={'NBLA': 'es', 'Wikcionario': 'es', 'Easton': 'en'})
-    results = Pane('NBLA')._dict_results('amor', _DICTS)
+    results = Pane('NBLA').dict_results('amor', _DICTS)
     assert [mod for mod, _desc, _html in results] == ['Wikcionario', 'Easton']
 
 
@@ -75,7 +72,7 @@ def test_an_ebible_bible_still_knows_its_language(monkeypatch):
           hits={'Easton': ('<p>en</p>', True),
                 'Wikcionario': ('<p>es</p>', True)},
           languages={key: 'es', 'Wikcionario': 'es', 'Easton': 'en'})
-    results = Pane(key)._dict_results('amor', _DICTS)
+    results = Pane(key).dict_results('amor', _DICTS)
     assert results[0][0] == 'Wikcionario'
 
 
@@ -87,19 +84,19 @@ def test_an_exact_hit_beats_the_reading_language(monkeypatch):
           hits={'Webster': ('<p>Pue</p>', False),
                 'Easton': ('<p>exact</p>', True)},
           languages={'NBLA': 'es', 'Webster': 'en', 'Easton': 'en'})
-    results = Pane('NBLA')._dict_results('pues', _DICTS)
+    results = Pane('NBLA').dict_results('pues', _DICTS)
     assert [mod for mod, _desc, _html in results] == ['Easton', 'Webster']
 
 
 def test_a_dictionary_with_nothing_to_say_gets_no_tab(monkeypatch):
     _stub(monkeypatch, hits={}, languages={'KJV': 'en'})
-    assert Pane('KJV')._dict_results('xyzzy', _DICTS) == []
+    assert Pane('KJV').dict_results('xyzzy', _DICTS) == []
 
 
 def test_no_reading_language_falls_back_to_the_titles(monkeypatch):
     _stub(monkeypatch,
           hits={mod: ('<p>x</p>', True) for mod, _d in _DICTS},
           languages={})
-    results = Pane('Unknown')._dict_results('love', _DICTS)
+    results = Pane('Unknown').dict_results('love', _DICTS)
     assert [mod for mod, _desc, _html in results] == \
         ['Easton', 'Webster', 'Wikcionario']

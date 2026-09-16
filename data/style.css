@@ -374,6 +374,16 @@ separator.journal-divider { background-color: alpha(@borders, 0.3); }
 }
 .journal-tools button:hover { background-color: alpha(@window_fg_color, 0.09); }
 
+/* Find and replace, under the formatting row. The same flat buttons; the
+ * fields keep their own frames, since they are where the typing goes. */
+.journal-find { padding: 4px 6px 6px; border-bottom: 1px solid alpha(@borders, 0.55); }
+.journal-find button {
+    min-width: 28px;
+    min-height: 28px;
+    padding: 2px;
+    border-radius: 7px;
+}
+
 /* The page switcher at the head of the sidebar. Adwaita's toggle group
  * already draws the segment and slides it; this only gives it room.
  *

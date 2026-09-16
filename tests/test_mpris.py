@@ -73,7 +73,8 @@ def _call(bus, method, params=None):
 # ── What the desktop is told ─────────────────────────────────────────────────
 
 def test_the_bus_name_is_this_app_and_this_instance():
-    """The app runs NON_UNIQUE, so two windows must not fight over one name."""
+    """Two copies of the app (a dev run beside the installed one) must not
+    fight over one name."""
     assert mpris.BUS_NAME.startswith(
         'org.mpris.MediaPlayer2.io.github.andresmessina_SDG.Scriptura.instance')
     assert mpris.BUS_NAME.endswith(str(__import__('os').getpid()))

@@ -82,7 +82,9 @@ def _setup_gettext():
 
 _setup_gettext()
 
+import backup  # noqa: E402
 import mpris  # noqa: E402
+import search_provider  # noqa: E402
 from styles import load_app_css  # noqa: E402
 from window import BibleWindow  # noqa: E402  (after logging setup)
 
@@ -93,7 +95,9 @@ def _parse_bible_uri(uri):
     (`bible:John+3:16`). Returns the reference string or None."""
     if not uri.startswith('bible:'):
         return None
-    body = uri[len('bible:'):]
+    # Gio.File rewrites `bible:John+3:16` as `bible:///John+3:16`, which is
+    # the form a link handed on to the open window arrives in.
+    body = uri[len('bible:'):].lstrip('/')
     if not body:
         return None
     return unquote(body).replace('+', ' ').strip() or None
@@ -293,14 +297,22 @@ def _scan_argv_for_bible_uri():
 
 
 class BibleApp(Adw.Application):
-    def __init__(self):
-        super().__init__(
-            application_id=APP_ID,
-            flags=(Gio.ApplicationFlags.NON_UNIQUE
-                   | Gio.ApplicationFlags.HANDLES_OPEN))
+    def __init__(self, unique=False):
+        # The launcher asks for one copy of the app. Each copy holds the
+        # reader's notes, journal and sermons in memory and rewrites the
+        # whole file on save, so two copies erase each other's work; a
+        # second launch or a clicked `bible:` link goes to the open window
+        # instead. Left off by default so the verify tools, which build
+        # the app beside whatever copy the reader has open, keep their own.
+        flags = Gio.ApplicationFlags.HANDLES_OPEN
+        if not unique:
+            flags |= Gio.ApplicationFlags.NON_UNIQUE
+        super().__init__(application_id=APP_ID, flags=flags)
         # Parsed from argv at init time — applies to both the activate
         # path (no URI args) and the open path (URI args, where Gio may
-        # still mangle the URI through Gio.File.get_uri()).
+        # still mangle the URI through Gio.File.get_uri()). Spent on the
+        # first window: a link sent on later by another launch arrives
+        # through `files`, not through this process's argv.
         self._argv_ref = _scan_argv_for_bible_uri()
         self.connect('activate', self._on_activate)
         self.connect('open', self._on_open)
@@ -308,8 +320,35 @@ class BibleApp(Adw.Application):
         # opens no connection: the bus is only reached once a reading is
         # actually playing.
         mpris.attach(self)
+        self._search_provider = search_provider.SearchProvider(self)
+
+    def do_dbus_register(self, connection, object_path):
+        self._search_provider.register(connection)
+        return Adw.Application.do_dbus_register(self, connection, object_path)
+
+    def do_dbus_unregister(self, connection, object_path):
+        self._search_provider.unregister(connection)
+        Adw.Application.do_dbus_unregister(self, connection, object_path)
+
+    def _raise_open_window(self, ref=None):
+        """Bring the open window forward, moved to `ref` when one was sent.
+        Returns False when there is no window yet."""
+        windows = self.get_windows()
+        if not windows:
+            return False
+        main_win = next(
+            (w for w in windows if isinstance(w, BibleWindow)), None)
+        if main_win is None:
+            windows[0].present()        # still on the welcome window
+            return True
+        if ref:
+            main_win.open_reference(ref)
+        main_win.present()
+        return True
 
     def _on_activate(self, app):
+        if self._raise_open_window():
+            return
         _register_icon_search_path()
         _pin_icon_theme()
         _apply_manual_font_rendering()
@@ -321,16 +360,19 @@ class BibleApp(Adw.Application):
         We prefer the argv-derived ref because Gio.File may not
         preserve custom URI schemes; fall back to Gio.File only if
         argv didn't yield a ref."""
-        _register_icon_search_path()
-        _pin_icon_theme()
-        _apply_manual_font_rendering()
-        load_app_css()
         ref = self._argv_ref
+        self._argv_ref = None
         if not ref:
             for f in files:
                 ref = _parse_bible_uri(f.get_uri())
                 if ref:
                     break
+        if self._raise_open_window(ref):
+            return
+        _register_icon_search_path()
+        _pin_icon_theme()
+        _apply_manual_font_rendering()
+        load_app_css()
         self._present_main_or_welcome(app, startup_ref=ref)
 
     def _present_main_or_welcome(self, app, startup_ref=None):
@@ -380,9 +422,22 @@ def relaunch_requested():
     return bool(os.environ.get(_RELAUNCH_ENV))
 
 
+def _on_startup(app):
+    # `startup` fires only in the copy that owns the window, never in a
+    # launch that hands off to it, and before any store is changed.
+    backup.daily_copy()
+    # Started by the desktop's search, with no window: stay up between
+    # keystrokes, then quit once the reader has stopped typing.
+    if app.get_flags() & Gio.ApplicationFlags.IS_SERVICE:
+        app.set_inactivity_timeout(10000)
+
+
 def main():
-    app = BibleApp()
-    app.run()
+    app = BibleApp(unique=True)
+    app.connect('startup', _on_startup)
+    # argv carries `--gapplication-service` when the desktop's search starts
+    # the app, and a `bible:` link to hand on to a copy already open.
+    app.run(sys.argv)
     # Re-exec here rather than from the button's handler: by now
     # GApplication has shut down and released its bus name, so the new
     # process starts as itself instead of handing straight back to the one

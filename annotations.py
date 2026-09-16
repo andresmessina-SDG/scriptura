@@ -39,6 +39,15 @@ _on_save_error: Callable[[], None] | None = None
 # write that succeeds, so a disk that frees up says so again.
 _save_error_reported = False
 
+# The open Annotations window, told of every save so its list follows marks
+# made elsewhere. One slot: the app keeps one such window at a time.
+_on_change: Callable[[], None] | None = None
+
+
+def set_change_handler(handler: Callable[[], None] | None) -> None:
+    global _on_change
+    _on_change = handler
+
 
 def set_save_error_handler(handler: Callable[[], None]) -> None:
     global _on_save_error, _save_error_reported
@@ -438,6 +447,11 @@ def _save(data: Annotations) -> bool:
     """
     global _cache, _save_error_reported
     _cache = data
+    if _on_change is not None:
+        try:
+            _on_change()
+        except Exception:
+            _log.exception('change handler raised')
     # Atomic write: build the file beside the destination, fsync, then
     # os.replace (atomic on POSIX). A crash mid-write leaves the
     # original intact instead of truncating it to zero bytes —

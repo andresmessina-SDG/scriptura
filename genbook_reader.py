@@ -217,7 +217,7 @@ class GenbookReader:
         """Persist the current entry path into module_positions."""
         if not self._entry_path:
             return
-        module = self._pane._module
+        module = self._pane.module
         if not module:
             return
         module_positions.remember_genbook_path(module, self._entry_path)
@@ -229,7 +229,7 @@ class GenbookReader:
         (cold open) or the saved entry path no longer renders (module
         restructured between sessions), fall back to the first
         non-empty entry."""
-        module = self._pane._module
+        module = self._pane.module
 
         def fetch() -> None:
             entries: list[Entry] = sword_bridge.list_genbook_entries(module)
@@ -281,7 +281,7 @@ class GenbookReader:
         # Returns GLib.SOURCE_REMOVE — typed as Any since gi stubs don't
         # narrow the constant; this is the GLib.idle_add callback contract.
         pane = self._pane
-        if module != pane._module or not pane._is_genbook:
+        if module != pane.module or not pane._is_genbook:
             return GLib.SOURCE_REMOVE
         dark = Adw.StyleManager.get_default().get_dark()
         pane._cancel_all_flashes()
@@ -381,7 +381,7 @@ class GenbookReader:
                 f'<span foreground="{fg}">'
                 f'{GLib.markup_escape_text(msg)}</span>', -1)
 
-        pane._view.get_vadjustment().set_value(0)
+        pane.view.get_vadjustment().set_value(0)
         return GLib.SOURCE_REMOVE
 
     def _insert_synopsis(self, synopsis: str, dark: bool) -> None:
@@ -412,7 +412,7 @@ class GenbookReader:
         btn.add_css_class('genbook-synopsis-toggle')
         btn.set_halign(Gtk.Align.START)
         set_accessible_label(btn, _('Show the chapter’s section summaries'))
-        pane._view.add_child_at_anchor(btn, anchor)
+        pane.view.add_child_at_anchor(btn, anchor)
         pane._buffer.insert(pane._buffer.get_end_iter(), '\n')
 
         table = pane._buffer.get_tag_table()
@@ -473,7 +473,7 @@ class GenbookReader:
         document order."""
         if not self._pane._is_genbook:
             return
-        entries: list[Entry] = sword_bridge.list_genbook_entries(self._pane._module)
+        entries: list[Entry] = sword_bridge.list_genbook_entries(self._pane.module)
         if not entries:
             return
         paths = [p for p, _l, _d in entries]
@@ -511,7 +511,7 @@ class GenbookReader:
         Built lazily on each show because the active module can change."""
         assert self._toc_pop is not None
         pop = self._toc_pop
-        entries: list[Entry] = sword_bridge.list_genbook_entries(self._pane._module)
+        entries: list[Entry] = sword_bridge.list_genbook_entries(self._pane.module)
 
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)

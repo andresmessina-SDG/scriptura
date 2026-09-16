@@ -133,3 +133,39 @@ def test_a_navigation_that_lands_does_not_toast():
         sword_bridge.chapter_count_in = orig
     assert win.toasts == []
     assert nav._current_loc == ('2 Maccabees', 3)
+
+
+# ── Mouse side buttons ──────────────────────────────────────────────────────
+
+def test_the_mouse_side_buttons_go_back_and_forward():
+    """History was reachable only through the header arrows. Buttons 8 and 9
+    are the back and forward buttons on a mouse that has them."""
+    import types
+    from gi.repository import Gtk
+    from window import BibleWindow
+
+    calls = []
+    fake = types.SimpleNamespace(
+        _MOUSE_BACK=BibleWindow._MOUSE_BACK,
+        _on_nav_back=lambda _b: calls.append('back'),
+        _on_nav_fwd=lambda _b: calls.append('forward'))
+    states = []
+    for button in (8, 9):
+        gesture = types.SimpleNamespace(get_current_button=lambda b=button: b,
+                                        set_state=states.append)
+        BibleWindow._on_side_button(fake, gesture, 1, 0.0, 0.0)
+    assert calls == ['back', 'forward']
+    assert states == [Gtk.EventSequenceState.CLAIMED] * 2
+
+
+def test_back_and_forward_keys_are_not_taken_by_gnome():
+    """Ctrl+Alt+arrows were the first choice, but GNOME switches workspaces
+    on them and the window never sees the press. Alt+arrows already change
+    chapter. The tooltips said Alt+←/→ for months."""
+    import re
+    import pathlib
+    src = (pathlib.Path(__file__).resolve().parents[1] / 'window.py').read_text()
+    assert "('go-back', ['<Alt>bracketleft']" in src
+    assert "('go-forward', ['<Alt>bracketright']" in src
+    assert not re.search(r'<Ctrl><Alt>(Left|Right)', src)
+    assert 'Alt+←' not in src and 'Alt+→' not in src

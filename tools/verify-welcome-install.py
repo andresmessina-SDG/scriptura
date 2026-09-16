@@ -384,8 +384,8 @@ def run_driver() -> int:
 
             # The window the handoff built.
             win = S['reading']
-            p1 = win.pane1._module
-            p2 = win.pane2._module
+            p1 = win.pane1.module
+            p2 = win.pane2.module
             split = win.pane2.get_visible()
             REPORT['measured']['window'] = {
                 'type': type(win).__name__, 'pane1': p1, 'pane2': p2,

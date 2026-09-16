@@ -208,7 +208,8 @@ def test_the_row_is_built_and_parented(isolated, display):
         while child is not None:
             buttons += 1
             child = child.get_next_sibling()
-        assert buttons == len(annotation_editors._TOOLS)
+        # The formatting tools, and Find at the far end.
+        assert buttons == len(annotation_editors._TOOLS) + 1
     finally:
         win.destroy()
 

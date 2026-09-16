@@ -737,9 +737,12 @@ class AnnotationsWindow(Adw.Window):
         # The last keystrokes before the window is shut are the ones most
         # likely to be lost; the timer may still be running when it closes.
         self.connect('close-request', self._on_close_request)
+        self._verse_cache = {}
+        self._store_reload_pending = False
 
         self._build_ui()
         self._reload()
+        annotations.set_change_handler(self._on_store_saved)
         if new_entry is not None:
             self.start_entry(**new_entry)
         if new_sermon is not None:
@@ -762,17 +765,10 @@ class AnnotationsWindow(Adw.Window):
         self._split_view.set_max_sidebar_width(440)
         self._split_view.set_sidebar_width_fraction(0.34)
 
-        # ── Sidebar page: the list + its header (refresh · tags · export) ─────
+        # ── Sidebar page: the list + its header (tags · export) ─────
         sidebar_tv = Adw.ToolbarView()
         sidebar_header = Adw.HeaderBar()
         sidebar_tv.add_top_bar(sidebar_header)
-
-        refresh_btn = Gtk.Button(icon_name='scriptura-view-refresh-symbolic')
-        refresh_btn.set_tooltip_text(_('Refresh'))
-        set_accessible_label(refresh_btn, _('Refresh'))
-        refresh_btn.add_css_class('flat')
-        refresh_btn.connect('clicked', lambda _: self._reload())
-        sidebar_header.pack_start(refresh_btn)
 
         tag_mgr_btn = Gtk.Button(icon_name='scriptura-view-list-bullet-symbolic')
         tag_mgr_btn.set_tooltip_text(_('Manage tags'))
@@ -1165,8 +1161,32 @@ class AnnotationsWindow(Adw.Window):
 
     # ── Data ──────────────────────────────────────────────────────────────────
 
+    def _row_verse(self, entry):
+        key = (entry['book'], entry['chapter'], entry['verse'])
+        if key not in self._verse_cache:
+            self._verse_cache[key] = ' '.join(self._mark_editor._verse_text(
+                *key).split())
+        return self._verse_cache[key]
+
+    def _on_store_saved(self):
+        # A mark made in the reading view reaches the list at once. Saves
+        # made here are left alone: this window is the active one while the
+        # reader types or clicks in it, and a rebuild under the cursor
+        # throws their place away (see MarkEditor.write).
+        if (not self.get_visible() or self.is_active()
+                or self._store_reload_pending):
+            return
+        self._store_reload_pending = True
+        GLib.idle_add(self._reload_from_store)
+
+    def _reload_from_store(self):
+        self._store_reload_pending = False
+        self._reload()
+        return GLib.SOURCE_REMOVE
+
     def _reload(self):
         self._updating = True
+        self._verse_cache = {}
         self._entries = _all_entries()
 
         # The appendix too, or a note taken in Tobit would be missing from
@@ -1715,13 +1735,16 @@ class AnnotationsWindow(Adw.Window):
                     dot.add_css_class(dot_cls)
                 hl_name = _HL_NAMES.get(entry['highlight'])
                 name = Gtk.Label(
-                    label=_(hl_name) if hl_name else _('Highlight'), xalign=0)
+                    label=_(hl_name) if hl_name else C_('kind of mark', 'Highlight'),
+                    xalign=0)
                 name.add_css_class('dim-label')
                 name.add_css_class('caption')
                 hue.append(dot)
                 hue.append(name)
                 badges.append(hue)
-            for present, text in ((entry['underline'], _('Underline')),
+            # The noun. The verse menu's `Underline` is the verb, and a
+            # language that tells them apart read an order in this list.
+            for present, text in ((entry['underline'], C_('kind of mark', 'Underline')),
                                   (entry['note'], _('Note'))):
                 if present:
                     have_badge = True
@@ -1746,6 +1769,16 @@ class AnnotationsWindow(Adw.Window):
             note_lbl.set_lines(2)
             note_lbl.set_ellipsize(Pango.EllipsizeMode.END)
             content.append(note_lbl)
+        elif not is_entry and not entry.get('is_chapter_note'):
+            # A mark with no note said only its colour, so finding one meant
+            # opening each. One dim line of the verse it is on, quoted as the
+            # detail pane quotes it.
+            words = self._row_verse(entry)
+            if words:
+                verse_lbl = Gtk.Label(label=words, xalign=0)
+                verse_lbl.set_ellipsize(Pango.EllipsizeMode.END)
+                verse_lbl.add_css_class('dim-label')
+                content.append(verse_lbl)
 
         # Tag chips — clicking sets the Tag filter to that tag
         tags = entry.get('tags', [])
@@ -1806,7 +1839,12 @@ class AnnotationsWindow(Adw.Window):
 
     def _on_close_request(self, _win):
         self._autosave.flush()
+        self._stop_following_store()
         return False
+
+    def _stop_following_store(self):
+        if annotations._on_change == self._on_store_saved:
+            annotations.set_change_handler(None)
 
     def destroy(self):
         """Never leave a write armed on a window that is going away.
@@ -1822,6 +1860,7 @@ class AnnotationsWindow(Adw.Window):
         being taken down is not them changing their mind.
         """
         self._autosave.flush()
+        self._stop_following_store()
         self._entry_editor.shutdown()
         self._sermon_editor.shutdown()
         self._mark_editor.shutdown()

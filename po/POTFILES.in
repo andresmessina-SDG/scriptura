@@ -28,6 +28,7 @@ imagery_reader.py
 interlinear_data.py
 interlinear_view.py
 lexicon_panel.py
+manuscript_find.py
 module_manager.py
 module_picker.py
 navigation.py
@@ -35,6 +36,7 @@ onboarding.py
 open_data.py
 overlays.py
 pane.py
+pane_peek.py
 pane_search.py
 passage_export.py
 passage_print.py

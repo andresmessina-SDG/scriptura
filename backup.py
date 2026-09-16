@@ -18,19 +18,31 @@ with that section empty, which is exactly right — it was written by a
 Scriptura that had none. The bump is for the other direction: validate()
 refuses a payload from a newer version, so an older Scriptura declines the
 file rather than silently dropping the writing in it.
+
+daily_copy() writes the same document once a day, at launch, to a folder on
+this device, and keeps the last DAILY_KEEP of them. It runs before the reader
+touches anything, so a copy never holds a mistake made that day.
 """
 
 import datetime
+import json
+import logging
+import os
 from typing import Any
 
 import annotations
 import bookmarks
 import journal
+import paths
 import reading_plans
 import sermons
 
 FORMAT = 'scriptura-study-data'
 VERSION = 3
+DAILY_KEEP = 14
+_DAILY_PREFIX = 'scriptura-study-data-'
+
+_log = logging.getLogger('scriptura.backup')
 
 
 def collect() -> dict[str, Any]:
@@ -112,3 +124,47 @@ def restore(payload: dict[str, Any]) -> list[str]:
         ('bookmarks', bookmarks.replace_all(payload.get('bookmarks', []))),
         ('reading_plans', reading_plans.replace_all(payload.get('reading_plans', {}))),
     ) if not ok]
+
+
+def _daily_copies(folder: str) -> list[str]:
+    """Daily copy file names, oldest first (ISO dates sort by name)."""
+    return sorted(n for n in os.listdir(folder)
+                  if n.startswith(_DAILY_PREFIX) and n.endswith('.json'))
+
+
+def daily_copy(folder: str | None = None,
+               today: datetime.date | None = None) -> str | None:
+    """Write today's copy unless one exists, then drop all but the newest
+    DAILY_KEEP. Returns the path written, or None. Never raises: a failed
+    copy must not stop the app from opening."""
+    try:
+        folder = folder or paths.backups_dir()
+        day = (today or datetime.date.today()).isoformat()
+        dest = os.path.join(folder, f'{_DAILY_PREFIX}{day}.json')
+        written = None
+        if not os.path.exists(dest):
+            doc = collect()
+            doc['exported'] = day
+            tmp = dest + '.tmp'
+            with open(tmp, 'w', encoding='utf-8') as f:
+                json.dump(doc, f, indent=2, ensure_ascii=False)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp, dest)
+            written = dest
+        # Days the app was not opened make no copy, so this keeps the last
+        # DAILY_KEEP days of use, not of the calendar.
+        copies = _daily_copies(folder)
+        for name in copies[:-DAILY_KEEP]:
+            os.remove(os.path.join(folder, name))
+        return written
+    except Exception:
+        _log.exception('daily copy failed')
+        return None
+
+
+def newest_daily_copy(folder: str | None = None) -> str | None:
+    """The most recent daily copy, or None when there is none yet."""
+    folder = folder or paths.backups_dir()
+    copies = _daily_copies(folder)
+    return os.path.join(folder, copies[-1]) if copies else None

@@ -36,6 +36,7 @@ import annotations
 import church_year
 import journal
 import journal_markup
+from manuscript_find import FindBar
 import motion
 import sermons
 
@@ -836,7 +837,10 @@ class _ProseEditor(_Editor):
         self._tools_rule = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
         paper.append(self._tools)
         paper.append(self._tools_rule)
+        self.find = FindBar(self.body)
+        paper.append(self.find)
         paper.append(page)
+        self.add_controller(self._find_shortcuts())
         box.append(paper)
 
         # The tags caption and the word count share a line: the count is
@@ -930,7 +934,39 @@ class _ProseEditor(_Editor):
             set_accessible_label(btn, _(label))
             btn.connect('clicked', self._on_tool, kind, marker)
             bar.append(btn)
+        find = Gtk.Button(icon_name='scriptura-system-search-symbolic')
+        find.add_css_class('flat')
+        find.set_hexpand(True)
+        find.set_halign(Gtk.Align.END)
+        find.set_tooltip_text(_('Find and replace (Ctrl+F)'))
+        set_accessible_label(find, _('Find and replace'))
+        find.connect('clicked', lambda _b: self.find.open())
+        bar.append(find)
         return bar
+
+    def _find_shortcuts(self):
+        """Ctrl+F and its companions, anywhere on the page.
+
+        On the editor rather than the body, so they work from the title as
+        well; local, so the window's own keys go on working elsewhere. Esc
+        closes the bar before it can reach the window's writing-mode exit.
+        """
+        def when_open(fn):
+            return lambda *_a: bool(self.find.get_reveal_child()) and (
+                fn() or True)
+
+        ctl = Gtk.ShortcutController()
+        ctl.set_scope(Gtk.ShortcutScope.LOCAL)
+        for keys, fn in (
+                ('<Control>f', lambda *_a: self.find.open() or True),
+                ('<Control>h', lambda *_a: self.find.open(replace=True) or True),
+                ('<Control>g', when_open(lambda: self.find.step(False))),
+                ('<Control><Shift>g', when_open(lambda: self.find.step(True))),
+                ('Escape', lambda *_a: self.find.close())):
+            ctl.add_shortcut(Gtk.Shortcut(
+                trigger=Gtk.ShortcutTrigger.parse_string(keys),
+                action=Gtk.CallbackAction.new(fn)))
+        return ctl
 
     def _body_shortcuts(self):
         """Ctrl+B and Ctrl+I, local to the body.

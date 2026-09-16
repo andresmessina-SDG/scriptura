@@ -47,9 +47,9 @@ def _menu(monkeypatch, verses=(10,)):
                         lambda *a: {})
 
     class _Pane:
-        _module, _book, _chapter = 'KJV', 'Genesis', 11
-        _view = Gtk.TextView()
-        _buffer = _view.get_buffer()
+        module, book, chapter = 'KJV', 'Genesis', 11
+        view = Gtk.TextView()
+        _buffer = view.get_buffer()
 
     pane = _Pane()
     # Built, not shown: `popup()` on a popover whose parent has no root
@@ -150,9 +150,9 @@ def stores(tmp_path, monkeypatch):
 
 def _pane(Gtk):
     class _Pane:
-        _module, _book, _chapter = 'KJV', 'John', 3
-        _view = Gtk.TextView()
-        _buffer = _view.get_buffer()
+        module, book, chapter = 'KJV', 'John', 3
+        view = Gtk.TextView()
+        _buffer = view.get_buffer()
     return _Pane()
 
 

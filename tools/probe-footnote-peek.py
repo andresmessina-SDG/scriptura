@@ -121,7 +121,7 @@ def run_driver() -> int:
     def watch(pane):
         """Record the popover's transitions — a failing peek shows as a
         popup/closed cycle repeating until the self-heal gives up."""
-        pop = getattr(pane, '_dict_pop', None)
+        pop = pane._peek.pop
         if pop is None or getattr(pane, '_probe_watched', False):
             return
         pane._probe_watched = True
@@ -140,7 +140,7 @@ def run_driver() -> int:
         return len(entry[1]) if entry else None
 
     def click(pane, run, then):
-        buf, view = pane._buffer, pane._view
+        buf, view = pane._buffer, pane.view
         view.scroll_to_iter(buf.get_iter_at_offset(run['offset']),
                             0.3, True, 0.0, 0.4)
 
@@ -152,13 +152,13 @@ def run_driver() -> int:
             S['events'] = []
             # GTK's own order: the dict gesture is CAPTURE (it dismisses an
             # open peek), the left gesture BUBBLE (it opens the new one).
-            pane._on_dict_click(None, 1, wx, wy)
+            pane._peek.on_dict_click(None, 1, wx, wy)
             pane._on_left_click(None, 1, wx, wy)
             pane._on_left_release(None, 1, wx, wy)
 
             def judge():
                 watch(pane)
-                pop = getattr(pane, '_dict_pop', None)
+                pop = pane._peek.pop
                 child = pop.get_child() if pop is not None else None
                 root = pane.get_root()
                 win_h = root.get_height() if root is not None else 0

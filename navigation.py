@@ -89,7 +89,7 @@ class NavigationController:
 
     def nav_books(self):
         """The book list navigation offers, for the modules now on screen."""
-        return window.nav_books([p._module for p in self._open_panes()],
+        return window.nav_books([p.module for p in self._open_panes()],
                                 current_book=self._current_loc[0])
 
     def _sync_nav_books(self):
@@ -117,8 +117,8 @@ class NavigationController:
         the last book it knows — Revelation under KJV — so the reader would
         get Revelation 1 under a Tobit heading with nothing to say so."""
         for p in self._open_panes():
-            if sword_bridge.module_has_book(p._module, book):
-                return p._module
+            if sword_bridge.module_has_book(p.module, book):
+                return p.module
         return None
 
     def _step_book(self, book, delta):
@@ -316,9 +316,9 @@ class NavigationController:
         # load_reference triggers _fetch_and_render — the render path
         # consumes the attribute and routes through _scroll_to_verse_silent.
         v1 = module_positions.get_verse_position(
-            self.pane1._module, book, chapter)
+            self.pane1.module, book, chapter)
         v2 = module_positions.get_verse_position(
-            self.pane2._module, book, chapter)
+            self.pane2.module, book, chapter)
         if v1:
             self.pane1._restore_top_verse = v1
         if v2:

@@ -332,7 +332,7 @@ def test_a_module_with_no_headings_has_no_units_to_invent(monkeypatch):
 # is the only thing that reports which you have.
 
 class StubPane:
-    _module, _book, _chapter = 'KJVA', 'John', 3
+    module, book, chapter = 'KJVA', 'John', 3
     _on_toast = None
 
     def get_root(self):

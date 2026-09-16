@@ -74,9 +74,17 @@ EXPECTED_GESTURE_SITES = {
     'imagery_reader.py': 4,
     'interlinear_view.py': 1,
     'lexicon_panel.py': 1,
+    # The find bar's field takes Shift+Enter for the previous match. A key,
+    # not a gesture, and named in the button's tooltip.
+    'manuscript_find.py': 1,
     'navigation.py': 1,
-    'pane.py': 15,
-    'window.py': 10,
+    'pane.py': 14,
+    # A card label's double-click look-up, moved out of pane.py with the
+    # rest of the peek. Tips already names double-click to look a word up.
+    'pane_peek.py': 1,
+    # Two of them are the mouse's back and forward buttons: invisible, so
+    # they have a Reading row.
+    'window.py': 11,
 }
 
 _GESTURE_CALL = re.compile(

@@ -56,15 +56,15 @@ class _Surface:
 
     @property
     def _module(self):
-        return self._pane._module
+        return self._pane.module
 
     @property
     def _book(self):
-        return self._pane._book
+        return self._pane.book
 
     @property
     def _chapter(self):
-        return self._pane._chapter
+        return self._pane.chapter
 
     @property
     def _on_toast(self):

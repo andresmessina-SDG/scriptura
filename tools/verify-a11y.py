@@ -286,8 +286,8 @@ def run_driver() -> int:
         has_label('pane_toolbar_named', pane._toolbar)
 
         # 2. the reading surface itself.
-        has_role('reading_view_is_document', pane._view, R.DOCUMENT)
-        has_label('reading_view_named', pane._view)
+        has_role('reading_view_is_document', pane.view, R.DOCUMENT)
+        has_label('reading_view_named', pane.view)
 
         # 3. the per-pane find bar. Building the revealer is what wires it,
         #    and the pane does that at construction.
@@ -335,10 +335,10 @@ def run_driver() -> int:
         state = None
         try:
             import annotations
-            annotations.save_highlight(pane._module, pane._book,
-                                       pane._chapter, 1, '#ffff00')
-            annotations.save_note(pane._module, pane._book,
-                                  pane._chapter, 1, 'a note')
+            annotations.save_highlight(pane.module, pane.book,
+                                       pane.chapter, 1, '#ffff00')
+            annotations.save_note(pane.module, pane.book,
+                                  pane.chapter, 1, 'a note')
             state = pane._verse_state_text(1)
             if can_announce:
                 pane._announce_verse_state(1)
@@ -346,7 +346,7 @@ def run_driver() -> int:
             add('verse_state_built', False, error=repr(exc))
         if state is not None:
             add('verse_state_names_reference',
-                f'{pane._chapter}:1' in state, state=state)
+                f'{pane.chapter}:1' in state, state=state)
             add('verse_state_names_highlight',
                 'highlight' in state.lower(), state=state)
             add('verse_state_names_note', 'note' in state.lower(), state=state)
@@ -356,7 +356,7 @@ def run_driver() -> int:
                 # state survives the announcement passing.
                 add('verse_state_on_view_description',
                     Gtk.test_accessible_has_property(
-                        pane._view, Gtk.AccessibleProperty.DESCRIPTION))
+                        pane.view, Gtk.AccessibleProperty.DESCRIPTION))
             else:
                 skip('verse_state_announced', 'no compositor (Broadway)')
                 skip('verse_state_on_view_description',
@@ -396,7 +396,7 @@ def run_driver() -> int:
             # call on_key directly. Assert the controller is positioned to
             # receive them.
             phases = []
-            ctrl = pane._view.observe_controllers()
+            ctrl = pane.view.observe_controllers()
             for i in range(ctrl.get_n_items()):
                 c = ctrl.get_item(i)
                 if isinstance(c, Gtk.EventControllerKey):
@@ -452,7 +452,7 @@ def run_driver() -> int:
             # Enter on a verse must reach the study menu — the action that
             # was right-click-only.
             def view_children():
-                out, ch = [], pane._view.get_first_child()
+                out, ch = [], pane.view.get_first_child()
                 while ch is not None:
                     out.append(ch)
                     ch = ch.get_next_sibling()
@@ -491,7 +491,7 @@ def run_driver() -> int:
             pass
         REPORT['measured']['icon_only_controls_without_a_name'] = len(unnamed)
         REPORT['measured']['pane_roles'] = {
-            'pane': role_of(pane), 'view': role_of(pane._view),
+            'pane': role_of(pane), 'view': role_of(pane.view),
             'toolbar': role_of(pane._toolbar),
         }
         return finish('done')

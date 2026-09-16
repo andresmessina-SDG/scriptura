@@ -78,6 +78,7 @@ scriptura/
 +-- window.py             # BibleWindow — header, panes, navigation funnels, About dialog
 +-- pane.py               # BiblePane — text rendering, annotations, click handling
 +-- pane_search.py        # PaneSearch — per-pane Ctrl+F bar + match highlight
++-- pane_peek.py          # PeekController — the double-click dictionary, footnote and verse peek
 +-- genbook_reader.py     # GenbookReader — Generic Books (TreeKey) subsystem extracted from pane.py
 +-- catena_reader.py      # CatenaReader — verse-synced commentary card view (pane subsystem)
 +-- imagery_reader.py     # ImageryReader — Art/Where tabs, traditions expander, zoom viewer
@@ -103,6 +104,7 @@ scriptura/
 +-- search_panel.py       # Search overlay (right-side revealer)
 +-- annotations_window.py # Annotations window (master-detail) + TagManagerWindow
 +-- annotation_editors.py # The three editors the window shows: mark, entry, sermon
++-- manuscript_find.py   # Find and replace in an entry or sermon body (Ctrl+F / Ctrl+H)
 +-- journal.py           # journal.json — entries (a page, where a note is a margin)
 +-- sermons.py           # sermons.json — manuscripts, series, preaching days
 +-- journal_markup.py    # the Markdown subset + reference parser (pure, no GTK)
@@ -454,6 +456,9 @@ code or window.py pane sizing.
     re-revealing a closed panel if results are still in memory).
   - `Alt+←/→` — prev/next chapter (wraps across books)
   - `Alt+↑/↓` — prev/next book
+  - `Alt+[` / `Alt+]` and mouse buttons 8/9 — back / forward through
+    history. Not `Ctrl+Alt+←/→`: GNOME switches workspaces on those.
+  - `Ctrl+D` — bookmark the chapter on screen
   - `Home` / `End` — first / last verse of current chapter (gated on
     `_focus_is_text_input()` so typing in entries still works)
   - `Ctrl+1` / `Ctrl+2` / `Ctrl+Tab` — focus pane / cycle panes
@@ -758,6 +763,7 @@ journal_markup.py  # the Markdown subset, pure: text in, spans out, no GTK.
                #   plus what Enter carries on (`next_marker`, `renumber`)
 journal_import.py  # Markdown/text files in, one file per entry
 annotation_editors.py  # MarkEditor + _ProseEditor → EntryEditor, SermonEditor
+manuscript_find.py  # the find/replace bar on a prose editor's sheet
 annotations_window.py  # the three pages, the list, the filters, TagManager
 ```
 

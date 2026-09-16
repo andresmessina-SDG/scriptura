@@ -6653,6 +6653,12 @@ msgstr "Desplace sobre el título del capítulo"
 msgid "Cycle through chapters"
 msgstr "Recorre los capítulos"
 
+msgid "Press the back or forward button on your mouse"
+msgstr "Pulsa el botón de atrás o adelante del ratón"
+
+msgid "Go back through the passages you visited"
+msgstr "Vuelve por los pasajes que visitaste"
+
 #: onboarding.py:66
 msgid "Turn on the lexicon, then tap a word"
 msgstr "Active el léxico y pulse una palabra"
@@ -7353,10 +7359,6 @@ msgstr ""
 #: window.py:3321
 msgid "Annotations"
 msgstr "Anotaciones"
-
-#: study_journal.py:286 study_journal.py:287
-msgid "Refresh"
-msgstr "Actualizar"
 
 #: study_journal.py:293 study_journal.py:294
 msgid "Manage tags"
@@ -8208,25 +8210,25 @@ msgid "Menu"
 msgstr "Menú"
 
 #: window.py:355
-msgid "Go back (Alt+←)"
-msgstr "Atrás (Alt+←)"
+msgid "Go back (Alt+[)"
+msgstr "Atrás (Alt+[)"
 
 #: window.py:356 window.py:2663
 msgid "Go back"
 msgstr "Atrás"
 
 #: window.py:364
-msgid "Go forward (Alt+→)"
-msgstr "Adelante (Alt+→)"
+msgid "Go forward (Alt+])"
+msgstr "Adelante (Alt+])"
 
 #: window.py:365 window.py:2666
 msgid "Go forward"
 msgstr "Adelante"
 
 #: window.py:382
-msgid "Go back (Alt+←) · right-click or hold for recent passages"
+msgid "Go back (Alt+[) · right-click or hold for recent passages"
 msgstr ""
-"Atrás (Alt+←) · pulse con el botón derecho o mantenga pulsado para ver los "
+"Atrás (Alt+[) · pulse con el botón derecho o mantenga pulsado para ver los "
 "pasajes recientes"
 
 #: window.py:411
@@ -9637,3 +9639,63 @@ msgstr "Exportar el pasaje"
 
 msgid "Compare translations of this verse"
 msgstr "Comparar traducciones de este versículo"
+
+msgid "Bookmark this chapter"
+msgstr "Añadir este capítulo a marcadores"
+
+msgid "Find and replace (Ctrl+F)"
+msgstr "Buscar y reemplazar (Ctrl+F)"
+
+msgid "Find and replace"
+msgstr "Buscar y reemplazar"
+
+msgid "Replace (Ctrl+H)"
+msgstr "Reemplazar (Ctrl+H)"
+
+msgid "Find in this page"
+msgstr "Buscar en esta página"
+
+msgid "Previous match (Shift+Enter)"
+msgstr "Coincidencia anterior (Mayús+Intro)"
+
+msgid "Next match (Enter)"
+msgstr "Coincidencia siguiente (Intro)"
+
+msgid "Close (Esc)"
+msgstr "Cerrar (Esc)"
+
+msgid "Close"
+msgstr "Cerrar"
+
+msgid "Replace with"
+msgstr "Reemplazar por"
+
+msgid "Replace All"
+msgstr "Reemplazar todo"
+
+msgid "{current} of {total}"
+msgstr "{current} de {total}"
+
+msgid "Replaced {n} match"
+msgid_plural "Replaced {n} matches"
+msgstr[0] "Se reemplazó {n} coincidencia"
+msgstr[1] "Se reemplazaron {n} coincidencias"
+
+msgid "Daily Copies"
+msgstr "Copias diarias"
+
+msgid "The last {n} day, kept on this device"
+msgid_plural "The last {n} days, kept on this device"
+msgstr[0] "El último {n} día, guardadas en este dispositivo"
+msgstr[1] "Los últimos {n} días, guardadas en este dispositivo"
+
+msgid "No daily copy yet"
+msgstr "Todavía no hay ninguna copia diaria"
+
+msgctxt "kind of mark"
+msgid "Highlight"
+msgstr "Resaltado"
+
+msgctxt "kind of mark"
+msgid "Underline"
+msgstr "Subrayado"

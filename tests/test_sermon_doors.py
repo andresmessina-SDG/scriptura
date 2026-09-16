@@ -35,9 +35,9 @@ class _Pane:
     """The three fields `collected_quote` reads off a pane."""
 
     def __init__(self, module='KJVA', book='Matthew', chapter=13):
-        self._module = module
-        self._book = book
-        self._chapter = chapter
+        self.module = module
+        self.book = book
+        self.chapter = chapter
 
 
 @pytest.fixture

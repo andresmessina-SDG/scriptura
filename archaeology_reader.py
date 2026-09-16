@@ -236,7 +236,7 @@ class ArchaeologyReader:
             lbl.add_controller(gesture)
             # Same double-click dictionary peek as the reading view.
             if self._pane is not None:
-                self._pane._attach_dict_to_label(lbl)
+                self._pane.attach_dict_to_label(lbl)
         return lbl
 
     # ── trimmed Copy / Select All menu ─────────────────────────────────────────

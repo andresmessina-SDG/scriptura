@@ -4,6 +4,60 @@ All notable changes to Scriptura. Format roughly follows
 [Keep a Changelog](https://keepachangelog.com/). Versioning is
 semver-ish — 0.x was the pre-Flathub testing track.
 
+## [Unreleased]
+
+### Added
+
+- **Find and replace in journal entries and sermons.** Ctrl+F, or the
+  search button at the head of the page, finds a word without regard to
+  case and steps through every use of it; Ctrl+H adds a replace field.
+  *Replace All* is a single undo.
+- **Ctrl+D bookmarks the chapter you are reading.** Until now the header
+  button was the only way.
+- **Back and forward from the keyboard and mouse.** Alt+[ and Alt+], or a
+  mouse's back and forward buttons, move through the passages you visited.
+- **A daily copy of your study data.** Each day the app is first opened, it
+  saves your annotations, journal, sermons, bookmarks and plan progress to a
+  folder on this device and keeps the last 14 copies. *Daily Copies* in the
+  menu opens that folder, and *Restore…* starts there.
+- **Look up a verse from the GNOME search.** Type a reference such as
+  "John 3:16" in Activities to see the verse in the translation you last
+  read; Enter opens Scriptura there. A book name alone is not enough, so
+  other searches are left alone.
+
+### Changed
+
+- **Single-pane view no longer shows controls for two panes.** The pane
+  lock and the swap button are hidden until there is a second pane. A lock
+  that is on stays in sight, so a pane that isn't following navigation still
+  says so.
+- **The annotations list shows the verse, and keeps itself current.** A
+  highlight or underline with no note shows a line of its verse, where it
+  showed only its colour. A mark made in the reading view appears in an
+  open list at once, so the Refresh button is gone.
+
+### Fixed
+
+- **Russian and Spanish named a mark with a verb.** The annotations list
+  and exports labelled an underline «Подчеркнуть» and «Subrayar», which
+  read as an order to underline; they now read «Подчёркивание» and
+  «Subrayado», and highlights likewise.
+
+- **The back and forward buttons named the wrong keys.** Their tooltips
+  said Alt+← and Alt+→, which change chapter.
+- **Two copies of the app could erase each other's notes.** Opening
+  Scriptura a second time, or clicking a `bible:` link while it was open,
+  started a second copy, and whichever saved last wiped out what the other
+  had written to your notes, journal and sermons. A second launch now
+  brings forward the window already open, and a link opens there.
+- **Copying from an eBible translation named its internal id.** A copied
+  verse read "John 3:16 (eBible: engwebp)"; it now names the translation,
+  as exports have since 1.6.2.
+- **With footnotes hidden, underlines and highlights sat one word late.**
+  In a chapter with footnotes, an underline on John 3:16 began at "God"
+  and ran on under the number 17. Search matches and the flash on a verse
+  you jump to were off the same way. They now sit on their words.
+
 ## [1.7.1] — 2026-09-15
 
 ### Fixed

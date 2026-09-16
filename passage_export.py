@@ -40,7 +40,7 @@ import catena_bridge
 import content
 import interlinear_data
 import sword_bridge
-from i18n import _
+from i18n import _, C_
 
 #: SBL Handbook §8 abbreviations, keyed by the app's own book names.
 #: Sourced, not recalled — see the module docstring. Books absent here are
@@ -575,8 +575,9 @@ def build_annotations(rows: list[dict[str, Any]], module: str, *,
 
         if not is_entry:
             kinds = [name for present, name in
-                     ((row.get('highlight'), _('Highlight')),
-                      (row.get('underline'), _('Underline'))) if present]
+                     ((row.get('highlight'), C_('kind of mark', 'Highlight')),
+                      (row.get('underline'), C_('kind of mark', 'Underline')))
+                     if present]
             if kinds:
                 lines.append(f'*{", ".join(kinds)}*' if markdown
                              else f'[{", ".join(kinds)}]')

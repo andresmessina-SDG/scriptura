@@ -32,7 +32,7 @@ class _Reader:
 
 def _fake_pane():
     p = types.SimpleNamespace(
-        _book='John', _chapter=3, _selected_verse=None, _module='TAGNT',
+        book='John', chapter=3, _selected_verse=None, module='TAGNT',
         _catena=_Reader(), _imagery=_Reader(), _archaeology=_Reader(),
         _interlinear=_Reader(), _genbook=_Reader(),
         _genealogy=_Reader(), pane_calls=[])
