@@ -267,7 +267,7 @@ def info() -> dict[str, str]:
     doc = document()
     n = sum(len(c['entries']) for c in doc['chapters'])
     return {
-        'description': _('Artifacts of the biblical world — inscriptions, '
+        'description': _('Artifacts of the biblical world: inscriptions, '
                          'monuments, and objects that touch the people, places, '
                          'and events named in Scripture, in historical sequence.'),
         'type': _('{n} artifacts').format(n=n),

@@ -41,120 +41,118 @@ msgstr "Lea y estudie la Biblia a fondo"
 msgid "Andres Messina"
 msgstr "Andres Messina"
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:16
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:17
 msgid ""
-"Scriptura is a focused Bible study application for the Linux desktop. A "
-"calm, two-pane reading view sits at its center, with a full study library "
-"never more than a click away."
+"Scriptura is a Bible study app for the Linux desktop. Read two translations "
+"side by side, with a full study library a click away."
 msgstr ""
-"Scriptura es una aplicación de estudio bíblico para el escritorio de Linux. "
-"En su centro hay una vista de lectura serena, de dos paneles, con una "
-"biblioteca de estudio completa siempre a un clic."
+"Scriptura es una aplicación de estudio bíblico para el escritorio Linux. Lea "
+"dos traducciones lado a lado, con toda una biblioteca de estudio a un clic."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:23
+msgid ""
+"Two translations side by side that move together, a reading mode with "
+"nothing else on screen, and a full-screen mode for a projector."
+msgstr ""
+"Dos traducciones lado a lado que avanzan juntas, un modo de lectura sin nada "
+"más en pantalla y un modo a pantalla completa para proyector."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:24
+msgid ""
+"The Greek and Hebrew behind the text: click a word for its meaning and "
+"grammar, or read an interlinear word by word."
+msgstr ""
+"El griego y el hebreo detrás del texto: haga clic en una palabra para ver su "
+"significado y su gramática, o lea un interlineal palabra por palabra."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:25
+msgid ""
+"Commentaries, devotionals and confessions, and how the church read each "
+"verse from the early fathers to the Reformers."
+msgstr ""
+"Comentarios, devocionales y confesiones, y cómo leyó la iglesia cada "
+"versículo, desde los primeros padres hasta los reformadores."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:26
+msgid "340,000 cross-references, and fast search across any text you install."
+msgstr ""
+"340 000 referencias cruzadas, y búsqueda rápida en cualquier texto que "
+"instale."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:27
+msgid "Highlights, notes and tags that show in every translation."
+msgstr "Resaltados, notas y etiquetas que aparecen en todas las traducciones."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:28
+msgid ""
+"A journal and sermon manuscripts, with your notes on the passage close at "
+"hand."
+msgstr ""
+"Un diario y manuscritos de sermones, con sus notas sobre el pasaje a mano."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:29
+msgid "Reading plans, and a Today page with the day's reading."
+msgstr "Planes de lectura, y una página Hoy con la lectura del día."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:30
+msgid "Chapters and devotionals read aloud."
+msgstr "Capítulos y devocionales leídos en voz alta."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:31
+msgid ""
+"Paintings, maps and archaeology for the passage you read, and the Bible's "
+"family lists drawn as charts."
+msgstr ""
+"Pinturas, mapas y arqueología para el pasaje que lee, y las genealogías de "
+"la Biblia dibujadas como esquemas."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:32
+msgid "English, Spanish and Russian, with Bibles and dictionaries in each."
+msgstr "En inglés, español y ruso, con Biblias y diccionarios en cada idioma."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:34
+msgid ""
+"Everything stays on your computer, with no account and no tracking. "
+"Scriptura goes online only to download the texts you choose."
+msgstr ""
+"Todo se queda en su ordenador, sin cuenta y sin rastreo. Scriptura solo se "
+"conecta a internet para descargar los textos que usted elija."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:54
+msgid ""
+"The Greek New Testament interlinear, with meaning, grammar and Strong's "
+"number under every word"
+msgstr ""
+"El interlineal del Nuevo Testamento griego, con significado, gramática y "
+"número Strong bajo cada palabra"
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:58
+msgid ""
+"Historical Commentaries: how the church read a verse across the centuries"
+msgstr ""
+"Comentarios históricos: cómo leyó la iglesia un versículo a lo largo de los "
+"siglos"
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:62
+msgid "Annotations: every mark you have made, in one place"
+msgstr "Anotaciones: todas sus marcas, en un solo lugar"
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:70
+msgid "Reading mode hides everything but the text"
+msgstr "El modo de lectura oculta todo menos el texto"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:21
 msgid "It brings together:"
 msgstr "Reúne:"
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:23
-msgid ""
-"Side-by-side reading of two translations with synchronized scrolling, plus a "
-"distraction-free reading mode."
-msgstr ""
-"Lectura en paralelo de dos traducciones con desplazamiento sincronizado, y "
-"un modo de lectura sin distracciones."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:24
-msgid ""
-"Original-language word study — click any word for its Hebrew or Greek root, "
-"its grammar, and every other place it appears."
-msgstr ""
-"Estudio de palabras en las lenguas originales: pulse cualquier palabra para "
-"ver su raíz hebrea o griega, su gramática y todos los demás lugares donde "
-"aparece."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:25
-msgid "A database of 340,000 cross-references linking related passages."
-msgstr ""
-"Una base de datos de 340 000 referencias cruzadas que enlaza pasajes "
-"relacionados."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:26
-msgid ""
-"Highlights, underlines, notes, and topical tags — one searchable set of "
-"annotations that belongs to the verse and appears in every translation."
-msgstr ""
-"Resaltados, subrayados, notas y etiquetas temáticas: un conjunto de "
-"anotaciones en el que se puede buscar, que pertenece al versículo y aparece "
-"en todas las traducciones."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:27
-msgid ""
-"A journal and a sermon manuscript beside your marks — a page for the day's "
-"reading, and a manuscript with its series, its preaching days, and the "
-"passages it was written from."
-msgstr ""
-"Un diario y un manuscrito de sermón junto a sus anotaciones: una página para "
-"la lectura del día, y un manuscrito con su serie, los días en que se predicó "
-"y los pasajes desde los que se escribió."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:27
-msgid ""
-"Full-text search across any installed text, and reading plans that track "
-"your progress day by day."
-msgstr ""
-"Búsqueda de texto completo en cualquier texto instalado, y planes de lectura "
-"que siguen su avance día a día."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:28
-msgid ""
-"A large, installable library of modern and classic Bibles, commentaries, "
-"devotionals, and reference works."
-msgstr ""
-"Una amplia biblioteca instalable de Biblias modernas y clásicas, "
-"comentarios, devocionales y obras de consulta."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:30
-msgid ""
-"Everything is stored on your computer with no telemetry. Scriptura connects "
-"to the network only to download the texts and reference data you choose."
-msgstr ""
-"Todo se guarda en su equipo y no hay telemetría. Scriptura se conecta a la "
-"red únicamente para descargar los textos y los datos de consulta que usted "
-"elija."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:47
 msgid "Two-pane reading with the Strong's lexicon open on a Greek word"
 msgstr ""
 "Lectura a dos paneles con el léxico de Strong abierto en una palabra griega"
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:51
-msgid ""
-"The Greek New Testament interlinear — gloss, parsing, and Strong's number "
-"under every word"
-msgstr ""
-"El interlineal del Nuevo Testamento griego: glosa, análisis y número de "
-"Strong bajo cada palabra"
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:55
-msgid ""
-"The Historical Commentaries pane — the church's voices on a verse, across "
-"the centuries"
-msgstr ""
-"El panel de comentarios históricos: las voces de la Iglesia sobre un "
-"versículo, a lo largo de los siglos"
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:59
-msgid "Annotations — every mark you have made in one filterable surface"
-msgstr "Anotaciones: todas tus marcas en una sola vista filtrable"
-
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:63
 msgid "Built-in reading plans with day-by-day progress"
 msgstr "Planes de lectura integrados con avance día a día"
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:67
-msgid "F11 reading mode hides all chrome for distraction-free reading"
-msgstr ""
-"El modo lectura (F11) oculta todos los controles para leer sin distracciones"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:83
 msgid "Bible"
@@ -185,552 +183,304 @@ msgstr "Devocional"
 msgid "Commentary"
 msgstr "Comentario"
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:141
-msgid "Scriptura in Russian, and the lists of names drawn as a book."
-msgstr "Scriptura en ruso, y las listas de nombres dibujadas como un libro."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:143
-msgid ""
-"The app reads in Russian — every menu, dialog and hint, with the three "
-"plural forms Russian needs and the Synodal book names it expects: 1 Kings is "
-"3-я Царств. The names are the ones Russian Bible software uses, not "
-"translations of the English."
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:212
+msgid "Scriptura in Russian, and the Bible's lists of names drawn as charts."
 msgstr ""
-"La aplicación se lee en ruso: cada menú, cada diálogo y cada aviso, con "
-"las tres formas de plural que el ruso necesita y los nombres sinodales "
-"de los libros que espera: 1 Reyes es 3-я Царств. Los términos son los "
-"que usa el software bíblico ruso, no traducciones del inglés."
+"Scriptura en ruso, y las listas de nombres de la Biblia dibujadas como "
+"esquemas."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:144
-msgid ""
-"Russian texts to read in it: a modern Russian Bible under a free licence, "
-"and the first Russian dictionary this app has ever offered, so a double-"
-"click on a Russian word answers."
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:214
+msgid "The app is now in Russian, with the book names Russian readers expect."
 msgstr ""
-"Textos rusos para leer en ella: una Biblia rusa moderna con licencia "
-"libre y el primer diccionario ruso que esta aplicación ha ofrecido, de "
-"modo que el doble clic sobre una palabra rusa por fin responde."
+"La aplicación ya está en ruso, con los nombres de los libros que esperan los "
+"lectores rusos."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:145
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:215
 msgid ""
-"The Book of Generations. Scripture keeps lists of names and readers skip "
-"them, so Scriptura draws them and binds them as a book: one genealogy to a "
-"page, from Adam to Noah through to Matthew and Luke side by side, with the "
-"ten lifespans of Genesis 5 on one axis. The charts are live — a folded run "
-"of generations opens in place, a name opens the person, a chip opens the "
-"verse — and the same geometry prints. Where a genealogy leaves generations "
-"out, the gap is drawn as a gap and cites who does name them; where Matthew "
-"and Luke disagree, both are given as their writers wrote them, with the "
-"three classical answers set out and none of them chosen."
+"A modern Russian Bible under a free licence, and the first Russian "
+"dictionary."
 msgstr ""
-"El libro de las generaciones. La Escritura guarda listas de nombres y el "
-"lector las salta, así que Scriptura las dibuja y las encuaderna como un "
-"libro: una genealogía por página, de Adán a Noé y hasta Mateo y Lucas "
-"uno junto al otro, con las diez vidas de Génesis 5 sobre un mismo eje. "
-"Los diagramas están vivos —un tramo plegado de generaciones se abre en "
-"su sitio, un nombre abre a la persona, una ficha abre el versículo— y la "
-"misma geometría se imprime. Donde una genealogía omite generaciones, el "
-"hueco se dibuja como hueco y cita a quien sí los nombra; donde Mateo y "
-"Lucas discrepan, se dan ambos tal como los escribieron sus autores, con "
-"las tres respuestas clásicas expuestas y ninguna elegida."
+"Una Biblia rusa moderna con licencia libre, y el primer diccionario ruso."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:146
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:216
 msgid ""
-"First run asks which language you read in, and the answer leads: it sets the "
-"interface and offers that language's own Bibles, dictionary and study tools, "
-"each collection described in the language it is for."
+"The Book of Generations draws the Bible's family lists as charts, one to a "
+"page. Click a name to learn about the person, or a verse to read it."
 msgstr ""
-"El primer arranque pregunta en qué idioma lee, y la respuesta manda: "
-"fija la interfaz y ofrece las Biblias, el diccionario y las herramientas "
-"de estudio de ese idioma, y describe cada colección en el idioma al que "
-"sirve."
+"El libro de las generaciones dibuja las genealogías de la Biblia como "
+"esquemas, una por página. Haga clic en un nombre para saber de la persona, o "
+"en un versículo para leerlo."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:147
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:217
 msgid ""
-"A Spanish dictionary, where there was none. Of the 168 dictionaries the "
-"SWORD repositories carry, not one was in Spanish; this one is, and it "
-"answers ordinary vocabulary rather than proper nouns alone."
+"On first run you pick your language, and the app offers Bibles, a dictionary "
+"and study tools in it."
 msgstr ""
-"Un diccionario en español, donde no había ninguno. De los 168 "
-"diccionarios que llevan los repositorios SWORD, ni uno estaba en "
-"español; este sí, y responde al vocabulario corriente y no solo a los "
-"nombres propios."
+"Al abrirla por primera vez usted elige su idioma, y la aplicación le ofrece "
+"Biblias, un diccionario y herramientas de estudio en él."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:148
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:218
+msgid "A Spanish dictionary, the first in any SWORD source."
+msgstr "Un diccionario en español, el primero en cualquier fuente SWORD."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:219
 msgid ""
-"Scripture in Stone reads in your language. The gallery is curated data "
-"rather than interface text, so all 342 of its captions, introductions and "
-"glossary entries had stayed English whatever language you chose. A "
-"photographer's credit, a bibliography entry and a verse chip still read as "
-"printed, because a licence, a library catalogue and a Bible reference each "
-"need the words they were given."
+"Scripture in Stone is in your language, and opens at once instead of loading "
+"every photo first."
 msgstr ""
-"La Escritura en piedra se lee en su idioma. La galería es contenido "
-"preparado y no texto de interfaz, así que sus 342 pies de foto, "
-"introducciones y entradas del glosario seguían en inglés cualquiera que "
-"fuese el idioma elegido. El crédito del fotógrafo, la entrada "
-"bibliográfica y la ficha del versículo se leen tal como están impresos, "
-"porque una licencia, un catálogo de biblioteca y una referencia bíblica "
-"necesitan cada uno las palabras que se les dieron."
+"La Escritura en piedra está en su idioma, y se abre enseguida en lugar de "
+"cargar antes todas las fotos."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:149
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:220
 msgid ""
-"Scripture in Stone opens as soon as you ask for it: it used to decode all 56 "
-"of its photographs before it would appear, and now loads them as they come "
-"into view."
+"Go to a passage with book names in your own language, such as «Бытие 3» or "
+"Génesis 3."
 msgstr ""
-"La Escritura en piedra se abre en cuanto la pide: antes descodificaba "
-"sus 56 fotografías antes de aparecer, y ahora las carga a medida que "
-"entran en pantalla."
+"Vaya a un pasaje con los nombres de los libros en su idioma, como Génesis 3 "
+"o «Бытие 3»."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:150
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:221
+msgid "Book names on cross-references and search charts are translated."
+msgstr ""
+"Los nombres de los libros en las referencias cruzadas y en los gráficos de "
+"búsqueda están traducidos."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:222
+msgid "Translated labels are no longer cut off."
+msgstr "Las etiquetas traducidas ya no se cortan."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:223
 msgid ""
-"The collection cards say what each language holds, counted from that "
-"language's own catalogue and written in that language."
+"First-run downloads are more reliable, and closing the window during one no "
+"longer leaves half a library behind."
 msgstr ""
-"Las tarjetas de las colecciones dicen lo que tiene cada idioma, contado "
-"desde su propio catálogo y escrito en ese idioma."
+"Las descargas del primer inicio son más fiables, y cerrar la ventana durante "
+"una ya no deja una biblioteca instalada a medias."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:151
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:229
+msgid "Scriptura in Spanish, and books it could not open before."
+msgstr "Scriptura en español, y libros que antes no podía abrir."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:231
 msgid ""
-"The dictionary peek says which dictionaries were searched, instead of advice "
-"written when every dictionary was an English one."
+"The app is now in Spanish. Pick the language on the first screen or from the "
+"menu."
 msgstr ""
-"La consulta del diccionario dice en qué diccionarios se buscó, en lugar "
-"del consejo escrito cuando todos los diccionarios eran ingleses."
+"La aplicación ya está en español. Elija el idioma en la primera pantalla o "
+"desde el menú."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:152
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:232
 msgid ""
-"Jumping to a reference takes the book name you are reading. «Бытие 3» and "
-"Génesis 3 — the names the book picker two inches away was showing — used to "
-"flash the box red."
+"Spanish Bibles: LBLA, NBLA, the Versión Biblia Libre, and Straubinger's with "
+"its long notes."
 msgstr ""
-"Ir a una referencia acepta el nombre del libro que está leyendo. «Бытие "
-"3» y Génesis 3 —los nombres que mostraba el selector de libros a dos "
-"dedos de distancia— hacían parpadear el campo en rojo."
+"Biblias en español: LBLA, NBLA, la Versión Biblia Libre y la de Straubinger "
+"con sus extensas notas."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:153
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:233
 msgid ""
-"Book names no longer sit in English inside a translated interface: the cross-"
-"reference chips under a verse and the per-book bars in a search chart are "
-"translated on the way out."
+"The whole Bible read aloud in Spanish, from La Biblia en Español Sencillo."
 msgstr ""
-"Los nombres de los libros ya no aparecen en inglés dentro de una "
-"interfaz traducida: las fichas de referencias cruzadas bajo un versículo "
-"y las barras por libro del gráfico de búsqueda se traducen al salir."
+"Toda la Biblia leída en voz alta en español, de La Biblia en Español "
+"Sencillo."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:154
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:234
 msgid ""
-"Translated labels stay inside the places that hold them — the paper chips "
-"and the Module Manager's tabs were cut mid-word in both translations — and "
-"the menu's cards keep their right-hand corners in every language."
+"Books such as Tobit, Judith, Sirach and Maccabees now open. Before, asking "
+"for one showed Revelation."
 msgstr ""
-"Las etiquetas traducidas caben donde van —los nombres del papel y las "
-"pestañas del Gestor de módulos se cortaban a media palabra en ambas "
-"traducciones— y las tarjetas del menú conservan su borde derecho en "
-"todos los idiomas."
+"Libros como Tobías, Judit, Eclesiástico y Macabeos ya se abren. Antes, al "
+"pedir uno se mostraba Apocalipsis."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:155
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:235
 msgid ""
-"A first-run download that failed for a module that exists: the cached list "
-"of available modules is refetched now whenever it has no row for something "
-"your collection asks for."
+"Every dictionary you install now shows, in any language, and so do Strong's "
+"numbers in Spanish Bibles."
 msgstr ""
-"Una descarga del primer arranque que fallaba con un módulo que sí "
-"existe: la lista guardada de módulos disponibles se vuelve a pedir "
-"siempre que no tenga una fila para algo que pide su colección."
+"Cada diccionario que instale aparece ya, en cualquier idioma, y también los "
+"números Strong de las Biblias en español."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:236
+msgid "Set wider spacing between letters, or use the OpenDyslexic font."
+msgstr "Aumente el espacio entre letras, o use la fuente OpenDyslexic."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:237
+msgid "The app follows the desktop's High Contrast setting."
+msgstr "La aplicación sigue el ajuste de alto contraste del escritorio."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:238
+msgid "An optional reading focus dims all but the passage you are reading."
+msgstr ""
+"Un modo de enfoque opcional atenúa todo menos el pasaje que está leyendo."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:239
+msgid "Audio shows on your desktop's media controls and media keys."
+msgstr ""
+"El audio aparece en los controles multimedia y las teclas multimedia del "
+"escritorio."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:240
 msgid ""
-"Closing the window during the first-run download no longer leaves part of a "
-"library behind. It asks, keeps whatever has arrived, and says where the rest "
-"can be found."
+"The page no longer jumps when you change the theme and other display "
+"settings."
 msgstr ""
-"Cerrar la ventana durante la descarga del primer arranque ya no deja "
-"media biblioteca. Ahora pregunta, conserva lo que haya llegado y dice "
-"dónde encontrar el resto."
+"La página ya no salta al cambiar el tema y otros ajustes de visualización."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
-msgid "Scriptura in Spanish, and the books it would not open."
-msgstr "Scriptura en español, y los libros que no abría."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:248
 msgid ""
-"The app itself now reads in Spanish — menus, dialogs, the Module Manager, "
-"first run, the reading plans, the liturgical calendar and all 66 book names. "
-"Pick the language in the header on the first screen, or from the menu at any "
-"time; each is listed in its own name, because the reader who needs it is by "
-"definition looking at words they may not read."
+"Listen to chapters of the Berean Standard Bible read aloud. Skip back, "
+"change the speed, and keep listening into the next chapter."
 msgstr ""
-"La aplicación misma se lee ahora en español: los menús, los diálogos, el "
-"Gestor de módulos, la primera puesta en marcha, los planes de lectura, el "
-"calendario litúrgico y los 66 nombres de los libros. Elija el idioma en la "
-"cabecera de la primera pantalla, o en el menú cuando quiera; cada uno "
-"aparece en su propio nombre, porque quien lo necesita está, por definición, "
-"mirando palabras que quizá no lee."
+"Escuche capítulos de la Berean Standard Bible leídos en voz alta. Retroceda, "
+"cambie la velocidad y siga escuchando en el capítulo siguiente."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:249
 msgid ""
-"Spanish Bibles to read in it: La Biblia de las Américas and the Nueva Biblia "
-"de las Américas from the Lockman Foundation, the Versión Biblia Libre, and "
-"Straubinger's, whose 13,099 footnotes are paragraph-length commentary rather "
-"than variant marks."
+"Listen to devotionals: Spurgeon's Morning and Evening, the Psalms, and Daily "
+"Strength on the Today page."
 msgstr ""
-"Biblias en español para leer en ella: La Biblia de las Américas y la Nueva "
-"Biblia de las Américas, de la Fundación Lockman, la Versión Biblia Libre y "
-"la de Straubinger, cuyas 13.099 notas son comentario de un párrafo entero y "
-"no marcas de variantes."
+"Escuche devocionales: Mañana y tarde de Spurgeon, los Salmos, y Daily "
+"Strength en la página Hoy."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
-msgid ""
-"A Spanish reading of the whole Bible — La Biblia en Español Sencillo, all "
-"1,189 chapters, the words on the page and the words in the ear from one "
-"publisher."
-msgstr ""
-"Una lectura en español de toda la Biblia: La Biblia en Español Sencillo, los "
-"1189 capítulos, con las palabras de la página y las del oído salidas de un "
-"mismo editor."
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:250
+msgid "Export a passage as a study sheet with your notes and highlights."
+msgstr "Exporte un pasaje como hoja de estudio con sus notas y resaltados."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:167
-msgid ""
-"The deuterocanonical books. A translation that carries them now shows them "
-"in an appendix after Revelation, so Tobit, Judith, Sirach and the Maccabees "
-"open like any other book. Until now asking for one silently handed you "
-"Revelation instead."
-msgstr ""
-"Los libros deuterocanónicos. La traducción que los trae los muestra ahora en "
-"un apéndice después del Apocalipsis, de modo que Tobías, Judit, el "
-"Eclesiástico y los Macabeos se abren como cualquier otro libro. Hasta ahora, "
-"pedir uno le entregaba el Apocalipsis sin decir nada."
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:251
+msgid "Save or copy a verse as an image."
+msgstr "Guarde o copie un versículo como imagen."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:168
-msgid ""
-"Every dictionary you install now appears, whatever language it is in. So do "
-"the Strong's numbers in the Spanish texts that carry them, which the reader "
-"could search but never see."
-msgstr ""
-"Todo diccionario que instale aparece ahora, sea cual sea su idioma. También "
-"los números Strong de los textos en español que los llevan, que el lector "
-"podía buscar pero nunca ver."
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:252
+msgid "Print a passage as a study handout."
+msgstr "Imprima un pasaje como material de estudio."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:169
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:253
 msgid ""
-"The space between letters is yours to open, from the typeface's own metrics "
-"up to a fifth of the type size — the best-supported thing typography can do "
-"for a reader who finds text hard going. OpenDyslexic is bundled beside it, "
-"offered honestly: the evidence for it is weak, and the app says so where you "
-"choose it."
+"Section headings from your Bible now show. Press [ and ] to move between "
+"sections."
 msgstr ""
-"El espacio entre letras queda en sus manos, desde las medidas propias de la "
-"letra hasta una quinta parte del cuerpo del texto: es lo mejor sostenido que "
-"la tipografía puede hacer por quien lee con dificultad. OpenDyslexic viene "
-"incluida a su lado, ofrecida con honradez: la evidencia a su favor es débil, "
-"y la aplicación lo dice allí donde usted la elige."
+"Ya se muestran los títulos de sección de su Biblia. Pulse [ y ] para pasar "
+"de una sección a otra."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:170
-msgid ""
-"Turn on the desktop's High Contrast and the app's own edges come with it — "
-"chips, swatches, cards, buttons and panel borders all drawn above the "
-"contrast the guidelines ask of a control's boundary. Nothing moves and "
-"nothing resizes."
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:254
+msgid "Use the reading pane from the keyboard, with screen reader support."
 msgstr ""
-"Active el Contraste alto del escritorio y los bordes propios de la "
-"aplicación lo acompañan: las fichas, las muestras de color, las tarjetas, "
-"los botones y los cantos de los paneles se dibujan por encima del contraste "
-"que las pautas piden para el límite de un control. Nada se mueve y nada "
-"cambia de tamaño."
+"Use el panel de lectura con el teclado, con soporte para lectores de "
+"pantalla."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:171
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:255
 msgid ""
-"Quiet the rest of the page: an optional reading focus that keeps the passage "
-"you are in on lit paper and lays the rest back under a veil of that same "
-"paper. It follows your scrolling, not your cursor."
+"Every Bible opens each chapter with a large first letter, and commentaries "
+"show their titles."
 msgstr ""
-"Aquietar el resto de la página: un enfoque de lectura opcional que mantiene "
-"el pasaje en el que va sobre papel iluminado y recuesta lo demás bajo un "
-"velo de ese mismo papel. Sigue su desplazamiento, no su cursor."
+"Toda Biblia abre cada capítulo con una letra inicial grande, y los "
+"comentarios muestran sus títulos."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:172
-msgid ""
-"Readings appear on the desktop's media controls — the media keys, the lock "
-"screen and the Shell — named by what they are, with play, pause, skip back, "
-"speed and volume."
-msgstr ""
-"Las lecturas aparecen en los controles multimedia del escritorio —las teclas "
-"de medios, la pantalla de bloqueo y el Shell— con el nombre de lo que son, y "
-"con reproducir, pausar, retroceder, velocidad y volumen."
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:256
+msgid "More prayers from the Roman calendar, and a steadier Today page."
+msgstr "Más oraciones del calendario romano, y una página Hoy más estable."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:173
-msgid ""
-"The app draws its own icons now, so the toolbar is the same line art on "
-"every desktop instead of whatever the local icon theme happened to supply. "
-"The window controls are still the desktop's own."
-msgstr ""
-"La aplicación dibuja ahora sus propios iconos, así que la barra de "
-"herramientas es el mismo trazo en todos los escritorios y no lo que aportara "
-"el tema de iconos de cada uno. Los controles de la ventana siguen siendo los "
-"del escritorio."
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:257
+msgid "Modules still install when CrossWire's server is down."
+msgstr "Los módulos se instalan aunque el servidor de CrossWire no funcione."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:174
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:265
 msgid ""
-"First run opens on a Bible and a commentary rather than the same text twice, "
-"installs the collection you choose for real, and hands you the gestures "
-"reference where the gestures are taught."
+"Read the Greek New Testament and the Hebrew Old Testament word by word, each "
+"word with its English meaning and grammar."
 msgstr ""
-"La primera puesta en marcha abre una Biblia y un comentario, en lugar del "
-"mismo texto dos veces, instala de verdad la colección que usted elija y le "
-"entrega la referencia de gestos allí donde los gestos se enseñan."
+"Lea el Nuevo Testamento griego y el Antiguo Testamento hebreo palabra por "
+"palabra, cada una con su significado en inglés y su gramática."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:175
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:266
 msgid ""
-"The page holds still. Flipping the theme, showing footnote markers, "
-"switching to old-style figures and lighting the drop cap all recolour the "
-"chapter you are reading instead of rebuilding it, and your place is held "
-"through the rebuilds that remain — including in poetry, where it used to "
-"slip."
+"A Greek lexicon pack with Abbott-Smith and Liddell-Scott-Jones. Click a "
+"verse in an entry to read it."
 msgstr ""
-"La página se queda quieta. Cambiar de tema, mostrar las llamadas de nota, "
-"pasar a las cifras antiguas y encender la capitular vuelven a colorear el "
-"capítulo que está leyendo en vez de rehacerlo, y su sitio se conserva en las "
-"reconstrucciones que quedan, también en la poesía, donde antes se perdía."
+"Un paquete de léxicos griegos con Abbott-Smith y Liddell-Scott-Jones. Haga "
+"clic en un versículo de una entrada para leerlo."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:176
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:267
 msgid ""
-"Nineteenth-century plates join the imagery pack, and an installed pack that "
-"has fallen behind now offers its own update."
+"Press F5 to show a passage full screen on a projector, alone or beside a "
+"second translation."
 msgstr ""
-"Las láminas del siglo XIX se suman al paquete de imágenes, y un paquete ya "
-"instalado que se haya quedado atrás ofrece ahora su propia actualización."
+"Pulse F5 para mostrar un pasaje a pantalla completa en un proyector, solo o "
+"junto a una segunda traducción."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:177
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:268
 msgid ""
-"A settings file the app cannot read is set aside rather than overwritten, a "
-"backup that did not reach the disk says so, and an archive that tries to "
-"write through a symlink is refused."
+"Maps link to their passages, and commentaries show the places a verse names."
 msgstr ""
-"Un archivo de ajustes que la aplicación no puede leer se aparta en vez de "
-"sobrescribirse, una copia de seguridad que no llegó al disco lo dice, y un "
-"archivo comprimido que intenta escribir a través de un enlace simbólico se "
-"rechaza."
+"Los mapas enlazan con sus pasajes, y los comentarios muestran los lugares "
+"que nombra un versículo."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:269
+msgid "Greek accents now display correctly."
+msgstr "Los acentos griegos ya se muestran correctamente."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:275
+msgid "Getting started is easier."
+msgstr "Empezar es más fácil."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:277
+msgid "A new Tips & Gestures guide in the menu lists every reading gesture."
+msgstr ""
+"Una nueva guía, Consejos y gestos, en el menú reúne todos los gestos de "
+"lectura."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:278
+msgid ""
+"One-time tips show hidden gestures when you first need them. You can turn "
+"them off."
+msgstr ""
+"Unos consejos que aparecen una sola vez muestran gestos ocultos cuando los "
+"necesita por primera vez. Puede desactivarlos."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:284
+msgid "Choose how your reading page looks."
+msgstr "Elija cómo se ve su página de lectura."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:286
+msgid ""
+"A new Appearance panel: choose a paper colour, and the text colour follows "
+"it."
+msgstr ""
+"Un nuevo panel de Apariencia: elija un color de papel, y el color del texto "
+"se adapta a él."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:287
+msgid "Bold and justified text are small buttons beside the font."
+msgstr ""
+"La negrita y el texto justificado son botones pequeños junto a la fuente."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:288
+msgid "Reading plans have a Today view and a month calendar."
+msgstr "Los planes de lectura tienen una vista Hoy y un calendario mensual."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:289
+msgid "Fixed faint trails left behind when scrolling."
+msgstr "Se corrigieron los rastros tenues que quedaban al desplazarse."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:304
+msgid ""
+"Scriptura's first release. Read two translations side by side, study the "
+"Hebrew and Greek behind any word, follow cross-references, and keep your "
+"highlights and notes in one searchable place, all offline on your own "
+"computer."
+msgstr ""
+"La primera versión de Scriptura. Lea dos traducciones lado a lado, estudie "
+"el hebreo y el griego detrás de cada palabra, siga las referencias cruzadas "
+"y guarde sus resaltados y notas en un solo lugar donde buscar, todo sin "
+"conexión en su propio ordenador."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:183
 msgid "Chapters read aloud, and passages you can take with you."
 msgstr "Capítulos leídos en voz alta, y pasajes que puede llevarse consigo."
 
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:185
-msgid ""
-"Chapters read aloud, in the Berean Standard Bible's own narration. A "
-"listening pill sits quietly at the foot of the page: skip back fifteen "
-"seconds, set the pace anywhere from 0.75× to 2×, and keep listening as you "
-"turn to the next chapter."
-msgstr ""
-"Capítulos leídos en voz alta, en la propia narración de la Berean Standard "
-"Bible. Una pastilla de escucha espera discreta al pie de la página: "
-"retroceda quince segundos, ajuste la velocidad entre 0,75× y 2×, y siga "
-"escuchando al pasar al capítulo siguiente."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:186
-msgid ""
-"Spoken devotionals from their publishers' own feeds — Spurgeon's Morning and "
-"Evening, the Psalms read one at a time, and the day's Daily Strength reading "
-"on the Today page."
-msgstr ""
-"Devocionales hablados desde los canales de sus propios editores: Mañana y "
-"tarde de Spurgeon, los Salmos leídos de uno en uno y la lectura del día de "
-"Daily Strength en la página Hoy."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:187
-msgid ""
-"Take a passage with you. Export it as a study worksheet in Markdown or plain "
-"text, carrying your own notes and highlights, with optional interlinear, "
-"textual-variant and church-fathers layers. Citations follow the SBTS/"
-"Turabian short form."
-msgstr ""
-"Llévese un pasaje consigo. Expórtelo como hoja de estudio en Markdown o "
-"texto sin formato, con sus propias notas y resaltados, y con capas "
-"opcionales de interlineal, variantes textuales y padres de la Iglesia. Las "
-"citas siguen la forma breve SBTS/Turabian."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:188
-msgid ""
-"A verse as an image, set in the app's own serif on its own paper — three "
-"shapes, saved to a file or copied straight to the clipboard."
-msgstr ""
-"Un versículo como imagen, compuesto en la tipografía serif de la aplicación "
-"sobre su propio papel: tres formas, que puede guardar en un archivo o copiar "
-"directamente al portapapeles."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:189
-msgid ""
-"Print a passage as a study handout, paginated so no line is ever cut in half."
-msgstr ""
-"Imprima un pasaje como material de estudio, paginado de modo que ninguna "
-"línea quede partida."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:190
-msgid ""
-"The section headings your translation actually ships, which until now were "
-"being dropped altogether. Move a whole thought at a time with [ and ], and "
-"see at a glance which sense-unit you are reading."
-msgstr ""
-"Los títulos de sección que su traducción trae de verdad y que hasta ahora se "
-"descartaban por completo. Avance de una idea entera cada vez con [ y ], y "
-"vea de un vistazo qué unidad de sentido está leyendo."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:191
-msgid ""
-"The reading pane is reachable from the keyboard throughout: step between "
-"verses and words with the arrow keys, open the lexicon, a footnote or the "
-"dictionary with Enter, and hear every move announced by a screen reader."
-msgstr ""
-"Al panel de lectura se llega enteramente desde el teclado: avance entre "
-"versículos y palabras con las flechas, abra el léxico, una nota al pie o el "
-"diccionario con Intro, y oiga cada movimiento anunciado por un lector de "
-"pantalla."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:192
-msgid ""
-"Every translation now gets its verse-one drop cap, and commentaries render "
-"the inline titles they carry."
-msgstr ""
-"Ahora todas las traducciones reciben su capitular en el versículo uno, y los "
-"comentarios representan los títulos que llevan en línea."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:193
-msgid "More of the Roman calendar's collects, and a steadier Today page."
-msgstr "Más colectas del calendario romano y una página Hoy más estable."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:194
-msgid ""
-"Modules keep installing when CrossWire's server is down: the app falls back "
-"to FTP, and then to a mirror of everything CrossWire's own licences allow "
-"anyone to redistribute."
-msgstr ""
-"Los módulos se siguen instalando cuando el servidor de CrossWire está caído: "
-"la aplicación recurre a FTP y después a un espejo de todo lo que las propias "
-"licencias de CrossWire permiten redistribuir."
-
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:200
 msgid "The original languages, word by word."
 msgstr "Las lenguas originales, palabra por palabra."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:202
-msgid ""
-"Two interlinear reading surfaces — the Greek New Testament and the Hebrew "
-"Old Testament (Tyndale House data): every word carries its English gloss and "
-"parsing, with transliteration and Strong's numbers a chip away and the "
-"lexicon a click away. A Hebrew Accents chip calms the cantillation marks."
-msgstr ""
-"Dos superficies de lectura interlineal: el Nuevo Testamento griego y el "
-"Antiguo Testamento hebreo (datos de Tyndale House). Cada palabra lleva su "
-"glosa en inglés y su análisis, con la transliteración y los números de "
-"Strong a un botón de distancia y el léxico a un clic. Un botón de acentos "
-"hebreos atenúa los signos de cantilación."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:203
-msgid ""
-"A Scholar's Greek Lexicon pack: Abbott-Smith becomes the brief Greek entry, "
-"with the full Liddell-Scott-Jones one click deeper. Scripture citations "
-"inside entries are live — click one to peek the verse in place, or send it "
-"to the other pane."
-msgstr ""
-"Un paquete de léxico griego académico: Abbott-Smith pasa a ser la entrada "
-"griega breve, con el Liddell-Scott-Jones completo a un clic más. Las citas "
-"bíblicas dentro de las entradas están vivas: pulse una para ver el versículo "
-"allí mismo o enviarlo al otro panel."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:204
-msgid ""
-"Presentation mode: press F5 to project the current passage full-screen for a "
-"projector or mirrored display, with paging through chapters, a verse-per-"
-"page toggle, live type-size control, and a side-by-side parallel view of two "
-"translations."
-msgstr ""
-"Modo presentación: pulse F5 para proyectar el pasaje actual a pantalla "
-"completa en un proyector o una pantalla duplicada, con paso por capítulos, "
-"un ajuste de un versículo por página, control del tamaño de letra en vivo y "
-"una vista paralela de dos traducciones."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:205
-msgid ""
-"Maps in Scripture in Art now carry their passage as a chip — click it to "
-"drive the partnered Bible pane there. And the Historical Commentaries pane "
-"shows place chips for the verse under commentary: click one for the place's "
-"photo and identification, without displacing what you're reading."
-msgstr ""
-"Los mapas de La Escritura en el arte llevan ahora su pasaje como botón: "
-"púlselo para llevar allí el panel de Biblia asociado. Y el panel de "
-"comentarios históricos muestra botones de lugar para el versículo comentado: "
-"pulse uno para ver la fotografía y la identificación del lugar, sin "
-"desplazar lo que está leyendo."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:206
-msgid ""
-"Greek in the reading panes now renders with correctly composed accents on "
-"systems where the default serif drew them detached."
-msgstr ""
-"El griego de los paneles de lectura se representa ahora con los acentos "
-"correctamente compuestos en los sistemas donde la tipografía serif "
-"predeterminada los dibujaba separados."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:212
-msgid "Getting started, made discoverable."
-msgstr "Los primeros pasos, ahora fáciles de encontrar."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:214
-msgid ""
-"A new Tips & Gestures guide, reachable from the menu, gathers every reading "
-"gesture in one place."
-msgstr ""
-"Una nueva guía de consejos y gestos, accesible desde el menú, reúne en un "
-"solo lugar todos los gestos de lectura."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:215
-msgid ""
-"Gentle one-time tips point out hidden gestures — like tapping a verse for "
-"its cross-references — the first time each is useful, then never again. You "
-"can turn them off any time."
-msgstr ""
-"Unos avisos discretos y únicos señalan los gestos ocultos —como pulsar un "
-"versículo para ver sus referencias cruzadas— la primera vez que cada uno "
-"resulta útil, y nunca más. Puede desactivarlos cuando quiera."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:221
-msgid "Customizable reading appearance."
-msgstr "Apariencia de lectura personalizable."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:223
-msgid ""
-"New Appearance panel: pick a reading paper — Paper, White, Sepia, Green, or "
-"a custom colour — with text colour that adapts to the page (a warm ink on "
-"sepia, and so on)."
-msgstr ""
-"Nuevo panel de apariencia: elija un papel de lectura —Papel, Blanco, Sepia, "
-"Verde o un color personalizado— con un color de texto que se adapta a la "
-"página (una tinta cálida sobre el sepia, por ejemplo)."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:224
-msgid ""
-"Bold and justified text move to compact controls beside the font, and the "
-"menu's sections gain a clearer, calmer layout."
-msgstr ""
-"La negrita y el texto justificado pasan a unos controles compactos junto a "
-"la tipografía, y las secciones del menú ganan una disposición más clara y "
-"serena."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:225
-msgid ""
-"Redesigned reading plans with a Today view and a month calendar of your "
-"progress."
-msgstr ""
-"Planes de lectura rediseñados, con una vista Hoy y un calendario mensual de "
-"su avance."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:226
-msgid "Fixed faint text trails when scrolling the reading view under Flatpak."
-msgstr ""
-"Se corrigieron los rastros tenues de texto al desplazar la vista de lectura "
-"en Flatpak."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:232
 msgid "Packaging fixes."
@@ -746,18 +496,6 @@ msgid "Patch SWORD's CMake to properly link libcurl (upstream bug API-263)."
 msgstr ""
 "Se parcheó el CMake de SWORD para enlazar libcurl correctamente (error "
 "API-263 en el proyecto original)."
-
-#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:241
-msgid ""
-"Scriptura's first release. Read two translations side by side, study the "
-"original Hebrew and Greek behind any word, follow cross-references between "
-"passages, and keep your highlights and notes together in one searchable "
-"place — all on your own computer, offline."
-msgstr ""
-"Primera versión de Scriptura. Lea dos traducciones en paralelo, estudie el "
-"hebreo y el griego originales que hay detrás de cualquier palabra, siga las "
-"referencias cruzadas entre pasajes y conserve sus resaltados y notas juntos "
-"en un lugar donde pueda buscarlos, todo en su propio equipo y sin conexión."
 
 #: annotation_dialogs.py:40 study_journal.py:55
 msgid "Yellow"
@@ -892,7 +630,7 @@ msgstr "foto"
 
 #: archaeology_bridge.py:270
 msgid ""
-"Artifacts of the biblical world — inscriptions, monuments, and objects that "
+"Artifacts of the biblical world: inscriptions, monuments, and objects that "
 "touch the people, places, and events named in Scripture, in historical "
 "sequence."
 msgstr ""
@@ -1107,13 +845,11 @@ msgstr "Antes del reino"
 
 #: archaeology_strings.py:20
 msgid ""
-"Before there was an Israel for the records to name, its neighbours were "
-"already writing, and a few of their words reach across to touch its earliest "
-"story."
+"Before Israel appears in any record, its neighbours were already writing, "
+"and a few of their texts bear on its earliest story."
 msgstr ""
-"Antes de que hubiera un Israel al que los registros pudieran nombrar, sus "
-"vecinos ya escribían, y unas pocas de sus palabras alcanzan a tocar su "
-"historia más temprana."
+"Antes de que Israel aparezca en registro alguno, sus vecinos ya escribían, y "
+"unos pocos de sus textos tienen que ver con su historia más temprana."
 
 #: archaeology_strings.py:21
 msgid "The United Monarchy"
@@ -1145,11 +881,11 @@ msgstr "Judá, Asiria y Nínive"
 
 #: archaeology_strings.py:26
 msgid ""
-"Judah alone now, in the lengthening shadow of Assyria: a clash of empires "
-"and a single besieged city, set down from both sides."
+"Judah stands alone now, under the growing power of Assyria: a war of empires "
+"and a besieged city, recorded by both sides."
 msgstr ""
-"Judá ya sola, a la sombra creciente de Asiria: un choque de imperios y una "
-"sola ciudad sitiada, puestos por escrito desde ambos lados."
+"Judá queda ya sola, bajo el poder creciente de Asiria: una guerra de "
+"imperios y una ciudad sitiada, contada por ambos lados."
 
 #: archaeology_strings.py:27
 msgid "The Fall and the Exile"
@@ -1193,12 +929,12 @@ msgstr "El mundo de Jesús"
 
 #: archaeology_strings.py:34
 msgid ""
-"The Judea of the Gospels brought down to its stones: a governor's name, a "
-"high priest's bones, the pools and pavements of the city."
+"The Judea of the Gospels in what it left behind: a governor's name, a high "
+"priest's family tomb, the pools and pavements of the city."
 msgstr ""
-"La Judea de los Evangelios llevada a sus piedras: el nombre de un "
-"gobernador, los huesos de un sumo sacerdote, los estanques y los pavimentos "
-"de la ciudad."
+"La Judea de los Evangelios en lo que dejó: el nombre de un gobernador, la "
+"tumba familiar de un sumo sacerdote, los estanques y los pavimentos de la "
+"ciudad."
 
 #: archaeology_strings.py:35
 msgid "The Apostolic World"
@@ -1260,13 +996,13 @@ msgstr "Hallada en Tell el-Amarna, 1887"
 #: archaeology_strings.py:46
 msgid ""
 "A cuneiform letter from Abdi-Heba, the ruler of Jerusalem, to the Egyptian "
-"pharaoh, written generations before David. It is among the earliest "
+"pharaoh, written some three centuries before David. It is among the earliest "
 "references to Jerusalem (as 'Urusalim'), and shows the city as a small "
 "Canaanite kingdom under Egyptian oversight: the world into which Israel "
 "would later come."
 msgstr ""
 "Una carta cuneiforme de Abdi-Hepa, gobernante de Jerusalén, al faraón de "
-"Egipto, escrita generaciones antes de David. Es una de las menciones más "
+"Egipto, escrita unos tres siglos antes de David. Es una de las menciones más "
 "tempranas de Jerusalén (como «Urusalim»), y muestra la ciudad como un "
 "pequeño reino cananeo bajo tutela egipcia: el mundo al que Israel llegaría "
 "después."
@@ -1296,14 +1032,14 @@ msgid ""
 "A victory stele of the pharaoh Merneptah, listing peoples his armies claimed "
 "to have defeated in Canaan. Among them, in hieroglyphs, is the name "
 "'Israel,' marked as a people rather than a place. It is the earliest mention "
-"of Israel found outside the Bible, placing the people in the land in the era "
-"of the Judges."
+"of Israel found outside the Bible, and places a people called Israel in "
+"Canaan by about 1200 BC, in the era of the Judges."
 msgstr ""
 "Una estela de victoria del faraón Merneptah que enumera los pueblos que sus "
 "ejércitos decían haber vencido en Canaán. Entre ellos, en jeroglíficos, está "
 "el nombre «Israel», marcado como pueblo y no como lugar. Es la mención más "
-"temprana de Israel hallada fuera de la Biblia, y sitúa al pueblo en la "
-"tierra en la época de los Jueces."
+"temprana de Israel hallada fuera de la Biblia, y sitúa a un pueblo llamado "
+"Israel en Canaán hacia el 1200 a. C., en la época de los Jueces."
 
 #: archaeology_strings.py:53
 msgid "The Tel Dan Stele"
@@ -1628,16 +1364,16 @@ msgstr "Excavada in situ en Nínive"
 #: archaeology_strings.py:109
 msgid ""
 "A reconstructed gate of Nineveh, flanked by the colossal human-headed winged "
-"bulls (lamassu) that guarded the Assyrian capital. Nineveh looms large in "
-"Scripture: the city Jonah was sent to, and whose violence Nahum condemned. "
-"The ancient gate and its bulls were destroyed in 2016; this records them as "
-"they stood."
+"bulls (lamassu) that guarded the Assyrian capital. Nineveh has a large place "
+"in Scripture: the city Jonah was sent to, and whose violence Nahum "
+"condemned. The ancient gate and its bulls were destroyed in 2016; this "
+"records them as they stood."
 msgstr ""
 "Una puerta reconstruida de Nínive, flanqueada por los colosales toros alados "
-"con cabeza humana (lamassu) que guardaban la capital asiria. Nínive pesa "
-"mucho en la Escritura: es la ciudad a la que fue enviado Jonás y cuya "
-"violencia condenó Nahúm. La puerta antigua y sus toros fueron destruidos en "
-"2016; esta imagen los deja como estaban."
+"con cabeza humana (lamassu) que guardaban la capital asiria. Nínive ocupa un "
+"lugar importante en la Escritura: es la ciudad a la que fue enviado Jonás y "
+"cuya violencia condenó Nahúm. La puerta antigua y sus toros fueron "
+"destruidos en 2016; esta imagen los deja como estaban."
 
 #: archaeology_strings.py:110
 msgid "Sargon II in His Chariot"
@@ -1661,17 +1397,17 @@ msgstr "Excavado en Khorsabad, década de 1840"
 
 #: archaeology_strings.py:115
 msgid ""
-"A palace relief of the Assyrian king Sargon II riding to war. Sargon "
-"completed the conquest of Samaria and deported the northern kingdom. Named "
-"just once in the Bible and long missing from other records, he was once "
-"doubted to have existed at all, until his vast palace at Khorsabad was "
-"unearthed. Isaiah names him directly."
+"A palace relief of the Assyrian king Sargon II riding to war. Sargon claimed "
+"the conquest of Samaria and deported the northern kingdom. The Bible names "
+"him only once, in Isaiah, and with few other records to go on, some scholars "
+"once doubted he had existed. His palace at Khorsabad, unearthed in the "
+"1840s, settled the question."
 msgstr ""
 "Un relieve palaciego del rey asirio Sargón II marchando a la guerra. Sargón "
-"completó la conquista de Samaria y deportó al reino del norte. Nombrado una "
-"sola vez en la Biblia y ausente durante mucho tiempo de los demás registros, "
-"se llegó a dudar de que hubiera existido, hasta que se desenterró su enorme "
-"palacio de Khorsabad. Isaías lo nombra directamente."
+"se atribuyó la conquista de Samaria y deportó al reino del norte. La Biblia "
+"lo nombra una sola vez, en Isaías, y con pocos registros más en que "
+"apoyarse, algunos estudiosos llegaron a dudar de que hubiera existido. Su "
+"palacio de Khorsabad, desenterrado en la década de 1840, zanjó la cuestión."
 
 #: archaeology_strings.py:116
 msgid "The Lachish Reliefs"
@@ -1839,16 +1575,16 @@ msgid ""
 "Two tiny strips of silver, rolled up and worn as amulets, from a family tomb "
 "on the shoulder of the Hinnom valley. Unrolled, each carried in scratched "
 "Hebrew letters the priestly blessing: 'The LORD bless you and keep you.' "
-"Written around 600 BC, on the eve of the exile, they are the oldest "
-"surviving words of Scripture, older than the Dead Sea Scrolls by four "
-"centuries."
+"Usually dated to around 600 BC, on the eve of the exile, they are the oldest "
+"known copy of words from Scripture, some four centuries older than the Dead "
+"Sea Scrolls."
 msgstr ""
 "Dos diminutas tiras de plata, enrolladas y llevadas como amuletos, de una "
 "tumba familiar en la ladera del valle de Hinom. Desenrolladas, cada una "
 "llevaba en letras hebreas rayadas la bendición sacerdotal: «El SEÑOR te "
-"bendiga y te guarde». Escritas hacia el 600 a. C., en vísperas del "
-"destierro, son las palabras más antiguas de la Escritura que se conservan, "
-"cuatro siglos anteriores a los Rollos del Mar Muerto."
+"bendiga y te guarde». Fechadas por lo general hacia el 600 a. C., en "
+"vísperas del destierro, son la copia más antigua que se conoce de palabras "
+"de la Escritura, unos cuatro siglos anteriores a los Rollos del Mar Muerto."
 
 #: archaeology_strings.py:145
 msgid "The Babylonian Chronicle"
@@ -1957,16 +1693,16 @@ msgid ""
 "A clay cylinder of Nabonidus, last king of Babylon, recording his building "
 "works and a prayer for his son. That son is Bel-shar-usur (Belshazzar), who "
 "in the book of Daniel holds the feast on the night Babylon falls. The "
-"cylinder explains a long-doubted detail: Belshazzar ruled as regent in his "
-"father's absence, which is why Daniel could be offered only 'third' place in "
-"the kingdom."
+"cylinder helps explain a long-doubted detail: Belshazzar ruled as regent in "
+"his father's absence, which is why Daniel could be offered only 'third' "
+"place in the kingdom."
 msgstr ""
 "Un cilindro de arcilla de Nabónido, último rey de Babilonia, que registra "
 "sus obras y una oración por su hijo. Ese hijo es Bel-sar-usur (Belsasar), "
 "que en el libro de Daniel celebra el banquete la noche en que cae Babilonia. "
-"El cilindro explica un detalle largamente puesto en duda: Belsasar gobernaba "
-"como regente en ausencia de su padre, y por eso a Daniel sólo se le podía "
-"ofrecer el «tercer» puesto del reino."
+"El cilindro ayuda a explicar un detalle largamente puesto en duda: Belsasar "
+"gobernaba como regente en ausencia de su padre, y por eso a Daniel sólo se "
+"le podía ofrecer el «tercer» puesto del reino."
 
 #: archaeology_strings.py:165
 msgid "The Cyrus Cylinder"
@@ -2047,13 +1783,14 @@ msgid ""
 "A limestone stele inscribed with letters of the Seleucid king Seleucus IV "
 "and his minister Heliodorus, appointing officials over the temples of the "
 "realm. Heliodorus is remembered in Second Maccabees as the agent sent to "
-"seize the treasures of the Temple in Jerusalem, and miraculously driven back."
+"seize the treasures of the Temple in Jerusalem, and, as that book tells it, "
+"driven back by a vision from heaven."
 msgstr ""
 "Una estela de caliza inscrita con cartas del rey seléucida Seleuco IV y su "
 "ministro Heliodoro, que nombran funcionarios sobre los templos del reino. A "
 "Heliodoro se le recuerda en Segundo de Macabeos como el agente enviado a "
-"apoderarse de los tesoros del Templo de Jerusalén, y rechazado "
-"milagrosamente."
+"apoderarse de los tesoros del Templo de Jerusalén y, según cuenta ese libro, "
+"rechazado por una visión del cielo."
 
 #: archaeology_strings.py:179
 msgid "A Coin of John Hyrcanus"
@@ -2111,14 +1848,16 @@ msgid ""
 "A column of the Great Isaiah Scroll from Qumran: here the song of the "
 "suffering servant, 'he was wounded for our transgressions.' Found among the "
 "Dead Sea Scrolls in 1947, it is a thousand years older than the previously "
-"oldest Hebrew copies of Isaiah, and matches them closely: a witness to how "
-"faithfully the text was handed down."
+"oldest Hebrew copies of Isaiah, and apart from small differences of spelling "
+"and wording it agrees with them: a witness to how carefully the text was "
+"handed down."
 msgstr ""
 "Una columna del gran rollo de Isaías de Qumrán: aquí el canto del siervo "
 "sufriente, «Él fue herido por nuestras transgresiones». Hallado entre los "
 "Rollos del Mar Muerto en 1947, es mil años más antiguo que las copias "
-"hebreas de Isaías hasta entonces más antiguas, y coincide estrechamente con "
-"ellas: un testigo de con cuánta fidelidad se transmitió el texto."
+"hebreas de Isaías hasta entonces más antiguas, y salvo pequeñas diferencias "
+"de grafía y redacción concuerda con ellas: un testigo del cuidado con que se "
+"transmitió el texto."
 
 #: archaeology_strings.py:190
 msgid "The Pilate Stone"
@@ -2140,14 +1879,14 @@ msgstr "Excavada in situ en Cesarea, 1961"
 msgid ""
 "A limestone block, later reused in the theatre at Caesarea, bearing a Latin "
 "dedication that names '[Pon]tius Pilatus, [Praef]ectus Iuda[ea]e': Pontius "
-"Pilate, prefect of Judea. Found in 1961, it is the only inscription naming "
-"Pilate from his own province and time, confirming both his name and his "
-"exact title in the years of Jesus' ministry and trial."
+"Pilate, prefect of Judea. Found in 1961, it is the only certain inscription "
+"naming Pilate from his own time, and confirms both his name and his exact "
+"title in the years of Jesus' ministry and trial."
 msgstr ""
 "Un bloque de caliza, reutilizado más tarde en el teatro de Cesarea, con una "
 "dedicatoria latina que nombra a «[Pon]cio Pilato, [pref]ecto de Jude[a]». "
-"Hallado en 1961, es la única inscripción que nombra a Pilato procedente de "
-"su propia provincia y su tiempo, y confirma tanto su nombre como su título "
+"Hallado en 1961, es la única inscripción segura que nombra a Pilato "
+"procedente de su propio tiempo, y confirma tanto su nombre como su título "
 "exacto en los años del ministerio y el juicio de Jesús."
 
 #: archaeology_strings.py:195
@@ -2191,14 +1930,16 @@ msgid ""
 "The excavated remains of a large twin pool, ringed by porticoes, on the "
 "north side of Jerusalem's Temple area. John's Gospel describes the healing "
 "of a paralysed man at the pool of Bethesda 'which has five roofed "
-"colonnades': a precise detail, once thought merely symbolic, that the "
-"archaeology of the twin pool and its surrounding porches bears out."
+"colonnades': a detail once thought merely symbolic. Excavation found a real "
+"twin pool with porticoes, though scholars still debate how closely its "
+"layout matches John's five."
 msgstr ""
 "Los restos excavados de un gran estanque doble, rodeado de pórticos, al "
 "norte de la explanada del Templo de Jerusalén. El Evangelio de Juan describe "
 "la curación de un paralítico en el estanque de Betesda, «que tiene cinco "
-"pórticos»: un detalle preciso, tenido en otro tiempo por meramente "
-"simbólico, que la arqueología del estanque doble y sus pórticos confirma."
+"pórticos»: un detalle tenido en otro tiempo por meramente simbólico. La "
+"excavación halló un estanque doble real con pórticos, aunque los estudiosos "
+"aún discuten hasta qué punto su trazado coincide con los cinco de Juan."
 
 #: archaeology_strings.py:203
 msgid "The Pool of Siloam"
@@ -2216,14 +1957,12 @@ msgstr "Excavado in situ, Jerusalén, 2004"
 msgid ""
 "The stepped stone edge of the Pool of Siloam, uncovered in 2004 at the foot "
 "of the City of David: the pool fed by Hezekiah's tunnel. In John's Gospel "
-"Jesus sends a man born blind to wash here, and he returns seeing; these are "
-"the steps on which that man, and countless pilgrims, once stood."
+"Jesus sends a man born blind to wash here, and he returns seeing."
 msgstr ""
 "El borde escalonado de piedra del estanque de Siloé, descubierto en 2004 al "
 "pie de la Ciudad de David: el estanque que alimentaba el túnel de Ezequías. "
 "En el Evangelio de Juan, Jesús envía allí a lavarse a un hombre ciego de "
-"nacimiento, y vuelve viendo; éstos son los escalones en los que aquel "
-"hombre, y incontables peregrinos, estuvieron."
+"nacimiento, y vuelve viendo."
 
 #: archaeology_strings.py:207
 msgid "The Temple Warning Inscription"
@@ -2245,15 +1984,16 @@ msgstr "Hallada en Jerusalén, 1871"
 msgid ""
 "A limestone block carved with a Greek warning that forbade Gentiles, on pain "
 "of death, from passing the barrier into the inner courts of the Temple. It "
-"is the very 'dividing wall' Paul was accused of breaching when he was seized "
-"in the Temple, and the image the letter to the Ephesians turns around, "
-"declaring that Christ has broken it down."
+"marks the barrier behind the charge that Paul had brought Gentiles into the "
+"Temple, when he was seized there. Many readers also hear it behind the "
+"'dividing wall' that the letter to the Ephesians says Christ has broken down."
 msgstr ""
 "Un bloque de caliza tallado con una advertencia en griego que prohibía a los "
 "gentiles, bajo pena de muerte, pasar la barrera hacia los atrios interiores "
-"del Templo. Es la misma «pared intermedia de separación» que se acusó a "
-"Pablo de haber traspasado cuando lo prendieron en el Templo, y la imagen que "
-"la carta a los Efesios da la vuelta al declarar que Cristo la ha derribado."
+"del Templo. Marca la barrera que está detrás de la acusación de que Pablo "
+"había metido gentiles en el Templo, cuando lo prendieron allí. Muchos "
+"lectores la ven también detrás de la «pared intermedia de separación» que, "
+"según la carta a los Efesios, Cristo ha derribado."
 
 #: archaeology_strings.py:212
 msgid "The Tribute Penny"
@@ -2274,16 +2014,16 @@ msgstr "Moneda imperial romana (se conocen muchos ejemplares)"
 #: archaeology_strings.py:216
 msgid ""
 "A silver denarius of the emperor Tiberius, his portrait on one side, an "
-"enthroned figure on the other. A coin exactly like this is the 'tribute "
-"penny' of the Gospels: shown such a coin and asked about paying taxes, Jesus "
-"answers, 'Render to Caesar the things that are Caesar's, and to God the "
-"things that are God's.'"
+"enthroned figure on the other. Coins like this are traditionally taken as "
+"the 'tribute penny' of the Gospels: shown such a coin and asked about paying "
+"taxes, Jesus answers, 'Render to Caesar the things that are Caesar's, and to "
+"God the things that are God's.'"
 msgstr ""
 "Un denario de plata del emperador Tiberio, con su retrato en una cara y una "
-"figura entronizada en la otra. Una moneda exactamente así es la «moneda del "
-"tributo» de los Evangelios: cuando se la mostraron y le preguntaron por el "
-"impuesto, Jesús respondió: «Den, pues, al César lo que es del César y a Dios "
-"lo que es de Dios»."
+"figura entronizada en la otra. Monedas como esta se identifican "
+"tradicionalmente con la «moneda del tributo» de los Evangelios: cuando se la "
+"mostraron y le preguntaron por el impuesto, Jesús respondió: «Den, pues, al "
+"César lo que es del César y a Dios lo que es de Dios»."
 
 #: archaeology_strings.py:217
 msgid "The Arch of Titus"
@@ -2361,13 +2101,11 @@ msgstr "Excavado por la Escuela Francesa de Atenas, desde 1914"
 msgid ""
 "The forum of Philippi, the Roman colony in Macedonia where Paul founded his "
 "first church on European soil. Acts tells of his arrival, the conversion of "
-"Lydia by the riverside, and a night in the city jail: the gospel's first "
-"steps into Europe."
+"Lydia by the riverside, and a night in the city jail."
 msgstr ""
 "El foro de Filipos, la colonia romana de Macedonia donde Pablo fundó su "
 "primera iglesia en suelo europeo. Hechos cuenta su llegada, la conversión de "
-"Lidia junto al río y una noche en la cárcel de la ciudad: los primeros pasos "
-"del evangelio en Europa."
+"Lidia junto al río y una noche en la cárcel de la ciudad."
 
 #: archaeology_strings.py:231
 msgid "The Areopagus (Mars Hill)"
@@ -2412,16 +2150,16 @@ msgstr "Excavado por la Escuela Americana de Estudios Clásicos, desde 1896"
 #: archaeology_strings.py:239
 msgid ""
 "The forum of ancient Corinth, with the bema, the raised platform from which "
-"Roman officials gave judgment. It was before this seat, Acts records, that "
-"the proconsul Gallio dismissed the charge brought against Paul. Gallio's "
-"term of office, dated by an inscription at Delphi, is the firmest anchor for "
-"the chronology of Paul's mission."
+"Roman officials gave judgment. Acts records that the proconsul Gallio "
+"dismissed the charge against Paul at the judgment seat, very likely this "
+"one. Gallio's term of office, dated by an inscription at Delphi, is the "
+"firmest anchor for the chronology of Paul's mission."
 msgstr ""
 "El foro de la antigua Corinto, con el bema, la plataforma elevada desde la "
-"que los magistrados romanos dictaban sentencia. Fue ante este estrado, según "
-"Hechos, donde el procónsul Galión desestimó la acusación presentada contra "
-"Pablo. El mandato de Galión, fechado por una inscripción de Delfos, es el "
-"anclaje más firme de la cronología de la misión de Pablo."
+"que los magistrados romanos dictaban sentencia. Según Hechos, el procónsul "
+"Galión desestimó la acusación contra Pablo ante el tribunal, muy "
+"probablemente este. El mandato de Galión, fechado por una inscripción de "
+"Delfos, es el anclaje más firme de la cronología de la misión de Pablo."
 
 #: archaeology_strings.py:240
 msgid "The Great Theatre of Ephesus"
@@ -2514,15 +2252,15 @@ msgid ""
 "The mound of ancient Jericho (Tell es-Sultan), among the oldest towns on "
 "earth. The great stone tower here is Neolithic, millennia older than Joshua. "
 "The Bible tells of Jericho's walls falling before Israel; the dating of the "
-"site's destruction layers is much debated, one of the harder places where "
-"text and trowel meet."
+"site's destruction layers is much debated, and remains one of the hardest "
+"questions in biblical archaeology."
 msgstr ""
 "El montículo de la antigua Jericó (Tell es-Sultán), una de las ciudades más "
 "antiguas del mundo. La gran torre de piedra que hay aquí es neolítica, "
 "milenios anterior a Josué. La Biblia cuenta que las murallas de Jericó "
 "cayeron ante Israel; la datación de los estratos de destrucción del "
-"yacimiento se discute mucho, uno de los lugares más difíciles donde el texto "
-"y la pala se encuentran."
+"yacimiento se discute mucho, y sigue siendo una de las cuestiones más "
+"difíciles de la arqueología bíblica."
 
 #: archaeology_strings.py:256
 msgid "Tel Hazor"
@@ -2654,13 +2392,14 @@ msgstr "Excavada in situ, Cafarnaúm"
 msgid ""
 "The white limestone synagogue of Capernaum, the lakeside town that was the "
 "base of Jesus' Galilean ministry. This building is later (4th–5th century), "
-"but it rests on the black basalt foundations of the 1st-century synagogue "
-"where, the Gospels say, Jesus taught and healed."
+"but it rests on black basalt foundations that its excavators identify as the "
+"1st-century synagogue where, the Gospels say, Jesus taught and healed."
 msgstr ""
 "La sinagoga de caliza blanca de Cafarnaúm, la aldea junto al lago que fue la "
 "base del ministerio galileo de Jesús. El edificio es posterior (siglos IV-"
-"V), pero se asienta sobre los cimientos de basalto negro de la sinagoga del "
-"siglo I donde, dicen los Evangelios, Jesús enseñó y sanó."
+"V), pero se asienta sobre cimientos de basalto negro que sus excavadores "
+"identifican como la sinagoga del siglo I donde, dicen los Evangelios, Jesús "
+"enseñó y sanó."
 
 #: archaeology_strings.py:279
 msgid "A Judean Pillar Figurine"
@@ -2678,14 +2417,14 @@ msgstr "Excavadas; corrientes en las casas judaítas"
 msgid ""
 "Small clay figurines of a woman supporting her breasts, mass-produced and "
 "found by the hundreds in ordinary Judahite houses. Their exact meaning is "
-"debated (fertility, protection, a goddess), but they put a face on the "
-"popular household religion the prophets kept condemning, when even in "
-"Jerusalem families baked cakes for 'the queen of heaven.'"
+"debated (fertility, protection, a goddess), but they show the popular "
+"household religion the prophets kept condemning, when even in Jerusalem "
+"families baked cakes for 'the queen of heaven.'"
 msgstr ""
 "Pequeñas figurillas de barro de una mujer que se sostiene los pechos, "
 "producidas en serie y halladas por centenares en casas judaítas corrientes. "
-"Su sentido exacto se discute (fecundidad, protección, una diosa), pero ponen "
-"rostro a la religión doméstica popular que los profetas no dejaban de "
+"Su sentido exacto se discute (fecundidad, protección, una diosa), pero "
+"muestran la religión doméstica popular que los profetas no dejaban de "
 "condenar, cuando incluso en Jerusalén las familias hacían tortas para «la "
 "reina del cielo»."
 
@@ -2709,14 +2448,14 @@ msgstr "Museo Metropolitano (adq. 1934); lugar del hallazgo no registrado"
 msgid ""
 "A simple wheel-made saucer with one edge pinched into a spout to hold the "
 "wick: the lamp that lit every Israelite house, burning a little olive oil "
-"through the night. Plain and everywhere, it is the lamp of the Psalmist's "
-"'lamp unto my feet, and a light unto my path.'"
+"through the night. Plain and common, it is the kind of lamp behind the "
+"Psalmist's 'lamp unto my feet, and a light unto my path.'"
 msgstr ""
 "Un sencillo platillo hecho a torno, con un borde pellizcado en pico para "
 "sostener la mecha: la lámpara que alumbraba toda casa israelita, quemando un "
-"poco de aceite de oliva durante la noche. Llana y omnipresente, es la "
-"lámpara del salmista: «Lámpara es a mis pies Tu palabra, y luz para mi "
-"camino»."
+"poco de aceite de oliva durante la noche. Sencilla y común, es la clase de "
+"lámpara que hay detrás del salmista: «Lámpara es a mis pies Tu palabra, y "
+"luz para mi camino»."
 
 #: archaeology_strings.py:288
 msgid "The Four-Room House"
@@ -3156,11 +2895,11 @@ msgstr ""
 
 #: archaeology_strings.py:356
 msgid ""
-"The influential minimalist challenge, which redates much of the tradition; "
+"An influential critical reading that dates much of the tradition later; "
 "worth knowing and weighing against the evidence above."
 msgstr ""
-"El influyente desafío minimalista, que redata buena parte de la tradición; "
-"conviene conocerlo y sopesarlo frente a la evidencia anterior."
+"Una influyente lectura crítica que fecha más tarde buena parte de la "
+"tradición; conviene conocerla y sopesarla frente a la evidencia anterior."
 
 #: archaeology_strings.py:357
 msgid ""
@@ -4555,27 +4294,27 @@ msgstr "En contra: %s"
 msgid "%(page)d of %(total)d"
 msgstr "%(page)d de %(total)d"
 
-#: genealogy_strings.py:27
-msgid "The lines the Bible keeps, drawn so they can be held"
-msgstr "Las líneas que guarda la Biblia, dibujadas para poder retenerlas"
-
 #: genealogy_strings.py:28
 msgid ""
 "Scripture keeps lists of names, and readers skip them. They are not\n"
-"filler: they are the spine the rest of the book hangs on, and the\n"
-"writers put them where they did on purpose.\n"
+"filler. They carry the story from one age to the next, and the writers\n"
+"placed them with care.\n"
 "\n"
 "Every line below is drawn from the text and cites it. Where a\n"
 "genealogy leaves generations out, the gap is drawn as a gap. Where two\n"
 "writers disagree, both are shown and neither is quietly corrected."
 msgstr ""
 "La Escritura guarda listas de nombres, y el lector las salta. No son "
-"relleno: son la espina dorsal de la que cuelga el resto del libro, y los "
-"autores las pusieron donde las pusieron a propósito.\n"
+"relleno. Llevan la historia de una época a la siguiente, y los autores las "
+"colocaron con cuidado.\n"
 "\n"
 "Cada línea de abajo se toma del texto y lo cita. Donde una genealogía omite "
 "generaciones, el vacío se dibuja como vacío. Donde dos autores no "
 "concuerdan, se muestran ambos y no se corrige a ninguno en silencio."
+
+#: genealogy_strings.py:27
+msgid "The family lines the Bible records, drawn as charts"
+msgstr "Los linajes que registra la Biblia, dibujados como esquemas"
 
 #: genealogy_strings.py:35
 msgctxt "person"
@@ -4631,8 +4370,8 @@ msgid "meaning uncertain"
 msgstr "significado incierto"
 
 #: genealogy_strings.py:47
-msgid "Not the 'gotten' of Cain: the two names are different words."
-msgstr "No es el «adquirido» de Caín: son dos palabras distintas."
+msgid "Close to Cain in spelling, but a different man in a different line."
+msgstr "Parecido a Caín en la grafía, pero otro hombre en otro linaje."
 
 #: genealogy_strings.py:48
 msgctxt "person"
@@ -4685,8 +4424,12 @@ msgid "man of the dart"
 msgstr "hombre del dardo"
 
 #: genealogy_strings.py:59
-msgid "The longest life recorded; it ends the year of the flood."
-msgstr "La vida más larga registrada; termina el año del diluvio."
+msgid ""
+"The longest life recorded. By the reckoning of Genesis 5, it ends in the "
+"year of the flood."
+msgstr ""
+"La vida más larga registrada. Según el cómputo de Génesis 5, termina el año "
+"del diluvio."
 
 #: genealogy_strings.py:60
 msgctxt "person"
@@ -4695,11 +4438,11 @@ msgstr "Lamec"
 
 #: genealogy_strings.py:61
 msgid ""
-"His own name is uncertain; the one he gave his son is not. He named Noah for "
-"the comfort he hoped for."
+"The meaning of his own name is uncertain; the one he gave his son is not. He "
+"named Noah for the comfort he hoped for."
 msgstr ""
-"Su propio nombre es incierto; el que dio a su hijo no lo es. Llamó Noé a su "
-"hijo por el consuelo que esperaba."
+"El significado de su propio nombre es incierto; el del que dio a su hijo no "
+"lo es. Llamó Noé a su hijo por el consuelo que esperaba."
 
 #: genealogy_strings.py:62
 msgctxt "person"
@@ -5147,8 +4890,8 @@ msgid "Ruth"
 msgstr "Rut"
 
 #: genealogy_strings.py:155
-msgid "A Moabitess; her book exists to end on this genealogy."
-msgstr "Moabita; su libro existe para terminar en esta genealogía."
+msgid "A Moabitess; her book ends on this genealogy."
+msgstr "Moabita; su libro termina en esta genealogía."
 
 #: genealogy_strings.py:156
 msgctxt "person"
@@ -5172,9 +4915,11 @@ msgstr "la que fue mujer de Urías"
 
 #: genealogy_strings.py:160
 msgid ""
-"Matthew will not give her name here — he names the wrong that was done to "
-"her."
-msgstr "Mateo no da aquí su nombre: nombra el agravio que se le hizo."
+"Matthew does not give her name. He calls her the wife of Uriah, which "
+"recalls David's sin."
+msgstr ""
+"Mateo no da su nombre. La llama la mujer de Urías, lo que recuerda el pecado "
+"de David."
 
 #: genealogy_strings.py:161
 msgctxt "person"
@@ -5238,7 +4983,7 @@ msgid "Azariah"
 msgstr "Azarías"
 
 #: genealogy_strings.py:173
-msgid "Called Azariah in 1 Chr 3:12 — one man, two names."
+msgid "Called Azariah in 1 Chr 3:12: one man, two names."
 msgstr "Llamado Azarías en 1 Cr 3:12: un hombre, dos nombres."
 
 #: genealogy_strings.py:174
@@ -5586,12 +5331,12 @@ msgstr "Los diez antes del diluvio"
 #: genealogy_strings.py:244
 msgid ""
 "One name a generation for ten generations, each with a number attached. Read "
-"as a list it is inert; read as a field of overlapping lives it is "
-"astonishing."
+"as a list it is easy to pass over. Laid out as lives, it shows how far they "
+"overlap."
 msgstr ""
 "Un nombre por generación durante diez generaciones, cada uno con un número. "
-"Leído como lista es inerte; leído como un campo de vidas superpuestas, "
-"asombra."
+"Como lista es fácil pasarla por alto. Dispuesta como vidas, muestra cuánto "
+"se superponen."
 
 #: genealogy_strings.py:245
 msgid "Genesis 5"
@@ -5609,16 +5354,19 @@ msgstr "Génesis 5, contado en años desde Adán"
 msgid ""
 "Every figure here is arithmetic on Genesis 5:3–32, and the arithmetic "
 "assumes what the text does not state: that the ten follow one another with "
-"no gap. Read that way, two things fall out that no list can show — these ten "
-"lives overlap almost completely, and Methuselah's nine hundred and sixty-"
-"nine years run out in the year the flood comes. The years are a reckoning, "
-"not a date the Bible gives."
+"no gap. Read that way, the chart shows two things a list cannot: these ten "
+"lives overlap far more than a list suggests, with Adam dying only 126 years "
+"before Noah is born, and Methuselah's nine hundred and sixty-nine years run "
+"out in the year the flood comes. The years are a reckoning, not a date the "
+"Bible gives."
 msgstr ""
 "Cada cifra es aritmética sobre Génesis 5:3–32, y esa aritmética supone lo "
 "que el texto no dice: que los diez se suceden sin hueco alguno. Leído así, "
-"salen dos cosas que ninguna lista muestra: estas diez vidas se solapan casi "
-"por completo, y los novecientos sesenta y nueve años de Matusalén se acaban "
-"el año del diluvio. Los años son un cómputo, no una fecha que la Biblia dé."
+"el gráfico muestra dos cosas que una lista no puede: estas diez vidas se "
+"superponen mucho más de lo que sugiere una lista, pues Adán muere solo 126 "
+"años antes de que nazca Noé, y los novecientos sesenta y nueve años de "
+"Matusalén se acaban el año del diluvio. Los años son un cómputo, no una "
+"fecha que la Biblia dé."
 
 #: genealogy_strings.py:249
 msgid "From Shem to Abraham"
@@ -5630,7 +5378,7 @@ msgstr "Los diez después del diluvio"
 
 #: genealogy_strings.py:251
 msgid ""
-"The same shape as Genesis 5, and the lifespans fall away as it runs — from "
+"The same shape as Genesis 5, and the lifespans fall away as it runs, from "
 "Shem's six hundred years to Terah's two hundred and five."
 msgstr ""
 "La misma forma que Génesis 5, y las vidas se acortan a medida que avanza: de "
@@ -5651,12 +5399,12 @@ msgstr "Cuatro madres, doce hijos"
 #: genealogy_strings.py:255
 msgid ""
 "Drawn father-only, this is a list of twelve names. Drawn with the mothers, "
-"it is the reason the tribes are grouped the way they are for the rest of the "
-"Bible."
+"it shows the grouping by mother that several later lists of the tribes "
+"follow."
 msgstr ""
 "Dibujado solo por padres, es una lista de doce nombres. Dibujado con las "
-"madres, es la razón por la que las tribus se agrupan así en el resto de la "
-"Biblia."
+"madres, muestra la agrupación por madre que siguen varias listas posteriores "
+"de las tribus."
 
 #: genealogy_strings.py:256
 msgid "Genesis 35:23–26"
@@ -5672,11 +5420,11 @@ msgstr "Diez nombres, de Fares a David"
 
 #: genealogy_strings.py:259
 msgid ""
-"The book of Ruth exists to arrive here. The same ten men appear in Matthew 1 "
-"under their Greek names — Perez is Phares, Hezron is Esrom, Boaz is Booz."
+"The book of Ruth ends here. The same ten men appear in Matthew 1 under their "
+"Greek names: Perez is Phares, Hezron is Esrom, Boaz is Booz."
 msgstr ""
-"El libro de Rut existe para llegar aquí. Los mismos diez hombres aparecen en "
-"Mateo 1 bajo sus nombres griegos: Fares, Esrom, Booz."
+"El libro de Rut termina aquí. Los mismos diez hombres aparecen en Mateo 1 "
+"bajo sus nombres griegos: Fares, Esrom, Booz."
 
 #: genealogy_strings.py:260
 msgid "Ruth 4:18–22"
@@ -5693,15 +5441,15 @@ msgstr "De Abraham al Cristo, en tres series de catorce"
 #: genealogy_strings.py:263
 msgid ""
 "Matthew counts his own list out loud in 1:17, and his list also passes over "
-"four kings Chronicles names. Both facts are drawn here — the bands are his "
-"count, the dashed edges are the omissions — and the chart does not say the "
-"one caused the other. Ancient genealogy omits generations as a matter of "
-"course, and \"begat\" can span them; the fourteens are also read as a "
-"mnemonic, and as the numerical value of David's name."
+"four kings Chronicles names. Both facts are drawn here (the bands are his "
+"count, the dashed edges the omissions), and the chart does not say the one "
+"caused the other. Ancient genealogy omits generations as a matter of course, "
+"and \"begat\" can span them; the fourteens are also read as a mnemonic, and "
+"as the numerical value of David's name."
 msgstr ""
 "Mateo cuenta su propia lista en voz alta en 1:17, y esa lista también pasa "
-"por alto a cuatro reyes que Crónicas nombra. Aquí se dibujan ambos hechos — "
-"las bandas son su cuenta, las aristas discontinuas son las omisiones — y el "
+"por alto a cuatro reyes que Crónicas nombra. Aquí se dibujan ambos hechos "
+"(las bandas son su cuenta, las aristas discontinuas las omisiones), y el "
 "gráfico no afirma que lo uno causara lo otro. La genealogía antigua omite "
 "generaciones con toda normalidad, y «engendró» puede abarcarlas; los "
 "catorces se leen también como recurso mnemotécnico y como el valor numérico "
@@ -5721,16 +5469,16 @@ msgstr "De Jesús hasta Adán, y más allá"
 
 #: genealogy_strings.py:267
 msgid ""
-"Luke runs the other way — from Jesus backwards — and does not stop at "
-"Abraham. He ends at Adam, and then at God, which is a claim rather than a "
-"link. Luke gives the older names in their Greek forms — Saruch for Serug, "
-"Ragau for Reu, Noe for Noah; one spelling is kept per man here so the two "
-"lists can be laid side by side, and either form finds him."
+"Luke runs the other way, from Jesus backwards, and does not stop at Abraham. "
+"He ends at Adam, and then at God, which is a claim rather than a link. Luke "
+"gives the older names in their Greek forms: Saruch for Serug, Ragau for Reu, "
+"Noe for Noah. One spelling is kept per man here so the two lists can be laid "
+"side by side, and either form finds him."
 msgstr ""
-"Lucas va en sentido contrario — desde Jesús hacia atrás — y no se detiene en "
+"Lucas va en sentido contrario, desde Jesús hacia atrás, y no se detiene en "
 "Abraham. Termina en Adán, y luego en Dios, lo cual es una afirmación y no un "
-"eslabón. Lucas da los nombres antiguos en sus formas griegas — Saruch por "
-"Serug, Ragau por Reu, Noé por Noé; aquí se conserva una sola grafía por "
+"eslabón. Lucas da los nombres antiguos en sus formas griegas: Saruch por "
+"Serug, Ragau por Reu, Noe por Noé. Aquí se conserva una sola grafía por "
 "hombre para poder poner las dos listas una junto a otra, y cualquiera de las "
 "dos formas lo encuentra."
 
@@ -5748,15 +5496,15 @@ msgstr "Dónde se tocan las dos listas y dónde se separan"
 
 #: genealogy_strings.py:271
 msgid ""
-"Both trace Jesus through David. They agree at David, at Shealtiel and "
-"Zerubbabel, and at Joseph — and nowhere in between. This chart states that "
-"and stops; the classical answers are set out below it, and none of them is "
-"chosen here."
+"Both trace Jesus through David. From Abraham to David they run almost name "
+"for name. After David they meet only at Shealtiel and Zerubbabel, and again "
+"at Joseph. This chart states that and stops; the classical answers are set "
+"out below it, and none of them is chosen here."
 msgstr ""
-"Ambos trazan a Jesús por David. Concuerdan en David, en Salatiel y "
-"Zorobabel, y en José, y en nada intermedio. Este diagrama lo dice y se "
-"detiene; las respuestas clásicas se exponen debajo, y aquí no se elige "
-"ninguna."
+"Ambos trazan a Jesús por David. De Abraham a David coinciden casi nombre por "
+"nombre. Después de David solo se encuentran en Salatiel y Zorobabel, y de "
+"nuevo en José. Este diagrama lo dice y se detiene; las respuestas clásicas "
+"se exponen debajo, y aquí no se elige ninguna."
 
 #: genealogy_strings.py:272
 msgid "Luke gives Mary's line"
@@ -5824,13 +5572,13 @@ msgstr "Trono legal frente a descendencia natural"
 
 #: genealogy_strings.py:281
 msgid ""
-"Matthew follows the royal succession — who held or had claim to the throne — "
-"while Luke follows physical descent. The two diverge after David because a "
-"throne passes by law and blood passes by birth."
+"Matthew follows the royal succession, those who held or had a claim to the "
+"throne, while Luke follows physical descent. The two diverge after David "
+"because a throne passes by law and blood passes by birth."
 msgstr ""
-"Mateo sigue la sucesión real —quién tenía el trono o derecho a él— mientras "
-"Lucas sigue la descendencia física. Divergen después de David porque un "
-"trono pasa por ley y la sangre pasa por nacimiento."
+"Mateo sigue la sucesión real, quienes tenían el trono o derecho a él, "
+"mientras Lucas sigue la descendencia física. Divergen después de David "
+"porque un trono pasa por ley y la sangre pasa por nacimiento."
 
 #: genealogy_strings.py:282
 msgid ""
