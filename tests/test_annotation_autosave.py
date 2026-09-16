@@ -177,3 +177,55 @@ def test_tags_autosave_too(isolated, display):
             'KJVA', 'Genesis', 1)['1']['tags'] == ['creation', 'covenant']
     finally:
         win.destroy()
+
+
+def _labels(row):
+    stack, out = [row], []
+    while stack:
+        w = stack.pop()
+        if hasattr(w, 'get_label') and isinstance(w.get_label(), str):
+            out.append(w.get_label())
+        child = w.get_first_child()
+        while child is not None:
+            stack.append(child)
+            child = child.get_next_sibling()
+    return out
+
+
+def test_a_mark_without_a_note_shows_its_verse(isolated, display, monkeypatch):
+    """A row said only a colour, so finding a mark meant opening each one."""
+    monkeypatch.setattr(annotations_window.annotation_editors.MarkEditor,
+                        '_verse_text', lambda self, b, c, v: 'For God so\nloved')
+    annotations.save_highlight('KJVA', 'John', 3, 16, '#ffff00')
+    annotations.save_note('KJVA', 'Genesis', 1, 1, 'my note')
+    win = annotations_window.AnnotationsWindow(on_navigate=lambda *a: None)
+    try:
+        john = _select(win, 'John', 3, 16)
+        assert 'For God so loved' in _labels(john)
+        genesis = _select(win, 'Genesis', 1, 1)
+        assert 'my note' in _labels(genesis)
+        assert 'For God so loved' not in _labels(genesis)
+    finally:
+        win.destroy()
+
+
+def test_the_list_follows_a_mark_made_elsewhere(isolated, display):
+    """No Refresh button: a save from the reading view rebuilds the list, but
+    a save made while this window is in use leaves the rows alone."""
+    annotations.save_highlight('KJVA', 'John', 3, 16, '#ffff00')
+    win = annotations_window.AnnotationsWindow(on_navigate=lambda *a: None)
+    try:
+        win.get_visible = lambda: True
+        win.is_active = lambda: True
+        annotations.save_highlight('KJVA', 'Genesis', 1, 1, '#ffff00')
+        assert not win._store_reload_pending
+
+        win.is_active = lambda: False
+        annotations.save_underline('KJVA', 'Mark', 1, 1, True)
+        annotations.save_note('KJVA', 'Mark', 1, 1, 'twice, one rebuild')
+        assert win._store_reload_pending
+        win._reload_from_store()
+        assert len(list(_rows(win))) == 3
+    finally:
+        win.destroy()
+    assert annotations._on_change is None

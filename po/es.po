@@ -9947,3 +9947,11 @@ msgstr[1] "Los últimos {n} días, guardadas en este dispositivo"
 
 msgid "No daily copy yet"
 msgstr "Todavía no hay ninguna copia diaria"
+
+msgctxt "kind of mark"
+msgid "Highlight"
+msgstr "Resaltado"
+
+msgctxt "kind of mark"
+msgid "Underline"
+msgstr "Subrayado"

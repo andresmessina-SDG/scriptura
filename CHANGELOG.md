@@ -31,8 +31,17 @@ semver-ish — 0.x was the pre-Flathub testing track.
   lock and the swap button are hidden until there is a second pane. A lock
   that is on stays in sight, so a pane that isn't following navigation still
   says so.
+- **The annotations list shows the verse, and keeps itself current.** A
+  highlight or underline with no note shows a line of its verse, where it
+  showed only its colour. A mark made in the reading view appears in an
+  open list at once, so the Refresh button is gone.
 
 ### Fixed
+
+- **Russian and Spanish named a mark with a verb.** The annotations list
+  and exports labelled an underline «Подчеркнуть» and «Subrayar», which
+  read as an order to underline; they now read «Подчёркивание» and
+  «Subrayado», and highlights likewise.
 
 - **The back and forward buttons named the wrong keys.** Their tooltips
   said Alt+← and Alt+→, which change chapter.

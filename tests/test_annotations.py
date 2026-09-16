@@ -315,3 +315,26 @@ def test_a_write_that_succeeds_re_arms_the_report(unwritable, isolated,
                         str(isolated / 'no-such-dir' / 'annotations.json'))
     annotations.save_note('KJVA', 'Genesis', 1, 3, 'z')
     assert unwritable == [1, 1]
+
+
+# ── change handler ───────────────────────────────────────────────────────────
+
+def test_every_save_tells_the_change_handler(isolated, monkeypatch):
+    calls = []
+    monkeypatch.setattr(annotations, '_on_change', None)
+    annotations.set_change_handler(lambda: calls.append(1))
+    annotations.save_highlight(None, 'John', 3, 16, '#ffff00')
+    annotations.save_note(None, 'John', 3, 16, 'loved')
+    assert len(calls) == 2
+    annotations.set_change_handler(None)
+    annotations.save_underline(None, 'John', 3, 16, True)
+    assert len(calls) == 2
+
+
+def test_a_raising_handler_does_not_stop_the_save(isolated, monkeypatch):
+    def boom():
+        raise RuntimeError
+    monkeypatch.setattr(annotations, '_on_change', boom)
+    annotations.save_highlight(None, 'John', 3, 16, '#ffff00')
+    annotations._cache = None
+    assert annotations.get_annotations(None, 'John', 3)

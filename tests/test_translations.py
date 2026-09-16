@@ -274,6 +274,22 @@ def test_the_swatch_cue_letters_stay_distinct(catalogue):
         f'{lang}: {letters} — a cue is one character, the swatch is 28px')
 
 
+def test_a_kind_of_mark_is_a_noun(catalogue):
+    """The annotation list and exports name a mark "Underline" and
+    "Highlight", and the verse menu uses the same English words as verbs.
+    Sharing one msgid, Russian labelled a mark «Подчеркнуть», an order to
+    underline. The noun has its own context and must not read as the verb."""
+    lang, path = catalogue
+    entries = _parse_po_contexts(path)
+    nouns = {msgid: strs[0] for msgid, ctx, strs in entries
+             if ctx == 'kind of mark' and strs}
+    verbs = {msgid: strs[0] for msgid, ctx, strs in entries
+             if ctx is None and msgid in ('Underline', 'Highlight') and strs}
+    assert set(nouns) == {'Underline', 'Highlight'}, f'{lang}: {nouns}'
+    for word, noun in nouns.items():
+        assert noun and noun != verbs.get(word), (
+            f'{lang}: the mark {word!r} reads {noun!r}, the same as the verb')
+
 def test_every_book_name_is_translated(catalogue):
     """Book names are the one string set a reader meets on every screen, and
     they are dual-role — English stays the key, this is only the display

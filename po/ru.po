@@ -9887,3 +9887,11 @@ msgstr[2] "За последние {n} дней, хранятся на этом 
 
 msgid "No daily copy yet"
 msgstr "Ежедневных копий пока нет"
+
+msgctxt "kind of mark"
+msgid "Highlight"
+msgstr "Выделение"
+
+msgctxt "kind of mark"
+msgid "Underline"
+msgstr "Подчёркивание"
