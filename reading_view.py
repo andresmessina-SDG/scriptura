@@ -231,6 +231,77 @@ class BibleTextView(Gtk.TextView):
     _LEX_COLOR_DARK = '#7fa3c1'
     _LEX_COLOR_LIGHT = '#5a7fa3'
 
+    def get_iter_location(self, it):
+        """Where GTK draws the character at `it`, hidden text allowed for.
+
+        GTK 4 answers this from the character's byte index in the buffer
+        line, and looks that index up in a layout that leaves hidden text
+        out. So every character after a hidden footnote marker is reported
+        where a later character is drawn: one letter late per marker before
+        it in the paragraph. Measured on John 3 with footnotes off, 2,572 of
+        3,188 characters came back wrong, and an underline on verse 16 began
+        at "God" and ran on under the number 17.
+
+        The cursor position takes the hidden text out, and was right for
+        every character tested with footnotes off and on. The two agree to
+        the pixel wherever nothing is hidden, so GTK's own answer stands
+        there, quirks and all, and the cursor's replaces it only where they
+        part.
+        """
+        rect = Gtk.TextView.get_iter_location(self, it)
+        # The band painter asks this once per character; with nothing hidden
+        # a second lookup would only add to its cost.
+        if self._hides is None:
+            self._hides = self._find_hidden()
+        if not self._hides:
+            return rect
+        strong = self._cursor(it)
+        # Rounding alone parts them by a pixel, or two in height where a
+        # raised verse number shares the line; a hidden marker moves the
+        # answer a whole letter or more.
+        if abs(rect.x - strong.x) <= 1 and abs(rect.y - strong.y) <= 2:
+            return rect
+        rect.x, rect.y, rect.height = strong.x, strong.y, strong.height
+        nxt = it.copy()
+        if nxt.forward_cursor_position():
+            after = self._cursor(nxt)
+            if after.y == strong.y and after.x >= strong.x:
+                rect.width = after.x - strong.x
+        return rect
+
+    #: Whether any tag hides text; None until worked out, and again after a
+    #: tag is added or changed.
+    _hides = None
+    #: Cursor positions by offset, kept only while one paint is measuring:
+    #: the painter walks a line character by character, and each step's
+    #: right edge is the next step's left.
+    _cursor_memo = None
+
+    def _find_hidden(self):
+        table = self.get_buffer().get_tag_table()
+        if not getattr(self, '_hides_watched', False):
+            self._hides_watched = True
+            for signal in ('tag-added', 'tag-changed'):
+                table.connect(signal, self._forget_hidden)
+        hidden = []
+        table.foreach(
+            lambda t, _d: hidden.append(t)
+            if t.get_property('invisible') else None, None)
+        return bool(hidden)
+
+    def _forget_hidden(self, *_args):
+        self._hides = None
+
+    def _cursor(self, it):
+        memo = self._cursor_memo
+        if memo is None:
+            return self.get_cursor_locations(it)[0]
+        key = it.get_offset()
+        rect = memo.get(key)
+        if rect is None:
+            rect = memo[key] = self.get_cursor_locations(it)[0]
+        return rect
+
     def do_snapshot_layer(self, layer, snapshot):
         # Paint our bands/underlines via GtkTextView's BELOW_TEXT hook rather
         # than overriding do_snapshot. Overriding do_snapshot breaks the view's
@@ -239,10 +310,13 @@ class BibleTextView(Gtk.TextView):
         # runtime). snapshot_layer is the supported extension point and draws
         # in buffer coordinate space, so no buffer_to_window_coords is needed.
         if layer == _BELOW:
+            self._cursor_memo = {}
             try:
                 self._draw_highlights(snapshot)
             except Exception:
                 pass  # never let a paint glitch blank the reading view
+            finally:
+                self._cursor_memo = None
         elif layer == _ABOVE:
             try:
                 self._draw_above(snapshot)

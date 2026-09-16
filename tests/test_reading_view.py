@@ -495,3 +495,49 @@ def test_a_scroll_does_not_arm_the_watch(monkeypatch):
     for _ in range(20):                     # frame after frame of scrolling
         assert view._layout_settled() is True
     assert not armed
+
+
+# ── Positions past hidden text ───────────────────────────────────────────────
+
+def _laid_out(cls):
+    """A view holding `one two three four five six`, with a hidden letter
+    after `one` and after `two` — the shape hidden footnote markers give a
+    verse. Allocated but never shown."""
+    from gi.repository import Gtk
+    view = cls()
+    buf = view.get_buffer()
+    hidden = buf.create_tag('hidden', invisible=True)
+    buf.set_text('one two three four five six')
+    buf.insert_with_tags(buf.get_iter_at_offset(3), 'X', hidden)
+    buf.insert_with_tags(buf.get_iter_at_offset(8), 'Y', hidden)
+    view.measure(Gtk.Orientation.HORIZONTAL, -1)
+    view.measure(Gtk.Orientation.VERTICAL, 600)
+    view.allocate(600, 200, -1, None)
+    text = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True)
+    return view, buf.get_iter_at_offset(text.index('five'))
+
+
+def test_a_character_after_hidden_text_is_placed_where_it_is_drawn():
+    """Regression: with footnotes off, an underline on John 3:16 began at
+    "God" and ran on under the number 17. GTK placed every character one
+    letter late per hidden marker before it; its own cursor did not."""
+    from gi.repository import Gdk, Gtk
+    Gtk.init_check()
+    if Gdk.Display.get_default() is None:
+        import pytest
+        pytest.skip('needs a display: lays out a real text view')
+
+    plain, it = _laid_out(Gtk.TextView)
+    cursor, _weak = plain.get_cursor_locations(it)
+    assert Gtk.TextView.get_iter_location(plain, it).x > cursor.x + 1, (
+        'GTK no longer misplaces text after hidden text; the override in '
+        'BibleTextView can go')
+
+    view, it = _laid_out(rv.BibleTextView)
+    rect = view.get_iter_location(it)
+    cursor, _weak = view.get_cursor_locations(it)
+    after = it.copy()
+    after.forward_char()
+    next_cursor, _weak = view.get_cursor_locations(after)
+    assert rect.x == cursor.x
+    assert rect.width == next_cursor.x - cursor.x
