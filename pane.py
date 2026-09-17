@@ -45,6 +45,19 @@ from a11y import set_accessible_label
 from i18n import _, book_label, format_date_heading
 
 
+_PAPER_HEX = re.compile(r'^#[0-9a-fA-F]{6}$')
+
+
+def valid_paper(value):
+    """`value` when it is a `#rrggbb` colour, else None.
+
+    Every paper the app writes is one. A settings.json edited by hand can
+    hold anything, and `is_dark_paper` on "Paper" raised while the window
+    was being built, so the app would not open until the file was fixed.
+    Read the stored paper through this and a bad one means the default."""
+    return value if isinstance(value, str) and _PAPER_HEX.match(value) else None
+
+
 def is_dark_paper(paper_hex):
     """Whether a paper colour wants light ink on it.
 
@@ -1524,7 +1537,8 @@ class BiblePane(Gtk.Box):
         self._font_bold    = settings.get('font_bold')
         self._font_justify = settings.get('font_justify')
         self._text_color   = settings.get(f'text_color_{settings.get("color_scheme") or "default"}')
-        self._bg_color     = settings.get(f'reading_bg_{settings.get("color_scheme") or "default"}')
+        self._bg_color     = valid_paper(
+            settings.get(f'reading_bg_{settings.get("color_scheme") or "default"}'))
         self._evening_strength = 0.0   # night-light paper shift (window-fed)
         self._css_provider = Gtk.CssProvider()
         self._view.get_style_context().add_provider(
@@ -2065,7 +2079,7 @@ class BiblePane(Gtk.Box):
         if 'font_bold'    in kwargs: self._font_bold    = kwargs['font_bold']
         if 'font_justify' in kwargs: self._font_justify = kwargs['font_justify']
         if 'text_color'   in kwargs: self._text_color   = kwargs['text_color']
-        if 'bg_color'     in kwargs: self._bg_color     = kwargs['bg_color']
+        if 'bg_color'     in kwargs: self._bg_color     = valid_paper(kwargs['bg_color'])
         self._update_font_css()
         # The card-mode documents scale with the same reading font size
         # (only archaeology and catena actually re-scale; the rest no-op).

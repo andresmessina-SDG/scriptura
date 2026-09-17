@@ -29,7 +29,7 @@ import annotation_dialogs
 import export_dialog
 import passage_print
 from pane import (BiblePane, DROPCAP_GOLD_DARK, DROPCAP_GOLD_LIGHT,
-                  auto_reading_ink, dropcap_color_hex)
+                  auto_reading_ink, dropcap_color_hex, valid_paper)
 from present import PresentView
 from today_page import TodayView, fetch_antiphon, fetch_epigraph
 from module_manager import ModuleManagerWindow
@@ -1550,7 +1550,7 @@ class BibleWindow(Adw.ApplicationWindow):
             nxt = child.get_next_sibling()
             self._paper_box.remove(child)
             child = nxt
-        paper_stored = settings.get(self._current_bg_key())
+        paper_stored = valid_paper(settings.get(self._current_bg_key()))
         ink_stored = settings.get(self._current_mode_key())
         pnorm = (paper_stored or '').lower()
         papers = self._papers()
@@ -1604,7 +1604,7 @@ class BibleWindow(Adw.ApplicationWindow):
         # dialog is parented to the window (not the popover), so dismissing the
         # popover can't orphan it; unparent is deferred to idle to avoid
         # destroying a row mid-click.
-        paper_stored = settings.get(self._current_bg_key())
+        paper_stored = valid_paper(settings.get(self._current_bg_key()))
         ink_stored = settings.get(self._current_mode_key())
         eff_paper = paper_stored or self._papers()[0][1]
         eff_ink = ink_stored or auto_reading_ink(eff_paper)
