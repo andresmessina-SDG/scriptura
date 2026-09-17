@@ -229,3 +229,40 @@ def test_the_list_follows_a_mark_made_elsewhere(isolated, display):
     finally:
         win.destroy()
     assert annotations._on_change is None
+
+
+def test_a_mark_made_elsewhere_leaves_the_open_manuscript_alone(
+        isolated, display, monkeypatch):
+    """The live list rebuilds the detail pane too. Re-populating the open
+    sermon with the words it already holds moved the cursor to the end,
+    dropped the scroll and cleared the undo history — for underlining a
+    verse in the reading view."""
+    import sermons
+    monkeypatch.setattr(sermons, 'SERMONS_FILE',
+                        str(isolated / 'sermons.json'))
+    monkeypatch.setattr(sermons, '_cache', None)
+    body = '\n'.join(f'Paragraph {i} of the manuscript.' for i in range(80))
+    sermons.save('s1', title='The Sower', body=body,
+                 anchors=[{'book': 'Matthew', 'chapter': 13, 'verses': []}])
+    win = annotations_window.AnnotationsWindow(on_navigate=lambda *a: None)
+    try:
+        win.select_sermon('s1')
+        buf = win._sermon_editor.body.get_buffer()
+        buf.place_cursor(buf.get_iter_at_offset(600))
+        buf.begin_user_action()
+        buf.insert_at_cursor(' amen')
+        buf.end_user_action()
+        win._autosave.flush()
+        assert buf.get_can_undo()
+
+        win.get_visible = lambda: True
+        win.is_active = lambda: False
+        annotations.save_underline('KJVA', 'Mark', 1, 1, True)
+        win._reload_from_store()
+
+        assert win._current_entry['id'] == 's1'
+        assert buf.get_iter_at_mark(buf.get_insert()).get_offset() == 605
+        assert buf.get_can_undo()
+        assert buf.get_text(*buf.get_bounds(), False) == body[:600] + ' amen' + body[600:]
+    finally:
+        win.destroy()
