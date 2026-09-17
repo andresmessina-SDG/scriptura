@@ -317,3 +317,14 @@ def test_the_fallback_never_shadows_a_real_install(tmp_path, monkeypatch):
     (tmp_path / 'share' / 'scriptura' / 'locale').mkdir(parents=True)
     got = _localedir_from(tmp_path, monkeypatch, 'share/scriptura/i18n.py')
     assert got == str(tmp_path / 'share' / 'locale')
+
+
+def test_a_language_setting_that_is_not_a_string_is_ignored(monkeypatch):
+    """settings.json edited by hand can hold anything under ui_language; the
+    gettext setup runs before the first window and a list there raised in
+    os.environ, so the app never started."""
+    import main
+    monkeypatch.delenv('LANGUAGE', raising=False)
+    monkeypatch.setattr(settings, 'get', lambda key: [1, 2, 3])
+    main._setup_gettext()
+    assert 'LANGUAGE' not in os.environ

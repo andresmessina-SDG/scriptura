@@ -53,7 +53,8 @@ def _setup_gettext():
         chosen = settings.get('ui_language')
     except Exception:
         chosen = None
-    if chosen:
+    # A hand-edited file can hold anything here; only a code is a language.
+    if chosen and isinstance(chosen, str):
         os.environ['LANGUAGE'] = chosen
     try:
         locale.setlocale(locale.LC_ALL, '')
