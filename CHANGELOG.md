@@ -6,6 +6,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+## [1.7.2] — 2026-09-17
+
 ### Added
 
 - **Textual variants in the Greek interlinear.** A Variants chip beside
@@ -85,7 +87,6 @@ semver-ish — 0.x was the pre-Flathub testing track.
   and exports labelled an underline «Подчеркнуть» and «Subrayar», which
   read as an order to underline; they now read «Подчёркивание» and
   «Subrayado», and highlights likewise.
-
 - **The back and forward buttons named the wrong keys.** Their tooltips
   said Alt+← and Alt+→, which change chapter.
 - **Two copies of the app could erase each other's notes.** Opening
