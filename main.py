@@ -2,12 +2,13 @@ import gettext
 import locale
 import logging
 import os
+import signal
 import sys
 from urllib.parse import unquote
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, Gdk, Gio
+from gi.repository import Gtk, Adw, Gdk, Gio, GLib
 
 
 APP_ID = 'io.github.andresmessina_SDG.Scriptura'
@@ -423,10 +424,41 @@ def relaunch_requested():
     return bool(os.environ.get(_RELAUNCH_ENV))
 
 
+#: How often a running app asks for the day's copy. The copy is written
+#: once a day whatever the answer, so this only sets how long after midnight
+#: an app left open makes it.
+_DAILY_TICK_S = 3600
+
+
+def _daily_tick():
+    backup.daily_copy()
+    return GLib.SOURCE_CONTINUE
+
+
+def _on_session_end(app):
+    """SIGTERM, SIGHUP or SIGINT: the session is ending the process.
+
+    Close the windows first, because close-request is where the editors
+    write what they still hold and the main window records its session; a
+    bare exit would lose up to the autosave delay of typing. Then quit.
+    """
+    for win in app.get_windows():
+        win.close()
+    app.quit()
+    return GLib.SOURCE_REMOVE
+
+
+def _listen_for_session_end(app):
+    for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT):
+        GLib.unix_signal_add(GLib.PRIORITY_HIGH, sig, _on_session_end, app)
+
+
 def _on_startup(app):
     # `startup` fires only in the copy that owns the window, never in a
     # launch that hands off to it, and before any store is changed.
     backup.daily_copy()
+    # An app left open for a week made no copy after its first day.
+    GLib.timeout_add_seconds(_DAILY_TICK_S, _daily_tick)
     # Started by the desktop's search, with no window: stay up between
     # keystrokes, then quit once the reader has stopped typing.
     if app.get_flags() & Gio.ApplicationFlags.IS_SERVICE:
@@ -436,6 +468,7 @@ def _on_startup(app):
 def main():
     app = BibleApp(unique=True)
     app.connect('startup', _on_startup)
+    _listen_for_session_end(app)
     # argv carries `--gapplication-service` when the desktop's search starts
     # the app, and a `bible:` link to hand on to a copy already open.
     app.run(sys.argv)

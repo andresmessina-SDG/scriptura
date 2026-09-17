@@ -10,6 +10,7 @@ import annotations
 import backup
 import bookmarks
 import journal
+import paths
 import reading_plans
 import sermons
 
@@ -28,6 +29,12 @@ def isolated(tmp_path, monkeypatch):
     monkeypatch.setattr(reading_plans, '_FILE',
                         str(tmp_path / 'reading_plans.json'))
     monkeypatch.setattr(reading_plans, '_cache', None)
+    # A restore writes a safety copy beside the daily ones first; keep it
+    # out of the developer's real backups folder.
+    def backups_dir():
+        (tmp_path / 'backups').mkdir(exist_ok=True)
+        return str(tmp_path / 'backups')
+    monkeypatch.setattr(paths, 'backups_dir', backups_dir)
     return tmp_path
 
 
@@ -313,3 +320,58 @@ def test_a_failed_copy_leaves_nothing_behind(isolated, monkeypatch):
     assert backup.daily_copy(str(folder), _day(0)) is None
     assert backup.newest_daily_copy(str(folder)) is None
     assert sorted(p.name for p in folder.iterdir()) == []
+
+
+# ── the copy a restore takes first ───────────────────────────────────────────
+
+def test_restore_keeps_a_copy_of_what_it_replaces(isolated):
+    """The daily copy is from launch. A sermon written since, then the wrong
+    file chosen in Restore…, was gone: the confirm dialog says "replaced",
+    and nothing kept the replaced words. Now a copy is written first."""
+    _populate()
+    folder = isolated / 'backups'
+    assert backup.restore(backup.validate(
+        {'format': backup.FORMAT, 'version': 1})) == []
+    assert sermons.all_sermons() == []
+    copies = [p for p in folder.iterdir()
+              if p.name.endswith('-before-restore.json')]
+    assert len(copies) == 1
+    with open(copies[0], encoding='utf-8') as f:
+        kept = backup.validate(json.load(f))
+    assert backup.counts(kept)['sermons'] == 1
+    # And it is a file Restore… can bring back.
+    assert backup.restore(kept) == []
+    assert sermons.all_sermons()[0]['title'] == 'The Sower Went Forth'
+
+
+def test_two_restores_in_a_day_keep_both_copies(isolated):
+    _populate()
+    folder = isolated / 'backups'
+    doc = backup.collect()
+    backup.restore(doc)
+    backup.restore(doc)
+    assert len([p for p in folder.iterdir()
+                if '-before-restore' in p.name]) == 2
+
+
+def test_a_safety_copy_is_not_the_newest_daily_copy(isolated):
+    """The Daily Copies row opens on the newest copy; the day's own copy is
+    the one to land on, with the restore copies beside it."""
+    _populate()
+    folder = isolated / 'backups'
+    folder.mkdir()
+    backup.daily_copy(str(folder), datetime.date.today())
+    backup.restore(backup.collect())
+    assert backup.newest_daily_copy(str(folder)).endswith(
+        f'{datetime.date.today().isoformat()}.json')
+
+
+def test_a_failed_safety_copy_does_not_stop_the_restore(isolated, monkeypatch):
+    """The reader confirmed; a folder that cannot be written is logged, not
+    a reason to refuse. The stores' own writes still report as before."""
+    _populate()
+    monkeypatch.setattr(paths, 'backups_dir',
+                        lambda: str(isolated / 'missing' / 'deeper'))
+    assert backup.restore(backup.validate(
+        {'format': backup.FORMAT, 'version': 1})) == []
+    assert sermons.all_sermons() == []

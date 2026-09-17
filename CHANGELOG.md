@@ -34,8 +34,13 @@ semver-ish — 0.x was the pre-Flathub testing track.
   mouse's back and forward buttons, move through the passages you visited.
 - **A daily copy of your study data.** Each day the app is first opened, it
   saves your annotations, journal, sermons, bookmarks and plan progress to a
-  folder on this device and keeps the last 14 copies. *Daily Copies* in the
-  menu opens that folder, and *Restore…* starts there.
+  folder on this device and keeps the last 14 copies. An app left open
+  across midnight makes the next day's copy within the hour. *Daily Copies*
+  in the menu opens that folder, and *Restore…* starts there.
+- **Restore… keeps what it replaces.** Before a restore, a copy of your
+  current study data is written beside the daily copies, named
+  *before-restore*, so the wrong file chosen is one more Restore… from
+  undone.
 - **Look up a verse from the GNOME search.** Type a reference such as
   "John 3:16" in Activities to see the verse in the translation you last
   read; Enter opens Scriptura there. A book name alone is not enough, so
@@ -63,6 +68,9 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - **Closing the main window could drop the last sentence of a sermon.** An
   edit still waiting to be saved in the Annotations window was lost when the
   main window closed first. It is written now.
+- **Logging out could drop the last sentence too.** The session ending the
+  app skipped the close path where the editors write. The app now closes its
+  windows first, so what was queued is written and the reading position kept.
 - **Restoring study data could keep an old sermon.** If Restore… ran while
   the Annotations window still had an edit waiting to be saved, that edit
   was written over the restored file a moment later: the window showed the
