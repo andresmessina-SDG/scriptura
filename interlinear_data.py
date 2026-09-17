@@ -15,7 +15,9 @@ interlinear's Variants chip and the passage export read them through
 
 Hebrew: the rendered stream is Leningrad plus Qere readings plus the
 verses Leningrad omits but the KJV-shaped app-space carries (type L/Q/R;
-X-typed insertion rows are stored but not rendered). TAHOT references
+X-typed insertion rows are stored but not rendered). A Qere row keeps the
+Ketiv, the form the scribes wrote, in its variants column; the
+interlinear's Ketiv chip shows it under the read form (`ketiv()`). TAHOT references
 are already English-first (`Psa.56.7(56.8)`), so no versification
 mapping is needed. Surface forms arrive morpheme-slashed with
 backslash-escaped punctuation and parashah markers — cleaned at parse.
@@ -43,8 +45,9 @@ GREEK = 'InterlinearGreek'
 HEBREW = 'InterlinearHebrew'
 
 # Stamped in PRAGMA user_version at build. 2 added the apparatus columns
-# (variant, note); a database from before is migrated to answer every
-# query with them empty, and needs_rebuild() tells the Module Manager a
+# (variant, note: the Greek editions' other readings and notes, the
+# Hebrew Ketiv); a database from before is migrated to answer every query
+# with them empty, and needs_rebuild() tells the Module Manager a
 # re-download would fill them.
 SCHEMA_VERSION = 2
 
@@ -306,12 +309,18 @@ def parse_line_hebrew(line: str) -> Optional[ParsedRow]:
         # before the »-alternatives, minus the leading punctuation.
         lemma_gloss = lm.group(2).split('»')[0].lstrip(':').strip()
 
+    # Column 6 holds the variants — the Ketiv under a Qere word among them
+    # (`K= 'a.cho.ta/i (אַחוֹתַ/י) "sister/ my" (…)`), read by
+    # parse_hebrew_variants. Column 7's spelling variants are not kept:
+    # the source says they change nothing and does not lay them out.
+    variant = fields[6].strip() if len(fields) > 6 else ''
+
     return ParsedRow(
         book=book, chapter=int(chapter), verse=int(verse), pos=int(pos),
         wtype=wtype, surface=surface, translit=translit, gloss=gloss,
         strongs=strongs, strongs_all=strongs_all, strongs_ext=chain,
         morph=morph, lemma=lemma, lemma_gloss=lemma_gloss,
-        editions='', rendered=not wtype.startswith('X'),
+        editions='', rendered=not wtype.startswith('X'), variant=variant,
     )
 
 
@@ -510,46 +519,47 @@ def remove(name: str) -> None:
 # and callers run on pane worker threads, so per-call connections avoid
 # cross-thread sharing entirely.
 
-_migrated = False
-# Two panes can load Greek chapters concurrently (dual-pane session
-# restore); without the lock both threads pass the flag check and race
-# the ALTER on separate connections — the loser raises OperationalError.
+_migrated: set[str] = set()     # module names migrated this process
+# Two panes can load chapters concurrently (dual-pane session restore);
+# without the lock both threads pass the flag check and race the ALTER on
+# separate connections — the loser raises OperationalError.
 _migrate_lock = threading.Lock()
 
 
 def _migrate(conn: sqlite3.Connection, name: str) -> None:
-    """One-shot cleanup of Greek databases built before parse_line
-    stripped TAGNT's ¶/¬ layout markers and before the column rename —
-    saves an existing install the 29 MB re-download. Gated on cheap
-    probes so clean databases pay a LIMIT-1 scan per process."""
-    global _migrated
-    if _migrated or name != GREEK:
+    """One-shot cleanup of databases built before the current schema —
+    saves an existing install the re-download. Gated on cheap probes so
+    clean databases pay a LIMIT-1 scan per process.
+
+    Greek: parse_line once left TAGNT's ¶/¬ layout markers in surfaces,
+    and a column was renamed. Both: schema 2's columns are added empty —
+    the data is in the raw files, not on disk — so user_version stays
+    below SCHEMA_VERSION and needs_rebuild() keeps offering the update."""
+    if name in _migrated:
         return
     with _migrate_lock:
-        if _migrated:
+        if name in _migrated:
             return
         cols = [r[1] for r in conn.execute('PRAGMA table_info(words)')]
         if 'in_na' in cols:
             conn.execute('ALTER TABLE words RENAME COLUMN in_na TO in_stream')
             conn.commit()
-        # Schema 2: the apparatus columns. Empty here — the data is in the
-        # raw files, not on disk — so user_version stays below
-        # SCHEMA_VERSION and needs_rebuild() keeps offering the update.
         for col in ('variant', 'note'):
             if col not in cols:
                 conn.execute(
                     f"ALTER TABLE words ADD COLUMN {col} TEXT NOT NULL DEFAULT ''")
                 conn.commit()
-        dirty = conn.execute(
-            "SELECT 1 FROM words WHERE surface LIKE '%¶%' "
-            "OR surface LIKE '%¬%' LIMIT 1").fetchone()
-        if dirty:
-            conn.execute(
-                "UPDATE words SET surface = TRIM(REPLACE(REPLACE("
-                "surface, '¶', ''), '¬', '')) "
-                "WHERE surface LIKE '%¶%' OR surface LIKE '%¬%'")
-            conn.commit()
-        _migrated = True
+        if name == GREEK:
+            dirty = conn.execute(
+                "SELECT 1 FROM words WHERE surface LIKE '%¶%' "
+                "OR surface LIKE '%¬%' LIMIT 1").fetchone()
+            if dirty:
+                conn.execute(
+                    "UPDATE words SET surface = TRIM(REPLACE(REPLACE("
+                    "surface, '¶', ''), '¬', '')) "
+                    "WHERE surface LIKE '%¶%' OR surface LIKE '%¬%'")
+                conn.commit()
+        _migrated.add(name)
 
 
 def load_chapter(name: str, book: str, chapter: int) -> list[Word]:
@@ -594,7 +604,7 @@ def load_chapter_full(name: str, book: str, chapter: int) -> list[Word]:
 def needs_rebuild(name: str) -> bool:
     """Whether an installed database predates the apparatus columns and a
     re-download would fill them. False when nothing is installed."""
-    if name != GREEK or not is_installed(name):
+    if not is_installed(name):
         return False
     conn = sqlite3.connect(_DB_FILES[name])
     try:
@@ -672,6 +682,65 @@ def parse_reading(raw: str) -> Optional[Reading]:
     surface, mark, translit, gloss = m.groups()
     return Reading(surface.strip(), translit.strip(), gloss.strip(),
                    eds.strip(), mark.islower())
+
+
+class HebrewReading(NamedTuple):
+    """One entry of a TAHOT variants column: `K=` is the Ketiv, the
+    others (A, B, S…) manuscripts and editions the chip does not show."""
+    source: str
+    surface: str
+    translit: str
+    gloss: str
+
+
+class Ketiv(NamedTuple):
+    written: str
+    translit: str
+    gloss: str
+    minor: bool     # TAHOT's own judgement: Q(k), a difference that need
+                    # not change the translation
+
+
+_HEB_VARIANT_RE = re.compile(
+    r'^([A-Za-z]+)=\s*(\S+)\s*\(([^)]*)\)\s*"([^"]*)"\s*\([^)]*\)\s*$')
+
+
+def parse_hebrew_variants(raw: str) -> list[HebrewReading]:
+    """`K= 'a.cho.ta/i (אַחוֹתַ/י) "sister/ my" (H0269/H9020=…)`, `¦`-joined
+    → readings, with the morpheme slashes and escapes cleaned the way the
+    surface forms are."""
+    out = []
+    for entry in raw.split('¦'):
+        m = _HEB_VARIANT_RE.match(entry.strip())
+        if not m:
+            continue
+        source, translit, surface, gloss = m.groups()
+        out.append(HebrewReading(
+            source, surface.replace('\\', '').replace('/', '').strip(),
+            translit.replace('/', '').strip(),
+            ' '.join(gloss.replace('/', ' ').split())))
+    return out
+
+
+def ketiv(word: Word) -> Optional[Ketiv]:
+    """The written form under a Qere word, or None: for a word Leningrad
+    reads as written, and for a Qere whose Ketiv differs only in spelling
+    (TAHOT records no K entry for those)."""
+    if not word.wtype.startswith('Q') or not word.variant:
+        return None
+    for reading in parse_hebrew_variants(word.variant):
+        if reading.source == 'K':
+            return Ketiv(reading.surface, reading.translit, reading.gloss,
+                         'k' in word.wtype)
+    return None
+
+
+def ketiv_note(word: Word, k: Ketiv) -> str:
+    """The tooltip sentence for a Qere word."""
+    return _('Written (Ketiv) {written} “{written_gloss}”; '
+             'read (Qere) {read} “{read_gloss}”.').format(
+        written=k.written, written_gloss=k.gloss,
+        read=word.surface, read_gloss=word.gloss)
 
 
 def _named(names: list[str], last_sep: str) -> str:

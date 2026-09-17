@@ -9681,3 +9681,23 @@ msgstr "и"
 #: module_manager.py
 msgid "A newer build adds the textual variants"
 msgstr "Новая сборка добавляет разночтения"
+
+#: interlinear_view.py
+msgid "Ketiv"
+msgstr "Кетив"
+
+#: interlinear_view.py
+msgid ""
+"The written form (Ketiv) under the read form (Qere) where the scribes "
+"corrected the text"
+msgstr ""
+"Написанная форма (кетив) под читаемой (кере) там, где писцы исправили "
+"текст"
+
+#: interlinear_data.py
+msgid "Written (Ketiv) {written} “{written_gloss}”; read (Qere) {read} “{read_gloss}”."
+msgstr "Написано (кетив) {written} «{written_gloss}»; читается (кере) {read} «{read_gloss}»."
+
+#: module_manager.py
+msgid "A newer build adds the Ketiv readings"
+msgstr "Новая сборка добавляет чтения кетив"

@@ -19,6 +19,11 @@ semver-ish — 0.x was the pre-Flathub testing track.
   interlinear installed before this release shows an Update button in
   the Module Manager, since the other readings and notes come with the
   new build.
+- **Ketiv under Qere in the Hebrew interlinear.** A Ketiv chip beside
+  Accents. With it on, a word the scribes corrected shows the form they
+  wrote under the form that is read, with its gloss (Joshua 2:13 reads
+  “sisters” over a written “sister”). Hovering names both. An interlinear
+  installed before this release shows the same Update button.
 - **Find and replace in journal entries and sermons.** Ctrl+F, or the
   search button at the head of the page, finds a word without regard to
   case and steps through every use of it; Ctrl+H adds a replace field.

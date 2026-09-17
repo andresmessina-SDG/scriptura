@@ -9736,3 +9736,23 @@ msgstr "ni"
 #: module_manager.py
 msgid "A newer build adds the textual variants"
 msgstr "Una versión más reciente añade las variantes textuales"
+
+#: interlinear_view.py
+msgid "Ketiv"
+msgstr "Ketiv"
+
+#: interlinear_view.py
+msgid ""
+"The written form (Ketiv) under the read form (Qere) where the scribes "
+"corrected the text"
+msgstr ""
+"La forma escrita (ketiv) bajo la forma leída (qeré) donde los escribas "
+"corrigieron el texto"
+
+#: interlinear_data.py
+msgid "Written (Ketiv) {written} “{written_gloss}”; read (Qere) {read} “{read_gloss}”."
+msgstr "Escrito (ketiv) {written} «{written_gloss}»; leído (qeré) {read} «{read_gloss}»."
+
+#: module_manager.py
+msgid "A newer build adds the Ketiv readings"
+msgstr "Una versión más reciente añade las lecturas ketiv"

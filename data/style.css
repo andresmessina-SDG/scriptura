@@ -961,6 +961,15 @@ button.menu-theme-toggle {
     color: alpha(currentColor, 0.6);
     margin-top: 1px;
 }
+/* The Ketiv under a Qere word: the written form, in the Hebrew face a
+   size down from the read one, dimmed. */
+.interlinear-ketiv {
+    font-family: 'Noto Serif Hebrew', 'SBL Hebrew', 'Ezra SIL',
+                 'Taamey Frank CLM', serif;
+    font-size: 17px;
+    color: alpha(currentColor, 0.55);
+    margin-top: 2px;
+}
 .interlinear-cell-variant {
     /* Nothing at rest: the brackets and the dimmed word carry it. Here so
        the class the code adds is defined (test_style_css), and as the hook

@@ -40,7 +40,7 @@ def greek_db(tmp_path, monkeypatch):
     monkeypatch.setitem(idata._MODULES[idata.GREEK], 'urls',
                         ['file://' + urllib.request.pathname2url(str(raw))])
     monkeypatch.setitem(idata._MODULES[idata.GREEK], 'min_words', 1)
-    monkeypatch.setattr(idata, '_migrated', False)
+    monkeypatch.setattr(idata, '_migrated', set())
     idata.download_and_build(idata.GREEK)
 
 
@@ -132,3 +132,44 @@ def _walk(widget):
         yield child
         yield from _walk(child)
         child = child.get_next_sibling()
+
+
+from tests.test_interlinear_data import HEB_ROW_QERE_REAL, HEB_ROW_PREFIXED
+
+
+@pytest.fixture
+def hebrew_db(tmp_path, monkeypatch):
+    raw = tmp_path / 'tahot.txt'
+    raw.write_text('\n'.join([HEB_ROW_PREFIXED, HEB_ROW_QERE_REAL]) + '\n',
+                   encoding='utf-8')
+    import urllib.request
+    monkeypatch.setitem(idata._DB_FILES, idata.HEBREW,
+                        str(tmp_path / 'hebrew.sqlite'))
+    monkeypatch.setitem(idata._MODULES[idata.HEBREW], 'urls',
+                        ['file://' + urllib.request.pathname2url(str(raw))])
+    monkeypatch.setitem(idata._MODULES[idata.HEBREW], 'min_words', 1)
+    monkeypatch.setattr(idata, '_migrated', set())
+    idata.download_and_build(idata.HEBREW)
+
+
+def test_the_ketiv_chip_shows_the_written_form_under_the_read_one(
+        display, hebrew_db, monkeypatch):
+    import settings
+    monkeypatch.setattr(settings, 'get', lambda key: None)
+    monkeypatch.setattr(settings, 'put', lambda key, value: None)
+    from interlinear_view import InterlinearReader
+    reader = InterlinearReader(pane=None)
+    reader.render_for(idata.HEBREW, 'Joshua', 2, 13)
+    assert _pump_until(lambda: len(reader._cells) == 1)
+    # Hebrew shows the Ketiv chip, not the Greek Variants one.
+    assert reader._chip_btns['ketiv'].get_visible()
+    assert not reader._chip_btns['variants'].get_visible()
+    cell, labels = reader._cells[0]
+    assert labels['_surface_full'] == 'אַחְיוֹתַ֔י'
+    assert not labels['variants'].get_visible()
+    assert cell.get_tooltip_text().startswith('Written (Ketiv) אַחוֹתַי')
+    reader._chip_btns['ketiv'].set_active(True)
+    assert labels['variants'].get_visible()
+    assert _texts(labels['variants']) == ['אַחוֹתַי', '“sister my”']
+    reader._chip_btns['ketiv'].set_active(False)
+    assert not labels['variants'].get_visible()

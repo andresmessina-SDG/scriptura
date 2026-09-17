@@ -453,7 +453,7 @@ def test_an_old_database_gains_the_columns_and_asks_for_a_rebuild(
     conn.commit()
     conn.close()
     monkeypatch.setitem(idata._DB_FILES, idata.GREEK, str(db))
-    monkeypatch.setattr(idata, '_migrated', False)
+    monkeypatch.setattr(idata, '_migrated', set())
     assert idata.needs_rebuild(idata.GREEK)
     words = idata.chapter_variants(idata.GREEK, 'John', 1)
     assert words[0].variant == '' and words[0].note == ''
@@ -475,7 +475,7 @@ def test_a_fresh_build_carries_the_apparatus(tmp_path, monkeypatch):
                         str(tmp_path / 'greek.sqlite'))
     monkeypatch.setitem(idata._MODULES[idata.GREEK], 'urls', _file_urls([str(raw)]))
     monkeypatch.setitem(idata._MODULES[idata.GREEK], 'min_words', 1)
-    monkeypatch.setattr(idata, '_migrated', False)
+    monkeypatch.setattr(idata, '_migrated', set())
     idata.download_and_build(idata.GREEK)
     assert not idata.needs_rebuild(idata.GREEK)
     john = idata.chapter_variants(idata.GREEK, 'John', 1)
@@ -483,3 +483,107 @@ def test_a_fresh_build_carries_the_apparatus(tmp_path, monkeypatch):
     matt = idata.load_chapter_full(idata.GREEK, 'Matthew', 1)
     assert [(w.surface, w.in_stream) for w in matt] == [('Βίβλος', True), ('ὁ', False)]
     assert [w.surface for w in idata.load_chapter(idata.GREEK, 'Matthew', 1)] == ['Βίβλος']
+
+
+# ── Qere / Ketiv ─────────────────────────────────────────────────────────────
+# Real TAHOT rows. Joshua 2:13 reads "sisters" (Qere) over the written
+# "sister"; Nehemiah 2:13 carries two variants, the Ketiv second.
+HEB_ROW_QERE_REAL = (
+    "Jos.2.13#09=Q(K)\tאַחְיוֹתַ֔/י\t'a.cho.ta/i\tsisters/ my\t{H0269}/H9020\t"
+    "HNcfpc/Sp1bs\tK= 'a.cho.ta/i (אַחוֹתַ/י) \"sister/ my\" "
+    "(H0269/H9020=HNcfsc/Sp1bs)\tL= אַחְוֹתַ֔/י ¦ ;\tH0269\t\t\t"
+    "{H0269=אָחוֹת=sister}/H9020=Ps1c=my\t\t\t\t\t")
+HEB_ROW_TWO_VARIANTS = (
+    "Neh.2.13#17=Q(K)\tהֵ֣ם\\׀/ /פְּרוּצִ֔ים\them/ /fe.ru.tzim\tthey/ /[were] "
+    "broken down\t{H1992}\\H9015/ /{H6555}\tHPp3mp//Vqsmpa\tB= he/m.fe.ru.tzim "
+    "(הֵ֣/מפְּרוּצִ֔ים) \"<the>/ [had been] broken down\" (H9009/{H6555}=HTd/Pp3mp)"
+    " ¦ K= ha/me.for.va.tzim (הַ/מְפֹרוָצִים) \"<the>/ [had been] broken down\" "
+    "(H9009/H6555=HTd/Pp3mp)\tL= הֵ֣מ\\׀//פְּרוּצִ֔ים\tH1992, H6555\t\t\t"
+    "{H1992=הֵ֫מָּה=they(masc.)}\\H9015=׀=separate/ /{H6555=פָּרַץ=to break through}"
+    "\t\t\t\t\t")
+
+
+def test_a_hebrew_row_keeps_its_variants_column():
+    row = idata.parse_line_hebrew(HEB_ROW_QERE_REAL)
+    assert row is not None
+    assert row.variant.startswith("K= 'a.cho.ta/i (אַחוֹתַ/י)")
+    assert row.note == ''
+
+
+def test_hebrew_variant_entries_are_parsed():
+    assert idata.parse_hebrew_variants(
+        "K= 'a.cho.ta/i (אַחוֹתַ/י) \"sister/ my\" (H0269/H9020=HNcfsc/Sp1bs)"
+    ) == [idata.HebrewReading('K', 'אַחוֹתַי', "'a.cho.tai", 'sister my')]
+    two = idata.parse_hebrew_variants(
+        idata.parse_line_hebrew(HEB_ROW_TWO_VARIANTS).variant)
+    assert [r.source for r in two] == ['B', 'K']
+    assert two[1] == idata.HebrewReading(
+        'K', 'הַמְפֹרוָצִים', 'hame.for.va.tzim', '<the> [had been] broken down')
+    assert idata.parse_hebrew_variants('') == []
+    assert idata.parse_hebrew_variants('garbage') == []
+
+
+def test_the_ketiv_is_read_off_a_qere_word():
+    w = idata.Word(13, 9, 'אַחְיוֹתַי', "'a.cho.tai", 'sisters my', 'H269', 'H269',
+                   'HNcfpc/Sp1bs', 'אָחוֹת', 'sister', True, 'Q(K)', '',
+                   "K= 'a.cho.ta/i (אַחוֹתַ/י) \"sister/ my\" (H0269/H9020=HNcfsc/Sp1bs)")
+    k = idata.ketiv(w)
+    assert k is not None
+    assert (k.written, k.gloss, k.minor) == ('אַחוֹתַי', 'sister my', False)
+    assert idata.ketiv_note(w, k) == (
+        'Written (Ketiv) אַחוֹתַי “sister my”; read (Qere) אַחְיוֹתַי “sisters my”.')
+
+
+def test_a_minor_ketiv_is_marked_and_a_plain_word_has_none():
+    minor = idata.Word(3, 8, 'וְלוֹ', 've.Lo', 'and to him', 'H3808', '', 'HC/R/Sp3ms',
+                       '', '', True, 'Q(k)', '',
+                       'K= ve.lo (וְלֹא) "and not" (H9002/H3808=HC/Tn)')
+    k = idata.ketiv(minor)
+    assert k is not None and k.minor and k.written == 'וְלֹא'
+    plain = idata.Word(1, 1, 'בְּרֵאשִׁית', '', 'in beginning', 'H7225', '', '', '', '',
+                       True, 'L', '', '')
+    assert idata.ketiv(plain) is None
+    # A Qere whose Ketiv differs only in spelling carries no K entry.
+    assert idata.ketiv(plain._replace(wtype='Q(K)')) is None
+
+
+def test_an_old_hebrew_database_gains_the_column_and_asks_for_a_rebuild(
+        tmp_path, monkeypatch):
+    db = tmp_path / 'hebrew.sqlite'
+    conn = sqlite3.connect(db)
+    conn.execute('''CREATE TABLE words (
+        book TEXT NOT NULL, chapter INTEGER NOT NULL, verse INTEGER NOT NULL,
+        pos INTEGER NOT NULL, wtype TEXT NOT NULL, in_stream INTEGER NOT NULL,
+        surface TEXT NOT NULL, translit TEXT NOT NULL, gloss TEXT NOT NULL,
+        strongs TEXT NOT NULL, strongs_all TEXT NOT NULL,
+        strongs_ext TEXT NOT NULL, morph TEXT NOT NULL, lemma TEXT NOT NULL,
+        lemma_gloss TEXT NOT NULL, editions TEXT NOT NULL,
+        PRIMARY KEY (book, chapter, verse, pos)) WITHOUT ROWID''')
+    conn.execute('INSERT INTO words VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                 ('Joshua', 2, 13, 9, 'Q(K)', 1, 'אַחְיוֹתַי', "'a.cho.tai",
+                  'sisters my', 'H269', 'H269', '{H0269}/H9020', 'HNcfpc/Sp1bs',
+                  'אָחוֹת', 'sister', ''))
+    conn.commit()
+    conn.close()
+    monkeypatch.setitem(idata._DB_FILES, idata.HEBREW, str(db))
+    monkeypatch.setattr(idata, '_migrated', set())
+    assert idata.needs_rebuild(idata.HEBREW)
+    words = idata.load_chapter_full(idata.HEBREW, 'Joshua', 2)
+    assert words[0].wtype == 'Q(K)' and words[0].variant == ''
+    assert idata.ketiv(words[0]) is None
+    assert idata.needs_rebuild(idata.HEBREW)
+
+
+def test_a_fresh_hebrew_build_carries_the_ketiv(tmp_path, monkeypatch):
+    raw = tmp_path / 'tahot.txt'
+    raw.write_text('\n'.join([HEB_ROW_PREFIXED, HEB_ROW_QERE_REAL]) + '\n',
+                   encoding='utf-8')
+    monkeypatch.setitem(idata._DB_FILES, idata.HEBREW,
+                        str(tmp_path / 'hebrew.sqlite'))
+    monkeypatch.setitem(idata._MODULES[idata.HEBREW], 'urls', _file_urls([str(raw)]))
+    monkeypatch.setitem(idata._MODULES[idata.HEBREW], 'min_words', 1)
+    monkeypatch.setattr(idata, '_migrated', set())
+    idata.download_and_build(idata.HEBREW)
+    assert not idata.needs_rebuild(idata.HEBREW)
+    josh = idata.load_chapter_full(idata.HEBREW, 'Joshua', 2)
+    assert idata.ketiv(josh[0]).written == 'אַחוֹתַי'

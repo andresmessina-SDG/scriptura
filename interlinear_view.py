@@ -48,6 +48,7 @@ _LINES = [
     ('gloss',    True,  N_('Gloss')),
     ('parse',    True,  N_('Parsing')),
     ('variants', False, N_('Variants')),
+    ('ketiv',    False, N_('Ketiv')),
 ]
 _SETTINGS_KEY = 'interlinear_lines'
 
@@ -98,6 +99,9 @@ class InterlinearReader:
         self._chip_btns['variants'].set_tooltip_text(
             _('Textual variants: words other editions add, leave out or '
               'read differently'))
+        self._chip_btns['ketiv'].set_tooltip_text(
+            _('The written form (Ketiv) under the read form (Qere) where '
+              'the scribes corrected the text'))
         # Cantillation toggle — Hebrew only (shown/hidden per module). Not a
         # stacked line: it transforms the word text itself, so it has its
         # own handler rather than the visibility one above.
@@ -170,10 +174,16 @@ class InterlinearReader:
         self._module = module
         self._rtl = interlinear_data.is_hebrew(module)
         self._book, self._chapter = book, chapter
-        # The Greek chapter is loaded whole, the words other editions add
-        # included, so the Variants chip toggles without a reload.
-        load = (interlinear_data.load_chapter if self._rtl
-                else interlinear_data.load_chapter_full)
+        # The chapter is loaded whole, with the apparatus columns, so the
+        # Variants and Ketiv chips toggle without a reload. Hebrew keeps to
+        # the reading stream: its out-of-stream rows are LXX insertions,
+        # which the Ketiv chip is not about.
+        if self._rtl:
+            def load(m, b, c):
+                return [w for w in interlinear_data.load_chapter_full(m, b, c)
+                        if w.in_stream]
+        else:
+            load = interlinear_data.load_chapter_full
 
         # A failed load must still reach _show_chapter: a silently dead
         # worker would leave the previous chapter on screen under the new
@@ -196,6 +206,7 @@ class InterlinearReader:
         self._flow.set_rtl(self._rtl)
         self._accents_btn.set_visible(self._rtl)
         self._chip_btns['variants'].set_visible(not self._rtl)
+        self._chip_btns['ketiv'].set_visible(self._rtl)
         if not words:
             self._flow.set_visible(False)
             self._empty.set_label(
@@ -290,21 +301,35 @@ class InterlinearReader:
         # The apparatus: who carries or lacks the word, and what the other
         # tradition reads. Two small sans lines in the parsing register,
         # shown with the Variants chip; the source's note is the tooltip.
-        ap = (interlinear_data.apparatus(w)
-              if not self._rtl and (w.editions or w.variant) else None)
+        # Under Hebrew the same box holds the Ketiv: the written form in
+        # the Hebrew face, its gloss beneath, shown with the Ketiv chip.
         variants = None
-        if ap is not None and (ap.editions or ap.reading):
-            variants = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-            if ap.editions:
-                eds = Gtk.Label(label=ap.editions)
-                eds.add_css_class('interlinear-editions')
-                variants.append(eds)
-            if ap.reading:
-                reading = Gtk.Label(label=ap.reading)
-                reading.add_css_class('interlinear-reading')
-                variants.append(reading)
-            if ap.note:
-                cell.set_tooltip_text(ap.note)
+        if self._rtl:
+            k = interlinear_data.ketiv(w)
+            if k is not None:
+                variants = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+                written = Gtk.Label(label=k.written)
+                written.add_css_class('interlinear-ketiv')
+                variants.append(written)
+                kgloss = Gtk.Label(label=f'“{k.gloss}”')
+                kgloss.add_css_class('interlinear-reading')
+                variants.append(kgloss)
+                cell.set_tooltip_text(interlinear_data.ketiv_note(w, k))
+        else:
+            ap = (interlinear_data.apparatus(w)
+                  if w.editions or w.variant else None)
+            if ap is not None and (ap.editions or ap.reading):
+                variants = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+                if ap.editions:
+                    eds = Gtk.Label(label=ap.editions)
+                    eds.add_css_class('interlinear-editions')
+                    variants.append(eds)
+                if ap.reading:
+                    reading = Gtk.Label(label=ap.reading)
+                    reading.add_css_class('interlinear-reading')
+                    variants.append(reading)
+                if ap.note:
+                    cell.set_tooltip_text(ap.note)
         labels['variants'] = variants
         labels['_variant_cell'] = not w.in_stream
 
@@ -321,7 +346,8 @@ class InterlinearReader:
             for lbl in variants:
                 lbl.set_halign(align)
                 lbl.set_ellipsize(Pango.EllipsizeMode.NONE)
-            variants.set_visible(self._lines['variants'])
+            variants.set_visible(
+                self._lines['ketiv' if self._rtl else 'variants'])
             cell.append(variants)
         if not w.in_stream:
             cell.add_css_class('interlinear-cell-variant')
@@ -369,9 +395,10 @@ class InterlinearReader:
         self._lines[line_id] = on
         settings.put(_SETTINGS_KEY, dict(self._lines))
         for cell, labels in self._cells:
-            if line_id == 'variants':
+            if line_id in ('variants', 'ketiv'):
                 # Whole cells come and go (the words other editions add),
-                # and the tag lines under the words that differ.
+                # and the lines under the words that differ — the Greek
+                # apparatus or the Hebrew Ketiv, whichever this chip is.
                 if labels['_variant_cell']:
                     cell.set_visible(on)
                 if labels['variants'] is not None:

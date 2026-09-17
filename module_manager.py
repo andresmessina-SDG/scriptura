@@ -589,7 +589,8 @@ class ModuleManagerWindow(Adw.Window):
                 up.add_css_class('suggested-action')
                 up.set_valign(Gtk.Align.CENTER)
                 up.set_tooltip_text(
-                    _('A newer build adds the textual variants'))
+                    _('A newer build adds the Ketiv readings') if hebrew
+                    else _('A newer build adds the textual variants'))
                 up.connect('clicked', self._on_interlinear_download, name)
                 row.add_suffix(up)
             btn = self._trash_button(
