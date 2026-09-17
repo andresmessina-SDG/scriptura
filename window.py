@@ -2967,6 +2967,11 @@ class BibleWindow(Adw.ApplicationWindow):
         # close-request fires before destruction; return False to allow
         # the close to proceed.
         try:
+            # The Annotations window is transient, not an application
+            # window: closing this one ends the process without closing it,
+            # and its queued autosave dies with the loop. Write it first.
+            if self._annotations_win is not None:
+                self._annotations_win._autosave.flush()
             is_max = bool(self.is_maximized())
             settings.put('window_maximized', is_max)
             # When maximized, get_width/get_height return the maximized

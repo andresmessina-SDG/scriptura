@@ -289,3 +289,30 @@ def test_restore_writes_the_pending_edit_before_replacing_the_stores(
                         lambda payload: order.append('restore') or [])
     BibleWindow._on_restore_confirm(fake, None, 'replace', {})
     assert order == ['flush', 'restore', 'reload']
+
+
+def test_closing_the_main_window_flushes_the_annotations_window(monkeypatch):
+    """The Annotations window is transient, not an application window, so
+    closing the main window ends the process without ever closing or
+    destroying it — and a GLib timeout dies with the process. A sentence
+    typed into a sermon within the autosave delay of clicking the main
+    window's close button was the one sentence that never reached disk."""
+    import types
+    import settings
+    import module_positions
+    from window import BibleWindow
+
+    flushed = []
+    fake = types.SimpleNamespace(
+        _annotations_win=types.SimpleNamespace(
+            _autosave=types.SimpleNamespace(flush=lambda: flushed.append(1))),
+        is_maximized=lambda: True, _current_loc=('Genesis', 1),
+        pane1=types.SimpleNamespace(module='KJVA',
+                                    _save_position_to_module_state=lambda: None),
+        pane2=types.SimpleNamespace(module='KJVA',
+                                    _save_position_to_module_state=lambda: None))
+    monkeypatch.setattr(settings, 'put', lambda *_a: None)
+    monkeypatch.setattr(settings, 'flush', lambda: None)
+    monkeypatch.setattr(module_positions, 'flush', lambda: None)
+    BibleWindow._on_close_request(fake, None)
+    assert flushed == [1]

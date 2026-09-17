@@ -60,6 +60,9 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Fixed
 
+- **Closing the main window could drop the last sentence of a sermon.** An
+  edit still waiting to be saved in the Annotations window was lost when the
+  main window closed first. It is written now.
 - **Restoring study data could keep an old sermon.** If Restore… ran while
   the Annotations window still had an edit waiting to be saved, that edit
   was written over the restored file a moment later: the window showed the
