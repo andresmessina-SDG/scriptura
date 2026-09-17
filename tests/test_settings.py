@@ -174,3 +174,30 @@ def test_non_ascii_values_preserved(isolated):
     settings.flush()
     content = (isolated / 'settings.json').read_text(encoding='utf-8')
     assert 'Génesis' in content
+
+
+@pytest.mark.parametrize('key, junk', [
+    ('window_height', 'tall'), ('window_width', -5.5), ('font_size', 'big'),
+    ('reading_width', []), ('split_pane_mode', 'yes'), ('recent_passages', 'John 3'),
+    ('hints_seen', 'all'), ('color_scheme', 7), ('font_family', 3),
+    ('reading_rate', None), ('window_maximized', 1),
+])
+def test_a_stored_value_of_the_wrong_type_reads_as_the_default(isolated, key, junk):
+    """settings.json is written by the app in the types the defaults table
+    shows, but a file edited by hand can hold anything, and a paper name in
+    place of a colour once stopped the window being built. A value whose
+    type is not the default's is treated as unset. `None` stays valid only
+    where the default is None."""
+    settings.put(key, junk)
+    assert settings.get(key) == settings._defaults[key]
+
+
+@pytest.mark.parametrize('key, value', [
+    ('font_size', 14), ('reading_rate', 2), ('window_width', 900),
+    ('ui_language', 'ru'), ('last_book', 'John'), ('last_chapter', 3),
+    ('pane1_module', 'KJVA'), ('dropcap_color', '#aa0000'), ('church_calendar', 'western'),
+    ('ui_language', None), ('recent_passages', ['John 3']), ('split_pane_mode', False),
+])
+def test_a_value_of_the_right_type_is_kept(isolated, key, value):
+    settings.put(key, value)
+    assert settings.get(key) == value

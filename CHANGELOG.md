@@ -50,10 +50,10 @@ semver-ish — 0.x was the pre-Flathub testing track.
   restored sermon, the file kept the old one, and the next launch showed
   the old one. The waiting edit is now saved first, then replaced with the
   rest.
-- **A paper colour that is not one no longer stops the app opening.** A
-  settings file edited by hand could hold a paper that was not a colour,
-  and the window failed while it was being built. Such a value now means
-  the default paper.
+- **A settings file edited by hand no longer stops the app opening.** A
+  paper that was not a colour, a window size below a pixel, a language that
+  was not a name, or any setting of the wrong type failed the window while
+  it was being built. Such a value now means the default.
 - **Russian and Spanish named a mark with a verb.** The annotations list
   and exports labelled an underline «Подчеркнуть» and «Subrayar», which
   read as an order to underline; they now read «Подчёркивание» and
