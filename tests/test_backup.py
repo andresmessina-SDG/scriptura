@@ -298,3 +298,18 @@ def test_daily_copy_keeps_the_newest(isolated):
 
 def test_daily_copy_never_raises(isolated):
     assert backup.daily_copy(str(isolated / 'missing'), _day(0)) is None
+
+
+def test_a_failed_copy_leaves_nothing_behind(isolated, monkeypatch):
+    """A full disk stopped the write halfway. The half-written `.tmp` sat in
+    the folder the Restore dialog opens on, and no pruning ever touched it:
+    `_daily_copies` only counts `.json`."""
+    folder = isolated / 'backups'
+    folder.mkdir()
+
+    def full_disk(*_args, **_kwargs):
+        raise OSError(28, 'No space left on device')
+    monkeypatch.setattr(backup.json, 'dump', full_disk)
+    assert backup.daily_copy(str(folder), _day(0)) is None
+    assert backup.newest_daily_copy(str(folder)) is None
+    assert sorted(p.name for p in folder.iterdir()) == []

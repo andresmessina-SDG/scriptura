@@ -24,6 +24,7 @@ this device, and keeps the last DAILY_KEEP of them. It runs before the reader
 touches anything, so a copy never holds a mistake made that day.
 """
 
+import contextlib
 import datetime
 import json
 import logging
@@ -137,6 +138,7 @@ def daily_copy(folder: str | None = None,
     """Write today's copy unless one exists, then drop all but the newest
     DAILY_KEEP. Returns the path written, or None. Never raises: a failed
     copy must not stop the app from opening."""
+    tmp = None
     try:
         folder = folder or paths.backups_dir()
         day = (today or datetime.date.today()).isoformat()
@@ -160,6 +162,11 @@ def daily_copy(folder: str | None = None,
         return written
     except Exception:
         _log.exception('daily copy failed')
+        # A half-written copy is not a copy. Left there, it sat in the folder
+        # the Restore dialog opens on, and pruning never counts a `.tmp`.
+        if tmp is not None:
+            with contextlib.suppress(OSError):
+                os.remove(tmp)
         return None
 
 
