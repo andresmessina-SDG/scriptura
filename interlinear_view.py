@@ -39,11 +39,15 @@ def N_(message):
 
 
 # Line id → (settings default, chip label). Order = stack order in the cell.
+# 'variants' is Greek-only and not a stacked line: it shows the words the
+# reading stream leaves out, in place, and the edition tags under words the
+# editions disagree about (the apparatus — interlinear_data.apparatus).
 _LINES = [
     ('strongs',  False, N_('Strong’s')),
     ('translit', False, N_('Translit')),
     ('gloss',    True,  N_('Gloss')),
     ('parse',    True,  N_('Parsing')),
+    ('variants', False, N_('Variants')),
 ]
 _SETTINGS_KEY = 'interlinear_lines'
 
@@ -91,6 +95,9 @@ class InterlinearReader:
             btn.connect('toggled', self._on_chip_toggled, line_id)
             self._chip_btns[line_id] = btn
             chips.append(btn)
+        self._chip_btns['variants'].set_tooltip_text(
+            _('Textual variants: words other editions add, leave out or '
+              'read differently'))
         # Cantillation toggle — Hebrew only (shown/hidden per module). Not a
         # stacked line: it transforms the word text itself, so it has its
         # own handler rather than the visibility one above.
@@ -163,6 +170,10 @@ class InterlinearReader:
         self._module = module
         self._rtl = interlinear_data.is_hebrew(module)
         self._book, self._chapter = book, chapter
+        # The Greek chapter is loaded whole, the words other editions add
+        # included, so the Variants chip toggles without a reload.
+        load = (interlinear_data.load_chapter if self._rtl
+                else interlinear_data.load_chapter_full)
 
         # A failed load must still reach _show_chapter: a silently dead
         # worker would leave the previous chapter on screen under the new
@@ -171,7 +182,7 @@ class InterlinearReader:
         # main loop, so closing over `task` is race-free here.)
         task = tasks.submit(
             f'interlinear:{id(self)}',
-            lambda _t: interlinear_data.load_chapter(module, book, chapter),
+            lambda _t: load(module, book, chapter),
             lambda words: self._show_chapter(task, words, verse),
             on_error=lambda _exc: self._show_chapter(task, [], verse))
 
@@ -184,6 +195,7 @@ class InterlinearReader:
         self._header.set_label(f'{book_label(self._book)} {self._chapter}')
         self._flow.set_rtl(self._rtl)
         self._accents_btn.set_visible(self._rtl)
+        self._chip_btns['variants'].set_visible(not self._rtl)
         if not words:
             self._flow.set_visible(False)
             self._empty.set_label(
@@ -240,9 +252,16 @@ class InterlinearReader:
         shown = w.surface
         if self._rtl and not self._lines['accents']:
             shown = _CANTILLATION_RE.sub('', shown)
+        # A word the reading stream leaves out is set in the apparatus
+        # brackets a critical edition uses, and dimmed: it is another
+        # tradition's text, present for comparison.
+        if not w.in_stream:
+            shown = f'⟦{shown}⟧'
         surface = Gtk.Label(label=shown)
         surface.add_css_class(
             'interlinear-word-heb' if self._rtl else 'interlinear-word')
+        if not w.in_stream:
+            surface.add_css_class('interlinear-word-variant')
         labels['surface'] = surface
         labels['_surface_full'] = w.surface   # for the accents toggle
 
@@ -268,6 +287,27 @@ class InterlinearReader:
             parse.set_tooltip_text(decoded)
         labels['parse'] = parse
 
+        # The apparatus: who carries or lacks the word, and what the other
+        # tradition reads. Two small sans lines in the parsing register,
+        # shown with the Variants chip; the source's note is the tooltip.
+        ap = (interlinear_data.apparatus(w)
+              if not self._rtl and (w.editions or w.variant) else None)
+        variants = None
+        if ap is not None and (ap.editions or ap.reading):
+            variants = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+            if ap.editions:
+                eds = Gtk.Label(label=ap.editions)
+                eds.add_css_class('interlinear-editions')
+                variants.append(eds)
+            if ap.reading:
+                reading = Gtk.Label(label=ap.reading)
+                reading.add_css_class('interlinear-reading')
+                variants.append(reading)
+            if ap.note:
+                cell.set_tooltip_text(ap.note)
+        labels['variants'] = variants
+        labels['_variant_cell'] = not w.in_stream
+
         for line_id in ('strongs', 'translit'):
             labels[line_id].set_visible(self._lines[line_id])
         for line_id in ('gloss', 'parse'):
@@ -277,6 +317,15 @@ class InterlinearReader:
             lbl.set_halign(align)
             lbl.set_ellipsize(Pango.EllipsizeMode.NONE)
             cell.append(lbl)
+        if variants is not None:
+            for lbl in variants:
+                lbl.set_halign(align)
+                lbl.set_ellipsize(Pango.EllipsizeMode.NONE)
+            variants.set_visible(self._lines['variants'])
+            cell.append(variants)
+        if not w.in_stream:
+            cell.add_css_class('interlinear-cell-variant')
+            cell.set_visible(self._lines['variants'])
 
         if w.strongs:
             click = Gtk.GestureClick()
@@ -319,8 +368,16 @@ class InterlinearReader:
         on = btn.get_active()
         self._lines[line_id] = on
         settings.put(_SETTINGS_KEY, dict(self._lines))
-        for _cell, labels in self._cells:
-            labels[line_id].set_visible(on)
+        for cell, labels in self._cells:
+            if line_id == 'variants':
+                # Whole cells come and go (the words other editions add),
+                # and the tag lines under the words that differ.
+                if labels['_variant_cell']:
+                    cell.set_visible(on)
+                if labels['variants'] is not None:
+                    labels['variants'].set_visible(on)
+            else:
+                labels[line_id].set_visible(on)
         # Cell heights changed — drop the flow's cached sizes and reflow.
         self._flow.invalidate_sizes()
 

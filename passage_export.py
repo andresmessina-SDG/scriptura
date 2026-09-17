@@ -287,6 +287,24 @@ def variant_rows(book: str, chapter: int,
     return sorted(grouped.items())
 
 
+def _variant_line(w: Any) -> str:
+    """`θεὸς “God” — NA27, NA28, SBL, Treg, WH; Tyn, TR and Byz read υἱός
+    “son”` — the other tradition's reading follows where the data names
+    one (interlinear_data.parse_reading; older databases carry none)."""
+    line = _('{surface} “{gloss}” — {editions}').format(
+        surface=w.surface, gloss=w.gloss,
+        editions=', '.join(sorted(_editions(w.editions))))
+    reading = interlinear_data.parse_reading(getattr(w, 'variant', '') or '')
+    if reading is not None:
+        line += '; ' + _('{editions} read {surface} “{gloss}”.').format(
+            editions=interlinear_data._named(
+                interlinear_data.editions_of(reading.editions),
+                C_('edition list', 'and')),
+            surface=reading.surface,
+            gloss=reading.gloss.replace('<', '').replace('>', '')).rstrip('.')
+    return line
+
+
 def catena_rows(book: str, chapter: int,
                 verses: list[int] | None = None
                 ) -> list[tuple[int, list]]:
@@ -452,11 +470,7 @@ def build(module: str, book: str, chapter: int,
         section(_('Textual variants'),
                 variant_rows(book, chapter, numbers),
                 lambda words: ' · '.join(
-                    _md(_('{surface} “{gloss}” — {editions}').format(
-                        surface=w.surface, gloss=w.gloss,
-                        editions=', '.join(sorted(_editions(w.editions)))),
-                        markdown)
-                    for w in words))
+                    _md(_variant_line(w), markdown) for w in words))
 
     if catena:
         section(_('Voices'),

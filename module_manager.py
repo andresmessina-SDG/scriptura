@@ -581,6 +581,17 @@ class ModuleManagerWindow(Adw.Window):
                   'Tyndale House data (CC BY)') if hebrew else
                 _('Every NT word with gloss, parsing, and Strong’s — '
                   'Tyndale House data (CC BY)'))
+            if interlinear_data.needs_rebuild(name):
+                # A database from before the apparatus columns: the same
+                # download, written through a temp file and renamed over
+                # the old one, fills them.
+                up = Gtk.Button(label=_('Update'))
+                up.add_css_class('suggested-action')
+                up.set_valign(Gtk.Align.CENTER)
+                up.set_tooltip_text(
+                    _('A newer build adds the textual variants'))
+                up.connect('clicked', self._on_interlinear_download, name)
+                row.add_suffix(up)
             btn = self._trash_button(
                 lambda: self._confirm_remove_generic(
                     title, lambda: self._do_interlinear_remove(name)))

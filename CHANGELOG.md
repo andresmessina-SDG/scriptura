@@ -8,6 +8,17 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Added
 
+- **Textual variants in the Greek interlinear.** A Variants chip beside
+  Strong’s, Translit, Gloss and Parsing. With it on, the words the
+  Textus Receptus or the Byzantine text add appear in place in ⟦ ⟧ with
+  the editions that carry them, a word those editions lack says so
+  (− TR Byz), and where they read another word it is named under the
+  Nestle-Aland one (Tyn TR Byz: υἱός “son” under θεός at John 1:18).
+  Hovering gives the source’s own note. Passage exports name the other
+  reading too. The data is Tyndale House’s TAGNT, already on disk; an
+  interlinear installed before this release shows an Update button in
+  the Module Manager, since the other readings and notes come with the
+  new build.
 - **Find and replace in journal entries and sermons.** Ctrl+F, or the
   search button at the head of the page, finds a word without regard to
   case and steps through every use of it; Ctrl+H adds a replace field.

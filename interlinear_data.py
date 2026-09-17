@@ -7,8 +7,11 @@ gloss, disambiguated Strong's, morphology (Robinson / OSHM), lemma and
 lexical gloss.
 
 Greek: the rendered stream is the NA28-equivalent text (type markers
-containing N/n); TR/Byz-only words are stored but not rendered, with the
-edition markers kept for a future collation surface.
+containing N/n); TR/Byz-only words are stored but not rendered. Each row
+also keeps TAGNT's apparatus: which editions carry the word, the other
+tradition's reading where one exists, and the source's own note. The
+interlinear's Variants chip and the passage export read them through
+`apparatus()`.
 
 Hebrew: the rendered stream is Leningrad plus Qere readings plus the
 verses Leningrad omits but the KJV-shaped app-space carries (type L/Q/R;
@@ -31,13 +34,19 @@ import zlib
 from typing import Callable, NamedTuple, Optional
 
 import paths
-from i18n import _
+from i18n import _, C_
 
 _BASE = ('https://raw.githubusercontent.com/STEPBible/STEPBible-Data/'
          'master/Translators%20Amalgamated%20OT%2BNT/')
 
 GREEK = 'InterlinearGreek'
 HEBREW = 'InterlinearHebrew'
+
+# Stamped in PRAGMA user_version at build. 2 added the apparatus columns
+# (variant, note); a database from before is migrated to answer every
+# query with them empty, and needs_rebuild() tells the Module Manager a
+# re-download would fill them.
+SCHEMA_VERSION = 2
 
 ATTRIBUTION = 'STEPBible / Tyndale House Cambridge · CC BY 4.0'
 
@@ -79,6 +88,13 @@ class Word(NamedTuple):
     morph: str          # Robinson code(s) / OSHM chain
     lemma: str
     lemma_gloss: str
+    # The apparatus fields, filled by load_chapter_full; load_chapter
+    # answers with the reading stream only and leaves them at rest.
+    in_stream: bool = True
+    wtype: str = ''
+    editions: str = ''
+    variant: str = ''
+    note: str = ''
 
 
 class VariantWord(NamedTuple):
@@ -95,6 +111,32 @@ class VariantWord(NamedTuple):
     gloss: str
     editions: str
     in_stream: bool
+    wtype: str = ''
+    variant: str = ''   # TAGNT's "Meaning variants" column, raw
+    note: str = ''      # TAGNT's "Variant Notes" column, tags stripped
+
+
+class Reading(NamedTuple):
+    """What another edition reads in place of a word: `parse_reading`'s
+    view of `υἱός (T=huios) son - G5207=N-NSM in: Tyn+TR+Byz`. `minor` is
+    TAGNT's own judgement (a lower-case marker): a difference too small to
+    change a translation."""
+    surface: str
+    translit: str
+    gloss: str
+    editions: str
+    minor: bool
+
+
+class Apparatus(NamedTuple):
+    """The three lines a word can show under the Variants chip. Each is ''
+    when there is nothing to say. `editions` names who carries a word the
+    critical text omits, or who lacks a word it carries (led by −);
+    `reading` is the other tradition's word; `note` is a sentence for the
+    tooltip."""
+    editions: str
+    reading: str
+    note: str
 
 
 class ParsedRow(NamedTuple):
@@ -114,6 +156,8 @@ class ParsedRow(NamedTuple):
     lemma_gloss: str
     editions: str
     rendered: bool
+    variant: str = ''
+    note: str = ''
 
 
 _REF_RE = re.compile(
@@ -179,6 +223,11 @@ def parse_line(line: str) -> Optional[ParsedRow]:
     lemma_field, _sep, lemma_gloss = fields[4].partition('=')
     lemma = lemma_field.split(',')[0].strip()
 
+    # Column 6 is the other tradition's reading, column 13 the source's
+    # note on it — the apparatus. Both are absent on most rows.
+    variant = fields[6].strip() if len(fields) > 6 else ''
+    note = _clean_note(fields[13]) if len(fields) > 13 else ''
+
     return ParsedRow(
         book=book, chapter=int(chapter), verse=int(verse), pos=int(pos),
         wtype=wtype, surface=surface, translit=translit, gloss=gloss,
@@ -186,7 +235,17 @@ def parse_line(line: str) -> Optional[ParsedRow]:
         strongs_ext=' '.join(exts), morph=' '.join(m for m in morphs if m),
         lemma=lemma, lemma_gloss=lemma_gloss.strip(),
         editions=fields[5].strip(), rendered=in_na_stream(wtype),
+        variant=variant, note=note,
     )
+
+
+_TAG_RE = re.compile(r'</?i>')
+
+
+def _clean_note(raw: str) -> str:
+    """A TAGNT note without its <i> tags and doubled spaces; the leading
+    `v` (a different reading) or `^` (added text) marker is kept."""
+    return ' '.join(_TAG_RE.sub('', raw).split())
 
 
 _BRACED_RE = re.compile(r'\{(H\d+[A-Za-z]?)\}')
@@ -343,8 +402,11 @@ def download_and_build(
                 strongs_ext TEXT NOT NULL, morph TEXT NOT NULL,
                 lemma TEXT NOT NULL, lemma_gloss TEXT NOT NULL,
                 editions TEXT NOT NULL,
+                variant TEXT NOT NULL DEFAULT '',
+                note TEXT NOT NULL DEFAULT '',
                 PRIMARY KEY (book, chapter, verse, pos)
             ) WITHOUT ROWID''')
+        conn.execute(f'PRAGMA user_version = {SCHEMA_VERSION}')
 
         done_bytes = 0
         # The HEAD pre-flight only serves progress scaling — skip the
@@ -359,7 +421,8 @@ def download_and_build(
                 row.wtype, int(row.rendered),
                 row.surface, row.translit, row.gloss,
                 row.strongs, row.strongs_all, row.strongs_ext,
-                row.morph, row.lemma, row.lemma_gloss, row.editions))
+                row.morph, row.lemma, row.lemma_gloss, row.editions,
+                row.variant, row.note))
 
         for url in spec['urls']:
             # Ask for gzip: the raw text compresses ~5× (the Hebrew set is
@@ -390,7 +453,7 @@ def download_and_build(
                     if len(batch) >= 2000:
                         conn.executemany(
                             'INSERT OR REPLACE INTO words VALUES '
-                            '(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', batch)
+                            '(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', batch)
                         batch.clear()
                     if on_progress:
                         try:
@@ -403,7 +466,7 @@ def download_and_build(
         if batch:
             conn.executemany(
                 'INSERT OR REPLACE INTO words VALUES '
-                '(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', batch)
+                '(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', batch)
         # Guard against a truncated or wrong-file download building an
         # empty shell that is_installed() would then report as ready.
         count = conn.execute('SELECT COUNT(*) FROM words').fetchone()[0]
@@ -469,6 +532,14 @@ def _migrate(conn: sqlite3.Connection, name: str) -> None:
         if 'in_na' in cols:
             conn.execute('ALTER TABLE words RENAME COLUMN in_na TO in_stream')
             conn.commit()
+        # Schema 2: the apparatus columns. Empty here — the data is in the
+        # raw files, not on disk — so user_version stays below
+        # SCHEMA_VERSION and needs_rebuild() keeps offering the update.
+        for col in ('variant', 'note'):
+            if col not in cols:
+                conn.execute(
+                    f"ALTER TABLE words ADD COLUMN {col} TEXT NOT NULL DEFAULT ''")
+                conn.commit()
         dirty = conn.execute(
             "SELECT 1 FROM words WHERE surface LIKE '%¶%' "
             "OR surface LIKE '%¬%' LIMIT 1").fetchone()
@@ -499,6 +570,39 @@ def load_chapter(name: str, book: str, chapter: int) -> list[Word]:
     return [Word(*r) for r in rows]
 
 
+def load_chapter_full(name: str, book: str, chapter: int) -> list[Word]:
+    """Every word of one chapter, the ones the reading stream leaves out
+    included, each with its apparatus fields — what the interlinear shows
+    with the Variants chip on."""
+    if not is_installed(name):
+        return []
+    conn = sqlite3.connect(_DB_FILES[name])
+    try:
+        _migrate(conn, name)
+        rows = conn.execute(
+            'SELECT verse, pos, surface, translit, gloss, strongs, '
+            'strongs_all, morph, lemma, lemma_gloss, in_stream, wtype, '
+            'editions, variant, note FROM words '
+            'WHERE book=? AND chapter=? ORDER BY verse, pos',
+            (book, chapter)).fetchall()
+    finally:
+        conn.close()
+    return [Word(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9],
+                 bool(r[10]), r[11], r[12], r[13], r[14]) for r in rows]
+
+
+def needs_rebuild(name: str) -> bool:
+    """Whether an installed database predates the apparatus columns and a
+    re-download would fill them. False when nothing is installed."""
+    if name != GREEK or not is_installed(name):
+        return False
+    conn = sqlite3.connect(_DB_FILES[name])
+    try:
+        return int(conn.execute('PRAGMA user_version').fetchone()[0]) < SCHEMA_VERSION
+    finally:
+        conn.close()
+
+
 def chapter_variants(name: str, book: str, chapter: int) -> list[VariantWord]:
     """Every word of a chapter with the editions that carry it — including
     the ones the reading stream leaves out.
@@ -515,12 +619,105 @@ def chapter_variants(name: str, book: str, chapter: int) -> list[VariantWord]:
     try:
         _migrate(conn, name)
         rows = conn.execute(
-            'SELECT verse, pos, surface, gloss, editions, in_stream '
-            'FROM words WHERE book=? AND chapter=? ORDER BY verse, pos',
+            'SELECT verse, pos, surface, gloss, editions, in_stream, wtype, '
+            'variant, note FROM words WHERE book=? AND chapter=? '
+            'ORDER BY verse, pos',
             (book, chapter)).fetchall()
     finally:
         conn.close()
-    return [VariantWord(v, p, s, g, e, bool(i)) for v, p, s, g, e, i in rows]
+    return [VariantWord(v, p, s, g, e, bool(i), t, va, n)
+            for v, p, s, g, e, i, t, va, n in rows]
+
+
+# ── The apparatus ─────────────────────────────────────────────────────────────
+# Pure readers of TAGNT's edition columns, shared by the interlinear's
+# Variants chip and the passage export.
+
+#: The eight editions TAGNT collates, in its own order. Anything else in an
+#: edition list (KJV, P66, Latin…) keeps the order it came in, after these.
+EDITION_ORDER = ('NA28', 'NA27', 'Tyn', 'SBL', 'WH', 'Treg', 'TR', 'Byz')
+_ORDER_MARK_RE = re.compile(r'[»«].*$')
+
+
+def editions_of(raw: str) -> list[str]:
+    """The editions in a `+`-joined list, canonical order, order markers
+    dropped: `TR»1` means TR carries the word one place along — still TR.
+    Presence is what the apparatus reports; word order is a claim the data
+    would not support here."""
+    seen: list[str] = []
+    for part in str(raw).split('+'):
+        name = _ORDER_MARK_RE.sub('', part).strip()
+        if name and name not in seen:
+            seen.append(name)
+    rank = {e: i for i, e in enumerate(EDITION_ORDER)}
+    return sorted(seen, key=lambda e: (rank.get(e, len(rank)), 0))
+
+
+_READING_RE = re.compile(r'^(.+?)\s*\(([A-Za-z]+)=([^)]*)\)\s*(.*)$')
+
+
+def parse_reading(raw: str) -> Optional[Reading]:
+    """`υἱός (T=huios) son - G5207=N-NSM in: Tyn+TR+Byz` → Reading. The
+    tail is split from the right, since a gloss may itself carry ` - `
+    and a compound reading tags each word (`G1722=PREP + G3588=T-DPM`)."""
+    head, sep, eds = raw.rpartition(' in: ')
+    if not sep:
+        return None
+    head, sep, _tagging = head.rpartition(' - ')
+    if not sep:
+        return None
+    m = _READING_RE.match(head.strip())
+    if not m:
+        return None
+    surface, mark, translit, gloss = m.groups()
+    return Reading(surface.strip(), translit.strip(), gloss.strip(),
+                   eds.strip(), mark.islower())
+
+
+def _named(names: list[str], last_sep: str) -> str:
+    if len(names) <= 1:
+        return ''.join(names)
+    return ', '.join(names[:-1]) + f' {last_sep} ' + names[-1]
+
+
+def apparatus(word: VariantWord) -> Apparatus:
+    """What the Variants chip shows under `word`, or three empty strings
+    for a word every edition carries alike.
+
+    The `editions` line is a bare list (`Tyn TR Byz`) for a word the
+    reading stream leaves out, and a subtracted one (`− TR Byz`) for a word
+    it carries that some of the eight lack. The `reading` line is the other
+    tradition's word with its gloss. The note is the source's own sentence
+    when it wrote one about a different reading; otherwise a sentence built
+    from the same facts. A `^` note only lists the added words, which the
+    cells already show in place, so it is not repeated."""
+    present = editions_of(word.editions)
+    reading = parse_reading(word.variant) if word.variant else None
+    if word.in_stream:
+        missing = [e for e in EDITION_ORDER if e not in present]
+        editions = ('− ' + ' '.join(missing)) if missing else ''
+        note = _('Not in {editions}.').format(
+            editions=_named(missing, C_('edition list', 'or'))) if missing else ''
+    else:
+        editions = ' '.join(present)
+        note = _('In {editions}; not in the Nestle-Aland text.').format(
+            editions=_named(present, C_('edition list', 'and')))
+    reading_line = ''
+    if reading is not None:
+        who = editions_of(reading.editions)
+        # `<the>` marks a word English supplies; in a quoted gloss the
+        # brackets would read as markup.
+        gloss = reading.gloss.replace('<', '').replace('>', '')
+        reading_line = '{who}: {surface} “{gloss}”'.format(
+            who=' '.join(who), surface=reading.surface, gloss=gloss)
+        note = _('{editions} read {surface} “{gloss}”.').format(
+            editions=_named(who, C_('edition list', 'and')), surface=reading.surface,
+            gloss=gloss)
+    if word.note.startswith('v '):
+        note = word.note[2:]
+    if not editions and not reading_line:
+        return Apparatus('', '', '')
+    return Apparatus(editions, reading_line, note)
 
 
 def chapter_count(name: str, book: str) -> int:
