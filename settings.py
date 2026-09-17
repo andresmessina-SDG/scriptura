@@ -229,6 +229,10 @@ def _fits(value: Any, default: Any) -> bool:
     return type(value) is type(default)
 
 
+def default(key: str) -> Any:
+    return _defaults.get(key)
+
+
 def get(key: str) -> Any:
     if _cache is None:
         _load()

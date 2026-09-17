@@ -182,6 +182,16 @@ class _FractionPaned(Gtk.Paned):
         Gtk.Paned.do_size_allocate(self, width, height, baseline)
 
 
+def stored_window_size():
+    """(width, height) from settings, or the defaults when either is below a
+    pixel. The app writes what it measured; a file edited by hand can hold
+    -5, and gtk_window_set_default_size asserts on it."""
+    w, h = settings.get('window_width'), settings.get('window_height')
+    if w < 1 or h < 1:
+        return settings.default('window_width'), settings.default('window_height')
+    return w, h
+
+
 class BibleWindow(Adw.ApplicationWindow):
 
     def __init__(self, **kwargs):
@@ -190,8 +200,7 @@ class BibleWindow(Adw.ApplicationWindow):
         super().__init__(**kwargs)
         # Restore saved window size; falls back to settings defaults
         # (1100x700) on first run.
-        self.set_default_size(
-            settings.get('window_width'), settings.get('window_height'))
+        self.set_default_size(*stored_window_size())
         if settings.get('window_maximized'):
             self.maximize()
         self.set_title('Scriptura')  # app name — not translated
