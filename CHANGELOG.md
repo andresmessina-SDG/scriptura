@@ -35,6 +35,12 @@ semver-ish — 0.x was the pre-Flathub testing track.
   highlight or underline with no note shows a line of its verse, where it
   showed only its colour. A mark made in the reading view appears in an
   open list at once, so the Refresh button is gone.
+- **Scripture in Stone and the genealogies say what the evidence carries.**
+  A few captions claimed more than is certain: the Pilate Stone as the only
+  inscription with his name, a Tiberius denarius as the tribute penny
+  itself, the Siloam steps as the ones the blind man stood on. They now
+  separate what is certain from what is traditional or debated. What
+  Scripture states stays as stated. Spanish and Russian follow.
 
 ### Fixed
 
