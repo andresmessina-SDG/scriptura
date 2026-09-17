@@ -128,6 +128,9 @@ scriptura/
 |   +-- verify-a11y.py         # the accessible tree: roles, relations, live regions (in CI)
 |   +-- verify-live-paths.py   # drives the real app and fails on anything the log calls
 |   |                          #   an error — 21 paths only a live window can reach
+|   +-- verify-stress.py       # the same app, hammered: 18 scenarios (junk settings and
+|   |                          #   stores, module install/remove, the welcome hand-off,
+|   |                          #   restore races, Replace All over 8k words) (in CI)
 |   +-- verify-docs.py         # the docs against the repo (stale claims, line counts)
 +-- tests/                # Pytest suite for the pure-Python bridges + helpers
 +-- flatpak/              # manifest patches (e.g. sword-curl-libraries.patch)
