@@ -9644,3 +9644,60 @@ msgstr "Выделение"
 msgctxt "kind of mark"
 msgid "Underline"
 msgstr "Подчёркивание"
+
+#: interlinear_view.py
+msgid "Variants"
+msgstr "Разночтения"
+
+#: interlinear_view.py
+msgid ""
+"Textual variants: words other editions add, leave out or read differently"
+msgstr ""
+"Разночтения: слова, которые другие издания добавляют, опускают или читают "
+"иначе"
+
+#: interlinear_data.py
+msgid "Not in {editions}."
+msgstr "Нет в {editions}."
+
+#: interlinear_data.py
+msgid "In {editions}; not in the Nestle-Aland text."
+msgstr "Есть в {editions}; нет в тексте Нестле-Аланда."
+
+#: interlinear_data.py
+msgid "{editions} read {surface} “{gloss}”."
+msgstr "{editions} читают {surface} «{gloss}»."
+
+#: interlinear_data.py
+msgctxt "edition list"
+msgid "and"
+msgstr "и"
+
+#: interlinear_data.py
+msgctxt "edition list"
+msgid "or"
+msgstr "и"
+
+#: module_manager.py
+msgid "A newer build adds the textual variants"
+msgstr "Новая сборка добавляет разночтения"
+
+#: interlinear_view.py
+msgid "Ketiv"
+msgstr "Кетив"
+
+#: interlinear_view.py
+msgid ""
+"The written form (Ketiv) under the read form (Qere) where the scribes "
+"corrected the text"
+msgstr ""
+"Написанная форма (кетив) под читаемой (кере) там, где писцы исправили "
+"текст"
+
+#: interlinear_data.py
+msgid "Written (Ketiv) {written} “{written_gloss}”; read (Qere) {read} “{read_gloss}”."
+msgstr "Написано (кетив) {written} «{written_gloss}»; читается (кере) {read} «{read_gloss}»."
+
+#: module_manager.py
+msgid "A newer build adds the Ketiv readings"
+msgstr "Новая сборка добавляет чтения кетив"

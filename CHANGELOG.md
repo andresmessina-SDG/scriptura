@@ -6,8 +6,26 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+## [1.7.2] — 2026-09-17
+
 ### Added
 
+- **Textual variants in the Greek interlinear.** A Variants chip beside
+  Strong’s, Translit, Gloss and Parsing. With it on, the words the
+  Textus Receptus or the Byzantine text add appear in place in ⟦ ⟧ with
+  the editions that carry them, a word those editions lack says so
+  (− TR Byz), and where they read another word it is named under the
+  Nestle-Aland one (Tyn TR Byz: υἱός “son” under θεός at John 1:18).
+  Hovering gives the source’s own note. Passage exports name the other
+  reading too. The data is Tyndale House’s TAGNT, already on disk; an
+  interlinear installed before this release shows an Update button in
+  the Module Manager, since the other readings and notes come with the
+  new build.
+- **Ketiv under Qere in the Hebrew interlinear.** A Ketiv chip beside
+  Accents. With it on, a word the scribes corrected shows the form they
+  wrote under the form that is read, with its gloss (Joshua 2:13 reads
+  “sisters” over a written “sister”). Hovering names both. An interlinear
+  installed before this release shows the same Update button.
 - **Find and replace in journal entries and sermons.** Ctrl+F, or the
   search button at the head of the page, finds a word without regard to
   case and steps through every use of it; Ctrl+H adds a replace field.
@@ -18,8 +36,13 @@ semver-ish — 0.x was the pre-Flathub testing track.
   mouse's back and forward buttons, move through the passages you visited.
 - **A daily copy of your study data.** Each day the app is first opened, it
   saves your annotations, journal, sermons, bookmarks and plan progress to a
-  folder on this device and keeps the last 14 copies. *Daily Copies* in the
-  menu opens that folder, and *Restore…* starts there.
+  folder on this device and keeps the last 14 copies. An app left open
+  across midnight makes the next day's copy within the hour. *Daily Copies*
+  in the menu opens that folder, and *Restore…* starts there.
+- **Restore… keeps what it replaces.** Before a restore, a copy of your
+  current study data is written beside the daily copies, named
+  *before-restore*, so the wrong file chosen is one more Restore… from
+  undone.
 - **Look up a verse from the GNOME search.** Type a reference such as
   "John 3:16" in Activities to see the verse in the translation you last
   read; Enter opens Scriptura there. A book name alone is not enough, so
@@ -35,14 +58,35 @@ semver-ish — 0.x was the pre-Flathub testing track.
   highlight or underline with no note shows a line of its verse, where it
   showed only its colour. A mark made in the reading view appears in an
   open list at once, so the Refresh button is gone.
+- **Scripture in Stone and the genealogies say what the evidence carries.**
+  A few captions claimed more than is certain: the Pilate Stone as the only
+  inscription with his name, a Tiberius denarius as the tribute penny
+  itself, the Siloam steps as the ones the blind man stood on. They now
+  separate what is certain from what is traditional or debated. What
+  Scripture states stays as stated. Spanish and Russian follow.
 
 ### Fixed
 
+- **Closing the main window could drop the last sentence of a sermon.** An
+  edit still waiting to be saved in the Annotations window was lost when the
+  main window closed first. It is written now.
+- **Logging out could drop the last sentence too.** The session ending the
+  app skipped the close path where the editors write. The app now closes its
+  windows first, so what was queued is written and the reading position kept.
+- **Restoring study data could keep an old sermon.** If Restore… ran while
+  the Annotations window still had an edit waiting to be saved, that edit
+  was written over the restored file a moment later: the window showed the
+  restored sermon, the file kept the old one, and the next launch showed
+  the old one. The waiting edit is now saved first, then replaced with the
+  rest.
+- **A settings file edited by hand no longer stops the app opening.** A
+  paper that was not a colour, a window size below a pixel, a language that
+  was not a name, or any setting of the wrong type failed the window while
+  it was being built. Such a value now means the default.
 - **Russian and Spanish named a mark with a verb.** The annotations list
   and exports labelled an underline «Подчеркнуть» and «Subrayar», which
   read as an order to underline; they now read «Подчёркивание» and
   «Subrayado», and highlights likewise.
-
 - **The back and forward buttons named the wrong keys.** Their tooltips
   said Alt+← and Alt+→, which change chapter.
 - **Two copies of the app could erase each other's notes.** Opening

@@ -29,7 +29,7 @@ import annotation_dialogs
 import export_dialog
 import passage_print
 from pane import (BiblePane, DROPCAP_GOLD_DARK, DROPCAP_GOLD_LIGHT,
-                  auto_reading_ink, dropcap_color_hex)
+                  auto_reading_ink, dropcap_color_hex, valid_paper)
 from present import PresentView
 from today_page import TodayView, fetch_antiphon, fetch_epigraph
 from module_manager import ModuleManagerWindow
@@ -182,6 +182,16 @@ class _FractionPaned(Gtk.Paned):
         Gtk.Paned.do_size_allocate(self, width, height, baseline)
 
 
+def stored_window_size():
+    """(width, height) from settings, or the defaults when either is below a
+    pixel. The app writes what it measured; a file edited by hand can hold
+    -5, and gtk_window_set_default_size asserts on it."""
+    w, h = settings.get('window_width'), settings.get('window_height')
+    if w < 1 or h < 1:
+        return settings.default('window_width'), settings.default('window_height')
+    return w, h
+
+
 class BibleWindow(Adw.ApplicationWindow):
 
     def __init__(self, **kwargs):
@@ -190,8 +200,7 @@ class BibleWindow(Adw.ApplicationWindow):
         super().__init__(**kwargs)
         # Restore saved window size; falls back to settings defaults
         # (1100x700) on first run.
-        self.set_default_size(
-            settings.get('window_width'), settings.get('window_height'))
+        self.set_default_size(*stored_window_size())
         if settings.get('window_maximized'):
             self.maximize()
         self.set_title('Scriptura')  # app name — not translated
@@ -1550,7 +1559,7 @@ class BibleWindow(Adw.ApplicationWindow):
             nxt = child.get_next_sibling()
             self._paper_box.remove(child)
             child = nxt
-        paper_stored = settings.get(self._current_bg_key())
+        paper_stored = valid_paper(settings.get(self._current_bg_key()))
         ink_stored = settings.get(self._current_mode_key())
         pnorm = (paper_stored or '').lower()
         papers = self._papers()
@@ -1604,7 +1613,7 @@ class BibleWindow(Adw.ApplicationWindow):
         # dialog is parented to the window (not the popover), so dismissing the
         # popover can't orphan it; unparent is deferred to idle to avoid
         # destroying a row mid-click.
-        paper_stored = settings.get(self._current_bg_key())
+        paper_stored = valid_paper(settings.get(self._current_bg_key()))
         ink_stored = settings.get(self._current_mode_key())
         eff_paper = paper_stored or self._papers()[0][1]
         eff_ink = ink_stored or auto_reading_ink(eff_paper)
@@ -2029,6 +2038,12 @@ class BibleWindow(Adw.ApplicationWindow):
     def _on_restore_confirm(self, _dialog, response, payload):
         if response != 'replace':
             return
+        # An edit still queued in the Annotations window is written now, to
+        # the store it was made in. The reload below flushes it too, but by
+        # then the store is the file's, and the old words went over it: the
+        # editor showed the restored sermon while the file kept the other.
+        if self._annotations_win is not None:
+            self._annotations_win._autosave.flush()
         failed = backup.restore(payload)
         # Re-render both panes so restored highlights/notes/indicators
         # appear (the reading anchor keeps the text in place), and rebuild
@@ -2952,6 +2967,11 @@ class BibleWindow(Adw.ApplicationWindow):
         # close-request fires before destruction; return False to allow
         # the close to proceed.
         try:
+            # The Annotations window is transient, not an application
+            # window: closing this one ends the process without closing it,
+            # and its queued autosave dies with the loop. Write it first.
+            if self._annotations_win is not None:
+                self._annotations_win._autosave.flush()
             is_max = bool(self.is_maximized())
             settings.put('window_maximized', is_max)
             # When maximized, get_width/get_height return the maximized

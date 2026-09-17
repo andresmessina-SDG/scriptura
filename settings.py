@@ -212,11 +212,36 @@ def flush() -> None:
     _save_now()
 
 
+def _fits(value: Any, default: Any) -> bool:
+    """Whether a stored value has the type the default shows.
+
+    The app writes settings.json in those types, but a file edited by hand
+    can hold anything, and a paper name in place of a colour once stopped
+    the window being built. A wrong-typed value reads as unset. Where the
+    default is None nothing is known about the type and the reader must
+    cope, as it must with an unset key."""
+    if default is None:
+        return True
+    if isinstance(default, bool):
+        return isinstance(value, bool)
+    if isinstance(default, float):
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
+    return type(value) is type(default)
+
+
+def default(key: str) -> Any:
+    return _defaults.get(key)
+
+
 def get(key: str) -> Any:
     if _cache is None:
         _load()
     assert _cache is not None  # _load() always assigns
-    return _cache.get(key, _defaults.get(key))
+    default = _defaults.get(key)
+    if key not in _cache:
+        return default
+    value = _cache[key]
+    return value if _fits(value, default) else default
 
 
 def put(key: str, value: Any) -> None:

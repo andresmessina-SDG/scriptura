@@ -942,6 +942,40 @@ button.menu-theme-toggle {
     color: alpha(currentColor, 0.65);
     margin-top: 1px;
 }
+/* A word the reading stream leaves out (TR/Byz-only), shown with the
+   Variants chip in ⟦ ⟧: another tradition's text, dimmed but in the
+   scripture serif — it is Greek, not apparatus. */
+.interlinear-word-variant {
+    color: alpha(currentColor, 0.55);
+}
+/* The apparatus lines: who carries or lacks the word, and the other
+   tradition's reading — the parsing register, one step warmer. */
+.interlinear-editions {
+    font-size: 9.5px;
+    letter-spacing: 0.5px;
+    color: alpha(currentColor, 0.5);
+    margin-top: 1px;
+}
+.interlinear-reading {
+    font-size: 11px;
+    color: alpha(currentColor, 0.6);
+    margin-top: 1px;
+}
+/* The Ketiv under a Qere word: the written form, in the Hebrew face a
+   size down from the read one, dimmed. */
+.interlinear-ketiv {
+    font-family: 'Noto Serif Hebrew', 'SBL Hebrew', 'Ezra SIL',
+                 'Taamey Frank CLM', serif;
+    font-size: 17px;
+    color: alpha(currentColor, 0.55);
+    margin-top: 2px;
+}
+.interlinear-cell-variant {
+    /* Nothing at rest: the brackets and the dimmed word carry it. Here so
+       the class the code adds is defined (test_style_css), and as the hook
+       for the high-contrast sheet. */
+    padding: 3px 6px;
+}
 /* '<the>' — a word English supplies implicitly; quieter than a real gloss
    so it reads as annotation, not markup. */
 .interlinear-gloss-implicit {

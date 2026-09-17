@@ -1226,11 +1226,20 @@ class _ProseEditor(_Editor):
         self.row = entry
         self._retitle_pane()
 
+        # A field that already holds the words is left alone: `set_text`
+        # moves the cursor to the end and, on the body, clears the undo
+        # history. The list rebuilds itself after a save made anywhere in
+        # the app, and the entry open here is usually the one it restores.
+        buf = self.body.get_buffer()
         self._loading = True
         try:
-            self.title.set_text(entry.get('title') or '')
-            self.body.get_buffer().set_text(entry.get('body') or '')
-            self.tags.set_text(', '.join(entry.get('tags') or []))
+            for widget, text in ((self.title, entry.get('title') or ''),
+                                 (self.tags, ', '.join(entry.get('tags') or []))):
+                if widget.get_text() != text:
+                    widget.set_text(text)
+            body = entry.get('body') or ''
+            if buf.get_text(*buf.get_bounds(), False) != body:
+                buf.set_text(body)
             self._populate_head(entry)
         finally:
             self._loading = False

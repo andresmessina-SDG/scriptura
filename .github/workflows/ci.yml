@@ -102,3 +102,26 @@ jobs:
           -init -sc -r CrossWire -ri CrossWire KJVA -ri CrossWire MHCC
       - name: Accessible-tree checks
         run: python3 tools/verify-a11y.py
+
+  # Hammers the real app: junk in every setting and store file, module
+  # install and removal under an open pane, the welcome hand-off, a restore
+  # racing the editor's autosave, Replace All over 8k words. Each scenario
+  # adapts to the modules present (KJVA + MHCC here) and fails on any ERROR
+  # record, GLib CRITICAL, raised step or scenario assertion. Written after
+  # 2,248 green unit tests sat over three interaction bugs (1.7.2 sweep).
+  stress:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: >-
+          dnf install -y --setopt=install_weak_deps=False
+          python3-gobject gobject-introspection gtk4 libadwaita
+          python3-sword sword-utils dejavu-sans-fonts dejavu-serif-fonts
+      - name: Fetch test modules
+        run: >-
+          installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom
+          -init -sc -r CrossWire -ri CrossWire KJVA -ri CrossWire MHCC
+      - name: Stress scenarios
+        run: python3 tools/verify-stress.py

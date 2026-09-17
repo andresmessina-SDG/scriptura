@@ -144,6 +144,23 @@
          notice most, in plain words and short sentences, with no em-dashes.
          The full record belongs in CHANGELOG.md, not here.
          tests/test_version_sync.py holds every release to this. -->
+    <release version="1.7.2" date="2026-09-17">
+      <description its:translate="no">
+        <p>Your writing is kept safer, and the interlinears show more.</p>
+        <ul>
+          <li>A daily copy of your notes, journal and sermons is kept on this device. Restore keeps a copy of what it replaces.</li>
+          <li>Closing the app or logging out no longer loses the last sentence you typed.</li>
+          <li>Opening the app a second time no longer risks your notes. It brings the open window forward.</li>
+          <li>Find and replace in journal entries and sermons, with Ctrl+F.</li>
+          <li>The Greek interlinear can show the words other editions add or change.</li>
+          <li>The Hebrew interlinear can show the form the scribes wrote under the form that is read.</li>
+          <li>Type a verse reference in the GNOME search to see it and open it.</li>
+          <li>Ctrl+D bookmarks the chapter. Alt+[ and Alt+] go back and forward.</li>
+          <li>The annotations list shows the verse and updates itself.</li>
+          <li>Highlights sat one word late when footnotes were hidden. This is fixed.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.7.1" date="2026-09-15">
       <!-- English only, by his call, as 1.6.1 and 1.6.2 shipped:
            its:translate="no" is what keeps xgettext out of them and both

@@ -229,3 +229,90 @@ def test_the_list_follows_a_mark_made_elsewhere(isolated, display):
     finally:
         win.destroy()
     assert annotations._on_change is None
+
+
+def test_a_mark_made_elsewhere_leaves_the_open_manuscript_alone(
+        isolated, display, monkeypatch):
+    """The live list rebuilds the detail pane too. Re-populating the open
+    sermon with the words it already holds moved the cursor to the end,
+    dropped the scroll and cleared the undo history — for underlining a
+    verse in the reading view."""
+    import sermons
+    monkeypatch.setattr(sermons, 'SERMONS_FILE',
+                        str(isolated / 'sermons.json'))
+    monkeypatch.setattr(sermons, '_cache', None)
+    body = '\n'.join(f'Paragraph {i} of the manuscript.' for i in range(80))
+    sermons.save('s1', title='The Sower', body=body,
+                 anchors=[{'book': 'Matthew', 'chapter': 13, 'verses': []}])
+    win = annotations_window.AnnotationsWindow(on_navigate=lambda *a: None)
+    try:
+        win.select_sermon('s1')
+        buf = win._sermon_editor.body.get_buffer()
+        buf.place_cursor(buf.get_iter_at_offset(600))
+        buf.begin_user_action()
+        buf.insert_at_cursor(' amen')
+        buf.end_user_action()
+        win._autosave.flush()
+        assert buf.get_can_undo()
+
+        win.get_visible = lambda: True
+        win.is_active = lambda: False
+        annotations.save_underline('KJVA', 'Mark', 1, 1, True)
+        win._reload_from_store()
+
+        assert win._current_entry['id'] == 's1'
+        assert buf.get_iter_at_mark(buf.get_insert()).get_offset() == 605
+        assert buf.get_can_undo()
+        assert buf.get_text(*buf.get_bounds(), False) == body[:600] + ' amen' + body[600:]
+    finally:
+        win.destroy()
+
+
+def test_restore_writes_the_pending_edit_before_replacing_the_stores(
+        monkeypatch):
+    """A restore reloads the Annotations window, and the reload flushes the
+    autosave: the pre-restore words went over the restored store, while
+    the editor showed the restored ones. The flush now comes first."""
+    import types
+    import backup
+    from window import BibleWindow
+
+    order = []
+    fake = types.SimpleNamespace(
+        _annotations_win=types.SimpleNamespace(
+            _autosave=types.SimpleNamespace(flush=lambda: order.append('flush')),
+            get_visible=lambda: True, _reload=lambda: order.append('reload')),
+        pane1=types.SimpleNamespace(_fetch_and_render=lambda: None),
+        pane2=types.SimpleNamespace(_fetch_and_render=lambda: None),
+        _menu_panel_built=False, _toast=lambda *_a: None)
+    monkeypatch.setattr(backup, 'restore',
+                        lambda payload: order.append('restore') or [])
+    BibleWindow._on_restore_confirm(fake, None, 'replace', {})
+    assert order == ['flush', 'restore', 'reload']
+
+
+def test_closing_the_main_window_flushes_the_annotations_window(monkeypatch):
+    """The Annotations window is transient, not an application window, so
+    closing the main window ends the process without ever closing or
+    destroying it — and a GLib timeout dies with the process. A sentence
+    typed into a sermon within the autosave delay of clicking the main
+    window's close button was the one sentence that never reached disk."""
+    import types
+    import settings
+    import module_positions
+    from window import BibleWindow
+
+    flushed = []
+    fake = types.SimpleNamespace(
+        _annotations_win=types.SimpleNamespace(
+            _autosave=types.SimpleNamespace(flush=lambda: flushed.append(1))),
+        is_maximized=lambda: True, _current_loc=('Genesis', 1),
+        pane1=types.SimpleNamespace(module='KJVA',
+                                    _save_position_to_module_state=lambda: None),
+        pane2=types.SimpleNamespace(module='KJVA',
+                                    _save_position_to_module_state=lambda: None))
+    monkeypatch.setattr(settings, 'put', lambda *_a: None)
+    monkeypatch.setattr(settings, 'flush', lambda: None)
+    monkeypatch.setattr(module_positions, 'flush', lambda: None)
+    BibleWindow._on_close_request(fake, None)
+    assert flushed == [1]

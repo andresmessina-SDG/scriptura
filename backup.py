@@ -19,11 +19,16 @@ Scriptura that had none. The bump is for the other direction: validate()
 refuses a payload from a newer version, so an older Scriptura declines the
 file rather than silently dropping the writing in it.
 
-daily_copy() writes the same document once a day, at launch, to a folder on
-this device, and keeps the last DAILY_KEEP of them. It runs before the reader
-touches anything, so a copy never holds a mistake made that day.
+daily_copy() writes the same document once a day to a folder on this
+device, and keeps the last DAILY_KEEP of them. It runs at launch, before the
+reader touches anything, so a copy never holds a mistake made that day; and
+once an hour after that, so an app left open across midnight still makes the
+next day's copy. restore() writes one more copy to the same folder first —
+of what it is about to replace, since the day's copy is from launch and the
+words written since would otherwise go with the wrong file chosen.
 """
 
+import contextlib
 import datetime
 import json
 import logging
@@ -116,7 +121,12 @@ def restore(payload: dict[str, Any]) -> list[str]:
     write failed still holds the restored data in memory, so the app looks
     right until the next launch: the caller must not report success without
     checking this.
+
+    A copy of the current stores goes to the backups folder first, so a
+    wrong file is one more Restore… away from undone. A copy that cannot be
+    written is logged and the restore goes ahead: the reader confirmed it.
     """
+    safety_copy()
     return [key for key, ok in (
         ('annotations', annotations.replace_all(payload.get('annotations', {}))),
         ('journal', journal.replace_all(payload.get('journal', {}))),
@@ -145,12 +155,7 @@ def daily_copy(folder: str | None = None,
         if not os.path.exists(dest):
             doc = collect()
             doc['exported'] = day
-            tmp = dest + '.tmp'
-            with open(tmp, 'w', encoding='utf-8') as f:
-                json.dump(doc, f, indent=2, ensure_ascii=False)
-                f.flush()
-                os.fsync(f.fileno())
-            os.replace(tmp, dest)
+            _write_copy(dest, doc)
             written = dest
         # Days the app was not opened make no copy, so this keeps the last
         # DAILY_KEEP days of use, not of the calendar.
@@ -160,6 +165,48 @@ def daily_copy(folder: str | None = None,
         return written
     except Exception:
         _log.exception('daily copy failed')
+        return None
+
+
+def _write_copy(dest: str, doc: dict[str, Any]) -> None:
+    """Write `doc` at `dest` atomically. A write that raises part-way
+    takes its `.tmp` with it: a half-written copy is not a copy, and left
+    there it sat in the folder the Restore dialog opens on, uncounted by
+    the pruning."""
+    tmp = dest + '.tmp'
+    try:
+        with open(tmp, 'w', encoding='utf-8') as f:
+            json.dump(doc, f, indent=2, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, dest)
+    except Exception:
+        with contextlib.suppress(OSError):
+            os.remove(tmp)
+        raise
+
+
+def safety_copy(folder: str | None = None) -> str | None:
+    """Write a copy of the stores as they stand, named for the moment and
+    for why: `…-2026-09-17-143005-before-restore.json`. Sorts before the
+    day's own copy, so the Daily Copies row still lands on that one, and is
+    pruned with the rest. Never raises; returns the path, or None."""
+    try:
+        folder = folder or paths.backups_dir()
+        now = datetime.datetime.now()
+        stem = os.path.join(
+            folder, f'{_DAILY_PREFIX}{now:%Y-%m-%d-%H%M%S}-before-restore')
+        dest = f'{stem}.json'
+        n = 2
+        while os.path.exists(dest) and n < 1000:
+            dest = f'{stem}-{n}.json'
+            n += 1
+        doc = collect()
+        doc['exported'] = now.date().isoformat()
+        _write_copy(dest, doc)
+        return dest
+    except Exception:
+        _log.exception('safety copy failed')
         return None
 
 
