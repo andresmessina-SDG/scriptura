@@ -871,6 +871,11 @@ def driver(scenario: str) -> int:
             Path(folder, 'scriptura-study-data-2020-01-01.json').write_text('not json')
             backup.newest_daily_copy(folder)
             # A folder that cannot be written logs, by design, and leaves no half file.
+            # Root writes through a mode (CI runs its container as root), so
+            # there is no read-only folder to test with there.
+            if os.geteuid() == 0:
+                skipped.append('read-only folder: running as root')
+                return
             ro = os.path.join(os.environ['SCRIPTURA_STRESS_SCRATCH'], 'ro')
             os.makedirs(ro, mode=0o500)
             allow(r'daily copy failed')
@@ -1165,7 +1170,10 @@ def driver(scenario: str) -> int:
 
         @step(300)
         def remove_shown(win):
-            if 'KJVA' not in readable:
+            # Only the scratch copy is ours to remove. On CI the container
+            # runs as root, installmgr writes to /usr/share/sword, and the
+            # bridge rightly refuses to remove a system module.
+            if 'KJVA' not in readable or 'zip' not in state:
                 return
             win.pane1._apply_module_change('KJVA')
             win._go_to('John', 3, 16)
