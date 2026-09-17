@@ -2029,6 +2029,12 @@ class BibleWindow(Adw.ApplicationWindow):
     def _on_restore_confirm(self, _dialog, response, payload):
         if response != 'replace':
             return
+        # An edit still queued in the Annotations window is written now, to
+        # the store it was made in. The reload below flushes it too, but by
+        # then the store is the file's, and the old words went over it: the
+        # editor showed the restored sermon while the file kept the other.
+        if self._annotations_win is not None:
+            self._annotations_win._autosave.flush()
         failed = backup.restore(payload)
         # Re-render both panes so restored highlights/notes/indicators
         # appear (the reading anchor keeps the text in place), and rebuild

@@ -266,3 +266,26 @@ def test_a_mark_made_elsewhere_leaves_the_open_manuscript_alone(
         assert buf.get_text(*buf.get_bounds(), False) == body[:600] + ' amen' + body[600:]
     finally:
         win.destroy()
+
+
+def test_restore_writes_the_pending_edit_before_replacing_the_stores(
+        monkeypatch):
+    """A restore reloads the Annotations window, and the reload flushes the
+    autosave: the pre-restore words went over the restored store, while
+    the editor showed the restored ones. The flush now comes first."""
+    import types
+    import backup
+    from window import BibleWindow
+
+    order = []
+    fake = types.SimpleNamespace(
+        _annotations_win=types.SimpleNamespace(
+            _autosave=types.SimpleNamespace(flush=lambda: order.append('flush')),
+            get_visible=lambda: True, _reload=lambda: order.append('reload')),
+        pane1=types.SimpleNamespace(_fetch_and_render=lambda: None),
+        pane2=types.SimpleNamespace(_fetch_and_render=lambda: None),
+        _menu_panel_built=False, _toast=lambda *_a: None)
+    monkeypatch.setattr(backup, 'restore',
+                        lambda payload: order.append('restore') or [])
+    BibleWindow._on_restore_confirm(fake, None, 'replace', {})
+    assert order == ['flush', 'restore', 'reload']

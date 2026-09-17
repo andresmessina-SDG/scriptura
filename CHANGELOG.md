@@ -44,6 +44,12 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Fixed
 
+- **Restoring study data could keep an old sermon.** If Restore… ran while
+  the Annotations window still had an edit waiting to be saved, that edit
+  was written over the restored file a moment later: the window showed the
+  restored sermon, the file kept the old one, and the next launch showed
+  the old one. The waiting edit is now saved first, then replaced with the
+  rest.
 - **Russian and Spanish named a mark with a verb.** The annotations list
   and exports labelled an underline «Подчеркнуть» and «Subrayar», which
   read as an order to underline; they now read «Подчёркивание» and
