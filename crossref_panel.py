@@ -7,6 +7,7 @@ from a11y import set_accessible_label
 from gtk_utils import clear_children, DelayedSpinner
 import sword_bridge
 import tasks
+from i18n import _, ngettext, book_label
 
 
 class CrossRefPanel(Gtk.Box):
