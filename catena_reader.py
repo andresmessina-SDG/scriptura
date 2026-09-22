@@ -18,7 +18,7 @@ from gi.repository import Gtk, Adw, GLib
 import a11y
 from a11y import set_accessible_label
 from gtk_utils import clear_children, fade_in
-from i18n import N_
+from i18n import _, ngettext, book_label, N_
 
 import catena_bridge
 import imagery_bridge
