@@ -31,6 +31,7 @@ import datetime
 import json
 import os
 import re
+import threading
 import urllib.request
 
 import paths
@@ -372,27 +373,6 @@ class Player:
             Gst.init(None)
         return Gst
 
-    #: Memoised: initialising GStreamer builds its plugin registry and probes
-    #: hardware video drivers, which was measured taking seconds on a cold
-    #: cache. This is asked on every date change, so it must be paid once.
-    _available: bool | None = None
-
-    @staticmethod
-    def available() -> bool:
-        """Whether GStreamer can be used at all in this build.
-
-        Only ever reached when the reader has turned the feature on — the
-        caller checks the setting first, so a default install never
-        initialises GStreamer at all.
-        """
-        if Player._available is None:
-            try:
-                Player._gst()
-                Player._available = True
-            except Exception:
-                Player._available = False
-        return Player._available
-
     def _build(self, path: str):
         Gst = self._gst()
         # Explicit, because the format is known. decodebin3 — which
@@ -554,3 +534,49 @@ class Player:
     def ended(self) -> bool:
         """Whether playback has run to the end of the file."""
         return self._pipeline is not None and self.progress() >= 0.999
+
+
+#: Memoised: initialising GStreamer builds its plugin registry and probes
+#: hardware video drivers, which was measured taking seconds on a cold cache.
+#: Module-level rather than on Player, so it survives a test swapping Player.
+_available: bool | None = None
+_available_lock = threading.Lock()
+
+#: Every element `Player._build` names. GStreamer can be present with one of
+#: these missing, and then the pipeline fails only at play time.
+_ELEMENTS = ('filesrc', 'mpegaudioparse', 'mpg123audiodec', 'audioconvert',
+             'volume', 'scaletempo', 'audioresample', 'autoaudiosink')
+
+
+def playback_available() -> bool:
+    """Whether this build can play the feeds at all: GStreamer, and every
+    element the pipeline names. Blocks while GStreamer initialises, so the
+    surfaces ask through `playback_ready`."""
+    global _available
+    with _available_lock:
+        if _available is None:
+            try:
+                Gst = Player._gst()
+                _available = all(Gst.ElementFactory.find(name) is not None
+                                 for name in _ELEMENTS)
+            except Exception:
+                _available = False
+        return _available
+
+
+def playback_ready(key: str, retry) -> bool:
+    """Whether an audio control may be offered, without blocking to find out.
+
+    Until GStreamer has been asked once, this asks off the UI thread, says
+    False, and calls `retry` when the answer is in, so the surface syncs
+    again and gets it at once. A build that cannot play never shows a
+    control that would download a file and then reset.
+    """
+    if _available is not None:
+        return _available
+    import tasks
+    tasks.submit(key=f'playback-probe:{key}',
+                 work=lambda _t: playback_available(),
+                 apply=lambda _ok: retry(),
+                 on_error=lambda _e: None)
+    return False

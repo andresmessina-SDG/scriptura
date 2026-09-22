@@ -6,9 +6,9 @@ click via show(). The panel is responsible for:
 
 * Rendering the Strong's definition (with clickable cross-numbers in
   the definition body).
-* Loading and displaying word-study results (every verse in the
-  current book containing this Strong's number, with the matched
-  word(s) bolded).
+* Loading and displaying word-study results — the concordance. Every
+  verse containing this Strong's number, with the matched word(s)
+  bolded, over the current book or the whole Bible.
 * History navigation back through previously-viewed Strong's entries
   reached by clicking cross-numbers in the definition body.
 
@@ -28,15 +28,19 @@ import a11y
 from a11y import set_accessible_label
 from gtk_utils import clear_children, fade_in, DelayedSpinner
 
+import content
+import lemma_index
+import search_query
 import sword_bridge
 import tasks
 
 _log = logging.getLogger('scriptura.lexicon')
 
-# Cap the word-study rows actually built: GTK ListBox rows aren't
-# virtualized, and a common word (G3588 'the') matches nearly every verse
-# of a book — thousands of rows stall the main loop for seconds. The
-# header still reports the full count; a tail note names the cut.
+# One page of word-study rows. GTK ListBox rows aren't virtualized, and a
+# common word (G3588 'the') matches nearly every verse — thousands of rows
+# stall the main loop for seconds. This used to be a hard cap with a note
+# naming the cut; it is now a page, and the rest waits behind a button, so
+# a concordance can reach its last verse.
 _WS_ROW_CAP = 200
 
 
@@ -160,13 +164,18 @@ class LexiconPanel(Gtk.Box):
 
     def __init__(self, on_word_study_navigate=None, on_first_show=None,
                  on_show_peek=None, on_dismiss_peek=None,
-                 on_open_verse=None):
+                 on_open_verse=None, on_search_query=None):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.set_visible(False)
         self.set_size_request(-1, 80)
         self.add_css_class('lex-panel')
 
         self._on_word_study_navigate = on_word_study_navigate
+        # Routed to the window: opens the search panel on a query string.
+        # The word study is a column too narrow for a frequency chart, and
+        # the search panel already draws one per section and book — so the
+        # concordance sends the reader there rather than growing a second.
+        self._on_search_query = on_search_query
         # Rate limiter for the word-study scan's per-chapter progress line.
         self._ws_progress = a11y.ProgressAnnouncer()
         # Verse-peek plumbing: the composing pane lends us its shared
@@ -208,7 +217,15 @@ class LexiconPanel(Gtk.Box):
         # to scope its scan. set_context() updates it.
         self._book = None
         self._module = None
-        self._ws_rows = 0        # rows built so far (capped at _WS_ROW_CAP)
+        # 'book' or 'bible'. Book is the default because the reader clicked
+        # a word in a chapter they are reading, and the near context is the
+        # commoner question; whole-Bible is one click away.
+        self._ws_scope = 'book'
+        # Re-entrancy guard for the linked pair — see _on_scope_toggled.
+        self._scope_settling = False
+        self._ws_pending = []    # matches found but not yet built as rows
+        self._ws_room = _WS_ROW_CAP   # rows left before the next page break
+        self._ws_more_row = None
 
         # ── Header row ──
         header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -341,6 +358,45 @@ class LexiconPanel(Gtk.Box):
         self._ws_header.set_ellipsize(Pango.EllipsizeMode.END)
         a11y.set_role(self._ws_header, Gtk.AccessibleRole.STATUS)
         ws_box.append(self._ws_header)
+
+        # ── Scope + frequency ──
+        # Two linked buttons rather than a dropdown: there are exactly two
+        # answers and both fit, so a menu would hide one behind a click.
+        scope_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        scope_row.add_css_class('ws-scope')
+        linked = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        linked.add_css_class('linked')
+        self._scope_book_btn = Gtk.ToggleButton(label=_('This book'),
+                                                active=True)
+        self._scope_bible_btn = Gtk.ToggleButton(label=_('Whole Bible'))
+        for btn in (self._scope_book_btn, self._scope_bible_btn):
+            btn.add_css_class('flat')
+            linked.append(btn)
+        self._scope_book_btn.connect('toggled', self._on_scope_toggled, 'book')
+        self._scope_bible_btn.connect('toggled', self._on_scope_toggled,
+                                      'bible')
+        set_accessible_label(linked, _('Word study scope'))
+        scope_row.append(linked)
+
+        # A link, not a third scope button. It leaves this panel for the
+        # search surface, which the two-accent law colours clay; styled in
+        # `.ws-freq` and still a Button so it keeps focus and an action role.
+        # The spacing alone never said this: 15px inside the scope pair
+        # against 24px before this one, measured off a real screenshot, and
+        # all three read as one kind.
+        self._freq_btn = Gtk.Button(label=_('Frequency'), hexpand=True,
+                                    halign=Gtk.Align.END,
+                                    valign=Gtk.Align.CENTER)
+        self._freq_btn.add_css_class('flat')
+        self._freq_btn.add_css_class('ws-freq')
+        self._freq_btn.set_tooltip_text(
+            _('Open this word in search, with its count per book'))
+        self._freq_btn.connect('clicked', self._on_freq_clicked)
+        # Nothing to route to when the composer supplied no callback —
+        # a button that does nothing is worse than one that is not there.
+        self._freq_btn.set_visible(self._on_search_query is not None)
+        scope_row.append(self._freq_btn)
+        ws_box.append(scope_row)
 
         self._ws_list = Gtk.ListBox()
         self._ws_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
@@ -721,14 +777,110 @@ class LexiconPanel(Gtk.Box):
 
     # ── Word study list ──────────────────────────────────────────────────
 
+    def _on_scope_toggled(self, btn, scope):
+        """Linked toggles, held mutually exclusive by hand — GTK4 has no
+        radio group for ToggleButton, and letting both go off would leave
+        the list scoped to nothing.
+
+        `_scope_settling` is not defensive padding, it is the whole
+        correctness of this pair. Turning the other button off emits ITS
+        `toggled`, which re-enters here with the old `_ws_scope` still in
+        place, reads the pair as "both off" and turns the button the
+        reader just left straight back on. The measured result was the
+        list scoped to the whole Bible with *This book* still lit — the
+        controls lying about what is below them.
+        """
+        if self._scope_settling:
+            return
+        if not btn.get_active():
+            # Clicking the lit button again: keep it lit rather than
+            # leaving the pair with no answer.
+            if self._ws_scope == scope:
+                self._scope_settling = True
+                try:
+                    btn.set_active(True)
+                finally:
+                    self._scope_settling = False
+            return
+        self._scope_settling = True
+        try:
+            other = (self._scope_bible_btn if scope == 'book'
+                     else self._scope_book_btn)
+            other.set_active(False)
+        finally:
+            self._scope_settling = False
+        if self._ws_scope == scope:
+            return
+        self._ws_scope = scope
+        if self._current_strong:
+            self._load_word_study(self._current_strong)
+
+    def _on_freq_clicked(self, _btn):
+        """Hand the word to the search panel, which already draws a count
+        per section and per book."""
+        if self._on_search_query and self._current_strong:
+            self._on_search_query(
+                f'strong:{lemma_index.normalise_strongs(self._current_strong)}')
+
+    def _ws_chapters(self, strong_num, book, module, scope):
+        """Which (book, chapter) pairs the scan has to load, in reading
+        order.
+
+        For one book that is every chapter of it. For the whole Bible it
+        is only the chapters the interlinear places this word in — 90-odd
+        rather than 1,189 — which is the entire reason whole-Bible scope
+        is affordable at all.
+
+        The interlinear picks the chapters; the MODULE's own markup still
+        decides which verses match, exactly as it does for one book. Two
+        scopes answering to two authorities would report different counts
+        for the same book. Chapter granularity is deliberate: where the
+        two disagree about a word, the whole chapter is still read, so the
+        module's tagging is what is missed from, not the interlinear's.
+        """
+        # `scope` is the value captured when the scan started, never
+        # self._ws_scope: this runs on a worker thread, and a reader who
+        # switches scope mid-scan would otherwise have the running scan
+        # change its mind halfway down the Bible.
+        if scope == 'book':
+            total = sword_bridge.chapter_count_in(module, book)
+            return [(book, ch) for ch in range(1, total + 1)]
+        refs = lemma_index.refs([search_query.Filter(
+            'strong', lemma_index.normalise_strongs(strong_num), False)])
+        seen = []
+        marked = set()
+        for ref_book, chapter, _verse in refs:
+            key = (ref_book, chapter)
+            if key not in marked:
+                marked.add(key)
+                seen.append(key)
+        return seen
+
     def _load_word_study(self, strong_num):
         # Clear the list immediately so the user sees the new search start.
         self._clear_ws()
-        self._ws_rows = 0
+
+        # Whole-Bible scope needs the interlinear to say which chapters to
+        # open; without it the only honest alternative is reading all 1,189,
+        # so the button says what is missing instead of being slow.
+        available = lemma_index.is_available()
+        self._scope_bible_btn.set_sensitive(available)
+        self._scope_bible_btn.set_tooltip_text(
+            None if available else
+            _('Install the interlinear to search the whole Bible'))
+        if not available and self._ws_scope == 'bible':
+            self._ws_scope = 'book'
+            self._scope_settling = True
+            try:
+                self._scope_bible_btn.set_active(False)
+                self._scope_book_btn.set_active(True)
+            finally:
+                self._scope_settling = False
 
         # Capture the search context so a late callback after navigation
         # can be discarded.
         book, module = self._book, self._module
+        scope = self._ws_scope
         if not book or not module:
             self._ws_header.set_text('')   # no context — nothing to scan
             return
@@ -743,84 +895,142 @@ class LexiconPanel(Gtk.Box):
             # A mid-scan failure still reaches _ws_finalize with the partial
             # count — a dead scan would leave the header on 'Searching…'
             # forever. (The runner's on_error backstops the same way.)
-            import content
             running = 0
             try:
-                total = sword_bridge.chapter_count_in(module, book)
-                for ch in range(1, total + 1):
+                chapters = self._ws_chapters(strong_num, book, module,
+                                             scope)
+                if scope == 'bible' and not chapters:
+                    # The interlinear does not carry this number at all —
+                    # a deuterocanonical word, or one only this module's
+                    # tagging uses. None, not 0: "0 occurrences in the
+                    # whole Bible" for a word plainly on the page in front
+                    # of the reader is worse than saying nothing.
+                    return None
+                total = len(chapters)
+                for i, (scan_book, ch) in enumerate(chapters, start=1):
                     if not task.is_current():
                         return running  # superseded — stop scanning
                     batch = []
-                    for v_num, html in content.load_chapter(module, book, ch):
+                    # content, never sword_bridge: an eBible translation is
+                    # a Bible the reader may have open, and the SWORD call
+                    # answers [] for it without raising.
+                    for v_num, html in content.load_chapter(
+                            module, scan_book, ch):
                         if pattern.search(str(html)):
                             markup = _make_verse_markup(html, strong_num)
-                            batch.append((book, ch, v_num, markup))
+                            batch.append((scan_book, ch, v_num, markup))
                     running += len(batch)
-                    task.post(self._ws_chapter_done,
-                              strong_num, book, module, batch, ch, total, running)
+                    task.post(self._ws_chapter_done, strong_num, book,
+                              module, scope, batch, scan_book, i, total,
+                              running)
             except Exception:
                 _log.exception('word study scan failed')
             return running
 
         tasks.submit(
             f'wordstudy:{id(self)}', fetch,
-            lambda running: self._ws_finalize(strong_num, book, module, running),
-            on_error=lambda _exc: self._ws_finalize(strong_num, book, module, 0))
+            lambda running: self._ws_finalize(strong_num, book, module,
+                                              scope, running),
+            on_error=lambda _exc: self._ws_finalize(strong_num, book, module,
+                                                    scope, 0))
 
     def _clear_ws(self):
+        """Empty the list AND the page bookkeeping. `show_loading` clears
+        between two words, so leaving a previous whole-Bible scan's
+        hundreds of pending matches behind would have them paged into the
+        next word's list."""
         clear_children(self._ws_list)
+        self._ws_more_row = None
+        self._ws_pending = []
+        self._ws_room = _WS_ROW_CAP
 
-    def _ws_chapter_done(self, strong_num, book, module, batch, ch, total, running):
+    def _ws_stale(self, strong_num, book, module, scope):
+        """Whether a callback belongs to a search the reader has left —
+        a different word, book, module, or scope."""
+        return (self._current_strong != strong_num
+                or self._book != book
+                or self._module != module
+                or self._ws_scope != scope)
+
+    def _ws_chapter_done(self, strong_num, book, module, scope, batch,
+                         scan_book, i, total, running):
         # Discard stale callbacks — the user may have navigated to a
         # different word, book, or module while the scan was in flight.
-        if (self._current_strong != strong_num
-                or self._book != book
-                or self._module != module):
+        if self._ws_stale(strong_num, book, module, scope):
             return GLib.SOURCE_REMOVE
-        # Progress header — running count + chapter position. The chapter
-        # number gives the user a sense of how much scanning is left
-        # without a full progress bar.
+        # Progress header — running count + position. Whole-Bible scope
+        # names the book being read; within one book that would repeat the
+        # same word on every tick.
+        where = book_label(book) if scope == 'book' else book_label(scan_book)
         progress = ngettext(
             'Searching {book}… {n} match so far ({ch}/{total})',
             'Searching {book}… {n} matches so far ({ch}/{total})',
-            running).format(book=book_label(book), n=running, ch=ch, total=total)
+            running).format(book=where, n=running, ch=i, total=total)
         self._ws_header.set_text(progress)
         # The header restates itself once per chapter (up to 150 of them);
         # rate-limit the spoken version.
         self._ws_progress.progress(self._ws_header, progress)
-        for ref_book, c, v_num, markup in batch:
-            if self._ws_rows >= _WS_ROW_CAP:
-                break
-            self._ws_list.append(self._build_ws_row(ref_book, c, v_num, markup))
-            self._ws_rows += 1
+        self._ws_pending.extend(batch)
+        self._build_ws_page(scope)
         return GLib.SOURCE_REMOVE
 
-    def _ws_finalize(self, strong_num, book, module, running):
-        if (self._current_strong != strong_num
-                or self._book != book
-                or self._module != module):
+    def _build_ws_page(self, scope):
+        """Build up to one page of rows out of what the scan has found.
+
+        Rows are built a page at a time rather than capped outright: a
+        GtkListBox does not virtualise, and ἀγάπη alone is 104 verses
+        while G3588 is most of the New Testament. The cap used to be the
+        end of the list; now it is the end of a page."""
+        if self._ws_more_row is not None:
+            self._ws_list.remove(self._ws_more_row)
+            self._ws_more_row = None
+        take = self._ws_pending[:self._ws_room]
+        del self._ws_pending[:self._ws_room]
+        self._ws_room -= len(take)
+        for ref_book, c, v_num, markup in take:
+            self._ws_list.append(
+                self._build_ws_row(ref_book, c, v_num, markup, scope))
+        if self._ws_pending:
+            self._ws_more_row = self._make_more_row(scope)
+            self._ws_list.append(self._ws_more_row)
+
+    def _make_more_row(self, scope):
+        btn = Gtk.Button(label=ngettext(
+            'Show {n} more verse', 'Show {n} more verses',
+            len(self._ws_pending)).format(n=len(self._ws_pending)))
+        btn.add_css_class('flat')
+        btn.connect('clicked', self._on_show_more, scope)
+        row = Gtk.ListBoxRow()
+        row.set_activatable(False)
+        row.set_selectable(False)
+        row.set_child(btn)
+        return row
+
+    def _on_show_more(self, _btn, scope):
+        self._ws_room = _WS_ROW_CAP
+        self._build_ws_page(scope)
+
+    def _ws_finalize(self, strong_num, book, module, scope, running):
+        if self._ws_stale(strong_num, book, module, scope):
             return GLib.SOURCE_REMOVE
         self._ws_progress.reset()
-        a11y.status(self._ws_header, ngettext(
-            '{n} occurrence in {book}',
-            '{n} occurrences in {book}',
-            running).format(n=running, book=book_label(book)))
-        if running > self._ws_rows:
-            # The list stops at the cap; say so rather than look truncated.
-            note = Gtk.Label(
-                label=_('Showing the first {n} verses').format(n=self._ws_rows),
-                xalign=0)
-            note.add_css_class('dim-label')
-            note.set_margin_start(8)
-            note.set_margin_top(6)
-            note.set_margin_bottom(8)
-            row = Gtk.ListBoxRow()
-            row.set_activatable(False)
-            row.set_child(note)
-            self._ws_list.append(row)
+        if running is None:
+            a11y.status(self._ws_header,
+                        _('Not in the interlinear — try this book'))
+            return GLib.SOURCE_REMOVE
+        if scope == 'book':
+            summary = ngettext(
+                '{n} occurrence in {book}', '{n} occurrences in {book}',
+                running).format(n=running, book=book_label(book))
+        else:
+            summary = ngettext(
+                '{n} occurrence in the whole Bible',
+                '{n} occurrences in the whole Bible',
+                running).format(n=running)
+        a11y.status(self._ws_header, summary)
         return GLib.SOURCE_REMOVE
 
-    def _build_ws_row(self, ref_book, ch, v_num, markup):
+    def _build_ws_row(self, ref_book, ch, v_num, markup, scope='book'):
         row = Gtk.ListBoxRow()
         row._nav = (ref_book, ch, v_num)
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
@@ -828,7 +1038,11 @@ class LexiconPanel(Gtk.Box):
         card.set_margin_end(8)
         card.set_margin_top(6)
         card.set_margin_bottom(6)
-        ref_lbl = Gtk.Label(label=f'{ch}:{v_num}', xalign=0)
+        # Within one book the book name is the header's; across the whole
+        # Bible it is the only thing telling Romans 5:8 from 1 John 4:8.
+        ref_text = (f'{ch}:{v_num}' if scope == 'book'
+                    else f'{book_label(ref_book)} {ch}:{v_num}')
+        ref_lbl = Gtk.Label(label=ref_text, xalign=0)
         ref_lbl.add_css_class('dim-label')
         text_lbl = Gtk.Label(xalign=0, wrap=True)
         # Cap the label's *natural* width so the ListBox doesn't request

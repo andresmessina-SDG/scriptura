@@ -1032,6 +1032,8 @@ def test_turning_spoken_readings_off_silences_a_reading(monkeypatch):
 def _settings(monkeypatch, rate=1.0, show_audio=True):
     """Never the real settings file — the stored rate is faked in memory."""
     store = {'reading_rate': rate, 'show_audio': show_audio}
+    # These drive a FakePlayer, so the host's GStreamer is not the question.
+    monkeypatch.setattr(devotional_audio, '_available', True)
     monkeypatch.setattr(settings, 'get', lambda key: store.get(key))
     monkeypatch.setattr(settings, 'put',
                         lambda key, value: store.__setitem__(key, value))
@@ -1319,3 +1321,50 @@ def test_the_devotional_controls_are_built_into_the_row_it_is_given():
     # it must be reachable and unparented once the surface is constructed.
     assert devot.progress.get_parent() is None
     Gtk.Box().append(devot.progress)
+
+
+# ── A build that cannot play ─────────────────────────────────────────────────
+
+def _offered(monkeypatch, can_play):
+    _runner(monkeypatch)
+    _settings(monkeypatch)
+    monkeypatch.setattr(devotional_audio, '_available', can_play)
+    c = _paging(monkeypatch, player=FakePlayer())
+    c.sync()
+    return c
+
+
+def test_a_build_that_cannot_play_offers_no_chapter(monkeypatch):
+    """Without GStreamer, or without an element the pipeline names, the
+    button used to show, download six megabytes, then quietly reset."""
+    assert _offered(monkeypatch, True)._reading_url is not None
+    c = _offered(monkeypatch, False)
+    assert c._reading_url is None
+    assert not c._reading_audio.visible
+
+
+def test_the_first_ask_does_not_block_and_comes_back(monkeypatch):
+    """Initialising GStreamer can take seconds on a cold cache, so the first
+    sync asks off the UI thread, offers nothing yet, and syncs again when the
+    answer is in."""
+    runner = _runner(monkeypatch)
+    monkeypatch.setattr(devotional_audio, '_available', None)
+    retried = []
+    assert not devotional_audio.playback_ready('k', lambda: retried.append(1))
+    assert runner.key == 'playback-probe:k'
+    runner.apply(True)
+    assert retried == [1]
+
+
+def test_a_missing_element_means_no_playback(monkeypatch):
+    class Factory:
+        @staticmethod
+        def find(name):
+            return None if name == 'mpg123audiodec' else object()
+
+    class Gst:
+        ElementFactory = Factory
+
+    monkeypatch.setattr(devotional_audio, '_available', None)
+    monkeypatch.setattr(devotional_audio.Player, '_gst', staticmethod(lambda: Gst))
+    assert devotional_audio.playback_available() is False

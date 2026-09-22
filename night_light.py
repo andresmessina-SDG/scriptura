@@ -69,6 +69,33 @@ def dusk_blend(paper_hex: str, strength: float) -> str:
         *(min(255, max(0, round(v))) for v in (r, g, b)))
 
 
+def probe(on_result: Callable[[bool], None]) -> None:
+    """Ask whether this desktop provides Night Light at all, then call
+    `on_result(available)` on the main loop.
+
+    A switch that promises something the session cannot do is worse than no
+    switch. On KDE, Xfce or a bare WM the name below has no owner, the
+    monitor stays inert exactly as documented — and the row in Appearance ▸
+    Advanced used to sit there enabled, flipping with no effect.
+
+    Asks over the same proxy the feature itself uses, so the gate cannot
+    disagree with the thing it gates, and with DO_NOT_AUTO_START so the
+    question never starts a service to answer itself. `get_name_owner()` is
+    the real test: a proxy constructs happily for a name nobody owns.
+    """
+    def ready(_source: object, result: Gio.AsyncResult) -> None:
+        try:
+            proxy = Gio.DBusProxy.new_for_bus_finish(result)
+        except GLib.Error:
+            on_result(False)
+            return
+        on_result(proxy.get_name_owner() is not None)
+
+    Gio.DBusProxy.new_for_bus(
+        Gio.BusType.SESSION, Gio.DBusProxyFlags.DO_NOT_AUTO_START, None,
+        _BUS_NAME, _OBJECT_PATH, _BUS_NAME, None, ready)
+
+
 class NightLightMonitor:
     """Watches Night Light and reports the paper-shift strength.
 

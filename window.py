@@ -7,7 +7,7 @@ gi.require_version('Adw', '1')
 gi.require_version('PangoCairo', '1.0')
 import datetime
 from gi.repository import Gtk, Adw, GLib, Gdk, Gio, Pango, PangoCairo
-from gtk_utils import clear_children
+from gtk_utils import clear_children, file_dialog_failed
 import sword_bridge
 import settings
 import devotional_audio
@@ -760,6 +760,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_module_switched=self._on_pane_module_switched,
                                on_hint=self._hints.maybe_fire,
                                on_open_verse=self._open_verse_in_pane2,
+                               on_search_query=self._search_for,
                                pane_id=1)
         self.pane2 = BiblePane(module_name=p2_mod,
                                on_word_click=self._on_word_click,
@@ -776,6 +777,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_module_switched=self._on_pane_module_switched,
                                on_hint=self._hints.maybe_fire,
                                on_open_verse=self._open_verse_in_pane2,
+                               on_search_query=self._search_for,
                                pane_id=2)
         # Initial f* sensitivity for the startup modules — the pane
         # callbacks above only fire on later switches.
@@ -1832,6 +1834,9 @@ class BibleWindow(Adw.ApplicationWindow):
     def _hide_search(self):
         self._overlays._hide_search()
 
+    def _search_for(self, query):
+        self._overlays._search_for(query)
+
 
     # ── Bookmarks ─────────────────────────────────────────────────────────────
 
@@ -1976,8 +1981,10 @@ class BibleWindow(Adw.ApplicationWindow):
     def _on_backup_finish(self, dialog, result):
         try:
             gfile = dialog.save_finish(result)
-        except GLib.Error:
-            return  # cancelled
+        except GLib.Error as err:
+            if file_dialog_failed(err):
+                self._toast(_('Could not open the file chooser'))
+            return
         try:
             with open(gfile.get_path(), 'w', encoding='utf-8') as f:
                 json.dump(backup.collect(), f, indent=2, ensure_ascii=False)
@@ -2006,8 +2013,10 @@ class BibleWindow(Adw.ApplicationWindow):
     def _on_restore_open(self, dialog, result):
         try:
             gfile = dialog.open_finish(result)
-        except GLib.Error:
-            return  # cancelled
+        except GLib.Error as err:
+            if file_dialog_failed(err):
+                self._toast(_('Could not open the file chooser'))
+            return
         try:
             with open(gfile.get_path(), encoding='utf-8') as f:
                 payload = backup.validate(json.load(f))
@@ -2408,6 +2417,10 @@ class BibleWindow(Adw.ApplicationWindow):
             return
         if not settings.get('show_audio'):
             self._stop_today_listen()
+            self._today_view.clear_listen()
+            return
+        if not devotional_audio.playback_ready(f'today:{id(self)}',
+                                               self._sync_today_listen):
             self._today_view.clear_listen()
             return
         today = datetime.date.today()
@@ -3372,8 +3385,13 @@ class BibleWindow(Adw.ApplicationWindow):
             application_icon='io.github.andresmessina_SDG.Scriptura',
             developer_name='Andres Messina',
             version=__version__,
-            comments=_('GNOME-native Bible study with SWORD modules, '
-                       'Strong’s lexicon, cross-references, and reading plans.'),
+            # Says what the app does, not which desktop it came from. It
+            # read "GNOME-native" until 2026-09-19; the app IS built to the
+            # GNOME HIG and ARCHITECTURE.md still says so, but that is a
+            # design statement for us, and in a KDE reader's software centre
+            # it reads as "not for you".
+            comments=_('Bible study with SWORD modules, Strong’s lexicon, '
+                       'cross-references, and reading plans.'),
             website='https://github.com/andresmessina-SDG/scriptura',
             issue_url='https://github.com/andresmessina-SDG/scriptura/issues',
             license_type=Gtk.License.GPL_3_0,
@@ -4274,6 +4292,25 @@ class BibleWindow(Adw.ApplicationWindow):
         ev_sw = Gtk.Switch(valign=Gtk.Align.CENTER)
         ev_sw.set_active(bool(settings.get('evening_paper')))
         set_accessible_label(ev_sw, _('Evening paper (follows Night Light)'))
+        # Off until the session says it has Night Light. The monitor is
+        # documented to stay inert where the interface is missing (KDE,
+        # Xfce, a bare WM) — which left this switch flipping with no
+        # effect, a control promising what the desktop cannot do. Insensitive
+        # with a reason, not hidden: the reader may run the app on two
+        # machines, and a setting that vanishes is its own puzzle.
+        # The STORED value is left alone for the same reason; this gates
+        # the control, not the preference.
+        ev_sw.set_sensitive(False)
+        ev_row.set_tooltip_text(
+            _('Checking whether this desktop provides Night Light…'))
+
+        def _night_light_answered(available, _sw=ev_sw, _row=ev_row):
+            _sw.set_sensitive(available)
+            _row.set_tooltip_text(None if available else _(
+                'This desktop does not provide Night Light, so the paper '
+                'has nothing to follow'))
+
+        night_light.probe(_night_light_answered)
 
         def _on_evening_switch(s, _p):
             on = s.get_active()

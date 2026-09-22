@@ -7625,10 +7625,6 @@ msgstr "Solo leer"
 msgid "Open a Bible and start reading right away."
 msgstr "Abra una Biblia y empiece a leer de inmediato."
 
-#: welcome.py:75
-msgid "Smallest download"
-msgstr "Descarga mínima"
-
 #: welcome.py:80
 msgid "Reading + study"
 msgstr "Lectura y estudio"
@@ -7638,10 +7634,6 @@ msgid "A few translations, and the tools for looking closely at a word."
 msgstr ""
 "Varias traducciones y las herramientas para mirar de cerca una palabra."
 
-#: welcome.py:83
-msgid "Small download"
-msgstr "Descarga pequeña"
-
 #: welcome.py:88
 msgid "Full library"
 msgstr "Biblioteca completa"
@@ -7649,10 +7641,6 @@ msgstr "Biblioteca completa"
 #: welcome.py:89
 msgid "Everything this language has, from the start."
 msgstr "Todo lo que hay en este idioma, desde el principio."
-
-#: welcome.py:90
-msgid "Larger download"
-msgstr "Descarga grande"
 
 #: welcome.py:316
 #, python-brace-format
@@ -9756,3 +9744,129 @@ msgstr "Escrito (ketiv) {written} «{written_gloss}»; leído (qeré) {read} «{
 #: module_manager.py
 msgid "A newer build adds the Ketiv readings"
 msgstr "Una versión más reciente añade las lecturas ketiv"
+
+#: lexicon_panel.py:368
+msgid "This book"
+msgstr "Este libro"
+
+#: lexicon_panel.py:370
+msgid "Whole Bible"
+msgstr "Toda la Biblia"
+
+#: lexicon_panel.py:377
+msgid "Word study scope"
+msgstr "Alcance del estudio de palabras"
+
+#: lexicon_panel.py:380
+msgid "Frequency"
+msgstr "Frecuencia"
+
+#: lexicon_panel.py:384
+msgid "Open this word in search, with its count per book"
+msgstr "Abrir esta palabra en la búsqueda, con su recuento por libro"
+
+#: lexicon_panel.py:838
+msgid "Install the interlinear to search the whole Bible"
+msgstr "Instale el interlineal para buscar en toda la Biblia"
+
+#: lexicon_panel.py:949
+#, python-brace-format
+msgid "Show {n} more verse"
+msgid_plural "Show {n} more verses"
+msgstr[0] "Mostrar {n} versículo más"
+msgstr[1] "Mostrar {n} versículos más"
+
+#: lexicon_panel.py:973
+#, python-brace-format
+msgid "{n} occurrence in the whole Bible"
+msgid_plural "{n} occurrences in the whole Bible"
+msgstr[0] "{n} aparición en toda la Biblia"
+msgstr[1] "{n} apariciones en toda la Biblia"
+
+#: search_panel.py:199
+msgid ""
+"Phrase: \"living water\" · either: bread OR wine · exclude: faith -works · "
+"prefix: baptiz* · the word underneath: strong:G26"
+msgstr ""
+"Frase: \"agua viva\" · cualquiera: pan OR vino · excluir: fe -obras · "
+"prefijo: bautiz* · la palabra de fondo: strong:G26"
+
+#: search_panel.py:460
+msgid "No interlinear installed"
+msgstr "No hay interlineal instalado"
+
+#: search_panel.py:461
+msgid ""
+"Searching by Greek or Hebrew word needs the interlinear data. Install it "
+"from the Module Manager."
+msgstr ""
+"Para buscar por palabra griega o hebrea hacen falta los datos del "
+"interlineal. Instálelos desde el Gestor de módulos."
+
+#: search_panel.py:497
+#, python-brace-format
+msgid "{n} word shares this spelling"
+msgid_plural "{n} words share this spelling"
+msgstr[0] "{n} palabra comparte esta grafía"
+msgstr[1] "{n} palabras comparten esta grafía"
+
+#: search_panel.py:508
+#, python-brace-format
+msgid "Search only {strongs}"
+msgstr "Buscar solo {strongs}"
+
+#: search_panel.py:513
+#, python-brace-format
+msgid "and {n} more"
+msgstr "y {n} más"
+
+#: search_panel.py:540
+#, python-brace-format
+msgid "{n} occurrence"
+msgid_plural "{n} occurrences"
+msgstr[0] "{n} aparición"
+msgstr[1] "{n} apariciones"
+
+#: lexicon_panel.py:984
+msgid "Not in the interlinear — try this book"
+msgstr "No está en el interlineal — pruebe con este libro"
+
+#: search_panel.py:510
+#, python-brace-format
+msgid "{n} word matches"
+msgid_plural "{n} words match"
+msgstr[0] "Coincide {n} palabra"
+msgstr[1] "Coinciden {n} palabras"
+
+#: data/io.github.andresmessina_SDG.Scriptura.desktop.in:4
+msgid "Bible study with SWORD modules, Strong's lexicon, and cross-references"
+msgstr ""
+"Estudio bíblico con módulos SWORD, léxico de Strong y referencias cruzadas"
+
+#: window.py:3385
+msgid ""
+"Bible study with SWORD modules, Strong’s lexicon, cross-references, and "
+"reading plans."
+msgstr ""
+"Estudio bíblico con módulos SWORD, léxico de Strong, referencias cruzadas y "
+"planes de lectura."
+
+#: window.py:4297
+msgid "Checking whether this desktop provides Night Light…"
+msgstr "Comprobando si este escritorio ofrece Luz nocturna…"
+
+#: window.py:4302
+msgid ""
+"This desktop does not provide Night Light, so the paper has nothing to follow"
+msgstr ""
+"Este escritorio no ofrece Luz nocturna, así que el papel no tiene nada a lo "
+"que seguir"
+
+#: window.py export_dialog.py annotations_window.py module_manager.py
+msgid "Could not open the file chooser"
+msgstr "No se pudo abrir el selector de archivos"
+
+#: welcome.py
+#, python-brace-format
+msgid "About {n} MB"
+msgstr "Unos {n} MB"

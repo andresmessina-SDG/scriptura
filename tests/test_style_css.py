@@ -319,3 +319,41 @@ def test_no_line_height_is_written_as_if_it_were_an_em_multiple():
              re.finditer(r'line-height:[^;]+;\s*/\*\s*~([\d.]+)em[^*]*\*/', text)
              if float(m.group(1)) > 1.8]
     assert not loose, f'these render looser than 1.8em: {loose}'
+
+
+#: The two-accent law at the top of style.css: clay is "leaves the current
+#: surface", and it is fixed in both light and dark.
+CLAY = '#a9744f'
+
+
+def test_the_word_study_scope_row_is_not_bolder_than_its_list():
+    """Adwaita bolds every button label. Measured on the live widgets, that
+    left the scope row at weight 700 over occurrences at 400 — a secondary
+    control heavier than the content it governs. The rule has to say so;
+    nothing else turns it off."""
+    weights = [_declaration(body, 'font-weight')
+               for selector, body in _rules()
+               if selector == '.ws-scope button']
+    assert weights, '.ws-scope button is no longer styled'
+    assert 'normal' in weights, (
+        '.ws-scope button must set font-weight: normal — without it the row '
+        'inherits Adwaita\'s bold and shouts over the list below it')
+
+
+def test_frequency_is_a_clay_link_and_not_a_third_scope_button():
+    """He read the row as "three toggles". Only two are: Frequency leaves
+    the panel for search, which the two-accent law colours clay. Spacing
+    alone never carried that — 15px inside the pair against 24px before it,
+    measured off a screenshot — so the styling has to."""
+    rule = {selector: body for selector, body in _rules()
+            if selector == '.ws-scope button.ws-freq'}
+    assert rule, '.ws-scope button.ws-freq is gone'
+    body = next(iter(rule.values()))
+    assert _declaration(body, 'color') == CLAY, (
+        f'Frequency must be clay ({CLAY}) — the law\'s colour for a control '
+        f'that leaves the current surface')
+    for prop, value in (('background', 'none'), ('border', 'none'),
+                        ('box-shadow', 'none')):
+        assert _declaration(body, prop) == value, (
+            f'Frequency still carries a button {prop}; it has to read as a '
+            f'link beside the scope pair')

@@ -69,6 +69,7 @@ py_sources = files(
   'journal.py',
   'journal_import.py',
   'journal_markup.py',
+  'lemma_index.py',
   'lexicon_data.py',
   'lexicon_panel.py',
   'manuscript_find.py',

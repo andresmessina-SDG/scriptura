@@ -74,7 +74,15 @@
  * Inter and sans-serif are fallbacks for older runtimes. Scoped to `window`
  * so the reading pane's own `textview { font-family }` rule still wins for
  * Scripture text (see BiblePane._update_font_css). Contextual alternates +
- * kerning on for cleaner rendering. */
+ * kerning on for cleaner rendering.
+ *
+ * The app SHIPS this face (data/fonts, installed by data/meson.build) as of
+ * 2026-09-19. It did not until then, and the fallbacks were doing real work:
+ * adwaita-sans-fonts is required by no package on Fedora and Inter is not
+ * packaged at all, so a source install on any non-GNOME desktop got
+ * whichever sans fontconfig chose. That matters here more than anywhere
+ * else in this file, because the line-height table immediately below is
+ * measured PER FACE. */
 window {
     font-family: "Adwaita Sans", "Inter", sans-serif;
     font-feature-settings: "cv05", "calt", "kern";
@@ -89,6 +97,13 @@ window {
  *     EB Garamond 1.31   Noto Serif 1.36   Noto Serif Hebrew 1.19
  *
  * (Each wobbles about 0.03 with the size, from pixel rounding.)
+ *
+ * Every face in that table is now bundled, which is the point: a substituted
+ * face changes the em these numbers render. Measured 2026-09-19 for the two
+ * the chrome used to fall through to — Noto Sans is 10.6% taller per line
+ * than Adwaita Sans, DejaVu Sans 5% narrower but wider in the glyph. Only
+ * one rule here rides the sans face (.today-rail-church); the rest ride
+ * reading faces that were bundled from the start.
  *
  * So `line-height: 1.6` on the reading serif sets 2.16em, not 1.6em, and
  * the same 1.6 on Newsreader sets 1.70em. Fourteen rules in this file were
@@ -1318,6 +1333,49 @@ box.mini-swatch {
     /* Roomy bottom padding so the first occurrence isn't cramped under the
        eyebrow — matches the breathing room atop the definition column. */
     padding: 8px 14px 8px 14px;
+}
+/* Scope pair + Frequency, under the eyebrow. The eyebrow already carries
+   the top padding, so this row only needs to clear the list below it; the
+   buttons stay flat and small so the controls read as a caption, not a
+   toolbar competing with the occurrences.
+
+   13px, not 10: it puts the ACTIVE pill's left edge on the occurrences'
+   own text column (measured off a real screenshot — the pill was landing
+   at 443 against verse references at 446). The pill edge is the strongest
+   left edge in the row, so that is the one that has to line up; the
+   inactive labels sit inside their own padding, as a pill's text does. */
+.ws-scope {
+    padding: 0 10px 6px 13px;
+}
+.ws-scope button {
+    font-size: 11px;
+    min-height: 22px;
+    padding: 1px 8px;
+    /* Adwaita bolds every button label. Measured on the live widgets, that
+       left this row at weight 700 over a list at 400 — a secondary control
+       heavier than the content it governs. */
+    font-weight: normal;
+}
+/* Frequency is not a third scope. It is a verb that LEAVES this panel for
+   the search surface, and the two-accent law at the top of this file gives
+   that its own colour: clay, "leaves the current surface". So it sheds the
+   button entirely and reads as a link, which is what finally separates it
+   from the pair beside it — 9px of extra gap never could (15px inside the
+   pair, 24px before this, measured; he read all three as one kind).
+   Stripped the same way `button.artifact-marker` is, and kept a Button so
+   it stays focusable and speaks to AT as an action. */
+.ws-scope button.ws-freq {
+    background: none;
+    box-shadow: none;
+    border: none;
+    padding: 1px 2px;
+    color: #a9744f;
+    opacity: 0.85;
+}
+.ws-scope button.ws-freq:hover {
+    opacity: 1;
+    background: none;
+    text-decoration: underline;
 }
 /* Put the whole panel on ONE surface. The definition TextView and the
    occurrences ListBox default to @view_bg_color (white), while the header and

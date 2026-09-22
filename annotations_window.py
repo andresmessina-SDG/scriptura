@@ -10,7 +10,7 @@ gi.require_version('Gdk', '4.0')
 from gi.repository import Gdk, Gio, Gtk, Adw, GLib, Pango
 from a11y import set_accessible_label
 from i18n import current_language, format_date
-from gtk_utils import Autosave, clear_children
+from gtk_utils import Autosave, clear_children, file_dialog_failed
 import annotation_dialogs
 import annotation_editors
 from annotation_editors import _HL_NAMES
@@ -2460,8 +2460,10 @@ class AnnotationsWindow(Adw.Window):
     def _on_export_finish(self, dialog, result, rows=None):
         try:
             gfile = dialog.save_finish(result)
-        except GLib.Error:
-            return  # cancelled, or no location chosen
+        except GLib.Error as err:
+            if file_dialog_failed(err):
+                self._show_export_error(_('Could not open the file chooser'))
+            return
         path = gfile.get_path() if gfile else None
         if not path:
             self._show_export_error(
@@ -2575,8 +2577,10 @@ class AnnotationsWindow(Adw.Window):
     def _on_import_finish(self, dialog, result):
         try:
             files = dialog.open_multiple_finish(result)
-        except GLib.Error:
-            return  # cancelled
+        except GLib.Error as err:
+            if file_dialog_failed(err):
+                self._toast(_('Could not open the file chooser'))
+            return
         added, failed = 0, 0
         for i in range(files.get_n_items()):
             path = files.get_item(i).get_path()

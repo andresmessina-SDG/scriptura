@@ -55,3 +55,44 @@ def test_blend_monotonic_in_strength():
 def test_blend_overdriven_strength_clamps():
     assert night_light.dusk_blend('#f7f4ee', 5.0) == \
         night_light.dusk_blend('#f7f4ee', 1.0)
+
+
+# ── Whether the desktop has the interface at all ────────────────────────────
+
+def _probe_answer(timeout_s=5):
+    """Run night_light.probe to completion on a private main loop."""
+    from gi.repository import GLib
+    loop = GLib.MainLoop()
+    out = {}
+
+    def done(available):
+        out['available'] = available
+        loop.quit()
+
+    night_light.probe(done)
+    GLib.timeout_add_seconds(timeout_s, lambda: (loop.quit(), False)[1])
+    loop.run()
+    return out.get('available')
+
+
+def test_an_absent_service_answers_no_rather_than_hanging(monkeypatch):
+    """The switch in Appearance ▸ Advanced is built insensitive and waits on
+    this answer. A desktop without Night Light — KDE, Xfce, a bare WM — has
+    to reach the callback with False, because a probe that never calls back
+    leaves the control disabled with a 'checking…' tooltip forever.
+
+    `Gio.DBusProxy` constructs happily for a name nobody owns, which is why
+    the probe tests `get_name_owner()` and not the construction.
+    """
+    monkeypatch.setattr(night_light, '_BUS_NAME', 'org.example.NoSuchService')
+    monkeypatch.setattr(night_light, '_OBJECT_PATH',
+                        '/org/example/NoSuchService')
+    assert _probe_answer() is False
+
+
+def test_the_probe_never_starts_a_service_to_answer_itself():
+    """DO_NOT_AUTO_START: asking whether Night Light is there must not
+    activate it. Without the flag the question spawns the answer."""
+    import inspect
+    src = inspect.getsource(night_light.probe)
+    assert 'DO_NOT_AUTO_START' in src

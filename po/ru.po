@@ -7569,10 +7569,6 @@ msgstr "Просто читать"
 msgid "Open a Bible and start reading right away."
 msgstr "Открыть Библию и сразу начать читать."
 
-#: welcome.py:75
-msgid "Smallest download"
-msgstr "Самая небольшая загрузка"
-
 #: welcome.py:80
 msgid "Reading + study"
 msgstr "Чтение и изучение"
@@ -7581,10 +7577,6 @@ msgstr "Чтение и изучение"
 msgid "A few translations, and the tools for looking closely at a word."
 msgstr "Несколько переводов и средства, чтобы вглядеться в слово."
 
-#: welcome.py:83
-msgid "Small download"
-msgstr "Небольшая загрузка"
-
 #: welcome.py:88
 msgid "Full library"
 msgstr "Полная библиотека"
@@ -7592,10 +7584,6 @@ msgstr "Полная библиотека"
 #: welcome.py:89
 msgid "Everything this language has, from the start."
 msgstr "Всё, что есть на этом языке, с самого начала."
-
-#: welcome.py:90
-msgid "Larger download"
-msgstr "Загрузка побольше"
 
 #: welcome.py:316
 #, python-brace-format
@@ -9701,3 +9689,133 @@ msgstr "Написано (кетив) {written} «{written_gloss}»; читае�
 #: module_manager.py
 msgid "A newer build adds the Ketiv readings"
 msgstr "Новая сборка добавляет чтения кетив"
+
+#: lexicon_panel.py:368
+msgid "This book"
+msgstr "Эта книга"
+
+#: lexicon_panel.py:370
+msgid "Whole Bible"
+msgstr "Вся Библия"
+
+#: lexicon_panel.py:377
+msgid "Word study scope"
+msgstr "Охват изучения слова"
+
+#: lexicon_panel.py:380
+msgid "Frequency"
+msgstr "Частота"
+
+#: lexicon_panel.py:384
+msgid "Open this word in search, with its count per book"
+msgstr "Открыть это слово в поиске, с числом вхождений по книгам"
+
+#: lexicon_panel.py:838
+msgid "Install the interlinear to search the whole Bible"
+msgstr "Установите подстрочник, чтобы искать по всей Библии"
+
+#: lexicon_panel.py:949
+#, python-brace-format
+msgid "Show {n} more verse"
+msgid_plural "Show {n} more verses"
+msgstr[0] "Показать ещё {n} стих"
+msgstr[1] "Показать ещё {n} стиха"
+msgstr[2] "Показать ещё {n} стихов"
+
+#: lexicon_panel.py:973
+#, python-brace-format
+msgid "{n} occurrence in the whole Bible"
+msgid_plural "{n} occurrences in the whole Bible"
+msgstr[0] "{n} вхождение во всей Библии"
+msgstr[1] "{n} вхождения во всей Библии"
+msgstr[2] "{n} вхождений во всей Библии"
+
+#: search_panel.py:199
+msgid ""
+"Phrase: \"living water\" · either: bread OR wine · exclude: faith -works · "
+"prefix: baptiz* · the word underneath: strong:G26"
+msgstr ""
+"Фраза: \"живая вода\" · любое из: хлеб OR вино · исключить: вера -дела · "
+"начало слова: крест* · слово в оригинале: strong:G26"
+
+#: search_panel.py:460
+msgid "No interlinear installed"
+msgstr "Подстрочник не установлен"
+
+#: search_panel.py:461
+msgid ""
+"Searching by Greek or Hebrew word needs the interlinear data. Install it "
+"from the Module Manager."
+msgstr ""
+"Для поиска по греческому или еврейскому слову нужны данные подстрочника. "
+"Установите их в Менеджере модулей."
+
+#: search_panel.py:497
+#, python-brace-format
+msgid "{n} word shares this spelling"
+msgid_plural "{n} words share this spelling"
+msgstr[0] "{n} слово имеет такое написание"
+msgstr[1] "{n} слова имеют такое написание"
+msgstr[2] "{n} слов имеют такое написание"
+
+#: search_panel.py:508
+#, python-brace-format
+msgid "Search only {strongs}"
+msgstr "Искать только {strongs}"
+
+#: search_panel.py:513
+#, python-brace-format
+msgid "and {n} more"
+msgstr "и ещё {n}"
+
+#: search_panel.py:540
+#, python-brace-format
+msgid "{n} occurrence"
+msgid_plural "{n} occurrences"
+msgstr[0] "{n} вхождение"
+msgstr[1] "{n} вхождения"
+msgstr[2] "{n} вхождений"
+
+#: lexicon_panel.py:984
+msgid "Not in the interlinear — try this book"
+msgstr "Нет в подстрочнике — попробуйте эту книгу"
+
+#: search_panel.py:510
+#, python-brace-format
+msgid "{n} word matches"
+msgid_plural "{n} words match"
+msgstr[0] "Подходит {n} слово"
+msgstr[1] "Подходят {n} слова"
+msgstr[2] "Подходят {n} слов"
+
+#: data/io.github.andresmessina_SDG.Scriptura.desktop.in:4
+msgid "Bible study with SWORD modules, Strong's lexicon, and cross-references"
+msgstr ""
+"Изучение Библии: модули SWORD, словарь Стронга и перекрёстные ссылки"
+
+#: window.py:3385
+msgid ""
+"Bible study with SWORD modules, Strong’s lexicon, cross-references, and "
+"reading plans."
+msgstr ""
+"Изучение Библии: модули SWORD, словарь Стронга, перекрёстные ссылки и планы "
+"чтения."
+
+#: window.py:4297
+msgid "Checking whether this desktop provides Night Light…"
+msgstr "Проверяется, есть ли в этой среде ночная подсветка…"
+
+#: window.py:4302
+msgid ""
+"This desktop does not provide Night Light, so the paper has nothing to follow"
+msgstr ""
+"В этой среде нет ночной подсветки, поэтому бумаге не за чем следовать"
+
+#: window.py export_dialog.py annotations_window.py module_manager.py
+msgid "Could not open the file chooser"
+msgstr "Не удалось открыть окно выбора файлов"
+
+#: welcome.py
+#, python-brace-format
+msgid "About {n} MB"
+msgstr "Около {n} МБ"

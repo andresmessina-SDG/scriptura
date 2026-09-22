@@ -321,3 +321,22 @@ def test_a_catalogue_older_than_the_module_is_refetched(monkeypatch):
     assert calls and calls[0] == 'refresh', (
         f'a catalogue with no row for Wikcionario was used as-is: {calls[:3]}')
     assert 'Wikcionario' in calls
+
+
+def test_every_step_has_a_measured_size():
+    """A step added to the catalogue without running
+    tools/measure-bundle-sizes.py would raise when the card is built."""
+    missing = sorted({(k, i) for b in _every_bundle()
+                      for k, i, _l, _f in b['items']} - set(welcome._SIZES))
+    assert not missing, f'run tools/measure-bundle-sizes.py for {missing}'
+
+
+def test_each_card_says_how_much_it_downloads():
+    """The cards said "Small download" over 60 MB. The number is the sum of
+    the steps, and a bigger tier never claims less than a smaller one."""
+    for language in ('en', 'es', 'ru'):
+        sizes = [b['mb'] for b in welcome.bundles_for(language)]
+        assert all(mb >= 1 for mb in sizes)
+        assert sizes == sorted(sizes), (language, sizes)
+    assert _bundle('study')['mb'] == welcome.download_mb(
+        _bundle('study')['items'])

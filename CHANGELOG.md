@@ -6,6 +6,58 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+### Changed
+
+- **The interface font now ships with the app.** Scriptura already carried
+  its reading faces so the page looks the same on every machine; the face
+  the menus and buttons are set in did not travel with them. On a desktop
+  that is not GNOME it fell back to whatever the system had, which sets
+  lines about a tenth taller. It is bundled now, so the chrome matches the
+  page everywhere. Nothing changes for anyone installing the Flatpak.
+- **“Evening paper” says when it cannot work.** The switch follows the
+  desktop’s Night Light, and not every desktop has one. Where there is
+  none the switch is now dimmed and says so, instead of turning on and
+  doing nothing.
+- The app’s one-line description no longer names a desktop. It says what
+  Scriptura does.
+- The window bar no longer shows the app’s colour icon on desktops that
+  put one there, such as KDE. The window buttons stay where the desktop
+  puts them.
+- The starting-library cards on the welcome screen give each download’s
+  size in megabytes. “Small download” was on a card that downloads
+  about 60 MB.
+
+### Added
+
+- **Search by the Greek or Hebrew word.** A query may now ask about the
+  word under the translation: `strong:G26` finds every verse whose Greek
+  carries ἀγάπη, `lemma:חֶסֶד` every verse whose Hebrew carries that
+  word, and `morph:V-AAM` every aorist imperative. Ordinary words still
+  mean what they meant, so `strong:G26 charity` asks the question a
+  concordance exists to answer — where one Greek word was rendered that
+  way, and `strong:G26 -love` the 26 places it is not — charity, dear,
+  beloved. The results are the reader’s own translation, with the count per
+  section and per book the search panel already draws. The header names
+  the word; where one spelling covers several words, as חֶסֶד covers
+  kindness, shame and a man’s name, it says so and offers each. A bare
+  `G26` is still a search for that text. Needs the interlinear data,
+  which the Module Manager installs.
+- **A whole-Bible concordance.** The occurrences list beside a Strong’s
+  definition now has a scope: this book, as before, or the whole Bible.
+  Long lists page instead of stopping at 200, so a common word can be
+  read to its last verse, and Frequency opens the word in search with its
+  count per book.
+
+### Fixed
+
+- A file chooser that cannot open now says so. On a desktop without one,
+  Export, Share as image, Backup, Restore and the imports used to do
+  nothing at all.
+- Where the system cannot play audio, no play button is offered. It used
+  to download the reading and then stop without a word.
+- The Share and “Written on this chapter” pages of the verse menu fit
+  their rows. They opened at the full menu’s height, mostly empty.
+
 ## [1.7.2] — 2026-09-17
 
 ### Added

@@ -23,6 +23,7 @@ import sword_bridge
 import verse_card
 import tasks
 from a11y import set_accessible_label
+from gtk_utils import file_dialog_failed
 from i18n import _
 
 #: Scope keys, in the order they are offered.
@@ -162,8 +163,10 @@ class ExportSheet:
     def _on_chosen(self, dialog, result):
         try:
             gfile = dialog.save_finish(result)
-        except GLib.Error:
-            return                      # cancelled, or nowhere chosen
+        except GLib.Error as err:
+            if file_dialog_failed(err):
+                self._report(_('Could not open the file chooser'))
+            return
         path = gfile.get_path() if gfile else None
         if not path:
             self._report(_('Please choose a location on this computer.'))
@@ -319,7 +322,9 @@ class CardSheet:
     def _on_chosen(self, dialog, result):
         try:
             gfile = dialog.save_finish(result)
-        except GLib.Error:
+        except GLib.Error as err:
+            if file_dialog_failed(err):
+                self._report(_('Could not open the file chooser'))
             return
         path = gfile.get_path() if gfile else None
         if not path:

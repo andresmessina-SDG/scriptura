@@ -177,7 +177,9 @@ class DevotionalAudio(_Surface):
         """
         date_obj = self._devotional_date
         self.stop()
-        if not settings.get('show_audio'):
+        if (not settings.get('show_audio')
+                or not devotional_audio.playback_ready(
+                    f'devot:{id(self)}', self.sync)):
             self._devot_audio_row.set_visible(False)
             return
         if date_obj is None or not devotional_audio.covers_module(self._module):
@@ -494,6 +496,10 @@ class ReadingAudio(_Surface):
         if not settings.get('show_audio'):
             self.stop()
             self._pill.dismiss()
+            return
+        if not devotional_audio.playback_ready(f'reading:{id(self)}',
+                                               self.sync):
+            self._dismiss_pill_if_idle()
             return
         if not self._is_verse_navigable():
             self._dismiss_pill_if_idle()
