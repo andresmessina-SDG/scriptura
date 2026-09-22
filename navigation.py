@@ -23,6 +23,7 @@ import settings
 import module_positions
 from a11y import set_accessible_label
 import window
+from i18n import _, book_label
 
 
 class NavigationController:
