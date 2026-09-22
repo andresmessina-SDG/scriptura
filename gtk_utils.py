@@ -1,8 +1,10 @@
 """Small GTK helpers shared across the UI."""
+import logging
+
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Adw, GLib, Gtk
+from gi.repository import Adw, Gio, GLib, Gtk
 
 import motion
 
@@ -135,6 +137,22 @@ def clear_children(widget: Gtk.Widget) -> None:
         nxt = child.get_next_sibling()
         widget.remove(child)
         child = nxt
+
+
+def file_dialog_failed(err: GLib.Error) -> bool:
+    """True when a Gtk.FileDialog failed, False when the reader closed it.
+
+    Both arrive as the same GLib.Error from `*_finish`. A failure is what a
+    desktop with no file-chooser portal gives (a bare tiling WM, say), and
+    treating it as a cancel left the button doing nothing at all.
+    """
+    if (err.matches(Gtk.DialogError.quark(), Gtk.DialogError.DISMISSED)
+            or err.matches(Gtk.DialogError.quark(), Gtk.DialogError.CANCELLED)
+            or err.matches(Gio.io_error_quark(), Gio.IOErrorEnum.CANCELLED)):
+        return False
+    logging.getLogger('scriptura.dialogs').warning(
+        'file dialog failed: %s', err.message)
+    return True
 
 
 class Autosave:

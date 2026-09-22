@@ -9873,3 +9873,7 @@ msgid ""
 msgstr ""
 "Este escritorio no ofrece Luz nocturna, así que el papel no tiene nada a lo "
 "que seguir"
+
+#: window.py export_dialog.py annotations_window.py module_manager.py
+msgid "Could not open the file chooser"
+msgstr "No se pudo abrir el selector de archivos"

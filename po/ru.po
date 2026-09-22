@@ -9822,3 +9822,7 @@ msgid ""
 "This desktop does not provide Night Light, so the paper has nothing to follow"
 msgstr ""
 "В этой среде нет ночной подсветки, поэтому бумаге не за чем следовать"
+
+#: window.py export_dialog.py annotations_window.py module_manager.py
+msgid "Could not open the file chooser"
+msgstr "Не удалось открыть окно выбора файлов"

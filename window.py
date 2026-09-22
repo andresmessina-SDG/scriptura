@@ -7,7 +7,7 @@ gi.require_version('Adw', '1')
 gi.require_version('PangoCairo', '1.0')
 import datetime
 from gi.repository import Gtk, Adw, GLib, Gdk, Gio, Pango, PangoCairo
-from gtk_utils import clear_children
+from gtk_utils import clear_children, file_dialog_failed
 import sword_bridge
 import settings
 import devotional_audio
@@ -1981,8 +1981,10 @@ class BibleWindow(Adw.ApplicationWindow):
     def _on_backup_finish(self, dialog, result):
         try:
             gfile = dialog.save_finish(result)
-        except GLib.Error:
-            return  # cancelled
+        except GLib.Error as err:
+            if file_dialog_failed(err):
+                self._toast(_('Could not open the file chooser'))
+            return
         try:
             with open(gfile.get_path(), 'w', encoding='utf-8') as f:
                 json.dump(backup.collect(), f, indent=2, ensure_ascii=False)
@@ -2011,8 +2013,10 @@ class BibleWindow(Adw.ApplicationWindow):
     def _on_restore_open(self, dialog, result):
         try:
             gfile = dialog.open_finish(result)
-        except GLib.Error:
-            return  # cancelled
+        except GLib.Error as err:
+            if file_dialog_failed(err):
+                self._toast(_('Could not open the file chooser'))
+            return
         try:
             with open(gfile.get_path(), encoding='utf-8') as f:
                 payload = backup.validate(json.load(f))

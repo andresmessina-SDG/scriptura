@@ -17,7 +17,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Gio, Gdk, Pango
 from a11y import set_accessible_label
-from gtk_utils import clear_children, DelayedSpinner
+from gtk_utils import clear_children, DelayedSpinner, file_dialog_failed
 import sword_bridge
 import open_data
 import ebible_bridge
@@ -1619,8 +1619,12 @@ class ModuleManagerWindow(Adw.Window):
     def _on_import_file_chosen(self, dialog, result):
         try:
             gfile = dialog.open_finish(result)
-        except GLib.Error:
-            return  # user cancelled
+        except GLib.Error as err:
+            if file_dialog_failed(err):
+                alert = Adw.AlertDialog(heading=_('Could not open the file chooser'))
+                alert.add_response('ok', _('OK'))
+                alert.present(self)
+            return
         if gfile is not None:
             self._load_zip_path(gfile.get_path())
 
