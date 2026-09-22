@@ -30,6 +30,7 @@ import sword_bridge
 import tasks
 from a11y import set_accessible_label
 from interlinear_flow import WordFlow
+from i18n import _, book_label
 
 
 def N_(message):
