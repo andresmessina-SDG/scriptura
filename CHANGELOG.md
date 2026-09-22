@@ -56,6 +56,15 @@ semver-ish — 0.x was the pre-Flathub testing track.
   read to its last verse, and Frequency opens the word in search with its
   count per book.
 
+- **The historical commentaries pack has 2,000 more voices on the
+  page.** Origen of Alexandria goes from 2,858 comments to 4,271 —
+  his homilies on Genesis, Exodus, Leviticus, Joshua, Judges,
+  1 Samuel, the Psalms, Isaiah, Luke and the Song of Songs, and the
+  commentaries on Matthew, Romans, Ephesians and 1 Corinthians —
+  and Ambrosiaster from 1,041 to 1,567. Dionysius bar Salibi joins
+  the Syriac voices. A few quotes that showed stray markup read
+  cleanly now. The Module Manager offers the new pack.
+
 ### Fixed
 
 - A file chooser that cannot open now says so. On a desktop without one,
