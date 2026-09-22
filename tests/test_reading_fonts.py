@@ -51,6 +51,54 @@ def test_the_dyslexia_licence_travels_with_the_font():
     assert 'Reserved Font Name' in text
 
 
+def _chrome_family():
+    """The first family `data/style.css` sets on `window` — the face every
+    menu, button and label in the app is drawn in."""
+    css = (REPO / 'data' / 'style.css').read_text()
+    m = re.search(r'\nwindow\s*\{[^}]*?font-family:\s*([^;]+);', css,
+                  re.DOTALL)
+    assert m, 'style.css no longer sets a font-family on `window`'
+    return m.group(1).split(',')[0].strip().strip('"\'')
+
+
+def test_the_chrome_face_is_bundled_like_the_reading_faces():
+    """The reading faces shipped from the start so the page looks the same
+    everywhere; the CHROME face did not, and the fallbacks behind it were
+    doing real work. Measured 2026-09-19: on Fedora `adwaita-sans-fonts` is
+    required by no package (it arrives with the GNOME desktop group, not
+    with gtk4 or libadwaita) and Inter is not packaged at all — so a source
+    install on KDE or Xfce drew every label in whatever sans fontconfig
+    picked, about a tenth taller per line than the line-height table at the
+    top of style.css is measured against."""
+    family = _chrome_family()
+    stem = family.replace(' ', '')
+    listed = _installed_data_names()
+    assert any(stem.lower() in name.lower() for name in listed), (
+        f'style.css asks for {family!r} first and no file in data/fonts '
+        f'installs it — the fallback families are not a plan')
+
+
+def test_the_chrome_face_ships_its_italic():
+    """The chrome really does set italic (.interlinear-translit,
+    .interlinear-gloss-implicit). Without the italic file fontconfig slants
+    the roman, which is not the same letterforms."""
+    stem = _chrome_family().replace(' ', '')
+    listed = _installed_data_names()
+    for style in ('Regular', 'Italic'):
+        assert any(f'{stem}-{style}'.lower() in name.lower()
+                   for name in listed), f'{stem}-{style} is not installed'
+
+
+def test_the_chrome_licence_travels_with_the_font():
+    """OFL clause 1, same as the reading faces."""
+    stem = _chrome_family().replace(' ', '')
+    licences = [n for n in _installed_data_names()
+                if stem.lower() in n.lower() and n.endswith('.txt')]
+    assert licences, f'no licence installed beside {stem}'
+    text = (FONT_DIR / Path(licences[0]).name).read_text()
+    assert 'SIL Open Font License' in text
+
+
 def test_the_family_name_is_never_translated():
     """It is the font, the settings value and the label at once."""
     source = (REPO / 'window.py').read_text()

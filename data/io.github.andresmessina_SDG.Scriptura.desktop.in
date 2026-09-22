@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Scriptura
 GenericName=Bible Study
-Comment=GNOME-native Bible study with SWORD modules, Strong's lexicon, and cross-references
+Comment=Bible study with SWORD modules, Strong's lexicon, and cross-references
 Exec=io.github.andresmessina_SDG.Scriptura %U
 Icon=io.github.andresmessina_SDG.Scriptura
 Categories=Education;Literature;

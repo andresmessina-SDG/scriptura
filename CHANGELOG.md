@@ -6,6 +6,24 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+### Changed
+
+- **The interface font now ships with the app.** Scriptura already carried
+  its reading faces so the page looks the same on every machine; the face
+  the menus and buttons are set in did not travel with them. On a desktop
+  that is not GNOME it fell back to whatever the system had, which sets
+  lines about a tenth taller. It is bundled now, so the chrome matches the
+  page everywhere. Nothing changes for anyone installing the Flatpak.
+- **“Evening paper” says when it cannot work.** The switch follows the
+  desktop’s Night Light, and not every desktop has one. Where there is
+  none the switch is now dimmed and says so, instead of turning on and
+  doing nothing.
+- The app’s one-line description no longer names a desktop. It says what
+  Scriptura does.
+- The window bar no longer shows the app’s colour icon on desktops that
+  put one there, such as KDE. The window buttons stay where the desktop
+  puts them.
+
 ### Added
 
 - **Search by the Greek or Hebrew word.** A query may now ask about the

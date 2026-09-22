@@ -266,6 +266,39 @@ def _watch_icon_theme(gtk_settings):
     gtk_settings.connect('notify::gtk-icon-theme-name', _pin_icon_theme)
 
 
+def _strip_icon(layout):
+    """`gtk-decoration-layout` with the app icon taken out.
+
+    Buttons are comma-separated, the two sides split by a colon; the side
+    and order of the rest stay as the desktop set them.
+    """
+    sides = [','.join(b for b in side.split(',') if b.strip() != 'icon')
+             for side in layout.split(':')]
+    return ':'.join(sides)
+
+
+def _drop_headerbar_icon(*_args):
+    """Keep the desktop's window controls, but not its app icon.
+
+    KDE's default layout is `icon:minimize,maximize,close`, which puts the
+    full-colour app icon at the far left of every header bar: the one
+    colour element in chrome that is otherwise ink on paper. The icon is
+    not a control, so dropping it does not touch what the platform owns.
+    Re-applied when the desktop pushes a new layout, which overwrites ours.
+    """
+    gtk_settings = Gtk.Settings.get_default()
+    if gtk_settings is None:
+        return
+    layout = gtk_settings.get_property('gtk-decoration-layout') or ''
+    stripped = _strip_icon(layout)
+    if stripped != layout:
+        gtk_settings.set_property('gtk-decoration-layout', stripped)
+    if not getattr(gtk_settings, '_scriptura_layout_watch', False):
+        gtk_settings._scriptura_layout_watch = True
+        gtk_settings.connect('notify::gtk-decoration-layout',
+                             _drop_headerbar_icon)
+
+
 def _apply_manual_font_rendering():
     """Pin GTK to MANUAL font rendering (classic integer-hinted glyph
     placement) instead of the AUTOMATIC mode's fractional vertical
@@ -353,6 +386,7 @@ class BibleApp(Adw.Application):
             return
         _register_icon_search_path()
         _pin_icon_theme()
+        _drop_headerbar_icon()
         _apply_manual_font_rendering()
         load_app_css()
         self._present_main_or_welcome(app, startup_ref=self._argv_ref)
@@ -373,6 +407,7 @@ class BibleApp(Adw.Application):
             return
         _register_icon_search_path()
         _pin_icon_theme()
+        _drop_headerbar_icon()
         _apply_manual_font_rendering()
         load_app_css()
         self._present_main_or_welcome(app, startup_ref=ref)

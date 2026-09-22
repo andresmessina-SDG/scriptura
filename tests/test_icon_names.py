@@ -139,3 +139,17 @@ def test_window_controls_are_left_to_the_desktop():
     assert 'window-close-symbolic' in main._PLATFORM_ICONS
     for name in main._PLATFORM_ICONS:
         assert name.startswith('window-')
+
+
+@pytest.mark.parametrize('layout, expected', [
+    ('icon:minimize,maximize,close', ':minimize,maximize,close'),  # KDE
+    ('close,minimize:icon', 'close,minimize:'),
+    ('appmenu:close', 'appmenu:close'),                            # GNOME
+    ('icon,close', 'close'),
+    ('', ''),
+])
+def test_headerbar_icon_is_dropped_controls_kept(layout, expected):
+    """KDE puts the full-colour app icon in every header bar. It goes; the
+    controls, their order and their side stay the desktop's."""
+    import main
+    assert main._strip_icon(layout) == expected

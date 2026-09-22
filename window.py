@@ -3377,8 +3377,13 @@ class BibleWindow(Adw.ApplicationWindow):
             application_icon='io.github.andresmessina_SDG.Scriptura',
             developer_name='Andres Messina',
             version=__version__,
-            comments=_('GNOME-native Bible study with SWORD modules, '
-                       'Strong’s lexicon, cross-references, and reading plans.'),
+            # Says what the app does, not which desktop it came from. It
+            # read "GNOME-native" until 2026-09-19; the app IS built to the
+            # GNOME HIG and ARCHITECTURE.md still says so, but that is a
+            # design statement for us, and in a KDE reader's software centre
+            # it reads as "not for you".
+            comments=_('Bible study with SWORD modules, Strong’s lexicon, '
+                       'cross-references, and reading plans.'),
             website='https://github.com/andresmessina-SDG/scriptura',
             issue_url='https://github.com/andresmessina-SDG/scriptura/issues',
             license_type=Gtk.License.GPL_3_0,
@@ -4279,6 +4284,25 @@ class BibleWindow(Adw.ApplicationWindow):
         ev_sw = Gtk.Switch(valign=Gtk.Align.CENTER)
         ev_sw.set_active(bool(settings.get('evening_paper')))
         set_accessible_label(ev_sw, _('Evening paper (follows Night Light)'))
+        # Off until the session says it has Night Light. The monitor is
+        # documented to stay inert where the interface is missing (KDE,
+        # Xfce, a bare WM) — which left this switch flipping with no
+        # effect, a control promising what the desktop cannot do. Insensitive
+        # with a reason, not hidden: the reader may run the app on two
+        # machines, and a setting that vanishes is its own puzzle.
+        # The STORED value is left alone for the same reason; this gates
+        # the control, not the preference.
+        ev_sw.set_sensitive(False)
+        ev_row.set_tooltip_text(
+            _('Checking whether this desktop provides Night Light…'))
+
+        def _night_light_answered(available, _sw=ev_sw, _row=ev_row):
+            _sw.set_sensitive(available)
+            _row.set_tooltip_text(None if available else _(
+                'This desktop does not provide Night Light, so the paper '
+                'has nothing to follow'))
+
+        night_light.probe(_night_light_answered)
 
         def _on_evening_switch(s, _p):
             on = s.get_active()
