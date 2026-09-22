@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  Timeline glyph for the "Scripture in Stone" date axis — a baseline with
-  staggered stems and dot markers, mirroring the timeline view itself. Kept
-  distinct from document-open-recent (the "Recent Passages" clock) it used to
-  borrow. Bundled, fill-only (#222) so GTK4 recolors it to @accent_color,
-  matching the artifact / imagery / commentary / globe symbolics alongside it.
-
-  Weight pass 2026-07-17: stems 0.8 → 1.4, baseline 0.9 → 1.5, dots +0.1,
-  toward the GNOME 2px symbolic norm.
-
-  Weight pass 2026-07-27: stems and baseline 1.5 → 2.0, dots to r1.7, and
-  the axis run out to the full 14px ink box (was 12.8 wide).
--->
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!--
+    Timeline glyph for the "Scripture in Stone" date axis — a baseline with
+    staggered stems and dot markers, mirroring the timeline view itself. Kept
+    distinct from document-open-recent (the "Recent Passages" clock) it used to
+    borrow. Bundled, fill-only (#222) so GTK4 recolors it to @accent_color,
+    matching the artifact / imagery / commentary / globe symbolics alongside it.
+  
+    Weight pass 2026-07-17: stems 0.8 → 1.4, baseline 0.9 → 1.5, dots +0.1,
+    toward the GNOME 2px symbolic norm.
+  
+    Weight pass 2026-07-27: stems and baseline 1.5 → 2.0, dots to r1.7, and
+    the axis run out to the full 14px ink box (was 12.8 wide).
+  -->
+
   <g fill="#222">
     <!-- baseline axis -->
     <path d="M1 10.6 H15 V12.6 H1 Z"/>

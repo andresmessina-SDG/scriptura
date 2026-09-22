@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  Church glyph for the menu's "Church calendar" row — a minimalist gabled
-  building with a cross at the ridge and an arched door, so the row stops
-  borrowing x-office-calendar from "Open to Today" beside it. Bundled and
-  drawn fill-only (#222, even-odd outline for the walls and roof) so GTK4
-  recolors it reliably, like the globe / keyboard / timeline symbolics.
-  Strokes sit at 1.7 like the post-weight-pass globe ring (the full GNOME
-  2px norm muddies the gable at 16px; started at 1.5, bumped to match).
--->
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!--
+    Church glyph for the menu's "Church calendar" row — a minimalist gabled
+    building with a cross at the ridge and an arched door, so the row stops
+    borrowing x-office-calendar from "Open to Today" beside it. Bundled and
+    drawn fill-only (#222, even-odd outline for the walls and roof) so GTK4
+    recolors it reliably, like the globe / keyboard / timeline symbolics.
+    Strokes sit at 1.7 like the post-weight-pass globe ring (the full GNOME
+    2px norm muddies the gable at 16px; started at 1.5, bumped to match).
+  -->
+
   <g fill="#222">
     <!-- cross at the ridge (merges into the roof apex) -->
     <rect x="7.15" y="0.7" width="1.7" height="4.2"/>

@@ -1,31 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  Keyboard glyph for the "Keyboard Shortcuts" button. Bundled (not pulled
-  from the icon theme) because some themes ship a keyboard symbolic that
-  GTK4 fails to recolor, rendering blank on dark backgrounds. Drawn in the
-  same fill-only structure as the app symbolic so it recolors reliably: a
-  rounded body frame (even-odd ring) plus one row of keys and a spacebar.
-
-  Weight pass 2026-07-17: frame 1.0 → 1.6 toward the GNOME 2px symbolic
-  norm. The heavier frame leaves less inner room, so the second key row was
-  dropped (five keys + spacebar is the standard GNOME keyboard metaphor)
-  rather than shrinking the keys into noise.
-
-  Centring fix 2026-07-27: the 2.0 frame leaves an inner void of x 3..13,
-  but the key row still ran 3.9..13.4 and overran it on the right, which
-  read as keys pushed off-centre. Fitting five keys inside it needs
-  them at 1.2, and at 16px 1.2 dissolves into grey smear rather than
-  reading as keys — tried, and it looked worse than the overrun. So the
-  row is FOUR keys at 1.5 with 0.8 gaps: 8.4 of the 10 available, centred
-  on x=8 with 0.8 clear each side. Four keys and a spacebar still read as
-  a keyboard; five smeared ones do not. Vertical gaps are an even 1.3.
-
-  Weight pass 2026-07-27: frame 1.5 → 2.0, and the body grown to fill the
-  14px Adwaita ink box (was 14x10). The heavier frame took the inner room
-  the keys sat in, so the body was stretched vertically rather than
-  shrinking them; the spacebar grew with it.
--->
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!--
+    Keyboard glyph for the "Keyboard Shortcuts" button. Bundled (not pulled
+    from the icon theme) because some themes ship a keyboard symbolic that
+    GTK4 fails to recolor, rendering blank on dark backgrounds. Drawn in the
+    same fill-only structure as the app symbolic so it recolors reliably: a
+    rounded body frame (even-odd ring) plus one row of keys and a spacebar.
+  
+    Weight pass 2026-07-17: frame 1.0 → 1.6 toward the GNOME 2px symbolic
+    norm. The heavier frame leaves less inner room, so the second key row was
+    dropped (five keys + spacebar is the standard GNOME keyboard metaphor)
+    rather than shrinking the keys into noise.
+  
+    Centring fix 2026-07-27: the 2.0 frame leaves an inner void of x 3..13,
+    but the key row still ran 3.9..13.4 and overran it on the right, which
+    read as keys pushed off-centre. Fitting five keys inside it needs
+    them at 1.2, and at 16px 1.2 dissolves into grey smear rather than
+    reading as keys — tried, and it looked worse than the overrun. So the
+    row is FOUR keys at 1.5 with 0.8 gaps: 8.4 of the 10 available, centred
+    on x=8 with 0.8 clear each side. Four keys and a spacebar still read as
+    a keyboard; five smeared ones do not. Vertical gaps are an even 1.3.
+  
+    Weight pass 2026-07-27: frame 1.5 → 2.0, and the body grown to fill the
+    14px Adwaita ink box (was 14x10). The heavier frame took the inner room
+    the keys sat in, so the body was stretched vertically rather than
+    shrinking them; the spacebar grew with it.
+  -->
+
   <g fill="#222">
     <path fill-rule="evenodd" d="M2.2 2.5 H13.8 A1.2 1.2 0 0 1 15 3.7 V12.3 A1.2 1.2 0 0 1 13.8 13.5 H2.2 A1.2 1.2 0 0 1 1 12.3 V3.7 A1.2 1.2 0 0 1 2.2 2.5 Z M3.4 4.5 A0.4 0.4 0 0 0 3 4.9 V11.1 A0.4 0.4 0 0 0 3.4 11.5 H12.6 A0.4 0.4 0 0 0 13 11.1 V4.9 A0.4 0.4 0 0 0 12.6 4.5 Z"/>
     <rect x="3.8" y="5.8" width="1.5" height="1.5" rx="0.3"/>
