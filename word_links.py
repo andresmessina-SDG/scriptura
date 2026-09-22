@@ -9,9 +9,10 @@ about. A dictionary that ships those links carries them beside its data as
 `links.tsv.gz` (see tools/build_russian_tw_dict.py): one line per link,
 `book  chapter  verse  Strong's  key`, in app-space (KJV) numbering.
 
-Read once per dictionary, on first use, off the UI thread (the peek's own
-worker asks). A dictionary without the file answers nothing, so every other
-dictionary is untouched.
+Read on first use, off the UI thread (the peek's own worker asks), and again
+whenever the file changes, so a dictionary updated in the Module Manager
+links at once rather than after a restart. A dictionary without the file
+answers nothing, so every other dictionary is untouched.
 """
 from __future__ import annotations
 
@@ -27,18 +28,24 @@ LINKS_FILE = 'links.tsv.gz'
 
 _log = logging.getLogger(__name__)
 _lock = threading.Lock()
-_links: dict[str, dict[tuple, str]] = {}
+#: module -> (the file's mtime when read, or None when absent; the table)
+_links: dict[str, tuple[float | None, dict[tuple, str]]] = {}
 
 
 def _load(module_name: str) -> dict[tuple, str]:
     """The module's links, keyed (book, chapter, verse, Strong's)."""
+    path = os.path.join(sword_bridge.module_data_path(module_name) or '',
+                        LINKS_FILE)
+    try:
+        mtime: float | None = os.stat(path).st_mtime
+    except OSError:
+        mtime = None
     with _lock:
-        if module_name in _links:
-            return _links[module_name]
+        cached = _links.get(module_name)
+        if cached is not None and cached[0] == mtime:
+            return cached[1]
         table: dict[tuple, str] = {}
-        path = os.path.join(sword_bridge.module_data_path(module_name) or '',
-                            LINKS_FILE)
-        if os.path.isfile(path):
+        if mtime is not None:
             try:
                 with gzip.open(path, 'rt', encoding='utf-8') as fh:
                     for line in fh:
@@ -48,7 +55,7 @@ def _load(module_name: str) -> dict[tuple, str]:
             except (OSError, ValueError, EOFError):
                 _log.exception('unreadable word links in %s', module_name)
                 table = {}
-        _links[module_name] = table
+        _links[module_name] = (mtime, table)
         return table
 
 

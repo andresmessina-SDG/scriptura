@@ -75,7 +75,7 @@ def test_the_peek_opens_the_linked_article(monkeypatch, tmp_path):
                         lambda m, b, c, v: v)
     monkeypatch.setattr(content, 'language_code', lambda m: 'ru')
     results = _peek('RusSynodalLIO', 'John', 18, 21).dict_results(
-        'спросил', [DICT], strongs=('G2065',))
+        'спросил', [DICT], strongs=('G2065',), where=('John', 18, 21))
     assert [html for _m, _d, html in results] == ['<p>спрашивать</p>']
     assert looked_up == ['СПРАШИВАТЬ']
 
@@ -90,20 +90,28 @@ def test_without_a_tag_the_peek_spells_as_before(monkeypatch, tmp_path):
     assert looked_up == ['спросил']
 
 
-def test_the_verse_is_asked_in_app_numbering(monkeypatch, tmp_path):
+def test_the_verse_is_asked_in_app_numbering(monkeypatch):
     """The Synodal Bible numbers some verses its own way; the links are in
-    app-space, so the displayed verse goes through map_verse_to_app."""
-    _links(monkeypatch, tmp_path, [('Psalms', 3, 1, 'H3068', 'ЯХВЕ')])
+    app-space, so the displayed verse goes through map_verse_to_app — on
+    the UI thread, before the lookup is handed to a worker."""
     monkeypatch.setattr(sword_bridge, 'map_verse_to_app',
                         lambda m, b, c, v: v - 1)
-    monkeypatch.setattr(
-        sword_bridge, 'lookup_dict_entry',
-        lambda mod, word: ('<p>yhwh</p>', True) if word == 'ЯХВЕ'
-        else ('', False))
-    monkeypatch.setattr(content, 'language_code', lambda m: 'ru')
-    results = _peek('RusSynodalLIO', 'Psalms', 3, 2).dict_results(
-        'Господи', [DICT], strongs=('H3068',))
-    assert results and results[0][2] == '<p>yhwh</p>'
+    assert _peek('RusSynodalLIO', 'Psalms', 3, 2)._link_ref() == (
+        'Psalms', 3, 1)
+    assert _peek('RusSynodalLIO', 'Psalms', 3, 0)._link_ref() is None
+
+
+def test_an_updated_dictionary_links_without_a_restart(monkeypatch, tmp_path):
+    """Asked once before the Module Manager update, when there was no file,
+    the answer must not stick."""
+    monkeypatch.setattr(sword_bridge, 'module_data_path',
+                        lambda m: str(tmp_path))
+    monkeypatch.setattr(word_links, '_links', {})
+    assert word_links.key_for(DICT[0], 'John', 3, 16, ['G25']) is None
+    with gzip.open(tmp_path / word_links.LINKS_FILE, 'wt',
+                   encoding='utf-8') as fh:
+        fh.write('John\t3\t16\tG25\tЛЮБОВЬ\n')
+    assert word_links.key_for(DICT[0], 'John', 3, 16, ['G25']) == 'ЛЮБОВЬ'
 
 
 def test_the_word_under_the_click_gives_its_numbers():

@@ -272,7 +272,13 @@ def _drop_headerbar_icon(*_args):
     full-colour app icon at the far left of every header bar: the one
     colour element in chrome that is otherwise ink on paper. The icon is
     not a control, so dropping it does not touch what the platform owns.
-    Re-applied when the desktop pushes a new layout, which overwrites ours.
+
+    The watch covers a desktop that adds the icon later. Once the app has
+    set the layout, though, GTK stops passing on the desktop's changes to it
+    (measured under mutter: set ':close', the desktop asked for
+    'close:minimize', GTK kept ':close'). So on KDE, where the icon is there
+    from the start, a reader who rearranges the buttons sees it at the next
+    launch.
     """
     gtk_settings = Gtk.Settings.get_default()
     if gtk_settings is None:
