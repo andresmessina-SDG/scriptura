@@ -26,6 +26,7 @@ import settings
 import sword_bridge
 import window
 from overlays import match_book
+from i18n import book_label
 
 OBJECT_PATH = '/io/github/andresmessina_SDG/Scriptura/SearchProvider'
 
