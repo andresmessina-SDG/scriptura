@@ -71,17 +71,16 @@ CATEGORY_ORDER = [
 ]
 UNCATEGORIZED = 'Uncategorized'
 
-# Curated attribution corrections applied at build time (upstream not yet
-# fixed). The 52 "Theodore Stratelates" entries are exegetical fragments on
-# Isaiah and John; the martyr-general of that name wrote nothing — they are
-# the fragments of Theodore of Heraclea (d. c. 355), the Eastern exegete.
-AUTHOR_CORRECTIONS = {
-    'Theodore Stratelates': {
-        'author': 'Theodore of Heraclea',
-        'year': 355,
-        'category': 'Eastern & Byzantine Theology',
-    },
-}
+# Curated attribution corrections applied at build time, for a folder
+# upstream has not fixed: {folder: {author, year, category}}.
+#
+# Empty since 2026-09-22, and that is the good outcome. Its one entry sent
+# the 52 "Theodore Stratelates" fragments to Theodore of Heraclea, the
+# Eastern exegete, because the martyr-general of that name wrote nothing;
+# upstream took the same correction as a PR and renamed the folder, so
+# matching on the old name now corrects nothing. The machinery stays for
+# the next one, which is cheaper than rediscovering it.
+AUTHOR_CORRECTIONS: dict[str, dict] = {}
 
 # Words kept lowercase when title-casing an ALL-CAPS source title.
 _TITLE_SMALL_WORDS = {'a', 'an', 'and', 'at', 'by', 'for', 'from', 'in',
@@ -238,7 +237,10 @@ def build(src_dir, out_path, cutoff):
     seen = set()  # (book, loc_start, loc_end, author, text) — drop exact dups
 
     for entry in sorted(os.scandir(src_dir), key=lambda e: e.name):
-        if not entry.is_dir():
+        # `.git` and `.github` are directories too, and counting them as
+        # authors is what made this tool report two authors with no year
+        # when every author folder has one.
+        if not entry.is_dir() or entry.name.startswith('.'):
             continue
         default_year, wiki, category, condemned = read_metadata(entry.path)
         author = entry.name
