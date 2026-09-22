@@ -73,7 +73,6 @@ _TIERS = (
         'id': 'reading',
         'title': N_('Just reading'),
         'tagline': N_('Open a Bible and start reading right away.'),
-        'size': N_('Smallest download'),
         'recommended': False,
     },
     {
@@ -81,14 +80,12 @@ _TIERS = (
         'title': N_('Reading + study'),
         'tagline': N_('A few translations, and the tools for looking '
                       'closely at a word.'),
-        'size': N_('Small download'),
         'recommended': True,
     },
     {
         'id': 'full',
         'title': N_('Full library'),
         'tagline': N_('Everything this language has, from the start.'),
-        'size': N_('Larger download'),
         'recommended': False,
     },
 )
@@ -281,6 +278,49 @@ _CATALOGUE = {
 _DEFAULT_LANG = 'en'
 
 
+# What each step downloads, in bytes, measured by
+# tools/measure-bundle-sizes.py (2026-09-22). Written here rather than asked
+# for at run time: on first run neither the SWORD nor the eBible catalogue is
+# on disk, and fetching both to label three cards would put the network in
+# front of the first screen. The cards used to say "Small download" over
+# 60 MB — the catena pack alone is 35 — so a number, even one that drifts a
+# little as modules are re-issued, says more. `--check` finds the drift.
+_SIZES = {
+    ('catena', ''): 35_511_897,
+    ('ebible', 'engwebp'): 2_903_449,
+    ('ebible', 'spaRV1909'): 2_380_143,
+    ('ebible', 'spabes'): 2_439_151,
+    ('ebible', 'spaonbv'): 1_569_979,
+    ('ebible', 'spavbl'): 2_695_311,
+    ('opendata', 'cross_references'): 1_983_158,
+    ('opendata', 'dodson'): 539_071,
+    ('opendata', 'topics'): 418_478,
+    ('sword', 'ASV'): 3_285_762,
+    ('sword', 'BSB'): 8_171_648,
+    ('sword', 'Easton'): 1_437_674,
+    ('sword', 'Geneva1599'): 1_535_614,
+    ('sword', 'JFB'): 5_687_741,
+    ('sword', 'KJVA'): 4_325_130,
+    ('sword', 'LBLA'): 3_500_891,
+    ('sword', 'MHCC'): 1_773_039,
+    ('sword', 'NBLA'): 3_390_186,
+    ('sword', 'RusOpenBible'): 2_463_849,
+    ('sword', 'RusSynodalLIO'): 3_148_170,
+    ('sword', 'RussianBibleWords'): 880_727,
+    ('sword', 'StrongsGreek'): 561_494,
+    ('sword', 'StrongsHebrew'): 532_370,
+    ('sword', 'TSK'): 2_643_739,
+    ('sword', 'Webster'): 1_481_368,
+    ('sword', 'Wikcionario'): 36_825_241,
+    ('sword', 'YLT'): 1_430_869,
+}
+
+
+def download_mb(items):
+    """Whole megabytes the steps download, never shown as zero."""
+    return max(1, round(sum(_SIZES[(k, i)] for k, i, _l, _f in items) / 1e6))
+
+
 def catalogue_languages():
     """Codes that can offer a starting library, in `available_languages` order.
 
@@ -369,6 +409,7 @@ def bundles_for(language):
         bundle['opens'] = entry['opens']
         bundle['items'] = entry['items']
         bundle['summary'] = _summarise(entry['items'])
+        bundle['mb'] = download_mb(entry['items'])
         out.append(bundle)
     return out
 
@@ -800,7 +841,7 @@ class WelcomeWindow(Adw.ApplicationWindow):
         spacer.set_vexpand(True)
         box.append(spacer)
 
-        size = Gtk.Label(label=_(bundle['size']))
+        size = Gtk.Label(label=_('About {n} MB').format(n=bundle['mb']))
         size.set_xalign(0)
         size.add_css_class('caption')
         size.add_css_class('dim-label')

@@ -23,6 +23,9 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - The window bar no longer shows the app’s colour icon on desktops that
   put one there, such as KDE. The window buttons stay where the desktop
   puts them.
+- The starting-library cards on the welcome screen give each download’s
+  size in megabytes. “Small download” was on a card that downloads
+  about 60 MB.
 
 ### Added
 

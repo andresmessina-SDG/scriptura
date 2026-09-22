@@ -7625,10 +7625,6 @@ msgstr "Solo leer"
 msgid "Open a Bible and start reading right away."
 msgstr "Abra una Biblia y empiece a leer de inmediato."
 
-#: welcome.py:75
-msgid "Smallest download"
-msgstr "Descarga mínima"
-
 #: welcome.py:80
 msgid "Reading + study"
 msgstr "Lectura y estudio"
@@ -7638,10 +7634,6 @@ msgid "A few translations, and the tools for looking closely at a word."
 msgstr ""
 "Varias traducciones y las herramientas para mirar de cerca una palabra."
 
-#: welcome.py:83
-msgid "Small download"
-msgstr "Descarga pequeña"
-
 #: welcome.py:88
 msgid "Full library"
 msgstr "Biblioteca completa"
@@ -7649,10 +7641,6 @@ msgstr "Biblioteca completa"
 #: welcome.py:89
 msgid "Everything this language has, from the start."
 msgstr "Todo lo que hay en este idioma, desde el principio."
-
-#: welcome.py:90
-msgid "Larger download"
-msgstr "Descarga grande"
 
 #: welcome.py:316
 #, python-brace-format
@@ -9877,3 +9865,8 @@ msgstr ""
 #: window.py export_dialog.py annotations_window.py module_manager.py
 msgid "Could not open the file chooser"
 msgstr "No se pudo abrir el selector de archivos"
+
+#: welcome.py
+#, python-brace-format
+msgid "About {n} MB"
+msgstr "Unos {n} MB"
