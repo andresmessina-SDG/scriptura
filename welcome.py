@@ -29,6 +29,7 @@ import onboarding
 import settings
 import i18n
 from a11y import set_accessible_label
+from i18n import _, ngettext
 
 
 def N_(message):
