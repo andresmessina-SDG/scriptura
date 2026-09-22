@@ -93,7 +93,24 @@ def test_parse_location_multi_verse_block_spans_first_to_last():
     assert bcp.parse_location('20_35-36-38') == (enc(20, 35), enc(20, 38))
 
 
-def test_author_correction_maps_theodore():
-    c = bcp.AUTHOR_CORRECTIONS['Theodore Stratelates']
-    assert c['author'] == 'Theodore of Heraclea'
-    assert c['category'] == 'Eastern & Byzantine Theology'
+def test_the_theodore_correction_is_gone_because_upstream_took_it():
+    """It renamed a folder upstream has since renamed itself (their PR #22),
+    so matching the old name corrects nothing. The table stays for the next
+    correction; a stale entry in it would be a silent no-op."""
+    assert 'Theodore Stratelates' not in bcp.AUTHOR_CORRECTIONS
+
+
+def test_a_dot_directory_is_not_an_author(tmp_path):
+    """`.git` and `.github` are directories, and counting them as authors is
+    what made the tool report two authors with no year over a checkout where
+    every author folder has one."""
+    (tmp_path / '.github').mkdir()
+    (tmp_path / 'Origen of Alexandria').mkdir()
+    (tmp_path / 'Origen of Alexandria' / 'metadata.toml').write_text(
+        "default_year=253\nfather_category='Early Fathers (Pre-Nicaea)'\n")
+    (tmp_path / 'Origen of Alexandria' / 'John 1_1.toml').write_text(
+        "[[commentary]]\nquote='In the beginning was the Word.'\n"
+        "source_title='Commentary on John'\n")
+    stats = bcp.build(str(tmp_path), str(tmp_path / 'out.db'), 1928)
+    assert stats['authors_no_year'] == 0
+    assert stats['authors_kept'] == 1
