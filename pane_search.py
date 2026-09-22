@@ -24,6 +24,7 @@ import motion
 import sword_bridge
 import search_query
 import search_controller
+from i18n import _, ngettext
 
 
 
