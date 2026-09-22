@@ -6,6 +6,7 @@ import threading
 import zipfile
 
 import paths
+from i18n import _
 
 # Resolved at import time; paths.open_data_dir() also handles one-shot
 # migration of individual files from the legacy `data/` subdirectory.
