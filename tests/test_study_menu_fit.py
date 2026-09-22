@@ -411,3 +411,34 @@ def test_the_title_is_over_the_middle_of_the_menu(stores):
     assert title.get_halign() == Gtk.Align.CENTER
     assert title.get_margin_start() == 0, title.get_margin_start()
     assert 'heading' in title.get_css_classes()
+
+
+def test_a_submenu_page_re_presents_the_popover():
+    """A popover grows for a taller page but never shrinks for a shorter
+    one. Rendered under mutter, Share opened at the main page's 546px with
+    three rows in it; presenting again brought it to 273. The request was
+    already right, so only the call can be guarded here."""
+    presented = []
+
+    class Popover:
+        def get_visible(self):
+            return True
+
+        def present(self):
+            presented.append(True)
+
+    class Stack:
+        def set_visible_child_name(self, name):
+            self.name = name
+
+        def get_ancestor(self, _type):
+            return Popover()
+
+        def get_child_by_name(self, _name):
+            return self
+
+        def get_first_child(self):
+            return None
+
+    annotation_dialogs._slide(Stack(), 'share')
+    assert presented == [True]

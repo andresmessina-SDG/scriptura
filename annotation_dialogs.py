@@ -240,6 +240,12 @@ def _slide(stack, name, back_to=None):
     Down goes to the row under it on a page nobody can see.
     """
     stack.set_visible_child_name(name)
+    # A popover grows to fit a taller page but never shrinks for a shorter
+    # one: measured under mutter, Share opened at the main page's 546px with
+    # three rows in it. Presenting again sizes the surface to the new page.
+    popover = stack.get_ancestor(Gtk.Popover)
+    if popover is not None and popover.get_visible():
+        popover.present()
     page = stack.get_child_by_name(name)
     first = page.get_first_child()
     while first is not None and not isinstance(first, Gtk.Button):

@@ -52,6 +52,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
   nothing at all.
 - Where the system cannot play audio, no play button is offered. It used
   to download the reading and then stop without a word.
+- The Share and “Written on this chapter” pages of the verse menu fit
+  their rows. They opened at the full menu’s height, mostly empty.
 
 ## [1.7.2] — 2026-09-17
 
