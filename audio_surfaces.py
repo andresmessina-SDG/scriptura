@@ -36,6 +36,7 @@ import tasks
 from a11y import set_accessible_label
 from audio_pill import AudioPill, format_length, sane_rate
 from gtk_utils import DelayedPulse
+from i18n import _, book_label
 
 
 class _Surface:
