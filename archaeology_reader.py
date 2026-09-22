@@ -30,7 +30,7 @@ gi.require_version('GdkPixbuf', '2.0')
 from gi.repository import Gtk, Adw, GLib, Gio, Gdk, Graphene, GdkPixbuf
 
 import archaeology_bridge
-from i18n import N_
+from i18n import _, ngettext, N_
 
 _log = logging.getLogger('scriptura.archaeology')
 
