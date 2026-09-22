@@ -2419,6 +2419,10 @@ class BibleWindow(Adw.ApplicationWindow):
             self._stop_today_listen()
             self._today_view.clear_listen()
             return
+        if not devotional_audio.playback_ready(f'today:{id(self)}',
+                                               self._sync_today_listen):
+            self._today_view.clear_listen()
+            return
         today = datetime.date.today()
         got = devotional_audio.todays_strength(today)
         if got is not None:

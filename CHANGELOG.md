@@ -45,6 +45,14 @@ semver-ish — 0.x was the pre-Flathub testing track.
   read to its last verse, and Frequency opens the word in search with its
   count per book.
 
+### Fixed
+
+- A file chooser that cannot open now says so. On a desktop without one,
+  Export, Share as image, Backup, Restore and the imports used to do
+  nothing at all.
+- Where the system cannot play audio, no play button is offered. It used
+  to download the reading and then stop without a word.
+
 ## [1.7.2] — 2026-09-17
 
 ### Added
