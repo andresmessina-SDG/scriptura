@@ -1,12 +1,9 @@
 """Importable gettext helpers.
 
-main._setup_gettext() installs ``_`` / ``ngettext`` into builtins for the bulk
-of the UI, but builtins injected at runtime are invisible to static analysis
-(mypy reports ``Name "_" is not defined``). Modules type-checked under
-mypy-strict import the same callables from here instead, so the names resolve.
-Both paths use the 'scriptura' domain bound in _setup_gettext, so they
-translate identically (gettext.gettext honours the domain set with
-gettext.textdomain()).
+Every module imports ``_``, ``ngettext``, ``C_`` and ``book_label`` from
+here. They used to be installed into builtins by main._setup_gettext() for
+most of the UI, which static analysis cannot see and which let a module that
+never imported them pass its tests on the names the test run lent it.
 """
 import datetime as _dt
 import gettext as _gettext
@@ -218,11 +215,9 @@ def install_language(code: str | None) -> None:
     re-binding reaches back to change them. The welcome window can do it
     because it rebuilds itself afterwards.
 
-    The builtins have to be re-installed, not just re-bound: gettext.install
-    binds `_` to one translation object, and that object does not notice a
-    later change of language. i18n's own `_` needs nothing: it re-reads the
-    environment per call and re-resolves the catalogue whenever that answer
-    changes (see `_catalogue`).
+    i18n's own `_` needs nothing more: it re-reads the environment per call
+    and re-resolves the catalogue whenever that answer changes (see
+    `_catalogue`).
     """
     import os
     if code:
@@ -233,7 +228,6 @@ def install_language(code: str | None) -> None:
     try:
         _gettext.bindtextdomain(DOMAIN, base)
         _gettext.textdomain(DOMAIN)
-        _gettext.install(DOMAIN, base, names=['ngettext'])
     except OSError:
         return
 

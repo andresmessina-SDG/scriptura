@@ -189,7 +189,6 @@ def test_a_relaunch_request_reaches_the_copy_of_main_that_is_running(
     Loading a second, independent copy of the module is the whole test:
     under a global it fails, under the environment it cannot.
     """
-    import builtins
     import importlib.util
     import os
 
@@ -197,23 +196,21 @@ def test_a_relaunch_request_reaches_the_copy_of_main_that_is_running(
     # process runs its module-level _setup_gettext() too, so saving after it
     # saves the damage.
     lang_was = os.environ.get('LANGUAGE')
-    builtins_was = {k: builtins.__dict__.get(k) for k in ('_', 'ngettext')}
 
     import main
     import settings as settings_mod
 
     # Executing main.py runs its module-level _setup_gettext(), which is not
-    # a read: it puts the saved ui_language into os.environ['LANGUAGE'] and
-    # rebinds the builtins `_` through gettext.install. Neither is restored
-    # by monkeypatch, so a second copy of main left the whole process
+    # a read: it puts the saved ui_language into os.environ['LANGUAGE'],
+    # which monkeypatch does not restore, so a second copy of main left the whole process
     # speaking the tester's own language — 20 tests in test_reading_audio
     # alone asserting "John 3" and getting «От Иоанна 3». It could not show
     # until a checkout had compiled catalogues to switch into.
     #
     # And it read his real ~/.config settings to decide which language, so
     # the suite's behaviour depended on a file outside the repo. Both are
-    # closed here: the settings file is a scratch one, and the two globals
-    # are put back.
+    # closed here: the settings file is a scratch one, and the variable is
+    # put back.
     monkeypatch.setattr(settings_mod, '_FILE', str(tmp_path / 'settings.json'))
     monkeypatch.setattr(settings_mod, '_cache', None)
 
@@ -227,11 +224,6 @@ def test_a_relaunch_request_reaches_the_copy_of_main_that_is_running(
             os.environ.pop('LANGUAGE', None)
         else:
             os.environ['LANGUAGE'] = lang_was
-        for k, v in builtins_was.items():
-            if v is None:
-                builtins.__dict__.pop(k, None)
-            else:
-                builtins.__dict__[k] = v
     assert other is not main
 
     other.request_relaunch()

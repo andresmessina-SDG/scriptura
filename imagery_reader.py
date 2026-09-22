@@ -38,6 +38,7 @@ from a11y import set_accessible_label
 from gtk_utils import clear_children, fade_in
 
 import imagery_bridge
+from i18n import _, ngettext, book_label
 
 _log = logging.getLogger('scriptura.imagery')
 

@@ -33,6 +33,7 @@ import lemma_index
 import search_query
 import sword_bridge
 import tasks
+from i18n import _, ngettext, book_label
 
 _log = logging.getLogger('scriptura.lexicon')
 

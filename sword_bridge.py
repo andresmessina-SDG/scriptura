@@ -319,6 +319,20 @@ def module_language(module_name):
         return ''
 
 
+def module_data_path(module_name):
+    """The folder an installed module's data files sit in, or ''.
+
+    Locked, because the dictionary peek asks from its worker thread."""
+    with _lock:
+        try:
+            mod = mgr().getModule(module_name)
+            if mod is None:
+                return ''
+            return str(mod.getConfigEntry('AbsoluteDataPath') or '')
+        except Exception:
+            return ''
+
+
 def module_info(module_name):
     """Return a dict of human-readable metadata for the Module Info popover.
     Missing fields come back as ''."""

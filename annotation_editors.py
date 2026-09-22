@@ -30,7 +30,7 @@ from gi.repository import Gdk, Gtk, Adw, GLib, Pango
 
 from a11y import set_accessible_label
 from gtk_utils import Autosave, clear_children
-from i18n import format_date
+from i18n import _, ngettext, book_label, format_date
 import annotation_dialogs
 import annotations
 import church_year

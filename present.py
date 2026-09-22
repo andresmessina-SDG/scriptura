@@ -17,6 +17,7 @@ from gi.repository import Gtk, Adw, Gdk, GLib
 from pane import _html_to_markup
 import present_paging
 import present_align
+from i18n import book_label
 
 
 class PresentView(Gtk.Box):

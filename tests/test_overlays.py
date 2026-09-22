@@ -180,11 +180,10 @@ def test_parse_jump_takes_the_name_the_reader_is_shown(monkeypatch):
     name in the book picker two inches away — flashed red for every reader
     but the English one. The English name stays the key; the shown name is
     just another way in."""
-    import builtins
+    import overlays
     ru = {'Genesis': 'Бытие', 'John': 'От Иоанна', '1 John': '1-е Иоанна',
           '1 Samuel': '1-я Царств', 'Job': 'Иов', 'Joshua': 'Иисус Навин'}
-    monkeypatch.setattr(builtins, 'book_label',
-                        lambda n: ru.get(n, n), raising=False)
+    monkeypatch.setattr(overlays, 'book_label', lambda n: ru.get(n, n))
     m = _mgr()
     assert m._parse_jump('Бытие 3')[:2] == ('Genesis', 3)
     assert m._parse_jump('Быт')[0] == 'Genesis'          # prefix, localized
@@ -195,10 +194,9 @@ def test_parse_jump_takes_the_name_the_reader_is_shown(monkeypatch):
 def test_parse_jump_contains_never_outranks_an_exact_name(monkeypatch):
     """The contains pass is last for a reason: «Иов» is a whole book name and
     must not lose to a book that merely contains it."""
-    import builtins
+    import overlays
     ru = {'Job': 'Иов', 'Joshua': 'Иисус Навин', 'Genesis': 'Бытие'}
-    monkeypatch.setattr(builtins, 'book_label',
-                        lambda n: ru.get(n, n), raising=False)
+    monkeypatch.setattr(overlays, 'book_label', lambda n: ru.get(n, n))
     m = _mgr()
     assert m._parse_jump('Иов')[0] == 'Job'
     assert m._parse_jump('Job')[0] == 'Job'

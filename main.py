@@ -36,7 +36,7 @@ _setup_logging()
 
 
 def _setup_gettext():
-    """Install `_()` as a builtin for the whole app. localedir is resolved
+    """Bind the app's gettext domain for the whole process. localedir is resolved
     relative to this file (installed at {prefix}/share/scriptura/, locale at
     {prefix}/share/locale — same __file__-relative trick as the icon search
     path). A missing localedir is fine: gettext falls back to the untranslated
@@ -63,23 +63,11 @@ def _setup_gettext():
         locale.textdomain(GETTEXT_DOMAIN)
     except (locale.Error, AttributeError):
         pass
-    # Bind the domain for the gettext module's own functions too, so the
-    # importable helpers in i18n.py (which alias gettext.gettext/ngettext)
-    # resolve the same catalog as the installed builtins. mypy-strict modules
-    # import from i18n.py; the (ignore_errors) UI modules use the builtins.
+    # Bind the domain for the gettext module's own functions too. Every
+    # module translates through i18n's `_`, `ngettext`, `C_` and
+    # `book_label`; nothing is installed into builtins.
     gettext.bindtextdomain(GETTEXT_DOMAIN, localedir)
     gettext.textdomain(GETTEXT_DOMAIN)
-    # names=['ngettext'] also installs ngettext() as a builtin for correct
-    # plural handling (languages with >2 plural forms can't use "+ 's'").
-    gettext.install(GETTEXT_DOMAIN, localedir, names=['ngettext'])
-    # book_label() (i18n.py) translates a canonical English book name for
-    # display; install it as a builtin too so the UI modules call it the same
-    # unqualified way they call _() / ngettext().
-    import builtins
-    import i18n
-    builtins.book_label = i18n.book_label
-    # Same reason: the UI modules call it unqualified, like _() and ngettext().
-    builtins.C_ = i18n.C_
 
 
 _setup_gettext()
@@ -284,7 +272,13 @@ def _drop_headerbar_icon(*_args):
     full-colour app icon at the far left of every header bar: the one
     colour element in chrome that is otherwise ink on paper. The icon is
     not a control, so dropping it does not touch what the platform owns.
-    Re-applied when the desktop pushes a new layout, which overwrites ours.
+
+    The watch covers a desktop that adds the icon later. Once the app has
+    set the layout, though, GTK stops passing on the desktop's changes to it
+    (measured under mutter: set ':close', the desktop asked for
+    'close:minimize', GTK kept ':close'). So on KDE, where the icon is there
+    from the start, a reader who rearranges the buttons sees it at the next
+    launch.
     """
     gtk_settings = Gtk.Settings.get_default()
     if gtk_settings is None:

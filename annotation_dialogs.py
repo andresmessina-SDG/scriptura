@@ -32,6 +32,7 @@ import passage_print
 import sword_bridge
 import ebible_bridge
 import open_data
+from i18n import _, ngettext, C_, book_label
 
 _log = logging.getLogger('scriptura.notes')
 

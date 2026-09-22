@@ -34,6 +34,7 @@ gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk, Gdk
 
 import a11y
+from i18n import _
 
 
 class VerseCursor:
