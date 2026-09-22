@@ -9,7 +9,7 @@ gi.require_version('Adw', '1')
 gi.require_version('Gdk', '4.0')
 from gi.repository import Gdk, Gio, Gtk, Adw, GLib, Pango
 from a11y import set_accessible_label
-from i18n import current_language, format_date
+from i18n import _, ngettext, C_, book_label, current_language, format_date
 from gtk_utils import Autosave, clear_children, file_dialog_failed
 import annotation_dialogs
 import annotation_editors
