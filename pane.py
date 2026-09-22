@@ -1177,7 +1177,8 @@ class BiblePane(Gtk.Box):
                  on_font_size_request=None, on_cipher_error=None,
                  on_edit_cipher=None, on_modules_changed=None,
                  on_open_artifact=None, on_open_lineage=None, on_module_switched=None,
-                 on_hint=None, on_open_verse=None, pane_id=1):
+                 on_hint=None, on_open_verse=None, on_search_query=None,
+                 pane_id=1):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         # GROUP, not REGION — measured, not assumed. GTK4's AT-SPI backend
         # emits no landmark roles at all: REGION, MAIN, NAVIGATION and BANNER
@@ -1645,6 +1646,7 @@ class BiblePane(Gtk.Box):
             on_show_peek=self.show_anchored_peek,
             on_dismiss_peek=self._peek.dismiss_lexicon_peek,
             on_open_verse=on_open_verse,
+            on_search_query=on_search_query,
         )
 
         # Content stack: the flowing reading view, or the catena card view

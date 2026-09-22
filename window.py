@@ -760,6 +760,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_module_switched=self._on_pane_module_switched,
                                on_hint=self._hints.maybe_fire,
                                on_open_verse=self._open_verse_in_pane2,
+                               on_search_query=self._search_for,
                                pane_id=1)
         self.pane2 = BiblePane(module_name=p2_mod,
                                on_word_click=self._on_word_click,
@@ -776,6 +777,7 @@ class BibleWindow(Adw.ApplicationWindow):
                                on_module_switched=self._on_pane_module_switched,
                                on_hint=self._hints.maybe_fire,
                                on_open_verse=self._open_verse_in_pane2,
+                               on_search_query=self._search_for,
                                pane_id=2)
         # Initial f* sensitivity for the startup modules — the pane
         # callbacks above only fire on later switches.
@@ -1831,6 +1833,9 @@ class BibleWindow(Adw.ApplicationWindow):
 
     def _hide_search(self):
         self._overlays._hide_search()
+
+    def _search_for(self, query):
+        self._overlays._search_for(query)
 
 
     # ── Bookmarks ─────────────────────────────────────────────────────────────

@@ -10,8 +10,10 @@ from gtk_utils import clear_children, DelayedSpinner
 import sword_bridge
 import ebible_bridge
 import journal_markup
+import lemma_index
 import paths
 import search_controller
+import search_query
 from empty_state import compact_empty_state
 from i18n import _, ngettext, book_label, C_
 
@@ -195,7 +197,8 @@ class SearchPanel(Gtk.Box):
         self._entry = Gtk.SearchEntry(hexpand=True, placeholder_text=_('Search…'))
         self._entry.set_tooltip_text(_(
             'Phrase: "living water" · either: bread OR wine · '
-            'exclude: faith -works · prefix: baptiz*'))
+            'exclude: faith -works · prefix: baptiz* · '
+            'the word underneath: strong:G26'))
         self._entry.connect('activate', self._on_search)
         self._entry.connect('search-changed', self._on_entry_changed)
         entry_row.append(self._entry)
@@ -233,6 +236,18 @@ class SearchPanel(Gtk.Box):
         status_row.append(self._spinner)
 
         self.append(status_row)
+
+        # ── The word a search is about ───────────────────────────────────────
+        # Only an original-language query fills this. A concordance that
+        # printed a reference list without naming the word it gathered
+        # would leave the reader unable to check it against the lexicon.
+        self._word_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        self._word_box.set_margin_start(12)
+        self._word_box.set_margin_end(12)
+        self._word_box.set_margin_bottom(8)
+        self._word_box.set_visible(False)
+        a11y.set_role(self._word_box, Gtk.AccessibleRole.STATUS)
+        self.append(self._word_box)
 
         # ── Chart area (scrollable, capped height) ────────────────────────────
         self._chart_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
@@ -287,6 +302,14 @@ class SearchPanel(Gtk.Box):
         self.set_module(module_name)
         if not self._results:
             self._show_history()
+
+    def run_query(self, query):
+        """Put `query` in the field and run it — the app's own route in,
+        used when a surface hands search a query the reader did not type.
+        The text is set rather than hidden so the reader can see, edit and
+        learn it."""
+        self._entry.set_text(query)
+        self._on_search()
 
     def _module_keys(self):
         """Picker keys: the 'All Bibles' sentinel first, then every searchable
@@ -345,6 +368,7 @@ class SearchPanel(Gtk.Box):
             self._filter_book = None
             self._expanded_section = None
             self._clear_chart()
+            self._clear_word_header()
             self._show_history()
             return
         module = self._current_module()
@@ -368,8 +392,18 @@ class SearchPanel(Gtk.Box):
         self._delayed_spinner.start()
 
         case = self._case_btn.get_active()
+        filters, _rest = search_query.split_filters(query)
+        self._clear_word_header()
+        # The word behind the query is read on the worker thread with the
+        # search itself — it costs a table scan, and the panel is the one
+        # surface that must never stall the main loop while a reader types.
+        # Only the run whose results are accepted is ever read back, so the
+        # generation guard covers this too.
+        found = {}
 
         def _search():
+            if filters:
+                found['senses'] = lemma_index.senses(filters)
             if module == search_controller.ALL_BIBLES:
                 return search_controller.search_all_bibles(
                     query, case,
@@ -383,7 +417,8 @@ class SearchPanel(Gtk.Box):
                 on_indexing_done=self._on_indexing_done)
 
         self._runner.run(_search, lambda rows, truncated:
-                         self._on_search_done(rows, truncated, query, module))
+                         self._on_search_done(rows, truncated, query, module,
+                                              filters, found.get('senses')))
 
     def _on_case_toggled(self, _btn):
         # Re-run the current query so the result list reflects the new
@@ -391,10 +426,13 @@ class SearchPanel(Gtk.Box):
         if self._entry.get_text().strip():
             self._on_search()
 
-    def _on_search_done(self, results, truncated, query, module):
+    def _on_search_done(self, results, truncated, query, module,
+                        filters=(), senses=None):
         # Stale results were already dropped by the runner's generation guard.
         self._delayed_spinner.stop()
         _save_history(query, module)
+        if filters:
+            self._show_word_header(senses or [], filters)
 
         self._results = results
         self._current_idx = -1
@@ -415,9 +453,121 @@ class SearchPanel(Gtk.Box):
         self._chart_scroll.set_visible(bool(self._results))
         self._populate_results(self._results)
         if not self._results and not self._own and not truncated:
-            self._results_list.append(self._make_empty_row(
-                _('No matches'),
-                _('Try a different word or phrase, or pick another module.')))
+            if filters and not lemma_index.is_available():
+                # Nothing installed is not the same answer as nothing found,
+                # and only one of the two is the reader's to fix.
+                self._results_list.append(self._make_empty_row(
+                    _('No interlinear installed'),
+                    _('Searching by Greek or Hebrew word needs the '
+                      'interlinear data. Install it from the Module '
+                      'Manager.')))
+            else:
+                self._results_list.append(self._make_empty_row(
+                    _('No matches'),
+                    _('Try a different word or phrase, or pick another module.')))
+
+    # ── The word a search is about ───────────────────────────────────────────
+
+    # How many senses the header spells out before it stops. A spelling
+    # shared by more than a handful of words is a sign the reader wants a
+    # Strong's number, not a longer list.
+    _SENSE_CAP = 4
+
+    def _clear_word_header(self):
+        clear_children(self._word_box)
+        self._word_box.set_visible(False)
+
+    def _show_word_header(self, senses, filters):
+        """Name the Greek or Hebrew word the results were gathered by.
+
+        One sense is a header. Several mean the query gathered more than
+        one word, and what to say about that depends on what was asked.
+
+        A LEMMA search really did gather one spelling covering several
+        words — חֶסֶד is kindness, its homonym shame, and a man's name —
+        so each is offered as a button narrowing to its Strong's number.
+        Picking one silently is the trap the genealogy charts refuse for a
+        name that covers several people.
+
+        A MORPHOLOGY search gathered a form class, not a spelling.
+        `morph:V-AAM` is 145 different words, which share no spelling at
+        all, and narrowing to one Strong's number would throw away the
+        question the reader asked. So it gets a count and no buttons.
+        """
+        self._clear_word_header()
+        if not senses:
+            return
+        self._word_box.set_visible(True)
+        if len(senses) == 1:
+            self._word_box.append(self._sense_line(senses[0]))
+            return
+        by_spelling = any(f.field == 'lemma' and not f.negate
+                          for f in filters)
+        note = Gtk.Label(
+            label=(ngettext('{n} word shares this spelling',
+                            '{n} words share this spelling', len(senses))
+                   if by_spelling else
+                   ngettext('{n} word matches', '{n} words match',
+                            len(senses))).format(n=len(senses)),
+            xalign=0, wrap=True)
+        note.add_css_class('dim-label')
+        self._word_box.append(note)
+        if not by_spelling:
+            return
+        for sense in senses[:self._SENSE_CAP]:
+            btn = Gtk.Button()
+            btn.add_css_class('flat')
+            btn.set_child(self._sense_line(sense, count=True))
+            btn.set_tooltip_text(
+                _('Search only {strongs}').format(strongs=sense.strongs))
+            btn.connect('clicked', self._on_sense_clicked, sense.strongs)
+            self._word_box.append(btn)
+        if len(senses) > self._SENSE_CAP:
+            more = Gtk.Label(
+                label=_('and {n} more').format(
+                    n=len(senses) - self._SENSE_CAP),
+                xalign=0)
+            more.add_css_class('dim-label')
+            self._word_box.append(more)
+
+    def _sense_line(self, sense, count=False):
+        """One word, set the way the interlinear sets it: the original in a
+        face that can draw it, the transliteration and gloss beneath."""
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        if sense.lemma:
+            word = Gtk.Label(label=sense.lemma, xalign=0)
+            # Greek and Hebrew need different faces; the Strong's letter is
+            # the only thing here that says which, and it is reliable.
+            word.add_css_class('interlinear-word-heb'
+                               if sense.strongs.upper().startswith('H')
+                               else 'interlinear-word')
+            box.append(word)
+        side = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0,
+                       valign=Gtk.Align.CENTER, hexpand=True)
+        if sense.gloss:
+            gloss = Gtk.Label(label=sense.gloss, xalign=0, wrap=True)
+            gloss.add_css_class('interlinear-gloss')
+            side.append(gloss)
+        trail = ' · '.join(p for p in (
+            sense.translit,
+            sense.strongs,
+            ngettext('{n} occurrence', '{n} occurrences',
+                     sense.occurrences).format(n=sense.occurrences)
+            if count else '',
+        ) if p)
+        if trail:
+            sub = Gtk.Label(label=trail, xalign=0)
+            sub.add_css_class('interlinear-translit')
+            side.append(sub)
+        box.append(side)
+        return box
+
+    def _on_sense_clicked(self, _btn, strongs):
+        """Narrow a lemma search to one of the words that share the
+        spelling. Replaces the query outright rather than appending, so the
+        entry always shows exactly what produced the list below it."""
+        self._entry.set_text(f'strong:{strongs}')
+        self._on_search()
 
     def _make_empty_row(self, title, description):
         row = Gtk.ListBoxRow()
@@ -627,8 +777,13 @@ class SearchPanel(Gtk.Box):
     _OWN_CAP = 30
 
     def _own_matches(self, query):
-        """The marks, entries and sermons whose words contain `query`."""
-        q = query.strip().lower()
+        """The marks, entries and sermons whose words contain `query`.
+
+        The TEXT half of the query only. A reader's own prose has no Greek
+        under it, so `strong:G26` matches none of it and the literal
+        string "strong:g26 charity" matches nothing at all — while the
+        word they actually typed, charity, is sitting in a sermon."""
+        q = search_query.split_filters(query)[1].strip().lower()
         if not q:
             return []
         # Imported here rather than at module level: this is the only path

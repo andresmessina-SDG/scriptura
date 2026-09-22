@@ -216,6 +216,29 @@ class OverlayManager:
             self._search_panel.prepare_for_show(mod)
             self._search_split.set_show_sidebar(True)
 
+    def _search_for(self, query):
+        """Open the search panel on a query the app composed — today only
+        the lexicon panel's Frequency button, which hands over
+        `strong:G26`. Deliberately reuses the reader's own search surface
+        rather than growing a second one: the panel already counts hits
+        per section and per book, steps with F3, and filters by book.
+
+        It also teaches the syntax, which is the point. Every power
+        feature here is an invisible gesture (GUIDANCE §5.1), and a query
+        the reader can see, edit and retype is the cheapest lesson
+        available.
+        """
+        self._dismiss_today(animate=False)
+        self._close_other_overlays(keep='search')
+        mod = self.pane1.module
+        if self.pane1._is_devotional:
+            texts = content.text_bible_names()
+            if texts:
+                mod = texts[0]
+        self._search_panel.prepare_for_show(mod)
+        self._search_panel.run_query(query)
+        self._search_split.set_show_sidebar(True)
+
     def _hide_search(self):
         self._search_split.set_show_sidebar(False)
 
