@@ -17,6 +17,7 @@ from gtk_utils import clear_children
 
 import sword_bridge
 import content
+from i18n import _
 
 
 def N_(message):
