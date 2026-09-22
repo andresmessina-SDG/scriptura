@@ -144,6 +144,23 @@
          notice most, in plain words and short sentences, with no em-dashes.
          The full record belongs in CHANGELOG.md, not here.
          tests/test_version_sync.py holds every release to this. -->
+    <release version="1.7.3" date="2026-09-22">
+      <description its:translate="no">
+        <p>Search the Greek and Hebrew behind the translation, and hear more of the fathers.</p>
+        <ul>
+          <li>Search by the word under the translation. strong:G26 finds every verse whose Greek carries that word, and lemma: and morph: ask the same of the spelling and the grammar.</li>
+          <li>The occurrences beside a Strong's definition can now cover the whole Bible, not only the book you are reading.</li>
+          <li>The historical commentaries add about 2,000 comments, most of them Origen. The Module Manager offers the new pack.</li>
+          <li>Double-clicking a word in a Russian Bible finds its dictionary article far more often. Update the Russian dictionary to get this.</li>
+          <li>The interface font now ships with the app, so the text looks the same on every desktop.</li>
+          <li>On desktops that put the app icon in the window bar, such as KDE, it no longer appears there.</li>
+          <li>Evening paper now says when your desktop has no Night Light, instead of doing nothing.</li>
+          <li>The starting library cards say how much each one downloads.</li>
+          <li>Where the system cannot play audio, no play button is offered.</li>
+          <li>A file chooser that cannot open now says so, and the Share and Written on this chapter menus fit their rows.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.7.2" date="2026-09-17">
       <description its:translate="no">
         <p>Your writing is kept safer, and the interlinears show more.</p>

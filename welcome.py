@@ -307,7 +307,7 @@ _SIZES = {
     ('sword', 'NBLA'): 3_390_186,
     ('sword', 'RusOpenBible'): 2_463_849,
     ('sword', 'RusSynodalLIO'): 3_148_170,
-    ('sword', 'RussianBibleWords'): 880_727,
+    ('sword', 'RussianBibleWords'): 1_421_584,
     ('sword', 'StrongsGreek'): 561_494,
     ('sword', 'StrongsHebrew'): 532_370,
     ('sword', 'TSK'): 2_643_739,
