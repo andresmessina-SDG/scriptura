@@ -17,6 +17,7 @@ import re
 import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import GLib, Pango
+from i18n import _
 
 
 def render_osis(buffer, raw, dark):
