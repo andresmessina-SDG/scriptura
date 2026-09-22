@@ -23,6 +23,7 @@ import genealogy_bridge
 import motion
 import sword_bridge
 import tasks
+import word_links
 from a11y import set_accessible_label
 from gtk_utils import clear_children
 from i18n import _, ngettext
@@ -397,7 +398,15 @@ class PeekController:
         rect.y = wy1
         rect.width = max(1, wx2 - wx1) if r2.y == r1.y else max(1, r1.width)
         rect.height = r1.height
-        self.show_dict_popup_at(word, self._view, rect)
+        self.show_dict_popup_at(word, self._view, rect,
+                                strongs=self._strongs_at_offset(word_offset))
+
+    def _strongs_at_offset(self, offset):
+        """The Strong's numbers the text tags this word with, or ()."""
+        it = self._buffer.get_iter_at_offset(offset)
+        return tuple(name[5:] for tag in it.get_tags()
+                     if (name := tag.get_property('name') or '')
+                     .startswith('strg:'))
 
     def _ensure_peek_popover(self, anchor_widget):
         """The shared non-autohide peek popover — dictionary look-ups and
@@ -532,7 +541,7 @@ class PeekController:
         pop.popup()
         self._peek_fade_in(pop)
 
-    def show_dict_popup_at(self, word, anchor_widget, rect):
+    def show_dict_popup_at(self, word, anchor_widget, rect, strongs=()):
         # A lightweight "Look Up" peek anchored at the double-clicked word,
         # not a detached window centred on the screen. Deep study still goes
         # through the Strong's lexicon panel. `anchor_widget`/`rect` say where
@@ -855,7 +864,7 @@ class PeekController:
             if not dicts:
                 return None
             searched[:] = [_short_dict_title(mn, md) for mn, md in dicts]
-            return self.dict_results(word, dicts)
+            return self.dict_results(word, dicts, strongs=strongs)
 
         # Latest-wins on the shared peek key: a newer lookup, footnote, or
         # anchored peek supersedes this fetch, so a late return can't
@@ -867,7 +876,7 @@ class PeekController:
                      on_error=lambda _exc: populate([]))
         return GLib.SOURCE_REMOVE
 
-    def dict_results(self, word, dicts):
+    def dict_results(self, word, dicts, strongs=()):
         """Every dictionary that answers `word`, in the order the tabs open.
 
         Which tab opens matters more than which tabs exist. Two things decide
@@ -900,9 +909,21 @@ class PeekController:
         is reachable by a test that needs no display.
         """
         lang = content.language_code(self._module)
+        verse = (sword_bridge.map_verse_to_app(
+            self._module, self._book, self._chapter, self._peek_verse)
+            if strongs and self._peek_verse else 0)
         results = []
         for mod_name, mod_desc in dicts:
-            html, exact = sword_bridge.lookup_dict_entry(mod_name, word)
+            # A verse-aware link names the article this very word is about,
+            # which no spelling can: it goes first, and counts as exact.
+            key = word_links.key_for(mod_name, self._book, self._chapter,
+                                     verse, strongs) if verse else None
+            html, exact = ('', False)
+            if key:
+                html = sword_bridge.lookup_dict_entry(mod_name, key)[0]
+                exact = bool(html)
+            if not html:
+                html, exact = sword_bridge.lookup_dict_entry(mod_name, word)
             if html:
                 same = bool(lang) and content.language_code(mod_name) == lang
                 results.append((mod_name, mod_desc, html, exact, same))

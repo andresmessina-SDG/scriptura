@@ -23,6 +23,14 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - The window bar no longer shows the app’s colour icon on desktops that
   put one there, such as KDE. The window buttons stay where the desktop
   puts them.
+- **Double-clicking a word in a Russian Bible finds its article far more
+  often.** Russian changes a word’s ending, and the dictionary is filed
+  under the base form, so спросил or иисуса found nothing. The
+  dictionary now carries Door43’s links from each verse’s words to its
+  articles, and a Bible tagged with Strong’s numbers, like the Synodal,
+  follows them: a quarter to a third of the words in a book now open
+  an article, up from one in ten. The Module Manager offers the updated
+  dictionary.
 - The starting-library cards on the welcome screen give each download’s
   size in megabytes. “Small download” was on a card that downloads
   about 60 MB.

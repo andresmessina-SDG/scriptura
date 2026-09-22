@@ -112,6 +112,7 @@ py_sources = files(
   'verse_cursor.py',
   'verse_card.py',
   'welcome.py',
+  'word_links.py',
   'window.py',
 )
 
