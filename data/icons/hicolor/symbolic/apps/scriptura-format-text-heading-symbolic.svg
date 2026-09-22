@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  Heading glyph — a capital H — for the journal editor's formatting row.
-  Drawn: Adwaita's heading symbolics are numbered (H1, H2 …) and the journal
-  offers one heading level, so a numeral would promise a choice that is not
-  there. Fill-only (#222).
--->
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!--
+    Heading glyph — a capital H — for the journal editor's formatting row.
+    Drawn: Adwaita's heading symbolics are numbered (H1, H2 …) and the journal
+    offers one heading level, so a numeral would promise a choice that is not
+    there. Fill-only (#222).
+  -->
+
   <g fill="#222">
     <rect x="3.4" y="2.8" width="1.9" height="10.4" rx="0.5"/>
     <rect x="10.7" y="2.8" width="1.9" height="10.4" rx="0.5"/>

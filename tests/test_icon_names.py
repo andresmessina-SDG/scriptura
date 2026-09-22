@@ -11,6 +11,7 @@ So: scrape the names out of the source and check each one against the
 pinned set plus what we ship ourselves.
 """
 
+import pathlib
 import os
 import re
 
@@ -153,3 +154,23 @@ def test_headerbar_icon_is_dropped_controls_kept(layout, expected):
     controls, their order and their side stay the desktop's."""
     import main
     assert main._strip_icon(layout) == expected
+
+
+def test_every_shipped_svg_is_recognisable_as_an_image():
+    """A tool that sniffs a file's first bytes to decide its format never
+    reaches `<svg>` when a long comment sits ahead of it. That is not
+    theoretical: `flatpak build-export` refused the app's own symbolic icon
+    on the 1.7.3 release with "Format not recognized", and the file had not
+    changed in two months. Comments belong inside the root element."""
+    import gi
+    gi.require_version('GdkPixbuf', '2.0')
+    from gi.repository import GdkPixbuf
+    unreadable = []
+    for path in sorted(pathlib.Path('data').rglob('*.svg')):
+        try:
+            GdkPixbuf.Pixbuf.new_from_file(str(path))
+        except Exception:
+            unreadable.append(path.name)
+    assert not unreadable, (
+        'these SVGs are not recognised as images — move any comment ahead '
+        f'of <svg> inside it: {unreadable}')

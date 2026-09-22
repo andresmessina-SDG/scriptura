@@ -1,38 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  Globe glyph for the picker's "Filter by language" button. Bundled (not
-  pulled from the icon theme) because the platform ships no globe-symbolic:
-  Adwaita's only candidate, preferences-desktop-locale-symbolic, is a FLAG
-  rather than a globe and lives in legacy/. (A flag is the wrong mark for a
-  language filter besides — languages are not countries.) Drawn fill-only,
-  even-odd rings and no strokes, so GTK4 recolors it reliably on any
-  background, like the keyboard symbolic alongside it.
-
-  Redrawn 2026-07-27, at 16px, after Andres found it illegible on the real
-  button. The failure was a DETAIL BUDGET, not a weight: roughly 14 usable
-  pixels were being asked to hold five elements — outer ring, meridian
-  ellipse, a vertical axis bar, the equator, and the gaps between them. The
-  axis bar and the meridian both run pole to pole through the centre, so at
-  16px they merged into a dark core. The weight pass earlier the same day
-  (ring 1.7 → 2.0) only fed the merge; the 2026-07-17 note in this very file
-  had already said full 2px muddies the inner detail, and that stood.
-
-  So this cuts instead of thickening. The axis bar is gone — the meridian
-  ellipse already reads as a sphere and the bar was redundant with it —
-  leaving three elements. The ring keeps 1.8, near the GNOME 2px norm,
-  because it is the silhouette and the main feature; the meridian (1.4) and
-  the equator (1.5) are interior detail and may run lighter, which is how
-  the stock symbolics treat their own interiors. That split is what buys the
-  open cells: a thicker ring eats the space the detail needs.
-
-  Proportions were settled on the 16px raster magnified with NEAREST, not on
-  a smooth preview — what matters at 16px is that the six cells stay darker
-  than the strokes bounding them. A 2.9 meridian radius against the 5.2
-  inner radius leaves a 2.3px side gap and a 3.0px centre gap, so no cell
-  fills in. Judge any future change the same way: a 16px icon is judged at
-  16px, on the chrome it actually sits on.
--->
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!--
+    Globe glyph for the picker's "Filter by language" button. Bundled (not
+    pulled from the icon theme) because the platform ships no globe-symbolic:
+    Adwaita's only candidate, preferences-desktop-locale-symbolic, is a FLAG
+    rather than a globe and lives in legacy/. (A flag is the wrong mark for a
+    language filter besides — languages are not countries.) Drawn fill-only,
+    even-odd rings and no strokes, so GTK4 recolors it reliably on any
+    background, like the keyboard symbolic alongside it.
+  
+    Redrawn 2026-07-27, at 16px, after Andres found it illegible on the real
+    button. The failure was a DETAIL BUDGET, not a weight: roughly 14 usable
+    pixels were being asked to hold five elements — outer ring, meridian
+    ellipse, a vertical axis bar, the equator, and the gaps between them. The
+    axis bar and the meridian both run pole to pole through the centre, so at
+    16px they merged into a dark core. The weight pass earlier the same day
+    (ring 1.7 → 2.0) only fed the merge; the 2026-07-17 note in this very file
+    had already said full 2px muddies the inner detail, and that stood.
+  
+    So this cuts instead of thickening. The axis bar is gone — the meridian
+    ellipse already reads as a sphere and the bar was redundant with it —
+    leaving three elements. The ring keeps 1.8, near the GNOME 2px norm,
+    because it is the silhouette and the main feature; the meridian (1.4) and
+    the equator (1.5) are interior detail and may run lighter, which is how
+    the stock symbolics treat their own interiors. That split is what buys the
+    open cells: a thicker ring eats the space the detail needs.
+  
+    Proportions were settled on the 16px raster magnified with NEAREST, not on
+    a smooth preview — what matters at 16px is that the six cells stay darker
+    than the strokes bounding them. A 2.9 meridian radius against the 5.2
+    inner radius leaves a 2.3px side gap and a 3.0px centre gap, so no cell
+    fills in. Judge any future change the same way: a 16px icon is judged at
+    16px, on the chrome it actually sits on.
+  -->
+
   <g fill="#222">
     <!-- Outer ring: r7 in to r5.2 — 1.8 of ink, 1px canvas margin -->
     <path fill-rule="evenodd" d="M8 1 A7 7 0 1 0 8 15 A7 7 0 1 0 8 1 Z M8 2.8 A5.2 5.2 0 1 1 8 13.2 A5.2 5.2 0 1 1 8 2.8 Z"/>
