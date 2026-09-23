@@ -6972,9 +6972,9 @@ msgstr ""
 msgid "Search this module"
 msgstr "Buscar en este módulo"
 
-#: pane_search.py:125
-msgid "Search this module…"
-msgstr "Buscar en este módulo…"
+#: pane_search.py
+msgid "Find in this chapter…"
+msgstr "Buscar en este capítulo…"
 
 #: pane_search.py:127 search_panel.py:187
 msgid ""
@@ -6997,9 +6997,9 @@ msgstr "Coincidencia siguiente"
 msgid "Match case"
 msgstr "Distinguir mayúsculas y minúsculas"
 
-#: pane_search.py:182
-msgid "Find in this module"
-msgstr "Buscar en este módulo"
+#: pane_search.py
+msgid "Find in this chapter"
+msgstr "Buscar en este capítulo"
 
 #: pane_search.py:260
 #, python-brace-format
@@ -7013,25 +7013,9 @@ msgid_plural "{n} in this chapter"
 msgstr[0] "{n} en este capítulo"
 msgstr[1] "{n} en este capítulo"
 
-#: pane_search.py:453
-msgid "Indexing…"
-msgstr "Indexando…"
-
-#: pane_search.py:456
-#, python-brace-format
-msgid "Indexing {idx}/{total}"
-msgstr "Indexando {idx}/{total}"
-
 #: pane_search.py:502 search_panel.py:408 study_journal.py:659
 msgid "No matches"
 msgstr "Sin coincidencias"
-
-#: pane_search.py:506
-#, python-brace-format
-msgid "Showing first {n} matches — try a more specific search."
-msgstr ""
-"Se muestran las primeras {n} coincidencias; pruebe con una búsqueda más "
-"concreta."
 
 #: passage_export.py:311
 #, python-brace-format
@@ -8261,9 +8245,13 @@ msgstr "Más"
 msgid "More actions"
 msgstr "Más acciones"
 
-#: window.py:510
-msgid "Search (Ctrl+F)"
-msgstr "Buscar (Ctrl+F)"
+#: window.py
+msgid "Search the Bible (Ctrl+F)"
+msgstr "Buscar en la Biblia (Ctrl+F)"
+
+#: window.py
+msgid "Search the Bible"
+msgstr "Buscar en la Biblia"
 
 #: window.py:511 window.py:2669
 msgid "Search"

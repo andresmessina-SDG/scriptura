@@ -547,8 +547,8 @@ class BibleWindow(Adw.ApplicationWindow):
         self._search_btn = search_btn = Gtk.Button(icon_name='scriptura-system-search-symbolic')
         search_btn.add_css_class('flat')
         search_btn.add_css_class('header-action')
-        search_btn.set_tooltip_text(_('Search (Ctrl+F)'))
-        set_accessible_label(search_btn, _('Search'))
+        search_btn.set_tooltip_text(_('Search the Bible (Ctrl+F)'))
+        set_accessible_label(search_btn, _('Search the Bible'))
         search_btn.connect('clicked', self._on_search_clicked)
         header.pack_end(search_btn)
 
@@ -2908,7 +2908,7 @@ class BibleWindow(Adw.ApplicationWindow):
                 _('Go forward'), lambda: self._on_nav_fwd(None),
                 sensitive=bool(self._nav_fwd))
             row(Gtk.Image.new_from_icon_name('scriptura-system-search-symbolic'),
-                _('Search'), lambda: self._on_search_clicked(None))
+                _('Search the Bible'), lambda: self._on_search_clicked(None))
 
         # Lexicon — leading glyph mirrors the header toggle (אΩ); a check marks
         # it when the lexicon is currently on.

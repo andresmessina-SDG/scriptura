@@ -15,6 +15,14 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - **A break between stanzas is half a line, not a whole one.** In the
   Psalms and other poetry the blank line between stanzas was a full line
   tall, so a break read as a missing line. It is now half as tall.
+- **Each search button has one job.** The magnifier in the window bar
+  searches the whole Bible, as before, and now says so. The button above
+  the page finds words in the chapter you are reading, with its own icon:
+  type to highlight, Enter for the next match, Shift+Enter for the one
+  before. It used to run a second whole-Bible search when you pressed
+  Enter.
+- The passage menu above the page now shows three dots across (⋯), so it
+  no longer looks like the window's menu (⋮) when the two sit together.
 
 ## [1.7.3] — 2026-09-22
 

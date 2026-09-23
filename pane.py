@@ -1396,7 +1396,9 @@ class BiblePane(Gtk.Box):
         # print a passage. A context menu is a shortcut, never the only path.
         # Same menu, same code, so the two doors can never say different
         # things.
-        self._passage_btn = Gtk.Button(icon_name='scriptura-view-more-symbolic')
+        # Horizontal dots, not the header's vertical ⋮: at narrow widths the two
+        # sit one above the other and must not read as the same menu.
+        self._passage_btn = Gtk.Button(icon_name='scriptura-view-more-horizontal-symbolic')
         self._passage_btn.add_css_class('flat')
         self._passage_btn.add_css_class('pane-action')
         self._passage_btn.set_tooltip_text(_('Passage actions'))

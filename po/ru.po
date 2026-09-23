@@ -6919,9 +6919,9 @@ msgstr "Добавьте словарь в менеджере модулей и 
 msgid "Search this module"
 msgstr "Искать в этом модуле"
 
-#: pane_search.py:125
-msgid "Search this module…"
-msgstr "Искать в этом модуле…"
+#: pane_search.py
+msgid "Find in this chapter…"
+msgstr "Найти в этой главе…"
 
 #: pane_search.py:127 search_panel.py:187
 msgid ""
@@ -6944,9 +6944,9 @@ msgstr "Следующее совпадение"
 msgid "Match case"
 msgstr "Учитывать регистр"
 
-#: pane_search.py:182
-msgid "Find in this module"
-msgstr "Найти в этом модуле"
+#: pane_search.py
+msgid "Find in this chapter"
+msgstr "Найти в этой главе"
 
 #: pane_search.py:260
 #, python-brace-format
@@ -6961,23 +6961,9 @@ msgstr[0] "{n} в этой главе"
 msgstr[1] "{n} в этой главе"
 msgstr[2] "{n} в этой главе"
 
-#: pane_search.py:453
-msgid "Indexing…"
-msgstr "Индексация…"
-
-#: pane_search.py:456
-#, python-brace-format
-msgid "Indexing {idx}/{total}"
-msgstr "Индексация {idx}/{total}"
-
 #: pane_search.py:502 search_panel.py:408 study_journal.py:659
 msgid "No matches"
 msgstr "Совпадений нет"
-
-#: pane_search.py:506
-#, python-brace-format
-msgid "Showing first {n} matches — try a more specific search."
-msgstr "Показаны первые {n} совпадений — уточните запрос."
 
 #: passage_export.py:311
 #, python-brace-format
@@ -8204,9 +8190,13 @@ msgstr "Ещё"
 msgid "More actions"
 msgstr "Другие действия"
 
-#: window.py:510
-msgid "Search (Ctrl+F)"
-msgstr "Искать (Ctrl+F)"
+#: window.py
+msgid "Search the Bible (Ctrl+F)"
+msgstr "Искать в Библии (Ctrl+F)"
+
+#: window.py
+msgid "Search the Bible"
+msgstr "Искать в Библии"
 
 #: window.py:511 window.py:2669
 msgid "Search"
