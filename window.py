@@ -3383,7 +3383,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._menu_stack = Gtk.Stack(vexpand=True)
         self._menu_stack.set_transition_type(
             Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
-        self._menu_stack.set_transition_duration(200)
+        self._menu_stack.set_transition_duration(motion.DURATION_STANDARD)
         _body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         _body.append(self._build_menu_nav_group())
         self._build_plan_section(_body)
@@ -3396,13 +3396,20 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         panel.append(self._build_menu_footer())
         return panel
 
-    def _show_menu_page(self, name):
+    def _show_menu_page(self, name, move_focus=False):
         """'menu' or 'appearance'. The header follows: a back arrow and the
-        page's name on Appearance, the plain title on the menu."""
+        page's name on Appearance, the plain title on the menu.
+
+        `move_focus` when the reader went there by the row or the back
+        arrow: focus would otherwise stay on a widget the switch just hid,
+        and a keyboard or screen-reader user lands nowhere. It goes to the
+        back arrow going in, and to the Appearance row coming out."""
         self._menu_stack.set_visible_child_name(name)
         sub = name != 'menu'
         self._menu_back.set_visible(sub)
         self._menu_title.set_label(_('Appearance') if sub else _('Menu'))
+        if move_focus:
+            (self._menu_back if sub else self._appear_nav_row).grab_focus()
 
     def _build_menu_header(self):
         # ── Header: title + close only. Global utilities (theme, shortcuts,
@@ -3421,7 +3428,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._menu_back.set_tooltip_text(_('Back'))
         set_accessible_label(self._menu_back, _('Back'))
         self._menu_back.set_visible(False)
-        self._menu_back.connect('clicked', lambda _b: self._show_menu_page('menu'))
+        self._menu_back.connect(
+            'clicked', lambda _b: self._show_menu_page('menu', move_focus=True))
         self._menu_title = title = Gtk.Label(label=_('Menu'), hexpand=True)
         title.set_xalign(0)
         title.add_css_class('title-4')
@@ -3450,7 +3458,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             ('scriptura-application-x-addon-symbolic',     _('Modules'),       self._on_modules_clicked),
             ('scriptura-view-fullscreen-symbolic',         _('Presentation'),  self._on_present_menu_clicked),
             ('scriptura-applications-graphics-symbolic',   _('Appearance'),
-             lambda _r: self._show_menu_page('appearance')),
+             lambda _r: self._show_menu_page('appearance', move_focus=True)),
         ]:
             row = Adw.ActionRow(title=label)
             row.add_prefix(Gtk.Image.new_from_icon_name(icon))
@@ -3460,6 +3468,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             row.set_activatable(True)
             row.connect('activated', handler)
             nav_group.add(row)
+        self._appear_nav_row = row   # the last: focus returns here from Appearance
         return nav_group
 
     def _on_language_selected(self, codes, languages, drop, toast_to=None):
