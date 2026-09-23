@@ -237,7 +237,11 @@ class PaneSearch:
         self._pane.view.queue_draw()
         # A find-bar jump is not the reader scrolling: mark it, and scroll by
         # mark so the move waits for line validation (see _scroll_to_verse).
+        # It is a new reading place, though: drop the old anchor and capture
+        # this one, or a resize or re-render would put the reader back.
         self._pane._mark_programmatic_scroll()
+        self._pane._reading_anchor = None
+        self._pane._schedule_anchor_capture(400)
         mark = buf.create_mark(None, si, True)
         self._pane.view.scroll_to_mark(mark, 0.1, False, 0.0, 0.0)
         buf.delete_mark(mark)
@@ -269,6 +273,13 @@ class PaneSearch:
         if self._clear_hl_tags(buf):
             self._pane.view.queue_draw()  # bands are painted from these tags
 
+        # Offsets from the chapter before mean nothing in this one.
+        self._matches = []
+        self._idx = -1
+        if self._prev_btn is not None:
+            self._prev_btn.set_sensitive(False)
+            self._next_btn.set_sensitive(False)
+
         pending = self._pending_highlight
         self._pending_highlight = None
         if not pending:
@@ -276,6 +287,8 @@ class PaneSearch:
             if q and self._rev.get_reveal_child():
                 self._live_highlight(q)
             return
+        if self._status is not None:
+            self._status.set_text('')
         query, case_sensitive = pending
         # Highlight exactly the query's positive terms (phrases split into
         # their words, prefix '*' stripped, excluded -terms dropped) — the

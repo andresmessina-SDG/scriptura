@@ -22,8 +22,9 @@ def find():
     buf.set_text('Grace and peace. Peace, then grace. Grace.')
     scrolls = []
     pane = types.SimpleNamespace(
-        _buffer=buf, view=view,
-        _mark_programmatic_scroll=lambda: scrolls.append(1))
+        _buffer=buf, view=view, _reading_anchor='old place',
+        _mark_programmatic_scroll=lambda: scrolls.append('mark'),
+        _schedule_anchor_capture=lambda ms=250: scrolls.append('capture'))
     ps = PaneSearch(pane)
     ps.build_button()
     ps.build_revealer()
@@ -103,3 +104,26 @@ def test_the_panel_query_wins_over_the_bar(find):
     find.stash_pending_highlight('then', False)
     find.apply_highlight()
     assert _ranges(find, '_search_hl') == [(24, 28)]
+
+
+def test_a_step_is_a_new_reading_place(find):
+    """Otherwise a later resize or re-render re-asserts the old anchor and
+    throws the reader back to where they were before the jump."""
+    find._live_highlight('grace')
+    find.step()
+    assert find._pane._reading_anchor is None
+    assert 'capture' in find.scrolls
+
+
+def test_a_panel_jump_drops_the_old_chapters_matches(find):
+    """Offsets from the chapter before are nonsense in this one; F3 would
+    step to them."""
+    find._rev.set_reveal_child(True)
+    find._entry.set_text('grace')
+    find._live_highlight('grace')
+    find._pane._buffer.set_text('Peace I leave with you.')
+    find.stash_pending_highlight('peace', False)
+    find.apply_highlight()
+    assert find.results == []
+    assert find.step() is False
+    assert not find._next_btn.get_sensitive()
