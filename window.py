@@ -1163,6 +1163,13 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self.pane1.view.grab_focus()
 
     def _on_key_press(self, controller, keyval, keycode, state):
+        # A dialog (Preferences, About, Tips, Shortcuts) lives inside this
+        # window, so this CAPTURE controller saw its keys first: Escape shut
+        # the Today page behind Preferences and left the dialog open, and in
+        # presentation Space turned a slide instead of a switch. The dialog
+        # owns the keyboard while it is up.
+        if self.get_visible_dialog() is not None:
+            return False
         alt  = bool(state & Gdk.ModifierType.ALT_MASK)
         ctrl = bool(state & Gdk.ModifierType.CONTROL_MASK)
 
