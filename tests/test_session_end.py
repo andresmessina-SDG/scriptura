@@ -56,7 +56,7 @@ def test_a_signal_closes_the_windows_before_quitting():
 
 def test_main_listens_for_the_session_ending(monkeypatch):
     heard = []
-    monkeypatch.setattr(GLib, 'unix_signal_add',
+    monkeypatch.setattr(main.GLibUnix, 'signal_add',
                         lambda prio, sig, fn, *a: heard.append(sig) or 1)
     app, _c, _q = _app()
     main._listen_for_session_end(app)
