@@ -34,6 +34,7 @@ py_sources = files(
   'annotation_editors.py',
   'annotations.py',
   'annotations_window.py',
+  'appearance_page.py',
   'archaeology_bridge.py',
   'archaeology_reader.py',
   'archaeology_strings.py',

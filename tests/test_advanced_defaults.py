@@ -1,7 +1,7 @@
 """The reading toggles ship off unless they earn a place.
 
 They live in two places since the menu was split: the type switches on the
-menu's Appearance page (window.py `_build_type_switches`) and the Reading
+menu's Appearance page (appearance_page.py `_build_type_switches`) and the Reading
 aids page of Preferences (preferences.py `_reading_aids_page`). One rule
 covers both.
 
@@ -11,7 +11,7 @@ written yet: a new switch that defaults on quietly enlarges what a first-time
 reader is handed, which is the decision this test exists to force back into
 the open.
 
-The toggle list is READ OUT OF window.py rather than restated here, so adding
+The toggle list is READ OUT OF the source rather than restated here, so adding
 a row is enough to bring it under the rule.
 """
 
@@ -52,7 +52,7 @@ def _advanced_toggle_keys() -> set[str]:
     """Every settings key wired to a reading switch: `_adv_switch(label, key,
     setter)` on the Appearance page and `_switch(title, key, on_change)` on
     the Reading aids page."""
-    return (_keys_in('window.py', '_build_type_switches', '_adv_switch')
+    return (_keys_in('appearance_page.py', '_build_type_switches', '_adv_switch')
             | _keys_in('preferences.py', '_reading_aids_page', '_switch'))
 
 
