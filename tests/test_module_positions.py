@@ -116,8 +116,12 @@ def test_debounced_save_eventually_lands(isolated):
     module_positions.remember_verse_position('BSB', 'Psalms', 107, 5)
     # File shouldn't exist yet — save is debounced
     assert not isolated.joinpath('module_positions.json').exists()
-    # Wait past the debounce window
-    time.sleep(0.6)
+    # Wait past the debounce window; a loaded CI runner can fire the
+    # timer late, so poll rather than sleep a fixed margin
+    deadline = time.monotonic() + 5
+    while (not isolated.joinpath('module_positions.json').exists()
+           and time.monotonic() < deadline):
+        time.sleep(0.05)
     assert isolated.joinpath('module_positions.json').exists()
     with open(isolated / 'module_positions.json', encoding='utf-8') as f:
         data = json.load(f)
