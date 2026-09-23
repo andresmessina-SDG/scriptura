@@ -1954,6 +1954,11 @@ class BibleWindow(Adw.ApplicationWindow):
     def _open_preferences(self, *_a):
         if getattr(self, '_prefs_dialog', None) is not None:
             return
+        # The menu has done its job once an item is chosen, and GNOME menus
+        # close then. It also matters here: GTK's GPU renderers leave one-step
+        # stripes where the dialog's dim halves the menu rows' colour (47 to
+        # 23.5, a rounding tie). Measured on his screen; gone under cairo.
+        self._menu_split.set_show_sidebar(False)
         import preferences
         self._prefs_dialog = preferences.build(self)
         self._prefs_dialog.present(self)
