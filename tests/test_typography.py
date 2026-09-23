@@ -103,7 +103,28 @@ def test_resolve_stanza_gap():
     markup, levels = _resolve_poetry_markup(
         '[[PLS1]]end of stanza[[PLE]][[PLGS]][[PLS1]]new stanza[[PLE]]', st)
     assert markup == 'end of stanza\n\nnew stanza\n'
-    assert levels == {0: 1, 2: 1}
+    assert levels == {0: 1, 1: 0, 2: 1}
+
+
+def test_resolve_stanza_gap_after_an_open_line():
+    # A group starting while a line is still open breaks it and leaves
+    # the blank line one further down; that blank line is the gap.
+    st = _state(at_ls=False)
+    markup, levels = _resolve_poetry_markup('tail[[PLGS]][[PLS1]]next', st)
+    assert markup == 'tail\n\nnext'
+    assert levels == {1: 0, 2: 1}
+
+
+def test_dropcap_line_height_follows_spacing():
+    # Measured: 1.0 keeps the cap's line on the body step from 1.4x up,
+    # 0.8 at 1.0x. The factor never exceeds 1.
+    import types
+    from gi.repository import Gtk
+    from pane import BiblePane
+    tag = Gtk.TextTag()
+    for ls, want in ((1.0, 0.8), (1.2, 0.9), (1.4, 1.0), (2.5, 1.0)):
+        BiblePane._sync_dropcap_height(types.SimpleNamespace(_line_spacing=ls), tag)
+        assert abs(tag.props.line_height - want) < 1e-6
 
 
 def test_resolve_counts_markup_newlines_not_tags():

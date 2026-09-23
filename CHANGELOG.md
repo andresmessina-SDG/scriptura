@@ -4,6 +4,18 @@ All notable changes to Scriptura. Format roughly follows
 [Keep a Changelog](https://keepachangelog.com/). Versioning is
 semver-ish — 0.x was the pre-Flathub testing track.
 
+## [Unreleased]
+
+### Changed
+
+- **The chapter's first line keeps the rhythm.** The large first letter
+  made the gap under the first line about a third wider than every other
+  line. That line now steps like the rest, at every line spacing, and the
+  letter keeps its size.
+- **A break between stanzas is half a line, not a whole one.** In the
+  Psalms and other poetry the blank line between stanzas was a full line
+  tall, so a break read as a missing line. It is now half as tall.
+
 ## [1.7.3] — 2026-09-22
 
 ### Changed

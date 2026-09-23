@@ -30,11 +30,13 @@ class Pane:
     _DROPCAP_TAG = BiblePane._DROPCAP_TAG
     _apply_dropcap_tag = BiblePane._apply_dropcap_tag
     _sync_dropcap_ink = BiblePane._sync_dropcap_ink
+    _sync_dropcap_height = BiblePane._sync_dropcap_height
     _raise_dropcap = BiblePane._raise_dropcap
 
     def __init__(self, colored=True):
         self._buffer = Gtk.TextBuffer()
         self._colored_dropcap = colored
+        self._line_spacing = 1.5
 
 
 def _force_theme(monkeypatch, dark):
