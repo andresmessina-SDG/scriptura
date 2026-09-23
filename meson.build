@@ -92,6 +92,7 @@ py_sources = files(
   'passage_export.py',
   'passage_print.py',
   'paths.py',
+  'preferences.py',
   'present.py',
   'present_align.py',
   'present_mode.py',

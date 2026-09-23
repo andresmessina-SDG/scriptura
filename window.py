@@ -1126,6 +1126,7 @@ class BibleWindow(Adw.ApplicationWindow):
             ('write-entry', ['<Ctrl><Shift>j'], self._write_about_here),
             ('write-sermon', ['<Ctrl><Shift>m'], self._sermon_about_here),
             ('show-help-overlay', ['<Ctrl>question'], self._open_shortcuts_dialog),
+            ('preferences', ['<Ctrl>comma'], self._open_preferences),
             # The keyboard alternative to dragging the split grip. Ctrl is
             # free here: the verse cursor hands every Ctrl combination back
             # to the window, and bare brackets already mean "move by unit",
@@ -1448,13 +1449,6 @@ class BibleWindow(Adw.ApplicationWindow):
             self._size_scale.set_value(new_size)
             self._size_scale.handler_unblock(self._size_scale_handler)
             self._size_val_lbl.set_text(f'{new_size:.0f}pt')
-
-    def _toggle_appear_card(self, _w):
-        open_ = not self._appear_revealer.get_reveal_child()
-        self._appear_revealer.set_reveal_child(open_)
-        # Chevron rotates ▸ → ▾ to signal the inline expansion.
-        self._appear_arrow.set_from_icon_name(
-            'scriptura-pan-down-symbolic' if open_ else 'scriptura-pan-end-symbolic')
 
     def _on_appear_font(self, drop, _):
         idx = drop.get_selected()
@@ -1953,7 +1947,16 @@ class BibleWindow(Adw.ApplicationWindow):
     def _toast(self, message):
         t = Adw.Toast.new(message)
         t.set_timeout(2)
-        self._toast_overlay.add_toast(t)
+        # A backup or restore started from Preferences reports there; the
+        # window's overlay is under the dialog, dimmed.
+        (getattr(self, '_prefs_dialog', None) or self._toast_overlay).add_toast(t)
+
+    def _open_preferences(self, *_a):
+        if getattr(self, '_prefs_dialog', None) is not None:
+            return
+        import preferences
+        self._prefs_dialog = preferences.build(self)
+        self._prefs_dialog.present(self)
 
     def _present_hint_toast(self, message):
         # Contextual hints linger a touch longer than a plain _toast (they're
@@ -3480,6 +3483,7 @@ class BibleWindow(Adw.ApplicationWindow):
             (N_('Compare translations of this verse'), 'action',
              'compare-verse'),
             (N_('Bookmark this chapter'), 'action', 'bookmark'),
+            (N_('Preferences'), 'action', 'preferences'),
             (N_('Keyboard shortcuts'), 'action', 'show-help-overlay'),
         ]),
     ]
@@ -3709,46 +3713,43 @@ class BibleWindow(Adw.ApplicationWindow):
         # reading plan) exceeds the available height. The footer below is a
         # sibling of the scroller, so it stays pinned to the panel's foot
         # instead of being pushed off-screen when the body overflows.
-        self._menu_scroll = Gtk.ScrolledWindow(vexpand=True)
-        self._menu_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        # Reserve a gutter for the scrollbar instead of overlaying it on the
-        # content, so it can't steal clicks from edge controls like the plan
-        # ⋯ menu button.
-        self._menu_scroll.set_overlay_scrolling(False)
+        def _scroller(child):
+            sc = Gtk.ScrolledWindow(vexpand=True)
+            sc.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            # Reserve a gutter for the scrollbar instead of overlaying it on
+            # the content, so it can't steal clicks from edge controls like
+            # the plan ⋯ menu button.
+            sc.set_overlay_scrolling(False)
+            sc.set_child(child)
+            return sc
+
+        # Two pages, one panel. The menu proper holds places and actions
+        # only; Appearance slides in over it rather than opening a dialog,
+        # because what it sets is judged by eye on the page beside it. The
+        # settings you set once and live with are in Preferences (Ctrl+,).
+        self._menu_stack = Gtk.Stack(vexpand=True)
+        self._menu_stack.set_transition_type(
+            Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
+        self._menu_stack.set_transition_duration(200)
         _body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        self._menu_scroll.set_child(_body)
-        panel.append(self._menu_scroll)
-
-        def _section_header(text):
-            # One quiet ALL-CAPS label leading a section, so the panel's
-            # settings groups share a rhythm (Appearance / Reading Plan).
-            h = Gtk.Label(label=text, xalign=0)
-            h.add_css_class('menu-section-header')
-            h.set_margin_start(14)
-            h.set_margin_end(12)
-            h.set_margin_top(16)
-            h.set_margin_bottom(4)
-            return h
-
         _body.append(self._build_menu_nav_group())
-
-        # ── Appearance: a section header + its own row whose chevron rotates
-        # (▸→▾) to expand the inline appearance card just below — a real expander
-        # affordance, not a → arrow that falsely implies push-navigation. ──────
-        _body.append(_section_header(_('Appearance')))
-        _body.append(self._build_appearance_row())
-        _body.append(self._build_appearance_card())
-
         self._build_plan_section(_body)
-
-        # ── Study data: one-file backup / restore of everything the reader
-        # accumulates by hand (annotations, bookmarks, plan progress) — the
-        # data is otherwise trapped inside the Flatpak datadir. ──────────────
-        _body.append(_section_header(_('Study Data')))
-        _body.append(self._build_study_data_group())
+        self._menu_scroll = _scroller(_body)
+        self._menu_stack.add_named(self._menu_scroll, 'menu')
+        self._menu_stack.add_named(
+            _scroller(self._build_appearance_page()), 'appearance')
+        panel.append(self._menu_stack)
 
         panel.append(self._build_menu_footer())
         return panel
+
+    def _show_menu_page(self, name):
+        """'menu' or 'appearance'. The header follows: a back arrow and the
+        page's name on Appearance, the plain title on the menu."""
+        self._menu_stack.set_visible_child_name(name)
+        sub = name != 'menu'
+        self._menu_back.set_visible(sub)
+        self._menu_title.set_label(_('Appearance') if sub else _('Menu'))
 
     def _build_menu_header(self):
         # ── Header: title + close only. Global utilities (theme, shortcuts,
@@ -3761,7 +3762,14 @@ class BibleWindow(Adw.ApplicationWindow):
         hbox.set_margin_end(8)
         hbox.set_margin_top(10)
         hbox.set_margin_bottom(8)
-        title = Gtk.Label(label=_('Menu'), hexpand=True)
+        self._menu_back = Gtk.Button(icon_name='scriptura-go-previous-symbolic')
+        self._menu_back.add_css_class('flat')
+        self._menu_back.add_css_class('menu-utility-action')
+        self._menu_back.set_tooltip_text(_('Back'))
+        set_accessible_label(self._menu_back, _('Back'))
+        self._menu_back.set_visible(False)
+        self._menu_back.connect('clicked', lambda _b: self._show_menu_page('menu'))
+        self._menu_title = title = Gtk.Label(label=_('Menu'), hexpand=True)
         title.set_xalign(0)
         title.add_css_class('title-4')
         close_btn = Gtk.Button(icon_name='scriptura-window-close-symbolic')
@@ -3770,6 +3778,7 @@ class BibleWindow(Adw.ApplicationWindow):
         close_btn.set_tooltip_text(_('Close menu (Esc)'))
         set_accessible_label(close_btn, _('Close menu'))
         close_btn.connect('clicked', lambda _: self._menu_split.set_show_sidebar(False))
+        hbox.append(self._menu_back)
         hbox.append(title)
         hbox.append(close_btn)
         return hbox
@@ -3787,6 +3796,8 @@ class BibleWindow(Adw.ApplicationWindow):
             ('scriptura-accessories-text-editor-symbolic', _('Annotations'), self._on_annotations_clicked),
             ('scriptura-application-x-addon-symbolic',     _('Modules'),       self._on_modules_clicked),
             ('scriptura-view-fullscreen-symbolic',         _('Presentation'),  self._on_present_menu_clicked),
+            ('scriptura-applications-graphics-symbolic',   _('Appearance'),
+             lambda _r: self._show_menu_page('appearance')),
         ]:
             row = Adw.ActionRow(title=label)
             row.add_prefix(Gtk.Image.new_from_icon_name(icon))
@@ -3796,127 +3807,9 @@ class BibleWindow(Adw.ApplicationWindow):
             row.set_activatable(True)
             row.connect('activated', handler)
             nav_group.add(row)
-        # Open-to-Today switch (label is a draft — Andres's taxonomy). Off
-        # restores direct-to-reading at launch; the change applies from the
-        # next launch (the current session's page, if any, is already up).
-        today_row = Adw.ActionRow(title=_('Open to Today'))
-        today_row.add_prefix(
-            Gtk.Image.new_from_icon_name('scriptura-x-office-calendar-symbolic'))
-        today_sw = Gtk.Switch(valign=Gtk.Align.CENTER)
-        today_sw.set_active(bool(settings.get('open_to_today')))
-        set_accessible_label(today_sw, _('Open to Today'))
-        today_sw.connect(
-            'notify::active',
-            lambda s, _p: settings.put('open_to_today', s.get_active()))
-        today_row.add_suffix(today_sw)
-        today_row.set_activatable_widget(today_sw)
-        nav_group.add(today_row)
-        # Church calendar for the Today page's church-year line. Default
-        # None — the ecumenical silence; each option is a tradition's
-        # historic calendar (labels are drafts — Andres's taxonomy).
-        church_row = Adw.ActionRow(title=_('Church calendar'))
-        church_row.add_prefix(
-            Gtk.Image.new_from_icon_name('scriptura-church-symbolic'))
-        _church_values = [None, 'anglican', 'roman', 'orthodox',
-                          'orthodox_old']
-        # Two labels per tradition. The pill carries the short name, because
-        # it sits on the row's own line and grows with whatever it says —
-        # "Orthodox (New Calendar)" pushed the row's title onto two lines. The
-        # popover has the width to name the edition, which is where the
-        # distinction is actually being made.
-        #
-        # Orthodoxy is the one tradition here that keeps two calendars, and
-        # the pill has to say which: with both rows reading "Orthodox" a
-        # reader could not tell from the closed row what they had chosen.
-        # Short forms, and in Russian the ones that language actually uses —
-        # «н. ст.» and «ст. ст.», new style and old style.
-        _church_names = [_('None'), _('Anglican'), _('Roman'),
-                         _('Orthodox (New)'), _('Orthodox (Old)')]
-        _church_editions = [_('None'), _('Anglican (BCP)'),
-                            _('Roman (traditional)'),
-                            _('Orthodox (New Calendar)'),
-                            _('Orthodox (Old Calendar)')]
-        church_drop = Gtk.DropDown(model=Gtk.StringList.new(_church_names))
-        # Ellipsize the button's own label, the way the font row below does
-        # and for the same reason: without a factory the DropDown's minimum
-        # width is its widest entry, so naming two Orthodox calendars set the
-        # minimum width of this row — and the title, «Церковный календарь» or
-        # «Calendario litúrgico», had nowhere left to go but a second line.
-        # Measured: Spanish went from one line to two the moment the second
-        # entry appeared, and Russian was over the edge already.
-        _church_btn = Gtk.SignalListItemFactory()
-        _church_btn.connect(
-            'setup', lambda _f, i: i.set_child(
-                Gtk.Label(xalign=0, hexpand=True,
-                          ellipsize=Pango.EllipsizeMode.END,
-                          max_width_chars=14)))
-        _church_btn.connect(
-            'bind', lambda _f, i: i.get_child().set_label(
-                _church_names[i.get_position()]))
-        church_drop.set_factory(_church_btn)
-        _church_list = Gtk.SignalListItemFactory()
-        _church_list.connect(
-            'setup', lambda _f, i: i.set_child(Gtk.Label(xalign=0)))
-        _church_list.connect(
-            'bind',
-            lambda _f, i: i.get_child().set_label(
-                _church_editions[i.get_position()]))
-        # The popover gets its own factory so the editions are spelled out
-        # there — the one place they must not be cut.
-        church_drop.set_list_factory(_church_list)
-        church_drop.set_valign(Gtk.Align.CENTER)
-        set_accessible_label(church_drop, _('Church calendar'))
-        cur_trad = settings.get('church_calendar')
-        church_drop.set_selected(
-            _church_values.index(cur_trad) if cur_trad in _church_values else 0)
-        church_drop.connect(
-            'notify::selected',
-            lambda d, _p: self._set_church_calendar(
-                _church_values[d.get_selected()]))
-        church_row.add_suffix(church_drop)
-        nav_group.add(church_row)
-        lang_row = self._build_language_row()
-        if lang_row is not None:
-            nav_group.add(lang_row)
         return nav_group
 
-    def _build_language_row(self):
-        """The UI language, for a reader whose desktop is not in the
-        language they read the app in. None when this install has only
-        English — a picker with one entry is furniture, not a choice.
-
-        Unlike the welcome window's copy, this one takes effect on the next
-        launch, and says so. Every string on screen was translated when its
-        widget was built, so switching now would mean rebuilding the whole
-        window — panes, positions, playing audio and all — to change words
-        the reader can already read. The welcome flow can afford that; this
-        cannot, and a half-translated window would be worse than a clear
-        wait.
-        """
-        import i18n
-        languages = i18n.available_languages()
-        if len(languages) < 2:
-            return None
-        codes = [c for c, _n in languages]
-        row = Adw.ActionRow(title=_('Language'))
-        row.set_subtitle(_('Applies next time you open Scriptura'))
-        row.add_prefix(Gtk.Image.new_from_icon_name(
-            'scriptura-globe-symbolic'))
-        drop = Gtk.DropDown(
-            model=Gtk.StringList.new([n for _c, n in languages]))
-        # The language in effect, which is the desktop's when nothing has
-        # been chosen — see i18n.current_language.
-        current = settings.get('ui_language') or i18n.current_language()
-        drop.set_selected(codes.index(current) if current in codes else 0)
-        drop.set_valign(Gtk.Align.CENTER)
-        set_accessible_label(drop, _('Language'))
-        drop.connect('notify::selected',
-                     lambda d, _p: self._on_language_selected(codes, languages, d))
-        row.add_suffix(drop)
-        row.set_activatable_widget(drop)
-        return row
-
-    def _on_language_selected(self, codes, languages, drop):
+    def _on_language_selected(self, codes, languages, drop, toast_to=None):
         """Record the choice, then offer the one thing that can carry it out.
 
         The window cannot change language where it stands — its strings were
@@ -3938,7 +3831,9 @@ class BibleWindow(Adw.ApplicationWindow):
         toast.set_timeout(8)
         toast.set_button_label(_('Reopen now'))
         toast.connect('button-clicked', lambda _t: self._relaunch_now())
-        self._toast_overlay.add_toast(toast)
+        # From the Preferences dialog the toast goes on the dialog: the
+        # window's own overlay sits under it, dimmed.
+        (toast_to or self._toast_overlay).add_toast(toast)
 
     def _relaunch_now(self):
         import main as _main
@@ -3947,28 +3842,9 @@ class BibleWindow(Adw.ApplicationWindow):
         if app is not None:
             app.quit()
 
-    def _build_appearance_row(self):
-        """The row whose chevron expands the card below it."""
-        appear_group = Adw.PreferencesGroup()
-        appear_group.set_margin_start(12)
-        appear_group.set_margin_end(12)
-        self._appear_row = Adw.ActionRow(title=_('Appearance'))
-        self._appear_row.add_prefix(
-            Gtk.Image.new_from_icon_name('scriptura-applications-graphics-symbolic'))
-        self._appear_arrow = Gtk.Image.new_from_icon_name('scriptura-pan-end-symbolic')
-        self._appear_arrow.add_css_class('dim-label')
-        self._appear_row.add_suffix(self._appear_arrow)
-        self._appear_row.set_activatable(True)
-        self._appear_row.connect('activated', self._toggle_appear_card)
-        appear_group.add(self._appear_row)
-        return appear_group
-
-    def _build_appearance_card(self):
-        """The inline revealer: font, size, colour and the advanced toggles."""
-        self._appear_revealer = Gtk.Revealer()
-        self._appear_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
-        self._appear_revealer.set_transition_duration(200)
-
+    def _build_appearance_page(self):
+        """The Appearance page of the menu: font, size, spacing, width,
+        colour, and the switches that change how the letters look."""
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         card.add_css_class('card')
         card.add_css_class('appearance-card')
@@ -4149,21 +4025,19 @@ class BibleWindow(Adw.ApplicationWindow):
         self._rebuild_colour_row()
 
         card.append(Gtk.Separator())
-        card.append(self._build_advanced_toggles())
-        self._appear_revealer.set_child(card)
-        return self._appear_revealer
+        card.append(self._build_type_switches())
+        return card
 
-    def _build_advanced_toggles(self):
-        # ── Advanced reading toggles ──────────────────────────────────────
-        # Five ship on: section headings, small caps, the coloured drop cap,
-        # hover preview, spoken readings. Every other toggle ships off. New
-        # toggles slot in as rows without a redesign, and ship off unless
-        # they earn a place in that five.
-        adv = Gtk.Expander(label=_('Advanced'))
+    def _build_type_switches(self):
+        # ── The switches that change how the letters look ─────────────────
+        # Three ship on: section headings, small caps, the coloured drop cap.
+        # Behaviour switches (hover preview, the sense-unit mark, Evening
+        # paper, spoken readings) are in Preferences: they change what the
+        # page does, not how the type looks, so nothing about them needs the
+        # page in view while they are set.
         adv_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        adv_box.set_margin_top(6)
 
-        # Letter spacing leads Advanced, ahead of the taste toggles. Widening
+        # Letter spacing leads, ahead of the taste toggles. Widening
         # tracking is the best-replicating readability lever there is — better
         # than any dyslexia face — and a reader who is struggling should not
         # have to pass nine typographic preferences to reach it. The scale
@@ -4191,7 +4065,7 @@ class BibleWindow(Adw.ApplicationWindow):
             for pane in (self.pane1, self.pane2):
                 getattr(pane, setter_name)(active)
 
-        def _adv_switch(label_text, key, setter_name, extra=None, note=None):
+        def _adv_switch(label_text, key, setter_name, extra=None):
             r = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
             title = Gtk.Label(label=label_text, xalign=0)
             # Wrap, and cap the natural width, or a long row title decides how
@@ -4207,24 +4081,8 @@ class BibleWindow(Adw.ApplicationWindow):
             # starts wrapping English rows for no gain.
             title.set_wrap(True)
             title.set_max_width_chars(30)
-            if note is None:
-                title.set_hexpand(True)
-                r.append(title)
-            else:
-                # A reason under the title, shown only while the row is
-                # unavailable — a switch that cannot do anything has to say
-                # why, or the reader concludes the app is broken (it reads
-                # exactly like a dead control otherwise).
-                col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-                col.set_hexpand(True)
-                col.append(title)
-                caption = Gtk.Label(label=note, xalign=0, wrap=True)
-                caption.add_css_class('dim-label')
-                caption.add_css_class('caption')
-                caption.set_visible(False)
-                col.append(caption)
-                r.append(col)
-                self._section_rows.append((r, caption))
+            title.set_hexpand(True)
+            r.append(title)
             if extra is not None:
                 r.append(extra)
             sw = Gtk.Switch(valign=Gtk.Align.CENTER)
@@ -4239,15 +4097,6 @@ class BibleWindow(Adw.ApplicationWindow):
 
         _adv_switch(_('Section headings'),
                     'show_headings', 'set_show_headings')
-        # Both read the sense-units a module marks with section headings.
-        # Plenty of translations mark none (KJV, ASV, the Russian Synodal),
-        # and on those the switches are honestly unavailable rather than
-        # silently inert — see _refresh_section_rows.
-        needs = _('This translation marks no sections')
-        _adv_switch(_('Mark the current sense-unit'),
-                    'mark_current_unit', 'set_mark_current_unit', note=needs)
-        _adv_switch(_('Quiet the rest of the page'),
-                    'focus_current_unit', 'set_focus_current_unit', note=needs)
         _adv_switch(_('Small caps for the divine name'),
                     'smallcaps_divine', 'set_divine_smallcaps')
         _adv_switch(_('Old-style numerals'),
@@ -4277,73 +4126,7 @@ class BibleWindow(Adw.ApplicationWindow):
         cap_sw.connect(
             'notify::active',
             lambda s, _p: self._dropcap_swatch.set_visible(s.get_active()))
-        # Behavior, not typography: dwell on a Strong's word peeks its
-        # gloss without a click.
-        _adv_switch(_('Preview words on hover'),
-                    'hover_preview', 'set_hover_preview')
-        # Evening paper is window-scoped (a Night Light D-Bus monitor), so
-        # it can't use the per-pane setter helper above. Same row idiom.
-        ev_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        _ev_lbl = Gtk.Label(label=_('Evening paper (follows Night Light)'),
-                            xalign=0, hexpand=True)
-        _ev_lbl.set_wrap(True)          # same width rule as the rows above
-        _ev_lbl.set_max_width_chars(30)
-        ev_row.append(_ev_lbl)
-        ev_sw = Gtk.Switch(valign=Gtk.Align.CENTER)
-        ev_sw.set_active(bool(settings.get('evening_paper')))
-        set_accessible_label(ev_sw, _('Evening paper (follows Night Light)'))
-        # Off until the session says it has Night Light. The monitor is
-        # documented to stay inert where the interface is missing (KDE,
-        # Xfce, a bare WM) — which left this switch flipping with no
-        # effect, a control promising what the desktop cannot do. Insensitive
-        # with a reason, not hidden: the reader may run the app on two
-        # machines, and a setting that vanishes is its own puzzle.
-        # The STORED value is left alone for the same reason; this gates
-        # the control, not the preference.
-        ev_sw.set_sensitive(False)
-        ev_row.set_tooltip_text(
-            _('Checking whether this desktop provides Night Light…'))
-
-        def _night_light_answered(available, _sw=ev_sw, _row=ev_row):
-            _sw.set_sensitive(available)
-            _row.set_tooltip_text(None if available else _(
-                'This desktop does not provide Night Light, so the paper '
-                'has nothing to follow'))
-
-        night_light.probe(_night_light_answered)
-
-        def _on_evening_switch(s, _p):
-            on = s.get_active()
-            settings.put('evening_paper', on)
-            if on:
-                self._start_evening_paper()
-            else:
-                self._stop_evening_paper()
-        ev_sw.connect('notify::active', _on_evening_switch)
-        ev_row.append(ev_sw)
-        adv_box.append(ev_row)
-        # Spoken readings span both panes (the devotional strip, the psalm
-        # control) and the Today page (Daily Strength), so they can't use the
-        # per-pane setter helper. On by default; off withdraws every audio
-        # control at once for readers who want none.
-        au_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        au_row.append(Gtk.Label(label=_('Spoken readings'),
-                                xalign=0, hexpand=True))
-        au_sw = Gtk.Switch(valign=Gtk.Align.CENTER)
-        au_sw.set_active(bool(settings.get('show_audio')))
-        set_accessible_label(au_sw, _('Spoken readings'))
-
-        def _on_audio_switch(s, _p):
-            on = s.get_active()
-            settings.put('show_audio', on)
-            for pane in (self.pane1, self.pane2):
-                pane.set_show_audio(on)
-            self._sync_today_listen()
-        au_sw.connect('notify::active', _on_audio_switch)
-        au_row.append(au_sw)
-        adv_box.append(au_row)
-        adv.set_child(adv_box)
-        return adv
+        return adv_box
 
     def _build_plan_section(self, body):
         """Appended straight to the body: five siblings, not a group."""
@@ -4490,39 +4273,13 @@ class BibleWindow(Adw.ApplicationWindow):
 
         body.append(self._plan_active_box)
 
-    def _build_study_data_group(self):
-        data_group = Adw.PreferencesGroup()
-        data_group.set_margin_start(12)
-        data_group.set_margin_end(12)
-        data_group.set_margin_bottom(8)
-        for icon, label, handler in [
-            ('scriptura-document-save-symbolic', _('Back Up…'), self._on_backup_clicked),
-            ('scriptura-document-open-symbolic', _('Restore…'), self._on_restore_clicked),
-        ]:
-            row = Adw.ActionRow(title=label)
-            row.add_prefix(Gtk.Image.new_from_icon_name(icon))
-            row.set_activatable(True)
-            row.connect('activated', handler)
-            data_group.add(row)
-        # The copies main() makes at launch. Opening their folder is the
-        # whole feature: Restore… already reads any of them.
-        daily = Adw.ActionRow(
-            title=_('Daily Copies'),
-            subtitle=ngettext('The last {n} day, kept on this device',
-                              'The last {n} days, kept on this device',
-                              backup.DAILY_KEEP).format(n=backup.DAILY_KEEP))
-        daily.add_prefix(Gtk.Image.new_from_icon_name(
-            'scriptura-document-open-recent-symbolic'))
-        daily.set_activatable(True)
-        daily.connect('activated', self._on_daily_copies_clicked)
-        data_group.add(daily)
-        return data_group
-
     def _build_menu_footer(self):
         # ── Footer: global utilities pinned to the bottom. The scroller above
         # is vexpand, so this stays anchored at the panel's foot — Apple-sidebar
         # placement that also fills the lower void when no plan is active.
-        footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        # Spacing 2, not 6: with both doors named, Russian («Параметры»,
+        # «Справка») needed 383px of the 379 the footer gets. Measured.
+        footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
         footer.add_css_class('menu-footer')
         footer.set_margin_start(12)
         footer.set_margin_end(8)
@@ -4558,29 +4315,49 @@ class BibleWindow(Adw.ApplicationWindow):
 
         footer.append(Gtk.Box(hexpand=True))  # spacer
 
-        tips_btn = Gtk.Button(icon_name='scriptura-tips-symbolic')
-        tips_btn.add_css_class('flat')
-        tips_btn.add_css_class('menu-utility-action')
-        tips_btn.set_tooltip_text(_('Tips & gestures'))
-        set_accessible_label(tips_btn, _('Tips & gestures'))
-        tips_btn.connect('clicked', self._open_tips_dialog)
-        footer.append(tips_btn)
+        # Two doors, both named: an icon alone is what this footer used to
+        # be, three glyphs a reader had to hover to decode.
+        def _labelled(icon, text):
+            box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+            box.append(Gtk.Image.new_from_icon_name(icon))
+            box.append(Gtk.Label(label=text))
+            return box
 
-        hotkeys_btn = Gtk.Button(icon_name='scriptura-keyboard-symbolic')
-        hotkeys_btn.add_css_class('flat')
-        hotkeys_btn.add_css_class('menu-utility-action')
-        hotkeys_btn.set_tooltip_text(_('Keyboard shortcuts'))
-        set_accessible_label(hotkeys_btn, _('Keyboard shortcuts'))
-        hotkeys_btn.connect('clicked', self._on_hotkeys_clicked)
-        footer.append(hotkeys_btn)
+        prefs_btn = Gtk.Button(child=_labelled(
+            'scriptura-emblem-system-symbolic', _('Preferences')))
+        prefs_btn.add_css_class('flat')
+        prefs_btn.add_css_class('menu-utility-action')
+        prefs_btn.set_tooltip_text(_('Preferences (Ctrl+,)'))
+        prefs_btn.connect('clicked', lambda _b: self._open_preferences())
+        footer.append(prefs_btn)
 
-        about_btn = Gtk.Button(icon_name='scriptura-help-about-symbolic')
-        about_btn.add_css_class('flat')
-        about_btn.add_css_class('menu-utility-action')
-        about_btn.set_tooltip_text(_('About Scriptura'))
-        set_accessible_label(about_btn, _('About Scriptura'))
-        about_btn.connect('clicked', self._on_about_clicked)
-        footer.append(about_btn)
+        # Help folds the three reference doors into one short list.
+        help_btn = Gtk.MenuButton(child=_labelled(
+            'scriptura-help-browser-symbolic', _('Help')))
+        help_btn.add_css_class('flat')
+        help_btn.add_css_class('menu-utility-action')
+        help_pop = Gtk.Popover()
+        help_list = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        # Each item keeps the icon it had as a bare footer button, so the
+        # welcome window's Tips line still shows the mark a reader will find.
+        for icon, label, handler in (
+                ('scriptura-tips-symbolic', _('Tips & gestures'),
+                 self._open_tips_dialog),
+                ('scriptura-keyboard-symbolic', _('Keyboard shortcuts'),
+                 self._on_hotkeys_clicked),
+                ('scriptura-help-about-symbolic', _('About Scriptura'),
+                 self._on_about_clicked)):
+            item = Gtk.Button(child=_labelled(icon, label))
+            item.add_css_class('flat')
+
+            def _go(_b, h=handler):
+                help_pop.popdown()
+                h(None)
+            item.connect('clicked', _go)
+            help_list.append(item)
+        help_pop.set_child(help_list)
+        help_btn.set_popover(help_pop)
+        footer.append(help_btn)
 
         return footer
 

@@ -1,4 +1,9 @@
-"""The Appearance ▸ Advanced toggles ship off unless they earn a place.
+"""The reading toggles ship off unless they earn a place.
+
+They live in two places since the menu was split: the type switches on the
+menu's Appearance page (window.py `_build_type_switches`) and the Reading
+aids page of Preferences (preferences.py `_reading_aids_page`). One rule
+covers both.
 
 Five ship on — section headings, small caps, the coloured drop cap, hover
 preview, spoken readings. Every other toggle ships off, including ones not
@@ -29,31 +34,26 @@ DEFAULT_ON = {
 }
 
 
-def _advanced_toggle_keys() -> set[str]:
-    """Every settings key wired to a switch in `_build_advanced_toggles`.
-
-    Two sources, because two rows are hand-rolled: the `_adv_switch(label,
-    key, setter)` helper, and a bare `settings.put(key, ...)` inside the
-    handlers of the rows that span more than one pane (evening paper, spoken
-    readings) and so cannot use the helper."""
-    tree = ast.parse((REPO_ROOT / 'window.py').read_text(encoding='utf-8'))
+def _keys_in(module: str, function: str, helper: str) -> set[str]:
+    tree = ast.parse((REPO_ROOT / module).read_text(encoding='utf-8'))
     fn = next(n for n in ast.walk(tree)
-              if isinstance(n, ast.FunctionDef)
-              and n.name == '_build_advanced_toggles')
+              if isinstance(n, ast.FunctionDef) and n.name == function)
     keys: set[str] = set()
     for node in ast.walk(fn):
-        if not isinstance(node, ast.Call):
-            continue
-        name = ast.unparse(node.func)
-        if name == '_adv_switch' and len(node.args) >= 2:
+        if (isinstance(node, ast.Call) and ast.unparse(node.func) == helper
+                and len(node.args) >= 2):
             key = node.args[1]
             if isinstance(key, ast.Constant) and isinstance(key.value, str):
                 keys.add(key.value)
-        elif name == 'settings.put' and node.args:
-            key = node.args[0]
-            if isinstance(key, ast.Constant) and isinstance(key.value, str):
-                keys.add(key.value)
     return keys
+
+
+def _advanced_toggle_keys() -> set[str]:
+    """Every settings key wired to a reading switch: `_adv_switch(label, key,
+    setter)` on the Appearance page and `_switch(title, key, on_change)` on
+    the Reading aids page."""
+    return (_keys_in('window.py', '_build_type_switches', '_adv_switch')
+            | _keys_in('preferences.py', '_reading_aids_page', '_switch'))
 
 
 def _defaults() -> dict:

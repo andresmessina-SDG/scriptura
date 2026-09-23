@@ -40,6 +40,7 @@ pane_peek.py
 pane_search.py
 passage_export.py
 passage_print.py
+preferences.py
 present_mode.py
 reading_plans.py
 search_panel.py

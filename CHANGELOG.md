@@ -23,6 +23,13 @@ semver-ish — 0.x was the pre-Flathub testing track.
   Enter.
 - The passage menu above the page now shows three dots across (⋯), so it
   no longer looks like the window's menu (⋮) when the two sit together.
+- **A shorter menu, and a Preferences window.** The menu now holds only
+  the places you go: Annotations, Modules, Presentation, Appearance and
+  your reading plan. Appearance opens beside the page, so you still see
+  every change to the text as you make it. The settings you set once are
+  in Preferences (Ctrl+,): how the app starts and its language, the
+  reading aids, and backing up your study data. Tips, keyboard shortcuts
+  and About are under Help, each with its name.
 
 ## [1.7.3] — 2026-09-22
 

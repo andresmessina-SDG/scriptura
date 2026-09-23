@@ -8664,14 +8664,6 @@ msgid "None"
 msgstr "Нет"
 
 #: window.py:3360
-msgid "Anglican"
-msgstr "Англиканский"
-
-#: window.py:3360
-msgid "Roman"
-msgstr "Римский"
-
-#: window.py:3360
 msgid "Orthodox"
 msgstr "Православный"
 
@@ -8755,10 +8747,6 @@ msgstr "Ширина колонки чтения"
 #: window.py:3651
 msgid "Colour"
 msgstr "Цвет"
-
-#: window.py:3670
-msgid "Advanced"
-msgstr "Дополнительно"
 
 #: window.py:3680 window.py:3685
 msgid "Letter spacing"
@@ -8890,6 +8878,34 @@ msgstr "День {n} · {passages}"
 #, python-brace-format
 msgid "Day {n}"
 msgstr "День {n}"
+
+#: preferences.py
+msgid "Starting"
+msgstr "При запуске"
+
+#: preferences.py
+msgid "Reading Aids"
+msgstr "Помощь в чтении"
+
+#: preferences.py
+msgid "Notes, highlights, journal entries, sermons, bookmarks and plan progress, in one file."
+msgstr "Заметки, выделения, записи дневника, проповеди, закладки и прогресс плана — в одном файле."
+
+#: preferences.py window.py
+msgid "Preferences"
+msgstr "Параметры"
+
+#: window.py
+msgid "Back"
+msgstr "Назад"
+
+#: window.py
+msgid "Preferences (Ctrl+,)"
+msgstr "Параметры (Ctrl+,)"
+
+#: window.py
+msgid "Help"
+msgstr "Справка"
 
 #~ msgid "Charts"
 #~ msgstr "Диаграммы"
@@ -9090,12 +9106,6 @@ msgstr "{day} {month} {year} г."
 msgctxt "date, month first"
 msgid "{month} {day}, {year}"
 msgstr "{day} {month} {year} г."
-
-msgid "Orthodox (New)"
-msgstr "Нов. стиль"
-
-msgid "Orthodox (Old)"
-msgstr "Ст. стиль"
 
 msgid "Orthodox (Old Calendar)"
 msgstr "Православный (старый стиль)"

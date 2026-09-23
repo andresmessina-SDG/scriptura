@@ -193,6 +193,7 @@ class OverlayManager:
             # most of a second of dropped frames (see _dismiss_today).
             self._dismiss_today(animate=False)
             self._ensure_menu_panel()
+            self._win._show_menu_page('menu')   # opens on the menu, not a subpage
             self._close_other_overlays(keep='menu')
             self._refresh_plan_ui()
             self._refresh_section_rows()

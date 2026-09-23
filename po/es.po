@@ -8723,14 +8723,6 @@ msgid "None"
 msgstr "Ninguno"
 
 #: window.py:3360
-msgid "Anglican"
-msgstr "Anglicano"
-
-#: window.py:3360
-msgid "Roman"
-msgstr "Romano"
-
-#: window.py:3360
 msgid "Orthodox"
 msgstr "Ortodoxo"
 
@@ -8815,10 +8807,6 @@ msgstr "Anchura de la columna de lectura"
 #: window.py:3651
 msgid "Colour"
 msgstr "Color"
-
-#: window.py:3670
-msgid "Advanced"
-msgstr "Avanzado"
 
 #: window.py:3680 window.py:3685
 msgid "Letter spacing"
@@ -8949,6 +8937,34 @@ msgstr "Día {n} · {passages}"
 #, python-brace-format
 msgid "Day {n}"
 msgstr "Día {n}"
+
+#: preferences.py
+msgid "Starting"
+msgstr "Al iniciar"
+
+#: preferences.py
+msgid "Reading Aids"
+msgstr "Ayudas de lectura"
+
+#: preferences.py
+msgid "Notes, highlights, journal entries, sermons, bookmarks and plan progress, in one file."
+msgstr "Notas, resaltados, entradas del diario, sermones, marcadores y progreso del plan, en un solo archivo."
+
+#: preferences.py window.py
+msgid "Preferences"
+msgstr "Preferencias"
+
+#: window.py
+msgid "Back"
+msgstr "Atrás"
+
+#: window.py
+msgid "Preferences (Ctrl+,)"
+msgstr "Preferencias (Ctrl+,)"
+
+#: window.py
+msgid "Help"
+msgstr "Ayuda"
 
 #~ msgid "Charts"
 #~ msgstr "Diagramas"
@@ -9152,12 +9168,6 @@ msgstr "{day} de {month} de {year}"
 msgctxt "date, month first"
 msgid "{month} {day}, {year}"
 msgstr "{day} de {month} de {year}"
-
-msgid "Orthodox (New)"
-msgstr "Ortod. (nuevo)"
-
-msgid "Orthodox (Old)"
-msgstr "Ortod. (ant.)"
 
 msgid "Orthodox (Old Calendar)"
 msgstr "Ortodoxo (calendario antiguo)"

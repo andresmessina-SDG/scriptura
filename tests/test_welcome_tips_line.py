@@ -64,8 +64,8 @@ def test_the_line_names_the_dialog_so_it_can_be_found_again(monkeypatch):
 
 
 def test_it_shows_the_mark_the_menu_uses(monkeypatch):
-    # The reference lives behind an unlabelled icon in the menu footer, so the
-    # line is only worth its space if it shows that same mark. Nothing shares
+    # The reference lives in the menu footer's Help list, beside its icon, so
+    # the line is only worth its space if it shows that same mark. Nothing shares
     # the name between the two files, hence the tie: the icon this button
     # carries must be a name window.py also uses. Matched against whole string
     # constants in the parse tree, so prose that mentions it does not count.
