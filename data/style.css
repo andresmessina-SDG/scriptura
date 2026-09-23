@@ -2505,3 +2505,15 @@ button.peek-lineage-link {
     font-size: 0.88em;
     color: @accent_color;
 }
+
+/* A dialog's dim, 4% lighter than libadwaita's. Its floating-sheet dimming
+   is the shade colour at twice its alpha: in dark, black at exactly 50%.
+   Halving an odd channel lands on .5, and the GPU renderers (Vulkan, GL)
+   round those ties either way from pixel to pixel — horizontal stripes and
+   tile seams across the whole surface behind Preferences. Measured under
+   mutter: ~15% of the dimmed page one step off on Vulkan, none on cairo.
+   At 1.92× the dark dim is 48%, and v × 0.52 is never a tie for any whole
+   v; the light dim moves 14% → 13.4%, which no eye will tell apart. */
+floating-sheet > dimming {
+    background-color: RGB(from var(--shade-color) r g b / calc(alpha * 1.92));
+}

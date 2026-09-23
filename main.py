@@ -8,7 +8,8 @@ from urllib.parse import unquote
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, Gdk, Gio, GLib
+gi.require_version('GLibUnix', '2.0')
+from gi.repository import Gtk, Adw, Gdk, Gio, GLib, GLibUnix
 
 
 APP_ID = 'io.github.andresmessina_SDG.Scriptura'
@@ -479,7 +480,7 @@ def _on_session_end(app):
 
 def _listen_for_session_end(app):
     for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT):
-        GLib.unix_signal_add(GLib.PRIORITY_HIGH, sig, _on_session_end, app)
+        GLibUnix.signal_add(GLib.PRIORITY_HIGH, sig, _on_session_end, app)
 
 
 def _on_startup(app):

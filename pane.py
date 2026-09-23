@@ -856,13 +856,16 @@ def _resolve_poetry_markup(markup, state):
             state['at_ls'] = True
             skip_ws = True
         elif tok == '[[PLGS]]':
-            # Stanza gap: one blank line between groups.
+            # Stanza gap: one blank line between groups, recorded as
+            # level 0 so the render can shrink it to half a line.
             if not state['at_ls']:
                 out.append('\n\n')
+                levels[nl + 1] = 0
                 nl += 2
                 state['at_ls'] = True
             elif out:
                 out.append('\n')
+                levels[nl] = 0
                 nl += 1
             skip_ws = True
         else:  # [[PLS<n>]]
@@ -1393,7 +1396,9 @@ class BiblePane(Gtk.Box):
         # print a passage. A context menu is a shortcut, never the only path.
         # Same menu, same code, so the two doors can never say different
         # things.
-        self._passage_btn = Gtk.Button(icon_name='scriptura-view-more-symbolic')
+        # Horizontal dots, not the header's vertical ⋮: at narrow widths the two
+        # sit one above the other and must not read as the same menu.
+        self._passage_btn = Gtk.Button(icon_name='scriptura-view-more-horizontal-symbolic')
         self._passage_btn.add_css_class('flat')
         self._passage_btn.add_css_class('pane-action')
         self._passage_btn.set_tooltip_text(_('Passage actions'))
@@ -2083,6 +2088,8 @@ class BiblePane(Gtk.Box):
         if 'text_color'   in kwargs: self._text_color   = kwargs['text_color']
         if 'bg_color'     in kwargs: self._bg_color     = valid_paper(kwargs['bg_color'])
         self._update_font_css()
+        if 'line_spacing' in kwargs:
+            self._sync_dropcap_height()
         # The card-mode documents scale with the same reading font size
         # (only archaeology and catena actually re-scale; the rest no-op).
         for content_mode in self._contents.values():
@@ -3156,6 +3163,7 @@ class BiblePane(Gtk.Box):
         if tag is None:
             tag = buf.create_tag(self._DROPCAP_TAG)
         self._sync_dropcap_ink(tag)
+        self._sync_dropcap_height(tag)
         buf.apply_tag(tag, buf.get_iter_at_offset(base + index),
                       buf.get_iter_at_offset(base + index + 1))
 
@@ -3179,6 +3187,23 @@ class BiblePane(Gtk.Box):
         else:
             tag.set_property('foreground-set', False)
         return True
+
+    def _sync_dropcap_height(self, tag=None):
+        """Keep the cap's line on the same step as every other line.
+
+        At its full line height the 200% letter made line one ~30% taller
+        than the rest (45px against 34 at 1.5×). A line-height factor on the
+        cap's run alone brings the step back to the body's; the letter keeps
+        its size and still rises into the room below the chapter title,
+        inside its paragraph's box, so no ink lands outside the redraw area
+        (the ghost trail a negative `rise` once left). Tight spacing needs a
+        smaller factor: measured, 1.0 holds the step from 1.4× up, 0.8 at 1.0×.
+        """
+        if tag is None:
+            tag = self._buffer.get_tag_table().lookup(self._DROPCAP_TAG)
+        if tag is not None:
+            ls = float(self._line_spacing or 1.5)
+            tag.set_property('line-height', min(1.0, 0.8 + (ls - 1.0) / 2))
 
     def _raise_dropcap(self):
         """Put the cap back on top of the body spans.
@@ -3723,6 +3748,13 @@ class BiblePane(Gtk.Box):
             self._poetry_tags = {
                 lvl: self._buffer.create_tag(f'poetry_l{lvl}')
                 for lvl in (1, 2, 3)}
+            # Level 0 is the blank line between stanzas. A full blank line
+            # made the break cost two steps (86px against 43 at 1.5×); half
+            # the font and half the view's 8px below-lines is half a step,
+            # at any line spacing. The newline stays in the buffer, so no
+            # offset moves.
+            self._poetry_tags[0] = self._buffer.create_tag(
+                'poetry_gap', scale=0.5, pixels_below_lines=4)
             self._sync_poetry_tags()
 
     def _sync_poetry_tags(self):

@@ -6919,9 +6919,9 @@ msgstr "Добавьте словарь в менеджере модулей и 
 msgid "Search this module"
 msgstr "Искать в этом модуле"
 
-#: pane_search.py:125
-msgid "Search this module…"
-msgstr "Искать в этом модуле…"
+#: pane_search.py
+msgid "Find in this chapter…"
+msgstr "Найти в этой главе…"
 
 #: pane_search.py:127 search_panel.py:187
 msgid ""
@@ -6944,9 +6944,9 @@ msgstr "Следующее совпадение"
 msgid "Match case"
 msgstr "Учитывать регистр"
 
-#: pane_search.py:182
-msgid "Find in this module"
-msgstr "Найти в этом модуле"
+#: pane_search.py
+msgid "Find in this chapter"
+msgstr "Найти в этой главе"
 
 #: pane_search.py:260
 #, python-brace-format
@@ -6961,23 +6961,9 @@ msgstr[0] "{n} в этой главе"
 msgstr[1] "{n} в этой главе"
 msgstr[2] "{n} в этой главе"
 
-#: pane_search.py:453
-msgid "Indexing…"
-msgstr "Индексация…"
-
-#: pane_search.py:456
-#, python-brace-format
-msgid "Indexing {idx}/{total}"
-msgstr "Индексация {idx}/{total}"
-
 #: pane_search.py:502 search_panel.py:408 study_journal.py:659
 msgid "No matches"
 msgstr "Совпадений нет"
-
-#: pane_search.py:506
-#, python-brace-format
-msgid "Showing first {n} matches — try a more specific search."
-msgstr "Показаны первые {n} совпадений — уточните запрос."
 
 #: passage_export.py:311
 #, python-brace-format
@@ -8204,9 +8190,13 @@ msgstr "Ещё"
 msgid "More actions"
 msgstr "Другие действия"
 
-#: window.py:510
-msgid "Search (Ctrl+F)"
-msgstr "Искать (Ctrl+F)"
+#: window.py
+msgid "Search the Bible (Ctrl+F)"
+msgstr "Искать в Библии (Ctrl+F)"
+
+#: window.py
+msgid "Search the Bible"
+msgstr "Искать в Библии"
 
 #: window.py:511 window.py:2669
 msgid "Search"
@@ -8674,14 +8664,6 @@ msgid "None"
 msgstr "Нет"
 
 #: window.py:3360
-msgid "Anglican"
-msgstr "Англиканский"
-
-#: window.py:3360
-msgid "Roman"
-msgstr "Римский"
-
-#: window.py:3360
 msgid "Orthodox"
 msgstr "Православный"
 
@@ -8765,10 +8747,6 @@ msgstr "Ширина колонки чтения"
 #: window.py:3651
 msgid "Colour"
 msgstr "Цвет"
-
-#: window.py:3670
-msgid "Advanced"
-msgstr "Дополнительно"
 
 #: window.py:3680 window.py:3685
 msgid "Letter spacing"
@@ -8900,6 +8878,34 @@ msgstr "День {n} · {passages}"
 #, python-brace-format
 msgid "Day {n}"
 msgstr "День {n}"
+
+#: preferences.py
+msgid "Starting"
+msgstr "При запуске"
+
+#: preferences.py
+msgid "Reading Aids"
+msgstr "Помощь в чтении"
+
+#: preferences.py
+msgid "Notes, highlights, journal entries, sermons, bookmarks and plan progress, in one file."
+msgstr "Заметки, выделения, записи дневника, проповеди, закладки и прогресс плана — в одном файле."
+
+#: preferences.py window.py
+msgid "Preferences"
+msgstr "Параметры"
+
+#: window.py
+msgid "Back"
+msgstr "Назад"
+
+#: window.py
+msgid "Preferences (Ctrl+,)"
+msgstr "Параметры (Ctrl+,)"
+
+#: window.py
+msgid "Help"
+msgstr "Справка"
 
 #~ msgid "Charts"
 #~ msgstr "Диаграммы"
@@ -9100,12 +9106,6 @@ msgstr "{day} {month} {year} г."
 msgctxt "date, month first"
 msgid "{month} {day}, {year}"
 msgstr "{day} {month} {year} г."
-
-msgid "Orthodox (New)"
-msgstr "Нов. стиль"
-
-msgid "Orthodox (Old)"
-msgstr "Ст. стиль"
 
 msgid "Orthodox (Old Calendar)"
 msgstr "Православный (старый стиль)"

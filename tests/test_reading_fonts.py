@@ -11,7 +11,7 @@ both break the licence and stop the setting resolving.
 import re
 from pathlib import Path
 
-from window import OPEN_DYSLEXIC
+from appearance_page import OPEN_DYSLEXIC
 
 REPO = Path(__file__).resolve().parents[1]
 FONT_DIR = REPO / 'data' / 'fonts'
@@ -101,7 +101,7 @@ def test_the_chrome_licence_travels_with_the_font():
 
 def test_the_family_name_is_never_translated():
     """It is the font, the settings value and the label at once."""
-    source = (REPO / 'window.py').read_text()
+    source = (REPO / 'appearance_page.py').read_text()
     assert f"_('{OPEN_DYSLEXIC}')" not in source
     assert f'_("{OPEN_DYSLEXIC}")' not in source
 

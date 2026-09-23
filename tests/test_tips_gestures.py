@@ -82,6 +82,9 @@ EXPECTED_GESTURE_SITES = {
     # A card label's double-click look-up, moved out of pane.py with the
     # rest of the peek. Tips already names double-click to look a word up.
     'pane_peek.py': 1,
+    # The chapter find bar takes Shift+Enter for the previous match, the same
+    # key and tooltip as the manuscript's find bar. A key, not a gesture.
+    'pane_search.py': 1,
     # Two of them are the mouse's back and forward buttons: invisible, so
     # they have a Reading row.
     'window.py': 11,

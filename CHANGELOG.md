@@ -4,6 +4,33 @@ All notable changes to Scriptura. Format roughly follows
 [Keep a Changelog](https://keepachangelog.com/). Versioning is
 semver-ish — 0.x was the pre-Flathub testing track.
 
+## [Unreleased]
+
+### Changed
+
+- **The chapter's first line keeps the rhythm.** The large first letter
+  made the gap under the first line about a third wider than every other
+  line. That line now steps like the rest, at every line spacing, and the
+  letter keeps its size.
+- **A break between stanzas is half a line, not a whole one.** In the
+  Psalms and other poetry the blank line between stanzas was a full line
+  tall, so a break read as a missing line. It is now half as tall.
+- **Each search button has one job.** The magnifier in the window bar
+  searches the whole Bible, as before, and now says so. The button above
+  the page finds words in the chapter you are reading, with its own icon:
+  type to highlight, Enter for the next match, Shift+Enter for the one
+  before. It used to run a second whole-Bible search when you pressed
+  Enter.
+- The passage menu above the page now shows three dots across (⋯), so it
+  no longer looks like the window's menu (⋮) when the two sit together.
+- **A shorter menu, and a Preferences window.** The menu now holds only
+  the places you go: Annotations, Modules, Presentation, Appearance and
+  your reading plan. Appearance opens beside the page, so you still see
+  every change to the text as you make it. The settings you set once are
+  in Preferences (Ctrl+,): how the app starts and its language, the
+  reading aids, and backing up your study data. Tips, keyboard shortcuts
+  and About are under Help, each with its name.
+
 ## [1.7.3] — 2026-09-22
 
 ### Changed
