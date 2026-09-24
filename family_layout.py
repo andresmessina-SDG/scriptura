@@ -81,18 +81,49 @@ def lanes() -> list[Lane]:
             for i, (n, ids) in enumerate(raw)]
 
 
-def positions() -> dict[str, tuple[float, float]]:
-    """Every Family Bible's (x, y): its root spot before 1611, else its
-    lane at its year."""
+#: Where a Bible with no place on the Line stands in the "by literalness"
+#: arrangement: its own column, past the free end.
+NOT_PLACED_X = 880.0
+
+#: A Bible placed as another: the 1611 KJV is placed on the 1769 text, the
+#: one readers have (the data's own note on it).
+PLACED_AS = {'kjv1611': 'kjv'}
+
+
+def line_x(value: float) -> float:
+    """The x of a place on the Line, across the lanes' width. A Bible past
+    the free end is pinned there (decided 7b)."""
+    return LANE_LEFT + min(max(value, 0.0), 1.0) * (LANE_RIGHT - LANE_LEFT)
+
+
+def spot(nid: str):
+    """A Family Bible's place on the Line, or None: the root has none."""
+    if nid in bible_family.family_data().get('root', {}):
+        return None
+    record = bible_family.node(PLACED_AS.get(nid, nid))
+    return bible_family.place_of(record) if record is not None else None
+
+
+def positions(arrangement: str = 'family') -> dict[str, tuple[float, float]]:
+    """Every Family Bible's (x, y). The root keeps its spot before 1611 in
+    both arrangements. After it, 'family' puts each Bible in its lane;
+    'line' slides it sideways to its place on the Line (time stays put),
+    and a Bible with no place to the column past the free end."""
     root = bible_family.family_data().get('root', {})
     out: dict[str, tuple[float, float]] = {
         i: (float(x), float(y)) for i, (x, y) in root.items()}
     for lane in lanes():
         for i in lane.members:
-            if i not in out:
-                record = bible_family.node(i)
-                assert record is not None       # members come from the data
-                out[i] = (lane.x, year_y(record['year']))
+            if i in out:
+                continue
+            record = bible_family.node(i)
+            assert record is not None       # members come from the data
+            y = year_y(record['year'])
+            if arrangement == 'line':
+                here = spot(i)
+                out[i] = (line_x(here.value) if here else NOT_PLACED_X, y)
+            else:
+                out[i] = (lane.x, y)
     return out
 
 

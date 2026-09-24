@@ -117,6 +117,8 @@ _defaults: dict[str, Any] = {
     # 'line'; and whether the Family shows as an outline list instead.
     'family_tree_view':   'family',
     'family_tree_outline': False,
+    # The Family's arrangement: 'family' (lanes) or 'line' (by literalness).
+    'family_tree_arrangement': 'family',
     # How fast the spoken chapter is read, as a multiple of the narrator's own
     # pace. Stored for the app rather than per chapter: a reader following the
     # text has found the speed they read at, not the speed for John 3. Souer

@@ -8,7 +8,8 @@ indented list. The app remembers the view last used.
 
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import GLib, Gtk
+gi.require_version('Adw', '1')
+from gi.repository import Adw, GLib, Gtk
 
 import bible_family
 import settings
@@ -56,8 +57,21 @@ class FamilyTree:
         set_accessible_label(self._line_btn, _('Show the Line'))
         views.append(self._family_btn)
         views.append(self._line_btn)
-        bar.append(views)
-        bar.append(Gtk.Box(hexpand=True))
+        switches = Adw.WrapBox(child_spacing=8, line_spacing=6, hexpand=True)
+        switches.append(views)
+        bar.append(switches)
+        # The Family's two arrangements: by family (lanes), or by
+        # literalness — every Bible slid to its place on the Line.
+        self._arrangements = Gtk.Box()
+        self._arrangements.add_css_class('linked')
+        self._by_family = Gtk.ToggleButton(label=_('By family'))
+        self._by_line = Gtk.ToggleButton(label=_('By literalness'))
+        self._by_line.set_group(self._by_family)
+        set_accessible_label(self._by_family, _('Arrange by family'))
+        set_accessible_label(self._by_line, _('Arrange by literalness'))
+        self._arrangements.append(self._by_family)
+        self._arrangements.append(self._by_line)
+        switches.append(self._arrangements)
         self._list_btn = Gtk.ToggleButton(
             icon_name='scriptura-view-list-symbolic')
         self._list_btn.add_css_class('flat')
@@ -66,14 +80,14 @@ class FamilyTree:
         bar.append(self._list_btn)
 
         self._stack = Gtk.Stack()
+        # Sized by what is showing: the hidden outline's long names set the
+        # whole pane's minimum at 509px, squeezing the Bible beside it.
+        self._stack.set_hhomogeneous(False)
         self._stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
         self._stack.add_named(self.line.widget, 'line')
 
         # The arrow-key walk cannot be seen, so the Family says it.
-        self._hint = Gtk.Label(
-            label=_('Hover or focus a Bible to light its line. Arrow keys '
-                    'walk from parent to child; Enter opens its card.'),
-            xalign=0, wrap=True)
+        self._hint = Gtk.Label(xalign=0, wrap=True)
         self._hint.add_css_class('family-line-meta')
         self._hint.set_margin_start(14)
         self._hint.set_margin_end(14)
@@ -88,6 +102,10 @@ class FamilyTree:
         (self._line_btn if view == 'line' else self._family_btn
          ).set_active(True)
         self._list_btn.set_active(bool(settings.get('family_tree_outline')))
+        (self._by_line if settings.get('family_tree_arrangement') == 'line'
+         else self._by_family).set_active(True)
+        self._by_family.connect('toggled', self._on_arrangement)
+        self._by_line.connect('toggled', self._on_arrangement)
         self._family_btn.connect('toggled', self._on_view)
         self._line_btn.connect('toggled', self._on_view)
         self._list_btn.connect('toggled', self._on_view)
@@ -121,8 +139,11 @@ class FamilyTree:
 
     def _show_view(self):
         family = self._family_btn.get_active()
+        drawing = family and not self._list_btn.get_active()
         self._list_btn.set_visible(family)
-        self._hint.set_visible(family and not self._list_btn.get_active())
+        self._arrangements.set_visible(drawing)
+        self._hint.set_visible(drawing)
+        self._hint.set_label(self._hint_text())
         if not family:
             self._stack.set_visible_child_name('line')
             return
@@ -130,10 +151,29 @@ class FamilyTree:
         self._stack.set_visible_child_name(
             'outline' if self._list_btn.get_active() else 'family')
 
+    def _hint_text(self):
+        if self._by_line.get_active():
+            return _('Each Bible sits where it lands on the Line; the lines '
+                     'of descent show which families drifted. A bar is a '
+                     'published range; a bracket, its makers’ own word.')
+        return _('Hover or focus a Bible to light its line. Arrow keys '
+                 'walk from parent to child; Enter opens its card.')
+
+    def _on_arrangement(self, btn):
+        if not btn.get_active():
+            return
+        arrangement = 'line' if btn is self._by_line else 'family'
+        settings.put('family_tree_arrangement', arrangement)
+        self._hint.set_label(self._hint_text())
+        if self.family is not None:
+            self.family.set_arrangement(arrangement)
+
     def _ensure_family(self):
         if self.family is not None:
             return
-        self.family = FamilyView(self._open_card)
+        self.family = FamilyView(
+            self._open_card,
+            'line' if self._by_line.get_active() else 'family')
         self.outline = FamilyOutline(self._open_card)
         self._stack.add_named(self.family.widget, 'family')
         self._stack.add_named(self.outline.widget, 'outline')

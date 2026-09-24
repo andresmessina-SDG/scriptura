@@ -51,8 +51,12 @@ semver-ish — 0.x was the pre-Flathub testing track.
   It opens on the Family: the Bibles people read today and every Bible
   they were revised from, back to Wycliffe and Tyndale, drawn down the
   page in time with a note at the moments that shaped them. Hover a Bible
-  to light its whole line; arrow keys walk from parent to child. A List
-  button shows the same family as an indented list. The Line lays out
+  to light its whole line; arrow keys walk from parent to child. Switch
+  it to By literalness and every Bible slides sideways to its place from
+  word for word to free, so you can watch a family drift: the RSV's line
+  toward word for word in the ESV, the Living Bible's back toward
+  translation in the NLT. A List button shows the same family as an
+  indented list. The Line lays out
   every English Bible from word for word to free; filter it by what you
   have installed, by tradition and by era. The Bible you are reading is
   marked, and pressing any Bible opens its card.

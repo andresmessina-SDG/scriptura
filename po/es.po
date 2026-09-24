@@ -10385,3 +10385,32 @@ msgid ""
 "Hover or focus a Bible to light its line. Arrow keys walk from parent to "
 "child; Enter opens its card."
 msgstr "Pasa el puntero o el foco por una Biblia para iluminar su línea. Las flechas van de padre a hijo; Intro abre su ficha."
+
+#: family_tree.py
+msgid "By family"
+msgstr "Por familia"
+
+#: family_tree.py
+msgid "By literalness"
+msgstr "Por literalidad"
+
+#: family_tree.py
+msgid "Arrange by family"
+msgstr "Ordenar por familia"
+
+#: family_tree.py
+msgid "Arrange by literalness"
+msgstr "Ordenar por literalidad"
+
+#: family_tree.py
+msgid "Each Bible sits where it lands on the Line; the lines of descent show which families drifted. A bar is a published range; a bracket, its makers’ own word."
+msgstr "Cada Biblia está donde cae en la Línea; las líneas de descendencia muestran qué familias se desplazaron. Una barra es un rango publicado; un corchete, la palabra de sus propios traductores."
+
+#: family_tree.py
+msgid "Not placed"
+msgstr "Sin lugar"
+
+#: family_view.py
+#, python-brace-format
+msgid "Placed as {name}: {where}"
+msgstr "Situada como {name}: {where}"

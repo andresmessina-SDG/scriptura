@@ -14,6 +14,7 @@ same family as an indented list, for readers who want it without a drawing.
 
 import math
 
+import cairo
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
@@ -27,6 +28,7 @@ from family_card import place_sentences, short_name
 from i18n import _
 
 DOT = 7.0               # the mark's radius, in the drawing's units
+BAR_BELOW = 12          # a range bar's distance under its Bible's mark
 NODE_H = 24
 
 
@@ -40,8 +42,13 @@ def _sentence(record, reading, installed):
     else:
         came = _('Not a revision of an earlier English Bible.')
     root = record['id'] in bible_family.family_data().get('root', {})
+    # Say what the drawing shows: the 1611 KJV wears the 1769 text's mark.
+    shown = bible_family.node(fl.PLACED_AS.get(record['id'], record['id']))
     where = (_('Before the Line: its spelling cannot be measured.') if root
-             else ' '.join(place_sentences(record)))
+             else ' '.join(place_sentences(shown)))
+    if shown is not record and not root:
+        where = _('Placed as {name}: {where}').format(
+            name=shown['name'], where=where)
     have = (_('You are reading this.') if reading
             else _('Installed.') if installed else '')
     return ' '.join(p for p in (
@@ -60,8 +67,9 @@ class _Node(Gtk.Button):
         self.add_css_class('flat')
         self.add_css_class('family-node')
         self._view = view
-        root = record['id'] in bible_family.family_data().get('root', {})
-        self.spot = None if root else bible_family.place_of(record)
+        self.root = record['id'] in bible_family.family_data().get('root', {})
+        self.spot = fl.spot(record['id'])
+        self.bar_above = False      # its range bar, when one crosses a label
         self.reading = False
 
         self._dot = Gtk.DrawingArea()
@@ -75,7 +83,7 @@ class _Node(Gtk.Button):
         self._year.add_css_class('family-node-year')
         self._box = Gtk.Box(spacing=4)
         self.set_child(self._box)
-        self.set_left(fl.label_left(x, root))
+        self.set_left(fl.label_left(x, self.root))
 
         self.connect('clicked', lambda _b: view._open_card(self))
         motion = Gtk.EventControllerMotion()
@@ -113,7 +121,10 @@ class _Node(Gtk.Button):
     def place(self, fixed):
         """Put the node so its mark's centre sits on (x, y)."""
         x0, y0, _x1, _y1 = self.box()
-        fixed.put(self, x0, y0)
+        if self.get_parent() is fixed:
+            fixed.move(self, x0, y0)
+        else:
+            fixed.put(self, x0, y0)
 
     def refresh(self, reading, installed):
         self.reading = reading
@@ -148,36 +159,54 @@ def _overlap(a, b, slack=2):
             and a[1] < b[3] - slack and b[1] < a[3] - slack)
 
 
-def _clashes(node, others):
-    return [o for o in others if o is not node
-            and _overlap(node.box(), o.box())]
+def _clashes(node, others, bars=()):
+    """What `node`'s label would run into: other nodes, and the range bars
+    and brackets drawn under other Bibles (a bar through a label reads as a
+    strike-through — the RNJB's bracket crossed NASB 2020)."""
+    box = node.box()
+    hits = [o for o in others if o is not node and _overlap(box, o.box())]
+    hits += [o for o, bar in bars if o is not node and _overlap(box, bar)]
+    return hits
 
 
-def _settle(node, placed):
-    """Find `node` a side for its label clear of those already placed:
-    its own side, else the other; failing both, flip the neighbour it
-    hits (HCSB, a year and a lane from TNIV, took both of TNIV's sides)."""
-    if not _clashes(node, placed):
+def _settle(node, placed, bars=()):
+    """Find `node` a side for its label clear of those already placed and
+    of every bar: its own side, else the other; failing both, flip the
+    neighbour it hits (HCSB, a year and a lane from TNIV, took both of
+    TNIV's sides)."""
+    if not _clashes(node, placed, bars):
         return
     node.set_left(not node.left)
-    if not _clashes(node, placed):
+    if not _clashes(node, placed, bars):
         return
     node.set_left(not node.left)
     for other in _clashes(node, placed):
         other.set_left(not other.left)
-        if _clashes(other, placed + [node]):
+        if _clashes(other, placed + [node], bars):
             other.set_left(not other.left)
+
+
+def _bar(node):
+    """The rectangle of the range bar or bracket drawn under a Bible in the
+    'by literalness' arrangement, or None."""
+    here = node.spot
+    if here is None or here.kind not in ('band', 'class'):
+        return None
+    y = node.y + (-BAR_BELOW if node.bar_above else BAR_BELOW)
+    return (fl.line_x(here.low) - 3, y - 4, fl.line_x(here.high) + 3, y + 3)
 
 
 class FamilyView:
     """The drawing and its nodes, in a frame that scrolls both ways."""
 
-    def __init__(self, on_open_card):
+    def __init__(self, on_open_card, arrangement='family'):
         self._on_open_card = on_open_card
         self._nodes: dict[str, _Node] = {}
         self._lit: set | None = None
         self._last = None
-        self._pos = fl.positions()
+        self._arrangement = arrangement
+        self._animation = None
+        self._pos = fl.positions(arrangement)
         self._edges = fl.edges()
         self._lanes = fl.lanes()
         self._notes = fl.notes()
@@ -202,12 +231,11 @@ class FamilyView:
             x, y = self._pos[nid]
             node = _Node(self, bible_family.node(nid), x, y)
             self._nodes[nid] = node
-        # Tab order runs down the page in time, then across. A label whose
-        # side is taken by a neighbour runs the other way.
         # The margin notes, in the reading serif, as real labels so a screen
         # reader reaches them. The early ones fall close together where the
         # axis is compressed, so each starts below the one above.
         self._note_spots = []
+        notes = []
         bottom = 0.0
         for note in self._notes:
             label = Gtk.Label(label=note.text, xalign=0, wrap=True)
@@ -215,21 +243,94 @@ class FamilyView:
             label.add_css_class('family-note')
             label.set_size_request(fl.NOTE_WIDTH, -1)
             top = max(note.y - 9, bottom + 10)
-            self._fixed.put(label, fl.NOTE_LEFT, top)
             height = label.measure(Gtk.Orientation.VERTICAL,
                                    fl.NOTE_WIDTH)[1]
             self._note_spots.append((note.y, top))
+            notes.append((top, label))
             bottom = top + height
 
-        order = sorted(self._nodes, key=lambda i: (self._pos[i][1],
-                                                   self._pos[i][0]))
+        # Into the drawing in reading order, down the page in time: Tab and
+        # a screen reader meet each note beside the Bibles of its years.
+        self._settle_labels()
+        things = [(n.y, 1, n) for n in self._nodes.values()]
+        things += [(top, 0, label) for top, label in notes]
+        for _y, is_node, w in sorted(things, key=lambda t: (t[0], t[1])):
+            if is_node:
+                w.place(self._fixed)
+            else:
+                self._fixed.put(w, fl.NOTE_LEFT, _y)
+
+    def _settle_labels(self):
+        """Each label on its natural side, then flipped where it would run
+        into one placed before it (down the page, then across)."""
+        order = sorted(self._nodes.values(), key=lambda n: (n.y, n.x))
+        for node in order:
+            node.bar_above = False
+        bars = ([(n, b) for n in order if (b := _bar(n)) is not None]
+                if self._arrangement == 'line' else [])
         placed: list[_Node] = []
-        for nid in order:
-            node = self._nodes[nid]
-            _settle(node, placed)
+        for node in order:
+            node.set_left(fl.label_left(node.x, node.root))
+            _settle(node, placed, bars)
             placed.append(node)
-        for nid in order:
-            self._nodes[nid].place(self._fixed)
+        # A bar no label could dodge (a bracket spans a whole zone) goes
+        # above its own Bible instead, when that side is clear.
+        for owner, _b in bars:
+            if any(_overlap(o.box(), _bar(owner)) for o in order
+                   if o is not owner):
+                owner.bar_above = True
+                if any(_overlap(o.box(), _bar(owner)) for o in order
+                       if o is not owner):
+                    owner.bar_above = False
+
+    # ── the arrangements ─────────────────────────────────────────────────
+
+    @property
+    def arrangement(self):
+        return self._arrangement
+
+    def set_arrangement(self, arrangement, animate=True):
+        """'family' (lanes) or 'line' (each Bible slid to its place on the
+        Line). The Bibles glide there, time staying put; with animations
+        off (GNOME's reduced motion) they are simply there."""
+        if arrangement == self._arrangement:
+            return
+        # A slide still running is finished first, and the new one starts
+        # from where that left the Bibles, not from where it found them.
+        if self._animation is not None:
+            self._animation.skip()
+        start = dict(self._pos)
+        end = fl.positions(arrangement)
+        self._arrangement = arrangement
+
+        def step(t):
+            for nid, node in self._nodes.items():
+                (x0, y0), (x1, y1) = start[nid], end[nid]
+                node.x, node.y = x0 + (x1 - x0) * t, y0 + (y1 - y0) * t
+                node.place(self._fixed)
+            self._pos = {k: (n.x, n.y) for k, n in self._nodes.items()}
+            self._area.queue_draw()
+
+        def done(*_a):
+            self._animation = None
+            self._pos = end
+            for nid, node in self._nodes.items():
+                node.x, node.y = end[nid]
+            self._settle_labels()
+            for node in self._nodes.values():
+                node.place(self._fixed)
+            self._area.queue_draw()
+
+        if not animate:
+            step(1.0)
+            done()
+            return
+        target = Adw.CallbackAnimationTarget.new(step)
+        anim = Adw.TimedAnimation.new(self._area, 0.0, 1.0, 700, target)
+        anim.set_easing(Adw.Easing.EASE_IN_OUT_CUBIC)
+        anim.connect('done', done)
+        self._animation = anim
+        anim.play()
 
     # ── the pane's calls ─────────────────────────────────────────────────
 
@@ -378,11 +479,62 @@ class FamilyView:
         text(_('⋮ compressed'), 24, fl.year_y(1745) - 8, size=0.75,
              alpha=0.45)
 
-        # Lane names above the axis, staggered so neighbours never touch.
-        for i, lane in enumerate(self._lanes):
-            text(lane.name.upper(), lane.x, fl.AXIS_TOP - (22 if i % 2
-                                                           else 40),
-                 size=0.68, bold=True, anchor='center', alpha=0.55)
+        if self._arrangement == 'family':
+            # Lane names above the axis, staggered so neighbours never touch.
+            for i, lane in enumerate(self._lanes):
+                text(lane.name.upper(), lane.x, fl.AXIS_TOP - (22 if i % 2
+                                                               else 40),
+                     size=0.68, bold=True, anchor='center', alpha=0.55)
+        else:
+            # The Line's zones across the page, and a column for the rest.
+            rgba(0.18)
+            cr.set_dash([1.0, 5.0])
+            for bound, _n in bible_family.ZONES[:-1]:
+                x = round(fl.line_x(bound)) + 0.5
+                cr.move_to(x, fl.AXIS_TOP - 18)
+                cr.line_to(x, h - 20)
+            cr.stroke()
+            cr.set_dash([])
+            lo = 0.0
+            for bound, name in bible_family.ZONES:
+                mid = fl.line_x((lo + min(bound, 1.0)) / 2)
+                text(_(name).upper(), mid, fl.AXIS_TOP - 34, size=0.68,
+                     bold=True, anchor='center', alpha=0.55)
+                lo = bound
+            text(_('Not placed').upper(), fl.NOT_PLACED_X,
+                 fl.AXIS_TOP - 34, size=0.68, bold=True, anchor='center',
+                 alpha=0.55)
+            # Where charts place a Bible, its range as a soft bar under it;
+            # where only its makers' word is known, a bracket over the zone.
+            if self._animation is None:
+                for nid, node in self._nodes.items():
+                    here = node.spot
+                    if here is None or here.kind not in ('band', 'class'):
+                        continue
+                    # A bar fades with its Bible when another line is lit.
+                    fade = 0.3 if (self._lit is not None
+                                   and nid not in self._lit) else 1.0
+                    y = node.y + (-BAR_BELOW if node.bar_above
+                                  else BAR_BELOW)
+                    x0, x1 = fl.line_x(here.low), fl.line_x(here.high)
+                    if here.kind == 'band':
+                        rgba(0.22 * fade)
+                        cr.set_line_width(5.0)
+                        cr.set_line_cap(cairo.LINE_CAP_ROUND)
+                        cr.move_to(x0, y)
+                        cr.line_to(x1, y)
+                        cr.stroke()
+                    else:
+                        # The bracket's ends point at its own Bible.
+                        tip = 4 if node.bar_above else -4
+                        rgba(0.45 * fade)
+                        cr.set_line_width(1.3)
+                        cr.move_to(x0 + 3, y + tip)
+                        cr.line_to(x0 + 3, y)
+                        cr.line_to(x1 - 3, y)
+                        cr.line_to(x1 - 3, y + tip)
+                        cr.stroke()
+                cr.set_line_cap(cairo.LINE_CAP_BUTT)
 
         # The lines of descent.
         for e in self._edges:
@@ -450,7 +602,8 @@ class FamilyOutline:
             text = '{} · {}'.format(rec['name'], rec['year'])
             if depth and main[nid].kind == 'para':
                 text += '  ' + _('(reworded)')
-            lbl = Gtk.Label(label=text, xalign=0)
+            lbl = Gtk.Label(label=text, xalign=0, wrap=True)
+            lbl.set_max_width_chars(1)      # wrap at the pane, not beyond
             lbl.set_margin_start(14 + depth * 22)
             lbl.set_margin_top(5)
             lbl.set_margin_bottom(5)
