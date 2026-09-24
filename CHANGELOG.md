@@ -47,11 +47,15 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Added
 
-- **The Bible Family Tree.** A new entry in each pane's module list lays
-  out every English Bible on one line, from word for word to free, with a
-  mark for where each lands. Filter by what you have installed, by
-  tradition and by era; sort by place, year or name. The Bible you are
-  reading is marked, and pressing any Bible opens its card.
+- **The Bible Family Tree.** A new entry in each pane's module list.
+  It opens on the Family: the Bibles people read today and every Bible
+  they were revised from, back to Wycliffe and Tyndale, drawn down the
+  page in time with a note at the moments that shaped them. Hover a Bible
+  to light its whole line; arrow keys walk from parent to child. A List
+  button shows the same family as an indented list. The Line lays out
+  every English Bible from word for word to free; filter it by what you
+  have installed, by tradition and by era. The Bible you are reading is
+  marked, and pressing any Bible opens its card.
 - **About this translation.** For an English Bible, the module list's
   info page now opens a card beside the page: where the Bible sits from
   word for word to free, the line of Bibles it was revised from, the

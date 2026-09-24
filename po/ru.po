@@ -10280,3 +10280,64 @@ msgstr "Порядок"
 #, python-brace-format
 msgid "Sort: {choice}"
 msgstr "Порядок: {choice}"
+
+#: family_view.py
+#, python-brace-format
+msgid "In the Family because: {why}."
+msgstr "В Семье, потому что: {why}."
+
+#: family_view.py
+msgid "Family"
+msgstr "Семья"
+
+#: family_view.py
+msgid "Line"
+msgstr "Линия"
+
+#: family_view.py
+msgid "Show the Family"
+msgstr "Показать Семью"
+
+#: family_view.py
+msgid "Show the Line"
+msgstr "Показать Линию"
+
+#: family_view.py
+msgid "Show the Family as a list"
+msgstr "Показать Семью списком"
+
+#: family_view.py
+#, python-brace-format
+msgid "Reworded from {name}."
+msgstr "Пересказ: {name}."
+
+#: family_view.py
+#, python-brace-format
+msgid "Revision of {name}."
+msgstr "Редакция: {name}."
+
+#: family_view.py
+msgid "Not a revision of an earlier English Bible."
+msgstr "Не редакция более ранней английской Библии."
+
+#: family_view.py
+msgid "Before the Line: its spelling cannot be measured."
+msgstr "До Линии: его правописание не поддаётся измерению."
+
+#: family_view.py
+msgid "Before 1611 — the root. These texts cannot be placed on the Line; their spelling defeats the measure."
+msgstr "До 1611 года — корень. Эти тексты нельзя поместить на Линию: их правописание не поддаётся измерению."
+
+#: family_view.py
+msgid "⋮ compressed"
+msgstr "⋮ сжато"
+
+#: family_view.py
+msgid "(reworded)"
+msgstr "(пересказ)"
+
+#: family_tree.py
+msgid ""
+"Hover or focus a Bible to light its line. Arrow keys walk from parent to "
+"child; Enter opens its card."
+msgstr "Наведите указатель или фокус на Библию, чтобы высветить её линию. Стрелки ведут от родителя к потомку; Enter открывает карточку."

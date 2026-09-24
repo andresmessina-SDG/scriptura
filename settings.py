@@ -113,6 +113,10 @@ _defaults: dict[str, Any] = {
     # other language. Off by default (decided 2026-09-24): a compare reads
     # within one language, and the switch sits in the compare popover.
     'compare_other_languages': False,
+    # The Bible Family Tree's view: 'family' (the drawing, the default) or
+    # 'line'; and whether the Family shows as an outline list instead.
+    'family_tree_view':   'family',
+    'family_tree_outline': False,
     # How fast the spoken chapter is read, as a multiple of the narrator's own
     # pace. Stored for the app rather than per chapter: a reader following the
     # text has found the speed they read at, not the speed for John 3. Souer

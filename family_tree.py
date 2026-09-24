@@ -1,0 +1,155 @@
+"""family_tree.py — The Bible Family Tree, the pane document.
+
+Two views of the same Bibles behind a switch: the Family (the Bibles people
+read, drawn down the page in time; the default) and the Line (every English
+Bible on one track). The Family also has an outline, the same tree as an
+indented list. The app remembers the view last used.
+"""
+
+import gi
+gi.require_version('Gtk', '4.0')
+from gi.repository import GLib, Gtk
+
+import bible_family
+import settings
+from a11y import set_accessible_label
+from family_line import FamilyLine
+from family_view import FamilyOutline, FamilyView
+from i18n import _
+
+
+def reading_module(pane):
+    """The Bible being read beside this pane: the other pane's, when it shows
+    one the data knows; else the Bible this pane showed before it opened the
+    Family Tree."""
+    root = pane.get_root() if pane is not None else None
+    for other in (getattr(root, 'pane1', None), getattr(root, 'pane2', None)):
+        if (other is not None and other is not pane and other.get_visible()
+                and bible_family.node_for_module(other.module)):
+            return other.module
+    came_from = getattr(pane, '_came_from', None)
+    if came_from and bible_family.node_for_module(came_from):
+        return came_from
+    return None
+
+
+class FamilyTree:
+    """The pane subsystem: the switch, and the views under it."""
+
+    def __init__(self, pane=None):
+        self._pane = pane
+        self.line = FamilyLine(pane)
+        self.family = None          # built on first show: 37 widgets
+        self.outline = None
+        self._scrolled_for = None
+
+        bar = Gtk.Box(spacing=8)
+        bar.set_margin_start(14)
+        bar.set_margin_end(14)
+        bar.set_margin_top(8)
+        views = Gtk.Box()
+        views.add_css_class('linked')
+        self._family_btn = Gtk.ToggleButton(label=_('Family'))
+        self._line_btn = Gtk.ToggleButton(label=_('Line'))
+        self._line_btn.set_group(self._family_btn)
+        set_accessible_label(self._family_btn, _('Show the Family'))
+        set_accessible_label(self._line_btn, _('Show the Line'))
+        views.append(self._family_btn)
+        views.append(self._line_btn)
+        bar.append(views)
+        bar.append(Gtk.Box(hexpand=True))
+        self._list_btn = Gtk.ToggleButton(
+            icon_name='scriptura-view-list-symbolic')
+        self._list_btn.add_css_class('flat')
+        self._list_btn.set_tooltip_text(_('Show the Family as a list'))
+        set_accessible_label(self._list_btn, _('Show the Family as a list'))
+        bar.append(self._list_btn)
+
+        self._stack = Gtk.Stack()
+        self._stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
+        self._stack.add_named(self.line.widget, 'line')
+
+        # The arrow-key walk cannot be seen, so the Family says it.
+        self._hint = Gtk.Label(
+            label=_('Hover or focus a Bible to light its line. Arrow keys '
+                    'walk from parent to child; Enter opens its card.'),
+            xalign=0, wrap=True)
+        self._hint.add_css_class('family-line-meta')
+        self._hint.set_margin_start(14)
+        self._hint.set_margin_end(14)
+        self._hint.set_margin_top(4)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        box.append(bar)
+        box.append(self._hint)
+        box.append(self._stack)
+        self.widget = box
+
+        view = settings.get('family_tree_view')
+        (self._line_btn if view == 'line' else self._family_btn
+         ).set_active(True)
+        self._list_btn.set_active(bool(settings.get('family_tree_outline')))
+        self._family_btn.connect('toggled', self._on_view)
+        self._line_btn.connect('toggled', self._on_view)
+        self._list_btn.connect('toggled', self._on_view)
+        self._show_view()
+
+    # ── the pane's calls ─────────────────────────────────────────────────
+
+    def render(self):
+        self.line.render()
+        if self.family is not None:
+            self._refresh_family()
+
+    def reading_module(self):
+        return reading_module(self._pane)
+
+    def focus_last(self):
+        name = self._stack.get_visible_child_name()
+        {'line': self.line, 'family': self.family,
+         'outline': self.outline}[name].focus_last()
+
+    # ── views ────────────────────────────────────────────────────────────
+
+    def _on_view(self, btn):
+        # The pair are a radio group: act once, on the one that lit.
+        if btn is not self._list_btn and not btn.get_active():
+            return
+        settings.put('family_tree_view',
+                     'family' if self._family_btn.get_active() else 'line')
+        settings.put('family_tree_outline', self._list_btn.get_active())
+        self._show_view()
+
+    def _show_view(self):
+        family = self._family_btn.get_active()
+        self._list_btn.set_visible(family)
+        self._hint.set_visible(family and not self._list_btn.get_active())
+        if not family:
+            self._stack.set_visible_child_name('line')
+            return
+        self._ensure_family()
+        self._stack.set_visible_child_name(
+            'outline' if self._list_btn.get_active() else 'family')
+
+    def _ensure_family(self):
+        if self.family is not None:
+            return
+        self.family = FamilyView(self._open_card)
+        self.outline = FamilyOutline(self._open_card)
+        self._stack.add_named(self.family.widget, 'family')
+        self._stack.add_named(self.outline.widget, 'outline')
+        self._refresh_family()
+
+    def _refresh_family(self):
+        installed = list(getattr(self._pane, '_names', []) or [])
+        reading = self.reading_module()
+        target = self.family.refresh(installed, reading)
+        # Scroll only when the Bible being read changes (the Line's rule):
+        # a theme switch re-renders too, and must leave the reader be.
+        if target is not None and target is not self._scrolled_for:
+            self._scrolled_for = target
+            GLib.idle_add(lambda: self.family.scroll_to(target) or False)
+
+    def _open_card(self, node_id):
+        root = self._pane.get_root() if self._pane is not None else None
+        if root is not None and hasattr(root, 'show_family_card'):
+            root.show_family_card(node_id, self._pane)

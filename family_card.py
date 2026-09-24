@@ -390,12 +390,16 @@ class FamilyCard(Gtk.Box):
                       'another does not.'), 'dim-label').set_margin_top(4)
 
     def _build_notes(self, record):
+        why = bible_family.why_in_family(record)
         if not (record.get('note') or record.get('editions')
-                or record.get('dispute')):
+                or record.get('dispute') or why):
             return
         self._section(_('Notes'))
         if record.get('note'):
             self._label(record['note'], 'family-card-body')
+        if why:
+            self._label(_('In the Family because: {why}.').format(why=why),
+                        'family-card-meta').set_margin_top(6)
         if record.get('editions'):
             self._label(_('Editions: {list}').format(
                 list=', '.join(record['editions'])),

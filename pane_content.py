@@ -106,7 +106,7 @@ class FamilyContent(PaneContent):
     stack_child = 'family'
 
     def render(self) -> None:
-        self._pane._family_line.render()
+        self._pane._family_tree.render()
 
     def on_verse(self, verse_num: int) -> None:
         return  # standalone document — not verse-keyed

@@ -25,7 +25,7 @@ from catena_reader import CatenaReader
 from imagery_reader import ImageryReader
 from archaeology_reader import ArchaeologyReader
 from genealogy_reader import GenealogyReader
-from family_line import FamilyLine
+from family_tree import FamilyTree
 from interlinear_view import InterlinearReader
 import interlinear_data
 from module_picker import ModulePicker
@@ -1299,9 +1299,9 @@ class BiblePane(Gtk.Box):
         # Like Scripture in Stone it is NOT verse-synced: it renders once and
         # its verse chips drive the partnered Bible pane.
         self._genealogy = GenealogyReader(self)
-        # The Bible Family Tree — every English Bible on one Line; a
-        # standalone document like the two above, opened from the list.
-        self._family_line = FamilyLine(self)
+        # The Bible Family Tree — the Family and the Line; a standalone
+        # document like the two above, opened from the list.
+        self._family_tree = FamilyTree(self)
         # Interlinear Greek NT — word-stack cells, verse-synced like a Bible.
         self._interlinear = InterlinearReader(self)
         # Each content mode is a PaneContent strategy; _compute_module_flags
@@ -1673,7 +1673,7 @@ class BiblePane(Gtk.Box):
         self._content_stack.add_named(self._imagery.widget, 'imagery')
         self._content_stack.add_named(self._archaeology.widget, 'archaeology')
         self._content_stack.add_named(self._genealogy.widget, 'genealogy')
-        self._content_stack.add_named(self._family_line.widget, 'family')
+        self._content_stack.add_named(self._family_tree.widget, 'family')
         self._content_stack.add_named(self._interlinear.widget, 'interlinear')
         # Full-pane placeholder for "can't show content here" states
         # (unsupported module, wrong cipher key, passage not in this module).

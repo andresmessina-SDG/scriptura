@@ -360,3 +360,35 @@ def translations() -> list[dict]:
     """Every English Bible in the data, in file order (no source texts)."""
     return [r for r in _data().get('node', [])
             if r.get('kind', 'translation') == 'translation']
+
+
+# ── the Family view ───────────────────────────────────────────────────────
+
+def family_members() -> list[str]:
+    """The Bibles the Family draws: every Bible read today or needed as a
+    landmark, and every Bible they revise or reword, back to the root. A
+    rule, not a list: change who is read and the Family follows. 'Drew on'
+    debts do not pull a Bible in; they are secondary (§5.3)."""
+    seeds = [r['id'] for r in translations()
+             if r.get('read') or r.get('landmark')]
+    members = set(seeds)
+    stack = list(seeds)
+    while stack:
+        here = stack.pop()
+        for e in _edges():
+            if (e['to'] == here and e['type'] in ('rev', 'para')
+                    and e['from'] not in members):
+                members.add(e['from'])
+                stack.append(e['from'])
+    return sorted(members, key=lambda i: (_by_id()[i]['year'], i))
+
+
+def family_data() -> dict:
+    """The Family view's hand-set parts: lanes, the pre-1611 root, notes."""
+    fam: dict = _data().get('family', {})
+    return fam
+
+
+def why_in_family(record: dict) -> str:
+    """Why a Bible is in the Family, in the data's own (English) words."""
+    return record.get('read') or record.get('landmark') or ''

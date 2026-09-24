@@ -15,6 +15,10 @@
 #           1 = The Message); measured = §15 (NT sample, "measured in Scriptura");
 #           class = Fee & Strauss where they give one, else the translation's
 #           self-described class; self = its own words, self_src = where.
+# read    = why it counts as read today (the readership sources, §5.3 of the
+#           UI research); landmark = why the history needs it. The Family is
+#           these Bibles and every Bible they revise or reword, back to the
+#           root: a rule, not a list (bible_family.family_members).
 # archaic = true: the text keeps thee/thou/unto English (23 or more such words
 #           per 1,000 in the measured sample; the next text down has 15). The
 #           measure reads these as supplied words, so such a Bible measures
@@ -90,6 +94,7 @@ dispute = "Later Version dated 1388 (Wikipedia list) to mid-1390s; Purvey's role
 installable = ["Wycliffe", "engwyc2017", "engwyc2018", "engWycliffe"]
 note = "Hand-copied from Latin; forbidden without licence by the Constitutions of Oxford (1409). About 250 manuscripts survive. Nothing later descends from it."
 src = ["wp:wycliffe", "wl", "kings"]
+landmark = "the first English Bible"
 [node.spectrum]
 measured_skip = "Middle English; the word match cannot read it (§15.5)"
 
@@ -182,6 +187,7 @@ installable = ["Geneva1599", "enggnv"]
 note = "Roman type, verse numbers, Calvinist margin notes James I called seditious. 150+ editions to 1644; the Bible of Shakespeare and the Mayflower."
 src = ["wp:geneva", "wl"]
 archaic = true
+landmark = "the Bible of the English Reformation household"
 [node.spectrum]
 measured_skip = "early modern spelling (§15.5)"
 
@@ -213,6 +219,7 @@ check = "checked"
 note = "Latinate vocabulary; the KJV translators took words from its NT."
 src = ["wl", "bruce"]
 
+landmark = "the Catholic root"
 [node.spectrum]
 none = "not installable (Challoner revision is); no published placement"
 [[node]]
@@ -247,6 +254,7 @@ editions = ["AKJV (Bible Gateway's KJV printing)", "KJVPCE", "KJV with Apocrypha
 note = "Reproduced almost unchanged in most current printings."
 src = ["wp:kjv"]
 archaic = true
+read = "ECPA top ten; most read in US surveys (55%, 2014)"
 [node.spectrum]
 band = [0.18, 0.26, 0.31]
 n = 4
@@ -273,6 +281,7 @@ installable = ["DRC", "engDRA"]
 note = "Moved much of the wording toward the KJV."
 src = ["wl", "bruce"]
 archaic = true
+landmark = "the Catholic text for two centuries"
 [node.spectrum]
 measured = 0.35
 measured_note = "NT only; the OT is from the Vulgate and cannot be matched to the Hebrew"
@@ -347,6 +356,7 @@ by = "Henry Wansbrough, OSB"
 check = "checked"
 note = "Lectionary basis in Australia, New Zealand and Ireland."
 src = ["wp:rnjb", "wl"]
+read = "Catholic lectionaries: Australia, New Zealand, Ireland"
 [node.spectrum]
 class = "formal"
 self = "formal equivalence, in language \"suitable for reading out loud\""
@@ -363,6 +373,7 @@ base_ot = "MT"
 base_nt = "CT"
 check = "checked"
 src = ["wl"]
+read = "US surveys (The Bible in American Life)"
 [node.spectrum]
 band = [0.42, 0.46, 0.51]
 n = 2
@@ -378,6 +389,7 @@ year = 2011
 check = "checked"
 src = ["wl"]
 
+read = "US Catholic lectionary"
 [node.spectrum]
 none = "no placement found; NAB (1970) band is 0.42–0.51"
 [[node]]
@@ -444,6 +456,7 @@ by = "Thomas Nelson; Arthur Farstad, executive editor"
 check = "checked"
 note = "Footnotes the critical (NU) and Majority (M) readings."
 src = ["wp:nkjv", "wl"]
+read = "ECPA top ten"
 [node.spectrum]
 band = [0.23, 0.29, 0.39]
 n = 5
@@ -860,6 +873,7 @@ by = "National Council of Churches; Bruce Metzger"
 check = "checked"
 editions = ["NRSVA", "NRSV-CE", "NRSVACE"]
 src = ["wl", "bg:NRSVACE"]
+read = "ECPA top ten (2024); US surveys"
 [node.spectrum]
 band = [0.37, 0.45, 0.55]
 n = 3
@@ -879,6 +893,7 @@ by = "Society of Biblical Literature for the NCC"
 check = "checked"
 src = ["friendship", "wl"]
 
+read = "successor to the NRSV"
 [node.spectrum]
 none = "no placement found; NRSV band is 0.37–0.55"
 [[node]]
@@ -897,6 +912,7 @@ installable = ["ESV"]
 editions = ["ESVUK"]
 note = "The August 2016 \"permanent text\" decision was reversed the next month."
 src = ["wp:esv", "wl"]
+read = "ECPA top ten; UK sales (24%)"
 [node.spectrum]
 band = [0.13, 0.22, 0.31]
 n = 5
@@ -966,6 +982,7 @@ by = "Lockman Foundation"
 check = "checked"
 installable = ["NASB"]
 src = ["wp:nasb", "wl"]
+read = "ECPA top ten"
 [node.spectrum]
 measured = 0.26
 
@@ -1034,6 +1051,7 @@ by = "Kenneth Taylor"
 check = "checked"
 paraphrase_kind = "english-source"
 src = ["wl", "br:nlt"]
+read = "US surveys (The Bible in American Life)"
 [node.spectrum]
 band = [0.90, 0.94, 0.95]
 n = 3
@@ -1053,6 +1071,7 @@ by = "Tyndale House; 90 scholars"
 check = "checked"
 editions = ["NLT Catholic Edition (2017)"]
 src = ["wp:nlt", "wl"]
+read = "ECPA top ten; UK sales (12%)"
 [node.spectrum]
 band = [0.69, 0.73, 0.84]
 n = 5
@@ -1277,6 +1296,7 @@ by = "American Bible Society; Robert Bratcher"
 check = "checked"
 note = "Bratcher, a former Southern Baptist missionary, resigned from the ABS in 1981 after calling inerrancy \"heresy\"."
 src = ["wl", "br:tev", "christiancentury"]
+read = "widely used in the UK"
 [node.spectrum]
 band = [0.79, 0.80, 0.80]
 n = 3
@@ -1344,6 +1364,7 @@ year = 1998
 year_label = "1996 (NT) · 1998"
 check = "checked"
 src = ["bg:NIRV", "wl"]
+read = "ECPA top ten"
 [node.spectrum]
 band = [0.74, 0.76, 0.89]
 n = 3
@@ -1459,6 +1480,7 @@ check = "checked"
 paraphrase_kind = "free-idiom"
 note = "Translated from the originals in a free idiom; charts put it at the free end."
 src = ["wl"]
+read = "ECPA top ten (2022)"
 [node.spectrum]
 band = [1.0, 1.0, 1.0]
 n = 5
@@ -1532,6 +1554,7 @@ by = "LifeWay; Thomas Schreiner (SBTS) and David Allen, co-chairs"
 check = "checked"
 editions = ["CSBA (Anglicised)"]
 src = ["csb:toc", "wl"]
+read = "ECPA top ten; fastest-growing in the UK"
 [node.spectrum]
 band = [0.36, 0.49, 0.69]
 n = 4
@@ -1878,6 +1901,7 @@ base_ot = "MT"
 by = "Harry Orlinsky and others"
 check = "checked"
 src = ["wp:njps", "wl"]
+read = "Reform and Conservative Jewish use"
 [node.spectrum]
 class = "functional"
 self = "\"a faithful, idiomatic rendering\""
@@ -1897,6 +1921,7 @@ check = "checked"
 editions = ["NIVUK"]
 note = "The current NIV. The SBC \"cannot commend\" it (resolution, June 2011) over gender language."
 src = ["wp:niv", "wl", "sbc:2011"]
+read = "ECPA top ten 2022 and 2024; UK best-seller; The Bible in American Life (19%)"
 [node.spectrum]
 band = [0.50, 0.60, 0.74]
 n = 5
@@ -2718,3 +2743,78 @@ ebible-cat = "https://ebible.org/Scriptures/translations.csv"
 "voice" = "The Voice (Bible translation)"
 "web" = "World English Bible"
 "wycliffe" = "Wycliffe's Bible"
+
+# ── The Family view ─────────────────────────────────────────────────────────
+# Lanes, left to right, one per line of descent after 1611; family_layout
+# orders them by the lane's average place on the Line. Before 1611 the Bibles
+# sit in a small hand-tuned tree (x, y in the drawing's own units; x runs
+# 0–1120, the root above the time axis at y 440), like a map label.
+[family]
+root = { wycliffe = [140, 70], tyndale = [330, 110], coverdale = [230, 190], matthew = [430, 190], great = [330, 265], geneva = [560, 265], bishops = [330, 340], douay-rheims = [780, 265] }
+
+[[family.lane]]
+name = "NASB"
+members = ["nasb", "nasb1995", "nasb2020"]
+[[family.lane]]
+name = "King James"
+members = ["kjv1611", "kjv", "nkjv"]
+[[family.lane]]
+name = "Revised line"
+members = ["rv", "asv", "rsv", "esv"]
+[[family.lane]]
+name = "NRSV"
+members = ["nrsv", "nrsvue"]
+[[family.lane]]
+name = "Holman · CSB"
+members = ["hcsb", "csb"]
+[[family.lane]]
+name = "Douay · NAB"
+members = ["challoner", "nab", "nabre"]
+[[family.lane]]
+name = "Jerusalem"
+members = ["jb", "njb", "rnjb"]
+[[family.lane]]
+name = "NIV"
+members = ["niv", "tniv", "niv2011"]
+[[family.lane]]
+name = "NIrV"
+members = ["nirv"]
+[[family.lane]]
+name = "Living · NLT"
+members = ["tlb", "nlt"]
+[[family.lane]]
+name = "Good News"
+members = ["gnt"]
+[[family.lane]]
+name = "Jewish"
+members = ["njps"]
+[[family.lane]]
+name = "The Message"
+members = ["msg"]
+
+# Margin notes at the moments that matter: facts, dated, one line each
+# (§4.5; wording checked against the research record, §7.2 for 1952).
+[[family.note]]
+year = 1611
+text = "1611 — the King James Version: the Bishops’ Bible revised, drawing on Tyndale, Geneva and Rheims."
+src = ["wp:kjv"]
+[[family.note]]
+year = 1745
+text = "For 270 years the KJV is the English Bible of Protestant use; Catholics read the Douay–Rheims, from 1752 in Challoner’s revision."
+src = ["wp:kjv", "wp:douay-rheims"]
+[[family.note]]
+year = 1885
+text = "1881–85 — the Revised Version: the KJV revised against an older Greek text."
+src = ["wp:rv"]
+[[family.note]]
+year = 1952
+text = "1952 — the RSV renders Isaiah 7:14 “young woman”; a North Carolina pastor burns the page."
+src = ["wp:rsv", "veracity"]
+[[family.note]]
+year = 1978
+text = "1978 — the NIV: a fresh translation, not a revision."
+src = ["wp:niv"]
+[[family.note]]
+year = 2001
+text = "2001 — the ESV: the RSV revised back toward word for word."
+src = ["wp:esv"]

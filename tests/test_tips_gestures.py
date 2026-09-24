@@ -71,6 +71,13 @@ EXPECTED_GESTURE_SITES = {
     # names the target — so they teach themselves and need no Tips row, which
     # is the whole distinction this file's anchor exists to force.
     'genealogy_reader.py': 2,
+    # The Family view: on each Bible a motion and a focus controller that
+    # light its whole line while the pointer or keyboard is on it (seen the
+    # moment it happens), and a key controller for the arrow keys that walk
+    # from parent to child. The walk cannot be seen, so the view says it in
+    # a line under its switch; being in the view, not in Tips, it is where
+    # the reader needs it.
+    'family_view.py': 3,
     'imagery_reader.py': 4,
     'interlinear_view.py': 1,
     'lexicon_panel.py': 1,

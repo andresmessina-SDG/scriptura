@@ -393,19 +393,8 @@ class FamilyLine:
         return list(getattr(self._pane, '_names', []) or [])
 
     def _reading_module(self):
-        """The Bible being read: the other pane's, when it shows one; else
-        the Bible this pane showed before it opened the Line."""
-        pane = self._pane
-        root = pane.get_root() if pane is not None else None
-        for other in (getattr(root, 'pane1', None), getattr(root, 'pane2', None)):
-            if (other is not None and other is not pane
-                    and other.get_visible()
-                    and bible_family.node_for_module(other.module)):
-                return other.module
-        came_from = getattr(pane, '_came_from', None)
-        if came_from and bible_family.node_for_module(came_from):
-            return came_from
-        return None
+        from family_tree import reading_module
+        return reading_module(self._pane)
 
     def _set_availability(self, key):
         self._availability = key
