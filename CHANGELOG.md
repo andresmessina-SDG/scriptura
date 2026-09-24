@@ -51,6 +51,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
   Scriptura goes online only to download the texts you choose. Spoken
   readings go online too, so it now says so, and that Preferences can
   turn them off. The website is corrected too.
+- The ESV's info page in the module list opened on nothing: a copyright
+  sign in its About text stopped the page from being built.
 
 ## [1.7.3] — 2026-09-22
 

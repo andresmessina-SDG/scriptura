@@ -877,3 +877,14 @@ def test_it_closes_up_after_every_opening_mark():
 def test_a_guillemet_keeps_its_space():
     """French sets « » with a space by design — that one is not a defect."""
     assert sword_bridge.plain_text('« <w>mot</w> »') == '« mot »'
+
+
+def test_a_latin1_conf_value_reaches_gtk_as_clean_text():
+    """The ESV's About text carries a Latin-1 ©, which arrives as a lone
+    surrogate; GTK raised on it and the module's info page never opened."""
+    import sword_bridge
+    assert sword_bridge._conf_text('Copyright \udca9 2001') == 'Copyright © 2001'
+    assert sword_bridge._conf_text('caf\udcc3\udca9') == 'café'   # UTF-8 bytes
+    assert sword_bridge._conf_text(None) == ''
+    for text in ('Copyright \udca9 2001', 'caf\udcc3\udca9', 'plain'):
+        sword_bridge._conf_text(text).encode('utf-8')
