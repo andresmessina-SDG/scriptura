@@ -55,6 +55,7 @@ py_sources = files(
   'ebible_bridge.py',
   'empty_state.py',
   'export_dialog.py',
+  'family_card.py',
   'genbook_reader.py',
   'genealogy_bridge.py',
   'genealogy_layout.py',

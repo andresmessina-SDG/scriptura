@@ -301,6 +301,13 @@ class ModuleManagerWindow(Adw.Window):
             self._build_tab(spec)
         toolbar_view.set_content(self._stack)
 
+    def search_bibles(self, query):
+        """Open on the Bibles tab with `query` in its search — the Card's
+        Install. A search reaches every language, so the reader's language
+        filter cannot hide the Bible they asked for."""
+        self._stack.set_visible_child_name('bibles')
+        self._tabs['bibles']['search'].set_text(query)
+
     # ── One tab = one content kind ────────────────────────────────────────────
 
     def _build_tab(self, spec):

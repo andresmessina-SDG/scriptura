@@ -9905,3 +9905,253 @@ msgstr "{zone}, según sus propios traductores"
 #: annotation_dialogs.py
 msgid "Other languages"
 msgstr "Otros idiomas"
+
+#: family_card.py
+msgid "the Masoretic Text (Hebrew)"
+msgstr "el Texto Masorético (hebreo)"
+
+#: family_card.py
+msgid "the Septuagint (Greek)"
+msgstr "la Septuaginta (griego)"
+
+#: family_card.py
+msgid "the Latin Vulgate"
+msgstr "la Vulgata latina"
+
+#: family_card.py
+msgid "the Textus Receptus (Greek)"
+msgstr "el Textus Receptus (griego)"
+
+#: family_card.py
+msgid "the Majority or Byzantine text (Greek)"
+msgstr "el texto mayoritario o bizantino (griego)"
+
+#: family_card.py
+msgid "the critical text (Nestle-Aland and UBS Greek)"
+msgstr "el texto crítico (griego de Nestle-Aland y UBS)"
+
+#: family_card.py
+msgid "an earlier English Bible, reworded"
+msgstr "una Biblia inglesa anterior, reformulada"
+
+#: family_card.py
+msgid "a Spanish Bible"
+msgstr "una Biblia en español"
+
+#: family_card.py
+msgid "an eclectic text, chosen reading by reading"
+msgstr "un texto ecléctico, elegido lectura por lectura"
+
+#: family_card.py
+msgid "the Syriac Peshitta"
+msgstr "la Peshitta siríaca"
+
+#: family_card.py
+msgid "Protestant"
+msgstr "Protestante"
+
+#: family_card.py
+msgid "Catholic"
+msgstr "Católica"
+
+#: family_card.py
+msgid "Before the Reformation"
+msgstr "Anterior a la Reforma"
+
+#: family_card.py
+msgid "Jewish"
+msgstr "Judía"
+
+#: family_card.py
+msgid "Messianic Jewish"
+msgstr "Judía mesiánica"
+
+#: family_card.py
+msgid "Ecumenical"
+msgstr "Ecuménica"
+
+#: family_card.py
+msgid "Baptist"
+msgstr "Bautista"
+
+#: family_card.py
+msgid "Lutheran"
+msgstr "Luterana"
+
+#: family_card.py
+msgid "Anglican"
+msgstr "Anglicana"
+
+#: family_card.py
+msgid "Brethren"
+msgstr "Hermanos de Plymouth"
+
+#: family_card.py
+msgid "Unitarian"
+msgstr "Unitaria"
+
+#: family_card.py
+msgid "Charismatic"
+msgstr "Carismática"
+
+#: family_card.py
+msgid "Other traditions"
+msgstr "Otras tradiciones"
+
+#: family_card.py
+msgid "New Testament"
+msgstr "Nuevo Testamento"
+
+#: family_card.py
+msgid "Old Testament"
+msgstr "Antiguo Testamento"
+
+#: family_card.py
+msgid "Part of the Bible"
+msgstr "Parte de la Biblia"
+
+#: family_card.py
+msgid "Two sources agree on these facts."
+msgstr "Dos fuentes coinciden en estos datos."
+
+#: family_card.py
+msgid "These facts rest on one standard source."
+msgstr "Estos datos se apoyan en una sola fuente de referencia."
+
+#: family_card.py
+msgid "Sources disagree on some of these facts."
+msgstr "Las fuentes discrepan en algunos de estos datos."
+
+#: family_card.py
+msgid "word for word"
+msgstr "palabra por palabra"
+
+#: family_card.py
+msgid "an expanded translation"
+msgstr "una traducción ampliada"
+
+#: family_card.py
+msgid "between word for word and thought for thought"
+msgstr "entre palabra por palabra y pensamiento por pensamiento"
+
+#: family_card.py
+msgid "thought for thought"
+msgstr "pensamiento por pensamiento"
+
+#: family_card.py
+msgid "a paraphrase"
+msgstr "una paráfrasis"
+
+#: family_card.py
+msgid "It has no place on the Line."
+msgstr "No tiene lugar en la Línea."
+
+#: family_card.py
+#, python-brace-format
+msgid "{n} published chart places it in “{zone}”."
+msgid_plural "{n} published charts place it in “{zone}”."
+msgstr[0] "{n} tabla publicada la sitúa en «{zone}»."
+msgstr[1] "{n} tablas publicadas la sitúan en «{zone}»."
+
+#: family_card.py
+msgid "Scriptura measured it too; the charts’ place is the one shown."
+msgstr "Scriptura también la midió; el lugar que se muestra es el de las tablas."
+
+#: family_card.py
+#, python-brace-format
+msgid "Measured in Scriptura: “{zone}”."
+msgstr "Medida en Scriptura: «{zone}»."
+
+#: family_card.py
+msgid "It measured freer still than The Message, so it sits at the free end."
+msgstr "Resultó aún más libre que The Message, así que se sitúa en el extremo libre."
+
+#: family_card.py
+msgid "Its older English reads a little freer on the measure than it is; its place allows for that."
+msgstr "Su inglés antiguo parece algo más libre en la medición de lo que es; su lugar lo tiene en cuenta."
+
+#: family_card.py
+#, python-brace-format
+msgid "Its makers describe it as {kind}; no chart has placed it."
+msgstr "Sus traductores la describen como {kind}; ninguna tabla la ha situado."
+
+#: family_card.py
+msgid "About this translation"
+msgstr "Sobre esta traducción"
+
+#: family_card.py
+msgid "You are reading this"
+msgstr "Estás leyendo esta"
+
+#: family_card.py
+msgid "Where it lands"
+msgstr "Dónde se sitúa"
+
+#: family_card.py
+#, python-brace-format
+msgid "Near {a} and {b} on the Line."
+msgstr "Cerca de {a} y {b} en la Línea."
+
+#: family_card.py
+#, python-brace-format
+msgid "Near {a} on the Line."
+msgstr "Cerca de {a} en la Línea."
+
+#: family_card.py
+msgid "Where it came from"
+msgstr "De dónde viene"
+
+#: family_card.py
+msgid "A fresh translation, not a revision of an earlier English Bible."
+msgstr "Una traducción nueva, no una revisión de una Biblia inglesa anterior."
+
+#: family_card.py
+msgid "Newest first; each is a revision of the next, unless it says otherwise."
+msgstr "Primero la más reciente; cada una revisa la siguiente, salvo que se indique otra cosa."
+
+#: family_card.py
+msgid "reworded from the next"
+msgstr "reformulada a partir de la siguiente"
+
+#: family_card.py
+msgid "Also drew on"
+msgstr "También se apoyó en"
+
+#: family_card.py
+msgid "Later Bibles from it"
+msgstr "Biblias posteriores que parten de ella"
+
+#: family_card.py
+msgid "What it translates"
+msgstr "Qué traduce"
+
+#: family_card.py
+#, python-brace-format
+msgid "{part}: {text}"
+msgstr "{part}: {text}"
+
+#: family_card.py
+msgid "This is what explains a verse one Bible has and another does not."
+msgstr "Esto explica que una Biblia tenga un versículo y otra no."
+
+#: family_card.py
+#, python-brace-format
+msgid "Editions: {list}"
+msgstr "Ediciones: {list}"
+
+#: family_card.py
+#, python-brace-format
+msgid "Sources differ: {what}"
+msgstr "Las fuentes difieren: {what}"
+
+#: family_card.py
+msgid "Sources"
+msgstr "Fuentes"
+
+#: family_card.py
+msgid "Open in this pane"
+msgstr "Abrir en este panel"
+
+#: family_card.py
+msgid "Compare this verse"
+msgstr "Comparar este versículo"

@@ -13,10 +13,8 @@ functions in this module.
 """
 
 import logging
-import math
 import re
 import threading
-import cairo
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
@@ -26,6 +24,7 @@ from a11y import set_accessible_description, set_accessible_label, set_role
 from gtk_utils import Autosave, clear_children, DelayedSpinner
 import annotations
 import bible_family
+from family_card import paint_track
 import content
 import journal
 import sermons
@@ -787,62 +786,8 @@ def _line_tick(spot, words):
     area.set_valign(Gtk.Align.CENTER)
     area.set_tooltip_text(words)
     area.set_draw_func(
-        lambda a, cr, w, h: _paint_tick(cr, w, h, spot, a.get_color()))
+        lambda a, cr, w, h: paint_track(cr, w, h, spot, a.get_color()))
     return area
-
-
-def _paint_tick(cr, w, h, spot, ink):
-    """Paint `_line_tick`'s track and mark in `ink` (a Gdk.RGBA)."""
-    pad, r, cy = 4.0, 3.0, h / 2
-
-    def x(v):
-        return pad + min(max(v, 0.0), 1.0) * (w - 2 * pad)
-
-    def faint(alpha=0.3):
-        cr.set_source_rgba(ink.red, ink.green, ink.blue, alpha)
-
-    # A ring must read as hollow: nothing of the track crosses its inside.
-    hole = ((x(spot.value) - r - 1, x(spot.value) + r + 1)
-            if spot.kind == 'measured' else None)
-    faint()
-    cr.set_line_width(1.0)
-    segments = [(pad, w - pad)] if hole is None else \
-        [(pad, hole[0]), (hole[1], w - pad)]
-    for a, b in segments:
-        if b > a:
-            cr.move_to(a, cy)
-            cr.line_to(b, cy)
-    for bound, _name in bible_family.ZONES[:-1]:
-        tx = round(x(bound)) + 0.5
-        if hole is None or not hole[0] <= tx <= hole[1]:
-            cr.move_to(tx, cy - 2.5)
-            cr.line_to(tx, cy + 2.5)
-    cr.stroke()
-
-    if spot.kind == 'band':
-        faint(0.25)
-        cr.set_line_width(5.0)
-        cr.set_line_cap(cairo.LINE_CAP_ROUND)
-        cr.move_to(x(spot.low), cy)
-        cr.line_to(x(spot.high), cy)
-        cr.stroke()
-        cr.set_source_rgba(ink.red, ink.green, ink.blue, 1.0)
-        cr.arc(x(spot.value), cy, r, 0, 2 * math.pi)
-        cr.fill()
-    elif spot.kind == 'measured':
-        cr.set_source_rgba(ink.red, ink.green, ink.blue, 1.0)
-        cr.set_line_width(1.4)
-        cr.arc(x(spot.value), cy, r - 0.3, 0, 2 * math.pi)
-        cr.stroke()
-    else:
-        cr.set_source_rgba(ink.red, ink.green, ink.blue, 0.8)
-        cr.set_line_width(1.4)
-        lo, hi = x(spot.low) + 2, x(spot.high) - 2
-        cr.move_to(lo, cy - 3.5)
-        cr.line_to(lo, cy - 1)
-        cr.line_to(hi, cy - 1)
-        cr.line_to(hi, cy - 3.5)
-        cr.stroke()
 
 
 def _open_journal_on(pane, parent_popover):

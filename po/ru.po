@@ -9856,3 +9856,254 @@ msgstr "{zone}, по словам самих переводчиков"
 #: annotation_dialogs.py
 msgid "Other languages"
 msgstr "Другие языки"
+
+#: family_card.py
+msgid "the Masoretic Text (Hebrew)"
+msgstr "масоретский текст (иврит)"
+
+#: family_card.py
+msgid "the Septuagint (Greek)"
+msgstr "Септуагинта (греческий)"
+
+#: family_card.py
+msgid "the Latin Vulgate"
+msgstr "латинская Вульгата"
+
+#: family_card.py
+msgid "the Textus Receptus (Greek)"
+msgstr "Textus Receptus (греческий)"
+
+#: family_card.py
+msgid "the Majority or Byzantine text (Greek)"
+msgstr "текст большинства, или византийский (греческий)"
+
+#: family_card.py
+msgid "the critical text (Nestle-Aland and UBS Greek)"
+msgstr "критический текст (греческий, Нестле — Аланд и UBS)"
+
+#: family_card.py
+msgid "an earlier English Bible, reworded"
+msgstr "пересказ более ранней английской Библии"
+
+#: family_card.py
+msgid "a Spanish Bible"
+msgstr "испанская Библия"
+
+#: family_card.py
+msgid "an eclectic text, chosen reading by reading"
+msgstr "эклектический текст, где каждое чтение выбрано отдельно"
+
+#: family_card.py
+msgid "the Syriac Peshitta"
+msgstr "сирийская Пешитта"
+
+#: family_card.py
+msgid "Protestant"
+msgstr "Протестантская"
+
+#: family_card.py
+msgid "Catholic"
+msgstr "Католическая"
+
+#: family_card.py
+msgid "Before the Reformation"
+msgstr "До Реформации"
+
+#: family_card.py
+msgid "Jewish"
+msgstr "Иудейская"
+
+#: family_card.py
+msgid "Messianic Jewish"
+msgstr "Мессианская иудейская"
+
+#: family_card.py
+msgid "Ecumenical"
+msgstr "Экуменическая"
+
+#: family_card.py
+msgid "Baptist"
+msgstr "Баптистская"
+
+#: family_card.py
+msgid "Lutheran"
+msgstr "Лютеранская"
+
+#: family_card.py
+msgid "Anglican"
+msgstr "Англиканская"
+
+#: family_card.py
+msgid "Brethren"
+msgstr "Плимутские братья"
+
+#: family_card.py
+msgid "Unitarian"
+msgstr "Унитарианская"
+
+#: family_card.py
+msgid "Charismatic"
+msgstr "Харизматическая"
+
+#: family_card.py
+msgid "Other traditions"
+msgstr "Другие традиции"
+
+#: family_card.py
+msgid "New Testament"
+msgstr "Новый Завет"
+
+#: family_card.py
+msgid "Old Testament"
+msgstr "Ветхий Завет"
+
+#: family_card.py
+msgid "Part of the Bible"
+msgstr "Часть Библии"
+
+#: family_card.py
+msgid "Two sources agree on these facts."
+msgstr "Два источника сходятся в этих фактах."
+
+#: family_card.py
+msgid "These facts rest on one standard source."
+msgstr "Эти факты опираются на один стандартный источник."
+
+#: family_card.py
+msgid "Sources disagree on some of these facts."
+msgstr "Источники расходятся в некоторых из этих фактов."
+
+#: family_card.py
+msgid "word for word"
+msgstr "дословный"
+
+#: family_card.py
+msgid "an expanded translation"
+msgstr "расширенный перевод"
+
+#: family_card.py
+msgid "between word for word and thought for thought"
+msgstr "промежуточный между дословным и смысловым"
+
+#: family_card.py
+msgid "thought for thought"
+msgstr "смысловой"
+
+#: family_card.py
+msgid "a paraphrase"
+msgstr "пересказ"
+
+#: family_card.py
+msgid "It has no place on the Line."
+msgstr "У него нет места на Линии."
+
+#: family_card.py
+#, python-brace-format
+msgid "{n} published chart places it in “{zone}”."
+msgid_plural "{n} published charts place it in “{zone}”."
+msgstr[0] "{n} опубликованная таблица помещает его в зону «{zone}»."
+msgstr[1] "{n} опубликованные таблицы помещают его в зону «{zone}»."
+msgstr[2] "{n} опубликованных таблиц помещают его в зону «{zone}»."
+
+#: family_card.py
+msgid "Scriptura measured it too; the charts’ place is the one shown."
+msgstr "Scriptura тоже измерила его; показано место по таблицам."
+
+#: family_card.py
+#, python-brace-format
+msgid "Measured in Scriptura: “{zone}”."
+msgstr "Измерено в Scriptura: «{zone}»."
+
+#: family_card.py
+msgid "It measured freer still than The Message, so it sits at the free end."
+msgstr "По измерению он ещё свободнее, чем The Message, поэтому стоит у свободного края."
+
+#: family_card.py
+msgid "Its older English reads a little freer on the measure than it is; its place allows for that."
+msgstr "Его старый английский при измерении кажется чуть свободнее, чем есть; его место это учитывает."
+
+#: family_card.py
+#, python-brace-format
+msgid "Its makers describe it as {kind}; no chart has placed it."
+msgstr "Переводчики называют его так: {kind}; ни одна таблица его не размещала."
+
+#: family_card.py
+msgid "About this translation"
+msgstr "Об этом переводе"
+
+#: family_card.py
+msgid "You are reading this"
+msgstr "Вы читаете этот перевод"
+
+#: family_card.py
+msgid "Where it lands"
+msgstr "Где он стоит"
+
+#: family_card.py
+#, python-brace-format
+msgid "Near {a} and {b} on the Line."
+msgstr "Рядом с {a} и {b} на Линии."
+
+#: family_card.py
+#, python-brace-format
+msgid "Near {a} on the Line."
+msgstr "Рядом с {a} на Линии."
+
+#: family_card.py
+msgid "Where it came from"
+msgstr "Откуда он"
+
+#: family_card.py
+msgid "A fresh translation, not a revision of an earlier English Bible."
+msgstr "Новый перевод, а не редакция более ранней английской Библии."
+
+#: family_card.py
+msgid "Newest first; each is a revision of the next, unless it says otherwise."
+msgstr "Сначала самый новый; каждый — редакция следующего, если не сказано иное."
+
+#: family_card.py
+msgid "reworded from the next"
+msgstr "пересказ следующего"
+
+#: family_card.py
+msgid "Also drew on"
+msgstr "Опирался также на"
+
+#: family_card.py
+msgid "Later Bibles from it"
+msgstr "Позднейшие Библии на его основе"
+
+#: family_card.py
+msgid "What it translates"
+msgstr "Что он переводит"
+
+#: family_card.py
+#, python-brace-format
+msgid "{part}: {text}"
+msgstr "{part}: {text}"
+
+#: family_card.py
+msgid "This is what explains a verse one Bible has and another does not."
+msgstr "Этим объясняется, почему стих есть в одной Библии и нет в другой."
+
+#: family_card.py
+#, python-brace-format
+msgid "Editions: {list}"
+msgstr "Издания: {list}"
+
+#: family_card.py
+#, python-brace-format
+msgid "Sources differ: {what}"
+msgstr "Источники расходятся: {what}"
+
+#: family_card.py
+msgid "Sources"
+msgstr "Источники"
+
+#: family_card.py
+msgid "Open in this pane"
+msgstr "Открыть в этой панели"
+
+#: family_card.py
+msgid "Compare this verse"
+msgstr "Сравнить этот стих"

@@ -23,6 +23,7 @@ import functools
 import logging
 import os
 import tomllib
+from urllib.parse import quote
 from typing import NamedTuple
 
 import ebible_bridge
@@ -65,38 +66,67 @@ class Place(NamedTuple):
 
 
 @functools.cache
-def _by_module() -> dict[str, dict]:
+def _data() -> dict:
     try:
         with open(_DATA_FILE, 'rb') as f:
-            data = tomllib.load(f)
+            return tomllib.load(f)
     except (OSError, tomllib.TOMLDecodeError) as e:
         _log.warning('Bible family data unreadable: %s', e)
         return {}
-    return {mod: node for node in data.get('node', [])
+
+
+@functools.cache
+def _by_id() -> dict[str, dict]:
+    return {n['id']: n for n in _data().get('node', [])}
+
+
+@functools.cache
+def _by_module() -> dict[str, dict]:
+    return {mod: node for node in _data().get('node', [])
             for mod in node.get('installable', [])}
 
 
-def place(module: str) -> Place | None:
-    """Where `module` sits on the Line, or None when nothing places it.
+def node(node_id: str) -> dict | None:
+    """One Bible's record from the data file, by its id."""
+    return _by_id().get(node_id)
+
+
+def node_for_module(module: str) -> dict | None:
+    """The Bible an installed module is a text of, or None.
 
     `module` is the app's key: a SWORD name, or an eBible id behind
     `ebible_bridge.PREFIX`. The data file holds bare ids for both."""
-    node = _by_module().get(module.removeprefix(ebible_bridge.PREFIX))
-    if node is None:
-        return None
-    sp = node.get('spectrum', {})
+    return _by_module().get(module.removeprefix(ebible_bridge.PREFIX))
+
+
+def installed_module(node_id: str, installed: list[str]) -> str | None:
+    """The first of `installed` (app keys) that is a text of this Bible."""
+    return next((m for m in installed
+                 if (n := node_for_module(m)) is not None
+                 and n['id'] == node_id), None)
+
+
+def place_of(record: dict) -> Place | None:
+    """Where a Bible's record sits on the Line, or None."""
+    sp = record.get('spectrum', {})
     if 'band' in sp:
         low, median, high = sp['band']
         return Place('band', median, low, high)
     if 'measured' in sp:
         v = sp['measured']
-        if node.get('archaic'):
+        if record.get('archaic'):
             v -= ARCHAIC_PENALTY
         return Place('measured', v, v, v)
     span = _CLASS_SPANS.get(sp.get('class', ''))
     if span is not None:
         return Place('class', (span[0] + span[1]) / 2, *span)
     return None
+
+
+def place(module: str) -> Place | None:
+    """Where the installed `module` sits on the Line, or None."""
+    record = node_for_module(module)
+    return place_of(record) if record is not None else None
 
 
 def zone_label(value: float) -> str:
@@ -110,3 +140,135 @@ def order_by_line(modules: list[str]) -> list[str]:
     placed.sort(key=lambda pm: pm[0])
     rest = [m for m in modules if place(m) is None]
     return [m for _v, m in placed] + rest
+
+
+# ── descent ───────────────────────────────────────────────────────────────
+#
+# Edge kinds: 'rev' a revision of, 'para' reworded from (an English Bible,
+# §9d), 'drew' drew on — a secondary debt, never the main line.
+
+def _edges() -> list[dict]:
+    edges: list[dict] = _data().get('edge', [])
+    return edges
+
+
+def descent(node_id: str) -> list[tuple[dict, str | None]]:
+    """The main line back to the root: [(this Bible, None), (its parent,
+    'rev' | 'para'), …]. Where a Bible has two parents (Matthew's Bible,
+    the NIV 2011) the first in the file is the main line; the other is
+    listed by `drew_on`."""
+    path: list[tuple[dict, str | None]] = []
+    seen = set()
+    cur, rel = node(node_id), None
+    while cur is not None and cur['id'] not in seen:
+        seen.add(cur['id'])
+        path.append((cur, rel))
+        up = next((e for e in _edges()
+                   if e['to'] == cur['id'] and e['type'] != 'drew'), None)
+        cur, rel = (node(up['from']), up['type']) if up else (None, None)
+    return path
+
+
+def drew_on(node_id: str) -> list[dict]:
+    """Every other Bible this one owes something to: its 'drew on' debts,
+    and any second parent the main line passed over."""
+    main = descent(node_id)
+    parent = main[1][0]['id'] if len(main) > 1 else None
+    return [n for e in _edges()
+            if e['to'] == node_id and e['from'] != parent
+            and (n := node(e['from'])) is not None]
+
+
+def descendants(node_id: str) -> list[dict]:
+    """The Bibles that revise, reword or draw on this one."""
+    return [n for e in _edges()
+            if e['from'] == node_id and (n := node(e['to'])) is not None]
+
+
+def neighbours(node_id: str) -> tuple[dict | None, dict | None]:
+    """The nearest Bibles either side on the Line that published charts
+    place — the ones a reader is likely to know. (None, None) when this
+    Bible has no point of its own: no place, or only its makers' word for
+    a whole zone, whose middle is not a position to stand next to."""
+    me = node(node_id)
+    here = place_of(me) if me else None
+    if here is None or here.kind == 'class':
+        return None, None
+    charted = [(p.value, n) for n in _data().get('node', [])
+               if n['id'] != node_id and (p := place_of(n)) is not None
+               and p.kind == 'band']
+    below = [pn for pn in charted if pn[0] <= here.value]
+    above = [pn for pn in charted if pn[0] > here.value]
+    return (max(below, key=lambda pn: pn[0])[1] if below else None,
+            min(above, key=lambda pn: pn[0])[1] if above else None)
+
+
+# ── words for the Card ────────────────────────────────────────────────────
+
+BASE_TEXTS = {
+    'MT': N_('the Masoretic Text (Hebrew)'),
+    'LXX': N_('the Septuagint (Greek)'),
+    'VUL': N_('the Latin Vulgate'),
+    'TR': N_('the Textus Receptus (Greek)'),
+    'MAJ': N_('the Majority or Byzantine text (Greek)'),
+    'CT': N_('the critical text (Nestle-Aland and UBS Greek)'),
+    'ENG': N_('an earlier English Bible, reworded'),
+    'SPA': N_('a Spanish Bible'),
+    'MIX': N_('an eclectic text, chosen reading by reading'),
+    'SYR': N_('the Syriac Peshitta'),
+}
+
+TRADITIONS = {
+    'protestant': N_('Protestant'), 'catholic': N_('Catholic'),
+    'catholic-era': N_('Before the Reformation'),
+    'orthodox': N_('Orthodox'), 'jewish': N_('Jewish'),
+    'messianic': N_('Messianic Jewish'), 'ecumenical': N_('Ecumenical'),
+    'baptist': N_('Baptist'), 'lutheran': N_('Lutheran'),
+    'anglican': N_('Anglican'), 'brethren': N_('Brethren'),
+    'unitarian': N_('Unitarian'), 'charismatic': N_('Charismatic'),
+    'other': N_('Other traditions'),
+}
+
+SCOPES = {
+    'bible': N_('Whole Bible'), 'nt': N_('New Testament'),
+    'ot': N_('Old Testament'), 'partial': N_('Part of the Bible'),
+}
+
+CONFIDENCE = {
+    'checked': N_('Two sources agree on these facts.'),
+    'reference': N_('These facts rest on one standard source.'),
+    'disputed': N_('Sources disagree on some of these facts.'),
+}
+
+_WIKI = 'https://en.wikipedia.org/wiki/'
+_CROSSWIRE = 'https://www.crosswire.org/sword/modules/ModInfo.jsp?modName='
+
+
+def source(key: str) -> tuple[str, str | None]:
+    """A citation key as (label, URL or None). Labels are English, like the
+    facts they stand behind."""
+    named = _data().get('source', {})
+    if key in named:
+        text = named[key]
+        url, _sep, rest = text.partition(' ')
+        if url.startswith('http'):
+            if url.startswith(_WIKI):
+                title = url[len(_WIKI):].replace('_', ' ')
+                return f'Wikipedia: {title}', url
+            host = url.split('/')[2].removeprefix('www.')
+            return host, url
+        return text.split(' — ')[0], None
+    kind, _sep, arg = key.partition(':')
+    if kind == 'wp':
+        title = _data().get('wikipedia', {}).get(arg)
+        if title:
+            return (f'Wikipedia: {title}',
+                    _WIKI + quote(title.replace(' ', '_'), safe="'(),_"))
+        return f'Wikipedia ({arg})', None
+    if kind == 'conf':
+        return f'CrossWire: {arg}', _CROSSWIRE + arg
+    if kind == 'bg':
+        return f'Bible Gateway: {arg}', None
+    if kind == 'br':
+        return f'bible-researcher.com ({arg})', None
+    return key, None

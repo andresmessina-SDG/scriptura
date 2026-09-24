@@ -45,6 +45,16 @@ semver-ish — 0.x was the pre-Flathub testing track.
   reading aids, and backing up your study data. Tips, keyboard shortcuts
   and About are under Help, each with its name.
 
+### Added
+
+- **About this translation.** For an English Bible, the module list's
+  info page now opens a card beside the page: where the Bible sits from
+  word for word to free, the line of Bibles it was revised from, the
+  Hebrew and Greek texts it translates, notes, and the sources behind
+  every fact. Each Bible it names opens its own card. From the card you
+  can open the Bible in the pane, install it, or compare the verse you
+  are on.
+
 ### Fixed
 
 - **The store listing tells the truth about going online.** It said

@@ -11,10 +11,11 @@ GenbookReader, CatenaReader, and PaneSearch.
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, Pango
+from gi.repository import Gtk, Adw, GLib, Pango
 from a11y import set_accessible_label
 from gtk_utils import clear_children
 
+import bible_family
 import sword_bridge
 import content
 from i18n import _
@@ -465,6 +466,21 @@ class ModulePicker:
 
         info = content.info(name)
 
+        # The Bible Family Tree's Card, for the Bibles it knows.
+        record = bible_family.node_for_module(name)
+        if record is not None:
+            inner = Gtk.Box(spacing=6)
+            inner.append(Gtk.Label(label=_('About this translation'),
+                                   xalign=0, hexpand=True))
+            inner.append(Gtk.Image.new_from_icon_name(
+                'scriptura-go-next-symbolic'))
+            about = Gtk.Button(child=inner)
+            about.add_css_class('module-family-link')
+            set_accessible_label(about, _('About this translation'))
+            about.connect('clicked',
+                          lambda _b, _id=record['id']: self._open_card(_id))
+            self._info_body.append(about)
+
         def _add_field(label, value, multiline=False):
             if not value:
                 return
@@ -495,6 +511,16 @@ class ModulePicker:
             self._info_body.append(empty)
 
         self._stack.set_visible_child_name('info')
+
+    def _open_card(self, node_id):
+        """Close the picker, then open the Card beside the page. On the next
+        idle, so the popover has finished closing first."""
+        self._popover.popdown()
+        root = self._pane.get_root()
+        if root is None or not hasattr(root, 'show_family_card'):
+            return
+        GLib.idle_add(lambda: root.show_family_card(node_id, self._pane)
+                      or GLib.SOURCE_REMOVE)
 
     def _can_remove(self, name):
         """Removable only if it isn't the pane's last module and isn't a

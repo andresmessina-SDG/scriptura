@@ -1552,7 +1552,7 @@ by = "Biblical Studies Press"
 check = "disputed"
 dispute = "first edition 2005 (Wikipedia list) or 2006 (Wikipedia article)"
 installable = ["NETfree", "NETtext", "engnet"]
-note = "Text leans functional; its 60,932 notes are formal. The Line places the text; the Card explains the notes."
+note = "Text leans functional; its 60,932 notes give the formal wording. The Line places the text."
 src = ["wp:net", "wl"]
 [node.spectrum]
 band = [0.60, 0.60, 0.60]
@@ -1814,7 +1814,7 @@ year = 2017
 year_label = "2017 (NT); whole Bible planned"
 by = "Brian Simmons; BroadStreet"
 check = "checked"
-note = "Widely read; removed from Bible Gateway in January 2022; published scholars dispute whether it is a translation."
+note = "Widely read; removed from Bible Gateway in January 2022. Published scholars dispute whether it is a translation: Andrew Wilson calls it \"not really a translation\", and Andrew Shead finds it \"at least 50% longer than the original\"."
 src = ["wp:tpt"]
 [node.spectrum]
 class = "disputed-translation"
@@ -2673,3 +2673,47 @@ ebible-cat = "https://ebible.org/Scriptures/translations.csv"
 # bg:<ABBR> = https://www.biblegateway.com/versions/ page for that abbreviation;
 # br:<page> = https://www.bible-researcher.com/<page>.html;
 # conf:<Module> = the module's .conf in the CrossWire catalogue (About/History).
+
+# Wikipedia articles behind the wp:<key> citations, by title (each checked
+# against the Wikipedia API on 2026-09-24; cjb and nog land on a section of
+# a wider article, which is where Wikipedia covers them).
+[wikipedia]
+"bishops" = "Bishops' Bible"
+"cev" = "Contemporary English Version"
+"cjb" = "Complete Jewish Bible"
+"douay-rheims" = "Douay–Rheims Bible"
+"english-translations" = "Bible translations into English"
+"esv" = "English Standard Version"
+"fnv" = "First Nations Version"
+"geneva" = "Geneva Bible"
+"great" = "Great Bible"
+"gw" = "God's Word Translation"
+"hcsb" = "Holman Christian Standard Bible"
+"jps1917" = "Jewish Publication Society of America Version"
+"kjv" = "King James Version"
+"leb" = "Lexham English Bible"
+"leningrad" = "Leningrad Codex"
+"lsv" = "Literal Standard Version"
+"mev" = "Modern English Version"
+"nab" = "New American Bible"
+"nasb" = "New American Standard Bible"
+"ncv" = "New Century Version"
+"net" = "New English Translation"
+"niv" = "New International Version"
+"njps" = "New Jewish Publication Society of America Tanakh"
+"nkjv" = "New King James Version"
+"nlt" = "New Living Translation"
+"nlv" = "New Life Version"
+"nog" = "Names of God Bible"
+"oeb" = "Open English Bible"
+"osb" = "Orthodox Study Bible"
+"rnjb" = "Revised New Jerusalem Bible"
+"rsv" = "Revised Standard Version"
+"rsvce" = "Revised Standard Version Catholic Edition"
+"rv" = "Revised Version"
+"tlv" = "Tree of Life Version"
+"tpt" = "The Passion Translation"
+"tyndale" = "Tyndale Bible"
+"voice" = "The Voice (Bible translation)"
+"web" = "World English Bible"
+"wycliffe" = "Wycliffe's Bible"

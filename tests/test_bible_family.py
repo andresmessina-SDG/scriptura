@@ -173,11 +173,11 @@ def _paint(spot):
     """Paint the tick at its real size; return the alpha channel by row."""
     import cairo
     from collections import namedtuple
-    import annotation_dialogs
+    import family_card
     w, h = 56, 12
     surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
     ink = namedtuple('Ink', 'red green blue')(0.0, 0.0, 0.0)
-    annotation_dialogs._paint_tick(cairo.Context(surf), w, h, spot, ink)
+    family_card.paint_track(cairo.Context(surf), w, h, spot, ink)
     surf.flush()
     data, stride = surf.get_data(), surf.get_stride()
     return lambda x, y: data[y * stride + x * 4 + 3]
@@ -237,3 +237,59 @@ def test_compare_never_opens_empty_behind_the_switch():
 def test_other_languages_start_hidden():
     import settings
     assert settings.default('compare_other_languages') is False
+
+
+# ── descent and the Card's facts ───────────────────────────────────────────
+
+def test_descent_runs_back_to_the_root():
+    path = [(n['id'], rel) for n, rel in bf.descent('nasb2020')]
+    assert path[0] == ('nasb2020', None)
+    assert path[-1][0] == 'tyndale'
+    assert ('kjv', 'rev') in path
+
+
+def test_a_reworded_bible_says_so():
+    path = [(n['id'], rel) for n, rel in bf.descent('tlb')]
+    assert path[1] == ('asv', 'para')
+
+
+def test_a_second_parent_is_not_lost():
+    """Matthew's Bible revised Tyndale AND Coverdale: the main line takes
+    the first, and the other is still named."""
+    assert bf.descent('matthew')[1][0]['id'] == 'tyndale'
+    assert [n['id'] for n in bf.drew_on('matthew')] == ['coverdale']
+
+
+def test_neighbours_are_charted_bibles_either_side():
+    below, above = bf.neighbours('esv')
+    esv = bf.place_of(BY_ID['esv']).value
+    for n in (below, above):
+        assert bf.place_of(n).kind == 'band'
+    assert bf.place_of(below).value <= esv < bf.place_of(above).value
+    assert bf.neighbours('tpt') == (None, None)
+
+
+def test_every_citation_has_a_label_and_wikipedia_ones_a_link():
+    for n in NODES:
+        for key in n.get('src', []):
+            label, url = bf.source(key)
+            assert label, key
+            if key.startswith('wp:'):
+                assert url and url.startswith('https://en.wikipedia.org/wiki/'), key
+
+
+def test_every_card_code_has_words():
+    for n in TRANSLATIONS:
+        assert n['tradition'] in bf.TRADITIONS, n['id']
+        assert n['scope'] in bf.SCOPES, n['id']
+        assert n['check'] in bf.CONFIDENCE, n['id']
+        for f in ('base_ot', 'base_nt'):
+            if f in n:
+                assert n[f] in bf.BASE_TEXTS, (n['id'], n[f])
+
+
+def test_installed_module_matches_by_bible_not_by_name():
+    assert bf.installed_module('kjv', ['RusSynodal', 'KJVA']) == 'KJVA'
+    assert bf.installed_module(
+        'web', [bf.ebible_bridge.PREFIX + 'engwebp']) is not None
+    assert bf.installed_module('esv', ['KJVA']) is None
