@@ -11,6 +11,7 @@ archaeology_reader.py
 archaeology_strings.py
 audio_pill.py
 audio_surfaces.py
+bible_family.py
 catena_bridge.py
 catena_reader.py
 church_year.py

@@ -9821,3 +9821,38 @@ msgstr "Не удалось открыть окно выбора файлов"
 #, python-brace-format
 msgid "About {n} MB"
 msgstr "Около {n} МБ"
+
+#: bible_family.py
+msgid "Word for word"
+msgstr "Дословно"
+
+#: bible_family.py
+msgid "Between"
+msgstr "Посередине"
+
+#: bible_family.py
+msgid "Thought for thought"
+msgstr "По смыслу"
+
+#: bible_family.py
+msgid "Free"
+msgstr "Свободно"
+
+#: annotation_dialogs.py
+#, python-brace-format
+msgid "{zone}, where published charts place it"
+msgstr "{zone}, по опубликованным таблицам"
+
+#: annotation_dialogs.py
+#, python-brace-format
+msgid "{zone}, as measured in Scriptura"
+msgstr "{zone}, по измерению Scriptura"
+
+#: annotation_dialogs.py
+#, python-brace-format
+msgid "{zone}, as its makers describe it"
+msgstr "{zone}, по словам самих переводчиков"
+
+#: annotation_dialogs.py
+msgid "Other languages"
+msgstr "Другие языки"

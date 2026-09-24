@@ -9870,3 +9870,38 @@ msgstr "No se pudo abrir el selector de archivos"
 #, python-brace-format
 msgid "About {n} MB"
 msgstr "Unos {n} MB"
+
+#: bible_family.py
+msgid "Word for word"
+msgstr "Palabra por palabra"
+
+#: bible_family.py
+msgid "Between"
+msgstr "Intermedia"
+
+#: bible_family.py
+msgid "Thought for thought"
+msgstr "Pensamiento por pensamiento"
+
+#: bible_family.py
+msgid "Free"
+msgstr "Libre"
+
+#: annotation_dialogs.py
+#, python-brace-format
+msgid "{zone}, where published charts place it"
+msgstr "{zone}, según las tablas publicadas"
+
+#: annotation_dialogs.py
+#, python-brace-format
+msgid "{zone}, as measured in Scriptura"
+msgstr "{zone}, según la medición de Scriptura"
+
+#: annotation_dialogs.py
+#, python-brace-format
+msgid "{zone}, as its makers describe it"
+msgstr "{zone}, según sus propios traductores"
+
+#: annotation_dialogs.py
+msgid "Other languages"
+msgstr "Otros idiomas"

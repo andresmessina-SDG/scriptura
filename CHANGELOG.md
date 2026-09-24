@@ -15,6 +15,13 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Changed
 
+- **Compare runs from word for word to free.** Comparing a verse now lists
+  your English Bibles from the most literal to the freest, each with a
+  small mark showing where it sits. A filled dot means published charts
+  place it there; a ring means Scriptura measured it. Hover the mark to
+  read which. Compare now shows only the Bibles in the language you are
+  reading; the Other languages switch at the top adds the rest, and the
+  app remembers your choice.
 - **The chapter's first line keeps the rhythm.** The large first letter
   made the gap under the first line about a third wider than every other
   line. That line now steps like the rest, at every line spacing, and the

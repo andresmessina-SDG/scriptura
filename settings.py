@@ -109,6 +109,10 @@ _defaults: dict[str, Any] = {
     # them. On by default — the controls only ever appear where audio exists;
     # off withdraws them entirely for readers who want none.
     'show_audio':         True,
+    # Compare shows the Bibles in the language being read; this adds every
+    # other language. Off by default (decided 2026-09-24): a compare reads
+    # within one language, and the switch sits in the compare popover.
+    'compare_other_languages': False,
     # How fast the spoken chapter is read, as a multiple of the narrator's own
     # pace. Stored for the app rather than per chapter: a reader following the
     # text has found the speed they read at, not the speed for John 3. Souer

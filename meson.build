@@ -42,6 +42,7 @@ py_sources = files(
   'audio_surfaces.py',
   'backup.py',
   'bible_audio.py',
+  'bible_family.py',
   'bookmarks.py',
   'catena_bridge.py',
   'catena_reader.py',
