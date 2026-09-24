@@ -293,3 +293,42 @@ def test_installed_module_matches_by_bible_not_by_name():
     assert bf.installed_module(
         'web', [bf.ebible_bridge.PREFIX + 'engwebp']) is not None
     assert bf.installed_module('esv', ['KJVA']) is None
+
+
+# ── the Line's filters ─────────────────────────────────────────────────────
+
+def test_every_bible_has_one_tradition_chip_and_one_era():
+    chips = {k for k, _label in bf.TRADITION_CHIPS}
+    for r in bf.translations():
+        assert bf.tradition_chip(r) in chips, r['id']
+        assert 0 <= bf.era(r) < len(bf.ERAS), r['id']
+
+
+def test_the_tradition_rulings_hold():
+    """Decided 2026-09-24: historic Protestant apart from Pentecostal and
+    Charismatic; the Restoration Movement and Wycliffe count as Protestant."""
+    chip = {r['id']: bf.tradition_chip(r) for r in bf.translations()}
+    assert chip['tpt'] == 'pentecostal'
+    assert chip['living-oracles'] == chip['rotherham'] == 'protestant'
+    assert chip['wycliffe'] == 'protestant'
+    assert chip['noyes'] == chip['diaglott'] == 'other'
+    assert chip['nrsv'] == 'ecumenical'
+    assert chip['cjb'] == chip['njps'] == 'jewish'
+    assert chip['mev'] == 'protestant'
+
+
+def test_era_boundaries():
+    assert [bf.era({'year': y}) for y in (1382, 1610, 1611, 1899, 1900,
+                                          1969, 1970, 2020)] == \
+        [0, 0, 1, 1, 2, 2, 3, 3]
+
+
+def test_the_family_module_is_known_to_the_app():
+    import content
+    import sword_bridge
+    assert bf.module_names() == [bf.MODULE_KEY]
+    assert content.type_key(bf.MODULE_KEY) == 'family'
+    assert bf.MODULE_KEY in content.readable_module_names()
+    assert sword_bridge.display_name(bf.MODULE_KEY) == 'The Bible Family Tree'
+    assert content.feature_card(bf.MODULE_KEY)['icon'] == \
+        'scriptura-bible-family-symbolic'

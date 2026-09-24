@@ -35,7 +35,7 @@ def _fake_pane():
         book='John', chapter=3, _selected_verse=None, module='TAGNT',
         _catena=_Reader(), _imagery=_Reader(), _archaeology=_Reader(),
         _interlinear=_Reader(), _genbook=_Reader(),
-        _genealogy=_Reader(), pane_calls=[])
+        _genealogy=_Reader(), _family_line=_Reader(), pane_calls=[])
     # Text-view strategies delegate to pane methods; record those calls.
     for m in ('_render_bible_chapter', '_fetch_and_render_devotional',
               '_display_unsupported_module', '_broadcast_verse_to_text'):
@@ -48,9 +48,9 @@ def test_build_keys_match_the_registry_card_modes():
     p = _fake_pane()
     contents = pane_content.build(p)
     assert set(contents) == {'imagery', 'catena', 'archaeology',
-                             'genealogy', 'interlinear'}
+                             'genealogy', 'family', 'interlinear'}
     assert {k: c.stack_child for k, c in contents.items()} == {
-        'genealogy': 'genealogy',
+        'genealogy': 'genealogy', 'family': 'family',
         'imagery': 'imagery', 'catena': 'catena',
         'archaeology': 'archaeology', 'interlinear': 'interlinear'}
 
@@ -124,3 +124,4 @@ def test_font_size_scales_only_the_document_modes():
     assert p._archaeology.calls == [('apply_font_size', (18,))]
     assert p._imagery.calls == []       # card views don't re-scale
     assert p._interlinear.calls == []
+    assert p._family_line.calls == []   # the Line is chrome, not reading text

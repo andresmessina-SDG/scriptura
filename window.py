@@ -831,6 +831,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             on_compare=self._family_card_compare,
         )
         self._card_pane = None
+        self._card_from = None
         self._card_split = Adw.OverlaySplitView()
         self._card_split.add_css_class('search-split')
         self._card_split.set_collapsed(True)
@@ -1503,16 +1504,34 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
     # ── The Bible Family Tree's Card ──────────────────────────────────────────
 
     def show_family_card(self, node_id, pane):
-        """Open the Card on one Bible, for the pane it was asked from."""
-        self._card_pane = pane
-        self._family_card.show(node_id, pane._names, pane.module)
+        """Open the Card on one Bible, for the pane it was asked from.
+
+        From the Line, the Card acts on the Bible beside it: Open goes to the
+        other pane when one is showing, and Compare needs a verse, so it is
+        offered only when there is a Bible pane to compare from."""
+        bible_pane, reading, open_here = pane, pane.module, True
+        if pane._is_family:
+            other = self.pane2 if pane is self.pane1 else self.pane1
+            shown = other.get_visible() and not other._is_family
+            bible_pane = other if shown else None
+            reading = pane._family_line.reading_module() or ''
+            open_here = not shown
+        self._card_pane = bible_pane or pane
+        self._card_from = pane
+        self._family_card.show(node_id, pane._names, reading,
+                               open_here=open_here,
+                               can_compare=bible_pane is not None)
         self._card_split.set_show_sidebar(True)
         self._family_card.focus_start()
 
     def _hide_family_card(self):
         self._card_split.set_show_sidebar(False)
-        if self._card_pane is not None:
-            self._card_pane.view.grab_focus()
+        # Back where the reader was: the Line's row, or the page.
+        src = self._card_from
+        if src is not None and src._is_family:
+            src._family_line.focus_last()
+        elif src is not None:
+            src.view.grab_focus()
 
     def _family_card_open(self, module):
         pane = self._card_pane
@@ -2443,6 +2462,10 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         """Everything the window re-derives when a pane changes module."""
         self._update_fnote_sensitivity()
         self._sync_nav_books()
+        # A Line beside it marks the Bible being read; that may have changed.
+        for pane in (self.pane1, self.pane2):
+            if pane._is_family:
+                pane._family_line.render()
 
     def _update_fnote_sensitivity(self):
         """Enable the f* toggle only when a loaded module can actually show

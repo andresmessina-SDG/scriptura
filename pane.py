@@ -25,6 +25,7 @@ from catena_reader import CatenaReader
 from imagery_reader import ImageryReader
 from archaeology_reader import ArchaeologyReader
 from genealogy_reader import GenealogyReader
+from family_line import FamilyLine
 from interlinear_view import InterlinearReader
 import interlinear_data
 from module_picker import ModulePicker
@@ -1298,6 +1299,9 @@ class BiblePane(Gtk.Box):
         # Like Scripture in Stone it is NOT verse-synced: it renders once and
         # its verse chips drive the partnered Bible pane.
         self._genealogy = GenealogyReader(self)
+        # The Bible Family Tree — every English Bible on one Line; a
+        # standalone document like the two above, opened from the list.
+        self._family_line = FamilyLine(self)
         # Interlinear Greek NT — word-stack cells, verse-synced like a Bible.
         self._interlinear = InterlinearReader(self)
         # Each content mode is a PaneContent strategy; _compute_module_flags
@@ -1669,6 +1673,7 @@ class BiblePane(Gtk.Box):
         self._content_stack.add_named(self._imagery.widget, 'imagery')
         self._content_stack.add_named(self._archaeology.widget, 'archaeology')
         self._content_stack.add_named(self._genealogy.widget, 'genealogy')
+        self._content_stack.add_named(self._family_line.widget, 'family')
         self._content_stack.add_named(self._interlinear.widget, 'interlinear')
         # Full-pane placeholder for "can't show content here" states
         # (unsupported module, wrong cipher key, passage not in this module).
@@ -1804,7 +1809,8 @@ class BiblePane(Gtk.Box):
         elif self._is_genbook:
             GLib.idle_add(self._genbook.fetch_and_render)
         elif (self._is_catena or self._is_imagery or self._is_archaeology
-                or self._is_genealogy or self._is_interlinear):
+                or self._is_genealogy or self._is_family
+                or self._is_interlinear):
             GLib.idle_add(self._fetch_and_render)
 
     def _on_pane_click(self, gesture, n_press, x, y):
@@ -1895,6 +1901,7 @@ class BiblePane(Gtk.Box):
         self._is_imagery = tk == 'imagery'
         self._is_archaeology = tk == 'archaeology'
         self._is_genealogy = tk == 'genealogy'
+        self._is_family = tk == 'family'
         self._is_interlinear = tk == 'interlinear'
         is_ebible = tk == 'ebible'
         if self._is_catena:
@@ -1905,6 +1912,8 @@ class BiblePane(Gtk.Box):
             self._module_type = 'Scripture in Stone'
         elif self._is_genealogy:
             self._module_type = 'The Book of Generations'
+        elif self._is_family:
+            self._module_type = 'The Bible Family Tree'
         elif self._is_interlinear:
             self._module_type = 'Interlinear'
         elif is_ebible:
@@ -1914,13 +1923,13 @@ class BiblePane(Gtk.Box):
         self._is_devotional = (
             not self._is_catena and not self._is_imagery
             and not self._is_archaeology and not self._is_genealogy
-            and not self._is_interlinear
+            and not self._is_family and not self._is_interlinear
             and not is_ebible
             and sword_bridge.is_devotional_module(m))
         self._is_genbook = (
             not self._is_catena and not self._is_imagery
             and not self._is_archaeology and not self._is_genealogy
-            and not self._is_interlinear
+            and not self._is_family and not self._is_interlinear
             and not is_ebible
             and self._module_type == 'Generic Books')
         # The active content strategy. Card modes are registry-keyed; the
@@ -4961,6 +4970,8 @@ class BiblePane(Gtk.Box):
         # display of that module — even in the other pane — restores
         # to here.
         self._save_position_to_module_state()
+        # The Line marks the Bible the reader came from as the one being read.
+        self._came_from = self._module
         self._module = new_module
         self._picker.set_current_label(new_module)
         self._compute_module_flags()

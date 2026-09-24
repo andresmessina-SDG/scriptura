@@ -10107,3 +10107,136 @@ msgstr "Открыть в этой панели"
 #: family_card.py
 msgid "Compare this verse"
 msgstr "Сравнить этот стих"
+
+#: family_line.py
+msgid "The Bible Family Tree"
+msgstr "Родословное древо Библии"
+
+#: family_line.py
+msgid "Every English Bible on one line from word for word to free, and the family each one comes from."
+msgstr "Все английские Библии на одной линии — от дословных до свободных — и семья, из которой вышла каждая."
+
+#: family_line.py
+#, python-brace-format
+msgid "{n} English Bible"
+msgid_plural "{n} English Bibles"
+msgstr[0] "{n} английская Библия"
+msgstr[1] "{n} английские Библии"
+msgstr[2] "{n} английских Библий"
+
+#: family_line.py
+msgid "Pentecostal & Charismatic"
+msgstr "Пятидесятнические и харизматические"
+
+#: family_line.py
+msgid "Jewish & Messianic"
+msgstr "Иудейские и мессианские"
+
+#: family_line.py
+msgid "Other groups"
+msgstr "Другие группы"
+
+#: family_line.py
+msgid "Before 1611"
+msgstr "До 1611"
+
+#: family_line.py
+msgid "1611–1899"
+msgstr "1611–1899"
+
+#: family_line.py
+msgid "1900–1969"
+msgstr "1900–1969"
+
+#: family_line.py
+msgid "1970 on"
+msgstr "С 1970"
+
+#: family_line.py
+msgid "Every English Bible, from word for word to free"
+msgstr "Все английские Библии — от дословных до свободных"
+
+#: family_line.py
+msgid "Open in the other pane"
+msgstr "Открыть в другой панели"
+
+#: family_line.py
+msgid "You are reading this."
+msgstr "Вы читаете этот перевод."
+
+#: family_line.py
+msgid "Installed."
+msgstr "Установлен."
+
+#: family_line.py
+msgid "Not installed."
+msgstr "Не установлен."
+
+#: family_line.py
+msgid "Can install"
+msgstr "Можно установить"
+
+#: family_line.py
+msgid "All traditions"
+msgstr "Все традиции"
+
+#: family_line.py
+msgid "All eras"
+msgstr "Все эпохи"
+
+#: family_line.py
+msgid "Sort"
+msgstr "Порядок"
+
+#: family_line.py
+msgid "By place on the Line"
+msgstr "По месту на Линии"
+
+#: family_line.py
+msgid "By year"
+msgstr "По году"
+
+#: family_line.py
+msgid "By name"
+msgstr "По названию"
+
+#: family_line.py
+msgid "English Bibles on the Line"
+msgstr "Английские Библии на Линии"
+
+#: family_line.py
+msgid "No Bible matches these filters."
+msgstr "Ни одна Библия не подходит под эти фильтры."
+
+#: family_line.py
+#, python-brace-format
+msgid "Described by their makers as “{zone}”"
+msgstr "По словам переводчиков — «{zone}»"
+
+#: family_line.py
+#, python-brace-format
+msgid "{zone} · {n} Bible"
+msgid_plural "{zone} · {n} Bibles"
+msgstr[0] "{zone} · {n} Библия"
+msgstr[1] "{zone} · {n} Библии"
+msgstr[2] "{zone} · {n} Библий"
+
+#: family_line.py
+#, python-brace-format
+msgid "{era} · {n} Bible"
+msgid_plural "{era} · {n} Bibles"
+msgstr[0] "{era} · {n} Библия"
+msgstr[1] "{era} · {n} Библии"
+msgstr[2] "{era} · {n} Библий"
+
+#: family_line.py
+#, python-brace-format
+msgid "Not placed · {n} Bible"
+msgid_plural "Not placed · {n} Bibles"
+msgstr[0] "Без места · {n} Библия"
+msgstr[1] "Без места · {n} Библии"
+msgstr[2] "Без места · {n} Библий"
+
+#: bible_family.py
+msgid "Eastern Orthodox"
+msgstr "Православная"

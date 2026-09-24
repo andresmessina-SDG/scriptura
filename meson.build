@@ -56,6 +56,7 @@ py_sources = files(
   'empty_state.py',
   'export_dialog.py',
   'family_card.py',
+  'family_line.py',
   'genbook_reader.py',
   'genealogy_bridge.py',
   'genealogy_layout.py',

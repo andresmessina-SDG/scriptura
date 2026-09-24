@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!--
+    Branching glyph for "The Bible Family Tree" — one root, a short stem, and
+    two lines of descent drifting apart, which is what the feature draws: a
+    family of translations moving out along a spectrum. Distinct from the
+    single vertical spine of the genealogy glyph. Bundled, fill-only (#222)
+    so GTK4 recolors it like the symbolics beside it.
+  -->
+  <g fill="#222">
+    <!-- the stem from the root -->
+    <path d="M7.3 9.5 H8.7 V12.5 H7.3 Z"/>
+    <!-- the two lines of descent -->
+    <path d="M7.4 8.9 L3.6 4.2 L4.7 3.3 L8.5 8.0 Z"/>
+    <path d="M8.6 8.9 L12.4 4.2 L11.3 3.3 L7.5 8.0 Z"/>
+    <!-- root, fork and the two branches' Bibles -->
+    <circle cx="8" cy="13.2" r="1.9"/>
+    <circle cx="8" cy="8.6" r="1.5"/>
+    <circle cx="3.6" cy="3.2" r="1.9"/>
+    <circle cx="12.4" cy="3.2" r="1.9"/>
+  </g>
+</svg>

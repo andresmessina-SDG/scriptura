@@ -27,12 +27,17 @@ from urllib.parse import quote
 from typing import NamedTuple
 
 import ebible_bridge
-from i18n import _, N_
+from i18n import _, N_, ngettext
 
 _log = logging.getLogger('scriptura.bible_family')
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _DATA_FILE = os.path.join(_HERE, 'data', 'bible_family', 'translations.toml')
+
+#: The bundled "module" a pane opens to show The Bible Family Tree, the way
+#: it opens The Book of Generations.
+MODULE_KEY = 'BibleFamilyTree'
+DISPLAY_NAME = N_('The Bible Family Tree')
 
 #: What old thee/thou English costs on the measure: the KJV measures 0.34,
 #: the KJVs with modern words 0.29–0.30. Taken off every `archaic` Bible's
@@ -221,7 +226,7 @@ BASE_TEXTS = {
 TRADITIONS = {
     'protestant': N_('Protestant'), 'catholic': N_('Catholic'),
     'catholic-era': N_('Before the Reformation'),
-    'orthodox': N_('Orthodox'), 'jewish': N_('Jewish'),
+    'orthodox': N_('Eastern Orthodox'), 'jewish': N_('Jewish'),
     'messianic': N_('Messianic Jewish'), 'ecumenical': N_('Ecumenical'),
     'baptist': N_('Baptist'), 'lutheran': N_('Lutheran'),
     'anglican': N_('Anglican'), 'brethren': N_('Brethren'),
@@ -272,3 +277,86 @@ def source(key: str) -> tuple[str, str | None]:
     if kind == 'br':
         return f'bible-researcher.com ({arg})', None
     return key, None
+
+
+# ── the pane's module ─────────────────────────────────────────────────────
+
+def is_family_module(name: str) -> bool:
+    return name == MODULE_KEY
+
+
+def module_names() -> list[str]:
+    """The bundled module key, if its data file is present."""
+    return [MODULE_KEY] if os.path.exists(_DATA_FILE) else []
+
+
+def display_name(name: str = '') -> str:
+    return _(DISPLAY_NAME)
+
+
+def info() -> dict[str, str]:
+    """Metadata for the module picker's info page."""
+    n = sum(1 for r in _data().get('node', [])
+            if r.get('kind', 'translation') == 'translation')
+    return {
+        'description': _('Every English Bible on one line from word for word '
+                         'to free, and the family each one comes from.'),
+        'type': ngettext('{n} English Bible', '{n} English Bibles',
+                         n).format(n=n),
+        'language': 'en',
+    }
+
+
+# ── filters for the Line ──────────────────────────────────────────────────
+#
+# Seven tradition chips (decided 2026-09-24). The data keeps the finer tag
+# for the Card; the chip is the family it belongs to. Historic Protestant
+# is kept apart from Pentecostal and Charismatic, at his asking; the
+# Restoration Movement and Wycliffe count as Protestant, his rulings.
+
+TRADITION_CHIPS = (
+    ('protestant', N_('Protestant')),
+    ('pentecostal', N_('Pentecostal & Charismatic')),
+    ('catholic', N_('Catholic')),
+    ('orthodox', N_('Eastern Orthodox')),
+    ('ecumenical', N_('Ecumenical')),
+    ('jewish', N_('Jewish & Messianic')),
+    ('other', N_('Other groups')),
+)
+
+_CHIP_OF_TRADITION = {
+    'protestant': 'protestant', 'baptist': 'protestant',
+    'lutheran': 'protestant', 'anglican': 'protestant',
+    'brethren': 'protestant', 'catholic-era': 'protestant',
+    'charismatic': 'pentecostal',
+    'catholic': 'catholic', 'orthodox': 'orthodox',
+    'ecumenical': 'ecumenical',
+    'jewish': 'jewish', 'messianic': 'jewish',
+    'unitarian': 'other', 'other': 'other',
+}
+
+
+def tradition_chip(record: dict) -> str:
+    """The tradition chip a Bible is filtered under."""
+    return _CHIP_OF_TRADITION[record['tradition']]
+
+
+#: Eras by first year, and the label each shows.
+ERAS = (
+    (0, 1610, N_('Before 1611')),
+    (1611, 1899, N_('1611–1899')),
+    (1900, 1969, N_('1900–1969')),
+    (1970, 9999, N_('1970 on')),
+)
+
+
+def era(record: dict) -> int:
+    """The index into ERAS of the era a Bible belongs to."""
+    return next(i for i, (lo, hi, _label) in enumerate(ERAS)
+                if lo <= record['year'] <= hi)
+
+
+def translations() -> list[dict]:
+    """Every English Bible in the data, in file order (no source texts)."""
+    return [r for r in _data().get('node', [])
+            if r.get('kind', 'translation') == 'translation']

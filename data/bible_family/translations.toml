@@ -477,8 +477,9 @@ year = 2014
 year_label = "2011 (NT) · 2014"
 base_ot = "MT"
 base_nt = "TR"
-by = "Military Bible Association"
+by = "Military Bible Association; James F. Linzey (Southern Baptist), chief editor"
 check = "checked"
+note = "Its senior editorial adviser was Stanley M. Horton, an Assemblies of God (Pentecostal) theologian; the committee drew on many denominations."
 src = ["wl", "wp:mev"]
 [node.spectrum]
 band = [0.19, 0.19, 0.19]

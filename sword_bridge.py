@@ -1108,6 +1108,9 @@ def display_name(name):
     import genealogy_bridge
     if genealogy_bridge.is_genealogy_module(name):
         return genealogy_bridge.display_name(name)
+    import bible_family
+    if bible_family.is_family_module(name):
+        return bible_family.display_name(name)
     return native_name(name) or DISPLAY_NAMES.get(name, name)
 
 

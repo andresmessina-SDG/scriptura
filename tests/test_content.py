@@ -8,6 +8,7 @@ import ebible_bridge
 import sword_bridge
 import imagery_bridge
 import archaeology_bridge
+import bible_family
 import interlinear_data
 
 
@@ -24,6 +25,7 @@ def _reps():
         'catena': catena_bridge.MODULE_KEY,
         'imagery': imagery_bridge.MODULE_KEY,
         'archaeology': archaeology_bridge.MODULE_KEY,
+        'family': bible_family.MODULE_KEY,
         'interlinear': interlinear_data.GREEK,
         'ebible': ebible_bridge.PREFIX + 'eng-web',
         'sword': 'KJV',
@@ -47,7 +49,7 @@ def test_type_key_matches_the_owning_descriptor():
 def test_registry_covers_every_type_once():
     keys = [ct.key for ct in content._TYPES]
     assert keys == ['catena', 'imagery', 'archaeology', 'genealogy',
-                    'interlinear',
+                    'family', 'interlinear',
                     'ebible', 'sword']
     assert keys[-1] == 'sword', 'the catch-all must stay last'
 

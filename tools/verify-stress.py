@@ -356,6 +356,9 @@ def driver(scenario: str) -> int:
                if m in readable]
         zoo += [m for m in readable if m not in zoo and (
             m.startswith(ebible_bridge.PREFIX) or content.kind(m) in ('catena', 'imagery', 'interlinear'))][:6]
+        # The Bible Family Tree: a pane document whose Card and Line both
+        # read the other pane, so it goes through the same storm.
+        zoo += [m for m in readable if content.type_key(m) == 'family']
         notes.append({'zoo': zoo})
         for m in zoo:
             @step(500)

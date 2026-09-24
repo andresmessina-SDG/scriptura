@@ -10155,3 +10155,132 @@ msgstr "Abrir en este panel"
 #: family_card.py
 msgid "Compare this verse"
 msgstr "Comparar este versículo"
+
+#: family_line.py
+msgid "The Bible Family Tree"
+msgstr "El árbol genealógico de la Biblia"
+
+#: family_line.py
+msgid "Every English Bible on one line from word for word to free, and the family each one comes from."
+msgstr "Todas las Biblias inglesas en una línea, de palabra por palabra a libre, y la familia de la que viene cada una."
+
+#: family_line.py
+#, python-brace-format
+msgid "{n} English Bible"
+msgid_plural "{n} English Bibles"
+msgstr[0] "{n} Biblia inglesa"
+msgstr[1] "{n} Biblias inglesas"
+
+#: family_line.py
+msgid "Pentecostal & Charismatic"
+msgstr "Pentecostal y carismática"
+
+#: family_line.py
+msgid "Jewish & Messianic"
+msgstr "Judía y mesiánica"
+
+#: family_line.py
+msgid "Other groups"
+msgstr "Otros grupos"
+
+#: family_line.py
+msgid "Before 1611"
+msgstr "Antes de 1611"
+
+#: family_line.py
+msgid "1611–1899"
+msgstr "1611–1899"
+
+#: family_line.py
+msgid "1900–1969"
+msgstr "1900–1969"
+
+#: family_line.py
+msgid "1970 on"
+msgstr "Desde 1970"
+
+#: family_line.py
+msgid "Every English Bible, from word for word to free"
+msgstr "Todas las Biblias inglesas, de palabra por palabra a libre"
+
+#: family_line.py
+msgid "Open in the other pane"
+msgstr "Abrir en el otro panel"
+
+#: family_line.py
+msgid "You are reading this."
+msgstr "Estás leyendo esta."
+
+#: family_line.py
+msgid "Installed."
+msgstr "Instalada."
+
+#: family_line.py
+msgid "Not installed."
+msgstr "No instalada."
+
+#: family_line.py
+msgid "Can install"
+msgstr "Se puede instalar"
+
+#: family_line.py
+msgid "All traditions"
+msgstr "Todas las tradiciones"
+
+#: family_line.py
+msgid "All eras"
+msgstr "Todas las épocas"
+
+#: family_line.py
+msgid "Sort"
+msgstr "Orden"
+
+#: family_line.py
+msgid "By place on the Line"
+msgstr "Por lugar en la Línea"
+
+#: family_line.py
+msgid "By year"
+msgstr "Por año"
+
+#: family_line.py
+msgid "By name"
+msgstr "Por nombre"
+
+#: family_line.py
+msgid "English Bibles on the Line"
+msgstr "Biblias inglesas en la Línea"
+
+#: family_line.py
+msgid "No Bible matches these filters."
+msgstr "Ninguna Biblia cumple estos filtros."
+
+#: family_line.py
+#, python-brace-format
+msgid "Described by their makers as “{zone}”"
+msgstr "Descritas por sus traductores como «{zone}»"
+
+#: family_line.py
+#, python-brace-format
+msgid "{zone} · {n} Bible"
+msgid_plural "{zone} · {n} Bibles"
+msgstr[0] "{zone} · {n} Biblia"
+msgstr[1] "{zone} · {n} Biblias"
+
+#: family_line.py
+#, python-brace-format
+msgid "{era} · {n} Bible"
+msgid_plural "{era} · {n} Bibles"
+msgstr[0] "{era} · {n} Biblia"
+msgstr[1] "{era} · {n} Biblias"
+
+#: family_line.py
+#, python-brace-format
+msgid "Not placed · {n} Bible"
+msgid_plural "Not placed · {n} Bibles"
+msgstr[0] "Sin lugar · {n} Biblia"
+msgstr[1] "Sin lugar · {n} Biblias"
+
+#: bible_family.py
+msgid "Eastern Orthodox"
+msgstr "Ortodoxa oriental"

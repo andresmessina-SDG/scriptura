@@ -161,6 +161,8 @@ class FamilyCard(Gtk.Box):
         self._history: list[str] = []
         self._installed: list[str] = []
         self._reading = ''
+        self._open_here = True
+        self._can_compare = True
 
         header = Gtk.Box(spacing=6)
         header.set_margin_start(8)
@@ -199,11 +201,16 @@ class FamilyCard(Gtk.Box):
 
     # ── public ───────────────────────────────────────────────────────────
 
-    def show(self, node_id, installed, reading):
+    def show(self, node_id, installed, reading, open_here=True,
+             can_compare=True):
         """Open on one Bible. `installed` is the app's module keys, and
-        `reading` the module in the pane the Card was opened from."""
+        `reading` the Bible being read. `open_here` says whether Open goes to
+        this pane or the other; `can_compare` whether there is a Bible pane
+        to compare a verse from."""
         self._installed = list(installed)
         self._reading = reading
+        self._open_here = open_here
+        self._can_compare = can_compare
         self._history = []
         self._render(node_id)
 
@@ -417,15 +424,18 @@ class FamilyCard(Gtk.Box):
         row.set_margin_top(22)
         if have is not None:
             if have != self._reading:
-                open_btn = Gtk.Button(label=_('Open in this pane'))
+                open_btn = Gtk.Button(label=_('Open in this pane')
+                                      if self._open_here
+                                      else _('Open in the other pane'))
                 open_btn.add_css_class('suggested-action')
                 open_btn.add_css_class('pill')
                 open_btn.connect('clicked', lambda _b: self._on_open(have))
                 row.append(open_btn)
-            cmp_btn = Gtk.Button(label=_('Compare this verse'))
-            cmp_btn.add_css_class('pill')
-            cmp_btn.connect('clicked', lambda _b: self._on_compare())
-            row.append(cmp_btn)
+            if self._can_compare:
+                cmp_btn = Gtk.Button(label=_('Compare this verse'))
+                cmp_btn.add_css_class('pill')
+                cmp_btn.connect('clicked', lambda _b: self._on_compare())
+                row.append(cmp_btn)
         elif record.get('installable'):
             query = record['installable'][0]
             inst = Gtk.Button(label=_('Install'))
