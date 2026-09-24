@@ -10414,3 +10414,51 @@ msgstr "Sin lugar"
 #, python-brace-format
 msgid "Placed as {name}: {where}"
 msgstr "Situada como {name}: {where}"
+
+#: family_view.py
+msgid "Print the Family as a poster"
+msgstr "Imprimir la Familia como cartel"
+
+#: family_view.py
+msgid "Could not print the Family"
+msgstr "No se pudo imprimir la Familia"
+
+#: family_view.py
+msgid "The English Bibles read today, placed by how literally they translate"
+msgstr "Las Biblias inglesas que se leen hoy, situadas según lo literal de su traducción"
+
+#: family_view.py
+msgid "The English Bibles read today, and the Bibles they came from"
+msgstr "Las Biblias inglesas que se leen hoy, y las Biblias de las que vienen"
+
+#: family_view.py
+msgid "published charts place it"
+msgstr "la sitúan las tablas publicadas"
+
+#: family_view.py
+msgid "measured in Scriptura"
+msgstr "medida en Scriptura"
+
+#: family_view.py
+msgid "described by its makers"
+msgstr "descrita por sus traductores"
+
+#: family_view.py
+msgid "before the Line"
+msgstr "anterior a la Línea"
+
+#: family_view.py
+msgid "a revision of"
+msgstr "revisión de"
+
+#: family_view.py
+msgid "reworded from"
+msgstr "reformulada a partir de"
+
+#: family_view.py
+msgid "drew on"
+msgstr "se apoyó en"
+
+#: family_view.py
+msgid "Scriptura · every fact and its source is in the app’s Bible Family Tree"
+msgstr "Scriptura · cada dato y su fuente están en el Árbol genealógico de la Biblia de la aplicación"

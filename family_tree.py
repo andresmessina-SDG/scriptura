@@ -15,7 +15,7 @@ import bible_family
 import settings
 from a11y import set_accessible_label
 from family_line import FamilyLine
-from family_view import FamilyOutline, FamilyView
+from family_view import FamilyOutline, FamilyView, paint_plate
 from i18n import _
 
 
@@ -72,6 +72,14 @@ class FamilyTree:
         self._arrangements.append(self._by_family)
         self._arrangements.append(self._by_line)
         switches.append(self._arrangements)
+        self._print_btn = Gtk.Button(
+            icon_name='scriptura-document-print-symbolic')
+        self._print_btn.add_css_class('flat')
+        self._print_btn.set_tooltip_text(_('Print the Family as a poster'))
+        set_accessible_label(self._print_btn,
+                             _('Print the Family as a poster'))
+        self._print_btn.connect('clicked', lambda _b: self.print_poster())
+        bar.append(self._print_btn)
         self._list_btn = Gtk.ToggleButton(
             icon_name='scriptura-view-list-symbolic')
         self._list_btn.add_css_class('flat')
@@ -142,6 +150,7 @@ class FamilyTree:
         drawing = family and not self._list_btn.get_active()
         self._list_btn.set_visible(family)
         self._arrangements.set_visible(drawing)
+        self._print_btn.set_visible(drawing)
         self._hint.set_visible(drawing)
         self._hint.set_label(self._hint_text())
         if not family:
@@ -188,6 +197,39 @@ class FamilyTree:
         if target is not None and target is not self._scrolled_for:
             self._scrolled_for = target
             GLib.idle_add(lambda: self.family.scroll_to(target) or False)
+
+    def build_print(self):
+        """The print job for the poster: one page, the Family fitted to it.
+        GNOME's dialog offers the paper (A3 or tabloid for a wall) and
+        'Print to File' for a PDF to take to a print shop."""
+        operation = Gtk.PrintOperation()
+        operation.set_job_name(_('The Bible Family Tree'))
+        operation.set_n_pages(1)
+        operation.set_use_full_page(False)
+        operation.set_unit(Gtk.Unit.POINTS)
+        family = self.family
+        operation.connect(
+            'draw-page', lambda _op, ctx, _n: paint_plate(
+                family, ctx.get_cairo_context(), ctx.get_width(),
+                ctx.get_height()))
+        return operation
+
+    def print_poster(self):
+        if self.family is None:
+            return
+        # Printed mid-slide, the Bibles would be caught half-way across.
+        if self.family._animation is not None:
+            self.family._animation.skip()
+        root = self._pane.get_root() if self._pane is not None else None
+        try:
+            self.build_print().run(Gtk.PrintOperationAction.PRINT_DIALOG,
+                                   root)
+        except Exception:
+            # A refused portal, no printers, a cancelled job: none of them
+            # is a reason to take the app down.
+            toast = getattr(self._pane, '_on_toast', None)
+            if toast:
+                toast(_('Could not print the Family'))
 
     def _open_card(self, node_id):
         root = self._pane.get_root() if self._pane is not None else None

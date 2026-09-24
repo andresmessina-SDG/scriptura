@@ -221,3 +221,88 @@ def test_a_second_switch_mid_slide_starts_where_the_bibles_are(monkeypatch):
                         or real(arr))
     view.set_arrangement('family', animate=False)
     assert seen[0] == line_end
+
+
+@pytest.mark.parametrize('lit', [None, {'esv', 'rsv'}])
+def test_the_drawing_paints_every_line_whether_or_not_one_is_lit(lit):
+    """A renamed local once turned `lit` into a bool after the first line,
+    and the next line of descent raised: the drawing stopped partway."""
+    import cairo
+    view, _opened = _view()
+    surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, 1180, 1833)
+    view._paint(cairo.Context(surf), 1180, 1833, fv._PLATE_INK,
+                fv.PLATE_BASE, lit)
+
+
+def test_the_poster_paints_in_black_on_one_page_whatever_the_theme():
+    import cairo
+    view, _opened = _view()
+    for arrangement in ('family', 'line'):
+        view.set_arrangement(arrangement, animate=False)
+        w, h = 842, 1191                    # A3, points
+        surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
+        cr = cairo.Context(surf)
+        cr.set_source_rgb(1, 1, 1)
+        cr.paint()
+        fv.paint_plate(view, cr, w, h)
+        surf.flush()
+        data, stride = surf.get_data(), surf.get_stride()
+        # the title band has dark ink in it; nothing is drawn light-on-dark
+        dark = sum(1 for y in range(10, 40) for x in range(20, 300)
+                   if data[y * stride + x * 4] < 90)
+        assert dark > 200, arrangement
+
+
+def test_the_print_job_is_one_page(monkeypatch):
+    page, _store = _page(monkeypatch)
+    page._ensure_family()
+    op = page.build_print()
+    assert op.get_n_pages_to_print() in (-1, 1)   # set before the dialog
+    assert page._print_btn.get_visible()
+    page._list_btn.set_active(True)
+    assert not page._print_btn.get_visible()
+
+
+def test_a_mark_starts_its_own_path():
+    """On the poster a mark followed a label on one surface; an arc begun
+    from the label's point drew a line from the text to the mark."""
+    import cairo
+    surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, 200, 40)
+    cr = cairo.Context(surf)
+    cr.move_to(5, 5)                    # where a label left the pen
+    fv._paint_mark(cr, 150, 20, None, fv._PLATE_INK)
+    surf.flush()
+    data, stride = surf.get_data(), surf.get_stride()
+    stray = sum(1 for x in range(20, 120) for y in range(0, 40)
+                if data[y * stride + x * 4 + 3])
+    assert stray == 0
+
+
+def test_the_print_job_itself_writes_the_poster(monkeypatch, tmp_path):
+    """The whole job, not just the painter: GTK runs it to a PDF file with
+    no dialog, through the same draw-page wiring the Print button uses."""
+    page, _store = _page(monkeypatch)
+    page._ensure_family()
+    op = page.build_print()
+    out = tmp_path / 'family.pdf'
+    op.set_export_filename(str(out))
+    result = op.run(Gtk.PrintOperationAction.EXPORT, None)
+    assert result == Gtk.PrintOperationResult.APPLY
+    data = out.read_bytes()
+    assert data.startswith(b'%PDF') and len(data) > 10000
+
+
+def test_printing_mid_slide_finishes_the_slide_first(monkeypatch):
+    page, _store = _page(monkeypatch)
+    page._ensure_family()
+    skipped = []
+
+    class Running:
+        def skip(self):
+            skipped.append(True)
+            page.family._animation = None
+    page.family._animation = Running()
+    monkeypatch.setattr(page, 'build_print', lambda: types.SimpleNamespace(
+        run=lambda *_a: None))
+    page.print_poster()
+    assert skipped == [True]

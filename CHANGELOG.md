@@ -56,7 +56,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
   word for word to free, so you can watch a family drift: the RSV's line
   toward word for word in the ESV, the Living Bible's back toward
   translation in the NLT. A List button shows the same family as an
-  indented list. The Line lays out
+  indented list, and Print makes it a poster for a classroom wall, in
+  either arrangement, with a key to its lines and marks. The Line lays out
   every English Bible from word for word to free; filter it by what you
   have installed, by tradition and by era. The Bible you are reading is
   marked, and pressing any Bible opens its card.

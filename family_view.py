@@ -133,7 +133,6 @@ class _Node(Gtk.Button):
         self._dot.queue_draw()
 
     def _draw_dot(self, area, cr, w, h):
-        ink = area.get_color()
         cx, cy, r = w / 2, h / 2, DOT - 1.5
         if self.reading:
             accent = Adw.StyleManager.get_default().get_accent_color_rgba()
@@ -141,17 +140,29 @@ class _Node(Gtk.Button):
             cr.set_line_width(2.0)
             cr.arc(cx, cy, r + 3.5, 0, 2 * math.pi)
             cr.stroke()
-        kind = self.spot.kind if self.spot is not None else None
-        cr.set_source_rgba(ink.red, ink.green, ink.blue, 1.0)
-        if kind == 'band':
-            cr.arc(cx, cy, r, 0, 2 * math.pi)
-            cr.fill()
-            return
-        cr.set_line_width(2.0 if kind == 'measured' else 1.4)
-        if kind == 'class':
-            cr.set_dash([2.0, 2.0])
-        cr.arc(cx, cy, r - 0.5, 0, 2 * math.pi)
-        cr.stroke()
+        _paint_mark(cr, cx, cy, self.spot, area.get_color())
+
+
+def _paint_mark(cr, cx, cy, spot, ink):
+    """A Bible's mark: filled where charts place it, a ring where Scriptura
+    measured it, a dashed ring where only its makers' word is known, a thin
+    ring where nothing places it (the root)."""
+    r = DOT - 1.5
+    kind = spot.kind if spot is not None else None
+    # A fresh path: on the poster the marks share one surface with the text,
+    # and an arc begun from the last label's point drew a line back to it.
+    cr.new_path()
+    cr.set_source_rgba(ink.red, ink.green, ink.blue, 1.0)
+    if kind == 'band':
+        cr.arc(cx, cy, r, 0, 2 * math.pi)
+        cr.fill()
+        return
+    cr.set_line_width(2.0 if kind == 'measured' else 1.4)
+    if kind == 'class':
+        cr.set_dash([2.0, 2.0])
+    cr.arc(cx, cy, r - 0.5, 0, 2 * math.pi)
+    cr.stroke()
+    cr.set_dash([])
 
 
 def _overlap(a, b, slack=2):
@@ -425,19 +436,27 @@ class FamilyView:
     # ── painting ─────────────────────────────────────────────────────────
 
     def _draw(self, area, cr, w, h):
-        ink = area.get_color()
+        self._paint(cr, w, h, area.get_color(),
+                    area.get_pango_context().get_font_description().get_size(),
+                    self._lit)
+
+    def _paint(self, cr, w, h, ink, base_size, lit):
+        """The drawing under the Bibles: axis, lanes or zones, lines of
+        descent, bars. `ink` is anything with red/green/blue; `lit` the
+        Bibles to keep bright (None for all). The poster calls it too."""
 
         def rgba(alpha):
             cr.set_source_rgba(ink.red, ink.green, ink.blue, alpha)
 
         layout = PangoCairo.create_layout(cr)
+        # Points to units as on screen, so a poster sets type like the view.
+        PangoCairo.context_set_resolution(layout.get_context(), 96)
 
         def text(s, x, y, size=0.8, italic=False, bold=False, width=None,
                  alpha=0.6, serif=False, anchor='left'):
             desc = Pango.FontDescription.from_string(
                 'Newsreader' if serif else 'Adwaita Sans')
-            desc.set_size(int(size * area.get_pango_context()
-                              .get_font_description().get_size()))
+            desc.set_size(int(size * base_size))
             if italic:
                 desc.set_style(Pango.Style.ITALIC)
             if bold:
@@ -512,8 +531,8 @@ class FamilyView:
                     if here is None or here.kind not in ('band', 'class'):
                         continue
                     # A bar fades with its Bible when another line is lit.
-                    fade = 0.3 if (self._lit is not None
-                                   and nid not in self._lit) else 1.0
+                    fade = 0.3 if (lit is not None
+                                   and nid not in lit) else 1.0
                     y = node.y + (-BAR_BELOW if node.bar_above
                                   else BAR_BELOW)
                     x0, x1 = fl.line_x(here.low), fl.line_x(here.high)
@@ -539,10 +558,9 @@ class FamilyView:
         # The lines of descent.
         for e in self._edges:
             a, b = self._pos[e.parent], self._pos[e.child]
-            lit = self._lit is None or (e.parent in self._lit
-                                        and e.child in self._lit)
+            bright = lit is None or (e.parent in lit and e.child in lit)
             strong = e.kind == 'rev'
-            rgba((0.55 if strong else 0.38) * (1 if lit else 0.25))
+            rgba((0.55 if strong else 0.38) * (1 if bright else 0.25))
             cr.set_line_width(1.6 if strong else 1.1)
             cr.set_dash([] if strong else [1.5, 3.0] if e.kind == 'para'
                         else [5.0, 4.0])
@@ -562,6 +580,118 @@ class FamilyView:
                 cr.line_to(fl.NOTE_LEFT - 6, top + 9)
         cr.stroke()
         cr.set_dash([])
+
+
+#: The poster's title band above the drawing and key below it.
+PLATE_HEAD = 110
+PLATE_FOOT = 96
+#: Type on the poster, as on screen: 11pt Adwaita Sans at 96 dpi.
+PLATE_BASE = 11 * Pango.SCALE
+_PLATE_INK = Gdk.RGBA(red=0.1, green=0.1, blue=0.1, alpha=1.0)
+
+
+def paint_plate(view, cr, page_w, page_h):
+    """The Family as a poster: what the view shows, in black on white, with
+    a title, a key and a source line, fitted to one page. No reading ring and
+    nothing lit: the poster is the class's, not the reader's."""
+    plate_w, plate_h = fl.WIDTH, PLATE_HEAD + fl.HEIGHT + PLATE_FOOT
+    scale = min(page_w / plate_w, page_h / plate_h)
+    cr.save()
+    cr.translate((page_w - plate_w * scale) / 2, 0)
+    cr.scale(scale, scale)
+    ink = _PLATE_INK
+    layout = PangoCairo.create_layout(cr)
+    PangoCairo.context_set_resolution(layout.get_context(), 96)
+
+    def text(s, x, y, size=1.0, bold=False, italic=False, serif=False,
+             width=None, alpha=1.0, anchor='left'):
+        desc = Pango.FontDescription.from_string(
+            'Newsreader' if serif else 'Adwaita Sans')
+        desc.set_size(int(size * PLATE_BASE))
+        if bold:
+            desc.set_weight(Pango.Weight.BOLD)
+        if italic:
+            desc.set_style(Pango.Style.ITALIC)
+        layout.set_font_description(desc)
+        layout.set_width(int(width * Pango.SCALE) if width else -1)
+        layout.set_wrap(Pango.WrapMode.WORD)
+        layout.set_text(s, -1)
+        tw, th = layout.get_pixel_size()
+        dx = {'left': 0, 'right': -tw}[anchor]
+        cr.move_to(x + dx, y)
+        cr.set_source_rgba(ink.red, ink.green, ink.blue, alpha)
+        PangoCairo.show_layout(cr, layout)
+        return tw, th
+
+    # Title band.
+    text(_('The Bible Family Tree'), 24, 18, size=2.0, bold=True)
+    subtitle = (_('The English Bibles read today, placed by how literally '
+                  'they translate')
+                if view.arrangement == 'line' else
+                _('The English Bibles read today, and the Bibles they came '
+                  'from'))
+    text(subtitle, 24, 58, size=1.15, italic=True, alpha=0.7)
+
+    # The drawing, then the Bibles and notes on it.
+    cr.save()
+    cr.translate(0, PLATE_HEAD)
+    view._paint(cr, fl.WIDTH, fl.HEIGHT, ink, PLATE_BASE, None)
+    side = DOT * 2 + 8
+    for node in view._nodes.values():
+        _paint_mark(cr, node.x, node.y, node.spot, ink)
+        name = short_name(node.record)
+        year = str(node.record['year'])
+        desc = Pango.FontDescription.from_string('Adwaita Sans')
+        desc.set_size(int(0.9 * PLATE_BASE))
+        desc.set_weight(Pango.Weight.BOLD)      # as text() draws it
+        layout.set_width(-1)
+        layout.set_font_description(desc)
+        layout.set_text(name, -1)
+        name_w, name_h = layout.get_pixel_size()
+        top = node.y - name_h / 2
+        if node.left:           # year · name · mark, ending at the mark
+            x = node.x - side / 2 - 4
+            text(year, x - name_w - 4, top + 1, size=0.8, alpha=0.55,
+                 anchor='right')
+            text(name, x - name_w, top, size=0.9, bold=True)
+        else:
+            x = node.x + side / 2 + 4
+            text(name, x, top, size=0.9, bold=True)
+            text(year, x + name_w + 4, top + 1, size=0.8, alpha=0.55)
+    for (_year_y, top), note in zip(view._note_spots, view._notes):
+        text(note.text, fl.NOTE_LEFT, top, size=0.95, italic=True,
+             serif=True, width=fl.NOTE_WIDTH, alpha=0.75)
+    cr.restore()
+
+    # Key and source line.
+    y = PLATE_HEAD + fl.HEIGHT + 14
+    x = 24
+    for spot_kind, words in (
+            ('band', _('published charts place it')),
+            ('measured', _('measured in Scriptura')),
+            ('class', _('described by its makers')),
+            (None, _('before the Line')),):
+        spot = (bible_family.Place(spot_kind, 0.5, 0.5, 0.5)
+                if spot_kind else None)
+        _paint_mark(cr, x + DOT, y + 9, spot, ink)
+        x += DOT * 2 + 6 + text(words, x + DOT * 2 + 6, y, size=0.85)[0] + 22
+    x = 24
+    y += 28
+    for dash, width, words in (([], 1.6, _('a revision of')),
+                               ([1.5, 3.0], 1.1, _('reworded from')),
+                               ([5.0, 4.0], 1.1, _('drew on'))):
+        cr.set_source_rgba(ink.red, ink.green, ink.blue, 0.6)
+        cr.set_line_width(width)
+        cr.set_dash(dash)
+        cr.move_to(x, y + 9)
+        cr.line_to(x + 30, y + 9)
+        cr.stroke()
+        cr.set_dash([])
+        x += 38 + text(words, x + 38, y, size=0.85)[0] + 22
+    text(_('Scriptura · every fact and its source is in the app’s Bible '
+           'Family Tree'), fl.WIDTH - 24, y + 30, size=0.75, alpha=0.55,
+         anchor='right')
+    cr.restore()
 
 
 class FamilyOutline:
