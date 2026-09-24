@@ -98,7 +98,7 @@ def test_a_narrow_pane_stacks_the_rows():
     line._set_stacked(True)
     row = line._rows[0]
     assert row._box.get_orientation() == Gtk.Orientation.VERTICAL
-    assert not line._axis.get_visible()
+    assert not line._axis_clamp.get_visible()
     line._set_stacked(False)
     assert row._box.get_orientation() == Gtk.Orientation.HORIZONTAL
 
@@ -155,3 +155,62 @@ def _children(w):
     while c is not None:
         yield c
         c = c.get_next_sibling()
+
+
+def test_a_filter_menu_names_its_choice_and_clears():
+    line = _line()
+    menu = line._trad_menu
+    assert menu._label.get_label() == 'All traditions'
+    assert not menu._clear.get_visible()
+    menu.pick('catholic')
+    assert line._tradition == 'catholic'
+    assert menu._label.get_label() == 'Catholic'
+    assert menu._clear.get_visible() and menu.has_css_class('narrowed')
+    menu._clear.emit('clicked')
+    assert line._tradition == '' and not menu._clear.get_visible()
+
+
+def test_sort_is_a_menu_without_a_clear():
+    line = _line()
+    line._sort_menu.pick('year')
+    assert line._sort == 'year'
+    assert line._sort_menu._label.get_label() == 'Sort: Year'
+    assert not line._sort_menu._clear.get_visible()
+
+
+def test_every_track_starts_at_the_same_x():
+    """The name column asks for exactly its width whatever the row holds,
+    and even when measured against a height: a label that wrapped once
+    asked for its one-line width there and pushed its track right."""
+    line = _line()
+    for row in line._rows:
+        for for_height in (-1, 40):
+            nat = row._text.measure(Gtk.Orientation.HORIZONTAL, for_height)[1]
+            assert nat == fl.NAME_W, (row.record['id'], for_height, nat)
+
+
+def test_only_a_name_that_outruns_its_column_gets_a_tooltip():
+    line = _line()
+    tips = {r.record['id']: r._name.get_tooltip_text() for r in line._rows}
+    assert tips['improved-edition'] == bf.node('improved-edition')['name']
+    assert tips['esv'] is None
+    assert 0 < sum(1 for t in tips.values() if t) < 10
+
+
+def test_each_filter_clears_with_its_own_words():
+    line = _line()
+    words = {m._clear.get_tooltip_text() for m in
+             (line._avail_menu, line._trad_menu, line._era_menu)}
+    assert words == {'Show every Bible again', 'Show every tradition again',
+                     'Show every era again'}
+    assert not line._sort_menu._clearable
+
+
+def test_narrow_puts_the_sort_among_the_filters_and_wide_takes_it_back():
+    line = _line()
+    line._set_stacked(True)
+    assert line._sort_menu.get_parent() is line._filters
+    line._set_stacked(False)
+    assert line._sort_menu.get_parent() is line._bar
+    line._set_stacked(False)                    # idempotent
+    assert line._sort_menu.get_parent() is line._bar

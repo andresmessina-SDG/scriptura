@@ -10231,21 +10231,9 @@ msgstr "Todas las tradiciones"
 msgid "All eras"
 msgstr "Todas las épocas"
 
-#: family_line.py
-msgid "Sort"
-msgstr "Orden"
 
-#: family_line.py
-msgid "By place on the Line"
-msgstr "Por lugar en la Línea"
 
-#: family_line.py
-msgid "By year"
-msgstr "Por año"
 
-#: family_line.py
-msgid "By name"
-msgstr "Por nombre"
 
 #: family_line.py
 msgid "English Bibles on the Line"
@@ -10284,3 +10272,55 @@ msgstr[1] "Sin lugar · {n} Biblias"
 #: bible_family.py
 msgid "Eastern Orthodox"
 msgstr "Ortodoxa oriental"
+
+
+#: family_line.py
+msgid "Place on the Line"
+msgstr "Lugar en la Línea"
+
+#: family_line.py
+msgid "Year"
+msgstr "Año"
+
+#: family_line.py
+msgid "Name"
+msgstr "Nombre"
+
+
+#: family_line.py
+#, python-brace-format
+msgid "{filter}: {choice}"
+msgstr "{filter}: {choice}"
+
+#: family_line.py
+msgid "Availability"
+msgstr "Disponibilidad"
+
+#: family_line.py
+msgid "Show every Bible again"
+msgstr "Volver a mostrar todas las Biblias"
+
+#: family_line.py
+msgid "Tradition"
+msgstr "Tradición"
+
+#: family_line.py
+msgid "Show every tradition again"
+msgstr "Volver a mostrar todas las tradiciones"
+
+#: family_line.py
+msgid "Era"
+msgstr "Época"
+
+#: family_line.py
+msgid "Show every era again"
+msgstr "Volver a mostrar todas las épocas"
+
+#: family_line.py
+msgid "Sort"
+msgstr "Orden"
+
+#: family_line.py
+#, python-brace-format
+msgid "Sort: {choice}"
+msgstr "Orden: {choice}"

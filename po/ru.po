@@ -10033,7 +10033,7 @@ msgstr "Об этом переводе"
 
 #: family_card.py
 msgid "You are reading this"
-msgstr "Вы читаете этот перевод"
+msgstr "Сейчас читаете"
 
 #: family_card.py
 msgid "Where it lands"
@@ -10184,21 +10184,9 @@ msgstr "Все традиции"
 msgid "All eras"
 msgstr "Все эпохи"
 
-#: family_line.py
-msgid "Sort"
-msgstr "Порядок"
 
-#: family_line.py
-msgid "By place on the Line"
-msgstr "По месту на Линии"
 
-#: family_line.py
-msgid "By year"
-msgstr "По году"
 
-#: family_line.py
-msgid "By name"
-msgstr "По названию"
 
 #: family_line.py
 msgid "English Bibles on the Line"
@@ -10240,3 +10228,55 @@ msgstr[2] "Без места · {n} Библий"
 #: bible_family.py
 msgid "Eastern Orthodox"
 msgstr "Православная"
+
+
+#: family_line.py
+msgid "Place on the Line"
+msgstr "Место на Линии"
+
+#: family_line.py
+msgid "Year"
+msgstr "Год"
+
+#: family_line.py
+msgid "Name"
+msgstr "Название"
+
+
+#: family_line.py
+#, python-brace-format
+msgid "{filter}: {choice}"
+msgstr "{filter}: {choice}"
+
+#: family_line.py
+msgid "Availability"
+msgstr "Наличие"
+
+#: family_line.py
+msgid "Show every Bible again"
+msgstr "Снова показать все Библии"
+
+#: family_line.py
+msgid "Tradition"
+msgstr "Традиция"
+
+#: family_line.py
+msgid "Show every tradition again"
+msgstr "Снова показать все традиции"
+
+#: family_line.py
+msgid "Era"
+msgstr "Эпоха"
+
+#: family_line.py
+msgid "Show every era again"
+msgstr "Снова показать все эпохи"
+
+#: family_line.py
+msgid "Sort"
+msgstr "Порядок"
+
+#: family_line.py
+#, python-brace-format
+msgid "Sort: {choice}"
+msgstr "Порядок: {choice}"
