@@ -3075,10 +3075,27 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             return
         export_dialog.export_passage(pane, pane.current_verses())
 
+    def _bible_pane_in_view(self):
+        """The pane a verse action acts on: the one in use, unless that is
+        the Family Tree, whose text view is hidden — then the Bible showing
+        beside it, or None when there is none."""
+        pane = self._pane_in_view()
+        if pane is not None and pane._is_family:
+            other = self.pane2 if pane is self.pane1 else self.pane1
+            shown = other.get_visible() and not other._is_family
+            pane = other if shown else None
+        return pane
+
     def _compare_verse(self):
         """One verse, so the selection's first is what it compares."""
-        pane = self._pane_in_view()
-        if pane is None or not pane.book:
+        pane = self._bible_pane_in_view()
+        if pane is None:
+            # A window too narrow for two panes shows the Family Tree alone.
+            # Aimed at its hidden text, the shortcut did nothing at all.
+            self._toast(_('Open a Bible beside the Family Tree to compare '
+                          'a verse'))
+            return
+        if not pane.book:
             return
         verses = pane.current_verses()
         if not verses:

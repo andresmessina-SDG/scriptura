@@ -412,3 +412,64 @@ def test_compare_settles_its_header_before_it_is_shown(display, monkeypatch):
     assert header.measure(Gtk.Orientation.VERTICAL, -1)[1] == \
         at_popup['height']
     at_popup['pop'].unparent()
+
+
+# ── Ctrl+Shift+C beside the Family Tree ─────────────────────────────────────
+
+class _ShortcutPane:
+    def __init__(self, family, visible=True):
+        self._is_family = family
+        self._visible = visible
+        self.book = 'John'
+        self._on_toast = None
+
+    def get_visible(self):
+        return self._visible
+
+    def current_verses(self):
+        return [16]
+
+
+def _shortcut_window(pane2_visible):
+    import window
+    toasts = []
+
+    class _Win:
+        _compare_verse = window.BibleWindow._compare_verse
+        _bible_pane_in_view = window.BibleWindow._bible_pane_in_view
+
+        def __init__(self):
+            self.pane1 = _ShortcutPane(family=True)
+            self.pane2 = _ShortcutPane(family=False, visible=pane2_visible)
+
+        def _pane_in_view(self):
+            return self.pane1          # the Family Tree has the focus
+
+        def _toast(self, message):
+            toasts.append(message)
+    return _Win(), toasts
+
+
+def test_compare_shortcut_reaches_past_the_family_tree(monkeypatch):
+    """Focus in the Family Tree used to aim Ctrl+Shift+C at the Family
+    pane's hidden text, and nothing happened. It compares in the Bible pane
+    beside it."""
+    import annotation_dialogs
+    calls = []
+    monkeypatch.setattr(annotation_dialogs, 'compare_translations',
+                        lambda pane, verse: calls.append((pane, verse)))
+    win, toasts = _shortcut_window(pane2_visible=True)
+    win._compare_verse()
+    assert calls == [(win.pane2, 16)] and toasts == []
+
+
+def test_compare_shortcut_says_why_with_only_the_family_tree(monkeypatch):
+    """A window too narrow for two panes shows the Family Tree alone. The
+    shortcut used to do nothing at all there; now it says what to do."""
+    import annotation_dialogs
+    calls = []
+    monkeypatch.setattr(annotation_dialogs, 'compare_translations',
+                        lambda pane, verse: calls.append((pane, verse)))
+    win, toasts = _shortcut_window(pane2_visible=False)
+    win._compare_verse()
+    assert calls == [] and len(toasts) == 1
