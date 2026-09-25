@@ -38,6 +38,13 @@ semver-ish — 0.x was the pre-Flathub testing track.
   reading aids, and backing up your study data. Tips, keyboard shortcuts
   and About are under Help, each with its name.
 
+### Fixed
+
+- **The store listing tells the truth about going online.** It said
+  Scriptura goes online only to download the texts you choose. Spoken
+  readings go online too, so it now says so, and that Preferences can
+  turn them off. The website is corrected too.
+
 ## [1.7.3] — 2026-09-22
 
 ### Changed
