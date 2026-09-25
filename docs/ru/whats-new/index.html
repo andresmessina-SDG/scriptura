@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Что нового в Scriptura</title>
+<meta name="description" content="Все выпуски Scriptura, от новых к старым, со списками изменений.">
+<link rel="canonical" href="https://andresmessina-sdg.github.io/scriptura/ru/whats-new/">
+<link rel="alternate" hreflang="en" href="https://andresmessina-sdg.github.io/scriptura/whats-new/">
+<link rel="alternate" hreflang="es" href="https://andresmessina-sdg.github.io/scriptura/es/whats-new/">
+<link rel="alternate" hreflang="ru" href="https://andresmessina-sdg.github.io/scriptura/ru/whats-new/">
+<link rel="alternate" hreflang="x-default" href="https://andresmessina-sdg.github.io/scriptura/whats-new/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Что нового в Scriptura">
+<meta property="og:description" content="Все выпуски Scriptura, от новых к старым, со списками изменений.">
+<meta property="og:url" content="https://andresmessina-sdg.github.io/scriptura/ru/whats-new/">
+<meta property="og:image" content="https://andresmessina-sdg.github.io/scriptura/assets/img/ru/reading.jpg">
+<meta name="theme-color" content="#f7f4ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1e1e1e" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" sizes="32x32" href="../../assets/icon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="../../assets/icon-64.png">
+<link rel="apple-touch-icon" href="../../assets/icon-180.png">
+<link rel="preload" href="../../assets/fonts/sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../../assets/fonts/sans-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../../assets/fonts/wordmark.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../../assets/site.css">
+<script>try{var p=JSON.parse(localStorage.getItem('scriptura-paper'));if(p&&p.vars){for(var k in p.vars)document.documentElement.style.setProperty(k,p.vars[k]);}}catch(e){}</script>
+</head>
+<body>
+<canvas id="field" aria-hidden="true"></canvas>
+<a class="skip" href="#main">Перейти к содержанию</a>
+
+<header class="head">
+  <a class="brand" href="../../ru/" aria-label="Scriptura"><span class="initial" aria-hidden="true"></span><span class="brand-word" aria-hidden="true">criptura</span></a>
+  <span class="sp"></span>
+  <a class="headbtn" href="../../ru/whats-new/" aria-current="page"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h6l3 3v9.4H4z"/><path d="M6.5 7.5h4M6.5 10h4M6.5 12.5h2.5"/></svg><span>Что нового</span></a>
+  <div class="pick">
+    <button type="button" class="headbtn" id="langbtn" aria-expanded="false" aria-controls="langpop" aria-label="Языки: Русский"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c1.7 1.8 2.5 3.9 2.5 6.2S9.7 12.4 8 14.2C6.3 12.4 5.5 10.3 5.5 8S6.3 3.6 8 1.8"/></svg><span>Русский</span><svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="m4.5 6.5 3.5 3.5 3.5-3.5"/></svg></button>
+    <div class="pop langs-pop" id="langpop" hidden><nav aria-label="Языки">
+<a lang="en" hreflang="en" href="../../whats-new/">English<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7"/></svg></a>
+<a lang="es" hreflang="es" href="../../es/whats-new/">Español<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7"/></svg></a>
+<a lang="ru" hreflang="ru" href="../../ru/whats-new/" aria-current="page">Русский<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7"/></svg></a>
+    </nav></div>
+  </div>
+  <div class="pick">
+    <button type="button" class="headbtn" id="paperbtn" aria-expanded="false" aria-controls="paperpop"><i aria-hidden="true"></i><span>Бумага</span></button>
+    <div class="pop papers-pop" id="paperpop" hidden role="group" aria-label="Бумага"><div class="papers" id="papers"></div></div>
+  </div>
+  <a class="headgo" href="../../ru/#install">Скачать</a>
+</header>
+<main id="main" class="news">
+  <section class="hero">
+    <p class="eyebrow">Выпуски</p>
+    <h1>Что нового</h1>
+    <p class="lede">Все выпуски, от новых к старым, — так, как их описывает магазин приложений. Полный список изменений — в <a class="clay" href="https://github.com/andresmessina-SDG/scriptura/blob/main/CHANGELOG.md">журнале изменений</a> проекта, на английском.</p>
+    <p class="note">Заметки к последним выпускам есть только на английском.</p>
+  </section>
+  <ol class="releases">
+<li class="release" id="v1-7-3" lang="en"><div class="rel-head"><h2>Версия 1.7.3</h2><time datetime="2026-09-22">22 сентября 2026 г.</time></div><p class="rel-sum">Search the Greek and Hebrew behind the translation, and hear more of the fathers.</p><ul class="rel-list"><li>Search by the word under the translation. strong:G26 finds every verse whose Greek carries that word, and lemma: and morph: ask the same of the spelling and the grammar.</li><li>The occurrences beside a Strong&#x27;s definition can now cover the whole Bible, not only the book you are reading.</li><li>The historical commentaries add about 2,000 comments, most of them Origen. The Module Manager offers the new pack.</li><li>Double-clicking a word in a Russian Bible finds its dictionary article far more often. Update the Russian dictionary to get this.</li><li>The interface font now ships with the app, so the text looks the same on every desktop.</li><li>On desktops that put the app icon in the window bar, such as KDE, it no longer appears there.</li><li>Evening paper now says when your desktop has no Night Light, instead of doing nothing.</li><li>The starting library cards say how much each one downloads.</li><li>Where the system cannot play audio, no play button is offered.</li><li>A file chooser that cannot open now says so, and the Share and Written on this chapter menus fit their rows.</li></ul></li>
+<li class="release" id="v1-7-2" lang="en"><div class="rel-head"><h2>Версия 1.7.2</h2><time datetime="2026-09-17">17 сентября 2026 г.</time></div><p class="rel-sum">Your writing is kept safer, and the interlinears show more.</p><ul class="rel-list"><li>A daily copy of your notes, journal and sermons is kept on this device. Restore keeps a copy of what it replaces.</li><li>Closing the app or logging out no longer loses the last sentence you typed.</li><li>Opening the app a second time no longer risks your notes. It brings the open window forward.</li><li>Find and replace in journal entries and sermons, with Ctrl+F.</li><li>The Greek interlinear can show the words other editions add or change.</li><li>The Hebrew interlinear can show the form the scribes wrote under the form that is read.</li><li>Type a verse reference in the GNOME search to see it and open it.</li><li>Ctrl+D bookmarks the chapter. Alt+[ and Alt+] go back and forward.</li><li>The annotations list shows the verse and updates itself.</li><li>Highlights sat one word late when footnotes were hidden. This is fixed.</li></ul></li>
+<li class="release" id="v1-7-1" lang="en"><div class="rel-head"><h2>Версия 1.7.1</h2><time datetime="2026-09-15">15 сентября 2026 г.</time></div><p class="rel-sum">Fixes for writing sermons.</p><ul class="rel-list"><li>Giving a sermon a series could close the app. This is fixed.</li><li>Typing in a long sermon no longer gets slower as the text grows.</li><li>Russian: the verse menu item for a new journal entry no longer reads as “add a bookmark”.</li></ul></li>
+<li class="release" id="v1-7-0" lang="en"><div class="rel-head"><h2>Версия 1.7.0</h2><time datetime="2026-09-14">14 сентября 2026 г.</time></div><p class="rel-sum">A place to write: a journal, sermons, and a new Today page.</p><ul class="rel-list"><li>A journal. Write an entry about one passage, several, or none, and add or remove passages later.</li><li>Sermons. Keep each sermon with its passages, its main idea, its series and the days you preached it. Print or export it on its own.</li><li>While you write a sermon, bring in your notes, highlights, verses, cross-references and word studies on the passage.</li><li>The Annotations window has three pages: Annotations, Journal and Sermons, each with its own search and filters.</li><li>Room to write, with buttons for bold, italic, headings, quotes and lists, and a word count.</li><li>Print, export and compare translations from the new ⋮ button, or with Ctrl+P, Ctrl+E and Ctrl+Shift+C. Before, they were only in the right-click menu.</li><li>The Today page shows the first verse of the day&#x27;s reading, on a new parchment background.</li><li>Search finds your own notes and entries as well as Bible verses.</li><li>The right-click menu is shorter and grouped.</li><li>Fixed: double-clicking a word said “No entry” even with dictionaries installed, and a reading plan could say it was done when it was not.</li></ul></li>
+<li class="release" id="v1-6-2" lang="en"><div class="rel-head"><h2>Версия 1.6.2</h2><time datetime="2026-09-10">10 сентября 2026 г.</time></div><p class="rel-sum">Your marks now show in every translation, and many fixes.</p><ul class="rel-list"><li>Highlights, underlines, notes and tags now show in every translation, not only the one you made them in. The Study Journal is now called Annotations.</li><li>Export, print and copy work for Bibles from eBible, and marks made in them land on the right verse.</li><li>Psalm numbers are right in the Clementine Vulgate and the Russian Synodal Bible from eBible.</li><li>“Match case” no longer turns an OR search into an AND search.</li><li>A link to a book your Bible does not have now tells you which book is missing, instead of doing nothing.</li><li>The Orthodox Old Calendar is offered beside the New Calendar.</li><li>Russian readers get the Orthodox troparion in Church Slavonic, not in English.</li><li>Dates show in the app&#x27;s language, not always in English.</li><li>A stray space before commas is gone from the Today page, devotionals, cross-references, dictionaries and collects.</li><li>Highlights cover the whole verse and stay beside the right text.</li></ul></li>
+<li class="release" id="v1-6-1" lang="en"><div class="rel-head"><h2>Версия 1.6.1</h2><time datetime="2026-09-02">2 сентября 2026 г.</time></div><p class="rel-sum">Two fixes for 1.6.0.</p><ul class="rel-list"><li>The right-click menu now opens in the middle of the page on small windows.</li><li>The Book of Generations opens at the text size you chose.</li></ul></li>
+<li class="release" id="v1-6-0"><div class="rel-head"><h2>Версия 1.6.0</h2><time datetime="2026-09-02">2 сентября 2026 г.</time></div><p class="rel-sum">Scriptura на русском и списки имён из Библии в виде схем.</p><ul class="rel-list"><li>Приложение теперь на русском, с привычными русскому читателю названиями книг.</li><li>Современная русская Библия под свободной лицензией и первый русский словарь.</li><li>«Книга родословий» показывает родословия Библии в виде схем, по одной на страницу. Нажмите на имя, чтобы узнать о человеке, или на стих, чтобы прочесть его.</li><li>При первом запуске вы выбираете язык, и приложение предлагает Библии, словарь и материалы для изучения на нём.</li><li>Испанский словарь, первый во всех источниках SWORD.</li><li>«Писание в камне» на вашем языке и открывается сразу, а не после загрузки всех фотографий.</li><li>Переходите к отрывку по названию книги на своём языке, например «Бытие 3» или Génesis 3.</li><li>Названия книг в перекрёстных ссылках и в диаграммах поиска переведены.</li><li>Переведённые надписи больше не обрезаются.</li><li>Загрузка при первом запуске стала надёжнее, а закрытие окна во время неё больше не оставляет библиотеку установленной наполовину.</li></ul></li>
+<li class="release" id="v1-5-0"><div class="rel-head"><h2>Версия 1.5.0</h2><time datetime="2026-08-19">19 августа 2026 г.</time></div><p class="rel-sum">Scriptura на испанском и книги, которые раньше не открывались.</p><ul class="rel-list"><li>Приложение теперь на испанском. Выберите язык на первом экране или в меню.</li><li>Испанские Библии: LBLA, NBLA, Versión Biblia Libre и Библия Штраубингера с подробными примечаниями.</li><li>Вся Библия вслух на испанском, из La Biblia en Español Sencillo.</li><li>Книги Товита, Иудифи, Сираха и Маккавейские теперь открываются. Раньше вместо них показывался Апокалипсис.</li><li>Теперь видны все установленные словари на любом языке, а также номера Стронга в испанских Библиях.</li><li>Увеличьте расстояние между буквами или включите шрифт OpenDyslexic.</li><li>Приложение учитывает настройку высокой контрастности рабочего стола.</li><li>Необязательный режим фокуса приглушает всё, кроме читаемого отрывка.</li><li>Звук управляется с медиапанели рабочего стола и медиаклавишами.</li><li>Страница больше не прыгает при смене темы и других настроек отображения.</li></ul></li>
+<li class="release" id="v1-4-0"><div class="rel-head"><h2>Версия 1.4.0</h2><time datetime="2026-07-27">27 июля 2026 г.</time></div><p class="rel-sum">Главы, читаемые вслух, и отрывки, которые можно взять с собой.</p><ul class="rel-list"><li>Слушайте главы Berean Standard Bible вслух. Отматывайте назад, меняйте скорость и слушайте дальше в следующей главе.</li><li>Слушайте размышления: «Утро и вечер» Сперджена, псалмы и Daily Strength на странице «Сегодня».</li><li>Экспортируйте отрывок как лист для изучения с вашими заметками и выделениями.</li><li>Сохраните или скопируйте стих как изображение.</li><li>Распечатайте отрывок как раздаточный материал.</li><li>Заголовки разделов вашей Библии теперь видны. Клавиши [ и ] переходят между разделами.</li><li>Панелью чтения можно пользоваться с клавиатуры, с поддержкой экранного диктора.</li><li>Каждая Библия начинает главу с большой буквицы, а комментарии показывают свои заголовки.</li><li>Больше молитв римского календаря и более устойчивая страница «Сегодня».</li><li>Модули устанавливаются, даже когда сервер CrossWire недоступен.</li></ul></li>
+<li class="release" id="v1-3-0"><div class="rel-head"><h2>Версия 1.3.0</h2><time datetime="2026-07-10">10 июля 2026 г.</time></div><p class="rel-sum">Языки оригинала, слово за словом.</p><ul class="rel-list"><li>Читайте греческий Новый Завет и еврейский Ветхий Завет пословно, с английским значением и грамматикой каждого слова.</li><li>Пакет греческих словарей с Abbott-Smith и Liddell-Scott-Jones. Нажмите на стих в статье, чтобы прочесть его.</li><li>Нажмите F5, чтобы показать отрывок во весь экран на проекторе, одним или рядом со вторым переводом.</li><li>Карты ссылаются на свои отрывки, а комментарии показывают места, названные в стихе.</li><li>Греческие ударения теперь отображаются правильно.</li></ul></li>
+<li class="release" id="v1-2-0"><div class="rel-head"><h2>Версия 1.2.0</h2><time datetime="2026-07-05">5 июля 2026 г.</time></div><p class="rel-sum">Начать стало проще.</p><ul class="rel-list"><li>Новое руководство «Советы и жесты» в меню собирает все жесты чтения.</li><li>Разовые подсказки показывают скрытые жесты, когда они впервые нужны. Их можно отключить.</li></ul></li>
+<li class="release" id="v1-1-0"><div class="rel-head"><h2>Версия 1.1.0</h2><time datetime="2026-06-28">28 июня 2026 г.</time></div><p class="rel-sum">Выберите, как выглядит страница для чтения.</p><ul class="rel-list"><li>Новая панель «Оформление»: выберите цвет бумаги, и цвет текста подстроится под него.</li><li>Жирный шрифт и выравнивание по ширине стали небольшими кнопками рядом со шрифтом.</li><li>У планов чтения есть вид «Сегодня» и календарь на месяц.</li><li>Исправлены бледные следы, остававшиеся при прокрутке.</li></ul></li>
+<li class="release" id="v1-0-1"><div class="rel-head"><h2>Версия 1.0.1</h2><time datetime="2026-05-28">28 мая 2026 г.</time></div><p class="rel-sum">Исправления сборки.</p><ul class="rel-list"><li>Перевод сборки на meson ради более чистой установки Flatpak.</li><li>Правка CMake в SWORD для корректной компоновки с libcurl (ошибка API-263).</li></ul></li>
+<li class="release" id="v1-0-0"><div class="rel-head"><h2>Версия 1.0.0</h2><time datetime="2026-05-23">23 мая 2026 г.</time></div><p class="rel-sum">Первый выпуск Scriptura. Читайте два перевода рядом, изучайте еврейский и греческий за каждым словом, переходите по перекрёстным ссылкам и храните выделения и заметки в одном месте с поиском, без интернета, на своём компьютере.</p></li>
+  </ol>
+</main>
+
+<footer class="colophon">
+  <p class="eyebrow">Выходные данные</p>
+  <p>Scriptura создаёт Andres Messina, программа распространяется по лицензии GPL-3.0. Писание на этой странице набрано шрифтом Noto Serif, остальное — Adwaita Sans, как в самом приложении. Страница ничего не загружает с других сайтов.</p>
+  <p>Буквы на полях — еврейский и греческий алфавиты, выписанные по порядку, как на странице «Сегодня» в приложении; изредка среди них встречается древняя палеоеврейская буква. Они стоят в той же пропорции, в какой написана Библия, если считать по стихам: 73,6 % еврейского, 25,6 % греческого и 0,9 % арамейского.</p>
+  <ul class="credits">
+<li>Русский открытый перевод и Библейский словарь — © Door43 World Missions Community, <a class="clay" href="https://creativecommons.org/licenses/by-sa/4.0/deed.ru">CC BY-SA 4.0</a>, из <a class="clay" href="https://git.door43.org/Door43-Catalog/ru_rob">Door43</a>; статьи словаря даны в отрывках.</li>
+<li>Синодальный перевод — общественное достояние, из <a class="clay" href="https://ebible.org/Scriptures/details.php?id=russyn">eBible.org</a>. Греческий словарь Стронга — общественное достояние.</li>
+<li>Данные подстрочника — <a class="clay" href="https://github.com/STEPBible/STEPBible-Data">STEPBible</a> / Tyndale House, Кембридж, <a class="clay" href="https://creativecommons.org/licenses/by/4.0/deed.ru">CC BY 4.0</a>. Цитаты отцов Церкви — общественное достояние, из <a class="clay" href="https://github.com/HistoricalChristianFaith/Commentaries-Database">HistoricalChristianFaith Commentaries Database</a>.</li>
+<li>Параллельные места — из <a class="clay" href="https://www.openbible.info/labs/cross-references/">OpenBible.info</a>, <a class="clay" href="https://creativecommons.org/licenses/by/4.0/deed.ru">CC BY</a>.</li>
+  </ul>
+  <nav>
+    <a class="clay" href="https://github.com/andresmessina-SDG/scriptura">Исходный код</a>
+    <a class="clay" href="../../ru/whats-new/">Что нового</a>
+    <a class="clay" href="https://github.com/andresmessina-SDG/scriptura/issues">Сообщить о проблеме</a>
+    <a class="clay" href="https://github.com/andresmessina-SDG/scriptura/blob/main/LICENSE">Лицензия</a>
+  </nav>
+</footer>
+
+<script type="application/json" id="site-data">{"text":null,"strings":{"xrefs_none":"В OpenBible нет параллельных мест для этого стиха.","voices_note":"Цитаты на английском.","close":"Закрыть","entry":"Стронг {n}","kjv_uses":"В KJV:","copied":"Скопировано","press_ctrl_c":"Нажмите Ctrl+C","auto_title":"Как в системе: светлая или тёмная тема","papers":{"Auto":"Авто","Paper":"Бумага","White":"Белая","Sepia":"Сепия","Green":"Зелёный","Slate":"Сланец","Charcoal":"Уголь","Black":"Чёрный"},"copy":"Копировать"}}</script>
+<script src="../../assets/site.js" defer></script>
+</body>
+</html>

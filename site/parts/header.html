@@ -1,0 +1,18 @@
+<a class="skip" href="#main">{{t.skip}}</a>
+
+<header class="head">
+  <a class="brand" href="{{home}}" aria-label="Scriptura"><span class="initial" aria-hidden="true"></span><span class="brand-word" aria-hidden="true">criptura</span></a>
+  <span class="sp"></span>
+  <a class="headbtn" href="{{news_href}}"{{news_current}}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h6l3 3v9.4H4z"/><path d="M6.5 7.5h4M6.5 10h4M6.5 12.5h2.5"/></svg><span>{{t.link_changes}}</span></a>
+  <div class="pick">
+    <button type="button" class="headbtn" id="langbtn" aria-expanded="false" aria-controls="langpop" aria-label="{{t.languages_label}}: {{lang_name}}"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c1.7 1.8 2.5 3.9 2.5 6.2S9.7 12.4 8 14.2C6.3 12.4 5.5 10.3 5.5 8S6.3 3.6 8 1.8"/></svg><span>{{lang_name}}</span><svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="m4.5 6.5 3.5 3.5 3.5-3.5"/></svg></button>
+    <div class="pop langs-pop" id="langpop" hidden><nav aria-label="{{t.languages_label}}">
+{{lang_menu}}
+    </nav></div>
+  </div>
+  <div class="pick">
+    <button type="button" class="headbtn" id="paperbtn" aria-expanded="false" aria-controls="paperpop"><i aria-hidden="true"></i><span>{{t.paper}}</span></button>
+    <div class="pop papers-pop" id="paperpop" hidden role="group" aria-label="{{t.paper}}"><div class="papers" id="papers"></div></div>
+  </div>
+  <a class="headgo" href="{{home_install}}">{{t.download}}</a>
+</header>

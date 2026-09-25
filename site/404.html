@@ -1,0 +1,18 @@
+{{> head}}
+<main id="main" class="lost">
+  <a class="brand big" href="{{root}}" data-nf-href="home" aria-label="Scriptura"><span class="initial" aria-hidden="true"></span><span class="brand-word" aria-hidden="true">criptura</span></a>
+  <div class="rule" aria-hidden="true"><span></span></div>
+  <p class="eyebrow rubric" data-nf="eyebrow">{{nf.eyebrow}}</p>
+  <h1 data-nf="h1">{{nf.h1}}</h1>
+  <blockquote class="lost-verse">
+    <p data-nf-verse><span class="dropcap">{{nf.verse_initial}}</span>{{nf.verse_rest}}</p>
+    <footer data-nf="ref">{{nf.ref}}</footer>
+  </blockquote>
+  <p class="lede" data-nf="body">{{nf.body}}</p>
+  <div class="act">
+    <a class="go" href="{{root}}" data-nf="home" data-nf-href="home">{{nf.home}}</a>
+    <a class="clay" href="{{root}}whats-new/" data-nf="news" data-nf-href="news">{{nf.news}}</a>
+  </div>
+</main>
+
+{{> scripts}}

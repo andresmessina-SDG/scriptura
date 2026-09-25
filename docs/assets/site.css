@@ -1,0 +1,290 @@
+/* The Scriptura website. Tokens are the app's own: paper, ink and gold from
+   pane.py and appearance_page.py, clay and the two-accent law from
+   data/style.css. Faces are the app's bundled ones, cut to the letters a
+   page needs by tools/build-site.py --assets and served from here. */
+
+@font-face { font-family: "S Sans"; src: url(fonts/sans-latin.woff2) format("woff2"); font-weight: 100 900; font-display: swap; unicode-range: U+0000-02FF, U+2000-206F, U+2190-21FF; }
+@font-face { font-family: "S Sans"; src: url(fonts/sans-cyrillic.woff2) format("woff2"); font-weight: 100 900; font-display: swap; unicode-range: U+0400-04FF, U+2116; }
+@font-face { font-family: "S Prose"; src: url(fonts/prose.woff2) format("woff2"); font-weight: 200 800; font-display: swap; }
+@font-face { font-family: "S Prose"; src: url(fonts/prose-italic.woff2) format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "S Wordmark"; src: url(fonts/wordmark.woff2) format("woff2"); font-weight: 500; font-display: block; }
+@font-face { font-family: "S Hebrew"; src: url(fonts/hebrew.woff2) format("woff2"); font-display: block; unicode-range: U+0590-05FF; }
+@font-face { font-family: "S Scripture"; src: url(fonts/scripture-latin.woff2) format("woff2"); font-weight: 400; font-display: swap; unicode-range: U+0000-02FF, U+0300-036F, U+0370-03FF, U+1F00-1FFF, U+2000-206F; }
+@font-face { font-family: "S Scripture"; src: url(fonts/scripture-cyrillic.woff2) format("woff2"); font-weight: 400; font-display: swap; unicode-range: U+0400-04FF, U+2116; }
+@font-face { font-family: "S Scripture"; src: url(fonts/scripture-medium-latin.woff2) format("woff2"); font-weight: 500 700; font-display: swap; unicode-range: U+0000-02FF, U+2000-206F; }
+@font-face { font-family: "S Scripture"; src: url(fonts/scripture-medium-cyrillic.woff2) format("woff2"); font-weight: 500 700; font-display: swap; unicode-range: U+0400-04FF, U+2116; }
+
+:root {
+  --paper: #f7f4ee; --ink: #2b2620; --gold: #a5822b; --blue: #0461be; --clay: #a9744f;
+  --ink-2: color-mix(in srgb, var(--ink) 74%, var(--paper));
+  --ink-3: color-mix(in srgb, var(--ink) 56%, var(--paper));
+  --rule: color-mix(in srgb, var(--ink) 13%, var(--paper));
+  --surface: color-mix(in srgb, var(--ink) 4%, var(--paper));
+  --gold-tint: color-mix(in srgb, var(--gold) 16%, var(--paper));
+  --gold-tint-2: color-mix(in srgb, var(--gold) 26%, var(--paper));
+  --gold-text: color-mix(in srgb, var(--gold) 64%, var(--ink));
+  --sans: "S Sans", "Adwaita Sans", "Inter", system-ui, sans-serif;
+  --prose: "S Prose", "Newsreader", "Noto Serif", Georgia, serif;
+  --scripture: "S Scripture", "Noto Serif", Georgia, serif;
+  --mono: "Adwaita Mono", ui-monospace, "DejaVu Sans Mono", monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #1e1e1e; --ink: #e8e0d4; --gold: #d0ac5c; --blue: #81d0ff; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --paper: #1e1e1e; --ink: #e8e0d4; --gold: #d0ac5c; --blue: #81d0ff; color-scheme: dark; }
+/* Newsreader has no Cyrillic: Russian prose is set in the sans, as in the app. */
+:root:lang(ru) { --prose: var(--sans); }
+
+[hidden] { display: none !important; }
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; padding-inline: 16px; background: var(--paper); color: var(--ink); font: 17px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 4px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+p { margin: 0; }
+figure { margin: 0; }
+svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.skip { position: absolute; left: 16px; top: -48px; background: var(--ink); color: var(--paper); padding: 8px 14px; border-radius: 6px; font-weight: 600; text-decoration: none; z-index: 10; }
+.skip:focus { top: 12px; }
+main, .head { max-width: 1120px; margin-inline: auto; }
+/* The Today page's abecedary, plain on the paper, kept to the margins. */
+#field { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+main, .colophon { position: relative; z-index: 1; }
+/* A grid track grows to its widest child's one-line width unless told it
+   may shrink: the terminal command alone made the page 860px wide on a phone. */
+.hero, .sec, .install, .colophon, .panel, .term-wrap, .lost { grid-template-columns: minmax(0, 1fr); }
+.head { position: relative; z-index: 2; }
+
+/* ── header ── */
+.head { display: flex; align-items: center; gap: 16px; padding-block: 18px; }
+/* The wordmark: the icon's illuminated S as a drop cap, in the reading gold
+   of whatever paper is chosen, then the word in EB Garamond. */
+.brand { display: flex; align-items: flex-end; text-decoration: none; color: var(--ink); }
+.initial { display: block; height: 78px; aspect-ratio: 280.5 / 412.5; margin-right: 1px; background: var(--gold);
+  -webkit-mask: url(initial-s.svg) no-repeat center / contain; mask: url(initial-s.svg) no-repeat center / contain; }
+.brand-word { font: 500 42px/1 "S Wordmark", "EB Garamond", Georgia, serif; letter-spacing: .005em; margin-bottom: 7px; }
+.head .sp { flex: 1; }
+.pick { position: relative; }
+.headbtn { display: inline-flex; align-items: center; gap: 7px; font: 600 14px var(--sans); color: var(--ink-2); background: none; border: 0; border-radius: 9999px; padding: 6px 10px; cursor: pointer; }
+.headbtn:hover, .headbtn[aria-expanded="true"], .headbtn[aria-current] { background: var(--surface); color: var(--ink); }
+a.headbtn { text-decoration: none; }
+.headbtn svg { width: 16px; height: 16px; }
+.headbtn .chev { width: 12px; height: 12px; margin-left: -2px; }
+.headbtn i { width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--ink-3); background: linear-gradient(135deg, var(--paper) 50%, var(--ink) 50%); }
+.headgo { font: 650 15px var(--sans); color: var(--gold-text); text-decoration: none; padding: 7px 14px; border-radius: 9999px; background: var(--gold-tint); }
+.headgo:hover { background: var(--gold-tint-2); }
+/* The pickers open under their buttons, over the page, as the app's popovers do. */
+.pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; background: var(--paper); border: 1px solid var(--rule); border-radius: 20px; box-shadow: 0 10px 30px -14px rgba(0, 0, 0, .35); }
+.papers-pop { padding: 14px 16px; width: max-content; max-width: 420px; }
+.langs-pop { padding: 6px; min-width: 190px; }
+.langs-pop nav { display: grid; }
+.langs-pop a { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 9px 12px; border-radius: 12px; text-decoration: none; font: 600 15px var(--sans); color: var(--ink-2); }
+.langs-pop a:hover { background: var(--surface); color: var(--ink); }
+.langs-pop a svg { width: 16px; height: 16px; visibility: hidden; }
+.langs-pop a[aria-current] { color: var(--ink); }
+.langs-pop a[aria-current] svg { visibility: visible; }
+.papers { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 600 13px var(--sans); padding: 7px 12px; border-radius: 10px; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); cursor: pointer; min-width: 64px; }
+.chip[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink-2); }
+.chip.auto { background: linear-gradient(135deg, #f7f4ee 50%, #1e1e1e 50%); color: #2b2620; }
+.chip.auto span { background: #f7f4ee; padding: 0 5px; border-radius: 4px; }
+
+/* ── shared voices ── */
+.eyebrow { font: 700 12.5px/1.3 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+.go { display: inline-flex; align-items: center; gap: 10px; font: 650 17px var(--sans); color: var(--gold-text); background: var(--gold-tint); text-decoration: none; padding: 12px 22px; border-radius: 9999px; transition: background-color .15s; }
+.go:hover { background: var(--gold-tint-2); }
+.go svg { width: 18px; height: 18px; }
+.quiet { font-size: 14px; color: var(--ink-3); }
+.meta-link { text-decoration: none; }
+.meta-link:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.clay { color: var(--clay); text-decoration: none; }
+.clay:hover { text-decoration: underline; }
+.act { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.lede { font: 21px/1.5 var(--prose); max-width: 34em; }
+.shot { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--rule); box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 16px 40px -20px rgba(0, 0, 0, .35); }
+
+/* ── hero ── */
+.hero { padding-block: 40px 36px; display: grid; gap: 18px; max-width: 760px; }
+.hero h1 { font: 700 clamp(34px, 5.6vw, 56px)/1.06 var(--sans); letter-spacing: -.025em; }
+
+/* ── the reading pane: the app's window, working ── */
+.win { border: 1px solid var(--rule); border-radius: 12px; background: var(--paper); box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 28px 60px -28px rgba(0, 0, 0, .4); overflow: hidden; }
+.bar { display: flex; align-items: center; gap: 14px; height: 46px; padding: 0 12px; background: var(--surface); border-bottom: 1px solid var(--rule); color: var(--ink-2); }
+.bar svg { width: 16px; height: 16px; flex: none; }
+.bar .t { flex: 1; text-align: center; font: 700 14px var(--sans); color: var(--ink); }
+.bar .x { width: 22px; height: 22px; border-radius: 50%; background: var(--rule); display: grid; place-items: center; }
+.bar .x svg { width: 10px; height: 10px; stroke-width: 1.5; }
+.panes { display: grid; grid-template-columns: 1fr 1fr; }
+.pane { padding: 14px 28px 26px; min-width: 0; }
+.pane + .pane { border-left: 1px solid var(--rule); }
+.ph { font: 600 13px var(--sans); color: var(--ink-2); margin-bottom: 14px; }
+.bible { font: 17.5px/1.72 var(--scripture); }
+.ch { font: 700 25px/1.2 var(--scripture); color: var(--ink-2); margin-bottom: 12px; }
+.vn { font: 500 .6em var(--sans); color: var(--ink-3); vertical-align: .55em; margin: 0 .22em 0 .1em; }
+.dc { font-size: 2.05em; line-height: 0; color: var(--gold); font-weight: 500; }
+.w { cursor: pointer; border-radius: 3px; transition: background-color .1s; }
+.w:hover { background: var(--gold-tint); }
+:root:lang(es) .w, :root:lang(ru) .w { text-decoration: underline dotted color-mix(in srgb, var(--ink) 40%, var(--paper)); text-underline-offset: 4px; }
+.w.on { color: var(--blue); text-decoration: underline solid var(--blue); text-underline-offset: 3px; }
+.vn { cursor: pointer; border-radius: 4px; padding: 0 .12em; }
+.vn:hover { color: var(--ink); }
+.vn.on { color: var(--gold-text); background: var(--gold-tint); }
+.lex { border-top: 1px solid var(--rule); background: var(--surface); }
+.tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 10px 20px 0; }
+.tabs [role="tab"] { font: 600 13px var(--sans); color: var(--ink-3); background: none; border: 1px solid transparent; border-radius: 9999px; padding: 5px 12px; cursor: pointer; }
+.tabs [role="tab"]:hover { color: var(--ink); }
+.tabs [role="tab"][aria-selected="true"] { color: var(--ink); background: var(--paper); border-color: var(--rule); }
+.where { margin-left: auto; font: 600 13px var(--sans); color: var(--ink-3); padding-right: 8px; }
+.panel { padding: 14px 28px 22px; display: grid; gap: 6px; align-content: start; height: 300px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+.panel .hd { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.panel .gk { font: 400 26px var(--scripture); }
+.panel .tr { font: italic 18px var(--prose); }
+.panel .pr { font: 14px var(--sans); color: var(--ink-3); }
+.panel .hw { font: 700 17px var(--sans); }
+.panel .df { font: 17px/1.5 var(--prose); max-width: 52em; }
+.panel .us { font: 14.5px/1.5 var(--sans); color: var(--ink-2); }
+.panel .note { font-size: 13px; color: var(--ink-3); }
+/* Cross-references go to the Bible: the accent, as in the app's bar. */
+.xchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.xchip { font: 600 13px var(--sans); color: var(--blue); background: var(--paper); border: 1px solid var(--rule); border-radius: 9999px; padding: 5px 12px; cursor: pointer; }
+.xchip:hover { border-color: color-mix(in srgb, var(--blue) 45%, var(--paper)); }
+.xchip[aria-pressed="true"] { background: color-mix(in srgb, var(--blue) 14%, var(--paper)); border-color: transparent; }
+.peek { margin: 10px 0 0; font: 17.5px/1.65 var(--scripture); max-width: 46em; }
+.peek b { font: 700 13px var(--sans); color: var(--ink-3); margin-right: .4em; }
+.voice { padding: 10px 0; border-top: 1px solid var(--rule); display: grid; gap: 1px; }
+.voice:first-of-type { border-top: 0; padding-top: 2px; }
+.voice .who { font: 14px var(--sans); color: var(--ink-3); }
+.voice .who b { color: var(--ink); }
+.voice .src { font: 13px var(--sans); color: var(--ink-3); }
+.voice .q { font: 17px/1.5 var(--prose); margin-top: 6px; max-width: 48em; }
+/* English inside a Russian page (the church's quotations, the English-only
+   release notes) keeps the prose face Russian itself cannot use. */
+:root:lang(ru) [lang="en"] { --prose: "S Prose", "Newsreader", "Noto Serif", Georgia, serif; }
+.win { position: relative; }
+.gloss { position: absolute; z-index: 5; max-width: 320px; font: 13.5px/1.35 var(--sans); color: var(--paper); background: var(--ink); padding: 6px 10px; border-radius: 6px; pointer-events: none; box-shadow: 0 6px 18px -8px rgba(0, 0, 0, .5); }
+/* The one moment of motion: the panel rises as if the Word had just been
+   touched. The app's own longest duration, 280ms. */
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+.lex.enter .panel { animation: rise 280ms cubic-bezier(.2, .8, .2, 1) 350ms backwards; }
+.w.on { transition: color 280ms; }
+.caption { font-size: 14px; color: var(--ink-3); margin-top: 14px; }
+
+/* ── sections ── */
+.sec { padding-block: 64px 8px; display: grid; gap: 22px; }
+.sec > h2 { font: 700 clamp(26px, 3.4vw, 34px)/1.15 var(--sans); letter-spacing: -.018em; max-width: 22em; }
+.bands { display: grid; gap: 56px; margin-block: 8px 20px; }
+.band { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 40px; align-items: center; }
+.band:nth-child(even) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.55fr); }
+.band:nth-child(even) .zoom { order: 2; }
+.band-text h3 { font: 700 24px/1.2 var(--sans); letter-spacing: -.012em; }
+.band-text p { font: 18.5px/1.55 var(--prose); color: var(--ink-2); margin-top: 10px; max-width: 30em; }
+.zoom { display: block; padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: 10px; }
+.zoom .shot { transition: transform .2s; }
+.zoom:hover .shot { transform: translateY(-2px); }
+.zoombox { max-width: min(96vw, 1400px); max-height: 94vh; padding: 0; border: 0; border-radius: 12px; background: transparent; cursor: zoom-out; }
+.zoombox::backdrop { background: rgba(10, 8, 6, .82); }
+.zoombox img { display: block; max-width: 100%; max-height: 94vh; border-radius: 12px; }
+/* the app's de-ruled flat rows */
+.rows.four { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); column-gap: 32px; }
+.row { padding: 14px 0; border-top: 1px solid var(--rule); }
+.row h3 { font: 700 16px/1.3 var(--sans); letter-spacing: -.005em; }
+.row p { font: 17px/1.45 var(--prose); color: var(--ink-2); margin-top: 3px; }
+.claims { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px 32px; }
+.claims h3 { font: 500 26px/1.2 var(--prose); }
+.claims p { font: 17px/1.5 var(--prose); color: var(--ink-2); margin-top: 6px; }
+
+/* ── install ── */
+.install { max-width: 790px; padding: 64px 0 24px; display: grid; gap: 26px; }
+.install h2 { font: 700 clamp(26px, 3.4vw, 32px)/1.15 var(--sans); letter-spacing: -.015em; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px; }
+.steps > li { display: grid; grid-template-columns: 34px 1fr; gap: 4px 14px; }
+.steps .n { font: 500 26px/1.1 var(--scripture); color: var(--gold); }
+.steps h3 { font: 700 17px/1.4 var(--sans); }
+.steps p { font: 18px/1.5 var(--prose); color: var(--ink-2); }
+.steps .more { grid-column: 2; margin-top: 10px; }
+.bundles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.bundle { border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; display: grid; gap: 3px; align-content: start; }
+.bundle b { font: 700 15px var(--sans); }
+.bundle span { font: 13.5px/1.4 var(--sans); color: var(--ink-2); }
+.bundle em { font: 600 12.5px var(--sans); font-style: normal; color: var(--ink-3); }
+.bundle.rec { border-color: color-mix(in srgb, var(--gold) 55%, var(--paper)); background: var(--gold-tint); }
+.term-wrap { display: grid; gap: 10px; }
+.term { display: flex; align-items: center; gap: 8px; border: 1px solid var(--rule); background: var(--surface); border-radius: 6px; padding: 6px 6px 6px 14px; }
+.term code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; font: 14px/2 var(--mono); scrollbar-width: thin; }
+.copy { font: 600 13px var(--sans); color: var(--ink-2); background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 6px 12px; cursor: pointer; flex: none; }
+.copy:hover { color: var(--ink); }
+.req { font: 15.5px/1.5 var(--prose); color: var(--ink-2); }
+
+/* ── colophon ── */
+.colophon { max-width: 1120px; margin: 40px auto 0; padding-block: 28px 56px; border-top: 1px solid var(--rule); display: grid; gap: 12px; }
+.colophon p, .credits { font: 16px/1.55 var(--prose); color: var(--ink-2); max-width: 42em; }
+.credits { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
+.colophon nav { display: flex; flex-wrap: wrap; gap: 0 20px; font: 600 14px var(--sans); }
+.colophon nav a { padding-block: 4px; }
+
+/* ── What's new: the store's release notes, newest first ── */
+.news .note { font-size: 14px; color: var(--ink-3); }
+.releases { list-style: none; margin: 0; padding: 0; max-width: 790px; }
+.release { padding-block: 34px; border-top: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; scroll-margin-top: 16px; }
+.release:first-child { border-top: 0; padding-top: 8px; }
+.rel-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+.rel-head h2 { font: 700 24px/1.2 var(--sans); letter-spacing: -.012em; }
+.rel-head time { font: 14px var(--sans); color: var(--ink-3); }
+.release:target .rel-head h2 { color: var(--gold-text); }
+/* Each release opens as the reading page opens a chapter: on a raised gold
+   initial, the pane's own (a summary is one line; a dropped one would hang). */
+.rel-sum { font: 500 21px/1.45 var(--prose); }
+.rel-sum::first-letter { font: 500 2.05em/0 var(--scripture); color: var(--gold); }
+.rel-list { margin: 4px 0 0; padding-left: 1.1em; display: grid; gap: 6px; font: 17.5px/1.5 var(--prose); color: var(--ink-2); max-width: 44em; }
+.rel-list li::marker { color: var(--gold); }
+
+/* ── The missing page: a leaf of its own, with the alphabet in its margins ── */
+.lost { max-width: 640px; margin-inline: auto; padding-block: 9vh 12vh; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 18px; }
+.brand.big .initial { height: 150px; }
+.brand.big .brand-word { font-size: 80px; margin-bottom: 13px; }
+.rule { position: relative; width: 150px; height: 12px; margin-block: 6px; }
+.rule::before { content: ""; position: absolute; inset: 50% 0 auto; border-top: 1px solid color-mix(in srgb, var(--gold) 60%, var(--paper)); }
+.rule span { position: absolute; left: 50%; top: 50%; width: 9px; height: 9px; background: var(--gold); transform: translate(-50%, -50%) rotate(45deg); box-shadow: 0 0 0 5px var(--paper); }
+.rubric { color: var(--gold-text); }
+.lost h1 { font: 700 clamp(30px, 4.6vw, 42px)/1.1 var(--sans); letter-spacing: -.02em; }
+.lost-verse { margin: 10px 0 4px; text-align: left; max-width: 30em; font: 22px/1.55 var(--scripture); }
+.lost-verse p { margin: 0; }
+.dropcap { float: left; font: 500 3.3em/.8 var(--scripture); color: var(--gold); margin: .05em .1em 0 0; }
+.lost-verse footer { clear: both; margin-top: 12px; font: 12px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.lost .lede { max-width: 30em; }
+.lost .act { justify-content: center; }
+
+@media (max-width: 680px) {
+  .brand.big .initial { height: 104px; }
+  .brand.big .brand-word { font-size: 56px; margin-bottom: 9px; }
+  .lost-verse { font-size: 19px; }
+  .panes { grid-template-columns: 1fr; }
+  .pane + .pane { border-left: 0; border-top: 1px solid var(--rule); }
+  .pane, .panel { padding-inline: 18px; }
+  .tabs { padding-inline: 10px; }
+  .where { display: none; }
+  .band { grid-template-columns: 1fr; gap: 18px; }
+  .band:nth-child(even) { grid-template-columns: 1fr; }
+  .band:nth-child(even) .zoom { order: 0; }
+  /* Five things share a phone's header: the wordmark steps down and the
+     buttons close up, so Download is never cut off (it was at 390px). */
+  .head { gap: 2px; }
+  .initial { height: 46px; }
+  .brand-word { font-size: 25px; margin-bottom: 4px; }
+  .head .sp { min-width: 4px; }
+  .headbtn { padding: 6px; }
+  .headgo { font-size: 14px; padding: 7px 12px; margin-left: 4px; }
+  .headbtn span, .headbtn .chev { display: none; }
+  .pop { position: fixed; left: 16px; right: 16px; top: 64px; max-width: none; width: auto; }
+  .steps > li { grid-template-columns: 26px 1fr; }
+}
+@media (max-width: 360px) {
+  .initial { height: 40px; }
+  .brand-word { font-size: 22px; }
+  .headbtn { padding: 5px; }
+  .headgo { padding: 6px 10px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

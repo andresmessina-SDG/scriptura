@@ -1,0 +1,754 @@
+{
+ "left": [
+  [
+   [
+    "В начале ",
+    null
+   ],
+   [
+    "было",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "Слово",
+    "БОЖЬЕ СЛОВО"
+   ],
+   [
+    ", ",
+    null
+   ],
+   [
+    "и",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "Слово",
+    "БОЖЬЕ СЛОВО"
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "было",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "у",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "Бога",
+    "БОГ"
+   ],
+   [
+    ", ",
+    null
+   ],
+   [
+    "и",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "Слово",
+    "БОЖЬЕ СЛОВО"
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "было",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "Бог",
+    "БОГ"
+   ],
+   [
+    ".",
+    null
+   ]
+  ],
+  [
+   [
+    "Оно",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "было",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "в",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "начале",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "у",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "Бога",
+    "БОГ"
+   ],
+   [
+    ".",
+    null
+   ]
+  ],
+  [
+   [
+    "Всё",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "через",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "Него",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "начало",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "существовать",
+    null
+   ],
+   [
+    ", ",
+    null
+   ],
+   [
+    "и",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "без",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "Него",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "ничего",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "не",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "существовало",
+    null
+   ],
+   [
+    ", ",
+    null
+   ],
+   [
+    "что",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "начало",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "существовать",
+    null
+   ],
+   [
+    ".",
+    null
+   ]
+  ],
+  [
+   [
+    "В",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "Нём",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "была",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "жизнь",
+    "ЖИЗНЬ"
+   ],
+   [
+    ", ",
+    null
+   ],
+   [
+    "и",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "жизнь",
+    "ЖИЗНЬ"
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "была",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "светом",
+    "СВЕТ"
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "для",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "людей",
+    null
+   ],
+   [
+    ".",
+    null
+   ]
+  ],
+  [
+   [
+    "Свет",
+    "СВЕТ"
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "светит",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "во",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "тьме",
+    "ТЬМА"
+   ],
+   [
+    ", ",
+    null
+   ],
+   [
+    "и",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "тьма",
+    "ТЬМА"
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "не",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "затмила",
+    null
+   ],
+   [
+    " ",
+    null
+   ],
+   [
+    "Его",
+    null
+   ],
+   [
+    ".",
+    null
+   ]
+  ]
+ ],
+ "right": [
+  "В начале было Слово, и Слово было у Бога, и Слово было Бог.",
+  "Оно было в начале у Бога.",
+  "Все чрез Него начало быть, и без Него ничто не начало быть, что начало быть.",
+  "В Нем была жизнь, и жизнь была свет человеков.",
+  "И свет во тьме светит, и тьма не объяла его."
+ ],
+ "entries": {
+  "БОЖЬЕ СЛОВО": {
+   "g": "λόγος",
+   "t": "logos",
+   "n": "G3056",
+   "h": "БОЖЬЕ СЛОВО",
+   "a": [
+    "Определение",
+    "В Библии выражение “Божье слово“ (“слово Божье“) означает слова, которые Бог говорил людям и видения, которые Он показывал. Если люди записывали то, что им сказал или показал Бог, это тоже называлось “Божьим Словом“. Также “Божьим Словом“ называют Иисуса, потому что Иисус Сам является обращением Бога к людям и всему миру.",
+    "• Слово “писание“ буквально означает “то, что было написано“. Это слово используется только в Новом Завете и означает еврейские Священные Писания, то есть Ветхий Завет. В этом случае слово “Писания“ (мн.число) или “Писание“ (ед.число) пишется с заглавной буквы, чтобы подчеркнуть, что эти тексты — это записанное Слово Божье. Бог велел людям записать Своё Слово, чтобы люди могли читать его (Слово) много лет спустя.",
+    "• Выражения “слово Яхве“ и “слово Господа“ обычно означают конкретные слова, которые Бог сказал пророку или простому человеку.",
+    "…"
+   ],
+   "b": "a word, speech, divine utterance, analogy"
+  },
+  "БОГ": {
+   "g": "θεός",
+   "t": "theos",
+   "n": "G2316",
+   "h": "БОГ",
+   "a": [
+    "Определение",
+    "В Библии словом “Бог” называется вечный Творец, сотворивший вселенную из ничего. Бог существует как Отец, Сын и Святой Дух. Бог открыл Своё имя израильтянам как “Яхве”. Прилагательное “Божий” означает “свойственный Богу”, “принадлежащий Богу” или “исходящий от Бога”.",
+    "• Бог существовал всегда и будет существовать всегда. Он существовал ещё до всего остального и будет существовать вечно.",
+    "• Он — единственный истинный Бог, имеющий власть над всей вселенной.",
+    "• Бог абсолютно праведен, безгранично мудр, свят, безгрешен, справедлив, милостив и любящ (то есть поступает милостиво и любит Своё творение).",
+    "• Бог всегда остается верным заветам и обещаниям, которые Он дал.",
+    "• Люди были созданы для поклонения Богу. Единственный, кому должны поклоняться люди, — это Бог.",
+    "• Бог открыл Своё имя как “Яхве”, что значит “Он есть”, “Я есть” или “Тот, Кто присутствует с нами”.",
+    "…"
+   ],
+   "b": "God, a god"
+  },
+  "ЖИЗНЬ": {
+   "g": "ζωή",
+   "t": "zoe",
+   "n": "G2222",
+   "h": "ЖИЗНЬ",
+   "a": [
+    "Определение",
+    "Слово “жизнь” означает существование человека, животного, всего живого как противоположность смерти или несуществованию.",
+    "### 1\\. Физическая жизнь",
+    "• Слово “жизнь” может означать конкретного человека: например, фраза “его жизнь была спасена” означает “его спасли”.",
+    "• Это слово может также означать совокупность событий, в которых человек принимал участие, и обстоятельств, в которых он оказывался, например: “он прожил хорошую жизнь”.",
+    "• Слово “жизнь” может означать время физического существования человека от его начала и до конца, например: “в конце его жизни”.",
+    "• Прилагательное “живой” может означать физическое существование, например: “моя мама жива до сих пор”.",
+    "• Глагол “жить” также означать пребывание в каком-то месте, например: “они жили в этом городе”.",
+    "• В Библии понятие “жизнь” часто противопоставляется понятию “смерть”.",
+    "…"
+   ],
+   "b": "life"
+  },
+  "СВЕТ": {
+   "g": "φῶς",
+   "t": "phos",
+   "n": "G5457",
+   "h": "СВЕТ",
+   "a": [
+    "Определение",
+    "Слово “свет” часто используется в Библии в переносном смысле, как образное выражение для обозначения мудрости, жизни, праведности, истины или счастья (см. метафора). Свет и тьма — это два противоположных явления, ведь тьма — это отсутствие света. Образы света и тьмы часто используются в Библии в паре.",
+    "• Иисус сказал: “Я — Свет для этого мира”. Это значит, что Иисус принёс истинные Божьи слова, обращённые к миру, и спас людей из тьмы их грехов.",
+    "• Апостол Иоанн писал: “Бог — это Свет, и в Нём нет никакой тьмы”.",
+    "• Верующие в Иисуса должны жить так, чтобы их жизнь была подобна светильникам, которые проливают свет и позволяют людям увидеть величие Бога.",
+    "• Христиане призваны “ходить во свете”. Это значит, что они должны жить в соответствии с Божьей волей и избегать греха.",
+    "…"
+   ],
+   "b": "light, a source of light"
+  },
+  "ТЬМА": {
+   "g": "σκοτία",
+   "t": "skotia",
+   "n": "G4653",
+   "h": "ТЬМА",
+   "a": [
+    "Определение",
+    "Тьма — это темнота, мрак, отсутствие света. Это слово может употребляться как в прямом, так и в переносном значении.",
+    "• Тьмой можно назвать человеческую нечестность, их духовную слепоту, а также всё, что имеет связь с грехом и развращённостью.",
+    "• Выражение “власть тьмы” употребляется в значении “власть зла и сатаны”.",
+    "• Слово “тьма” может иметь образное значение, символизируя смерть (см.: метафора).",
+    "• О людях, не знающих Бога, говорят, что они “пребывают во тьме”, то есть они не понимают, как им нужно поступать.",
+    "• Бог — Свет, Он праведен, и тьма (или зло) не способна Его поглотить.",
+    "• Место наказания, где будут мучиться отвергшие Бога люди, названо в Библии “внешней тьмой”.",
+    "Варианты перевода",
+    "…"
+   ],
+   "b": "darkness"
+  }
+ },
+ "lookup": "RussianBibleWords",
+ "xrefs": [
+  [
+   {
+    "r": "Бытие 1:1",
+    "t": "В начале Бог создал небо и землю."
+   },
+   {
+    "r": "От Иоанна 17:5",
+    "t": "Теперь Ты, Отец, прославь Меня у Тебя Самого той славой, которую Я имел у Тебя до сотворения мира."
+   },
+   {
+    "r": "Откровение 19:13",
+    "t": "На Нём была одежда, пропитанная кровью. Его имя — \"Божье Слово\"."
+   },
+   {
+    "r": "К Колоссянам 1:17",
+    "t": "Иисус прежде всего, и всё Им держится."
+   },
+   {
+    "r": "От Иоанна 1:14",
+    "t": "Слово стало плотью и находилось с нами, полное благодати и истины. Мы видели Его славу, как славу Единственного от Отца."
+   },
+   {
+    "r": "1-е Иоанна 1:1",
+    "t": "Свидетельствуем о том, что было от начала, что мы слышали и видели своими глазами, на что мы смотрели и к чему прикасались наши руки — о Слове жизни."
+   }
+  ],
+  [],
+  [
+   {
+    "r": "К Колоссянам 1:16",
+    "t": "потому что Им сотворено всё, что в небесах и что на земле, видимое и невидимое: и престолы, и господства, и начальства, и власти — всё Им и для Него сотворено."
+   },
+   {
+    "r": "1-е Коринфянам 8:6",
+    "t": "но у нас один Бог Отец, от Которого всё, и мы для Него, и один Господь Иисус Христос, Которым всё сотворено, и мы сотворены Им."
+   },
+   {
+    "r": "Откровение 4:11",
+    "t": "«Господь, Ты достоин принять славу, честь и силу, потому что Ты всё сотворил, и по Твоей воле всё сотворено и существует»."
+   },
+   {
+    "r": "Псалтирь 33:6",
+    "t": "Словом Господа созданы небеса, и Его дыханием — всё их войско."
+   },
+   {
+    "r": "Бытие 1:26",
+    "t": "И сказал Бог: «Создадим человека по Нашему образу и по Нашему подобию, и пусть они управляют морскими рыбами, небесными птицами, скотом и всей землёй, и всеми пресмыкающимися на земле»."
+   },
+   {
+    "r": "От Иоанна 1:10",
+    "t": "Он был в мире, и мир начал существовать через Него, но мир Его не узнал."
+   }
+  ],
+  [
+   {
+    "r": "От Иоанна 8:12",
+    "t": "Иисус снова говорил к народу и сказал им: «Я – свет миру. Кто последует за Мной, тот не будет ходить во тьме, но будет иметь свет жизни»."
+   },
+   {
+    "r": "От Иоанна 12:46",
+    "t": "Я – свет. Я пришёл в мир, чтобы каждый верующий в Меня не оставался во тьме."
+   },
+   {
+    "r": "От Иоанна 5:26",
+    "t": "Как Отец имеет жизнь в Самом Себе, так и Сыну дал возможность иметь жизнь в Самом Себе."
+   },
+   {
+    "r": "1-е Иоанна 1:5",
+    "t": "И вот послание, которое мы услышали от Него и рассказываем вам: Бог — это свет, и в Нём нет никакой тьмы."
+   },
+   {
+    "r": "От Иоанна 9:5",
+    "t": "Пока Я в мире, Я – свет миру»."
+   },
+   {
+    "r": "От Луки 1:78",
+    "t": "По великому милосердию нашего Бога Он посетит нас свыше, как восход,"
+   }
+  ],
+  [
+   {
+    "r": "От Иоанна 3:19",
+    "t": "Суд состоит в том, что свет пришёл в мир, но люди полюбили больше тьму, чем свет, потому что делали злые дела."
+   },
+   {
+    "r": "От Иоанна 12:36",
+    "t": "Пока свет с вами, верьте в свет — и будете сыновьями света». Сказав это, Иисус отошёл от них и скрылся."
+   },
+   {
+    "r": "1-е Коринфянам 2:14",
+    "t": "Душевный человек не принимает того, что от Божьего Духа, ведь он считает это глупостью и не может понимать, потому что об этом надо рассуждать духовно."
+   },
+   {
+    "r": "Иов 24:13",
+    "t": "Среди них есть враги света, они не знают Его путей и не ходят по Его дорогам."
+   },
+   {
+    "r": "От Иоанна 1:10",
+    "t": "Он был в мире, и мир начал существовать через Него, но мир Его не узнал."
+   },
+   {
+    "r": "К Римлянам 1:28",
+    "t": "И так как они не заботились о том, чтобы Бог был в их разуме, то Бог отдал их извращённому уму – поступать развратно."
+   }
+  ]
+ ],
+ "voices": [
+  [
+   {
+    "a": "Origen of Alexandria",
+    "y": "ок. 253 по Р. Х.",
+    "s": "Catena Aurea by Aquinas",
+    "t": "There are many significations of this word beginning. For there is a beginning of a journey, and beginning of a length, according to Proverbs, The beginning of the right path is to do justice. There is a beginning too of a creation, according to Job, He is the beginning of the ways of God. Nor would it be incorrect to say, that God is the Beginning of all things. …"
+   },
+   {
+    "a": "Hilary of Poitiers",
+    "y": "ок. 367 по Р. Х.",
+    "s": "Catena Aurea by Aquinas",
+    "t": "Years, centuries, ages, are passed over, place what beginning thou wilt in thy imagining, thou graspest it not in time, for He, from Whom it is derived, still was. Consider then the world, understand what is written of it. In the beginning God made the heaven and the earth. …"
+   },
+   {
+    "a": "Basil of Caesarea",
+    "y": "ок. 379 по Р. Х.",
+    "s": "Catena Aurea by Aquinas",
+    "t": "This Word is not a human word. For how was there a human word in the beginning, when man received his being last of all? There was not then any word of man in the beginning, nor yet of Angels; for every creature is within the limits of time, having its beginning of existence from the Creator. But what says the Gospel? It calls the Only-Begotten Himself the Word. Wherefore then Word? …"
+   },
+   {
+    "a": "John Chrysostom",
+    "y": "ок. 407 по Р. Х.",
+    "s": "Homily on the Gospel of John 2",
+    "t": "\"In the beginning was the Word, and the Word was with God.\" Seest thou the great boldness and power of the words, how he speaks nothing doubting nor conjecturing, but declaring all things plainly? For this is the teacher's part, not to waver in anything he says, since if he who is to be a guide to the rest require another person who shall be able to establish him with certainty, he would be rightly ranked not among t …"
+   }
+  ],
+  [
+   {
+    "a": "Origen of Alexandria",
+    "y": "ок. 253 по Р. Х.",
+    "s": "Catena Aurea by Aquinas",
+    "t": "Or thus, the Evangelist having begun with those propositions, reunites them into one, saying, The Same was in the beginning with God. For in the first of the three we learnt in what the Word was, that it was in the beginning; in the second, with whom, with God; in the third who the Word was, God. …"
+   },
+   {
+    "a": "Hilary of Poitiers",
+    "y": "ок. 367 по Р. Х.",
+    "s": "Catena Aurea by Aquinas",
+    "t": "Whereas he had said, the Word was God, the fearfulness, and strangeness of the speech disturbed me; the prophets having declared that God was One. But, to quiet my apprehensions, the fisherman reveals the scheme of this so great mystery, and refers all to one, without dishonour, without obliterating [the Person], without reference to timeb, saying, The Same was in the beginning with God; …"
+   },
+   {
+    "a": "John Chrysostom",
+    "y": "ок. 407 по Р. Х.",
+    "s": "Catena Aurea by Aquinas",
+    "t": "Not asserting, as Plato does, one to be intelligence, the other soul; for the Divine Nature is very different from this... But you say, the Father is called God with the addition of the article, the Son without it. What say you then, when the Apostle. writes, The great God and our Saviour Jesus Christ; and again, Who is over all, God; and Grace be unto you and peace from God our Father; without the article? …"
+   },
+   {
+    "a": "Theodore of Mopsuestia",
+    "y": "ок. 428 по Р. Х.",
+    "s": "Commentary on John 1.1.1",
+    "t": "John wanted to persuade by using the name \"Word,\" as if by an analogy, that it was possible for something to be from something else without having to be separated from it by length of time.… Also, because he said \"he was in the beginning,\" he showed not that he was without a beginning but rather that he was coexistent from eternity with his beginning."
+   }
+  ],
+  [
+   {
+    "a": "Origen of Alexandria",
+    "y": "ок. 253 по Р. Х.",
+    "s": "Catena Aurea by Aquinas",
+    "t": "Here too Valentinus errs, saying, that the Word supplied to the Creator the cause of the creation of the worlde. If this interpretation is true, it should have been written that all things had their existence from the Word through the Creator, not contrariwise, through the Word from the Creator. …"
+   },
+   {
+    "a": "Hilary of Poitiers",
+    "y": "ок. 367 по Р. Х.",
+    "s": "Catena Aurea by Aquinas",
+    "t": "Or thus: [It is said], the Word indeed was in the beginning, but it may be that He was not before the beginning. But what saith he; All things were made by him. He is infinite by Whom every thing, which is, was made: and since all things were made by Him, time is likewisec. Or thus; That all things were made by him, is pronouncing too much, it may be said. …"
+   },
+   {
+    "a": "John Chrysostom",
+    "y": "ок. 407 по Р. Х.",
+    "s": "Homily on the Gospel of John 5",
+    "t": "Moses in the beginning of the history and writings of the Old Testament speaks to us of the objects of sense, and enumerates them to us at length. For, \"In the beginning,\" he says, \"God made the heaven and the earth,\" and then he adds, that light was created, and a second heaven and the stars, the various kinds of living creatures, and, that we may not delay by going through particulars, everything else. …"
+   },
+   {
+    "a": "Theodore of Mopsuestia",
+    "y": "ок. 428 по Р. Х.",
+    "s": "Commentary on John 1.1.2-3",
+    "t": "Intending to make the divinity of the Only Begotten clearer, [the Evangelist] wanted to show the difference [of the Son] not only by indicating his dignity but also by demonstrating that he has no participation with the created order. …"
+   }
+  ],
+  [
+   {
+    "a": "Origen of Alexandria",
+    "y": "ок. 253 по Р. Х.",
+    "s": "Catena Aurea by Aquinas",
+    "t": "If 'the word' be taken for that which is in each man, inasmuch as it was implanted in each by the Word, which was in the beginning, then also, we commit nothing without this 'word' [reason] taking this word 'nothing' in a popular sense. For the Apostle says that sin was dead without the law, but when the commandment came, sin revived; for sin is not imputed when there is no law. …"
+   },
+   {
+    "a": "Hilary of Poitiers",
+    "y": "ок. 367 по Р. Х.",
+    "s": "Catena Aurea by Aquinas",
+    "t": "Or it can be understood thus. In that he had said, without Him was not any thing made, one might have been perplexed, and have asked, Was then any thing made by another, which yet was not made without Him? if so, then though nothing is made without, all things are not made by Him: it being one thing to make, another to be with the maker. …"
+   },
+   {
+    "a": "John Chrysostom",
+    "y": "ок. 407 по Р. Х.",
+    "s": "Catena Aurea by Aquinas",
+    "t": "Or to give an other explanation. We will not put the stop at without Him was not any thing made, as the heretics do. For they wishing to prove the Holy Ghost a creature, read, That which was made in Him, was life. But this cannot be so understood. For first, this was not the place for making mention of the Holy Ghost. But let us suppose it was; …"
+   },
+   {
+    "a": "Jerome",
+    "y": "ок. 420 по Р. Х.",
+    "s": "Homily 87, on John 1.1-14",
+    "t": "Many read this inaccurately because they add without any punctuation, \"that which has been made in him was life.\" The correct statement is \"All things were made through him, and without him was made nothing that has been made,\" meaning that that which has been made without him has not been made. …"
+   }
+  ],
+  [
+   {
+    "a": "Origen of Alexandria",
+    "y": "ок. 253 по Р. Х.",
+    "s": "Catena Aurea by Aquinas",
+    "t": "We must not omit to notice, that he puts the life before the light of men. For it would be a contradiction to suppose a being without life to be illuminated; as if life were an addition to illumination.. But to proceed: if the life was the light of men, meaning men only, Christ is the light and the life of men only; an heretical supposition. …"
+   },
+   {
+    "a": "John Chrysostom",
+    "y": "ок. 407 по Р. Х.",
+    "s": "Homily on the Gospel of John 5",
+    "t": "\"And the light shineth in darkness.\" He calls death and error, \"darkness.\" For the light which is the object of our senses does not shine in darkness, but apart from it; but the preaching of Christ hath shone forth in the midst of prevailing error, and made it to disappear. And He by enduring death hath so overcome death, that He hath recovered those already held by it. …"
+   },
+   {
+    "a": "Augustine of Hippo",
+    "y": "ок. 430 по Р. Х.",
+    "s": "Catena Aurea by Aquinas",
+    "t": "Whereas that life is the light of men, but foolish hearts cannot receive that light, being so incumbered with sins that they cannot see it; for this cause lest any should think there is no light near them, because they cannot see it, he continues: And the light shineth in darkness, and the darkness comprehended it not. …"
+   },
+   {
+    "a": "Cyril of Alexandria",
+    "y": "ок. 444 по Р. Х.",
+    "s": "Commentary on the Gospel of John, Book 1",
+    "t": "Needs does the most wise Evangelist hasten to expand to us by this too that is now before us the thought expressed above. For he did not think, I suppose, that it would suffice to the hearers unto being able to think unerringly of God the Word, that He is verily the Light of men, by only saying, And the Life was the Light of men. …"
+   }
+  ]
+ ],
+ "ref": "От Иоанна 1"
+}
