@@ -390,18 +390,9 @@ def fake_urlopen(monkeypatch):
     calls = []
     outcomes = {}
 
-    class _Resp:
-        def __init__(self, data):
-            self._data = data
-
-        def read(self):
-            return self._data
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *_exc):
-            return False
+    # A BytesIO streams in chunks, as a response does, and is a context
+    # manager already.
+    _Resp = io.BytesIO
 
     def _tier(url):
         if url.startswith(sword_bridge._MIRROR_BASE):

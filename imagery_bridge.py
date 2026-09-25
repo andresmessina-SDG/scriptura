@@ -20,6 +20,7 @@ do not (Acts 13:1–14:28 would wrongly exclude 13:40). `passage_label`
 carries the human-readable scope for display.
 """
 
+import gzip
 import logging
 import os
 import re
@@ -27,9 +28,11 @@ import shutil
 import sqlite3
 import tarfile
 import threading
+import zlib
 from typing import Callable, TypedDict
 
 import paths
+import transfer
 from i18n import _
 
 _log = logging.getLogger('scriptura.imagery')
@@ -392,43 +395,49 @@ def download_and_install(on_progress: Callable[[int, int], None] | None = None,
     are served as ordered `.000/.001/…` parts (see _resolve_parts); they are
     streamed in sequence into one archive, so concatenation is implicit.
     Extracts into a sibling staging dir then swaps it in, so an interrupted
-    download never leaves a half-written pack in service.
+    download never leaves a half-written pack in service. A download stopped
+    part-way resumes from where it stopped.
     """
-    import urllib.request
     url = url or PACK_URL
     dest_dir = paths.imagery_dir()
-    parent = os.path.dirname(dest_dir)
     staging = dest_dir + '.part'
-    tmp_archive = os.path.join(parent, '.imagery.tar.gz.part')
+    tmp_archive = _partial_path()
     shutil.rmtree(staging, ignore_errors=True)
+    parts = _resolve_parts(url)
+    total = sum(size for _, size in parts)
+    # Unpacking needs about the archive's size again: photographs do not
+    # compress. A stopped download resumes (transfer.fetch_resumable).
+    transfer.fetch_resumable(parts, tmp_archive, on_progress, extra=total)
     try:
-        parts = _resolve_parts(url)
-        total = sum(size for _, size in parts)
-        done = 0
-        with open(tmp_archive, 'wb') as out:
-            for part_url, _size in parts:
-                with urllib.request.urlopen(part_url, timeout=120) as resp:
-                    while True:
-                        chunk = resp.read(65536)
-                        if not chunk:
-                            break
-                        out.write(chunk)
-                        done += len(chunk)
-                        if on_progress:
-                            on_progress(done, total)
         os.makedirs(staging, exist_ok=True)
-        with tarfile.open(tmp_archive, mode='r:gz') as tar:
-            _safe_extract(tar, staging)
+        try:
+            with tarfile.open(tmp_archive, mode='r:gz') as tar:
+                _safe_extract(tar, staging)
+        except (tarfile.TarError, EOFError, zlib.error, gzip.BadGzipFile,
+                ValueError):
+            # Damaged or unsafe, and resuming would only add to it.
+            transfer.discard(tmp_archive)
+            raise
         shutil.rmtree(dest_dir, ignore_errors=True)
         os.replace(staging, dest_dir)
     finally:
-        try:
-            if os.path.exists(tmp_archive):
-                os.remove(tmp_archive)
-        except OSError:
-            pass
         shutil.rmtree(staging, ignore_errors=True)
+    transfer.discard(tmp_archive)
     _reset()
+
+
+def _partial_path() -> str:
+    return os.path.join(os.path.dirname(paths.imagery_dir()),
+                        '.imagery.tar.gz.part')
+
+
+def partial_download() -> tuple[int, int] | None:
+    """(bytes so far, total) of a pack download stopped part-way, or None."""
+    return transfer.partial(_partial_path())
+
+
+def discard_partial() -> None:
+    transfer.discard(_partial_path())
 
 
 def remove_pack() -> None:

@@ -14,6 +14,7 @@ import zipfile
 
 import paths
 import search_query
+import transfer
 
 _log = logging.getLogger('scriptura.ebible')
 
@@ -605,7 +606,7 @@ def download_translation_sync(tid, entry, on_status=None):
     url = _USFM_URL.format(id=tid)
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     with urllib.request.urlopen(req, timeout=120) as r:
-        data = r.read()
+        data = transfer.read(r)
 
     if on_status:
         on_status('parse')

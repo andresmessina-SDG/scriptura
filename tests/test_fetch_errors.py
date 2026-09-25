@@ -10,6 +10,7 @@ import pytest
 import ebible_bridge
 import fetch_errors
 import sword_bridge
+import transfer
 
 
 def _http(code):
@@ -31,6 +32,7 @@ def _http(code):
     (sword_bridge.BadModule('x'), 'SWORD module'),
     (ebible_bridge.TooFewVerses('eng', 0, 31102), 'copy you have was kept'),
     (LookupError('odd'), 'Something went wrong: odd'),
+    (transfer.NoSpace(1_500_000_000, 400_000_000), '1.5\u00a0GB'),
 ])
 def test_each_failure_has_its_sentence(exc, words):
     assert words in fetch_errors.describe(exc)

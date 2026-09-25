@@ -15,8 +15,11 @@ import urllib.error
 import zipfile
 import zlib
 
+from gi.repository import GLib
+
 import ebible_bridge
 import sword_bridge
+import transfer
 from i18n import _
 
 _DAMAGED = (zipfile.BadZipFile, tarfile.TarError, gzip.BadGzipFile,
@@ -67,6 +70,10 @@ def describe(exc):
                      'catalogue and try again.')
         return _('The server turned the download away (error {code}). '
                  'Try again later.').format(code=exc.code)
+    if isinstance(exc, transfer.NoSpace):
+        return _('This needs {need} of free disk space, and {free} is '
+                 'free.').format(need=GLib.format_size(exc.need),
+                                 free=GLib.format_size(exc.free))
     cause = _cause(exc)
     if isinstance(cause, OSError) and cause.errno == errno.ENOSPC:
         return _('There isn’t enough free disk space.')

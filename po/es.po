@@ -10521,3 +10521,70 @@ msgstr "La descarga llegó dañada. Inténtelo de nuevo."
 #: fetch_errors.py
 msgid "Something went wrong: {detail}"
 msgstr "Algo salió mal: {detail}"
+
+#: module_manager.py
+msgid "This needs {need} of free disk space, and {free} is free."
+msgstr "Hacen falta {need} de espacio libre en el disco, y hay {free} libres."
+
+#: module_manager.py
+msgid "{name} couldn’t be downloaded"
+msgstr "No se pudo descargar {name}"
+
+#: module_manager.py
+msgid "Resume"
+msgstr "Reanudar"
+
+#: module_manager.py
+msgid "{done} of {total} MB downloaded"
+msgstr "{done} de {total} MB descargados"
+
+#: module_manager.py
+msgid "{name}: {reason}"
+msgstr "{name}: {reason}"
+
+#: module_manager.py
+msgid "Cancel {name}"
+msgstr "Cancelar {name}"
+
+#: module_manager.py
+msgid "Queued"
+msgstr "En cola"
+
+#: module_manager.py
+msgid "Removing…"
+msgstr "Quitando…"
+
+#: module_manager.py
+msgid "{done} of {total} MB"
+msgstr "{done} de {total} MB"
+
+#: module_manager.py
+msgid "Starting…"
+msgstr "Empezando…"
+
+#: module_manager.py
+msgid "{name} installed"
+msgstr "{name} instalado"
+
+#: module_manager.py
+msgid "{name} removed"
+msgstr "{name} quitado"
+
+#: module_manager.py
+msgid "Quit while downloading?"
+msgstr "¿Salir mientras se descarga?"
+
+#: module_manager.py
+msgid "{name} hasn’t finished. Quit now and it stops; the Module Manager can pick it up again."
+msgstr "{name} no ha terminado. Si sale ahora, se detendrá; el Gestor de módulos puede retomarlo."
+
+#: module_manager.py
+msgid "Quit"
+msgstr "Salir"
+
+
+#: window.py
+msgid "{n} download hasn’t finished. Quit now and it stops; the Module Manager can pick it up again."
+msgid_plural "{n} downloads haven’t finished. Quit now and they stop; the Module Manager can pick them up again."
+msgstr[0] "{n} descarga no ha terminado. Si sale ahora, se detendrá; el Gestor de módulos puede retomarla."
+msgstr[1] "{n} descargas no han terminado. Si sale ahora, se detendrán; el Gestor de módulos puede retomarlas."

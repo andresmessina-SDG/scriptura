@@ -405,18 +405,8 @@ def test_a_download_stamps_what_it_imported(db, monkeypatch):
                    '\\id GEN\n\\c 1\n\\v 1 In the beginning\n'
                    '\\v 2 And the earth\n')
 
-    class _Response:
-        def read(self):
-            return buf.getvalue()
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *a):
-            return False
-
     monkeypatch.setattr(urllib.request, 'urlopen',
-                        lambda req, timeout=None: _Response())
+                        lambda req, timeout=None: _io.BytesIO(buf.getvalue()))
     eb.download_translation_sync(
         'engwebp', {'translationId': 'engwebp', 'shortTitle': 'WEB',
                     'UpdateDate': '2026-08-08'})
@@ -433,18 +423,8 @@ def _serve_usfm(monkeypatch, usfm):
         if usfm is not None:
             z.writestr('01-GENengwebp.usfm', usfm)
 
-    class _Response:
-        def read(self):
-            return buf.getvalue()
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *a):
-            return False
-
     monkeypatch.setattr(urllib.request, 'urlopen',
-                        lambda req, timeout=None: _Response())
+                        lambda req, timeout=None: _io.BytesIO(buf.getvalue()))
 
 
 @pytest.mark.parametrize('usfm', [None, '\\id GEN\n\\c 1\n\\v 1 Only one\n'])

@@ -10,14 +10,13 @@ and a search query widens back to every language so the default can
 never dead-end a search.
 """
 import logging
-import threading
 from datetime import datetime
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Gio, Gdk, Pango
-from a11y import set_accessible_label
-from gtk_utils import clear_children, DelayedSpinner, file_dialog_failed
+from a11y import announce, set_accessible_label
+from gtk_utils import clear_children, file_dialog_failed
 import sword_bridge
 import open_data
 import ebible_bridge
@@ -27,40 +26,54 @@ import archaeology_bridge
 import interlinear_data
 import lexicon_data
 import content
+import downloads
 import fetch_errors
 from i18n import _, ngettext
 
 _log = logging.getLogger('scriptura.modules')
 
 
-# ── The operation in flight, for the whole process ───────────────────────────
+# ── A big download that ends out of sight ────────────────────────────────────
 #
-# A download outlives the window that started it: close the Module Manager
-# (Esc does it) and the worker thread runs on. This state used to live on the
-# window, so the next window opened thought nothing was running and offered
-# the same Download again; a second copy then raced the first over one temp
-# file, and when the first landed nobody told the panes. It lives here now,
-# where every window can see it.
+# The GNOME HIG names this case as what a desktop notification is for: a
+# long download that finishes, or fails, while the reader is elsewhere. Not
+# for small ones, which end before anyone has looked away.
 
-class _Operation:
-    def __init__(self, status):
-        self.status = status      # what a window opened part-way shows
-        self.frac = None
-        self.windows = []         # every Module Manager window showing it
+_BIG = 25 * 1024 * 1024
+_windows: list = []       # the Module Manager windows open now
 
 
-_current = None
+def _notify(job):
+    if job.state not in (downloads.DONE, downloads.FAILED) \
+            or job.total < _BIG or any(w.is_active() for w in _windows):
+        return
+    app = Gio.Application.get_default()
+    if app is None:
+        return
+    if job.state == downloads.DONE:
+        note = Gio.Notification.new(job.done_text or job.title)
+    else:
+        note = Gio.Notification.new(
+            _('{name} couldn’t be downloaded').format(name=job.title))
+        note.set_body(fetch_errors.describe(job.error))
+    app.send_notification(f'download-{job.key}', note)
 
 
-def _report(text, frac=None):
-    """Progress from a worker thread (via idle_add), to every window
-    showing the operation."""
-    op = _current
-    if op is not None:
-        op.status, op.frac = text, frac
-        for win in op.windows:
-            win._set_progress(text, frac)
-    return GLib.SOURCE_REMOVE
+downloads.listen(_notify)
+
+
+def _lane_of(key):
+    """The download lane for a row key: which host its bytes come from."""
+    kind = key.split(':', 1)[0]
+    return {'sword': downloads.CROSSWIRE,
+            'ebible': downloads.EBIBLE}.get(kind, downloads.PACKS)
+
+
+def _mb(n):
+    """Bytes as megabytes for a progress line: a decimal under ten, where a
+    whole number would read 0 for most of a small download."""
+    mb = n / (1024 * 1024)
+    return f'{mb:.1f}' if mb < 10 else str(int(mb))
 
 
 def N_(message):
@@ -229,27 +242,6 @@ def _ago(dt):
     return ngettext('updated {m} month ago', 'updated {m} months ago', months).format(m=months)
 
 
-def _fmt_progress(base, done, total):
-    """Append a translated percent/size detail to a base progress message.
-    Shares the '{pct}% (…)' / '{done} MB' msgids with welcome.py."""
-    if total > 0:
-        detail = _('{pct}% ({done} of {total} MB)').format(
-            pct=int(done * 100 / total), done=done >> 20, total=total >> 20)
-    else:
-        detail = _('{done} MB').format(done=done >> 20)
-    return f'{base} {detail}'
-
-
-def _progress_fraction(done, total):
-    """Bar fraction while download bytes flow; None = activity pulse.
-    Pulse covers both a size-unknown download (total 0) and the tail after
-    the last byte (extract/parse/commit, done >= total) — a determinate bar
-    frozen at 100% through the tail would read as hung."""
-    if 0 < done < total:
-        return done / total
-    return None
-
-
 class ModuleManagerWindow(Adw.Window):
     def __init__(self, on_modules_changed=None, **kwargs):
         super().__init__(**kwargs)
@@ -267,21 +259,19 @@ class ModuleManagerWindow(Adw.Window):
         self._closed = False
         self._flash_source = None
         self._tabs = {}
+        self._job_widgets = {}      # job key -> [(label, bar)] on its rows
+        self._pulsing = set()       # row bars with no measure yet
+        self._row_pulse = 0
+        self._redraw_source = 0
         self.add_css_class('module-manager')
         self._build_ui()
         self.connect('close-request', self._on_close_request)
         self._populate()
-        self._join_current()
-
-    def _join_current(self):
-        """Opened while an earlier window's download is still running: show
-        it, so its row is not mistaken for one that never started."""
-        if _current is None:
-            return
-        _current.windows.append(self)
-        self._set_busy(True, _current.status)
-        if _current.frac is not None:
-            self._set_progress(_current.status, _current.frac)
+        # The queue outlives this window: a download started from an earlier
+        # one shows on its row here, and ends here.
+        _windows.append(self)
+        downloads.listen(self._on_job)
+        self._sync_bar()
 
     # ── Window chrome ─────────────────────────────────────────────────────────
 
@@ -587,106 +577,111 @@ class ModuleManagerWindow(Adw.Window):
             group.add(self._make_lexicon_pack_row())
             t['curated'].append(group)
 
-    def _make_catena_row(self):
+    def _update_button(self, tooltip, on_click):
+        up = Gtk.Button(label=_('Update'))
+        up.add_css_class('suggested-action')
+        up.set_valign(Gtk.Align.CENTER)
+        up.set_tooltip_text(tooltip)
+        up.connect('clicked', on_click)
+        return up
+
+    def _download_button(self, on_click, partial=None):
+        """Download, or Resume where a download stopped part-way."""
+        btn = Gtk.Button(label=_('Resume') if partial else _('Download'))
+        btn.add_css_class('suggested-action')
+        btn.set_valign(Gtk.Align.CENTER)
+        btn.connect('clicked', on_click)
+        return btn
+
+    def _pack_row(self, key, title, installed_subtitle, subtitle, update,
+                  on_download, on_remove, partial=None, discard=None):
+        """The row every curated pack shares. `update` is None or the
+        tooltip of an Update button; `partial` the (bytes, total) of a
+        download stopped part-way, which the row offers to resume — or to
+        throw away with the trash button, through `discard`."""
         row = Adw.ActionRow()
-        row.set_title(_('Historical Commentaries'))
+        row.set_title(title)
+        buttons = []
+        if installed_subtitle is not None:
+            row.set_subtitle(installed_subtitle)
+            if update:
+                buttons.append(self._update_button(update, on_download))
+            buttons.append(self._trash_button(
+                lambda: self._confirm_remove_generic(title, on_remove, key)))
+        else:
+            if partial:
+                subtitle += ' · ' + _('{done} of {total} MB downloaded').format(
+                    done=_mb(partial[0]), total=_mb(partial[1]))
+            row.set_subtitle(subtitle)
+            buttons.append(self._download_button(on_download, partial))
+            if partial:
+                buttons.append(self._trash_button(
+                    lambda: self._confirm_remove_generic(title, discard, key)))
+        self._add_actions(row, key, *buttons)
+        return row
+
+    def _make_catena_row(self):
+        installed = None
         if catena_bridge.is_installed():
             n = catena_bridge.pack_info().get('quote_count', '')
-            row.set_subtitle(
+            installed = (
                 _('{n} quotations from the church fathers to the Reformers, '
                   'verse by verse').format(n=n) if n else
                 _('Church-history commentary, verse by verse'))
-            if catena_bridge.update_available():
-                up = Gtk.Button(label=_('Update'))
-                up.add_css_class('suggested-action')
-                up.set_valign(Gtk.Align.CENTER)
-                up.set_tooltip_text(_('A newer pack is available'))
-                up.connect('clicked', self._on_catena_update)
-                row.add_suffix(up)
-            btn = self._trash_button(
-                lambda: self._confirm_remove_generic(
-                    _('Historical Commentaries'), self._do_catena_remove))
-        else:
-            row.set_subtitle(
-                _('How the church read each verse, from the fathers to the '
-                  'Reformers · ~33 MB download'))
-            btn = Gtk.Button(label=_('Download'))
-            btn.add_css_class('suggested-action')
-            btn.connect('clicked', self._on_catena_download)
-        btn.set_valign(Gtk.Align.CENTER)
-        row.add_suffix(btn)
-        return row
+        return self._pack_row(
+            'pack:catena', _('Historical Commentaries'), installed,
+            _('How the church read each verse, from the fathers to the '
+              'Reformers · ~33 MB download'),
+            installed is not None and catena_bridge.update_available()
+            and _('A newer pack is available'),
+            self._on_catena_download, self._do_catena_remove,
+            catena_bridge.partial_download(), catena_bridge.discard_partial)
 
     def _make_interlinear_row(self, name=interlinear_data.GREEK):
         hebrew = interlinear_data.is_hebrew(name)
-        title = (_('Interlinear — Hebrew OT') if hebrew
-                 else _('Interlinear — Greek NT'))
-        row = Adw.ActionRow()
-        row.set_title(title)
+        installed = None
         if interlinear_data.is_installed(name):
-            row.set_subtitle(
+            installed = (
                 _('Every OT word with gloss, parsing, and Strong’s — '
                   'Tyndale House data (CC BY)') if hebrew else
                 _('Every NT word with gloss, parsing, and Strong’s — '
                   'Tyndale House data (CC BY)'))
-            if interlinear_data.needs_rebuild(name):
-                # A database from before the apparatus columns: the same
-                # download, written through a temp file and renamed over
-                # the old one, fills them.
-                up = Gtk.Button(label=_('Update'))
-                up.add_css_class('suggested-action')
-                up.set_valign(Gtk.Align.CENTER)
-                up.set_tooltip_text(
-                    _('A newer build adds the Ketiv readings') if hebrew
-                    else _('A newer build adds the textual variants'))
-                up.connect('clicked', self._on_interlinear_download, name)
-                row.add_suffix(up)
-            btn = self._trash_button(
-                lambda: self._confirm_remove_generic(
-                    title, lambda: self._do_interlinear_remove(name)))
-        else:
-            row.set_subtitle(
-                _('The Hebrew Old Testament word by word — gloss, parsing, '
-                  'and Strong’s under each word · ~16 MB download')
-                if hebrew else
-                _('The Greek New Testament word by word — gloss, parsing, '
-                  'and Strong’s under each word · ~7 MB download'))
-            btn = Gtk.Button(label=_('Download'))
-            btn.add_css_class('suggested-action')
-            btn.connect('clicked', self._on_interlinear_download, name)
-        btn.set_valign(Gtk.Align.CENTER)
-        row.add_suffix(btn)
-        return row
+        # A database from before the apparatus columns: the same download,
+        # written through a temp file and renamed over the old one, fills
+        # them.
+        update = installed is not None and interlinear_data.needs_rebuild(
+            name) and (_('A newer build adds the Ketiv readings') if hebrew
+                       else _('A newer build adds the textual variants'))
+        return self._pack_row(
+            'pack:interlinear:' + name,
+            _('Interlinear — Hebrew OT') if hebrew
+            else _('Interlinear — Greek NT'),
+            installed,
+            _('The Hebrew Old Testament word by word — gloss, parsing, '
+              'and Strong’s under each word · ~16 MB download')
+            if hebrew else
+            _('The Greek New Testament word by word — gloss, parsing, '
+              'and Strong’s under each word · ~7 MB download'),
+            update,
+            lambda b: self._on_interlinear_download(b, name),
+            lambda: self._do_interlinear_remove(name))
 
     def _make_imagery_row(self):
-        row = Adw.ActionRow()
-        row.set_title(_('Bible Imagery'))
+        installed = None
         if imagery_bridge.is_installed():
             n = imagery_bridge.pack_info().get('image_count', '')
-            row.set_subtitle(
-                _('{n} illustrations, maps, and place photos, verse by verse').format(n=n)
-                if n else
+            installed = (
+                _('{n} illustrations, maps, and place photos, verse by verse'
+                  ).format(n=n) if n else
                 _('Illustrations, maps, and place photos, verse by verse'))
-            if imagery_bridge.update_available():
-                up = Gtk.Button(label=_('Update'))
-                up.add_css_class('suggested-action')
-                up.set_valign(Gtk.Align.CENTER)
-                up.set_tooltip_text(_('A newer pack is available'))
-                up.connect('clicked', self._on_imagery_update)
-                row.add_suffix(up)
-            btn = self._trash_button(
-                lambda: self._confirm_remove_generic(
-                    _('Bible Imagery'), self._do_imagery_remove))
-        else:
-            row.set_subtitle(
-                _('Illustrations, historical maps, and photographs of the '
-                  'places named in each verse · ~525 MB download'))
-            btn = Gtk.Button(label=_('Download'))
-            btn.add_css_class('suggested-action')
-            btn.connect('clicked', self._on_imagery_download)
-        btn.set_valign(Gtk.Align.CENTER)
-        row.add_suffix(btn)
-        return row
+        return self._pack_row(
+            'pack:imagery', _('Bible Imagery'), installed,
+            _('Illustrations, historical maps, and photographs of the '
+              'places named in each verse · ~525 MB download'),
+            installed is not None and imagery_bridge.update_available()
+            and _('A newer pack is available'),
+            self._on_imagery_download, self._do_imagery_remove,
+            imagery_bridge.partial_download(), imagery_bridge.discard_partial)
 
     def _make_archaeology_row(self):
         """Scripture in Stone ships inside the app — nothing to download,
@@ -707,16 +702,15 @@ class ModuleManagerWindow(Adw.Window):
         row = Adw.ActionRow()
         row.set_title(GLib.markup_escape_text(src['label']))
         row.set_subtitle(GLib.markup_escape_text(src['description']))
+        key = 'db:' + src['id']
         if src['installed']:
             btn = self._trash_button(
                 lambda: self._confirm_remove_generic(
-                    src['label'], lambda: self._do_db_remove(src['id'])))
+                    src['label'], lambda: self._do_db_remove(src['id']), key))
         else:
-            btn = Gtk.Button(label=_('Download'))
-            btn.add_css_class('suggested-action')
-            btn.set_valign(Gtk.Align.CENTER)
-            btn.connect('clicked', lambda b, sid=src['id']: self._on_db_download(b, sid))
-        row.add_suffix(btn)
+            btn = self._download_button(
+                lambda b, sid=src['id']: self._on_db_download(b, sid))
+        self._add_actions(row, key, btn)
         return row
 
     # ── Language filter (chip + popover list) ─────────────────────────────────
@@ -901,7 +895,7 @@ class ModuleManagerWindow(Adw.Window):
             btn.set_valign(Gtk.Align.CENTER)
             btn.connect('clicked',
                         lambda b, t_=tid, e=entry: self._on_eb_download(b, t_, e))
-            row.add_suffix(btn)
+            self._add_actions(row, 'ebible:' + tid, btn)
             group.add(row)
             t['update_rows'].append(row)
         for mod, old in mine:
@@ -915,7 +909,7 @@ class ModuleManagerWindow(Adw.Window):
             btn.set_valign(Gtk.Align.CENTER)
             btn.connect('clicked',
                         lambda b, m=mod, r=row: self._on_install(b, m, r))
-            row.add_suffix(btn)
+            self._add_actions(row, 'sword:' + mod['name'], btn)
             group.add(row)
             t['update_rows'].append(row)
 
@@ -1126,6 +1120,11 @@ class ModuleManagerWindow(Adw.Window):
             + '  ·  ' + ' · '.join(sources)))
         for item in items:
             row.add_row(self._entry_row(item, installed))
+        # A folded group would hide an edition's progress and its Cancel.
+        row.set_expanded(any(
+            downloads.get(key) or downloads.get('rm:' + key)
+            for key in (('sword:' + p['name']) if src == 'sword'
+                        else ('ebible:' + p[0]) for src, p in items)))
         return row
 
     def _make_sword_row(self, mod, installed):
@@ -1168,7 +1167,7 @@ class ModuleManagerWindow(Adw.Window):
             btn.set_valign(Gtk.Align.CENTER)
             btn.connect('clicked',
                         lambda b, m=mod, r=row: self._on_install(b, m, r))
-        row.add_suffix(btn)
+        self._add_actions(row, 'sword:' + key, btn)
         return row
 
     def _make_eb_row(self, tid, title, lang_code, lang_name, entry, installed):
@@ -1200,6 +1199,7 @@ class ModuleManagerWindow(Adw.Window):
             # _eb_stale_reasons() already excludes anything the catalogue has
             # no entry for — a blank one would rewrite the title and licence
             # as empty strings.
+            buttons = []
             reason = self._eb_stale.get(tid)
             if reason:
                 upd = Gtk.Button(label=_('Update'))
@@ -1208,10 +1208,10 @@ class ModuleManagerWindow(Adw.Window):
                 upd.connect('clicked',
                             lambda b, t_=tid, e=entry:
                                 self._on_eb_download(b, t_, e))
-                row.add_suffix(upd)
+                buttons.append(upd)
             btn = self._trash_button(
                 lambda t_=tid, ti=title: self._confirm_remove_generic(
-                    ti, lambda: self._do_eb_remove(t_)))
+                    ti, lambda: self._do_eb_remove(t_), 'ebible:' + t_))
         else:
             # Same verb as the CrossWire rows — the user is installing a
             # module either way; which wire it arrives over is plumbing.
@@ -1220,60 +1220,153 @@ class ModuleManagerWindow(Adw.Window):
             btn.set_valign(Gtk.Align.CENTER)
             btn.connect('clicked',
                         lambda b, t_=tid, e=entry: self._on_eb_download(b, t_, e))
-        row.add_suffix(btn)
+            buttons = []
+        self._add_actions(row, 'ebible:' + tid, *buttons, btn)
         return row
 
-    # ── One async runner for every operation ──────────────────────────────────
+    # ── The download queue, drawn on the rows ─────────────────────────────────
     #
-    # Every network/disk operation goes through here: one gate (`_current`,
-    # shared by every window), one thread pattern, one _closed guard — and a
-    # visible answer when an operation is refused, instead of a silent no-op.
+    # Every install, update and removal is a job in `downloads`. Its row shows
+    # it (queued, bytes so far, a Cancel) instead of its buttons, whichever
+    # window started it; work with no row (a catalogue refresh, an import)
+    # shows on the window's bar.
 
-    def _run_async(self, work, on_done, busy_msg='', show_bar=True,
-                   retry=None, status=''):
-        """Run work() on a daemon thread; on_done(err) on the main loop,
-        `err` being the sentence shown to the reader, or None.
-        Returns False (with visible feedback) if another operation holds
-        the gate. `retry` re-runs the whole operation from the error strip.
-        `status` names a row operation (no bar here) for a window opened
-        while it runs."""
-        global _current
-        if _current is not None:
-            self._flash(_('Waiting for the current operation to finish…'))
-            return False
-        op = _current = _Operation(busy_msg or status)
-        op.windows.append(self)
-        self._set_busy(True, busy_msg, show_bar=show_bar)
+    def _submit(self, key, title, work, *, row=True, changes=True,
+                done_text='', then=None):
+        """Queue `work(job)` under `key` on the lane its key names.
+        `changes`: tell the panes when it succeeds, window open or not.
+        `then(job)`: run on success while this window is still open."""
+        tell_panes = self._on_modules_changed
 
-        def runner():
-            err = None
-            try:
-                work()
-            except Exception as e:
-                _log.error('operation failed: %r', e, exc_info=True)
-                err = fetch_errors.describe(e)
-            GLib.idle_add(finish, err)
+        def on_finish(job):
+            if job.state != downloads.DONE:
+                return
+            if changes and tell_panes is not None:
+                tell_panes()
+            if then is not None and not self._closed:
+                then(job)
+        return downloads.submit(key, title, _lane_of(key), work,
+                                on_finish=on_finish, row=row,
+                                done_text=done_text)
 
-        def finish(err):
-            global _current
-            _current = None
-            showing = [w for w in op.windows if not w._closed]
-            for win in showing:
-                win._set_busy(False)
-                if err:
-                    win._set_error(err, retry if win is self else None)
+    def _on_job(self, job):
+        if self._closed:
+            return
+        if not job.row:
+            self._sync_bar()
+        elif job.active and job.key in self._job_widgets:
+            for label, bar in self._job_widgets[job.key]:
+                self._paint_job(job, label, bar)
+        elif job.active:
+            self._queue_redraw()        # a new job: its row turns to progress
+        if job.active:
+            return
+        self._populate()                # it ended: the data changed
+        if job.state == downloads.FAILED:
+            text = _('{name}: {reason}').format(
+                name=job.title, reason=fetch_errors.describe(job.error))
+            self._set_error(text, retry=job.again)
+            announce(self, text, urgent=True)
+        elif job.state == downloads.DONE and job.done_text:
+            announce(self, job.done_text)
+
+    def _queue_redraw(self):
+        """Redraw every tab's rows from the data already read, once, however
+        many jobs changed in the meantime."""
+        if self._redraw_source:
+            return
+
+        def redraw():
+            self._redraw_source = 0
             if not self._closed:
-                on_done(err)
-            else:
-                # The window that started this is gone; the panes are not.
-                # Tell them, and let a window opened since redraw its rows.
-                self._modules_changed()
-                for win in showing:
-                    win._populate()
+                self._job_widgets = {}
+                for tab_id in self._tabs:
+                    self._refresh_tab(tab_id, full=True)
             return GLib.SOURCE_REMOVE
+        self._redraw_source = GLib.idle_add(redraw)
 
-        threading.Thread(target=runner, daemon=True).start()
+    def _sync_bar(self):
+        """The window bar shows the first job that has no row, if any."""
+        jobs = [j for j in downloads.active() if not j.row]
+        if not jobs:
+            self._set_busy(False)
+            return
+        job = jobs[0]
+        text = job.phase or job.title
+        if not self._progress.get_visible():
+            self._set_busy(True, text)
+        self._set_progress(text, job.fraction)
+
+    def _add_actions(self, row, key, *buttons):
+        """Give `row` its buttons, or, while a job for `key` is queued or
+        running, that job's progress and Cancel instead."""
+        if not self._show_job(row, key):
+            for btn in buttons:
+                row.add_suffix(btn)
+
+    def _show_job(self, row, key):
+        job = downloads.get(key) or downloads.get('rm:' + key)
+        if job is None:
+            return False
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        box.set_valign(Gtk.Align.CENTER)
+        label = Gtk.Label()
+        label.add_css_class('caption')
+        label.add_css_class('dim-label')
+        bar = Gtk.ProgressBar()
+        bar.set_valign(Gtk.Align.CENTER)
+        bar.set_size_request(80, -1)
+        box.append(label)
+        box.append(bar)
+        if job.key == key:
+            # Removals take a moment and are not worth stopping halfway.
+            cancel = Gtk.Button(icon_name='scriptura-window-close-symbolic')
+            cancel.add_css_class('flat')
+            cancel.add_css_class('circular')
+            cancel.set_tooltip_text(_('Cancel'))
+            set_accessible_label(
+                cancel, _('Cancel {name}').format(name=job.title))
+            cancel.connect('clicked', lambda _b: downloads.cancel(key))
+            box.append(cancel)
+        row.add_suffix(box)
+        self._job_widgets.setdefault(job.key, []).append((label, bar))
+        self._paint_job(job, label, bar)
         return True
+
+    def _paint_job(self, job, label, bar):
+        frac = job.fraction
+        if job.state == downloads.QUEUED:
+            text = _('Queued')
+        elif job.key.startswith('rm:'):
+            text = _('Removing…')
+        elif job.phase:
+            text = job.phase
+        elif job.total:
+            text = _('{done} of {total} MB').format(
+                done=_mb(job.done), total=_mb(job.total))
+        elif job.done:
+            text = _('{done} MB').format(done=_mb(job.done))
+        else:
+            text = _('Starting…')
+        label.set_text(text)
+        bar.set_visible(job.state == downloads.RUNNING)
+        if frac is None:
+            self._pulsing.add(bar)
+            if not self._row_pulse:
+                self._row_pulse = GLib.timeout_add(80, self._pulse_rows)
+        else:
+            self._pulsing.discard(bar)
+            bar.set_fraction(frac)
+
+    def _pulse_rows(self):
+        live = {b for b in self._pulsing if b.get_root() is not None}
+        self._pulsing = live
+        if self._closed or not live:
+            self._row_pulse = 0
+            return GLib.SOURCE_REMOVE
+        for bar in live:
+            bar.pulse()
+        return GLib.SOURCE_CONTINUE
 
     def _set_busy(self, busy, status='', show_bar=True):
         if self._closed:
@@ -1300,7 +1393,7 @@ class ModuleManagerWindow(Adw.Window):
     def _set_progress(self, text, frac=None):
         """Update the window bar. A known fraction makes it determinate
         (the pulse stops); None means activity — the pulse resumes, see
-        _progress_fraction."""
+        downloads.Job.fraction."""
         if self._closed:
             return GLib.SOURCE_REMOVE
         self._progress.set_text(text)
@@ -1344,21 +1437,6 @@ class ModuleManagerWindow(Adw.Window):
             self._status_bar.set_visible(False)
         return GLib.SOURCE_REMOVE
 
-    def _row_spinner(self, row, button):
-        """Swap a row's action button for a spinner while it installs/removes.
-        The list is rebuilt on completion, so the spinner row is transient.
-        Delayed past the perception threshold (the button vanishing is the
-        immediate feedback); returns the DelayedSpinner so the caller can
-        stop a pending timer when the operation completes."""
-        row.remove(button)
-        spinner = Gtk.Spinner()
-        spinner.set_valign(Gtk.Align.CENTER)
-        spinner.set_visible(False)
-        row.add_suffix(spinner)
-        delayed = DelayedSpinner(spinner)
-        delayed.start()
-        return delayed
-
     def _trash_button(self, on_confirm):
         """A flat trash-icon remove button; `on_confirm` runs when clicked.
         Hover-revealed (`.module-row-action`) per the house row-action rule."""
@@ -1379,9 +1457,13 @@ class ModuleManagerWindow(Adw.Window):
         # Mark closed so the daemon workers' idle callbacks early-return
         # instead of mutating finalized widgets, and stop the pulse.
         self._closed = True
-        if self._pulse_source is not None:
-            GLib.source_remove(self._pulse_source)
-            self._pulse_source = None
+        downloads.unlisten(self._on_job)
+        if self in _windows:
+            _windows.remove(self)
+        for source in ('_pulse_source', '_row_pulse', '_redraw_source'):
+            if getattr(self, source):
+                GLib.source_remove(getattr(self, source))
+                setattr(self, source, None if source == '_pulse_source' else 0)
         return False
 
     def _modules_changed(self):
@@ -1397,28 +1479,16 @@ class ModuleManagerWindow(Adw.Window):
             # up front rather than letting it install and render garbage.
             self._prompt_cipher_install(btn, mod, row)
             return
-        self._start_install(btn, name, row)
+        self._start_install(name, _friendly_name(mod))
 
-    def _start_install(self, btn, name, row, cipher_key=None):
-        def work():
+    def _start_install(self, name, title, cipher_key=None):
+        def work(_job):
             sword_bridge.install_module(name)
             if cipher_key:
                 sword_bridge.set_cipher_key(name, cipher_key)
 
-        delayed = None
-
-        def done(err):
-            if delayed is not None:
-                delayed.stop()
-            self._modules_changed()
-            self._populate()
-
-        if self._run_async(work, done, show_bar=False,
-                           retry=lambda: self._start_install(
-                               btn, name, row, cipher_key),
-                           status=_('Downloading {name}…').format(
-                               name=name)):
-            delayed = self._row_spinner(row, btn)
+        self._submit('sword:' + name, title, work,
+                     done_text=_('{name} installed').format(name=title))
 
     def _prompt_cipher_install(self, btn, mod, row):
         dialog = Adw.AlertDialog()
@@ -1441,7 +1511,8 @@ class ModuleManagerWindow(Adw.Window):
         dialog.connect(
             'response',
             lambda _d, r: self._start_install(
-                btn, mod['name'], row, entry.get_text().strip() or None)
+                mod['name'], _friendly_name(mod),
+                entry.get_text().strip() or None)
             if r == 'install' else None)
         dialog.present(self)
 
@@ -1459,90 +1530,60 @@ class ModuleManagerWindow(Adw.Window):
         dialog.set_close_response('cancel')
         dialog.connect(
             'response',
-            lambda _d, r: self._start_remove(name, row) if r == 'remove' else None)
+            lambda _d, r: self._start_remove(name, friendly)
+            if r == 'remove' else None)
         dialog.present(self)
 
-    def _start_remove(self, name, row):
-        def done(err):
-            self._modules_changed()
-            self._populate()
-
-        self._run_async(lambda: sword_bridge.remove_module(name), done,
-                        show_bar=False,
-                        retry=lambda: self._start_remove(name, row))
+    def _start_remove(self, name, title):
+        self._submit('rm:sword:' + name, title,
+                     lambda _job: sword_bridge.remove_module(name),
+                     done_text=_('{name} removed').format(name=title))
 
     # ── Refresh (per tab: every catalogue that feeds it) ─────────────────────
 
     def _on_refresh(self, tab_id):
         wants_ebible = self._tabs[tab_id]['spec']['ebible']
 
-        def work():
+        def work(job):
             sword_bridge.refresh_source()
             if wants_ebible:
-                GLib.idle_add(_report,
-                              _('Downloading eBible catalog…'))
+                job.set_phase(_('Downloading eBible catalog…'))
                 ebible_bridge.download_catalog_sync()
 
-        def done(err):
-            if not err:
-                self._populate()
-
-        self._run_async(work, done,
-                        busy_msg=_('Downloading module list from CrossWire…'),
-                        retry=lambda: self._on_refresh(tab_id))
+        self._submit('sword:refresh',
+                     _('Downloading module list from CrossWire…'), work,
+                     row=False, changes=False)
 
     # ── Curated pack / database downloads ────────────────────────────────────
 
-    def _pack_download(self, btn, name, download):
-        """Shared flow for the catena/imagery/database downloads: byte
-        progress on the window bar, button disabled while running."""
-        base = _('Downloading {name}…').format(name=name)
+    def _pack_download(self, key, name, download):
+        """Shared flow for the curated packs and open databases: the row
+        shows its bytes. `download(on_progress)` does the work."""
+        self._submit(key, name, lambda job: download(job.progress),
+                     done_text=_('{name} installed').format(name=name))
 
-        def progress(done_b, total):
-            GLib.idle_add(_report,
-                          _fmt_progress(base, done_b, total),
-                          _progress_fraction(done_b, total))
-
-        def done(err):
-            self._modules_changed()
-            self._populate()
-
-        if self._run_async(lambda: download(progress), done, busy_msg=base,
-                           retry=lambda: self._pack_download(
-                               btn, name, download)):
-            btn.set_sensitive(False)
-            btn.set_label(_('Downloading…'))
-
-    def _on_catena_download(self, btn):
+    def _on_catena_download(self, _btn):
+        # Download and Update alike: the install writes through a temp file
+        # and renames atomically, so it overwrites an older pack in place.
         self._pack_download(
-            btn, _('Historical Commentaries'),
+            'pack:catena', _('Historical Commentaries'),
             lambda p: catena_bridge.download_and_install(on_progress=p))
 
-    def _on_catena_update(self, btn):
-        # Same flow as the first download — the install writes through a temp
-        # file and renames atomically, so it overwrites the older pack in place.
+    def _on_imagery_download(self, _btn):
+        # Download and Update alike: the install extracts into a staging
+        # directory and swaps it in whole, so an update replaces the old
+        # pack rather than merging with it — plates dropped from the sources
+        # do not survive as orphans.
         self._pack_download(
-            btn, _('Historical Commentaries'),
-            lambda p: catena_bridge.download_and_install(on_progress=p))
-
-    def _on_imagery_update(self, btn):
-        # The same flow as the first download: the install extracts into a
-        # staging directory and swaps it in whole, so an update replaces the
-        # old pack rather than merging with it — plates dropped from the
-        # sources do not survive as orphans.
-        self._on_imagery_download(btn)
-
-    def _on_imagery_download(self, btn):
-        self._pack_download(
-            btn, _('Bible Imagery'),
+            'pack:imagery', _('Bible Imagery'),
             lambda p: imagery_bridge.download_and_install(on_progress=p))
 
-    def _on_db_download(self, btn, source_id):
+    def _on_db_download(self, _btn, source_id):
         src = next((s for s in open_data.get_sources() if s['id'] == source_id), None)
         if src is None:
             return
         self._pack_download(
-            btn, src['label'],
+            'db:' + source_id, src['label'],
             lambda p: open_data.download_source(source_id, on_progress=p))
 
     def _make_lexicon_pack_row(self):
@@ -1554,7 +1595,8 @@ class ModuleManagerWindow(Adw.Window):
                   'data (CC BY)'))
             btn = self._trash_button(
                 lambda: self._confirm_remove_generic(
-                    _('Scholar’s Greek Lexicon'), self._do_lexicon_remove))
+                    _('Scholar’s Greek Lexicon'), self._do_lexicon_remove,
+                    'pack:lexicon'))
         else:
             row.set_subtitle(
                 _('Upgrade Greek definitions to Abbott-Smith, with the full '
@@ -1563,23 +1605,23 @@ class ModuleManagerWindow(Adw.Window):
             btn.add_css_class('suggested-action')
             btn.connect('clicked', self._on_lexicon_download)
         btn.set_valign(Gtk.Align.CENTER)
-        row.add_suffix(btn)
+        self._add_actions(row, 'pack:lexicon', btn)
         return row
 
-    def _on_lexicon_download(self, btn):
+    def _on_lexicon_download(self, _btn):
         self._pack_download(
-            btn, _('Scholar’s Greek Lexicon'),
+            'pack:lexicon', _('Scholar’s Greek Lexicon'),
             lambda p: lexicon_data.download_and_build(on_progress=p))
 
     def _do_lexicon_remove(self):
         lexicon_data.remove()
 
-    def _on_interlinear_download(self, btn, name):
+    def _on_interlinear_download(self, _btn, name):
         label = (_('Interlinear — Hebrew OT')
                  if interlinear_data.is_hebrew(name)
                  else _('Interlinear — Greek NT'))
         self._pack_download(
-            btn, label,
+            'pack:interlinear:' + name, label,
             lambda p: interlinear_data.download_and_build(name,
                                                           on_progress=p))
 
@@ -1588,18 +1630,20 @@ class ModuleManagerWindow(Adw.Window):
 
     def _do_catena_remove(self):
         catena_bridge.remove_pack()
+        catena_bridge.discard_partial()
 
     def _do_imagery_remove(self):
         imagery_bridge.remove_pack()
+        imagery_bridge.discard_partial()
 
     def _do_db_remove(self, source_id):
         open_data.remove_source(source_id)
 
-    def _confirm_remove_generic(self, friendly, on_confirm):
+    def _confirm_remove_generic(self, friendly, on_confirm, key):
         """Confirmation dialog for removing a non-SWORD pack/source.
-        `on_confirm` does the removal, through the one-operation gate: run
-        straight away it could land in the middle of that pack's own update,
-        which then put back what the reader had just removed."""
+        `on_confirm` does the removal, queued behind any job on the same
+        lane: run straight away it could land in the middle of that pack's
+        own update, which then put back what the reader had just removed."""
         dialog = Adw.AlertDialog()
         dialog.set_heading(_('Remove?'))
         dialog.set_body(
@@ -1612,17 +1656,14 @@ class ModuleManagerWindow(Adw.Window):
         dialog.set_default_response('cancel')
         dialog.set_close_response('cancel')
         dialog.connect('response',
-                       lambda _d, r: self._start_remove_generic(on_confirm)
+                       lambda _d, r: self._start_remove_generic(
+                           on_confirm, key, friendly)
                        if r == 'remove' else None)
         dialog.present(self)
 
-    def _start_remove_generic(self, remove):
-        def done(err):
-            self._modules_changed()
-            self._populate()
-
-        self._run_async(remove, done, show_bar=False,
-                        retry=lambda: self._start_remove_generic(remove))
+    def _start_remove_generic(self, remove, key, title):
+        self._submit('rm:' + key, title, lambda _job: remove(),
+                     done_text=_('{name} removed').format(name=title))
 
     # ── eBible download / remove ─────────────────────────────────────────────
 
@@ -1635,34 +1676,29 @@ class ModuleManagerWindow(Adw.Window):
         'save': N_('Saving…'),
     }
 
-    def _on_eb_download(self, btn, tid, entry):
+    def _on_eb_download(self, _btn, tid, entry):
         title = (entry.get('shortTitle') or tid).strip()
         # Asked before the download, because afterwards everything is installed.
         updating = tid in ebible_bridge.installed_ids()
 
-        def on_status(code):
-            GLib.idle_add(_report,
-                          _(self._EB_STATUS.get(code, code)))
+        def work(job):
+            def on_status(code):
+                # While the bytes arrive the row counts them; the steps after
+                # have no measure, so they are named instead.
+                job.set_phase('' if code == 'download'
+                              else _(self._EB_STATUS.get(code, code)))
+            ebible_bridge.download_translation_sync(tid, entry,
+                                                    on_status=on_status)
 
-        def done(err):
-            self._modules_changed()
-            self._populate()
-            # An install announces itself: the row moves to Installed and the
-            # button turns into a trash can. An update now announces itself
-            # too — the row leaves the updates group and drops its button —
-            # but that is an absence, and an absence is easy to miss on a
-            # window the reader was watching. Name what happened.
-            if updating and not err:
-                self._flash(_('{name} updated').format(name=title))
-
-        if self._run_async(
-                lambda: ebible_bridge.download_translation_sync(
-                    tid, entry, on_status=on_status),
-                done, busy_msg=_('Downloading {name}…').format(name=title),
-                retry=lambda: self._on_eb_download(btn, tid, entry)):
-            btn.set_sensitive(False)
-            # The same call serves both buttons; only the word differs.
-            btn.set_label(_('Updating…') if updating else _('Installing…'))
+        # An install announces itself: the row moves to Installed and the
+        # button turns into a trash can. An update is an absence (the row
+        # leaves the updates group), and an absence is easy to miss on a
+        # window the reader was watching. Name what happened.
+        self._submit(
+            'ebible:' + tid, title, work,
+            done_text=(_('{name} updated') if updating
+                       else _('{name} installed')).format(name=title),
+            then=lambda job: self._flash(job.done_text) if updating else None)
 
     def _do_eb_remove(self, tid):
         ebible_bridge.remove_translation(tid)
@@ -1704,17 +1740,17 @@ class ModuleManagerWindow(Adw.Window):
     def _load_zip_path(self, path):
         state = {}
 
-        def work():
+        def work(_job):
             with open(path, 'rb') as f:
                 state['data'] = f.read()
             state['mods'] = sword_bridge.inspect_module_zip(state['data'])
 
-        def done(err):
-            if not err and state.get('mods'):
+        def then(_job):
+            if state.get('mods'):
                 self._show_import_sheet(state['mods'], state['data'])
 
-        self._run_async(work, done, busy_msg=_('Reading module file…'),
-                        retry=lambda: self._load_zip_path(path))
+        self._submit('sword:import-read', _('Reading module file…'), work,
+                     row=False, changes=False, then=then)
 
     def _show_import_sheet(self, mods, zip_bytes):
         dialog = Adw.Dialog()
@@ -1865,14 +1901,9 @@ class ModuleManagerWindow(Adw.Window):
                  else ngettext('{n} module', '{n} modules',
                                len(selected)).format(n=len(selected)))
 
-        def done(err):
-            if not err:
-                self._modules_changed()
-            self._populate()
-
-        if self._run_async(
-                lambda: sword_bridge.install_module_from_zip(
-                    zip_bytes, selected, cipher_keys),
-                done, busy_msg=_('Installing {label}…').format(label=label),
-                retry=lambda: self._do_import(zip_bytes, rows, dialog)):
-            dialog.close()
+        self._submit(
+            'sword:import', _('Installing {label}…').format(label=label),
+            lambda _job: sword_bridge.install_module_from_zip(
+                zip_bytes, selected, cipher_keys),
+            row=False)
+        dialog.close()

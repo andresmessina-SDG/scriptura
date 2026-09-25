@@ -15,6 +15,20 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Changed
 
+- **Downloads queue up, show their progress, and can be cancelled.**
+  Installing no longer waits for whatever else is downloading: each
+  download waits its turn and says so on its row, which then shows how
+  much has arrived and a button to cancel it. Bibles from eBible.org keep
+  coming while a pack downloads from elsewhere. Close the Module Manager
+  and the downloads carry on; open it again and they are still there.
+- **A large pack picks up where it stopped.** A cancelled or cut-off
+  download of Bible Imagery or Historical Commentaries offers Resume and
+  continues from the last byte. The Module Manager checks for the free
+  space first and says how much it needs.
+- **Big downloads tell you when they finish.** One over 25 MB that ends
+  while you are in another window sends a desktop notification, whether
+  it worked or not. Screen readers hear each download finish or fail.
+- **Quitting while something downloads asks first.**
 - **Compare runs from word for word to free.** Comparing a verse now lists
   your English Bibles from the most literal to the freest, each with a
   small mark showing where it sits. A filled dot means published charts

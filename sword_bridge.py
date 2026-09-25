@@ -15,6 +15,7 @@ from collections import OrderedDict
 import Sword
 
 import search_query
+import transfer
 
 _sword_log = logging.getLogger('scriptura.sword')
 _search_log = logging.getLogger('scriptura.search')
@@ -2099,7 +2100,7 @@ def _fetch_mirror(path, timeout):
     url = f'{_MIRROR_BASE}/{os.path.basename(path)}'
     try:
         with urllib.request.urlopen(url, timeout=timeout) as resp:
-            return resp.read()
+            return transfer.read(resp)
     except urllib.error.HTTPError as exc:
         if exc.code == 404:
             raise NotMirrored(
@@ -2121,7 +2122,7 @@ def _fetch_scriptura(name, timeout):
 
     with urllib.request.urlopen(f'{_SCRIPTURA_BASE}/{name}',
                                 timeout=timeout) as resp:
-        return resp.read()
+        return transfer.read(resp)
 
 
 def _fetch_crosswire(path, timeout):
@@ -2134,7 +2135,7 @@ def _fetch_crosswire(path, timeout):
         try:
             with urllib.request.urlopen(
                     f'{_CROSSWIRE_HTTPS}/{path}', timeout=timeout) as resp:
-                return resp.read()
+                return transfer.read(resp)
         except urllib.error.HTTPError:
             # The web server answered: a 404 means the file is genuinely
             # not there, and FTP would say the same. Report it as-is.
@@ -2152,7 +2153,7 @@ def _fetch_crosswire(path, timeout):
         try:
             with urllib.request.urlopen(
                     f'{_CROSSWIRE_FTP}/{path}', timeout=timeout) as resp:
-                return resp.read()
+                return transfer.read(resp)
         except (urllib.error.URLError, OSError) as exc:
             _sword_log.info('CrossWire FTP failed (%s) — trying mirror', exc)
     else:
@@ -2468,6 +2469,8 @@ def _install_zip(zf, names=None, cipher_keys=None):
         dir_rel, prefix = _module_files(info)
         modules.append((name, _zip_path(cm), dir_rel, prefix))
 
+    transfer.ensure_space(_SWORD_PATH, sum(
+        i.file_size for i in infos if not i.is_dir()))
     staging = _new_staging()
     try:
         for member in infos:
