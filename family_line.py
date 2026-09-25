@@ -217,10 +217,14 @@ class _Menu(Gtk.Box):
         """Choose `key`, as a click on it would."""
         self._checks[key].set_active(True)
 
+    def clear(self):
+        """Back to the first, unfiltered choice."""
+        self.pick(self._choices[0][0])
+
     def _on_clear(self, _button):
         # The × hides itself once the filter is clear; the keyboard goes
         # back to the menu rather than vanishing with it.
-        self.pick(self._choices[0][0])
+        self.clear()
         self._button.grab_focus()
 
     def _on_toggled(self, check, key):
@@ -253,6 +257,7 @@ class FamilyLine:
         self._availability = 'all'
         self._tradition = ''
         self._era = -1
+        self._query = ''
         self._sort = 'place'
         self._stacked = False
         self._counts: dict = {}
@@ -274,6 +279,14 @@ class FamilyLine:
         bar.set_margin_top(8)
         bar.set_margin_bottom(4)
         filters = Adw.WrapBox(child_spacing=6, line_spacing=4, hexpand=True)
+        # Find a Bible by name, abbreviation or year: 126 rows are too many
+        # to scan for one.
+        self._search = Gtk.SearchEntry(placeholder_text=_('Find a Bible'))
+        self._search.set_width_chars(12)
+        set_accessible_label(self._search, _('Find a Bible'))
+        self._search.connect('search-changed', self._on_search)
+        self._search.connect('stop-search', lambda e: e.set_text(''))
+        filters.append(self._search)
         self._avail_menu = _Menu(
             _('Availability'),
             [('all', _('All Bibles')), ('installed', _('Installed')),
@@ -397,6 +410,10 @@ class FamilyLine:
         from family_tree import reading_module
         return reading_module(self._pane)
 
+    def _on_search(self, entry):
+        self._query = entry.get_text()
+        self._refilter()
+
     def _set_availability(self, key):
         self._availability = key
         self._refilter()
@@ -442,6 +459,8 @@ class FamilyLine:
         if self._tradition and row.chip != self._tradition:
             return False
         if self._era >= 0 and row.era != self._era:
+            return False
+        if self._query and not bible_family.matches(row.record, self._query):
             return False
         return True
 
@@ -508,6 +527,41 @@ class FamilyLine:
         if ok:
             adj = self._scroll.get_vadjustment()
             adj.set_value(max(0.0, bounds.get_y() - adj.get_page_size() / 3))
+
+    def show_node(self, node_id):
+        """Bring one Bible's row into view and give it the keyboard. Filters
+        that hide it are cleared first: a row asked for by name must show."""
+        self._ensure_rows()
+        row = next((r for r in self._rows if r.record['id'] == node_id), None)
+        if row is None:
+            return
+        if not self._filter(row):
+            self._search.set_text('')
+            for menu in (self._avail_menu, self._trad_menu, self._era_menu):
+                menu.clear()
+            self._query, self._availability = '', 'all'
+            self._tradition, self._era = '', -1
+            self._refilter()
+        self._last_row = row
+        row.grab_focus()
+        vadj = self._scroll.get_vadjustment()
+
+        def go():
+            self._scroll_to(row)
+            return GLib.SOURCE_REMOVE
+
+        if vadj.get_page_size() > 0:
+            GLib.idle_add(go)
+            return
+        handler = None
+
+        def on_changed(_adj):
+            # A pane just turned to the Family Tree has no page yet, and a
+            # scroll before it has one clamps to the top.
+            if vadj.get_page_size() > 0:
+                vadj.disconnect(handler)
+                GLib.idle_add(go)
+        handler = vadj.connect('changed', on_changed)
 
     def focus_last(self):
         """Put the keyboard back on the row whose Card just closed."""

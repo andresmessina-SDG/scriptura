@@ -402,6 +402,9 @@ def test_compare_settles_its_header_before_it_is_shown(display, monkeypatch):
 
         def _verse_ranges(self, _v):
             return None
+
+        def get_root(self):
+            return None
     ad.compare_translations(_Pane(), 16)
     for fn, args in queued:               # the verses arrive
         fn(*args)
@@ -522,3 +525,159 @@ def test_export_shortcut_from_the_family_tree(monkeypatch, pane2_visible,
     got = ('pane2' if exported == [win.pane2] else
            'toast' if toasts and not exported else 'wrong')
     assert got == expected
+
+
+
+# ── Compare's "See on the Line" ─────────────────────────────────────────────
+
+def _compare_with_root(monkeypatch, module):
+    """Open Compare on `module` in a pane whose window can show the Line;
+    returns (popover, calls to show_on_line, queued idles)."""
+    from gi.repository import Gtk
+    import annotation_dialogs as ad
+    monkeypatch.setattr(ad, '_compare_names', lambda: [module])
+    monkeypatch.setattr(ad.content, 'language_code', lambda m: 'en')
+    monkeypatch.setattr(ad.content, 'load_chapter',
+                        lambda m, b, c: [(16, 'text')])
+    monkeypatch.setattr(ad.sword_bridge, 'map_target_verse',
+                        lambda m, b, c, v: v)
+    monkeypatch.setattr(ad.settings, 'get', lambda key: False)
+
+    class _Now:
+        def __init__(self, target, daemon=None):
+            self.target = target
+
+        def start(self):
+            pass                          # the verses never matter here
+    monkeypatch.setattr(ad.threading, 'Thread', _Now)
+    queued = []
+    monkeypatch.setattr(ad.GLib, 'idle_add', lambda fn, *a: queued.append(
+        (fn, a)))
+    shown = {}
+    monkeypatch.setattr(Gtk.Popover, 'popup',
+                        lambda pop: shown.setdefault('pop', pop))
+    monkeypatch.setattr(Gtk.Popover, 'popdown', lambda pop: None)
+    calls = []
+
+    class _Root:
+        def show_on_line(self, node_id, pane):
+            calls.append(node_id)
+
+    root = _Root()
+
+    class _Pane:
+        view = Gtk.Box()
+        book, chapter = 'John', 3
+
+        def _verse_ranges(self, _v):
+            return None
+
+        def get_root(self):
+            return root
+    pane = _Pane()
+    pane.module = module
+    ad.compare_translations(pane, 16)
+    return shown['pop'], calls, queued
+
+
+def _buttons(widget):
+    from gi.repository import Gtk
+    out, c = [], widget.get_first_child()
+    while c is not None:
+        if isinstance(c, Gtk.Button) and c.get_label():
+            out.append(c)
+        out += _buttons(c)
+        c = c.get_next_sibling()
+    return out
+
+
+def test_compare_offers_the_line_for_a_bible_the_line_holds(display,
+                                                           monkeypatch):
+    pop, calls, queued = _compare_with_root(monkeypatch, 'KJV')
+    see = [b for b in _buttons(pop) if b.get_label() == 'See on the Line']
+    assert len(see) == 1                  # there at popup(), not added later
+    see[0].emit('clicked')
+    for fn, args in queued:
+        fn(*args)
+    assert calls == ['kjv']
+    pop.unparent()
+
+
+def test_compare_offers_no_line_for_a_bible_it_does_not_hold(display,
+                                                            monkeypatch):
+    pop, _calls, _queued = _compare_with_root(monkeypatch, 'RusSynodal')
+    assert not [b for b in _buttons(pop)
+                if b.get_label() == 'See on the Line']
+    pop.unparent()
+
+
+
+def test_compare_can_still_shrink_as_far_as_it_could(display, monkeypatch):
+    """A popover too tall to fit above or below the verse is not shown at
+    all, so with the Line link it must still shrink to what it could before
+    the link came (242px)."""
+    from gi.repository import Gtk
+    pop, _calls, _q = _compare_with_root(monkeypatch, 'KJV')
+    assert pop.get_child().measure(Gtk.Orientation.VERTICAL, 484)[0] <= 242
+    pop.unparent()
+
+
+def test_compare_keeps_its_size_once_open(display, monkeypatch):
+    """An open popup that grows past the room beside the verse is closed by
+    GNOME Shell: Compare flashed shut near the top of a pane once its link
+    made the verses' arrival grow it 42px too far. Its size is settled before
+    popup() and neither the verses nor the Other languages switch move it."""
+    from gi.repository import Gtk
+    import annotation_dialogs as ad
+    names = ['KJV', 'ESV', 'ASV', 'RusSynodal']
+    langs = {'RusSynodal': 'ru'}
+    monkeypatch.setattr(ad, '_compare_names', lambda: names)
+    monkeypatch.setattr(ad.content, 'language_code',
+                        lambda m: langs.get(m, 'en'))
+    monkeypatch.setattr(ad.content, 'load_chapter', lambda m, b, c: [
+        (16, 'For God so loved the world, that he gave his only begotten '
+             'Son, that whosoever believeth in him should not perish, but '
+             'have everlasting life.')])
+    monkeypatch.setattr(ad.sword_bridge, 'map_target_verse',
+                        lambda m, b, c, v: v)
+    monkeypatch.setattr(ad.bible_family, 'place', lambda m: None)
+    monkeypatch.setattr(ad.settings, 'get', lambda key: False)
+    monkeypatch.setattr(ad.settings, 'put', lambda key, v: None)
+
+    class _Now:
+        def __init__(self, target, daemon=None):
+            self.target = target
+
+        def start(self):
+            self.target()
+    monkeypatch.setattr(ad.threading, 'Thread', _Now)
+    queued = []
+    monkeypatch.setattr(ad.GLib, 'idle_add', lambda fn, *a: queued.append(
+        (fn, a)))
+    at = {}
+
+    def size(pop):
+        return pop.get_child().measure(Gtk.Orientation.VERTICAL, 484)
+
+    def popup(pop):
+        at['pop'], at['size'] = pop, size(pop)
+    monkeypatch.setattr(Gtk.Popover, 'popup', popup)
+
+    class _Pane:
+        view = Gtk.Box()
+        book, chapter, module = 'John', 3, 'KJV'
+
+        def _verse_ranges(self, _v):
+            return None
+
+        def get_root(self):
+            return None
+    ad.compare_translations(_Pane(), 16)
+    for fn, args in queued:               # the verses arrive
+        fn(*args)
+    pop = at['pop']
+    assert size(pop) == at['size']
+    switch = pop.get_child().get_first_child().get_last_child()
+    switch.set_active(True)               # the Russian Bible joins the list
+    assert size(pop) == at['size']
+    pop.unparent()

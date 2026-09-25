@@ -36,6 +36,7 @@ _ENTRY = {'translationId': 'spaRV1909', 'shortTitle': 'Reina Valera 1909',
 
 def _row_buttons(entry, installed, stale=None):
     win = ModuleManagerWindow.__new__(ModuleManagerWindow)
+    win._action_rows = {}
     win._trash_button = lambda cb: Gtk.Button(label='Remove')
     win._eb_stale = dict(stale or {})
     win._eb_by_id = {'spaRV1909': entry}
@@ -181,3 +182,56 @@ def test_a_fresh_install_stays_quiet():
 @needs_display
 def test_a_failed_update_does_not_claim_success():
     assert _run_download(already_installed=True, err='HTTP 500') == []
+
+
+# ── A download starting or ending does not rebuild what it need not ─────────
+
+def _small_window(monkeypatch):
+    """A real window over a two-module catalogue, nothing on disk."""
+    import module_manager as mm
+    mods = [{'name': n, 'description': n, 'type': 'Biblical Texts',
+             'lang': 'en', 'features': set(), 'license': '', 'size': '1000',
+             'version': '1', 'locked': False, 'installed': False}
+            for n in ('Alpha', 'Beta')]
+    monkeypatch.setattr(mm.sword_bridge, 'list_available_modules',
+                        lambda: [dict(m) for m in mods])
+    monkeypatch.setattr(mm.sword_bridge, 'available_updates', lambda: [])
+    monkeypatch.setattr(mm.sword_bridge, 'catalog_timestamp', lambda: None)
+    monkeypatch.setattr(mm.ebible_bridge, 'catalog_entries', lambda: [])
+    monkeypatch.setattr(mm.ebible_bridge, 'installed_ids', lambda: set())
+    monkeypatch.setattr(mm.ebible_bridge, 'import_stamps', lambda: {})
+    return mm, mm.ModuleManagerWindow()
+
+
+@needs_display
+def test_a_download_starting_turns_its_row_over_in_place(monkeypatch):
+    """Redrawing every tab for a new download froze the window 0.56s."""
+    import downloads
+    mm, win = _small_window(monkeypatch)
+    rebuilt = []
+    monkeypatch.setattr(win, '_refresh_tab',
+                        lambda *a, **k: rebuilt.append(a))
+    job = downloads.Job('sword:Alpha', 'Alpha', downloads.CROSSWIRE, None)
+    monkeypatch.setitem(downloads._jobs, job.key, job)
+    win._on_job(job)
+    assert rebuilt == []
+    assert len(win._job_widgets.get('sword:Alpha', [])) == 1
+    win.close()
+
+
+@needs_display
+def test_only_the_tab_on_screen_is_rebuilt_until_another_is_shown(
+        monkeypatch):
+    mm, win = _small_window(monkeypatch)
+    rebuilt = []
+    real = win._refresh_tab
+    monkeypatch.setattr(win, '_refresh_tab', lambda tab_id, **k: (
+        rebuilt.append((tab_id, k.get('languages'))), real(tab_id, **k)))
+    win._populate(languages=False)        # a download ended
+    assert rebuilt == [('bibles', False)]
+    win._stack.set_visible_child_name('commentaries')
+    # Never shown before, so its language list is built too, this once.
+    assert rebuilt[-1] == ('commentaries', True)
+    win._stack.set_visible_child_name('bibles')
+    assert len(rebuilt) == 2              # already current: not rebuilt again
+    win.close()

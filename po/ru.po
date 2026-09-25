@@ -10545,3 +10545,15 @@ msgid_plural "{n} downloads haven’t finished. Quit now and they stop; the Modu
 msgstr[0] "{n} загрузка не завершена. Если выйти сейчас, она остановится; её можно продолжить в менеджере модулей."
 msgstr[1] "{n} загрузки не завершены. Если выйти сейчас, они остановятся; их можно продолжить в менеджере модулей."
 msgstr[2] "{n} загрузок не завершено. Если выйти сейчас, они остановятся; их можно продолжить в менеджере модулей."
+
+#: family_tree.py
+msgid "Show the margin notes"
+msgstr "Показать заметки на полях"
+
+#: family_tree.py
+msgid "Find a Bible"
+msgstr "Найти Библию"
+
+#: family_tree.py
+msgid "See on the Line"
+msgstr "Показать на Линии"

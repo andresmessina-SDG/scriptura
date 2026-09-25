@@ -64,7 +64,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - **The Bible Family Tree.** A new entry in each pane's module list.
   It opens on the Family: the Bibles people read today and every Bible
   they were revised from, back to Wycliffe and Tyndale, drawn down the
-  page in time with a note at the moments that shaped them. Hover a Bible
+  page in time with a note at the moments that shaped them (a button puts
+  the notes away for the lines alone). Hover a Bible
   to light its whole line; arrow keys walk from parent to child. Switch
   it to By literalness and every Bible slides sideways to its place from
   word for word to free, so you can watch a family drift: the RSV's line
@@ -72,8 +73,10 @@ semver-ish — 0.x was the pre-Flathub testing track.
   translation in the NLT. A List button shows the same family as an
   indented list, and Print makes it a poster for a classroom wall, in
   either arrangement, with a key to its lines and marks. The Line lays out
-  every English Bible from word for word to free; filter it by what you
-  have installed, by tradition and by era. The Bible you are reading is
+  every English Bible from word for word to free; find one by name,
+  abbreviation or year, and filter by what you have installed, by
+  tradition and by era. Compare's See on the Line opens it at the Bible
+  you are reading. The Bible you are reading is
   marked, and pressing any Bible opens its card. Under the desktop's high
   contrast setting its faint lines, ranges and dates are drawn darker.
 - **About this translation.** For an English Bible, the module list's

@@ -10588,3 +10588,15 @@ msgid "{n} download hasn’t finished. Quit now and it stops; the Module Manager
 msgid_plural "{n} downloads haven’t finished. Quit now and they stop; the Module Manager can pick them up again."
 msgstr[0] "{n} descarga no ha terminado. Si sale ahora, se detendrá; el Gestor de módulos puede retomarla."
 msgstr[1] "{n} descargas no han terminado. Si sale ahora, se detendrán; el Gestor de módulos puede retomarlas."
+
+#: family_tree.py
+msgid "Show the margin notes"
+msgstr "Mostrar las notas al margen"
+
+#: family_tree.py
+msgid "Find a Bible"
+msgstr "Buscar una Biblia"
+
+#: family_tree.py
+msgid "See on the Line"
+msgstr "Ver en la Línea"

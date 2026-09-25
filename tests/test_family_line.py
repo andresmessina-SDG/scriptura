@@ -214,3 +214,44 @@ def test_narrow_puts_the_sort_among_the_filters_and_wide_takes_it_back():
     assert line._sort_menu.get_parent() is line._bar
     line._set_stacked(False)                    # idempotent
     assert line._sort_menu.get_parent() is line._bar
+
+
+# ── Find a Bible ────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize('query,expected', [
+    ('nasb 1995', {'nasb1995'}),              # name and year together
+    ('NKJV', {'nkjv'}),                       # the abbreviation
+    ('Douay–Rhéims', {'douay-rheims', 'challoner'}),   # dash and accent fold
+    ('kjv 1611', {'kjv1611'}),
+    ('nothing like this', set()),
+])
+def test_find_a_bible(query, expected):
+    line = _line()
+    line._search.set_text(query)
+    line._on_search(line._search)     # search-changed waits for a timeout
+    assert {r.record['id'] for r in _shown(line)} == expected
+
+
+def test_the_search_narrows_what_the_filters_left_and_clears():
+    line = _line()
+    line._set_tradition('catholic')
+    line._search.set_text('bible')
+    line._on_search(line._search)
+    shown = _shown(line)
+    assert shown and all(r.chip == 'catholic' for r in shown)
+    line._search.set_text('')
+    line._on_search(line._search)
+    assert len(_shown(line)) == 14             # the tradition filter alone
+
+
+def test_a_bible_asked_for_by_name_shows_whatever_the_filters():
+    """Compare's 'See on the Line' asks for the Bible being read; a filter
+    left on from before must not hide it."""
+    line = _line()
+    line._set_tradition('catholic')
+    line._search.set_text('douay')
+    line._on_search(line._search)
+    line.show_node('kjv')
+    assert line._last_row.record['id'] == 'kjv'
+    assert line._filter(line._last_row)
+    assert line._search.get_text() == '' and line._tradition == ''

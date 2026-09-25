@@ -260,9 +260,9 @@ class ModuleManagerWindow(Adw.Window):
         self._flash_source = None
         self._tabs = {}
         self._job_widgets = {}      # job key -> [(label, bar)] on its rows
+        self._action_rows = {}      # row key -> [(row, its buttons)]
         self._pulsing = set()       # row bars with no measure yet
         self._row_pulse = 0
-        self._redraw_source = 0
         self.add_css_class('module-manager')
         self._build_ui()
         self.connect('close-request', self._on_close_request)
@@ -331,6 +331,10 @@ class ModuleManagerWindow(Adw.Window):
         for spec in _TABS:
             self._build_tab(spec)
         toolbar_view.set_content(self._stack)
+        self._stack.connect(
+            'notify::visible-child-name',
+            lambda stack, _p: self._refresh_if_stale(
+                stack.get_visible_child_name()))
 
     def search_bibles(self, query):
         """Open on the Bibles tab with `query` in its search — the Card's
@@ -492,7 +496,12 @@ class ModuleManagerWindow(Adw.Window):
 
     # ── Data gathering ────────────────────────────────────────────────────────
 
-    def _populate(self):
+    def _populate(self, languages=True):
+        """Read the catalogues and installed modules again and rebuild every
+        tab. `languages` False keeps each tab's language list: it comes from
+        the catalogue alone, and rebuilding four lists of about 1,300
+        languages was more than half of the 0.6s this took after a
+        download."""
         try:
             self._all_modules = sword_bridge.list_available_modules()
             self._has_catalog = True
@@ -514,17 +523,31 @@ class ModuleManagerWindow(Adw.Window):
                           for e in self._eb_catalog}
         self._updates = sword_bridge.available_updates() if self._has_catalog else []
         self._eb_stale = self._eb_stale_reasons()
-        for tab_id in self._tabs:
-            self._refresh_tab(tab_id, full=True)
+        self._job_widgets = {}
+        self._action_rows = {}
+        # Only the tab on screen is rebuilt now; the others when they are
+        # shown. All four at once took most of the time after a download.
+        for t in self._tabs.values():
+            t['stale'] = ('languages' if languages
+                          or t.get('stale') == 'languages' else 'rows')
+        self._refresh_if_stale(self._stack.get_visible_child_name())
 
-    def _refresh_tab(self, tab_id, full=False):
+    def _refresh_if_stale(self, tab_id):
+        t = self._tabs.get(tab_id)
+        if t is None or not t.get('stale'):
+            return
+        languages = t.pop('stale') == 'languages'
+        self._refresh_tab(tab_id, full=True, languages=languages)
+
+    def _refresh_tab(self, tab_id, full=False, languages=True):
         """Re-render one tab against current data. `full` also rebuilds the
-        language filter options and curated rows (data changed, not just
-        the user's filter/search)."""
+        curated rows and, unless `languages` is False, the language filter
+        options (data changed, not just the user's filter/search)."""
         t = self._tabs[tab_id]
         if full:
             self._rebuild_curated(t)
-            self._rebuild_lang_options(t)
+            if languages:
+                self._rebuild_lang_options(t)
         self._rebuild_updates(t)
         self._rebuild_installed(t)
         self._rebuild_browse(t)
@@ -1258,10 +1281,12 @@ class ModuleManagerWindow(Adw.Window):
             for label, bar in self._job_widgets[job.key]:
                 self._paint_job(job, label, bar)
         elif job.active:
-            self._queue_redraw()        # a new job: its row turns to progress
+            self._show_job_in_rows(job)     # a new job: its rows turn over
         if job.active:
             return
-        self._populate()                # it ended: the data changed
+        # It ended: the data changed. The language lists only change with
+        # the catalogue.
+        self._populate(languages=job.key == 'sword:refresh')
         if job.state == downloads.FAILED:
             text = _('{name}: {reason}').format(
                 name=job.title, reason=fetch_errors.describe(job.error))
@@ -1270,20 +1295,20 @@ class ModuleManagerWindow(Adw.Window):
         elif job.state == downloads.DONE and job.done_text:
             announce(self, job.done_text)
 
-    def _queue_redraw(self):
-        """Redraw every tab's rows from the data already read, once, however
-        many jobs changed in the meantime."""
-        if self._redraw_source:
-            return
-
-        def redraw():
-            self._redraw_source = 0
-            if not self._closed:
-                self._job_widgets = {}
-                for tab_id in self._tabs:
-                    self._refresh_tab(tab_id, full=True)
-            return GLib.SOURCE_REMOVE
-        self._redraw_source = GLib.idle_add(redraw)
+    def _show_job_in_rows(self, job):
+        """Turn the rows a new job belongs to over to its progress, in
+        place. Redrawing every tab for it froze the window for 0.56s."""
+        key = job.key[3:] if job.key.startswith('rm:') else job.key
+        for row, buttons in self._action_rows.get(key, []):
+            if row.get_root() is None:
+                continue                # a row from an earlier build
+            for btn in buttons:
+                if btn.get_parent() is not None:
+                    row.remove(btn)
+            self._show_job(row, key)
+            group = row.get_ancestor(Adw.ExpanderRow)
+            if group is not None:
+                group.set_expanded(True)    # not hidden in a folded group
 
     def _sync_bar(self):
         """The window bar shows the first job that has no row, if any."""
@@ -1300,6 +1325,7 @@ class ModuleManagerWindow(Adw.Window):
     def _add_actions(self, row, key, *buttons):
         """Give `row` its buttons, or, while a job for `key` is queued or
         running, that job's progress and Cancel instead."""
+        self._action_rows.setdefault(key, []).append((row, buttons))
         if not self._show_job(row, key):
             for btn in buttons:
                 row.add_suffix(btn)
@@ -1460,7 +1486,7 @@ class ModuleManagerWindow(Adw.Window):
         downloads.unlisten(self._on_job)
         if self in _windows:
             _windows.remove(self)
-        for source in ('_pulse_source', '_row_pulse', '_redraw_source'):
+        for source in ('_pulse_source', '_row_pulse'):
             if getattr(self, source):
                 GLib.source_remove(getattr(self, source))
                 setattr(self, source, None if source == '_pulse_source' else 0)
