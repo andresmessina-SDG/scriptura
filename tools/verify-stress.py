@@ -1207,16 +1207,10 @@ def driver(scenario: str) -> int:
                            '\\v 2 And the earth\\f + \\fr 1:2 \\ft a note\\f* was without form.\n')
                 z.writestr('44-JHNstress.usfm', '\\id JHN\n\\c 3\n\\v 16 For God so loved.\n')
 
-            class _R:
-                def read(self):
-                    return buf.getvalue()
-
-                def __enter__(self):
-                    return self
-
-                def __exit__(self, *a):
-                    return False
-            urllib.request.urlopen = lambda req, timeout=None: _R()
+            # A BytesIO reads in chunks, as a response does (downloads read
+            # through transfer.read), and is a context manager already.
+            urllib.request.urlopen = lambda req, timeout=None: io.BytesIO(
+                buf.getvalue())
             ebible_bridge.download_translation_sync(
                 'stress', {'translationId': 'stress', 'shortTitle': 'Stress', 'UpdateDate': '2026-01-01'})
             win._on_modules_changed()

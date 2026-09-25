@@ -59,10 +59,11 @@ def test_the_same_work_is_never_queued_twice():
 def test_one_host_at_a_time_but_hosts_side_by_side():
     release = threading.Event()
     ran = []
-    downloads.submit('pack:big', 'Big', downloads.PACKS,
-                     _blocked(release, ran))
+    big = downloads.submit('pack:big', 'Big', downloads.PACKS,
+                           _blocked(release, ran))
     downloads.submit('pack:next', 'Next', downloads.PACKS,
                      _blocked(release, ran))
+    _pump_until(lambda: big.state == downloads.RUNNING)
     bible = downloads.submit('ebible:x', 'X', downloads.EBIBLE,
                              lambda job: ran.append(job.key))
     _pump_until(lambda: bible.state == downloads.DONE)
