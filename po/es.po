@@ -10478,3 +10478,46 @@ msgstr "Abra una Biblia junto al Árbol genealógico de la Biblia para imprimir 
 #: window.py
 msgid "Open a Bible beside the Family Tree to export a passage"
 msgstr "Abra una Biblia junto al Árbol genealógico de la Biblia para exportar un pasaje"
+#: fetch_errors.py
+msgid "CrossWire is unreachable, and only CrossWire may hand out this module. Try again when it is back."
+msgstr "No se puede conectar con CrossWire, y solo CrossWire puede distribuir este módulo. Inténtelo de nuevo cuando vuelva a estar disponible."
+
+#: fetch_errors.py
+msgid "This module isn’t in the saved catalogue. Refresh the catalogue and try again."
+msgstr "Este módulo no está en el catálogo guardado. Actualice el catálogo e inténtelo de nuevo."
+
+#: fetch_errors.py
+msgid "This file isn’t a SWORD module Scriptura can install. Nothing was changed."
+msgstr "Este archivo no es un módulo SWORD que Scriptura pueda instalar. No se ha cambiado nada."
+
+#: fetch_errors.py
+msgid "The download looks incomplete, so the copy you have was kept. Try again later."
+msgstr "La descarga parece incompleta, así que se ha conservado la copia que ya tenía. Inténtelo de nuevo más tarde."
+
+#: fetch_errors.py
+msgid "The file isn’t on the server any more. Refresh the catalogue and try again."
+msgstr "El archivo ya no está en el servidor. Actualice el catálogo e inténtelo de nuevo."
+
+#: fetch_errors.py
+msgid "The server turned the download away (error {code}). Try again later."
+msgstr "El servidor rechazó la descarga (error {code}). Inténtelo de nuevo más tarde."
+
+#: fetch_errors.py
+msgid "Scriptura can’t reach the internet. Check your connection and try again."
+msgstr "Scriptura no puede conectarse a internet. Compruebe su conexión e inténtelo de nuevo."
+
+#: fetch_errors.py
+msgid "There isn’t enough free disk space."
+msgstr "No hay suficiente espacio libre en el disco."
+
+#: fetch_errors.py
+msgid "The server isn’t answering. Try again later."
+msgstr "El servidor no responde. Inténtelo de nuevo más tarde."
+
+#: fetch_errors.py
+msgid "The download arrived damaged. Try again."
+msgstr "La descarga llegó dañada. Inténtelo de nuevo."
+
+#: fetch_errors.py
+msgid "Something went wrong: {detail}"
+msgstr "Algo salió mal: {detail}"

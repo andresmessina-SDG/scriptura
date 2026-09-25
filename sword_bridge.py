@@ -7,6 +7,7 @@ import re
 import shutil
 import sqlite3
 import tarfile
+import tempfile
 import threading
 import unicodedata
 import zipfile
@@ -2059,6 +2060,20 @@ _SCRIPTURA_BASE = ('https://github.com/andresmessina-SDG/scriptura'
                    '/releases/download/sword-modules')
 
 
+class NotMirrored(RuntimeError):
+    """CrossWire is unreachable and the module's licence keeps it off the
+    mirror, so there is nowhere else to fetch it from."""
+
+
+class NotInCatalogue(RuntimeError):
+    """The cached module list has no conf for the module being installed."""
+
+
+class BadModule(ValueError):
+    """A zip or conf that is not a module this app will install: not a zip,
+    no conf, or a path that would land outside ~/.sword."""
+
+
 def _reachable(host, port, timeout=5):
     """Whether a TCP connection to host:port opens within `timeout`.
 
@@ -2087,7 +2102,7 @@ def _fetch_mirror(path, timeout):
             return resp.read()
     except urllib.error.HTTPError as exc:
         if exc.code == 404:
-            raise RuntimeError(
+            raise NotMirrored(
                 'CrossWire is unreachable, and this module is not in the '
                 'backup mirror — its licence only permits CrossWire to '
                 'distribute it. Please try again when CrossWire is back.'
@@ -2280,20 +2295,195 @@ def install_module(module_name):
 
 
 def _extract_module_zip(data):
-    """Unpack a module zip into ~/.sword/."""
+    """Install every module in a downloaded module zip into ~/.sword/."""
     with zipfile.ZipFile(io.BytesIO(data)) as zf:
-        # Extract member-by-member through _safe_extract (rather than
-        # extractall) so the network path enforces the same path-escape
-        # guard as the local sideload path. The confs are checked first, so
-        # a module whose DataPath points outside ~/.sword leaves nothing
-        # behind for a later removal to act on.
-        for cm in _zip_conf_members(zf.infolist()):
-            _module_data_dir(_parse_conf_lines(
-                zf.read(cm.filename).decode('utf-8-sig', errors='replace').splitlines()))
-        for member in zf.infolist():
+        _install_zip(zf)
+
+
+# Dictionary and general-book drivers read DataPath as a file prefix
+# (`…/easton/easton` names easton.dat, easton.idx…), not as a directory.
+_PREFIX_DRIVERS = frozenset(
+    {'RawLD', 'RawLD4', 'zLD', 'OldzLD', 'RawGenBook', 'zGenBook'})
+
+
+def _module_files(info):
+    """(directory, prefix) holding a module's data, relative to ~/.sword.
+
+    `prefix` is None for texts and commentaries, whose DataPath is the
+    directory. For a dictionary or a general book it is the file-name stem.
+    Either way the directory is the module's: dictionaries keep more there
+    than their stem names (Strong's `strongs.doc`, FreDAW's `images/`). The
+    stem matters only if another module shares the directory (see
+    _dir_shared). Raises ValueError where _module_data_dir does."""
+    rel = _module_data_dir(info)
+    if not rel:
+        return '', None
+    if info.get('moddrv') in _PREFIX_DRIVERS:
+        return os.path.dirname(rel), os.path.basename(rel)
+    return rel, None
+
+
+def _owns(dir_rel, path):
+    """Whether `path`, relative to ~/.sword, lies in a module's directory."""
+    return bool(dir_rel) and path.startswith(dir_rel + '/')
+
+
+def _dir_shared(dir_rel, module_name):
+    """Whether another installed module keeps its data in `dir_rel` too.
+
+    Not something CrossWire does, but nothing forbids two dictionaries one
+    directory, and deleting or swapping the whole directory would take the
+    neighbour with it."""
+    mods_d = os.path.join(_SWORD_PATH, 'mods.d')
+    try:
+        confs = [f for f in os.listdir(mods_d) if f.endswith('.conf')]
+    except OSError:
+        return False
+    for f in confs:
+        info = _parse_conf(os.path.join(mods_d, f))
+        if info.get('name', '').lower() == module_name.lower():
+            continue
+        try:
+            if _module_files(info)[0] == dir_rel:
+                return True
+        except ValueError:
+            continue
+    return False
+
+
+def _zip_path(member):
+    """A zip member's name relative to the archive root (no leading `./`)."""
+    name = member.filename
+    while name.startswith('./'):
+        name = name[2:]
+    return name
+
+
+def _drop_index(module_name):
+    """Delete a module's search index, so the next search rebuilds it from
+    the text now on disk. An index outlives an update otherwise: its schema
+    version is all _index_is_valid checks, and it would go on finding the
+    words the old version had."""
+    try:
+        os.remove(_get_index_path(module_name))
+    except FileNotFoundError:
+        pass
+    except OSError:
+        _sword_log.warning('could not delete the search index of %s',
+                           module_name)
+
+
+def _new_staging():
+    """A fresh staging directory inside ~/.sword, so moving out of it is a
+    rename on the same file system."""
+    os.makedirs(_SWORD_PATH, exist_ok=True)
+    return tempfile.mkdtemp(prefix='.install-', dir=_SWORD_PATH)
+
+
+def _swap_data(staging, name, dir_rel, prefix):
+    """Move one module's staged data over its installed data."""
+    src = os.path.join(staging, dir_rel)
+    dst = os.path.join(_SWORD_PATH, dir_rel)
+    if not os.path.isdir(src):
+        return              # a conf-only zip: the data on disk stays
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    if prefix is None or not _dir_shared(dir_rel, name):
+        # Renames, not copies: the old directory steps aside, the new one
+        # steps in, and only then is the old one deleted. Files the new
+        # version dropped go with it.
+        old = dst + '.old'
+        shutil.rmtree(old, ignore_errors=True)
+        if os.path.lexists(dst):
+            os.rename(dst, old)
+        os.rename(src, dst)
+        shutil.rmtree(old, ignore_errors=True)
+        return
+    # A shared directory: only this module's stem files are swapped, the
+    # neighbour's stay; anything else staged goes in with the loose files.
+    new = {f for f in os.listdir(src) if f.startswith(prefix + '.')}
+    os.makedirs(dst, exist_ok=True)
+    for f in new:
+        os.replace(os.path.join(src, f), os.path.join(dst, f))
+    for f in os.listdir(dst):
+        if f.startswith(prefix + '.') and f not in new:
+            os.remove(os.path.join(dst, f))
+
+
+def _commit(staging, modules, loose=False):
+    """Move staged modules into ~/.sword: data first, each conf last.
+
+    `modules` is [(name, conf_rel, dir_rel, prefix)]. SWORD sees a module
+    once its conf is in mods.d, so by the time the conf lands every file it
+    names is already in place. `loose` also moves any other staged file
+    (a downloaded zip is installed whole, as it always was)."""
+    for name, _conf, dir_rel, prefix in modules:
+        if dir_rel:
+            _swap_data(staging, name, dir_rel, prefix)
+    if loose or any(prefix for *_rest, prefix in modules):
+        for root, _dirs, files in os.walk(staging):
+            for f in files:
+                src = os.path.join(root, f)
+                rel = os.path.relpath(src, staging)
+                if rel.split(os.sep)[0] == 'mods.d':
+                    continue
+                dst = os.path.join(_SWORD_PATH, rel)
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                os.replace(src, dst)
+    for name, conf_rel, _dir, _prefix in modules:
+        dst = os.path.join(_SWORD_PATH, conf_rel)
+        # A published conf carries an empty CipherKey=; the reader's key lives
+        # only in the installed one. Replacing it lost the key, and an updated
+        # locked module came back scrambled.
+        key = _parse_conf(dst).get('cipherkey', '') \
+            if os.path.exists(dst) else ''
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        os.replace(os.path.join(staging, conf_rel), dst)
+        if key and not _parse_conf(dst).get('cipherkey'):
+            _write_cipher_key(name, key)
+        _drop_index(name)
+
+
+def _install_zip(zf, names=None, cipher_keys=None):
+    """Install modules from an open module zip: whole, or not at all.
+
+    Everything is extracted into a staging directory first, so a damaged
+    archive or a disk that fills halfway leaves the installed module as it
+    was. Every DataPath is checked before anything is written, so one bad
+    conf refuses the whole zip.
+
+    `names` None installs everything in the zip (the download path). A set
+    installs only those modules' confs and data files, as a sideload picks
+    from a multi-module zip. `cipher_keys` is an optional {name: key} map
+    written into each installed conf.
+    """
+    infos = zf.infolist()
+    modules = []
+    for cm in _zip_conf_members(infos):
+        info = _parse_conf_lines(
+            zf.read(cm.filename).decode('utf-8-sig',
+                                        errors='replace').splitlines())
+        name = info.get('name')
+        if not name or (names is not None and name not in names):
+            continue
+        dir_rel, prefix = _module_files(info)
+        modules.append((name, _zip_path(cm), dir_rel, prefix))
+
+    staging = _new_staging()
+    try:
+        for member in infos:
             if member.is_dir():
                 continue
-            _safe_extract(zf, member, _SWORD_PATH)
+            path = _zip_path(member)
+            if names is None or any(
+                    path == conf or _owns(d, path)
+                    for _n, conf, d, _pre in modules):
+                _safe_extract(zf, member, staging)
+        _commit(staging, modules, loose=names is None)
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
+    for name, key in (cipher_keys or {}).items():
+        if key and any(name == m[0] for m in modules):
+            _write_cipher_key(name, key)
     _reset()
 
 
@@ -2325,7 +2515,7 @@ def _list_remote_dir(path, timeout=60):
         # and a mirror. There is no mirror for these modules — their licence
         # forbids one — so give the same explanation rather than letting a
         # socket error reach the reader as the whole story.
-        raise RuntimeError(
+        raise NotMirrored(
             'CrossWire is unreachable, and this module has no backup mirror '
             '— its licence only permits CrossWire to distribute it. Please '
             'try again when CrossWire is back.') from exc
@@ -2354,12 +2544,12 @@ def _install_raw_module(module_name, source):
     conf_src = os.path.join(shadow or '', 'mods.d',
                             f'{module_name.lower()}.conf')
     if not os.path.exists(conf_src):
-        raise RuntimeError(
+        raise NotInCatalogue(
             f'{module_name} is not in the cached module list — '
             'click Refresh and try again.')
 
     info = _parse_conf(conf_src)
-    data_dir = _module_data_dir(info)      # raises if the path escapes
+    data_dir, prefix = _module_files(info)   # raises if the path escapes
     if not data_dir:
         raise RuntimeError(f'{module_name} declares no DataPath.')
 
@@ -2370,15 +2560,19 @@ def _install_raw_module(module_name, source):
     blobs = [(n, _fetch_crosswire(f'{source}/{data_dir}/{n}', 120))
              for n in names]
 
-    target = os.path.join(_SWORD_PATH, data_dir)
-    os.makedirs(target, exist_ok=True)
-    for name, blob in blobs:
-        with open(os.path.join(target, name), 'wb') as fh:
-            fh.write(blob)
-    conf_dir = os.path.join(_SWORD_PATH, 'mods.d')
-    os.makedirs(conf_dir, exist_ok=True)
-    shutil.copyfile(conf_src, os.path.join(conf_dir,
-                                           f'{module_name.lower()}.conf'))
+    conf_rel = os.path.join('mods.d', f'{module_name.lower()}.conf')
+    staging = _new_staging()
+    try:
+        target = os.path.join(staging, data_dir)
+        os.makedirs(target, exist_ok=True)
+        for name, blob in blobs:
+            with open(os.path.join(target, name), 'wb') as fh:
+                fh.write(blob)
+        os.makedirs(os.path.join(staging, 'mods.d'), exist_ok=True)
+        shutil.copyfile(conf_src, os.path.join(staging, conf_rel))
+        _commit(staging, [(module_name, conf_rel, data_dir, prefix)])
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
     _reset()
 
 
@@ -2398,7 +2592,7 @@ def _module_data_dir(info):
     root = os.path.realpath(_SWORD_PATH)
     full = os.path.realpath(os.path.join(root, raw))
     if full == root or not full.startswith(root + os.sep):
-        raise ValueError(f'DataPath escapes the SWORD directory: {raw}')
+        raise BadModule(f'DataPath escapes the SWORD directory: {raw}')
     return os.path.relpath(full, root)
 
 
@@ -2412,21 +2606,21 @@ def remove_module(module_name):
             raise RuntimeError(f'{module_name} is a system-installed module and cannot be removed here.')
         raise RuntimeError(f'Module conf not found: {conf}')
     info = _parse_conf(conf)
-    data_path = _module_data_dir(info)
-    if data_path:
-        full = os.path.join(_SWORD_PATH, data_path)
-        if os.path.isdir(full):
+    dir_rel, prefix = _module_files(info)
+    full = os.path.join(_SWORD_PATH, dir_rel)
+    # A dictionary's or general book's DataPath is a file stem inside its
+    # directory. Looking for a directory named by the whole DataPath found
+    # none, and every data file stayed on disk after the module was removed.
+    if dir_rel and os.path.isdir(full):
+        if prefix is None or not _dir_shared(dir_rel, module_name):
             shutil.rmtree(full)
+        else:
+            for f in os.listdir(full):
+                if f.startswith(prefix + '.'):
+                    os.remove(os.path.join(full, f))
     os.remove(conf)
 
-    # Delete the associated FTS5 search index (a single .db file).
-    idx_path = _get_index_path(module_name)
-    if os.path.exists(idx_path):
-        try:
-            os.remove(idx_path)
-        except OSError:
-            pass
-
+    _drop_index(module_name)
     _reset()
 
 
@@ -2578,7 +2772,7 @@ def inspect_module_zip(zip_bytes):
     try:
         zf = zipfile.ZipFile(io.BytesIO(zip_bytes))
     except zipfile.BadZipFile:
-        raise ValueError('That file is not a valid .zip archive.')
+        raise BadModule('That file is not a valid .zip archive.')
 
     installed = {n.lower() for n in module_names()}
     results = []
@@ -2586,7 +2780,7 @@ def inspect_module_zip(zip_bytes):
         infos = zf.infolist()
         conf_members = list(_zip_conf_members(infos))
         if not conf_members:
-            raise ValueError(
+            raise BadModule(
                 "This doesn't look like a SWORD module "
                 '(no mods.d/*.conf inside).')
         for cm in conf_members:
@@ -2596,20 +2790,14 @@ def inspect_module_zip(zip_bytes):
             if not name:
                 continue
             try:
-                datapath = _module_data_dir(info)
+                dir_rel = _module_files(info)[0]
             except ValueError:
                 # Still listed — dropping it silently would leave the user
                 # with a file picker that appears to do nothing. Its size
                 # reads 0 and install_module_from_zip refuses it by name.
-                datapath = ''
-            size = 0
-            if datapath:
-                for i in infos:
-                    if i.is_dir():
-                        continue
-                    p = i.filename.lstrip('./')
-                    if p == datapath or p.startswith(datapath + '/'):
-                        size += i.file_size
+                dir_rel = ''
+            size = sum(i.file_size for i in infos
+                       if not i.is_dir() and _owns(dir_rel, _zip_path(i)))
             is_installed = name.lower() in installed
             results.append({
                 'name': name,
@@ -2630,7 +2818,7 @@ def _safe_extract(zf, member, dest):
     target = os.path.realpath(os.path.join(dest, member.filename))
     root = os.path.realpath(dest)
     if target != root and not target.startswith(root + os.sep):
-        raise ValueError(f'Unsafe path in zip: {member.filename}')
+        raise BadModule(f'Unsafe path in zip: {member.filename}')
     os.makedirs(os.path.dirname(target), exist_ok=True)
     with zf.open(member) as src, open(target, 'wb') as out:
         shutil.copyfileobj(src, out)
@@ -2668,34 +2856,8 @@ def install_module_from_zip(zip_bytes, names, cipher_keys=None):
     Validation happens before any file is written, so a bad zip leaves no
     partial state.
     """
-    cipher_keys = cipher_keys or {}
-    wanted = set(names)
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
-        infos = zf.infolist()
-        # DataPath is checked for every wanted module first, so one bad conf
-        # refuses the whole import rather than landing on disk beside the
-        # modules extracted before it — where a later removal would act on it.
-        chosen = []
-        for cm in _zip_conf_members(infos):
-            info = _parse_conf_lines(
-                zf.read(cm.filename).decode('utf-8-sig', errors='replace').splitlines())
-            name = info.get('name')
-            if name not in wanted:
-                continue
-            chosen.append((cm, name, _module_data_dir(info)))
-        for cm, name, datapath in chosen:
-            _safe_extract(zf, cm, _SWORD_PATH)
-            if datapath:
-                for i in infos:
-                    if i.is_dir():
-                        continue
-                    p = i.filename.lstrip('./')
-                    if p == datapath or p.startswith(datapath + '/'):
-                        _safe_extract(zf, i, _SWORD_PATH)
-            key = cipher_keys.get(name)
-            if key:
-                _write_cipher_key(name, key)
-    _reset()
+        _install_zip(zf, set(names), cipher_keys)
 
 
 def set_cipher_key(module_name, key):

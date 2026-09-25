@@ -27,9 +27,40 @@ import archaeology_bridge
 import interlinear_data
 import lexicon_data
 import content
+import fetch_errors
 from i18n import _, ngettext
 
 _log = logging.getLogger('scriptura.modules')
+
+
+# ── The operation in flight, for the whole process ───────────────────────────
+#
+# A download outlives the window that started it: close the Module Manager
+# (Esc does it) and the worker thread runs on. This state used to live on the
+# window, so the next window opened thought nothing was running and offered
+# the same Download again; a second copy then raced the first over one temp
+# file, and when the first landed nobody told the panes. It lives here now,
+# where every window can see it.
+
+class _Operation:
+    def __init__(self, status):
+        self.status = status      # what a window opened part-way shows
+        self.frac = None
+        self.windows = []         # every Module Manager window showing it
+
+
+_current = None
+
+
+def _report(text, frac=None):
+    """Progress from a worker thread (via idle_add), to every window
+    showing the operation."""
+    op = _current
+    if op is not None:
+        op.status, op.frac = text, frac
+        for win in op.windows:
+            win._set_progress(text, frac)
+    return GLib.SOURCE_REMOVE
 
 
 def N_(message):
@@ -233,7 +264,6 @@ class ModuleManagerWindow(Adw.Window):
         self._eb_stale = {}
         self._updating_filters = False
         self._pulse_source = None
-        self._op_busy = False
         self._closed = False
         self._flash_source = None
         self._tabs = {}
@@ -241,6 +271,17 @@ class ModuleManagerWindow(Adw.Window):
         self._build_ui()
         self.connect('close-request', self._on_close_request)
         self._populate()
+        self._join_current()
+
+    def _join_current(self):
+        """Opened while an earlier window's download is still running: show
+        it, so its row is not mistaken for one that never started."""
+        if _current is None:
+            return
+        _current.windows.append(self)
+        self._set_busy(True, _current.status)
+        if _current.frac is not None:
+            self._set_progress(_current.status, _current.frac)
 
     # ── Window chrome ─────────────────────────────────────────────────────────
 
@@ -1184,18 +1225,24 @@ class ModuleManagerWindow(Adw.Window):
 
     # ── One async runner for every operation ──────────────────────────────────
     #
-    # Every network/disk operation goes through here: one gate
-    # (`_op_busy`), one thread pattern, one _closed guard — and a visible
-    # answer when an operation is refused, instead of a silent no-op.
+    # Every network/disk operation goes through here: one gate (`_current`,
+    # shared by every window), one thread pattern, one _closed guard — and a
+    # visible answer when an operation is refused, instead of a silent no-op.
 
-    def _run_async(self, work, on_done, busy_msg='', show_bar=True, retry=None):
-        """Run work() on a daemon thread; on_done(err) on the main loop.
+    def _run_async(self, work, on_done, busy_msg='', show_bar=True,
+                   retry=None, status=''):
+        """Run work() on a daemon thread; on_done(err) on the main loop,
+        `err` being the sentence shown to the reader, or None.
         Returns False (with visible feedback) if another operation holds
-        the gate. `retry` re-runs the whole operation from the error strip."""
-        if self._op_busy:
+        the gate. `retry` re-runs the whole operation from the error strip.
+        `status` names a row operation (no bar here) for a window opened
+        while it runs."""
+        global _current
+        if _current is not None:
             self._flash(_('Waiting for the current operation to finish…'))
             return False
-        self._op_busy = True
+        op = _current = _Operation(busy_msg or status)
+        op.windows.append(self)
         self._set_busy(True, busy_msg, show_bar=show_bar)
 
         def runner():
@@ -1203,18 +1250,26 @@ class ModuleManagerWindow(Adw.Window):
             try:
                 work()
             except Exception as e:
-                err = str(e)
+                _log.error('operation failed: %r', e, exc_info=True)
+                err = fetch_errors.describe(e)
             GLib.idle_add(finish, err)
 
         def finish(err):
-            if self._closed:
-                return GLib.SOURCE_REMOVE
-            self._op_busy = False
-            self._set_busy(False)
-            if err:
-                _log.error('operation failed: %s', err)
-                self._set_error(err, retry)
-            on_done(err)
+            global _current
+            _current = None
+            showing = [w for w in op.windows if not w._closed]
+            for win in showing:
+                win._set_busy(False)
+                if err:
+                    win._set_error(err, retry if win is self else None)
+            if not self._closed:
+                on_done(err)
+            else:
+                # The window that started this is gone; the panes are not.
+                # Tell them, and let a window opened since redraw its rows.
+                self._modules_changed()
+                for win in showing:
+                    win._populate()
             return GLib.SOURCE_REMOVE
 
         threading.Thread(target=runner, daemon=True).start()
@@ -1360,7 +1415,9 @@ class ModuleManagerWindow(Adw.Window):
 
         if self._run_async(work, done, show_bar=False,
                            retry=lambda: self._start_install(
-                               btn, name, row, cipher_key)):
+                               btn, name, row, cipher_key),
+                           status=_('Downloading {name}…').format(
+                               name=name)):
             delayed = self._row_spinner(row, btn)
 
     def _prompt_cipher_install(self, btn, mod, row):
@@ -1422,7 +1479,7 @@ class ModuleManagerWindow(Adw.Window):
         def work():
             sword_bridge.refresh_source()
             if wants_ebible:
-                GLib.idle_add(self._set_progress,
+                GLib.idle_add(_report,
                               _('Downloading eBible catalog…'))
                 ebible_bridge.download_catalog_sync()
 
@@ -1442,7 +1499,7 @@ class ModuleManagerWindow(Adw.Window):
         base = _('Downloading {name}…').format(name=name)
 
         def progress(done_b, total):
-            GLib.idle_add(self._set_progress,
+            GLib.idle_add(_report,
                           _fmt_progress(base, done_b, total),
                           _progress_fraction(done_b, total))
 
@@ -1516,8 +1573,6 @@ class ModuleManagerWindow(Adw.Window):
 
     def _do_lexicon_remove(self):
         lexicon_data.remove()
-        self._modules_changed()
-        self._populate()
 
     def _on_interlinear_download(self, btn, name):
         label = (_('Interlinear — Hebrew OT')
@@ -1530,25 +1585,21 @@ class ModuleManagerWindow(Adw.Window):
 
     def _do_interlinear_remove(self, name):
         interlinear_data.remove(name)
-        self._modules_changed()
-        self._populate()
 
     def _do_catena_remove(self):
         catena_bridge.remove_pack()
-        self._modules_changed()
-        self._populate()
 
     def _do_imagery_remove(self):
         imagery_bridge.remove_pack()
-        self._modules_changed()
-        self._populate()
 
     def _do_db_remove(self, source_id):
         open_data.remove_source(source_id)
-        self._populate()
 
     def _confirm_remove_generic(self, friendly, on_confirm):
-        """Confirmation dialog for removing a non-SWORD pack/source."""
+        """Confirmation dialog for removing a non-SWORD pack/source.
+        `on_confirm` does the removal, through the one-operation gate: run
+        straight away it could land in the middle of that pack's own update,
+        which then put back what the reader had just removed."""
         dialog = Adw.AlertDialog()
         dialog.set_heading(_('Remove?'))
         dialog.set_body(
@@ -1561,8 +1612,17 @@ class ModuleManagerWindow(Adw.Window):
         dialog.set_default_response('cancel')
         dialog.set_close_response('cancel')
         dialog.connect('response',
-                       lambda _d, r: on_confirm() if r == 'remove' else None)
+                       lambda _d, r: self._start_remove_generic(on_confirm)
+                       if r == 'remove' else None)
         dialog.present(self)
+
+    def _start_remove_generic(self, remove):
+        def done(err):
+            self._modules_changed()
+            self._populate()
+
+        self._run_async(remove, done, show_bar=False,
+                        retry=lambda: self._start_remove_generic(remove))
 
     # ── eBible download / remove ─────────────────────────────────────────────
 
@@ -1581,7 +1641,7 @@ class ModuleManagerWindow(Adw.Window):
         updating = tid in ebible_bridge.installed_ids()
 
         def on_status(code):
-            GLib.idle_add(self._set_progress,
+            GLib.idle_add(_report,
                           _(self._EB_STATUS.get(code, code)))
 
         def done(err):
@@ -1606,8 +1666,6 @@ class ModuleManagerWindow(Adw.Window):
 
     def _do_eb_remove(self, tid):
         ebible_bridge.remove_translation(tid)
-        self._modules_changed()
-        self._populate()
 
     # ── Import module from file (sideload) ────────────────────────────────────
 

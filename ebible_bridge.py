@@ -572,6 +572,15 @@ def catalog_entries():
     except Exception:
         return []
 
+class TooFewVerses(RuntimeError):
+    """A download parsed to no verses, or to under half of the installed
+    copy's. Nothing on disk was changed."""
+
+    def __init__(self, tid, got, had):
+        super().__init__(f'{tid}: parsed {got} verses, {had} installed')
+        self.tid, self.got, self.had = tid, got, had
+
+
 # These are synchronous — always call from a background thread.
 
 def download_catalog_sync():
@@ -611,6 +620,16 @@ def download_translation_sync(tid, entry, on_status=None):
                 verses.update(file_verses)
                 notes.update(file_notes)
 
+    conn = _db()
+    had = conn.execute('SELECT COUNT(*) FROM verses WHERE translation=?',
+                       (tid,)).fetchone()[0]
+    # The old rows are deleted before the new ones go in, so a download that
+    # parses to nothing, or to a fraction of the copy it replaces (eBible
+    # changing its zip layout would do either), would leave an empty Bible
+    # where a whole one stood. Refuse it, and keep what is there.
+    if not verses or len(verses) < had // 2:
+        raise TooFewVerses(tid, len(verses), had)
+
     if on_status:
         on_status('save')
     title     = (entry.get('shortTitle') or entry.get('translationId') or tid).strip()
@@ -620,7 +639,6 @@ def download_translation_sync(tid, entry, on_status=None):
     license_  = (entry.get('licenseType') or '').strip()
     src_date  = source_date(entry)
 
-    conn = _db()
     conn.execute('DELETE FROM verses      WHERE translation=?', (tid,))
     conn.execute('DELETE FROM notes       WHERE translation=?', (tid,))
     conn.execute('DELETE FROM translations WHERE id=?',         (tid,))
