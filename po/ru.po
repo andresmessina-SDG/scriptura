@@ -10426,3 +10426,11 @@ msgstr "Scriptura · каждый факт и его источник — в «�
 #: window.py
 msgid "Open a Bible beside the Family Tree to compare a verse"
 msgstr "Откройте Библию рядом с «Родословным древом Библии», чтобы сравнить стих"
+
+#: window.py
+msgid "Open a Bible beside the Family Tree to print a passage"
+msgstr "Откройте Библию рядом с «Родословным древом Библии», чтобы напечатать отрывок"
+
+#: window.py
+msgid "Open a Bible beside the Family Tree to export a passage"
+msgstr "Откройте Библию рядом с «Родословным древом Библии», чтобы экспортировать отрывок"

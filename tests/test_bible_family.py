@@ -417,11 +417,20 @@ def test_compare_settles_its_header_before_it_is_shown(display, monkeypatch):
 # ── Ctrl+Shift+C beside the Family Tree ─────────────────────────────────────
 
 class _ShortcutPane:
-    def __init__(self, family, visible=True):
+    def __init__(self, family, visible=True, poster=False):
         self._is_family = family
         self._visible = visible
         self.book = 'John'
         self._on_toast = None
+        self.posters = []
+        if family:
+            self._family_tree = self
+
+    def can_print(self):
+        return self._poster
+
+    def print_poster(self):
+        self.posters.append(True)
 
     def get_visible(self):
         return self._visible
@@ -430,16 +439,19 @@ class _ShortcutPane:
         return [16]
 
 
-def _shortcut_window(pane2_visible):
+def _shortcut_window(pane2_visible, poster=False):
     import window
     toasts = []
 
     class _Win:
         _compare_verse = window.BibleWindow._compare_verse
+        _print_passage = window.BibleWindow._print_passage
+        _export_passage = window.BibleWindow._export_passage
         _bible_pane_in_view = window.BibleWindow._bible_pane_in_view
 
         def __init__(self):
             self.pane1 = _ShortcutPane(family=True)
+            self.pane1._poster = poster
             self.pane2 = _ShortcutPane(family=False, visible=pane2_visible)
 
         def _pane_in_view(self):
@@ -473,3 +485,40 @@ def test_compare_shortcut_says_why_with_only_the_family_tree(monkeypatch):
     win, toasts = _shortcut_window(pane2_visible=False)
     win._compare_verse()
     assert calls == [] and len(toasts) == 1
+
+
+@pytest.mark.parametrize('poster,pane2_visible,expected', [
+    (True, True, 'poster'),       # the Family drawn: Ctrl+P is its Print
+    (True, False, 'poster'),      # …with or without a Bible beside it
+    (False, True, 'pane2'),       # the Line or the list: the Bible beside
+    (False, False, 'toast'),      # nothing to print: say so
+])
+def test_print_shortcut_from_the_family_tree(monkeypatch, poster,
+                                             pane2_visible, expected):
+    """With the focus in the Family Tree, Ctrl+P used to print the Family
+    pane's hidden, empty text."""
+    import passage_print
+    printed = []
+    monkeypatch.setattr(passage_print, 'print_passage',
+                        lambda pane, verses: printed.append(pane))
+    win, toasts = _shortcut_window(pane2_visible, poster)
+    win._print_passage()
+    got = ('poster' if win.pane1.posters else
+           'pane2' if printed == [win.pane2] else
+           'toast' if toasts and not printed else 'wrong')
+    assert got == expected
+
+
+@pytest.mark.parametrize('pane2_visible,expected', [
+    (True, 'pane2'), (False, 'toast')])
+def test_export_shortcut_from_the_family_tree(monkeypatch, pane2_visible,
+                                              expected):
+    import export_dialog
+    exported = []
+    monkeypatch.setattr(export_dialog, 'export_passage',
+                        lambda pane, verses: exported.append(pane))
+    win, toasts = _shortcut_window(pane2_visible)
+    win._export_passage()
+    got = ('pane2' if exported == [win.pane2] else
+           'toast' if toasts and not exported else 'wrong')
+    assert got == expected

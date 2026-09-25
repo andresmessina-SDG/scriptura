@@ -216,6 +216,11 @@ class FamilyTree:
             GLib.idle_add(lambda: self._showing is None
                           and self.family.scroll_to(target) and False)
 
+    def can_print(self):
+        """Whether the poster can be printed now: from the Family drawn,
+        where its Print button shows, not from the Line or the list."""
+        return self._print_btn.get_visible()
+
     def build_print(self):
         """The print job for the poster: one page, the Family fitted to it.
         GNOME's dialog offers the paper (A3 or tabloid for a wall) and

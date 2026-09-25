@@ -83,9 +83,11 @@ semver-ish — 0.x was the pre-Flathub testing track.
   appeared only after the verses arrived, which resized a popup already on
   screen, and GNOME Shell closed it. The switch is now settled before
   Compare opens.
-- **Ctrl+Shift+C did nothing while the Family Tree had the focus.** It now
-  compares the verse in the Bible beside it, and when the window is too
-  narrow to show one, it says so.
+- **Shortcuts misfired while the Family Tree had the focus.** Ctrl+Shift+C
+  did nothing, and Ctrl+P and Ctrl+E printed or exported an empty passage.
+  Compare and export now act on the Bible beside the Family Tree, and say
+  so when the window is too narrow to show one. Ctrl+P prints the Family
+  as a poster, as its own Print button does.
 
 ## [1.7.3] — 2026-09-22
 
