@@ -128,9 +128,10 @@ def test_the_outline_holds_every_bible_once_in_family_order():
     assert rows.index('asv') < rows.index('tlb')
 
 
-def _page(monkeypatch, view='family', outline=False):
+def _page(monkeypatch, view='family', outline=False, notes=True):
     import settings
-    store = {'family_tree_view': view, 'family_tree_outline': outline}
+    store = {'family_tree_view': view, 'family_tree_outline': outline,
+             'family_tree_notes': notes}
     monkeypatch.setattr(settings, 'get', lambda k: store.get(k))
     monkeypatch.setattr(settings, 'put', lambda k, v: store.__setitem__(k, v))
     pane = types.SimpleNamespace(_names=['KJVA'], _came_from='KJVA',
@@ -369,3 +370,44 @@ def test_the_poster_ignores_high_contrast(monkeypatch):
     plain = plate()
     monkeypatch.setattr(fv, 'high_contrast', lambda: True)
     assert plate() == plain
+
+
+# ── The margin notes can be put away ────────────────────────────────────────
+
+def _notes_shown(view):
+    return [lbl.get_visible() for lbl in view._note_labels]
+
+
+def test_the_margin_notes_can_be_put_away_and_it_is_remembered(monkeypatch):
+    page, store = _page(monkeypatch)
+    assert page._notes_btn.get_visible()
+    assert _notes_shown(page.family) == [True] * 6
+    page._notes_btn.set_active(False)
+    assert store['family_tree_notes'] is False
+    assert _notes_shown(page.family) == [False] * 6
+    # Opened again, the Family comes back as it was left.
+    again, _store = _page(monkeypatch, notes=False)
+    assert _notes_shown(again.family) == [False] * 6
+    # The notes belong to the drawing: no switch for them on the Line.
+    page._line_btn.set_active(True)
+    assert not page._notes_btn.get_visible()
+
+
+def test_the_poster_leaves_out_the_notes_the_screen_leaves_out():
+    import cairo
+
+    def ink(view):
+        w, h = 842, 1191
+        surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
+        cr = cairo.Context(surf)
+        cr.set_source_rgb(1, 1, 1)
+        cr.paint()
+        fv.paint_plate(view, cr, w, h)
+        surf.flush()
+        data = bytes(surf.get_data())
+        return sum(1 for i in range(0, len(data), 4) if data[i] < 160)
+
+    view, _opened = _view()
+    with_notes = ink(view)
+    view.set_notes_visible(False)
+    assert ink(view) < with_notes

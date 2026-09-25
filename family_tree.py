@@ -81,6 +81,18 @@ class FamilyTree:
                              _('Print the Family as a poster'))
         self._print_btn.connect('clicked', lambda _b: self.print_poster())
         bar.append(self._print_btn)
+        # The margin notes (a burning in 1952, a Bible in every parish) are
+        # history beside the drawing; a reader who wants the lines alone
+        # can put them away.
+        self._notes_btn = Gtk.ToggleButton(
+            icon_name='scriptura-format-text-quote-symbolic')
+        self._notes_btn.add_css_class('flat')
+        self._notes_btn.set_tooltip_text(_('Show the margin notes'))
+        set_accessible_label(self._notes_btn, _('Show the margin notes'))
+        # In the wrapping row, not the bar's fixed end: one more button
+        # there raised the pane's minimum past what leaves the Bible beside
+        # it its room.
+        switches.append(self._notes_btn)
         self._list_btn = Gtk.ToggleButton(
             icon_name='scriptura-view-list-symbolic')
         self._list_btn.add_css_class('flat')
@@ -111,6 +123,8 @@ class FamilyTree:
         (self._line_btn if view == 'line' else self._family_btn
          ).set_active(True)
         self._list_btn.set_active(bool(settings.get('family_tree_outline')))
+        self._notes_btn.set_active(bool(settings.get('family_tree_notes')))
+        self._notes_btn.connect('toggled', self._on_notes)
         (self._by_line if settings.get('family_tree_arrangement') == 'line'
          else self._by_family).set_active(True)
         self._by_family.connect('toggled', self._on_arrangement)
@@ -146,6 +160,11 @@ class FamilyTree:
         self._showing = node_id
         view.show_node(node_id, lambda: setattr(self, '_showing', None))
 
+    def show_on_line(self, node_id):
+        """Turn to the Line and put the keyboard on one Bible's row."""
+        self._line_btn.set_active(True)
+        self.line.show_node(node_id)
+
     def focus_last(self):
         name = self._stack.get_visible_child_name()
         {'line': self.line, 'family': self.family,
@@ -162,12 +181,18 @@ class FamilyTree:
         settings.put('family_tree_outline', self._list_btn.get_active())
         self._show_view()
 
+    def _on_notes(self, btn):
+        settings.put('family_tree_notes', btn.get_active())
+        if self.family is not None:
+            self.family.set_notes_visible(btn.get_active())
+
     def _show_view(self):
         family = self._family_btn.get_active()
         drawing = family and not self._list_btn.get_active()
         self._list_btn.set_visible(family)
         self._arrangements.set_visible(drawing)
         self._print_btn.set_visible(drawing)
+        self._notes_btn.set_visible(drawing)
         self._hint.set_visible(drawing)
         self._hint.set_label(self._hint_text())
         if not family:
@@ -200,6 +225,7 @@ class FamilyTree:
         self.family = FamilyView(
             self._open_card,
             'line' if self._by_line.get_active() else 'family')
+        self.family.set_notes_visible(self._notes_btn.get_active())
         self.outline = FamilyOutline(self._open_card)
         self._stack.add_named(self.family.widget, 'family')
         self._stack.add_named(self.outline.widget, 'outline')

@@ -1549,11 +1549,11 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._on_modules_clicked(None)
         self._modules_win.search_bibles(query)
 
-    def _family_card_show_in_family(self, node_id):
-        """Show the Card's Bible in the Family: in the Family Tree already
-        showing if there is one, else in the other pane when two are open,
-        else in this pane, which the Family then marks as the Bible left."""
-        src = self._card_from
+    def _family_pane_for(self, src):
+        """Where to show a Bible in the Family Tree, asked from `src`: the
+        Family Tree already showing if there is one, else the other pane
+        when two are open, else `src` itself, which the Family Tree then
+        marks as the Bible left. Turned to the Family Tree if need be."""
         other = self.pane2 if src is self.pane1 else self.pane1
         if src._is_family:
             pane = src
@@ -1561,11 +1561,21 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             pane = other
         else:
             pane = src
-        self._card_from = None      # the keyboard goes to the Bible shown
-        self._hide_family_card()
         if not pane._is_family:
             pane._apply_module_change(bible_family.MODULE_KEY)
-        pane._family_tree.show_node(node_id)
+        return pane
+
+    def _family_card_show_in_family(self, node_id):
+        """Show the Card's Bible in the Family."""
+        src = self._card_from
+        self._card_from = None      # the keyboard goes to the Bible shown
+        self._hide_family_card()
+        self._family_pane_for(src)._family_tree.show_node(node_id)
+
+    def show_on_line(self, node_id, src):
+        """Compare's 'See on the Line': the Bible `src` is reading, in its
+        row on the Line."""
+        self._family_pane_for(src)._family_tree.show_on_line(node_id)
 
     def _family_card_compare(self):
         pane = self._card_pane

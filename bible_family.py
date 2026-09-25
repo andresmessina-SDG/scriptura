@@ -22,7 +22,9 @@ from __future__ import annotations
 import functools
 import logging
 import os
+import re
 import tomllib
+import unicodedata
 from urllib.parse import quote
 from typing import NamedTuple
 
@@ -348,6 +350,27 @@ ERAS = (
     (1900, 1969, N_('1900–1969')),
     (1970, 9999, N_('1970 on')),
 )
+
+
+def _fold(text: str) -> str:
+    """Lower case, no accents, punctuation as spaces: 'Douay–Rheims'
+    and 'douay rheims' fold alike."""
+    text = unicodedata.normalize('NFKD', text.casefold())
+    text = ''.join(c for c in text if not unicodedata.combining(c))
+    return ' '.join(re.sub(r'[^\w]+', ' ', text).split())
+
+
+def matches(record: dict, query: str) -> bool:
+    """Whether every word of `query` is in the Bible's name, abbreviation,
+    year or one of its editions ('nasb 1995', 'douay', 'kjv 1611')."""
+    words = _fold(query).split()
+    if not words:
+        return True
+    hay = ' '.join(_fold(str(part)) for part in (
+        record.get('name', ''), record.get('abbr', ''),
+        record.get('year', ''), record.get('year_label', ''),
+        *record.get('editions', [])))
+    return all(word in hay for word in words)
 
 
 def era(record: dict) -> int:

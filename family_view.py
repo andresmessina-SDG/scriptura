@@ -248,6 +248,8 @@ class FamilyView:
         # reader reaches them. The early ones fall close together where the
         # axis is compressed, so each starts below the one above.
         self._note_spots = []
+        self._note_labels = []
+        self._show_notes = True
         notes = []
         bottom = 0.0
         for note in self._notes:
@@ -259,6 +261,7 @@ class FamilyView:
             height = label.measure(Gtk.Orientation.VERTICAL,
                                    fl.NOTE_WIDTH)[1]
             self._note_spots.append((note.y, top))
+            self._note_labels.append(label)
             notes.append((top, label))
             bottom = top + height
 
@@ -272,6 +275,14 @@ class FamilyView:
                 w.place(self._fixed)
             else:
                 self._fixed.put(w, fl.NOTE_LEFT, _y)
+
+    def set_notes_visible(self, visible):
+        """Show or hide the margin notes and their leaders; the poster,
+        which prints what is on screen, follows."""
+        self._show_notes = visible
+        for label in self._note_labels:
+            label.set_visible(visible)
+        self._area.queue_draw()
 
     def _settle_labels(self):
         """Each label on its natural side, then flipped where it would run
@@ -606,7 +617,7 @@ class FamilyView:
         # its year. (The notes themselves are labels, for screen readers.)
         rgba(lift(0.3, hc))
         cr.set_dash([1.0, 3.0])
-        for year_y, top in self._note_spots:
+        for year_y, top in (self._note_spots if self._show_notes else ()):
             if top > year_y - 9 + 1:
                 cr.move_to(fl.NOTE_LEFT - 18, year_y)
                 cr.line_to(fl.NOTE_LEFT - 6, top + 9)
@@ -690,7 +701,8 @@ def paint_plate(view, cr, page_w, page_h):
             x = node.x + side / 2 + 4
             text(name, x, top, size=0.9, bold=True)
             text(year, x + name_w + 4, top + 1, size=0.8, alpha=0.55)
-    for (_year_y, top), note in zip(view._note_spots, view._notes):
+    notes = zip(view._note_spots, view._notes) if view._show_notes else ()
+    for (_year_y, top), note in notes:
         text(note.text, fl.NOTE_LEFT, top, size=0.95, italic=True,
              serif=True, width=fl.NOTE_WIDTH, alpha=0.75)
     cr.restore()

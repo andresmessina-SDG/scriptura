@@ -650,10 +650,18 @@ def compare_translations(pane, verse, popover=None):
     header.append(others)
     outer.append(header)
 
+    # The popover's size is settled here and never changes once it is up:
+    # an open popup that grows past the room beside the verse is closed by
+    # GNOME Shell. So the list's height is fixed before any verse arrives —
+    # room for every installed Bible, up to 420px — and the verses, and the
+    # Other languages switch, fill it rather than grow it. Its minimum stays
+    # small, so a popover squeezed near the window's edge still has a size
+    # it fits at: one that fits neither above nor below is not shown at all.
+    list_h = min(420, 140 * max(1, len(names)))
     scroll = Gtk.ScrolledWindow()
     scroll.set_min_content_width(420)
-    scroll.set_min_content_height(200)
-    scroll.set_max_content_height(420)
+    scroll.set_min_content_height(min(150, list_h))
+    scroll.set_max_content_height(list_h)
     scroll.set_propagate_natural_height(True)
 
     # Local — two compare popovers in flight don't clobber each other.
@@ -675,8 +683,32 @@ def compare_translations(pane, verse, popover=None):
     delayed_spinner = DelayedSpinner(spinner)
     delayed_spinner.start()
 
-    scroll.set_child(comp_list)
+    holder = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+    holder.set_size_request(-1, list_h)     # its natural height from the start
+    holder.append(comp_list)
+    scroll.set_child(holder)
     outer.append(scroll)
+
+    # See on the Line: the Bible being read, in its row there. Offered only
+    # for a Bible the Line holds, and built here, before the popover is
+    # shown, like the switch above: nothing may grow it once it is up.
+    node = bible_family.node_for_module(reading)
+    root = pane.get_root()
+    if node is not None and hasattr(root, 'show_on_line'):
+        see = Gtk.Button(label=_('See on the Line'))
+        see.add_css_class('flat')
+        see.set_halign(Gtk.Align.END)
+        see.set_margin_end(8)
+        see.set_margin_bottom(8)
+
+        def on_see(_btn, node_id=node['id']):
+            comp.popdown()
+            # After the popover has gone, so the keyboard lands on the Line.
+            GLib.idle_add(lambda: root.show_on_line(node_id, pane)
+                          or GLib.SOURCE_REMOVE)
+        see.connect('clicked', on_see)
+        outer.append(see)
+
     comp.set_child(outer)
     comp.popup()
 
@@ -715,10 +747,7 @@ def compare_translations(pane, verse, popover=None):
 
     def on_others(sw, _pspec):
         settings.put('compare_other_languages', sw.get_active())
-        fill()
-        # A popover grows for a longer list but never shrinks for a shorter
-        # one; presenting again sizes it to the rows now in it.
-        comp.present()
+        fill()          # into the list's fixed height; the popover stays put
 
     others.connect('notify::active', on_others)
 
