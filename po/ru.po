@@ -10434,3 +10434,114 @@ msgstr "Откройте Библию рядом с «Родословным д�
 #: window.py
 msgid "Open a Bible beside the Family Tree to export a passage"
 msgstr "Откройте Библию рядом с «Родословным древом Библии», чтобы экспортировать отрывок"
+#: fetch_errors.py
+msgid "CrossWire is unreachable, and only CrossWire may hand out this module. Try again when it is back."
+msgstr "Не удаётся подключиться к CrossWire, а распространять этот модуль может только CrossWire. Попробуйте снова, когда сервер заработает."
+
+#: fetch_errors.py
+msgid "This module isn’t in the saved catalogue. Refresh the catalogue and try again."
+msgstr "Этого модуля нет в сохранённом каталоге. Обновите каталог и попробуйте снова."
+
+#: fetch_errors.py
+msgid "This file isn’t a SWORD module Scriptura can install. Nothing was changed."
+msgstr "Этот файл не является модулем SWORD, который Scriptura может установить. Ничего не изменено."
+
+#: fetch_errors.py
+msgid "The download looks incomplete, so the copy you have was kept. Try again later."
+msgstr "Загрузка, похоже, неполная, поэтому ваша копия сохранена. Попробуйте позже."
+
+#: fetch_errors.py
+msgid "The file isn’t on the server any more. Refresh the catalogue and try again."
+msgstr "Этого файла больше нет на сервере. Обновите каталог и попробуйте снова."
+
+#: fetch_errors.py
+msgid "The server turned the download away (error {code}). Try again later."
+msgstr "Сервер отклонил загрузку (ошибка {code}). Попробуйте позже."
+
+#: fetch_errors.py
+msgid "Scriptura can’t reach the internet. Check your connection and try again."
+msgstr "Scriptura не может подключиться к интернету. Проверьте соединение и попробуйте снова."
+
+#: fetch_errors.py
+msgid "There isn’t enough free disk space."
+msgstr "Недостаточно свободного места на диске."
+
+#: fetch_errors.py
+msgid "The server isn’t answering. Try again later."
+msgstr "Сервер не отвечает. Попробуйте позже."
+
+#: fetch_errors.py
+msgid "The download arrived damaged. Try again."
+msgstr "Файл загрузился с повреждениями. Попробуйте снова."
+
+#: fetch_errors.py
+msgid "Something went wrong: {detail}"
+msgstr "Что-то пошло не так: {detail}"
+
+#: module_manager.py
+msgid "This needs {need} of free disk space, and {free} is free."
+msgstr "Нужно {need} свободного места на диске, а свободно {free}."
+
+#: module_manager.py
+msgid "{name} couldn’t be downloaded"
+msgstr "Не удалось загрузить {name}"
+
+#: module_manager.py
+msgid "Resume"
+msgstr "Продолжить"
+
+#: module_manager.py
+msgid "{done} of {total} MB downloaded"
+msgstr "Загружено {done} из {total} МБ"
+
+#: module_manager.py
+msgid "{name}: {reason}"
+msgstr "{name}: {reason}"
+
+#: module_manager.py
+msgid "Cancel {name}"
+msgstr "Отменить {name}"
+
+#: module_manager.py
+msgid "Queued"
+msgstr "В очереди"
+
+#: module_manager.py
+msgid "Removing…"
+msgstr "Удаление…"
+
+#: module_manager.py
+msgid "{done} of {total} MB"
+msgstr "{done} из {total} МБ"
+
+#: module_manager.py
+msgid "Starting…"
+msgstr "Начало…"
+
+#: module_manager.py
+msgid "{name} installed"
+msgstr "{name}: установлено"
+
+#: module_manager.py
+msgid "{name} removed"
+msgstr "{name}: удалено"
+
+#: module_manager.py
+msgid "Quit while downloading?"
+msgstr "Выйти во время загрузки?"
+
+#: module_manager.py
+msgid "{name} hasn’t finished. Quit now and it stops; the Module Manager can pick it up again."
+msgstr "{name} ещё не завершено. Если выйти сейчас, загрузка остановится; её можно продолжить в менеджере модулей."
+
+#: module_manager.py
+msgid "Quit"
+msgstr "Выйти"
+
+
+#: window.py
+msgid "{n} download hasn’t finished. Quit now and it stops; the Module Manager can pick it up again."
+msgid_plural "{n} downloads haven’t finished. Quit now and they stop; the Module Manager can pick them up again."
+msgstr[0] "{n} загрузка не завершена. Если выйти сейчас, она остановится; её можно продолжить в менеджере модулей."
+msgstr[1] "{n} загрузки не завершены. Если выйти сейчас, они остановятся; их можно продолжить в менеджере модулей."
+msgstr[2] "{n} загрузок не завершено. Если выйти сейчас, они остановятся; их можно продолжить в менеджере модулей."

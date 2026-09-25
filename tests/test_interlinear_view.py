@@ -104,6 +104,12 @@ def test_an_older_interlinear_offers_an_update(display, monkeypatch):
     monkeypatch.setattr(idata, 'is_installed', lambda _n: True)
 
     class Fake:
+        _pack_row = ModuleManagerWindow._pack_row
+        _update_button = ModuleManagerWindow._update_button
+        _download_button = ModuleManagerWindow._download_button
+        _add_actions = ModuleManagerWindow._add_actions
+        _show_job = ModuleManagerWindow._show_job
+
         def _trash_button(self, _cb):
             return Gtk.Button()
 

@@ -18,9 +18,11 @@ import os
 import shutil
 import sqlite3
 import threading
+import zlib
 from typing import Callable, TypedDict
 
 import paths
+import transfer
 from i18n import _
 
 _log = logging.getLogger('scriptura.catena')
@@ -195,39 +197,41 @@ def download_and_install(on_progress: Callable[[int, int], None] | None = None,
 
     Synchronous — call from a background thread. `on_progress(done, total)`
     reports downloaded bytes (total is 0 if the server sends no length).
-    Writes through temp files and renames atomically, so an interrupted
-    download never leaves a half-written pack in service.
+    A download stopped part-way (cancelled, cut off, the app quit) resumes
+    from where it stopped; see transfer.fetch_resumable. Decompresses
+    through a temp file and renames atomically, so no half-written pack is
+    ever in service.
     """
-    # Lazy: pulls in http/ssl/email (~40 ms) — only needed for downloads.
-    import urllib.request
     url = url or PACK_URL
     dest = paths.catena_db_path()
     tmp_gz = dest + '.gz.part'
     tmp_db = dest + '.part'
+    size = transfer.probe(url)
+    # The database unpacks to about four times the download.
+    transfer.fetch_resumable([(url, size)], tmp_gz, on_progress,
+                             extra=size * 5)
     try:
-        with urllib.request.urlopen(url, timeout=120) as resp:
-            total = int(resp.headers.get('Content-Length') or 0)
-            done = 0
-            with open(tmp_gz, 'wb') as out:
-                while True:
-                    chunk = resp.read(65536)
-                    if not chunk:
-                        break
-                    out.write(chunk)
-                    done += len(chunk)
-                    if on_progress:
-                        on_progress(done, total)
         with gzip.open(tmp_gz, 'rb') as gz, open(tmp_db, 'wb') as out:
             shutil.copyfileobj(gz, out)
         os.replace(tmp_db, dest)
+    except (gzip.BadGzipFile, EOFError, zlib.error):
+        # Damaged, and resuming would only add to the damage: start again.
+        transfer.discard(tmp_gz)
+        raise
     finally:
-        for p in (tmp_gz, tmp_db):
-            try:
-                if os.path.exists(p):
-                    os.remove(p)
-            except OSError:
-                pass
+        if os.path.exists(tmp_db):
+            os.remove(tmp_db)
+    transfer.discard(tmp_gz)
     _reset()
+
+
+def partial_download() -> tuple[int, int] | None:
+    """(bytes so far, total) of a pack download stopped part-way, or None."""
+    return transfer.partial(paths.catena_db_path() + '.gz.part')
+
+
+def discard_partial() -> None:
+    transfer.discard(paths.catena_db_path() + '.gz.part')
 
 
 def remove_pack() -> None:

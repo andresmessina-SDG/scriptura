@@ -175,6 +175,94 @@ def test_install_blocks_path_traversal(sword_home, tmp_path):
     assert not (tmp_path.parent / 'escape').exists()
 
 
+def test_update_replaces_the_data_and_drops_the_search_index(
+        sword_home, tmp_path, monkeypatch):
+    # An update used to extract over the old files: a file the new version
+    # no longer ships stayed, and the search index went on finding the old
+    # text, since its schema version is all that was checked.
+    idx_dir = tmp_path / 'fts'
+    idx_dir.mkdir()
+    monkeypatch.setattr(sword_bridge, 'FTS_INDEX_DIR', str(idx_dir))
+    sword_bridge.install_module_from_zip(_make_zip([
+        ('Aaa', _conf('Aaa', version='1.0'),
+         [('modules/texts/ztext/aaa/ot.bzs', b'old'),
+          ('modules/texts/ztext/aaa/dropped.bzz', b'old')])]), ['Aaa'])
+    (idx_dir / 'Aaa.db').write_bytes(b'index of the old text')
+
+    sword_bridge._extract_module_zip(_make_zip([
+        ('Aaa', _conf('Aaa', version='2.0'),
+         [('modules/texts/ztext/aaa/ot.bzs', b'new')])]))
+
+    data = sword_home / 'modules/texts/ztext/aaa'
+    assert (data / 'ot.bzs').read_bytes() == b'new'
+    assert not (data / 'dropped.bzz').exists()
+    assert 'Version=2.0' in (sword_home / 'mods.d' / 'aaa.conf').read_text()
+    assert not (idx_dir / 'Aaa.db').exists()
+    assert not list(sword_home.glob('.install-*'))
+
+
+def test_failed_update_leaves_the_installed_module_alone(
+        sword_home, monkeypatch):
+    # A full disk halfway through used to leave half-old, half-new files
+    # under a conf that claimed the new version.
+    sword_bridge.install_module_from_zip(_make_zip([
+        ('Aaa', _conf('Aaa', version='1.0'),
+         [('modules/texts/ztext/aaa/ot.bzs', b'old'),
+          ('modules/texts/ztext/aaa/nt.bzs', b'old')])]), ['Aaa'])
+    real = sword_bridge._safe_extract
+    calls = []
+
+    def disk_fills(zf, member, dest):
+        calls.append(member.filename)
+        if len(calls) == 2:
+            raise OSError(28, 'No space left on device')
+        real(zf, member, dest)
+    monkeypatch.setattr(sword_bridge, '_safe_extract', disk_fills)
+
+    with pytest.raises(OSError):
+        sword_bridge._extract_module_zip(_make_zip([
+            ('Aaa', _conf('Aaa', version='2.0'),
+             [('modules/texts/ztext/aaa/ot.bzs', b'new'),
+              ('modules/texts/ztext/aaa/nt.bzs', b'new')])]))
+
+    data = sword_home / 'modules/texts/ztext/aaa'
+    assert (data / 'ot.bzs').read_bytes() == b'old'
+    assert (data / 'nt.bzs').read_bytes() == b'old'
+    assert 'Version=1.0' in (sword_home / 'mods.d' / 'aaa.conf').read_text()
+    assert not list(sword_home.glob('.install-*'))
+
+
+def test_install_dictionary_whose_datapath_is_a_file_prefix(sword_home):
+    # A dictionary's DataPath names a file stem, not a directory, and the
+    # sideload matched it as a directory: the conf went in with no data.
+    # The directory holds more than the stem names (FreDAW's images/).
+    conf = _conf('Dict', datapath='./modules/lexdict/zld/fredaw/dict'
+                 ).replace('ModDrv=zText', 'ModDrv=zLD')
+    z = _make_zip([('Dict', conf, [
+        ('modules/lexdict/zld/fredaw/dict.idx', b'i'),
+        ('modules/lexdict/zld/fredaw/dict.dat', b'd'),
+        ('modules/lexdict/zld/fredaw/images/10.jpg', b'j')])])
+    sword_bridge.install_module_from_zip(z, ['Dict'])
+    data = sword_home / 'modules/lexdict/zld/fredaw'
+    assert (data / 'dict.idx').exists()
+    assert (data / 'dict.dat').exists()
+    assert (data / 'images/10.jpg').exists()
+
+
+def test_update_keeps_the_readers_unlock_key(sword_home):
+    # The catalogue's conf carries an empty CipherKey=. An update replaced
+    # the conf the reader had unlocked, and the text came back scrambled.
+    sword_bridge.install_module_from_zip(
+        _make_zip([('Nasbx', _conf('Nasbx', locked=True), [])]), ['Nasbx'],
+        {'Nasbx': 'SECRET42'})
+    sword_bridge._extract_module_zip(
+        _make_zip([('Nasbx', _conf('Nasbx', version='2.0', locked=True), [])]))
+    conf = (sword_home / 'mods.d' / 'nasbx.conf').read_text()
+    assert 'Version=2.0' in conf
+    assert 'CipherKey=SECRET42' in conf
+    assert conf.count('CipherKey=') == 1
+
+
 def test_installed_version_reads_conf(sword_home):
     (sword_home / 'mods.d' / 'foo.conf').write_text(_conf('Foo', version='4.2'))
     assert sword_bridge.installed_version('Foo') == '4.2'
@@ -222,6 +310,44 @@ def test_remove_module_deletes_its_own_data(sword_home):
     assert not (sword_home / 'mods.d' / 'kjvx.conf').exists()
 
 
+def _dict_conf(name, stem):
+    return _conf(name, datapath=f'./modules/lexdict/zld/shared/{stem}'
+                 ).replace('ModDrv=zText', 'ModDrv=zLD')
+
+
+def test_remove_dictionary_deletes_its_directory(sword_home):
+    # A dictionary's DataPath is a file stem. Removal used to look for a
+    # directory of that name, find none, and leave every data file behind.
+    (sword_home / 'mods.d' / 'dict.conf').write_text(_dict_conf('Dict', 'dict'))
+    shared = sword_home / 'modules/lexdict/zld/shared'
+    (shared / 'images').mkdir(parents=True)
+    for f in ('dict.idx', 'dict.dat', 'strongs.doc', 'images/1.jpg'):
+        (shared / f).write_bytes(b'x')
+    sword_bridge.remove_module('Dict')
+    assert not shared.exists()
+
+
+def test_remove_dictionary_spares_a_neighbour_in_its_directory(sword_home):
+    (sword_home / 'mods.d' / 'dict.conf').write_text(_dict_conf('Dict', 'dict'))
+    (sword_home / 'mods.d' / 'other.conf').write_text(
+        _dict_conf('Other', 'other'))
+    shared = sword_home / 'modules/lexdict/zld/shared'
+    shared.mkdir(parents=True)
+    for f in ('dict.idx', 'dict.dat', 'other.idx', 'other.dat'):
+        (shared / f).write_bytes(b'x')
+    sword_bridge.remove_module('Dict')
+    assert sorted(p.name for p in shared.iterdir()) == ['other.dat',
+                                                        'other.idx']
+
+
+def test_inspect_counts_a_dictionarys_files(sword_home):
+    z = _make_zip([('Dict', _dict_conf('Dict', 'dict'), [
+        ('modules/lexdict/zld/shared/dict.idx', b'i' * 10),
+        ('modules/lexdict/zld/shared/dict.dat', b'd' * 30)])])
+    (mod,) = sword_bridge.inspect_module_zip(z)
+    assert mod['size'] == 40
+
+
 def test_remove_module_refuses_datapath_outside_sword(sword_home, tmp_path):
     # An embedded `..` survives lstrip('./'), so this conf used to resolve
     # outside ~/.sword and be rmtree'd.
@@ -264,18 +390,9 @@ def fake_urlopen(monkeypatch):
     calls = []
     outcomes = {}
 
-    class _Resp:
-        def __init__(self, data):
-            self._data = data
-
-        def read(self):
-            return self._data
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *_exc):
-            return False
+    # A BytesIO streams in chunks, as a response does, and is a context
+    # manager already.
+    _Resp = io.BytesIO
 
     def _tier(url):
         if url.startswith(sword_bridge._MIRROR_BASE):

@@ -402,24 +402,45 @@ def test_a_download_stamps_what_it_imported(db, monkeypatch):
     buf = _io.BytesIO()
     with _zipfile.ZipFile(buf, 'w') as z:
         z.writestr('01-GENengwebp.usfm',
-                   '\\id GEN\n\\c 1\n\\v 1 In the beginning\n')
-
-    class _Response:
-        def read(self):
-            return buf.getvalue()
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *a):
-            return False
+                   '\\id GEN\n\\c 1\n\\v 1 In the beginning\n'
+                   '\\v 2 And the earth\n')
 
     monkeypatch.setattr(urllib.request, 'urlopen',
-                        lambda req, timeout=None: _Response())
+                        lambda req, timeout=None: _io.BytesIO(buf.getvalue()))
     eb.download_translation_sync(
         'engwebp', {'translationId': 'engwebp', 'shortTitle': 'WEB',
                     'UpdateDate': '2026-08-08'})
     assert eb.import_stamps() == {'engwebp': ('2026-08-08', eb.IMPORT_VERSION)}
+
+
+def _serve_usfm(monkeypatch, usfm):
+    import io as _io
+    import urllib.request
+    import zipfile as _zipfile
+
+    buf = _io.BytesIO()
+    with _zipfile.ZipFile(buf, 'w') as z:
+        if usfm is not None:
+            z.writestr('01-GENengwebp.usfm', usfm)
+
+    monkeypatch.setattr(urllib.request, 'urlopen',
+                        lambda req, timeout=None: _io.BytesIO(buf.getvalue()))
+
+
+@pytest.mark.parametrize('usfm', [None, '\\id GEN\n\\c 1\n\\v 1 Only one\n'])
+def test_an_update_that_parses_too_little_keeps_the_text(db, monkeypatch,
+                                                         usfm):
+    """The old rows are deleted before the new ones go in. A download that
+    parsed to nothing (or to a quarter of the text) used to leave an empty
+    Bible behind; now it is refused and the installed copy stays whole."""
+    _serve_usfm(monkeypatch, usfm)
+    with pytest.raises(eb.TooFewVerses):
+        eb.download_translation_sync(
+            'engwebp', {'translationId': 'engwebp', 'shortTitle': 'WEB'})
+    conn = eb._db()
+    assert conn.execute("SELECT COUNT(*) FROM verses "
+                        "WHERE translation='engwebp'").fetchone()[0] == 4
+    assert eb.installed_ids() == {'engwebp'}
 
 
 def test_source_date_prefers_the_update_date():

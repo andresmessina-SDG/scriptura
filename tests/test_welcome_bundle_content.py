@@ -12,6 +12,8 @@ These tests read both sides rather than restating either, so a bundle edit
 or a Tips edit has to keep them agreed.
 """
 
+import pytest
+
 import onboarding
 import sword_bridge
 import welcome
@@ -340,3 +342,46 @@ def test_each_card_says_how_much_it_downloads():
         assert sizes == sorted(sizes), (language, sizes)
     assert _bundle('study')['mb'] == welcome.download_mb(
         _bundle('study')['items'])
+
+
+# ── The Module Manager route out of the welcome screen ──────────────────────
+
+class _Welcome:
+    _on_mgr_closed = welcome.WelcomeWindow._on_mgr_closed
+    _on_mgr_modules_changed = welcome.WelcomeWindow._on_mgr_modules_changed
+    _handoff_if_bible = welcome.WelcomeWindow._handoff_if_bible
+
+    def __init__(self):
+        self.handoffs = 0
+        self._mgr_open = True
+
+    def _handoff(self):
+        self.handoffs += 1
+
+
+@pytest.mark.parametrize('bibles,expected', [
+    (['ebible:spaRV1909'], 1),     # an eBible Bible used to keep him here
+    ([], 0),                        # a lone dictionary used to hand off
+])
+def test_closing_the_manager_hands_off_only_with_a_bible(monkeypatch,
+                                                         bibles, expected):
+    monkeypatch.setattr(welcome.content, 'text_bible_names', lambda: bibles)
+    monkeypatch.setattr(welcome.sword_bridge, 'module_names',
+                        lambda: ['StrongsGreek'])
+    w = _Welcome()
+    w._on_mgr_closed(None)
+    assert w.handoffs == expected
+
+
+def test_a_bible_that_lands_after_the_manager_closed_still_hands_off(
+        monkeypatch):
+    bibles = []
+    monkeypatch.setattr(welcome.content, 'text_bible_names', lambda: bibles)
+    w = _Welcome()
+    w._on_mgr_modules_changed()          # manager open: its close decides
+    w._on_mgr_closed(None)               # closed mid-download: nothing yet
+    assert w.handoffs == 0
+    bibles.append('KJV')
+    w._on_mgr_modules_changed()          # the download lands
+    w._on_mgr_modules_changed()          # …and nothing hands off twice
+    assert w.handoffs == 1

@@ -1,37 +1,13 @@
-"""Determinate download-bar semantics (_progress_fraction).
-
-Pure helper — the window bar is determinate exactly while download bytes
-flow, and returns to the activity pulse for size-unknown downloads and
-for the post-download tail (extract/parse/commit), where a bar frozen at
-100% would read as hung.
-"""
-from module_manager import _progress_fraction
-
-
-def test_fraction_while_bytes_flow():
-    assert _progress_fraction(1, 4) == 0.25
-    assert _progress_fraction(3, 4) == 0.75
-
-
-def test_unknown_total_pulses():
-    assert _progress_fraction(1024, 0) is None
-
-
-def test_nothing_reported_yet_pulses():
-    assert _progress_fraction(0, 4) is None
-
-
-def test_tail_after_last_byte_pulses():
-    assert _progress_fraction(4, 4) is None
-    assert _progress_fraction(5, 4) is None
-
+"""The Module Manager's rows."""
 
 # ── The installed eBible row's Update button ────────────────────────────────
 # An installed translation used to offer nothing but Remove, so picking up a
 # re-parse (the Strong's numbers the USFM parser now keeps) meant deleting
 # the text and fetching it again.
 
-import pytest                                        # noqa: E402
+from types import SimpleNamespace
+
+import pytest
 import gi                                             # noqa: E402
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
@@ -154,7 +130,7 @@ def test_stale_needs_a_catalogue_entry():
 # ── An update has to say it happened ────────────────────────────────────────
 
 def _run_download(already_installed, err=None):
-    """Drive _on_eb_download with the async runner stubbed out, and report
+    """Drive _on_eb_download with the queue stubbed out, and report
     what reached the status line."""
     import ebible_bridge
     from module_manager import ModuleManagerWindow as W
@@ -166,10 +142,13 @@ def _run_download(already_installed, err=None):
     win._populate = lambda: None
     win._set_progress = lambda msg: None
 
-    def fake_run_async(work, on_done, busy_msg='', show_bar=True, retry=None):
-        on_done(err)          # completes synchronously; no thread, no network
-        return True
-    win._run_async = fake_run_async
+    def fake_submit(key, title, work, *, row=True, changes=True,
+                    done_text='', then=None):
+        # Completes synchronously; no thread, no network. `then` runs only
+        # on success, as the queue's on_finish does.
+        if err is None and then is not None:
+            then(SimpleNamespace(done_text=done_text))
+    win._submit = fake_submit
 
     real_ids = ebible_bridge.installed_ids
     ebible_bridge.installed_ids = lambda: ({'latVUC'} if already_installed

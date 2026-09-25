@@ -14,6 +14,7 @@ bridge. Wrong/unavailable module IDs surface as recoverable warnings — the
 only hard requirement for handing off to the main window is that at least one
 Bible text ends up installed."""
 
+import logging
 import threading
 import gi
 gi.require_version('Gtk', '4.0')
@@ -25,11 +26,14 @@ import open_data
 import catena_bridge
 import content
 import ebible_bridge
+import fetch_errors
 import onboarding
 import settings
 import i18n
 from a11y import set_accessible_label
 from i18n import _, ngettext
+
+_log = logging.getLogger('scriptura.welcome')
 
 
 def N_(message):
@@ -977,7 +981,8 @@ class WelcomeWindow(Adw.ApplicationWindow):
             except Exception as e:
                 # Not fatal: every module in the released repository still
                 # installs by zip without it.
-                failed.append((_('module list'), str(e)))
+                _log.warning('module list refresh failed: %r', e)
+                failed.append((_('module list'), fetch_errors.describe(e)))
 
         total = len(items)
         for step, (kind, ident, label, _facet) in enumerate(
@@ -997,7 +1002,8 @@ class WelcomeWindow(Adw.ApplicationWindow):
                 elif kind == 'ebible':
                     self._install_ebible(ident)
             except Exception as e:
-                failed.append((label, str(e)))
+                _log.warning('%s failed: %r', ident, e)
+                failed.append((label, fetch_errors.describe(e)))
         GLib.idle_add(self._finish_install, failed, bundle)
 
     def _install_ebible(self, tid):
@@ -1114,15 +1120,34 @@ class WelcomeWindow(Adw.ApplicationWindow):
         # separate tile, and Mutter stacks it above its parent.
         win = ModuleManagerWindow(
             application=self.get_application(),
+            on_modules_changed=self._on_mgr_modules_changed,
             transient_for=self,
             modal=True,
         )
+        self._mgr_open = True
         win.connect('close-request', self._on_mgr_closed)
         win.present()
 
     def _on_mgr_closed(self, _win):
         # User may have installed modules manually; re-check and hand off
         # to the real window if so. Otherwise stay on welcome.
-        if sword_bridge.module_names():
-            self._handoff()
+        self._mgr_open = False
+        self._handoff_if_bible()
         return False
+
+    def _on_mgr_modules_changed(self):
+        # A download outlives the Module Manager: close it mid-download and
+        # the Bible lands after _on_mgr_closed has already looked and found
+        # nothing. While the manager is still open, its close decides.
+        if not getattr(self, '_mgr_open', False):
+            self._handoff_if_bible()
+
+    def _handoff_if_bible(self):
+        # A Bible of any source, as _finish_install asks. Counting SWORD
+        # modules kept a reader who installed an eBible Bible on this
+        # screen, and handed one who installed only a dictionary to a main
+        # window with nothing to open.
+        if content.text_bible_names() and not getattr(self, '_handed_off',
+                                                       False):
+            self._handed_off = True
+            self._handoff()

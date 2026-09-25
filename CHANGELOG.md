@@ -15,6 +15,20 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Changed
 
+- **Downloads queue up, show their progress, and can be cancelled.**
+  Installing no longer waits for whatever else is downloading: each
+  download waits its turn and says so on its row, which then shows how
+  much has arrived and a button to cancel it. Bibles from eBible.org keep
+  coming while a pack downloads from elsewhere. Close the Module Manager
+  and the downloads carry on; open it again and they are still there.
+- **A large pack picks up where it stopped.** A cancelled or cut-off
+  download of Bible Imagery or Historical Commentaries offers Resume and
+  continues from the last byte. The Module Manager checks for the free
+  space first and says how much it needs.
+- **Big downloads tell you when they finish.** One over 25 MB that ends
+  while you are in another window sends a desktop notification, whether
+  it worked or not. Screen readers hear each download finish or fail.
+- **Quitting while something downloads asks first.**
 - **Compare runs from word for word to free.** Comparing a verse now lists
   your English Bibles from the most literal to the freest, each with a
   small mark showing where it sits. A filled dot means published charts
@@ -88,6 +102,27 @@ semver-ish — 0.x was the pre-Flathub testing track.
   Compare and export now act on the Bible beside the Family Tree, and say
   so when the window is too narrow to show one. Ctrl+P prints the Family
   as a poster, as its own Print button does.
+- **Closing the Module Manager mid-download lost track of the download.**
+  It carried on unseen, the panes never heard when it landed, and the
+  Module Manager opened next offered the same download again; a second
+  copy then wrote over the first. Reopened now, it shows the download
+  still running, and the panes hear when it lands.
+- **Search in an updated module found the old text.** Its search index
+  was kept through the update; it is now rebuilt.
+- **An update that failed halfway, on a full disk for instance, left a
+  broken module.** Modules now arrive whole or not at all, and an update
+  no longer keeps files the new version dropped.
+- **Updating a locked module lost its unlock key**, and the text came back
+  scrambled.
+- **An eBible update that downloaded nothing readable emptied the
+  Bible.** The copy you have is now kept.
+- **Removing a dictionary or general book left its files on disk**, and
+  importing one from a file installed it without its text.
+- Download errors read as plain sentences in your language, not as
+  English error codes.
+- Removing a pack while it was updating could be undone by the update.
+- On the welcome screen, a Bible installed from the Module Manager did not
+  open Scriptura unless it came from CrossWire, and a dictionary alone did.
 
 ## [1.7.3] — 2026-09-22
 

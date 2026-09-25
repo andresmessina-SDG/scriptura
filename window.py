@@ -14,6 +14,7 @@ import mpris
 import tasks
 import motion
 import night_light
+import downloads
 import module_positions
 import onboarding
 import backup
@@ -2739,6 +2740,12 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._toast(_('Swapped: {a} ↔ {b}').format(a=a, b=b))
 
     def _on_close_request(self, _win):
+        # A download runs on a daemon thread and dies with the process.
+        # Closing this window ends the process, so say so first, as the
+        # welcome screen does for its own.
+        if downloads.busy() and not getattr(self, '_quit_anyway', False):
+            self._ask_quit_mid_download()
+            return True
         # Persist current session state so the next launch restores it.
         # close-request fires before destruction; return False to allow
         # the close to proceed.
@@ -2775,6 +2782,37 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         except Exception:
             _log.exception('close-save failed')
         return False
+
+    def _ask_quit_mid_download(self):
+        jobs = downloads.active()
+        if len(jobs) == 1:
+            body = _('{name} hasn’t finished. Quit now and it stops; the '
+                     'Module Manager can pick it up again.').format(
+                         name=jobs[0].title)
+        else:
+            body = ngettext(
+                '{n} download hasn’t finished. Quit now and it stops; the '
+                'Module Manager can pick it up again.',
+                '{n} downloads haven’t finished. Quit now and they stop; '
+                'the Module Manager can pick them up again.',
+                len(jobs)).format(n=len(jobs))
+        dialog = Adw.AlertDialog(heading=_('Quit while downloading?'),
+                                 body=body)
+        dialog.add_response('keep', _('Keep Downloading'))
+        dialog.add_response('quit', _('Quit'))
+        dialog.set_response_appearance('quit',
+                                       Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.set_default_response('keep')
+        dialog.set_close_response('keep')
+        dialog.connect('response', self._on_quit_mid_download)
+        dialog.present(self)
+
+    def _on_quit_mid_download(self, _dialog, response):
+        if response != 'quit':
+            return
+        # Set first, or close() would ask the same question again.
+        self._quit_anyway = True
+        self.close()
 
     # ── Search ────────────────────────────────────────────────────────────────
 
