@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What’s new in Scriptura</title>
+<meta name="description" content="Every Scriptura release, newest first, in the words of its release notes.">
+<link rel="canonical" href="https://andresmessina-sdg.github.io/scriptura/whats-new/">
+<link rel="alternate" hreflang="en" href="https://andresmessina-sdg.github.io/scriptura/whats-new/">
+<link rel="alternate" hreflang="es" href="https://andresmessina-sdg.github.io/scriptura/es/whats-new/">
+<link rel="alternate" hreflang="ru" href="https://andresmessina-sdg.github.io/scriptura/ru/whats-new/">
+<link rel="alternate" hreflang="x-default" href="https://andresmessina-sdg.github.io/scriptura/whats-new/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="What’s new in Scriptura">
+<meta property="og:description" content="Every Scriptura release, newest first, in the words of its release notes.">
+<meta property="og:url" content="https://andresmessina-sdg.github.io/scriptura/whats-new/">
+<meta property="og:image" content="https://andresmessina-sdg.github.io/scriptura/assets/img/en/reading.jpg">
+<meta name="theme-color" content="#f7f4ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1e1e1e" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/icon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="../assets/icon-64.png">
+<link rel="apple-touch-icon" href="../assets/icon-180.png">
+<link rel="preload" href="../assets/fonts/sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../assets/fonts/prose.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../assets/fonts/wordmark.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../assets/site.css">
+<script>try{var p=JSON.parse(localStorage.getItem('scriptura-paper'));if(p&&p.vars){for(var k in p.vars)document.documentElement.style.setProperty(k,p.vars[k]);}}catch(e){}</script>
+</head>
+<body>
+<canvas id="field" aria-hidden="true"></canvas>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="head">
+  <a class="brand" href="../" aria-label="Scriptura"><span class="initial" aria-hidden="true"></span><span class="brand-word" aria-hidden="true">criptura</span></a>
+  <span class="sp"></span>
+  <a class="headbtn" href="../whats-new/" aria-current="page"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h6l3 3v9.4H4z"/><path d="M6.5 7.5h4M6.5 10h4M6.5 12.5h2.5"/></svg><span>What’s new</span></a>
+  <div class="pick">
+    <button type="button" class="headbtn" id="langbtn" aria-expanded="false" aria-controls="langpop" aria-label="Languages: English"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c1.7 1.8 2.5 3.9 2.5 6.2S9.7 12.4 8 14.2C6.3 12.4 5.5 10.3 5.5 8S6.3 3.6 8 1.8"/></svg><span>English</span><svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="m4.5 6.5 3.5 3.5 3.5-3.5"/></svg></button>
+    <div class="pop langs-pop" id="langpop" hidden><nav aria-label="Languages">
+<a lang="en" hreflang="en" href="../whats-new/" aria-current="page">English<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7"/></svg></a>
+<a lang="es" hreflang="es" href="../es/whats-new/">Español<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7"/></svg></a>
+<a lang="ru" hreflang="ru" href="../ru/whats-new/">Русский<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7"/></svg></a>
+    </nav></div>
+  </div>
+  <div class="pick">
+    <button type="button" class="headbtn" id="paperbtn" aria-expanded="false" aria-controls="paperpop"><i aria-hidden="true"></i><span>Paper</span></button>
+    <div class="pop papers-pop" id="paperpop" hidden role="group" aria-label="Paper"><div class="papers" id="papers"></div></div>
+  </div>
+  <a class="headgo" href="../#install">Download</a>
+</header>
+<main id="main" class="news">
+  <section class="hero">
+    <p class="eyebrow">Release notes</p>
+    <h1>What’s new</h1>
+    <p class="lede">Every release, newest first, as the app store describes it. The full record of every change is in the project’s <a class="clay" href="https://github.com/andresmessina-SDG/scriptura/blob/main/CHANGELOG.md">changelog</a>.</p>
+
+  </section>
+  <ol class="releases">
+<li class="release" id="v1-7-3"><div class="rel-head"><h2>Version 1.7.3</h2><time datetime="2026-09-22">22 September 2026</time></div><p class="rel-sum">Search the Greek and Hebrew behind the translation, and hear more of the fathers.</p><ul class="rel-list"><li>Search by the word under the translation. strong:G26 finds every verse whose Greek carries that word, and lemma: and morph: ask the same of the spelling and the grammar.</li><li>The occurrences beside a Strong&#x27;s definition can now cover the whole Bible, not only the book you are reading.</li><li>The historical commentaries add about 2,000 comments, most of them Origen. The Module Manager offers the new pack.</li><li>Double-clicking a word in a Russian Bible finds its dictionary article far more often. Update the Russian dictionary to get this.</li><li>The interface font now ships with the app, so the text looks the same on every desktop.</li><li>On desktops that put the app icon in the window bar, such as KDE, it no longer appears there.</li><li>Evening paper now says when your desktop has no Night Light, instead of doing nothing.</li><li>The starting library cards say how much each one downloads.</li><li>Where the system cannot play audio, no play button is offered.</li><li>A file chooser that cannot open now says so, and the Share and Written on this chapter menus fit their rows.</li></ul></li>
+<li class="release" id="v1-7-2"><div class="rel-head"><h2>Version 1.7.2</h2><time datetime="2026-09-17">17 September 2026</time></div><p class="rel-sum">Your writing is kept safer, and the interlinears show more.</p><ul class="rel-list"><li>A daily copy of your notes, journal and sermons is kept on this device. Restore keeps a copy of what it replaces.</li><li>Closing the app or logging out no longer loses the last sentence you typed.</li><li>Opening the app a second time no longer risks your notes. It brings the open window forward.</li><li>Find and replace in journal entries and sermons, with Ctrl+F.</li><li>The Greek interlinear can show the words other editions add or change.</li><li>The Hebrew interlinear can show the form the scribes wrote under the form that is read.</li><li>Type a verse reference in the GNOME search to see it and open it.</li><li>Ctrl+D bookmarks the chapter. Alt+[ and Alt+] go back and forward.</li><li>The annotations list shows the verse and updates itself.</li><li>Highlights sat one word late when footnotes were hidden. This is fixed.</li></ul></li>
+<li class="release" id="v1-7-1"><div class="rel-head"><h2>Version 1.7.1</h2><time datetime="2026-09-15">15 September 2026</time></div><p class="rel-sum">Fixes for writing sermons.</p><ul class="rel-list"><li>Giving a sermon a series could close the app. This is fixed.</li><li>Typing in a long sermon no longer gets slower as the text grows.</li><li>Russian: the verse menu item for a new journal entry no longer reads as “add a bookmark”.</li></ul></li>
+<li class="release" id="v1-7-0"><div class="rel-head"><h2>Version 1.7.0</h2><time datetime="2026-09-14">14 September 2026</time></div><p class="rel-sum">A place to write: a journal, sermons, and a new Today page.</p><ul class="rel-list"><li>A journal. Write an entry about one passage, several, or none, and add or remove passages later.</li><li>Sermons. Keep each sermon with its passages, its main idea, its series and the days you preached it. Print or export it on its own.</li><li>While you write a sermon, bring in your notes, highlights, verses, cross-references and word studies on the passage.</li><li>The Annotations window has three pages: Annotations, Journal and Sermons, each with its own search and filters.</li><li>Room to write, with buttons for bold, italic, headings, quotes and lists, and a word count.</li><li>Print, export and compare translations from the new ⋮ button, or with Ctrl+P, Ctrl+E and Ctrl+Shift+C. Before, they were only in the right-click menu.</li><li>The Today page shows the first verse of the day&#x27;s reading, on a new parchment background.</li><li>Search finds your own notes and entries as well as Bible verses.</li><li>The right-click menu is shorter and grouped.</li><li>Fixed: double-clicking a word said “No entry” even with dictionaries installed, and a reading plan could say it was done when it was not.</li></ul></li>
+<li class="release" id="v1-6-2"><div class="rel-head"><h2>Version 1.6.2</h2><time datetime="2026-09-10">10 September 2026</time></div><p class="rel-sum">Your marks now show in every translation, and many fixes.</p><ul class="rel-list"><li>Highlights, underlines, notes and tags now show in every translation, not only the one you made them in. The Study Journal is now called Annotations.</li><li>Export, print and copy work for Bibles from eBible, and marks made in them land on the right verse.</li><li>Psalm numbers are right in the Clementine Vulgate and the Russian Synodal Bible from eBible.</li><li>“Match case” no longer turns an OR search into an AND search.</li><li>A link to a book your Bible does not have now tells you which book is missing, instead of doing nothing.</li><li>The Orthodox Old Calendar is offered beside the New Calendar.</li><li>Russian readers get the Orthodox troparion in Church Slavonic, not in English.</li><li>Dates show in the app&#x27;s language, not always in English.</li><li>A stray space before commas is gone from the Today page, devotionals, cross-references, dictionaries and collects.</li><li>Highlights cover the whole verse and stay beside the right text.</li></ul></li>
+<li class="release" id="v1-6-1"><div class="rel-head"><h2>Version 1.6.1</h2><time datetime="2026-09-02">2 September 2026</time></div><p class="rel-sum">Two fixes for 1.6.0.</p><ul class="rel-list"><li>The right-click menu now opens in the middle of the page on small windows.</li><li>The Book of Generations opens at the text size you chose.</li></ul></li>
+<li class="release" id="v1-6-0"><div class="rel-head"><h2>Version 1.6.0</h2><time datetime="2026-09-02">2 September 2026</time></div><p class="rel-sum">Scriptura in Russian, and the Bible&#x27;s lists of names drawn as charts.</p><ul class="rel-list"><li>The app is now in Russian, with the book names Russian readers expect.</li><li>A modern Russian Bible under a free licence, and the first Russian dictionary.</li><li>The Book of Generations draws the Bible&#x27;s family lists as charts, one to a page. Click a name to learn about the person, or a verse to read it.</li><li>On first run you pick your language, and the app offers Bibles, a dictionary and study tools in it.</li><li>A Spanish dictionary, the first in any SWORD source.</li><li>Scripture in Stone is in your language, and opens at once instead of loading every photo first.</li><li>Go to a passage with book names in your own language, such as «Бытие 3» or Génesis 3.</li><li>Book names on cross-references and search charts are translated.</li><li>Translated labels are no longer cut off.</li><li>First-run downloads are more reliable, and closing the window during one no longer leaves half a library behind.</li></ul></li>
+<li class="release" id="v1-5-0"><div class="rel-head"><h2>Version 1.5.0</h2><time datetime="2026-08-19">19 August 2026</time></div><p class="rel-sum">Scriptura in Spanish, and books it could not open before.</p><ul class="rel-list"><li>The app is now in Spanish. Pick the language on the first screen or from the menu.</li><li>Spanish Bibles: LBLA, NBLA, the Versión Biblia Libre, and Straubinger&#x27;s with its long notes.</li><li>The whole Bible read aloud in Spanish, from La Biblia en Español Sencillo.</li><li>Books such as Tobit, Judith, Sirach and Maccabees now open. Before, asking for one showed Revelation.</li><li>Every dictionary you install now shows, in any language, and so do Strong&#x27;s numbers in Spanish Bibles.</li><li>Set wider spacing between letters, or use the OpenDyslexic font.</li><li>The app follows the desktop&#x27;s High Contrast setting.</li><li>An optional reading focus dims all but the passage you are reading.</li><li>Audio shows on your desktop&#x27;s media controls and media keys.</li><li>The page no longer jumps when you change the theme and other display settings.</li></ul></li>
+<li class="release" id="v1-4-0"><div class="rel-head"><h2>Version 1.4.0</h2><time datetime="2026-07-27">27 July 2026</time></div><p class="rel-sum">Chapters read aloud, and passages you can take with you.</p><ul class="rel-list"><li>Listen to chapters of the Berean Standard Bible read aloud. Skip back, change the speed, and keep listening into the next chapter.</li><li>Listen to devotionals: Spurgeon&#x27;s Morning and Evening, the Psalms, and Daily Strength on the Today page.</li><li>Export a passage as a study sheet with your notes and highlights.</li><li>Save or copy a verse as an image.</li><li>Print a passage as a study handout.</li><li>Section headings from your Bible now show. Press [ and ] to move between sections.</li><li>Use the reading pane from the keyboard, with screen reader support.</li><li>Every Bible opens each chapter with a large first letter, and commentaries show their titles.</li><li>More prayers from the Roman calendar, and a steadier Today page.</li><li>Modules still install when CrossWire&#x27;s server is down.</li></ul></li>
+<li class="release" id="v1-3-0"><div class="rel-head"><h2>Version 1.3.0</h2><time datetime="2026-07-10">10 July 2026</time></div><p class="rel-sum">The original languages, word by word.</p><ul class="rel-list"><li>Read the Greek New Testament and the Hebrew Old Testament word by word, each word with its English meaning and grammar.</li><li>A Greek lexicon pack with Abbott-Smith and Liddell-Scott-Jones. Click a verse in an entry to read it.</li><li>Press F5 to show a passage full screen on a projector, alone or beside a second translation.</li><li>Maps link to their passages, and commentaries show the places a verse names.</li><li>Greek accents now display correctly.</li></ul></li>
+<li class="release" id="v1-2-0"><div class="rel-head"><h2>Version 1.2.0</h2><time datetime="2026-07-05">5 July 2026</time></div><p class="rel-sum">Getting started is easier.</p><ul class="rel-list"><li>A new Tips &amp; Gestures guide in the menu lists every reading gesture.</li><li>One-time tips show hidden gestures when you first need them. You can turn them off.</li></ul></li>
+<li class="release" id="v1-1-0"><div class="rel-head"><h2>Version 1.1.0</h2><time datetime="2026-06-28">28 June 2026</time></div><p class="rel-sum">Choose how your reading page looks.</p><ul class="rel-list"><li>A new Appearance panel: choose a paper colour, and the text colour follows it.</li><li>Bold and justified text are small buttons beside the font.</li><li>Reading plans have a Today view and a month calendar.</li><li>Fixed faint trails left behind when scrolling.</li></ul></li>
+<li class="release" id="v1-0-1"><div class="rel-head"><h2>Version 1.0.1</h2><time datetime="2026-05-28">28 May 2026</time></div><p class="rel-sum">Packaging fixes.</p><ul class="rel-list"><li>Convert the build to meson for a cleaner Flatpak install.</li><li>Patch SWORD&#x27;s CMake to properly link libcurl (upstream bug API-263).</li></ul></li>
+<li class="release" id="v1-0-0"><div class="rel-head"><h2>Version 1.0.0</h2><time datetime="2026-05-23">23 May 2026</time></div><p class="rel-sum">Scriptura&#x27;s first release. Read two translations side by side, study the Hebrew and Greek behind any word, follow cross-references, and keep your highlights and notes in one searchable place, all offline on your own computer.</p></li>
+  </ol>
+</main>
+
+<footer class="colophon">
+  <p class="eyebrow">Colophon</p>
+  <p>Scriptura is made by Andres Messina and released under the GPL-3.0. This page is set in Noto Serif for Scripture, Newsreader for prose and Adwaita Sans for everything else, the same faces the app uses, and it loads nothing from any other site.</p>
+  <p>The letters in the margins are the Hebrew and Greek alphabets written out in order, as on the app’s Today page, with an older Paleo-Hebrew letter among them now and then. They stand in the proportion the Bible is written in, counted verse by verse: 73.6% Hebrew, 25.6% Greek and 0.9% Aramaic.</p>
+  <ul class="credits">
+<li>The King James Version and Strong’s Greek Dictionary are in the public domain, from the <a class="clay" href="https://crosswire.org/sword/">CrossWire SWORD library</a>.</li>
+<li>The <a class="clay" href="https://berean.bible/">Berean Standard Bible</a> is in the public domain.</li>
+<li>The interlinear’s word data is from <a class="clay" href="https://github.com/STEPBible/STEPBible-Data">STEPBible</a> / Tyndale House, Cambridge, <a class="clay" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. The church’s quotations are public domain, from the <a class="clay" href="https://github.com/HistoricalChristianFaith/Commentaries-Database">HistoricalChristianFaith Commentaries Database</a>.</li>
+<li>The cross-references are from <a class="clay" href="https://www.openbible.info/labs/cross-references/">OpenBible.info</a>, <a class="clay" href="https://creativecommons.org/licenses/by/4.0/">CC BY</a>, and the short glosses from Dodson’s Greek lexicon, public domain.</li>
+  </ul>
+  <nav>
+    <a class="clay" href="https://github.com/andresmessina-SDG/scriptura">Source code</a>
+    <a class="clay" href="../whats-new/">What’s new</a>
+    <a class="clay" href="https://github.com/andresmessina-SDG/scriptura/issues">Report a problem</a>
+    <a class="clay" href="https://github.com/andresmessina-SDG/scriptura/blob/main/LICENSE">Licence</a>
+  </nav>
+</footer>
+
+<script type="application/json" id="site-data">{"text":null,"strings":{"xrefs_none":"OpenBible lists no cross-references for this verse.","voices_note":"","close":"Close","entry":"Strong’s {n}","kjv_uses":"In the KJV:","copied":"Copied","press_ctrl_c":"Press Ctrl+C","auto_title":"Follow the system’s light or dark setting","papers":{"Auto":"Auto","Paper":"Paper","White":"White","Sepia":"Sepia","Green":"Green","Slate":"Slate","Charcoal":"Charcoal","Black":"Black"},"copy":"Copy"}}</script>
+<script src="../assets/site.js" defer></script>
+</body>
+</html>

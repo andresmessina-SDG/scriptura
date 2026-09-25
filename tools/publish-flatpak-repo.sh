@@ -20,7 +20,7 @@ cd "$(dirname "$0")/.."                       # repo root
 
 SIGN_HOME="${SIGN_HOME:-$HOME/.scriptura-flatpak-signing}"
 BASE_URL="${BASE_URL:-https://andresmessina-sdg.github.io/scriptura-flatpak}"
-HOMEPAGE="https://github.com/andresmessina-SDG/scriptura"
+HOMEPAGE="https://andresmessina-sdg.github.io/scriptura/"
 MANIFEST="io.github.andresmessina_SDG.Scriptura.yml"
 APPID="io.github.andresmessina_SDG.Scriptura"
 BUILDDIR="flatpak-build"
@@ -71,17 +71,15 @@ Homepage=$HOMEPAGE
 Comment=Signed Flatpak repository for Scriptura
 GPGKey=$PUBKEY
 EOF
+# The install files' own address sends a visitor to the website, which
+# carries the install steps (docs/ in the scriptura repo).
 cat > "$OUT/index.html" <<EOF
 <!doctype html><html lang="en"><meta charset="utf-8">
-<title>Scriptura — install for Linux</title>
-<body style="font-family:sans-serif;max-width:40rem;margin:4rem auto;padding:0 1rem">
-<h1>Scriptura</h1>
-<p>A focused Bible study app for the Linux desktop.</p>
-<p><a href="scriptura.flatpakref"><b>Install (Flatpak)</b></a></p>
-<p>Or from a terminal:</p>
-<pre>flatpak install $BASE_URL/scriptura.flatpakref</pre>
-<p><a href="$HOMEPAGE">Source code</a></p>
-</body></html>
+<title>Scriptura</title>
+<meta http-equiv="refresh" content="0; url=$HOMEPAGE">
+<link rel="canonical" href="$HOMEPAGE">
+<p><a href="$HOMEPAGE">Scriptura</a></p>
+</html>
 EOF
 
 echo

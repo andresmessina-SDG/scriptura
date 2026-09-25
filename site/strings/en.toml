@@ -1,0 +1,190 @@
+# The English page. Every file in this folder carries the same keys;
+# tests/test_site.py checks that they do.
+
+title = "Scriptura: Bible study for Linux"
+description = "Read two translations side by side, with the Greek under every word and the church's reading of each verse. Free, with no account, on your own computer."
+skip = "Skip to content"
+paper = "Paper"
+download = "Download"
+download_linux = "Download for Linux"
+languages_label = "Languages"
+
+eyebrow = "Bible study for Linux"
+h1 = "Read and study the Bible in depth."
+lede = "Two translations side by side, the Greek and Hebrew under every word, and how the church read each verse. Free, with no account, all on your own computer."
+hero_meta = "Version {version} · Flatpak"
+
+window_label = "A working example of Scriptura’s reading view"
+pane_title = "John 1"
+pane_left = "King James Version"
+pane_right = "Berean Standard Bible"
+
+sec_tools = "Everything for close study, on one screen"
+live_caption = "This is live. Click a word for its Strong’s entry, or a verse number for the passages that echo it and what the church wrote on it."
+tab_entry = "Strong’s"
+tab_xrefs = "Cross-references"
+tab_voices = "Voices of the Church"
+zoom_label = "Enlarge"
+teach_h = "For those who teach"
+teach_lede = "Write the sermon beside the text, then preach it. Your manuscripts, your notes on the passage and a view for the projector live in one place."
+news_title = "What’s new in Scriptura"
+news_description = "Every Scriptura release, newest first, in the words of its release notes."
+news_eyebrow = "Release notes"
+news_h1 = "What’s new"
+news_lede_html = "Every release, newest first, as the app store describes it. The full record of every change is in the project’s <a class=\"clay\" href=\"https://github.com/andresmessina-SDG/scriptura/blob/main/CHANGELOG.md\">changelog</a>."
+news_english_note = ""
+release_heading = "Version {version}"
+sec_yours = "Yours, and no one else’s"
+
+install_eyebrow = "Get Scriptura"
+install_h = "Install it in three steps"
+step1_h = "Download the installer"
+step1_p = "A small file named scriptura.flatpakref."
+step2_h = "Open the file"
+step2_p = "GNOME Software or KDE Discover installs Scriptura and keeps it up to date."
+step3_h = "Choose a starting library"
+step3_p = "The first screen asks your language, then offers three places to start. You can add or remove anything later."
+recommended = "Recommended"
+about_mb = "About {n} MB"
+terminal = "Or in a terminal:"
+copy = "Copy"
+needs_html = "Scriptura needs Flatpak. Fedora Workstation, Linux Mint, Pop!_OS and Zorin OS include it. On Ubuntu, Debian and others, <a class=\"clay\" href=\"https://flathub.org/setup\">set it up first</a>."
+
+colophon_h = "Colophon"
+colophon_p = "Scriptura is made by Andres Messina and released under the GPL-3.0. This page is set in Noto Serif for Scripture, Newsreader for prose and Adwaita Sans for everything else, the same faces the app uses, and it loads nothing from any other site."
+colophon_margins = "The letters in the margins are the Hebrew and Greek alphabets written out in order, as on the app’s Today page, with an older Paleo-Hebrew letter among them now and then. They stand in the proportion the Bible is written in, counted verse by verse: 73.6% Hebrew, 25.6% Greek and 0.9% Aramaic."
+link_source = "Source code"
+link_changes = "What’s new"
+link_issues = "Report a problem"
+link_licence = "Licence"
+
+credits_html = [
+  "The King James Version and Strong’s Greek Dictionary are in the public domain, from the <a class=\"clay\" href=\"https://crosswire.org/sword/\">CrossWire SWORD library</a>.",
+  "The <a class=\"clay\" href=\"https://berean.bible/\">Berean Standard Bible</a> is in the public domain.",
+  "The interlinear’s word data is from <a class=\"clay\" href=\"https://github.com/STEPBible/STEPBible-Data\">STEPBible</a> / Tyndale House, Cambridge, <a class=\"clay\" href=\"https://creativecommons.org/licenses/by/4.0/\">CC BY 4.0</a>. The church’s quotations are public domain, from the <a class=\"clay\" href=\"https://github.com/HistoricalChristianFaith/Commentaries-Database\">HistoricalChristianFaith Commentaries Database</a>.",
+  "The cross-references are from <a class=\"clay\" href=\"https://www.openbible.info/labs/cross-references/\">OpenBible.info</a>, <a class=\"clay\" href=\"https://creativecommons.org/licenses/by/4.0/\">CC BY</a>, and the short glosses from Dodson’s Greek lexicon, public domain.",
+]
+
+[[shots]]
+img = "interlinear"
+title = "The Greek word by word"
+text = "Open an interlinear beside any Bible and read the Greek New Testament or the Hebrew Bible one word at a time, with the gloss, the parsing and the Strong’s number under each. The variant readings and the Hebrew Ketiv are a click away."
+alt = "The Greek interlinear at John 1, beside the King James Version"
+
+[[shots]]
+img = "voices"
+title = "The church on every verse"
+text = "Beside any passage, Voices of the Church gathers what the fathers, the medieval teachers and the Reformers wrote about it: 87,995 quotations from Irenaeus to Calvin, each filed under the verse it explains and dated by its century."
+alt = "Voices of the Church beside John 1, grouped by era"
+
+[[shots]]
+img = "art"
+title = "Art for the passage you are reading"
+text = "Scripture in Art sets paintings, engravings, icons and stained glass beside the verse on your screen: 1,256 images, from Caravaggio’s Calling of Saint Matthew to Doré’s engravings, each with its source and credit."
+alt = "Matthew 9 beside Caravaggio’s The Calling of Saint Matthew"
+
+[[shots]]
+img = "reading"
+title = "Reading mode"
+text = "Clear everything but the text. Seven papers, from white to black, each come with their own ink, and the drop cap is set in gold."
+alt = "Psalm 23 in reading mode"
+
+[[rows]]
+title = "Notes that follow the verse"
+text = "Highlights, notes and tags show in every translation."
+
+[[rows]]
+title = "Search and concordance"
+text = "Every place a Greek or Hebrew word is used."
+
+[[rows]]
+title = "340,000 cross-references"
+text = "From OpenBible.info, five times the Treasury’s count."
+
+[[rows]]
+title = "Maps and places"
+text = "Maps of the journeys, and photographs of the places a verse names."
+
+[[rows]]
+title = "Scripture in Stone"
+text = "Archaeology tied to its verses."
+
+[[rows]]
+title = "The Book of Generations"
+text = "The Bible’s family lists drawn as charts."
+
+[[rows]]
+title = "Listen"
+text = "Any chapter of the Berean Standard Bible, read aloud."
+
+[[rows]]
+title = "Reading plans and Today"
+text = "The day’s reading and the church’s calendar."
+
+[[rows]]
+title = "Commentaries and confessions"
+text = "Matthew Henry, Calvin, the 1689 Confession and more."
+
+[teach_shot]
+img = "writing"
+title = "The writing room"
+text = "Draft in plain text with headings, lists and quotations. Scripture you collect lands in the sermon with its reference, and nothing is lost when you close the window."
+alt = "A sermon on John 1 open in the writing room"
+
+[[teach_rows]]
+title = "Series and dates"
+text = "Group sermons into a series and keep the days each was preached."
+
+[[teach_rows]]
+title = "Present"
+text = "F5 puts a passage on a projector in large type."
+
+[[teach_rows]]
+title = "Print and export"
+text = "A passage as a study handout, with your notes and highlights."
+
+[[teach_rows]]
+title = "A verse as an image"
+text = "Save or copy a verse set on paper, ready to share."
+
+[[claims]]
+title = "No account."
+text = "Open it and read. There is nothing to sign up for."
+
+[[claims]]
+title = "Nothing sent."
+text = "Scriptura goes online only when you ask: to download a text or to play a chapter aloud."
+
+[[claims]]
+title = "Free and open."
+text = "No price and no ads. The source is on GitHub under the GPL."
+
+[papers]
+Auto = "Auto"
+Paper = "Paper"
+White = "White"
+Sepia = "Sepia"
+Green = "Green"
+Slate = "Slate"
+Charcoal = "Charcoal"
+Black = "Black"
+
+[js]
+xrefs_none = "OpenBible lists no cross-references for this verse."
+voices_note = ""
+close = "Close"
+entry = "Strong’s {n}"
+kjv_uses = "In the KJV:"
+copied = "Copied"
+press_ctrl_c = "Press Ctrl+C"
+auto_title = "Follow the system’s light or dark setting"
+
+[notfound]
+title = "Page not found · Scriptura"
+eyebrow = "Page not found"
+h1 = "This page is not here."
+body = "The address may be mistyped, or the page may have moved. Everything on the site starts from the home page."
+verse = "For this my son was dead, and is alive again; he was lost, and is found."
+ref = "Luke 15:24 · King James Version"
+home = "Go to the home page"
+news = "What’s new"

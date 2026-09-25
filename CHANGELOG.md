@@ -6,6 +6,13 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+### Added
+
+- **Scriptura has a website**, <https://andresmessina-sdg.github.io/scriptura/>,
+  in English, Spanish and Russian: a working reading pane, the install
+  steps, and every release's notes. The store listing's homepage, the
+  README and the old install page now point to it.
+
 ### Changed
 
 - **The chapter's first line keeps the rhythm.** The large first letter

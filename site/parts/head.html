@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{page_title}}</title>{{robots}}
+<meta name="description" content="{{page_description}}">
+<link rel="canonical" href="{{canonical}}">
+{{alternates}}
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{page_title}}">
+<meta property="og:description" content="{{page_description}}">
+<meta property="og:url" content="{{canonical}}">
+<meta property="og:image" content="{{og_image}}">
+<meta name="theme-color" content="#f7f4ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1e1e1e" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" sizes="32x32" href="{{root}}assets/icon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="{{root}}assets/icon-64.png">
+<link rel="apple-touch-icon" href="{{root}}assets/icon-180.png">
+<link rel="preload" href="{{root}}assets/fonts/{{font_sans}}.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="{{root}}assets/fonts/{{font_lede}}.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="{{root}}assets/fonts/wordmark.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="{{root}}assets/site.css">
+<script>try{var p=JSON.parse(localStorage.getItem('scriptura-paper'));if(p&&p.vars){for(var k in p.vars)document.documentElement.style.setProperty(k,p.vars[k]);}}catch(e){}</script>
+</head>
+<body>
+<canvas id="field" aria-hidden="true"></canvas>

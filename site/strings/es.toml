@@ -1,0 +1,190 @@
+# La página en español. Los términos siguen los de la app (po/es.po).
+
+title = "Scriptura: estudio bíblico para Linux"
+description = "Lea dos traducciones lado a lado, con el griego bajo cada palabra y la lectura de la Iglesia en cada versículo. Gratis, sin cuenta, en su propio equipo."
+skip = "Ir al contenido"
+paper = "Papel"
+download = "Descargar"
+download_linux = "Descargar para Linux"
+languages_label = "Idiomas"
+
+eyebrow = "Estudio bíblico para Linux"
+h1 = "Lea y estudie la Biblia a fondo."
+lede = "Dos traducciones lado a lado, el griego y el hebreo bajo cada palabra, y cómo leyó la Iglesia cada versículo. Gratis, sin cuenta, todo en su propio equipo."
+hero_meta = "Versión {version} · Flatpak"
+
+window_label = "Un ejemplo real de la vista de lectura de Scriptura"
+pane_title = "Juan 1"
+pane_left = "Reina-Valera 1909"
+pane_right = "La Biblia en Español Sencillo"
+
+sec_tools = "Todo para el estudio detenido, en una sola pantalla"
+live_caption = "Esto funciona. Haga clic en una palabra subrayada para ver su entrada en el diccionario, o en un número de versículo para ver los pasajes que le hacen eco y lo que escribió la Iglesia."
+tab_entry = "Diccionario"
+tab_xrefs = "Referencias cruzadas"
+tab_voices = "Voces de la Iglesia"
+zoom_label = "Ampliar"
+teach_h = "Para quienes enseñan"
+teach_lede = "Escriba el sermón junto al texto y luego predíquelo. Sus manuscritos, sus notas sobre el pasaje y una vista para el proyector están en un solo lugar."
+news_title = "Novedades de Scriptura"
+news_description = "Cada versión de Scriptura, de la más reciente a la más antigua, con sus notas."
+news_eyebrow = "Notas de versión"
+news_h1 = "Novedades"
+news_lede_html = "Cada versión, de la más reciente a la más antigua, tal como la describe la tienda de aplicaciones. El registro completo de cambios está en el <a class=\"clay\" href=\"https://github.com/andresmessina-SDG/scriptura/blob/main/CHANGELOG.md\">changelog</a> del proyecto, en inglés."
+news_english_note = "Las notas de las versiones más recientes solo están en inglés."
+release_heading = "Versión {version}"
+sec_yours = "Suyo, y de nadie más"
+
+install_eyebrow = "Obtener Scriptura"
+install_h = "Instálela en tres pasos"
+step1_h = "Descargue el instalador"
+step1_p = "Un archivo pequeño llamado scriptura.flatpakref."
+step2_h = "Abra el archivo"
+step2_p = "GNOME Software o KDE Discover instala Scriptura y la mantiene al día."
+step3_h = "Elija una biblioteca inicial"
+step3_p = "La primera pantalla le pregunta su idioma y luego le ofrece tres maneras de empezar. Puede añadir o quitar lo que quiera más adelante."
+recommended = "Recomendada"
+about_mb = "Unos {n} MB"
+terminal = "O en una terminal:"
+copy = "Copiar"
+needs_html = "Scriptura necesita Flatpak. Fedora Workstation, Linux Mint, Pop!_OS y Zorin OS ya lo incluyen. En Ubuntu, Debian y otras, <a class=\"clay\" href=\"https://flathub.org/setup\">configúrelo primero</a>."
+
+colophon_h = "Colofón"
+colophon_p = "Scriptura la hace Andres Messina y se publica bajo la licencia GPL-3.0. Esta página usa Noto Serif para la Escritura, Newsreader para la prosa y Adwaita Sans para todo lo demás, las mismas fuentes que la app, y no carga nada de ningún otro sitio."
+colophon_margins = "Las letras de los márgenes son los alfabetos hebreo y griego escritos en orden, como en la página Hoy de la app, con alguna letra del antiguo paleohebreo entre ellas. Guardan la proporción en que está escrita la Biblia, contada versículo a versículo: 73,6 % hebreo, 25,6 % griego y 0,9 % arameo."
+link_source = "Código fuente"
+link_changes = "Novedades"
+link_issues = "Informar de un problema"
+link_licence = "Licencia"
+
+credits_html = [
+  "Reina-Valera 1909, de dominio público, con los números de Strong de Rubén Gómez, de la <a class=\"clay\" href=\"https://crosswire.org/sword/\">biblioteca SWORD de CrossWire</a>.",
+  "La Biblia en Español Sencillo © 2018, 2019 AudioBiblia.org / Irma Flores, <a class=\"clay\" href=\"https://creativecommons.org/licenses/by/4.0/deed.es\">CC BY 4.0</a>, vía <a class=\"clay\" href=\"https://ebible.org/Scriptures/details.php?id=spabes\">eBible.org</a>.",
+  "Las entradas del diccionario vienen del <a class=\"clay\" href=\"https://es.wiktionary.org/\">Wikcionario</a>, <a class=\"clay\" href=\"https://creativecommons.org/licenses/by-sa/4.0/deed.es\">CC BY-SA 4.0</a>, en extractos. El diccionario griego de Strong es de dominio público.",
+  "Los datos del interlineal son de <a class=\"clay\" href=\"https://github.com/STEPBible/STEPBible-Data\">STEPBible</a> / Tyndale House, Cambridge, <a class=\"clay\" href=\"https://creativecommons.org/licenses/by/4.0/deed.es\">CC BY 4.0</a>. Las citas de la Iglesia son de dominio público, de la <a class=\"clay\" href=\"https://github.com/HistoricalChristianFaith/Commentaries-Database\">HistoricalChristianFaith Commentaries Database</a>.",
+  "Las referencias cruzadas son de <a class=\"clay\" href=\"https://www.openbible.info/labs/cross-references/\">OpenBible.info</a>, <a class=\"clay\" href=\"https://creativecommons.org/licenses/by/4.0/deed.es\">CC BY</a>.",
+]
+
+[[shots]]
+img = "interlinear"
+title = "El griego palabra por palabra"
+text = "Abra un interlineal junto a cualquier Biblia y lea el Nuevo Testamento griego o la Biblia hebrea palabra por palabra, con la glosa, el análisis y el número de Strong bajo cada una. Las glosas están en inglés."
+alt = "El interlineal griego en Juan 1, junto a la Reina-Valera"
+
+[[shots]]
+img = "voices"
+title = "La Iglesia en cada versículo"
+text = "Junto a cualquier pasaje, Voces de la Iglesia reúne lo que escribieron sobre él los padres, los maestros medievales y los reformadores: 87.995 citas, de Ireneo a Calvino, ordenadas por versículo y fechadas por siglo. Las citas están en inglés."
+alt = "Voces de la Iglesia junto a Juan 1, agrupadas por época"
+
+[[shots]]
+img = "art"
+title = "Arte para el pasaje que está leyendo"
+text = "La Escritura en el arte pone pinturas, grabados, iconos y vidrieras junto al versículo que tiene en pantalla: 1.256 imágenes, de La vocación de san Mateo de Caravaggio a los grabados de Doré, cada una con su fuente y su crédito. Los títulos están en inglés."
+alt = "Mateo 9 junto a La vocación de san Mateo, de Caravaggio"
+
+[[shots]]
+img = "reading"
+title = "Modo de lectura"
+text = "Deje en pantalla solo el texto. Siete papeles, del blanco al negro, cada uno con su propia tinta, y la letra capital en oro."
+alt = "El Salmo 23 en modo de lectura"
+
+[[rows]]
+title = "Notas que siguen al versículo"
+text = "Resaltados, notas y etiquetas aparecen en cada traducción."
+
+[[rows]]
+title = "Búsqueda y concordancia"
+text = "Cada lugar donde aparece una palabra griega o hebrea."
+
+[[rows]]
+title = "340.000 referencias cruzadas"
+text = "De OpenBible.info, cinco veces las del Treasury."
+
+[[rows]]
+title = "Mapas y lugares"
+text = "Mapas de los viajes y fotografías de los lugares que nombra un versículo."
+
+[[rows]]
+title = "La Escritura en piedra"
+text = "Arqueología unida a sus versículos."
+
+[[rows]]
+title = "El libro de las generaciones"
+text = "Las genealogías de la Biblia dibujadas como cuadros."
+
+[[rows]]
+title = "Escuchar"
+text = "La Biblia en Español Sencillo, leída en voz alta."
+
+[[rows]]
+title = "Planes de lectura y Hoy"
+text = "La lectura del día y el calendario de la Iglesia."
+
+[[rows]]
+title = "Comentarios y confesiones"
+text = "Matthew Henry, Calvino y más, en inglés."
+
+[teach_shot]
+img = "writing"
+title = "La sala de escritura"
+text = "Escriba en texto sencillo con títulos, listas y citas. La Escritura que recoja llega al sermón con su referencia, y nada se pierde al cerrar la ventana."
+alt = "Un sermón sobre Juan 1 abierto en la sala de escritura"
+
+[[teach_rows]]
+title = "Series y fechas"
+text = "Agrupe los sermones en series y guarde los días en que predicó cada uno."
+
+[[teach_rows]]
+title = "Proyectar"
+text = "F5 muestra un pasaje en el proyector con letra grande."
+
+[[teach_rows]]
+title = "Imprimir y exportar"
+text = "Un pasaje como hoja de estudio, con sus notas y resaltados."
+
+[[teach_rows]]
+title = "Un versículo como imagen"
+text = "Guarde o copie un versículo compuesto sobre papel, listo para compartir."
+
+[[claims]]
+title = "Sin cuenta."
+text = "Ábrala y lea. No hay nada que registrar."
+
+[[claims]]
+title = "Nada se envía."
+text = "Scriptura solo se conecta cuando usted lo pide: para descargar un texto o escuchar un capítulo."
+
+[[claims]]
+title = "Libre y gratuita."
+text = "Sin precio y sin anuncios. El código está en GitHub bajo la GPL."
+
+[papers]
+Auto = "Auto"
+Paper = "Papel"
+White = "Blanco"
+Sepia = "Sepia"
+Green = "Verde"
+Slate = "Pizarra"
+Charcoal = "Carbón"
+Black = "Negro"
+
+[js]
+xrefs_none = "OpenBible no recoge referencias cruzadas para este versículo."
+voices_note = "Las citas están en inglés."
+close = "Cerrar"
+entry = "Strong {n}"
+kjv_uses = "En la KJV:"
+copied = "Copiado"
+press_ctrl_c = "Pulse Ctrl+C"
+auto_title = "Seguir el modo claro u oscuro del sistema"
+
+[notfound]
+title = "Página no encontrada · Scriptura"
+eyebrow = "Página no encontrada"
+h1 = "Esta página no está aquí."
+body = "Puede que la dirección esté mal escrita o que la página se haya movido. Todo el sitio parte de la página de inicio."
+verse = "Porque este mi hijo muerto era, y ha revivido; habíase perdido, y es hallado."
+ref = "Lucas 15:24 · Reina-Valera 1909"
+home = "Ir a la página de inicio"
+news = "Novedades"

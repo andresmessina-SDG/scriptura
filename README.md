@@ -6,6 +6,7 @@ Strong's lexicon, full-text search, per-verse notes: all on your own
 machine, all in service of a quiet, focused hour with Scripture.
 
 Built on GNOME with GTK4 + libadwaita, in Python, GPL-3.0.
+Website: <https://andresmessina-sdg.github.io/scriptura/>
 
 > _"For the word of God is living and active, sharper than any
 > two-edged sword..."_ — Hebrews 4:12
