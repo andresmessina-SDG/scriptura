@@ -153,7 +153,7 @@ text = "Ábrala y lea. No hay nada que registrar."
 
 [[claims]]
 title = "Nada se envía."
-text = "Scriptura solo se conecta cuando usted lo pide: para descargar un texto o escuchar un capítulo."
+text = "Scriptura solo se conecta a internet para descargar los textos que usted elija y para las lecturas habladas, que puede desactivar en Preferencias."
 
 [[claims]]
 title = "Libre y gratuita."

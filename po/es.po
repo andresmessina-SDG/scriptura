@@ -113,10 +113,12 @@ msgstr "En inglés, español y ruso, con Biblias y diccionarios en cada idioma."
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:34
 msgid ""
 "Everything stays on your computer, with no account and no tracking. "
-"Scriptura goes online only to download the texts you choose."
+"Scriptura goes online only to download the texts you choose and for spoken "
+"readings, which you can turn off in Preferences."
 msgstr ""
 "Todo se queda en su ordenador, sin cuenta y sin rastreo. Scriptura solo se "
-"conecta a internet para descargar los textos que usted elija."
+"conecta a internet para descargar los textos que usted elija y para las "
+"lecturas habladas, que puede desactivar en Preferencias."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:54
 msgid ""
