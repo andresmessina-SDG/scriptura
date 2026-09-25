@@ -169,7 +169,7 @@ def test_zone_boundaries():
 
 # ── the compare popover's mark ─────────────────────────────────────────────
 
-def _paint(spot):
+def _paint(spot, hc=False):
     """Paint the tick at its real size; return the alpha channel by row."""
     import cairo
     from collections import namedtuple
@@ -177,7 +177,7 @@ def _paint(spot):
     w, h = 56, 12
     surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, w, h)
     ink = namedtuple('Ink', 'red green blue')(0.0, 0.0, 0.0)
-    family_card.paint_track(cairo.Context(surf), w, h, spot, ink)
+    family_card.paint_track(cairo.Context(surf), w, h, spot, ink, hc=hc)
     surf.flush()
     data, stride = surf.get_data(), surf.get_stride()
     return lambda x, y: data[y * stride + x * 4 + 3]
@@ -201,6 +201,19 @@ def test_a_ring_stays_hollow_anywhere_on_the_track(value):
 def test_a_band_draws_a_solid_dot():
     alpha = _paint(bf.Place('band', 0.5, 0.4, 0.6))
     assert alpha(round(4 + 0.5 * 48 - 0.5), 6) > 200
+
+
+def test_high_contrast_lifts_the_track_and_the_range():
+    """The hairline track and a band's soft range reach 3:1 under high
+    contrast; the dot was solid already."""
+    import family_card
+    spot = bf.Place('band', 0.5, 0.2, 0.8)
+    for hc, floor in ((False, 0.3), (True, family_card.HC_LINE)):
+        alpha = _paint(spot, hc)
+        # The 1px track straddles two pixel rows: its column adds up to it.
+        assert sum(alpha(6, y) for y in range(12)) >= round(floor * 255) - 3
+        assert alpha(round(4 + 0.3 * 48), 6) >= round(
+            (family_card.HC_LINE if hc else 0.25) * 255) - 2   # the range
 
 
 def test_compare_splits_by_the_language_being_read():

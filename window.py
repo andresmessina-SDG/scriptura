@@ -25,6 +25,7 @@ import sermons
 import annotations
 import search_controller
 import annotation_dialogs
+import bible_family
 import export_dialog
 import passage_print
 from pane import BiblePane
@@ -829,6 +830,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             on_open=self._family_card_open,
             on_install=self._family_card_install,
             on_compare=self._family_card_compare,
+            on_show_in_family=self._family_card_show_in_family,
         )
         self._card_pane = None
         self._card_from = None
@@ -1518,9 +1520,11 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             open_here = not shown
         self._card_pane = bible_pane or pane
         self._card_from = pane
-        self._family_card.show(node_id, pane._names, reading,
-                               open_here=open_here,
-                               can_compare=bible_pane is not None)
+        self._family_card.show(
+            node_id, pane._names, reading, open_here=open_here,
+            can_compare=bible_pane is not None,
+            from_family=pane._is_family
+            and pane._family_tree.showing_family())
         self._card_split.set_show_sidebar(True)
         self._family_card.focus_start()
 
@@ -1543,6 +1547,24 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._hide_family_card()
         self._on_modules_clicked(None)
         self._modules_win.search_bibles(query)
+
+    def _family_card_show_in_family(self, node_id):
+        """Show the Card's Bible in the Family: in the Family Tree already
+        showing if there is one, else in the other pane when two are open,
+        else in this pane, which the Family then marks as the Bible left."""
+        src = self._card_from
+        other = self.pane2 if src is self.pane1 else self.pane1
+        if src._is_family:
+            pane = src
+        elif other.get_visible():
+            pane = other
+        else:
+            pane = src
+        self._card_from = None      # the keyboard goes to the Bible shown
+        self._hide_family_card()
+        if not pane._is_family:
+            pane._apply_module_change(bible_family.MODULE_KEY)
+        pane._family_tree.show_node(node_id)
 
     def _family_card_compare(self):
         pane = self._card_pane

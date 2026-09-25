@@ -17,7 +17,7 @@ from gi.repository import Adw, GLib, Gtk, Pango
 
 import bible_family
 from a11y import set_accessible_label
-from family_card import paint_track
+from family_card import paint_track, redraw_on_contrast
 from i18n import _, ngettext
 
 #: The name column's width: the tracks start where it ends, in every row
@@ -85,6 +85,7 @@ class _Row(Gtk.ListBoxRow):
             spot = self.spot
             self._track.set_draw_func(lambda a, cr, w, h: paint_track(
                 cr, w, h, spot, a.get_color(), pad=6.0, r=4.0))
+            redraw_on_contrast(self._track)
         self._box.append(self._track)
         self.set_child(self._box)
 

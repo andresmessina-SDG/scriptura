@@ -25,19 +25,57 @@ from a11y import set_accessible_label
 from i18n import _, N_, ngettext
 
 
-def paint_track(cr, w, h, spot, ink, pad=4.0, r=3.0):
+#: Under the desktop's high contrast, the faint inks rise to these floors:
+#: 3:1 for a line or mark (WCAG 1.4.11), 4.5:1 for text (1.4.3). The light
+#: palette sets both, since its ink is itself only 80% opaque (style-hc.css
+#: has the arithmetic); dark clears them with room to spare.
+HC_LINE = 0.55
+HC_TEXT = 0.7
+
+
+def high_contrast():
+    return Adw.StyleManager.get_default().get_high_contrast()
+
+
+def lift(alpha, hc, text=False):
+    """`alpha`, raised to the high-contrast floor when `hc` is on."""
+    return max(alpha, HC_TEXT if text else HC_LINE) if hc else alpha
+
+
+def redraw_on_contrast(area):
+    """Repaint `area` when high contrast is switched: the style sheet swap
+    reaches CSS, never the alphas a draw function paints with."""
+    manager = Adw.StyleManager.get_default()
+    handlers = []
+
+    def on_realize(a):
+        handlers.append(manager.connect('notify::high-contrast',
+                                        lambda *_x: a.queue_draw()))
+
+    def on_unrealize(_a):
+        while handlers:
+            manager.disconnect(handlers.pop())
+
+    area.connect('realize', on_realize)
+    area.connect('unrealize', on_unrealize)
+
+
+def paint_track(cr, w, h, spot, ink, pad=4.0, r=3.0, hc=None):
     """The Line's track across `w`, with `spot`'s mark on it, in `ink`
     (anything with red/green/blue). A filled dot on a soft range where
     published charts place a Bible, a ring where Scriptura measured it, a
     bracket over the zone where only its makers' description is known. A
-    Bible past the free end is pinned there."""
+    Bible past the free end is pinned there. `hc`: high contrast, else the
+    desktop's setting."""
     cy = h / 2
+    if hc is None:
+        hc = high_contrast()
 
     def x(v):
         return pad + min(max(v, 0.0), 1.0) * (w - 2 * pad)
 
     def faint(alpha=0.3):
-        cr.set_source_rgba(ink.red, ink.green, ink.blue, alpha)
+        cr.set_source_rgba(ink.red, ink.green, ink.blue, lift(alpha, hc))
 
     # A ring must read as hollow: nothing of the track crosses its inside.
     hole = ((x(spot.value) - r - 1, x(spot.value) + r + 1)
@@ -151,18 +189,21 @@ class FamilyCard(Gtk.Box):
     """The Card as a side sheet. `show(node_id, installed, reading)` opens it
     on one Bible; links inside it move to other Bibles, Back returns."""
 
-    def __init__(self, on_close, on_open, on_install, on_compare):
+    def __init__(self, on_close, on_open, on_install, on_compare,
+                 on_show_in_family):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.add_css_class('search-panel')
         self._on_close = on_close
         self._on_open = on_open
         self._on_install = on_install
         self._on_compare = on_compare
+        self._on_show_in_family = on_show_in_family
         self._history: list[str] = []
         self._installed: list[str] = []
         self._reading = ''
         self._open_here = True
         self._can_compare = True
+        self._from_family = False
 
         header = Gtk.Box(spacing=6)
         header.set_margin_start(8)
@@ -202,15 +243,17 @@ class FamilyCard(Gtk.Box):
     # ── public ───────────────────────────────────────────────────────────
 
     def show(self, node_id, installed, reading, open_here=True,
-             can_compare=True):
+             can_compare=True, from_family=False):
         """Open on one Bible. `installed` is the app's module keys, and
         `reading` the Bible being read. `open_here` says whether Open goes to
         this pane or the other; `can_compare` whether there is a Bible pane
-        to compare a verse from."""
+        to compare a verse from; `from_family` whether the Card was opened
+        from that Bible in the Family."""
         self._installed = list(installed)
         self._reading = reading
         self._open_here = open_here
         self._can_compare = can_compare
+        self._from_family = from_family
         self._history = []
         self._render(node_id)
 
@@ -305,6 +348,7 @@ class FamilyCard(Gtk.Box):
             area.set_content_height(22)
             area.set_draw_func(lambda a, cr, w, h: paint_track(
                 cr, w, h, spot, a.get_color(), pad=7.0, r=5.0))
+            redraw_on_contrast(area)
             self._body.append(area)
             ends = Gtk.Box()
             ends.add_css_class('family-card-axis')
@@ -446,5 +490,14 @@ class FamilyCard(Gtk.Box):
             inst.add_css_class('pill')
             inst.connect('clicked', lambda _b: self._on_install(query))
             row.append(inst)
+        # Not on the Card the Family itself opened: it is showing already.
+        opened_on = self._from_family and record['id'] == self._history[0]
+        if (record['id'] in bible_family.family_members()
+                and not opened_on):
+            fam = Gtk.Button(label=_('Show in the Family'))
+            fam.add_css_class('pill')
+            fam.connect('clicked',
+                        lambda _b: self._on_show_in_family(record['id']))
+            row.append(fam)
         if row.get_first_child() is not None:
             self._body.append(row)

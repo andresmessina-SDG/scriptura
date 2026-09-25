@@ -24,7 +24,7 @@ from a11y import set_accessible_description, set_accessible_label, set_role
 from gtk_utils import Autosave, clear_children, DelayedSpinner
 import annotations
 import bible_family
-from family_card import paint_track
+from family_card import paint_track, redraw_on_contrast
 import content
 import journal
 import sermons
@@ -787,6 +787,7 @@ def _line_tick(spot, words):
     area.set_tooltip_text(words)
     area.set_draw_func(
         lambda a, cr, w, h: paint_track(cr, w, h, spot, a.get_color()))
+    redraw_on_contrast(area)
     return area
 
 

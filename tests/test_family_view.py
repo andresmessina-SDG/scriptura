@@ -3,7 +3,7 @@ Skips without a display (building GTK widgets without one segfaults)."""
 import types
 
 import pytest
-from gi.repository import Gdk, Gtk
+from gi.repository import Gdk, GLib, Gtk
 
 Gtk.init_check()
 if Gdk.Display.get_default() is None:
@@ -306,3 +306,66 @@ def test_printing_mid_slide_finishes_the_slide_first(monkeypatch):
         run=lambda *_a: None))
     page.print_poster()
     assert skipped == [True]
+
+
+def test_show_node_turns_to_the_family_and_keeps_the_bible(monkeypatch):
+    """The Card's Show in the Family: from the Line, the page turns to the
+    Family; the drawing or the list, whichever the reader chose, holds the
+    Bible so the keyboard lands on it."""
+    page, store = _page(monkeypatch, view='line')
+    page.show_node('rsv')
+    assert page._stack.get_visible_child_name() == 'family'
+    assert store['family_tree_view'] == 'family'
+    assert page.family._last is page.family._nodes['rsv']
+
+    page, _store = _page(monkeypatch, view='line', outline=True)
+    page.show_node('rsv')
+    assert page._stack.get_visible_child_name() == 'outline'
+    assert page.outline._last.record['id'] == 'rsv'
+
+
+def test_a_scroll_before_layout_waits_for_the_page():
+    """A pane just turned to the Family has no page yet: a scroll then was
+    clamped to the top, and the Bible asked for sat below the fold."""
+    import family_layout as fl
+    view, _opened = _view()
+    node, done = view._nodes['rsv'], []
+    view.scroll_to(node, lambda: done.append(True))
+    assert done == []
+    view._scroll.get_vadjustment().configure(0, 0, fl.HEIGHT, 1, 10, 600)
+    ctx = GLib.MainContext.default()
+    while ctx.pending():
+        ctx.iteration(False)
+    assert done == [True]
+    assert view._scroll.get_vadjustment().get_value() == node.y - 200
+
+
+def _ink_total(view, hc):
+    import cairo
+    surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, 1180, 1833)
+    view._paint(cairo.Context(surf), 1180, 1833, fv._PLATE_INK,
+                fv.PLATE_BASE, None, hc=hc)
+    surf.flush()
+    return sum(surf.get_data()[3::4])
+
+
+def test_high_contrast_lifts_the_drawing():
+    view, _opened = _view()
+    # Mostly text by area, which rises only from 0.6 to 0.7.
+    assert _ink_total(view, True) > _ink_total(view, False) * 1.05
+
+
+def test_the_poster_ignores_high_contrast(monkeypatch):
+    """The poster is black on white paper whatever the desktop asks."""
+    import cairo
+    view, _opened = _view()
+
+    def plate():
+        surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, 842, 1191)
+        fv.paint_plate(view, cairo.Context(surf), 842, 1191)
+        surf.flush()
+        return bytes(surf.get_data())
+
+    plain = plate()
+    monkeypatch.setattr(fv, 'high_contrast', lambda: True)
+    assert plate() == plain

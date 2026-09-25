@@ -60,14 +60,15 @@ semver-ish — 0.x was the pre-Flathub testing track.
   either arrangement, with a key to its lines and marks. The Line lays out
   every English Bible from word for word to free; filter it by what you
   have installed, by tradition and by era. The Bible you are reading is
-  marked, and pressing any Bible opens its card.
+  marked, and pressing any Bible opens its card. Under the desktop's high
+  contrast setting its faint lines, ranges and dates are drawn darker.
 - **About this translation.** For an English Bible, the module list's
   info page now opens a card beside the page: where the Bible sits from
   word for word to free, the line of Bibles it was revised from, the
   Hebrew and Greek texts it translates, notes, and the sources behind
   every fact. Each Bible it names opens its own card. From the card you
-  can open the Bible in the pane, install it, or compare the verse you
-  are on.
+  can open the Bible in the pane, install it, compare the verse you are
+  on, or show it in the Family.
 
 ### Fixed
 

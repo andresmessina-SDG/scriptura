@@ -43,6 +43,7 @@ class FamilyTree:
         self.family = None          # built on first show: 37 widgets
         self.outline = None
         self._scrolled_for = None
+        self._showing = None        # a Bible the Card asked to show
 
         bar = Gtk.Box(spacing=8)
         bar.set_margin_start(14)
@@ -129,6 +130,22 @@ class FamilyTree:
     def reading_module(self):
         return reading_module(self._pane)
 
+    def showing_family(self):
+        """True when the Family (drawn or as a list) is showing, not the
+        Line."""
+        return self._family_btn.get_active()
+
+    def show_node(self, node_id):
+        """Turn to the Family and put the keyboard on one Bible there, its
+        line lit: in the drawing, or in the list if the reader chose it."""
+        self._family_btn.set_active(True)
+        self._ensure_family()
+        view = self.outline if self._list_btn.get_active() else self.family
+        # It beats the scroll to the Bible being read, which a pane just
+        # turned to the Family has queued already.
+        self._showing = node_id
+        view.show_node(node_id, lambda: setattr(self, '_showing', None))
+
     def focus_last(self):
         name = self._stack.get_visible_child_name()
         {'line': self.line, 'family': self.family,
@@ -196,7 +213,8 @@ class FamilyTree:
         # a theme switch re-renders too, and must leave the reader be.
         if target is not None and target is not self._scrolled_for:
             self._scrolled_for = target
-            GLib.idle_add(lambda: self.family.scroll_to(target) or False)
+            GLib.idle_add(lambda: self._showing is None
+                          and self.family.scroll_to(target) and False)
 
     def build_print(self):
         """The print job for the poster: one page, the Family fitted to it.

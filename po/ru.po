@@ -10108,6 +10108,10 @@ msgstr "Открыть в этой панели"
 msgid "Compare this verse"
 msgstr "Сравнить этот стих"
 
+#: family_card.py
+msgid "Show in the Family"
+msgstr "Показать в Семье"
+
 #: family_line.py
 msgid "The Bible Family Tree"
 msgstr "Родословное древо Библии"

@@ -91,3 +91,20 @@ button.catena-chip,
 button.stone-chip {
     border-color: @accent_color;
 }
+
+/* ── The Bible Family Tree ───────────────────────────────────────────────── */
+/* Its quiet text — years, notes, the Line's dates and axis, the Card's
+   kicker and dates — reaches 4.5:1 (1.4.3). 0.7 is the lowest opacity that
+   clears it in light, where the ink is itself 80% opaque. The drawn inks
+   (tracks, bars, lines of descent) are lifted in code, by the same floors:
+   family_card.HC_LINE and HC_TEXT. A dimmed Bible stays dim: the reader asked
+   for that by lighting another's line. */
+.family-node-year,
+.family-note,
+.family-line-meta,
+.family-line-axis,
+.family-card-kicker,
+.family-card-meta,
+.family-card-axis {
+    opacity: 0.7;
+}

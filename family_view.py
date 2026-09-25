@@ -20,11 +20,12 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 gi.require_version('Pango', '1.0')
 gi.require_version('PangoCairo', '1.0')
-from gi.repository import Adw, Gdk, Gtk, Pango, PangoCairo
+from gi.repository import Adw, Gdk, GLib, Gtk, Pango, PangoCairo
 
 import bible_family
 import family_layout as fl
-from family_card import place_sentences, short_name
+from family_card import (high_contrast, lift, place_sentences,
+                         redraw_on_contrast, short_name)
 from i18n import _
 
 DOT = 7.0               # the mark's radius, in the drawing's units
@@ -230,6 +231,7 @@ class FamilyView:
         # natural, and the frame squeezed the drawing to its own size.
         self._area.set_size_request(fl.WIDTH, int(fl.HEIGHT))
         self._area.set_draw_func(self._draw)
+        redraw_on_contrast(self._area)
         self._fixed = Gtk.Fixed()
         overlay = Gtk.Overlay(halign=Gtk.Align.CENTER)
         overlay.set_child(self._area)
@@ -358,15 +360,42 @@ class FamilyView:
                 target = node
         return target
 
-    def scroll_to(self, node):
+    def scroll_to(self, node, then=None):
+        """Bring `node` into view, a third of the way down; `then` runs
+        after. A frame not yet laid out has no page to scroll, and would
+        clamp the scroll to the top, so this waits until it has one."""
         vadj = self._scroll.get_vadjustment()
         hadj = self._scroll.get_hadjustment()
-        vadj.set_value(max(0.0, node.y - vadj.get_page_size() / 3))
-        hadj.set_value(max(0.0, node.x - hadj.get_page_size() / 2))
+
+        def go():
+            vadj.set_value(max(0.0, node.y - vadj.get_page_size() / 3))
+            hadj.set_value(max(0.0, node.x - hadj.get_page_size() / 2))
+            if then is not None:
+                then()
+
+        if vadj.get_page_size() > 0:
+            go()
+            return
+        handler = None
+
+        def on_changed(_adj):
+            if vadj.get_page_size() > 0:
+                vadj.disconnect(handler)
+                # Not inside the layout that sent this: a scroll set there
+                # moved the value but never the drawing.
+                GLib.idle_add(lambda: go() or GLib.SOURCE_REMOVE)
+        handler = vadj.connect('changed', on_changed)
 
     def focus_last(self):
         if self._last is not None and self._last.get_mapped():
             self._last.grab_focus()
+
+    def show_node(self, node_id, then=None):
+        """Give one Bible the keyboard, which lights its line, and scroll
+        to it; `then` runs once it is in view."""
+        node = self._last = self._nodes[node_id]
+        node.grab_focus()
+        self.scroll_to(node, then)
 
     # ── interaction ──────────────────────────────────────────────────────
 
@@ -438,12 +467,14 @@ class FamilyView:
     def _draw(self, area, cr, w, h):
         self._paint(cr, w, h, area.get_color(),
                     area.get_pango_context().get_font_description().get_size(),
-                    self._lit)
+                    self._lit, hc=high_contrast())
 
-    def _paint(self, cr, w, h, ink, base_size, lit):
+    def _paint(self, cr, w, h, ink, base_size, lit, hc=False):
         """The drawing under the Bibles: axis, lanes or zones, lines of
         descent, bars. `ink` is anything with red/green/blue; `lit` the
-        Bibles to keep bright (None for all). The poster calls it too."""
+        Bibles to keep bright (None for all); `hc` lifts the faint inks for
+        high contrast, but not the rules and grid, which only divide. The
+        poster calls it too."""
 
         def rgba(alpha):
             cr.set_source_rgba(ink.red, ink.green, ink.blue, alpha)
@@ -468,7 +499,7 @@ class FamilyView:
             tw = layout.get_pixel_size()[0]
             dx = {'left': 0, 'center': -tw / 2, 'right': -tw}[anchor]
             cr.move_to(x + dx, y)
-            rgba(alpha)
+            rgba(lift(alpha, hc, text=True))
             PangoCairo.show_layout(cr, layout)
             return layout.get_pixel_size()[1]
 
@@ -537,7 +568,7 @@ class FamilyView:
                                   else BAR_BELOW)
                     x0, x1 = fl.line_x(here.low), fl.line_x(here.high)
                     if here.kind == 'band':
-                        rgba(0.22 * fade)
+                        rgba(lift(0.22, hc) * fade)
                         cr.set_line_width(5.0)
                         cr.set_line_cap(cairo.LINE_CAP_ROUND)
                         cr.move_to(x0, y)
@@ -546,7 +577,7 @@ class FamilyView:
                     else:
                         # The bracket's ends point at its own Bible.
                         tip = 4 if node.bar_above else -4
-                        rgba(0.45 * fade)
+                        rgba(lift(0.45, hc) * fade)
                         cr.set_line_width(1.3)
                         cr.move_to(x0 + 3, y + tip)
                         cr.line_to(x0 + 3, y)
@@ -560,7 +591,8 @@ class FamilyView:
             a, b = self._pos[e.parent], self._pos[e.child]
             bright = lit is None or (e.parent in lit and e.child in lit)
             strong = e.kind == 'rev'
-            rgba((0.55 if strong else 0.38) * (1 if bright else 0.25))
+            rgba(lift(0.55 if strong else 0.38, hc)
+                 * (1 if bright else 0.25))
             cr.set_line_width(1.6 if strong else 1.1)
             cr.set_dash([] if strong else [1.5, 3.0] if e.kind == 'para'
                         else [5.0, 4.0])
@@ -572,7 +604,7 @@ class FamilyView:
 
         # A note pushed down by the one above keeps a dotted leader back to
         # its year. (The notes themselves are labels, for screen readers.)
-        rgba(0.3)
+        rgba(lift(0.3, hc))
         cr.set_dash([1.0, 3.0])
         for year_y, top in self._note_spots:
             if top > year_y - 9 + 1:
@@ -757,6 +789,21 @@ class FamilyOutline:
     def _on_row(self, _list, row):
         self._last = row
         self._on_open_card(row.record['id'])
+
+    def show_node(self, node_id, then=None):
+        for row in self._rows():
+            if row.record['id'] == node_id:
+                self._last = row
+                row.grab_focus()     # the list scrolls to its focus
+                break
+        if then is not None:
+            then()
+
+    def _rows(self):
+        row = self._list.get_first_child()
+        while row is not None:
+            yield row
+            row = row.get_next_sibling()
 
     def focus_last(self):
         if self._last is not None and self._last.get_mapped():
