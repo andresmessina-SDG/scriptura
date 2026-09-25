@@ -3064,21 +3064,54 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
     # calls, so the two doors can never drift apart.
 
     def _print_passage(self):
-        pane = self._pane_in_view()
-        if pane is None or not pane.book:
+        # In the Family Tree, print what is on screen: the poster, as its
+        # own Print button does. Aimed at the pane's hidden text, Ctrl+P
+        # used to print an empty passage.
+        focused = self._pane_in_view()
+        if focused is not None and focused._is_family \
+                and focused._family_tree.can_print():
+            focused._family_tree.print_poster()
+            return
+        pane = self._bible_pane_in_view()
+        if pane is None:
+            self._toast(_('Open a Bible beside the Family Tree to print a '
+                          'passage'))
+            return
+        if not pane.book:
             return
         passage_print.print_passage(pane, pane.current_verses())
 
     def _export_passage(self):
-        pane = self._pane_in_view()
-        if pane is None or not pane.book:
+        pane = self._bible_pane_in_view()
+        if pane is None:
+            self._toast(_('Open a Bible beside the Family Tree to export a '
+                          'passage'))
+            return
+        if not pane.book:
             return
         export_dialog.export_passage(pane, pane.current_verses())
 
+    def _bible_pane_in_view(self):
+        """The pane a verse action acts on: the one in use, unless that is
+        the Family Tree, whose text view is hidden — then the Bible showing
+        beside it, or None when there is none."""
+        pane = self._pane_in_view()
+        if pane is not None and pane._is_family:
+            other = self.pane2 if pane is self.pane1 else self.pane1
+            shown = other.get_visible() and not other._is_family
+            pane = other if shown else None
+        return pane
+
     def _compare_verse(self):
         """One verse, so the selection's first is what it compares."""
-        pane = self._pane_in_view()
-        if pane is None or not pane.book:
+        pane = self._bible_pane_in_view()
+        if pane is None:
+            # A window too narrow for two panes shows the Family Tree alone.
+            # Aimed at its hidden text, the shortcut did nothing at all.
+            self._toast(_('Open a Bible beside the Family Tree to compare '
+                          'a verse'))
+            return
+        if not pane.book:
             return
         verses = pane.current_verses()
         if not verses:

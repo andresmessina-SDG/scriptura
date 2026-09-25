@@ -619,15 +619,26 @@ def compare_translations(pane, verse, popover=None):
     title.set_hexpand(True)
 
     # Other languages: off by default, so a compare reads within the
-    # language on the page. Shown only once a Bible in another language
-    # turns up — with none installed there is nothing to switch.
+    # language on the page. Shown only when a Bible in another language is
+    # installed — with none there is nothing to switch.
+    #
+    # Decided here, before the popover is shown, from the installed Bibles'
+    # languages — never later, when the verses arrive. Revealing the switch
+    # then made the header taller on a popover already on screen, and
+    # GNOME Shell dismissed the resized popup: Compare flashed and closed on
+    # every route. The rows are safe; they fill a scroller of fixed limits.
+    names = _compare_names()
+    reading = pane.module
+    lang = content.language_code(reading)
+    _same, other_names = _split_by_language(
+        [(m, '') for m in names], content.language_code, lang)
     others_lbl = Gtk.Label(label=_('Other languages'))
     others_lbl.add_css_class('dim-label')
     others = Gtk.Switch(valign=Gtk.Align.CENTER,
                         active=bool(settings.get('compare_other_languages')))
     set_accessible_label(others, _('Other languages'))
-    others_lbl.set_visible(False)
-    others.set_visible(False)
+    others_lbl.set_visible(bool(other_names))
+    others.set_visible(bool(other_names))
 
     header = Gtk.Box(spacing=8)
     header.set_margin_start(12)
@@ -669,13 +680,9 @@ def compare_translations(pane, verse, popover=None):
     comp.set_child(outer)
     comp.popup()
 
-    book, chapter, reading = pane.book, pane.chapter, pane.module
+    book, chapter = pane.book, pane.chapter
 
     def fetch():
-        names = [m for m in sword_bridge.module_names()
-                 if not sword_bridge.is_internal_use(m)
-                 and sword_bridge.module_type(m) == 'Biblical Texts']
-        names += ebible_bridge.module_names()
         results = []
         for mod in names:
             vs = content.load_chapter(mod, book, chapter)
@@ -701,11 +708,8 @@ def compare_translations(pane, verse, popover=None):
             return GLib.SOURCE_REMOVE
         # Languages are read here, on the UI thread: a module's config read
         # is not guarded against the worker that loads the verses.
-        lang = content.language_code(reading)
         same, other = _split_by_language(results, content.language_code, lang)
         shown['same'], shown['other'] = same, other
-        others_lbl.set_visible(bool(other))
-        others.set_visible(bool(other))
         fill()
         return GLib.SOURCE_REMOVE
 
@@ -748,6 +752,14 @@ def compare_translations(pane, verse, popover=None):
             comp_list.append(row)
 
     threading.Thread(target=fetch, daemon=True).start()
+
+
+def _compare_names():
+    """Every installed Bible a compare can list."""
+    names = [m for m in sword_bridge.module_names()
+             if not sword_bridge.is_internal_use(m)
+             and sword_bridge.module_type(m) == 'Biblical Texts']
+    return names + ebible_bridge.module_names()
 
 
 def _split_by_language(results, lang_of, lang):

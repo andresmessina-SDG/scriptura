@@ -345,3 +345,180 @@ def test_the_family_module_is_known_to_the_app():
     assert sword_bridge.display_name(bf.MODULE_KEY) == 'The Bible Family Tree'
     assert content.feature_card(bf.MODULE_KEY)['icon'] == \
         'scriptura-bible-family-symbolic'
+
+
+# ── Compare keeps its size once it is on screen ─────────────────────────────
+
+@pytest.fixture
+def display():
+    from gi.repository import Gdk, Gtk
+    Gtk.init_check()
+    if Gdk.Display.get_default() is None:
+        pytest.skip('needs a display: builds real widgets')
+
+
+def test_compare_settles_its_header_before_it_is_shown(display, monkeypatch):
+    """The Other languages switch used to appear when the verses arrived,
+    making the header taller on a popover already on screen. GNOME Shell
+    dismissed the resized popup, so Compare flashed and closed on every
+    route. Whether the switch shows is now decided before popup(), and the
+    verses arriving leave the header as it was."""
+    from gi.repository import Gtk
+    import annotation_dialogs as ad
+
+    langs = {'KJV': 'en', 'RusSynodal': 'ru'}
+    monkeypatch.setattr(ad, '_compare_names', lambda: ['KJV', 'RusSynodal'])
+    monkeypatch.setattr(ad.content, 'language_code', lambda m: langs.get(m, ''))
+    monkeypatch.setattr(ad.content, 'load_chapter',
+                        lambda m, b, c: [(16, f'{m} text')])
+    monkeypatch.setattr(ad.sword_bridge, 'map_target_verse',
+                        lambda m, b, c, v: v)
+    monkeypatch.setattr(ad.bible_family, 'place', lambda m: None)
+    monkeypatch.setattr(ad.settings, 'get', lambda key: False)
+
+    class _Now:                           # the worker and idle, run inline
+        def __init__(self, target, daemon=None):
+            self.target = target
+
+        def start(self):
+            self.target()
+    monkeypatch.setattr(ad.threading, 'Thread', _Now)
+    queued = []
+    monkeypatch.setattr(ad.GLib, 'idle_add', lambda fn, *a: queued.append(
+        (fn, a)))
+
+    at_popup = {}
+
+    def popup(pop):                       # popup() without a window segfaults
+        header = pop.get_child().get_first_child()
+        at_popup['switch'] = header.get_last_child().get_visible()
+        at_popup['height'] = header.measure(Gtk.Orientation.VERTICAL, -1)[1]
+        at_popup['pop'] = pop
+    monkeypatch.setattr(Gtk.Popover, 'popup', popup)
+
+    class _Pane:
+        view = Gtk.Box()          # a TextView loops on a child left at teardown
+        book, chapter, module = 'John', 3, 'KJV'
+
+        def _verse_ranges(self, _v):
+            return None
+    ad.compare_translations(_Pane(), 16)
+    for fn, args in queued:               # the verses arrive
+        fn(*args)
+
+    header = at_popup['pop'].get_child().get_first_child()
+    assert at_popup['switch'] is True
+    assert header.get_last_child().get_visible() is True
+    assert header.measure(Gtk.Orientation.VERTICAL, -1)[1] == \
+        at_popup['height']
+    at_popup['pop'].unparent()
+
+
+# ── Ctrl+Shift+C beside the Family Tree ─────────────────────────────────────
+
+class _ShortcutPane:
+    def __init__(self, family, visible=True, poster=False):
+        self._is_family = family
+        self._visible = visible
+        self.book = 'John'
+        self._on_toast = None
+        self.posters = []
+        if family:
+            self._family_tree = self
+
+    def can_print(self):
+        return self._poster
+
+    def print_poster(self):
+        self.posters.append(True)
+
+    def get_visible(self):
+        return self._visible
+
+    def current_verses(self):
+        return [16]
+
+
+def _shortcut_window(pane2_visible, poster=False):
+    import window
+    toasts = []
+
+    class _Win:
+        _compare_verse = window.BibleWindow._compare_verse
+        _print_passage = window.BibleWindow._print_passage
+        _export_passage = window.BibleWindow._export_passage
+        _bible_pane_in_view = window.BibleWindow._bible_pane_in_view
+
+        def __init__(self):
+            self.pane1 = _ShortcutPane(family=True)
+            self.pane1._poster = poster
+            self.pane2 = _ShortcutPane(family=False, visible=pane2_visible)
+
+        def _pane_in_view(self):
+            return self.pane1          # the Family Tree has the focus
+
+        def _toast(self, message):
+            toasts.append(message)
+    return _Win(), toasts
+
+
+def test_compare_shortcut_reaches_past_the_family_tree(monkeypatch):
+    """Focus in the Family Tree used to aim Ctrl+Shift+C at the Family
+    pane's hidden text, and nothing happened. It compares in the Bible pane
+    beside it."""
+    import annotation_dialogs
+    calls = []
+    monkeypatch.setattr(annotation_dialogs, 'compare_translations',
+                        lambda pane, verse: calls.append((pane, verse)))
+    win, toasts = _shortcut_window(pane2_visible=True)
+    win._compare_verse()
+    assert calls == [(win.pane2, 16)] and toasts == []
+
+
+def test_compare_shortcut_says_why_with_only_the_family_tree(monkeypatch):
+    """A window too narrow for two panes shows the Family Tree alone. The
+    shortcut used to do nothing at all there; now it says what to do."""
+    import annotation_dialogs
+    calls = []
+    monkeypatch.setattr(annotation_dialogs, 'compare_translations',
+                        lambda pane, verse: calls.append((pane, verse)))
+    win, toasts = _shortcut_window(pane2_visible=False)
+    win._compare_verse()
+    assert calls == [] and len(toasts) == 1
+
+
+@pytest.mark.parametrize('poster,pane2_visible,expected', [
+    (True, True, 'poster'),       # the Family drawn: Ctrl+P is its Print
+    (True, False, 'poster'),      # …with or without a Bible beside it
+    (False, True, 'pane2'),       # the Line or the list: the Bible beside
+    (False, False, 'toast'),      # nothing to print: say so
+])
+def test_print_shortcut_from_the_family_tree(monkeypatch, poster,
+                                             pane2_visible, expected):
+    """With the focus in the Family Tree, Ctrl+P used to print the Family
+    pane's hidden, empty text."""
+    import passage_print
+    printed = []
+    monkeypatch.setattr(passage_print, 'print_passage',
+                        lambda pane, verses: printed.append(pane))
+    win, toasts = _shortcut_window(pane2_visible, poster)
+    win._print_passage()
+    got = ('poster' if win.pane1.posters else
+           'pane2' if printed == [win.pane2] else
+           'toast' if toasts and not printed else 'wrong')
+    assert got == expected
+
+
+@pytest.mark.parametrize('pane2_visible,expected', [
+    (True, 'pane2'), (False, 'toast')])
+def test_export_shortcut_from_the_family_tree(monkeypatch, pane2_visible,
+                                              expected):
+    import export_dialog
+    exported = []
+    monkeypatch.setattr(export_dialog, 'export_passage',
+                        lambda pane, verses: exported.append(pane))
+    win, toasts = _shortcut_window(pane2_visible)
+    win._export_passage()
+    got = ('pane2' if exported == [win.pane2] else
+           'toast' if toasts and not exported else 'wrong')
+    assert got == expected

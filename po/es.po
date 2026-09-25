@@ -10466,3 +10466,15 @@ msgstr "se apoyó en"
 #: family_view.py
 msgid "Scriptura · every fact and its source is in the app’s Bible Family Tree"
 msgstr "Scriptura · cada dato y su fuente están en el Árbol genealógico de la Biblia de la aplicación"
+
+#: window.py
+msgid "Open a Bible beside the Family Tree to compare a verse"
+msgstr "Abra una Biblia junto al Árbol genealógico de la Biblia para comparar un versículo"
+
+#: window.py
+msgid "Open a Bible beside the Family Tree to print a passage"
+msgstr "Abra una Biblia junto al Árbol genealógico de la Biblia para imprimir un pasaje"
+
+#: window.py
+msgid "Open a Bible beside the Family Tree to export a passage"
+msgstr "Abra una Biblia junto al Árbol genealógico de la Biblia para exportar un pasaje"

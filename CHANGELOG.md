@@ -78,6 +78,16 @@ semver-ish — 0.x was the pre-Flathub testing track.
   turn them off. The website is corrected too.
 - The ESV's info page in the module list opened on nothing: a copyright
   sign in its About text stopped the page from being built.
+- **Compare translations flashed open and closed at once**, from the verse
+  menu, the ⋮ button and the Family Card alike. Its Other languages switch
+  appeared only after the verses arrived, which resized a popup already on
+  screen, and GNOME Shell closed it. The switch is now settled before
+  Compare opens.
+- **Shortcuts misfired while the Family Tree had the focus.** Ctrl+Shift+C
+  did nothing, and Ctrl+P and Ctrl+E printed or exported an empty passage.
+  Compare and export now act on the Bible beside the Family Tree, and say
+  so when the window is too narrow to show one. Ctrl+P prints the Family
+  as a poster, as its own Print button does.
 
 ## [1.7.3] — 2026-09-22
 
