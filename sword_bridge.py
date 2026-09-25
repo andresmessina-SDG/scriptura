@@ -333,6 +333,24 @@ def module_data_path(module_name):
             return ''
 
 
+def _conf_text(value):
+    """A .conf value as clean text. A conf with no `Encoding=UTF-8` is
+    Latin-1, and its high bytes reach Python as lone surrogates ('\\udca9'
+    for ©), which GTK refuses outright: the ESV's About text made its info
+    page raise instead of opening. Recover the bytes and read them as UTF-8
+    when they are, Latin-1 when they are not."""
+    text = str(value or '')
+    try:
+        text.encode('utf-8')
+        return text
+    except UnicodeEncodeError:
+        raw = text.encode('utf-8', 'surrogateescape')
+        try:
+            return raw.decode('utf-8')
+        except UnicodeDecodeError:
+            return raw.decode('latin-1')
+
+
 def module_info(module_name):
     """Return a dict of human-readable metadata for the Module Info popover.
     Missing fields come back as ''."""
@@ -343,12 +361,12 @@ def module_info(module_name):
         mod = mgr().getModule(module_name)
         if mod is None:
             return info
-        info['description'] = str(mod.getConfigEntry('Description') or '')
-        info['version']     = str(mod.getConfigEntry('Version') or '')
-        info['copyright']   = str(mod.getConfigEntry('Copyright') or '')
-        info['license']     = str(mod.getConfigEntry('DistributionLicense')
-                                  or mod.getConfigEntry('License') or '')
-        info['about']       = str(mod.getConfigEntry('About') or '')
+        info['description'] = _conf_text(mod.getConfigEntry('Description'))
+        info['version']     = _conf_text(mod.getConfigEntry('Version'))
+        info['copyright']   = _conf_text(mod.getConfigEntry('Copyright'))
+        info['license']     = _conf_text(mod.getConfigEntry('DistributionLicense')
+                                         or mod.getConfigEntry('License'))
+        info['about']       = _conf_text(mod.getConfigEntry('About'))
         info['language']    = str(mod.getConfigEntry('Lang') or '').strip().lower()
         info['type']        = str(mod.getType() or '')
     except Exception:
@@ -1090,6 +1108,9 @@ def display_name(name):
     import genealogy_bridge
     if genealogy_bridge.is_genealogy_module(name):
         return genealogy_bridge.display_name(name)
+    import bible_family
+    if bible_family.is_family_module(name):
+        return bible_family.display_name(name)
     return native_name(name) or DISPLAY_NAMES.get(name, name)
 
 

@@ -9821,3 +9821,604 @@ msgstr "Не удалось открыть окно выбора файлов"
 #, python-brace-format
 msgid "About {n} MB"
 msgstr "Около {n} МБ"
+
+#: bible_family.py
+msgid "Word for word"
+msgstr "Дословно"
+
+#: bible_family.py
+msgid "Between"
+msgstr "Посередине"
+
+#: bible_family.py
+msgid "Thought for thought"
+msgstr "По смыслу"
+
+#: bible_family.py
+msgid "Free"
+msgstr "Свободно"
+
+#: annotation_dialogs.py
+#, python-brace-format
+msgid "{zone}, where published charts place it"
+msgstr "{zone}, по опубликованным таблицам"
+
+#: annotation_dialogs.py
+#, python-brace-format
+msgid "{zone}, as measured in Scriptura"
+msgstr "{zone}, по измерению Scriptura"
+
+#: annotation_dialogs.py
+#, python-brace-format
+msgid "{zone}, as its makers describe it"
+msgstr "{zone}, по словам самих переводчиков"
+
+#: annotation_dialogs.py
+msgid "Other languages"
+msgstr "Другие языки"
+
+#: family_card.py
+msgid "the Masoretic Text (Hebrew)"
+msgstr "масоретский текст (иврит)"
+
+#: family_card.py
+msgid "the Septuagint (Greek)"
+msgstr "Септуагинта (греческий)"
+
+#: family_card.py
+msgid "the Latin Vulgate"
+msgstr "латинская Вульгата"
+
+#: family_card.py
+msgid "the Textus Receptus (Greek)"
+msgstr "Textus Receptus (греческий)"
+
+#: family_card.py
+msgid "the Majority or Byzantine text (Greek)"
+msgstr "текст большинства, или византийский (греческий)"
+
+#: family_card.py
+msgid "the critical text (Nestle-Aland and UBS Greek)"
+msgstr "критический текст (греческий, Нестле — Аланд и UBS)"
+
+#: family_card.py
+msgid "an earlier English Bible, reworded"
+msgstr "пересказ более ранней английской Библии"
+
+#: family_card.py
+msgid "a Spanish Bible"
+msgstr "испанская Библия"
+
+#: family_card.py
+msgid "an eclectic text, chosen reading by reading"
+msgstr "эклектический текст, где каждое чтение выбрано отдельно"
+
+#: family_card.py
+msgid "the Syriac Peshitta"
+msgstr "сирийская Пешитта"
+
+#: family_card.py
+msgid "Protestant"
+msgstr "Протестантская"
+
+#: family_card.py
+msgid "Catholic"
+msgstr "Католическая"
+
+#: family_card.py
+msgid "Before the Reformation"
+msgstr "До Реформации"
+
+#: family_card.py
+msgid "Jewish"
+msgstr "Иудейская"
+
+#: family_card.py
+msgid "Messianic Jewish"
+msgstr "Мессианская иудейская"
+
+#: family_card.py
+msgid "Ecumenical"
+msgstr "Экуменическая"
+
+#: family_card.py
+msgid "Baptist"
+msgstr "Баптистская"
+
+#: family_card.py
+msgid "Lutheran"
+msgstr "Лютеранская"
+
+#: family_card.py
+msgid "Anglican"
+msgstr "Англиканская"
+
+#: family_card.py
+msgid "Brethren"
+msgstr "Плимутские братья"
+
+#: family_card.py
+msgid "Unitarian"
+msgstr "Унитарианская"
+
+#: family_card.py
+msgid "Charismatic"
+msgstr "Харизматическая"
+
+#: family_card.py
+msgid "Other traditions"
+msgstr "Другие традиции"
+
+#: family_card.py
+msgid "New Testament"
+msgstr "Новый Завет"
+
+#: family_card.py
+msgid "Old Testament"
+msgstr "Ветхий Завет"
+
+#: family_card.py
+msgid "Part of the Bible"
+msgstr "Часть Библии"
+
+#: family_card.py
+msgid "Two sources agree on these facts."
+msgstr "Два источника сходятся в этих фактах."
+
+#: family_card.py
+msgid "These facts rest on one standard source."
+msgstr "Эти факты опираются на один стандартный источник."
+
+#: family_card.py
+msgid "Sources disagree on some of these facts."
+msgstr "Источники расходятся в некоторых из этих фактов."
+
+#: family_card.py
+msgid "word for word"
+msgstr "дословный"
+
+#: family_card.py
+msgid "an expanded translation"
+msgstr "расширенный перевод"
+
+#: family_card.py
+msgid "between word for word and thought for thought"
+msgstr "промежуточный между дословным и смысловым"
+
+#: family_card.py
+msgid "thought for thought"
+msgstr "смысловой"
+
+#: family_card.py
+msgid "a paraphrase"
+msgstr "пересказ"
+
+#: family_card.py
+msgid "It has no place on the Line."
+msgstr "У него нет места на Линии."
+
+#: family_card.py
+#, python-brace-format
+msgid "{n} published chart places it in “{zone}”."
+msgid_plural "{n} published charts place it in “{zone}”."
+msgstr[0] "{n} опубликованная таблица помещает его в зону «{zone}»."
+msgstr[1] "{n} опубликованные таблицы помещают его в зону «{zone}»."
+msgstr[2] "{n} опубликованных таблиц помещают его в зону «{zone}»."
+
+#: family_card.py
+msgid "Scriptura measured it too; the charts’ place is the one shown."
+msgstr "Scriptura тоже измерила его; показано место по таблицам."
+
+#: family_card.py
+#, python-brace-format
+msgid "Measured in Scriptura: “{zone}”."
+msgstr "Измерено в Scriptura: «{zone}»."
+
+#: family_card.py
+msgid "It measured freer still than The Message, so it sits at the free end."
+msgstr "По измерению он ещё свободнее, чем The Message, поэтому стоит у свободного края."
+
+#: family_card.py
+msgid "Its older English reads a little freer on the measure than it is; its place allows for that."
+msgstr "Его старый английский при измерении кажется чуть свободнее, чем есть; его место это учитывает."
+
+#: family_card.py
+#, python-brace-format
+msgid "Its makers describe it as {kind}; no chart has placed it."
+msgstr "Переводчики называют его так: {kind}; ни одна таблица его не размещала."
+
+#: family_card.py
+msgid "About this translation"
+msgstr "Об этом переводе"
+
+#: family_card.py
+msgid "You are reading this"
+msgstr "Сейчас читаете"
+
+#: family_card.py
+msgid "Where it lands"
+msgstr "Где он стоит"
+
+#: family_card.py
+#, python-brace-format
+msgid "Near {a} and {b} on the Line."
+msgstr "Рядом с {a} и {b} на Линии."
+
+#: family_card.py
+#, python-brace-format
+msgid "Near {a} on the Line."
+msgstr "Рядом с {a} на Линии."
+
+#: family_card.py
+msgid "Where it came from"
+msgstr "Откуда он"
+
+#: family_card.py
+msgid "A fresh translation, not a revision of an earlier English Bible."
+msgstr "Новый перевод, а не редакция более ранней английской Библии."
+
+#: family_card.py
+msgid "Newest first; each is a revision of the next, unless it says otherwise."
+msgstr "Сначала самый новый; каждый — редакция следующего, если не сказано иное."
+
+#: family_card.py
+msgid "reworded from the next"
+msgstr "пересказ следующего"
+
+#: family_card.py
+msgid "Also drew on"
+msgstr "Опирался также на"
+
+#: family_card.py
+msgid "Later Bibles from it"
+msgstr "Позднейшие Библии на его основе"
+
+#: family_card.py
+msgid "What it translates"
+msgstr "Что он переводит"
+
+#: family_card.py
+#, python-brace-format
+msgid "{part}: {text}"
+msgstr "{part}: {text}"
+
+#: family_card.py
+msgid "This is what explains a verse one Bible has and another does not."
+msgstr "Этим объясняется, почему стих есть в одной Библии и нет в другой."
+
+#: family_card.py
+#, python-brace-format
+msgid "Editions: {list}"
+msgstr "Издания: {list}"
+
+#: family_card.py
+#, python-brace-format
+msgid "Sources differ: {what}"
+msgstr "Источники расходятся: {what}"
+
+#: family_card.py
+msgid "Sources"
+msgstr "Источники"
+
+#: family_card.py
+msgid "Open in this pane"
+msgstr "Открыть в этой панели"
+
+#: family_card.py
+msgid "Compare this verse"
+msgstr "Сравнить этот стих"
+
+#: family_card.py
+msgid "Show in the Family"
+msgstr "Показать в Семье"
+
+#: family_line.py
+msgid "The Bible Family Tree"
+msgstr "Родословное древо Библии"
+
+#: family_line.py
+msgid "Every English Bible on one line from word for word to free, and the family each one comes from."
+msgstr "Все английские Библии на одной линии — от дословных до свободных — и семья, из которой вышла каждая."
+
+#: family_line.py
+#, python-brace-format
+msgid "{n} English Bible"
+msgid_plural "{n} English Bibles"
+msgstr[0] "{n} английская Библия"
+msgstr[1] "{n} английские Библии"
+msgstr[2] "{n} английских Библий"
+
+#: family_line.py
+msgid "Pentecostal & Charismatic"
+msgstr "Пятидесятнические и харизматические"
+
+#: family_line.py
+msgid "Jewish & Messianic"
+msgstr "Иудейские и мессианские"
+
+#: family_line.py
+msgid "Other groups"
+msgstr "Другие группы"
+
+#: family_line.py
+msgid "Before 1611"
+msgstr "До 1611"
+
+#: family_line.py
+msgid "1611–1899"
+msgstr "1611–1899"
+
+#: family_line.py
+msgid "1900–1969"
+msgstr "1900–1969"
+
+#: family_line.py
+msgid "1970 on"
+msgstr "С 1970"
+
+#: family_line.py
+msgid "Every English Bible, from word for word to free"
+msgstr "Все английские Библии — от дословных до свободных"
+
+#: family_line.py
+msgid "Open in the other pane"
+msgstr "Открыть в другой панели"
+
+#: family_line.py
+msgid "You are reading this."
+msgstr "Вы читаете этот перевод."
+
+#: family_line.py
+msgid "Installed."
+msgstr "Установлен."
+
+#: family_line.py
+msgid "Not installed."
+msgstr "Не установлен."
+
+#: family_line.py
+msgid "Can install"
+msgstr "Можно установить"
+
+#: family_line.py
+msgid "All traditions"
+msgstr "Все традиции"
+
+#: family_line.py
+msgid "All eras"
+msgstr "Все эпохи"
+
+
+
+
+
+#: family_line.py
+msgid "English Bibles on the Line"
+msgstr "Английские Библии на Линии"
+
+#: family_line.py
+msgid "No Bible matches these filters."
+msgstr "Ни одна Библия не подходит под эти фильтры."
+
+#: family_line.py
+#, python-brace-format
+msgid "Described by their makers as “{zone}”"
+msgstr "По словам переводчиков — «{zone}»"
+
+#: family_line.py
+#, python-brace-format
+msgid "{zone} · {n} Bible"
+msgid_plural "{zone} · {n} Bibles"
+msgstr[0] "{zone} · {n} Библия"
+msgstr[1] "{zone} · {n} Библии"
+msgstr[2] "{zone} · {n} Библий"
+
+#: family_line.py
+#, python-brace-format
+msgid "{era} · {n} Bible"
+msgid_plural "{era} · {n} Bibles"
+msgstr[0] "{era} · {n} Библия"
+msgstr[1] "{era} · {n} Библии"
+msgstr[2] "{era} · {n} Библий"
+
+#: family_line.py
+#, python-brace-format
+msgid "Not placed · {n} Bible"
+msgid_plural "Not placed · {n} Bibles"
+msgstr[0] "Без места · {n} Библия"
+msgstr[1] "Без места · {n} Библии"
+msgstr[2] "Без места · {n} Библий"
+
+#: bible_family.py
+msgid "Eastern Orthodox"
+msgstr "Православная"
+
+
+#: family_line.py
+msgid "Place on the Line"
+msgstr "Место на Линии"
+
+#: family_line.py
+msgid "Year"
+msgstr "Год"
+
+#: family_line.py
+msgid "Name"
+msgstr "Название"
+
+
+#: family_line.py
+#, python-brace-format
+msgid "{filter}: {choice}"
+msgstr "{filter}: {choice}"
+
+#: family_line.py
+msgid "Availability"
+msgstr "Наличие"
+
+#: family_line.py
+msgid "Show every Bible again"
+msgstr "Снова показать все Библии"
+
+#: family_line.py
+msgid "Tradition"
+msgstr "Традиция"
+
+#: family_line.py
+msgid "Show every tradition again"
+msgstr "Снова показать все традиции"
+
+#: family_line.py
+msgid "Era"
+msgstr "Эпоха"
+
+#: family_line.py
+msgid "Show every era again"
+msgstr "Снова показать все эпохи"
+
+#: family_line.py
+msgid "Sort"
+msgstr "Порядок"
+
+#: family_line.py
+#, python-brace-format
+msgid "Sort: {choice}"
+msgstr "Порядок: {choice}"
+
+#: family_view.py
+#, python-brace-format
+msgid "In the Family because: {why}."
+msgstr "В Семье, потому что: {why}."
+
+#: family_view.py
+msgid "Family"
+msgstr "Семья"
+
+#: family_view.py
+msgid "Line"
+msgstr "Линия"
+
+#: family_view.py
+msgid "Show the Family"
+msgstr "Показать Семью"
+
+#: family_view.py
+msgid "Show the Line"
+msgstr "Показать Линию"
+
+#: family_view.py
+msgid "Show the Family as a list"
+msgstr "Показать Семью списком"
+
+#: family_view.py
+#, python-brace-format
+msgid "Reworded from {name}."
+msgstr "Пересказ: {name}."
+
+#: family_view.py
+#, python-brace-format
+msgid "Revision of {name}."
+msgstr "Редакция: {name}."
+
+#: family_view.py
+msgid "Not a revision of an earlier English Bible."
+msgstr "Не редакция более ранней английской Библии."
+
+#: family_view.py
+msgid "Before the Line: its spelling cannot be measured."
+msgstr "До Линии: его правописание не поддаётся измерению."
+
+#: family_view.py
+msgid "Before 1611 — the root. These texts cannot be placed on the Line; their spelling defeats the measure."
+msgstr "До 1611 года — корень. Эти тексты нельзя поместить на Линию: их правописание не поддаётся измерению."
+
+#: family_view.py
+msgid "⋮ compressed"
+msgstr "⋮ сжато"
+
+#: family_view.py
+msgid "(reworded)"
+msgstr "(пересказ)"
+
+#: family_tree.py
+msgid ""
+"Hover or focus a Bible to light its line. Arrow keys walk from parent to "
+"child; Enter opens its card."
+msgstr "Наведите указатель или фокус на Библию, чтобы высветить её линию. Стрелки ведут от родителя к потомку; Enter открывает карточку."
+
+#: family_tree.py
+msgid "By family"
+msgstr "По семьям"
+
+#: family_tree.py
+msgid "By literalness"
+msgstr "По буквальности"
+
+#: family_tree.py
+msgid "Arrange by family"
+msgstr "Расположить по семьям"
+
+#: family_tree.py
+msgid "Arrange by literalness"
+msgstr "Расположить по буквальности"
+
+#: family_tree.py
+msgid "Each Bible sits where it lands on the Line; the lines of descent show which families drifted. A bar is a published range; a bracket, its makers’ own word."
+msgstr "Каждая Библия стоит там, где её место на Линии; линии родства показывают, какие семьи сместились. Полоса — опубликованный диапазон; скобка — слова самих переводчиков."
+
+#: family_tree.py
+msgid "Not placed"
+msgstr "Без места"
+
+#: family_view.py
+#, python-brace-format
+msgid "Placed as {name}: {where}"
+msgstr "Помещён как {name}: {where}"
+
+#: family_view.py
+msgid "Print the Family as a poster"
+msgstr "Напечатать Семью как плакат"
+
+#: family_view.py
+msgid "Could not print the Family"
+msgstr "Не удалось напечатать Семью"
+
+#: family_view.py
+msgid "The English Bibles read today, placed by how literally they translate"
+msgstr "Английские Библии, которые читают сегодня, по степени буквальности перевода"
+
+#: family_view.py
+msgid "The English Bibles read today, and the Bibles they came from"
+msgstr "Английские Библии, которые читают сегодня, и Библии, от которых они произошли"
+
+#: family_view.py
+msgid "published charts place it"
+msgstr "по опубликованным таблицам"
+
+#: family_view.py
+msgid "measured in Scriptura"
+msgstr "измерено в Scriptura"
+
+#: family_view.py
+msgid "described by its makers"
+msgstr "по словам переводчиков"
+
+#: family_view.py
+msgid "before the Line"
+msgstr "до Линии"
+
+#: family_view.py
+msgid "a revision of"
+msgstr "редакция"
+
+#: family_view.py
+msgid "reworded from"
+msgstr "пересказ"
+
+#: family_view.py
+msgid "drew on"
+msgstr "опирался на"
+
+#: family_view.py
+msgid "Scriptura · every fact and its source is in the app’s Bible Family Tree"
+msgstr "Scriptura · каждый факт и его источник — в «Родословном древе Библии» в приложении"

@@ -29,6 +29,7 @@ import catena_bridge
 import imagery_bridge
 import archaeology_bridge
 import genealogy_bridge
+import bible_family
 import interlinear_data
 from i18n import _
 
@@ -56,6 +57,7 @@ def readable_module_names() -> list[str]:
             + catena_bridge.module_names() + imagery_bridge.module_names()
             + archaeology_bridge.module_names()
             + genealogy_bridge.module_names()
+            + bible_family.module_names()
             + interlinear_data.module_names())
 
 
@@ -213,6 +215,14 @@ _TYPES: list[_ContentType] = [
             'tagline': _('The lines of descent, drawn')}),
         # bundled: can_remove False.
     _ContentType(
+        'family', bible_family.is_family_module,
+        kind=lambda name: 'books',
+        info=lambda name: cast(dict, bible_family.info()),
+        feature_card=lambda name: {
+            'icon': 'scriptura-bible-family-symbolic',
+            'tagline': _('Every English Bible, from word for word to free')}),
+        # bundled: can_remove False.
+    _ContentType(
         'interlinear', interlinear_data.is_interlinear_module,
         kind=lambda name: 'bible', info=_interlinear_info,
         feature_card=lambda name: {
@@ -257,8 +267,8 @@ def _type_for(name: str) -> _ContentType:
 
 def type_key(name: str) -> str:
     """The registry key of the source that owns this module: one of
-    'catena', 'imagery', 'archaeology', 'genealogy', 'interlinear',
-    'ebible', 'sword'.
+    'catena', 'imagery', 'archaeology', 'genealogy', 'family',
+    'interlinear', 'ebible', 'sword'.
 
     The single source of truth for "which content source is this" — callers
     that used to re-walk the bridge predicates (is_catena_module …

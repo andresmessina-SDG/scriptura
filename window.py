@@ -25,6 +25,7 @@ import sermons
 import annotations
 import search_controller
 import annotation_dialogs
+import bible_family
 import export_dialog
 import passage_print
 from pane import BiblePane
@@ -32,6 +33,7 @@ from appearance_page import AppearancePageMixin
 from present import PresentView
 from today_page import TodayView, fetch_antiphon, fetch_epigraph
 from module_manager import ModuleManagerWindow
+from family_card import FamilyCard
 from search_panel import SearchPanel
 from annotations_window import AnnotationsWindow
 
@@ -820,6 +822,27 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._search_split.set_max_sidebar_width(460)
         self._search_split.set_sidebar(self._search_panel)
 
+        # ── The Bible Family Tree's Card (end-side sheet, like Search) ───────
+        # Opened from the module picker's info page. Its own split view so
+        # it and Search keep separate state; nested inside the search split.
+        self._family_card = FamilyCard(
+            on_close=self._hide_family_card,
+            on_open=self._family_card_open,
+            on_install=self._family_card_install,
+            on_compare=self._family_card_compare,
+            on_show_in_family=self._family_card_show_in_family,
+        )
+        self._card_pane = None
+        self._card_from = None
+        self._card_split = Adw.OverlaySplitView()
+        self._card_split.add_css_class('search-split')
+        self._card_split.set_collapsed(True)
+        self._card_split.set_show_sidebar(False)
+        self._card_split.set_sidebar_position(Gtk.PackType.END)
+        self._card_split.set_min_sidebar_width(420)
+        self._card_split.set_max_sidebar_width(460)
+        self._card_split.set_sidebar(self._family_card)
+
         # ── Quick jump overlay ────────────────────────────────────────────────
         self._jump_entry = Gtk.SearchEntry()
         self._jump_entry.set_placeholder_text(_('Go to… (e.g. John 3:16)'))
@@ -992,7 +1015,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         # area, side overlays, cross-ref bar): the search split wraps the
         # content stack, and the menu split wraps the search split — two
         # nested overlay views, one per edge.
-        self._search_split.set_content(main_box)
+        self._card_split.set_content(main_box)
+        self._search_split.set_content(self._card_split)
         self._menu_split.set_content(self._search_split)
         toolbar_view.set_content(self._menu_split)
 
@@ -1181,6 +1205,9 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
                 return True
             if self._search_split.get_show_sidebar():
                 self._hide_search()
+                return True
+            if self._card_split.get_show_sidebar():
+                self._hide_family_card()
                 return True
             if self._menu_split.get_show_sidebar():
                 self._menu_split.set_show_sidebar(False)
@@ -1475,6 +1502,81 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
 
     def _hide_search(self):
         self._overlays._hide_search()
+
+    # ── The Bible Family Tree's Card ──────────────────────────────────────────
+
+    def show_family_card(self, node_id, pane):
+        """Open the Card on one Bible, for the pane it was asked from.
+
+        From the Line, the Card acts on the Bible beside it: Open goes to the
+        other pane when one is showing, and Compare needs a verse, so it is
+        offered only when there is a Bible pane to compare from."""
+        bible_pane, reading, open_here = pane, pane.module, True
+        if pane._is_family:
+            other = self.pane2 if pane is self.pane1 else self.pane1
+            shown = other.get_visible() and not other._is_family
+            bible_pane = other if shown else None
+            reading = pane._family_tree.reading_module() or ''
+            open_here = not shown
+        self._card_pane = bible_pane or pane
+        self._card_from = pane
+        self._family_card.show(
+            node_id, pane._names, reading, open_here=open_here,
+            can_compare=bible_pane is not None,
+            from_family=pane._is_family
+            and pane._family_tree.showing_family())
+        self._card_split.set_show_sidebar(True)
+        self._family_card.focus_start()
+
+    def _hide_family_card(self):
+        self._card_split.set_show_sidebar(False)
+        # Back where the reader was: the Line's row, or the page.
+        src = self._card_from
+        if src is not None and src._is_family:
+            src._family_tree.focus_last()
+        elif src is not None:
+            src.view.grab_focus()
+
+    def _family_card_open(self, module):
+        pane = self._card_pane
+        self._hide_family_card()
+        if pane is not None and module != pane.module:
+            pane._apply_module_change(module)
+
+    def _family_card_install(self, query):
+        self._hide_family_card()
+        self._on_modules_clicked(None)
+        self._modules_win.search_bibles(query)
+
+    def _family_card_show_in_family(self, node_id):
+        """Show the Card's Bible in the Family: in the Family Tree already
+        showing if there is one, else in the other pane when two are open,
+        else in this pane, which the Family then marks as the Bible left."""
+        src = self._card_from
+        other = self.pane2 if src is self.pane1 else self.pane1
+        if src._is_family:
+            pane = src
+        elif other.get_visible():
+            pane = other
+        else:
+            pane = src
+        self._card_from = None      # the keyboard goes to the Bible shown
+        self._hide_family_card()
+        if not pane._is_family:
+            pane._apply_module_change(bible_family.MODULE_KEY)
+        pane._family_tree.show_node(node_id)
+
+    def _family_card_compare(self):
+        pane = self._card_pane
+        self._hide_family_card()
+        if pane is None or not pane.book:
+            return
+        verses = pane.current_verses()
+        if not verses:
+            if pane._on_toast:
+                pane._on_toast(_('Choose a verse to compare'))
+            return
+        annotation_dialogs.compare_translations(pane, verses[0])
 
     def _search_for(self, query):
         self._overlays._search_for(query)
@@ -2382,6 +2484,10 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         """Everything the window re-derives when a pane changes module."""
         self._update_fnote_sensitivity()
         self._sync_nav_books()
+        # A Line beside it marks the Bible being read; that may have changed.
+        for pane in (self.pane1, self.pane2):
+            if pane._is_family:
+                pane._family_tree.render()
 
     def _update_fnote_sensitivity(self):
         """Enable the f* toggle only when a loaded module can actually show
@@ -2504,6 +2610,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         # sizes its sidebar to min(max-sidebar-width, window width));
         # restore the 420px floor when leaving the ultra band.
         self._search_split.set_min_sidebar_width(0 if narrow else 420)
+        self._card_split.set_min_sidebar_width(0 if narrow else 420)
 
     def _apply_narrow_pane(self):
         """While collapsed, show exactly one pane: pane 1 in single mode, or the

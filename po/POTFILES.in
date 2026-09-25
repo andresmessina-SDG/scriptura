@@ -11,6 +11,7 @@ archaeology_reader.py
 archaeology_strings.py
 audio_pill.py
 audio_surfaces.py
+bible_family.py
 catena_bridge.py
 catena_reader.py
 church_year.py
@@ -18,6 +19,10 @@ content.py
 crossref_panel.py
 devotional.py
 export_dialog.py
+family_card.py
+family_line.py
+family_tree.py
+family_view.py
 genbook_reader.py
 genealogy_bridge.py
 genealogy_layout.py

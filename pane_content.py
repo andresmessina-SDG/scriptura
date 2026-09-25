@@ -102,6 +102,19 @@ class GenealogyContent(PaneContent):
         self._pane._genealogy.apply_font_size(pt)
 
 
+class FamilyContent(PaneContent):
+    stack_child = 'family'
+
+    def render(self) -> None:
+        self._pane._family_tree.render()
+
+    def on_verse(self, verse_num: int) -> None:
+        return  # standalone document — not verse-keyed
+
+    def apply_font_size(self, pt: int) -> None:
+        return  # chrome text: it follows the desktop, not the reading size
+
+
 class _TextContent(PaneContent):
     """A mode that renders into the shared text view. A verse broadcast runs
     the pane's text-path; modes without matching verse tags (devotionals,
@@ -145,6 +158,7 @@ def build(pane) -> dict:
         'catena': CatenaContent(pane),
         'archaeology': ArchaeologyContent(pane),
         'genealogy': GenealogyContent(pane),
+        'family': FamilyContent(pane),
         'interlinear': InterlinearContent(pane),
     }
 

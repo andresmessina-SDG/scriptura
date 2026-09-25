@@ -59,6 +59,10 @@ install_subdir('archaeology', install_dir: pkgdatadir / 'data')
 # computed from it at draw time, so there are no plate files to ship.
 install_subdir('genealogy', install_dir: pkgdatadir / 'data')
 
+# The Bible Family Tree: every English Bible, its descent and its place on
+# the word-for-word ↔ free spectrum. Read by bible_family.py.
+install_subdir('bible_family', install_dir: pkgdatadir / 'data')
+
 # Bundled fonts (all OFL) so typography is identical on every machine
 # instead of falling back to whatever the host happens to have. The
 # Flatpak runtime's fontconfig scans /app/share/fonts, and /usr/share/fonts

@@ -131,6 +131,141 @@ window {
     border-top-left-radius: 20px;
     border-bottom-left-radius: 20px;
 }
+
+/* ── The Bible Family Tree's Card (end-side sheet; wears .search-panel) ──
+   Apple News anatomy, like Scripture in Stone: a sans header block, then the
+   facts. Serif only for running prose (notes, a Bible's own words); Newsreader
+   has no Cyrillic, so translated sentences stay in the chrome's sans. */
+.family-card-kicker {
+    font-size: 0.8em;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    opacity: 0.6;
+}
+.family-card-title {
+    font-size: 1.5em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-top: 2px;
+}
+.family-card-meta {
+    font-size: 0.9em;
+    opacity: 0.65;
+}
+.family-card-reading {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: @accent_color;
+}
+.family-card-section {
+    font-weight: 700;
+    font-size: 0.95em;
+}
+.family-card-body {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-size: 1.05em;
+    line-height: 1.43;   /* ~1.53em on Newsreader */
+}
+.family-card-axis {
+    font-size: 0.8em;
+    opacity: 0.6;
+}
+/* The line of descent: one ruled column, newest at the top. */
+.family-card-path {
+    border-left: 2px solid alpha(@window_fg_color, 0.15);
+    padding-left: 10px;
+}
+.family-card-path-here {
+    font-weight: 700;
+}
+/* Links to another Bible's Card stay on this surface: ink, underlined by
+   Pango, no colour. Links to a web source leave it: clay. */
+.family-card-links link,
+.family-card-links link:visited {
+    color: @window_fg_color;
+}
+.family-card-links link:hover {
+    color: @accent_color;
+}
+.family-card-source {
+    font-size: 0.9em;
+}
+.family-card-source link,
+.family-card-source link:visited {
+    color: #a9744f;          /* clay: leaves the current surface */
+}
+/* The Line: one flat list, the tracks in one column. The filters are quiet
+   menu buttons; a narrowed one is ink-tinted (a filter, not a destination,
+   so never the accent) and grows a × to clear it. */
+.family-filter > menubutton > button,
+.family-filter > button {
+    min-height: 28px;
+    font-weight: normal;
+}
+.family-filter.narrowed > menubutton > button,
+.family-filter.narrowed > button {
+    background-color: alpha(@window_fg_color, 0.1);
+    font-weight: 600;
+}
+.family-line-list, .family-line-list > row { background-color: transparent; }
+.family-line-name {
+    font-weight: 600;
+}
+.family-line-meta {
+    font-size: 0.85em;
+    opacity: 0.65;
+}
+.family-line-axis {
+    font-size: 0.8em;
+    opacity: 0.6;
+    padding: 2px 0 4px;
+    border-bottom: 1px solid alpha(@borders, 0.5);
+}
+.family-line-head {
+    font-weight: 700;
+    font-size: 0.9em;
+    margin: 18px 14px 4px;
+}
+.family-line-subhead {
+    font-size: 0.85em;
+    font-style: italic;
+    opacity: 0.7;
+    margin: 10px 14px 2px;
+}
+/* The Family: each Bible a flat button over the drawing. Hover or focus
+   lights a Bible's whole line and dims the rest. */
+button.family-node {
+    min-height: 24px;
+    padding: 0 4px;
+    border-radius: 12px;
+}
+.family-node-name {
+    font-weight: 600;
+    font-size: 0.9em;
+}
+.family-node-year {
+    font-size: 0.8em;
+    opacity: 0.55;
+}
+button.family-node.dim {
+    opacity: 0.3;
+}
+.family-note {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-style: italic;
+    font-size: 0.95em;
+    line-height: 1.34;   /* ~1.43em on Newsreader */
+    opacity: 0.62;
+}
+.family-outline, .family-outline > row { background-color: transparent; }
+.family-outline-child {
+    opacity: 0.9;
+}
+button.module-family-link {
+    margin: 6px 0 4px;
+}
 .bar-fill       { background-color: @accent_bg_color; border-radius: 4px; min-height: 10px; }
 .bar-fill-sub   { background-color: alpha(@accent_bg_color, 0.5); border-radius: 4px; min-height: 10px; }
 .bar-label-active { color: @accent_color; font-weight: bold; }

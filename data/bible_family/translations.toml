@@ -1,0 +1,2820 @@
+# The Bible Family Tree — every English Bible, its descent and its place on
+# the word-for-word ↔ free spectrum. Read by bible_family.py.
+#
+# The research record behind it (§ numbers below) is kept outside the repo.
+# tests/test_bible_family.py checks this file.
+#
+# check   = "checked"   a second source agreed this session
+#           "reference" one standard reference only
+#           "disputed"  sources disagree; `dispute` says how; draw with "c."/a range
+# year    = the year to plot: first complete publication of the node's scope
+# base_*  = MT Masoretic · LXX Septuagint · VUL Vulgate · TR Textus Receptus ·
+#           MAJ Byzantine/Majority · CT critical (NA/UBS/SBL/WH) · ENG an English
+#           text (paraphrase) · SPA a Spanish text · MIX eclectic
+# spectrum: band = [low, median, high] and n from §13.3 (0 = word-for-word end,
+#           1 = The Message); measured = §15 (NT sample, "measured in Scriptura");
+#           class = Fee & Strauss where they give one, else the translation's
+#           self-described class; self = its own words, self_src = where.
+# read    = why it counts as read today (the readership sources, §5.3 of the
+#           UI research); landmark = why the history needs it. The Family is
+#           these Bibles and every Bible they revise or reword, back to the
+#           root: a rule, not a list (bible_family.family_members).
+# archaic = true: the text keeps thee/thou/unto English (23 or more such words
+#           per 1,000 in the measured sample; the next text down has 15). The
+#           measure reads these as supplied words, so such a Bible measures
+#           about 0.05 freer than it is (§15.5); bible_family.py takes that
+#           off before placing it.
+
+schema = 1
+
+# ── source texts (kind = "source") ─────────────────────────────────────────
+[[node]]
+id = "vulgate"
+kind = "source"
+name = "Latin Vulgate"
+year = 405
+year_label = "c. 405"
+check = "reference"
+src = ["metzger"]
+
+[[node]]
+id = "lxx"
+kind = "source"
+name = "Septuagint"
+year = -200
+year_label = "3rd–1st c. BC"
+check = "reference"
+src = ["metzger"]
+
+[[node]]
+id = "mt"
+kind = "source"
+name = "Masoretic Text (Bomberg 1524–25; Leningrad Codex c. 1008)"
+year = 1524
+check = "checked"
+src = ["wp:leningrad", "bruce"]
+
+[[node]]
+id = "tr"
+kind = "source"
+name = "Textus Receptus (Erasmus 1516 → Stephanus 1550 → Beza 1598)"
+year = 1516
+check = "reference"
+src = ["metzger"]
+
+[[node]]
+id = "maj"
+kind = "source"
+name = "Majority / Byzantine text (Hodges–Farstad 1982; Robinson–Pierpont 1991–2018)"
+year = 1982
+check = "checked"
+src = ["byzantinetext"]
+
+[[node]]
+id = "ct"
+kind = "source"
+name = "Critical text (Westcott–Hort 1881 → Nestle-Aland / UBS)"
+year = 1881
+check = "checked"
+src = ["wp:rv"]
+
+# ── the Wycliffite root ─────────────────────────────────────────────────────
+[[node]]
+id = "wycliffe"
+name = "Wycliffe Bible"
+tradition = "catholic-era"
+scope = "bible"
+year = 1382
+year_label = "c. 1382 (Early) · c. 1395 (Later)"
+base_ot = "VUL"
+base_nt = "VUL"
+by = "associated with John Wycliffe and Nicholas of Hereford; Later Version traditionally John Purvey"
+check = "disputed"
+dispute = "Later Version dated 1388 (Wikipedia list) to mid-1390s; Purvey's role disputed"
+installable = ["Wycliffe", "engwyc2017", "engwyc2018", "engWycliffe"]
+note = "Hand-copied from Latin; forbidden without licence by the Constitutions of Oxford (1409). About 250 manuscripts survive. Nothing later descends from it."
+src = ["wp:wycliffe", "wl", "kings"]
+landmark = "the first English Bible"
+[node.spectrum]
+measured_skip = "Middle English; the word match cannot read it (§15.5)"
+
+# ── Reformation trunk ───────────────────────────────────────────────────────
+[[node]]
+id = "tyndale"
+name = "Tyndale New Testament"
+tradition = "protestant"
+scope = "partial"
+year = 1526
+year_label = "1526 (NT) · 1530 (Pentateuch) · 1534 (NT rev.)"
+base_ot = "MT"
+base_nt = "TR"
+by = "William Tyndale"
+check = "checked"
+installable = ["Tyndale", "engtnt"]
+note = "First printed English NT. Tyndale was strangled and burned at Vilvoorde in 1536. About 84% of the KJV NT is his wording (Nielson & Skousen 1998)."
+src = ["wp:tyndale", "nielson-skousen", "wl"]
+archaic = true
+[node.spectrum]
+measured_skip = "early modern spelling (§15.5)"
+
+[[node]]
+id = "coverdale"
+name = "Coverdale Bible"
+tradition = "protestant"
+scope = "bible"
+year = 1535
+base_ot = "MIX"
+base_nt = "TR"
+by = "Myles Coverdale"
+check = "checked"
+note = "First complete printed English Bible; Tyndale where he had translated, German and Latin versions for the rest."
+src = ["wl", "wp:great", "bruce"]
+
+[node.spectrum]
+none = "not installable; no published placement"
+[[node]]
+id = "matthew"
+name = "Matthew's Bible"
+tradition = "protestant"
+scope = "bible"
+year = 1537
+base_ot = "MT"
+base_nt = "TR"
+by = "John Rogers, as \"Thomas Matthew\""
+check = "checked"
+note = "First printing of Tyndale's Joshua–2 Chronicles; licensed by Henry VIII."
+src = ["wp:tyndale", "wp:great", "wl"]
+
+[node.spectrum]
+none = "not installable; no published placement"
+[[node]]
+id = "taverner"
+name = "Taverner's Bible"
+tradition = "protestant"
+scope = "bible"
+year = 1539
+by = "Richard Taverner"
+check = "checked"
+src = ["wl", "bruce"]
+
+[node.spectrum]
+none = "not installable; no published placement"
+[[node]]
+id = "great"
+name = "Great Bible"
+tradition = "protestant"
+scope = "bible"
+year = 1539
+by = "Myles Coverdale for Thomas Cromwell"
+check = "checked"
+note = "Ordered into every parish church; second edition 1540 with Cranmer's preface. Its Psalter is still the Psalter of the 1662 Book of Common Prayer."
+src = ["wp:great", "wl"]
+
+[node.spectrum]
+none = "not installable; no published placement"
+[[node]]
+id = "geneva"
+name = "Geneva Bible"
+tradition = "protestant"
+scope = "bible"
+year = 1560
+year_label = "1557 (NT) · 1560"
+base_ot = "MT"
+base_nt = "TR"
+by = "Marian exiles: William Whittingham, Anthony Gilby and others"
+check = "checked"
+installable = ["Geneva1599", "enggnv"]
+note = "Roman type, verse numbers, Calvinist margin notes James I called seditious. 150+ editions to 1644; the Bible of Shakespeare and the Mayflower."
+src = ["wp:geneva", "wl"]
+archaic = true
+landmark = "the Bible of the English Reformation household"
+[node.spectrum]
+measured_skip = "early modern spelling (§15.5)"
+
+[[node]]
+id = "bishops"
+name = "Bishops' Bible"
+tradition = "protestant"
+scope = "bible"
+year = 1568
+year_label = "1568 (rev. 1572)"
+by = "Archbishop Matthew Parker"
+check = "checked"
+note = "The Church of England's answer to Geneva; the KJV's official base text."
+src = ["wl", "bruce"]
+
+[node.spectrum]
+none = "not installable; no published placement"
+[[node]]
+id = "douay-rheims"
+name = "Douay–Rheims Bible"
+tradition = "catholic"
+scope = "bible"
+year = 1610
+year_label = "1582 (NT, Rheims) · 1609–10 (OT, Douai)"
+base_ot = "VUL"
+base_nt = "VUL"
+by = "Gregory Martin and the English College"
+check = "checked"
+note = "Latinate vocabulary; the KJV translators took words from its NT."
+src = ["wl", "bruce"]
+
+landmark = "the Catholic root"
+[node.spectrum]
+none = "not installable (Challoner revision is); no published placement"
+[[node]]
+id = "kjv1611"
+name = "King James Version (1611)"
+abbr = "KJV"
+tradition = "protestant"
+scope = "bible"
+year = 1611
+base_ot = "MT"
+base_nt = "TR"
+by = "47 translators in six companies (Westminster, Oxford, Cambridge)"
+check = "checked"
+note = "Commissioned at Hampton Court, 1604; printed by Robert Barker. The text almost everyone reads is Blayney's 1769 edition."
+src = ["wp:kjv", "wl"]
+
+[node.spectrum]
+none = "placed on the 1769 node, the text readers have"
+[[node]]
+id = "kjv"
+name = "King James Version (1769 Blayney text)"
+abbr = "KJV"
+tradition = "protestant"
+scope = "bible"
+year = 1769
+base_ot = "MT"
+base_nt = "TR"
+by = "Benjamin Blayney (Oxford)"
+check = "checked"
+installable = ["KJV", "KJVA", "KJVPCE", "eng-kjv", "eng-kjv2006", "engkjvcpb"]
+editions = ["AKJV (Bible Gateway's KJV printing)", "KJVPCE", "KJV with Apocrypha", "BRG (colour-letter KJV)"]
+note = "Reproduced almost unchanged in most current printings."
+src = ["wp:kjv"]
+archaic = true
+read = "ECPA top ten; most read in US surveys (55%, 2014)"
+[node.spectrum]
+band = [0.18, 0.26, 0.31]
+n = 4
+measured = 0.34
+measured_note = "archaic English reads about 0.05 freer than it is (§15.5)"
+class = "formal"
+self = "\"we have not tied ourselves to an uniformity of phrasing\""
+self_src = "Translators to the Reader, 1611"
+
+# ── Catholic line ───────────────────────────────────────────────────────────
+[[node]]
+id = "challoner"
+name = "Douay–Rheims, Challoner revision"
+abbr = "DRC"
+tradition = "catholic"
+scope = "bible"
+year = 1752
+year_label = "1749–52"
+base_ot = "VUL"
+base_nt = "VUL"
+by = "Bishop Richard Challoner"
+check = "checked"
+installable = ["DRC", "engDRA"]
+note = "Moved much of the wording toward the KJV."
+src = ["wl", "bruce"]
+archaic = true
+landmark = "the Catholic text for two centuries"
+[node.spectrum]
+measured = 0.35
+measured_note = "NT only; the OT is from the Vulgate and cannot be matched to the Hebrew"
+
+[[node]]
+id = "confraternity"
+name = "Confraternity New Testament"
+tradition = "catholic"
+scope = "nt"
+year = 1941
+check = "checked"
+src = ["wl", "bruce"]
+
+[node.spectrum]
+none = "not installable; no published placement"
+[[node]]
+id = "knox"
+name = "Knox Bible"
+tradition = "catholic"
+scope = "bible"
+year = 1955
+year_label = "1945 (NT) · 1949 (OT) · 1955"
+base_ot = "VUL"
+base_nt = "VUL"
+by = "Ronald Knox"
+check = "checked"
+src = ["wl", "bruce"]
+[node.spectrum]
+band = [0.70, 0.70, 0.70]
+n = 1
+
+[[node]]
+id = "jb"
+name = "Jerusalem Bible"
+abbr = "JB"
+tradition = "catholic"
+scope = "bible"
+year = 1966
+base_ot = "MT"
+base_nt = "CT"
+check = "checked"
+note = "Translated from the originals with strong influence from the French Bible de Jérusalem."
+src = ["wl"]
+[node.spectrum]
+class = "intermediate"
+
+[[node]]
+id = "njb"
+name = "New Jerusalem Bible"
+abbr = "NJB"
+tradition = "catholic"
+scope = "bible"
+year = 1985
+check = "checked"
+src = ["wl"]
+[node.spectrum]
+band = [0.46, 0.55, 0.63]
+n = 2
+class = "intermediate"
+
+[[node]]
+id = "rnjb"
+name = "Revised New Jerusalem Bible"
+abbr = "RNJB"
+tradition = "catholic"
+scope = "bible"
+year = 2019
+year_label = "2018 (NT) · 2019"
+base_ot = "MT"
+base_nt = "CT"
+by = "Henry Wansbrough, OSB"
+check = "checked"
+note = "Lectionary basis in Australia, New Zealand and Ireland."
+src = ["wp:rnjb", "wl"]
+read = "Catholic lectionaries: Australia, New Zealand, Ireland"
+[node.spectrum]
+class = "formal"
+self = "formal equivalence, in language \"suitable for reading out loud\""
+self_src = "Wikipedia, RNJB"
+
+[[node]]
+id = "nab"
+name = "New American Bible"
+abbr = "NAB"
+tradition = "catholic"
+scope = "bible"
+year = 1970
+base_ot = "MT"
+base_nt = "CT"
+check = "checked"
+src = ["wl"]
+read = "US surveys (The Bible in American Life)"
+[node.spectrum]
+band = [0.42, 0.46, 0.51]
+n = 2
+class = "intermediate"
+
+[[node]]
+id = "nabre"
+name = "New American Bible, Revised Edition"
+abbr = "NABRE"
+tradition = "catholic"
+scope = "bible"
+year = 2011
+check = "checked"
+src = ["wl"]
+
+read = "US Catholic lectionary"
+[node.spectrum]
+none = "no placement found; NAB (1970) band is 0.42–0.51"
+[[node]]
+id = "ncb"
+name = "New Catholic Bible"
+abbr = "NCB"
+tradition = "catholic"
+scope = "bible"
+year = 2019
+year_label = "2015 (NT) · 2019"
+by = "Catholic Book Publishing; Jude Winkler, OFM Conv."
+check = "checked"
+src = ["bg:NCB", "wl"]
+[node.spectrum]
+class = "formal"
+self = "\"a translation of literal or formal equivalence\""
+self_src = "Bible Gateway version page"
+
+[[node]]
+id = "cpdv"
+name = "Catholic Public Domain Version"
+abbr = "CPDV"
+tradition = "catholic"
+scope = "bible"
+year = 2009
+base_ot = "VUL"
+base_nt = "VUL"
+check = "reference"
+installable = ["CPDV"]
+src = ["conf:CPDV"]
+[node.spectrum]
+measured = 0.37
+measured_note = "NT only; Vulgate base"
+
+# ── the KJV's modernisers ───────────────────────────────────────────────────
+[[node]]
+id = "webster"
+name = "Webster's Revision"
+tradition = "protestant"
+scope = "bible"
+year = 1833
+base_ot = "MT"
+base_nt = "TR"
+by = "Noah Webster"
+check = "checked"
+installable = ["Webster", "engwebster"]
+editions = ["Revised Webster (RWebster module)"]
+src = ["wl"]
+archaic = true
+[node.spectrum]
+measured = 0.31
+
+[[node]]
+id = "nkjv"
+name = "New King James Version"
+abbr = "NKJV"
+tradition = "protestant"
+scope = "bible"
+year = 1982
+year_label = "1979 (NT) · 1982"
+base_ot = "MT"
+base_nt = "TR"
+by = "Thomas Nelson; Arthur Farstad, executive editor"
+check = "checked"
+note = "Footnotes the critical (NU) and Majority (M) readings."
+src = ["wp:nkjv", "wl"]
+read = "ECPA top ten"
+[node.spectrum]
+band = [0.23, 0.29, 0.39]
+n = 5
+class = "formal"
+self = "\"complete equivalence … seeks to preserve all of the information in the text\""
+self_src = "NKJV preface"
+
+[[node]]
+id = "kj21"
+name = "21st Century King James Version"
+abbr = "KJ21"
+tradition = "protestant"
+scope = "bible"
+year = 1994
+base_nt = "TR"
+by = "Deuel Enterprises"
+check = "reference"
+src = ["bg:KJ21"]
+[node.spectrum]
+class = "formal"
+self = "\"not a new translation, but a careful updating to eliminate obsolete words\""
+self_src = "Bible Gateway version page"
+
+[[node]]
+id = "mev"
+name = "Modern English Version"
+abbr = "MEV"
+tradition = "protestant"
+scope = "bible"
+year = 2014
+year_label = "2011 (NT) · 2014"
+base_ot = "MT"
+base_nt = "TR"
+by = "Military Bible Association; James F. Linzey (Southern Baptist), chief editor"
+check = "checked"
+note = "Its senior editorial adviser was Stanley M. Horton, an Assemblies of God (Pentecostal) theologian; the committee drew on many denominations."
+src = ["wl", "wp:mev"]
+[node.spectrum]
+band = [0.19, 0.19, 0.19]
+n = 1
+
+[[node]]
+id = "akjv-engelbrite"
+name = "American King James Version"
+abbr = "AKJV"
+tradition = "protestant"
+scope = "bible"
+year = 1999
+by = "Stone Engelbrite"
+check = "reference"
+installable = ["AKJV"]
+note = "Not Bible Gateway's \"AKJV\", which is a KJV printing."
+src = ["conf:AKJV"]
+[node.spectrum]
+measured = 0.29
+self = "\"a simple word for word update from the King James English\""
+self_src = "module About text"
+
+[[node]]
+id = "ukjv"
+name = "Updated King James Version"
+abbr = "UKJV"
+tradition = "protestant"
+scope = "bible"
+year = 2000
+check = "reference"
+installable = ["UKJV"]
+src = ["conf:UKJV"]
+[node.spectrum]
+measured = 0.30
+
+[[node]]
+id = "mkjv"
+name = "Modern King James Version (Green)"
+abbr = "MKJV"
+tradition = "protestant"
+scope = "bible"
+year = 1962
+year_label = "1962 (rev. 1993)"
+by = "Jay P. Green Sr."
+check = "reference"
+installable = ["MKJV"]
+src = ["conf:MKJV", "groseclose"]
+[node.spectrum]
+measured = 0.30
+
+[[node]]
+id = "rkjnt"
+name = "Revised King James New Testament"
+tradition = "protestant"
+scope = "nt"
+year = 1998
+year_label = "1998 (2000 ed.)"
+by = "Brad Haugaard"
+check = "reference"
+installable = ["RKJNT"]
+src = ["conf:RKJNT"]
+[node.spectrum]
+measured = 0.25
+
+# ── 18th–19th-century versions ──────────────────────────────────────────────
+[[node]]
+id = "worsley"
+name = "Worsley New Testament"
+tradition = "protestant"
+scope = "nt"
+year = 1770
+by = "John Worsley"
+check = "reference"
+installable = ["Worsley"]
+src = ["conf:Worsley"]
+archaic = true
+[node.spectrum]
+measured = 0.39
+
+[[node]]
+id = "haweis"
+name = "Haweis New Testament"
+tradition = "protestant"
+scope = "nt"
+year = 1795
+by = "Thomas Haweis"
+check = "reference"
+installable = ["Haweis"]
+src = ["conf:Haweis"]
+archaic = true
+[node.spectrum]
+measured = 0.36
+
+[[node]]
+id = "thomson"
+name = "Thomson's Translation"
+tradition = "protestant"
+scope = "bible"
+year = 1808
+base_ot = "LXX"
+by = "Charles Thomson"
+check = "checked"
+note = "First English OT from the Septuagint; first Bible translated in America."
+src = ["wl"]
+
+[node.spectrum]
+none = "not installable; no published placement"
+[[node]]
+id = "living-oracles"
+name = "Living Oracles NT"
+tradition = "protestant"
+scope = "nt"
+year = 1826
+by = "Alexander Campbell"
+check = "reference"
+installable = ["LO"]
+note = "Renders baptizō \"immerse\"."
+src = ["bruce"]
+
+[node.spectrum]
+none = "installable but not measured (not in the 2026-09-23 run)"
+[[node]]
+id = "brenton"
+name = "Brenton's Septuagint"
+tradition = "protestant"
+scope = "ot"
+year = 1844
+base_ot = "LXX"
+by = "Lancelot Brenton"
+check = "checked"
+installable = ["eng-Brenton", "englxxup", "eng-lxx2012", "eng-uk-lxx2012"]
+src = ["wl"]
+
+[node.spectrum]
+none = "LXX base; the Hebrew glosses are the wrong source"
+[[node]]
+id = "leeser"
+name = "Leeser Bible (Tanakh)"
+tradition = "jewish"
+scope = "ot"
+year = 1853
+base_ot = "MT"
+by = "Isaac Leeser"
+check = "disputed"
+dispute = "Wikipedia's list gives 1994 (a later edition); 1853 is the first publication"
+installable = ["englee"]
+src = ["wl", "bruce"]
+archaic = true
+[node.spectrum]
+measured = 0.32
+measured_note = "OT sample, put on the NT scale through 30 Bibles measured on both (residual sd 0.04)"
+
+[[node]]
+id = "ylt"
+name = "Young's Literal Translation"
+abbr = "YLT"
+tradition = "protestant"
+scope = "bible"
+year = 1862
+year_label = "1862 (rev. 1887, 1898)"
+base_ot = "MT"
+base_nt = "TR"
+by = "Robert Young"
+check = "checked"
+installable = ["YLT", "engylt"]
+src = ["wl"]
+archaic = true
+[node.spectrum]
+measured = 0.22
+
+[[node]]
+id = "abu"
+name = "Bible Union New Testament"
+tradition = "baptist"
+scope = "nt"
+year = 1864
+year_label = "1862–64"
+by = "American Bible Union: Conant, Hackett, Kendrick"
+check = "checked"
+note = "Made so that baptizō would read \"immerse\"."
+src = ["br:abu"]
+
+[node.spectrum]
+none = "not installable; no published placement"
+[[node]]
+id = "anderson"
+name = "Anderson New Testament"
+tradition = "protestant"
+scope = "nt"
+year = 1864
+by = "Henry T. Anderson"
+check = "reference"
+installable = ["Anderson"]
+src = ["conf:Anderson"]
+[node.spectrum]
+measured = 0.28
+
+[[node]]
+id = "diaglott"
+name = "Emphatic Diaglott"
+tradition = "other"
+scope = "nt"
+year = 1864
+by = "Benjamin Wilson"
+check = "checked"
+installable = ["Diaglott"]
+src = ["wl"]
+
+[node.spectrum]
+none = "an interlinear; not a reading text"
+[[node]]
+id = "noyes"
+name = "Noyes Translation"
+tradition = "unitarian"
+scope = "partial"
+year = 1869
+base_nt = "CT"
+by = "George R. Noyes; American Unitarian Association"
+check = "reference"
+installable = ["Noyes", "engnoy"]
+note = "Greek of Tischendorf; OT only Job–Malachi."
+src = ["conf:Noyes"]
+archaic = true
+[node.spectrum]
+measured = 0.27
+
+[[node]]
+id = "julia-smith"
+name = "Julia E. Smith Translation"
+tradition = "protestant"
+scope = "bible"
+year = 1876
+by = "Julia E. Smith"
+check = "checked"
+note = "First complete Bible translated by a woman."
+src = ["wl"]
+
+[node.spectrum]
+none = "not installable; no published placement"
+[[node]]
+id = "darby"
+name = "Darby Bible"
+tradition = "brethren"
+scope = "bible"
+year = 1890
+year_label = "1867 (NT) · 1890"
+by = "John Nelson Darby"
+check = "checked"
+installable = ["Darby", "engDBY"]
+src = ["wl"]
+archaic = true
+[node.spectrum]
+measured = 0.24
+
+[[node]]
+id = "improved-edition"
+name = "Improved Edition NT (American Baptist Publication Society)"
+tradition = "baptist"
+scope = "nt"
+year = 1891
+by = "Alvah Hovey, John A. Broadus, Henry G. Weston"
+check = "checked"
+note = "Broadus co-founded Southern Seminary. Printed with \"immerse\" and with \"baptize\"."
+src = ["br:abu"]
+
+[node.spectrum]
+none = "not installable; no published placement"
+[[node]]
+id = "rotherham"
+name = "Rotherham's Emphasised Bible"
+tradition = "protestant"
+scope = "bible"
+year = 1902
+year_label = "1872 (NT) · 1902"
+by = "J. B. Rotherham"
+check = "reference"
+installable = ["Rotherham"]
+src = ["conf:Rotherham"]
+archaic = true
+[node.spectrum]
+measured = 0.24
+
+# ── the revision line ───────────────────────────────────────────────────────
+[[node]]
+id = "rv"
+name = "Revised Version"
+abbr = "RV"
+tradition = "protestant"
+scope = "bible"
+year = 1885
+year_label = "1881 (NT) · 1885 · Apocrypha 1894–95"
+base_ot = "MT"
+base_nt = "CT"
+by = "Convocation of Canterbury, from 1870"
+check = "checked"
+installable = ["eng-rv"]
+note = "More than 30,000 changes in the NT, over 5,000 on textual grounds."
+src = ["wp:rv", "wl"]
+archaic = true
+[node.spectrum]
+measured = 0.26
+
+[[node]]
+id = "asv"
+name = "American Standard Version"
+abbr = "ASV"
+tradition = "protestant"
+scope = "bible"
+year = 1901
+base_ot = "MT"
+base_nt = "CT"
+by = "American Revision Committee"
+check = "checked"
+installable = ["ASV", "eng-asv", "engasvbt"]
+note = "Renders the divine name \"Jehovah\"."
+src = ["wl", "wp:nasb"]
+archaic = true
+[node.spectrum]
+class = "formal"
+measured = 0.26
+
+[[node]]
+id = "rsv"
+name = "Revised Standard Version"
+abbr = "RSV"
+tradition = "ecumenical"
+scope = "bible"
+year = 1952
+year_label = "1946 (NT) · 1952 · NT 2nd ed. 1971"
+base_ot = "MT"
+base_nt = "CT"
+by = "National Council of Churches; Luther Weigle"
+check = "checked"
+note = "Rendered Isaiah 7:14 \"young woman\"; a pastor burned the page in 1952."
+src = ["wp:rsv", "wl", "veracity"]
+[node.spectrum]
+band = [0.19, 0.28, 0.36]
+n = 2
+class = "formal"
+
+[[node]]
+id = "rsvce"
+name = "RSV Catholic Edition"
+abbr = "RSV-CE"
+tradition = "catholic"
+scope = "bible"
+year = 1966
+year_label = "1965 (NT) · 1966"
+check = "checked"
+src = ["wp:rsvce", "wl"]
+
+[node.spectrum]
+none = "placed on the RSV node"
+[[node]]
+id = "rsv2ce"
+name = "RSV Second Catholic Edition"
+abbr = "RSV-2CE"
+tradition = "catholic"
+scope = "bible"
+year = 2006
+by = "Ignatius Press"
+check = "checked"
+note = "Restores \"virgin\" at Isaiah 7:14."
+src = ["wp:rsvce", "wl"]
+[node.spectrum]
+class = "formal"
+
+[[node]]
+id = "nrsv"
+name = "New Revised Standard Version"
+abbr = "NRSV"
+tradition = "ecumenical"
+scope = "bible"
+year = 1989
+base_ot = "MT"
+base_nt = "CT"
+by = "National Council of Churches; Bruce Metzger"
+check = "checked"
+editions = ["NRSVA", "NRSV-CE", "NRSVACE"]
+src = ["wl", "bg:NRSVACE"]
+read = "ECPA top ten (2024); US surveys"
+[node.spectrum]
+band = [0.37, 0.45, 0.55]
+n = 3
+class = "formal"
+self = "\"As literal as possible, as free as necessary\""
+self_src = "NRSV, To the Reader"
+
+[[node]]
+id = "nrsvue"
+name = "NRSV Updated Edition"
+abbr = "NRSVue"
+tradition = "ecumenical"
+scope = "bible"
+year = 2021
+year_label = "2021 (digital) · 2022 (print)"
+by = "Society of Biblical Literature for the NCC"
+check = "checked"
+src = ["friendship", "wl"]
+
+read = "successor to the NRSV"
+[node.spectrum]
+none = "no placement found; NRSV band is 0.37–0.55"
+[[node]]
+id = "esv"
+name = "English Standard Version"
+abbr = "ESV"
+tradition = "protestant"
+scope = "bible"
+year = 2001
+year_label = "2001 (rev. 2007, 2011, 2016)"
+base_ot = "MT"
+base_nt = "CT"
+by = "Crossway; J. I. Packer, general editor"
+check = "checked"
+installable = ["ESV"]
+editions = ["ESVUK"]
+note = "The August 2016 \"permanent text\" decision was reversed the next month."
+src = ["wp:esv", "wl"]
+read = "ECPA top ten; UK sales (24%)"
+[node.spectrum]
+band = [0.13, 0.22, 0.31]
+n = 5
+measured = 0.24
+class = "formal"
+self = "\"essentially literal\""
+self_src = "ESV preface"
+
+[[node]]
+id = "esvce"
+name = "ESV Catholic Edition"
+abbr = "ESV-CE"
+tradition = "catholic"
+scope = "bible"
+year = 2018
+check = "checked"
+src = ["wl"]
+
+[node.spectrum]
+none = "placed on the ESV node"
+[[node]]
+id = "nasb"
+name = "New American Standard Bible (1971/77)"
+abbr = "NASB"
+tradition = "protestant"
+scope = "bible"
+year = 1971
+year_label = "1960 (John) · 1963 (NT) · 1971"
+base_ot = "MT"
+base_nt = "CT"
+by = "Lockman Foundation"
+check = "checked"
+src = ["wp:nasb", "wl"]
+[node.spectrum]
+band = [0.06, 0.08, 0.19]
+n = 5
+class = "formal"
+self = "where \"word-for-word literalness was unacceptable to the modern reader … the more literal rendering has been indicated in the notes\""
+self_src = "NASB preface"
+
+[[node]]
+id = "nasb1995"
+name = "NASB 1995"
+tradition = "protestant"
+scope = "bible"
+year = 1995
+base_ot = "MT"
+base_nt = "CT"
+by = "Lockman Foundation"
+check = "checked"
+installable = ["NASB1995"]
+src = ["wp:nasb", "wl"]
+[node.spectrum]
+band = [0.23, 0.23, 0.23]
+n = 1
+measured = 0.22
+
+[[node]]
+id = "nasb2020"
+name = "NASB 2020"
+tradition = "protestant"
+scope = "bible"
+year = 2020
+base_ot = "MT"
+base_nt = "CT"
+by = "Lockman Foundation"
+check = "checked"
+installable = ["NASB"]
+src = ["wp:nasb", "wl"]
+read = "ECPA top ten"
+[node.spectrum]
+measured = 0.26
+
+[[node]]
+id = "lsb"
+name = "Legacy Standard Bible"
+abbr = "LSB"
+tradition = "protestant"
+scope = "bible"
+year = 2021
+base_ot = "MT"
+base_nt = "CT"
+by = "The Master's Seminary; Three Sixteen Publishing with Lockman"
+check = "checked"
+note = "Renders the divine name \"Yahweh\"."
+src = ["lsbible", "wl"]
+[node.spectrum]
+class = "formal"
+self = "\"consistency and word-for-word precision\""
+self_src = "lsbible.org"
+
+[[node]]
+id = "ampc"
+name = "Amplified Bible (Classic Edition)"
+abbr = "AMPC"
+tradition = "protestant"
+scope = "bible"
+year = 1965
+year_label = "1958 (NT) · 1965"
+base_ot = "MT"
+base_nt = "CT"
+by = "Lockman Foundation; Zondervan"
+check = "checked"
+src = ["bg:AMPC", "wl"]
+[node.spectrum]
+band = [0.11, 0.16, 0.21]
+n = 2
+class = "expanded"
+self = "\"explanatory alternate readings and amplifications\""
+self_src = "Bible Gateway version page"
+
+[[node]]
+id = "amp"
+name = "Amplified Bible (2015)"
+abbr = "AMP"
+tradition = "protestant"
+scope = "bible"
+year = 2015
+by = "Lockman Foundation"
+check = "reference"
+src = ["bg:AMP"]
+[node.spectrum]
+class = "expanded"
+
+[[node]]
+id = "tlb"
+name = "The Living Bible"
+abbr = "TLB"
+tradition = "protestant"
+scope = "bible"
+year = 1971
+year_label = "1962 (Living Letters) · 1971"
+base_ot = "ENG"
+base_nt = "ENG"
+by = "Kenneth Taylor"
+check = "checked"
+paraphrase_kind = "english-source"
+src = ["wl", "br:nlt"]
+read = "US surveys (The Bible in American Life)"
+[node.spectrum]
+band = [0.90, 0.94, 0.95]
+n = 3
+class = "paraphrase"
+
+[[node]]
+id = "nlt"
+name = "New Living Translation"
+abbr = "NLT"
+tradition = "protestant"
+scope = "bible"
+year = 1996
+year_label = "1996 (2nd ed. 2004; 2007, 2013, 2015)"
+base_ot = "MT"
+base_nt = "CT"
+by = "Tyndale House; 90 scholars"
+check = "checked"
+editions = ["NLT Catholic Edition (2017)"]
+src = ["wp:nlt", "wl"]
+read = "ECPA top ten; UK sales (12%)"
+[node.spectrum]
+band = [0.69, 0.73, 0.84]
+n = 5
+class = "functional"
+self = "\"thought-for-thought translation … both exegetically accurate and idiomatically powerful\""
+self_src = "NLT introduction"
+
+[[node]]
+id = "web"
+name = "World English Bible"
+abbr = "WEB"
+tradition = "protestant"
+scope = "bible"
+year = 2000
+year_label = "1997 (draft) · 2000 · declared complete 2020"
+base_ot = "MT"
+base_nt = "MAJ"
+by = "Michael Paul Johnson"
+check = "checked"
+installable = ["engwebp", "eng-web", "engwebu", "eng-webbe", "eng-web-c", "engwebpb"]
+editions = ["WEB British Edition", "WEB Catholic", "World Messianic Bible"]
+src = ["wp:web", "wl"]
+[node.spectrum]
+measured = 0.24
+self = "\"a fairly literal translation\""
+self_src = "WEB FAQ"
+
+[[node]]
+id = "nheb"
+name = "New Heart English Bible"
+abbr = "NHEB"
+tradition = "protestant"
+scope = "bible"
+year = 2009
+check = "reference"
+installable = ["NHEB", "NHEBJE", "NHEBME"]
+src = ["conf:NHEB"]
+[node.spectrum]
+measured = 0.22
+
+[[node]]
+id = "acv"
+name = "A Conservative Version"
+abbr = "ACV"
+tradition = "protestant"
+scope = "bible"
+year = 2005
+year_label = "2000s (date not found)"
+by = "Walter L. Porter"
+check = "disputed"
+dispute = "no publication year in the module or the lists consulted"
+installable = ["ACV"]
+src = ["conf:ACV"]
+archaic = true
+[node.spectrum]
+measured = 0.27
+
+# ── 20th-century modern-speech and fresh translations ───────────────────────
+[[node]]
+id = "twentieth"
+name = "Twentieth Century New Testament"
+tradition = "protestant"
+scope = "nt"
+year = 1904
+year_label = "1898–1904"
+base_nt = "CT"
+check = "checked"
+installable = ["Twenty"]
+src = ["wl"]
+[node.spectrum]
+measured = 0.64
+
+[[node]]
+id = "godbey"
+name = "Godbey New Testament"
+tradition = "protestant"
+scope = "nt"
+year = 1902
+by = "William Baxter Godbey"
+check = "reference"
+installable = ["Godbey"]
+src = ["conf:Godbey"]
+[node.spectrum]
+measured = 0.29
+
+[[node]]
+id = "weymouth"
+name = "Weymouth New Testament"
+tradition = "protestant"
+scope = "nt"
+year = 1903
+year_label = "1903 (3rd ed. 1912)"
+base_nt = "CT"
+by = "Richard F. Weymouth"
+check = "checked"
+installable = ["Weymouth"]
+src = ["wl", "conf:Weymouth"]
+[node.spectrum]
+measured = 0.59
+
+[[node]]
+id = "moffatt"
+name = "Moffatt, A New Translation"
+tradition = "protestant"
+scope = "bible"
+year = 1926
+year_label = "1913 (NT) · 1926"
+by = "James Moffatt"
+check = "checked"
+src = ["wl"]
+
+[node.spectrum]
+none = "not installable; no published placement"
+[[node]]
+id = "montgomery"
+name = "Centenary Translation (Montgomery NT)"
+tradition = "baptist"
+scope = "nt"
+year = 1924
+by = "Helen Barrett Montgomery; American Baptist Publication Society"
+check = "checked"
+installable = ["Montgomery"]
+note = "First NT translated from Greek by a woman; she was the first woman president of the Northern Baptist Convention (1921)."
+src = ["abhs", "wl"]
+[node.spectrum]
+measured = 0.46
+
+[[node]]
+id = "aat-goodspeed"
+name = "An American Translation (Smith–Goodspeed)"
+tradition = "protestant"
+scope = "bible"
+year = 1931
+year_label = "1923 (NT) · 1931"
+by = "Edgar J. Goodspeed; J. M. Powis Smith"
+check = "disputed"
+dispute = "1931 (standard references) or 1935 (Wikipedia list, the edition with Apocrypha)"
+src = ["wl", "bruce"]
+
+[node.spectrum]
+none = "not installable; no published placement"
+[[node]]
+id = "bbe"
+name = "Bible in Basic English"
+abbr = "BBE"
+tradition = "protestant"
+scope = "bible"
+year = 1949
+year_label = "1941 (NT) · 1949 (rev. 1964)"
+by = "S. H. Hooke"
+check = "checked"
+installable = ["BBE", "engBBE"]
+src = ["wl", "conf:BBE"]
+[node.spectrum]
+measured = 0.67
+
+[[node]]
+id = "phillips"
+name = "J. B. Phillips New Testament"
+tradition = "protestant"
+scope = "nt"
+year = 1958
+year_label = "1947 (Letters to Young Churches) · 1958 · 1972"
+by = "J. B. Phillips"
+check = "checked"
+paraphrase_kind = "free-idiom"
+src = ["wl", "br:phillips"]
+[node.spectrum]
+class = "paraphrase"
+
+[[node]]
+id = "neb"
+name = "New English Bible"
+abbr = "NEB"
+tradition = "ecumenical"
+scope = "bible"
+year = 1970
+year_label = "1961 (NT) · 1970"
+check = "checked"
+src = ["wl"]
+[node.spectrum]
+class = "intermediate"
+
+[[node]]
+id = "reb"
+name = "Revised English Bible"
+abbr = "REB"
+tradition = "ecumenical"
+scope = "bible"
+year = 1989
+check = "checked"
+src = ["wl"]
+[node.spectrum]
+band = [0.70, 0.70, 0.70]
+n = 1
+class = "intermediate"
+
+[[node]]
+id = "we"
+name = "Bible in Worldwide English (NT)"
+tradition = "protestant"
+scope = "nt"
+year = 1969
+by = "Annie Cressman"
+check = "checked"
+installable = ["BWE"]
+src = ["wl"]
+[node.spectrum]
+class = "functional"
+
+[[node]]
+id = "gnt"
+name = "Good News Translation (Today's English Version)"
+abbr = "GNT"
+tradition = "protestant"
+scope = "bible"
+year = 1976
+year_label = "1966 (NT) · 1976"
+base_ot = "MT"
+base_nt = "CT"
+by = "American Bible Society; Robert Bratcher"
+check = "checked"
+note = "Bratcher, a former Southern Baptist missionary, resigned from the ABS in 1981 after calling inerrancy \"heresy\"."
+src = ["wl", "br:tev", "christiancentury"]
+read = "widely used in the UK"
+[node.spectrum]
+band = [0.79, 0.80, 0.80]
+n = 3
+class = "functional"
+self = "dynamic equivalence in a \"common language\" register"
+self_src = "as described by Marlowe from its introduction"
+
+[[node]]
+id = "aat-beck"
+name = "An American Translation (Beck)"
+tradition = "lutheran"
+scope = "bible"
+year = 1976
+year_label = "1963 (NT) · 1976"
+by = "William F. Beck"
+check = "checked"
+src = ["wp:gw", "wl"]
+
+[node.spectrum]
+none = "not installable; no published placement"
+[[node]]
+id = "niv"
+name = "New International Version"
+abbr = "NIV"
+tradition = "protestant"
+scope = "bible"
+year = 1978
+year_label = "1973 (NT) · 1978 · rev. 1984"
+base_ot = "MT"
+base_nt = "CT"
+by = "Committee on Bible Translation; Biblica"
+check = "checked"
+editions = ["NIVI (UK, 1996)"]
+src = ["wp:niv", "wl", "sbc:2011"]
+[node.spectrum]
+band = [0.50, 0.60, 0.74]
+n = 5
+class = "intermediate"
+self = "\"fidelity to the thought of the Biblical writers\" … \"more than a word-for-word translation\""
+self_src = "NIV preface"
+
+[[node]]
+id = "tniv"
+name = "Today's New International Version"
+abbr = "TNIV"
+tradition = "protestant"
+scope = "bible"
+year = 2005
+year_label = "2002 (NT) · 2005"
+check = "checked"
+note = "Opposed by an SBC resolution (2002) over gender language; withdrawn in 2011."
+src = ["wp:niv", "wl", "sbc:2002"]
+[node.spectrum]
+band = [0.53, 0.56, 0.60]
+n = 2
+class = "intermediate"
+
+[[node]]
+id = "nirv"
+name = "New International Reader's Version"
+abbr = "NIrV"
+tradition = "protestant"
+scope = "bible"
+year = 1998
+year_label = "1996 (NT) · 1998"
+check = "checked"
+src = ["bg:NIRV", "wl"]
+read = "ECPA top ten"
+[node.spectrum]
+band = [0.74, 0.76, 0.89]
+n = 3
+class = "functional"
+
+[[node]]
+id = "icb"
+name = "International Children's Bible"
+abbr = "ICB"
+tradition = "protestant"
+scope = "bible"
+year = 1986
+year_label = "1983 (NT) · 1986–87"
+by = "World Bible Translation Center"
+check = "disputed"
+dispute = "complete Bible 1986 (Bible Gateway) or 1987 (Wikipedia, NCV article)"
+src = ["bg:ICB", "wp:ncv"]
+[node.spectrum]
+class = "functional"
+
+[[node]]
+id = "ncv"
+name = "New Century Version"
+abbr = "NCV"
+tradition = "protestant"
+scope = "bible"
+year = 1991
+year_label = "1987 (NT) · 1991"
+check = "checked"
+src = ["wl", "br:ncv"]
+[node.spectrum]
+band = [0.61, 0.64, 0.67]
+n = 2
+class = "functional"
+
+[[node]]
+id = "exb"
+name = "The Expanded Bible"
+abbr = "EXB"
+tradition = "protestant"
+scope = "bible"
+year = 2011
+by = "Thomas Nelson"
+check = "checked"
+src = ["bg:EXB", "wl"]
+[node.spectrum]
+class = "functional"
+self = "NCV base text with bracketed literal and alternate renderings"
+self_src = "Bible Gateway version page"
+
+[[node]]
+id = "erv"
+name = "Easy-to-Read Version"
+abbr = "ERV"
+tradition = "protestant"
+scope = "bible"
+year = 1989
+year_label = "1987 (NT) · 1989 · rev. 2006, 2015"
+base_ot = "MT"
+base_nt = "CT"
+by = "World Bible Translation Center / Bible League International"
+check = "checked"
+installable = ["engerv"]
+src = ["bg:ERV", "wl"]
+[node.spectrum]
+band = [0.90, 0.90, 0.90]
+n = 1
+measured = 0.89
+class = "functional"
+
+[[node]]
+id = "nlv"
+name = "New Life Version"
+abbr = "NLV"
+tradition = "protestant"
+scope = "bible"
+year = 1986
+year_label = "1969 (NT) · 1986"
+by = "Gleason and Kathryn Ledyard"
+check = "checked"
+src = ["wp:nlv", "wl"]
+[node.spectrum]
+class = "functional"
+self = "\"a limited vocabulary of about 850 words\""
+self_src = "Wikipedia, NLV"
+
+[[node]]
+id = "cev"
+name = "Contemporary English Version"
+abbr = "CEV"
+tradition = "protestant"
+scope = "bible"
+year = 1995
+year_label = "1991 (NT) · 1995"
+by = "American Bible Society; Barclay Newman"
+check = "checked"
+src = ["wp:cev", "wl"]
+[node.spectrum]
+band = [0.81, 0.86, 0.95]
+n = 3
+class = "functional"
+
+[[node]]
+id = "msg"
+name = "The Message"
+abbr = "MSG"
+tradition = "protestant"
+scope = "bible"
+year = 2002
+year_label = "1993 (NT) · 2002"
+by = "Eugene Peterson"
+check = "checked"
+paraphrase_kind = "free-idiom"
+note = "Translated from the originals in a free idiom; charts put it at the free end."
+src = ["wl"]
+read = "ECPA top ten (2022)"
+[node.spectrum]
+band = [1.0, 1.0, 1.0]
+n = 5
+class = "functional"
+
+[[node]]
+id = "gw"
+name = "GOD'S WORD Translation"
+abbr = "GW"
+tradition = "lutheran"
+scope = "bible"
+year = 1995
+base_ot = "MT"
+base_nt = "CT"
+by = "God's Word to the Nations Mission Society"
+check = "checked"
+installable = ["GodsWord"]
+src = ["wp:gw", "wl"]
+[node.spectrum]
+band = [0.49, 0.68, 0.87]
+n = 2
+measured = 0.76
+class = "functional"
+self = "\"Closest Natural Equivalence\""
+self_src = "Wikipedia, God's Word Translation"
+
+[[node]]
+id = "nog"
+name = "Names of God Bible"
+abbr = "NOG"
+tradition = "protestant"
+scope = "bible"
+year = 2011
+by = "Baker; notes by Ann Spangler"
+check = "checked"
+src = ["bg:NOG", "wl"]
+[node.spectrum]
+class = "functional"
+
+[[node]]
+id = "hcsb"
+name = "Holman Christian Standard Bible"
+abbr = "HCSB"
+tradition = "baptist"
+scope = "bible"
+year = 2004
+year_label = "1999 (NT) · 2004"
+base_ot = "MT"
+base_nt = "CT"
+by = "LifeWay / Holman; Arthur Farstad, then Edwin Blum"
+check = "checked"
+note = "The Southern Baptist Convention's own translation, through LifeWay."
+src = ["br:csb-intro", "wp:hcsb", "wl"]
+[node.spectrum]
+band = [0.31, 0.35, 0.39]
+n = 2
+class = "intermediate"
+self = "\"optimal equivalence\""
+self_src = "HCSB introduction"
+
+[[node]]
+id = "csb"
+name = "Christian Standard Bible"
+abbr = "CSB"
+tradition = "baptist"
+scope = "bible"
+year = 2017
+base_ot = "MT"
+base_nt = "CT"
+by = "LifeWay; Thomas Schreiner (SBTS) and David Allen, co-chairs"
+check = "checked"
+editions = ["CSBA (Anglicised)"]
+src = ["csb:toc", "wl"]
+read = "ECPA top ten; fastest-growing in the UK"
+[node.spectrum]
+band = [0.36, 0.49, 0.69]
+n = 4
+class = "intermediate"
+self = "\"the optimal blend of accuracy and readability\""
+self_src = "csbible.com"
+
+[[node]]
+id = "net"
+name = "NET Bible"
+abbr = "NET"
+tradition = "protestant"
+scope = "bible"
+year = 2005
+year_label = "2005–06 (2nd ed. 2017)"
+base_ot = "MT"
+base_nt = "CT"
+by = "Biblical Studies Press"
+check = "disputed"
+dispute = "first edition 2005 (Wikipedia list) or 2006 (Wikipedia article)"
+installable = ["NETfree", "NETtext", "engnet"]
+note = "Text leans functional; its 60,932 notes give the formal wording. The Line places the text."
+src = ["wp:net", "wl"]
+[node.spectrum]
+band = [0.60, 0.60, 0.60]
+n = 1
+measured = 0.41
+measured_note = "text only; the notes are not measured"
+class = "intermediate"
+self = "a \"mediating version\": functional text, formal notes"
+self_src = "NET preface"
+
+[[node]]
+id = "isv"
+name = "International Standard Version"
+abbr = "ISV"
+tradition = "protestant"
+scope = "bible"
+year = 2011
+check = "checked"
+installable = ["ISV"]
+src = ["wl"]
+[node.spectrum]
+band = [0.53, 0.53, 0.53]
+n = 1
+measured = 0.47
+
+[[node]]
+id = "leb"
+name = "Lexham English Bible"
+abbr = "LEB"
+tradition = "protestant"
+scope = "bible"
+year = 2011
+year_label = "2010 (NT) · 2011–12"
+base_ot = "MT"
+base_nt = "CT"
+by = "Logos / Lexham; W. Hall Harris III"
+check = "disputed"
+dispute = "complete Bible 2011 (Wikipedia article) or 2012 (Wikipedia list)"
+installable = ["LEB"]
+src = ["wp:leb", "wl"]
+[node.spectrum]
+band = [0.15, 0.15, 0.15]
+n = 1
+measured = 0.24
+class = "formal"
+self = "\"transparency with the original language text\""
+self_src = "LEB preface"
+
+[[node]]
+id = "ceb"
+name = "Common English Bible"
+abbr = "CEB"
+tradition = "ecumenical"
+scope = "bible"
+year = 2011
+check = "checked"
+src = ["wl"]
+[node.spectrum]
+band = [0.81, 0.84, 0.88]
+n = 2
+
+[[node]]
+id = "voice"
+name = "The Voice"
+tradition = "protestant"
+scope = "bible"
+year = 2012
+year_label = "2008–11 (NT) · 2012"
+by = "Ecclesia Bible Society; Thomas Nelson"
+check = "checked"
+src = ["wp:voice", "wl"]
+[node.spectrum]
+band = [0.92, 0.92, 0.92]
+n = 1
+class = "functional"
+
+[[node]]
+id = "ehv"
+name = "Evangelical Heritage Version"
+abbr = "EHV"
+tradition = "lutheran"
+scope = "bible"
+year = 2019
+by = "Wartburg Project"
+check = "checked"
+src = ["bg:EHV", "wl"]
+[node.spectrum]
+class = "intermediate"
+self = "\"a balance between the poles of so-called literal and dynamic equivalent theories\""
+self_src = "Bible Gateway version page"
+
+[[node]]
+id = "mounce"
+name = "Mounce Reverse Interlinear NT"
+tradition = "protestant"
+scope = "nt"
+year = 2011
+by = "William D. Mounce"
+check = "reference"
+src = ["bg:MOUNCE"]
+[node.spectrum]
+class = "formal"
+self = "\"it sits between the ESV and NIV\""
+self_src = "Bible Gateway version page"
+
+[[node]]
+id = "dlnt"
+name = "Disciples' Literal New Testament"
+abbr = "DLNT"
+tradition = "protestant"
+scope = "nt"
+year = 2011
+by = "Michael Magill"
+check = "checked"
+src = ["bg:DLNT", "wl"]
+[node.spectrum]
+class = "formal"
+self = "\"reflects the Greek forms, grammar, and sentence structure\""
+self_src = "Bible Gateway version page"
+
+[[node]]
+id = "knt"
+name = "Kingdom New Testament / New Testament for Everyone"
+abbr = "NTE"
+tradition = "anglican"
+scope = "nt"
+year = 2011
+year_label = "2011 (3rd ed. 2023)"
+by = "N. T. Wright"
+check = "checked"
+src = ["bg:NTFE", "wl"]
+[node.spectrum]
+class = "intermediate"
+self = "\"a fresh and dynamic translation\""
+self_src = "Bible Gateway version page"
+
+[[node]]
+id = "tlv"
+name = "Tree of Life Version"
+abbr = "TLV"
+tradition = "messianic"
+scope = "bible"
+year = 2015
+year_label = "2011 (NT) · 2014–15"
+base_ot = "MT"
+base_nt = "CT"
+by = "Messianic Jewish Family Bible Society"
+check = "checked"
+src = ["wp:tlv", "wl"]
+[node.spectrum]
+class = "formal"
+
+[[node]]
+id = "cjb"
+name = "Complete Jewish Bible"
+abbr = "CJB"
+tradition = "messianic"
+scope = "bible"
+year = 1998
+year_label = "1989 (NT) · 1998"
+base_ot = "ENG"
+base_nt = "CT"
+by = "David H. Stern"
+check = "checked"
+paraphrase_kind = "english-source"
+note = "OT paraphrases the 1917 JPS, correcting from the Hebrew where Stern disagreed."
+src = ["wp:cjb", "wl"]
+[node.spectrum]
+class = "functional"
+
+[[node]]
+id = "ojb"
+name = "Orthodox Jewish Bible"
+abbr = "OJB"
+tradition = "messianic"
+scope = "bible"
+year = 2002
+year_label = "1996 (NT) · 2002"
+by = "Phillip Goble"
+check = "checked"
+installable = ["OrthJBC", "engojb"]
+src = ["wl"]
+
+[node.spectrum]
+none = "installable but not measured (not in the 2026-09-23 run)"
+[[node]]
+id = "nmb"
+name = "New Matthew Bible"
+abbr = "NMB"
+tradition = "protestant"
+scope = "partial"
+year = 2016
+year_label = "2016 (NT); OT in progress"
+by = "Ruth Magnusson Davis; Baruch House"
+check = "reference"
+src = ["bg:NMB"]
+[node.spectrum]
+class = "formal"
+
+[[node]]
+id = "rgt"
+name = "Revised Geneva Translation"
+abbr = "RGT"
+tradition = "protestant"
+scope = "bible"
+year = 2019
+base_nt = "MAJ"
+by = "Five Talents Audio"
+check = "reference"
+src = ["bg:RGT"]
+[node.spectrum]
+class = "formal"
+self = "\"a formal or complete equivalency, based on the Byzantine text-type\""
+self_src = "Bible Gateway version page"
+
+[[node]]
+id = "jubilee"
+name = "Jubilee Bible 2000"
+abbr = "JUB"
+tradition = "protestant"
+scope = "bible"
+year = 2000
+base_ot = "SPA"
+base_nt = "SPA"
+by = "Russell M. Stendal"
+check = "checked"
+installable = ["Jubilee2000"]
+note = "Made from the Spanish Reina (1569) and Valera (1602) with Enzinas's NT (1543), not from the KJV."
+src = ["conf:Jubilee2000", "wl"]
+archaic = true
+[node.spectrum]
+measured = 0.31
+class = "formal"
+self = "\"each unique Hebrew word matched and mated to a unique English word\""
+self_src = "Bible Gateway version page"
+
+[[node]]
+id = "easy"
+name = "EasyEnglish Bible"
+abbr = "EASY"
+tradition = "protestant"
+scope = "bible"
+year = 2018
+by = "MissionAssist (Wycliffe Global Alliance)"
+check = "checked"
+src = ["bg:EASY", "wl"]
+[node.spectrum]
+class = "functional"
+self = "\"a 'meaning-for-meaning' translation not a 'word-for-word' translation\""
+self_src = "Bible Gateway version page"
+
+[[node]]
+id = "tpt"
+name = "The Passion Translation"
+abbr = "TPT"
+tradition = "charismatic"
+scope = "partial"
+year = 2017
+year_label = "2017 (NT); whole Bible planned"
+by = "Brian Simmons; BroadStreet"
+check = "checked"
+note = "Widely read; removed from Bible Gateway in January 2022. Published scholars dispute whether it is a translation: Andrew Wilson calls it \"not really a translation\", and Andrew Shead finds it \"at least 50% longer than the original\"."
+src = ["wp:tpt"]
+[node.spectrum]
+class = "disputed-translation"
+self = "\"a highly readable heart-level expression\""
+self_src = "Wikipedia, TPT"
+
+[[node]]
+id = "fnv"
+name = "First Nations Version"
+abbr = "FNV"
+tradition = "protestant"
+scope = "nt"
+year = 2021
+by = "Terry Wildman and a team of twelve; InterVarsity Press"
+check = "checked"
+src = ["wp:fnv", "wl"]
+[node.spectrum]
+class = "functional"
+
+[[node]]
+id = "osb"
+name = "Orthodox Study Bible"
+abbr = "OSB"
+tradition = "orthodox"
+scope = "bible"
+year = 2008
+year_label = "1993 (NT) · 2008"
+base_ot = "LXX"
+base_nt = "TR"
+by = "St Athanasius Academy; Thomas Nelson"
+check = "checked"
+src = ["wp:osb", "wl"]
+[node.spectrum]
+class = "formal"
+
+[[node]]
+id = "jps1917"
+name = "JPS Tanakh (1917)"
+abbr = "JPS"
+tradition = "jewish"
+scope = "ot"
+year = 1917
+base_ot = "MT"
+check = "checked"
+installable = ["JPS", "engjps"]
+src = ["wl"]
+archaic = true
+[node.spectrum]
+measured = 0.28
+measured_note = "OT sample, put on the NT scale through 30 Bibles measured on both (residual sd 0.04)"
+
+[[node]]
+id = "njps"
+name = "NJPS Tanakh"
+tradition = "jewish"
+scope = "ot"
+year = 1985
+year_label = "1962 (Torah) · 1985 · 2023 gender-sensitive ed."
+base_ot = "MT"
+by = "Harry Orlinsky and others"
+check = "checked"
+src = ["wp:njps", "wl"]
+read = "Reform and Conservative Jewish use"
+[node.spectrum]
+class = "functional"
+self = "\"a faithful, idiomatic rendering\""
+self_src = "Wikipedia, NJPS"
+
+[[node]]
+id = "niv2011"
+name = "New International Version (2011)"
+abbr = "NIV"
+tradition = "protestant"
+scope = "bible"
+year = 2011
+base_ot = "MT"
+base_nt = "CT"
+by = "Committee on Bible Translation; Biblica"
+check = "checked"
+editions = ["NIVUK"]
+note = "The current NIV. The SBC \"cannot commend\" it (resolution, June 2011) over gender language."
+src = ["wp:niv", "wl", "sbc:2011"]
+read = "ECPA top ten 2022 and 2024; UK best-seller; The Bible in American Life (19%)"
+[node.spectrum]
+band = [0.50, 0.60, 0.74]
+n = 5
+class = "intermediate"
+band_note = "charts do not say which NIV edition they place; the band is shared with the 1978/84 node"
+
+[[node]]
+id = "murdock"
+name = "Murdock's Peshitta NT"
+tradition = "protestant"
+scope = "nt"
+year = 1851
+base_nt = "SYR"
+by = "James Murdock"
+check = "reference"
+installable = ["Murdock"]
+src = ["conf:Murdock"]
+[node.spectrum]
+measured_skip = "translated from Syriac; the Greek glosses are the wrong source"
+
+[[node]]
+id = "etheridge"
+name = "Etheridge's Peshitta NT"
+tradition = "protestant"
+scope = "nt"
+year = 1849
+base_nt = "SYR"
+by = "John Wesley Etheridge"
+check = "reference"
+installable = ["Etheridge", "engoke"]
+note = "The eBible `engoke` is Etheridge's Targum Onkelos, grouped here by translator."
+src = ["conf:Etheridge"]
+[node.spectrum]
+measured_skip = "translated from Syriac"
+
+# ── recent free / open translations (installable) ───────────────────────────
+[[node]]
+id = "litv"
+name = "Literal Translation of the Bible (Green)"
+abbr = "LITV"
+tradition = "protestant"
+scope = "bible"
+year = 1985
+base_ot = "MT"
+base_nt = "TR"
+by = "Jay P. Green Sr."
+check = "checked"
+installable = ["LITV"]
+src = ["wl", "conf:LITV"]
+[node.spectrum]
+measured = 0.22
+
+[[node]]
+id = "common"
+name = "The Common Edition NT"
+tradition = "protestant"
+scope = "nt"
+year = 1999
+by = "Timothy E. Clontz"
+check = "reference"
+installable = ["Common"]
+src = ["conf:Common"]
+[node.spectrum]
+measured = 0.24
+
+[[node]]
+id = "emtv"
+name = "English Majority Text Version"
+abbr = "EMTV"
+tradition = "protestant"
+scope = "nt"
+year = 2002
+year_label = "2002 (2012 ed.)"
+base_nt = "MAJ"
+by = "Paul W. Esposito"
+check = "reference"
+installable = ["EMTV", "engemtv"]
+src = ["conf:EMTV"]
+[node.spectrum]
+measured = 0.19
+
+[[node]]
+id = "oeb"
+name = "Open English Bible"
+abbr = "OEB"
+tradition = "protestant"
+scope = "partial"
+year = 2010
+year_label = "2010– (in progress)"
+base_nt = "CT"
+by = "Russell Allen"
+check = "checked"
+installable = ["OEB", "OEBcth", "engoebus", "engoebcw"]
+src = ["wp:oeb", "wl"]
+[node.spectrum]
+measured = 0.64
+
+[[node]]
+id = "t4t"
+name = "Translation for Translators"
+abbr = "T4T"
+tradition = "protestant"
+scope = "bible"
+year = 2017
+year_label = "2008–17"
+by = "Ellis W. Deibler Jr."
+check = "reference"
+installable = ["eng-t4t"]
+note = "Spells out every figure of speech for field translators; freer than The Message on the measure."
+src = ["ebible-cat"]
+[node.spectrum]
+measured = 1.10
+
+[[node]]
+id = "ulb"
+name = "Unlocked Literal Bible"
+abbr = "ULB"
+tradition = "protestant"
+scope = "bible"
+year = 2017
+by = "Door43 World Missions Community"
+check = "reference"
+installable = ["engULB"]
+src = ["ebible-cat"]
+[node.spectrum]
+measured = 0.32
+
+[[node]]
+id = "fbv"
+name = "Free Bible Version"
+abbr = "FBV"
+tradition = "protestant"
+scope = "bible"
+year = 2018
+by = "Jonathan Gallagher"
+check = "checked"
+installable = ["engfbv"]
+src = ["wl", "ebible-cat"]
+[node.spectrum]
+measured = 0.73
+
+[[node]]
+id = "lsv"
+name = "Literal Standard Version"
+abbr = "LSV"
+tradition = "protestant"
+scope = "bible"
+year = 2020
+base_ot = "MT"
+base_nt = "TR"
+by = "Covenant Press"
+check = "checked"
+installable = ["englsv"]
+src = ["wp:lsv", "wl"]
+[node.spectrum]
+measured = 0.18
+
+[[node]]
+id = "tcent"
+name = "Text-Critical English New Testament"
+tradition = "protestant"
+scope = "nt"
+year = 2022
+by = "Robert Adam Boyd"
+check = "reference"
+installable = ["engtcent"]
+src = ["ebible-cat"]
+[node.spectrum]
+measured = 0.32
+
+[[node]]
+id = "bsb"
+name = "Berean Standard Bible"
+abbr = "BSB"
+tradition = "protestant"
+scope = "bible"
+year = 2016
+year_label = "2016 (as Berean Study Bible) · 2022 (renamed) · public domain 2023"
+base_ot = "MT"
+base_nt = "CT"
+by = "Bible Hub"
+check = "checked"
+installable = ["BSB", "engbsb"]
+src = ["berean-terms", "wl", "wikisource:bsb"]
+[node.spectrum]
+measured = 0.37
+self = "\"each word is connected back to the Greek or Hebrew text to produce a transparent text\""
+self_src = "BSB preface"
+
+[[node]]
+id = "msb"
+name = "Majority Standard Bible"
+abbr = "MSB"
+tradition = "protestant"
+scope = "bible"
+year = 2022
+base_ot = "MT"
+base_nt = "MAJ"
+by = "Bible Hub"
+check = "checked"
+installable = ["engmsb"]
+src = ["wl"]
+[node.spectrum]
+measured = 0.38
+
+# ── edges (parent → child) ──────────────────────────────────────────────────
+# type: rev = revision of · drew = drew on · para = paraphrase of an English
+# text. base-text edges come from base_ot/base_nt and are not listed here.
+
+[[edge]]
+from = "tyndale"
+to = "coverdale"
+type = "rev"
+check = "checked"
+src = ["bruce", "wp:great", "wp:english-translations"]
+
+[[edge]]
+from = "tyndale"
+to = "matthew"
+type = "rev"
+check = "checked"
+src = ["wp:tyndale"]
+
+[[edge]]
+from = "coverdale"
+to = "matthew"
+type = "rev"
+check = "checked"
+src = ["bg:NMB", "bruce"]
+
+[[edge]]
+from = "matthew"
+to = "taverner"
+type = "rev"
+check = "reference"
+src = ["bruce", "threetwoone"]
+
+[[edge]]
+from = "matthew"
+to = "great"
+type = "rev"
+check = "checked"
+src = ["wp:great"]
+
+[[edge]]
+from = "tyndale"
+to = "geneva"
+type = "drew"
+check = "checked"
+src = ["wl", "bruce"]
+
+[[edge]]
+from = "great"
+to = "geneva"
+type = "drew"
+check = "reference"
+src = ["bruce"]
+
+[[edge]]
+from = "great"
+to = "bishops"
+type = "rev"
+check = "checked"
+src = ["bruce", "wp:bishops"]
+
+[[edge]]
+from = "geneva"
+to = "bishops"
+type = "drew"
+check = "checked"
+src = ["bruce", "wp:bishops"]
+
+[[edge]]
+from = "bishops"
+to = "kjv1611"
+type = "rev"
+check = "checked"
+src = ["bruce", "wp:kjv", "wp:bishops"]
+
+[[edge]]
+from = "tyndale"
+to = "kjv1611"
+type = "drew"
+check = "checked"
+src = ["nielson-skousen"]
+
+[[edge]]
+from = "geneva"
+to = "kjv1611"
+type = "drew"
+check = "checked"
+src = ["wp:geneva"]
+
+[[edge]]
+from = "coverdale"
+to = "kjv1611"
+type = "drew"
+check = "checked"
+src = ["bruce", "wp:kjv"]
+
+[[edge]]
+from = "matthew"
+to = "kjv1611"
+type = "drew"
+check = "checked"
+src = ["bruce", "wp:kjv"]
+
+[[edge]]
+from = "great"
+to = "kjv1611"
+type = "drew"
+check = "checked"
+src = ["bruce", "wp:kjv"]
+
+[[edge]]
+from = "douay-rheims"
+to = "kjv1611"
+type = "drew"
+check = "checked"
+src = ["bruce", "wp:douay-rheims"]
+
+[[edge]]
+from = "kjv1611"
+to = "kjv"
+type = "rev"
+check = "checked"
+src = ["wp:kjv"]
+
+[[edge]]
+from = "douay-rheims"
+to = "challoner"
+type = "rev"
+check = "checked"
+src = ["wl"]
+
+[[edge]]
+from = "kjv1611"
+to = "challoner"
+type = "drew"
+check = "checked"
+src = ["bruce", "wp:douay-rheims"]
+
+[[edge]]
+from = "kjv"
+to = "webster"
+type = "rev"
+check = "checked"
+src = ["wl"]
+
+[[edge]]
+from = "kjv"
+to = "abu"
+type = "rev"
+check = "reference"
+src = ["br:abu"]
+
+[[edge]]
+from = "abu"
+to = "improved-edition"
+type = "rev"
+check = "checked"
+src = ["br:abu"]
+
+[[edge]]
+from = "kjv"
+to = "rv"
+type = "rev"
+check = "checked"
+src = ["wp:rv", "wl"]
+
+[[edge]]
+from = "rv"
+to = "asv"
+type = "rev"
+check = "checked"
+src = ["wp:rv"]
+
+[[edge]]
+from = "asv"
+to = "rsv"
+type = "rev"
+check = "checked"
+src = ["wp:rsv"]
+
+[[edge]]
+from = "rsv"
+to = "nrsv"
+type = "rev"
+check = "checked"
+src = ["wp:rsv"]
+
+[[edge]]
+from = "nrsv"
+to = "nrsvue"
+type = "rev"
+check = "checked"
+src = ["friendship"]
+
+[[edge]]
+from = "rsv"
+to = "esv"
+type = "rev"
+check = "checked"
+src = ["wp:esv"]
+
+[[edge]]
+from = "esv"
+to = "esvce"
+type = "rev"
+check = "checked"
+src = ["wl"]
+
+[[edge]]
+from = "rsv"
+to = "rsvce"
+type = "rev"
+check = "checked"
+src = ["wp:rsvce"]
+
+[[edge]]
+from = "rsvce"
+to = "rsv2ce"
+type = "rev"
+check = "checked"
+src = ["wp:rsvce", "wl"]
+
+[[edge]]
+from = "asv"
+to = "nasb"
+type = "rev"
+check = "checked"
+src = ["wp:nasb"]
+
+[[edge]]
+from = "nasb"
+to = "nasb1995"
+type = "rev"
+check = "checked"
+src = ["wp:nasb"]
+
+[[edge]]
+from = "nasb1995"
+to = "nasb2020"
+type = "rev"
+check = "checked"
+src = ["wp:nasb"]
+
+[[edge]]
+from = "nasb1995"
+to = "lsb"
+type = "rev"
+check = "checked"
+src = ["lsbible"]
+
+[[edge]]
+from = "asv"
+to = "ampc"
+type = "drew"
+check = "checked"
+src = ["bg:AMPC"]
+
+[[edge]]
+from = "ampc"
+to = "amp"
+type = "rev"
+check = "reference"
+src = ["bg:AMP"]
+
+[[edge]]
+from = "asv"
+to = "tlb"
+type = "para"
+check = "checked"
+src = ["br:nlt"]
+
+[[edge]]
+from = "tlb"
+to = "nlt"
+type = "rev"
+check = "checked"
+src = ["wp:nlt"]
+
+[[edge]]
+from = "asv"
+to = "web"
+type = "rev"
+check = "checked"
+src = ["wp:web"]
+
+[[edge]]
+from = "web"
+to = "nheb"
+type = "rev"
+check = "reference"
+src = ["conf:NHEB"]
+
+[[edge]]
+from = "kjv"
+to = "nkjv"
+type = "rev"
+check = "checked"
+src = ["wp:nkjv"]
+
+[[edge]]
+from = "kjv"
+to = "kj21"
+type = "rev"
+check = "checked"
+src = ["bg:KJ21"]
+
+[[edge]]
+from = "kjv"
+to = "mev"
+type = "rev"
+check = "checked"
+src = ["wl", "wp:mev"]
+
+[[edge]]
+from = "kjv"
+to = "akjv-engelbrite"
+type = "rev"
+check = "checked"
+src = ["conf:AKJV"]
+
+[[edge]]
+from = "kjv"
+to = "ukjv"
+type = "rev"
+check = "checked"
+src = ["conf:UKJV"]
+
+[[edge]]
+from = "kjv"
+to = "mkjv"
+type = "rev"
+check = "reference"
+src = ["conf:MKJV"]
+
+[[edge]]
+from = "kjv"
+to = "rkjnt"
+type = "rev"
+check = "checked"
+src = ["conf:RKJNT"]
+
+[[edge]]
+from = "ylt"
+to = "lsv"
+type = "rev"
+check = "checked"
+src = ["wp:lsv"]
+
+[[edge]]
+from = "twentieth"
+to = "oeb"
+type = "rev"
+check = "checked"
+src = ["wp:oeb", "wl"]
+
+[[edge]]
+from = "bsb"
+to = "msb"
+type = "rev"
+check = "checked"
+src = ["berean-terms"]
+
+[[edge]]
+from = "neb"
+to = "reb"
+type = "rev"
+check = "checked"
+src = ["wl", "br:reb"]
+
+[[edge]]
+from = "jb"
+to = "njb"
+type = "rev"
+check = "checked"
+src = ["wl"]
+
+[[edge]]
+from = "njb"
+to = "rnjb"
+type = "rev"
+check = "checked"
+src = ["wp:rnjb"]
+
+[[edge]]
+from = "confraternity"
+to = "nab"
+type = "drew"
+check = "checked"
+src = ["bruce", "wp:nab"]
+note = "Began as a revision of the Confraternity Bible; after 1943 became a fresh translation from the originals."
+
+[[edge]]
+from = "challoner"
+to = "confraternity"
+type = "rev"
+check = "checked"
+src = ["bruce", "wp:douay-rheims"]
+
+[[edge]]
+from = "nab"
+to = "nabre"
+type = "rev"
+check = "checked"
+src = ["wl"]
+
+[[edge]]
+from = "niv"
+to = "tniv"
+type = "rev"
+check = "checked"
+src = ["wp:niv"]
+
+[[edge]]
+from = "niv"
+to = "niv2011"
+type = "rev"
+check = "checked"
+src = ["wp:niv"]
+
+[[edge]]
+from = "tniv"
+to = "niv2011"
+type = "rev"
+check = "checked"
+src = ["wp:niv"]
+note = "The 2011 NIV replaced both the 1984 NIV and the TNIV."
+
+[[edge]]
+from = "niv"
+to = "nirv"
+type = "rev"
+check = "checked"
+src = ["bg:NIRV"]
+
+[[edge]]
+from = "icb"
+to = "ncv"
+type = "rev"
+check = "checked"
+src = ["br:ncv", "wp:ncv"]
+
+[[edge]]
+from = "ncv"
+to = "exb"
+type = "rev"
+check = "checked"
+src = ["bg:EXB"]
+
+[[edge]]
+from = "aat-beck"
+to = "gw"
+type = "rev"
+check = "checked"
+src = ["wp:gw"]
+
+[[edge]]
+from = "gw"
+to = "nog"
+type = "rev"
+check = "checked"
+src = ["bg:NOG", "wp:nog"]
+
+[[edge]]
+from = "hcsb"
+to = "csb"
+type = "rev"
+check = "checked"
+src = ["csb:toc", "wl"]
+
+[[edge]]
+from = "matthew"
+to = "nmb"
+type = "rev"
+check = "checked"
+src = ["bg:NMB"]
+
+[[edge]]
+from = "geneva"
+to = "rgt"
+type = "rev"
+check = "checked"
+src = ["bg:RGT"]
+
+[[edge]]
+from = "jps1917"
+to = "cjb"
+type = "para"
+check = "checked"
+src = ["wp:cjb"]
+
+[[edge]]
+from = "nkjv"
+to = "osb"
+type = "rev"
+check = "checked"
+src = ["wp:osb"]
+
+[[edge]]
+from = "asv"
+to = "jps1917"
+type = "drew"
+check = "checked"
+src = ["wp:jps1917"]
+
+[[edge]]
+from = "rv"
+to = "jps1917"
+type = "drew"
+check = "checked"
+src = ["bruce", "wp:jps1917"]
+
+# ── installable English texts deliberately not placed on the map ─────────────
+# Not widely used, or lineage unverifiable, or outside historic orthodoxy
+# (tradition noted). Listed so the coverage check can tell "left out on
+# purpose" from "forgotten". Reason in each value.
+[not_placed]
+AB = "The Apostles' Bible (LXX-based OT); small circulation"
+ABP = "Apostolic Bible Polyglot; an interlinear, not a reading Bible"
+AFV2020 = "A Faithful Version; lineage by own claim only"
+GHT = "Garth's Hyper-literal Translation; small circulation"
+JST = "Joseph Smith Translation; Latter Day Saint (tradition: other)"
+RecVer = "Recovery Version; Living Stream Ministry (tradition: other)"
+RLT = "Revised Literal Translation of the KJV (2018); small circulation"
+RNKJV = "Restored Name KJV; sacred-name edition of the KJV"
+SPE = "Samaritan Pentateuch in English; not a Bible translation line"
+KJVA = "edition of kjv (with Apocrypha)"
+KJVPCE = "edition of kjv"
+RWebster = "edition of webster"
+NHEBJE = "edition of nheb"
+NHEBME = "edition of nheb"
+OEBcth = "edition of oeb"
+engaoi = "Anindilyakwa English Bible; regional"
+engbarkly = "Barkly Bible portions; regional"
+enge2t = "E2E Jonah; portion"
+engf35 = "Family 35 NT (Pickering); small circulation"
+eng-glw = "God's Living Word; portions"
+engnna = "Nyangumarta English Bible; regional"
+engourb = "One Unity Resource Bible; small circulation"
+engPEV = "Plain English Version (2026); regional"
+eng-t4t-note = "placed as t4t"
+engwmb = "World Messianic Bible; edition of web"
+engwmbb = "World Messianic Bible British; edition of web"
+engamp = "Amplified 2015; listed by eBible but not downloadable"
+engnasb = "NASB 1995; listed by eBible but not downloadable (installed from the Lockman repo instead)"
+enggw = "GOD'S WORD; listed but not redistributable (installed from CrossWire instead)"
+engasvbt = "edition of asv"
+engjps-note = "placed as jps1917"
+
+# ── sources (citation keys) ─────────────────────────────────────────────────
+[source]
+wl = "https://en.wikipedia.org/wiki/List_of_English_Bible_translations (read 2026-09-23)"
+bruce = "F. F. Bruce, History of the Bible in English, 3rd ed. (1978) — standard reference, not re-read"
+metzger = "Bruce M. Metzger, The Bible in Translation (2001) — standard reference, not re-read"
+nielson-skousen = "https://www.tandfonline.com/doi/abs/10.1179/ref_1998_3_1_004"
+byzantinetext = "https://byzantinetext.com/study/editions/robinson-pierpont/"
+kings = "https://kingscollections.org/exhibitions/specialcollections/bible/first-english-bible/wycliffe-bible"
+threetwoone = "http://threetwoone.org/diagrams/bible-editions-timeline.gif"
+groseclose = "https://preacherwin.com/wp-content/uploads/2008/04/bible-versions.pdf"
+veracity = "https://sharedveracity.net/tag/luther-hux/"
+christiancentury = "https://www.christiancentury.org/article/2010-08/good-news-bible-translator-dies-opposed-inerrantists"
+friendship = "https://www.friendshippress.org/pages/about-the-nrsvue"
+lsbible = "https://lsbible.org/comparisons/"
+abhs = "https://abhsarchives.org/helen-barrett-montgomery-woman-firsts/"
+berean-terms = "https://berean.bible/terms.htm"
+"wikisource:bsb" = "https://en.wikisource.org/wiki/Bible_(Berean_Standard)/Greek,_Hebrew_and_Aramaic_Sources_and_Abbreviations"
+ebible-cat = "https://ebible.org/Scriptures/translations.csv"
+"csb:toc" = "https://csbible.com/about-the-csb/translation-oversight-committee/"
+"sbc:2002" = "https://www.sbc.net/resource-library/resolutions/on-todays-new-international-version/"
+"sbc:2011" = "https://baptistnews.com/article/southern-baptists-cannot-commend-new-niv-bible-translation/"
+# prefixes: wp:<x> = the English Wikipedia article on that translation;
+# bg:<ABBR> = https://www.biblegateway.com/versions/ page for that abbreviation;
+# br:<page> = https://www.bible-researcher.com/<page>.html;
+# conf:<Module> = the module's .conf in the CrossWire catalogue (About/History).
+
+# Wikipedia articles behind the wp:<key> citations, by title (each checked
+# against the Wikipedia API on 2026-09-24; cjb and nog land on a section of
+# a wider article, which is where Wikipedia covers them).
+[wikipedia]
+"bishops" = "Bishops' Bible"
+"cev" = "Contemporary English Version"
+"cjb" = "Complete Jewish Bible"
+"douay-rheims" = "Douay–Rheims Bible"
+"english-translations" = "Bible translations into English"
+"esv" = "English Standard Version"
+"fnv" = "First Nations Version"
+"geneva" = "Geneva Bible"
+"great" = "Great Bible"
+"gw" = "God's Word Translation"
+"hcsb" = "Holman Christian Standard Bible"
+"jps1917" = "Jewish Publication Society of America Version"
+"kjv" = "King James Version"
+"leb" = "Lexham English Bible"
+"leningrad" = "Leningrad Codex"
+"lsv" = "Literal Standard Version"
+"mev" = "Modern English Version"
+"nab" = "New American Bible"
+"nasb" = "New American Standard Bible"
+"ncv" = "New Century Version"
+"net" = "New English Translation"
+"niv" = "New International Version"
+"njps" = "New Jewish Publication Society of America Tanakh"
+"nkjv" = "New King James Version"
+"nlt" = "New Living Translation"
+"nlv" = "New Life Version"
+"nog" = "Names of God Bible"
+"oeb" = "Open English Bible"
+"osb" = "Orthodox Study Bible"
+"rnjb" = "Revised New Jerusalem Bible"
+"rsv" = "Revised Standard Version"
+"rsvce" = "Revised Standard Version Catholic Edition"
+"rv" = "Revised Version"
+"tlv" = "Tree of Life Version"
+"tpt" = "The Passion Translation"
+"tyndale" = "Tyndale Bible"
+"voice" = "The Voice (Bible translation)"
+"web" = "World English Bible"
+"wycliffe" = "Wycliffe's Bible"
+
+# ── The Family view ─────────────────────────────────────────────────────────
+# Lanes, left to right, one per line of descent after 1611; family_layout
+# orders them by the lane's average place on the Line. Before 1611 the Bibles
+# sit in a small hand-tuned tree (x, y in the drawing's own units; x runs
+# 0–1120, the root above the time axis at y 440), like a map label.
+[family]
+root = { wycliffe = [140, 70], tyndale = [330, 110], coverdale = [230, 190], matthew = [430, 190], great = [330, 265], geneva = [560, 265], bishops = [330, 340], douay-rheims = [780, 265] }
+
+[[family.lane]]
+name = "NASB"
+members = ["nasb", "nasb1995", "nasb2020"]
+[[family.lane]]
+name = "King James"
+members = ["kjv1611", "kjv", "nkjv"]
+[[family.lane]]
+name = "Revised line"
+members = ["rv", "asv", "rsv", "esv"]
+[[family.lane]]
+name = "NRSV"
+members = ["nrsv", "nrsvue"]
+[[family.lane]]
+name = "Holman · CSB"
+members = ["hcsb", "csb"]
+[[family.lane]]
+name = "Douay · NAB"
+members = ["challoner", "nab", "nabre"]
+[[family.lane]]
+name = "Jerusalem"
+members = ["jb", "njb", "rnjb"]
+[[family.lane]]
+name = "NIV"
+members = ["niv", "tniv", "niv2011"]
+[[family.lane]]
+name = "NIrV"
+members = ["nirv"]
+[[family.lane]]
+name = "Living · NLT"
+members = ["tlb", "nlt"]
+[[family.lane]]
+name = "Good News"
+members = ["gnt"]
+[[family.lane]]
+name = "Jewish"
+members = ["njps"]
+[[family.lane]]
+name = "The Message"
+members = ["msg"]
+
+# Margin notes at the moments that matter: facts, dated, one line each
+# (§4.5; wording checked against the research record, §7.2 for 1952).
+[[family.note]]
+year = 1611
+text = "1611 — the King James Version: the Bishops’ Bible revised, drawing on Tyndale, Geneva and Rheims."
+src = ["wp:kjv"]
+[[family.note]]
+year = 1745
+text = "For 270 years the KJV is the English Bible of Protestant use; Catholics read the Douay–Rheims, from 1752 in Challoner’s revision."
+src = ["wp:kjv", "wp:douay-rheims"]
+[[family.note]]
+year = 1885
+text = "1881–85 — the Revised Version: the KJV revised against an older Greek text."
+src = ["wp:rv"]
+[[family.note]]
+year = 1952
+text = "1952 — the RSV renders Isaiah 7:14 “young woman”; a North Carolina pastor burns the page."
+src = ["wp:rsv", "veracity"]
+[[family.note]]
+year = 1978
+text = "1978 — the NIV: a fresh translation, not a revision."
+src = ["wp:niv"]
+[[family.note]]
+year = 2001
+text = "2001 — the ESV: the RSV revised back toward word for word."
+src = ["wp:esv"]

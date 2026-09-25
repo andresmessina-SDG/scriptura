@@ -20,12 +20,15 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Gdk, Pango
 
-from a11y import set_accessible_label, set_role
+from a11y import set_accessible_description, set_accessible_label, set_role
 from gtk_utils import Autosave, clear_children, DelayedSpinner
 import annotations
+import bible_family
+from family_card import paint_track, redraw_on_contrast
 import content
 import journal
 import sermons
+import settings
 import export_dialog
 import passage_export
 import passage_print
@@ -613,11 +616,28 @@ def compare_translations(pane, verse, popover=None):
             ref=f'{book_label(pane.book)} {pane.chapter}:{verse}'),
         xalign=0)
     title.add_css_class('heading')
-    title.set_margin_start(12)
-    title.set_margin_end(12)
-    title.set_margin_top(8)
-    title.set_margin_bottom(6)
-    outer.append(title)
+    title.set_hexpand(True)
+
+    # Other languages: off by default, so a compare reads within the
+    # language on the page. Shown only once a Bible in another language
+    # turns up — with none installed there is nothing to switch.
+    others_lbl = Gtk.Label(label=_('Other languages'))
+    others_lbl.add_css_class('dim-label')
+    others = Gtk.Switch(valign=Gtk.Align.CENTER,
+                        active=bool(settings.get('compare_other_languages')))
+    set_accessible_label(others, _('Other languages'))
+    others_lbl.set_visible(False)
+    others.set_visible(False)
+
+    header = Gtk.Box(spacing=8)
+    header.set_margin_start(12)
+    header.set_margin_end(12)
+    header.set_margin_top(8)
+    header.set_margin_bottom(6)
+    header.append(title)
+    header.append(others_lbl)
+    header.append(others)
+    outer.append(header)
 
     scroll = Gtk.ScrolledWindow()
     scroll.set_min_content_width(420)
@@ -649,7 +669,7 @@ def compare_translations(pane, verse, popover=None):
     comp.set_child(outer)
     comp.popup()
 
-    book, chapter = pane.book, pane.chapter
+    book, chapter, reading = pane.book, pane.chapter, pane.module
 
     def fetch():
         names = [m for m in sword_bridge.module_names()
@@ -668,31 +688,107 @@ def compare_translations(pane, verse, popover=None):
             plain = re.sub(r'<[^>]+>', '', str(v_html)).strip()
             if plain:
                 results.append((mod, plain))
+        # From word for word to free, so every compare reads as the spectrum.
+        order = bible_family.order_by_line([mod for mod, _t in results])
+        results.sort(key=lambda r: order.index(r[0]))
         GLib.idle_add(populate, results)
+
+    shown = {}
 
     def populate(results):
         delayed_spinner.stop()
         if comp.get_parent() is None:
             return GLib.SOURCE_REMOVE
+        # Languages are read here, on the UI thread: a module's config read
+        # is not guarded against the worker that loads the verses.
+        lang = content.language_code(reading)
+        same, other = _split_by_language(results, content.language_code, lang)
+        shown['same'], shown['other'] = same, other
+        others_lbl.set_visible(bool(other))
+        others.set_visible(bool(other))
+        fill()
+        return GLib.SOURCE_REMOVE
+
+    def on_others(sw, _pspec):
+        settings.put('compare_other_languages', sw.get_active())
+        fill()
+        # A popover grows for a longer list but never shrinks for a shorter
+        # one; presenting again sizes it to the rows now in it.
+        comp.present()
+
+    others.connect('notify::active', on_others)
+
+    def fill():
+        if 'same' not in shown:
+            return
         clear_children(comp_list)
-        for mod, text in results:
+        rows = shown['same'] + (shown['other'] if others.get_active() else [])
+        for mod, text in rows:
             row = Gtk.ListBoxRow()
             rb = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
             rb.set_margin_start(12)
             rb.set_margin_end(12)
             rb.set_margin_top(8)
             rb.set_margin_bottom(8)
-            ml = Gtk.Label(label=sword_bridge.display_name(mod), xalign=0)
+            head = Gtk.Box(spacing=12)
+            ml = Gtk.Label(label=sword_bridge.display_name(mod), xalign=0,
+                           hexpand=True)
             ml.add_css_class('compare-version')
+            head.append(ml)
+            spot = bible_family.place(mod)
+            if spot is not None:
+                words = _line_words(spot)
+                head.append(_line_tick(spot, words))
+                set_accessible_description(row, words)
             tl = Gtk.Label(label=text, xalign=0, wrap=True)
             tl.set_max_width_chars(52)
-            rb.append(ml)
+            rb.append(head)
             rb.append(tl)
             row.set_child(rb)
             comp_list.append(row)
-        return GLib.SOURCE_REMOVE
 
     threading.Thread(target=fetch, daemon=True).start()
+
+
+def _split_by_language(results, lang_of, lang):
+    """[(module, text)] split into the Bibles in `lang` and the rest, each
+    keeping its order. The Bible being read leads, in its own language,
+    whatever language the app is in. An unknown `lang`, or one no row
+    shares, counts everything as one language: the list never opens empty
+    behind a switch.
+    """
+    same = [r for r in results if lang and lang_of(r[0]) == lang]
+    if not same:
+        return list(results), []
+    return same, [r for r in results if lang_of(r[0]) != lang]
+
+
+def _line_words(spot):
+    """Where a Bible sits on the Line, and on whose word, as a sentence."""
+    zone = bible_family.zone_label(spot.value)
+    if spot.kind == 'band':
+        return _('{zone}, where published charts place it').format(zone=zone)
+    if spot.kind == 'measured':
+        return _('{zone}, as measured in Scriptura').format(zone=zone)
+    return _('{zone}, as its makers describe it').format(zone=zone)
+
+
+def _line_tick(spot, words):
+    """A small copy of the Line's track, with this Bible's mark on it.
+
+    The marks are the Line's own: a filled dot on a soft range where published
+    charts place it, a ring where Scriptura measured it, a bracket where only
+    its makers' description is known. A Bible past the free end is pinned there.
+    """
+    area = Gtk.DrawingArea()
+    area.set_content_width(56)
+    area.set_content_height(12)
+    area.set_valign(Gtk.Align.CENTER)
+    area.set_tooltip_text(words)
+    area.set_draw_func(
+        lambda a, cr, w, h: paint_track(cr, w, h, spot, a.get_color()))
+    redraw_on_contrast(area)
+    return area
 
 
 def _open_journal_on(pane, parent_popover):

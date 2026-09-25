@@ -15,6 +15,13 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Changed
 
+- **Compare runs from word for word to free.** Comparing a verse now lists
+  your English Bibles from the most literal to the freest, each with a
+  small mark showing where it sits. A filled dot means published charts
+  place it there; a ring means Scriptura measured it. Hover the mark to
+  read which. Compare now shows only the Bibles in the language you are
+  reading; the Other languages switch at the top adds the rest, and the
+  app remembers your choice.
 - **The chapter's first line keeps the rhythm.** The large first letter
   made the gap under the first line about a third wider than every other
   line. That line now steps like the rest, at every line spacing, and the
@@ -38,12 +45,39 @@ semver-ish — 0.x was the pre-Flathub testing track.
   reading aids, and backing up your study data. Tips, keyboard shortcuts
   and About are under Help, each with its name.
 
+### Added
+
+- **The Bible Family Tree.** A new entry in each pane's module list.
+  It opens on the Family: the Bibles people read today and every Bible
+  they were revised from, back to Wycliffe and Tyndale, drawn down the
+  page in time with a note at the moments that shaped them. Hover a Bible
+  to light its whole line; arrow keys walk from parent to child. Switch
+  it to By literalness and every Bible slides sideways to its place from
+  word for word to free, so you can watch a family drift: the RSV's line
+  toward word for word in the ESV, the Living Bible's back toward
+  translation in the NLT. A List button shows the same family as an
+  indented list, and Print makes it a poster for a classroom wall, in
+  either arrangement, with a key to its lines and marks. The Line lays out
+  every English Bible from word for word to free; filter it by what you
+  have installed, by tradition and by era. The Bible you are reading is
+  marked, and pressing any Bible opens its card. Under the desktop's high
+  contrast setting its faint lines, ranges and dates are drawn darker.
+- **About this translation.** For an English Bible, the module list's
+  info page now opens a card beside the page: where the Bible sits from
+  word for word to free, the line of Bibles it was revised from, the
+  Hebrew and Greek texts it translates, notes, and the sources behind
+  every fact. Each Bible it names opens its own card. From the card you
+  can open the Bible in the pane, install it, compare the verse you are
+  on, or show it in the Family.
+
 ### Fixed
 
 - **The store listing tells the truth about going online.** It said
   Scriptura goes online only to download the texts you choose. Spoken
   readings go online too, so it now says so, and that Preferences can
   turn them off. The website is corrected too.
+- The ESV's info page in the module list opened on nothing: a copyright
+  sign in its About text stopped the page from being built.
 
 ## [1.7.3] — 2026-09-22
 
