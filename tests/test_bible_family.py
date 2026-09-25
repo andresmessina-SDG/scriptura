@@ -345,3 +345,70 @@ def test_the_family_module_is_known_to_the_app():
     assert sword_bridge.display_name(bf.MODULE_KEY) == 'The Bible Family Tree'
     assert content.feature_card(bf.MODULE_KEY)['icon'] == \
         'scriptura-bible-family-symbolic'
+
+
+# ── Compare keeps its size once it is on screen ─────────────────────────────
+
+@pytest.fixture
+def display():
+    from gi.repository import Gdk, Gtk
+    Gtk.init_check()
+    if Gdk.Display.get_default() is None:
+        pytest.skip('needs a display: builds real widgets')
+
+
+def test_compare_settles_its_header_before_it_is_shown(display, monkeypatch):
+    """The Other languages switch used to appear when the verses arrived,
+    making the header taller on a popover already on screen. GNOME Shell
+    dismissed the resized popup, so Compare flashed and closed on every
+    route. Whether the switch shows is now decided before popup(), and the
+    verses arriving leave the header as it was."""
+    from gi.repository import Gtk
+    import annotation_dialogs as ad
+
+    langs = {'KJV': 'en', 'RusSynodal': 'ru'}
+    monkeypatch.setattr(ad, '_compare_names', lambda: ['KJV', 'RusSynodal'])
+    monkeypatch.setattr(ad.content, 'language_code', lambda m: langs.get(m, ''))
+    monkeypatch.setattr(ad.content, 'load_chapter',
+                        lambda m, b, c: [(16, f'{m} text')])
+    monkeypatch.setattr(ad.sword_bridge, 'map_target_verse',
+                        lambda m, b, c, v: v)
+    monkeypatch.setattr(ad.bible_family, 'place', lambda m: None)
+    monkeypatch.setattr(ad.settings, 'get', lambda key: False)
+
+    class _Now:                           # the worker and idle, run inline
+        def __init__(self, target, daemon=None):
+            self.target = target
+
+        def start(self):
+            self.target()
+    monkeypatch.setattr(ad.threading, 'Thread', _Now)
+    queued = []
+    monkeypatch.setattr(ad.GLib, 'idle_add', lambda fn, *a: queued.append(
+        (fn, a)))
+
+    at_popup = {}
+
+    def popup(pop):                       # popup() without a window segfaults
+        header = pop.get_child().get_first_child()
+        at_popup['switch'] = header.get_last_child().get_visible()
+        at_popup['height'] = header.measure(Gtk.Orientation.VERTICAL, -1)[1]
+        at_popup['pop'] = pop
+    monkeypatch.setattr(Gtk.Popover, 'popup', popup)
+
+    class _Pane:
+        view = Gtk.Box()          # a TextView loops on a child left at teardown
+        book, chapter, module = 'John', 3, 'KJV'
+
+        def _verse_ranges(self, _v):
+            return None
+    ad.compare_translations(_Pane(), 16)
+    for fn, args in queued:               # the verses arrive
+        fn(*args)
+
+    header = at_popup['pop'].get_child().get_first_child()
+    assert at_popup['switch'] is True
+    assert header.get_last_child().get_visible() is True
+    assert header.measure(Gtk.Orientation.VERTICAL, -1)[1] == \
+        at_popup['height']
+    at_popup['pop'].unparent()
