@@ -425,3 +425,68 @@ def test_the_lists_download_turns_refresh_into_a_spinner(monkeypatch):
     assert not isinstance(btn.get_child(), Adw.Spinner)
     assert btn.get_tooltip_text() == 'Refresh the catalogue'
     win.close()
+
+
+@needs_display
+def test_a_burst_of_jobs_ending_rebuilds_once(monkeypatch):
+    """Update All ends many jobs at nearly the same time; rebuilt once per
+    job, back to back, sixteen rebuilds froze the window for 3.2 s."""
+    import time
+    import downloads
+    from gi.repository import GLib
+    win, _s = _updates_window(monkeypatch, due=False)
+    built = []
+    monkeypatch.setattr(win, '_populate',
+                        lambda languages=True: built.append(languages))
+    for i in range(16):
+        job = downloads.Job(f'sword:M{i}', f'M{i}', downloads.CROSSWIRE, None)
+        job.state = downloads.DONE
+        win._on_job(job)
+    lists = downloads.Job('sword:refresh', 'lists', downloads.CROSSWIRE,
+                          None, row=False)
+    lists.state = downloads.DONE
+    win._on_job(lists)
+    assert built == []
+    ctx = GLib.MainContext.default()
+    end = time.monotonic() + 0.5
+    while time.monotonic() < end:
+        ctx.iteration(False)
+        time.sleep(0.01)
+    assert built == [True]      # once, with the language lists (a refresh)
+    win.close()
+
+
+@needs_display
+def test_a_burst_of_finished_downloads_is_said_once(monkeypatch):
+    """Update All ended 59 jobs in seconds, and a screen reader was made to
+    read all 59 sentences."""
+    import time
+    import downloads
+    import module_manager as mm
+    from gi.repository import GLib
+    win, _s = _updates_window(monkeypatch, due=False)
+    said = []
+    monkeypatch.setattr(mm, 'announce', lambda _w, text, **k: said.append(text))
+    monkeypatch.setattr(win, '_populate', lambda languages=True: None)
+
+    def end(key, text):
+        job = downloads.Job(key, key, downloads.CROSSWIRE, None,
+                            done_text=text)
+        job.state = downloads.DONE
+        win._on_job(job)
+
+    def settle():
+        ctx = GLib.MainContext.default()
+        stop = time.monotonic() + 0.6
+        while time.monotonic() < stop:
+            ctx.iteration(False)
+            time.sleep(0.01)
+    end('sword:A', 'A installed')
+    settle()
+    assert said == ['A installed']          # one: in its own words
+    for i in range(5):
+        end(f'sword:B{i}', f'B{i} installed')
+    settle()
+    assert said[1:] == ['5 downloads finished']
+    assert win._status.get_text() == '5 downloads finished'
+    win.close()

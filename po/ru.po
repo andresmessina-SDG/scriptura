@@ -10691,3 +10691,10 @@ msgid_plural "{n} updates"
 msgstr[0] "{n} обновление"
 msgstr[1] "{n} обновления"
 msgstr[2] "{n} обновлений"
+
+#: module_manager.py
+msgid "{n} download finished"
+msgid_plural "{n} downloads finished"
+msgstr[0] "{n} загрузка завершена"
+msgstr[1] "{n} загрузки завершены"
+msgstr[2] "{n} загрузок завершено"

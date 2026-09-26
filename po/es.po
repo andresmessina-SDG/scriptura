@@ -10732,3 +10732,9 @@ msgid "{n} update"
 msgid_plural "{n} updates"
 msgstr[0] "{n} actualización"
 msgstr[1] "{n} actualizaciones"
+
+#: module_manager.py
+msgid "{n} download finished"
+msgid_plural "{n} downloads finished"
+msgstr[0] "{n} descarga terminada"
+msgstr[1] "{n} descargas terminadas"

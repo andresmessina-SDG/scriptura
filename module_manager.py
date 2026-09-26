@@ -350,6 +350,9 @@ class ModuleManagerWindow(Adw.Window):
         self._job_widgets = {}      # job key -> [(label, ring)] on its rows
         self._action_rows = {}      # row key -> [(row, its buttons)]
         self._check_job = None      # the check this window started itself
+        self._populate_soon = None  # (source id, languages) of a rebuild due
+        self._finished = []         # what ended in this burst, to be said
+        self._finished_soon = None
         self.add_css_class('module-manager')
         self._build_ui()
         self.connect('close-request', self._on_close_request)
@@ -360,6 +363,47 @@ class ModuleManagerWindow(Adw.Window):
         downloads.listen(self._on_job)
         self._sync_bar()
         self._check_for_updates()
+
+    def _queue_populate(self, languages):
+        """Rebuild once, a moment after the last of a burst of jobs ends.
+        Each rebuild costs 150-200 ms, and Update All ends many jobs at
+        nearly the same time: rebuilt once per job, back to back, sixteen of
+        them froze the window for 3.2 s."""
+        if self._populate_soon is not None:
+            source, earlier = self._populate_soon
+            GLib.source_remove(source)
+            languages = languages or earlier
+
+        def go():
+            self._populate_soon = None
+            if not self._closed:
+                self._populate(languages=languages)
+            return GLib.SOURCE_REMOVE
+        self._populate_soon = (GLib.timeout_add(120, go), languages)
+
+    def _queue_finished(self, text):
+        """Say what finished, once a burst is over: one job, in its own
+        words; many, how many. Update All ended 59 jobs in a few seconds,
+        and a screen reader was made to read all 59."""
+        self._finished.append(text)
+        if self._finished_soon is not None:
+            GLib.source_remove(self._finished_soon)
+
+        def say():
+            self._finished_soon = None
+            texts, self._finished = self._finished, []
+            if self._closed or not texts:
+                return GLib.SOURCE_REMOVE
+            if len(texts) == 1:
+                announce(self, texts[0])
+            else:
+                words = ngettext('{n} download finished',
+                                 '{n} downloads finished',
+                                 len(texts)).format(n=len(texts))
+                announce(self, words)
+                self._flash(words)
+            return GLib.SOURCE_REMOVE
+        self._finished_soon = GLib.timeout_add(300, say)
 
     def _check_for_updates(self):
         """Download the lists again when they are missing or more than a
@@ -1432,7 +1476,7 @@ class ModuleManagerWindow(Adw.Window):
             return
         # It ended: the data changed. The language lists only change with
         # the catalogue.
-        self._populate(languages=job.key == 'sword:refresh')
+        self._queue_populate(languages=job.key == 'sword:refresh')
         if job.state == downloads.FAILED and job is self._check_job:
             # A check the reader did not ask for fails quietly: the lists
             # stay as they were, and Refresh is there.
@@ -1443,7 +1487,7 @@ class ModuleManagerWindow(Adw.Window):
             self._set_error(text, retry=job.again)
             announce(self, text, urgent=True)
         elif job.state == downloads.DONE and job.done_text:
-            announce(self, job.done_text)
+            self._queue_finished(job.done_text)
 
     def _show_job_in_rows(self, job):
         """Turn the rows a new job belongs to over to its progress, in
@@ -1662,6 +1706,12 @@ class ModuleManagerWindow(Adw.Window):
         # instead of mutating finalized widgets, and stop the pulse.
         self._closed = True
         downloads.unlisten(self._on_job)
+        if self._populate_soon is not None:
+            GLib.source_remove(self._populate_soon[0])
+            self._populate_soon = None
+        if self._finished_soon is not None:
+            GLib.source_remove(self._finished_soon)
+            self._finished_soon = None
         if self in _windows:
             _windows.remove(self)
         if self._pulse_source:
