@@ -72,6 +72,18 @@ text = "Abra un interlineal junto a cualquier Biblia y lea el Nuevo Testamento g
 alt = "El interlineal griego en Juan 1, junto a la Reina-Valera"
 
 [[shots]]
+img = "read"
+title = "Leer la diferencia"
+text = "Un versículo en cada Biblia inglesa que tenga, de la más literal arriba a la más libre abajo, con el hebreo o el griego encima. Marcar diferencias atenúa las palabras que cada Biblia comparte con la de al lado, para que resalte lo que cambió cada traducción. Las Biblias son inglesas."
+alt = "Salmo 23:1 en Biblias inglesas junto a la Reina-Valera, con el hebreo encima"
+
+[[shots]]
+img = "family"
+title = "El árbol genealógico de la Biblia"
+text = "Las Biblias inglesas que se leen hoy y las Biblias de las que fueron revisadas, dibujadas a lo largo del tiempo, con una nota en los momentos que las formaron. Cámbielo a Por literalidad y vea cómo una familia se desplaza de lo literal a lo libre. Las Biblias son inglesas."
+alt = "El árbol genealógico de la Biblia de 1966 a 2004, las Biblias inglesas modernas en sus familias"
+
+[[shots]]
 img = "voices"
 title = "La Iglesia en cada versículo"
 text = "Junto a cualquier pasaje, Voces de la Iglesia reúne lo que escribieron sobre él los padres, los maestros medievales y los reformadores: 87.995 citas, de Ireneo a Calvino, ordenadas por versículo y fechadas por siglo. Las citas están en inglés."
@@ -108,6 +120,10 @@ text = "Mapas de los viajes y fotografías de los lugares que nombra un versícu
 [[rows]]
 title = "La Escritura en piedra"
 text = "Arqueología unida a sus versículos."
+
+[[rows]]
+title = "El árbol genealógico de la Biblia"
+text = "De dónde viene cada Biblia inglesa, y cuán literal es su traducción."
 
 [[rows]]
 title = "El libro de las generaciones"

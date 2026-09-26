@@ -99,6 +99,10 @@ msgid "Chapters and devotionals read aloud."
 msgstr "Главы и размышления вслух."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:31
+msgid "The Bible Family Tree: where each English Bible came from, how literally it translates, and one verse read across them all."
+msgstr "Родословное древо Библии: откуда происходит каждая английская Библия, насколько буквален её перевод, и один стих во всех них."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:31
 msgid ""
 "Paintings, maps and archaeology for the passage you read, and the Bible's "
 "family lists drawn as charts."
@@ -10698,3 +10702,27 @@ msgid_plural "{n} downloads finished"
 msgstr[0] "{n} загрузка завершена"
 msgstr[1] "{n} загрузки завершены"
 msgstr[2] "{n} загрузок завершено"
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
+msgid "One verse in every English Bible you have, with the Hebrew above, beside the Bible you are reading"
+msgstr "Один стих во всех ваших английских Библиях, с еврейским текстом над ними, рядом с Библией, которую вы читаете"
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
+msgid "The Bible Family Tree: the English Bibles read today and the Bibles they came from"
+msgstr "Родословное древо Библии: английские Библии, которые читают сегодня, и Библии, от которых они произошли"
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
+msgid "The Greek New Testament word by word, with meaning, grammar and Strong's number under each word"
+msgstr "Греческий Новый Завет слово за словом, со значением, грамматикой и номером Стронга под каждым словом"
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
+msgid "Voices of the Church: what the fathers and the Reformers wrote on the verse you are reading"
+msgstr "Голоса Церкви: что писали отцы и реформаторы о стихе, который вы читаете"
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
+msgid "Art for the passage: Caravaggio's Calling of Saint Matthew beside Matthew 9"
+msgstr "Искусство к отрывку: «Призвание апостола Матфея» Караваджо рядом с Матфея 9"
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
+msgid "Write a sermon beside the passage, with its series, dates and verses"
+msgstr "Пишите проповедь рядом с отрывком, с её серией, датами и стихами"

@@ -11,7 +11,7 @@ Website: <https://andresmessina-sdg.github.io/scriptura/>
 > _"For the word of God is living and active, sharper than any
 > two-edged sword..."_ — Hebrews 4:12
 
-![Scriptura: two-pane reading with the Strong's lexicon panel open](data/screenshots/01-two-pane-lexicon.png)
+![Scriptura: Psalm 23 in the King James Version, beside the same verse in six English Bibles with the Hebrew above](data/screenshots/01-read-the-difference.png)
 
 ---
 
@@ -31,22 +31,26 @@ Website: <https://andresmessina-sdg.github.io/scriptura/>
 - **Art, archaeology and genealogies.** Paintings and maps for the
   passage you read, a gallery of finds from the ground, and the
   Bible's family lists drawn as charts.
+- **The Bible Family Tree.** Where each English Bible came from, how
+  literally it translates, and one verse read across them all.
 - **Listen.** Chapters and devotionals read aloud.
 - **Present.** F5 shows a passage full screen on a projector.
 - **In English, Spanish and Russian.**
 
 Scriptura runs entirely on your computer. There is no telemetry,
-no account, no background phone-home. The only time the app uses the
-network is when you explicitly download a module, fetch a translation
-from eBible.org, or install an open-data file. Your study is your
-own.
+no account, no background phone-home. The app goes online only to
+download the texts you choose, to check for updates when you open the
+Module Manager, and for spoken readings, which you can turn off in
+Preferences. Your study is your own.
 
 | | |
 |:---:|:---:|
-| ![The Greek New Testament interlinear: gloss, parsing, and Strong's number under every word](data/screenshots/06-interlinear-greek.png) | ![The Historical Commentaries pane: the church's voices on a verse, across the centuries](data/screenshots/02-historical-commentaries.png) |
-| _Greek NT interlinear_ | _Historical Commentaries_ |
-| ![Annotations: every mark you have made in one filterable view](data/screenshots/03-study-journal.png) | ![Distraction-free reading mode in dark theme](data/screenshots/05-reading-mode-dark.png) |
-| _Annotations_ | _Reading mode (dark)_ |
+| ![The Bible Family Tree: the English Bibles read today and the Bibles they came from](data/screenshots/02-bible-family-tree.png) | ![The Greek New Testament interlinear: meaning, grammar and Strong's number under every word](data/screenshots/03-interlinear-greek.png) |
+| _The Bible Family Tree_ | _Greek NT interlinear_ |
+| ![Voices of the Church: the fathers and the Reformers on the verse beside the text](data/screenshots/04-voices-of-the-church.png) | ![Caravaggio's Calling of Saint Matthew beside Matthew 9](data/screenshots/05-scripture-in-art.png) |
+| _Voices of the Church_ | _Scripture in Art_ |
+| ![A sermon manuscript on John 1, in the writing room](data/screenshots/06-sermon-writing.png) | ![Psalm 23 in reading mode, dark](data/screenshots/07-reading-mode-dark.png) |
+| _Sermon writing_ | _Reading mode (dark)_ |
 
 ---
 
