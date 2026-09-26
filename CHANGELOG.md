@@ -12,6 +12,42 @@ semver-ish — 0.x was the pre-Flathub testing track.
   in English, Spanish and Russian: a working reading pane, the install
   steps, and every release's notes. The store listing's homepage, the
   README and the old install page now point to it.
+- **The Bible Family Tree.** A new entry in each pane's module list, with
+  three views: Family, Line and Read.
+  The Family shows the Bibles people read today and every Bible they were
+  revised from, drawn down the page in time with a note at the moments
+  that shaped them (a button puts the notes away for the lines alone). The
+  eight Bibles before 1611, back to Wycliffe and Tyndale, fold into one
+  line at the top; open it to see them. Hover a Bible to light its whole
+  line; arrow keys walk from parent to child. Switch it to By literalness
+  and every Bible slides sideways to its place from word for word to free,
+  with a key to its marks and ranges, so you can watch a family drift: the
+  RSV's line toward word for word in the ESV, the Living Bible's back
+  toward translation in the NLT. A List button shows the same family as an
+  indented list, and Print makes it a poster for a classroom wall, in
+  either arrangement, with a key to its lines and marks.
+  The Line lays out every English Bible from word for word to free; find
+  one by name, abbreviation or year, and filter by what you have
+  installed, by tradition and by era. Compare's See on the Line opens it
+  at the Bible you are reading.
+  Read the difference shows one verse in every English Bible you have,
+  from word for word at the top to free at the bottom, with the Greek or
+  Hebrew above and a gloss under each word. Mark differences fades the
+  words each Bible shares with its neighbour, so what a translation
+  changed stands out. Choose All Bibles and the ones you lack join them in
+  their places, each with a link to install it. It opens at the verse you
+  are reading, or from Compare's Read the difference; type a reference or
+  step verse by verse.
+  The Bible you are reading is marked, and pressing any Bible opens its
+  card. Under the desktop's high contrast setting the faint lines, ranges
+  and dates are drawn darker.
+- **About this translation.** For an English Bible, the module list's
+  info page now opens a card beside the page: where the Bible sits from
+  word for word to free, the line of Bibles it was revised from, the
+  Hebrew and Greek texts it translates, notes, and the sources behind
+  every fact. Each Bible it names opens its own card. From the card you
+  can open the Bible in the pane, install it, compare the verse you are
+  on, or show it in the Family.
 
 ### Changed
 
@@ -59,42 +95,6 @@ semver-ish — 0.x was the pre-Flathub testing track.
   reading aids, and backing up your study data. Tips, keyboard shortcuts
   and About are under Help, each with its name.
 
-### Added
-
-- **The Bible Family Tree.** A new entry in each pane's module list.
-  It opens on the Family: the Bibles people read today and every Bible
-  they were revised from, back to Wycliffe and Tyndale, drawn down the
-  page in time with a note at the moments that shaped them (a button puts
-  the notes away for the lines alone). Hover a Bible
-  to light its whole line; arrow keys walk from parent to child. Switch
-  it to By literalness and every Bible slides sideways to its place from
-  word for word to free, so you can watch a family drift: the RSV's line
-  toward word for word in the ESV, the Living Bible's back toward
-  translation in the NLT. A List button shows the same family as an
-  indented list, and Print makes it a poster for a classroom wall, in
-  either arrangement, with a key to its lines and marks. The Line lays out
-  every English Bible from word for word to free; find one by name,
-  abbreviation or year, and filter by what you have installed, by
-  tradition and by era. Compare's See on the Line opens it at the Bible
-  you are reading. Read the difference shows one verse in every English
-  Bible you have, from word for word at the top to free at the bottom,
-  with the Greek or Hebrew above and a gloss under each word. Mark
-  differences fades the words each Bible shares with its neighbour, so what
-  a translation changed stands out. Choose All
-  Bibles and the ones you lack join them in their places, each with a link
-  to install it. It opens at the
-  verse you are reading, or from Compare's Read the difference; type a
-  reference or step verse by verse. The Bible you are reading is
-  marked, and pressing any Bible opens its card. Under the desktop's high
-  contrast setting its faint lines, ranges and dates are drawn darker.
-- **About this translation.** For an English Bible, the module list's
-  info page now opens a card beside the page: where the Bible sits from
-  word for word to free, the line of Bibles it was revised from, the
-  Hebrew and Greek texts it translates, notes, and the sources behind
-  every fact. Each Bible it names opens its own card. From the card you
-  can open the Bible in the pane, install it, compare the verse you are
-  on, or show it in the Family.
-
 ### Fixed
 
 - **The store listing tells the truth about going online.** It said
@@ -103,6 +103,11 @@ semver-ish — 0.x was the pre-Flathub testing track.
   turn them off. The website is corrected too.
 - The ESV's info page in the module list opened on nothing: a copyright
   sign in its About text stopped the page from being built.
+- **Compare showed the wrong verse beside a Synodal or Vulgate psalm.**
+  Those Bibles count a psalm's title as verses, so a verse there has a
+  different number in the others: comparing the Synodal's «Помилуй меня,
+  Боже» showed the KJV's verse 3, not its verse 1. Compare now matches
+  each Bible's own numbering.
 - **Compare translations flashed open and closed at once**, from the verse
   menu, the ⋮ button and the Family Card alike. Its Other languages switch
   appeared only after the verses arrived, which resized a popup already on

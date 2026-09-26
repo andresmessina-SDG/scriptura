@@ -604,7 +604,10 @@ class FamilyRead:
         kicker = Gtk.Label(
             label=_('The Hebrew, read right to left, with a word-by-word '
                     'gloss') if hebrew
-            else _('The Greek, with a word-by-word gloss'), xalign=0)
+            else _('The Greek, with a word-by-word gloss'), xalign=0,
+            wrap=True)
+        # Wrapped: on one line, in Russian in a narrow pane, it set the
+        # column wider than the pane and cut off the card beneath it.
         kicker.add_css_class('family-card-kicker')
         self._source.append(kicker)
         # Centred in its card, each line of words (decided 2026-09-25).

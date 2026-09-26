@@ -81,6 +81,7 @@ class _Node(Gtk.Button):
         self.root = record['id'] in bible_family.family_data().get('root', {})
         self.spot = fl.spot(record['id'])
         self.bar_above = False      # its range bar, when one crosses a label
+        self.placed_x = None        # where place() last put its left edge
         self.reading = False
 
         self._dot = Gtk.DrawingArea()
@@ -144,6 +145,7 @@ class _Node(Gtk.Button):
         """Put the node so its mark's centre sits on (x, y)."""
         x0, y0, _x1, _y1 = self.box()
         y0 += self._view._dy(self)
+        self.placed_x = x0
         if self.get_parent() is fixed:
             fixed.move(self, x0, y0)
         else:
@@ -366,16 +368,28 @@ class FamilyView:
             else:
                 self._fixed.put(w, fl.NOTE_LEFT, _y)
         self._apply_fold(self._fold)
-        # Measured here, before the stylesheet reaches them, the labels are
-        # a little wide, and a label left of its mark put the mark 6px off
-        # its lane (1769 KJV). Once on screen they measure true: again.
-        self._fixed.connect('map', lambda _w: self._resettle())
+        self._resettling = False
+
+    def _check_placing(self):
+        """A label left of its mark is placed by its width, and the width
+        changes under it: measured before the stylesheet reached it, and
+        again after a theme switch, the 1769 KJV's mark sat 6px off its
+        lane. Checked at each paint; any node that moved is placed again,
+        after the paint, where a widget may move."""
+        if self._resettling or self._animation is not None:
+            return
+        if any(n.placed_x is not None and abs(n.box()[0] - n.placed_x) > 0.5
+               for n in self._nodes.values()):
+            self._resettling = True
+            GLib.idle_add(self._resettle)
 
     def _resettle(self):
+        self._resettling = False
         self._settle_labels()
         for node in self._nodes.values():
             node.place(self._fixed)
         self._area.queue_draw()
+        return GLib.SOURCE_REMOVE
 
     # ── the root, folded or open ─────────────────────────────────────────
 
@@ -681,6 +695,7 @@ class FamilyView:
     # ── painting ─────────────────────────────────────────────────────────
 
     def _draw(self, area, cr, w, h):
+        self._check_placing()
         self._paint(cr, w, h, area.get_color(),
                     area.get_pango_context().get_font_description().get_size(),
                     self._lit, hc=high_contrast(), fold=self._fold,

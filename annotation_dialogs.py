@@ -745,12 +745,16 @@ def compare_translations(pane, verse, popover=None):
     comp.popup()
 
     book, chapter = pane.book, pane.chapter
+    # Each Bible's verse is found here, on the UI thread: it reads the
+    # modules' configs, which the worker below must not.
+    targets = {mod: compare_target(reading, mod, book, chapter, verse)
+               for mod in names}
 
     def fetch():
         results = []
         for mod in names:
             vs = content.load_chapter(mod, book, chapter)
-            want = compare_target(reading, mod, book, chapter, verse)
+            want = targets[mod]
             v_html = next((h for vn, h in vs if vn == want), '')
             plain = re.sub(r'<[^>]+>', '', str(v_html)).strip()
             if plain:

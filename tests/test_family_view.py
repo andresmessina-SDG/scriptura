@@ -629,3 +629,18 @@ def test_the_1611_kjv_draws_no_second_bar():
     view = fv.FamilyView(lambda i: None, 'line')
     assert fv._bar(view._nodes['kjv1611']) is None
     assert fv._bar(view._nodes['kjv']) is not None
+
+
+def test_a_label_that_changed_width_is_placed_again():
+    """After a theme switch a label left of its mark measured anew, and the
+    1769 KJV's mark sat 6px off its lane: a paint notices and re-places."""
+    view, _opened = _view()
+    node = view._nodes['kjv']
+    node.placed_x = node.box()[0] + 10
+    view._check_placing()
+    assert view._resettling
+    ctx = GLib.MainContext.default()
+    while ctx.pending():
+        ctx.iteration(False)
+    assert not view._resettling
+    assert abs(node.placed_x - node.box()[0]) < 0.5
