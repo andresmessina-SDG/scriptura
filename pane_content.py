@@ -109,7 +109,9 @@ class FamilyContent(PaneContent):
         self._pane._family_tree.render()
 
     def on_verse(self, verse_num: int) -> None:
-        return  # standalone document — not verse-keyed
+        # A verse clicked or stepped to in the Bible beside it: Read goes
+        # there, whether or not it is the view showing.
+        self._pane._family_tree.read.follow_reading()
 
     def apply_font_size(self, pt: int) -> None:
         return  # chrome text: it follows the desktop, not the reading size

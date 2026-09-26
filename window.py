@@ -1622,6 +1622,18 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._family_pane_for(src)._family_tree.show_read(book, chapter,
                                                           verse)
 
+    def read_moved(self, src, book, chapter, verse):
+        """Read the difference went to a verse by itself: the header and
+        the Bible beside it go there too. Within the chapter on the page,
+        only the verse marker moves, so a step is not a re-render."""
+        if self._current_loc != (book, chapter):
+            self._go_to(book, chapter, verse)
+            return
+        for pane in (self.pane1, self.pane2):
+            if (pane is not src and pane.get_visible()
+                    and (pane.book, pane.chapter) == (book, chapter)):
+                pane.select_verse(verse)
+
     def _family_card_compare(self):
         pane = self._card_pane
         self._hide_family_card()

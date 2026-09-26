@@ -1969,6 +1969,9 @@ class BiblePane(Gtk.Box):
         self._window_target_verse = None
         if self._sync_btn.get_active():
             return
+        if self._is_family:
+            self._family_tree.read.follow((book, chapter, 1))
+            return
         if self._is_catena or self._is_imagery or self._is_interlinear:
             self._book = book
             self._chapter = chapter
@@ -1986,6 +1989,9 @@ class BiblePane(Gtk.Box):
         self._window_chapter = chapter
         self._window_target_verse = verse
         if self._sync_btn.get_active():
+            return
+        if self._is_family:
+            self._family_tree.read.follow((book, chapter, verse or 1))
             return
         if self._is_catena or self._is_imagery or self._is_interlinear:
             self._book = book
@@ -4975,6 +4981,9 @@ class BiblePane(Gtk.Box):
         self._module = new_module
         self._picker.set_current_label(new_module)
         self._compute_module_flags()
+        if self._is_family:
+            # Before the verse the reader is on is cleared below.
+            self._family_tree.read.start_here()
         # A pane showing a page with no verses (the Family Tree, a general
         # book) keeps the header's place, not its own: a Bible chosen next
         # opened at the pane's stale Genesis 1 while the header said Isaiah 1

@@ -217,10 +217,10 @@ class FamilyTree:
         settings.put('family_tree_view', view)
         settings.put('family_tree_outline', self._list_btn.get_active())
         if btn is None and view == 'read':
-            # Turned to, it reads the verse the reader is on now; turned to
+            # Turned to, it reads the verse it kept while away; turned to
             # by Compare, show_read has set the verse already.
             if not self._read_asked:
-                self.read.follow_reading()
+                self.read.turned_to()
         self._show_view()
 
     def _on_notes(self, btn):
