@@ -490,3 +490,29 @@ def test_a_burst_of_finished_downloads_is_said_once(monkeypatch):
     assert said[1:] == ['5 downloads finished']
     assert win._status.get_text() == '5 downloads finished'
     win.close()
+
+
+@needs_display
+def test_a_flash_never_covers_an_error(monkeypatch):
+    """"5 downloads finished", just after a failure, replaced its words and
+    hid its Retry."""
+    win, _s = _updates_window(monkeypatch, due=False)
+    win._set_error('KJV: The server isn’t answering.', retry=lambda: None)
+    win._flash('5 downloads finished')
+    assert win._status.get_text() == 'KJV: The server isn’t answering.'
+    assert win._retry_btn.get_visible()
+    win.close()
+
+
+def test_removing_from_the_picker_takes_its_update_with_it(monkeypatch):
+    import types
+    import module_picker
+    import updates
+    updates.set_pending(['sword:KJV', 'sword:ASV'])
+    monkeypatch.setattr(module_picker.content, 'remove', lambda name: None)
+    picker = module_picker.ModulePicker.__new__(module_picker.ModulePicker)
+    picker._pane = types.SimpleNamespace(
+        _on_toast=None, _on_modules_changed=lambda: None)
+    picker._do_remove('KJV')
+    assert updates.pending() == {'sword:ASV'}
+    updates.set_pending([])

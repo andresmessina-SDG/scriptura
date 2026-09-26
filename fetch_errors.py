@@ -23,7 +23,7 @@ import transfer
 from i18n import _
 
 _DAMAGED = (zipfile.BadZipFile, tarfile.TarError, gzip.BadGzipFile,
-            EOFError, zlib.error)
+            EOFError, zlib.error, transfer.Damaged)
 
 
 def _cause(exc):

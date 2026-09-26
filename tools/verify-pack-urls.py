@@ -20,6 +20,13 @@ Checks, per bridge:
             large packs are served as `.000/.001/…` and the resolver probes
             for those first.
 
+  sums    — every asset of the pack releases and of `sword-modules` has a
+            `<asset>.sha256` beside it, and it matches the digest GitHub
+            records for the asset. The app refuses a download that fails its
+            published sums, so a missing file leaves it unchecked and a stale
+            one (an asset re-uploaded without new sums) breaks every install.
+            Publish with tools/publish-release-asset.sh.
+
 Usage:  python3 tools/verify-pack-urls.py
 Exit 0 = every pack reachable, 1 = at least one is not, 2 = network trouble.
 
@@ -56,9 +63,51 @@ def check_imagery() -> tuple[bool, str]:
                   f'LATEST_BUILT={imagery_bridge.LATEST_BUILT}')
 
 
+_REPO = 'andresmessina-SDG/scriptura'
+
+
+def _release_tag(url: str) -> str:
+    return url.split('/releases/download/')[1].split('/')[0]
+
+
+def check_sums() -> tuple[bool, str]:
+    import json
+    import urllib.request
+
+    import transfer
+    tags = (_release_tag(catena_bridge.PACK_URL),
+            _release_tag(imagery_bridge.PACK_URL), 'sword-modules')
+    problems, checked = [], 0
+    for tag in tags:
+        api = f'https://api.github.com/repos/{_REPO}/releases/tags/{tag}'
+        with urllib.request.urlopen(api, timeout=30) as resp:
+            assets = json.load(resp)['assets']
+        digests = {a['name']: (a.get('digest') or '').removeprefix('sha256:')
+                   for a in assets}
+        base = f'https://github.com/{_REPO}/releases/download/{tag}'
+        sums: dict = {}
+        for name in digests:
+            if name.endswith('.sha256'):
+                sums.update(transfer.published_sums(
+                    f'{base}/{name.removesuffix(".sha256")}') or {})
+        for name, digest in digests.items():
+            if name.endswith('.sha256'):
+                continue
+            checked += 1
+            if name not in sums:
+                problems.append(f'{tag}/{name}: no .sha256 published')
+            elif digest and sums[name] != digest:
+                problems.append(f'{tag}/{name}: its .sha256 is stale — '
+                                'every install of it would be refused')
+    if problems:
+        return False, '\n         '.join(problems)
+    return True, f'{checked} assets match their published sums'
+
+
 def main() -> int:
     failed = False
-    for name, check in (('catena', check_catena), ('imagery', check_imagery)):
+    for name, check in (('catena', check_catena), ('imagery', check_imagery),
+                        ('sums', check_sums)):
         try:
             ok, detail = check()
         except FileNotFoundError as e:
@@ -69,8 +118,9 @@ def main() -> int:
         print(f'  {name:8} {"ok   " if ok else "FAIL "} {detail}')
         failed |= not ok
     if failed:
-        print('\na pack URL does not resolve — publishing this release would '
-              'ship a dead Install button', file=sys.stderr)
+        print('\na pack check failed — publishing this release would ship '
+              'an Install button that 404s or a download the app refuses',
+              file=sys.stderr)
     return 1 if failed else 0
 
 

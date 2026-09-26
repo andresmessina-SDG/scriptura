@@ -10,6 +10,7 @@ import sqlite3
 import tarfile
 import tempfile
 import threading
+import time
 import unicodedata
 import zipfile
 from collections import OrderedDict
@@ -2125,13 +2126,92 @@ def _fetch_scriptura(name, timeout):
     """
     import urllib.request
 
-    with urllib.request.urlopen(f'{_SCRIPTURA_BASE}/{name}',
-                                timeout=timeout) as resp:
-        return transfer.read(resp)
+    url = f'{_SCRIPTURA_BASE}/{name}'
+    with urllib.request.urlopen(url, timeout=timeout) as resp:
+        blob = transfer.read(resp)
+    # Checked against the sums published beside it, when there are some.
+    want = (transfer.published_sums(url) or {}).get(name)
+    if want and transfer.sha256_of(blob) != want:
+        raise transfer.Damaged(f'{name} does not match its published '
+                               'checksum')
+    return blob
 
 
-def _fetch_crosswire(path, timeout):
-    """Download `path`; CrossWire over HTTPS, then FTP, then our mirror."""
+# The mirror's manifest: the SHA-256 of every module it holds and of the
+# catalogue, fetched the first time a download needs checking.
+_manifest = None
+
+
+def _mirror_manifest(fresh=False):
+    """{'modules': {name: entry}, 'catalogue': hex}, or {} when it cannot be
+    read (then nothing can be checked, and nothing is refused for it).
+    `fresh` reads it again: the mirror is rebuilt weekly, and a manifest
+    kept from earlier in a long session would refuse the new copies."""
+    global _manifest
+    if _manifest is None or fresh:
+        import urllib.error
+        import urllib.request
+        try:
+            with urllib.request.urlopen(f'{_MIRROR_BASE}/manifest.json',
+                                        timeout=30) as resp:
+                data = json.load(resp)
+            _manifest = {'modules': {e['module']: e
+                                     for e in data.get('modules', [])},
+                         'catalogue': data.get('catalogue_sha256', '')}
+        except (urllib.error.URLError, OSError, ValueError, KeyError) as exc:
+            _sword_log.info('mirror manifest unreadable: %s', exc)
+            return {}
+    return _manifest
+
+
+def _catalogue_version(name):
+    """The version the cached catalogue gives `name`, or ''."""
+    shadow = _shadow_path()
+    if not shadow:
+        return ''
+    return _parse_conf(os.path.join(shadow, 'mods.d',
+                                    f'{name.lower()}.conf')).get('version', '')
+
+
+def _module_zip_ok(name, blob, tier):
+    """Whether a module zip that came over `tier` ('ftp' or 'mirror')
+    matches the mirror's manifest. The mirror's own copy must. CrossWire's
+    FTP copy (plain text, open to change on the way) must when the manifest
+    has the same version: CrossWire's zips are byte for byte the mirror's
+    then (11 of 11 measured, 2026-09-26). A module the mirror does not hold
+    (its licence forbids it) has nothing to be checked against."""
+    digest = transfer.sha256_of(blob)
+    for fresh in (False, True):
+        entry = _mirror_manifest(fresh).get('modules', {}).get(name)
+        if entry is None:
+            return True
+        if tier == 'ftp' and entry.get('version') != _catalogue_version(name):
+            return True
+        if digest == entry.get('sha256'):
+            return True
+    return False
+
+
+def _catalogue_ok(blob, tier):
+    """The mirror's copy of the released catalogue must match its
+    manifest; CrossWire's changes whenever any module does, so it cannot be
+    held to a weekly manifest."""
+    if tier != 'mirror':
+        return True
+    digest = transfer.sha256_of(blob)
+    for fresh in (False, True):
+        want = _mirror_manifest(fresh).get('catalogue')
+        if not want or digest == want:
+            return True
+    return False
+
+
+def _fetch_crosswire(path, timeout, check=None):
+    """Download `path`; CrossWire over HTTPS, then FTP, then our mirror.
+
+    `check(blob, tier)` vets what came over FTP or from the mirror: an FTP
+    copy that fails it is dropped for the mirror's; a mirror copy that fails
+    it is refused. Over HTTPS the connection itself is checked."""
     # Lazy: pulls in http/ssl/email (~40 ms) — only needed for downloads.
     import urllib.error
     import urllib.request
@@ -2158,13 +2238,21 @@ def _fetch_crosswire(path, timeout):
         try:
             with urllib.request.urlopen(
                     f'{_CROSSWIRE_FTP}/{path}', timeout=timeout) as resp:
-                return transfer.read(resp)
+                blob = transfer.read(resp)
+            if check is None or check(blob, 'ftp'):
+                return blob
+            _sword_log.warning('%s over FTP does not match the mirror\'s '
+                               'checksum — using the mirror', path)
         except (urllib.error.URLError, OSError) as exc:
             _sword_log.info('CrossWire FTP failed (%s) — trying mirror', exc)
     else:
         _sword_log.info('CrossWire FTP not answering — trying mirror')
 
-    return _fetch_mirror(path, timeout)
+    blob = _fetch_mirror(path, timeout)
+    if check is not None and not check(blob, 'mirror'):
+        raise transfer.Damaged(f'{os.path.basename(path)} from the mirror '
+                               'does not match its checksum')
+    return blob
 
 
 def refresh_source():
@@ -2178,7 +2266,8 @@ def refresh_source():
     other four hundred modules.
     """
     from datetime import datetime
-    data = _fetch_crosswire(f'{_RELEASED_SOURCE}/mods.d.tar.gz', 60)
+    data = _fetch_crosswire(f'{_RELEASED_SOURCE}/mods.d.tar.gz', 60,
+                            check=_catalogue_ok)
 
     ts = datetime.now().strftime('%Y%m%d%H%M%S')
     base = os.path.expanduser('~/.sword/InstallMgr')
@@ -2296,8 +2385,9 @@ def install_module(module_name):
     if source is not None:
         _install_raw_module(module_name, source)
         return
-    _extract_module_zip(
-        _fetch_crosswire(f'packages/rawzip/{module_name}.zip', 120))
+    _extract_module_zip(_fetch_crosswire(
+        f'packages/rawzip/{module_name}.zip', 120,
+        check=lambda blob, tier: _module_zip_ok(module_name, blob, tier)))
 
 
 def _extract_module_zip(data):
@@ -2381,8 +2471,23 @@ def _drop_index(module_name):
 
 def _new_staging():
     """A fresh staging directory inside ~/.sword, so moving out of it is a
-    rename on the same file system."""
+    rename on the same file system.
+
+    One more than an hour old is a leftover from a process killed
+    mid-install, which nothing else would ever delete. A younger one may be
+    another install's, still unpacking (the welcome screen installs on its
+    own thread), and is left alone."""
     os.makedirs(_SWORD_PATH, exist_ok=True)
+    stale = time.time() - 3600
+    for entry in os.listdir(_SWORD_PATH):
+        path = os.path.join(_SWORD_PATH, entry)
+        try:
+            old = entry.startswith('.install-') and \
+                os.path.getmtime(path) < stale
+        except OSError:
+            continue
+        if old:
+            shutil.rmtree(path, ignore_errors=True)
     return tempfile.mkdtemp(prefix='.install-', dir=_SWORD_PATH)
 
 

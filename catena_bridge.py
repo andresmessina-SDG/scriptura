@@ -210,6 +210,15 @@ def download_and_install(on_progress: Callable[[int, int], None] | None = None,
     # The database unpacks to about four times the download.
     transfer.fetch_resumable([(url, size)], tmp_gz, on_progress,
                              extra=size * 5)
+    # Checked against the sums published beside it before anything is
+    # unpacked; a pack that fails them is thrown away, not resumed.
+    sums = transfer.published_sums(url)
+    if sums:
+        try:
+            transfer.check_sums(tmp_gz, [(url, size)], sums)
+        except transfer.Damaged:
+            transfer.discard(tmp_gz)
+            raise
     try:
         with gzip.open(tmp_gz, 'rb') as gz, open(tmp_db, 'wb') as out:
             shutil.copyfileobj(gz, out)

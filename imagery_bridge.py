@@ -408,6 +408,16 @@ def download_and_install(on_progress: Callable[[int, int], None] | None = None,
     # Unpacking needs about the archive's size again: photographs do not
     # compress. A stopped download resumes (transfer.fetch_resumable).
     transfer.fetch_resumable(parts, tmp_archive, on_progress, extra=total)
+    # Checked against the sums published beside the pack (one line per
+    # part) before anything is unpacked; a pack that fails them is thrown
+    # away, not resumed.
+    sums = transfer.published_sums(url)
+    if sums:
+        try:
+            transfer.check_sums(tmp_archive, parts, sums)
+        except transfer.Damaged:
+            transfer.discard(tmp_archive)
+            raise
     try:
         os.makedirs(staging, exist_ok=True)
         try:

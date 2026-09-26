@@ -107,7 +107,7 @@ def test_install_takes_the_zip_path_for_a_released_module(shadow, monkeypatch):
     calls = []
     monkeypatch.setattr(sword_bridge, '_module_source', lambda _n: None)
     monkeypatch.setattr(sword_bridge, '_fetch_crosswire',
-                        lambda path, _t: calls.append(path) or _stub_zip())
+                        lambda path, _t, **_k: calls.append(path) or _stub_zip())
     monkeypatch.setattr(sword_bridge, '_reset', lambda: None)
     monkeypatch.setattr(sword_bridge, '_safe_extract', lambda *a: None)
     monkeypatch.setattr(sword_bridge, '_zip_conf_members', lambda _i: [])
@@ -138,7 +138,7 @@ def test_install_fetches_file_by_file_for_a_lockman_module(shadow, tmp_path,
     fetched = []
     monkeypatch.setattr(
         sword_bridge, '_fetch_crosswire',
-        lambda path, _t: fetched.append(path) or b'data:' + path.encode())
+        lambda path, _t, **_k: fetched.append(path) or b'data:' + path.encode())
     monkeypatch.setattr(sword_bridge, '_reset', lambda: None)
 
     sword_bridge.install_module('LBLA')
@@ -164,7 +164,7 @@ def test_a_lockman_install_writes_nothing_when_a_fetch_fails(shadow, tmp_path,
     monkeypatch.setattr(sword_bridge, '_list_remote_dir',
                         lambda path, **k: ['ot.bzz', 'ot.bzs'])
 
-    def _fetch(path, _t):
+    def _fetch(path, _t, **_k):
         if path.endswith('ot.bzs'):
             raise RuntimeError('connection lost')
         return b'data'
@@ -284,7 +284,7 @@ def test_a_corrupt_second_catalogue_does_not_lose_the_first(tmp_path,
 
     good = _catalogue({'sparv.conf': _conf('SpaRV')})
 
-    def _fetch(path, _t):
+    def _fetch(path, _t, **_k):
         if path.startswith(sword_bridge._RELEASED_SOURCE):
             return good
         return b'not a gzip archive at all'
@@ -331,7 +331,7 @@ def test_our_catalogue_is_recorded_against_our_source(tmp_path, monkeypatch):
                         lambda p: p.replace('~', str(home)))
     monkeypatch.setattr(
         sword_bridge, '_fetch_crosswire',
-        lambda path, _t: _catalogue({'sparv.conf': _conf('SpaRV')}))
+        lambda path, _t, **_k: _catalogue({'sparv.conf': _conf('SpaRV')}))
     monkeypatch.setattr(
         sword_bridge, '_fetch_scriptura',
         lambda name, _t: _catalogue({'wikcionario.conf': _conf('Wikcionario')}))
@@ -355,7 +355,7 @@ def test_our_repository_being_unreachable_does_not_lose_the_refresh(
                         lambda p: p.replace('~', str(home)))
     monkeypatch.setattr(
         sword_bridge, '_fetch_crosswire',
-        lambda path, _t: _catalogue({'sparv.conf': _conf('SpaRV')}))
+        lambda path, _t, **_k: _catalogue({'sparv.conf': _conf('SpaRV')}))
 
     def _down(_name, _t):
         raise OSError('github unreachable')

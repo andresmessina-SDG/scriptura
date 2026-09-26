@@ -1671,7 +1671,11 @@ class ModuleManagerWindow(Adw.Window):
             cb()
 
     def _flash(self, message):
-        """Transient, self-clearing status line (busy-gate refusals)."""
+        """Transient, self-clearing status line (busy-gate refusals). Never
+        over an error: "5 downloads finished" arriving just after a failure
+        replaced its words and hid its Retry."""
+        if self._retry_cb is not None and self._status_bar.get_visible():
+            return
         self._status.set_text(message)
         self._retry_btn.set_visible(False)
         self._status_bar.set_visible(True)
@@ -1784,11 +1788,14 @@ class ModuleManagerWindow(Adw.Window):
                                        Adw.ResponseAppearance.SUGGESTED)
         dialog.set_default_response('install')
         dialog.set_close_response('cancel')
+        # Asked about a metered connection too, once the key is in.
         dialog.connect(
             'response',
-            lambda _d, r: self._start_install(
-                mod['name'], _friendly_name(mod),
-                entry.get_text().strip() or None)
+            lambda _d, r: self._ask_if_metered(
+                _size_bytes(mod.get('size')),
+                lambda: self._start_install(
+                    mod['name'], _friendly_name(mod),
+                    entry.get_text().strip() or None))
             if r == 'install' else None)
         dialog.present(self)
 
