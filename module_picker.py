@@ -587,6 +587,8 @@ class ModulePicker:
                     _("Couldn't remove {name} — {error}").format(
                         name=disp, error=e))
             return
+        # Its update goes with it, or the menu's dot would go on offering one.
+        updates.set_pending(updates.pending() - {updates.key_for_module(name)})
         if self._pane._on_toast:
             self._pane._on_toast(_('Removed {name}').format(name=disp))
         # Refresh both panes (and fall back if a pane showed this module).

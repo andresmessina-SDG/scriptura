@@ -10,6 +10,7 @@ import sqlite3
 import tarfile
 import tempfile
 import threading
+import time
 import unicodedata
 import zipfile
 from collections import OrderedDict
@@ -2141,11 +2142,13 @@ def _fetch_scriptura(name, timeout):
 _manifest = None
 
 
-def _mirror_manifest():
+def _mirror_manifest(fresh=False):
     """{'modules': {name: entry}, 'catalogue': hex}, or {} when it cannot be
-    read (then nothing can be checked, and nothing is refused for it)."""
+    read (then nothing can be checked, and nothing is refused for it).
+    `fresh` reads it again: the mirror is rebuilt weekly, and a manifest
+    kept from earlier in a long session would refuse the new copies."""
     global _manifest
-    if _manifest is None:
+    if _manifest is None or fresh:
         import urllib.error
         import urllib.request
         try:
@@ -2177,20 +2180,30 @@ def _module_zip_ok(name, blob, tier):
     has the same version: CrossWire's zips are byte for byte the mirror's
     then (11 of 11 measured, 2026-09-26). A module the mirror does not hold
     (its licence forbids it) has nothing to be checked against."""
-    entry = _mirror_manifest().get('modules', {}).get(name)
-    if entry is None:
-        return True
-    if tier == 'ftp' and entry.get('version') != _catalogue_version(name):
-        return True
-    return transfer.sha256_of(blob) == entry.get('sha256')
+    digest = transfer.sha256_of(blob)
+    for fresh in (False, True):
+        entry = _mirror_manifest(fresh).get('modules', {}).get(name)
+        if entry is None:
+            return True
+        if tier == 'ftp' and entry.get('version') != _catalogue_version(name):
+            return True
+        if digest == entry.get('sha256'):
+            return True
+    return False
 
 
 def _catalogue_ok(blob, tier):
     """The mirror's copy of the released catalogue must match its
     manifest; CrossWire's changes whenever any module does, so it cannot be
     held to a weekly manifest."""
-    want = _mirror_manifest().get('catalogue')
-    return tier != 'mirror' or not want or transfer.sha256_of(blob) == want
+    if tier != 'mirror':
+        return True
+    digest = transfer.sha256_of(blob)
+    for fresh in (False, True):
+        want = _mirror_manifest(fresh).get('catalogue')
+        if not want or digest == want:
+            return True
+    return False
 
 
 def _fetch_crosswire(path, timeout, check=None):
@@ -2460,13 +2473,21 @@ def _new_staging():
     """A fresh staging directory inside ~/.sword, so moving out of it is a
     rename on the same file system.
 
-    Any staging directory already there is a leftover: installs run one at a
-    time, on one worker, in one app, so one found now belongs to a process
-    that was killed mid-install. Nothing else would ever delete it."""
+    One more than an hour old is a leftover from a process killed
+    mid-install, which nothing else would ever delete. A younger one may be
+    another install's, still unpacking (the welcome screen installs on its
+    own thread), and is left alone."""
     os.makedirs(_SWORD_PATH, exist_ok=True)
+    stale = time.time() - 3600
     for entry in os.listdir(_SWORD_PATH):
-        if entry.startswith('.install-'):
-            shutil.rmtree(os.path.join(_SWORD_PATH, entry), ignore_errors=True)
+        path = os.path.join(_SWORD_PATH, entry)
+        try:
+            old = entry.startswith('.install-') and \
+                os.path.getmtime(path) < stale
+        except OSError:
+            continue
+        if old:
+            shutil.rmtree(path, ignore_errors=True)
     return tempfile.mkdtemp(prefix='.install-', dir=_SWORD_PATH)
 
 

@@ -91,7 +91,7 @@ def test_an_ftp_copy_that_fails_the_manifest_is_dropped_for_the_mirror(
         monkeypatch):
     good = b'the real KJV zip'
     path = _ladder(monkeypatch, False, b'changed on the way', good)
-    monkeypatch.setattr(sb, '_mirror_manifest', lambda: {
+    monkeypatch.setattr(sb, '_mirror_manifest', lambda fresh=False: {
         'modules': {'KJV': {'version': '3.1', 'sha256': _hex(good)}}})
     monkeypatch.setattr(sb, '_catalogue_version', lambda name: '3.1')
     check = lambda blob, tier: sb._module_zip_ok('KJV', blob, tier)
@@ -100,7 +100,7 @@ def test_an_ftp_copy_that_fails_the_manifest_is_dropped_for_the_mirror(
 
 def test_a_mirror_copy_that_fails_the_manifest_is_refused(monkeypatch):
     path = _ladder(monkeypatch, False, None, b'stale mirror copy')
-    monkeypatch.setattr(sb, '_mirror_manifest', lambda: {
+    monkeypatch.setattr(sb, '_mirror_manifest', lambda fresh=False: {
         'modules': {'KJV': {'version': '3.1', 'sha256': _hex(b'real')}}})
     monkeypatch.setattr(sb, '_catalogue_version', lambda name: '3.1')
     monkeypatch.setattr(sb, '_reachable',
@@ -113,14 +113,14 @@ def test_a_mirror_copy_that_fails_the_manifest_is_refused(monkeypatch):
 def test_what_cannot_be_compared_is_not_refused(monkeypatch):
     entry = {'version': '3.0', 'sha256': _hex(b'old')}
     monkeypatch.setattr(sb, '_mirror_manifest',
-                        lambda: {'modules': {'KJV': entry}})
+                        lambda fresh=False: {'modules': {'KJV': entry}})
     monkeypatch.setattr(sb, '_catalogue_version', lambda name: '3.1')
     # A newer version on CrossWire than the weekly mirror has seen.
     assert sb._module_zip_ok('KJV', b'new', 'ftp')
     # A module the mirror may not hold (licensed to CrossWire alone).
     assert sb._module_zip_ok('ESV2011', b'x', 'mirror')
     # No manifest at all.
-    monkeypatch.setattr(sb, '_mirror_manifest', lambda: {})
+    monkeypatch.setattr(sb, '_mirror_manifest', lambda fresh=False: {})
     assert sb._module_zip_ok('KJV', b'x', 'mirror')
 
 
@@ -132,11 +132,19 @@ def test_https_is_not_second_guessed(monkeypatch):
 
 def test_a_killed_install_leaves_no_staging_behind(monkeypatch, tmp_path):
     monkeypatch.setattr(sb, '_SWORD_PATH', str(tmp_path))
+    import time
     old = tmp_path / '.install-dead'
     (old / 'modules').mkdir(parents=True)
+    hours_ago = time.time() - 2 * 3600
+    os.utime(old, (hours_ago, hours_ago))
+    # A young one may be another install still unpacking (the welcome
+    # screen's own thread): it is left alone.
+    live = tmp_path / '.install-live'
+    live.mkdir()
     (tmp_path / 'mods.d').mkdir()
     new = sb._new_staging()
     assert not old.exists()
+    assert live.exists()
     assert os.path.isdir(new) and (tmp_path / 'mods.d').exists()
 
 
@@ -157,3 +165,22 @@ def test_a_pack_that_fails_its_sums_is_thrown_away(monkeypatch, tmp_path):
         catena_bridge.download_and_install(url='https://x/catena.db.gz')
     assert not (tmp_path / 'catena.db.gz.part').exists()   # not resumed
     assert not (tmp_path / 'catena.db').exists()
+
+
+def test_a_manifest_from_before_the_weekly_rebuild_is_read_again(
+        monkeypatch):
+    """Kept all session, the manifest refused the mirror's new copies."""
+    new = b'rebuilt KJV zip'
+    manifests = {False: {'modules': {'KJV': {'version': '3.1',
+                                             'sha256': _hex(b'old zip')}}},
+                 True: {'modules': {'KJV': {'version': '3.1',
+                                            'sha256': _hex(new)}}}}
+    asked = []
+
+    def manifest(fresh=False):
+        asked.append(fresh)
+        return manifests[fresh]
+    monkeypatch.setattr(sb, '_mirror_manifest', manifest)
+    assert sb._module_zip_ok('KJV', new, 'mirror')
+    assert asked == [False, True]
+    assert not sb._module_zip_ok('KJV', b'bad', 'mirror')   # still refused
