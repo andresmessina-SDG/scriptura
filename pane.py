@@ -4975,6 +4975,20 @@ class BiblePane(Gtk.Box):
         self._module = new_module
         self._picker.set_current_label(new_module)
         self._compute_module_flags()
+        # A pane showing a page with no verses (the Family Tree, a general
+        # book) keeps the header's place, not its own: a Bible chosen next
+        # opened at the pane's stale Genesis 1 while the header said Isaiah 1
+        # (2026-09-26). It opens where the header is. A locked pane is
+        # unlocked below, and catches up there the same way.
+        follows = (self._is_verse_navigable() or self._is_catena
+                   or self._is_imagery or self._is_interlinear)
+        if (follows and not self._sync_btn.get_active()
+                and self._window_book
+                and (self._book, self._chapter)
+                != (self._window_book, self._window_chapter)):
+            self._book = self._window_book
+            self._chapter = self._window_chapter
+            self._target_verse = self._window_target_verse
         # Restore the new module's last-known position from the shared
         # module_positions store. Verse-keyed modules use _restore_top_verse
         # (consumed by _display); genbooks delegate to GenbookReader.

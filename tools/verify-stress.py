@@ -80,6 +80,7 @@ SCENARIOS: dict[str, dict] = {
     'settings_junk_c': {'settings': _JUNK_C},
     'store_junk': {'stores': _STORE_JUNK},
     'modules': {'home': 'kjva'},
+    'module_place': {},
     'welcome': {'home': 'scratch', 'env': {'BIBLE_READER_FORCE_WELCOME': '1'}},
 }
 
@@ -1292,12 +1293,62 @@ def driver(scenario: str) -> int:
         def end(win):
             pass
 
+    def module_place(win):
+        """A single pane on a page with no verses (the Family Tree, a
+        general book) follows the header without a place of its own. A
+        Bible chosen next opened at the pane's stale Genesis 1 while the
+        header said Isaiah 1 (2026-09-26)."""
+        family = [m for m in readable if content.type_key(m) == 'family']
+        book_mod = have('Institutes', 'Concord', 'DarkNightOfTheSoul')
+        bible = bible_pool('KJVA', 'BSB', 'LEB', 'YLT')[0]
+
+        @step(400)
+        def single(win):
+            win._btn_split.set_active(False)
+            win.pane1._apply_module_change(family[0] if family else book_mod)
+
+        @step(400)
+        def header(win):
+            win._go_to('Isaiah', 1, 1)
+
+        @step(600)
+        def to_bible(win):
+            win.pane1._apply_module_change(bible)
+
+        @step(200)
+        def same_place(win):
+            check(win._current_loc == ('Isaiah', 1),
+                  f'header moved: {win._current_loc}')
+            check((win.pane1._book, win.pane1._chapter) == ('Isaiah', 1),
+                  'Bible chosen after the Family Tree opened at '
+                  f'{win.pane1._book} {win.pane1._chapter}, header Isaiah 1')
+
+        if book_mod:
+            @step(500)
+            def to_book(win):
+                win.pane1._apply_module_change(book_mod)
+
+            @step(400)
+            def header2(win):
+                win._go_to('Job', 10, 1)
+
+            @step(600)
+            def back(win):
+                win.pane1._apply_module_change(bible)
+
+            @step(200)
+            def same_place2(win):
+                check((win.pane1._book, win.pane1._chapter) == ('Job', 10),
+                      'Bible chosen after a general book opened at '
+                      f'{win.pane1._book} {win.pane1._chapter}, header Job 10')
+
     scenarios = {
         'nav_storm': nav_storm, 'module_zoo': module_zoo, 'annotation_storm': annotation_storm,
         'editor': editor, 'today': today, 'search': search, 'peek': peek,
         'window_churn': window_churn, 'backup': backup_, 'present': present, 'plans': plans,
         'appearance': appearance, 'settings_junk_a': settings_junk, 'settings_junk_b': settings_junk,
         'settings_junk_c': settings_junk, 'store_junk': store_junk, 'modules': modules,
+        'module_place': module_place,
         'welcome': welcome,
     }
 
