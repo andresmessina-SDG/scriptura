@@ -217,7 +217,12 @@ class _Row(Gtk.ListBoxRow):
         if name.create_pango_layout(
                 record['name']).get_pixel_size()[0] > 2 * NAME_W:
             name.set_tooltip_text(record['name'])
-        left.append(name)
+        # Held to the column: a label asks for its whole line, and the KJV's
+        # 280px name widened its column, its track and its row past every
+        # other row's instead of wrapping (2026-09-26).
+        self._name_clamp = Adw.Clamp(maximum_size=NAME_W,
+                                     tightening_threshold=NAME_W, child=name)
+        left.append(self._name_clamp)
         # The year and the track on one line: stacked, the names took more
         # height than the verses, and five Bibles filled a screen.
         facts = Gtk.Box(spacing=10)
@@ -289,6 +294,8 @@ class _Row(Gtk.ListBoxRow):
                                   else Gtk.Orientation.HORIZONTAL)
         self._box.set_spacing(6 if stacked else 16)
         self._left.set_size_request(-1 if stacked else NAME_W, -1)
+        # Stacked, the name has the row's whole width.
+        self._name_clamp.set_maximum_size(10_000 if stacked else NAME_W)
 
 
 class FamilyRead:
