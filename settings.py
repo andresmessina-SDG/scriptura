@@ -118,6 +118,10 @@ _defaults: dict[str, Any] = {
     'family_tree_view':   'family',
     'family_tree_outline': False,
     'family_tree_notes': True,
+    # The installed texts with an update, as the Module Manager last found
+    # them ('sword:NAME', 'ebible:ID', 'pack:…'): the menu's dot and the
+    # module picker's line read it (updates.py).
+    'module_updates': [],
     # Whether the Family opens with the root (the Bibles before 1611) open;
     # folded by default, so the first screen is the Bibles read now.
     'family_tree_root_open': False,

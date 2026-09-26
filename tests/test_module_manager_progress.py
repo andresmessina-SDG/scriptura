@@ -235,3 +235,193 @@ def test_only_the_tab_on_screen_is_rebuilt_until_another_is_shown(
     win._stack.set_visible_child_name('bibles')
     assert len(rebuilt) == 2              # already current: not rebuilt again
     win.close()
+
+
+# ── The update loop ─────────────────────────────────────────────────────────
+
+def _updates_window(monkeypatch, due=True, may=True):
+    import updates
+    monkeypatch.setattr(updates, 'check_due', lambda with_ebible: due)
+    monkeypatch.setattr(updates, 'may_check', lambda: may)
+    submitted = []
+    import module_manager as mm
+    real = mm.ModuleManagerWindow._submit
+
+    def submit(self, key, title, work, **kw):
+        submitted.append((key, title, kw))
+        if key == 'sword:refresh':
+            return 'check-job'      # never run: no network in a test
+        return real(self, key, title, work, **kw)
+    monkeypatch.setattr(mm.ModuleManagerWindow, '_submit', submit)
+    mm_, win = _small_window(monkeypatch)
+    return win, submitted
+
+
+@needs_display
+def test_opening_the_manager_checks_when_the_lists_are_old(monkeypatch):
+    win, submitted = _updates_window(monkeypatch)
+    assert [(k, t) for k, t, _kw in submitted] == \
+        [('sword:refresh', 'Checking for updates…')]
+    assert submitted[0][2]['row'] is False
+    assert win._check_job == 'check-job'
+    win.close()
+
+
+@needs_display
+@pytest.mark.parametrize('due, may', [(False, True), (True, False)])
+def test_no_check_when_fresh_offline_or_metered(monkeypatch, due, may):
+    win, submitted = _updates_window(monkeypatch, due=due, may=may)
+    assert submitted == []
+    win.close()
+
+
+@needs_display
+def test_a_check_that_fails_says_nothing(monkeypatch):
+    import downloads
+    win, _submitted = _updates_window(monkeypatch)
+    job = downloads.Job('sword:refresh', 'Checking for updates…',
+                        downloads.CROSSWIRE, None, row=False)
+    job.state, job.error = downloads.FAILED, OSError('no route')
+    win._check_job = job
+    errors = []
+    monkeypatch.setattr(win, '_set_error', lambda *a, **k: errors.append(a))
+    win._on_job(job)
+    assert errors == []
+    win.close()
+
+
+@needs_display
+def test_update_rows_say_their_size_and_what_changed(monkeypatch):
+    import updates
+    win, _s = _updates_window(monkeypatch, due=False)
+    new = {'name': 'Alpha', 'description': 'Alpha', 'type': 'Biblical Texts',
+           'lang': 'en', 'features': set(), 'license': '',
+           'size': str(3 * 1024 * 1024), 'version': '2.0', 'locked': False,
+           'installed': True, 'history': {'2.0': 'New text source'}}
+    beta = dict(new, name='Beta', history={})
+    win._updates = [(new, '1.0'), (beta, '1.0')]
+    started = []
+    monkeypatch.setattr(win, '_on_install',
+                        lambda b, m, r: started.append(m['name']))
+    t = win._tabs['bibles']
+    win._rebuild_updates(t)
+    alpha = t['update_rows'][0]
+    assert alpha.get_subtitle() == \
+        'Update from v1.0 to v2.0 · 3.0 MB · New text source'
+    every = t['updates_group'].get_header_suffix()
+    assert every is not None and every.get_label() == 'Update All'
+    every.emit('clicked')
+    assert started == ['Alpha', 'Beta']
+    win._updates = [(new, '1.0')]
+    win._rebuild_updates(t)
+    assert t['updates_group'].get_header_suffix() is None
+    # What the menu's dot reads, set by the Module Manager's reading.
+    monkeypatch.setattr(win, '_eb_stale_reasons', lambda: {'x': 'source'})
+    monkeypatch.setattr(mm_sword(), 'available_updates',
+                        lambda: [(new, '1.0')])
+    win._populate(languages=False)
+    assert {'sword:Alpha', 'ebible:x'} <= updates.pending()
+    updates.set_pending([])
+    win.close()
+
+
+def mm_sword():
+    import module_manager
+    return module_manager.sword_bridge
+
+
+@needs_display
+def test_a_big_download_on_a_metered_connection_asks_first(monkeypatch):
+    import updates
+    from gi.repository import Adw
+    win, _s = _updates_window(monkeypatch, due=False)
+    shown, went = [], []
+    monkeypatch.setattr(Adw.AlertDialog, 'present',
+                        lambda self, parent: shown.append(self))
+    monkeypatch.setattr(updates, 'metered', lambda: True)
+    win._ask_if_metered(60 * 1024 * 1024, lambda: went.append(True))
+    assert len(shown) == 1 and went == []
+    shown[0].emit('response', 'download')
+    assert went == [True]
+    win._ask_if_metered(5 * 1024 * 1024, lambda: went.append('small'))
+    assert went[-1] == 'small' and len(shown) == 1
+    monkeypatch.setattr(updates, 'metered', lambda: False)
+    win._ask_if_metered(600 * 1024 * 1024, lambda: went.append('free'))
+    assert went[-1] == 'free' and len(shown) == 1
+    win.close()
+
+
+@needs_display
+def test_each_tab_counts_its_own_updates(monkeypatch):
+    """The menu said 5 and the Bibles tab 4: the fifth, the imagery pack,
+    was under Books & More, with nothing to say so."""
+    import updates
+    win, _s = _updates_window(monkeypatch, due=False)
+    bible = {'name': 'Alpha', 'type': 'Biblical Texts', 'version': '2'}
+    comm = {'name': 'Gamma', 'type': 'Commentaries', 'version': '2'}
+    monkeypatch.setattr(mm_sword(), 'available_updates',
+                        lambda: [(bible, '1'), (comm, '1')])
+    monkeypatch.setattr(win, '_eb_stale_reasons',
+                        lambda: {'spaRV1909': 'source'})
+    monkeypatch.setattr(updates, 'pack_keys', lambda: ['pack:imagery'])
+    win._populate(languages=False)
+    badges = {tid: t['page'].get_badge_number()
+              for tid, t in win._tabs.items()}
+    assert badges == {'bibles': 2, 'commentaries': 1, 'study': 0,
+                      'books': 1}
+    updates.set_pending([])
+    win.close()
+
+
+# ── Progress as a ring around Cancel ────────────────────────────────────────
+
+def test_megabytes_round_rather_than_cut():
+    import module_manager as mm
+    assert mm._mb(34_600_000) == '33'       # 32.997: the row says ~33 MB
+    assert mm._mb(2_700_000) == '2.6'
+
+
+@needs_display
+def test_a_row_shows_its_job_as_a_ring_and_words_in_one_column(
+        monkeypatch):
+    import downloads
+    win, _s = _updates_window(monkeypatch, due=False)
+    alpha = downloads.Job('sword:Alpha', 'Alpha', downloads.CROSSWIRE, None)
+    alpha.state, alpha.done, alpha.total = downloads.RUNNING, 1, 4
+    beta = downloads.Job('sword:Beta', 'Beta', downloads.CROSSWIRE, None)
+    for job in (alpha, beta):
+        monkeypatch.setitem(downloads._jobs, job.key, job)
+        win._on_job(job)
+    (a_label, a_ring), = win._job_widgets['sword:Alpha']
+    (b_label, b_ring), = win._job_widgets['sword:Beta']
+    assert (a_ring.state, a_ring.fraction) == (downloads.RUNNING, 0.25)
+    assert b_ring.state == downloads.QUEUED and b_label.get_text() == 'Queued'
+    # One width for every row's words, whatever they say.
+    assert a_label.get_size_request()[0] == b_label.get_size_request()[0] > 0
+    alpha.phase = 'Reading the text…'
+    alpha.done = alpha.total = 0
+    win._on_job(alpha)
+    assert a_ring.fraction is None           # unknown: the arc goes round
+    win.close()
+
+
+@needs_display
+def test_the_lists_download_turns_refresh_into_a_spinner(monkeypatch):
+    import downloads
+    from gi.repository import Adw
+    win, _s = _updates_window(monkeypatch, due=False)
+    job = downloads.Job('sword:refresh', 'Checking for updates…',
+                        downloads.CROSSWIRE, None, row=False)
+    job.state = downloads.RUNNING
+    monkeypatch.setitem(downloads._jobs, job.key, job)
+    win._sync_bar()
+    btn = win._tabs['bibles']['refresh']
+    assert isinstance(btn.get_child(), Adw.Spinner)
+    assert btn.get_tooltip_text() == 'Checking for updates…'
+    assert not win._progress.get_visible()   # not across the window
+    job.state = downloads.DONE
+    monkeypatch.delitem(downloads._jobs, job.key)
+    win._sync_bar()
+    assert not isinstance(btn.get_child(), Adw.Spinner)
+    assert btn.get_tooltip_text() == 'Refresh the catalogue'
+    win.close()

@@ -10,6 +10,7 @@ and a search query widens back to every language so the default can
 never dead-end a search.
 """
 import logging
+import math
 from datetime import datetime
 import gi
 gi.require_version('Gtk', '4.0')
@@ -28,6 +29,7 @@ import lexicon_data
 import content
 import downloads
 import fetch_errors
+import updates
 from i18n import _, ngettext
 
 _log = logging.getLogger('scriptura.modules')
@@ -71,15 +73,89 @@ def _lane_of(key):
 
 def _mb(n):
     """Bytes as megabytes for a progress line: a decimal under ten, where a
-    whole number would read 0 for most of a small download."""
+    whole number would read 0 for most of a small download. Rounded, not cut:
+    cut, the catena's 32.997 MB read "32" under a row that says ~33 MB."""
     mb = n / (1024 * 1024)
-    return f'{mb:.1f}' if mb < 10 else str(int(mb))
+    return f'{mb:.1f}' if mb < 10 else str(round(mb))
+
+
+class _Ring(Gtk.DrawingArea):
+    """A download's progress as a ring around its Cancel (decided
+    2026-09-26): filled clockwise from the top as the bytes arrive; a short
+    arc going round when the amount is unknown, which says "working" where a
+    sliding bar read as "20% done"; a faint dotted ring while queued. It
+    takes no room from the row's own words, as a bar beside them did."""
+
+    SIZE = 30
+
+    def __init__(self):
+        super().__init__(accessible_role=Gtk.AccessibleRole.PRESENTATION)
+        self.set_content_width(self.SIZE)
+        self.set_content_height(self.SIZE)
+        self.set_can_target(False)
+        self.state = downloads.QUEUED
+        self.fraction = None
+        self._angle = 0.0
+        self._tick = None
+        self.set_draw_func(self._draw)
+
+    def show(self, state, fraction):
+        self.state, self.fraction = state, fraction
+        # GNOME's reduced motion stops the arc; it stays where it is.
+        moving = Gtk.Settings.get_default().get_property(
+            'gtk-enable-animations')
+        spin = state == downloads.RUNNING and fraction is None and moving
+        if spin and self._tick is None:
+            self._tick = self.add_tick_callback(self._on_tick)
+        elif not spin and self._tick is not None:
+            self.remove_tick_callback(self._tick)
+            self._tick = None
+        self.queue_draw()
+
+    def _on_tick(self, _widget, clock):
+        self._angle = clock.get_frame_time() / 1e6 * 2 * math.pi * 0.8
+        self.queue_draw()
+        return GLib.SOURCE_CONTINUE
+
+    def _draw(self, _area, cr, w, h):
+        ink = self.get_color()
+        style = Adw.StyleManager.get_default()
+        cx, cy, r = w / 2, h / 2, min(w, h) / 2 - 1.5
+        cr.set_line_width(2.0)
+        cr.set_source_rgba(ink.red, ink.green, ink.blue,
+                           0.4 if style.get_high_contrast() else 0.16)
+        if self.state == downloads.QUEUED:
+            cr.set_dash([1.5, 3.0])
+        cr.arc(cx, cy, r, 0, 2 * math.pi)
+        cr.stroke()
+        cr.set_dash([])
+        if self.state != downloads.RUNNING:
+            return
+        accent = style.get_accent_color_rgba()
+        cr.set_source_rgba(accent.red, accent.green, accent.blue, 1.0)
+        cr.set_line_cap(1)          # round
+        top = -math.pi / 2
+        if self.fraction is None:
+            start = top + self._angle
+            cr.arc(cx, cy, r, start, start + math.pi / 2)
+        else:
+            cr.arc(cx, cy, r, top,
+                   top + 2 * math.pi * max(0.02, min(1.0, self.fraction)))
+        cr.stroke()
+
 
 
 def N_(message):
     """No-op gettext marker for strings in module-level data; translated at
     display time via _()."""
     return message
+
+
+#: Every word a download's row can show beside its ring, for the width of
+#: the column they share: fixed, so the words line up down the list and never
+#: shrink under a row (a shrinking label left a stray pixel on a GPU screen).
+_JOB_WORDS = (N_('Queued'), N_('Removing…'), N_('Starting…'),
+              N_('Downloading…'), N_('Reading the text…'), N_('Saving…'))
 
 
 _LANG_NAMES = {
@@ -178,6 +254,18 @@ def _tab_of_type(sword_type):
 _RENDER_CAP = 150
 
 
+#: The imagery pack's download, as its row states it (~525 MB).
+_IMAGERY_BYTES = 525 * 1024 * 1024
+
+
+def _size_bytes(raw):
+    """SWORD InstallSize (bytes, as a string) → int, or 0."""
+    try:
+        return int(float(raw))
+    except (TypeError, ValueError):
+        return 0
+
+
 def _fmt_size(raw):
     """SWORD InstallSize (bytes, as a string) → '2.3 MB'."""
     try:
@@ -259,10 +347,9 @@ class ModuleManagerWindow(Adw.Window):
         self._closed = False
         self._flash_source = None
         self._tabs = {}
-        self._job_widgets = {}      # job key -> [(label, bar)] on its rows
+        self._job_widgets = {}      # job key -> [(label, ring)] on its rows
         self._action_rows = {}      # row key -> [(row, its buttons)]
-        self._pulsing = set()       # row bars with no measure yet
-        self._row_pulse = 0
+        self._check_job = None      # the check this window started itself
         self.add_css_class('module-manager')
         self._build_ui()
         self.connect('close-request', self._on_close_request)
@@ -272,6 +359,26 @@ class ModuleManagerWindow(Adw.Window):
         _windows.append(self)
         downloads.listen(self._on_job)
         self._sync_bar()
+        self._check_for_updates()
+
+    def _check_for_updates(self):
+        """Download the lists again when they are missing or more than a
+        week old, so updates are found without a Refresh (decided
+        2026-09-25). Only here, where the reader chose to go, and never
+        without a network or on a metered one."""
+        with_ebible = bool(ebible_bridge.installed_ids())
+        if not (updates.check_due(with_ebible) and updates.may_check()):
+            return
+
+        def work(job):
+            sword_bridge.refresh_source()
+            if with_ebible:
+                ebible_bridge.download_catalog_sync()
+
+        # The Refresh button's key: a check and a Refresh never run twice.
+        self._check_job = self._submit(
+            'sword:refresh', _('Checking for updates…'), work,
+            row=False, changes=False)
 
     # ── Window chrome ─────────────────────────────────────────────────────────
 
@@ -492,7 +599,8 @@ class ModuleManagerWindow(Adw.Window):
         scroll.set_child(clamp)
         # Label-only switcher tabs: four titled tabs with icons truncate
         # at the default width, and the icons add nothing the words don't.
-        self._stack.add_titled(scroll, spec['id'], _(spec['title']))
+        t['page'] = self._stack.add_titled(scroll, spec['id'],
+                                           _(spec['title']))
 
     # ── Data gathering ────────────────────────────────────────────────────────
 
@@ -523,6 +631,21 @@ class ModuleManagerWindow(Adw.Window):
                           for e in self._eb_catalog}
         self._updates = sword_bridge.available_updates() if self._has_catalog else []
         self._eb_stale = self._eb_stale_reasons()
+        # What the menu's dot and the module picker read.
+        packs = updates.pack_keys()
+        updates.set_pending(
+            ['sword:' + m['name'] for m, _old in self._updates]
+            + ['ebible:' + tid for tid in self._eb_stale] + packs)
+        # And each tab's count, so "5 updates" on the menu can be found
+        # here: the fifth was the imagery pack, under Books & More.
+        for tab_id, t in self._tabs.items():
+            n = sum(_tab_of_type(m['type']) == tab_id
+                    for m, _old in self._updates)
+            if t['spec']['ebible']:
+                n += len(self._eb_stale)
+            if tab_id == 'books':       # the curated packs' own tab
+                n += len(packs)
+            t['page'].set_badge_number(n)
         self._job_widgets = {}
         self._action_rows = {}
         # Only the tab on screen is rebuilt now; the others when they are
@@ -906,6 +1029,7 @@ class ModuleManagerWindow(Adw.Window):
         n = len(mine) + len(eb)
         group.set_title(ngettext('{n} update available',
                                  '{n} updates available', n).format(n=n))
+        starts = []         # each row's Update, for Update all
         for tid, reason in eb:
             entry = self._eb_by_id.get(tid, {})
             row = Adw.ActionRow()
@@ -918,23 +1042,45 @@ class ModuleManagerWindow(Adw.Window):
             btn.set_valign(Gtk.Align.CENTER)
             btn.connect('clicked',
                         lambda b, t_=tid, e=entry: self._on_eb_download(b, t_, e))
+            starts.append(lambda t_=tid, e=entry, b=btn:
+                          self._on_eb_download(b, t_, e))
             self._add_actions(row, 'ebible:' + tid, btn)
             group.add(row)
             t['update_rows'].append(row)
         for mod, old in mine:
             row = Adw.ActionRow()
             row.set_title(GLib.markup_escape_text(_friendly_name(mod)[:80]))
-            row.set_subtitle(GLib.markup_escape_text(
-                _('Update from v{old} to v{new}').format(
-                    old=old, new=mod['version'])))
+            # The size, and what its makers say changed: "v2.6 to v3.1" alone
+            # said nothing about whether it was worth the download.
+            parts = [_('Update from v{old} to v{new}').format(
+                old=old, new=mod['version'])]
+            size = _fmt_size(mod.get('size'))
+            if size:
+                parts.append(size)
+            news = sword_bridge.newest_history(mod)
+            if news:
+                parts.append(news)
+            row.set_subtitle(GLib.markup_escape_text(' · '.join(parts)))
+            row.set_subtitle_lines(2)
             btn = Gtk.Button(label=_('Update'))
             btn.add_css_class('suggested-action')
             btn.set_valign(Gtk.Align.CENTER)
             btn.connect('clicked',
                         lambda b, m=mod, r=row: self._on_install(b, m, r))
+            starts.append(lambda m=mod, r=row, b=btn: self._on_install(b, m, r))
             self._add_actions(row, 'sword:' + mod['name'], btn)
             group.add(row)
             t['update_rows'].append(row)
+        # Update all, beside the count, when there is more than one: the
+        # queue takes them one at a time per host.
+        if n > 1:
+            every = Gtk.Button(label=_('Update All'))
+            every.add_css_class('flat')
+            every.set_valign(Gtk.Align.CENTER)
+            every.connect('clicked', lambda _b: [go() for go in starts])
+            group.set_header_suffix(every)
+        else:
+            group.set_header_suffix(None)
 
     # ── Installed section ─────────────────────────────────────────────────────
 
@@ -1278,8 +1424,8 @@ class ModuleManagerWindow(Adw.Window):
         if not job.row:
             self._sync_bar()
         elif job.active and job.key in self._job_widgets:
-            for label, bar in self._job_widgets[job.key]:
-                self._paint_job(job, label, bar)
+            for label, ring in self._job_widgets[job.key]:
+                self._paint_job(job, label, ring)
         elif job.active:
             self._show_job_in_rows(job)     # a new job: its rows turn over
         if job.active:
@@ -1287,7 +1433,11 @@ class ModuleManagerWindow(Adw.Window):
         # It ended: the data changed. The language lists only change with
         # the catalogue.
         self._populate(languages=job.key == 'sword:refresh')
-        if job.state == downloads.FAILED:
+        if job.state == downloads.FAILED and job is self._check_job:
+            # A check the reader did not ask for fails quietly: the lists
+            # stay as they were, and Refresh is there.
+            _log.info('update check failed: %s', job.error)
+        elif job.state == downloads.FAILED:
             text = _('{name}: {reason}').format(
                 name=job.title, reason=fetch_errors.describe(job.error))
             self._set_error(text, retry=job.again)
@@ -1311,8 +1461,14 @@ class ModuleManagerWindow(Adw.Window):
                 group.set_expanded(True)    # not hidden in a folded group
 
     def _sync_bar(self):
-        """The window bar shows the first job that has no row, if any."""
+        """The window bar shows the first job that has no row, if any. The
+        lists' own download (a Refresh, or the check on opening) shows on
+        the Refresh button instead: across the window, a check the reader
+        never asked for was the loudest thing in it."""
         jobs = [j for j in downloads.active() if not j.row]
+        lists = next((j for j in jobs if j.key == 'sword:refresh'), None)
+        self._show_refreshing(lists)
+        jobs = [j for j in jobs if j is not lists]
         if not jobs:
             self._set_busy(False)
             return
@@ -1321,6 +1477,20 @@ class ModuleManagerWindow(Adw.Window):
         if not self._progress.get_visible():
             self._set_busy(True, text)
         self._set_progress(text, job.fraction)
+
+    def _show_refreshing(self, job):
+        """Each tab's Refresh as a spinner while the lists download, its
+        words in the tooltip; the arrow again when they are done."""
+        words = (job.phase or job.title) if job else _('Refresh the catalogue')
+        for t in self._tabs.values():
+            btn = t['refresh']
+            busy = isinstance(btn.get_child(), Adw.Spinner)
+            if job is not None and not busy:
+                btn.set_child(Adw.Spinner())
+            elif job is None and busy:
+                btn.set_icon_name('scriptura-view-refresh-symbolic')
+            btn.set_tooltip_text(words)
+            set_accessible_label(btn, words)
 
     def _add_actions(self, row, key, *buttons):
         """Give `row` its buttons, or, while a job for `key` is queued or
@@ -1336,30 +1506,55 @@ class ModuleManagerWindow(Adw.Window):
             return False
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         box.set_valign(Gtk.Align.CENTER)
-        label = Gtk.Label()
+        label = Gtk.Label(xalign=1)
         label.add_css_class('caption')
         label.add_css_class('dim-label')
-        bar = Gtk.ProgressBar()
-        bar.set_valign(Gtk.Align.CENTER)
-        bar.set_size_request(80, -1)
+        label.set_size_request(self._job_words_width(label), -1)
         box.append(label)
-        box.append(bar)
+        ring = _Ring()
+        # The Cancel sits inside the ring; a removal has no Cancel, being
+        # over before it is worth stopping, and shows the ring alone.
+        centre = Gtk.Overlay()
+        centre.set_child(ring)
         if job.key == key:
-            # Removals take a moment and are not worth stopping halfway.
-            cancel = Gtk.Button(icon_name='scriptura-window-close-symbolic')
+            icon = Gtk.Image.new_from_icon_name(
+                'scriptura-window-close-symbolic')
+            icon.add_css_class('job-cancel-icon')
+            centre.add_overlay(icon)
+            cancel = Gtk.Button(child=centre)
             cancel.add_css_class('flat')
             cancel.add_css_class('circular')
+            cancel.add_css_class('job-cancel')
+            cancel.set_valign(Gtk.Align.CENTER)
             cancel.set_tooltip_text(_('Cancel'))
             set_accessible_label(
                 cancel, _('Cancel {name}').format(name=job.title))
             cancel.connect('clicked', lambda _b: downloads.cancel(key))
             box.append(cancel)
+        else:
+            centre.set_valign(Gtk.Align.CENTER)
+            box.append(centre)
         row.add_suffix(box)
-        self._job_widgets.setdefault(job.key, []).append((label, bar))
-        self._paint_job(job, label, bar)
+        self._job_widgets.setdefault(job.key, []).append((label, ring))
+        self._paint_job(job, label, ring)
         return True
 
-    def _paint_job(self, job, label, bar):
+    _words_width = None
+
+    @classmethod
+    def _job_words_width(cls, label):
+        """The width of the words' column, from the longest they can be in
+        this language, with "{done} of {total} MB" at three figures each."""
+        if cls._words_width is None:
+            words = [_(w) for w in _JOB_WORDS]
+            words.append(_('{done} of {total} MB').format(done='888',
+                                                          total='888'))
+            cls._words_width = max(
+                label.create_pango_layout(w).get_pixel_size()[0]
+                for w in words) + 4
+        return cls._words_width
+
+    def _paint_job(self, job, label, ring):
         frac = job.fraction
         if job.state == downloads.QUEUED:
             text = _('Queued')
@@ -1375,24 +1570,7 @@ class ModuleManagerWindow(Adw.Window):
         else:
             text = _('Starting…')
         label.set_text(text)
-        bar.set_visible(job.state == downloads.RUNNING)
-        if frac is None:
-            self._pulsing.add(bar)
-            if not self._row_pulse:
-                self._row_pulse = GLib.timeout_add(80, self._pulse_rows)
-        else:
-            self._pulsing.discard(bar)
-            bar.set_fraction(frac)
-
-    def _pulse_rows(self):
-        live = {b for b in self._pulsing if b.get_root() is not None}
-        self._pulsing = live
-        if self._closed or not live:
-            self._row_pulse = 0
-            return GLib.SOURCE_REMOVE
-        for bar in live:
-            bar.pulse()
-        return GLib.SOURCE_CONTINUE
+        ring.show(job.state, frac)
 
     def _set_busy(self, busy, status='', show_bar=True):
         if self._closed:
@@ -1486,10 +1664,9 @@ class ModuleManagerWindow(Adw.Window):
         downloads.unlisten(self._on_job)
         if self in _windows:
             _windows.remove(self)
-        for source in ('_pulse_source', '_row_pulse'):
-            if getattr(self, source):
-                GLib.source_remove(getattr(self, source))
-                setattr(self, source, None if source == '_pulse_source' else 0)
+        if self._pulse_source:
+            GLib.source_remove(self._pulse_source)
+            self._pulse_source = None
         return False
 
     def _modules_changed(self):
@@ -1505,7 +1682,30 @@ class ModuleManagerWindow(Adw.Window):
             # up front rather than letting it install and render garbage.
             self._prompt_cipher_install(btn, mod, row)
             return
-        self._start_install(name, _friendly_name(mod))
+        self._ask_if_metered(_size_bytes(mod.get('size')),
+                             lambda: self._start_install(name,
+                                                         _friendly_name(mod)))
+
+    def _ask_if_metered(self, size, go):
+        """Run `go` now, or, on a metered connection and for a download of
+        more than 50 MB, once the reader says so."""
+        if not (size and size > updates.METERED_ASK_BYTES
+                and updates.metered()):
+            go()
+            return
+        dialog = Adw.AlertDialog()
+        dialog.set_heading(_('Download on a Metered Connection?'))
+        dialog.set_body(
+            _('This download is about {size} MB, and your connection may '
+              'charge by the amount used.').format(size=_mb(size)))
+        dialog.add_response('cancel', _('Cancel'))
+        dialog.add_response('download', _('Download'))
+        dialog.set_response_appearance('download',
+                                       Adw.ResponseAppearance.SUGGESTED)
+        dialog.set_close_response('cancel')
+        dialog.connect('response',
+                       lambda _d, r: go() if r == 'download' else None)
+        dialog.present(self)
 
     def _start_install(self, name, title, cipher_key=None):
         def work(_job):
@@ -1600,9 +1800,11 @@ class ModuleManagerWindow(Adw.Window):
         # directory and swaps it in whole, so an update replaces the old
         # pack rather than merging with it — plates dropped from the sources
         # do not survive as orphans.
-        self._pack_download(
-            'pack:imagery', _('Bible Imagery'),
-            lambda p: imagery_bridge.download_and_install(on_progress=p))
+        self._ask_if_metered(
+            _IMAGERY_BYTES,
+            lambda: self._pack_download(
+                'pack:imagery', _('Bible Imagery'),
+                lambda p: imagery_bridge.download_and_install(on_progress=p)))
 
     def _on_db_download(self, _btn, source_id):
         src = next((s for s in open_data.get_sources() if s['id'] == source_id), None)
@@ -1698,7 +1900,8 @@ class ModuleManagerWindow(Adw.Window):
     # boundary as the search-truncation message.
     _EB_STATUS = {
         'download': N_('Downloading…'),
-        'parse': N_('Parsing USFM…'),
+        # 'USFM' is the file's format: a reader needs only the step.
+        'parse': N_('Reading the text…'),
         'save': N_('Saving…'),
     }
 

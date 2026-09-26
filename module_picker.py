@@ -18,6 +18,7 @@ from gtk_utils import clear_children
 import bible_family
 import sword_bridge
 import content
+import updates
 from i18n import _
 
 
@@ -411,10 +412,34 @@ class ModulePicker:
         lbl.set_ellipsize(Pango.EllipsizeMode.END)
         if name == self._pane.module:
             lbl.add_css_class('accent')
-        hb.append(lbl)
+        if updates.has_update(name):
+            # A line under the name, and the way to it (decided 2026-09-25).
+            names = Gtk.Box(orientation=Gtk.Orientation.VERTICAL,
+                            hexpand=True)
+            names.append(lbl)
+            names.append(self._update_link())
+            hb.append(names)
+        else:
+            hb.append(lbl)
         hb.append(self._info_button(name))
         row.set_child(hb)
         return row
+
+    def _update_link(self):
+        """'Update available', which opens the Module Manager."""
+        link = Gtk.Button(label=_('Update available'))
+        link.add_css_class('flat')
+        link.add_css_class('module-update-link')
+        link.set_halign(Gtk.Align.START)
+        link.set_tooltip_text(_('Open the Module Manager to update it'))
+
+        def go(_b):
+            self._popover.popdown()
+            root = self._pane.get_root()
+            if root is not None and hasattr(root, 'open_modules'):
+                root.open_modules()
+        link.connect('clicked', go)
+        return link
 
     def _make_feature_row(self, name, card):
         """Richer row for the marquee packs — leading icon, curated title,

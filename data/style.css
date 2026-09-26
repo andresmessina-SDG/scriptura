@@ -2743,3 +2743,44 @@ button.peek-lineage-link {
 floating-sheet > dimming {
     background-color: RGB(from var(--shade-color) r g b / calc(alpha * 1.92));
 }
+
+/* An update waiting: a dot on the menu button, a count on its Modules row,
+   and a line under the module's name in the picker (decided 2026-09-25).
+   The accent, because each leads somewhere a click away. */
+.update-dot {
+    min-width: 7px;
+    min-height: 7px;
+    margin: 0 -1px 0 0;
+    border-radius: 9999px;
+    background-color: @accent_bg_color;
+}
+.update-count {
+    font-size: 0.9em;
+    color: @accent_color;
+}
+button.module-update-link {
+    min-height: 0;
+    padding: 0 4px;
+    margin-left: -4px;
+    font-size: 0.85em;
+    font-weight: normal;
+    color: @accent_color;
+}
+
+/* A download's Cancel inside its progress ring (module_manager._Ring): the
+   button no bigger than the ring, the cross small enough to sit inside it. */
+button.job-cancel {
+    min-width: 30px;
+    min-height: 30px;
+    padding: 0;
+}
+.job-cancel-icon {
+    -gtk-icon-size: 12px;
+}
+
+/* A Module Manager tab with updates waiting: libadwaita sets the count on
+   the word's last letter and cuts the letter around it ("Books & More" lost
+   its "e"). The word makes room, so the count sits clear of it. */
+.module-manager indicatorbin.badge > label {
+    margin-right: 9px;
+}

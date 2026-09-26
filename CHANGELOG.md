@@ -12,6 +12,15 @@ semver-ish — 0.x was the pre-Flathub testing track.
   in English, Spanish and Russian: a working reading pane, the install
   steps, and every release's notes. The store listing's homepage, the
   README and the old install page now point to it.
+- **Updates find you.** Opening the Module Manager checks for updates by
+  itself when its lists are more than a week old, but never on a metered
+  connection. A dot on the menu and a count on its Modules row say when a
+  text has an update, the module picker says so under its name, and each
+  Module Manager tab shows how many of its own are waiting. Each update
+  shows its size and what its makers changed, and Update All takes them
+  all. On a metered connection, a download over 50 MB asks first. The
+  store listing and the website now say that Scriptura goes online to
+  check for updates when you open the Module Manager.
 - **The Bible Family Tree.** A new entry in each pane's module list, with
   three views: Family, Line and Read.
   The Family shows the Bibles people read today and every Bible they were
@@ -54,7 +63,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - **Downloads queue up, show their progress, and can be cancelled.**
   Installing no longer waits for whatever else is downloading: each
   download waits its turn and says so on its row, which then shows how
-  much has arrived and a button to cancel it. Bibles from eBible.org keep
+  much has arrived in a ring around the button that cancels it, leaving
+  the row's own words whole. Bibles from eBible.org keep
   coming while a pack downloads from elsewhere. Close the Module Manager
   and the downloads carry on; open it again and they are still there.
 - **A large pack picks up where it stopped.** A cancelled or cut-off
