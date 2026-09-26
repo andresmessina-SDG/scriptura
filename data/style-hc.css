@@ -101,6 +101,8 @@ button.stone-chip {
    for that by lighting another's line. */
 .family-node-year,
 .family-note,
+.family-root-toggle > box,
+.family-arrangements > button:not(:checked),
 .family-line-meta,
 .family-line-axis,
 .family-card-kicker,

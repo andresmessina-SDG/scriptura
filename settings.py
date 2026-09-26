@@ -118,6 +118,9 @@ _defaults: dict[str, Any] = {
     'family_tree_view':   'family',
     'family_tree_outline': False,
     'family_tree_notes': True,
+    # Whether the Family opens with the root (the Bibles before 1611) open;
+    # folded by default, so the first screen is the Bibles read now.
+    'family_tree_root_open': False,
     # The Family's arrangement: 'family' (lanes) or 'line' (by literalness).
     'family_tree_arrangement': 'family',
     # Read the difference: the Bibles installed ('installed', decided

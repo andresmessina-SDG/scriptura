@@ -49,47 +49,48 @@ class FamilyTree:
         self._showing = None        # a Bible the Card asked to show
         self._read_asked = False    # Compare chose the verse to read
 
-        bar = Gtk.Box(spacing=8)
+        # The three views in the app's page switcher, the Journal's: one
+        # control, the selection sliding between the words, centred over
+        # what it turns. What belongs to one view sits apart and quiet: the
+        # Family's own buttons at the end of this row, its arrangement
+        # beside the hint under it (2026-09-26).
+        self._views = Adw.ToggleGroup()
+        self._views.add_css_class('round')
+        self._views.add_css_class('page-switcher')
+        # A tooltip only where the word is short of the name: one that
+        # repeats a visible label only drops a box over the page.
+        for name, label in (('family', _('Family')), ('line', _('Line')),
+                            ('read', _('Read'))):
+            self._views.add(Adw.Toggle(name=name, label=label))
+        self._views.get_toggle_by_name('read').set_tooltip(
+            _('Read the difference'))
+        bar = Gtk.CenterBox()
         bar.set_margin_start(14)
         bar.set_margin_end(14)
         bar.set_margin_top(8)
-        views = Gtk.Box()
-        views.add_css_class('linked')
-        self._family_btn = Gtk.ToggleButton(label=_('Family'))
-        self._line_btn = Gtk.ToggleButton(label=_('Line'))
-        self._read_btn = Gtk.ToggleButton(label=_('Read'))
-        self._line_btn.set_group(self._family_btn)
-        self._read_btn.set_group(self._family_btn)
-        set_accessible_label(self._family_btn, _('Show the Family'))
-        set_accessible_label(self._line_btn, _('Show the Line'))
-        self._read_btn.set_tooltip_text(_('Read the difference'))
-        set_accessible_label(self._read_btn, _('Read the difference'))
-        views.append(self._family_btn)
-        views.append(self._line_btn)
-        views.append(self._read_btn)
-        switches = Adw.WrapBox(child_spacing=8, line_spacing=6, hexpand=True)
-        switches.append(views)
-        bar.append(switches)
+        bar.set_center_widget(self._views)
+        tools = Gtk.Box(spacing=2)
+        tools.add_css_class('family-tools')
+        tools.set_valign(Gtk.Align.CENTER)
+        bar.set_end_widget(tools)
         # The Family's two arrangements: by family (lanes), or by
         # literalness — every Bible slid to its place on the Line.
-        self._arrangements = Gtk.Box()
-        self._arrangements.add_css_class('linked')
+        self._arrangements = Gtk.Box(spacing=2)
+        self._arrangements.add_css_class('family-arrangements')
         self._by_family = Gtk.ToggleButton(label=_('By family'))
         self._by_line = Gtk.ToggleButton(label=_('By literalness'))
         self._by_line.set_group(self._by_family)
         set_accessible_label(self._by_family, _('Arrange by family'))
         set_accessible_label(self._by_line, _('Arrange by literalness'))
-        self._arrangements.append(self._by_family)
-        self._arrangements.append(self._by_line)
-        switches.append(self._arrangements)
-        self._print_btn = Gtk.Button(
-            icon_name='scriptura-document-print-symbolic')
-        self._print_btn.add_css_class('flat')
-        self._print_btn.set_tooltip_text(_('Print the Family as a poster'))
-        set_accessible_label(self._print_btn,
-                             _('Print the Family as a poster'))
-        self._print_btn.connect('clicked', lambda _b: self.print_poster())
-        bar.append(self._print_btn)
+        for btn in (self._by_family, self._by_line):
+            btn.add_css_class('flat')
+            self._arrangements.append(btn)
+        self._list_btn = Gtk.ToggleButton(
+            icon_name='scriptura-view-list-symbolic')
+        self._list_btn.add_css_class('flat')
+        self._list_btn.set_tooltip_text(_('Show the Family as a list'))
+        set_accessible_label(self._list_btn, _('Show the Family as a list'))
+        tools.append(self._list_btn)
         # The margin notes (a burning in 1952, a Bible in every parish) are
         # history beside the drawing; a reader who wants the lines alone
         # can put them away.
@@ -98,16 +99,15 @@ class FamilyTree:
         self._notes_btn.add_css_class('flat')
         self._notes_btn.set_tooltip_text(_('Show the margin notes'))
         set_accessible_label(self._notes_btn, _('Show the margin notes'))
-        # In the wrapping row, not the bar's fixed end: one more button
-        # there raised the pane's minimum past what leaves the Bible beside
-        # it its room.
-        switches.append(self._notes_btn)
-        self._list_btn = Gtk.ToggleButton(
-            icon_name='scriptura-view-list-symbolic')
-        self._list_btn.add_css_class('flat')
-        self._list_btn.set_tooltip_text(_('Show the Family as a list'))
-        set_accessible_label(self._list_btn, _('Show the Family as a list'))
-        bar.append(self._list_btn)
+        tools.append(self._notes_btn)
+        self._print_btn = Gtk.Button(
+            icon_name='scriptura-document-print-symbolic')
+        self._print_btn.add_css_class('flat')
+        self._print_btn.set_tooltip_text(_('Print the Family as a poster'))
+        set_accessible_label(self._print_btn,
+                             _('Print the Family as a poster'))
+        self._print_btn.connect('clicked', lambda _b: self.print_poster())
+        tools.append(self._print_btn)
 
         self._stack = Gtk.Stack()
         # Sized by what is showing: the hidden outline's long names set the
@@ -117,21 +117,27 @@ class FamilyTree:
         self._stack.add_named(self.line.widget, 'line')
         self._stack.add_named(self.read.widget, 'read')
 
-        # The arrow-key walk cannot be seen, so the Family says it.
-        self._hint = Gtk.Label(xalign=0, wrap=True)
+        # Every view says in a line how to read it; the arrow-key walk
+        # cannot be seen, so the Family says that. The same line under each
+        # view, so the page does not jump as the switch turns.
+        self._hint = Gtk.Label(xalign=0, wrap=True, hexpand=True)
         self._hint.add_css_class('family-line-meta')
-        self._hint.set_margin_start(14)
-        self._hint.set_margin_end(14)
-        self._hint.set_margin_top(4)
+        self._hint.set_valign(Gtk.Align.CENTER)
+        under = Adw.WrapBox(child_spacing=12, line_spacing=2)
+        under.set_margin_start(14)
+        under.set_margin_end(14)
+        under.set_margin_top(4)
+        under.append(self._arrangements)
+        under.append(self._hint)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         box.append(bar)
-        box.append(self._hint)
+        box.append(under)
         box.append(self._stack)
         self.widget = box
 
         view = settings.get('family_tree_view')
-        {'line': self._line_btn, 'read': self._read_btn}.get(
-            view, self._family_btn).set_active(True)
+        self._views.set_active_name(
+            view if view in ('line', 'read') else 'family')
         self._list_btn.set_active(bool(settings.get('family_tree_outline')))
         self._notes_btn.set_active(bool(settings.get('family_tree_notes')))
         self._notes_btn.connect('toggled', self._on_notes)
@@ -139,9 +145,8 @@ class FamilyTree:
          else self._by_family).set_active(True)
         self._by_family.connect('toggled', self._on_arrangement)
         self._by_line.connect('toggled', self._on_arrangement)
-        self._family_btn.connect('toggled', self._on_view)
-        self._line_btn.connect('toggled', self._on_view)
-        self._read_btn.connect('toggled', self._on_view)
+        self._views.connect('notify::active-name',
+                            lambda _g, _p: self._on_view(None))
         self._list_btn.connect('toggled', self._on_view)
         self._show_view()
 
@@ -149,7 +154,7 @@ class FamilyTree:
 
     def render(self):
         self.line.render()
-        if self._read_btn.get_active():
+        if self.view == 'read':
             self.read.render()
         if self.family is not None:
             self._refresh_family()
@@ -160,12 +165,12 @@ class FamilyTree:
     def showing_family(self):
         """True when the Family (drawn or as a list) is showing, not the
         Line."""
-        return self._family_btn.get_active()
+        return self.view == 'family'
 
     def show_node(self, node_id):
         """Turn to the Family and put the keyboard on one Bible there, its
         line lit: in the drawing, or in the list if the reader chose it."""
-        self._family_btn.set_active(True)
+        self.turn_to('family')
         self._ensure_family()
         view = self.outline if self._list_btn.get_active() else self.family
         # It beats the scroll to the Bible being read, which a pane just
@@ -175,14 +180,14 @@ class FamilyTree:
 
     def show_on_line(self, node_id):
         """Turn to the Line and put the keyboard on one Bible's row."""
-        self._line_btn.set_active(True)
+        self.turn_to('line')
         self.line.show_node(node_id)
 
     def show_read(self, book, chapter, verse):
         """Turn to Read the difference at one verse."""
         self._read_asked = True
         self.read.show_verse(book, chapter, verse)
-        self._read_btn.set_active(True)
+        self.turn_to('read')
         self._read_asked = False
 
     def focus_last(self):
@@ -192,15 +197,20 @@ class FamilyTree:
 
     # ── views ────────────────────────────────────────────────────────────
 
+    @property
+    def view(self):
+        """The view showing: 'family', 'line' or 'read'."""
+        return self._views.get_active_name()
+
+    def turn_to(self, view):
+        self._views.set_active_name(view)
+
     def _on_view(self, btn):
-        # The pair are a radio group: act once, on the one that lit.
-        if btn is not self._list_btn and not btn.get_active():
-            return
-        view = ('family' if self._family_btn.get_active()
-                else 'read' if self._read_btn.get_active() else 'line')
+        """The switch turned (`btn` None) or the list toggled."""
+        view = self.view
         settings.put('family_tree_view', view)
         settings.put('family_tree_outline', self._list_btn.get_active())
-        if btn is self._read_btn:
+        if btn is None and view == 'read':
             # Turned to, it reads the verse the reader is on now; turned to
             # by Compare, show_read has set the verse already.
             if not self._read_asked:
@@ -213,14 +223,14 @@ class FamilyTree:
             self.family.set_notes_visible(btn.get_active())
 
     def _show_view(self):
-        family = self._family_btn.get_active()
+        family = self.view == 'family'
         drawing = family and not self._list_btn.get_active()
         self._list_btn.set_visible(family)
         self._arrangements.set_visible(drawing)
         self._print_btn.set_visible(drawing)
         self._notes_btn.set_visible(drawing)
-        read = self._read_btn.get_active()
-        self._hint.set_visible(drawing or read)
+        read = self.view == 'read'
+        self._hint.set_visible(not family or drawing)
         self._hint.set_label(self._hint_text())
         if not family:
             self._stack.set_visible_child_name('read' if read else 'line')
@@ -230,7 +240,11 @@ class FamilyTree:
             'outline' if self._list_btn.get_active() else 'family')
 
     def _hint_text(self):
-        if self._read_btn.get_active():
+        if self.view == 'line':
+            return _('Every English Bible on one track, word for word at '
+                     'the left, free at the right. Press a Bible to open '
+                     'its card.')
+        if self.view == 'read':
             return _('One verse in English Bibles, word for word at the '
                      'top, free at the bottom. Press a Bible to open its '
                      'card.')
@@ -257,6 +271,10 @@ class FamilyTree:
             self._open_card,
             'line' if self._by_line.get_active() else 'family')
         self.family.set_notes_visible(self._notes_btn.get_active())
+        self.family.set_root_open(bool(settings.get('family_tree_root_open')),
+                                  animate=False)
+        self.family.on_root = lambda open_: settings.put(
+            'family_tree_root_open', open_)
         self.outline = FamilyOutline(self._open_card)
         self._stack.add_named(self.family.widget, 'family')
         self._stack.add_named(self.outline.widget, 'outline')

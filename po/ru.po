@@ -10332,6 +10332,22 @@ msgstr "До Линии: его правописание не поддаётся
 msgid "Before 1611 — the root. These texts cannot be placed on the Line; their spelling defeats the measure."
 msgstr "До 1611 года — корень. Эти тексты нельзя поместить на Линию: их правописание не поддаётся измерению."
 
+#: family_tree.py
+msgid "Every English Bible on one track, word for word at the left, free at the right. Press a Bible to open its card."
+msgstr "Все английские Библии на одной шкале: пословные слева, свободные справа. Нажмите на Библию, чтобы открыть её карточку."
+
+#: family_view.py
+msgid "Before 1611 — the root: {first} to {last}"
+msgstr "До 1611 года — корень: от {first} до {last}"
+
+#: family_view.py
+msgid "Fold the root"
+msgstr "Свернуть корень"
+
+#: family_view.py
+msgid "Show the root"
+msgstr "Показать корень"
+
 #: family_view.py
 msgid "⋮ compressed"
 msgstr "⋮ сжато"

@@ -205,7 +205,7 @@ def _page(monkeypatch, view='read'):
 
 def test_the_page_remembers_read_and_hides_the_family_tools(monkeypatch):
     page, store = _page(monkeypatch, view='line')
-    page._read_btn.set_active(True)
+    page.turn_to('read')
     assert page._stack.get_visible_child_name() == 'read'
     assert store['family_tree_view'] == 'read'
     assert page.read.ref == ('John', 3, 16)
@@ -344,7 +344,7 @@ def test_read_opens_with_no_bible_being_read(monkeypatch):
                                  book='John', chapter=3, _selected_verse=None,
                                  get_root=lambda: None)
     page = ft.FamilyTree(pane)
-    page._read_btn.set_active(True)
+    page.turn_to('read')
     assert page._stack.get_visible_child_name() == 'read'
     assert page.read.ref == ('John', 3, 1)
     assert page.read._rows

@@ -33,6 +33,14 @@ BAR_BELOW = 15          # a range bar's distance under its Bible's mark
 #: A range narrower than this is one chart's point: no bar is drawn.
 BAR_MIN_W = 4.0
 NODE_H = 24
+#: The rule under the root, and where it sits with the root folded: the
+#: root, eight Bibles before 1611, filled the first screen, and the Bibles
+#: people read were further down (2026-09-26).
+ROOT_RULE = fl.AXIS_TOP - 52
+FOLDED_RULE = 56
+FOLD_SHIFT = ROOT_RULE - FOLDED_RULE
+#: How far below the rule a line out of the folded root comes to full ink.
+STUB_FADE = 44
 
 
 def _sentence(record, reading, installed):
@@ -124,6 +132,7 @@ class _Node(Gtk.Button):
     def place(self, fixed):
         """Put the node so its mark's centre sits on (x, y)."""
         x0, y0, _x1, _y1 = self.box()
+        y0 += self._view._dy(self)
         if self.get_parent() is fixed:
             fixed.move(self, x0, y0)
         else:
@@ -266,6 +275,12 @@ class FamilyView:
         self._edges = fl.edges()
         self._lanes = fl.lanes()
         self._notes = fl.notes()
+        self._root_ids = set(bible_family.family_data().get('root', {}))
+        # The root starts folded; the pane restores the reader's choice.
+        self._root_open = False
+        self._fold = 1.0
+        self._fold_anim = None
+        self.on_root = None
 
         # The painting is the lines, axis and lane names: presentation, so a
         # screen reader walks the Bibles and notes instead.
@@ -273,7 +288,7 @@ class FamilyView:
             accessible_role=Gtk.AccessibleRole.PRESENTATION)
         # A size request, not just a content size: the content size is only
         # natural, and the frame squeezed the drawing to its own size.
-        self._area.set_size_request(fl.WIDTH, int(fl.HEIGHT))
+        self._area.set_size_request(fl.WIDTH, int(fl.HEIGHT) - FOLD_SHIFT)
         self._area.set_draw_func(self._draw)
         redraw_on_contrast(self._area)
         self._fixed = Gtk.Fixed()
@@ -283,6 +298,22 @@ class FamilyView:
         self._scroll = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
         self._scroll.set_child(overlay)
         self.widget = self._scroll
+
+        # The root's own line at the top, which folds and opens it. First
+        # in the drawing, so Tab meets it before the Bibles.
+        self._root_btn = Gtk.Button()
+        self._root_btn.add_css_class('flat')
+        self._root_btn.add_css_class('family-root-toggle')
+        # One line: a Fixed gives a wrapping label its narrowest width.
+        self._root_label = Gtk.Label(xalign=0)
+        box = Gtk.Box(spacing=6)
+        box.append(Gtk.Image(icon_name='scriptura-pan-end-symbolic'))
+        box.append(self._root_label)
+        self._root_btn.set_child(box)
+        self._root_btn.connect(
+            'clicked', lambda _b: self.set_root_open(not self._root_open))
+        self._fixed.put(self._root_btn, 12, 10)
+        self._show_root_state()
 
         for nid in bible_family.family_members():
             x, y = self._pos[nid]
@@ -319,6 +350,88 @@ class FamilyView:
                 w.place(self._fixed)
             else:
                 self._fixed.put(w, fl.NOTE_LEFT, _y)
+        self._apply_fold(self._fold)
+
+    # ── the root, folded or open ─────────────────────────────────────────
+
+    @property
+    def root_open(self):
+        return self._root_open
+
+    def set_root_open(self, open_, animate=True):
+        """Open the root (the Bibles before 1611) or fold it to one line.
+        Folding, the root's Bibles sink onto the rule and fade while the
+        drawing rises under them; the lines they gave the KJV and the
+        Douay–Rheims stand straight up out of the fold."""
+        if open_ == self._root_open:
+            return
+        self._root_open = open_
+        self._show_root_state()
+        if self.on_root is not None:
+            self.on_root(open_)
+        # A fold still running turns round from where it is.
+        if self._fold_anim is not None:
+            self._fold_anim.pause()
+            self._fold_anim = None
+        target = 0.0 if open_ else 1.0
+        if not animate:
+            self._apply_fold(target)
+            return
+        anim = Adw.TimedAnimation.new(
+            self._area, self._fold, target,
+            max(1, int(520 * abs(target - self._fold))),
+            Adw.CallbackAnimationTarget.new(self._apply_fold))
+        anim.set_easing(Adw.Easing.EASE_IN_OUT_CUBIC)
+        anim.connect('done', lambda *_a: setattr(self, '_fold_anim', None))
+        self._fold_anim = anim
+        anim.play()
+
+    def _show_root_state(self):
+        if self._root_open:
+            words = _('Before 1611 — the root. These texts cannot be placed '
+                      'on the Line; their spelling defeats the measure.')
+            tip = _('Fold the root')
+            self._root_btn.add_css_class('open')
+        else:
+            root = sorted((bible_family.node(i) for i in self._root_ids),
+                          key=lambda r: r['year'])
+            words = _('Before 1611 — the root: {first} to {last}').format(
+                first=f"{short_name(root[0])} {root[0]['year']}",
+                last=f"{short_name(root[-1])} {root[-1]['year']}")
+            tip = _('Show the root')
+            self._root_btn.remove_css_class('open')
+        self._root_label.set_label(words)
+        self._root_btn.set_tooltip_text(tip)
+        # EXPANDED is boolean-or-undefined, held as an int.
+        self._root_btn.update_state([Gtk.AccessibleState.EXPANDED],
+                                    [int(self._root_open)])
+
+    def _shift(self):
+        """How far the drawing has risen for the fold."""
+        return round(self._fold * FOLD_SHIFT)
+
+    def _sink(self, nid, y):
+        """How far a root Bible has sunk toward the rule."""
+        return (ROOT_RULE - y) * self._fold if nid in self._root_ids else 0.0
+
+    def _dy(self, node):
+        """Where a node is drawn, below where the layout puts it."""
+        return self._sink(node.record['id'], node.y) - self._shift()
+
+    def _apply_fold(self, fold):
+        self._fold = fold
+        shift = self._shift()
+        for node in self._nodes.values():
+            if node.root:
+                # Gone before they reach the rule, so they never pile up
+                # on it; opening, they appear in the second half.
+                node.set_opacity(max(0.0, 1.0 - fold * 1.6))
+                node.set_visible(fold < 1.0)
+            node.place(self._fixed)
+        for (_y, top), label in zip(self._note_spots, self._note_labels):
+            self._fixed.move(label, fl.NOTE_LEFT, top - shift)
+        self._area.set_size_request(fl.WIDTH, int(fl.HEIGHT) - shift)
+        self._area.queue_draw()
 
     def set_notes_visible(self, visible):
         """Show or hide the margin notes and their leaders; the poster,
@@ -419,11 +532,14 @@ class FamilyView:
         """Bring `node` into view, a third of the way down; `then` runs
         after. A frame not yet laid out has no page to scroll, and would
         clamp the scroll to the top, so this waits until it has one."""
+        if node.root:
+            self.set_root_open(True, animate=False)
         vadj = self._scroll.get_vadjustment()
         hadj = self._scroll.get_hadjustment()
 
         def go():
-            vadj.set_value(max(0.0, node.y - vadj.get_page_size() / 3))
+            vadj.set_value(max(0.0, node.y + self._dy(node)
+                               - vadj.get_page_size() / 3))
             hadj.set_value(max(0.0, node.x - hadj.get_page_size() / 2))
             if then is not None:
                 then()
@@ -449,6 +565,8 @@ class FamilyView:
         """Give one Bible the keyboard, which lights its line, and scroll
         to it; `then` runs once it is in view."""
         node = self._last = self._nodes[node_id]
+        if node.root:
+            self.set_root_open(True, animate=False)
         node.grab_focus()
         self.scroll_to(node, then)
 
@@ -499,12 +617,18 @@ class FamilyView:
             sign = 1 if keyval == Gdk.KEY_Right else -1
             x, y = self._pos[nid]
             cands = [k for k, (kx, ky) in self._pos.items()
-                     if k != nid and (kx - x) * sign > 4]
+                     if k != nid and (kx - x) * sign > 4
+                     and (self._root_open or k not in self._root_ids)]
             cands.sort(key=lambda k: abs(self._pos[k][0] - x)
                        + 2 * abs(self._pos[k][1] - y))
             target = cands[0] if cands else None
         else:
             return False
+        if target in self._root_ids and not self._root_open:
+            # Up from the KJV into the folded root: its line, which opens it.
+            if keyval == Gdk.KEY_Up:
+                self._root_btn.grab_focus()
+            return True
         if target is not None:
             nxt = self._nodes[target]
             nxt.grab_focus()
@@ -514,15 +638,17 @@ class FamilyView:
     def scroll_to_visible(self, node):
         vadj = self._scroll.get_vadjustment()
         top, page = vadj.get_value(), vadj.get_page_size()
-        if not top + 40 < node.y < top + page - 40:
-            vadj.set_value(max(0.0, node.y - page / 2))
+        y = node.y + self._dy(node)
+        if not top + 40 < y < top + page - 40:
+            vadj.set_value(max(0.0, y - page / 2))
 
     # ── painting ─────────────────────────────────────────────────────────
 
     def _draw(self, area, cr, w, h):
         self._paint(cr, w, h, area.get_color(),
                     area.get_pango_context().get_font_description().get_size(),
-                    self._lit, hc=high_contrast())
+                    self._lit, hc=high_contrast(), fold=self._fold,
+                    caption=False)
 
     def _unplaced(self, node_id):
         """Whether a Bible stands in Not placed: arranged by literalness,
@@ -531,12 +657,19 @@ class FamilyView:
         return (self._arrangement == 'line' and node.spot is None
                 and not node.root)
 
-    def _paint(self, cr, w, h, ink, base_size, lit, hc=False):
+    def _paint(self, cr, w, h, ink, base_size, lit, hc=False, fold=0.0,
+               caption=True):
         """The drawing under the Bibles: axis, lanes or zones, lines of
         descent, bars. `ink` is anything with red/green/blue; `lit` the
         Bibles to keep bright (None for all); `hc` lifts the faint inks for
-        high contrast, but not the rules and grid, which only divide. The
-        poster calls it too."""
+        high contrast, but not the rules and grid, which only divide;
+        `fold` how far the root is folded (1 folded); `caption` whether to
+        write the root's line, which on screen is the button that folds
+        it. The poster calls it too, with the root open."""
+        cr.save()
+        shift = round(fold * FOLD_SHIFT)
+        cr.translate(0, -shift)
+        h += shift
 
         def rgba(alpha):
             cr.set_source_rgba(ink.red, ink.green, ink.blue, alpha)
@@ -574,13 +707,14 @@ class FamilyView:
         # Before 1611: the root, and a rule under it.
         # Translated, so in the sans: Newsreader has no Cyrillic. The notes
         # below stay English facts, and keep the reading serif.
-        text(_('Before 1611 — the root. These texts cannot be placed on '
-               'the Line; their spelling defeats the measure.'),
-             24, 20, italic=True, width=fl.NOTE_LEFT - 60)
+        if caption:
+            text(_('Before 1611 — the root. These texts cannot be placed '
+                   'on the Line; their spelling defeats the measure.'),
+                 24, 20, italic=True, width=fl.NOTE_LEFT - 60)
         rgba(0.15)
         cr.set_line_width(1.0)
-        cr.move_to(20, fl.AXIS_TOP - 52.5)
-        cr.line_to(w - 20, fl.AXIS_TOP - 52.5)
+        cr.move_to(20, ROOT_RULE - 0.5)
+        cr.line_to(w - 20, ROOT_RULE - 0.5)
         cr.stroke()
 
         # The time axis.
@@ -678,14 +812,38 @@ class FamilyView:
                 cr.rectangle(kx, ky, kw, kh)
             cr.clip()
         for e in self._edges:
-            a, b = self._pos[e.parent], self._pos[e.child]
+            (ax, ay), (bx, by) = self._pos[e.parent], self._pos[e.child]
             bright = lit is None or (e.parent in lit and e.child in lit)
             strong = e.kind == 'rev'
             # A line to a Bible with no place on the Line stays faint: the
             # longest strokes ran to the two Bibles known least.
-            rgba(lift(0.55 if strong else 0.38, hc)
-                 * (1 if bright else 0.25)
-                 * (0.4 if self._unplaced(e.child) else 1))
+            alpha = (lift(0.55 if strong else 0.38, hc)
+                     * (1 if bright else 0.25)
+                     * (0.4 if self._unplaced(e.child) else 1))
+            from_root = e.parent in self._root_ids
+            if from_root:
+                ay += (ROOT_RULE - ay) * fold
+            if e.child in self._root_ids:
+                by += (ROOT_RULE - by) * fold
+            b = (bx, by)
+            if from_root and e.child not in self._root_ids and strong:
+                # A revision of a root Bible stands straight up out of the
+                # fold, fading into it: the line leaves the rule above its
+                # own Bible, not a Bible folded out of sight.
+                ax += (b[0] - ax) * fold
+                grad = cairo.LinearGradient(0, ROOT_RULE, 0,
+                                            ROOT_RULE + STUB_FADE)
+                grad.add_color_stop_rgba(0, ink.red, ink.green, ink.blue,
+                                         alpha * (1 - fold))
+                grad.add_color_stop_rgba(1, ink.red, ink.green, ink.blue,
+                                         alpha)
+                cr.set_source(grad)
+            elif from_root:
+                # Inside the root, and the root's "drew on" lines, go with it.
+                rgba(alpha * (1 - fold))
+            else:
+                rgba(alpha)
+            a = (ax, ay)
             cr.set_line_width(1.6 if strong else 1.1)
             cr.set_dash([] if strong else [1.5, 3.0] if e.kind == 'para'
                         else [5.0, 4.0])
@@ -706,6 +864,7 @@ class FamilyView:
                 cr.line_to(fl.NOTE_LEFT - 6, top + 9)
         cr.stroke()
         cr.set_dash([])
+        cr.restore()
 
 
 #: The poster's title band above the drawing and key below it.

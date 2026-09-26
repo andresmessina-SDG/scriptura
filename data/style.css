@@ -287,6 +287,55 @@ button.family-node {
 button.family-node.dim {
     opacity: 0.3;
 }
+/* The Family's two arrangements, under the page switcher and beside the
+   hint: a choice inside one view, so quieter than the switch above it. */
+.family-arrangements > button {
+    min-height: 26px;
+    padding: 0 10px;
+    border-radius: 13px;
+    font-size: 0.9em;
+    font-weight: normal;
+}
+.family-arrangements > button:not(:checked) {
+    opacity: 0.6;
+}
+.family-arrangements > button:not(:checked):hover {
+    opacity: 0.9;
+}
+
+/* The Family's own buttons at the end of the switcher's row: round, like
+   the arrangement pills, so a lit one reads as the same kind of choice. */
+.family-tools > button {
+    border-radius: 9999px;
+}
+
+/* The root's line, which folds and opens it: set like the drawing's
+   italic captions, and the chevron turns as it opens. */
+button.family-root-toggle {
+    min-height: 28px;
+    padding: 0 12px 0 8px;
+    border-radius: 14px;
+}
+.family-root-toggle > box {
+    opacity: 0.6;
+    transition: opacity 150ms ease;
+}
+.family-root-toggle:hover > box,
+.family-root-toggle:focus-visible > box {
+    opacity: 0.9;
+}
+.family-root-toggle label {
+    font-style: italic;
+    font-weight: normal;
+    font-size: 0.8em;
+}
+.family-root-toggle image {
+    -gtk-icon-size: 12px;
+    transition: -gtk-icon-transform 250ms ease;
+}
+.family-root-toggle.open image {
+    -gtk-icon-transform: rotate(90deg);
+}
 .family-note {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;

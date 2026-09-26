@@ -10376,6 +10376,22 @@ msgstr "Anterior a la Línea: su ortografía no se puede medir."
 msgid "Before 1611 — the root. These texts cannot be placed on the Line; their spelling defeats the measure."
 msgstr "Antes de 1611: la raíz. Estos textos no pueden situarse en la Línea; su ortografía impide la medición."
 
+#: family_tree.py
+msgid "Every English Bible on one track, word for word at the left, free at the right. Press a Bible to open its card."
+msgstr "Todas las Biblias en inglés en una sola pista: palabra por palabra a la izquierda, libre a la derecha. Pulse una Biblia para abrir su ficha."
+
+#: family_view.py
+msgid "Before 1611 — the root: {first} to {last}"
+msgstr "Antes de 1611: la raíz, de {first} a {last}"
+
+#: family_view.py
+msgid "Fold the root"
+msgstr "Plegar la raíz"
+
+#: family_view.py
+msgid "Show the root"
+msgstr "Mostrar la raíz"
+
 #: family_view.py
 msgid "⋮ compressed"
 msgstr "⋮ comprimido"
