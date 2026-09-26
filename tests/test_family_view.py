@@ -579,5 +579,53 @@ def test_every_view_says_how_to_read_it(monkeypatch):
         page.turn_to(view)
         assert store['family_tree_view'] == view
         assert page._hint.get_visible() and page._hint.get_label(), view
+        assert not page._key.get_visible()
         assert page._arrangements.get_visible() == (view == 'family')
         assert page._notes_btn.get_visible() == (view == 'family')
+
+
+def test_by_literalness_the_hint_is_the_key(monkeypatch):
+    page, _store = _page(monkeypatch)
+    page.turn_to('family')
+    page._by_line.set_active(True)
+    assert page._key.get_visible() and not page._hint.get_visible()
+    page._by_family.set_active(True)
+    assert page._hint.get_visible() and not page._key.get_visible()
+
+
+def test_every_bible_label_cuts_the_lines_behind_it():
+    """The line rising out of the fold into the Douay-Rheims struck
+    through "KJV 1611"."""
+    import cairo
+    view, _opened = _view()
+    surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, 1180, 1833)
+    view._paint(cairo.Context(surf), 1180, 1833, fv._PLATE_INK,
+                fv.PLATE_BASE, None, fold=1.0, caption=False)
+    boxes = {(round(x0), round(y0)) for x0, y0, _w, _h in view._knockouts}
+    for nid in ('kjv1611', 'challoner', 'esv'):
+        x0, y0, _x1, _y1 = view._nodes[nid].label_box()
+        assert (round(x0), round(y0)) in boxes, nid
+    # Folded, the root's hidden labels cut nothing.
+    x0, y0, _x1, _y1 = view._nodes['geneva'].label_box()
+    assert (round(x0), round(y0)) not in boxes
+
+
+def test_no_label_sits_on_a_line_out_of_the_fold():
+    for arrangement in ('family', 'line'):
+        view = fv.FamilyView(lambda i: None, arrangement)
+        for nid in ('kjv1611', 'challoner'):
+            x = view._nodes[nid].x
+            for other in view._nodes.values():
+                if other.root or other.record['id'] == nid:
+                    continue
+                x0, y0, x1, y1 = other.label_box()
+                assert not (x0 < x < x1
+                            and y0 < view._nodes[nid].y
+                            and y1 > fv.ROOT_RULE), (arrangement, nid,
+                                                     other.record['id'])
+
+
+def test_the_1611_kjv_draws_no_second_bar():
+    view = fv.FamilyView(lambda i: None, 'line')
+    assert fv._bar(view._nodes['kjv1611']) is None
+    assert fv._bar(view._nodes['kjv']) is not None

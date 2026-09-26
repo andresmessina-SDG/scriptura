@@ -266,6 +266,12 @@ window {
 .family-read-list > row {
     border-bottom: 1px solid alpha(@borders, 0.3);
 }
+/* The list has the side margins in Read, so its heads sit at its edge. */
+.family-read-list .family-line-head,
+.family-read-list .family-line-subhead {
+    margin-left: 0;
+    margin-right: 0;
+}
 /* The link's words line up with the text around it, not its padding. */
 .family-read-install { opacity: 0.7; margin-left: -6px; }
 .family-read-pick { font-size: 0.85em; }
@@ -287,19 +293,19 @@ button.family-node {
 button.family-node.dim {
     opacity: 0.3;
 }
-/* The Family's two arrangements, under the page switcher and beside the
-   hint: a choice inside one view, so quieter than the switch above it. */
-.family-arrangements > button {
+/* A choice inside one view (the Family's arrangements, Read's Mark
+   differences): quieter than the page switcher above it. */
+button.family-pill {
     min-height: 26px;
     padding: 0 10px;
     border-radius: 13px;
     font-size: 0.9em;
     font-weight: normal;
 }
-.family-arrangements > button:not(:checked) {
+button.family-pill:not(:checked) {
     opacity: 0.6;
 }
-.family-arrangements > button:not(:checked):hover {
+button.family-pill:not(:checked):hover {
     opacity: 0.9;
 }
 

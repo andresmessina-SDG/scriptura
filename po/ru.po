@@ -10333,8 +10333,8 @@ msgid "Before 1611 — the root. These texts cannot be placed on the Line; their
 msgstr "До 1611 года — корень. Эти тексты нельзя поместить на Линию: их правописание не поддаётся измерению."
 
 #: family_tree.py
-msgid "Every English Bible on one track, word for word at the left, free at the right. Press a Bible to open its card."
-msgstr "Все английские Библии на одной шкале: пословные слева, свободные справа. Нажмите на Библию, чтобы открыть её карточку."
+msgid "Word for word at the left, free at the right. Press a Bible to open its card."
+msgstr "Пословные слева, свободные справа. Нажмите на Библию, чтобы открыть её карточку."
 
 #: family_view.py
 msgid "Before 1611 — the root: {first} to {last}"
@@ -10357,10 +10357,8 @@ msgid "(reworded)"
 msgstr "(пересказ)"
 
 #: family_tree.py
-msgid ""
-"Hover or focus a Bible to light its line. Arrow keys walk from parent to "
-"child; Enter opens its card."
-msgstr "Наведите указатель или фокус на Библию, чтобы высветить её линию. Стрелки ведут от родителя к потомку; Enter открывает карточку."
+msgid "Hover a Bible to light its line. Arrow keys walk the family; Enter opens its card."
+msgstr "Наведите указатель на Библию, чтобы подсветить её линию. Стрелки ведут по семье; Enter открывает её карточку."
 
 #: family_tree.py
 msgid "By family"
@@ -10379,8 +10377,12 @@ msgid "Arrange by literalness"
 msgstr "Расположить по буквальности"
 
 #: family_tree.py
-msgid "Each Bible sits where it lands on the Line; the lines of descent show which families drifted. A bar is a published range; a bracket, its makers’ own word."
-msgstr "Каждая Библия стоит там, где её место на Линии; линии родства показывают, какие семьи сместились. Полоса — опубликованный диапазон; скобка — слова самих переводчиков."
+msgid "published range"
+msgstr "опубликованный диапазон"
+
+#: family_view.py
+msgid "its makers’ word"
+msgstr "по словам создателей"
 
 #: family_tree.py
 msgid "Not placed"
@@ -10583,8 +10585,8 @@ msgid "Read the difference"
 msgstr "Прочесть разницу"
 
 #: family_read.py
-msgid "One verse in English Bibles, word for word at the top, free at the bottom. Press a Bible to open its card."
-msgstr "Один стих в английских Библиях: сверху дословные, внизу свободные. Нажмите на Библию, чтобы открыть её карточку."
+msgid "One verse, word for word at the top, free at the bottom. Press a Bible to open its card."
+msgstr "Один стих: сверху дословные, внизу свободные. Нажмите на Библию, чтобы открыть её карточку."
 
 #: family_read.py
 msgid "John 3:16"

@@ -192,9 +192,9 @@ class _Row(Gtk.ListBoxRow):
         self.empty = False      # an installed text without this verse
         self.plain = ''
 
+        # No side margins: the list has them, so each row's rule ends where
+        # the card of the original above does.
         self._box = Gtk.Box(spacing=16)
-        self._box.set_margin_start(14)
-        self._box.set_margin_end(14)
         self._box.set_margin_top(10)
         self._box.set_margin_bottom(10)
         left = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
@@ -205,14 +205,17 @@ class _Row(Gtk.ListBoxRow):
         left.set_hexpand(False)
         left.set_valign(Gtk.Align.START)
         self._left = left
-        name = Gtk.Label(label=record['name'], xalign=0)
+        # Two lines before it is cut: "King James Version (1769…" hid the
+        # year that tells the two KJVs apart.
+        name = Gtk.Label(label=record['name'], xalign=0, wrap=True, lines=2)
+        name.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
         name.set_ellipsize(Pango.EllipsizeMode.END)
         name.set_max_width_chars(1)
         name.add_css_class('family-line-name')
         if reading:
             name.add_css_class('accent')
         if name.create_pango_layout(
-                record['name']).get_pixel_size()[0] > NAME_W:
+                record['name']).get_pixel_size()[0] > 2 * NAME_W:
             name.set_tooltip_text(record['name'])
         left.append(name)
         # The year and the track on one line: stacked, the names took more
@@ -349,6 +352,10 @@ class FamilyRead:
         bar.append(self._rows_menu)
         self._marks_btn = Gtk.ToggleButton(label=_('Mark differences'))
         self._marks_btn.add_css_class('flat')
+        # A choice within the view, set like the Family's arrangements: a
+        # filled button here was the heaviest thing on the page.
+        self._marks_btn.add_css_class('family-pill')
+        self._marks_btn.set_valign(Gtk.Align.CENTER)
         self._marks_btn.set_tooltip_text(
             _('Fade the words each Bible shares with the one above it (the '
               'first, with the one below), so the words that differ stand '
@@ -386,6 +393,8 @@ class FamilyRead:
         self._list = Gtk.ListBox()
         self._list.add_css_class('family-line-list')
         self._list.add_css_class('family-read-list')
+        self._list.set_margin_start(14)
+        self._list.set_margin_end(14)
         self._list.set_selection_mode(Gtk.SelectionMode.NONE)
         self._list.set_filter_func(
             lambda row: not row.empty

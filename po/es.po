@@ -10377,8 +10377,8 @@ msgid "Before 1611 — the root. These texts cannot be placed on the Line; their
 msgstr "Antes de 1611: la raíz. Estos textos no pueden situarse en la Línea; su ortografía impide la medición."
 
 #: family_tree.py
-msgid "Every English Bible on one track, word for word at the left, free at the right. Press a Bible to open its card."
-msgstr "Todas las Biblias en inglés en una sola pista: palabra por palabra a la izquierda, libre a la derecha. Pulse una Biblia para abrir su ficha."
+msgid "Word for word at the left, free at the right. Press a Bible to open its card."
+msgstr "Palabra por palabra a la izquierda, libre a la derecha. Pulse una Biblia para abrir su ficha."
 
 #: family_view.py
 msgid "Before 1611 — the root: {first} to {last}"
@@ -10401,10 +10401,8 @@ msgid "(reworded)"
 msgstr "(reformulada)"
 
 #: family_tree.py
-msgid ""
-"Hover or focus a Bible to light its line. Arrow keys walk from parent to "
-"child; Enter opens its card."
-msgstr "Pasa el puntero o el foco por una Biblia para iluminar su línea. Las flechas van de padre a hijo; Intro abre su ficha."
+msgid "Hover a Bible to light its line. Arrow keys walk the family; Enter opens its card."
+msgstr "Pasa el puntero por una Biblia para iluminar su línea. Las flechas recorren la familia; Intro abre su ficha."
 
 #: family_tree.py
 msgid "By family"
@@ -10423,8 +10421,12 @@ msgid "Arrange by literalness"
 msgstr "Ordenar por literalidad"
 
 #: family_tree.py
-msgid "Each Bible sits where it lands on the Line; the lines of descent show which families drifted. A bar is a published range; a bracket, its makers’ own word."
-msgstr "Cada Biblia está donde cae en la Línea; las líneas de descendencia muestran qué familias se desplazaron. Una barra es un rango publicado; un corchete, la palabra de sus propios traductores."
+msgid "published range"
+msgstr "intervalo publicado"
+
+#: family_view.py
+msgid "its makers’ word"
+msgstr "según sus autores"
 
 #: family_tree.py
 msgid "Not placed"
@@ -10626,8 +10628,8 @@ msgid "Read the difference"
 msgstr "Leer la diferencia"
 
 #: family_read.py
-msgid "One verse in English Bibles, word for word at the top, free at the bottom. Press a Bible to open its card."
-msgstr "Un versículo en Biblias inglesas, palabra por palabra arriba, libre abajo. Pulse una Biblia para abrir su ficha."
+msgid "One verse, word for word at the top, free at the bottom. Press a Bible to open its card."
+msgstr "Un versículo, palabra por palabra arriba, libre abajo. Pulse una Biblia para abrir su ficha."
 
 #: family_read.py
 msgid "John 3:16"

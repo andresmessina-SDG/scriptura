@@ -17,7 +17,7 @@ import settings
 from a11y import set_accessible_label
 from family_line import FamilyLine
 from family_read import FamilyRead
-from family_view import FamilyOutline, FamilyView, paint_plate
+from family_view import FamilyOutline, FamilyView, key_widget, paint_plate
 from i18n import _
 
 
@@ -76,7 +76,6 @@ class FamilyTree:
         # The Family's two arrangements: by family (lanes), or by
         # literalness — every Bible slid to its place on the Line.
         self._arrangements = Gtk.Box(spacing=2)
-        self._arrangements.add_css_class('family-arrangements')
         self._by_family = Gtk.ToggleButton(label=_('By family'))
         self._by_line = Gtk.ToggleButton(label=_('By literalness'))
         self._by_line.set_group(self._by_family)
@@ -84,6 +83,7 @@ class FamilyTree:
         set_accessible_label(self._by_line, _('Arrange by literalness'))
         for btn in (self._by_family, self._by_line):
             btn.add_css_class('flat')
+            btn.add_css_class('family-pill')
             self._arrangements.append(btn)
         self._list_btn = Gtk.ToggleButton(
             icon_name='scriptura-view-list-symbolic')
@@ -120,15 +120,21 @@ class FamilyTree:
         # Every view says in a line how to read it; the arrow-key walk
         # cannot be seen, so the Family says that. The same line under each
         # view, so the page does not jump as the switch turns.
-        self._hint = Gtk.Label(xalign=0, wrap=True, hexpand=True)
+        # Centred under the switch, like it: at the left it lined up with
+        # nothing, the views' content starting well in from the edge.
+        self._hint = Gtk.Label(wrap=True, justify=Gtk.Justification.CENTER)
         self._hint.add_css_class('family-line-meta')
         self._hint.set_valign(Gtk.Align.CENTER)
-        under = Adw.WrapBox(child_spacing=12, line_spacing=2)
+        # By literalness the hint is the drawing's key, drawn, not said.
+        self._key = key_widget()
+        self._key.set_valign(Gtk.Align.CENTER)
+        under = Adw.WrapBox(child_spacing=12, line_spacing=2, align=0.5)
         under.set_margin_start(14)
         under.set_margin_end(14)
         under.set_margin_top(4)
         under.append(self._arrangements)
         under.append(self._hint)
+        under.append(self._key)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         box.append(bar)
         box.append(under)
@@ -230,8 +236,7 @@ class FamilyTree:
         self._print_btn.set_visible(drawing)
         self._notes_btn.set_visible(drawing)
         read = self.view == 'read'
-        self._hint.set_visible(not family or drawing)
-        self._hint.set_label(self._hint_text())
+        self._show_hint()
         if not family:
             self._stack.set_visible_child_name('read' if read else 'line')
             return
@@ -239,28 +244,32 @@ class FamilyTree:
         self._stack.set_visible_child_name(
             'outline' if self._list_btn.get_active() else 'family')
 
+    def _show_hint(self):
+        """One short line under the switch in every view; the drawing by
+        literalness shows its key there instead."""
+        family = self.view == 'family'
+        drawing = family and not self._list_btn.get_active()
+        key = drawing and self._by_line.get_active()
+        self._key.set_visible(key)
+        self._hint.set_visible(not key and (not family or drawing))
+        self._hint.set_label(self._hint_text())
+
     def _hint_text(self):
         if self.view == 'line':
-            return _('Every English Bible on one track, word for word at '
-                     'the left, free at the right. Press a Bible to open '
-                     'its card.')
+            return _('Word for word at the left, free at the right. Press a '
+                     'Bible to open its card.')
         if self.view == 'read':
-            return _('One verse in English Bibles, word for word at the '
-                     'top, free at the bottom. Press a Bible to open its '
-                     'card.')
-        if self._by_line.get_active():
-            return _('Each Bible sits where it lands on the Line; the lines '
-                     'of descent show which families drifted. A bar is a '
-                     'published range; a bracket, its makers’ own word.')
-        return _('Hover or focus a Bible to light its line. Arrow keys '
-                 'walk from parent to child; Enter opens its card.')
+            return _('One verse, word for word at the top, free at the '
+                     'bottom. Press a Bible to open its card.')
+        return _('Hover a Bible to light its line. Arrow keys walk the '
+                 'family; Enter opens its card.')
 
     def _on_arrangement(self, btn):
         if not btn.get_active():
             return
         arrangement = 'line' if btn is self._by_line else 'family'
         settings.put('family_tree_arrangement', arrangement)
-        self._hint.set_label(self._hint_text())
+        self._show_hint()
         if self.family is not None:
             self.family.set_arrangement(arrangement)
 

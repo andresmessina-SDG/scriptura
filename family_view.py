@@ -129,6 +129,17 @@ class _Node(Gtk.Button):
             else (self.x - pad - side / 2)
         return (x0, self.y - NODE_H / 2, x0 + nat, self.y + NODE_H / 2)
 
+    def label_box(self):
+        """The rectangle of its name and year alone, not its mark: where a
+        line of descent is cut so it never strikes through them."""
+        x0, _y0, x1, _y1 = self.box()
+        half = (DOT * 2 + 8) / 2
+        if self.left:
+            x1 = self.x - half
+        else:
+            x0 = self.x + half
+        return (x0, self.y - 8, x1, self.y + 8)
+
     def place(self, fixed):
         """Put the node so its mark's centre sits on (x, y)."""
         x0, y0, _x1, _y1 = self.box()
@@ -254,6 +265,10 @@ def _bar(node):
     here = node.spot
     if here is None or here.kind not in ('band', 'class'):
         return None
+    if node.record['id'] in fl.PLACED_AS:
+        # The 1611 KJV wears the 1769 text's place: its bar would be the
+        # same bar again, ten rows above.
+        return None
     if (here.kind == 'band'
             and fl.line_x(here.high) - fl.line_x(here.low) < BAR_MIN_W):
         return None
@@ -351,6 +366,16 @@ class FamilyView:
             else:
                 self._fixed.put(w, fl.NOTE_LEFT, _y)
         self._apply_fold(self._fold)
+        # Measured here, before the stylesheet reaches them, the labels are
+        # a little wide, and a label left of its mark put the mark 6px off
+        # its lane (1769 KJV). Once on screen they measure true: again.
+        self._fixed.connect('map', lambda _w: self._resettle())
+
+    def _resettle(self):
+        self._settle_labels()
+        for node in self._nodes.values():
+            node.place(self._fixed)
+        self._area.queue_draw()
 
     # ── the root, folded or open ─────────────────────────────────────────
 
@@ -449,10 +474,21 @@ class FamilyView:
             node.bar_above = False
         bars = ([(n, b) for n in order if (b := _bar(n)) is not None]
                 if self._arrangement == 'line' else [])
+        # The lines rising out of the folded root, straight up from their
+        # Bibles, are obstacles too: the Douay-Rheims's crossed "KJV 1611",
+        # and cut there it seemed to hang from the KJV. Kept open or
+        # folded, so a label does not jump as the root folds.
+        stubs = []
+        for e in self._edges:
+            if (e.kind == 'rev' and e.parent in self._root_ids
+                    and e.child not in self._root_ids):
+                child = self._nodes[e.child]
+                stubs.append((child, (child.x - 2, ROOT_RULE,
+                                      child.x + 2, child.y - DOT)))
         placed: list[_Node] = []
         for node in order:
             node.set_left(fl.label_left(node.x, node.root))
-            _settle(node, placed, bars)
+            _settle(node, placed, bars + stubs)
             placed.append(node)
         # A bar no label could dodge (a bracket spans a whole zone) goes
         # above its own Bible instead, when that side is clear.
@@ -769,7 +805,8 @@ class FamilyView:
             if self._animation is None:
                 for nid, node in self._nodes.items():
                     here = node.spot
-                    if here is None or here.kind not in ('band', 'class'):
+                    if (here is None or here.kind not in ('band', 'class')
+                            or nid in fl.PLACED_AS):
                         continue
                     # A bar fades with its Bible when another line is lit.
                     fade = 0.3 if (lit is not None
@@ -801,6 +838,15 @@ class FamilyView:
                         cr.line_to(x1 - 3, y + tip)
                         cr.stroke()
                 cr.set_line_cap(cairo.LINE_CAP_BUTT)
+
+        # Every Bible's name and year cut the lines too: the line rising out
+        # of the fold into the Douay-Rheims struck through "KJV 1611".
+        for nid, node in self._nodes.items():
+            if node.root and fold >= 1.0:
+                continue
+            x0, y0, x1, y1 = node.label_box()
+            sink = self._sink(nid, node.y) if fold else 0.0
+            knockouts.append((x0, y0 + sink, x1 - x0, y1 - y0))
 
         # The lines of descent, cut where they pass behind a name.
         self._knockouts = knockouts
@@ -865,6 +911,61 @@ class FamilyView:
         cr.stroke()
         cr.set_dash([])
         cr.restore()
+
+
+def key_widget():
+    """The key to the drawing by literalness, as the poster has it: the
+    marks, the bar and the bracket, each drawn and named."""
+    box = Adw.WrapBox(child_spacing=14, line_spacing=2)
+
+    def item(draw, words, width=16):
+        cell = Gtk.Box(spacing=5)
+        area = Gtk.DrawingArea(accessible_role=Gtk.AccessibleRole.PRESENTATION)
+        area.set_content_width(width)
+        area.set_content_height(16)
+        area.set_valign(Gtk.Align.CENTER)
+        area.set_draw_func(lambda a, cr, w, h: draw(cr, w, h, a.get_color()))
+        redraw_on_contrast(area)
+        cell.append(area)
+        label = Gtk.Label(label=words)
+        label.add_css_class('family-line-meta')
+        cell.append(label)
+        box.append(cell)
+
+    def mark(kind):
+        spot = bible_family.Place(kind, 0.5, 0.5, 0.5)
+
+        def draw(cr, w, h, ink):
+            cr.scale(0.8, 0.8)
+            _paint_mark(cr, w / 1.6, h / 1.6, spot, ink)
+        return draw
+
+    def bar(cr, w, h, ink):
+        cr.set_source_rgba(ink.red, ink.green, ink.blue,
+                           lift(0.22, high_contrast()) / 0.22 * 0.35)
+        cr.set_line_width(4.0)
+        cr.set_line_cap(cairo.LINE_CAP_ROUND)
+        cr.move_to(3, h / 2)
+        cr.line_to(w - 3, h / 2)
+        cr.stroke()
+
+    def bracket(cr, w, h, ink):
+        cr.set_source_rgba(ink.red, ink.green, ink.blue,
+                           lift(0.45, high_contrast()))
+        cr.set_line_width(1.3)
+        y = round(h / 2) + 2.5
+        cr.move_to(2, y - 4)
+        cr.line_to(2, y)
+        cr.line_to(w - 2, y)
+        cr.line_to(w - 2, y - 4)
+        cr.stroke()
+
+    item(mark('band'), _('published charts place it'))
+    item(mark('measured'), _('measured in Scriptura'))
+    item(mark('class'), _('described by its makers'))
+    item(bar, _('published range'), width=22)
+    item(bracket, _('its makers’ word'), width=22)
+    return box
 
 
 #: The poster's title band above the drawing and key below it.
