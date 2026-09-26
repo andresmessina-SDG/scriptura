@@ -713,3 +713,26 @@ def test_compare_keeps_its_size_once_open(display, monkeypatch):
     switch.set_active(True)               # the Russian Bible joins the list
     assert size(pop) == at['size']
     pop.unparent()
+
+
+def test_compare_reads_the_verse_as_the_pane_numbers_it(monkeypatch):
+    """A Synodal psalm counts its title: its verse 3 is the KJV's verse 1,
+    and Compare showed the KJV's verse 3 beside it."""
+    import annotation_dialogs as ad
+    import annotations
+    import sword_bridge
+    v11n = {'RusSynodal': 'Synodal', 'RusSynodalLIO': 'Synodal',
+            'KJV': 'KJV'}
+    monkeypatch.setattr(sword_bridge, '_module_v11n', v11n.get)
+    monkeypatch.setattr(annotations, 'app_verse',
+                        lambda mod, b, c, v: {'RusSynodal': v - 2}.get(mod, v))
+    monkeypatch.setattr(sword_bridge, 'map_target_verse',
+                        lambda mod, b, c, v: v + 2 if v11n[mod] == 'Synodal'
+                        else v)
+    at = ad.compare_target
+    assert at('RusSynodal', 'KJV', 'Psalms', 51, 3) == 1
+    # Its own kind keeps the number, so a title sits beside a title.
+    assert at('RusSynodal', 'RusSynodalLIO', 'Psalms', 51, 1) == 1
+    assert at('RusSynodal', 'RusSynodal', 'Psalms', 51, 1) == 1
+    # From the KJV the number was already the app's.
+    assert at('KJV', 'RusSynodal', 'Psalms', 51, 1) == 3
