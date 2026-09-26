@@ -563,6 +563,9 @@ def _compare_with_root(monkeypatch, module):
         def show_on_line(self, node_id, pane):
             calls.append(node_id)
 
+        def read_difference(self, pane, book, chapter, verse):
+            calls.append((book, chapter, verse))
+
     root = _Root()
 
     class _Pane:
@@ -600,6 +603,35 @@ def test_compare_offers_the_line_for_a_bible_the_line_holds(display,
     for fn, args in queued:
         fn(*args)
     assert calls == ['kjv']
+    pop.unparent()
+
+
+def test_compare_opens_read_the_difference_at_its_verse(display,
+                                                     monkeypatch):
+    """Any Bible, in the Line's data or not: the verse is what is read."""
+    pop, calls, queued = _compare_with_root(monkeypatch, 'RusSynodal')
+    read = [b for b in _buttons(pop) if b.get_label() == 'Read the difference']
+    assert len(read) == 1
+    read[0].emit('clicked')
+    for fn, args in queued:
+        fn(*args)
+    assert calls == [('John', 3, 16)]
+    pop.unparent()
+
+
+def test_compare_reads_the_difference_in_the_app_s_numbering(display,
+                                                           monkeypatch):
+    """Compare's verse is the pane's module's own number: a Vulgate psalm's
+    verse 16 is the KJV's 14."""
+    import annotations
+    monkeypatch.setattr(annotations, 'app_verse',
+                        lambda m, b, c, v: v - 2 if m == 'Vulgate' else v)
+    pop, calls, queued = _compare_with_root(monkeypatch, 'Vulgate')
+    read = [b for b in _buttons(pop) if b.get_label() == 'Read the difference']
+    read[0].emit('clicked')
+    for fn, args in queued:
+        fn(*args)
+    assert calls == [('John', 3, 14)]
     pop.unparent()
 
 

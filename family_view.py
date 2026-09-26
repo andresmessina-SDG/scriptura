@@ -29,7 +29,9 @@ from family_card import (high_contrast, lift, place_sentences,
 from i18n import _
 
 DOT = 7.0               # the mark's radius, in the drawing's units
-BAR_BELOW = 12          # a range bar's distance under its Bible's mark
+BAR_BELOW = 15          # a range bar's distance under its Bible's mark
+#: A range narrower than this is one chart's point: no bar is drawn.
+BAR_MIN_W = 4.0
 NODE_H = 24
 
 
@@ -198,11 +200,53 @@ def _settle(node, placed, bars=()):
             other.set_left(not other.left)
 
 
+def _measure(layout, text, base_size, size):
+    """How wide `text` sets as a lane name: bold, `size` of the base."""
+    desc = Pango.FontDescription.from_string('Adwaita Sans')
+    desc.set_size(int(size * base_size))
+    desc.set_weight(Pango.Weight.BOLD)
+    layout.set_font_description(desc)
+    layout.set_width(-1)
+    layout.set_text(text, -1)
+    return layout.get_pixel_size()[0]
+
+
+def lane_labels(lanes, measure):
+    """(size, [(lane, lines)]): each lane's name broken to fit its lane,
+    and the size that lets every word fit. `measure(text, size)` gives a
+    width in pixels."""
+    gap = min((b.x - a.x for a, b in zip(lanes, lanes[1:])), default=80.0)
+    size = 0.68
+    while size > 0.56 and max(measure(word, size) for lane in lanes
+                              for word in lane.name.split()) > gap - 6:
+        size -= 0.02
+    return size, [(lane, _wrap_words(lane.name, gap - 6,
+                                     lambda t: measure(t, size)))
+                  for lane in lanes]
+
+
+def _wrap_words(text, width, measure):
+    """`text` broken between words into lines no wider than `width` where a
+    word allows; a '·' stays with the word before it."""
+    words = text.replace(' · ', '\u00a0· ').split(' ')
+    lines: list[str] = []
+    for word in words:
+        word = word.replace('\u00a0', ' ')
+        if lines and measure(f'{lines[-1]} {word}') <= width:
+            lines[-1] = f'{lines[-1]} {word}'
+        else:
+            lines.append(word)
+    return lines
+
+
 def _bar(node):
     """The rectangle of the range bar or bracket drawn under a Bible in the
     'by literalness' arrangement, or None."""
     here = node.spot
     if here is None or here.kind not in ('band', 'class'):
+        return None
+    if (here.kind == 'band'
+            and fl.line_x(here.high) - fl.line_x(here.low) < BAR_MIN_W):
         return None
     y = node.y + (-BAR_BELOW if node.bar_above else BAR_BELOW)
     return (fl.line_x(here.low) - 3, y - 4, fl.line_x(here.high) + 3, y + 3)
@@ -480,6 +524,13 @@ class FamilyView:
                     area.get_pango_context().get_font_description().get_size(),
                     self._lit, hc=high_contrast())
 
+    def _unplaced(self, node_id):
+        """Whether a Bible stands in Not placed: arranged by literalness,
+        with no place on the Line and not one of the root."""
+        node = self._nodes[node_id]
+        return (self._arrangement == 'line' and node.spot is None
+                and not node.root)
+
     def _paint(self, cr, w, h, ink, base_size, lit, hc=False):
         """The drawing under the Bibles: axis, lanes or zones, lines of
         descent, bars. `ink` is anything with red/green/blue; `lit` the
@@ -494,8 +545,12 @@ class FamilyView:
         # Points to units as on screen, so a poster sets type like the view.
         PangoCairo.context_set_resolution(layout.get_context(), 96)
 
+        # Where the names over the lines sit: the lines of descent are cut
+        # there, so no line strikes through a name.
+        knockouts = []
+
         def text(s, x, y, size=0.8, italic=False, bold=False, width=None,
-                 alpha=0.6, serif=False, anchor='left'):
+                 alpha=0.6, serif=False, anchor='left', knock=False):
             desc = Pango.FontDescription.from_string(
                 'Newsreader' if serif else 'Adwaita Sans')
             desc.set_size(int(size * base_size))
@@ -507,8 +562,10 @@ class FamilyView:
             layout.set_width(int(width * Pango.SCALE) if width else -1)
             layout.set_wrap(Pango.WrapMode.WORD)
             layout.set_text(s, -1)
-            tw = layout.get_pixel_size()[0]
+            tw, th = layout.get_pixel_size()
             dx = {'left': 0, 'center': -tw / 2, 'right': -tw}[anchor]
+            if knock:
+                knockouts.append((x + dx - 4, y - 2, tw + 8, th + 4))
             cr.move_to(x + dx, y)
             rgba(lift(alpha, hc, text=True))
             PangoCairo.show_layout(cr, layout)
@@ -541,11 +598,19 @@ class FamilyView:
              alpha=0.45)
 
         if self._arrangement == 'family':
-            # Lane names above the axis, staggered so neighbours never touch.
-            for i, lane in enumerate(self._lanes):
-                text(lane.name.upper(), lane.x, fl.AXIS_TOP - (22 if i % 2
-                                                               else 40),
-                     size=0.68, bold=True, anchor='center', alpha=0.55)
+            # Lane names above the axis in one row, each wrapped to its own
+            # lane's width and sitting on one line: staggered in two rows,
+            # neighbours read as one tangle (2026-09-25).
+            # In title case: in capitals "JERUSALEM" alone outran its lane
+            # (60px of 59) and ran into "HOLMAN · CSB". A name that still
+            # will not fit sets the whole row a size down.
+            size, labels = lane_labels(
+                self._lanes, lambda t, sz: _measure(layout, t, base_size, sz))
+            for lane, lines in labels:
+                for k, line in enumerate(reversed(lines)):
+                    text(line, lane.x, fl.AXIS_TOP - 24 - 13 * k,
+                         size=size, bold=True, anchor='center', alpha=0.55,
+                         knock=True)
         else:
             # The Line's zones across the page, and a column for the rest.
             rgba(0.18)
@@ -560,11 +625,11 @@ class FamilyView:
             for bound, name in bible_family.ZONES:
                 mid = fl.line_x((lo + min(bound, 1.0)) / 2)
                 text(_(name).upper(), mid, fl.AXIS_TOP - 34, size=0.68,
-                     bold=True, anchor='center', alpha=0.55)
+                     bold=True, anchor='center', alpha=0.55, knock=True)
                 lo = bound
             text(_('Not placed').upper(), fl.NOT_PLACED_X,
                  fl.AXIS_TOP - 34, size=0.68, bold=True, anchor='center',
-                 alpha=0.55)
+                 alpha=0.55, knock=True)
             # Where charts place a Bible, its range as a soft bar under it;
             # where only its makers' word is known, a bracket over the zone.
             if self._animation is None:
@@ -578,9 +643,15 @@ class FamilyView:
                     y = node.y + (-BAR_BELOW if node.bar_above
                                   else BAR_BELOW)
                     x0, x1 = fl.line_x(here.low), fl.line_x(here.high)
+                    if here.kind == 'band' and x1 - x0 < BAR_MIN_W:
+                        # One chart's figure has no width, and its mark
+                        # already sits on it: as a bar it was a speck under
+                        # the name, like dirt; as a tick, hidden behind the
+                        # Bible's own line (NASB 1995).
+                        continue
                     if here.kind == 'band':
                         rgba(lift(0.22, hc) * fade)
-                        cr.set_line_width(5.0)
+                        cr.set_line_width(4.0)
                         cr.set_line_cap(cairo.LINE_CAP_ROUND)
                         cr.move_to(x0, y)
                         cr.line_to(x1, y)
@@ -597,13 +668,24 @@ class FamilyView:
                         cr.stroke()
                 cr.set_line_cap(cairo.LINE_CAP_BUTT)
 
-        # The lines of descent.
+        # The lines of descent, cut where they pass behind a name.
+        self._knockouts = knockouts
+        cr.save()
+        if knockouts:
+            cr.set_fill_rule(cairo.FILL_RULE_EVEN_ODD)
+            cr.rectangle(0, 0, w, h)
+            for kx, ky, kw, kh in knockouts:
+                cr.rectangle(kx, ky, kw, kh)
+            cr.clip()
         for e in self._edges:
             a, b = self._pos[e.parent], self._pos[e.child]
             bright = lit is None or (e.parent in lit and e.child in lit)
             strong = e.kind == 'rev'
+            # A line to a Bible with no place on the Line stays faint: the
+            # longest strokes ran to the two Bibles known least.
             rgba(lift(0.55 if strong else 0.38, hc)
-                 * (1 if bright else 0.25))
+                 * (1 if bright else 0.25)
+                 * (0.4 if self._unplaced(e.child) else 1))
             cr.set_line_width(1.6 if strong else 1.1)
             cr.set_dash([] if strong else [1.5, 3.0] if e.kind == 'para'
                         else [5.0, 4.0])
@@ -612,6 +694,7 @@ class FamilyView:
             cr.curve_to(*p1, *p2, *p3)
             cr.stroke()
         cr.set_dash([])
+        cr.restore()
 
         # A note pushed down by the one above keeps a dotted leader back to
         # its year. (The notes themselves are labels, for screen readers.)

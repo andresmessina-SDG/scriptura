@@ -24,6 +24,7 @@ from a11y import set_accessible_description, set_accessible_label, set_role
 from gtk_utils import Autosave, clear_children, DelayedSpinner
 import annotations
 import bible_family
+import family_read
 from family_card import paint_track, redraw_on_contrast
 import content
 import journal
@@ -692,14 +693,28 @@ def compare_translations(pane, verse, popover=None):
     # See on the Line: the Bible being read, in its row there. Offered only
     # for a Bible the Line holds, and built here, before the popover is
     # shown, like the switch above: nothing may grow it once it is up.
+    # Read the difference beside it: this verse down the Line, in a pane.
     node = bible_family.node_for_module(reading)
     root = pane.get_root()
+    doors = Gtk.Box(spacing=4, halign=Gtk.Align.END)
+    doors.set_margin_end(8)
+    doors.set_margin_bottom(8)
+    if hasattr(root, 'read_difference') and family_read.readable(pane.book):
+        read = Gtk.Button(label=_('Read the difference'))
+        read.add_css_class('flat')
+        # `verse` is the pane's module's own number; the view reads the app's.
+        where = family_read.app_ref(pane.module, pane.book, pane.chapter,
+                                    verse)
+
+        def on_read(_btn):
+            comp.popdown()
+            GLib.idle_add(lambda: root.read_difference(pane, *where)
+                          or GLib.SOURCE_REMOVE)
+        read.connect('clicked', on_read)
+        doors.append(read)
     if node is not None and hasattr(root, 'show_on_line'):
         see = Gtk.Button(label=_('See on the Line'))
         see.add_css_class('flat')
-        see.set_halign(Gtk.Align.END)
-        see.set_margin_end(8)
-        see.set_margin_bottom(8)
 
         def on_see(_btn, node_id=node['id']):
             comp.popdown()
@@ -707,7 +722,9 @@ def compare_translations(pane, verse, popover=None):
             GLib.idle_add(lambda: root.show_on_line(node_id, pane)
                           or GLib.SOURCE_REMOVE)
         see.connect('clicked', on_see)
-        outer.append(see)
+        doors.append(see)
+    if doors.get_first_child() is not None:
+        outer.append(doors)
 
     comp.set_child(outer)
     comp.popup()

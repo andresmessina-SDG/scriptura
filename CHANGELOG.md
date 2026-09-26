@@ -76,7 +76,15 @@ semver-ish — 0.x was the pre-Flathub testing track.
   every English Bible from word for word to free; find one by name,
   abbreviation or year, and filter by what you have installed, by
   tradition and by era. Compare's See on the Line opens it at the Bible
-  you are reading. The Bible you are reading is
+  you are reading. Read the difference shows one verse in every English
+  Bible you have, from word for word at the top to free at the bottom,
+  with the Greek or Hebrew above and a gloss under each word. Mark
+  differences fades the words each Bible shares with its neighbour, so what
+  a translation changed stands out. Choose All
+  Bibles and the ones you lack join them in their places, each with a link
+  to install it. It opens at the
+  verse you are reading, or from Compare's Read the difference; type a
+  reference or step verse by verse. The Bible you are reading is
   marked, and pressing any Bible opens its card. Under the desktop's high
   contrast setting its faint lines, ranges and dates are drawn darker.
 - **About this translation.** For an English Bible, the module list's

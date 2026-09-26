@@ -10600,3 +10600,75 @@ msgstr "Buscar una Biblia"
 #: family_tree.py
 msgid "See on the Line"
 msgstr "Ver en la Línea"
+
+#: family_read.py
+msgid "Read"
+msgstr "Leer"
+
+#: family_read.py
+msgid "Read the difference"
+msgstr "Leer la diferencia"
+
+#: family_read.py
+msgid "One verse in English Bibles, word for word at the top, free at the bottom. Press a Bible to open its card."
+msgstr "Un versículo en Biblias inglesas, palabra por palabra arriba, libre abajo. Pulse una Biblia para abrir su ficha."
+
+#: family_read.py
+msgid "John 3:16"
+msgstr "Juan 3:16"
+
+#: family_read.py
+msgid "Verse to read"
+msgstr "Versículo que leer"
+
+#: family_read.py
+msgid "Previous verse"
+msgstr "Versículo anterior"
+
+#: family_read.py
+msgid "Next verse"
+msgstr "Versículo siguiente"
+
+#: family_read.py
+msgid "Try:"
+msgstr "Pruebe:"
+
+#: family_read.py
+msgid "Install to read it here"
+msgstr "Instálela para leerla aquí"
+
+#: family_read.py
+msgid "See the Greek behind these: install the Greek interlinear"
+msgstr "Vea el griego detrás de estas: instale el interlineal griego"
+
+#: family_read.py
+msgid "See the Hebrew behind these: install the Hebrew interlinear"
+msgstr "Vea el hebreo detrás de estas: instale el interlineal hebreo"
+
+#: family_read.py
+msgid "The Greek, with a word-by-word gloss"
+msgstr "El griego, con una glosa palabra por palabra"
+
+#: family_read.py
+msgid "The Hebrew, read right to left, with a word-by-word gloss"
+msgstr "El hebreo, que se lee de derecha a izquierda, con una glosa palabra por palabra"
+
+#: family_read.py
+msgid "One verse in English Bibles, from word for word to free"
+msgstr "Un versículo en Biblias inglesas, de palabra por palabra a libre"
+
+#: family_read.py
+msgid "No English Bible you have installed is in the Family Tree. Choose All Bibles to see the ones you can install."
+msgstr "Ninguna Biblia inglesa que tenga instalada figura en el árbol genealógico de la Biblia. Elija Todas las Biblias para ver las que puede instalar."
+
+#: family_read.py
+msgid "Mark differences"
+msgstr "Marcar diferencias"
+
+#: family_read.py
+msgid "Fade the words each Bible shares with the one above it (the first, with the one below), so the words that differ stand out"
+msgstr "Atenúa las palabras que cada Biblia comparte con la de arriba (la primera, con la de abajo), para que resalten las que difieren"
+
+#: family_read.py
+msgid "Marks the definite object; English does not translate it"
+msgstr "Marca el objeto definido; el inglés no lo traduce"

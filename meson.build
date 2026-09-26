@@ -58,6 +58,7 @@ py_sources = files(
   'family_card.py',
   'family_layout.py',
   'family_line.py',
+  'family_read.py',
   'family_tree.py',
   'family_view.py',
   'genbook_reader.py',

@@ -30,6 +30,17 @@ COLUMN_MAX = 860
 STACK_BELOW = 560
 
 
+def line_group(spot):
+    """Where a Bible at `spot` falls in the Line's order, as (order, kind):
+    its zone, the described-only Bibles after the placed ones in each, and
+    the Bibles with no place last."""
+    if spot is None:
+        return (99, 'none')
+    zone = next(i for i, (bound, _n) in enumerate(bible_family.ZONES)
+                if spot.value < bound)
+    return (zone * 2 + (spot.kind == 'class'), 'zone')
+
+
 def _clamped(child):
     """`child` held to the Line's column, centred when the pane is wider."""
     clamp = Adw.Clamp(maximum_size=COLUMN_MAX, tightening_threshold=COLUMN_MAX)
@@ -134,12 +145,7 @@ class _Row(Gtk.ListBoxRow):
             return (self.era, 'era')
         if sort == 'name':
             return (0, '')
-        if self.spot is None:
-            return (99, 'none')
-        zone = next(i for i, (bound, _n) in enumerate(bible_family.ZONES)
-                    if self.spot.value < bound)
-        described = self.spot.kind == 'class'
-        return (zone * 2 + described, 'zone')
+        return line_group(self.spot)
 
     def sort_key(self, sort):
         name = self.record['name'].lower()

@@ -411,3 +411,62 @@ def test_the_poster_leaves_out_the_notes_the_screen_leaves_out():
     with_notes = ink(view)
     view.set_notes_visible(False)
     assert ink(view) < with_notes
+
+
+# ── 2026-09-25: lanes, unplaced lines, bars ──────────────────────────────
+
+def _real_measure():
+    import cairo
+    from gi.repository import Pango, PangoCairo
+    cr = cairo.Context(cairo.ImageSurface(cairo.FORMAT_ARGB32, 4, 4))
+    layout = PangoCairo.create_layout(cr)
+    PangoCairo.context_set_resolution(layout.get_context(), 96)
+    base = 11 * Pango.SCALE
+    return lambda t, size: fv._measure(layout, t, base, size)
+
+
+def test_lane_names_sit_in_one_row_and_never_touch():
+    """Staggered over two rows the names read as one tangle, and in
+    capitals JERUSALEM (60px) outran its 59px lane into HOLMAN · CSB."""
+    import family_layout as fl
+    measure = _real_measure()
+    size, labels = fv.lane_labels(fl.lanes(), measure)
+    widths = [(lane.x, max(measure(line, size) for line in lines))
+              for lane, lines in labels]
+    for (xa, wa), (xb, wb) in zip(widths, widths[1:]):
+        assert xa + wa / 2 + 4 <= xb - wb / 2, (xa, xb)
+    assert max(len(lines) for _l, lines in labels) <= 2
+
+
+def test_a_dot_stays_with_the_word_before_it():
+    wide = lambda t: len(t) * 7
+    assert fv._wrap_words('Douay · NAB', 53, wide) == ['Douay ·', 'NAB']
+    assert fv._wrap_words('NIV', 53, wide) == ['NIV']
+
+
+def test_every_lane_name_cuts_the_lines_behind_it():
+    import cairo
+    import family_layout as fl
+    from gi.repository import Gdk
+    view = fv.FamilyView(lambda i: None, 'family')
+    cr = cairo.Context(cairo.ImageSurface(cairo.FORMAT_ARGB32, 50, 50))
+    view._paint(cr, fl.WIDTH, fl.HEIGHT, Gdk.RGBA(red=0, green=0, blue=0,
+                                                  alpha=1), 11 * 1024, None)
+    for lane in fl.lanes():
+        assert any(x <= lane.x <= x + w for x, _y, w, _h in view._knockouts)
+
+
+def test_lines_to_the_unplaced_are_faint_by_literalness_only():
+    view = fv.FamilyView(lambda i: None, 'line')
+    assert view._unplaced('nabre') and view._unplaced('nrsvue')
+    assert not view._unplaced('esv') and not view._unplaced('tyndale')
+    view.set_arrangement('family', animate=False)
+    assert not view._unplaced('nabre')
+
+
+def test_a_range_of_one_chart_draws_no_bar():
+    """NASB 1995's range is one chart's 0.23: as a bar, a speck under its
+    name; as a tick, hidden behind its own line. Its mark says it."""
+    view = fv.FamilyView(lambda i: None, 'line')
+    assert fv._bar(view._nodes['nasb1995']) is None
+    assert fv._bar(view._nodes['nkjv']) is not None

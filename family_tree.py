@@ -1,9 +1,10 @@
 """family_tree.py — The Bible Family Tree, the pane document.
 
-Two views of the same Bibles behind a switch: the Family (the Bibles people
-read, drawn down the page in time; the default) and the Line (every English
-Bible on one track). The Family also has an outline, the same tree as an
-indented list. The app remembers the view last used.
+Three views of the same Bibles behind a switch: the Family (the Bibles people
+read, drawn down the page in time; the default), the Line (every English
+Bible on one track) and Read the difference (one verse down the Line). The
+Family also has an outline, the same tree as an indented list. The app
+remembers the view last used.
 """
 
 import gi
@@ -15,6 +16,7 @@ import bible_family
 import settings
 from a11y import set_accessible_label
 from family_line import FamilyLine
+from family_read import FamilyRead
 from family_view import FamilyOutline, FamilyView, paint_plate
 from i18n import _
 
@@ -40,10 +42,12 @@ class FamilyTree:
     def __init__(self, pane=None):
         self._pane = pane
         self.line = FamilyLine(pane)
+        self.read = FamilyRead(pane)
         self.family = None          # built on first show: 37 widgets
         self.outline = None
         self._scrolled_for = None
         self._showing = None        # a Bible the Card asked to show
+        self._read_asked = False    # Compare chose the verse to read
 
         bar = Gtk.Box(spacing=8)
         bar.set_margin_start(14)
@@ -53,11 +57,16 @@ class FamilyTree:
         views.add_css_class('linked')
         self._family_btn = Gtk.ToggleButton(label=_('Family'))
         self._line_btn = Gtk.ToggleButton(label=_('Line'))
+        self._read_btn = Gtk.ToggleButton(label=_('Read'))
         self._line_btn.set_group(self._family_btn)
+        self._read_btn.set_group(self._family_btn)
         set_accessible_label(self._family_btn, _('Show the Family'))
         set_accessible_label(self._line_btn, _('Show the Line'))
+        self._read_btn.set_tooltip_text(_('Read the difference'))
+        set_accessible_label(self._read_btn, _('Read the difference'))
         views.append(self._family_btn)
         views.append(self._line_btn)
+        views.append(self._read_btn)
         switches = Adw.WrapBox(child_spacing=8, line_spacing=6, hexpand=True)
         switches.append(views)
         bar.append(switches)
@@ -106,6 +115,7 @@ class FamilyTree:
         self._stack.set_hhomogeneous(False)
         self._stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
         self._stack.add_named(self.line.widget, 'line')
+        self._stack.add_named(self.read.widget, 'read')
 
         # The arrow-key walk cannot be seen, so the Family says it.
         self._hint = Gtk.Label(xalign=0, wrap=True)
@@ -120,8 +130,8 @@ class FamilyTree:
         self.widget = box
 
         view = settings.get('family_tree_view')
-        (self._line_btn if view == 'line' else self._family_btn
-         ).set_active(True)
+        {'line': self._line_btn, 'read': self._read_btn}.get(
+            view, self._family_btn).set_active(True)
         self._list_btn.set_active(bool(settings.get('family_tree_outline')))
         self._notes_btn.set_active(bool(settings.get('family_tree_notes')))
         self._notes_btn.connect('toggled', self._on_notes)
@@ -131,6 +141,7 @@ class FamilyTree:
         self._by_line.connect('toggled', self._on_arrangement)
         self._family_btn.connect('toggled', self._on_view)
         self._line_btn.connect('toggled', self._on_view)
+        self._read_btn.connect('toggled', self._on_view)
         self._list_btn.connect('toggled', self._on_view)
         self._show_view()
 
@@ -138,6 +149,8 @@ class FamilyTree:
 
     def render(self):
         self.line.render()
+        if self._read_btn.get_active():
+            self.read.render()
         if self.family is not None:
             self._refresh_family()
 
@@ -165,9 +178,16 @@ class FamilyTree:
         self._line_btn.set_active(True)
         self.line.show_node(node_id)
 
+    def show_read(self, book, chapter, verse):
+        """Turn to Read the difference at one verse."""
+        self._read_asked = True
+        self.read.show_verse(book, chapter, verse)
+        self._read_btn.set_active(True)
+        self._read_asked = False
+
     def focus_last(self):
         name = self._stack.get_visible_child_name()
-        {'line': self.line, 'family': self.family,
+        {'line': self.line, 'read': self.read, 'family': self.family,
          'outline': self.outline}[name].focus_last()
 
     # ── views ────────────────────────────────────────────────────────────
@@ -176,9 +196,15 @@ class FamilyTree:
         # The pair are a radio group: act once, on the one that lit.
         if btn is not self._list_btn and not btn.get_active():
             return
-        settings.put('family_tree_view',
-                     'family' if self._family_btn.get_active() else 'line')
+        view = ('family' if self._family_btn.get_active()
+                else 'read' if self._read_btn.get_active() else 'line')
+        settings.put('family_tree_view', view)
         settings.put('family_tree_outline', self._list_btn.get_active())
+        if btn is self._read_btn:
+            # Turned to, it reads the verse the reader is on now; turned to
+            # by Compare, show_read has set the verse already.
+            if not self._read_asked:
+                self.read.follow_reading()
         self._show_view()
 
     def _on_notes(self, btn):
@@ -193,16 +219,21 @@ class FamilyTree:
         self._arrangements.set_visible(drawing)
         self._print_btn.set_visible(drawing)
         self._notes_btn.set_visible(drawing)
-        self._hint.set_visible(drawing)
+        read = self._read_btn.get_active()
+        self._hint.set_visible(drawing or read)
         self._hint.set_label(self._hint_text())
         if not family:
-            self._stack.set_visible_child_name('line')
+            self._stack.set_visible_child_name('read' if read else 'line')
             return
         self._ensure_family()
         self._stack.set_visible_child_name(
             'outline' if self._list_btn.get_active() else 'family')
 
     def _hint_text(self):
+        if self._read_btn.get_active():
+            return _('One verse in English Bibles, word for word at the '
+                     'top, free at the bottom. Press a Bible to open its '
+                     'card.')
         if self._by_line.get_active():
             return _('Each Bible sits where it lands on the Line; the lines '
                      'of descent show which families drifted. A bar is a '
