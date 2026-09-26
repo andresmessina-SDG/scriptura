@@ -113,13 +113,22 @@ _defaults: dict[str, Any] = {
     # other language. Off by default (decided 2026-09-24): a compare reads
     # within one language, and the switch sits in the compare popover.
     'compare_other_languages': False,
-    # The Bible Family Tree's view: 'family' (the drawing, the default) or
-    # 'line'; and whether the Family shows as an outline list instead.
+    # The Bible Family Tree's view: 'family' (the drawing, the default),
+    # 'line' or 'read'; and whether the Family shows as an outline list.
     'family_tree_view':   'family',
     'family_tree_outline': False,
     'family_tree_notes': True,
+    # Whether the Family opens with the root (the Bibles before 1611) open;
+    # folded by default, so the first screen is the Bibles read now.
+    'family_tree_root_open': False,
     # The Family's arrangement: 'family' (lanes) or 'line' (by literalness).
     'family_tree_arrangement': 'family',
+    # Read the difference: the Bibles installed ('installed', decided
+    # 2026-09-25) or every one, the rest offering their install ('all').
+    'family_read_rows': 'installed',
+    # Read the difference fades the words each Bible shares with the one
+    # above it (on by default, 2026-09-25).
+    'family_read_marks': True,
     # How fast the spoken chapter is read, as a multiple of the narrator's own
     # pace. Stored for the app rather than per chapter: a reader following the
     # text has found the speed they read at, not the speed for John 3. Souer

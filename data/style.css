@@ -233,6 +233,48 @@ window {
     opacity: 0.7;
     margin: 10px 14px 2px;
 }
+/* Read the difference: the verse is read, so it takes the Card's serif;
+   the original above it sits smaller than the interlinear's own page. */
+.family-read-verse {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-size: 1.05em;
+    line-height: 1.43;   /* ~1.53em on Newsreader */
+}
+.family-read-greek {
+    font-family: 'Noto Serif', 'DejaVu Serif', 'Source Serif 4', serif;
+    font-size: 18px;
+}
+.family-read-hebrew {
+    font-family: 'Noto Serif Hebrew', 'SBL Hebrew', 'Ezra SIL',
+                 'Taamey Frank CLM', serif;
+    font-size: 21px;
+}
+.family-read-install, .family-read-pick {
+    font-weight: normal;
+    padding: 2px 6px;
+    min-height: 0;
+}
+/* The original in a card above the Bibles; each Bible below on its own
+   de-ruled row, as the prototype drew them. */
+.family-read-source {
+    background-color: alpha(currentColor, 0.035);
+    border: 1px solid alpha(@borders, 0.6);
+    border-radius: 10px;
+    padding: 12px 14px;
+}
+.family-read-list > row {
+    border-bottom: 1px solid alpha(@borders, 0.3);
+}
+/* The list has the side margins in Read, so its heads sit at its edge. */
+.family-read-list .family-line-head,
+.family-read-list .family-line-subhead {
+    margin-left: 0;
+    margin-right: 0;
+}
+/* The link's words line up with the text around it, not its padding. */
+.family-read-install { opacity: 0.7; margin-left: -6px; }
+.family-read-pick { font-size: 0.85em; }
 /* The Family: each Bible a flat button over the drawing. Hover or focus
    lights a Bible's whole line and dims the rest. */
 button.family-node {
@@ -250,6 +292,55 @@ button.family-node {
 }
 button.family-node.dim {
     opacity: 0.3;
+}
+/* A choice inside one view (the Family's arrangements, Read's Mark
+   differences): quieter than the page switcher above it. */
+button.family-pill {
+    min-height: 26px;
+    padding: 0 10px;
+    border-radius: 13px;
+    font-size: 0.9em;
+    font-weight: normal;
+}
+button.family-pill:not(:checked) {
+    opacity: 0.6;
+}
+button.family-pill:not(:checked):hover {
+    opacity: 0.9;
+}
+
+/* The Family's own buttons at the end of the switcher's row: round, like
+   the arrangement pills, so a lit one reads as the same kind of choice. */
+.family-tools > button {
+    border-radius: 9999px;
+}
+
+/* The root's line, which folds and opens it: set like the drawing's
+   italic captions, and the chevron turns as it opens. */
+button.family-root-toggle {
+    min-height: 28px;
+    padding: 0 12px 0 8px;
+    border-radius: 14px;
+}
+.family-root-toggle > box {
+    opacity: 0.6;
+    transition: opacity 150ms ease;
+}
+.family-root-toggle:hover > box,
+.family-root-toggle:focus-visible > box {
+    opacity: 0.9;
+}
+.family-root-toggle label {
+    font-style: italic;
+    font-weight: normal;
+    font-size: 0.8em;
+}
+.family-root-toggle image {
+    -gtk-icon-size: 12px;
+    transition: -gtk-icon-transform 250ms ease;
+}
+.family-root-toggle.open image {
+    -gtk-icon-transform: rotate(90deg);
 }
 .family-note {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',

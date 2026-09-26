@@ -21,6 +21,7 @@ devotional.py
 export_dialog.py
 family_card.py
 family_line.py
+family_read.py
 family_tree.py
 family_view.py
 genbook_reader.py

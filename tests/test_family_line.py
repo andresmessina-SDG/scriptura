@@ -98,9 +98,13 @@ def test_a_narrow_pane_stacks_the_rows():
     line._set_stacked(True)
     row = line._rows[0]
     assert row._box.get_orientation() == Gtk.Orientation.VERTICAL
-    assert not line._axis_clamp.get_visible()
+    # The axis stays, full width over the stacked tracks: hidden, its zone
+    # names went with it and the ticks meant nothing.
+    assert line._axis_clamp.get_visible()
+    assert not line._axis_spacer.get_visible()
     line._set_stacked(False)
     assert row._box.get_orientation() == Gtk.Orientation.HORIZONTAL
+    assert line._axis_spacer.get_visible()
 
 
 def _settle():
@@ -255,3 +259,64 @@ def test_a_bible_asked_for_by_name_shows_whatever_the_filters():
     assert line._last_row.record['id'] == 'kjv'
     assert line._filter(line._last_row)
     assert line._search.get_text() == '' and line._tradition == ''
+
+
+
+# ── 2026-09-25 review: brackets, the unplaced, zone names, the sort ──────
+
+def test_a_bible_with_no_place_says_so_where_its_track_would_be():
+    line = _line()
+    said = {r.record['id']: r._track.get_label() for r in line._rows
+            if r.spot is None}
+    assert said['nabre'] == 'Not placed'
+    assert said['tyndale'] == 'Before the Line'
+
+
+def test_every_zone_is_named_over_its_stretch_of_the_track():
+    w = 500
+    spots = fl.zone_name_spots(w, [80, 50, 105, 25])
+    assert None not in spots
+    # Each centred between its ticks.
+    lo = 0.0
+    for (bound, _n), x, tw in zip(bf.ZONES, spots, [80, 50, 105, 25]):
+        hi = min(bound, 1.0)
+        mid = fl.TRACK_PAD + (lo + hi) / 2 * (w - 2 * fl.TRACK_PAD)
+        assert abs(x + tw / 2 - mid) < 1
+        lo = hi
+
+
+def test_a_name_wider_than_its_end_zone_goes_to_the_end_of_the_track():
+    """"Свободно" outruns the Free zone (~49px on a 500px track)."""
+    spots = fl.zone_name_spots(500, [80, 50, 60, 60])
+    assert spots[3] == 500 - fl.TRACK_PAD - 60
+    # A middle name that cannot fit is left out, never squeezed.
+    spots = fl.zone_name_spots(200, [40, 90, 90, 20])
+    assert spots[1] is None or spots[2] is None
+
+
+def test_a_changed_sort_is_not_tinted_like_a_filter():
+    line = _line()
+    line._sort_menu.pick('year')
+    assert not line._sort_menu.has_css_class('narrowed')
+    line._trad_menu.pick('catholic')
+    assert line._trad_menu.has_css_class('narrowed')
+
+
+def test_a_bracket_sits_above_the_track():
+    """Drawn on the track it read as a thicker stretch of the Line."""
+    import cairo
+    from gi.repository import Gdk
+    from family_card import paint_track
+    surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, 200, 18)
+    spot = bf.Place('class', 0.16, 0.0, 0.33)
+    paint_track(cairo.Context(surf), 200, 18, spot,
+                Gdk.RGBA(red=0, green=0, blue=0, alpha=1), pad=6.0, r=4.0,
+                hc=False)
+    data, stride = surf.get_data(), surf.get_stride()
+
+    def alpha(x, y):
+        return data[y * stride + x * 4 + 3]
+    # Mid-bracket: ink above the track's row, and the track row itself
+    # no darker than plain track.
+    assert max(alpha(40, y) for y in range(0, 6)) > 150
+    assert alpha(40, 9) == alpha(150, 9)

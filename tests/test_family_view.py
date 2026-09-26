@@ -142,11 +142,11 @@ def _page(monkeypatch, view='family', outline=False, notes=True):
 def test_the_page_opens_on_the_family_and_remembers_the_line(monkeypatch):
     page, store = _page(monkeypatch)
     assert page._stack.get_visible_child_name() == 'family'
-    page._line_btn.set_active(True)
+    page.turn_to('line')
     assert page._stack.get_visible_child_name() == 'line'
     assert store['family_tree_view'] == 'line'
     assert not page._list_btn.get_visible()
-    page._family_btn.set_active(True)
+    page.turn_to('family')
     assert page._stack.get_visible_child_name() == 'family'
     page._list_btn.set_active(True)
     assert page._stack.get_visible_child_name() == 'outline'
@@ -338,7 +338,9 @@ def test_a_scroll_before_layout_waits_for_the_page():
     while ctx.pending():
         ctx.iteration(False)
     assert done == [True]
-    assert view._scroll.get_vadjustment().get_value() == node.y - 200
+    # Where the node is drawn: with the root folded, the drawing has risen.
+    assert view._scroll.get_vadjustment().get_value() == \
+        node.y - fv.FOLD_SHIFT - 200
 
 
 def _ink_total(view, hc):
@@ -389,7 +391,7 @@ def test_the_margin_notes_can_be_put_away_and_it_is_remembered(monkeypatch):
     again, _store = _page(monkeypatch, notes=False)
     assert _notes_shown(again.family) == [False] * 6
     # The notes belong to the drawing: no switch for them on the Line.
-    page._line_btn.set_active(True)
+    page.turn_to('line')
     assert not page._notes_btn.get_visible()
 
 
@@ -411,3 +413,234 @@ def test_the_poster_leaves_out_the_notes_the_screen_leaves_out():
     with_notes = ink(view)
     view.set_notes_visible(False)
     assert ink(view) < with_notes
+
+
+# ── 2026-09-25: lanes, unplaced lines, bars ──────────────────────────────
+
+def _real_measure():
+    import cairo
+    from gi.repository import Pango, PangoCairo
+    cr = cairo.Context(cairo.ImageSurface(cairo.FORMAT_ARGB32, 4, 4))
+    layout = PangoCairo.create_layout(cr)
+    PangoCairo.context_set_resolution(layout.get_context(), 96)
+    base = 11 * Pango.SCALE
+    return lambda t, size: fv._measure(layout, t, base, size)
+
+
+def test_lane_names_sit_in_one_row_and_never_touch():
+    """Staggered over two rows the names read as one tangle, and in
+    capitals JERUSALEM (60px) outran its 59px lane into HOLMAN · CSB."""
+    import family_layout as fl
+    measure = _real_measure()
+    size, labels = fv.lane_labels(fl.lanes(), measure)
+    widths = [(lane.x, max(measure(line, size) for line in lines))
+              for lane, lines in labels]
+    for (xa, wa), (xb, wb) in zip(widths, widths[1:]):
+        assert xa + wa / 2 + 4 <= xb - wb / 2, (xa, xb)
+    assert max(len(lines) for _l, lines in labels) <= 2
+
+
+def test_a_dot_stays_with_the_word_before_it():
+    wide = lambda t: len(t) * 7
+    assert fv._wrap_words('Douay · NAB', 53, wide) == ['Douay ·', 'NAB']
+    assert fv._wrap_words('NIV', 53, wide) == ['NIV']
+
+
+def test_every_lane_name_cuts_the_lines_behind_it():
+    import cairo
+    import family_layout as fl
+    from gi.repository import Gdk
+    view = fv.FamilyView(lambda i: None, 'family')
+    cr = cairo.Context(cairo.ImageSurface(cairo.FORMAT_ARGB32, 50, 50))
+    view._paint(cr, fl.WIDTH, fl.HEIGHT, Gdk.RGBA(red=0, green=0, blue=0,
+                                                  alpha=1), 11 * 1024, None)
+    for lane in fl.lanes():
+        assert any(x <= lane.x <= x + w for x, _y, w, _h in view._knockouts)
+
+
+def test_lines_to_the_unplaced_are_faint_by_literalness_only():
+    view = fv.FamilyView(lambda i: None, 'line')
+    assert view._unplaced('nabre') and view._unplaced('nrsvue')
+    assert not view._unplaced('esv') and not view._unplaced('tyndale')
+    view.set_arrangement('family', animate=False)
+    assert not view._unplaced('nabre')
+
+
+def test_a_range_of_one_chart_draws_no_bar():
+    """NASB 1995's range is one chart's 0.23: as a bar, a speck under its
+    name; as a tick, hidden behind its own line. Its mark says it."""
+    view = fv.FamilyView(lambda i: None, 'line')
+    assert fv._bar(view._nodes['nasb1995']) is None
+    assert fv._bar(view._nodes['nkjv']) is not None
+
+
+def _root(view):
+    return [n for n in view._nodes.values() if n.root]
+
+
+def test_the_root_opens_folded_and_the_drawing_rises():
+    """The root filled the first screen; folded, the KJV is near the top."""
+    import family_layout as fl
+    view, _opened = _view()
+    assert not view.root_open
+    assert all(not n.get_visible() for n in _root(view))
+    assert view._area.get_size_request()[1] == int(fl.HEIGHT) - fv.FOLD_SHIFT
+    kjv = view._nodes['kjv1611']
+    assert kjv.y + view._dy(kjv) < 120
+    assert 'Wycliffe Bible 1382' in view._root_label.get_label()
+    assert 'Douay' in view._root_label.get_label()
+
+
+def test_the_root_line_opens_and_folds_it():
+    import family_layout as fl
+    view, _opened = _view()
+    view._root_btn.emit('clicked')
+    view._apply_fold(0.0)           # the slide's end, without a clock
+    assert view.root_open
+    assert all(n.get_visible() for n in _root(view))
+    assert view._area.get_size_request()[1] == int(fl.HEIGHT)
+    assert view._nodes['kjv1611'].y + view._dy(view._nodes['kjv1611']) \
+        == fl.AXIS_TOP
+    assert 'cannot be placed' in view._root_label.get_label()
+    assert view._root_btn.has_css_class('open')
+    view.set_root_open(False, animate=False)
+    assert not view.root_open and not view._root_btn.has_css_class('open')
+
+
+def test_the_root_line_comes_first_to_tab():
+    view, _opened = _view()
+    assert view._fixed.get_first_child() is view._root_btn
+
+
+def test_up_from_the_kjv_into_the_folded_root_reaches_its_line(monkeypatch):
+    view, _opened = _view()
+    grabbed = []
+    monkeypatch.setattr(view._root_btn, 'grab_focus',
+                        lambda: grabbed.append(True))
+    assert view._walk(view._nodes['kjv1611'], Gdk.KEY_Up)
+    assert grabbed == [True]
+    assert not view.root_open
+
+
+def test_showing_a_root_bible_opens_the_root():
+    view, _opened = _view()
+    view.show_node('geneva')
+    assert view.root_open
+    assert view._nodes['geneva'].get_visible()
+
+
+def test_the_fold_is_remembered(monkeypatch):
+    page, store = _page(monkeypatch)
+    assert not page.family.root_open
+    page.family.set_root_open(True, animate=False)
+    assert store['family_tree_root_open'] is True
+    again = ft.FamilyTree(page._pane)
+    again._ensure_family()
+    assert again.family.root_open
+
+
+def test_folded_the_revisions_rise_straight_out_of_the_fold(monkeypatch):
+    """Bishops' to KJV and Douay-Rheims to its Challoner revision stand
+    straight up from the rule; the root's other lines are gone."""
+    import cairo
+    import family_layout as fl
+    view, _opened = _view()
+    curves = []
+    real = fl.edge_curve
+    monkeypatch.setattr(fl, 'edge_curve',
+                        lambda a, b: curves.append((a, b)) or real(a, b))
+    surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, 1180, 1833)
+    view._paint(cairo.Context(surf), 1180, 1833, fv._PLATE_INK,
+                fv.PLATE_BASE, None, fold=1.0, caption=False)
+    for child in ('kjv1611', 'challoner'):
+        cx, cy = view._pos[child]
+        up = [a for a, b in curves if b == (cx, cy) and a[1] == fv.ROOT_RULE]
+        assert up and any(a[0] == cx for a in up), child
+
+
+def test_the_poster_prints_the_root_open_whatever_the_screen(monkeypatch):
+    import cairo
+    view, _opened = _view()
+    assert not view.root_open
+    said = []
+    monkeypatch.setattr(fv.PangoCairo, 'show_layout',
+                        lambda _cr, layout: said.append(layout.get_text()))
+    surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, 600, 900)
+    fv.paint_plate(view, cairo.Context(surf), 600, 900)
+    assert any('cannot be placed' in t for t in said)
+    assert 'Wycliffe Bible' in said
+
+
+def test_every_view_says_how_to_read_it(monkeypatch):
+    """The line under the switch is there in all three views, so the page
+    does not jump as it turns; the arrangement only with the drawing."""
+    page, store = _page(monkeypatch)
+    for view in ('family', 'line', 'read'):
+        page.turn_to(view)
+        assert store['family_tree_view'] == view
+        assert page._hint.get_visible() and page._hint.get_label(), view
+        assert not page._key.get_visible()
+        assert page._arrangements.get_visible() == (view == 'family')
+        assert page._notes_btn.get_visible() == (view == 'family')
+
+
+def test_by_literalness_the_hint_is_the_key(monkeypatch):
+    page, _store = _page(monkeypatch)
+    page.turn_to('family')
+    page._by_line.set_active(True)
+    assert page._key.get_visible() and not page._hint.get_visible()
+    page._by_family.set_active(True)
+    assert page._hint.get_visible() and not page._key.get_visible()
+
+
+def test_every_bible_label_cuts_the_lines_behind_it():
+    """The line rising out of the fold into the Douay-Rheims struck
+    through "KJV 1611"."""
+    import cairo
+    view, _opened = _view()
+    surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, 1180, 1833)
+    view._paint(cairo.Context(surf), 1180, 1833, fv._PLATE_INK,
+                fv.PLATE_BASE, None, fold=1.0, caption=False)
+    boxes = {(round(x0), round(y0)) for x0, y0, _w, _h in view._knockouts}
+    for nid in ('kjv1611', 'challoner', 'esv'):
+        x0, y0, _x1, _y1 = view._nodes[nid].label_box()
+        assert (round(x0), round(y0)) in boxes, nid
+    # Folded, the root's hidden labels cut nothing.
+    x0, y0, _x1, _y1 = view._nodes['geneva'].label_box()
+    assert (round(x0), round(y0)) not in boxes
+
+
+def test_no_label_sits_on_a_line_out_of_the_fold():
+    for arrangement in ('family', 'line'):
+        view = fv.FamilyView(lambda i: None, arrangement)
+        for nid in ('kjv1611', 'challoner'):
+            x = view._nodes[nid].x
+            for other in view._nodes.values():
+                if other.root or other.record['id'] == nid:
+                    continue
+                x0, y0, x1, y1 = other.label_box()
+                assert not (x0 < x < x1
+                            and y0 < view._nodes[nid].y
+                            and y1 > fv.ROOT_RULE), (arrangement, nid,
+                                                     other.record['id'])
+
+
+def test_the_1611_kjv_draws_no_second_bar():
+    view = fv.FamilyView(lambda i: None, 'line')
+    assert fv._bar(view._nodes['kjv1611']) is None
+    assert fv._bar(view._nodes['kjv']) is not None
+
+
+def test_a_label_that_changed_width_is_placed_again():
+    """After a theme switch a label left of its mark measured anew, and the
+    1769 KJV's mark sat 6px off its lane: a paint notices and re-places."""
+    view, _opened = _view()
+    node = view._nodes['kjv']
+    node.placed_x = node.box()[0] + 10
+    view._check_placing()
+    assert view._resettling
+    ctx = GLib.MainContext.default()
+    while ctx.pending():
+        ctx.iteration(False)
+    assert not view._resettling
+    assert abs(node.placed_x - node.box()[0]) < 0.5

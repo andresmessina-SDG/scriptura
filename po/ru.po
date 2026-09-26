@@ -10332,6 +10332,22 @@ msgstr "До Линии: его правописание не поддаётся
 msgid "Before 1611 — the root. These texts cannot be placed on the Line; their spelling defeats the measure."
 msgstr "До 1611 года — корень. Эти тексты нельзя поместить на Линию: их правописание не поддаётся измерению."
 
+#: family_tree.py
+msgid "Word for word at the left, free at the right. Press a Bible to open its card."
+msgstr "Пословные слева, свободные справа. Нажмите на Библию, чтобы открыть её карточку."
+
+#: family_view.py
+msgid "Before 1611 — the root: {first} to {last}"
+msgstr "До 1611 года — корень: от {first} до {last}"
+
+#: family_view.py
+msgid "Fold the root"
+msgstr "Свернуть корень"
+
+#: family_view.py
+msgid "Show the root"
+msgstr "Показать корень"
+
 #: family_view.py
 msgid "⋮ compressed"
 msgstr "⋮ сжато"
@@ -10341,10 +10357,8 @@ msgid "(reworded)"
 msgstr "(пересказ)"
 
 #: family_tree.py
-msgid ""
-"Hover or focus a Bible to light its line. Arrow keys walk from parent to "
-"child; Enter opens its card."
-msgstr "Наведите указатель или фокус на Библию, чтобы высветить её линию. Стрелки ведут от родителя к потомку; Enter открывает карточку."
+msgid "Hover a Bible to light its line. Arrow keys walk the family; Enter opens its card."
+msgstr "Наведите указатель на Библию, чтобы подсветить её линию. Стрелки ведут по семье; Enter открывает её карточку."
 
 #: family_tree.py
 msgid "By family"
@@ -10363,8 +10377,12 @@ msgid "Arrange by literalness"
 msgstr "Расположить по буквальности"
 
 #: family_tree.py
-msgid "Each Bible sits where it lands on the Line; the lines of descent show which families drifted. A bar is a published range; a bracket, its makers’ own word."
-msgstr "Каждая Библия стоит там, где её место на Линии; линии родства показывают, какие семьи сместились. Полоса — опубликованный диапазон; скобка — слова самих переводчиков."
+msgid "published range"
+msgstr "опубликованный диапазон"
+
+#: family_view.py
+msgid "its makers’ word"
+msgstr "по словам создателей"
 
 #: family_tree.py
 msgid "Not placed"
@@ -10557,3 +10575,79 @@ msgstr "Найти Библию"
 #: family_tree.py
 msgid "See on the Line"
 msgstr "Показать на Линии"
+
+#: family_read.py
+msgid "Read"
+msgstr "Читать"
+
+#: family_read.py
+msgid "Read the difference"
+msgstr "Прочесть разницу"
+
+#: family_read.py
+msgid "One verse, word for word at the top, free at the bottom. Press a Bible to open its card."
+msgstr "Один стих: сверху дословные, внизу свободные. Нажмите на Библию, чтобы открыть её карточку."
+
+#: family_read.py
+msgid "John 3:16"
+msgstr "Иоанна 3:16"
+
+#: family_read.py
+msgid "Verse to read"
+msgstr "Стих для чтения"
+
+#: family_read.py
+msgid "Previous verse"
+msgstr "Предыдущий стих"
+
+#: family_read.py
+msgid "Next verse"
+msgstr "Следующий стих"
+
+#: family_read.py
+msgid "Try:"
+msgstr "Попробуйте:"
+
+#: family_read.py
+msgid "Install to read it here"
+msgstr "Установите, чтобы читать здесь"
+
+#: family_read.py
+msgid "See the Greek behind these: install the Greek interlinear"
+msgstr "Посмотрите греческий оригинал: установите греческий подстрочник"
+
+#: family_read.py
+msgid "See the Hebrew behind these: install the Hebrew interlinear"
+msgstr "Посмотрите еврейский оригинал: установите еврейский подстрочник"
+
+#: family_read.py
+msgid "The Greek, with a word-by-word gloss"
+msgstr "Греческий текст с пословным переводом"
+
+#: family_read.py
+msgid "The Hebrew, read right to left, with a word-by-word gloss"
+msgstr "Еврейский текст (читается справа налево) с пословным переводом"
+
+#: family_read.py
+msgid "One verse in English Bibles, from word for word to free"
+msgstr "Один стих в английских Библиях, от дословных к свободным"
+
+#: family_read.py
+msgid "No English Bible you have installed is in the Family Tree. Choose All Bibles to see the ones you can install."
+msgstr "Ни одной из установленных у вас английских Библий нет в Родословном древе Библии. Выберите «Все Библии», чтобы увидеть те, которые можно установить."
+
+#: family_read.py
+msgid "Mark differences"
+msgstr "Отметить различия"
+
+#: family_read.py
+msgid "Fade the words each Bible shares with the one above it (the first, with the one below), so the words that differ stand out"
+msgstr "Приглушает слова, общие у каждой Библии с Библией выше (у первой — с Библией ниже), чтобы различия были видны"
+
+#: family_read.py
+msgid "Marks the definite object; English does not translate it"
+msgstr "Указывает на определённое дополнение; в английском не переводится"
+
+#: family_line.py
+msgid "Before the Line"
+msgstr "До Линии"

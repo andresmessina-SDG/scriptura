@@ -24,6 +24,7 @@ from a11y import set_accessible_description, set_accessible_label, set_role
 from gtk_utils import Autosave, clear_children, DelayedSpinner
 import annotations
 import bible_family
+import family_read
 from family_card import paint_track, redraw_on_contrast
 import content
 import journal
@@ -592,6 +593,21 @@ def _verse_rect(pane, verse):
     return rect
 
 
+def compare_target(reading, mod, book, chapter, verse):
+    """The verse to show from `mod` for `verse` as the Bible being read
+    (`reading`) numbers it. The pane's verses are its module's own: a
+    Synodal psalm counts its title, so its «Помилуй меня, Боже» is verse 3
+    there and verse 1 in the KJV, and Compare showed the KJV's verse 3.
+    So the number goes to the app's first, then to each module's. A Bible
+    numbered as the one being read takes the number as it is, which keeps
+    a title (the app has no verse for it) beside its own kind."""
+    if mod == reading or (sword_bridge._module_v11n(mod)
+                          == sword_bridge._module_v11n(reading)):
+        return verse
+    app = annotations.app_verse(reading, book, chapter, verse)
+    return sword_bridge.map_target_verse(mod, book, chapter, app)
+
+
 def compare_translations(pane, verse, popover=None):
     # Reuse the study menu's anchor (the click point) so the compare popover
     # opens where the user clicked, like the menu it replaces — both are
@@ -692,14 +708,28 @@ def compare_translations(pane, verse, popover=None):
     # See on the Line: the Bible being read, in its row there. Offered only
     # for a Bible the Line holds, and built here, before the popover is
     # shown, like the switch above: nothing may grow it once it is up.
+    # Read the difference beside it: this verse down the Line, in a pane.
     node = bible_family.node_for_module(reading)
     root = pane.get_root()
+    doors = Gtk.Box(spacing=4, halign=Gtk.Align.END)
+    doors.set_margin_end(8)
+    doors.set_margin_bottom(8)
+    if hasattr(root, 'read_difference') and family_read.readable(pane.book):
+        read = Gtk.Button(label=_('Read the difference'))
+        read.add_css_class('flat')
+        # `verse` is the pane's module's own number; the view reads the app's.
+        where = family_read.app_ref(pane.module, pane.book, pane.chapter,
+                                    verse)
+
+        def on_read(_btn):
+            comp.popdown()
+            GLib.idle_add(lambda: root.read_difference(pane, *where)
+                          or GLib.SOURCE_REMOVE)
+        read.connect('clicked', on_read)
+        doors.append(read)
     if node is not None and hasattr(root, 'show_on_line'):
         see = Gtk.Button(label=_('See on the Line'))
         see.add_css_class('flat')
-        see.set_halign(Gtk.Align.END)
-        see.set_margin_end(8)
-        see.set_margin_bottom(8)
 
         def on_see(_btn, node_id=node['id']):
             comp.popdown()
@@ -707,22 +737,24 @@ def compare_translations(pane, verse, popover=None):
             GLib.idle_add(lambda: root.show_on_line(node_id, pane)
                           or GLib.SOURCE_REMOVE)
         see.connect('clicked', on_see)
-        outer.append(see)
+        doors.append(see)
+    if doors.get_first_child() is not None:
+        outer.append(doors)
 
     comp.set_child(outer)
     comp.popup()
 
     book, chapter = pane.book, pane.chapter
+    # Each Bible's verse is found here, on the UI thread: it reads the
+    # modules' configs, which the worker below must not.
+    targets = {mod: compare_target(reading, mod, book, chapter, verse)
+               for mod in names}
 
     def fetch():
         results = []
         for mod in names:
             vs = content.load_chapter(mod, book, chapter)
-            # `verse` is app-space; the rows carry the module's own
-            # numbering, which on a Synodal or Vulgate psalter counts the
-            # superscription. Without this the comparison showed «Псалом
-            # Давида, когда он бежал…» where the KJV column shows verse 1.
-            want = sword_bridge.map_target_verse(mod, book, chapter, verse)
+            want = targets[mod]
             v_html = next((h for vn, h in vs if vn == want), '')
             plain = re.sub(r'<[^>]+>', '', str(v_html)).strip()
             if plain:

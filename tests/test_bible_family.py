@@ -563,6 +563,9 @@ def _compare_with_root(monkeypatch, module):
         def show_on_line(self, node_id, pane):
             calls.append(node_id)
 
+        def read_difference(self, pane, book, chapter, verse):
+            calls.append((book, chapter, verse))
+
     root = _Root()
 
     class _Pane:
@@ -600,6 +603,35 @@ def test_compare_offers_the_line_for_a_bible_the_line_holds(display,
     for fn, args in queued:
         fn(*args)
     assert calls == ['kjv']
+    pop.unparent()
+
+
+def test_compare_opens_read_the_difference_at_its_verse(display,
+                                                     monkeypatch):
+    """Any Bible, in the Line's data or not: the verse is what is read."""
+    pop, calls, queued = _compare_with_root(monkeypatch, 'RusSynodal')
+    read = [b for b in _buttons(pop) if b.get_label() == 'Read the difference']
+    assert len(read) == 1
+    read[0].emit('clicked')
+    for fn, args in queued:
+        fn(*args)
+    assert calls == [('John', 3, 16)]
+    pop.unparent()
+
+
+def test_compare_reads_the_difference_in_the_app_s_numbering(display,
+                                                           monkeypatch):
+    """Compare's verse is the pane's module's own number: a Vulgate psalm's
+    verse 16 is the KJV's 14."""
+    import annotations
+    monkeypatch.setattr(annotations, 'app_verse',
+                        lambda m, b, c, v: v - 2 if m == 'Vulgate' else v)
+    pop, calls, queued = _compare_with_root(monkeypatch, 'Vulgate')
+    read = [b for b in _buttons(pop) if b.get_label() == 'Read the difference']
+    read[0].emit('clicked')
+    for fn, args in queued:
+        fn(*args)
+    assert calls == [('John', 3, 14)]
     pop.unparent()
 
 
@@ -681,3 +713,26 @@ def test_compare_keeps_its_size_once_open(display, monkeypatch):
     switch.set_active(True)               # the Russian Bible joins the list
     assert size(pop) == at['size']
     pop.unparent()
+
+
+def test_compare_reads_the_verse_as_the_pane_numbers_it(monkeypatch):
+    """A Synodal psalm counts its title: its verse 3 is the KJV's verse 1,
+    and Compare showed the KJV's verse 3 beside it."""
+    import annotation_dialogs as ad
+    import annotations
+    import sword_bridge
+    v11n = {'RusSynodal': 'Synodal', 'RusSynodalLIO': 'Synodal',
+            'KJV': 'KJV'}
+    monkeypatch.setattr(sword_bridge, '_module_v11n', v11n.get)
+    monkeypatch.setattr(annotations, 'app_verse',
+                        lambda mod, b, c, v: {'RusSynodal': v - 2}.get(mod, v))
+    monkeypatch.setattr(sword_bridge, 'map_target_verse',
+                        lambda mod, b, c, v: v + 2 if v11n[mod] == 'Synodal'
+                        else v)
+    at = ad.compare_target
+    assert at('RusSynodal', 'KJV', 'Psalms', 51, 3) == 1
+    # Its own kind keeps the number, so a title sits beside a title.
+    assert at('RusSynodal', 'RusSynodalLIO', 'Psalms', 51, 1) == 1
+    assert at('RusSynodal', 'RusSynodal', 'Psalms', 51, 1) == 1
+    # From the KJV the number was already the app's.
+    assert at('KJV', 'RusSynodal', 'Psalms', 51, 1) == 3

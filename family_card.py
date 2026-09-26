@@ -112,13 +112,16 @@ def paint_track(cr, w, h, spot, ink, pad=4.0, r=3.0, hc=None):
         cr.arc(x(spot.value), cy, r - 0.3, 0, 2 * math.pi)
         cr.stroke()
     else:
+        # Over the track, its ends reaching down to it. Drawn on the track
+        # itself it read as a thicker stretch of the Line, not as a mark.
         cr.set_source_rgba(ink.red, ink.green, ink.blue, 0.8)
         cr.set_line_width(1.4)
         lo, hi = x(spot.low) + 2, x(spot.high) - 2
-        cr.move_to(lo, cy - r - 0.5)
-        cr.line_to(lo, cy - 1)
-        cr.line_to(hi, cy - 1)
-        cr.line_to(hi, cy - r - 0.5)
+        top = max(1.0, cy - r - 1.5)
+        cr.move_to(lo, cy - 1.5)
+        cr.line_to(lo, top)
+        cr.line_to(hi, top)
+        cr.line_to(hi, cy - 1.5)
         cr.stroke()
 
 

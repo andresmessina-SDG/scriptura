@@ -1546,6 +1546,11 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
 
     def _family_card_install(self, query):
         self._hide_family_card()
+        self.open_bibles(query)
+
+    def open_bibles(self, query=''):
+        """The Module Manager on its Bibles tab, `query` in its search. An
+        empty search shows the interlinears pinned at its top."""
         self._on_modules_clicked(None)
         self._modules_win.search_bibles(query)
 
@@ -1576,6 +1581,11 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         """Compare's 'See on the Line': the Bible `src` is reading, in its
         row on the Line."""
         self._family_pane_for(src)._family_tree.show_on_line(node_id)
+
+    def read_difference(self, src, book, chapter, verse):
+        """Compare's 'Read the difference': the verse down the Line."""
+        self._family_pane_for(src)._family_tree.show_read(book, chapter,
+                                                          verse)
 
     def _family_card_compare(self):
         pane = self._card_pane
@@ -3367,6 +3377,12 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
     def _on_modules_changed(self):
         self.pane1.refresh_modules()
         self.pane2.refresh_modules()
+        # The Family Tree marks what is installed and reads its verses from
+        # it; a refresh alone left a Bible just installed from Read the
+        # difference offering to be installed, and the Line calling it not.
+        for pane in (self.pane1, self.pane2):
+            if pane._is_family:
+                pane._family_tree.render()
         # A same-module refresh doesn't fire on_module_switched, but an
         # install can still change capability (e.g. an eBible re-download
         # that now carries notes).
