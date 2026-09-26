@@ -29,6 +29,15 @@ on:
     tags: ['**']
   workflow_dispatch:
 
+# One run at a time. Two pushes seconds apart (two branches, two merges)
+# started two runs together, and the second failed on refs the first had
+# just moved ("cannot lock ref"): a red mark for a mirror that was right.
+# Now the second waits. A run still waiting is replaced by a newer one,
+# which loses nothing: every run clones GitHub whole, as it is then.
+concurrency:
+  group: mirror-codeberg
+  cancel-in-progress: false
+
 jobs:
   mirror:
     runs-on: ubuntu-latest
