@@ -10629,3 +10629,7 @@ msgstr "Приглушает слова, общие у каждой Библии
 #: family_read.py
 msgid "Marks the definite object; English does not translate it"
 msgstr "Указывает на определённое дополнение; в английском не переводится"
+
+#: family_line.py
+msgid "Before the Line"
+msgstr "До Линии"

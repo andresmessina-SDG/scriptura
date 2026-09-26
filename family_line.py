@@ -13,7 +13,8 @@ and a sort — by place on the Line (the default, grouped by zone), by year
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Adw, GLib, Gtk, Pango
+gi.require_version('PangoCairo', '1.0')
+from gi.repository import Adw, GLib, Gtk, Pango, PangoCairo
 
 import bible_family
 from a11y import set_accessible_label
@@ -28,6 +29,8 @@ ROW_SPACING = 16
 COLUMN_MAX = 860
 #: Below this width the rows stack: name above, track below.
 STACK_BELOW = 560
+#: The track's inset at each end, in the rows and on the axis above them.
+TRACK_PAD = 6.0
 
 
 def line_group(spot):
@@ -39,6 +42,46 @@ def line_group(spot):
     zone = next(i for i, (bound, _n) in enumerate(bible_family.ZONES)
                 if spot.value < bound)
     return (zone * 2 + (spot.kind == 'class'), 'zone')
+
+
+def zone_name_spots(w, widths):
+    """Where each zone's name starts on an axis `w` wide, or None where it
+    cannot be set: centred over its stretch of the track, as the rows draw
+    it; a name wider than its zone at either end of the track is set to that
+    end instead ("Свободно" outruns the Free zone), and a name that would
+    touch the one before it is left out rather than squeezed."""
+    spots = []
+    lo, last_end = 0.0, -1e9
+    n = len(bible_family.ZONES)
+    for i, ((bound, _name), tw) in enumerate(zip(bible_family.ZONES,
+                                                 widths)):
+        hi = min(bound, 1.0)
+        x0 = TRACK_PAD + lo * (w - 2 * TRACK_PAD)
+        x1 = TRACK_PAD + hi * (w - 2 * TRACK_PAD)
+        x = (x0 + x1 - tw) / 2
+        if tw > x1 - x0 - 6:
+            x = (TRACK_PAD if i == 0 else w - TRACK_PAD - tw
+                 if i == n - 1 else None)
+        if x is not None and (x < last_end + 8 or x < 0 or x + tw > w):
+            x = None
+        spots.append(x)
+        if x is not None:
+            last_end = x + tw
+        lo = hi
+    return spots
+
+
+def _paint_zone_names(area, cr, w, h):
+    """The zones' names over the axis, at `zone_name_spots`."""
+    color = area.get_color()
+    cr.set_source_rgba(color.red, color.green, color.blue, color.alpha)
+    layouts = [area.create_pango_layout(_(name))
+               for _b, name in bible_family.ZONES]
+    widths = [lay.get_pixel_size()[0] for lay in layouts]
+    for lay, x in zip(layouts, zone_name_spots(w, widths)):
+        if x is not None:
+            cr.move_to(x, (h - lay.get_pixel_size()[1]) / 2)
+            PangoCairo.show_layout(cr, lay)
 
 
 def _clamped(child):
@@ -95,9 +138,18 @@ class _Row(Gtk.ListBoxRow):
         if self.spot is not None:
             spot = self.spot
             self._track.set_draw_func(lambda a, cr, w, h: paint_track(
-                cr, w, h, spot, a.get_color(), pad=6.0, r=4.0))
+                cr, w, h, spot, a.get_color(), pad=TRACK_PAD, r=4.0))
             redraw_on_contrast(self._track)
-        self._box.append(self._track)
+            self._box.append(self._track)
+        else:
+            # Said, not left blank: sorted by name or year, a Bible with no
+            # place had an empty gap where its track should be.
+            self._track = Gtk.Label(
+                label=_('Before the Line') if record['year'] < 1611
+                else _('Not placed'), xalign=0, hexpand=True)
+            self._track.add_css_class('family-line-meta')
+            self._track.set_margin_start(int(TRACK_PAD))
+            self._box.append(self._track)
         self.set_child(self._box)
 
     def refresh(self, installed, reading):
@@ -163,10 +215,13 @@ class _Menu(Gtk.Box):
     and grows a × that puts the filter back. `choices` is [(key, label)],
     the first being the unfiltered one; `on_pick(key)` runs on a choice."""
 
-    def __init__(self, name, choices, on_pick, clear_words='', shown=None):
+    def __init__(self, name, choices, on_pick, clear_words='', shown=None,
+                 tint=True):
         """`name` is what the filter is ("Tradition"), for screen readers,
         which would otherwise hear only "Catholic". `shown` formats the
-        visible label from the choice (the sort's "Sort: {choice}")."""
+        visible label from the choice (the sort's "Sort: {choice}").
+        `tint`: whether a choice past the first shows as narrowed; a sort
+        hides nothing, so it never does."""
         super().__init__()
         self.add_css_class('linked')
         self.add_css_class('family-filter')
@@ -174,6 +229,7 @@ class _Menu(Gtk.Box):
         self._choices = choices
         self._on_pick = on_pick
         self._shown = shown or '{choice}'
+        self._tint = tint
         self._key = choices[0][0]
 
         self._button = Gtk.MenuButton()
@@ -246,7 +302,7 @@ class _Menu(Gtk.Box):
         self._label.set_label(self._shown.format(choice=label))
         narrowed = self._key != self._choices[0][0]
         self._clear.set_visible(self._clearable and narrowed)
-        if narrowed:
+        if narrowed and self._tint:
             self.add_css_class('narrowed')
         else:
             self.remove_css_class('narrowed')
@@ -319,7 +375,7 @@ class FamilyLine:
             _('Sort'),
             [('place', _('Place on the Line')), ('year', _('Year')),
              ('name', _('Name'))], self._set_sort,
-            shown=_('Sort: {choice}'))
+            shown=_('Sort: {choice}'), tint=False)
         self._sort_menu.set_valign(Gtk.Align.START)
         bar.append(self._sort_menu)
         box.append(_clamped(bar))
@@ -332,12 +388,15 @@ class FamilyLine:
         self._axis.set_margin_end(14)
         spacer = Gtk.Box()
         spacer.set_size_request(NAME_W, -1)
+        self._axis_spacer = spacer
         self._axis.append(spacer)
-        ends = Gtk.Box(hexpand=True)
-        ends.append(Gtk.Label(label=_('Word for word'), xalign=0,
-                              hexpand=True))
-        ends.append(Gtk.Label(label=_('Free'), xalign=1))
-        self._axis.append(ends)
+        # The four zones named over their stretch of the track, between the
+        # ticks: with only its two ends named, the ticks meant nothing to a
+        # reader sorting by name or year, where no zone headings come.
+        zones = Gtk.DrawingArea(hexpand=True)
+        zones.set_content_height(16)
+        zones.set_draw_func(_paint_zone_names)
+        self._axis.append(zones)
         self._axis_clamp = _clamped(self._axis)
         box.append(self._axis_clamp)
 
@@ -451,7 +510,10 @@ class FamilyLine:
         self._stacked = stacked
         for row in self._rows:
             row.set_stacked(stacked)
-        self._axis_clamp.set_visible(not stacked)
+        # Stacked, the tracks run the full width under their names, and the
+        # axis with its zone names does too: hidden, the ticks meant nothing.
+        self._axis_spacer.set_visible(not stacked)
+        self._axis.set_spacing(0 if stacked else ROW_SPACING)
 
     # ── the list's functions ─────────────────────────────────────────────
 

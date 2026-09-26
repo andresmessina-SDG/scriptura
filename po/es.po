@@ -10672,3 +10672,7 @@ msgstr "Atenúa las palabras que cada Biblia comparte con la de arriba (la prime
 #: family_read.py
 msgid "Marks the definite object; English does not translate it"
 msgstr "Marca el objeto definido; el inglés no lo traduce"
+
+#: family_line.py
+msgid "Before the Line"
+msgstr "Anterior a la Línea"
