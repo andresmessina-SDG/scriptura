@@ -59,6 +59,12 @@ _module_positions._FILE = os.path.join(_SCRATCH, 'module_positions.json')
 _sermons.SERMONS_FILE = os.path.join(_SCRATCH, 'sermons.json')
 _sermons._cache = None
 
+# ── No test may go online to check for updates ─────────────────────────────
+# The Module Manager checks by itself when its lists are old, which in a test
+# (no lists at all) is always. A test of the check turns it on for itself.
+import updates as _updates  # noqa: E402
+_updates.may_check = lambda: False
+
 
 # ── No test may put a file chooser on the tester's screen ──────────────────
 # Gtk.FileDialog's save() and open() are the calls that present one. A test

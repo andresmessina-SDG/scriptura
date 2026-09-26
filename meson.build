@@ -82,6 +82,7 @@ py_sources = files(
   'lexicon_panel.py',
   'manuscript_find.py',
   'downloads.py',
+  'updates.py',
   'fetch_errors.py',
   'module_manager.py',
   'module_picker.py',

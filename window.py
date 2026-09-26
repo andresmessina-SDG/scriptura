@@ -9,6 +9,7 @@ from gi.repository import Gtk, Adw, GLib, Gdk, Gio
 from gtk_utils import clear_children, file_dialog_failed
 import sword_bridge
 import settings
+import updates
 import devotional_audio
 import mpris
 import tasks
@@ -277,6 +278,11 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         # so later launches warm in <100ms. Deferred to idle so it doesn't
         # compete with the initial chapter render.
         GLib.idle_add(self._prewarm_cross_refs)
+        # The menu's dot, from the list the Module Manager last saved; the
+        # packs' part is read again, as a new app can expect a newer pack.
+        updates.listen(self._show_updates)
+        self._show_updates()
+        GLib.idle_add(lambda: updates.note_packs() or GLib.SOURCE_REMOVE)
         # Surface a failed annotation write as a toast — otherwise the
         # in-memory change would quietly disappear on the next launch.
         annotations.set_save_error_handler(
@@ -318,6 +324,20 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         if result:
             book, chapter, verse = result
             GLib.idle_add(lambda: self._go_to(book, chapter, verse) or False)
+
+    def _show_updates(self):
+        """The dot on the menu and the count on its Modules row."""
+        n = len(updates.pending())
+        self._update_dot.set_visible(n > 0)
+        set_accessible_label(
+            self._burger_btn,
+            ngettext('Menu, {n} update available',
+                     'Menu, {n} updates available', n).format(n=n)
+            if n else _('Menu'))
+        label = getattr(self, '_updates_label', None)
+        if label is not None:
+            label.set_label(ngettext('{n} update', '{n} updates', n).format(n=n))
+            label.set_visible(n > 0)
 
     def _prewarm_cross_refs(self):
         import open_data
@@ -380,12 +400,25 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         toolbar_view.add_top_bar(header)
 
         # ── Left: burger + back/forward + navigation ──────────────────────────
-        burger_btn = Gtk.Button(icon_name='scriptura-open-menu-symbolic')
+        burger_btn = Gtk.Button()
         burger_btn.set_tooltip_text(_('Menu'))
         set_accessible_label(burger_btn, _('Menu'))
         burger_btn.add_css_class('flat')
         burger_btn.add_css_class('header-action')
         burger_btn.connect('clicked', self._toggle_menu)
+        # A dot on the menu when a text has an update, as the Modules row
+        # inside says how many (decided 2026-09-25: a dot, and a line in
+        # the module picker; no notification).
+        burger = Gtk.Overlay()
+        burger.set_child(Gtk.Image.new_from_icon_name(
+            'scriptura-open-menu-symbolic'))
+        self._update_dot = Gtk.Box(halign=Gtk.Align.END,
+                                   valign=Gtk.Align.START)
+        self._update_dot.add_css_class('update-dot')
+        self._update_dot.set_can_target(False)
+        burger.add_overlay(self._update_dot)
+        burger_btn.set_child(burger)
+        self._burger_btn = burger_btn
         header.pack_start(burger_btn)
 
         self._back_btn = Gtk.Button(icon_name='scriptura-go-previous-symbolic')
@@ -3362,6 +3395,11 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             dialog.add(sec)
         dialog.present(self)
 
+    def open_modules(self):
+        """The Module Manager, from outside the menu (the module picker's
+        Update available)."""
+        self._on_modules_clicked(None)
+
     def _on_modules_clicked(self, _btn):
         if self._modules_win is not None and self._modules_win.get_visible():
             self._modules_win.present()
@@ -3666,6 +3704,12 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         ]:
             row = Adw.ActionRow(title=label)
             row.add_prefix(Gtk.Image.new_from_icon_name(icon))
+            if handler == self._on_modules_clicked:
+                self._updates_label = Gtk.Label()
+                self._updates_label.add_css_class('update-count')
+                self._updates_label.set_valign(Gtk.Align.CENTER)
+                row.add_suffix(self._updates_label)
+                self._modules_row = row
             chevron = Gtk.Image.new_from_icon_name('scriptura-go-next-symbolic')
             chevron.add_css_class('dim-label')
             row.add_suffix(chevron)

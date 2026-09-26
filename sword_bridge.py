@@ -1,3 +1,4 @@
+import functools
 import html as html_mod
 import io
 import json
@@ -1871,6 +1872,9 @@ def _parse_conf_lines(raw_lines):
                 info['datapath'] = v
             elif k == 'lang':
                 info['lang'] = v
+            elif k.startswith('history_'):
+                # What each version changed, in its makers' words.
+                info.setdefault('history', {})[k[len('history_'):]] = v
             elif k == 'version':
                 info['version'] = v
             elif k == 'distributionlicense':
@@ -1979,6 +1983,7 @@ def list_available_modules():
                 'license': info.get('license', ''),
                 'size': info.get('size', ''),
                 'version': info.get('version', ''),
+                'history': info.get('history', {}),
                 'locked': 'cipherkey' in info,
             })
     result.sort(key=lambda m: m['name'].lower())
@@ -2683,6 +2688,19 @@ def installed_version(module_name):
     if not os.path.exists(conf):
         return ''
     return _parse_conf(conf).get('version', '')
+
+
+def newest_history(mod):
+    """What the catalogue's version of `mod` changed, in its makers' words:
+    its own version's History line, else the newest one; '' with none."""
+    history = mod.get('history') or {}
+    if not history:
+        return ''
+    version = mod.get('version', '')
+    if version in history:
+        return history[version]
+    newest = max(history, key=functools.cmp_to_key(cmp_version))
+    return history[newest]
 
 
 def available_updates():

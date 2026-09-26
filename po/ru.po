@@ -114,12 +114,14 @@ msgstr ""
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:34
 msgid ""
 "Everything stays on your computer, with no account and no tracking. "
-"Scriptura goes online only to download the texts you choose and for spoken "
-"readings, which you can turn off in Preferences."
+"Scriptura goes online only to download the texts you choose, to check for "
+"updates when you open the Module Manager, and for spoken readings, which you "
+"can turn off in Preferences."
 msgstr ""
 "Всё хранится на вашем компьютере, без учётной записи и без слежки. Scriptura "
-"выходит в интернет, только чтобы скачать выбранные вами тексты, и для "
-"озвученных чтений, которые можно отключить в Параметрах."
+"выходит в интернет, только чтобы скачать выбранные вами тексты, проверить "
+"обновления, когда вы открываете Менеджер модулей, и для озвученных чтений, "
+"которые можно отключить в Параметрах."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:54
 msgid ""
@@ -6346,8 +6348,8 @@ msgid "“{name}” will be removed. You can download it again later."
 msgstr "«{name}» будет удалён. Позже его можно загрузить снова."
 
 #: module_manager.py:1571
-msgid "Parsing USFM…"
-msgstr "Разбор USFM…"
+msgid "Reading the text…"
+msgstr "Чтение текста…"
 
 #: module_manager.py:1572
 msgid "Saving…"
@@ -10651,3 +10653,48 @@ msgstr "Указывает на определённое дополнение; �
 #: family_line.py
 msgid "Before the Line"
 msgstr "До Линии"
+
+#: module_manager.py
+msgid "Checking for updates…"
+msgstr "Проверка обновлений…"
+
+#: module_manager.py
+msgid "Update All"
+msgstr "Обновить все"
+
+#: module_manager.py
+msgid "Download on a Metered Connection?"
+msgstr "Скачать через лимитное подключение?"
+
+#: module_manager.py
+msgid "This download is about {size} MB, and your connection may charge by the amount used."
+msgstr "Объём загрузки — около {size} МБ, а ваше подключение может тарифицироваться по объёму."
+
+#: module_picker.py
+msgid "Update available"
+msgstr "Доступно обновление"
+
+#: module_picker.py
+msgid "Open the Module Manager to update it"
+msgstr "Откройте Менеджер модулей, чтобы обновить"
+
+#: window.py
+msgid "Menu, {n} update available"
+msgid_plural "Menu, {n} updates available"
+msgstr[0] "Меню, {n} обновление"
+msgstr[1] "Меню, {n} обновления"
+msgstr[2] "Меню, {n} обновлений"
+
+#: window.py
+msgid "{n} update"
+msgid_plural "{n} updates"
+msgstr[0] "{n} обновление"
+msgstr[1] "{n} обновления"
+msgstr[2] "{n} обновлений"
+
+#: module_manager.py
+msgid "{n} download finished"
+msgid_plural "{n} downloads finished"
+msgstr[0] "{n} загрузка завершена"
+msgstr[1] "{n} загрузки завершены"
+msgstr[2] "{n} загрузок завершено"
