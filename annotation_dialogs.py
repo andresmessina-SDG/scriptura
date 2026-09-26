@@ -582,14 +582,20 @@ def _verse_rect(pane, verse):
     What a popover points at when nobody clicked anything — the keyboard and
     the toolbar's ⋮ both arrive here with no pointer position, and a fixed
     corner of the view would put the card somewhere the verse is not.
+
+    A verse scrolled out of sight is pointed at from the view's nearest
+    edge: its own position lay thousands of pixels off, and GTK answered
+    that by opening Compare in the window's top-left corner.
     """
     rect = Gdk.Rectangle()
     rect.x, rect.y, rect.width, rect.height = 160, 80, 1, 1
     ranges = pane._verse_ranges(verse)
     if ranges:
         location = pane.view.get_iter_location(ranges[1])
-        rect.x, rect.y = pane.view.buffer_to_window_coords(
+        x, y = pane.view.buffer_to_window_coords(
             Gtk.TextWindowType.WIDGET, location.x, location.y)
+        rect.x = max(0, min(x, pane.view.get_width() - 1))
+        rect.y = max(0, min(y, pane.view.get_height() - 1))
     return rect
 
 

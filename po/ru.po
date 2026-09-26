@@ -5801,11 +5801,11 @@ msgstr[2] "Поиск в книге {book}… пока {n} совпадений 
 
 #: lexicon_panel.py:750
 #, python-brace-format
-msgid "{n} occurrence in {book}"
-msgid_plural "{n} occurrences in {book}"
-msgstr[0] "{n} вхождение в книге {book}"
-msgstr[1] "{n} вхождения в книге {book}"
-msgstr[2] "{n} вхождений в книге {book}"
+msgid "{n} verse in {book}"
+msgid_plural "{n} verses in {book}"
+msgstr[0] "{n} стих в книге {book}"
+msgstr[1] "{n} стиха в книге {book}"
+msgstr[2] "{n} стихов в книге {book}"
 
 #: lexicon_panel.py:756
 #, python-brace-format
@@ -9732,11 +9732,11 @@ msgstr[2] "Показать ещё {n} стихов"
 
 #: lexicon_panel.py:973
 #, python-brace-format
-msgid "{n} occurrence in the whole Bible"
-msgid_plural "{n} occurrences in the whole Bible"
-msgstr[0] "{n} вхождение во всей Библии"
-msgstr[1] "{n} вхождения во всей Библии"
-msgstr[2] "{n} вхождений во всей Библии"
+msgid "{n} verse in the whole Bible"
+msgid_plural "{n} verses in the whole Bible"
+msgstr[0] "{n} стих во всей Библии"
+msgstr[1] "{n} стиха во всей Библии"
+msgstr[2] "{n} стихов во всей Библии"
 
 #: search_panel.py:199
 msgid ""

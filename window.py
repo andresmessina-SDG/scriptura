@@ -1544,7 +1544,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
 
         From the Line, the Card acts on the Bible beside it: Open goes to the
         other pane when one is showing, and Compare needs a verse, so it is
-        offered only when there is a Bible pane to compare from."""
+        offered only when there is a Bible pane to compare from, and one
+        with verses: beside an interlinear it only said to choose one."""
         bible_pane, reading, open_here = pane, pane.module, True
         if pane._is_family:
             other = self.pane2 if pane is self.pane1 else self.pane1
@@ -1556,7 +1557,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._card_from = pane
         self._family_card.show(
             node_id, pane._names, reading, open_here=open_here,
-            can_compare=bible_pane is not None,
+            can_compare=(bible_pane is not None
+                         and bible_pane._is_verse_navigable()),
             from_family=pane._is_family
             and pane._family_tree.showing_family())
         self._card_split.set_show_sidebar(True)

@@ -4734,8 +4734,8 @@ class BiblePane(Gtk.Box):
         pseudo-modules have no SWORD text (the scan would find 0 matches for
         every word), so they scan the tagged original-language source the
         morph lookups already rely on — MorphGNT for the Greek NT, OSHB for
-        the Hebrew OT. Absent those, fall through to the pane's own module
-        (scan degrades to empty, as any untagged module's would)."""
+        the Hebrew OT. Absent those, the pane's own module: the scan then
+        reads the interlinear's own words (lexicon_panel._scan_chapter)."""
         if self._is_interlinear:
             tagged = ('OSHB' if interlinear_data.is_hebrew(self._module)
                       else 'MorphGNT')
