@@ -67,6 +67,15 @@ semver-ish — 0.x was the pre-Flathub testing track.
   the row's own words whole. Bibles from eBible.org keep
   coming while a pack downloads from elsewhere. Close the Module Manager
   and the downloads carry on; open it again and they are still there.
+- **Downloads are checked before they are installed.** A Bible or book
+  that comes from the backup mirror, or over CrossWire's unencrypted FTP,
+  is checked against the checksum the mirror publishes; an FTP copy that
+  fails is swapped for the mirror's, and a mirror copy that fails is
+  refused. The curated packs and Scriptura's own Russian and Spanish
+  modules are checked against the checksum published beside each. A
+  download that fails says it arrived damaged, and nothing is changed. An
+  install cut off by a crash no longer leaves its half-unpacked files
+  behind in the modules folder.
 - **A large pack picks up where it stopped.** A cancelled or cut-off
   download of Bible Imagery or Historical Commentaries offers Resume and
   continues from the last byte. The Module Manager checks for the free

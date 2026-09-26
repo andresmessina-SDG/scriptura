@@ -6,7 +6,9 @@ binds a progress callback to the worker thread; the backends call `read`
 or `fetch_resumable` and never need to know whether a queue is watching.
 """
 
+import hashlib
 import json
+import logging
 import os
 import shutil
 import threading
@@ -14,6 +16,7 @@ import urllib.request
 
 _CHUNK = 64 * 1024
 _local = threading.local()
+_log = logging.getLogger('scriptura.transfer')
 
 
 class Cancelled(BaseException):
@@ -24,6 +27,10 @@ class Cancelled(BaseException):
     progress callback cannot fail a download. Cancelling has to get past
     those, and every cleanup in them is a `finally` or `except
     BaseException` already."""
+
+
+class Damaged(ValueError):
+    """A download that does not match the checksum published for it."""
 
 
 class NoSpace(OSError):
@@ -79,6 +86,66 @@ def probe(url, timeout=30):
     req = urllib.request.Request(url, method='HEAD')
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return int(resp.headers.get('Content-Length') or 0)
+
+
+def published_sums(url, timeout=30):
+    """The SHA-256 sums published beside `url` as `<url>.sha256`, as
+    {file name: hex}, or None when there are none or they cannot be read.
+
+    The file is what `sha256sum` writes: one "<hex>  <name>" line per file,
+    so a pack split into parts lists each part. A bare hash on its own line
+    stands for `url` itself. A missing file is not a failure: a pack
+    published before its sums were is installed unchecked, as before."""
+    import urllib.error
+    try:
+        with urllib.request.urlopen(url + '.sha256', timeout=timeout) as resp:
+            text = resp.read(64 * 1024).decode('ascii', errors='replace')
+    except (urllib.error.URLError, OSError, ValueError) as exc:
+        _log.info('no checksum for %s: %s', url, exc)
+        return None
+    sums = {}
+    for line in text.splitlines():
+        bits = line.split()
+        if not bits:
+            continue
+        digest = bits[0].lower()
+        if len(digest) != 64 or not all(c in '0123456789abcdef'
+                                        for c in digest):
+            continue
+        name = bits[1].lstrip('*') if len(bits) > 1 else url
+        sums[os.path.basename(name)] = digest
+    return sums or None
+
+
+def sha256_of(blob):
+    return hashlib.sha256(blob).hexdigest()
+
+
+def check_sums(path, parts, sums):
+    """Check the downloaded file `path`, made of `parts` [(url, size)] in
+    order, against `sums` from published_sums. Raises Damaged on a
+    mismatch. A part the sums do not name is not checked."""
+    if len(parts) == 1:
+        spans = [(parts[0][0], os.path.getsize(path))]
+    elif all(size for _url, size in parts):
+        spans = parts
+    else:
+        _log.info('part sizes unknown: %s not checked', path)
+        return
+    with open(path, 'rb') as fh:
+        for url, size in spans:
+            digest = hashlib.sha256()
+            left = size
+            while left > 0:
+                chunk = fh.read(min(_CHUNK * 16, left))
+                if not chunk:
+                    raise Damaged(f'{os.path.basename(url)} is short')
+                digest.update(chunk)
+                left -= len(chunk)
+            want = sums.get(os.path.basename(url))
+            if want and digest.hexdigest() != want:
+                raise Damaged(f'{os.path.basename(url)} does not match its '
+                              'published checksum')
 
 
 def _meta_path(part):
