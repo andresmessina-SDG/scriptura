@@ -72,6 +72,18 @@ text = "Open an interlinear beside any Bible and read the Greek New Testament or
 alt = "The Greek interlinear at John 1, beside the King James Version"
 
 [[shots]]
+img = "read"
+title = "Read the difference"
+text = "One verse in every English Bible you have, from word for word at the top to free at the bottom, with the Hebrew or Greek above. Mark differences fades the words each Bible shares with its neighbour, so what a translation changed stands out."
+alt = "Psalm 23:1 in English Bibles beside the King James Version, the Hebrew above them"
+
+[[shots]]
+img = "family"
+title = "The Bible Family Tree"
+text = "The English Bibles read today and the Bibles they were revised from, drawn down the page in time, with a note at the moments that shaped them. Switch it to By literalness and watch a family drift from word for word toward free."
+alt = "The Bible Family Tree from 1966 to 2004, the modern English Bibles in their families"
+
+[[shots]]
 img = "voices"
 title = "The church on every verse"
 text = "Beside any passage, Voices of the Church gathers what the fathers, the medieval teachers and the Reformers wrote about it: 87,995 quotations from Irenaeus to Calvin, each filed under the verse it explains and dated by its century."
@@ -108,6 +120,10 @@ text = "Maps of the journeys, and photographs of the places a verse names."
 [[rows]]
 title = "Scripture in Stone"
 text = "Archaeology tied to its verses."
+
+[[rows]]
+title = "The Bible Family Tree"
+text = "Where each English Bible came from, and how literally it translates."
 
 [[rows]]
 title = "The Book of Generations"

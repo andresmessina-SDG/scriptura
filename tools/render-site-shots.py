@@ -59,6 +59,21 @@ SHOTS = {
         'pane1_module': BIBLE[lang], 'pane2_module': READING[lang],
         'last_book': 'John', 'last_chapter': 1, 'split_pane_mode': True,
         'sermon': True},
+    # The Bible Family Tree, full width: the Family by family, with the root
+    # folded so the Bibles people read fill the page. The KJV is marked as the
+    # Bible being read.
+    'family': lambda lang: {
+        'pane1_module': 'BibleFamilyTree', 'pane2_module': BIBLE[lang],
+        'last_book': 'John', 'last_chapter': 1, 'split_pane_mode': False,
+        'family_tree_view': 'family', 'family_tree_arrangement': 'family',
+        'came_from': 'KJVA', 'scroll_year': 1964},
+    # Read the difference beside the Bible being read: one verse down the
+    # Line, the Hebrew above it, the words each Bible changed in full ink.
+    # Psalm 23:1, where "I shall not want" becomes "I lack nothing".
+    'read': lambda lang: {
+        'pane1_module': BIBLE[lang], 'pane2_module': 'BibleFamilyTree',
+        'last_book': 'Psalms', 'last_chapter': 23, 'split_pane_mode': True,
+        'family_tree_view': 'read', 'family_read_marks': True},
 }
 # Every shot in the app's light and dark: the page shows the one that
 # matches the reader's paper.
@@ -135,8 +150,39 @@ def _seed_sermon(data_home: Path, lang: str) -> None:
     path.write_text(json.dumps(store, ensure_ascii=False, indent=2), encoding='utf-8')
 
 
+# The SWORD modules a shot may show: open texts only (the page's rule,
+# tests/test_site.py), so Read the difference, which lists every English
+# Bible installed, never shows a copyrighted one. A scratch HOME holds links
+# to them alone.
+OPEN_MODULES = ('kjva', 'asv', 'bsb', 'ylt', 'acv', 'webster', 'sparv1909',
+                'strongsgreek', 'strongshebrew')
+
+
+def _curated_home(home: Path) -> None:
+    src = Path.home() / '.sword'
+    dst = home / '.sword'
+    (dst / 'mods.d').mkdir(parents=True)
+    for name in OPEN_MODULES:
+        conf = src / 'mods.d' / f'{name}.conf'
+        if not conf.exists():
+            continue
+        (dst / 'mods.d' / conf.name).symlink_to(conf)
+        for line in conf.read_text(errors='replace').splitlines():
+            if line.startswith('DataPath='):
+                rel = line.split('=', 1)[1].strip().lstrip('./').rstrip('/')
+                data = src / rel
+                if not data.is_dir():       # a dictionary names a file stem
+                    rel = os.path.dirname(rel)
+                    data = src / rel
+                if not (dst / rel).exists():
+                    (dst / rel).parent.mkdir(parents=True, exist_ok=True)
+                    (dst / rel).symlink_to(data)
+                break
+
+
 # The stores a shot reads, copied from the reader's data directory.
 DATA_FILES = ('catena.db', 'ebible.db', 'open_data/interlinear_greek.sqlite',
+              'open_data/interlinear_hebrew.sqlite',
               'open_data/greek_lexicon.sqlite')
 
 
@@ -160,7 +206,8 @@ def _seed_data(data_home: Path) -> None:
 
 
 def run_one(lang: str, shot: str, scheme: str, sword: Path,
-            data_home: Path, out: Path, timeout: float = 120.0) -> str:
+            data_home: Path, out: Path, home: Path,
+            timeout: float = 120.0) -> str:
     with tempfile.TemporaryDirectory(prefix='scriptura-shot-') as scratch:
         env = os.environ.copy()
         for var in ('XDG_CONFIG_HOME', 'XDG_CACHE_HOME', 'XDG_RUNTIME_DIR'):
@@ -168,6 +215,7 @@ def run_one(lang: str, shot: str, scheme: str, sword: Path,
             d.mkdir(mode=0o700)
             env[var] = str(d)
         env['XDG_DATA_HOME'] = str(data_home)
+        env['HOME'] = str(home)
         seed = {'ui_language': lang, 'tips_enabled': False,
                 'open_to_today': False, 'show_crossrefs': False,
                 'window_width': SIZE[0], 'window_height': SIZE[1],
@@ -176,6 +224,8 @@ def run_one(lang: str, shot: str, scheme: str, sword: Path,
         reading_mode = spec.pop('reading_mode', False)
         verse = spec.pop('verse', 1)
         sermon = spec.pop('sermon', False)
+        came_from = spec.pop('came_from', '')
+        scroll_year = spec.pop('scroll_year', 0)
         if sermon:
             _seed_sermon(data_home, lang)
         seed.update(spec, color_scheme=scheme)
@@ -188,7 +238,9 @@ def run_one(lang: str, shot: str, scheme: str, sword: Path,
                     'SITE_SHOT_OUT': str(out / f'{lang}-{name}.png'),
                     'SITE_SHOT_READING': '1' if reading_mode else '',
                     'SITE_SHOT_VERSE': str(verse),
-                    'SITE_SHOT_SERMON': SERMON_ID if sermon else ''})
+                    'SITE_SHOT_SERMON': SERMON_ID if sermon else '',
+                    'SITE_SHOT_CAMEFROM': came_from,
+                    'SITE_SHOT_SCROLL_YEAR': str(scroll_year or '')})
         env.pop('DISPLAY', None)
         mutter = subprocess.Popen(
             ['mutter', '--headless', '--wayland', f'--wayland-display={WAYLAND}',
@@ -247,6 +299,11 @@ def driver() -> int:
                                           int(os.environ.get('SITE_SHOT_VERSE', '1')))
         if os.environ.get('SITE_SHOT_READING'):
             win._set_reading_mode(True, toast=False)
+        if os.environ.get('SITE_SHOT_CAMEFROM'):
+            # The Bible the reader was on before turning to the Family Tree:
+            # its node wears the reading ring.
+            win.pane1._came_from = os.environ['SITE_SHOT_CAMEFROM']
+            win.pane1._family_tree.render()
         if os.environ.get('SITE_SHOT_SERMON'):
             win._open_annotations()
             target['win'] = win._annotations_win
@@ -258,6 +315,18 @@ def driver() -> int:
         verse = int(os.environ.get('SITE_SHOT_VERSE', '1'))
         if verse > 1:
             win.pane2.select_verse(verse)
+
+    def scroll(win):
+        # The Family opens at 1611; the Bibles most people read are after
+        # 1950, so a picture of it starts lower down.
+        year = os.environ.get('SITE_SHOT_SCROLL_YEAR')
+        tree = getattr(win.pane1, '_family_tree', None)
+        if year and tree is not None and tree.family is not None:
+            import family_layout as fl
+            import family_view as fv
+            fam = tree.family
+            fam._scroll.get_vadjustment().set_value(
+                fl.year_y(int(year)) - fam._shift() - 24)
 
     def sermon(win):
         if 'win' in target:
@@ -273,6 +342,7 @@ def driver() -> int:
     steps.append(first)
     steps.extend([lambda win: None] * 2)
     steps.append(select)
+    steps.append(scroll)
     steps.append(sermon)
     steps.extend([lambda win: None] * 3)
     steps.append(unfocus)
@@ -340,13 +410,15 @@ def main_() -> int:
     langs = args.only.split(',')
     args.out.mkdir(parents=True, exist_ok=True)
     failed = 0
-    with tempfile.TemporaryDirectory(prefix='scriptura-shot-data-') as data:
+    with tempfile.TemporaryDirectory(prefix='scriptura-shot-data-') as data, \
+            tempfile.TemporaryDirectory(prefix='scriptura-shot-home-') as home:
         _seed_data(Path(data))
+        _curated_home(Path(home))
         for lang in langs:
             for shot in args.shots.split(','):
                 for scheme in SCHEMES:
                     line = run_one(lang, shot, scheme, args.sword.resolve(),
-                                   Path(data), args.out.resolve())
+                                   Path(data), args.out.resolve(), Path(home))
                     print(line)
                     failed += 'ERROR' in line or 'exit' in line or 'mutter' in line
     publish(args.out.resolve(), langs)

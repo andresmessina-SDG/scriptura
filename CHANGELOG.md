@@ -4,7 +4,7 @@ All notable changes to Scriptura. Format roughly follows
 [Keep a Changelog](https://keepachangelog.com/). Versioning is
 semver-ish — 0.x was the pre-Flathub testing track.
 
-## [Unreleased]
+## [1.8.0] — 2026-09-26
 
 ### Added
 
@@ -122,6 +122,21 @@ semver-ish — 0.x was the pre-Flathub testing track.
   turn them off. The website is corrected too.
 - The ESV's info page in the module list opened on nothing: a copyright
   sign in its About text stopped the page from being built.
+- **A Bible chosen after the Family Tree opened at Genesis 1.** A pane
+  showing the Family Tree or a general book kept its own old place while
+  the header moved on, so a Bible chosen next opened there, not at the
+  chapter the header named. It now opens where the header is.
+- **Keys pressed in a dialog reached the page behind it.** Escape with
+  Preferences open closed the Today page behind the dialog and left the
+  dialog open, and in presentation the arrow keys turned slides. A dialog
+  now keeps the keyboard while it is open.
+- **Faint stripes showed across the page behind Preferences** on some
+  graphics cards, and the menu left a seam under it. The dimming behind a
+  dialog no longer lands on a shade the graphics card rounds unevenly, and
+  the menu closes as Preferences opens.
+- **Moving between the menu's pages left the keyboard nowhere.** Going to
+  Appearance, focus now moves to its back arrow, and coming back, to the
+  Appearance row, so a keyboard or screen-reader user stays in place.
 - **Compare showed the wrong verse beside a Synodal or Vulgate psalm.**
   Those Bibles count a psalm's title as verses, so a verse there has a
   different number in the others: comparing the Synodal's «Помилуй меня,

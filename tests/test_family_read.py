@@ -431,3 +431,17 @@ def test_the_object_marker_leaves_the_gloss_line(monkeypatch):
     cell = card.get_first_child().get_first_child()
     assert cell.get_last_child().get_label() == ' '
     assert 'object' in cell.get_tooltip_text()
+
+
+def test_a_long_name_wraps_in_its_column_instead_of_widening_it():
+    """"King James Version (1769 Blayney text)" widened its column to
+    280px, and its track and row with it, past every other row's."""
+    record = bf.node('kjv')
+    row = fr._Row(record, 'KJVA', False, lambda q: None)
+    assert row._name_clamp.get_maximum_size() == fr.NAME_W
+    left_nat = row._left.measure(Gtk.Orientation.HORIZONTAL, -1)[1]
+    assert left_nat <= fr.NAME_W, left_nat
+    row.set_stacked(True)               # stacked, the whole width
+    assert row._name_clamp.get_maximum_size() > 1000
+    row.set_stacked(False)
+    assert row._name_clamp.get_maximum_size() == fr.NAME_W

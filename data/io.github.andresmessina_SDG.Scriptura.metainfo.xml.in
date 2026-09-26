@@ -28,6 +28,7 @@
       <li>A journal and sermon manuscripts, with your notes on the passage close at hand.</li>
       <li>Reading plans, and a Today page with the day's reading.</li>
       <li>Chapters and devotionals read aloud.</li>
+      <li>The Bible Family Tree: where each English Bible came from, how literally it translates, and one verse read across them all.</li>
       <li>Paintings, maps and archaeology for the passage you read, and the Bible's family lists drawn as charts.</li>
       <li>English, Spanish and Russian, with Bibles and dictionaries in each.</li>
     </ul>
@@ -48,27 +49,31 @@
 
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/01-two-pane-lexicon.png</image>
-      <caption>Two-pane reading with the Strong's lexicon open on a Greek word</caption>
+      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/01-read-the-difference.png</image>
+      <caption>One verse in every English Bible you have, with the Hebrew above, beside the Bible you are reading</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/06-interlinear-greek.png</image>
-      <caption>The Greek New Testament interlinear, with meaning, grammar and Strong's number under every word</caption>
+      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/02-bible-family-tree.png</image>
+      <caption>The Bible Family Tree: the English Bibles read today and the Bibles they came from</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/02-historical-commentaries.png</image>
-      <caption>Historical Commentaries: how the church read a verse across the centuries</caption>
+      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/03-interlinear-greek.png</image>
+      <caption>The Greek New Testament word by word, with meaning, grammar and Strong's number under each word</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/03-study-journal.png</image>
-      <caption>Annotations: every mark you have made, in one place</caption>
+      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/04-voices-of-the-church.png</image>
+      <caption>Voices of the Church: what the fathers and the Reformers wrote on the verse you are reading</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/04-reading-plan.png</image>
-      <caption>Built-in reading plans with day-by-day progress</caption>
+      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/05-scripture-in-art.png</image>
+      <caption>Art for the passage: Caravaggio's Calling of Saint Matthew beside Matthew 9</caption>
     </screenshot>
     <screenshot>
-      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/05-reading-mode-dark.png</image>
+      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/06-sermon-writing.png</image>
+      <caption>Write a sermon beside the passage, with its series, dates and verses</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/andresmessina-SDG/scriptura/main/data/screenshots/07-reading-mode-dark.png</image>
       <caption>Reading mode hides everything but the text</caption>
     </screenshot>
   </screenshots>
@@ -146,6 +151,23 @@
          notice most, in plain words and short sentences, with no em-dashes.
          The full record belongs in CHANGELOG.md, not here.
          tests/test_version_sync.py holds every release to this. -->
+    <release version="1.8.0" date="2026-09-26">
+      <description its:translate="no">
+        <p>The Bible Family Tree, and downloads that look after themselves.</p>
+        <ul>
+          <li>The Bible Family Tree draws the English Bibles people read, and the Bibles they came from, down the page in time. Print it as a poster.</li>
+          <li>The Line places every English Bible from word for word to free. Filter it by what you have, by tradition and by era.</li>
+          <li>Read the difference shows one verse in every Bible you have, with the Greek or Hebrew above it.</li>
+          <li>Each English Bible has a card: where it sits on the Line, the Bibles it came from, and the source of every fact.</li>
+          <li>Compare lists its Bibles from word for word to free, and finds the right verse in Bibles that number the Psalms differently.</li>
+          <li>Downloads wait their turn, show their progress, can be cancelled, and pick up where they stopped.</li>
+          <li>The Module Manager checks for updates when its lists are a week old, and a dot on the menu says when one is waiting.</li>
+          <li>Every download is checked for damage before it is installed.</li>
+          <li>The menu now holds only places, and a Preferences window holds the settings you set once.</li>
+          <li>Scriptura has a website, in English, Spanish and Russian.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.7.3" date="2026-09-22">
       <description its:translate="no">
         <p>Search the Greek and Hebrew behind the translation, and hear more of the fathers.</p>

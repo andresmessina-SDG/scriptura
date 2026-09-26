@@ -99,6 +99,10 @@ msgid "Chapters and devotionals read aloud."
 msgstr "Capítulos y devocionales leídos en voz alta."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:31
+msgid "The Bible Family Tree: where each English Bible came from, how literally it translates, and one verse read across them all."
+msgstr "El árbol genealógico de la Biblia: de dónde viene cada Biblia inglesa, cuán literal es su traducción, y un versículo leído en todas ellas."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:31
 msgid ""
 "Paintings, maps and archaeology for the passage you read, and the Bible's "
 "family lists drawn as charts."
@@ -10738,3 +10742,27 @@ msgid "{n} download finished"
 msgid_plural "{n} downloads finished"
 msgstr[0] "{n} descarga terminada"
 msgstr[1] "{n} descargas terminadas"
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
+msgid "One verse in every English Bible you have, with the Hebrew above, beside the Bible you are reading"
+msgstr "Un versículo en cada Biblia inglesa que tenga, con el hebreo encima, junto a la Biblia que lee"
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
+msgid "The Bible Family Tree: the English Bibles read today and the Bibles they came from"
+msgstr "El árbol genealógico de la Biblia: las Biblias inglesas que se leen hoy y las Biblias de las que vienen"
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
+msgid "The Greek New Testament word by word, with meaning, grammar and Strong's number under each word"
+msgstr "El Nuevo Testamento griego palabra por palabra, con el significado, la gramática y el número de Strong bajo cada palabra"
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
+msgid "Voices of the Church: what the fathers and the Reformers wrote on the verse you are reading"
+msgstr "Voces de la Iglesia: lo que los padres y los reformadores escribieron sobre el versículo que lee"
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
+msgid "Art for the passage: Caravaggio's Calling of Saint Matthew beside Matthew 9"
+msgstr "Arte para el pasaje: la Vocación de san Mateo de Caravaggio junto a Mateo 9"
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
+msgid "Write a sermon beside the passage, with its series, dates and verses"
+msgstr "Escriba un sermón junto al pasaje, con su serie, sus fechas y sus versículos"
