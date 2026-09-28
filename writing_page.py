@@ -156,7 +156,8 @@ class WritingPageMixin:
         toggles in one group so AT hears a radio choice.
         """
         face = settings.get('writing_font')
-        self._font_label = Gtk.Label(label=face)
+        self._font_label = Gtk.Label(label=face, xalign=0)
+        self._font_label.connect('realize', self._pin_font_label)
         inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         inner.append(Gtk.Image(icon_name='scriptura-font-x-generic-symbolic'))
         inner.append(self._font_label)
@@ -198,6 +199,37 @@ class WritingPageMixin:
             self._font_label.get_label()].set_active(True))
         btn.set_popover(popover)
         return btn
+
+    def _pin_title(self, title):
+        """Hold the title at the height of the tallest face on offer.
+
+        Each face brings its own line height, so the title stood 20px tall
+        in Newsreader and 34px in OpenDyslexic, and a change of face moved
+        every row under it. Measured as `GtkText` measures itself: the taller
+        of the laid-out line and the font's ascent plus descent.
+        """
+        context = title.get_pango_context()
+        base = context.get_font_description()
+        tallest = 0
+        for face in WRITING_FONTS:
+            desc = base.copy()
+            desc.set_family(f'{face}, Noto Serif, serif')
+            metrics = context.get_metrics(desc, None)
+            layout = Pango.Layout.new(context)
+            layout.set_font_description(desc)
+            layout.set_text('Ág', -1)
+            extent = metrics.get_ascent() + metrics.get_descent()
+            tallest = max(tallest, layout.get_pixel_size()[1],
+                          -(-extent // Pango.SCALE))
+        # On the text inside, so the entry's own padding stays on top.
+        title.get_delegate().set_size_request(-1, tallest)
+
+    def _pin_font_label(self, label):
+        """Size the font button to the longest face name, so the tools
+        beside it hold still when the face changes."""
+        label.set_size_request(max(
+            label.create_pango_layout(name).get_pixel_size()[0]
+            for name in WRITING_FONTS), -1)
 
     def _name_font_button(self, face):
         set_accessible_label(self._font_button,

@@ -738,6 +738,7 @@ class _ProseEditor(WritingPageMixin, _Editor):
         self.title.set_has_frame(False)
         self.title.set_placeholder_text(_(self.title_placeholder))
         self.title.add_css_class('journal-entry-heading')
+        self.title.connect('realize', self._pin_title)
         self.title.connect('changed', self._edited)
         self._watch_focus(self.title)
         self._leaves_writing(self.title)

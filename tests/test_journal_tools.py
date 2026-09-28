@@ -790,6 +790,33 @@ def test_choosing_a_face_sets_every_sheet(isolated, own_settings, display):
         win.destroy()
 
 
+def test_a_change_of_face_moves_nothing(isolated, own_settings, display):
+    """The title stood 20px tall in Newsreader and 34px in OpenDyslexic, so
+    every row under it jumped when the face changed; the font button's width
+    followed the name and moved the tools beside it."""
+    from gi.repository import Gtk, Pango
+    win = _open()
+    try:
+        ed = _editor(win)
+        ed._pin_title(ed.title)
+        ed._pin_font_label(ed._font_label)
+        heights, widths = set(), set()
+        for face in writing_page.WRITING_FONTS:
+            ed._font_choices[face].set_active(True)
+            # Set on the title itself: a window never shown takes no restyle.
+            attrs = Pango.AttrList()
+            attrs.insert(Pango.attr_family_new(face))
+            ed.title.set_attributes(attrs)
+            ed.title.set_text('Ág')
+            heights.add(ed.title.measure(Gtk.Orientation.VERTICAL, -1)[1])
+            widths.add(ed._font_label.measure(
+                Gtk.Orientation.HORIZONTAL, -1)[1])
+        assert len(heights) == 1, heights
+        assert len(widths) == 1, widths
+    finally:
+        win.destroy()
+
+
 def test_an_unknown_face_falls_back_to_the_default(isolated, own_settings,
                                                    display):
     own_settings.put('writing_font', 'Comic Sans MS')
