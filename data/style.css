@@ -614,6 +614,25 @@ separator.journal-divider { background-color: alpha(@borders, 0.3); }
     border-radius: 7px;
 }
 .journal-tools button:hover { background-color: alpha(@window_fg_color, 0.09); }
+/* A tool that is on for the caret's text says so in the accent, as the
+ * format buttons in Pages do; Adwaita's own checked flat button was too
+ * faint to tell apart on the sheet. The choices inside the style and font
+ * menus are toggles too, so the current one reads the same way. */
+.journal-tools button:checked,
+.journal-tools menubutton > button:checked {
+    background-color: alpha(@accent_bg_color, 0.2);
+    color: @accent_color;
+}
+/* The font menu is a word, not a glyph, so it needs sides the square
+ * buttons do not. The node inside a MenuButton is its own `button`. */
+.journal-font-menu > button { padding-left: 8px; padding-right: 8px; }
+
+/* The paragraph-style menu is an icon with an arrow; the arrow is what
+ * says it opens, so it gets the room a square button does not have. */
+.journal-style-menu > button { padding-left: 4px; padding-right: 4px; }
+
+/* The card a reference click opens: one quiet button. */
+.journal-ref-card > contents { padding: 2px; }
 
 /* Find and replace, under the formatting row. The same flat buttons; the
  * fields keep their own frames, since they are where the typing goes. */

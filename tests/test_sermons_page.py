@@ -440,7 +440,7 @@ def test_collecting_into_the_open_sermon_goes_through_the_buffer(isolated,
         assert win.open_sermon_id() == 's1'
         win.collect_into('s1', 'Isaiah 55:10–11', _anchor('Isaiah', 55, 10))
         buf = win._sermon_editor.body.get_buffer()
-        shown = buf.get_text(*buf.get_bounds(), False)
+        shown = buf.get_text(*buf.get_bounds(), True)
         assert shown.endswith('Isaiah 55:10–11')
         assert sermons.get('s1')['body'] == shown
     finally:
@@ -715,7 +715,7 @@ def test_the_manuscript_continues_a_list_too(isolated, display):
         buf.set_text('1. First point')
         buf.place_cursor(buf.get_end_iter())
         buf.insert_at_cursor('\n')
-        assert buf.get_text(*buf.get_bounds(), False) == '1. First point\n2. '
+        assert buf.get_text(*buf.get_bounds(), True) == '1. First point\n2. '
     finally:
         win.destroy()
 
@@ -940,7 +940,7 @@ def test_a_mark_on_the_passage_goes_in_where_the_caret_is(isolated, display):
         marks = annotations_window.marks_on('Matthew', 13)
         assert len(marks) == 1
         editor._insert_mark(marks[0])
-        body = buf.get_text(*buf.get_bounds(), False)
+        body = buf.get_text(*buf.get_bounds(), True)
         assert body.startswith('Opening line.\n\n')
         assert 'The soil is the hearer.' in body
         assert 'Matthew 13:23' in body

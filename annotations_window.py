@@ -508,6 +508,12 @@ def reference_names():
                          passage_export.abbreviate(book)):
             if spelling:
                 names[spelling] = book
+    # Names English readers write that no table above carries: "Psalm 23"
+    # is how one psalm is cited, and "Song of Songs" is the ESV's and NIV's
+    # title for the book the app calls Song of Solomon.
+    for alias, book in (('Psalm', 'Psalms'),
+                        ('Song of Songs', 'Song of Solomon')):
+        names.setdefault(alias, book)
     # After the full names, so a curated abbreviation never displaces a
     # spelling the app itself uses, and only for books this app knows.
     for abbrev, book in sword_bridge.book_abbreviations(lang).items():

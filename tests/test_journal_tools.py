@@ -9,6 +9,7 @@ is notation journal_markup cannot read back.
 import pytest
 
 import annotation_editors
+import writing_page
 import annotations
 import annotations_window
 import journal
@@ -46,8 +47,9 @@ def _open():
 
 
 def _text(editor):
+    """The body as written — folded markers included, as the app reads it."""
     buf = editor.body.get_buffer()
-    return buf.get_text(*buf.get_bounds(), False)
+    return buf.get_text(*buf.get_bounds(), True)
 
 
 def _set(editor, text, start=None, end=None):
@@ -208,8 +210,8 @@ def test_the_row_is_built_and_parented(isolated, display):
         while child is not None:
             buttons += 1
             child = child.get_next_sibling()
-        # The formatting tools, and Find at the far end.
-        assert buttons == len(annotation_editors._TOOLS) + 1
+        # The formatting tools, the style and font menus, and Find.
+        assert buttons == len(annotation_editors._TOOLS) + 3
     finally:
         win.destroy()
 
@@ -256,59 +258,64 @@ def test_one_press_is_one_undo_for_a_list(isolated, display):
         win.destroy()
 
 
-# ── The tip belongs to the links ─────────────────────────────────────────────
+# ── A reference answers a click ──────────────────────────────────────────────
 
-def test_the_body_tooltip_only_answers_over_a_reference(isolated, display):
-    """As a plain tooltip it fired wherever the pointer rested in the body:
-    a box over the words you are writing."""
+class _Gesture:
+    def __init__(self, state=0):
+        self._state = state
+
+    def get_current_event_state(self):
+        return self._state
+
+
+def test_a_click_on_a_reference_offers_it(isolated, display):
+    """The caret lands, and a card says where the reference goes — the
+    way a link in Pages answers a click. A plain tooltip used to fire
+    wherever the pointer rested, over the words being written."""
     win = _open()
     try:
         ed = _editor(win)
-        assert ed.body.get_tooltip_text() is None
+        assert not ed.body.get_has_tooltip()
         _set(ed, 'see John 3:16')
-        ed._restyle.cancel()
-        ed._restyle_references()
-        assert ed.refs, 'the reference was not marked'
-
-        class Tip:
-            text = None
-
-            def set_text(self, t):
-                self.text = t
-
-        tip = Tip()
+        offered = []
+        ed._ref_at = lambda x, y: (4, 13, 'John', 3, 16)
+        ed._offer_ref = offered.append
         ed.refs = [(4, 13, 'John', 3, 16)]
-        # Keyboard mode has no pointer to be over anything.
-        assert ed._on_body_tooltip(ed.body, 0, 0, True, tip) is False
+        ed._on_body_click(_Gesture(), 1, 0, 0)
+        assert offered == [(4, 13, 'John', 3, 16)]
+    finally:
+        win.destroy()
 
-        # A probe's view has no allocation, so the real hit test cannot be
-        # driven from coordinates. Stand in for it at the one seam that
-        # matters: which offset the pointer landed on.
-        class FakeIter:
-            def __init__(self, offset):
-                self._offset = offset
 
-            def get_offset(self):
-                return self._offset
+def test_ctrl_click_goes_straight_there(isolated, display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, 'see John 3:16')
+        went = []
+        ed._on_navigate = lambda *a: went.append(a)
+        ed._ref_at = lambda x, y: (4, 13, 'John', 3, 16)
+        ed.refs = [(4, 13, 'John', 3, 16)]
+        from gi.repository import Gdk
+        ed._on_body_click(_Gesture(Gdk.ModifierType.CONTROL_MASK), 1, 0, 0)
+        assert went == [('John', 3, 16)]
+    finally:
+        win.destroy()
 
-        class FakeView:
-            def __init__(self, offset):
-                self._offset = offset
 
-            def window_to_buffer_coords(self, *_a):
-                return (0, 0)
-
-            def get_iter_at_location(self, *_a):
-                return (True, FakeIter(self._offset))
-
-        ed.body = FakeView(6)               # inside "John 3:16"
-        assert ed._on_body_tooltip(None, 0, 0, False, tip) is True
-        assert tip.text
-
-        tip.text = None
-        ed.body = FakeView(1)               # on "see"
-        assert ed._on_body_tooltip(None, 0, 0, False, tip) is False
-        assert tip.text is None
+def test_the_card_names_the_passage_and_never_takes_the_keyboard(
+        isolated, display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, 'see John 3:16')
+        ed._offer_ref((4, 13, 'John', 3, 16))
+        assert '3:16' in ed._ref_go.get_label()
+        assert not ed._ref_card.get_can_focus()
+        went = []
+        ed._on_navigate = lambda *a: went.append(a)
+        ed._ref_go.emit('clicked')
+        assert went == [('John', 3, 16)]
     finally:
         win.destroy()
 
@@ -676,8 +683,8 @@ def test_bold_ignores_the_space_a_drag_took_with_it(isolated, display):
 # pass cost 9.3ms of every keystroke at 8,000 words — but it is only safe
 # while it tags *identically* to reading the whole body.
 
-_TAGS = ('md-strong', 'md-emphasis', 'md-heading', 'md-quote', 'md-bullet',
-         'md-marker')
+_TAGS = ('md-strong', 'md-emphasis', 'md-heading', 'md-subheading',
+         'md-rule', 'md-quote', 'md-bullet', 'md-marker')
 
 
 def _merge(spans):
@@ -720,7 +727,8 @@ def test_editing_tags_exactly_as_a_whole_body_pass_would(isolated, display):
     win = _open()
     try:
         ed = _editor(win)
-        _set(ed, '# Title\n\nSome **bold** and *italic*.\n> quoted\n- one\n')
+        _set(ed, '# Title\n\nSome **bold** and *italic*.\n> quoted\n- one\n---\n'
+                 '#### Arrival\n')
         buf = ed.body.get_buffer()
         edits = [
             (0, '*'), (3, '**x** '), (30, '\n> new quote\n'),
@@ -737,5 +745,337 @@ def test_editing_tags_exactly_as_a_whole_body_pass_would(isolated, display):
             buf.delete(buf.get_iter_at_offset(a), buf.get_iter_at_offset(b))
             assert _tags_on(buf) == _merge(journal_markup.spans(_text(ed))), (
                 f'stale tags after deleting {a}..{b}')
+    finally:
+        win.destroy()
+
+
+# ── The page: face, measure, hanging markers ─────────────────────────────────
+
+@pytest.fixture
+def own_settings(tmp_path, monkeypatch):
+    import settings
+    monkeypatch.setattr(settings, '_FILE', str(tmp_path / 'settings.json'))
+    monkeypatch.setattr(settings, '_cache', None)
+    return settings
+
+
+def test_the_font_menu_offers_every_writing_face(isolated, own_settings,
+                                                 display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        assert tuple(ed._font_choices) == writing_page.WRITING_FONTS
+        # A glyph and an arrow, so it reads as a menu and not as a label.
+        assert ed._font_button.get_always_show_arrow()
+        assert ed._font_label.get_label() == 'Newsreader'
+        assert ed._font_choices['Newsreader'].get_active()
+    finally:
+        win.destroy()
+
+
+def test_choosing_a_face_sets_every_sheet(isolated, own_settings, display):
+    """One face for the writing, whichever page it was chosen on."""
+    win = _open()
+    try:
+        entry = _editor(win)
+        sermon = win._sermon_editor
+        entry._font_choices['EB Garamond'].set_active(True)
+        assert own_settings.get('writing_font') == 'EB Garamond'
+        assert sermon._font_label.get_label() == 'EB Garamond'
+        css = writing_page._WRITING_CSS.to_string()
+        assert '"EB Garamond"' in css
+        # the reading page's leading, not the face's own
+        assert 'line-height: 1.5' in css
+    finally:
+        win.destroy()
+
+
+def test_an_unknown_face_falls_back_to_the_default(isolated, own_settings,
+                                                   display):
+    own_settings.put('writing_font', 'Comic Sans MS')
+    writing_page.refresh_writing_style()
+    assert '"Newsreader"' in writing_page._WRITING_CSS.to_string()
+
+
+def test_the_column_takes_the_reading_measure(isolated, own_settings, display):
+    """125 characters a line with the list hidden, 139 in writing mode —
+    the view meant to be best read worst. Centred at the reading width."""
+    win = _open()
+    try:
+        ed = _editor(win)
+        table = ed.body.get_buffer().get_tag_table()
+        ed._fit_page(1000)
+        side = (1000 - 540) // 2
+        assert ed.body.get_left_margin() == side
+        assert ed.body.get_right_margin() == side
+        assert table.lookup('md-quote').get_property('left-margin') == side + 20
+        assert table.lookup('md-bullet').get_property('left-margin') == side + 22
+        # a sheet narrower than the measure keeps the old margin
+        ed._fit_page(400)
+        assert ed.body.get_left_margin() == writing_page._BODY_MARGIN
+    finally:
+        win.destroy()
+
+
+def _hang_for(ed, marker):
+    buf = ed.body.get_buffer()
+    it = buf.get_iter_at_offset(_text(ed).index(marker))
+    tags = [t for t in it.get_tags() if t in ed._hangs.values()]
+    return tags[0] if tags else None
+
+
+def _write_on(ed, needle):
+    """Put the caret on the line holding `needle`, as a writer would."""
+    buf = ed.body.get_buffer()
+    ed._set_writing(True)
+    buf.place_cursor(buf.get_iter_at_offset(_text(ed).index(needle)))
+
+
+def _hidden(ed, needle):
+    buf = ed.body.get_buffer()
+    it = buf.get_iter_at_offset(_text(ed).index(needle))
+    return it.has_tag(buf.get_tag_table().lookup('md-hidden'))
+
+
+def test_markers_hang_in_the_margin_on_the_line_being_written(
+        isolated, own_settings, display):
+    """The words start on the column's edge; the marker sits left of it. A
+    negative indent alone pulls the WRAPPED lines in, so the paragraph has
+    to start out in the margin by the marker's width as well."""
+    win = _open()
+    try:
+        ed = _editor(win)
+        ed._fit_page(1000)
+        side = ed.body.get_left_margin()
+        _set(ed, '## Arrival\n\n> In peace\n\n#### Debrief\n\n- a list')
+        for marker, edge in (('## ', side), ('> ', side + 20),
+                             ('#### ', side), ('- ', side + 22)):
+            _write_on(ed, marker)
+            tag = _hang_for(ed, marker)
+            assert tag is not None, marker
+            width = -tag.get_property('indent')
+            assert width > 0, marker
+            assert tag.get_property('left-margin') == edge - width, marker
+    finally:
+        win.destroy()
+
+
+def test_markers_fold_off_the_line_being_written(isolated, own_settings,
+                                                 display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '## Arrival\n\nSome **bold** words\n\n- item\n2. two')
+        # A page opened, not yet written in, reads clean.
+        assert _hidden(ed, '## ') and _hidden(ed, '**') and _hidden(ed, '- ')
+        _write_on(ed, 'Some')
+        assert not _hidden(ed, '**')
+        assert _hidden(ed, '## ') and _hidden(ed, '- ')
+        # Nothing hangs where the marker is folded away.
+        assert _hang_for(ed, '## ') is None
+        # A list's number is never folded: it is the item's number.
+        assert not _hidden(ed, '2. ')
+        _write_on(ed, 'Arrival')
+        assert not _hidden(ed, '## ') and _hidden(ed, '**')
+    finally:
+        win.destroy()
+
+
+def test_folded_markers_are_still_saved(isolated, own_settings, display):
+    """The data rule: a marker out of sight is still the entry. Read with
+    hidden text left out, the body would have been saved without them."""
+    win = _open()
+    try:
+        ed = _editor(win)
+        body = '## Arrival\n\nSome **bold** words\n\n> quoted\n\n- item\n\n---'
+        _set(ed, body)
+        assert _hidden(ed, '**')
+        entry = {'id': journal.new_id(), 'anchors': []}
+        ed.write(entry)
+        assert entry['body'] == body
+        assert journal.get(entry['id'])['body'] == body
+    finally:
+        win.destroy()
+
+
+def test_a_selection_shows_every_line_it_touches(isolated, own_settings,
+                                                 display):
+    """So what is copied is the entry as written, markers and all."""
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '## One\n\nSome **bold**\n\n- item\n\nafter')
+        ed._set_writing(True)
+        buf = ed.body.get_buffer()
+        buf.select_range(buf.get_start_iter(),
+                         buf.get_iter_at_offset(_text(ed).index('item') + 2))
+        assert not any(_hidden(ed, m) for m in ('## ', '**', '- '))
+    finally:
+        win.destroy()
+
+
+def test_leaving_for_the_title_folds_the_page(isolated, own_settings,
+                                              display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, 'Some **bold** words')
+        _write_on(ed, 'Some')
+        assert not _hidden(ed, '**')
+        ed._set_writing(False)
+        assert _hidden(ed, '**')
+    finally:
+        win.destroy()
+
+
+def test_a_marker_never_hangs_past_the_sheet(isolated, own_settings, display):
+    """At a narrow window the margin is 12px; a marker wider than that
+    hangs only as far as the margin goes."""
+    win = _open()
+    try:
+        ed = _editor(win)
+        ed._fit_page(300)
+        _set(ed, '#### Debrief')
+        _write_on(ed, 'Debrief')
+        tag = _hang_for(ed, '#### ')
+        assert tag.get_property('left-margin') >= 0
+        assert -tag.get_property('indent') <= writing_page._BODY_MARGIN
+    finally:
+        win.destroy()
+
+
+def test_heading_levels_are_three_sizes(isolated, own_settings, display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '# One\n## Two\n### Three\n#### Four')
+        buf = ed.body.get_buffer()
+
+        def scale(needle):
+            it = buf.get_iter_at_offset(_text(ed).index(needle))
+            size = 1.0
+            for tag in it.get_tags():
+                if tag.get_property('scale-set'):
+                    size *= tag.get_property('scale')
+            return round(size, 2)
+
+        assert scale('One') == 1.25
+        assert scale('Two') == 1.12
+        assert scale('Three') == scale('Four') == 1.0
+    finally:
+        win.destroy()
+
+
+# ── The style menu ───────────────────────────────────────────────────────────
+
+def test_the_style_menu_sets_and_clears_a_heading(isolated, own_settings,
+                                                  display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, 'Arrival\n- item', 0)
+        ed._set_style('## ')
+        assert _text(ed) == '## Arrival\n- item'
+        # Set, not toggled: the same choice again leaves it a subheading.
+        ed._set_style('## ')
+        assert _text(ed) == '## Arrival\n- item'
+        ed._set_style('# ')
+        assert _text(ed) == '# Arrival\n- item'
+        ed._set_style('')
+        assert _text(ed) == 'Arrival\n- item'
+        # Body takes a list off too, as it does in Pages.
+        buf = ed.body.get_buffer()
+        buf.place_cursor(buf.get_iter_at_offset(_text(ed).index('item')))
+        ed._set_style('')
+        assert _text(ed) == 'Arrival\nitem'
+    finally:
+        win.destroy()
+
+
+def test_the_style_menu_shows_its_keys(isolated, own_settings, display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        assert set(ed._style_choices) == {'', '# ', '## ', '### '}
+    finally:
+        win.destroy()
+
+
+# ── The buttons show what the caret is in ────────────────────────────────────
+
+def test_the_buttons_press_for_what_the_caret_is_in(isolated, own_settings,
+                                                    display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, 'Some **bold** words\n> quoted\n- item\n1. first')
+        buttons = ed._tool_buttons
+        buf = ed.body.get_buffer()
+
+        def at(needle):
+            buf.place_cursor(buf.get_iter_at_offset(_text(ed).index(needle)))
+
+        at('bold')
+        buf.place_cursor(buf.get_iter_at_offset(_text(ed).index('bold') + 2))
+        assert buttons['**'].get_active() and not buttons['*'].get_active()
+        at('words')
+        assert not buttons['**'].get_active()
+        at('quoted')
+        assert buttons['> '].get_active()
+        at('item')
+        assert buttons['- '].get_active() and not buttons['> '].get_active()
+        at('first')
+        assert buttons['number'].get_active()
+    finally:
+        win.destroy()
+
+
+def test_a_press_never_takes_the_caret_from_the_body(isolated, own_settings,
+                                                     display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        for btn in ed._tool_buttons.values():
+            assert not btn.get_focus_on_click()
+        assert not ed._style_button.get_focus_on_click()
+        assert not ed._font_button.get_focus_on_click()
+    finally:
+        win.destroy()
+
+
+# ── Saved ────────────────────────────────────────────────────────────────────
+
+def test_saved_shows_after_a_write_and_only_then(isolated, own_settings,
+                                                 display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        fade = ed._saved_fade
+        assert ed._saved.get_opacity() == 0
+        _set(ed, 'words')
+        entry = {'id': journal.new_id(), 'anchors': []}
+        ed.write(entry)
+        assert fade.get_value_to() == 1 and ed._saved_source
+        ed._unflash_saved()
+        assert fade.get_value_to() == 0 and not ed._saved_source
+        # An empty entry is never written, so nothing is said to be saved.
+        fade.skip()
+        _set(ed, '')
+        ed.title.set_text('')
+        ed.write({'id': journal.new_id(), 'anchors': []})
+        assert fade.get_value_to() == 0 and not ed._saved_source
+    finally:
+        win.destroy()
+
+
+def test_a_heading_turned_to_prose_stops_hanging(isolated, own_settings,
+                                                 display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, '## Arrival')
+        buf = ed.body.get_buffer()
+        buf.delete(buf.get_start_iter(), buf.get_iter_at_offset(3))
+        assert not set(buf.get_start_iter().get_tags()) & set(ed._hangs.values())
     finally:
         win.destroy()

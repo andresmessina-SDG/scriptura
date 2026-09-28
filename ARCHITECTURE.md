@@ -104,6 +104,7 @@ scriptura/
 +-- search_panel.py       # Search overlay (right-side revealer)
 +-- annotations_window.py # Annotations window (master-detail) + TagManagerWindow
 +-- annotation_editors.py # The three editors the window shows: mark, entry, sermon
++-- writing_page.py      # The prose editors' sheet: column, folded markers, drawn bullets/quotes/rules, font
 +-- manuscript_find.py   # Find and replace in an entry or sermon body (Ctrl+F / Ctrl+H)
 +-- journal.py           # journal.json — entries (a page, where a note is a margin)
 +-- sermons.py           # sermons.json — manuscripts, series, preaching days
@@ -762,10 +763,19 @@ sermons.py     # sermons.json  — manuscripts: title, big idea, body, series
                #   and a write re-files the sermon at the END of the store, so
                #   the file's own order answers `most_recent()`
 journal_markup.py  # the Markdown subset, pure: text in, spans out, no GTK.
-               #   Emphasis, one heading level, quote, lists, reference links,
-               #   plus what Enter carries on (`next_marker`, `renumber`)
+               #   Emphasis, headings (1–3, 4–6 as one), quote, lists, rules,
+               #   reference links (incl. `Rom.` and relative `v. 48`), what
+               #   Enter carries on (`next_marker`, `renumber`), and
+               #   `from_html` — clipboard HTML as the subset, for paste
 journal_import.py  # Markdown/text files in, one file per entry
-annotation_editors.py  # MarkEditor + _ProseEditor → EntryEditor, SermonEditor
+annotation_editors.py  # MarkEditor + _ProseEditor → EntryEditor, SermonEditor.
+               #   Every read of the body passes include_hidden=True, or
+               #   folded markers would not be saved
+writing_page.py  # WritingPageMixin on _ProseEditor: how the sheet looks.
+               #   The prose body is a `_WritingView`: markers fold off the
+               #   caret's lines (`md-hidden`, `_sync_reveal`) and hang in the
+               #   margin on it; quote bars, rules and bullet dots are drawn in
+               #   its BELOW layer
 manuscript_find.py  # the find/replace bar on a prose editor's sheet
 annotations_window.py  # the three pages, the list, the filters, TagManager
 ```

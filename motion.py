@@ -64,6 +64,11 @@ SEARCH_DEBOUNCE_MS = 200
 # gtk_utils.Autosave.
 AUTOSAVE_DELAY_MS = 900
 
+# How long "Saved" stays under the sheet after a write before it fades.
+# Long enough to be read at a glance up from the page, short enough that a
+# writer who pauses every sentence does not watch it blink on and off.
+SAVED_HOLD_MS = 1800
+
 # Restyle debounce for work too heavy to do per keystroke. Scanning a body
 # for scripture references means matching ~134 book spellings at every
 # position: 0.8ms on a page, but 10ms on a sermon-length entry — over half a

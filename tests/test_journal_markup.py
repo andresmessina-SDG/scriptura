@@ -46,7 +46,7 @@ def test_emphasis_does_not_cross_a_line_break():
 
 
 def test_a_lone_asterisk_styles_nothing():
-    for src in ('a ** b', 'a * b', '***', 'x*'):
+    for src in ('a ** b', 'a * b', 'x*', '**'):
         assert md.spans(src) == [], src
 
 
@@ -60,6 +60,19 @@ def test_a_heading_takes_the_whole_line():
     src = '# The Sixth Sunday'
     assert _text(src, _tags(src, 'md-heading')) == ['# The Sixth Sunday']
     assert _text(src, _tags(src, 'md-marker')) == ['# ']
+
+
+def test_levels_four_to_six_are_one_subheading():
+    """A study guide's `####` sections, and our own export's — it pushes an
+    entry's `##` down to `####` — showed as literal hashes."""
+    for src in ('#### Arrival', '##### Arrival', '###### Arrival'):
+        assert _text(src, _tags(src, 'md-subheading')) == [src], src
+        assert _tags(src, 'md-heading') == [], src
+        assert _text(src, _tags(src, 'md-marker')) == [src[:-len('Arrival')]]
+
+
+def test_seven_hashes_are_not_a_heading():
+    assert md.spans('####### Arrival') == []
 
 
 def test_a_blockquote_takes_the_whole_line():
@@ -165,6 +178,51 @@ def test_the_span_covers_exactly_the_reference():
     assert src[a:b] == 'John 3:16'
 
 
+def test_an_abbreviation_may_carry_a_full_stop():
+    """Chicago, SBL in print and every study guide write "Rom. 10:9"."""
+    names = dict(NAMES, **{'1 Cor': '1 Corinthians'})
+    for src, want in (('Rom. 10:9', ('Romans', 10, 9)),
+                      ('Rom.10:9', ('Romans', 10, 9)),
+                      ('1 Cor. 15:20', ('1 Corinthians', 15, 20))):
+        found = md.reference_spans(src, names)
+        assert [f[2:] for f in found] == [want], src
+        assert src[found[0][0]:found[0][1]] == src, src
+
+
+def test_a_sentence_ending_on_a_name_is_not_a_reference():
+    """Without a verse after it, a full stop ends the sentence."""
+    assert md.reference_spans('we read John. 3 of us stayed', NAMES) == []
+    assert md.reference_spans('see Rom. 8 again', NAMES) == []
+
+
+def test_a_relative_verse_takes_the_passage_above():
+    src = 'Luke 8:41-56. In v. 48 he says it; vv. 45-46 come first.'
+    names = {'Luke': 'Luke'}
+    found = md.reference_spans(src, names)
+    assert [f[2:] for f in found] == [
+        ('Luke', 8, 41), ('Luke', 8, 48), ('Luke', 8, 45)]
+    assert [src[a:b] for a, b, *_ in found] == ['Luke 8:41', 'v. 48', 'vv. 45']
+
+
+def test_a_relative_verse_follows_the_nearest_passage_above():
+    src = 'John 3:1, v. 5, then Rom 6:3 and v. 4'
+    assert [f[2:] for f in md.reference_spans(src, NAMES)] == [
+        ('John', 3, 1), ('John', 3, 5), ('Romans', 6, 3), ('Romans', 6, 4)]
+
+
+def test_a_relative_verse_with_nothing_above_links_nothing():
+    """Never a guess: no passage named yet, no link — not even to one named
+    further down."""
+    assert md.reference_spans('v. 48 first, then John 3:16', NAMES) == [
+        (18, 27, 'John', 3, 16)]
+    assert md.reference_spans('in v. 48', NAMES) == []
+
+
+def test_a_word_ending_in_v_is_not_a_relative_verse():
+    assert [f[2:] for f in md.reference_spans(
+        'John 3:1 and Rev. 2 then Lev. 3', NAMES)] == [('John', 3, 1)]
+
+
 # ── The one-line preview ─────────────────────────────────────────────────────
 
 def test_plain_joins_the_paragraphs_and_drops_the_notation():
@@ -258,6 +316,7 @@ def test_a_heading_opens_no_run():
 def test_line_marker_reads_the_heading_too():
     """What a new marker has to replace, rather than sit in front of."""
     assert md.line_marker('## Point one') == '## '
+    assert md.line_marker('#### Arrival') == '#### '
     assert md.line_marker('1. one') == '1. '
     assert md.line_marker('plain prose') == ''
 
@@ -291,3 +350,70 @@ def test_what_enter_writes_is_notation_the_renderer_reads():
         made = md.next_marker(line) + 'next'
         assert 'md-bullet' in {t for _a, _b, t in md.spans(made)} or \
             'md-quote' in {t for _a, _b, t in md.spans(made)}
+
+
+# ── Rules ────────────────────────────────────────────────────────────────────
+
+def test_three_or_more_of_one_mark_is_a_rule():
+    for src in ('---', '***', '___', '- - -', '* * *', '-----'):
+        assert _tags(src, 'md-rule') == [(0, len(src))], src
+        assert _tags(src, 'md-marker') == [(0, len(src))], src
+
+
+def test_a_rule_is_not_a_list_or_emphasis():
+    """`* * *` would otherwise be a bullet whose text is two stars."""
+    assert _tags('* * *', 'md-bullet') == []
+    for src in ('--', '-- x', '- item', '**', '-*-'):
+        assert _tags(src, 'md-rule') == [], src
+
+
+# ── Pasting from a web page ──────────────────────────────────────────────────
+
+def test_paste_keeps_what_the_subset_can_say():
+    html = ('<h2>Arrival</h2><p>Jesus <b>went</b> with <i>him</i>.</p>'
+            '<ul><li>one</li><li>two</li></ul>'
+            '<blockquote><p>Go in peace.</p></blockquote><hr>'
+            '<ol><li>first</li><li>second</li></ol>')
+    assert md.from_html(html) == (
+        '## Arrival\n\nJesus **went** with *him*.\n\n- one\n- two\n\n'
+        '> Go in peace.\n\n---\n\n1. first\n2. second')
+
+
+def test_paste_closes_emphasis_against_the_words():
+    """'** went **' is notation the subset will not read back."""
+    assert md.from_html('<p>Jesus<b> went </b>on</p>') == 'Jesus **went** on'
+
+
+def test_paste_reads_google_docs_styles():
+    """Docs says bold with font-weight:700 on a span, and wraps the whole
+    paste in a <b> that it marks font-weight:normal."""
+    html = ('<b style="font-weight:normal" id="docs-internal-guid-x"><p>'
+            '<span style="font-weight:700">Bold</span> plain '
+            '<span style="font-style:italic">slanted</span></p></b>')
+    assert md.from_html(html) == '**Bold** plain *slanted*'
+
+
+def test_paste_drops_what_it_cannot_say():
+    html = ('<style>p{color:red}</style><script>x()</script>'
+            '<p><a href="https://example.com">a link</a> and '
+            '<img src="x.png"> <span style="color:blue">colour</span></p>')
+    assert md.from_html(html) == 'a link and colour'
+
+
+def test_paste_writes_verse_numbers_as_superscripts():
+    """Bible sites set verse numbers in <sup>; run into the text they read
+    as "16For God"."""
+    assert md.from_html('<p><sup>16</sup>For God so loved</p>') == \
+        '¹⁶For God so loved'
+
+
+def test_paste_keeps_line_breaks_inside_a_paragraph():
+    assert md.from_html('<p>one<br>two</p>') == 'one\ntwo'
+
+
+def test_paste_collapses_html_whitespace():
+    assert md.from_html('<p>  one\n   two  </p>') == 'one two'
+
+
+def test_paste_of_nothing_is_nothing():
+    assert md.from_html('<p> </p><div></div>') == ''

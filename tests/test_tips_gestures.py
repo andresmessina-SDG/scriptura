@@ -63,7 +63,14 @@ EXPECTED_GESTURE_SITES = {
     # stops sitting under "No series". Nothing to discover — the reader typed
     # the series and the list agrees with them; the controller only decides
     # when, so the rebuild does not fire on every keystroke.
-    'annotation_editors.py': 5,
+    #
+    # The sixth is a focus controller that says the reader is writing:
+    # entering the body shows the markdown on the line being written.
+    # Nothing to discover — the notation appears where the caret goes,
+    # which is the whole point. A click on a reference now opens a card
+    # that names the passage and says Ctrl+click goes straight there, so
+    # that one teaches itself.
+    'annotation_editors.py': 6,
     'archaeology_reader.py': 6,
     'crossref_panel.py': 2,
     # The genealogy charts take a click and a motion controller each. Both
@@ -95,6 +102,10 @@ EXPECTED_GESTURE_SITES = {
     # Two of them are the mouse's back and forward buttons: invisible, so
     # they have a Reading row.
     'window.py': 11,
+    # The seventh editor controller, moved here with the writing page: a
+    # focus controller on the title and tags that folds the body's markdown
+    # when the reader leaves it. Nothing to discover.
+    'writing_page.py': 1,
 }
 
 _GESTURE_CALL = re.compile(

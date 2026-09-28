@@ -10766,3 +10766,31 @@ msgstr "Arte para el pasaje: la Vocación de san Mateo de Caravaggio junto a Mat
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
 msgid "Write a sermon beside the passage, with its series, dates and verses"
 msgstr "Escriba un sermón junto al pasaje, con su serie, sus fechas y sus versículos"
+
+#: annotation_editors.py
+msgid "Body"
+msgstr "Cuerpo"
+
+#: annotation_editors.py
+msgid "Subheading"
+msgstr "Subencabezado"
+
+#: annotation_editors.py
+msgid "Minor Heading"
+msgstr "Encabezado menor"
+
+#: annotation_editors.py
+msgid "Font: {name}"
+msgstr "Tipografía: {name}"
+
+#: annotation_editors.py
+msgid "Paragraph Style"
+msgstr "Estilo de párrafo"
+
+#: annotation_editors.py
+msgid "Ctrl+click a reference to go there directly"
+msgstr "Ctrl+clic en una referencia para ir directamente"
+
+#: annotation_editors.py
+msgid "Go to {reference}"
+msgstr "Ir a {reference}"

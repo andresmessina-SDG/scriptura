@@ -4,6 +4,48 @@ All notable changes to Scriptura. Format roughly follows
 [Keep a Changelog](https://keepachangelog.com/). Versioning is
 semver-ish — 0.x was the pre-Flathub testing track.
 
+## [Unreleased]
+
+### Added
+
+- **Read the difference keeps up with your reading.** Click a verse in the
+  Bible beside the Family Tree, or move to one with the keyboard, and Read
+  turns to it, even while another view is showing. The header sets it too,
+  so with one pane the Family Tree never shows a different place from the
+  header. Stepping or typing a reference in Read takes the header and the
+  Bible beside it along.
+
+- **A writing page that reads like a page.** In the journal and sermons,
+  Markdown symbols fold away once you leave a line and come back on the line
+  you are writing, in the margin, so the words never move. Lists show a
+  bullet, quotes a bar, and `---` a line.
+- **Paragraph styles.** Body, Heading, Subheading and Minor Heading, from a
+  menu or Ctrl+0 to Ctrl+3, each shown at its size.
+- **A font for your writing.** Newsreader, Noto Serif, EB Garamond, Adwaita
+  Sans, Roboto or OpenDyslexic, for every journal and sermon page.
+- **Easier reading while you write.** The text keeps the reading page's
+  width and line spacing instead of running the full window.
+- The formatting buttons light up for what the cursor is in.
+- A click on a reference offers to go there; Ctrl+click still goes at once.
+- "Saved" shows for a moment after each save.
+- Pasting from a web page or a word processor keeps headings, lists,
+  quotes, bold and italic.
+- References written `Rom. 10:9`, `Psalm 23`, `Song of Songs 2:1`, `v. 48`
+  and `vv. 45-46` now link, and headings of four to six `#` are styled.
+
+### Fixed
+
+- A heading exported from the journal came back as literal `####` when the
+  file was imported again.
+- The word study counted 0 for every word, in the book and in the whole
+  Bible, when clicked from an interlinear without the OSHB or MorphGNT
+  modules installed. It now counts from the interlinear's own words, and
+  says it counts verses.
+- Compare opened in the window's top-left corner when the verse it was for
+  had scrolled out of sight. It now points from the edge of the page.
+- The translation card offered Compare this verse beside an interlinear,
+  where it could only say to choose a verse.
+
 ## [1.8.0] — 2026-09-26
 
 ### Added

@@ -32,12 +32,21 @@ Span = tuple[int, int, str]
 #: A line's whole-line role, by the marker that opens it. Order matters only
 #: in that '- ' and '* ' are both bullets.
 _HEADING = re.compile(r'^(#{1,3} )')
+#: Levels four to six. One smaller heading for all three rather than three
+#: more steps: the type system gains one size, and a study guide's `####`
+#: sections — or our own export, which pushes an entry's `##` down to
+#: `####` — stop reading as literal hashes.
+_SUBHEADING = re.compile(r'^(#{4,6} )')
 _QUOTE = re.compile(r'^(> ?)')
 _BULLET = re.compile(r'^([-*] )')
 #: A numbered line. Same tag as a bullet: what the styling does with either
 #: is indent the line and hang its marker, and a second tag would mean a
 #: second set of rules to keep in step for no visible difference.
 _NUMBER = re.compile(r'^(\d{1,2}[.)] )')
+#: A thematic break: three or more of one of `-`, `*` or `_`, alone on the
+#: line. Read before the bullet, or `* * *` would be a list of stars. The
+#: whole line is its marker — there are no words on it to style.
+_RULE = re.compile(r'^ {0,3}([-*_])(?: *\1){2,} *$')
 
 #: Inline emphasis. Strong is matched first and its region removed, so the
 #: inner pair of '**bold**' is never read as two italics. Neither may span a
@@ -50,7 +59,7 @@ _EMPHASIS = re.compile(r'\*(?=\S)([^*]+?)(?<=\S)\*')
 def spans(text: str) -> list[Span]:
     """Every styling span in `text`, in no particular order.
 
-    Tags used: `md-heading`, `md-quote`, `md-bullet`, `md-strong`,
+    Tags used: `md-heading`, `md-subheading`, `md-rule`, `md-quote`, `md-bullet`, `md-strong`,
     `md-emphasis`, and `md-marker` for the syntax characters themselves.
     A caller applies them; this decides nothing about how they look.
     """
@@ -63,9 +72,13 @@ def spans(text: str) -> list[Span]:
 
 
 def _line_spans(line: str, base: int) -> list[Span]:
+    if _RULE.match(line):
+        return [(base, base + len(line), 'md-rule'),
+                (base, base + len(line), 'md-marker')]
     out: list[Span] = []
     body_at = 0
-    for pattern, tag in ((_HEADING, 'md-heading'), (_QUOTE, 'md-quote'),
+    for pattern, tag in ((_HEADING, 'md-heading'),
+                         (_SUBHEADING, 'md-subheading'), (_QUOTE, 'md-quote'),
                          (_BULLET, 'md-bullet'), (_NUMBER, 'md-bullet')):
         m = pattern.match(line)
         if m:
@@ -130,6 +143,20 @@ def _inline_spans(line: str, base: int, start_at: int) -> list[Span]:
 #: sentence, while the ambiguous "John 3:16.17" links nothing at all.
 _REF_TAIL = r'\s*(\d{1,3})(?:\s*[:.]\s*(\d{1,3}))?(?!\d|[:.]\d)'
 
+#: The full stop an abbreviation wears in print — "Rom. 10:9", "1 Cor.
+#: 15:20" — which Chicago, SBL in print and most study guides all use. Taken
+#: only when a chapter AND a verse follow it: "we read John. 3 of us stayed"
+#: is a sentence ending on a name, and a full stop before a bare number is
+#: too weak a sign to call it a reference.
+_ABBREV_STOP = r'(?:\.(?=\s*\d{1,3}\s*[:.]\s*\d))?'
+
+#: A verse cited inside the passage already under discussion — "v. 48",
+#: "vv. 45-46" — which is how a study guide cites once it has named the
+#: passage. It has no book of its own, so it is resolved against the last
+#: full reference before it, and links nothing when there is none.
+_RELATIVE = re.compile(r'(?<![^\W\d_])vv?\.\s*(\d{1,3})(?!\d|[:.]\d)',
+                       re.IGNORECASE)
+
 
 #: The compiled alternation, and the names it was built from. Rebuilding it
 #: per call cost 0.77ms on a 3KB body — seventy times the whole Markdown pass
@@ -152,7 +179,7 @@ def _pattern(names: dict[str, str]) -> tuple[re.Pattern[str], dict[str, str]]:
     ordered = sorted(names, key=len, reverse=True)
     pattern = re.compile(
         r'(?<![^\W\d_])(' + '|'.join(re.escape(n) for n in ordered) + r')'
-        + _REF_TAIL, re.IGNORECASE)
+        + _ABBREV_STOP + _REF_TAIL, re.IGNORECASE)
     folded = {k.casefold(): v for k, v in names.items()}
     _PATTERN_CACHE = (id(names), pattern, folded)
     return pattern, folded
@@ -166,6 +193,7 @@ def reference_spans(text: str, names: dict[str, str]
     the key every store, VerseKey and OSIS mapping in the app speaks. Longest
     spelling wins, so "1 John 1:1" is not read as "John 1:1" with a stray 1
     in front of it, and «От Иоанна» beats nothing but is matched whole.
+    A "v. 48" after a full reference is returned too, in text order.
     """
     if not names:
         return []
@@ -179,7 +207,26 @@ def reference_spans(text: str, names: dict[str, str]
             continue
         verse = int(m.group(3)) if m.group(3) else None
         out.append((m.start(), m.end(), book, int(m.group(2)), verse))
-    return out
+    return _with_relative(text, out)
+
+
+def _with_relative(text: str,
+                   found: list[tuple[int, int, str, int, int | None]]
+                   ) -> list[tuple[int, int, str, int, int | None]]:
+    """`found` with every "v. 48" that follows one of its references.
+
+    The book and chapter are the nearest full reference ABOVE, in the same
+    body — never one further down, and never a guess when there is none.
+    """
+    if not found:
+        return found
+    out = list(found)
+    for m in _RELATIVE.finditer(text):
+        above = [f for f in found if f[1] <= m.start()]
+        if above:
+            _a, _b, book, chapter, _v = above[-1]
+            out.append((m.start(), m.end(), book, chapter, int(m.group(1))))
+    return sorted(out)
 
 
 def numbered_marker(line: str) -> str:
@@ -209,7 +256,7 @@ def line_marker(line: str) -> str:
     is a bullet whose text reads '1. one', which is not what pressing the
     bullet on a numbered line asks for.
     """
-    match = _HEADING.match(line)
+    match = _HEADING.match(line) or _SUBHEADING.match(line)
     return match.group(1) if match else list_marker(line)
 
 
@@ -319,3 +366,201 @@ def to_markdown(text: str) -> str:
     string around.
     """
     return text
+
+
+# ── Pasting from a web page ─────────────────────────────────────────────────
+#
+# What a reader copies from a browser, a word processor or a Bible site
+# arrives as HTML beside the plain text. Taking the plain text, as the view
+# does by default, throws away every heading, list and emphasis the reader
+# could see when they copied it. This keeps the part of it the subset can
+# say, as the subset says it, and drops the rest: colours, fonts, links'
+# addresses, images. What comes out is ordinary Markdown in the buffer —
+# exactly what the reader could have typed.
+
+from html.parser import HTMLParser
+
+_SUPERSCRIPT = str.maketrans('0123456789', '⁰¹²³⁴⁵⁶⁷⁸⁹')
+_BLOCKS = {'p', 'div', 'section', 'article', 'header', 'footer', 'main',
+           'table', 'tr', 'pre', 'figure', 'figcaption', 'dl', 'dt', 'dd'}
+_SKIP = {'script', 'style', 'head', 'title', 'template', 'noscript'}
+
+
+def _style_flags(style: str) -> tuple[bool | None, bool | None]:
+    """(bold, italic) that an inline `style` sets, None where it is silent.
+
+    Google Docs marks nothing with <b>; it says font-weight:700 on a span,
+    and wraps the whole paste in a <b style="font-weight:normal">.
+    """
+    bold = italic = None
+    for decl in style.lower().split(';'):
+        key, _, value = decl.partition(':')
+        key, value = key.strip(), value.strip()
+        if key == 'font-weight':
+            bold = value in ('bold', 'bolder') or (
+                value.isdigit() and int(value) >= 600)
+        elif key == 'font-style':
+            italic = value in ('italic', 'oblique')
+    return bold, italic
+
+
+class _ToMarkdown(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.blocks: list[str] = []
+        self.runs: list[tuple[str, bool, bool]] = []
+        self.prefix = ''
+        self.styles: list[tuple[str, bool | None, bool | None]] = []
+        self.lists: list[list[int]] = []   # [counter] per ol, [] per ul
+        self.quote = 0
+        self.skip = 0
+        self.sup = 0
+
+    # Inline style is a stack, so a </span> closes only what its <span> set.
+    def _flag(self, index: int) -> bool:
+        for entry in reversed(self.styles):
+            if entry[index] is not None:
+                return bool(entry[index])
+        return False
+
+    def handle_starttag(self, tag: str, attrs: list) -> None:
+        if tag in _SKIP:
+            self.skip += 1
+            return
+        style = dict(attrs).get('style') or ''
+        bold, italic = _style_flags(style)
+        if tag in ('b', 'strong') and bold is None:
+            bold = True
+        if tag in ('i', 'em', 'cite') and italic is None:
+            italic = True
+        self.styles.append((tag, bold, italic))
+        if tag == 'br':
+            self.styles.pop()
+            self.runs.append(('\n', False, False))
+        elif tag == 'sup':
+            self.sup += 1
+        elif tag in ('h1', 'h2', 'h3', 'h4', 'h5', 'h6'):
+            self._close_block()
+            self.prefix = '#' * int(tag[1]) + ' '
+        elif tag == 'blockquote':
+            self._close_block()
+            self.quote += 1
+        elif tag in ('ul', 'ol'):
+            self._close_block()
+            self.lists.append([0] if tag == 'ol' else [])
+        elif tag == 'li':
+            self._close_block()
+            if self.lists and self.lists[-1]:
+                self.lists[-1][0] += 1
+                self.prefix = f'{self.lists[-1][0]}. '
+            else:
+                self.prefix = '- '
+        elif tag == 'hr':
+            self.styles.pop()
+            self._close_block()
+            self.blocks.append('---')
+        elif tag in _BLOCKS:
+            self._close_block()
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in _SKIP:
+            self.skip = max(0, self.skip - 1)
+            return
+        for i in range(len(self.styles) - 1, -1, -1):
+            if self.styles[i][0] == tag:
+                del self.styles[i:]
+                break
+        if tag == 'sup':
+            self.sup = max(0, self.sup - 1)
+        elif tag == 'blockquote':
+            self._close_block()
+            self.quote = max(0, self.quote - 1)
+        elif tag in ('ul', 'ol'):
+            self._close_block()
+            if self.lists:
+                self.lists.pop()
+        elif tag in _BLOCKS or tag == 'li' or tag in (
+                'h1', 'h2', 'h3', 'h4', 'h5', 'h6'):
+            self._close_block()
+
+    def handle_data(self, data: str) -> None:
+        if self.skip:
+            return
+        # HTML's own rule: any run of whitespace is one space.
+        text = re.sub(r'\s+', ' ', data)
+        if self.sup and text.strip().isdigit():
+            text = text.strip().translate(_SUPERSCRIPT)
+        if text:
+            self.runs.append((text, self._flag(1), self._flag(2)))
+
+    def _close_block(self) -> None:
+        lines = _inline(self.runs).split('\n')
+        self.runs = []
+        # Runs meet with a space each side of an element's edge; one is
+        # enough.
+        body = [re.sub(r' {2,}', ' ', line).strip() for line in lines
+                if line.strip()]
+        if body:
+            head = self.prefix + body[0]
+            # A heading holds one line; a list item's later lines stay in it.
+            text = '\n'.join([head] + body[1:])
+            if self.quote:
+                text = '\n'.join('> ' + line for line in text.split('\n'))
+            self.blocks.append(text)
+        self.prefix = ''
+
+    def result(self) -> str:
+        self._close_block()
+        out: list[str] = []
+        for i, block in enumerate(self.blocks):
+            # List items and quoted lines sit together; everything else is
+            # its own paragraph, a blank line apart, as the reader types it.
+            if i:
+                kind = _item_kind(block)
+                tight = kind and kind == _item_kind(self.blocks[i - 1])
+                out.append('\n' if tight else '\n\n')
+            out.append(block)
+        return ''.join(out).strip()
+
+
+def _item_kind(block: str) -> str:
+    """'list' or 'quote' for a block that sits tight against its own kind,
+    '' for a paragraph."""
+    if block.startswith('> '):
+        return 'quote'
+    return 'list' if _BULLET.match(block) or _NUMBER.match(block) else ''
+
+
+def _inline(runs: list[tuple[str, bool, bool]]) -> str:
+    """Runs of (text, bold, italic) as the subset writes them.
+
+    Adjacent runs of one style are merged first, and the markers close
+    against the words, never against a space — '** word **' is notation the
+    subset will not read back, so the spaces step outside the pair.
+    """
+    merged: list[list] = []
+    for text, bold, italic in runs:
+        if merged and merged[-1][1:] == [bold, italic]:
+            merged[-1][0] += text
+        else:
+            merged.append([text, bold, italic])
+    out = []
+    for text, bold, italic in merged:
+        marker = ('**' if bold else '') + ('*' if italic else '')
+        core = text.strip()
+        if not marker or not core or '\n' in core:
+            out.append(text)
+            continue
+        lead = text[:len(text) - len(text.lstrip())]
+        tail = text[len(text.rstrip()):]
+        out.append(f'{lead}{marker}{core}{marker[::-1]}{tail}')
+    return ''.join(out)
+
+
+def from_html(html: str) -> str:
+    """`html` as the Markdown subset: headings, lists, quotes, rules,
+    bold and italic. Everything else is kept as its text or dropped."""
+    parser = _ToMarkdown()
+    parser.feed(html)
+    parser.close()
+    return parser.result()

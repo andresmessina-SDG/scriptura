@@ -440,6 +440,9 @@ def test_reference_names_cover_english_localized_and_sbl(isolated):
     assert names.get('Rom') == 'Romans'
     # and the deuterocanon, or a note on Sirach links nothing
     assert 'Sirach' in names
+    # and the names English writers use that no table carries
+    assert names.get('Psalm') == 'Psalms'
+    assert names.get('Song of Songs') == 'Song of Solomon'
 
 
 def test_a_new_anchored_entry_lands_in_canonical_order(isolated, display):

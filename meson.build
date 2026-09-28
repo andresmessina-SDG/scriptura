@@ -127,6 +127,7 @@ py_sources = files(
   'welcome.py',
   'word_links.py',
   'window.py',
+  'writing_page.py',
 )
 
 install_data(py_sources, install_dir: pkgdatadir)

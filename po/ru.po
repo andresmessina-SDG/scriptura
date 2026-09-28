@@ -10726,3 +10726,31 @@ msgstr "Искусство к отрывку: «Призвание апосто�
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
 msgid "Write a sermon beside the passage, with its series, dates and verses"
 msgstr "Пишите проповедь рядом с отрывком, с её серией, датами и стихами"
+
+#: annotation_editors.py
+msgid "Body"
+msgstr "Основной текст"
+
+#: annotation_editors.py
+msgid "Subheading"
+msgstr "Подзаголовок"
+
+#: annotation_editors.py
+msgid "Minor Heading"
+msgstr "Малый заголовок"
+
+#: annotation_editors.py
+msgid "Font: {name}"
+msgstr "Шрифт: {name}"
+
+#: annotation_editors.py
+msgid "Paragraph Style"
+msgstr "Стиль абзаца"
+
+#: annotation_editors.py
+msgid "Ctrl+click a reference to go there directly"
+msgstr "Ctrl+щелчок по ссылке — перейти сразу"
+
+#: annotation_editors.py
+msgid "Go to {reference}"
+msgstr "Открыть {reference}"
