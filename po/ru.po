@@ -592,13 +592,7 @@ msgstr "{ref} — переводы"
 msgid "Save"
 msgstr "Сохранить"
 
-#: annotation_dialogs.py:399 annotation_dialogs.py:558
-msgid "Topics (comma-separated)"
-msgstr "Темы (через запятую)"
 
-#: annotation_dialogs.py:406
-msgid "e.g. Salvation, Prayer, Prophecy"
-msgstr "например: спасение, молитва, пророчество"
 
 #: annotation_dialogs.py:452
 msgid "Suggested"
@@ -610,9 +604,6 @@ msgstr "Предлагаемые"
 msgid "{ref} — Chapter Note"
 msgstr "{ref} — заметка к главе"
 
-#: annotation_dialogs.py:565
-msgid "e.g. Creation, Covenant"
-msgstr "например: творение, завет"
 
 #: archaeology_bridge.py:25 archaeology_strings.py:14
 msgid "Scripture in Stone"
@@ -9407,8 +9398,6 @@ msgstr "Ещё не произнесена"
 msgid "Remove {date}"
 msgstr "Убрать {date}"
 
-msgid "Add a date"
-msgstr "Добавить дату"
 
 msgid "Written for {day}"
 msgstr "Написана к дню: {day}"
@@ -9428,8 +9417,8 @@ msgstr "По циклам"
 msgid "Recently preached"
 msgstr "Недавно произнесённые"
 
-msgid "Write about a passage or about the day — the pencil above starts one."
-msgstr "Напишите об отрывке или о дне — карандаш выше начнёт запись."
+msgid "Write about a passage or about the day."
+msgstr "Напишите об отрывке или о дне."
 
 msgid "No sermons yet"
 msgstr "Проповедей пока нет"
@@ -10754,3 +10743,81 @@ msgstr "Ctrl+щелчок по ссылке — перейти сразу"
 #: annotation_editors.py
 msgid "Go to {reference}"
 msgstr "Открыть {reference}"
+
+#: window.py
+msgid "Writing"
+msgstr "Редактор"
+
+#: window.py
+msgid "New journal entry or sermon"
+msgstr "Новая запись дневника или проповедь"
+
+#: window.py
+msgid "Show or hide the list"
+msgstr "Показать или скрыть список"
+
+#: window.py
+msgid "Writing mode"
+msgstr "Режим письма"
+
+#: window.py
+msgid "Leave writing mode"
+msgstr "Выйти из режима письма"
+
+#: window.py
+msgid "Bold, italic"
+msgstr "Полужирный, курсив"
+
+#: window.py
+msgid "Body, Heading, Subheading, Minor Heading"
+msgstr "Основной текст, заголовок, подзаголовок, малый заголовок"
+
+#: window.py
+msgid "Next or previous match"
+msgstr "Следующее или предыдущее совпадение"
+
+#: window.py
+msgid "Go straight to a reference"
+msgstr "Сразу перейти по ссылке"
+
+#: window.py
+msgid "Ctrl + click"
+msgstr "Ctrl + щелчок"
+
+#: window.py
+msgid "Close the window"
+msgstr "Закрыть окно"
+
+#: annotations_window.py i18n.py
+msgid "Yesterday"
+msgstr "Вчера"
+
+#: annotations_window.py i18n.py
+msgid "Edited today"
+msgstr "Изменено сегодня"
+
+#: annotations_window.py i18n.py
+msgid "Edited yesterday"
+msgstr "Изменено вчера"
+
+#: annotations_window.py i18n.py
+msgctxt "date, short"
+msgid "{day} {month}"
+msgstr "{day} {month}"
+
+#: annotations_window.py i18n.py
+msgctxt "date, short, another year"
+msgid "{day} {month} {year}"
+msgstr "{day} {month} {year}"
+
+#: pane_peek.py
+msgid "Your note · verse {v}"
+msgstr "Ваша заметка · стих {v}"
+
+#: pane_peek.py
+msgid "Edit note"
+msgstr "Изменить заметку"
+
+#: annotation_editors.py
+msgid "Add a date preached"
+msgstr "Добавить дату проповеди"

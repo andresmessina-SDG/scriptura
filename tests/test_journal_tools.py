@@ -1106,3 +1106,20 @@ def test_a_heading_turned_to_prose_stops_hanging(isolated, own_settings,
         assert not set(buf.get_start_iter().get_tags()) & set(ed._hangs.values())
     finally:
         win.destroy()
+
+
+def test_the_title_does_not_open_selected(isolated, own_settings, display):
+    """Focus reaching the title selected the whole of it, so the first key a
+    writer pressed replaced the title."""
+    from gi.repository import GLib
+    win = _open()
+    try:
+        ed = _editor(win)
+        ed.title.set_text('Power of Healing')
+        ed.title.grab_focus()
+        while GLib.MainContext.default().iteration(False):
+            pass
+        assert not ed.title.get_selection_bounds()
+        assert ed.title.get_position() == len('Power of Healing')
+    finally:
+        win.destroy()

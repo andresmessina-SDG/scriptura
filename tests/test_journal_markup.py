@@ -417,3 +417,20 @@ def test_paste_collapses_html_whitespace():
 
 def test_paste_of_nothing_is_nothing():
     assert md.from_html('<p> </p><div></div>') == ''
+
+
+def test_preview_leaves_out_headings_and_rules():
+    """A row already leads with the title, and a manuscript's first heading
+    is usually that title again: "The Sower Four soils Read Mark 4…"."""
+    body = ('# The Sower\n\n## Four soils\n\nRead Mark 4:1-9.\n\n---\n\n'
+            'Application.')
+    assert md.preview(body) == 'Read Mark 4:1-9. Application.'
+
+
+def test_preview_sets_list_items_apart():
+    body = 'Four soils:\n\n1. the path\n2. rocky ground\n- among thorns\n\nThen.'
+    assert md.preview(body) == 'Four soils: the path · rocky ground · among thorns Then.'
+
+
+def test_preview_of_nothing_but_headings_keeps_them():
+    assert md.preview('# Only a title\n\n## And a part') == 'Only a title And a part'

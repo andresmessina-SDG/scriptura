@@ -542,10 +542,14 @@ separator.journal-divider { background-color: alpha(@borders, 0.3); }
  * neither needs a badge. The family LIST matters: Newsreader carries no
  * Cyrillic, and Noto Serif is second because it ships with the app, so every
  * Russian glyph lands there rather than on whatever the machine owns. */
-.journal-entry-title, .journal-entry-heading, .journal-entry-body {
+.journal-entry-title, .journal-entry-heading, .journal-entry-body,
+.writing-note {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
 }
+/* A mark's note: writing, so the body's face and size (the face and leading
+ * are overridden from settings by writing_page.refresh_writing_style). */
+.writing-note { font-size: 1.05em; }
 .journal-entry-title { font-size: 1.05em; font-weight: 600; }
 
 /* The title field is not a form field: no frame, a step above body size,
@@ -728,13 +732,15 @@ separator.journal-divider { background-color: alpha(@borders, 0.3); }
  * frameless, and a full-width filled box was the last loud thing left in it.
  * The caption above and the placeholder inside already say what it holds, so
  * the frame was saying nothing twice. Focus is the caret, as it is above. */
-.journal-tags-field {
+.journal-tags-field,
+.sermon-meta-field {
     padding-left: 0;
     padding-right: 0;
     background: none;
     box-shadow: none;
 }
-.journal-tags-field:focus-within {
+.journal-tags-field:focus-within,
+.sermon-meta-field:focus-within {
     background: none;
     box-shadow: none;
     outline: none;
@@ -954,6 +960,14 @@ image.module-feature-icon {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 1.1em;
+}
+
+/* The note peek's Edit: its words on the text's left edge, with the hover
+ * field still round them. */
+.note-peek-edit {
+    padding-left: 6px;
+    padding-right: 6px;
+    margin-left: -6px;
 }
 
 menubutton.pane-module-button > button,

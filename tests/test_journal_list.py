@@ -618,9 +618,33 @@ def test_an_empty_page_says_which_page_is_empty(isolated, display):
 
     win = _open_journal()
     try:
-        assert 'No journal entries yet' in texts(win)
+        # One empty state, on the right, with the way in; the list is blank.
+        assert win._empty_detail.get_title() == 'No journal entries yet'
+        assert win._empty_new_btn.get_visible()
+        assert win._empty_new_btn.get_label() == 'New journal entry'
+        assert texts(win) == ''
+        assert not win._count_lbl.get_visible()
+        win._empty_new_btn.emit('clicked')
+        assert win._current_entry['kind'] == 'entry'
         win.set_mode('marks')
-        assert 'No journal entries yet' not in texts(win)
+        assert win._empty_detail.get_title() != 'No journal entries yet'
+        assert not win._empty_new_btn.get_visible()
+        assert win._count_lbl.get_text() == '1 annotation'
+    finally:
+        win.destroy()
+
+
+def test_no_matches_stays_in_the_list(isolated, display):
+    """Filtered to nothing is not an empty page: the list says so and the
+    right pane offers no New button."""
+    annotations.save_note(None, 'John', 3, 16, 'a mark')
+    win = annotations_window.AnnotationsWindow(on_navigate=lambda *a: None)
+    try:
+        win._search_entry.set_text('zzzz')
+        win._apply_filter()
+        assert not win._empty_new_btn.get_visible()
+        assert not win._count_lbl.get_visible()
+        assert win._list.get_first_child() is not None
     finally:
         win.destroy()
 

@@ -52,6 +52,9 @@ WRITING_FONTS = ('Newsreader', 'Noto Serif', 'EB Garamond', 'Adwaita Sans',
 #: the journal and the sermons page together.
 _LIVE: 'weakref.WeakSet[WritingPageMixin]' = weakref.WeakSet()
 _WRITING_CSS: Gtk.CssProvider | None = None
+#: Every live mark-note field, so a change of face or measure reaches them
+#: too. A note is writing; it is set as the journal is.
+_NOTES: 'weakref.WeakSet[Gtk.Widget]' = weakref.WeakSet()
 
 
 def refresh_writing_style():
@@ -77,14 +80,36 @@ def refresh_writing_style():
     # Noto Serif behind every face: it ships with the app and carries the
     # Cyrillic that Newsreader and EB Garamond lack.
     _WRITING_CSS.load_from_data((
-        f".journal-entry-body, .journal-entry-heading {{ "
+        f".journal-entry-body, .journal-entry-heading, .writing-note {{ "
         f"font-family: '{face}', 'Noto Serif', serif; }} "
-        f".journal-entry-body {{ line-height: {settings.get('line_spacing')}; }}"
+        f".journal-entry-body, .writing-note {{ "
+        f"line-height: {settings.get('line_spacing')}; }}"
     ).encode())
     for editor in list(_LIVE):
         editor._font_label.set_label(face)
         editor._name_font_button(face)
         editor.body.queue_resize()
+    for note in list(_NOTES):
+        note.queue_resize()
+
+
+def ensure_writing_style():
+    """Load the writing sheet's CSS if nothing has yet. Loading it restyles
+    every widget on the display, so a note being opened asks for this, and
+    only a change of face or leading reloads it."""
+    if _WRITING_CSS is None:
+        refresh_writing_style()
+
+
+def note_measure(width):
+    """The side margin that sets a note at the reading measure in `width`,
+    never less than the note's own 12px."""
+    measure = int(settings.get('reading_width') or 540)
+    return max(_NOTE_MARGIN, (width - measure) // 2)
+
+
+#: A mark note's margin when the pane is narrower than the measure.
+_NOTE_MARGIN = 12
 
 
 def _decode_html(data):
@@ -158,7 +183,7 @@ class WritingPageMixin:
         face = settings.get('writing_font')
         self._font_label = Gtk.Label(label=face, xalign=0)
         self._font_label.connect('realize', self._pin_font_label)
-        inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        inner =Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         inner.append(Gtk.Image(icon_name='scriptura-font-x-generic-symbolic'))
         inner.append(self._font_label)
         # The glyph says "font" before the name is read, and the arrow says
@@ -709,6 +734,15 @@ class WritingPageMixin:
         rect.width, rect.height = max(1, x1 - x0), a.height
         self._ref_card.set_pointing_to(rect)
         self._ref_card.popup()
+
+    def _dismiss_ref_card(self):
+        """Esc over the card closes the card and goes no further. The card
+        takes no focus, so without this the key went on up and closed the
+        window with it."""
+        if not self._ref_card.get_visible():
+            return False
+        self._ref_card.popdown()
+        return True
 
     def _on_ref_go(self, _btn):
         self._ref_card.popdown()

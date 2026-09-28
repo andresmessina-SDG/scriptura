@@ -9,7 +9,7 @@ gi.require_version('Adw', '1')
 gi.require_version('Gdk', '4.0')
 from gi.repository import Gdk, Gio, Gtk, Adw, GLib, Pango
 from a11y import set_accessible_label
-from i18n import _, ngettext, C_, book_label, current_language, format_date
+from i18n import _, ngettext, C_, book_label, current_language, format_date, format_short_date
 from gtk_utils import Autosave, clear_children, file_dialog_failed
 import annotation_dialogs
 import annotation_editors
@@ -268,6 +268,14 @@ def _marks_in_chapter(book, chapter, verses):
     return entries
 
 
+def _books_of(row):
+    """Every book a row is on. A page of writing is on each of its passages,
+    not only the first: the chapter doors count it from any of them, and a
+    book filter that kept only the first opened them on "No matches"."""
+    return ({a['book'] for a in row.get('anchors') or []}
+            or {row['book']})
+
+
 def _journal_rows():
     """Journal entries in the same flat shape the marks use.
 
@@ -437,13 +445,13 @@ def _entry_date(e):
     return stamp[:10]
 
 
-def _preached_label(entry):
-    """The day a sermon was last preached, or '' when it never was."""
+def _preached_label(entry, today=None):
+    """The day a sermon was last preached, short, or '' when it never was."""
     preached = entry.get('preached') or []
     if not preached:
         return ''
     try:
-        return format_date(date.fromisoformat(preached[-1]))
+        return format_short_date(date.fromisoformat(preached[-1]), today)
     except ValueError:
         return ''
 
@@ -457,12 +465,15 @@ def _series_part_label(entry):
     return _('Part {n}').format(n=part)
 
 
-def _edited_label(entry):
+def _edited_label(entry, short=False, today=None):
     """"Edited <date>" for an entry that carries a timestamp, else ''.
 
     Set the way the Today page sets a date, not with a numeric format: the
     order is the translator's, and Spanish and Russian put the day first.
-    Marks made before the store recorded dates simply have none.
+    Marks made before the store recorded dates simply have none. `short` is
+    the list row's form — "Edited today", "Edited 14 Sep" — where the full
+    date on every row cut the reference short; the editor's header keeps
+    the full one.
     """
     stamp = entry.get('modified') or entry.get('created')
     if not isinstance(stamp, str) or not stamp:
@@ -471,7 +482,16 @@ def _edited_label(entry):
         when = datetime.fromisoformat(stamp).date()
     except ValueError:
         return ''
-    return _('Edited {date}').format(date=format_date(when))
+    if not short:
+        return _('Edited {date}').format(date=format_date(when))
+    today = today or date.today()
+    # Whole sentences, not "Edited {date}" around "Today": Spanish reads
+    # "Editado el {date}", and "Editado el hoy" is not Spanish.
+    if when == today:
+        return _('Edited today')
+    if when == today - timedelta(days=1):
+        return _('Edited yesterday')
+    return _('Edited {date}').format(date=format_short_date(when, today))
 
 
 #: The spellings, and the language they were built for. ONE dict object per
@@ -544,7 +564,7 @@ def _anchor_label(entry):
     return ref
 
 
-def _entry_day_label(entry):
+def _entry_day_label(entry, today=None):
     """An entry's own date, set the translator's way and with no verb on it.
 
     A mark's caption says "Edited <date>" because that is when it was
@@ -554,7 +574,7 @@ def _entry_day_label(entry):
     """
     raw = entry.get('date') or ''
     try:
-        return format_date(date.fromisoformat(raw))
+        return format_short_date(date.fromisoformat(raw), today)
     except ValueError:
         return ''
 
@@ -568,6 +588,12 @@ class TagManagerWindow(Adw.Window):
         self._on_changed = on_changed
         self.set_title(_('Tag Manager'))
         self.set_default_size(440, 540)
+        # Esc closes it, as it closes every other window of the app. The
+        # rename and remove dialogs take their own Esc before it bubbles here.
+        esc = Gtk.EventControllerKey()
+        esc.connect('key-pressed', lambda _c, kv, _kc, _s:
+                    self.close() or True if kv == Gdk.KEY_Escape else False)
+        self.add_controller(esc)
         self._build_ui()
         self._populate_tags()
 
@@ -734,6 +760,9 @@ class AnnotationsWindow(Adw.Window):
         self._no_passage_shown = False
         self._series_shown = None
         self._has_anchored = False
+        #: Nothing of this page's kind in the store at all — not "nothing
+        #: that matches". The right pane then says how to begin, once.
+        self._page_empty = False
         #: Which kind of thing the list is showing. A sermon manuscript is
         #: planned as a third, which is why this is a mode rather than a
         #: boolean and why the tabs are built from a table.
@@ -776,7 +805,7 @@ class AnnotationsWindow(Adw.Window):
         sidebar_header = Adw.HeaderBar()
         sidebar_tv.add_top_bar(sidebar_header)
 
-        tag_mgr_btn = Gtk.Button(icon_name='scriptura-view-list-bullet-symbolic')
+        tag_mgr_btn = Gtk.Button(icon_name='scriptura-tag-symbolic')
         tag_mgr_btn.set_tooltip_text(_('Manage tags'))
         set_accessible_label(tag_mgr_btn, _('Manage tags'))
         tag_mgr_btn.add_css_class('flat')
@@ -872,22 +901,82 @@ class AnnotationsWindow(Adw.Window):
     # ── Room to write ─────────────────────────────────────────────────────────
 
     def _install_shortcuts(self):
-        """F9 for the list, F11 for writing mode, Esc out of it.
+        """F9 for the list, F11 for writing mode, Esc out of it, Ctrl+W to
+        close.
 
-        This window bound no keys at all until now, so nothing here displaces
-        anything. F11 is deliberately the SAME key as the reading mode in the
-        main window: one gesture for "take the room away from the chrome and
-        give it to the words", wherever the reader is standing.
+        F11 is deliberately the SAME key as the reading mode in the main
+        window: one gesture for "take the room away from the chrome and give
+        it to the words", wherever the reader is standing.
+
+        Esc is taken twice. In CAPTURE, before anything below sees it, it
+        leaves writing mode: the toast overlay ate the first press, and a
+        close-on-Esc ran ahead of the mode's own shortcut, so Esc never left
+        the mode. Otherwise it goes down as usual — a popover, the find bar,
+        the reference card take theirs — and what comes back up closes the
+        window only when the reader is not typing (`_on_escape`).
         """
         ctl = Gtk.ShortcutController()
         ctl.set_scope(Gtk.ShortcutScope.GLOBAL)
         for accel, fn in (('F9', self._toggle_sidebar),
                           ('F11', self._toggle_writing_mode),
-                          ('Escape', self._leave_writing_mode)):
+                          ('Escape', self._on_escape),
+                          ('<Control>w', self._close_window),
+                          ('<Control>n', self._new_from_keys)):
             ctl.add_shortcut(Gtk.Shortcut.new(
                 Gtk.ShortcutTrigger.parse_string(accel),
                 Gtk.CallbackAction.new(lambda *_a, fn=fn: fn())))
         self.add_controller(ctl)
+
+        first = Gtk.EventControllerKey()
+        first.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        first.connect('key-pressed', lambda _c, keyval, _k, _s:
+                      self._escape_first(keyval))
+        self.add_controller(first)
+
+    def _escape_first(self, keyval):
+        """Esc in writing mode, before anything below can take it — unless
+        something open below is Esc's to close first. The find bar and the
+        reference card both stay up in writing mode, and each closes on Esc;
+        taking the key from them left the mode with the bar still open. Their
+        own Esc runs in the bubble phase, below the toast overlay, so they
+        still get it while the mode's toast shows."""
+        if keyval != Gdk.KEY_Escape or not self._writing_mode:
+            return False
+        ed = self._detail_stack.get_visible_child()
+        find = getattr(ed, 'find', None)
+        card = getattr(ed, '_ref_card', None)
+        tags = getattr(ed, '_tag_popover', None)
+        if ((find is not None and find.get_reveal_child())
+                or (card is not None and card.get_visible())
+                or (tags is not None and tags.get_visible())):
+            return False
+        return self._leave_writing_mode()
+
+    def _on_escape(self):
+        """Close the window, unless the reader is typing.
+
+        Esc is the key people press to dismiss things, and in a field it
+        closed the page they were writing in. Nothing was lost — the close
+        flushes — but it threw them out mid-sentence. Ctrl+W closes from
+        anywhere.
+        """
+        if self._leave_writing_mode():
+            return True
+        focus = self.get_focus()
+        if isinstance(focus, (Gtk.Text, Gtk.TextView)):
+            return False
+        self.close()
+        return True
+
+    def _close_window(self):
+        self.close()
+        return True
+
+    def _new_from_keys(self):
+        """Ctrl+N: what the pencil does — a sermon on the Sermons page, an
+        entry everywhere else."""
+        self._on_new_entry(None)
+        return True
 
     def _toggle_sidebar(self):
         self._split_view.set_show_sidebar(
@@ -1140,6 +1229,13 @@ class AnnotationsWindow(Adw.Window):
         self._empty_detail = Adw.StatusPage(
             icon_name='scriptura-document-edit-symbolic')
         self._empty_detail.set_vexpand(True)
+        # Shown only on a page with nothing on it yet: the one way in, where
+        # the only door used to be the small pencil in the sidebar header.
+        self._empty_new_btn = Gtk.Button()
+        self._empty_new_btn.add_css_class('pill')
+        self._empty_new_btn.set_halign(Gtk.Align.CENTER)
+        self._empty_new_btn.connect('clicked', self._on_new_entry)
+        self._empty_detail.set_child(self._empty_new_btn)
         self._sync_empty_detail()
         self._detail_stack.add_named(self._empty_detail, 'empty')
 
@@ -1199,7 +1295,7 @@ class AnnotationsWindow(Adw.Window):
         # the filter that is supposed to list every book the store holds.
         book_keys = [b for b in (sword_bridge._ALL_BOOKS
                                  + list(sword_bridge.DEUTEROCANON))
-                     if any(e['book'] == b for e in self._entries)]
+                     if any(b in _books_of(e) for e in self._entries)]
         all_tags = [_('All tags')] + sorted(
             {t for e in self._entries for t in e.get('tags', [])})
 
@@ -1283,7 +1379,7 @@ class AnnotationsWindow(Adw.Window):
             # only narrows within it.
             if e.get('kind') != (page_kind or 'mark'):
                 continue
-            if bf_key is not None and e['book'] != bf_key:
+            if bf_key is not None and bf_key not in _books_of(e):
                 continue
             if tf == 'notes' and not e['note']:
                 continue
@@ -1385,6 +1481,7 @@ class AnnotationsWindow(Adw.Window):
         # and a re-sort is not a change of what you are reading.
         open_key = (_entry_key(self._current_entry)
                     if self._current_entry is not None else None)
+        left = self._current_entry
 
         # Clear existing rows (also drops any prior footer).
         clear_children(self._list)
@@ -1399,17 +1496,7 @@ class AnnotationsWindow(Adw.Window):
         # verse-less there is no group above for "No passage" to be below.
         self._has_anchored = any(e['book'] is not None for e in self._filtered)
 
-        n = len(self._filtered)
-        # Per page: "126 entries" of marks beside "1 entry" of journal was
-        # one word doing two jobs in one window.
-        if self._mode == 'journal':
-            counted = ngettext('{n} entry', '{n} entries', n).format(n=n)
-        elif self._mode == 'sermons':
-            counted = ngettext('{n} sermon', '{n} sermons', n).format(n=n)
-        else:
-            counted = ngettext('{n} annotation', '{n} annotations',
-                               n).format(n=n)
-        self._count_lbl.set_text(counted)
+        self._recount()
 
         self._preserve = self._preserve_select
         self._preserve_select = None
@@ -1424,33 +1511,26 @@ class AnnotationsWindow(Adw.Window):
             page_kind = _WRITING_KIND.get(self._mode, 'mark')
             on_page = any(e.get('kind') == page_kind for e in self._entries)
             if on_page:
-                title = _('No matches')
-                desc = _('Try a different search or filter.')
-            elif self._mode == 'journal':
-                title = _('No journal entries yet')
-                desc = _('Write about a passage or about the day — '
-                         'the pencil above starts one.')
-            elif self._mode == 'sermons':
-                title = _('No sermons yet')
-                desc = _('Write a manuscript here, and collect verses into '
-                         'it from the reading page.')
-            else:
-                title = _('No annotations yet')
-                desc = _('Right-click a verse to highlight it or add a note.')
-            empty = compact_empty_state(
-                icon_name='scriptura-document-edit-symbolic',
-                title=title,
-                description=desc,
-            )
-            row = Gtk.ListBoxRow()
-            row.set_selectable(False)
-            row.set_activatable(False)
-            row.set_child(empty)
-            self._list.append(row)
+                empty = compact_empty_state(
+                    icon_name='scriptura-document-edit-symbolic',
+                    title=_('No matches'),
+                    description=_('Try a different search or filter.'),
+                )
+                row = Gtk.ListBoxRow()
+                row.set_selectable(False)
+                row.set_activatable(False)
+                row.set_child(empty)
+                self._list.append(row)
+            # Nothing yet: the right pane says so, once, with the way in.
+            self._page_empty = not on_page
+            self._sync_empty_detail()
             self._current_entry = None
             self._clear_detail_title()
             self._detail_stack.set_visible_child_name('empty')
             return
+        if self._page_empty:
+            self._page_empty = False
+            self._sync_empty_detail()
 
         # Render the first slice. If a preserved entry (set by save/delete)
         # still exists further down, keep materialising slices until it
@@ -1463,6 +1543,8 @@ class AnnotationsWindow(Adw.Window):
             target_row = self._append_rows()
 
         if target_row is not None:
+            if left is not None and target_row._entry is not left:
+                self._forget_if_unwritten(left)
             self._list.select_row(target_row)
             # row-selected fires asynchronously; populate immediately too
             # so the detail pane updates with the freshly-reloaded entry
@@ -1475,6 +1557,21 @@ class AnnotationsWindow(Adw.Window):
             self._current_entry = None
             self._clear_detail_title()
             self._detail_stack.set_visible_child_name('empty')
+
+    def _recount(self):
+        n = len(self._filtered)
+        # Per page: "126 entries" of marks beside "1 entry" of journal was
+        # one word doing two jobs in one window.
+        if self._mode == 'journal':
+            counted = ngettext('{n} entry', '{n} entries', n).format(n=n)
+        elif self._mode == 'sermons':
+            counted = ngettext('{n} sermon', '{n} sermons', n).format(n=n)
+        else:
+            counted = ngettext('{n} annotation', '{n} annotations',
+                               n).format(n=n)
+        self._count_lbl.set_text(counted)
+        # "0 annotations" above an empty state said the same thing twice.
+        self._count_lbl.set_visible(n > 0)
 
     def _append_rows(self):
         """Append the next _RENDER_CAP slice of self._filtered, then a
@@ -1693,7 +1790,7 @@ class AnnotationsWindow(Adw.Window):
         elif is_entry:
             when = _entry_day_label(entry)
         else:
-            when = _edited_label(entry)
+            when = _edited_label(entry, short=True)
         if when:
             when_lbl = Gtk.Label(label=when, xalign=1)
             when_lbl.add_css_class('dim-label')
@@ -1829,6 +1926,10 @@ class AnnotationsWindow(Adw.Window):
         # text, and _populate_detail is about to overwrite them. Flushing
         # after that point would file this entry's words under the next one.
         self._autosave.flush()
+        left = self._current_entry
+        if (left is not None and getattr(row, '_entry', None) is not None
+                and row._entry is not left):
+            self._forget_if_unwritten(left)
         if row is None or not hasattr(row, '_entry'):
             self._current_entry = None
             self._clear_detail_title()
@@ -1961,6 +2062,8 @@ class AnnotationsWindow(Adw.Window):
         if mode == self._mode:
             return
         self._autosave.flush()
+        if self._current_entry is not None:
+            self._forget_if_unwritten(self._current_entry)
         self._mode = mode
         if self._tabs.get_active_name() != mode:
             self._tabs.set_active_name(mode)
@@ -1989,8 +2092,68 @@ class AnnotationsWindow(Adw.Window):
         self._retitle()
         self._apply_filter()
 
+    def _forget_if_unwritten(self, entry):
+        """Take a new page the reader left without writing out of the list.
+
+        `start_entry` and `start_sermon` put a row up before anything is
+        stored — nothing is, until there are words. Left behind it stayed as
+        "Untitled entry", counted and with a bin, until the window reloaded.
+        Called after the flush, so a page with words in it is in the store
+        by now and stays.
+        """
+        store = {'entry': journal, 'sermon': sermons}.get(entry.get('kind'))
+        if store is None or store.get(entry['id']) is not None:
+            return
+        if entry in self._entries:
+            self._entries.remove(entry)
+        # After the selection settles: the list is mid-signal here.
+        GLib.idle_add(self._drop_row_of, entry)
+
+    def _drop_row_of(self, entry):
+        row = self._row_for_entry(entry)
+        if row is not None:
+            above = row.get_prev_sibling()
+            below = row.get_next_sibling()
+            self._list.remove(row)
+            # A group heading ("No passage", "No series") that headed only
+            # this row now heads nothing.
+            # Not when "Show more" follows: the rest of its group is below it.
+            if (above is not None and hasattr(above, '_series')
+                    and not hasattr(below, '_entry')
+                    and (below is None or below is not self._more_row)):
+                self._list.remove(above)
+                if self._no_passage_shown and entry.get('book') is None:
+                    self._no_passage_shown = False
+        self._filtered = [e for e in self._filtered if e is not entry]
+        self._recount()
+        return GLib.SOURCE_REMOVE
+
     def _sync_empty_detail(self):
-        """What the right-hand pane says with nothing open, per page."""
+        """What the right-hand pane says with nothing open, per page.
+
+        On a page with nothing on it the list stays blank and this pane
+        carries the one empty state, with the way in. Two used to stand side
+        by side, the right one saying "Pick an entry from the list" beside a
+        list with nothing in it.
+        """
+        self._empty_new_btn.set_visible(
+            self._page_empty and self._mode in ('journal', 'sermons'))
+        if self._page_empty:
+            if self._mode == 'journal':
+                title = _('No journal entries yet')
+                desc = _('Write about a passage or about the day.')
+                self._empty_new_btn.set_label(_('New journal entry'))
+            elif self._mode == 'sermons':
+                title = _('No sermons yet')
+                desc = _('Write a manuscript here, and collect verses into '
+                         'it from the reading page.')
+                self._empty_new_btn.set_label(_('New sermon'))
+            else:
+                title = _('No annotations yet')
+                desc = _('Right-click a verse to highlight it or add a note.')
+            self._empty_detail.set_title(title)
+            self._empty_detail.set_description(desc)
+            return
         if self._mode == 'sermons':
             title = _('No sermon selected')
             desc = _('Pick a sermon from the list to write in it.')

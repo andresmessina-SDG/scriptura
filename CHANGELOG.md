@@ -32,8 +32,44 @@ semver-ish — 0.x was the pre-Flathub testing track.
   quotes, bold and italic.
 - References written `Rom. 10:9`, `Psalm 23`, `Song of Songs 2:1`, `v. 48`
   and `vv. 45-46` now link, and headings of four to six `#` are styled.
+- **Read a note where it is.** Click the blue number of a verse with a note
+  to read the note and its tags on the page, with Edit note beside them.
+- An empty Journal or Sermons page offers New journal entry or New sermon.
+- Ctrl+N starts a journal entry or a sermon in the Annotations window, and
+  Ctrl+W closes it. The shortcuts window has a Writing section.
+- List rows give short dates ("Edited today", "14 Sep"), and a preview no
+  longer repeats a heading or runs list items together.
+
+### Changed
+
+- Esc no longer closes the Annotations window while you are typing in it;
+  it still closes it from the list.
+- The note editors on the reading page say Tags, not Topics.
+- A verse note is set like the journal: in your writing font, at the
+  reading width.
+- In a note, Add to "…" sits beside the verse it belongs to.
+- A sermon's preaching dates read "Preached 14 Sep", and Series and Part
+  are frameless like the title.
+- Manage tags has a tag icon of its own.
 
 ### Fixed
+
+- Esc now leaves writing mode. It used to do nothing while the mode's
+  message showed, then close the whole window.
+- Esc over a reference card closed the Annotations window with it.
+- A new entry or sermon left without a word stayed in the list as
+  "Untitled" until the window was reopened.
+- "1 sermon on this chapter" opened an empty Sermons page when the chapter
+  was not the sermon's first passage. The journal's door did the same.
+- An entry or sermon opened with its whole title selected, so the first key
+  replaced it.
+- A sermon's Part took letters and then saved no part at all. It takes only
+  numbers now.
+- Esc did not close the Tag Manager.
+- The shortcuts window said "No Shortcut" beside Ctrl + click and
+  Ctrl + scroll. It shows the Ctrl key.
+- Changing the writing font no longer moves the title, the tools, or the
+  page below them.
 
 - A heading exported from the journal came back as literal `####` when the
   file was imported again.

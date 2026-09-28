@@ -30,7 +30,7 @@ from gi.repository import Gdk, Gtk, Adw, GLib, Pango
 
 from a11y import set_accessible_label
 from gtk_utils import Autosave, clear_children
-from i18n import _, ngettext, book_label, format_date
+from i18n import _, ngettext, book_label, format_date, format_short_date
 import annotation_dialogs
 import annotations
 import church_year
@@ -39,6 +39,7 @@ import journal_markup
 from manuscript_find import FindBar
 import motion
 import sermons
+import writing_page
 from writing_page import (_BODY_MARGIN, _LIST_INSET, _LIVE, _SheetScroll,
                           _STYLES, _WritingView, WritingPageMixin,
                           refresh_writing_style)
@@ -292,6 +293,16 @@ class _Editor(Gtk.Box):
         focus.connect('leave', lambda _c: self._on_flush())
         widget.add_controller(focus)
 
+    def _unselect_title(self):
+        """Put the caret at the end of the title if focus selected all of
+        it. A selection the writer is making is never the whole title the
+        instant focus arrives, so it is left alone."""
+        bounds = self.title.get_selection_bounds()
+        text = self.title.get_text()
+        if text and bounds and tuple(bounds) == (0, len(text)):
+            self.title.select_region(-1, -1)
+        return GLib.SOURCE_REMOVE
+
     def _verse_text(self, book, chapter, verse):
         """The verse's own words, in the translation that fits the interface
         language, falling back to the one the reader has open.
@@ -480,6 +491,12 @@ class MarkEditor(_Editor):
         self.note.set_top_margin(10)
         self.note.set_bottom_margin(12)
         self.note.add_css_class('journal-note-field')
+        # Writing, so the writing face and the reading measure, as the
+        # journal body beside it is. Plain text still: nothing renders a
+        # note's notation.
+        self.note.add_css_class('writing-note')
+        writing_page._NOTES.add(self.note)
+        writing_page.ensure_writing_style()
         self.note.get_buffer().connect('changed', self._edited)
         self._watch_focus(self.note)
 
@@ -493,7 +510,8 @@ class MarkEditor(_Editor):
         # nothing renders its markup. One idiom for a field you write in —
         # which is the rule that took the card OFF both of them last pass,
         # and the rule that puts the edge back on both of them now.
-        note_scroll = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
+        note_scroll = _SheetScroll(self._fit_note, vexpand=True,
+                                   hexpand=True)
         note_scroll.set_policy(
             Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         note_scroll.set_child(self.note)
@@ -506,13 +524,14 @@ class MarkEditor(_Editor):
         # Into the sermon being written. A mark is where "this belongs in
         # Sunday's manuscript" is actually thought, and the note goes with
         # the verse — which is the one thing the reading page's own door
-        # cannot do, because there the note is not on screen.
+        # cannot do, because there the note is not on screen. It rides in
+        # the verse chip's row (`populate`): both send this verse somewhere,
+        # where alone between the note and the tags it belonged to neither.
         self._collect_btn = Gtk.Button()
         self._collect_btn.add_css_class('flat')
-        self._collect_btn.set_halign(Gtk.Align.START)
+        self._collect_btn.set_valign(Gtk.Align.CENTER)
         self._collect_btn.set_visible(False)
         self._collect_btn.connect('clicked', self._on_collect_clicked)
-        box.append(self._collect_btn)
 
         tags_lbl = Gtk.Label(label=_('Tags (comma-separated)'), xalign=0)
         tags_lbl.add_css_class('dim-label')
@@ -541,6 +560,7 @@ class MarkEditor(_Editor):
         if not is_cn:
             self._go_box.append(self._ref_chip(
                 ref, entry['book'], entry['chapter'], entry['app_verse'] or 1))
+        self._go_box.append(self._collect_btn)
         self._show_verse(entry)
 
         self._hl_row.set_visible(not is_cn)
@@ -563,6 +583,16 @@ class MarkEditor(_Editor):
         finally:
             self._loading = False
         self._sync_collect_button()
+
+    def _fit_note(self, width):
+        """Centre the note at the reading measure, as `_fit_page` does the
+        journal body."""
+        if width <= 0:
+            return
+        side = writing_page.note_measure(width)
+        if self.note.get_left_margin() != side:
+            self.note.set_left_margin(side)
+            self.note.set_right_margin(side)
 
     def _sync_collect_button(self):
         """Offered only when there is a sermon to add to. A door to nowhere
@@ -739,6 +769,13 @@ class _ProseEditor(WritingPageMixin, _Editor):
         self.title.set_placeholder_text(_(self.title_placeholder))
         self.title.add_css_class('journal-entry-heading')
         self.title.connect('realize', self._pin_title)
+        # An entry selects all of itself when focus arrives from anywhere
+        # but a click, so a page opened with the title focused lost it to
+        # the first key. A title is a line of the page, not a form field.
+        unselect = Gtk.EventControllerFocus()
+        unselect.connect('enter', lambda _c: GLib.idle_add(
+            self._unselect_title))
+        self.title.add_controller(unselect)
         self.title.connect('changed', self._edited)
         self._watch_focus(self.title)
         self._leaves_writing(self.title)
@@ -1015,7 +1052,8 @@ class _ProseEditor(WritingPageMixin, _Editor):
         return ctl
 
     def _body_shortcuts(self):
-        """Ctrl+B and Ctrl+I, local to the body.
+        """Ctrl+B and Ctrl+I, the styles, and Esc over the reference card, local
+        to the body.
 
         Local scope: they mean nothing outside a text buffer, and the
         window's own accelerators must keep working everywhere else in it.
@@ -1032,6 +1070,10 @@ class _ProseEditor(WritingPageMixin, _Editor):
                 trigger=Gtk.ShortcutTrigger.parse_string(keys),
                 action=Gtk.CallbackAction.new(
                     lambda _w, _a, m=marker: self._set_style(m) or True)))
+        ctl.add_shortcut(Gtk.Shortcut(
+            trigger=Gtk.ShortcutTrigger.parse_string('Escape'),
+            action=Gtk.CallbackAction.new(
+                lambda *_a: self._dismiss_ref_card())))
         return ctl
 
     def _on_tool(self, _btn, kind, marker):
@@ -1855,8 +1897,11 @@ class SermonEditor(_ProseEditor):
         self.series = Gtk.Entry()
         # Not hexpand: a full-width filled box for a series name was the
         # loudest thing in a pane whose title and big idea are frameless, and
-        # a series name is a few words.
+        # a series name is a few words. Frameless too, as they are: the
+        # caption says what it holds and the caret says where to type.
         self.series.set_width_chars(24)
+        self.series.set_has_frame(False)
+        self.series.add_css_class('sermon-meta-field')
         self.series.set_placeholder_text(_('None'))
         self.series.connect('changed', self._series_edited)
         self._watch_focus(self.series)
@@ -1883,9 +1928,14 @@ class SermonEditor(_ProseEditor):
         self.part.set_width_chars(3)
         self.part.set_max_width_chars(3)
         self.part.set_input_purpose(Gtk.InputPurpose.DIGITS)
+        # A part is saved only as a number, so the field takes only digits:
+        # a typed "two" used to sit there and be saved as no part at all.
+        self.part.connect('changed', self._digits_only)
         # A series in progress does not always know its length, so the part
         # may simply be blank — "part 3 of ?" has to be sayable.
         self.part.set_placeholder_text('—')
+        self.part.set_has_frame(False)
+        self.part.add_css_class('sermon-meta-field')
         self.part.connect('changed', self._series_edited)
         self._watch_focus(self.part)
         self._watch_grouping(self.part)
@@ -2143,18 +2193,20 @@ class SermonEditor(_ProseEditor):
         """A filled chip, where a passage is outlined: a preaching date is
         the reader's own record, not Scripture's place."""
         try:
-            label = format_date(date.fromisoformat(iso))
+            day = date.fromisoformat(iso)
+            label = format_date(day)
+            short = format_short_date(day, relative=False)
         except ValueError:
-            label = iso
+            label = short = iso
         pair = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
         pair.add_css_class('chip-pair')
-        chip = Gtk.Button(label=label)
+        # The chip says what the date is. A bare date beside "Add a date"
+        # left a sighted reader to guess; only a screen reader heard
+        # "Preached". Short on the chip, whole for the screen reader.
+        chip = Gtk.Button(label=_('Preached {date}').format(date=short))
         chip.add_css_class('tag-chip')
         chip.add_css_class('chip-leading')
         chip.set_can_focus(False)
-        # The visible "Preached" caption is gone from the metadata line, so
-        # the chip says it: sighted readers get it from the neighbouring
-        # "Add a date", and a screen reader gets it here.
         set_accessible_label(chip, _('Preached {date}').format(date=label))
         pair.append(chip)
         drop = Gtk.Button(icon_name='scriptura-window-close-symbolic')
@@ -2168,7 +2220,7 @@ class SermonEditor(_ProseEditor):
 
     def _add_date_chip(self):
         button = Gtk.MenuButton()
-        button.set_child(Gtk.Label(label=_('Add a date')))
+        button.set_child(Gtk.Label(label=_('Add a date preached')))
         button.add_css_class('add-chip')
         popover = Gtk.Popover()
         calendar = Gtk.Calendar()
@@ -2318,6 +2370,17 @@ class SermonEditor(_ProseEditor):
         self._day.set_visible(bool(name))
         if name:
             self._day.set_text(_('Written for {day}').format(day=name))
+
+    def _digits_only(self, entry):
+        """Keep only the digits of what was typed or pasted, so "Part 3"
+        lands as 3. On `changed`, not `insert-text`: PyGObject cannot hand
+        that signal's position back, and GLib warned on every key."""
+        text = entry.get_text()
+        digits = ''.join(c for c in text if c.isdigit())
+        if digits != text:
+            at = entry.get_position()
+            entry.set_text(digits)
+            entry.set_position(min(at, len(digits)))
 
     def _series_value(self):
         """`{name, part}` from the two fields, or None for no series.

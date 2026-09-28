@@ -4557,10 +4557,14 @@ class BiblePane(Gtk.Box):
         keyboard verse cursor, so the two can never disagree about what a
         position means."""
         targets = {'verse': None, 'strong': None, 'morph': None,
-                   'devref': None, 'fnote': None, 'phrase_tag': None}
+                   'devref': None, 'fnote': None, 'phrase_tag': None,
+                   'note': False}
         for tag in it.get_tags():
             name = tag.get_property('name')
-            if name and name.startswith('strg:'):
+            if name == '_note_marker':
+                # The verse number of a verse with a note, drawn bold blue.
+                targets['note'] = True
+            elif name and name.startswith('strg:'):
                 targets['strong'] = name[5:]
             elif name and name.startswith('vnum_'):
                 try:
@@ -4635,6 +4639,12 @@ class BiblePane(Gtk.Box):
             self._announce_verse_state(verse_num)
             # Resume keyboard stepping from wherever the pointer just landed.
             self._cursor.sync_to(verse_num)
+        if targets['note'] and verse_num is not None:
+            # The reader's own note, read where it is. Reading it used to
+            # take the menu and the editor. No broadcast, as for a footnote:
+            # the other pane must not reflow under the open peek.
+            self._peek.show_note_peek(verse_num, it)
+            return
         if strong_num and self._on_word_click:
             # Resolve phrase context — the full English phrase text and
             # the full Strong's chain on the source <w> tag — so the

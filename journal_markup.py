@@ -353,8 +353,32 @@ _PREVIEW_SCAN = 400
 
 
 def preview(text: str) -> str:
-    """The one-line preview a list row shows for `text`."""
-    return plain(text[:_PREVIEW_SCAN])
+    """The one-line preview a list row shows for `text`.
+
+    Headings and rules are left out: the row already leads with the title,
+    and a manuscript's first heading is usually that title again — a sermon
+    row read "The Sower Four soils Read Mark 4:1-9. the path rocky ground".
+    List items are set apart with ' · ', where bare spaces ran them into one
+    broken sentence. A body that is nothing but headings keeps them, or the
+    row would say nothing at all. `plain` itself is unchanged: the word count
+    reads it.
+    """
+    head = text[:_PREVIEW_SCAN]
+    parts: list[tuple[bool, str]] = []
+    for line in head.split('\n'):
+        if (_HEADING.match(line) or _SUBHEADING.match(line)
+                or _RULE.match(line)):
+            continue
+        words = plain(line)
+        if words:
+            parts.append((bool(_BULLET.match(line) or _NUMBER.match(line)),
+                          words))
+    if not parts:
+        return plain(head)
+    out = parts[0][1]
+    for (was_item, _w), (item, words) in zip(parts, parts[1:]):
+        out += (' · ' if was_item and item else ' ') + words
+    return out
 
 
 def to_markdown(text: str) -> str:
