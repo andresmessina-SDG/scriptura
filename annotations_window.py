@@ -902,7 +902,7 @@ class AnnotationsWindow(Adw.Window):
 
     def _install_shortcuts(self):
         """F9 for the list, F11 for writing mode, Esc out of it, Ctrl+W to
-        close.
+        close, F5 to preach the open sermon.
 
         F11 is deliberately the SAME key as the reading mode in the main
         window: one gesture for "take the room away from the chrome and give
@@ -921,7 +921,8 @@ class AnnotationsWindow(Adw.Window):
                           ('F11', self._toggle_writing_mode),
                           ('Escape', self._on_escape),
                           ('<Control>w', self._close_window),
-                          ('<Control>n', self._new_from_keys)):
+                          ('<Control>n', self._new_from_keys),
+                          ('F5', self._deliver_sermon)):
             ctl.add_shortcut(Gtk.Shortcut.new(
                 Gtk.ShortcutTrigger.parse_string(accel),
                 Gtk.CallbackAction.new(lambda *_a, fn=fn: fn())))
@@ -932,6 +933,13 @@ class AnnotationsWindow(Adw.Window):
         first.connect('key-pressed', lambda _c, keyval, _k, _s:
                       self._escape_first(keyval))
         self.add_controller(first)
+
+    def _deliver_sermon(self):
+        """The open sermon, full-screen to preach from — from the list as
+        well as from inside the manuscript."""
+        ed = self._detail_stack.get_visible_child()
+        if ed is self._sermon_editor and self._current_entry is not None:
+            ed._deliver()
 
     def _escape_first(self, keyval):
         """Esc in writing mode, before anything below can take it — unless

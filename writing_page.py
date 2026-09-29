@@ -432,6 +432,8 @@ class WritingPageMixin:
         table.lookup('md-bullet').set_property('left-margin', side + _LIST_INSET)
         for marker, tag in self._hangs.items():
             self._hang(tag, marker, side)
+        self._room = width - 2 * side
+        self._restyle_tables()
         self.body.queue_draw()
 
     def _hang(self, tag, marker, side):
@@ -444,7 +446,7 @@ class WritingPageMixin:
         starts a marker's width to the left, and the wrapped lines come back
         to the edge the words began on.
         """
-        edge = side + (0 if marker[0] == '#' else
+        edge = side + (0 if marker[0] == '#' or '|' in marker else
                        _QUOTE_INSET if marker[0] == '>' else _LIST_INSET)
         width = min(self._marker_width(marker), max(0, side - 2))
         tag.set_property('left-margin', edge - width)
@@ -497,7 +499,7 @@ class WritingPageMixin:
     _LINE_TAGS = ('md-strong', 'md-emphasis', 'md-heading', 'md-subheading',
                   'md-rule', 'md-quote', 'md-bullet', 'md-marker',
                   'md-hidden', 'md-list-number', 'md-level-1', 'md-level-2',
-                  'md-bullet-mark')
+                  'md-bullet-mark', 'md-ghost', 'md-table-rule')
 
     def _restyle_lines(self, buf, first, last):
         """Re-read lines `first`..`last`: the subset's own spans, then what
@@ -506,10 +508,14 @@ class WritingPageMixin:
 
         A list's number is never hidden. It is not notation standing in for
         a bullet the page can draw; it is the item's number.
+
+        A table is read whole: its columns are measured across every row,
+        so the range widens to take in any table it touches.
         """
         total = buf.get_line_count()
         first = max(0, min(first, total - 1))
         last = max(first, min(last, total - 1))
+        first, last = self._widen_to_tables(buf, first, last)
         start = buf.get_iter_at_line(first)[1]
         if last + 1 < total:
             end = buf.get_iter_at_line(last + 1)[1]
@@ -517,18 +523,28 @@ class WritingPageMixin:
             end = buf.get_end_iter()
         for tag in self._LINE_TAGS:
             buf.remove_tag_by_name(tag, start, end)
-        for hang in self._hangs.values():
-            buf.remove_tag(hang, start, end)
+        for pool in (self._hangs, self._pads, self._rules):
+            for tag in pool.values():
+                buf.remove_tag(tag, start, end)
         shown = self._shown_lines()
         at = start.get_offset()
         # Hidden markers included: they are the entry, whatever is drawn.
-        for n, line in enumerate(buf.get_text(start, end, True).split('\n'),
-                                 start=first):
+        lines = buf.get_text(start, end, True).split('\n')
+        kinds = journal_markup.table_kinds(lines)
+        table = []
+        for n, (line, kind) in enumerate(zip(lines, kinds), start=first):
             revealed = shown is not None and shown[0] <= n <= shown[1]
-            number = journal_markup.numbered_marker(line)
-            for a, b, tag in journal_markup.spans(line):
+            number = '' if kind else journal_markup.numbered_marker(line)
+            spans = (journal_markup.table_spans(line, kind) if kind
+                     else journal_markup.spans(line))
+            for a, b, tag in spans:
                 s = buf.get_iter_at_offset(at + a)
                 e = buf.get_iter_at_offset(at + b)
+                if tag == 'md-pipe':
+                    buf.apply_tag_by_name('md-marker', s, e)
+                    if not revealed:
+                        buf.apply_tag_by_name('md-ghost', s, e)
+                    continue
                 buf.apply_tag_by_name(tag, s, e)
                 if tag != 'md-marker':
                     continue
@@ -539,14 +555,167 @@ class WritingPageMixin:
                     buf.apply_tag_by_name('md-bullet-mark', s, e)
                 if not revealed:
                     buf.apply_tag_by_name('md-hidden', s, e)
-            marker = journal_markup.line_marker(line)
             whole = (buf.get_iter_at_offset(at),
                      buf.get_iter_at_offset(at + len(line)))
+            if table and kind in ('', 'head'):
+                self._align_table(buf, table)
+                table = []
+            if kind in ('head', 'row'):
+                table.append((at, line, spans, revealed))
+                lead = journal_markup.table_lead(line)
+                if lead:
+                    buf.apply_tag(self._hang_tag(lead), *whole)
+            elif kind == 'rule':
+                table.append((at, line, None, revealed))
+            marker = '' if kind else journal_markup.line_marker(line)
             if marker.startswith('#') and len(marker) in self._LEVEL_SCALE:
                 buf.apply_tag_by_name(f'md-level-{len(marker) - 1}', *whole)
             if marker and (revealed or number):
                 buf.apply_tag(self._hang_tag(marker), *whole)
             at += len(line) + 1
+        if table:
+            self._align_table(buf, table)
+
+    # ── Tables ──────────────────────────────────────────────────────────
+    #
+    # A table's pipes fold away off the line being written, as every other
+    # marker does, but they keep their room: each cell is opened out by
+    # letter spacing on the space before the pipe that ends it, so the next
+    # cell starts on its column. Pango adds a lone character's spacing
+    # whole, after it (measured), so the padding is exact. The pipes stay in
+    # the layout, dimmed or clear, so the caret coming to a row changes its
+    # ink and not its shape.
+
+    def _widen_to_tables(self, buf, first, last):
+        """`first`..`last` grown to the whole run of piped lines around it,
+        so a table is always restyled as one."""
+        total = buf.get_line_count()
+        while first > 0 and '|' in self._line_text(buf, first - 1):
+            first -= 1
+        while last + 1 < total and '|' in self._line_text(buf, last + 1):
+            last += 1
+        return first, last
+
+    def _align_table(self, buf, rows):
+        """Line up the columns of one table. `rows` holds each of its lines
+        as (offset, text, spans, revealed); the delimiter row has no spans.
+
+        The columns are set by the rows as they read with their markers
+        folded, so a row the caret opens, whose inline markers take room,
+        pads itself to the same columns rather than moving every other row.
+        A table wider than the column is left as written, pipes showing:
+        lined up, it would only wrap.
+        """
+        cells = [journal_markup.table_cells(line) if spans is not None
+                 else None for _at, line, spans, _r in rows]
+        folded = [self._cell_xs(line, spans, False, c)
+                  for (_at, line, spans, _r), c in zip(rows, cells)
+                  if spans is not None]
+        gap = self._column_gap()
+        columns = max(len(xs) - 1 for xs in folded)
+        targets = [0.0]
+        for j in range(1, columns):
+            targets.append(gap + max(targets[j - 1] + xs[j] - xs[j - 1]
+                                     for xs in folded if len(xs) > j + 1))
+        width = max(targets[len(xs) - 2] + xs[-1] - xs[-2] for xs in folded)
+        if self._room > 0 and width > self._room:
+            start = buf.get_iter_at_offset(rows[0][0])
+            end = buf.get_iter_at_offset(rows[-1][0] + len(rows[-1][1]))
+            buf.remove_tag_by_name('md-ghost', start, end)
+            return
+        for (at, line, spans, revealed), row_cells in zip(rows, cells):
+            if spans is None:
+                if not revealed:
+                    buf.apply_tag(self._rule_tag(round(width)),
+                                  buf.get_iter_at_offset(at),
+                                  buf.get_iter_at_offset(at + len(line)))
+                continue
+            xs = self._cell_xs(line, spans, revealed, row_cells)
+            moved = 0.0
+            for j in range(1, len(xs) - 1):
+                pad = max(0.0, targets[j] - xs[j] - moved)
+                moved += pad
+                pipe = row_cells[j][0]
+                where = pipe - 1 if pipe > 0 and line[pipe - 1] == ' ' else pipe
+                s = buf.get_iter_at_offset(at + where)
+                e = buf.get_iter_at_offset(at + where + 1)
+                buf.apply_tag(self._pad_tag(round(pad)), s, e)
+
+    def _cell_xs(self, line, spans, revealed, cells):
+        """Where each cell of `line` starts, and where its last one ends, in
+        pixels from the first cell's start — laid out as the view lays the
+        line out, hidden markers left out, with no padding."""
+        hidden = [False] * len(line)
+        if not revealed:
+            for a, b, tag in spans:
+                if tag == 'md-marker':
+                    hidden[a:b] = [True] * (b - a)
+        before = [0]
+        for ch, gone in zip(line, hidden):
+            before.append(before[-1] + (0 if gone else len(ch.encode())))
+        text = ''.join(ch for ch, gone in zip(line, hidden) if not gone)
+        layout = self.body.create_pango_layout(text)
+        attrs = Pango.AttrList()
+        for a, b, tag in spans:
+            if tag in ('md-pipe', 'md-marker'):
+                attr = Pango.attr_scale_new(0.8)
+            elif tag == 'md-strong':
+                attr = Pango.attr_weight_new(Pango.Weight.BOLD)
+            elif tag == 'md-emphasis':
+                attr = Pango.attr_style_new(Pango.Style.ITALIC)
+            else:
+                continue
+            attr.start_index, attr.end_index = before[a], before[b]
+            attrs.insert(attr)
+        layout.set_attributes(attrs)
+
+        def x(i):
+            return layout.index_to_pos(before[i]).x / Pango.SCALE
+        xs = [x(start) for _pipe, start, _end in cells]
+        xs.append(x(cells[-1][2]))
+        return [v - xs[0] for v in xs]
+
+    def _restyle_tables(self):
+        """Re-read every table: a new face or column changes their widths."""
+        buf = self.body.get_buffer()
+        lines = buf.get_text(*buf.get_bounds(), True).split('\n')
+        n = 0
+        while n < len(lines):
+            if '|' in lines[n]:
+                first = n
+                while n + 1 < len(lines) and '|' in lines[n + 1]:
+                    n += 1
+                self._restyle_lines(buf, first, n)
+            n += 1
+
+    def _column_gap(self):
+        """The room between one column's longest cell and the next: an em
+        of the body's face, on top of the folded pipe's own."""
+        return self.body.create_pango_layout('\u2003').get_pixel_size()[0]
+
+    def _pad_tag(self, px):
+        tag = self._pads.get(px)
+        if tag is None:
+            tag = self.body.get_buffer().create_tag(
+                None, letter_spacing=px * Pango.SCALE)
+            self._pads[px] = tag
+        return tag
+
+    def _rule_tag(self, px):
+        """A tag that carries a table's width to the line drawn under its
+        header, which `_draw_page` reads back."""
+        tag = self._rules.get(px)
+        if tag is None:
+            tag = self.body.get_buffer().create_tag(None)
+            self._rules[px] = tag
+        return tag
+
+    def _table_width(self, it):
+        """The width a table's rule line carries, or None."""
+        for px, tag in self._rules.items():
+            if it.has_tag(tag):
+                return px
+        return None
 
     # ── Which lines show their markers ──────────────────────────────────
     #
@@ -641,6 +810,9 @@ class WritingPageMixin:
             if not (shown is not None and shown[0] <= n <= shown[1]):
                 if it.has_tag(rule):
                     self._draw_rule(snapshot, ink, side, right, y + h / 2)
+                elif (width := self._table_width(it)) is not None:
+                    self._draw_rule(snapshot, ink, side, side + width,
+                                    y + h / 2)
                 elif it.has_tag(bullet) and it.get_char() in ('-', '*'):
                     self._draw_bullet(snapshot, ink, side, y, it.get_char())
             if not it.forward_line():

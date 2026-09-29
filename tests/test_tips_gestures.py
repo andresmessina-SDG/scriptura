@@ -81,7 +81,10 @@ EXPECTED_GESTURE_SITES = {
     # The seventh is a focus controller on the title that undoes the
     # select-all an entry does when focus arrives, so the first key typed
     # does not replace the title. Nothing to discover: it removes a trap.
-    'annotation_editors.py': 7,
+    #
+    # The eighth takes Tab inside a table, to move from cell to cell. A key,
+    # not a gesture: the Keyboard Shortcuts window lists it under Writing.
+    'annotation_editors.py': 8,
     'archaeology_reader.py': 6,
     'crossref_panel.py': 2,
     # The genealogy charts take a click and a motion controller each. Both
@@ -110,6 +113,9 @@ EXPECTED_GESTURE_SITES = {
     # The chapter find bar takes Shift+Enter for the previous match, the same
     # key and tooltip as the manuscript's find bar. A key, not a gesture.
     'pane_search.py': 1,
+    # The delivery view's keys: scroll, heading to heading, Esc to leave.
+    # Keys, not gestures, and the view's own foot line names them.
+    'sermon_delivery.py': 1,
     # Two of them are the mouse's back and forward buttons: invisible, so
     # they have a Reading row.
     'window.py': 11,

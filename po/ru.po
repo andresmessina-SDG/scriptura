@@ -8153,6 +8153,9 @@ msgstr ""
 msgid "Choose passage (Ctrl+L)"
 msgstr "Выбрать отрывок (Ctrl+L)"
 
+msgid "Scroll to change chapter"
+msgstr "Прокрутка меняет главу"
+
 #: window.py:412
 msgid "Choose passage"
 msgstr "Выбрать отрывок"
@@ -8489,14 +8492,6 @@ msgstr "Первый стих текущей главы"
 #: window.py:2977
 msgid "Last verse of current chapter"
 msgstr "Последний стих текущей главы"
-
-#: window.py:2978
-msgid "Cycle chapters with the mouse wheel"
-msgstr "Прокрутка глав колесиком мыши"
-
-#: window.py:2978
-msgid "Scroll over title"
-msgstr "Прокрутка над заголовком"
 
 #: window.py:2980
 msgid "Reading with the keyboard"
@@ -10775,6 +10770,24 @@ msgstr "Основной текст, заголовок, подзаголово�
 #: window.py
 msgid "Next or previous match"
 msgstr "Следующее или предыдущее совпадение"
+
+msgid "Next or previous table cell"
+msgstr "Следующая или предыдущая ячейка таблицы"
+
+msgid "Preach from this (F5)"
+msgstr "Проповедовать по этому тексту (F5)"
+
+msgid "Preach from this"
+msgstr "Проповедовать по этому тексту"
+
+msgid "Preach a sermon full-screen"
+msgstr "Проповедь на весь экран"
+
+msgid "Time since you began"
+msgstr "Время с начала"
+
+msgid "↑ ↓ scroll · ← → headings · Esc leave"
+msgstr "↑ ↓ прокрутка · ← → заголовки · Esc выход"
 
 #: window.py
 msgid "Go straight to a reference"

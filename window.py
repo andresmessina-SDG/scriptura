@@ -497,7 +497,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._ref_btn.set_always_show_arrow(True)
         self._ref_btn.add_css_class('flat')
         self._ref_btn.add_css_class('reference-title-button')
-        self._ref_btn.set_tooltip_text(_('Choose passage (Ctrl+L)'))
+        self._ref_btn.set_tooltip_text(_('Choose passage (Ctrl+L)') + '\n'
+                                       + _('Scroll to change chapter'))
         set_accessible_label(self._ref_btn, _('Choose passage'))
         self._ref_pop = Gtk.Popover()
         self._ref_pop.set_has_arrow(True)
@@ -3450,11 +3451,10 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
     #               _action_accels (single source of truth — can't drift).
     #   'accel'   → value is an accelerator string handled elsewhere
     #               (the contextual key controller).
-    #   'literal' → value is plain text for input that isn't a key accel
-    #               (mouse wheel gestures).
     #   'gesture' → value is (modifier accel, text): a gesture made with a key
-    #               held. The key draws as a keycap; a bare 'literal' row
-    #               drew "No Shortcut", which reads as if there were none.
+    #               held. The key draws as a keycap. A gesture with no key
+    #               has no row: Adw.ShortcutsItem draws "No Shortcut" beside
+    #               it, so scrolling over the title is told in its tooltip.
     _SHORTCUT_SECTIONS = [
         (N_('Navigation'), [
             (N_('Quick jump to any reference (e.g. John 3:16)'), 'action', 'goto'),
@@ -3466,7 +3466,6 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             (N_('Next book'), 'action', 'next-book'),
             (N_('First verse of current chapter'), 'accel', 'Home'),
             (N_('Last verse of current chapter'), 'accel', 'End'),
-            (N_('Cycle chapters with the mouse wheel'), 'literal', N_('Scroll over title')),
         ]),
         (N_('Reading with the keyboard'), [
             (N_('Move between verses'), 'accel', 'Up Down'),
@@ -3515,6 +3514,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
              '<Ctrl>0 <Ctrl>1 <Ctrl>2 <Ctrl>3'),
             (N_('Find and replace'), 'accel', '<Ctrl>f <Ctrl>h'),
             (N_('Next or previous match'), 'accel', '<Ctrl>g <Ctrl><Shift>g'),
+            (N_('Next or previous table cell'), 'accel', 'Tab <Shift>Tab'),
+            (N_('Preach a sermon full-screen'), 'accel', 'F5'),
             (N_('Go straight to a reference'), 'gesture', ('<Control>', N_('Ctrl + click'))),
             (N_('Close the window'), 'accel', '<Ctrl>w'),
         ]),
@@ -3540,16 +3541,13 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         is why a hand-rolled Adw.Dialog used to live here). Built from
         _SHORTCUT_SECTIONS; _action_accels stays the single source of truth
         for action accelerators, so the dialog and the dispatch can't
-        drift. 'literal' rows (mouse / scroll gestures that aren't key
-        accelerators) render as title + subtitle with no key caps."""
+        drift. 'gesture' rows draw the held key as a keycap, with the
+        gesture as the subtitle."""
         dialog = Adw.ShortcutsDialog()
         for section, rows in self._SHORTCUT_SECTIONS:
             sec = Adw.ShortcutsSection.new(_(section))
             for desc, kind, value in rows:
-                if kind == 'literal':
-                    item = Adw.ShortcutsItem.new(_(desc), '')
-                    item.set_subtitle(_(value))
-                elif kind == 'gesture':
+                if kind == 'gesture':
                     item = Adw.ShortcutsItem.new(_(desc), value[0])
                     item.set_subtitle(_(value[1]))
                 else:

@@ -602,6 +602,31 @@ separator.journal-divider { background-color: alpha(@borders, 0.3); }
     opacity: 1;
 }
 
+/* The delivery view (sermon_delivery.py): dark whatever the theme — a lit
+ * page is glare in a dim church. The text view carries the ground itself:
+ * a clear one leaves trails behind a scroll. Cue gold is set on its tag. */
+.sermon-delivery,
+textview.delivery-text,
+textview.delivery-text > text {
+    background-color: #14130f;
+    color: #f0ece3;
+}
+.delivery-top {
+    padding: 28px 40px 12px;
+    color: #9a9287;
+    font-size: 15px;
+}
+.delivery-clock {
+    font-feature-settings: "tnum";
+    font-size: 17px;
+    letter-spacing: 0.04em;
+}
+.delivery-foot {
+    padding: 10px 40px 18px;
+    color: #7d766c;
+    font-size: 12px;
+}
+
 /* The body sits ON the sheet, so it draws no background of its own — the
  * .journal-paper under it is the paper. */
 .journal-entry-body { font-size: 1.05em; background: none; }

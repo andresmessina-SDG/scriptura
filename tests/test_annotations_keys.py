@@ -400,13 +400,13 @@ def test_escape_closes_the_tag_manager(isolated, display):
 
 
 def test_a_gesture_with_a_key_shows_the_key():
-    """A 'literal' row draws "No Shortcut" beside its text, so Ctrl + click
+    """A row with no key draws "No Shortcut" beside its text, so Ctrl + click
     read as if it had no shortcut at all. A gesture made with a key held
-    is a 'gesture' row, and the key draws as a keycap."""
+    is a 'gesture' row, and the key draws as a keycap; a gesture with no key
+    has no row at all."""
     for _section, rows in window.BibleWindow._SHORTCUT_SECTIONS:
         for desc, kind, value in rows:
-            if kind == 'literal':
-                assert 'Ctrl' not in value, desc
+            assert kind in ('action', 'accel', 'gesture'), desc
             if kind == 'gesture':
                 ok, _key, mods = Gtk.accelerator_parse(value[0])
                 assert ok and mods, desc
