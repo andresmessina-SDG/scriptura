@@ -28,6 +28,7 @@ import family_read
 from family_card import paint_track, redraw_on_contrast
 import content
 import journal
+import motion
 import sermons
 import settings
 import export_dialog
@@ -365,7 +366,8 @@ def build_study_menu(pane, verses, x, y, anchor=None):
 
     stack = Gtk.Stack()
     stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
-    stack.set_transition_duration(140)
+    stack.set_transition_duration(motion.DURATION_SHORT)
+    motion.follow_reduced_motion(stack)
     # The width is shared so the menu never jumps sideways mid-slide; the
     # height is not, so a short page is not padded out to the tall one.
     stack.set_hhomogeneous(True)

@@ -562,6 +562,7 @@ class GenealogyReader:
         self._stack.set_transition_type(
             Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
         self._stack.set_transition_duration(motion.DURATION_SHORT)
+        motion.follow_reduced_motion(self._stack)
         self._root.append(self._stack)
         self._root.append(self._build_foot())
 

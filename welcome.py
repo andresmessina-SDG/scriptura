@@ -27,6 +27,7 @@ import catena_bridge
 import content
 import ebible_bridge
 import fetch_errors
+import motion
 import onboarding
 import settings
 import i18n
@@ -442,7 +443,7 @@ class WelcomeWindow(Adw.ApplicationWindow):
         # language to offer — a choice of one is furniture.
         self._stack = Gtk.Stack()
         self._stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
-        self._stack.set_transition_duration(150)
+        self._stack.set_transition_duration(motion.DURATION_SHORT)
         if self._offers_a_language_choice():
             self._stack.add_named(self._build_language_page(), 'language')
         self._stack.add_named(self._build_choose(), 'choose')
@@ -710,7 +711,7 @@ class WelcomeWindow(Adw.ApplicationWindow):
         toolbar_view.add_top_bar(self._build_header())
         self._stack = Gtk.Stack()
         self._stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
-        self._stack.set_transition_duration(150)
+        self._stack.set_transition_duration(motion.DURATION_SHORT)
         if self._offers_a_language_choice():
             self._stack.add_named(self._build_language_page(), 'language')
         self._stack.add_named(self._build_choose(), 'choose')

@@ -1181,6 +1181,7 @@ class AnnotationsWindow(Adw.Window):
             Gtk.RevealerTransitionType.SLIDE_DOWN)
         self._filter_revealer.set_transition_duration(
             motion.DURATION_STANDARD)
+        motion.follow_reduced_motion(self._filter_revealer)
         self._filter_revealer.set_child(grid)
         filter_region.append(self._filter_revealer)
         sidebar.append(filter_region)
@@ -1222,7 +1223,7 @@ class AnnotationsWindow(Adw.Window):
         self._detail_stack = Gtk.Stack()
         self._detail_stack.set_transition_type(
             Gtk.StackTransitionType.CROSSFADE)
-        self._detail_stack.set_transition_duration(150)
+        self._detail_stack.set_transition_duration(motion.DURATION_SHORT)
 
         # Retitled per page in `_sync_empty_detail`: "Pick an annotation" is
         # the wrong sentence to read beside a list of sermons.

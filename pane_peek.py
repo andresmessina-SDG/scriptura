@@ -748,7 +748,7 @@ class PeekController:
             tabs.set_margin_bottom(7)
             stack = Gtk.Stack()
             stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
-            stack.set_transition_duration(120)
+            stack.set_transition_duration(motion.DURATION_SHORT)
             stack.set_vhomogeneous(False)
             btns: dict = {}
 

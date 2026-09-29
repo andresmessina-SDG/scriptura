@@ -141,6 +141,12 @@ class _Decoration:
         return self.enabled is None or bool(self.enabled(view))
 
 
+def _flash_colour(view):
+    """The navigation flash's band, scaled by how far it has faded."""
+    return (f'rgba({view._FLASH_RGB},'
+            f'{view._FLASH_ALPHA * view._flash_fade:.3f})')
+
+
 _BELOW = Gtk.TextViewLayer.BELOW_TEXT
 _ABOVE = Gtk.TextViewLayer.ABOVE_TEXT
 
@@ -156,7 +162,7 @@ _DECORATIONS = (
     _Decoration('search match (current)', _BELOW, '_search_hl_cur', 'band',
                 lambda v: v._SEARCH_CUR_COLOR),
     _Decoration('navigation flash', _BELOW, '_flash', 'band',
-                lambda v: v._FLASH_COLOR),
+                _flash_colour),
     _Decoration('annotation underline', _BELOW, '_ul_text', 'underline',
                 _text_colour),
     # The rule and the veil share `_cur_unit` — either can run without the
@@ -223,7 +229,10 @@ class BibleTextView(Gtk.TextView):
     # as "you are here" against the soft bands on the other matches (Safari's
     # yellow-all / orange-current split, kept in one colour family).
     _SEARCH_CUR_COLOR = 'rgba(224,150,36,0.85)'
-    _FLASH_COLOR = 'rgba(232,120,32,0.44)'    # orange, navigation flash
+    _FLASH_RGB = '232,120,32'                 # orange, navigation flash
+    _FLASH_ALPHA = 0.44
+    # How far the flash has faded: 1 while it holds, down to 0 as it leaves.
+    _flash_fade = 1.0
     # Annotation + lexicon underlines are painted (not Pango underlines) so they
     # stay uniform under the 200% verse-1 drop cap. Thickness, and the muted
     # accent of the hover/lexicon dotted underline (per theme).
@@ -474,6 +483,12 @@ class BibleTextView(Gtk.TextView):
                                     dotted=dec.style == 'dotted')
             elif dec.style == 'rule':
                 self._draw_unit_rule(snapshot, buf, tag, lo, hi, colour)
+
+    def set_flash_fade(self, fade):
+        """Scale the navigation flash's band, 1 (full) to 0 (gone). Paint
+        only: the `_flash` tag stays until the pane takes it off."""
+        self._flash_fade = float(fade)
+        self.queue_draw()
 
     def set_unit_rule(self, enabled):
         """Whether to draw the margin rule beside the current unit. Asked

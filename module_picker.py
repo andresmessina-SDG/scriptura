@@ -18,6 +18,7 @@ from gtk_utils import clear_children
 import bible_family
 import sword_bridge
 import content
+import motion
 import updates
 from i18n import _
 
@@ -95,7 +96,7 @@ class ModulePicker:
 
         stack = Gtk.Stack()
         stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
-        stack.set_transition_duration(150)
+        stack.set_transition_duration(motion.DURATION_SHORT)
         # Let each page drive its own height so a short tab (one-item
         # Imagery) doesn't reserve the full list height of dead space.
         stack.set_vhomogeneous(False)

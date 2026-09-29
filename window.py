@@ -683,6 +683,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             revealer = Gtk.Revealer()
             revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_LEFT)
             revealer.set_transition_duration(motion.DURATION_SHORT)
+            motion.follow_reduced_motion(revealer)
             revealer.set_child(toggle)
             # Both of what decides a folded tool's fate, watched at the
             # source: whether it is on, and whether it can do anything. An
@@ -893,7 +894,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
 
         self._jump_revealer = Gtk.Revealer()
         self._jump_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
-        self._jump_revealer.set_transition_duration(200)
+        self._jump_revealer.set_transition_duration(motion.DURATION_STANDARD)
+        motion.follow_reduced_motion(self._jump_revealer)
         self._jump_revealer.set_halign(Gtk.Align.CENTER)
         self._jump_revealer.set_valign(Gtk.Align.START)
         self._jump_revealer.set_child(jump_wrap)
@@ -952,7 +954,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         )
         self._crossref_revealer = Gtk.Revealer()
         self._crossref_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_UP)
-        self._crossref_revealer.set_transition_duration(200)
+        self._crossref_revealer.set_transition_duration(motion.DURATION_STANDARD)
+        motion.follow_reduced_motion(self._crossref_revealer)
         self._crossref_revealer.set_child(self._crossref_panel)
 
     def _build_reading_overlay(self):
@@ -980,7 +983,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._exit_reading_revealer = Gtk.Revealer()
         self._exit_reading_revealer.set_transition_type(
             Gtk.RevealerTransitionType.SLIDE_DOWN)
-        self._exit_reading_revealer.set_transition_duration(200)
+        self._exit_reading_revealer.set_transition_duration(motion.DURATION_STANDARD)
+        motion.follow_reduced_motion(self._exit_reading_revealer)
         self._exit_reading_revealer.set_halign(Gtk.Align.CENTER)
         self._exit_reading_revealer.set_valign(Gtk.Align.START)
         self._exit_reading_revealer.set_margin_top(6)
@@ -1013,6 +1017,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             self._today_revealer.set_transition_type(
                 Gtk.RevealerTransitionType.SLIDE_DOWN)
             self._today_revealer.set_transition_duration(motion.DURATION_STANDARD)
+            motion.follow_reduced_motion(self._today_revealer)
             self._today_revealer.set_child(self._today_view)
             self._today_revealer.set_reveal_child(True)
             overlay.add_overlay(self._today_revealer)
@@ -3667,6 +3672,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._menu_stack.set_transition_type(
             Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
         self._menu_stack.set_transition_duration(motion.DURATION_STANDARD)
+        motion.follow_reduced_motion(self._menu_stack)
         _body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         _body.append(self._build_menu_nav_group())
         self._build_plan_section(_body)

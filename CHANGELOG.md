@@ -39,9 +39,19 @@ semver-ish — 0.x was the pre-Flathub testing track.
   Ctrl+W closes it. The shortcuts window has a Writing section.
 - List rows give short dates ("Edited today", "14 Sep"), and a preview no
   longer repeats a heading or runs list items together.
+- **Reduce motion is honoured.** With Reduce motion on in GNOME Settings,
+  Accessibility, panels, bars and menu pages no longer slide, the listening
+  pill fades in without rising, the Family Tree folds and re-arranges in one
+  step, the map's "you are here" ring holds still, and a jump to a verse
+  lands at once. Fades stay.
 
 ### Changed
 
+- The orange mark on a verse you jumped to now fades away instead of
+  vanishing, and only the latest verse carries it. The mark on a Scripture in
+  Stone plate keeps the same time.
+- A jump to a verse more than a screen and a half away lands at once instead
+  of racing through the pages between. Nearer jumps still glide.
 - Esc no longer closes the Annotations window while you are typing in it;
   it still closes it from the list.
 - The note editors on the reading page say Tags, not Topics.

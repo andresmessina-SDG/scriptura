@@ -30,6 +30,7 @@ gi.require_version('GdkPixbuf', '2.0')
 from gi.repository import Gtk, Adw, GLib, Gio, Gdk, Graphene, GdkPixbuf
 
 import archaeology_bridge
+import motion
 from i18n import _, ngettext, N_
 
 _log = logging.getLogger('scriptura.archaeology')
@@ -702,7 +703,7 @@ class ArchaeologyReader:
             return self._scroll_tries < 25      # retry until the pane lays out
         self._scroller.get_vadjustment().set_value(max(0, rect.get_y() - 8))
         w.add_css_class('stone-flash')
-        GLib.timeout_add(1400,
+        GLib.timeout_add(motion.FLASH_HOLD_MS,
                          lambda: w.remove_css_class('stone-flash') or False)
         self._scroll_target = None
         return False
@@ -749,12 +750,13 @@ class ArchaeologyReader:
         click = Gtk.GestureClick()
         click.connect('released', self._on_map_click)
         area.add_controller(click)
-        motion = Gtk.EventControllerMotion()
-        motion.connect('motion', self._on_map_motion)
-        motion.connect('leave', self._on_map_leave)
-        area.add_controller(motion)
-        # Gentle pulse for the "you are here" ring (only if there's one to draw).
-        if self._map_here is not None:
+        hover = Gtk.EventControllerMotion()
+        hover.connect('motion', self._on_map_motion)
+        hover.connect('leave', self._on_map_leave)
+        area.add_controller(hover)
+        # Gentle pulse for the "you are here" ring (only if there's one to
+        # draw). Under reduced motion the ring holds still at its mid size.
+        if self._map_here is not None and motion.should_move():
             self._map_tick = area.add_tick_callback(
                 lambda a, _c, _d: (a.queue_draw() or True), None)
 
@@ -944,8 +946,10 @@ class ArchaeologyReader:
         if self._map_here is not None:
             for px, py, e in self._map_screen:
                 if e is self._map_here:
-                    t = GLib.get_monotonic_time() / 1e6
-                    pulse = 0.5 + 0.5 * math.sin(t * 3.0)
+                    pulse = 0.5
+                    if self._map_tick:
+                        t = GLib.get_monotonic_time() / 1e6
+                        pulse = 0.5 + 0.5 * math.sin(t * 3.0)
                     cr.set_source_rgba(0.20, 0.52, 0.89, 0.85)
                     cr.set_line_width(2.5)
                     cr.arc(px, py, 11 + 3 * pulse, 0, 6.2831853)

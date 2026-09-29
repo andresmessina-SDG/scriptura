@@ -32,7 +32,9 @@
  *   corner radius     : 4 (inline bars/swatches) · 6 (cards/controls) ·
  *                       10 (chips) · 20 (overlay panels) · 9999 (pills)
  *   motion            : named tokens in motion.py (durations 100/150/200/280,
- *                       enter/exit/move/fade easings) — no new literal durations
+ *                       enter/exit/move/fade easings) — no new literal durations;
+ *                       anything that travels goes quiet under
+ *                       @media (prefers-reduced-motion: reduce)
  * Accent-tinted chrome uses @accent_* tokens so it follows the user's chosen
  * GNOME accent colour; the highlighter palette below is intentionally fixed
  * (those are semantic content colours, not chrome).
@@ -324,7 +326,7 @@ button.family-root-toggle {
 }
 .family-root-toggle > box {
     opacity: 0.6;
-    transition: opacity 150ms ease;
+    transition: opacity 100ms linear;
 }
 .family-root-toggle:hover > box,
 .family-root-toggle:focus-visible > box {
@@ -337,10 +339,19 @@ button.family-root-toggle {
 }
 .family-root-toggle image {
     -gtk-icon-size: 12px;
-    transition: -gtk-icon-transform 250ms ease;
+    /* DURATION_STANDARD, EASE_MOVE (ease-in-out cubic) */
+    transition: -gtk-icon-transform 200ms cubic-bezier(0.65, 0, 0.35, 1);
 }
 .family-root-toggle.open image {
     -gtk-icon-transform: rotate(90deg);
+}
+/* Reduce motion (GNOME Settings > Accessibility): the chevron turns in one
+   frame. Live because styles.py binds this sheet's prefers-reduced-motion
+   to the desktop's; fades elsewhere stay, since they are not motion. */
+@media (prefers-reduced-motion: reduce) {
+    .family-root-toggle image {
+        transition: none;
+    }
 }
 .family-note {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
@@ -2039,13 +2050,17 @@ button.stone-chip-rel {
 .stone-contents button {
     padding: 6px 12px;
 }
-/* Gentle flash when a Bible 'related artifact' marker scrolls here. */
+/* Flash when a Bible 'related artifact' marker scrolls here: the Bible
+   pane's numbers (motion.FLASH_HOLD_MS, then DURATION_EMPHASIZED linear).
+   On at once, so the arriving state has no transition; the base carries the
+   fade for when the class comes off. */
 .stone-plate {
-    transition: background 400ms ease;
+    transition: background 280ms linear;
     border-radius: 10px;
 }
 .stone-plate.stone-flash {
     background: alpha(@accent_color, 0.13);
+    transition: none;
 }
 
 /* The inline 'related artifact' icon embedded beside a Bible verse — small,
@@ -2223,7 +2238,7 @@ button.genbook-synopsis-toggle label {
     letter-spacing: 0.04em;
     min-height: 0;
     padding: 1px 7px;
-    transition: opacity 150ms ease-out;
+    transition: opacity 100ms linear;
 }
 .devotional-date-nav:hover .devotional-alt,
 .devotional-date-nav:focus-within .devotional-alt {

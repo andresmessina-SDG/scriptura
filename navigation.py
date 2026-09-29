@@ -21,6 +21,7 @@ from gtk_utils import clear_children
 import sword_bridge
 import settings
 import module_positions
+import motion
 from a11y import set_accessible_label
 import window
 from i18n import _, book_label
@@ -373,7 +374,8 @@ class NavigationController:
 
         stack = Gtk.Stack()
         stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
-        stack.set_transition_duration(150)
+        stack.set_transition_duration(motion.DURATION_SHORT)
+        motion.follow_reduced_motion(stack)
         stack.set_vexpand(True)
 
         # Chapter grid
