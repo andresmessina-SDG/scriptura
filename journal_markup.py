@@ -500,8 +500,10 @@ def plain(text: str) -> str:
 
     The markers come off through `spans` rather than a second set of
     patterns, so the preview can never disagree with the rendering about
-    what is notation.
+    what is notation. A table's pipes and delimiter row are notation too,
+    though the editor keeps them in view: they went into the word count.
     """
+    text = _untabled(text, ' ')
     drop = sorted((a, b) for a, b, tag in spans(text) if tag == 'md-marker')
     out, at = [], 0
     for a, b in drop:
@@ -509,6 +511,24 @@ def plain(text: str) -> str:
         at = b
     out.append(text[at:])
     return ' '.join(''.join(out).split())
+
+
+def _untabled(text: str, joiner: str) -> str:
+    """`text` with each table row as its cells joined by `joiner`, and each
+    delimiter row gone."""
+    lines = text.split('\n')
+    out = []
+    for line, kind in zip(lines, table_kinds(lines)):
+        if kind == 'rule':
+            continue
+        out.append(_row_text(line, joiner) if kind else line)
+    return '\n'.join(out)
+
+
+def _row_text(line: str, joiner: str) -> str:
+    """A table row's cells, joined by `joiner`, the empty ones left out."""
+    return joiner.join(c for c in (line[s:e].strip()
+                                   for _p, s, e in table_cells(line)) if c)
 
 
 #: A verse range trailing a reference the matcher has already found —
@@ -555,20 +575,21 @@ def preview(text: str) -> str:
     and a manuscript's first heading is usually that title again — a sermon
     row read "The Sower Four soils Read Mark 4:1-9. the path rocky ground".
     List items are set apart with ' · ', where bare spaces ran them into one
-    broken sentence. A body that is nothing but headings keeps them, or the
-    row would say nothing at all. `plain` itself is unchanged: the word count
-    reads it.
+    broken sentence. A table row is set apart the same way, its cells by
+    commas. A body that is nothing but headings keeps them, or the row would
+    say nothing at all. `plain` itself is unchanged: the word count reads it.
     """
     head = text[:_PREVIEW_SCAN]
     parts: list[tuple[bool, str]] = []
-    for line in head.split('\n'):
+    lines = head.split('\n')
+    for line, kind in zip(lines, table_kinds(lines)):
         if (_HEADING.match(line) or _SUBHEADING.match(line)
-                or _RULE.match(line)):
+                or _RULE.match(line) or kind == 'rule'):
             continue
-        words = plain(line)
+        words = plain(_row_text(line, ', ') if kind else line)
         if words:
-            parts.append((bool(_BULLET.match(line) or _NUMBER.match(line)),
-                          words))
+            parts.append((bool(kind or _BULLET.match(line)
+                               or _NUMBER.match(line)), words))
     if not parts:
         return plain(head)
     out = parts[0][1]

@@ -503,6 +503,27 @@ def test_paste_of_nothing_is_nothing():
     assert md.from_html('<p> </p><div></div>') == ''
 
 
+_TABLE_ENTRY = ('Intro line.\n\n| Soil | Fruit |\n|---|---|\n'
+                '| **path** | none |\n| good | a hundredfold |\n\nAfter.')
+
+
+def test_a_table_previews_as_its_cells_row_by_row():
+    """The row showed "| Soil | Fruit | |---|---| | path | none |"."""
+    assert md.preview(_TABLE_ENTRY) == (
+        'Intro line. Soil, Fruit · path, none · good, a hundredfold After.')
+
+
+def test_a_tables_pipes_and_delimiter_row_are_not_words():
+    """The count read 20 words in an entry of 10."""
+    assert md.plain(_TABLE_ENTRY) == (
+        'Intro line. Soil Fruit path none good a hundredfold After.')
+
+
+def test_export_keeps_a_table_as_markdown():
+    """Export writes .md, where the pipes ARE the table."""
+    assert md.to_markdown(_TABLE_ENTRY) == _TABLE_ENTRY
+
+
 def test_preview_leaves_out_headings_and_rules():
     """A row already leads with the title, and a manuscript's first heading
     is usually that title again: "The Sower Four soils Read Mark 4…"."""
