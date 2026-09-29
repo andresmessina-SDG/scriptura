@@ -2416,13 +2416,8 @@ button.today-mark {
    read off the PANE's allocation — on a split screen this surface is a
    column, not a window). Only the hero moves: the caps voices are already
    at the size a caps voice wants, and growing them would turn furniture
-   into hierarchy. */
-.today-narrow .today-passage {
-    font-size: 32px;
-}
-.today-wide .today-passage {
-    font-size: 54px;
-}
+   into hierarchy. Its sizes are set in today_page (_HERO_PX), not here: a
+   class added mid-allocation restyles a frame late. */
 /* At wide widths the date and the day's designation leave the column and
    stand in the left margin as a Kalendar heading — the only place on this
    page where a caps voice is set left and allowed to wrap, so the tracking

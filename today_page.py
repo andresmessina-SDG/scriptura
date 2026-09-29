@@ -140,6 +140,14 @@ _GUTTER_WIDE = _RAIL_WIDTH + _RAIL_MARGIN
 # gives the column everything it would have had without it.
 _WIDE_AT = 720 + 2 * _GUTTER_WIDE
 
+# The hero's size at each breakpoint ('' is the default width; the CSS sets
+# the same 42px). A Pango attribute, not a `.today-wide` CSS rule: a
+# breakpoint applies inside size-allocate, where a class change is only
+# restyled on the NEXT frame. At launch that frame came ~330ms later, so the
+# page opened at 42px and then jumped to 54. An attribute lands in the
+# allocation that set it.
+_HERO_PX = {'narrow': 32, '': 42, 'wide': 54}
+
 
 def _stop(offset: float, color: 'Gdk.RGBA') -> 'Gsk.ColorStop':
     stop = Gsk.ColorStop()
@@ -858,6 +866,9 @@ class TodayView(Gtk.Box):
             self.remove_css_class(name)
         if mode:
             self.add_css_class(f'today-{mode}')
+        attrs = Pango.AttrList()
+        attrs.insert(Pango.attr_size_new_absolute(_HERO_PX[mode] * Pango.SCALE))
+        self._passage.set_attributes(attrs)
         wide = mode == 'wide'
         self._rail.set_visible(wide)
         self._eyebrow.set_visible(not wide)
