@@ -106,6 +106,7 @@ scriptura/
 +-- annotation_editors.py # The three editors the window shows: mark, entry, sermon
 +-- writing_page.py      # The prose editors' sheet: column, folded markers, drawn bullets/quotes/rules, font
 +-- manuscript_find.py   # Find and replace in an entry or sermon body (Ctrl+F / Ctrl+H)
++-- sermon_delivery.py   # A sermon full-screen to preach from (F5): large type, cues, a timer
 +-- journal.py           # journal.json — entries (a page, where a note is a margin)
 +-- sermons.py           # sermons.json — manuscripts, series, preaching days
 +-- journal_markup.py    # the Markdown subset + reference parser (pure, no GTK)
@@ -765,8 +766,11 @@ sermons.py     # sermons.json  — manuscripts: title, big idea, body, series
 journal_markup.py  # the Markdown subset, pure: text in, spans out, no GTK.
                #   Emphasis, headings (1–3, 4–6 as one), quote, lists, rules,
                #   reference links (incl. `Rom.` and relative `v. 48`), what
-               #   Enter carries on (`next_marker`, `renumber`), and
-               #   `from_html` — clipboard HTML as the subset, for paste
+               #   Enter carries on (`next_marker`, `renumber`), tables
+               #   (`table_kinds`, `table_cells`), `for_delivery` (the text
+               #   the delivery view shows), and `from_html` — clipboard
+               #   HTML as the subset, for paste; a heading a word
+               #   processor marks only by its size in pt becomes one
 journal_import.py  # Markdown/text files in, one file per entry
 annotation_editors.py  # MarkEditor + _ProseEditor → EntryEditor, SermonEditor.
                #   Every read of the body passes include_hidden=True, or
@@ -777,6 +781,11 @@ writing_page.py  # WritingPageMixin on _ProseEditor: how the sheet looks.
                #   margin on it; quote bars, rules and bullet dots are drawn in
                #   its BELOW layer
 manuscript_find.py  # the find/replace bar on a prose editor's sheet
+sermon_delivery.py  # DeliveryWindow: the manuscript full-screen on a dark
+               #   page. Type sized so every face holds ~45 characters a
+               #   line (measured against Noto Serif), the reader's Line
+               #   spacing read as ems. Opened by SermonEditor._deliver and
+               #   the Annotations window's F5
 annotations_window.py  # the three pages, the list, the filters, TagManager
 ```
 
