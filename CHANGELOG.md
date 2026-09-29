@@ -4,7 +4,7 @@ All notable changes to Scriptura. Format roughly follows
 [Keep a Changelog](https://keepachangelog.com/). Versioning is
 semver-ish — 0.x was the pre-Flathub testing track.
 
-## [Unreleased]
+## [1.8.1] — 2026-09-29
 
 ### Added
 

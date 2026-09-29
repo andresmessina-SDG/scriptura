@@ -151,6 +151,23 @@
          notice most, in plain words and short sentences, with no em-dashes.
          The full record belongs in CHANGELOG.md, not here.
          tests/test_version_sync.py holds every release to this. -->
+    <release version="1.8.1" date="2026-09-29">
+      <description its:translate="no">
+        <p>A writing page that reads like a page, and a view to preach from.</p>
+        <ul>
+          <li>Writing looks like a page: Markdown symbols fold away once you leave a line.</li>
+          <li>Paragraph styles and a choice of font for your journal and sermons.</li>
+          <li>Tables in the journal and sermons, with Tab to move between cells.</li>
+          <li>Preach from a sermon: F5 shows it full screen in large type, with a timer.</li>
+          <li>Pasting from a web page or word processor keeps headings, lists, bold and italic.</li>
+          <li>Click a verse's note number to read the note on the page.</li>
+          <li>Read the difference follows the Bible beside it.</li>
+          <li>Reduce motion in GNOME Settings is now honoured.</li>
+          <li>The Today page and startup open without jumps and keep your place.</li>
+          <li>Esc behaves in the Annotations window, and word study counts from interlinears.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.8.0" date="2026-09-26">
       <description its:translate="no">
         <p>The Bible Family Tree, and downloads that look after themselves.</p>
