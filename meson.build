@@ -115,6 +115,7 @@ py_sources = files(
   'search_panel.py',
   'search_provider.py',
   'search_query.py',
+  'sermon_delivery.py',
   'sermons.py',
   'settings.py',
   'styles.py',

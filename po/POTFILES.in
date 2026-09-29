@@ -52,6 +52,7 @@ preferences.py
 present_mode.py
 reading_plans.py
 search_panel.py
+sermon_delivery.py
 today_page.py
 verse_card.py
 verse_cursor.py

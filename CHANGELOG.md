@@ -28,6 +28,15 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - The formatting buttons light up for what the cursor is in.
 - A click on a reference offers to go there; Ctrl+click still goes at once.
 - "Saved" shows for a moment after each save.
+- **Tables.** A Markdown table in the journal or a sermon lines up in
+  columns, with its header in bold over a rule. The pipes fold away off the
+  line you are writing. Tab and Shift+Tab move between cells, and Tab in
+  the last cell starts a new row.
+- **Preach from a sermon.** The new button at the end of a sermon's
+  toolbar, or F5, shows the manuscript full-screen on a dark page in large
+  type, with the current heading and a timer at the top. Notes in square
+  brackets show in gold. The arrow keys scroll and jump between headings,
+  and Esc leaves.
 - Pasting from a web page or a word processor keeps headings, lists,
   quotes, bold and italic.
 - References written `Rom. 10:9`, `Psalm 23`, `Song of Songs 2:1`, `v. 48`
@@ -46,6 +55,9 @@ semver-ish — 0.x was the pre-Flathub testing track.
   lands at once. Fades stay.
 
 ### Changed
+
+- The Keyboard Shortcuts window no longer lists scrolling over the chapter
+  title with "No Shortcut" beside it. The title's tooltip says it instead.
 
 - The orange mark on a verse you jumped to now fades away instead of
   vanishing, and only the latest verse carries it. The mark on a Scripture in

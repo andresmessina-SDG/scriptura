@@ -8206,6 +8206,9 @@ msgstr ""
 msgid "Choose passage (Ctrl+L)"
 msgstr "Elegir pasaje (Ctrl+L)"
 
+msgid "Scroll to change chapter"
+msgstr "Gira la rueda para cambiar de capítulo"
+
 #: window.py:412
 msgid "Choose passage"
 msgstr "Elegir pasaje"
@@ -8548,14 +8551,6 @@ msgstr "Primer versículo del capítulo actual"
 #: window.py:2977
 msgid "Last verse of current chapter"
 msgstr "Último versículo del capítulo actual"
-
-#: window.py:2978
-msgid "Cycle chapters with the mouse wheel"
-msgstr "Recorrer los capítulos con la rueda del ratón"
-
-#: window.py:2978
-msgid "Scroll over title"
-msgstr "Desplazar sobre el título"
 
 #: window.py:2980
 msgid "Reading with the keyboard"
@@ -10815,6 +10810,24 @@ msgstr "Cuerpo, Encabezado, Subencabezado, Encabezado menor"
 #: window.py
 msgid "Next or previous match"
 msgstr "Coincidencia siguiente o anterior"
+
+msgid "Next or previous table cell"
+msgstr "Celda siguiente o anterior de una tabla"
+
+msgid "Preach from this (F5)"
+msgstr "Predicar desde este texto (F5)"
+
+msgid "Preach from this"
+msgstr "Predicar desde este texto"
+
+msgid "Preach a sermon full-screen"
+msgstr "Predicar un sermón a pantalla completa"
+
+msgid "Time since you began"
+msgstr "Tiempo desde que empezó"
+
+msgid "↑ ↓ scroll · ← → headings · Esc leave"
+msgstr "↑ ↓ desplazar · ← → encabezados · Esc salir"
 
 #: window.py
 msgid "Go straight to a reference"

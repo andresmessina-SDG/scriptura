@@ -434,3 +434,81 @@ def test_preview_sets_list_items_apart():
 
 def test_preview_of_nothing_but_headings_keeps_them():
     assert md.preview('# Only a title\n\n## And a part') == 'Only a title And a part'
+
+
+# ── Tables ───────────────────────────────────────────────────────────────────
+
+_TABLE = ['| Book | Verse |', '|------|:-----:|', '| John | 3:16 |',
+          '| | x |', 'after']
+
+
+def test_a_table_is_a_header_a_rule_and_its_rows():
+    assert md.table_kinds(_TABLE) == ['head', 'rule', 'row', 'row', '']
+
+
+def test_a_lone_piped_line_is_prose():
+    assert md.table_kinds(['a | b', 'no rule under it']) == ['', '']
+
+
+def test_a_rule_needs_as_many_cells_as_its_header():
+    assert md.table_kinds(['a | b | c', '---|---', 'd | e']) == ['', '', '']
+
+
+def test_a_thematic_break_is_not_a_table_rule():
+    assert md.table_kinds(['a | b', '---']) == ['', '']
+
+
+def test_outer_pipes_are_optional():
+    assert md.table_kinds(['a | b', '--- | ---', 'c | d']) == \
+        ['head', 'rule', 'row']
+    assert md.table_cells('a | b') == md.table_cells('a | b |')
+
+
+def test_cells_are_their_words_with_the_spaces_trimmed():
+    line = '| John | 3:16 |'
+    assert [line[s:e] for _p, s, e in md.table_cells(line)] == \
+        ['John', '3:16']
+
+
+def test_an_empty_cell_is_kept_in_its_column():
+    assert [(p, s, e) for p, s, e in md.table_cells('| | x |')] == \
+        [(0, 1, 1), (2, 4, 5)]
+
+
+def test_an_escaped_pipe_is_a_character():
+    line = r'a \| b | c'
+    assert [line[s:e] for _p, s, e in md.table_cells(line)] == \
+        [r'a \| b', 'c']
+
+
+def test_pipes_are_notation_and_a_header_is_strong():
+    line = '| Book | **Verse** |'
+    spans = md.table_spans(line, 'head')
+    pipes = [line[a:b] for a, b, t in spans if t == 'md-pipe']
+    assert pipes == ['| ', ' | ', ' |']
+    assert ('md-strong', 'Book') in [(t, line[a:b]) for a, b, t in spans]
+    markers = [line[a:b] for a, b, t in spans if t == 'md-marker']
+    assert markers == ['**', '**']
+
+
+def test_emphasis_does_not_pair_across_cells():
+    line = '| *a | b* |'
+    assert not [t for _a, _b, t in md.table_spans(line, 'row')
+                if t == 'md-emphasis']
+
+
+def test_the_rule_is_all_notation():
+    line = '|---|---|'
+    assert set(md.table_spans(line, 'rule')) == {
+        (0, len(line), 'md-table-rule'), (0, len(line), 'md-pipe')}
+
+
+def test_the_lead_is_what_hangs_in_the_margin():
+    assert md.table_lead('| a | b |') == '| '
+    assert md.table_lead('a | b') == ''
+
+
+def test_a_new_row_has_the_header_s_columns():
+    row, caret = md.new_table_row('| a | b | c |')
+    assert len(md.table_cells(row)) == 3
+    assert row[:caret] == '| '

@@ -38,6 +38,7 @@ import journal
 import journal_markup
 from manuscript_find import FindBar
 import motion
+import sermon_delivery
 import sermons
 import writing_page
 from writing_page import (_BODY_MARGIN, _LIST_INSET, _LIVE, _SheetScroll,
@@ -734,6 +735,12 @@ class _ProseEditor(WritingPageMixin, _Editor):
         #: column and face were when their indents were measured.
         self._hangs: dict[str, Gtk.TextTag] = {}
         self._page_key: tuple[str, int] | None = None
+        #: A table's padding after a cell, and the width of its header rule,
+        #: one tag per whole pixel (`_pad_tag`, `_rule_tag`).
+        self._pads: dict[int, Gtk.TextTag] = {}
+        self._rules: dict[int, Gtk.TextTag] = {}
+        #: The text column's width, from the last `_fit_page`; 0 until then.
+        self._room = 0
         #: Whether the body is where the reader is writing. The markers show
         #: only there, on the lines the caret or selection is on; a page
         #: opened, or left for the title or the tags, reads clean.
@@ -869,6 +876,12 @@ class _ProseEditor(WritingPageMixin, _Editor):
         self.body.add_controller(click)
         self._ref_card = self._build_ref_card()
         self.body.add_controller(self._body_shortcuts())
+        # Capture: the view's own key handler takes Tab to write a tab
+        # character, before any bubble-phase shortcut could see it.
+        tabs = Gtk.EventControllerKey()
+        tabs.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        tabs.connect('key-pressed', self._on_body_tab)
+        self.body.add_controller(tabs)
 
         body_scroll = _SheetScroll(self._fit_page, vexpand=True, hexpand=True)
         body_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -1279,6 +1292,80 @@ class _ProseEditor(WritingPageMixin, _Editor):
             buf.end_user_action()
             self._continuing = False
 
+    # ── Tab, inside a table ──────────────────────────────────────────────
+    #
+    # A table's pipes fold away, so Tab is how the reader gets from cell to
+    # cell: Tab to the next, Shift+Tab to the one before, and Tab in the
+    # last cell of the last row opens a new row. Outside a table Tab does
+    # what it always did.
+
+    def _on_body_tab(self, _ctl, keyval, _code, state):
+        if keyval not in (Gdk.KEY_Tab, Gdk.KEY_KP_Tab, Gdk.KEY_ISO_Left_Tab):
+            return False
+        if state & (Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.ALT_MASK):
+            return False
+        back = (keyval == Gdk.KEY_ISO_Left_Tab
+                or bool(state & Gdk.ModifierType.SHIFT_MASK))
+        return self._tab_in_table(back)
+
+    def _tab_in_table(self, back):
+        """Move the caret to the next cell, or the one before when `back`.
+        False when the caret is not in a table."""
+        buf = self.body.get_buffer()
+        at = buf.get_iter_at_mark(buf.get_insert())
+        line_no, column = at.get_line(), at.get_line_offset()
+        first, last = self._widen_to_tables(buf, line_no, line_no)
+        lines = [self._line_text(buf, n) for n in range(first, last + 1)]
+        kinds = journal_markup.table_kinds(lines)
+        here = line_no - first
+        if not kinds[here]:
+            return False
+        head = max(n for n in range(here + 1) if kinds[n] == 'head')
+        end = head + 1
+        while end + 1 < len(kinds) and kinds[end + 1] == 'row':
+            end += 1
+        rows = [n for n in range(head, end + 1) if kinds[n] != 'rule']
+        cells = journal_markup.table_cells(lines[here])
+        cell = (max((i for i, c in enumerate(cells) if c[0] < column),
+                    default=-1) if kinds[here] != 'rule' else None)
+        step = -1 if back else 1
+        if cell is not None and 0 <= cell + step < len(cells):
+            target = (here, cell + step)
+        else:
+            later = [n for n in rows if (n < here if back else n > here)]
+            if later:
+                n = later[-1] if back else later[0]
+                target = (n, len(journal_markup.table_cells(lines[n])) - 1
+                          if back else 0)
+            elif back:
+                return True
+            else:
+                self._add_table_row(buf, first + end, lines[head])
+                return True
+        n, i = target
+        line = lines[n]
+        _pipe, start, stop = journal_markup.table_cells(line)[i]
+        if start == stop and stop < len(line) and line[stop] == ' ':
+            stop += 1
+        place = buf.get_iter_at_line_offset(first + n, stop)[1]
+        buf.place_cursor(place)
+        self.body.scroll_mark_onscreen(buf.get_insert())
+        return True
+
+    def _add_table_row(self, buf, after, head):
+        """A new, empty row under line `after`, the caret in its first cell."""
+        row, caret = journal_markup.new_table_row(head)
+        buf.begin_user_action()
+        try:
+            end = buf.get_iter_at_line(after)[1]
+            if not end.ends_line():
+                end.forward_to_line_end()
+            buf.insert(end, '\n' + row)
+        finally:
+            buf.end_user_action()
+        buf.place_cursor(buf.get_iter_at_line_offset(after + 1, caret)[1])
+        self.body.scroll_mark_onscreen(buf.get_insert())
+
     def _renumber(self, buf, line_no):
         """Renumber the run of numbered lines `line_no` belongs to.
 
@@ -1405,6 +1492,16 @@ class _ProseEditor(WritingPageMixin, _Editor):
         buf.create_tag('md-list-number', scale=1 / 0.8)
         # A marker off the line being written folds away.
         buf.create_tag('md-hidden', invisible=True)
+        # A table's pipes fold away too, but keep their room: the columns
+        # are lined up with them in place, so a row the caret comes to
+        # shows its pipes without a word moving. After md-marker, so it
+        # outranks that tag's dimming.
+        clear = Gdk.RGBA()
+        clear.alpha = 0
+        buf.create_tag('md-ghost', foreground_rgba=clear)
+        # A table's delimiter row, drawn as a line under the header. Small,
+        # so the line sits close under it.
+        buf.create_tag('md-table-rule', scale=0.6)
         # A bullet's '- ' is opened out, so the dash stands a bullet's
         # distance from its words — and the dot drawn in its place when it
         # folds sits exactly where the dash will appear.
@@ -1874,6 +1971,44 @@ class SermonEditor(_ProseEditor):
         return '{words} · {time}'.format(
             words=super()._length_label(words),
             time=_('≈ {n} min').format(n=minutes))
+
+    def _build_tools(self):
+        """The formatting row, and at its end the door to the pulpit: the
+        manuscript full-screen to preach from. F5, as a presentation is in
+        the main window, is the window's (`_install_shortcuts`)."""
+        bar = super()._build_tools()
+        preach = Gtk.Button(icon_name='scriptura-view-fullscreen-symbolic')
+        preach.add_css_class('flat')
+        preach.set_tooltip_text(_('Preach from this (F5)'))
+        set_accessible_label(preach, _('Preach from this'))
+        preach.connect('clicked', lambda _b: self._deliver())
+        bar.append(preach)
+        return bar
+
+    def _deliver(self):
+        """Open the view on this sermon — or bring back the one already
+        open on it, as it is written now. With a projector beside the laptop
+        this window stays in reach while the view is up, and a second press
+        or a double-click stacked a second view, with the clock started
+        over, that Esc then only half dismissed."""
+        buf = self.body.get_buffer()
+        # True: markers folded out of sight are still the sermon.
+        body = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True)
+        shown = ((self.row or {}).get('id'), self.title.get_text().strip(),
+                 body)
+        open_on, win = getattr(self, '_delivery', (None, None))
+        # Still a toplevel, or closed: 'destroy' never comes while this
+        # attribute holds the window, so it cannot say.
+        if win is not None and win in Gtk.Window.list_toplevels():
+            if open_on == shown:
+                win.present()
+                return win
+            win.close()
+        win = sermon_delivery.DeliveryWindow(shown[1], body,
+                                             transient_for=self.get_root())
+        self._delivery = (shown, win)
+        win.present()
+        return win
 
     def _build_head(self, box):
         # ── The big idea ────────────────────────────────────────────────

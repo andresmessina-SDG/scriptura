@@ -1123,3 +1123,134 @@ def test_the_title_does_not_open_selected(isolated, own_settings, display):
         assert ed.title.get_position() == len('Power of Healing')
     finally:
         win.destroy()
+
+
+# ── Tables ───────────────────────────────────────────────────────────────────
+
+_TABLE = ('| Book | Verse |\n|---|---|\n'
+          '| Genesis | 1:1 |\n| Ruth | 4:17 |')
+
+
+def _tab(editor, back=False):
+    from gi.repository import Gdk
+    from gi.repository import Gtk
+    keys = [c for c in editor.body.observe_controllers()
+            if isinstance(c, Gtk.EventControllerKey)
+            and c.get_propagation_phase() == Gtk.PropagationPhase.CAPTURE]
+    keyval = Gdk.KEY_ISO_Left_Tab if back else Gdk.KEY_Tab
+    state = Gdk.ModifierType.SHIFT_MASK if back else 0
+    return any(c.emit('key-pressed', keyval, 0, state) for c in keys)
+
+
+def _caret(editor):
+    buf = editor.body.get_buffer()
+    at = buf.get_iter_at_mark(buf.get_insert())
+    return at.get_line(), at.get_line_offset()
+
+
+def test_the_columns_line_up(isolated, display):
+    """Each row's cells, measured as the view lays them out, plus the
+    padding the page gave them, start at the same x in every row."""
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, _TABLE)
+        buf = ed.body.get_buffer()
+        starts = []
+        for n in (0, 2, 3):
+            line = annotation_editors._ProseEditor._line_text(buf, n)
+            cells = journal_markup.table_cells(line)
+            spans = journal_markup.table_spans(line, 'head' if n == 0
+                                               else 'row')
+            xs = ed._cell_xs(line, spans, False, cells)
+            at = buf.get_iter_at_line(n)[1].get_offset()
+            pads = []
+            for i in range(len(line)):
+                it = buf.get_iter_at_offset(at + i)
+                pads.append(sum(px for px, tag in ed._pads.items()
+                                if it.has_tag(tag)))
+            starts.append([x + sum(pads[:start])
+                           for x, (_p, start, _e) in zip(xs, cells)])
+        for row in starts[1:]:
+            assert row == pytest.approx(starts[0], abs=0.51)
+        assert starts[0][1] > 0
+    finally:
+        win.destroy()
+
+
+def test_pipes_fold_but_keep_their_room(isolated, display):
+    """Off the line being written a pipe is clear, not gone: hiding it
+    would move every word when the caret came to its row."""
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, _TABLE)
+        buf = ed.body.get_buffer()
+        table = buf.get_tag_table()
+        pipe = buf.get_iter_at_offset(0)
+        assert pipe.has_tag(table.lookup('md-ghost'))
+        assert not pipe.has_tag(table.lookup('md-hidden'))
+    finally:
+        win.destroy()
+
+
+def test_tab_goes_to_the_next_cell(isolated, display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, _TABLE, 31)             # in "Genesis"
+        assert _tab(ed)
+        assert _caret(ed) == (2, 15)     # after "1:1"
+        assert _tab(ed)
+        assert _caret(ed) == (3, 6)      # after "Ruth", past the rule
+        assert _text(ed) == _TABLE
+    finally:
+        win.destroy()
+
+
+def test_shift_tab_goes_back_over_the_rule(isolated, display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, _TABLE, 31)
+        assert _tab(ed, back=True)
+        assert _caret(ed) == (0, 14)     # after "Verse"
+        assert _tab(ed, back=True)
+        assert _caret(ed) == (0, 6)      # after "Book"
+        assert _tab(ed, back=True)       # the first cell: nowhere to go
+        assert _caret(ed) == (0, 6)
+    finally:
+        win.destroy()
+
+
+def test_tab_in_the_last_cell_opens_a_row(isolated, display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, _TABLE, len(_TABLE))
+        assert _tab(ed)
+        assert _text(ed) == _TABLE + '\n|  |  |'
+        assert _caret(ed) == (4, 2)
+    finally:
+        win.destroy()
+
+
+def test_tab_on_the_rule_goes_to_the_first_row(isolated, display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, _TABLE, 20)             # on the |---|---| row
+        assert _tab(ed)
+        assert _caret(ed) == (2, 9)      # after "Genesis"
+    finally:
+        win.destroy()
+
+
+def test_tab_outside_a_table_is_left_to_the_view(isolated, display):
+    win = _open()
+    try:
+        ed = _editor(win)
+        _set(ed, 'a | b is prose', 3)
+        assert not _tab(ed)
+    finally:
+        win.destroy()

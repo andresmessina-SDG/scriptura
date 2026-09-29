@@ -294,6 +294,202 @@ def renumber(lines: list[str]) -> list[str]:
             for i, (line, marker) in enumerate(zip(lines, markers))]
 
 
+
+# ── Tables ───────────────────────────────────────────────────────────────────
+#
+# GitHub's pipe table: a header row, a delimiter row of dashes, then body
+# rows. A table needs its neighbours to be recognised — a lone line with a
+# pipe in it is prose — so, unlike the rest of the subset, it cannot be read
+# a line at a time. The page lines the columns up and folds the pipes away;
+# this decides where the cells are and nothing about how wide they are drawn.
+
+#: A pipe that divides cells. A backslash before it makes it a character.
+_PIPE = re.compile(r'(?<!\\)\|')
+#: The delimiter row: a run of dashes per cell, a colon at either end
+#: allowed (alignment, which the page does not use), pipes between them.
+_TABLE_RULE = re.compile(r'^ {0,3}\|?(?: *:?-+:? *\|)*(?: *:?-+:? *)\|? *$')
+
+
+def _is_table_row(line: str) -> bool:
+    return bool(line.strip()) and _PIPE.search(line) is not None
+
+
+def _is_table_rule(line: str) -> bool:
+    return '|' in line and _TABLE_RULE.match(line) is not None
+
+
+def table_kinds(lines: list[str]) -> list[str]:
+    """Each line's part in a table: 'head', 'rule', 'row', or '' for none.
+
+    A table starts where a row with a pipe sits on a delimiter row with the
+    same number of cells, and runs until a line with no pipe.
+    """
+    kinds = [''] * len(lines)
+    i = 0
+    while i + 1 < len(lines):
+        if (_is_table_row(lines[i]) and _is_table_rule(lines[i + 1])
+                and len(table_cells(lines[i]))
+                == len(table_cells(lines[i + 1]))):
+            kinds[i], kinds[i + 1] = 'head', 'rule'
+            i += 2
+            while i < len(lines) and _is_table_row(lines[i]):
+                kinds[i] = 'row'
+                i += 1
+        else:
+            i += 1
+    return kinds
+
+
+def table_cells(line: str) -> list[tuple[int, int, int]]:
+    """A table row's cells as (pipe, start, end): the pipe that opens the
+    cell (-1 for a first cell with none before it) and its words, spaces
+    trimmed. An empty cell starts and ends just after its pipe.
+
+    Leading and trailing pipes are optional, as in GitHub's tables: the
+    whitespace before the first pipe and after the last is not a cell.
+    """
+    pipes = [m.start() for m in _PIPE.finditer(line)]
+    bounds = [-1] + pipes + [len(line)]
+    cells = []
+    for n, (pipe, stop) in enumerate(zip(bounds, bounds[1:])):
+        segment = line[pipe + 1:stop]
+        edge = n == 0 or n == len(bounds) - 2
+        if edge and not segment.strip() and pipes:
+            continue
+        lead = len(segment) - len(segment.lstrip())
+        start = pipe + 1 + lead
+        end = start + len(segment.strip())
+        if start == end:
+            start = end = pipe + 1
+        cells.append((pipe, start, end))
+    return cells
+
+
+def table_spans(line: str, kind: str) -> list[Span]:
+    """The spans of one line of a table, by its part in it.
+
+    `md-pipe` covers each pipe with the spaces either side of it: the
+    notation that divides cells, which the page folds away while keeping
+    its room. A header's words are strong; a cell's own emphasis is read
+    inside the cell, so a '*' in one cell never pairs with one in the next.
+    The delimiter row is `md-table-rule` and pipe from end to end.
+    """
+    if kind == 'rule':
+        return [(0, len(line), 'md-table-rule'), (0, len(line), 'md-pipe')]
+    out: list[Span] = []
+    cells = table_cells(line)
+    words = [(start, end) for _pipe, start, end in cells if end > start]
+    at = 0
+    for start, end in words + [(len(line), len(line))]:
+        if start > at:
+            out.append((at, start, 'md-pipe'))
+        if end > start:
+            if kind == 'head':
+                out.append((start, end, 'md-strong'))
+            out.extend(_inline_spans(line[start:end], start, 0))
+        at = end
+    return out
+
+
+def table_lead(line: str) -> str:
+    """The pipe and spaces a table row opens with, or '' — what the page
+    hangs in the margin so the first column starts on the text's edge."""
+    cells = table_cells(line)
+    if not cells or cells[0][0] < 0:
+        return ''
+    return line[:cells[0][1]]
+
+
+def new_table_row(head: str) -> tuple[str, int]:
+    """An empty row for the table `head` heads, and where its first cell's
+    caret goes."""
+    columns = len(table_cells(head))
+    return '| ' + ' | '.join([''] * columns) + ' |', 2
+
+
+
+# ── The manuscript as it is preached ────────────────────────────────────────
+
+#: A note to the preacher: words in square brackets, not a link's label.
+_CUE = re.compile(r'\[[^\[\]\n]+\](?!\()')
+
+
+def for_delivery(text: str) -> tuple[str, list[Span]]:
+    """`text` as the delivery view shows it: the notation gone and what it
+    marked kept as spans — `md-heading`, `md-subheading`, `md-quote`,
+    `md-strong`, `md-emphasis`, `md-rule`, `md-table` — plus `md-cue` for a bracketed
+    note to the preacher, which is read differently from what is said.
+
+    Nothing is edited here, so nothing needs to stay: a bullet becomes '• ',
+    a rule a row of dots, and a table its cells split by tabs, under an
+    `md-table` span the view sets its columns on; its delimiter row goes.
+    """
+    lines = text.split('\n')
+    kinds = table_kinds(lines)
+    out: list[str] = []
+    spans: list[Span] = []
+    at = 0
+    table_at = None
+    for line, kind in zip(lines, kinds):
+        if kind == 'rule':
+            continue
+        if table_at is not None and not kind:
+            spans.append((table_at, at - 1, 'md-table'))
+            table_at = None
+        if kind:
+            if table_at is None:
+                table_at = at
+            cells: list[str] = []
+            for _p, s, e in table_cells(line):
+                cell, cell_spans = _unmarked(line[s:e],
+                                             _inline_spans(line[s:e], 0, 0))
+                offset = at + sum(len(c) + 1 for c in cells)
+                spans.extend((offset + a, offset + b, tag)
+                             for a, b, tag in cell_spans)
+                cells.append(cell)
+            shown = '\t'.join(cells)
+            if kind == 'head':
+                spans.append((at, at + len(shown), 'md-strong'))
+        elif _RULE.match(line):
+            shown = '·   ·   ·'
+            spans.append((at, at + len(shown), 'md-rule'))
+        else:
+            shown, line_spans = _unmarked(
+                line, _line_spans(line, 0),
+                lead='• ' if _BULLET.match(line) else '',
+                keep_first=bool(numbered_marker(line)))
+            spans.extend((at + a, at + b, tag) for a, b, tag in line_spans)
+        for m in _CUE.finditer(shown):
+            spans.append((at + m.start(), at + m.end(), 'md-cue'))
+        out.append(shown)
+        at += len(shown) + 1
+    if table_at is not None:
+        spans.append((table_at, at - 1, 'md-table'))
+    return '\n'.join(out), spans
+
+
+def _unmarked(line: str, found: list[Span], lead: str = '',
+              keep_first: bool = False) -> tuple[str, list[Span]]:
+    """`line` with its markers dropped and `lead` put before it, and the
+    spans in `found` moved onto what is left. `keep_first` keeps a marker
+    at the start of the line: a list's number is read out, not hidden."""
+    drop = [False] * len(line)
+    for a, b, tag in found:
+        if tag == 'md-marker' and not (keep_first and a == 0):
+            drop[a:b] = [True] * (b - a)
+    index = [len(lead)]
+    for d in drop:
+        index.append(index[-1] + (0 if d else 1))
+    shown = lead + ''.join(c for c, d in zip(line, drop) if not d)
+    return shown, [(0 if tag in _WHOLE_LINE else index[a], index[b], tag)
+                   for a, b, tag in found
+                   if tag not in ('md-marker', 'md-bullet')]
+
+
+#: The spans that style a whole line, so they start where it does.
+_WHOLE_LINE = ('md-heading', 'md-subheading', 'md-quote')
+
+
 def plain(text: str) -> str:
     """`text` with its notation taken off and its lines joined into one.
 
