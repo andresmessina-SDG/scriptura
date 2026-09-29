@@ -826,6 +826,19 @@ headerbar.today-chrome windowcontrols > button:active > image {
     opacity: 1;
 }
 
+/* The header coming back while the page fades (window.py _header_leaving).
+ * Swapped in for .today-chrome, so every rule above lets go at once and the
+ * bar, its rule, the controls' ink and the chips travel back over the same
+ * DURATION_STANDARD as the page's fade: the bar arrives as the paper goes,
+ * and nothing is left to change when the page is gone. */
+headerbar.today-leaving,
+headerbar.today-leaving > windowhandle,
+headerbar.today-leaving button,
+headerbar.today-leaving windowcontrols > button > image {
+    transition: color 200ms ease-out, background-color 200ms ease-out,
+                border-bottom-color 200ms ease-out, opacity 200ms ease-out;
+}
+
 button.header-action,
 menubutton.header-action > button {
     min-width: 34px;

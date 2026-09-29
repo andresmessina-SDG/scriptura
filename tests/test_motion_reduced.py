@@ -239,8 +239,13 @@ def _keeper(target_y):
     import pane_scroll
 
     class View:
+        blank = False
+
         def get_iter_location(self, _it):
             return _Loc(target_y, 20)
+
+        def set_blank(self, blank):
+            self.blank = blank
 
         def get_height(self):
             return 500
@@ -283,6 +288,43 @@ def test_a_far_jump_lands_in_one_frame(reduced):
     keeper.land_jump(mark, 0.1, 0.2)
     adj.set_value(300)            # GTK's glide takes its first step
     assert adj.get_value() == _gtk_target(6000)
+
+
+def test_a_window_opening_part_way_down_shows_no_text_until_it_lands(
+        reduced):
+    # A saved place or a bible: link: the chapter's top was painted first,
+    # verse 1 for ~260ms before the leap to the reader's verse.
+    reduced(False)
+    keeper, adj, mark = _keeper(400)
+    keeper.veil_until_landed()
+    assert keeper._view.blank
+    keeper.land_jump(mark, 0.1, 0.2)
+    assert keeper._view.blank, 'lifted before the jump landed'
+    adj.set_value(120)
+    # Near as it is, an opening lands rather than gliding in from the top,
+    # and the text comes back in the frame it lands in.
+    assert adj.get_value() == _gtk_target(400)
+    assert not keeper._view.blank
+
+
+def test_an_opening_already_in_place_shows_its_text_at_once(reduced):
+    # No move will come when the target is where the view stands (clamped to
+    # the top), so the landing cannot be what lifts the paper.
+    reduced(False)
+    keeper, adj, mark = _keeper(10)
+    keeper.veil_until_landed()
+    keeper.land_jump(mark, 0.1, 0.2)
+    assert adj.get_value() == 0
+    assert not keeper._view.blank
+    assert keeper._landing is None
+
+
+def test_a_jump_that_never_starts_does_not_leave_the_paper_up(reduced):
+    reduced(False)
+    keeper, _adj, _mark = _keeper(400)
+    keeper.veil_until_landed()
+    keeper.unveil_unless_landing()      # no such verse: nothing to land
+    assert not keeper._view.blank
 
 
 def test_a_near_jump_keeps_the_glide(reduced):

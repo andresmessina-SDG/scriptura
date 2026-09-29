@@ -1317,6 +1317,7 @@ class BiblePane(Gtk.Box):
         self._chapter = 1
         self._target_verse = None
         self._restore_top_verse = None
+        self._render_pending = False
         # Pixel-exact reading locus captured before a content-mutating
         # re-render (footnote toggle, theme flip) — consumed by _display.
         # Coarser than _restore_top_verse's use (module switches), finer
@@ -2385,6 +2386,9 @@ class BiblePane(Gtk.Box):
 
     def _fetch_and_render(self):
         self._rendered_verses = None
+        # Only a chapter fetch sets it again; any other render (devotional,
+        # card, book) supersedes one in flight whose apply is then dropped.
+        self._render_pending = False
         self._audio.sync()
         # Chapter audio stops above on every render. The devotional player must
         # too when the pane is no longer a devotional — otherwise Spurgeon's
@@ -2421,11 +2425,15 @@ class BiblePane(Gtk.Box):
                 heads = sword_bridge.chapter_headings(module, book, chapter)
             return verses, notes, heads
 
+        # Read by the window, which holds the Today page's exit until the
+        # chapter under it is in: a fade that runs through the render drops
+        # every frame of it.
+        self._render_pending = True
         task = tasks.submit(
             f'chapter:{id(self)}', fetch,
             lambda res: self._display(res[0], book, chapter, module,
                                       res[1], task, headings=res[2]),
-            on_error=lambda _exc: None)
+            on_error=lambda _exc: setattr(self, '_render_pending', False))
 
     def _show_status_page(self, icon, title, description, action=None):
         self._cancel_all_flashes()
@@ -2627,6 +2635,7 @@ class BiblePane(Gtk.Box):
             return GLib.SOURCE_REMOVE
         if task is not None and not task.is_current():
             return GLib.SOURCE_REMOVE  # superseded by a newer fetch
+        self._render_pending = False
         # The rebuild collapses and re-grows the adjustment; none of that
         # is the reader scrolling.
         self._mark_programmatic_scroll()
@@ -2942,7 +2951,7 @@ class BiblePane(Gtk.Box):
             # the scroll lands.
             self._selected_verse = v
             self._set_current_verse_indicator(v)
-            GLib.idle_add(self._scroll_to_verse, v)
+            GLib.idle_add(self._scroll_to_verse_unveiling, v)
         elif self._restore_anchor is not None:
             anchor = self._restore_anchor
             self._restore_anchor = None
@@ -3411,6 +3420,7 @@ class BiblePane(Gtk.Box):
         painted frames the restore was scheduled behind."""
         restore(arg)
         self._reading_scroll.release_scroll_hold()
+        self._scroll.unveil_unless_landing()
         return GLib.SOURCE_REMOVE
 
     def _rerender_keeping_place(self):
@@ -3856,6 +3866,20 @@ class BiblePane(Gtk.Box):
             # 1 Cor 10:9). A short delay is more reliable than chaining
             # idle_add because GTK4's line validation isn't synchronous.
             GLib.timeout_add(150, self._flash_verse_deferred, verse_num)
+        return GLib.SOURCE_REMOVE
+
+    def veil_opening(self):
+        """Keep the text back until the chapter the window opens on has
+        landed at its verse — only where a chapter render is coming to land
+        it; anywhere else the veil would wait out its safety for nothing."""
+        if self._is_verse_navigable() and not self._sync_btn.get_active():
+            self._scroll.veil_until_landed()
+
+    def _scroll_to_verse_unveiling(self, verse_num):
+        """The render's jump to its target verse; the veil a window opening
+        on that verse put up comes down with the landing, or now if none."""
+        self._scroll_to_verse(verse_num)
+        self._scroll.unveil_unless_landing()
         return GLib.SOURCE_REMOVE
 
     def _flash_verse_deferred(self, verse_num):

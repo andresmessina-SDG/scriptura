@@ -233,6 +233,8 @@ class BibleTextView(Gtk.TextView):
     _FLASH_ALPHA = 0.44
     # How far the flash has faded: 1 while it holds, down to 0 as it leaves.
     _flash_fade = 1.0
+    # Paper over all the text while the opening scroll is still to land.
+    _blank = False
     # Annotation + lexicon underlines are painted (not Pango underlines) so they
     # stay uniform under the 200% verse-1 drop cap. Thickness, and the muted
     # accent of the hover/lexicon dotted underline (per theme).
@@ -334,6 +336,9 @@ class BibleTextView(Gtk.TextView):
 
     def _draw_above(self, snapshot):
         """The decorations that paint over the text rather than under it."""
+        if self._blank:
+            self._draw_blank(snapshot)
+            return
         table = self.get_buffer().get_tag_table()
         for dec in _DECORATIONS:
             if dec.layer != _ABOVE or not dec.on(self):
@@ -503,6 +508,27 @@ class BibleTextView(Gtk.TextView):
         self._focus_paper = paper_hex
         self._focus_dim = float(dim)
         self.queue_draw()
+
+    def set_blank(self, blank):
+        """Show the paper without the text on it, or the text again.
+
+        For the opening of a chapter that lands mid-way: until the scroll
+        has landed the view holds the chapter's top, and painting it would
+        show verse 1 before the reader's own place. The paper is what the
+        focus veil is drawn in, at full strength and over the whole view.
+        """
+        blank = bool(blank)
+        if blank != self._blank:
+            self._blank = blank
+            self.queue_draw()
+
+    def _draw_blank(self, snapshot):
+        colour = Gdk.RGBA()
+        if not colour.parse(getattr(self, '_focus_paper', None) or '#ffffff'):
+            return
+        vr = self.get_visible_rect()
+        self._veil(snapshot, colour, vr.y, vr.y + vr.height,
+                   float(self.get_width()))
 
     def _draw_focus_veil(self, snapshot, tag, colour):
         """Quiet everything but the sense-unit being read.

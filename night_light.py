@@ -41,6 +41,17 @@ _BUS_NAME = 'org.gnome.SettingsDaemon.Color'
 _OBJECT_PATH = '/org/gnome/SettingsDaemon/Color'
 
 
+# The one call made before the first frame waits no longer than this: a
+# session bus that does not answer must not hold the window back.
+_FIRST_READ_TIMEOUT_MS = 200
+
+
+def _strength(active: bool | None, temperature_k: int | None) -> float:
+    if active and temperature_k is not None:
+        return strength_for_temperature(int(temperature_k))
+    return 0.0
+
+
 def strength_for_temperature(temperature_k: int) -> float:
     """Map a Night Light temperature to a 0..1 shift strength.
     6500K (neutral) → 0; 3500K or warmer → 1; linear between."""
@@ -110,9 +121,32 @@ class NightLightMonitor:
         self._proxy: Gio.DBusProxy | None = None
         self._changed_id = 0
         self._stopped = False
+        self._read_now()
         Gio.DBusProxy.new_for_bus(
             Gio.BusType.SESSION, Gio.DBusProxyFlags.NONE, None,
             _BUS_NAME, _OBJECT_PATH, _BUS_NAME, None, self._on_ready)
+
+    def _read_now(self) -> None:
+        """Report the strength before the window is first drawn.
+
+        The proxy below answers from the main loop, and the window is built
+        and drawn before the loop turns: measured, its strength landed one
+        frame after the first paint, so an evening opened on cool paper and
+        warmed in view. One bounded call instead — 5ms on a GNOME session —
+        and the proxy carries on with the changes after.
+        """
+        try:
+            bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+            reply = bus.call_sync(
+                _BUS_NAME, _OBJECT_PATH, 'org.freedesktop.DBus.Properties',
+                'GetAll', GLib.Variant('(s)', (_BUS_NAME,)),
+                GLib.VariantType('(a{sv})'),
+                Gio.DBusCallFlags.NO_AUTO_START, _FIRST_READ_TIMEOUT_MS, None)
+        except GLib.Error:
+            return                      # not GNOME / no permission: the proxy decides
+        props = reply.unpack()[0]
+        self._on_strength(_strength(props.get('NightLightActive'),
+                                    props.get('Temperature')))
 
     def _on_ready(self, _source: object, result: Gio.AsyncResult) -> None:
         try:
@@ -135,11 +169,9 @@ class NightLightMonitor:
         assert self._proxy is not None
         active = self._proxy.get_cached_property('NightLightActive')
         temp = self._proxy.get_cached_property('Temperature')
-        if active is not None and active.unpack() and temp is not None:
-            s = strength_for_temperature(int(temp.unpack()))
-        else:
-            s = 0.0
-        self._on_strength(s)
+        self._on_strength(_strength(
+            active.unpack() if active is not None else None,
+            temp.unpack() if temp is not None else None))
 
     def stop(self) -> None:
         self._stopped = True
