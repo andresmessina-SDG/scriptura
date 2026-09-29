@@ -18,7 +18,7 @@ import weakref
 
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import Gdk, Gtk, GLib, Graphene, Gsk, Pango  # noqa: E402
+from gi.repository import Gdk, Gio, Gtk, GLib, Graphene, Gsk, Pango  # noqa: E402
 
 from a11y import set_accessible_label  # noqa: E402
 from i18n import N_, _  # noqa: E402
@@ -962,12 +962,33 @@ class WritingPageMixin:
                              self._on_html_read)
 
     def _on_html_read(self, clipboard, result):
+        """Read the paste to its end, then write it.
+
+        The clipboard is a pipe from the app that copied, and one read gives
+        only what has arrived: a long paste came through cut off after its
+        first 4KB, with nothing to say so. Spliced whole, and without
+        waiting on the other app, which may be slow to write it all.
+        """
         try:
             stream, _mime = clipboard.read_finish(result)
-            data = stream.read_bytes(8 * 1024 * 1024, None).get_data() or b''
-            stream.close(None)
+        except GLib.Error:
+            self._paste_html(clipboard, b'')
+            return
+        sink = Gio.MemoryOutputStream.new_resizable()
+        sink.splice_async(
+            stream, Gio.OutputStreamSpliceFlags.CLOSE_SOURCE
+            | Gio.OutputStreamSpliceFlags.CLOSE_TARGET,
+            GLib.PRIORITY_DEFAULT, None, self._on_html_spliced, clipboard)
+
+    def _on_html_spliced(self, sink, result, clipboard):
+        try:
+            sink.splice_finish(result)
+            data = sink.steal_as_bytes().get_data() or b''
         except GLib.Error:
             data = b''
+        self._paste_html(clipboard, data)
+
+    def _paste_html(self, clipboard, data):
         text = journal_markup.from_html(_decode_html(data)) if data else ''
         buf = self.body.get_buffer()
         if not text:
