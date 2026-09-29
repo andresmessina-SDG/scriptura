@@ -683,6 +683,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             revealer = Gtk.Revealer()
             revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_LEFT)
             revealer.set_transition_duration(motion.DURATION_SHORT)
+            motion.follow_reduced_motion(revealer)
             revealer.set_child(toggle)
             # Both of what decides a folded tool's fate, watched at the
             # source: whether it is on, and whether it can do anything. An
@@ -893,7 +894,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
 
         self._jump_revealer = Gtk.Revealer()
         self._jump_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
-        self._jump_revealer.set_transition_duration(200)
+        self._jump_revealer.set_transition_duration(motion.DURATION_STANDARD)
+        motion.follow_reduced_motion(self._jump_revealer)
         self._jump_revealer.set_halign(Gtk.Align.CENTER)
         self._jump_revealer.set_valign(Gtk.Align.START)
         self._jump_revealer.set_child(jump_wrap)
@@ -952,7 +954,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         )
         self._crossref_revealer = Gtk.Revealer()
         self._crossref_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_UP)
-        self._crossref_revealer.set_transition_duration(200)
+        self._crossref_revealer.set_transition_duration(motion.DURATION_STANDARD)
+        motion.follow_reduced_motion(self._crossref_revealer)
         self._crossref_revealer.set_child(self._crossref_panel)
 
     def _build_reading_overlay(self):
@@ -980,7 +983,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._exit_reading_revealer = Gtk.Revealer()
         self._exit_reading_revealer.set_transition_type(
             Gtk.RevealerTransitionType.SLIDE_DOWN)
-        self._exit_reading_revealer.set_transition_duration(200)
+        self._exit_reading_revealer.set_transition_duration(motion.DURATION_STANDARD)
+        motion.follow_reduced_motion(self._exit_reading_revealer)
         self._exit_reading_revealer.set_halign(Gtk.Align.CENTER)
         self._exit_reading_revealer.set_valign(Gtk.Align.START)
         self._exit_reading_revealer.set_margin_top(6)
@@ -1013,6 +1017,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             self._today_revealer.set_transition_type(
                 Gtk.RevealerTransitionType.SLIDE_DOWN)
             self._today_revealer.set_transition_duration(motion.DURATION_STANDARD)
+            motion.follow_reduced_motion(self._today_revealer)
             self._today_revealer.set_child(self._today_view)
             self._today_revealer.set_reveal_child(True)
             overlay.add_overlay(self._today_revealer)
@@ -1544,7 +1549,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
 
         From the Line, the Card acts on the Bible beside it: Open goes to the
         other pane when one is showing, and Compare needs a verse, so it is
-        offered only when there is a Bible pane to compare from."""
+        offered only when there is a Bible pane to compare from, and one
+        with verses: beside an interlinear it only said to choose one."""
         bible_pane, reading, open_here = pane, pane.module, True
         if pane._is_family:
             other = self.pane2 if pane is self.pane1 else self.pane1
@@ -1556,7 +1562,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._card_from = pane
         self._family_card.show(
             node_id, pane._names, reading, open_here=open_here,
-            can_compare=bible_pane is not None,
+            can_compare=(bible_pane is not None
+                         and bible_pane._is_verse_navigable()),
             from_family=pane._is_family
             and pane._family_tree.showing_family())
         self._card_split.set_show_sidebar(True)
@@ -1619,6 +1626,18 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         """Compare's 'Read the difference': the verse down the Line."""
         self._family_pane_for(src)._family_tree.show_read(book, chapter,
                                                           verse)
+
+    def read_moved(self, src, book, chapter, verse):
+        """Read the difference went to a verse by itself: the header and
+        the Bible beside it go there too. Within the chapter on the page,
+        only the verse marker moves, so a step is not a re-render."""
+        if self._current_loc != (book, chapter):
+            self._go_to(book, chapter, verse)
+            return
+        for pane in (self.pane1, self.pane2):
+            if (pane is not src and pane.get_visible()
+                    and (pane.book, pane.chapter) == (book, chapter)):
+                pane.select_verse(verse)
 
     def _family_card_compare(self):
         pane = self._card_pane
@@ -3039,7 +3058,10 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             transient_for=self,
             modal=False,
         )
-        self._attach_esc_close(self._annotations_win, '_annotations_win')
+        # It owns its Esc: leave writing mode first, and never close while
+        # the reader is typing (AnnotationsWindow._on_escape).
+        self._attach_esc_close(self._annotations_win, '_annotations_win',
+                               esc=False)
         # The plan's tiles carry a dot for a day that was written about, and
         # nothing else rebuilds that grid within a session — so an entry
         # written just now would not show until the plan changed.
@@ -3246,11 +3268,15 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
 
     # ── Modules ───────────────────────────────────────────────────────────────
 
-    def _attach_esc_close(self, win, slot_name=None):
-        ctrl = Gtk.EventControllerKey.new()
-        ctrl.connect('key-pressed',
-            lambda c, kv, kc, s: win.close() or True if kv == Gdk.KEY_Escape else False)
-        win.add_controller(ctrl)
+    def _attach_esc_close(self, win, slot_name=None, esc=True):
+        # `esc=False` for a window that owns its Esc: this controller runs in
+        # the bubble phase ahead of the window's own shortcuts, so it would
+        # close the window before anything there saw the key.
+        if esc:
+            ctrl = Gtk.EventControllerKey.new()
+            ctrl.connect('key-pressed',
+                lambda c, kv, kc, s: win.close() or True if kv == Gdk.KEY_Escape else False)
+            win.add_controller(ctrl)
         # Clear the slot on `self` when the window closes, so the next open
         # creates a fresh window instead of presenting a destroyed one.
         if slot_name:
@@ -3307,6 +3333,9 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
     #               (the contextual key controller).
     #   'literal' → value is plain text for input that isn't a key accel
     #               (mouse wheel gestures).
+    #   'gesture' → value is (modifier accel, text): a gesture made with a key
+    #               held. The key draws as a keycap; a bare 'literal' row
+    #               drew "No Shortcut", which reads as if there were none.
     _SHORTCUT_SECTIONS = [
         (N_('Navigation'), [
             (N_('Quick jump to any reference (e.g. John 3:16)'), 'action', 'goto'),
@@ -3338,7 +3367,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             (N_('Previous search result'), 'action', 'search-prev'),
             (N_('Increase font size'), 'action', 'zoom-in'),
             (N_('Decrease font size'), 'action', 'zoom-out'),
-            (N_('Zoom font (or pinch on touchpad)'), 'literal', N_('Ctrl + scroll')),
+            (N_('Zoom font (or pinch on touchpad)'), 'gesture', ('<Control>', N_('Ctrl + scroll'))),
             (N_('Narrow the left pane'), 'action', 'split-narrow'),
             (N_('Widen the left pane'), 'action', 'split-widen'),
             (N_('Even up the split'), 'action', 'split-even'),
@@ -3355,6 +3384,20 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             (N_('Larger / smaller text'), 'accel', 'plus minus'),
             (N_('Jump to a passage'), 'action', 'goto'),
             (N_('Exit presentation'), 'accel', 'Escape'),
+        ]),
+        # Keys of the Annotations window, which has no dialog of its own.
+        (N_('Writing'), [
+            (N_('New journal entry or sermon'), 'accel', '<Ctrl>n'),
+            (N_('Show or hide the list'), 'accel', 'F9'),
+            (N_('Writing mode'), 'accel', 'F11'),
+            (N_('Leave writing mode'), 'accel', 'Escape'),
+            (N_('Bold, italic'), 'accel', '<Ctrl>b <Ctrl>i'),
+            (N_('Body, Heading, Subheading, Minor Heading'), 'accel',
+             '<Ctrl>0 <Ctrl>1 <Ctrl>2 <Ctrl>3'),
+            (N_('Find and replace'), 'accel', '<Ctrl>f <Ctrl>h'),
+            (N_('Next or previous match'), 'accel', '<Ctrl>g <Ctrl><Shift>g'),
+            (N_('Go straight to a reference'), 'gesture', ('<Control>', N_('Ctrl + click'))),
+            (N_('Close the window'), 'accel', '<Ctrl>w'),
         ]),
         (N_('General'), [
             (N_('Annotations and journal'), 'action', 'annotations'),
@@ -3387,6 +3430,9 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
                 if kind == 'literal':
                     item = Adw.ShortcutsItem.new(_(desc), '')
                     item.set_subtitle(_(value))
+                elif kind == 'gesture':
+                    item = Adw.ShortcutsItem.new(_(desc), value[0])
+                    item.set_subtitle(_(value[1]))
                 else:
                     accel = (self._action_accels[value][0]
                              if kind == 'action' else value)
@@ -3626,6 +3672,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._menu_stack.set_transition_type(
             Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
         self._menu_stack.set_transition_duration(motion.DURATION_STANDARD)
+        motion.follow_reduced_motion(self._menu_stack)
         _body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         _body.append(self._build_menu_nav_group())
         self._build_plan_section(_body)

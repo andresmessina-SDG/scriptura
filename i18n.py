@@ -319,6 +319,28 @@ def format_date(date: _dt.date) -> str:
         day=date.day, month=month_name(date.month), year=date.year)
 
 
+def format_short_date(date: _dt.date, today: _dt.date | None = None,
+                      relative: bool = True) -> str:
+    """A date short enough for a list row — Today, Yesterday, `14 Sep`, and
+    the year only when it is not this one: `1 Dec 2025`.
+
+    No weekday: "Edited Monday" needs the weekday declined in Russian
+    («в понедельник»), which a nominative name table cannot give.
+    `relative=False` for a date inside a sentence ("Preached {date}"), where
+    a capitalised Today would read wrong.
+    """
+    today = today or _dt.date.today()
+    if relative and date == today:
+        return _('Today')
+    if relative and date == today - _dt.timedelta(days=1):
+        return _('Yesterday')
+    if date.year == today.year:
+        return C_('date, short', '{day} {month}').format(
+            day=date.day, month=month_abbr(date.month))
+    return C_('date, short, another year', '{day} {month} {year}').format(
+        day=date.day, month=month_abbr(date.month), year=date.year)
+
+
 def format_date_heading(date: _dt.date) -> str:
     """A full date the way the devotional heads its reading —
     `September 2, 2026`. Separate from format_date because the two surfaces

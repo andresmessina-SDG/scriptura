@@ -541,6 +541,50 @@ class PeekController:
         pop.popup()
         self._peek_fade_in(pop)
 
+    def show_note_peek(self, verse, it):
+        """The reader's note on `verse`, in the shared peek, anchored at the
+        marked verse number. Same popover, placement and fade as a footnote;
+        the Edit button opens the note editor the verse menu opens."""
+        import annotations
+        annos = annotations.get_annotations(
+            self._module, self._book, self._chapter) or {}
+        anno = annos.get(str(verse)) or {}
+        note = (anno.get('note') or '').strip()
+        if not note:
+            return
+        tags = [str(t) for t in (anno.get('tags') or []) if t]
+        r = self._view.get_iter_location(it)
+        wx, wy = self._view.buffer_to_window_coords(
+            Gtk.TextWindowType.WIDGET, r.x, r.y)
+        rect = Gdk.Rectangle()
+        rect.x, rect.y, rect.width, rect.height = (
+            wx, wy, max(1, r.width), r.height)
+
+        pop = self._ensure_peek_popover(self._view)
+        tasks.cancel(f'peek:{id(self._pane)}')
+        avail = self._peek_room(self._view, rect, pop)
+        pop.set_pointing_to(rect)
+
+        def edit():
+            import annotation_dialogs
+            pop.popdown()
+            annotation_dialogs._show_note_window(self._pane, verse, note, tags)
+
+        content = note_peek_content(
+            verse, note, tags, edit,
+            scroll=lambda w: self._peek_scroller(
+                w, avail, chrome=NOTE_PEEK_CHROME))
+        pop.set_child(content)
+        # Its body never takes focus — announce it, as a footnote is.
+        a11y.announce(self._view, f'{content.get_first_child().get_text()}. '
+                                  f'{note}')
+        self._dict_retries = 0
+        self._dict_open_at = GLib.get_monotonic_time()
+        self._dict_user_closed = False
+        pop.set_opacity(0.0)
+        pop.popup()
+        self._peek_fade_in(pop)
+
     def show_dict_popup_at(self, word, anchor_widget, rect, strongs=()):
         # A lightweight "Look Up" peek anchored at the double-clicked word,
         # not a detached window centred on the screen. Deep study still goes
@@ -704,7 +748,7 @@ class PeekController:
             tabs.set_margin_bottom(7)
             stack = Gtk.Stack()
             stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
-            stack.set_transition_duration(120)
+            stack.set_transition_duration(motion.DURATION_SHORT)
             stack.set_vhomogeneous(False)
             btns: dict = {}
 
@@ -939,3 +983,50 @@ class PeekController:
                 results.append((mod_name, mod_desc, html, exact, same))
         results.sort(key=lambda r: (not r[3], not r[4], r[1].lower()))
         return [(mn, md, html) for mn, md, html, _e, _s in results]
+
+
+#: What the note peek spends round its body: the footnote peek's 86 (caption,
+#: margins, arrow) plus a tags line and the Edit button with their spacing.
+#: Budgeted as a footnote, a long note asked for more height than it had,
+#: and a peek too tall to place is not shown at all.
+NOTE_PEEK_CHROME = 150
+
+
+def note_peek_content(verse, note, tags, on_edit, scroll=None):
+    """The note peek's body: a caption, the note, its tags, and Edit.
+
+    Built apart from the popover so it can be checked without one. The note
+    is plain text — a mark's note has no notation — set like a footnote's
+    body, and only it scrolls, so the caption stays in view.
+    """
+    content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+    content.set_size_request(280, -1)
+    cap_text = _('Your note · verse {v}').format(v=verse)
+    cap = Gtk.Label(label=cap_text, xalign=0)
+    cap.add_css_class('caption')
+    cap.add_css_class('dim-label')
+    content.append(cap)
+    body = Gtk.Label(label=note, xalign=0, wrap=True)
+    body.add_css_class('fnote-body')
+    body.set_max_width_chars(40)
+    body.set_selectable(False)
+    content.append(scroll(body) if scroll else body)
+    if tags:
+        tag_lbl = Gtk.Label(label='  '.join(f'#{t}' for t in tags), xalign=0,
+                            wrap=True)
+        tag_lbl.add_css_class('caption')
+        tag_lbl.add_css_class('dim-label')
+        content.append(tag_lbl)
+    edit = Gtk.Button(label=_('Edit note'))
+    edit.add_css_class('flat')
+    edit.add_css_class('note-peek-edit')
+    edit.set_halign(Gtk.Align.START)
+    edit.connect('clicked', lambda _b: on_edit())
+    content.append(edit)
+    for m in ('top', 'bottom', 'start', 'end'):
+        getattr(content, f'set_margin_{m}')(14)
+    a11y.set_role(content, Gtk.AccessibleRole.NOTE)
+    set_accessible_label(content, cap_text)
+    a11y.labelled_by(body, cap)
+    return content
+

@@ -15,6 +15,7 @@ import gi
 gi.require_version('PangoCairo', '1.0')
 from gi.repository import Adw, Gdk, GLib, Gtk, Pango, PangoCairo  # noqa: E402
 
+import writing_page  # noqa: E402
 import settings  # noqa: E402
 from a11y import set_accessible_label  # noqa: E402
 from i18n import N_, _  # noqa: E402
@@ -649,6 +650,7 @@ class AppearancePageMixin:
         self._spacing_val_lbl.set_text(f'{val:.1f}×')
         self.pane1.set_appearance(line_spacing=val)
         self.pane2.set_appearance(line_spacing=val)
+        writing_page.refresh_writing_style()
 
     def _on_appear_width(self, scale):
         px = int(round(scale.get_value() / 20.0) * 20)
@@ -656,6 +658,7 @@ class AppearancePageMixin:
         self._width_val_lbl.set_text(f'{px}px')
         self.pane1.set_reading_width(px)
         self.pane2.set_reading_width(px)
+        writing_page.refresh_writing_style()
 
     def _on_appear_bold(self, btn):
         bold = btn.get_active()

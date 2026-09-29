@@ -18,7 +18,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Gdk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Adw, Gdk, Gtk
+from gi.repository import Adw, Gdk, GObject, Gtk
 
 _log = logging.getLogger('scriptura.styles')
 
@@ -49,11 +49,28 @@ def load_app_css() -> None:
         _log.error('stylesheet missing: %s', _STYLE_PATH)
         return
     provider = Gtk.CssProvider()
+    _follow_reduced_motion(provider)
     provider.load_from_path(_STYLE_PATH)
     Gtk.StyleContext.add_provider_for_display(
         display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
     _loaded = True
     _watch_high_contrast(display)
+
+
+def _follow_reduced_motion(provider: Gtk.CssProvider) -> None:
+    """Make `@media (prefers-reduced-motion: reduce)` in style.css live.
+
+    GTK 4.22 answers that query from the PROVIDER's own
+    `prefers-reduced-motion` property, which an application provider must
+    set itself; the desktop's preference arrives on GtkSettings. Bound, the
+    block follows the desktop switch while the app runs (measured)."""
+    gtk_settings = Gtk.Settings.get_default()
+    if (gtk_settings is None or provider.find_property(
+            'prefers-reduced-motion') is None):
+        return
+    gtk_settings.bind_property(
+        'gtk-interface-reduced-motion', provider, 'prefers-reduced-motion',
+        GObject.BindingFlags.SYNC_CREATE)
 
 
 def _watch_high_contrast(display: Gdk.Display) -> None:

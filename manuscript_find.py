@@ -23,6 +23,7 @@ from gi.repository import Gdk, GLib, Gtk
 
 from a11y import set_accessible_label
 from i18n import _, ngettext
+import motion
 
 #: The reading view's own search ambers (reading_view._SEARCH_COLOR and
 #: _SEARCH_CUR_COLOR), so a match looks like a match wherever the reader meets
@@ -81,6 +82,7 @@ class FindBar(Gtk.Revealer):
         self._current: int | None = None
         self._refresh_source = 0
         self.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
+        motion.follow_reduced_motion(self)
 
         self._tag = self._buf.create_tag(
             'find-match', background_rgba=_rgba(_MATCH_COLOUR))

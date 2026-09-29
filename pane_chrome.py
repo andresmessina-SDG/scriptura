@@ -76,7 +76,9 @@ class ChromeController:
         self.revealed = reveal
         self._accum = 0.0
         p = self._pane
-        p._toolbar_revealer.set_transition_duration(280 if reveal else 200)
+        p._toolbar_revealer.set_transition_duration(
+            motion.DURATION_EMPHASIZED if reveal
+            else motion.DURATION_STANDARD)
         p._toolbar_revealer.set_reveal_child(reveal)
         self.animate_strip()
 
@@ -136,6 +138,11 @@ class ChromeController:
         anim.connect('done', done)
         self._anim = anim
         anim.play()
+        if not motion.should_move():
+            # Reduced motion: the card top and the scroll value arrive in
+            # one frame, still together, so the glyphs hold as before.
+            anim.skip()
+            return
 
         def force_finish():
             # A stalled frame clock (headless, hidden window) must not leave

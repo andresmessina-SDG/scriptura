@@ -4,6 +4,94 @@ All notable changes to Scriptura. Format roughly follows
 [Keep a Changelog](https://keepachangelog.com/). Versioning is
 semver-ish — 0.x was the pre-Flathub testing track.
 
+## [Unreleased]
+
+### Added
+
+- **Read the difference keeps up with your reading.** Click a verse in the
+  Bible beside the Family Tree, or move to one with the keyboard, and Read
+  turns to it, even while another view is showing. The header sets it too,
+  so with one pane the Family Tree never shows a different place from the
+  header. Stepping or typing a reference in Read takes the header and the
+  Bible beside it along.
+
+- **A writing page that reads like a page.** In the journal and sermons,
+  Markdown symbols fold away once you leave a line and come back on the line
+  you are writing, in the margin, so the words never move. Lists show a
+  bullet, quotes a bar, and `---` a line.
+- **Paragraph styles.** Body, Heading, Subheading and Minor Heading, from a
+  menu or Ctrl+0 to Ctrl+3, each shown at its size.
+- **A font for your writing.** Newsreader, Noto Serif, EB Garamond, Adwaita
+  Sans, Roboto or OpenDyslexic, for every journal and sermon page.
+- **Easier reading while you write.** The text keeps the reading page's
+  width and line spacing instead of running the full window.
+- The formatting buttons light up for what the cursor is in.
+- A click on a reference offers to go there; Ctrl+click still goes at once.
+- "Saved" shows for a moment after each save.
+- Pasting from a web page or a word processor keeps headings, lists,
+  quotes, bold and italic.
+- References written `Rom. 10:9`, `Psalm 23`, `Song of Songs 2:1`, `v. 48`
+  and `vv. 45-46` now link, and headings of four to six `#` are styled.
+- **Read a note where it is.** Click the blue number of a verse with a note
+  to read the note and its tags on the page, with Edit note beside them.
+- An empty Journal or Sermons page offers New journal entry or New sermon.
+- Ctrl+N starts a journal entry or a sermon in the Annotations window, and
+  Ctrl+W closes it. The shortcuts window has a Writing section.
+- List rows give short dates ("Edited today", "14 Sep"), and a preview no
+  longer repeats a heading or runs list items together.
+- **Reduce motion is honoured.** With Reduce motion on in GNOME Settings,
+  Accessibility, panels, bars and menu pages no longer slide, the listening
+  pill fades in without rising, the Family Tree folds and re-arranges in one
+  step, the map's "you are here" ring holds still, and a jump to a verse
+  lands at once. Fades stay.
+
+### Changed
+
+- The orange mark on a verse you jumped to now fades away instead of
+  vanishing, and only the latest verse carries it. The mark on a Scripture in
+  Stone plate keeps the same time.
+- A jump to a verse more than a screen and a half away lands at once instead
+  of racing through the pages between. Nearer jumps still glide.
+- Esc no longer closes the Annotations window while you are typing in it;
+  it still closes it from the list.
+- The note editors on the reading page say Tags, not Topics.
+- A verse note is set like the journal: in your writing font, at the
+  reading width.
+- In a note, Add to "…" sits beside the verse it belongs to.
+- A sermon's preaching dates read "Preached 14 Sep", and Series and Part
+  are frameless like the title.
+- Manage tags has a tag icon of its own.
+
+### Fixed
+
+- Esc now leaves writing mode. It used to do nothing while the mode's
+  message showed, then close the whole window.
+- Esc over a reference card closed the Annotations window with it.
+- A new entry or sermon left without a word stayed in the list as
+  "Untitled" until the window was reopened.
+- "1 sermon on this chapter" opened an empty Sermons page when the chapter
+  was not the sermon's first passage. The journal's door did the same.
+- An entry or sermon opened with its whole title selected, so the first key
+  replaced it.
+- A sermon's Part took letters and then saved no part at all. It takes only
+  numbers now.
+- Esc did not close the Tag Manager.
+- The shortcuts window said "No Shortcut" beside Ctrl + click and
+  Ctrl + scroll. It shows the Ctrl key.
+- Changing the writing font no longer moves the title, the tools, or the
+  page below them.
+
+- A heading exported from the journal came back as literal `####` when the
+  file was imported again.
+- The word study counted 0 for every word, in the book and in the whole
+  Bible, when clicked from an interlinear without the OSHB or MorphGNT
+  modules installed. It now counts from the interlinear's own words, and
+  says it counts verses.
+- Compare opened in the window's top-left corner when the verse it was for
+  had scrolled out of sight. It now points from the edge of the page.
+- The translation card offered Compare this verse beside an interlinear,
+  where it could only say to choose a verse.
+
 ## [1.8.0] — 2026-09-26
 
 ### Added

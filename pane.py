@@ -1463,7 +1463,8 @@ class BiblePane(Gtk.Box):
 
         self._date_nav_revealer = Gtk.Revealer()
         self._date_nav_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
-        self._date_nav_revealer.set_transition_duration(200)
+        self._date_nav_revealer.set_transition_duration(motion.DURATION_STANDARD)
+        motion.follow_reduced_motion(self._date_nav_revealer)
         date_nav_stack = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         date_nav_stack.append(date_nav)
         date_nav_stack.append(self._devot_audio.progress)
@@ -1480,7 +1481,8 @@ class BiblePane(Gtk.Box):
         # point everything else moves around.
         self._toolbar_revealer = Gtk.Revealer()
         self._toolbar_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_UP)
-        self._toolbar_revealer.set_transition_duration(280)
+        self._toolbar_revealer.set_transition_duration(motion.DURATION_EMPHASIZED)
+        motion.follow_reduced_motion(self._toolbar_revealer)
         self._toolbar_revealer.set_child(toolbar)
         self._toolbar_revealer.set_reveal_child(True)
         # Keyboard focus must never strand the user on a hidden control: any
@@ -1634,6 +1636,7 @@ class BiblePane(Gtk.Box):
         # Owns its own widgets, state, and navigation history; we just
         # compose it into the vertical Paned below the Bible text view.
         self._flash_timers = set()
+        self._flash_anim = None   # the flash's fade-out, while it runs
         # _current_morph is a transient buffer: _on_left_click reads the
         # morph: tag at click time and stashes it here, so when window.py
         # later calls back via show_lexicon() we can pass it through to
@@ -1762,10 +1765,10 @@ class BiblePane(Gtk.Box):
         # to the word under the cursor, instead of a permanent underline
         # on every Strong's-tagged word in the chapter.
         self._strg_hover_range = None
-        motion = Gtk.EventControllerMotion.new()
-        motion.connect('motion', self._on_view_motion)
-        motion.connect('leave', lambda _c: self._on_view_leave())
-        self._view.add_controller(motion)
+        view_motion = Gtk.EventControllerMotion.new()
+        view_motion.connect('motion', self._on_view_motion)
+        view_motion.connect('leave', lambda _c: self._on_view_leave())
+        self._view.add_controller(view_motion)
 
         # Ctrl+scroll over the reading area adjusts font size. Universal
         # text-reader / browser convention. Pinch zoom (touchpad) goes
@@ -1969,6 +1972,9 @@ class BiblePane(Gtk.Box):
         self._window_target_verse = None
         if self._sync_btn.get_active():
             return
+        if self._is_family:
+            self._family_tree.read.follow((book, chapter, 1))
+            return
         if self._is_catena or self._is_imagery or self._is_interlinear:
             self._book = book
             self._chapter = chapter
@@ -1986,6 +1992,9 @@ class BiblePane(Gtk.Box):
         self._window_chapter = chapter
         self._window_target_verse = verse
         if self._sync_btn.get_active():
+            return
+        if self._is_family:
+            self._family_tree.read.follow((book, chapter, verse or 1))
             return
         if self._is_catena or self._is_imagery or self._is_interlinear:
             self._book = book
@@ -3837,6 +3846,7 @@ class BiblePane(Gtk.Box):
             # line validation completes.
             mark = self._buffer.create_mark(None, it, True)
             self._view.scroll_to_mark(mark, 0.1, True, 0.0, 0.2)
+            self._scroll.land_jump(mark, 0.1, 0.2)
             self._buffer.delete_mark(mark)
             # Defer the flash by ~150ms so scroll has fully settled and the
             # verse is actually in the viewport. Applying the flash in the
@@ -4111,31 +4121,48 @@ class BiblePane(Gtk.Box):
             # dark after it).
             flash_tag = self._buffer.create_tag('_flash')
 
-        self._buffer.apply_tag(flash_tag, start, end)
+        # One "you are here" at a time: a new arrival takes the band off
+        # the last, and a fade still running on it stops. Removing a tag
+        # invalidates iterators, so the range is carried as offsets.
+        start_offset, end_offset = start.get_offset(), end.get_offset()
+        self._cancel_all_flashes()
+        self._buffer.apply_tag(
+            flash_tag, self._buffer.get_iter_at_offset(start_offset),
+            self._buffer.get_iter_at_offset(end_offset))
+        # On at once, since it is the answer to the jump; held; then faded
+        # out rather than snapped off (MOTION_RESEARCH M2). The fade is paint
+        # only, so it cannot move the text or the scroll anchor.
+        self._view.set_flash_fade(1.0)
         # Force the textview to repaint — apply_tag alone sometimes fails to
         # invalidate the right screen region after a scroll, leaving the
         # tag applied at the correct buffer offset but the visible verse
         # rendered as if the tag isn't there.
         self._view.queue_draw()
-        start_offset = start.get_offset()
-        end_offset = end.get_offset()
-        # Each flash runs its own timer. Rapid clicks on multiple verses
-        # would otherwise cancel earlier timers and leave their highlights stuck.
-        # Buffer-reset paths (chapter/module change) clear all pending flashes
-        # via _cancel_all_flashes() so stale offsets can't leak into new content.
         holder = [0]
 
-        def _expire():
+        def _fade():
             self._flash_timers.discard(holder[0])
-            ft = self._buffer.get_tag_table().lookup('_flash')
-            if ft:
-                s = self._buffer.get_iter_at_offset(start_offset)
-                e = self._buffer.get_iter_at_offset(end_offset)
-                self._buffer.remove_tag(ft, s, e)
-                self._view.queue_draw()  # band is painted from this tag
+            anim = Adw.TimedAnimation.new(
+                self._view, 1.0, 0.0, motion.DURATION_EMPHASIZED,
+                Adw.CallbackAnimationTarget.new(self._view.set_flash_fade))
+            anim.set_easing(motion.EASE_FADE)
+            anim.connect('done', lambda _a: self._cancel_all_flashes())
+            self._flash_anim = anim
+            anim.play()
+
+            # Stall-safety: a frame clock that never ticks (headless, a
+            # hidden window) must not leave the band on the page.
+            def _force_done():
+                if self._flash_anim is anim:
+                    anim.skip()
+                return GLib.SOURCE_REMOVE
+
+            GLib.timeout_add(motion.DURATION_EMPHASIZED + 500, _force_done)
             return GLib.SOURCE_REMOVE
 
-        holder[0] = GLib.timeout_add(1000, _expire)
+        # Buffer-reset paths (chapter/module change) clear the flash via
+        # _cancel_all_flashes() so stale offsets can't leak into new content.
+        holder[0] = GLib.timeout_add(motion.FLASH_HOLD_MS, _fade)
         self._flash_timers.add(holder[0])
 
     def _cancel_all_flashes(self):
@@ -4145,6 +4172,9 @@ class BiblePane(Gtk.Box):
             except Exception:
                 pass
         self._flash_timers.clear()
+        anim, self._flash_anim = self._flash_anim, None
+        if anim is not None:
+            anim.pause()
         flash_tag = self._buffer.get_tag_table().lookup('_flash')
         if flash_tag:
             self._buffer.remove_tag(
@@ -4152,7 +4182,7 @@ class BiblePane(Gtk.Box):
                 self._buffer.get_start_iter(),
                 self._buffer.get_end_iter(),
             )
-            self._view.queue_draw()  # band is painted from this tag
+        self._view.set_flash_fade(1.0)
 
 
     def _tag_strong_words(self, start_iter, end_iter, raw_html):
@@ -4551,10 +4581,14 @@ class BiblePane(Gtk.Box):
         keyboard verse cursor, so the two can never disagree about what a
         position means."""
         targets = {'verse': None, 'strong': None, 'morph': None,
-                   'devref': None, 'fnote': None, 'phrase_tag': None}
+                   'devref': None, 'fnote': None, 'phrase_tag': None,
+                   'note': False}
         for tag in it.get_tags():
             name = tag.get_property('name')
-            if name and name.startswith('strg:'):
+            if name == '_note_marker':
+                # The verse number of a verse with a note, drawn bold blue.
+                targets['note'] = True
+            elif name and name.startswith('strg:'):
                 targets['strong'] = name[5:]
             elif name and name.startswith('vnum_'):
                 try:
@@ -4629,6 +4663,12 @@ class BiblePane(Gtk.Box):
             self._announce_verse_state(verse_num)
             # Resume keyboard stepping from wherever the pointer just landed.
             self._cursor.sync_to(verse_num)
+        if targets['note'] and verse_num is not None:
+            # The reader's own note, read where it is. Reading it used to
+            # take the menu and the editor. No broadcast, as for a footnote:
+            # the other pane must not reflow under the open peek.
+            self._peek.show_note_peek(verse_num, it)
+            return
         if strong_num and self._on_word_click:
             # Resolve phrase context — the full English phrase text and
             # the full Strong's chain on the source <w> tag — so the
@@ -4734,8 +4774,8 @@ class BiblePane(Gtk.Box):
         pseudo-modules have no SWORD text (the scan would find 0 matches for
         every word), so they scan the tagged original-language source the
         morph lookups already rely on — MorphGNT for the Greek NT, OSHB for
-        the Hebrew OT. Absent those, fall through to the pane's own module
-        (scan degrades to empty, as any untagged module's would)."""
+        the Hebrew OT. Absent those, the pane's own module: the scan then
+        reads the interlinear's own words (lexicon_panel._scan_chapter)."""
         if self._is_interlinear:
             tagged = ('OSHB' if interlinear_data.is_hebrew(self._module)
                       else 'MorphGNT')
@@ -4975,6 +5015,9 @@ class BiblePane(Gtk.Box):
         self._module = new_module
         self._picker.set_current_label(new_module)
         self._compute_module_flags()
+        if self._is_family:
+            # Before the verse the reader is on is cleared below.
+            self._family_tree.read.start_here()
         # A pane showing a page with no verses (the Family Tree, a general
         # book) keeps the header's place, not its own: a Bible chosen next
         # opened at the pane's stale Genesis 1 while the header said Isaiah 1

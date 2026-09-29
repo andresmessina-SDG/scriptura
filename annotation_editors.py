@@ -30,7 +30,7 @@ from gi.repository import Gdk, Gtk, Adw, GLib, Pango
 
 from a11y import set_accessible_label
 from gtk_utils import Autosave, clear_children
-from i18n import _, ngettext, book_label, format_date
+from i18n import _, ngettext, book_label, format_date, format_short_date
 import annotation_dialogs
 import annotations
 import church_year
@@ -39,6 +39,10 @@ import journal_markup
 from manuscript_find import FindBar
 import motion
 import sermons
+import writing_page
+from writing_page import (_BODY_MARGIN, _LIST_INSET, _LIVE, _SheetScroll,
+                          _STYLES, _WritingView, WritingPageMixin,
+                          refresh_writing_style)
 
 
 def N_(message):
@@ -289,6 +293,16 @@ class _Editor(Gtk.Box):
         focus.connect('leave', lambda _c: self._on_flush())
         widget.add_controller(focus)
 
+    def _unselect_title(self):
+        """Put the caret at the end of the title if focus selected all of
+        it. A selection the writer is making is never the whole title the
+        instant focus arrives, so it is left alone."""
+        bounds = self.title.get_selection_bounds()
+        text = self.title.get_text()
+        if text and bounds and tuple(bounds) == (0, len(text)):
+            self.title.select_region(-1, -1)
+        return GLib.SOURCE_REMOVE
+
     def _verse_text(self, book, chapter, verse):
         """The verse's own words, in the translation that fits the interface
         language, falling back to the one the reader has open.
@@ -477,6 +491,12 @@ class MarkEditor(_Editor):
         self.note.set_top_margin(10)
         self.note.set_bottom_margin(12)
         self.note.add_css_class('journal-note-field')
+        # Writing, so the writing face and the reading measure, as the
+        # journal body beside it is. Plain text still: nothing renders a
+        # note's notation.
+        self.note.add_css_class('writing-note')
+        writing_page._NOTES.add(self.note)
+        writing_page.ensure_writing_style()
         self.note.get_buffer().connect('changed', self._edited)
         self._watch_focus(self.note)
 
@@ -490,7 +510,8 @@ class MarkEditor(_Editor):
         # nothing renders its markup. One idiom for a field you write in —
         # which is the rule that took the card OFF both of them last pass,
         # and the rule that puts the edge back on both of them now.
-        note_scroll = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
+        note_scroll = _SheetScroll(self._fit_note, vexpand=True,
+                                   hexpand=True)
         note_scroll.set_policy(
             Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         note_scroll.set_child(self.note)
@@ -503,13 +524,14 @@ class MarkEditor(_Editor):
         # Into the sermon being written. A mark is where "this belongs in
         # Sunday's manuscript" is actually thought, and the note goes with
         # the verse — which is the one thing the reading page's own door
-        # cannot do, because there the note is not on screen.
+        # cannot do, because there the note is not on screen. It rides in
+        # the verse chip's row (`populate`): both send this verse somewhere,
+        # where alone between the note and the tags it belonged to neither.
         self._collect_btn = Gtk.Button()
         self._collect_btn.add_css_class('flat')
-        self._collect_btn.set_halign(Gtk.Align.START)
+        self._collect_btn.set_valign(Gtk.Align.CENTER)
         self._collect_btn.set_visible(False)
         self._collect_btn.connect('clicked', self._on_collect_clicked)
-        box.append(self._collect_btn)
 
         tags_lbl = Gtk.Label(label=_('Tags (comma-separated)'), xalign=0)
         tags_lbl.add_css_class('dim-label')
@@ -538,6 +560,7 @@ class MarkEditor(_Editor):
         if not is_cn:
             self._go_box.append(self._ref_chip(
                 ref, entry['book'], entry['chapter'], entry['app_verse'] or 1))
+        self._go_box.append(self._collect_btn)
         self._show_verse(entry)
 
         self._hl_row.set_visible(not is_cn)
@@ -560,6 +583,16 @@ class MarkEditor(_Editor):
         finally:
             self._loading = False
         self._sync_collect_button()
+
+    def _fit_note(self, width):
+        """Centre the note at the reading measure, as `_fit_page` does the
+        journal body."""
+        if width <= 0:
+            return
+        side = writing_page.note_measure(width)
+        if self.note.get_left_margin() != side:
+            self.note.set_left_margin(side)
+            self.note.set_right_margin(side)
 
     def _sync_collect_button(self):
         """Offered only when there is a sermon to add to. A door to nowhere
@@ -662,17 +695,9 @@ class MarkEditor(_Editor):
 #: notation rather than hiding it, and an entry written by hand and one
 #: written by button are the same file. `wrap` goes around the selection;
 #: `prefix` goes on the front of every line it touches.
-#: The body's own left margin. Every paragraph tag below has to carry it:
-#: a tag's `left-margin` REPLACES the view's rather than adding to it, so
-#: when this went from 2 to 12 with the sheet, the quote's 22 and the list's
-#: 18 quietly stopped being indents of 20 and 16 and became 10 and 6. The
-#: blockquote and the list flattened out and nobody's test could see it.
-_BODY_MARGIN = 12
-
 _TOOLS = [
     ('scriptura-format-text-bold-symbolic', N_('Bold'), 'wrap', '**'),
     ('scriptura-format-text-italic-symbolic', N_('Italic'), 'wrap', '*'),
-    ('scriptura-format-text-heading-symbolic', N_('Heading'), 'prefix', '# '),
     ('scriptura-format-text-quote-symbolic', N_('Quote'), 'prefix', '> '),
     ('scriptura-view-list-bullet-symbolic', N_('Bullet list'),
      'prefix', '- '),
@@ -681,7 +706,7 @@ _TOOLS = [
 ]
 
 
-class _ProseEditor(_Editor):
+class _ProseEditor(WritingPageMixin, _Editor):
     """What a journal entry and a sermon manuscript both are.
 
     A title, however many passages it was written against, a body carrying
@@ -705,11 +730,32 @@ class _ProseEditor(_Editor):
         self._restyle = Autosave(self._restyle_references,
                                  delay_ms=motion.RESTYLE_DELAY_MS)
         self.refs = []
+        #: The markers that hang in the margin, by marker text, and what the
+        #: column and face were when their indents were measured.
+        self._hangs: dict[str, Gtk.TextTag] = {}
+        self._page_key: tuple[str, int] | None = None
+        #: Whether the body is where the reader is writing. The markers show
+        #: only there, on the lines the caret or selection is on; a page
+        #: opened, or left for the title or the tags, reads clean.
+        self._writing = False
+        #: The lines whose markers show, as marks so they ride edits above.
+        self._shown: tuple[Gtk.TextMark, Gtk.TextMark] | None = None
+        self._saved_source = 0
+        #: The drawn bullet, measured once per face, column and leading.
+        self._dot: tuple[tuple, Pango.Layout, float] | None = None
+        self._ref_hit = None
         self._build()
+        _LIVE.add(self)
+        refresh_writing_style()
 
     def shutdown(self):
         """Never leave a restyle armed on an editor going away."""
         self._restyle.cancel()
+        _LIVE.discard(self)
+        if self._saved_source:
+            GLib.source_remove(self._saved_source)
+            self._saved_source = 0
+        self._ref_card.unparent()
         super().shutdown()
 
     def _build(self):
@@ -722,8 +768,17 @@ class _ProseEditor(_Editor):
         self.title.set_has_frame(False)
         self.title.set_placeholder_text(_(self.title_placeholder))
         self.title.add_css_class('journal-entry-heading')
+        self.title.connect('realize', self._pin_title)
+        # An entry selects all of itself when focus arrives from anywhere
+        # but a click, so a page opened with the title focused lost it to
+        # the first key. A title is a line of the page, not a form field.
+        unselect = Gtk.EventControllerFocus()
+        unselect.connect('enter', lambda _c: GLib.idle_add(
+            self._unselect_title))
+        self.title.add_controller(unselect)
         self.title.connect('changed', self._edited)
         self._watch_focus(self.title)
+        self._leaves_writing(self.title)
         box.append(self.title)
 
         # ── One line of metadata, not four ──────────────────────────────
@@ -779,7 +834,7 @@ class _ProseEditor(_Editor):
         # after the signals are live is a crash waiting for the first path
         # that sets text a line earlier.
 
-        self.body = Gtk.TextView()
+        self.body = _WritingView(self)
         self.body.set_wrap_mode(Gtk.WrapMode.WORD)
         self.body.set_left_margin(_BODY_MARGIN)
         self.body.set_right_margin(_BODY_MARGIN)
@@ -803,19 +858,19 @@ class _ProseEditor(_Editor):
                                        self._on_body_insert)
         self._watch_focus(self.body)
         self._install_markup_tags(self.body.get_buffer())
+        self.body.get_buffer().connect('mark-set', self._on_mark_set)
+        self.body.connect('paste-clipboard', self._on_paste)
+        writing = Gtk.EventControllerFocus()
+        writing.connect('enter', lambda _c: self._set_writing(True))
+        self.body.add_controller(writing)
         click = Gtk.GestureClick()
         click.set_button(1)
         click.connect('released', self._on_body_click)
         self.body.add_controller(click)
-        # The tip belongs to the LINKS, not to the page. As a plain
-        # tooltip it fired wherever the pointer rested in the body — a box
-        # over the words you are writing, saying something that is only
-        # true of a few of them.
-        self.body.set_has_tooltip(True)
-        self.body.connect('query-tooltip', self._on_body_tooltip)
+        self._ref_card = self._build_ref_card()
         self.body.add_controller(self._body_shortcuts())
 
-        body_scroll = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
+        body_scroll = _SheetScroll(self._fit_page, vexpand=True, hexpand=True)
         body_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         body_scroll.set_child(self.body)
 
@@ -855,6 +910,23 @@ class _ProseEditor(_Editor):
         tags_lbl.add_css_class('caption')
         tags_lbl.set_hexpand(True)
         caption.append(tags_lbl)
+        # "Saved", for a moment after each write. There is no Save button to
+        # press, and a reader from a word processor looks for one; this is
+        # the quiet answer to "did it keep that?", gone again before it can
+        # become something to watch.
+        self._saved = Gtk.Label(label=_('Saved'), xalign=1)
+        self._saved.add_css_class('dim-label')
+        self._saved.add_css_class('caption')
+        # Widget opacity, not a CSS transition: that stalled at 0 on a
+        # class change. An Adw animation follows the desktop's animation
+        # setting the same way and jumps to its end when that is off.
+        self._saved.set_opacity(0)
+        # Held apart from the count, or the two read as one phrase.
+        self._saved.set_margin_end(12)
+        self._saved_fade = Adw.TimedAnimation.new(
+            self._saved, 0, 1, 150,
+            Adw.PropertyAnimationTarget.new(self._saved, 'opacity'))
+        caption.append(self._saved)
         self._words = Gtk.Label(xalign=1)
         self._words.add_css_class('dim-label')
         self._words.add_css_class('caption')
@@ -868,6 +940,7 @@ class _ProseEditor(_Editor):
         self.tags.set_placeholder_text(_(self.tags_example))
         self.tags.connect('changed', self._edited)
         self._watch_focus(self.tags)
+        self._leaves_writing(self.tags)
         self._watch_tags(self.tags)
         box.append(self.tags)
 
@@ -927,13 +1000,23 @@ class _ProseEditor(_Editor):
         bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
         bar.add_css_class('journal-tools')
         accel = {'**': _('Bold (Ctrl+B)'), '*': _('Italic (Ctrl+I)')}
+        #: Toggles, so each shows what the caret is in — the way every
+        #: editor teaches what its buttons did — and AT hears pressed or not.
+        self._tool_buttons: dict[str, Gtk.ToggleButton] = {}
         for icon, label, kind, marker in _TOOLS:
-            btn = Gtk.Button(icon_name=icon)
+            btn = Gtk.ToggleButton(icon_name=icon)
             btn.add_css_class('flat')
+            # The caret stays in the body: a press that took the keyboard
+            # would fold the markers it is about to write.
+            btn.set_focus_on_click(False)
             btn.set_tooltip_text(accel.get(marker) or _(label))
             set_accessible_label(btn, _(label))
             btn.connect('clicked', self._on_tool, kind, marker)
             bar.append(btn)
+            self._tool_buttons[kind if kind == 'number' else marker] = btn
+            if marker == '*':
+                bar.append(self._build_style_menu())
+        bar.append(self._build_font_menu())
         find = Gtk.Button(icon_name='scriptura-system-search-symbolic')
         find.add_css_class('flat')
         find.set_hexpand(True)
@@ -969,7 +1052,8 @@ class _ProseEditor(_Editor):
         return ctl
 
     def _body_shortcuts(self):
-        """Ctrl+B and Ctrl+I, local to the body.
+        """Ctrl+B and Ctrl+I, the styles, and Esc over the reference card, local
+        to the body.
 
         Local scope: they mean nothing outside a text buffer, and the
         window's own accelerators must keep working everywhere else in it.
@@ -981,6 +1065,15 @@ class _ProseEditor(_Editor):
                 trigger=Gtk.ShortcutTrigger.parse_string(keys),
                 action=Gtk.CallbackAction.new(
                     lambda _w, _a, m=marker: self._wrap(m) or True)))
+        for _label, marker, _scale, keys in _STYLES:
+            ctl.add_shortcut(Gtk.Shortcut(
+                trigger=Gtk.ShortcutTrigger.parse_string(keys),
+                action=Gtk.CallbackAction.new(
+                    lambda _w, _a, m=marker: self._set_style(m) or True)))
+        ctl.add_shortcut(Gtk.Shortcut(
+            trigger=Gtk.ShortcutTrigger.parse_string('Escape'),
+            action=Gtk.CallbackAction.new(
+                lambda *_a: self._dismiss_ref_card())))
         return ctl
 
     def _on_tool(self, _btn, kind, marker):
@@ -1000,7 +1093,7 @@ class _ProseEditor(_Editor):
         a, b = bounds if bounds else 2 * (
             buf.get_iter_at_mark(buf.get_insert()),)
         start, end = a.get_offset(), b.get_offset()
-        text = buf.get_text(a, b, False)
+        text = buf.get_text(a, b, True)
         # A drag takes the space after a word with it more often than not, and
         # '**word **' is notation the renderer will not read back: the pair
         # has to close against a non-space. So the markers go around what was
@@ -1077,7 +1170,7 @@ class _ProseEditor(_Editor):
         if start < 0 or end > buf.get_char_count():
             return ''
         return buf.get_text(buf.get_iter_at_offset(start),
-                            buf.get_iter_at_offset(end), False)
+                            buf.get_iter_at_offset(end), True)
 
     def _number(self, _marker=''):
         """Number the lines the selection touches, or take the numbers off.
@@ -1218,7 +1311,7 @@ class _ProseEditor(_Editor):
         end = start.copy()
         if not end.ends_line():
             end.forward_to_line_end()
-        return buf.get_text(start, end, False)
+        return buf.get_text(start, end, True)
 
     def populate(self, entry):
         """Fill the shared fields. A subclass fills its own, inside the
@@ -1238,7 +1331,7 @@ class _ProseEditor(_Editor):
                 if widget.get_text() != text:
                     widget.set_text(text)
             body = entry.get('body') or ''
-            if buf.get_text(*buf.get_bounds(), False) != body:
+            if buf.get_text(*buf.get_bounds(), True) != body:
                 buf.set_text(body)
             self._populate_head(entry)
         finally:
@@ -1274,21 +1367,30 @@ class _ProseEditor(_Editor):
             return
         buf.create_tag('md-strong', weight=Pango.Weight.BOLD)
         buf.create_tag('md-emphasis', style=Pango.Style.ITALIC)
-        buf.create_tag('md-heading', weight=Pango.Weight.BOLD, scale=1.25,
-                       pixels_above_lines=12, pixels_below_lines=4)
+        # A heading is bold at the body's size; its level's tag, below, sets
+        # the size (tag scales multiply). Three steps a reader can see:
+        # 1.25, 1.12, and the body's own size for the third and deeper.
+        buf.create_tag('md-heading', weight=Pango.Weight.BOLD,
+                       pixels_above_lines=10, pixels_below_lines=4)
+        buf.create_tag('md-subheading', weight=Pango.Weight.BOLD,
+                       pixels_above_lines=10, pixels_below_lines=4)
+        buf.create_tag('md-level-1', scale=self._LEVEL_SCALE[2],
+                       pixels_above_lines=16)
+        buf.create_tag('md-level-2', scale=self._LEVEL_SCALE[3],
+                       pixels_above_lines=12)
+        # A rule's line is drawn in the middle of its own; the space around
+        # it is what makes it a break rather than a line of dashes.
+        buf.create_tag('md-rule', pixels_above_lines=6, pixels_below_lines=6)
         # A quoted passage should look quoted — that is the whole reason §6.5
         # asked for any of this, and italic-plus-a-hair was not it. A block:
-        # set in, held off the paragraphs either side, and standing on a
-        # faint field of its own (a text tag cannot draw the rule a quote
-        # would carry in print; `paragraph-background` is the one block-level
-        # mark it has). The tint is minted in _dim_markers, from live ink.
+        # set in, held off the paragraphs either side, on a faint rounded
+        # field with a bar down its edge, drawn by `_draw_quote`.
         buf.create_tag('md-quote', style=Pango.Style.ITALIC,
                        left_margin=_BODY_MARGIN + 20,
                        pixels_above_lines=6, pixels_below_lines=6)
-        # A hanging indent, so a list item that wraps aligns under its own
-        # words rather than under its marker.
-        buf.create_tag('md-bullet', left_margin=_BODY_MARGIN + 22,
-                       indent=-14)
+        # Set in; the marker, when it shows, hangs left of the words (the
+        # hang tags), so a wrapped item aligns under its own words.
+        buf.create_tag('md-bullet', left_margin=_BODY_MARGIN + _LIST_INSET)
         # The syntax stays visible and editable, but recedes. Nothing is
         # hidden from the person who typed it. GtkTextTag has no alpha
         # property, so the colour is the view's own ink knocked back — read
@@ -1298,6 +1400,15 @@ class _ProseEditor(_Editor):
         # scaffolding; at 0.8 they read as notation beside the words rather
         # than as words.
         buf.create_tag('md-marker', scale=0.8)
+        # A list's number is its words' size and ink: it is read, not
+        # skipped. After md-marker, so it outranks that tag's dimming.
+        buf.create_tag('md-list-number', scale=1 / 0.8)
+        # A marker off the line being written folds away.
+        buf.create_tag('md-hidden', invisible=True)
+        # A bullet's '- ' is opened out, so the dash stands a bullet's
+        # distance from its words — and the dot drawn in its place when it
+        # folds sits exactly where the dash will appear.
+        buf.create_tag('md-bullet-mark', letter_spacing=self._BULLET_SPACING)
         # A reference is a door, so it looks like one: the accent ink and an
         # underline, the app's own link vocabulary.
         buf.create_tag('md-ref', underline=Pango.Underline.SINGLE)
@@ -1317,7 +1428,7 @@ class _ProseEditor(_Editor):
         it costs 0.5ms on that manuscript, which is why this rides the
         reference debounce and not the keystroke.
         """
-        text = buf.get_text(*buf.get_bounds(), False)
+        text = buf.get_text(*buf.get_bounds(), True)
         words = len(journal_markup.plain(text).split())
         self._words.set_visible(bool(words))
         if words:
@@ -1384,19 +1495,9 @@ class _ProseEditor(_Editor):
         first = max(0, min(first, total - 1))
         last = max(first, min(last, total - 1))
 
-        start = buf.get_iter_at_line(first)[1]
-        if last + 1 < total:
-            end = buf.get_iter_at_line(last + 1)[1]
-        else:
-            end = buf.get_end_iter()
-        for tag in ('md-strong', 'md-emphasis', 'md-heading', 'md-quote',
-                    'md-bullet', 'md-marker'):
-            buf.remove_tag_by_name(tag, start, end)
-        base = start.get_offset()
-        text = buf.get_text(start, end, False)
-        for a, b, tag in journal_markup.spans(text):
-            buf.apply_tag_by_name(tag, buf.get_iter_at_offset(base + a),
-                                  buf.get_iter_at_offset(base + b))
+        self._restyle_lines(buf, first, last)
+        self._sync_reveal()
+        self._sync_tools()
         self._restyle.schedule()
 
     @staticmethod
@@ -1415,7 +1516,7 @@ class _ProseEditor(_Editor):
         self._count_words(buf)
         start, end = buf.get_bounds()
         buf.remove_tag_by_name('md-ref', start, end)
-        text = buf.get_text(start, end, False)
+        text = buf.get_text(start, end, True)
         # Kept so a click can be answered without parsing again, and so the
         # answer is the one the reader can see underlined.
         self.refs = journal_markup.reference_spans(text, self._names())
@@ -1424,26 +1525,28 @@ class _ProseEditor(_Editor):
                                   buf.get_iter_at_offset(b))
 
     def _on_body_click(self, gesture, n_press, x, y):
-        """Ctrl+click on a reference goes there.
+        """A click on a reference offers it; Ctrl+click goes straight there.
 
-        **Ctrl is required, and it has to be.** The body is an editable
-        field that is never not editable — there is no read-only mode, since
-        autosave removed the view/edit split — so a plain click has to place
-        the cursor. Without the modifier a reader could not put the caret
-        inside "John 3:16" to fix a typo without the window navigating away
-        from what they were writing.
+        The body is never not editable, so a plain click has to place the
+        caret — a reader fixing a typo inside "John 3:16" must not be
+        carried off to John. So a plain click does both: the caret lands,
+        and a small card opens under the reference saying where it goes,
+        the way a link in Pages or Google Docs answers a click. Ctrl+click
+        is the shortcut past the card, and the card says so.
         """
         if n_press != 1 or not self.refs:
-            return
-        state = gesture.get_current_event_state()
-        if not (state & Gdk.ModifierType.CONTROL_MASK):
             return
         if self.body.get_buffer().get_has_selection():
             return
         hit = self._ref_at(x, y)
-        if hit is not None:
-            _a, _b, book, chapter, verse = hit
+        if hit is None:
+            return
+        _a, _b, book, chapter, verse = hit
+        state = gesture.get_current_event_state()
+        if state & Gdk.ModifierType.CONTROL_MASK:
             self._on_navigate(book, chapter, verse or 1)
+        else:
+            self._offer_ref(hit)
 
     def _ref_at(self, x, y):
         """The reference under widget coordinates (x, y), or None."""
@@ -1459,12 +1562,6 @@ class _ProseEditor(_Editor):
             if span[0] <= offset < span[1]:
                 return span
         return None
-
-    def _on_body_tooltip(self, _view, x, y, keyboard, tooltip):
-        if keyboard or self._ref_at(x, y) is None:
-            return False
-        tooltip.set_text(_('Ctrl+click to go to this passage'))
-        return True
 
     def _dim_markers(self, buf):
         """Point the marker and reference tags at live theme colours.
@@ -1482,13 +1579,9 @@ class _ProseEditor(_Editor):
             dim.red, dim.green, dim.blue = ink.red, ink.green, ink.blue
             dim.alpha = ink.alpha * 0.35
             tag.set_property('foreground-rgba', dim)
-        quote = table.lookup('md-quote')
-        if quote is not None:
-            ink = self.body.get_color()
-            field = Gdk.RGBA()
-            field.red, field.green, field.blue = ink.red, ink.green, ink.blue
-            field.alpha = ink.alpha * 0.06
-            quote.set_property('paragraph-background-rgba', field)
+        number = table.lookup('md-list-number')
+        if number is not None:
+            number.set_property('foreground-rgba', self.body.get_color())
         ref = table.lookup('md-ref')
         if ref is not None:
             # The desktop's accent, not a literal blue — the reader may have
@@ -1723,7 +1816,8 @@ class EntryEditor(_ProseEditor):
         exactly as it was.
         """
         buf = self.body.get_buffer()
-        body = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), False)
+        # True: markers folded out of sight are still the entry.
+        body = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True)
         title = self.title.get_text().strip()
         tags = [t.strip() for t in self.tags.get_text().split(',')
                 if t.strip()]
@@ -1737,6 +1831,7 @@ class EntryEditor(_ProseEditor):
         journal.save(e['id'], date=e.get('date') or None, title=title,
                      body=body, anchors=e.get('anchors') or [], tags=tags,
                      plan=e.get('plan'), collect=e.get('collect'))
+        self._flash_saved()
         stored = journal.get(e['id'])
         if stored is not None:
             e['created'] = stored['created']
@@ -1802,8 +1897,11 @@ class SermonEditor(_ProseEditor):
         self.series = Gtk.Entry()
         # Not hexpand: a full-width filled box for a series name was the
         # loudest thing in a pane whose title and big idea are frameless, and
-        # a series name is a few words.
+        # a series name is a few words. Frameless too, as they are: the
+        # caption says what it holds and the caret says where to type.
         self.series.set_width_chars(24)
+        self.series.set_has_frame(False)
+        self.series.add_css_class('sermon-meta-field')
         self.series.set_placeholder_text(_('None'))
         self.series.connect('changed', self._series_edited)
         self._watch_focus(self.series)
@@ -1830,9 +1928,14 @@ class SermonEditor(_ProseEditor):
         self.part.set_width_chars(3)
         self.part.set_max_width_chars(3)
         self.part.set_input_purpose(Gtk.InputPurpose.DIGITS)
+        # A part is saved only as a number, so the field takes only digits:
+        # a typed "two" used to sit there and be saved as no part at all.
+        self.part.connect('changed', self._digits_only)
         # A series in progress does not always know its length, so the part
         # may simply be blank — "part 3 of ?" has to be sayable.
         self.part.set_placeholder_text('—')
+        self.part.set_has_frame(False)
+        self.part.add_css_class('sermon-meta-field')
         self.part.connect('changed', self._series_edited)
         self._watch_focus(self.part)
         self._watch_grouping(self.part)
@@ -2090,18 +2193,20 @@ class SermonEditor(_ProseEditor):
         """A filled chip, where a passage is outlined: a preaching date is
         the reader's own record, not Scripture's place."""
         try:
-            label = format_date(date.fromisoformat(iso))
+            day = date.fromisoformat(iso)
+            label = format_date(day)
+            short = format_short_date(day, relative=False)
         except ValueError:
-            label = iso
+            label = short = iso
         pair = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
         pair.add_css_class('chip-pair')
-        chip = Gtk.Button(label=label)
+        # The chip says what the date is. A bare date beside "Add a date"
+        # left a sighted reader to guess; only a screen reader heard
+        # "Preached". Short on the chip, whole for the screen reader.
+        chip = Gtk.Button(label=_('Preached {date}').format(date=short))
         chip.add_css_class('tag-chip')
         chip.add_css_class('chip-leading')
         chip.set_can_focus(False)
-        # The visible "Preached" caption is gone from the metadata line, so
-        # the chip says it: sighted readers get it from the neighbouring
-        # "Add a date", and a screen reader gets it here.
         set_accessible_label(chip, _('Preached {date}').format(date=label))
         pair.append(chip)
         drop = Gtk.Button(icon_name='scriptura-window-close-symbolic')
@@ -2115,7 +2220,7 @@ class SermonEditor(_ProseEditor):
 
     def _add_date_chip(self):
         button = Gtk.MenuButton()
-        button.set_child(Gtk.Label(label=_('Add a date')))
+        button.set_child(Gtk.Label(label=_('Add a date preached')))
         button.add_css_class('add-chip')
         popover = Gtk.Popover()
         calendar = Gtk.Calendar()
@@ -2266,6 +2371,17 @@ class SermonEditor(_ProseEditor):
         if name:
             self._day.set_text(_('Written for {day}').format(day=name))
 
+    def _digits_only(self, entry):
+        """Keep only the digits of what was typed or pasted, so "Part 3"
+        lands as 3. On `changed`, not `insert-text`: PyGObject cannot hand
+        that signal's position back, and GLib warned on every key."""
+        text = entry.get_text()
+        digits = ''.join(c for c in text if c.isdigit())
+        if digits != text:
+            at = entry.get_position()
+            entry.set_text(digits)
+            entry.set_position(min(at, len(digits)))
+
     def _series_value(self):
         """`{name, part}` from the two fields, or None for no series.
 
@@ -2294,7 +2410,7 @@ class SermonEditor(_ProseEditor):
         verse and in the book filter.
         """
         buf = self.body.get_buffer()
-        existing = buf.get_text(*buf.get_bounds(), False)
+        existing = buf.get_text(*buf.get_bounds(), True)
         addition = f'\n\n{text}' if existing.strip() else text
         buf.insert(buf.get_end_iter(), addition)
         if anchor is not None:
@@ -2318,7 +2434,8 @@ class SermonEditor(_ProseEditor):
         sermons.json exactly as it was.
         """
         buf = self.body.get_buffer()
-        body = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), False)
+        # True: markers folded out of sight are still the sermon.
+        body = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True)
         title = self.title.get_text().strip()
         idea = self.idea.get_text().strip()
         tags = [t.strip() for t in self.tags.get_text().split(',')
@@ -2338,6 +2455,7 @@ class SermonEditor(_ProseEditor):
                      anchors=e.get('anchors') or [], series=series,
                      preached=e.get('preached') or [], tags=tags,
                      collect=e.get('collect'))
+        self._flash_saved()
         stored = sermons.get(e['id'])
         if stored is not None:
             e['created'] = stored['created']

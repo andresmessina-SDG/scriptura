@@ -32,7 +32,9 @@
  *   corner radius     : 4 (inline bars/swatches) · 6 (cards/controls) ·
  *                       10 (chips) · 20 (overlay panels) · 9999 (pills)
  *   motion            : named tokens in motion.py (durations 100/150/200/280,
- *                       enter/exit/move/fade easings) — no new literal durations
+ *                       enter/exit/move/fade easings) — no new literal durations;
+ *                       anything that travels goes quiet under
+ *                       @media (prefers-reduced-motion: reduce)
  * Accent-tinted chrome uses @accent_* tokens so it follows the user's chosen
  * GNOME accent colour; the highlighter palette below is intentionally fixed
  * (those are semantic content colours, not chrome).
@@ -324,7 +326,7 @@ button.family-root-toggle {
 }
 .family-root-toggle > box {
     opacity: 0.6;
-    transition: opacity 150ms ease;
+    transition: opacity 100ms linear;
 }
 .family-root-toggle:hover > box,
 .family-root-toggle:focus-visible > box {
@@ -337,10 +339,19 @@ button.family-root-toggle {
 }
 .family-root-toggle image {
     -gtk-icon-size: 12px;
-    transition: -gtk-icon-transform 250ms ease;
+    /* DURATION_STANDARD, EASE_MOVE (ease-in-out cubic) */
+    transition: -gtk-icon-transform 200ms cubic-bezier(0.65, 0, 0.35, 1);
 }
 .family-root-toggle.open image {
     -gtk-icon-transform: rotate(90deg);
+}
+/* Reduce motion (GNOME Settings > Accessibility): the chevron turns in one
+   frame. Live because styles.py binds this sheet's prefers-reduced-motion
+   to the desktop's; fades elsewhere stay, since they are not motion. */
+@media (prefers-reduced-motion: reduce) {
+    .family-root-toggle image {
+        transition: none;
+    }
 }
 .family-note {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
@@ -542,10 +553,14 @@ separator.journal-divider { background-color: alpha(@borders, 0.3); }
  * neither needs a badge. The family LIST matters: Newsreader carries no
  * Cyrillic, and Noto Serif is second because it ships with the app, so every
  * Russian glyph lands there rather than on whatever the machine owns. */
-.journal-entry-title, .journal-entry-heading, .journal-entry-body {
+.journal-entry-title, .journal-entry-heading, .journal-entry-body,
+.writing-note {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
 }
+/* A mark's note: writing, so the body's face and size (the face and leading
+ * are overridden from settings by writing_page.refresh_writing_style). */
+.writing-note { font-size: 1.05em; }
 .journal-entry-title { font-size: 1.05em; font-weight: 600; }
 
 /* The title field is not a form field: no frame, a step above body size,
@@ -614,6 +629,25 @@ separator.journal-divider { background-color: alpha(@borders, 0.3); }
     border-radius: 7px;
 }
 .journal-tools button:hover { background-color: alpha(@window_fg_color, 0.09); }
+/* A tool that is on for the caret's text says so in the accent, as the
+ * format buttons in Pages do; Adwaita's own checked flat button was too
+ * faint to tell apart on the sheet. The choices inside the style and font
+ * menus are toggles too, so the current one reads the same way. */
+.journal-tools button:checked,
+.journal-tools menubutton > button:checked {
+    background-color: alpha(@accent_bg_color, 0.2);
+    color: @accent_color;
+}
+/* The font menu is a word, not a glyph, so it needs sides the square
+ * buttons do not. The node inside a MenuButton is its own `button`. */
+.journal-font-menu > button { padding-left: 8px; padding-right: 8px; }
+
+/* The paragraph-style menu is an icon with an arrow; the arrow is what
+ * says it opens, so it gets the room a square button does not have. */
+.journal-style-menu > button { padding-left: 4px; padding-right: 4px; }
+
+/* The card a reference click opens: one quiet button. */
+.journal-ref-card > contents { padding: 2px; }
 
 /* Find and replace, under the formatting row. The same flat buttons; the
  * fields keep their own frames, since they are where the typing goes. */
@@ -709,13 +743,15 @@ separator.journal-divider { background-color: alpha(@borders, 0.3); }
  * frameless, and a full-width filled box was the last loud thing left in it.
  * The caption above and the placeholder inside already say what it holds, so
  * the frame was saying nothing twice. Focus is the caret, as it is above. */
-.journal-tags-field {
+.journal-tags-field,
+.sermon-meta-field {
     padding-left: 0;
     padding-right: 0;
     background: none;
     box-shadow: none;
 }
-.journal-tags-field:focus-within {
+.journal-tags-field:focus-within,
+.sermon-meta-field:focus-within {
     background: none;
     box-shadow: none;
     outline: none;
@@ -935,6 +971,14 @@ image.module-feature-icon {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 1.1em;
+}
+
+/* The note peek's Edit: its words on the text's left edge, with the hover
+ * field still round them. */
+.note-peek-edit {
+    padding-left: 6px;
+    padding-right: 6px;
+    margin-left: -6px;
 }
 
 menubutton.pane-module-button > button,
@@ -2006,13 +2050,17 @@ button.stone-chip-rel {
 .stone-contents button {
     padding: 6px 12px;
 }
-/* Gentle flash when a Bible 'related artifact' marker scrolls here. */
+/* Flash when a Bible 'related artifact' marker scrolls here: the Bible
+   pane's numbers (motion.FLASH_HOLD_MS, then DURATION_EMPHASIZED linear).
+   On at once, so the arriving state has no transition; the base carries the
+   fade for when the class comes off. */
 .stone-plate {
-    transition: background 400ms ease;
+    transition: background 280ms linear;
     border-radius: 10px;
 }
 .stone-plate.stone-flash {
     background: alpha(@accent_color, 0.13);
+    transition: none;
 }
 
 /* The inline 'related artifact' icon embedded beside a Bible verse — small,
@@ -2190,7 +2238,7 @@ button.genbook-synopsis-toggle label {
     letter-spacing: 0.04em;
     min-height: 0;
     padding: 1px 7px;
-    transition: opacity 150ms ease-out;
+    transition: opacity 100ms linear;
 }
 .devotional-date-nav:hover .devotional-alt,
 .devotional-date-nav:focus-within .devotional-alt {

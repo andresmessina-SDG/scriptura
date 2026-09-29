@@ -502,12 +502,15 @@ class AudioPill(Gtk.Box):
             self._anim.pause()
             self._anim = None
 
+        # Under reduced motion it only fades; the rise is the motion.
+        travel = TRAVEL_PX if motion.should_move() else 0
+
         def frame(value):
             self.set_opacity(value)
             # Rises as it fades in, sinks as it goes: the travel is tied to
             # the opacity so the two can never disagree.
             self.set_margin_bottom(
-                round(FOOT_MARGIN - TRAVEL_PX * (1.0 - value)))
+                round(FOOT_MARGIN - travel * (1.0 - value)))
 
         def finished(_a):
             self._anim = None

@@ -279,7 +279,10 @@ def test_the_row_shows_the_day_it_was_last_preached(isolated):
     _sower(preached=['2024-03-03', '2026-02-08'])
     row = [r for r in annotations_window._all_entries()
            if r['kind'] == 'sermon'][0]
-    assert '2026' in annotations_window._preached_label(row)
+    import datetime
+    # The last of the two, not the first; short, as every row date is.
+    assert annotations_window._preached_label(
+        row, today=datetime.date(2026, 9, 28)) == '8 Feb'
 
 
 def test_a_sermon_never_preached_shows_no_day(isolated):
@@ -440,7 +443,7 @@ def test_collecting_into_the_open_sermon_goes_through_the_buffer(isolated,
         assert win.open_sermon_id() == 's1'
         win.collect_into('s1', 'Isaiah 55:10–11', _anchor('Isaiah', 55, 10))
         buf = win._sermon_editor.body.get_buffer()
-        shown = buf.get_text(*buf.get_bounds(), False)
+        shown = buf.get_text(*buf.get_bounds(), True)
         assert shown.endswith('Isaiah 55:10–11')
         assert sermons.get('s1')['body'] == shown
     finally:
@@ -715,7 +718,7 @@ def test_the_manuscript_continues_a_list_too(isolated, display):
         buf.set_text('1. First point')
         buf.place_cursor(buf.get_end_iter())
         buf.insert_at_cursor('\n')
-        assert buf.get_text(*buf.get_bounds(), False) == '1. First point\n2. '
+        assert buf.get_text(*buf.get_bounds(), True) == '1. First point\n2. '
     finally:
         win.destroy()
 
@@ -785,6 +788,38 @@ def test_the_chapter_door_opens_the_sermon_it_promised(isolated, display):
         assert win._current_entry is not None
         assert win._current_entry['id'] == 's2'
         assert win._selected_book_key() == 'Matthew'
+    finally:
+        win.destroy()
+
+
+def test_the_chapter_door_finds_a_sermon_by_a_later_passage(isolated,
+                                                             display):
+    """A verse added to a sermon is its second passage. The door counted the
+    sermon from every passage and the book filter kept only the first, so
+    the page opened on "No matches"."""
+    sermons.save('s1', title='later', anchors=[_anchor('Psalms', 146),
+                                               _anchor('Exodus', 20, 3)])
+    win = _open_sermons()
+    try:
+        win.show_sermons_on('Exodus', 20)
+        assert win._selected_book_key() == 'Exodus'
+        assert win._current_entry is not None
+        assert win._current_entry['id'] == 's1'
+    finally:
+        win.destroy()
+
+
+def test_the_journal_door_finds_an_entry_by_a_later_passage(isolated,
+                                                            display):
+    # Another entry puts Exodus in the book filter, as his marks did.
+    journal.save('j0', title='first', body='x', anchors=[_anchor('Exodus', 1)])
+    journal.save('j1', title='later', body='x',
+                 anchors=[_anchor('Psalms', 146), _anchor('Exodus', 20, 3)])
+    win = _open_sermons()
+    try:
+        win.show_entries_on('Exodus', 20)
+        assert win._current_entry is not None
+        assert win._current_entry['id'] == 'j1'
     finally:
         win.destroy()
 
@@ -940,7 +975,7 @@ def test_a_mark_on_the_passage_goes_in_where_the_caret_is(isolated, display):
         marks = annotations_window.marks_on('Matthew', 13)
         assert len(marks) == 1
         editor._insert_mark(marks[0])
-        body = buf.get_text(*buf.get_bounds(), False)
+        body = buf.get_text(*buf.get_bounds(), True)
         assert body.startswith('Opening line.\n\n')
         assert 'The soil is the hearer.' in body
         assert 'Matthew 13:23' in body
@@ -992,3 +1027,59 @@ def test_the_study_menu_says_what_was_preached_here(isolated, display,
     popover = annotation_dialogs.build_study_menu(_Pane(), [1], 10, 10)
     labels = _menu_labels(popover.get_child())
     assert '1 sermon on this chapter' in labels
+
+
+def _labels_in(w):
+    from gi.repository import Gtk
+    out = []
+    if isinstance(w, Gtk.Label):
+        out.append(w.get_text())
+    c = w.get_first_child()
+    while c is not None:
+        out += _labels_in(c)
+        c = c.get_next_sibling()
+    return out
+
+
+def test_the_preaching_date_says_it_was_preached(isolated, display):
+    """A bare date chip beside "Add a date" did not say which date it was;
+    only a screen reader heard "Preached"."""
+    import datetime
+    this_year = datetime.date.today().year
+    _sower(preached=[f'{this_year}-02-08'])
+    win = _open_sermons()
+    try:
+        win.select_sermon('s1')
+        texts = _labels_in(win._sermon_editor._preached_box)
+        assert 'Preached 8 Feb' in texts
+        assert 'Add a date preached' in texts
+    finally:
+        win.destroy()
+
+
+def test_series_and_part_are_frameless(isolated, display):
+    _sower()
+    win = _open_sermons()
+    try:
+        ed = win._sermon_editor
+        assert not ed.series.get_has_frame() and not ed.part.get_has_frame()
+    finally:
+        win.destroy()
+
+
+def test_the_part_takes_only_a_number(isolated, display):
+    """The part is saved only when it is a number, yet the field took
+    letters, so a typed "two" was quietly no part at all."""
+    win = _open_sermons()
+    try:
+        win.start_sermon()
+        part = win._sermon_editor.part
+        part.insert_text('1a', 0)
+        assert part.get_text() == '1'
+        part.set_text('')
+        part.insert_text('Part 12', 0)   # a paste keeps its digits
+        assert part.get_text() == '12'
+        part.insert_text('two', 2)
+        assert part.get_text() == '12'
+    finally:
+        win.destroy()

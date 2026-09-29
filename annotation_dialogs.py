@@ -28,11 +28,13 @@ import family_read
 from family_card import paint_track, redraw_on_contrast
 import content
 import journal
+import motion
 import sermons
 import settings
 import export_dialog
 import passage_export
 import passage_print
+import writing_page
 import sword_bridge
 import ebible_bridge
 import open_data
@@ -364,7 +366,8 @@ def build_study_menu(pane, verses, x, y, anchor=None):
 
     stack = Gtk.Stack()
     stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
-    stack.set_transition_duration(140)
+    stack.set_transition_duration(motion.DURATION_SHORT)
+    motion.follow_reduced_motion(stack)
     # The width is shared so the menu never jumps sideways mid-slide; the
     # height is not, so a short page is not padded out to the tall one.
     stack.set_hhomogeneous(True)
@@ -582,14 +585,20 @@ def _verse_rect(pane, verse):
     What a popover points at when nobody clicked anything — the keyboard and
     the toolbar's ⋮ both arrive here with no pointer position, and a fixed
     corner of the view would put the card somewhere the verse is not.
+
+    A verse scrolled out of sight is pointed at from the view's nearest
+    edge: its own position lay thousands of pixels off, and GTK answered
+    that by opening Compare in the window's top-left corner.
     """
     rect = Gdk.Rectangle()
     rect.x, rect.y, rect.width, rect.height = 160, 80, 1, 1
     ranges = pane._verse_ranges(verse)
     if ranges:
         location = pane.view.get_iter_location(ranges[1])
-        rect.x, rect.y = pane.view.buffer_to_window_coords(
+        x, y = pane.view.buffer_to_window_coords(
             Gtk.TextWindowType.WIDGET, location.x, location.y)
+        rect.x = max(0, min(x, pane.view.get_width() - 1))
+        rect.y = max(0, min(y, pane.view.get_height() - 1))
     return rect
 
 
@@ -1016,6 +1025,9 @@ def _show_note_window(pane, verse, current_note, current_tags):
     scrolled.add_css_class('note-field')
     scrolled.set_overflow(Gtk.Overflow.HIDDEN)
     entry = Gtk.TextView()
+    # The writing face, as the note editor in the Annotations window.
+    entry.add_css_class('writing-note')
+    writing_page.ensure_writing_style()
     entry.set_editable(True)
     entry.set_cursor_visible(True)
     entry.set_wrap_mode(Gtk.WrapMode.WORD)
@@ -1028,14 +1040,14 @@ def _show_note_window(pane, verse, current_note, current_tags):
     scrolled.set_child(entry)
     box.append(scrolled)
 
-    tags_lbl = Gtk.Label(label=_('Topics (comma-separated)'), xalign=0)
+    tags_lbl = Gtk.Label(label=_('Tags (comma-separated)'), xalign=0)
     tags_lbl.add_css_class('dim-label')
     box.append(tags_lbl)
 
     tags_entry = Gtk.Entry()
     safe_tags = [str(t) for t in (current_tags or []) if t]
     tags_entry.set_text(', '.join(safe_tags))
-    tags_entry.set_placeholder_text(_('e.g. Salvation, Prayer, Prophecy'))
+    tags_entry.set_placeholder_text(_('e.g. prayer, faith, covenant'))
     box.append(tags_entry)
 
     try:
@@ -1177,6 +1189,8 @@ def show_chapter_note(pane):
     scrolled.add_css_class('note-field')
     scrolled.set_overflow(Gtk.Overflow.HIDDEN)
     tv = Gtk.TextView()
+    tv.add_css_class('writing-note')
+    writing_page.ensure_writing_style()
     tv.set_editable(True)
     tv.set_cursor_visible(True)
     tv.set_wrap_mode(Gtk.WrapMode.WORD)
@@ -1189,14 +1203,14 @@ def show_chapter_note(pane):
     scrolled.set_child(tv)
     box.append(scrolled)
 
-    tags_lbl = Gtk.Label(label=_('Topics (comma-separated)'), xalign=0)
+    tags_lbl = Gtk.Label(label=_('Tags (comma-separated)'), xalign=0)
     tags_lbl.add_css_class('dim-label')
     box.append(tags_lbl)
 
     tags_entry = Gtk.Entry()
     safe_tags = [str(t) for t in (tags or []) if t]
     tags_entry.set_text(', '.join(safe_tags))
-    tags_entry.set_placeholder_text(_('e.g. Creation, Covenant'))
+    tags_entry.set_placeholder_text(_('e.g. prayer, faith, covenant'))
     box.append(tags_entry)
 
     auto = Autosave(lambda: _save_chapter_note(pane, buf, tags_entry))

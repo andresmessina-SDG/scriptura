@@ -19,6 +19,8 @@ import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Gdk, GLib, Gtk
 
+import motion
+
 
 def _is_fnote_marker_char(it):
     """True when the iter sits on a footnote-marker glyph (superscript
@@ -100,6 +102,8 @@ class ScrollKeeper:
         # or a scrollbar drag. Value changes without recent input are churn.
         self._last_scroll_input = 0
         self._scrollbar_held = False
+        # Cancels the verse jump still waiting to land (land_jump), if any.
+        self._landing = None
 
     # ── Proxies to pane-owned widgets / render state ─────────────────────────
     # The method bodies below reference these exactly as they did inline; the
@@ -452,6 +456,91 @@ class ScrollKeeper:
         earlier = [v for v in present if v < verse_num]
         return max(earlier) if earlier else verse_num
 
+    def land_jump(self, mark, within_margin, yalign):
+        """Keep GTK's glide for a near jump; land a far one, or any jump
+        under reduced motion, in one frame (MOTION_RESEARCH M3).
+
+        GTK already glides every scroll_to_mark: 200ms ease-out, however
+        far — measured under mutter, an 11-screen jump in Psalm 119 moved
+        6,600px in that time, which shows nothing but a blur, and Reduce
+        motion does not stop it. Call right after
+        `scroll_to_mark(mark, within_margin, True, 0.0, yalign)`. GTK starts
+        the glide when it flushes the pending scroll, having validated the
+        lines there, so the first moving frame is when the destination can
+        be computed exactly; a plain set_value then ends the glide before
+        that frame paints."""
+        # One landing at a time: an older one still waiting would cut to
+        # its own target on the new glide's first frame.
+        if self._landing is not None:
+            self._landing()
+        adj = self._reading_scroll.get_vadjustment()
+        source = adj.get_value()
+        seq, input_t0 = self._anchor_seq, self._last_scroll_input
+        own = self._buffer.create_mark(
+            None, self._buffer.get_iter_at_mark(mark), True)
+        state = {}
+
+        def finish():
+            self._landing = None
+            adj.disconnect(state['handler'])
+            if not own.get_deleted():
+                self._buffer.delete_mark(own)
+
+        def cancel():
+            GLib.source_remove(state['timer'])
+            finish()
+
+        def on_change(_adj):
+            GLib.source_remove(state['timer'])
+            if (seq != self._anchor_seq
+                    or self._last_scroll_input != input_t0):
+                # A newer render, or the reader took the scroll: not ours.
+                finish()
+                return
+            if not self._reading_scroll.get_mapped():
+                # Unmapped mid-glide: GTK is finishing the glide itself, from
+                # inside gtk_adjustment_enable_animation, which ends the
+                # frame-clock update after this handler returns. A set_value
+                # here ends it first, and the second end is a Gdk-CRITICAL
+                # (updating_count > 0), seen in CI's nav_storm.
+                finish()
+                return
+            target = self._aligned_value(own, within_margin, yalign)
+            finish()
+            near = (abs(target - source)
+                    <= motion.GLIDE_MAX_PAGES * adj.get_page_size())
+            if near and motion.should_move():
+                return
+            if abs(adj.get_value() - target) < 1:
+                return   # already landed; nothing to cut
+            self._mark_programmatic_scroll()
+            adj.set_value(target)
+
+        def expire():
+            # No move came: already in place, or nothing to scroll.
+            finish()
+            return GLib.SOURCE_REMOVE
+
+        state['handler'] = adj.connect('value-changed', on_change)
+        state['timer'] = GLib.timeout_add(1000, expire)
+        self._landing = cancel
+
+    def _aligned_value(self, mark, within_margin, yalign):
+        """Where GTK's aligned scroll_to_mark puts the adjustment: the
+        use_align branch of gtk_text_view_scroll_to_iter (GTK 4.22),
+        clamped as the adjustment clamps. Matched GTK's landing to under a
+        pixel on near, far and after-render jumps, measured."""
+        view = self._view
+        loc = view.get_iter_location(self._buffer.get_iter_at_mark(mark))
+        height = view.get_height()
+        margin = int(height * within_margin)
+        inner = max(1, height - 2 * margin)
+        value = (loc.y + int(loc.height * yalign - inner * yalign)
+                 - margin + view.get_top_margin())
+        adj = self._reading_scroll.get_vadjustment()
+        return max(adj.get_lower(),
+                   min(value, adj.get_upper() - adj.get_page_size()))
+
     def _scroll_to_verse_silent(self, verse_num):
         self._mark_programmatic_scroll()
         self._reading_anchor = None  # a jump IS a new reading locus
@@ -466,5 +555,6 @@ class ScrollKeeper:
                 return GLib.SOURCE_REMOVE
         mark = self._buffer.create_mark(None, it, True)
         self._view.scroll_to_mark(mark, 0.0, True, 0.0, 0.0)
+        self.land_jump(mark, 0.0, 0.0)
         self._buffer.delete_mark(mark)
         return GLib.SOURCE_REMOVE

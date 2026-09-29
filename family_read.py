@@ -384,7 +384,7 @@ class FamilyRead:
             b = Gtk.Button(label=ref_label(ref))
             b.add_css_class('flat')
             b.add_css_class('family-read-pick')
-            b.connect('clicked', lambda _b, r=ref: self.show_verse(*r))
+            b.connect('clicked', lambda _b, r=ref: self._lead(r))
             picks.append(b)
         box.append(_clamped(picks))
 
@@ -447,14 +447,44 @@ class FamilyRead:
             self.ref = self._reading_verse()
         self._show(keep_place=True)
 
+    def follow(self, ref):
+        """Go to `ref`, chosen outside Read: a verse clicked or stepped to
+        in the Bible beside it, or the header. While Read is not on screen
+        it only keeps the verse; it is read when Read is turned to."""
+        if ref == self.ref or not readable(ref[0]):
+            return
+        self.ref = ref
+        if self._root.get_mapped():
+            self._show()
+
     def follow_reading(self):
-        """Turn to the verse being read beside this pane."""
+        """Go to the verse being read beside this pane."""
+        self.follow(self._reading_verse())
+
+    def start_here(self):
+        """The pane has just turned to the Family Tree: Read starts at the
+        verse being read, not where it was left the last time."""
+        self.ref = None
         self.ref = self._reading_verse()
+
+    def turned_to(self):
+        """Read has been turned to: its verse, kept up to date while it
+        was away, or the one being read if it has none yet."""
+        if self.ref is None:
+            self.ref = self._reading_verse()
         self._show()
 
     def show_verse(self, book, chapter, verse):
         self.ref = (book, chapter, verse)
         self._show()
+
+    def _lead(self, ref):
+        """A verse Read went to by itself: the header, and the Bible
+        beside it, go there too (decided 2026-09-26)."""
+        self.show_verse(*ref)
+        root = self._pane.get_root() if self._pane is not None else None
+        if root is not None and hasattr(root, 'read_moved'):
+            root.read_moved(self._pane, *ref)
 
     def focus_last(self):
         """Put the keyboard back on the row whose Card just closed."""
@@ -494,11 +524,11 @@ class FamilyRead:
             GLib.timeout_add(600, lambda: entry.remove_css_class('error')
                              or GLib.SOURCE_REMOVE)
             return
-        self.show_verse(*ref)
+        self._lead(ref)
 
     def _step(self, delta):
         if self.ref is not None:
-            self.show_verse(*step(self.ref, delta))
+            self._lead(step(self.ref, delta))
 
     def _set_rows(self, key):
         self._show_all = key == 'all'

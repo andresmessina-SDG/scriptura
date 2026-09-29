@@ -164,7 +164,8 @@ class PaneSearch:
 
         self._rev = Gtk.Revealer()
         self._rev.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
-        self._rev.set_transition_duration(200)
+        self._rev.set_transition_duration(motion.DURATION_STANDARD)
+        motion.follow_reduced_motion(self._rev)
         self._rev.set_child(inner)
         self._rev.set_reveal_child(False)
         return self._rev

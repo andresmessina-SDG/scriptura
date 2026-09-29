@@ -23,6 +23,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk, GLib
 import sword_bridge
+import motion
 import tasks
 from a11y import set_accessible_label
 import window
@@ -354,7 +355,8 @@ class PresentController:
         self._present_controls_revealer = Gtk.Revealer()
         self._present_controls_revealer.set_transition_type(
             Gtk.RevealerTransitionType.SLIDE_UP)
-        self._present_controls_revealer.set_transition_duration(200)
+        self._present_controls_revealer.set_transition_duration(motion.DURATION_STANDARD)
+        motion.follow_reduced_motion(self._present_controls_revealer)
         self._present_controls_revealer.set_halign(Gtk.Align.CENTER)
         self._present_controls_revealer.set_valign(Gtk.Align.END)
         self._present_controls_revealer.set_margin_bottom(28)

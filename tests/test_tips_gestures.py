@@ -39,7 +39,14 @@ EXPECTED_GESTURE_SITES = {
     # folds again when it leaves. Not a Tips row — the toast that opens the
     # mode names all three ways out, which is the same bargain the reading
     # mode in the main window strikes.
-    'annotations_window.py': 1,
+    #
+    # The second is a capture-phase key controller that takes Esc out of
+    # writing mode before anything below can close the window on it. A key,
+    # and the one the mode's toast already names.
+    #
+    # The third is the Tag Manager's Esc, which closes it as Esc closes
+    # every other window of the app. The convention, not something to teach.
+    'annotations_window.py': 3,
     # Two, and they moved here with the editors they belong to. One focus
     # controller, reused across the note, tags, title and body fields,
     # flushing a pending autosave when the reader leaves one — invisible by
@@ -63,7 +70,18 @@ EXPECTED_GESTURE_SITES = {
     # stops sitting under "No series". Nothing to discover — the reader typed
     # the series and the list agrees with them; the controller only decides
     # when, so the rebuild does not fire on every keystroke.
-    'annotation_editors.py': 5,
+    #
+    # The sixth is a focus controller that says the reader is writing:
+    # entering the body shows the markdown on the line being written.
+    # Nothing to discover — the notation appears where the caret goes,
+    # which is the whole point. A click on a reference now opens a card
+    # that names the passage and says Ctrl+click goes straight there, so
+    # that one teaches itself.
+    #
+    # The seventh is a focus controller on the title that undoes the
+    # select-all an entry does when focus arrives, so the first key typed
+    # does not replace the title. Nothing to discover: it removes a trap.
+    'annotation_editors.py': 7,
     'archaeology_reader.py': 6,
     'crossref_panel.py': 2,
     # The genealogy charts take a click and a motion controller each. Both
@@ -95,6 +113,10 @@ EXPECTED_GESTURE_SITES = {
     # Two of them are the mouse's back and forward buttons: invisible, so
     # they have a Reading row.
     'window.py': 11,
+    # The seventh editor controller, moved here with the writing page: a
+    # focus controller on the title and tags that folds the body's markdown
+    # when the reader leaves it. Nothing to discover.
+    'writing_page.py': 1,
 }
 
 _GESTURE_CALL = re.compile(

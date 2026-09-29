@@ -445,3 +445,41 @@ def test_a_long_name_wraps_in_its_column_instead_of_widening_it():
     assert row._name_clamp.get_maximum_size() > 1000
     row.set_stacked(False)
     assert row._name_clamp.get_maximum_size() == fr.NAME_W
+
+
+# ── following the Bible beside it, and leading it (2026-09-26) ──────────
+
+def test_read_keeps_a_verse_followed_while_away_and_reads_it_when_turned_to(
+        monkeypatch):
+    read = _read(monkeypatch)
+    fetched = []
+    monkeypatch.setattr(fr, 'verse_text',
+                        lambda m, ref: fetched.append(ref) or 'x')
+    read.follow(('Romans', 8, 28))          # not on screen: kept, not read
+    assert read.ref == ('Romans', 8, 28) and fetched == []
+    read.turned_to()
+    assert set(fetched) == {('Romans', 8, 28)}
+    assert read._entry.get_text() == 'Romans 8:28'
+    fetched.clear()
+    read._root.get_mapped = lambda: True    # on screen: read at once
+    read.follow(('Romans', 8, 29))
+    assert set(fetched) == {('Romans', 8, 29)}
+    fetched.clear()
+    read.follow(('Romans', 8, 29))          # the same verse: nothing to do
+    read.follow(('Tobit', 1, 1))            # a book Read has no rows for
+    assert fetched == [] and read.ref == ('Romans', 8, 29)
+
+
+def test_read_leads_only_when_the_reader_moved_it(monkeypatch):
+    moved = []
+    root = types.SimpleNamespace(
+        read_moved=lambda src, *ref: moved.append(ref),
+        open_bibles=lambda q: None)
+    read = _read(monkeypatch, root=root)
+    read.follow(('John', 1, 1))
+    read.show_verse('John', 1, 2)           # Compare's Read the difference
+    assert moved == []
+    read._step(1)
+    read._entry.set_text('Romans 3:23')
+    read._on_entry(read._entry)
+    assert moved == [('John', 1, 3), ('Romans', 3, 23)]

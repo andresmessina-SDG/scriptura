@@ -26,6 +26,10 @@ _defaults: dict[str, Any] = {
     # ~66 characters per line at the default face/size (measured: 720px
     # ran ~90 CPL, well past the 45–75 readability band).
     'reading_width':      540,
+    # The face the journal and sermon sheets are set in — one of
+    # writing_page.WRITING_FONTS. Newsreader is what the sheet was
+    # designed in, so it is what a reader who never opens the menu keeps.
+    'writing_font':       'Newsreader',
     # Advanced typography (Appearance ▸ Advanced). Five of the Advanced
     # toggles ship on — section headings, small caps, the coloured drop cap,
     # hover preview and spoken readings — and every other one ships off.

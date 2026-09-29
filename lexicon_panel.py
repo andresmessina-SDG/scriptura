@@ -29,6 +29,7 @@ from a11y import set_accessible_label
 from gtk_utils import clear_children, fade_in, DelayedSpinner
 
 import content
+import interlinear_data
 import lemma_index
 import search_query
 import sword_bridge
@@ -62,6 +63,24 @@ def _scan_pattern(strong_num):
                           re.IGNORECASE)
     return re.compile(rf'strong:{re.escape(strong_num)}(?!\d)',
                       re.IGNORECASE)
+
+
+def _scan_chapter(module, book, chapter):
+    """[(verse, markup)] of one chapter, for the word study to search.
+
+    An interlinear has no SWORD text: through `content` it answers [], and
+    every word counted 0 on a machine without OSHB or MorphGNT to scan
+    instead. Its own words carry the Strong's numbers, so they are read as
+    the `<w>` markup the scan and the bolding already understand."""
+    if not interlinear_data.is_interlinear_module(module):
+        return content.load_chapter(module, book, chapter)
+    verses = {}
+    for w in interlinear_data.load_chapter(module, book, chapter):
+        lemma = ' '.join('strong:' + n
+                         for n in (w.strongs_all or w.strongs).split())
+        verses.setdefault(w.verse, []).append(
+            f'<w lemma="{lemma}">{w.surface}</w>')
+    return [(v, ' '.join(words)) for v, words in verses.items()]
 
 
 def _make_verse_markup(html, target_strong):
@@ -903,7 +922,7 @@ class LexiconPanel(Gtk.Box):
                 if scope == 'bible' and not chapters:
                     # The interlinear does not carry this number at all —
                     # a deuterocanonical word, or one only this module's
-                    # tagging uses. None, not 0: "0 occurrences in the
+                    # tagging uses. None, not 0: "0 verses in the
                     # whole Bible" for a word plainly on the page in front
                     # of the reader is worse than saying nothing.
                     return None
@@ -915,7 +934,7 @@ class LexiconPanel(Gtk.Box):
                     # content, never sword_bridge: an eBible translation is
                     # a Bible the reader may have open, and the SWORD call
                     # answers [] for it without raising.
-                    for v_num, html in content.load_chapter(
+                    for v_num, html in _scan_chapter(
                             module, scan_book, ch):
                         if pattern.search(str(html)):
                             markup = _make_verse_markup(html, strong_num)
@@ -1021,12 +1040,12 @@ class LexiconPanel(Gtk.Box):
             return GLib.SOURCE_REMOVE
         if scope == 'book':
             summary = ngettext(
-                '{n} occurrence in {book}', '{n} occurrences in {book}',
+                '{n} verse in {book}', '{n} verses in {book}',
                 running).format(n=running, book=book_label(book))
         else:
             summary = ngettext(
-                '{n} occurrence in the whole Bible',
-                '{n} occurrences in the whole Bible',
+                '{n} verse in the whole Bible',
+                '{n} verses in the whole Bible',
                 running).format(n=running)
         a11y.status(self._ws_header, summary)
         return GLib.SOURCE_REMOVE

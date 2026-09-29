@@ -24,6 +24,7 @@ from gi.repository import Adw, Gdk, GLib, Gtk, Pango, PangoCairo
 
 import bible_family
 import family_layout as fl
+import motion
 from family_card import (high_contrast, lift, place_sentences,
                          redraw_on_contrast, short_name)
 from i18n import _
@@ -413,14 +414,15 @@ class FamilyView:
             self._fold_anim.pause()
             self._fold_anim = None
         target = 0.0 if open_ else 1.0
-        if not animate:
+        if not animate or not motion.should_move():
             self._apply_fold(target)
             return
         anim = Adw.TimedAnimation.new(
             self._area, self._fold, target,
-            max(1, int(520 * abs(target - self._fold))),
+            max(1, int(motion.DURATION_CHART_FOLD
+                       * abs(target - self._fold))),
             Adw.CallbackAnimationTarget.new(self._apply_fold))
-        anim.set_easing(Adw.Easing.EASE_IN_OUT_CUBIC)
+        anim.set_easing(motion.EASE_MOVE)
         anim.connect('done', lambda *_a: setattr(self, '_fold_anim', None))
         self._fold_anim = anim
         anim.play()
@@ -552,13 +554,14 @@ class FamilyView:
                 node.place(self._fixed)
             self._area.queue_draw()
 
-        if not animate:
+        if not animate or not motion.should_move():
             step(1.0)
             done()
             return
         target = Adw.CallbackAnimationTarget.new(step)
-        anim = Adw.TimedAnimation.new(self._area, 0.0, 1.0, 700, target)
-        anim.set_easing(Adw.Easing.EASE_IN_OUT_CUBIC)
+        anim = Adw.TimedAnimation.new(
+            self._area, 0.0, 1.0, motion.DURATION_CHART_MORPH, target)
+        anim.set_easing(motion.EASE_MOVE)
         anim.connect('done', done)
         self._animation = anim
         anim.play()
