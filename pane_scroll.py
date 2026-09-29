@@ -497,12 +497,22 @@ class ScrollKeeper:
                 # A newer render, or the reader took the scroll: not ours.
                 finish()
                 return
+            if not self._reading_scroll.get_mapped():
+                # Unmapped mid-glide: GTK is finishing the glide itself, from
+                # inside gtk_adjustment_enable_animation, which ends the
+                # frame-clock update after this handler returns. A set_value
+                # here ends it first, and the second end is a Gdk-CRITICAL
+                # (updating_count > 0), seen in CI's nav_storm.
+                finish()
+                return
             target = self._aligned_value(own, within_margin, yalign)
             finish()
             near = (abs(target - source)
                     <= motion.GLIDE_MAX_PAGES * adj.get_page_size())
             if near and motion.should_move():
                 return
+            if abs(adj.get_value() - target) < 1:
+                return   # already landed; nothing to cut
             self._mark_programmatic_scroll()
             adj.set_value(target)
 

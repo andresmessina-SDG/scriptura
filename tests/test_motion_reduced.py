@@ -249,11 +249,16 @@ def _keeper(target_y):
             return 18
 
     class Scroll:
+        mapped = True
+
         def __init__(self):
             self.adj = Gtk.Adjustment(lower=0, upper=20000, page_size=500)
 
         def get_vadjustment(self):
             return self.adj
+
+        def get_mapped(self):
+            return self.mapped
 
     class Pane:
         view = View()
@@ -313,4 +318,17 @@ def test_a_second_jump_replaces_the_first(reduced):
     keeper.land_jump(mark, 0.1, 0.2)
     adj.set_value(300)
     assert adj.get_value() == _gtk_target(6000)
+    assert keeper._landing is None
+
+
+def test_a_pane_hidden_mid_glide_is_left_to_gtk(reduced):
+    """Hiding the pane makes GTK finish the glide from inside
+    gtk_adjustment_enable_animation; a set_value there ended the frame
+    clock's update twice (Gdk-CRITICAL in CI's nav_storm)."""
+    reduced(True)
+    keeper, adj, mark = _keeper(6000)
+    keeper._reading_scroll.mapped = False
+    keeper.land_jump(mark, 0.1, 0.2)
+    adj.set_value(6100)            # GTK jumping to its own target
+    assert adj.get_value() == 6100
     assert keeper._landing is None
