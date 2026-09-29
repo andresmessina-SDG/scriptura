@@ -415,6 +415,90 @@ def test_paste_collapses_html_whitespace():
     assert md.from_html('<p>  one\n   two  </p>') == 'one two'
 
 
+#: What OnlyOffice put on the clipboard for a Heading and two bullets,
+#: trimmed of its data blob and border noise: no <h1>, only a larger size.
+_ONLYOFFICE = (
+    '<p style="margin-top:8pt;margin-bottom:4pt" class="docData;DOCY;v5;1;B">'
+    '<span style="font-family:\'Arial\';font-size:16pt;color:#0f4761">'
+    '<b>How to use maps</b></span></p>'
+    '<ul style="padding-left:40px"><li style="list-style-type: disc">'
+    '<p style="margin-left:36pt;text-indent:-18pt">'
+    '<span style="font-family:\'Arial\';font-size:10pt"><b>Compass rose:</b>'
+    '</span><span style="font-family:\'Arial\';font-size:10pt"> the symbol '
+    'on a map that shows direction.</span></p></li>'
+    '<li style="list-style-type: disc"><p style="margin-left:36pt">'
+    '<span style="font-family:\'Arial\';font-size:12pt">A compass is '
+    'numbered in degrees.</span></p></li></ul>')
+
+
+def test_paste_keeps_bullets_whose_text_sits_in_a_paragraph():
+    """OnlyOffice, Word and Google Docs all write <li><p>…</p></li>; the
+    <p> cleared the bullet before any of its words arrived."""
+    assert md.from_html('<ul><li><p>one</p></li><li><p>two</p></li></ul>'
+                        '<p>after</p>') == '- one\n- two\n\nafter'
+    assert md.from_html('<ol><li><p>first</p></li><li><p>second</p></li>'
+                        '</ol>') == '1. first\n2. second'
+
+
+def test_paste_reads_a_heading_from_its_size_when_it_has_no_tag():
+    assert md.from_html(_ONLYOFFICE) == (
+        '# How to use maps\n\n'
+        '- **Compass rose:** the symbol on a map that shows direction.\n'
+        '- A compass is numbered in degrees.')
+
+
+def test_paste_ranks_untagged_headings_against_the_body():
+    """Word's own sizes over its 11pt body: 20, 16 and 14pt."""
+    def p(size, text):
+        return f'<p><span style="font-size:{size}pt">{text}</span></p>'
+    html = (p(20, 'One') + p(11, 'Body text here.') + p(16, 'Two')
+            + p(14, 'Three') + p(11, 'More body text, and then some.'))
+    assert md.from_html(html) == (
+        '# One\n\nBody text here.\n\n## Two\n\n### Three\n\n'
+        'More body text, and then some.')
+
+
+def test_a_manuscript_set_large_throughout_has_no_headings():
+    """Sermon manuscripts are often 14pt from top to bottom; size alone,
+    measured against nothing, would make every paragraph a heading."""
+    html = ''.join(f'<p><span style="font-size:14pt">{t}</span></p>'
+                   for t in ('The sower went out.', 'And some fell.'))
+    assert md.from_html(html) == 'The sower went out.\n\nAnd some fell.'
+
+
+def test_a_web_page_copied_with_its_styles_gains_no_headings():
+    """A browser copies computed styles, in px: a page's large intro
+    paragraph is design, and its real headings arrive as <h2>."""
+    html = ('<h2 style="font-size: 28px">Arrival</h2>'
+            '<p style="font-size: 22px">A short, larger intro.</p>'
+            '<p style="font-size: 16px">The body of the article, which runs '
+            'on for longer than the intro does.</p>')
+    assert md.from_html(html) == (
+        '## Arrival\n\nA short, larger intro.\n\n'
+        'The body of the article, which runs on for longer than the intro '
+        'does.')
+
+
+def test_a_libreoffice_line_set_large_by_hand_is_a_heading():
+    """LibreOffice's clipboard, exported from a document whose heading was
+    made by enlarging a line, not by a Heading style."""
+    html = ('<p><font face="Liberation Serif, serif"><font size="3" '
+            'style="font-size: 12pt">Some fell upon stony places.</font>'
+            '</font></p><p><font face="Liberation Serif, serif"><font '
+            'size="5" style="font-size: 20pt"><b>The rock</b></font></font>'
+            '</p><p><font size="3" style="font-size: 12pt">Where they had '
+            'not much earth.</font></p>')
+    assert md.from_html(html) == (
+        'Some fell upon stony places.\n\n# The rock\n\n'
+        'Where they had not much earth.')
+
+
+def test_a_bold_line_at_body_size_stays_bold():
+    html = ('<p><span style="font-size:11pt"><b>Note:</b></span></p>'
+            '<p><span style="font-size:11pt">Body.</span></p>')
+    assert md.from_html(html) == '**Note:**\n\nBody.'
+
+
 def test_paste_of_nothing_is_nothing():
     assert md.from_html('<p> </p><div></div>') == ''
 

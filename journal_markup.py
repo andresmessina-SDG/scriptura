@@ -624,13 +624,46 @@ def _style_flags(style: str) -> tuple[bool | None, bool | None]:
     return bold, italic
 
 
+def _font_size(style: str) -> float | None:
+    """The size an inline `style` sets, in points — and only in points.
+
+    Word processors write pt (OnlyOffice, LibreOffice, Word, Google Docs).
+    A browser copying a web page writes its computed styles in px, where a
+    page's larger intro paragraph is design, not a heading, and its real
+    headings come as <h2> already.
+    """
+    for decl in style.lower().split(';'):
+        key, _, value = decl.partition(':')
+        if key.strip() == 'font-size':
+            m = re.fullmatch(r'\s*([\d.]+)\s*pt\s*', value)
+            if m:
+                return float(m.group(1))
+    return None
+
+
+#: A paragraph this much larger than the paste's body text is a heading of
+#: that level. OnlyOffice and Word online write no <h1>, only a size; these
+#: sit Word's own 20, 16 and 14pt headings over its 11pt body at 1, 2, 3.
+_HEADING_RATIOS = ((1.6, 1), (1.35, 2), (1.15, 3))
+#: Longer than this and a large paragraph is a pull quote, not a heading.
+_HEADING_MAX = 150
+
+
 class _ToMarkdown(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.blocks: list[str] = []
         self.runs: list[tuple[str, bool, bool]] = []
         self.prefix = ''
-        self.styles: list[tuple[str, bool | None, bool | None]] = []
+        self.styles: list[tuple[str, bool | None, bool | None,
+                                float | None]] = []
+        #: Characters set at each size, over the whole paste: the most
+        #: common is the body text that a heading's size is read against.
+        self.sized: dict[float, int] = {}
+        #: The smallest size in the block being built (None: some of it
+        #: had none), and, per plain paragraph written, that size.
+        self.block_size: list[float | None] = []
+        self.plain_sizes: dict[int, float] = {}
         self.lists: list[list[int]] = []   # [counter] per ol, [] per ul
         self.quote = 0
         self.skip = 0
@@ -643,6 +676,12 @@ class _ToMarkdown(HTMLParser):
                 return bool(entry[index])
         return False
 
+    def _size(self) -> float | None:
+        for entry in reversed(self.styles):
+            if entry[3] is not None:
+                return entry[3]
+        return None
+
     def handle_starttag(self, tag: str, attrs: list) -> None:
         if tag in _SKIP:
             self.skip += 1
@@ -653,7 +692,7 @@ class _ToMarkdown(HTMLParser):
             bold = True
         if tag in ('i', 'em', 'cite') and italic is None:
             italic = True
-        self.styles.append((tag, bold, italic))
+        self.styles.append((tag, bold, italic, _font_size(style)))
         if tag == 'br':
             self.styles.pop()
             self.runs.append(('\n', False, False))
@@ -697,10 +736,15 @@ class _ToMarkdown(HTMLParser):
             self.quote = max(0, self.quote - 1)
         elif tag in ('ul', 'ol'):
             self._close_block()
+            self.prefix = ''
             if self.lists:
                 self.lists.pop()
-        elif tag in _BLOCKS or tag == 'li' or tag in (
-                'h1', 'h2', 'h3', 'h4', 'h5', 'h6'):
+        elif tag == 'li' or tag in ('h1', 'h2', 'h3', 'h4', 'h5', 'h6'):
+            self._close_block()
+            # An item or heading with no words of its own must not lend its
+            # marker to the paragraph after it.
+            self.prefix = ''
+        elif tag in _BLOCKS:
             self._close_block()
 
     def handle_data(self, data: str) -> None:
@@ -712,6 +756,12 @@ class _ToMarkdown(HTMLParser):
             text = text.strip().translate(_SUPERSCRIPT)
         if text:
             self.runs.append((text, self._flag(1), self._flag(2)))
+            if text.strip():
+                size = self._size()
+                self.block_size.append(size)
+                if size is not None:
+                    self.sized[size] = (self.sized.get(size, 0)
+                                        + len(text.strip()))
 
     def _close_block(self) -> None:
         lines = _inline(self.runs).split('\n')
@@ -720,17 +770,42 @@ class _ToMarkdown(HTMLParser):
         # enough.
         body = [re.sub(r' {2,}', ' ', line).strip() for line in lines
                 if line.strip()]
-        if body:
-            head = self.prefix + body[0]
-            # A heading holds one line; a list item's later lines stay in it.
-            text = '\n'.join([head] + body[1:])
-            if self.quote:
-                text = '\n'.join('> ' + line for line in text.split('\n'))
-            self.blocks.append(text)
+        sizes, self.block_size = self.block_size, []
+        if not body:
+            # `<li><p>words</p></li>`: the <p> closes a block with nothing
+            # in it yet, and the bullet has to wait for the words.
+            return
+        if (not self.prefix and not self.quote and not self.lists
+                and len(body) == 1 and sizes and None not in sizes):
+            self.plain_sizes[len(self.blocks)] = min(
+                s for s in sizes if s is not None)
+        head = self.prefix + body[0]
+        # A heading holds one line; a list item's later lines stay in it.
+        text = '\n'.join([head] + body[1:])
+        if self.quote:
+            text = '\n'.join('> ' + line for line in text.split('\n'))
+        self.blocks.append(text)
         self.prefix = ''
+
+    def _headings_by_size(self) -> None:
+        """Make headings of the plain paragraphs set larger than the body."""
+        if not self.sized:
+            return
+        body = max(self.sized, key=lambda s: self.sized[s])
+        for i, size in self.plain_sizes.items():
+            text = self.blocks[i]
+            level = next((n for ratio, n in _HEADING_RATIOS
+                          if size >= body * ratio), 0)
+            if not level or len(text) > _HEADING_MAX:
+                continue
+            # A heading is bold already; the pair would only be noise.
+            whole = re.fullmatch(r'\*\*([^*]+)\*\*', text)
+            self.blocks[i] = '#' * level + ' ' + (
+                whole.group(1) if whole else text)
 
     def result(self) -> str:
         self._close_block()
+        self._headings_by_size()
         out: list[str] = []
         for i, block in enumerate(self.blocks):
             # List items and quoted lines sit together; everything else is
