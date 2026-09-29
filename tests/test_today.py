@@ -595,6 +595,12 @@ class TestTheHeaderOverToday:
         s._ref_btn = Gtk.MenuButton()
         s._header.set_title_widget(s._ref_btn)
         s._toolbar_view.add_top_bar(s._header)
+        s._paned = Gtk.Box()
+        s._toolbar_view.set_content(s._paned)
+        s._top_bar_handler = None
+        import window
+        s._hold_panes_below_header = (
+            lambda: window.BibleWindow._hold_panes_below_header(s))
         s._header_css = Gtk.CssProvider()
         Gtk.StyleContext.add_provider_for_display(
             Gdk.Display.get_default(), s._header_css,
@@ -644,6 +650,35 @@ class TestTheHeaderOverToday:
         assert 'rgb(58,47,34)' in css
         assert 'windowcontrols > button' in css
 
+    def test_the_panes_keep_their_place_below_the_bar(self, stand,
+                                                        monkeypatch):
+        # Extended, the panes were laid out with their first 46px behind the
+        # bar, and handing that back dropped the text in view. They are held
+        # at the bar's height instead, so the header's return moves nothing.
+        import window
+        monkeypatch.setattr(stand._toolbar_view, 'get_top_bar_height',
+                            lambda: 46, raising=False)
+        window.BibleWindow._dress_header_for_today(stand, '#d8d2c7')
+        assert stand._paned.get_margin_top() == 46
+        window.BibleWindow._undress_header(stand)
+        assert stand._paned.get_margin_top() == 0
+        assert stand._top_bar_handler is None
+
+    def test_the_header_comes_back_while_the_page_fades(self, stand):
+        import window
+        window.BibleWindow._dress_header_for_today(stand, '#3a2f22')
+        window.BibleWindow._header_leaving(stand)
+        # The ink and the chips let go; the page keeps the top edge until the
+        # fade is over, and the title is back to fade in with it.
+        assert not stand._header.has_css_class('today-chrome')
+        assert stand._header.has_css_class('today-leaving')
+        assert stand._header_css.to_string().strip() == ''
+        assert stand._toolbar_view.get_extend_content_to_top_edge()
+        assert stand._ref_btn.get_visible()
+        window.BibleWindow._undress_header(stand)
+        assert not stand._header.has_css_class('today-leaving')
+        assert not stand._toolbar_view.get_extend_content_to_top_edge()
+
     def test_the_bar_itself_stops_painting(self):
         """The structural half lives in style.css, not in a built string.
 
@@ -657,6 +692,40 @@ class TestTheHeaderOverToday:
                / 'data' / 'style.css').read_text()
         assert 'headerbar.today-chrome > windowhandle' in css
         assert 'headerbar.today-chrome windowcontrols > button > image' in css
+        # And comes back across the fade rather than at its end.
+        assert 'headerbar.today-leaving > windowhandle' in css
+        assert 'transition:' in css.split('headerbar.today-leaving,')[1][:400]
+
+
+class TestContinue:
+    """Continue where you left off goes nowhere it already is."""
+
+    def _stand(self, loc):
+        class Stand:
+            pass
+        s = Stand()
+        s._current_loc = loc
+        s.went, s.dismissed = [], []
+        s._go_to = lambda *a, **k: s.went.append(a)
+        s._dismiss_today = lambda *a, **k: s.dismissed.append(True)
+        return s
+
+    def test_the_chapter_already_open_is_not_reloaded(self):
+        # Reloading it dropped the restored place: measured, the reader
+        # landed on verse 1 of Psalm 119 instead of verse 105, after a
+        # 245ms stall that ate the whole exit.
+        import window
+        s = self._stand(('Psalms', 119))
+        window.BibleWindow._on_today_continue(s, ('Psalms', 119))
+        assert s.went == []
+        assert s.dismissed
+
+    def test_a_pane_moved_meanwhile_is_brought_back(self):
+        # The startup devotional auto-nav can move pane 1 under the page.
+        import window
+        s = self._stand(('John', 3))
+        window.BibleWindow._on_today_continue(s, ('Psalms', 119))
+        assert s.went == [('Psalms', 119)]
 
 
 class TestTheFinishedPlan:

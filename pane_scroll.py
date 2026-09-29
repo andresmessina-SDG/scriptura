@@ -21,6 +21,11 @@ from gi.repository import Gdk, GLib, Gtk
 
 import motion
 
+# The longest the paper may stand over a chapter that never lands: a fetch
+# that failed, a render that never came. The veil goes up before the fetch,
+# and the landing measured ~0.6s after it, so this is well clear of it.
+VEIL_SAFETY_MS = 3000
+
 
 def _is_fnote_marker_char(it):
     """True when the iter sits on a footnote-marker glyph (superscript
@@ -104,6 +109,10 @@ class ScrollKeeper:
         self._scrollbar_held = False
         # Cancels the verse jump still waiting to land (land_jump), if any.
         self._landing = None
+        # Paper over the text until the opening jump lands; the stamp lets a
+        # safety timer lift only the veil it was set for.
+        self._veiled = False
+        self._veil_gen = 0
 
     # ── Proxies to pane-owned widgets / render state ─────────────────────────
     # The method bodies below reference these exactly as they did inline; the
@@ -456,6 +465,37 @@ class ScrollKeeper:
         earlier = [v for v in present if v < verse_num]
         return max(earlier) if earlier else verse_num
 
+    def veil_until_landed(self):
+        """Show the paper and not the text until the opening jump lands.
+
+        For a chapter the window opens part-way down (a saved place, a
+        `bible:` link). The jump runs on an idle after the render, which
+        loses to the redraw, so the chapter's top was painted first: verse 1
+        for about a quarter of a second, then a leap to the reader's verse.
+        Lifted by the landing, or by the safety below if no jump ever comes.
+        """
+        self._veil_gen += 1
+        self._veiled = True
+        self._view.set_blank(True)
+        GLib.timeout_add(VEIL_SAFETY_MS, self._veil_expired, self._veil_gen)
+
+    def _veil_expired(self, gen):
+        if gen == self._veil_gen:
+            self.unveil()
+        return GLib.SOURCE_REMOVE
+
+    def unveil(self):
+        if self._veiled:
+            self._veiled = False
+            self._veil_gen += 1
+            self._view.set_blank(False)
+
+    def unveil_unless_landing(self):
+        """After a jump was asked for: lift the veil now if it started no
+        landing (no such verse), rather than leave the paper to the safety."""
+        if self._landing is None:
+            self.unveil()
+
     def land_jump(self, mark, within_margin, yalign):
         """Keep GTK's glide for a near jump; land a far one, or any jump
         under reduced motion, in one frame (MOTION_RESEARCH M3).
@@ -492,6 +532,11 @@ class ScrollKeeper:
 
         def on_change(_adj):
             GLib.source_remove(state['timer'])
+            # Veiled means the window is opening on this place: it lands,
+            # never glides in from the top, however near. The value set
+            # below is painted in the same frame the text comes back in.
+            veiled = self._veiled
+            self.unveil()
             if (seq != self._anchor_seq
                     or self._last_scroll_input != input_t0):
                 # A newer render, or the reader took the scroll: not ours.
@@ -509,7 +554,7 @@ class ScrollKeeper:
             finish()
             near = (abs(target - source)
                     <= motion.GLIDE_MAX_PAGES * adj.get_page_size())
-            if near and motion.should_move():
+            if near and motion.should_move() and not veiled:
                 return
             if abs(adj.get_value() - target) < 1:
                 return   # already landed; nothing to cut
@@ -519,11 +564,20 @@ class ScrollKeeper:
         def expire():
             # No move came: already in place, or nothing to scroll.
             finish()
+            self.unveil()
             return GLib.SOURCE_REMOVE
 
         state['handler'] = adj.connect('value-changed', on_change)
         state['timer'] = GLib.timeout_add(1000, expire)
         self._landing = cancel
+        if self._veiled and abs(
+                self._aligned_value(own, within_margin, yalign) - source) < 1:
+            # Already where the jump would put it — a commentary section that
+            # holds the verse and opens at the top — so no move will come to
+            # lift the veil: measured, the pane stood blank a second longer
+            # than its partner, until the timer above.
+            cancel()
+            self.unveil()
 
     def _aligned_value(self, mark, within_margin, yalign):
         """Where GTK's aligned scroll_to_mark puts the adjustment: the

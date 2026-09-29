@@ -6,7 +6,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 import datetime
 from gi.repository import Gtk, Adw, GLib, Gdk, Gio
-from gtk_utils import clear_children, file_dialog_failed
+from gtk_utils import clear_children, fade_in, file_dialog_failed
 import sword_bridge
 import settings
 import updates
@@ -43,6 +43,11 @@ _log = logging.getLogger('scriptura.window')
 from crossref_panel import CrossRefPanel
 from a11y import announce, set_accessible_label
 from i18n import _, ngettext, book_label, month_abbr
+
+
+# How long the Today page waits for the chapter it leaves onto before it
+# fades anyway. Renders measured 190-250ms; this is the ceiling, not the aim.
+_TODAY_WAIT_MS = 800
 
 
 def N_(message):
@@ -243,6 +248,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._panes_narrow = False
         self._ultra_narrow = False
         self._narrow_pane = 1
+        # Keeps the panes below the header while the Today page has the top.
+        self._top_bar_handler = None
         self._build_ui()
         self._load_all_panes()
         # Evening paper (opt-in): follow Night Light once the panes exist.
@@ -257,7 +264,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._today_suppress = False
         self._today_dark_handler = None
         if self._today_view is not None:
-            self._populate_today()
+            self._populate_today(now=True)
         _scheme_map = {
             'light':   Adw.ColorScheme.FORCE_LIGHT,
             'dark':    Adw.ColorScheme.FORCE_DARK,
@@ -312,10 +319,22 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
                 self._toast,
                 _("Couldn't save reading-plan progress — check disk space or "
                   "permissions. The change may be lost when you quit.")))
-        # If launched via `bible:John+3:16` URI, navigate now that the
-        # panes are loaded. Bad refs silently no-op.
+        # If launched via `bible:John+3:16` URI, go there now, before the
+        # window is first drawn. Sent on an idle, as a later link is, it
+        # painted four states in ~500ms: empty panes, the saved chapter
+        # under a "John 3" title, John 3 from the top, then verse 16. Now the
+        # saved chapter's render is superseded before it lands, and the text
+        # is kept back until verse 16 is in place. Bad refs silently no-op.
         if self._startup_ref:
-            self.open_reference(self._startup_ref)
+            result = self._parse_jump(self._startup_ref)
+            if result:
+                book, chapter, verse = result
+                self._go_to(book, chapter, verse)
+                # After the go, which renders on a task: nothing is drawn
+                # yet, and a refused go leaves nothing to veil for.
+                if verse and self._current_loc == (book, chapter):
+                    for pane in (self.pane1, self.pane2):
+                        pane.veil_opening()
 
     def open_reference(self, ref):
         """Go to a reference sent from outside — a `bible:` link, at launch
@@ -1006,6 +1025,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         # show; a `bible:` URI launch skips it (the user asked for a verse).
         self._today_view = None
         self._today_revealer = None
+        self._today_leaving = None
         if settings.get('open_to_today') and not self._startup_ref:
             self._today_view = TodayView(
                 on_begin=self._on_today_begin,
@@ -1013,11 +1033,17 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
                 on_choose_plans=self._on_today_choose_plans,
                 on_listen=self._on_today_listen,
                 on_write=self._write_about_today)
+            # A fade, not a slide. A revealer slides by growing its child
+            # (height / progress), and an overlay child fills the window, so
+            # the "slide" held its box and stretched the page inside it:
+            # measured 714 -> 2,147,483,647px in twelve frames, the parchment
+            # drawn out into streaks and the words carried off the top. A
+            # fade keeps the page its own size. It stays under Reduce motion
+            # too, which asks for slides to go and lets fades remain.
             self._today_revealer = Gtk.Revealer()
             self._today_revealer.set_transition_type(
-                Gtk.RevealerTransitionType.SLIDE_DOWN)
+                Gtk.RevealerTransitionType.CROSSFADE)
             self._today_revealer.set_transition_duration(motion.DURATION_STANDARD)
-            motion.follow_reduced_motion(self._today_revealer)
             self._today_revealer.set_child(self._today_view)
             self._today_revealer.set_reveal_child(True)
             overlay.add_overlay(self._today_revealer)
@@ -2104,7 +2130,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
 
     # ── Today page (the Morning Office landing) ──────────────────────────
 
-    def _populate_today(self):
+    def _populate_today(self, now=False):
         saved_book = settings.get('last_book')
         saved_chap = settings.get('last_chapter')
         last = ((saved_book, saved_chap)
@@ -2139,11 +2165,9 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._today_view.clear_epigraph()
         self._today_view.clear_antiphon()
         self._sync_today_listen()
-        tasks.submit(
-            key=f'today-epigraph:{id(self)}',
-            work=lambda _t: fetch_epigraph(collect_key),
-            apply=self._on_today_epigraph,
-            on_error=lambda _e: None)
+        self._today_fetch('today-epigraph', now,
+                          lambda: fetch_epigraph(collect_key),
+                          self._on_today_epigraph)
         # The day's opening line, read out of the reader's own Bible. After
         # populate, which is what resolves which chapter today opens at.
         #
@@ -2155,11 +2179,30 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         target = self._today_view.antiphon_target()
         if bible and target:
             book, chapter = target
-            tasks.submit(
-                key=f'today-antiphon:{id(self)}',
-                work=lambda _t: fetch_antiphon(bible, book, chapter),
-                apply=self._on_today_antiphon,
-                on_error=lambda _e: None)
+            self._today_fetch('today-antiphon', now,
+                              lambda: fetch_antiphon(bible, book, chapter),
+                              self._on_today_antiphon)
+
+    def _today_fetch(self, key, now, work, apply):
+        """Fill one of the page's lines: at once when the window is opening,
+        on a task when the page is repopulated while up.
+
+        At open it cannot wait for a task. The applies run at DEFAULT_IDLE,
+        below the redraw, so the first frame went out without the opening
+        verse and the collect though both were read before the window was
+        even mapped; they landed together ~350ms later and moved the whole
+        column up ~80px. Read here they cost a few ms before the first frame.
+        """
+        if now:
+            try:
+                result = work()
+            except Exception:
+                _log.exception('%s failed', key)
+                result = None
+            apply(result)
+            return
+        tasks.submit(key=f'{key}:{id(self)}', work=lambda _t: work(),
+                     apply=apply, on_error=lambda _e: None)
 
     def _refresh_today_appearance(self):
         if self._today_view is not None:
@@ -2192,6 +2235,15 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         """
         self._toolbar_view.set_extend_content_to_top_edge(True)
         self._header.add_css_class('today-chrome')
+        # The panes are not the page: they keep the place they have under a
+        # header, so nothing beneath has to move when the header comes back.
+        # Extended, they were laid out with their first 46px behind the bar,
+        # and handing that back dropped the text a header's height.
+        self._hold_panes_below_header()
+        if self._top_bar_handler is None:
+            self._top_bar_handler = self._toolbar_view.connect(
+                'notify::top-bar-height',
+                lambda *_a: self._hold_panes_below_header())
         # The passage button is the window's title, and over this page it
         # repeated one: "Psalms 146" sat centred above the page's own
         # "Psalms 11-15" hero, two titles competing for the same glance.
@@ -2207,17 +2259,42 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             }}
         """.encode())
 
-    def _undress_header(self):
-        """Put the chrome back. Called at the START of the dismissal, not at
-        the end of it: while the content is extended the reading panes
-        underneath are allocated with their first 46px behind the header, and
-        restoring that after the slide would drop the text down a header's
-        height in full view. Restoring it as the page begins to leave hides
-        the one re-allocation under the page that is going anyway."""
+    def _hold_panes_below_header(self):
+        if self._top_bar_handler is not None or self._header.has_css_class(
+                'today-chrome'):
+            self._paned.set_margin_top(self._toolbar_view.get_top_bar_height())
+
+    def _header_leaving(self):
+        """Hand the header back while the page fades, not after it.
+
+        The bar, its ink and its chips travel back across the fade
+        (`.today-leaving` in style.css carries the transition) and the
+        passage title fades in as the page goes. The content stays extended
+        until the end, so the page keeps its place under the bar; the panes
+        were held below it all along (_hold_panes_below_header).
+        """
         if not self._header.has_css_class('today-chrome'):
             return
-        self._toolbar_view.set_extend_content_to_top_edge(False)
         self._header.remove_css_class('today-chrome')
+        self._header.add_css_class('today-leaving')
+        self._header_css.load_from_data(b'')
+        self._ref_btn.set_visible(True)
+        fade_in(self._ref_btn)
+
+    def _undress_header(self):
+        """Put the chrome back. The panes were held at their place under the
+        header all the while, so giving the bar its height back moves
+        nothing on screen."""
+        if not (self._header.has_css_class('today-chrome')
+                or self._header.has_css_class('today-leaving')):
+            return
+        self._toolbar_view.set_extend_content_to_top_edge(False)
+        self._paned.set_margin_top(0)
+        if self._top_bar_handler is not None:
+            self._toolbar_view.disconnect(self._top_bar_handler)
+            self._top_bar_handler = None
+        self._header.remove_css_class('today-chrome')
+        self._header.remove_css_class('today-leaving')
         self._ref_btn.set_visible(True)
         self._header_css.load_from_data(b'')
 
@@ -2406,8 +2483,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         if self._today_view is not None:
             self._populate_today()
 
-    def _dismiss_today(self, animate=True):
-        """Slide the Today page away. Once per session — there is no way
+    def _dismiss_today(self, animate=True, after_load=False):
+        """Fade the Today page away. Once per session — there is no way
         back to it until the next launch.
 
         `animate=False` for a caller that is opening a sidebar over the same
@@ -2416,13 +2493,18 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         animation — 0.83s of frames lost on a 1366px window, which is what
         made opening the menu feel stuck. Dismissed instantly the same toggle
         loses nothing. Nobody watches a page leave while a panel arrives.
+
+        `after_load` for navigation: the page holds until the chapter it
+        leaves onto is set under it. Measured: with the render still to come
+        the ~230ms it holds the main thread took every frame of the fade —
+        the page froze where it stood, then was simply gone.
         """
         if self._today_revealer is None:
+            if not animate and self._today_leaving is not None:
+                self._hide_today(self._today_leaving)
             return
-        self._undress_header()
         revealer, self._today_revealer = self._today_revealer, None
-        if not animate:
-            revealer.set_transition_duration(0)
+        self._today_leaving = revealer
         self._today_view = None
         if self._today_dark_handler is not None:
             Adw.StyleManager.get_default().disconnect(self._today_dark_handler)
@@ -2430,28 +2512,65 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         tasks.cancel(f'today-epigraph:{id(self)}')
         tasks.cancel(f'today-antiphon:{id(self)}')
         self._stop_today_listen()
-        # can_target off immediately so the sliding page never eats a click;
-        # fully hidden (and out of the picking/AT tree) after the slide.
+        # can_target off immediately so the leaving page never eats a click;
+        # fully hidden (and out of the picking/AT tree) after the fade.
         revealer.set_can_target(False)
-        revealer.set_reveal_child(False)
         if not animate:
-            # Out of the layout at once. With no slide to wait for there is
+            # Out of the layout at once. With no fade to wait for there is
             # nothing to keep it mapped, and leaving it mapped means its whole
             # tree is still measured through every frame of the sidebar's.
-            revealer.set_visible(False)
-            return
+            self._hide_today(revealer)
+        elif after_load:
+            self._after_panes_render(lambda: self._fade_today(revealer))
+        else:
+            self._fade_today(revealer)
+
+    def _fade_today(self, revealer):
+        if self._today_leaving is not revealer:
+            return                      # cut meanwhile by a panel opening
+        self._header_leaving()
+        revealer.set_reveal_child(False)
         GLib.timeout_add(
             motion.DURATION_STANDARD + 50,
-            lambda: revealer.set_visible(False) or GLib.SOURCE_REMOVE)
+            lambda: self._today_leaving is revealer
+            and self._hide_today(revealer) or GLib.SOURCE_REMOVE)
+
+    def _hide_today(self, revealer):
+        self._today_leaving = None
+        revealer.set_transition_duration(0)
+        revealer.set_reveal_child(False)
+        revealer.set_visible(False)
+        self._undress_header()
+
+    def _after_panes_render(self, then):
+        """Run `then` once no pane has a chapter render still to come, and a
+        frame's grace after for its layout; or at _TODAY_WAIT_MS whatever
+        happened. A timer, not a tick: a frame clock that does not tick
+        (headless) must not leave the page up for good."""
+        start = GLib.get_monotonic_time()
+        clear = [0]
+
+        def poll():
+            if any(p._render_pending for p in (self.pane1, self.pane2)):
+                clear[0] = 0
+            else:
+                clear[0] += 1
+            late = GLib.get_monotonic_time() - start > _TODAY_WAIT_MS * 1000
+            if clear[0] < 2 and not late:
+                return GLib.SOURCE_CONTINUE
+            then()
+            return GLib.SOURCE_REMOVE
+        GLib.timeout_add(16, poll)
 
     def _on_today_begin(self, book, chapter):
         self._go_to(book, chapter)      # navigation dismisses the page
 
     def _on_today_continue(self, target):
-        # The panes already restored the saved position at startup; navigate
-        # anyway so the page's promise holds even if a startup devotional
-        # auto-nav moved pane 1 meanwhile.
-        if target:
+        # The panes already restored the saved position at startup. Navigate
+        # only if a startup devotional auto-nav moved pane 1 meanwhile: going
+        # to the chapter already shown reloaded it and dropped the place —
+        # measured, the reader landed on verse 1 instead of verse 105.
+        if target and tuple(target) != self._current_loc:
             self._go_to(target[0], target[1], record=False)
         self._dismiss_today()
 

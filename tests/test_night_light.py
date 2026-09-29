@@ -96,3 +96,43 @@ def test_the_probe_never_starts_a_service_to_answer_itself():
     import inspect
     src = inspect.getsource(night_light.probe)
     assert 'DO_NOT_AUTO_START' in src
+
+
+# ── The first reading, before the window is drawn ───────────────────────────
+
+def test_the_first_strength_is_known_before_the_loop_turns(monkeypatch):
+    """The proxy answers from the main loop, and the window is built and
+    drawn before the loop turns: an evening opened on cool paper and warmed
+    in view. The monitor reads once, synchronously, as it is made."""
+    from gi.repository import GLib
+
+    class Bus:
+        def call_sync(self, *_args):
+            return GLib.Variant('(a{sv})', ({
+                'NightLightActive': GLib.Variant('b', True),
+                'Temperature': GLib.Variant('u', 3500)},))
+
+    monkeypatch.setattr(night_light.Gio, 'bus_get_sync',
+                        lambda *_a: Bus())
+    seen = []
+    monitor = night_light.NightLightMonitor(seen.append)
+    monitor.stop()
+    assert seen == [1.0]
+
+
+def test_the_first_reading_is_bounded_and_starts_nothing():
+    import inspect
+    src = inspect.getsource(night_light.NightLightMonitor._read_now)
+    assert 'NO_AUTO_START' in src
+    assert '_FIRST_READ_TIMEOUT_MS' in src
+
+
+def test_an_unanswered_first_reading_reports_nothing(monkeypatch):
+    from gi.repository import GLib
+
+    def fail(*_a):
+        raise GLib.Error('no bus')
+    monkeypatch.setattr(night_light.Gio, 'bus_get_sync', fail)
+    seen = []
+    night_light.NightLightMonitor(seen.append).stop()
+    assert seen == []

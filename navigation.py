@@ -165,10 +165,11 @@ class NavigationController:
             self._say_book_missing(book)
             return
         # Any navigation is "an action" — it takes the reader in, so the
-        # Today page slides away (unless this is the programmatic startup
-        # devotional auto-nav, which happens beneath it).
+        # Today page leaves (unless this is the programmatic startup
+        # devotional auto-nav, which happens beneath it) — once the chapter
+        # it is going to has been set under it.
         if not self._today_suppress:
-            self._dismiss_today()
+            self._dismiss_today(after_load=True)
         if record:
             self._push_nav_back(self._current_loc)
             self._nav_fwd.clear()
@@ -323,8 +324,10 @@ class NavigationController:
             self.pane2.module, book, chapter)
         if v1:
             self.pane1._restore_top_verse = v1
+            self.pane1.veil_opening()
         if v2:
             self.pane2._restore_top_verse = v2
+            self.pane2.veil_opening()
         self.pane1.load_reference(book, chapter)
         self.pane2.load_reference(book, chapter)
 

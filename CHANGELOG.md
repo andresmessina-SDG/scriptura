@@ -92,6 +92,24 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - The translation card offered Compare this verse beside an interlinear,
   where it could only say to choose a verse.
 
+- Closing the Today page stretched it into streaks before the reading text
+  showed. It now fades, and the header comes back with it without moving
+  the page.
+- "Continue where you left off" froze for a moment and then opened the
+  chapter at verse 1. It keeps your place now.
+- Choosing a reading from the Today page froze it before it closed. It now
+  waits for the chapter, then fades.
+- The Today page opened without the day's verse and prayer, then jumped as
+  they arrived. They are there from the start.
+- On a wide window the Today page's title opened small, then grew a moment
+  later. It opens at its full size.
+- Opening Scriptura where you left off showed verse 1, then jumped to your
+  place. It shows your place first.
+- A `bible:` link opened the last chapter first, then the linked chapter
+  from the top, then the verse. It opens at the verse.
+- With Evening paper and Night Light on, the paper warmed after the window
+  had already appeared.
+
 ## [1.8.0] — 2026-09-26
 
 ### Added
