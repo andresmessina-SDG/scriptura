@@ -38,6 +38,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Fixed
 
+- **GOD'S WORD from eBible.org is known to the Bible Family Tree.** Installed
+  from there, it had no place on the Line or in Compare.
 - **Psalms in the Vulgate and Synodal numbering.** Where these Bibles join
   or divide a psalm differently from the King James, the page now shows the
   psalm named in the header. Psalm 10 no longer repeats Psalm 9, and the end

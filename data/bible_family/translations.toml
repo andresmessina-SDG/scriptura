@@ -1497,7 +1497,7 @@ base_ot = "MT"
 base_nt = "CT"
 by = "God's Word to the Nations Mission Society"
 check = "checked"
-installable = ["GodsWord"]
+installable = ["GodsWord", "enggw"]
 src = ["wp:gw", "wl"]
 [node.spectrum]
 band = [0.49, 0.68, 0.87]
