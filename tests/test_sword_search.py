@@ -97,7 +97,7 @@ def test_empty_query(fts_module):
 
 def test_index_reused_not_rebuilt(fts_module):
     sb.search_module(fts_module, 'God')
-    assert sb._index_is_valid(sb._get_index_path(fts_module))
+    assert sb._index_is_valid(sb._get_index_path(fts_module), fts_module)
     # A second search hits the existing index (build callback must not fire).
     started = []
     sb.search_module(fts_module, 'world',

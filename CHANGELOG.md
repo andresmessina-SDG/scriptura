@@ -4,6 +4,22 @@ All notable changes to Scriptura. Format roughly follows
 [Keep a Changelog](https://keepachangelog.com/). Versioning is
 semver-ish — 0.x was the pre-Flathub testing track.
 
+## [Unreleased]
+
+### Fixed
+
+- **Psalms in the Vulgate and Synodal numbering.** Where these Bibles join
+  or divide a psalm differently from the King James, the page now shows the
+  psalm named in the header. Psalm 10 no longer repeats Psalm 9, and the end
+  of Psalms 116 and 147 can be read and searched at last, under the
+  numbering its own Bible prints.
+
+### Changed
+
+- **Downloads say who is asking.** Every request now names Scriptura and its
+  website, where eBible downloads used to claim to be a web browser. Nothing
+  about you is sent.
+
 ## [1.8.1] — 2026-09-29
 
 ### Added

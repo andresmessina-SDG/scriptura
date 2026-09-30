@@ -57,6 +57,7 @@ link_source = "Source code"
 link_changes = "What’s new"
 link_issues = "Report a problem"
 link_licence = "Licence"
+link_donate = "Donate"
 
 credits_html = [
   "The King James Version and Strong’s Greek Dictionary are in the public domain, from the <a class=\"clay\" href=\"https://crosswire.org/sword/\">CrossWire SWORD library</a>.",

@@ -11,3 +11,9 @@ bugfixes.
 """
 
 __version__ = '1.8.1'
+
+# Sent with every request. It names the app and where to read about it, and
+# nothing about the reader: no address, ever. eBible refuses urllib's own
+# `Python-urllib/3.x` with a 403, which is why it once sent a browser's name.
+USER_AGENT = (f'Scriptura/{__version__} '
+              '(+https://andresmessina-sdg.github.io/scriptura/)')

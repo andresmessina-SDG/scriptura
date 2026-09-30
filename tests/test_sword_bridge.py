@@ -385,6 +385,7 @@ def v11n_mods(monkeypatch):
                              'FakeKJV': _FakeV11nMod('KJV'),
                              'FakeGerman': _FakeV11nMod('German')})
     monkeypatch.setattr(sword_bridge, '_book_maps', {})
+    monkeypatch.setattr(sword_bridge, '_line_maps', {})
 
 
 def test_map_ref_psalter_offset():
@@ -480,9 +481,76 @@ def test_map_verse_to_app_falls_back(v11n_mods):
 
 
 def test_map_verse_to_app_merged_chapter_stays_put(v11n_mods):
-    """App ch 9 renders merged Vulg 9; its deep verses reverse to KJV Ps
-    10 — a cross-chapter broadcast would desync panes, so fall back."""
+    """Vulg 9:25 is KJV Ps 10 and app ch 9 no longer renders it; a number
+    the page does not hold is handed back, never broadcast to another
+    chapter, where it would desync the panes."""
     assert sword_bridge.map_verse_to_app('FakeVulg', 'Psalms', 9, 25) == 25
+
+
+# ── Merged and split psalms, drawn line by line ─────────────────────────────
+
+#: Every app chapter SWORD's Vulg and Synodal tables merge or split. Measured
+#: over all 150 psalms; the rest are one module chapter shown whole.
+_REDRAWN = (9, 10, 114, 115, 116, 147)
+
+
+def test_only_merged_and_split_psalms_are_redrawn(v11n_mods):
+    redrawn = [ch for ch in range(1, 151)
+               if sword_bridge.chapter_lines('FakeVulg', 'Psalms', ch)]
+    assert tuple(redrawn) == _REDRAWN
+    assert sword_bridge.chapter_lines('FakeKJV', 'Psalms', 116) is None
+    assert sword_bridge.chapter_lines('FakeVulg', 'Genesis', 1) is None
+
+
+def test_a_merged_psalm_shows_only_its_own_half(v11n_mods):
+    """KJV Ps 10 is Vulg 9:22-39. It showed all 39 lines, 21 of them KJV 9."""
+    lines = sword_bridge.chapter_lines('FakeVulg', 'Psalms', 10)
+    assert [(k, c, v) for k, _b, c, v in lines] == \
+        [(v, 9, v) for v in range(22, 40)]
+    assert sword_bridge.module_chapter_breaks('FakeVulg', 'Psalms', 10) == {}
+
+
+def test_a_split_psalm_goes_on_into_the_next_chapter(v11n_mods):
+    """KJV Ps 116 is Vulg 114:1-9 then 115:1-10; the second half was
+    reachable from nowhere. It continues the keys and prints its own
+    numerals, from 1, under its own chapter."""
+    lines = sword_bridge.chapter_lines('FakeVulg', 'Psalms', 116)
+    assert [(k, c, v) for k, _b, c, v in lines] == \
+        [(v, 114, v) for v in range(1, 10)] + \
+        [(9 + v, 115, v) for v in range(1, 11)]
+    assert sword_bridge.printed_verse('FakeVulg', 'Psalms', 116, 10) == 1
+    assert sword_bridge.printed_verse('FakeVulg', 'Psalms', 116, 9) == 9
+    assert sword_bridge.printed_verse('FakeVulg', 'Psalms', 23, 4) == 4
+    assert sword_bridge.module_chapter_breaks('FakeVulg', 'Psalms', 116) \
+        == {10: 115}
+
+
+def test_every_verse_of_a_redrawn_psalm_is_on_its_page(v11n_mods):
+    """Each KJV verse targets a line the page renders, and that line
+    reports the same verse back — the round trip the panes, the marks and
+    search all make."""
+    for ch in _REDRAWN:
+        keys = {ln[0] for ln in
+                sword_bridge.chapter_lines('FakeVulg', 'Psalms', ch)}
+        for v in range(1, sword_bridge.verse_count('Psalms', ch) + 1):
+            key = sword_bridge.map_target_verse('FakeVulg', 'Psalms', ch, v)
+            assert key in keys, (ch, v)
+            assert sword_bridge.map_verse_to_app(
+                'FakeVulg', 'Psalms', ch, key) == v, (ch, v)
+
+
+def test_a_v3_index_stays_valid_unless_the_module_is_mapped(
+        v11n_mods, tmp_path):
+    """v4 only changed what a mapped module indexes; nobody else rebuilds."""
+    import sqlite3
+    path = tmp_path / 'idx.db'
+    conn = sqlite3.connect(path)
+    conn.execute('CREATE TABLE verses (content)')
+    conn.execute('PRAGMA user_version = 3')
+    conn.commit()
+    conn.close()
+    assert sword_bridge._index_is_valid(str(path), 'FakeKJV')
+    assert not sword_bridge._index_is_valid(str(path), 'FakeVulg')
 
 
 # ── installed_dict_modules: no language filter ───────────────────────────────

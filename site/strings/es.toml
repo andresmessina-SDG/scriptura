@@ -56,6 +56,7 @@ link_source = "Código fuente"
 link_changes = "Novedades"
 link_issues = "Informar de un problema"
 link_licence = "Licencia"
+link_donate = "Donar"
 
 credits_html = [
   "Reina-Valera 1909, de dominio público, con los números de Strong de Rubén Gómez, de la <a class=\"clay\" href=\"https://crosswire.org/sword/\">biblioteca SWORD de CrossWire</a>.",

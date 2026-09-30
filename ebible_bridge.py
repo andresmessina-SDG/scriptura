@@ -15,6 +15,7 @@ import zipfile
 import paths
 import search_query
 import transfer
+from _version import USER_AGENT
 
 _log = logging.getLogger('scriptura.ebible')
 
@@ -465,6 +466,28 @@ def _module_ref(module_name, book, chapter):
         or (book, chapter)
 
 
+def _chapter_rows(module_name, book, chapter, rows_for):
+    """Rows for an app chapter, keyed as the pane addresses them.
+
+    `rows_for(m_book, m_chapter)` fetches one module chapter's rows, verse
+    first. Most chapters are one module chapter read whole; the few that a
+    merge or split redraws are picked line by line from sword_bridge's table,
+    for the reason given there."""
+    m_book, m_chapter = _module_ref(module_name, book, chapter)
+    if m_book == book and m_chapter == chapter:
+        return rows_for(book, chapter)
+    import sword_bridge
+    lines = sword_bridge.chapter_lines(module_name, book, chapter)
+    if lines is None:
+        return rows_for(m_book, m_chapter)
+    by_ref = {}
+    for m_ch in sorted({ln[2] for ln in lines}):
+        for row in rows_for(m_book, m_ch):
+            by_ref.setdefault((m_ch, row[0]), []).append(row[1:])
+    return [(key, *rest) for key, _b, m_ch, m_v in lines
+            for rest in by_ref.get((m_ch, m_v), ())]
+
+
 def load_chapter(module_name, book, chapter):
     """Returns [(verse_num, html_text)] — same shape as sword_bridge.load_chapter().
 
@@ -474,14 +497,13 @@ def load_chapter(module_name, book, chapter):
     they do for a mapped SWORD module — a Vulgate psalter shows its printed
     numbering, and the pane translates at the tag level."""
     tid = _tid(module_name)
-    book, chapter = _module_ref(module_name, book, chapter)
     try:
         conn = _db()
-        rows = conn.execute(
-            'SELECT verse, COALESCE(markup, text) FROM verses '
-            'WHERE translation=? AND book=? AND chapter=? ORDER BY verse',
-            (tid, book, chapter)).fetchall()
-        return list(rows)
+        return _chapter_rows(module_name, book, chapter, lambda b, ch: list(
+            conn.execute(
+                'SELECT verse, COALESCE(markup, text) FROM verses '
+                'WHERE translation=? AND book=? AND chapter=? ORDER BY verse',
+                (tid, b, ch)).fetchall()))
     except Exception:
         return []
 
@@ -493,13 +515,13 @@ def chapter_footnotes(module_name, book, chapter):
     Mapped the same way as load_chapter, or the notes would belong to a
     different chapter than the text they annotate."""
     tid = _tid(module_name)
-    book, chapter = _module_ref(module_name, book, chapter)
     try:
         conn = _db()
-        rows = conn.execute(
-            'SELECT verse, n, type, body FROM notes '
-            'WHERE translation=? AND book=? AND chapter=? ORDER BY verse, n',
-            (tid, book, chapter)).fetchall()
+        rows = _chapter_rows(module_name, book, chapter, lambda b, ch: list(
+            conn.execute(
+                'SELECT verse, n, type, body FROM notes '
+                'WHERE translation=? AND book=? AND chapter=? '
+                'ORDER BY verse, n', (tid, b, ch)).fetchall()))
     except Exception:
         return {}
     out = {}
@@ -588,7 +610,7 @@ def download_catalog_sync():
     """Download and cache the eBible catalog CSV. Raises on failure."""
     # Lazy: pulls in http/ssl/email (~40 ms) — only needed for downloads.
     import urllib.request
-    req = urllib.request.Request(CATALOG_URL, headers={'User-Agent': 'Mozilla/5.0'})
+    req = urllib.request.Request(CATALOG_URL, headers={'User-Agent': USER_AGENT})
     with urllib.request.urlopen(req, timeout=20) as r:
         data = r.read()
     # Write through a tmp + os.replace so a killed download can't leave a
@@ -604,7 +626,7 @@ def download_translation_sync(tid, entry, on_status=None):
     if on_status:
         on_status('download')
     url = _USFM_URL.format(id=tid)
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    req = urllib.request.Request(url, headers={'User-Agent': USER_AGENT})
     with urllib.request.urlopen(req, timeout=120) as r:
         data = transfer.read(r)
 

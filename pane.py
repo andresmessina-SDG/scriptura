@@ -1268,6 +1268,9 @@ class BiblePane(Gtk.Box):
         # no headings argument, so the attribute has to exist before the
         # first fetch ever assigns one.
         self._rendered_headings = {}
+        # {key: printed numeral} for lines a split psalm carries over from the
+        # module's next chapter; every other line prints its key.
+        self._numerals = {}
         # Per-pane Ctrl+F search subsystem (widgets + state + highlight tag).
         # Constructed eagerly so the toolbar button and revealer can be
         # placed during _build_ui below.
@@ -2197,7 +2200,9 @@ class BiblePane(Gtk.Box):
             for v_num, html in verses:
                 plain = re.sub(r'<[^>]+>', '', str(html)).strip()
                 if plain:
-                    lines.append(f'{v_num} {plain}')
+                    printed = sword_bridge.printed_verse(module, book,
+                                                         chapter, v_num)
+                    lines.append(f'{printed} {plain}')
             text = '\n'.join(lines) + '\n'
             GLib.idle_add(self._finish_copy_chapter, text, book, chapter)
 
@@ -2728,6 +2733,13 @@ class BiblePane(Gtk.Box):
         # block rather than silently doing nothing.
         self._present_verses = sorted(v for v, _ in verses)
 
+        # A split psalm (KJV 116 = Vulg 114 + 115) goes on into the module's
+        # next chapter mid-page: those lines print its own numerals, from 1
+        # again, under its number. See sword_bridge.chapter_lines.
+        lines = sword_bridge.chapter_lines(module, book, chapter) or ()
+        self._numerals = {key: m_v for key, _b, _c, m_v in lines if key != m_v}
+        seams = sword_bridge.module_chapter_breaks(module, book, chapter)
+
         # Chapter heading — muted, sits above the first verse and scrolls with text.
         # Bibles only; commentaries emit their own per-verse headers, and
         # generic books / dictionaries don't have a Book Chapter reference
@@ -2790,6 +2802,10 @@ class BiblePane(Gtk.Box):
             # toggle need not re-render. Keeping them in the buffer also keeps
             # _verse_ranges' offsets identical between the two states.
             if not is_commentary:
+                if start_v in seams:
+                    self._insert_section_heading(
+                        f'{book_label(book)} {seams[start_v]}',
+                        wrote_a_block, hideable=False)
                 for head in self._rendered_headings.get(start_v, ()):
                     self._insert_section_heading(head, wrote_a_block)
 
@@ -2826,7 +2842,7 @@ class BiblePane(Gtk.Box):
             else:
                 v_num_markup = (f'<span foreground="gray" size="small" '
                                 f'weight="bold" rise="2500"{self._numeral_ff()}>'
-                                f' {start_v} </span>')
+                                f' {self._numerals.get(start_v, start_v)} </span>')
                 self._buffer.insert_markup(self._buffer.get_end_iter(), v_num_markup, -1)
 
             text_start_mark = self._buffer.create_mark(None, self._buffer.get_end_iter(), True)
@@ -3434,7 +3450,7 @@ class BiblePane(Gtk.Box):
             self._restore_top_verse = self._find_topmost_visible_verse()
         self._fetch_and_render()
 
-    def _insert_section_heading(self, text, lead_blank):
+    def _insert_section_heading(self, text, lead_blank, hideable=True):
         """Insert a publisher section heading above the verse it titles.
 
         Same voice as the section titles _html_to_markup already styles —
@@ -3445,13 +3461,18 @@ class BiblePane(Gtk.Box):
         `lead_blank` is False for the first block of a chapter. The chapter
         heading above it already ends in a newline and deliberately carries
         no blank line of its own (see its comment: a blank line there "left
-        an oversized top gap"); adding one here reopens exactly that gap."""
+        an oversized top gap"); adding one here reopens exactly that gap.
+
+        `hideable=False` keeps it through the headings toggle: the seam of a
+        split psalm is the only thing saying why the numerals start again."""
         lead = '\n\n' if lead_blank else ''
         markup = (f'{lead}<span size="90%" weight="bold" letter_spacing="800" '
                   f'foreground="gray">'
                   f'{GLib.markup_escape_text(text)}</span>\n')
         start = self._buffer.get_end_iter().get_offset()
         self._buffer.insert_markup(self._buffer.get_end_iter(), markup, -1)
+        if not hideable:
+            return
         # The surrounding newlines are inside the tagged range on purpose:
         # hiding the words but leaving their blank line behind would open a
         # gap where the heading used to be.
@@ -3997,7 +4018,7 @@ class BiblePane(Gtk.Box):
         in the current buffer, or None if the verse isn't applied here.
 
         The verse number span is rendered as " {N} " (leading space, digits,
-        trailing space) — so vtext_start is len(str(N))+2 chars past
+        trailing space, N as printed) — so vtext_start is len(str(N))+2 chars past
         vnum_start. This lets highlight/underline tags target the verse
         text only, leaving the gray verse number untouched."""
         tag = self._buffer.get_tag_table().lookup(f'vnum_{verse_num}')
@@ -4010,7 +4031,8 @@ class BiblePane(Gtk.Box):
         vtext_end = vnum_start.copy()
         vtext_end.forward_to_tag_toggle(tag)
         vtext_start = vnum_start.copy()
-        vtext_start.forward_chars(len(str(verse_num)) + 2)
+        vtext_start.forward_chars(
+            len(str(self._numerals.get(verse_num, verse_num))) + 2)
         return vnum_start, vtext_start, vtext_end
 
     def _apply_anno_tags(self, verse_num, anno, fresh=False):
