@@ -495,7 +495,21 @@ def _on_startup(app):
         app.set_inactivity_timeout(10000)
 
 
+def _name_ourselves_to_hosts():
+    """Send Scriptura's User-Agent on every request that sets none.
+
+    urllib otherwise says `Python-urllib/3.x`, which tells a host nothing
+    about who is asking and which eBible refuses outright. Installing it once
+    here covers every fetch in the app, the ones written since included."""
+    import urllib.request
+    from _version import USER_AGENT
+    opener = urllib.request.build_opener()
+    opener.addheaders = [('User-Agent', USER_AGENT)]
+    urllib.request.install_opener(opener)
+
+
 def main():
+    _name_ourselves_to_hosts()
     app = BibleApp(unique=True)
     app.connect('startup', _on_startup)
     _listen_for_session_end(app)

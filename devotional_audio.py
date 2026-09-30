@@ -35,6 +35,7 @@ import threading
 import urllib.request
 
 import paths
+from _version import USER_AGENT
 
 #: Crossway's feed for the devotional. Resolved from the podcast's public
 #: directory listing; the publisher's own channel, not a mirror.
@@ -81,7 +82,7 @@ MISS_RETRY_FLOOR = datetime.timedelta(hours=1)
 #: go looking for the other.
 EVENING_HOUR = 12
 
-_UA = 'Scriptura (Bible reader; +https://github.com/andresmessina-SDG/scriptura)'
+_UA = USER_AGENT
 
 #: What each reading is a reading OF, for the desktop's media bus — the
 #: place a lock screen states the book rather than the passage. The

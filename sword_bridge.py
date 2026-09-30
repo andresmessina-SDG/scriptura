@@ -117,7 +117,10 @@ MAX_SEARCH_RESULTS = 5000  # cap result count so a common word can't flood the U
 # every stored reference speaks the one navigation space (a hit's verse
 # number previously targeted one verse off on mapped modules); merged
 # chapters (KJV Ps 9+10 = Vulg 9) dedupe instead of double-indexing.
-_FTS_INDEX_VERSION = 3
+# v4: split chapters index their tail (KJV Ps 116:10-19 and 147:12-20 were in
+# no index). Only a mapped module's text changed, so a v3 index of any other
+# module stays valid and no one else pays for a rebuild.
+_FTS_INDEX_VERSION = 4
 
 
 def _get_index_path(module_name):
@@ -127,7 +130,7 @@ def _get_index_path(module_name):
     return os.path.join(FTS_INDEX_DIR, safe + '.db')
 
 
-def _index_is_valid(idx_path):
+def _index_is_valid(idx_path, module_name):
     """True if a built, current-version FTS5 index exists at idx_path."""
     if not os.path.exists(idx_path):
         return False
@@ -138,7 +141,8 @@ def _index_is_valid(idx_path):
             conn.execute('SELECT 1 FROM verses LIMIT 1')  # table present?
         finally:
             conn.close()
-        return ver == _FTS_INDEX_VERSION
+        return ver == _FTS_INDEX_VERSION or (
+            ver == 3 and _module_v11n(module_name) is None)
     except Exception:
         return False
 
@@ -193,9 +197,10 @@ def _build_module_index(module_name, on_progress=None):
                 for v_num, html in load_chapter(module_name, book, ch):
                     plain_text = re.sub(r'<[^>]+>', '', str(html))
                     ref = (book, ch, v_num)
-                    if mapped and v11n:
-                        rev = _map_ref_reverse(v11n, mapped[0], mapped[1],
-                                               v_num)
+                    line = (_line_ref(module_name, book, ch, v_num)
+                            if mapped and v11n else None)
+                    if line is not None:
+                        rev = _map_ref_reverse(v11n, *line)
                         if rev is not None:
                             ref = rev
                     if mapped:
@@ -281,6 +286,7 @@ def _reset():
         _marks_sections.clear()
         _strongs_cache.clear()
         _book_maps.clear()
+        _line_maps.clear()
         _module_dc.clear()
     with _indexing_lock:
         _indexing_threads.clear()
@@ -589,6 +595,100 @@ def mapped_chapter(module_name, book, chapter):
     return m.get(chapter) if m else None
 
 
+# Where the systems merge or split a chapter, the anchor alone shows the wrong
+# text. KJV Ps 10 anchored to Vulg 9 showed all of Vulg 9, whose first 21
+# lines are KJV Ps 9; KJV Ps 116 anchored to Vulg 114 showed only its first
+# nine verses, and 116:10-19 (Vulg 115) was reachable from nowhere. Measured
+# over SWORD's tables, Vulg and Synodal each have four such chapters: 9, 10,
+# 114, 115 merged, 116 and 147 split.
+#
+# So those chapters are drawn line by line: every module line whose KJV
+# reference falls in the app chapter, from as many module chapters as hold
+# one. A line keeps its module verse as its key, which is what the pane, the
+# marks and the verse cursor all address. Lines from a second module chapter
+# would repeat those numbers (Vulg 115 starts again at 1), so they continue
+# from the last key instead and print their own numeral: see printed_verse.
+
+_line_maps = {}  # (module_name, book, chapter) → [(key, m_book, m_ch, m_v)] | None
+
+
+def _v11n_verse_max(v11n, book, chapter):
+    vk = Sword.VerseKey()
+    if v11n:
+        vk.setVersificationSystem(v11n)
+    vk.setText(f'{book} {chapter}:1')
+    return vk.getVerseMax()
+
+
+def _compute_chapter_lines(v11n, book, chapter, anchor):
+    """The line table for one mapped chapter, or None when it is exactly the
+    anchor chapter, keyed as printed — true of all but a handful."""
+    m_book, anchor_ch = anchor
+    chapters = {anchor_ch}
+    for v in range(1, _v11n_verse_max(None, book, chapter) + 1):
+        ref = _map_ref(book, chapter, v, v11n)
+        if ref is not None and ref[0] == m_book:
+            chapters.add(ref[1])
+    lines = []
+    for m_ch in sorted(chapters):
+        for m_v in range(1, _v11n_verse_max(v11n, m_book, m_ch) + 1):
+            rev = _map_ref_reverse(v11n, m_book, m_ch, m_v)
+            ours = (m_ch == anchor_ch if rev is None
+                    else rev[0].lower() == book.lower() and rev[1] == chapter)
+            if not ours:
+                continue
+            if m_ch == anchor_ch:
+                key = m_v
+            else:
+                key = lines[-1][0] + 1 if lines else m_v
+            lines.append((key, m_book, m_ch, m_v))
+    whole_anchor = [(v, m_book, anchor_ch, v) for v in
+                    range(1, _v11n_verse_max(v11n, m_book, anchor_ch) + 1)]
+    return None if lines == whole_anchor or not lines else lines
+
+
+def chapter_lines(module_name, book, chapter):
+    """[(key, module_book, module_chapter, module_verse)] in reading order
+    for an app chapter that a merge or split redraws, or None for every
+    chapter the anchor already shows whole (all unmapped ones included)."""
+    mapped = mapped_chapter(module_name, book, chapter)
+    if mapped is None:
+        return None
+    key = (module_name, book, chapter)
+    if key not in _line_maps:
+        try:
+            _line_maps[key] = _compute_chapter_lines(
+                _module_v11n(module_name), book, chapter, mapped)
+        except Exception:
+            _line_maps[key] = None
+    return _line_maps[key]
+
+
+def _line_ref(module_name, book, chapter, key):
+    """A rendered line's key → its (book, chapter, verse) in the module's own
+    numbering, or None when the chapter is unmapped."""
+    lines = chapter_lines(module_name, book, chapter)
+    if lines is not None:
+        return next((ln[1:] for ln in lines if ln[0] == key), None)
+    mapped = mapped_chapter(module_name, book, chapter)
+    return (*mapped, key) if mapped else None
+
+
+def printed_verse(module_name, book, chapter, key):
+    """The numeral the module prints for a rendered line: its key, except on
+    the lines a split carries over from the next module chapter."""
+    ref = _line_ref(module_name, book, chapter, key)
+    return ref[2] if ref is not None else key
+
+
+def module_chapter_breaks(module_name, book, chapter):
+    """{key: module chapter} for each line where a second module chapter
+    begins mid-page — the pane marks the seam there."""
+    lines = chapter_lines(module_name, book, chapter) or []
+    return {key: m_ch for i, (key, _b, m_ch, _v) in enumerate(lines)
+            if i and m_ch != lines[i - 1][2]}
+
+
 def _map_ref_reverse(v11n, book, chapter, verse):
     """One module-space reference → app-space (KJV), or None. The
     mirror of _map_ref, with the same clamping guard on the source."""
@@ -618,10 +718,10 @@ def map_verse_to_app(module_name, book, chapter, verse):
     v11n = _module_v11n(module_name)
     if v11n is None:
         return verse
-    mapped = mapped_chapter(module_name, book, chapter)
-    if mapped is None:
+    line = _line_ref(module_name, book, chapter, verse)
+    if line is None:
         return verse
-    ref = _map_ref_reverse(v11n, mapped[0], mapped[1], verse)
+    ref = _map_ref_reverse(v11n, *line)
     if ref is not None and ref[0].lower() == book.lower() \
             and ref[1] == chapter:
         return ref[2]
@@ -656,6 +756,9 @@ def map_target_verse(module_name, book, chapter, verse):
     if mapped is None:
         return verse
     ref = _map_ref(book, chapter, verse, v11n)
+    lines = chapter_lines(module_name, book, chapter)
+    if ref is not None and lines is not None:
+        return next((ln[0] for ln in lines if ln[1:] == ref), verse)
     if ref is not None and ref[:2] == mapped:
         return ref[2]
     return verse
@@ -687,6 +790,7 @@ def load_chapter(module_name, book, chapter):
         # the module's own numbering where a safe per-book map exists
         # (Greek/Latin psalter offset). The cache key above deliberately
         # stays app-space.
+        lines = chapter_lines(module_name, book, chapter)
         mapped = mapped_chapter(module_name, book, chapter)
         if mapped:
             book, chapter = mapped
@@ -712,9 +816,13 @@ def load_chapter(module_name, book, chapter):
         results = []
         notes = {}
         headings = {}
-        for v in range(1, verse_max + 1):
+        if lines is None:
+            lines = [(v, book, chapter, v) for v in range(1, verse_max + 1)]
+        for v, _m_book, m_ch, m_v in lines:
             try:
-                vk.setVerse(v)
+                if m_ch != vk.getChapter():
+                    vk.setText(f'{book} {m_ch}:1')
+                vk.setVerse(m_v)
                 mod.setKey(vk)
                 results.append((v, mod.renderText()))
             except Exception:
@@ -3127,7 +3235,7 @@ def search_module(module_name, query, on_indexing_start=None,
 
     idx_path = _get_index_path(module_name)
 
-    if not _index_is_valid(idx_path):
+    if not _index_is_valid(idx_path, module_name):
         # Atomic check-and-spawn: two concurrent searches must not both build
         # the same index. Hold _indexing_lock only for the dict op, never
         # during the long-running join below.
@@ -3163,7 +3271,7 @@ def search_module(module_name, query, on_indexing_start=None,
         if on_indexing_done:
             on_indexing_done()
 
-        if not _index_is_valid(idx_path):
+        if not _index_is_valid(idx_path, module_name):
             return []
 
     # Perform search. chapter/verse are stored as FTS5 text columns, so CAST

@@ -140,6 +140,7 @@ class RecolourPane(Pane):
     _set_current_verse_indicator = BiblePane._set_current_verse_indicator
     _sync_dropcap_ink = BiblePane._sync_dropcap_ink
     _verse_ranges = BiblePane._verse_ranges
+    _numerals: dict = {}
 
     def __init__(self, selected=None, module_type='Biblical Texts',
                  devotional=False, rendered=True):

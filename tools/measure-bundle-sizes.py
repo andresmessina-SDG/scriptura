@@ -28,6 +28,7 @@ import ebible_bridge  # noqa: E402
 import open_data  # noqa: E402
 import sword_bridge as sb  # noqa: E402
 import welcome  # noqa: E402
+from _version import USER_AGENT  # noqa: E402
 
 #: How far a stored size may drift before --check calls it stale. Modules are
 #: re-issued now and then; a card that says 40 MB for 44 is still honest.
@@ -36,7 +37,7 @@ TOLERANCE = 0.2
 
 def _length(url):
     req = urllib.request.Request(url, method='HEAD',
-                                 headers={'User-Agent': 'Mozilla/5.0'})
+                                 headers={'User-Agent': USER_AGENT})
     with urllib.request.urlopen(req, timeout=60) as resp:
         return int(resp.headers['Content-Length'])
 

@@ -4,7 +4,9 @@ Nothing installs `_` into builtins any more, here or in the app: every
 module imports its helpers from i18n, so a module that forgets to fails
 the suite with NameError instead of passing on a name the test run lent it.
 """
+import atexit
 import os
+import shutil
 import tempfile
 
 # ── The suite must not read, or write, the tester's own settings ───────────
@@ -23,8 +25,9 @@ import tempfile
 # ~/.config, and no test can write there.
 import settings as _settings  # noqa: E402
 
-_settings._FILE = os.path.join(tempfile.mkdtemp(prefix='scriptura-tests-'),
-                               'settings.json')
+_SETTINGS_DIR = tempfile.mkdtemp(prefix='scriptura-tests-')
+atexit.register(shutil.rmtree, _SETTINGS_DIR, True)
+_settings._FILE = os.path.join(_SETTINGS_DIR, 'settings.json')
 _settings._cache = None
 
 # ── Nor the tester's own study data ────────────────────────────────────────
@@ -40,6 +43,7 @@ _settings._cache = None
 # this is only the floor. Nothing here is read either, so a machine with a
 # full annotation history runs the suite the same as a fresh checkout.
 _SCRATCH = tempfile.mkdtemp(prefix='scriptura-stores-')
+atexit.register(shutil.rmtree, _SCRATCH, True)
 
 import annotations as _annotations  # noqa: E402
 import bookmarks as _bookmarks  # noqa: E402

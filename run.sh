@@ -13,4 +13,7 @@
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")"
 python3 tools/build-locale.py
+# GStreamer probes VA-API for audio, and libva prints its
+# "libva info:" lines to the terminal. They are harmless; errors still show.
+export LIBVA_MESSAGING_LEVEL=1
 exec python3 main.py "$@"

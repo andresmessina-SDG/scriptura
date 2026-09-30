@@ -57,6 +57,7 @@ link_source = "Исходный код"
 link_changes = "Что нового"
 link_issues = "Сообщить о проблеме"
 link_licence = "Лицензия"
+link_donate = "Поддержать"
 
 credits_html = [
   "Русский открытый перевод и Библейский словарь — © Door43 World Missions Community, <a class=\"clay\" href=\"https://creativecommons.org/licenses/by-sa/4.0/deed.ru\">CC BY-SA 4.0</a>, из <a class=\"clay\" href=\"https://git.door43.org/Door43-Catalog/ru_rob\">Door43</a>; статьи словаря даны в отрывках.",

@@ -894,3 +894,17 @@ def test_picking_one_verse_out_of_a_mapped_chapter_needs_the_mapped_number(db):
     assert sword_bridge.map_target_verse(
         eb.PREFIX + 'engkjvish', 'Psalms', 3, 1) == 1
 
+
+
+def test_a_split_psalm_reads_on_into_the_module_s_next_chapter(db):
+    """KJV Ps 116 is Synodal 114 and the first ten verses of 115. The
+    anchor alone showed 114, so 116:10-19 were in no chapter at all; and
+    KJV Ps 10, merged into Synodal 9, showed all of 9 twice over."""
+    _seed_psalter('Synodal', 'russplit', text='line')
+    module = eb.PREFIX + 'russplit'
+    rows = eb.load_chapter(module, 'Psalms', 116)
+    assert [t for _v, t in rows] == \
+        [f'line 114:{v}' for v in range(1, 10)] + \
+        [f'line 115:{v}' for v in range(1, 11)]
+    assert [v for v, _t in rows] == list(range(1, 20))
+    assert eb.load_chapter(module, 'Psalms', 10)[0] == (22, 'line 9:22')

@@ -424,13 +424,15 @@ def build(module: str, book: str, chapter: int,
         lines.append(f'# {heading}')
         lines.append('')
         for verse, text in rows:
-            lines.append(f'> **{verse}** {text}')
+            printed = sword_bridge.printed_verse(module, book, chapter, verse)
+            lines.append(f'> **{printed}** {text}')
         lines.append('')
     else:
         lines.append(heading)
         lines.append('')
         for verse, text in rows:
-            lines.append(f'{verse} {text}')
+            printed = sword_bridge.printed_verse(module, book, chapter, verse)
+            lines.append(f'{printed} {text}')
         lines.append('')
 
     if notes:
