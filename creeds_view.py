@@ -49,6 +49,9 @@ LABELS_W = 176
 #: Least room between two labels, and between a label and the next.
 LABEL_GAP = 24
 BOOK_GAP = 21
+#: The closest two labels may come when there are too many for the strip.
+MIN_LABEL_GAP = 22
+MIN_BOOK_GAP = 17
 #: Below this width the detail opens under the line; below the second the
 #: strip turns sideways and the threads go.
 WIDE_SP = 880
@@ -62,9 +65,23 @@ def ref_label(link: dict) -> str:
     return f"{book_label(link['book'])} {tail}"
 
 
+def fit(items: list[dict], gap: float, least: float, lo: float,
+        hi: float) -> list[dict]:
+    """Spread the items that fit in lo..hi. Too many at `gap` close up to
+    as near as `least`; past that, the ones with the smallest `n` go."""
+    room = int((hi - lo) / least) + 1
+    if len(items) > room:
+        items = sorted(items, key=lambda it: -it['n'])[:room]
+    if len(items) > 1:
+        gap = min(gap, (hi - lo) / (len(items) - 1))
+    spread(items, gap, lo, hi)
+    return items
+
+
 def spread(items: list[dict], gap: float, lo: float, hi: float) -> None:
     """Give each item a `py` near its `y`, in order, at least `gap` apart,
-    each crowded run centred on its true places, all within lo..hi."""
+    each crowded run centred on its true places, all within lo..hi (so
+    `gap` must fit them: see `fit`)."""
     items.sort(key=lambda it: it['y'])
     groups: list[dict] = []
     for it in items:
@@ -859,10 +876,9 @@ class CreedsPage:
                 e['n'] += 1
                 if link['kind'] == 'w':
                     e['link'] = link
-            items = list(ports.values())
-            spread(items, LABEL_GAP, g['top'], g['bottom'])
-            g['ports'] = {e['link']['ref']: e for e in items}
-            for e in items:
+            g['ports'] = ports
+            for e in fit(list(ports.values()), LABEL_GAP, MIN_LABEL_GAP,
+                         g['top'], g['bottom']):
                 text = ref_label(e['link'])
                 if e['n'] > 1:
                     text += f"  ×{e['n']}"
@@ -880,7 +896,7 @@ class CreedsPage:
             most = max((len(i) for _n, i in counts), default=1)
             entries = [{'y': sum(g['y'](link) for _p, link in items) / len(items),
                         'name': name, 'n': len(items)} for name, items in counts]
-            spread(entries, BOOK_GAP, g['top'], g['bottom'])
+            entries = fit(entries, BOOK_GAP, MIN_BOOK_GAP, g['top'], g['bottom'])
             g['books'] = entries
             for e in entries:
                 btn = Gtk.Button()
@@ -1023,6 +1039,8 @@ class CreedsPage:
             # Each label on a leader from its verse's true place, the way the
             # book labels sit when nothing is chosen.
             for e in ports.values():
+                if 'py' not in e:
+                    continue      # no room for its label; the thread still lands
                 src(0.3)
                 cr.set_line_width(1)
                 cr.move_to(sx + STRIP_W + 1, e['y'])

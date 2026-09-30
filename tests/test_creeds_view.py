@@ -144,3 +144,21 @@ def test_the_strip_stays_put_while_the_lines_scroll(page):
     assert page._lines.is_ancestor(page._scroll)
     assert not page._strip.is_ancestor(page._scroll)
     assert not page._labels.is_ancestor(page._scroll)
+
+
+def test_too_many_labels_close_up_and_never_pile():
+    """Thirty books at 21px want more than a short pane's strip: they close
+    up evenly instead of being pushed past its top onto one another."""
+    items = [{'y': 10 + i, 'n': 1} for i in range(30)]
+    kept = cv.fit(items, 21, 17, 0, 540)
+    assert len(kept) == 30
+    ys = [it['py'] for it in kept]
+    assert ys[0] >= 0 and ys[-1] <= 540
+    assert all(b - a >= 17 for a, b in zip(ys, ys[1:]))
+
+
+def test_past_the_least_gap_the_smallest_go():
+    items = [{'y': i, 'n': 1 if i % 2 else 5} for i in range(30)]
+    kept = cv.fit(items, 21, 17, 0, 170)
+    assert len(kept) == 11
+    assert all(it['n'] == 5 for it in kept)

@@ -2973,8 +2973,8 @@ button.creeds-port {
 button.creeds-book {
     font-size: 0.85em;
     font-weight: normal;
-    min-height: 20px;
-    padding: 1px 6px;
+    min-height: 16px;
+    padding: 0 6px;
     opacity: 0.8;
 }
 .creeds-count-bar {
