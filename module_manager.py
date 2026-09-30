@@ -333,8 +333,11 @@ def _ago(dt):
     return ngettext('updated {m} month ago', 'updated {m} months ago', months).format(m=months)
 
 
-#: The Bible Family Tree's track on a Module Manager row, in px.
+#: The Bible Family Tree's track on a Module Manager row, in px, and in a
+#: window narrower than _FAMILY_NARROW_SP, where 140px left the name 130.
 _FAMILY_TRACK_W = 140
+_FAMILY_TRACK_NARROW = 80
+_FAMILY_NARROW_SP = 560
 
 
 def _first_descendant(widget, kind, test=lambda _w: True):
@@ -349,6 +352,16 @@ def _first_descendant(widget, kind, test=lambda _w: True):
             return found
         child = child.get_next_sibling()
     return None
+
+
+def _hide_track(row):
+    """Hide a row's track while the row shows a download: the progress is
+    wider than the button it replaces, and the track, aligned to the button,
+    was pushed left of every other row's."""
+    track = _first_descendant(
+        row, Gtk.Button, lambda w: w.get_name() == 'module-family-track')
+    if track is not None:
+        track.set_visible(False)
 
 
 def _descendants(widget, test):
@@ -375,6 +388,7 @@ class ModuleManagerWindow(Adw.Window):
         self._on_modules_changed = on_modules_changed
         self._on_show_in_family = on_show_in_family
         self._on_see_line = on_see_line
+        self._track_w = _FAMILY_TRACK_W
         self._all_modules = []
         self._has_catalog = False
         self._eb_catalog = []
@@ -489,6 +503,13 @@ class ModuleManagerWindow(Adw.Window):
         esc.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         esc.connect('key-pressed', self._on_card_escape)
         self.add_controller(esc)
+        narrow = Adw.Breakpoint.new(Adw.BreakpointCondition.parse(
+            f'max-width: {_FAMILY_NARROW_SP}sp'))
+        narrow.connect('apply', lambda _b: self._set_track_width(
+            _FAMILY_TRACK_NARROW))
+        narrow.connect('unapply', lambda _b: self._set_track_width(
+            _FAMILY_TRACK_W))
+        self.add_breakpoint(narrow)
 
         header = Adw.HeaderBar()
         toolbar_view.add_top_bar(header)
@@ -1401,6 +1422,10 @@ class ModuleManagerWindow(Adw.Window):
             record = bible_family.node_for_module(name)
             if record is not None:
                 self._family_door(row, record)
+                job = ('sword:' if src == 'sword' else 'ebible:') + name
+                if src != 'group' and (downloads.get(job)
+                                       or downloads.get('rm:' + job)):
+                    _hide_track(row)
         return row
 
     # ── The Bible Family Tree on a Bible row ─────────────────────────────────
@@ -1438,7 +1463,7 @@ class ModuleManagerWindow(Adw.Window):
             face.set_draw_func(lambda a, cr, w, h: paint_track(
                 cr, w, h, spot, a.get_color(), r=4.0))
             redraw_on_contrast(face)
-        face.set_size_request(_FAMILY_TRACK_W, -1)
+        face.set_size_request(self._track_w, -1)
         door = Gtk.Button(child=face)
         door.add_css_class('flat')
         door.add_css_class('module-family-track')
@@ -1453,6 +1478,13 @@ class ModuleManagerWindow(Adw.Window):
                      lambda _b, i=record['id']: self._show_card(i))
         header.insert_child_after(door, title)
 
+    def _set_track_width(self, width):
+        """Every track at `width`: the rows drawn, and those drawn next."""
+        self._track_w = width
+        for door in _descendants(
+                self, lambda w: w.get_name() == 'module-family-track'):
+            door.get_child().set_size_request(width, -1)
+
     @staticmethod
     def _align_tracks(group):
         """End every track in `group` at one x. Each sits just before its
@@ -1461,7 +1493,8 @@ class ModuleManagerWindow(Adw.Window):
         the difference as margin."""
         pairs = []
         for track in _descendants(
-                group, lambda w: w.get_name() == 'module-family-track'):
+                group, lambda w: w.get_name() == 'module-family-track'
+                and w.get_visible()):
             suffixes = track.get_next_sibling()
             while suffixes is not None and \
                     not suffixes.has_css_class('suffixes'):
@@ -1687,6 +1720,7 @@ class ModuleManagerWindow(Adw.Window):
                 if btn.get_parent() is not None:
                     row.remove(btn)
             self._show_job(row, key)
+            _hide_track(row)
             group = row.get_ancestor(Adw.ExpanderRow)
             if group is not None:
                 group.set_expanded(True)    # not hidden in a folded group

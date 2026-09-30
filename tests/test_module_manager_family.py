@@ -181,3 +181,36 @@ def test_see_all_on_the_line_only_with_a_main_window(monkeypatch):
     (btn,) = see(_window(monkeypatch, on_see_line=lambda: asked.append(1)))
     btn.emit('clicked')
     assert asked == [1]
+
+
+def test_a_downloading_row_hides_its_track_and_leaves_the_column(monkeypatch):
+    # The progress replaces a narrower button; a track aligned to the button
+    # was pushed left of every other row's while the download ran.
+    import downloads
+    win = _window(monkeypatch)
+    bsb = _row(win, 'Berean Standard Bible')
+    job = downloads.Job('sword:BSB', 'BSB', downloads.CROSSWIRE, None)
+    monkeypatch.setitem(downloads._jobs, job.key, job)
+    win._show_job_in_rows(job)
+    (track,) = _tracks(bsb)
+    assert not track.get_visible()
+    # Rows drawn while it runs start with the track hidden, and the column
+    # is aligned to the rows around it, not to the progress.
+    win._refresh_tab('bibles', full=True)
+    (track,) = _tracks(_row(win, 'Berean Standard Bible'))
+    assert not track.get_visible()
+
+
+def test_a_narrow_window_narrows_every_track(monkeypatch):
+    win = _window(monkeypatch)
+    win._set_track_width(mm._FAMILY_TRACK_NARROW)
+    faces = [d.get_child() for d in _tracks(win)]
+    assert faces and all(f.get_size_request()[0] == mm._FAMILY_TRACK_NARROW
+                         for f in faces)
+    # And the rows drawn next.
+    win._refresh_tab('bibles', full=True)
+    assert all(d.get_child().get_size_request()[0]
+               == mm._FAMILY_TRACK_NARROW for d in _tracks(win))
+    win._set_track_width(mm._FAMILY_TRACK_W)
+    assert all(d.get_child().get_size_request()[0] == mm._FAMILY_TRACK_W
+               for d in _tracks(win))

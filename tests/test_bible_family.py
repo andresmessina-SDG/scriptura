@@ -736,3 +736,15 @@ def test_compare_reads_the_verse_as_the_pane_numbers_it(monkeypatch):
     assert at('RusSynodal', 'RusSynodal', 'Psalms', 51, 1) == 1
     # From the KJV the number was already the app's.
     assert at('KJV', 'RusSynodal', 'Psalms', 51, 1) == 3
+
+
+def test_every_edition_of_a_work_is_the_same_bible():
+    # The Module Manager folds a translation's CrossWire and eBible editions
+    # into one row (content.EDITION_WORKS). An edition the data does not list
+    # was a Bible nothing recognised once installed: no track, no row on the
+    # Line, no place in Compare. GOD'S WORD's eBible edition was one.
+    import content
+    for work in content.EDITION_WORKS:
+        ids = {(bf.node_for_module(k) or {}).get('id')
+               for k in (*work['sword'], *work['ebible'])}
+        assert len(ids) == 1, (work['id'], ids)
