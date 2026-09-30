@@ -53,6 +53,9 @@ CREATE TABLE places (
 CREATE TABLE place_verses (place_id TEXT, book TEXT, chapter INTEGER, verse INTEGER);
 CREATE INDEX idx_place_verses ON place_verses (book, chapter, verse);
 CREATE TABLE pack_meta (key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE imagery_lang (
+    file_path TEXT, lang TEXT, lang_path TEXT, source_url TEXT,
+    license TEXT, attribution TEXT, PRIMARY KEY (file_path, lang));
 """
 
 
@@ -767,6 +770,24 @@ def ingest_modern(conn, images_dir, width, limit, fetch_images):
                 continue
         file_url = ('https://commons.wikimedia.org/wiki/File:'
                     + m['file'].replace(' ', '_'))
+        for lang, lm in m.get('lang', {}).items():
+            lang_rel = f'images/modern_{slug}.{lang}.svg'
+            if fetch_images:
+                url = ('https://commons.wikimedia.org/wiki/Special:FilePath/'
+                       + urllib.parse.quote(lm['file']))
+                try:
+                    fetch(url, os.path.join(images_dir,
+                                            f'modern_{slug}.{lang}.svg'))
+                except Exception as e:  # noqa: BLE001
+                    print(f'  ! modern {slug} {lang} fetch failed: {e}')
+                    continue
+            conn.execute(
+                'INSERT INTO imagery_lang (file_path, lang, lang_path, '
+                'source_url, license, attribution) VALUES (?,?,?,?,?,?)',
+                (rel, lang, lang_rel,
+                 'https://commons.wikimedia.org/wiki/File:'
+                 + lm['file'].replace(' ', '_'),
+                 lm['license'], lm['attribution']))
         for rng in m['ranges']:
             ce = rng.get('chapter_end', rng['chapter'])
             ve = rng.get('verse_end', rng['verse'])

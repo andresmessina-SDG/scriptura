@@ -114,6 +114,50 @@ def test_art_excludes_maps(pack):
         == ['First Journey']
 
 
+def test_map_shows_the_readers_language_version(pack, monkeypatch):
+    _seed(str(pack), imagery=[
+        _img('map', 'modern_map', 'Tribes', 'Joshua', 13, 1, ch_end=21,
+             v_end=45, file_path='images/modern_tribes.svg',
+             license='CC BY-SA 3.0')])
+    conn = sqlite3.connect(str(pack))
+    conn.execute('CREATE TABLE imagery_lang (file_path TEXT, lang TEXT, '
+                 'lang_path TEXT, source_url TEXT, license TEXT, '
+                 'attribution TEXT, PRIMARY KEY (file_path, lang))')
+    conn.execute('INSERT INTO imagery_lang VALUES (?,?,?,?,?,?)',
+                 ('images/modern_tribes.svg', 'es',
+                  'images/modern_tribes.es.svg', 'https://es.example',
+                  'CC BY-SA 4.0', 'Kordas'))
+    conn.commit()
+    conn.close()
+
+    def shown(lang):
+        monkeypatch.setattr(imagery_bridge, 'current_language', lambda: lang)
+        (m,) = imagery_bridge.maps_for('Joshua', 15, 1)
+        return (os.path.basename(m['path']), m['license'], m['attribution'])
+
+    assert shown('es') == ('modern_tribes.es.svg', 'CC BY-SA 4.0', 'Kordas')
+    # No Russian version: the English map, with its own credit.
+    assert shown('ru') == ('modern_tribes.svg', 'CC BY-SA 3.0', None)
+    assert shown('en') == shown('ru')
+
+
+def test_shipped_map_languages_are_whole():
+    # Every language version names a file and carries its own licence and
+    # credit — a share-alike map shown without its credit breaks the licence.
+    import tomllib
+    path = os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), 'tools', 'modern_maps.toml')
+    with open(path, 'rb') as f:
+        maps = tomllib.load(f)['map']
+    langs = [(m['slug'], lang, v) for m in maps
+             for lang, v in m.get('lang', {}).items()]
+    assert len(langs) == 5
+    for slug, lang, v in langs:
+        assert lang in ('es', 'ru'), slug
+        assert v['file'].endswith('.svg'), slug
+        assert v['license'] in v['attribution'], (slug, lang)
+
+
 def test_place_display_name_strips_disambiguation_suffix():
     # OpenBible's 'Antioch 2' / 'Galilee 1' suffixes are data, not display.
     assert imagery_bridge.place_display_name('Antioch 2') == 'Antioch'

@@ -181,6 +181,13 @@ def gate_images(rep: Report, conn: sqlite3.Connection, packdir: str) -> None:
     absent, wrong_size = [], []
     rows = conn.execute(
         'SELECT file_path, file_size FROM imagery').fetchall()
+    # The same map in the reader's language (tools/modern_maps.toml
+    # `[map.lang.xx]`); a pack built before that table existed has none.
+    try:
+        rows += conn.execute(
+            'SELECT lang_path, NULL FROM imagery_lang').fetchall()
+    except sqlite3.OperationalError:
+        pass
     for rel, recorded in rows:
         if not rel:
             continue
