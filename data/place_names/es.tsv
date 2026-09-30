@@ -1,0 +1,1026 @@
+# Bible places as the Reina-Valera 1909 names them (Public Domain).
+# Columns: OpenBible place id, the Bible's name, the modern site's name.
+# An empty column means the app keeps the English.
+# Places: OpenBible Bible Geocoding Data, CC BY 4.0.
+# Modern names: Wikidata labels, CC0.
+# Built by tools/build_place_names.py. Do not edit by hand.
+a0009b3	Ruma	
+a009e7d	En-hadda	
+a010244	Rama	
+a012705	Nilo	
+a0293ff	Puerta de las Aguas	
+a031bda	Caná	
+a033b84	Susán	
+a03a5d0	Molada	
+a03be2e	Tappua	
+a03cb21	Beth-aven	
+a03f6cf	Sión	
+a040ba5	Acéldama	Aceldama
+a0415e8	Carcor	
+a041bb3	Samaria	Samaria
+a046454	Beeroth	
+a046c70	Gath-rimmón	
+a053f15	Carmelo	
+a0574da	Ije-abarim	
+a05ebb7	Rephidim	
+a05ee76	Adadrimón	
+a061538	Ser	
+a062b95	Ahión	
+a070c7b	Dophca	Serabit el-Jadim
+a071cb2	Nehelam	
+a075d61	Beer-seba	Tell Be'er Sheva
+a077262	Siphmoth	
+a079478	Betonim	
+a079b21	Rameses	Qantir
+a07ae2d	Sereda	
+a08144e	Cabul	
+a08174b	Sora	
+a087a14	Buz	
+a0905b5	Succoth	
+a094036	Beth-oron la de abajo	
+a095b6e	Jazer	
+a0a178b	Beth-esel	
+a0a2ca7	Assón	Aso
+a0a52ec	Methegamma	Tell es-Safi
+a0a6365	Duma	
+a0a98de	Sepharad	Sardes
+a0aa664	Sodoma	
+a0aa8cf	Bethesda	Estanque de Betesda
+a0ac467	Getheo	Tell es-Safi
+a0b5c50	Zin	
+a0bccbd	Cerera	
+a0bcd48	Janoa	
+a0c97c0	Tel-harsa	Nippur
+a0c9a06	Geliloth	
+a0cc925	Beth-dagón	
+a0cd098	Beser	
+a0d1977	Beth-bara	
+a0d784a	Dibón	
+a0dc90b	Campiña de Meonenim	
+a0e11c1		Til Barsip
+a0e21ff	Athach	
+a0e33a3	En-haccore	
+a0e8903	Hauran	Hauran
+a0ed7ff	Siclag	
+a0ef1e1	Oboth	
+a0f440a	Galacia	Galacia
+a0f4ea8	Arabia	Arabia Pétrea
+a0f54e4	Sin	
+a0f8af9	Mizpa	
+a0fe2be	Bene-jaacán	
+a0ff819	Chîtlis	
+a10147d	Telabib	Nippur
+a104820	Ophir	
+a105543	Armagedón	Megido
+a112427	Beth-lehem	
+a112fe3	Enón	
+a116c5c		Jonia
+a11bbbe	Hierápolis	
+a12012d	Gedera	
+a121d5e		Foro Apio
+a13ffd4	Rabbit	
+a14325e	Bealoth	
+a149f13	Judea	
+a15257a	Jerusalem	
+a154d7b	Hamonah	Abarim
+a156070	En-hasor	Aynata
+a15973c	Migdol	
+a159fa4	Siria	
+a160272	Tiro	
+a1611b6	Puerta del Muladar	
+a16596e	Eter	
+a173c40	Arphad	
+a175f4b	Janum	
+a17c178	Timnath	
+a17e154	Rehoboth	
+a18873f	Gath	Tell es-Safi
+a190097	Zin	
+a197f19	Asia	Asia
+a19b076	Pisón	
+a19ec8c	Galaad	
+a19fd03	Licia	Licia
+a1a57d0	Kir-moab	
+a1ab517	Hethlon	
+a1ad8e1	Nod	
+a1aff30	Seirath	
+a1b30e1	Eder	Tel Arad
+a1b5486	Recom	
+a1b6474	Haseroth	
+a1b9ca6	Aroer	
+a1ba491	Maroth	
+a1c44ea	Salmón	
+a1c600b	Ajalón	Yalo
+a1c7cc1		Alaşehir
+a1cb244		Tell Be'er Sheva
+a1ce1b7	Hasar-enán	
+a1d1918	Helchât	
+a1d9047	Havila	Arabia
+a1db553	Bamoth	
+a1e3697	Siracusa	
+a1e3eff	Asena	
+a1eb300	Jarmuth	
+a1f2174	Ophni	
+a1fe6e7	Atenas	
+a204528	Raccath	
+a206291	Bezec	
+a2109c3		Abarim
+a217d18	Babilonia	
+a21b934	Irpeel	
+a221d82	El-kosh	
+a2227ba	Bizotia	
+a22663b	Baalzephón	
+a2270e4	Achzib	
+a231f80	Jericó	Tell es-Sultan
+a234727	Anab	
+a23a2e6	Tochên	
+a2410c1	Elim	
+a244d8f	Eglón	
+a2466e4		Transjordania
+a2517a0	Idumea	
+a2526f8	Hai	
+a25f8e2	Salisa	
+a263e60	Casa de Togarma	Armenia
+a26921e	Enam	
+a26aa94	Creta	Creta
+a26c8f2	Havoth-jair	
+a26cd81	Eltecón	
+a2715db	Cabseel	
+a2735ff	Edom	
+a27b472	Sichâr	
+a27d0e0	Etham	
+a282c15	Sepharvaim	
+a282dce	Samaria	Samaria
+a289254	Baala	
+a28a7df	Hachîla	
+a28d652	Rabba	
+a28da66	Saraim	
+a28f432	Zanoa	
+a293fbf	Bosra	
+a294859	Siloé	Piscina de Siloé
+a296e06	Massa	
+a2a145b	Aner	
+a2a303c	Gihón	Fuente del Gihón
+a2a77d2	Nea	
+a2a8df0	Beth-san	
+a2b389a	Jorcaam	
+a2b5ee9		Nippur
+a2bb265	Cinneroth	
+a2bb5ef		Aravá
+a2bf0f8	Ataroth-addar	
+a2c5cc7	Lod	Lod
+a2c780b	Adami-neceb	
+a2ca712	Itta-kazin	
+a2cd991	Pibeseth	
+a2d3ca1	Gabaa	
+a2d4170		Tell Be'er Sheva
+a2d6bfc	Hamath	Hamat Tiberíades
+a2d7b73		Sardes
+a2d84de	Chêrioth	
+a2d9bc8	Misia	Misia
+a2da675	Beth-arbel	
+a2e1bc0	Gath	
+a2e3aa0	Tecoa	
+a2e5054	Chephira	
+a2e65fb	Smirna	
+a2e6de9	Valle de Ajalón	Valle de Ayalon
+a2e73ba	Ritma	
+a2e7601	Cipro	Chipre
+a2e7975	Elón	
+a2e9e40	Tappua	
+a2ebe1c	Hepher	
+a2ebfdf		Samawah
+a2ec6b7	Para	
+a2f0a70	Michmetat	
+a2f0f05	Gabaa	
+a2f186d	Atad	
+a2f1fa1	Amead	Monte Carmelo
+a2f3001	Châm	
+a2fc4c4	Puerta de la Fuente	
+a2fc530	Gador	
+a2feddf	Hosa	
+a304bb7	Baal-hamón	
+a305f43	Sihor	
+a308715	Beth-lehem	
+a3088c2	Hasor	
+a30b045	El-Beth-el	
+a30c937	Asdod	
+a30e7ea	Aruboth	
+a30e967		Monte Guerizín
+a30f37b	Beth-jesimoth	
+a311f80	Sene	
+a314731	Nimra	
+a314765	Papho	
+a31a510	Zerethshahar	
+a321cb8	Cedes	
+a32397f	Alús	
+a329990	Caphtor	Creta
+a32a4f8	Caldeos	
+a32d25a	Ceelatha	
+a33910d	Mitilene	
+a339971		Soreq
+a33cfcc	Gabaa	
+a33d53e	Fenicia	
+a33fbde	Capadocia	Capadocia
+a341fe8		Monte Hermón
+a3498b5	Mezaab	
+a355b6e	Esthaol	
+a359997	Lut	Sardes
+a36348c	Ahlab	
+a3668b6	Licaonia	Licaonia
+a366989	Bala-hasor	
+a367677	Beth-gamul	
+a373106	Cana	
+a376eed	Lodebar	
+a3870fe	Phithom	
+a38776a		Sardes
+a38ad07	Ar	
+a38ad9f	Moreh	
+a39267b	Acrabim	
+a397042	Luz	
+a398e5d	Coos	Cos
+a39a6b9	Sochô	
+a3a2a75	Dedán	
+a3b5b53	Beth-semes	
+a3b7885	Macbena	
+a3ba698	Mar Bermejo	Golfo de Suez
+a3bb26d	Beth-semes	
+a3bb384	Río	
+a3bcd66	Dura	
+a3c7b44		Harrán
+a3cae2c	Sephar	Zafar
+a3cb036	Helba	
+a3cc590	Lachîs	
+a3cefc6		Galilea
+a3d1321	Asiria	
+a3d18b2	Mar Bermejo	Golfo de Suez
+a3d1c99	Dibón	
+a3d2f0a	Chebar	
+a3e21c6	Monte de Carmelo	Monte Carmelo
+a3e8d63		Tell Afis
+a3e94bd	Libna	
+a3f0756	Babilonia	
+a3f0f69	España	Hispania
+a3f301c	Hasar-addar	
+a3f5814	Gerar	
+a3f8916	Beth-araba	
+a3fc47a	Ecrón	
+a402ee4	Valle de Shave	
+a40647c	Piratonita	
+a411283	Migdol	
+a412c43	Hanatón	
+a41a054	Adma	
+a4218ee	Rhodas	Rodas
+a422a1f	Luz	
+a422f1c		Reino de Saba
+a42418f	Gethsemaní	Getsemaní
+a42a5b2	Argob	
+a42c452	Chesalón	
+a4335ba	Migrón	
+a43608b	Esek	
+a438f5e	Carca	
+a43f60f	Mesopotamia	Harrán
+a446973	Rachâl	
+a4488e9	Puteolos	
+a44c89d	Selsah	
+a44cac9	Chôzeba	
+a45acc3	Rimmón	
+a45dd20	Jocteel	
+a47678a	Gedor	
+a47f86c	Etam	
+a48191b	Cedes de Nephtalí	
+a488856	Saaraim	
+a4959d5	Cartán	
+a498faa	Abilinia	
+a49cd82		Salona
+a49e1d0	Filipos	Filipos
+a4aa78a	Soba	
+a4b8b4d		Hattusa
+a4bdea7	Amphípolis	
+a4c2c75	Chîo	Quíos
+a4cc324	Arnón	Wadi Mujib
+a4cea2a	Arad	Tel Arad
+a4cf129	Aphec	
+a4d0250	Suph	Al-Ram
+a4d3e40	Asor	
+a4d6a38	Hazezón-tamar	
+a4e39f6		Galilea
+a4e5a69		Colosas
+a4e7fa8	Saanán	
+a4f2291	Janoa	
+a4f35bc	Bethania	Al Azariyeh
+a4fa255	Cedes	
+a50057d	Desierto de Ziph	
+a505743	Meriba	
+a507da9	Ephraim	
+a50eea4		Fortaleza Antonia
+a513646	Dan	
+a5187a4	Kibsaim	
+a51df0e		Ein Guedi
+a520374	Beer	
+a527d04		Anjar
+a529e92		Tell es-Sultan
+a52e310	Gederathita	
+a539e01	Jerimoth	
+a53b82d	Ophra	
+a53c3ce	Rechâ	
+a549c0f	Abiezer	
+a54ef72		Al-Ram
+a54fdd6	Husa	Husan
+a55027d	Mileto	Mileto
+a55136c	Sema	Tell Be'er Sheva
+a553110	Cedrón	
+a553fe6		Monte Hermón
+a55aded	Pisidia	
+a55d681	Geder	
+a561af4	Beth-dagón	
+a5627a3	Goa	
+a562fcc	Mar de Galilea	mar de Galilea
+a56788c	Lasea	
+a567e0e	Cushán	
+a56cad5	Jocdeam	
+a5709da	Eltolad	Tell Be'er Sheva
+a571072	Beth-gader	
+a571ca0	Migdalgad	
+a573b95	Esem	
+a57835d	Melita	
+a57bb2e	Raama	Naŷrán
+a57df09	Besor	
+a57e0a0	Masreca	
+a57ea5f	Uzzen-seera	
+a581f0c	Canaán	Canaán
+a58252b	Boscath	
+a58735e	Cesarea	
+a587ea0	Beth-emec	
+a58df35	Gebim	
+a593a48	Corazín	
+a5947d7	Tamar	
+a5948b2		Monte Guerizín
+a597123		Monte Hermón
+a597dd0	Sela	
+a5983ec		Wadi Kelt
+a59f6f5	Arabia	Arabia
+a5a1bdd	Abel-mehola	
+a5a6458	Cisón	Río Kishon
+a5a846f	Humta	
+a5b01f4	Sahasim	
+a5bbf9c	Zimri	
+a5bf0bd		Río Litani
+a5c0cb0		Bitinia
+a5c92e1	Jocneam	
+a5ccd34	Eleale	
+a5cda86	Maresa	
+a5d1690	Thebes	Tubas
+a5d37f9	Tanath-silo	
+a5d4629	Sallechêt	
+a5db1a6	Erech	Uruk
+a5dd9e3	Gimzo	
+a5e36e6	Gidgad	
+a5eafe1		Etruria
+a5f43dd	Tarsis	Huelva
+a5f4608	Beth-car	
+a5f9092	Mesech	Gordio
+a601121	Ramath-lehi	
+a6046fa	Ammón	
+a6057f5	Puerta del Pescado	
+a60f092	Gosén	Qantir
+a6163e0	Sephath	
+a62236c	Ammón	Hamat Tiberíades
+a62aa3a	Lamas	
+a62dec4	Eufrates	
+a62fa2d		Monte Hermón
+a62fe31	Berea	Véria
+a6309c7	Hapharaim	
+a631d35	Gólgotha	Basílica del Santo Sepulcro
+a6343cc		Sela
+a6399b3	Gilgal	
+a63bb26	Regio	Regio de Calabria
+a63c21e		Til Barsip
+a63c70b		Et-Tell
+a64f355	Beth-el	
+a64ff72	Sochô	
+a654e6d		Kermanshah
+a655b28	Rimmono	
+a656cb6	Beer	
+a65c305	Danna	
+a65db0f	Meribah	
+a66136c	Baal-tamar	
+a662eed	Cedes	
+a664d03	Horma	Ramyah
+a6779cd	Hobah	
+a67990c	Mizpa	
+a67bd13	Jiphta	
+a6845b1	Maón	
+a68750d	Samotracia	
+a68d1a9	Cedar	
+a694ea2	Mizpa	
+a696a95	Beth-aven	
+a69c1d4	Damasco	
+a69e1b8	Macedonia	Macedonia
+a6ac675	Moreseth-gath	
+a6b4fb2	Mesa	
+a6bf059	Baal-perasim	
+a6c2936	Madón	
+a6c3859	Ahava	
+a6c704a	Antioquía	
+a6cf75c	Ur	
+a6d306d	Seleucia	Seleucia Pieria
+a6d57ed	Rama	Al-Ram
+a6d7a41	Avim	Et-Tell
+a6d9af3	Harán	Harrán
+a6dc035	Seredat	
+a6df20a	Gilo	
+a6e060d		Al-Maghtas
+a6e2c95	Manahath	
+a6e6528	Timnath-sera	
+a6ee047	Aguas de Merom	
+a6ef6a9	Telem	
+a6f048c	Gibbethón	
+a6f05f6	Taanach	
+a6f33c5	Asor	Jasor
+a6f437a	Corinto	
+a6f4a6d		Assur
+a6f61d3	Trogilio	
+a6fa2d3	Sarepta	
+a6fc60d	Aphec	
+a6fea11	Astaroth	
+a70ac98	Abelmizraim	
+a70c56b	Dor	
+a70f9d3	Chûn	
+a70fd5d	Nínive	
+a7184a7	Italia	
+a71d65f	Elisah	Chipre
+a71d79b	Gihón	
+a728e07	Hebrón	
+a72a1ff	Abdón	
+a730058	Líbano	
+a734b66	Millo	
+a736f6c	Mizpa	
+a737810		Ciudad de Yibuti
+a7384d7		Taba
+a738bf1	Parán	
+a73af5f	Harada	
+a7409b9	Edén	Til Barsip
+a74c453		Ghawr ash-Shafi
+a7560c2	Abrona	
+a75aff4		Al-Qastal
+a75b45e	Beth-oron	
+a75be6f	Rama	Al-Ram
+a763368	Gur-baal	
+a764256	Gammadeos	
+a7672d8	Asar-gadda	Tell Be'er Sheva
+a7719f8	Misgab	
+a774e50		Tell es-Sultan
+a785680	Hadasa	
+a78580c	Beth-meon	
+a78592e		Bayburt
+a78b87e	Irón	
+a78f72b	Sen	
+a79606b	Ananiah	Al Azariyeh
+a79d6a5	Halí	
+a7a5f29	Ham	
+a7a7549	Ulai	
+a7aafda		Esparta
+a7adb01	Jabneel	
+a7b2e63	Aphec	
+a7b3f5d	Saphir	
+a7b6270	Puerta de Ephraim	
+a7be664		Tell Tayinat
+a7cdf52	Thibath	
+a7d0e71	Rogelim	
+a7d1972	Mejarcón	Río Yarkon
+a7d3e84	Hammoth-dor	Hamat Tiberíades
+a7de69e	Genezaret	
+a7df136	Hareth	
+a7e13e1	Hai	Et-Tell
+a7e3823	Seboim	
+a7e39d2	Lais	
+a7e3a59	Elam	
+a7ed00e	Cabón	
+a800159	Aloth	
+a804aeb	Camón	
+a80bf37	Gomer	
+a80d317	Thirsa	
+a813f22	Rimmón	
+a815d89		Areópago
+a816ed9	Gerar	
+a81a10a	Gosén	
+a81ab85	Seba	Reino de Saba
+a81b7b1	Puerta del Valle	
+a81cdb5	Cirene	
+a8248e0	Siddim	
+a82f7b4	Ether	
+a831506	Temán	
+a8394b8	Babilonia	
+a83a43e		Ponto
+a83d789	Beth-sitta	
+a83fb1e	Laodicea	Laodicea
+a83fd43	Sarón	Llanura de Sharon
+a845493	Adithaim	
+a846a2a	Samir	
+a84a509	Gilgal	
+a84c5a4	Beth-eden	Til Barsip
+a84cafa	Alammelec	
+a84f426	Ciudad de David	Ciudad de David
+a85151a	Hebrón	
+a8518f1	Nimrod	
+a8527ba		Río Karkheh
+a8530e9	Tabor	
+a8554e3	Megiddo	Megido
+a858723	Gog	Sardes
+a859268	Bochîm	
+a85a60a		Traconítide
+a85cbab	Beth-semes	
+a85eb38	Edrei	
+a8687ff	Heleph	
+a86d7c7		Huelva
+a86e0b0	Salim	
+a871210	Bosra	
+a874951		Assur
+a8754c4	Ariel	
+a878481	India	Indo
+a878d66	Ibleam	
+a878fea	Gur	
+a87f8f5	Beth-marchâboth	
+a882ef5	Beón	
+a88331e	Moseroth	
+a884255		Monte Ebal
+a887a2d	Hasasón-tamar	Ein Guedi
+a887d36	Saruhén	
+a89005a	Hasar-sual	Tell Be'er Sheva
+a890adf	Siria	
+a89511f	Ain	
+a898f06	Chisiloth-tabor	Iksal
+a8a6a5b	Seveneh	Asuán
+a8a8e54	Helbón	
+a8ac29f	Bala	
+a8adc43	Bosra	
+a8b7a6b	Accad	
+a8bbf2b	Lasarón	Llanura de Sharon
+a8bc4e3	Meroz	
+a8c207b		Rodas
+a8c3105	Mehara	
+a8c579d	Valle de Gabaón	
+a8ccbf2	Jeruel	
+a8ce5c4	Achsaph	
+a8d054a	Pharphar	
+a8d18cf		Neápolis escita
+a8da370	Rimmón	
+a8dafd6	Mathana á Nahaliel	
+a8e4a15	Amma	
+a8e53d5	Esion-geber	
+a8eaad5	Merathaim	
+a8eae19	En-gannim	
+a8ec7ba		Harrán
+a8f428d	Chîriath-jearim	
+a8f60f3	Patmos	Patmos
+a8f6a28	Asmón	
+a9042c4		Nippur
+a907232	Jagur	
+a90f6e1	Rama	Al-Ram
+a919ab0	Archi en Ataroth	
+a91b732	Bethsaida	
+a91c509	Troas	Alejandría de Tróade
+a91d516	Luhith	
+a924b16	Gozán	Tell Halaf
+a92de65	Betul	
+a938779	Parvaim	
+a939939	Torre de Sichêm	
+a93f8b6	Miseal	Tell Keisan
+a942d07	Beeroth	
+a944b90	Tara	
+a94b661	Tiatira	
+a954735		Gilboa
+a957c5b		Sahab
+a95a37b	Beth-le-aphrah	
+a95b373	Addón	
+a961693	Chilmad	
+a9664ba		Naŷrán
+a9674fc		Tebas
+a978a24	Cabul	
+a979444		Monte Hermón
+a97b595	Libna	
+a97cb23	Mephaath	Um er-Rasas
+a98b02e		Sela
+a98e4d7	Sidón	
+a99875b	Baalath	
+a9a2541	Gebal	
+a9a57b7	Asna	
+a9a6f72		Al-Qastal
+a9ac5f9	Hiva	
+a9b852f	Ziph	
+a9ba60c	Sepham	Hermel
+a9bb03e	Monte Horeb	
+a9bba61	Chîriath-jearim	
+a9bf50d	Noba	
+a9cdd53	Horem	
+a9cf1e8	Galilea	Galilea
+a9d4f8e	Hammón	
+a9dd823	Horonaim	
+a9ea180	Jasubi-lehem	
+a9ecc26	Phunón	
+a9ef72b	Peor	
+a9f5289	Naarán	
+a9fc13a	Bethsaida	
+a9fd165	Aznot-tabor	
+aa0b1d6	Moab	
+aa0ef78	Jehud	
+aa10f27	Sibma	
+aa21f26	Etham	
+aa23a3e	Noba	
+aa24ad4		Reserva forestal de Ajlun
+aa28709	Succoth	
+aa31dd3	Cencreas	
+aa3d425	Puerta de las Ovejas	
+aa3e5ae	Raccón	
+aa3ff18	Bered	Haluza
+aa4680a	Silo	
+aa4b3e2	Mira	Myra
+aa4e69f	Sarón	Transjordania
+aa516c2		Valle de Jezreel
+aa54aa4		Valle del Jordán
+aa56bd1		Cartago
+aa572e2	Gomorra	
+aa5cc66		Monte Ebal
+aa5f658	Mithca	
+aa6b19b	Parán	
+aa6d1bd	Migdol	
+aa7a40a	Basán	
+aa7bee8	Cherith	
+aa805fb		Mediterráneo
+aa8275b	Abarim	Abarim
+aa87ef6	Mechôna	
+aa884e2		Et-Tell
+aa8edd2	Gaza	
+aa95188	Pamphylia	Panfilia
+aa9be2b	Gedor	
+aa9c505	Hamath	
+aa9e265		Monte Hermón
+aa9e754		Til Barsip
+aaa2177	Zared	
+aaa4c6e	Ramat	
+aaa6f7a	Edrei	Daraa
+aaa8a88	Hasmona	
+aaa8b2e	Jocmeam	
+aaaaead	Tubal	Tabal
+aab30ec		Alto Egipto
+aab3ff0	Ziph	
+aab4a5f	Sardis	Sardes
+aab92ca	Sedad	Sadad
+aab9a5e	Hena	
+aabd0ba	Beth-hogla	
+aabf84a		Kursi
+aac759d	Monte de Basán	
+aacbcf0	Eglaim	
+aacfcda	Zoar	Ghawr ash-Shafi
+aad0fa0	Mizpa	Monte Hermón
+aad7e4e	Salem	
+aadaf09	Eben-ezer	
+aae8a95	Avith	
+aaee94d	Addar	
+aaf03fa	Jericó	
+aaf5fef	Rehob	
+aaf998e	Ataroth	
+aafc721	Betén	
+aafd7c4	Ephes-dammim	
+aafe3bd	Nesib	
+aaff3e1	Tob	
+ab05a42	Gaas	
+ab15bb3	Japhia	
+ab183f8		Valle de Ela
+ab1a343	Beth-lehem	
+ab1d954	Rehoboth	
+ab20df9	Apolonia	Apolonia
+ab270f6	Hasar-susa	
+ab28e2e	En-rimmón	
+ab2bde8	Ribla	
+ab2e402	Jocmeam	
+ab33b54	Gath-rimmón	
+ab34789	Anathoth	
+ab3ad14	Chêrub	
+ab41e6b	Chezib	
+ab428de	Amana	
+ab49753	Saphón	
+ab4d194	Menuchâ	
+ab5161f	Zered	
+ab5175f	Asán	
+ab55371	Kir-hareseth	
+ab56451	Silla	
+ab571de	Nehiel	
+ab5b542	Sarid	
+ab5bd29	Nebo	
+ab5c435	Tabbat	
+ab5d319	Sibrahim	
+ab624f3	Chôrasán	
+ab635e4	Dothán	
+ab682e6	Beth-oron la de arriba	
+ab6f1f0	Saalim	
+ab71288	Rehob	
+ab786f4	Ara	Tell Halaf
+ab793ce	Gnido	
+ab7bf48	Cesarea de Filipo	
+ab7c40f		Adulis
+ab8473d	Jesuá	
+ab86a69	Judá	
+ab89be9	Ararat	
+ab8ae56	Phrygia	Frigia
+ab92800	Chîr	Der
+ab94aea	Gilgal	
+ab95484	Amalec	
+ab9580e	Dragón	
+ab9696f	Persia	
+ab9a5ec	Azazel	
+aba3717		Et-Tell
+abaa030	Batrabbim	
+abb1e21		Río Karkheh
+abc1b7c	Baalath	
+abc2af0	Tolemaida	Acre
+abc358b	Arad	Tel Arad
+abc9a1d	Ataroth	
+abd2a8d	Hamath	Hamat Tiberíades
+abd637f	Ophra	
+abd8ada	Ressen	
+abd9596	Monte de Sión	Monte Sion
+abde10e	Boses	
+abe40d1	Tahath	
+abe5dde	Lacum	
+abe5f95	Engannim	
+abed304	Mar Salado	mar Muerto
+abf0690		Lod
+abf176f	Hala	
+abf2fc1	Hesbón	
+abf4481	Adada	
+abf8060	Jeth-la	Yalo
+abf8e4e	Maceda	
+abf97ba	Hanes	
+abfba2a	Monte de Sinaí	
+abfdefc	Eben-ezer	
+abff59d	Bethfagé	
+abff89f	Jabneel	
+abffcaa	Abel-beth-maachâ	
+ac0254c		Tell Beit Mirsim
+ac041e2	Magbis	
+ac07206	Anaarath	
+ac0d1a5	Monte de Ephraim	
+ac12af9	Lidia	
+ac1fbba	Maceloth	
+ac1fef1	Nephtoa	Lifta
+ac2192b		Valle de la Becá
+ac22b90	Anim	
+ac24f5f	Gabaa	
+ac25afc	Epha	
+ac2907d	Sior	
+ac2bb0c	Maccas	
+ac2c4c5		Monte de los Olivos
+ac2cef0	Cades-barnea	
+ac2f5ea	Baala	
+ac31fee	Zoán	Tanis
+ac3233c	Cana	Qana
+ac333a2	Itnán	
+ac3ac4e	Lebaoth	
+ac3bc41	Salca	
+ac3d92d	Chesullot	Iksal
+ac401ea	Beer-elim	
+ac405c0	Ilírico	Salona
+ac4b767	Beth-pelet	
+ac4f712	Aphec	
+ac4ff01		Tell es-Sultan
+ac53696	Sebarim	
+ac54760		Cordillera del Líbano
+ac5ba1a	Senaa	
+ac5e5c4	Havila	Arabia
+ac62cbc	Hamath	
+ac6416d	Debir	
+ac644e9	Jezreelita	Yatta
+ac66d7a	Gía	
+ac6b210		Reino de Saba
+ac6cefa		Harrán
+ac702f1	Mizpa	
+ac71e65	Palestina	
+ac722b9	Helcath-assurim	
+ac744c1	Atalia	
+ac79b33	Rimmón-peres	
+ac814fb	Beth-passes	
+ac86af5	Sunem	
+ac87d4c	Ascalón	
+ac8955e		Monte Hermón
+ac959b2	Bilam	
+ac95bd8	Ribla	
+ac99af3	Beth-diblathaim	
+ac9a77c		Tell es-Sultan
+ac9adc9	Tiberias	
+ac9c090	Succoth	
+aca2b0a	Clauda	Gavdos
+aca444b	Endor	
+aca7bd9	Jaboc	Río Zarqa
+acb3716	Ezel	
+acc1702		Qumrán
+acc6d8e	Madián	
+acc7184	Juta	Yatta
+accdd09	Nebo	
+acce8c8	Asor-hadatta	
+acd48d6	Tema	Taima
+acd63ee	Monte de Tabor	
+acd682e	Neballath	
+acd9498	Esán	
+acd9b19	Ebes	
+acdbce0	Shur	
+acf2fac	Cesil	
+acf57c5	Monte de Gilboa	Gilboa
+acf6ec0	Samo	Samos
+acf8790	Adummim	
+acfcf28	Tarala	
+ad04336	Merala	
+ad053dd		Et-Tell
+ad0d82f	Achzib	
+ad13f27	Anem	
+ad14067	Magdalá	
+ad14500	Ephraim	
+ad15169	Ghiba	Yab'a
+ad161d1	Iim	
+ad16b1e	Sual	
+ad2048e	Debir	
+ad259d1	Mar de Jazer	
+ad27e17	Senir	Monte Hermón
+ad2d29f	Hesmón	
+ad2f6c2	Beer-seba	Tell Be'er Sheva
+ad2fadf	Media	
+ad334c4	Debir	
+ad36371	Sirte	
+ad3970d	Mara	
+ad3d9fc	Baal-salisa	
+ad3e63c	Gosén	
+ad42cdc		Al-Ram
+ad44943	En-eglaim	
+ad44b24		Valle de la Becá
+ad4607c	Hareb	
+ad4ad26	Alemeth	
+ad54201	Chîriathaim	
+ad5c4a1	Hebrón	
+ad63819	Cilicia	
+ad64d75	Mar Bermejo	Golfo de Áqaba
+ad6b2b7	Tappua	
+ad6cc26	Ir-semes	
+ad6eb0b	Jattir	
+ad74690	Cedes	
+ad763b1	Labán	
+ad797fe	Tadmor	
+ad7e819	Havilah	
+ad81b79	Topheth	
+ad94cc9	Izreel	Yatta
+ad9df93	Keila	
+ada25df	Horma	
+ada3369	Almón	
+ada6b64		Gerasa
+adac973	Beth-tappua	
+adaef13	Lasa	
+adb008c	Taphnes	
+adb5ae4	Cedes	
+adbbb54	Jotba	
+adc31c7	Adam	
+adc3294		Río Karkheh
+addb84c	Casipia	
+addba2a	Beth-sur	
+addc3e7	Harim	
+ade301b	Pátara	Patara
+ade6a96	Migrón	
+adea06c	Michmas	
+adea7b0		Ein Guedi
+adf05b8	Ziphón	
+adf74d4	Sichêm	
+ae00861	Macpela	
+ae023a9	Joppe	
+ae04aa8	Puerta de Benjamín	
+ae05348	Etam	
+ae067b5	Rabba	
+ae0bf4a	Jezreel	
+ae1054e	Minni	
+ae11a0d	Desierto de Maón	
+ae12e43	Baal-gad	
+ae14b1d	Gaba	
+ae16cf5	Adoraim	
+ae180d8	Elón	
+ae1c9ea	Najoth	Al-Ram
+ae1d208	Eleph	
+ae1f807	Calah	Nimrud
+ae20466	Simrom-meron	
+ae259d9	Rameth	
+ae28fc7	Dinaba	
+ae32196		Monte Hermón
+ae3cace		Ma'ayan Harod
+ae3d487	Magog	Sardes
+ae3f164	Timna	
+ae41ab4	Antioquía	
+ae425aa	Iconio	Konya
+ae44746	Beer-seba	Tell Be'er Sheva
+ae46bcd	Apheca	
+ae46f2e	Aroer	
+ae4cd38	Rehob	Valle de la Becá
+ae4d198	Immer	
+ae50cf1	Desierto de Sinaí	
+ae5657c	Asor	
+ae5bfe9	Mahanaim	
+ae5cc46	Chîtron	
+ae5ede9	Babilonia	
+ae60c0c	Maarath	
+ae686c9	Jordán	río Jordán
+ae6bfe2	Ono	
+ae6cef8	Beth-anath	
+ae71673	Siloé	Piscina de Siloé
+ae7274b	Emmaús	
+ae733a2	Decápolis	Decápolis
+ae73b90	Galaad	
+ae7bd8b	Naama	
+ae83378	Bene-berác	
+ae83efa	Canneh	
+ae86cd7	Dalmacia	Dalmacia
+ae87a54	Gidom	
+ae8badb	Dimón	
+ae8d09d	Dalmanutha	
+ae8f9cf	Cina	
+ae8fac6	Ideala	
+ae981db	Monte de Seir	
+ae9b9bc	Hasor	
+aea4530	Gob	
+aeb09c0	Helam	
+aeb19d6	Husoth	
+aeb46a8		Chipre
+aeb5f24	Beth-el	
+aeb9e97	Mamre	
+aec139c	Middín	
+aec23b1	Gabbatha	
+aec9225	Aschênaz	Neápolis escita
+aecc492	Dilán	
+aed6538	Gezer	
+aed6b0e	Nopha	
+aed8df9	Gilgal	
+aede336	Gabaón	
+aedf531	Jabes	
+aee679c	Naín	
+aee80af	Calneh	Nippur
+aeeaca0	Lehi	
+aeedde4	Sansana	
+aef4242	Acaya	
+aefdac1		Resafa
+af04ad9	Rissa	
+af054ba	Gedor	
+af0719d	Listra	
+af084cf		Sefelá
+af0ac29	Elath	
+af133c0		Adana
+af19252	Habor	Río Jabur
+af20c46	Sión	
+af2161c	Capernaum	
+af2ca0c	Azeca	
+af301ca	Egipto	
+af35635	Moza	
+af3ce34	Beth-peor	
+af3d9fc	Arimatea	
+af3daeb	Edén	Armenia
+af43cde	Nicópolis	
+af48fdd	Bezec	
+af4c2cd	Arroyo de Arnón	Wadi Mujib
+af4e985	Ephrata	
+af4f21c	Medeba	
+af536fb	Aruma	
+af55829	Uphaz	
+af58391		Fortaleza Antonia
+af5884f	Nazaret	
+af614df		Iksal
+af623fd	Beth-birai	
+af6476f	Samir	Samaria
+af64fb3	Sittim	
+af66926	Chêrioth-hesron	
+af66b89	Beth-nimra	
+af6c09e	Ephrata	
+af6c325	Gessur	Fiq
+af6c730	Carchêmis	
+af725b1	Shinar	
+af725bb		Golfo de Áqaba
+af74969	Aroer	
+af74b9f	Sechâchâ	
+af79c1d		Huelva
+af7eb92		Ghawr ash-Shafi
+af82614	Adullam	
+af8b51e	Puerta de los Caballos	
+af8ce6a	Sela	Sela
+af92088	Jabes de Galaad	
+af96edd	Ophel	Ophel
+af9cfc9	Rogel	
+afa792e	Umma	
+afa863b	Salamina	
+afb265c	Aín	
+afbf1b5	Arvad	Arwad
+afc2466	Mizpa	
+afc8e7a	Roma	
+afca9ce		Halhul
+afcb77d	Dizahab	
+afd8b40	Harodi	
+afd9259	Pisga	
+afdda14	Nob	
+afe1143	Adama	
+afe28fe	Zanoa	
+afe4be0	Ashteroth-carnaim	
+afe6972		Kermanshah
+afef438	Tres Tabernas	Tres Tabernas
+aff04b8	Perge	
+aff43ac	Nachôr	Harrán
