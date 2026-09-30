@@ -87,6 +87,12 @@ EXPECTED_GESTURE_SITES = {
     'annotation_editors.py': 8,
     'archaeology_reader.py': 6,
     'crossref_panel.py': 2,
+    # The Creeds: a motion controller on each line that lights its threads
+    # while the pointer is on it (seen the moment it happens); a key
+    # controller for Up and Down, which walk the lines; and Esc, which puts
+    # a line down. The keys cannot be seen, so the page names them in a
+    # line under its key, where the reader needs them, not in Tips.
+    'creeds_view.py': 3,
     # The genealogy charts take a click and a motion controller each. Both
     # are VISIBLE affordances — the cursor becomes a pointer and a tooltip
     # names the target — so they teach themselves and need no Tips row, which

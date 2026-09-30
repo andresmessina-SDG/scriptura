@@ -131,6 +131,10 @@ _defaults: dict[str, Any] = {
     'family_tree_root_open': False,
     # The Family's arrangement: 'family' (lanes) or 'line' (by literalness).
     'family_tree_arrangement': 'family',
+    # The Creeds: the creed last shown ('apostles', 'nicene', 'athanasian'),
+    # and its text: 'en' (the 1662 English) or 'orig' (the Greek or Latin).
+    'creeds_tab': 'apostles',
+    'creeds_text': 'en',
     # Read the difference: the Bibles installed ('installed', decided
     # 2026-09-25) or every one, the rest offering their install ('all').
     'family_read_rows': 'installed',

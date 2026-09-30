@@ -49,6 +49,8 @@ py_sources = files(
   'church_year.py',
   'collects.py',
   'content.py',
+  'creeds.py',
+  'creeds_view.py',
   'crossref_panel.py',
   'devotional.py',
   'devotional_audio.py',

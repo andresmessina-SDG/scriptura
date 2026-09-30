@@ -360,6 +360,8 @@ def driver(scenario: str) -> int:
         # The Bible Family Tree: a pane document whose Card and Line both
         # read the other pane, so it goes through the same storm.
         zoo += [m for m in readable if content.type_key(m) == 'family']
+        # The Creeds: a pane document whose verse chips drive the other pane.
+        zoo += [m for m in readable if content.type_key(m) == 'creeds']
         notes.append({'zoo': zoo})
         for m in zoo:
             @step(500)

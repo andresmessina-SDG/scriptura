@@ -2876,3 +2876,214 @@ button.job-cancel {
 .module-manager indicatorbin.badge > label {
     margin-right: 9px;
 }
+
+/* ── The Creeds (creeds_view.py) ──────────────────────────────────────────
+   The creed in sense-lines, serif, at the reading size; a tick ends each
+   line and threads run from it to a strip that is the Bible. Everything the
+   reader chooses is flat; verse references are the accent (they go to the
+   Bible); nothing here is clay. English content (the creed, the notes, the
+   KJV) is serif; translated chrome stays in the sans, since Newsreader has
+   no Cyrillic. */
+.creeds-title {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Georgia', serif;
+    font-size: 1.9em;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+.creeds-origin {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Georgia', serif;
+    font-size: 1.1em;
+    margin-top: 4px;
+}
+.creeds-facts,
+.creeds-key,
+.creeds-hint {
+    font-size: 0.85em;
+    opacity: 0.7;
+}
+.creeds-facts {
+    margin-top: 8px;
+}
+.creeds-key-sample {
+    font-family: 'Newsreader', 'Noto Serif', 'Georgia', serif;
+    font-size: 1.1em;
+}
+.creeds-hint {
+    margin: 4px 0 16px;
+}
+.creeds-section {
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    opacity: 0.55;
+    margin: 16px 0 6px 30px;
+}
+button.creeds-line {
+    padding: 4px 8px 4px 0;
+    min-height: 0;
+    border-radius: 6px;
+    font-weight: normal;
+}
+button.creeds-article-start {
+    margin-top: 14px;
+}
+.creeds-lines > button.creeds-line:first-child {
+    margin-top: 0;
+}
+button.creeds-line.hot {
+    background: alpha(@accent_bg_color, 0.10);
+}
+button.creeds-line.chosen {
+    background: alpha(@accent_bg_color, 0.18);
+}
+button.creeds-line.lit {
+    background: alpha(@window_fg_color, 0.07);
+}
+.creeds-active button.creeds-line:not(.chosen):not(.hot):not(.lit) .creeds-text {
+    opacity: 0.55;
+}
+.creeds-num {
+    font-size: 0.75em;
+    font-weight: 600;
+    opacity: 0.5;
+    margin-top: 0.5em;
+}
+.creeds-text {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Georgia', serif;
+    line-height: 1.50;   /* ~1.60em on Newsreader */
+}
+.creeds-greek .creeds-text,
+.creeds-greek-text {
+    font-family: 'Noto Serif', 'Gentium Plus', serif;
+}
+.creeds-absent {
+    font-style: italic;
+    opacity: 0.6;
+}
+button.creeds-ref {
+    color: @accent_color;
+    font-size: 0.9em;
+    font-weight: 600;
+    min-height: 22px;
+    padding: 2px 6px;
+}
+button.creeds-port {
+    font-weight: 500;
+}
+button.creeds-book {
+    font-size: 0.85em;
+    font-weight: normal;
+    min-height: 20px;
+    padding: 1px 6px;
+    opacity: 0.8;
+}
+.creeds-count-bar {
+    background: alpha(@window_fg_color, 0.18);
+    border-radius: 2px;
+}
+.creeds-count {
+    font-size: 0.85em;
+    opacity: 0.6;
+}
+.creeds-side {
+    border-left: 1px solid alpha(@borders, 0.5);
+}
+.creeds-detail {
+    padding: 18px 18px 28px;
+}
+.creeds-inline {
+    margin: 6px 0 14px 26px;
+    padding: 14px 14px 18px;
+    background: @view_bg_color;
+    border: 1px solid alpha(@borders, 0.6);
+    border-radius: 10px;
+}
+.creeds-kicker,
+.creeds-section-head {
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    opacity: 0.55;
+}
+.creeds-phrase {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Georgia', serif;
+    font-size: 1.35em;
+    font-weight: 500;
+}
+.creeds-orig {
+    font-family: 'Newsreader', 'Noto Serif', 'Georgia', serif;
+    font-style: italic;
+    font-size: 1.1em;
+    opacity: 0.7;
+}
+.creeds-orig.creeds-greek-text {
+    font-style: normal;
+}
+.creeds-flag {
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 3px 9px;
+    border-radius: 9999px;
+    background: alpha(@window_fg_color, 0.08);
+}
+.creeds-body,
+.creeds-verse {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Georgia', serif;
+    font-size: 1.05em;
+    line-height: 1.45;   /* ~1.55em on Newsreader */
+}
+.creeds-ui {
+    line-height: 1.20;   /* ~1.45em on Adwaita Sans */
+    opacity: 0.8;
+}
+.creeds-coined-note {
+    border-left: 2px dotted alpha(@window_fg_color, 0.25);
+    padding-left: 10px;
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+.creeds-link {
+    padding-bottom: 12px;
+    border-bottom: 1px solid alpha(@borders, 0.3);
+}
+.creeds-who {
+    font-size: 0.85em;
+    opacity: 0.55;
+}
+.creeds-orig-verse {
+    font-family: 'Newsreader', 'Noto Serif', 'Georgia', serif;
+    font-style: italic;
+    opacity: 0.75;
+}
+.creeds-orig-verse.creeds-greek-text {
+    font-style: normal;
+}
+.creeds-link-note {
+    font-family: 'Newsreader', 'Noto Serif', 'Georgia', serif;
+    font-style: italic;
+    opacity: 0.7;
+}
+.creeds-witness {
+    font-size: 0.75em;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    border: 1px solid alpha(@window_fg_color, 0.2);
+    opacity: 0.8;
+}
+.creeds-witness-measured {
+    border-style: dashed;
+}
+.creeds-left-out {
+    border-top: 1px solid alpha(@borders, 0.4);
+    padding-top: 12px;
+    opacity: 0.85;
+}
+.creeds-book-line {
+    padding-bottom: 10px;
+    border-bottom: 1px solid alpha(@borders, 0.3);
+}
+button.creeds-book-line-btn {
+    font-weight: normal;
+    padding: 2px 4px;
+}

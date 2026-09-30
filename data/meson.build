@@ -73,6 +73,10 @@ install_subdir('place_names', install_dir: pkgdatadir / 'data')
 # the word-for-word ↔ free spectrum. Read by bible_family.py.
 install_subdir('bible_family', install_dir: pkgdatadir / 'data')
 
+# The Creeds: the three creeds, each line tied to its verses. Built and
+# checked by tools/creeds/build_creeds.py; read by creeds.py.
+install_subdir('creeds', install_dir: pkgdatadir / 'data')
+
 # Bundled fonts (all OFL) so typography is identical on every machine
 # instead of falling back to whatever the host happens to have. The
 # Flatpak runtime's fontconfig scans /app/share/fonts, and /usr/share/fonts

@@ -29,6 +29,7 @@ import catena_bridge
 import imagery_bridge
 import archaeology_bridge
 import genealogy_bridge
+import creeds
 import bible_family
 import interlinear_data
 from i18n import _
@@ -58,6 +59,7 @@ def readable_module_names() -> list[str]:
             + archaeology_bridge.module_names()
             + genealogy_bridge.module_names()
             + bible_family.module_names()
+            + creeds.module_names()
             + interlinear_data.module_names())
 
 
@@ -223,6 +225,14 @@ _TYPES: list[_ContentType] = [
             'tagline': _('Every English Bible, from word for word to free')}),
         # bundled: can_remove False.
     _ContentType(
+        'creeds', creeds.is_creeds_module,
+        kind=lambda name: 'books',
+        info=lambda name: cast(dict, creeds.info()),
+        feature_card=lambda name: {
+            'icon': 'scriptura-creeds-symbolic',
+            'tagline': _('Three creeds, each line drawn to its Scripture')}),
+        # bundled: can_remove False.
+    _ContentType(
         'interlinear', interlinear_data.is_interlinear_module,
         kind=lambda name: 'bible', info=_interlinear_info,
         feature_card=lambda name: {
@@ -267,7 +277,7 @@ def _type_for(name: str) -> _ContentType:
 
 def type_key(name: str) -> str:
     """The registry key of the source that owns this module: one of
-    'catena', 'imagery', 'archaeology', 'genealogy', 'family',
+    'catena', 'imagery', 'archaeology', 'genealogy', 'family', 'creeds',
     'interlinear', 'ebible', 'sword'.
 
     The single source of truth for "which content source is this" — callers

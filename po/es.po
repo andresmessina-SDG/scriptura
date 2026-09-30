@@ -10914,3 +10914,181 @@ msgstr "Ver todas en la Línea"
 #, python-brace-format
 msgid "About {bible}"
 msgstr "Acerca de {bible}"
+
+msgid "The Creeds"
+msgstr "Los Credos"
+
+msgid "The Apostles' Creed"
+msgstr "El Credo de los Apóstoles"
+
+msgid "The Nicene Creed"
+msgstr "El Credo Niceno"
+
+msgid "The Athanasian Creed"
+msgstr "El Credo de Atanasio"
+
+msgid "Same words"
+msgstr "Mismas palabras"
+
+msgid "Same teaching"
+msgstr "Misma enseñanza"
+
+msgid "Foretold"
+msgstr "Anunciado"
+
+msgid ""
+"The Apostles', Nicene and Athanasian Creeds, each line drawn to the verses "
+"it comes from."
+msgstr ""
+"Los Credos de los Apóstoles, Niceno y de Atanasio, cada línea unida a los "
+"versículos de donde procede."
+
+#, python-brace-format
+msgid "{n} link to Scripture"
+msgid_plural "{n} links to Scripture"
+msgstr[0] "{n} vínculo con la Escritura"
+msgstr[1] "{n} vínculos con la Escritura"
+
+msgid "Apostles'"
+msgstr "Apostólico"
+
+msgid "Nicene"
+msgstr "Niceno"
+
+msgid "Athanasian"
+msgstr "Atanasiano"
+
+msgid ""
+"Pick a line, or walk with Up and Down, to follow its threads to the verses "
+"it comes from. Pick a book on the strip to light the lines that rest on it."
+msgstr ""
+"Elija una línea, o recórralas con Arriba y Abajo, para seguir sus hilos "
+"hasta los versículos de donde procede. Elija un libro en la franja para "
+"iluminar las líneas que se apoyan en él."
+
+msgid "Heavier: more witnesses"
+msgstr "Más grueso: más testigos"
+
+msgid "word"
+msgstr "palabra"
+
+msgid "Not a Bible word"
+msgstr "No es palabra bíblica"
+
+msgid "line"
+msgstr "línea"
+
+msgid "Disputed"
+msgstr "Discutido"
+
+#, python-brace-format
+msgid "{n} book"
+msgid_plural "{n} books"
+msgstr[0] "{n} libro"
+msgstr[1] "{n} libros"
+
+#, python-brace-format
+msgid "{n} cited by an older witness"
+msgid_plural "{n} cited by an older witness"
+msgstr[0] "{n} citado por un testigo antiguo"
+msgstr[1] "{n} citados por un testigo antiguo"
+
+#, python-brace-format
+msgid "{n} disputed line"
+msgid_plural "{n} disputed lines"
+msgstr[0] "{n} línea discutida"
+msgstr[1] "{n} líneas discutidas"
+
+msgid "[not in the Greek]"
+msgstr "[no está en el griego]"
+
+msgid "[not in the Latin]"
+msgstr "[no está en el latín]"
+
+#, python-brace-format
+msgid "Verse {n}: {text}"
+msgstr "Versículo {n}: {text}"
+
+#, python-brace-format
+msgid "Article {n}: {text}"
+msgstr "Artículo {n}: {text}"
+
+msgid "(disputed)"
+msgstr "(discutido)"
+
+msgid "Scripture for a line"
+msgstr "La Escritura de una línea"
+
+msgid ""
+"Pick a line of the creed. Its verses appear here: the ones whose words the "
+"creed uses, the ones that teach what it says, and the promises it sees "
+"fulfilled."
+msgstr ""
+"Elija una línea del credo. Sus versículos aparecen aquí: los que prestan "
+"sus palabras al credo, los que enseñan lo que dice y las promesas que ve "
+"cumplidas."
+
+msgid "Keys: Up and Down walk the lines; Esc puts a line down."
+msgstr ""
+"Teclas: Arriba y Abajo recorren las líneas; Esc deja de mostrar una línea."
+
+#, python-brace-format
+msgid "Verse {n} of {total}"
+msgstr "Versículo {n} de {total}"
+
+#, python-brace-format
+msgid "Article {n} of {total}"
+msgstr "Artículo {n} de {total}"
+
+msgid "The Church chose this word; the New Testament does not use it."
+msgstr "La Iglesia eligió esta palabra; el Nuevo Testamento no la usa."
+
+msgid "The Church chose this word; the Latin Bible does not use it."
+msgstr "La Iglesia eligió esta palabra; la Biblia latina no la usa."
+
+#, python-brace-format
+msgid "Left out: {ref}"
+msgstr "Omitido: {ref}"
+
+msgid "Open in the Bible"
+msgstr "Abrir en la Biblia"
+
+msgid "No witness yet"
+msgstr "Aún sin testigo"
+
+#, python-brace-format
+msgid "Word match · {n}"
+msgstr "Palabras en común · {n}"
+
+msgid "Shares words with the creed in its original language"
+msgstr "Comparte palabras con el credo en su lengua original"
+
+msgid "Book"
+msgstr "Libro"
+
+#, python-brace-format
+msgid "{n} link"
+msgid_plural "{n} links"
+msgstr[0] "{n} vínculo"
+msgstr[1] "{n} vínculos"
+
+#, python-brace-format
+msgid "{n} line of the creed"
+msgid_plural "{n} lines of the creed"
+msgstr[0] "{n} línea del credo"
+msgstr[1] "{n} líneas del credo"
+
+#, python-brace-format
+msgid "{book}: {n} link"
+msgid_plural "{book}: {n} links"
+msgstr[0] "{book}: {n} vínculo"
+msgstr[1] "{book}: {n} vínculos"
+
+msgid "Three creeds, each line drawn to its Scripture"
+msgstr "Tres credos, cada línea unida a su Escritura"
+
+msgid "A creed uses these words — open The Creeds"
+msgstr "Un credo usa estas palabras: abrir Los Credos"
+
+msgid "Said in the creeds"
+msgstr "Dicho en los credos"

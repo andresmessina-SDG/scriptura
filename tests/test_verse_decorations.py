@@ -53,6 +53,9 @@ class Pane:
     def _insert_lineage_marker(self, *a):
         self.fired.append('lineage_marker')
 
+    def _insert_creed_marker(self, *a):
+        self.fired.append('creed_marker')
+
     def _apply_anno_tags(self, *a, **k):
         self.fired.append('annotations')
 
@@ -71,6 +74,7 @@ def _loaded(pane, commentary=False):
     r.anno = {'highlight': 'yellow'}
     r.has_artifact = True
     r.has_lineage = True
+    r.has_creed = True
     r.cap_index = 0
     r.fn_markers = [(4, '1', 'a')]
     r.vnotes = {'1': ('t', 'body')}
@@ -79,7 +83,8 @@ def _loaded(pane, commentary=False):
 
 
 ORDER = ('dropcap', 'footnotes', 'poetry_lines', 'artifact_marker',
-         'lineage_marker', 'vnum', 'annotations', 'strong_words')
+         'lineage_marker', 'creed_marker', 'vnum', 'annotations',
+         'strong_words')
 
 
 def test_the_registry_is_the_order_the_loop_applied():
@@ -91,6 +96,13 @@ def test_the_lineage_marker_also_lands_before_vnum():
     a chapter can carry both."""
     names = [d.name for d in _VERSE_DECORATIONS]
     assert names.index('lineage_marker') < names.index('vnum')
+
+
+def test_the_creed_marker_also_lands_before_vnum():
+    """It INSERTS a character too, and a verse can carry a lineage mark and
+    a creed mark both."""
+    names = [d.name for d in _VERSE_DECORATIONS]
+    assert names.index('creed_marker') < names.index('vnum')
 
 
 def test_the_artifact_marker_lands_before_vnum_measures_the_block():
@@ -130,6 +142,7 @@ def test_every_entry_but_the_anchor_excludes_commentaries():
     r = _VerseRender(1, 1, '', is_commentary=True)
     r.has_artifact = True
     r.has_lineage = True
+    r.has_creed = True
     r.cap_index = 0
     r.fn_markers = [(0, '1', 'a')]
     r.poetry_lines = {0: 1}
