@@ -51,7 +51,7 @@ MODULE_KEY = 'Bible Imagery'
 # that a newer pack exists (update_available).
 PACK_URL = ('https://github.com/andresmessina-SDG/scriptura/releases/'
             'download/imagery-pack-v1/imagery.tar.gz')
-LATEST_BUILT = '2026-08-02'
+LATEST_BUILT = '2026-09-30'
 
 # Illustration kinds shown in the "Art" tab; 'map' goes to "Where".
 _ART_KINDS = ('illustration', 'painting', 'icon', 'glass')
@@ -280,7 +280,24 @@ def maps_for(book: str, chapter: int, verse: int) -> list[ImageryItem]:
         _log.exception('imagery map lookup failed for %s %s:%s',
                        book, chapter, verse)
         return []
-    return [_item(r) for r in rows]
+    items = [_item(r) for r in rows]
+    # A map Commons also has in the reader's language shows that file, with
+    # its own credit. One SVG with <switch systemLanguage> would not do: the
+    # pane loads through glycin, whose loader never sees LANGUAGE.
+    try:
+        local = {r[0]: r[1:] for r in conn.execute(
+            'SELECT file_path, lang_path, source_url, license, attribution '
+            'FROM imagery_lang WHERE lang = ?', (current_language(),))}
+    except sqlite3.OperationalError:
+        local = {}      # a pack built before the table existed
+    for item, row in zip(items, rows):
+        if row[5] in local:
+            path, url, lic, credit = local[row[5]]
+            item['path'] = _abs(path)
+            item['source_url'] = url
+            item['license'] = lic
+            item['attribution'] = credit
+    return items
 
 
 # The place names a Spanish or Russian Bible prints, built by

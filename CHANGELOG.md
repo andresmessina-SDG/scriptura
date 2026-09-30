@@ -16,6 +16,10 @@ semver-ish — 0.x was the pre-Flathub testing track.
   interface, the places named in a verse take the names the Reina-Valera 1909
   or the Synodal Bible gives them, and the modern site its local name where
   one is known. Names not yet checked stay in English.
+- **Maps in Spanish and Russian.** Under a Spanish or Russian interface, the
+  Twelve Tribes and Persian Empire maps show the versions drawn in that
+  language, and the Assyrian Empire map in Spanish, each with its own
+  credit. They arrive with the next imagery pack update.
 
 ### Added
 

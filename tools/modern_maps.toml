@@ -7,6 +7,10 @@
 # SVGs render crisply via the gdk-pixbuf rsvg loader; tradition = 'modern_map'.
 #
 # `file` = exact Commons filename; `slug` = local basename.
+# `[map.lang.xx]` = the map as Commons has it in that language, drawn or
+# translated by its own cartographers; the reader in that language gets it
+# in place of the English, with its own credit. None exists for es/ru on
+# the Israel/Judah map, or in Russian for the Assyrian one.
 
 # ── Old Testament subjects ──────────────────────────────────────────────────
 # No public-domain modern SVGs exist for these; the good cartography is all
@@ -23,6 +27,14 @@ title = "The Twelve Tribes of Israel"
 passage_label = "Joshua 13–21"
 license = "CC BY-SA 3.0"
 attribution = "Kordas et al. · CC BY-SA 3.0 · Wikimedia Commons"
+[map.lang.es]
+file = "12 tribus de Israel.svg"
+license = "CC BY-SA 3.0"
+attribution = "Kordas et al. · CC BY-SA 3.0 · Wikimedia Commons"
+[map.lang.ru]
+file = "12 tribes Israel rus.svg"
+license = "CC BY-SA 3.0"
+attribution = "Janz et al. · CC BY-SA 3.0 · Wikimedia Commons"
 [[map.ranges]]
 book = "Joshua"
 chapter = 13
@@ -57,6 +69,14 @@ title = "The Persian (Achaemenid) Empire"
 passage_label = "Ezra · Nehemiah · Esther"
 license = "CC BY-SA 3.0"
 attribution = "Anton Gutsunaev & Uirauna · CC BY-SA 3.0 · Wikimedia Commons"
+[map.lang.es]
+file = "Achaemenid Empire es.svg"
+license = "CC BY-SA 4.0"
+attribution = "Anton Gutsunaev & Uirauna · CC BY-SA 4.0 · Wikimedia Commons"
+[map.lang.ru]
+file = "Achaemenid Empire ru.svg"
+license = "CC BY-SA 3.0"
+attribution = "Anton Gutsunaev · CC BY-SA 3.0 · Wikimedia Commons"
 [[map.ranges]]
 book = "Ezra"
 chapter = 1
@@ -83,6 +103,10 @@ title = "The Assyrian Empire"
 passage_label = "2 Kings 15–19"
 license = "CC BY-SA 4.0"
 attribution = "Juan Miguel · CC BY-SA 4.0 · Wikimedia Commons"
+[map.lang.es]
+file = "Territorial organization of the Assyrian Empire in times of Ashurbanipal-es.svg"
+license = "CC BY-SA 4.0"
+attribution = "Rowanwindwhistler, after Juan Miguel · CC BY-SA 4.0 · Wikimedia Commons"
 [[map.ranges]]
 book = "2 Kings"
 chapter = 15
