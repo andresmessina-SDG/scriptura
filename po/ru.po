@@ -10844,3 +10844,24 @@ msgstr "Изменить заметку"
 #: annotation_editors.py
 msgid "Add a date preached"
 msgstr "Добавить дату проповеди"
+
+#: renderings.py
+msgid "Reina-Valera 1909"
+msgstr "Reina-Valera 1909"
+
+#: renderings.py
+msgid "Russian Literal Open Bible"
+msgstr "Russian Literal Open Bible"
+
+#: renderings.py
+#, python-brace-format
+msgid "{bible}: {words}"
+msgstr "{bible}: {words}"
+
+#: window.py
+msgid "Reina-Valera 1909 (eBible.org) — Spanish word renderings, public domain"
+msgstr "Reina-Valera 1909 (eBible.org): испанские переводы слов, общественное достояние"
+
+#: window.py
+msgid "Russian Literal Open Bible (Door43) — Russian word renderings (CC BY-SA 4.0)"
+msgstr "Russian Literal Open Bible (Door43): русские переводы слов (CC BY-SA 4.0)"

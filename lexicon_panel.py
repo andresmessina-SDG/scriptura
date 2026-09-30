@@ -31,6 +31,7 @@ from gtk_utils import clear_children, fade_in, DelayedSpinner
 import content
 import interlinear_data
 import lemma_index
+import renderings
 import search_query
 import sword_bridge
 import tasks
@@ -360,8 +361,19 @@ class LexiconPanel(Gtk.Box):
         self._brief_text = None      # panel-dialect html of the brief entry
         self._brief_heuristic_refs = True
 
+        # Under a Spanish or Russian interface: how that language's Bible
+        # renders the word (renderings.py). Below the English entry, which
+        # stays; hidden in English and where the Bible leaves it untranslated.
+        self._native_lbl = Gtk.Label(xalign=0, wrap=True)
+        self._native_lbl.add_css_class('dim-label')
+        self._native_lbl.set_margin_start(16)
+        self._native_lbl.set_margin_end(16)
+        self._native_lbl.set_margin_bottom(6)
+        self._native_lbl.set_visible(False)
+
         def_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         def_box.append(def_scroll)
+        def_box.append(self._native_lbl)
         def_box.append(self._lsj_btn)
 
         # ── Word study (right side) ──
@@ -608,6 +620,10 @@ class LexiconPanel(Gtk.Box):
         from_pack = (bool(text) and strong_num.startswith('G')
                      and lexicon_data.has_brief(strong_num))
         self._brief_heuristic_refs = not from_pack
+
+        rendered = renderings.line(strong_num)
+        self._native_lbl.set_text(rendered or '')
+        self._native_lbl.set_visible(bool(rendered))
 
         if not text:
             self._def_buf.set_text(_('Definition not found.'))

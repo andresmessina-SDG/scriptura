@@ -12,6 +12,7 @@ import sword_bridge
 import ebible_bridge
 import archaeology_bridge
 import genealogy_bridge
+import renderings
 import content
 import annotations
 import motion
@@ -4578,6 +4579,14 @@ class BiblePane(Gtk.Box):
             320 if _win_w <= 0 else max(240, min(320, _win_w - 24)), -1)
         box.append(cap)
         box.append(body)
+        # Under a Spanish or Russian interface, how that language's Bible
+        # renders the word; the English entry above stays.
+        rendered = renderings.line(strong)
+        if rendered:
+            native = Gtk.Label(label=rendered, xalign=0, wrap=True)
+            native.set_max_width_chars(44)
+            native.add_css_class('dim-label')
+            box.append(native)
         for m in ('top', 'bottom', 'start', 'end'):
             getattr(box, f'set_margin_{m}')(12)
         # The corridor: pointer onto the card cancels the dismissal grace;
