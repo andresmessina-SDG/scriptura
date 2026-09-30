@@ -30,13 +30,23 @@ def N_(message: str) -> str:
 # key → hint message. Each fires at most once (see HintController). Kept to a
 # tight set of the highest-value invisible gestures; the full gesture list
 # lives in the Tips dialog, so hints only need to seed discovery, not exhaust
-# it. All three teach a gesture that leaves no visual trace at rest.
+# it. All four teach a gesture that leaves no visual trace at rest.
 HINTS: dict[str, str] = {
     'first_render':      N_('Tip: tap a verse to open its cross-references.'),
     'first_verse_click': N_('Tip: right-click a verse for highlights, notes, '
                             'and study tools.'),
     'first_lexicon':     N_('Tip: tap any word to open its lexicon entry.'),
+    # The footnote and cross-reference switches fold away behind אΩ, the most
+    # invisible thing in the app. Taught where a switch is worth finding: a
+    # chapter that has footnotes.
+    'first_footnotes':   N_('Tip: point at אΩ for the footnote and '
+                            'cross-reference switches.'),
 }
+
+# key → a hint it must follow, and never in the same session: the first chapter
+# a reader ever opens would otherwise raise two toasts at once, the second one
+# covering the first.
+AFTER: dict[str, str] = {'first_footnotes': 'first_render'}
 
 
 # Tips & Gestures reference content: (section, [(gesture, result), ...]).
@@ -99,6 +109,7 @@ class HintController:
 
     def __init__(self, present: Callable[[str], None]) -> None:
         self._present = present
+        self._fired: set[str] = set()
 
     @staticmethod
     def enabled() -> bool:
@@ -113,7 +124,11 @@ class HintController:
         seen = settings.get('hints_seen') or []
         if key in seen:
             return False
+        before = AFTER.get(key)
+        if before is not None and (before not in seen or before in self._fired):
+            return False
         settings.put('hints_seen', [*seen, key])
+        self._fired.add(key)
         self._present(_(HINTS[key]))
         return True
 

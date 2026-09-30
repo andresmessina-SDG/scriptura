@@ -332,3 +332,27 @@ def test_a_plan_not_yet_begun_anchors_on_its_first_day(isolated_plans):
 
 def test_an_empty_plan_is_never_finished(isolated_plans):
     assert reading_plans.plan_anchor('psalms_30_days', _days_ago(1), 0) == (0, False)
+
+
+# ── Begin again from today ───────────────────────────────────────────────────
+# His call, 2026-09-29: a lapsed plan restarts from today and keeps what was
+# read. Reset stays the only thing that wipes it.
+
+def test_only_a_lapsed_plan_offers_to_begin_again(isolated_plans):
+    assert not reading_plans.lapsed('psalms_30_days', _days_ago(4), 30)
+    assert reading_plans.lapsed('psalms_30_days', _days_ago(56), 30)
+    for day in range(30):
+        reading_plans.set_day_done('psalms_30_days', day, True)
+    assert not reading_plans.lapsed('psalms_30_days', _days_ago(56), 30)
+
+
+def test_beginning_again_makes_today_the_first_unread_day(isolated_plans):
+    reading_plans.set_start_date('psalms_30_days', _days_ago(56))
+    for day in (0, 1, 5):
+        reading_plans.set_day_done('psalms_30_days', day, True)
+    reading_plans.begin_again('psalms_30_days', 30)
+    _plan, start = reading_plans.get_active()
+    assert start == _days_ago(2)
+    assert reading_plans.get_completed('psalms_30_days') == {0, 1, 5}
+    assert reading_plans.plan_anchor('psalms_30_days', start, 30) == (2, False)
+    assert not reading_plans.lapsed('psalms_30_days', start, 30)

@@ -21,7 +21,8 @@ import tasks
 ALL_BIBLES = '\x00all-bibles'
 
 # Canonical book order for sorting the cross-module union.
-_BOOK_ORDER = {b: i for i, b in enumerate(sword_bridge._ALL_BOOKS)}
+_BOOK_ORDER = {b: i for i, b in enumerate(
+    [*sword_bridge._ALL_BOOKS, *sword_bridge.DEUTEROCANON])}
 
 
 def search_backend(module, query, case_sensitive,

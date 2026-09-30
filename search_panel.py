@@ -91,6 +91,8 @@ SECTIONS = [
                           '2 Thessalonians', '1 Timothy', '2 Timothy', 'Titus', 'Philemon']),
     (N_('General Epistles'), ['Hebrews', 'James', '1 Peter', '2 Peter', '1 John',
                           '2 John', '3 John', 'Jude', 'Revelation']),
+    # Last and only when it has hits: most Bibles carry none of it.
+    (N_('Deuterocanon'),     sword_bridge.DEUTEROCANON),
 ]
 
 _BOOK_TO_SECTION = {book: sec for sec, books in SECTIONS for book in books}
@@ -681,6 +683,8 @@ class SearchPanel(Gtk.Box):
 
         for sec_name, sec_books in SECTIONS:
             count = sec_counts.get(sec_name, 0)
+            if not count and sec_books is sword_bridge.DEUTEROCANON:
+                continue
             expanded = (sec_name == self._expanded_section)
             btn = self._bar_button(_(sec_name), count, max_val, sub=False, active=expanded)
             btn.connect('clicked', self._on_section_clicked, sec_name, sec_books)
