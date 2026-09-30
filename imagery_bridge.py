@@ -33,7 +33,7 @@ from typing import Callable, TypedDict
 
 import paths
 import transfer
-from i18n import _
+from i18n import _, current_language
 
 _log = logging.getLogger('scriptura.imagery')
 
@@ -283,8 +283,34 @@ def maps_for(book: str, chapter: int, verse: int) -> list[ImageryItem]:
     return [_item(r) for r in rows]
 
 
+# The place names a Spanish or Russian Bible prints, built by
+# tools/build_place_names.py into data/place_names/{lang}.tsv:
+# place id → (the Bible's name, the modern site's name), '' = keep English.
+_PLACE_NAMES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                'data', 'place_names')
+_place_names: dict[str, dict[str, tuple[str, str]]] = {}
+
+
+def _place_names_for(lang: str) -> dict[str, tuple[str, str]]:
+    if lang not in _place_names:
+        table: dict[str, tuple[str, str]] = {}
+        try:
+            with open(os.path.join(_PLACE_NAMES_DIR, f'{lang}.tsv'),
+                      encoding='utf-8') as f:
+                for line in f:
+                    cols = line.rstrip('\n').split('\t')
+                    if line.startswith('#') or len(cols) != 3:
+                        continue
+                    table[cols[0]] = (cols[1], cols[2])
+        except OSError:
+            pass
+        _place_names[lang] = table
+    return _place_names[lang]
+
+
 def places_for(book: str, chapter: int, verse: int) -> list[Place]:
-    """Places named in the exact verse, most-confident first."""
+    """Places named in the exact verse, most-confident first, named as the
+    reader's language names them where data/place_names has the name."""
     conn = _db()
     if conn is None:
         return []
@@ -301,12 +327,15 @@ def places_for(book: str, chapter: int, verse: int) -> list[Place]:
         _log.exception('imagery place lookup failed for %s %s:%s',
                        book, chapter, verse)
         return []
-    return [
-        Place(place_id=r[0], ancient_name=r[1], modern_name=r[2],
-              confidence=r[3], path=_abs(r[4]), caption=r[5], credit=r[6],
-              license=r[7], source_url=r[8])
-        for r in rows
-    ]
+    names = _place_names_for(current_language())
+    out = []
+    for r in rows:
+        bible, modern = names.get(r[0], ('', ''))
+        out.append(Place(place_id=r[0], ancient_name=bible or r[1],
+                         modern_name=modern or r[2], confidence=r[3],
+                         path=_abs(r[4]), caption=r[5], credit=r[6],
+                         license=r[7], source_url=r[8]))
+    return out
 
 
 # ── install / remove ─────────────────────────────────────────────────────────

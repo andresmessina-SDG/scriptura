@@ -12,6 +12,10 @@ semver-ish — 0.x was the pre-Flathub testing track.
   Russian interface, the hover card and the lexicon panel add one line
   under the English entry: how that language's Bible renders the word,
   with the Bible named. "Reina-Valera 1909: amor, caridad" for agape.
+- **Bible places in Spanish and Russian.** Under a Spanish or Russian
+  interface, the places named in a verse take the names the Reina-Valera 1909
+  or the Synodal Bible gives them, and the modern site its local name where
+  one is known. Names not yet checked stay in English.
 
 ### Added
 
