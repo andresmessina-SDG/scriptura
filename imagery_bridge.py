@@ -51,7 +51,7 @@ MODULE_KEY = 'Bible Imagery'
 # that a newer pack exists (update_available).
 PACK_URL = ('https://github.com/andresmessina-SDG/scriptura/releases/'
             'download/imagery-pack-v1/imagery.tar.gz')
-LATEST_BUILT = '2026-08-02'
+LATEST_BUILT = '2026-09-30'
 
 # Illustration kinds shown in the "Art" tab; 'map' goes to "Where".
 _ART_KINDS = ('illustration', 'painting', 'icon', 'glass')
