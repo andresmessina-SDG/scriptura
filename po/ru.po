@@ -10871,5 +10871,6 @@ msgid "See all on the Line"
 msgstr "Показать все на Линии"
 
 #: module_manager.py
-msgid "About →"
-msgstr "Подробнее →"
+#, python-brace-format
+msgid "About {bible}"
+msgstr "Подробнее: {bible}"

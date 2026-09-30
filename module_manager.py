@@ -334,7 +334,7 @@ def _ago(dt):
 
 
 #: The Bible Family Tree's track on a Module Manager row, in px.
-_FAMILY_TRACK_W = 240
+_FAMILY_TRACK_W = 140
 
 
 def _first_descendant(widget, kind, test=lambda _w: True):
@@ -349,6 +349,18 @@ def _first_descendant(widget, kind, test=lambda _w: True):
             return found
         child = child.get_next_sibling()
     return None
+
+
+def _descendants(widget, test):
+    """Every widget under `widget`, depth first, that passes `test`."""
+    out = []
+    child = widget.get_first_child()
+    while child is not None:
+        if test(child):
+            out.append(child)
+        out += _descendants(child, test)
+        child = child.get_next_sibling()
+    return out
 
 
 class ModuleManagerWindow(Adw.Window):
@@ -1227,6 +1239,7 @@ class ModuleManagerWindow(Adw.Window):
         for _key, item in sorted(entries, key=lambda e: e[0]):
             group.add(self._entry_row(item, installed=True))
         t['installed_box'].append(group)
+        self._align_tracks(group)
 
     # ── Browse (merged catalogue) ─────────────────────────────────────────────
 
@@ -1323,6 +1336,7 @@ class ModuleManagerWindow(Adw.Window):
             group.add(row)
             t['browse_rows'].append(row)
         t['shown'] += len(chunk)
+        self._align_tracks(group)
         if t['shown'] < len(t['filtered']):
             footer = Adw.ActionRow()
             footer.set_title(
@@ -1392,60 +1406,72 @@ class ModuleManagerWindow(Adw.Window):
     # ── The Bible Family Tree on a Bible row ─────────────────────────────────
 
     def _family_door(self, row, record):
-        """'About →' at the end of the subtitle, opening the Card, and the
-        Line's track under the text, the same width on every row, so the
-        marks compare down the list. Across the whole row it read as a
-        second rule above the list's own. Adw rows have no place under the subtitle: the row's own
-        header box moves into a column with the track below it, and takes
-        its `header` class along, which is what Adwaita pads."""
+        """The Line's track beside the name, at the row's end before its
+        buttons, centred on the row, and itself the door to the Bible's
+        Card, as pressing a Bible on the Line is. A Bible with no place on
+        the Line says so in the track's stead, as the Line does.
+        `_align_tracks` then ends every track in a list at one x, so the
+        marks compare down it."""
         inner = row
         if isinstance(row, Adw.ExpanderRow):
             inner = _first_descendant(row, Adw.ActionRow)
             if inner is None:
                 return
-        # Never "About" at a line's end and the arrow alone on the next.
-        link = GLib.markup_escape_text(_('About →').replace(' →', '\u00a0→'))
-        row.set_subtitle(row.get_subtitle() + '  ·  '
-                         + f'<a href="card">{link}</a>')
-        subtitle = _first_descendant(
-            inner, Gtk.Label, lambda w: w.has_css_class('subtitle'))
-        if subtitle is not None:
-            # The row's own ink, as the catena's source links: accent blue
-            # would outshout the Install beside it.
-            subtitle.add_css_class('module-family-about')
-            subtitle.connect('activate-link',
-                             lambda _l, _uri, i=record['id']:
-                                 self._show_card(i) or True)
-        spot = bible_family.place_of(record)
         header = inner.get_child()
-        if spot is None or header is None:
+        title = _first_descendant(
+            header, Gtk.Box, lambda w: w.has_css_class('title')) \
+            if header is not None else None
+        if title is None:
             return
-        area = Gtk.DrawingArea()
-        # Odd: the track's 1px line then falls on a pixel row, not between
-        # two, where it blurred into a 2px rule brighter than the list's own.
-        area.set_content_height(15)
-        area.set_size_request(_FAMILY_TRACK_W, -1)
-        area.set_halign(Gtk.Align.START)
-        area.set_margin_top(3)
-        area.set_margin_bottom(4)
-        area.set_name('module-family-track')
+        spot = bible_family.place_of(record)
+        if spot is None:
+            face = Gtk.Label(
+                label=_('Before the Line') if record['year'] < 1611
+                else _('Not placed'), xalign=0)
+            face.add_css_class('dim-label')
+            face.add_css_class('caption')
+        else:
+            face = Gtk.DrawingArea()
+            # Odd: the track's 1px line then falls on a pixel row, not
+            # between two, where it blurred into a 2px rule.
+            face.set_content_height(15)
+            face.set_draw_func(lambda a, cr, w, h: paint_track(
+                cr, w, h, spot, a.get_color(), r=4.0))
+            redraw_on_contrast(face)
+        face.set_size_request(_FAMILY_TRACK_W, -1)
+        door = Gtk.Button(child=face)
+        door.add_css_class('flat')
+        door.add_css_class('module-family-track')
+        door.set_name('module-family-track')
+        door.set_valign(Gtk.Align.CENTER)
+        about = _('About {bible}').format(bible=record['name'])
         words = ' '.join(place_sentences(record))
-        area.set_tooltip_text(words)
-        area.update_property([Gtk.AccessibleProperty.DESCRIPTION], [words])
-        area.set_draw_func(lambda a, cr, w, h: paint_track(
-            cr, w, h, spot, a.get_color(), r=4.0))
-        redraw_on_contrast(area)
-        inner.set_child(None)
-        column = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        header.remove_css_class('header')
-        column.add_css_class('header')
-        # A plain row centres its title in Adwaita's 50px minimum; a header
-        # moved into a column is packed from the top instead, and the title
-        # rose 5px against the rows around it.
-        header.set_margin_top(5)
-        column.append(header)
-        column.append(area)
-        inner.set_child(column)
+        door.set_tooltip_text(f'{about}\n{words}')
+        set_accessible_label(door, about)
+        door.update_property([Gtk.AccessibleProperty.DESCRIPTION], [words])
+        door.connect('clicked',
+                     lambda _b, i=record['id']: self._show_card(i))
+        header.insert_child_after(door, title)
+
+    @staticmethod
+    def _align_tracks(group):
+        """End every track in `group` at one x. Each sits just before its
+        row's buttons, and the buttons differ (Install, Remove, Update and
+        Remove, an edition group's chevron): a row with narrower ones gets
+        the difference as margin."""
+        pairs = []
+        for track in _descendants(
+                group, lambda w: w.get_name() == 'module-family-track'):
+            suffixes = track.get_next_sibling()
+            while suffixes is not None and \
+                    not suffixes.has_css_class('suffixes'):
+                suffixes = suffixes.get_next_sibling()
+            width = suffixes.measure(Gtk.Orientation.HORIZONTAL, -1)[1] \
+                if suffixes is not None else 0
+            pairs.append((track, width))
+        widest = max((w for _t, w in pairs), default=0)
+        for track, width in pairs:
+            track.set_margin_end(widest - width)
 
     def _installed_keys(self):
         return ([m['name'] for m in self._all_modules if m['installed']]

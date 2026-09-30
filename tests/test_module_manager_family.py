@@ -23,7 +23,8 @@ def _mod(name, installed=False):
 
 
 def _window(monkeypatch, installed=('KJV', 'KJVA'), **kw):
-    mods = [_mod('BSB'), _mod('Alpha')] + [_mod(n, True) for n in installed]
+    mods = [_mod('BSB'), _mod('Alpha'), _mod('Tyndale')] + [
+        _mod(n, True) for n in installed]
     monkeypatch.setattr(mm.sword_bridge, 'list_available_modules',
                         lambda: [dict(m) for m in mods])
     monkeypatch.setattr(mm.sword_bridge, 'available_updates', lambda: [])
@@ -62,40 +63,58 @@ def _row(win, title):
     return rows[0]
 
 
-def test_a_known_bible_carries_its_track_and_about(monkeypatch):
+def test_a_known_bible_carries_its_track_an_unknown_one_none(monkeypatch):
     win = _window(monkeypatch)
-    bsb = _row(win, 'Berean Standard Bible')
-    assert len(_tracks(bsb)) == 1
-    assert 'href="card"' in bsb.get_subtitle()
-    alpha = _row(win, 'Alpha')
-    assert _tracks(alpha) == []
-    assert 'href' not in alpha.get_subtitle()
+    assert len(_tracks(_row(win, 'Berean Standard Bible'))) == 1
+    assert _tracks(_row(win, 'Alpha')) == []
 
 
-def test_the_header_keeps_its_padding_class(monkeypatch):
-    # Adwaita pads `row > box.header`: the column the header moved into
-    # must carry the class, or the row loses its padding.
+def test_a_bible_with_no_place_says_so_and_still_opens_its_card(monkeypatch):
+    # As the Line does; the Card is still there to open.
+    win = _window(monkeypatch)
+    (door,) = _tracks(_row(win, 'Tyndale New Testament (1526)'))
+    assert door.get_child().get_label() == 'Before the Line'
+    door.emit('clicked')
+    assert win._card.node_id == 'tyndale'
+
+
+def test_the_track_sits_beside_the_name_in_the_rows_own_header(monkeypatch):
+    # In the row's header, after the title column and before the buttons:
+    # the row keeps Adwaita's padding and its one-line height.
     bsb = _row(_window(monkeypatch), 'Berean Standard Bible')
-    column = bsb.get_child()
-    assert column.has_css_class('header')
-    assert not column.get_first_child().has_css_class('header')
+    (track,) = _tracks(bsb)
+    assert track.get_parent() is bsb.get_child()
+    assert track.get_prev_sibling().has_css_class('title')
+    assert track.get_next_sibling().has_css_class('suffixes')
+    assert track.get_valign() == Gtk.Align.CENTER
+    # The subtitle is left as it was: the track is the door to the Card.
+    assert 'href' not in bsb.get_subtitle()
 
 
-def test_the_track_is_a_crisp_scale_not_a_rule(monkeypatch):
-    (track,) = _tracks(_row(_window(monkeypatch), 'Berean Standard Bible'))
-    # One width on every row, not the row's: across the whole row it read
-    # as a second separator.
+def test_the_track_is_a_crisp_scale(monkeypatch):
+    (door,) = _tracks(_row(_window(monkeypatch), 'Berean Standard Bible'))
+    track = door.get_child()
     assert track.get_size_request()[0] == mm._FAMILY_TRACK_W
-    assert track.get_halign() == Gtk.Align.START
     # Odd, so the 1px line sits on a pixel row instead of blurring over two.
     assert track.get_content_height() % 2 == 1
+
+
+def test_every_track_in_a_list_ends_at_one_x(monkeypatch):
+    # Installed: Remove buttons beside an edition group's chevron. The
+    # margin makes up the difference, so track + margin + buttons is one
+    # width on every row.
+    win = _window(monkeypatch, installed=('KJV', 'KJVA', 'ASV', 'BBE'))
+    tracks = _tracks(win._tabs['bibles']['installed_box'])
+    assert len(tracks) >= 2
+    widths = {t.get_margin_end() + t.get_next_sibling().measure(
+        Gtk.Orientation.HORIZONTAL, -1)[1] for t in tracks}
+    assert len(widths) == 1
 
 
 def test_a_group_carries_one_track_its_editions_none(monkeypatch):
     win = _window(monkeypatch)
     group = _row(win, 'King James Version')
     assert isinstance(group, mm.Adw.ExpanderRow)
-    assert 'href="card"' in group.get_subtitle()
     # The group draws its own header as an ActionRow: that one is not an
     # edition.
     header = mm._first_descendant(group, mm.Adw.ActionRow)
@@ -106,11 +125,11 @@ def test_a_group_carries_one_track_its_editions_none(monkeypatch):
     assert len(_tracks(group)) == 1
 
 
-def test_about_opens_the_card_in_the_window_and_esc_closes_it(monkeypatch):
+def test_the_track_opens_the_card_in_the_window_and_esc_closes_it(
+        monkeypatch):
     win = _window(monkeypatch)
-    subtitle = mm._first_descendant(
-        _row(win, 'Berean Standard Bible'), Gtk.Label, lambda w: w.has_css_class('subtitle'))
-    subtitle.emit('activate-link', 'card')
+    (door,) = _tracks(_row(win, 'Berean Standard Bible'))
+    door.emit('clicked')
     assert win._card_split.get_show_sidebar()
     assert win._card.node_id == 'bsb'
     assert win._on_card_escape(None, Gdk.KEY_Escape, 0, 0) is True
