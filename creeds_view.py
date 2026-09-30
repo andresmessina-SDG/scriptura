@@ -51,6 +51,9 @@ LABEL_GAP = 24
 BOOK_GAP = 21
 #: The closest two labels may come when there are too many for the strip.
 MIN_LABEL_GAP = 22
+#: The rail's width, and the room left beyond it for the scrollbar.
+RAIL_W = FIELD_W + STRIP_W + LABELS_W
+RAIL_END = 14
 MIN_BOOK_GAP = 17
 #: Below this width the detail opens under the line; below the second the
 #: strip turns sideways and the threads go.
@@ -226,6 +229,8 @@ class CreedsPage:
             xalign=0, wrap=True)
         hint.add_css_class('creeds-hint')
         page.append(hint)
+        # The side panel says the same when it shows.
+        self._hint = hint
 
         # Sideways strip, for a narrow pane.
         self._hstrip = Gtk.DrawingArea()
@@ -249,32 +254,37 @@ class CreedsPage:
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         clamp = Adw.Clamp(maximum_size=740, tightening_threshold=560)
         clamp.set_child(page)
-        scroll.set_child(clamp)
+        clamp.set_hexpand(True)
+        # The scroller runs under the rail to the panel's edge, so its bar
+        # sits there, not in the middle of the page; this keeps the room.
+        self._rail_room = Gtk.Box(width_request=RAIL_W + RAIL_END)
+        content = Gtk.Box()
+        content.append(clamp)
+        content.append(self._rail_room)
+        scroll.set_child(content)
         scroll.get_vadjustment().connect('value-changed', self._on_scrolled)
         self._scroll = scroll
 
         # The strip stays put while the lines scroll: the whole Bible is on
         # screen at every place in the creed, so every thread lands. Beside
-        # it, the verse labels; before it, the run the threads cross.
-        self._rail = Gtk.Box()
+        # it, the verse labels; before it, the run the threads cross. It
+        # lies over the scroller, short of its edge, clear of the bar.
+        self._rail = Gtk.Box(halign=Gtk.Align.END, margin_end=RAIL_END)
         self._rail.append(Gtk.Box(width_request=FIELD_W))
         self._strip = Gtk.Box(width_request=STRIP_W)
         self._rail.append(self._strip)
         self._labels = Gtk.Fixed(width_request=LABELS_W)
         self._rail.append(self._labels)
-        # The rail is beside the scroller, not in it; a wheel over it still
+        # The rail is over the scroller, not in it; a wheel over it still
         # moves the lines.
         wheel = Gtk.EventControllerScroll.new(
             Gtk.EventControllerScrollFlags.VERTICAL)
         wheel.connect('scroll', self._on_rail_scroll)
         self._rail.add_controller(wheel)
 
-        inner = Gtk.Box()
-        inner.append(scroll)
-        inner.append(self._rail)
         self._overlay = Gtk.Overlay()
         self._overlay.set_hexpand(True)
-        self._overlay.set_child(inner)
+        self._overlay.set_child(scroll)
         self._area = Gtk.DrawingArea()
         self._area.set_can_target(False)
         self._area.set_draw_func(self._draw)
@@ -282,6 +292,7 @@ class CreedsPage:
         self._area.connect('resize', lambda *_a: self._queue_layout())
         redraw_on_contrast(self._area)
         self._overlay.add_overlay(self._area)
+        self._overlay.add_overlay(self._rail)
         body.append(self._overlay)
 
         # The detail, beside the lines on a wide pane.
@@ -616,9 +627,10 @@ class CreedsPage:
 
     def _apply_width(self):
         self._hstrip.set_visible(self._narrow)
-        for w in (self._rail, self._area):
+        for w in (self._rail, self._rail_room, self._area):
             w.set_visible(not self._narrow)
         self._side.set_visible(self._wide)
+        self._hint.set_visible(not self._wide)
 
     # ── the detail ───────────────────────────────────────────────────────
 
