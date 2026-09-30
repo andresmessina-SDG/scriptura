@@ -109,6 +109,7 @@ py_sources = files(
   'present_mode.py',
   'present_paging.py',
   'reading_plans.py',
+  'renderings.py',
   'scribal_field.py',
   'reading_view.py',
   'search_controller.py',

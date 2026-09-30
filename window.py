@@ -3437,6 +3437,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             _('eBible.org — modern translation catalog and texts'),
             _('Berean Standard Bible audio — chapters read by Bob Souer (CC0)'),
             _('HistoricalChristianFaith Commentaries Database — historical commentary pack'),
+            _('Reina-Valera 1909 (eBible.org) — Spanish word renderings, public domain'),
+            _('Russian Literal Open Bible (Door43) — Russian word renderings (CC BY-SA 4.0)'),
         ])
         dlg.add_acknowledgement_section(_('Built with'), [
             'GTK4 + libadwaita',

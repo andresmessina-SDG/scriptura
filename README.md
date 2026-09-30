@@ -242,7 +242,12 @@ This app stands on the work of others:
   else Scripture has interpreted Scripture.
 - **Dodson Greek Lexicon**: public-domain NT Greek definitions.
 - **eBible.org**: the modern licensed translations (LEB, BSB, ASV,
-  and many more) that complete the picture.
+  and many more) that complete the picture, and the Strong's-tagged
+  Reina-Valera 1909 (public domain) behind the Spanish line under each
+  Strong's entry.
+- **Door43**: the aligned Russian Literal Open Bible behind the Russian
+  line under each Strong's entry (CC BY-SA 4.0; the derived word list in
+  `data/renderings/ru.tsv` carries the same licence).
 - **HistoricalChristianFaith Commentaries Database**: the
   public-domain patristic, medieval, and Reformation commentary that
   powers the Historical Commentaries pack.

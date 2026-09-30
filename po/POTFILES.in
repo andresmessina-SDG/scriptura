@@ -51,6 +51,7 @@ passage_print.py
 preferences.py
 present_mode.py
 reading_plans.py
+renderings.py
 search_panel.py
 sermon_delivery.py
 today_page.py

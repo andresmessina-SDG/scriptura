@@ -101,6 +101,7 @@ scriptura/
 +-- settings.py           # User preferences (debounced atomic writes)
 +-- module_positions.py   # Per-module scroll/entry-path memory shared across panes
 +-- reading_plans.py      # Built-in plans + progress
++-- renderings.py         # es/ru line under a Strong's entry: how that language's Bible renders it (data/renderings/)
 +-- search_panel.py       # Search overlay (right-side revealer)
 +-- annotations_window.py # Annotations window (master-detail) + TagManagerWindow
 +-- annotation_editors.py # The three editors the window shows: mark, entry, sermon

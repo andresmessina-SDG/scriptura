@@ -8,6 +8,13 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Added
 
+- **A Spanish and a Russian line under Strong's entries.** Under a Spanish or
+  Russian interface, the hover card and the lexicon panel add one line
+  under the English entry: how that language's Bible renders the word,
+  with the Bible named. "Reina-Valera 1909: amor, caridad" for agape.
+
+### Added
+
 - **Begin a lapsed reading plan again from today.** When a plan's days have
   run out with readings left, its menu offers to start again from today. The
   days you have read stay ticked, and today becomes the first unread day.
