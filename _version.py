@@ -10,7 +10,7 @@ Versioning is semver-ish: bump MINOR for new features, PATCH for
 bugfixes.
 """
 
-__version__ = '1.8.1'
+__version__ = '1.8.2'
 
 # Sent with every request. It names the app and where to read about it, and
 # nothing about the reader: no address, ever. eBible refuses urllib's own

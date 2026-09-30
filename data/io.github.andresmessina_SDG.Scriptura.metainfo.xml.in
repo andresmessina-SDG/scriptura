@@ -151,6 +151,23 @@
          notice most, in plain words and short sentences, with no em-dashes.
          The full record belongs in CHANGELOG.md, not here.
          tests/test_version_sync.py holds every release to this. -->
+    <release version="1.8.2" date="2026-09-30">
+      <description its:translate="no">
+        <p>Spanish and Russian beyond the menus, and the Bible Family Tree in the Module Manager.</p>
+        <ul>
+          <li>In Spanish or Russian, a Strong's entry also shows how a Bible in that language renders the word.</li>
+          <li>The places named in a verse take the names a Spanish or Russian Bible gives them.</li>
+          <li>Three maps come in Spanish and two in Russian, with an update to the imagery pack.</li>
+          <li>The Module Manager shows where each English Bible sits from word for word to free, and opens its card.</li>
+          <li>Search finds the deuterocanon: Tobit, Sirach, the Maccabees and the rest.</li>
+          <li>A reading plan that ran out can begin again from today, keeping the days you read.</li>
+          <li>Bibles that number the Psalms like the Vulgate show the psalm the header names.</li>
+          <li>A tip, shown once, says where the footnote switches are.</li>
+          <li>Scripture in Stone and the genealogy pages have their wider line spacing back.</li>
+          <li>Downloads name Scriptura, where some claimed to be a web browser.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.8.1" date="2026-09-29">
       <description its:translate="no">
         <p>A writing page that reads like a page, and a view to preach from.</p>
