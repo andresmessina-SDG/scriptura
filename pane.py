@@ -3026,6 +3026,8 @@ class BiblePane(Gtk.Box):
         # the right context to teach that verses are tappable.
         if self._on_hint and self._module_type == 'Biblical Texts':
             self._on_hint('first_render')
+            if self._rendered_notes:
+                self._on_hint('first_footnotes')
         # Mark the unit the fresh chapter opens on. The render cleared both
         # the tag and `_current_unit`, and until this the mark waited for a
         # scroll — so a reader who opened a chapter and read down it saw

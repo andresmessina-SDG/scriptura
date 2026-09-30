@@ -220,3 +220,19 @@ def test_a_rebuild_leaves_the_reader_on_the_page_they_were_on(monkeypatch):
     win._stack.set_visible_child_name('progress')
     win._rebuild()
     assert win._stack.get_visible_child_name() == 'progress'
+
+
+# ── The אΩ hint follows the launch hint, never beside it ────────────────────
+
+def test_the_footnotes_hint_waits_for_a_later_session(isolated):
+    """Both contexts can arrive with the very first chapter. In that session
+    only the launch hint shows; the next chapter with footnotes, in a later
+    session, gets the אΩ one."""
+    ctrl, shown = _controller()
+    assert ctrl.maybe_fire('first_footnotes') is False   # before first_render
+    assert ctrl.maybe_fire('first_render') is True
+    assert ctrl.maybe_fire('first_footnotes') is False   # same session
+    later, shown_later = _controller()
+    assert later.maybe_fire('first_footnotes') is True
+    assert 'אΩ' in shown_later[0]
+    assert later.maybe_fire('first_footnotes') is False

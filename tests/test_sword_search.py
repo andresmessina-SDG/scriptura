@@ -115,3 +115,31 @@ def test_indexing_callbacks_fire_on_build(fts_module):
     assert events[0] == 'start'
     assert events[-1] == 'done'
     assert ('progress', 'Genesis') in events
+
+
+# ── The deuterocanon a module carries ────────────────────────────────────────
+# Tobit was readable and never found: the index walked the 66 books only.
+
+def test_the_appendix_a_module_carries_is_indexed(fts_module, monkeypatch):
+    monkeypatch.setattr(sb, 'module_books', lambda module: ('Tobit',))
+    monkeypatch.setattr(sb, 'chapter_count_in', lambda module, book: 1)
+    monkeypatch.setitem(_VERSES, ('Tobit', 1),
+                        [(9, 'and of her I begat Tobias, and God was with him')])
+    assert _books(sb.search_module(fts_module, 'Tobias')) == [('Tobit', 1, 9)]
+    # Appended after Revelation, so the canonical rowid order holds.
+    assert _books(sb.search_module(fts_module, 'God'))[-1] == ('Tobit', 1, 9)
+
+
+def test_an_older_index_rebuilds_only_where_the_appendix_is(
+        fts_module, monkeypatch):
+    import sqlite3
+    sb.search_module(fts_module, 'God')
+    path = sb._get_index_path(fts_module)
+    conn = sqlite3.connect(path)
+    conn.execute('PRAGMA user_version = 4')
+    conn.commit()
+    conn.close()
+    monkeypatch.setattr(sb, 'module_books', lambda module: ())
+    assert sb._index_is_valid(path, fts_module)
+    monkeypatch.setattr(sb, 'module_books', lambda module: ('Tobit',))
+    assert not sb._index_is_valid(path, fts_module)

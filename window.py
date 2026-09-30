@@ -3959,6 +3959,12 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         _reset_box.set_margin_end(4)
         _reset_box.set_margin_top(4)
         _reset_box.set_margin_bottom(4)
+        # Offered only once the schedule has run out with days unread.
+        self._plan_restart_btn = Gtk.Button(label=_('Begin again from today'))
+        self._plan_restart_btn.add_css_class('flat')
+        self._plan_restart_btn.get_child().set_xalign(0)
+        self._plan_restart_btn.connect('clicked', self._on_plan_begin_again)
+        _reset_box.append(self._plan_restart_btn)
         self._plan_catchup_btn = Gtk.Button(label=_('Catch up to today'))
         self._plan_catchup_btn.add_css_class('flat')
         self._plan_catchup_btn.get_child().set_xalign(0)
@@ -4232,6 +4238,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         # length while 28 of its days were still unread.
         self._plan_anchor, finished = reading_plans.plan_anchor(
             plan_id, start_date, total)
+        self._plan_restart_btn.set_visible(
+            reading_plans.lapsed(plan_id, start_date, total))
         self._plan_today_eyebrow.set_text(
             _('Plan complete') if finished
             else _('Day {n} · Today').format(n=self._plan_anchor + 1))
@@ -4466,6 +4474,11 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._plan_today_check.set_active(self._plan_anchor in self._plan_completed)
         self._plan_today_check.handler_unblock(self._plan_today_check_handler)
         self._update_plan_progress()
+
+    def _on_plan_begin_again(self, _btn):
+        self._plan_menu_pop.popdown()
+        reading_plans.begin_again(self._plan_id, self._plan_total)
+        self._refresh_plan_ui()
 
     def _on_plan_reset(self, _btn):
         self._plan_menu_pop.popdown()

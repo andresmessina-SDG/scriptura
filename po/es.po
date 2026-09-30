@@ -6608,6 +6608,12 @@ msgstr ""
 msgid "Tip: tap any word to open its lexicon entry."
 msgstr "Consejo: pulse cualquier palabra para abrir su entrada del léxico."
 
+#: onboarding.py
+msgid ""
+"Tip: point at אΩ for the footnote and cross-reference switches."
+msgstr ""
+"Consejo: pase el puntero sobre אΩ para ver los interruptores de notas al pie y referencias cruzadas."
+
 #: onboarding.py:58
 msgid "Reading"
 msgstr "Lectura"
@@ -8861,6 +8867,10 @@ msgstr "Plan de lectura"
 #: window.py:3872 window.py:3873
 msgid "Reading plan options"
 msgstr "Opciones del plan de lectura"
+
+#: window.py
+msgid "Begin again from today"
+msgstr "Empezar de nuevo desde hoy"
 
 #: window.py:3880
 msgid "Catch up to today"

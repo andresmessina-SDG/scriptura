@@ -120,7 +120,9 @@ MAX_SEARCH_RESULTS = 5000  # cap result count so a common word can't flood the U
 # v4: split chapters index their tail (KJV Ps 116:10-19 and 147:12-20 were in
 # no index). Only a mapped module's text changed, so a v3 index of any other
 # module stays valid and no one else pays for a rebuild.
-_FTS_INDEX_VERSION = 4
+# v5: the deuterocanon a module carries is indexed too (Tobit was readable
+# and never found). Again only the modules that carry it rebuild.
+_FTS_INDEX_VERSION = 5
 
 
 def _get_index_path(module_name):
@@ -141,10 +143,15 @@ def _index_is_valid(idx_path, module_name):
             conn.execute('SELECT 1 FROM verses LIMIT 1')  # table present?
         finally:
             conn.close()
-        return ver == _FTS_INDEX_VERSION or (
-            ver == 3 and _module_v11n(module_name) is None)
     except Exception:
         return False
+    # An older index stays valid wherever what the newer ones index is the
+    # same: v4 changed only mapped psalters, v5 only the appendix books.
+    if ver == _FTS_INDEX_VERSION:
+        return True
+    if ver not in (3, 4) or module_books(module_name):
+        return False
+    return ver == 4 or _module_v11n(module_name) is None
 
 def _build_module_index(module_name, on_progress=None):
     """Build a fresh FTS5 index for module_name into a per-module SQLite file.
@@ -173,8 +180,9 @@ def _build_module_index(module_name, on_progress=None):
                      "book UNINDEXED, chapter UNINDEXED, verse UNINDEXED, "
                      "content, tokenize='unicode61')")
         conn.execute(f'PRAGMA user_version = {_FTS_INDEX_VERSION}')
-        total_books = len(_ALL_BOOKS)
-        for i, book in enumerate(_ALL_BOOKS, start=1):
+        books = [*_ALL_BOOKS, *module_books(module_name)]
+        total_books = len(books)
+        for i, book in enumerate(books, start=1):
             if on_progress:
                 try:
                     on_progress(i, total_books, book)
@@ -192,7 +200,10 @@ def _build_module_index(module_name, on_progress=None):
             book_rows = []
             seen_refs = set()
             v11n = _module_v11n(module_name)
-            for ch in range(1, chapter_count(book, module_name) + 1):
+            n_chapters = (chapter_count(book, module_name)
+                          if book in _ALL_BOOKS
+                          else chapter_count_in(module_name, book))
+            for ch in range(1, n_chapters + 1):
                 mapped = mapped_chapter(module_name, book, ch)
                 for v_num, html in load_chapter(module_name, book, ch):
                     plain_text = re.sub(r'<[^>]+>', '', str(html))

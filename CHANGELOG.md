@@ -6,6 +6,17 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+### Added
+
+- **Begin a lapsed reading plan again from today.** When a plan's days have
+  run out with readings left, its menu offers to start again from today. The
+  days you have read stay ticked, and today becomes the first unread day.
+- **The deuterocanon turns up in search.** Tobit, Sirach, the Maccabees and
+  the other books a Bible carries were readable but never found. Search now
+  covers them, grouped last in the results.
+- **One more tip, shown once:** the footnote and cross-reference switches
+  are behind the אΩ mark.
+
 ### Fixed
 
 - **Psalms in the Vulgate and Synodal numbering.** Where these Bibles join
@@ -16,6 +27,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Changed
 
+- **Wider line spacing again on Scripture in Stone and the genealogy
+  pages,** as they had before 1.7.0.
 - **Downloads say who is asking.** Every request now names Scriptura and its
   website, where eBible downloads used to claim to be a web browser. Nothing
   about you is sent.

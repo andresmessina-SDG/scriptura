@@ -112,6 +112,11 @@ window {
  * written as if the number were the em value; all fourteen are now the
  * FACTOR, with the em each was measured to render in a comment beside it.
  *
+ * Scripture in Stone and the genealogy pages (.stone-*, .gen-*) keep the
+ * looser 1.58-1.73em they were read and approved at before 1.7.0. That is a
+ * chosen look, not a leftover: tightening them to what their numbers once
+ * seemed to say was tried in 1.7.0 and reverted.
+ *
  * Writing a new one: pick the em you want, divide by the face's number
  * above, and record the em. The measuring script is the pitch probe in
  * ~/today-renders/_scripts/pitch.py.
@@ -1921,13 +1926,13 @@ button.catena-chip-place {
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 1.05em;
     opacity: 0.6;
-    line-height: 1.52;   /* ~1.60em on Newsreader */
+    line-height: 1.60;   /* ~1.70em on Newsreader */
     margin-bottom: 14px;
 }
 .stone-front-body {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
-    line-height: 1.52;   /* ~1.63em on Newsreader */
+    line-height: 1.60;   /* ~1.68em on Newsreader */
     margin-bottom: 10px;
 }
 .stone-era {
@@ -1946,7 +1951,7 @@ button.catena-chip-place {
     font-style: italic;
     font-size: 1.02em;
     opacity: 0.72;
-    line-height: 1.43;   /* ~1.53em on Newsreader */
+    line-height: 1.50;   /* ~1.58em on Newsreader */
     margin-top: 8px;
 }
 .stone-plate {
@@ -1980,7 +1985,7 @@ button.catena-chip-place {
 .stone-caption {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
-    line-height: 1.50;   /* ~1.60em on Newsreader */
+    line-height: 1.60;   /* ~1.73em on Newsreader */
     margin-top: 14px;
 }
 .stone-chips {
@@ -2074,7 +2079,7 @@ button.stone-chip-rel {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
     opacity: 0.75;
-    line-height: 1.46;   /* ~1.56em on Newsreader */
+    line-height: 1.55;   /* ~1.62em on Newsreader */
 }
 .stone-read-title {
     font-style: italic;
@@ -2689,12 +2694,12 @@ button.audio-pill-close {
                  'Iowan Old Style', 'Georgia', serif;
     font-size: 1.05em;
     opacity: 0.6;
-    line-height: 1.52;   /* ~1.60em on Newsreader */
+    line-height: 1.60;   /* ~1.70em on Newsreader */
 }
 .gen-intro {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
-    line-height: 1.52;   /* ~1.63em on Newsreader */
+    line-height: 1.60;   /* ~1.68em on Newsreader */
     opacity: 0.85;
 }
 /* The passage kicker over a chart — the one place a genealogy section says

@@ -310,6 +310,25 @@ def mark_done_through(plan_id: str, last_idx: int) -> set[int]:
     return comp
 
 
+def lapsed(plan_id: str, start_date_str: str, total: int) -> bool:
+    """True when the calendar has run past the plan while days are unread —
+    the one state in which beginning again means anything."""
+    return (total > 0 and today_index(start_date_str) >= total
+            and len(get_completed(plan_id)) < total)
+
+
+def begin_again(plan_id: str, total: int) -> None:
+    """Restart a lapsed plan from today, keeping every day already read.
+
+    The new start date is set back by the first unread day, so today IS that
+    day and the schedule runs on from it. Starting at day 1 instead would offer
+    a reader who read 20 days their first day again, already ticked."""
+    unread = set(range(total)) - get_completed(plan_id)
+    first = min(unread) if unread else 0
+    start = datetime.date.today() - datetime.timedelta(days=first)
+    set_start_date(plan_id, start.isoformat())
+
+
 def today_index(start_date_str: str) -> int:
     """0-based day index for today. Negative if plan hasn't started yet."""
     try:
