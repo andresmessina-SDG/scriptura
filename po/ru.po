@@ -10865,3 +10865,11 @@ msgstr "Reina-Valera 1909 (eBible.org): испанские переводы сл
 #: window.py
 msgid "Russian Literal Open Bible (Door43) — Russian word renderings (CC BY-SA 4.0)"
 msgstr "Russian Literal Open Bible (Door43): русские переводы слов (CC BY-SA 4.0)"
+
+#: module_manager.py
+msgid "See all on the Line"
+msgstr "Показать все на Линии"
+
+#: module_manager.py
+msgid "About →"
+msgstr "Подробнее →"

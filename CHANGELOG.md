@@ -20,6 +20,10 @@ semver-ish — 0.x was the pre-Flathub testing track.
   Twelve Tribes and Persian Empire maps show the versions drawn in that
   language, and the Assyrian Empire map in Spanish, each with its own
   credit. They arrive with the next imagery pack update.
+- **The Bible Family Tree in the Module Manager.** Each English Bible the
+  Family Tree knows shows where it sits on the Line under its row, and an
+  About link opens its card in the Module Manager itself. "See all on the
+  Line" opens the Line showing the Bibles you can install.
 
 ### Added
 

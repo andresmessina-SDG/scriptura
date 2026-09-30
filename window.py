@@ -1644,6 +1644,17 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._hide_family_card()
         self._family_pane_for(src)._family_tree.show_node(node_id)
 
+    def _manager_show_in_family(self, node_id):
+        """The Card's Show in the Family, from the Module Manager."""
+        self._family_pane_for(self._pane_in_view())._family_tree.show_node(
+            node_id)
+
+    def _manager_see_line(self):
+        """The Module Manager's See all on the Line: what can be
+        installed, on the Line."""
+        self._family_pane_for(
+            self._pane_in_view())._family_tree.show_can_install()
+
     def show_on_line(self, node_id, src):
         """Compare's 'See on the Line': the Bible `src` is reading, in its
         row on the Line."""
@@ -3571,6 +3582,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             return
         self._modules_win = ModuleManagerWindow(
             on_modules_changed=self._on_modules_changed,
+            on_show_in_family=self._manager_show_in_family,
+            on_see_line=self._manager_see_line,
             transient_for=self,
             modal=False,
         )
