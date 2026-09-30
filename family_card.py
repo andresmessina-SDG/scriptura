@@ -207,6 +207,8 @@ class FamilyCard(Gtk.Box):
         self._open_here = True
         self._can_compare = True
         self._from_family = False
+        self._can_open = True
+        self._can_show_family = True
 
         header = Gtk.Box(spacing=6)
         header.set_margin_start(8)
@@ -246,13 +248,18 @@ class FamilyCard(Gtk.Box):
     # ── public ───────────────────────────────────────────────────────────
 
     def show(self, node_id, installed, reading, open_here=True,
-             can_compare=True, from_family=False):
+             can_compare=True, from_family=False, can_open=True,
+             can_show_family=True):
         """Open on one Bible. `installed` is the app's module keys, and
         `reading` the Bible being read. `open_here` says whether Open goes to
         this pane or the other; `can_compare` whether there is a Bible pane
         to compare a verse from; `from_family` whether the Card was opened
-        from that Bible in the Family."""
+        from that Bible in the Family; `can_open` whether there is a pane to
+        open it in (not in the Module Manager); `can_show_family` whether
+        there is a main window to show the Family in."""
         self._installed = list(installed)
+        self._can_open = can_open
+        self._can_show_family = can_show_family
         self._reading = reading
         self._open_here = open_here
         self._can_compare = can_compare
@@ -474,7 +481,7 @@ class FamilyCard(Gtk.Box):
         row = Adw.WrapBox(child_spacing=8, line_spacing=8)
         row.set_margin_top(22)
         if have is not None:
-            if have != self._reading:
+            if self._can_open and have != self._reading:
                 open_btn = Gtk.Button(label=_('Open in this pane')
                                       if self._open_here
                                       else _('Open in the other pane'))
@@ -495,7 +502,8 @@ class FamilyCard(Gtk.Box):
             row.append(inst)
         # Not on the Card the Family itself opened: it is showing already.
         opened_on = self._from_family and record['id'] == self._history[0]
-        if (record['id'] in bible_family.family_members()
+        if (self._can_show_family
+                and record['id'] in bible_family.family_members()
                 and not opened_on):
             fam = Gtk.Button(label=_('Show in the Family'))
             fam.add_css_class('pill')

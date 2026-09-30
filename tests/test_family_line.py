@@ -320,3 +320,13 @@ def test_a_bracket_sits_above_the_track():
     # no darker than plain track.
     assert max(alpha(40, y) for y in range(0, 6)) > 150
     assert alpha(40, 9) == alpha(150, 9)
+
+
+def test_the_module_managers_door_shows_what_can_be_installed():
+    line = _line()
+    line.show_can_install()
+    assert line._availability == 'can'
+    assert line._avail_menu.key == 'can'
+    shown = _shown(line)
+    assert shown and all(r.installed is None and r.record.get('installable')
+                         for r in shown)

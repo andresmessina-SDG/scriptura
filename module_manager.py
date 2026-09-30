@@ -24,12 +24,15 @@ import ebible_bridge
 import catena_bridge
 import imagery_bridge
 import archaeology_bridge
+import bible_family
 import interlinear_data
 import lexicon_data
 import content
 import downloads
 import fetch_errors
 import updates
+from family_card import (FamilyCard, paint_track, place_sentences,
+                         redraw_on_contrast)
 from i18n import _, ngettext
 
 _log = logging.getLogger('scriptura.modules')
@@ -330,12 +333,48 @@ def _ago(dt):
     return ngettext('updated {m} month ago', 'updated {m} months ago', months).format(m=months)
 
 
+#: The Bible Family Tree's track on a Module Manager row, in px.
+_FAMILY_TRACK_W = 140
+
+
+def _first_descendant(widget, kind, test=lambda _w: True):
+    """The first widget under `widget`, depth first, that is a `kind` and
+    passes `test`, or None."""
+    child = widget.get_first_child()
+    while child is not None:
+        if isinstance(child, kind) and test(child):
+            return child
+        found = _first_descendant(child, kind, test)
+        if found is not None:
+            return found
+        child = child.get_next_sibling()
+    return None
+
+
+def _descendants(widget, test):
+    """Every widget under `widget`, depth first, that passes `test`."""
+    out = []
+    child = widget.get_first_child()
+    while child is not None:
+        if test(child):
+            out.append(child)
+        out += _descendants(child, test)
+        child = child.get_next_sibling()
+    return out
+
+
 class ModuleManagerWindow(Adw.Window):
-    def __init__(self, on_modules_changed=None, **kwargs):
+    def __init__(self, on_modules_changed=None, on_show_in_family=None,
+                 on_see_line=None, **kwargs):
+        """`on_show_in_family(node_id)` and `on_see_line()` reach the Bible
+        Family Tree in the main window; without them (the welcome window has
+        none) the Card and the Bibles tab offer no way there."""
         super().__init__(**kwargs)
         self.set_title(_('Module Manager'))
         self.set_default_size(640, 720)
         self._on_modules_changed = on_modules_changed
+        self._on_show_in_family = on_show_in_family
+        self._on_see_line = on_see_line
         self._all_modules = []
         self._has_catalog = False
         self._eb_catalog = []
@@ -428,7 +467,28 @@ class ModuleManagerWindow(Adw.Window):
 
     def _build_ui(self):
         toolbar_view = Adw.ToolbarView()
-        self.set_content(toolbar_view)
+        # The Bible Family Tree's Card, from a Bible row's "About": over the
+        # window from the right, as it comes over the page in the main one.
+        self._card = FamilyCard(
+            on_close=self._hide_card, on_open=lambda _m: None,
+            on_install=self._card_install, on_compare=lambda: None,
+            on_show_in_family=self._card_show_in_family)
+        self._card_split = Adw.OverlaySplitView()
+        self._card_split.add_css_class('search-split')
+        self._card_split.set_collapsed(True)
+        self._card_split.set_show_sidebar(False)
+        self._card_split.set_sidebar_position(Gtk.PackType.END)
+        self._card_split.set_min_sidebar_width(420)
+        self._card_split.set_max_sidebar_width(460)
+        self._card_split.set_sidebar(self._card)
+        self._card_split.set_content(toolbar_view)
+        self.set_content(self._card_split)
+        # Esc closes the Card before the window: in the capture phase, ahead
+        # of the window's own Esc.
+        esc = Gtk.EventControllerKey()
+        esc.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        esc.connect('key-pressed', self._on_card_escape)
+        self.add_controller(esc)
 
         header = Adw.HeaderBar()
         toolbar_view.add_top_bar(header)
@@ -625,7 +685,18 @@ class ModuleManagerWindow(Adw.Window):
 
         t['browse_group'] = Adw.PreferencesGroup()
         t['browse_group'].set_title(_('Browse catalogue'))
-        t['browse_group'].set_header_suffix(t['refresh'])
+        if spec['id'] == 'bibles' and self._on_see_line is not None:
+            # The Bible Family Tree's Line, showing what can be installed.
+            see = Gtk.Button(label=_('See all on the Line'))
+            see.add_css_class('flat')
+            see.set_valign(Gtk.Align.CENTER)
+            see.connect('clicked', lambda _b: self._on_see_line())
+            suffix = Gtk.Box(spacing=4)
+            suffix.append(see)
+            suffix.append(t['refresh'])
+            t['browse_group'].set_header_suffix(suffix)
+        else:
+            t['browse_group'].set_header_suffix(t['refresh'])
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
         for m in ('start', 'end'):
@@ -1168,6 +1239,7 @@ class ModuleManagerWindow(Adw.Window):
         for _key, item in sorted(entries, key=lambda e: e[0]):
             group.add(self._entry_row(item, installed=True))
         t['installed_box'].append(group)
+        self._align_tracks(group)
 
     # ── Browse (merged catalogue) ─────────────────────────────────────────────
 
@@ -1264,6 +1336,7 @@ class ModuleManagerWindow(Adw.Window):
             group.add(row)
             t['browse_rows'].append(row)
         t['shown'] += len(chunk)
+        self._align_tracks(group)
         if t['shown'] < len(t['filtered']):
             footer = Adw.ActionRow()
             footer.set_title(
@@ -1309,13 +1382,127 @@ class ModuleManagerWindow(Adw.Window):
                 else (k, it)
                 for k, it in out]
 
-    def _entry_row(self, item, installed):
+    def _entry_row(self, item, installed, door=True):
+        """The row for one catalogue entry. `door`: give a Bible the Family
+        Tree knows its track and About; an edition inside a group has the
+        group's."""
         src, payload = item
         if src == 'group':
-            return self._make_group_row(*payload, installed=installed)
-        if src == 'sword':
-            return self._make_sword_row(payload, installed)
-        return self._make_eb_row(*payload, installed=installed)
+            row = self._make_group_row(*payload, installed=installed)
+            key = payload[1][0][1]
+        elif src == 'sword':
+            row = self._make_sword_row(payload, installed)
+            key = payload
+        else:
+            row = self._make_eb_row(*payload, installed=installed)
+            key = payload
+        if door:
+            name = key['name'] if isinstance(key, dict) else key[0]
+            record = bible_family.node_for_module(name)
+            if record is not None:
+                self._family_door(row, record)
+        return row
+
+    # ── The Bible Family Tree on a Bible row ─────────────────────────────────
+
+    def _family_door(self, row, record):
+        """The Line's track beside the name, at the row's end before its
+        buttons, centred on the row, and itself the door to the Bible's
+        Card, as pressing a Bible on the Line is. A Bible with no place on
+        the Line says so in the track's stead, as the Line does.
+        `_align_tracks` then ends every track in a list at one x, so the
+        marks compare down it."""
+        inner = row
+        if isinstance(row, Adw.ExpanderRow):
+            inner = _first_descendant(row, Adw.ActionRow)
+            if inner is None:
+                return
+        header = inner.get_child()
+        title = _first_descendant(
+            header, Gtk.Box, lambda w: w.has_css_class('title')) \
+            if header is not None else None
+        if title is None:
+            return
+        spot = bible_family.place_of(record)
+        if spot is None:
+            face = Gtk.Label(
+                label=_('Before the Line') if record['year'] < 1611
+                else _('Not placed'), xalign=0)
+            face.add_css_class('dim-label')
+            face.add_css_class('caption')
+        else:
+            face = Gtk.DrawingArea()
+            # Odd: the track's 1px line then falls on a pixel row, not
+            # between two, where it blurred into a 2px rule.
+            face.set_content_height(15)
+            face.set_draw_func(lambda a, cr, w, h: paint_track(
+                cr, w, h, spot, a.get_color(), r=4.0))
+            redraw_on_contrast(face)
+        face.set_size_request(_FAMILY_TRACK_W, -1)
+        door = Gtk.Button(child=face)
+        door.add_css_class('flat')
+        door.add_css_class('module-family-track')
+        door.set_name('module-family-track')
+        door.set_valign(Gtk.Align.CENTER)
+        about = _('About {bible}').format(bible=record['name'])
+        words = ' '.join(place_sentences(record))
+        door.set_tooltip_text(f'{about}\n{words}')
+        set_accessible_label(door, about)
+        door.update_property([Gtk.AccessibleProperty.DESCRIPTION], [words])
+        door.connect('clicked',
+                     lambda _b, i=record['id']: self._show_card(i))
+        header.insert_child_after(door, title)
+
+    @staticmethod
+    def _align_tracks(group):
+        """End every track in `group` at one x. Each sits just before its
+        row's buttons, and the buttons differ (Install, Remove, Update and
+        Remove, an edition group's chevron): a row with narrower ones gets
+        the difference as margin."""
+        pairs = []
+        for track in _descendants(
+                group, lambda w: w.get_name() == 'module-family-track'):
+            suffixes = track.get_next_sibling()
+            while suffixes is not None and \
+                    not suffixes.has_css_class('suffixes'):
+                suffixes = suffixes.get_next_sibling()
+            width = suffixes.measure(Gtk.Orientation.HORIZONTAL, -1)[1] \
+                if suffixes is not None else 0
+            pairs.append((track, width))
+        widest = max((w for _t, w in pairs), default=0)
+        for track, width in pairs:
+            track.set_margin_end(widest - width)
+
+    def _installed_keys(self):
+        return ([m['name'] for m in self._all_modules if m['installed']]
+                + [ebible_bridge.PREFIX + t
+                   for t in ebible_bridge.installed_ids()])
+
+    def _show_card(self, node_id):
+        self._card.show(node_id, self._installed_keys(), '',
+                        can_compare=False, can_open=False,
+                        can_show_family=self._on_show_in_family is not None)
+        self._card_split.set_show_sidebar(True)
+        self._card.focus_start()
+
+    def _hide_card(self):
+        self._card_split.set_show_sidebar(False)
+
+    def _on_card_escape(self, _ctrl, keyval, _code, _state):
+        if keyval == Gdk.KEY_Escape and self._card_split.get_show_sidebar():
+            self._hide_card()
+            return True
+        return False
+
+    def _card_install(self, query):
+        """The Card's Install: its Bible's rows, found in the Bibles tab."""
+        self._hide_card()
+        self.search_bibles(query)
+
+    def _card_show_in_family(self, node_id):
+        self._hide_card()
+        if self._on_show_in_family is not None:
+            self._on_show_in_family(node_id)
 
     def _make_group_row(self, work, items, installed):
         """One expandable row per translation; each edition keeps its full
@@ -1332,7 +1519,7 @@ class ModuleManagerWindow(Adw.Window):
                      len(items)).format(n=len(items))
             + '  ·  ' + ' · '.join(sources)))
         for item in items:
-            row.add_row(self._entry_row(item, installed))
+            row.add_row(self._entry_row(item, installed, door=False))
         # A folded group would hide an edition's progress and its Cancel.
         row.set_expanded(any(
             downloads.get(key) or downloads.get('rm:' + key)

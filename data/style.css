@@ -373,6 +373,12 @@ button.family-root-toggle {
 button.module-family-link {
     margin: 6px 0 4px;
 }
+/* The Module Manager's track, a button that opens the Card: little more
+   than the track itself, so the column stays narrow beside the name. */
+button.module-family-track {
+    padding: 4px 6px;
+    min-height: 0;
+}
 .bar-fill       { background-color: @accent_bg_color; border-radius: 4px; min-height: 10px; }
 .bar-fill-sub   { background-color: alpha(@accent_bg_color, 0.5); border-radius: 4px; min-height: 10px; }
 .bar-label-active { color: @accent_color; font-weight: bold; }

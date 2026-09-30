@@ -596,6 +596,13 @@ class FamilyLine:
             adj = self._scroll.get_vadjustment()
             adj.set_value(max(0.0, bounds.get_y() - adj.get_page_size() / 3))
 
+    def show_can_install(self):
+        """Only the Bibles that can be installed: the Module Manager's
+        'See all on the Line'."""
+        self._ensure_rows()
+        self._avail_menu.pick('can')
+        self._scroll.get_vadjustment().set_value(0)
+
     def show_node(self, node_id):
         """Bring one Bible's row into view and give it the keyboard. Filters
         that hide it are cleared first: a row asked for by name must show."""

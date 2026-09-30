@@ -105,6 +105,10 @@ EXPECTED_GESTURE_SITES = {
     # The find bar's field takes Shift+Enter for the previous match. A key,
     # not a gesture, and named in the button's tooltip.
     'manuscript_find.py': 1,
+    # The Module Manager's Esc for the Bible Family Tree's Card, in the
+    # capture phase so it closes the Card before the window. Esc closes the
+    # Card in the main window too: the convention, nothing to teach.
+    'module_manager.py': 1,
     'navigation.py': 1,
     'pane.py': 14,
     # A card label's double-click look-up, moved out of pane.py with the

@@ -189,6 +189,11 @@ class FamilyTree:
         self.turn_to('line')
         self.line.show_node(node_id)
 
+    def show_can_install(self):
+        """Turn to the Line, showing the Bibles that can be installed."""
+        self.turn_to('line')
+        self.line.show_can_install()
+
     def show_read(self, book, chapter, verse):
         """Turn to Read the difference at one verse."""
         self._read_asked = True
