@@ -135,3 +135,12 @@ def test_the_lines_follow_the_reading_size(page):
     page.show_line('nicene', '1a')
     _pump()
     assert size(next(iter(page._texts.values()))) == 40 * Pango.SCALE
+
+
+def test_the_strip_stays_put_while_the_lines_scroll(page):
+    """The strip was once as tall as the creed, so a line near the top sent
+    its New Testament threads off the foot of the pane. It sits beside the
+    scroller now, never in it."""
+    assert page._lines.is_ancestor(page._scroll)
+    assert not page._strip.is_ancestor(page._scroll)
+    assert not page._labels.is_ancestor(page._scroll)

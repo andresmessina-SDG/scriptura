@@ -85,3 +85,14 @@ def test_info_counts_the_links():
     info = creeds.info()
     assert info['language'] == 'en'
     assert info['type'].split()[0].isdigit()
+
+
+def test_no_verse_carries_the_kjv_closing_note():
+    """The KJV prints an epistle's closing note ("The second epistle to the
+    Corinthians was written from Philippi…") inside its last verse."""
+    for c in creeds.data()['creeds']:
+        for p in creeds.phrases(c['id']):
+            for link in p['links']:
+                assert 'was written from' not in link['text'], link['ref']
+                assert not link['text'].endswith(('Tychicus.', 'Timothy.')), (
+                    link['ref'])

@@ -3,14 +3,17 @@
 Each creed is set in sense-lines, one phrase to a line, and every line ends in
 a tick. Pick a line (or walk them with Up and Down) and threads run from its
 tick to the verses it is drawn from, on a strip that is the whole Bible:
-Genesis at the top, Revelation at the foot, each Testament filling half. Pick
-a book on the strip and the lines that draw on it light instead.
+Genesis at the top, Revelation at the foot, each Testament filling half. The
+strip stays put while the lines scroll, so the whole Bible is always on
+screen and every thread lands. Pick a book on the strip and the lines that
+draw on it light instead.
 
 Three kinds of link, drawn three ways: the same words (a solid thread), the
-same teaching (a fine one), foretold (dashed). A thread grows heavier with
-each older witness that cites the verse for the same article. Verses sitting
-close together get their own labels, fanned out, each tied back to its true
-place on the strip by a small knot, so four verses of John 1 read as four.
+same teaching (a fine one), foretold (dashed). A thread grows a little heavier
+with each older witness that cites the verse for the same article. Each
+thread ends at its verse's true place; verses sitting close together get
+their own labels, fanned out on leaders, so four verses of John 1 read as
+four.
 
 Every verse reference goes to the Bible beside the page, the way Scripture in
 Stone's chips do. Colour follows the two-accent law: references are accent
@@ -28,7 +31,7 @@ import math
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Adw, GLib, Gtk, Pango
+from gi.repository import Adw, Gdk, GLib, Gtk, Pango
 
 import creeds
 import motion
@@ -218,25 +221,43 @@ class CreedsPage:
         self._lines = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self._lines.add_css_class('creeds-lines')
         self._lines.set_valign(Gtk.Align.START)
-        # The lines take the width; the threads get a fixed run to the strip.
-        self._lines.set_hexpand(True)
         keys = Gtk.EventControllerKey()
         keys.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         keys.connect('key-pressed', self._on_key)
         self._lines.add_controller(keys)
-        self._field = Gtk.Box()
-        self._field.set_size_request(FIELD_W, -1)
-        self._strip = Gtk.Box()
-        self._strip.set_size_request(STRIP_W, -1)
-        self._labels = Gtk.Fixed()
-        self._labels.set_size_request(LABELS_W, -1)
-        row = Gtk.Box()
-        row.append(self._lines)
-        row.append(self._field)
-        row.append(self._strip)
-        row.append(self._labels)
+        page.append(self._lines)
+
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_hexpand(True)
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        clamp = Adw.Clamp(maximum_size=740, tightening_threshold=560)
+        clamp.set_child(page)
+        scroll.set_child(clamp)
+        scroll.get_vadjustment().connect('value-changed', self._on_scrolled)
+        self._scroll = scroll
+
+        # The strip stays put while the lines scroll: the whole Bible is on
+        # screen at every place in the creed, so every thread lands. Beside
+        # it, the verse labels; before it, the run the threads cross.
+        self._rail = Gtk.Box()
+        self._rail.append(Gtk.Box(width_request=FIELD_W))
+        self._strip = Gtk.Box(width_request=STRIP_W)
+        self._rail.append(self._strip)
+        self._labels = Gtk.Fixed(width_request=LABELS_W)
+        self._rail.append(self._labels)
+        # The rail is beside the scroller, not in it; a wheel over it still
+        # moves the lines.
+        wheel = Gtk.EventControllerScroll.new(
+            Gtk.EventControllerScrollFlags.VERTICAL)
+        wheel.connect('scroll', self._on_rail_scroll)
+        self._rail.add_controller(wheel)
+
+        inner = Gtk.Box()
+        inner.append(scroll)
+        inner.append(self._rail)
         self._overlay = Gtk.Overlay()
-        self._overlay.set_child(row)
+        self._overlay.set_hexpand(True)
+        self._overlay.set_child(inner)
         self._area = Gtk.DrawingArea()
         self._area.set_can_target(False)
         self._area.set_draw_func(self._draw)
@@ -244,16 +265,7 @@ class CreedsPage:
         self._area.connect('resize', lambda *_a: self._queue_layout())
         redraw_on_contrast(self._area)
         self._overlay.add_overlay(self._area)
-        page.append(self._overlay)
-
-        scroll = Gtk.ScrolledWindow()
-        scroll.set_hexpand(True)
-        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        clamp = Adw.Clamp(maximum_size=980, tightening_threshold=720)
-        clamp.set_child(page)
-        scroll.set_child(clamp)
-        self._scroll = scroll
-        body.append(scroll)
+        body.append(self._overlay)
 
         # The detail, beside the lines on a wide pane.
         self._side = Gtk.ScrolledWindow()
@@ -299,7 +311,7 @@ class CreedsPage:
 
         def heavier(cr, ink):
             cr.set_source_rgba(ink.red, ink.green, ink.blue, 0.9)
-            for x0, x1, w in ((1, 11, 1.0), (15, 25, 3.0)):
+            for x0, x1, w in ((1, 11, 1.0), (15, 25, 2.3)):
                 cr.set_line_width(w)
                 cr.move_to(x0, 5)
                 cr.line_to(x1, 5)
@@ -427,9 +439,11 @@ class CreedsPage:
             text = Gtk.Label(xalign=0, wrap=True, use_markup=True)
             text.set_markup(markup)
             text.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
-            # Bounds the column's natural width; no hexpand here, which
-            # would climb to the column and push the strip off the page.
+            # Bounds the column's natural width. The expand gives the label
+            # the row: without it GTK sizes a wrapped label to the narrowest
+            # width that keeps its line count, so every line broke elsewhere.
             text.set_max_width_chars(44)
+            text.set_hexpand(True)
             text.add_css_class('creeds-text')
             # A widget's own provider styles that widget only, not its
             # children, so each line carries the reading size itself.
@@ -585,7 +599,7 @@ class CreedsPage:
 
     def _apply_width(self):
         self._hstrip.set_visible(self._narrow)
-        for w in (self._field, self._strip, self._labels, self._area):
+        for w in (self._rail, self._area):
             w.set_visible(not self._narrow)
         self._side.set_visible(self._wide)
 
@@ -666,8 +680,11 @@ class CreedsPage:
                      _('The Church chose this word; the Latin Bible does not '
                        'use it.'))
             c = Gtk.Label(xalign=0, wrap=True, use_markup=True)
+            # A gloss that quotes a word already ('uncreate, “uncreated”')
+            # is not quoted again.
+            said = (gloss if '“' in gloss else f'“{gloss}”')
             c.set_markup(f'<b>{GLib.markup_escape_text(word)}</b> '
-                         f'“{GLib.markup_escape_text(gloss)}”. '
+                         f'{GLib.markup_escape_text(said)}. '
                          f'{GLib.markup_escape_text(where)}')
             c.add_css_class('creeds-coined-note')
             box.append(c)
@@ -907,23 +924,29 @@ class CreedsPage:
 
     def _measure(self) -> dict | None:
         ov = self._overlay
-        first = next(iter(self._rows.values()), None)
-        if first is None or ov.get_width() <= 0:
+        if not self._rows or ov.get_width() <= 0:
             return None
-        ok_l, lines = self._lines.compute_bounds(ov)
         ok_s, strip = self._strip.compute_bounds(ov)
         ok_f, lab = self._labels.compute_bounds(ov)
-        ok_r, row0 = first.compute_bounds(ov)
-        if not (ok_l and ok_s and ok_f and ok_r):
+        if not (ok_s and ok_f):
             return None
-        top = row0.get_y() + 6
-        bottom = lines.get_y() + lines.get_height() - 6
+        top = strip.get_y() + 18
+        bottom = strip.get_y() + strip.get_height() - 18
         half = (bottom - top) / 2
 
         def y(link):
             return (top + half + 5 + link['tp'] * (half - 5) if link['nt']
                     else top + link['tp'] * (half - 5))
 
+        g = {'sx': strip.get_x(), 'lx': lab.get_x(),
+             'top': top, 'bottom': bottom, 'mid': top + half, 'y': y}
+        g.update(self._measure_lines())
+        return g
+
+    def _measure_lines(self) -> dict:
+        """Where each line's tick sits now: it moves with the scroll."""
+        ov = self._overlay
+        ok_l, lines = self._lines.compute_bounds(ov)
         ys = {}
         for pid, text in self._texts.items():
             ok, b = text.compute_bounds(ov)
@@ -933,15 +956,26 @@ class CreedsPage:
             line = layout.get_line_readonly(0)
             h = line.get_pixel_extents()[1].height if line else b.get_height()
             ys[pid] = b.get_y() + min(h, b.get_height()) / 2
-        return {'gx': lines.get_x() + lines.get_width() + 10,
-                'sx': strip.get_x(), 'lx': lab.get_x(),
-                'top': top, 'bottom': bottom, 'mid': top + half,
-                'y': y, 'ys': ys}
+        gx = lines.get_x() + lines.get_width() + 10 if ok_l else 0
+        return {'gx': gx, 'ys': ys}
+
+    def _on_scrolled(self, _adj):
+        # Not measured here: the signal comes before the lines move, so the
+        # ticks are read again when the threads are drawn.
+        self._area.queue_draw()
+
+    def _on_rail_scroll(self, ctl, _dx, dy):
+        adj = self._scroll.get_vadjustment()
+        if ctl.get_unit() == Gdk.ScrollUnit.WHEEL:
+            dy *= adj.get_page_size() ** (2 / 3)   # GTK's own wheel step
+        adj.set_value(adj.get_value() + dy)
+        return True
 
     def _draw(self, area, cr, w, h):
         g = self._geo
         if g is None:
             return
+        g.update(self._measure_lines())
         ink = area.get_color()
         hc = high_contrast()
 
@@ -986,13 +1020,12 @@ class CreedsPage:
             cr.fill()
         if active:
             ports = g.get('ports', {})
+            # Each label on a leader from its verse's true place, the way the
+            # book labels sit when nothing is chosen.
             for e in ports.values():
-                yt = e['y']
-                src(0.25)
+                src(0.3)
                 cr.set_line_width(1)
-                cr.move_to(sx - 2, e['py'])
-                cr.line_to(sx + STRIP_W / 2, yt)
-                cr.line_to(sx + STRIP_W + 2, e['py'])
+                cr.move_to(sx + STRIP_W + 1, e['y'])
                 cr.line_to(g['lx'] - 4, e['py'])
                 cr.stroke()
             prog = self._progress
@@ -1001,10 +1034,10 @@ class CreedsPage:
                 y1 = g['ys'].get(p['id'])
                 if e is None or y1 is None:
                     continue
-                x1, x2, y2 = g['gx'] + 4, sx - 2, e['py']
+                x1, x2, y2 = g['gx'] + 4, sx - 1, e['y']
                 dx = max(24.0, (x2 - x1) * 0.5)
                 n = len([x for x in link['witness'] if x])
-                width = {'w': 1.5, 't': 1.0, 'f': 1.2}[link['kind']] + 0.6 * n
+                width = {'w': 1.4, 't': 0.9, 'f': 1.1}[link['kind']] + 0.3 * n
                 alpha = {'w': 0.95, 't': 0.6, 'f': 0.85}[link['kind']]
                 pts = ((x1, y1), (x1 + dx, y1), (x2 - dx, y2), (x2, y2))
                 cr.set_line_width(width)

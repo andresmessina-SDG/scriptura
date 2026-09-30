@@ -68,7 +68,11 @@ def parse(ref):
 def kjv(ref):
     out = subprocess.run(['diatheke', '-b', 'KJV', '-f', 'plain', '-k', ref], capture_output=True, text=True).stdout
     lines = [l for l in out.strip().split('\n') if l and not l.startswith('(KJV')]
-    return re.sub(r'\s+', ' ', ' '.join(re.sub(r'^[\w ]+ \d+:\d+:\s*', '', l) for l in lines)).strip()
+    text = re.sub(r'\s+', ' ', ' '.join(re.sub(r'^[\w ]+ \d+:\d+:\s*', '', l) for l in lines)).strip()
+    # The KJV prints each epistle's closing note ("Written to the Hebrews
+    # from Italy…") inside its last verse, after the Amen; it is not Scripture.
+    return re.sub(r'(Amen\.) (?:Written|Unto|It was written|The (?:first|second)) .*$',
+                  r'\1', text)
 
 MGR = Sword.SWMgr(); VULG = MGR.getModule('Vulgate')
 def vulgate(b, c, v):
