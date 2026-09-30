@@ -81,6 +81,16 @@ def test_the_header_keeps_its_padding_class(monkeypatch):
     assert not column.get_first_child().has_css_class('header')
 
 
+def test_the_track_is_a_crisp_scale_not_a_rule(monkeypatch):
+    (track,) = _tracks(_row(_window(monkeypatch), 'Berean Standard Bible'))
+    # One width on every row, not the row's: across the whole row it read
+    # as a second separator.
+    assert track.get_size_request()[0] == mm._FAMILY_TRACK_W
+    assert track.get_halign() == Gtk.Align.START
+    # Odd, so the 1px line sits on a pixel row instead of blurring over two.
+    assert track.get_content_height() % 2 == 1
+
+
 def test_a_group_carries_one_track_its_editions_none(monkeypatch):
     win = _window(monkeypatch)
     group = _row(win, 'King James Version')
