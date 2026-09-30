@@ -117,7 +117,8 @@ def _place_labels(place, pane=None):
     passes no pane, so the caption gets no dictionary attachment)."""
     out = []
     name = imagery_bridge.place_display_name(place['ancient_name'])
-    if place.get('modern_name'):
+    # 'Hauran · today Hauran' says nothing the name did not.
+    if place.get('modern_name') and place['modern_name'] != name:
         name = _('{ancient} · today {modern}').format(
             ancient=name, modern=place['modern_name'])
     title = Gtk.Label(label=name, xalign=0, wrap=True)

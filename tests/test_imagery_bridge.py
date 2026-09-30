@@ -6,6 +6,7 @@ thread-local connection is reset."""
 
 import io
 import os
+import re
 import sqlite3
 import tarfile
 
@@ -173,6 +174,47 @@ def test_places_join_and_confidence_order(pack):
     assert res[0]['path'].endswith('images/perga.jpg')
     # A place tied to a different verse doesn't leak in.
     assert imagery_bridge.places_for('Acts', 13, 99) == []
+
+
+def test_places_take_the_readers_language(pack, monkeypatch, tmp_path):
+    names = tmp_path / 'place_names'
+    names.mkdir()
+    (names / 'es.tsv').write_text(
+        '# comment\tline\tskipped\n'
+        'perga\tPerge\t\n'           # modern name empty: keep English
+        'antioch\t\tAntioquía\n',    # Bible name empty: keep English
+        encoding='utf-8')
+    monkeypatch.setattr(imagery_bridge, '_PLACE_NAMES_DIR', str(names))
+    monkeypatch.setattr(imagery_bridge, '_place_names', {})
+    _seed(
+        str(pack),
+        places=[
+            ('perga', 'Perga', 'Perge', 0.0, 0.0, 2, None),
+            ('antioch', 'Antioch', 'Antakya', 0.0, 0.0, 3, None),
+        ],
+        place_verses=[('perga', 'Acts', 13, 13), ('antioch', 'Acts', 13, 13)])
+
+    def named(lang):
+        monkeypatch.setattr(imagery_bridge, 'current_language', lambda: lang)
+        return [(p['ancient_name'], p['modern_name'])
+                for p in imagery_bridge.places_for('Acts', 13, 13)]
+
+    assert named('es') == [('Antioch', 'Antioquía'), ('Perge', 'Perge')]
+    assert named('en') == [('Antioch', 'Antakya'), ('Perga', 'Perge')]
+    # A language with no file keeps English.
+    assert named('ru') == named('en')
+
+
+def test_shipped_place_names_all_load():
+    # Every row loads (a stray tab would drop it silently) under an
+    # OpenBible id: 'a' + six hex digits.
+    for lang in ('es', 'ru'):
+        path = os.path.join(imagery_bridge._PLACE_NAMES_DIR, f'{lang}.tsv')
+        with open(path, encoding='utf-8') as f:
+            rows = [ln for ln in f if not ln.startswith('#')]
+        table = imagery_bridge._place_names_for(lang)
+        assert len(table) == len(rows) > 500
+        assert all(re.fullmatch(r'a[0-9a-f]{6}', k) for k in table)
 
 
 def test_module_names_and_predicate(pack):
