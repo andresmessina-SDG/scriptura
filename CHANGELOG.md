@@ -6,6 +6,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+## [1.8.2] — 2026-09-30
+
 ### Added
 
 - **A Spanish and a Russian line under Strong's entries.** Under a Spanish or
@@ -19,14 +21,12 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - **Maps in Spanish and Russian.** Under a Spanish or Russian interface, the
   Twelve Tribes and Persian Empire maps show the versions drawn in that
   language, and the Assyrian Empire map in Spanish, each with its own
-  credit. They arrive with the next imagery pack update.
+  credit. They come with an update to the imagery pack, offered in the
+  Module Manager.
 - **The Bible Family Tree in the Module Manager.** Each English Bible the
-  Family Tree knows shows where it sits on the Line under its row, and an
-  About link opens its card in the Module Manager itself. "See all on the
+  Family Tree knows shows where it sits on the Line, beside its name, and a
+  click on that opens its card in the Module Manager itself. "See all on the
   Line" opens the Line showing the Bibles you can install.
-
-### Added
-
 - **Begin a lapsed reading plan again from today.** When a plan's days have
   run out with readings left, its menu offers to start again from today. The
   days you have read stay ticked, and today becomes the first unread day.
@@ -38,6 +38,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Fixed
 
+- **A place is named once when it has kept its name.** A place card read
+  "Hauran · today Hauran" for 91 places; it now says "Hauran".
 - **GOD'S WORD from eBible.org is known to the Bible Family Tree.** Installed
   from there, it had no place on the Line or in Compare.
 - **Psalms in the Vulgate and Synodal numbering.** Where these Bibles join
