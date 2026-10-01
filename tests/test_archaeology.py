@@ -54,17 +54,19 @@ def test_the_mirror_matches_the_toml():
 
 
 def test_every_curated_field_is_translated(loud):
-    """Titles, captions, dates, places, holdings, provenance, the chapter
-    introductions and the glossary — the whole page a reader looks at."""
+    """Titles, fact lines and notes, dates, places, holdings, provenance,
+    the chapter introductions and the glossary — the whole page a reader
+    looks at, but for the quotations, which stand in the sources' English."""
     doc = loud
     assert doc['title'].isupper() and doc['subtitle'].isupper()
     assert doc['body'].isupper()
     chapter = doc['chapters'][0]
     assert chapter['title'].isupper() and chapter['intro'].isupper()
     entry = chapter['entries'][0]
-    for field in ('title', 'place', 'date', 'holding', 'provenance',
-                  'caption'):
+    for field in ('title', 'place', 'date', 'holding', 'provenance', 'fact'):
         assert entry[field].isupper(), field
+    assert all(n.isupper() for n in entry['notes'])
+    assert entry['quotes'] and not any(q['text'].isupper() for q in entry['quotes'])
     term = doc['terms'][0]
     assert term['term'].isupper() and term['definition'].isupper()
     assert doc['reading'][0]['note'].isupper()

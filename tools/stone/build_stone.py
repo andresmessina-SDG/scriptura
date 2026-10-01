@@ -103,12 +103,16 @@ def check_quote(q, where):
         _UNCHECKED.add(q['source'])
         return
     pieces = q.get('pieces') or re.split(r'…', q['text'])
+    # A page set in two columns (a translation beside its original) runs
+    # their lines together in the scan: each piece is then looked for
+    # anywhere, not after the one before.
+    in_order = not q.get('columns')
     at = 0
     for piece in pieces:
         piece = plain(piece).strip(' ,;')
         if not piece:
             continue
-        i = body.find(piece, at)
+        i = body.find(piece, at if in_order else 0)
         if i < 0:
             errors.append(f"{where}: quotation not in {q['source']}: …{piece[:60]}…")
             return
