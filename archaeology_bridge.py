@@ -10,10 +10,11 @@ view.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import tomllib
-from typing import TypedDict
+from typing import TypedDict, cast
 
 import i18n
 from i18n import _, N_
@@ -36,6 +37,16 @@ class Ref(TypedDict):
     chapter: int
     verse: int
     label: str
+    #: A key of KIND_NAMES, or '' on an entry not yet rewritten.
+    kind: str
+    #: The verse in the KJV (the KJVA for the Apocrypha).
+    text: str
+    apocrypha: bool
+
+
+class Quote(TypedDict):
+    text: str
+    cite: str
 
 
 class Detail(TypedDict):
@@ -63,6 +74,10 @@ class Entry(TypedDict):
     provenance: str
     credit: str
     caption: str
+    fact: str
+    quotes: list[Quote]
+    notes: list[str]
+    contested: bool
     lat: float | None
     lon: float | None
     refs: list[Ref]
@@ -94,6 +109,8 @@ class Document(TypedDict):
     chapters: list[Chapter]
     terms: list[Term]
     reading: list[Reading]
+    #: What the Apocrypha is, quoted, for any plate that links to it.
+    apocrypha: list[Quote]
 
 
 _doc: Document | None = None
@@ -150,6 +167,40 @@ def _credit(text: str) -> str:
     return _('photo') + sep + rest if head == 'photo' else text
 
 
+#: The KJV's Apocrypha, which it prints between the Testaments.
+APOCRYPHA = frozenset((
+    '1 Esdras', '2 Esdras', 'Tobit', 'Judith', 'Additions to Esther', 'Wisdom',
+    'Sirach', 'Baruch', 'Prayer of Azariah', 'Susanna', 'Bel and the Dragon',
+    'Prayer of Manasseh', '1 Maccabees', '2 Maccabees'))
+
+#: What each link of a rewritten entry is: the stone and the verse name the
+#: same person, the same place, the same event, carry the same words, or show
+#: the same custom. The plate says it beside the verse.
+KIND_NAMES = {
+    'person': N_('Same person'),
+    'place': N_('Same place'),
+    'event': N_('Same event'),
+    'words': N_('Same words'),
+    'custom': N_('Same custom'),
+}
+
+
+def _verses() -> dict[str, str]:
+    """Each linked verse's KJV text, written by tools/stone/build_stone.py."""
+    try:
+        with open(os.path.join(_DATA_DIR, 'verses.json'), encoding='utf-8') as f:
+            return cast(dict[str, str], json.load(f))
+    except (OSError, ValueError) as e:
+        _log.warning('Scripture in Stone verses unreadable: %s', e)
+        return {}
+
+
+def _quote(q: dict) -> Quote:
+    # A quotation is the source's own words, in the English it was printed
+    # in, and its citation: content, never translated.
+    return {'text': q['text'], 'cite': q['cite']}
+
+
 def document() -> Document:
     """The parsed gallery: intro + chapters (in declared order), each with its
     entries (in declared order). Cached after first load."""
@@ -162,6 +213,7 @@ def document() -> Document:
         raw = tomllib.load(f)
 
     intro = raw.get('intro', {})
+    verses = _verses()
     # Preserve declared chapter order; bucket entries into their chapter.
     chapters: list[Chapter] = [
         {'id': c['id'], 'title': _(c['title']), 'intro': _t(c.get('intro', '')),
@@ -183,7 +235,10 @@ def document() -> Document:
         refs: list[Ref] = [
             {'book': r['book'], 'chapter': r['chapter'], 'verse': r['verse'],
              'label': f'{i18n.book_label(r["book"])} '
-                      f'{r["chapter"]}:{r["verse"]}'}
+                      f'{r["chapter"]}:{r["verse"]}',
+             'kind': r.get('kind', ''),
+             'text': verses.get(f'{r["book"]} {r["chapter"]}:{r["verse"]}', ''),
+             'apocrypha': r['book'] in APOCRYPHA}
             for r in e.get('refs', [])
         ]
         # The attribution inside `credit` is not translated: the licences
@@ -196,6 +251,12 @@ def document() -> Document:
             'provenance': _t(e.get('provenance', '')),
             'credit': _credit(e.get('credit', '')),
             'caption': _t(e.get('caption', '')),
+            # A rewritten entry: one line of fact (ours, translated), the
+            # sources' own words, short notes, and whether it is contested.
+            'fact': _t(e.get('fact', '')),
+            'quotes': [_quote(q) for q in e.get('quote', [])],
+            'notes': [_t(n) for n in e.get('notes', [])],
+            'contested': bool(e.get('contested')),
             'lat': e.get('lat'), 'lon': e.get('lon'),
             'refs': refs, 'details': [], 'related': [],
         })
@@ -235,6 +296,7 @@ def document() -> Document:
                   for t in raw.get('term', [])],
         'reading': [{'title': r['title'], 'note': _t(r.get('note', ''))}
                     for r in raw.get('reading', [])],
+        'apocrypha': [_quote(q) for q in raw.get('apocrypha', [])],
     }
     _doc_lang = lang
     return _doc
@@ -255,6 +317,19 @@ def _index() -> dict[tuple[str, int, int], Entry]:
                     idx.setdefault((r['book'], r['chapter'], r['verse']), entry)
         _verse_index = idx
     return _verse_index
+
+
+def artifact_title(book: str, chapter: int, verse: int) -> str:
+    """The title of the artifact a verse's mark opens, in the reader's
+    language ('' when none)."""
+    entry = _index().get((book, chapter, verse))
+    if entry is None:
+        return ''
+    for chap in document()['chapters']:
+        for e in chap['entries']:
+            if e['image'] == entry['image']:
+                return e['title']
+    return ''
 
 
 def verses_with_artifacts(book: str, chapter: int) -> set[int]:

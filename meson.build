@@ -1,5 +1,5 @@
 project('scriptura',
-  version: '1.8.2',
+  version: '1.8.3',
   meson_version: '>= 0.59.0',
   license: 'GPL-3.0-or-later',
 )
@@ -49,6 +49,8 @@ py_sources = files(
   'church_year.py',
   'collects.py',
   'content.py',
+  'creeds.py',
+  'creeds_view.py',
   'crossref_panel.py',
   'devotional.py',
   'devotional_audio.py',

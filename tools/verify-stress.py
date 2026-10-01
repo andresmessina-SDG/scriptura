@@ -232,9 +232,16 @@ def driver(scenario: str) -> int:
 
     def writer(level, fields, _n):
         text = GLib.log_writer_format_fields(level, fields, False)
+        # The last two are Broadway's renderer, not the app: a widget set in
+        # the text (a verse's mark) makes GTK lay an empty cairo node over the
+        # text layout, and in the odd frame where that layout is 0px wide
+        # gsk_broadway_renderer_add_node turns it into a 0px texture. The GL,
+        # Vulkan and cairo renderers skip an empty node.
         if (level <= GLib.LogLevelFlags.LEVEL_CRITICAL
                 and 'Broadway' not in text
-                and 'gdk_monitor_get_geometry' not in text):
+                and 'gdk_monitor_get_geometry' not in text
+                and "cairo_image_surface_get_width (surface) > 0" not in text
+                and 'gdk_texture_save_to_png_bytes: assertion' not in text):
             if is_allowed(text):
                 notes.append({'expected_glib': text.strip()[:160]})
             else:
@@ -360,6 +367,8 @@ def driver(scenario: str) -> int:
         # The Bible Family Tree: a pane document whose Card and Line both
         # read the other pane, so it goes through the same storm.
         zoo += [m for m in readable if content.type_key(m) == 'family']
+        # The Creeds: a pane document whose verse chips drive the other pane.
+        zoo += [m for m in readable if content.type_key(m) == 'creeds']
         notes.append({'zoo': zoo})
         for m in zoo:
             @step(500)

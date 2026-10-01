@@ -12,6 +12,7 @@ import sword_bridge
 import ebible_bridge
 import archaeology_bridge
 import genealogy_bridge
+import creeds
 import renderings
 import content
 import annotations
@@ -27,6 +28,7 @@ from imagery_reader import ImageryReader
 from archaeology_reader import ArchaeologyReader
 from genealogy_reader import GenealogyReader
 from family_tree import FamilyTree
+from creeds_view import CreedsPage
 from interlinear_view import InterlinearReader
 import interlinear_data
 from module_picker import ModulePicker
@@ -675,6 +677,7 @@ class _VerseRender:
 
     __slots__ = ('start_v', 'end_v', 'html', 'is_commentary', 'anno',
                  'start_mark', 'text_mark', 'has_artifact', 'has_lineage',
+                 'has_creed',
                  'cap_index', 'fn_markers', 'vnotes', 'poetry_lines')
 
     def __init__(self, start_v, end_v, html, is_commentary):
@@ -687,6 +690,7 @@ class _VerseRender:
         self.text_mark = None
         self.has_artifact = False
         self.has_lineage = False
+        self.has_creed = False
         # Filled in by the Bible branch only; a commentary produces none of
         # them, and the plain-text fallback resets them to exactly this.
         self.cap_index = None
@@ -753,6 +757,13 @@ _VERSE_DECORATIONS = (
         'lineage_marker',
         lambda p, r: p._insert_lineage_marker(r.start_v),
         lambda p, r: not r.is_commentary and r.has_lineage),
+    # And for a verse whose words a creed uses: opens The Creeds at that line.
+    # Only the same-words verses carry it (about a hundred Bible-wide), not
+    # every verse a creed line is tied to, so it stays a quiet cue.
+    _VerseDecoration(
+        'creed_marker',
+        lambda p, r: p._insert_creed_marker(r.start_v),
+        lambda p, r: not r.is_commentary and r.has_creed),
     # The verse anchor navigation resolves against. For a grouped commentary
     # section every verse in [start_v, end_v] points at the same block, so
     # navigating to any of them lands on this section. No enable condition:
@@ -1181,7 +1192,8 @@ class BiblePane(Gtk.Box):
                  on_word_study_navigate=None, on_toast=None,
                  on_font_size_request=None, on_cipher_error=None,
                  on_edit_cipher=None, on_modules_changed=None,
-                 on_open_artifact=None, on_open_lineage=None, on_module_switched=None,
+                 on_open_artifact=None, on_open_lineage=None,
+                 on_open_creed=None, on_module_switched=None,
                  on_hint=None, on_open_verse=None, on_search_query=None,
                  pane_id=1):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
@@ -1204,6 +1216,7 @@ class BiblePane(Gtk.Box):
         self._on_word_study_navigate = on_word_study_navigate
         self._on_open_artifact = on_open_artifact
         self._on_open_lineage = on_open_lineage
+        self._on_open_creed = on_open_creed
         self._on_toast = on_toast
         self._on_font_size_request = on_font_size_request
         self._on_cipher_error = on_cipher_error
@@ -1306,6 +1319,9 @@ class BiblePane(Gtk.Box):
         # The Bible Family Tree — the Family and the Line; a standalone
         # document like the two above, opened from the list.
         self._family_tree = FamilyTree(self)
+        # The Creeds — the three creeds, each line drawn to its Scripture; a
+        # standalone document like the ones above, opened from the list.
+        self._creeds = CreedsPage(self)
         # Interlinear Greek NT — word-stack cells, verse-synced like a Bible.
         self._interlinear = InterlinearReader(self)
         # Each content mode is a PaneContent strategy; _compute_module_flags
@@ -1682,6 +1698,7 @@ class BiblePane(Gtk.Box):
         self._content_stack.add_named(self._archaeology.widget, 'archaeology')
         self._content_stack.add_named(self._genealogy.widget, 'genealogy')
         self._content_stack.add_named(self._family_tree.widget, 'family')
+        self._content_stack.add_named(self._creeds.widget, 'creeds')
         self._content_stack.add_named(self._interlinear.widget, 'interlinear')
         # Full-pane placeholder for "can't show content here" states
         # (unsupported module, wrong cipher key, passage not in this module).
@@ -1818,7 +1835,7 @@ class BiblePane(Gtk.Box):
             GLib.idle_add(self._genbook.fetch_and_render)
         elif (self._is_catena or self._is_imagery or self._is_archaeology
                 or self._is_genealogy or self._is_family
-                or self._is_interlinear):
+                or self._is_creeds or self._is_interlinear):
             GLib.idle_add(self._fetch_and_render)
 
     def _on_pane_click(self, gesture, n_press, x, y):
@@ -1910,6 +1927,7 @@ class BiblePane(Gtk.Box):
         self._is_archaeology = tk == 'archaeology'
         self._is_genealogy = tk == 'genealogy'
         self._is_family = tk == 'family'
+        self._is_creeds = tk == 'creeds'
         self._is_interlinear = tk == 'interlinear'
         is_ebible = tk == 'ebible'
         if self._is_catena:
@@ -1922,6 +1940,8 @@ class BiblePane(Gtk.Box):
             self._module_type = 'The Book of Generations'
         elif self._is_family:
             self._module_type = 'The Bible Family Tree'
+        elif self._is_creeds:
+            self._module_type = 'The Creeds'
         elif self._is_interlinear:
             self._module_type = 'Interlinear'
         elif is_ebible:
@@ -1931,13 +1951,15 @@ class BiblePane(Gtk.Box):
         self._is_devotional = (
             not self._is_catena and not self._is_imagery
             and not self._is_archaeology and not self._is_genealogy
-            and not self._is_family and not self._is_interlinear
+            and not self._is_family and not self._is_creeds
+            and not self._is_interlinear
             and not is_ebible
             and sword_bridge.is_devotional_module(m))
         self._is_genbook = (
             not self._is_catena and not self._is_imagery
             and not self._is_archaeology and not self._is_genealogy
-            and not self._is_family and not self._is_interlinear
+            and not self._is_family and not self._is_creeds
+            and not self._is_interlinear
             and not is_ebible
             and self._module_type == 'Generic Books')
         # The active content strategy. Card modes are registry-keyed; the
@@ -2601,8 +2623,10 @@ class BiblePane(Gtk.Box):
         # control also needs an explicit accessible name (the tooltip isn't one).
         btn.set_can_focus(True)
         btn.set_valign(Gtk.Align.CENTER)
-        btn.set_tooltip_text(_('Related artifact — open in Scripture in Stone'))
-        set_accessible_label(btn, _('Related artifact'))
+        title = archaeology_bridge.artifact_title(self._book, self._chapter, verse)
+        btn.set_tooltip_text((title + '\n' if title else '')
+                             + _('Open it in Scripture in Stone'))
+        set_accessible_label(btn, title or _('Related artifact'))
         if self._on_open_artifact:
             btn.connect(
                 'clicked',
@@ -2632,6 +2656,30 @@ class BiblePane(Gtk.Box):
             btn.connect(
                 'clicked',
                 lambda *_a, v=verse: self._on_open_lineage(
+                    self, self._book, self._chapter, v))
+        self._view.add_child_at_anchor(btn, anchor)
+
+    def _insert_creed_marker(self, verse):
+        """A small clickable mark beside a verse whose words a creed uses,
+        opening The Creeds at that line. The lineage marker's shape and
+        machinery; clay, like the other marks that leave the Bible."""
+        self._buffer.insert(self._buffer.get_end_iter(), ' ')
+        anchor = self._buffer.create_child_anchor(self._buffer.get_end_iter())
+        img = Gtk.Image.new_from_icon_name('scriptura-creeds-symbolic')
+        img.set_pixel_size(self._artifact_icon_px())
+        self._artifact_markers.append(img)
+        btn = Gtk.Button(child=img)
+        btn.add_css_class('flat')
+        btn.add_css_class('artifact-marker')
+        btn.set_can_focus(True)
+        btn.set_valign(Gtk.Align.CENTER)
+        said = creeds.mark_tooltip(self._book, self._chapter, verse)
+        btn.set_tooltip_text(said + '\n' + _('Open it in The Creeds'))
+        set_accessible_label(btn, said or _('Said in the creeds'))
+        if self._on_open_creed:
+            btn.connect(
+                'clicked',
+                lambda *_a, v=verse: self._on_open_creed(
                     self, self._book, self._chapter, v))
         self._view.add_child_at_anchor(btn, anchor)
 
@@ -2675,6 +2723,9 @@ class BiblePane(Gtk.Box):
         # mark per name marks every line on the page, which is noise.
         gen_verses = (set() if is_commentary
                       else genealogy_bridge.marker_verses(book, chapter))
+        # Verses whose words a creed uses.
+        creed_verses = (set() if is_commentary
+                        else creeds.marker_verses(book, chapter))
         self._artifact_markers = []  # rebuilt below; old ones died with set_text('')
 
         self._cancel_all_flashes()
@@ -2819,6 +2870,7 @@ class BiblePane(Gtk.Box):
             r.anno = annos.get(str(start_v), {})
             r.has_artifact = start_v in art_verses
             r.has_lineage = start_v in gen_verses
+            r.has_creed = start_v in creed_verses
 
             # 1. Verse number — inline for Bibles, bold section header for commentaries
             if is_commentary:

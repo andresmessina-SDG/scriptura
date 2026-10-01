@@ -54,17 +54,19 @@ def test_the_mirror_matches_the_toml():
 
 
 def test_every_curated_field_is_translated(loud):
-    """Titles, captions, dates, places, holdings, provenance, the chapter
-    introductions and the glossary — the whole page a reader looks at."""
+    """Titles, fact lines and notes, dates, places, holdings, provenance,
+    the chapter introductions and the glossary — the whole page a reader
+    looks at, but for the quotations, which stand in the sources' English."""
     doc = loud
     assert doc['title'].isupper() and doc['subtitle'].isupper()
     assert doc['body'].isupper()
     chapter = doc['chapters'][0]
     assert chapter['title'].isupper() and chapter['intro'].isupper()
     entry = chapter['entries'][0]
-    for field in ('title', 'place', 'date', 'holding', 'provenance',
-                  'caption'):
+    for field in ('title', 'place', 'date', 'holding', 'provenance', 'fact'):
         assert entry[field].isupper(), field
+    assert all(n.isupper() for n in entry['notes'])
+    assert entry['quotes'] and not any(q['text'].isupper() for q in entry['quotes'])
     term = doc['terms'][0]
     assert term['term'].isupper() and term['definition'].isupper()
     assert doc['reading'][0]['note'].isupper()
@@ -235,3 +237,47 @@ def test_render_decodes_no_photographs():
                 if pic.get_paintable() is not None]
     # The paths are still there to load from, and they exist on disk.
     assert all(os.path.exists(path) for _plate, _pic, path in reader._lazy)
+
+
+def test_a_rewritten_plate_speaks_in_its_sources_words():
+    """A plate with a `fact` line: every verse says what kind of link it is
+    and carries its KJV text (tools/stone/build_stone.py writes them and
+    checks every quotation against its source); every quotation has its
+    citation; and what is in our words stays short."""
+    import archaeology_bridge as ab
+    rewritten = [e for c in ab.document()['chapters'] for e in c['entries']
+                 if e['fact']]
+    assert len(rewritten) >= 5
+    for e in rewritten:
+        assert not e['caption'], e['image']
+        assert len(e['fact']) <= 160
+        for r in e['refs']:
+            assert r['kind'] in ab.KIND_NAMES, (e['image'], r['label'])
+            assert r['text'], (e['image'], r['label'])
+        for q in e['quotes']:
+            assert q['text'] and q['cite'], e['image']
+        assert all(len(n) <= 120 for n in e['notes'])
+
+
+def test_every_verse_the_gallery_links_has_its_text():
+    import archaeology_bridge as ab
+    for c in ab.document()['chapters']:
+        for e in c['entries']:
+            for r in e['refs']:
+                assert r['text'], (e['image'], r['label'])
+
+
+def test_a_link_to_the_apocrypha_brings_what_those_books_are():
+    """Article VI (1571) and An Orthodox Creed's Article 37 (1679), quoted."""
+    import archaeology_bridge as ab
+    d = ab.document()
+    assert len(d['apocrypha']) == 2
+    flagged = [r for c in d['chapters'] for e in c['entries'] for r in e['refs']
+               if r['apocrypha']]
+    assert {r['book'] for r in flagged} == {'1 Maccabees', '2 Maccabees'}
+
+
+def test_the_bible_mark_names_the_artifact():
+    import archaeology_bridge as ab
+    assert ab.artifact_title('2 Kings', 3, 4) == 'The Mesha Stele'
+    assert ab.artifact_title('Genesis', 1, 1) == ''

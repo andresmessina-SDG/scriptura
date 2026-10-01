@@ -1,0 +1,185 @@
+"""The Creeds' data and its doors, without GTK.
+
+The data is built and checked by tools/creeds/build_creeds.py; these tests
+hold the shipped file to the shape the page and the reading view read, and
+check the two lookups the reading view's mark depends on.
+"""
+import content
+import creeds
+import sword_bridge
+
+
+def test_three_creeds_ship_in_tab_order():
+    ids = [c['id'] for c in creeds.data()['creeds']]
+    assert ids == list(creeds.CREED_IDS)
+
+
+def test_the_module_is_listed_and_named():
+    assert creeds.MODULE_KEY in creeds.module_names()
+    assert creeds.MODULE_KEY in content.readable_module_names()
+    assert content.type_key(creeds.MODULE_KEY) == 'creeds'
+    assert sword_bridge.display_name(creeds.MODULE_KEY) == 'The Creeds'
+
+
+def test_every_link_is_shaped_for_the_page():
+    for c in creeds.data()['creeds']:
+        for p in creeds.phrases(c['id']):
+            assert p['links'], p['id']
+            for link in p['links']:
+                assert link['kind'] in creeds.KIND_NAMES
+                assert link['text'], link['ref']
+                assert 0.0 <= link['tp'] <= 1.0
+                if link['kind'] == 'f':
+                    assert not link['nt'], link['ref']
+                if link['kind'] == 'w':
+                    # The builder refuses a same-words link that shares no word.
+                    assert link['shared'] > 0, link['ref']
+                    assert any(hit for _w, hit, _g in link['orig_words'])
+
+
+def test_disputed_lines_say_why():
+    """In the words of those who disputed them."""
+    for cid in creeds.CREED_IDS:
+        for p in creeds.phrases(cid):
+            if p.get('disputed'):
+                assert p.get('quotes') or p.get('note'), (cid, p['id'])
+
+
+def test_each_creed_rebuilds_its_1662_opening():
+    first = {cid: creeds.phrases(cid)[0]['en'] for cid in creeds.CREED_IDS}
+    assert first['apostles'].startswith('I believe in God the Father Almighty')
+    assert first['nicene'].startswith('I believe in one God the Father')
+    assert first['athanasian'].startswith('Whosoever will be saved')
+
+
+def test_athanasian_has_42_verses_and_its_sections():
+    c = creeds.creed('athanasian')
+    assert len(c['articles']) == 42
+    assert [n for n, _name in c['sections']] == [1, 3, 29, 42]
+
+
+def test_only_same_words_verses_carry_the_mark():
+    # Luke 1:33 is "whose kingdom shall have no end" word for word.
+    assert 33 in creeds.marker_verses('Luke', 1)
+    # John 3:16 is only same teaching in the Nicene, but same words in the
+    # Apostles' Latin ("Filium … unigenitum"), so it is marked.
+    assert 16 in creeds.marker_verses('John', 3)
+    # Genesis 1:1 is only ever same teaching.
+    assert 1 not in creeds.marker_verses('Genesis', 1)
+
+
+def test_a_range_marks_each_verse_in_it():
+    # "dead, and buried" uses 1 Corinthians 15:3-4.
+    assert {3, 4} <= creeds.marker_verses('1 Corinthians', 15)
+
+
+def test_the_mark_opens_the_line_in_the_creed_showing():
+    assert creeds.line_for_verse('Luke', 1, 33) == ('nicene', '7c')
+    # 1 Timothy 6:13 is in both the Apostles' and the Nicene.
+    assert creeds.line_for_verse('1 Timothy', 6, 13) == ('apostles', '4a')
+    assert creeds.line_for_verse('1 Timothy', 6, 13,
+                                 prefer='nicene') == ('nicene', '4b')
+    assert creeds.line_for_verse('Genesis', 1, 1) is None
+
+
+def test_info_counts_the_links():
+    info = creeds.info()
+    assert info['language'] == 'en'
+    assert info['type'].split()[0].isdigit()
+
+
+def test_no_verse_carries_the_kjv_closing_note():
+    """The KJV prints an epistle's closing note ("The second epistle to the
+    Corinthians was written from Philippi…") inside its last verse."""
+    for c in creeds.data()['creeds']:
+        for p in creeds.phrases(c['id']):
+            for link in p['links']:
+                assert 'was written from' not in link['text'], link['ref']
+                assert not link['text'].endswith(('Tychicus.', 'Timothy.')), (
+                    link['ref'])
+
+
+def test_every_section_heading_is_in_the_catalogue():
+    """The headings come from the data; the page translates them, so each
+    must be one the catalogues carry."""
+    for c in creeds.data()['creeds']:
+        for _n, name in c.get('sections') or []:
+            assert name in creeds.SECTION_NAMES, name
+
+
+def test_the_apostles_and_nicene_are_set_in_three_parts():
+    for cid in ('apostles', 'nicene'):
+        c = creeds.creed(cid)
+        assert [name for _n, name in c['sections']] == [
+            'God the Father', 'God the Son', 'God the Holy Ghost']
+
+
+def test_old_words_are_glossed_where_they_stand():
+    def old(cid, pid):
+        p = next(p for p in creeds.phrases(cid) if p['id'] == pid)
+        return dict(p.get('old', []))
+    assert old('apostles', '7a')['quick'] == 'living'
+    assert old('nicene', '7b')['quick'] == 'living'
+    assert 'conversion' in old('athanasian', '35')
+    assert 'as touching' in old('athanasian', '33')
+    assert 'quick' not in old('apostles', '1a')
+
+
+def test_giver_of_life_is_not_marked_as_a_word_the_church_chose():
+    """John 6:63 has the same word as a verb, and the line already links it
+    as the same words."""
+    c = creeds.creed('nicene')
+    assert '8b' not in c['coined_en']
+    p = next(p for p in creeds.phrases('nicene') if p['id'] == '8b')
+    assert not p.get('coined')
+    assert any(link['ref'] == 'John 6:63' and link['kind'] == 'w'
+               for link in p['links'])
+
+
+def test_the_mark_names_the_creed_and_the_line():
+    assert creeds.mark_tooltip('Luke', 1, 33) == (
+        'In the Nicene Creed: “Whose kingdom shall have no end”')
+    assert creeds.mark_tooltip('Genesis', 1, 2) == ''
+
+
+def test_the_page_speaks_in_quotations():
+    """Under each title, in the opening and beside the lines that want a
+    word, the page quotes the Fathers, the confessions and Schaff, each with
+    where it stands (tools/creeds/quotes.py; the builder checks each one
+    against its source). What is left in the page's own words stays short."""
+    d = creeds.data()
+    assert len(d['opening']['why']) == 3 and d['opening']['words']['text']
+    for c in d['creeds']:
+        assert c['origin']['text'] and c['origin']['cite']
+        for p in creeds.phrases(c['id']):
+            for q in p.get('quotes', []):
+                assert q['text'] and q['cite'], (c['id'], p['id'])
+            assert len(p.get('note', '')) <= 100, (c['id'], p['id'])
+
+
+def test_the_chalcedonian_creed_stands_between_nicaea_and_the_athanasian():
+    """Schaff's order, which is also the order of their councils."""
+    assert creeds.CREED_IDS == ('apostles', 'nicene', 'chalcedon', 'athanasian')
+    c = creeds.creed('chalcedon')
+    assert c['orig'] == 'grc' and len(creeds.phrases('chalcedon')) == 18
+    assert creeds.UNITS['chalcedon'] == 'line'
+    assert 'Chalcedon' in c['origin']['text']
+
+
+def test_chalcedon_marks_the_words_the_council_chose():
+    """Θεοτόκος and the four adverbs are not in the Greek New Testament (the
+    builder checks each against TAGNT); each comes with Schaff's note."""
+    by_id = {p['id']: p for p in creeds.phrases('chalcedon')}
+    assert [w for w, _g in by_id['8']['coined']] == ['θεοτόκου']
+    assert len(by_id['11']['coined']) == 4
+    for pid in ('8', '11'):
+        assert any('Schaff' in q['cite'] for q in by_id[pid]['quotes'])
+
+
+def test_leo_witnesses_the_lines_he_quoted():
+    """The council read and approved Leo's Tome; where it quotes a verse a
+    line rests on, the thread carries his name."""
+    by_id = {p['id']: p for p in creeds.phrases('chalcedon')}
+    leo = {link['ref'] for p in by_id.values() for link in p['links']
+           if 'Leo' in link['witness']}
+    assert {'John 1:1', 'John 1:14', 'John 10:30', '1 Timothy 2:5'} <= leo

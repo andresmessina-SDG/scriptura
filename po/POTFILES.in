@@ -1,7 +1,5 @@
 # List of source files containing translatable strings.
 # Append .py files here as their strings are wrapped in _().
-data/io.github.andresmessina_SDG.Scriptura.desktop.in
-data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
 annotation_dialogs.py
 annotation_editors.py
 annotations_window.py
@@ -16,7 +14,11 @@ catena_bridge.py
 catena_reader.py
 church_year.py
 content.py
+creeds.py
+creeds_view.py
 crossref_panel.py
+data/io.github.andresmessina_SDG.Scriptura.desktop.in
+data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
 devotional.py
 export_dialog.py
 family_card.py
@@ -24,6 +26,7 @@ family_line.py
 family_read.py
 family_tree.py
 family_view.py
+fetch_errors.py
 genbook_reader.py
 genealogy_bridge.py
 genealogy_layout.py
@@ -36,7 +39,6 @@ interlinear_data.py
 interlinear_view.py
 lexicon_panel.py
 manuscript_find.py
-fetch_errors.py
 module_manager.py
 module_picker.py
 navigation.py

@@ -808,6 +808,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
                                on_modules_changed=self._on_modules_changed,
                                on_open_artifact=self._on_open_artifact,
                                on_open_lineage=self._on_open_lineage,
+                               on_open_creed=self._on_open_creed,
                                on_module_switched=self._on_pane_module_switched,
                                on_hint=self._hints.maybe_fire,
                                on_open_verse=self._open_verse_in_pane2,
@@ -825,6 +826,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
                                on_modules_changed=self._on_modules_changed,
                                on_open_artifact=self._on_open_artifact,
                                on_open_lineage=self._on_open_lineage,
+                               on_open_creed=self._on_open_creed,
                                on_module_switched=self._on_pane_module_switched,
                                on_hint=self._hints.maybe_fire,
                                on_open_verse=self._open_verse_in_pane2,
@@ -3626,7 +3628,9 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         if not self._btn_split.get_active():
             self._btn_split.set_active(True)  # → _on_view_mode reveals pane2
         # Put the Bible in whichever pane isn't the gallery (defaults to pane2).
-        target = self.pane2 if self.pane1._is_archaeology else self.pane1
+        target = (self.pane2
+                  if self.pane1._is_archaeology or self.pane1._is_creeds
+                  else self.pane1)
         if not target._is_verse_navigable():
             bible = self._first_bible_module()
             if bible:
@@ -3689,6 +3693,33 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             self._btn_split.set_active(True)
         if not other._is_genealogy:
             other._apply_module_change(genealogy_bridge.MODULE_KEY)
+        return other
+
+    def _on_open_creed(self, source_pane, book, chapter, verse):
+        """A creed mark beside a Bible verse was clicked: show The Creeds in
+        the other pane, at the line that uses this verse's words — in the
+        creed already showing, if that one has such a line."""
+        import creeds
+        page = self._ensure_creeds_visible(source_pane)
+        if page is None:
+            return
+        found = creeds.line_for_verse(book, chapter, verse,
+                                      prefer=page._creeds.current_creed())
+        if found:
+            page._creeds.show_line(*found)
+
+    def _ensure_creeds_visible(self, source_pane):
+        """A pane showing The Creeds, loading it opposite the Bible we
+        clicked from if it isn't open. Mirrors _ensure_lineage_visible."""
+        import creeds
+        for p in (self.pane1, self.pane2):
+            if p.get_visible() and p._is_creeds:
+                return p
+        other = self.pane2 if source_pane is self.pane1 else self.pane1
+        if not other.get_visible():
+            self._btn_split.set_active(True)
+        if not other._is_creeds:
+            other._apply_module_change(creeds.MODULE_KEY)
         return other
 
     def _ensure_artifacts_visible(self, source_pane):

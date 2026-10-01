@@ -979,19 +979,6 @@ msgstr "Переднеазиатский музей, Берлин"
 msgid "Found at Tell el-Amarna, 1887"
 msgstr "Найдено в Телль-эль-Амарне, 1887"
 
-#: archaeology_strings.py:46
-msgid ""
-"A cuneiform letter from Abdi-Heba, the ruler of Jerusalem, to the Egyptian "
-"pharaoh, written some three centuries before David. It is among the earliest "
-"references to Jerusalem (as 'Urusalim'), and shows the city as a small "
-"Canaanite kingdom under Egyptian oversight: the world into which Israel "
-"would later come."
-msgstr ""
-"Клинописное письмо Абди-Хебы, правителя Иерусалима, египетскому фараону, "
-"написанное примерно за три века до Давида. Это одно из самых ранних "
-"упоминаний Иерусалима (как «Урусалим»); город предстаёт малым ханаанским "
-"царством под египетским надзором: тот мир, в который позже придёт Израиль."
-
 #: archaeology_strings.py:47
 msgid "The Merneptah Stele"
 msgstr "Стела Мернептаха"
@@ -1011,20 +998,6 @@ msgstr "Египетский музей, Каир"
 #: archaeology_strings.py:51
 msgid "Excavated at Thebes by Flinders Petrie, 1896"
 msgstr "Раскопана в Фивах Флиндерсом Питри, 1896"
-
-#: archaeology_strings.py:52
-msgid ""
-"A victory stele of the pharaoh Merneptah, listing peoples his armies claimed "
-"to have defeated in Canaan. Among them, in hieroglyphs, is the name "
-"'Israel,' marked as a people rather than a place. It is the earliest mention "
-"of Israel found outside the Bible, and places a people called Israel in "
-"Canaan by about 1200 BC, in the era of the Judges."
-msgstr ""
-"Победная стела фараона Мернептаха, перечисляющая народы, которые его войска "
-"объявили побеждёнными в Ханаане. Среди них иероглифами стоит имя «Израиль», "
-"помеченное как народ, а не как местность. Это самое раннее упоминание "
-"Израиля вне Библии; оно помещает народ по имени Израиль в Ханаане около 1200 "
-"года до н. э., в эпоху Судей."
 
 #: archaeology_strings.py:53
 msgid "The Tel Dan Stele"
@@ -1046,20 +1019,6 @@ msgstr "Музей Израиля, Иерусалим"
 msgid "Excavated in situ at Tel Dan, 1993–94"
 msgstr "Раскопана на месте в Тель-Дане, 1993–94"
 
-#: archaeology_strings.py:58
-msgid ""
-"A fragmentary basalt victory stele, written in Aramaic, set up by a king of "
-"Aram-Damascus. Its lines boast of defeating a 'king of Israel' and a king of "
-"the 'House of David' (bytdwd). It is the earliest reference outside the "
-"Bible to David's dynasty: a witness that the line of David was remembered as "
-"a real royal house within about a century and a half of his reign."
-msgstr ""
-"Обломки базальтовой победной стелы на арамейском языке, поставленной царём "
-"Арам-Дамаска. Её строки хвалятся победой над «царём Израиля» и над царём "
-"«дома Давидова» (bytdwd). Это самое раннее упоминание династии Давида вне "
-"Библии: свидетельство того, что род Давида помнили как настоящий царский дом "
-"уже через полтора века после его правления."
-
 #: archaeology_strings.py:59
 msgid "The Eshbaal Inscription"
 msgstr "Надпись Ешбаала"
@@ -1079,20 +1038,6 @@ msgstr "Управление древностей Израиля"
 #: archaeology_strings.py:63
 msgid "Excavated at Khirbet Qeiyafa, 2012"
 msgstr "Раскопан в Хирбет-Кейяфе, 2012"
-
-#: archaeology_strings.py:64
-msgid ""
-"A large storage jar from a fortified Judahite town, incised before firing "
-"with the name 'Eshbaal son of Beda' in early alphabetic script. Eshbaal is a "
-"rare name (its only biblical bearer is a son of King Saul), and the "
-"inscription shows it in use, and Judahites writing, in the very era the "
-"Bible assigns to Saul and David."
-msgstr ""
-"Большой сосуд для припасов из укреплённого иудейского городка, с "
-"процарапанным до обжига именем «Ешбаал, сын Беды», написанным ранним "
-"алфавитным письмом. Ешбаал — редкое имя (единственный его носитель в Библии "
-"— сын царя Саула), и надпись показывает и это имя в употреблении, и иудеев "
-"пишущими — в ту самую эпоху, которую Библия отводит Саулу и Давиду."
 
 #: archaeology_strings.py:65
 msgid "The Six-Chambered Gate at Gezer"
@@ -1114,21 +1059,6 @@ msgstr "in situ"
 msgid "Excavated in situ at Gezer"
 msgstr "Раскопаны на месте в Гезере"
 
-#: archaeology_strings.py:70
-msgid ""
-"A monumental city gate at Gezer, one of three nearly identical gates (with "
-"Hazor and Megiddo) long linked to a single royal building programme: the "
-"cities First Kings says Solomon fortified. The dating is debated, some "
-"placing the gates a little later, but they attest a kingdom building on a "
-"substantial, centralised scale."
-msgstr ""
-"Монументальные городские ворота в Гезере, одни из трёх почти одинаковых "
-"(вместе с Асором и Мегиддо), которые давно связывают с единой царской "
-"строительной программой — с городами, укреплёнными, по словам Третьей книги "
-"Царств, Соломоном. Датировка спорна, и некоторые относят ворота к более "
-"позднему времени, но они свидетельствуют о царстве, строившем крупно и по "
-"единому замыслу."
-
 #: archaeology_strings.py:71
 msgid "The Gezer Calendar"
 msgstr "Гезерский календарь"
@@ -1149,18 +1079,6 @@ msgstr "Стамбульские археологические музеи"
 msgid "Excavated at Gezer, 1908"
 msgstr "Раскопан в Гезере, 1908"
 
-#: archaeology_strings.py:76
-msgid ""
-"A small limestone tablet inscribed with a list of the agricultural year: "
-"months of sowing, harvest, and pruning. Written in early Hebrew letters, it "
-"is among the oldest known texts in the language of the Bible, from the "
-"century the Scriptures assign to Solomon, who is said to have rebuilt Gezer."
-msgstr ""
-"Небольшая известняковая табличка с перечнем земледельческого года: месяцы "
-"сева, жатвы и обрезки лозы. Написанная ранними еврейскими буквами, она "
-"принадлежит к древнейшим известным текстам на языке Библии — из того века, "
-"который Писание отводит Соломону, о котором сказано, что он отстроил Гезер."
-
 #: archaeology_strings.py:77
 msgid "The Campaign Relief of Shishak"
 msgstr "Рельеф о походе Сусакима"
@@ -1176,19 +1094,6 @@ msgstr "ок. 925 до н. э."
 #: archaeology_strings.py:80
 msgid "Standing temple relief, Karnak"
 msgstr "Рельеф на стене храма, Карнак"
-
-#: archaeology_strings.py:81
-msgid ""
-"On the temple wall at Karnak, the pharaoh Sheshonq I left a relief of his "
-"campaign into Canaan, with a long list of the towns his army claimed. "
-"Sheshonq is widely identified with the biblical Shishak, who, the Bible "
-"says, marched against Jerusalem in the fifth year of Rehoboam and carried "
-"off the treasures of the Temple."
-msgstr ""
-"На стене храма в Карнаке фараон Шешонк I оставил рельеф о своём походе в "
-"Ханаан с длинным списком городов, взятых, по его словам, его войском. "
-"Шешонка обычно отождествляют с библейским Сусакимом, который, по словам "
-"Библии, пошёл на Иерусалим в пятый год Ровоама и унёс сокровища Храма."
 
 #: archaeology_strings.py:82
 msgid "The Mesha Stele"
@@ -1214,20 +1119,6 @@ msgstr ""
 "Найдена в Дибане, 1868; вскоре разбита, её текст отчасти сохранён в бумажном "
 "эстампаже"
 
-#: archaeology_strings.py:87
-msgid ""
-"A black basalt victory stele set up by Mesha, king of Moab, recounting his "
-"rebellion against Israel. It names 'Omri king of Israel' and his dynasty, "
-"and the God of Israel by the name YHWH; by a contested reading it may also "
-"name the 'House of David.' Second Kings tells the same revolt of Mesha from "
-"Israel's side."
-msgstr ""
-"Победная стела из чёрного базальта, поставленная Мешей, царём Моавитским, о "
-"его восстании против Израиля. Она называет «Амврия, царя Израильского» и его "
-"династию, а Бога Израилева — именем ЯХВЕ; по спорному чтению в ней может "
-"стоять и «дом Давидов». О том же восстании Месы, со стороны Израиля, "
-"рассказывает Четвёртая книга Царств."
-
 #: archaeology_strings.py:88
 msgid "The Kurkh Monolith of Shalmaneser III"
 msgstr "Курхский монолит Салманасара III"
@@ -1247,21 +1138,6 @@ msgstr "Британский музей, Лондон"
 #: archaeology_strings.py:92
 msgid "Found at Üçtepe, 1861"
 msgstr "Найден в Ючтепе, 1861"
-
-#: archaeology_strings.py:93
-msgid ""
-"A monument of the Assyrian king Shalmaneser III recording his campaigns, "
-"including the battle of Qarqar in 853 BC against a coalition of western "
-"kings. Among the allies it lists 'Ahab the Israelite,' credited with two "
-"thousand chariots: the earliest Assyrian mention of a named king of Israel, "
-"who reigns through much of First Kings."
-msgstr ""
-"Монумент ассирийского царя Салманасара III с описанием его походов, в том "
-"числе битвы при Каркаре в 853 году до н. э. против коалиции западных царей. "
-"Среди союзников он перечисляет «Ахава израильтянина», которому приписывает "
-"две тысячи колесниц: это самое раннее ассирийское упоминание израильского "
-"царя по имени — царя, который правит на протяжении большей части Третьей "
-"книги Царств."
 
 #: archaeology_strings.py:94
 msgid "A Nimrud Ivory"
@@ -1283,20 +1159,6 @@ msgstr "Метрополитен-музей"
 msgid "Excavated at Nimrud"
 msgstr "Раскопана в Нимруде"
 
-#: archaeology_strings.py:99
-msgid ""
-"A finely carved ivory furniture inlay from the Assyrian palaces at Nimrud, "
-"where such pieces (much of it Phoenician work, gathered as tribute) survive "
-"by the hundred. Ivories like these give substance to the Bible's notice of "
-"the 'house of ivory' that Ahab built, and the prophets' rebukes of those who "
-"lounged on 'beds of ivory.'"
-msgstr ""
-"Тонко резанная накладка из слоновой кости для мебели из ассирийских дворцов "
-"в Нимруде, где такие вещи (в большинстве финикийской работы, собранные как "
-"дань) сохранились сотнями. Такие кости придают плоть библейскому упоминанию "
-"«дома из слоновой кости», построенного Ахавом, и обличениям пророков в адрес "
-"тех, кто нежился на «ложах из слоновой кости»."
-
 #: archaeology_strings.py:100
 msgid "The Black Obelisk of Shalmaneser III"
 msgstr "Чёрный обелиск Салманасара III"
@@ -1308,22 +1170,6 @@ msgstr "ок. 825 до н. э."
 #: archaeology_strings.py:102
 msgid "Excavated at Nimrud by Layard, 1846"
 msgstr "Раскопан в Нимруде Лэйардом, 1846"
-
-#: archaeology_strings.py:103
-msgid ""
-"A black limestone monument recording the campaigns of the Assyrian king "
-"Shalmaneser III. One register shows a figure bowing to bring tribute. The "
-"cuneiform above names him 'Jehu, son of Omri': in Assyrian usage, a king of "
-"the land of Omri, that is, Israel. It is the only known contemporary image "
-"of an Israelite monarch, set against the heavy Assyrian pressure the Bible "
-"records in Jehu's day."
-msgstr ""
-"Монумент из чёрного известняка с описанием походов ассирийского царя "
-"Салманасара III. На одном из поясов изображён человек, склонившийся с данью. "
-"Клинопись над ним называет его «Ииуй, сын Амврия»: по ассирийскому обычаю — "
-"царь земли Амврия, то есть Израиля. Это единственное известное прижизненное "
-"изображение израильского царя, на фоне тяжёлого ассирийского давления, о "
-"котором Библия говорит во дни Ииуя."
 
 #: archaeology_strings.py:104
 msgid "The Gate of Nineveh"
@@ -1345,20 +1191,6 @@ msgstr "in situ (уничтожены в 2016)"
 msgid "Excavated in situ at Nineveh"
 msgstr "Раскопаны на месте в Ниневии"
 
-#: archaeology_strings.py:109
-msgid ""
-"A reconstructed gate of Nineveh, flanked by the colossal human-headed winged "
-"bulls (lamassu) that guarded the Assyrian capital. Nineveh has a large place "
-"in Scripture: the city Jonah was sent to, and whose violence Nahum "
-"condemned. The ancient gate and its bulls were destroyed in 2016; this "
-"records them as they stood."
-msgstr ""
-"Восстановленные ворота Ниневии с колоссальными крылатыми быками с "
-"человеческими головами (ламассу), охранявшими ассирийскую столицу. Ниневия "
-"занимает в Писании большое место: это город, в который был послан Иона и чьё "
-"насилие обличал Наум. Древние ворота и их быки были уничтожены в 2016 году; "
-"этот снимок сохраняет их такими, какими они стояли."
-
 #: archaeology_strings.py:110
 msgid "Sargon II in His Chariot"
 msgstr "Саргон II на колеснице"
@@ -1379,20 +1211,6 @@ msgstr "Иракский музей, Багдад"
 msgid "Excavated at Khorsabad, 1840s"
 msgstr "Раскопан в Хорсабаде, 1840-е"
 
-#: archaeology_strings.py:115
-msgid ""
-"A palace relief of the Assyrian king Sargon II riding to war. Sargon claimed "
-"the conquest of Samaria and deported the northern kingdom. The Bible names "
-"him only once, in Isaiah, and with few other records to go on, some scholars "
-"once doubted he had existed. His palace at Khorsabad, unearthed in the "
-"1840s, settled the question."
-msgstr ""
-"Дворцовый рельеф ассирийского царя Саргона II, едущего на войну. Саргон "
-"приписывал себе завоевание Самарии и увёл в плен северное царство. Библия "
-"называет его лишь однажды, у Исаии, и при немногих других источниках "
-"некоторые учёные когда-то сомневались, что он существовал. Его дворец в "
-"Хорсабаде, раскопанный в 1840-х годах, решил этот вопрос."
-
 #: archaeology_strings.py:116
 msgid "The Lachish Reliefs"
 msgstr "Рельефы из Лахиса"
@@ -1409,21 +1227,6 @@ msgstr "ок. 700–692 до н. э."
 msgid "Excavated at Nineveh by Layard, 1840s"
 msgstr "Раскопаны в Ниневии Лэйардом, 1840-е"
 
-#: archaeology_strings.py:120
-msgid ""
-"Carved gypsum panels from Sennacherib's palace, depicting in documentary "
-"detail the Assyrian siege and capture of the Judahite fortress city of "
-"Lachish in 701 BC: siege ramps, archers, and files of captives carrying "
-"their belongings into exile. The Bible records the same campaign, when "
-"Sennacherib 'came up against all the fortified cities of Judah and took "
-"them.'"
-msgstr ""
-"Резные гипсовые плиты из дворца Сеннахирима, с документальной подробностью "
-"изображающие ассирийскую осаду и взятие иудейской крепости Лахис в 701 году "
-"до н. э.: осадные насыпи, лучники и вереницы пленных, уносящих свой скарб в "
-"плен. Библия говорит о том же походе, когда Сеннахирим «пошёл против всех "
-"укреплённых городов Иудеи и взял их»."
-
 #: archaeology_strings.py:121
 msgid "The Taylor Prism of Sennacherib"
 msgstr "Призма Тейлора Сеннахирима"
@@ -1435,20 +1238,6 @@ msgstr "ок. 691 до н. э."
 #: archaeology_strings.py:124
 msgid "Acquired at Nineveh, 1830"
 msgstr "Приобретена в Ниневии, 1830"
-
-#: archaeology_strings.py:125
-msgid ""
-"A six-sided clay prism inscribed with the annals of Sennacherib. It records "
-"his campaign of 701 BC against Judah, boasting that he shut up Hezekiah "
-"'like a bird in a cage' in Jerusalem, yet tellingly it never claims to have "
-"taken the city. Second Kings tells of the same siege, and of Jerusalem's "
-"deliverance."
-msgstr ""
-"Шестигранная глиняная призма с анналами Сеннахирима. Она сообщает о его "
-"походе 701 года до н. э. против Иудеи и хвалится тем, что он запер Езекию в "
-"Иерусалиме «как птицу в клетке» — но, что показательно, нигде не заявляет, "
-"что взял город. О той же осаде и об избавлении Иерусалима рассказывает "
-"Четвёртая книга Царств."
 
 #: archaeology_strings.py:126
 msgid "The Siloam Inscription"
@@ -1466,20 +1255,6 @@ msgstr "ок. 701 до н. э."
 msgid "Found in situ in the Siloam tunnel, 1880"
 msgstr "Найдена на месте, в Силоамском туннеле, 1880"
 
-#: archaeology_strings.py:130
-msgid ""
-"An inscription carved in the wall of a water tunnel beneath Jerusalem, "
-"describing the moment two teams of diggers, working from opposite ends, met "
-"in the middle. The tunnel carried water from the Gihon spring inside the "
-"city walls: the engineering work the Bible credits to King Hezekiah as he "
-"prepared for the Assyrian siege."
-msgstr ""
-"Надпись, высеченная в стене водного туннеля под Иерусалимом, о том "
-"мгновении, когда две артели землекопов, шедшие с противоположных концов, "
-"встретились посередине. Туннель провёл воду источника Гихон внутрь городских "
-"стен: инженерная работа, которую Библия приписывает царю Езекии, "
-"готовившемуся к ассирийской осаде."
-
 #: archaeology_strings.py:131
 msgid "The Bulla of Hezekiah"
 msgstr "Булла Езекии"
@@ -1496,19 +1271,6 @@ msgstr "ок. 700 до н. э."
 msgid "Excavated at the Ophel, Jerusalem, 2009"
 msgstr "Раскопана на Офеле, Иерусалим, 2009"
 
-#: archaeology_strings.py:135
-msgid ""
-"A clay sealing once pressed over the cord of a document, stamped with the "
-"royal seal of 'Hezekiah son of Ahaz, king of Judah,' above a winged sun-"
-"disk. Recovered in controlled excavation near the Temple Mount, it is a "
-"personal impression from the administration of the reforming king of "
-"Hezekiah's chapters."
-msgstr ""
-"Глиняный оттиск, некогда наложенный на шнур документа, с царской печатью "
-"«Езекии, сына Ахаза, царя Иудейского» над крылатым солнечным диском. "
-"Найденный при научных раскопках близ Храмовой горы, это личный оттиск из "
-"канцелярии царя-реформатора, о котором говорят главы о Езекии."
-
 #: archaeology_strings.py:136
 msgid "The Royal Steward Inscription"
 msgstr "Надпись царского домоправителя"
@@ -1520,20 +1282,6 @@ msgstr "Сильван, Иерусалим"
 #: archaeology_strings.py:138
 msgid "Found in situ at Silwan, 1870"
 msgstr "Найдена на месте в Сильване, 1870"
-
-#: archaeology_strings.py:139
-msgid ""
-"The carved lintel of a rock-cut tomb in Silwan, opposite the City of David, "
-"bearing a Hebrew inscription that warns against disturbing the bones of a "
-"royal steward. The official's name is broken away, but its surviving ending "
-"and his office fit Shebna, the steward whom Isaiah rebukes for hewing "
-"himself just such a showy tomb."
-msgstr ""
-"Резная притолока вырубленной в скале гробницы в Сильване, напротив Града "
-"Давидова, с еврейской надписью, предостерегающей тревожить кости царского "
-"домоправителя. Имя сановника отбито, но уцелевшее окончание и его должность "
-"подходят Севне — домоправителю, которого Исаия обличает за то, что тот "
-"вытесал себе как раз такую броскую гробницу."
 
 #: archaeology_strings.py:140
 msgid "The Ketef Hinnom Silver Scrolls"
@@ -1552,22 +1300,6 @@ msgid "Excavated in a burial cave at Ketef Hinnom by Gabriel Barkay, 1979"
 msgstr ""
 "Раскопаны в погребальной пещере в Кетеф-Хинноме Габриэлем Баркаем, 1979"
 
-#: archaeology_strings.py:144
-msgid ""
-"Two tiny strips of silver, rolled up and worn as amulets, from a family tomb "
-"on the shoulder of the Hinnom valley. Unrolled, each carried in scratched "
-"Hebrew letters the priestly blessing: 'The LORD bless you and keep you.' "
-"Usually dated to around 600 BC, on the eve of the exile, they are the oldest "
-"known copy of words from Scripture, some four centuries older than the Dead "
-"Sea Scrolls."
-msgstr ""
-"Две крошечные серебряные полоски, свёрнутые и носимые как амулеты, из "
-"семейной гробницы на склоне долины Енном. Развёрнутые, они несли "
-"процарапанными еврейскими буквами священническое благословение: «Да "
-"благословит тебя Господь и сохранит тебя». Обычно их датируют около 600 года "
-"до н. э., накануне плена; это древнейшая известная запись слов Писания, "
-"примерно на четыре века старше свитков Мёртвого моря."
-
 #: archaeology_strings.py:145
 msgid "The Babylonian Chronicle"
 msgstr "Вавилонская хроника"
@@ -1579,20 +1311,6 @@ msgstr "ок. 550 до н. э."
 #: archaeology_strings.py:148
 msgid "Acquired from Babylonia (unprovenanced)"
 msgstr "Приобретена в Вавилонии (без документированного происхождения)"
-
-#: archaeology_strings.py:149
-msgid ""
-"A clay tablet from the Babylonian Chronicles, the year-by-year record of "
-"Babylon's kings. One entry notes how Nebuchadnezzar besieged 'the city of "
-"Judah,' captured it, seized its king, and appointed another: the fall of "
-"Jerusalem in 597 BC and the exile of Jehoiachin, set down in plain "
-"Babylonian prose beside the account in Second Kings."
-msgstr ""
-"Глиняная табличка из Вавилонских хроник — погодной записи о царях Вавилона. "
-"Одна запись сообщает, как Навуходоносор осадил «город Иудеи», взял его, "
-"захватил его царя и поставил другого: падение Иерусалима в 597 году до н. э. "
-"и пленение Иехонии, изложенные сухой вавилонской прозой рядом с рассказом "
-"Четвёртой книги Царств."
 
 #: archaeology_strings.py:150
 msgid "The Lachish Letters"
@@ -1610,21 +1328,6 @@ msgstr "ок. 588 до н. э."
 msgid "Excavated in the gate-room at Lachish by J. L. Starkey, 1935"
 msgstr "Раскопаны в надвратной комнате Лахиса Дж. Л. Старки, 1935"
 
-#: archaeology_strings.py:154
-msgid ""
-"Military dispatches written in ink on potsherds, found in the burnt "
-"guardroom of Lachish's gate, from the weeks when Nebuchadnezzar's army was "
-"closing on Judah. In the letter shown here, an officer reports 'we cannot "
-"see Azekah': the signal fires of the neighbouring fortress had gone out. "
-"Jeremiah names Lachish and Azekah as the last two fortified cities of Judah "
-"left standing."
-msgstr ""
-"Военные донесения, написанные чернилами на черепках и найденные в сгоревшей "
-"караульне лахисских ворот, — из тех недель, когда войско Навуходоносора "
-"подступало к Иудее. В показанном здесь письме офицер доносит: «мы не видим "
-"Азеки» — сигнальные огни соседней крепости погасли. Иеремия называет Лахис и "
-"Азеку последними двумя укреплёнными городами Иудеи, что ещё держались."
-
 #: archaeology_strings.py:155
 msgid "The Ishtar Gate of Babylon"
 msgstr "Ворота Иштар в Вавилоне"
@@ -1640,18 +1343,6 @@ msgstr "Пергамский музей, Берлин"
 #: archaeology_strings.py:158
 msgid "Excavated at Babylon by Koldewey, 1902–14"
 msgstr "Раскопаны в Вавилоне Кольдевеем, 1902–14"
-
-#: archaeology_strings.py:159
-msgid ""
-"A dragon of the god Marduk, in glazed and moulded brick from the Ishtar Gate "
-"of Babylon: the dazzling capital Nebuchadnezzar rebuilt, and to which Judah "
-"was carried into exile. In the book of Daniel the king surveys it in pride: "
-"'Is not this great Babylon, which I have built?'"
-msgstr ""
-"Дракон бога Мардука, из глазурованного формованного кирпича с Ворот Иштар в "
-"Вавилоне: ослепительной столицы, отстроенной Навуходоносором, куда Иудея "
-"была уведена в плен. В книге Даниила царь оглядывает её с гордостью: «Это ли "
-"не величественный Вавилон, который построил я?»"
 
 #: archaeology_strings.py:160
 msgid "The Nabonidus Cylinder"
@@ -1669,22 +1360,6 @@ msgstr "ок. 540 до н. э."
 msgid "Excavated at Ur"
 msgstr "Раскопан в Уре"
 
-#: archaeology_strings.py:164
-msgid ""
-"A clay cylinder of Nabonidus, last king of Babylon, recording his building "
-"works and a prayer for his son. That son is Bel-shar-usur (Belshazzar), who "
-"in the book of Daniel holds the feast on the night Babylon falls. The "
-"cylinder helps explain a long-doubted detail: Belshazzar ruled as regent in "
-"his father's absence, which is why Daniel could be offered only 'third' "
-"place in the kingdom."
-msgstr ""
-"Глиняный цилиндр Набонида, последнего царя Вавилона, с записью о его "
-"строительных работах и молитвой о сыне. Этот сын — Бел-шар-уцур (Валтасар), "
-"который в книге Даниила устраивает пир в ночь падения Вавилона. Цилиндр "
-"помогает объяснить давно оспариваемую подробность: Валтасар правил как "
-"соправитель в отсутствие отца, потому Даниилу и могли предложить лишь "
-"«третье» место в царстве."
-
 #: archaeology_strings.py:165
 msgid "The Cyrus Cylinder"
 msgstr "Цилиндр Кира"
@@ -1696,22 +1371,6 @@ msgstr "после 539 до н. э."
 #: archaeology_strings.py:167
 msgid "Excavated at Babylon by Rassam, 1879"
 msgstr "Раскопан в Вавилоне Рассамом, 1879"
-
-#: archaeology_strings.py:168
-msgid ""
-"A clay cylinder inscribed in Babylonian cuneiform after Cyrus the Great of "
-"Persia took Babylon. It proclaims his policy of returning displaced peoples "
-"and restoring their sanctuaries: the same imperial outlook that, in the "
-"biblical account, let the exiles of Judah return from Babylon and rebuild "
-"the Temple. The cylinder names no Jews in particular; it attests the policy, "
-"not the specific decree."
-msgstr ""
-"Глиняный цилиндр с вавилонской клинописью, составленный после того, как Кир "
-"Великий Персидский взял Вавилон. Он провозглашает его политику возвращения "
-"переселённых народов и восстановления их святынь: тот самый имперский "
-"взгляд, который, по библейскому рассказу, позволил пленникам Иудеи вернуться "
-"из Вавилона и отстроить Храм. Цилиндр не называет иудеев особо; он "
-"свидетельствует о политике, а не о самом указе."
 
 #: archaeology_strings.py:169
 msgid "The Behistun Inscription"
@@ -1728,19 +1387,6 @@ msgstr "ок. 520 до н. э."
 #: archaeology_strings.py:172
 msgid "Standing cliff monument, Iran"
 msgstr "Скальный монумент на месте, Иран"
-
-#: archaeology_strings.py:173
-msgid ""
-"High on a cliff in western Iran, Darius the Great proclaimed his rise to "
-"power in three languages: the trilingual key that finally let scholars read "
-"cuneiform. Darius authorised the rebuilding of the Temple in Jerusalem; this "
-"monument shows the very king whose decree, in the book of Ezra, sent the "
-"work forward."
-msgstr ""
-"Высоко на скале в западном Иране Дарий Великий провозгласил своё восшествие "
-"к власти на трёх языках: трёхъязычный ключ, который наконец позволил учёным "
-"читать клинопись. Дарий разрешил отстроить Храм в Иерусалиме; этот монумент "
-"показывает того самого царя, чей указ, по книге Ездры, двинул работу вперёд."
 
 #: archaeology_strings.py:174
 msgid "The Heliodorus Stele"
@@ -1759,19 +1405,6 @@ msgid "Unprovenanced; matched to fragments excavated at Maresha"
 msgstr ""
 "Без документированного происхождения; сопоставлена с обломками, раскопанными "
 "в Мареше"
-
-#: archaeology_strings.py:178
-msgid ""
-"A limestone stele inscribed with letters of the Seleucid king Seleucus IV "
-"and his minister Heliodorus, appointing officials over the temples of the "
-"realm. Heliodorus is remembered in Second Maccabees as the agent sent to "
-"seize the treasures of the Temple in Jerusalem, and, as that book tells it, "
-"driven back by a vision from heaven."
-msgstr ""
-"Известняковая стела с письмами селевкидского царя Селевка IV и его министра "
-"Гелиодора о назначении надзирателей над храмами державы. Гелиодора помнят по "
-"Второй книге Маккавейской как посланного захватить сокровища Храма в "
-"Иерусалиме и, по рассказу этой книги, отражённого небесным видением."
 
 #: archaeology_strings.py:179
 msgid "A Coin of John Hyrcanus"
@@ -1793,20 +1426,6 @@ msgstr "многие собрания"
 msgid "Hasmonean coinage (many examples known)"
 msgstr "Хасмонейская чеканка (известно много образцов)"
 
-#: archaeology_strings.py:184
-msgid ""
-"A small bronze coin of the Hasmonean ruler John Hyrcanus, its Hebrew legend "
-"naming 'Yehohanan the High Priest and the Council of the Jews,' its reverse "
-"a double cornucopia. It is a coin of the priest-kings descended from the "
-"Maccabean revolt: the independent Jewish state whose story First Maccabees "
-"carries toward the New Testament age."
-msgstr ""
-"Маленькая бронзовая монета хасмонейского правителя Иоанна Гиркана: еврейская "
-"надпись называет «Иоханана первосвященника и совет иудеев», на обороте — "
-"двойной рог изобилия. Это монета священников-царей, вышедших из "
-"Маккавейского восстания, — независимого иудейского государства, чью историю "
-"Первая книга Маккавейская доводит до эпохи Нового Завета."
-
 #: archaeology_strings.py:185
 msgid "The Great Isaiah Scroll"
 msgstr "Большой свиток Исаии"
@@ -1822,21 +1441,6 @@ msgstr "ок. 125 до н. э."
 #: archaeology_strings.py:188
 msgid "Found at Qumran, Cave 1, 1947"
 msgstr "Найден в Кумране, пещера 1, 1947"
-
-#: archaeology_strings.py:189
-msgid ""
-"A column of the Great Isaiah Scroll from Qumran: here the song of the "
-"suffering servant, 'he was wounded for our transgressions.' Found among the "
-"Dead Sea Scrolls in 1947, it is a thousand years older than the previously "
-"oldest Hebrew copies of Isaiah, and apart from small differences of spelling "
-"and wording it agrees with them: a witness to how carefully the text was "
-"handed down."
-msgstr ""
-"Столбец Большого свитка Исаии из Кумрана: здесь песнь о страдающем рабе: «Он "
-"изъязвлен был за грехи наши». Найденный среди свитков Мёртвого моря в 1947 "
-"году, он на тысячу лет старше прежде древнейших еврейских списков Исаии и, "
-"если не считать небольших различий в написании и словах, согласуется с ними: "
-"свидетельство того, как бережно передавался текст."
 
 #: archaeology_strings.py:190
 msgid "The Pilate Stone"
@@ -1854,20 +1458,6 @@ msgstr "ок. 26–36 н. э."
 msgid "Excavated in situ at Caesarea, 1961"
 msgstr "Раскопан на месте в Кесарии, 1961"
 
-#: archaeology_strings.py:194
-msgid ""
-"A limestone block, later reused in the theatre at Caesarea, bearing a Latin "
-"dedication that names '[Pon]tius Pilatus, [Praef]ectus Iuda[ea]e': Pontius "
-"Pilate, prefect of Judea. Found in 1961, it is the only certain inscription "
-"naming Pilate from his own time, and confirms both his name and his exact "
-"title in the years of Jesus' ministry and trial."
-msgstr ""
-"Известняковый блок, позже использованный вторично в театре Кесарии, с "
-"латинским посвящением, называющим «[Пон]тия Пилата, [преф]екта Иуде[и]». "
-"Найденный в 1961 году, это единственная достоверная надпись его времени, "
-"называющая Пилата: она подтверждает и имя, и точный титул в годы служения и "
-"суда над Иисусом."
-
 #: archaeology_strings.py:195
 msgid "The Caiaphas Ossuary"
 msgstr "Оссуарий Каиафы"
@@ -1880,22 +1470,6 @@ msgstr "I век н. э."
 msgid "Excavated in a Jerusalem tomb, 1990"
 msgstr "Раскопан в иерусалимской гробнице, 1990"
 
-#: archaeology_strings.py:199
-msgid ""
-"An ornately carved limestone ossuary (a box for reburied bones) found in a "
-"Jerusalem tomb in 1990. Twice inscribed 'Yehosef bar Qayafa' (Joseph, son of "
-"Caiaphas), it is widely identified with the high priest before whom, in the "
-"Gospels, Jesus was brought for trial. A minority of scholars question the "
-"identification; the name and the priestly family, however, are firmly "
-"attested."
-msgstr ""
-"Богато украшенный известняковый оссуарий (ящик для перезахоронения костей), "
-"найденный в иерусалимской гробнице в 1990 году. Дважды надписанный «Йехосеф "
-"бар Каяфа» (Иосиф, сын Каиафы), он широко отождествляется с "
-"первосвященником, перед которым, по Евангелиям, был приведён на суд Иисус. "
-"Меньшинство учёных оспаривает отождествление; само имя и священнический род, "
-"однако, засвидетельствованы твёрдо."
-
 #: archaeology_strings.py:200
 msgid "The Pool of Bethesda"
 msgstr "Купальня Вифезда"
@@ -1903,22 +1477,6 @@ msgstr "Купальня Вифезда"
 #: archaeology_strings.py:201
 msgid "Excavated in situ, Jerusalem"
 msgstr "Раскопана на месте, Иерусалим"
-
-#: archaeology_strings.py:202
-msgid ""
-"The excavated remains of a large twin pool, ringed by porticoes, on the "
-"north side of Jerusalem's Temple area. John's Gospel describes the healing "
-"of a paralysed man at the pool of Bethesda 'which has five roofed "
-"colonnades': a detail once thought merely symbolic. Excavation found a real "
-"twin pool with porticoes, though scholars still debate how closely its "
-"layout matches John's five."
-msgstr ""
-"Раскопанные остатки большой двойной купальни, окружённой портиками, к северу "
-"от храмовой площади Иерусалима. Евангелие от Иоанна описывает исцеление "
-"расслабленного при купальне Вифезда, «при которой было пять крытых ходов»: "
-"подробность, которую когда-то считали лишь символической. Раскопки нашли "
-"настоящую двойную купальню с портиками, хотя учёные до сих пор спорят, "
-"насколько её устройство соответствует пяти ходам Иоанна."
 
 #: archaeology_strings.py:203
 msgid "The Pool of Siloam"
@@ -1931,17 +1489,6 @@ msgstr "Иерусалим (Град Давидов)"
 #: archaeology_strings.py:205
 msgid "Excavated in situ, Jerusalem, 2004"
 msgstr "Раскопана на месте, Иерусалим, 2004"
-
-#: archaeology_strings.py:206
-msgid ""
-"The stepped stone edge of the Pool of Siloam, uncovered in 2004 at the foot "
-"of the City of David: the pool fed by Hezekiah's tunnel. In John's Gospel "
-"Jesus sends a man born blind to wash here, and he returns seeing."
-msgstr ""
-"Ступенчатый каменный край купальни Силоам, открытый в 2004 году у подножия "
-"Града Давидова: купальни, которую питал туннель Езекии. В Евангелии от "
-"Иоанна Иисус посылает сюда умыться слепорождённого, и тот возвращается "
-"зрячим."
 
 #: archaeology_strings.py:207
 msgid "The Temple Warning Inscription"
@@ -1959,20 +1506,6 @@ msgstr "I век до н. э. — I век н. э."
 msgid "Found in Jerusalem, 1871"
 msgstr "Найдена в Иерусалиме, 1871"
 
-#: archaeology_strings.py:211
-msgid ""
-"A limestone block carved with a Greek warning that forbade Gentiles, on pain "
-"of death, from passing the barrier into the inner courts of the Temple. It "
-"marks the barrier behind the charge that Paul had brought Gentiles into the "
-"Temple, when he was seized there. Many readers also hear it behind the "
-"'dividing wall' that the letter to the Ephesians says Christ has broken down."
-msgstr ""
-"Известняковый блок с греческим предупреждением, под страхом смерти "
-"запрещавшим язычникам переступать ограду во внутренние дворы Храма. Он "
-"отмечает ту ограду, из-за которой Павла обвинили, что он ввёл язычников в "
-"Храм, когда его там схватили. Многие читатели видят её и за «преградой», "
-"которую, по Посланию к Ефесянам, разрушил Христос."
-
 #: archaeology_strings.py:212
 msgid "The Tribute Penny"
 msgstr "Динарий кесаря"
@@ -1988,19 +1521,6 @@ msgstr "14–37 н. э."
 #: archaeology_strings.py:215
 msgid "Roman imperial coinage (many examples known)"
 msgstr "Римская императорская чеканка (известно много образцов)"
-
-#: archaeology_strings.py:216
-msgid ""
-"A silver denarius of the emperor Tiberius, his portrait on one side, an "
-"enthroned figure on the other. Coins like this are traditionally taken as "
-"the 'tribute penny' of the Gospels: shown such a coin and asked about paying "
-"taxes, Jesus answers, 'Render to Caesar the things that are Caesar's, and to "
-"God the things that are God's.'"
-msgstr ""
-"Серебряный денарий императора Тиверия: на одной стороне его портрет, на "
-"другой восседающая фигура. Такие монеты по традиции считают «динарием» "
-"Евангелий: когда Иисусу показали её и спросили о подати, Он ответил: "
-"«отдавайте кесарево кесарю, а Божие Богу»."
 
 #: archaeology_strings.py:217
 msgid "The Arch of Titus"
@@ -2018,20 +1538,6 @@ msgstr "ок. 81 н. э."
 msgid "Standing monument, Rome"
 msgstr "Стоящий монумент, Рим"
 
-#: archaeology_strings.py:221
-msgid ""
-"On the Arch of Titus in Rome, a relief shows soldiers carrying the spoils of "
-"the Jerusalem Temple in triumph (the seven-branched menorah, the table of "
-"showbread, the silver trumpets) after the city's destruction in AD 70. It is "
-"the Temple's own furniture, paraded as plunder, in the years after Jesus "
-"foretold that not one stone would be left upon another."
-msgstr ""
-"На арке Тита в Риме рельеф изображает воинов, несущих в триумфе добычу "
-"иерусалимского Храма (семисвечную менору, стол хлебов предложения, "
-"серебряные трубы) после разрушения города в 70 году н. э. Это собственная "
-"утварь Храма, проносимая как трофей, — в годы после того, как Иисус "
-"предсказал, что не останется камня на камне."
-
 #: archaeology_strings.py:222
 msgid "The Judaea Capta Coinage"
 msgstr "Монеты Judaea Capta"
@@ -2043,18 +1549,6 @@ msgstr "Рим"
 #: archaeology_strings.py:224
 msgid "AD 71"
 msgstr "71 н. э."
-
-#: archaeology_strings.py:225
-msgid ""
-"A Roman coin struck to celebrate the crushing of the Jewish revolt: a palm "
-"tree, a bound captive, a mourning woman, and the words IUDAEA CAPTA, 'Judea "
-"captured.' Minted across the empire after AD 70, it is Rome's own monument "
-"to the fall of Jerusalem that the Gospels record Jesus foretelling."
-msgstr ""
-"Римская монета, отчеканенная в честь подавления иудейского восстания: "
-"пальма, связанный пленник, скорбящая женщина и слова IUDAEA CAPTA — «Иудея "
-"пленена». Чеканенная по всей империи после 70 года н. э., это собственный "
-"памятник Рима падению Иерусалима, которое, по Евангелиям, предсказал Иисус."
 
 #: archaeology_strings.py:226
 msgid "The Forum of Philippi"
@@ -2072,16 +1566,6 @@ msgstr "Римская эпоха"
 msgid "Excavated by the French School at Athens, from 1914"
 msgstr "Раскопан Французской школой в Афинах, с 1914"
 
-#: archaeology_strings.py:230
-msgid ""
-"The forum of Philippi, the Roman colony in Macedonia where Paul founded his "
-"first church on European soil. Acts tells of his arrival, the conversion of "
-"Lydia by the riverside, and a night in the city jail."
-msgstr ""
-"Форум Филипп, римской колонии в Македонии, где Павел основал первую церковь "
-"на европейской земле. Деяния рассказывают о его приходе, об обращении Лидии "
-"у реки и о ночи в городской темнице."
-
 #: archaeology_strings.py:231
 msgid "The Areopagus (Mars Hill)"
 msgstr "Ареопаг (холм Марса)"
@@ -2098,18 +1582,6 @@ msgstr "посещение Павла ок. 50 н. э."
 msgid "Standing site, Athens"
 msgstr "Сохранившееся место, Афины"
 
-#: archaeology_strings.py:235
-msgid ""
-"The Areopagus, or Mars Hill: the rocky height below the Athenian Acropolis "
-"where the city's council met. Acts sets here Paul's address to the "
-"philosophers, taking their altar 'to an unknown god' as his starting point "
-"for the God who 'made the world and everything in it.'"
-msgstr ""
-"Ареопаг, или холм Марса: скалистая высота под афинским Акрополем, где "
-"собирался совет города. Деяния помещают сюда речь Павла к философам, который "
-"взял их жертвенник «неведомому Богу» отправной точкой для Бога, "
-"«сотворившего мир и всё, что в нём»."
-
 #: archaeology_strings.py:236
 msgid "The Bema at Corinth"
 msgstr "Бема в Коринфе"
@@ -2121,20 +1593,6 @@ msgstr "Древний Коринф"
 #: archaeology_strings.py:238
 msgid "Excavated by the American School of Classical Studies, from 1896"
 msgstr "Раскопан Американской школой классических исследований, с 1896"
-
-#: archaeology_strings.py:239
-msgid ""
-"The forum of ancient Corinth, with the bema, the raised platform from which "
-"Roman officials gave judgment. Acts records that the proconsul Gallio "
-"dismissed the charge against Paul at the judgment seat, very likely this "
-"one. Gallio's term of office, dated by an inscription at Delphi, is the "
-"firmest anchor for the chronology of Paul's mission."
-msgstr ""
-"Форум древнего Коринфа с бемой, возвышением, с которого римские должностные "
-"лица выносили приговор. По Деяниям, проконсул Галлион отклонил обвинение "
-"против Павла перед судейским местом, скорее всего именно этим. Срок "
-"должности Галлиона, датированный надписью в Дельфах, — самая твёрдая опора "
-"для хронологии миссии Павла."
 
 #: archaeology_strings.py:240
 msgid "The Great Theatre of Ephesus"
@@ -2148,18 +1606,6 @@ msgstr "Эфес"
 msgid "Excavated by the Austrian Archaeological Institute, from 1895"
 msgstr "Раскопан Австрийским археологическим институтом, с 1895"
 
-#: archaeology_strings.py:243
-msgid ""
-"The great theatre of Ephesus, which held some 25,000 people. Acts sets here "
-"the riot of the silversmiths, who feared Paul's preaching would ruin the "
-"trade in silver shrines of Artemis and filled the theatre with the chant, "
-"'Great is Artemis of the Ephesians!'"
-msgstr ""
-"Большой театр Эфеса, вмещавший около 25 000 человек. Деяния помещают сюда "
-"мятеж серебряников, которые боялись, что проповедь Павла погубит торговлю "
-"серебряными храмиками Артемиды, и наполнили театр криком: «велика Артемида "
-"Ефесская!»"
-
 #: archaeology_strings.py:244
 msgid "The Temple of Artemis"
 msgstr "Храм Артемиды"
@@ -2172,18 +1618,6 @@ msgstr "отстроен после 356 до н. э."
 msgid "Site located by John Turtle Wood, 1869"
 msgstr "Место найдено Джоном Тертлом Вудом, 1869"
 
-#: archaeology_strings.py:247
-msgid ""
-"A single re-erected column marks the temple of Artemis at Ephesus, once "
-"counted among the seven wonders of the world. The cult of 'Artemis of the "
-"Ephesians,' and the craftsmen who profited from it, form the backdrop to the "
-"uproar Paul's preaching stirred in the city."
-msgstr ""
-"Одна заново поднятая колонна отмечает храм Артемиды в Эфесе, некогда "
-"причисленный к семи чудесам света. Культ «Артемиды Ефесской» и ремесленники, "
-"кормившиеся от него, — фон того возмущения, которое подняла в городе "
-"проповедь Павла."
-
 #: archaeology_strings.py:248
 msgid "The Erastus Inscription"
 msgstr "Надпись Ераста"
@@ -2191,20 +1625,6 @@ msgstr "Надпись Ераста"
 #: archaeology_strings.py:249
 msgid "Excavated in situ at Corinth"
 msgstr "Раскопана на месте в Коринфе"
-
-#: archaeology_strings.py:250
-msgid ""
-"A paving stone by the theatre of Corinth, its bronze letters lost but their "
-"cut sockets still legible: 'Erastus, in return for his aedileship, laid this "
-"at his own expense.' Many identify this magistrate with the Erastus, 'the "
-"city treasurer,' whom Paul names sending greetings from Corinth, though the "
-"identification is not certain."
-msgstr ""
-"Плита мостовой у театра в Коринфе: её бронзовые буквы утрачены, но "
-"вырубленные гнёзда всё ещё читаются: «Ераст в благодарность за эдильство "
-"вымостил это на свои средства». Многие отождествляют этого магистрата с "
-"Ерастом, «городским казнохранителем», от которого Павел передаёт приветствие "
-"из Коринфа, хотя отождествление и не бесспорно."
 
 #: archaeology_strings.py:251
 msgid "Ancient Jericho"
@@ -2222,20 +1642,6 @@ msgstr "башня ок. 8000 до н. э."
 msgid "Tower excavated by Kathleen Kenyon, 1952–58"
 msgstr "Башня раскопана Кэтлин Кеньон, 1952–58"
 
-#: archaeology_strings.py:255
-msgid ""
-"The mound of ancient Jericho (Tell es-Sultan), among the oldest towns on "
-"earth. The great stone tower here is Neolithic, millennia older than Joshua. "
-"The Bible tells of Jericho's walls falling before Israel; the dating of the "
-"site's destruction layers is much debated, and remains one of the hardest "
-"questions in biblical archaeology."
-msgstr ""
-"Холм древнего Иерихона (Телль-эс-Султан), одного из древнейших городов на "
-"земле. Большая каменная башня здесь неолитическая, на тысячелетия старше "
-"Иисуса Навина. Библия рассказывает о падении стен Иерихона перед Израилем; "
-"датировка слоёв разрушения на этом городище горячо обсуждается и остаётся "
-"одним из самых трудных вопросов библейской археологии."
-
 #: archaeology_strings.py:256
 msgid "Tel Hazor"
 msgstr "Тель-Асор"
@@ -2247,19 +1653,6 @@ msgstr "Бронзовый — железный век"
 #: archaeology_strings.py:258
 msgid "Excavated by Yigael Yadin, 1955–58; digs continue"
 msgstr "Раскопан Игаэлем Ядином, 1955–58; раскопки продолжаются"
-
-#: archaeology_strings.py:259
-msgid ""
-"The vast mound of Hazor, the largest tel in the land: in the Bible 'the head "
-"of all those kingdoms,' the Canaanite city Joshua is said to have burned. "
-"Excavators have found a destroyed Canaanite city beneath a later Israelite "
-"one, fortified with a monumental gate of the type the Bible links to Solomon."
-msgstr ""
-"Огромный холм Асора, самый большой телль в стране: в Библии «глава всех "
-"царств сих», ханаанский город, который, как сказано, сжёг Иисус Навин. "
-"Археологи нашли разрушенный ханаанский город под более поздним израильским, "
-"укреплённым монументальными воротами того типа, что Библия связывает с "
-"Соломоном."
 
 #: archaeology_strings.py:260
 msgid "The Gate of Megiddo"
@@ -2279,18 +1672,6 @@ msgstr ""
 "Раскопаны Восточным институтом Чикагского университета, 1925–39; раскопки "
 "продолжаются"
 
-#: archaeology_strings.py:264
-msgid ""
-"The chambered gate of Megiddo, the fortress city guarding the pass into the "
-"Jezreel Valley. Here King Josiah fell facing Pharaoh Necho; and the city's "
-"hill, Har Megiddo, gives its name to Armageddon, the gathering-place of "
-"Revelation's final battle."
-msgstr ""
-"Камерные ворота Мегиддо — крепости, стерегущей проход в Изреельскую долину. "
-"Здесь пал царь Иосия, вышедший против фараона Нехао; а холм этого города, "
-"Хар-Мегиддо, дал имя Армагеддону — месту сбора для последней битвы "
-"Откровения."
-
 #: archaeology_strings.py:265
 msgid "The Sanctuary at Arad"
 msgstr "Святилище в Араде"
@@ -2307,20 +1688,6 @@ msgstr "Железный век"
 msgid "Excavated by Yohanan Aharoni, 1962–67"
 msgstr "Раскопано Йохананом Ахарони, 1962–67"
 
-#: archaeology_strings.py:269
-msgid ""
-"The desert fortress of Arad, holding one of the very few Israelite temples "
-"yet excavated: a courtyard with a sacrificial altar and a small inner "
-"shrine, apparently taken out of use during a religious reform of the kind "
-"the Bible credits to Hezekiah, who 'removed the high places' to centre "
-"worship on Jerusalem."
-msgstr ""
-"Пустынная крепость Арад, где сохранился один из очень немногих раскопанных "
-"израильских храмов: двор с жертвенником и малое внутреннее святилище, по "
-"всей видимости выведенное из употребления при религиозной реформе того рода, "
-"какую Библия приписывает Езекии, который «отменил высоты», чтобы "
-"сосредоточить поклонение в Иерусалиме."
-
 #: archaeology_strings.py:270
 msgid "The Herodian Temple Stones"
 msgstr "Камни Иродова Храма"
@@ -2332,18 +1699,6 @@ msgstr "I век до н. э."
 #: archaeology_strings.py:272
 msgid "Standing site, Jerusalem"
 msgstr "Сохранившееся место, Иерусалим"
-
-#: archaeology_strings.py:273
-msgid ""
-"The massive Herodian ashlars of the Western Wall, part of the retaining wall "
-"Herod the Great raised to enlarge the Temple platform. These are the kind of "
-"stones behind a disciple's awe, 'what wonderful stones and what wonderful "
-"buildings,' and Jesus' reply that not one would be left upon another."
-msgstr ""
-"Огромные иродовы тёсаные блоки Западной стены — часть подпорной стены, "
-"которую Ирод Великий возвёл, расширяя храмовую площадь. Это те самые камни, "
-"что стоят за изумлением ученика: «какие камни и какие здания!» — и за "
-"ответом Иисуса, что не останется камня на камне."
 
 #: archaeology_strings.py:274
 msgid "The Synagogue at Capernaum"
@@ -2361,18 +1716,6 @@ msgstr "синагога IV–V вв. н. э."
 msgid "Excavated in situ, Capernaum"
 msgstr "Раскопана на месте, Капернаум"
 
-#: archaeology_strings.py:278
-msgid ""
-"The white limestone synagogue of Capernaum, the lakeside town that was the "
-"base of Jesus' Galilean ministry. This building is later (4th–5th century), "
-"but it rests on black basalt foundations that its excavators identify as the "
-"1st-century synagogue where, the Gospels say, Jesus taught and healed."
-msgstr ""
-"Синагога Капернаума из белого известняка, в приозёрном городке, который был "
-"опорой галилейского служения Иисуса. Это здание более позднее (IV–V век), но "
-"оно стоит на чёрных базальтовых основаниях, которые раскопщики считают "
-"синагогой I века, где, по Евангелиям, Иисус учил и исцелял."
-
 #: archaeology_strings.py:279
 msgid "A Judean Pillar Figurine"
 msgstr "Иудейская столбовидная статуэтка"
@@ -2384,20 +1727,6 @@ msgstr "Иудея"
 #: archaeology_strings.py:281
 msgid "Excavated; common in Judahite homes"
 msgstr "Раскопаны; обычны в иудейских домах"
-
-#: archaeology_strings.py:282
-msgid ""
-"Small clay figurines of a woman supporting her breasts, mass-produced and "
-"found by the hundreds in ordinary Judahite houses. Their exact meaning is "
-"debated (fertility, protection, a goddess), but they show the popular "
-"household religion the prophets kept condemning, when even in Jerusalem "
-"families baked cakes for 'the queen of heaven.'"
-msgstr ""
-"Небольшие глиняные статуэтки женщины, поддерживающей груди, изготовленные во "
-"множестве и найденные сотнями в обычных иудейских домах. Их точный смысл "
-"спорен (плодородие, защита, богиня), но они показывают ту домашнюю народную "
-"религию, которую не переставали обличать пророки, когда даже в Иерусалиме "
-"семьи пекли пирожки «богине неба»."
 
 #: archaeology_strings.py:283
 msgid "An Israelite Oil Lamp"
@@ -2414,18 +1743,6 @@ msgstr "ок. 900 до н. э."
 #: archaeology_strings.py:286
 msgid "Metropolitan Museum (acc. 1934); findspot unrecorded"
 msgstr "Метрополитен-музей (поступление 1934); место находки не записано"
-
-#: archaeology_strings.py:287
-msgid ""
-"A simple wheel-made saucer with one edge pinched into a spout to hold the "
-"wick: the lamp that lit every Israelite house, burning a little olive oil "
-"through the night. Plain and common, it is the kind of lamp behind the "
-"Psalmist's 'lamp unto my feet, and a light unto my path.'"
-msgstr ""
-"Простое блюдце, сделанное на круге, с одним защипнутым краем-носиком для "
-"фитиля: светильник, освещавший каждый израильский дом и всю ночь сжигавший "
-"немного оливкового масла. Простой и обычный, это такой светильник, какой "
-"стоит за словами псалмопевца: «светильник ноге моей и свет стезе моей»."
 
 #: archaeology_strings.py:288
 msgid "The Four-Room House"
@@ -2449,20 +1766,6 @@ msgstr ""
 "Современная реконструкция в натуральную величину (Гарвардский семитский "
 "музей)"
 
-#: archaeology_strings.py:293
-msgid ""
-"A full-scale modern reconstruction of the 'four-room house,' the standard "
-"Israelite dwelling of the Iron Age: a broad rear room behind three long "
-"spaces, the ground floor for animals and storage, the family living above. "
-"This is the house behind countless biblical scenes: the home whose doorposts "
-"were to carry the words of the Law."
-msgstr ""
-"Современная реконструкция в натуральную величину «четырёхкомнатного дома» — "
-"обычного израильского жилища железного века: широкая задняя комната за тремя "
-"длинными помещениями, первый этаж для скота и припасов, семья живёт наверху. "
-"Это дом, стоящий за бесчисленными библейскими сценами, — тот, на косяках "
-"которого надлежало написать слова Закона."
-
 #: archaeology_strings.py:294
 msgid "A Rock-Cut Winepress"
 msgstr "Давильня, вырубленная в скале"
@@ -2479,20 +1782,6 @@ msgstr "Железный век — римское время"
 msgid "Rock-cut installation, Judean hills"
 msgstr "Установка, вырубленная в скале, Иудейские горы"
 
-#: archaeology_strings.py:298
-msgid ""
-"A winepress hewn from the bedrock: an upper floor where grapes were trodden "
-"underfoot, and a lower vat where the juice ran down and gathered. Thousands "
-"dot the hills of the land. Isaiah's song of the vineyard tells of one being "
-"cut. The treading of the press, juice splashing the treader's garments red, "
-"became Scripture's image of both joy and wrath."
-msgstr ""
-"Давильня, высеченная в материковой скале: верхняя площадка, где виноград "
-"топтали ногами, и нижний чан, куда стекал и собирался сок. Тысячи таких "
-"усеивают горы этой земли. Песнь Исаии о винограднике рассказывает, как "
-"высекали одну из них. Топтание точила, когда сок багрит одежды топчущего, "
-"стало в Писании образом и радости, и гнева."
-
 #: archaeology_strings.py:299
 msgid "Judean Scale Weights"
 msgstr "Иудейские весовые гирьки"
@@ -2500,20 +1789,6 @@ msgstr "Иудейские весовые гирьки"
 #: archaeology_strings.py:300
 msgid "Excavated, Judahite sites"
 msgstr "Раскопаны на иудейских городищах"
-
-#: archaeology_strings.py:301
-msgid ""
-"A graded set of polished limestone weights for the balance scale, several "
-"inscribed with their value: the shekel and its fractions, the beka, the pim. "
-"The standards were never quite uniform, which is why the Law returns so "
-"often to honest weights, and why a 'just balance' and a hidden 'bag of "
-"deceitful weights' could stand for righteousness and fraud themselves."
-msgstr ""
-"Набор ступенчатых полированных известняковых гирек для весов, на нескольких "
-"обозначен их вес: сикль и его доли, бека, пим. Стандарты никогда не были "
-"вполне единообразны — вот почему Закон так часто возвращается к честным "
-"весам и почему «верные весы» и припрятанная «сума с обманчивыми гирями» "
-"могли означать саму праведность и сам обман."
 
 #: archaeology_strings.py:302
 msgid "A Collared-Rim Storage Jar"
@@ -2535,20 +1810,6 @@ msgstr "выставлен в древнем Силоме"
 msgid "Excavated at Shiloh"
 msgstr "Раскопан в Силоме"
 
-#: archaeology_strings.py:307
-msgid ""
-"A large collared-rim storage jar: the heavy pithos, named for the ridge at "
-"its neck, that became a hallmark of the new highland villages of the early "
-"Iron Age, the world of the settlement and the judges. This one comes from "
-"Shiloh, where the tabernacle stood and the boy Samuel served; jars like it "
-"held the grain, oil, and wine of a household's year."
-msgstr ""
-"Большой сосуд для припасов с воротничковым венчиком: тяжёлый пифос, "
-"названный по валику на горле, ставший приметой новых нагорных селений "
-"раннего железного века — мира заселения земли и судей. Этот происходит из "
-"Силома, где стояла скиния и служил отрок Самуил; в таких сосудах держали "
-"зерно, масло и вино на год для целого дома."
-
 #: archaeology_strings.py:308
 msgid "An LMLK Seal Impression"
 msgstr "Оттиск печати LMLK"
@@ -2556,21 +1817,6 @@ msgstr "Оттиск печати LMLK"
 #: archaeology_strings.py:309
 msgid "Excavated; thousands known across Judah"
 msgstr "Раскопаны; известны тысячи по всей Иудее"
-
-#: archaeology_strings.py:310
-msgid ""
-"A jar handle stamped before firing with a royal seal: a four-winged beetle, "
-"the paleo-Hebrew letters l-m-l-k ('belonging to the king') above, and a town "
-"name below. Thousands are known, almost all from the years around Hezekiah's "
-"reign. They mark a royal system of storage jars, most likely provisioning "
-"Judah's towns against the Assyrian onslaught the Bible records him preparing "
-"for."
-msgstr ""
-"Ручка сосуда, оттиснутая до обжига царской печатью: четырёхкрылый жук, над "
-"ним палеоеврейские буквы l-m-l-k («принадлежит царю»), под ним — название "
-"города. Известны тысячи, почти все из лет около царствования Езекии. Они "
-"отмечают царскую систему сосудов-хранилищ, скорее всего снабжавшую города "
-"Иудеи перед ассирийским натиском, к которому, по Библии, Езекия готовился."
 
 #: archaeology_strings.py:311
 msgid "A Herodian Oil Lamp"
@@ -2583,19 +1829,6 @@ msgstr "Музей Майкла Карлоса, Атланта"
 #: archaeology_strings.py:313
 msgid "Common Herodian-period type"
 msgstr "Обычный тип иродианского времени"
-
-#: archaeology_strings.py:314
-msgid ""
-"The small wheel-made lamp of the New Testament age, with a short nozzle for "
-"the wick and a wide hole for the oil. Lamps like this lit the houses of "
-"Jesus' day: the lamp set on a stand, not under a basket; the lamp a woman "
-"lights to sweep her house in search of one lost coin."
-msgstr ""
-"Маленький светильник новозаветной поры, сделанный на круге, с коротким "
-"носиком для фитиля и широким отверстием для масла. Такие светильники "
-"освещали дома времён Иисуса: светильник, который ставят на подсвечнике, а не "
-"под сосудом; светильник, который зажигает женщина, чтобы мести дом в поисках "
-"одной потерянной монеты."
 
 #: archaeology_strings.py:315
 msgid ""
@@ -6819,10 +6052,6 @@ msgstr ""
 msgid "No entry found for this date."
 msgstr "На эту дату записей нет."
 
-#: pane.py:2569
-msgid "Related artifact — open in Scripture in Stone"
-msgstr "Связанный артефакт — открыть в «Писании в камне»"
-
 #: pane.py:2570
 msgid "Related artifact"
 msgstr "Связанный артефакт"
@@ -10874,3 +10103,538 @@ msgstr "Показать все на Линии"
 #, python-brace-format
 msgid "About {bible}"
 msgstr "Подробнее: {bible}"
+
+msgid "The Creeds"
+msgstr "Символы веры"
+
+msgid "The Apostles' Creed"
+msgstr "Апостольский Символ веры"
+
+msgid "The Nicene Creed"
+msgstr "Никео-Цареградский Символ веры"
+
+msgid "The Athanasian Creed"
+msgstr "Афанасиев Символ веры"
+
+msgid "Same words"
+msgstr "Те же слова"
+
+msgid "Same teaching"
+msgstr "То же учение"
+
+msgid "Foretold"
+msgstr "Предсказано"
+
+msgid "The Apostles', Nicene, Chalcedonian and Athanasian Creeds, each line drawn to the verses it comes from."
+msgstr "Апостольский, Никео-Цареградский, Халкидонский и Афанасиев Символы веры: каждая строка связана со стихами, из которых она взята."
+
+#, python-brace-format
+msgid "{n} link to Scripture"
+msgid_plural "{n} links to Scripture"
+msgstr[0] "{n} связь с Писанием"
+msgstr[1] "{n} связи с Писанием"
+msgstr[2] "{n} связей с Писанием"
+
+msgid "Apostles"
+msgstr "Апостольский"
+
+msgid "Nicene"
+msgstr "Никейский"
+
+msgid "Athanasian"
+msgstr "Афанасиев"
+
+msgid "Pick a line, or move with Up and Down, to follow its threads to the verses it comes from. Pick a book on the strip to light the lines that rest on it."
+msgstr "Выберите строку или пройдите по строкам клавишами Вверх и Вниз, чтобы проследить её нити до стихов, из которых она взята. Выберите книгу на полосе, чтобы выделить строки, которые на неё опираются."
+
+msgid "Heavier: more witnesses"
+msgstr "Толще: больше свидетелей"
+
+msgid "word"
+msgstr "слово"
+
+msgid "Disputed"
+msgstr "Спорно"
+
+#, python-brace-format
+msgid "{n} book"
+msgid_plural "{n} books"
+msgstr[0] "{n} книга"
+msgstr[1] "{n} книги"
+msgstr[2] "{n} книг"
+
+#, python-brace-format
+msgid "{n} disputed line"
+msgid_plural "{n} disputed lines"
+msgstr[0] "{n} спорная строка"
+msgstr[1] "{n} спорные строки"
+msgstr[2] "{n} спорных строк"
+
+msgid "[not in the Greek]"
+msgstr "[нет в греческом тексте]"
+
+msgid "[not in the Latin]"
+msgstr "[нет в латинском тексте]"
+
+#, python-brace-format
+msgid "Verse {n}: {text}"
+msgstr "Стих {n}: {text}"
+
+#, python-brace-format
+msgid "Article {n}: {text}"
+msgstr "Член {n}: {text}"
+
+msgid "(disputed)"
+msgstr "(спорно)"
+
+#, python-brace-format
+msgid "Verse {n} of {total}"
+msgstr "Стих {n} из {total}"
+
+#, python-brace-format
+msgid "Article {n} of {total}"
+msgstr "Член {n} из {total}"
+
+#, python-brace-format
+msgid "Left out: {ref}"
+msgstr "Не приводится: {ref}"
+
+msgid "Open in the Bible"
+msgstr "Открыть в Библии"
+
+msgid "Book"
+msgstr "Книга"
+
+#, python-brace-format
+msgid "{n} link"
+msgid_plural "{n} links"
+msgstr[0] "{n} связь"
+msgstr[1] "{n} связи"
+msgstr[2] "{n} связей"
+
+#, python-brace-format
+msgid "{n} line of the creed"
+msgid_plural "{n} lines of the creed"
+msgstr[0] "{n} строка символа"
+msgstr[1] "{n} строки символа"
+msgstr[2] "{n} строк символа"
+
+#, python-brace-format
+msgid "{book}: {n} link"
+msgid_plural "{book}: {n} links"
+msgstr[0] "{book}: {n} связь"
+msgstr[1] "{book}: {n} связи"
+msgstr[2] "{book}: {n} связей"
+
+msgid "Four creeds, each line drawn to its Scripture"
+msgstr "Четыре символа веры, каждая строка связана с Писанием"
+
+msgid "Said in the creeds"
+msgstr "Сказано в символах веры"
+
+#, python-brace-format
+msgid "In the Apostles' Creed: “{line}”"
+msgstr "В Апостольском Символе веры: «{line}»"
+
+#, python-brace-format
+msgid "In the Nicene Creed: “{line}”"
+msgstr "В Никео-Цареградском Символе веры: «{line}»"
+
+#, python-brace-format
+msgid "In the Athanasian Creed: “{line}”"
+msgstr "В Афанасиевом Символе веры: «{line}»"
+
+msgid "Open it in The Creeds"
+msgstr "Открыть в «Символах веры»"
+
+msgid "God the Father"
+msgstr "Бог Отец"
+
+msgid "God the Son"
+msgstr "Бог Сын"
+
+msgid "God the Holy Ghost"
+msgstr "Бог Дух Святой"
+
+msgid "The faith"
+msgstr "Вера"
+
+msgid "The Trinity"
+msgstr "Троица"
+
+msgid "Christ"
+msgstr "Христос"
+
+msgid "A word the Church chose"
+msgstr "Слово, избранное Церковью"
+
+#, python-brace-format
+msgid "{n} cited by a witness"
+msgid_plural "{n} cited by a witness"
+msgstr[0] "{n} приводит свидетель"
+msgstr[1] "{n} приводят свидетели"
+msgstr[2] "{n} приводят свидетели"
+
+msgid "Old words"
+msgstr "Устаревшие слова"
+
+msgid "Proved by Scripture"
+msgstr "Доказано Писанием"
+
+msgid "Reading the threads"
+msgstr "Как читать нити"
+
+msgid "Show this line"
+msgstr "Показать эту строку"
+
+msgid "The witnesses"
+msgstr "Свидетели"
+
+msgid "Pick a line to begin. Up and Down move between lines; Esc clears the choice."
+msgstr "Выберите строку, чтобы начать. Вверх и Вниз — переход по строкам; Esc снимает выбор."
+
+#, python-brace-format
+msgid "{n} word shared"
+msgid_plural "{n} words shared"
+msgstr[0] "{n} общее слово"
+msgstr[1] "{n} общих слова"
+msgstr[2] "{n} общих слов"
+
+msgid "The words in bold are the ones this verse shares with the creed in its Greek or Latin"
+msgstr "Жирным выделены слова, общие у этого стиха с символом на греческом или латыни"
+
+msgid "Words the Church chose"
+msgstr "Слова, избранные Церковью"
+
+msgid "Not in the New Testament."
+msgstr "Нет в Новом Завете."
+
+msgid "Not in the Latin Bible."
+msgstr "Нет в латинской Библии."
+
+msgid "words"
+msgstr "слова"
+
+msgid "The Chalcedonian Creed"
+msgstr "Халкидонский орос"
+
+#, python-brace-format
+msgid "In the Chalcedonian Creed: “{line}”"
+msgstr "В Халкидонском оросе: «{line}»"
+
+msgid "Chalcedonian"
+msgstr "Халкидонский"
+
+msgid "One and the same Son"
+msgstr "Один и тот же Сын"
+
+msgid "Truly God and truly man"
+msgstr "Истинно Бог и истинно человек"
+
+msgid "In two natures"
+msgstr "В двух естествах"
+
+msgid "As the prophets declared"
+msgstr "Как возвестили пророки"
+
+#, python-brace-format
+msgid "Line {n}: {text}"
+msgstr "Строка {n}: {text}"
+
+#, python-brace-format
+msgid "Line {n} of {total}"
+msgstr "Строка {n} из {total}"
+
+msgid "An Aramaic victory stele, most likely of Hazael of Damascus, naming a king of the “House of David” (bytdwd)."
+msgstr "Арамейская победная стела, скорее всего Азаила Дамасского, называющая царя «дома Давидова» (bytdwd)."
+
+msgid "Some read bytdwd as a place name, since a word divider would usually stand between “house” and “David”."
+msgstr "Некоторые читают bytdwd как название места: между «дом» и «Давид» обычно стоял бы разделитель слов."
+
+msgid "Its restored lines claim the deaths of Joram and Ahaziah, which 2 Kings 9 gives to Jehu."
+msgstr "Восстановленные строки приписывают её автору смерть Иорама и Охозии, которую 4 Царств 9 приписывает Ииую."
+
+msgid "Mesha, king of Moab, tells of his revolt against Israel, naming Omri king of Israel and the God of Israel."
+msgstr "Меша, царь Моава, рассказывает о своём восстании против Израиля, называя Амврия, царя Израильского, и Бога Израилева."
+
+msgid "A later reading (Lemaire, 1994) finds “House of David” in line 31, where this 1919 translation has a gap."
+msgstr "Более позднее прочтение (Лемер, 1994) находит «дом Давидов» в строке 31, где в этом переводе 1919 года пропуск."
+
+msgid "Sennacherib's annals of his campaign of 701 BC against Judah: Hezekiah shut up in Jerusalem, and tribute sent after him to Nineveh."
+msgstr "Летопись Синаххериба о походе 701 г. до н. э. на Иудею: Езекия заперт в Иерусалиме, а дань отправлена вслед за царём в Ниневию."
+
+msgid "2 Kings 18:14 has three hundred talents of silver; the prism, eight hundred. Both have thirty of gold."
+msgstr "В 4 Царств 18:14 — триста талантов серебра, на призме — восемьсот. Золота у обоих тридцать."
+
+msgid "The prism tells of the siege, but not of Jerusalem taken."
+msgstr "Призма рассказывает об осаде, но не о взятии Иерусалима."
+
+msgid "A dedication from Caesarea that names Pontius Pilate, prefect of Judea."
+msgstr "Посвятительная надпись из Кесарии, называющая Понтия Пилата, префекта Иудеи."
+
+msgid "The stone calls him prefect; the Gospels call him governor."
+msgstr "На камне он префект; в Евангелиях — правитель."
+
+msgid "Two silver amulets of about 600 BC, each scratched with the priestly blessing of Numbers 6."
+msgstr "Два серебряных амулета около 600 г. до н. э., на каждом нацарапано священническое благословение из Чисел 6."
+
+msgid "The oldest known copy of words from Scripture, some four centuries older than the Dead Sea Scrolls."
+msgstr "Древнейшая известная запись слов Писания, примерно на четыре века старше Кумранских рукописей."
+
+msgid "Same person"
+msgstr "То же лицо"
+
+msgid "Same place"
+msgstr "То же место"
+
+msgid "Same event"
+msgstr "То же событие"
+
+msgid "Same custom"
+msgstr "Тот же обычай"
+
+msgid "Contested"
+msgstr "Оспаривается"
+
+msgid "On the Apocrypha"
+msgstr "Об апокрифах"
+
+msgid "In Scripture"
+msgstr "В Писании"
+
+msgid "Open it in Scripture in Stone"
+msgstr "Открыть в «Писании в камне»"
+
+msgid "A letter from Abdi-Heba, ruler of Jerusalem, to the pharaoh of Egypt, some three centuries before David."
+msgstr "Письмо Абди-Хебы, правителя Иерусалима, фараону Египта, примерно за три века до Давида."
+
+msgid "He writes the city's name Urusalim."
+msgstr "Имя города он пишет как Урусалим."
+
+msgid "Pharaoh Merneptah's victory hymn, about 1208 BC, naming Israel among the peoples of Canaan."
+msgstr "Победный гимн фараона Мернептаха, около 1208 г. до н. э., называющий Израиль среди народов Ханаана."
+
+msgid "The sign written with “Israel” marks a people, not a place: the earliest mention of Israel outside the Bible."
+msgstr "Знак при слове «Израиль» обозначает народ, а не место: древнейшее упоминание Израиля вне Библии."
+
+msgid "A storage jar incised before firing with the name “Eshbaal son of Beda”, about 1000 BC."
+msgstr "Кувшин для запасов с процарапанным до обжига именем «Ешбаал, сын Беды», около 1000 г. до н. э."
+
+msgid "The same name, not the same man: Saul's son Eshbaal was not Beda's. The name was in use in Saul's day."
+msgstr "То же имя, но не тот же человек: Ешбаал, сын Саула, не сын Беды. Имя было в ходу во дни Саула."
+
+msgid "A six-chambered city gate at Gezer, one of three alike, with Hazor's and Megiddo's."
+msgstr "Шестикамерные городские ворота в Газере — одни из трёх похожих, вместе с воротами Асора и Мегиддо."
+
+msgid "Some date the three gates a century after Solomon."
+msgstr "Некоторые датируют все трое ворот веком позже Соломона."
+
+msgid "A small limestone tablet listing the farming year in early Hebrew letters, 10th century BC."
+msgstr "Небольшая известняковая табличка с перечнем земледельческого года, написанная древнееврейскими буквами, X век до н. э."
+
+msgid "Pharaoh Sheshonq I's relief at Karnak, about 925 BC, listing the towns his army claimed in Canaan."
+msgstr "Рельеф фараона Шешонка I в Карнаке, около 925 г. до н. э., с перечнем городов Ханаана, которые его войско объявило взятыми."
+
+msgid "Jerusalem is not among the names that survive on it."
+msgstr "Иерусалима нет среди уцелевших на нём имён."
+
+msgid "Shalmaneser III's monument of the battle of Qarqar, 853 BC, naming Ahab among the allied kings."
+msgstr "Памятник Салманасара III о битве при Каркаре, 853 г. до н. э., называющий Ахава среди союзных царей."
+
+msgid "A carved ivory inlay from the Assyrian palaces at Nimrud, much of such work Phoenician."
+msgstr "Резная накладка из слоновой кости из ассирийских дворцов Нимруда; многое из такой работы — финикийское."
+
+msgid "Shalmaneser III's obelisk, about 825 BC, showing Jehu of Israel bowed low with his tribute."
+msgstr "Обелиск Салманасара III, около 825 г. до н. э., где Ииуй Израильский склонился до земли со своей данью."
+
+msgid "It calls him “of the land of Omri”: Jehu was no son of Omri, whose line he ended."
+msgstr "Он назван «из страны Амврия»: Ииуй не был сыном Амврия, чей род он пресёк."
+
+msgid "A reconstructed gate of Nineveh with its winged bulls, as they stood before their destruction in 2016."
+msgstr "Восстановленные ворота Ниневии с крылатыми быками — такими, какими они стояли до разрушения в 2016 году."
+
+msgid "A palace relief of Sargon II of Assyria riding to war: the king Isaiah names once."
+msgstr "Дворцовый рельеф: Саргон II Ассирийский едет на войну. Этого царя Исаия называет однажды."
+
+msgid "Some once doubted Sargon had lived; his palace at Khorsabad, found in the 1840s, settled it."
+msgstr "Некогда сомневались, что Саргон существовал; его дворец в Хорсабаде, найденный в 1840-х, решил спор."
+
+msgid "Sennacherib's palace reliefs of his siege and capture of Lachish, 701 BC."
+msgstr "Дворцовые рельефы Сеннахирима об осаде и взятии Лахиса, 701 г. до н. э."
+
+msgid "The inscription in Hezekiah's tunnel, telling how its two crews of diggers met."
+msgstr "Надпись в туннеле Езекии о том, как встретились две бригады землекопов."
+
+msgid "A clay sealing stamped with King Hezekiah's seal, from the Ophel dig by the Temple Mount, published in 2015."
+msgstr "Глиняная печать с оттиском печати царя Езекии из раскопок Офела у Храмовой горы, опубликованная в 2015 году."
+
+msgid "The lintel of a rock-cut tomb in Silwan, of a royal steward whose name and title fit Shebna."
+msgstr "Перемычка высеченной в скале гробницы в Силуане — гробницы царского домоправителя, чьё имя и звание подходят Севне."
+
+msgid "The name is broken: “…yahu”. His title on the lintel, “over the house”, is the one Isaiah gives Shebna."
+msgstr "Имя повреждено: «…ягу». Его звание на перемычке, «начальствующий над домом», — то самое, что Исаия даёт Севне."
+
+msgid "A tablet of the Babylonian Chronicle recording Nebuchadnezzar's capture of “the city of Judah” in 597 BC."
+msgstr "Табличка Вавилонской хроники о взятии Навуходоносором «города Иудеи» в 597 г. до н. э."
+
+msgid "It gives the day, the second of Adar, and tells of a king seized and another set in his place."
+msgstr "Она называет день — второе адара — и говорит, что царь был схвачен, а на его место поставлен другой."
+
+msgid "Letters in ink on potsherds from the gate of Lachish, written as Babylon closed on Judah."
+msgstr "Письма чернилами на черепках из ворот Лахиса, написанные, когда Вавилон смыкал кольцо вокруг Иудеи."
+
+msgid "In one the writer can no longer see the signals of Azekah."
+msgstr "В одном из них писавший уже не видит сигналов Азека."
+
+msgid "A dragon of Marduk in glazed brick from the Ishtar Gate of Nebuchadnezzar's Babylon."
+msgstr "Дракон Мардука из глазурованного кирпича с ворот Иштар Вавилона Навуходоносора."
+
+msgid "A clay cylinder of Nabonidus, last king of Babylon, closing with a prayer for his son Belshazzar."
+msgstr "Глиняный цилиндр Набонида, последнего царя Вавилона, завершённый молитвой о сыне Валтасаре."
+
+msgid "Belshazzar ruled for his absent father, which may be why Daniel could be made only third ruler."
+msgstr "Валтасар правил за отсутствующего отца — быть может, поэтому Даниил мог стать лишь третьим властелином."
+
+msgid "Cyrus of Persia's proclamation after he took Babylon in 539 BC."
+msgstr "Воззвание Кира Персидского после взятия им Вавилона в 539 г. до н. э."
+
+msgid "It names no Jews: it shows the policy Ezra records, not his decree."
+msgstr "Иудеи в нём не названы: он показывает политику, о которой пишет Ездра, а не сам указ."
+
+msgid "Darius the Great's record of his rise, carved on a cliff in Iran in three languages."
+msgstr "Повесть Дария Великого о его восхождении, высеченная на скале в Иране на трёх языках."
+
+msgid "A stele with letters of Seleucus IV and his minister Heliodorus, 178 BC."
+msgstr "Стела с письмами Селевка IV и его сановника Илиодора, 178 г. до н. э."
+
+msgid "Second Maccabees tells of Heliodorus sent to seize the Temple's treasury."
+msgstr "Вторая книга Маккавейская рассказывает, как Илиодора послали захватить сокровищницу Храма."
+
+msgid "A small bronze coin of John Hyrcanus, the Hasmonean priest-ruler, 135–104 BC."
+msgstr "Маленькая бронзовая монета Иоанна Гиркана, хасмонейского первосвященника и правителя, 135–104 гг. до н. э."
+
+msgid "A column of the Great Isaiah Scroll from Qumran, about 125 BC, at the song of the suffering servant."
+msgstr "Столбец Большого свитка Исаии из Кумрана, около 125 г. до н. э., на песни о страждущем рабе."
+
+msgid "It is a thousand years older than the oldest Hebrew copies of Isaiah known before 1947."
+msgstr "Он на тысячу лет старше древнейших еврейских списков Исаии, известных до 1947 года."
+
+msgid "A carved limestone bone box from a Jerusalem tomb, found in 1990."
+msgstr "Резной известняковый оссуарий из иерусалимской гробницы, найденный в 1990 году."
+
+msgid "A few question the identification; the name and the priestly family are not in doubt."
+msgstr "Некоторые оспаривают отождествление; имя и священнический род сомнений не вызывают."
+
+msgid "The excavated twin pool north of the Temple area, once ringed with porticoes."
+msgstr "Раскопанный двойной водоём к северу от храмовой площади, некогда окружённый портиками."
+
+msgid "Scholars still debate how its layout matches John's five porches."
+msgstr "Учёные всё ещё спорят, как его устройство соотносится с пятью притворами у Иоанна."
+
+msgid "The stepped edge of the Pool of Siloam, uncovered in 2004 below the City of David."
+msgstr "Ступенчатый край купальни Силоам, открытый в 2004 году ниже Города Давида."
+
+msgid "A Greek warning from the Temple's barrier, forbidding Gentiles to pass it on pain of death."
+msgstr "Греческое предупреждение с ограды Храма, запрещавшее язычникам проходить за неё под страхом смерти."
+
+msgid "Many hear it behind Ephesians 2:14, “the middle wall of partition”."
+msgstr "Многие слышат её за словами Ефесянам 2:14 о «стоявшей посреди преграде»."
+
+msgid "A silver denarius of the emperor Tiberius, the coin of the Gospels' question of tribute."
+msgstr "Серебряный денарий императора Тиверия — монета евангельского вопроса о подати."
+
+msgid "Some think the coin shown Jesus more likely a local tetradrachm with Tiberius' head."
+msgstr "Некоторые считают, что Иисусу скорее показали местную тетрадрахму с головой Тиверия."
+
+msgid "Rome's arch to Titus, with a relief of the Temple's spoils carried in his triumph after AD 70."
+msgstr "Римская арка Тита с рельефом храмовой добычи, пронесённой в его триумфе после 70 г."
+
+msgid "A Roman coin struck across the empire after AD 70 to mark the fall of Judea."
+msgstr "Римская монета, чеканившаяся по всей империи после 70 г. в память падения Иудеи."
+
+msgid "Its legend means “Judea captured”."
+msgstr "Надпись означает «Иудея покорена»."
+
+msgid "The forum of Philippi, the Roman colony where Paul founded his first church in Europe."
+msgstr "Форум Филипп — римской колонии, где Павел основал свою первую церковь в Европе."
+
+msgid "Mars Hill, below the Acropolis of Athens, where the city's council met."
+msgstr "Холм Ареса под Афинским акрополем, где собирался совет города."
+
+msgid "The raised platform in Corinth's forum from which Roman officials gave judgment."
+msgstr "Возвышение на форуме Коринфа, с которого римские власти вершили суд."
+
+msgid "An inscription at Delphi dates Gallio's office: the firmest date in Paul's journeys."
+msgstr "Надпись в Дельфах датирует правление Галлиона — самую твёрдую дату в путешествиях Павла."
+
+msgid "The great theatre of Ephesus, which held some 25,000 people."
+msgstr "Большой театр Ефеса, вмещавший около 25 000 человек."
+
+msgid "One re-erected column marks the Temple of Artemis at Ephesus, a wonder of the ancient world."
+msgstr "Одна восстановленная колонна отмечает храм Артемиды Эфесской — одно из чудес древнего мира."
+
+msgid "A paving stone by Corinth's theatre naming Erastus, who laid it at his own expense as aedile."
+msgstr "Плита мостовой у театра Коринфа с именем Ераста, уложившего её на свои средства как эдил."
+
+msgid "Its date is disputed, and so is whether this Erastus is Paul's."
+msgstr "Её дата спорна, как и то, тот ли это Ераст, что у Павла."
+
+msgid "The mound of ancient Jericho, among the oldest towns on earth; its stone tower is millennia older than Joshua."
+msgstr "Холм древнего Иерихона, одного из древнейших городов земли; его каменная башня на тысячелетия старше Иисуса Навина."
+
+msgid "The dating of its fallen walls is much debated: Garstang placed them about 1400 BC, Kenyon about 1550."
+msgstr "Датировка его рухнувших стен сильно спорна: Гарстанг относил её к 1400 г. до н. э., Кеньон — к 1550."
+
+msgid "Hazor, the largest mound in the land, with a burnt Canaanite city beneath an Israelite one."
+msgstr "Асор, крупнейший холм-телль страны: сожжённый ханаанский город под израильским."
+
+msgid "The chambered gate of Megiddo, the fortress guarding the pass into the Jezreel Valley."
+msgstr "Камерные ворота Мегиддо — крепости, стерёгшей проход в Изреельскую долину."
+
+msgid "Whether the gate is Solomon's is debated. The hill, Har Megiddo, gives Armageddon its name."
+msgstr "Спорно, Соломоновы ли это ворота. Холм Хар-Мегиддо дал имя Армагеддону."
+
+msgid "The desert fortress of Arad, with one of the very few Israelite shrines yet excavated."
+msgstr "Пустынная крепость Арад с одним из немногих раскопанных израильских святилищ."
+
+msgid "Its altar seems to have gone out of use in a reform like Hezekiah's."
+msgstr "Его жертвенник, похоже, вышел из употребления при реформе, подобной реформе Езекии."
+
+msgid "Herodian stones of the Western Wall, part of Herod's retaining wall for the Temple platform."
+msgstr "Иродовы камни Западной стены — часть подпорной стены Ирода вокруг храмовой площадки."
+
+msgid "The limestone synagogue of Capernaum, 4th–5th century, on basalt foundations dated to the 1st."
+msgstr "Известняковая синагога Капернаума, IV–V века, на базальтовом основании, датируемом I веком."
+
+msgid "Whether the basalt foundations are the synagogue of Jesus' day is debated."
+msgstr "Спорно, принадлежит ли базальтовое основание синагоге дней Иисуса."
+
+msgid "A clay figurine of a woman, of a kind found by hundreds in Judahite houses, 8th–7th century BC."
+msgstr "Глиняная женская статуэтка — такие сотнями находят в иудейских домах, VIII–VII века до н. э."
+
+msgid "Their meaning is debated: fertility, protection, or a goddess."
+msgstr "Их смысл спорен: плодородие, защита или богиня."
+
+msgid "A wheel-made saucer lamp with one edge pinched for the wick, about 900 BC."
+msgstr "Гончарная лампа-блюдце с защипнутым для фитиля краем, около 900 г. до н. э."
+
+msgid "A full-size reconstruction of the four-room house, the common Israelite dwelling."
+msgstr "Реконструкция в натуральную величину «четырёхкомнатного дома» — обычного израильского жилища."
+
+msgid "A winepress cut in the bedrock: a floor for treading above, a vat below."
+msgstr "Точило, высеченное в скале: площадка для топтания сверху, чан внизу."
+
+msgid "A graded set of limestone balance weights, some inscribed with their value."
+msgstr "Набор известняковых гирь для весов, некоторые с надписанным весом."
+
+msgid "The pim weight explains 1 Samuel 13:21, where the KJV, not knowing the word, has “a file”."
+msgstr "Гиря «пим» объясняет 1 Царств 13:21, где английская KJV, не зная слова, пишет «напильник»."
+
+msgid "A collared-rim storage jar from Shiloh, of the early Iron Age."
+msgstr "Кувшин для запасов с «воротником» из Силома, ранний железный век."
+
+msgid "A jar handle stamped with the royal LMLK seal and a town's name, about 700 BC."
+msgstr "Ручка кувшина с оттиском царской печати LMLK и названием города, около 700 г. до н. э."
+
+msgid "The small wheel-made lamp of the New Testament age."
+msgstr "Небольшая гончарная лампа новозаветной поры."

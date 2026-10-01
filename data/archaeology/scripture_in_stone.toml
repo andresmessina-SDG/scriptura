@@ -89,8 +89,18 @@ place = "Tell el-Amarna, Egypt"
 date = "14th century BC"
 holding = "Vorderasiatisches Museum, Berlin"
 credit = "photo Osama S. M. Amin · CC BY-SA 4.0"
-caption = "A cuneiform letter from Abdi-Heba, the ruler of Jerusalem, to the Egyptian pharaoh, written some three centuries before David. It is among the earliest references to Jerusalem (as 'Urusalim'), and shows the city as a small Canaanite kingdom under Egyptian oversight: the world into which Israel would later come."
-refs = [ { book = "Joshua", chapter = 10, verse = 1 } ]
+fact = "A letter from Abdi-Heba, ruler of Jerusalem, to the pharaoh of Egypt, some three centuries before David."
+refs = [
+  { book = "Joshua", chapter = 10, verse = 1, kind = "place" },
+]
+notes = [
+  "He writes the city's name Urusalim.",
+]
+
+[[entry.quote]]
+source = "rogers"
+cite = "A letter of Abdi-Khiba of Jerusalem, tr. R. W. Rogers, Cuneiform Parallels to the Old Testament (1912)"
+text = "Behold this land of Jerusalem, — neither my father nor my mother gave it to me; the strong arm of the king gave it to me."
 
 [[entry]]
 chapter = "before-israel"
@@ -104,10 +114,23 @@ place = "Thebes, Egypt"
 date = "c. 1208 BC"
 holding = "Egyptian Museum, Cairo"
 credit = "photo Webscribe · CC BY-SA 3.0"
-caption = "A victory stele of the pharaoh Merneptah, listing peoples his armies claimed to have defeated in Canaan. Among them, in hieroglyphs, is the name 'Israel,' marked as a people rather than a place. It is the earliest mention of Israel found outside the Bible, and places a people called Israel in Canaan by about 1200 BC, in the era of the Judges."
-refs = [ { book = "Judges", chapter = 2, verse = 16 } ]
+fact = "Pharaoh Merneptah's victory hymn, about 1208 BC, naming Israel among the peoples of Canaan."
+refs = [
+  { book = "Judges", chapter = 1, verse = 18, kind = "place" },
+  { book = "Judges", chapter = 1, verse = 29, kind = "place" },
+]
 
 # ── The United Monarchy ──────────────────────────────────────────────────────
+notes = [
+  "The sign written with “Israel” marks a people, not a place: the earliest mention of Israel outside the Bible.",
+]
+
+[[entry.quote]]
+source = "breasted3"
+cite = "The Merneptah Stele, tr. J. H. Breasted, Ancient Records of Egypt III (1906), his transliterations left out"
+text = "Carried off is Askalon. Seized upon is Gezer, Yenoam is made as a thing not existing. Israel is desolated, his seed is not; Palestine has become a widow for Egypt."
+pieces = [ "Carried off is Askalon", "Seized upon is Gezer", "Yenoam", "is made as a thing not existing", "Israel", "is desolated, his seed is not", "Palestine", "has become a widow" ]
+
 [[entry]]
 chapter = "united-monarchy"
 image = "tel_dan.jpg"
@@ -121,10 +144,17 @@ place = "Tel Dan, northern Israel"
 date = "9th century BC"
 holding = "Israel Museum, Jerusalem"
 credit = "photo Oren Rozen · CC BY-SA 4.0"
-caption = "A fragmentary basalt victory stele, written in Aramaic, set up by a king of Aram-Damascus. Its lines boast of defeating a 'king of Israel' and a king of the 'House of David' (bytdwd). It is the earliest reference outside the Bible to David's dynasty: a witness that the line of David was remembered as a real royal house within about a century and a half of his reign."
+fact = "An Aramaic victory stele, most likely of Hazael of Damascus, naming a king of the “House of David” (bytdwd)."
 refs = [
-  { book = "2 Samuel", chapter = 7, verse = 16 },
-  { book = "1 Kings", chapter = 15, verse = 20 },
+  { book = "2 Samuel", chapter = 7, verse = 16, kind = "person" },
+  { book = "1 Kings", chapter = 15, verse = 20, kind = "place" },
+  { book = "2 Kings", chapter = 8, verse = 28, kind = "person" },
+  { book = "2 Kings", chapter = 9, verse = 24, kind = "event" },
+]
+contested = true
+notes = [
+  "Some read bytdwd as a place name, since a word divider would usually stand between “house” and “David”.",
+  "Its restored lines claim the deaths of Joram and Ahaziah, which 2 Kings 9 gives to Jehu.",
 ]
 
 [[entry]]
@@ -139,8 +169,13 @@ place = "Khirbet Qeiyafa, Judah"
 date = "c. 1000 BC"
 holding = "Israel Antiquities Authority"
 credit = "photo SalemOptix · CC0"
-caption = "A large storage jar from a fortified Judahite town, incised before firing with the name 'Eshbaal son of Beda' in early alphabetic script. Eshbaal is a rare name (its only biblical bearer is a son of King Saul), and the inscription shows it in use, and Judahites writing, in the very era the Bible assigns to Saul and David."
-refs = [ { book = "1 Chronicles", chapter = 8, verse = 33 } ]
+fact = "A storage jar incised before firing with the name “Eshbaal son of Beda”, about 1000 BC."
+refs = [
+  { book = "1 Chronicles", chapter = 8, verse = 33, kind = "custom" },
+]
+notes = [
+  "The same name, not the same man: Saul's son Eshbaal was not Beda's. The name was in use in Saul's day.",
+]
 
 [[entry]]
 chapter = "united-monarchy"
@@ -155,8 +190,14 @@ place = "Tel Gezer"
 date = "10th century BC (debated)"
 holding = "in situ"
 credit = "photo Ian Scott · CC BY-SA 2.0"
-caption = "A monumental city gate at Gezer, one of three nearly identical gates (with Hazor and Megiddo) long linked to a single royal building programme: the cities First Kings says Solomon fortified. The dating is debated, some placing the gates a little later, but they attest a kingdom building on a substantial, centralised scale."
-refs = [ { book = "1 Kings", chapter = 9, verse = 15 } ]
+fact = "A six-chambered city gate at Gezer, one of three alike, with Hazor's and Megiddo's."
+refs = [
+  { book = "1 Kings", chapter = 9, verse = 15, kind = "event" },
+]
+contested = true
+notes = [
+  "Some date the three gates a century after Solomon.",
+]
 
 [[entry]]
 chapter = "united-monarchy"
@@ -170,10 +211,20 @@ place = "Gezer"
 date = "10th century BC"
 holding = "Istanbul Archaeology Museums"
 credit = "photo Ana al'ain · CC BY-SA 3.0"
-caption = "A small limestone tablet inscribed with a list of the agricultural year: months of sowing, harvest, and pruning. Written in early Hebrew letters, it is among the oldest known texts in the language of the Bible, from the century the Scriptures assign to Solomon, who is said to have rebuilt Gezer."
-refs = [ { book = "1 Kings", chapter = 9, verse = 17 } ]
+fact = "A small limestone tablet listing the farming year in early Hebrew letters, 10th century BC."
+refs = [
+  { book = "Exodus", chapter = 9, verse = 31, kind = "custom" },
+  { book = "Ruth", chapter = 1, verse = 22, kind = "custom" },
+  { book = "1 Kings", chapter = 9, verse = 17, kind = "place" },
+]
 
 # ── The Kingdom Divided ──────────────────────────────────────────────────────
+
+[[entry.quote]]
+source = "macalister2"
+cite = "The Gezer Calendar, tr. R. A. S. Macalister, The Excavation of Gezer (1912)"
+text = "Month of the fruit-harvest — Month of the sowing — Month of the after-grass — Month of the flax-harvest — Month of the barley-harvest — Month of the harvest of all [the rest] — Month of the pruning of vine-plants — Month of the fig-harvest —"
+
 [[entry]]
 chapter = "divided"
 image = "shishak.jpg"
@@ -186,8 +237,20 @@ place = "Karnak, Egypt"
 date = "c. 925 BC"
 holding = "in situ"
 credit = "photo Neithsabes · CC BY-SA 3.0"
-caption = "On the temple wall at Karnak, the pharaoh Sheshonq I left a relief of his campaign into Canaan, with a long list of the towns his army claimed. Sheshonq is widely identified with the biblical Shishak, who, the Bible says, marched against Jerusalem in the fifth year of Rehoboam and carried off the treasures of the Temple."
-refs = [ { book = "1 Kings", chapter = 14, verse = 25 } ]
+fact = "Pharaoh Sheshonq I's relief at Karnak, about 925 BC, listing the towns his army claimed in Canaan."
+refs = [
+  { book = "Joshua", chapter = 17, verse = 11, kind = "place" },
+  { book = "1 Kings", chapter = 14, verse = 25, kind = "event" },
+  { book = "2 Chronicles", chapter = 12, verse = 2, kind = "event" },
+]
+notes = [
+  "Jerusalem is not among the names that survive on it.",
+]
+
+[[entry.quote]]
+source = "breasted4"
+cite = "J. H. Breasted, Ancient Records of Egypt IV (1906), on the list"
+text = "…the list then proceeds with towns of Israel in the Kishon valley and vicinity: … Taanach … Shunem … Bethshean … Rehob … Gibeon …"
 
 [[entry]]
 chapter = "divided"
@@ -202,8 +265,33 @@ place = "Dibon, Moab"
 date = "c. 840 BC"
 holding = "Louvre, Paris"
 credit = "photo Mbzt · CC BY-SA 4.0"
-caption = "A black basalt victory stele set up by Mesha, king of Moab, recounting his rebellion against Israel. It names 'Omri king of Israel' and his dynasty, and the God of Israel by the name YHWH; by a contested reading it may also name the 'House of David.' Second Kings tells the same revolt of Mesha from Israel's side."
-refs = [ { book = "2 Kings", chapter = 3, verse = 4 } ]
+fact = "Mesha, king of Moab, tells of his revolt against Israel, naming Omri king of Israel and the God of Israel."
+refs = [
+  { book = "Numbers", chapter = 32, verse = 34, kind = "place" },
+  { book = "1 Kings", chapter = 16, verse = 23, kind = "person" },
+  { book = "2 Kings", chapter = 3, verse = 4, kind = "person" },
+  { book = "2 Kings", chapter = 3, verse = 5, kind = "event" },
+]
+contested = true
+notes = [
+  "A later reading (Lemaire, 1994) finds “House of David” in line 31, where this 1919 translation has a gap.",
+]
+
+[[entry.quote]]
+source = "compston_mesha"
+cite = "The Mesha Stele, lines 4–6, tr. H. F. B. Compston (1919)"
+text = "ʿOmrî was king of Yisrāʾēl, and he afflicted Mōʾāḇ days many, for Kemôš was angry with his land. And his son succeeded him, and he too said I will afflict Mōʾāḇ."
+
+[[entry.quote]]
+source = "compston_mesha"
+cite = "The Mesha Stele, line 10, tr. Compston"
+text = "Now the men of Gaḏ had dwelt in the land of ʿǎṭarôṯ from of old…"
+
+[[entry.quote]]
+source = "compston_mesha"
+cite = "The Mesha Stele, lines 14 and 17–18, tr. Compston"
+text = "And Kemôš said unto me Go, seize Neḇôh against Yisrāʾēl… And I took from thence the [vessels] of Yahweh, and dragged them before Kemôš."
+pieces = [ "And Kemôš said unto me Go, seize Neḇôh against Yisrāʾēl", "And I took from thence the [ves-]", "sels of Yahweh, and dragged them before Kemôš." ]
 
 [[entry]]
 chapter = "divided"
@@ -217,8 +305,16 @@ place = "Üçtepe (Diyarbakır), Turkey"
 date = "c. 853 BC"
 holding = "British Museum, London"
 credit = "photo Osama S. M. Amin · CC BY-SA 4.0"
-caption = "A monument of the Assyrian king Shalmaneser III recording his campaigns, including the battle of Qarqar in 853 BC against a coalition of western kings. Among the allies it lists 'Ahab the Israelite,' credited with two thousand chariots: the earliest Assyrian mention of a named king of Israel, who reigns through much of First Kings."
-refs = [ { book = "1 Kings", chapter = 16, verse = 29 } ]
+fact = "Shalmaneser III's monument of the battle of Qarqar, 853 BC, naming Ahab among the allied kings."
+refs = [
+  { book = "1 Kings", chapter = 16, verse = 29, kind = "person" },
+  { book = "1 Kings", chapter = 20, verse = 34, kind = "event" },
+]
+
+[[entry.quote]]
+source = "rogers"
+cite = "The Kurkh Monolith, tr. R. W. Rogers, Cuneiform Parallels to the Old Testament (1912)"
+text = "…two thousand chariots, ten thousand men of Ahab, the Israelite…"
 
 [[entry]]
 chapter = "divided"
@@ -232,8 +328,12 @@ place = "Nimrud (Kalhu), Assyria"
 date = "9th–8th century BC"
 holding = "Metropolitan Museum of Art"
 credit = "Metropolitan Museum of Art · CC0"
-caption = "A finely carved ivory furniture inlay from the Assyrian palaces at Nimrud, where such pieces (much of it Phoenician work, gathered as tribute) survive by the hundred. Ivories like these give substance to the Bible's notice of the 'house of ivory' that Ahab built, and the prophets' rebukes of those who lounged on 'beds of ivory.'"
-refs = [ { book = "1 Kings", chapter = 22, verse = 39 } ]
+fact = "A carved ivory inlay from the Assyrian palaces at Nimrud, much of such work Phoenician."
+refs = [
+  { book = "1 Kings", chapter = 22, verse = 39, kind = "custom" },
+  { book = "Amos", chapter = 3, verse = 15, kind = "custom" },
+  { book = "Amos", chapter = 6, verse = 4, kind = "custom" },
+]
 
 [[entry]]
 chapter = "divided"
@@ -248,13 +348,22 @@ place = "Nimrud (Kalhu), Assyria"
 date = "c. 825 BC"
 holding = "British Museum, London"
 credit = "photo Gary Todd · CC0"
-caption = "A black limestone monument recording the campaigns of the Assyrian king Shalmaneser III. One register shows a figure bowing to bring tribute. The cuneiform above names him 'Jehu, son of Omri': in Assyrian usage, a king of the land of Omri, that is, Israel. It is the only known contemporary image of an Israelite monarch, set against the heavy Assyrian pressure the Bible records in Jehu's day."
+fact = "Shalmaneser III's obelisk, about 825 BC, showing Jehu of Israel bowed low with his tribute."
 refs = [
-  { book = "2 Kings", chapter = 9, verse = 2 },
-  { book = "2 Kings", chapter = 10, verse = 31 },
+  { book = "2 Kings", chapter = 9, verse = 2, kind = "person" },
+  { book = "2 Kings", chapter = 10, verse = 11, kind = "event" },
 ]
 
 # ── Judah, Assyria, and Nineveh ──────────────────────────────────────────────
+notes = [
+  "It calls him “of the land of Omri”: Jehu was no son of Omri, whose line he ended.",
+]
+
+[[entry.quote]]
+source = "rogers"
+cite = "The Black Obelisk, the legend above the relief, tr. R. W. Rogers, Cuneiform Parallels to the Old Testament (1912)"
+text = "Tribute of Jehu, of the land of Omri: silver (and) gold, a bowl (?) of gold, a basin (?) of gold, cups (?) of gold, pails of gold, bars of lead…"
+
 [[entry]]
 chapter = "judah"
 image = "nineveh_lamassu.jpg"
@@ -268,8 +377,11 @@ place = "Nineveh (Mosul), Iraq"
 date = "8th–7th century BC"
 holding = "in situ (destroyed 2016)"
 credit = "photo Photonashwan · CC BY-SA 4.0"
-caption = "A reconstructed gate of Nineveh, flanked by the colossal human-headed winged bulls (lamassu) that guarded the Assyrian capital. Nineveh has a large place in Scripture: the city Jonah was sent to, and whose violence Nahum condemned. The ancient gate and its bulls were destroyed in 2016; this records them as they stood."
-refs = [ { book = "Jonah", chapter = 3, verse = 3 } ]
+fact = "A reconstructed gate of Nineveh with its winged bulls, as they stood before their destruction in 2016."
+refs = [
+  { book = "Jonah", chapter = 3, verse = 3, kind = "place" },
+  { book = "Nahum", chapter = 3, verse = 1, kind = "place" },
+]
 
 [[entry]]
 chapter = "judah"
@@ -284,8 +396,19 @@ place = "Khorsabad (Dur-Sharrukin)"
 date = "c. 710 BC"
 holding = "Iraq Museum, Baghdad"
 credit = "photo Osama S. M. Amin · CC BY-SA 4.0"
-caption = "A palace relief of the Assyrian king Sargon II riding to war. Sargon claimed the conquest of Samaria and deported the northern kingdom. The Bible names him only once, in Isaiah, and with few other records to go on, some scholars once doubted he had existed. His palace at Khorsabad, unearthed in the 1840s, settled the question."
-refs = [ { book = "Isaiah", chapter = 20, verse = 1 } ]
+fact = "A palace relief of Sargon II of Assyria riding to war: the king Isaiah names once."
+refs = [
+  { book = "2 Kings", chapter = 17, verse = 6, kind = "event" },
+  { book = "Isaiah", chapter = 20, verse = 1, kind = "event" },
+]
+notes = [
+  "Some once doubted Sargon had lived; his palace at Khorsabad, found in the 1840s, settled it.",
+]
+
+[[entry.quote]]
+source = "rogers"
+cite = "Sargon's annals, on Ashdod, tr. R. W. Rogers, Cuneiform Parallels to the Old Testament (1912)"
+text = "Azuri, king of Ashdod, planned in his heart to bring no more tribute, and sent to the kings of his neighborhood to stir up enmity against Assyria… I marched against Ashdod."
 
 [[entry]]
 chapter = "judah"
@@ -300,10 +423,11 @@ place = "Palace of Sennacherib, Nineveh"
 date = "c. 700–692 BC"
 holding = "British Museum, London"
 credit = "photo Osama S. M. Amin · CC BY-SA 4.0"
-caption = "Carved gypsum panels from Sennacherib's palace, depicting in documentary detail the Assyrian siege and capture of the Judahite fortress city of Lachish in 701 BC: siege ramps, archers, and files of captives carrying their belongings into exile. The Bible records the same campaign, when Sennacherib 'came up against all the fortified cities of Judah and took them.'"
+fact = "Sennacherib's palace reliefs of his siege and capture of Lachish, 701 BC."
 refs = [
-  { book = "2 Kings", chapter = 18, verse = 13 },
-  { book = "2 Chronicles", chapter = 32, verse = 9 },
+  { book = "2 Kings", chapter = 18, verse = 13, kind = "event" },
+  { book = "2 Kings", chapter = 18, verse = 14, kind = "place" },
+  { book = "2 Chronicles", chapter = 32, verse = 9, kind = "event" },
 ]
 
 [[entry]]
@@ -319,8 +443,32 @@ place = "Nineveh"
 date = "c. 691 BC"
 holding = "British Museum, London"
 credit = "photo David Castor · public domain"
-caption = "A six-sided clay prism inscribed with the annals of Sennacherib. It records his campaign of 701 BC against Judah, boasting that he shut up Hezekiah 'like a bird in a cage' in Jerusalem, yet tellingly it never claims to have taken the city. Second Kings tells of the same siege, and of Jerusalem's deliverance."
-refs = [ { book = "2 Kings", chapter = 18, verse = 17 } ]
+fact = "Sennacherib's annals of his campaign of 701 BC against Judah: Hezekiah shut up in Jerusalem, and tribute sent after him to Nineveh."
+refs = [
+  { book = "2 Kings", chapter = 18, verse = 13, kind = "event" },
+  { book = "2 Kings", chapter = 18, verse = 14, kind = "event" },
+  { book = "2 Kings", chapter = 19, verse = 36, kind = "event" },
+  { book = "Isaiah", chapter = 36, verse = 1, kind = "event" },
+]
+notes = [
+  "2 Kings 18:14 has three hundred talents of silver; the prism, eight hundred. Both have thirty of gold.",
+  "The prism tells of the siege, but not of Jerusalem taken.",
+]
+
+[[entry.quote]]
+source = "rogers"
+cite = "The Taylor Prism, col. III, tr. R. W. Rogers, Cuneiform Parallels to the Old Testament (1912)"
+text = "And of Hezekiah, the Judaean, who had not submitted to my yoke, forty-six strong cities, with walls, the smaller cities which were around them, without number … I besieged and captured them."
+
+[[entry.quote]]
+source = "rogers"
+cite = "The Taylor Prism, col. III, tr. Rogers"
+text = "[Hezekiah] himself I shut up like a caged bird within Jerusalem, his royal city."
+
+[[entry.quote]]
+source = "rogers"
+cite = "The Taylor Prism, col. III, tr. Rogers"
+text = "With thirty talents of gold [and] eight hundred talents of silver … he despatched after me to Nineveh, my capital city."
 
 [[entry]]
 chapter = "judah"
@@ -335,8 +483,17 @@ place = "Jerusalem (Siloam tunnel)"
 date = "c. 701 BC"
 holding = "Istanbul Archaeology Museums"
 credit = "Matson Collection (Library of Congress) · public domain"
-caption = "An inscription carved in the wall of a water tunnel beneath Jerusalem, describing the moment two teams of diggers, working from opposite ends, met in the middle. The tunnel carried water from the Gihon spring inside the city walls: the engineering work the Bible credits to King Hezekiah as he prepared for the Assyrian siege."
-refs = [ { book = "2 Kings", chapter = 20, verse = 20 } ]
+fact = "The inscription in Hezekiah's tunnel, telling how its two crews of diggers met."
+refs = [
+  { book = "2 Kings", chapter = 20, verse = 20, kind = "event" },
+  { book = "2 Chronicles", chapter = 32, verse = 30, kind = "event" },
+]
+
+[[entry.quote]]
+source = "driver1890"
+cite = "The Siloam Inscription, lines 4–5, tr. S. R. Driver (1890)"
+text = "…the miners … smote each so as to meet his fellow, pick against pick; and there flowed the water from the source to the pool…"
+pieces = [ "the miners", "smote each so as to meet his fellow, pick against pick; and there flowed", "the water from the source to the pool" ]
 
 [[entry]]
 chapter = "judah"
@@ -351,8 +508,15 @@ place = "Jerusalem (Ophel)"
 date = "c. 700 BC"
 holding = "Israel Museum, Jerusalem"
 credit = "photo Tamir Zegman · CC BY-SA 4.0"
-caption = "A clay sealing once pressed over the cord of a document, stamped with the royal seal of 'Hezekiah son of Ahaz, king of Judah,' above a winged sun-disk. Recovered in controlled excavation near the Temple Mount, it is a personal impression from the administration of the reforming king of Hezekiah's chapters."
-refs = [ { book = "2 Kings", chapter = 18, verse = 1 } ]
+fact = "A clay sealing stamped with King Hezekiah's seal, from the Ophel dig by the Temple Mount, published in 2015."
+refs = [
+  { book = "2 Kings", chapter = 18, verse = 1, kind = "person" },
+]
+
+[[entry.quote]]
+source = "wikipedia_hezekiah_seal"
+cite = "The impression, in translation"
+text = "Belonging to Hezekiah [son of] Ahaz king of Judah"
 
 [[entry]]
 chapter = "judah"
@@ -367,10 +531,18 @@ place = "Silwan, Jerusalem"
 date = "c. 700 BC"
 holding = "British Museum, London"
 credit = "photo Mustafaa · CC BY-SA 3.0"
-caption = "The carved lintel of a rock-cut tomb in Silwan, opposite the City of David, bearing a Hebrew inscription that warns against disturbing the bones of a royal steward. The official's name is broken away, but its surviving ending and his office fit Shebna, the steward whom Isaiah rebukes for hewing himself just such a showy tomb."
-refs = [ { book = "Isaiah", chapter = 22, verse = 15 } ]
+fact = "The lintel of a rock-cut tomb in Silwan, of a royal steward whose name and title fit Shebna."
+refs = [
+  { book = "Isaiah", chapter = 22, verse = 15, kind = "person" },
+  { book = "Isaiah", chapter = 22, verse = 16, kind = "custom" },
+]
 
 # ── The Fall and the Exile ───────────────────────────────────────────────────
+contested = true
+notes = [
+  "The name is broken: “…yahu”. His title on the lintel, “over the house”, is the one Isaiah gives Shebna.",
+]
+
 [[entry]]
 chapter = "exile"
 image = "ketef_hinnom.jpg"
@@ -384,8 +556,15 @@ place = "Ketef Hinnom, Jerusalem"
 date = "c. 600 BC"
 holding = "Israel Museum, Jerusalem"
 credit = "photo Bachrach44 · CC BY-SA 3.0"
-caption = "Two tiny strips of silver, rolled up and worn as amulets, from a family tomb on the shoulder of the Hinnom valley. Unrolled, each carried in scratched Hebrew letters the priestly blessing: 'The LORD bless you and keep you.' Usually dated to around 600 BC, on the eve of the exile, they are the oldest known copy of words from Scripture, some four centuries older than the Dead Sea Scrolls."
-refs = [ { book = "Numbers", chapter = 6, verse = 24 } ]
+fact = "Two silver amulets of about 600 BC, each scratched with the priestly blessing of Numbers 6."
+refs = [
+  { book = "Numbers", chapter = 6, verse = 24, kind = "words" },
+  { book = "Numbers", chapter = 6, verse = 25, kind = "words" },
+  { book = "Numbers", chapter = 6, verse = 26, kind = "words" },
+]
+notes = [
+  "The oldest known copy of words from Scripture, some four centuries older than the Dead Sea Scrolls.",
+]
 
 [[entry]]
 chapter = "exile"
@@ -400,8 +579,15 @@ place = "Babylon"
 date = "c. 550 BC"
 holding = "British Museum, London"
 credit = "British Museum · CC BY-SA 4.0"
-caption = "A clay tablet from the Babylonian Chronicles, the year-by-year record of Babylon's kings. One entry notes how Nebuchadnezzar besieged 'the city of Judah,' captured it, seized its king, and appointed another: the fall of Jerusalem in 597 BC and the exile of Jehoiachin, set down in plain Babylonian prose beside the account in Second Kings."
-refs = [ { book = "2 Kings", chapter = 24, verse = 10 } ]
+fact = "A tablet of the Babylonian Chronicle recording Nebuchadnezzar's capture of “the city of Judah” in 597 BC."
+refs = [
+  { book = "2 Kings", chapter = 24, verse = 10, kind = "event" },
+  { book = "2 Kings", chapter = 24, verse = 12, kind = "event" },
+  { book = "2 Kings", chapter = 24, verse = 17, kind = "event" },
+]
+notes = [
+  "It gives the day, the second of Adar, and tells of a king seized and another set in his place.",
+]
 
 [[entry]]
 chapter = "exile"
@@ -416,8 +602,13 @@ place = "Lachish, Judah"
 date = "c. 588 BC"
 holding = "British Museum, London"
 credit = "Wellcome Collection · CC BY 4.0"
-caption = "Military dispatches written in ink on potsherds, found in the burnt guardroom of Lachish's gate, from the weeks when Nebuchadnezzar's army was closing on Judah. In the letter shown here, an officer reports 'we cannot see Azekah': the signal fires of the neighbouring fortress had gone out. Jeremiah names Lachish and Azekah as the last two fortified cities of Judah left standing."
-refs = [ { book = "Jeremiah", chapter = 34, verse = 7 } ]
+fact = "Letters in ink on potsherds from the gate of Lachish, written as Babylon closed on Judah."
+refs = [
+  { book = "Jeremiah", chapter = 34, verse = 7, kind = "place" },
+]
+notes = [
+  "In one the writer can no longer see the signals of Azekah.",
+]
 
 [[entry]]
 chapter = "exile"
@@ -432,8 +623,11 @@ place = "Babylon"
 date = "6th century BC"
 holding = "Pergamon Museum, Berlin"
 credit = "photo Osama S. M. Amin · CC BY-SA 4.0"
-caption = "A dragon of the god Marduk, in glazed and moulded brick from the Ishtar Gate of Babylon: the dazzling capital Nebuchadnezzar rebuilt, and to which Judah was carried into exile. In the book of Daniel the king surveys it in pride: 'Is not this great Babylon, which I have built?'"
-refs = [ { book = "Daniel", chapter = 4, verse = 30 } ]
+fact = "A dragon of Marduk in glazed brick from the Ishtar Gate of Nebuchadnezzar's Babylon."
+refs = [
+  { book = "Jeremiah", chapter = 50, verse = 2, kind = "custom" },
+  { book = "Daniel", chapter = 4, verse = 30, kind = "place" },
+]
 
 [[entry]]
 chapter = "exile"
@@ -448,10 +642,22 @@ place = "Ur"
 date = "c. 540 BC"
 holding = "British Museum, London"
 credit = "British Museum · CC BY 2.5"
-caption = "A clay cylinder of Nabonidus, last king of Babylon, recording his building works and a prayer for his son. That son is Bel-shar-usur (Belshazzar), who in the book of Daniel holds the feast on the night Babylon falls. The cylinder helps explain a long-doubted detail: Belshazzar ruled as regent in his father's absence, which is why Daniel could be offered only 'third' place in the kingdom."
-refs = [ { book = "Daniel", chapter = 5, verse = 1 } ]
+fact = "A clay cylinder of Nabonidus, last king of Babylon, closing with a prayer for his son Belshazzar."
+refs = [
+  { book = "Daniel", chapter = 5, verse = 1, kind = "person" },
+  { book = "Daniel", chapter = 5, verse = 29, kind = "event" },
+]
 
 # ── Return under Persia ──────────────────────────────────────────────────────
+notes = [
+  "Belshazzar ruled for his absent father, which may be why Daniel could be made only third ruler.",
+]
+
+[[entry.quote]]
+source = "rogers"
+cite = "The Nabonidus Cylinder, tr. R. W. Rogers, Cuneiform Parallels to the Old Testament (1912)"
+text = "And as for Belshazzar, the first-born son, the issue of my body, do thou implant in his heart the fear of thy great divinity."
+
 [[entry]]
 chapter = "return"
 image = "cyrus_cylinder.jpg"
@@ -465,11 +671,20 @@ place = "Babylon"
 date = "after 539 BC"
 holding = "British Museum, London"
 credit = "photo Mike Peel · CC BY-SA 4.0"
-caption = "A clay cylinder inscribed in Babylonian cuneiform after Cyrus the Great of Persia took Babylon. It proclaims his policy of returning displaced peoples and restoring their sanctuaries: the same imperial outlook that, in the biblical account, let the exiles of Judah return from Babylon and rebuild the Temple. The cylinder names no Jews in particular; it attests the policy, not the specific decree."
+fact = "Cyrus of Persia's proclamation after he took Babylon in 539 BC."
 refs = [
-  { book = "Ezra", chapter = 1, verse = 1 },
-  { book = "Isaiah", chapter = 45, verse = 1 },
+  { book = "2 Chronicles", chapter = 36, verse = 23, kind = "event" },
+  { book = "Ezra", chapter = 1, verse = 1, kind = "event" },
+  { book = "Isaiah", chapter = 45, verse = 1, kind = "person" },
 ]
+notes = [
+  "It names no Jews: it shows the policy Ezra records, not his decree.",
+]
+
+[[entry.quote]]
+source = "rogers"
+cite = "The Cyrus Cylinder, tr. R. W. Rogers, Cuneiform Parallels to the Old Testament (1912)"
+text = "…the gods, who dwelt in them, I brought them back to their places, and caused them to dwell in a habitation for all time. All their inhabitants I collected and restored them to their dwelling places."
 
 [[entry]]
 chapter = "return"
@@ -484,10 +699,20 @@ place = "Behistun, Iran"
 date = "c. 520 BC"
 holding = "in situ"
 credit = "photo Leen van Dorp · CC0"
-caption = "High on a cliff in western Iran, Darius the Great proclaimed his rise to power in three languages: the trilingual key that finally let scholars read cuneiform. Darius authorised the rebuilding of the Temple in Jerusalem; this monument shows the very king whose decree, in the book of Ezra, sent the work forward."
-refs = [ { book = "Ezra", chapter = 6, verse = 1 } ]
+fact = "Darius the Great's record of his rise, carved on a cliff in Iran in three languages."
+refs = [
+  { book = "Ezra", chapter = 4, verse = 24, kind = "person" },
+  { book = "Ezra", chapter = 6, verse = 1, kind = "person" },
+  { book = "Haggai", chapter = 1, verse = 1, kind = "person" },
+]
 
 # ── Between the Testaments ───────────────────────────────────────────────────
+
+[[entry.quote]]
+source = "behistun"
+cite = "The Behistun Inscription, col. I, tr. L. W. King and R. C. Thompson (1907)"
+text = "I am Darius, the great king, the king of kings, the king of Persia, the king of the provinces, the son of Hystaspes, the grandson of Arsames, the Achaemenian."
+
 [[entry]]
 chapter = "between"
 image = "heliodorus.jpg"
@@ -500,8 +725,13 @@ place = "Maresha, Israel"
 date = "178 BC"
 holding = "Israel Museum, Jerusalem"
 credit = "photo Gary Todd · CC0"
-caption = "A limestone stele inscribed with letters of the Seleucid king Seleucus IV and his minister Heliodorus, appointing officials over the temples of the realm. Heliodorus is remembered in Second Maccabees as the agent sent to seize the treasures of the Temple in Jerusalem, and, as that book tells it, driven back by a vision from heaven."
-refs = [ { book = "2 Maccabees", chapter = 3, verse = 7 } ]
+fact = "A stele with letters of Seleucus IV and his minister Heliodorus, 178 BC."
+refs = [
+  { book = "2 Maccabees", chapter = 3, verse = 7, kind = "person" },
+]
+notes = [
+  "Second Maccabees tells of Heliodorus sent to seize the Temple's treasury.",
+]
 
 [[entry]]
 chapter = "between"
@@ -515,8 +745,15 @@ place = "Judea"
 date = "135–104 BC"
 holding = "many collections"
 credit = "Classical Numismatic Group · CC BY-SA 3.0"
-caption = "A small bronze coin of the Hasmonean ruler John Hyrcanus, its Hebrew legend naming 'Yehohanan the High Priest and the Council of the Jews,' its reverse a double cornucopia. It is a coin of the priest-kings descended from the Maccabean revolt: the independent Jewish state whose story First Maccabees carries toward the New Testament age."
-refs = [ { book = "1 Maccabees", chapter = 16, verse = 23 } ]
+fact = "A small bronze coin of John Hyrcanus, the Hasmonean priest-ruler, 135–104 BC."
+refs = [
+  { book = "1 Maccabees", chapter = 16, verse = 23, kind = "person" },
+]
+
+[[entry.quote]]
+source = "wikipedia_hyrcanus"
+cite = "The coin's legend, in Hebrew, in translation"
+text = "Yehohanan the High Priest and the Council of the Jews"
 
 [[entry]]
 chapter = "between"
@@ -530,10 +767,17 @@ place = "Qumran, Cave 1"
 date = "c. 125 BC"
 holding = "Israel Museum, Jerusalem"
 credit = "Israel Museum (photo Ardon Bar-Hama) · public domain"
-caption = "A column of the Great Isaiah Scroll from Qumran: here the song of the suffering servant, 'he was wounded for our transgressions.' Found among the Dead Sea Scrolls in 1947, it is a thousand years older than the previously oldest Hebrew copies of Isaiah, and apart from small differences of spelling and wording it agrees with them: a witness to how carefully the text was handed down."
-refs = [ { book = "Isaiah", chapter = 53, verse = 5 } ]
+fact = "A column of the Great Isaiah Scroll from Qumran, about 125 BC, at the song of the suffering servant."
+refs = [
+  { book = "Isaiah", chapter = 53, verse = 4, kind = "words" },
+  { book = "Isaiah", chapter = 53, verse = 5, kind = "words" },
+]
 
 # ── The World of Jesus ───────────────────────────────────────────────────────
+notes = [
+  "It is a thousand years older than the oldest Hebrew copies of Isaiah known before 1947.",
+]
+
 [[entry]]
 chapter = "jesus"
 image = "pilate_stone.jpg"
@@ -546,11 +790,20 @@ place = "Caesarea Maritima"
 date = "c. AD 26–36"
 holding = "Israel Museum, Jerusalem"
 credit = "photo Marion Doss · CC BY-SA 2.0"
-caption = "A limestone block, later reused in the theatre at Caesarea, bearing a Latin dedication that names '[Pon]tius Pilatus, [Praef]ectus Iuda[ea]e': Pontius Pilate, prefect of Judea. Found in 1961, it is the only certain inscription naming Pilate from his own time, and confirms both his name and his exact title in the years of Jesus' ministry and trial."
+fact = "A dedication from Caesarea that names Pontius Pilate, prefect of Judea."
 refs = [
-  { book = "Luke", chapter = 3, verse = 1 },
-  { book = "John", chapter = 19, verse = 16 },
+  { book = "Matthew", chapter = 27, verse = 2, kind = "person" },
+  { book = "Luke", chapter = 3, verse = 1, kind = "person" },
 ]
+notes = [
+  "The stone calls him prefect; the Gospels call him governor.",
+]
+
+[[entry.quote]]
+source = "wikipedia_pilate"
+cite = "The inscription, with the conjectured letters in brackets"
+text = "[DIS AUGUSTI]S TIBERIÉUM\n[...PONTI]US PILATUS\n[...PRAEF]ECTUS IUDA[EA]E\n[...FECIT D]E[DICAVIT]"
+pieces = [ "[DIS AUGUSTI]S TIBERIÉUM", "[...PONTI]US PILATUS", "[...PRAEF]ECTUS IUDA[EA]E", "[...FECIT D]E[DICAVIT]" ]
 
 [[entry]]
 chapter = "jesus"
@@ -564,11 +817,21 @@ place = "Jerusalem"
 date = "1st century AD"
 holding = "Israel Museum, Jerusalem"
 credit = "photo deror_avi · CC BY-SA 3.0"
-caption = "An ornately carved limestone ossuary (a box for reburied bones) found in a Jerusalem tomb in 1990. Twice inscribed 'Yehosef bar Qayafa' (Joseph, son of Caiaphas), it is widely identified with the high priest before whom, in the Gospels, Jesus was brought for trial. A minority of scholars question the identification; the name and the priestly family, however, are firmly attested."
+fact = "A carved limestone bone box from a Jerusalem tomb, found in 1990."
 refs = [
-  { book = "Matthew", chapter = 26, verse = 57 },
-  { book = "John", chapter = 18, verse = 13 },
+  { book = "Matthew", chapter = 26, verse = 57, kind = "person" },
+  { book = "Luke", chapter = 3, verse = 2, kind = "person" },
+  { book = "John", chapter = 18, verse = 13, kind = "person" },
 ]
+contested = true
+notes = [
+  "A few question the identification; the name and the priestly family are not in doubt.",
+]
+
+[[entry.quote]]
+source = "wikipedia_caiaphas"
+cite = "The ossuary, inscribed twice, in translation"
+text = "Joseph, son of Caiaphas"
 
 [[entry]]
 chapter = "jesus"
@@ -583,8 +846,19 @@ place = "Jerusalem"
 date = "1st century AD"
 holding = "in situ"
 credit = "photo Alzbeta · CC BY-SA 3.0"
-caption = "The excavated remains of a large twin pool, ringed by porticoes, on the north side of Jerusalem's Temple area. John's Gospel describes the healing of a paralysed man at the pool of Bethesda 'which has five roofed colonnades': a detail once thought merely symbolic. Excavation found a real twin pool with porticoes, though scholars still debate how closely its layout matches John's five."
-refs = [ { book = "John", chapter = 5, verse = 2 } ]
+fact = "The excavated twin pool north of the Temple area, once ringed with porticoes."
+refs = [
+  { book = "John", chapter = 5, verse = 2, kind = "place" },
+]
+contested = true
+notes = [
+  "Scholars still debate how its layout matches John's five porches.",
+]
+
+[[entry.quote]]
+source = "ppts1"
+cite = "The Bordeaux Pilgrim (333), tr. Aubrey Stewart, Palestine Pilgrims' Text Society (1887)"
+text = "Further in the city are twin pools (piscinae gemellares), with five porticoes, which are called Bethsaida. There persons who have been sick for many years are cured…"
 
 [[entry]]
 chapter = "jesus"
@@ -599,8 +873,18 @@ place = "Jerusalem (City of David)"
 date = "1st century AD"
 holding = "in situ"
 credit = "photo Rhododendrites · CC BY-SA 4.0"
-caption = "The stepped stone edge of the Pool of Siloam, uncovered in 2004 at the foot of the City of David: the pool fed by Hezekiah's tunnel. In John's Gospel Jesus sends a man born blind to wash here, and he returns seeing."
-refs = [ { book = "John", chapter = 9, verse = 7 } ]
+fact = "The stepped edge of the Pool of Siloam, uncovered in 2004 below the City of David."
+refs = [
+  { book = "Nehemiah", chapter = 3, verse = 15, kind = "place" },
+  { book = "Isaiah", chapter = 8, verse = 6, kind = "place" },
+  { book = "John", chapter = 9, verse = 7, kind = "place" },
+]
+
+[[entry.quote]]
+source = "ppts1"
+cite = "The Bordeaux Pilgrim (333), tr. Aubrey Stewart, Palestine Pilgrims' Text Society (1887)"
+text = "…below in the valley, beside the wall, is a pool which is called Siloe and has four porticoes…"
+pieces = [ "below in the valley, beside", "the wall, is a pool which is called Siloe and has four porticoes" ]
 
 [[entry]]
 chapter = "jesus"
@@ -614,9 +898,27 @@ title = "The Temple Warning Inscription"
 place = "Jerusalem (Temple Mount)"
 date = "1st century BC–AD"
 holding = "Istanbul Archaeology Museums"
-credit = "photo Tamar Hayardeni · CC BY 2.5"
-caption = "A limestone block carved with a Greek warning that forbade Gentiles, on pain of death, from passing the barrier into the inner courts of the Temple. It marks the barrier behind the charge that Paul had brought Gentiles into the Temple, when he was seized there. Many readers also hear it behind the 'dividing wall' that the letter to the Ephesians says Christ has broken down."
-refs = [ { book = "Acts", chapter = 21, verse = 28 } ]
+credit = "photo Tamar Hayardeni · Attribution"
+fact = "A Greek warning from the Temple's barrier, forbidding Gentiles to pass it on pain of death."
+refs = [
+  { book = "Acts", chapter = 21, verse = 28, kind = "event" },
+  { book = "Ephesians", chapter = 2, verse = 14, kind = "custom" },
+]
+notes = [
+  "Many hear it behind Ephesians 2:14, “the middle wall of partition”.",
+]
+
+[[entry.quote]]
+source = "deissmann"
+cite = "The inscription, tr. A. Deissmann, Light from the Ancient East (1910)"
+text = "Let no foreigner enter within the screen and enclosure surrounding the sanctuary. Whosoever is taken so doing will be the cause that death overtaketh him."
+pieces = [ "Let no foreigner enter within", "the screen and enclosure sur", "rounding the sanctuary", "soever is taken so doing will", "be the cause that death over", "taketh him" ]
+columns = true
+
+[[entry.quote]]
+source = "josephus_war"
+cite = "Josephus, The Jewish War 5.5.2, tr. William Whiston"
+text = "…upon it stood pillars, at equal distances from one another, declaring the law of purity, some in Greek, and some in Roman letters, that \"no foreigner should go within that sanctuary\"…"
 
 [[entry]]
 chapter = "jesus"
@@ -630,10 +932,18 @@ place = "Lugdunum (Lyon) mint"
 date = "AD 14–37"
 holding = "many collections"
 credit = "photo DrusMAX · CC BY-SA 3.0"
-caption = "A silver denarius of the emperor Tiberius, his portrait on one side, an enthroned figure on the other. Coins like this are traditionally taken as the 'tribute penny' of the Gospels: shown such a coin and asked about paying taxes, Jesus answers, 'Render to Caesar the things that are Caesar's, and to God the things that are God's.'"
-refs = [ { book = "Matthew", chapter = 22, verse = 21 } ]
+fact = "A silver denarius of the emperor Tiberius, the coin of the Gospels' question of tribute."
+refs = [
+  { book = "Matthew", chapter = 22, verse = 19, kind = "custom" },
+  { book = "Matthew", chapter = 22, verse = 21, kind = "custom" },
+  { book = "Luke", chapter = 20, verse = 24, kind = "custom" },
+]
 
 # ── The Fall of Jerusalem ────────────────────────────────────────────────────
+notes = [
+  "Some think the coin shown Jesus more likely a local tetradrachm with Tiberius' head.",
+]
+
 [[entry]]
 chapter = "ad70"
 image = "arch_titus.jpg"
@@ -647,8 +957,22 @@ place = "Rome (Forum)"
 date = "c. AD 81"
 holding = "in situ"
 credit = "photo Laurel Lodged · public domain"
-caption = "On the Arch of Titus in Rome, a relief shows soldiers carrying the spoils of the Jerusalem Temple in triumph (the seven-branched menorah, the table of showbread, the silver trumpets) after the city's destruction in AD 70. It is the Temple's own furniture, paraded as plunder, in the years after Jesus foretold that not one stone would be left upon another."
-refs = [ { book = "Luke", chapter = 21, verse = 6 } ]
+fact = "Rome's arch to Titus, with a relief of the Temple's spoils carried in his triumph after AD 70."
+refs = [
+  { book = "Exodus", chapter = 25, verse = 31, kind = "custom" },
+  { book = "Luke", chapter = 21, verse = 6, kind = "event" },
+]
+
+[[entry.quote]]
+source = "wikipedia_arch_titus"
+cite = "The inscription on the arch's east side"
+text = "SENATVS\nPOPVLVSQVE⸱ROMANVS\nDIVO⸱TITO⸱DIVI⸱VESPASIANI⸱F[ILIO]\nVESPASIANO⸱AVGVSTO"
+pieces = [ "SENATVS", "POPVLVSQVE⸱ROMANVS", "DIVO⸱TITO⸱DIVI⸱VESPASIANI⸱F[ILIO]", "VESPASIANO⸱AVGVSTO" ]
+
+[[entry.quote]]
+source = "josephus_war"
+cite = "Josephus, The Jewish War 7.5.5, tr. William Whiston"
+text = "But for those that were taken in the temple of Jerusalem, they made the greatest figure of them all; that is, the golden table, of the weight of many talents; the candlestick also, that was made of gold…"
 
 [[entry]]
 chapter = "ad70"
@@ -663,11 +987,22 @@ place = "Rome"
 date = "AD 71"
 holding = "many collections"
 credit = "Classical Numismatic Group · CC BY-SA 2.5"
-caption = "A Roman coin struck to celebrate the crushing of the Jewish revolt: a palm tree, a bound captive, a mourning woman, and the words IUDAEA CAPTA, 'Judea captured.' Minted across the empire after AD 70, it is Rome's own monument to the fall of Jerusalem that the Gospels record Jesus foretelling."
-refs = [ { book = "Matthew", chapter = 24, verse = 2 } ]
+fact = "A Roman coin struck across the empire after AD 70 to mark the fall of Judea."
+refs = [
+  { book = "Matthew", chapter = 24, verse = 2, kind = "event" },
+  { book = "Luke", chapter = 21, verse = 24, kind = "event" },
+]
 
 
 # ── Additions: apostolic world + sites (2026-06-02) ──────────────────────────
+notes = [
+  "Its legend means “Judea captured”.",
+]
+
+[[entry.quote]]
+source = "wikipedia_judaea_capta"
+cite = "The coin's legend"
+text = "IVDAEA CAPTA"
 
 [[entry]]
 chapter = "apostolic"
@@ -682,9 +1017,10 @@ place = "Philippi, Macedonia"
 date = "Roman era"
 holding = "in situ"
 credit = "photo Berthold Werner · CC BY-SA 3.0"
-caption = "The forum of Philippi, the Roman colony in Macedonia where Paul founded his first church on European soil. Acts tells of his arrival, the conversion of Lydia by the riverside, and a night in the city jail."
+fact = "The forum of Philippi, the Roman colony where Paul founded his first church in Europe."
 refs = [
-  { book = "Acts", chapter = 16, verse = 12 },
+  { book = "Acts", chapter = 16, verse = 12, kind = "place" },
+  { book = "Philippians", chapter = 1, verse = 1, kind = "place" },
 ]
 
 [[entry]]
@@ -700,10 +1036,16 @@ place = "Athens"
 date = "Paul's visit c. AD 50"
 holding = "in situ"
 credit = "photo Sings83 · CC BY 4.0"
-caption = "The Areopagus, or Mars Hill: the rocky height below the Athenian Acropolis where the city's council met. Acts sets here Paul's address to the philosophers, taking their altar 'to an unknown god' as his starting point for the God who 'made the world and everything in it.'"
+fact = "Mars Hill, below the Acropolis of Athens, where the city's council met."
 refs = [
-  { book = "Acts", chapter = 17, verse = 22 },
+  { book = "Acts", chapter = 17, verse = 19, kind = "place" },
+  { book = "Acts", chapter = 17, verse = 22, kind = "place" },
 ]
+
+[[entry.quote]]
+source = "pausanias1"
+cite = "Pausanias, Description of Greece 1.28.5, tr. W. H. S. Jones (1918)"
+text = "There is also the Hill of Ares, so named because Ares was the first to be tried here…"
 
 [[entry]]
 chapter = "apostolic"
@@ -718,9 +1060,12 @@ place = "Ancient Corinth"
 date = "1st century AD"
 holding = "in situ"
 credit = "photo George E. Koronaios · CC0"
-caption = "The forum of ancient Corinth, with the bema, the raised platform from which Roman officials gave judgment. Acts records that the proconsul Gallio dismissed the charge against Paul at the judgment seat, very likely this one. Gallio's term of office, dated by an inscription at Delphi, is the firmest anchor for the chronology of Paul's mission."
+fact = "The raised platform in Corinth's forum from which Roman officials gave judgment."
 refs = [
-  { book = "Acts", chapter = 18, verse = 12 },
+  { book = "Acts", chapter = 18, verse = 12, kind = "place" },
+]
+notes = [
+  "An inscription at Delphi dates Gallio's office: the firmest date in Paul's journeys.",
 ]
 
 [[entry]]
@@ -736,9 +1081,10 @@ place = "Ephesus"
 date = "Roman era"
 holding = "in situ"
 credit = "photo shankar s. · CC BY 2.0"
-caption = "The great theatre of Ephesus, which held some 25,000 people. Acts sets here the riot of the silversmiths, who feared Paul's preaching would ruin the trade in silver shrines of Artemis and filled the theatre with the chant, 'Great is Artemis of the Ephesians!'"
+fact = "The great theatre of Ephesus, which held some 25,000 people."
 refs = [
-  { book = "Acts", chapter = 19, verse = 29 },
+  { book = "Acts", chapter = 19, verse = 29, kind = "place" },
+  { book = "Acts", chapter = 19, verse = 34, kind = "event" },
 ]
 
 [[entry]]
@@ -754,10 +1100,17 @@ place = "Ephesus"
 date = "rebuilt after 356 BC"
 holding = "in situ"
 credit = "photo Roy Egloff · CC BY-SA 4.0"
-caption = "A single re-erected column marks the temple of Artemis at Ephesus, once counted among the seven wonders of the world. The cult of 'Artemis of the Ephesians,' and the craftsmen who profited from it, form the backdrop to the uproar Paul's preaching stirred in the city."
+fact = "One re-erected column marks the Temple of Artemis at Ephesus, a wonder of the ancient world."
 refs = [
-  { book = "Acts", chapter = 19, verse = 27 },
+  { book = "Acts", chapter = 19, verse = 27, kind = "place" },
+  { book = "Acts", chapter = 19, verse = 35, kind = "place" },
 ]
+
+[[entry.quote]]
+source = "pliny36"
+cite = "Pliny, Natural History 36.21, tr. J. Bostock and H. T. Riley (1855)"
+text = "The most wonderful monument of Græcian magnificence, and one that merits our genuine admiration, is the Temple of Diana at Ephesus, which took one hundred and twenty years in building, a work in which all Asia joined."
+pieces = [ "The most wonderful monument of Græcian magnificence, and one that merits our genuine admiration, is the Temple of Diana at Ephesus, which took one hundred and twenty years in building, a work in which all Asia", "joined" ]
 
 [[entry]]
 chapter = "apostolic"
@@ -772,9 +1125,14 @@ place = "Ancient Corinth"
 date = "1st century AD"
 holding = "in situ"
 credit = "photo Rduncan2 · CC BY-SA 4.0"
-caption = "A paving stone by the theatre of Corinth, its bronze letters lost but their cut sockets still legible: 'Erastus, in return for his aedileship, laid this at his own expense.' Many identify this magistrate with the Erastus, 'the city treasurer,' whom Paul names sending greetings from Corinth, though the identification is not certain."
+fact = "A paving stone by Corinth's theatre naming Erastus, who laid it at his own expense as aedile."
 refs = [
-  { book = "Romans", chapter = 16, verse = 23 },
+  { book = "Romans", chapter = 16, verse = 23, kind = "person" },
+  { book = "2 Timothy", chapter = 4, verse = 20, kind = "person" },
+]
+contested = true
+notes = [
+  "Its date is disputed, and so is whether this Erastus is Paul's.",
 ]
 
 [[entry]]
@@ -789,9 +1147,14 @@ place = "Tell es-Sultan, Jericho"
 date = "tower c. 8000 BC"
 holding = "in situ"
 credit = "photo Immanuelle · CC BY-SA 4.0"
-caption = "The mound of ancient Jericho (Tell es-Sultan), among the oldest towns on earth. The great stone tower here is Neolithic, millennia older than Joshua. The Bible tells of Jericho's walls falling before Israel; the dating of the site's destruction layers is much debated, and remains one of the hardest questions in biblical archaeology."
+fact = "The mound of ancient Jericho, among the oldest towns on earth; its stone tower is millennia older than Joshua."
 refs = [
-  { book = "Joshua", chapter = 6, verse = 20 },
+  { book = "Joshua", chapter = 6, verse = 20, kind = "event" },
+  { book = "1 Kings", chapter = 16, verse = 34, kind = "event" },
+]
+contested = true
+notes = [
+  "The dating of its fallen walls is much debated: Garstang placed them about 1400 BC, Kenyon about 1550.",
 ]
 
 [[entry]]
@@ -807,9 +1170,11 @@ place = "Tel Hazor"
 date = "Bronze–Iron Age"
 holding = "in situ"
 credit = "photo Bukvoed · CC BY 4.0"
-caption = "The vast mound of Hazor, the largest tel in the land: in the Bible 'the head of all those kingdoms,' the Canaanite city Joshua is said to have burned. Excavators have found a destroyed Canaanite city beneath a later Israelite one, fortified with a monumental gate of the type the Bible links to Solomon."
+fact = "Hazor, the largest mound in the land, with a burnt Canaanite city beneath an Israelite one."
 refs = [
-  { book = "Joshua", chapter = 11, verse = 10 },
+  { book = "Joshua", chapter = 11, verse = 10, kind = "place" },
+  { book = "Joshua", chapter = 11, verse = 11, kind = "event" },
+  { book = "1 Kings", chapter = 9, verse = 15, kind = "event" },
 ]
 
 [[entry]]
@@ -825,10 +1190,15 @@ place = "Tel Megiddo"
 date = "10th c. BC and later"
 holding = "in situ"
 credit = "photo Ian Scott · CC BY-SA 2.0"
-caption = "The chambered gate of Megiddo, the fortress city guarding the pass into the Jezreel Valley. Here King Josiah fell facing Pharaoh Necho; and the city's hill, Har Megiddo, gives its name to Armageddon, the gathering-place of Revelation's final battle."
+fact = "The chambered gate of Megiddo, the fortress guarding the pass into the Jezreel Valley."
 refs = [
-  { book = "2 Kings", chapter = 23, verse = 29 },
-  { book = "Revelation", chapter = 16, verse = 16 },
+  { book = "1 Kings", chapter = 9, verse = 15, kind = "place" },
+  { book = "2 Kings", chapter = 23, verse = 29, kind = "event" },
+  { book = "Revelation", chapter = 16, verse = 16, kind = "place" },
+]
+contested = true
+notes = [
+  "Whether the gate is Solomon's is debated. The hill, Har Megiddo, gives Armageddon its name.",
 ]
 
 [[entry]]
@@ -843,9 +1213,12 @@ place = "Tel Arad"
 date = "Iron Age"
 holding = "in situ"
 credit = "photo Bukvoed · CC BY 4.0"
-caption = "The desert fortress of Arad, holding one of the very few Israelite temples yet excavated: a courtyard with a sacrificial altar and a small inner shrine, apparently taken out of use during a religious reform of the kind the Bible credits to Hezekiah, who 'removed the high places' to centre worship on Jerusalem."
+fact = "The desert fortress of Arad, with one of the very few Israelite shrines yet excavated."
 refs = [
-  { book = "2 Kings", chapter = 18, verse = 4 },
+  { book = "2 Kings", chapter = 18, verse = 4, kind = "event" },
+]
+notes = [
+  "Its altar seems to have gone out of use in a reform like Hezekiah's.",
 ]
 
 [[entry]]
@@ -861,10 +1234,17 @@ place = "Jerusalem (Temple Mount)"
 date = "1st century BC"
 holding = "in situ"
 credit = "photo Daniel Rosehill · CC BY 4.0"
-caption = "The massive Herodian ashlars of the Western Wall, part of the retaining wall Herod the Great raised to enlarge the Temple platform. These are the kind of stones behind a disciple's awe, 'what wonderful stones and what wonderful buildings,' and Jesus' reply that not one would be left upon another."
+fact = "Herodian stones of the Western Wall, part of Herod's retaining wall for the Temple platform."
 refs = [
-  { book = "Mark", chapter = 13, verse = 1 },
+  { book = "Mark", chapter = 13, verse = 1, kind = "place" },
+  { book = "Mark", chapter = 13, verse = 2, kind = "event" },
+  { book = "John", chapter = 2, verse = 20, kind = "place" },
 ]
+
+[[entry.quote]]
+source = "josephus_ant"
+cite = "Josephus, Antiquities of the Jews 15.11.3, tr. William Whiston"
+text = "Now the temple was built of stones that were white and strong, and each of their length was twenty-five cubits, their height was eight, and their breadth about twelve…"
 
 [[entry]]
 chapter = "jesus"
@@ -878,13 +1258,18 @@ place = "Capernaum, Galilee"
 date = "synagogue 4th–5th c. AD"
 holding = "in situ"
 credit = "photo Benjamín Núñez González · CC BY-SA 4.0"
-caption = "The white limestone synagogue of Capernaum, the lakeside town that was the base of Jesus' Galilean ministry. This building is later (4th–5th century), but it rests on black basalt foundations that its excavators identify as the 1st-century synagogue where, the Gospels say, Jesus taught and healed."
+fact = "The limestone synagogue of Capernaum, 4th–5th century, on basalt foundations dated to the 1st."
 refs = [
-  { book = "Mark", chapter = 1, verse = 21 },
+  { book = "Mark", chapter = 1, verse = 21, kind = "place" },
+  { book = "Luke", chapter = 7, verse = 5, kind = "place" },
 ]
 
 
 # ── Detail closeups (carousel in the zoom view) ─────────────────────────────
+contested = true
+notes = [
+  "Whether the basalt foundations are the synagogue of Jesus' day is debated.",
+]
 
 [[detail]]
 parent = "tel_dan.jpg"
@@ -938,8 +1323,15 @@ holding = "Israel Museum, Jerusalem"
 credit = "photo Chamberi · CC BY-SA 3.0"
 lat = 31.7
 lon = 35.1
-caption = """Small clay figurines of a woman supporting her breasts, mass-produced and found by the hundreds in ordinary Judahite houses. Their exact meaning is debated (fertility, protection, a goddess), but they show the popular household religion the prophets kept condemning, when even in Jerusalem families baked cakes for 'the queen of heaven.'"""
-refs = [ { book = "Jeremiah", chapter = 7, verse = 18 } ]
+fact = "A clay figurine of a woman, of a kind found by hundreds in Judahite houses, 8th–7th century BC."
+refs = [
+  { book = "Jeremiah", chapter = 7, verse = 18, kind = "custom" },
+  { book = "Jeremiah", chapter = 44, verse = 19, kind = "custom" },
+]
+contested = true
+notes = [
+  "Their meaning is debated: fertility, protection, or a goddess.",
+]
 
 [[entry]]
 chapter = "everyday"
@@ -952,8 +1344,11 @@ place = "Levant"
 date = "c. 900 BC"
 holding = "Metropolitan Museum of Art"
 credit = "Metropolitan Museum of Art · CC0"
-caption = """A simple wheel-made saucer with one edge pinched into a spout to hold the wick: the lamp that lit every Israelite house, burning a little olive oil through the night. Plain and common, it is the kind of lamp behind the Psalmist's 'lamp unto my feet, and a light unto my path.'"""
-refs = [ { book = "Psalms", chapter = 119, verse = 105 } ]
+fact = "A wheel-made saucer lamp with one edge pinched for the wick, about 900 BC."
+refs = [
+  { book = "Psalms", chapter = 119, verse = 105, kind = "custom" },
+  { book = "Proverbs", chapter = 31, verse = 18, kind = "custom" },
+]
 
 [[entry]]
 chapter = "everyday"
@@ -965,8 +1360,11 @@ place = "(modern reconstruction)"
 date = "Iron Age type"
 holding = "Harvard Semitic Museum"
 credit = "photo Daderot · CC0"
-caption = """A full-scale modern reconstruction of the 'four-room house,' the standard Israelite dwelling of the Iron Age: a broad rear room behind three long spaces, the ground floor for animals and storage, the family living above. This is the house behind countless biblical scenes: the home whose doorposts were to carry the words of the Law."""
-refs = [ { book = "Deuteronomy", chapter = 6, verse = 9 } ]
+fact = "A full-size reconstruction of the four-room house, the common Israelite dwelling."
+refs = [
+  { book = "Deuteronomy", chapter = 6, verse = 9, kind = "custom" },
+  { book = "Deuteronomy", chapter = 22, verse = 8, kind = "custom" },
+]
 
 [[entry]]
 chapter = "everyday"
@@ -981,8 +1379,12 @@ holding = "in situ"
 credit = "photo Tombah · CC BY-SA 4.0"
 lat = 31.78
 lon = 35.13
-caption = """A winepress hewn from the bedrock: an upper floor where grapes were trodden underfoot, and a lower vat where the juice ran down and gathered. Thousands dot the hills of the land. Isaiah's song of the vineyard tells of one being cut. The treading of the press, juice splashing the treader's garments red, became Scripture's image of both joy and wrath."""
-refs = [ { book = "Isaiah", chapter = 5, verse = 2 } ]
+fact = "A winepress cut in the bedrock: a floor for treading above, a vat below."
+refs = [
+  { book = "Judges", chapter = 6, verse = 11, kind = "custom" },
+  { book = "Isaiah", chapter = 5, verse = 2, kind = "custom" },
+  { book = "Isaiah", chapter = 63, verse = 3, kind = "custom" },
+]
 
 [[entry]]
 chapter = "everyday"
@@ -997,8 +1399,15 @@ holding = "Israel Museum, Jerusalem"
 credit = "photo Chamberi · CC BY-SA 3.0"
 lat = 31.78
 lon = 35.0
-caption = """A graded set of polished limestone weights for the balance scale, several inscribed with their value: the shekel and its fractions, the beka, the pim. The standards were never quite uniform, which is why the Law returns so often to honest weights, and why a 'just balance' and a hidden 'bag of deceitful weights' could stand for righteousness and fraud themselves."""
-refs = [ { book = "Exodus", chapter = 38, verse = 26 }, { book = "Proverbs", chapter = 11, verse = 1 } ]
+fact = "A graded set of limestone balance weights, some inscribed with their value."
+refs = [
+  { book = "Exodus", chapter = 38, verse = 26, kind = "custom" },
+  { book = "1 Samuel", chapter = 13, verse = 21, kind = "custom" },
+  { book = "Proverbs", chapter = 11, verse = 1, kind = "custom" },
+]
+notes = [
+  "The pim weight explains 1 Samuel 13:21, where the KJV, not knowing the word, has “a file”.",
+]
 
 [[entry]]
 chapter = "everyday"
@@ -1013,8 +1422,11 @@ holding = "on display at ancient Shiloh"
 credit = "photo Bukvoed · CC BY 4.0"
 lat = 32.06
 lon = 35.29
-caption = """A large collared-rim storage jar: the heavy pithos, named for the ridge at its neck, that became a hallmark of the new highland villages of the early Iron Age, the world of the settlement and the judges. This one comes from Shiloh, where the tabernacle stood and the boy Samuel served; jars like it held the grain, oil, and wine of a household's year."""
-refs = [ { book = "1 Samuel", chapter = 1, verse = 9 } ]
+fact = "A collared-rim storage jar from Shiloh, of the early Iron Age."
+refs = [
+  { book = "Joshua", chapter = 18, verse = 1, kind = "place" },
+  { book = "1 Samuel", chapter = 1, verse = 9, kind = "place" },
+]
 
 [[entry]]
 chapter = "everyday"
@@ -1029,8 +1441,15 @@ holding = "many collections"
 credit = "photo Funhistory · public domain"
 lat = 31.6
 lon = 34.9
-caption = """A jar handle stamped before firing with a royal seal: a four-winged beetle, the paleo-Hebrew letters l-m-l-k ('belonging to the king') above, and a town name below. Thousands are known, almost all from the years around Hezekiah's reign. They mark a royal system of storage jars, most likely provisioning Judah's towns against the Assyrian onslaught the Bible records him preparing for."""
-refs = [ { book = "2 Chronicles", chapter = 32, verse = 28 } ]
+fact = "A jar handle stamped with the royal LMLK seal and a town's name, about 700 BC."
+refs = [
+  { book = "2 Chronicles", chapter = 32, verse = 28, kind = "custom" },
+]
+
+[[entry.quote]]
+source = "wikipedia_lmlk"
+cite = "The four letters l-m-l-k, in translation"
+text = "[belonging] to the king"
 
 [[entry]]
 chapter = "everyday"
@@ -1043,11 +1462,16 @@ place = "Judea"
 date = "1st century BC–AD"
 holding = "Michael C. Carlos Museum, Atlanta"
 credit = "photo Gary Todd · CC0"
-caption = """The small wheel-made lamp of the New Testament age, with a short nozzle for the wick and a wide hole for the oil. Lamps like this lit the houses of Jesus' day: the lamp set on a stand, not under a basket; the lamp a woman lights to sweep her house in search of one lost coin."""
-refs = [ { book = "Matthew", chapter = 5, verse = 15 }, { book = "Luke", chapter = 15, verse = 8 } ]
+fact = "The small wheel-made lamp of the New Testament age."
+refs = [
+  { book = "Matthew", chapter = 5, verse = 15, kind = "custom" },
+  { book = "Matthew", chapter = 25, verse = 1, kind = "custom" },
+  { book = "Luke", chapter = 15, verse = 8, kind = "custom" },
+]
 
 
 # ── Glossary (closing reference section) ─────────────────────────────────────
+
 [[term]]
 term = "Tell (tel)"
 definition = "A mound built up over centuries as a town was rebuilt on its own ruins, layer upon layer: the characteristic site of Near Eastern archaeology."
@@ -1136,3 +1560,17 @@ note = "An influential critical reading that dates much of the tradition later; 
 [[reading]]
 title = "British Museum · Israel Museum · Louvre"
 note = "Their online collections: catalogue entries, with photographs and bibliography, for many of the objects shown here."
+
+# Two entries rest on 1 and 2 Maccabees. What those books are, in the words of
+# the Church of England's Article VI (1571) and the General Baptists' Article
+# 37 (1679); the page shows these beside any link to the Apocrypha.
+[[apocrypha]]
+source = "schaff_39_articles"
+cite = "The Thirty-nine Articles (1571), Article 6"
+text = "And the other bookes, (as Hierome sayth) the Churche doth reade for example of lyfe and instruction of manners: but yet doth it not applie them to establishe any doctrene."
+pieces = [ "And the other bookes, (as Hierome sayth) the Churche doth reade for example of lyfe and instruction", "of manners: but yet doth it not applie them to establishe any doctrene." ]
+
+[[apocrypha]]
+source = "oc"
+cite = "An Orthodox Creed (General Baptists, 1679), Article 37"
+text = "And by the holy Scriptures we understand, the Canonical Books of the Old and New Testament … of which there hath never been any doubt of their Verity, and Authority, in the Protestant Churches of Christ to this Day."

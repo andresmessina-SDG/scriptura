@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!--
+    Glyph for "The Creeds": three lines of a creed, and one thread running
+    from a line to the strip that stands for the Bible, which is what the
+    page draws. Drawn for this app. Fill-only (#222) so GTK4 recolors it
+    like the symbolics beside it.
+  -->
+  <g fill="#222">
+    <!-- three lines of the creed -->
+    <path d="M1 2.25 H7.5 V3.75 H1 Z"/>
+    <path d="M1 7.25 H6 V8.75 H1 Z"/>
+    <path d="M1 12.25 H7.5 V13.75 H1 Z"/>
+    <!-- the Bible strip -->
+    <path d="M13 1 H15 V15 H13 Z"/>
+    <!-- a thread from the middle line up to the strip -->
+    <path d="M7 7.25 C9.6 7.25 9.9 2.75 12.3 2.75 V4.25 C10.9 4.25 10.9 8.75 7 8.75 Z"/>
+  </g>
+</svg>

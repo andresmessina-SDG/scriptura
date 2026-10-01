@@ -6,6 +6,35 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+## [1.8.3] — 2026-09-30
+
+### Added
+
+- **The Creeds.** The Apostles', Nicene, Chalcedonian and Athanasian Creeds,
+  each set line by line, with every line drawn to the verses it comes from: the verses whose
+  words it uses, the ones that teach what it says, and the Old Testament
+  promises it sees fulfilled. Pick a line to follow its threads into the
+  Bible, or pick a book to see which lines rest on it. The 1662 English (for
+  Chalcedon, Schaff's) sits beside the Greek and Latin originals; disputed lines, and the words the
+  Church chose that the Bible does not use, are marked, and explained in the
+  words of the Fathers, the confessions and Schaff, each quotation checked
+  against its source. 1662 words whose sense has moved ("the quick and the
+  dead") are glossed. A verse whose words a creed
+  uses carries a small mark in the reading view that opens the creed at that
+  line. Open it from the module list.
+
+### Changed
+
+- **Scripture in Stone speaks in its sources' words.** Every artifact now
+  quotes the stone itself or an old witness to it where a public-domain text
+  exists (Rogers, Breasted, Compston, Deissmann, Josephus, the Bordeaux
+  Pilgrim, Pausanias, Pliny), each with its source and checked word for word;
+  every verse it bears on is shown with what kind of link it is and its KJV
+  text, and contested readings are marked. A link to
+  the Apocrypha quotes Article VI and the 1679 Orthodox Creed on what those
+  books are. The Bible's mark names its artifact, titles are set in the
+  serif, and the search box no longer takes the focus when the page opens.
+
 ## [1.8.2] — 2026-09-30
 
 ### Added
