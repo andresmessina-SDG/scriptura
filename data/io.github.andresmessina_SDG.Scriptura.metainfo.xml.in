@@ -152,7 +152,7 @@
          The full record belongs in CHANGELOG.md, not here.
          tests/test_version_sync.py holds every release to this. -->
     <release version="1.8.3" date="2026-09-30">
-      <description its:translate="no">
+      <description>
         <p>The Creeds, and Scripture in Stone in its sources' words.</p>
         <ul>
           <li>The Creeds: the Apostles', Nicene, Chalcedonian and Athanasian Creeds, each line drawn to the verses it comes from.</li>
@@ -167,7 +167,7 @@
       </description>
     </release>
     <release version="1.8.2" date="2026-09-30">
-      <description its:translate="no">
+      <description>
         <p>Spanish and Russian beyond the menus, and the Bible Family Tree in the Module Manager.</p>
         <ul>
           <li>In Spanish or Russian, a Strong's entry also shows how a Bible in that language renders the word.</li>
@@ -184,7 +184,7 @@
       </description>
     </release>
     <release version="1.8.1" date="2026-09-29">
-      <description its:translate="no">
+      <description>
         <p>A writing page that reads like a page, and a view to preach from.</p>
         <ul>
           <li>Writing looks like a page: Markdown symbols fold away once you leave a line.</li>
@@ -201,7 +201,7 @@
       </description>
     </release>
     <release version="1.8.0" date="2026-09-26">
-      <description its:translate="no">
+      <description>
         <p>The Bible Family Tree, and downloads that look after themselves.</p>
         <ul>
           <li>The Bible Family Tree draws the English Bibles people read, and the Bibles they came from, down the page in time. Print it as a poster.</li>
@@ -218,7 +218,7 @@
       </description>
     </release>
     <release version="1.7.3" date="2026-09-22">
-      <description its:translate="no">
+      <description>
         <p>Search the Greek and Hebrew behind the translation, and hear more of the fathers.</p>
         <ul>
           <li>Search by the word under the translation. strong:G26 finds every verse whose Greek carries that word, and lemma: and morph: ask the same of the spelling and the grammar.</li>
@@ -235,7 +235,7 @@
       </description>
     </release>
     <release version="1.7.2" date="2026-09-17">
-      <description its:translate="no">
+      <description>
         <p>Your writing is kept safer, and the interlinears show more.</p>
         <ul>
           <li>A daily copy of your notes, journal and sermons is kept on this device. Restore keeps a copy of what it replaces.</li>
@@ -252,10 +252,7 @@
       </description>
     </release>
     <release version="1.7.1" date="2026-09-15">
-      <!-- English only, by his call, as 1.6.1 and 1.6.2 shipped:
-           its:translate="no" is what keeps xgettext out of them and both
-           catalogues at 100%. -->
-      <description its:translate="no">
+      <description>
         <p>Fixes for writing sermons.</p>
         <ul>
           <li>Giving a sermon a series could close the app. This is fixed.</li>
@@ -265,10 +262,7 @@
       </description>
     </release>
     <release version="1.7.0" date="2026-09-14">
-      <!-- English only, by his call, as 1.6.1 and 1.6.2 shipped:
-           its:translate="no" is what keeps xgettext out of them and both
-           catalogues at 100%. -->
-      <description its:translate="no">
+      <description>
         <p>A place to write: a journal, sermons, and a new Today page.</p>
         <ul>
           <li>A journal. Write an entry about one passage, several, or none, and add or remove passages later.</li>
@@ -285,9 +279,7 @@
       </description>
     </release>
     <release version="1.6.2" date="2026-09-10">
-      <!-- English only, by his call, as 1.6.1 shipped: its:translate="no"
-           is what keeps xgettext out of them and both catalogues at 100%. -->
-      <description its:translate="no">
+      <description>
         <p>Your marks now show in every translation, and many fixes.</p>
         <ul>
           <li>Highlights, underlines, notes and tags now show in every translation, not only the one you made them in. The Study Journal is now called Annotations.</li>
@@ -304,10 +296,7 @@
       </description>
     </release>
     <release version="1.6.1" date="2026-09-02">
-      <!-- English only, by his call: a patch release's notes are not
-           worth stranding two catalogues at 99%. its:translate="no" is what
-           keeps xgettext out of them. -->
-      <description its:translate="no">
+      <description>
         <p>Two fixes for 1.6.0.</p>
         <ul>
           <li>The right-click menu now opens in the middle of the page on small windows.</li>
