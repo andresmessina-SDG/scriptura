@@ -18,9 +18,10 @@ from gi.repository import Gtk, Adw, GLib
 import a11y
 from a11y import set_accessible_label
 from gtk_utils import clear_children, fade_in
-from i18n import _, ngettext, book_label, N_
+from i18n import _, ngettext, book_label, current_language, N_
 
 import catena_bridge
+import sword_bridge
 import imagery_bridge
 
 _log = logging.getLogger('scriptura.catena')
@@ -245,7 +246,8 @@ class CatenaReader:
             if (self._category_filter is None
                 or e['category'] == self._category_filter)
             and (not self._author_query
-                 or self._author_query in e['author'].lower())
+                 or self._author_query in e['author'].lower()
+                 or self._author_query in _author_name(e['author']).lower())
         ]
 
         filtering = self._category_filter is not None or bool(self._author_query)
@@ -557,12 +559,33 @@ def _category_name(cat):
     return _(name) if name else cat
 
 
+#: The suffix nearly every quoted-by line carries (9,269 of them name
+#: Aquinas); the rest are rare and stay as the pack has them.
+_QUOTED_BY = re.compile(r'^\(as quoted by ([^,()]+?)(?:, AD (\d+))?\)$')
+
+
+def _author_name(name):
+    """An author as the reader's language names them. A Bible book quoted as
+    a voice takes the app's own book name; anyone else, the name in
+    data/author_names, or the English where that has none."""
+    if name in sword_bridge._ALL_BOOKS or name in sword_bridge.DEUTEROCANON:
+        return book_label(name)
+    return catena_bridge.author_name(name, current_language())
+
+
 def _author_parts(e):
-    """(author, display suffix). The pack normalizes suffixes now — stray
-    whitespace stripped and bare locators parenthesized at build time — so
-    this just reads the stored fields (suffix drives the dimmed eyebrow aside,
+    """(author, display suffix), in the reader's language. The pack
+    normalizes suffixes — stray whitespace stripped and bare locators
+    parenthesized at build time (suffix drives the dimmed eyebrow aside,
     e.g. '(as quoted by Aquinas, AD 1274)')."""
-    return e['author'], (e.get('author_suffix') or '')
+    suffix = e.get('author_suffix') or ''
+    m = _QUOTED_BY.match(suffix)
+    if m:
+        who = _author_name(m.group(1))
+        suffix = (_('(as quoted by {name}, AD {year})').format(
+                      name=who, year=m.group(2)) if m.group(2)
+                  else _('(as quoted by {name})').format(name=who))
+    return _author_name(e['author']), suffix
 
 
 def _author_label(e):

@@ -65,3 +65,18 @@ def test_root_labels_run_right_and_late_ones_left_near_the_edge():
 def test_margin_notes_are_in_time_order():
     ys = [n.y for n in fl.notes()]
     assert ys == sorted(ys) and len(ys) == 6
+
+
+def test_every_margin_note_reaches_the_translators():
+    """The notes live in the table, where xgettext cannot see them; until
+    2026-10-01 Spanish and Russian readers met all six in English. Each must
+    be marked, word for word, in bible_family.FAMILY_NOTES."""
+    table = [n['text'] for n in bf.family_data().get('note', [])]
+    assert table and set(table) <= set(bf.FAMILY_NOTES)
+
+
+def test_only_the_worded_lanes_are_translated():
+    """A plain `_()` would turn the Jerusalem Bible's lane into the city:
+    "Jerusalem" is in the catalogue as a place."""
+    assert bf.lane_label('Jerusalem') == 'Jerusalem'
+    assert bf.lane_label('NASB') == 'NASB'

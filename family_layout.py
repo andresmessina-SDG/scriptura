@@ -19,6 +19,7 @@ from __future__ import annotations
 from typing import NamedTuple
 
 import bible_family
+from i18n import _
 
 WIDTH = 1180
 AXIS_TOP = 440          # y of 1611, where the time axis begins
@@ -77,7 +78,7 @@ def lanes() -> list[Lane]:
     raw = [(n, ids) for n, ids in raw if ids]
     raw.sort(key=lambda ni: mean_place(ni[1]))
     step = (LANE_RIGHT - LANE_LEFT) / max(1, len(raw) - 1)
-    return [Lane(n, LANE_LEFT + i * step, ids)
+    return [Lane(bible_family.lane_label(n), LANE_LEFT + i * step, ids)
             for i, (n, ids) in enumerate(raw)]
 
 
@@ -150,7 +151,7 @@ def edge_curve(a: tuple[float, float], b: tuple[float, float]):
 
 
 def notes() -> list[Note]:
-    return [Note(year_y(n['year']), n['text'])
+    return [Note(year_y(n['year']), _(n['text']))
             for n in bible_family.family_data().get('note', [])]
 
 
