@@ -2671,8 +2671,9 @@ class BiblePane(Gtk.Box):
         btn.add_css_class('artifact-marker')
         btn.set_can_focus(True)
         btn.set_valign(Gtk.Align.CENTER)
-        btn.set_tooltip_text(_('A creed uses these words — open The Creeds'))
-        set_accessible_label(btn, _('Said in the creeds'))
+        said = creeds.mark_tooltip(self._book, self._chapter, verse)
+        btn.set_tooltip_text(said + '\n' + _('Open it in The Creeds'))
+        set_accessible_label(btn, said or _('Said in the creeds'))
         if self._on_open_creed:
             btn.connect(
                 'clicked',

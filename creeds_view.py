@@ -43,22 +43,24 @@ from i18n import _, book_label, ngettext
 
 #: Width of the Bible strip, and of the label column beside it.
 STRIP_W = 12
-#: The run the threads cross between the lines' ticks and the strip.
+#: The run the threads cross between the lines' ticks and the strip; both
+#: narrower when the pane is (beside the Bible, in the split).
 FIELD_W = 120
 LABELS_W = 176
+COMPACT_FIELD_W = 44
+COMPACT_LABELS_W = 128
 #: Least room between two labels, and between a label and the next.
 LABEL_GAP = 24
 BOOK_GAP = 21
 #: The closest two labels may come when there are too many for the strip.
 MIN_LABEL_GAP = 22
-#: The rail's width, and the room left beyond it for the scrollbar.
-RAIL_W = FIELD_W + STRIP_W + LABELS_W
+#: The room left beyond the rail for the scrollbar.
 RAIL_END = 14
 MIN_BOOK_GAP = 17
-#: Below this width the detail opens under the line; below the second the
-#: strip turns sideways and the threads go.
+#: Below this width the detail opens under the line and the rail narrows;
+#: below the second the strip turns sideways and the threads go.
 WIDE_SP = 880
-NARROW_SP = 560
+NARROW_SP = 420
 THREAD_MS = 550
 
 
@@ -145,6 +147,10 @@ class CreedsPage:
         self._texts: dict[str, Gtk.Label] = {}
         self._geo: dict | None = None
         self._layout_pending = False
+        # Set when the chosen line was picked from outside the page or the
+        # lines reflowed; the next layout, with settled positions, scrolls to it.
+        self._bring_into_view = False
+        self._in_view_timer = 0
         self._built = False
         self._font_pt = 0
         self._chips: dict[str, Gtk.Button] = {}
@@ -219,6 +225,9 @@ class CreedsPage:
         head.append(self._title)
         head.append(text_box)
         page.append(head)
+        # Beside the Bible the switch goes under the title, which it would
+        # otherwise squeeze onto three lines.
+        self._head, self._text_box = head, text_box
         page.append(self._origin)
         page.append(self._facts)
         page.append(self._key())
@@ -257,12 +266,13 @@ class CreedsPage:
         clamp.set_hexpand(True)
         # The scroller runs under the rail to the panel's edge, so its bar
         # sits there, not in the middle of the page; this keeps the room.
-        self._rail_room = Gtk.Box(width_request=RAIL_W + RAIL_END)
+        self._rail_room = Gtk.Box()
         content = Gtk.Box()
         content.append(clamp)
         content.append(self._rail_room)
         scroll.set_child(content)
         scroll.get_vadjustment().connect('value-changed', self._on_scrolled)
+        scroll.get_vadjustment().connect('changed', self._on_lines_resized)
         self._scroll = scroll
 
         # The strip stays put while the lines scroll: the whole Bible is on
@@ -270,10 +280,11 @@ class CreedsPage:
         # it, the verse labels; before it, the run the threads cross. It
         # lies over the scroller, short of its edge, clear of the bar.
         self._rail = Gtk.Box(halign=Gtk.Align.END, margin_end=RAIL_END)
-        self._rail.append(Gtk.Box(width_request=FIELD_W))
+        self._field = Gtk.Box()
+        self._rail.append(self._field)
         self._strip = Gtk.Box(width_request=STRIP_W)
         self._rail.append(self._strip)
-        self._labels = Gtk.Fixed(width_request=LABELS_W)
+        self._labels = Gtk.Fixed()
         self._rail.append(self._labels)
         # The rail is over the scroller, not in it; a wheel over it still
         # moves the lines.
@@ -318,24 +329,7 @@ class CreedsPage:
         box.set_margin_top(10)
         box.set_margin_bottom(4)
 
-        def swatch(draw):
-            a = Gtk.DrawingArea()
-            a.set_content_width(26)
-            a.set_content_height(10)
-            a.set_valign(Gtk.Align.CENTER)
-            a.set_draw_func(lambda ar, cr, w, h: draw(cr, ar.get_color()))
-            return a
-
-        def line(width, alpha, dash=None):
-            def draw(cr, ink):
-                cr.set_source_rgba(ink.red, ink.green, ink.blue, alpha)
-                cr.set_line_width(width)
-                if dash:
-                    cr.set_dash(dash)
-                cr.move_to(1, 5)
-                cr.line_to(25, 5)
-                cr.stroke()
-            return draw
+        swatch = _swatch
 
         def heavier(cr, ink):
             cr.set_source_rgba(ink.red, ink.green, ink.blue, 0.9)
@@ -345,16 +339,17 @@ class CreedsPage:
                 cr.line_to(x1, 5)
                 cr.stroke()
 
-        items = ((line(2.0, 0.95), _('Same words')),
-                 (line(1.2, 0.55), _('Same teaching')),
-                 (line(1.4, 0.8, [4, 3]), _('Foretold')),
+        items = ((_THREAD['w'], _('Same words')),
+                 (_THREAD['t'], _('Same teaching')),
+                 (_THREAD['f'], _('Foretold')),
                  (heavier, _('Heavier: more witnesses')))
         for draw, text in items:
             item = Gtk.Box(spacing=6)
             item.append(swatch(draw))
             item.append(Gtk.Label(label=text))
             box.append(item)
-        for wrap, sample, text in ((_coined, _('word'), _('Not a Bible word')),
+        for wrap, sample, text in ((_coined, _('word'),
+                                    _('A word the Church chose')),
                                    (_disputed, _('line'), _('Disputed'))):
             item = Gtk.Box(spacing=6)
             s = Gtk.Label(use_markup=True)
@@ -400,8 +395,8 @@ class CreedsPage:
             ngettext('{n} link to Scripture', '{n} links to Scripture',
                      links).format(n=links),
             ngettext('{n} book', '{n} books', books).format(n=books),
-            ngettext('{n} cited by an older witness',
-                     '{n} cited by an older witness', older).format(n=older),
+            ngettext('{n} also cited by a witness',
+                     '{n} also cited by a witness', older).format(n=older),
         ]
         if disputed:
             parts.append(ngettext('{n} disputed line', '{n} disputed lines',
@@ -456,7 +451,7 @@ class CreedsPage:
         every = self._creed.get('id') == 'athanasian'
         for p in self._phrases:
             if p['first'] and p['art'] in sections:
-                head = Gtk.Label(label=sections[p['art']], xalign=0)
+                head = Gtk.Label(label=_(sections[p['art']]), xalign=0)
                 head.add_css_class('creeds-section')
                 self._lines.append(head)
             markup, absent = self._line_markup(p)
@@ -551,6 +546,7 @@ class CreedsPage:
         if creed_id != self._creed_id and creed_id in creeds.CREED_IDS:
             self._tabs.set_active_name(creed_id)   # → _on_tab loads it
         self.select_line(pid)
+        self._want_in_view()
         btn = self._rows.get(pid)
         if btn is not None:
             GLib.idle_add(self._reveal, btn)
@@ -624,13 +620,51 @@ class CreedsPage:
         self._apply_width()
         self._show_detail()
         self._queue_layout()
+        # The lines reflowed (a verse just split the window, say): keep the
+        # chosen one in view.
+        self._want_in_view()
+
+    def _want_in_view(self):
+        """Bring the chosen line into view, and again each time the lines'
+        height settles further (a creed just loaded, the page just narrowed)
+        for a second; past that the reader's own scrolling is left alone."""
+        self._bring_into_view = True
+        if self._in_view_timer:
+            GLib.source_remove(self._in_view_timer)
+        self._in_view_timer = GLib.timeout_add(1000, self._stop_bringing)
+
+    def _stop_bringing(self):
+        self._bring_into_view = False
+        self._in_view_timer = 0
+        return GLib.SOURCE_REMOVE
+
+    def _on_lines_resized(self, _adj):
+        if self._bring_into_view and self._sel in self._rows:
+            self._keep_in_view(self._rows[self._sel])
+
+    def _keep_in_view(self, btn):
+        """Scroll the chosen line into view; focus stays where it is. The
+        viewport waits for its own layout, where a measured scroll made now
+        would be clamped to heights not yet settled."""
+        viewport = self._scroll.get_child()
+        if isinstance(viewport, Gtk.Viewport):
+            viewport.scroll_to(btn, None)
 
     def _apply_width(self):
         self._hstrip.set_visible(self._narrow)
         for w in (self._rail, self._rail_room, self._area):
             w.set_visible(not self._narrow)
+        field, labels = ((FIELD_W, LABELS_W) if self._wide
+                         else (COMPACT_FIELD_W, COMPACT_LABELS_W))
+        self._field.set_size_request(field, -1)
+        self._labels.set_size_request(labels, -1)
+        self._rail_room.set_size_request(field + STRIP_W + labels + RAIL_END, -1)
         self._side.set_visible(self._wide)
         self._hint.set_visible(not self._wide)
+        self._head.set_orientation(Gtk.Orientation.HORIZONTAL if self._wide
+                                   else Gtk.Orientation.VERTICAL)
+        self._text_box.set_halign(Gtk.Align.FILL if self._wide
+                                  else Gtk.Align.START)
 
     # ── the detail ───────────────────────────────────────────────────────
 
@@ -671,16 +705,7 @@ class CreedsPage:
         if not self._sel:
             if not self._wide:
                 return None
-            box = _vbox(10, 'creeds-detail')
-            box.append(_label(_('Scripture for a line'), 'creeds-kicker'))
-            box.append(_label(
-                _('Pick a line of the creed. Its verses appear here: the ones '
-                  'whose words the creed uses, the ones that teach what it '
-                  'says, and the promises it sees fulfilled.'), 'creeds-ui'))
-            box.append(_label(
-                _('Keys: Up and Down walk the lines; Esc puts a line down.'),
-                'creeds-hint'))
-            return box
+            return self._opening()
         p = self._byid[self._sel]
         box = _vbox(14, 'creeds-detail')
         self._chips = {}
@@ -703,6 +728,16 @@ class CreedsPage:
             box.append(flag)
         if p.get('note'):
             box.append(_label(p['note'], 'creeds-body'))
+        if p.get('old'):
+            old = _vbox(2, 'creeds-old')
+            old.append(_label(_('Old words'), 'creeds-section-head'))
+            for word, meaning in p['old']:
+                w = Gtk.Label(xalign=0, wrap=True, use_markup=True)
+                w.set_markup(f'<b>{GLib.markup_escape_text(word)}</b>  '
+                             f'{GLib.markup_escape_text(meaning)}')
+                w.add_css_class('creeds-old-word')
+                old.append(w)
+            box.append(old)
         for word, gloss in p.get('coined', []):
             where = (_('The Church chose this word; the New Testament does not '
                        'use it.') if self._creed.get('orig') == 'grc' else
@@ -736,6 +771,71 @@ class CreedsPage:
             left.append(_label(lo['note'], 'creeds-body'))
             left.append(_label(lo['text'], 'creeds-verse'))
             box.append(left)
+        return box
+
+    def _opening(self) -> Gtk.Widget:
+        """Before a line is picked: why the Scripture, how to read the
+        threads (each with a line of this creed to try), who the witnesses
+        are."""
+        box = _vbox(10, 'creeds-detail')
+        box.append(_label(_('Why the Scripture'), 'creeds-kicker'))
+        box.append(_label(CHARTER, 'creeds-quote'))
+        box.append(_label(_('An Orthodox Creed (General Baptists, 1679), '
+                            'Article 38'), 'creeds-cite'))
+        box.append(_label(_('The Thirty-nine Articles (1571) say the same in '
+                            'Article 8. This page sets each line of the creed '
+                            'beside the verses it rests on, so you can see '
+                            'for yourself.'), 'creeds-ui'))
+
+        head = _label(_('Reading the threads'), 'creeds-kicker')
+        head.set_margin_top(12)
+        box.append(head)
+        meaning = {'w': _('Same words: the creed says what Scripture says.'),
+                   't': _('Same teaching: Scripture teaches what the line '
+                          'says.'),
+                   'f': _('Foretold: an Old Testament promise the line sees '
+                          'kept.')}
+        for kind in ('w', 't', 'f'):
+            row = Gtk.Box(spacing=10)
+            sw = _swatch(_THREAD[kind])
+            sw.set_valign(Gtk.Align.START)
+            sw.set_margin_top(5)
+            row.append(sw)
+            col = _vbox(2, 'creeds-reading')
+            col.append(_label(meaning[kind], 'creeds-ui'))
+            pid, ref = EXAMPLES[self._creed_id][kind]
+            p = self._byid.get(pid)
+            if p is not None:
+                text = Gtk.Label(xalign=0, wrap=True)
+                text.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+                text.set_label('“{line}” · {ref}'.format(
+                    line=p['en'].strip().rstrip(',;:.'),
+                    ref=ref_label({'ref': ref,
+                                   'book': ref.rsplit(' ', 1)[0]})))
+                ex = Gtk.Button(child=text)
+                ex.add_css_class('flat')
+                ex.add_css_class('creeds-example')
+                ex.set_tooltip_text(_('Show this line'))
+                ex.connect('clicked',
+                           lambda _b, i=pid, r=ref: self.select_line(i, r))
+                col.append(ex)
+            row.append(col)
+            box.append(row)
+
+        head = _label(_('The witnesses'), 'creeds-kicker')
+        head.set_margin_top(12)
+        box.append(head)
+        box.append(_label(_('A heavier thread is a verse that one of these '
+                            'also cited for the same line:'), 'creeds-ui'))
+        named = {w for _p, link in self._all for w in link['witness']}
+        for w in _WITNESS_ORDER:
+            if w in named:
+                box.append(_label(_WITNESS_FULL[w], 'creeds-witness-line'))
+        box.append(_label(_('Words shared: the verse uses the same words as '
+                            'the creed in its Greek or Latin; they are marked '
+                            'in bold.'), 'creeds-ui'))
+        box.append(_label(_('Pick a line to begin. Up and Down walk the '
+                            'lines; Esc puts a line down.'), 'creeds-hint'))
         return box
 
     def _link_card(self, link: dict, chips: dict) -> Gtk.Widget:
@@ -772,11 +872,13 @@ class CreedsPage:
             if w is None:
                 t = _label(_('No witness yet'), 'creeds-witness')
             elif w == 'Word match':
-                t = _label(_('Word match · {n}').format(n=link.get('shared', 0)),
-                           'creeds-witness')
+                n = link.get('shared', 0)
+                t = _label(ngettext('{n} word shared', '{n} words shared',
+                                    n).format(n=n), 'creeds-witness')
                 t.add_css_class('creeds-witness-measured')
-                t.set_tooltip_text(_('Shares words with the creed in its '
-                                     'original language'))
+                t.set_tooltip_text(_('The words in bold are the ones this '
+                                     'verse shares with the creed in its '
+                                     'Greek or Latin'))
             else:
                 t = _label(w, 'creeds-witness')
                 t.set_tooltip_text(_WITNESS_FULL.get(w, w))
@@ -871,6 +973,8 @@ class CreedsPage:
         self._lines.remove_css_class('creeds-active')
         if active:
             self._lines.add_css_class('creeds-active')
+        if self._bring_into_view and self._sel in self._rows:
+            self._keep_in_view(self._rows[self._sel])
         if self._narrow:
             self._geo = None
             self._hstrip.queue_draw()
@@ -914,11 +1018,12 @@ class CreedsPage:
                 btn = Gtk.Button()
                 row = Gtk.Box(spacing=6)
                 row.append(Gtk.Label(label=book_label(e['name'])))
-                bar = Gtk.Box()
-                bar.add_css_class('creeds-count-bar')
-                bar.set_size_request(round(4 + 44 * e['n'] / most), 4)
-                bar.set_valign(Gtk.Align.CENTER)
-                row.append(bar)
+                if self._wide:      # no room for the bar beside the Bible
+                    bar = Gtk.Box()
+                    bar.add_css_class('creeds-count-bar')
+                    bar.set_size_request(round(4 + 44 * e['n'] / most), 4)
+                    bar.set_valign(Gtk.Align.CENTER)
+                    row.append(bar)
                 n = Gtk.Label(label=str(e['n']))
                 n.add_css_class('creeds-count')
                 row.append(n)
@@ -1124,6 +1229,27 @@ class CreedsPage:
 
 # ── helpers ──────────────────────────────────────────────────────────────
 
+#: Article 38 of An Orthodox Creed (1679), in its own spelling. Content:
+#: quoted, never translated.
+CHARTER = ('“…ought throughly to be received, and believed. For we believe '
+           'they may be proved by most undoubted Authority of holy '
+           'Scripture.”')
+
+#: One line of each creed per kind of thread, for the opening to show:
+#: (line id, reference). tests/test_creeds_view.py holds each to the data.
+EXAMPLES = {
+    'apostles': {'w': ('7a', '2 Timothy 4:1'), 't': ('1b', 'Genesis 1:1'),
+                 'f': ('3b', 'Isaiah 7:14')},
+    'nicene': {'w': ('7c', 'Luke 1:33'), 't': ('2c', 'John 1:1'),
+               'f': ('3c', 'Isaiah 7:14')},
+    'athanasian': {'w': ('41', 'John 5:29'), 't': ('8', 'Psalms 90:2'),
+                   'f': ('22', 'Micah 5:2')},
+}
+
+#: Oldest first.
+_WITNESS_ORDER = ('Cyril', 'Westminster', 'Larger Catechism',
+                  'Orthodox Creed', 'Philaret')
+
 _WITNESS_FULL = {
     'Cyril': 'Cyril of Jerusalem, Catechetical Lectures, c. 350',
     'Philaret': 'Philaret of Moscow, Longer Catechism, 1839',
@@ -1131,6 +1257,32 @@ _WITNESS_FULL = {
     'Larger Catechism': 'Westminster Larger Catechism, 1648',
     'Westminster': 'Westminster Confession of Faith, 1647',
 }
+
+
+def _swatch(draw) -> Gtk.DrawingArea:
+    a = Gtk.DrawingArea()
+    a.set_content_width(26)
+    a.set_content_height(10)
+    a.set_valign(Gtk.Align.CENTER)
+    a.set_draw_func(lambda ar, cr, w, h: draw(cr, ar.get_color()))
+    return a
+
+
+def _line_drawer(width, alpha, dash=None):
+    def draw(cr, ink):
+        cr.set_source_rgba(ink.red, ink.green, ink.blue, alpha)
+        cr.set_line_width(width)
+        if dash:
+            cr.set_dash(dash)
+        cr.move_to(1, 5)
+        cr.line_to(25, 5)
+        cr.stroke()
+    return draw
+
+
+#: How each kind of thread looks in the key and the opening.
+_THREAD = {'w': _line_drawer(2.0, 0.95), 't': _line_drawer(1.2, 0.55),
+           'f': _line_drawer(1.4, 0.8, [4, 3])}
 
 
 def _fold(word: str) -> str:

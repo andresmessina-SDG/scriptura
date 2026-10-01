@@ -3074,6 +3074,40 @@ button.creeds-book {
 .creeds-witness-measured {
     border-style: dashed;
 }
+/* The opening, before a line is picked: the 1679 charter, the threads
+   with a line to try, the witnesses. */
+.creeds-quote {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Georgia', serif;
+    font-size: 1.1em;
+    font-style: italic;
+}
+.creeds-cite,
+.creeds-witness-line {
+    font-size: 0.85em;
+    opacity: 0.7;
+}
+.creeds-cite {
+    margin-bottom: 4px;
+}
+.creeds-reading {
+    margin-bottom: 4px;
+}
+button.creeds-example {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Georgia', serif;
+    font-weight: normal;
+    min-height: 0;
+    padding: 2px 6px;
+    margin-left: -6px;
+}
+/* Old words: the 1662 word, then its sense. English content, so serif. */
+.creeds-old {
+    border-left: 2px dotted alpha(@window_fg_color, 0.25);
+    padding-left: 10px;
+}
+.creeds-old-word {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Georgia', serif;
+    opacity: 0.85;
+}
 .creeds-left-out {
     border-top: 1px solid alpha(@borders, 0.4);
     padding-top: 12px;

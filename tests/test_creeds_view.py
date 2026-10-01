@@ -162,3 +162,42 @@ def test_past_the_least_gap_the_smallest_go():
     kept = cv.fit(items, 21, 17, 0, 170)
     assert len(kept) == 11
     assert all(it['n'] == 5 for it in kept)
+
+
+def test_each_opening_example_is_a_real_thread_of_its_kind():
+    for cid, kinds in cv.EXAMPLES.items():
+        by_id = {p['id']: p for p in creeds.phrases(cid)}
+        for kind, (pid, ref) in kinds.items():
+            assert any(link['ref'] == ref and link['kind'] == kind
+                       for link in by_id[pid]['links']), (cid, kind, ref)
+
+
+def test_the_opening_offers_a_line_to_try_for_each_thread(page):
+    page._wide = True
+    opening = page._detail()
+    examples = []
+    child = opening.get_first_child()
+    stack = [opening]
+    while stack:
+        w = stack.pop()
+        if w.has_css_class('creeds-example'):
+            examples.append(w)
+        c = w.get_first_child()
+        while c is not None:
+            stack.append(c)
+            c = c.get_next_sibling()
+    assert child is not None and len(examples) == 3
+    examples[0].emit('clicked')
+    assert page._sel in {pid for pid, _r in cv.EXAMPLES['apostles'].values()}
+
+
+def test_beside_the_bible_the_rail_narrows_but_stays(page):
+    """In the split a verse opens, the pane is about 500px: the threads stay,
+    on a narrower rail."""
+    page._wide, page._narrow = False, False
+    page._apply_width()
+    assert page._rail.get_visible()
+    assert page._field.get_size_request()[0] == cv.COMPACT_FIELD_W
+    page._wide = True
+    page._apply_width()
+    assert page._field.get_size_request()[0] == cv.FIELD_W

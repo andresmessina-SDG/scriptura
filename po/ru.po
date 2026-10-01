@@ -10933,9 +10933,6 @@ msgstr "Толще: больше свидетелей"
 msgid "word"
 msgstr "слово"
 
-msgid "Not a Bible word"
-msgstr "Не библейское слово"
-
 msgid "line"
 msgstr "строка"
 
@@ -10948,13 +10945,6 @@ msgid_plural "{n} books"
 msgstr[0] "{n} книга"
 msgstr[1] "{n} книги"
 msgstr[2] "{n} книг"
-
-#, python-brace-format
-msgid "{n} cited by an older witness"
-msgid_plural "{n} cited by an older witness"
-msgstr[0] "{n} приводит древний свидетель"
-msgstr[1] "{n} приводят древние свидетели"
-msgstr[2] "{n} приводят древние свидетели"
 
 #, python-brace-format
 msgid "{n} disputed line"
@@ -10980,21 +10970,6 @@ msgstr "Член {n}: {text}"
 msgid "(disputed)"
 msgstr "(спорно)"
 
-msgid "Scripture for a line"
-msgstr "Писание для строки"
-
-msgid ""
-"Pick a line of the creed. Its verses appear here: the ones whose words the "
-"creed uses, the ones that teach what it says, and the promises it sees "
-"fulfilled."
-msgstr ""
-"Выберите строку символа веры. Здесь появятся её стихи: те, чьи слова он "
-"повторяет, те, что учат тому же, и обетования, которые он видит "
-"исполнившимися."
-
-msgid "Keys: Up and Down walk the lines; Esc puts a line down."
-msgstr "Клавиши: Вверх и Вниз — по строкам; Esc снимает выбор строки."
-
 #, python-brace-format
 msgid "Verse {n} of {total}"
 msgstr "Стих {n} из {total}"
@@ -11018,13 +10993,6 @@ msgstr "Открыть в Библии"
 
 msgid "No witness yet"
 msgstr "Свидетелей пока нет"
-
-#, python-brace-format
-msgid "Word match · {n}"
-msgstr "Общие слова · {n}"
-
-msgid "Shares words with the creed in its original language"
-msgstr "Совпадает по словам с символом веры на языке оригинала"
 
 msgid "Book"
 msgstr "Книга"
@@ -11053,8 +11021,97 @@ msgstr[2] "{book}: {n} связей"
 msgid "Three creeds, each line drawn to its Scripture"
 msgstr "Три символа веры, каждая строка связана с Писанием"
 
-msgid "A creed uses these words — open The Creeds"
-msgstr "Эти слова есть в символе веры — открыть «Символы веры»"
-
 msgid "Said in the creeds"
 msgstr "Сказано в символах веры"
+
+#, python-brace-format
+msgid "In the Apostles' Creed: “{line}”"
+msgstr "В Апостольском Символе веры: «{line}»"
+
+#, python-brace-format
+msgid "In the Nicene Creed: “{line}”"
+msgstr "В Никео-Цареградском Символе веры: «{line}»"
+
+#, python-brace-format
+msgid "In the Athanasian Creed: “{line}”"
+msgstr "В Афанасиевом Символе веры: «{line}»"
+
+msgid "Open it in The Creeds"
+msgstr "Открыть в «Символах веры»"
+
+msgid "God the Father"
+msgstr "Бог Отец"
+
+msgid "God the Son"
+msgstr "Бог Сын"
+
+msgid "God the Holy Ghost"
+msgstr "Бог Дух Святой"
+
+msgid "The faith"
+msgstr "Вера"
+
+msgid "The Trinity"
+msgstr "Троица"
+
+msgid "Christ"
+msgstr "Христос"
+
+msgid "A word the Church chose"
+msgstr "Слово, избранное Церковью"
+
+#, python-brace-format
+msgid "{n} also cited by a witness"
+msgid_plural "{n} also cited by a witness"
+msgstr[0] "{n} приводит и свидетель"
+msgstr[1] "{n} приводят и свидетели"
+msgstr[2] "{n} приводят и свидетели"
+
+msgid "Old words"
+msgstr "Устаревшие слова"
+
+msgid "Why the Scripture"
+msgstr "Почему Писание"
+
+msgid "An Orthodox Creed (General Baptists, 1679), Article 38"
+msgstr "An Orthodox Creed (генеральные баптисты, 1679), статья 38"
+
+msgid "The Thirty-nine Articles (1571) say the same in Article 8. This page sets each line of the creed beside the verses it rests on, so you can see for yourself."
+msgstr "Тридцать девять статей (1571) говорят то же в статье 8. Здесь каждая строка символа стоит рядом со стихами, на которых она основана, — чтобы вы могли убедиться сами."
+
+msgid "Reading the threads"
+msgstr "Как читать нити"
+
+msgid "Same words: the creed says what Scripture says."
+msgstr "Те же слова: символ говорит то, что говорит Писание."
+
+msgid "Same teaching: Scripture teaches what the line says."
+msgstr "То же учение: Писание учит тому, что говорит строка."
+
+msgid "Foretold: an Old Testament promise the line sees kept."
+msgstr "Предсказано: ветхозаветное обетование, которое строка видит исполненным."
+
+msgid "Show this line"
+msgstr "Показать эту строку"
+
+msgid "The witnesses"
+msgstr "Свидетели"
+
+msgid "A heavier thread is a verse that one of these also cited for the same line:"
+msgstr "Более толстая нить — стих, который один из них тоже приводит к той же строке:"
+
+msgid "Words shared: the verse uses the same words as the creed in its Greek or Latin; they are marked in bold."
+msgstr "Общие слова: стих употребляет те же слова, что и символ на греческом или латыни; они выделены жирным."
+
+msgid "Pick a line to begin. Up and Down walk the lines; Esc puts a line down."
+msgstr "Выберите строку, чтобы начать. Вверх и Вниз — по строкам; Esc снимает выбор строки."
+
+#, python-brace-format
+msgid "{n} word shared"
+msgid_plural "{n} words shared"
+msgstr[0] "{n} общее слово"
+msgstr[1] "{n} общих слова"
+msgstr[2] "{n} общих слов"
+
+msgid "The words in bold are the ones this verse shares with the creed in its Greek or Latin"
+msgstr "Жирным выделены слова, общие у этого стиха с символом на греческом или латыни"

@@ -41,6 +41,23 @@ def author(b, c):
     return AUTHOR.get(b, b)
 
 # Reference texts: the 1662 wording each creed's phrases must rebuild exactly.
+# 1662 words whose sense has moved, glossed from Webster's 1913 Revised
+# Unabridged Dictionary (public domain; the SWORD module Webster1913), in
+# the sense the creed uses: (word as shown, pattern, meaning).
+OLD_WORDS = [
+    ("quick", r"\bquick\b", "living"),
+    ("Holy Ghost", r"\bHoly Ghost\b", "the Holy Spirit; “ghost” is the old word for spirit"),
+    ("confounding", r"\bconfounding\b", "mixing together, so they cannot be told apart"),
+    ("incomprehensible", r"\bincomprehensibles?\b", "not held within any limits"),
+    ("Godhead", r"\bGodhead\b", "divine nature"),
+    ("verity", r"\bverity\b", "truth"),
+    ("afore", r"\bafore\b", "before"),
+    ("reasonable", r"\breasonable\b", "having reason"),
+    ("as touching", r"\bas touching\b", "concerning; with respect to"),
+    ("Manhood", r"\bManhood\b", "being human"),
+    ("conversion", r"\bconversion\b", "change from one state to another"),
+]
+
 REF_EN = {
  "nicene": "I believe in one God the Father Almighty, Maker of heaven and earth, And of all things visible and invisible: And in one Lord Jesus Christ, the only-begotten Son of God, Begotten of his Father before all worlds, God of God, Light of Light, Very God of very God, Begotten, not made, Being of one substance with the Father, By whom all things were made; Who for us men, and for our salvation came down from heaven, And was incarnate by the Holy Ghost of the Virgin Mary, And was made man, And was crucified also for us under Pontius Pilate. He suffered and was buried, And the third day he rose again according to the Scriptures, And ascended into heaven, And sitteth on the right hand of the Father. And he shall come again with glory to judge both the quick and the dead: Whose kingdom shall have no end. And I believe in the Holy Ghost, The Lord and giver of life, Who proceedeth from the Father and the Son, Who with the Father and the Son together is worshipped and glorified, Who spake by the Prophets. And I believe one Catholick and Apostolick Church. I acknowledge one Baptism for the remission of sins. And I look for the Resurrection of the dead, And the life of the world to come. Amen.",
  "apostles": "I believe in God the Father Almighty, Maker of heaven and earth: And in Jesus Christ his only Son our Lord, Who was conceived by the Holy Ghost, Born of the Virgin Mary, Suffered under Pontius Pilate, Was crucified, dead, and buried: He descended into hell; The third day he rose again from the dead; He ascended into heaven, And sitteth on the right hand of God the Father Almighty; From thence he shall come to judge the quick and the dead. I believe in the Holy Ghost; The holy Catholick Church; The Communion of Saints; The Forgiveness of sins; The Resurrection of the body, And the Life everlasting. Amen.",
@@ -137,6 +154,9 @@ for cid, mod in (("apostles", apostles_data), ("nicene", nicene_data), ("athanas
             if not note: errors.append(f"{cid} {n}: left-out {ref} has no note")
         for pid, en, orig, keys, links, extra in art["phrases"]:
             P = {"id": pid, "en": en, "orig": orig, "links": [], **extra}
+            old = [[w, m] for w, pat, m in OLD_WORDS if re.search(pat, en)]
+            if old:
+                P["old"] = old
             if not links: errors.append(f"{cid} {pid}: no links")
             if extra.get("disputed") and not extra.get("note"): errors.append(f"{cid} {pid}: disputed without a note")
             for w in mod.COINED_EN.get(pid, []):
@@ -202,6 +222,10 @@ for cid, mod in (("apostles", apostles_data), ("nicene", nicene_data), ("athanas
             if x != y: errors.append(f"athanasian {k}: differs from the 1662 text")
         if len(got) != len(ref): errors.append(f"athanasian: {len(got)} lines, 1662 has {len(ref)}")
     out["creeds"].append(C)
+
+for w, pat, _m in OLD_WORDS:
+    if not any(re.search(pat, p["en"]) for c in out["creeds"] for a in c["articles"] for p in a["phrases"]):
+        errors.append(f"old word '{w}' is in no line")
 
 with open(OUT, 'w', encoding='utf-8') as f:
     json.dump(out, f, ensure_ascii=False, indent=1)

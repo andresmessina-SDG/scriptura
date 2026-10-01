@@ -122,7 +122,7 @@ ARTICLES = [
   ("8b", " and giver of life,",
    "τὸ ζωοποιόν,", "πνεῦμα ζῳοποιέω",
    [("w", "John 6:63"), ("w", "2 Corinthians 3:6"), ("t", "Romans 8:11"), ("f", "Ezekiel 37:14")],
-   {"coined": [("ζωοποιόν", "life-giving (the noun form; Scripture uses the verb)")]}),
+   {"note": "Christ's own word, as a verb: “It is the spirit that quickeneth” (John 6:63), τὸ ζωοποιοῦν, “that which gives life”. The creed makes it a title."}),
   ("8c", " Who proceedeth from the Father",
    "τὸ ἐκ τοῦ Πατρὸς ἐκπορευόμενον,", "πατήρ ἐκπορεύω",
    [("w", "John 15:26")],
@@ -183,7 +183,10 @@ AUTHOR = {
  "1 John": "John", "Revelation": "John",
 }
 
-COINED_EN = {"2f":["one substance"],"3c":["incarnate"],"3d":["made man"],"8b":["giver of life"],"8e":["worshipped and glorified"],"9a":["Catholick","Apostolick"]}
+# The creed's three parts, as Heidelberg Q 24 divides the Apostles': (first article, name).
+SECTIONS = [(1, "God the Father"), (2, "God the Son"), (8, "God the Holy Ghost")]
+
+COINED_EN = {"2f":["one substance"],"3c":["incarnate"],"3d":["made man"],"8e":["worshipped and glorified"],"9a":["Catholick","Apostolick"]}
 
 # Witnesses: Cyril (lectures), Philaret (article), An Orthodox Creed (1679) articles.
 _OC = {1:["2","3","11"],2:["4"],3:["5","6"],4:["17","18"],5:["17"],6:["17"],7:["17","50"],8:["8"],9:["29","30"],10:["27","28"],11:["49"],12:["49","50"]}

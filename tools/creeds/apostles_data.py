@@ -88,6 +88,9 @@ ARTICLES = [
 
 COINED_EN = {"9a": ["Catholick"]}
 
+# The creed's three parts, as Heidelberg Q 24 divides it: (first article, name).
+SECTIONS = [(1, "God the Father"), (2, "God the Son"), (8, "God the Holy Ghost")]
+
 # Witnesses: Westminster Larger Catechism (1648) questions, An Orthodox Creed (1679) articles.
 WITNESS = {
  1: {"WLC": ["7", "8", "9", "10", "11", "15"], "OC": ["2", "3", "11"]},

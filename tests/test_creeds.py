@@ -96,3 +96,45 @@ def test_no_verse_carries_the_kjv_closing_note():
                 assert 'was written from' not in link['text'], link['ref']
                 assert not link['text'].endswith(('Tychicus.', 'Timothy.')), (
                     link['ref'])
+
+
+def test_every_section_heading_is_in_the_catalogue():
+    """The headings come from the data; the page translates them, so each
+    must be one the catalogues carry."""
+    for c in creeds.data()['creeds']:
+        for _n, name in c.get('sections') or []:
+            assert name in creeds.SECTION_NAMES, name
+
+
+def test_the_apostles_and_nicene_are_set_in_three_parts():
+    for cid in ('apostles', 'nicene'):
+        c = creeds.creed(cid)
+        assert [name for _n, name in c['sections']] == [
+            'God the Father', 'God the Son', 'God the Holy Ghost']
+
+
+def test_old_words_are_glossed_where_they_stand():
+    def old(cid, pid):
+        p = next(p for p in creeds.phrases(cid) if p['id'] == pid)
+        return dict(p.get('old', []))
+    assert old('apostles', '7a')['quick'] == 'living'
+    assert old('nicene', '7b')['quick'] == 'living'
+    assert 'conversion' in old('athanasian', '35')
+    assert 'as touching' in old('athanasian', '33')
+    assert 'quick' not in old('apostles', '1a')
+
+
+def test_giver_of_life_is_not_marked_as_a_word_the_church_chose():
+    """John 6:63 has the same word as a verb, and the line already links it
+    as the same words."""
+    c = creeds.creed('nicene')
+    assert '8b' not in c['coined_en']
+    p = next(p for p in creeds.phrases('nicene') if p['id'] == '8b')
+    assert not p.get('coined')
+    assert 'John 6:63' in p['note']
+
+
+def test_the_mark_names_the_creed_and_the_line():
+    assert creeds.mark_tooltip('Luke', 1, 33) == (
+        'In the Nicene Creed: “Whose kingdom shall have no end”')
+    assert creeds.mark_tooltip('Genesis', 1, 2) == ''

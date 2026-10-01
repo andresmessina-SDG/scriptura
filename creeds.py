@@ -54,6 +54,20 @@ ORIGINS = {
                   'but not his.',
 }
 
+#: The reading view's mark, one whole sentence per creed so each language
+#: can fit the creed's name to it.
+SAID_IN = {
+    'apostles': N_("In the Apostles' Creed: “{line}”"),
+    'nicene': N_('In the Nicene Creed: “{line}”'),
+    'athanasian': N_('In the Athanasian Creed: “{line}”'),
+}
+
+#: The section headings the data names, here so the catalogues carry them:
+#: the page shows them through _().
+SECTION_NAMES = (N_('God the Father'), N_('God the Son'),
+                 N_('God the Holy Ghost'), N_('The faith'), N_('The Trinity'),
+                 N_('Christ'))
+
 KIND_NAMES = {
     'w': N_('Same words'),
     't': N_('Same teaching'),
@@ -140,6 +154,16 @@ def _same_words() -> dict[tuple[str, int], dict[int, list[tuple[str, str]]]]:
 def marker_verses(book: str, chapter: int) -> set[int]:
     """Verses in this chapter whose words a creed uses."""
     return set(_same_words().get((book, chapter), {}))
+
+
+def mark_tooltip(book: str, chapter: int, verse: int) -> str:
+    """What the reading view's mark says: which creed, and the line."""
+    found = line_for_verse(book, chapter, verse)
+    if found is None:
+        return ''
+    cid, pid = found
+    line = next((p['en'] for p in phrases(cid) if p['id'] == pid), '')
+    return _(SAID_IN[cid]).format(line=line.strip().rstrip(',;:.'))
 
 
 def line_for_verse(book: str, chapter: int, verse: int,

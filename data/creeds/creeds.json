@@ -9,7 +9,20 @@
      "Catholick"
     ]
    },
-   "sections": null,
+   "sections": [
+    [
+     1,
+     "God the Father"
+    ],
+    [
+     2,
+     "God the Son"
+    ],
+    [
+     8,
+     "God the Holy Ghost"
+    ]
+   ],
    "articles": [
     {
      "n": 1,
@@ -1912,6 +1925,12 @@
           "Orthodox Creed"
          ]
         }
+       ],
+       "old": [
+        [
+         "Holy Ghost",
+         "the Holy Spirit; “ghost” is the old word for spirit"
+        ]
        ]
       },
       {
@@ -4429,6 +4448,12 @@
          "tp": 0.921901,
          "witness": []
         }
+       ],
+       "old": [
+        [
+         "quick",
+         "living"
+        ]
        ]
       }
      ],
@@ -4612,6 +4637,12 @@
          "tp": 0.944951,
          "witness": []
         }
+       ],
+       "old": [
+        [
+         "Holy Ghost",
+         "the Holy Spirit; “ghost” is the old word for spirit"
+        ]
        ]
       }
      ],
@@ -5939,9 +5970,6 @@
     "3d": [
      "made man"
     ],
-    "8b": [
-     "giver of life"
-    ],
     "8e": [
      "worshipped and glorified"
     ],
@@ -5950,7 +5978,20 @@
      "Apostolick"
     ]
    },
-   "sections": null,
+   "sections": [
+    [
+     1,
+     "God the Father"
+    ],
+    [
+     2,
+     "God the Son"
+    ],
+    [
+     8,
+     "God the Holy Ghost"
+    ]
+   ],
    "articles": [
     {
      "n": 1,
@@ -8767,7 +8808,13 @@
          "made flesh"
         ]
        ],
-       "note": "“Incarnate” puts John 1:14, “the Word was made flesh”, into one verb that the New Testament itself does not use."
+       "note": "“Incarnate” puts John 1:14, “the Word was made flesh”, into one verb that the New Testament itself does not use.",
+       "old": [
+        [
+         "Holy Ghost",
+         "the Holy Spirit; “ghost” is the old word for spirit"
+        ]
+       ]
       },
       {
        "id": "3d",
@@ -10304,6 +10351,12 @@
          ],
          "shared": 2
         }
+       ],
+       "old": [
+        [
+         "quick",
+         "living"
+        ]
        ]
       },
       {
@@ -10576,6 +10629,12 @@
           "Orthodox Creed"
          ]
         }
+       ],
+       "old": [
+        [
+         "Holy Ghost",
+         "the Holy Spirit; “ghost” is the old word for spirit"
+        ]
        ]
       },
       {
@@ -10849,12 +10908,7 @@
          "witness": []
         }
        ],
-       "coined": [
-        [
-         "ζωοποιόν",
-         "life-giving (the noun form; Scripture uses the verb)"
-        ]
-       ]
+       "note": "Christ's own word, as a verb: “It is the spirit that quickeneth” (John 6:63), τὸ ζωοποιοῦν, “that which gives life”. The creed makes it a title."
       },
       {
        "id": "8c",
@@ -12815,6 +12869,12 @@
          "tp": 0.313462,
          "witness": []
         }
+       ],
+       "old": [
+        [
+         "confounding",
+         "mixing together, so they cannot be told apart"
+        ]
        ]
       }
      ],
@@ -12889,6 +12949,12 @@
          "tp": 0.313462,
          "witness": []
         }
+       ],
+       "old": [
+        [
+         "Holy Ghost",
+         "the Holy Spirit; “ghost” is the old word for spirit"
+        ]
        ]
       }
      ],
@@ -13011,6 +13077,16 @@
          "coæterna",
          "co-eternal"
         ]
+       ],
+       "old": [
+        [
+         "Holy Ghost",
+         "the Holy Spirit; “ghost” is the old word for spirit"
+        ],
+        [
+         "Godhead",
+         "divine nature"
+        ]
        ]
       }
      ],
@@ -13063,6 +13139,12 @@
          "tp": 0.320921,
          "witness": []
         }
+       ],
+       "old": [
+        [
+         "Holy Ghost",
+         "the Holy Spirit; “ghost” is the old word for spirit"
+        ]
        ]
       }
      ],
@@ -13139,6 +13221,12 @@
          "Increatus",
          "uncreate, “uncreated”"
         ]
+       ],
+       "old": [
+        [
+         "Holy Ghost",
+         "the Holy Spirit; “ghost” is the old word for spirit"
+        ]
        ]
       }
      ],
@@ -13212,7 +13300,17 @@
          "witness": []
         }
        ],
-       "note": "The Latin immensus means “without measure”: not held within any place. The 1662 “incomprehensible” carries that older sense."
+       "note": "The Latin immensus means “without measure”: not held within any place. The 1662 “incomprehensible” carries that older sense.",
+       "old": [
+        [
+         "Holy Ghost",
+         "the Holy Spirit; “ghost” is the old word for spirit"
+        ],
+        [
+         "incomprehensible",
+         "not held within any limits"
+        ]
+       ]
       }
      ],
      "left_out": []
@@ -13392,6 +13490,12 @@
           "Orthodox Creed"
          ]
         }
+       ],
+       "old": [
+        [
+         "Holy Ghost",
+         "the Holy Spirit; “ghost” is the old word for spirit"
+        ]
        ]
       }
      ],
@@ -13483,6 +13587,12 @@
         [
          "increatus",
          "uncreated"
+        ]
+       ],
+       "old": [
+        [
+         "incomprehensible",
+         "not held within any limits"
         ]
        ]
       }
@@ -13778,6 +13888,12 @@
          "tp": 0.506002,
          "witness": []
         }
+       ],
+       "old": [
+        [
+         "Holy Ghost",
+         "the Holy Spirit; “ghost” is the old word for spirit"
+        ]
        ]
       }
      ],
@@ -14216,6 +14332,12 @@
          "tp": 0.776282,
          "witness": []
         }
+       ],
+       "old": [
+        [
+         "Holy Ghost",
+         "the Holy Spirit; “ghost” is the old word for spirit"
+        ]
        ]
       }
      ],
@@ -14801,6 +14923,12 @@
          ],
          "shared": 2
         }
+       ],
+       "old": [
+        [
+         "Holy Ghost",
+         "the Holy Spirit; “ghost” is the old word for spirit"
+        ]
        ]
       }
      ],
@@ -15046,6 +15174,12 @@
          "tp": 0.674423,
          "witness": []
         }
+       ],
+       "old": [
+        [
+         "verity",
+         "truth"
+        ]
        ]
       }
      ],
@@ -15620,7 +15754,13 @@
        "disputed": true,
        "disp_en": "and of the Son",
        "disp_orig": "et Filio",
-       "note": "The Latin says “of the Father and of the Son”. This creed was written in the West; the Orthodox, who confess that the Spirit proceeds from the Father (John 15:26), do not use it."
+       "note": "The Latin says “of the Father and of the Son”. This creed was written in the West; the Orthodox, who confess that the Spirit proceeds from the Father (John 15:26), do not use it.",
+       "old": [
+        [
+         "Holy Ghost",
+         "the Holy Spirit; “ghost” is the old word for spirit"
+        ]
+       ]
       }
      ],
      "left_out": []
@@ -15836,6 +15976,12 @@
           "Orthodox Creed"
          ]
         }
+       ],
+       "old": [
+        [
+         "Holy Ghost",
+         "the Holy Spirit; “ghost” is the old word for spirit"
+        ]
        ]
       }
      ],
@@ -15910,6 +16056,12 @@
         [
          "Trinitate",
          "Trinity"
+        ]
+       ],
+       "old": [
+        [
+         "afore",
+         "before"
         ]
        ]
       }
@@ -16738,6 +16890,12 @@
           "Orthodox Creed"
          ]
         }
+       ],
+       "old": [
+        [
+         "reasonable",
+         "having reason"
+        ]
        ]
       }
      ],
@@ -16879,6 +17037,20 @@
          "tp": 0.790278,
          "witness": []
         }
+       ],
+       "old": [
+        [
+         "Godhead",
+         "divine nature"
+        ],
+        [
+         "as touching",
+         "concerning; with respect to"
+        ],
+        [
+         "Manhood",
+         "being human"
+        ]
        ]
       }
      ],
@@ -17010,6 +17182,20 @@
           "Orthodox Creed"
          ]
         }
+       ],
+       "old": [
+        [
+         "Godhead",
+         "divine nature"
+        ],
+        [
+         "Manhood",
+         "being human"
+        ],
+        [
+         "conversion",
+         "change from one state to another"
+        ]
        ]
       }
      ],
@@ -17125,6 +17311,12 @@
          "tp": 0.718475,
          "witness": []
         }
+       ],
+       "old": [
+        [
+         "reasonable",
+         "having reason"
+        ]
        ]
       }
      ],
@@ -18006,6 +18198,12 @@
          "tp": 0.631939,
          "witness": []
         }
+       ],
+       "old": [
+        [
+         "quick",
+         "living"
+        ]
        ]
       }
      ],

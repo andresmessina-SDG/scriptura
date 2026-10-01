@@ -10972,9 +10972,6 @@ msgstr "Más grueso: más testigos"
 msgid "word"
 msgstr "palabra"
 
-msgid "Not a Bible word"
-msgstr "No es palabra bíblica"
-
 msgid "line"
 msgstr "línea"
 
@@ -10986,12 +10983,6 @@ msgid "{n} book"
 msgid_plural "{n} books"
 msgstr[0] "{n} libro"
 msgstr[1] "{n} libros"
-
-#, python-brace-format
-msgid "{n} cited by an older witness"
-msgid_plural "{n} cited by an older witness"
-msgstr[0] "{n} citado por un testigo antiguo"
-msgstr[1] "{n} citados por un testigo antiguo"
 
 #, python-brace-format
 msgid "{n} disputed line"
@@ -11015,22 +11006,6 @@ msgstr "Artículo {n}: {text}"
 
 msgid "(disputed)"
 msgstr "(discutido)"
-
-msgid "Scripture for a line"
-msgstr "La Escritura de una línea"
-
-msgid ""
-"Pick a line of the creed. Its verses appear here: the ones whose words the "
-"creed uses, the ones that teach what it says, and the promises it sees "
-"fulfilled."
-msgstr ""
-"Elija una línea del credo. Sus versículos aparecen aquí: los que prestan "
-"sus palabras al credo, los que enseñan lo que dice y las promesas que ve "
-"cumplidas."
-
-msgid "Keys: Up and Down walk the lines; Esc puts a line down."
-msgstr ""
-"Teclas: Arriba y Abajo recorren las líneas; Esc deja de mostrar una línea."
 
 #, python-brace-format
 msgid "Verse {n} of {total}"
@@ -11056,13 +11031,6 @@ msgstr "Abrir en la Biblia"
 msgid "No witness yet"
 msgstr "Aún sin testigo"
 
-#, python-brace-format
-msgid "Word match · {n}"
-msgstr "Palabras en común · {n}"
-
-msgid "Shares words with the creed in its original language"
-msgstr "Comparte palabras con el credo en su lengua original"
-
 msgid "Book"
 msgstr "Libro"
 
@@ -11087,8 +11055,95 @@ msgstr[1] "{book}: {n} vínculos"
 msgid "Three creeds, each line drawn to its Scripture"
 msgstr "Tres credos, cada línea unida a su Escritura"
 
-msgid "A creed uses these words — open The Creeds"
-msgstr "Un credo usa estas palabras: abrir Los Credos"
-
 msgid "Said in the creeds"
 msgstr "Dicho en los credos"
+
+#, python-brace-format
+msgid "In the Apostles' Creed: “{line}”"
+msgstr "En el Credo de los Apóstoles: «{line}»"
+
+#, python-brace-format
+msgid "In the Nicene Creed: “{line}”"
+msgstr "En el Credo Niceno: «{line}»"
+
+#, python-brace-format
+msgid "In the Athanasian Creed: “{line}”"
+msgstr "En el Credo de Atanasio: «{line}»"
+
+msgid "Open it in The Creeds"
+msgstr "Abrirlo en Los Credos"
+
+msgid "God the Father"
+msgstr "Dios Padre"
+
+msgid "God the Son"
+msgstr "Dios Hijo"
+
+msgid "God the Holy Ghost"
+msgstr "Dios Espíritu Santo"
+
+msgid "The faith"
+msgstr "La fe"
+
+msgid "The Trinity"
+msgstr "La Trinidad"
+
+msgid "Christ"
+msgstr "Cristo"
+
+msgid "A word the Church chose"
+msgstr "Una palabra que eligió la Iglesia"
+
+#, python-brace-format
+msgid "{n} also cited by a witness"
+msgid_plural "{n} also cited by a witness"
+msgstr[0] "{n} citado también por un testigo"
+msgstr[1] "{n} citados también por un testigo"
+
+msgid "Old words"
+msgstr "Palabras antiguas"
+
+msgid "Why the Scripture"
+msgstr "Por qué la Escritura"
+
+msgid "An Orthodox Creed (General Baptists, 1679), Article 38"
+msgstr "An Orthodox Creed (bautistas generales, 1679), artículo 38"
+
+msgid "The Thirty-nine Articles (1571) say the same in Article 8. This page sets each line of the creed beside the verses it rests on, so you can see for yourself."
+msgstr "Los Treinta y Nueve Artículos (1571) dicen lo mismo en el artículo 8. Esta página pone cada línea del credo junto a los versículos en que se apoya, para que lo veas por ti mismo."
+
+msgid "Reading the threads"
+msgstr "Cómo leer los hilos"
+
+msgid "Same words: the creed says what Scripture says."
+msgstr "Mismas palabras: el credo dice lo que dice la Escritura."
+
+msgid "Same teaching: Scripture teaches what the line says."
+msgstr "Misma enseñanza: la Escritura enseña lo que dice la línea."
+
+msgid "Foretold: an Old Testament promise the line sees kept."
+msgstr "Anunciado: una promesa del Antiguo Testamento que la línea ve cumplida."
+
+msgid "Show this line"
+msgstr "Mostrar esta línea"
+
+msgid "The witnesses"
+msgstr "Los testigos"
+
+msgid "A heavier thread is a verse that one of these also cited for the same line:"
+msgstr "Un hilo más grueso es un versículo que uno de ellos también citó para la misma línea:"
+
+msgid "Words shared: the verse uses the same words as the creed in its Greek or Latin; they are marked in bold."
+msgstr "Palabras en común: el versículo usa las mismas palabras que el credo en su griego o latín; van en negrita."
+
+msgid "Pick a line to begin. Up and Down walk the lines; Esc puts a line down."
+msgstr "Elige una línea para empezar. Arriba y Abajo recorren las líneas; Esc deja de mostrar una línea."
+
+#, python-brace-format
+msgid "{n} word shared"
+msgid_plural "{n} words shared"
+msgstr[0] "{n} palabra en común"
+msgstr[1] "{n} palabras en común"
+
+msgid "The words in bold are the ones this verse shares with the creed in its Greek or Latin"
+msgstr "Las palabras en negrita son las que este versículo comparte con el credo en su griego o latín"
