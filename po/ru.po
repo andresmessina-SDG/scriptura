@@ -11064,8 +11064,8 @@ msgstr[2] "{n} приводят и свидетели"
 msgid "Old words"
 msgstr "Устаревшие слова"
 
-msgid "Why the Scripture"
-msgstr "Почему Писание"
+msgid "Proved by Scripture"
+msgstr "Доказано Писанием"
 
 msgid "Reading the threads"
 msgstr "Как читать нити"

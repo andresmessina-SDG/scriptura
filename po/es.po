@@ -11097,8 +11097,8 @@ msgstr[1] "{n} citados también por un testigo"
 msgid "Old words"
 msgstr "Palabras antiguas"
 
-msgid "Why the Scripture"
-msgstr "Por qué la Escritura"
+msgid "Proved by Scripture"
+msgstr "Probado por la Escritura"
 
 msgid "Reading the threads"
 msgstr "Cómo leer los hilos"

@@ -785,7 +785,7 @@ class CreedsPage:
         are."""
         opening = creeds.data().get('opening', {})
         box = _vbox(10, 'creeds-detail')
-        box.append(_label(_('Why the Scripture'), 'creeds-kicker'))
+        box.append(_label(_('Proved by Scripture'), 'creeds-kicker'))
         for q in opening.get('why', []):
             box.append(_quotation(q))
 
