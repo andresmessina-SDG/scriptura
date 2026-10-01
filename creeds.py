@@ -1,6 +1,6 @@
 """creeds.py — The Creeds, the bundled module.
 
-The Apostles', Nicene and Athanasian Creeds, each line tied to the verses it
+The Apostles', Nicene, Chalcedonian and Athanasian Creeds, each line tied to the verses it
 is drawn from. The data is built and checked by `tools/creeds/build_creeds.py`
 into `data/creeds/creeds.json`; this module reads it for three callers:
 
@@ -36,12 +36,18 @@ _DATA_FILE = os.path.join(_HERE, 'data', 'creeds', 'creeds.json')
 MODULE_KEY = 'TheCreeds'
 DISPLAY_NAME = N_('The Creeds')
 
-#: Tab order: the Book of Concord's, which is also shortest to longest.
-CREED_IDS = ('apostles', 'nicene', 'athanasian')
+#: Tab order: Schaff's for the four, which is also the order of their councils
+#: and of the Book of Concord's three.
+CREED_IDS = ('apostles', 'nicene', 'chalcedon', 'athanasian')
+
+#: How a creed numbers its lines: by article, or line by line.
+UNITS = {'apostles': 'article', 'nicene': 'article', 'chalcedon': 'line',
+         'athanasian': 'verse'}
 
 TITLES = {
     'apostles': N_("The Apostles' Creed"),
     'nicene': N_('The Nicene Creed'),
+    'chalcedon': N_('The Chalcedonian Creed'),
     'athanasian': N_('The Athanasian Creed'),
 }
 
@@ -50,6 +56,7 @@ TITLES = {
 SAID_IN = {
     'apostles': N_("In the Apostles' Creed: “{line}”"),
     'nicene': N_('In the Nicene Creed: “{line}”'),
+    'chalcedon': N_('In the Chalcedonian Creed: “{line}”'),
     'athanasian': N_('In the Athanasian Creed: “{line}”'),
 }
 
@@ -57,7 +64,9 @@ SAID_IN = {
 #: the page shows them through _().
 SECTION_NAMES = (N_('God the Father'), N_('God the Son'),
                  N_('God the Holy Ghost'), N_('The faith'), N_('The Trinity'),
-                 N_('Christ'))
+                 N_('Christ'), N_('One and the same Son'),
+                 N_('Truly God and truly man'), N_('In two natures'),
+                 N_('As the prophets declared'))
 
 KIND_NAMES = {
     'w': N_('Same words'),
@@ -111,8 +120,8 @@ def info() -> dict[str, str]:
     n = sum(len(p['links']) for c in data().get('creeds', [])
             for a in c['articles'] for p in a['phrases'])
     return {
-        'description': _("The Apostles', Nicene and Athanasian Creeds, each "
-                         'line drawn to the verses it comes from.'),
+        'description': _("The Apostles', Nicene, Chalcedonian and Athanasian "
+                         'Creeds, each line drawn to the verses it comes from.'),
         'type': ngettext('{n} link to Scripture', '{n} links to Scripture',
                          n).format(n=n),
         'language': 'en',

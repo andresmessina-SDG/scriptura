@@ -25,7 +25,7 @@ and Vulgate modules installed, and Scriptura's Greek interlinear
 import json, os, re, sqlite3, subprocess, sys, unicodedata
 HERE = os.path.dirname(os.path.abspath(__file__)) + '/'
 sys.path.insert(0, HERE)
-import nicene_data, apostles_data, athanasian_data
+import nicene_data, apostles_data, athanasian_data, chalcedon_data
 import quotes as Q
 import Sword
 
@@ -119,7 +119,8 @@ def tpos(b, c, v):
 W = json.load(open(HERE + 'witnesses.json'))
 BAD_WIT = sorted({f"{src} {sec}: {B} {C}:{A}" for src, secs in W.items() for sec, rs in secs.items() for B, C, A, Z in rs
                   if B in OFF and 1 <= C <= dict(BOOKS)[B] and A > vmax(B, C)})
-WNAME = {"Cyril": "Cyril", "Philaret": "Philaret", "OC": "Orthodox Creed", "WLC": "Larger Catechism", "WCF": "Westminster"}
+WNAME = {"Cyril": "Cyril", "Philaret": "Philaret", "OC": "Orthodox Creed", "WLC": "Larger Catechism", "WCF": "Westminster",
+         "Leo": "Leo"}
 def cites(src, secs, b, c, v1, v2):
     for s in secs:
         for B, C, A, Z in W[src].get(s, []):
@@ -144,10 +145,12 @@ errors, warns = [], []
 # source (fetch_texts.py; src/oc.txt for An Orthodox Creed). Spacing, quote
 # marks, case and footnote numbers are set aside on both sides.
 def _plain(t):
+    t = unicodedata.normalize('NFC', t)    # one code point per accented letter
     t = t.replace('’', "'").replace('‘', "'").replace('“', '"').replace('”', '"')
     t = re.sub(r'\s+', ' ', t)
     t = re.sub(r' \d{1,3}(?= )', '', t)            # footnote and page numbers
     t = re.sub(r' ?— ?', '—', t)
+    t = re.sub(r'(?<=[(\[]) ', '', t)
     t = re.sub(r' (?=[,;:.?!)\]\'"])', '', t)
     return t.casefold()
 _SRC = {}
@@ -181,7 +184,8 @@ out = {"creeds": [], "books": [[b, OFF[b], n] for b, n in BOOKS],
                         round((OFF[b] + n - (NT0 if OFF[b] >= NT0 else 0)) / ((TOTAL - NT0) if OFF[b] >= NT0 else NT0), 6),
                         OFF[b] >= NT0] for b, n in BOOKS}}
 VW = None
-for cid, mod in (("apostles", apostles_data), ("nicene", nicene_data), ("athanasian", athanasian_data)):
+for cid, mod in (("apostles", apostles_data), ("nicene", nicene_data), ("chalcedon", chalcedon_data),
+                 ("athanasian", athanasian_data)):
     C = {"id": cid, "title": mod.TITLE, "orig": mod.ORIG, "coined_en": mod.COINED_EN,
          "origin": quoted(Q.ORIGINS[cid], f"{cid} origin"),
          "sections": getattr(mod, "SECTIONS", None), "articles": []}
@@ -241,15 +245,41 @@ for cid, mod in (("apostles", apostles_data), ("nicene", nicene_data), ("athanas
                     else: errors.append(f"{cid} {pid}: same-words link {ref} shares no word")
                 P["links"].append(L)
             # coined words are absent from Scripture
-            for w, _g in extra.get("coined", []):
+            if extra.get("coined"):
+                P["coined"] = [[c[0], c[1]] for c in extra["coined"]]
+            for w, _g, *lemma in extra.get("coined", []):
                 if mod.ORIG == "grc":
-                    pass  # Greek coined words were checked against TAGNT lemmas in the echo test
+                    # given its lemma, a Greek word is looked for in the Greek NT; the
+                    # Nicene's were checked in the echo test (CREEDS_RESEARCH.md §7)
+                    if lemma and norm_gr(lemma[0]) in NT_LEMMAS:
+                        errors.append(f"{cid} {pid}: coined '{w}' is in the Greek New Testament")
                 else:
                     if VW is None: VW = vulgate_words()
                     st = norm_la(w)[:6]
                     if any(x.startswith(st) for x in VW): errors.append(f"{cid} {pid}: coined '{w}' is in the Vulgate")
             A["phrases"].append(P)
         C["articles"].append(A)
+    # Schaff's text: the lines rebuild his English exactly, and his English and
+    # Greek (the transcription's slips undone) are his words, in his order.
+    if hasattr(mod, "REF_EN"):
+        got = re.sub(r'\s+', ' ', ' '.join(p["en"] for a in C["articles"] for p in a["phrases"])).strip()
+        if got != mod.REF_EN: errors.append(f"{cid}: lines differ from Schaff's English")
+        src = _source("schaff_chalcedon_text")
+        if src is None:
+            _UNCHECKED.add("schaff_chalcedon_text")
+        else:
+            gr = ' '.join(p["orig"] for a in C["articles"] for p in a["phrases"])
+            for bad, good in mod.GREEK_FIXES:
+                if gr.count(good) != 1: errors.append(f"{cid}: Greek fix '{good}' not found once")
+                gr = gr.replace(good, bad)
+            words = re.findall(r'\w+', src)
+            for label, text in (("English", mod.REF_EN), ("Greek", gr)):
+                at = 0
+                for w in re.findall(r'\w+', _plain(text)):
+                    try:
+                        at = words.index(w, at) + 1
+                    except ValueError:
+                        errors.append(f"{cid}: {label} word '{w}' not in Schaff's text, in order"); break
     # the phrases rebuild the 1662 text exactly
     if cid in REF_EN:
         got = re.sub(r'\s+', ' ', ' '.join(''.join(p["en"] for p in a["phrases"]) for a in C["articles"])).strip()

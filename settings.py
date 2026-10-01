@@ -131,7 +131,8 @@ _defaults: dict[str, Any] = {
     'family_tree_root_open': False,
     # The Family's arrangement: 'family' (lanes) or 'line' (by literalness).
     'family_tree_arrangement': 'family',
-    # The Creeds: the creed last shown ('apostles', 'nicene', 'athanasian'),
+    # The Creeds: the creed last shown ('apostles', 'nicene', 'chalcedon',
+    # 'athanasian'),
     # and its text: 'en' (the 1662 English) or 'orig' (the Greek or Latin).
     'creeds_tab': 'apostles',
     'creeds_text': 'en',

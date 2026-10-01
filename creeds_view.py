@@ -174,12 +174,13 @@ class CreedsPage:
         self._built = True
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 
-        # The three creeds in the app's page switcher, and the text switch.
+        # The four creeds in the app's page switcher, and the text switch.
         self._tabs = Adw.ToggleGroup()
         self._tabs.add_css_class('round')
         self._tabs.add_css_class('page-switcher')
         for cid, label in (('apostles', _("Apostles'")),
                            ('nicene', _('Nicene')),
+                           ('chalcedon', _('Chalcedonian')),
                            ('athanasian', _('Athanasian'))):
             self._tabs.add(Adw.Toggle(name=cid, label=label))
         self._tabs.set_active_name(self._creed_id)
@@ -455,7 +456,8 @@ class CreedsPage:
         self._lines.remove_css_class('creeds-greek')
         if greek:
             self._lines.add_css_class('creeds-greek')
-        every = self._creed.get('id') == 'athanasian'
+        unit = creeds.UNITS.get(self._creed_id, 'article')
+        every = unit != 'article'      # each line its own number
         for p in self._phrases:
             if p['first'] and p['art'] in sections:
                 head = Gtk.Label(label=_(sections[p['art']]), xalign=0)
@@ -489,8 +491,9 @@ class CreedsPage:
             btn.add_css_class('creeds-line')
             if p['first'] and not every:
                 btn.add_css_class('creeds-article-start')
-            label = (_('Verse {n}: {text}') if every
-                     else _('Article {n}: {text}')).format(
+            label = {'verse': _('Verse {n}: {text}'),
+                     'line': _('Line {n}: {text}')}.get(
+                unit, _('Article {n}: {text}')).format(
                 n=p['art'], text=p['en'].strip())
             if p.get('disputed'):
                 label += ' ' + _('(disputed)')
@@ -721,9 +724,10 @@ class CreedsPage:
         box = _vbox(14, 'creeds-detail')
         self._chips = {}
         total = len(self._creed.get('articles', []))
-        kicker = (_('Verse {n} of {total}')
-                  if self._creed.get('id') == 'athanasian'
-                  else _('Article {n} of {total}'))
+        kicker = {'verse': _('Verse {n} of {total}'),
+                  'line': _('Line {n} of {total}')}.get(
+            creeds.UNITS.get(self._creed_id, 'article'),
+            _('Article {n} of {total}'))
         box.append(_label(kicker.format(n=p['art'], total=total),
                           'creeds-kicker'))
         box.append(_label(p['en'].strip(), 'creeds-phrase'))
@@ -1242,16 +1246,19 @@ EXAMPLES = {
                  'f': ('3b', 'Isaiah 7:14')},
     'nicene': {'w': ('7c', 'Luke 1:33'), 't': ('2c', 'John 1:1'),
                'f': ('3c', 'Isaiah 7:14')},
+    'chalcedon': {'w': ('6', 'Hebrews 4:15'), 't': ('4', 'John 10:30'),
+                  'f': ('8', 'Isaiah 7:14')},
     'athanasian': {'w': ('41', 'John 5:29'), 't': ('8', 'Psalms 90:2'),
                    'f': ('22', 'Micah 5:2')},
 }
 
 #: Oldest first.
-_WITNESS_ORDER = ('Cyril', 'Westminster', 'Larger Catechism',
+_WITNESS_ORDER = ('Cyril', 'Leo', 'Westminster', 'Larger Catechism',
                   'Orthodox Creed', 'Philaret')
 
 _WITNESS_FULL = {
     'Cyril': 'Cyril of Jerusalem, Catechetical Lectures, c. 350',
+    'Leo': 'Leo the Great, Tome to Flavian, 449',
     'Philaret': 'Philaret of Moscow, Longer Catechism, 1839',
     'Orthodox Creed': 'An Orthodox Creed, General Baptists, 1679',
     'Larger Catechism': 'Westminster Larger Catechism, 1648',

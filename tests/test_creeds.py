@@ -155,3 +155,31 @@ def test_the_page_speaks_in_quotations():
             for q in p.get('quotes', []):
                 assert q['text'] and q['cite'], (c['id'], p['id'])
             assert len(p.get('note', '')) <= 100, (c['id'], p['id'])
+
+
+def test_the_chalcedonian_creed_stands_between_nicaea_and_the_athanasian():
+    """Schaff's order, which is also the order of their councils."""
+    assert creeds.CREED_IDS == ('apostles', 'nicene', 'chalcedon', 'athanasian')
+    c = creeds.creed('chalcedon')
+    assert c['orig'] == 'grc' and len(creeds.phrases('chalcedon')) == 18
+    assert creeds.UNITS['chalcedon'] == 'line'
+    assert 'Chalcedon' in c['origin']['text']
+
+
+def test_chalcedon_marks_the_words_the_council_chose():
+    """Θεοτόκος and the four adverbs are not in the Greek New Testament (the
+    builder checks each against TAGNT); each comes with Schaff's note."""
+    by_id = {p['id']: p for p in creeds.phrases('chalcedon')}
+    assert [w for w, _g in by_id['8']['coined']] == ['θεοτόκου']
+    assert len(by_id['11']['coined']) == 4
+    for pid in ('8', '11'):
+        assert any('Schaff' in q['cite'] for q in by_id[pid]['quotes'])
+
+
+def test_leo_witnesses_the_lines_he_quoted():
+    """The council read and approved Leo's Tome; where it quotes a verse a
+    line rests on, the thread carries his name."""
+    by_id = {p['id']: p for p in creeds.phrases('chalcedon')}
+    leo = {link['ref'] for p in by_id.values() for link in p['links']
+           if 'Leo' in link['witness']}
+    assert {'John 1:1', 'John 1:14', 'John 10:30', '1 Timothy 2:5'} <= leo

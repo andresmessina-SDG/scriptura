@@ -32,6 +32,9 @@ TEXTS = {
     'schaff_athanasian': 'https://ccel.org/ccel/schaff/creeds1/creeds1.iv.v.html',
     'heidelberg': 'https://ccel.org/ccel/schaff/creeds3/creeds3.iv.vi.html',
     'philaret': 'https://www.pravoslavieto.com/docs/eng/Orthodox_Catechism_of_Philaret.htm',
+    'schaff_chalcedon': 'https://ccel.org/ccel/schaff/creeds1/creeds1.iv.iv.html',
+    'schaff_chalcedon_text': 'https://ccel.org/ccel/schaff/creeds2/creeds2.iv.i.iii.html',
+    'leo_tome': 'https://www.newadvent.org/fathers/3604028.htm',
 }
 
 

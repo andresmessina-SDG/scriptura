@@ -24,6 +24,10 @@ ORIGINS = {
                    "The Symbolum Quicunque is a remarkably clear and precise summary "
                    "of the doctrinal decisions of the first four œcumenical Councils "
                    "(from A.D. 325 to A.D. 451)…"),
+    'chalcedon': ('schaff_chalcedon', SCHAFF,
+                  "The Creed of Chalcedon was adopted at the fourth and fifth sessions of the "
+                  "fourth œcumenical Council, held at Chalcedon, opposite Constantinople, A.D. "
+                  "451 (Oct. 22d and 25th)."),
 }
 
 # The opening: why each line is set beside the Scripture.
@@ -180,3 +184,84 @@ WARNINGS = [
      "…'the best explication [better, statement] of the Trinity,' provided, however, "
      "'that the damnatory sentences be excepted, or modestly expounded.'"),
 ]
+
+
+# ── The Chalcedonian Creed ──────────────────────────────────────────────────
+# Schaff's footnotes to the text itself (Creeds of Christendom II), Leo's Tome,
+# which the council read and approved, and An Orthodox Creed's article on the
+# two natures.
+SCHAFF_TEXT = 'Philip Schaff, notes to the text, The Creeds of Christendom (1877)'
+LEO = 'Leo the Great, Tome to Flavian (Letter 28) {} (449)'
+OC6 = 'An Orthodox Creed (General Baptists, 1679), Article 6'
+
+RATIONAL_SOUL = [('schaff_chalcedon_text', SCHAFF_TEXT,
+                  "Against Apollinaris, who denied that Christ had a ψυχὴ λογική, anima "
+                  "rationalis… But the rational spirit of man requires salvation as much as "
+                  "the body.")]
+
+CONSUBSTANTIAL_WITH_US = [('schaff_chalcedon_text', SCHAFF_TEXT,
+                           "Ὁμοούσιος … is used in both clauses, though with a shade of "
+                           "difference. Christ's homoousia with the Father implies numerical "
+                           "unity, or identity of essence…; Christ's homoousia with men means "
+                           "only generic unity, or equality of nature.")]
+
+THEOTOKOS = [('schaff_chalcedon_text', SCHAFF_TEXT,
+              "The predicate θεοτόκος, the Bringer-forth of God … is directed against "
+              "Nestorius, and was meant originally not so much to exalt the Virgin Mary, as to "
+              "assert the true divinity of Christ and the realness of the Incarnation… It is "
+              "immediately after qualified by the phrase κατὰ τὴν ἀνθρωπότητα (secundum "
+              "humanitatem)… It is safer to adhere to the New Testament designation of Mary as "
+              "μήτηρ Ἰησοῦ, or μήτηρ τοῦ Κυρίου (Luke i. 43).")]
+
+ONE_CHRIST = [('oc', OC6,
+               "…and of two Natures is one Christ, God-Man, or Immanuel, God with us.")]
+
+TWO_NATURES = [('schaff_chalcedon_text', SCHAFF_TEXT,
+                "Ἐν δύο φύσεσιν, and all the Latin translations, in duabus naturis …, are "
+                "directed against Eutyches. The present Greek text reads, it is true, ἐκ δύο "
+                "φύσεων, from two natures; but this signifies, and, according to the connection, "
+                "can only signify, essentially the same thing…")]
+
+FOUR_ADVERBS = [
+    ('schaff_chalcedon_text', SCHAFF_TEXT,
+     "ἀσυγχύτως, inconfuse, and ἀτρέπτως, immutabiliter (without confusion, without "
+     "conversion or change), are directed against Eutychianism, which mixes and confounds "
+     "the human and the divine natures in Christ…"),
+    ('schaff_chalcedon_text', SCHAFF_TEXT,
+     "ἀδιαιρέτως, indivise, ἀχωρίστως, inseparabiliter (without division, without "
+     "separation), both in opposition to Nestorianism, which so emphasized the duality of "
+     "natures … as to lose sight of the unity of person…"),
+    ('oc', OC6, "…without change of either Nature, or mixture of both…"),
+]
+
+NATURES_KEPT = [('leo_tome', LEO.format(3),
+                 "For both natures retain their own proper character without loss: and as "
+                 "the form of God did not do away with the form of a slave, so the form of a "
+                 "slave did not impair the form of God.")]
+
+EACH_FORM = [
+    ('leo_tome', LEO.format(4),
+     "For each form does what is proper to it with the co-operation of the other; that is "
+     "the Word performing what appertains to the Word, and the flesh carrying out what "
+     "appertains to the flesh."),
+    ('leo_tome', LEO.format(4),
+     "To be hungry and thirsty, to be weary, and to sleep, is clearly human: but to satisfy "
+     "5,000 men with five loaves … to walk upon the surface of the sea with feet that do not "
+     "sink, and to quell the risings of the waves by rebuking the winds, is, without any "
+     "doubt, Divine."),
+]
+
+ONE_PERSON = [('leo_tome', LEO.format(4),
+               "…it is not part of the same nature to say, I and the Father are one, and to "
+               "say, the Father is greater than I. For although in the Lord Jesus Christ God "
+               "and man is one person, yet the source of the degradation, which is shared by "
+               "both, is one, and the source of the glory, which is shared by both, is "
+               "another.")]
+
+CHALCEDON_FATHERS = [('schaff_chalcedon', SCHAFF,
+                      "It embraces the Nicæno-Constantinopolitan Creed, and the "
+                      "christological doctrine set forth in the classical Epistola Dogmatica "
+                      "of Pope Leo the Great to Flavian…",
+                      ["It embraces the Nicæno-Constantinopolitan Creed, and the "
+                       "christological doctrine set forth in",
+                       "the classical Epistola Dogmatica of Pope Leo the Great to Flavian"])]

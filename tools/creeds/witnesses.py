@@ -4,6 +4,7 @@
 #       https://baptiststudiesonline.com/wp-content/uploads/2007/02/orthodox-creed.pdf
 #   westminster_larger_catechism.json, westminster_confession_of_faith.json —
 #       from https://github.com/NonlinearFruit/Creeds.json (the 1648/1647 proofs)
+#   leo_refs.json — Leo's Tome (newadvent.org/fathers/3604028.htm), kept in src/.
 #   cyril_refs.json, philaret_refs.json — the references printed in Cyril's
 #       Catechetical Lectures 3, 6-18 (newadvent.org/fathers/3101*.htm) and in
 #       Philaret's Longer Catechism, "On the First Article" … "Twelfth"
@@ -103,6 +104,9 @@ def plain_spans(refs):
     return out
 W['Philaret'] = {k: plain_spans(v) for k, v in json.load(open(S + 'philaret_refs.json')).items()}
 W['Cyril'] = {k: plain_spans(v) for k, v in json.load(open(S + 'cyril_refs.json')).items()}
+# Leo's Tome (449): the references the NPNF edition prints, and the passages
+# it quotes word for word, each found in the text; allusions are left out.
+W['Leo'] = {k: plain_spans(v) for k, v in json.load(open(S + 'leo_refs.json')).items()}
 bad = sorted({r[0] for src in W.values() for sec in src.values() for r in sec if r[0] not in FULL})
 json.dump(W, open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'witnesses.json'), 'w'))
 print({k: (len(v), sum(len(x) for x in v.values())) for k, v in W.items()})

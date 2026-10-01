@@ -91,3 +91,4 @@ site-shots/
 # fetched, never committed (tools/creeds/fetch_texts.py, witnesses.py).
 tools/creeds/src/texts/
 tools/creeds/src/oc.txt
+tools/creeds/src/westminster_*.json

@@ -10936,12 +10936,8 @@ msgstr "Misma enseñanza"
 msgid "Foretold"
 msgstr "Anunciado"
 
-msgid ""
-"The Apostles', Nicene and Athanasian Creeds, each line drawn to the verses "
-"it comes from."
-msgstr ""
-"Los Credos de los Apóstoles, Niceno y de Atanasio, cada línea unida a los "
-"versículos de donde procede."
+msgid "The Apostles', Nicene, Chalcedonian and Athanasian Creeds, each line drawn to the verses it comes from."
+msgstr "Los Credos de los Apóstoles, Niceno, de Calcedonia y de Atanasio, cada línea unida a los versículos de donde procede."
 
 #, python-brace-format
 msgid "{n} link to Scripture"
@@ -11035,8 +11031,8 @@ msgid_plural "{book}: {n} links"
 msgstr[0] "{book}: {n} vínculo"
 msgstr[1] "{book}: {n} vínculos"
 
-msgid "Three creeds, each line drawn to its Scripture"
-msgstr "Tres credos, cada línea unida a su Escritura"
+msgid "Four creeds, each line drawn to its Scripture"
+msgstr "Cuatro credos, cada línea unida a su Escritura"
 
 msgid "Said in the creeds"
 msgstr "Dicho en los credos"
@@ -11121,3 +11117,33 @@ msgstr "No está en la Biblia latina."
 
 msgid "words"
 msgstr "palabras"
+
+msgid "The Chalcedonian Creed"
+msgstr "El Credo de Calcedonia"
+
+#, python-brace-format
+msgid "In the Chalcedonian Creed: “{line}”"
+msgstr "En el Credo de Calcedonia: «{line}»"
+
+msgid "Chalcedonian"
+msgstr "Calcedonense"
+
+msgid "One and the same Son"
+msgstr "Uno y el mismo Hijo"
+
+msgid "Truly God and truly man"
+msgstr "Verdaderamente Dios y verdaderamente hombre"
+
+msgid "In two natures"
+msgstr "En dos naturalezas"
+
+msgid "As the prophets declared"
+msgstr "Como lo declararon los profetas"
+
+#, python-brace-format
+msgid "Line {n}: {text}"
+msgstr "Línea {n}: {text}"
+
+#, python-brace-format
+msgid "Line {n} of {total}"
+msgstr "Línea {n} de {total}"

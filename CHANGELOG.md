@@ -8,12 +8,12 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ### Added
 
-- **The Creeds.** The Apostles', Nicene and Athanasian Creeds, each set line
-  by line, with every line drawn to the verses it comes from: the verses whose
+- **The Creeds.** The Apostles', Nicene, Chalcedonian and Athanasian Creeds,
+  each set line by line, with every line drawn to the verses it comes from: the verses whose
   words it uses, the ones that teach what it says, and the Old Testament
   promises it sees fulfilled. Pick a line to follow its threads into the
-  Bible, or pick a book to see which lines rest on it. The 1662 English sits
-  beside the Greek and Latin originals; disputed lines, and the words the
+  Bible, or pick a book to see which lines rest on it. The 1662 English (for
+  Chalcedon, Schaff's) sits beside the Greek and Latin originals; disputed lines, and the words the
   Church chose that the Bible does not use, are marked, and explained in the
   words of the Fathers, the confessions and Schaff, each quotation checked
   against its source. 1662 words whose sense has moved ("the quick and the

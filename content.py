@@ -230,7 +230,7 @@ _TYPES: list[_ContentType] = [
         info=lambda name: cast(dict, creeds.info()),
         feature_card=lambda name: {
             'icon': 'scriptura-creeds-symbolic',
-            'tagline': _('Three creeds, each line drawn to its Scripture')}),
+            'tagline': _('Four creeds, each line drawn to its Scripture')}),
         # bundled: can_remove False.
     _ContentType(
         'interlinear', interlinear_data.is_interlinear_module,
