@@ -661,3 +661,27 @@ def test_the_covenant_thread_never_crosses_a_brothers_name():
                     continue
                 right = t.x + wide(t.text, t.size, t.weight)
                 assert right <= ln.x, (width, t.text, right, ln.x)
+
+
+def test_prose_carries_no_line_breaks_of_its_own():
+    """A wrapping label breaks lines where the pane needs them. The opening
+    paragraph used to keep the source file's own breaks as well, so in a
+    narrow pane it read "They / are not / filler" in English, while the
+    Spanish and Russian, written without them, wrapped cleanly. Paragraph
+    breaks (a blank line) are fine; a lone newline is not."""
+    import tomllib
+    with open(os.path.join(_ROOT, 'data', 'genealogy', 'genealogy.toml'), 'rb') as f:
+        table = tomllib.load(f)
+
+    def strings(node, path=''):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                yield from strings(v, f'{path}.{k}')
+        elif isinstance(node, list):
+            for i, v in enumerate(node):
+                yield from strings(v, f'{path}[{i}]')
+        elif isinstance(node, str):
+            yield path, node.strip()
+
+    wrapped = [p for p, s in strings(table) if re.search(r'[^\n]\n[^\n]', s)]
+    assert not wrapped, f'hard line breaks in {wrapped}'

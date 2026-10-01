@@ -46,6 +46,31 @@ DISPLAY_NAME = N_('The Bible Family Tree')
 #: measured figure (decided 2026-09-24).
 ARCHAIC_PENALTY = 0.05
 
+#: The Family view's margin notes, marked here so xgettext sees them;
+#: family_layout translates them where it reads the table.
+FAMILY_NOTES = (
+    N_('1611 — the King James Version: the Bishops’ Bible revised, drawing '
+       'on Tyndale, Geneva and Rheims.'),
+    N_('For 270 years the KJV is the English Bible of Protestant use; '
+       'Catholics read the Douay–Rheims, from 1752 in Challoner’s revision.'),
+    N_('1881–85 — the Revised Version: the KJV revised against an older '
+       'Greek text.'),
+    N_('1952 — the RSV renders Isaiah 7:14 “young woman”; a North Carolina '
+       'pastor burns the page.'),
+    N_('1978 — the NIV: a fresh translation, not a revision.'),
+    N_('2001 — the ESV: the RSV revised back toward word for word.'),
+)
+
+
+def lane_label(name: str) -> str:
+    """A Family lane's name as the reader sees it. Most lanes are Bible
+    names and stay as the drawing labels them; the two named in words are
+    translated. Not `_()` on every name: "Jerusalem" is in the catalogue as
+    the city, and the Jerusalem Bible's lane is not the city."""
+    return {'Revised line': _('Revised line'),
+            'Jewish': _('Jewish')}.get(name, name)
+
+
 #: The four zones of the Line, by upper bound.
 ZONES = (
     (0.33, N_('Word for word')),

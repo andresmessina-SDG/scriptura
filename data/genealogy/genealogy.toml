@@ -16,12 +16,12 @@
 title = "The Book of Generations"
 subtitle = "The family lines the Bible records, drawn as charts"
 body = """
-Scripture keeps lists of names, and readers skip them. They are not
-filler. They carry the story from one age to the next, and the writers
+Scripture keeps lists of names, and readers skip them. They are not \
+filler. They carry the story from one age to the next, and the writers \
 placed them with care.
 
-Every line below is drawn from the text and cites it. Where a
-genealogy leaves generations out, the gap is drawn as a gap. Where two
+Every line below is drawn from the text and cites it. Where a \
+genealogy leaves generations out, the gap is drawn as a gap. Where two \
 writers disagree, both are shown and neither is quietly corrected.
 """
 

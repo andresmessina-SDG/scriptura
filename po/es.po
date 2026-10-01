@@ -3878,13 +3878,13 @@ msgstr "%(page)d de %(total)d"
 
 #: genealogy_strings.py:28
 msgid ""
-"Scripture keeps lists of names, and readers skip them. They are not\n"
-"filler. They carry the story from one age to the next, and the writers\n"
+"Scripture keeps lists of names, and readers skip them. They are not "
+"filler. They carry the story from one age to the next, and the writers "
 "placed them with care.\n"
 "\n"
-"Every line below is drawn from the text and cites it. Where a\n"
-"genealogy leaves generations out, the gap is drawn as a gap. Where two\n"
-"writers disagree, both are shown and neither is quietly corrected."
+"Every line below is drawn from the text and cites it. Where a genealogy "
+"leaves generations out, the gap is drawn as a gap. Where two writers "
+"disagree, both are shown and neither is quietly corrected."
 msgstr ""
 "La Escritura guarda listas de nombres, y el lector las salta. No son "
 "relleno. Llevan la historia de una época a la siguiente, y los autores las "
@@ -11020,3 +11020,39 @@ msgstr "Un asa de tinaja estampada con el sello real LMLK y el nombre de una ciu
 
 msgid "The small wheel-made lamp of the New Testament age."
 msgstr "La pequeña lámpara hecha a torno de la época del Nuevo Testamento."
+
+#: bible_family.py
+msgid "1611 — the King James Version: the Bishops’ Bible revised, drawing on Tyndale, Geneva and Rheims."
+msgstr "1611 — la King James Version: la Bishops’ Bible revisada, apoyándose en Tyndale, la Geneva y la Rheims."
+
+#: bible_family.py
+msgid "For 270 years the KJV is the English Bible of Protestant use; Catholics read the Douay–Rheims, from 1752 in Challoner’s revision."
+msgstr "Durante 270 años la KJV es la Biblia inglesa de uso protestante; los católicos leen la Douay–Rheims, desde 1752 en la revisión de Challoner."
+
+#: bible_family.py
+msgid "1881–85 — the Revised Version: the KJV revised against an older Greek text."
+msgstr "1881–85 — la Revised Version: la KJV revisada según un texto griego más antiguo."
+
+#: bible_family.py
+msgid "1952 — the RSV renders Isaiah 7:14 “young woman”; a North Carolina pastor burns the page."
+msgstr "1952 — la RSV traduce Isaías 7:14 «mujer joven»; un pastor de Carolina del Norte quema la página."
+
+#: bible_family.py
+msgid "1978 — the NIV: a fresh translation, not a revision."
+msgstr "1978 — la NIV: una traducción nueva, no una revisión."
+
+#: bible_family.py
+msgid "2001 — the ESV: the RSV revised back toward word for word."
+msgstr "2001 — la ESV: la RSV revisada para acercarse de nuevo a la traducción palabra por palabra."
+
+#: bible_family.py
+msgid "Revised line"
+msgstr "Línea Revised"
+
+#: catena_reader.py
+msgid "(as quoted by {name}, AD {year})"
+msgstr "(citado por {name}, {year} d. C.)"
+
+#: catena_reader.py
+msgid "(as quoted by {name})"
+msgstr "(citado por {name})"
