@@ -1917,13 +1917,13 @@ button.catena-chip-place {
 .stone-front {
     margin: 12px 0 8px;
 }
-/* Apple News-style hero: a crisp sans headline (matching the app chrome)
-   over an editorial serif body. The title leans on weight + tight tracking
-   rather than size, so it stops eating the viewport on narrow windows. */
+/* The titles are serif, as the Creeds' are: the two content pages read as
+   one family (his call, 2026-09-30). */
 .stone-front-title {
-    font-family: "Adwaita Sans", "Inter", sans-serif;
-    font-size: 1.5em;
-    font-weight: 700;
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-size: 1.9em;
+    font-weight: 600;
     letter-spacing: -0.01em;
     margin-bottom: 2px;
 }
@@ -1938,18 +1938,20 @@ button.catena-chip-place {
 .stone-front-body {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
-    line-height: 1.60;   /* ~1.68em on Newsreader */
+    line-height: 1.45;   /* ~1.55em on Newsreader */
     margin-bottom: 10px;
 }
 .stone-era {
     margin: 32px 0 8px;
 }
+/* Ink, not accent: the accent means "goes to the Bible", and a chapter
+   title goes nowhere. */
 .stone-era-title {
-    font-size: 1em;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    color: @accent_color;
-    margin-bottom: 8px;
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-size: 1.35em;
+    font-weight: 600;
+    margin-bottom: 4px;
 }
 .stone-era-intro {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
@@ -1972,12 +1974,11 @@ button.catena-chip-place {
     background-color: @shade_color;
     box-shadow: inset 0 0 0 1px alpha(@window_fg_color, 0.05);
 }
-/* Artifact name — a heading, so sans (matching the hero) rather than serif:
-   the serif voice is reserved for running reading text. */
 .stone-title {
-    font-family: "Adwaita Sans", "Inter", sans-serif;
-    font-size: 1.2em;
-    font-weight: 700;
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-size: 1.35em;
+    font-weight: 600;
     letter-spacing: -0.01em;
 }
 /* Header block (title · byline · provenance) sits tight as one sans unit; the
@@ -1988,11 +1989,58 @@ button.catena-chip-place {
     font-size: 0.9em;
     margin-bottom: 2px;
 }
-.stone-caption {
+.stone-caption,
+.stone-fact {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
-    line-height: 1.60;   /* ~1.73em on Newsreader */
+    line-height: 1.45;   /* ~1.55em on Newsreader */
     margin-top: 14px;
+}
+/* A rewritten plate: the stone's own words, each with its source; short
+   notes; the verses it bears on, each with what kind of link it is. */
+.stone-quotation {
+    margin-top: 12px;
+}
+.stone-quote {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    font-style: italic;
+    line-height: 1.45;   /* ~1.55em on Newsreader */
+}
+.stone-cite {
+    font-size: 0.82em;
+    opacity: 0.7;
+}
+.stone-notes {
+    margin-top: 12px;
+    padding-left: 10px;
+    border-left: 2px dotted alpha(@window_fg_color, 0.25);
+}
+.stone-note {
+    font-size: 0.92em;
+    opacity: 0.85;
+}
+.stone-flag {
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 3px 9px;
+    border-radius: 9999px;
+    background: alpha(@window_fg_color, 0.08);
+}
+.stone-scripture {
+    margin-top: 14px;
+    margin-bottom: 10px;
+}
+.stone-kind {
+    font-size: 0.78em;
+    opacity: 0.6;
+}
+.stone-verse {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
+                 'Iowan Old Style', 'Georgia', serif;
+    line-height: 1.45;   /* ~1.55em on Newsreader */
+    opacity: 0.9;
 }
 .stone-chips {
     margin-top: 10px;

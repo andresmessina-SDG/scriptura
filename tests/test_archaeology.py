@@ -235,3 +235,47 @@ def test_render_decodes_no_photographs():
                 if pic.get_paintable() is not None]
     # The paths are still there to load from, and they exist on disk.
     assert all(os.path.exists(path) for _plate, _pic, path in reader._lazy)
+
+
+def test_a_rewritten_plate_speaks_in_its_sources_words():
+    """A plate with a `fact` line: every verse says what kind of link it is
+    and carries its KJV text (tools/stone/build_stone.py writes them and
+    checks every quotation against its source); every quotation has its
+    citation; and what is in our words stays short."""
+    import archaeology_bridge as ab
+    rewritten = [e for c in ab.document()['chapters'] for e in c['entries']
+                 if e['fact']]
+    assert len(rewritten) >= 5
+    for e in rewritten:
+        assert not e['caption'], e['image']
+        assert len(e['fact']) <= 160
+        for r in e['refs']:
+            assert r['kind'] in ab.KIND_NAMES, (e['image'], r['label'])
+            assert r['text'], (e['image'], r['label'])
+        for q in e['quotes']:
+            assert q['text'] and q['cite'], e['image']
+        assert all(len(n) <= 120 for n in e['notes'])
+
+
+def test_every_verse_the_gallery_links_has_its_text():
+    import archaeology_bridge as ab
+    for c in ab.document()['chapters']:
+        for e in c['entries']:
+            for r in e['refs']:
+                assert r['text'], (e['image'], r['label'])
+
+
+def test_a_link_to_the_apocrypha_brings_what_those_books_are():
+    """Article VI (1571) and An Orthodox Creed's Article 37 (1679), quoted."""
+    import archaeology_bridge as ab
+    d = ab.document()
+    assert len(d['apocrypha']) == 2
+    flagged = [r for c in d['chapters'] for e in c['entries'] for r in e['refs']
+               if r['apocrypha']]
+    assert {r['book'] for r in flagged} == {'1 Maccabees', '2 Maccabees'}
+
+
+def test_the_bible_mark_names_the_artifact():
+    import archaeology_bridge as ab
+    assert ab.artifact_title('2 Kings', 3, 4) == 'The Mesha Stele'
+    assert ab.artifact_title('Genesis', 1, 1) == ''

@@ -1046,20 +1046,6 @@ msgstr "Музей Израиля, Иерусалим"
 msgid "Excavated in situ at Tel Dan, 1993–94"
 msgstr "Раскопана на месте в Тель-Дане, 1993–94"
 
-#: archaeology_strings.py:58
-msgid ""
-"A fragmentary basalt victory stele, written in Aramaic, set up by a king of "
-"Aram-Damascus. Its lines boast of defeating a 'king of Israel' and a king of "
-"the 'House of David' (bytdwd). It is the earliest reference outside the "
-"Bible to David's dynasty: a witness that the line of David was remembered as "
-"a real royal house within about a century and a half of his reign."
-msgstr ""
-"Обломки базальтовой победной стелы на арамейском языке, поставленной царём "
-"Арам-Дамаска. Её строки хвалятся победой над «царём Израиля» и над царём "
-"«дома Давидова» (bytdwd). Это самое раннее упоминание династии Давида вне "
-"Библии: свидетельство того, что род Давида помнили как настоящий царский дом "
-"уже через полтора века после его правления."
-
 #: archaeology_strings.py:59
 msgid "The Eshbaal Inscription"
 msgstr "Надпись Ешбаала"
@@ -1213,20 +1199,6 @@ msgid ""
 msgstr ""
 "Найдена в Дибане, 1868; вскоре разбита, её текст отчасти сохранён в бумажном "
 "эстампаже"
-
-#: archaeology_strings.py:87
-msgid ""
-"A black basalt victory stele set up by Mesha, king of Moab, recounting his "
-"rebellion against Israel. It names 'Omri king of Israel' and his dynasty, "
-"and the God of Israel by the name YHWH; by a contested reading it may also "
-"name the 'House of David.' Second Kings tells the same revolt of Mesha from "
-"Israel's side."
-msgstr ""
-"Победная стела из чёрного базальта, поставленная Мешей, царём Моавитским, о "
-"его восстании против Израиля. Она называет «Амврия, царя Израильского» и его "
-"династию, а Бога Израилева — именем ЯХВЕ; по спорному чтению в ней может "
-"стоять и «дом Давидов». О том же восстании Месы, со стороны Израиля, "
-"рассказывает Четвёртая книга Царств."
 
 #: archaeology_strings.py:88
 msgid "The Kurkh Monolith of Shalmaneser III"
@@ -1436,20 +1408,6 @@ msgstr "ок. 691 до н. э."
 msgid "Acquired at Nineveh, 1830"
 msgstr "Приобретена в Ниневии, 1830"
 
-#: archaeology_strings.py:125
-msgid ""
-"A six-sided clay prism inscribed with the annals of Sennacherib. It records "
-"his campaign of 701 BC against Judah, boasting that he shut up Hezekiah "
-"'like a bird in a cage' in Jerusalem, yet tellingly it never claims to have "
-"taken the city. Second Kings tells of the same siege, and of Jerusalem's "
-"deliverance."
-msgstr ""
-"Шестигранная глиняная призма с анналами Сеннахирима. Она сообщает о его "
-"походе 701 года до н. э. против Иудеи и хвалится тем, что он запер Езекию в "
-"Иерусалиме «как птицу в клетке» — но, что показательно, нигде не заявляет, "
-"что взял город. О той же осаде и об избавлении Иерусалима рассказывает "
-"Четвёртая книга Царств."
-
 #: archaeology_strings.py:126
 msgid "The Siloam Inscription"
 msgstr "Силоамская надпись"
@@ -1551,22 +1509,6 @@ msgstr "ок. 600 до н. э."
 msgid "Excavated in a burial cave at Ketef Hinnom by Gabriel Barkay, 1979"
 msgstr ""
 "Раскопаны в погребальной пещере в Кетеф-Хинноме Габриэлем Баркаем, 1979"
-
-#: archaeology_strings.py:144
-msgid ""
-"Two tiny strips of silver, rolled up and worn as amulets, from a family tomb "
-"on the shoulder of the Hinnom valley. Unrolled, each carried in scratched "
-"Hebrew letters the priestly blessing: 'The LORD bless you and keep you.' "
-"Usually dated to around 600 BC, on the eve of the exile, they are the oldest "
-"known copy of words from Scripture, some four centuries older than the Dead "
-"Sea Scrolls."
-msgstr ""
-"Две крошечные серебряные полоски, свёрнутые и носимые как амулеты, из "
-"семейной гробницы на склоне долины Енном. Развёрнутые, они несли "
-"процарапанными еврейскими буквами священническое благословение: «Да "
-"благословит тебя Господь и сохранит тебя». Обычно их датируют около 600 года "
-"до н. э., накануне плена; это древнейшая известная запись слов Писания, "
-"примерно на четыре века старше свитков Мёртвого моря."
 
 #: archaeology_strings.py:145
 msgid "The Babylonian Chronicle"
@@ -1853,20 +1795,6 @@ msgstr "ок. 26–36 н. э."
 #: archaeology_strings.py:193
 msgid "Excavated in situ at Caesarea, 1961"
 msgstr "Раскопан на месте в Кесарии, 1961"
-
-#: archaeology_strings.py:194
-msgid ""
-"A limestone block, later reused in the theatre at Caesarea, bearing a Latin "
-"dedication that names '[Pon]tius Pilatus, [Praef]ectus Iuda[ea]e': Pontius "
-"Pilate, prefect of Judea. Found in 1961, it is the only certain inscription "
-"naming Pilate from his own time, and confirms both his name and his exact "
-"title in the years of Jesus' ministry and trial."
-msgstr ""
-"Известняковый блок, позже использованный вторично в театре Кесарии, с "
-"латинским посвящением, называющим «[Пон]тия Пилата, [преф]екта Иуде[и]». "
-"Найденный в 1961 году, это единственная достоверная надпись его времени, "
-"называющая Пилата: она подтверждает и имя, и точный титул в годы служения и "
-"суда над Иисусом."
 
 #: archaeology_strings.py:195
 msgid "The Caiaphas Ossuary"
@@ -6819,10 +6747,6 @@ msgstr ""
 msgid "No entry found for this date."
 msgstr "На эту дату записей нет."
 
-#: pane.py:2569
-msgid "Related artifact — open in Scripture in Stone"
-msgstr "Связанный артефакт — открыть в «Писании в камне»"
-
 #: pane.py:2570
 msgid "Related artifact"
 msgstr "Связанный артефакт"
@@ -11115,3 +11039,63 @@ msgstr "Строка {n}: {text}"
 #, python-brace-format
 msgid "Line {n} of {total}"
 msgstr "Строка {n} из {total}"
+
+msgid "An Aramaic victory stele, most likely of Hazael of Damascus, naming a king of the “House of David” (bytdwd)."
+msgstr "Арамейская победная стела, скорее всего Азаила Дамасского, называющая царя «дома Давидова» (bytdwd)."
+
+msgid "Some read bytdwd as a place name, since a word divider would usually stand between “house” and “David”."
+msgstr "Некоторые читают bytdwd как название места: между «дом» и «Давид» обычно стоял бы разделитель слов."
+
+msgid "Its restored lines claim the deaths of Joram and Ahaziah, which 2 Kings 9 gives to Jehu."
+msgstr "Восстановленные строки приписывают её автору смерть Иорама и Охозии, которую 4 Царств 9 приписывает Ииую."
+
+msgid "Mesha, king of Moab, tells of his revolt against Israel, naming Omri king of Israel and the God of Israel."
+msgstr "Меша, царь Моава, рассказывает о своём восстании против Израиля, называя Амврия, царя Израильского, и Бога Израилева."
+
+msgid "A later reading (Lemaire, 1994) finds “House of David” in line 31, where this 1919 translation has a gap."
+msgstr "Более позднее прочтение (Лемер, 1994) находит «дом Давидов» в строке 31, где в этом переводе 1919 года пропуск."
+
+msgid "Sennacherib's annals of his campaign of 701 BC against Judah: Hezekiah shut up in Jerusalem, and tribute sent after him to Nineveh."
+msgstr "Летопись Синаххериба о походе 701 г. до н. э. на Иудею: Езекия заперт в Иерусалиме, а дань отправлена вслед за царём в Ниневию."
+
+msgid "2 Kings 18:14 has three hundred talents of silver; the prism, eight hundred. Both have thirty of gold."
+msgstr "В 4 Царств 18:14 — триста талантов серебра, на призме — восемьсот. Золота у обоих тридцать."
+
+msgid "The prism tells of the siege, but not of Jerusalem taken."
+msgstr "Призма рассказывает об осаде, но не о взятии Иерусалима."
+
+msgid "A dedication from Caesarea that names Pontius Pilate, prefect of Judea."
+msgstr "Посвятительная надпись из Кесарии, называющая Понтия Пилата, префекта Иудеи."
+
+msgid "The stone calls him prefect; the Gospels call him governor."
+msgstr "На камне он префект; в Евангелиях — правитель."
+
+msgid "Two silver amulets of about 600 BC, each scratched with the priestly blessing of Numbers 6."
+msgstr "Два серебряных амулета около 600 г. до н. э., на каждом нацарапано священническое благословение из Чисел 6."
+
+msgid "The oldest known copy of words from Scripture, some four centuries older than the Dead Sea Scrolls."
+msgstr "Древнейшая известная запись слов Писания, примерно на четыре века старше Кумранских рукописей."
+
+msgid "Same person"
+msgstr "То же лицо"
+
+msgid "Same place"
+msgstr "То же место"
+
+msgid "Same event"
+msgstr "То же событие"
+
+msgid "Same custom"
+msgstr "Тот же обычай"
+
+msgid "Contested"
+msgstr "Оспаривается"
+
+msgid "On the Apocrypha"
+msgstr "Об апокрифах"
+
+msgid "In Scripture"
+msgstr "В Писании"
+
+msgid "Open it in Scripture in Stone"
+msgstr "Открыть в «Писании в камне»"

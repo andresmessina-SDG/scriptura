@@ -109,6 +109,7 @@ class ArchaeologyReader:
         self._load_source = 0
         self._apparatus: list[Gtk.Widget] = []  # glossary / further-reading
         self._front = None
+        self._apocrypha: list = []          # what the Apocrypha is, quoted
         self._scroll_target = None
         self._scroll_tries = 0
         self._map_points: list = []
@@ -143,6 +144,10 @@ class ArchaeologyReader:
         self._search.set_hexpand(False)
         self._search.set_max_width_chars(28)
         self._search.connect('search-changed', self._on_search)
+        # When the page appears, GTK hands the focus on from the hidden
+        # reading view to the first field it finds: this one, so every visit
+        # opened on a lit search box. Let it go; a click or Tab reaches it.
+        self._root.connect('map', lambda *_a: GLib.idle_add(self._release_focus))
         self._contents_btn = Gtk.MenuButton(
             icon_name='scriptura-view-list-symbolic', tooltip_text=_('Contents'))
         self._contents_btn.add_css_class('flat')
@@ -271,6 +276,7 @@ class ArchaeologyReader:
         if self._built:
             return
         doc = archaeology_bridge.document()
+        self._apocrypha = doc.get('apocrypha', [])
 
         self._front = self._clamp(self._frontispiece(doc), _TEXT_W)
         self._page.append(self._front)
@@ -410,7 +416,26 @@ class ArchaeologyReader:
                     text=GLib.markup_escape_text(entry['provenance'])))
             txt.append(prov)
 
-        txt.append(self._label(entry['caption'], 'stone-caption', selectable=True))
+        if entry.get('fact'):
+            # A rewritten entry speaks in its sources' words: one line of
+            # fact, then the stone's own words, then short notes.
+            txt.append(self._label(entry['fact'], 'stone-fact', selectable=True))
+            for q in entry['quotes']:
+                txt.append(self._quotation(q))
+            if entry['contested'] or entry['notes']:
+                notes = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+                notes.add_css_class('stone-notes')
+                if entry['contested']:
+                    flag = Gtk.Label(label=_('Contested'))
+                    flag.add_css_class('stone-flag')
+                    flag.set_halign(Gtk.Align.START)
+                    notes.append(flag)
+                for n in entry['notes']:
+                    notes.append(self._label(n, 'stone-note', selectable=True))
+                txt.append(notes)
+        else:
+            txt.append(self._label(entry['caption'], 'stone-caption',
+                                   selectable=True))
 
         if entry.get('details'):
             n = len(entry['details'])
@@ -421,7 +446,9 @@ class ArchaeologyReader:
                 'stone-views')
             txt.append(hint)
 
-        if entry['refs']:
+        if entry['refs'] and entry.get('fact'):
+            txt.append(self._scripture(entry['refs']))
+        elif entry['refs']:
             # WrapBox (not a plain HBox): the chip row wraps to new lines on a
             # narrow pane instead of summing every chip's width into one wide
             # min that would clip the whole document.
@@ -433,6 +460,12 @@ class ArchaeologyReader:
             for ref in entry['refs']:
                 chips.append(self._verse_chip(ref))
             txt.append(chips)
+
+        if any(r.get('apocrypha') for r in entry['refs']) and self._apocrypha:
+            # What those books are, in the words of the confessions.
+            txt.append(self._label(_('On the Apocrypha'), 'stone-chips-lead'))
+            for q in self._apocrypha:
+                txt.append(self._quotation(q))
 
         if entry.get('related'):
             # "See also" — jump to a thematically related artifact in the gallery
@@ -448,6 +481,50 @@ class ArchaeologyReader:
             txt.append(self._credit(entry))
         plate.append(self._clamp(txt, _TEXT_W))
         return plate
+
+    def _release_focus(self):
+        win = self._root.get_root()
+        focus = win.get_focus() if win is not None else None
+        if focus is not None and (focus is self._search
+                                  or focus.is_ancestor(self._search)):
+            win.set_focus(None)
+        return GLib.SOURCE_REMOVE
+
+    def _quotation(self, q):
+        """A quotation and where it stands: the source's words in its own
+        English, never translated (tools/stone/build_stone.py checks each
+        against its source)."""
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        box.add_css_class('stone-quotation')
+        box.append(self._label(f'“{q["text"]}”', 'stone-quote', selectable=True))
+        box.append(self._label(q['cite'], 'stone-cite', selectable=True))
+        return box
+
+    def _scripture(self, refs):
+        """The verses a rewritten entry bears on: for each, what kind of link
+        it is, the reference (to the Bible pane), and the verse itself."""
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        box.add_css_class('stone-scripture')
+        box.append(self._label(_('In Scripture'), 'stone-chips-lead'))
+        for ref in refs:
+            row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+            head = Gtk.Box(spacing=8)
+            kind = archaeology_bridge.KIND_NAMES.get(ref['kind'])
+            if kind:
+                lab = self._label('', 'stone-kind')
+                lab.set_markup('<span variant="smallcaps" letter_spacing="1024">'
+                               f'{GLib.markup_escape_text(_(kind))}</span>')
+                lab.set_valign(Gtk.Align.CENTER)
+                lab.set_wrap(False)     # one line, beside its chip
+                head.append(lab)
+            chip = self._verse_chip(ref)
+            chip.set_halign(Gtk.Align.START)
+            head.append(chip)
+            row.append(head)
+            if ref.get('text'):
+                row.append(self._label(ref['text'], 'stone-verse', selectable=True))
+            box.append(row)
+        return box
 
     def _related_chip(self, rel):
         """A chip that jumps to another artifact's plate within the gallery."""
@@ -555,7 +632,9 @@ class ArchaeologyReader:
         verses it attests, and the artifacts it links to."""
         parts = [entry['title'], entry['place'], entry['date'],
                  entry['holding'], entry.get('provenance', ''),
-                 entry['caption']]
+                 entry['caption'], entry.get('fact', '')]
+        parts += [q['text'] for q in entry.get('quotes', [])]
+        parts += entry.get('notes', [])
         parts += [r['label'] for r in entry['refs']]
         parts += [r['title'] for r in entry.get('related', [])]
         return ' '.join(parts).lower()

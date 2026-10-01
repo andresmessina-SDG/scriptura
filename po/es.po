@@ -1060,21 +1060,6 @@ msgstr "Museo de Israel, Jerusalén"
 msgid "Excavated in situ at Tel Dan, 1993–94"
 msgstr "Excavada in situ en Tel Dan, 1993-94"
 
-#: archaeology_strings.py:58
-msgid ""
-"A fragmentary basalt victory stele, written in Aramaic, set up by a king of "
-"Aram-Damascus. Its lines boast of defeating a 'king of Israel' and a king of "
-"the 'House of David' (bytdwd). It is the earliest reference outside the "
-"Bible to David's dynasty: a witness that the line of David was remembered as "
-"a real royal house within about a century and a half of his reign."
-msgstr ""
-"Una estela de victoria de basalto, fragmentaria, escrita en arameo y erigida "
-"por un rey de Aram-Damasco. Sus líneas se jactan de haber vencido a un «rey "
-"de Israel» y a un rey de la «Casa de David» (bytdwd). Es la referencia más "
-"temprana fuera de la Biblia a la dinastía de David: un testigo de que el "
-"linaje de David se recordaba como una casa real verdadera a siglo y medio de "
-"su reinado."
-
 #: archaeology_strings.py:59
 msgid "The Eshbaal Inscription"
 msgstr "La inscripción de Es-baal"
@@ -1229,20 +1214,6 @@ msgid ""
 msgstr ""
 "Hallada en Dhiban, 1868; despedazada poco después, su texto se conserva en "
 "parte en un calco de papel"
-
-#: archaeology_strings.py:87
-msgid ""
-"A black basalt victory stele set up by Mesha, king of Moab, recounting his "
-"rebellion against Israel. It names 'Omri king of Israel' and his dynasty, "
-"and the God of Israel by the name YHWH; by a contested reading it may also "
-"name the 'House of David.' Second Kings tells the same revolt of Mesha from "
-"Israel's side."
-msgstr ""
-"Una estela de victoria de basalto negro erigida por Mesa, rey de Moab, que "
-"narra su rebelión contra Israel. Nombra a «Omri rey de Israel» y a su "
-"dinastía, y al Dios de Israel por el nombre YHWH; según una lectura "
-"discutida, podría nombrar también la «Casa de David». Segundo de Reyes "
-"cuenta la misma rebelión de Mesa desde el lado de Israel."
 
 #: archaeology_strings.py:88
 msgid "The Kurkh Monolith of Shalmaneser III"
@@ -1452,20 +1423,6 @@ msgstr "h. 691 a. C."
 msgid "Acquired at Nineveh, 1830"
 msgstr "Adquirido en Nínive, 1830"
 
-#: archaeology_strings.py:125
-msgid ""
-"A six-sided clay prism inscribed with the annals of Sennacherib. It records "
-"his campaign of 701 BC against Judah, boasting that he shut up Hezekiah "
-"'like a bird in a cage' in Jerusalem, yet tellingly it never claims to have "
-"taken the city. Second Kings tells of the same siege, and of Jerusalem's "
-"deliverance."
-msgstr ""
-"Un prisma de arcilla de seis caras inscrito con los anales de Senaquerib. "
-"Registra su campaña de 701 a. C. contra Judá y se jacta de haber encerrado a "
-"Ezequías en Jerusalén «como a un pájaro en una jaula»; significativamente, "
-"nunca afirma haber tomado la ciudad. Segundo de Reyes cuenta el mismo "
-"asedio, y la liberación de Jerusalén."
-
 #: archaeology_strings.py:126
 msgid "The Siloam Inscription"
 msgstr "La inscripción de Siloé"
@@ -1568,22 +1525,6 @@ msgstr "h. 600 a. C."
 msgid "Excavated in a burial cave at Ketef Hinnom by Gabriel Barkay, 1979"
 msgstr ""
 "Excavados en una cueva funeraria de Ketef Hinnom por Gabriel Barkay, 1979"
-
-#: archaeology_strings.py:144
-msgid ""
-"Two tiny strips of silver, rolled up and worn as amulets, from a family tomb "
-"on the shoulder of the Hinnom valley. Unrolled, each carried in scratched "
-"Hebrew letters the priestly blessing: 'The LORD bless you and keep you.' "
-"Usually dated to around 600 BC, on the eve of the exile, they are the oldest "
-"known copy of words from Scripture, some four centuries older than the Dead "
-"Sea Scrolls."
-msgstr ""
-"Dos diminutas tiras de plata, enrolladas y llevadas como amuletos, de una "
-"tumba familiar en la ladera del valle de Hinom. Desenrolladas, cada una "
-"llevaba en letras hebreas rayadas la bendición sacerdotal: «El SEÑOR te "
-"bendiga y te guarde». Fechadas por lo general hacia el 600 a. C., en "
-"vísperas del destierro, son la copia más antigua que se conoce de palabras "
-"de la Escritura, unos cuatro siglos anteriores a los Rollos del Mar Muerto."
 
 #: archaeology_strings.py:145
 msgid "The Babylonian Chronicle"
@@ -1873,20 +1814,6 @@ msgstr "h. 26-36 d. C."
 #: archaeology_strings.py:193
 msgid "Excavated in situ at Caesarea, 1961"
 msgstr "Excavada in situ en Cesarea, 1961"
-
-#: archaeology_strings.py:194
-msgid ""
-"A limestone block, later reused in the theatre at Caesarea, bearing a Latin "
-"dedication that names '[Pon]tius Pilatus, [Praef]ectus Iuda[ea]e': Pontius "
-"Pilate, prefect of Judea. Found in 1961, it is the only certain inscription "
-"naming Pilate from his own time, and confirms both his name and his exact "
-"title in the years of Jesus' ministry and trial."
-msgstr ""
-"Un bloque de caliza, reutilizado más tarde en el teatro de Cesarea, con una "
-"dedicatoria latina que nombra a «[Pon]cio Pilato, [pref]ecto de Jude[a]». "
-"Hallado en 1961, es la única inscripción segura que nombra a Pilato "
-"procedente de su propio tiempo, y confirma tanto su nombre como su título "
-"exacto en los años del ministerio y el juicio de Jesús."
 
 #: archaeology_strings.py:195
 msgid "The Caiaphas Ossuary"
@@ -6870,10 +6797,6 @@ msgstr ""
 msgid "No entry found for this date."
 msgstr "No se encontró ninguna entrada para esta fecha."
 
-#: pane.py:2569
-msgid "Related artifact — open in Scripture in Stone"
-msgstr "Objeto relacionado: abrir en La Escritura en piedra"
-
 #: pane.py:2570
 msgid "Related artifact"
 msgstr "Objeto relacionado"
@@ -11147,3 +11070,63 @@ msgstr "Línea {n}: {text}"
 #, python-brace-format
 msgid "Line {n} of {total}"
 msgstr "Línea {n} de {total}"
+
+msgid "An Aramaic victory stele, most likely of Hazael of Damascus, naming a king of the “House of David” (bytdwd)."
+msgstr "Estela aramea de victoria, muy probablemente de Hazael de Damasco, que nombra a un rey de la «Casa de David» (bytdwd)."
+
+msgid "Some read bytdwd as a place name, since a word divider would usually stand between “house” and “David”."
+msgstr "Algunos leen bytdwd como nombre de lugar, pues un separador de palabras solía ir entre «casa» y «David»."
+
+msgid "Its restored lines claim the deaths of Joram and Ahaziah, which 2 Kings 9 gives to Jehu."
+msgstr "Sus líneas restauradas se atribuyen la muerte de Joram y de Ocozías, que 2 Reyes 9 atribuye a Jehú."
+
+msgid "Mesha, king of Moab, tells of his revolt against Israel, naming Omri king of Israel and the God of Israel."
+msgstr "Mesa, rey de Moab, narra su rebelión contra Israel y nombra a Omri, rey de Israel, y al Dios de Israel."
+
+msgid "A later reading (Lemaire, 1994) finds “House of David” in line 31, where this 1919 translation has a gap."
+msgstr "Una lectura posterior (Lemaire, 1994) halla «Casa de David» en la línea 31, donde esta traducción de 1919 tiene una laguna."
+
+msgid "Sennacherib's annals of his campaign of 701 BC against Judah: Hezekiah shut up in Jerusalem, and tribute sent after him to Nineveh."
+msgstr "Los anales de Senaquerib sobre su campaña del 701 a. C. contra Judá: Ezequías encerrado en Jerusalén y el tributo enviado tras él a Nínive."
+
+msgid "2 Kings 18:14 has three hundred talents of silver; the prism, eight hundred. Both have thirty of gold."
+msgstr "2 Reyes 18:14 dice trescientos talentos de plata; el prisma, ochocientos. Ambos dicen treinta de oro."
+
+msgid "The prism tells of the siege, but not of Jerusalem taken."
+msgstr "El prisma cuenta el asedio, pero no la toma de Jerusalén."
+
+msgid "A dedication from Caesarea that names Pontius Pilate, prefect of Judea."
+msgstr "Una dedicatoria de Cesarea que nombra a Poncio Pilato, prefecto de Judea."
+
+msgid "The stone calls him prefect; the Gospels call him governor."
+msgstr "La piedra lo llama prefecto; los Evangelios, gobernador."
+
+msgid "Two silver amulets of about 600 BC, each scratched with the priestly blessing of Numbers 6."
+msgstr "Dos amuletos de plata de hacia el 600 a. C., cada uno grabado con la bendición sacerdotal de Números 6."
+
+msgid "The oldest known copy of words from Scripture, some four centuries older than the Dead Sea Scrolls."
+msgstr "La copia más antigua conocida de palabras de la Escritura, unos cuatro siglos anterior a los Rollos del Mar Muerto."
+
+msgid "Same person"
+msgstr "Misma persona"
+
+msgid "Same place"
+msgstr "Mismo lugar"
+
+msgid "Same event"
+msgstr "Mismo suceso"
+
+msgid "Same custom"
+msgstr "Misma costumbre"
+
+msgid "Contested"
+msgstr "Discutido"
+
+msgid "On the Apocrypha"
+msgstr "Sobre los apócrifos"
+
+msgid "In Scripture"
+msgstr "En la Escritura"
+
+msgid "Open it in Scripture in Stone"
+msgstr "Abrirlo en La Escritura en piedra"

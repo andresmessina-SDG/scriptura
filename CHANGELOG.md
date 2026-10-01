@@ -21,6 +21,17 @@ semver-ish — 0.x was the pre-Flathub testing track.
   uses carries a small mark in the reading view that opens the creed at that
   line. Open it from the module list.
 
+### Changed
+
+- **Scripture in Stone speaks in its sources' words.** The Mesha Stele, the
+  Taylor Prism, the Tel Dan Stele, the Pilate Stone and the Ketef Hinnom
+  scrolls now quote the stones themselves, in public-domain translations,
+  each with its source; every verse they bear on is shown with what kind of
+  link it is and its KJV text, and contested readings are marked. A link to
+  the Apocrypha quotes Article VI and the 1679 Orthodox Creed on what those
+  books are. The Bible's mark names its artifact, titles are set in the
+  serif, and the search box no longer takes the focus when the page opens.
+
 ## [1.8.2] — 2026-09-30
 
 ### Added

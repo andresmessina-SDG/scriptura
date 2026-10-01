@@ -90,8 +90,12 @@ def collect() -> list[str]:
 
     for e in raw.get('entry', []):
         for field in ('title', 'place', 'date', 'holding', 'provenance',
-                      'caption'):
+                      'caption', 'fact'):
             add(e.get(field, ''))
+        # A rewritten entry's notes are short facts in our words, and are
+        # translated; its quotations are the sources' words, and are not.
+        for note in e.get('notes', []):
+            add(note)
 
     for d in raw.get('detail', []):
         add(d.get('caption', ''))

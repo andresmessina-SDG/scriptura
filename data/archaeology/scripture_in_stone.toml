@@ -121,10 +121,17 @@ place = "Tel Dan, northern Israel"
 date = "9th century BC"
 holding = "Israel Museum, Jerusalem"
 credit = "photo Oren Rozen · CC BY-SA 4.0"
-caption = "A fragmentary basalt victory stele, written in Aramaic, set up by a king of Aram-Damascus. Its lines boast of defeating a 'king of Israel' and a king of the 'House of David' (bytdwd). It is the earliest reference outside the Bible to David's dynasty: a witness that the line of David was remembered as a real royal house within about a century and a half of his reign."
+fact = "An Aramaic victory stele, most likely of Hazael of Damascus, naming a king of the “House of David” (bytdwd)."
 refs = [
-  { book = "2 Samuel", chapter = 7, verse = 16 },
-  { book = "1 Kings", chapter = 15, verse = 20 },
+  { book = "2 Samuel", chapter = 7, verse = 16, kind = "person" },
+  { book = "1 Kings", chapter = 15, verse = 20, kind = "place" },
+  { book = "2 Kings", chapter = 8, verse = 28, kind = "person" },
+  { book = "2 Kings", chapter = 9, verse = 24, kind = "event" },
+]
+contested = true
+notes = [
+  "Some read bytdwd as a place name, since a word divider would usually stand between “house” and “David”.",
+  "Its restored lines claim the deaths of Joram and Ahaziah, which 2 Kings 9 gives to Jehu.",
 ]
 
 [[entry]]
@@ -202,8 +209,33 @@ place = "Dibon, Moab"
 date = "c. 840 BC"
 holding = "Louvre, Paris"
 credit = "photo Mbzt · CC BY-SA 4.0"
-caption = "A black basalt victory stele set up by Mesha, king of Moab, recounting his rebellion against Israel. It names 'Omri king of Israel' and his dynasty, and the God of Israel by the name YHWH; by a contested reading it may also name the 'House of David.' Second Kings tells the same revolt of Mesha from Israel's side."
-refs = [ { book = "2 Kings", chapter = 3, verse = 4 } ]
+fact = "Mesha, king of Moab, tells of his revolt against Israel, naming Omri king of Israel and the God of Israel."
+refs = [
+  { book = "Numbers", chapter = 32, verse = 34, kind = "place" },
+  { book = "1 Kings", chapter = 16, verse = 23, kind = "person" },
+  { book = "2 Kings", chapter = 3, verse = 4, kind = "person" },
+  { book = "2 Kings", chapter = 3, verse = 5, kind = "event" },
+]
+contested = true
+notes = [
+  "A later reading (Lemaire, 1994) finds “House of David” in line 31, where this 1919 translation has a gap.",
+]
+
+[[entry.quote]]
+source = "compston_mesha"
+cite = "The Mesha Stele, lines 4–6, tr. H. F. B. Compston (1919)"
+text = "ʿOmrî was king of Yisrāʾēl, and he afflicted Mōʾāḇ days many, for Kemôš was angry with his land. And his son succeeded him, and he too said I will afflict Mōʾāḇ."
+
+[[entry.quote]]
+source = "compston_mesha"
+cite = "The Mesha Stele, line 10, tr. Compston"
+text = "Now the men of Gaḏ had dwelt in the land of ʿǎṭarôṯ from of old…"
+
+[[entry.quote]]
+source = "compston_mesha"
+cite = "The Mesha Stele, lines 14 and 17–18, tr. Compston"
+text = "And Kemôš said unto me Go, seize Neḇôh against Yisrāʾēl… And I took from thence the [vessels] of Yahweh, and dragged them before Kemôš."
+pieces = [ "And Kemôš said unto me Go, seize Neḇôh against Yisrāʾēl", "And I took from thence the [ves-]", "sels of Yahweh, and dragged them before Kemôš." ]
 
 [[entry]]
 chapter = "divided"
@@ -319,8 +351,32 @@ place = "Nineveh"
 date = "c. 691 BC"
 holding = "British Museum, London"
 credit = "photo David Castor · public domain"
-caption = "A six-sided clay prism inscribed with the annals of Sennacherib. It records his campaign of 701 BC against Judah, boasting that he shut up Hezekiah 'like a bird in a cage' in Jerusalem, yet tellingly it never claims to have taken the city. Second Kings tells of the same siege, and of Jerusalem's deliverance."
-refs = [ { book = "2 Kings", chapter = 18, verse = 17 } ]
+fact = "Sennacherib's annals of his campaign of 701 BC against Judah: Hezekiah shut up in Jerusalem, and tribute sent after him to Nineveh."
+refs = [
+  { book = "2 Kings", chapter = 18, verse = 13, kind = "event" },
+  { book = "2 Kings", chapter = 18, verse = 14, kind = "event" },
+  { book = "2 Kings", chapter = 19, verse = 36, kind = "event" },
+  { book = "Isaiah", chapter = 36, verse = 1, kind = "event" },
+]
+notes = [
+  "2 Kings 18:14 has three hundred talents of silver; the prism, eight hundred. Both have thirty of gold.",
+  "The prism tells of the siege, but not of Jerusalem taken.",
+]
+
+[[entry.quote]]
+source = "rogers"
+cite = "The Taylor Prism, col. III, tr. R. W. Rogers, Cuneiform Parallels to the Old Testament (1912)"
+text = "And of Hezekiah, the Judaean, who had not submitted to my yoke, forty-six strong cities, with walls, the smaller cities which were around them, without number … I besieged and captured them."
+
+[[entry.quote]]
+source = "rogers"
+cite = "The Taylor Prism, col. III, tr. Rogers"
+text = "[Hezekiah] himself I shut up like a caged bird within Jerusalem, his royal city."
+
+[[entry.quote]]
+source = "rogers"
+cite = "The Taylor Prism, col. III, tr. Rogers"
+text = "With thirty talents of gold [and] eight hundred talents of silver … he despatched after me to Nineveh, my capital city."
 
 [[entry]]
 chapter = "judah"
@@ -384,8 +440,15 @@ place = "Ketef Hinnom, Jerusalem"
 date = "c. 600 BC"
 holding = "Israel Museum, Jerusalem"
 credit = "photo Bachrach44 · CC BY-SA 3.0"
-caption = "Two tiny strips of silver, rolled up and worn as amulets, from a family tomb on the shoulder of the Hinnom valley. Unrolled, each carried in scratched Hebrew letters the priestly blessing: 'The LORD bless you and keep you.' Usually dated to around 600 BC, on the eve of the exile, they are the oldest known copy of words from Scripture, some four centuries older than the Dead Sea Scrolls."
-refs = [ { book = "Numbers", chapter = 6, verse = 24 } ]
+fact = "Two silver amulets of about 600 BC, each scratched with the priestly blessing of Numbers 6."
+refs = [
+  { book = "Numbers", chapter = 6, verse = 24, kind = "words" },
+  { book = "Numbers", chapter = 6, verse = 25, kind = "words" },
+  { book = "Numbers", chapter = 6, verse = 26, kind = "words" },
+]
+notes = [
+  "The oldest known copy of words from Scripture, some four centuries older than the Dead Sea Scrolls.",
+]
 
 [[entry]]
 chapter = "exile"
@@ -546,11 +609,20 @@ place = "Caesarea Maritima"
 date = "c. AD 26–36"
 holding = "Israel Museum, Jerusalem"
 credit = "photo Marion Doss · CC BY-SA 2.0"
-caption = "A limestone block, later reused in the theatre at Caesarea, bearing a Latin dedication that names '[Pon]tius Pilatus, [Praef]ectus Iuda[ea]e': Pontius Pilate, prefect of Judea. Found in 1961, it is the only certain inscription naming Pilate from his own time, and confirms both his name and his exact title in the years of Jesus' ministry and trial."
+fact = "A dedication from Caesarea that names Pontius Pilate, prefect of Judea."
 refs = [
-  { book = "Luke", chapter = 3, verse = 1 },
-  { book = "John", chapter = 19, verse = 16 },
+  { book = "Matthew", chapter = 27, verse = 2, kind = "person" },
+  { book = "Luke", chapter = 3, verse = 1, kind = "person" },
 ]
+notes = [
+  "The stone calls him prefect; the Gospels call him governor.",
+]
+
+[[entry.quote]]
+source = "wikipedia_pilate"
+cite = "The inscription, with the conjectured letters in brackets"
+text = "[DIS AUGUSTI]S TIBERIÉUM\n[...PONTI]US PILATUS\n[...PRAEF]ECTUS IUDA[EA]E\n[...FECIT D]E[DICAVIT]"
+pieces = [ "[DIS AUGUSTI]S TIBERIÉUM", "[...PONTI]US PILATUS", "[...PRAEF]ECTUS IUDA[EA]E", "[...FECIT D]E[DICAVIT]" ]
 
 [[entry]]
 chapter = "jesus"
@@ -614,7 +686,7 @@ title = "The Temple Warning Inscription"
 place = "Jerusalem (Temple Mount)"
 date = "1st century BC–AD"
 holding = "Istanbul Archaeology Museums"
-credit = "photo Tamar Hayardeni · CC BY 2.5"
+credit = "photo Tamar Hayardeni · Attribution"
 caption = "A limestone block carved with a Greek warning that forbade Gentiles, on pain of death, from passing the barrier into the inner courts of the Temple. It marks the barrier behind the charge that Paul had brought Gentiles into the Temple, when he was seized there. Many readers also hear it behind the 'dividing wall' that the letter to the Ephesians says Christ has broken down."
 refs = [ { book = "Acts", chapter = 21, verse = 28 } ]
 
@@ -1136,3 +1208,17 @@ note = "An influential critical reading that dates much of the tradition later; 
 [[reading]]
 title = "British Museum · Israel Museum · Louvre"
 note = "Their online collections: catalogue entries, with photographs and bibliography, for many of the objects shown here."
+
+# Two entries rest on 1 and 2 Maccabees. What those books are, in the words of
+# the Church of England's Article VI (1571) and the General Baptists' Article
+# 37 (1679); the page shows these beside any link to the Apocrypha.
+[[apocrypha]]
+source = "schaff_39_articles"
+cite = "The Thirty-nine Articles (1571), Article 6"
+text = "And the other bookes, (as Hierome sayth) the Churche doth reade for example of lyfe and instruction of manners: but yet doth it not applie them to establishe any doctrene."
+pieces = [ "And the other bookes, (as Hierome sayth) the Churche doth reade for example of lyfe and instruction", "of manners: but yet doth it not applie them to establishe any doctrene." ]
+
+[[apocrypha]]
+source = "oc"
+cite = "An Orthodox Creed (General Baptists, 1679), Article 37"
+text = "And by the holy Scriptures we understand, the Canonical Books of the Old and New Testament … of which there hath never been any doubt of their Verity, and Authority, in the Protestant Churches of Christ to this Day."

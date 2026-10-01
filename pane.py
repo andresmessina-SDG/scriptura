@@ -2623,8 +2623,10 @@ class BiblePane(Gtk.Box):
         # control also needs an explicit accessible name (the tooltip isn't one).
         btn.set_can_focus(True)
         btn.set_valign(Gtk.Align.CENTER)
-        btn.set_tooltip_text(_('Related artifact — open in Scripture in Stone'))
-        set_accessible_label(btn, _('Related artifact'))
+        title = archaeology_bridge.artifact_title(self._book, self._chapter, verse)
+        btn.set_tooltip_text((title + '\n' if title else '')
+                             + _('Open it in Scripture in Stone'))
+        set_accessible_label(btn, title or _('Related artifact'))
         if self._on_open_artifact:
             btn.connect(
                 'clicked',
