@@ -1930,7 +1930,7 @@ button.catena-chip-place {
 .stone-front-sub {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
-    font-size: 1.05em;
+    font-size: 1.2em;
     opacity: 0.6;
     line-height: 1.60;   /* ~1.70em on Newsreader */
     margin-bottom: 14px;
@@ -1949,7 +1949,7 @@ button.catena-chip-place {
 .stone-era-title {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
-    font-size: 1.35em;
+    font-size: 1.5em;
     font-weight: 600;
     margin-bottom: 4px;
 }
@@ -1963,7 +1963,7 @@ button.catena-chip-place {
     margin-top: 8px;
 }
 .stone-plate {
-    margin: 24px 0 10px;
+    margin: 44px 0 10px;
 }
 /* The plate band is a fixed-height strip the photo CONTAIN-fits into, so a
    portrait plate leaves empty flanks. The shade backing turns that empty
@@ -1977,7 +1977,7 @@ button.catena-chip-place {
 .stone-title {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Charter',
                  'Iowan Old Style', 'Georgia', serif;
-    font-size: 1.35em;
+    font-size: 1.6em;
     font-weight: 600;
     letter-spacing: -0.01em;
 }
@@ -1986,7 +1986,8 @@ button.catena-chip-place {
    together signal "header ended, reading begins" (Apple News article anatomy). */
 .stone-meta {
     opacity: 0.65;
-    font-size: 0.9em;
+    font-size: 0.95em;
+    margin-top: 2px;
     margin-bottom: 2px;
 }
 .stone-caption,
@@ -2043,7 +2044,7 @@ button.catena-chip-place {
     opacity: 0.9;
 }
 .stone-chips {
-    margin-top: 10px;
+    margin-top: 16px;
 }
 .stone-chips-lead {
     opacity: 0.55;
@@ -2099,13 +2100,13 @@ button.stone-chip:active { background-color: alpha(@window_fg_color, 0.10); }
 /* Provenance line — how the object is known (excavated in situ vs market). */
 .stone-prov {
     opacity: 0.6;
-    font-size: 0.82em;
+    font-size: 0.88em;
     margin-bottom: 2px;
 }
 /* 'See also' cross-link chips — clay-toned, to set them apart from the blue
    verse chips (those leave for the Bible; these jump within the gallery). */
 .stone-seealso {
-    margin-top: 4px;
+    margin-top: 8px;
     margin-bottom: 2px;
 }
 .stone-seealso > flowboxchild {

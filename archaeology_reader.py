@@ -42,6 +42,13 @@ cairo_book = cairo.FONT_WEIGHT_NORMAL
 cairo_bold = cairo.FONT_WEIGHT_BOLD
 
 _TEXT_W = 680    # comfortable reading measure
+#: The labels that are reading text, and follow the reading size; the rest
+#: of the page is chrome.
+_READING = frozenset(('stone-front-body', 'stone-era-intro', 'stone-caption',
+                      'stone-fact', 'stone-quote', 'stone-verse'))
+#: Titles keep their rank above the reading text, whatever its size.
+_TITLES = {'stone-front-title': 1.6, 'stone-era-title': 1.35,
+           'stone-title': 1.25, 'stone-front-sub': 1.1}
 _IMG_W = 920     # images run wider than the text
 
 # Bounds of the bundled biblical-world base map (the crop in build/data).
@@ -193,12 +200,13 @@ class ArchaeologyReader:
         adj.connect('value-changed', lambda *_a: self._pump_images())
         adj.connect('changed', lambda *_a: self._pump_images())
 
-        # Font scaling: the .stone-* sizes are em-relative, so one base
-        # font-size on .stone-page scales the whole document. Driven by the
-        # app's reading font-size (apply_font_size, called by the pane).
+        # Font scaling: the reading text follows the app's reading size
+        # (apply_font_size, called by the pane); titles, meta lines, chips
+        # and credits follow the desktop, as on the Creeds page. Scaled whole,
+        # a large reading size set every meta line and chip at reading size.
+        # A widget's own provider styles that widget only, so each reading
+        # label carries it (see _label).
         self._font_provider = Gtk.CssProvider()
-        self._page.get_style_context().add_provider(
-            self._font_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
         # Trimmed right-click menu for the read-only prose. GtkLabel's stock
         # selection menu carries inert Cut/Paste/Delete items and can't be
@@ -229,6 +237,9 @@ class ArchaeologyReader:
     def _label(self, text, css, selectable=False, xalign=0):
         lbl = Gtk.Label(label=text, xalign=xalign, wrap=True)
         lbl.add_css_class(css)
+        if css in _READING or css in _TITLES:
+            lbl.get_style_context().add_provider(
+                self._font_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
         if selectable:
             lbl.set_selectable(True)
             # A selectable label shows a blinking text caret only while it has
@@ -470,9 +481,11 @@ class ArchaeologyReader:
         if entry.get('related'):
             # "See also" — jump to a thematically related artifact in the gallery
             # (a wrapping flow, since titles are long). Turns the list into a web.
-            txt.append(self._label(_('See also'), 'stone-chips-lead'))
             flow = Adw.WrapBox(child_spacing=0, line_spacing=6)
             flow.add_css_class('stone-seealso')
+            lead = self._label(_('See also'), 'stone-chips-lead')
+            lead.set_valign(Gtk.Align.CENTER)
+            flow.append(lead)
             for r in entry['related']:
                 flow.append(self._related_chip(r))
             txt.append(flow)
@@ -658,13 +671,14 @@ class ArchaeologyReader:
 
     # ── font scaling ──────────────────────────────────────────────────────────
     def apply_font_size(self, pt):
-        """Scale the whole document from the app's reading font size (the
-        .stone-* sizes are em-relative). Called on render and whenever the
-        pane's appearance changes."""
+        """Set the reading text at the app's reading font size. Called on
+        render and whenever the pane's appearance changes."""
         if not pt:
             return
-        self._font_provider.load_from_data(
-            f'.stone-page {{ font-size: {pt}pt; }}'.encode())
+        sel = ', '.join('.' + c for c in sorted(_READING))
+        rules = [f'{sel} {{ font-size: {pt}pt; }}']
+        rules += [f'.{c} {{ font-size: {pt * k:.1f}pt; }}' for c, k in _TITLES.items()]
+        self._font_provider.load_from_data('\n'.join(rules).encode())
 
     # ── contents jump ─────────────────────────────────────────────────────────
     def _build_contents(self, doc):
