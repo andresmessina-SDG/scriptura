@@ -178,7 +178,7 @@ class CreedsPage:
         self._tabs = Adw.ToggleGroup()
         self._tabs.add_css_class('round')
         self._tabs.add_css_class('page-switcher')
-        for cid, label in (('apostles', _("Apostles'")),
+        for cid, label in (('apostles', _('Apostles')),
                            ('nicene', _('Nicene')),
                            ('chalcedon', _('Chalcedonian')),
                            ('athanasian', _('Athanasian'))):

@@ -10906,7 +10906,7 @@ msgstr[0] "{n} связь с Писанием"
 msgstr[1] "{n} связи с Писанием"
 msgstr[2] "{n} связей с Писанием"
 
-msgid "Apostles'"
+msgid "Apostles"
 msgstr "Апостольский"
 
 msgid "Nicene"

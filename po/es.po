@@ -10945,7 +10945,7 @@ msgid_plural "{n} links to Scripture"
 msgstr[0] "{n} vínculo con la Escritura"
 msgstr[1] "{n} vínculos con la Escritura"
 
-msgid "Apostles'"
+msgid "Apostles"
 msgstr "Apostólico"
 
 msgid "Nicene"
