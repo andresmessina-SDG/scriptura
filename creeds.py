@@ -45,15 +45,6 @@ TITLES = {
     'athanasian': N_('The Athanasian Creed'),
 }
 
-#: Where each creed comes from: content, so English like the notes.
-ORIGINS = {
-    'apostles': "Rome's baptismal creed, received in its present form in "
-                'Gaul by the eighth century.',
-    'nicene': 'Nicaea, 325, and Constantinople, 381.',
-    'athanasian': 'Latin, from southern Gaul about 500; named for Athanasius '
-                  'but not his.',
-}
-
 #: The reading view's mark, one whole sentence per creed so each language
 #: can fit the creed's name to it.
 SAID_IN = {

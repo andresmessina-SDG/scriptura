@@ -2,29 +2,28 @@
 # 42 verses as the 1662 Prayer Book prints them; the Latin is Schaff's (44 verses:
 # 1662 verse 39 = Latin 39-40, 40 = Latin 41-42). Kinds and stems as in apostles_data.
 
+import quotes as Q
+
 TITLE = "The Athanasian Creed"
 ORIG = "la"
 
-WARN = ("These warnings split the Church of England in the 1860s and 1870s, and the Episcopal "
-        "Church in the United States never used this creed in worship. The verses show where "
-        "Scripture itself joins salvation to faith.")
-DESCENT = ("“Descended into hell” is disputed; see the Apostles' Creed, article 5, for the ways "
-           "churches read it.")
+WARN = Q.WARNINGS
+DESCENT = Q.DESCENT
 
 L = [
  # (n, English, Latin, stems, links, extra)
  (1, "Whosoever will be saved: before all things it is necessary that he hold the Catholick Faith.",
   "Quicunque vult salvus esse: ante omnia opus est, ut teneat catholicam fidem.", "salv tene fide",
   [("t", "Hebrews 11:6"), ("t", "Jude 1:3"), ("t", "Acts 4:12")],
-  {"note": WARN, "coined": [("catholicam", "catholic, “universal”")]}),
+  {"quotes": WARN, "coined": [("catholicam", "catholic, “universal”")]}),
  (2, "Which Faith except every one do keep whole and undefiled: without doubt he shall perish everlastingly.",
   "Quam nisi quisque integram inviolatamque servaverit: absque dubio in æternum peribit.", "serv peri aetern",
-  [("t", "John 3:18"), ("t", "John 3:36"), ("t", "2 Timothy 1:13")], {"note": WARN}),
+  [("t", "John 3:18"), ("t", "John 3:36"), ("t", "2 Timothy 1:13")], {"quotes": WARN}),
  (3, "And the Catholick Faith is this: That we worship one God in Trinity, and Trinity in Unity;",
   "Fides autem catholica hæc est: ut unum Deum in Trinitate, et Trinitatem in Unitate veneremur;", "fide unus unum deus deum",
   [("w", "Deuteronomy 6:4"), ("t", "Matthew 28:19"), ("t", "2 Corinthians 13:14"), ("t", "1 Corinthians 8:4")],
   {"coined": [("Trinitate", "Trinity"), ("catholica", "catholic")],
-   "note": "“Trinity” is not a Bible word; Tertullian used it in Latin about 200. The creed uses it for what Matthew 28:19 names: one name, three Persons."}),
+   "quotes": Q.TRINITY}),
  (4, "Neither confounding the Persons: nor dividing the Substance.",
   "Neque confundentes personas: neque substantiam separantes.", "person substant",
   [("w", "Hebrews 1:3"), ("t", "Matthew 3:16-17"), ("t", "John 10:30"), ("t", "John 14:16")], {}),
@@ -45,7 +44,7 @@ L = [
  (9, "The Father incomprehensible, the Son incomprehensible: and the Holy Ghost incomprehensible.",
   "Immensus Pater: immensus Filius: immensus et Spiritus Sanctus.", "immens",
   [("t", "1 Kings 8:27"), ("t", "Jeremiah 23:24"), ("t", "Psalms 139:7"), ("t", "Matthew 28:20")],
-  {"note": "The Latin immensus means “without measure”: not held within any place. The 1662 “incomprehensible” carries that older sense."}),
+  {}),
  (10, "The Father eternal, the Son eternal: and the Holy Ghost eternal.",
   "Æternus Pater: æternus Filius: æternus et Spiritus Sanctus.", "aetern",
   [("w", "Romans 16:26"), ("t", "Hebrews 9:14"), ("t", "Psalms 90:2"), ("t", "John 8:58"), ("t", "Revelation 1:8")], {}),
@@ -89,7 +88,7 @@ L = [
   "Spiritus Sanctus a Patre et Filio: non factus, nec creatus, nec genitus: sed procedens.", "spirit patr proced",
   [("w", "John 15:26"), ("t", "Galatians 4:6", "Cited by the West."), ("t", "John 16:7", "Cited by the West."), ("t", "Romans 8:9")],
   {"disputed": True, "disp_en": "and of the Son", "disp_orig": "et Filio",
-   "note": "The Latin says “of the Father and of the Son”. This creed was written in the West; the Orthodox, who confess that the Spirit proceeds from the Father (John 15:26), do not use it."}),
+   "quotes": Q.DOUBLE_PROCESSION}),
  (24, "So there is one Father, not three Fathers; one Son, not three Sons: one Holy Ghost, not three Holy Ghosts.",
   "Unus ergo Pater, non tres patres: unus Filius, non tres filii: unus Spiritus Sanctus, non tres spiritus sancti.", "unus pater spirit",
   [("w", "Ephesians 4:4-6"), ("t", "1 Corinthians 12:4-6")], {}),
@@ -110,7 +109,7 @@ L = [
  (28, "He therefore that will be saved: must thus think of the Trinity.",
   "Qui vult ergo salvus esse, ita de Trinitate sentiat.", "salv",
   [("t", "John 17:3"), ("t", "1 John 2:23"), ("t", "2 John 1:9")],
-  {"note": WARN, "coined": [("Trinitate", "Trinity")]}),
+  {"quotes": WARN, "coined": [("Trinitate", "Trinity")]}),
  (29, "Furthermore it is necessary to everlasting salvation: that he also believe rightly the Incarnation of our Lord Jesus Christ.",
   "Sed necessarium est ad æternam salutem: ut incarnationem quoque Domini nostri Jesu Christi fideliter credat.", "salut domin iesu christ cred",
   [("t", "1 John 4:2"), ("t", "2 John 1:7"), ("t", "John 20:31")],
@@ -143,7 +142,7 @@ L = [
  (38, "Who suffered for our salvation: descended into hell, rose again the third day from the dead.",
   "Qui passus est pro nostra salute: descendit ad inferos: tertia die resurrexit a mortuis.", "pass pati salut descend infer terti resurr resurg mortu",
   [("w", "Luke 24:46"), ("w", "1 Corinthians 15:4"), ("w", "Ephesians 4:9"), ("w", "Hebrews 2:10"), ("t", "1 Peter 3:19"), ("f", "Psalms 16:10")],
-  {"disputed": True, "disp_en": "descended into hell", "disp_orig": "descendit ad inferos", "note": DESCENT}),
+  {"disputed": True, "disp_en": "descended into hell", "disp_orig": "descendit ad inferos", "quotes": DESCENT}),
  (39, "He ascended into heaven, he sitteth on the right hand of the Father, God Almighty: from whence he shall come to judge the quick and the dead.",
   "Ascendit ad cœlos: sedet ad dexteram Dei Patris omnipotentis. Inde venturus est judicare vivos et mortuos.", "ascend sede sedit dexter dextr ventur iudic vivos vivor mortu",
   [("w", "Ephesians 4:10"), ("w", "Colossians 3:1"), ("w", "2 Timothy 4:1"), ("w", "Acts 10:42"), ("t", "Acts 1:11"), ("f", "Psalms 110:1")], {}),
@@ -153,11 +152,11 @@ L = [
  (41, "And they that have done good shall go into life everlasting: and they that have done evil into everlasting fire.",
   "Et qui bona egerunt, ibunt in vitam æternam: qui vero mala, in ignem æternum.", "bona eger ibunt vita aetern mala ignem",
   [("w", "John 5:29"), ("w", "Matthew 25:46"), ("w", "Matthew 25:41"), ("f", "Daniel 12:2")],
-  {"note": "Close to word for word from John 5:29 and Matthew 25:46 in the Latin Bible the creed's author read."}),
+  {}),
  (42, "This is the Catholick Faith: which except a man believe faithfully, he cannot be saved.",
   "Hæc est fides catholica: quam nisi quisque fideliter firmiterque crediderit, salvus esse non poterit.", "fide cred salv",
   [("t", "John 3:18"), ("t", "John 3:36"), ("t", "Hebrews 11:6"), ("t", "Acts 4:12")],
-  {"note": WARN, "coined": [("catholica", "catholic")]}),
+  {"quotes": WARN, "coined": [("catholica", "catholic")]}),
 ]
 
 ARTICLES = [{"n": n, "phrases": [(str(n), en, la, stems, links, extra)],

@@ -2893,6 +2893,7 @@ button.job-cancel {
 .creeds-origin {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Georgia', serif;
     font-size: 1.1em;
+    font-style: italic;
     margin-top: 4px;
 }
 .creeds-facts,
@@ -3088,6 +3089,10 @@ button.creeds-book {
 }
 .creeds-cite {
     margin-bottom: 4px;
+}
+/* A quotation and its source: the page's notes are the old writers' words. */
+.creeds-quotation {
+    margin-bottom: 6px;
 }
 .creeds-reading {
     margin-bottom: 4px;

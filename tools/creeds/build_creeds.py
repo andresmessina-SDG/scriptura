@@ -26,6 +26,7 @@ import json, os, re, sqlite3, subprocess, sys, unicodedata
 HERE = os.path.dirname(os.path.abspath(__file__)) + '/'
 sys.path.insert(0, HERE)
 import nicene_data, apostles_data, athanasian_data
+import quotes as Q
 import Sword
 
 OPEN = os.environ.get('SCRIPTURA_OPEN_DATA',
@@ -138,6 +139,43 @@ def vulgate_words():
 NT_LEMMAS = {norm_gr(l) for (l,) in GDB.execute("select distinct lemma from words")}
 
 errors, warns = [], []
+
+# The quotations: each piece between ellipses must stand, in order, in its
+# source (fetch_texts.py; src/oc.txt for An Orthodox Creed). Spacing, quote
+# marks, case and footnote numbers are set aside on both sides.
+def _plain(t):
+    t = t.replace('’', "'").replace('‘', "'").replace('“', '"').replace('”', '"')
+    t = re.sub(r'\s+', ' ', t)
+    t = re.sub(r' \d{1,3}(?= )', '', t)            # footnote and page numbers
+    t = re.sub(r' ?— ?', '—', t)
+    t = re.sub(r' (?=[,;:.?!)\]\'"])', '', t)
+    return t.casefold()
+_SRC = {}
+def _source(name):
+    if name not in _SRC:
+        path = HERE + ('src/oc.txt' if name == 'oc' else f'src/texts/{name}.txt')
+        _SRC[name] = _plain(open(path, encoding='utf-8').read()) if os.path.exists(path) else None
+    return _SRC[name]
+_UNCHECKED = set()
+def quoted(q, where):
+    src, cite, text = q[:3]
+    pieces = q[3] if len(q) > 3 else re.split(r'…|\.\.\.', text)
+    body = _source(src)
+    if body is None:
+        _UNCHECKED.add(src)
+    else:
+        at = 0
+        for piece in pieces:
+            piece = _plain(piece).strip(' ,;')
+            if not piece:
+                continue
+            i = body.find(piece, at)
+            if i < 0:
+                errors.append(f"{where}: quotation not in {src}: …{piece[:60]}…")
+                break
+            at = i + len(piece)
+    return {"cite": cite, "text": text}
+
 out = {"creeds": [], "books": [[b, OFF[b], n] for b, n in BOOKS],
        "bookspan": {b: [round((OFF[b] - (NT0 if OFF[b] >= NT0 else 0)) / ((TOTAL - NT0) if OFF[b] >= NT0 else NT0), 6),
                         round((OFF[b] + n - (NT0 if OFF[b] >= NT0 else 0)) / ((TOTAL - NT0) if OFF[b] >= NT0 else NT0), 6),
@@ -145,6 +183,7 @@ out = {"creeds": [], "books": [[b, OFF[b], n] for b, n in BOOKS],
 VW = None
 for cid, mod in (("apostles", apostles_data), ("nicene", nicene_data), ("athanasian", athanasian_data)):
     C = {"id": cid, "title": mod.TITLE, "orig": mod.ORIG, "coined_en": mod.COINED_EN,
+         "origin": quoted(Q.ORIGINS[cid], f"{cid} origin"),
          "sections": getattr(mod, "SECTIONS", None), "articles": []}
     for art in mod.ARTICLES:
         n = art["n"]; wit = mod.WITNESS[n]
@@ -154,11 +193,13 @@ for cid, mod in (("apostles", apostles_data), ("nicene", nicene_data), ("athanas
             if not note: errors.append(f"{cid} {n}: left-out {ref} has no note")
         for pid, en, orig, keys, links, extra in art["phrases"]:
             P = {"id": pid, "en": en, "orig": orig, "links": [], **extra}
+            if "quotes" in extra:
+                P["quotes"] = [quoted(q, f"{cid} {pid}") for q in extra["quotes"]]
             old = [[w, m] for w, pat, m in OLD_WORDS if re.search(pat, en)]
             if old:
                 P["old"] = old
             if not links: errors.append(f"{cid} {pid}: no links")
-            if extra.get("disputed") and not extra.get("note"): errors.append(f"{cid} {pid}: disputed without a note")
+            if extra.get("disputed") and not (extra.get("note") or extra.get("quotes")): errors.append(f"{cid} {pid}: disputed without a note")
             for w in mod.COINED_EN.get(pid, []):
                 if w not in en: errors.append(f"{cid} {pid}: coined English '{w}' not in the line")
             seen = set()
@@ -223,6 +264,9 @@ for cid, mod in (("apostles", apostles_data), ("nicene", nicene_data), ("athanas
         if len(got) != len(ref): errors.append(f"athanasian: {len(got)} lines, 1662 has {len(ref)}")
     out["creeds"].append(C)
 
+out["opening"] = {"why": [quoted(q, "opening") for q in Q.WHY],
+                  "words": quoted(Q.WORDS, "opening")}
+
 for w, pat, _m in OLD_WORDS:
     if not any(re.search(pat, p["en"]) for c in out["creeds"] for a in c["articles"] for p in a["phrases"]):
         errors.append(f"old word '{w}' is in no line")
@@ -237,6 +281,7 @@ for c in out["creeds"]:
           f"same words {sum(l['kind']=='w' for l in L):3}  historic witness {hist:3} ({100*hist//max(1,len(L))}%)  "
           f"books {len({l['book'] for l in L})}")
 for w in warns: print("WARN", w)
+if _UNCHECKED: print("WARN quotations not checked, sources missing (run fetch_texts.py):", ", ".join(sorted(_UNCHECKED)))
 if BAD_WIT: print("NOTE witness references past a chapter's end (source misprints or OCR):", "; ".join(BAD_WIT))
 for e in errors: print("FAIL", e)
 sys.exit(1 if errors else 0)

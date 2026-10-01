@@ -9,6 +9,10 @@
      "Catholick"
     ]
    },
+   "origin": {
+    "cite": "Philip Schaff, The Creeds of Christendom (1877)",
+    "text": "As the Lord's Prayer is the Prayer of prayers, the Decalogue the Law of laws, so the Apostles' Creed is the Creed of creeds."
+   },
    "sections": [
     [
      1,
@@ -789,8 +793,7 @@
           "Orthodox Creed"
          ]
         }
-       ],
-       "note": "Not in the Old Roman Creed of the fourth century. The received text added it in Gaul by the fifth."
+       ]
       }
      ],
      "left_out": []
@@ -2569,7 +2572,12 @@
          "witness": []
         }
        ],
-       "note": "The creed fixes the cross in history, in the same words Paul uses in 1 Timothy 6:13."
+       "quotes": [
+        {
+         "cite": "Rufinus, Commentary on the Apostles' Creed 18 (c. 404)",
+         "text": "They who have handed down the Creed to us have with much forethought specified the time when these things were done — under Pontius Pilate,— lest in any respect the tradition should falter, as though vague and uncertain."
+        }
+       ]
       },
       {
        "id": "4b",
@@ -3211,7 +3219,24 @@
         }
        ],
        "disputed": true,
-       "note": "Missing from the oldest forms of the creed; it first appears in Rufinus's creed of Aquileia, about 400. The Latin says Christ went down “to those below”. Churches read it three ways: he entered the state of the dead (the General Baptist Orthodox Creed of 1679: “not … the place of the Damned, but … the state of the Dead”); he bore the anguish of hell on the cross (Calvin; Heidelberg Catechism, Q. 44); he went down to the dead in triumph (Catholic and Lutheran teaching)."
+       "quotes": [
+        {
+         "cite": "Rufinus, Commentary on the Apostles' Creed 18 (c. 404)",
+         "text": "But it should be known that the clause, He descended into Hell, is not added in the Creed of the Roman Church, neither is it in that of the Oriental Churches. It seems to be implied, however, when it is said that He was buried."
+        },
+        {
+         "cite": "An Orthodox Creed (General Baptists, 1679), its note on this line",
+         "text": "Not that he (to wit) Christ went into the place of the Damned, but that he went absolutely unto the state of the Dead."
+        },
+        {
+         "cite": "Heidelberg Catechism, Question 44 (1563)",
+         "text": "That in my greatest temptations I may be assured that Christ, my Lord, by his inexpressible anguish, pains, and terrors which he suffered in his soul on the cross and before, has redeemed me from the anguish and torment of hell."
+        },
+        {
+         "cite": "Philaret of Moscow, Longer Catechism, Question 215 (1839)",
+         "text": "To the end that he might there also preach his victory over death, and deliver the souls which with faith awaited his coming."
+        }
+       ]
       },
       {
        "id": "5b",
@@ -4840,7 +4865,12 @@
          "catholic, “universal”"
         ]
        ],
-       "note": "“Catholic” means whole or universal and is not a Bible word. Some Lutherans say “Christian” instead."
+       "quotes": [
+        {
+         "cite": "Cyril of Jerusalem, Catechetical Lectures 18.23",
+         "text": "It is called Catholic then because it extends over all the world, from one end of the earth to the other…"
+        }
+       ]
       },
       {
        "id": "9b",
@@ -5069,7 +5099,12 @@
          ]
         }
        ],
-       "note": "Not in the Old Roman Creed; added in Gaul. The Latin can mean fellowship with holy people or sharing in holy things."
+       "quotes": [
+        {
+         "cite": "Heidelberg Catechism, Question 55",
+         "text": "First, that believers, all and every one, as members of Christ, have part in him and in all his treasures and gifts. Secondly, that each one must feel himself bound to use his gifts, readily and cheerfully, for the advantage and welfare of other members."
+        }
+       ]
       }
      ],
      "left_out": []
@@ -5619,7 +5654,16 @@
          "witness": []
         }
        ],
-       "note": "The Latin says “of the flesh”; the 1662 text says “body”."
+       "quotes": [
+        {
+         "cite": "Philip Schaff, The Creeds of Christendom (1877)",
+         "text": "The Latin reads carnis, the Greek σαρκός, flesh…"
+        },
+        {
+         "cite": "Heidelberg Catechism, Question 57",
+         "text": "That not only my soul, after this life, shall be immediately taken up to Christ its Head, but also that this my body, raised by the power of Christ, shall again be united with my soul, and made like unto the glorious body of Christ."
+        }
+       ]
       }
      ],
      "left_out": []
@@ -5977,6 +6021,10 @@
      "Catholick",
      "Apostolick"
     ]
+   },
+   "origin": {
+    "cite": "Philip Schaff, The Creeds of Christendom (1877)",
+    "text": "The original Nicene Creed dates from the first œcumenical Council, which was held at Nicæa, A.D. 325, for the settlement of the Arian controversy…"
    },
    "sections": [
     [
@@ -7003,8 +7051,7 @@
          ],
          "shared": 3
         }
-       ],
-       "note": "The Nicene Creed adds this line to the older creeds. It is Paul's pair of words in Colossians 1:16, and the word match found it first."
+       ]
       }
      ],
      "left_out": [
@@ -7998,7 +8045,12 @@
          "witness": []
         }
        ],
-       "note": "Arius read “the firstborn of every creature” (Colossians 1:15) as the Son being made. The creed answers from John 1:3: all things were made through him, so he is not one of them."
+       "quotes": [
+        {
+         "cite": "Cyril of Jerusalem, Catechetical Lectures 11.4",
+         "text": "…a Son eternally begotten by an inscrutable and incomprehensible generation. And in like manner on hearing of the First-born, think not that this is after the manner of men; for the first-born among men have other brothers also."
+        }
+       ]
       },
       {
        "id": "2f",
@@ -8073,7 +8125,12 @@
          "of one substance"
         ]
        ],
-       "note": "Not a Bible word. The council chose it because Arius's party could accept every biblical title for the Son while denying he was fully God. It says in one word what John 1:1 and 10:30 say."
+       "quotes": [
+        {
+         "cite": "Athanasius, De Decretis 20 (c. 351)",
+         "text": "But the Bishops … were again compelled on their part to collect the sense of the Scriptures, and to re-say and re-write what they had said before, more distinctly still, namely, that the Son is 'one in essence' with the Father…"
+        }
+       ]
       },
       {
        "id": "2g",
@@ -8808,7 +8865,6 @@
          "made flesh"
         ]
        ],
-       "note": "“Incarnate” puts John 1:14, “the Word was made flesh”, into one verb that the New Testament itself does not use.",
        "old": [
         [
          "Holy Ghost",
@@ -9217,7 +9273,12 @@
          "witness": []
         }
        ],
-       "note": "The creed fixes the cross in history. Paul uses the same three Greek words in 1 Timothy 6:13."
+       "quotes": [
+        {
+         "cite": "Rufinus, Commentary on the Apostles' Creed 18 (c. 404)",
+         "text": "They who have handed down the Creed to us have with much forethought specified the time when these things were done — under Pontius Pilate,— lest in any respect the tradition should falter, as though vague and uncertain."
+        }
+       ]
       },
       {
        "id": "4c",
@@ -9622,7 +9683,12 @@
          ]
         }
        ],
-       "note": "“According to the Scriptures” is Paul's phrase in 1 Corinthians 15:3–4. The Scriptures he means are the Old Testament, so this line sends the reader to the prophets itself."
+       "quotes": [
+        {
+         "cite": "Cyril of Jerusalem, Catechetical Lectures 14.2",
+         "text": "As an Apostle, therefore, has sent us back to the testimonies of the Scriptures, it is good that we should get full knowledge of the hope of our salvation…"
+        }
+       ]
       }
      ],
      "left_out": []
@@ -9754,8 +9820,7 @@
          "tp": 0.631939,
          "witness": []
         }
-       ],
-       "note": "The word match found nothing here: the New Testament says “sat down” with other verbs. Psalm 110:1 is the Old Testament verse the New Testament quotes most."
+       ]
       }
      ],
      "left_out": [
@@ -10506,7 +10571,12 @@
          "witness": []
         }
        ],
-       "note": "Word for word from the angel Gabriel in Luke 1:33."
+       "quotes": [
+        {
+         "cite": "Cyril of Jerusalem, Catechetical Lectures 15.27",
+         "text": "And should you ever hear any say that the kingdom of Christ shall have an end, abhor the heresy… He has not listened to Gabriel, saying, And He shall reign over the house of Jacob for ever, and of His kingdom there shall be no end."
+        }
+       ]
       }
      ],
      "left_out": []
@@ -10907,8 +10977,7 @@
          "tp": 0.902564,
          "witness": []
         }
-       ],
-       "note": "Christ's own word, as a verb: “It is the spirit that quickeneth” (John 6:63), τὸ ζωοποιοῦν, “that which gives life”. The creed makes it a title."
+       ]
       },
       {
        "id": "8c",
@@ -11054,8 +11123,7 @@
          ],
          "shared": 2
         }
-       ],
-       "note": "Christ's own words in John 15:26."
+       ]
       },
       {
        "id": "8d",
@@ -11107,7 +11175,16 @@
         }
        ],
        "disputed": true,
-       "note": "Not in the Greek of 381. Western churches added it (first at Toledo in 589) and the 1662 text has it. The Orthodox reject it. Both sides appeal to Scripture."
+       "quotes": [
+        {
+         "cite": "Philip Schaff, The Creeds of Christendom (1877)",
+         "text": "The Latin or Western form differs from the Greek by the little word Filioque, which, next to the authority of the Pope, is the chief source of the greatest schism in Christendom."
+        },
+        {
+         "cite": "Philip Schaff, The Creeds of Christendom (1877)",
+         "text": "The first clear trace of the Filioque in the Nicene Creed we find at the third Council of Toledo in Spain, A.D. 589…"
+        }
+       ]
       },
       {
        "id": "8e",
@@ -11434,7 +11511,13 @@
          "apostolic"
         ]
        ],
-       "note": "The 1662 text leaves out “holy”, which the Greek has. “Catholic” means whole or universal; some Lutherans say “Christian” instead."
+       "quotes": [
+        {
+         "cite": "Cyril of Jerusalem, Catechetical Lectures 18.23",
+         "text": "It is called Catholic then because it extends over all the world, from one end of the earth to the other…"
+        }
+       ],
+       "note": "The Greek has “holy” here; the 1662 English leaves it out."
       }
      ],
      "left_out": []
@@ -11768,7 +11851,16 @@
          ]
         }
        ],
-       "note": "Churches read this line differently. Orthodox, Catholic and Lutheran readers hold that baptism conveys forgiveness. Baptists read it as the sign of forgiveness already received by faith (Acts 10:43, which Philaret also cites)."
+       "quotes": [
+        {
+         "cite": "An Orthodox Creed (General Baptists, 1679), Article 28",
+         "text": "Baptism is an Ordinance of the New Testament, ordained by Jesus Christ to be unto the Party Baptized, or Dipped, a Sign of our entrance into the Covenant of Grace, and ingrafting into Christ, and into the Body of Christ, which is his Church: And of Remission of Sin in the Blood of Christ…"
+        },
+        {
+         "cite": "Philaret of Moscow, Longer Catechism, Question 288 (1839)",
+         "text": "Baptism is a Sacrament, in which a man who believes, having his body thrice plunged in water in the name of God the Father, the Son, and the Holy Ghost, dies to the carnal life of sin, and is born again of the Holy Ghost to a life spiritual and holy."
+        }
+       ]
       }
      ],
      "left_out": [
@@ -12062,8 +12154,7 @@
           "Cyril"
          ]
         }
-       ],
-       "note": "“We look for” (προσδοκῶμεν) is the very form Peter uses in 2 Peter 3:13."
+       ]
       }
      ],
      "left_out": []
@@ -12413,6 +12504,10 @@
      "Catholick"
     ]
    },
+   "origin": {
+    "cite": "Philip Schaff, The Creeds of Christendom (1877)",
+    "text": "The Symbolum Quicunque is a remarkably clear and precise summary of the doctrinal decisions of the first four œcumenical Councils (from A.D. 325 to A.D. 451)…"
+   },
    "sections": [
     [
      1,
@@ -12482,7 +12577,16 @@
          ]
         }
        ],
-       "note": "These warnings split the Church of England in the 1860s and 1870s, and the Episcopal Church in the United States never used this creed in worship. The verses show where Scripture itself joins salvation to faith.",
+       "quotes": [
+        {
+         "cite": "Philip Schaff, The Creeds of Christendom (1877)",
+         "text": "The Athanasian Creed, in strong contrast with the uncontroversial and peaceful tone of the Apostles' Creed, begins and ends with the solemn declaration that the catholic faith in the Trinity and the Incarnation herein set forth is the indispensable condition of salvation, and that those who reject it will be lost forever."
+        },
+        {
+         "cite": "Philip Schaff, The Creeds of Christendom (1877), quoting Richard Baxter",
+         "text": "…'the best explication [better, statement] of the Trinity,' provided, however, 'that the damnatory sentences be excepted, or modestly expounded.'"
+        }
+       ],
        "coined": [
         [
          "catholicam",
@@ -12541,7 +12645,16 @@
          "witness": []
         }
        ],
-       "note": "These warnings split the Church of England in the 1860s and 1870s, and the Episcopal Church in the United States never used this creed in worship. The verses show where Scripture itself joins salvation to faith."
+       "quotes": [
+        {
+         "cite": "Philip Schaff, The Creeds of Christendom (1877)",
+         "text": "The Athanasian Creed, in strong contrast with the uncontroversial and peaceful tone of the Apostles' Creed, begins and ends with the solemn declaration that the catholic faith in the Trinity and the Incarnation herein set forth is the indispensable condition of salvation, and that those who reject it will be lost forever."
+        },
+        {
+         "cite": "Philip Schaff, The Creeds of Christendom (1877), quoting Richard Baxter",
+         "text": "…'the best explication [better, statement] of the Trinity,' provided, however, 'that the damnatory sentences be excepted, or modestly expounded.'"
+        }
+       ]
       }
      ],
      "left_out": [
@@ -12678,7 +12791,12 @@
          "catholic"
         ]
        ],
-       "note": "“Trinity” is not a Bible word; Tertullian used it in Latin about 200. The creed uses it for what Matthew 28:19 names: one name, three Persons."
+       "quotes": [
+        {
+         "cite": "Tertullian, Against Praxeas 2 (c. 213)",
+         "text": "…the mystery of the dispensation is still guarded, which distributes the Unity into a Trinity, placing in their order the three Persons — the Father, the Son, and the Holy Ghost: three, however, not in condition, but in degree; not in substance, but in form; not in power, but in aspect; yet of one substance, and of one condition, and of one power, inasmuch as He is one God…"
+        }
+       ]
       }
      ],
      "left_out": []
@@ -13300,7 +13418,6 @@
          "witness": []
         }
        ],
-       "note": "The Latin immensus means “without measure”: not held within any place. The 1662 “incomprehensible” carries that older sense.",
        "old": [
         [
          "Holy Ghost",
@@ -15754,7 +15871,12 @@
        "disputed": true,
        "disp_en": "and of the Son",
        "disp_orig": "et Filio",
-       "note": "The Latin says “of the Father and of the Son”. This creed was written in the West; the Orthodox, who confess that the Spirit proceeds from the Father (John 15:26), do not use it.",
+       "quotes": [
+        {
+         "cite": "Philip Schaff, The Creeds of Christendom (1877)",
+         "text": "The Latin Church … taught since Augustine the double procession of the Spirit from the Father and the Son, and, without consulting the East, put it into the Creed."
+        }
+       ],
        "old": [
         [
          "Holy Ghost",
@@ -16248,7 +16370,16 @@
          ]
         }
        ],
-       "note": "These warnings split the Church of England in the 1860s and 1870s, and the Episcopal Church in the United States never used this creed in worship. The verses show where Scripture itself joins salvation to faith.",
+       "quotes": [
+        {
+         "cite": "Philip Schaff, The Creeds of Christendom (1877)",
+         "text": "The Athanasian Creed, in strong contrast with the uncontroversial and peaceful tone of the Apostles' Creed, begins and ends with the solemn declaration that the catholic faith in the Trinity and the Incarnation herein set forth is the indispensable condition of salvation, and that those who reject it will be lost forever."
+        },
+        {
+         "cite": "Philip Schaff, The Creeds of Christendom (1877), quoting Richard Baxter",
+         "text": "…'the best explication [better, statement] of the Trinity,' provided, however, 'that the damnatory sentences be excepted, or modestly expounded.'"
+        }
+       ],
        "coined": [
         [
          "Trinitate",
@@ -17758,7 +17889,24 @@
        "disputed": true,
        "disp_en": "descended into hell",
        "disp_orig": "descendit ad inferos",
-       "note": "“Descended into hell” is disputed; see the Apostles' Creed, article 5, for the ways churches read it."
+       "quotes": [
+        {
+         "cite": "Rufinus, Commentary on the Apostles' Creed 18 (c. 404)",
+         "text": "But it should be known that the clause, He descended into Hell, is not added in the Creed of the Roman Church, neither is it in that of the Oriental Churches. It seems to be implied, however, when it is said that He was buried."
+        },
+        {
+         "cite": "An Orthodox Creed (General Baptists, 1679), its note on this line",
+         "text": "Not that he (to wit) Christ went into the place of the Damned, but that he went absolutely unto the state of the Dead."
+        },
+        {
+         "cite": "Heidelberg Catechism, Question 44 (1563)",
+         "text": "That in my greatest temptations I may be assured that Christ, my Lord, by his inexpressible anguish, pains, and terrors which he suffered in his soul on the cross and before, has redeemed me from the anguish and torment of hell."
+        },
+        {
+         "cite": "Philaret of Moscow, Longer Catechism, Question 215 (1839)",
+         "text": "To the end that he might there also preach his victory over death, and deliver the souls which with faith awaited his coming."
+        }
+       ]
       }
      ],
      "left_out": []
@@ -18854,8 +19002,7 @@
           "Orthodox Creed"
          ]
         }
-       ],
-       "note": "Close to word for word from John 5:29 and Matthew 25:46 in the Latin Bible the creed's author read."
+       ]
       }
      ],
      "left_out": []
@@ -18923,7 +19070,16 @@
          ]
         }
        ],
-       "note": "These warnings split the Church of England in the 1860s and 1870s, and the Episcopal Church in the United States never used this creed in worship. The verses show where Scripture itself joins salvation to faith.",
+       "quotes": [
+        {
+         "cite": "Philip Schaff, The Creeds of Christendom (1877)",
+         "text": "The Athanasian Creed, in strong contrast with the uncontroversial and peaceful tone of the Apostles' Creed, begins and ends with the solemn declaration that the catholic faith in the Trinity and the Incarnation herein set forth is the indispensable condition of salvation, and that those who reject it will be lost forever."
+        },
+        {
+         "cite": "Philip Schaff, The Creeds of Christendom (1877), quoting Richard Baxter",
+         "text": "…'the best explication [better, statement] of the Trinity,' provided, however, 'that the damnatory sentences be excepted, or modestly expounded.'"
+        }
+       ],
        "coined": [
         [
          "catholica",
@@ -19606,5 +19762,25 @@
    1.0,
    true
   ]
+ },
+ "opening": {
+  "why": [
+   {
+    "cite": "Cyril of Jerusalem, Catechetical Lectures 5.12 (c. 350)",
+    "text": "For the articles of the Faith were not composed as seemed good to men; but the most important points collected out of all the Scripture make up one complete teaching of the Faith."
+   },
+   {
+    "cite": "An Orthodox Creed (General Baptists, 1679), Article 38",
+    "text": "…ought throughly to be received, and believed. For we believe they may be proved by most undoubted Authority of holy Scripture…"
+   },
+   {
+    "cite": "Cyril of Jerusalem, Catechetical Lectures 4.17",
+    "text": "Even to me, who tell you these things, give not absolute credence, unless thou receive the proof of the things which I announce from the Divine Scriptures."
+   }
+  ],
+  "words": {
+   "cite": "Augustine, On the Trinity V.9 (c. 415)",
+   "text": "Yet, when the question is asked, What three? human language labors altogether under great poverty of speech. The answer, however, is given, three persons, not that it might be [completely] spoken, but that it might not be left [wholly] unspoken."
+  }
  }
 }

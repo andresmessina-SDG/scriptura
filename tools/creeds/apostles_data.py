@@ -4,6 +4,8 @@
 # The stems are matched against the Vulgate: a verse word counts when it begins
 # with a stem, or contains a stem of five letters or more.
 
+import quotes as Q
+
 TITLE = "The Apostles' Creed"
 ORIG = "la"
 
@@ -14,7 +16,7 @@ ARTICLES = [
     ("t", "1 Corinthians 8:6"), ("t", "Matthew 6:9"), ("t", "Hebrews 11:6")], {}),
   ("1b", " Maker of heaven and earth:", "Creatorem caeli et terrae.", "creat creav fecit fecist caelu caeli terra",
    [("w", "Genesis 14:19"), ("w", "Psalms 121:2"), ("w", "Acts 4:24"), ("t", "Genesis 1:1"), ("t", "Acts 17:24"), ("t", "Hebrews 11:3")],
-   {"note": "Not in the Old Roman Creed of the fourth century. The received text added it in Gaul by the fifth."}),
+   {}),
  ]},
  {"n": 2, "phrases": [
   ("2a", "And in Jesus Christ", "Et in Iesum Christum,", "iesu christ cred",
@@ -33,7 +35,7 @@ ARTICLES = [
  {"n": 4, "phrases": [
   ("4a", " Suffered under Pontius Pilate,", "passus sub Pontio Pilato,", "passus pass pati ponti pilat",
    [("w", "1 Timothy 6:13"), ("w", "1 Peter 2:21"), ("w", "Acts 4:27"), ("t", "Luke 24:26"), ("t", "Matthew 27:2"), ("f", "Isaiah 53:4")],
-   {"note": "The creed fixes the cross in history, in the same words Paul uses in 1 Timothy 6:13."}),
+   {"quotes": Q.PILATE}),
   ("4b", " Was crucified,", "crucifixus,", "crucifi",
    [("w", "1 Corinthians 2:2"), ("w", "Mark 15:25"), ("t", "Galatians 3:13"), ("f", "Psalms 22:16"), ("f", "Isaiah 53:5")], {}),
   ("4c", " dead, and buried:", "mortuus, et sepultus,", "mortu sepult",
@@ -43,7 +45,7 @@ ARTICLES = [
   ("5a", " He descended into hell;", "descendit ad inferos,", "descend infer",
    [("w", "Ephesians 4:9"), ("w", "Acts 2:27"), ("t", "1 Peter 3:19"), ("t", "Acts 2:31"), ("t", "Matthew 12:40"), ("f", "Psalms 16:10")],
    {"disputed": True,
-    "note": "Missing from the oldest forms of the creed; it first appears in Rufinus's creed of Aquileia, about 400. The Latin says Christ went down “to those below”. Churches read it three ways: he entered the state of the dead (the General Baptist Orthodox Creed of 1679: “not … the place of the Damned, but … the state of the Dead”); he bore the anguish of hell on the cross (Calvin; Heidelberg Catechism, Q. 44); he went down to the dead in triumph (Catholic and Lutheran teaching)."}),
+    "quotes": Q.DESCENT}),
   ("5b", " The third day he rose again from the dead;", "tertia die resurrexit a mortuis,", "terti resurr resurg mortu",
    [("w", "Luke 24:46"), ("w", "1 Corinthians 15:4"), ("w", "Matthew 16:21"), ("t", "Acts 10:40"), ("f", "Jonah 1:17"),
     ("f", "Hosea 6:2", "The early church read the third day here. In context the verse speaks of Israel restored.")], {}),
@@ -66,10 +68,10 @@ ARTICLES = [
   ("9a", " The holy Catholick Church;", "sanctam Ecclesiam catholicam,", "sanct eccles",
    [("w", "Ephesians 5:27"), ("t", "Matthew 16:18"), ("t", "Ephesians 1:22"), ("t", "Revelation 7:9"), ("t", "Colossians 1:18")],
    {"coined": [("catholicam", "catholic, “universal”")],
-    "note": "“Catholic” means whole or universal and is not a Bible word. Some Lutherans say “Christian” instead."}),
+    "quotes": Q.CATHOLIC}),
   ("9b", " The Communion of Saints;", "sanctorum communionem,", "sanct commun",
    [("w", "2 Corinthians 13:14"), ("w", "Acts 2:42"), ("t", "Ephesians 2:19"), ("t", "1 John 1:3"), ("t", "Hebrews 12:23")],
-   {"note": "Not in the Old Roman Creed; added in Gaul. The Latin can mean fellowship with holy people or sharing in holy things."}),
+   {"quotes": Q.COMMUNION}),
  ]},
  {"n": 10, "phrases": [
   ("10a", " The Forgiveness of sins;", "remissionem peccatorum,", "remiss peccat",
@@ -78,7 +80,7 @@ ARTICLES = [
  {"n": 11, "phrases": [
   ("11a", " The Resurrection of the body,", "carnis resurrectionem,", "carn caro resurr",
    [("w", "Job 19:26"), ("t", "1 Corinthians 15:42"), ("t", "John 5:28"), ("t", "Philippians 3:21"), ("t", "Luke 24:39"), ("f", "Daniel 12:2"), ("f", "Isaiah 26:19")],
-   {"note": "The Latin says “of the flesh”; the 1662 text says “body”."}),
+   {"quotes": Q.FLESH}),
  ]},
  {"n": 12, "phrases": [
   ("12a", " And the Life everlasting. Amen.", "vitam aeternam. Amen.", "vita aetern",

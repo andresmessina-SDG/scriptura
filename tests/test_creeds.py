@@ -37,11 +37,12 @@ def test_every_link_is_shaped_for_the_page():
                     assert any(hit for _w, hit, _g in link['orig_words'])
 
 
-def test_disputed_lines_carry_a_note():
+def test_disputed_lines_say_why():
+    """In the words of those who disputed them."""
     for cid in creeds.CREED_IDS:
         for p in creeds.phrases(cid):
             if p.get('disputed'):
-                assert p.get('note'), (cid, p['id'])
+                assert p.get('quotes') or p.get('note'), (cid, p['id'])
 
 
 def test_each_creed_rebuilds_its_1662_opening():
@@ -131,10 +132,26 @@ def test_giver_of_life_is_not_marked_as_a_word_the_church_chose():
     assert '8b' not in c['coined_en']
     p = next(p for p in creeds.phrases('nicene') if p['id'] == '8b')
     assert not p.get('coined')
-    assert 'John 6:63' in p['note']
+    assert any(link['ref'] == 'John 6:63' and link['kind'] == 'w'
+               for link in p['links'])
 
 
 def test_the_mark_names_the_creed_and_the_line():
     assert creeds.mark_tooltip('Luke', 1, 33) == (
         'In the Nicene Creed: “Whose kingdom shall have no end”')
     assert creeds.mark_tooltip('Genesis', 1, 2) == ''
+
+
+def test_the_page_speaks_in_quotations():
+    """Under each title, in the opening and beside the lines that want a
+    word, the page quotes the Fathers, the confessions and Schaff, each with
+    where it stands (tools/creeds/quotes.py; the builder checks each one
+    against its source). What is left in the page's own words stays short."""
+    d = creeds.data()
+    assert len(d['opening']['why']) == 3 and d['opening']['words']['text']
+    for c in d['creeds']:
+        assert c['origin']['text'] and c['origin']['cite']
+        for p in creeds.phrases(c['id']):
+            for q in p.get('quotes', []):
+                assert q['text'] and q['cite'], (c['id'], p['id'])
+            assert len(p.get('note', '')) <= 100, (c['id'], p['id'])

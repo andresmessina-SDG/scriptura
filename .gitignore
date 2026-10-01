@@ -86,3 +86,8 @@ PROMOTION.md
 locale/
 SWEEP_1.7.2.md
 site-shots/
+
+# The old texts tools/creeds/build_creeds.py checks the quotations against;
+# fetched, never committed (tools/creeds/fetch_texts.py, witnesses.py).
+tools/creeds/src/texts/
+tools/creeds/src/oc.txt

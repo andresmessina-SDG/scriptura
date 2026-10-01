@@ -218,6 +218,8 @@ class CreedsPage:
         self._title.add_css_class('creeds-title')
         self._origin = Gtk.Label(xalign=0, wrap=True)
         self._origin.add_css_class('creeds-origin')
+        self._origin_cite = Gtk.Label(xalign=0, wrap=True)
+        self._origin_cite.add_css_class('creeds-cite')
         self._facts = Gtk.Label(xalign=0, wrap=True)
         self._facts.add_css_class('creeds-facts')
         head = Gtk.Box(spacing=12)
@@ -229,6 +231,7 @@ class CreedsPage:
         # otherwise squeeze onto three lines.
         self._head, self._text_box = head, text_box
         page.append(self._origin)
+        page.append(self._origin_cite)
         page.append(self._facts)
         page.append(self._key())
         hint = Gtk.Label(
@@ -378,7 +381,9 @@ class CreedsPage:
         self._sel = self._book = self._hot = None
         self._geo = None
         self._title.set_label(_(creeds.TITLES.get(self._creed_id, '')))
-        self._origin.set_label(creeds.ORIGINS.get(self._creed_id, ''))
+        origin = c.get('origin') or {}
+        self._origin.set_label(_quoted(origin.get('text', '')))
+        self._origin_cite.set_label(origin.get('cite', ''))
         self._text_orig.set_label(_('Greek') if c.get('orig') == 'grc'
                                   else _('Latin'))
         self._set_facts()
@@ -726,6 +731,8 @@ class CreedsPage:
             flag.add_css_class('creeds-flag')
             flag.set_halign(Gtk.Align.START)
             box.append(flag)
+        for q in p.get('quotes', []):
+            box.append(_quotation(q))
         if p.get('note'):
             box.append(_label(p['note'], 'creeds-body'))
         if p.get('old'):
@@ -739,10 +746,9 @@ class CreedsPage:
                 old.append(w)
             box.append(old)
         for word, gloss in p.get('coined', []):
-            where = (_('The Church chose this word; the New Testament does not '
-                       'use it.') if self._creed.get('orig') == 'grc' else
-                     _('The Church chose this word; the Latin Bible does not '
-                       'use it.'))
+            where = (_('Not in the New Testament.')
+                     if self._creed.get('orig') == 'grc'
+                     else _('Not in the Latin Bible.'))
             c = Gtk.Label(xalign=0, wrap=True, use_markup=True)
             # A gloss that quotes a word already ('uncreate, “uncreated”')
             # is not quoted again.
@@ -777,24 +783,15 @@ class CreedsPage:
         """Before a line is picked: why the Scripture, how to read the
         threads (each with a line of this creed to try), who the witnesses
         are."""
+        opening = creeds.data().get('opening', {})
         box = _vbox(10, 'creeds-detail')
         box.append(_label(_('Why the Scripture'), 'creeds-kicker'))
-        box.append(_label(CHARTER, 'creeds-quote'))
-        box.append(_label(_('An Orthodox Creed (General Baptists, 1679), '
-                            'Article 38'), 'creeds-cite'))
-        box.append(_label(_('The Thirty-nine Articles (1571) say the same in '
-                            'Article 8. This page sets each line of the creed '
-                            'beside the verses it rests on, so you can see '
-                            'for yourself.'), 'creeds-ui'))
+        for q in opening.get('why', []):
+            box.append(_quotation(q))
 
         head = _label(_('Reading the threads'), 'creeds-kicker')
         head.set_margin_top(12)
         box.append(head)
-        meaning = {'w': _('Same words: the creed says what Scripture says.'),
-                   't': _('Same teaching: Scripture teaches what the line '
-                          'says.'),
-                   'f': _('Foretold: an Old Testament promise the line sees '
-                          'kept.')}
         for kind in ('w', 't', 'f'):
             row = Gtk.Box(spacing=10)
             sw = _swatch(_THREAD[kind])
@@ -802,7 +799,7 @@ class CreedsPage:
             sw.set_margin_top(5)
             row.append(sw)
             col = _vbox(2, 'creeds-reading')
-            col.append(_label(meaning[kind], 'creeds-ui'))
+            col.append(_label(_(creeds.KIND_NAMES[kind]), 'creeds-ui'))
             pid, ref = EXAMPLES[self._creed_id][kind]
             p = self._byid.get(pid)
             if p is not None:
@@ -822,18 +819,19 @@ class CreedsPage:
             row.append(col)
             box.append(row)
 
+        if opening.get('words'):
+            head = _label(_('Words the Church chose'), 'creeds-kicker')
+            head.set_margin_top(12)
+            box.append(head)
+            box.append(_quotation(opening['words']))
+
         head = _label(_('The witnesses'), 'creeds-kicker')
         head.set_margin_top(12)
         box.append(head)
-        box.append(_label(_('A heavier thread is a verse that one of these '
-                            'also cited for the same line:'), 'creeds-ui'))
         named = {w for _p, link in self._all for w in link['witness']}
         for w in _WITNESS_ORDER:
             if w in named:
                 box.append(_label(_WITNESS_FULL[w], 'creeds-witness-line'))
-        box.append(_label(_('Words shared: the verse uses the same words as '
-                            'the creed in its Greek or Latin; they are marked '
-                            'in bold.'), 'creeds-ui'))
         box.append(_label(_('Pick a line to begin. Up and Down walk the '
                             'lines; Esc puts a line down.'), 'creeds-hint'))
         return box
@@ -1229,12 +1227,6 @@ class CreedsPage:
 
 # ── helpers ──────────────────────────────────────────────────────────────
 
-#: Article 38 of An Orthodox Creed (1679), in its own spelling. Content:
-#: quoted, never translated.
-CHARTER = ('“…ought throughly to be received, and believed. For we believe '
-           'they may be proved by most undoubted Authority of holy '
-           'Scripture.”')
-
 #: One line of each creed per kind of thread, for the opening to show:
 #: (line id, reference). tests/test_creeds_view.py holds each to the data.
 EXAMPLES = {
@@ -1257,6 +1249,20 @@ _WITNESS_FULL = {
     'Larger Catechism': 'Westminster Larger Catechism, 1648',
     'Westminster': 'Westminster Confession of Faith, 1647',
 }
+
+
+def _quoted(text: str) -> str:
+    return f'“{text}”' if text else ''
+
+
+def _quotation(q: dict) -> Gtk.Widget:
+    """A quotation and where it stands. The words are the source's own, in
+    English as written: content, never translated; tools/creeds/quotes.py
+    holds them and the builder checks each against its source."""
+    box = _vbox(2, 'creeds-quotation')
+    box.append(_label(_quoted(q['text']), 'creeds-quote'))
+    box.append(_label(q['cite'], 'creeds-cite'))
+    return box
 
 
 def _swatch(draw) -> Gtk.DrawingArea:

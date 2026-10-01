@@ -14,10 +14,10 @@ semver-ish — 0.x was the pre-Flathub testing track.
   promises it sees fulfilled. Pick a line to follow its threads into the
   Bible, or pick a book to see which lines rest on it. The 1662 English sits
   beside the Greek and Latin originals; disputed lines, and the words the
-  Church chose that the Bible does not use, are marked and explained, and
-  1662 words whose sense has moved ("the quick and the dead") are glossed. An
-  opening says why: the 1679 Orthodox Creed holds the creeds "may be proved
-  by most undoubted Authority of holy Scripture". A verse whose words a creed
+  Church chose that the Bible does not use, are marked, and explained in the
+  words of the Fathers, the confessions and Schaff, each quotation checked
+  against its source. 1662 words whose sense has moved ("the quick and the
+  dead") are glossed. A verse whose words a creed
   uses carries a small mark in the reading view that opens the creed at that
   line. Open it from the module list.
 

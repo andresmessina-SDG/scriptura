@@ -11015,12 +11015,6 @@ msgstr "Versículo {n} de {total}"
 msgid "Article {n} of {total}"
 msgstr "Artículo {n} de {total}"
 
-msgid "The Church chose this word; the New Testament does not use it."
-msgstr "La Iglesia eligió esta palabra; el Nuevo Testamento no la usa."
-
-msgid "The Church chose this word; the Latin Bible does not use it."
-msgstr "La Iglesia eligió esta palabra; la Biblia latina no la usa."
-
 #, python-brace-format
 msgid "Left out: {ref}"
 msgstr "Omitido: {ref}"
@@ -11106,35 +11100,14 @@ msgstr "Palabras antiguas"
 msgid "Why the Scripture"
 msgstr "Por qué la Escritura"
 
-msgid "An Orthodox Creed (General Baptists, 1679), Article 38"
-msgstr "An Orthodox Creed (bautistas generales, 1679), artículo 38"
-
-msgid "The Thirty-nine Articles (1571) say the same in Article 8. This page sets each line of the creed beside the verses it rests on, so you can see for yourself."
-msgstr "Los Treinta y Nueve Artículos (1571) dicen lo mismo en el artículo 8. Esta página pone cada línea del credo junto a los versículos en que se apoya, para que lo veas por ti mismo."
-
 msgid "Reading the threads"
 msgstr "Cómo leer los hilos"
-
-msgid "Same words: the creed says what Scripture says."
-msgstr "Mismas palabras: el credo dice lo que dice la Escritura."
-
-msgid "Same teaching: Scripture teaches what the line says."
-msgstr "Misma enseñanza: la Escritura enseña lo que dice la línea."
-
-msgid "Foretold: an Old Testament promise the line sees kept."
-msgstr "Anunciado: una promesa del Antiguo Testamento que la línea ve cumplida."
 
 msgid "Show this line"
 msgstr "Mostrar esta línea"
 
 msgid "The witnesses"
 msgstr "Los testigos"
-
-msgid "A heavier thread is a verse that one of these also cited for the same line:"
-msgstr "Un hilo más grueso es un versículo que uno de ellos también citó para la misma línea:"
-
-msgid "Words shared: the verse uses the same words as the creed in its Greek or Latin; they are marked in bold."
-msgstr "Palabras en común: el versículo usa las mismas palabras que el credo en su griego o latín; van en negrita."
 
 msgid "Pick a line to begin. Up and Down walk the lines; Esc puts a line down."
 msgstr "Elige una línea para empezar. Arriba y Abajo recorren las líneas; Esc deja de mostrar una línea."
@@ -11147,3 +11120,12 @@ msgstr[1] "{n} palabras en común"
 
 msgid "The words in bold are the ones this verse shares with the creed in its Greek or Latin"
 msgstr "Las palabras en negrita son las que este versículo comparte con el credo en su griego o latín"
+
+msgid "Words the Church chose"
+msgstr "Palabras que eligió la Iglesia"
+
+msgid "Not in the New Testament."
+msgstr "No está en el Nuevo Testamento."
+
+msgid "Not in the Latin Bible."
+msgstr "No está en la Biblia latina."

@@ -10978,12 +10978,6 @@ msgstr "Стих {n} из {total}"
 msgid "Article {n} of {total}"
 msgstr "Член {n} из {total}"
 
-msgid "The Church chose this word; the New Testament does not use it."
-msgstr "Это слово выбрала Церковь; в Новом Завете его нет."
-
-msgid "The Church chose this word; the Latin Bible does not use it."
-msgstr "Это слово выбрала Церковь; в латинской Библии его нет."
-
 #, python-brace-format
 msgid "Left out: {ref}"
 msgstr "Не приводится: {ref}"
@@ -11073,35 +11067,14 @@ msgstr "Устаревшие слова"
 msgid "Why the Scripture"
 msgstr "Почему Писание"
 
-msgid "An Orthodox Creed (General Baptists, 1679), Article 38"
-msgstr "An Orthodox Creed (генеральные баптисты, 1679), статья 38"
-
-msgid "The Thirty-nine Articles (1571) say the same in Article 8. This page sets each line of the creed beside the verses it rests on, so you can see for yourself."
-msgstr "Тридцать девять статей (1571) говорят то же в статье 8. Здесь каждая строка символа стоит рядом со стихами, на которых она основана, — чтобы вы могли убедиться сами."
-
 msgid "Reading the threads"
 msgstr "Как читать нити"
-
-msgid "Same words: the creed says what Scripture says."
-msgstr "Те же слова: символ говорит то, что говорит Писание."
-
-msgid "Same teaching: Scripture teaches what the line says."
-msgstr "То же учение: Писание учит тому, что говорит строка."
-
-msgid "Foretold: an Old Testament promise the line sees kept."
-msgstr "Предсказано: ветхозаветное обетование, которое строка видит исполненным."
 
 msgid "Show this line"
 msgstr "Показать эту строку"
 
 msgid "The witnesses"
 msgstr "Свидетели"
-
-msgid "A heavier thread is a verse that one of these also cited for the same line:"
-msgstr "Более толстая нить — стих, который один из них тоже приводит к той же строке:"
-
-msgid "Words shared: the verse uses the same words as the creed in its Greek or Latin; they are marked in bold."
-msgstr "Общие слова: стих употребляет те же слова, что и символ на греческом или латыни; они выделены жирным."
 
 msgid "Pick a line to begin. Up and Down walk the lines; Esc puts a line down."
 msgstr "Выберите строку, чтобы начать. Вверх и Вниз — по строкам; Esc снимает выбор строки."
@@ -11115,3 +11088,12 @@ msgstr[2] "{n} общих слов"
 
 msgid "The words in bold are the ones this verse shares with the creed in its Greek or Latin"
 msgstr "Жирным выделены слова, общие у этого стиха с символом на греческом или латыни"
+
+msgid "Words the Church chose"
+msgstr "Слова, избранные Церковью"
+
+msgid "Not in the New Testament."
+msgstr "Нет в Новом Завете."
+
+msgid "Not in the Latin Bible."
+msgstr "Нет в латинской Библии."
