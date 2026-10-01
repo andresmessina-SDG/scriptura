@@ -10919,22 +10919,14 @@ msgstr "Никейский"
 msgid "Athanasian"
 msgstr "Афанасиев"
 
-msgid ""
-"Pick a line, or walk with Up and Down, to follow its threads to the verses "
-"it comes from. Pick a book on the strip to light the lines that rest on it."
-msgstr ""
-"Выберите строку или пройдите по строкам клавишами Вверх и Вниз, чтобы "
-"проследить её нити до стихов, из которых она взята. Выберите книгу на "
-"полосе, чтобы выделить строки, которые на неё опираются."
+msgid "Pick a line, or move with Up and Down, to follow its threads to the verses it comes from. Pick a book on the strip to light the lines that rest on it."
+msgstr "Выберите строку или пройдите по строкам клавишами Вверх и Вниз, чтобы проследить её нити до стихов, из которых она взята. Выберите книгу на полосе, чтобы выделить строки, которые на неё опираются."
 
 msgid "Heavier: more witnesses"
 msgstr "Толще: больше свидетелей"
 
 msgid "word"
 msgstr "слово"
-
-msgid "line"
-msgstr "строка"
 
 msgid "Disputed"
 msgstr "Спорно"
@@ -10984,9 +10976,6 @@ msgstr "Не приводится: {ref}"
 
 msgid "Open in the Bible"
 msgstr "Открыть в Библии"
-
-msgid "No witness yet"
-msgstr "Свидетелей пока нет"
 
 msgid "Book"
 msgstr "Книга"
@@ -11055,11 +11044,11 @@ msgid "A word the Church chose"
 msgstr "Слово, избранное Церковью"
 
 #, python-brace-format
-msgid "{n} also cited by a witness"
-msgid_plural "{n} also cited by a witness"
-msgstr[0] "{n} приводит и свидетель"
-msgstr[1] "{n} приводят и свидетели"
-msgstr[2] "{n} приводят и свидетели"
+msgid "{n} cited by a witness"
+msgid_plural "{n} cited by a witness"
+msgstr[0] "{n} приводит свидетель"
+msgstr[1] "{n} приводят свидетели"
+msgstr[2] "{n} приводят свидетели"
 
 msgid "Old words"
 msgstr "Устаревшие слова"
@@ -11076,8 +11065,8 @@ msgstr "Показать эту строку"
 msgid "The witnesses"
 msgstr "Свидетели"
 
-msgid "Pick a line to begin. Up and Down walk the lines; Esc puts a line down."
-msgstr "Выберите строку, чтобы начать. Вверх и Вниз — по строкам; Esc снимает выбор строки."
+msgid "Pick a line to begin. Up and Down move between lines; Esc clears the choice."
+msgstr "Выберите строку, чтобы начать. Вверх и Вниз — переход по строкам; Esc снимает выбор."
 
 #, python-brace-format
 msgid "{n} word shared"
@@ -11097,3 +11086,6 @@ msgstr "Нет в Новом Завете."
 
 msgid "Not in the Latin Bible."
 msgstr "Нет в латинской Библии."
+
+msgid "words"
+msgstr "слова"

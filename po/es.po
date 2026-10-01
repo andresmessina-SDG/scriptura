@@ -10958,22 +10958,14 @@ msgstr "Niceno"
 msgid "Athanasian"
 msgstr "Atanasiano"
 
-msgid ""
-"Pick a line, or walk with Up and Down, to follow its threads to the verses "
-"it comes from. Pick a book on the strip to light the lines that rest on it."
-msgstr ""
-"Elija una línea, o recórralas con Arriba y Abajo, para seguir sus hilos "
-"hasta los versículos de donde procede. Elija un libro en la franja para "
-"iluminar las líneas que se apoyan en él."
+msgid "Pick a line, or move with Up and Down, to follow its threads to the verses it comes from. Pick a book on the strip to light the lines that rest on it."
+msgstr "Elija una línea, o recórralas con Arriba y Abajo, para seguir sus hilos hasta los versículos de donde procede. Elija un libro en la franja para iluminar las líneas que se apoyan en él."
 
 msgid "Heavier: more witnesses"
 msgstr "Más grueso: más testigos"
 
 msgid "word"
 msgstr "palabra"
-
-msgid "line"
-msgstr "línea"
 
 msgid "Disputed"
 msgstr "Discutido"
@@ -11021,9 +11013,6 @@ msgstr "Omitido: {ref}"
 
 msgid "Open in the Bible"
 msgstr "Abrir en la Biblia"
-
-msgid "No witness yet"
-msgstr "Aún sin testigo"
 
 msgid "Book"
 msgstr "Libro"
@@ -11089,10 +11078,10 @@ msgid "A word the Church chose"
 msgstr "Una palabra que eligió la Iglesia"
 
 #, python-brace-format
-msgid "{n} also cited by a witness"
-msgid_plural "{n} also cited by a witness"
-msgstr[0] "{n} citado también por un testigo"
-msgstr[1] "{n} citados también por un testigo"
+msgid "{n} cited by a witness"
+msgid_plural "{n} cited by a witness"
+msgstr[0] "{n} citado por un testigo"
+msgstr[1] "{n} citados por un testigo"
 
 msgid "Old words"
 msgstr "Palabras antiguas"
@@ -11109,8 +11098,8 @@ msgstr "Mostrar esta línea"
 msgid "The witnesses"
 msgstr "Los testigos"
 
-msgid "Pick a line to begin. Up and Down walk the lines; Esc puts a line down."
-msgstr "Elige una línea para empezar. Arriba y Abajo recorren las líneas; Esc deja de mostrar una línea."
+msgid "Pick a line to begin. Up and Down move between lines; Esc clears the choice."
+msgstr "Elija una línea para empezar. Arriba y Abajo pasan de una línea a otra; Esc quita la selección."
 
 #, python-brace-format
 msgid "{n} word shared"
@@ -11129,3 +11118,6 @@ msgstr "No está en el Nuevo Testamento."
 
 msgid "Not in the Latin Bible."
 msgstr "No está en la Biblia latina."
+
+msgid "words"
+msgstr "palabras"

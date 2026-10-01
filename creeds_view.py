@@ -222,20 +222,21 @@ class CreedsPage:
         self._origin_cite.add_css_class('creeds-cite')
         self._facts = Gtk.Label(xalign=0, wrap=True)
         self._facts.add_css_class('creeds-facts')
-        head = Gtk.Box(spacing=12)
-        self._title.set_hexpand(True)
+        # The switch sits beside the title where there is room and under it
+        # where there is not: side by side, a long title and a long switch
+        # (Russian's) were wider than the column and pushed the page past
+        # the window's edge.
+        head = Adw.WrapBox(child_spacing=12, line_spacing=4,
+                           justify=Adw.JustifyMode.SPREAD)
         head.append(self._title)
         head.append(text_box)
         page.append(head)
-        # Beside the Bible the switch goes under the title, which it would
-        # otherwise squeeze onto three lines.
-        self._head, self._text_box = head, text_box
         page.append(self._origin)
         page.append(self._origin_cite)
         page.append(self._facts)
         page.append(self._key())
         hint = Gtk.Label(
-            label=_('Pick a line, or walk with Up and Down, to follow its '
+            label=_('Pick a line, or move with Up and Down, to follow its '
                     'threads to the verses it comes from. Pick a book on the '
                     'strip to light the lines that rest on it.'),
             xalign=0, wrap=True)
@@ -271,6 +272,7 @@ class CreedsPage:
         # sits there, not in the middle of the page; this keeps the room.
         self._rail_room = Gtk.Box()
         content = Gtk.Box()
+        self._content = content
         content.append(clamp)
         content.append(self._rail_room)
         scroll.set_child(content)
@@ -353,7 +355,7 @@ class CreedsPage:
             box.append(item)
         for wrap, sample, text in ((_coined, _('word'),
                                     _('A word the Church chose')),
-                                   (_disputed, _('line'), _('Disputed'))):
+                                   (_disputed, _('words'), _('Disputed'))):
             item = Gtk.Box(spacing=6)
             s = Gtk.Label(use_markup=True)
             s.set_markup(wrap(GLib.markup_escape_text(sample)))
@@ -400,8 +402,8 @@ class CreedsPage:
             ngettext('{n} link to Scripture', '{n} links to Scripture',
                      links).format(n=links),
             ngettext('{n} book', '{n} books', books).format(n=books),
-            ngettext('{n} also cited by a witness',
-                     '{n} also cited by a witness', older).format(n=older),
+            ngettext('{n} cited by a witness',
+                     '{n} cited by a witness', older).format(n=older),
         ]
         if disputed:
             parts.append(ngettext('{n} disputed line', '{n} disputed lines',
@@ -648,12 +650,20 @@ class CreedsPage:
             self._keep_in_view(self._rows[self._sel])
 
     def _keep_in_view(self, btn):
-        """Scroll the chosen line into view; focus stays where it is. The
-        viewport waits for its own layout, where a measured scroll made now
-        would be clamped to heights not yet settled."""
-        viewport = self._scroll.get_child()
-        if isinstance(viewport, Gtk.Viewport):
-            viewport.scroll_to(btn, None)
+        """Scroll so the chosen line sits a third of the way down, unless it
+        is already well inside the view; focus stays where it is. Called
+        again each time the lines' height settles (see _want_in_view): the
+        first try can come before the page has its full height."""
+        ok, b = btn.compute_bounds(self._content)
+        if not ok:
+            return
+        adj = self._scroll.get_vadjustment()
+        top, page = adj.get_value(), adj.get_page_size()
+        margin = page / 6
+        if top + margin <= b.get_y() <= top + page - margin - b.get_height():
+            return
+        adj.set_value(min(max(0, b.get_y() - page / 3),
+                          adj.get_upper() - page))
 
     def _apply_width(self):
         self._hstrip.set_visible(self._narrow)
@@ -666,10 +676,6 @@ class CreedsPage:
         self._rail_room.set_size_request(field + STRIP_W + labels + RAIL_END, -1)
         self._side.set_visible(self._wide)
         self._hint.set_visible(not self._wide)
-        self._head.set_orientation(Gtk.Orientation.HORIZONTAL if self._wide
-                                   else Gtk.Orientation.VERTICAL)
-        self._text_box.set_halign(Gtk.Align.FILL if self._wide
-                                  else Gtk.Align.START)
 
     # ── the detail ───────────────────────────────────────────────────────
 
@@ -832,8 +838,8 @@ class CreedsPage:
         for w in _WITNESS_ORDER:
             if w in named:
                 box.append(_label(_WITNESS_FULL[w], 'creeds-witness-line'))
-        box.append(_label(_('Pick a line to begin. Up and Down walk the '
-                            'lines; Esc puts a line down.'), 'creeds-hint'))
+        box.append(_label(_('Pick a line to begin. Up and Down move between '
+                            'lines; Esc clears the choice.'), 'creeds-hint'))
         return box
 
     def _link_card(self, link: dict, chips: dict) -> Gtk.Widget:
@@ -865,11 +871,11 @@ class CreedsPage:
             card.append(o)
         if link.get('note'):
             card.append(_label(link['note'], 'creeds-link-note'))
+        if not link['witness']:
+            return card
         wits = Adw.WrapBox(child_spacing=6, line_spacing=6)
-        for w in link['witness'] or [None]:
-            if w is None:
-                t = _label(_('No witness yet'), 'creeds-witness')
-            elif w == 'Word match':
+        for w in link['witness']:
+            if w == 'Word match':
                 n = link.get('shared', 0)
                 t = _label(ngettext('{n} word shared', '{n} words shared',
                                     n).format(n=n), 'creeds-witness')
@@ -1169,7 +1175,9 @@ class CreedsPage:
                     continue
                 x1, x2, y2 = g['gx'] + 4, sx - 1, e['y']
                 dx = max(24.0, (x2 - x1) * 0.5)
-                n = len([x for x in link['witness'] if x])
+                # Heavier for each older witness, as the key says; the
+                # word match is the kind's own mark, not a witness.
+                n = len([x for x in link['witness'] if x != 'Word match'])
                 width = {'w': 1.4, 't': 0.9, 'f': 1.1}[link['kind']] + 0.3 * n
                 alpha = {'w': 0.95, 't': 0.6, 'f': 0.85}[link['kind']]
                 pts = ((x1, y1), (x1 + dx, y1), (x2 - dx, y2), (x2, y2))

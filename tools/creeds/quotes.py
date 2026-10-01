@@ -18,7 +18,8 @@ ORIGINS = {
     'nicene': ('schaff_nicene', SCHAFF,
                "The original Nicene Creed dates from the first œcumenical Council, "
                "which was held at Nicæa, A.D. 325, for the settlement of the Arian "
-               "controversy…"),
+               "controversy… The Nicæno-Constantinopolitan Creed … adds all the "
+               "clauses after 'Holy Ghost,' but omits the anathema."),
     'athanasian': ('schaff_athanasian', SCHAFF,
                    "The Symbolum Quicunque is a remarkably clear and precise summary "
                    "of the doctrinal decisions of the first four œcumenical Councils "
@@ -32,8 +33,8 @@ WHY = [
      "the most important points collected out of all the Scripture make up one "
      "complete teaching of the Faith."),
     ('oc', 'An Orthodox Creed (General Baptists, 1679), Article 38',
-     "…ought throughly to be received, and believed. For we believe they may be "
-     "proved by most undoubted Authority of holy Scripture…"),
+     "The Three Creeds … ought throughly to be received, and believed. For we "
+     "believe they may be proved by most undoubted Authority of holy Scripture…"),
     ('cyril04', 'Cyril of Jerusalem, Catechetical Lectures 4.17',
      "Even to me, who tell you these things, give not absolute credence, unless "
      "thou receive the proof of the things which I announce from the Divine "
@@ -63,10 +64,16 @@ DESCENT = [
      "Not that he (to wit) Christ went into the place of the Damned, but that he "
      "went absolutely unto the state of the Dead."),
     ('heidelberg', 'Heidelberg Catechism, Question 44 (1563)',
+     "Why is it added: He descended into Hades? "
      "That in my greatest temptations I may be assured that Christ, my Lord, by his "
      "inexpressible anguish, pains, and terrors which he suffered in his soul on "
-     "the cross and before, has redeemed me from the anguish and torment of hell."),
+     "the cross and before, has redeemed me from the anguish and torment of hell.",
+     ["Why is it added: He descended into Hades?",
+      "That in my greatest temptations I may be assured that Christ, my Lord, by his "
+      "inexpressible anguish, pains, and terrors which he suffered in his soul on "
+      "the cross and before, has redeemed me from the anguish and torment of hell."]),
     ('philaret', 'Philaret of Moscow, Longer Catechism, Question 215 (1839)',
+     "Wherefore did Jesus Christ descend into hell? "
      "To the end that he might there also preach his victory over death, and "
      "deliver the souls which with faith awaited his coming."),
 ]
@@ -76,20 +83,28 @@ CATHOLIC = [('cyril18', 'Cyril of Jerusalem, Catechetical Lectures 18.23',
              "one end of the earth to the other…")]
 
 COMMUNION = [('heidelberg', 'Heidelberg Catechism, Question 55',
+              "What dost thou understand by the communion of saints? "
               "First, that believers, all and every one, as members of Christ, have "
               "part in him and in all his treasures and gifts. Secondly, that each one "
               "must feel himself bound to use his gifts, readily and cheerfully, for "
-              "the advantage and welfare of other members.")]
+              "the advantage and welfare of other members.",
+              ["What dost thou understand by the communion of saints?",
+               "First, that believers, all and every one, as members of Christ, have "
+               "part in him and in all his treasures and gifts. Secondly, that each "
+               "one must feel himself bound to use his gifts, readily and cheerfully, "
+               "for the advantage and welfare of other members."])]
 
 FLESH = [
     ('schaff_apostles', SCHAFF,
      "The Latin reads carnis, the Greek σαρκός, flesh…"),
     ('heidelberg', 'Heidelberg Catechism, Question 57',
+     "What comfort does the resurrection of the body afford thee? "
      "That not only my soul, after this life, shall be immediately taken up to "
      "Christ its Head, but also that this my body, raised by the power of Christ, "
      "shall again be united with my soul, and made like unto the glorious body of "
      "Christ.",
-     ["That not only my soul, after this life, shall be immediately taken up to "
+     ["What comfort does the resurrection of the body afford thee?",
+      "That not only my soul, after this life, shall be immediately taken up to "
       "Christ its Head, but also that this my body, raised by the power",
       "of Christ, shall again be united with my soul, and made like unto the "
       "glorious body of Christ."]),

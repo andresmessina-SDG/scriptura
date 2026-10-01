@@ -2920,7 +2920,7 @@ button.job-cancel {
     margin: 16px 0 6px 30px;
 }
 button.creeds-line {
-    padding: 4px 8px 4px 0;
+    padding: 7px 8px 7px 0;
     min-height: 0;
     border-radius: 6px;
     font-weight: normal;
@@ -2951,7 +2951,7 @@ button.creeds-line.lit {
 }
 .creeds-text {
     font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Georgia', serif;
-    line-height: 1.50;   /* ~1.60em on Newsreader */
+    line-height: 1.25;   /* ~1.34em on Newsreader */
 }
 .creeds-greek .creeds-text,
 .creeds-greek-text {
