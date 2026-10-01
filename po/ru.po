@@ -189,6 +189,378 @@ msgstr "Ежедневное чтение"
 msgid "Commentary"
 msgstr "Комментарий"
 
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
+msgid "The Creeds, and Scripture in Stone in its sources' words."
+msgstr "Символы веры и «Писание в камне» словами своих источников."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:158
+msgid "The Creeds: the Apostles', Nicene, Chalcedonian and Athanasian Creeds, each line drawn to the verses it comes from."
+msgstr "Символы веры: Апостольский, Никео-Цареградский, Халкидонский орос и Афанасиев, каждая строка связана со стихами, из которых взята."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
+msgid "Pick a line to follow its threads into the Bible, or a book to see which lines rest on it."
+msgstr "Выберите строку, чтобы пройти по её нитям в Библию, или книгу, чтобы увидеть, какие строки на ней основаны."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:160
+msgid "Each creed sits beside its Greek or Latin original, with old English words explained."
+msgstr "Каждый символ стоит рядом со своим греческим или латинским подлинником, а старые английские слова объяснены."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:161
+msgid "Disputed lines, and words the Bible does not use, are explained in the words of the Fathers and the confessions."
+msgstr "Спорные строки и слова, которых нет в Библии, объяснены словами отцов и исповеданий."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
+msgid "A verse a creed quotes carries a small mark that opens the creed at that line."
+msgstr "Стих, который приводит символ веры, несёт небольшую метку, открывающую символ на этой строке."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:163
+msgid "Scripture in Stone quotes each stone, or an old witness to it, checked word for word."
+msgstr "«Писание в камне» приводит надпись каждого камня или древнее свидетельство о нём, сверенное слово в слово."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
+msgid "Every verse an artifact bears on shows its text and how the two are linked."
+msgstr "Каждый стих, к которому относится артефакт, показан с текстом и с тем, как они связаны."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
+msgid "Contested readings are marked, and the titles are set in the serif."
+msgstr "Спорные прочтения отмечены, а заголовки набраны шрифтом с засечками."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:171
+msgid "Spanish and Russian beyond the menus, and the Bible Family Tree in the Module Manager."
+msgstr "Испанский и русский не только в меню, и «Родословное древо Библии» в Менеджере модулей."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:173
+msgid "In Spanish or Russian, a Strong's entry also shows how a Bible in that language renders the word."
+msgstr "На испанском или русском статья Стронга показывает и то, как слово передаёт Библия на этом языке."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:174
+msgid "The places named in a verse take the names a Spanish or Russian Bible gives them."
+msgstr "Места, названные в стихе, носят имена, которые им даёт испанская или русская Библия."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:175
+msgid "Three maps come in Spanish and two in Russian, with an update to the imagery pack."
+msgstr "Три карты есть на испанском и две на русском — с обновлением набора изображений."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:176
+msgid "The Module Manager shows where each English Bible sits from word for word to free, and opens its card."
+msgstr "Менеджер модулей показывает место каждой английской Библии от дословных до свободных и открывает её карточку."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:177
+msgid "Search finds the deuterocanon: Tobit, Sirach, the Maccabees and the rest."
+msgstr "Поиск находит второканонические книги: Товита, Сираха, Маккавейские и остальные."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:178
+msgid "A reading plan that ran out can begin again from today, keeping the days you read."
+msgstr "Закончившийся план чтения можно начать заново с сегодняшнего дня, сохранив прочитанные дни."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:179
+msgid "Bibles that number the Psalms like the Vulgate show the psalm the header names."
+msgstr "Библии, нумерующие псалмы как Вульгата, показывают тот псалом, который назван в заголовке."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:180
+msgid "A tip, shown once, says where the footnote switches are."
+msgstr "Разовый совет подсказывает, где находятся переключатели сносок."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:181
+msgid "Scripture in Stone and the genealogy pages have their wider line spacing back."
+msgstr "В «Писании в камне» и на страницах родословий вернулся более широкий межстрочный интервал."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:182
+msgid "Downloads name Scriptura, where some claimed to be a web browser."
+msgstr "Загрузки называют себя Scriptura, тогда как некоторые выдавали себя за веб-браузер."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:188
+msgid "A writing page that reads like a page, and a view to preach from."
+msgstr "Страница для письма, которая читается как страница, и вид для проповеди."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:190
+msgid "Writing looks like a page: Markdown symbols fold away once you leave a line."
+msgstr "Текст выглядит как страница: символы Markdown скрываются, как только вы покидаете строку."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:191
+msgid "Paragraph styles and a choice of font for your journal and sermons."
+msgstr "Стили абзацев и выбор шрифта для дневника и проповедей."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:192
+msgid "Tables in the journal and sermons, with Tab to move between cells."
+msgstr "Таблицы в дневнике и проповедях; Tab переходит между ячейками."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:193
+msgid "Preach from a sermon: F5 shows it full screen in large type, with a timer."
+msgstr "Проповедуйте по тексту: F5 показывает проповедь на весь экран крупным шрифтом, с таймером."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:194
+msgid "Pasting from a web page or word processor keeps headings, lists, bold and italic."
+msgstr "При вставке с веб-страницы или из текстового редактора сохраняются заголовки, списки, полужирный и курсив."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:195
+msgid "Click a verse's note number to read the note on the page."
+msgstr "Нажмите номер сноски у стиха, чтобы прочесть её на странице."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:196
+msgid "Read the difference follows the Bible beside it."
+msgstr "«Прочесть разницу» следует за Библией рядом."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:197
+msgid "Reduce motion in GNOME Settings is now honoured."
+msgstr "Теперь учитывается настройка GNOME, уменьшающая анимацию."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:198
+msgid "The Today page and startup open without jumps and keep your place."
+msgstr "Страница «Сегодня» и запуск открываются без скачков и сохраняют ваше место."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:199
+msgid "Esc behaves in the Annotations window, and word study counts from interlinears."
+msgstr "Esc работает как надо в окне «Пометки», а изучение слова ведёт подсчёт по подстрочникам."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:205
+msgid "The Bible Family Tree, and downloads that look after themselves."
+msgstr "«Родословное древо Библии» и загрузки, которые сами о себе заботятся."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:207
+msgid "The Bible Family Tree draws the English Bibles people read, and the Bibles they came from, down the page in time. Print it as a poster."
+msgstr "«Родословное древо Библии» рисует английские Библии, которые читают люди, и Библии, от которых они произошли, сверху вниз во времени. Его можно напечатать как плакат."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:208
+msgid "The Line places every English Bible from word for word to free. Filter it by what you have, by tradition and by era."
+msgstr "«Линия» располагает все английские Библии от дословных до свободных. Её можно отфильтровать по тому, что у вас есть, по традиции и по эпохе."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:209
+msgid "Read the difference shows one verse in every Bible you have, with the Greek or Hebrew above it."
+msgstr "«Прочесть разницу» показывает один стих во всех ваших Библиях, а над ним греческий или еврейский текст."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:210
+msgid "Each English Bible has a card: where it sits on the Line, the Bibles it came from, and the source of every fact."
+msgstr "У каждой английской Библии есть карточка: её место на «Линии», Библии, от которых она произошла, и источник каждого факта."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:211
+msgid "Compare lists its Bibles from word for word to free, and finds the right verse in Bibles that number the Psalms differently."
+msgstr "«Сравнить» располагает Библии от дословных до свободных и находит нужный стих в Библиях, где псалмы пронумерованы иначе."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:212
+msgid "Downloads wait their turn, show their progress, can be cancelled, and pick up where they stopped."
+msgstr "Загрузки ждут своей очереди, показывают ход, их можно отменить, и они продолжаются с того места, где остановились."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:213
+msgid "The Module Manager checks for updates when its lists are a week old, and a dot on the menu says when one is waiting."
+msgstr "Менеджер модулей проверяет обновления, когда его спискам исполняется неделя, а точка на меню сообщает, что обновление ждёт."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:214
+msgid "Every download is checked for damage before it is installed."
+msgstr "Каждая загрузка проверяется на повреждения перед установкой."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:215
+msgid "The menu now holds only places, and a Preferences window holds the settings you set once."
+msgstr "В меню теперь только разделы, а окно «Параметры» хранит настройки, которые задают один раз."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:216
+msgid "Scriptura has a website, in English, Spanish and Russian."
+msgstr "У Scriptura есть сайт на английском, испанском и русском."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:222
+msgid "Search the Greek and Hebrew behind the translation, and hear more of the fathers."
+msgstr "Поиск по греческому и еврейскому тексту за переводом, и больше голосов отцов."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:224
+msgid "Search by the word under the translation. strong:G26 finds every verse whose Greek carries that word, and lemma: and morph: ask the same of the spelling and the grammar."
+msgstr "Ищите по слову, стоящему за переводом. strong:G26 находит все стихи, где в греческом стоит это слово, а lemma: и morph: делают то же по написанию и по грамматике."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:225
+msgid "The occurrences beside a Strong's definition can now cover the whole Bible, not only the book you are reading."
+msgstr "Вхождения рядом с определением Стронга теперь могут охватывать всю Библию, а не только книгу, которую вы читаете."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:226
+msgid "The historical commentaries add about 2,000 comments, most of them Origen. The Module Manager offers the new pack."
+msgstr "В исторические толкования добавлено около 2000 комментариев, большинство из них — Ориген. Менеджер модулей предлагает новый набор."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:227
+msgid "Double-clicking a word in a Russian Bible finds its dictionary article far more often. Update the Russian dictionary to get this."
+msgstr "Двойной щелчок по слову в русской Библии гораздо чаще находит его словарную статью. Для этого обновите русский словарь."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:228
+msgid "The interface font now ships with the app, so the text looks the same on every desktop."
+msgstr "Шрифт интерфейса теперь поставляется с приложением, поэтому текст выглядит одинаково в любой среде."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:229
+msgid "On desktops that put the app icon in the window bar, such as KDE, it no longer appears there."
+msgstr "В средах, которые ставят значок приложения в заголовок окна, например в KDE, он там больше не появляется."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:230
+msgid "Evening paper now says when your desktop has no Night Light, instead of doing nothing."
+msgstr "Вечерняя бумага теперь сообщает, что в вашей среде нет ночной подсветки, а не просто бездействует."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:231
+msgid "The starting library cards say how much each one downloads."
+msgstr "Карточки начальных библиотек показывают объём загрузки каждой."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:232
+msgid "Where the system cannot play audio, no play button is offered."
+msgstr "Если система не может воспроизводить звук, кнопка воспроизведения не показывается."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:233
+msgid "A file chooser that cannot open now says so, and the Share and Written on this chapter menus fit their rows."
+msgstr "Окно выбора файла, которое не может открыться, теперь сообщает об этом, а меню «Поделиться» и «Написано об этой главе» умещаются в своих строках."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:239
+msgid "Your writing is kept safer, and the interlinears show more."
+msgstr "Ваши записи сохраняются надёжнее, а подстрочники показывают больше."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:241
+msgid "A daily copy of your notes, journal and sermons is kept on this device. Restore keeps a copy of what it replaces."
+msgstr "На этом устройстве хранится ежедневная копия ваших заметок, дневника и проповедей. Восстановление сохраняет копию того, что заменяет."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:242
+msgid "Closing the app or logging out no longer loses the last sentence you typed."
+msgstr "При закрытии приложения или выходе из сеанса последняя набранная фраза больше не теряется."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:243
+msgid "Opening the app a second time no longer risks your notes. It brings the open window forward."
+msgstr "Повторный запуск приложения больше не угрожает вашим заметкам: он выводит вперёд уже открытое окно."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:244
+msgid "Find and replace in journal entries and sermons, with Ctrl+F."
+msgstr "Поиск и замена в записях дневника и проповедях — Ctrl+F."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:245
+msgid "The Greek interlinear can show the words other editions add or change."
+msgstr "Греческий подстрочник может показывать слова, которые другие издания добавляют или меняют."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:246
+msgid "The Hebrew interlinear can show the form the scribes wrote under the form that is read."
+msgstr "Еврейский подстрочник может показывать форму, написанную писцами, под формой, которая читается."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:247
+msgid "Type a verse reference in the GNOME search to see it and open it."
+msgstr "Введите ссылку на стих в поиске GNOME, чтобы увидеть и открыть его."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:248
+msgid "Ctrl+D bookmarks the chapter. Alt+[ and Alt+] go back and forward."
+msgstr "Ctrl+D добавляет главу в закладки. Alt+[ и Alt+] — назад и вперёд."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:249
+msgid "The annotations list shows the verse and updates itself."
+msgstr "Список пометок показывает стих и обновляется сам."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:250
+msgid "Highlights sat one word late when footnotes were hidden. This is fixed."
+msgstr "Выделения смещались на одно слово, когда сноски были скрыты. Это исправлено."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:256
+msgid "Fixes for writing sermons."
+msgstr "Исправления для работы над проповедями."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:258
+msgid "Giving a sermon a series could close the app. This is fixed."
+msgstr "Назначение проповеди цикла могло закрыть приложение. Это исправлено."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:259
+msgid "Typing in a long sermon no longer gets slower as the text grows."
+msgstr "Набор текста в длинной проповеди больше не замедляется по мере роста текста."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:260
+msgid "Russian: the verse menu item for a new journal entry no longer reads as “add a bookmark”."
+msgstr "Русский: пункт меню стиха для новой записи в дневнике больше не читается как «добавить закладку»."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:266
+msgid "A place to write: a journal, sermons, and a new Today page."
+msgstr "Место для письма: дневник, проповеди и новая страница «Сегодня»."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:268
+msgid "A journal. Write an entry about one passage, several, or none, and add or remove passages later."
+msgstr "Дневник. Пишите запись об одном отрывке, нескольких или ни об одном, а потом добавляйте или убирайте отрывки."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:269
+msgid "Sermons. Keep each sermon with its passages, its main idea, its series and the days you preached it. Print or export it on its own."
+msgstr "Проповеди. Храните каждую проповедь с её отрывками, главной мыслью, циклом и днями, когда вы её произносили. Печатайте или экспортируйте её отдельно."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:270
+msgid "While you write a sermon, bring in your notes, highlights, verses, cross-references and word studies on the passage."
+msgstr "Работая над проповедью, добавляйте в неё свои заметки, выделения, стихи, параллельные места и изучение слов по отрывку."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:271
+msgid "The Annotations window has three pages: Annotations, Journal and Sermons, each with its own search and filters."
+msgstr "В окне «Пометки» три страницы: «Пометки», «Дневник» и «Проповеди», у каждой свой поиск и фильтры."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:272
+msgid "Room to write, with buttons for bold, italic, headings, quotes and lists, and a word count."
+msgstr "Простор для письма: кнопки полужирного, курсива, заголовков, цитат и списков и счётчик слов."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:273
+msgid "Print, export and compare translations from the new ⋮ button, or with Ctrl+P, Ctrl+E and Ctrl+Shift+C. Before, they were only in the right-click menu."
+msgstr "Печать, экспорт и сравнение переводов — из новой кнопки ⋮ или по Ctrl+P, Ctrl+E и Ctrl+Shift+C. Раньше они были только в контекстном меню."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:274
+msgid "The Today page shows the first verse of the day's reading, on a new parchment background."
+msgstr "Страница «Сегодня» показывает первый стих чтения дня на новом пергаментном фоне."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:275
+msgid "Search finds your own notes and entries as well as Bible verses."
+msgstr "Поиск находит не только стихи Библии, но и ваши заметки и записи."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:276
+msgid "The right-click menu is shorter and grouped."
+msgstr "Контекстное меню стало короче и разбито на группы."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:277
+msgid "Fixed: double-clicking a word said “No entry” even with dictionaries installed, and a reading plan could say it was done when it was not."
+msgstr "Исправлено: двойной щелчок по слову давал «Нет статьи» даже при установленных словарях, а план чтения мог считаться завершённым, когда это было не так."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:283
+msgid "Your marks now show in every translation, and many fixes."
+msgstr "Ваши пометки теперь видны во всех переводах, и много исправлений."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:285
+msgid "Highlights, underlines, notes and tags now show in every translation, not only the one you made them in. The Study Journal is now called Annotations."
+msgstr "Выделения, подчёркивания, заметки и метки теперь видны во всех переводах, а не только в том, где вы их сделали. «Дневник изучения» теперь называется «Пометки»."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:286
+msgid "Export, print and copy work for Bibles from eBible, and marks made in them land on the right verse."
+msgstr "Экспорт, печать и копирование работают для Библий из eBible, а пометки в них попадают на нужный стих."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:287
+msgid "Psalm numbers are right in the Clementine Vulgate and the Russian Synodal Bible from eBible."
+msgstr "Номера псалмов верны в Климентинской Вульгате и в русском Синодальном переводе из eBible."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:288
+msgid "“Match case” no longer turns an OR search into an AND search."
+msgstr "«Учитывать регистр» больше не превращает поиск с OR в поиск с AND."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:289
+msgid "A link to a book your Bible does not have now tells you which book is missing, instead of doing nothing."
+msgstr "Ссылка на книгу, которой нет в вашей Библии, теперь сообщает, какой книги не хватает, а не просто бездействует."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:290
+msgid "The Orthodox Old Calendar is offered beside the New Calendar."
+msgstr "Православный календарь по старому стилю предлагается рядом с новым."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:291
+msgid "Russian readers get the Orthodox troparion in Church Slavonic, not in English."
+msgstr "Русские читатели получают православный тропарь на церковнославянском, а не на английском."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:292
+msgid "Dates show in the app's language, not always in English."
+msgstr "Даты показываются на языке приложения, а не всегда на английском."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:293
+msgid "A stray space before commas is gone from the Today page, devotionals, cross-references, dictionaries and collects."
+msgstr "Лишний пробел перед запятыми исчез со страницы «Сегодня», из ежедневных чтений, параллельных мест, словарей и коллект."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:294
+msgid "Highlights cover the whole verse and stay beside the right text."
+msgstr "Выделения покрывают весь стих и остаются у нужного текста."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:300
+msgid "Two fixes for 1.6.0."
+msgstr "Два исправления к 1.6.0."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:302
+msgid "The right-click menu now opens in the middle of the page on small windows."
+msgstr "В маленьких окнах контекстное меню теперь открывается посередине страницы."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:303
+msgid "The Book of Generations opens at the text size you chose."
+msgstr "«Книга родословий» открывается с выбранным вами размером текста."
+
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:212
 msgid "Scriptura in Russian, and the Bible's lists of names drawn as charts."
 msgstr "Scriptura на русском и списки имён из Библии в виде схем."
