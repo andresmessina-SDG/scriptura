@@ -110,6 +110,11 @@ install_subdir('creeds', install_dir: pkgdatadir / 'data')
 # and all four are needed, since the reading text sets bold and italic. Its
 # licence travels with it (OFL clause 1: the licence must accompany the font,
 # and the family name is a Reserved Font Name).
+#
+# UnifrakturMaguntia is a second face a reader chooses: a blackletter offered
+# in Appearance ▸ Font. One weight, no italic, Latin only — Cyrillic and Greek
+# fall back to another face. Its name is a Reserved Font Name too, so the file
+# ships unmodified and its licence travels with it.
 install_data(
   'fonts/AdwaitaSans-Regular.ttf',
   'fonts/AdwaitaSans-Italic.ttf',
@@ -126,6 +131,8 @@ install_data(
   'fonts/OpenDyslexic-Italic.otf',
   'fonts/OpenDyslexic-Bold-Italic.otf',
   'fonts/OpenDyslexic-OFL.txt',
+  'fonts/UnifrakturMaguntia-Book.ttf',
+  'fonts/UnifrakturMaguntia-OFL.txt',
   install_dir: datadir / 'fonts' / 'scriptura',
 )
 

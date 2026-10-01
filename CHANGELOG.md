@@ -6,6 +6,11 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+### Added
+
+- **UnifrakturMaguntia**, a blackletter face, ships with the app and can be
+  chosen in Appearance ▸ Font. It covers Latin script only.
+
 ## [1.8.3] — 2026-09-30
 
 ### Added
