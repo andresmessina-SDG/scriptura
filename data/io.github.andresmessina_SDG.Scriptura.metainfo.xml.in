@@ -151,6 +151,21 @@
          notice most, in plain words and short sentences, with no em-dashes.
          The full record belongs in CHANGELOG.md, not here.
          tests/test_version_sync.py holds every release to this. -->
+    <release version="1.8.3" date="2026-09-30">
+      <description its:translate="no">
+        <p>The Creeds, and Scripture in Stone in its sources' words.</p>
+        <ul>
+          <li>The Creeds: the Apostles', Nicene, Chalcedonian and Athanasian Creeds, each line drawn to the verses it comes from.</li>
+          <li>Pick a line to follow its threads into the Bible, or a book to see which lines rest on it.</li>
+          <li>Each creed sits beside its Greek or Latin original, with old English words explained.</li>
+          <li>Disputed lines, and words the Bible does not use, are explained in the words of the Fathers and the confessions.</li>
+          <li>A verse a creed quotes carries a small mark that opens the creed at that line.</li>
+          <li>Scripture in Stone quotes each stone, or an old witness to it, checked word for word.</li>
+          <li>Every verse an artifact bears on shows its text and how the two are linked.</li>
+          <li>Contested readings are marked, and the titles are set in the serif.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.8.2" date="2026-09-30">
       <description its:translate="no">
         <p>Spanish and Russian beyond the menus, and the Bible Family Tree in the Module Manager.</p>

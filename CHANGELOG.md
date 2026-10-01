@@ -6,6 +6,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+## [1.8.3] — 2026-09-30
+
 ### Added
 
 - **The Creeds.** The Apostles', Nicene, Chalcedonian and Athanasian Creeds,
