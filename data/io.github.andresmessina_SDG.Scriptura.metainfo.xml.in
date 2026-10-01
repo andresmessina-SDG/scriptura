@@ -150,7 +150,10 @@
          Keep each one short: at most ten items, the ones a reader will
          notice most, in plain words and short sentences, with no em-dashes.
          The full record belongs in CHANGELOG.md, not here.
-         tests/test_version_sync.py holds every release to this. -->
+         tests/test_version_sync.py holds every release to this.
+         Every note is translated: add each line to po/es.po and po/ru.po,
+         or tests/test_translations.py fails, then rebuild the site with
+         tools/build-site.py so What's new shows it in all three languages. -->
     <release version="1.8.3" date="2026-09-30">
       <description>
         <p>The Creeds, and Scripture in Stone in its sources' words.</p>
