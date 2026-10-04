@@ -23,6 +23,8 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Gdk, GLib, Gsk, Graphene, Pango
 
+from gtk_utils import iter_at_location
+
 
 def _visible_lines(view, vr):
     """The first and last buffer lines the viewport shows.
@@ -241,6 +243,10 @@ class BibleTextView(Gtk.TextView):
     _UL_THICK = 1.5
     _LEX_COLOR_DARK = '#7fa3c1'
     _LEX_COLOR_LIGHT = '#5a7fa3'
+
+    def get_iter_at_location(self, x, y):
+        """GTK's, minus the abort on a hidden-text line's bottom spacing."""
+        return iter_at_location(self, x, y)
 
     def get_iter_location(self, it):
         """Where GTK draws the character at `it`, hidden text allowed for.
