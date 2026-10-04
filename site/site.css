@@ -383,27 +383,6 @@ button, a, .w, .vn, [role="tab"] { touch-action: manipulation; }
    the circle); the old page stays still beneath it. */
 .ink::view-transition-old(root), .ink::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 
-/* The pane tells the story: on a screen with room, the window stays
-   put while three steps pass beside it, and each step works the window. */
-.story-steps { display: none; }
-@media (min-width: 1100px) and (min-height: 760px) {
-  .story { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr); gap: 48px; }
-  .story-pane { position: sticky; top: max(24px, calc(50vh - 350px)); align-self: start; }
-  .story-pane .caption { display: none; }
-  /* The whole window must fit the screen beside the steps: the verses
-     scroll inside it, fading at the foot, and the panel is a little shorter. */
-  .story .panes { max-height: calc(100vh - 392px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--rule) transparent;
-    -webkit-mask: linear-gradient(to bottom, #000 calc(100% - 36px), transparent); mask: linear-gradient(to bottom, #000 calc(100% - 36px), transparent); }
-  .story .panel { height: 240px; }
-  .story-steps { display: block; list-style: none; margin: 0; padding: 0 0 12vh; }
-  .step { min-height: 76vh; display: flex; flex-direction: column; justify-content: center; gap: 10px;
-    opacity: .3; transition: opacity 300ms ease; }
-  .step:first-child { min-height: 60vh; justify-content: flex-start; padding-top: 18vh; }
-  .step.on { opacity: 1; }
-  .step .n { font: 500 1.625rem/1 var(--scripture); color: var(--gold); }
-  .step h3 { font: 700 1.5rem/1.2 var(--sans); letter-spacing: -.012em; }
-  .step p { font: 1.1875rem/1.5 var(--prose); color: var(--ink-2); max-width: 22em; text-wrap: pretty; }
-}
 .vn { transition: color var(--d-hover) ease, background-color var(--d-rise) ease; }
 
 /* The cross-reference map: every strong link between two chapters is
@@ -523,7 +502,6 @@ button, a, .w, .vn, [role="tab"] { touch-action: manipulation; }
 .win.reading .pane { padding: 40px 56px 44px; }
 .win.reading .bible { font-size: 1.1875rem; }
 .win.reading .touch-exit { display: block; position: absolute; top: 12px; right: 12px; z-index: 4; }
-.story .win.reading .panes { max-height: none; }
 .present { position: fixed; inset: 0; z-index: 60; display: grid; place-content: center; gap: 28px; padding: 6vh 8vw; background: var(--paper); color: var(--ink); outline: none; }
 .present-v { font: clamp(1.75rem, 3.6vw, 3.25rem)/1.45 var(--scripture); max-width: 30em; text-wrap: pretty; }
 .present-r { font: 600 clamp(1rem, 1.4vw, 1.25rem) var(--sans); color: var(--gold-text); }
@@ -607,7 +585,7 @@ button, a, .w, .vn, [role="tab"] { touch-action: manipulation; }
   .win.one.right .pane + .pane { display: block; border-top: 0; }
   .win.one .ph { display: none; }
   /* The panel grows with its content: no scroll inside a scroll. */
-  .panel, .story .panel { height: auto; max-height: none; overflow: visible; }
+  .panel { height: auto; max-height: none; overflow: visible; }
 
   /* Thumb-sized targets, without changing how anything looks. */
   .w, .vn { position: relative; }

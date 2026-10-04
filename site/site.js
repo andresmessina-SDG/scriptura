@@ -549,33 +549,6 @@
     document.getElementById('lex').classList.add('enter');
   }
 
-  // The story beside the window: each step that reaches the middle of
-  // the screen works the window as a reader would.
-  const steps = [...document.querySelectorAll('.step')];
-  const roomy = matchMedia('(min-width: 1100px) and (min-height: 760px)');
-  const SHOW = [
-    () => opening && openWord(opening),
-    () => { Object.assign(state, { tab: 'xrefs', verse: 1, ref: 0 }); render(); },
-    () => { Object.assign(state, { tab: 'voices', verse: 1 }); render(); },
-  ];
-  let shown = 0;
-  if (steps.length && 'IntersectionObserver' in window) {
-    const io = new IntersectionObserver(entries => {
-      if (!roomy.matches) return;
-      for (const en of entries) {
-        if (!en.isIntersecting) continue;
-        const n = steps.indexOf(en.target);
-        steps.forEach((s, i) => s.classList.toggle('on', i === n));
-        if (n === shown) continue;
-        shown = n; SHOW[n]();
-        if (!still.matches) panel.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }],
-          { duration: 220, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
-      }
-    }, { rootMargin: '-45% 0px -45% 0px' });
-    steps.forEach(s => io.observe(s));
-    steps[0].classList.add('on');
-  }
-
   // Small live touches: the window's own Reading mode, Presentation and a
   // verse card, as the app has them. Built once the demo data is in.
   document.addEventListener('DOMContentLoaded', () => {

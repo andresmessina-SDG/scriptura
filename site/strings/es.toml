@@ -20,8 +20,6 @@ pane_right = "La Biblia en Español Sencillo"
 
 sec_tools = "Todo para el estudio detenido, en una sola pantalla"
 live_caption = "Esto funciona. Haga clic en una palabra subrayada para ver su entrada en el diccionario, o en un número de versículo para ver los pasajes que le hacen eco y lo que escribió la Iglesia."
-story_label = "Cómo funciona la ventana"
-story = ["Haga clic en una palabra subrayada para ver su entrada en el diccionario.", "Haga clic en un número de versículo para ver los pasajes que le hacen eco.", "El mismo número abre lo que escribió la Iglesia sobre ese versículo."]
 map_h = "La Escritura interpreta la Escritura"
 map_p = "OpenBible.info reúne {total} referencias cruzadas. Aquí se trazan los vínculos más fuertes entre los 1189 capítulos. Señale un libro."
 map_canvas = "Arcos que unen los capítulos de la Biblia que remiten unos a otros, de Génesis a Apocalipsis."

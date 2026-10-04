@@ -908,12 +908,6 @@ def render(lang, page='home'):
     values['claims'] = '\n'.join(
         f'<div><h3>{esc(c["title"])}</h3><p>{esc(c["text"])}</p></div>'
         for c in s['claims'])
-    # The window's three steps, named as its tabs are.
-    values['story_steps'] = '\n'.join(
-        f'      <li class="step"><span class="n" aria-hidden="true">{i}</span>'
-        f'<h3>{esc(s[tab])}</h3><p>{esc(text)}</p></li>'
-        for i, (tab, text) in enumerate(
-            zip(('tab_entry', 'tab_xrefs', 'tab_voices'), s['story']), 1))
     with open(os.path.join(SITE, 'data', 'xmap.json'), encoding='utf-8') as fh:
         total = json.load(fh)['total']
     sep = ',' if lang == 'en' else '\u00a0'
