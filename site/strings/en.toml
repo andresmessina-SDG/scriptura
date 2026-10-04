@@ -21,8 +21,6 @@ pane_right = "Berean Standard Bible"
 
 sec_tools = "Everything for close study, on one screen"
 live_caption = "This is live. Click a word for its Strong’s entry, or a verse number for the passages that echo it and what the church wrote on it."
-story_label = "How the window works"
-story = ["Click a word for its Strong’s entry.", "Click a verse number for the passages that echo it.", "The same verse number opens what the church wrote on it."]
 map_h = "Scripture interprets Scripture"
 map_p = "OpenBible.info lists {total} cross-references. The strongest links between the 1,189 chapters are drawn here. Point at a book."
 map_canvas = "Arcs joining the chapters of the Bible that cross-reference each other, Genesis to Revelation."
