@@ -34,6 +34,7 @@ import json
 import os
 import re
 import shutil
+import struct
 import sys
 import tomllib
 
@@ -866,11 +867,13 @@ def render(lang, page='home'):
         f'<div class="row"><h3>{esc(r["title"])}</h3><p>{esc(r["text"])}</p></div>'
         for r in s['rows'])
 
-    from PIL import Image
-
     def size(name):
-        with Image.open(os.path.join(DOCS, 'assets', 'img', lang, name + '.webp')) as im:
-            return im.size
+        # Read from the lossy WebP header, so the pages build without Pillow.
+        with open(os.path.join(DOCS, 'assets', 'img', lang, name + '.webp'), 'rb') as fh:
+            head = fh.read(30)
+        assert head[12:16] == b'VP8 ', name
+        w, h = struct.unpack('<HH', head[26:30])
+        return w & 0x3fff, h & 0x3fff
 
     def band(sh):
         """A feature at a size you can read: the picture follows the paper
