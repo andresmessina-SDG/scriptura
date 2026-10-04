@@ -11,6 +11,8 @@
     </div>
   </section>
 
+  <div class="story">
+  <div class="story-pane">
   <figure class="win" aria-label="{{t.window_label}}">
     <div class="bar" aria-hidden="true">
       <svg viewBox="0 0 16 16"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
@@ -34,6 +36,11 @@
     <div class="gloss" id="gloss" role="tooltip" hidden></div>
   </figure>
   <p class="caption">{{t.live_caption}}</p>
+  </div>
+    <ol class="story-steps" aria-label="{{t.story_label}}">
+{{story_steps}}
+    </ol>
+  </div>
 
   <section class="sec">
     <h2>{{t.sec_tools}}</h2>
@@ -43,6 +50,13 @@
     <div class="rows">
 {{rows}}
     </div>
+  </section>
+
+  <section class="sec xmap-sec" aria-labelledby="xmap-h">
+    <h2 id="xmap-h">{{t.map_h}}</h2>
+    <p class="lede">{{map_p}}</p>
+    <div class="xmap-wrap"><canvas id="xmap-c" tabindex="0" role="img" aria-label="{{t.map_canvas}}" aria-describedby="xmap-read"></canvas><div class="xmap-ends" aria-hidden="true"><span>{{t.map_first}}</span><span>{{t.map_last}}</span></div></div>
+    <p class="xmap-read" id="xmap-read" aria-live="polite">&nbsp;</p>
   </section>
 
   <section class="sec">

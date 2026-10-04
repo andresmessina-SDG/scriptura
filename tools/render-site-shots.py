@@ -32,6 +32,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WAYLAND = 'scriptura-site-0'
 SIZE = (1366, 733)
+# Shots taken in a window of their own size: Reading mode reads best narrow.
+SIZES = {'reading-narrow': (760, 860)}
 
 # The reader's Bible in each language: open texts only.
 BIBLE = {'en': 'KJVA', 'es': 'SpaRV1909', 'ru': 'RusOpenBible'}
@@ -52,6 +54,10 @@ SHOTS = {
         'last_book': 'Matthew', 'last_chapter': 9, 'split_pane_mode': True,
         'verse': 9},
     'reading': lambda lang: {
+        'pane1_module': READING[lang], 'pane2_module': BIBLE[lang],
+        'last_book': 'Psalms', 'last_chapter': 23, 'split_pane_mode': False,
+        'reading_mode': True},
+    'reading-narrow': lambda lang: {
         'pane1_module': READING[lang], 'pane2_module': BIBLE[lang],
         'last_book': 'Psalms', 'last_chapter': 23, 'split_pane_mode': False,
         'reading_mode': True},
@@ -218,7 +224,8 @@ def run_one(lang: str, shot: str, scheme: str, sword: Path,
         env['HOME'] = str(home)
         seed = {'ui_language': lang, 'tips_enabled': False,
                 'open_to_today': False, 'show_crossrefs': False,
-                'window_width': SIZE[0], 'window_height': SIZE[1],
+                'window_width': SIZES.get(shot, SIZE)[0],
+                'window_height': SIZES.get(shot, SIZE)[1],
                 'window_maximized': False}
         spec = SHOTS[shot](lang)
         reading_mode = spec.pop('reading_mode', False)
@@ -238,13 +245,14 @@ def run_one(lang: str, shot: str, scheme: str, sword: Path,
                     'SITE_SHOT_OUT': str(out / f'{lang}-{name}.png'),
                     'SITE_SHOT_READING': '1' if reading_mode else '',
                     'SITE_SHOT_VERSE': str(verse),
+                    'SITE_SHOT_SIZE': '%dx%d' % SIZES.get(shot, SIZE),
                     'SITE_SHOT_SERMON': SERMON_ID if sermon else '',
                     'SITE_SHOT_CAMEFROM': came_from,
                     'SITE_SHOT_SCROLL_YEAR': str(scroll_year or '')})
         env.pop('DISPLAY', None)
         mutter = subprocess.Popen(
             ['mutter', '--headless', '--wayland', f'--wayland-display={WAYLAND}',
-             '--virtual-monitor', f'{SIZE[0] + 200}x{SIZE[1] + 200}'],
+             '--virtual-monitor', '%dx%d' % tuple(v + 200 for v in SIZES.get(shot, SIZE))],
             env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         try:
             sock = Path(env['XDG_RUNTIME_DIR'], WAYLAND)
@@ -275,6 +283,7 @@ def driver() -> int:
 
     app = main.BibleApp()
     out = Path(os.environ['SITE_SHOT_OUT'])
+    size = tuple(int(v) for v in os.environ.get('SITE_SHOT_SIZE', '%dx%d' % SIZE).split('x'))
     result: list[str] = []
 
     def shoot(win):
@@ -294,7 +303,7 @@ def driver() -> int:
     target: dict = {}
 
     def first(win):
-        win.set_default_size(*SIZE)
+        win.set_default_size(*size)
         win.pane1.load_reference_at_verse(win.pane1.book, win.pane1.chapter,
                                           int(os.environ.get('SITE_SHOT_VERSE', '1')))
         if os.environ.get('SITE_SHOT_READING'):
@@ -307,7 +316,7 @@ def driver() -> int:
         if os.environ.get('SITE_SHOT_SERMON'):
             win._open_annotations()
             target['win'] = win._annotations_win
-            target['win'].set_default_size(*SIZE)
+            target['win'].set_default_size(*size)
 
     def select(win):
         # What the Bible pane broadcasts when a reader clicks a verse: the
