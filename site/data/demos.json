@@ -1,0 +1,1784 @@
+{
+ "diff": {
+  "refs": [
+   "John 3:16",
+   "Romans 12:2",
+   "Genesis 1:2",
+   "Philippians 4:6"
+  ],
+  "bibles": [
+   {
+    "abbr": "YLT",
+    "name": "Young's Literal Translation",
+    "year": 1862,
+    "at": 0.17,
+    "t": [
+     "for God did so love the world, that His Son--the only begotten--He gave, that every one who is believing in him may not perish, but may have life age-during.",
+     "and be not conformed to this age, but be transformed by the renewing of your mind, for your proving what is the will of God--the good, and acceptable, and perfect.",
+     "the earth hath existed waste and void, and darkness is on the face of the deep, and the Spirit of God fluttering on the face of the waters,",
+     "for nothing be anxious, but in everything by prayer, and by supplication, with thanksgiving, let your requests be made known unto God;"
+    ]
+   },
+   {
+    "abbr": "LSV",
+    "name": "Literal Standard Version",
+    "year": 2020,
+    "at": 0.18,
+    "t": [
+     "for God so loved the world that He gave the only begotten Son, that everyone who is believing in Him may not perish, but may have continuous life.",
+     "and do not be conformed to this age, but be transformed by the renewing of your mind, for your proving what [is] the will of God—the good, and acceptable, and perfect.",
+     "and the earth was formless and void, and darkness [was] on the face of the deep, and the Spirit of God [was] fluttering on the face of the waters,",
+     "be anxious for nothing, but in everything by prayer, and by supplication, with thanksgiving, let your requests be made known to God;"
+    ]
+   },
+   {
+    "abbr": "ASV",
+    "name": "American Standard Version",
+    "year": 1901,
+    "at": 0.21,
+    "t": [
+     "For God so loved the world, that he gave his only begotten Son, that whosoever believeth on him should not perish, but have eternal life.",
+     "And be not fashioned according to this world: but be ye transformed by the renewing of your mind, that ye may prove what is the good and acceptable and perfect will of God.",
+     "And the earth was waste and void; and darkness was upon the face of the deep: and the Spirit of God moved upon the face of the waters.",
+     "In nothing be anxious; but in everything by prayer and supplication with thanksgiving let your requests be made known unto God."
+    ]
+   },
+   {
+    "abbr": "ACV",
+    "name": "A Conservative Version",
+    "year": 2005,
+    "at": 0.22,
+    "t": [
+     "For God so loved the world, that he gave his only begotten Son, so that every man who believes in him would not perish, but have eternal life.",
+     "And be not conformed to this age, but be ye transformed by the renewal of your mind, for ye to approve what is the good and acceptable and perfect will of God.",
+     "And the earth was without form and void, and darkness was upon the face of the deep, and the Spirit of God moved upon the face of the waters.",
+     "Be anxious about nothing, but in everything by prayer and supplication with thankfulness make your requests known to God."
+    ]
+   },
+   {
+    "abbr": "KJV",
+    "name": "King James Version (1769 Blayney text)",
+    "year": 1769,
+    "at": 0.26,
+    "t": [
+     "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.",
+     "And be not conformed to this world: but be ye transformed by the renewing of your mind, that ye may prove what is that good, and acceptable, and perfect, will of God.",
+     "And the earth was without form and void; and darkness was upon the face of the deep. And the Spirit of God moved upon the face of the waters.",
+     "Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God."
+    ]
+   },
+   {
+    "abbr": "Webster",
+    "name": "Webster's Revision",
+    "year": 1833,
+    "at": 0.26,
+    "t": [
+     "For God so loved the world, that he gave his only-begotten Son, that whoever believeth in him, should not perish, but have everlasting life.",
+     "And be not conformed to this world: but be ye transformed by the renewing of your mind, that ye may prove what [is] that good and acceptable, and perfect will of God.",
+     "And the earth was without form, and void; and darkness [was] upon the face of the deep: and the Spirit of God moved upon the face of the waters.",
+     "Be anxious for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known to God."
+    ]
+   },
+   {
+    "abbr": "BSB",
+    "name": "Berean Standard Bible",
+    "year": 2016,
+    "at": 0.37,
+    "t": [
+     "For God so loved the world that He gave His one and only Son, that everyone who believes in Him shall not perish but have eternal life.",
+     "Do not be conformed to this world, but be transformed by the renewing of your mind. Then you will be able to test and approve what is the good, pleasing, and perfect will of God.",
+     "Now the earth was formless and void, and darkness was over the surface of the deep. And the Spirit of God was hovering over the surface of the waters.",
+     "Be anxious for nothing, but in everything, by prayer and petition, with thanksgiving, present your requests to God."
+    ]
+   },
+   {
+    "abbr": "BBE",
+    "name": "Bible in Basic English",
+    "year": 1949,
+    "at": 0.67,
+    "t": [
+     "For God had such love for the world that he gave his only Son, so that whoever has faith in him may not come to destruction but have eternal life.",
+     "And let not your behaviour be like that of this world, but be changed and made new in mind, so that by experience you may have knowledge of the good and pleasing and complete purpose of God.",
+     "And the earth was waste and without form; and it was dark on the face of the deep: and the Spirit of God was moving on the face of the waters.",
+     "Have no cares; but in everything with prayer and praise put your requests before God."
+    ]
+   }
+  ],
+  "others": [
+   {
+    "abbr": "NASB",
+    "name": "New American Standard Bible (1971/77)",
+    "at": 0.08
+   },
+   {
+    "abbr": "ESV",
+    "name": "English Standard Version",
+    "at": 0.22
+   },
+   {
+    "abbr": "CSB",
+    "name": "Christian Standard Bible",
+    "at": 0.49
+   },
+   {
+    "abbr": "NIV",
+    "name": "New International Version",
+    "at": 0.6
+   },
+   {
+    "abbr": "NLT",
+    "name": "New Living Translation",
+    "at": 0.73
+   },
+   {
+    "abbr": "MSG",
+    "name": "The Message",
+    "at": 1.0
+   }
+  ]
+ },
+ "inter": {
+  "nt": {
+   "ref": "John 1:1",
+   "kjv": [
+    [
+     "In",
+     "G1722"
+    ],
+    [
+     " ",
+     null
+    ],
+    [
+     "the beginning",
+     "G746"
+    ],
+    [
+     " ",
+     null
+    ],
+    [
+     "was",
+     "G1510"
+    ],
+    [
+     " ",
+     null
+    ],
+    [
+     "the Word",
+     "G3056"
+    ],
+    [
+     ", ",
+     null
+    ],
+    [
+     "and",
+     "G2532"
+    ],
+    [
+     " ",
+     null
+    ],
+    [
+     "the Word",
+     "G3056"
+    ],
+    [
+     " ",
+     null
+    ],
+    [
+     "was",
+     "G1510"
+    ],
+    [
+     " ",
+     null
+    ],
+    [
+     "with",
+     "G4314"
+    ],
+    [
+     " ",
+     null
+    ],
+    [
+     "God",
+     "G2316"
+    ],
+    [
+     ", ",
+     null
+    ],
+    [
+     "and",
+     "G2532"
+    ],
+    [
+     " ",
+     null
+    ],
+    [
+     "the Word",
+     "G3056"
+    ],
+    [
+     " ",
+     null
+    ],
+    [
+     "was",
+     "G1510"
+    ],
+    [
+     " ",
+     null
+    ],
+    [
+     "God",
+     "G2316"
+    ],
+    [
+     ".",
+     null
+    ]
+   ],
+   "words": [
+    {
+     "s": "Ἐν",
+     "t": "En",
+     "g": "In [the]",
+     "n": "G1722",
+     "p": "Preposition"
+    },
+    {
+     "s": "ἀρχῇ",
+     "t": "archēa",
+     "g": "beginning",
+     "n": "G746",
+     "p": "Noun · Dative · Singular · Feminine"
+    },
+    {
+     "s": "ἦν",
+     "t": "ēn",
+     "g": "was",
+     "n": "G1510",
+     "p": "Verb · Imperfect · Active · Indicative · 3rd Person · Singular"
+    },
+    {
+     "s": "ὁ",
+     "t": "ho",
+     "g": "the",
+     "n": "G3588",
+     "p": "Article · Nominative · Singular · Masculine"
+    },
+    {
+     "s": "λόγος,",
+     "t": "logos",
+     "g": "Word,",
+     "n": "G3056",
+     "p": "Noun · Nominative · Singular · Masculine"
+    },
+    {
+     "s": "καὶ",
+     "t": "kai",
+     "g": "and",
+     "n": "G2532",
+     "p": "Conjunction"
+    },
+    {
+     "s": "ὁ",
+     "t": "ho",
+     "g": "the",
+     "n": "G3588",
+     "p": "Article · Nominative · Singular · Masculine"
+    },
+    {
+     "s": "λόγος",
+     "t": "logos",
+     "g": "Word",
+     "n": "G3056",
+     "p": "Noun · Nominative · Singular · Masculine"
+    },
+    {
+     "s": "ἦν",
+     "t": "ēn",
+     "g": "was",
+     "n": "G1510",
+     "p": "Verb · Imperfect · Active · Indicative · 3rd Person · Singular"
+    },
+    {
+     "s": "πρὸς",
+     "t": "pros",
+     "g": "with",
+     "n": "G4314",
+     "p": "Preposition"
+    },
+    {
+     "s": "τὸν",
+     "t": "ton",
+     "g": "<the>",
+     "n": "G3588",
+     "p": "Article · Accusative · Singular · Masculine"
+    },
+    {
+     "s": "θεόν,",
+     "t": "theon",
+     "g": "God,",
+     "n": "G2316",
+     "p": "Noun · Accusative · Singular · Masculine"
+    },
+    {
+     "s": "καὶ",
+     "t": "kai",
+     "g": "and",
+     "n": "G2532",
+     "p": "Conjunction"
+    },
+    {
+     "s": "θεὸς",
+     "t": "theos",
+     "g": "God",
+     "n": "G2316",
+     "p": "Noun · Nominative · Singular · Masculine"
+    },
+    {
+     "s": "ἦν",
+     "t": "ēn",
+     "g": "was",
+     "n": "G1510",
+     "p": "Verb · Imperfect · Active · Indicative · 3rd Person · Singular"
+    },
+    {
+     "s": "ὁ",
+     "t": "ho",
+     "g": "the",
+     "n": "G3588",
+     "p": "Article · Nominative · Singular · Masculine"
+    },
+    {
+     "s": "λόγος.",
+     "t": "logos",
+     "g": "Word.",
+     "n": "G3056",
+     "p": "Noun · Nominative · Singular · Masculine"
+    }
+   ],
+   "es": {
+    "line": [
+     [
+      "EN",
+      "G1722"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "el principio",
+      "G746"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "era",
+      "G1510"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "el",
+      "G3588"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "Verbo",
+      "G3056"
+     ],
+     [
+      ", ",
+      null
+     ],
+     [
+      "y",
+      "G2532"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "el",
+      "G3588"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "Verbo",
+      "G3056"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "era",
+      "G1510"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "con",
+      "G4314"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "Dios",
+      "G2316"
+     ],
+     [
+      ", ",
+      null
+     ],
+     [
+      "y",
+      "G2532"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "el",
+      "G3588"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "Verbo",
+      "G3056"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "era",
+      "G1510"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "Dios",
+      "G2316"
+     ],
+     [
+      ".",
+      null
+     ]
+    ]
+   },
+   "ru": {
+    "line": [
+     [
+      "В начале было Слово, и Слово было у Бога, и Слово было Бог.",
+      null
+     ]
+    ]
+   }
+  },
+  "ot": {
+   "ref": "Genesis 1:1",
+   "kjv": [
+    [
+     "In the beginning",
+     "H7225"
+    ],
+    [
+     " ",
+     null
+    ],
+    [
+     "God",
+     "H430"
+    ],
+    [
+     " ",
+     null
+    ],
+    [
+     "created",
+     "H1254"
+    ],
+    [
+     " ",
+     null
+    ],
+    [
+     "the heaven",
+     "H8064"
+    ],
+    [
+     " ",
+     null
+    ],
+    [
+     "and",
+     "H853"
+    ],
+    [
+     " ",
+     null
+    ],
+    [
+     "the earth",
+     "H776"
+    ],
+    [
+     ".",
+     null
+    ]
+   ],
+   "words": [
+    {
+     "s": "בְּרֵאשִׁ֖ית",
+     "t": "be.re.Shit",
+     "g": "in beginning",
+     "n": "H7225",
+     "p": "Preposition  +  Noun · Feminine · Singular · Absolute"
+    },
+    {
+     "s": "בָּרָ֣א",
+     "t": "ba.Ra'",
+     "g": "he created",
+     "n": "H1254",
+     "p": "Verb · Qal · Perfect · 3rd Person · Masculine · Singular"
+    },
+    {
+     "s": "אֱלֹהִ֑ים",
+     "t": "'E.lo.Him",
+     "g": "God",
+     "n": "H430",
+     "p": "Noun · Masculine · Plural · Absolute"
+    },
+    {
+     "s": "אֵ֥ת",
+     "t": "'et",
+     "g": "<obj.>",
+     "n": "H853",
+     "p": "Particle · Object Marker"
+    },
+    {
+     "s": "הַשָּׁמַ֖יִם",
+     "t": "ha.sha.Ma.yim",
+     "g": "the heavens",
+     "n": "H8064",
+     "p": "Particle · Definite Article  +  Noun · Masculine · Plural · Absolute"
+    },
+    {
+     "s": "וְאֵ֥ת",
+     "t": "ve.'Et",
+     "g": "and <obj.>",
+     "n": "H853",
+     "p": "Conjunction  +  Particle · Object Marker"
+    },
+    {
+     "s": "הָאָֽרֶץ׃",
+     "t": "ha.'A.retz",
+     "g": "the earth",
+     "n": "H776",
+     "p": "Particle · Definite Article  +  Noun · Feminine · Singular · Absolute"
+    }
+   ],
+   "es": {
+    "line": [
+     [
+      "EN el principio",
+      "H7225"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "crió",
+      "H1254"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "Dios",
+      "H430"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "los cielos",
+      "H8064"
+     ],
+     [
+      " ",
+      null
+     ],
+     [
+      "y la tierra",
+      "H776"
+     ],
+     [
+      ".",
+      null
+     ]
+    ]
+   },
+   "ru": {
+    "line": [
+     [
+      "В начале сотворил Бог небо и землю.",
+      null
+     ]
+    ]
+   }
+  }
+ },
+ "family": {
+  "nodes": [
+   {
+    "id": "wycliffe",
+    "abbr": "Wycliffe Bible",
+    "name": "Wycliffe Bible",
+    "year": 1382,
+    "yl": "c. 1382 (Early) · c. 1395 (Later)",
+    "note": "Hand-copied from Latin; forbidden without licence by the Constitutions of Oxford (1409). About 250 manuscripts survive. Nothing later descends from it.",
+    "at": null,
+    "root": true,
+    "xy": [
+     140.0,
+     70.0
+    ],
+    "xyl": [
+     140.0,
+     70.0
+    ]
+   },
+   {
+    "id": "tyndale",
+    "abbr": "Tyndale New Testament",
+    "name": "Tyndale New Testament",
+    "year": 1526,
+    "yl": "1526 (NT) · 1530 (Pentateuch) · 1534 (NT rev.)",
+    "note": "First printed English NT. Tyndale was strangled and burned at Vilvoorde in 1536. About 84% of the KJV NT is his wording (Nielson & Skousen 1998).",
+    "at": null,
+    "root": true,
+    "xy": [
+     330.0,
+     110.0
+    ],
+    "xyl": [
+     330.0,
+     110.0
+    ]
+   },
+   {
+    "id": "coverdale",
+    "abbr": "Coverdale Bible",
+    "name": "Coverdale Bible",
+    "year": 1535,
+    "yl": "1535",
+    "note": "First complete printed English Bible; Tyndale where he had translated, German and Latin versions for the rest.",
+    "at": null,
+    "root": true,
+    "xy": [
+     230.0,
+     190.0
+    ],
+    "xyl": [
+     230.0,
+     190.0
+    ]
+   },
+   {
+    "id": "matthew",
+    "abbr": "Matthew's Bible",
+    "name": "Matthew's Bible",
+    "year": 1537,
+    "yl": "1537",
+    "note": "First printing of Tyndale's Joshua–2 Chronicles; licensed by Henry VIII.",
+    "at": null,
+    "root": true,
+    "xy": [
+     430.0,
+     190.0
+    ],
+    "xyl": [
+     430.0,
+     190.0
+    ]
+   },
+   {
+    "id": "great",
+    "abbr": "Great Bible",
+    "name": "Great Bible",
+    "year": 1539,
+    "yl": "1539",
+    "note": "Ordered into every parish church; second edition 1540 with Cranmer's preface. Its Psalter is still the Psalter of the 1662 Book of Common Prayer.",
+    "at": null,
+    "root": true,
+    "xy": [
+     330.0,
+     265.0
+    ],
+    "xyl": [
+     330.0,
+     265.0
+    ]
+   },
+   {
+    "id": "geneva",
+    "abbr": "Geneva Bible",
+    "name": "Geneva Bible",
+    "year": 1560,
+    "yl": "1557 (NT) · 1560",
+    "note": "Roman type, verse numbers, Calvinist margin notes James I called seditious. 150+ editions to 1644; the Bible of Shakespeare and the Mayflower.",
+    "at": null,
+    "root": true,
+    "xy": [
+     560.0,
+     265.0
+    ],
+    "xyl": [
+     560.0,
+     265.0
+    ]
+   },
+   {
+    "id": "bishops",
+    "abbr": "Bishops' Bible",
+    "name": "Bishops' Bible",
+    "year": 1568,
+    "yl": "1568 (rev. 1572)",
+    "note": "The Church of England's answer to Geneva; the KJV's official base text.",
+    "at": null,
+    "root": true,
+    "xy": [
+     330.0,
+     340.0
+    ],
+    "xyl": [
+     330.0,
+     340.0
+    ]
+   },
+   {
+    "id": "douay-rheims",
+    "abbr": "Douay–Rheims Bible",
+    "name": "Douay–Rheims Bible",
+    "year": 1610,
+    "yl": "1582 (NT, Rheims) · 1609–10 (OT, Douai)",
+    "note": "Latinate vocabulary; the KJV translators took words from its NT.",
+    "at": null,
+    "root": true,
+    "xy": [
+     780.0,
+     265.0
+    ],
+    "xyl": [
+     780.0,
+     265.0
+    ]
+   },
+   {
+    "id": "kjv1611",
+    "abbr": "KJV",
+    "name": "King James Version (1611)",
+    "year": 1611,
+    "yl": "1611",
+    "note": "Commissioned at Hampton Court, 1604; printed by Robert Barker. The text almost everyone reads is Blayney's 1769 edition.",
+    "at": null,
+    "root": false,
+    "xy": [
+     238.3,
+     440.0
+    ],
+    "xyl": [
+     304.6,
+     440.0
+    ]
+   },
+   {
+    "id": "challoner",
+    "abbr": "DRC",
+    "name": "Douay–Rheims, Challoner revision",
+    "year": 1752,
+    "yl": "1749–52",
+    "note": "Moved much of the wording toward the KJV.",
+    "at": 0.3,
+    "root": false,
+    "xy": [
+     297.5,
+     517.5
+    ],
+    "xyl": [
+     333.0,
+     517.5
+    ]
+   },
+   {
+    "id": "kjv",
+    "abbr": "KJV",
+    "name": "King James Version (1769 Blayney text)",
+    "year": 1769,
+    "yl": "1769",
+    "note": "Reproduced almost unchanged in most current printings.",
+    "at": 0.26,
+    "root": false,
+    "xy": [
+     238.3,
+     526.9
+    ],
+    "xyl": [
+     304.6,
+     526.9
+    ]
+   },
+   {
+    "id": "rv",
+    "abbr": "RV",
+    "name": "Revised Version",
+    "year": 1885,
+    "yl": "1881 (NT) · 1885 · Apocrypha 1894–95",
+    "note": "More than 30,000 changes in the NT, over 5,000 on textual grounds.",
+    "at": 0.21,
+    "root": false,
+    "xy": [
+     179.2,
+     603
+    ],
+    "xyl": [
+     269.1,
+     603
+    ]
+   },
+   {
+    "id": "asv",
+    "abbr": "ASV",
+    "name": "American Standard Version",
+    "year": 1901,
+    "yl": "1901",
+    "note": "Renders the divine name \"Jehovah\".",
+    "at": 0.21,
+    "root": false,
+    "xy": [
+     179.2,
+     651
+    ],
+    "xyl": [
+     269.1,
+     651
+    ]
+   },
+   {
+    "id": "rsv",
+    "abbr": "RSV",
+    "name": "Revised Standard Version",
+    "year": 1952,
+    "yl": "1946 (NT) · 1952 · NT 2nd ed. 1971",
+    "note": "Rendered Isaiah 7:14 \"young woman\"; a pastor burned the page in 1952.",
+    "at": 0.28,
+    "root": false,
+    "xy": [
+     179.2,
+     824
+    ],
+    "xyl": [
+     318.8,
+     824
+    ]
+   },
+   {
+    "id": "jb",
+    "abbr": "JB",
+    "name": "Jerusalem Bible",
+    "year": 1966,
+    "yl": "1966",
+    "note": "Translated from the originals with strong influence from the French Bible de Jérusalem.",
+    "at": 0.49,
+    "root": false,
+    "xy": [
+     356.7,
+     1006
+    ],
+    "xyl": [
+     471.4,
+     1006
+    ]
+   },
+   {
+    "id": "nab",
+    "abbr": "NAB",
+    "name": "New American Bible",
+    "year": 1970,
+    "yl": "1970",
+    "note": "",
+    "at": 0.46,
+    "root": false,
+    "xy": [
+     297.5,
+     1058
+    ],
+    "xyl": [
+     446.6,
+     1058
+    ]
+   },
+   {
+    "id": "nasb",
+    "abbr": "NASB",
+    "name": "New American Standard Bible (1971/77)",
+    "year": 1971,
+    "yl": "1960 (John) · 1963 (NT) · 1971",
+    "note": "",
+    "at": 0.08,
+    "root": false,
+    "xy": [
+     120.0,
+     1071
+    ],
+    "xyl": [
+     176.8,
+     1071
+    ]
+   },
+   {
+    "id": "tlb",
+    "abbr": "TLB",
+    "name": "The Living Bible",
+    "year": 1971,
+    "yl": "1962 (Living Letters) · 1971",
+    "note": "",
+    "at": 0.94,
+    "root": false,
+    "xy": [
+     770.8,
+     1071
+    ],
+    "xyl": [
+     787.4,
+     1071
+    ]
+   },
+   {
+    "id": "gnt",
+    "abbr": "GNT",
+    "name": "Good News Translation (Today's English Version)",
+    "year": 1976,
+    "yl": "1966 (NT) · 1976",
+    "note": "Bratcher, a former Southern Baptist missionary, resigned from the ABS in 1981 after calling inerrancy \"heresy\".",
+    "at": 0.8,
+    "root": false,
+    "xy": [
+     711.7,
+     1136
+    ],
+    "xyl": [
+     688.0,
+     1136
+    ]
+   },
+   {
+    "id": "niv",
+    "abbr": "NIV",
+    "name": "New International Version",
+    "year": 1978,
+    "yl": "1973 (NT) · 1978 · rev. 1984",
+    "note": "",
+    "at": 0.6,
+    "root": false,
+    "xy": [
+     534.2,
+     1162
+    ],
+    "xyl": [
+     546.0,
+     1162
+    ]
+   },
+   {
+    "id": "nkjv",
+    "abbr": "NKJV",
+    "name": "New King James Version",
+    "year": 1982,
+    "yl": "1979 (NT) · 1982",
+    "note": "Footnotes the critical (NU) and Majority (M) readings.",
+    "at": 0.29,
+    "root": false,
+    "xy": [
+     238.3,
+     1214
+    ],
+    "xyl": [
+     325.9,
+     1214
+    ]
+   },
+   {
+    "id": "njb",
+    "abbr": "NJB",
+    "name": "New Jerusalem Bible",
+    "year": 1985,
+    "yl": "1985",
+    "note": "",
+    "at": 0.55,
+    "root": false,
+    "xy": [
+     356.7,
+     1253
+    ],
+    "xyl": [
+     510.5,
+     1253
+    ]
+   },
+   {
+    "id": "njps",
+    "abbr": "NJPS Tanakh",
+    "name": "NJPS Tanakh",
+    "year": 1985,
+    "yl": "1962 (Torah) · 1985 · 2023 gender-sensitive ed.",
+    "note": "",
+    "at": 0.78,
+    "root": false,
+    "xy": [
+     652.5,
+     1253
+    ],
+    "xyl": [
+     673.8,
+     1253
+    ]
+   },
+   {
+    "id": "nrsv",
+    "abbr": "NRSV",
+    "name": "New Revised Standard Version",
+    "year": 1989,
+    "yl": "1989",
+    "note": "",
+    "at": 0.45,
+    "root": false,
+    "xy": [
+     475.0,
+     1305
+    ],
+    "xyl": [
+     439.5,
+     1305
+    ]
+   },
+   {
+    "id": "nasb1995",
+    "abbr": "NASB 1995",
+    "name": "NASB 1995",
+    "year": 1995,
+    "yl": "1995",
+    "note": "",
+    "at": 0.23,
+    "root": false,
+    "xy": [
+     120.0,
+     1383
+    ],
+    "xyl": [
+     283.3,
+     1383
+    ]
+   },
+   {
+    "id": "nlt",
+    "abbr": "NLT",
+    "name": "New Living Translation",
+    "year": 1996,
+    "yl": "1996 (2nd ed. 2004; 2007, 2013, 2015)",
+    "note": "",
+    "at": 0.73,
+    "root": false,
+    "xy": [
+     770.8,
+     1396
+    ],
+    "xyl": [
+     638.3,
+     1396
+    ]
+   },
+   {
+    "id": "nirv",
+    "abbr": "NIrV",
+    "name": "New International Reader's Version",
+    "year": 1998,
+    "yl": "1996 (NT) · 1998",
+    "note": "",
+    "at": 0.76,
+    "root": false,
+    "xy": [
+     593.3,
+     1422
+    ],
+    "xyl": [
+     659.6,
+     1422
+    ]
+   },
+   {
+    "id": "esv",
+    "abbr": "ESV",
+    "name": "English Standard Version",
+    "year": 2001,
+    "yl": "2001 (rev. 2007, 2011, 2016)",
+    "note": "The August 2016 \"permanent text\" decision was reversed the next month.",
+    "at": 0.22,
+    "root": false,
+    "xy": [
+     179.2,
+     1461
+    ],
+    "xyl": [
+     276.2,
+     1461
+    ]
+   },
+   {
+    "id": "msg",
+    "abbr": "MSG",
+    "name": "The Message",
+    "year": 2002,
+    "yl": "1993 (NT) · 2002",
+    "note": "Translated from the originals in a free idiom; charts put it at the free end.",
+    "at": 1.0,
+    "root": false,
+    "xy": [
+     830.0,
+     1474
+    ],
+    "xyl": [
+     830.0,
+     1474
+    ]
+   },
+   {
+    "id": "hcsb",
+    "abbr": "HCSB",
+    "name": "Holman Christian Standard Bible",
+    "year": 2004,
+    "yl": "1999 (NT) · 2004",
+    "note": "The Southern Baptist Convention's own translation, through LifeWay.",
+    "at": 0.35,
+    "root": false,
+    "xy": [
+     415.8,
+     1500
+    ],
+    "xyl": [
+     368.5,
+     1500
+    ]
+   },
+   {
+    "id": "tniv",
+    "abbr": "TNIV",
+    "name": "Today's New International Version",
+    "year": 2005,
+    "yl": "2002 (NT) · 2005",
+    "note": "Opposed by an SBC resolution (2002) over gender language; withdrawn in 2011.",
+    "at": 0.56,
+    "root": false,
+    "xy": [
+     534.2,
+     1513
+    ],
+    "xyl": [
+     517.6,
+     1513
+    ]
+   },
+   {
+    "id": "nabre",
+    "abbr": "NABRE",
+    "name": "New American Bible, Revised Edition",
+    "year": 2011,
+    "yl": "2011",
+    "note": "",
+    "at": null,
+    "root": false,
+    "xy": [
+     297.5,
+     1591
+    ],
+    "xyl": [
+     880.0,
+     1591
+    ]
+   },
+   {
+    "id": "niv2011",
+    "abbr": "NIV",
+    "name": "New International Version (2011)",
+    "year": 2011,
+    "yl": "2011",
+    "note": "The current NIV. The SBC \"cannot commend\" it (resolution, June 2011) over gender language.",
+    "at": 0.6,
+    "root": false,
+    "xy": [
+     534.2,
+     1591
+    ],
+    "xyl": [
+     546.0,
+     1591
+    ]
+   },
+   {
+    "id": "csb",
+    "abbr": "CSB",
+    "name": "Christian Standard Bible",
+    "year": 2017,
+    "yl": "2017",
+    "note": "",
+    "at": 0.49,
+    "root": false,
+    "xy": [
+     415.8,
+     1669
+    ],
+    "xyl": [
+     467.9,
+     1669
+    ]
+   },
+   {
+    "id": "rnjb",
+    "abbr": "RNJB",
+    "name": "Revised New Jerusalem Bible",
+    "year": 2019,
+    "yl": "2018 (NT) · 2019",
+    "note": "Lectionary basis in Australia, New Zealand and Ireland.",
+    "at": 0.17,
+    "root": false,
+    "xy": [
+     356.7,
+     1695
+    ],
+    "xyl": [
+     237.2,
+     1695
+    ]
+   },
+   {
+    "id": "nasb2020",
+    "abbr": "NASB 2020",
+    "name": "NASB 2020",
+    "year": 2020,
+    "yl": "2020",
+    "note": "",
+    "at": 0.26,
+    "root": false,
+    "xy": [
+     120.0,
+     1708
+    ],
+    "xyl": [
+     304.6,
+     1708
+    ]
+   },
+   {
+    "id": "nrsvue",
+    "abbr": "NRSVue",
+    "name": "NRSV Updated Edition",
+    "year": 2021,
+    "yl": "2021 (digital) · 2022 (print)",
+    "note": "",
+    "at": null,
+    "root": false,
+    "xy": [
+     475.0,
+     1721
+    ],
+    "xyl": [
+     880.0,
+     1721
+    ]
+   }
+  ],
+  "notes": {
+   "en": [
+    [
+     440.0,
+     "1611 — the King James Version: the Bishops’ Bible revised, drawing on Tyndale, Geneva and Rheims."
+    ],
+    [
+     513.7,
+     "For 270 years the KJV is the English Bible of Protestant use; Catholics read the Douay–Rheims, from 1752 in Challoner’s revision."
+    ],
+    [
+     603,
+     "1881–85 — the Revised Version: the KJV revised against an older Greek text."
+    ],
+    [
+     824,
+     "1952 — the RSV renders Isaiah 7:14 “young woman”; a North Carolina pastor burns the page."
+    ],
+    [
+     1162,
+     "1978 — the NIV: a fresh translation, not a revision."
+    ],
+    [
+     1461,
+     "2001 — the ESV: the RSV revised back toward word for word."
+    ]
+   ],
+   "es": [
+    [
+     440.0,
+     "1611 — la King James Version: la Bishops’ Bible revisada, apoyándose en Tyndale, la Geneva y la Rheims."
+    ],
+    [
+     513.7,
+     "Durante 270 años la KJV es la Biblia inglesa de uso protestante; los católicos leen la Douay–Rheims, desde 1752 en la revisión de Challoner."
+    ],
+    [
+     603,
+     "1881–85 — la Revised Version: la KJV revisada según un texto griego más antiguo."
+    ],
+    [
+     824,
+     "1952 — la RSV traduce Isaías 7:14 «mujer joven»; un pastor de Carolina del Norte quema la página."
+    ],
+    [
+     1162,
+     "1978 — la NIV: una traducción nueva, no una revisión."
+    ],
+    [
+     1461,
+     "2001 — la ESV: la RSV revisada para acercarse de nuevo a la traducción palabra por palabra."
+    ]
+   ],
+   "ru": [
+    [
+     440.0,
+     "1611 — King James Version: редакция Bishops’ Bible с опорой на Tyndale, Geneva и Rheims."
+    ],
+    [
+     513.7,
+     "270 лет KJV остаётся английской Библией протестантов; католики читают Douay–Rheims, с 1752 года — в редакции Чаллонера."
+    ],
+    [
+     603,
+     "1881–85 — Revised Version: редакция KJV по более древнему греческому тексту."
+    ],
+    [
+     824,
+     "1952 — RSV передаёт Исаию 7:14 как «молодая женщина»; пастор из Северной Каролины сжигает эту страницу."
+    ],
+    [
+     1162,
+     "1978 — NIV: новый перевод, а не редакция."
+    ],
+    [
+     1461,
+     "2001 — ESV: редакция RSV, снова ближе к дословному переводу."
+    ]
+   ]
+  },
+  "edges": [
+   {
+    "f": "tyndale",
+    "t": "coverdale",
+    "k": "rev"
+   },
+   {
+    "f": "tyndale",
+    "t": "matthew",
+    "k": "rev"
+   },
+   {
+    "f": "coverdale",
+    "t": "matthew",
+    "k": "rev"
+   },
+   {
+    "f": "matthew",
+    "t": "great",
+    "k": "rev"
+   },
+   {
+    "f": "tyndale",
+    "t": "geneva",
+    "k": "drew"
+   },
+   {
+    "f": "great",
+    "t": "geneva",
+    "k": "drew"
+   },
+   {
+    "f": "great",
+    "t": "bishops",
+    "k": "rev"
+   },
+   {
+    "f": "geneva",
+    "t": "bishops",
+    "k": "drew"
+   },
+   {
+    "f": "bishops",
+    "t": "kjv1611",
+    "k": "rev"
+   },
+   {
+    "f": "tyndale",
+    "t": "kjv1611",
+    "k": "drew"
+   },
+   {
+    "f": "geneva",
+    "t": "kjv1611",
+    "k": "drew"
+   },
+   {
+    "f": "coverdale",
+    "t": "kjv1611",
+    "k": "drew"
+   },
+   {
+    "f": "matthew",
+    "t": "kjv1611",
+    "k": "drew"
+   },
+   {
+    "f": "great",
+    "t": "kjv1611",
+    "k": "drew"
+   },
+   {
+    "f": "douay-rheims",
+    "t": "kjv1611",
+    "k": "drew"
+   },
+   {
+    "f": "kjv1611",
+    "t": "kjv",
+    "k": "rev"
+   },
+   {
+    "f": "douay-rheims",
+    "t": "challoner",
+    "k": "rev"
+   },
+   {
+    "f": "kjv1611",
+    "t": "challoner",
+    "k": "drew"
+   },
+   {
+    "f": "kjv",
+    "t": "rv",
+    "k": "rev"
+   },
+   {
+    "f": "rv",
+    "t": "asv",
+    "k": "rev"
+   },
+   {
+    "f": "asv",
+    "t": "rsv",
+    "k": "rev"
+   },
+   {
+    "f": "rsv",
+    "t": "nrsv",
+    "k": "rev"
+   },
+   {
+    "f": "nrsv",
+    "t": "nrsvue",
+    "k": "rev"
+   },
+   {
+    "f": "rsv",
+    "t": "esv",
+    "k": "rev"
+   },
+   {
+    "f": "asv",
+    "t": "nasb",
+    "k": "rev"
+   },
+   {
+    "f": "nasb",
+    "t": "nasb1995",
+    "k": "rev"
+   },
+   {
+    "f": "nasb1995",
+    "t": "nasb2020",
+    "k": "rev"
+   },
+   {
+    "f": "asv",
+    "t": "tlb",
+    "k": "para"
+   },
+   {
+    "f": "tlb",
+    "t": "nlt",
+    "k": "rev"
+   },
+   {
+    "f": "kjv",
+    "t": "nkjv",
+    "k": "rev"
+   },
+   {
+    "f": "jb",
+    "t": "njb",
+    "k": "rev"
+   },
+   {
+    "f": "njb",
+    "t": "rnjb",
+    "k": "rev"
+   },
+   {
+    "f": "nab",
+    "t": "nabre",
+    "k": "rev"
+   },
+   {
+    "f": "niv",
+    "t": "tniv",
+    "k": "rev"
+   },
+   {
+    "f": "niv",
+    "t": "niv2011",
+    "k": "rev"
+   },
+   {
+    "f": "tniv",
+    "t": "niv2011",
+    "k": "rev"
+   },
+   {
+    "f": "niv",
+    "t": "nirv",
+    "k": "rev"
+   },
+   {
+    "f": "hcsb",
+    "t": "csb",
+    "k": "rev"
+   }
+  ],
+  "ticks": [
+   [
+    1611,
+    440.0
+   ],
+   [
+    1700,
+    488.9
+   ],
+   [
+    1800,
+    544.0
+   ],
+   [
+    1900,
+    648
+   ],
+   [
+    1950,
+    798
+   ],
+   [
+    2000,
+    1448
+   ],
+   [
+    2025,
+    1773
+   ]
+  ],
+  "w": 1180,
+  "lanes": [
+   120,
+   830,
+   924,
+   880.0,
+   440
+  ],
+  "h": 1781
+ },
+ "art": [
+  {
+   "ref": [
+    "Matthew",
+    9,
+    9
+   ],
+   "title": "The Calling of Saint Matthew",
+   "artist": "Caravaggio",
+   "year": 1600,
+   "img": "art419.webp",
+   "w": 960,
+   "h": 898,
+   "t": {
+    "en": "And as Jesus passed forth from thence, he saw a man, named Matthew, sitting at the receipt of custom: and he saith unto him, Follow me. And he arose, and followed him.",
+    "es": "Y pasando Jesús de allí, vió á un hombre que estaba sentado al banco de los públicos tributos, el cual se llamaba Mateo; y dícele: Sígueme. Y se levantó, y le siguió.",
+    "ru": "Проходя оттуда, Иисус увидел человека, сидящего у сбора пошлин, по имени Матфея, и говорит ему: следуй за Мною. И он встал и последовал за Ним."
+   }
+  },
+  {
+   "ref": [
+    "Genesis",
+    22,
+    10
+   ],
+   "title": "The Sacrifice of Isaac",
+   "artist": "Caravaggio",
+   "year": 1603,
+   "img": "art412.webp",
+   "w": 960,
+   "h": 740,
+   "t": {
+    "en": "And Abraham stretched forth his hand, and took the knife to slay his son.",
+    "es": "Y extendió Abraham su mano, y tomó el cuchillo, para degollar á su hijo.",
+    "ru": "И простер Авраам руку свою и взял нож, чтобы заколоть сына своего."
+   }
+  },
+  {
+   "ref": [
+    "Luke",
+    15,
+    20
+   ],
+   "title": "The Return of the Prodigal Son",
+   "artist": "Rembrandt",
+   "year": 1669,
+   "img": "art425.webp",
+   "w": 843,
+   "h": 1100,
+   "t": {
+    "en": "And he arose, and came to his father. But when he was yet a great way off, his father saw him, and had compassion, and ran, and fell on his neck, and kissed him.",
+    "es": "Y levantándose, vino á su padre. Y como aun estuviese lejos, viólo su padre, y fué movido á misericordia, y corrió, y echóse sobre su cuello, y besóle.",
+    "ru": "Встал и пошел к отцу своему. И когда он был еще далеко, увидел его отец его и сжалился; и, побежав, пал ему на шею и целовал его."
+   }
+  },
+  {
+   "ref": [
+    "John",
+    20,
+    27
+   ],
+   "title": "The Incredulity of Saint Thomas",
+   "artist": "Caravaggio",
+   "year": 1602,
+   "img": "art423.webp",
+   "w": 960,
+   "h": 710,
+   "t": {
+    "en": "Then saith he to Thomas, Reach hither thy finger, and behold my hands; and reach hither thy hand, and thrust it into my side: and be not faithless, but believing.",
+    "es": "Luego dice á Tomás: Mete tu dedo aquí, y ve mis manos: y alarga acá tu mano, y métela en mi costado: y no seas incrédulo, sino fiel.",
+    "ru": "Потом говорит Фоме: подай перст свой сюда и посмотри руки Мои; подай руку твою и вложи в ребра Мои; и не будь неверующим, но верующим."
+   }
+  }
+ ],
+ "ui": {
+  "en": [
+   "By family",
+   "By literalness",
+   "Mark differences",
+   "Old Testament",
+   "New Testament",
+   "Word for word",
+   "Free",
+   "Exit reading mode",
+   "Presentation",
+   "Exit presentation",
+   "Copy"
+  ],
+  "es": [
+   "Por familia",
+   "Por literalidad",
+   "Marcar diferencias",
+   "Antiguo Testamento",
+   "Nuevo Testamento",
+   "Palabra por palabra",
+   "Libre",
+   "Salir del modo lectura",
+   "Presentación",
+   "Salir de la presentación",
+   "Copiar"
+  ],
+  "ru": [
+   "По семьям",
+   "По буквальности",
+   "Отметить различия",
+   "Ветхий Завет",
+   "Новый Завет",
+   "Дословно",
+   "Свободно",
+   "Выйти из режима чтения",
+   "Презентация",
+   "Выйти из показа",
+   "Копировать"
+  ]
+ },
+ "zones": {
+  "en": [
+   "Word for word",
+   "Between",
+   "Thought for thought",
+   "Free"
+  ],
+  "es": [
+   "Palabra por palabra",
+   "Intermedia",
+   "Pensamiento por pensamiento",
+   "Libre"
+  ],
+  "ru": [
+   "Дословно",
+   "Посередине",
+   "По смыслу",
+   "Свободно"
+  ]
+ }
+}

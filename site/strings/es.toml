@@ -20,6 +20,13 @@ pane_right = "La Biblia en Español Sencillo"
 
 sec_tools = "Todo para el estudio detenido, en una sola pantalla"
 live_caption = "Esto funciona. Haga clic en una palabra subrayada para ver su entrada en el diccionario, o en un número de versículo para ver los pasajes que le hacen eco y lo que escribió la Iglesia."
+story_label = "Cómo funciona la ventana"
+story = ["Haga clic en una palabra subrayada para ver su entrada en el diccionario.", "Haga clic en un número de versículo para ver los pasajes que le hacen eco.", "El mismo número abre lo que escribió la Iglesia sobre ese versículo."]
+map_h = "La Escritura interpreta la Escritura"
+map_p = "OpenBible.info reúne {total} referencias cruzadas. Aquí se trazan los vínculos más fuertes entre los 1189 capítulos. Señale un libro."
+map_canvas = "Arcos que unen los capítulos de la Biblia que remiten unos a otros, de Génesis a Apocalipsis."
+map_first = "Génesis"
+map_last = "Apocalipsis"
 tab_entry = "Diccionario"
 tab_xrefs = "Referencias cruzadas"
 tab_voices = "Voces de la Iglesia"
@@ -97,7 +104,7 @@ text = "La Escritura en el arte pone pinturas, grabados, iconos y vidrieras junt
 alt = "Mateo 9 junto a La vocación de san Mateo, de Caravaggio"
 
 [[shots]]
-img = "reading"
+img = "reading-narrow"
 title = "Modo de lectura"
 text = "Deje en pantalla solo el texto. Siete papeles, del blanco al negro, cada uno con su propia tinta, y la letra capital en oro."
 alt = "El Salmo 23 en modo de lectura"
@@ -205,3 +212,16 @@ verse = "Porque este mi hijo muerto era, y ha revivido; habíase perdido, y es h
 ref = "Lucas 15:24 · Reina-Valera 1909"
 home = "Ir a la página de inicio"
 news = "Novedades"
+
+# The working demos: the words around them (tools/build-site.py merges
+# these into assets/demos-data.js).
+[demo]
+unfold = ["Desplegar el árbol", "37 Biblias, de 1382 a hoy", "Plegar el árbol"]
+swipe = "Deslice hacia los lados para seguir las líneas."
+phonedl = ["¿Está en un teléfono? Scriptura es para equipos con Linux.", "Envíe esta página al equipo donde la instalará.", "Compartir", "Copiar enlace", "Enlace copiado", "Descargar de todos modos"]
+credit_html = "Literal Standard Version (LSV), © 2020 Covenant Press y Covenant Christian Coalition, <a class=\"clay\" href=\"https://www.lsvbible.com/\">lsvbible.com</a>. Usada bajo <a class=\"clay\" href=\"https://creativecommons.org/licenses/by-sa/4.0/\">CC BY-SA 4.0</a>, sin cambios. Los demás textos son de dominio público: la Berean Standard Bible por su dedicación CC0, y la King James Version en todo el mundo salvo el Reino Unido, donde está bajo patente de la Corona."
+pd = "Dominio público"
+map_read = "{book} · {n} referencias cruzadas · {m} libros"
+yl = [["NT 2nd ed.", "NT, 2.ª ed."], ["2nd ed.", "2.ª ed."], ["gender-sensitive ed.", "ed. de lenguaje inclusivo"], ["Pentateuch", "Pentateuco"], ["Apocrypha", "Apócrifos"], ["Early", "temprana"], ["Later", "tardía"], ["Torah", "Torá"], ["John", "Juan"], ["print", "impresa"], ["OT", "AT"], ["c. ", "h. "]]
+artists = {}
+art_titles = { "419" = "La vocación de san Mateo", "412" = "El sacrificio de Isaac", "425" = "El regreso del hijo pródigo", "423" = "La incredulidad de santo Tomás" }

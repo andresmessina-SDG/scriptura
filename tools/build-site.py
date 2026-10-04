@@ -4,6 +4,7 @@
     python3 tools/build-site.py                  # the pages, from site/
     python3 tools/build-site.py --data SWORD_DIR # also re-read the passages
     python3 tools/build-site.py --assets         # also re-cut fonts and icons
+    python3 tools/build-site.py --demos SWORD_DIR # also rebuild the live demos' data
 
 The pages come from `site/page.html`, the words from `site/strings/*.toml`
 and the live reading pane's text from `site/data/*.json`. The version and
@@ -16,6 +17,14 @@ SWORD library holding KJVA, BSB, SpaRV1909, RusOpenBible, StrongsGreek,
 Wikcionario and RussianBibleWords, and from the eBible store for the two
 eBible texts. Only open texts: every one is public domain or CC BY / BY-SA,
 and the colophon credits each.
+
+`--demos` builds what the working demos read: one verse in the open English
+Bibles of the Family (YLT, ASV, ACV, KJVA, Webster, BSB and BBE from the
+SWORD library, the LSV from the eBible store) for Read the difference; John
+1:1 and Genesis 1:1 from the app's interlinear store; the Family's own
+layout; four public-domain paintings from the imagery pack; and the
+cross-reference map from OpenBible. Licensed Bibles appear only by name and
+place on the Line, as in the app, never by their text.
 
 Nothing here runs when the site is served; the output is plain files.
 """
@@ -322,6 +331,225 @@ def build_data(sword_dir, ebible_db, open_dir, catena_db):
     i18n.install_language(None)
 
 
+# ── the working demos (--demos) ───────────────────────────────────────────
+# Read the difference: the open Bibles of the Family, as the app reads them.
+DIFF_VERSES = (('John', 3, 16), ('Romans', 12, 2), ('Genesis', 1, 2),
+               ('Philippians', 4, 6))
+DIFF_BIBLES = (('YLT', 'ylt', 'sword'), ('englsv', 'lsv', 'ebible'),
+               ('ASV', 'asv', 'sword'), ('ACV', 'acv', 'sword'),
+               ('KJVA', 'kjv', 'sword'), ('Webster', 'webster', 'sword'),
+               ('BSB', 'bsb', 'sword'), ('BBE', 'bbe', 'sword'))
+# Licensed Bibles shown by name and place only, for the reader's bearings.
+DIFF_OTHERS = ('nasb', 'esv', 'csb', 'niv', 'nlt', 'msg')
+# Paintings that lead the art pane on their verse (imagery ids).
+ART = ((419, ('Matthew', 9, 9)), (412, ('Genesis', 22, 10)),
+       (425, ('Luke', 15, 20)), (423, ('John', 20, 27)))
+# The map draws chapter links OpenBible's readers made at least this often.
+XMAP_MIN = 8
+# The words each page's own Bible sets above the interlinear.
+_INTER_LINE = {'es': 'spaRV1909', 'ru': 'russyn'}
+# RV1909 tags ἦν with Strong's old number; the interlinear uses the new.
+_STRONGS_ALIAS = {'G2258': 'G1510'}
+
+
+def _ebible_row(con, translation, book, chapter, verse):
+    row = con.execute('SELECT text, markup FROM verses WHERE translation=? AND '
+                      'book=? AND chapter=? AND verse=?',
+                      (translation, book, chapter, verse)).fetchone()
+    return (row[0], row[1] or '') if row else ('', '')
+
+
+def _one_line(text):
+    return re.sub(r'\s+', ' ', text.replace('¶', '')).strip()
+
+
+def _xmap(open_dir):
+    """Every chapter link with XMAP_MIN or more references, as packed
+    (from, to, weight) triples, and each book's totals."""
+    import base64
+    import collections
+    import csv
+    import struct
+    import open_data
+    books = [b for b in open_data._OSIS_BOOKS if b != 'Revelation']
+    alias = {'Revelation': 'Rev'}
+    last = collections.Counter()
+    pairs, out, linked, total = collections.Counter(), collections.Counter(), \
+        collections.defaultdict(set), 0
+    with open(os.path.join(open_dir, 'cross_references.txt'), encoding='utf-8') as fh:
+        next(fh)
+        for row in csv.reader(fh, delimiter='\t'):
+            a, b = row[0].split('-')[0].split('.'), row[1].split('-')[0].split('.')
+            a[0], b[0] = alias.get(a[0], a[0]), alias.get(b[0], b[0])
+            if a[0] not in books or b[0] not in books:
+                continue
+            ia, ib = books.index(a[0]), books.index(b[0])
+            last[ia] = max(last[ia], int(a[1]))
+            last[ib] = max(last[ib], int(b[1]))
+            if int(row[2]) <= 0:
+                continue
+            total += 1
+            out[ia] += 1
+            if ia != ib:
+                linked[ia].add(ib)
+            pa, pb = (ia, int(a[1])), (ib, int(b[1]))
+            if pa != pb:
+                pairs[tuple(sorted([pa, pb]))] += 1
+    chapters = [last[i] for i in range(66)]
+    start = [sum(chapters[:i]) for i in range(66)]
+    keep = sorted(((start[a[0]] + a[1] - 1, start[b[0]] + b[1] - 1, min(n, 255))
+                   for (a, b), n in pairs.items() if n >= XMAP_MIN),
+                  key=lambda t: (t[2], t[0], t[1]))   # faint first, strong on top
+    raw = b''.join(struct.pack('<HHB', *t) for t in keep)
+    return books, {'total': total, 'chapters': chapters,
+                   'refs': [out[i] for i in range(66)],
+                   'linked': [len(linked[i]) for i in range(66)],
+                   'arcs': base64.b64encode(raw).decode()}
+
+
+def build_demos(sword_dir, ebible_db, open_dir, imagery_dir):
+    import importlib
+    import sqlite3
+    os.environ['SWORD_PATH'] = sword_dir
+    sys.path.insert(0, ROOT)
+    import Sword
+    import bible_family
+    import open_data
+    import sword_bridge
+    mgr = Sword.SWMgr(sword_dir)
+    eb = sqlite3.connect(ebible_db)
+
+    def sword_text(module, ref):
+        mod = mgr.getModule(module)
+        if mod is None:
+            sys.exit(f'{module} is not in {sword_dir}')
+        mod.setKey(Sword.VerseKey(ref))
+        return _one_line(_plain(_clean(mod.getRawEntry())))
+
+    # Read the difference, from word for word to free on the app's own Line.
+    bibles = []
+    for module, nid, kind in DIFF_BIBLES:
+        node = bible_family.node(nid)
+        texts = [sword_text(module, f'{b} {c}:{v}') if kind == 'sword'
+                 else _one_line(_ebible_row(eb, module, b, c, v)[0])
+                 for b, c, v in DIFF_VERSES]
+        assert all(texts), module
+        bibles.append({'abbr': node.get('abbr') or module, 'name': node['name'],
+                       'year': node['year'],
+                       'at': round(bible_family.place_of(node).value, 2), 't': texts})
+    bibles.sort(key=lambda b: b['at'])
+    others = [{'abbr': bible_family.node(i)['abbr'], 'name': bible_family.node(i)['name'],
+               'at': round(bible_family.place_of(bible_family.node(i)).value, 2)}
+              for i in DIFF_OTHERS]
+
+    # The interlinear: John 1:1 and Genesis 1:1, with the app's parsing.
+    inter = {}
+    for key, db, book, decode in (
+            ('nt', 'interlinear_greek.sqlite', 'John',
+             lambda m: '  +  '.join(filter(None, (sword_bridge.decode_robinson(
+                 'robinson:' + c) for c in m.split())))),
+            ('ot', 'interlinear_hebrew.sqlite', 'Genesis',
+             lambda m: '  +  '.join(filter(None, (sword_bridge.decode_hebrew_morph(
+                 'oshm:' + (s if i == 0 or s.startswith('H') else 'H' + s))
+                 for i, s in enumerate(m.split('/'))))))):
+        rows = sqlite3.connect(os.path.join(open_dir, db)).execute(
+            'SELECT surface, translit, gloss, strongs, morph FROM words WHERE '
+            'book=? AND chapter=1 AND verse=1 AND in_stream=1 ORDER BY pos',
+            (book,)).fetchall()
+        mod = mgr.getModule('KJVA')
+        mod.setKey(Sword.VerseKey(f'{book} 1:1'))
+        entry = {'ref': f'{book} 1:1', 'kjv': _tokens(mod.getRawEntry()),
+                 'words': [{'s': s, 't': t, 'g': g, 'n': n, 'p': decode(m)}
+                           for s, t, g, n, m in rows]}
+        for lang, translation in _INTER_LINE.items():
+            text, markup = _ebible_row(eb, translation, book, 1, 1)
+            if '<w ' in markup:
+                line = [[w, _STRONGS_ALIAS.get(n, n)] for w, n in _tokens(markup)]
+            else:
+                line = [[_one_line(text), None]]
+            entry[lang] = {'line': line}
+        inter[key] = entry
+
+    # The Family, as family_layout draws it, with its notes in each language.
+    import family_layout
+    pos = {'family': family_layout.positions('family'),
+           'line': family_layout.positions('line')}
+    root = bible_family.family_data().get('root', {})
+    nodes = []
+    for nid in bible_family.family_members():
+        n = bible_family.node(nid)
+        place = bible_family.place_of(n)
+        nodes.append({'id': nid, 'abbr': n.get('abbr') or n['name'], 'name': n['name'],
+                      'year': n['year'], 'yl': n.get('year_label') or str(n['year']),
+                      'note': n.get('note', ''),
+                      'at': round(place.value, 2) if place else None,
+                      'root': nid in root,
+                      'xy': [round(v, 1) for v in pos['family'][nid]],
+                      'xyl': [round(v, 1) for v in pos['line'][nid]]})
+    nodes.sort(key=lambda n: n['year'])
+    notes, ui, zones = {}, {}, {}
+    for lang in LANGS:
+        with _InLanguage(lang) as i18n:
+            importlib.reload(bible_family)
+            importlib.reload(family_layout)
+            notes[lang] = [[n.y, n.text] for n in family_layout.notes()]
+            ui[lang] = [i18n._(t) for t in (
+                'By family', 'By literalness', 'Mark differences', 'Old Testament',
+                'New Testament', 'Word for word', 'Free', 'Exit reading mode',
+                'Presentation', 'Exit presentation', 'Copy')]
+            zones[lang] = [bible_family.zone_label(v) for v in (0.1, 0.5, 0.8, 0.95)]
+    family = {'nodes': nodes, 'notes': notes,
+              'edges': [{'f': e.parent, 't': e.child, 'k': e.kind}
+                        for e in family_layout.edges()],
+              'ticks': [[y, round(family_layout.year_y(y), 1)]
+                        for y in (1611, 1700, 1800, 1900, 1950, 2000, 2025)],
+              'w': family_layout.WIDTH,
+              'lanes': [family_layout.LANE_LEFT, family_layout.LANE_RIGHT,
+                        family_layout.NOTE_LEFT, family_layout.NOT_PLACED_X,
+                        family_layout.AXIS_TOP]}
+    family['h'] = round(max(max(n['xy'][1], n['xyl'][1]) for n in nodes) + 60)
+
+    # Art for the passage: each painting, at a size a band shows, and its
+    # verse in each page's Bible.
+    from PIL import Image
+    art_dir = os.path.join(DOCS, 'assets', 'art')
+    os.makedirs(art_dir, exist_ok=True)
+    img_db = sqlite3.connect(os.path.join(imagery_dir, 'imagery.sqlite'))
+    art = []
+    for iid, (b, c, v) in ART:
+        title, artist, year, path, lic = img_db.execute(
+            'SELECT title, artist, year, file_path, license FROM imagery WHERE id=?',
+            (iid,)).fetchone()
+        assert lic == 'PD', (iid, lic)
+        im = Image.open(os.path.join(imagery_dir, path)).convert('RGB')
+        im.thumbnail((1100, 1100))
+        name = f'art{iid}.webp'
+        im.save(os.path.join(art_dir, name), quality=80)
+        art.append({'ref': [b, c, v], 'title': title, 'artist': artist, 'year': year,
+                    'img': name, 'w': im.width, 'h': im.height,
+                    't': {lang: _one_line(_ebible_row(eb, tr, b, c, v)[0])
+                          for lang, tr in (('en', 'eng-kjv2006'), ('es', 'spaRV1909'),
+                                           ('ru', 'russyn'))}})
+
+    # The map, and the book names in each language from the app's catalogues.
+    books, xmap = _xmap(open_dir)
+    xmap['names'] = {}
+    for lang in LANGS:
+        with _InLanguage(lang) as i18n:
+            xmap['names'][lang] = [i18n._(open_data._OSIS_BOOKS[b]) for b in books]
+
+    for name, data in (('demos', {'diff': {'refs': [f'{b} {c}:{v}' for b, c, v in DIFF_VERSES],
+                                            'bibles': bibles, 'others': others},
+                                   'inter': inter, 'family': family, 'art': art,
+                                   'ui': ui, 'zones': zones}),
+                       ('xmap', xmap)):
+        with open(os.path.join(SITE, 'data', f'{name}.json'), 'w', encoding='utf-8') as fh:
+            json.dump(data, fh, ensure_ascii=False, indent=1)
+            fh.write('\n')
+    print(f'demos: {len(bibles)} Bibles, {len(nodes)} in the Family, {len(art)} paintings; '
+          f'map: {xmap["total"]} cross-references, {len(xmap["arcs"]) * 3 // 4 // 5} arcs')
+
+
 # ── fonts and icons (--assets) ────────────────────────────────────────────
 LATIN = ('U+0020-007E,U+00A0-00FF,U+0131,U+0152-0153,U+2013-2014,'
          'U+2018-201E,U+2022,U+2026,U+2039-203A,U+00B7,U+2009,U+2192')
@@ -351,7 +579,13 @@ FONTS = [
         'U+%04X' % c for c in range(0x05D0, 0x05EB)
         if c not in (0x05DA, 0x05DD, 0x05DF, 0x05E3, 0x05E5)),
      {'wdth': 100, 'wght': 400}),
+    # The interlinear's Hebrew, pointed and accented: the whole block.
+    ('NotoSerifHebrew[wdth,wght].ttf', 'hebrew-text', 'U+0020,U+0591-05F4,U+FB1D-FB4F',
+     {'wdth': 100, 'wght': 400}),
 ]
+# Phone-sized crops of two screenshots: the part that matters, at a size a
+# phone can read. (left, top, right, bottom) in the 1366 x 733 shot.
+PHONE_CROPS = {'voices': (696, 84, 1366, 733), 'writing': (600, 250, 1200, 690)}
 
 
 def build_assets():
@@ -406,6 +640,13 @@ def build_assets():
     stale = os.path.join(out, 'OFL.txt')
     if os.path.exists(stale):
         os.remove(stale)
+    for lang in LANGS:
+        for name, box in PHONE_CROPS.items():
+            for dark in ('', '-dark'):
+                img = os.path.join(DOCS, 'assets', 'img', lang, name + dark + '.webp')
+                Image.open(img).crop(box).save(
+                    os.path.join(DOCS, 'assets', 'img', lang, f'{name}-phone{dark}.webp'),
+                    quality=86, method=6)
 
 
 # ── the pages ─────────────────────────────────────────────────────────────
@@ -553,6 +794,7 @@ def _common(lang, s, root, page_path, version):
         'font_sans': 'sans-latin',
         'font_lede': 'sans-cyrillic' if lang == 'ru' else 'prose',
         'page_title': esc(s['title']), 'page_description': esc(s['description']),
+        'page_scripts': '',
     })
     values['alternates'] = '\n'.join(
         f'<link rel="alternate" hreflang="{code}" href="{BASE_URL}{_prefix(code)}{page_path}">'
@@ -624,16 +866,35 @@ def render(lang, page='home'):
         f'<div class="row"><h3>{esc(r["title"])}</h3><p>{esc(r["text"])}</p></div>'
         for r in s['rows'])
 
+    from PIL import Image
+
+    def size(name):
+        with Image.open(os.path.join(DOCS, 'assets', 'img', lang, name + '.webp')) as im:
+            return im.size
+
     def band(sh):
         """A feature at a size you can read: the picture follows the paper
-        (a dark one on a dark paper), and a click opens it full size."""
+        (a dark one on a dark paper), and a click opens it full size. On a
+        phone, a shot with a phone crop shows the crop. Sources marked
+        data-dark are the ones site.js points at the paper."""
         src = f'{root}assets/img/{lang}/{sh["img"]}'
+        w, h = size(sh['img'])
+        phone = ''
+        if sh['img'] in PHONE_CROPS:
+            pw, ph = size(sh['img'] + '-phone')
+            when = '(max-width: 759px)'
+            phone = (f'<source data-dark data-when="{when}" '
+                     f'media="{when} and (prefers-color-scheme: dark)" '
+                     f'srcset="{src}-phone-dark.webp" width="{pw}" height="{ph}">'
+                     f'<source media="{when}" srcset="{src}-phone.webp" '
+                     f'width="{pw}" height="{ph}">')
+        narrow = ' narrow' if h > w else ''
         return (
-            f'<article class="band"><button type="button" class="zoom" '
+            f'<article class="band{narrow}"><button type="button" class="zoom" '
             f'aria-label="{esc(s["zoom_label"])}: {esc(sh["title"])}">'
-            f'<picture><source media="(prefers-color-scheme: dark)" '
+            f'<picture>{phone}<source data-dark media="(prefers-color-scheme: dark)" '
             f'srcset="{src}-dark.webp"><img class="shot" src="{src}.webp" '
-            f'width="1366" height="733" alt="{esc(sh["alt"])}" loading="lazy">'
+            f'width="{w}" height="{h}" alt="{esc(sh["alt"])}" loading="lazy">'
             f'</picture></button><div class="band-text"><h3>{esc(sh["title"])}</h3>'
             f'<p>{esc(sh["text"])}</p></div></article>')
     values['bands'] = '\n'.join(band(sh) for sh in s['shots'])
@@ -644,6 +905,19 @@ def render(lang, page='home'):
     values['claims'] = '\n'.join(
         f'<div><h3>{esc(c["title"])}</h3><p>{esc(c["text"])}</p></div>'
         for c in s['claims'])
+    # The window's three steps, named as its tabs are.
+    values['story_steps'] = '\n'.join(
+        f'      <li class="step"><span class="n" aria-hidden="true">{i}</span>'
+        f'<h3>{esc(s[tab])}</h3><p>{esc(text)}</p></li>'
+        for i, (tab, text) in enumerate(
+            zip(('tab_entry', 'tab_xrefs', 'tab_voices'), s['story']), 1))
+    with open(os.path.join(SITE, 'data', 'xmap.json'), encoding='utf-8') as fh:
+        total = json.load(fh)['total']
+    sep = ',' if lang == 'en' else '\u00a0'
+    values['map_p'] = esc(s['map_p'].format(total=f'{total:,}'.replace(',', sep)))
+    values['page_scripts'] = ''.join(
+        f'\n<script src="{root}assets/{name}" defer></script>'
+        for name in ('xmap-data.js', 'xmap.js', 'demos-data.js', 'demos.js'))
     values['bundles'] = '\n'.join(
         f'<div class="bundle{" rec" if b["recommended"] else ""}"><b>{esc(b["title"])}</b>'
         f'<span>{esc(b["summary"])}</span><em>'
@@ -679,6 +953,32 @@ def render_404():
     return _fill(_template('404.html'), values)
 
 
+def demo_scripts():
+    """The demos' data as two scripts: what --demos built, with the words
+    each language's page says around it."""
+    with open(os.path.join(SITE, 'data', 'demos.json'), encoding='utf-8') as fh:
+        demos = json.load(fh)
+    with open(os.path.join(SITE, 'data', 'xmap.json'), encoding='utf-8') as fh:
+        xmap = json.load(fh)
+    words = {lang: _strings(lang)['demo'] for lang in LANGS}
+    for key in ('unfold', 'swipe', 'phonedl', 'pd', 'yl', 'artists'):
+        demos[key] = {lang: words[lang][key] for lang in LANGS}
+    demos['credit'] = {lang: words[lang]['credit_html'] for lang in LANGS}
+    demos['arttitles'] = {}
+    for lang in LANGS:
+        for iid, title in words[lang]['art_titles'].items():
+            demos['arttitles'].setdefault(iid, {})[lang] = title
+    xmap['read'] = {lang: words[lang]['map_read'] for lang in LANGS}
+
+    def script(var, data, what):
+        return (f'// {what} Built by tools/build-site.py; do not edit.\n'
+                f'window.{var}=' + json.dumps(data, ensure_ascii=False,
+                                              separators=(',', ':')) + ';\n')
+    return {'demos-data.js': script('DEMOS', demos, 'The working demos\' data.'),
+            'xmap-data.js': script('XMAP', xmap, 'OpenBible.info cross-references (CC BY), '
+                                   'chapter links with %d or more.' % XMAP_MIN)}
+
+
 def build_pages(out=DOCS):
     for lang in LANGS:
         for page, (_name, page_path) in PAGES.items():
@@ -689,8 +989,11 @@ def build_pages(out=DOCS):
     with open(os.path.join(out, '404.html'), 'w', encoding='utf-8') as fh:
         fh.write(render_404())
     os.makedirs(os.path.join(out, 'assets'), exist_ok=True)
-    for f in ('site.css', 'site.js', 'initial-s.svg'):
+    for f in ('site.css', 'site.js', 'demos.js', 'xmap.js', 'initial-s.svg'):
         shutil.copy(os.path.join(SITE, f), os.path.join(out, 'assets', f))
+    for name, text in demo_scripts().items():
+        with open(os.path.join(out, 'assets', name), 'w', encoding='utf-8') as fh:
+            fh.write(text)
     with open(os.path.join(out, '.nojekyll'), 'w'):
         pass
 
@@ -709,11 +1012,19 @@ def main():
         '~/.local/share/bible-reader/catena.db'),
         help='the Voices of the Church pack')
     ap.add_argument('--assets', action='store_true',
-                    help='re-cut the fonts and icons')
+                    help='re-cut the fonts, icons and phone crops')
+    ap.add_argument('--demos', metavar='SWORD_DIR',
+                    help="rebuild the demos' data from this SWORD library")
+    ap.add_argument('--imagery', default=os.path.expanduser(
+        '~/.local/share/bible-reader/imagery'),
+        help='the Bible Imagery pack, for the paintings')
     args = ap.parse_args()
     if args.data:
         build_data(os.path.abspath(args.data), args.ebible,
                    args.open_data, args.catena)
+    if args.demos:
+        build_demos(os.path.abspath(args.demos), args.ebible, args.open_data,
+                    args.imagery)
     if args.assets:
         build_assets()
     build_pages()

@@ -21,6 +21,13 @@ pane_right = "Berean Standard Bible"
 
 sec_tools = "Everything for close study, on one screen"
 live_caption = "This is live. Click a word for its Strong’s entry, or a verse number for the passages that echo it and what the church wrote on it."
+story_label = "How the window works"
+story = ["Click a word for its Strong’s entry.", "Click a verse number for the passages that echo it.", "The same verse number opens what the church wrote on it."]
+map_h = "Scripture interprets Scripture"
+map_p = "OpenBible.info lists {total} cross-references. The strongest links between the 1,189 chapters are drawn here. Point at a book."
+map_canvas = "Arcs joining the chapters of the Bible that cross-reference each other, Genesis to Revelation."
+map_first = "Genesis"
+map_last = "Revelation"
 tab_entry = "Strong’s"
 tab_xrefs = "Cross-references"
 tab_voices = "Voices of the Church"
@@ -97,7 +104,7 @@ text = "Scripture in Art sets paintings, engravings, icons and stained glass bes
 alt = "Matthew 9 beside Caravaggio’s The Calling of Saint Matthew"
 
 [[shots]]
-img = "reading"
+img = "reading-narrow"
 title = "Reading mode"
 text = "Clear everything but the text. Seven papers, from white to black, each come with their own ink, and the drop cap is set in gold."
 alt = "Psalm 23 in reading mode"
@@ -205,3 +212,16 @@ verse = "For this my son was dead, and is alive again; he was lost, and is found
 ref = "Luke 15:24 · King James Version"
 home = "Go to the home page"
 news = "What’s new"
+
+# The working demos: the words around them (tools/build-site.py merges
+# these into assets/demos-data.js).
+[demo]
+unfold = ["Unfold the tree", "37 Bibles, 1382 to today", "Fold the tree"]
+swipe = "Swipe sideways to follow the lines."
+phonedl = ["On a phone? Scriptura is for Linux computers.", "Send this page to the computer you will install it on.", "Share", "Copy link", "Link copied", "Download anyway"]
+credit_html = "Literal Standard Version (LSV), copyright © 2020 Covenant Press and the Covenant Christian Coalition, <a class=\"clay\" href=\"https://www.lsvbible.com/\">lsvbible.com</a>. Used under <a class=\"clay\" href=\"https://creativecommons.org/licenses/by-sa/4.0/\">CC BY-SA 4.0</a>, unchanged. The other texts are in the public domain: the Berean Standard Bible by its CC0 dedication, and the King James Version everywhere but the United Kingdom, where it is under Crown patent."
+pd = "Public domain"
+map_read = "{book} · {n} cross-references · {m} books"
+yl = []
+artists = {}
+art_titles = {}
