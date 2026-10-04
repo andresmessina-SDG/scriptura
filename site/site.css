@@ -228,7 +228,7 @@ a.headbtn { text-decoration: none; }
 .night.sheet { box-shadow: 0 -1px 0 color-mix(in srgb, var(--gold) 22%, transparent), 0 -28px 48px -28px rgb(0 0 0 / .45); }
 /* The lamp: one verse alone, over the gilded S, lit as the dark comes. */
 .lamp { position: relative; isolation: isolate; min-height: min(78svh, 46rem); display: grid; place-content: center; gap: 22px; margin: 0; padding-block: 48px; text-align: center; }
-.lamp::before { content: ""; position: absolute; z-index: -1; left: 50%; top: 50%; translate: -50% -50%; height: min(60svh, 32rem); aspect-ratio: 280.5 / 412.5;
+.lamp::before { content: ""; position: absolute; z-index: -1; left: 50%; top: 50%; translate: -50% -50%; height: min(60svh, 32rem, 110vw); aspect-ratio: 280.5 / 412.5;
   background: var(--gold); opacity: .07; -webkit-mask: url(initial-s.svg) no-repeat center / contain; mask: url(initial-s.svg) no-repeat center / contain; }
 .lamp::after { content: ""; position: absolute; z-index: -2; left: 50%; top: 50%; translate: -50% -50%; width: min(90vw, 56rem); aspect-ratio: 1.6;
   background: radial-gradient(closest-side, color-mix(in srgb, var(--gold) 16%, transparent), transparent); opacity: var(--night, 1); }
@@ -258,7 +258,10 @@ body { background: var(--grain) 0 0 / 180px, var(--paper); }
      steps as it leaves, rather than closing them up. */
   .claims > div { margin-bottom: calc((2 - var(--k)) * 18px); }
   .claims::after { content: ""; height: 14vh; }
-  .claims h3 { font-size: clamp(1.625rem, 2.6vw, 2.125rem); }
+  .claims h3 { font-size: clamp(1.375rem, 2.6vw, 2.125rem); overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; }
+}
+@media (min-height: 600px) and (max-width: 559px) {
+  .claims > div { grid-template-columns: 2rem minmax(0, 1fr); gap: 4px 12px; padding: 22px 20px; }
 }
 
 /* Reveals: a band or row rises 8px and comes into focus once, when it is
@@ -567,7 +570,7 @@ button, a, .w, .vn, [role="tab"] { touch-action: manipulation; }
 .art-cap { font: 0.8125rem var(--sans); color: var(--ink-3); }
 
 /* The window's touches */
-.touch { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--ink-2); cursor: pointer;
+.touch { display: grid; place-items: center; flex: none; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--ink-2); cursor: pointer;
   transition: background-color var(--d-hover) ease, transform var(--d-press) var(--ease-out); }
 .touch svg { width: 16px; height: 16px; }
 .touch:active { transform: scale(var(--press)); transition-duration: 100ms; }
