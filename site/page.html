@@ -1,6 +1,7 @@
 {{> head}}
 {{> header}}
 <main id="main">
+  <div class="leaf">
   <section class="hero">
     <p class="eyebrow">{{t.eyebrow}}</p>
     <h1>{{t.h1}}</h1>
@@ -34,7 +35,9 @@
     <div class="gloss" id="gloss" role="tooltip" hidden></div>
   </figure>
   <p class="caption">{{t.live_caption}}</p>
+  </div>
 
+  <div class="leaf sheet">
   <section class="sec">
     <h2>{{t.sec_tools}}</h2>
     <div class="bands">
@@ -44,14 +47,22 @@
 {{rows}}
     </div>
   </section>
+  </div>
 
+  <div class="leaf sheet night">
+  <figure class="lamp">
+    <blockquote lang="{{lang}}">{{t.lamp_html}}</blockquote>
+    <figcaption>{{t.lamp_ref}}</figcaption>
+  </figure>
   <section class="sec xmap-sec" aria-labelledby="xmap-h">
     <h2 id="xmap-h">{{t.map_h}}</h2>
     <p class="lede">{{map_p}}</p>
     <div class="xmap-wrap"><canvas id="xmap-c" tabindex="0" role="img" aria-label="{{t.map_canvas}}" aria-describedby="xmap-read"></canvas><div class="xmap-ends" aria-hidden="true"><span>{{t.map_first}}</span><span>{{t.map_last}}</span></div></div>
     <p class="xmap-read" id="xmap-read" aria-live="polite">&nbsp;</p>
   </section>
+  </div>
 
+  <div class="leaf sheet">
   <section class="sec">
     <h2>{{t.teach_h}}</h2>
     <p class="lede">{{t.teach_lede}}</p>
@@ -88,6 +99,7 @@
       <p class="req">{{t.needs_html}}</p>
     </div>
   </section>
+  </div>
 </main>
 
 {{> colophon}}

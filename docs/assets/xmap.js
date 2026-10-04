@@ -29,7 +29,7 @@
   const xOf = ch => PAD + (ch + .5) / TOTAL * (W - 2 * PAD);
 
   function colours() {
-    const cs = getComputedStyle(root);
+    const cs = getComputedStyle(canvas);   // the night sets its own colours
     return { gold: cs.getPropertyValue('--gold').trim(), lit: cs.getPropertyValue('--gold-text').trim(),
              ink: cs.getPropertyValue('--ink').trim() };
   }

@@ -151,8 +151,8 @@
       y += LEAD; row++;
     }
   }
-  const lit = { write: 1, lx: 0, ly: 0, mx: 0, my: 0, lamp: 0, lampTo: 0, glint: null };
-  const LAMP = 120;
+  const lit = { write: 1, lx: 0, ly: 0, mx: 0, my: 0, lamp: 0, lampTo: 0, glint: null, night: 0 };
+  const LAMP = 120, NIGHT_GOLD = [208, 172, 92];
   function paintField() {
     const ctx = field.getContext('2d'), s = SIZE / 9;
     ctx.clearRect(0, 0, fieldW, fieldH);
@@ -167,8 +167,10 @@
       let warm = 0;
       if (lit.lamp > 0.005) { const d = Math.hypot(g.x - lit.lx, g.y - lit.ly); if (d < LAMP) warm = lit.lamp * Math.pow(1 - d / LAMP, 2); }
       if (lit.glint && lit.glint.i === gi) warm = Math.max(warm, lit.glint.v);
-      const c = warm ? inkRGB.map((v, j) => Math.round(v + (goldRGB[j] - v) * Math.min(1, warm * 1.1))) : inkRGB;
-      const a = Math.min(0.55, g.a * k * (1 + warm * 4));
+      // At nightfall every letter turns toward gold, a little brighter: stars.
+      const w = Math.max(warm, lit.night), to = lit.night > warm ? NIGHT_GOLD : goldRGB;
+      const c = w ? inkRGB.map((v, j) => Math.round(v + (to[j] - v) * Math.min(1, w * 1.1))) : inkRGB;
+      const a = Math.min(0.55, g.a * k * (1 + warm * 4)) * (1 - lit.night) + 0.2 * g.wt * k * lit.night;
       const rgba = `rgba(${c.join(',')},${a})`;
       if (g.path) { ctx.strokeStyle = rgba; ctx.beginPath(); g.path(ctx, g.x, g.y, s); ctx.stroke(); return; }
       const f = g.greek ? `${SIZE}px "S Scripture", "Noto Serif", serif` : `${SIZE}px "S Hebrew", "Noto Serif Hebrew", serif`;
@@ -177,6 +179,85 @@
     });
   }
   function drawField() { layoutField(); paintField(); drawStrip(); }
+
+  // The leaves. Each but the last holds once its foot meets the foot of the
+  // screen (--stick, from its height), and dims as the next leaf covers it.
+  // While the night leaf holds the screen the room goes dark too, and the
+  // margin letters turn to gold. Scroll is the only clock.
+  const leaves = [...document.querySelectorAll('main > .leaf')];
+  if (leaves.length > 1) {
+    const night = leaves.findIndex(l => l.classList.contains('night'));
+    const lamp = night < 0 ? null : leaves[night].querySelector('.lamp');
+    // Dimming each leaf: the first by its own opacity (nothing lies under
+    // it), the sheets by a shade laid over them.
+    const dims = leaves.slice(0, -1).map(l => {
+      if (!l.classList.contains('sheet')) return v => { l.style.opacity = v ? (1 - v * 0.6).toFixed(3) : ''; };
+      const sh = el('div', 'shade'); sh.setAttribute('aria-hidden', 'true'); l.append(sh);
+      return v => { sh.style.opacity = (v * 0.32).toFixed(3); };
+    });
+    const fall = el('div', 'nightfall');
+    fall.setAttribute('aria-hidden', 'true');
+    field.before(fall);
+    let tops = [], covers = [], leafRaf = 0;
+    const smooth = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+    const turn = () => {
+      leafRaf = 0;
+      const vh = innerHeight, heads = leaves.map(l => l.getBoundingClientRect().top);
+      for (let i = 0; i < dims.length; i++) {
+        const c = Math.round(smooth((vh - heads[i + 1]) / vh) * 1000) / 1000;
+        if (c !== covers[i]) { covers[i] = c; dims[i](c); }
+      }
+      if (night < 0) return;
+      const n = Math.min(smooth((vh * 0.6 - heads[night]) / (vh * 0.6)),
+                         night + 1 < leaves.length ? smooth(heads[night + 1] / (vh * 0.6)) : 1);
+      if (Math.abs(n - lit.night) > 0.003 || (n !== lit.night && (n === 0 || n === 1))) {
+        lit.night = n;
+        fall.style.opacity = n.toFixed(3);
+        if (lamp) lamp.style.setProperty('--night', n.toFixed(3));
+        paintField();
+      }
+    };
+    // Heights change as demos unfold and panels grow: measure again then.
+    // The resting tops (sticky off) let focus find a leaf the next has covered.
+    const measure = () => {
+      root.classList.remove('leaves');
+      tops = leaves.map(l => l.getBoundingClientRect().top + scrollY);
+      leaves.forEach(l => l.style.setProperty('--stick', `${Math.min(0, innerHeight - l.offsetHeight)}px`));
+      root.classList.add('leaves');
+      turn();
+    };
+    addEventListener('scroll', () => { leafRaf ||= requestAnimationFrame(turn); }, { passive: true });
+    if ('ResizeObserver' in window) new ResizeObserver(() => measure()).observe(leaves[0].parentNode);
+    let sizeRaf = 0;
+    addEventListener('resize', () => { sizeRaf ||= requestAnimationFrame(() => { sizeRaf = 0; measure(); }); });
+    measure();
+    // A keyboard reader tabbing back into a covered leaf: bring it out. Only
+    // for keyboard focus, and only when what took it lies under the next
+    // leaf: a click on the uncovered part of a held leaf must not move it.
+    document.addEventListener('focusin', e => {
+      const i = leaves.findIndex(l => l.contains(e.target));
+      if (i < 0 || i === leaves.length - 1 || !e.target.matches(':focus-visible')) return;
+      if (e.target.getBoundingClientRect().bottom <= leaves[i + 1].getBoundingClientRect().top) return;
+      const within = e.target.getBoundingClientRect().top - leaves[i].getBoundingClientRect().top;
+      scrollTo({ top: tops[i] + within - innerHeight * 0.3, behavior: 'instant' });
+    });
+  }
+
+  // Reveals: bands and rows rise into focus once, when first seen; those
+  // seen together follow one another by 50ms.
+  const rv = [...document.querySelectorAll('main .band, main .row')];
+  if (rv.length && 'IntersectionObserver' in window) {
+    rv.forEach(n => n.classList.add('rv'));
+    root.classList.add('reveals');
+    const io = new IntersectionObserver(es => {
+      es.filter(e => e.isIntersecting).forEach((e, i) => {
+        e.target.style.setProperty('--d', `${Math.min(i, 4) * 50}ms`);
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      });
+    }, { rootMargin: '0px 0px -8% 0px' });
+    rv.forEach(n => io.observe(n));
+  }
 
   // Where the margins are too narrow for the field, one line of it runs
   // across the top of the footer: Hebrew written right to left, Greek under
