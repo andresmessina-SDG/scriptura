@@ -139,6 +139,53 @@ def clear_children(widget: Gtk.Widget) -> None:
         child = nxt
 
 
+def iter_at_location(view: Gtk.TextView, x: int,
+                     y: int) -> tuple[bool, Gtk.TextIter]:
+    """`Gtk.TextView.get_iter_at_location`, without the GTK 4.22 abort.
+
+    When y falls in the space below a line's text (`pixels-below-lines`),
+    GTK takes the line's full byte count, hidden text included, and walks
+    that many VISIBLE bytes. On a line that hides anything (a footnote
+    marker, a heading's newline) the walk runs into the next line and GTK
+    kills the process:
+
+        Gtk-ERROR: Byte index 849 is off the end of the line
+        #7  iter_set_from_byte_offset
+        #8  gtk_text_iter_set_visible_line_index
+        #10 gtk_text_layout_get_iter_at_position
+        #11 gtk_text_view_get_iter_at_location
+        #26 gtk_event_controller_motion_handle_event
+
+    For a point in that space on such a line, answer what GTK answers on a
+    line that hides nothing: outside, at the line's end.
+    """
+    line, _top = view.get_line_at_y(y)
+    nxt = line.copy()
+    nxt.forward_line()
+    buf = view.get_buffer()
+    if buf.get_text(line, nxt, True) == buf.get_text(line, nxt, False):
+        return _gtk_iter_at_location(view, x, y)
+    end = line.copy()
+    if not end.ends_line():
+        end.forward_to_line_end()
+    last = nxt.copy()
+    while last.backward_char() and last.compare(line) >= 0:
+        if buf.get_text(last, nxt, False):
+            break                       # the line's last visible character
+    else:
+        return False, end               # nothing on the line is visible
+    rect = view.get_cursor_locations(last)[0]
+    if y >= rect.y + rect.height:
+        return False, end
+    return _gtk_iter_at_location(view, x, y)
+
+
+def _gtk_iter_at_location(view: Gtk.TextView, x: int,
+                          y: int) -> tuple[bool, Gtk.TextIter]:
+    found, it = Gtk.TextView.get_iter_at_location(view, x, y)
+    return found, it
+
+
 def file_dialog_failed(err: GLib.Error) -> bool:
     """True when a Gtk.FileDialog failed, False when the reader closed it.
 

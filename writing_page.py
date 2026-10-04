@@ -22,6 +22,7 @@ from gi.repository import Gdk, Gio, Gtk, GLib, Graphene, Gsk, Pango  # noqa: E40
 
 from a11y import set_accessible_label  # noqa: E402
 from i18n import N_, _  # noqa: E402
+from gtk_utils import iter_at_location  # noqa: E402
 import journal_markup  # noqa: E402
 from passage_export import format_reference  # noqa: E402
 import motion  # noqa: E402
@@ -164,6 +165,10 @@ class _WritingView(Gtk.TextView):
         super().__init__()
         # Weak: the editor owns the view, and a cycle would outlive both.
         self._editor = weakref.ref(editor)
+
+    def get_iter_at_location(self, x, y):
+        """GTK's, minus the abort on a hidden-text line's bottom spacing."""
+        return iter_at_location(self, x, y)
 
     def do_snapshot_layer(self, layer, snapshot):
         editor = self._editor()

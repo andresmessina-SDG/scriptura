@@ -11,6 +11,11 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - **UnifrakturMaguntia**, a blackletter face, ships with the app and can be
   chosen in Appearance ▸ Font. It covers Latin script only.
 
+### Fixed
+
+- The app no longer closes when the pointer rests in the space below a
+  paragraph that hides a footnote marker or a heading.
+
 ## [1.8.3] — 2026-09-30
 
 ### Added
