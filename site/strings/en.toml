@@ -21,6 +21,9 @@ pane_right = "Berean Standard Bible"
 
 sec_tools = "Everything for close study, on one screen"
 live_caption = "This is live. Click a word for its Strong’s entry, or a verse number for the passages that echo it and what the church wrote on it."
+# The lamp verse before the map, as the KJV prints it (added words in italics).
+lamp_html = "Thy word <i>is</i> a lamp unto my feet, and a light unto my path."
+lamp_ref = "Psalm 119:105"
 map_h = "Scripture interprets Scripture"
 map_p = "OpenBible.info lists {total} cross-references. The strongest links between the 1,189 chapters are drawn here. Point at a book."
 map_canvas = "Arcs joining the chapters of the Bible that cross-reference each other, Genesis to Revelation."

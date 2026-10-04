@@ -23,6 +23,8 @@
   --gold-tint: color-mix(in srgb, var(--gold) 16%, var(--paper));
   --gold-tint-2: color-mix(in srgb, var(--gold) 26%, var(--paper));
   --gold-text: color-mix(in srgb, var(--gold) 64%, var(--ink));
+  /* Nightfall's dark, from whichever paper is chosen. */
+  --paper-night: color-mix(in srgb, var(--paper) 8%, #050403);
   --sans: "S Sans", "Adwaita Sans", "Inter", system-ui, sans-serif;
   --prose: "S Prose", "Newsreader", "Noto Serif", Georgia, serif;
   --scripture: "S Scripture", "Noto Serif", Georgia, serif;
@@ -193,6 +195,80 @@ a.headbtn { text-decoration: none; }
 .claims { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px 32px; }
 .claims h3 { font: 500 1.625rem/1.2 var(--prose); }
 .claims p { font: 1.0625rem/1.5 var(--prose); color: var(--ink-2); margin-top: 6px; }
+
+/* ── leaves: the page is a book whose leaves turn as you read ──
+   Each leaf scrolls until its foot meets the foot of the screen, then holds
+   (site.js sets --stick) while the next leaf, a sheet with a rounded head,
+   rises over it; the held leaf dims as it is covered. site.js sets each
+   dimming as an opacity on one element: a custom property would restyle
+   every element in the leaf on every frame. Only with script: a held leaf
+   taller than the screen must know its own height. */
+.sheet { position: relative; margin-top: 56px; margin-inline: calc(-1 * var(--bleed)); padding: 8px var(--bleed) 72px;
+  border-radius: 28px 28px 0 0; background: var(--grain) 0 0 / 180px, var(--paper);
+  box-shadow: 0 -1px 0 var(--rule), 0 -28px 48px -28px rgb(var(--shade) / .3);
+  /* The shadow falls only above the head: at the sides it would spill into
+     the margins, and sheets held beneath would stack it into a dark band. */
+  clip-path: inset(-96px 0 0 0); }
+:root { --bleed: 16px; }
+@media (min-width: 1232px) { :root { --bleed: 40px; } }
+.leaves .leaf:not(:last-child) { position: sticky; top: var(--stick, 0px); }
+.shade { position: absolute; z-index: 9; inset: 0; border-radius: inherit; pointer-events: none; background: rgb(var(--shade)); opacity: 0; }
+
+/* Night, for the map: a dark leaf, worked out again from its own paper and
+   ink. While it holds the screen, the room around it goes dark too (site.js
+   sets the opacity of .nightfall) and the margin letters turn to faint gold. */
+.nightfall { position: fixed; inset: 0; background: var(--paper-night); opacity: 0; pointer-events: none; }
+.night { color-scheme: dark; color: var(--ink); --shade: 0 0 0;
+  --paper: var(--paper-night); --ink: #e8e0d4; --gold: #d0ac5c; --blue: #81d0ff;
+  --ink-2: color-mix(in srgb, var(--ink) 74%, var(--paper));
+  --ink-3: color-mix(in srgb, var(--ink) 56%, var(--paper));
+  --rule: color-mix(in srgb, var(--ink) 13%, var(--paper));
+  --gold-tint: color-mix(in srgb, var(--gold) 16%, var(--paper));
+  --gold-text: color-mix(in srgb, var(--gold) 64%, var(--ink)); }
+.night.sheet { box-shadow: 0 -1px 0 color-mix(in srgb, var(--gold) 22%, transparent), 0 -28px 48px -28px rgb(0 0 0 / .45); }
+/* The lamp: one verse alone, over the gilded S, lit as the dark comes. */
+.lamp { position: relative; isolation: isolate; min-height: min(78svh, 46rem); display: grid; place-content: center; gap: 22px; margin: 0; padding-block: 48px; text-align: center; }
+.lamp::before { content: ""; position: absolute; z-index: -1; left: 50%; top: 50%; translate: -50% -50%; height: min(60svh, 32rem); aspect-ratio: 280.5 / 412.5;
+  background: var(--gold); opacity: .07; -webkit-mask: url(initial-s.svg) no-repeat center / contain; mask: url(initial-s.svg) no-repeat center / contain; }
+.lamp::after { content: ""; position: absolute; z-index: -2; left: 50%; top: 50%; translate: -50% -50%; width: min(90vw, 56rem); aspect-ratio: 1.6;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--gold) 16%, transparent), transparent); opacity: var(--night, 1); }
+.lamp blockquote { margin: 0 auto; max-width: 17em; font: 400 clamp(1.875rem, 4.4vw, 3.5rem)/1.18 var(--scripture); letter-spacing: -.012em; text-wrap: balance; }
+.lamp figcaption { font: 600 0.8125rem var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--gold-text); }
+
+/* Paper with a grain, so the page reads as a material, not a flat colour:
+   mid-grey fibres, faint enough to darken a light paper and lighten a dark. */
+:root { --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+body { background: var(--grain) 0 0 / 180px, var(--paper); }
+
+/* Lamplight behind the hero, as if a reading lamp stood above the page. */
+.hero { position: relative; }
+.hero::before { content: ""; position: absolute; z-index: -1; pointer-events: none; top: -180px; inset-inline: 0; height: 720px;
+  background: radial-gradient(ellipse 42% 56% at 58% 40%, color-mix(in srgb, var(--gold) 13%, transparent), transparent); }
+
+/* What stays yours: three vows, each laid on the one before as you read. */
+@media (min-height: 600px) {
+  .claims { grid-template-columns: minmax(0, 1fr); gap: 16vh; counter-reset: vow; }
+  .claims > div { position: sticky; top: calc(12vh + var(--k) * 18px); counter-increment: vow; display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: 4px 18px;
+    min-height: 11rem; align-content: center; padding: 30px 36px; border: 1px solid var(--rule); border-radius: 20px;
+    background: var(--grain) 0 0 / 180px, var(--paper); box-shadow: 0 -12px 32px -20px rgb(var(--shade) / .35); }
+  .claims > div::before { content: counter(vow); grid-row: span 2; font: 500 2rem/1.1 var(--scripture); color: var(--gold); }
+  .claims > div:nth-child(1) { --k: 0; } .claims > div:nth-child(2) { --k: 1; } .claims > div:nth-child(3) { --k: 2; }
+  /* A sticky card cannot pass the end of .claims: the spacer lets the whole
+     pile hold before it goes, and each card's foot margin keeps the pile's
+     steps as it leaves, rather than closing them up. */
+  .claims > div { margin-bottom: calc((2 - var(--k)) * 18px); }
+  .claims::after { content: ""; height: 14vh; }
+  .claims h3 { font-size: clamp(1.625rem, 2.6vw, 2.125rem); }
+}
+
+/* Reveals: a band or row rises 8px and comes into focus once, when it is
+   first seen. Only with script (site.js adds .reveals). */
+.reveals .rv { opacity: 0; transform: translateY(var(--rise)); filter: blur(4px); }
+.reveals .rv.in { opacity: 1; transform: none; filter: none;
+  transition: opacity var(--d-rise) var(--ease-out) var(--d, 0ms), transform var(--d-rise) var(--ease-out) var(--d, 0ms), filter var(--d-rise) var(--ease-out) var(--d, 0ms); }
+@media (prefers-reduced-motion: reduce) { .reveals .rv { filter: none; } }
+@media print { .reveals .rv { opacity: 1; transform: none; filter: none; } .nightfall, .shade { display: none; }
+  .leaves .leaf { position: static; opacity: 1 !important; } .sheet { box-shadow: none; } }
 
 /* ── install ── */
 .install { max-width: 790px; padding: 64px 0 24px; display: grid; gap: 26px; }
@@ -578,8 +654,16 @@ button, a, .w, .vn, [role="tab"] { touch-action: manipulation; }
   .ft .ft-swipe { display: block; font: 600 0.75rem var(--sans); color: var(--ink-3); }
 
   /* One translation at a time, the panel right under it. */
-  .win .pane-pick { display: flex; flex-wrap: nowrap; margin: 10px 14px 0; }
-  .pane-pick button { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* justify-self: start (from .seg) now shrinks a block to its content in
+     Chrome, which made this one wider than the window: stretch it. Like the
+     demos' choices below, two columns; a long name takes a second line. */
+  .win .pane-pick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 10px 14px 0; justify-self: stretch; border-radius: 16px; }
+  /* A demo's choices as a tidy grid of two, never a pill wrapped round a
+     lone last choice. */
+  .demo .seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); justify-self: stretch; border-radius: 16px; }
+  .demo .seg button { border-radius: 12px; padding-inline: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rd-head .seg { flex: 1 1 100%; }
+  .pane-pick button { min-width: 0; padding-inline: 8px; border-radius: 12px; line-height: 1.25; text-wrap: balance; }
   .win.one .pane + .pane { display: none; }
   .win.one.right .pane:first-child { display: none; }
   .win.one.right .pane + .pane { display: block; border-top: 0; }
