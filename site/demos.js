@@ -100,12 +100,12 @@
   (() => {
     // The app's Read the difference is the English Bibles of the Family, in
     // every language: so is this, with its controls in the page's language.
-    const R = D.diff, box = el('div', 'demo rd');
-    let verse = 0, marking = false;
+    const R = D.diff, box = el('div', 'demo rd marking');
+    let verse = 0, marking = true;
     const head = el('div', 'rd-head');
     const refs = segmented(R.refs.map(refName), i => { verse = i; fill(); });
     const mark = el('button', 'rd-mark', MARK);
-    mark.type = 'button'; mark.setAttribute('aria-pressed', 'false');
+    mark.type = 'button'; mark.setAttribute('aria-pressed', 'true');
     mark.addEventListener('click', () => { marking = !marking; mark.setAttribute('aria-pressed', String(marking)); box.classList.toggle('marking', marking); });
     head.append(refs, mark);
     // The Line: word for word at the left, free at the right. Open Bibles are
