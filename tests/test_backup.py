@@ -176,6 +176,18 @@ def test_validate_rejects_damaged_plan_inner_shapes(isolated):
             backup.validate(doc)
 
 
+@pytest.mark.parametrize('day', [[], [1], {}, '2', None, True, False, 1.5, -1])
+def test_validate_rejects_malformed_completed_days(isolated, day):
+    _populate()
+    before = json.loads(json.dumps(backup.collect()))
+    doc = json.loads(json.dumps(before))
+    doc['reading_plans']['completed']['canonical'] = [0, day]
+    with pytest.raises(ValueError, match='file is damaged'):
+        backup.restore(backup.validate(doc))
+    assert backup.collect() == before
+    assert reading_plans.get_completed('canonical') == {0, 1}
+
+
 # ── Version 2: the journal joined the bundle ────────────────────────────────
 
 def test_a_v1_file_restores_with_an_empty_journal(isolated):

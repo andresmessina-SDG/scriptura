@@ -192,6 +192,30 @@ msgid "Commentary"
 msgstr "Comentario"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
+msgid "Crash fixes and more reliable reading plans and searches."
+msgstr "Correcciones de cierres inesperados y mejoras en los planes de lectura y las búsquedas."
+
+msgid "Moving the pointer below a paragraph with hidden text or widgets no longer closes the app."
+msgstr "Mover el puntero debajo de un párrafo con texto o elementos ocultos ya no cierra la aplicación."
+
+msgid "Write about today attaches the readings shown on Today, even after a plan's schedule has lapsed."
+msgstr "Escribir sobre hoy adjunta las lecturas que aparecen en Hoy, incluso cuando ha vencido el calendario del plan."
+
+msgid "Simultaneous searches safely share the same search index while it is being built."
+msgstr "Las búsquedas simultáneas comparten el mismo índice de búsqueda sin conflictos mientras se construye."
+
+msgid "Original-language searches respect wildcard exclusions such as -lov*."
+msgstr "Las búsquedas en los idiomas originales respetan las exclusiones con comodines, como -lov*."
+
+msgid "Match case checks whole words and phrases, including prefix searches."
+msgstr "Distinguir mayúsculas comprueba palabras y frases completas, incluidas las búsquedas por prefijo."
+
+msgid "Restore rejects damaged reading-plan progress before it can break the plan view."
+msgstr "La restauración rechaza los datos de progreso dañados antes de que puedan causar errores en la vista del plan."
+
+msgid "UnifrakturMaguntia, a blackletter font for Latin script, is available in Appearance."
+msgstr "UnifrakturMaguntia, una fuente gótica para el alfabeto latino, está disponible en Apariencia."
+
 msgid "The Creeds, and Scripture in Stone in its sources' words."
 msgstr "Los Credos, y La Escritura en piedra con las palabras de sus fuentes."
 
