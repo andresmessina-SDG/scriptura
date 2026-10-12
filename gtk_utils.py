@@ -163,14 +163,17 @@ def iter_at_location(view: Gtk.TextView, x: int,
     nxt = line.copy()
     nxt.forward_line()
     buf = view.get_buffer()
-    if buf.get_text(line, nxt, True) == buf.get_text(line, nxt, False):
+    # get_text omits embedded widgets/images even when include_hidden_chars
+    # is True. GTK counts their replacement characters in the byte offset,
+    # so a hidden child anchor needs the same guard as a hidden footnote.
+    if buf.get_slice(line, nxt, True) == buf.get_slice(line, nxt, False):
         return _gtk_iter_at_location(view, x, y)
     end = line.copy()
     if not end.ends_line():
         end.forward_to_line_end()
     last = nxt.copy()
     while last.backward_char() and last.compare(line) >= 0:
-        if buf.get_text(last, nxt, False):
+        if buf.get_slice(last, nxt, False):
             break                       # the line's last visible character
     else:
         return False, end               # nothing on the line is visible

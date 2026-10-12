@@ -6,6 +6,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+## [1.8.4] — 2026-10-12
+
 ### Added
 
 - **UnifrakturMaguntia**, a blackletter face, ships with the app and can be
@@ -14,7 +16,17 @@ semver-ish — 0.x was the pre-Flathub testing track.
 ### Fixed
 
 - The app no longer closes when the pointer rests in the space below a
-  paragraph that hides a footnote marker or a heading.
+  paragraph that hides a footnote marker, a heading, or an embedded widget.
+- **Write about today** attaches the readings shown on Today when a plan's
+  schedule has lapsed, using the first unread day instead of the last day.
+- Concurrent searches share one index builder, including during a module-cache
+  reset, so they cannot collide while creating the same temporary database.
+- Original-language searches preserve wildcard exclusions such as
+  `strong:G26 -lov*`.
+- **Match case** checks whole words and adjacent phrases, preserving prefix
+  matching, instead of accepting a matching substring inside another word.
+- Backup validation rejects malformed completed-day values before restoring
+  reading-plan progress.
 
 ## [1.8.3] — 2026-09-30
 

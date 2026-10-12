@@ -102,7 +102,7 @@ def _cache_strong(strong_num, value):
         _strongs_cache.popitem(last=False)
 
 _indexing_threads = {} # To keep track of indexing processes per module
-# Separate lock for _indexing_threads dict ops only — never held during join().
+# Separate lock for registering/starting indexers — never held during join().
 # Keeping it distinct from _lock avoids deadlocks (indexer threads acquire _lock
 # inside load_chapter; if we held _lock here, the indexer couldn't make progress).
 _indexing_lock = threading.Lock()
@@ -300,7 +300,11 @@ def _reset():
         _line_maps.clear()
         _module_dc.clear()
     with _indexing_lock:
-        _indexing_threads.clear()
+        # Resetting module caches must not forget builders still using their
+        # temporary databases, or a new search could start a second writer.
+        for name, thread in list(_indexing_threads.items()):
+            if not thread.is_alive():
+                _indexing_threads.pop(name, None)
 
 
 
@@ -3250,31 +3254,34 @@ def search_module(module_name, query, on_indexing_start=None,
     idx_path = _get_index_path(module_name)
 
     if not _index_is_valid(idx_path, module_name):
-        # Atomic check-and-spawn: two concurrent searches must not both build
-        # the same index. Hold _indexing_lock only for the dict op, never
-        # during the long-running join below.
-        started_here = False
+        # Publish only a started thread. Otherwise another search can see
+        # is_alive() == False and launch a second writer on the same .tmp.
+        def build():
+            if on_indexing_start:
+                on_indexing_start()
+            _build_module_index(module_name, on_progress=on_indexing_progress)
+
+        thread = None
         with _indexing_lock:
             existing = _indexing_threads.get(module_name)
-            if existing is None or not existing.is_alive():
+            if existing is not None and existing.is_alive():
+                thread = existing
+            elif not _index_is_valid(idx_path, module_name):
+                # A builder may have finished since the check above.
                 thread = threading.Thread(
-                    target=_build_module_index,
-                    args=(module_name,),
-                    kwargs={'on_progress': on_indexing_progress},
+                    target=build,
                     daemon=True
                 )
                 _indexing_threads[module_name] = thread
-                started_here = True
-            else:
-                thread = existing
-
-        if started_here:
-            if on_indexing_start:
-                on_indexing_start()
-            thread.start()
+                try:
+                    thread.start()
+                except Exception:
+                    _indexing_threads.pop(module_name, None)
+                    raise
 
         # Wait for the indexing thread to complete — lock released during join.
-        thread.join()
+        if thread is not None:
+            thread.join()
 
         with _indexing_lock:
             # Only remove if it's still our thread (a later search may have

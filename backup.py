@@ -83,6 +83,7 @@ def validate(payload: Any) -> dict[str, Any]:
     if (not isinstance(plans.get('start_dates', {}), dict)
             or not isinstance(plans.get('completed', {}), dict)
             or not all(isinstance(days, list)
+                       and all(type(day) is int and day >= 0 for day in days)
                        for days in plans.get('completed', {}).values())):
         raise ValueError('file is damaged')
     return payload

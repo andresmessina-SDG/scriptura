@@ -3288,8 +3288,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         if plan_id and start_date:
             days = reading_plans.get_plan_days(plan_id)
             if days:
-                idx = max(0, min(reading_plans.today_index(start_date),
-                                 len(days) - 1))
+                idx, _finished = reading_plans.plan_anchor(
+                    plan_id, start_date, len(days))
                 anchors = [{'book': book, 'chapter': chapter, 'verses': []}
                            for book, chapter in days[idx]]
                 plan = {'id': plan_id, 'day': idx}

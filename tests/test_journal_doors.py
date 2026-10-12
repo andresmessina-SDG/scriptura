@@ -135,15 +135,31 @@ def test_a_plan_days_readings_become_whole_chapter_anchors(isolated):
     assert all(a['verses'] == [] for a in journal.get('j1')['anchors'])
 
 
-def test_today_index_stays_inside_the_plan(isolated):
-    """A reader who started a one-year plan two years ago still gets a day
-    that exists — the door clamps rather than indexing off the end."""
-    reading_plans.set_start_date('bible_1_year', '2020-01-01')
-    days = reading_plans.get_plan_days('bible_1_year')
-    raw = reading_plans.today_index('2020-01-01')
-    assert raw >= len(days)
-    clamped = max(0, min(raw, len(days) - 1))
-    assert 0 <= clamped < len(days)
+@pytest.mark.parametrize('elapsed,completed,expected', [
+    (40, [0, 1], 2),       # lapsed: resume at day three
+    (40, list(range(30)), 29),  # finished: last day
+    (4, [0, 1], 4),        # within the schedule: calendar day
+    (-2, [], 0),           # future start: first day
+])
+def test_write_about_today_uses_the_displayed_plan_day(
+        isolated, monkeypatch, elapsed, completed, expected):
+    from types import SimpleNamespace
+    import settings
+    import window
+
+    days = [[('John', i + 1)] for i in range(30)]
+    monkeypatch.setattr(reading_plans, 'get_plan_days', lambda plan: days)
+    monkeypatch.setattr(settings, 'get', lambda key: None)
+    start = datetime.date.today() - datetime.timedelta(days=elapsed)
+    reading_plans.set_start_date('test_plan', start.isoformat())
+    for day in completed:
+        reading_plans.set_day_done('test_plan', day, True)
+    entries = []
+    door = SimpleNamespace(_open_annotations=entries.append)
+    window.BibleWindow._write_about_today(door)
+    assert entries[0]['plan'] == {'id': 'test_plan', 'day': expected}
+    assert entries[0]['anchors'] == [
+        {'book': 'John', 'chapter': expected + 1, 'verses': []}]
 
 
 # ── The keyboard ─────────────────────────────────────────────────────────────
