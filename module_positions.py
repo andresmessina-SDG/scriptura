@@ -43,6 +43,7 @@ _load_failed: bool = False
 _SAVE_DEBOUNCE_S: float = 0.5
 _save_timer: threading.Timer | None = None
 _save_timer_lock = threading.Lock()
+_write_lock = threading.Lock()
 
 
 def _load() -> None:
@@ -85,9 +86,13 @@ def _write_snapshot(snapshot: dict[str, dict[str, Any]]) -> None:
 def _save_now() -> None:
     """Synchronous save. Snapshots state under the lock, then writes
     outside the lock so disk I/O can't block other callers."""
-    with _lock:
-        snapshot = dict(_state)
-    _write_snapshot(snapshot)
+    # A timer may already be writing when flush() cancels it. Take the
+    # snapshot under the write lock too, so the final save cannot be
+    # followed by an older snapshot, and the writers never share a .tmp.
+    with _write_lock:
+        with _lock:
+            snapshot = dict(_state)
+        _write_snapshot(snapshot)
 
 
 def _on_debounce_fire() -> None:
