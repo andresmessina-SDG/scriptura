@@ -474,8 +474,8 @@ def _chapter_rows(module_name, book, chapter, rows_for):
     merge or split redraws are picked line by line from sword_bridge's table,
     for the reason given there."""
     m_book, m_chapter = _module_ref(module_name, book, chapter)
-    if m_book == book and m_chapter == chapter:
-        return rows_for(book, chapter)
+    # Even 9 → 9 needs its line table: the module's Psalm 9 also holds
+    # app Psalm 10. An unchanged chapter number does not mean identical text.
     import sword_bridge
     lines = sword_bridge.chapter_lines(module_name, book, chapter)
     if lines is None:
@@ -662,36 +662,38 @@ def download_translation_sync(tid, entry, on_status=None):
     license_  = (entry.get('licenseType') or '').strip()
     src_date  = source_date(entry)
 
-    conn.execute('DELETE FROM verses      WHERE translation=?', (tid,))
-    conn.execute('DELETE FROM notes       WHERE translation=?', (tid,))
-    conn.execute('DELETE FROM translations WHERE id=?',         (tid,))
-    conn.executemany(
-        'INSERT OR REPLACE INTO verses '
-        '(translation, book, chapter, verse, text, markup) '
-        'VALUES (?,?,?,?,?,?)', _verse_rows(tid, verses))
-    conn.executemany(
-        'INSERT OR REPLACE INTO notes VALUES (?,?,?,?,?,?,?)',
-        [(tid, b, c, v, n, t, body)
-         for (b, c, v), lst in notes.items() if b
-         for n, t, body in lst])
-    # Named columns, not positional: the stamps were added after this table
-    # shipped, and a bare VALUES (?,?,?,?,?,?) silently breaks on the next one.
-    conn.execute(
-        'INSERT OR REPLACE INTO translations '
-        '(id, title, language, lang_code, copyright, license, '
-        ' source_date, import_version) VALUES (?,?,?,?,?,?,?,?)',
-        (tid, title, language, lang_code, copyright_, license_,
-         src_date, IMPORT_VERSION))
-    conn.commit()
+    # The download lane reuses this connection. Roll back on any failure,
+    # or its next successful job would commit this partial replacement too.
+    with conn:
+        conn.execute('DELETE FROM verses      WHERE translation=?', (tid,))
+        conn.execute('DELETE FROM notes       WHERE translation=?', (tid,))
+        conn.execute('DELETE FROM translations WHERE id=?',         (tid,))
+        conn.executemany(
+            'INSERT OR REPLACE INTO verses '
+            '(translation, book, chapter, verse, text, markup) '
+            'VALUES (?,?,?,?,?,?)', _verse_rows(tid, verses))
+        conn.executemany(
+            'INSERT OR REPLACE INTO notes VALUES (?,?,?,?,?,?,?)',
+            [(tid, b, c, v, n, t, body)
+             for (b, c, v), lst in notes.items() if b
+             for n, t, body in lst])
+        # Named columns, not positional: the stamps were added after this table
+        # shipped, and a bare VALUES (?,?,?,?,?,?) silently breaks on the next one.
+        conn.execute(
+            'INSERT OR REPLACE INTO translations '
+            '(id, title, language, lang_code, copyright, license, '
+            ' source_date, import_version) VALUES (?,?,?,?,?,?,?,?)',
+            (tid, title, language, lang_code, copyright_, license_,
+             src_date, IMPORT_VERSION))
     _forget_v11n(tid)
 
 def remove_translation(tid):
-    _forget_v11n(tid)
     conn = _db()
-    conn.execute('DELETE FROM verses      WHERE translation=?', (tid,))
-    conn.execute('DELETE FROM notes       WHERE translation=?', (tid,))
-    conn.execute('DELETE FROM translations WHERE id=?',         (tid,))
-    conn.commit()
+    with conn:
+        conn.execute('DELETE FROM verses      WHERE translation=?', (tid,))
+        conn.execute('DELETE FROM notes       WHERE translation=?', (tid,))
+        conn.execute('DELETE FROM translations WHERE id=?',         (tid,))
+    _forget_v11n(tid)
 
 
 def remove_module(module_name):

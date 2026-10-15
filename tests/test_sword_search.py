@@ -100,6 +100,24 @@ def test_case_sensitive_does_not_accept_a_substring(fts_module, monkeypatch):
         ('Genesis', 1, 2)]
 
 
+@pytest.mark.parametrize('n_matches', [1, 3, 4])
+def test_case_sensitive_cap_counts_only_matches_in_requested_case(
+        fts_module, monkeypatch, n_matches):
+    monkeypatch.setattr(sb, 'MAX_SEARCH_RESULTS', 3)
+    monkeypatch.setitem(_VERSES, ('Genesis', 1),
+                        [(v, 'the') for v in range(1, 6)])
+    monkeypatch.setitem(_VERSES, ('John', 3),
+                        [(v, 'The') for v in range(1, n_matches + 1)])
+    expected = [('John', 3, v, 'The')
+                for v in range(1, min(n_matches, 3) + 1)]
+    if n_matches > 3:
+        expected.append(('', 0, 0, ''))
+    assert sb.search_module(fts_module, 'The', case_sensitive=True) == expected
+    # Ordinary searches still stop at the cap and report truncation.
+    assert sb.search_module(fts_module, 'The') == [
+        ('Genesis', 1, v, 'the') for v in range(1, 4)] + [('', 0, 0, '')]
+
+
 def test_empty_query(fts_module):
     assert sb.search_module(fts_module, '') == []
     assert sb.search_module(fts_module, '   ') == []

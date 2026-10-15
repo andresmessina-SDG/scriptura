@@ -6,6 +6,16 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+### Added
+
+- **Merriweather** is bundled and available in Appearance ▸ Font, including
+  its italic and variable weights.
+
+### Fixed
+
+- **UnifrakturMaguntia** now appears in Appearance ▸ Font after an update.
+  A font cache saved by the previous release hid it.
+
 ## [1.8.4] — 2026-10-12
 
 ### Added

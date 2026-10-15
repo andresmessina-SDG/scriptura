@@ -3297,14 +3297,22 @@ def search_module(module_name, query, on_indexing_start=None,
 
     # Perform search. chapter/verse are stored as FTS5 text columns, so CAST
     # them back to int — the navigation chain (chapter_count/clamp) does
-    # integer comparisons. Fetch one past the cap to detect truncation.
+    # integer comparisons. Count only matches in the requested case toward
+    # the cap: unicode61's case-insensitive matches can crowd those out.
     try:
         conn = sqlite3.connect(idx_path)
         try:
-            rows = conn.execute(
+            cursor = conn.execute(
                 'SELECT book, CAST(chapter AS INTEGER), CAST(verse AS INTEGER), '
-                'content FROM verses WHERE verses MATCH ? ORDER BY rowid '
-                'LIMIT ?', (match, MAX_SEARCH_RESULTS + 1)).fetchall()
+                'content FROM verses WHERE verses MATCH ? ORDER BY rowid',
+                (match,))
+            rows = []
+            for row in cursor:
+                if case_sensitive and not search_query.case_matches(query, row[3]):
+                    continue
+                rows.append(row)
+                if len(rows) > MAX_SEARCH_RESULTS:
+                    break
         finally:
             conn.close()
     except Exception:
@@ -3313,12 +3321,6 @@ def search_module(module_name, query, on_indexing_start=None,
 
     truncated = len(rows) > MAX_SEARCH_RESULTS
     formatted = [(b, c, v, content) for (b, c, v, content) in rows[:MAX_SEARCH_RESULTS]]
-    # FTS5 (unicode61) folds case at index time, so MATCH is case-insensitive.
-    # For a case-sensitive match we post-filter the stored verbatim content
-    # for the original-case terms (shared with the eBible backend).
-    if case_sensitive:
-        formatted = [r for r in formatted
-                     if search_query.case_matches(query, r[3])]
     if truncated:
         # Sentinel row the panel detects and replaces with its own translated
         # message, so this backend stays English-free.
