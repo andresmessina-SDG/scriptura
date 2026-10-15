@@ -115,12 +115,26 @@ install_subdir('creeds', install_dir: pkgdatadir / 'data')
 # in Appearance ▸ Font. One weight, no italic, Latin only — Cyrillic and Greek
 # fall back to another face. Its name is a Reserved Font Name too, so the file
 # ships unmodified and its licence travels with it.
+# Merriweather is another Appearance choice, with variable upright and italic
+# faces. Keep upstream files unmodified: Merriweather is a Reserved Font Name.
+# A few accented capitals exceed its declared ascent (up to 5% em); as with
+# UnifrakturMaguntia above, retain the original metrics and ship the OFL.
+#
+# The directory carries the version. Flatpak stamps every directory with
+# mtime 0, and fontconfig trusts a cached scan while the mtime matches, so
+# after an update the per-app cache from the last release hid any face added
+# since: 1.8.4's UnifrakturMaguntia was missing from the Font list on every
+# machine that had run 1.8.3. Fontconfig names a cache after its directory's
+# path, so a new path per release forces a fresh scan.
 install_data(
   'fonts/AdwaitaSans-Regular.ttf',
   'fonts/AdwaitaSans-Italic.ttf',
   'fonts/AdwaitaSans-OFL.txt',
   'fonts/Newsreader[opsz,wght].ttf',
   'fonts/Newsreader-Italic[opsz,wght].ttf',
+  'fonts/Merriweather[opsz,wdth,wght].ttf',
+  'fonts/Merriweather-Italic[opsz,wdth,wght].ttf',
+  'fonts/Merriweather-OFL.txt',
   'fonts/EBGaramond[wght].ttf',
   'fonts/EBGaramond-Italic[wght].ttf',
   'fonts/Roboto[wdth,wght].ttf',
@@ -133,7 +147,7 @@ install_data(
   'fonts/OpenDyslexic-OFL.txt',
   'fonts/UnifrakturMaguntia-Book.ttf',
   'fonts/UnifrakturMaguntia-OFL.txt',
-  install_dir: datadir / 'fonts' / 'scriptura',
+  install_dir: datadir / 'fonts' / 'scriptura-' + meson.project_version(),
 )
 
 desktop_validate = find_program('desktop-file-validate', required: false)
