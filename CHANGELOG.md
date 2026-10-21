@@ -11,10 +11,27 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - **Merriweather** is bundled and available in Appearance ▸ Font, including
   its italic and variable weights.
 
+### Changed
+
+- Parallel presentation shows the Bible abbreviations at the outer corners,
+  with the displayed verse reference centered above a divider between the texts.
+
 ### Fixed
 
+- Presentation aligns equivalent verses across different Bible numbering
+  systems, keeps numbered psalm titles and combined verses, and makes
+  Ctrl+L reach the requested text. Each translation keeps its own printed
+  verse numbers and references, including across split psalms.
 - **UnifrakturMaguntia** now appears in Appearance ▸ Font after an update.
   A font cache saved by the previous release hid it.
+- A settings or reading-position save still in progress at quit can no longer
+  overwrite the final save.
+- A failed eBible download or removal leaves the translation as it was,
+  instead of half-replaced text that the next download would keep.
+- Psalm 9 in an eBible translation numbered like the Synodal or the Vulgate
+  no longer runs on into Psalm 10, in its text or its footnotes.
+- **Match case** searches count only matches in the chosen case toward the
+  result limit, so matches in other cases cannot push them out.
 
 ## [1.8.4] — 2026-10-12
 

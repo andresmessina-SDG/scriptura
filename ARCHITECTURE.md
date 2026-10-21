@@ -580,6 +580,18 @@ code or window.py pane sizing.
   printed numbering (Vulgate title-verses shift by one). FTS index rows
   store app-space chapter numbers (`_FTS_INDEX_VERSION` 2).
 
+Presentation aligns the two chapter streams in app space (`present_align.project`
+and `coalesce`), while retaining every original line and its
+`sword_bridge.rendered_verse_ref` for printed numbers and captions. Numbered
+prefaces stay separate; a module line covering several app verses groups those
+verses on both sides. Forward mappings fill gaps in reverse tables, but do not
+override an existing reverse-mapped verse. Ctrl+L supplies `focus_app_verse`;
+initial F5 supplies the source pane's rendered key through `focus_verse`.
+Both enter the same projected rows; no source pane or persisted reference moves.
+The known RusSynodal Psalm 114:8/9 data/table disagreement is handled only when
+the module's 9 slot is empty: its 8 line contains both KJV 116:8 and 9. It does
+not infer combined verses from arbitrary missing text in other translations.
+
 ## Historical Commentaries (catena)
 
 A fourth pane mode (`_is_catena` in pane.py, alongside `_is_devotional`

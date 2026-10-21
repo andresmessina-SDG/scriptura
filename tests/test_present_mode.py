@@ -3,11 +3,25 @@ cross-chapter stepping (no GTK — fake panes + a stubbed chapter count)."""
 import os
 import sys
 import types
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import present_mode
 import sword_bridge
+
+
+@pytest.mark.parametrize('module, expected', [
+    ('KJVA', 'KJVA'),
+    ('BSB', 'BSB'),
+    ('RusSynodal', 'RusSynodal'),
+    ('eBible: engbsb', 'BSB'),
+    ('eBible: eng-asv', 'ASV'),
+    ('eBible: unknown-edition', 'unknown-edition'),
+])
+def test_presentation_uses_known_abbreviations_without_inventing_initials(
+        module, expected):
+    assert present_mode._module_abbreviation(module) == expected
 
 
 class _Pane:

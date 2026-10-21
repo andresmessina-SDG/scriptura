@@ -525,6 +525,15 @@ def test_a_split_psalm_goes_on_into_the_next_chapter(v11n_mods):
         == {10: 115}
 
 
+def test_rendered_reference_includes_the_split_chapter_seam(v11n_mods):
+    assert sword_bridge.rendered_verse_ref('FakeVulg', 'Psalms', 116, 10) == (
+        'Psalms', 115, 1)
+    assert sword_bridge.rendered_verse_ref('FakeVulg', 'Psalms', 23, 4) == (
+        'Psalms', 22, 4)
+    assert sword_bridge.rendered_verse_ref('FakeKJV', 'John', 3, 16) == (
+        'John', 3, 16)
+
+
 def test_every_verse_of_a_redrawn_psalm_is_on_its_page(v11n_mods):
     """Each KJV verse targets a line the page renders, and that line
     reports the same verse back — the round trip the panes, the marks and

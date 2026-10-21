@@ -696,6 +696,15 @@ def printed_verse(module_name, book, chapter, key):
     return ref[2] if ref is not None else key
 
 
+def rendered_verse_ref(module_name, book, chapter, key):
+    """A rendered line's key → its full reference in the module's numbering.
+
+    Split chapters can continue their internal keys across a chapter seam;
+    captions and presentation must print the actual chapter and verse there.
+    """
+    return _line_ref(module_name, book, chapter, key) or (book, chapter, key)
+
+
 def module_chapter_breaks(module_name, book, chapter):
     """{key: module chapter} for each line where a second module chapter
     begins mid-page — the pane marks the seam there."""
