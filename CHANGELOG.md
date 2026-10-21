@@ -25,7 +25,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
   Ctrl+L reach the requested text. Each translation keeps its own printed
   verse numbers and references, including across split psalms.
 - **UnifrakturMaguntia** now appears in Appearance ▸ Font after an update.
-  A font cache saved by the previous release hid it.
+  A font cache saved by the previous release hid it. The corrected 1.8.5 build
+  loads bundled font files directly at startup, bypassing cached font folders.
 - A settings or reading-position save still in progress at quit can no longer
   overwrite the final save.
 - A failed eBible download or removal leaves the translation as it was,

@@ -124,8 +124,9 @@ install_subdir('creeds', install_dir: pkgdatadir / 'data')
 # mtime 0, and fontconfig trusts a cached scan while the mtime matches, so
 # after an update the per-app cache from the last release hid any face added
 # since: 1.8.4's UnifrakturMaguntia was missing from the Font list on every
-# machine that had run 1.8.3. Fontconfig names a cache after its directory's
-# path, so a new path per release forces a fresh scan.
+# machine that had run 1.8.3. The parent cache can still retain the old
+# subdirectory list, so main._register_bundled_fonts also loads these files
+# directly into Pango before the window and font picker are built.
 install_data(
   'fonts/AdwaitaSans-Regular.ttf',
   'fonts/AdwaitaSans-Italic.ttf',
