@@ -190,6 +190,45 @@ msgid "Commentary"
 msgstr "Комментарий"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
+msgid "Clearer parallel presentation, new reading fonts, and more reliable saves and downloads."
+msgstr "Более наглядная параллельная презентация, новые шрифты для чтения и более надёжное сохранение и скачивание."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:158
+msgid "Parallel presentation places Bible abbreviations at the outer corners and centers verse references above a divider."
+msgstr "В параллельной презентации сокращённые названия переводов расположены во внешних углах, а ссылки на стихи по центру над разделителем."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
+msgid "Presentation keeps equivalent verses together across Bible numbering systems, including when jumping with Ctrl+L."
+msgstr "В презентации соответствующие стихи остаются рядом при разной нумерации в переводах, в том числе при переходе с помощью Ctrl+L."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:160
+msgid "Numbered psalm titles, combined verses and split psalms keep their printed references in presentation."
+msgstr "Нумерованные надписания псалмов, объединённые стихи и разделённые псалмы сохраняют в презентации ссылки по нумерации своего перевода."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:161
+msgid "Merriweather is available in Appearance, with italic and variable weights."
+msgstr "В настройках оформления доступен шрифт Merriweather с курсивом и переменной насыщенностью."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
+msgid "UnifrakturMaguntia appears in the font list after updating from an earlier release."
+msgstr "UnifrakturMaguntia появляется в списке шрифтов после обновления с предыдущих версий."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:163
+msgid "Closing the app reliably saves the final settings and reading position."
+msgstr "При закрытии приложения надёжно сохраняются последние настройки и место чтения."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
+msgid "A failed eBible download or removal leaves the translation as it was."
+msgstr "При неудачном скачивании или удалении перевода eBible его прежнее состояние сохраняется."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
+msgid "Psalm 9 in eBible translations numbered like the Synodal or Vulgate no longer includes Psalm 10."
+msgstr "Псалом 9 в переводах eBible с синодальной нумерацией или нумерацией Вульгаты больше не включает псалом 10."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
+msgid "Match case searches keep results in the chosen case from being crowded out by other matches."
+msgstr "При поиске с учётом регистра другие совпадения больше не вытесняют результаты с нужным регистром."
+
 msgid "Crash fixes and more reliable reading plans and searches."
 msgstr "Исправления сбоев и более надёжная работа планов чтения и поиска."
 
