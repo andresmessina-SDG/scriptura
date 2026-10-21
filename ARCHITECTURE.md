@@ -21,6 +21,12 @@ a clean GNOME look and feel and an emphasis on quiet, distraction-free reading.
   Lexicon (CC-BY). Downloaded on demand via Module Manager.
 - **Text rendering:** Native `Gtk.TextView` + Pango markup (WebKitGTK was tried
   and reverted — do not suggest switching back)
+- **Bundled fonts:** `main._register_bundled_fonts` loads each shipped TTF/OTF
+  into the default Pango font map before creating the application. Both
+  rendering and Appearance see these fonts without depending on Fontconfig's
+  directory caches, which can retain old parent-folder listings after a
+  Flatpak update. Installed files live in `share/fonts/scriptura-<version>`;
+  source runs use `data/fonts`.
 - **Search:** SQLite FTS5 full-text indexing (per-module, lazy-built;
   shared query grammar across the SWORD and eBible backends — see
   `search_query.py`)
