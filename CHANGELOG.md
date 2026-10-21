@@ -6,6 +6,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+## [1.8.5] — 2026-10-21
+
 ### Added
 
 - **Merriweather** is bundled and available in Appearance ▸ Font, including

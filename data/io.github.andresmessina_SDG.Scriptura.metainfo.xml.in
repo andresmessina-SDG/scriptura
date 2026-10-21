@@ -151,6 +151,22 @@
          notice most, in plain words and short sentences, with no em-dashes.
          The full record belongs in CHANGELOG.md, not here.
          tests/test_version_sync.py holds every release to this. -->
+    <release version="1.8.5" date="2026-10-21">
+      <description>
+        <p>Clearer parallel presentation, new reading fonts, and more reliable saves and downloads.</p>
+        <ul>
+          <li>Parallel presentation places Bible abbreviations at the outer corners and centers verse references above a divider.</li>
+          <li>Presentation keeps equivalent verses together across Bible numbering systems, including when jumping with Ctrl+L.</li>
+          <li>Numbered psalm titles, combined verses and split psalms keep their printed references in presentation.</li>
+          <li>Merriweather is available in Appearance, with italic and variable weights.</li>
+          <li>UnifrakturMaguntia appears in the font list after updating from an earlier release.</li>
+          <li>Closing the app reliably saves the final settings and reading position.</li>
+          <li>A failed eBible download or removal leaves the translation as it was.</li>
+          <li>Psalm 9 in eBible translations numbered like the Synodal or Vulgate no longer includes Psalm 10.</li>
+          <li>Match case searches keep results in the chosen case from being crowded out by other matches.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.8.4" date="2026-10-12">
       <description>
         <p>Crash fixes and more reliable reading plans and searches.</p>
