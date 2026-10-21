@@ -1209,15 +1209,27 @@ button.menu-theme-toggle {
 .present-text {
     line-height: 1.02;   /* ~1.37em on the reading serif, live from the pane */
 }
-/* Parallel (bilingual) mode: the dimmed verse-number "spine" between the two
-   language columns. Quiet enough not to compete, tabular so it reads as a
-   marker not a word. (Grid gutters are set in code, not CSS.) */
-.present-spine {
-    font-size: 60%;
-    opacity: 0.42;
+/* Parallel presentation: the versions name the outer edges; the reference
+   sits on the centre axis above the continuous divider. */
+.present-parallel-header {
+    padding-bottom: 24px;
+}
+.present-version {
+    font-family: 'Adwaita Sans', sans-serif;
+    font-size: 12pt;
+    font-weight: 600;
     letter-spacing: 1px;
-    font-feature-settings: "tnum" 1;
-    margin-top: 0.35em;
+    opacity: 0.65;
+}
+.present-reference {
+    font-family: 'Adwaita Sans', sans-serif;
+    font-size: 18pt;
+    font-weight: 500;
+}
+.present-divider {
+    min-width: 1px;
+    background-color: currentColor;
+    opacity: 0.25;
 }
 /* Floating control strip: .osd + .toolbar carry the media-overlay pill; add a
    little breathing room and keep the separators quiet. */
