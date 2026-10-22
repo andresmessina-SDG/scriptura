@@ -95,6 +95,10 @@ EXPECTED_GESTURE_SITES = {
     # fourth passes a wheel over the Bible strip on to the lines, so the
     # page scrolls wherever the pointer is: nothing to discover.
     'creeds_view.py': 4,
+    # The harmony: a key controller for Up and Down, which walk the
+    # sections, and Esc, which goes back to the opening. The keys cannot be
+    # seen, so the opening names them in its last line, as The Creeds does.
+    'harmony_view.py': 2,
     # The genealogy charts take a click and a motion controller each. Both
     # are VISIBLE affordances — the cursor becomes a pointer and a tooltip
     # names the target — so they teach themselves and need no Tips row, which

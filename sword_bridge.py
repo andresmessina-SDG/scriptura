@@ -1250,6 +1250,9 @@ def display_name(name):
     import creeds
     if creeds.is_creeds_module(name):
         return creeds.display_name(name)
+    import harmony
+    if harmony.is_harmony_module(name):
+        return harmony.display_name(name)
     return native_name(name) or DISPLAY_NAMES.get(name, name)
 
 

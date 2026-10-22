@@ -3187,3 +3187,106 @@ button.creeds-book-line-btn {
     font-weight: normal;
     padding: 2px 4px;
 }
+
+/* ── The Harmony of the Gospels (harmony_view.py) ────────────────────────
+   The Creeds' grammar, made four: Robertson's sections down the left, each
+   ending in its fourfold sign; the accounts side by side in the reading
+   serif at the reading size; the four pillars above them. Headings, notes
+   and the Gospels are English content, so serif; chrome stays sans. The
+   kickers, pills, references and quotations reuse The Creeds' classes. */
+.harmony-outline-scroll {
+    border-right: 1px solid alpha(@borders, 0.5);
+}
+.harmony-outline {
+    padding: 8px 10px 28px 12px;
+}
+.harmony-part {
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    opacity: 0.55;
+    margin: 16px 0 4px 8px;
+}
+button.harmony-row {
+    padding: 6px 8px;
+    min-height: 0;
+    border-radius: 6px;
+    font-weight: normal;
+}
+button.harmony-row.chosen {
+    background: alpha(@accent_bg_color, 0.18);
+}
+.harmony-num {
+    font-size: 0.75em;
+    font-weight: 600;
+    opacity: 0.5;
+    font-feature-settings: "tnum";
+}
+button.harmony-row .harmony-num {
+    margin-top: 0.3em;
+}
+.harmony-row-title {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Georgia', serif;
+    line-height: 1.15;   /* ~1.3em on Newsreader */
+}
+.harmony-cite {
+    font-size: 0.85em;
+    opacity: 0.7;
+    font-feature-settings: "tnum";
+    margin-top: 2px;
+}
+.harmony-setting {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Georgia', serif;
+    font-size: 1.05em;
+    font-style: italic;
+    opacity: 0.75;
+}
+.harmony-band {
+    margin: 18px 0 6px;
+}
+.harmony-band-label {
+    font-size: 0.75em;
+    opacity: 0.6;
+}
+.harmony-fact {
+    margin-top: 18px;
+    padding-left: 10px;
+    border-left: 2px dotted alpha(@window_fg_color, 0.25);
+}
+.harmony-accounts {
+    margin-top: 16px;
+}
+.harmony-col-head {
+    padding-bottom: 6px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid alpha(@borders, 0.4);
+}
+.harmony-text {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Georgia', serif;
+    line-height: 1.45;   /* ~1.55em on Newsreader */
+}
+.harmony-canon {
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    opacity: 0.55;
+    margin-top: 14px;
+}
+.harmony-link {
+    padding: 12px 0;
+    border-top: 1px solid alpha(@borders, 0.3);
+}
+button.harmony-target-btn {
+    font-weight: normal;
+    padding: 2px 4px;
+    margin-left: -4px;
+}
+.harmony-target {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Georgia', serif;
+    font-size: 1.05em;
+}
+.harmony-quote {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Georgia', serif;
+    font-style: italic;
+    opacity: 0.75;
+}

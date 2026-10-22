@@ -3630,6 +3630,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         # Put the Bible in whichever pane isn't the gallery (defaults to pane2).
         target = (self.pane2
                   if self.pane1._is_archaeology or self.pane1._is_creeds
+                  or self.pane1._is_harmony
                   else self.pane1)
         if not target._is_verse_navigable():
             bible = self._first_bible_module()

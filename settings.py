@@ -136,6 +136,10 @@ _defaults: dict[str, Any] = {
     # and its text: 'en' (the 1662 English) or 'orig' (the Greek or Latin).
     'creeds_tab': 'apostles',
     'creeds_text': 'en',
+    # The harmony: the section last shown, and the lens ('robertson' or
+    # 'eusebius').
+    'harmony_section': '',
+    'harmony_lens': 'robertson',
     # Read the difference: the Bibles installed ('installed', decided
     # 2026-09-25) or every one, the rest offering their install ('all').
     'family_read_rows': 'installed',

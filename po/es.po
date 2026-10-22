@@ -11119,3 +11119,171 @@ msgstr "(citado por {name}, {year} d. C.)"
 #: catena_reader.py
 msgid "(as quoted by {name})"
 msgstr "(citado por {name})"
+
+#: content.py
+msgid "The four Gospels side by side"
+msgstr "Los cuatro Evangelios lado a lado"
+
+#: harmony.py
+msgid "The Harmony of the Gospels"
+msgstr "La armonía de los Evangelios"
+
+#: harmony.py
+msgid "Said elsewhere"
+msgstr "Dicho en otro lugar"
+
+#: harmony.py
+msgid "Similar event"
+msgstr "Suceso semejante"
+
+#: harmony.py
+msgid "Only here"
+msgstr "Solo aquí"
+
+#: harmony.py
+msgid "The four Gospels side by side: A. T. Robertson’s harmony (1922), with the canon tables of Eusebius."
+msgstr "Los cuatro Evangelios lado a lado: la armonía de A. T. Robertson (1922), con las tablas de cánones de Eusebio."
+
+#: harmony.py
+#, python-brace-format
+msgid "{n} section"
+msgid_plural "{n} sections"
+msgstr[0] "{n} sección"
+msgstr[1] "{n} secciones"
+
+#: harmony.py
+msgid "Eusebius’s tables end at Mark 16:8."
+msgstr "Las tablas de Eusebio terminan en Marcos 16:8."
+
+#: harmony.py
+msgid "John 7:53–8:11 is missing from many early Greek manuscripts."
+msgstr "Juan 7:53–8:11 falta en muchos manuscritos griegos antiguos."
+
+#: harmony.py
+#, python-brace-format
+msgid "{ref} is not in the Revised Version Robertson printed."
+msgstr "{ref} no está en la Revised Version que imprimió Robertson."
+
+#: harmony.py
+msgid "The INTF tables give one section here the canon “I.IV”, which is not one of Eusebius’s ten; its parallels are in all four Gospels, so it is shown as Canon I."
+msgstr "Las tablas del INTF dan a una sección de aquí el canon «I.IV», que no es ninguno de los diez de Eusebio; sus paralelos están en los cuatro Evangelios, así que se muestra como Canon I."
+
+#: harmony_view.py
+msgid "Previous section"
+msgstr "Sección anterior"
+
+#: harmony_view.py
+msgid "Next section"
+msgstr "Sección siguiente"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "Section {n}, {gospels}: {title}"
+msgstr "Sección {n}, {gospels}: {title}"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "Robertson § {n}"
+msgstr "Robertson § {n}"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "Eusebius {canons}"
+msgstr "Eusebio {canons}"
+
+#: harmony_view.py
+msgid "The rows of Eusebius’s tables that touch this section, each passage beside those he paired with it"
+msgstr "Las filas de las tablas de Eusebio que tocan esta sección, cada pasaje junto a los que él le emparejó"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "Only in {gospel}"
+msgstr "Solo en {gospel}"
+
+#: harmony_view.py
+msgid "Same words in the Greek"
+msgstr "Mismas palabras en el griego"
+
+#: harmony_view.py
+msgid "Measured from the Greek words: these passages share more of them than chance gives"
+msgstr "Medido sobre las palabras griegas: estos pasajes comparten más de las que daría el azar"
+
+#: harmony_view.py
+msgid "Measured from the Greek words: these passages share few of them; they agree in what they teach"
+msgstr "Medido sobre las palabras griegas: estos pasajes comparten pocas; coinciden en lo que enseñan"
+
+#: harmony_view.py
+msgid "Readings"
+msgstr "Lecturas"
+
+#: harmony_view.py
+msgid "Show what the Greek editions read, in the interlinear"
+msgstr "Mostrar lo que leen las ediciones griegas, en el interlineal"
+
+#: harmony_view.py
+msgid "Where the section falls in each Gospel"
+msgstr "Dónde cae la sección en cada Evangelio"
+
+#: harmony_view.py
+msgid "Underlined: a word whose Greek another passage here also uses."
+msgstr "Subrayado: una palabra cuyo griego también usa otro pasaje de aquí."
+
+#: harmony_view.py
+#, python-brace-format
+msgid "{bible} carries no Strong’s numbers, so the words the passages share are not underlined."
+msgstr "{bible} no lleva números Strong, así que las palabras que comparten los pasajes no se subrayan."
+
+#: harmony_view.py
+#, python-brace-format
+msgid "§ {n}"
+msgstr "§ {n}"
+
+#: harmony_view.py
+msgid "Eusebius’s section number in this Gospel"
+msgstr "Número de sección de Eusebio en este Evangelio"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "§ {n}  {title}"
+msgstr "§ {n}  {title}"
+
+#: harmony_view.py
+msgid "Show this section"
+msgstr "Mostrar esta sección"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "{n} told in more than one Gospel"
+msgid_plural "{n} told in more than one Gospel"
+msgstr[0] "{n} narrada en más de un Evangelio"
+msgstr[1] "{n} narradas en más de un Evangelio"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "{n} Eusebian section"
+msgid_plural "{n} Eusebian sections"
+msgstr[0] "{n} sección de Eusebio"
+msgstr[1] "{n} secciones de Eusebio"
+
+#: harmony_view.py
+msgid "Reading the links"
+msgstr "Cómo leer los enlaces"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "Try § {n}: {title}"
+msgstr "Pruebe § {n}: {title}"
+
+#: harmony_view.py
+msgid "Pick a section to begin. Up and Down move between sections; Esc comes back here."
+msgstr "Elija una sección para empezar. Arriba y Abajo pasan de una sección a otra; Esc vuelve aquí."
+
+#: harmony_view.py
+#, python-brace-format
+msgid "Canon X · only in {gospel}"
+msgstr "Canon X · solo en {gospel}"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "Canon {n} · {gospels}"
+msgstr "Canon {n} · {gospels}"

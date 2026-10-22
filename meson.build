@@ -70,6 +70,8 @@ py_sources = files(
   'genealogy_strings.py',
   'genealogy_svg.py',
   'gtk_utils.py',
+  'harmony.py',
+  'harmony_view.py',
   'i18n.py',
   'imagery_bridge.py',
   'imagery_reader.py',

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!--
+    Glyph for "The Harmony of the Gospels": four pillars, each a whole
+    Gospel, and one section lit on each where it falls, which is what the
+    page draws. Drawn for this app. Fill-only (#222) so GTK4 recolors it
+    like the symbolics beside it.
+  -->
+  <g fill="#222">
+    <!-- the four pillars, Matthew to John -->
+    <path d="M1.5 1 H2.5 V15 H1.5 Z"/>
+    <path d="M5.5 1 H6.5 V15 H5.5 Z"/>
+    <path d="M9.5 1 H10.5 V15 H9.5 Z"/>
+    <path d="M13.5 1 H14.5 V15 H13.5 Z"/>
+    <!-- one section, lit on each -->
+    <path d="M0.5 9 H3.5 V12 H0.5 Z"/>
+    <path d="M4.5 10 H7.5 V13 H4.5 Z"/>
+    <path d="M8.5 8.5 H11.5 V11.5 H8.5 Z"/>
+    <path d="M12.5 3 H15.5 V6 H12.5 Z"/>
+  </g>
+</svg>

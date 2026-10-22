@@ -82,6 +82,10 @@ install_subdir('bible_family', install_dir: pkgdatadir / 'data')
 # checked by tools/creeds/build_creeds.py; read by creeds.py.
 install_subdir('creeds', install_dir: pkgdatadir / 'data')
 
+# The Harmony of the Gospels: Robertson's sections and the Eusebian canons,
+# with typed links. Built by tools/harmony/build_harmony.py; read by harmony.py.
+install_subdir('harmony', install_dir: pkgdatadir / 'data')
+
 # Bundled fonts (all OFL) so typography is identical on every machine
 # instead of falling back to whatever the host happens to have. The
 # Flatpak runtime's fontconfig scans /app/share/fonts, and /usr/share/fonts

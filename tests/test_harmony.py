@@ -1,0 +1,115 @@
+"""The harmony's data and lookups, without GTK.
+
+The data is built and checked by tools/harmony/build_harmony.py; these tests
+hold the shipped file to the shape the page reads, and check the lookups it
+makes.
+"""
+import content
+import harmony
+import sword_bridge
+
+
+def test_the_module_is_listed_and_named():
+    assert harmony.MODULE_KEY in harmony.module_names()
+    assert harmony.MODULE_KEY in content.readable_module_names()
+    assert content.type_key(harmony.MODULE_KEY) == 'harmony'
+    assert sword_bridge.display_name(harmony.MODULE_KEY) == \
+        'The Harmony of the Gospels'
+
+
+def test_robertsons_185_sections_in_14_parts():
+    ids = harmony.section_ids()
+    assert len(ids) == 185 and ids[0] == '1' and ids[-1] == '184'
+    parts = harmony.data()['parts']
+    assert len(parts) == 14
+    assert sorted(sid for p in parts for sid in p['sections']) == sorted(ids)
+
+
+def test_headings_are_in_sentence_case():
+    """Robertson's capitals are print, not emphasis; names keep theirs."""
+    s = harmony.section('72')
+    assert s['heading'].startswith('The first retirement. The Twelve return')
+    assert harmony.section('143')['heading'].endswith(
+        "(possibly that of John Mark's father and mother)")
+    for s in harmony.data()['sections']:
+        assert not s['heading'].isupper(), s['id']
+    # Divine titles keep Robertson's capitals; John Mark's father does not.
+    assert harmony.section('2')['heading'].endswith('as the Word (Logos)')
+    assert harmony.section('58')['heading'].endswith('about the Father')
+    assert 'the Son of man' in harmony.section('84')['heading']
+
+
+def test_spans_come_in_canonical_order():
+    """Robertson leads with Mark; the columns never reorder."""
+    assert list(harmony.gospel_spans('72')) == list(harmony.GOSPELS)
+    assert harmony.ref_text(harmony.gospel_spans('72')['Mark'][0]) == \
+        'Mark 6:30–44'
+
+
+def test_a_verse_finds_its_section():
+    assert harmony.section_for_verse('Matthew', 14, 15) == '72'
+    assert harmony.section_for_verse('John', 6, 5) == '72'
+    # A verse Robertson's text left out is attached to its neighbour.
+    assert harmony.section_for_verse('Mark', 11, 26) == '131'
+    assert harmony.section_for_verse('Acts', 1, 9) is None
+
+
+def test_the_lords_prayer_is_said_elsewhere_not_one_event():
+    """Robertson gives two occasions (§54, §105): a fine link, not solid."""
+    to_105 = [m for m in harmony.other_links('54') if m['target'] == '105']
+    assert [m['kind'] for m in to_105] == ['same_words']
+    assert to_105[0]['witnesses'] == ['eusebius', 'robertson']
+
+
+def test_the_eusebius_lens_pairs_passages_outside_the_section():
+    """§54 is Matthew alone; Eusebius sets Luke 11:1–4 beside its prayer."""
+    rows = harmony.eusebius_rows('54')
+    prayer = [r for r in rows if any(
+        harmony.ref_text(x['span']).startswith('Luke 11:1')
+        for x in r['cells'].get('Luke', []))]
+    assert prayer and 'Matt' in prayer[0]['cells']
+    for r in rows:
+        assert r['table'] in harmony.CANON_GOSPELS
+
+
+def test_textual_questions_are_stated_once_each():
+    mark_end = harmony.section_for_verse('Mark', 16, 9)
+    assert ('Eusebius’s tables end at Mark 16:8.', ('Mark', 16, 9)) in \
+        harmony.facts(mark_end)
+    assert any('7:53' in f for f, _v in harmony.facts('97'))
+    assert any('Matthew 17:21' in f for f, _v in harmony.facts('87'))
+    assert harmony.facts('72') == []
+    # The readings open at a verse the section holds, not at Mark 16:9.
+    assert harmony.facts('184')[0][1] == ('Mark', 16, 19)
+
+
+def test_the_one_odd_canon_is_read_as_canon_one_and_said():
+    assert harmony.canon('I.IV') == 'I'
+    with_odd = [s for s in harmony.section_ids()
+                if any('I.IV' in f for f, _v in harmony.facts(s))]
+    assert with_odd == ['141']
+    assert 'I.IV' not in harmony.canons('141')
+
+
+def test_places_fall_inside_their_gospel():
+    """John's temple cleansing near his start, the Synoptics' near their end."""
+    john = harmony.place(harmony.gospel_spans('31')['John'][0])
+    mark = harmony.place(harmony.gospel_spans('129')['Mark'][0])
+    assert 0 <= john[0] < john[1] < 0.15
+    assert 0.6 < mark[0] < mark[1] <= 1
+
+
+def test_words_keep_text_and_strongs_in_order():
+    markup = ('<w savlm="strong:G2532">And</w> <w savlm="strong:G3588 '
+              'strong:G652">the apostles</w>, <w savlm="strong:G3756"/>'
+              'went<note type="x">a note</note>')
+    got = harmony.words(markup)
+    assert ''.join(t for t, _n in got) == 'And the apostles, went'
+    assert got[2] == ('the apostles', frozenset({'G3588', 'G652'}))
+
+
+def test_shared_numbers_leave_out_function_words():
+    a = [(1, 1, [('loaves', frozenset({'G740'})), ('and', frozenset({'G2532'}))])]
+    b = [(2, 1, [('loaves', frozenset({'G740'})), ('and', frozenset({'G2532'}))])]
+    c = [(3, 1, [('boat', frozenset({'G4143'}))])]
+    assert harmony.shared_numbers([a, b, c]) == [{'G740'}, {'G740'}, set()]

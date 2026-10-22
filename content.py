@@ -30,6 +30,7 @@ import imagery_bridge
 import archaeology_bridge
 import genealogy_bridge
 import creeds
+import harmony
 import bible_family
 import interlinear_data
 from i18n import _
@@ -60,6 +61,7 @@ def readable_module_names() -> list[str]:
             + genealogy_bridge.module_names()
             + bible_family.module_names()
             + creeds.module_names()
+            + harmony.module_names()
             + interlinear_data.module_names())
 
 
@@ -233,6 +235,14 @@ _TYPES: list[_ContentType] = [
             'tagline': _('Four creeds, each line drawn to its Scripture')}),
         # bundled: can_remove False.
     _ContentType(
+        'harmony', harmony.is_harmony_module,
+        kind=lambda name: 'books',
+        info=lambda name: cast(dict, harmony.info()),
+        feature_card=lambda name: {
+            'icon': 'scriptura-harmony-symbolic',
+            'tagline': _('The four Gospels side by side')}),
+        # bundled: can_remove False.
+    _ContentType(
         'interlinear', interlinear_data.is_interlinear_module,
         kind=lambda name: 'bible', info=_interlinear_info,
         feature_card=lambda name: {
@@ -278,6 +288,7 @@ def _type_for(name: str) -> _ContentType:
 def type_key(name: str) -> str:
     """The registry key of the source that owns this module: one of
     'catena', 'imagery', 'archaeology', 'genealogy', 'family', 'creeds',
+    'harmony',
     'interlinear', 'ebible', 'sword'.
 
     The single source of truth for "which content source is this" — callers
