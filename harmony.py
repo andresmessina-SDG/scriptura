@@ -164,6 +164,42 @@ def section_for_verse(book: str, chapter: int, verse: int) -> str | None:
     return loose['attach_to'] if loose else None
 
 
+@functools.cache
+def _starts() -> dict[tuple[str, int], dict[int, str]]:
+    """(app book, chapter) → verse → section, for every section told in
+    more than one Gospel, at the verse where it starts in each."""
+    out: dict[tuple[str, int], dict[int, str]] = {}
+    for s in data().get('sections', []):
+        if len(s['gospels']) < 2:
+            continue
+        seen = set()
+        for r in s['refs']:
+            # One sign per Gospel: where the section begins in it, not again
+            # where Robertson resumes it after a break (§152, Mark 14:26, 32).
+            if r['book'] in GOSPELS and r['book'] not in seen:
+                seen.add(r['book'])
+                c, v = r['start']
+                out.setdefault((BOOK[r['book']], c), {}).setdefault(v, s['id'])
+    return out
+
+
+def section_starts(book: str, chapter: int) -> dict[int, str]:
+    """Verses in this chapter where a section told in more than one Gospel
+    begins: where the reading view draws its fourfold sign."""
+    return _starts().get((book, chapter), {})
+
+
+def told(sid: str) -> tuple[bool, ...]:
+    """Whether each Gospel, Matthew to John, tells this section."""
+    gospels = (section(sid) or {}).get('gospels', [])
+    return tuple(b in gospels for b in GOSPELS)
+
+
+def gospel_of(book: str) -> int | None:
+    """An app book's place among the four, or None outside them."""
+    return next((i for i, b in enumerate(GOSPELS) if BOOK[b] == book), None)
+
+
 # ── references ───────────────────────────────────────────────────────────
 
 def ref_text(span: dict, with_book: bool = True) -> str:

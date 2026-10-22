@@ -183,6 +183,12 @@ _DECORATIONS = (
                 enabled=lambda v: getattr(v, '_show_unit_rule', False)),
     _Decoration('lexicon hover', _BELOW, '_strg_hover', 'dotted',
                 _lexicon_colour),
+    # The fourfold sign beside a verse where a section of the Gospel
+    # harmony begins: in the left margin, left of the sense-unit rule, so
+    # it never moves the text. Off until the reader turns it on.
+    _Decoration('harmony sign', _BELOW, '_harmony_sign', 'sign',
+                _text_colour,
+                enabled=lambda v: getattr(v, '_show_harmony', False)),
     _Decoration('focus veil', _ABOVE, '_cur_unit', 'veil', _veil_colour,
                 enabled=lambda v: bool(getattr(v, '_focus_dim', 0.0))),
 )
@@ -494,6 +500,8 @@ class BibleTextView(Gtk.TextView):
                                     dotted=dec.style == 'dotted')
             elif dec.style == 'rule':
                 self._draw_unit_rule(snapshot, buf, tag, lo, hi, colour)
+            elif dec.style == 'sign':
+                self._draw_harmony_signs(snapshot, lo, hi, colour)
 
     def set_flash_fade(self, fade):
         """Scale the navigation flash's band, 1 (full) to 0 (gone). Paint
@@ -506,6 +514,88 @@ class BibleTextView(Gtk.TextView):
         separately from the tag, which the focus veil also reads."""
         self._show_unit_rule = bool(enabled)
         self.queue_draw()
+
+    def set_harmony(self, enabled):
+        """Whether to draw the Gospel harmony's signs in the margin. Paint
+        only: the signs are found when the chapter renders."""
+        self._show_harmony = bool(enabled)
+        self.queue_draw()
+
+    def set_harmony_signs(self, signs):
+        """The rendered chapter's signs: [(mark, section, told, here)] —
+        the verse's start, the section id, which Gospels tell it, and which
+        of the four is being read."""
+        self._harmony_signs = signs
+
+    _SIGN_GAP = 5.0       # between the four dots, top to bottom
+    _SIGN_R = 1.8
+    _SIGN_INSET = 24.0    # from the text's edge: left of the unit rule
+
+    def _sign_geometry(self, mark):
+        """(x, y top, y bottom) of a sign in buffer coordinates, centred on
+        the first line of its verse."""
+        r = self.get_iter_location(self.get_buffer().get_iter_at_mark(mark))
+        x = max(8.0, self.get_left_margin() - self._SIGN_INSET)
+        mid = r.y + r.height / 2
+        half = 1.5 * self._SIGN_GAP + self._SIGN_R
+        return x, mid - half, mid + half
+
+    def _sign_lines(self):
+        """The signs to draw, one per line: [(mark, x, y0, told, here,
+        sections)]. Two sections can begin on one line (Mark 14:26 and 27);
+        they share its sign, and the peek lists both."""
+        lines: dict[float, list] = {}
+        for mark, sid, told, here in getattr(self, '_harmony_signs', ()):
+            if mark.get_deleted():
+                continue
+            x, y0, _y1 = self._sign_geometry(mark)
+            if y0 in lines:
+                lines[y0][5].append(sid)
+            else:
+                lines[y0] = [mark, x, y0, told, here, [sid]]
+        return list(lines.values())
+
+    def harmony_sign_at(self, bx, by):
+        """The sections whose sign is under a point in buffer coordinates,
+        or None. Read from the marks, never from get_iter_at_location (which
+        aborts on some lines; see gtk_utils)."""
+        if not getattr(self, '_show_harmony', False):
+            return None
+        span = 3 * self._SIGN_GAP + 2 * self._SIGN_R
+        for _mark, x, y0, _told, _here, sids in self._sign_lines():
+            if abs(bx - x) <= 9 and y0 - 6 <= by <= y0 + span + 6:
+                return sids
+        return None
+
+    def _draw_harmony_signs(self, snapshot, lo, hi, col):
+        """Four dots, Matthew at the top, filled where the section is told;
+        the Gospel being read is a short bar, so the reader sees where they
+        are among the four."""
+        from family_card import high_contrast, lift
+        signs = self._sign_lines()
+        if not signs:
+            return
+        buf = self.get_buffer()
+        top = self.get_iter_location(lo).y - 20
+        bottom = self.get_iter_location(hi).y + 40
+        cr = snapshot.append_cairo(Graphene.Rect().init(
+            0, top, max(1, self.get_left_margin()), max(1, bottom - top)))
+        cr.set_source_rgba(col.red, col.green, col.blue,
+                           lift(0.45, high_contrast()))
+        cr.set_line_width(1.0)
+        for mark, x, y0, told, here, _sids in signs:
+            it = buf.get_iter_at_mark(mark)
+            if it.compare(lo) < 0 or it.compare(hi) > 0:
+                continue
+            for i, on in enumerate(told):
+                y = y0 + self._SIGN_R + i * self._SIGN_GAP
+                if i == here:
+                    cr.rectangle(x - 3.2, y - 0.8, 6.4, 1.6)
+                    cr.fill()
+                    continue
+                cr.arc(x, y, self._SIGN_R if on else self._SIGN_R - 0.4,
+                       0, 6.2832)
+                cr.fill() if on else cr.stroke()
 
     def set_focus_paper(self, paper_hex, dim):
         """The paper the veil is drawn in, and how strongly. `dim` of 0 is

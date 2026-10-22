@@ -2877,6 +2877,27 @@ button.audio-pill-close {
     font-size: 0.85em;
     opacity: 0.6;
 }
+/* The harmony's peek: the section in serif (Robertson's words), each other
+   Gospel's passage in the accent (it goes to the Bible), one clay door off
+   the surface to the harmony page. */
+.peek-harmony-title {
+    font-family: 'Newsreader', 'Noto Serif', 'Source Serif 4', 'Georgia', serif;
+    font-size: 1.05em;
+}
+button.peek-harmony-ref {
+    min-height: 0;
+    padding: 2px 6px;
+    margin-left: -6px;
+    font-weight: 600;
+    color: @accent_color;
+}
+button.peek-harmony-door {
+    min-height: 0;
+    padding: 2px 6px;
+    margin: 4px 0 0 -6px;
+    font-size: 0.9em;
+    color: #a9744f;          /* clay: leaves the current surface */
+}
 button.peek-lineage-link {
     min-height: 0;
     padding: 2px 8px;

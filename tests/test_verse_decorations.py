@@ -56,6 +56,9 @@ class Pane:
     def _insert_creed_marker(self, *a):
         self.fired.append('creed_marker')
 
+    def _apply_harmony_sign(self, *a):
+        self.fired.append('harmony_sign')
+
     def _apply_anno_tags(self, *a, **k):
         self.fired.append('annotations')
 
@@ -75,6 +78,7 @@ def _loaded(pane, commentary=False):
     r.has_artifact = True
     r.has_lineage = True
     r.has_creed = True
+    r.harmony_sid = '72'
     r.cap_index = 0
     r.fn_markers = [(4, '1', 'a')]
     r.vnotes = {'1': ('t', 'body')}
@@ -83,8 +87,8 @@ def _loaded(pane, commentary=False):
 
 
 ORDER = ('dropcap', 'footnotes', 'poetry_lines', 'artifact_marker',
-         'lineage_marker', 'creed_marker', 'vnum', 'annotations',
-         'strong_words')
+         'lineage_marker', 'creed_marker', 'harmony_sign', 'vnum',
+         'annotations', 'strong_words')
 
 
 def test_the_registry_is_the_order_the_loop_applied():
@@ -143,6 +147,7 @@ def test_every_entry_but_the_anchor_excludes_commentaries():
     r.has_artifact = True
     r.has_lineage = True
     r.has_creed = True
+    r.harmony_sid = '72'
     r.cap_index = 0
     r.fn_markers = [(0, '1', 'a')]
     r.poetry_lines = {0: 1}

@@ -47,6 +47,9 @@ _defaults: dict[str, Any] = {
     # toggle). On by default — markers only appear where notes exist, and
     # the toggle disables on modules that can't show any.
     'show_footnotes':     True,
+    # The Gospel harmony's fourfold sign in the margin (the header's
+    # reading tools). Off until the reader turns it on.
+    'show_harmony':       False,
     # Publisher section headings ("The Baptism of Jesus"). SWORD hands
     # these over as entry attributes rather than in the verse text, so
     # they were silently dropped until DR4. A reading convention, not a

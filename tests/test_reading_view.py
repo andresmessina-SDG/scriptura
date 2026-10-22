@@ -33,7 +33,8 @@ def test_paint_order_is_bottom_up():
 
 
 def test_every_decoration_declares_a_known_layer_and_style():
-    styles = {'highlights', 'band', 'underline', 'dotted', 'rule', 'veil'}
+    styles = {'highlights', 'band', 'underline', 'dotted', 'rule', 'veil',
+              'sign'}
     for dec in rv._DECORATIONS:
         assert dec.layer in (rv._BELOW, rv._ABOVE), dec.name
         assert dec.style in styles, dec.name

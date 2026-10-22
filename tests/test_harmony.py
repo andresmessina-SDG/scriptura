@@ -113,3 +113,25 @@ def test_shared_numbers_leave_out_function_words():
     b = [(2, 1, [('loaves', frozenset({'G740'})), ('and', frozenset({'G2532'}))])]
     c = [(3, 1, [('boat', frozenset({'G4143'}))])]
     assert harmony.shared_numbers([a, b, c]) == [{'G740'}, {'G740'}, set()]
+
+
+def test_signs_sit_where_a_shared_section_begins_in_each_gospel():
+    """§72 starts at Mark 6:30 and John 6:1; a one-Gospel section (§56,
+    Luke 7:11) gets no sign: there is nothing to set beside it."""
+    assert harmony.section_starts('Mark', 6)[30] == '72'
+    assert harmony.section_starts('John', 6)[1] == '72'
+    assert 11 not in harmony.section_starts('Luke', 7)
+    assert harmony.section_starts('Acts', 1) == {}
+    assert harmony.told('72') == (True, True, True, True)
+    assert harmony.gospel_of('Luke') == 2 and harmony.gospel_of('Acts') is None
+
+
+def test_the_passion_is_dense_but_bounded():
+    """At most 14 signs in one chapter (Luke 9), as the research measured;
+    a section Robertson resumes after a break signs only where it begins.
+    Mark 14 has §152 once, at verse 26, though Robertson resumes it at 32."""
+    worst = max(len(harmony.section_starts(harmony.BOOK[b], c))
+                for b, n in (('Matt', 28), ('Mark', 16), ('Luke', 24),
+                             ('John', 21)) for c in range(1, n + 1))
+    assert worst == 14
+    assert list(harmony.section_starts('Mark', 14).values()).count('152') == 1

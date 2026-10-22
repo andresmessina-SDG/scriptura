@@ -176,6 +176,8 @@ class PeekController:
         if n_press != 2:
             return
         bx, by = self._view.window_to_buffer_coords(Gtk.TextWindowType.WIDGET, int(x), int(y))
+        if self._view.harmony_sign_at(bx, by) is not None:
+            return      # a harmony sign in the margin, not a word
         found, it = self._view.get_iter_at_location(bx, by)
         if not found:
             return
@@ -534,6 +536,88 @@ class PeekController:
         a11y.labelled_by(lbl, cap)
         a11y.announce(self._view, f'{cap_text}. {lbl.get_text()}')
 
+        self._dict_retries = 0
+        self._dict_open_at = GLib.get_monotonic_time()
+        self._dict_user_closed = False
+        pop.set_opacity(0.0)
+        pop.popup()
+        self._peek_fade_in(pop)
+
+    def show_harmony_peek(self, sids, bx, by):
+        """The Gospel harmony's parallels for the sections whose sign was
+        clicked (two can begin on one line), in the shared peek: each other
+        Gospel's passage in the accent (it opens in the other pane), and one
+        clay line that opens the harmony page at the first section."""
+        import harmony
+        sections = [s for s in map(harmony.section, sids) if s is not None]
+        if not sections:
+            return
+        wx, wy = self._view.buffer_to_window_coords(
+            Gtk.TextWindowType.WIDGET, int(bx), int(by))
+        rect = Gdk.Rectangle()
+        rect.x, rect.y, rect.width, rect.height = wx - 6, wy - 10, 12, 20
+        pop = self._ensure_peek_popover(self._view)
+        tasks.cancel(f'peek:{id(self._pane)}')
+        avail = self._peek_room(self._view, rect, pop)
+        pop.set_pointing_to(rect)
+
+        here = harmony.gospel_of(self._book)
+        root = self._view.get_root()
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        content.set_size_request(280, -1)
+        body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        captions = []
+        for section in sections:
+            sid = section['id']
+            cap_text = _('§ {n} · Same event').format(n=sid)
+            captions.append(f"{cap_text}. {section['heading']}")
+            cap = Gtk.Label(label=cap_text, xalign=0)
+            cap.add_css_class('caption')
+            cap.add_css_class('dim-label')
+            if len(captions) > 1:
+                cap.set_margin_top(10)      # a second section, set apart
+            body.append(cap)
+            title = Gtk.Label(label=section['heading'], xalign=0, wrap=True)
+            title.set_max_width_chars(40)
+            title.add_css_class('peek-harmony-title')
+            body.append(title)
+            for code, spans in harmony.gospel_spans(sid).items():
+                if harmony.GOSPELS.index(code) == here:
+                    continue
+                for span in spans:
+                    btn = Gtk.Button(label=harmony.ref_text(span))
+                    btn.add_css_class('flat')
+                    btn.add_css_class('peek-harmony-ref')
+                    btn.set_halign(Gtk.Align.START)
+                    btn.set_tooltip_text(_('Open it beside'))
+                    c, v = span['start']
+
+                    def go(_b, b=harmony.BOOK[code], c=c, v=v):
+                        pop.popdown()
+                        opener = getattr(root, '_open_beside', None)
+                        if opener is not None:
+                            opener(self._pane, b, c, v)
+                    btn.connect('clicked', go)
+                    body.append(btn)
+        content.append(self._peek_scroller(body, avail, chrome=70))
+        door = Gtk.Button(label=_('Open in The Harmony of the Gospels'))
+        door.add_css_class('flat')
+        door.add_css_class('peek-harmony-door')
+        door.set_halign(Gtk.Align.START)
+
+        def open_page(_b, sid=sections[0]['id']):
+            pop.popdown()
+            opener = getattr(root, '_on_open_harmony', None)
+            if opener is not None:
+                opener(self._pane, sid)
+        door.connect('clicked', open_page)
+        content.append(door)
+        for m in ('top', 'bottom', 'start', 'end'):
+            getattr(content, f'set_margin_{m}')(14)
+        pop.set_child(content)
+        a11y.set_role(content, Gtk.AccessibleRole.NOTE)
+        set_accessible_label(content, captions[0])
+        a11y.announce(self._view, ' '.join(captions))
         self._dict_retries = 0
         self._dict_open_at = GLib.get_monotonic_time()
         self._dict_user_closed = False

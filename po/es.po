@@ -11287,3 +11287,24 @@ msgstr "Canon X · solo en {gospel}"
 #, python-brace-format
 msgid "Canon {n} · {gospels}"
 msgstr "Canon {n} · {gospels}"
+
+#: window.py
+msgid "Gospel parallels"
+msgstr "Paralelos en los Evangelios"
+
+#: pane_peek.py
+#, python-brace-format
+msgid "§ {n} · Same event"
+msgstr "§ {n} · Mismo suceso"
+
+#: pane_peek.py
+msgid "Open it beside"
+msgstr "Abrirlo al lado"
+
+#: pane_peek.py
+msgid "Open in The Harmony of the Gospels"
+msgstr "Abrir en La armonía de los Evangelios"
+
+#: window.py
+msgid "Gospel parallels — a sign in the margin where the other Gospels tell the same event"
+msgstr "Paralelos en los Evangelios: una señal en el margen donde los otros Evangelios narran el mismo suceso"

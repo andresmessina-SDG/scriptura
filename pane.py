@@ -13,6 +13,7 @@ import ebible_bridge
 import archaeology_bridge
 import genealogy_bridge
 import creeds
+import harmony
 import renderings
 import content
 import annotations
@@ -678,7 +679,7 @@ class _VerseRender:
 
     __slots__ = ('start_v', 'end_v', 'html', 'is_commentary', 'anno',
                  'start_mark', 'text_mark', 'has_artifact', 'has_lineage',
-                 'has_creed',
+                 'has_creed', 'harmony_sid',
                  'cap_index', 'fn_markers', 'vnotes', 'poetry_lines')
 
     def __init__(self, start_v, end_v, html, is_commentary):
@@ -692,6 +693,7 @@ class _VerseRender:
         self.has_artifact = False
         self.has_lineage = False
         self.has_creed = False
+        self.harmony_sid = None
         # Filled in by the Bible branch only; a commentary produces none of
         # them, and the plain-text fallback resets them to exactly this.
         self.cap_index = None
@@ -765,6 +767,13 @@ _VERSE_DECORATIONS = (
         'creed_marker',
         lambda p, r: p._insert_creed_marker(r.start_v),
         lambda p, r: not r.is_commentary and r.has_creed),
+    # Where a section of the Gospel harmony begins: the view paints the
+    # fourfold sign beside it when the reader has the signs on, so the toggle
+    # repaints rather than re-renders.
+    _VerseDecoration(
+        'harmony_sign',
+        lambda p, r: p._apply_harmony_sign(r),
+        lambda p, r: not r.is_commentary and r.harmony_sid is not None),
     # The verse anchor navigation resolves against. For a grouped commentary
     # section every verse in [start_v, end_v] points at the same block, so
     # navigating to any of them lands on this section. No enable condition:
@@ -1239,6 +1248,9 @@ class BiblePane(Gtk.Box):
         # unlike the lexicon: footnotes are reading content, not a lookup
         # mode, so a reader who wants them wants them every session.
         self._show_footnotes = bool(settings.get('show_footnotes'))
+        # The Gospel harmony's signs in the margin (the header's reading
+        # tools). Off until the reader turns them on.
+        self._show_harmony = bool(settings.get('show_harmony'))
         # Section headings (Appearance ▸ Advanced). A reading convention —
         # publisher-supplied structure that SWORD hands over separately from
         # the verse text — so it defaults on, like small caps.
@@ -1583,6 +1595,8 @@ class BiblePane(Gtk.Box):
         self._update_font_css()
 
         self._buffer = self._view.get_buffer()
+        self._view.set_harmony(self._show_harmony)
+        self._harmony_signs: list = []
 
         # The reading column is the app's main content, not a plain text box:
         # naming it DOCUMENT tells AT this is prose to be read, and gives the
@@ -2423,6 +2437,7 @@ class BiblePane(Gtk.Box):
 
     def _fetch_and_render(self):
         self._rendered_verses = None
+        self._clear_harmony_signs()
         # Only a chapter fetch sets it again; any other render (devotional,
         # card, book) supersedes one in flight whose apply is then dropped.
         self._render_pending = False
@@ -2692,6 +2707,37 @@ class BiblePane(Gtk.Box):
                     self, self._book, self._chapter, v))
         self._view.add_child_at_anchor(btn, anchor)
 
+    def _apply_harmony_sign(self, r):
+        """Mark the verse number where a harmony section begins, and note
+        the sign for the view to paint. The tag carries nothing visible; it
+        wakes the view's paint pass."""
+        table = self._buffer.get_tag_table()
+        tag = table.lookup('_harmony_sign') or self._buffer.create_tag(
+            '_harmony_sign')
+        start = self._buffer.get_iter_at_mark(r.start_mark)
+        self._buffer.apply_tag(tag, start,
+                               self._buffer.get_iter_at_mark(r.text_mark))
+        self._harmony_signs.append((self._buffer.create_mark(None, start, True),
+                                    r.harmony_sid, harmony.told(r.harmony_sid),
+                                    self._harmony_here))
+
+    def _clear_harmony_signs(self):
+        """Forget the last chapter's signs. They keep marks of their own
+        (the render deletes each verse's marks once the verse is decorated),
+        and every render clears them: a devotional or a book written into
+        the same view would otherwise wear a Gospel chapter's signs."""
+        for mark, *_rest in self._harmony_signs:
+            if not mark.get_deleted():
+                self._buffer.delete_mark(mark)
+        self._harmony_signs = []
+        self._view.set_harmony_signs(self._harmony_signs)
+
+    def set_show_harmony(self, enabled):
+        """Show or hide the harmony's signs. Paint only, like the unit
+        rule: nothing in the buffer changes."""
+        self._show_harmony = bool(enabled)
+        self._view.set_harmony(self._show_harmony)
+
     def _display(self, verses, book, chapter, module, notes=None, task=None,
                  headings=None):
         if book != self._book or chapter != self._chapter or module != self._module:
@@ -2735,6 +2781,11 @@ class BiblePane(Gtk.Box):
         # Verses whose words a creed uses.
         creed_verses = (set() if is_commentary
                         else creeds.marker_verses(book, chapter))
+        # Verses where a section of the Gospel harmony begins.
+        harmony_starts = ({} if is_commentary
+                          else harmony.section_starts(book, chapter))
+        self._harmony_here = harmony.gospel_of(book)
+        self._clear_harmony_signs()
         self._artifact_markers = []  # rebuilt below; old ones died with set_text('')
 
         self._cancel_all_flashes()
@@ -2880,6 +2931,7 @@ class BiblePane(Gtk.Box):
             r.has_artifact = start_v in art_verses
             r.has_lineage = start_v in gen_verses
             r.has_creed = start_v in creed_verses
+            r.harmony_sid = harmony_starts.get(start_v)
 
             # 1. Verse number — inline for Bibles, bold section header for commentaries
             if is_commentary:
@@ -4419,6 +4471,18 @@ class BiblePane(Gtk.Box):
         word. Also feeds the hover-preview dwell tracker (Advanced,
         default off) — every exit path reports 'not on a word' so a
         pending dwell can't fire for a word the cursor already left."""
+        # Over a harmony sign, the pointer says it can be clicked: the
+        # sign is paint, so nothing else would.
+        bx, by = self._view.window_to_buffer_coords(
+            Gtk.TextWindowType.WIDGET, int(x), int(y))
+        on_sign = self._view.harmony_sign_at(bx, by) is not None
+        if on_sign != getattr(self, '_on_sign', False):
+            self._on_sign = on_sign
+            if on_sign:
+                self._cursor_off_sign = self._view.get_cursor()
+                self._view.set_cursor_from_name('pointer')
+            else:
+                self._view.set_cursor(self._cursor_off_sign)
         if not self._lexicon_enabled:
             self._clear_strg_hover()
             self._hover_track(None, None, x, y)
@@ -4753,6 +4817,11 @@ class BiblePane(Gtk.Box):
         # click (collapse phantom selection) from a drag-select (preserve).
         self._click_press_pos = (x, y)
         bx, by = self._view.window_to_buffer_coords(Gtk.TextWindowType.WIDGET, int(x), int(y))
+        sids = self._view.harmony_sign_at(bx, by)
+        if sids is not None:
+            if n_press == 1:
+                self._peek.show_harmony_peek(sids, bx, by)
+            return
         found, it = self._view.get_iter_at_location(bx, by)
         if not found:
             return

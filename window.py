@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 import threading
 import gi
 gi.require_version('Gtk', '4.0')
@@ -111,6 +112,40 @@ def nav_books(modules, current_book=None):
     if current_book in DEUTEROCANON:
         return BOOKS + DEUTEROCANON
     return BOOKS
+
+
+
+def _draw_harmony_glyph(area, cr, w, h):
+    """The harmony toggle's glyph: a great arch over two, on three columns
+    with capitals and a base — the frame painted over Eusebius's canon
+    tables, which set the Gospels' parallels side by side."""
+    ink = area.get_color()
+    cr.set_source_rgba(ink.red, ink.green, ink.blue, ink.alpha)
+    lw = 1.3
+    cr.set_line_width(lw)
+    x0, x1 = lw / 2 + 1.0, w - lw / 2 - 1.0
+    xs = (x0, (x0 + x1) / 2, x1)
+    r, big = (x1 - x0) / 4, (x1 - x0) / 2
+    spring = big + lw / 2 + 0.3
+    base = h - lw / 2 - 1.6
+    for x in xs:
+        cr.move_to(x, base)
+        cr.line_to(x, spring)
+        cr.stroke()
+    for a, b in zip(xs, xs[1:]):
+        cr.arc((a + b) / 2, spring, r, math.pi, 0)
+        cr.stroke()
+    cr.arc(w / 2, spring, big, math.pi, 0)
+    cr.stroke()
+    cr.set_line_width(1.0)
+    for x in xs:
+        cr.move_to(x - 1.6, spring + 0.5)
+        cr.line_to(x + 1.6, spring + 0.5)
+        cr.stroke()
+    cr.set_line_width(1.3)
+    cr.move_to(0, h - 0.9)
+    cr.line_to(w, h - 0.9)
+    cr.stroke()
 
 
 class _FractionPaned(Gtk.Paned):
@@ -568,6 +603,23 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self.xref_toggle.set_active(bool(settings.get('show_crossrefs')))
         self.xref_toggle.connect('toggled', self._on_xref_toggle)
 
+        # Gospel harmony toggle — a canon-table arcade (his pick, 2026-10-22;
+        # four dots read as a "more" menu beside ※ and f*). Drawn: no font
+        # has it. Persisted like footnotes; off until the reader asks.
+        self.harmony_toggle = Gtk.ToggleButton()
+        sign = Gtk.DrawingArea(content_width=17, content_height=20)
+        sign.set_valign(Gtk.Align.CENTER)
+        sign.set_draw_func(_draw_harmony_glyph)
+        self.harmony_toggle.set_child(sign)
+        self.harmony_toggle.add_css_class('flat')
+        self.harmony_toggle.add_css_class('scriptura-lex-toggle')
+        self.harmony_toggle.set_tooltip_text(
+            _('Gospel parallels — a sign in the margin where the other '
+              'Gospels tell the same event'))
+        set_accessible_label(self.harmony_toggle, _('Gospel parallels'))
+        self.harmony_toggle.set_active(bool(settings.get('show_harmony')))
+        self.harmony_toggle.connect('toggled', self._on_harmony_toggle)
+
         # ── Right: search + bookmarks + view toggle ────────────────────────────
         self._bookmark_btn = Gtk.Button(icon_name='scriptura-bookmark-new-symbolic')
         self._bookmark_btn.add_css_class('flat')
@@ -698,7 +750,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         # on which tools happen to be on.
         self._tools_revealers = []
         self._study_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        for toggle in (self.xref_toggle, self.fnote_toggle):
+        for toggle in (self.harmony_toggle, self.xref_toggle,
+                       self.fnote_toggle):
             toggle.set_margin_end(3)
             revealer = Gtk.Revealer()
             revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_LEFT)
@@ -2115,6 +2168,12 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self.pane1.set_show_footnotes(enabled)
         self.pane2.set_show_footnotes(enabled)
 
+    def _on_harmony_toggle(self, _btn):
+        enabled = self.harmony_toggle.get_active()
+        settings.put('show_harmony', enabled)
+        self.pane1.set_show_harmony(enabled)
+        self.pane2.set_show_harmony(enabled)
+
     def _on_xref_toggle(self, _btn):
         enabled = self.xref_toggle.get_active()
         settings.put('show_crossrefs', enabled)
@@ -2643,7 +2702,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         # either way, and it is where the reader's attention already is. A
         # tool that stays on show through the fold keeps its own focus.
         focus = self.get_focus()
-        if focus in (self.xref_toggle, self.fnote_toggle) and not (
+        if focus in (self.harmony_toggle, self.xref_toggle,
+                     self.fnote_toggle) and not (
                 focus.get_active() and focus.get_sensitive()):
             self.lex_toggle.grab_focus()
         self._apply_tools_reveal()
@@ -2652,7 +2712,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
     def _tools_members(self):
         """The cluster's focusable members, in visual (left-to-right) order.
         An insensitive f* (no loaded translation has notes) is not a stop."""
-        return [w for w in (self.xref_toggle, self.fnote_toggle, self.lex_toggle)
+        return [w for w in (self.harmony_toggle, self.xref_toggle,
+                            self.fnote_toggle, self.lex_toggle)
                 if w.get_sensitive()]
 
     def _tools_focus_member(self, widget):
@@ -2911,6 +2972,16 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
                          not self.xref_toggle.get_active()))
         if self.xref_toggle.get_active():
             xr_row.get_child().append(
+                Gtk.Image.new_from_icon_name('scriptura-object-select-symbolic'))
+
+        hm_glyph = Gtk.DrawingArea(content_width=15, content_height=18)
+        hm_glyph.set_valign(Gtk.Align.CENTER)
+        hm_glyph.set_draw_func(_draw_harmony_glyph)
+        hm_row = row(hm_glyph, _('Gospel parallels'),
+                     lambda: self.harmony_toggle.set_active(
+                         not self.harmony_toggle.get_active()))
+        if self.harmony_toggle.get_active():
+            hm_row.get_child().append(
                 Gtk.Image.new_from_icon_name('scriptura-object-select-symbolic'))
 
         row(Gtk.Image.new_from_icon_name('scriptura-bookmark-new-symbolic'),
@@ -3708,6 +3779,33 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
                                       prefer=page._creeds.current_creed())
         if found:
             page._creeds.show_line(*found)
+
+    def _on_open_harmony(self, source_pane, sid):
+        """A harmony sign's door: the harmony page in the other pane, at the
+        section."""
+        import harmony
+        target = next((p for p in (self.pane1, self.pane2)
+                       if p.get_visible() and p._is_harmony), None)
+        if target is None:
+            target = self.pane2 if source_pane is self.pane1 else self.pane1
+            if not target.get_visible():
+                self._btn_split.set_active(True)
+            target._apply_module_change(harmony.MODULE_KEY)
+        target._harmony.show_section(sid)
+
+    def _open_beside(self, source_pane, book, chapter, verse):
+        """A parallel from a harmony sign: the passage in the other pane,
+        and the pane read from left where it is. _open_verse_in_pane2 for
+        whichever pane is the other."""
+        import content
+        other = self.pane2 if source_pane is self.pane1 else self.pane1
+        if not self._btn_split.get_active():
+            self._btn_split.set_active(True)
+        if not content.is_text_bible(other.module):
+            other._apply_module_change(source_pane.module)
+        other.load_reference_at_verse(book, chapter, verse)
+        if other._sync_btn.get_active():
+            other._sync_btn.set_active(False)
 
     def _ensure_creeds_visible(self, source_pane):
         """A pane showing The Creeds, loading it opposite the Bible we
