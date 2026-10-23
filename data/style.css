@@ -3311,3 +3311,31 @@ button.harmony-target-btn {
     font-style: italic;
     opacity: 0.75;
 }
+/* "Set it beside" keeps to the page, so it is ink, not the accent (the
+   accent goes to the Bible); underlined, as the sketch drew it. */
+button.harmony-beside {
+    font-weight: normal;
+    padding: 2px 6px;
+    margin-left: -6px;
+    min-height: 24px;
+}
+button.harmony-beside label {
+    text-decoration-line: underline;
+}
+/* Pressed, it says so in its words ("Take it away"); Adwaita's checked fill
+   would be the one surface on the page not cast from its paper. */
+button.harmony-beside:checked {
+    background: none;
+}
+button.harmony-beside:checked:hover {
+    background-color: alpha(currentColor, 0.07);
+}
+.harmony-beside-head {
+    font-size: 0.8em;
+    opacity: 0.7;
+}
+.harmony-canon-x {
+    margin-top: 18px;
+    padding-top: 10px;
+    border-top: 1px solid alpha(@borders, 0.3);
+}

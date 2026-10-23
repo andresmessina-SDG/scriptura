@@ -6786,6 +6786,26 @@ msgstr "Los cuatro Evangelios en el orden de los hechos, todos los relatos de ca
 msgid "The Harmony, § {n}"
 msgstr "La armonía, § {n}"
 
+#: harmony_view.py
+msgid "Eusebius, Canon X"
+msgstr "Eusebio, canon X"
+
+#: harmony_view.py
+msgid "Take it away"
+msgstr "Quitarlo"
+
+#: harmony_view.py
+msgid "Set it beside"
+msgstr "Ponerlo al lado"
+
+#: harmony_view.py
+msgid "Show this event beside the accounts"
+msgstr "Mostrar este hecho junto a los relatos"
+
+#: harmony_view.py
+msgid "Similar event, not the same · § {n}"
+msgstr "Suceso semejante, no el mismo · § {n}"
+
 #: plan_session.py
 msgid "Day {n} · {passage} · {i} of {total}"
 msgstr "Día {n} · {passage} · {i} de {total}"

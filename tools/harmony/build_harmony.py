@@ -773,6 +773,9 @@ def checked(src, cite, text):
 
 
 opening = [checked(*q) for q in OPENING]
+# Under a section told in one Gospel and wholly in his tenth table.
+canon_x = checked('carpianus', 'Eusebius, Letter to Carpianus (tr. Mark DelCogliano)',
+                  'the tenth is for unique things recorded in each gospel.')
 
 data = {
     'schema': 1,
@@ -784,6 +787,7 @@ data = {
     },
     'versification': 'KJV',
     'opening': opening,
+    'canon_x': canon_x,
     'kinds': KINDS,
     'parts': parts, 'groups': groups, 'sections': sections, 'similar': similar,
     'eusebius': sorted(eus.values(), key=lambda e: (e['id'].split('.')[0], int(e['id'].split('.')[1]))),

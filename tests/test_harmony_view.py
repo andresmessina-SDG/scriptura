@@ -203,3 +203,64 @@ def test_the_threads_wait_to_draw_in_until_the_band_is_on_screen(page, monkeypat
     page.select('72')
     assert page._band_progress == 0.0
     assert page._band_anim.get_state() == Adw.AnimationState.IDLE
+
+
+# ── Canon X and a similar event set beside (sketches C and E) ───────────────
+
+def test_canon_x_is_quoted_where_eusebius_too_set_the_whole_section_apart(page):
+    assert harmony.canons('56') == ['X']
+    assert page._canon_x('56') is not None
+    mixed = next(s['id'] for s in harmony.data()['sections']
+                 if len(s['gospels']) == 1 and 'X' in harmony.canons(s['id'])
+                 and harmony.canons(s['id']) != ['X'])
+    assert page._canon_x(mixed) is None          # he paired some of it
+    assert page._canon_x('72') is None           # told in all four
+    page._lens = 'eusebius'
+    assert page._canon_x('56') is None
+
+
+def test_a_similar_event_goes_beside_the_accounts_and_comes_away(page):
+    page.select('55')
+    target = next(m['section'] for m in harmony.other_links('55')
+                  if m['kind'] == 'look_alike')
+    before = page._slots()
+    page._set_beside(target)
+    extra = [f'+{b}' for b in harmony.gospel_spans(target)]
+    assert page._slots() == before + extra
+    assert any(c.get('beside') == target
+               for c in page._account_rows[0]['cells'])
+    assert page._beside_btns[target].get_active()
+    page._set_beside(None)
+    assert page._slots() == before
+
+
+def test_choosing_another_section_takes_the_similar_event_away(page):
+    page.select('55')
+    target = next(m['section'] for m in harmony.other_links('55')
+                  if m['kind'] == 'look_alike')
+    page._set_beside(target)
+    page.select('56')
+    assert page._beside is None
+
+
+def test_a_similar_event_beside_neither_counts_for_nor_wears_an_underline(
+        page, monkeypatch):
+    seen = []
+
+    def shared(cols):
+        seen.append(len(cols))
+        return [{1} for _c in cols]
+    monkeypatch.setattr(harmony, 'shared_numbers', shared)
+    rows = [{'head': None, 'cells': [
+        {'book': 'Matt', 'spans': [], 'eus': []},
+        {'book': 'Luke', 'spans': [], 'eus': []},
+        {'book': 'John', 'spans': [], 'eus': [], 'slot': '+John',
+         'beside': '33'}]}]
+    made = []
+    monkeypatch.setattr(page, '_cell',
+                        lambda c, w, s: made.append((c['book'], s)) or Gtk.Label())
+    page._grid = None
+    page._note = Gtk.Label()
+    page._fill(rows, 'KJV')
+    assert seen == [2]
+    assert made == [('Matt', {1}), ('Luke', {1}), ('John', set())]

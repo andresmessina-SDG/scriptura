@@ -6755,6 +6755,26 @@ msgstr "Четыре Евангелия в порядке событий, все
 msgid "The Harmony, § {n}"
 msgstr "Гармония, § {n}"
 
+#: harmony_view.py
+msgid "Eusebius, Canon X"
+msgstr "Евсевий, канон X"
+
+#: harmony_view.py
+msgid "Take it away"
+msgstr "Убрать"
+
+#: harmony_view.py
+msgid "Set it beside"
+msgstr "Поставить рядом"
+
+#: harmony_view.py
+msgid "Show this event beside the accounts"
+msgstr "Показать это событие рядом с повествованиями"
+
+#: harmony_view.py
+msgid "Similar event, not the same · § {n}"
+msgstr "Сходное событие, не то же самое · § {n}"
+
 #: plan_session.py
 msgid "Day {n} · {passage} · {i} of {total}"
 msgstr "День {n} · {passage} · {i} из {total}"

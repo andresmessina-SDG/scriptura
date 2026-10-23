@@ -136,6 +136,11 @@ class HarmonyPage:
         self._account_rows: list[dict] | None = None
         self._grid: Gtk.Grid | None = None
         self._band_area: Gtk.DrawingArea | None = None
+        # A similar event set beside the accounts (sketch E): its section.
+        self._beside: str | None = None
+        self._accounts_box: Gtk.Widget | None = None
+        self._links_box: Gtk.Widget | None = None
+        self._beside_btns: dict[str, Gtk.ToggleButton] = {}
         self._band_anim: Adw.TimedAnimation | None = None
         self._band_progress = 1.0
         self._texts: dict[tuple, list] = {}
@@ -298,6 +303,7 @@ class HarmonyPage:
         if sid is not None and harmony.section(sid) is None:
             return
         self._sel = sid
+        self._beside = None
         settings.put('harmony_section', sid or '')
         self._show()
         self._main.get_vadjustment().set_value(0)
@@ -355,6 +361,7 @@ class HarmonyPage:
         if not lens or lens == self._lens:
             return
         self._lens = lens
+        self._beside = None
         settings.put('harmony_lens', lens)
         self._show()
 
@@ -458,6 +465,10 @@ class HarmonyPage:
         self._content.append(self._header(self._sel))
         self._content.append(self._band(self._sel))
         self._content.append(self._accounts(self._sel))
+        canon_x = self._canon_x(self._sel)
+        if canon_x is not None:
+            self._content.append(canon_x)
+        self._links_box = None
         links = harmony.other_links(self._sel)
         if links:
             self._content.append(self._links(links))
@@ -701,7 +712,8 @@ class HarmonyPage:
             found = {b for r in harmony.eusebius_rows(self._sel)
                      for b in r['cells']}
             return [b for b in harmony.GOSPELS if b in found]
-        return list(harmony.gospel_spans(self._sel))
+        return list(harmony.gospel_spans(self._sel)) + [
+            f'+{b}' for b in harmony.gospel_spans(self._beside or '')]
 
     def _accounts(self, sid: str) -> Gtk.Widget:
         box = _vbox(10, 'harmony-accounts')
@@ -719,13 +731,52 @@ class HarmonyPage:
         else:
             rows = [{'head': None, 'cells': [
                 {'book': b, 'spans': spans, 'eus': []}
-                for b, spans in harmony.gospel_spans(sid).items()]}]
+                for b, spans in harmony.gospel_spans(sid).items()] + [
+                {'book': b, 'spans': spans, 'eus': [], 'slot': f'+{b}',
+                 'beside': self._beside}
+                for b, spans in harmony.gospel_spans(self._beside or '').items()]}]
         self._account_rows = rows
         self._grid = Gtk.Grid(column_spacing=22, row_spacing=10)
         self._grid.set_column_homogeneous(True)
         box.append(self._grid)
+        self._accounts_box = box
         self._read(rows)
         return box
+
+    def _canon_x(self, sid: str) -> Gtk.Widget | None:
+        """Eusebius's own word for a section told in one Gospel, where he
+        too set all of it apart: his tenth table (sketch C). Where he paired
+        some of its verses, the header's canons say so, and the line would
+        claim more than he did (his call, 2026-10-23)."""
+        q = harmony.data().get('canon_x')
+        if (self._lens != 'robertson' or q is None
+                or len(harmony.gospel_spans(sid)) != 1
+                or harmony.canons(sid) != ['X']):
+            return None
+        box = _vbox(6, 'harmony-canon-x')
+        box.append(_label(_('Eusebius, Canon X'), 'creeds-kicker'))
+        box.append(_quotation(q))
+        return box
+
+    def _set_beside(self, target: str | None):
+        """Set a similar event's passages beside the accounts, or take them
+        away. Only the accounts and the links are rebuilt: the band above
+        does not move, and its threads do not draw in again."""
+        if target == self._beside or self._sel is None:
+            return
+        had_focus = any(b.is_focus() for b in self._beside_btns.values())
+        self._beside = target
+        for old, make in ((self._accounts_box, lambda: self._accounts(self._sel)),
+                          (self._links_box, lambda: self._links(
+                              harmony.other_links(self._sel)))):
+            if old is None:
+                continue
+            new = make()
+            self._content.insert_child_after(new, old)
+            self._content.remove(old)
+        btn = self._beside_btns.get(target or '')
+        if had_focus and btn is not None:
+            btn.grab_focus()
 
     def _read(self, rows: list[dict]):
         """Fetch the accounts' words off the main loop, then lay them out."""
@@ -770,13 +821,19 @@ class HarmonyPage:
         for r in rows:
             words = [[v for sp in c['spans'] for v in self._texts.get(
                 (module, _span_key(sp)), [])] for c in r['cells']]
-            shared = harmony.shared_numbers(words)
+            # An underline marks the same event's shared Greek, so a similar
+            # event set beside counts for none and wears none (his call).
+            mine = [i for i, c in enumerate(r['cells']) if not c.get('beside')]
+            found = iter(harmony.shared_numbers([words[i] for i in mine]))
+            shared = [next(found) if i in mine else set()
+                      for i in range(len(words))]
             tagged |= any(nums for col in words for _c, _v, ws in col
                           for _t, nums in ws)
             cells = [self._cell(c, w, s) for c, w, s in
                      zip(r['cells'], words, shared)]
             self._cells.append({'head': r['head'], 'cells': cells,
-                                'books': [c['book'] for c in r['cells']]})
+                                'books': [c.get('slot', c['book'])
+                                          for c in r['cells']]})
         self._note.set_label(
             _('Underlined: a word whose Greek another passage here also uses.')
             if tagged else
@@ -812,6 +869,14 @@ class HarmonyPage:
                 refs.append(n)
         head.append(refs)
         box.append(head)
+        if cell.get('beside'):
+            # Named for what it is, so it is never read as a fifth account;
+            # under the head, so the heads stay level across the columns.
+            kind = Gtk.Box(spacing=8)
+            kind.append(_swatch(_STROKE['look_alike']))
+            kind.append(_label(_('Similar event, not the same · § {n}').format(
+                n=cell['beside']), 'harmony-beside-head'))
+            box.append(kind)
         text = _PassageText(xalign=0, yalign=0, wrap=True, use_markup=True)
         text.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
         text.set_markup(_markup(verses, shared))
@@ -849,6 +914,8 @@ class HarmonyPage:
 
     def _links(self, links: list[dict]) -> Gtk.Widget:
         box = _vbox(0, 'harmony-links')
+        self._links_box = box
+        self._beside_btns = {}
         for kind in ('look_alike', 'same_words'):
             mine = [m for m in links if m['kind'] == kind]
             if not mine:
@@ -899,6 +966,20 @@ class HarmonyPage:
             q = _label(f"“{m['quote']}”", 'harmony-quote')
             col.append(q)
             col.append(_label('Robertson', 'creeds-cite'))
+        if (m['kind'] == 'look_alike' and target is not None
+                and self._lens == 'robertson'):
+            on = self._beside == target['id']
+            beside = Gtk.ToggleButton(
+                label=_('Take it away') if on else _('Set it beside'))
+            beside.set_active(on)
+            beside.add_css_class('flat')
+            beside.add_css_class('harmony-beside')
+            beside.set_halign(Gtk.Align.START)
+            beside.set_tooltip_text(_('Show this event beside the accounts'))
+            beside.connect('toggled', lambda b, i=target['id']: self._set_beside(
+                i if b.get_active() else None))
+            self._beside_btns[target['id']] = beside
+            col.append(beside)
         row.append(col)
         return row
 
