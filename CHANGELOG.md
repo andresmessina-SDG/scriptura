@@ -6,6 +6,33 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+## [1.9.0] — 2026-10-23
+
+### Added
+
+- **The Harmony of the Gospels**, a page that sets the four Gospels side by
+  side: A. T. Robertson's harmony (1922, after Broadus), 185 sections in 14
+  parts, with the canon tables of Eusebius as a second lens. The accounts are
+  read in the Bible beside the page, Matthew to John, and a word whose Greek
+  another account also uses is underlined, from the Bible's Strong's numbers.
+- A band above the accounts shows where the section falls in each Gospel,
+  with threads joining the same event and reaching to similar events. A
+  similar event can be set beside the accounts as one more column.
+- Links to similar events and to passages said elsewhere, each naming its
+  witness; Eusebius's own words under a section only one Gospel tells; short
+  fact lines where the text is in question (Mark 16:9–20, John 7:53–8:11),
+  with a door to the Greek interlinear's readings.
+- **Gospel parallels in the margin**: four dots where a section told in more
+  than one Gospel begins; a click shows the other Gospels' passages. Off by
+  default; the toggle is in the header's reading tools.
+- **Life of Christ in 40 Days**, a reading plan of Robertson's sections in
+  order, every account of each, with a door to the day's sections on the
+  harmony page.
+- Reading plans can read part of a chapter. Opening a plan's reading lights
+  the passage and quiets the rest of the chapter; a pill at the foot of the
+  page offers the next passage once the end is in view, then marks the day
+  read. Every plan has it; the close, Esc or any move of your own ends it.
+
 ## [1.8.5] — 2026-10-21
 
 ### Added
