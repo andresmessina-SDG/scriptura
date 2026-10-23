@@ -61,11 +61,21 @@ def test_a_one_passage_day_names_no_count():
 # ── The window's side: following the reader, and letting go ─────────────────
 
 class _Pane:
-    def __init__(self):
+    def __init__(self, module='KJV'):
         self.lit = 'unset'
+        self.module = module
+        self.pill = None
+        self.on_end = None
+
+    def get_visible(self):
+        return True
+
+    def take_foot_pill(self, pill):
+        self.pill = pill
 
     def set_lit_passage(self, lit, on_end=None, on_left=None):
         self.lit = lit
+        self.on_end = on_end
 
 
 class _Pill:
@@ -86,7 +96,7 @@ def _window():
     win = SimpleNamespace(pane1=_Pane(), pane2=_Pane(), _plan_pill=_Pill(),
                           _plan_session=PlanSession('p', 10, DAY, index=1))
     for name in ('_on_plan_left', '_end_plan_session', '_light_plan_passage',
-                 '_on_plan_end_seen'):
+                 '_on_plan_end_seen', '_plan_reading_pane'):
         setattr(win, name, getattr(window.BibleWindow, name).__get__(win))
     return win
 
@@ -116,3 +126,16 @@ def test_a_refused_move_ends_the_session_rather_than_naming_a_passage():
     window.BibleWindow._plan_session_go(win)
     assert win._plan_session is None
     assert win.pane1.lit is None
+
+
+def test_the_pane_holding_the_bible_reads_the_day(monkeypatch):
+    """The harmony page in pane 1 and the Bible in pane 2: the pill and the
+    end of the passage are pane 2's. In pane 1 the end was never watched,
+    so "Next" never came."""
+    import content
+    monkeypatch.setattr(content, 'is_text_bible', lambda m: m == 'KJV')
+    win = _window()
+    win.pane1.module = 'GospelHarmony'
+    win._light_plan_passage()
+    assert win.pane2.pill is win._plan_pill and win.pane1.pill is None
+    assert win.pane2.on_end is not None and win.pane1.on_end is None

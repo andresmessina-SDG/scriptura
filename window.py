@@ -894,7 +894,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._plan_session = None
         self._plan_pill = PlanPill(on_step=self._on_plan_step,
                                    on_close=self._end_plan_session)
-        self.pane1.add_foot_pill(self._plan_pill)
+        self.pane1.take_foot_pill(self._plan_pill)
 
         self._paned = _FractionPaned(orientation=Gtk.Orientation.HORIZONTAL,
                                      vexpand=True, hexpand=True)
@@ -4691,11 +4691,25 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._plan_pill.present()
         self._light_plan_passage()
 
+    def _plan_reading_pane(self):
+        """The pane the day is read in: pane 1, unless it holds a page and
+        pane 2 holds the Bible (the harmony beside the reading, say). The
+        pill, the end of the passage and the leaving are all that pane's."""
+        import content
+        if (not content.is_text_bible(self.pane1.module)
+                and self.pane2.get_visible()
+                and content.is_text_bible(self.pane2.module)):
+            return self.pane2
+        return self.pane1
+
     def _light_plan_passage(self):
         lit = self._plan_session.lit()
-        self.pane1.set_lit_passage(lit, on_end=self._on_plan_end_seen,
-                                   on_left=self._on_plan_left)
-        self.pane2.set_lit_passage(lit)
+        reading = self._plan_reading_pane()
+        other = self.pane2 if reading is self.pane1 else self.pane1
+        reading.take_foot_pill(self._plan_pill)
+        reading.set_lit_passage(lit, on_end=self._on_plan_end_seen,
+                                on_left=self._on_plan_left)
+        other.set_lit_passage(lit)
 
     def _on_plan_end_seen(self, _seen):
         if self._plan_session is not None:

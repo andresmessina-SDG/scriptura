@@ -3770,18 +3770,27 @@ class BiblePane(Gtk.Box):
 
     # ── A plan session's lit passage ─────────────────────────────────────
 
-    def add_foot_pill(self, pill):
-        """Float another pill at the reading's foot, resting over the
-        listening pill while that one is up rather than on top of it."""
-        self._chrome_overlay.add_overlay(pill)
+    def take_foot_pill(self, pill):
+        """Float a pill at this pane's foot, taking it from the other pane if
+        it is there, and resting it over the listening pill while that one
+        is up rather than on top of it."""
+        parent = pill.get_parent()
+        if parent is not self._chrome_overlay:
+            if parent is not None:
+                parent.remove_overlay(pill)
+            self._chrome_overlay.add_overlay(pill)
         audio = self._audio.pill
 
         def stack(*_a):
+            if pill.get_parent() is not self._chrome_overlay:
+                return
             pill.foot = audio_pill.FOOT_MARGIN + (
                 max(audio.get_height(), 48) + 8 if audio.get_visible() else 0)
             if pill.is_shown():
                 pill.set_margin_bottom(pill.foot)
-        audio.connect('notify::visible', stack)
+        if not getattr(self, '_stacks_foot_pill', False):
+            self._stacks_foot_pill = True
+            audio.connect('notify::visible', stack)
         stack()
 
     def set_lit_passage(self, lit, on_end=None, on_left=None):
