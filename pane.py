@@ -8,11 +8,13 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 gi.require_version('Gsk', '4.0')
 from gi.repository import Gtk, Adw, GLib, Gdk, Pango
+import audio_pill
 import sword_bridge
 import ebible_bridge
 import archaeology_bridge
 import genealogy_bridge
 import creeds
+import harmony
 import renderings
 import content
 import annotations
@@ -29,6 +31,7 @@ from archaeology_reader import ArchaeologyReader
 from genealogy_reader import GenealogyReader
 from family_tree import FamilyTree
 from creeds_view import CreedsPage
+from harmony_view import HarmonyPage
 from interlinear_view import InterlinearReader
 import interlinear_data
 from module_picker import ModulePicker
@@ -677,7 +680,7 @@ class _VerseRender:
 
     __slots__ = ('start_v', 'end_v', 'html', 'is_commentary', 'anno',
                  'start_mark', 'text_mark', 'has_artifact', 'has_lineage',
-                 'has_creed',
+                 'has_creed', 'harmony_sid',
                  'cap_index', 'fn_markers', 'vnotes', 'poetry_lines')
 
     def __init__(self, start_v, end_v, html, is_commentary):
@@ -691,6 +694,7 @@ class _VerseRender:
         self.has_artifact = False
         self.has_lineage = False
         self.has_creed = False
+        self.harmony_sid = None
         # Filled in by the Bible branch only; a commentary produces none of
         # them, and the plain-text fallback resets them to exactly this.
         self.cap_index = None
@@ -764,6 +768,13 @@ _VERSE_DECORATIONS = (
         'creed_marker',
         lambda p, r: p._insert_creed_marker(r.start_v),
         lambda p, r: not r.is_commentary and r.has_creed),
+    # Where a section of the Gospel harmony begins: the view paints the
+    # fourfold sign beside it when the reader has the signs on, so the toggle
+    # repaints rather than re-renders.
+    _VerseDecoration(
+        'harmony_sign',
+        lambda p, r: p._apply_harmony_sign(r),
+        lambda p, r: not r.is_commentary and r.harmony_sid is not None),
     # The verse anchor navigation resolves against. For a grouped commentary
     # section every verse in [start_v, end_v] points at the same block, so
     # navigating to any of them lands on this section. No enable condition:
@@ -1238,6 +1249,9 @@ class BiblePane(Gtk.Box):
         # unlike the lexicon: footnotes are reading content, not a lookup
         # mode, so a reader who wants them wants them every session.
         self._show_footnotes = bool(settings.get('show_footnotes'))
+        # The Gospel harmony's signs in the margin (the header's reading
+        # tools). Off until the reader turns them on.
+        self._show_harmony = bool(settings.get('show_harmony'))
         # Section headings (Appearance ▸ Advanced). A reading convention —
         # publisher-supplied structure that SWORD hands over separately from
         # the verse text — so it defaults on, like small caps.
@@ -1250,6 +1264,14 @@ class BiblePane(Gtk.Box):
         # Verse the currently-marked sense-unit starts at, so a scroll that
         # stays inside one unit costs a comparison and no retagging.
         self._current_unit = None
+        # A plan session's lit passage: (book, chapter, first, last), 0 for
+        # the chapter's own end — see set_lit_passage.
+        self._lit = None
+        self._lit_end_offset = None
+        self._lit_end_seen = False
+        self._lit_check_queued = False
+        self._on_lit_end = None
+        self._on_lit_left = None
         # Advanced typography (Appearance ▸ Advanced): small-caps divine
         # name and old-style figures are reading conventions (on by
         # default); flush poetry and the tinted drop cap are opt-ins.
@@ -1322,6 +1344,9 @@ class BiblePane(Gtk.Box):
         # The Creeds — the three creeds, each line drawn to its Scripture; a
         # standalone document like the ones above, opened from the list.
         self._creeds = CreedsPage(self)
+        # The Harmony of the Gospels — the four Gospels side by side, section
+        # by section; a standalone document like the ones above.
+        self._harmony = HarmonyPage(self)
         # Interlinear Greek NT — word-stack cells, verse-synced like a Bible.
         self._interlinear = InterlinearReader(self)
         # Each content mode is a PaneContent strategy; _compute_module_flags
@@ -1579,6 +1604,8 @@ class BiblePane(Gtk.Box):
         self._update_font_css()
 
         self._buffer = self._view.get_buffer()
+        self._view.set_harmony(self._show_harmony)
+        self._harmony_signs: list = []
 
         # The reading column is the app's main content, not a plain text box:
         # naming it DOCUMENT tells AT this is prose to be read, and gives the
@@ -1699,6 +1726,7 @@ class BiblePane(Gtk.Box):
         self._content_stack.add_named(self._genealogy.widget, 'genealogy')
         self._content_stack.add_named(self._family_tree.widget, 'family')
         self._content_stack.add_named(self._creeds.widget, 'creeds')
+        self._content_stack.add_named(self._harmony.widget, 'harmony')
         self._content_stack.add_named(self._interlinear.widget, 'interlinear')
         # Full-pane placeholder for "can't show content here" states
         # (unsupported module, wrong cipher key, passage not in this module).
@@ -1733,6 +1761,7 @@ class BiblePane(Gtk.Box):
         # summoned, it persists while there is something to control, and it
         # never moves the text.
         chrome_overlay.add_overlay(self._audio.pill)
+        self._chrome_overlay = chrome_overlay
         self.append(chrome_overlay)
         self._sync_view_top_margin()
         self._apply_reading_page_edge()
@@ -1835,7 +1864,8 @@ class BiblePane(Gtk.Box):
             GLib.idle_add(self._genbook.fetch_and_render)
         elif (self._is_catena or self._is_imagery or self._is_archaeology
                 or self._is_genealogy or self._is_family
-                or self._is_creeds or self._is_interlinear):
+                or self._is_creeds or self._is_harmony
+                or self._is_interlinear):
             GLib.idle_add(self._fetch_and_render)
 
     def _on_pane_click(self, gesture, n_press, x, y):
@@ -1852,6 +1882,7 @@ class BiblePane(Gtk.Box):
         # Scroll-driven, so it follows the eye rather than the last click.
         # Cheap: a comparison unless the unit actually changed.
         self._update_current_unit()
+        self._check_lit_end()
 
     def _set_chrome_revealed(self, reveal):
         self._chrome.set_revealed(reveal)
@@ -1928,6 +1959,7 @@ class BiblePane(Gtk.Box):
         self._is_genealogy = tk == 'genealogy'
         self._is_family = tk == 'family'
         self._is_creeds = tk == 'creeds'
+        self._is_harmony = tk == 'harmony'
         self._is_interlinear = tk == 'interlinear'
         is_ebible = tk == 'ebible'
         if self._is_catena:
@@ -1942,6 +1974,8 @@ class BiblePane(Gtk.Box):
             self._module_type = 'The Bible Family Tree'
         elif self._is_creeds:
             self._module_type = 'The Creeds'
+        elif self._is_harmony:
+            self._module_type = 'The Harmony of the Gospels'
         elif self._is_interlinear:
             self._module_type = 'Interlinear'
         elif is_ebible:
@@ -1952,14 +1986,14 @@ class BiblePane(Gtk.Box):
             not self._is_catena and not self._is_imagery
             and not self._is_archaeology and not self._is_genealogy
             and not self._is_family and not self._is_creeds
-            and not self._is_interlinear
+            and not self._is_harmony and not self._is_interlinear
             and not is_ebible
             and sword_bridge.is_devotional_module(m))
         self._is_genbook = (
             not self._is_catena and not self._is_imagery
             and not self._is_archaeology and not self._is_genealogy
             and not self._is_family and not self._is_creeds
-            and not self._is_interlinear
+            and not self._is_harmony and not self._is_interlinear
             and not is_ebible
             and self._module_type == 'Generic Books')
         # The active content strategy. Card modes are registry-keyed; the
@@ -2414,6 +2448,7 @@ class BiblePane(Gtk.Box):
 
     def _fetch_and_render(self):
         self._rendered_verses = None
+        self._clear_harmony_signs()
         # Only a chapter fetch sets it again; any other render (devotional,
         # card, book) supersedes one in flight whose apply is then dropped.
         self._render_pending = False
@@ -2683,6 +2718,37 @@ class BiblePane(Gtk.Box):
                     self, self._book, self._chapter, v))
         self._view.add_child_at_anchor(btn, anchor)
 
+    def _apply_harmony_sign(self, r):
+        """Mark the verse number where a harmony section begins, and note
+        the sign for the view to paint. The tag carries nothing visible; it
+        wakes the view's paint pass."""
+        table = self._buffer.get_tag_table()
+        tag = table.lookup('_harmony_sign') or self._buffer.create_tag(
+            '_harmony_sign')
+        start = self._buffer.get_iter_at_mark(r.start_mark)
+        self._buffer.apply_tag(tag, start,
+                               self._buffer.get_iter_at_mark(r.text_mark))
+        self._harmony_signs.append((self._buffer.create_mark(None, start, True),
+                                    r.harmony_sid, harmony.told(r.harmony_sid),
+                                    self._harmony_here))
+
+    def _clear_harmony_signs(self):
+        """Forget the last chapter's signs. They keep marks of their own
+        (the render deletes each verse's marks once the verse is decorated),
+        and every render clears them: a devotional or a book written into
+        the same view would otherwise wear a Gospel chapter's signs."""
+        for mark, *_rest in self._harmony_signs:
+            if not mark.get_deleted():
+                self._buffer.delete_mark(mark)
+        self._harmony_signs = []
+        self._view.set_harmony_signs(self._harmony_signs)
+
+    def set_show_harmony(self, enabled):
+        """Show or hide the harmony's signs. Paint only, like the unit
+        rule: nothing in the buffer changes."""
+        self._show_harmony = bool(enabled)
+        self._view.set_harmony(self._show_harmony)
+
     def _display(self, verses, book, chapter, module, notes=None, task=None,
                  headings=None):
         if book != self._book or chapter != self._chapter or module != self._module:
@@ -2690,6 +2756,11 @@ class BiblePane(Gtk.Box):
         if task is not None and not task.is_current():
             return GLib.SOURCE_REMOVE  # superseded by a newer fetch
         self._render_pending = False
+        if self._lit is not None:
+            # Queued here, not at the end: an empty or cipher-locked chapter
+            # returns early below, and the session must still hear that the
+            # reader went there. Idle, so it runs on the finished page.
+            GLib.idle_add(self._light_rendered, book, chapter)
         # The rebuild collapses and re-grows the adjustment; none of that
         # is the reader scrolling.
         self._mark_programmatic_scroll()
@@ -2726,6 +2797,11 @@ class BiblePane(Gtk.Box):
         # Verses whose words a creed uses.
         creed_verses = (set() if is_commentary
                         else creeds.marker_verses(book, chapter))
+        # Verses where a section of the Gospel harmony begins.
+        harmony_starts = ({} if is_commentary
+                          else harmony.section_starts(book, chapter))
+        self._harmony_here = harmony.gospel_of(book)
+        self._clear_harmony_signs()
         self._artifact_markers = []  # rebuilt below; old ones died with set_text('')
 
         self._cancel_all_flashes()
@@ -2871,6 +2947,7 @@ class BiblePane(Gtk.Box):
             r.has_artifact = start_v in art_verses
             r.has_lineage = start_v in gen_verses
             r.has_creed = start_v in creed_verses
+            r.harmony_sid = harmony_starts.get(start_v)
 
             # 1. Verse number — inline for Bibles, bold section header for commentaries
             if is_commentary:
@@ -3691,6 +3768,126 @@ class BiblePane(Gtk.Box):
             self._view.queue_draw()
         self._current_unit = None
 
+    # ── A plan session's lit passage ─────────────────────────────────────
+
+    def take_foot_pill(self, pill):
+        """Float a pill at this pane's foot, taking it from the other pane if
+        it is there, and resting it over the listening pill while that one
+        is up rather than on top of it."""
+        parent = pill.get_parent()
+        if parent is not self._chrome_overlay:
+            if parent is not None:
+                parent.remove_overlay(pill)
+            self._chrome_overlay.add_overlay(pill)
+        audio = self._audio.pill
+
+        def stack(*_a):
+            if pill.get_parent() is not self._chrome_overlay:
+                return
+            pill.foot = audio_pill.FOOT_MARGIN + (
+                max(audio.get_height(), 48) + 8 if audio.get_visible() else 0)
+            if pill.is_shown():
+                pill.set_margin_bottom(pill.foot)
+        if not getattr(self, '_stacks_foot_pill', False):
+            self._stacks_foot_pill = True
+            audio.connect('notify::visible', stack)
+        stack()
+
+    def set_lit_passage(self, lit, on_end=None, on_left=None):
+        """Light a plan passage's verses and quiet the rest of the chapter, or
+        with None stop.
+
+        `lit` is (book, chapter, first, last) in app-space (KJV) numbering,
+        0 for either end meaning the chapter's own. `on_end(seen)` hears when
+        the last lit verse comes into view; `on_left(book, chapter)` hears
+        when this pane renders a chapter the passage is not in — the reader
+        has gone elsewhere.
+        """
+        self._lit = lit
+        self._on_lit_end = on_end
+        self._on_lit_left = on_left
+        self._lit_end_offset = None
+        self._lit_end_seen = False
+        self._clear_lit_tag()
+        if (lit is not None and not self._render_pending
+                and (lit[0], lit[1]) == (self._book, self._chapter)):
+            GLib.idle_add(self._light_rendered, self._book, self._chapter)
+
+    def _light_rendered(self, book, chapter):
+        lit = self._lit
+        if lit is None or (book, chapter) != (self._book, self._chapter):
+            return GLib.SOURCE_REMOVE
+        if (lit[0], lit[1]) != (book, chapter):
+            if self._on_lit_left is not None:
+                self._on_lit_left(book, chapter)
+            return GLib.SOURCE_REMOVE
+        if self._module_type != 'Biblical Texts':
+            return GLib.SOURCE_REMOVE
+        rendered = sorted(v for v, _h in (self._rendered_verses or []))
+        if not rendered:
+            return GLib.SOURCE_REMOVE
+
+        def present(v, default):
+            if not v:
+                return default
+            return self._resolve_present_verse(sword_bridge.map_target_verse(
+                self._module, book, chapter, v))
+        first = present(lit[2], rendered[0])
+        last = present(lit[3], rendered[-1])
+        first_range = self._verse_ranges(first)
+        last_range = self._verse_ranges(last)
+        if not first_range or not last_range:
+            return GLib.SOURCE_REMOVE
+        if (first, last) != (rendered[0], rendered[-1]):
+            # Only part of the chapter is read: light it. A whole chapter
+            # has nothing to quiet.
+            buf = self._buffer
+            tag = (buf.get_tag_table().lookup('_plan_passage')
+                   or buf.create_tag('_plan_passage'))
+            buf.apply_tag(tag, first_range[0], last_range[2])
+            self._view.set_passage_lit(True)
+        self._lit_end_offset = last_range[2].get_offset()
+        self._lit_end_seen = False
+        self._check_lit_end()
+        return GLib.SOURCE_REMOVE
+
+    def _clear_lit_tag(self):
+        tag = self._buffer.get_tag_table().lookup('_plan_passage')
+        if tag is not None:
+            self._buffer.remove_tag(tag, self._buffer.get_start_iter(),
+                                    self._buffer.get_end_iter())
+        self._view.set_passage_lit(False)
+
+    def _check_lit_end(self):
+        """Tell the session once the last lit verse has been in view. Once:
+        the offer it brings stays up if the reader looks back a line."""
+        if (self._lit_end_offset is None or self._lit_end_seen
+                or self._on_lit_end is None or self._view._blank
+                or not self._view.get_realized()):
+            return
+        wait = (self._scroll._ignore_scroll_until
+                - GLib.get_monotonic_time()) // 1000
+        if wait > 0 or self._scroll._landing is not None:
+            # The app is still moving the page — a render, or the landing on
+            # the passage — and where it stands meanwhile is not where the
+            # reader reads: measured, a passage opened from deep in another
+            # chapter was "seen" at the new chapter's foot before it landed.
+            if not self._lit_check_queued:
+                self._lit_check_queued = True
+                GLib.timeout_add(max(50, wait + 50), self._check_lit_end_later)
+            return
+        it = self._buffer.get_iter_at_offset(self._lit_end_offset)
+        loc = self._view.get_iter_location(it)
+        vr = self._view.get_visible_rect()
+        if loc.y + loc.height <= vr.y + vr.height or self._at_chapter_foot():
+            self._lit_end_seen = True
+            self._on_lit_end(True)
+
+    def _check_lit_end_later(self):
+        self._lit_check_queued = False
+        self._check_lit_end()
+        return GLib.SOURCE_REMOVE
+
     def marks_sections(self):
         """Whether the module this pane is showing supplies section headings
         at all — the data both sense-unit controls are built on.
@@ -4410,6 +4607,18 @@ class BiblePane(Gtk.Box):
         word. Also feeds the hover-preview dwell tracker (Advanced,
         default off) — every exit path reports 'not on a word' so a
         pending dwell can't fire for a word the cursor already left."""
+        # Over a harmony sign, the pointer says it can be clicked: the
+        # sign is paint, so nothing else would.
+        bx, by = self._view.window_to_buffer_coords(
+            Gtk.TextWindowType.WIDGET, int(x), int(y))
+        on_sign = self._view.harmony_sign_at(bx, by) is not None
+        if on_sign != getattr(self, '_on_sign', False):
+            self._on_sign = on_sign
+            if on_sign:
+                self._cursor_off_sign = self._view.get_cursor()
+                self._view.set_cursor_from_name('pointer')
+            else:
+                self._view.set_cursor(self._cursor_off_sign)
         if not self._lexicon_enabled:
             self._clear_strg_hover()
             self._hover_track(None, None, x, y)
@@ -4744,6 +4953,11 @@ class BiblePane(Gtk.Box):
         # click (collapse phantom selection) from a drag-select (preserve).
         self._click_press_pos = (x, y)
         bx, by = self._view.window_to_buffer_coords(Gtk.TextWindowType.WIDGET, int(x), int(y))
+        sids = self._view.harmony_sign_at(bx, by)
+        if sids is not None:
+            if n_press == 1:
+                self._peek.show_harmony_peek(sids, bx, by)
+            return
         found, it = self._view.get_iter_at_location(bx, by)
         if not found:
             return

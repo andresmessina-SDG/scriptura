@@ -16,6 +16,8 @@ church_year.py
 content.py
 creeds.py
 creeds_view.py
+harmony.py
+harmony_view.py
 crossref_panel.py
 data/io.github.andresmessina_SDG.Scriptura.desktop.in
 data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
@@ -50,6 +52,7 @@ pane_peek.py
 pane_search.py
 passage_export.py
 passage_print.py
+plan_session.py
 preferences.py
 present_mode.py
 reading_plans.py

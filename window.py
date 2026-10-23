@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 import threading
 import gi
 gi.require_version('Gtk', '4.0')
@@ -33,6 +34,7 @@ import passage_print
 from pane import BiblePane
 from appearance_page import AppearancePageMixin
 from present import PresentView
+from plan_session import PlanPill, PlanSession
 from today_page import TodayView, fetch_antiphon, fetch_epigraph
 from module_manager import ModuleManagerWindow
 from family_card import FamilyCard
@@ -111,6 +113,40 @@ def nav_books(modules, current_book=None):
     if current_book in DEUTEROCANON:
         return BOOKS + DEUTEROCANON
     return BOOKS
+
+
+
+def _draw_harmony_glyph(area, cr, w, h):
+    """The harmony toggle's glyph: a great arch over two, on three columns
+    with capitals and a base — the frame painted over Eusebius's canon
+    tables, which set the Gospels' parallels side by side."""
+    ink = area.get_color()
+    cr.set_source_rgba(ink.red, ink.green, ink.blue, ink.alpha)
+    lw = 1.3
+    cr.set_line_width(lw)
+    x0, x1 = lw / 2 + 1.0, w - lw / 2 - 1.0
+    xs = (x0, (x0 + x1) / 2, x1)
+    r, big = (x1 - x0) / 4, (x1 - x0) / 2
+    spring = big + lw / 2 + 0.3
+    base = h - lw / 2 - 1.6
+    for x in xs:
+        cr.move_to(x, base)
+        cr.line_to(x, spring)
+        cr.stroke()
+    for a, b in zip(xs, xs[1:]):
+        cr.arc((a + b) / 2, spring, r, math.pi, 0)
+        cr.stroke()
+    cr.arc(w / 2, spring, big, math.pi, 0)
+    cr.stroke()
+    cr.set_line_width(1.0)
+    for x in xs:
+        cr.move_to(x - 1.6, spring + 0.5)
+        cr.line_to(x + 1.6, spring + 0.5)
+        cr.stroke()
+    cr.set_line_width(1.3)
+    cr.move_to(0, h - 0.9)
+    cr.line_to(w, h - 0.9)
+    cr.stroke()
 
 
 class _FractionPaned(Gtk.Paned):
@@ -568,6 +604,23 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self.xref_toggle.set_active(bool(settings.get('show_crossrefs')))
         self.xref_toggle.connect('toggled', self._on_xref_toggle)
 
+        # Gospel harmony toggle — a canon-table arcade (his pick, 2026-10-22;
+        # four dots read as a "more" menu beside ※ and f*). Drawn: no font
+        # has it. Persisted like footnotes; off until the reader asks.
+        self.harmony_toggle = Gtk.ToggleButton()
+        sign = Gtk.DrawingArea(content_width=17, content_height=20)
+        sign.set_valign(Gtk.Align.CENTER)
+        sign.set_draw_func(_draw_harmony_glyph)
+        self.harmony_toggle.set_child(sign)
+        self.harmony_toggle.add_css_class('flat')
+        self.harmony_toggle.add_css_class('scriptura-lex-toggle')
+        self.harmony_toggle.set_tooltip_text(
+            _('Gospel parallels — a sign in the margin where the other '
+              'Gospels tell the same event'))
+        set_accessible_label(self.harmony_toggle, _('Gospel parallels'))
+        self.harmony_toggle.set_active(bool(settings.get('show_harmony')))
+        self.harmony_toggle.connect('toggled', self._on_harmony_toggle)
+
         # ── Right: search + bookmarks + view toggle ────────────────────────────
         self._bookmark_btn = Gtk.Button(icon_name='scriptura-bookmark-new-symbolic')
         self._bookmark_btn.add_css_class('flat')
@@ -698,7 +751,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         # on which tools happen to be on.
         self._tools_revealers = []
         self._study_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        for toggle in (self.xref_toggle, self.fnote_toggle):
+        for toggle in (self.harmony_toggle, self.xref_toggle,
+                       self.fnote_toggle):
             toggle.set_margin_end(3)
             revealer = Gtk.Revealer()
             revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_LEFT)
@@ -835,6 +889,12 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         # Initial f* sensitivity for the startup modules — the pane
         # callbacks above only fire on later switches.
         self._update_fnote_sensitivity()
+
+        # Reading a plan day: the passage lit in pane 1, the pill at its foot.
+        self._plan_session = None
+        self._plan_pill = PlanPill(on_step=self._on_plan_step,
+                                   on_close=self._end_plan_session)
+        self.pane1.take_foot_pill(self._plan_pill)
 
         self._paned = _FractionPaned(orientation=Gtk.Orientation.HORIZONTAL,
                                      vexpand=True, hexpand=True)
@@ -1288,6 +1348,9 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
                 return True
             if getattr(self, '_reading_mode', False):
                 self._set_reading_mode(False)
+                return True
+            if self._plan_session is not None:
+                self._end_plan_session()
                 return True
             return False
 
@@ -2115,6 +2178,12 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self.pane1.set_show_footnotes(enabled)
         self.pane2.set_show_footnotes(enabled)
 
+    def _on_harmony_toggle(self, _btn):
+        enabled = self.harmony_toggle.get_active()
+        settings.put('show_harmony', enabled)
+        self.pane1.set_show_harmony(enabled)
+        self.pane2.set_show_harmony(enabled)
+
     def _on_xref_toggle(self, _btn):
         enabled = self.xref_toggle.get_active()
         settings.put('show_crossrefs', enabled)
@@ -2192,9 +2261,9 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         bible = self._first_bible_module()
         target = self._today_view.antiphon_target()
         if bible and target:
-            book, chapter = target
+            book, chapter, verse = target
             self._today_fetch('today-antiphon', now,
-                              lambda: fetch_antiphon(bible, book, chapter),
+                              lambda: fetch_antiphon(bible, book, chapter, verse),
                               self._on_today_antiphon)
 
     def _today_fetch(self, key, now, work, apply):
@@ -2576,8 +2645,17 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             return GLib.SOURCE_REMOVE
         GLib.timeout_add(16, poll)
 
-    def _on_today_begin(self, book, chapter):
-        self._go_to(book, chapter)      # navigation dismisses the page
+    def _on_today_begin(self, book, chapter, verse=0):
+        # Navigation dismisses the page. The target is the plan day's first
+        # passage, so the day is read as a session from there.
+        plan_id, start_date = reading_plans.get_active()
+        days = reading_plans.get_plan_days(plan_id) if plan_id else []
+        if plan_id and start_date and days:
+            idx, _finished = reading_plans.plan_anchor(
+                plan_id, start_date, len(days))
+            self._start_plan_session(plan_id, idx, 0)
+            return
+        self._go_to(book, chapter, verse or None)
 
     def _on_today_continue(self, target):
         # The panes already restored the saved position at startup. Navigate
@@ -2643,7 +2721,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         # either way, and it is where the reader's attention already is. A
         # tool that stays on show through the fold keeps its own focus.
         focus = self.get_focus()
-        if focus in (self.xref_toggle, self.fnote_toggle) and not (
+        if focus in (self.harmony_toggle, self.xref_toggle,
+                     self.fnote_toggle) and not (
                 focus.get_active() and focus.get_sensitive()):
             self.lex_toggle.grab_focus()
         self._apply_tools_reveal()
@@ -2652,7 +2731,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
     def _tools_members(self):
         """The cluster's focusable members, in visual (left-to-right) order.
         An insensitive f* (no loaded translation has notes) is not a stop."""
-        return [w for w in (self.xref_toggle, self.fnote_toggle, self.lex_toggle)
+        return [w for w in (self.harmony_toggle, self.xref_toggle,
+                            self.fnote_toggle, self.lex_toggle)
                 if w.get_sensitive()]
 
     def _tools_focus_member(self, widget):
@@ -2911,6 +2991,16 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
                          not self.xref_toggle.get_active()))
         if self.xref_toggle.get_active():
             xr_row.get_child().append(
+                Gtk.Image.new_from_icon_name('scriptura-object-select-symbolic'))
+
+        hm_glyph = Gtk.DrawingArea(content_width=15, content_height=18)
+        hm_glyph.set_valign(Gtk.Align.CENTER)
+        hm_glyph.set_draw_func(_draw_harmony_glyph)
+        hm_row = row(hm_glyph, _('Gospel parallels'),
+                     lambda: self.harmony_toggle.set_active(
+                         not self.harmony_toggle.get_active()))
+        if self.harmony_toggle.get_active():
+            hm_row.get_child().append(
                 Gtk.Image.new_from_icon_name('scriptura-object-select-symbolic'))
 
         row(Gtk.Image.new_from_icon_name('scriptura-bookmark-new-symbolic'),
@@ -3280,8 +3370,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         The day's readings are already on screen, the plan day is already
         counted and the church-year designation is already resolved, so the
         entry arrives anchored and stamped with nothing typed for the reader.
-        A plan day's readings are whole chapters, which is why the anchors
-        carry no verses.
+        An anchor is a chapter: a whole chapter's carries no verses, a
+        passage's carries the verses it reads there.
         """
         anchors, plan = [], None
         plan_id, start_date = reading_plans.get_active()
@@ -3290,8 +3380,14 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             if days:
                 idx, _finished = reading_plans.plan_anchor(
                     plan_id, start_date, len(days))
-                anchors = [{'book': book, 'chapter': chapter, 'verses': []}
-                           for book, chapter in days[idx]]
+                for book, c, v, c2, v2 in reading_plans.passages(days[idx]):
+                    for ch in range(c, c2 + 1):
+                        lo = v if ch == c and v else 1
+                        hi = v2 if ch == c2 and v2 else 0
+                        if lo > 1 and not hi:
+                            hi = sword_bridge.verse_count(book, ch)
+                        anchors.append({'book': book, 'chapter': ch,
+                                        'verses': list(range(lo, hi + 1))})
                 plan = {'id': plan_id, 'day': idx}
         collect = None
         tradition = settings.get('church_calendar')
@@ -3630,6 +3726,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         # Put the Bible in whichever pane isn't the gallery (defaults to pane2).
         target = (self.pane2
                   if self.pane1._is_archaeology or self.pane1._is_creeds
+                  or self.pane1._is_harmony
                   else self.pane1)
         if not target._is_verse_navigable():
             bible = self._first_bible_module()
@@ -3707,6 +3804,33 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
                                       prefer=page._creeds.current_creed())
         if found:
             page._creeds.show_line(*found)
+
+    def _on_open_harmony(self, source_pane, sid):
+        """A harmony sign's door: the harmony page in the other pane, at the
+        section."""
+        import harmony
+        target = next((p for p in (self.pane1, self.pane2)
+                       if p.get_visible() and p._is_harmony), None)
+        if target is None:
+            target = self.pane2 if source_pane is self.pane1 else self.pane1
+            if not target.get_visible():
+                self._btn_split.set_active(True)
+            target._apply_module_change(harmony.MODULE_KEY)
+        target._harmony.show_section(sid)
+
+    def _open_beside(self, source_pane, book, chapter, verse):
+        """A parallel from a harmony sign: the passage in the other pane,
+        and the pane read from left where it is. _open_verse_in_pane2 for
+        whichever pane is the other."""
+        import content
+        other = self.pane2 if source_pane is self.pane1 else self.pane1
+        if not self._btn_split.get_active():
+            self._btn_split.set_active(True)
+        if not content.is_text_bible(other.module):
+            other._apply_module_change(source_pane.module)
+        other.load_reference_at_verse(book, chapter, verse)
+        if other._sync_btn.get_active():
+            other._sync_btn.set_active(False)
 
     def _ensure_creeds_visible(self, source_pane):
         """A pane showing The Creeds, loading it opposite the Bible we
@@ -4289,8 +4413,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._plan_today_eyebrow.set_text(
             _('Plan complete') if finished
             else _('Day {n} · Today').format(n=self._plan_anchor + 1))
-        self._plan_today_passage.set_text(
-            reading_plans.format_passages(days[self._plan_anchor]) if total else '')
+        self._plan_today_passage.set_text(reading_plans.unbroken(
+            reading_plans.format_passages(days[self._plan_anchor])) if total else '')
 
         self._plan_today_check.handler_block(self._plan_today_check_handler)
         self._plan_today_check.set_active(self._plan_anchor in self._plan_completed)
@@ -4415,16 +4539,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         eyebrow.add_css_class('caption')
         eyebrow.add_css_class('dim-label')
         box.append(eyebrow)
-        # One tappable row per passage group — opens it and closes the menu.
-        for book, start, end in reading_plans.group_readings(self._plan_days[idx]):
-            label = (f'{book_label(book)} {start}' if start == end
-                     else f'{book_label(book)} {start}–{end}')
-            btn = Gtk.Button(label=label)
-            btn.add_css_class('flat')
-            btn.set_halign(Gtk.Align.FILL)
-            btn.get_child().set_xalign(0)
-            btn.connect('clicked', self._on_plan_passage_clicked, pop, book, start)
-            box.append(btn)
+        # One tappable row per passage — opens it and closes the menu.
+        self._append_plan_passages(box, pop, idx)
         done_chk = Gtk.CheckButton(label=_('Mark done'))
         done_chk.set_margin_top(4)
         done_chk.set_active(idx in self._plan_completed)
@@ -4458,16 +4574,16 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._open_plan_day(self._plan_anchor, self._plan_open_btn)
 
     def _open_plan_day(self, idx, anchor):
-        readings = self._plan_days[idx]
-        if not readings:
+        passages = reading_plans.passages(self._plan_days[idx])
+        if not passages:
             return
-        groups = reading_plans.group_readings(readings)
-        if len(groups) <= 1:
-            book, chapter = readings[0]
+        if (len(passages) == 1
+                and not reading_plans.day_sections(self._plan_id, idx)):
             self._menu_split.set_show_sidebar(False)
-            self._go_to(book, chapter)
+            self._start_plan_session(self._plan_id, idx, 0)
             return
-        # Multi-passage day: let the user pick which to open.
+        # Multi-passage day, or one with a door to the harmony: let the
+        # user pick which to open.
         pop = Gtk.Popover()
         pop.set_parent(anchor)
         pop.set_has_arrow(True)
@@ -4477,17 +4593,30 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         box.set_margin_end(6)
         box.set_margin_top(6)
         box.set_margin_bottom(6)
-        for book, start, end in groups:
-            label = (f'{book_label(book)} {start}' if start == end
-                     else f'{book_label(book)} {start}–{end}')
-            btn = Gtk.Button(label=label)
+        self._append_plan_passages(box, pop, idx)
+        pop.set_child(box)
+        pop.popup()
+
+    def _append_plan_passages(self, box, pop, idx):
+        """A plan day's rows: one per passage, then, for a day built from the
+        harmony, one opening its sections on the harmony page beside."""
+        for i, p in enumerate(reading_plans.passages(self._plan_days[idx])):
+            btn = Gtk.Button(label=reading_plans.passage_text(p, book_label(p[0])))
             btn.add_css_class('flat')
             btn.set_halign(Gtk.Align.FILL)
             btn.get_child().set_xalign(0)
-            btn.connect('clicked', self._on_plan_passage_clicked, pop, book, start)
+            btn.connect('clicked', self._on_plan_passage_clicked, pop, idx, i)
             box.append(btn)
-        pop.set_child(box)
-        pop.popup()
+        sections = reading_plans.day_sections(self._plan_id, idx)
+        if sections:
+            span = (sections[0] if len(sections) == 1
+                    else f'{sections[0]}–{sections[-1]}')
+            btn = Gtk.Button(label=_('The Harmony, § {n}').format(n=span))
+            btn.add_css_class('flat')
+            btn.set_halign(Gtk.Align.FILL)
+            btn.get_child().set_xalign(0)
+            btn.connect('clicked', self._on_plan_harmony_clicked, pop, sections[0])
+            box.append(btn)
 
     def _on_plan_dropdown_changed(self, _drop, _param):
         if self._updating_plan:
@@ -4532,7 +4661,101 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         reading_plans.reset_progress(sel_id)
         self._refresh_plan_ui()
 
-    def _on_plan_passage_clicked(self, _btn, pop, book, chapter):
+    def _on_plan_passage_clicked(self, _btn, pop, day, index):
         pop.popdown()
         self._menu_split.set_show_sidebar(False)
-        self._go_to(book, chapter)
+        self._start_plan_session(self._plan_id, day, index)
+
+    # ── Reading a plan day as one session (plan_session.py) ──────────────
+
+    def _start_plan_session(self, plan_id, day, index):
+        passages = reading_plans.passages(reading_plans.get_plan_days(plan_id)[day])
+        if not passages:
+            return
+        self._plan_session = PlanSession(plan_id, day, passages, index)
+        self._plan_session_go()
+
+    def _plan_session_go(self):
+        """Open the session's place and light it. Navigate first, then
+        light: a pane lights at once only a chapter it has already rendered,
+        and lit ahead of the move it would read the old page's end."""
+        s = self._plan_session
+        book, chapter, verse = s.target()
+        self._go_to(book, chapter, verse or None)
+        if self._current_loc != (book, chapter):
+            # The move was refused (a module without the book says so in a
+            # toast); a pill naming a passage nobody is reading would stay.
+            self._end_plan_session()
+            return
+        self._plan_pill.show_where(s.where())
+        self._plan_pill.present()
+        self._light_plan_passage()
+
+    def _plan_reading_pane(self):
+        """The pane the day is read in: pane 1, unless it holds a page and
+        pane 2 holds the Bible (the harmony beside the reading, say). The
+        pill, the end of the passage and the leaving are all that pane's."""
+        import content
+        if (not content.is_text_bible(self.pane1.module)
+                and self.pane2.get_visible()
+                and content.is_text_bible(self.pane2.module)):
+            return self.pane2
+        return self.pane1
+
+    def _light_plan_passage(self):
+        lit = self._plan_session.lit()
+        reading = self._plan_reading_pane()
+        other = self.pane2 if reading is self.pane1 else self.pane1
+        reading.take_foot_pill(self._plan_pill)
+        reading.set_lit_passage(lit, on_end=self._on_plan_end_seen,
+                                on_left=self._on_plan_left)
+        other.set_lit_passage(lit)
+
+    def _on_plan_end_seen(self, _seen):
+        if self._plan_session is not None:
+            offer = self._plan_session.offer()
+            self._plan_pill.show_offer(offer)
+            # Said once, as it appears: a reader who cannot see the pill
+            # change would never learn the step was there.
+            announce(self, offer)
+
+    def _on_plan_left(self, book, chapter):
+        """Pane 1 rendered a chapter the lit passage is not in. Paging on
+        into the passage's own next chapter carries the session with it;
+        anywhere else is the reader's own way, and the session ends."""
+        s = self._plan_session
+        if s is not None and s.holds(book, chapter):
+            s.follow(chapter)
+            self._plan_pill.show_where(s.where())
+            self._light_plan_passage()
+        else:
+            self._end_plan_session()
+
+    def _on_plan_step(self):
+        s = self._plan_session
+        if s is None:
+            return
+        if s.step() == 'done':
+            if getattr(self, '_plan_cells', None) and self._plan_id == s.plan_id:
+                self._set_plan_day_done(s.day, True)
+            else:
+                reading_plans.set_day_done(s.plan_id, s.day, True)
+            announce(self, _('Day {n} marked read').format(n=s.day + 1))
+            self._end_plan_session()
+            return
+        s.advance()
+        self._plan_session_go()
+
+    def _end_plan_session(self):
+        if self._plan_session is None:
+            return
+        self._plan_session = None
+        self.pane1.set_lit_passage(None)
+        self.pane2.set_lit_passage(None)
+        self._plan_pill.dismiss()
+
+    def _on_plan_harmony_clicked(self, _btn, pop, sid):
+        # Beside the reading, not over it: the passages stay in pane 1.
+        pop.popdown()
+        self._menu_split.set_show_sidebar(False)
+        self._on_open_harmony(self.pane1, sid)

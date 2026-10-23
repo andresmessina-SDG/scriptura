@@ -117,6 +117,14 @@ def _veil_colour(view):
     return col
 
 
+def _passage_veil_colour(view):
+    col = Gdk.RGBA()
+    if not col.parse(getattr(view, '_focus_paper', None) or '#ffffff'):
+        return None
+    col.alpha = view.PASSAGE_DIM
+    return col
+
+
 class _Decoration:
     """One mark painted over the reading text.
 
@@ -183,8 +191,21 @@ _DECORATIONS = (
                 enabled=lambda v: getattr(v, '_show_unit_rule', False)),
     _Decoration('lexicon hover', _BELOW, '_strg_hover', 'dotted',
                 _lexicon_colour),
+    # The fourfold sign beside a verse where a section of the Gospel
+    # harmony begins: in the left margin, left of the sense-unit rule, so
+    # it never moves the text. Off until the reader turns it on.
+    _Decoration('harmony sign', _BELOW, '_harmony_sign', 'sign',
+                _text_colour,
+                enabled=lambda v: getattr(v, '_show_harmony', False)),
+    # A plan passage, lit while a reading plan's day is read, quiets the rest
+    # of the chapter as the focus veil does; while one is lit, the unit's
+    # veil stands down rather than quieting the passage's own verses too.
     _Decoration('focus veil', _ABOVE, '_cur_unit', 'veil', _veil_colour,
-                enabled=lambda v: bool(getattr(v, '_focus_dim', 0.0))),
+                enabled=lambda v: (bool(getattr(v, '_focus_dim', 0.0))
+                                   and not getattr(v, '_passage_lit', False))),
+    _Decoration('plan passage veil', _ABOVE, '_plan_passage', 'passage',
+                _passage_veil_colour,
+                enabled=lambda v: getattr(v, '_passage_lit', False)),
 )
 
 
@@ -237,6 +258,10 @@ class BibleTextView(Gtk.TextView):
     _flash_fade = 1.0
     # Paper over all the text while the opening scroll is still to land.
     _blank = False
+    # A plan passage is lit (pane.set_lit_passage), and how strongly the rest
+    # of its chapter is quieted: the focus veil's strength, his 0.55.
+    _passage_lit = False
+    PASSAGE_DIM = 0.55
     # Annotation + lexicon underlines are painted (not Pango underlines) so they
     # stay uniform under the 200% verse-1 drop cap. Thickness, and the muted
     # accent of the hover/lexicon dotted underline (per theme).
@@ -308,6 +333,7 @@ class BibleTextView(Gtk.TextView):
 
     def _forget_hidden(self, *_args):
         self._hides = None
+        self._sign_memo = None
 
     def _cursor(self, it):
         memo = self._cursor_memo
@@ -357,6 +383,8 @@ class BibleTextView(Gtk.TextView):
                 continue
             if dec.style == 'veil':
                 self._draw_focus_veil(snapshot, tag, colour)
+            elif dec.style == 'passage':
+                self._draw_passage_veil(snapshot, tag, colour)
 
     def _metrics(self):
         m = self.get_pango_context().get_metrics(None, None)
@@ -494,6 +522,8 @@ class BibleTextView(Gtk.TextView):
                                     dotted=dec.style == 'dotted')
             elif dec.style == 'rule':
                 self._draw_unit_rule(snapshot, buf, tag, lo, hi, colour)
+            elif dec.style == 'sign':
+                self._draw_harmony_signs(snapshot, lo, hi, colour)
 
     def set_flash_fade(self, fade):
         """Scale the navigation flash's band, 1 (full) to 0 (gone). Paint
@@ -505,6 +535,112 @@ class BibleTextView(Gtk.TextView):
         """Whether to draw the margin rule beside the current unit. Asked
         separately from the tag, which the focus veil also reads."""
         self._show_unit_rule = bool(enabled)
+        self.queue_draw()
+
+    def set_harmony(self, enabled):
+        """Whether to draw the Gospel harmony's signs in the margin. Paint
+        only: the signs are found when the chapter renders."""
+        self._show_harmony = bool(enabled)
+        self.queue_draw()
+
+    def set_harmony_signs(self, signs):
+        """The rendered chapter's signs: [(mark, section, told, here)] —
+        the verse's start, the section id, which Gospels tell it, and which
+        of the four is being read."""
+        self._harmony_signs = signs
+        self._sign_memo = None
+
+    #: The signs' places, and the layout they were measured in.
+    _sign_memo = None
+    _SIGN_GAP = 5.0       # between the four dots, top to bottom
+    _SIGN_R = 1.8
+    _SIGN_INSET = 24.0    # from the text's edge: left of the unit rule
+
+    def _sign_geometry(self, mark):
+        """(x, y top, y bottom) of a sign in buffer coordinates, centred on
+        the first line of its verse."""
+        r = self.get_iter_location(self.get_buffer().get_iter_at_mark(mark))
+        x = self._sign_x()
+        mid = r.y + r.height / 2
+        half = 1.5 * self._SIGN_GAP + self._SIGN_R
+        return x, mid - half, mid + half
+
+    def _sign_x(self):
+        return max(8.0, self.get_left_margin() - self._SIGN_INSET)
+
+    def _sign_lines(self):
+        """The signs to draw, one per line: [(mark, x, y0, told, here,
+        sections)]. Two sections can begin on one line (Mark 14:26 and 27);
+        they share its sign, and the peek lists both.
+
+        Measured once per layout, not on every frame of a scroll: kept while
+        the stamp the bands paint by (`_layout_stamp`) holds and the
+        chapter's signs are the same, and dropped when a tag changes (a
+        footnote marker hidden or shown moves the lines without a render)."""
+        signs = getattr(self, '_harmony_signs', ())
+        key = (getattr(self, '_stamp', None), len(signs))
+        memo = self._sign_memo
+        if memo is not None and memo[0] == key:
+            return memo[1]
+        lines: dict[float, list] = {}
+        for mark, sid, told, here in signs:
+            if mark.get_deleted():
+                continue
+            x, y0, _y1 = self._sign_geometry(mark)
+            if y0 in lines:
+                lines[y0][5].append(sid)
+            else:
+                lines[y0] = [mark, x, y0, told, here, [sid]]
+        self._sign_memo = (key, list(lines.values()))
+        return self._sign_memo[1]
+
+    def harmony_sign_at(self, bx, by):
+        """The sections whose sign is under a point in buffer coordinates,
+        or None. Read from the marks, never from get_iter_at_location (which
+        aborts on some lines; see gtk_utils)."""
+        # Every pointer move asks; most are nowhere near the margin.
+        if (not getattr(self, '_show_harmony', False)
+                or abs(bx - self._sign_x()) > 9):
+            return None
+        span = 3 * self._SIGN_GAP + 2 * self._SIGN_R
+        for _mark, x, y0, _told, _here, sids in self._sign_lines():
+            if abs(bx - x) <= 9 and y0 - 6 <= by <= y0 + span + 6:
+                return sids
+        return None
+
+    def _draw_harmony_signs(self, snapshot, lo, hi, col):
+        """Four dots, Matthew at the top, filled where the section is told;
+        the Gospel being read is a short bar, so the reader sees where they
+        are among the four."""
+        from family_card import high_contrast, lift
+        signs = self._sign_lines()
+        if not signs:
+            return
+        buf = self.get_buffer()
+        top = self.get_iter_location(lo).y - 20
+        bottom = self.get_iter_location(hi).y + 40
+        cr = snapshot.append_cairo(Graphene.Rect().init(
+            0, top, max(1, self.get_left_margin()), max(1, bottom - top)))
+        cr.set_source_rgba(col.red, col.green, col.blue,
+                           lift(0.45, high_contrast()))
+        cr.set_line_width(1.0)
+        for mark, x, y0, told, here, _sids in signs:
+            it = buf.get_iter_at_mark(mark)
+            if it.compare(lo) < 0 or it.compare(hi) > 0:
+                continue
+            for i, on in enumerate(told):
+                y = y0 + self._SIGN_R + i * self._SIGN_GAP
+                if i == here:
+                    cr.rectangle(x - 3.2, y - 0.8, 6.4, 1.6)
+                    cr.fill()
+                    continue
+                cr.arc(x, y, self._SIGN_R if on else self._SIGN_R - 0.4,
+                       0, 6.2832)
+                cr.fill() if on else cr.stroke()
+
+    def set_passage_lit(self, lit):
+        """Whether a plan passage is lit; see _draw_passage_veil."""
+        self._passage_lit = bool(lit)
         self.queue_draw()
 
     def set_focus_paper(self, paper_hex, dim):
@@ -576,6 +712,30 @@ class BibleTextView(Gtk.TextView):
                    top.y if heading is None
                    else self.get_iter_location(heading).y, width)
         self._veil(snapshot, colour, bottom.y + bottom.height,
+                   vr.y + vr.height, width)
+
+    def _draw_passage_veil(self, snapshot, tag, colour):
+        """Quiet the chapter around a plan passage.
+
+        The focus veil's paper, over everything above and below the passage.
+        Unlike a sense-unit, the passage stays where it is while the reader
+        scrolls, so it is found in the whole buffer rather than on screen: a
+        reader who scrolls past it sees the page quieted, which is true. The
+        passage's own heading stays lit with it, as the unit's does.
+        """
+        buf = self.get_buffer()
+        start = buf.get_start_iter()
+        if not start.has_tag(tag) and not start.forward_to_tag_toggle(tag):
+            return                      # nothing lit: fail open
+        end = start.copy()
+        end.forward_to_tag_toggle(tag)
+        vr = self.get_visible_rect()
+        width = float(self.get_width())
+        heading = heading_line(buf, start)
+        top = self.get_iter_location(heading if heading is not None else start)
+        bottom = self.get_iter_location(end)
+        self._veil(snapshot, colour, vr.y, min(top.y, vr.y + vr.height), width)
+        self._veil(snapshot, colour, max(bottom.y + bottom.height, vr.y),
                    vr.y + vr.height, width)
 
     @staticmethod

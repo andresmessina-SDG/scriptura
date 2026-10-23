@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!--
+    Glyph for "The Harmony of the Gospels": a great arch over two, on three
+    columns with capitals and a base, the frame painted over Eusebius's
+    canon tables; the same arcade as the margin toggle. Columns sit on whole
+    pixels so it stays sharp at 16px. Drawn for this app. Fill-only (#222)
+    so GTK4 recolors it like the symbolics beside it.
+  -->
+  <g fill="#222">
+    <!-- the great arch -->
+    <path d="M1 8 A7 7 0 0 1 15 8 H13.5 A5.5 5.5 0 0 0 2.5 8 Z"/>
+    <!-- the two arches under it -->
+    <path d="M1 8 A4 4 0 0 1 9 8 H7.5 A2.5 2.5 0 0 0 2.5 8 Z"/>
+    <path d="M7 8 A4 4 0 0 1 15 8 H13.5 A2.5 2.5 0 0 0 8.5 8 Z"/>
+    <!-- the three columns -->
+    <path d="M1 8 H3 V13 H1 Z"/>
+    <path d="M7 8 H9 V13 H7 Z"/>
+    <path d="M13 8 H15 V13 H13 Z"/>
+    <!-- their capitals -->
+    <path d="M0 8 H4 V9 H0 Z"/>
+    <path d="M6 8 H10 V9 H6 Z"/>
+    <path d="M12 8 H16 V9 H12 Z"/>
+    <!-- the base -->
+    <path d="M0 14 H16 V16 H0 Z"/>
+  </g>
+</svg>

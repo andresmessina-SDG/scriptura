@@ -106,25 +106,85 @@ def format_length(seconds):
     return f'{minutes}:{rest:02d}'
 
 
-class AudioPill(Gtk.Box):
-    """The floating player. Owns its own look and its own waiting; the pane
-    tells it what is happening and reads nothing back."""
+class FootPill(Gtk.Box):
+    """A pill floating at the foot of the reading, cast from the page's paper
+    (`.audio-pill`), that rises as it arrives and sinks as it goes."""
 
-    def __init__(self, on_play_pause, on_back, on_close, on_rate=None,
-                 on_switch=None, on_return=None):
+    def __init__(self):
         super().__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         self.add_css_class('audio-pill')
         self.set_halign(Gtk.Align.CENTER)
         self.set_valign(Gtk.Align.END)
-        self.set_margin_bottom(FOOT_MARGIN)
+        #: Where the pill rests; one stacked over another rests higher.
+        self.foot = FOOT_MARGIN
+        self.set_margin_bottom(self.foot)
         self.set_visible(False)
         self.set_opacity(0.0)
-        self._state = 'idle'
         self._anim = None
         # Whether the pill is *meant* to be up. Not the same as get_visible():
         # visibility only drops at the end of the leaving animation, so asking
         # the widget swallowed a reopen pressed during those 150ms.
         self._shown = False
+
+    # ── Arriving and leaving ─────────────────────────────────────────────
+    def is_shown(self):
+        """Whether the pill is up, including while it is still arriving or
+        leaving. Ask this rather than get_visible()."""
+        return self._shown
+
+    def present(self):
+        if self._shown:
+            return
+        self._shown = True
+        self.set_visible(True)
+        # From wherever it currently is, so reopening mid-dismiss picks the
+        # fade up rather than snapping it back to nothing first.
+        self._animate(self.get_opacity(), 1.0,
+                      motion.DURATION_STANDARD, motion.EASE_ENTER)
+
+    def dismiss(self):
+        if not self._shown:
+            return
+        self._shown = False
+        self._animate(self.get_opacity(), 0.0,
+                      motion.DURATION_SHORT, motion.EASE_EXIT,
+                      done=lambda: self.set_visible(False))
+
+    def _animate(self, start, end, duration, easing, done=None):
+        if self._anim is not None:
+            self._anim.pause()
+            self._anim = None
+
+        # Under reduced motion it only fades; the rise is the motion.
+        travel = TRAVEL_PX if motion.should_move() else 0
+
+        def frame(value):
+            self.set_opacity(value)
+            # Rises as it fades in, sinks as it goes: the travel is tied to
+            # the opacity so the two can never disagree.
+            self.set_margin_bottom(
+                round(self.foot - travel * (1.0 - value)))
+
+        def finished(_a):
+            self._anim = None
+            if done is not None:
+                done()
+
+        target = Adw.CallbackAnimationTarget.new(frame)
+        self._anim = Adw.TimedAnimation.new(self, start, end, duration, target)
+        self._anim.set_easing(easing)
+        self._anim.connect('done', finished)
+        self._anim.play()
+
+
+class AudioPill(FootPill):
+    """The floating player. Owns its own look and its own waiting; the pane
+    tells it what is happening and reads nothing back."""
+
+    def __init__(self, on_play_pause, on_back, on_close, on_rate=None,
+                 on_switch=None, on_return=None):
+        super().__init__()
+        self._state = 'idle'
 
         self._back_btn = self._button(
             'scriptura-back-fifteen-symbolic', _('Back fifteen seconds'),
@@ -472,53 +532,7 @@ class AudioPill(Gtk.Box):
         that has not started has nothing to go back to."""
         self._back_btn.set_sensitive(can_seek)
 
-    # ── Arriving and leaving ─────────────────────────────────────────────
-    def is_shown(self):
-        """Whether the pill is up, including while it is still arriving or
-        leaving. Ask this rather than get_visible()."""
-        return self._shown
-
-    def present(self):
-        if self._shown:
-            return
-        self._shown = True
-        self.set_visible(True)
-        # From wherever it currently is, so reopening mid-dismiss picks the
-        # fade up rather than snapping it back to nothing first.
-        self._animate(self.get_opacity(), 1.0,
-                      motion.DURATION_STANDARD, motion.EASE_ENTER)
-
     def dismiss(self):
-        if not self._shown:
-            return
-        self._shown = False
-        self.set_state('idle')
-        self._animate(self.get_opacity(), 0.0,
-                      motion.DURATION_SHORT, motion.EASE_EXIT,
-                      done=lambda: self.set_visible(False))
-
-    def _animate(self, start, end, duration, easing, done=None):
-        if self._anim is not None:
-            self._anim.pause()
-            self._anim = None
-
-        # Under reduced motion it only fades; the rise is the motion.
-        travel = TRAVEL_PX if motion.should_move() else 0
-
-        def frame(value):
-            self.set_opacity(value)
-            # Rises as it fades in, sinks as it goes: the travel is tied to
-            # the opacity so the two can never disagree.
-            self.set_margin_bottom(
-                round(FOOT_MARGIN - travel * (1.0 - value)))
-
-        def finished(_a):
-            self._anim = None
-            if done is not None:
-                done()
-
-        target = Adw.CallbackAnimationTarget.new(frame)
-        self._anim = Adw.TimedAnimation.new(self, start, end, duration, target)
-        self._anim.set_easing(easing)
-        self._anim.connect('done', finished)
-        self._anim.play()
+        if self._shown:
+            self.set_state('idle')
+        super().dismiss()

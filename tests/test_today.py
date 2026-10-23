@@ -56,6 +56,11 @@ class TestPassageDisplay:
     def test_empty(self):
         assert today_page.passage_display([]) == ''
 
+    def test_a_passage_day_names_its_verses(self):
+        readings = [('Matthew', 12, 22, 12, 50), ('Luke', 7, 36, 8, 3)]
+        assert (today_page.passage_display(readings)
+                == 'Matthew 12:22–50 · Luke 7:36–8:3')
+
 
 RAW = (
     '<title>July 18</title>'
@@ -307,6 +312,16 @@ class TestAntiphon:
         assert (today_page.fetch_antiphon('KJV', 'Psalms', 23)
                 == 'The LORD is my shepherd')
 
+    def test_a_day_that_opens_mid_chapter_opens_at_its_verse(self, chapter):
+        chapter.extend([(1, 'Then the high priest'), (54, 'Then took they him')])
+        assert (today_page.fetch_antiphon('KJV', 'Luke', 22, 54)
+                == 'Then took they him')
+
+    def test_a_verse_the_module_lacks_falls_back_to_verse_one(self, chapter):
+        chapter.extend([(0, 'A Psalm of David'), (1, 'The LORD is my shepherd')])
+        assert (today_page.fetch_antiphon('KJV', 'Psalms', 23, 7)
+                == 'The LORD is my shepherd')
+
     def test_a_chapter_that_is_all_preamble_still_answers(self, chapter):
         chapter.append((0, 'A Song of degrees'))
         assert today_page.fetch_antiphon('KJV', 'Psalms', 120) == 'A Song of degrees'
@@ -324,10 +339,10 @@ class TestAntiphon:
 
     def test_the_target_is_the_plan_day_then_the_last_place(self, view):
         assert view.antiphon_target() == view._begin_target or \
-            view.antiphon_target() == ('John', 3)
+            view.antiphon_target() == ('John', 3, 0)
         view._begin_target = None
         view._continue_target = ('Romans', 2)
-        assert view.antiphon_target() == ('Romans', 2)
+        assert view.antiphon_target() == ('Romans', 2, 0)
         view._continue_target = None
         assert view.antiphon_target() is None
 
@@ -783,7 +798,7 @@ class TestTheFinishedPlan:
         plan['day'] = 30
         plan['done'] = set(range(30))
         view.populate(('Romans', 2), 'KJV')
-        assert view.antiphon_target() == ('Romans', 2)
+        assert view.antiphon_target() == ('Romans', 2, 0)
 
 
 class TestALapsedSchedule:
@@ -817,12 +832,12 @@ class TestALapsedSchedule:
     def test_it_offers_the_earliest_unread_day(self, view, lapsed):
         view.populate(('Romans', 2), 'KJV')
         assert 'day 3' in view._kicker.get_text()      # days 1 and 2 are read
-        assert view._begin_target == ('Psalms', 102)
+        assert view._begin_target == ('Psalms', 102, 0)
 
     def test_a_gap_is_picked_up_at_the_gap(self, view, lapsed):
         lapsed['done'] = {0, 1, 5, 6}
         view.populate(('Romans', 2), 'KJV')
-        assert view._begin_target == ('Psalms', 102)   # day 3, not day 8
+        assert view._begin_target == ('Psalms', 102, 0)   # day 3, not day 8
 
     def test_every_day_read_is_complete_whatever_the_date(self, view, lapsed):
         lapsed['done'] = set(range(30))

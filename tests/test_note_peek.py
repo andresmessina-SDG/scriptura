@@ -101,6 +101,7 @@ def test_a_click_on_the_marked_number_opens_it():
     fake = types.SimpleNamespace(
         _view=types.SimpleNamespace(
             window_to_buffer_coords=lambda _w, x, y: (x, y),
+            harmony_sign_at=lambda x, y: None,
             get_iter_at_location=lambda x, y: (True, buf.get_iter_at_offset(1))),
         _targets_at_iter=Targets()._targets_at_iter,
         _peek=types.SimpleNamespace(

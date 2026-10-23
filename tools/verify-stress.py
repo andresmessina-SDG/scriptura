@@ -370,6 +370,8 @@ def driver(scenario: str) -> int:
         zoo += [m for m in readable if content.type_key(m) == 'family']
         # The Creeds: a pane document whose verse chips drive the other pane.
         zoo += [m for m in readable if content.type_key(m) == 'creeds']
+        # The harmony: a pane document that reads the Bible beside it.
+        zoo += [m for m in readable if content.type_key(m) == 'harmony']
         notes.append({'zoo': zoo})
         for m in zoo:
             @step(500)

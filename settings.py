@@ -47,6 +47,9 @@ _defaults: dict[str, Any] = {
     # toggle). On by default — markers only appear where notes exist, and
     # the toggle disables on modules that can't show any.
     'show_footnotes':     True,
+    # The Gospel harmony's fourfold sign in the margin (the header's
+    # reading tools). Off until the reader turns it on.
+    'show_harmony':       False,
     # Publisher section headings ("The Baptism of Jesus"). SWORD hands
     # these over as entry attributes rather than in the verse text, so
     # they were silently dropped until DR4. A reading convention, not a
@@ -136,6 +139,10 @@ _defaults: dict[str, Any] = {
     # and its text: 'en' (the 1662 English) or 'orig' (the Greek or Latin).
     'creeds_tab': 'apostles',
     'creeds_text': 'en',
+    # The harmony: the section last shown, and the lens ('robertson' or
+    # 'eusebius').
+    'harmony_section': '',
+    'harmony_lens': 'robertson',
     # Read the difference: the Bibles installed ('installed', decided
     # 2026-09-25) or every one, the rest offering their install ('all').
     'family_read_rows': 'installed',

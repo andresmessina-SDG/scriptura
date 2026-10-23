@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import datetime
-from typing import Any, Callable, TypedDict
+from typing import Any, Callable, NotRequired, TypedDict
 
 import paths
 
@@ -12,9 +12,13 @@ def N_(message: str) -> str:
     translated at display time via _() in window.py."""
     return message
 
-# A reading is a (book, chapter) pair; a day's readings is a list of them;
-# a plan stores 'days' as a list of days.
-Reading = tuple[str, int]
+# A reading is a whole chapter, (book, chapter), or a passage for a plan
+# that reads part of one; a day's readings is a list of them; a plan stores
+# 'days' as a list of days.
+Chapter = tuple[str, int]
+# (book, chapter, verse, end_chapter, end_verse); verse 0 is a whole chapter.
+Passage = tuple[str, int, int, int, int]
+Reading = Chapter | Passage
 ReadingGroup = tuple[str, int, int]  # (book, start_ch, end_ch)
 
 
@@ -23,6 +27,8 @@ class Plan(TypedDict):
     name: str
     description: str
     days: list[list[Reading]]
+    # The harmony sections each day reads, for a plan built from them.
+    sections: NotRequired[list[list[str]]]
 
 
 class PlanSummary(TypedDict):
@@ -114,6 +120,26 @@ def _make_blended() -> list[list[Reading]]:
     return [s1[d] + s2[d] + s3[d] + s4[d] for d in range(365)]
 
 
+_LIFE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          'data', 'harmony', 'life_of_christ.json')
+
+
+def _life_of_christ() -> tuple[list[list[Reading]], list[list[str]]]:
+    """The Life of Christ plan's days, and each day's harmony sections, from
+    the file tools/harmony/build_life_plan.py writes."""
+    try:
+        with open(_LIFE_FILE, encoding='utf-8') as f:
+            days = json.load(f)['days']
+    except (OSError, ValueError, KeyError) as e:
+        _log.warning('Life of Christ plan unreadable: %s', e)
+        return [], []
+    return ([[(b, c, v, c2, v2) for b, c, v, c2, v2 in d['passages']]
+             for d in days], [d['sections'] for d in days])
+
+
+_LIFE_DAYS, _LIFE_SECTIONS = _life_of_christ()
+
+
 _PLANS: list[Plan] = [
     {
         'id': 'bible_1_year',
@@ -139,6 +165,15 @@ _PLANS: list[Plan] = [
         'name': N_('New Testament in 90 Days'),
         'description': N_('Read through the entire New Testament in three months.'),
         'days': _spread(_expand(_NT), 90),
+    },
+    {
+        'id': 'life_of_christ_40_days',
+        'name': N_('Life of Christ in 40 Days'),
+        'description': N_(
+            'The four Gospels in the order of the events, every account of '
+            'each, after Robertson’s harmony.'),
+        'days': _LIFE_DAYS,
+        'sections': _LIFE_SECTIONS,
     },
     {
         'id': 'psalms_30_days',
@@ -167,7 +202,16 @@ def get_plan_days(plan_id: str) -> list[list[Reading]]:
     return []
 
 
-def group_readings(readings: list[Reading]) -> list[ReadingGroup]:
+def day_sections(plan_id: str, day_idx: int) -> list[str]:
+    """The harmony sections a plan's day reads; [] for a plan of chapters."""
+    for p in _PLANS:
+        if p['id'] == plan_id:
+            days = p.get('sections', [])
+            return days[day_idx] if 0 <= day_idx < len(days) else []
+    return []
+
+
+def group_readings(readings: list[Chapter]) -> list[ReadingGroup]:
     """Return [(book, start_ch, end_ch)] for contiguous same-book runs."""
     groups: list[ReadingGroup] = []
     i = 0
@@ -184,15 +228,45 @@ def group_readings(readings: list[Reading]) -> list[ReadingGroup]:
     return groups
 
 
+def passages(readings: list[Reading]) -> list[Passage]:
+    """A day's readings as passages: a run of whole chapters is one passage
+    with verse 0, and a passage stays as it is."""
+    out: list[Passage] = []
+    run: list[Chapter] = []
+    for r in readings + [('', 0, 0, 0, 0)]:      # the sentinel ends a run
+        if len(r) == 2:
+            run.append(r)
+            continue
+        out += [(b, s, 0, e, 0) for b, s, e in group_readings(run)]
+        run = []
+        if r[0]:
+            out.append(r)
+    return out
+
+
+def passage_text(p: Passage, book: str) -> str:
+    """One passage under the given book name: 'Gen 1–3', 'Luke 6:17–49',
+    'Luke 7:36–8:3'."""
+    _b, c, v, c2, v2 = p
+    if not v:
+        return f'{book} {c}' if c == c2 else f'{book} {c}–{c2}'
+    if c != c2:
+        return f'{book} {c}:{v}–{c2}:{v2}'
+    return f'{book} {c}:{v}' if v == v2 else f'{book} {c}:{v}–{v2}'
+
+
+def unbroken(text: str) -> str:
+    """A passage line that never breaks inside a reference's numbers: a line
+    ending 'Mark 3:19–' read as a mistake. Only the dash is held; binding
+    the book name too left '1-е Коринфянам 11:23–26' wider than a narrow
+    Today page (352px at 32px, measured)."""
+    return text.replace('–', '–\u2060')
+
+
 def format_passages(readings: list[Reading]) -> str:
     """Compress [(book, ch), …] into e.g. 'Gen 1–3 · Matt 1'."""
-    if not readings:
-        return ''
-    parts = []
-    for book, start, end in group_readings(readings):
-        a = _ABBREV.get(book, book)
-        parts.append(f'{a} {start}' if start == end else f'{a} {start}–{end}')
-    return ' · '.join(parts)
+    return ' · '.join(passage_text(p, _ABBREV.get(p[0], p[0]))
+                      for p in passages(readings))
 
 
 # ── Progress persistence ───────────────────────────────────────────────────────
