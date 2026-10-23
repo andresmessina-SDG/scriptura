@@ -6743,6 +6743,42 @@ msgstr "Новый Завет за 90 дней"
 msgid "Read through the entire New Testament in three months."
 msgstr "Прочитать весь Новый Завет за три месяца."
 
+#: reading_plans.py
+msgid "Life of Christ in 40 Days"
+msgstr "Жизнь Христа за 40 дней"
+
+#: reading_plans.py
+msgid "The four Gospels in the order of the events, every account of each, after Robertson’s harmony."
+msgstr "Четыре Евангелия в порядке событий, все повествования о каждом, по гармонии Робертсона."
+
+#: window.py
+msgid "The Harmony, § {n}"
+msgstr "Гармония, § {n}"
+
+#: plan_session.py
+msgid "Day {n} · {passage} · {i} of {total}"
+msgstr "День {n} · {passage} · {i} из {total}"
+
+#: plan_session.py
+msgid "Continue: {passage} →"
+msgstr "Дальше: {passage} →"
+
+#: plan_session.py
+msgid "Next: {passage} →"
+msgstr "Следующий: {passage} →"
+
+#: plan_session.py
+msgid "Mark day {n} read"
+msgstr "Отметить день {n} прочитанным"
+
+#: plan_session.py
+msgid "Back to ordinary reading"
+msgstr "Вернуться к обычному чтению"
+
+#: window.py
+msgid "Day {n} marked read"
+msgstr "День {n} отмечен прочитанным"
+
 #: reading_plans.py:144
 msgid "Psalms in 30 Days"
 msgstr "Псалтирь за 30 дней"

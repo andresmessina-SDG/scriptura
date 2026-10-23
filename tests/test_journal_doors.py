@@ -124,9 +124,9 @@ def test_the_entry_opens_dated_today_unless_told_otherwise(isolated, display):
 # ── The plan day a Today door would hand over ───────────────────────────────
 
 def test_a_plan_days_readings_become_whole_chapter_anchors(isolated):
-    """Reading is (book, chapter) — a plan day names chapters, never verses —
-    so its anchors carry an empty verse list, which the store keeps as
-    meaning the whole chapter rather than no anchor at all."""
+    """A chapter plan's day names whole chapters, so its anchors carry an
+    empty verse list, which the store keeps as meaning the whole chapter
+    rather than no anchor at all."""
     days = reading_plans.get_plan_days('bible_1_year')
     assert days
     anchors = [{'book': b, 'chapter': c, 'verses': []} for b, c in days[0]]
@@ -160,6 +160,29 @@ def test_write_about_today_uses_the_displayed_plan_day(
     assert entries[0]['plan'] == {'id': 'test_plan', 'day': expected}
     assert entries[0]['anchors'] == [
         {'book': 'John', 'chapter': expected + 1, 'verses': []}]
+
+
+def test_a_passage_day_anchors_the_verses_it_reads(isolated, monkeypatch):
+    """A Life of Christ day reads parts of chapters: each chapter it touches
+    is an anchor carrying the verses read there, the run to a chapter's end
+    counted from the versification."""
+    from types import SimpleNamespace
+    import settings
+    import sword_bridge
+    import window
+
+    days = [[('Matthew', 12, 22, 12, 50), ('Luke', 7, 36, 8, 3)]]
+    monkeypatch.setattr(reading_plans, 'get_plan_days', lambda plan: days)
+    monkeypatch.setattr(settings, 'get', lambda key: None)
+    monkeypatch.setattr(sword_bridge, 'verse_count', lambda book, ch: 50)
+    reading_plans.set_start_date('test_plan', datetime.date.today().isoformat())
+    entries = []
+    window.BibleWindow._write_about_today(
+        SimpleNamespace(_open_annotations=entries.append))
+    assert entries[0]['anchors'] == [
+        {'book': 'Matthew', 'chapter': 12, 'verses': list(range(22, 51))},
+        {'book': 'Luke', 'chapter': 7, 'verses': list(range(36, 51))},
+        {'book': 'Luke', 'chapter': 8, 'verses': [1, 2, 3]}]
 
 
 # ── The keyboard ─────────────────────────────────────────────────────────────

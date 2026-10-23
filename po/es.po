@@ -6774,6 +6774,42 @@ msgstr "El Nuevo Testamento en 90 días"
 msgid "Read through the entire New Testament in three months."
 msgstr "Lea el Nuevo Testamento entero en tres meses."
 
+#: reading_plans.py
+msgid "Life of Christ in 40 Days"
+msgstr "La vida de Cristo en 40 días"
+
+#: reading_plans.py
+msgid "The four Gospels in the order of the events, every account of each, after Robertson’s harmony."
+msgstr "Los cuatro Evangelios en el orden de los hechos, todos los relatos de cada uno, según la armonía de Robertson."
+
+#: window.py
+msgid "The Harmony, § {n}"
+msgstr "La armonía, § {n}"
+
+#: plan_session.py
+msgid "Day {n} · {passage} · {i} of {total}"
+msgstr "Día {n} · {passage} · {i} de {total}"
+
+#: plan_session.py
+msgid "Continue: {passage} →"
+msgstr "Continuar: {passage} →"
+
+#: plan_session.py
+msgid "Next: {passage} →"
+msgstr "Siguiente: {passage} →"
+
+#: plan_session.py
+msgid "Mark day {n} read"
+msgstr "Marcar el día {n} como leído"
+
+#: plan_session.py
+msgid "Back to ordinary reading"
+msgstr "Volver a la lectura normal"
+
+#: window.py
+msgid "Day {n} marked read"
+msgstr "Día {n} marcado como leído"
+
 #: reading_plans.py:144
 msgid "Psalms in 30 Days"
 msgstr "Los Salmos en 30 días"

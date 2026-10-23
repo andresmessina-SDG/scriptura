@@ -134,6 +134,77 @@ def test_format_passages_empty_returns_empty_string():
     assert reading_plans.format_passages([]) == ''
 
 
+# ── passages: chapter runs and part-chapter readings ─────────────────────────
+
+def test_a_run_of_chapters_is_one_passage_with_no_verse():
+    assert reading_plans.passages(
+        [('Genesis', 1), ('Genesis', 2), ('Matthew', 1)]) == [
+        ('Genesis', 1, 0, 2, 0), ('Matthew', 1, 0, 1, 0)]
+
+
+def test_a_passage_stays_as_it_is():
+    day = [('Matthew', 12, 22, 12, 50), ('Luke', 7, 36, 8, 3)]
+    assert reading_plans.passages(day) == day
+
+
+@pytest.mark.parametrize('p,text', [
+    (('Genesis', 1, 0, 1, 0), 'Genesis 1'),
+    (('Genesis', 1, 0, 3, 0), 'Genesis 1–3'),
+    (('Luke', 6, 17, 6, 49), 'Luke 6:17–49'),
+    (('Luke', 7, 36, 8, 3), 'Luke 7:36–8:3'),
+    (('1 Corinthians', 15, 5, 15, 5), '1 Corinthians 15:5'),
+])
+def test_passage_text(p, text):
+    assert reading_plans.passage_text(p, p[0]) == text
+
+
+def test_format_passages_names_the_verses_of_a_passage_day():
+    assert reading_plans.format_passages(
+        [('Matthew', 12, 22, 12, 50), ('Luke', 7, 36, 8, 3)]) == \
+        'Matt 12:22–50 · Luke 7:36–8:3'
+
+
+def test_a_passage_line_never_breaks_after_a_dash():
+    text = reading_plans.unbroken('Mark 3:19–35 · Luke 7:36–8:3')
+    assert text == 'Mark 3:19–\u206035 · Luke 7:36–\u20608:3'
+
+
+# ── The Life of Christ plan ──────────────────────────────────────────────────
+
+LIFE = 'life_of_christ_40_days'
+
+
+def test_the_life_of_christ_reads_every_section_in_robertsons_order():
+    """Forty days, and the sections run 1 to 185, each on one day only."""
+    import harmony
+    ids = [s['id'] for s in harmony.data()['sections']]
+    days = [reading_plans.day_sections(LIFE, i) for i in range(40)]
+    assert len(reading_plans.get_plan_days(LIFE)) == 40
+    assert all(days)
+    assert [sid for day in days for sid in day] == ids
+
+
+def test_each_account_of_a_days_sections_is_in_its_passages():
+    """Every account of every section is read on the section's day."""
+    import harmony
+    book = {'Matt': 'Matthew', 'Mark': 'Mark', 'Luke': 'Luke',
+            'John': 'John', 'Acts': 'Acts', '1Cor': '1 Corinthians'}
+    sections = {s['id']: s for s in harmony.data()['sections']}
+    for i, day in enumerate(reading_plans.get_plan_days(LIFE)):
+        for sid in reading_plans.day_sections(LIFE, i):
+            for r in sections[sid]['refs']:
+                assert any(
+                    p[0] == book[r['book']]
+                    and (p[1], p[2]) <= tuple(r['start'])
+                    and tuple(r['end']) <= (p[3], p[4])
+                    for p in day), (i, sid, r)
+
+
+def test_a_plan_of_chapters_has_no_harmony_sections():
+    assert reading_plans.day_sections('nt_90_days', 0) == []
+    assert reading_plans.day_sections(LIFE, 40) == []
+
+
 def _days_ago(n):
     return (datetime.date.today() - datetime.timedelta(days=n)).isoformat()
 
@@ -163,13 +234,14 @@ def test_today_index_invalid_format_returns_zero():
 
 # ── Plan catalog ─────────────────────────────────────────────────────────────
 
-def test_get_plans_returns_all_six():
+def test_get_plans_returns_all_seven():
     plans = reading_plans.get_plans()
-    assert len(plans) == 6
+    assert len(plans) == 7
     ids = {p['id'] for p in plans}
     assert ids == {
         'bible_1_year', 'blended_1_year', 'ot_1_year',
-        'nt_90_days', 'psalms_30_days', 'proverbs_31_days',
+        'nt_90_days', 'life_of_christ_40_days', 'psalms_30_days',
+        'proverbs_31_days',
     }
 
 

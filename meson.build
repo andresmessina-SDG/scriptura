@@ -107,6 +107,7 @@ py_sources = files(
   'passage_export.py',
   'passage_print.py',
   'paths.py',
+  'plan_session.py',
   'preferences.py',
   'present.py',
   'present_align.py',

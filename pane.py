@@ -8,6 +8,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 gi.require_version('Gsk', '4.0')
 from gi.repository import Gtk, Adw, GLib, Gdk, Pango
+import audio_pill
 import sword_bridge
 import ebible_bridge
 import archaeology_bridge
@@ -1263,6 +1264,14 @@ class BiblePane(Gtk.Box):
         # Verse the currently-marked sense-unit starts at, so a scroll that
         # stays inside one unit costs a comparison and no retagging.
         self._current_unit = None
+        # A plan session's lit passage: (book, chapter, first, last), 0 for
+        # the chapter's own end — see set_lit_passage.
+        self._lit = None
+        self._lit_end_offset = None
+        self._lit_end_seen = False
+        self._lit_check_queued = False
+        self._on_lit_end = None
+        self._on_lit_left = None
         # Advanced typography (Appearance ▸ Advanced): small-caps divine
         # name and old-style figures are reading conventions (on by
         # default); flush poetry and the tinted drop cap are opt-ins.
@@ -1752,6 +1761,7 @@ class BiblePane(Gtk.Box):
         # summoned, it persists while there is something to control, and it
         # never moves the text.
         chrome_overlay.add_overlay(self._audio.pill)
+        self._chrome_overlay = chrome_overlay
         self.append(chrome_overlay)
         self._sync_view_top_margin()
         self._apply_reading_page_edge()
@@ -1872,6 +1882,7 @@ class BiblePane(Gtk.Box):
         # Scroll-driven, so it follows the eye rather than the last click.
         # Cheap: a comparison unless the unit actually changed.
         self._update_current_unit()
+        self._check_lit_end()
 
     def _set_chrome_revealed(self, reveal):
         self._chrome.set_revealed(reveal)
@@ -2745,6 +2756,11 @@ class BiblePane(Gtk.Box):
         if task is not None and not task.is_current():
             return GLib.SOURCE_REMOVE  # superseded by a newer fetch
         self._render_pending = False
+        if self._lit is not None:
+            # Queued here, not at the end: an empty or cipher-locked chapter
+            # returns early below, and the session must still hear that the
+            # reader went there. Idle, so it runs on the finished page.
+            GLib.idle_add(self._light_rendered, book, chapter)
         # The rebuild collapses and re-grows the adjustment; none of that
         # is the reader scrolling.
         self._mark_programmatic_scroll()
@@ -3751,6 +3767,117 @@ class BiblePane(Gtk.Box):
             buf.remove_tag(tag, buf.get_start_iter(), buf.get_end_iter())
             self._view.queue_draw()
         self._current_unit = None
+
+    # ── A plan session's lit passage ─────────────────────────────────────
+
+    def add_foot_pill(self, pill):
+        """Float another pill at the reading's foot, resting over the
+        listening pill while that one is up rather than on top of it."""
+        self._chrome_overlay.add_overlay(pill)
+        audio = self._audio.pill
+
+        def stack(*_a):
+            pill.foot = audio_pill.FOOT_MARGIN + (
+                max(audio.get_height(), 48) + 8 if audio.get_visible() else 0)
+            if pill.is_shown():
+                pill.set_margin_bottom(pill.foot)
+        audio.connect('notify::visible', stack)
+        stack()
+
+    def set_lit_passage(self, lit, on_end=None, on_left=None):
+        """Light a plan passage's verses and quiet the rest of the chapter, or
+        with None stop.
+
+        `lit` is (book, chapter, first, last) in app-space (KJV) numbering,
+        0 for either end meaning the chapter's own. `on_end(seen)` hears when
+        the last lit verse comes into view; `on_left(book, chapter)` hears
+        when this pane renders a chapter the passage is not in — the reader
+        has gone elsewhere.
+        """
+        self._lit = lit
+        self._on_lit_end = on_end
+        self._on_lit_left = on_left
+        self._lit_end_offset = None
+        self._lit_end_seen = False
+        self._clear_lit_tag()
+        if (lit is not None and not self._render_pending
+                and (lit[0], lit[1]) == (self._book, self._chapter)):
+            GLib.idle_add(self._light_rendered, self._book, self._chapter)
+
+    def _light_rendered(self, book, chapter):
+        lit = self._lit
+        if lit is None or (book, chapter) != (self._book, self._chapter):
+            return GLib.SOURCE_REMOVE
+        if (lit[0], lit[1]) != (book, chapter):
+            if self._on_lit_left is not None:
+                self._on_lit_left(book, chapter)
+            return GLib.SOURCE_REMOVE
+        if self._module_type != 'Biblical Texts':
+            return GLib.SOURCE_REMOVE
+        rendered = sorted(v for v, _h in (self._rendered_verses or []))
+        if not rendered:
+            return GLib.SOURCE_REMOVE
+
+        def present(v, default):
+            if not v:
+                return default
+            return self._resolve_present_verse(sword_bridge.map_target_verse(
+                self._module, book, chapter, v))
+        first = present(lit[2], rendered[0])
+        last = present(lit[3], rendered[-1])
+        first_range = self._verse_ranges(first)
+        last_range = self._verse_ranges(last)
+        if not first_range or not last_range:
+            return GLib.SOURCE_REMOVE
+        if (first, last) != (rendered[0], rendered[-1]):
+            # Only part of the chapter is read: light it. A whole chapter
+            # has nothing to quiet.
+            buf = self._buffer
+            tag = (buf.get_tag_table().lookup('_plan_passage')
+                   or buf.create_tag('_plan_passage'))
+            buf.apply_tag(tag, first_range[0], last_range[2])
+            self._view.set_passage_lit(True)
+        self._lit_end_offset = last_range[2].get_offset()
+        self._lit_end_seen = False
+        self._check_lit_end()
+        return GLib.SOURCE_REMOVE
+
+    def _clear_lit_tag(self):
+        tag = self._buffer.get_tag_table().lookup('_plan_passage')
+        if tag is not None:
+            self._buffer.remove_tag(tag, self._buffer.get_start_iter(),
+                                    self._buffer.get_end_iter())
+        self._view.set_passage_lit(False)
+
+    def _check_lit_end(self):
+        """Tell the session once the last lit verse has been in view. Once:
+        the offer it brings stays up if the reader looks back a line."""
+        if (self._lit_end_offset is None or self._lit_end_seen
+                or self._on_lit_end is None or self._view._blank
+                or not self._view.get_realized()):
+            return
+        wait = (self._scroll._ignore_scroll_until
+                - GLib.get_monotonic_time()) // 1000
+        if wait > 0 or self._scroll._landing is not None:
+            # The app is still moving the page — a render, or the landing on
+            # the passage — and where it stands meanwhile is not where the
+            # reader reads: measured, a passage opened from deep in another
+            # chapter was "seen" at the new chapter's foot before it landed.
+            if not self._lit_check_queued:
+                self._lit_check_queued = True
+                GLib.timeout_add(max(50, wait + 50), self._check_lit_end_later)
+            return
+        it = self._buffer.get_iter_at_offset(self._lit_end_offset)
+        loc = self._view.get_iter_location(it)
+        vr = self._view.get_visible_rect()
+        if loc.y + loc.height <= vr.y + vr.height or self._at_chapter_foot():
+            self._lit_end_seen = True
+            self._on_lit_end(True)
+
+    def _check_lit_end_later(self):
+        self._lit_check_queued = False
+        self._check_lit_end()
+        return GLib.SOURCE_REMOVE
 
     def marks_sections(self):
         """Whether the module this pane is showing supplies section headings

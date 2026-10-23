@@ -117,6 +117,14 @@ def _veil_colour(view):
     return col
 
 
+def _passage_veil_colour(view):
+    col = Gdk.RGBA()
+    if not col.parse(getattr(view, '_focus_paper', None) or '#ffffff'):
+        return None
+    col.alpha = view.PASSAGE_DIM
+    return col
+
+
 class _Decoration:
     """One mark painted over the reading text.
 
@@ -189,8 +197,15 @@ _DECORATIONS = (
     _Decoration('harmony sign', _BELOW, '_harmony_sign', 'sign',
                 _text_colour,
                 enabled=lambda v: getattr(v, '_show_harmony', False)),
+    # A plan passage, lit while a reading plan's day is read, quiets the rest
+    # of the chapter as the focus veil does; while one is lit, the unit's
+    # veil stands down rather than quieting the passage's own verses too.
     _Decoration('focus veil', _ABOVE, '_cur_unit', 'veil', _veil_colour,
-                enabled=lambda v: bool(getattr(v, '_focus_dim', 0.0))),
+                enabled=lambda v: (bool(getattr(v, '_focus_dim', 0.0))
+                                   and not getattr(v, '_passage_lit', False))),
+    _Decoration('plan passage veil', _ABOVE, '_plan_passage', 'passage',
+                _passage_veil_colour,
+                enabled=lambda v: getattr(v, '_passage_lit', False)),
 )
 
 
@@ -243,6 +258,10 @@ class BibleTextView(Gtk.TextView):
     _flash_fade = 1.0
     # Paper over all the text while the opening scroll is still to land.
     _blank = False
+    # A plan passage is lit (pane.set_lit_passage), and how strongly the rest
+    # of its chapter is quieted: the focus veil's strength, his 0.55.
+    _passage_lit = False
+    PASSAGE_DIM = 0.55
     # Annotation + lexicon underlines are painted (not Pango underlines) so they
     # stay uniform under the 200% verse-1 drop cap. Thickness, and the muted
     # accent of the hover/lexicon dotted underline (per theme).
@@ -364,6 +383,8 @@ class BibleTextView(Gtk.TextView):
                 continue
             if dec.style == 'veil':
                 self._draw_focus_veil(snapshot, tag, colour)
+            elif dec.style == 'passage':
+                self._draw_passage_veil(snapshot, tag, colour)
 
     def _metrics(self):
         m = self.get_pango_context().get_metrics(None, None)
@@ -617,6 +638,11 @@ class BibleTextView(Gtk.TextView):
                        0, 6.2832)
                 cr.fill() if on else cr.stroke()
 
+    def set_passage_lit(self, lit):
+        """Whether a plan passage is lit; see _draw_passage_veil."""
+        self._passage_lit = bool(lit)
+        self.queue_draw()
+
     def set_focus_paper(self, paper_hex, dim):
         """The paper the veil is drawn in, and how strongly. `dim` of 0 is
         off, and is the default — nothing here paints until the reader asks
@@ -686,6 +712,30 @@ class BibleTextView(Gtk.TextView):
                    top.y if heading is None
                    else self.get_iter_location(heading).y, width)
         self._veil(snapshot, colour, bottom.y + bottom.height,
+                   vr.y + vr.height, width)
+
+    def _draw_passage_veil(self, snapshot, tag, colour):
+        """Quiet the chapter around a plan passage.
+
+        The focus veil's paper, over everything above and below the passage.
+        Unlike a sense-unit, the passage stays where it is while the reader
+        scrolls, so it is found in the whole buffer rather than on screen: a
+        reader who scrolls past it sees the page quieted, which is true. The
+        passage's own heading stays lit with it, as the unit's does.
+        """
+        buf = self.get_buffer()
+        start = buf.get_start_iter()
+        if not start.has_tag(tag) and not start.forward_to_tag_toggle(tag):
+            return                      # nothing lit: fail open
+        end = start.copy()
+        end.forward_to_tag_toggle(tag)
+        vr = self.get_visible_rect()
+        width = float(self.get_width())
+        heading = heading_line(buf, start)
+        top = self.get_iter_location(heading if heading is not None else start)
+        bottom = self.get_iter_location(end)
+        self._veil(snapshot, colour, vr.y, min(top.y, vr.y + vr.height), width)
+        self._veil(snapshot, colour, max(bottom.y + bottom.height, vr.y),
                    vr.y + vr.height, width)
 
     @staticmethod

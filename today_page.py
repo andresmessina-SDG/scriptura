@@ -192,11 +192,8 @@ def progress_whisper(day_n: int, total: int) -> str:
 def passage_display(readings: list[reading_plans.Reading]) -> str:
     """The day's readings with full localized book names — the hero line
     speaks in 'Psalms 111–115', not the menu column's 'Ps 111–115'."""
-    parts = []
-    for book, start, end in reading_plans.group_readings(readings):
-        b = book_label(book)
-        parts.append(f'{b} {start}' if start == end else f'{b} {start}–{end}')
-    return ' · '.join(parts)
+    return ' · '.join(reading_plans.passage_text(p, book_label(p[0]))
+                      for p in reading_plans.passages(readings))
 
 
 def _strip_tags(fragment: str) -> str:
@@ -252,7 +249,8 @@ def parse_epigraph(raw_osis: str, evening: bool = False) -> tuple[str, str] | No
     return quote, ref
 
 
-def fetch_antiphon(module: str, book: str, chapter: int) -> str | None:
+def fetch_antiphon(module: str, book: str, chapter: int,
+                   verse: int = 0) -> str | None:
     """The opening line of today's appointed reading, or None.
 
     The office books open a day with an antiphon — one sentence carrying the
@@ -264,8 +262,9 @@ def fetch_antiphon(module: str, book: str, chapter: int) -> str | None:
 
     Verse 1 of the first appointed chapter, not a chosen "verse of the day":
     it needs no curation, it cannot be wrong, and it is literally where
-    today's reading opens. The reader's own module answers, so it arrives in
-    their translation and their language.
+    today's reading opens; a day that opens mid-chapter passes its verse.
+    The reader's own module answers, so it arrives in their translation and
+    their language.
 
     Through `content`, never `sword_bridge`: an eBible key answers [] from
     the SWORD bridge without raising (GUIDANCE — one way in to a chapter).
@@ -278,7 +277,8 @@ def fetch_antiphon(module: str, book: str, chapter: int) -> str | None:
         return None
     # Verse 0 is a Psalm superscription or a book preamble where a module
     # carries one — the day opens at verse 1 wherever there is one.
-    numbered = [v for v in verses if v[0] >= 1] or verses
+    numbered = ([v for v in verses if v[0] == verse] if verse else []) \
+        or [v for v in verses if v[0] >= 1] or verses
     text = sword_bridge.plain_text(numbered[0][1]).strip()
     if not text:
         return None
@@ -342,7 +342,8 @@ class TodayView(Gtk.Box):
         self._on_choose_plans = on_choose_plans
         self._on_listen = on_listen
         self._on_write = on_write
-        self._begin_target = None      # (book, chapter) for the plan day
+        # (book, chapter, verse) for the plan day; verse 0 is the chapter's top
+        self._begin_target: tuple[str, int, int] | None = None
         self._continue_target = None   # (book, chapter) for last position
         self._mode = ''          # '' | 'narrow' | 'wide' (breakpoints)
         self._marks_move_queued = False
@@ -1081,11 +1082,13 @@ class TodayView(Gtk.Box):
                 self._begin_btn.set_visible(True)
             else:
                 readings = days[anchor]
-                self._passage.set_text(passage_display(readings))
+                self._passage.set_text(
+                    reading_plans.unbroken(passage_display(readings)))
                 whisper = progress_whisper(anchor + 1, total)
                 self._whisper.set_text(whisper)
                 self._whisper.set_visible(bool(whisper))
-                self._begin_target = readings[0] if readings else None
+                first = reading_plans.passages(readings)[:1]
+                self._begin_target = first[0][:3] if first else None
                 self._begin_btn.set_label(_('Begin today’s reading →'))
                 set_accessible_label(self._begin_btn, _('Begin today’s reading'))
                 self._begin_btn.set_visible(self._begin_target is not None)
@@ -1125,12 +1128,15 @@ class TodayView(Gtk.Box):
         else:
             self._continue_btn.set_visible(False)
 
-    def antiphon_target(self) -> tuple[str, int] | None:
-        """The chapter whose opening line the antiphon should speak: today's
-        appointed reading, or the place the reader left off when no plan is
-        running. Resolved by `populate`, so call it after."""
-        target = self._begin_target or self._continue_target
-        return target if target is None else (target[0], int(target[1]))
+    def antiphon_target(self) -> tuple[str, int, int] | None:
+        """(book, chapter, verse) whose line the antiphon should speak:
+        today's appointed reading, or the place the reader left off when no
+        plan is running; verse 0 is the chapter's opening. Resolved by
+        `populate`, so call it after."""
+        if self._begin_target is not None:
+            return self._begin_target
+        target = self._continue_target
+        return target if target is None else (target[0], int(target[1]), 0)
 
     def set_antiphon(self, text: str) -> None:
         """The day's opening line, under the reference that names it."""
