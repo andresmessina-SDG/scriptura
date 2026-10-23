@@ -360,7 +360,8 @@ class HarmonyPage:
             self._outline_scroll.set_size_request(320, -1)
             self._outline_scroll.set_propagate_natural_height(False)
             self._body.prepend(self._outline_scroll)
-        elif not self._wide and parent is not self._outline_pop:
+        elif (not self._wide
+                and self._outline_pop.get_child() is not self._outline_scroll):
             if parent is not None:
                 self._body.remove(self._outline_scroll)
             self._outline_scroll.set_size_request(340, 480)

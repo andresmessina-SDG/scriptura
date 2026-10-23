@@ -142,6 +142,19 @@ def test_the_margin_signs_are_placed_once_a_layout():
     assert view.harmony_sign_at(x + 50, y0 + 1) is None
 
 
+def test_the_outline_moves_into_the_popover_once(page):
+    """Medium to phone width keeps the outline in its popover. A popover
+    holds its child inside a widget of its own, so the outline's parent is
+    never the popover; taking it from the page again was a GTK critical."""
+    page._wide = False
+    page._apply_width()
+    removed = []
+    page._body.remove = lambda w: removed.append(w)
+    page._apply_width()
+    assert page._outline_pop.get_child() is page._outline_scroll
+    assert removed == []
+
+
 def test_canon_heads_name_the_gospels():
     row = next(r for r in harmony.eusebius_rows('72') if r['table'] == 'I')
     assert hv._canon_head(row) == 'Canon I · Matthew, Mark, Luke, John'
