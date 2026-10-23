@@ -7,7 +7,7 @@ failure).
 import time
 
 import pytest
-from gi.repository import Gdk, GLib, Gtk, Pango
+from gi.repository import Adw, Gdk, GLib, Gtk, Pango
 
 Gtk.init_check()
 if Gdk.Display.get_default() is None:
@@ -166,3 +166,40 @@ def test_a_click_closes_the_outline_popover_and_keys_do_not(page):
     assert page.current_section() == '73'
     page._on_row(None, '56')
     assert page.current_section() == '56'
+
+
+# ── the threads in the pillars band ──────────────────────────────────────────
+
+def test_the_accounts_are_joined_gospel_to_gospel_in_order():
+    rows = [[((0.5, 0.51), 'section', ('robertson', 'eusebius'))], [],
+            [((0.3, 0.31), 'section', ('robertson', 'eusebius'))],
+            [((0.2, 0.21), 'section', ('robertson', 'eusebius'))]]
+    assert hv._threads(rows) == [
+        ((0, (0.5, 0.51)), (2, (0.3, 0.31)), 'section', 2),
+        ((2, (0.3, 0.31)), (3, (0.2, 0.21)), 'section', 2)]
+
+
+def test_a_similar_event_runs_to_the_nearest_account_and_said_elsewhere_does_not():
+    rows = [[((0.5, 0.51), 'section', ('robertson',))],
+            [((0.4, 0.41), 'section', ('robertson',))],
+            [((0.1, 0.11), 'look_alike', ('robertson',)),
+             ((0.6, 0.61), 'same_words', ('eusebius',))],
+            []]
+    threads = hv._threads(rows)
+    assert ((1, (0.4, 0.41)), (2, (0.1, 0.11)), 'look_alike', 1) in threads
+    assert not any(t[2] == 'same_words' for t in threads)
+
+
+def test_a_one_gospel_section_has_nothing_to_join():
+    rows = [[], [], [((0.5, 0.51), 'section', ('robertson',)),
+                     ((0.2, 0.21), 'look_alike', ('robertson',))], []]
+    assert hv._threads(rows) == []
+
+
+def test_the_threads_wait_to_draw_in_until_the_band_is_on_screen(page, monkeypatch):
+    """Started on a band not yet placed, the animation was skipped to its
+    end and the threads never drew in; it now plays when the band maps."""
+    monkeypatch.setattr(hv.motion, 'should_animate', lambda: True)
+    page.select('72')
+    assert page._band_progress == 0.0
+    assert page._band_anim.get_state() == Adw.AnimationState.IDLE

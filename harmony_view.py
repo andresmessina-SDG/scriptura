@@ -35,7 +35,9 @@ import settings
 import sword_bridge
 import tasks
 from a11y import set_accessible_label
-from creeds_view import _MARK, _THREAD, _label, _quotation, _swatch, _vbox
+import motion
+from creeds_view import (THREAD_MS, _MARK, _THREAD, _bezier_length, _label,
+                         _quotation, _swatch, _vbox)
 from family_card import high_contrast, lift, redraw_on_contrast
 from gtk_utils import clear_children
 from i18n import _, book_label, ngettext
@@ -75,6 +77,41 @@ def _hollow(cr, ink):
     cr.stroke()
 
 
+#: A thread's width before its witnesses add to it, and its strength:
+#: The Creeds' own, same event as its "same words", a similar event as its
+#: "foretold".
+_THREAD_LINE = {'section': (1.4, 0.95), 'look_alike': (1.1, 0.85)}
+
+
+def _threads(rows: list[list]) -> list[tuple]:
+    """The band's threads. The section's accounts are joined Gospel to Gospel
+    in canonical order; each similar event is joined to the nearest Gospel
+    that tells the section (the upper on a tie), as in the sketch. A passage
+    in the one Gospel that tells the section has no other to join.
+
+    Said elsewhere stays a tick on its strip (his call, 2026-10-23): the
+    Sermon on the Mount has two dozen such links, and their threads drawn
+    knotted the band. The rows below the accounts list them all.
+
+    `rows` holds (place, kind, witnesses) per Gospel. Returns
+    ((row, place), (row, place), kind, witness count), the upper end first.
+    """
+    own = {i: next(m for m in row if m[1] == 'section')
+           for i, row in enumerate(rows) if any(m[1] == 'section' for m in row)}
+    told = sorted(own)
+    out = [((a, own[a][0]), (b, own[b][0]), 'section', len(own[a][2]))
+           for a, b in zip(told, told[1:])]
+    for r, row in enumerate(rows):
+        for place, kind, wit in row:
+            near = [i for i in told if i != r]
+            if kind != 'look_alike' or not near:
+                continue
+            i = min(near, key=lambda i: (abs(i - r), i))
+            a, b = sorted(((i, own[i][0]), (r, place)))
+            out.append((a, b, kind, len(wit)))
+    return out
+
+
 def gospel_name(code: str) -> str:
     return book_label(harmony.BOOK[code])
 
@@ -98,6 +135,9 @@ class HarmonyPage:
         self._cells: list[dict] = []
         self._account_rows: list[dict] | None = None
         self._grid: Gtk.Grid | None = None
+        self._band_area: Gtk.DrawingArea | None = None
+        self._band_anim: Adw.TimedAnimation | None = None
+        self._band_progress = 1.0
         self._texts: dict[tuple, list] = {}
         self._font_provider = Gtk.CssProvider()
         self.widget = Adw.BreakpointBin()
@@ -516,8 +556,11 @@ class HarmonyPage:
 
     def _band(self, sid: str) -> Gtk.Widget:
         """Each Gospel from first verse to last, the section lit where it
-        falls; the passages it links to marked in their strokes."""
-        lit: dict[str, list] = {b: [] for b in harmony.GOSPELS}
+        falls and the passages it links to marked in their strokes; threads
+        join the section's accounts Gospel to Gospel, and each linked passage
+        to the nearest of them, as The Creeds joins a line to its verses."""
+        # (place, kind, witnesses) per Gospel.
+        marks: dict[str, list] = {b: [] for b in harmony.GOSPELS}
         if self._lens == 'eusebius':
             mine = harmony.gospel_spans(sid)
             for row in harmony.eusebius_rows(sid):
@@ -525,55 +568,127 @@ class HarmonyPage:
                     for e in entries:
                         inside = any(harmony.overlaps(e['span'], r)
                                      for r in mine.get(b, []))
-                        lit[b].append((harmony.place(e['span']),
-                                       'section' if inside else 'same_words'))
+                        marks[b].append((harmony.place(e['span']),
+                                         'section' if inside else 'same_words',
+                                         ('eusebius',)))
         else:
+            own = tuple((harmony.same_event(sid) or {}).get('witnesses')
+                        or ('robertson',))
             for b, spans in harmony.gospel_spans(sid).items():
-                lit[b] += [(harmony.place(r), 'section') for r in spans]
+                marks[b] += [(harmony.place(r), 'section', own) for r in spans]
             for m in harmony.other_links(sid):
                 for r in m['spans']:
-                    lit[r['book']].append((harmony.place(r), m['kind']))
+                    marks[r['book']].append((harmony.place(r), m['kind'],
+                                             tuple(m['witnesses'])))
         grid = Gtk.Grid(column_spacing=10, row_spacing=STRIP_GAP)
         grid.add_css_class('harmony-band')
+        names = []
         for i, b in enumerate(harmony.GOSPELS):
             name = _label(gospel_name(b), 'harmony-band-label')
             name.set_wrap(False)
             grid.attach(name, 0, i, 1, 1)
-            strip = Gtk.DrawingArea(hexpand=True, content_height=STRIP_H)
-            strip.set_valign(Gtk.Align.CENTER)
-            strip.set_draw_func(self._draw_strip, lit[b])
-            strip.set_accessible_role(Gtk.AccessibleRole.PRESENTATION)
-            redraw_on_contrast(strip)
-            grid.attach(strip, 1, i, 1, 1)
+            names.append(name)
+        area = Gtk.DrawingArea(hexpand=True)
+        area.set_draw_func(self._draw_band,
+                           ([marks[b] for b in harmony.GOSPELS],
+                            _threads([marks[b] for b in harmony.GOSPELS]),
+                            names))
+        area.set_accessible_role(Gtk.AccessibleRole.PRESENTATION)
+        redraw_on_contrast(area)
+        grid.attach(area, 1, 0, 1, len(harmony.GOSPELS))
         set_accessible_label(grid, _('Where the section falls in each Gospel'))
+        self._band_area = area
+        self._draw_in()
         return grid
 
-    def _draw_strip(self, area, cr, w, h, marks):
+    def _draw_in(self):
+        """The threads draw in as The Creeds' do; under reduced motion they
+        are simply there."""
+        if self._band_anim is not None:
+            self._band_anim.skip()
+            self._band_anim = None
+        self._band_progress = 1.0
+        if not motion.should_animate():
+            return
+        self._band_progress = 0.0
+        area = self._band_area
+
+        def frame(value):
+            self._band_progress = value
+            area.queue_draw()
+        self._band_anim = Adw.TimedAnimation.new(
+            area, 0.0, 1.0, THREAD_MS, Adw.CallbackAnimationTarget.new(frame))
+        self._band_anim.set_easing(motion.EASE_ENTER)
+        # Played once the band is on screen: it is built before it is placed,
+        # and an animation started on a widget not yet mapped is skipped to
+        # its end — measured, the threads never drew in at all.
+        anim = self._band_anim
+
+        def start(*_a):
+            area.disconnect(handler)
+            anim.play()
+        handler = area.connect('map', start)
+
+    def _draw_band(self, area, cr, w, _h, data):
+        rows, threads, names = data
         ink = area.get_color()
         hc = high_contrast()
 
         def src(alpha):
             cr.set_source_rgba(ink.red, ink.green, ink.blue, lift(alpha, hc))
 
-        src(0.10)
-        cr.rectangle(0, 1, w, h - 2)
-        cr.fill()
-        # The links first, so the section draws over them.
-        for (a, z), kind in sorted(marks, key=lambda m: m[1] == 'section'):
-            x = a * w
-            if kind == 'section':
-                src(0.85)
-                cr.rectangle(x, 0, max(2.5, (z - a) * w), h)
-                cr.fill()
-                continue
-            cr.set_line_width(1.2 if kind == 'look_alike' else 1)
-            src(0.8 if kind == 'look_alike' else 0.5)
+        # Each strip sits level with its Gospel's name.
+        mids = []
+        for name in names:
+            ok, r = name.compute_bounds(area)
+            if not ok:
+                return
+            mids.append(r.get_y() + r.get_height() / 2)
+        half = STRIP_H / 2
+        for y in mids:
+            src(0.10)
+            cr.rectangle(0, y - half + 1, w, STRIP_H - 2)
+            cr.fill()
+        # The threads under the marks, so each lands on its passage.
+        prog = self._band_progress
+        for (ra, pa), (rb, pb), kind, n in threads:
+            x1, x2 = (pa[0] + pa[1]) / 2 * w, (pb[0] + pb[1]) / 2 * w
+            down = ra < rb
+            y1 = mids[ra] + (half if down else -half)
+            y2 = mids[rb] - (half if down else -half)
+            ym = (y1 + y2) / 2
+            pts = ((x1, y1), (x1, ym), (x2, ym), (x2, y2))
+            width, alpha = _THREAD_LINE[kind]
+            cr.set_line_width(width + 0.3 * n)
             if kind == 'look_alike':
-                cr.set_dash([2, 1.5])
-            cr.move_to(x + 0.5, 0)
-            cr.line_to(x + 0.5, h)
+                src(alpha * prog)
+                cr.set_dash([4, 3])
+            else:
+                src(alpha)
+                if prog < 1:
+                    length = _bezier_length(*pts)
+                    cr.set_dash([length * prog, length + 1])
+            cr.move_to(*pts[0])
+            cr.curve_to(*pts[1], *pts[2], *pts[3])
             cr.stroke()
             cr.set_dash([])
+        for y, row in zip(mids, rows):
+            # The links first, so the section draws over them.
+            for (a, z), kind, _w in sorted(row, key=lambda m: m[1] == 'section'):
+                x = a * w
+                if kind == 'section':
+                    src(0.85)
+                    cr.rectangle(x, y - half, max(2.5, (z - a) * w), STRIP_H)
+                    cr.fill()
+                    continue
+                cr.set_line_width(1.2 if kind == 'look_alike' else 1)
+                src(0.8 if kind == 'look_alike' else 0.5)
+                if kind == 'look_alike':
+                    cr.set_dash([2, 1.5])
+                cr.move_to(x + 0.5, y - half)
+                cr.line_to(x + 0.5, y + half)
+                cr.stroke()
+                cr.set_dash([])
 
     # ── the accounts ─────────────────────────────────────────────────────
 
