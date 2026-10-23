@@ -186,6 +186,8 @@ def _starts() -> dict[tuple[str, int], dict[int, str]]:
 def section_starts(book: str, chapter: int) -> dict[int, str]:
     """Verses in this chapter where a section told in more than one Gospel
     begins: where the reading view draws its fourfold sign."""
+    if gospel_of(book) is None:
+        return {}      # every chapter renders through here; skip the load
     return _starts().get((book, chapter), {})
 
 
@@ -243,12 +245,13 @@ def _eus_order(eid: str) -> tuple[int, int]:
     return int(g), int(n)
 
 
-def eusebian_sections(sid: str) -> list[str]:
+@functools.cache
+def eusebian_sections(sid: str) -> tuple[str, ...]:
     """Eusebius's sections that overlap this Robertson section."""
     spans = [r for rs in gospel_spans(sid).values() for r in rs]
-    return sorted((e['id'] for e in _eusebius().values()
-                   if any(overlaps(e['span'], r) for r in spans)),
-                  key=_eus_order)
+    return tuple(sorted((e['id'] for e in _eusebius().values()
+                         if any(overlaps(e['span'], r) for r in spans)),
+                        key=_eus_order))
 
 
 def canon(table: str) -> str:
@@ -263,10 +266,12 @@ def canons(sid: str) -> list[str]:
     return [t for t in CANON_GOSPELS if t in found]
 
 
-def eusebius_rows(sid: str) -> list[dict]:
+@functools.cache
+def eusebius_rows(sid: str) -> tuple[dict, ...]:
     """The canon rows that touch this section, for the Eusebius lens: each
     row a Eusebian section with those it is paired with, by Gospel. Rows
-    outside the section come in too: that is the lens."""
+    outside the section come in too: that is the lens. Cached, as the page
+    asks on every resize: callers read the rows, never change them."""
     rows, seen = [], set()
     for eid in eusebian_sections(sid):
         e = _eusebius()[eid]
@@ -281,7 +286,7 @@ def eusebius_rows(sid: str) -> list[dict]:
         rows.append({'table': canon(e['table']), 'raw_table': e['table'],
                      'ids': sorted(ids, key=_eus_order),
                      'cells': {b: cells[b] for b in GOSPELS if b in cells}})
-    return rows
+    return tuple(rows)
 
 
 # ── links ────────────────────────────────────────────────────────────────

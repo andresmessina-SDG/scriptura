@@ -7,7 +7,7 @@ failure).
 import time
 
 import pytest
-from gi.repository import Gdk, GLib, Gtk
+from gi.repository import Gdk, GLib, Gtk, Pango
 
 Gtk.init_check()
 if Gdk.Display.get_default() is None:
@@ -96,6 +96,50 @@ def test_the_markup_numbers_verses_and_underlines_shared_words():
     assert '6:30</span>' in m and '>31</span>' in m
     assert 'underline="single"' in m and m.count('underline=') == 1
     Gtk.Label().set_markup(m)       # valid Pango markup
+
+
+def test_an_accounts_text_asks_no_width_and_keeps_its_height():
+    """GTK measures a wrapping label's width a letter to a line, which for
+    a long passage took most of a second; the column sets it instead. The
+    height at a given width is the plain label's."""
+    m = hv._markup([(5, v, [('Blessed are the poor in spirit: for theirs '
+                             'is the kingdom of heaven. ', frozenset())])
+                    for v in range(1, 40)], set())
+    fast = hv._PassageText(wrap=True, use_markup=True)
+    plain = Gtk.Label(wrap=True, use_markup=True)
+    for lab in (fast, plain):
+        lab.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+        lab.set_markup(m)
+    assert fast.measure(Gtk.Orientation.HORIZONTAL, -1)[:2] == (0, 0)
+    assert (fast.measure(Gtk.Orientation.VERTICAL, 400)[:2]
+            == plain.measure(Gtk.Orientation.VERTICAL, 400)[:2])
+
+
+def test_the_margin_signs_are_placed_once_a_layout():
+    """Placing a sign lays its line out, and a scroll paints every frame:
+    the places hold until the layout, the chapter's signs or a tag change.
+    A pointer away from the margin asks nothing."""
+    from reading_view import BibleTextView
+    view = BibleTextView()
+    buf = view.get_buffer()
+    buf.set_text('30 And the apostles gathered themselves together unto Jesus')
+    signs = [(buf.create_mark(None, buf.get_start_iter(), True), '72',
+              (True,) * 4, 1)]
+    view.set_harmony_signs(signs)
+    view.set_harmony(True)
+    first = view._sign_lines()
+    assert view._sign_lines() is first
+    view._stamp = 'the layout moved'
+    moved = view._sign_lines()
+    assert moved is not first and view._sign_lines() is moved
+    buf.create_tag(None, invisible=True)            # footnote markers hidden
+    tagged = view._sign_lines()
+    assert tagged is not moved
+    view.set_harmony_signs(list(signs))
+    assert view._sign_lines() is not tagged
+    _mark, x, y0, *_rest = view._sign_lines()[0]
+    assert view.harmony_sign_at(x, y0 + 1) == ['72']
+    assert view.harmony_sign_at(x + 50, y0 + 1) is None
 
 
 def test_canon_heads_name_the_gospels():

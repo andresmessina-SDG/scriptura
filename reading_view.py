@@ -314,6 +314,7 @@ class BibleTextView(Gtk.TextView):
 
     def _forget_hidden(self, *_args):
         self._hides = None
+        self._sign_memo = None
 
     def _cursor(self, it):
         memo = self._cursor_memo
@@ -526,7 +527,10 @@ class BibleTextView(Gtk.TextView):
         the verse's start, the section id, which Gospels tell it, and which
         of the four is being read."""
         self._harmony_signs = signs
+        self._sign_memo = None
 
+    #: The signs' places, and the layout they were measured in.
+    _sign_memo = None
     _SIGN_GAP = 5.0       # between the four dots, top to bottom
     _SIGN_R = 1.8
     _SIGN_INSET = 24.0    # from the text's edge: left of the unit rule
@@ -535,17 +539,30 @@ class BibleTextView(Gtk.TextView):
         """(x, y top, y bottom) of a sign in buffer coordinates, centred on
         the first line of its verse."""
         r = self.get_iter_location(self.get_buffer().get_iter_at_mark(mark))
-        x = max(8.0, self.get_left_margin() - self._SIGN_INSET)
+        x = self._sign_x()
         mid = r.y + r.height / 2
         half = 1.5 * self._SIGN_GAP + self._SIGN_R
         return x, mid - half, mid + half
 
+    def _sign_x(self):
+        return max(8.0, self.get_left_margin() - self._SIGN_INSET)
+
     def _sign_lines(self):
         """The signs to draw, one per line: [(mark, x, y0, told, here,
         sections)]. Two sections can begin on one line (Mark 14:26 and 27);
-        they share its sign, and the peek lists both."""
+        they share its sign, and the peek lists both.
+
+        Measured once per layout, not on every frame of a scroll: kept while
+        the stamp the bands paint by (`_layout_stamp`) holds and the
+        chapter's signs are the same, and dropped when a tag changes (a
+        footnote marker hidden or shown moves the lines without a render)."""
+        signs = getattr(self, '_harmony_signs', ())
+        key = (getattr(self, '_stamp', None), len(signs))
+        memo = self._sign_memo
+        if memo is not None and memo[0] == key:
+            return memo[1]
         lines: dict[float, list] = {}
-        for mark, sid, told, here in getattr(self, '_harmony_signs', ()):
+        for mark, sid, told, here in signs:
             if mark.get_deleted():
                 continue
             x, y0, _y1 = self._sign_geometry(mark)
@@ -553,13 +570,16 @@ class BibleTextView(Gtk.TextView):
                 lines[y0][5].append(sid)
             else:
                 lines[y0] = [mark, x, y0, told, here, [sid]]
-        return list(lines.values())
+        self._sign_memo = (key, list(lines.values()))
+        return self._sign_memo[1]
 
     def harmony_sign_at(self, bx, by):
         """The sections whose sign is under a point in buffer coordinates,
         or None. Read from the marks, never from get_iter_at_location (which
         aborts on some lines; see gtk_utils)."""
-        if not getattr(self, '_show_harmony', False):
+        # Every pointer move asks; most are nowhere near the margin.
+        if (not getattr(self, '_show_harmony', False)
+                or abs(bx - self._sign_x()) > 9):
             return None
         span = 3 * self._SIGN_GAP + 2 * self._SIGN_R
         for _mark, x, y0, _told, _here, sids in self._sign_lines():

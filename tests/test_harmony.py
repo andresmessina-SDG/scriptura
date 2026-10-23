@@ -126,6 +126,21 @@ def test_signs_sit_where_a_shared_section_begins_in_each_gospel():
     assert harmony.gospel_of('Luke') == 2 and harmony.gospel_of('Acts') is None
 
 
+def test_a_chapter_outside_the_gospels_leaves_the_harmony_unread():
+    """Every chapter's render asks for its signs; Romans must not pay for
+    reading the harmony's data to learn it has none."""
+    harmony.data.cache_clear()
+    harmony._starts.cache_clear()
+    assert harmony.section_starts('Romans', 8) == {}
+    assert harmony.data.cache_info().currsize == 0
+
+
+def test_the_eusebius_rows_are_worked_out_once_a_section():
+    """The page asks for them on every resize of a drag."""
+    assert harmony.eusebius_rows('54') is harmony.eusebius_rows('54')
+    assert harmony.eusebian_sections('54') is harmony.eusebian_sections('54')
+
+
 def test_the_passion_is_dense_but_bounded():
     """At most 14 signs in one chapter (Luke 9), as the research measured;
     a section Robertson resumes after a break signs only where it begins.

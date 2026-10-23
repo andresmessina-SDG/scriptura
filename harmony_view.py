@@ -213,6 +213,11 @@ class HarmonyPage:
                                   wrap=True)
                 title.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
                 title.set_max_width_chars(34)
+                # A floor for its least width, so GTK measures it at twelve
+                # letters a line, not one: the outline's 185 titles took
+                # 0.3 s of the page's first frame (measured). The title
+                # fills its row either way.
+                title.set_width_chars(12)
                 title.set_hexpand(True)
                 title.add_css_class('harmony-row-title')
                 box = Gtk.Box(spacing=8)
@@ -471,12 +476,16 @@ class HarmonyPage:
     def _witness(self, w: str) -> Gtk.Widget:
         name, full = _WITNESS[w]
         t = _label(name, 'creeds-witness')
+        # A pill is one line; unwrapped, it is cheap to measure (a wrapping
+        # label is laid out a letter to a line to find its least width).
+        t.set_wrap(False)
         t.set_tooltip_text(full)
         return t
 
     def _measured(self, words: bool) -> Gtk.Widget:
         t = _label(_('Same words in the Greek') if words
                    else _('Same teaching'), 'creeds-witness')
+        t.set_wrap(False)
         t.add_css_class('creeds-witness-measured')
         t.set_tooltip_text(
             _('Measured from the Greek words: these passages share more of '
@@ -611,17 +620,31 @@ class HarmonyPage:
                  for sp in c['spans']}
         missing = [k for k in want if k not in self._texts]
 
-        def work(_task):
-            return {k: harmony.passage(module, spans[k[1]]) for k in missing}
+        def work(task):
+            # A newer section (a held Down key) makes this one stale: stop
+            # reading, so the old fetches do not pile up behind the new.
+            found = {}
+            for k in missing:
+                if not task.is_current():
+                    break
+                found[k] = harmony.passage(module, spans[k[1]])
+            return found
 
         def done(found):
             self._texts.update(found)
             if self._account_rows is rows:
                 self._fill(rows, module)
 
+        def start():
+            if self._account_rows is rows:
+                tasks.submit(f'harmony:{id(self)}', work, done,
+                             lambda _exc: done({}))
+            return GLib.SOURCE_REMOVE
+
         if missing:
-            tasks.submit(f'harmony:{id(self)}', work, done,
-                         lambda _exc: done({}))
+            # After the frame that draws the section: a reading thread holds
+            # the interpreter half the time, and the window's frame waits.
+            GLib.idle_add(start)
         else:
             self._fill(rows, module)
 
@@ -668,11 +691,12 @@ class HarmonyPage:
             refs.append(chip)
             if eid:
                 n = _label(_('§ {n}').format(n=eid.split('.')[1]), 'harmony-num')
+                n.set_wrap(False)
                 n.set_tooltip_text(_('Eusebius’s section number in this Gospel'))
                 refs.append(n)
         head.append(refs)
         box.append(head)
-        text = Gtk.Label(xalign=0, yalign=0, wrap=True, use_markup=True)
+        text = _PassageText(xalign=0, yalign=0, wrap=True, use_markup=True)
         text.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
         text.set_markup(_markup(verses, shared))
         text.add_css_class('harmony-text')
@@ -854,6 +878,23 @@ class HarmonyPage:
 
 
 # ── helpers ──────────────────────────────────────────────────────────────
+
+class _PassageText(Gtk.Label):
+    """An account's words: a wrapping label that does not ask Pango its
+    width.
+
+    GTK measures a wrapping label's width by laying the text out twice, on
+    one line and as narrow as it goes, a word to a line: for the Sermon on
+    the Mount thousands of lines, and the frame that showed § 54 took 0.6 s
+    (measured; 45 ms without). The column sets the width here, and WORD_CHAR
+    breaks a word too long for it, so the label asks for none. Its height is
+    still measured at the width it is given."""
+
+    def do_measure(self, orientation, for_size):
+        if orientation == Gtk.Orientation.HORIZONTAL:
+            return 0, 0, -1, -1
+        return Gtk.Label.do_measure(self, orientation, for_size)
+
 
 def _span_key(span: dict) -> tuple:
     return (span['book'], *span['start'], *span['end'])
