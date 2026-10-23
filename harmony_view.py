@@ -50,7 +50,7 @@ NARROW_SP = 420
 COL_MIN = 220
 #: A pillar's height, and the room between two.
 STRIP_H = 7
-STRIP_GAP = 5
+STRIP_GAP = 11   # room for the threads between strips (his call: 30% taller)
 
 #: The links' strokes, The Creeds' grammar: solid is "this is that", fine
 #: "this echoes that", dashed "this resembles that".
@@ -79,36 +79,64 @@ def _hollow(cr, ink):
 
 #: A thread's width before its witnesses add to it, and its strength:
 #: The Creeds' own, same event as its "same words", a similar event as its
-#: "foretold".
-_THREAD_LINE = {'section': (1.4, 0.95), 'look_alike': (1.1, 0.85)}
+#: "foretold". `other` joins a similar event's own accounts, quieter, so the
+#: section's thread stays the one the eye follows.
+_THREAD_LINE = {'section': (1.4, 0.95), 'look_alike': (1.1, 0.85),
+                'other': (1.0, 0.4)}
+
+
+def _mark_x(place: tuple[float, float], kind: str, w: float) -> float:
+    """Where a mark sits across its strip, so a thread lands on it: the
+    middle of a section's block, or the tick at a passage's middle."""
+    a, z = place
+    if kind == 'section':
+        return a * w + max(2.5, (z - a) * w) / 2
+    return round((a + z) / 2 * w) + 0.5      # a 1px tick, on the pixel
 
 
 def _threads(rows: list[list]) -> list[tuple]:
     """The band's threads. The section's accounts are joined Gospel to Gospel
-    in canonical order; each similar event is joined to the nearest Gospel
-    that tells the section (the upper on a tie), as in the sketch. A passage
-    in the one Gospel that tells the section has no other to join.
+    in canonical order. A similar event's own accounts are joined the same
+    way, quieter, and one dashed thread runs to it from the section, between
+    the closest pair of marks on different strips: §39's second rejection,
+    told in Matthew and Mark, takes one dashed thread from Luke, not two run
+    side by side through Mark's strip.
 
     Said elsewhere stays a tick on its strip (his call, 2026-10-23): the
     Sermon on the Mount has two dozen such links, and their threads drawn
     knotted the band. The rows below the accounts list them all.
 
-    `rows` holds (place, kind, witnesses) per Gospel. Returns
-    ((row, place), (row, place), kind, witness count), the upper end first.
+    `rows` holds (place, kind, witnesses, event) per Gospel, `event` naming
+    the section a similar event is. Returns ((row, place, kind), (row, place,
+    kind), thread kind, witness count), the upper end first.
     """
-    own = {i: next(m for m in row if m[1] == 'section')
-           for i, row in enumerate(rows) if any(m[1] == 'section' for m in row)}
-    told = sorted(own)
-    out = [((a, own[a][0]), (b, own[b][0]), 'section', len(own[a][2]))
-           for a, b in zip(told, told[1:])]
+    def chain(firsts: dict[int, tuple], kind: str, n: int) -> list[tuple]:
+        told = sorted(firsts)
+        return [((a, *firsts[a]), (b, *firsts[b]), kind, n)
+                for a, b in zip(told, told[1:])]
+
+    own: dict[int, tuple] = {}
+    events: dict[str, dict[int, tuple]] = {}
+    wit: dict[str, int] = {}
+    n_own = 0
     for r, row in enumerate(rows):
-        for place, kind, wit in row:
-            near = [i for i in told if i != r]
-            if kind != 'look_alike' or not near:
-                continue
-            i = min(near, key=lambda i: (abs(i - r), i))
-            a, b = sorted(((i, own[i][0]), (r, place)))
-            out.append((a, b, kind, len(wit)))
+        for place, kind, w, event in row:
+            if kind == 'section':
+                own.setdefault(r, (place, kind))
+                n_own = len(w)
+            elif kind == 'look_alike':
+                events.setdefault(event, {}).setdefault(r, (place, kind))
+                wit[event] = max(wit.get(event, 0), len(w))
+    out = chain(own, 'section', n_own)
+    for event, marks in events.items():
+        out += chain(marks, 'other', 0)
+        pairs = [((abs(a - b), abs(sum(own[a][0]) - sum(marks[b][0]))), a, b)
+                 for a in own for b in marks if a != b]
+        if not pairs:
+            continue
+        _d, a, b = min(pairs)
+        ends = sorted(((a, *own[a]), (b, *marks[b])))
+        out.append((ends[0], ends[1], 'look_alike', wit[event]))
     return out
 
 
@@ -581,16 +609,18 @@ class HarmonyPage:
                                      for r in mine.get(b, []))
                         marks[b].append((harmony.place(e['span']),
                                          'section' if inside else 'same_words',
-                                         ('eusebius',)))
+                                         ('eusebius',), None))
         else:
             own = tuple((harmony.same_event(sid) or {}).get('witnesses')
                         or ('robertson',))
             for b, spans in harmony.gospel_spans(sid).items():
-                marks[b] += [(harmony.place(r), 'section', own) for r in spans]
+                marks[b] += [(harmony.place(r), 'section', own, None)
+                             for r in spans]
             for m in harmony.other_links(sid):
                 for r in m['spans']:
                     marks[r['book']].append((harmony.place(r), m['kind'],
-                                             tuple(m['witnesses'])))
+                                             tuple(m['witnesses']),
+                                             m['section'] or m['target']))
         grid = Gtk.Grid(column_spacing=10, row_spacing=STRIP_GAP)
         grid.add_css_class('harmony-band')
         names = []
@@ -662,8 +692,8 @@ class HarmonyPage:
             cr.fill()
         # The threads under the marks, so each lands on its passage.
         prog = self._band_progress
-        for (ra, pa), (rb, pb), kind, n in threads:
-            x1, x2 = (pa[0] + pa[1]) / 2 * w, (pb[0] + pb[1]) / 2 * w
+        for (ra, pa, ka), (rb, pb, kb), kind, n in threads:
+            x1, x2 = _mark_x(pa, ka, w), _mark_x(pb, kb, w)
             down = ra < rb
             y1 = mids[ra] + (half if down else -half)
             y2 = mids[rb] - (half if down else -half)
@@ -685,19 +715,20 @@ class HarmonyPage:
             cr.set_dash([])
         for y, row in zip(mids, rows):
             # The links first, so the section draws over them.
-            for (a, z), kind, _w in sorted(row, key=lambda m: m[1] == 'section'):
-                x = a * w
+            for (a, z), kind, _w, _e in sorted(row,
+                                               key=lambda m: m[1] == 'section'):
                 if kind == 'section':
                     src(0.85)
-                    cr.rectangle(x, y - half, max(2.5, (z - a) * w), STRIP_H)
+                    cr.rectangle(a * w, y - half, max(2.5, (z - a) * w), STRIP_H)
                     cr.fill()
                     continue
+                x = _mark_x((a, z), kind, w)
                 cr.set_line_width(1.2 if kind == 'look_alike' else 1)
                 src(0.8 if kind == 'look_alike' else 0.5)
                 if kind == 'look_alike':
                     cr.set_dash([2, 1.5])
-                cr.move_to(x + 0.5, y - half)
-                cr.line_to(x + 0.5, y + half)
+                cr.move_to(x, y - half)
+                cr.line_to(x, y + half)
                 cr.stroke()
                 cr.set_dash([])
 

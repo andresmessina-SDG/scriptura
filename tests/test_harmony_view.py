@@ -171,29 +171,49 @@ def test_a_click_closes_the_outline_popover_and_keys_do_not(page):
 # ── the threads in the pillars band ──────────────────────────────────────────
 
 def test_the_accounts_are_joined_gospel_to_gospel_in_order():
-    rows = [[((0.5, 0.51), 'section', ('robertson', 'eusebius'))], [],
-            [((0.3, 0.31), 'section', ('robertson', 'eusebius'))],
-            [((0.2, 0.21), 'section', ('robertson', 'eusebius'))]]
+    two = ('robertson', 'eusebius')
+    rows = [[((0.5, 0.51), 'section', two, None)], [],
+            [((0.3, 0.31), 'section', two, None)],
+            [((0.2, 0.21), 'section', two, None)]]
     assert hv._threads(rows) == [
-        ((0, (0.5, 0.51)), (2, (0.3, 0.31)), 'section', 2),
-        ((2, (0.3, 0.31)), (3, (0.2, 0.21)), 'section', 2)]
+        ((0, (0.5, 0.51), 'section'), (2, (0.3, 0.31), 'section'), 'section', 2),
+        ((2, (0.3, 0.31), 'section'), (3, (0.2, 0.21), 'section'), 'section', 2)]
 
 
-def test_a_similar_event_runs_to_the_nearest_account_and_said_elsewhere_does_not():
-    rows = [[((0.5, 0.51), 'section', ('robertson',))],
-            [((0.4, 0.41), 'section', ('robertson',))],
-            [((0.1, 0.11), 'look_alike', ('robertson',)),
-             ((0.6, 0.61), 'same_words', ('eusebius',))],
-            []]
-    threads = hv._threads(rows)
-    assert ((1, (0.4, 0.41)), (2, (0.1, 0.11)), 'look_alike', 1) in threads
-    assert not any(t[2] == 'same_words' for t in threads)
+def test_a_similar_event_told_twice_takes_one_dashed_thread():
+    """§39: Luke alone; the second rejection in Matthew and Mark. Its two
+    accounts are joined to each other, and one dashed thread reaches it,
+    from Luke to the nearer, Mark — not two side by side through Mark."""
+    r = ('robertson',)
+    rows = [[((0.45, 0.46), 'look_alike', r, '69')],
+            [((0.33, 0.34), 'look_alike', r, '69')],
+            [((0.2, 0.21), 'section', r, None)], []]
+    assert hv._threads(rows) == [
+        ((0, (0.45, 0.46), 'look_alike'), (1, (0.33, 0.34), 'look_alike'),
+         'other', 0),
+        ((1, (0.33, 0.34), 'look_alike'), (2, (0.2, 0.21), 'section'),
+         'look_alike', 1)]
 
 
-def test_a_one_gospel_section_has_nothing_to_join():
-    rows = [[], [], [((0.5, 0.51), 'section', ('robertson',)),
-                     ((0.2, 0.21), 'look_alike', ('robertson',))], []]
+def test_said_elsewhere_takes_no_thread():
+    r = ('eusebius',)
+    rows = [[((0.5, 0.51), 'section', r, None)],
+            [((0.4, 0.41), 'section', r, None)],
+            [((0.6, 0.61), 'same_words', r, '113')], []]
+    assert not any(t[2] in ('same_words', 'other', 'look_alike')
+                   for t in hv._threads(rows))
+
+
+def test_a_one_gospel_section_and_its_like_in_the_same_gospel_have_nothing_to_join():
+    r = ('robertson',)
+    rows = [[], [], [((0.5, 0.51), 'section', r, None),
+                     ((0.2, 0.21), 'look_alike', r, '59')], []]
     assert hv._threads(rows) == []
+
+
+def test_a_thread_lands_on_its_mark():
+    assert hv._mark_x((0.5, 0.5), 'look_alike', 200) == 100.5
+    assert hv._mark_x((0.5, 0.501), 'section', 200) == 100 + 2.5 / 2
 
 
 def test_the_threads_wait_to_draw_in_until_the_band_is_on_screen(page, monkeypatch):
