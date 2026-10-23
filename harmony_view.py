@@ -171,6 +171,7 @@ class HarmonyPage:
         self._beside_btns: dict[str, Gtk.ToggleButton] = {}
         self._band_anim: Adw.TimedAnimation | None = None
         self._band_progress = 1.0
+        self._whole_left = 0
         self._texts: dict[tuple, list] = {}
         self._font_provider = Gtk.CssProvider()
         self.widget = Adw.BreakpointBin()
@@ -490,6 +491,7 @@ class HarmonyPage:
         if self._sel is None:
             self._content.append(self._opening())
             return
+        self._repaint_whole()
         self._content.append(self._header(self._sel))
         self._content.append(self._band(self._sel))
         self._content.append(self._accounts(self._sel))
@@ -503,6 +505,42 @@ class HarmonyPage:
         # Facts about the text come after it, not before (his call).
         for fact, verse in harmony.facts(self._sel):
             self._content.append(self._fact(fact, verse))
+
+    #: Frames the section is repainted whole after a change: one per
+    #: buffer GTK may keep in turn, and one over.
+    _WHOLE_FRAMES = 4
+
+    def _repaint_whole(self):
+        """Repaint the whole section for the next few frames, not only what
+        changed.
+
+        GTK repaints the boxes its drawing records say changed, and on the GPU
+        renderers a title's capitals reach a pixel or two above the box GTK
+        records for its letters: going from a long title to a short one left
+        the tops of the old letters standing beside and below the new. Proved
+        on his screen: with GSK_DEBUG=full-redraw they were gone. One whole
+        frame was not enough, as GTK paints into two or three buffers in
+        turn. So for a few frames the section's opacity steps between two
+        values too close to 1 to see, and each step makes it a new drawing
+        that GTK repaints whole, in every buffer.
+        """
+        box = self._content
+        clock = box.get_frame_clock()
+        if clock is None or self._whole_left:
+            self._whole_left = self._WHOLE_FRAMES if clock is not None else 0
+            return
+        self._whole_left = self._WHOLE_FRAMES
+        box.set_opacity(0.99)
+
+        def after(c):
+            self._whole_left -= 1
+            if self._whole_left <= 0:
+                c.disconnect(handler)
+                box.set_opacity(1.0)
+                return
+            box.set_opacity(0.98 if box.get_opacity() > 0.985 else 0.99)
+            c.request_phase(Gdk.FrameClockPhase.PAINT)
+        handler = clock.connect('after-paint', after)
 
     def _header(self, sid: str) -> Gtk.Widget:
         s = harmony.section(sid) or {}

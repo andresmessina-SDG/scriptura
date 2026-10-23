@@ -284,3 +284,11 @@ def test_a_similar_event_beside_neither_counts_for_nor_wears_an_underline(
     page._fill(rows, 'KJV')
     assert seen == [2]
     assert made == [('Matt', {1}), ('Luke', {1}), ('John', set())]
+
+
+def test_a_page_not_on_screen_is_left_at_full_opacity(page):
+    """The whole-section repaint needs a frame clock; off screen it must not
+    leave the section a shade see-through with nothing to restore it."""
+    page.select('55')
+    assert page._content.get_opacity() == 1.0
+    assert page._whole_left == 0
