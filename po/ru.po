@@ -190,6 +190,50 @@ msgid "Commentary"
 msgstr "Комментарий"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
+msgid "The Harmony of the Gospels, and reading plans that walk you through each day."
+msgstr "Гармония Евангелий и планы чтения, которые ведут вас через каждый день."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:158
+msgid "The Harmony of the Gospels sets the four Gospels side by side, event by event, after A. T. Robertson's harmony."
+msgstr "«Гармония Евангелий» ставит четыре Евангелия рядом, событие за событием, по гармонии А. Т. Робертсона."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
+msgid "A switch shows the canon tables of Eusebius instead, with the passages he set together."
+msgstr "Переключатель показывает вместо этого канонические таблицы Евсевия с отрывками, которые он поставил вместе."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:160
+msgid "Words whose Greek another account also uses are underlined, in Bibles with Strong's numbers."
+msgstr "Слова, греческий оригинал которых есть и в другом повествовании, подчёркнуты в Библиях с номерами Стронга."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:161
+msgid "A band shows where each event falls in each Gospel, with threads to the same and similar events."
+msgstr "Полоса показывает, где каждое событие находится в каждом Евангелии, с нитями к тому же и к сходным событиям."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
+msgid "A similar event can be set beside the accounts to compare them."
+msgstr "Сходное событие можно поставить рядом с повествованиями, чтобы сравнить их."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:163
+msgid "Gospel parallels can be marked in the reading margin. Click a mark to read the other Gospels."
+msgstr "Параллели Евангелий можно отмечать на полях при чтении. Нажмите на метку, чтобы прочитать другие Евангелия."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
+msgid "A new reading plan, Life of Christ in 40 Days, reads every account of each event in order."
+msgstr "Новый план чтения «Жизнь Христа за 40 дней» читает по порядку все повествования о каждом событии."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
+msgid "Reading plans can now read part of a chapter."
+msgstr "Планы чтения теперь могут охватывать часть главы."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
+msgid "Opening a plan's reading lights the passage and offers the next one when you reach its end."
+msgstr "При открытии чтения из плана отрывок выделяется, а в его конце предлагается следующий."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:167
+msgid "Mark the day read without leaving the text."
+msgstr "Отмечайте день прочитанным, не уходя из текста."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
 msgid "Clearer parallel presentation, new reading fonts, and more reliable saves and downloads."
 msgstr "Более наглядная параллельная презентация, новые шрифты для чтения и более надёжное сохранение и скачивание."
 
