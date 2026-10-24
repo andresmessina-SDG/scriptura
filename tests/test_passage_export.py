@@ -18,11 +18,13 @@ CHAPTER = [(15, 'Verse fifteen.'), (16, 'For God so <i>loved</i> the world.'),
            (19, 'Verse nineteen.')]
 
 
-def _sword(monkeypatch, headings=None):
+def _sword(monkeypatch, headings=None, titles=None):
     monkeypatch.setattr(sword_bridge, 'load_chapter',
                         lambda *_a: list(CHAPTER))
     monkeypatch.setattr(sword_bridge, 'chapter_headings',
                         lambda *_a: dict(headings or {}))
+    monkeypatch.setattr(sword_bridge, 'chapter_titles',
+                        lambda *_a: dict(titles or {}))
     monkeypatch.setattr(sword_bridge, 'module_info',
                         lambda _m: {'description': 'King James Version'})
 
@@ -412,3 +414,37 @@ def test_an_ebible_key_cites_the_translation_not_the_id(monkeypatch):
     assert passage_export.version_label(key) == 'Russian Synodal Bible'
     assert passage_export.attribution(key) == \
         'Text from Russian Synodal Bible.'
+
+
+# ── Psalm superscriptions ────────────────────────────────────────────────────
+# Scripture that stands above its verse with no number of its own. A sheet
+# carries it whenever it takes in that verse; a card, which quotes exactly the
+# verses it cites, never does.
+
+SUPERSCRIPTION = {15: ['<w lemma="strong:H05329">To the chief Musician</w>, '
+                       'A Psalm of David.']}
+
+
+def test_sheet_sets_the_superscription_above_its_verse(monkeypatch):
+    _sword(monkeypatch, titles=SUPERSCRIPTION)
+    lines = build('KJV', 'Psalms', 51, [15, 16], notes=False).splitlines()
+    at = lines.index('> *To the chief Musician, A Psalm of David.*')
+    assert lines[at + 1].startswith('> **15**')
+
+
+def test_plain_sheet_sets_it_as_a_plain_line(monkeypatch):
+    _sword(monkeypatch, titles=SUPERSCRIPTION)
+    lines = build('KJV', 'Psalms', 51, [15, 16], notes=False,
+                  markdown=False).splitlines()
+    at = lines.index('To the chief Musician, A Psalm of David.')
+    assert lines[at + 1].startswith('15 ')
+
+
+def test_sheet_without_its_verse_leaves_it_out(monkeypatch):
+    _sword(monkeypatch, titles=SUPERSCRIPTION)
+    assert 'Musician' not in build('KJV', 'Psalms', 51, [16, 17], notes=False)
+
+
+def test_card_quotes_only_the_verses_it_cites(monkeypatch):
+    _sword(monkeypatch, titles=SUPERSCRIPTION)
+    assert 'Musician' not in passage_export.verse_text('KJV', 'Psalms', 51, [15])

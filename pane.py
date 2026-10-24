@@ -210,6 +210,11 @@ _FN_TOKEN_RE = re.compile(r'\[\[FN_(\d+)\]\]')
 #: those falls back to a render. Not chapter-scoped: one shared style tag.
 _HEADING_TAG = 'section_heading'
 
+#: Marks a psalm superscription or Psalm 119 letter (_insert_scripture_title).
+#: No style and never hidden: it names the row as a title, carrying no verse,
+#: for anything that asks what sits at the reading top. Not chapter-scoped.
+_TITLE_TAG = 'psalm_title'
+
 #: Source markup that carries its own headings, which the tag above cannot
 #: govern. Checked per verse so the toggle knows whether it may restyle.
 _INLINE_TITLE_RE = re.compile(r'<title([^>]*)>|<h[1-6]\b[^>]*>', re.IGNORECASE)
@@ -494,6 +499,22 @@ _WORD_AFTER_RE = re.compile(r"^[\s,;:.!?'’\"“”]*([A-Za-z]+)")
 def _is_caps_word(word):
     word = word.replace("'", '').replace('’', '')
     return len(word) >= 2 and word.isupper()
+
+
+def scripture_title_markup(osis, dark, smallcaps=False):
+    """A psalm superscription or Psalm 119 letter as Pango markup: italic at
+    92%, with supplied words turned upright as printed KJVs set them. Shared
+    by the reading view and presentation so the two cannot drift."""
+    markup = _html_to_markup(osis, dark, divine_smallcaps=smallcaps)
+    if smallcaps:
+        markup = _smallcap_divine_literals(markup)
+    markup = markup.replace('<i>', '<span style="normal">')
+    markup = markup.replace('</i>', '</span>')
+    # A line that opens on a Hebrew letter ("א ALEPH.") is laid out
+    # right-to-left and drawn reversed against the far edge; the mark holds
+    # it to the reading text's direction.
+    mark = '\u200e' if _HEBREW_RUN.match(re.sub(r'<[^>]+>', '', markup)) else ''
+    return f'{mark}<span style="italic" size="92%">{markup}</span>'
 
 
 def _smallcap_divine_literals(markup):
@@ -1304,6 +1325,9 @@ class BiblePane(Gtk.Box):
         # no headings argument, so the attribute has to exist before the
         # first fetch ever assigns one.
         self._rendered_headings = {}
+        # {verse: [title_osis, …]}: psalm superscriptions and Psalm 119's
+        # letters, kept for the re-theme path like the headings above.
+        self._rendered_titles = {}
         # {key: printed numeral} for lines a split psalm carries over from the
         # module's next chapter; every other line prints its key.
         self._numerals = {}
@@ -2483,10 +2507,12 @@ class BiblePane(Gtk.Box):
             if ebible_bridge.is_ebible_module(module):
                 notes = ebible_bridge.chapter_footnotes(module, book, chapter)
                 heads = {}
+                titles = {}
             else:
                 notes = sword_bridge.chapter_footnotes(module, book, chapter)
                 heads = sword_bridge.chapter_headings(module, book, chapter)
-            return verses, notes, heads
+                titles = sword_bridge.chapter_titles(module, book, chapter)
+            return verses, notes, heads, titles
 
         # Read by the window, which holds the Today page's exit until the
         # chapter under it is in: a fade that runs through the render drops
@@ -2495,7 +2521,8 @@ class BiblePane(Gtk.Box):
         task = tasks.submit(
             f'chapter:{id(self)}', fetch,
             lambda res: self._display(res[0], book, chapter, module,
-                                      res[1], task, headings=res[2]),
+                                      res[1], task, headings=res[2],
+                                      titles=res[3]),
             on_error=lambda _exc: setattr(self, '_render_pending', False))
 
     def _show_status_page(self, icon, title, description, action=None):
@@ -2750,7 +2777,7 @@ class BiblePane(Gtk.Box):
         self._view.set_harmony(self._show_harmony)
 
     def _display(self, verses, book, chapter, module, notes=None, task=None,
-                 headings=None):
+                 headings=None, titles=None):
         if book != self._book or chapter != self._chapter or module != self._module:
             return GLib.SOURCE_REMOVE
         if task is not None and not task.is_current():
@@ -2775,6 +2802,8 @@ class BiblePane(Gtk.Box):
             # Kept so a re-theme render (which re-runs _display with no fetch)
             # doesn't drop the headings the way it would a bare parameter.
             self._rendered_headings = headings
+        if titles is not None:
+            self._rendered_titles = titles
         # The re-theming path re-calls _display without notes; reuse the
         # set from the original fetch.
         if notes is None:
@@ -2936,6 +2965,8 @@ class BiblePane(Gtk.Box):
                         wrote_a_block, hideable=False)
                 for head in self._rendered_headings.get(start_v, ()):
                     self._insert_section_heading(head, wrote_a_block)
+                for title in self._rendered_titles.get(start_v, ()):
+                    self._insert_scripture_title(title, dark)
 
             if _renders_inline_title(html):
                 self._rendered_inline_titles = True
@@ -3610,6 +3641,24 @@ class BiblePane(Gtk.Box):
         # gap where the heading used to be.
         self._buffer.apply_tag(self._heading_tag(),
                                self._buffer.get_iter_at_offset(start),
+                               self._buffer.get_end_iter())
+
+    def _insert_scripture_title(self, osis, dark):
+        """Set a psalm superscription or Psalm 119 letter above its verse.
+
+        Scripture, so never under the headings toggle and never a sense-unit
+        start: italic at 92% in the body ink, on its own line, with supplied
+        words turned upright as printed KJVs set them. Outside the verse's
+        `vnum_` range, like a heading, so a highlight or the current-verse
+        mark never spreads over it."""
+        end = self._buffer.get_end_iter()
+        lead = '' if end.starts_line() else '\n'
+        start = end.get_offset()
+        markup = scripture_title_markup(osis, dark, self._smallcaps_divine)
+        self._buffer.insert_markup(end, f'{lead}{markup}\n', -1)
+        tag = (self._buffer.get_tag_table().lookup(_TITLE_TAG)
+               or self._buffer.create_tag(_TITLE_TAG))
+        self._buffer.apply_tag(tag, self._buffer.get_iter_at_offset(start),
                                self._buffer.get_end_iter())
 
     def _unit_bounds(self, verse):

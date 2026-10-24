@@ -69,9 +69,13 @@ _cache = OrderedDict()
 _notes_cache = OrderedDict()
 # Section headings for the same chapters: {verse: [heading_html, ...]}.
 # SWORD moves preverse titles out of the rendered text into entry
-# attributes (see _collect_headings), so they ride the same render pass
+# attributes (see _collect_preverse), so they ride the same render pass
 # and evict in lockstep, exactly like the footnotes above.
 _headings_cache = OrderedDict()
+# Psalm superscriptions and acrostic letters for the same chapters:
+# {verse: [title_osis, ...]}. The same preverse blobs as the headings, kept
+# apart because they are Scripture, not editorial divisions.
+_titles_cache = OrderedDict()
 # Strong's lookup cache — same shape, smaller cap. A typical chapter
 # references 30–50 unique Strong's numbers; 500 covers many chapters of
 # recent activity before evicting.
@@ -79,19 +83,23 @@ _STRONGS_CACHE_CAP = 500
 _strongs_cache = OrderedDict()
 
 
-def _cache_chapter(key, value, notes, headings):
-    """Insert a chapter render + its footnotes + its section headings with
-    LRU eviction (the three caches stay in lockstep). Caller holds _lock."""
+def _cache_chapter(key, value, notes, headings, titles):
+    """Insert a chapter render + its footnotes, section headings and psalm
+    titles with LRU eviction (the caches stay in lockstep). Caller holds
+    _lock."""
     _cache[key] = value
     _cache.move_to_end(key)
     _notes_cache[key] = notes
     _notes_cache.move_to_end(key)
     _headings_cache[key] = headings
     _headings_cache.move_to_end(key)
+    _titles_cache[key] = titles
+    _titles_cache.move_to_end(key)
     if len(_cache) > _CHAPTER_CACHE_CAP:
         _cache.popitem(last=False)
         _notes_cache.popitem(last=False)
         _headings_cache.popitem(last=False)
+        _titles_cache.popitem(last=False)
 
 
 def _cache_strong(strong_num, value):
@@ -282,7 +290,7 @@ def mgr():
             _mgr.setGlobalOption('Footnotes', 'On')
             # Section headings ride the same mechanism: without this the
             # heading filters drop preverse titles instead of moving them
-            # into the entry attributes _collect_headings reads back.
+            # into the entry attributes _collect_preverse reads back.
             _mgr.setGlobalOption('Headings', 'On')
         return _mgr
 
@@ -294,6 +302,7 @@ def _reset():
         _cache.clear()
         _notes_cache.clear()
         _headings_cache.clear()
+        _titles_cache.clear()
         _marks_sections.clear()
         _strongs_cache.clear()
         _book_maps.clear()
@@ -840,6 +849,7 @@ def load_chapter(module_name, book, chapter):
         results = []
         notes = {}
         headings = {}
+        titles = {}
         if lines is None:
             lines = [(v, book, chapter, v) for v in range(1, verse_max + 1)]
         for v, _m_book, m_ch, m_v in lines:
@@ -854,11 +864,14 @@ def load_chapter(module_name, book, chapter):
             v_notes = _collect_footnotes(mod)
             if v_notes:
                 notes[v] = v_notes
-            v_heads = _collect_headings(mod)
+            v_heads = _collect_preverse(mod, _titles_from_raw)
             if v_heads:
                 headings[v] = v_heads
+            v_titles = _collect_preverse(mod, _scripture_titles_from_raw)
+            if v_titles:
+                titles[v] = v_titles
 
-        _cache_chapter(key, results, notes, headings)
+        _cache_chapter(key, results, notes, headings, titles)
         return results
 
 
@@ -910,12 +923,16 @@ _TITLE_RE = re.compile(r'<title\b([^>]*)>(.*?)</title>', re.S | re.I)
 # canonical Psalm superscriptions are part of the text, not editorial
 # section divisions. Both would read as headings if rendered as one.
 _SKIP_TITLE_TYPES = frozenset({'parallel', 'psalm', 'acrostic', 'sub'})
+# The skipped titles that are Scripture: a psalm's superscription and the
+# Hebrew letter over each stanza of Psalm 119. _scripture_titles_from_raw
+# reads these for the pane to set as text.
+_SCRIPTURE_TITLE_TYPES = frozenset({'psalm', 'acrostic'})
 
 
 def _titles_from_raw(raw):
     """Section heading strings from a preverse attribute blob.
 
-    Split out from _collect_headings so the parsing rules — which title
+    Split out from _collect_preverse so the parsing rules — which title
     types count as pericope headings, entity unescaping, whitespace
     collapse — are testable without a live SWORD module."""
     out = []
@@ -932,8 +949,29 @@ def _titles_from_raw(raw):
     return out
 
 
-def _collect_headings(mod):
-    """Section heading text for the verse just rendered, outermost first.
+def _scripture_titles_from_raw(raw):
+    """Psalm superscriptions and acrostic letters from a preverse blob, as
+    OSIS markup — the supplied-word and Hebrew tags are kept for the pane.
+
+    A title runs on to the next title or the end of the blob: LEB sets the
+    second half of a superscription ("When Nathan the prophet came to him…")
+    as a poetry line after the title, still before verse 1."""
+    out = []
+    matches = list(_TITLE_RE.finditer(raw))
+    for i, m in enumerate(matches):
+        kind = re.search(r'type="([^"]+)"', m.group(1))
+        if not kind or kind.group(1).lower() not in _SCRIPTURE_TITLE_TYPES:
+            continue
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(raw)
+        body = (m.group(2) + raw[m.end():end]).strip()
+        if re.sub(r'<[^>]+>|\s', '', body):
+            out.append(body)
+    return out
+
+
+def _collect_preverse(mod, parse):
+    """What `parse` finds in the preverse titles of the verse just
+    rendered, outermost first.
 
     Must run right after renderText(), like _collect_footnotes: SWORD's
     heading filters move preverse titles OUT of the rendered text and into
@@ -960,10 +998,24 @@ def _collect_headings(mod):
                 pmap = hmap[k2]
                 for k3 in pmap.keys():
                     raw = str(pmap[k3])       # copy out immediately
-                    out.extend(_titles_from_raw(raw))
+                    out.extend(parse(raw))
     except Exception:
         _sword_log.exception('heading attribute read failed')
     return out
+
+
+def chapter_titles(module_name, book, chapter):
+    """{verse: [title_osis, ...]} for a chapter — the psalm superscriptions
+    and acrostic letters that precede each verse. Same render pass and cache
+    behaviour as chapter_headings."""
+    key = (module_name, book, chapter)
+    with _lock:
+        if key in _titles_cache:
+            _titles_cache.move_to_end(key)
+            return _titles_cache[key]
+    load_chapter(module_name, book, chapter)
+    with _lock:
+        return _titles_cache.get(key, {})
 
 
 def chapter_headings(module_name, book, chapter):

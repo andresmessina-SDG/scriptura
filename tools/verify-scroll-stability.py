@@ -897,7 +897,13 @@ def run_matrix() -> int:
         a = p._capture_scroll_anchor()
         v = p._find_topmost_visible_verse()
         S['sweep_seen'] += 1
-        if a is None or v is None:
+        # A heading or psalm-title row carries no verse, so the coarse probe
+        # answers None there by design; the pixel anchor is what holds the
+        # place on such a row, and only its absence costs the reader.
+        top, _by = p._scroll._iter_at_reading_top(4)
+        on_title = any((t.get_property('name') or '') in (
+            'section_heading', 'psalm_title') for t in top.get_tags())
+        if a is None or (v is None and not on_title):
             S['sweep_misses'].append({
                 'adj': S['sweep_at'],
                 'pixel_anchor': list(a) if a else None,

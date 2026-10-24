@@ -14,7 +14,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Gdk, GLib
 
-from pane import _html_to_markup
+from pane import _html_to_markup, scripture_title_markup
 import present_paging
 import present_align
 import sword_bridge
@@ -132,6 +132,8 @@ class PresentView(Gtk.Box):
         self._parts_b = {}
         self._refs = {}
         self._refs_b = {}
+        self._titles = {}          # {verse: [title_osis]}: psalm superscriptions
+        self._titles_b = {}
         self._app_aliases = {}
         self._primary_projection = None
         self._secondary_projection = None
@@ -277,6 +279,11 @@ class PresentView(Gtk.Box):
         # e.g. Mark 9:44) so verse-at-a-time never lands on a blank slide.
         primary, self._refs = self._project(module, book, chapter, verses)
         self._primary_projection = primary
+        self._titles = (sword_bridge.chapter_titles(module, book, chapter)
+                        if module else {})
+        self._titles_b = (sword_bridge.chapter_titles(secondary_module, book,
+                                                      chapter)
+                          if secondary is not None and secondary_module else {})
         if secondary is not None:
             self._translation_b, verses_b = secondary
             projected, self._refs_b = self._project(
@@ -439,6 +446,8 @@ class PresentView(Gtk.Box):
         self._parts_b = {}
         self._refs = {}
         self._refs_b = {}
+        self._titles = {}          # {verse: [title_osis]}: psalm superscriptions
+        self._titles_b = {}
         self._app_aliases = {}
         self._primary_projection = None
         self._secondary_projection = None
@@ -772,7 +781,11 @@ class PresentView(Gtk.Box):
             return ''
         source = self._parts_b if secondary else self._parts
         refs = self._refs_b if secondary else self._refs
-        parts = []
+        titles = self._titles_b if secondary else self._titles
+        # Scripture above the verse with no number of its own: it rides with
+        # the verse, so verse-at-a-time puts it on that verse's slide.
+        parts = [scripture_title_markup(t, dark)
+                 for t in titles.get(verse, ())]
         for key, raw in source.get(verse, [(verse, html)]):
             text = _html_to_markup(raw, dark).strip()
             number = refs.get(key, ('', 0, key))[2]
