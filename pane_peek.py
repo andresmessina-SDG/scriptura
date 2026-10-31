@@ -518,6 +518,7 @@ class PeekController:
         content.append(cap)
         lbl = Gtk.Label(xalign=0, wrap=True)
         lbl.add_css_class('fnote-body')
+        lbl.add_css_class('peek-reading')
         lbl.set_max_width_chars(40)
         try:
             lbl.set_markup(_html_to_markup(body, dark))
@@ -1092,6 +1093,7 @@ def note_peek_content(verse, note, tags, on_edit, scroll=None):
     content.append(cap)
     body = Gtk.Label(label=note, xalign=0, wrap=True)
     body.add_css_class('fnote-body')
+    body.add_css_class('peek-reading')
     body.set_max_width_chars(40)
     body.set_selectable(False)
     content.append(scroll(body) if scroll else body)

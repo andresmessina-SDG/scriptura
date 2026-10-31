@@ -1,6 +1,7 @@
 import html as _html_mod
 import threading
 import colorsys
+import functools
 import re
 from datetime import date as _date, timedelta
 import gi
@@ -20,6 +21,7 @@ import content
 import annotations
 import motion
 import settings
+import styles
 import tasks
 import module_positions
 import pane_content
@@ -75,6 +77,80 @@ def is_dark_paper(paper_hex):
     g = int(paper_hex[3:5], 16) / 255
     b = int(paper_hex[5:7], 16) / 255
     return 0.299 * r + 0.587 * g + 0.114 * b < 0.5
+
+
+_HEX_RE = re.compile(r'#[0-9a-fA-F]{6}')
+
+
+def _is_hex(value):
+    return isinstance(value, str) and bool(_HEX_RE.fullmatch(value))
+
+
+def _rel_luminance(hex_col):
+    def lin(c):
+        return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+    r, g, b = (int(hex_col[i:i + 2], 16) / 255 for i in (1, 3, 5))
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+
+
+def contrast_ratio(a, b):
+    """WCAG contrast between two #rrggbb colours."""
+    hi, lo = sorted((_rel_luminance(a), _rel_luminance(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def _mix(a, b, t):
+    pa = [int(a[i:i + 2], 16) for i in (1, 3, 5)]
+    pb = [int(b[i:i + 2], 16) for i in (1, 3, 5)]
+    return '#' + ''.join(f'{round(x + (y - x) * t):02x}' for x, y in zip(pa, pb))
+
+
+#: Small text needs 4.5:1 (WCAG 1.4.3); 4.6 leaves room for rounding.
+#: High contrast asks for the enhanced 7:1 (1.4.6).
+SMALL_TEXT_CONTRAST = 4.6
+HIGH_CONTRAST = 7.0
+
+
+def _toward(start, goal, paper, target):
+    """The first colour on the line from `start` to `goal` that reaches
+    `target` contrast on `paper`, or `goal` if none short of it does."""
+    for k in range(101):
+        col = _mix(start, goal, k / 100)
+        if contrast_ratio(col, paper) >= target:
+            return col
+    return goal
+
+
+def paper_inks(paper, ink, dark, target=SMALL_TEXT_CONTRAST):
+    muted, link = _paper_inks(paper, ink, dark, target)
+    return {'_ink_muted': muted, '_ink_link': link}
+
+
+@functools.lru_cache(maxsize=64)
+def _paper_inks(paper, ink, dark, target):
+    """The muted ink (verse numerals, section headings) and the link blue
+    for a paper, each just dark (or light) enough for small text.
+
+    They were fixed values, chosen once for the default paper: the grey sat
+    at 3.6:1 on Paper and 3.1:1 on Green. The muted ink is now the reading
+    ink faded toward the paper until it would drop below `target`, so it
+    keeps the paper's hue; the blue moves toward the ink until it reaches
+    it. A fixed colour that already did better is kept, so no paper loses
+    contrast it had (the grey gives 5.3:1 on Black)."""
+    muted = ink
+    for k in range(101):
+        col = _mix(ink, paper, k / 100)
+        if contrast_ratio(col, paper) < target:
+            break
+        muted = col
+    old_grey, old_link = '#808080', ('#7fa3c1' if dark else '#5a7fa3')
+    link = _toward(old_link, ink, paper, target)
+    if contrast_ratio(old_grey, paper) >= max(
+            target, contrast_ratio(muted, paper)):
+        muted = old_grey
+    # Cached: theme_ink asks this several times a verse while a chapter
+    # renders (0.4 ms a time, over half a second on Psalm 119).
+    return muted, link
 
 
 def auto_reading_ink(paper_hex):
@@ -201,6 +277,19 @@ _NOTE_ANCHOR_RE = re.compile(
     r'<note\s[^>]*?swordFootnote="(\d+)"[^>]*?(?:/>|>\s*</note>)')
 _FN_TOKEN_RE = re.compile(r'\[\[FN_(\d+)\]\]')
 
+# Paragraph breaks come in two shapes. The KJV opens a paragraph with a
+# milestone, `<milestone marker="¶" type="x-p"/>`, before any of the verse's
+# words (all 2,970 of them, measured); the KJV2006 eBible text keeps a bare ¶
+# there instead. Most other modules close a paragraph at the end of its last
+# verse, `<div eID="…" type="x-p"/>` (ASV, BSB, LEB, Platense, Vulgate,
+# Synodal) or `type="paragraph"` (SBLGNT, Synodal LIO), so the NEXT verse
+# opens one. A break inside a verse is already a blank line (_html_to_markup).
+_PARA_OPEN_RE = re.compile(
+    r'^\s*(?:<[^>]+>\s*)*?(?:<milestone\b[^>]*\btype="x-p"[^>]*/>|¶)')
+_PARA_END_RE = re.compile(
+    r'<div\b(?=[^>]*\beID=)(?=[^>]*\btype="(?:x-p|paragraph)")[^>]*/>'
+    r'(?:\s*<[^>]+>)*\s*$')
+
 #: Publisher section headings carry this tag, newlines and all, and are always
 #: rendered — the setting only flips its `invisible`, so showing or hiding them
 #: restyles the chapter instead of rebuilding it. Covers the headings that
@@ -209,6 +298,11 @@ _FN_TOKEN_RE = re.compile(r'\[\[FN_(\d+)\]\]')
 #: lines OUTSIDE the span, so they cannot be hidden by one tag; a chapter with
 #: those falls back to a render. Not chapter-scoped: one shared style tag.
 _HEADING_TAG = 'section_heading'
+
+#: Marks a psalm superscription or Psalm 119 letter (_insert_scripture_title).
+#: No style and never hidden: it names the row as a title, carrying no verse,
+#: for anything that asks what sits at the reading top. Not chapter-scoped.
+_TITLE_TAG = 'psalm_title'
 
 #: Source markup that carries its own headings, which the tag above cannot
 #: govern. Checked per verse so the toggle knows whether it may restyle.
@@ -429,7 +523,7 @@ def _html_to_markup(html, dark, strip=True, divine_smallcaps=False,
     html = html.replace(
         '[[B_S]]',
         '\n\n<span size="90%" weight="bold" letter_spacing="800" '
-        'foreground="gray">')
+        f'foreground="{theme_ink(dark)["_ink_muted"]}">')
     html = html.replace('[[B_E]]', '</span>\n')
     # Inline bold — no surrounding newlines, used for in-paragraph
     # emphasis like commentary verse-number prefixes ("1.", "2."), not
@@ -439,7 +533,8 @@ def _html_to_markup(html, dark, strip=True, divine_smallcaps=False,
     # raised so they read as verse pointers without looking like a
     # separate "Verse N" header.
     html = html.replace('[[SUP_S]]',
-                        '<span size="smaller" rise="4000" foreground="#888">')
+                        '<span size="smaller" rise="4000" '
+                        f'foreground="{theme_ink(dark)["_ink_muted"]}">')
     html = html.replace('[[SUP_E]]', '</span>')
 
     # Annotation styling (highlight, underline, note) is NOT baked into the
@@ -494,6 +589,22 @@ _WORD_AFTER_RE = re.compile(r"^[\s,;:.!?'’\"“”]*([A-Za-z]+)")
 def _is_caps_word(word):
     word = word.replace("'", '').replace('’', '')
     return len(word) >= 2 and word.isupper()
+
+
+def scripture_title_markup(osis, dark, smallcaps=False):
+    """A psalm superscription or Psalm 119 letter as Pango markup: italic at
+    92%, with supplied words turned upright as printed KJVs set them. Shared
+    by the reading view and presentation so the two cannot drift."""
+    markup = _html_to_markup(osis, dark, divine_smallcaps=smallcaps)
+    if smallcaps:
+        markup = _smallcap_divine_literals(markup)
+    markup = markup.replace('<i>', '<span style="normal">')
+    markup = markup.replace('</i>', '</span>')
+    # A line that opens on a Hebrew letter ("א ALEPH.") is laid out
+    # right-to-left and drawn reversed against the far edge; the mark holds
+    # it to the reading text's direction.
+    mark = '\u200e' if _HEBREW_RUN.match(re.sub(r'<[^>]+>', '', markup)) else ''
+    return f'{mark}<span style="italic" size="92%">{markup}</span>'
 
 
 def _smallcap_divine_literals(markup):
@@ -654,10 +765,18 @@ def theme_ink(dark):
 
     `_ink_link` is the blue shared by footnote markers, commentary
     cross-references and the lexicon hover; they are one colour by intent.
+    `_ink_muted` is verse numerals and section headings.
+
+    These are the colours for each theme's default paper, and the markup is
+    written in them. A pane on another paper gives its adopted tags the
+    colours `paper_inks` works out for that paper (`BiblePane._paper_ink`).
     """
+    paper = '#1e1e1e' if dark else '#f7f4ee'
+    derived = paper_inks(paper, auto_reading_ink(paper), dark)
     return {
         '_ink_heading':   '#8d8278' if dark else '#7a7066',
-        '_ink_link':      '#7fa3c1' if dark else '#5a7fa3',
+        '_ink_link':      derived['_ink_link'],
+        '_ink_muted':     derived['_ink_muted'],
         '_ink_redletter': '#e07070' if dark else '#bb0000',
         '_ink_dropcap':   dropcap_color_hex(dark),
     }
@@ -1304,6 +1423,9 @@ class BiblePane(Gtk.Box):
         # no headings argument, so the attribute has to exist before the
         # first fetch ever assigns one.
         self._rendered_headings = {}
+        # {verse: [title_osis, …]}: psalm superscriptions and Psalm 119's
+        # letters, kept for the re-theme path like the headings above.
+        self._rendered_titles = {}
         # {key: printed numeral} for lines a split psalm carries over from the
         # module's next chapter; every other line prints its key.
         self._numerals = {}
@@ -1842,6 +1964,8 @@ class BiblePane(Gtk.Box):
 
         # Re-render when system theme switches dark/light
         Adw.StyleManager.get_default().connect('notify::dark', self._on_theme_changed)
+        Adw.StyleManager.get_default().connect('notify::high-contrast',
+                                               self._on_theme_changed)
 
         # Initial toolbar visibility based on what kind of module the
         # pane starts on. Without this, a session that ended on a
@@ -2126,6 +2250,17 @@ class BiblePane(Gtk.Box):
             css += (" textview.bible-view, textview.bible-view text "
                     f"{{ background-color: {surface}; }}")
         self._css_provider.load_from_data(css.encode())
+        styles.set_reading_size(self._font_size)
+        # The muted ink and the link blue are worked out from this paper;
+        # carry a new paper onto the spans already drawn. The first call
+        # comes from __init__, before there is a buffer or anything drawn.
+        buf = getattr(self, '_buffer', None)
+        if buf is not None:
+            table = buf.get_tag_table()
+            for name, hexcol in self._paper_ink(dark).items():
+                tag = table.lookup(name)
+                if tag is not None:
+                    tag.set_property('foreground', hexcol)
         # The pill is cast from the same paper and ink. Its own provider,
         # because this one is on the text view and would never reach a
         # sibling in the overlay.
@@ -2209,6 +2344,21 @@ class BiblePane(Gtk.Box):
         """The verse the reader is focused on (or None), so presentation can
         open on the page holding it rather than always at the chapter top."""
         return self._selected_verse
+
+    def _paper_ink(self, dark):
+        """theme_ink for the paper this pane shows: the muted ink and the
+        link blue worked out from it, at 7:1 under high contrast."""
+        look = self.reading_appearance(self._evening_strength)
+        hc = Adw.StyleManager.get_default().get_high_contrast()
+        ink = theme_ink(dark)
+        paper, text = look['surface'], look['ink']
+        # A stored colour can be junk (the stress harness writes ints); CSS
+        # shrugs it off, the arithmetic here would not. Default paper, then.
+        if not (_is_hex(paper) and _is_hex(text)):
+            return ink
+        ink.update(paper_inks(paper, text, dark,
+                              HIGH_CONTRAST if hc else SMALL_TEXT_CONTRAST))
+        return ink
 
     def reading_appearance(self, evening_strength=0.0):
         """The effective paper / ink / serif this pane reads with, so the
@@ -2363,6 +2513,19 @@ class BiblePane(Gtk.Box):
     def _find_topmost_visible_verse(self):
         return self._scroll._find_topmost_visible_verse()
 
+    def reading_verse(self):
+        """The verse the reader is on, for the Back history: the selected
+        verse while it is on screen, else the top one. None before a
+        render."""
+        top = self._scroll._find_topmost_visible_verse()
+        sel = self._selected_verse
+        if sel is None or top is None:
+            return top
+        bottom = self._scroll._verse_at_window_y(self._view.get_height() - 4)
+        if top <= sel and (bottom is None or sel <= bottom):
+            return sel
+        return top
+
     def _resolve_present_verse(self, verse_num):
         return self._scroll._resolve_present_verse(verse_num)
 
@@ -2483,10 +2646,12 @@ class BiblePane(Gtk.Box):
             if ebible_bridge.is_ebible_module(module):
                 notes = ebible_bridge.chapter_footnotes(module, book, chapter)
                 heads = {}
+                titles = {}
             else:
                 notes = sword_bridge.chapter_footnotes(module, book, chapter)
                 heads = sword_bridge.chapter_headings(module, book, chapter)
-            return verses, notes, heads
+                titles = sword_bridge.chapter_titles(module, book, chapter)
+            return verses, notes, heads, titles
 
         # Read by the window, which holds the Today page's exit until the
         # chapter under it is in: a fade that runs through the render drops
@@ -2495,7 +2660,8 @@ class BiblePane(Gtk.Box):
         task = tasks.submit(
             f'chapter:{id(self)}', fetch,
             lambda res: self._display(res[0], book, chapter, module,
-                                      res[1], task, headings=res[2]),
+                                      res[1], task, headings=res[2],
+                                      titles=res[3]),
             on_error=lambda _exc: setattr(self, '_render_pending', False))
 
     def _show_status_page(self, icon, title, description, action=None):
@@ -2750,7 +2916,7 @@ class BiblePane(Gtk.Box):
         self._view.set_harmony(self._show_harmony)
 
     def _display(self, verses, book, chapter, module, notes=None, task=None,
-                 headings=None):
+                 headings=None, titles=None):
         if book != self._book or chapter != self._chapter or module != self._module:
             return GLib.SOURCE_REMOVE
         if task is not None and not task.is_current():
@@ -2775,6 +2941,8 @@ class BiblePane(Gtk.Box):
             # Kept so a re-theme render (which re-runs _display with no fetch)
             # doesn't drop the headings the way it would a bare parameter.
             self._rendered_headings = headings
+        if titles is not None:
+            self._rendered_titles = titles
         # The re-theming path re-calls _display without notes; reuse the
         # set from the original fetch.
         if notes is None:
@@ -2907,6 +3075,7 @@ class BiblePane(Gtk.Box):
         # section heading of a chapter doesn't stack a blank line on top of
         # the chapter heading's own trailing newline.
         wrote_a_block = False
+        prev_html = ''   # the verse before, to see a paragraph close on it
 
         for start_v, end_v, html in iterable:
             plain = re.sub(r'<[^>]+>', '', str(html)).strip()
@@ -2930,12 +3099,21 @@ class BiblePane(Gtk.Box):
             # toggle need not re-render. Keeping them in the buffer also keeps
             # _verse_ranges' offsets identical between the two states.
             if not is_commentary:
+                opens = wrote_a_block and (
+                    _PARA_OPEN_RE.match(str(html))
+                    or _PARA_END_RE.search(prev_html))
+                heads_from = self._buffer.get_char_count()
                 if start_v in seams:
                     self._insert_section_heading(
                         f'{book_label(book)} {seams[start_v]}',
                         wrote_a_block, hideable=False)
                 for head in self._rendered_headings.get(start_v, ()):
                     self._insert_section_heading(head, wrote_a_block)
+                for title in self._rendered_titles.get(start_v, ()):
+                    self._insert_scripture_title(title, dark)
+                if opens:
+                    self._break_paragraph(heads_from)
+                prev_html = str(html)
 
             if _renders_inline_title(html):
                 self._rendered_inline_titles = True
@@ -2970,8 +3148,11 @@ class BiblePane(Gtk.Box):
                     # blank line of separation between commentary sections.
                     self._buffer.insert(self._buffer.get_end_iter(), '\n')
             else:
-                v_num_markup = (f'<span foreground="gray" size="small" '
-                                f'weight="bold" rise="2500"{self._numeral_ff()}>'
+                # Semibold: in the darker ink, bold stood out more than the
+                # old grey did; 600 keeps the old presence.
+                v_num_markup = (f'<span foreground="{theme_ink(dark)["_ink_muted"]}" '
+                                f'size="small" weight="600" '
+                                f'rise="2500"{self._numeral_ff()}>'
                                 f' {self._numerals.get(start_v, start_v)} </span>')
                 self._buffer.insert_markup(self._buffer.get_end_iter(), v_num_markup, -1)
 
@@ -3063,6 +3244,9 @@ class BiblePane(Gtk.Box):
                     fn_markers = []  # fallback text has no marker letters
                     poetry_lines = {}
                     cap_index = None  # the plain fallback carries no cap
+                # A paragraph break inside the verse came through as a blank
+                # line; give it the half-step a break between verses gets.
+                self._halve_blank_lines(text_start_mark)
                 r.cap_index = cap_index
                 r.fn_markers = fn_markers
                 r.vnotes = vnotes
@@ -3197,7 +3381,7 @@ class BiblePane(Gtk.Box):
     #: innermost span is adopted last. The drop cap is absent on purpose: its
     #: colour is never written into the markup (see `_DROPCAP_SPAN`), so it has
     #: nothing to adopt and `_raise_dropcap` handles its precedence instead.
-    _INK_ORDER = ('_ink_heading', '_ink_redletter', '_ink_link')
+    _INK_ORDER = ('_ink_heading', '_ink_redletter', '_ink_link', '_ink_muted')
 
     #: What `insert_markup` calls the tags it mints for a `foreground=` span.
     #: Adoption considers these and nothing else — see `_adopt_theme_ink`.
@@ -3255,8 +3439,7 @@ class BiblePane(Gtk.Box):
             ours = table.lookup(ink_name)
             if ours is None:
                 ours = buf.create_tag(ink_name)
-            ours.set_property('foreground-rgba',
-                              tags[0].get_property('foreground-rgba'))
+            ours.set_property('foreground', self._paper_ink(dark)[ink_name])
             for tag in tags:
                 # Offsets, not iters: the table is mutated below and a
                 # collected range has to survive that.
@@ -3598,8 +3781,9 @@ class BiblePane(Gtk.Box):
         `hideable=False` keeps it through the headings toggle: the seam of a
         split psalm is the only thing saying why the numerals start again."""
         lead = '\n\n' if lead_blank else ''
+        dark = Adw.StyleManager.get_default().get_dark()
         markup = (f'{lead}<span size="90%" weight="bold" letter_spacing="800" '
-                  f'foreground="gray">'
+                  f'foreground="{theme_ink(dark)["_ink_muted"]}">'
                   f'{GLib.markup_escape_text(text)}</span>\n')
         start = self._buffer.get_end_iter().get_offset()
         self._buffer.insert_markup(self._buffer.get_end_iter(), markup, -1)
@@ -3610,6 +3794,68 @@ class BiblePane(Gtk.Box):
         # gap where the heading used to be.
         self._buffer.apply_tag(self._heading_tag(),
                                self._buffer.get_iter_at_offset(start),
+                               self._buffer.get_end_iter())
+
+    def _break_paragraph(self, heads_from):
+        """End the running paragraph so the next verse opens a new one,
+        half a line below (the stanza gap). The last verse left its
+        separating space; drop it. A heading or a closed poetry line already
+        ended the line, and then there is nothing to do — except that a
+        heading the reader has hidden takes its newlines with it, so the
+        first one (at `heads_from`, where the headings began) is kept out of
+        the hidden range: the paragraph still starts a line."""
+        if self._buffer.get_char_count() > heads_from:
+            first = self._buffer.get_iter_at_offset(heads_from)
+            if first.get_char() == '\n':
+                after = first.copy()
+                after.forward_char()
+                self._buffer.remove_tag_by_name(_HEADING_TAG, first, after)
+        end = self._buffer.get_end_iter()
+        last = end.copy()
+        if last.backward_char() and last.get_char() == ' ':
+            self._buffer.delete(last, end)
+            end = self._buffer.get_end_iter()
+        last = end.copy()
+        if last.backward_char() and last.get_char() == '\n':
+            return
+        self._buffer.insert(end, '\n\n')
+        self._ensure_poetry_tags()
+        end = self._buffer.get_end_iter()
+        blank = end.copy()
+        blank.backward_char()
+        self._buffer.apply_tag(self._poetry_tags[0], blank, end)
+
+    def _halve_blank_lines(self, from_mark):
+        """Give each empty line from `from_mark` to the buffer's end the
+        stanza gap: half a step, at any size or line spacing. The newline
+        stays, so no offset moves."""
+        self._ensure_poetry_tags()
+        it = self._buffer.get_iter_at_mark(from_mark)
+        if not it.starts_line():
+            it.forward_line()
+        while not it.is_end():
+            nxt = it.copy()
+            nxt.forward_line()
+            if it.ends_line() and not nxt.is_end():
+                self._buffer.apply_tag(self._poetry_tags[0], it, nxt)
+            it = nxt
+
+    def _insert_scripture_title(self, osis, dark):
+        """Set a psalm superscription or Psalm 119 letter above its verse.
+
+        Scripture, so never under the headings toggle and never a sense-unit
+        start: italic at 92% in the body ink, on its own line, with supplied
+        words turned upright as printed KJVs set them. Outside the verse's
+        `vnum_` range, like a heading, so a highlight or the current-verse
+        mark never spreads over it."""
+        end = self._buffer.get_end_iter()
+        lead = '' if end.starts_line() else '\n'
+        start = end.get_offset()
+        markup = scripture_title_markup(osis, dark, self._smallcaps_divine)
+        self._buffer.insert_markup(end, f'{lead}{markup}\n', -1)
+        tag = (self._buffer.get_tag_table().lookup(_TITLE_TAG)
+               or self._buffer.create_tag(_TITLE_TAG))
+        self._buffer.apply_tag(tag, self._buffer.get_iter_at_offset(start),
                                self._buffer.get_end_iter())
 
     def _unit_bounds(self, verse):
@@ -4068,7 +4314,9 @@ class BiblePane(Gtk.Box):
         it, the font size, or the flush toggle changes."""
         if self._poetry_tags is None:
             return
-        em = self._font_size * 96.0 / 72.0
+        # Held to the Appearance slider's 8–26pt: a junk stored size reached
+        # here as -1e18 and overflowed the int property (stress settings_junk_c).
+        em = min(max(self._font_size, 8), 26) * 96.0 / 72.0
         hang = round(1.5 * em)
         step = 0 if self._poetry_flush else round(1.5 * em)
         side = self._view.get_left_margin()
@@ -4667,7 +4915,7 @@ class BiblePane(Gtk.Box):
             # reads distinctly from the solid annotation underline.
             hover_tag = self._buffer.create_tag(
                 '_strg_hover',
-                foreground=theme_ink(dark)['_ink_link'],
+                foreground=self._paper_ink(dark)['_ink_link'],
             )
         table = self._buffer.get_tag_table()
         hover_tag.set_priority(table.get_size() - 1)
@@ -5268,7 +5516,7 @@ class BiblePane(Gtk.Box):
         but a redraw.
         """
         dark = Adw.StyleManager.get_default().get_dark()
-        ink = theme_ink(dark)
+        ink = self._paper_ink(dark)
         table = self._buffer.get_tag_table()
         for name, hexcol in ink.items():
             tag = table.lookup(name)

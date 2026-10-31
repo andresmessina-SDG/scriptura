@@ -418,12 +418,17 @@ def build(module: str, book: str, chapter: int,
     numbers = [v for v, _t in rows]
     heading = format_reference(book, chapter, verses if wanted else None,
                                version=version or version_label(module))
+    # Psalm superscriptions and Psalm 119's letters: Scripture standing above
+    # a verse with no number of their own, so they come with that verse.
+    titles = sword_bridge.chapter_titles(module, book, chapter)
 
     lines: list[str] = []
     if markdown:
         lines.append(f'# {heading}')
         lines.append('')
         for verse, text in rows:
+            for title in titles.get(verse, ()):
+                lines.append(f'> *{_md(_plain(title), markdown)}*')
             printed = sword_bridge.printed_verse(module, book, chapter, verse)
             lines.append(f'> **{printed}** {text}')
         lines.append('')
@@ -431,6 +436,8 @@ def build(module: str, book: str, chapter: int,
         lines.append(heading)
         lines.append('')
         for verse, text in rows:
+            for title in titles.get(verse, ()):
+                lines.append(_plain(title))
             printed = sword_bridge.printed_verse(module, book, chapter, verse)
             lines.append(f'{printed} {text}')
         lines.append('')

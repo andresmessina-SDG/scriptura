@@ -159,3 +159,25 @@ def test_synodal_final_combined_line_does_not_target_its_empty_engine_slot(
         '8 Delivered; walk before the Lord')
     assert view._grid.get_child_at(1, 0).get_text() == '8 Delivered\n9 Walk'
     assert view._parallel_ref.get_text() == 'Psalms 114:8   ·   Psalms 116:8–9'
+
+
+def test_superscription_is_projected_above_its_verse(view):
+    """Scripture with no number of its own: it rides with the verse it stands
+    above, in italics, so verse-at-a-time puts it on that verse's slide."""
+    view.load_chapter('Psalms', 51, 'King James Version',
+                      [(1, 'Have mercy upon me'), (2, 'Wash me')])
+    view._titles = {1: ['To the chief Musician, A Psalm of David.']}
+    first = view._verse_markup(1, 'Have mercy upon me', False)
+    assert first.index('To the chief Musician') < first.index('Have mercy')
+    assert 'style="italic"' in first
+    assert 'Musician' not in view._verse_markup(2, 'Wash me', False)
+
+
+def test_each_translation_projects_its_own_superscription(view):
+    view.load_chapter('Psalms', 51, 'King James Version', [(1, 'Have mercy')],
+                      secondary=('Berean Standard Bible', [(1, 'Have mercy on me')]))
+    view._titles = {1: ['To the chief Musician.']}
+    view._titles_b = {1: ['For the choirmaster.']}
+    assert 'choirmaster' in view._verse_markup(1, 'Have mercy on me', False,
+                                               secondary=True)
+    assert 'choirmaster' not in view._verse_markup(1, 'Have mercy', False)

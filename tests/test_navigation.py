@@ -6,6 +6,8 @@ import os
 import sys
 import types
 
+import pytest
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import navigation
@@ -20,7 +22,11 @@ class _Btn:
 
 
 def _make():
-    win = types.SimpleNamespace(_back_btn=_Btn(), _fwd_btn=_Btn())
+    pane1 = types.SimpleNamespace(verse=7, locked=False, module='KJV',
+                                  book=None, chapter=None)
+    pane1.reading_verse = lambda: pane1.verse
+    pane1._sync_btn = types.SimpleNamespace(get_active=lambda: pane1.locked)
+    win = types.SimpleNamespace(_back_btn=_Btn(), _fwd_btn=_Btn(), pane1=pane1)
     nav = navigation.NavigationController(win)
     calls = []
     nav._go_to = lambda *a, **k: calls.append((a, k))  # stub the funnel
@@ -30,28 +36,67 @@ def _make():
 def test_push_nav_back_caps_at_nav_max():
     nav, _ = _make()
     for i in range(nav._NAV_MAX + 25):
-        nav._push_nav_back(('Genesis', i))
+        nav._push_nav_back(('Genesis', i, None))
     assert len(nav._nav_back) == nav._NAV_MAX
     # Oldest entries fall off the front; the newest is kept.
-    assert nav._nav_back[-1] == ('Genesis', nav._NAV_MAX + 24)
+    assert nav._nav_back[-1] == ('Genesis', nav._NAV_MAX + 24, None)
+
+
+def _at(nav, loc):
+    """Put the window at `loc`, with pane 1 following it there."""
+    nav._current_loc = loc
+    nav._win.pane1.book, nav._win.pane1.chapter = loc
+
+
+@pytest.fixture(autouse=True)
+def _unmapped(monkeypatch):
+    monkeypatch.setattr(navigation.sword_bridge, 'map_verse_to_app',
+                        lambda _m, _b, _c, v: v)
 
 
 def test_back_then_forward_round_trips():
     nav, calls = _make()
-    nav._current_loc = ('John', 3)
-    nav._nav_back = [('Genesis', 1), ('Exodus', 2)]
+    _at(nav, ('John', 3))
+    nav._win.pane1.verse = 16
+    nav._nav_back = [('Genesis', 1, None), ('Exodus', 2, 5)]
 
     nav._on_nav_back(None)
-    # Popped Exodus 2; John 3 pushed onto forward; navigated there (no record).
-    assert calls[-1] == (('Exodus', 2), {'record': False})
-    assert nav._nav_fwd == [('John', 3)]
-    assert nav._nav_back == [('Genesis', 1)]
+    # Popped Exodus 2:5; John 3:16 pushed onto forward; navigated there (no
+    # record), to the verse the reader was on.
+    assert calls[-1] == (('Exodus', 2, 5), {'record': False})
+    assert nav._nav_fwd == [('John', 3, 16)]
+    assert nav._nav_back == [('Genesis', 1, None)]
 
-    nav._current_loc = ('Exodus', 2)  # _go_to was stubbed, so set it by hand
+    _at(nav, ('Exodus', 2))  # _go_to was stubbed, so set it by hand
+    nav._win.pane1.verse = 9
     nav._on_nav_fwd(None)
-    assert calls[-1] == (('John', 3), {'record': False})
+    assert calls[-1] == (('John', 3, 16), {'record': False})
     assert nav._nav_fwd == []
-    assert nav._nav_back == [('Genesis', 1), ('Exodus', 2)]
+    assert nav._nav_back == [('Genesis', 1, None), ('Exodus', 2, 9)]
+
+
+def test_a_locked_pane_lends_no_verse():
+    nav, _ = _make()
+    _at(nav, ('John', 3))
+    nav._win.pane1.locked = True
+    assert nav._here() == ('John', 3, None)
+
+
+def test_a_pane_elsewhere_lends_no_verse():
+    nav, _ = _make()
+    _at(nav, ('John', 3))
+    nav._win.pane1.chapter = 4
+    assert nav._here() == ('John', 3, None)
+
+
+def test_the_verse_is_kept_in_app_numbering(monkeypatch):
+    # The Synodal psalter prints Psalm 51:1 as 50:3; history holds 51:1.
+    nav, _ = _make()
+    _at(nav, ('Psalms', 51))
+    nav._win.pane1.verse = 3
+    monkeypatch.setattr(navigation.sword_bridge, 'map_verse_to_app',
+                        lambda _m, _b, _c, v: v - 2)
+    assert nav._here() == ('Psalms', 51, 1)
 
 
 def test_nav_back_noop_on_empty_stack():
@@ -63,7 +108,7 @@ def test_nav_back_noop_on_empty_stack():
 
 def test_update_nav_btns_reflects_stack_state():
     nav, _ = _make()
-    nav._nav_back = [('Genesis', 1)]
+    nav._nav_back = [('Genesis', 1, None)]
     nav._nav_fwd = []
     nav._update_nav_btns()
     assert nav._back_btn.sensitive is True
@@ -122,7 +167,9 @@ def test_a_navigation_that_lands_does_not_toast():
     win.chapter_drop = types.SimpleNamespace(set_model=lambda m: None,
                                              set_selected=lambda i: None)
     win.pane1 = win.pane2 = types.SimpleNamespace(
-        load_reference=lambda *a: None, load_reference_at_verse=lambda *a: None)
+        load_reference=lambda *a: None, load_reference_at_verse=lambda *a: None,
+        reading_verse=lambda: None, book=None, chapter=None, module='KJV',
+        _sync_btn=types.SimpleNamespace(get_active=lambda: False))
     nav._open_panes = lambda: []
     import sword_bridge
     orig = sword_bridge.chapter_count_in

@@ -441,16 +441,24 @@ class ScrollKeeper:
         return GLib.SOURCE_REMOVE
 
     def _find_topmost_visible_verse(self):
+        return self._verse_at_window_y(4)
+
+    def _verse_at_window_y(self, window_y):
         if not self._view.get_realized():
             return None
-        it, _by = self._iter_at_reading_top(4)
-        for tag in it.get_tags():
-            name = tag.get_property('name') or ''
-            if name.startswith('vnum_'):
-                try:
-                    return int(name.split('_', 1)[1])
-                except (ValueError, IndexError):
-                    continue
+        it, _by = self._iter_at_reading_top(window_y)
+        # A paragraph gap or a section heading belongs to no verse; the
+        # verse the reader is at is the one just below it.
+        for _ in range(4):
+            for tag in it.get_tags():
+                name = tag.get_property('name') or ''
+                if name.startswith('vnum_'):
+                    try:
+                        return int(name.split('_', 1)[1])
+                    except (ValueError, IndexError):
+                        continue
+            if not it.forward_line():
+                break
         return None
 
     def _resolve_present_verse(self, verse_num):
