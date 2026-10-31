@@ -6,6 +6,34 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+## [1.9.1] — 2026-10-31
+
+### Fixed
+
+- **Psalm superscriptions and Psalm 119's letters** were dropped in every
+  Bible that has them (KJV, ASV, BSB and LEB lost all 116 superscriptions).
+  They are set as Scripture: italic at 92%, on their own line, supplied words
+  upright, outside the headings toggle; presentation and passage export carry
+  them with their verse.
+- **Paragraph breaks** never showed outside poetry. The KJV's ¶ milestone was
+  stripped, and a paragraph closed at a verse's end (ASV, BSB, LEB, Platense,
+  Vulgate, Synodal, SBLGNT) lost its break. A verse now opens a paragraph
+  half a line below the last, the stanza gap; a break inside a verse matches,
+  and a hidden heading no longer swallows one.
+- **Small-text contrast**: verse numerals, section headings, footnote markers
+  and commentary references were fixed colours at 3.1–3.8:1 on the light
+  papers. Their colours now come from the paper, at 4.6:1 (7:1 under high
+  contrast); numerals are semibold.
+- **A cross-reference chip in single-pane view** moved the pane past the
+  window's history: no Back entry, and the header kept the old chapter.
+- **Back and Forward** returned to the chapter top; they now return to the
+  verse the reader was on, in the app's numbering.
+
+### Changed
+
+- The footnote and note peeks take the reading size; cross-reference chips
+  keep the interface size up to 12.5pt and grow as its square root above it.
+
 ## [1.9.0] — 2026-10-23
 
 ### Added
