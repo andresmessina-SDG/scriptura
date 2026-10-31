@@ -112,8 +112,11 @@ def _where(filters) -> Optional[tuple[str, list]]:
     # nominative nouns, which is not a search anybody typed.
     if not any(not f.negate for f in filters):
         return None
-    clauses = []
-    params: list = []
+    # Positive filters AND together on one word; a filter marked `alt`
+    # starts a new group, and the groups join with OR. Exclusions apply
+    # to every group.
+    groups: list[tuple[list, list]] = [([], [])]
+    nots: tuple[list, list] = ([], [])
     for f in filters:
         if f.field == 'strong':
             num = normalise_strongs(f.value)
@@ -131,11 +134,20 @@ def _where(filters) -> Optional[tuple[str, list]]:
             args = [f.value.strip()]
         else:
             continue
-        clauses.append(f'NOT {expr}' if f.negate else expr)
-        params.extend(args)
-    if not clauses:
+        if f.negate:
+            nots[0].append(f'NOT {expr}')
+            nots[1].extend(args)
+            continue
+        if f.alt and groups[-1][0]:
+            groups.append(([], []))
+        groups[-1][0].append(expr)
+        groups[-1][1].extend(args)
+    groups = [g for g in groups if g[0]]
+    if not groups:
         return None
-    return ' AND '.join(clauses), params
+    either = ' OR '.join('(' + ' AND '.join(c) + ')' for c, _a in groups)
+    params = [p for _c, args in groups for p in args] + nots[1]
+    return ' AND '.join([f'({either})', *nots[0]]), params
 
 
 def _query(filters, columns: str, rendered_only: bool = True):

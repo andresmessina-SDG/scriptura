@@ -168,6 +168,36 @@ def test_a_compound_answers_to_every_number_in_its_chain(greek):
     assert li.refs(_f('strong:G2532')) == [('Romans', 7, 25)]
 
 
+def test_or_between_two_numbers_gathers_either(greek):
+    """`strong:G26 OR strong:G260` is alternation, as OR is in the text
+    grammar. The OR was left in the text half and the two numbers were
+    joined with AND, which asks for one word carrying both: 0 verses."""
+    assert li.refs(_f('strong:G26 OR strong:G260')) == [
+        ('Matthew', 24, 12), ('John', 15, 12), ('Romans', 7, 25)]
+    assert sq.split_filters('strong:G26 OR strong:G260')[1] == ''
+
+
+def test_and_still_binds_tighter_than_or(greek):
+    # (G26 as a nominative) OR G1473, never G26 AND (N-NSF OR G1473).
+    assert li.refs(_f('strong:G26 morph:N-NSF OR strong:G1473')) == [
+        ('Matthew', 24, 12), ('Romans', 7, 25)]
+
+
+def test_an_exclusion_applies_to_both_sides_of_an_or(greek):
+    assert li.refs(_f('strong:G26 OR strong:G25 -morph:N-ASF')) == [
+        ('Matthew', 24, 12), ('John', 15, 12)]
+    assert li.refs(_f('strong:G26 OR strong:G1473 -lemma:ἐγώ')) == [
+        ('Matthew', 24, 12), ('John', 15, 12)]
+
+
+def test_an_or_beside_text_stays_in_the_text_half():
+    filters, rest = sq.split_filters('strong:G26 OR love')
+    assert filters == [sq.Filter('strong', 'G26', False)]
+    assert rest == 'OR love'
+    assert sq.split_filters('love OR strong:G26')[0] == [
+        sq.Filter('strong', 'G26', False)]
+
+
 def test_an_unparseable_number_matches_nothing_rather_than_everything(greek):
     assert li.refs(_f('strong:banana')) == []
     assert li.describe(_f('strong:banana')) is None

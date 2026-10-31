@@ -16,7 +16,9 @@ Supported grammar (deliberately small and predictable):
 
 The last three are not FTS terms at all — `split_filters` lifts them out
 for the interlinear databases to answer, and the caller intersects the two
-result sets. Everything below concerns the text half.
+result sets. A bare OR between two of them is alternation there too:
+`strong:H7965 OR strong:G1515` is the verses with either word. Everything
+below concerns the text half.
 
 Robustness contract: every term is emitted as a double-quoted FTS5 string
 literal, so arbitrary user input (stray quotes, punctuation, operator words,
@@ -223,10 +225,12 @@ _FILTER_RE = re.compile(
 class Filter(NamedTuple):
     """One original-language term. `field` is a FILTER_FIELDS member,
     `value` the text after the colon (quotes stripped), `negate` whether
-    it was written with a leading '-'."""
+    it was written with a leading '-', `alt` whether a bare OR joins it
+    to the filter before it."""
     field: str
     value: str
     negate: bool
+    alt: bool = False
 
 
 def exclusions(query):
@@ -261,13 +265,27 @@ def split_filters(query):
     removed, ready for `build_match` and the case post-filter, and is ''
     when the query was nothing but filters. A filter with an empty value
     (`strong:`, a half-typed query) is dropped rather than matching
-    everything."""
+    everything.
+
+    A bare OR between two positive filters marks the second `alt` and is
+    not kept in `rest`. Left in, it joined the two filters with AND, so
+    `strong:H7965 OR strong:G1515` asked for one word carrying both
+    numbers and found none. An OR beside a text term stays in `rest`."""
     filters = []
     kept = []
+    after_filter = False  # the last token kept or lifted was a positive filter
+    pending_or = False
     for raw in _TOKEN_RE.findall(query or ''):
+        if raw == 'OR' and after_filter:
+            pending_or = True
+            continue
         m = _FILTER_RE.match(raw)
         if not m:
+            if pending_or:
+                kept.append('OR')
+                pending_or = False
             kept.append(raw)
+            after_filter = False
             continue
         value = m.group(3).strip()
         if value.startswith('"') and value.endswith('"') and len(value) > 1:
@@ -275,5 +293,10 @@ def split_filters(query):
         value = value.strip()
         if not value:
             continue
-        filters.append(Filter(m.group(2).lower(), value, bool(m.group(1))))
+        negate = bool(m.group(1))
+        filters.append(Filter(m.group(2).lower(), value, negate,
+                              pending_or and not negate))
+        if not negate:
+            pending_or = False
+            after_filter = True
     return filters, ' '.join(kept)
