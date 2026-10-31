@@ -78,6 +78,72 @@ def is_dark_paper(paper_hex):
     return 0.299 * r + 0.587 * g + 0.114 * b < 0.5
 
 
+_HEX_RE = re.compile(r'#[0-9a-fA-F]{6}')
+
+
+def _is_hex(value):
+    return isinstance(value, str) and bool(_HEX_RE.fullmatch(value))
+
+
+def _rel_luminance(hex_col):
+    def lin(c):
+        return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+    r, g, b = (int(hex_col[i:i + 2], 16) / 255 for i in (1, 3, 5))
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+
+
+def contrast_ratio(a, b):
+    """WCAG contrast between two #rrggbb colours."""
+    hi, lo = sorted((_rel_luminance(a), _rel_luminance(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def _mix(a, b, t):
+    pa = [int(a[i:i + 2], 16) for i in (1, 3, 5)]
+    pb = [int(b[i:i + 2], 16) for i in (1, 3, 5)]
+    return '#' + ''.join(f'{round(x + (y - x) * t):02x}' for x, y in zip(pa, pb))
+
+
+#: Small text needs 4.5:1 (WCAG 1.4.3); 4.6 leaves room for rounding.
+#: High contrast asks for the enhanced 7:1 (1.4.6).
+SMALL_TEXT_CONTRAST = 4.6
+HIGH_CONTRAST = 7.0
+
+
+def _toward(start, goal, paper, target):
+    """The first colour on the line from `start` to `goal` that reaches
+    `target` contrast on `paper`, or `goal` if none short of it does."""
+    for k in range(101):
+        col = _mix(start, goal, k / 100)
+        if contrast_ratio(col, paper) >= target:
+            return col
+    return goal
+
+
+def paper_inks(paper, ink, dark, target=SMALL_TEXT_CONTRAST):
+    """The muted ink (verse numerals, section headings) and the link blue
+    for a paper, each just dark (or light) enough for small text.
+
+    They were fixed values, chosen once for the default paper: the grey sat
+    at 3.6:1 on Paper and 3.1:1 on Green. The muted ink is now the reading
+    ink faded toward the paper until it would drop below `target`, so it
+    keeps the paper's hue; the blue moves toward the ink until it reaches
+    it. A fixed colour that already did better is kept, so no paper loses
+    contrast it had (the grey gives 5.3:1 on Black)."""
+    muted = ink
+    for k in range(101):
+        col = _mix(ink, paper, k / 100)
+        if contrast_ratio(col, paper) < target:
+            break
+        muted = col
+    old_grey, old_link = '#808080', ('#7fa3c1' if dark else '#5a7fa3')
+    link = _toward(old_link, ink, paper, target)
+    if contrast_ratio(old_grey, paper) >= max(
+            target, contrast_ratio(muted, paper)):
+        muted = old_grey
+    return {'_ink_muted': muted, '_ink_link': link}
+
+
 def auto_reading_ink(paper_hex):
     """Derive a comfortable reading ink for a paper colour. Dark papers get a
     warm off-white; light papers get a warm dark ink that *shares the paper's
@@ -448,7 +514,7 @@ def _html_to_markup(html, dark, strip=True, divine_smallcaps=False,
     html = html.replace(
         '[[B_S]]',
         '\n\n<span size="90%" weight="bold" letter_spacing="800" '
-        'foreground="gray">')
+        f'foreground="{theme_ink(dark)["_ink_muted"]}">')
     html = html.replace('[[B_E]]', '</span>\n')
     # Inline bold — no surrounding newlines, used for in-paragraph
     # emphasis like commentary verse-number prefixes ("1.", "2."), not
@@ -458,7 +524,8 @@ def _html_to_markup(html, dark, strip=True, divine_smallcaps=False,
     # raised so they read as verse pointers without looking like a
     # separate "Verse N" header.
     html = html.replace('[[SUP_S]]',
-                        '<span size="smaller" rise="4000" foreground="#888">')
+                        '<span size="smaller" rise="4000" '
+                        f'foreground="{theme_ink(dark)["_ink_muted"]}">')
     html = html.replace('[[SUP_E]]', '</span>')
 
     # Annotation styling (highlight, underline, note) is NOT baked into the
@@ -689,10 +756,18 @@ def theme_ink(dark):
 
     `_ink_link` is the blue shared by footnote markers, commentary
     cross-references and the lexicon hover; they are one colour by intent.
+    `_ink_muted` is verse numerals and section headings.
+
+    These are the colours for each theme's default paper, and the markup is
+    written in them. A pane on another paper gives its adopted tags the
+    colours `paper_inks` works out for that paper (`BiblePane._paper_ink`).
     """
+    paper = '#1e1e1e' if dark else '#f7f4ee'
+    derived = paper_inks(paper, auto_reading_ink(paper), dark)
     return {
         '_ink_heading':   '#8d8278' if dark else '#7a7066',
-        '_ink_link':      '#7fa3c1' if dark else '#5a7fa3',
+        '_ink_link':      derived['_ink_link'],
+        '_ink_muted':     derived['_ink_muted'],
         '_ink_redletter': '#e07070' if dark else '#bb0000',
         '_ink_dropcap':   dropcap_color_hex(dark),
     }
@@ -1880,6 +1955,8 @@ class BiblePane(Gtk.Box):
 
         # Re-render when system theme switches dark/light
         Adw.StyleManager.get_default().connect('notify::dark', self._on_theme_changed)
+        Adw.StyleManager.get_default().connect('notify::high-contrast',
+                                               self._on_theme_changed)
 
         # Initial toolbar visibility based on what kind of module the
         # pane starts on. Without this, a session that ended on a
@@ -2165,6 +2242,16 @@ class BiblePane(Gtk.Box):
                     f"{{ background-color: {surface}; }}")
         self._css_provider.load_from_data(css.encode())
         styles.set_reading_size(self._font_size)
+        # The muted ink and the link blue are worked out from this paper;
+        # carry a new paper onto the spans already drawn. The first call
+        # comes from __init__, before there is a buffer or anything drawn.
+        buf = getattr(self, '_buffer', None)
+        if buf is not None:
+            table = buf.get_tag_table()
+            for name, hexcol in self._paper_ink(dark).items():
+                tag = table.lookup(name)
+                if tag is not None:
+                    tag.set_property('foreground', hexcol)
         # The pill is cast from the same paper and ink. Its own provider,
         # because this one is on the text view and would never reach a
         # sibling in the overlay.
@@ -2248,6 +2335,21 @@ class BiblePane(Gtk.Box):
         """The verse the reader is focused on (or None), so presentation can
         open on the page holding it rather than always at the chapter top."""
         return self._selected_verse
+
+    def _paper_ink(self, dark):
+        """theme_ink for the paper this pane shows: the muted ink and the
+        link blue worked out from it, at 7:1 under high contrast."""
+        look = self.reading_appearance(self._evening_strength)
+        hc = Adw.StyleManager.get_default().get_high_contrast()
+        ink = theme_ink(dark)
+        paper, text = look['surface'], look['ink']
+        # A stored colour can be junk (the stress harness writes ints); CSS
+        # shrugs it off, the arithmetic here would not. Default paper, then.
+        if not (_is_hex(paper) and _is_hex(text)):
+            return ink
+        ink.update(paper_inks(paper, text, dark,
+                              HIGH_CONTRAST if hc else SMALL_TEXT_CONTRAST))
+        return ink
 
     def reading_appearance(self, evening_strength=0.0):
         """The effective paper / ink / serif this pane reads with, so the
@@ -3035,8 +3137,11 @@ class BiblePane(Gtk.Box):
                     # blank line of separation between commentary sections.
                     self._buffer.insert(self._buffer.get_end_iter(), '\n')
             else:
-                v_num_markup = (f'<span foreground="gray" size="small" '
-                                f'weight="bold" rise="2500"{self._numeral_ff()}>'
+                # Semibold: in the darker ink, bold stood out more than the
+                # old grey did; 600 keeps the old presence.
+                v_num_markup = (f'<span foreground="{theme_ink(dark)["_ink_muted"]}" '
+                                f'size="small" weight="600" '
+                                f'rise="2500"{self._numeral_ff()}>'
                                 f' {self._numerals.get(start_v, start_v)} </span>')
                 self._buffer.insert_markup(self._buffer.get_end_iter(), v_num_markup, -1)
 
@@ -3265,7 +3370,7 @@ class BiblePane(Gtk.Box):
     #: innermost span is adopted last. The drop cap is absent on purpose: its
     #: colour is never written into the markup (see `_DROPCAP_SPAN`), so it has
     #: nothing to adopt and `_raise_dropcap` handles its precedence instead.
-    _INK_ORDER = ('_ink_heading', '_ink_redletter', '_ink_link')
+    _INK_ORDER = ('_ink_heading', '_ink_redletter', '_ink_link', '_ink_muted')
 
     #: What `insert_markup` calls the tags it mints for a `foreground=` span.
     #: Adoption considers these and nothing else — see `_adopt_theme_ink`.
@@ -3323,8 +3428,7 @@ class BiblePane(Gtk.Box):
             ours = table.lookup(ink_name)
             if ours is None:
                 ours = buf.create_tag(ink_name)
-            ours.set_property('foreground-rgba',
-                              tags[0].get_property('foreground-rgba'))
+            ours.set_property('foreground', self._paper_ink(dark)[ink_name])
             for tag in tags:
                 # Offsets, not iters: the table is mutated below and a
                 # collected range has to survive that.
@@ -3666,8 +3770,9 @@ class BiblePane(Gtk.Box):
         `hideable=False` keeps it through the headings toggle: the seam of a
         split psalm is the only thing saying why the numerals start again."""
         lead = '\n\n' if lead_blank else ''
+        dark = Adw.StyleManager.get_default().get_dark()
         markup = (f'{lead}<span size="90%" weight="bold" letter_spacing="800" '
-                  f'foreground="gray">'
+                  f'foreground="{theme_ink(dark)["_ink_muted"]}">'
                   f'{GLib.markup_escape_text(text)}</span>\n')
         start = self._buffer.get_end_iter().get_offset()
         self._buffer.insert_markup(self._buffer.get_end_iter(), markup, -1)
@@ -4790,7 +4895,7 @@ class BiblePane(Gtk.Box):
             # reads distinctly from the solid annotation underline.
             hover_tag = self._buffer.create_tag(
                 '_strg_hover',
-                foreground=theme_ink(dark)['_ink_link'],
+                foreground=self._paper_ink(dark)['_ink_link'],
             )
         table = self._buffer.get_tag_table()
         hover_tag.set_priority(table.get_size() - 1)
@@ -5391,7 +5496,7 @@ class BiblePane(Gtk.Box):
         but a redraw.
         """
         dark = Adw.StyleManager.get_default().get_dark()
-        ink = theme_ink(dark)
+        ink = self._paper_ink(dark)
         table = self._buffer.get_tag_table()
         for name, hexcol in ink.items():
             tag = table.lookup(name)
