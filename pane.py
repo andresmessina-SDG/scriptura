@@ -2400,6 +2400,19 @@ class BiblePane(Gtk.Box):
     def _find_topmost_visible_verse(self):
         return self._scroll._find_topmost_visible_verse()
 
+    def reading_verse(self):
+        """The verse the reader is on, for the Back history: the selected
+        verse while it is on screen, else the top one. None before a
+        render."""
+        top = self._scroll._find_topmost_visible_verse()
+        sel = self._selected_verse
+        if sel is None or top is None:
+            return top
+        bottom = self._scroll._verse_at_window_y(self._view.get_height() - 4)
+        if top <= sel and (bottom is None or sel <= bottom):
+            return sel
+        return top
+
     def _resolve_present_verse(self, verse_num):
         return self._scroll._resolve_present_verse(verse_num)
 

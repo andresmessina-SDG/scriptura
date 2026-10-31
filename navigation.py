@@ -171,7 +171,7 @@ class NavigationController:
         if not self._today_suppress:
             self._dismiss_today(after_load=True)
         if record:
-            self._push_nav_back(self._current_loc)
+            self._push_nav_back(self._here())
             self._nav_fwd.clear()
             self._update_nav_btns()
 
@@ -201,6 +201,11 @@ class NavigationController:
         else:
             self.pane1.load_reference(book, chapter)
             self.pane2.load_reference(book, chapter)
+
+    def _here(self):
+        """(book, chapter, verse) for the history: the window's place and
+        the verse pane 1 is on, so Back returns to it, not the chapter top."""
+        return (*self._current_loc, self._win.pane1.reading_verse())
 
     def _push_nav_back(self, loc):
         self._nav_back.append(loc)
@@ -557,18 +562,18 @@ class NavigationController:
     def _on_nav_back(self, _btn):
         if not self._nav_back:
             return
-        self._nav_fwd.append(self._current_loc)
-        book, chapter = self._nav_back.pop()
+        self._nav_fwd.append(self._here())
+        book, chapter, verse = self._nav_back.pop()
         self._update_nav_btns()
-        self._go_to(book, chapter, record=False)
+        self._go_to(book, chapter, verse, record=False)
 
     def _on_nav_fwd(self, _btn):
         if not self._nav_fwd:
             return
-        self._push_nav_back(self._current_loc)
-        book, chapter = self._nav_fwd.pop()
+        self._push_nav_back(self._here())
+        book, chapter, verse = self._nav_fwd.pop()
         self._update_nav_btns()
-        self._go_to(book, chapter, record=False)
+        self._go_to(book, chapter, verse, record=False)
 
     def _update_nav_btns(self):
         self._back_btn.set_sensitive(bool(self._nav_back))

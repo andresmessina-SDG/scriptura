@@ -3169,6 +3169,11 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             target = self.pane1
         else:
             return
+        if target is self.pane1 and not self.pane1._sync_btn.get_active():
+            # Pane 1 follows the window: go the window's way, so the jump
+            # has a Back entry and the header names where it went.
+            self._go_to(book, chapter, verse)
+            return
         target.force_navigate(book, chapter, verse)
 
     def _on_crossref_right_clicked(self, book, chapter, verse, widget):
