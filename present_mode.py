@@ -30,6 +30,18 @@ import window
 from i18n import _, book_label
 
 
+def _module_abbreviation(module):
+    """Use the module's short name, or the curated abbreviation for eBible."""
+    import ebible_bridge
+    if ebible_bridge.is_ebible_module(module):
+        import bible_family
+        record = bible_family.node_for_module(module)
+        if record and record.get('abbr'):
+            return record['abbr']
+        return module.removeprefix(ebible_bridge.PREFIX)
+    return module
+
+
 class PresentController:
     def __init__(self, win):
         self._win = win
@@ -161,7 +173,11 @@ class PresentController:
             # worker thread needed) so the first slide is ready instantly.
             self._present_view.load_chapter(
                 book, chapter, translation, verses,
-                focus_verse=pane.current_verse(), secondary=secondary)
+                focus_verse=pane.current_verse(), secondary=secondary,
+                abbreviation=_module_abbreviation(self._present_module),
+                secondary_abbreviation=(
+                    _module_abbreviation(self._present_module_b) if bi else None),
+                module=self._present_module, secondary_module=self._present_module_b)
             self._present_view.set_parallel(bool(bi))
         self._present_view.set_visible(True)
         self._sync_present_controls()
@@ -275,7 +291,12 @@ class PresentController:
         self._present_book, self._present_chapter = book, chapter
         self._present_view.load_chapter(
             book, chapter, translation, verses,
-            land=land, focus_verse=focus_verse, secondary=secondary)
+            land=land, focus_app_verse=focus_verse,
+            secondary=secondary,
+            abbreviation=_module_abbreviation(self._present_module),
+            secondary_abbreviation=(
+                _module_abbreviation(self._present_module_b) if secondary else None),
+            module=self._present_module, secondary_module=self._present_module_b)
         # Honour the session's parallel intent, but only where the second column
         # actually loaded (an out-of-coverage chapter shows single).
         self._present_view.set_parallel(

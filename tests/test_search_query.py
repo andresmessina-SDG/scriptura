@@ -180,3 +180,37 @@ def test_the_case_must_match():
 def test_a_query_with_no_positive_term_filters_nothing():
     assert sq.case_matches('', 'anything') is True
     assert sq.case_matches('-works', 'anything') is True
+
+
+@pytest.mark.parametrize('query,text,expected', [
+    ('he', 'He saw the people', False),
+    ('he', 'And he saw the people', True),
+    ('he', 'He saw them; hence they left', False),
+    ('he*', 'He saw them; hence they left', True),
+    ('he*', 'He saw the people', False),
+    ('"living water"', 'Living water and living bread', False),
+    ('"living wat"*', 'living waters', True),
+    ('"living wat"*', 'Living waters and living bread', False),
+    ('he OR Lord', 'He saw the Lord', True),
+    ('he Lord', 'He saw the Lord', False),
+    ('God', 'God-given', True),
+    ('he', 'He saw he\u0301he', False),
+    ('él', 'e\u0301l dijo', True),
+    ('él', 'Él dijo', False),
+    ('God', 'God_given', True),
+])
+def test_case_matches_whole_tokens_and_phrases(query, text, expected):
+    assert sq.case_matches(query, text) is expected
+
+
+@pytest.mark.parametrize('query,expected', [
+    ('-lov*', ['For God so loved the world']),
+    ('-"living wat"*', ['living water springs up']),
+    ('-lov* -"living wat"*',
+     ['For God so loved the world', 'living water springs up']),
+])
+def test_exclusions_preserve_prefix_semantics(fts, query, expected):
+    rewritten = sq.exclusions(query)
+    rows = fts.execute('SELECT content FROM t WHERE t MATCH ?',
+                       (sq.build_match(rewritten),)).fetchall()
+    assert [r[0] for r in rows] == expected

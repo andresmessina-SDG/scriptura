@@ -443,6 +443,49 @@ def test_an_update_that_parses_too_little_keeps_the_text(db, monkeypatch,
     assert eb.installed_ids() == {'engwebp'}
 
 
+def test_failed_update_rolls_back_before_next_download(db, monkeypatch):
+    """A parsed number too large for SQLite fails after the old rows were
+    deleted and one new verse inserted. The lane reuses this connection:
+    another download must never commit those half-finished changes."""
+    conn = eb._db()
+    before = {table: conn.execute(f'SELECT * FROM {table} ORDER BY rowid').fetchall()
+              for table in ('verses', 'notes', 'translations')}
+    _serve_usfm(monkeypatch,
+                '\\id GEN\n\\c 1\n\\v 1 Replacement\n'
+                '\\c 99999999999999999999\n\\v 1 Invalid chapter\n')
+    with pytest.raises(OverflowError):
+        eb.download_translation_sync('engwebp', {})
+    assert not conn.in_transaction
+    for table, rows in before.items():
+        assert conn.execute(f'SELECT * FROM {table} ORDER BY rowid').fetchall() == rows
+
+    _serve_usfm(monkeypatch, '\\id GEN\n\\c 1\n\\v 1 Another Bible\n')
+    eb.download_translation_sync('other', {})
+    with sqlite3.connect(eb._DB) as reader:
+        for table, rows in before.items():
+            key = 'id' if table == 'translations' else 'translation'
+            assert reader.execute(f'SELECT * FROM {table} WHERE {key}=? ORDER BY rowid',
+                                  ('engwebp',)).fetchall() == rows
+    # Rollback keeps the external-content FTS index consistent too.
+    assert len(eb.search_module(eb.PREFIX + 'engwebp', 'God')) == 3
+    assert eb.search_module(eb.PREFIX + 'engwebp', 'Replacement') == []
+
+
+def test_failed_removal_rolls_back_verses_and_notes(db):
+    conn = eb._db()
+    before = {table: conn.execute(f'SELECT * FROM {table} ORDER BY rowid').fetchall()
+              for table in ('verses', 'notes', 'translations')}
+    conn.execute('CREATE TRIGGER refuse_removal BEFORE DELETE ON translations '
+                 "BEGIN SELECT RAISE(ABORT, 'removal failed'); END")
+    conn.commit()
+    with pytest.raises(sqlite3.IntegrityError, match='removal failed'):
+        eb.remove_translation('engwebp')
+    assert not conn.in_transaction
+    for table, rows in before.items():
+        assert conn.execute(f'SELECT * FROM {table} ORDER BY rowid').fetchall() == rows
+    assert len(eb.search_module(eb.PREFIX + 'engwebp', 'God')) == 3
+
+
 def test_source_date_prefers_the_update_date():
     assert eb.source_date({'UpdateDate': '2026-08-08',
                            'sourceDate': '2020-10-09'}) == '2026-08-08'
@@ -908,3 +951,24 @@ def test_a_split_psalm_reads_on_into_the_module_s_next_chapter(db):
         [f'line 115:{v}' for v in range(1, 11)]
     assert [v for v, _t in rows] == list(range(1, 20))
     assert eb.load_chapter(module, 'Psalms', 10)[0] == (22, 'line 9:22')
+
+
+@pytest.mark.parametrize('v11n', ['Synodal', 'Vulg'])
+def test_psalm_nine_excludes_psalm_ten_even_when_chapter_number_matches(
+        db, v11n):
+    """9 → 9 still needs the merged-chapter line mapping. The second half
+    belongs to app Psalm 10, for text and translator footnotes alike."""
+    tid = 'merged-nine-' + v11n
+    _seed_psalter(v11n, tid, text='line')
+    conn = eb._db()
+    conn.executemany('INSERT INTO notes VALUES (?,?,?,?,?,?,?)',
+                     [(tid, 'Psalms', 9, v, 1, '', f'note {v}')
+                      for v in (1, 21, 22, 39)])
+    conn.commit()
+    module = eb.PREFIX + tid
+    assert eb.load_chapter(module, 'Psalms', 9) == [
+        (v, f'line 9:{v}') for v in range(1, 22)]
+    assert eb.chapter_footnotes(module, 'Psalms', 9) == {
+        1: [('1', '', 'note 1')], 21: [('1', '', 'note 21')]}
+    assert eb.chapter_footnotes(module, 'Psalms', 10) == {
+        22: [('1', '', 'note 22')], 39: [('1', '', 'note 39')]}

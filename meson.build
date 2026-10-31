@@ -1,5 +1,5 @@
 project('scriptura',
-  version: '1.8.3',
+  version: '1.9.1',
   meson_version: '>= 0.59.0',
   license: 'GPL-3.0-or-later',
 )
@@ -70,6 +70,8 @@ py_sources = files(
   'genealogy_strings.py',
   'genealogy_svg.py',
   'gtk_utils.py',
+  'harmony.py',
+  'harmony_view.py',
   'i18n.py',
   'imagery_bridge.py',
   'imagery_reader.py',
@@ -105,6 +107,7 @@ py_sources = files(
   'passage_export.py',
   'passage_print.py',
   'paths.py',
+  'plan_session.py',
   'preferences.py',
   'present.py',
   'present_align.py',

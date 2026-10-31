@@ -46,6 +46,10 @@ class Pane:
     def __init__(self):
         self._buffer = Gtk.TextBuffer()
 
+    def _paper_ink(self, dark):
+        # The theme's default paper, where the derived inks are theme_ink's.
+        return pane_mod.theme_ink(dark)
+
 
 def colour_at(buf, offset):
     """The foreground actually painted at `offset` — the highest-priority tag

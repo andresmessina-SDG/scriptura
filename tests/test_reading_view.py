@@ -33,7 +33,8 @@ def test_paint_order_is_bottom_up():
 
 
 def test_every_decoration_declares_a_known_layer_and_style():
-    styles = {'highlights', 'band', 'underline', 'dotted', 'rule', 'veil'}
+    styles = {'highlights', 'band', 'underline', 'dotted', 'rule', 'veil',
+              'sign', 'passage'}
     for dec in rv._DECORATIONS:
         assert dec.layer in (rv._BELOW, rv._ABOVE), dec.name
         assert dec.style in styles, dec.name
@@ -41,9 +42,9 @@ def test_every_decoration_declares_a_known_layer_and_style():
         assert (dec.tag is None) == (dec.style == 'highlights'), dec.name
 
 
-def test_the_veil_is_the_only_thing_painted_over_the_text():
+def test_only_the_veils_are_painted_over_the_text():
     above = [d.name for d in rv._DECORATIONS if d.layer == rv._ABOVE]
-    assert above == ['focus veil']
+    assert above == ['focus veil', 'plan passage veil']
 
 
 def test_rule_and_veil_share_the_unit_tag():

@@ -41,6 +41,30 @@ LATEST_BUILT = '2026-09-22'
 # Mirrors the build script's sentinel for "date unknown".
 _UNKNOWN_YEAR = 9999
 
+# The names a Spanish or Russian reader knows each author by, built by
+# tools/build_author_names.py into data/author_names/{lang}.tsv: English
+# name → that language's. An author missing there keeps the English.
+_AUTHOR_NAMES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 'data', 'author_names')
+_author_names: dict[str, dict[str, str]] = {}
+
+
+def author_name(name: str, lang: str) -> str:
+    """`name` as a reader of `lang` knows it, or unchanged."""
+    if lang not in _author_names:
+        table: dict[str, str] = {}
+        try:
+            with open(os.path.join(_AUTHOR_NAMES_DIR, f'{lang}.tsv'),
+                      encoding='utf-8') as f:
+                for line in f:
+                    cols = line.rstrip('\n').split('\t')
+                    if not line.startswith('#') and len(cols) == 2:
+                        table[cols[0]] = cols[1]
+        except OSError:
+            pass
+        _author_names[lang] = table
+    return _author_names[lang].get(name, name)
+
 
 class CatenaEntry(TypedDict):
     author: str

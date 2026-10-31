@@ -4,7 +4,7 @@ import logging
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Adw, Gio, GLib, Gtk
+from gi.repository import Adw, Gdk, Gio, GLib, GObject, Graphene, Gtk
 
 import motion
 
@@ -125,6 +125,110 @@ def fade_in(widget: Gtk.Widget) -> None:
     GLib.timeout_add(motion.DURATION_MICRO + 500, _force_done)
 
 
+#: How far in from the ends of the popover's side its arrow must stay: the
+#: largest corner radius we give a popover (the speed sheet's 18px; Adwaita's
+#: is 12) plus half of GTK's 24px arrow base, and 2px to spare.
+ARROW_INSET = 32
+_arrow_guard_on = False
+
+
+def keep_popover_arrows_on_body() -> None:
+    """Keep every popover's arrow on the straight part of its side.
+
+    A popover whose anchor sits near a screen edge is slid back onto the
+    screen, but GTK leaves the arrow on the anchor: within 8px of the edge
+    it floats free of the body, and within about 30px it sits on the
+    rounded corner. Where the window is, and so how near an edge an anchor
+    sits, Wayland does not say, so this checks after GTK has placed the
+    popover and, when the arrow would miss, points it at the nearest place
+    on the body's straight edge instead. Installed once for the whole app,
+    so popovers GTK makes for menu buttons are covered too."""
+    global _arrow_guard_on
+    if _arrow_guard_on:
+        return
+    _arrow_guard_on = True
+    GObject.add_emission_hook(Gtk.Widget, 'realize', _on_widget_realize)
+
+
+def _on_widget_realize(widget, *_args) -> bool:
+    if isinstance(widget, Gtk.Popover) and widget.get_surface() is not None:
+        widget.get_surface().connect('layout', _on_popover_layout, widget)
+        widget.connect('unmap', _restore_pointing)
+    return True     # keep the hook
+
+
+def _restore_pointing(pop: Gtk.Popover) -> None:
+    """Give back the anchor the popover's owner set, so the next showing
+    starts from it rather than from the last correction."""
+    saved = getattr(pop, '_arrow_saved', None)
+    if saved is not None:
+        pop._arrow_saved = None
+        pop.set_pointing_to(saved[1] if saved[0] else None)
+    pop._arrow_fixes = 0
+
+
+def _on_popover_layout(surface, _w, _h, pop: Gtk.Popover) -> None:
+    if not pop.get_has_arrow() or not pop.get_mapped():
+        return
+    fixes = getattr(pop, '_arrow_fixes', 0)
+    if fixes >= 3:
+        return      # never chase a layout that will not settle
+    target = arrow_target(pop, surface)
+    if target is None:
+        return
+    if getattr(pop, '_arrow_saved', None) is None:
+        pop._arrow_saved = pop.get_pointing_to()
+    pop._arrow_fixes = fixes + 1
+    pop.set_pointing_to(target)
+
+
+def arrow_target(pop: Gtk.Popover, surface) -> Gdk.Rectangle | None:
+    """The anchor, in the parent's coordinates, that keeps the arrow on the
+    body's straight edge, or None when it is there already."""
+    parent = pop.get_parent()
+    native = parent.get_native() if parent is not None else None
+    contents = pop.get_first_child()
+    while contents is not None and contents.get_css_name() != 'contents':
+        contents = contents.get_next_sibling()
+    if native is None or contents is None:
+        return None
+    ok, rect = pop.get_pointing_to()
+    if not ok:
+        rect = Gdk.Rectangle()
+        rect.x, rect.y = 0, 0
+        rect.width, rect.height = parent.get_width(), parent.get_height()
+    # Everything in the parent's surface, where the popup is placed.
+    ok, at = parent.compute_point(native, Graphene.Point().init(rect.x, rect.y))
+    found, body = contents.compute_bounds(pop)
+    if not ok or not found:
+        return None
+    nx, ny = native.get_surface_transform()
+    sx, sy = pop.get_surface_transform()
+    ax, ay = at.x + nx, at.y + ny
+    left = surface.get_position_x() + sx + body.get_x()
+    top = surface.get_position_y() + sy + body.get_y()
+    right, bottom = left + body.get_width(), top + body.get_height()
+    cx, cy = ax + rect.width / 2, ay + rect.height / 2
+    if cy <= top or cy >= bottom:       # arrow on the top or bottom side
+        tip, lo, hi = cx, left + ARROW_INSET, right - ARROW_INSET
+    elif cx <= left or cx >= right:     # arrow on the left or right side
+        tip, lo, hi = cy, top + ARROW_INSET, bottom - ARROW_INSET
+    else:
+        return None                     # the body covers the anchor
+    goal = (lo + hi) / 2 if lo > hi else min(max(tip, lo), hi)
+    shift = round(goal - tip)
+    if shift == 0:
+        return None
+    new = Gdk.Rectangle()
+    if cy <= top or cy >= bottom:
+        new.x, new.y = round(rect.x + rect.width / 2 + shift), rect.y
+        new.width, new.height = 1, rect.height
+    else:
+        new.x, new.y = rect.x, round(rect.y + rect.height / 2 + shift)
+        new.width, new.height = rect.width, 1
+    return new
+
+
 def clear_children(widget: Gtk.Widget) -> None:
     """Remove every child of a Gtk.Box / Gtk.ListBox / Gtk.FlowBox.
 
@@ -137,6 +241,56 @@ def clear_children(widget: Gtk.Widget) -> None:
         nxt = child.get_next_sibling()
         widget.remove(child)
         child = nxt
+
+
+def iter_at_location(view: Gtk.TextView, x: int,
+                     y: int) -> tuple[bool, Gtk.TextIter]:
+    """`Gtk.TextView.get_iter_at_location`, without the GTK 4.22 abort.
+
+    When y falls in the space below a line's text (`pixels-below-lines`),
+    GTK takes the line's full byte count, hidden text included, and walks
+    that many VISIBLE bytes. On a line that hides anything (a footnote
+    marker, a heading's newline) the walk runs into the next line and GTK
+    kills the process:
+
+        Gtk-ERROR: Byte index 849 is off the end of the line
+        #7  iter_set_from_byte_offset
+        #8  gtk_text_iter_set_visible_line_index
+        #10 gtk_text_layout_get_iter_at_position
+        #11 gtk_text_view_get_iter_at_location
+        #26 gtk_event_controller_motion_handle_event
+
+    For a point in that space on such a line, answer what GTK answers on a
+    line that hides nothing: outside, at the line's end.
+    """
+    line, _top = view.get_line_at_y(y)
+    nxt = line.copy()
+    nxt.forward_line()
+    buf = view.get_buffer()
+    # get_text omits embedded widgets/images even when include_hidden_chars
+    # is True. GTK counts their replacement characters in the byte offset,
+    # so a hidden child anchor needs the same guard as a hidden footnote.
+    if buf.get_slice(line, nxt, True) == buf.get_slice(line, nxt, False):
+        return _gtk_iter_at_location(view, x, y)
+    end = line.copy()
+    if not end.ends_line():
+        end.forward_to_line_end()
+    last = nxt.copy()
+    while last.backward_char() and last.compare(line) >= 0:
+        if buf.get_slice(last, nxt, False):
+            break                       # the line's last visible character
+    else:
+        return False, end               # nothing on the line is visible
+    rect = view.get_cursor_locations(last)[0]
+    if y >= rect.y + rect.height:
+        return False, end
+    return _gtk_iter_at_location(view, x, y)
+
+
+def _gtk_iter_at_location(view: Gtk.TextView, x: int,
+                          y: int) -> tuple[bool, Gtk.TextIter]:
+    found, it = Gtk.TextView.get_iter_at_location(view, x, y)
+    return found, it
 
 
 def file_dialog_failed(err: GLib.Error) -> bool:

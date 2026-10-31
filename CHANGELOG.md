@@ -6,6 +6,127 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+### Added
+- Preferences ▸ Reading Aids ▸ Mark verses the creeds quote: shows or hides the creeds mark beside a verse whose words a creed uses.
+
+### Fixed
+- A note, footnote or dictionary peek closes when the text scrolls or the chapter changes. A note peek left open across a chapter change saved its note onto the new chapter's verse.
+- Footnote and note peeks widen with the reading size, and a long tags line no longer stretches the note peek.
+- A popover's arrow stays on the popover near a screen edge.
+- A dictionary peek closed in its first moments, by Escape, a chapter change or a module change, no longer comes back.
+- A click on the hover card lands on the text beneath it instead of doing nothing.
+- A word clicked low on the page stays in view when the cross-reference bar and lexicon open below it.
+- The other pane no longer scrolls to a clicked verse it already shows.
+- The dictionary peek opens about 0.1 s sooner.
+- A click that opens a peek no longer brings back the hidden pane header, whose slide moved the peek off its word or closed it.
+
+## [1.9.1] — 2026-10-31
+
+### Fixed
+
+- **Psalm superscriptions and Psalm 119's letters** were dropped in every
+  Bible that has them (KJV, ASV, BSB and LEB lost all 116 superscriptions).
+  They are set as Scripture: italic at 92%, on their own line, supplied words
+  upright, outside the headings toggle; presentation and passage export carry
+  them with their verse.
+- **Paragraph breaks** never showed outside poetry. The KJV's ¶ milestone was
+  stripped, and a paragraph closed at a verse's end (ASV, BSB, LEB, Platense,
+  Vulgate, Synodal, SBLGNT) lost its break. A verse now opens a paragraph
+  half a line below the last, the stanza gap; a break inside a verse matches,
+  and a hidden heading no longer swallows one.
+- **Small-text contrast**: verse numerals, section headings, footnote markers
+  and commentary references were fixed colours at 3.1–3.8:1 on the light
+  papers. Their colours now come from the paper, at 4.6:1 (7:1 under high
+  contrast); numerals are semibold.
+- **A cross-reference chip in single-pane view** moved the pane past the
+  window's history: no Back entry, and the header kept the old chapter.
+- **Back and Forward** returned to the chapter top; they now return to the
+  verse the reader was on, in the app's numbering.
+
+### Changed
+
+- The footnote and note peeks take the reading size; cross-reference chips
+  keep the interface size up to 12.5pt and grow as its square root above it.
+
+## [1.9.0] — 2026-10-23
+
+### Added
+
+- **The Harmony of the Gospels**, a page that sets the four Gospels side by
+  side: A. T. Robertson's harmony (1922, after Broadus), 185 sections in 14
+  parts, with the canon tables of Eusebius as a second lens. The accounts are
+  read in the Bible beside the page, Matthew to John, and a word whose Greek
+  another account also uses is underlined, from the Bible's Strong's numbers.
+- A band above the accounts shows where the section falls in each Gospel,
+  with threads joining the same event and reaching to similar events. A
+  similar event can be set beside the accounts as one more column.
+- Links to similar events and to passages said elsewhere, each naming its
+  witness; Eusebius's own words under a section only one Gospel tells; short
+  fact lines where the text is in question (Mark 16:9–20, John 7:53–8:11),
+  with a door to the Greek interlinear's readings.
+- **Gospel parallels in the margin**: four dots where a section told in more
+  than one Gospel begins; a click shows the other Gospels' passages. Off by
+  default; the toggle is in the header's reading tools.
+- **Life of Christ in 40 Days**, a reading plan of Robertson's sections in
+  order, every account of each, with a door to the day's sections on the
+  harmony page.
+- Reading plans can read part of a chapter. Opening a plan's reading lights
+  the passage and quiets the rest of the chapter; a pill at the foot of the
+  page offers the next passage once the end is in view, then marks the day
+  read. Every plan has it; the close, Esc or any move of your own ends it.
+
+## [1.8.5] — 2026-10-21
+
+### Added
+
+- **Merriweather** is bundled and available in Appearance ▸ Font, including
+  its italic and variable weights.
+
+### Changed
+
+- Parallel presentation shows the Bible abbreviations at the outer corners,
+  with the displayed verse reference centered above a divider between the texts.
+
+### Fixed
+
+- Presentation aligns equivalent verses across different Bible numbering
+  systems, keeps numbered psalm titles and combined verses, and makes
+  Ctrl+L reach the requested text. Each translation keeps its own printed
+  verse numbers and references, including across split psalms.
+- **UnifrakturMaguntia** now appears in Appearance ▸ Font after an update.
+  A font cache saved by the previous release hid it. The corrected 1.8.5 build
+  loads bundled font files directly at startup, bypassing cached font folders.
+- A settings or reading-position save still in progress at quit can no longer
+  overwrite the final save.
+- A failed eBible download or removal leaves the translation as it was,
+  instead of half-replaced text that the next download would keep.
+- Psalm 9 in an eBible translation numbered like the Synodal or the Vulgate
+  no longer runs on into Psalm 10, in its text or its footnotes.
+- **Match case** searches count only matches in the chosen case toward the
+  result limit, so matches in other cases cannot push them out.
+
+## [1.8.4] — 2026-10-12
+
+### Added
+
+- **UnifrakturMaguntia**, a blackletter face, ships with the app and can be
+  chosen in Appearance ▸ Font. It covers Latin script only.
+
+### Fixed
+
+- The app no longer closes when the pointer rests in the space below a
+  paragraph that hides a footnote marker, a heading, or an embedded widget.
+- **Write about today** attaches the readings shown on Today when a plan's
+  schedule has lapsed, using the first unread day instead of the last day.
+- Concurrent searches share one index builder, including during a module-cache
+  reset, so they cannot collide while creating the same temporary database.
+- Original-language searches preserve wildcard exclusions such as
+  `strong:G26 -lov*`.
+- **Match case** checks whole words and adjacent phrases, preserving prefix
+  matching, instead of accepting a matching substring inside another word.
+- Backup validation rejects malformed completed-day values before restoring
+  reading-plan progress.
+
 ## [1.8.3] — 2026-09-30
 
 ### Added

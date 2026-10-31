@@ -110,3 +110,56 @@ def _apply_high_contrast(display: Gdk.Display,
     else:
         Gtk.StyleContext.remove_provider_for_display(display, _hc_provider)
     _hc_attached = wanted
+
+
+
+_reading_provider: Gtk.CssProvider | None = None
+
+#: The reading size the surfaces below were drawn for before they followed
+#: it (settings' default), so they look as before at that size.
+_BASE_READING_PT = 12.5
+
+
+def _ui_font_pt() -> float:
+    gtk_settings = Gtk.Settings.get_default()
+    name = gtk_settings.get_property('gtk-font-name') if gtk_settings else ''
+    try:
+        return float((name or '').rsplit(' ', 1)[1])
+    except (IndexError, ValueError):
+        return 11.0
+
+
+def chip_pt(reading_pt: float, ui_pt: float) -> float:
+    """Cross-reference chip size for a reading size. Never below the
+    interface size, and above the default it grows as the square root, so
+    twice the text gives 1.41 times the chips, not a giant bar."""
+    return float(ui_pt * max(1.0, reading_pt / _BASE_READING_PT) ** 0.5)
+
+
+def reading_size_css(reading_pt: float, ui_pt: float) -> str:
+    pt = min(max(float(reading_pt), 8.0), 26.0)
+    # The note peeks widen with their text, so a line holds as many words
+    # at 26pt as at the default. Never narrower than the default's 280px.
+    width = round(280 * max(1.0, pt / _BASE_READING_PT))
+    return (f'.peek-reading {{ font-size: {pt:g}pt; }} '
+            f'.peek-reading-box {{ min-width: {width}px; }} '
+            '.crossref-bar button.xref-chip '
+            f'{{ font-size: {chip_pt(pt, ui_pt):.1f}pt; }}')
+
+
+def set_reading_size(reading_pt: float) -> None:
+    """Size the text that sits beside the reading text to the reader's size:
+    the footnote and note peeks' bodies in full (and their width with them),
+    the cross-reference chips by chip_pt. They are not under the pane's own provider (a popover, a
+    window-level bar), so they get one on the display."""
+    global _reading_provider
+    display = Gdk.Display.get_default()
+    if display is None:
+        return
+    if _reading_provider is None:
+        _reading_provider = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_display(
+            display, _reading_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 2)
+    _reading_provider.load_from_data(
+        reading_size_css(reading_pt, _ui_font_pt()).encode())

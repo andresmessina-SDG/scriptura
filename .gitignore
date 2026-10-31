@@ -72,6 +72,7 @@ QOL_RESEARCH.md
 DOWNLOADS_RESEARCH.md
 MOTION_RESEARCH.md
 CONTENT_I18N_RESEARCH.md
+GOSPEL_HARMONY_RESEARCH.md
 FLATHUB_REVIEW_PLAN.md
 CARTOGRAPHY_METHODOLOGY.md
 FLATPAK_RELEASE.md
@@ -93,3 +94,4 @@ tools/creeds/src/texts/
 tools/creeds/src/oc.txt
 tools/creeds/src/westminster_*.json
 tools/stone/src/texts/
+tools/harmony/src/

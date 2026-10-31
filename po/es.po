@@ -192,6 +192,153 @@ msgid "Commentary"
 msgstr "Comentario"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
+msgid "Psalm titles, paragraphs, and clearer small text."
+msgstr "Títulos de los salmos, párrafos y texto pequeño más claro."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:158
+msgid "Psalm titles and the Hebrew letters of Psalm 119 now appear above their verses, set as Scripture."
+msgstr "Los títulos de los salmos y las letras hebreas del Salmo 119 aparecen ahora sobre sus versículos, como parte de la Escritura."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
+msgid "They also come with their verses in presentation and in exported passages."
+msgstr "También acompañan a sus versículos en la presentación y en los pasajes exportados."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:160
+msgid "Bibles that mark paragraphs now show them, with a small gap between."
+msgstr "Las Biblias que marcan párrafos ahora los muestran, con un pequeño espacio entre ellos."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:161
+msgid "Verse numbers, section headings and footnote letters now have more contrast, so they are easier to read on every paper."
+msgstr "Los números de versículo, los títulos de sección y las letras de las notas al pie tienen ahora más contraste y se leen mejor sobre cualquier papel."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
+msgid "High contrast mode raises it further."
+msgstr "El modo de alto contraste lo aumenta aún más."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:163
+msgid "Footnotes and your notes open at your reading size."
+msgstr "Las notas al pie y sus notas se abren al tamaño de lectura que usted eligió."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
+msgid "Cross-references grow with larger reading sizes."
+msgstr "Las referencias cruzadas crecen con los tamaños de lectura grandes."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
+msgid "In single-pane view, following a cross-reference adds a step you can go Back from."
+msgstr "En la vista de un panel, seguir una referencia cruzada añade un paso al que puede volver con Atrás."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
+msgid "Back and Forward return to the verse you were reading."
+msgstr "Atrás y Adelante vuelven al versículo que estaba leyendo."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
+msgid "The Harmony of the Gospels, and reading plans that walk you through each day."
+msgstr "La armonía de los Evangelios, y planes de lectura que lo acompañan día a día."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:158
+msgid "The Harmony of the Gospels sets the four Gospels side by side, event by event, after A. T. Robertson's harmony."
+msgstr "La armonía de los Evangelios pone los cuatro Evangelios lado a lado, suceso por suceso, según la armonía de A. T. Robertson."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
+msgid "A switch shows the canon tables of Eusebius instead, with the passages he set together."
+msgstr "Un interruptor muestra en su lugar las tablas de cánones de Eusebio, con los pasajes que él puso juntos."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:160
+msgid "Words whose Greek another account also uses are underlined, in Bibles with Strong's numbers."
+msgstr "Se subrayan las palabras cuyo griego usa también otro relato, en las Biblias con números de Strong."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:161
+msgid "A band shows where each event falls in each Gospel, with threads to the same and similar events."
+msgstr "Una banda muestra dónde cae cada suceso en cada Evangelio, con hilos hacia el mismo suceso y los sucesos semejantes."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
+msgid "A similar event can be set beside the accounts to compare them."
+msgstr "Un suceso semejante puede ponerse al lado de los relatos para compararlos."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:163
+msgid "Gospel parallels can be marked in the reading margin. Click a mark to read the other Gospels."
+msgstr "Los paralelos de los Evangelios pueden marcarse en el margen de lectura. Pulse una marca para leer los otros Evangelios."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
+msgid "A new reading plan, Life of Christ in 40 Days, reads every account of each event in order."
+msgstr "Un nuevo plan de lectura, La vida de Cristo en 40 días, lee en orden cada relato de cada suceso."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
+msgid "Reading plans can now read part of a chapter."
+msgstr "Los planes de lectura ahora pueden leer parte de un capítulo."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
+msgid "Opening a plan's reading lights the passage and offers the next one when you reach its end."
+msgstr "Al abrir la lectura de un plan, el pasaje se ilumina y, al llegar a su final, se ofrece el siguiente."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:167
+msgid "Mark the day read without leaving the text."
+msgstr "Marque el día como leído sin salir del texto."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
+msgid "Clearer parallel presentation, new reading fonts, and more reliable saves and downloads."
+msgstr "Presentación paralela más clara, nuevas fuentes de lectura y mejoras en el guardado y las descargas."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:158
+msgid "Parallel presentation places Bible abbreviations at the outer corners and centers verse references above a divider."
+msgstr "La presentación paralela coloca las abreviaturas de las Biblias en las esquinas exteriores y centra las referencias de los versículos sobre un separador."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
+msgid "Presentation keeps equivalent verses together across Bible numbering systems, including when jumping with Ctrl+L."
+msgstr "La presentación mantiene juntos los versículos equivalentes entre Biblias con distinta numeración, también al saltar con Ctrl+L."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:160
+msgid "Numbered psalm titles, combined verses and split psalms keep their printed references in presentation."
+msgstr "Los títulos numerados de los salmos, los versículos combinados y los salmos divididos conservan sus referencias impresas en la presentación."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:161
+msgid "Merriweather is available in Appearance, with italic and variable weights."
+msgstr "Merriweather está disponible en Apariencia, con cursiva y grosores variables."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
+msgid "UnifrakturMaguntia appears in the font list after updating from an earlier release."
+msgstr "UnifrakturMaguntia aparece en la lista de fuentes al actualizar desde una versión anterior."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:163
+msgid "Closing the app reliably saves the final settings and reading position."
+msgstr "Al cerrar la aplicación se guardan correctamente los últimos ajustes y la posición de lectura."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
+msgid "A failed eBible download or removal leaves the translation as it was."
+msgstr "Si una descarga o eliminación de eBible falla, la traducción se conserva tal como estaba."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
+msgid "Psalm 9 in eBible translations numbered like the Synodal or Vulgate no longer includes Psalm 10."
+msgstr "El Salmo 9 de las traducciones de eBible con numeración sinodal o de la Vulgata ya no incluye el Salmo 10."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
+msgid "Match case searches keep results in the chosen case from being crowded out by other matches."
+msgstr "En las búsquedas con Distinguir mayúsculas, otras coincidencias ya no desplazan los resultados que respetan las mayúsculas y minúsculas elegidas."
+
+msgid "Crash fixes and more reliable reading plans and searches."
+msgstr "Correcciones de cierres inesperados y mejoras en los planes de lectura y las búsquedas."
+
+msgid "Moving the pointer below a paragraph with hidden text or widgets no longer closes the app."
+msgstr "Mover el puntero debajo de un párrafo con texto o elementos ocultos ya no cierra la aplicación."
+
+msgid "Write about today attaches the readings shown on Today, even after a plan's schedule has lapsed."
+msgstr "Escribir sobre hoy adjunta las lecturas que aparecen en Hoy, incluso cuando ha vencido el calendario del plan."
+
+msgid "Simultaneous searches safely share the same search index while it is being built."
+msgstr "Las búsquedas simultáneas comparten el mismo índice de búsqueda sin conflictos mientras se construye."
+
+msgid "Original-language searches respect wildcard exclusions such as -lov*."
+msgstr "Las búsquedas en los idiomas originales respetan las exclusiones con comodines, como -lov*."
+
+msgid "Match case checks whole words and phrases, including prefix searches."
+msgstr "Distinguir mayúsculas comprueba palabras y frases completas, incluidas las búsquedas por prefijo."
+
+msgid "Restore rejects damaged reading-plan progress before it can break the plan view."
+msgstr "La restauración rechaza los datos de progreso dañados antes de que puedan causar errores en la vista del plan."
+
+msgid "UnifrakturMaguntia, a blackletter font for Latin script, is available in Appearance."
+msgstr "UnifrakturMaguntia, una fuente gótica para el alfabeto latino, está disponible en Apariencia."
+
 msgid "The Creeds, and Scripture in Stone in its sources' words."
 msgstr "Los Credos, y La Escritura en piedra con las palabras de sus fuentes."
 
@@ -3878,13 +4025,13 @@ msgstr "%(page)d de %(total)d"
 
 #: genealogy_strings.py:28
 msgid ""
-"Scripture keeps lists of names, and readers skip them. They are not\n"
-"filler. They carry the story from one age to the next, and the writers\n"
+"Scripture keeps lists of names, and readers skip them. They are not "
+"filler. They carry the story from one age to the next, and the writers "
 "placed them with care.\n"
 "\n"
-"Every line below is drawn from the text and cites it. Where a\n"
-"genealogy leaves generations out, the gap is drawn as a gap. Where two\n"
-"writers disagree, both are shown and neither is quietly corrected."
+"Every line below is drawn from the text and cites it. Where a genealogy "
+"leaves generations out, the gap is drawn as a gap. Where two writers "
+"disagree, both are shown and neither is quietly corrected."
 msgstr ""
 "La Escritura guarda listas de nombres, y el lector las salta. No son "
 "relleno. Llevan la historia de una época a la siguiente, y los autores las "
@@ -6711,6 +6858,62 @@ msgstr "El Nuevo Testamento en 90 días"
 msgid "Read through the entire New Testament in three months."
 msgstr "Lea el Nuevo Testamento entero en tres meses."
 
+#: reading_plans.py
+msgid "Life of Christ in 40 Days"
+msgstr "La vida de Cristo en 40 días"
+
+#: reading_plans.py
+msgid "The four Gospels in the order of the events, every account of each, after Robertson’s harmony."
+msgstr "Los cuatro Evangelios en el orden de los hechos, todos los relatos de cada uno, según la armonía de Robertson."
+
+#: window.py
+msgid "The Harmony, § {n}"
+msgstr "La armonía, § {n}"
+
+#: harmony_view.py
+msgid "Eusebius, Canon X"
+msgstr "Eusebio, canon X"
+
+#: harmony_view.py
+msgid "Take it away"
+msgstr "Quitarlo"
+
+#: harmony_view.py
+msgid "Set it beside"
+msgstr "Ponerlo al lado"
+
+#: harmony_view.py
+msgid "Show this event beside the accounts"
+msgstr "Mostrar este hecho junto a los relatos"
+
+#: harmony_view.py
+msgid "Similar event, not the same · § {n}"
+msgstr "Suceso semejante, no el mismo · § {n}"
+
+#: plan_session.py
+msgid "Day {n} · {passage} · {i} of {total}"
+msgstr "Día {n} · {passage} · {i} de {total}"
+
+#: plan_session.py
+msgid "Continue: {passage} →"
+msgstr "Continuar: {passage} →"
+
+#: plan_session.py
+msgid "Next: {passage} →"
+msgstr "Siguiente: {passage} →"
+
+#: plan_session.py
+msgid "Mark day {n} read"
+msgstr "Marcar el día {n} como leído"
+
+#: plan_session.py
+msgid "Back to ordinary reading"
+msgstr "Volver a la lectura normal"
+
+#: window.py
+msgid "Day {n} marked read"
+msgstr "Día {n} marcado como leído"
+
 #: reading_plans.py:144
 msgid "Psalms in 30 Days"
 msgstr "Los Salmos en 30 días"
@@ -8426,6 +8629,10 @@ msgstr "Capitular en color"
 #: window.py:3790
 msgid "Preview words on hover"
 msgstr "Vista previa de las palabras al pasar el puntero"
+
+#: preferences.py:129
+msgid "Mark verses the creeds quote"
+msgstr "Marcar los versículos que citan los credos"
 
 #: window.py:3795 window.py:3802
 msgid "Evening paper (follows Night Light)"
@@ -11020,3 +11227,228 @@ msgstr "Un asa de tinaja estampada con el sello real LMLK y el nombre de una ciu
 
 msgid "The small wheel-made lamp of the New Testament age."
 msgstr "La pequeña lámpara hecha a torno de la época del Nuevo Testamento."
+
+#: bible_family.py
+msgid "1611 — the King James Version: the Bishops’ Bible revised, drawing on Tyndale, Geneva and Rheims."
+msgstr "1611 — la King James Version: la Bishops’ Bible revisada, apoyándose en Tyndale, la Geneva y la Rheims."
+
+#: bible_family.py
+msgid "For 270 years the KJV is the English Bible of Protestant use; Catholics read the Douay–Rheims, from 1752 in Challoner’s revision."
+msgstr "Durante 270 años la KJV es la Biblia inglesa de uso protestante; los católicos leen la Douay–Rheims, desde 1752 en la revisión de Challoner."
+
+#: bible_family.py
+msgid "1881–85 — the Revised Version: the KJV revised against an older Greek text."
+msgstr "1881–85 — la Revised Version: la KJV revisada según un texto griego más antiguo."
+
+#: bible_family.py
+msgid "1952 — the RSV renders Isaiah 7:14 “young woman”; a North Carolina pastor burns the page."
+msgstr "1952 — la RSV traduce Isaías 7:14 «mujer joven»; un pastor de Carolina del Norte quema la página."
+
+#: bible_family.py
+msgid "1978 — the NIV: a fresh translation, not a revision."
+msgstr "1978 — la NIV: una traducción nueva, no una revisión."
+
+#: bible_family.py
+msgid "2001 — the ESV: the RSV revised back toward word for word."
+msgstr "2001 — la ESV: la RSV revisada para acercarse de nuevo a la traducción palabra por palabra."
+
+#: bible_family.py
+msgid "Revised line"
+msgstr "Línea Revised"
+
+#: catena_reader.py
+msgid "(as quoted by {name}, AD {year})"
+msgstr "(citado por {name}, {year} d. C.)"
+
+#: catena_reader.py
+msgid "(as quoted by {name})"
+msgstr "(citado por {name})"
+
+#: content.py
+msgid "The four Gospels side by side"
+msgstr "Los cuatro Evangelios lado a lado"
+
+#: harmony.py
+msgid "The Harmony of the Gospels"
+msgstr "La armonía de los Evangelios"
+
+#: harmony.py
+msgid "Said elsewhere"
+msgstr "Dicho en otro lugar"
+
+#: harmony.py
+msgid "Similar event"
+msgstr "Suceso semejante"
+
+#: harmony.py
+msgid "Only here"
+msgstr "Solo aquí"
+
+#: harmony.py
+msgid "The four Gospels side by side: A. T. Robertson’s harmony (1922), with the canon tables of Eusebius."
+msgstr "Los cuatro Evangelios lado a lado: la armonía de A. T. Robertson (1922), con las tablas de cánones de Eusebio."
+
+#: harmony.py
+#, python-brace-format
+msgid "{n} section"
+msgid_plural "{n} sections"
+msgstr[0] "{n} sección"
+msgstr[1] "{n} secciones"
+
+#: harmony.py
+msgid "Eusebius’s tables end at Mark 16:8."
+msgstr "Las tablas de Eusebio terminan en Marcos 16:8."
+
+#: harmony.py
+msgid "John 7:53–8:11 is missing from many early Greek manuscripts."
+msgstr "Juan 7:53–8:11 falta en muchos manuscritos griegos antiguos."
+
+#: harmony.py
+#, python-brace-format
+msgid "{ref} is not in the Revised Version Robertson printed."
+msgstr "{ref} no está en la Revised Version que imprimió Robertson."
+
+#: harmony.py
+msgid "The INTF tables give one section here the canon “I.IV”, which is not one of Eusebius’s ten; its parallels are in all four Gospels, so it is shown as Canon I."
+msgstr "Las tablas del INTF dan a una sección de aquí el canon «I.IV», que no es ninguno de los diez de Eusebio; sus paralelos están en los cuatro Evangelios, así que se muestra como Canon I."
+
+#: harmony_view.py
+msgid "Previous section"
+msgstr "Sección anterior"
+
+#: harmony_view.py
+msgid "Next section"
+msgstr "Sección siguiente"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "Section {n}, {gospels}: {title}"
+msgstr "Sección {n}, {gospels}: {title}"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "Robertson § {n}"
+msgstr "Robertson § {n}"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "Eusebius {canons}"
+msgstr "Eusebio {canons}"
+
+#: harmony_view.py
+msgid "The rows of Eusebius’s tables that touch this section, each passage beside those he paired with it"
+msgstr "Las filas de las tablas de Eusebio que tocan esta sección, cada pasaje junto a los que él le emparejó"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "Only in {gospel}"
+msgstr "Solo en {gospel}"
+
+#: harmony_view.py
+msgid "Same words in the Greek"
+msgstr "Mismas palabras en el griego"
+
+#: harmony_view.py
+msgid "Measured from the Greek words: these passages share more of them than chance gives"
+msgstr "Medido sobre las palabras griegas: estos pasajes comparten más de las que daría el azar"
+
+#: harmony_view.py
+msgid "Measured from the Greek words: these passages share few of them; they agree in what they teach"
+msgstr "Medido sobre las palabras griegas: estos pasajes comparten pocas; coinciden en lo que enseñan"
+
+#: harmony_view.py
+msgid "Readings"
+msgstr "Lecturas"
+
+#: harmony_view.py
+msgid "Show what the Greek editions read, in the interlinear"
+msgstr "Mostrar lo que leen las ediciones griegas, en el interlineal"
+
+#: harmony_view.py
+msgid "Where the section falls in each Gospel"
+msgstr "Dónde cae la sección en cada Evangelio"
+
+#: harmony_view.py
+msgid "Underlined: a word whose Greek another passage here also uses."
+msgstr "Subrayado: una palabra cuyo griego también usa otro pasaje de aquí."
+
+#: harmony_view.py
+#, python-brace-format
+msgid "{bible} carries no Strong’s numbers, so the words the passages share are not underlined."
+msgstr "{bible} no lleva números Strong, así que las palabras que comparten los pasajes no se subrayan."
+
+#: harmony_view.py
+#, python-brace-format
+msgid "§ {n}"
+msgstr "§ {n}"
+
+#: harmony_view.py
+msgid "Eusebius’s section number in this Gospel"
+msgstr "Número de sección de Eusebio en este Evangelio"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "§ {n}  {title}"
+msgstr "§ {n}  {title}"
+
+#: harmony_view.py
+msgid "Show this section"
+msgstr "Mostrar esta sección"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "{n} told in more than one Gospel"
+msgid_plural "{n} told in more than one Gospel"
+msgstr[0] "{n} narrada en más de un Evangelio"
+msgstr[1] "{n} narradas en más de un Evangelio"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "{n} Eusebian section"
+msgid_plural "{n} Eusebian sections"
+msgstr[0] "{n} sección de Eusebio"
+msgstr[1] "{n} secciones de Eusebio"
+
+#: harmony_view.py
+msgid "Reading the links"
+msgstr "Cómo leer los enlaces"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "Try § {n}: {title}"
+msgstr "Pruebe § {n}: {title}"
+
+#: harmony_view.py
+msgid "Pick a section to begin. Up and Down move between sections; Esc comes back here."
+msgstr "Elija una sección para empezar. Arriba y Abajo pasan de una sección a otra; Esc vuelve aquí."
+
+#: harmony_view.py
+#, python-brace-format
+msgid "Canon X · only in {gospel}"
+msgstr "Canon X · solo en {gospel}"
+
+#: harmony_view.py
+#, python-brace-format
+msgid "Canon {n} · {gospels}"
+msgstr "Canon {n} · {gospels}"
+
+#: window.py
+msgid "Gospel parallels"
+msgstr "Paralelos en los Evangelios"
+
+#: pane_peek.py
+#, python-brace-format
+msgid "§ {n} · Same event"
+msgstr "§ {n} · Mismo suceso"
+
+#: pane_peek.py
+msgid "Open it beside"
+msgstr "Abrirlo al lado"
+
+#: pane_peek.py
+msgid "Open in The Harmony of the Gospels"
+msgstr "Abrir en La armonía de los Evangelios"
+
+#: window.py
+msgid "Gospel parallels — a sign in the margin where the other Gospels tell the same event"
+msgstr "Paralelos en los Evangelios: una señal en el margen donde los otros Evangelios narran el mismo suceso"

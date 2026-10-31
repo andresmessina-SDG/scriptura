@@ -411,18 +411,20 @@ def test_exclusions_rewrite_as_a_positive_query():
     assert sq.exclusions('-"living water"') == '"living water"'
 
 
-def test_an_exclusion_subtracts_from_the_words_verses(backend, monkeypatch):
+@pytest.mark.parametrize('excluded', ['love', 'lov*'])
+def test_an_exclusion_subtracts_from_the_words_verses(
+        backend, monkeypatch, excluded):
     """`strong:G26 -love` is the verses with ἀγάπη that do NOT say love —
     where a reader finds the places the King James says charity instead.
     Handing `-love` to the text backend got it dropped (all the verses
     came back); handing it over whole got none of them."""
     def text(module, query, case, *a, **k):
-        assert query == 'love', f'the exclusion went over as {query!r}'
+        assert query == excluded, f'the exclusion went over as {query!r}'
         return [('Matthew', 24, 12, 'And the love of many')]
 
     monkeypatch.setattr(backend, '_text_backend', text)
     rows, _t = backend.split_truncation(
-        backend.search_backend('AnyBible', 'strong:G26 -love', False))
+        backend.search_backend('AnyBible', f'strong:G26 -{excluded}', False))
     assert [r[:3] for r in rows] == [('John', 15, 12)]
 
 

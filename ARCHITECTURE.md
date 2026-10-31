@@ -21,6 +21,12 @@ a clean GNOME look and feel and an emphasis on quiet, distraction-free reading.
   Lexicon (CC-BY). Downloaded on demand via Module Manager.
 - **Text rendering:** Native `Gtk.TextView` + Pango markup (WebKitGTK was tried
   and reverted — do not suggest switching back)
+- **Bundled fonts:** `main._register_bundled_fonts` loads each shipped TTF/OTF
+  into the default Pango font map before creating the application. Both
+  rendering and Appearance see these fonts without depending on Fontconfig's
+  directory caches, which can retain old parent-folder listings after a
+  Flatpak update. Installed files live in `share/fonts/scriptura-<version>`;
+  source runs use `data/fonts`.
 - **Search:** SQLite FTS5 full-text indexing (per-module, lazy-built;
   shared query grammar across the SWORD and eBible backends — see
   `search_query.py`)
@@ -579,6 +585,18 @@ code or window.py pane sizing.
   module-space behavior. Verse numbers shown are always the module's own
   printed numbering (Vulgate title-verses shift by one). FTS index rows
   store app-space chapter numbers (`_FTS_INDEX_VERSION` 2).
+
+Presentation aligns the two chapter streams in app space (`present_align.project`
+and `coalesce`), while retaining every original line and its
+`sword_bridge.rendered_verse_ref` for printed numbers and captions. Numbered
+prefaces stay separate; a module line covering several app verses groups those
+verses on both sides. Forward mappings fill gaps in reverse tables, but do not
+override an existing reverse-mapped verse. Ctrl+L supplies `focus_app_verse`;
+initial F5 supplies the source pane's rendered key through `focus_verse`.
+Both enter the same projected rows; no source pane or persisted reference moves.
+The known RusSynodal Psalm 114:8/9 data/table disagreement is handled only when
+the module's 9 slot is empty: its 8 line contains both KJV 116:8 and 9. It does
+not infer combined verses from arbitrary missing text in other translations.
 
 ## Historical Commentaries (catena)
 

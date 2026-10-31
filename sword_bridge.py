@@ -69,9 +69,13 @@ _cache = OrderedDict()
 _notes_cache = OrderedDict()
 # Section headings for the same chapters: {verse: [heading_html, ...]}.
 # SWORD moves preverse titles out of the rendered text into entry
-# attributes (see _collect_headings), so they ride the same render pass
+# attributes (see _collect_preverse), so they ride the same render pass
 # and evict in lockstep, exactly like the footnotes above.
 _headings_cache = OrderedDict()
+# Psalm superscriptions and acrostic letters for the same chapters:
+# {verse: [title_osis, ...]}. The same preverse blobs as the headings, kept
+# apart because they are Scripture, not editorial divisions.
+_titles_cache = OrderedDict()
 # Strong's lookup cache — same shape, smaller cap. A typical chapter
 # references 30–50 unique Strong's numbers; 500 covers many chapters of
 # recent activity before evicting.
@@ -79,19 +83,23 @@ _STRONGS_CACHE_CAP = 500
 _strongs_cache = OrderedDict()
 
 
-def _cache_chapter(key, value, notes, headings):
-    """Insert a chapter render + its footnotes + its section headings with
-    LRU eviction (the three caches stay in lockstep). Caller holds _lock."""
+def _cache_chapter(key, value, notes, headings, titles):
+    """Insert a chapter render + its footnotes, section headings and psalm
+    titles with LRU eviction (the caches stay in lockstep). Caller holds
+    _lock."""
     _cache[key] = value
     _cache.move_to_end(key)
     _notes_cache[key] = notes
     _notes_cache.move_to_end(key)
     _headings_cache[key] = headings
     _headings_cache.move_to_end(key)
+    _titles_cache[key] = titles
+    _titles_cache.move_to_end(key)
     if len(_cache) > _CHAPTER_CACHE_CAP:
         _cache.popitem(last=False)
         _notes_cache.popitem(last=False)
         _headings_cache.popitem(last=False)
+        _titles_cache.popitem(last=False)
 
 
 def _cache_strong(strong_num, value):
@@ -102,7 +110,7 @@ def _cache_strong(strong_num, value):
         _strongs_cache.popitem(last=False)
 
 _indexing_threads = {} # To keep track of indexing processes per module
-# Separate lock for _indexing_threads dict ops only — never held during join().
+# Separate lock for registering/starting indexers — never held during join().
 # Keeping it distinct from _lock avoids deadlocks (indexer threads acquire _lock
 # inside load_chapter; if we held _lock here, the indexer couldn't make progress).
 _indexing_lock = threading.Lock()
@@ -282,7 +290,7 @@ def mgr():
             _mgr.setGlobalOption('Footnotes', 'On')
             # Section headings ride the same mechanism: without this the
             # heading filters drop preverse titles instead of moving them
-            # into the entry attributes _collect_headings reads back.
+            # into the entry attributes _collect_preverse reads back.
             _mgr.setGlobalOption('Headings', 'On')
         return _mgr
 
@@ -294,13 +302,18 @@ def _reset():
         _cache.clear()
         _notes_cache.clear()
         _headings_cache.clear()
+        _titles_cache.clear()
         _marks_sections.clear()
         _strongs_cache.clear()
         _book_maps.clear()
         _line_maps.clear()
         _module_dc.clear()
     with _indexing_lock:
-        _indexing_threads.clear()
+        # Resetting module caches must not forget builders still using their
+        # temporary databases, or a new search could start a second writer.
+        for name, thread in list(_indexing_threads.items()):
+            if not thread.is_alive():
+                _indexing_threads.pop(name, None)
 
 
 
@@ -692,6 +705,15 @@ def printed_verse(module_name, book, chapter, key):
     return ref[2] if ref is not None else key
 
 
+def rendered_verse_ref(module_name, book, chapter, key):
+    """A rendered line's key → its full reference in the module's numbering.
+
+    Split chapters can continue their internal keys across a chapter seam;
+    captions and presentation must print the actual chapter and verse there.
+    """
+    return _line_ref(module_name, book, chapter, key) or (book, chapter, key)
+
+
 def module_chapter_breaks(module_name, book, chapter):
     """{key: module chapter} for each line where a second module chapter
     begins mid-page — the pane marks the seam there."""
@@ -827,6 +849,7 @@ def load_chapter(module_name, book, chapter):
         results = []
         notes = {}
         headings = {}
+        titles = {}
         if lines is None:
             lines = [(v, book, chapter, v) for v in range(1, verse_max + 1)]
         for v, _m_book, m_ch, m_v in lines:
@@ -841,11 +864,14 @@ def load_chapter(module_name, book, chapter):
             v_notes = _collect_footnotes(mod)
             if v_notes:
                 notes[v] = v_notes
-            v_heads = _collect_headings(mod)
+            v_heads = _collect_preverse(mod, _titles_from_raw)
             if v_heads:
                 headings[v] = v_heads
+            v_titles = _collect_preverse(mod, _scripture_titles_from_raw)
+            if v_titles:
+                titles[v] = v_titles
 
-        _cache_chapter(key, results, notes, headings)
+        _cache_chapter(key, results, notes, headings, titles)
         return results
 
 
@@ -897,12 +923,16 @@ _TITLE_RE = re.compile(r'<title\b([^>]*)>(.*?)</title>', re.S | re.I)
 # canonical Psalm superscriptions are part of the text, not editorial
 # section divisions. Both would read as headings if rendered as one.
 _SKIP_TITLE_TYPES = frozenset({'parallel', 'psalm', 'acrostic', 'sub'})
+# The skipped titles that are Scripture: a psalm's superscription and the
+# Hebrew letter over each stanza of Psalm 119. _scripture_titles_from_raw
+# reads these for the pane to set as text.
+_SCRIPTURE_TITLE_TYPES = frozenset({'psalm', 'acrostic'})
 
 
 def _titles_from_raw(raw):
     """Section heading strings from a preverse attribute blob.
 
-    Split out from _collect_headings so the parsing rules — which title
+    Split out from _collect_preverse so the parsing rules — which title
     types count as pericope headings, entity unescaping, whitespace
     collapse — are testable without a live SWORD module."""
     out = []
@@ -919,8 +949,29 @@ def _titles_from_raw(raw):
     return out
 
 
-def _collect_headings(mod):
-    """Section heading text for the verse just rendered, outermost first.
+def _scripture_titles_from_raw(raw):
+    """Psalm superscriptions and acrostic letters from a preverse blob, as
+    OSIS markup — the supplied-word and Hebrew tags are kept for the pane.
+
+    A title runs on to the next title or the end of the blob: LEB sets the
+    second half of a superscription ("When Nathan the prophet came to him…")
+    as a poetry line after the title, still before verse 1."""
+    out = []
+    matches = list(_TITLE_RE.finditer(raw))
+    for i, m in enumerate(matches):
+        kind = re.search(r'type="([^"]+)"', m.group(1))
+        if not kind or kind.group(1).lower() not in _SCRIPTURE_TITLE_TYPES:
+            continue
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(raw)
+        body = (m.group(2) + raw[m.end():end]).strip()
+        if re.sub(r'<[^>]+>|\s', '', body):
+            out.append(body)
+    return out
+
+
+def _collect_preverse(mod, parse):
+    """What `parse` finds in the preverse titles of the verse just
+    rendered, outermost first.
 
     Must run right after renderText(), like _collect_footnotes: SWORD's
     heading filters move preverse titles OUT of the rendered text and into
@@ -947,10 +998,24 @@ def _collect_headings(mod):
                 pmap = hmap[k2]
                 for k3 in pmap.keys():
                     raw = str(pmap[k3])       # copy out immediately
-                    out.extend(_titles_from_raw(raw))
+                    out.extend(parse(raw))
     except Exception:
         _sword_log.exception('heading attribute read failed')
     return out
+
+
+def chapter_titles(module_name, book, chapter):
+    """{verse: [title_osis, ...]} for a chapter — the psalm superscriptions
+    and acrostic letters that precede each verse. Same render pass and cache
+    behaviour as chapter_headings."""
+    key = (module_name, book, chapter)
+    with _lock:
+        if key in _titles_cache:
+            _titles_cache.move_to_end(key)
+            return _titles_cache[key]
+    load_chapter(module_name, book, chapter)
+    with _lock:
+        return _titles_cache.get(key, {})
 
 
 def chapter_headings(module_name, book, chapter):
@@ -1237,6 +1302,9 @@ def display_name(name):
     import creeds
     if creeds.is_creeds_module(name):
         return creeds.display_name(name)
+    import harmony
+    if harmony.is_harmony_module(name):
+        return harmony.display_name(name)
     return native_name(name) or DISPLAY_NAMES.get(name, name)
 
 
@@ -3250,31 +3318,34 @@ def search_module(module_name, query, on_indexing_start=None,
     idx_path = _get_index_path(module_name)
 
     if not _index_is_valid(idx_path, module_name):
-        # Atomic check-and-spawn: two concurrent searches must not both build
-        # the same index. Hold _indexing_lock only for the dict op, never
-        # during the long-running join below.
-        started_here = False
+        # Publish only a started thread. Otherwise another search can see
+        # is_alive() == False and launch a second writer on the same .tmp.
+        def build():
+            if on_indexing_start:
+                on_indexing_start()
+            _build_module_index(module_name, on_progress=on_indexing_progress)
+
+        thread = None
         with _indexing_lock:
             existing = _indexing_threads.get(module_name)
-            if existing is None or not existing.is_alive():
+            if existing is not None and existing.is_alive():
+                thread = existing
+            elif not _index_is_valid(idx_path, module_name):
+                # A builder may have finished since the check above.
                 thread = threading.Thread(
-                    target=_build_module_index,
-                    args=(module_name,),
-                    kwargs={'on_progress': on_indexing_progress},
+                    target=build,
                     daemon=True
                 )
                 _indexing_threads[module_name] = thread
-                started_here = True
-            else:
-                thread = existing
-
-        if started_here:
-            if on_indexing_start:
-                on_indexing_start()
-            thread.start()
+                try:
+                    thread.start()
+                except Exception:
+                    _indexing_threads.pop(module_name, None)
+                    raise
 
         # Wait for the indexing thread to complete — lock released during join.
-        thread.join()
+        if thread is not None:
+            thread.join()
 
         with _indexing_lock:
             # Only remove if it's still our thread (a later search may have
@@ -3290,14 +3361,22 @@ def search_module(module_name, query, on_indexing_start=None,
 
     # Perform search. chapter/verse are stored as FTS5 text columns, so CAST
     # them back to int — the navigation chain (chapter_count/clamp) does
-    # integer comparisons. Fetch one past the cap to detect truncation.
+    # integer comparisons. Count only matches in the requested case toward
+    # the cap: unicode61's case-insensitive matches can crowd those out.
     try:
         conn = sqlite3.connect(idx_path)
         try:
-            rows = conn.execute(
+            cursor = conn.execute(
                 'SELECT book, CAST(chapter AS INTEGER), CAST(verse AS INTEGER), '
-                'content FROM verses WHERE verses MATCH ? ORDER BY rowid '
-                'LIMIT ?', (match, MAX_SEARCH_RESULTS + 1)).fetchall()
+                'content FROM verses WHERE verses MATCH ? ORDER BY rowid',
+                (match,))
+            rows = []
+            for row in cursor:
+                if case_sensitive and not search_query.case_matches(query, row[3]):
+                    continue
+                rows.append(row)
+                if len(rows) > MAX_SEARCH_RESULTS:
+                    break
         finally:
             conn.close()
     except Exception:
@@ -3306,12 +3385,6 @@ def search_module(module_name, query, on_indexing_start=None,
 
     truncated = len(rows) > MAX_SEARCH_RESULTS
     formatted = [(b, c, v, content) for (b, c, v, content) in rows[:MAX_SEARCH_RESULTS]]
-    # FTS5 (unicode61) folds case at index time, so MATCH is case-insensitive.
-    # For a case-sensitive match we post-filter the stored verbatim content
-    # for the original-case terms (shared with the eBible backend).
-    if case_sensitive:
-        formatted = [r for r in formatted
-                     if search_query.case_matches(query, r[3])]
     if truncated:
         # Sentinel row the panel detects and replaces with its own translated
         # message, so this backend stays English-free.

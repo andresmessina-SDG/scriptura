@@ -123,6 +123,10 @@ class PeekController:
         # sits in (the genealogy fragment disambiguates on it).
         self._dict_max_body = 320
         self._peek_verse = 0
+        # Where the reading view was scrolled when the peek opened. A peek
+        # points at a place in the text; once the text moves it points at
+        # the wrong words, so a scroll closes it (on_reading_scroll).
+        self._scroll_at = 0.0
 
     # ── Proxies to pane-owned state ──────────────────────────────────────────
 
@@ -176,6 +180,8 @@ class PeekController:
         if n_press != 2:
             return
         bx, by = self._view.window_to_buffer_coords(Gtk.TextWindowType.WIDGET, int(x), int(y))
+        if self._view.harmony_sign_at(bx, by) is not None:
+            return      # a harmony sign in the margin, not a word
         found, it = self._view.get_iter_at_location(bx, by)
         if not found:
             return
@@ -196,10 +202,12 @@ class PeekController:
         word = self._buffer.get_text(word_start, word_end, False).strip()
         if word and word.replace("'", '').replace('’', '').isalpha():
             offset = word_start.get_offset()
-            # Small defer off the click dispatch; the popover shows invisibly
-            # and is revealed only once stable, so we don't need to wait out
-            # the relayout cascade here.
-            GLib.timeout_add(100, self.show_dict_popup, word, offset)
+            # Off the click dispatch, but at once: the popover shows invisibly
+            # and is revealed only once stable, so there is no relayout to
+            # wait out here. A 100 ms wait was a fifth of the time to the peek.
+            # A timeout, not an idle: an idle waits behind every frame and
+            # layout pass, and never ran while the panels slid open.
+            GLib.timeout_add(0, self.show_dict_popup, word, offset)
 
     def attach_to_label(self, label):
         """Wire the double-click dictionary peek onto a card label (commentary
@@ -281,12 +289,24 @@ class PeekController:
         window's Escape handler uses this (the peek is non-focusable, so it
         never sees the key itself)."""
         self._hover_gloss_range = None  # a dismissed gloss can re-dwell
+        # Set even when the peek is not showing: the self-heal may have it
+        # down for a moment with a reshow queued, and the reshow must not
+        # bring it back.
+        self._dict_user_closed = True
         pop = self.pop
         if pop is not None and pop.get_visible():
-            self._dict_user_closed = True
             pop.popdown()
             return True
         return False
+
+    def on_reading_scroll(self, value):
+        """Close a peek on the reading view once the text scrolls under it.
+        A pixel or two of layout settle is not a scroll."""
+        pop = self.pop
+        if (pop is not None and pop.get_visible()
+                and pop.get_parent() is self._view
+                and abs(value - self._scroll_at) > 2):
+            self.dismiss()
 
     def _peek_room(self, anchor_widget, rect, pop):
         """Point `pop` at whichever side of `rect` has more room, and return
@@ -464,6 +484,10 @@ class PeekController:
             if pop.get_parent() is not None:
                 pop.unparent()
             pop.set_parent(anchor_widget)
+        # A header still sliding would carry the page, and the peek with
+        # it, off the word: let it land first.
+        self._pane._chrome.finish()
+        self._scroll_at = self._view.get_vadjustment().get_value()
         return pop
 
     def show_footnote_peek(self, key, it):
@@ -506,6 +530,7 @@ class PeekController:
         dark = Adw.StyleManager.get_default().get_dark()
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         content.set_size_request(280, -1)
+        content.add_css_class('peek-reading-box')
         cap_text = (_('Cross-references ({letter}) · verse {v}')
                     if ftype == 'crossReference'
                     else _('Footnote ({letter}) · verse {v}')).format(
@@ -516,6 +541,7 @@ class PeekController:
         content.append(cap)
         lbl = Gtk.Label(xalign=0, wrap=True)
         lbl.add_css_class('fnote-body')
+        lbl.add_css_class('peek-reading')
         lbl.set_max_width_chars(40)
         try:
             lbl.set_markup(_html_to_markup(body, dark))
@@ -534,6 +560,88 @@ class PeekController:
         a11y.labelled_by(lbl, cap)
         a11y.announce(self._view, f'{cap_text}. {lbl.get_text()}')
 
+        self._dict_retries = 0
+        self._dict_open_at = GLib.get_monotonic_time()
+        self._dict_user_closed = False
+        pop.set_opacity(0.0)
+        pop.popup()
+        self._peek_fade_in(pop)
+
+    def show_harmony_peek(self, sids, bx, by):
+        """The Gospel harmony's parallels for the sections whose sign was
+        clicked (two can begin on one line), in the shared peek: each other
+        Gospel's passage in the accent (it opens in the other pane), and one
+        clay line that opens the harmony page at the first section."""
+        import harmony
+        sections = [s for s in map(harmony.section, sids) if s is not None]
+        if not sections:
+            return
+        wx, wy = self._view.buffer_to_window_coords(
+            Gtk.TextWindowType.WIDGET, int(bx), int(by))
+        rect = Gdk.Rectangle()
+        rect.x, rect.y, rect.width, rect.height = wx - 6, wy - 10, 12, 20
+        pop = self._ensure_peek_popover(self._view)
+        tasks.cancel(f'peek:{id(self._pane)}')
+        avail = self._peek_room(self._view, rect, pop)
+        pop.set_pointing_to(rect)
+
+        here = harmony.gospel_of(self._book)
+        root = self._view.get_root()
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        content.set_size_request(280, -1)
+        body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        captions = []
+        for section in sections:
+            sid = section['id']
+            cap_text = _('§ {n} · Same event').format(n=sid)
+            captions.append(f"{cap_text}. {section['heading']}")
+            cap = Gtk.Label(label=cap_text, xalign=0)
+            cap.add_css_class('caption')
+            cap.add_css_class('dim-label')
+            if len(captions) > 1:
+                cap.set_margin_top(10)      # a second section, set apart
+            body.append(cap)
+            title = Gtk.Label(label=section['heading'], xalign=0, wrap=True)
+            title.set_max_width_chars(40)
+            title.add_css_class('peek-harmony-title')
+            body.append(title)
+            for code, spans in harmony.gospel_spans(sid).items():
+                if harmony.GOSPELS.index(code) == here:
+                    continue
+                for span in spans:
+                    btn = Gtk.Button(label=harmony.ref_text(span))
+                    btn.add_css_class('flat')
+                    btn.add_css_class('peek-harmony-ref')
+                    btn.set_halign(Gtk.Align.START)
+                    btn.set_tooltip_text(_('Open it beside'))
+                    c, v = span['start']
+
+                    def go(_b, b=harmony.BOOK[code], c=c, v=v):
+                        pop.popdown()
+                        opener = getattr(root, '_open_beside', None)
+                        if opener is not None:
+                            opener(self._pane, b, c, v)
+                    btn.connect('clicked', go)
+                    body.append(btn)
+        content.append(self._peek_scroller(body, avail, chrome=70))
+        door = Gtk.Button(label=_('Open in The Harmony of the Gospels'))
+        door.add_css_class('flat')
+        door.add_css_class('peek-harmony-door')
+        door.set_halign(Gtk.Align.START)
+
+        def open_page(_b, sid=sections[0]['id']):
+            pop.popdown()
+            opener = getattr(root, '_on_open_harmony', None)
+            if opener is not None:
+                opener(self._pane, sid)
+        door.connect('clicked', open_page)
+        content.append(door)
+        for m in ('top', 'bottom', 'start', 'end'):
+            getattr(content, f'set_margin_{m}')(14)
+        pop.set_child(content)
+        a11y.set_role(content, Gtk.AccessibleRole.NOTE)
+        set_accessible_label(content, captions[0])
+        a11y.announce(self._view, ' '.join(captions))
         self._dict_retries = 0
         self._dict_open_at = GLib.get_monotonic_time()
         self._dict_user_closed = False
@@ -1001,6 +1109,7 @@ def note_peek_content(verse, note, tags, on_edit, scroll=None):
     """
     content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
     content.set_size_request(280, -1)
+    content.add_css_class('peek-reading-box')
     cap_text = _('Your note · verse {v}').format(v=verse)
     cap = Gtk.Label(label=cap_text, xalign=0)
     cap.add_css_class('caption')
@@ -1008,12 +1117,15 @@ def note_peek_content(verse, note, tags, on_edit, scroll=None):
     content.append(cap)
     body = Gtk.Label(label=note, xalign=0, wrap=True)
     body.add_css_class('fnote-body')
+    body.add_css_class('peek-reading')
     body.set_max_width_chars(40)
     body.set_selectable(False)
     content.append(scroll(body) if scroll else body)
     if tags:
         tag_lbl = Gtk.Label(label='  '.join(f'#{t}' for t in tags), xalign=0,
                             wrap=True)
+        # Or a long list of tags sets the peek's width, not the note.
+        tag_lbl.set_max_width_chars(40)
         tag_lbl.add_css_class('caption')
         tag_lbl.add_css_class('dim-label')
         content.append(tag_lbl)

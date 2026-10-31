@@ -29,6 +29,7 @@ plain terms (see `plain_terms`) as a post-filter over the matched text.
 """
 
 import re
+import unicodedata
 from typing import NamedTuple
 
 # A token is: an optional leading '-', then either a "quoted phrase" or a bare
@@ -132,6 +133,26 @@ def case_groups(query):
     return groups
 
 
+def _case_tokens(text):
+    """Case-preserving words with the index's Unicode token boundaries.
+
+    unicode61 uses letters, numbers and private-use characters as tokens;
+    combining marks belong to their preceding word, not a new word.
+    """
+    words, word = [], []
+    for char in unicodedata.normalize('NFC', text):
+        category = unicodedata.category(char)
+        if (category[0] in ('L', 'N') or category == 'Co'
+                or (category[0] == 'M' and word)):
+            word.append(char)
+        elif word:
+            words.append(''.join(word))
+            word = []
+    if word:
+        words.append(''.join(word))
+    return words
+
+
 def case_matches(query, text):
     """Whether `text` carries the query's positive terms in the case they were
     typed — the post-filter both backends run for "Match case".
@@ -141,11 +162,26 @@ def case_matches(query, text):
     threw away 959 of the KJV's 1,217 hits, every one of them cased exactly as
     asked. A query with no usable positive term filters nothing.
     """
-    groups = case_groups(query)
-    if not groups:
+    positives, _neg, connectors = _parse(split_filters(query)[1])
+    if not positives:
         return True
-    body = text or ''
-    return any(all(word in body for word in group) for group in groups)
+    # Match token sequences, keeping phrases adjacent and allowing only the
+    # final token of a prefix term to match the beginning of a word.
+    body = _case_tokens(text or '')
+    groups = []
+    for i, (fts, plain) in enumerate(positives):
+        words = _case_tokens(plain)
+        prefix = fts.endswith('*')
+        matched = bool(words) and any(
+            body[start:start + len(words) - 1] == words[:-1]
+            and (body[start + len(words) - 1].startswith(words[-1])
+                 if prefix else body[start + len(words) - 1] == words[-1])
+            for start in range(len(body) - len(words) + 1))
+        if not groups or connectors[i] == 'OR':
+            groups.append(matched)
+        else:
+            groups[-1] = groups[-1] and matched
+    return any(groups)
 
 
 def plain_terms(query):
@@ -212,8 +248,9 @@ def exclusions(query):
     104 verses rather than 2.
     """
     _pos, negatives, _conn = _parse(query or '')
-    terms = [plain if ' ' not in plain else f'"{plain}"'
-             for _fts, plain in negatives]
+    terms = [(plain if ' ' not in plain and plain != 'OR' else f'"{plain}"')
+             + ('*' if fts.endswith('*') else '')
+             for fts, plain in negatives]
     return ' OR '.join(terms)
 
 

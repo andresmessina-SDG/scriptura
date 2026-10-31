@@ -69,10 +69,12 @@ class FakeWindow:
 
     def __init__(self, *, pointer=False, focus_in_cluster=False,
                  focus_visible=False, bloomed=True):
+        self.harmony_toggle = FakeToggle()
         self.xref_toggle = FakeToggle()
         self.fnote_toggle = FakeToggle()
         self.lex_toggle = FakeToggle()
-        self._tools_revealers = [FakeRevealer(self.xref_toggle),
+        self._tools_revealers = [FakeRevealer(self.harmony_toggle),
+                                 FakeRevealer(self.xref_toggle),
                                  FakeRevealer(self.fnote_toggle)]
         self._tools_hover = FakeController(pointer)
         self._tools_focus = FakeController(focus_in_cluster)
@@ -167,10 +169,10 @@ def test_arrows_walk_the_cluster_in_visual_order():
 
 def test_arrows_stop_at_the_ends_rather_than_wrapping():
     win = FakeWindow()
-    win._focus = win.xref_toggle                  # already leftmost
+    win._focus = win.harmony_toggle               # already leftmost
     win._on_tools_key(None, Gdk.KEY_Left, 0, NO_MODS)
-    assert win.xref_toggle.focused is True
-    assert win.fnote_toggle.focused is False
+    assert win.harmony_toggle.focused is True
+    assert win.xref_toggle.focused is False
 
 
 def test_an_insensitive_footnote_toggle_is_not_a_stop():
@@ -195,7 +197,7 @@ def test_tab_leaves_the_cluster_as_a_whole():
     win = FakeWindow()
     win._focus = win.lex_toggle
     assert win._on_tools_key(None, Gdk.KEY_ISO_Left_Tab, 0, NO_MODS) is False
-    assert win.xref_toggle.focused is True
+    assert win.harmony_toggle.focused is True
 
 
 def test_modified_arrows_are_left_alone():

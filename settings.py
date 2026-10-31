@@ -47,6 +47,12 @@ _defaults: dict[str, Any] = {
     # toggle). On by default — markers only appear where notes exist, and
     # the toggle disables on modules that can't show any.
     'show_footnotes':     True,
+    # The Gospel harmony's fourfold sign in the margin (the header's
+    # reading tools). Off until the reader turns it on.
+    'show_harmony':       False,
+    # The small creeds mark beside a verse whose words a creed uses
+    # (Preferences ▸ Reading Aids). On by default; it is a quiet cue.
+    'show_creed_marks':   True,
     # Publisher section headings ("The Baptism of Jesus"). SWORD hands
     # these over as entry attributes rather than in the verse text, so
     # they were silently dropped until DR4. A reading convention, not a
@@ -136,6 +142,10 @@ _defaults: dict[str, Any] = {
     # and its text: 'en' (the 1662 English) or 'orig' (the Greek or Latin).
     'creeds_tab': 'apostles',
     'creeds_text': 'en',
+    # The harmony: the section last shown, and the lens ('robertson' or
+    # 'eusebius').
+    'harmony_section': '',
+    'harmony_lens': 'robertson',
     # Read the difference: the Bibles installed ('installed', decided
     # 2026-09-25) or every one, the rest offering their install ('all').
     'family_read_rows': 'installed',
@@ -196,23 +206,28 @@ def _load() -> None:
 _SAVE_DEBOUNCE_S: float = 0.5
 _save_timer: threading.Timer | None = None
 _save_lock = threading.Lock()
+_write_lock = threading.Lock()
 
 
 def _save_now() -> None:
     """Synchronous write. Snapshots _cache under the lock to avoid the
     'dictionary changed size during iteration' race if a put() lands
     mid-serialise. Atomic write — see annotations.py for the rationale."""
-    with _save_lock:
-        snapshot = dict(_cache) if _cache is not None else {}
-    try:
-        tmp = _FILE + '.tmp'
-        with open(tmp, 'w', encoding='utf-8') as f:
-            json.dump(snapshot, f, indent=2, ensure_ascii=False)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp, _FILE)
-    except Exception:
-        _log.exception('save failed')
+    # A timer already writing cannot be cancelled by flush(). Serialize the
+    # snapshot and write together, so it cannot overwrite the final save or
+    # keep writing into the same .tmp after flush() has renamed it.
+    with _write_lock:
+        with _save_lock:
+            snapshot = dict(_cache) if _cache is not None else {}
+        try:
+            tmp = _FILE + '.tmp'
+            with open(tmp, 'w', encoding='utf-8') as f:
+                json.dump(snapshot, f, indent=2, ensure_ascii=False)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp, _FILE)
+        except Exception:
+            _log.exception('save failed')
 
 
 def _on_debounce_fire() -> None:
@@ -281,5 +296,6 @@ def put(key: str, value: Any) -> None:
     if _cache is None:
         _load()
     assert _cache is not None
-    _cache[key] = value
+    with _save_lock:
+        _cache[key] = value
     _schedule_save()

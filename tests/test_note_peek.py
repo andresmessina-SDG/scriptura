@@ -101,6 +101,7 @@ def test_a_click_on_the_marked_number_opens_it():
     fake = types.SimpleNamespace(
         _view=types.SimpleNamespace(
             window_to_buffer_coords=lambda _w, x, y: (x, y),
+            harmony_sign_at=lambda x, y: None,
             get_iter_at_location=lambda x, y: (True, buf.get_iter_at_offset(1))),
         _targets_at_iter=Targets()._targets_at_iter,
         _peek=types.SimpleNamespace(
@@ -109,6 +110,7 @@ def test_a_click_on_the_marked_number_opens_it():
         _set_current_verse_indicator=lambda v: None,
         _announce_verse_state=lambda v: None,
         _cursor=types.SimpleNamespace(sync_to=lambda v: None),
+        _keep_click_in_view=lambda it: None,
         _on_word_click=None, _on_verse_select=None, _on_word_study_navigate=None)
     BiblePane._on_left_click(fake, None, 1, 5, 5)
     assert opened == [16]
@@ -128,3 +130,22 @@ def test_a_long_note_leaves_room_for_its_tags_and_edit(display):
     _min, natural, _b, _b2 = box.measure(Gtk.Orientation.VERTICAL, 308)
     # The popover adds its arrow and border outside the content.
     assert natural <= avail - 20
+
+
+def test_many_tags_do_not_widen_the_peek(display):
+    # Fourteen tags on one unbounded line made the peek 660px wide, and the
+    # note's lines ran to 70 characters.
+    box = pane_peek.note_peek_content(
+        16, 'Given.', [f'tag{i}' for i in range(14)], on_edit=lambda: None)
+    tags = [w for w in _all(box) if isinstance(w, Gtk.Label)
+            and w.get_text().startswith('#tag0')]
+    assert tags[0].get_max_width_chars() == 40
+
+
+def _all(w):
+    out = [w]
+    c = w.get_first_child()
+    while c is not None:
+        out += _all(c)
+        c = c.get_next_sibling()
+    return out

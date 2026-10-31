@@ -154,6 +154,69 @@
          Every note is translated: add each line to po/es.po and po/ru.po,
          or tests/test_translations.py fails, then rebuild the site with
          tools/build-site.py so What's new shows it in all three languages. -->
+    <release version="1.9.1" date="2026-10-31">
+      <description>
+        <p>Psalm titles, paragraphs, and clearer small text.</p>
+        <ul>
+          <li>Psalm titles and the Hebrew letters of Psalm 119 now appear above their verses, set as Scripture.</li>
+          <li>They also come with their verses in presentation and in exported passages.</li>
+          <li>Bibles that mark paragraphs now show them, with a small gap between.</li>
+          <li>Verse numbers, section headings and footnote letters now have more contrast, so they are easier to read on every paper.</li>
+          <li>High contrast mode raises it further.</li>
+          <li>Footnotes and your notes open at your reading size.</li>
+          <li>Cross-references grow with larger reading sizes.</li>
+          <li>In single-pane view, following a cross-reference adds a step you can go Back from.</li>
+          <li>Back and Forward return to the verse you were reading.</li>
+        </ul>
+      </description>
+    </release>
+    <release version="1.9.0" date="2026-10-23">
+      <description>
+        <p>The Harmony of the Gospels, and reading plans that walk you through each day.</p>
+        <ul>
+          <li>The Harmony of the Gospels sets the four Gospels side by side, event by event, after A. T. Robertson's harmony.</li>
+          <li>A switch shows the canon tables of Eusebius instead, with the passages he set together.</li>
+          <li>Words whose Greek another account also uses are underlined, in Bibles with Strong's numbers.</li>
+          <li>A band shows where each event falls in each Gospel, with threads to the same and similar events.</li>
+          <li>A similar event can be set beside the accounts to compare them.</li>
+          <li>Gospel parallels can be marked in the reading margin. Click a mark to read the other Gospels.</li>
+          <li>A new reading plan, Life of Christ in 40 Days, reads every account of each event in order.</li>
+          <li>Reading plans can now read part of a chapter.</li>
+          <li>Opening a plan's reading lights the passage and offers the next one when you reach its end.</li>
+          <li>Mark the day read without leaving the text.</li>
+        </ul>
+      </description>
+    </release>
+    <release version="1.8.5" date="2026-10-21">
+      <description>
+        <p>Clearer parallel presentation, new reading fonts, and more reliable saves and downloads.</p>
+        <ul>
+          <li>Parallel presentation places Bible abbreviations at the outer corners and centers verse references above a divider.</li>
+          <li>Presentation keeps equivalent verses together across Bible numbering systems, including when jumping with Ctrl+L.</li>
+          <li>Numbered psalm titles, combined verses and split psalms keep their printed references in presentation.</li>
+          <li>Merriweather is available in Appearance, with italic and variable weights.</li>
+          <li>UnifrakturMaguntia appears in the font list after updating from an earlier release.</li>
+          <li>Closing the app reliably saves the final settings and reading position.</li>
+          <li>A failed eBible download or removal leaves the translation as it was.</li>
+          <li>Psalm 9 in eBible translations numbered like the Synodal or Vulgate no longer includes Psalm 10.</li>
+          <li>Match case searches keep results in the chosen case from being crowded out by other matches.</li>
+        </ul>
+      </description>
+    </release>
+    <release version="1.8.4" date="2026-10-12">
+      <description>
+        <p>Crash fixes and more reliable reading plans and searches.</p>
+        <ul>
+          <li>Moving the pointer below a paragraph with hidden text or widgets no longer closes the app.</li>
+          <li>Write about today attaches the readings shown on Today, even after a plan's schedule has lapsed.</li>
+          <li>Simultaneous searches safely share the same search index while it is being built.</li>
+          <li>Original-language searches respect wildcard exclusions such as -lov*.</li>
+          <li>Match case checks whole words and phrases, including prefix searches.</li>
+          <li>Restore rejects damaged reading-plan progress before it can break the plan view.</li>
+          <li>UnifrakturMaguntia, a blackletter font for Latin script, is available in Appearance.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.8.3" date="2026-09-30">
       <description>
         <p>The Creeds, and Scripture in Stone in its sources' words.</p>

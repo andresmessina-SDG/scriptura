@@ -7,6 +7,7 @@ page break one of the promises it makes: nothing loaded from another site,
 open Bible texts only, and the three languages saying the same things."""
 
 import importlib.util
+import json
 import os
 import re
 import shutil
@@ -75,11 +76,17 @@ def test_whats_new_has_every_release():
     assert versions[0] == __version__
 
 
-@pytest.mark.parametrize('name', ['site.css', 'site.js'])
+@pytest.mark.parametrize('name', ['site.css', 'site.js', 'demos.js', 'xmap.js'])
 def test_assets_are_built_from_site(name):
     with open(os.path.join(_ROOT, 'site', name), encoding='utf-8') as a, \
             open(os.path.join(DOCS, 'assets', name), encoding='utf-8') as b:
         assert a.read() == b.read()
+
+
+@pytest.mark.parametrize('name', ['demos-data.js', 'xmap-data.js'])
+def test_demo_data_is_built_from_site(name):
+    with open(os.path.join(DOCS, 'assets', name), encoding='utf-8') as fh:
+        assert fh.read() == build_site.demo_scripts()[name]
 
 
 def test_version_is_the_apps():
@@ -104,12 +111,21 @@ def test_nothing_loads_from_another_site():
 
 def test_only_open_bibles():
     """Licensed translations stay off the site, in the text and the pane."""
-    # The release notes on What's new name the Bibles the app offers, which is
-    # not showing their text; every page that sets Scripture is checked.
+    # The release notes on What's new name the Bibles the app offers, and the
+    # demos place licensed Bibles on the Line by name, which is not showing
+    # their text; every other file is checked, and every verse the demos show
+    # comes from an open Bible.
     for path, text in _served_text():
-        if os.sep + 'whats-new' + os.sep in path:
+        if (os.sep + 'whats-new' + os.sep in path
+                or os.path.basename(path) == 'demos-data.js'):
             continue
         assert not re.search(r'\b(ESV|NIV|NASB|NBLA|LBLA|NLT|CSB)\b', text), path
+    with open(os.path.join(_ROOT, 'site', 'data', 'demos.json'), encoding='utf-8') as fh:
+        demos = json.load(fh)
+    assert [b['abbr'] for b in demos['diff']['bibles']] == [
+        'YLT', 'LSV', 'ASV', 'ACV', 'KJV', 'Webster', 'BSB', 'BBE']
+    assert all(set(b) == {'abbr', 'name', 'at'} for b in demos['diff']['others'])
+    assert all('t' not in n for n in demos['family']['nodes'])
     assert {spec['left'][1] for spec in build_site.TEXTS.values()} | {
         spec['right'][1] for spec in build_site.TEXTS.values()} == {
         'KJVA', 'BSB', 'SpaRV1909', 'spabes', 'RusOpenBible', 'russyn'}
@@ -122,6 +138,7 @@ def test_languages_say_the_same_things():
         assert set(other) == set(en), lang
         assert set(other['js']) == set(en['js']), lang
         assert set(other['papers']) == set(en['papers']), lang
+        assert set(other['demo']) == set(en['demo']), lang
         for key in ('shots', 'claims', 'credits_html', 'rows', 'teach_rows'):
             assert other[key], (lang, key)
         assert [s['img'] for s in other['shots']] == [s['img'] for s in en['shots']]

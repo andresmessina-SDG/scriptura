@@ -74,6 +74,7 @@ def _setup_gettext():
 _setup_gettext()
 
 import backup  # noqa: E402
+import gtk_utils  # noqa: E402
 import mpris  # noqa: E402
 import search_provider  # noqa: E402
 from styles import load_app_css  # noqa: E402
@@ -385,6 +386,9 @@ class BibleApp(Adw.Application):
         _apply_manual_font_rendering()
         load_app_css()
         self._present_main_or_welcome(app, startup_ref=self._argv_ref)
+        # After a window exists: GTK registers a widget's signals only once
+        # the first widget is made, and the guard hooks one of them.
+        gtk_utils.keep_popover_arrows_on_body()
 
     def _on_open(self, app, files, _n_files, _hint):
         """Fired when invoked with a URI (e.g. `bible:John+3:16`).
@@ -406,6 +410,7 @@ class BibleApp(Adw.Application):
         _apply_manual_font_rendering()
         load_app_css()
         self._present_main_or_welcome(app, startup_ref=ref)
+        gtk_utils.keep_popover_arrows_on_body()
 
     def _present_main_or_welcome(self, app, startup_ref=None):
         import sword_bridge
@@ -508,8 +513,42 @@ def _name_ourselves_to_hosts():
     urllib.request.install_opener(opener)
 
 
+def _register_bundled_fonts():
+    """Load our font files before GTK builds the window and its font list.
+
+    Flatpak gives directories a zero mtime. A cached /app/share/fonts can
+    retain the previous release's subdirectory list even when the new font
+    directory carries a version. Registering the files directly with Pango
+    bypasses both that parent cache and stale scans of the files themselves.
+    """
+    from pathlib import Path
+    gi.require_version('PangoCairo', '1.0')
+    from gi.repository import PangoCairo
+    from _version import __version__
+
+    here = Path(__file__).resolve().parent
+    fonts = here / 'data' / 'fonts'
+    if not fonts.is_dir():
+        fonts = here.parent / 'fonts' / f'scriptura-{__version__}'
+    font_map = PangoCairo.FontMap.get_default()
+    register = getattr(font_map, 'add_font_file', None)
+    log = logging.getLogger('scriptura.fonts')
+    if register is None:
+        log.warning('Loading bundled fonts directly requires Pango 1.56 or newer')
+        return
+    for path in sorted(fonts.glob('*')):
+        if path.suffix.lower() not in {'.ttf', '.otf'}:
+            continue
+        try:
+            if not register(str(path)):
+                log.warning('Could not load bundled font %s', path.name)
+        except GLib.Error as error:
+            log.warning('Could not load bundled font %s: %s', path.name, error)
+
+
 def main():
     _name_ourselves_to_hosts()
+    _register_bundled_fonts()
     app = BibleApp(unique=True)
     app.connect('startup', _on_startup)
     _listen_for_session_end(app)

@@ -70,6 +70,7 @@ SCENARIOS: dict[str, dict] = {
     'today': {'settings': {'open_to_today': True}},
     'search': {},
     'peek': {},
+    'lexicon_split': {},
     'window_churn': {},
     'backup': {},
     'present': {},
@@ -369,6 +370,8 @@ def driver(scenario: str) -> int:
         zoo += [m for m in readable if content.type_key(m) == 'family']
         # The Creeds: a pane document whose verse chips drive the other pane.
         zoo += [m for m in readable if content.type_key(m) == 'creeds']
+        # The harmony: a pane document that reads the Bible beside it.
+        zoo += [m for m in readable if content.type_key(m) == 'harmony']
         notes.append({'zoo': zoo})
         for m in zoo:
             @step(500)
@@ -746,6 +749,47 @@ def driver(scenario: str) -> int:
         @step(800)
         def end(win):
             win.pane1.dismiss_dict_peek()
+
+    def lexicon_split(win):
+        """Exercise the two-pane lexicon path from the October crash reports.
+
+        Hover every pixel row, including paragraph gaps with hidden notes;
+        change the layout while both panes have asynchronous word lookups.
+        """
+        @step(800)
+        def open_both(win):
+            win._btn_split.set_active(True)
+            win.lex_toggle.set_active(True)
+            for pane in (win.pane1, win.pane2):
+                pane._apply_module_change(bible_pool('KJVA')[0])
+                pane.set_show_footnotes(False)
+                pane.set_show_headings(False)
+            win._go_to('John', 3, 16)
+
+        for i in range(12):
+            @step(250)
+            def lookup(win, i=i):
+                for pane in (win.pane1, win.pane2):
+                    win._on_word_click(pane, ('G26', 'G3056', 'H430')[i % 3])
+                    pane.set_reading_width((360, 520, 700)[i % 3])
+                    pane.set_show_footnotes(i % 3 == 1)
+                    pane.set_show_headings(i % 3 == 2)
+
+            @step(100)
+            def hover(win):
+                for pane in (win.pane1, win.pane2):
+                    view = pane._view
+                    for y in range(view.get_height()):
+                        for x in (5, view.get_width() // 2,
+                                  max(0, view.get_width() - 5)):
+                            pane._on_view_motion(None, x, y)
+
+            @step(200)
+            def navigate(win, i=i):
+                win._go_to('John', 1 + i % 4, 1)
+                if i % 2:
+                    for pane in (win.pane1, win.pane2):
+                        pane._hide_lexicon()
 
     def window_churn(win):
         for i in range(12):
@@ -1354,6 +1398,7 @@ def driver(scenario: str) -> int:
     scenarios = {
         'nav_storm': nav_storm, 'module_zoo': module_zoo, 'annotation_storm': annotation_storm,
         'editor': editor, 'today': today, 'search': search, 'peek': peek,
+        'lexicon_split': lexicon_split,
         'window_churn': window_churn, 'backup': backup_, 'present': present, 'plans': plans,
         'appearance': appearance, 'settings_junk_a': settings_junk, 'settings_junk_b': settings_junk,
         'settings_junk_c': settings_junk, 'store_junk': store_junk, 'modules': modules,

@@ -14,9 +14,10 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Gdk, GLib
 
-from pane import _html_to_markup
+from pane import _html_to_markup, scripture_title_markup
 import present_paging
 import present_align
+import sword_bridge
 from i18n import book_label
 
 
@@ -53,6 +54,22 @@ class PresentView(Gtk.Box):
         self._eyebrow.set_wrap(True)
         self._eyebrow.set_justify(Gtk.Justification.CENTER)
 
+        self._parallel_header = Gtk.CenterBox()
+        self._parallel_header.add_css_class('present-parallel-header')
+        self._parallel_header.set_visible(False)
+        self._version_a = Gtk.Label(xalign=0)
+        self._version_b = Gtk.Label(xalign=1)
+        for label in (self._version_a, self._version_b):
+            label.add_css_class('present-version')
+        self._parallel_ref = Gtk.Label()
+        self._parallel_ref.add_css_class('present-reference')
+        self._parallel_ref.set_wrap(True)
+        self._parallel_ref.set_justify(Gtk.Justification.CENTER)
+        self._parallel_header.set_start_widget(self._version_a)
+        self._parallel_header.set_center_widget(self._parallel_ref)
+        self._parallel_header.set_end_widget(self._version_b)
+        self.append(self._parallel_header)
+
         self._text = Gtk.Label()
         self._text.add_css_class('present-text')
         self._text.set_wrap(True)
@@ -60,12 +77,12 @@ class PresentView(Gtk.Box):
         self._text.set_use_markup(True)
         self._text.set_selectable(False)
 
-        # Parallel (bilingual) surface: two verse-locked columns flanking a
-        # dimmed verse-number spine. Kept in the same column and toggled by
-        # visibility with _text, so the fit/measure engine measures whichever is
+        # Parallel surface: two verse-locked columns. Toggled by visibility
+        # with _text, so the fit/measure engine measures whichever is
         # showing (a hidden widget contributes 0 to the size request).
         self._grid = Gtk.Grid()
-        self._grid.set_column_spacing(22)
+        self._grid.set_column_homogeneous(True)
+        self._grid.set_column_spacing(56)
         self._grid.set_row_spacing(14)
         self._grid.set_hexpand(True)
         self._grid.set_visible(False)
@@ -90,15 +107,36 @@ class PresentView(Gtk.Box):
         self._scroller.set_child(clamp)
         self._scroller.set_vexpand(True)
         self._scroller.set_hexpand(True)
-        self.append(self._scroller)
+        body = Gtk.Overlay()
+        body.set_child(self._scroller)
+        body.set_vexpand(True)
+        self._parallel_divider = Gtk.Separator(
+            orientation=Gtk.Orientation.VERTICAL)
+        self._parallel_divider.add_css_class('present-divider')
+        self._parallel_divider.set_halign(Gtk.Align.CENTER)
+        self._parallel_divider.set_can_target(False)
+        self._parallel_divider.set_visible(False)
+        body.add_overlay(self._parallel_divider)
+        self.append(body)
 
         self._book = None          # canonical English book, or None (placeholder)
         self._chapter = 0
         self._translation = ''
+        self._abbreviation = ''
         self._verses = []          # [(verse_num, source_html), …]
         self._verses_b = []        # secondary pane's verses (parallel mode)
         self._translation_b = ''
+        self._abbreviation_b = ''
         self._rows = []            # aligned [(verse, html_a|None, html_b|None)]
+        self._parts = {}
+        self._parts_b = {}
+        self._refs = {}
+        self._refs_b = {}
+        self._titles = {}          # {verse: [title_osis]}: psalm superscriptions
+        self._titles_b = {}
+        self._app_aliases = {}
+        self._primary_projection = None
+        self._secondary_projection = None
         self._has_secondary = False  # a second translation is loaded
         self._bilingual = False    # user toggle; effective = has_secondary & this
         self._weights = []         # per-item text length, for pagination
@@ -115,7 +153,7 @@ class PresentView(Gtk.Box):
         self._ink = ''
         self._family = ''
         self._reflow_pending = None
-        self._alloc_key = (0, 0)
+        self._alloc_key = (0, 0, 0)
         self._viewport_hint = 0
 
     def set_cross_handler(self, on_cross):
@@ -217,12 +255,16 @@ class PresentView(Gtk.Box):
     # ── Chapter loading ─────────────────────────────────────────────────────
     def load_chapter(self, book, chapter, translation, verses,
                      land='first', show_numbers=None, focus_verse=None,
-                     secondary=None):
+                     secondary=None, abbreviation=None,
+                     secondary_abbreviation=None, module=None,
+                     secondary_module=None, focus_app_verse=None):
         """Show `verses` (a [(verse, source_html), …] list) for one chapter.
         `land` decides which page to open on — 'first' (default) or 'last',
         used when rolling backward into the previous chapter. `focus_verse`,
-        when given, wins over `land`: open on the page holding that verse, so
+        when given, is a primary module's rendered key and wins over `land`, so
         F5 presents from where the reader is rather than the chapter top.
+        `focus_app_verse` is the app-space reference supplied by Ctrl+L; it
+        takes precedence over a source key and resolves combined verse rows.
 
         `secondary`, when given, is `(translation_b, verses_b)` — a second
         pane's chapter. It's verse-aligned with the primary so parallel mode can
@@ -232,21 +274,37 @@ class PresentView(Gtk.Box):
         self._book = book
         self._chapter = chapter
         self._translation = translation
+        self._abbreviation = abbreviation or translation
         # Drop verses with no visible text (critical-text modules omit some,
         # e.g. Mark 9:44) so verse-at-a-time never lands on a blank slide.
-        self._verses = [(v, h) for v, h in verses
-                        if re.sub(r'<[^>]+>', '', str(h)).strip()]
+        primary, self._refs = self._project(module, book, chapter, verses)
+        self._primary_projection = primary
+        self._titles = (sword_bridge.chapter_titles(module, book, chapter)
+                        if module else {})
+        self._titles_b = (sword_bridge.chapter_titles(secondary_module, book,
+                                                      chapter)
+                          if secondary is not None and secondary_module else {})
         if secondary is not None:
             self._translation_b, verses_b = secondary
-            self._verses_b = [(v, h) for v, h in verses_b
-                              if re.sub(r'<[^>]+>', '', str(h)).strip()]
-            self._rows = present_align.align(self._verses, self._verses_b)
-            self._has_secondary = bool(self._verses_b)
+            projected, self._refs_b = self._project(
+                secondary_module, book, chapter, verses_b)
+            self._secondary_projection = projected
+            self._has_secondary = bool(projected.verses)
         else:
             self._translation_b = ''
             self._verses_b = []
             self._rows = []
+            self._parts_b = {}
+            self._refs_b = {}
             self._has_secondary = False
+            self._secondary_projection = None
+        self._sync_projection()
+        if focus_app_verse is not None:
+            focus_verse = focus_app_verse
+        elif focus_verse is not None:
+            focus_verse = self._primary_source_to_app.get(focus_verse, focus_verse)
+        self._abbreviation_b = secondary_abbreviation or self._translation_b
+        self._sync_parallel_layout()
         self._recompute_weights()
         self._pages = []
         self._stepper = present_paging.Stepper()
@@ -265,19 +323,77 @@ class PresentView(Gtk.Box):
             self._stepper.end()
         self._render()
 
+    @staticmethod
+    def _project(module, book, chapter, verses):
+        visible = [(v, str(h)) for v, h in verses
+                   if re.sub(r'<[^>]+>', '', str(h)).strip()]
+        if module is None:
+            projection = present_align.project(visible, lambda v: v, lambda v: v)
+            refs = {v: (book, chapter, v) for v, _h in visible}
+        else:
+            projection = present_align.project(
+                visible,
+                lambda v: sword_bridge.map_verse_to_app(module, book, chapter, v),
+                lambda v: sword_bridge.map_target_verse(module, book, chapter, v),
+                app_verses=(range(1, sword_bridge.verse_count(book, chapter) + 1)
+                            if sword_bridge.mapped_chapter(module, book, chapter)
+                            else None))
+            # This module's printed Ps 114:8 contains both KJV 116:8 and 9.
+            # Its engine table still addresses an empty 114:9. Keep that known
+            # combined line together; do not infer combinations from arbitrary
+            # omissions in other modules (critical texts omit verses too).
+            if (module == 'RusSynodal' and book == 'Psalms' and chapter == 116
+                    and 8 in projection.source_to_app
+                    and any(v == 9 and not re.sub(r'<[^>]+>', '', str(h)).strip()
+                            for v, h in verses)):
+                projection = projection._replace(aliases={
+                    **projection.aliases, 9: projection.source_to_app[8]})
+            refs = {v: sword_bridge.rendered_verse_ref(module, book, chapter, v)
+                    for v, _h in visible}
+        return projection, refs
+
     def _effective_parallel(self):
         """Whether both columns actually show — a second translation is loaded
         AND the presenter hasn't collapsed to one language."""
         return self._has_secondary and self._bilingual
 
+    def _sync_projection(self):
+        if self._primary_projection is None:
+            return
+        if self._effective_parallel():
+            primary, secondary = present_align.coalesce(
+                self._primary_projection, self._secondary_projection)
+            self._verses_b, self._parts_b = secondary.verses, secondary.parts
+            self._rows = present_align.align(primary.verses, secondary.verses)
+        else:
+            primary, = present_align.coalesce(self._primary_projection)
+            if self._secondary_projection is not None:
+                self._verses_b = self._secondary_projection.verses
+                self._parts_b = self._secondary_projection.parts
+        self._verses, self._parts = primary.verses, primary.parts
+        self._primary_source_to_app = primary.source_to_app
+        self._app_aliases = primary.aliases
+
     def _page_items(self):
         """The list the pages slice into: aligned rows in parallel, else the
-        primary verses. Both are indexable with `item[0]` == verse number."""
+        primary verses. Both use app-space verse keys, including a preface at
+        0; printed references are kept separately for each translation."""
         return self._rows if self._effective_parallel() else self._verses
 
     def _clamp_max(self):
         # Two columns need more room than a single reading measure.
         return 1700 if self._effective_parallel() else 1100
+
+    def _sync_parallel_layout(self):
+        parallel = self._effective_parallel()
+        self._parallel_header.set_visible(parallel)
+        self._parallel_divider.set_visible(parallel)
+        self._eyebrow.set_visible(not parallel)
+        self._version_a.set_text(self._abbreviation)
+        self._version_b.set_text(self._abbreviation_b)
+        self._version_a.set_tooltip_text(self._translation)
+        self._version_b.set_tooltip_text(self._translation_b)
+        self._clamp.set_maximum_size(self._clamp_max())
 
     def _recompute_weights(self):
         """Per-item pagination weight. In parallel the row is as tall as its
@@ -307,6 +423,7 @@ class PresentView(Gtk.Box):
         pages index the current item list, so map the verse number to its index
         first."""
         items = self._page_items()
+        verse = self._app_aliases.get(verse, verse)
         vi = next((i for i, item in enumerate(items) if item[0] == verse), None)
         if vi is None:
             return False
@@ -325,7 +442,17 @@ class PresentView(Gtk.Box):
         self._verses_b = []
         self._translation_b = ''
         self._rows = []
+        self._parts = {}
+        self._parts_b = {}
+        self._refs = {}
+        self._refs_b = {}
+        self._titles = {}          # {verse: [title_osis]}: psalm superscriptions
+        self._titles_b = {}
+        self._app_aliases = {}
+        self._primary_projection = None
+        self._secondary_projection = None
         self._has_secondary = False
+        self._sync_parallel_layout()
         self._weights = [1]
         self._pages = [(0, 1)]
         self._stepper = present_paging.Stepper()
@@ -454,7 +581,8 @@ class PresentView(Gtk.Box):
         base so a change that frees up room grows back, not just shrinks."""
         self._present_pt = self._mode_base_pt()
         self._apply_font()
-        self._clamp.set_maximum_size(self._clamp_max())
+        self._sync_parallel_layout()
+        self._sync_projection()
         self._recompute_weights()
         self._recompute_capacity()
         if self._verses:
@@ -489,7 +617,9 @@ class PresentView(Gtk.Box):
         Gtk.Box.do_size_allocate(self, width, height, baseline)
         # Re-page only when the allocation actually changes — NOT when the
         # budget drifts from a fit correction, or the two would fight.
-        key = (width, height)
+        # The fixed parallel header changes the body's height without changing
+        # the surface's own allocation. Re-fit against that new viewport too.
+        key = (width, height, self._scroller.get_height())
         if key != self._alloc_key:
             self._alloc_key = key
             if self._reflow_pending is None:
@@ -607,6 +737,7 @@ class PresentView(Gtk.Box):
 
     def _paint_page(self):
         self._eyebrow.set_text(self._eyebrow_text())
+        self._parallel_ref.set_text(self._parallel_reference())
         page = self._current_page()
         if page is None:
             self._text.set_visible(True)
@@ -627,36 +758,45 @@ class PresentView(Gtk.Box):
             row = 0
             for verse, html_a, html_b in self._rows[start:end]:
                 self._grid.attach(
-                    self._cell(html_a, dark, Gtk.Justification.RIGHT, 1.0),
+                    self._cell(html_a, dark, Gtk.Justification.RIGHT, 1.0, verse),
                     0, row, 1, 1)
-                if self._show_numbers and verse:
-                    spine = Gtk.Label(label=str(verse))
-                    spine.add_css_class('present-spine')
-                    spine.set_valign(Gtk.Align.START)
-                    self._grid.attach(spine, 1, row, 1, 1)
                 self._grid.attach(
-                    self._cell(html_b, dark, Gtk.Justification.LEFT, 0.0),
-                    2, row, 1, 1)
+                    self._cell(html_b, dark, Gtk.Justification.LEFT, 0.0, verse,
+                               secondary=True),
+                    1, row, 1, 1)
                 row += 1
             return
         self._text.set_visible(True)
         self._grid.set_visible(False)
         parts = []
         for verse, html in self._verses[start:end]:
-            text = _html_to_markup(html, dark).strip()
+            text = self._verse_markup(verse, html, dark)
             if not text:
                 continue
-            if self._show_numbers and verse:
-                # Small, dimmed, raised verse number — enough to locate a verse
-                # on the slide without competing with the words.
-                parts.append(
-                    f'<span size="55%" rise="7000" fgalpha="42000">'
-                    f'{verse} </span>{text}')
-            else:
-                parts.append(text)
+            parts.append(text)
         self._text.set_markup(self._sized('  '.join(parts)))
 
-    def _cell(self, html, dark, justify, xalign):
+    def _verse_markup(self, verse, html, dark, secondary=False):
+        if html is None:
+            return ''
+        source = self._parts_b if secondary else self._parts
+        refs = self._refs_b if secondary else self._refs
+        titles = self._titles_b if secondary else self._titles
+        # Scripture above the verse with no number of its own: it rides with
+        # the verse, so verse-at-a-time puts it on that verse's slide.
+        parts = [scripture_title_markup(t, dark)
+                 for t in titles.get(verse, ())]
+        for key, raw in source.get(verse, [(verse, html)]):
+            text = _html_to_markup(raw, dark).strip()
+            number = refs.get(key, ('', 0, key))[2]
+            if text and self._show_numbers and number:
+                text = (f'<span size="55%" rise="7000" fgalpha="42000">'
+                        f'{number} </span>{text}')
+            if text:
+                parts.append(text)
+        return '\n'.join(parts)
+
+    def _cell(self, html, dark, justify, xalign, verse, secondary=False):
         lbl = Gtk.Label()
         lbl.add_css_class('present-text')
         lbl.set_wrap(True)
@@ -667,8 +807,8 @@ class PresentView(Gtk.Box):
         lbl.set_halign(Gtk.Align.FILL)
         lbl.set_valign(Gtk.Align.START)
         lbl.set_xalign(xalign)          # block hugs the spine (right) or margin (left)
-        lbl.set_markup(self._sized(_html_to_markup(html, dark).strip()) if html
-                       else '')
+        text = self._verse_markup(verse, html, dark, secondary)
+        lbl.set_markup(self._sized(text))
         return lbl
 
     def _clear_grid(self):
@@ -678,15 +818,57 @@ class PresentView(Gtk.Box):
             self._grid.remove(child)
             child = nxt
 
+    def _parallel_reference(self):
+        if not self._book:
+            return ''
+        a = self._page_references(self._parts, self._refs)
+        b = self._page_references(self._parts_b, self._refs_b)
+        # A shared reference is printed once; differing numbering is printed in
+        # column order rather than attaching one translation's numbers to both.
+        left = self._reference_text(a)
+        right = self._reference_text(b)
+        return '   ·   '.join(dict.fromkeys(r for r in (left, right) if r))
+
+    def _page_references(self, parts, refs):
+        page = self._current_page()
+        if page is None:
+            return []
+        return [refs[key] for item in self._page_items()[page[0]:page[1]]
+                for key, _html in parts.get(item[0], [])]
+
+    @staticmethod
+    def _verse_ranges(verses):
+        if not verses:
+            return ''
+        # A missing verse must stay a gap rather than become part of a range.
+        ranges = []
+        first = last = verses[0]
+        for verse in verses[1:]:
+            if verse == last + 1:
+                last = verse
+            else:
+                ranges.append(str(first) if first == last else f'{first}–{last}')
+                first = last = verse
+        ranges.append(str(first) if first == last else f'{first}–{last}')
+        return ', '.join(ranges)
+
+    def _reference_text(self, refs, include_verses=True):
+        groups = {}
+        for book, chapter, verse in refs:
+            groups.setdefault((book, chapter), []).append(verse)
+        return '; '.join(
+            f'{book_label(book)} {chapter}' +
+            (f':{self._verse_ranges(verses)}' if include_verses else '')
+            for (book, chapter), verses in groups.items())
+
     def _eyebrow_text(self):
         if not self._book:
             return self._translation or ''
-        ref = f'{book_label(self._book)} {self._chapter}'
-        items = self._page_items()
-        if self._verse_at_a_time and self._pages and items:
-            start, _end = self._pages[min(self._stepper.index,
-                                          len(self._pages) - 1)]
-            ref = f'{book_label(self._book)} {self._chapter}:{items[start][0]}'
+        ref = self._reference_text(
+            self._page_references(self._parts, self._refs),
+            include_verses=self._verse_at_a_time)
+        if not ref:
+            ref = f'{book_label(self._book)} {self._chapter}'
         parts = [ref]
         if self._translation:
             parts.append(self._translation)

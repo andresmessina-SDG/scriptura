@@ -171,7 +171,7 @@ class NavigationController:
         if not self._today_suppress:
             self._dismiss_today(after_load=True)
         if record:
-            self._push_nav_back(self._current_loc)
+            self._push_nav_back(self._here())
             self._nav_fwd.clear()
             self._update_nav_btns()
 
@@ -201,6 +201,25 @@ class NavigationController:
         else:
             self.pane1.load_reference(book, chapter)
             self.pane2.load_reference(book, chapter)
+
+    def _here(self):
+        """(book, chapter, verse) for the history: the window's place and
+        the verse pane 1 is on, so Back returns to it, not the chapter top.
+
+        Only while pane 1 shows the window's place: a pane locked elsewhere
+        would lend a verse from another chapter. The pane counts in its
+        module's numbering; history is in the app's (the Synodal psalter
+        numbers Psalm 51:1 as 50:3)."""
+        book, chapter = self._current_loc
+        pane = self._win.pane1
+        if (pane._sync_btn.get_active()
+                or (pane.book, pane.chapter) != (book, chapter)):
+            return (book, chapter, None)
+        verse = pane.reading_verse()
+        if verse is not None:
+            verse = sword_bridge.map_verse_to_app(pane.module, book, chapter,
+                                                  verse)
+        return (book, chapter, verse)
 
     def _push_nav_back(self, loc):
         self._nav_back.append(loc)
@@ -557,18 +576,18 @@ class NavigationController:
     def _on_nav_back(self, _btn):
         if not self._nav_back:
             return
-        self._nav_fwd.append(self._current_loc)
-        book, chapter = self._nav_back.pop()
+        self._nav_fwd.append(self._here())
+        book, chapter, verse = self._nav_back.pop()
         self._update_nav_btns()
-        self._go_to(book, chapter, record=False)
+        self._go_to(book, chapter, verse, record=False)
 
     def _on_nav_fwd(self, _btn):
         if not self._nav_fwd:
             return
-        self._push_nav_back(self._current_loc)
-        book, chapter = self._nav_fwd.pop()
+        self._push_nav_back(self._here())
+        book, chapter, verse = self._nav_fwd.pop()
         self._update_nav_btns()
-        self._go_to(book, chapter, record=False)
+        self._go_to(book, chapter, verse, record=False)
 
     def _update_nav_btns(self):
         self._back_btn.set_sensitive(bool(self._nav_back))

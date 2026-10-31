@@ -7,6 +7,9 @@ exercises the real FTS5 index build, the shared query grammar, ORDER BY
 canonical, the int CAST, case-sensitive post-filtering, and the on-disk
 index file — everything the new code path owns."""
 
+from concurrent.futures import ThreadPoolExecutor
+import threading
+
 import pytest
 
 import sword_bridge as sb
@@ -90,6 +93,31 @@ def test_case_sensitive(fts_module):
     assert _books(sb.search_module(fts_module, 'God', case_sensitive=True))
 
 
+def test_case_sensitive_does_not_accept_a_substring(fts_module, monkeypatch):
+    monkeypatch.setitem(_VERSES, ('Genesis', 1), [
+        (1, 'He saw the people'), (2, 'And he saw the people')])
+    assert _books(sb.search_module(fts_module, 'he', case_sensitive=True)) == [
+        ('Genesis', 1, 2)]
+
+
+@pytest.mark.parametrize('n_matches', [1, 3, 4])
+def test_case_sensitive_cap_counts_only_matches_in_requested_case(
+        fts_module, monkeypatch, n_matches):
+    monkeypatch.setattr(sb, 'MAX_SEARCH_RESULTS', 3)
+    monkeypatch.setitem(_VERSES, ('Genesis', 1),
+                        [(v, 'the') for v in range(1, 6)])
+    monkeypatch.setitem(_VERSES, ('John', 3),
+                        [(v, 'The') for v in range(1, n_matches + 1)])
+    expected = [('John', 3, v, 'The')
+                for v in range(1, min(n_matches, 3) + 1)]
+    if n_matches > 3:
+        expected.append(('', 0, 0, ''))
+    assert sb.search_module(fts_module, 'The', case_sensitive=True) == expected
+    # Ordinary searches still stop at the cap and report truncation.
+    assert sb.search_module(fts_module, 'The') == [
+        ('Genesis', 1, v, 'the') for v in range(1, 4)] + [('', 0, 0, '')]
+
+
 def test_empty_query(fts_module):
     assert sb.search_module(fts_module, '') == []
     assert sb.search_module(fts_module, '   ') == []
@@ -115,6 +143,72 @@ def test_indexing_callbacks_fire_on_build(fts_module):
     assert events[0] == 'start'
     assert events[-1] == 'done'
     assert ('progress', 'Genesis') in events
+
+
+@pytest.mark.parametrize('reset_caches', [False, True])
+def test_concurrent_searches_share_one_builder(
+        fts_module, monkeypatch, reset_caches):
+    announced = threading.Event()
+    release = threading.Event()
+    second_joining = threading.Event()
+    second_ident = []
+    builds = []
+    original_build = sb._build_module_index
+    original_join = threading.Thread.join
+
+    def build(*args, **kwargs):
+        builds.append(args[0])
+        original_build(*args, **kwargs)
+
+    def on_start():
+        announced.set()
+        assert release.wait(5)
+
+    def join(thread, *args, **kwargs):
+        if second_ident == [threading.get_ident()]:
+            second_joining.set()
+        return original_join(thread, *args, **kwargs)
+
+    def second_search():
+        second_ident.append(threading.get_ident())
+        return sb.search_module(fts_module, 'God')
+
+    monkeypatch.setattr(sb, '_build_module_index', build)
+    monkeypatch.setattr(threading.Thread, 'join', join)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first = pool.submit(sb.search_module, fts_module, 'God', on_start)
+        try:
+            assert announced.wait(5)
+            if reset_caches:
+                sb._reset()
+            second = pool.submit(second_search)
+            assert second_joining.wait(5)
+        finally:
+            release.set()
+        assert _books(first.result(timeout=5)) == [
+            ('Genesis', 1, 1), ('John', 3, 16), ('John', 3, 17)]
+        assert second.result(timeout=5) == first.result()
+    assert builds == [fts_module]
+    assert sb._index_is_valid(sb._get_index_path(fts_module), fts_module)
+
+
+def test_search_rechecks_index_after_waiting_for_lock(fts_module, monkeypatch):
+    expected = sb.search_module(fts_module, 'God')
+    original_valid = sb._index_is_valid
+    checks = []
+    builds = []
+
+    def valid(*args):
+        checks.append(1)
+        return False if len(checks) == 1 else original_valid(*args)
+
+    def unexpected_build(*args, **kwargs):
+        builds.append(1)
+
+    monkeypatch.setattr(sb, '_index_is_valid', valid)
+    monkeypatch.setattr(sb, '_build_module_index', unexpected_build)
+    assert sb.search_module(fts_module, 'God') == expected
+    assert builds == []
 
 
 # ── The deuterocanon a module carries ────────────────────────────────────────

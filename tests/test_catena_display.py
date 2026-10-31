@@ -1,7 +1,7 @@
-"""Tests for catena_reader's display helpers — the (now pass-through) author
-split, the category display-name lookup, and the sentence-boundary preview
-cut. Suffix/title normalization moved into the pack build (see
-test_catena_build). Pure functions; no widgets are built."""
+"""Tests for catena_reader's display helpers — the author split (named in
+the reader's language), the category display-name lookup, and the
+sentence-boundary preview cut. Suffix/title normalization moved into the
+pack build (see test_catena_build). Pure functions; no widgets are built."""
 
 import catena_reader
 from catena_reader import (_author_label, _author_parts, _category_name,
@@ -71,3 +71,26 @@ def test_preview_never_doubles_a_source_ellipsis():
     p = _preview(text)
     assert p.endswith('earth …')
     assert not p.endswith('……')
+
+
+def test_an_author_takes_the_name_the_readers_language_gives_him(monkeypatch):
+    monkeypatch.setattr(catena_reader, 'current_language', lambda: 'es')
+    name, suffix = _author_parts({
+        'author': 'Augustine of Hippo',
+        'author_suffix': '(as quoted by Aquinas, AD 1274)'})
+    assert name == 'Agustín de Hipona'
+    # The suffix's template is the catalogue's; the name inside is the table's.
+    assert 'Tomás de Aquino' in suffix and '1274' in suffix
+
+
+def test_a_name_the_table_lacks_stays_english(monkeypatch):
+    monkeypatch.setattr(catena_reader, 'current_language', lambda: 'ru')
+    assert _author_parts({'author': 'Nobody of Nowhere'})[0] == 'Nobody of Nowhere'
+
+
+def test_a_pseudonymous_author_is_never_named_as_the_real_one():
+    """Pseudo-Athanasius's Wikipedia link is Athanasius's own page, so its
+    Wikidata labels name Athanasius. The build drops them."""
+    import catena_bridge
+    for lang in ('es', 'ru'):
+        assert catena_bridge.author_name('Pseudo-Athanasius', lang) == 'Pseudo-Athanasius'

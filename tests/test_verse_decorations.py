@@ -34,6 +34,7 @@ class Pane:
     def __init__(self, commentary=False, lexicon=True):
         self._buffer = Gtk.TextBuffer()
         self._lexicon_enabled = lexicon
+        self._show_creed_marks = True
         self._on_word_click = (lambda *a: None) if lexicon else None
         self.fired = []
 
@@ -56,6 +57,9 @@ class Pane:
     def _insert_creed_marker(self, *a):
         self.fired.append('creed_marker')
 
+    def _apply_harmony_sign(self, *a):
+        self.fired.append('harmony_sign')
+
     def _apply_anno_tags(self, *a, **k):
         self.fired.append('annotations')
 
@@ -75,6 +79,7 @@ def _loaded(pane, commentary=False):
     r.has_artifact = True
     r.has_lineage = True
     r.has_creed = True
+    r.harmony_sid = '72'
     r.cap_index = 0
     r.fn_markers = [(4, '1', 'a')]
     r.vnotes = {'1': ('t', 'body')}
@@ -83,8 +88,8 @@ def _loaded(pane, commentary=False):
 
 
 ORDER = ('dropcap', 'footnotes', 'poetry_lines', 'artifact_marker',
-         'lineage_marker', 'creed_marker', 'vnum', 'annotations',
-         'strong_words')
+         'lineage_marker', 'creed_marker', 'harmony_sign', 'vnum',
+         'annotations', 'strong_words')
 
 
 def test_the_registry_is_the_order_the_loop_applied():
@@ -126,6 +131,13 @@ def test_a_bible_verse_wears_every_mark():
     assert p._buffer.get_tag_table().lookup('vnum_1') is not None
 
 
+def test_the_creeds_switch_takes_off_the_creeds_mark():
+    p = Pane()
+    p._show_creed_marks = False
+    p._decorate_verse(_loaded(p))
+    assert p.fired == [n for n in ORDER if n not in ('vnum', 'creed_marker')]
+
+
 def test_a_commentary_section_wears_only_its_anchor():
     """One block per section, its own `Verse N` header instead of a number,
     and no user annotations — so every mark but the anchor is a mark on the
@@ -143,6 +155,7 @@ def test_every_entry_but_the_anchor_excludes_commentaries():
     r.has_artifact = True
     r.has_lineage = True
     r.has_creed = True
+    r.harmony_sid = '72'
     r.cap_index = 0
     r.fn_markers = [(0, '1', 'a')]
     r.poetry_lines = {0: 1}
