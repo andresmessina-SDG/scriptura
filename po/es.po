@@ -8630,6 +8630,10 @@ msgstr "Capitular en color"
 msgid "Preview words on hover"
 msgstr "Vista previa de las palabras al pasar el puntero"
 
+#: preferences.py:129
+msgid "Mark verses the creeds quote"
+msgstr "Marcar los versículos que citan los credos"
+
 #: window.py:3795 window.py:3802
 msgid "Evening paper (follows Night Light)"
 msgstr "Papel de noche (sigue a la luz nocturna)"

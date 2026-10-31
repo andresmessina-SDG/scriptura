@@ -6,6 +6,9 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+### Added
+- Preferences ▸ Reading Aids ▸ Mark verses the creeds quote: shows or hides the creeds mark beside a verse whose words a creed uses.
+
 ### Fixed
 - A note, footnote or dictionary peek closes when the text scrolls or the chapter changes. A note peek left open across a chapter change saved its note onto the new chapter's verse.
 - Footnote and note peeks widen with the reading size, and a long tags line no longer stretches the note peek.

@@ -34,6 +34,7 @@ class Pane:
     def __init__(self, commentary=False, lexicon=True):
         self._buffer = Gtk.TextBuffer()
         self._lexicon_enabled = lexicon
+        self._show_creed_marks = True
         self._on_word_click = (lambda *a: None) if lexicon else None
         self.fired = []
 
@@ -128,6 +129,13 @@ def test_a_bible_verse_wears_every_mark():
     p._decorate_verse(_loaded(p))
     assert p.fired == [n for n in ORDER if n != 'vnum']
     assert p._buffer.get_tag_table().lookup('vnum_1') is not None
+
+
+def test_the_creeds_switch_takes_off_the_creeds_mark():
+    p = Pane()
+    p._show_creed_marks = False
+    p._decorate_verse(_loaded(p))
+    assert p.fired == [n for n in ORDER if n not in ('vnum', 'creed_marker')]
 
 
 def test_a_commentary_section_wears_only_its_anchor():

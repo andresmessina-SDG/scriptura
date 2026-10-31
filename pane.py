@@ -886,7 +886,8 @@ _VERSE_DECORATIONS = (
     _VerseDecoration(
         'creed_marker',
         lambda p, r: p._insert_creed_marker(r.start_v),
-        lambda p, r: not r.is_commentary and r.has_creed),
+        lambda p, r: (not r.is_commentary and r.has_creed
+                      and p._show_creed_marks)),
     # Where a section of the Gospel harmony begins: the view paints the
     # fourfold sign beside it when the reader has the signs on, so the toggle
     # repaints rather than re-renders.
@@ -1375,6 +1376,7 @@ class BiblePane(Gtk.Box):
         # publisher-supplied structure that SWORD hands over separately from
         # the verse text — so it defaults on, like small caps.
         self._show_headings = bool(settings.get('show_headings'))
+        self._show_creed_marks = bool(settings.get('show_creed_marks'))
         self._mark_current_unit = bool(settings.get('mark_current_unit'))
         # Quiet the rest of the page while reading a unit. Shares the
         # `_cur_unit` tag with the margin rule above, so either, both or
@@ -2939,6 +2941,14 @@ class BiblePane(Gtk.Box):
                 self._buffer.delete_mark(mark)
         self._harmony_signs = []
         self._view.set_harmony_signs(self._harmony_signs)
+
+    def set_show_creed_marks(self, enabled):
+        """Show or hide the creeds marks beside verses. They are buttons
+        in the text, so the chapter is rebuilt."""
+        if self._show_creed_marks == bool(enabled):
+            return
+        self._show_creed_marks = bool(enabled)
+        self._rerender_keeping_place()
 
     def set_show_harmony(self, enabled):
         """Show or hide the harmony's signs. Paint only, like the unit
