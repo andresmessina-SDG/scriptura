@@ -202,10 +202,12 @@ class PeekController:
         word = self._buffer.get_text(word_start, word_end, False).strip()
         if word and word.replace("'", '').replace('’', '').isalpha():
             offset = word_start.get_offset()
-            # Small defer off the click dispatch; the popover shows invisibly
-            # and is revealed only once stable, so we don't need to wait out
-            # the relayout cascade here.
-            GLib.timeout_add(100, self.show_dict_popup, word, offset)
+            # Off the click dispatch, but at once: the popover shows invisibly
+            # and is revealed only once stable, so there is no relayout to
+            # wait out here. A 100 ms wait was a fifth of the time to the peek.
+            # A timeout, not an idle: an idle waits behind every frame and
+            # layout pass, and never ran while the panels slid open.
+            GLib.timeout_add(0, self.show_dict_popup, word, offset)
 
     def attach_to_label(self, label):
         """Wire the double-click dictionary peek onto a card label (commentary

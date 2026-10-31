@@ -6,6 +6,15 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+### Fixed
+- A note, footnote or dictionary peek closes when the text scrolls or the chapter changes. A note peek left open across a chapter change saved its note onto the new chapter's verse.
+- Footnote and note peeks widen with the reading size, and a long tags line no longer stretches the note peek.
+- A popover's arrow stays on the popover near a screen edge.
+- A click on the hover card lands on the text beneath it instead of doing nothing.
+- A word clicked low on the page stays in view when the cross-reference bar and lexicon open below it.
+- The other pane no longer scrolls to a clicked verse it already shows.
+- The dictionary peek opens about 0.1 s sooner.
+
 ## [1.9.1] — 2026-10-31
 
 ### Fixed

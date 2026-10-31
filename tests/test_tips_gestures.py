@@ -122,7 +122,9 @@ EXPECTED_GESTURE_SITES = {
     # Card in the main window too: the convention, nothing to teach.
     'module_manager.py': 1,
     'navigation.py': 1,
-    'pane.py': 14,
+    # The hover card hands a press on it to the text beneath: the reader
+    # clicked the text, so there is nothing new to learn.
+    'pane.py': 15,
     # A card label's double-click look-up, moved out of pane.py with the
     # rest of the peek. Tips already names double-click to look a word up.
     'pane_peek.py': 1,

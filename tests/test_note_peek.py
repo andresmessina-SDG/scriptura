@@ -110,6 +110,7 @@ def test_a_click_on_the_marked_number_opens_it():
         _set_current_verse_indicator=lambda v: None,
         _announce_verse_state=lambda v: None,
         _cursor=types.SimpleNamespace(sync_to=lambda v: None),
+        _keep_click_in_view=lambda it: None,
         _on_word_click=None, _on_verse_select=None, _on_word_study_navigate=None)
     BiblePane._on_left_click(fake, None, 1, 5, 5)
     assert opened == [16]
