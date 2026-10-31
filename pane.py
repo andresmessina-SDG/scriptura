@@ -201,6 +201,19 @@ _NOTE_ANCHOR_RE = re.compile(
     r'<note\s[^>]*?swordFootnote="(\d+)"[^>]*?(?:/>|>\s*</note>)')
 _FN_TOKEN_RE = re.compile(r'\[\[FN_(\d+)\]\]')
 
+# Paragraph breaks come in two shapes. The KJV opens a paragraph with a
+# milestone, `<milestone marker="¶" type="x-p"/>`, before any of the verse's
+# words (all 2,970 of them, measured); the KJV2006 eBible text keeps a bare ¶
+# there instead. Most other modules close a paragraph at the end of its last
+# verse, `<div eID="…" type="x-p"/>` (ASV, BSB, LEB, Platense, Vulgate,
+# Synodal) or `type="paragraph"` (SBLGNT, Synodal LIO), so the NEXT verse
+# opens one. A break inside a verse is already a blank line (_html_to_markup).
+_PARA_OPEN_RE = re.compile(
+    r'^\s*(?:<[^>]+>\s*)*?(?:<milestone\b[^>]*\btype="x-p"[^>]*/>|¶)')
+_PARA_END_RE = re.compile(
+    r'<div\b(?=[^>]*\beID=)(?=[^>]*\btype="(?:x-p|paragraph)")[^>]*/>'
+    r'(?:\s*<[^>]+>)*\s*$')
+
 #: Publisher section headings carry this tag, newlines and all, and are always
 #: rendered — the setting only flips its `invisible`, so showing or hiding them
 #: restyles the chapter instead of rebuilding it. Covers the headings that
@@ -2936,6 +2949,7 @@ class BiblePane(Gtk.Box):
         # section heading of a chapter doesn't stack a blank line on top of
         # the chapter heading's own trailing newline.
         wrote_a_block = False
+        prev_html = ''   # the verse before, to see a paragraph close on it
 
         for start_v, end_v, html in iterable:
             plain = re.sub(r'<[^>]+>', '', str(html)).strip()
@@ -2967,6 +2981,11 @@ class BiblePane(Gtk.Box):
                     self._insert_section_heading(head, wrote_a_block)
                 for title in self._rendered_titles.get(start_v, ()):
                     self._insert_scripture_title(title, dark)
+                if wrote_a_block and (
+                        _PARA_OPEN_RE.match(str(html))
+                        or _PARA_END_RE.search(prev_html)):
+                    self._break_paragraph()
+                prev_html = str(html)
 
             if _renders_inline_title(html):
                 self._rendered_inline_titles = True
@@ -3094,6 +3113,9 @@ class BiblePane(Gtk.Box):
                     fn_markers = []  # fallback text has no marker letters
                     poetry_lines = {}
                     cap_index = None  # the plain fallback carries no cap
+                # A paragraph break inside the verse came through as a blank
+                # line; give it the half-step a break between verses gets.
+                self._halve_blank_lines(text_start_mark)
                 r.cap_index = cap_index
                 r.fn_markers = fn_markers
                 r.vnotes = vnotes
@@ -3643,6 +3665,41 @@ class BiblePane(Gtk.Box):
                                self._buffer.get_iter_at_offset(start),
                                self._buffer.get_end_iter())
 
+    def _break_paragraph(self):
+        """End the running paragraph so the next verse opens a new one,
+        half a line below (the stanza gap). The last verse left its
+        separating space; drop it. A heading or a closed poetry line already
+        ended the line, and then there is nothing to do."""
+        end = self._buffer.get_end_iter()
+        last = end.copy()
+        if last.backward_char() and last.get_char() == ' ':
+            self._buffer.delete(last, end)
+            end = self._buffer.get_end_iter()
+        last = end.copy()
+        if last.backward_char() and last.get_char() == '\n':
+            return
+        self._buffer.insert(end, '\n\n')
+        self._ensure_poetry_tags()
+        end = self._buffer.get_end_iter()
+        blank = end.copy()
+        blank.backward_char()
+        self._buffer.apply_tag(self._poetry_tags[0], blank, end)
+
+    def _halve_blank_lines(self, from_mark):
+        """Give each empty line from `from_mark` to the buffer's end the
+        stanza gap: half a step, at any size or line spacing. The newline
+        stays, so no offset moves."""
+        self._ensure_poetry_tags()
+        it = self._buffer.get_iter_at_mark(from_mark)
+        if not it.starts_line():
+            it.forward_line()
+        while not it.is_end():
+            nxt = it.copy()
+            nxt.forward_line()
+            if it.ends_line() and not nxt.is_end():
+                self._buffer.apply_tag(self._poetry_tags[0], it, nxt)
+            it = nxt
+
     def _insert_scripture_title(self, osis, dark):
         """Set a psalm superscription or Psalm 119 letter above its verse.
 
@@ -4117,7 +4174,9 @@ class BiblePane(Gtk.Box):
         it, the font size, or the flush toggle changes."""
         if self._poetry_tags is None:
             return
-        em = self._font_size * 96.0 / 72.0
+        # Held to the Appearance slider's 8–26pt: a junk stored size reached
+        # here as -1e18 and overflowed the int property (stress settings_junk_c).
+        em = min(max(self._font_size, 8), 26) * 96.0 / 72.0
         hang = round(1.5 * em)
         step = 0 if self._poetry_flush else round(1.5 * em)
         side = self._view.get_left_margin()
