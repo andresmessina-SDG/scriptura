@@ -190,6 +190,46 @@ msgid "Commentary"
 msgstr "Комментарий"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
+msgid "Psalm titles, paragraphs, and clearer small text."
+msgstr "Надписания псалмов, абзацы и более чёткий мелкий текст."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:158
+msgid "Psalm titles and the Hebrew letters of Psalm 119 now appear above their verses, set as Scripture."
+msgstr "Надписания псалмов и еврейские буквы псалма 119 теперь стоят над своими стихами как часть Писания."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
+msgid "They also come with their verses in presentation and in exported passages."
+msgstr "Они также идут вместе со своими стихами в презентации и в экспортированных отрывках."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:160
+msgid "Bibles that mark paragraphs now show them, with a small gap between."
+msgstr "Библии, в которых размечены абзацы, теперь показывают их с небольшим промежутком."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:161
+msgid "Verse numbers, section headings and footnote letters now have more contrast, so they are easier to read on every paper."
+msgstr "Номера стихов, заголовки разделов и буквы сносок стали контрастнее и лучше читаются на любой бумаге."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
+msgid "High contrast mode raises it further."
+msgstr "В режиме высокой контрастности контраст ещё выше."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:163
+msgid "Footnotes and your notes open at your reading size."
+msgstr "Сноски и ваши заметки открываются в размере текста, выбранном для чтения."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
+msgid "Cross-references grow with larger reading sizes."
+msgstr "Параллельные места увеличиваются при крупном размере текста."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
+msgid "In single-pane view, following a cross-reference adds a step you can go Back from."
+msgstr "В режиме одной панели переход по параллельному месту можно отменить кнопкой «Назад»."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
+msgid "Back and Forward return to the verse you were reading."
+msgstr "«Назад» и «Вперёд» возвращают к стиху, который вы читали."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
 msgid "The Harmony of the Gospels, and reading plans that walk you through each day."
 msgstr "Гармония Евангелий и планы чтения, которые ведут вас через каждый день."
 

@@ -151,6 +151,22 @@
          notice most, in plain words and short sentences, with no em-dashes.
          The full record belongs in CHANGELOG.md, not here.
          tests/test_version_sync.py holds every release to this. -->
+    <release version="1.9.1" date="2026-10-31">
+      <description>
+        <p>Psalm titles, paragraphs, and clearer small text.</p>
+        <ul>
+          <li>Psalm titles and the Hebrew letters of Psalm 119 now appear above their verses, set as Scripture.</li>
+          <li>They also come with their verses in presentation and in exported passages.</li>
+          <li>Bibles that mark paragraphs now show them, with a small gap between.</li>
+          <li>Verse numbers, section headings and footnote letters now have more contrast, so they are easier to read on every paper.</li>
+          <li>High contrast mode raises it further.</li>
+          <li>Footnotes and your notes open at your reading size.</li>
+          <li>Cross-references grow with larger reading sizes.</li>
+          <li>In single-pane view, following a cross-reference adds a step you can go Back from.</li>
+          <li>Back and Forward return to the verse you were reading.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.9.0" date="2026-10-23">
       <description>
         <p>The Harmony of the Gospels, and reading plans that walk you through each day.</p>

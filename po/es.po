@@ -192,6 +192,46 @@ msgid "Commentary"
 msgstr "Comentario"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
+msgid "Psalm titles, paragraphs, and clearer small text."
+msgstr "Títulos de los salmos, párrafos y texto pequeño más claro."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:158
+msgid "Psalm titles and the Hebrew letters of Psalm 119 now appear above their verses, set as Scripture."
+msgstr "Los títulos de los salmos y las letras hebreas del Salmo 119 aparecen ahora sobre sus versículos, como parte de la Escritura."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
+msgid "They also come with their verses in presentation and in exported passages."
+msgstr "También acompañan a sus versículos en la presentación y en los pasajes exportados."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:160
+msgid "Bibles that mark paragraphs now show them, with a small gap between."
+msgstr "Las Biblias que marcan párrafos ahora los muestran, con un pequeño espacio entre ellos."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:161
+msgid "Verse numbers, section headings and footnote letters now have more contrast, so they are easier to read on every paper."
+msgstr "Los números de versículo, los títulos de sección y las letras de las notas al pie tienen ahora más contraste y se leen mejor sobre cualquier papel."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
+msgid "High contrast mode raises it further."
+msgstr "El modo de alto contraste lo aumenta aún más."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:163
+msgid "Footnotes and your notes open at your reading size."
+msgstr "Las notas al pie y sus notas se abren al tamaño de lectura que usted eligió."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
+msgid "Cross-references grow with larger reading sizes."
+msgstr "Las referencias cruzadas crecen con los tamaños de lectura grandes."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
+msgid "In single-pane view, following a cross-reference adds a step you can go Back from."
+msgstr "En la vista de un panel, seguir una referencia cruzada añade un paso al que puede volver con Atrás."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
+msgid "Back and Forward return to the verse you were reading."
+msgstr "Atrás y Adelante vuelven al versículo que estaba leyendo."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
 msgid "The Harmony of the Gospels, and reading plans that walk you through each day."
 msgstr "La armonía de los Evangelios, y planes de lectura que lo acompañan día a día."
 
