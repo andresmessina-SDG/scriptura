@@ -2003,6 +2003,7 @@ class BiblePane(Gtk.Box):
 
     def _on_reading_scroll(self, adj):
         self._scroll._on_reading_scroll(adj)
+        self._peek.on_reading_scroll(adj.get_value())
         # Scroll-driven, so it follows the eye rather than the last click.
         # Cheap: a comparison unless the unit actually changed.
         self._update_current_unit()
@@ -2610,6 +2611,9 @@ class BiblePane(Gtk.Box):
             table.remove(tag)
 
     def _fetch_and_render(self):
+        # An open peek points at words this render replaces, and a note
+        # peek's Edit would write to whatever chapter comes next.
+        self._peek.dismiss()
         self._rendered_verses = None
         self._clear_harmony_signs()
         # Only a chapter fetch sets it again; any other render (devotional,

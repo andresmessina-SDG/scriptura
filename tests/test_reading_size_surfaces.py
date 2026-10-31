@@ -29,3 +29,10 @@ def test_peek_body_takes_the_reading_size():
 def test_a_junk_size_is_held_to_the_slider_range():
     assert '.peek-reading { font-size: 26pt; }' in reading_size_css(1e18, 11)
     assert '.peek-reading { font-size: 8pt; }' in reading_size_css(-1e18, 11)
+
+
+def test_peek_width_follows_the_text_and_never_narrows():
+    # At 26pt the 280px peek ran three words to a line.
+    assert '.peek-reading-box { min-width: 280px; }' in reading_size_css(12.5, 11)
+    assert '.peek-reading-box { min-width: 560px; }' in reading_size_css(25, 11)
+    assert '.peek-reading-box { min-width: 280px; }' in reading_size_css(8, 11)

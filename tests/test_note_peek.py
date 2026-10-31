@@ -129,3 +129,22 @@ def test_a_long_note_leaves_room_for_its_tags_and_edit(display):
     _min, natural, _b, _b2 = box.measure(Gtk.Orientation.VERTICAL, 308)
     # The popover adds its arrow and border outside the content.
     assert natural <= avail - 20
+
+
+def test_many_tags_do_not_widen_the_peek(display):
+    # Fourteen tags on one unbounded line made the peek 660px wide, and the
+    # note's lines ran to 70 characters.
+    box = pane_peek.note_peek_content(
+        16, 'Given.', [f'tag{i}' for i in range(14)], on_edit=lambda: None)
+    tags = [w for w in _all(box) if isinstance(w, Gtk.Label)
+            and w.get_text().startswith('#tag0')]
+    assert tags[0].get_max_width_chars() == 40
+
+
+def _all(w):
+    out = [w]
+    c = w.get_first_child()
+    while c is not None:
+        out += _all(c)
+        c = c.get_next_sibling()
+    return out

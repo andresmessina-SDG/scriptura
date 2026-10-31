@@ -123,6 +123,10 @@ class PeekController:
         # sits in (the genealogy fragment disambiguates on it).
         self._dict_max_body = 320
         self._peek_verse = 0
+        # Where the reading view was scrolled when the peek opened. A peek
+        # points at a place in the text; once the text moves it points at
+        # the wrong words, so a scroll closes it (on_reading_scroll).
+        self._scroll_at = 0.0
 
     # ── Proxies to pane-owned state ──────────────────────────────────────────
 
@@ -289,6 +293,15 @@ class PeekController:
             pop.popdown()
             return True
         return False
+
+    def on_reading_scroll(self, value):
+        """Close a peek on the reading view once the text scrolls under it.
+        A pixel or two of layout settle is not a scroll."""
+        pop = self.pop
+        if (pop is not None and pop.get_visible()
+                and pop.get_parent() is self._view
+                and abs(value - self._scroll_at) > 2):
+            self.dismiss()
 
     def _peek_room(self, anchor_widget, rect, pop):
         """Point `pop` at whichever side of `rect` has more room, and return
@@ -466,6 +479,7 @@ class PeekController:
             if pop.get_parent() is not None:
                 pop.unparent()
             pop.set_parent(anchor_widget)
+        self._scroll_at = self._view.get_vadjustment().get_value()
         return pop
 
     def show_footnote_peek(self, key, it):
@@ -508,6 +522,7 @@ class PeekController:
         dark = Adw.StyleManager.get_default().get_dark()
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         content.set_size_request(280, -1)
+        content.add_css_class('peek-reading-box')
         cap_text = (_('Cross-references ({letter}) · verse {v}')
                     if ftype == 'crossReference'
                     else _('Footnote ({letter}) · verse {v}')).format(
@@ -1086,6 +1101,7 @@ def note_peek_content(verse, note, tags, on_edit, scroll=None):
     """
     content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
     content.set_size_request(280, -1)
+    content.add_css_class('peek-reading-box')
     cap_text = _('Your note · verse {v}').format(v=verse)
     cap = Gtk.Label(label=cap_text, xalign=0)
     cap.add_css_class('caption')
@@ -1100,6 +1116,8 @@ def note_peek_content(verse, note, tags, on_edit, scroll=None):
     if tags:
         tag_lbl = Gtk.Label(label='  '.join(f'#{t}' for t in tags), xalign=0,
                             wrap=True)
+        # Or a long list of tags sets the peek's width, not the note.
+        tag_lbl.set_max_width_chars(40)
         tag_lbl.add_css_class('caption')
         tag_lbl.add_css_class('dim-label')
         content.append(tag_lbl)
