@@ -20,6 +20,7 @@ import content
 import annotations
 import motion
 import settings
+import styles
 import tasks
 import module_positions
 import pane_content
@@ -2163,6 +2164,7 @@ class BiblePane(Gtk.Box):
             css += (" textview.bible-view, textview.bible-view text "
                     f"{{ background-color: {surface}; }}")
         self._css_provider.load_from_data(css.encode())
+        styles.set_reading_size(self._font_size)
         # The pill is cast from the same paper and ink. Its own provider,
         # because this one is on the text view and would never reach a
         # sibling in the overlay.
