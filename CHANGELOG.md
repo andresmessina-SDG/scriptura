@@ -14,6 +14,7 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - A word clicked low on the page stays in view when the cross-reference bar and lexicon open below it.
 - The other pane no longer scrolls to a clicked verse it already shows.
 - The dictionary peek opens about 0.1 s sooner.
+- A click that opens a peek no longer brings back the hidden pane header, whose slide moved the peek off its word or closed it.
 
 ## [1.9.1] — 2026-10-31
 

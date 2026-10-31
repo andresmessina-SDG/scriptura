@@ -1412,6 +1412,9 @@ class BiblePane(Gtk.Box):
         # opens below the text cannot cover it (_keep_click_in_view).
         self._keep_mark = None
         self._keep_timer = 0
+        # A tap shows the header once the click has played out
+        # (_on_pane_click).
+        self._tap_reveal_timer = 0
         # The double-click dictionary, footnote and verse peeks (pane_peek.py).
         self._peek = PeekController(self)
         # Poetry-line paragraph tags, created on first poetry render;
@@ -2001,7 +2004,14 @@ class BiblePane(Gtk.Box):
         # A tap in the reading area brings the toolbar back (reading-app
         # convention). Reveal-only, not toggle: a tap should never hide chrome
         # mid-read (e.g. a Strong's-word click) — scrolling down does that.
-        self._reveal_chrome()
+        # Not at once: the header slides the page's top edge, and a peek the
+        # same click opens would ride along with it. So wait until a
+        # double-click can't be coming, and leave the header be if the click
+        # opened a peek.
+        if self._tap_reveal_timer:
+            GLib.source_remove(self._tap_reveal_timer)
+        self._tap_reveal_timer = GLib.timeout_add(
+            self._click_settle_ms(), self._tap_reveal_fire)
         if self._on_click_outside_search:
             self._on_click_outside_search()
 
@@ -2012,6 +2022,19 @@ class BiblePane(Gtk.Box):
         # Cheap: a comparison unless the unit actually changed.
         self._update_current_unit()
         self._check_lit_end()
+
+    def _click_settle_ms(self):
+        """How long a click takes to play out: a double-click's window, or
+        the panels it opens sliding in, whichever is longer."""
+        return max(Gtk.Settings.get_default().get_property(
+            'gtk-double-click-time'), motion.DURATION_STANDARD) + 50
+
+    def _tap_reveal_fire(self):
+        self._tap_reveal_timer = 0
+        pop = self._peek.pop
+        if pop is None or not pop.get_visible():
+            self._reveal_chrome()
+        return GLib.SOURCE_REMOVE
 
     def _set_chrome_revealed(self, reveal):
         self._chrome.set_revealed(reveal)
@@ -5138,9 +5161,8 @@ class BiblePane(Gtk.Box):
         if self._keep_mark is not None and not self._keep_mark.get_deleted():
             self._buffer.delete_mark(self._keep_mark)
         self._keep_mark = self._buffer.create_mark(None, it, True)
-        wait = max(Gtk.Settings.get_default().get_property(
-            'gtk-double-click-time'), motion.DURATION_STANDARD) + 50
-        self._keep_timer = GLib.timeout_add(wait, self._keep_click_fire)
+        self._keep_timer = GLib.timeout_add(
+            self._click_settle_ms(), self._keep_click_fire)
 
     def _keep_click_fire(self):
         self._keep_timer = 0
@@ -5164,9 +5186,18 @@ class BiblePane(Gtk.Box):
         target = min(adj.get_value() + bottom - room,
                      adj.get_upper() - adj.get_page_size())
         self._mark_programmatic_scroll(motion.DURATION_STANDARD + 200)
+        # Step by the change in each frame, not to an absolute value: the
+        # tap's header reveal may slide the page in the same moment, and
+        # its own steps must add to these, not be overwritten.
+        last = {'v': 0.0}
+
+        def frame(value):
+            adj.set_value(adj.get_value() + value - last['v'])
+            last['v'] = value
+
         anim = Adw.TimedAnimation.new(
-            self._view, adj.get_value(), target, motion.DURATION_STANDARD,
-            Adw.PropertyAnimationTarget.new(adj, 'value'))
+            self._view, 0.0, target - adj.get_value(),
+            motion.DURATION_STANDARD, Adw.CallbackAnimationTarget.new(frame))
         anim.set_easing(motion.EASE_MOVE)
         anim.connect('done', lambda _a: self._schedule_anchor_capture())
         anim.play()

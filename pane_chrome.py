@@ -43,6 +43,11 @@ class ChromeController:
         fight it."""
         return self._anim is not None
 
+    def finish(self):
+        """End a running strip animation now, at its end state."""
+        if self._anim is not None:
+            self._anim.skip()
+
     def reset_accum(self):
         self._accum = 0.0
 

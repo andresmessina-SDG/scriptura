@@ -481,6 +481,9 @@ class PeekController:
             if pop.get_parent() is not None:
                 pop.unparent()
             pop.set_parent(anchor_widget)
+        # A header still sliding would carry the page, and the peek with
+        # it, off the word: let it land first.
+        self._pane._chrome.finish()
         self._scroll_at = self._view.get_vadjustment().get_value()
         return pop
 
