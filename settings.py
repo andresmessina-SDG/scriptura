@@ -50,6 +50,9 @@ _defaults: dict[str, Any] = {
     # The Gospel harmony's fourfold sign in the margin (the header's
     # reading tools). Off until the reader turns it on.
     'show_harmony':       False,
+    # The small creeds mark beside a verse whose words a creed uses
+    # (Preferences ▸ Reading Aids). On by default; it is a quiet cue.
+    'show_creed_marks':   True,
     # Publisher section headings ("The Baptism of Jesus"). SWORD hands
     # these over as entry attributes rather than in the verse text, so
     # they were silently dropped until DR4. A reading convention, not a

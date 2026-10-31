@@ -8,7 +8,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 gi.require_version('Gsk', '4.0')
-from gi.repository import Gtk, Adw, GLib, Gdk, Pango
+from gi.repository import Gtk, Adw, GLib, Gdk, Graphene, Pango
 import audio_pill
 import sword_bridge
 import ebible_bridge
@@ -886,7 +886,8 @@ _VERSE_DECORATIONS = (
     _VerseDecoration(
         'creed_marker',
         lambda p, r: p._insert_creed_marker(r.start_v),
-        lambda p, r: not r.is_commentary and r.has_creed),
+        lambda p, r: (not r.is_commentary and r.has_creed
+                      and p._show_creed_marks)),
     # Where a section of the Gospel harmony begins: the view paints the
     # fourfold sign beside it when the reader has the signs on, so the toggle
     # repaints rather than re-renders.
@@ -1375,6 +1376,7 @@ class BiblePane(Gtk.Box):
         # publisher-supplied structure that SWORD hands over separately from
         # the verse text — so it defaults on, like small caps.
         self._show_headings = bool(settings.get('show_headings'))
+        self._show_creed_marks = bool(settings.get('show_creed_marks'))
         self._mark_current_unit = bool(settings.get('mark_current_unit'))
         # Quiet the rest of the page while reading a unit. Shares the
         # `_cur_unit` tag with the margin rule above, so either, both or
@@ -1408,6 +1410,13 @@ class BiblePane(Gtk.Box):
         self._hover_timer = 0
         self._hover_grace_timer = 0
         self._hover_gloss_range = None
+        # The clicked line, held for a moment so the bar and lexicon the click
+        # opens below the text cannot cover it (_keep_click_in_view).
+        self._keep_mark = None
+        self._keep_timer = 0
+        # A tap shows the header once the click has played out
+        # (_on_pane_click).
+        self._tap_reveal_timer = 0
         # The double-click dictionary, footnote and verse peeks (pane_peek.py).
         self._peek = PeekController(self)
         # Poetry-line paragraph tags, created on first poetry render;
@@ -1997,16 +2006,37 @@ class BiblePane(Gtk.Box):
         # A tap in the reading area brings the toolbar back (reading-app
         # convention). Reveal-only, not toggle: a tap should never hide chrome
         # mid-read (e.g. a Strong's-word click) — scrolling down does that.
-        self._reveal_chrome()
+        # Not at once: the header slides the page's top edge, and a peek the
+        # same click opens would ride along with it. So wait until a
+        # double-click can't be coming, and leave the header be if the click
+        # opened a peek.
+        if self._tap_reveal_timer:
+            GLib.source_remove(self._tap_reveal_timer)
+        self._tap_reveal_timer = GLib.timeout_add(
+            self._click_settle_ms(), self._tap_reveal_fire)
         if self._on_click_outside_search:
             self._on_click_outside_search()
 
     def _on_reading_scroll(self, adj):
         self._scroll._on_reading_scroll(adj)
+        self._peek.on_reading_scroll(adj.get_value())
         # Scroll-driven, so it follows the eye rather than the last click.
         # Cheap: a comparison unless the unit actually changed.
         self._update_current_unit()
         self._check_lit_end()
+
+    def _click_settle_ms(self):
+        """How long a click takes to play out: a double-click's window, or
+        the panels it opens sliding in, whichever is longer."""
+        return max(Gtk.Settings.get_default().get_property(
+            'gtk-double-click-time'), motion.DURATION_STANDARD) + 50
+
+    def _tap_reveal_fire(self):
+        self._tap_reveal_timer = 0
+        pop = self._peek.pop
+        if pop is None or not pop.get_visible():
+            self._reveal_chrome()
+        return GLib.SOURCE_REMOVE
 
     def _set_chrome_revealed(self, reveal):
         self._chrome.set_revealed(reveal)
@@ -2610,6 +2640,9 @@ class BiblePane(Gtk.Box):
             table.remove(tag)
 
     def _fetch_and_render(self):
+        # An open peek points at words this render replaces, and a note
+        # peek's Edit would write to whatever chapter comes next.
+        self._peek.dismiss()
         self._rendered_verses = None
         self._clear_harmony_signs()
         # Only a chapter fetch sets it again; any other render (devotional,
@@ -2908,6 +2941,14 @@ class BiblePane(Gtk.Box):
                 self._buffer.delete_mark(mark)
         self._harmony_signs = []
         self._view.set_harmony_signs(self._harmony_signs)
+
+    def set_show_creed_marks(self, enabled):
+        """Show or hide the creeds marks beside verses. They are buttons
+        in the text, so the chapter is rebuilt."""
+        if self._show_creed_marks == bool(enabled):
+            return
+        self._show_creed_marks = bool(enabled)
+        self._rerender_keeping_place()
 
     def set_show_harmony(self, enabled):
         """Show or hide the harmony's signs. Paint only, like the unit
@@ -5035,6 +5076,10 @@ class BiblePane(Gtk.Box):
             # must never replace something the reader asked for.
             return GLib.SOURCE_REMOVE
         start_off, end_off, strong = word
+        lex = self._lex_panel
+        if lex.get_visible() and lex._current_strong == strong:
+            # The lexicon below already shows this word in full.
+            return GLib.SOURCE_REMOVE
 
         def apply(text):
             gloss = _gloss_from_strong_entry(text)
@@ -5104,9 +5149,101 @@ class BiblePane(Gtk.Box):
         mc.connect('enter', lambda *_a: self._hover_cancel_grace())
         mc.connect('leave', lambda *_a: self._hover_arm_grace())
         box.add_controller(mc)
+        # The card has nothing to press, but it covers text the reader may
+        # be reaching for: a press closes it and lands on the text beneath,
+        # or the click did nothing and the card left 0.3 s later.
+        press = Gtk.GestureClick(button=0)
+        press.connect('pressed', self._on_gloss_pressed, box)
+        box.add_controller(press)
 
         self.show_anchored_peek(self._view, rect, box)
         self._hover_gloss_range = (start_off, end_off)
+
+    def _keep_click_in_view(self, it):
+        """Keep the clicked line above what the click opens below the text.
+
+        The cross-reference bar takes 46px and the lexicon 184px off the
+        bottom of the view, a third of it together, and a word clicked low
+        on the page ended up behind them. Checked once both have opened and
+        a double-click has had its time."""
+        if self._keep_timer:
+            GLib.source_remove(self._keep_timer)
+        if self._keep_mark is not None and not self._keep_mark.get_deleted():
+            self._buffer.delete_mark(self._keep_mark)
+        self._keep_mark = self._buffer.create_mark(None, it, True)
+        self._keep_timer = GLib.timeout_add(
+            self._click_settle_ms(), self._keep_click_fire)
+
+    def _keep_click_fire(self):
+        self._keep_timer = 0
+        mark, self._keep_mark = self._keep_mark, None
+        if mark is None or mark.get_deleted():
+            return GLib.SOURCE_REMOVE
+        it = self._buffer.get_iter_at_mark(mark)
+        self._buffer.delete_mark(mark)
+        pop = self._peek.pop
+        if (not self._view.get_mapped()
+                or (pop is not None and pop.get_visible())):
+            # A peek points at this line; moving the text would close it.
+            return GLib.SOURCE_REMOVE
+        loc = self._view.get_iter_location(it)
+        _x, bottom = self._view.buffer_to_window_coords(
+            Gtk.TextWindowType.WIDGET, 0, loc.y + loc.height)
+        room = self._view.get_height() - 12
+        if bottom <= room:
+            return GLib.SOURCE_REMOVE
+        adj = self._view.get_vadjustment()
+        target = min(adj.get_value() + bottom - room,
+                     adj.get_upper() - adj.get_page_size())
+        self._mark_programmatic_scroll(motion.DURATION_STANDARD + 200)
+        # Step by the change in each frame, not to an absolute value: the
+        # tap's header reveal may slide the page in the same moment, and
+        # its own steps must add to these, not be overwritten.
+        last = {'v': 0.0}
+
+        def frame(value):
+            adj.set_value(adj.get_value() + value - last['v'])
+            last['v'] = value
+
+        anim = Adw.TimedAnimation.new(
+            self._view, 0.0, target - adj.get_value(),
+            motion.DURATION_STANDARD, Adw.CallbackAnimationTarget.new(frame))
+        anim.set_easing(motion.EASE_MOVE)
+        anim.connect('done', lambda _a: self._schedule_anchor_capture())
+        anim.play()
+        return GLib.SOURCE_REMOVE
+
+    def _verse_on_screen(self, verse_num):
+        """Whether the verse's first line is wholly in view."""
+        tag = self._buffer.get_tag_table().lookup(f'vnum_{verse_num}')
+        it = self._buffer.get_start_iter()
+        if tag is None or (not it.has_tag(tag)
+                           and not it.forward_to_tag_toggle(tag)):
+            return False
+        loc = self._view.get_iter_location(it)
+        _x, top = self._view.buffer_to_window_coords(
+            Gtk.TextWindowType.WIDGET, 0, loc.y)
+        return 0 <= top and top + loc.height <= self._view.get_height()
+
+    def _gloss_point(self, box, x, y):
+        """A point on the hover card, in the reading view's coordinates."""
+        ok, pt = box.compute_point(self._view, Graphene.Point().init(x, y))
+        return (pt.x, pt.y) if ok else None
+
+    def _on_gloss_pressed(self, gesture, _n_press, x, y, box):
+        at = self._gloss_point(box, x, y)
+        button = gesture.get_current_button()
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+        # Closing the card unmaps it, so its release never comes: the
+        # click is played out whole here.
+        self.dismiss_dict_peek()
+        if at is None:
+            return
+        if button == Gdk.BUTTON_SECONDARY:
+            self._on_right_click(gesture, 1, *at)
+        elif button == Gdk.BUTTON_PRIMARY:
+            self._on_left_click(gesture, 1, *at)
+            self._on_left_release(gesture, 1, *at)
 
     def _on_zoom_scroll(self, controller, _dx, dy):
         """Ctrl+wheel = adjust font size. Without Ctrl, return False so
@@ -5234,6 +5371,7 @@ class BiblePane(Gtk.Box):
             self._announce_verse_state(verse_num)
             # Resume keyboard stepping from wherever the pointer just landed.
             self._cursor.sync_to(verse_num)
+            self._keep_click_in_view(it)
         if targets['note'] and verse_num is not None:
             # The reader's own note, read where it is. Reading it used to
             # take the menu and the editor. No broadcast, as for a footnote:
@@ -5678,7 +5816,13 @@ class BiblePane(Gtk.Box):
         self._set_current_verse_indicator(verse_num)
         self._cursor.sync_to(verse_num)
         tag = self._buffer.get_tag_table().lookup(f'vnum_{verse_num}')
-        if tag:
+        if tag is None:
+            return
+        if self._verse_on_screen(verse_num):
+            # Already in view: mark it where it is. Scrolling to put it
+            # near the top moved this pane on every click in the other.
+            GLib.timeout_add(150, self._flash_verse_deferred, verse_num)
+        else:
             self._scroll_to_verse(verse_num)
 
     def force_navigate(self, book, chapter, verse):

@@ -74,6 +74,7 @@ def _setup_gettext():
 _setup_gettext()
 
 import backup  # noqa: E402
+import gtk_utils  # noqa: E402
 import mpris  # noqa: E402
 import search_provider  # noqa: E402
 from styles import load_app_css  # noqa: E402
@@ -385,6 +386,9 @@ class BibleApp(Adw.Application):
         _apply_manual_font_rendering()
         load_app_css()
         self._present_main_or_welcome(app, startup_ref=self._argv_ref)
+        # After a window exists: GTK registers a widget's signals only once
+        # the first widget is made, and the guard hooks one of them.
+        gtk_utils.keep_popover_arrows_on_body()
 
     def _on_open(self, app, files, _n_files, _hint):
         """Fired when invoked with a URI (e.g. `bible:John+3:16`).
@@ -406,6 +410,7 @@ class BibleApp(Adw.Application):
         _apply_manual_font_rendering()
         load_app_css()
         self._present_main_or_welcome(app, startup_ref=ref)
+        gtk_utils.keep_popover_arrows_on_body()
 
     def _present_main_or_welcome(self, app, startup_ref=None):
         import sword_bridge

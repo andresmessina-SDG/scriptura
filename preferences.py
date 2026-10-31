@@ -126,6 +126,8 @@ def _reading_aids_page(win):
     # without a click.
     aids.add(_switch(_('Preview words on hover'), 'hover_preview',
                      per_pane('set_hover_preview')))
+    aids.add(_switch(_('Mark verses the creeds quote'), 'show_creed_marks',
+                     per_pane('set_show_creed_marks')))
     # Both read the sense-units a module marks with section headings. Plenty
     # of translations mark none (KJV, ASV, the Russian Synodal), and on those
     # the switches are honestly unavailable rather than silently inert — see

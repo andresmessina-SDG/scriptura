@@ -5,8 +5,8 @@ menu's Appearance page (appearance_page.py `_build_type_switches`) and the Readi
 aids page of Preferences (preferences.py `_reading_aids_page`). One rule
 covers both.
 
-Five ship on — section headings, small caps, the coloured drop cap, hover
-preview, spoken readings. Every other toggle ships off, including ones not
+Six ship on — section headings, small caps, the coloured drop cap, hover
+preview, spoken readings, the creeds marks. Every other toggle ships off, including ones not
 written yet: a new switch that defaults on quietly enlarges what a first-time
 reader is handed, which is the decision this test exists to force back into
 the open.
@@ -31,6 +31,9 @@ DEFAULT_ON = {
     'colored_dropcap',
     'hover_preview',
     'show_audio',
+    # The creeds marks were always shown; the switch only lets a reader
+    # turn them off.
+    'show_creed_marks',
 }
 
 
@@ -70,7 +73,7 @@ def test_the_toggle_list_was_actually_found():
 
 
 @pytest.mark.parametrize('key', sorted(_advanced_toggle_keys()))
-def test_only_the_named_five_ship_on(key):
+def test_only_the_named_six_ship_on(key):
     defaults = _defaults()
     assert key in defaults, f'{key} has no default'
     assert bool(defaults[key]) is (key in DEFAULT_ON), (

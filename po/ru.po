@@ -8592,6 +8592,10 @@ msgstr "Цветная буквица"
 msgid "Preview words on hover"
 msgstr "Показывать значение при наведении"
 
+#: preferences.py:129
+msgid "Mark verses the creeds quote"
+msgstr "Отмечать стихи, которые цитируют символы веры"
+
 #: window.py:3795 window.py:3802
 msgid "Evening paper (follows Night Light)"
 msgstr "Вечерняя бумага (следует за ночной подсветкой)"
