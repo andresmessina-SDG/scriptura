@@ -289,9 +289,12 @@ class PeekController:
         window's Escape handler uses this (the peek is non-focusable, so it
         never sees the key itself)."""
         self._hover_gloss_range = None  # a dismissed gloss can re-dwell
+        # Set even when the peek is not showing: the self-heal may have it
+        # down for a moment with a reshow queued, and the reshow must not
+        # bring it back.
+        self._dict_user_closed = True
         pop = self.pop
         if pop is not None and pop.get_visible():
-            self._dict_user_closed = True
             pop.popdown()
             return True
         return False

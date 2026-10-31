@@ -68,3 +68,19 @@ def test_a_new_render_closes_the_peek():
     p = _Pane()
     BiblePane._fetch_and_render(p)
     assert p.closed
+
+
+def test_a_dismiss_between_self_heal_shows_holds():
+    # A relayout can take the peek down and queue a reshow 60 ms later. A
+    # dismiss in that gap finds nothing showing; the reshow must not bring
+    # the peek back.
+    shown = []
+    pop = types.SimpleNamespace(get_visible=lambda: False,
+                                popup=lambda: shown.append(1),
+                                set_opacity=lambda v: None)
+    c = types.SimpleNamespace(pop=pop, _dict_user_closed=False,
+                              _hover_gloss_range=None,
+                              _dict_arm_reveal=lambda p: None)
+    assert PeekController.dismiss(c) is False
+    PeekController._dict_reshow(c, pop)
+    assert not shown

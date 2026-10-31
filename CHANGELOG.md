@@ -13,6 +13,7 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - A note, footnote or dictionary peek closes when the text scrolls or the chapter changes. A note peek left open across a chapter change saved its note onto the new chapter's verse.
 - Footnote and note peeks widen with the reading size, and a long tags line no longer stretches the note peek.
 - A popover's arrow stays on the popover near a screen edge.
+- A dictionary peek closed in its first moments, by Escape, a chapter change or a module change, no longer comes back.
 - A click on the hover card lands on the text beneath it instead of doing nothing.
 - A word clicked low on the page stays in view when the cross-reference bar and lexicon open below it.
 - The other pane no longer scrolls to a clicked verse it already shows.
