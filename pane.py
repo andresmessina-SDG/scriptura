@@ -1,6 +1,7 @@
 import html as _html_mod
 import threading
 import colorsys
+import functools
 import re
 from datetime import date as _date, timedelta
 import gi
@@ -121,6 +122,12 @@ def _toward(start, goal, paper, target):
 
 
 def paper_inks(paper, ink, dark, target=SMALL_TEXT_CONTRAST):
+    muted, link = _paper_inks(paper, ink, dark, target)
+    return {'_ink_muted': muted, '_ink_link': link}
+
+
+@functools.lru_cache(maxsize=64)
+def _paper_inks(paper, ink, dark, target):
     """The muted ink (verse numerals, section headings) and the link blue
     for a paper, each just dark (or light) enough for small text.
 
@@ -141,7 +148,9 @@ def paper_inks(paper, ink, dark, target=SMALL_TEXT_CONTRAST):
     if contrast_ratio(old_grey, paper) >= max(
             target, contrast_ratio(muted, paper)):
         muted = old_grey
-    return {'_ink_muted': muted, '_ink_link': link}
+    # Cached: theme_ink asks this several times a verse while a chapter
+    # renders (0.4 ms a time, over half a second on Psalm 119).
+    return muted, link
 
 
 def auto_reading_ink(paper_hex):
@@ -3090,6 +3099,10 @@ class BiblePane(Gtk.Box):
             # toggle need not re-render. Keeping them in the buffer also keeps
             # _verse_ranges' offsets identical between the two states.
             if not is_commentary:
+                opens = wrote_a_block and (
+                    _PARA_OPEN_RE.match(str(html))
+                    or _PARA_END_RE.search(prev_html))
+                heads_from = self._buffer.get_char_count()
                 if start_v in seams:
                     self._insert_section_heading(
                         f'{book_label(book)} {seams[start_v]}',
@@ -3098,10 +3111,8 @@ class BiblePane(Gtk.Box):
                     self._insert_section_heading(head, wrote_a_block)
                 for title in self._rendered_titles.get(start_v, ()):
                     self._insert_scripture_title(title, dark)
-                if wrote_a_block and (
-                        _PARA_OPEN_RE.match(str(html))
-                        or _PARA_END_RE.search(prev_html)):
-                    self._break_paragraph()
+                if opens:
+                    self._break_paragraph(heads_from)
                 prev_html = str(html)
 
             if _renders_inline_title(html):
@@ -3785,11 +3796,20 @@ class BiblePane(Gtk.Box):
                                self._buffer.get_iter_at_offset(start),
                                self._buffer.get_end_iter())
 
-    def _break_paragraph(self):
+    def _break_paragraph(self, heads_from):
         """End the running paragraph so the next verse opens a new one,
         half a line below (the stanza gap). The last verse left its
         separating space; drop it. A heading or a closed poetry line already
-        ended the line, and then there is nothing to do."""
+        ended the line, and then there is nothing to do — except that a
+        heading the reader has hidden takes its newlines with it, so the
+        first one (at `heads_from`, where the headings began) is kept out of
+        the hidden range: the paragraph still starts a line."""
+        if self._buffer.get_char_count() > heads_from:
+            first = self._buffer.get_iter_at_offset(heads_from)
+            if first.get_char() == '\n':
+                after = first.copy()
+                after.forward_char()
+                self._buffer.remove_tag_by_name(_HEADING_TAG, first, after)
         end = self._buffer.get_end_iter()
         last = end.copy()
         if last.backward_char() and last.get_char() == ' ':

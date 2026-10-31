@@ -204,8 +204,22 @@ class NavigationController:
 
     def _here(self):
         """(book, chapter, verse) for the history: the window's place and
-        the verse pane 1 is on, so Back returns to it, not the chapter top."""
-        return (*self._current_loc, self._win.pane1.reading_verse())
+        the verse pane 1 is on, so Back returns to it, not the chapter top.
+
+        Only while pane 1 shows the window's place: a pane locked elsewhere
+        would lend a verse from another chapter. The pane counts in its
+        module's numbering; history is in the app's (the Synodal psalter
+        numbers Psalm 51:1 as 50:3)."""
+        book, chapter = self._current_loc
+        pane = self._win.pane1
+        if (pane._sync_btn.get_active()
+                or (pane.book, pane.chapter) != (book, chapter)):
+            return (book, chapter, None)
+        verse = pane.reading_verse()
+        if verse is not None:
+            verse = sword_bridge.map_verse_to_app(pane.module, book, chapter,
+                                                  verse)
+        return (book, chapter, verse)
 
     def _push_nav_back(self, loc):
         self._nav_back.append(loc)
