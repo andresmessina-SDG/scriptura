@@ -191,6 +191,50 @@ msgstr "Devocional"
 msgid "Commentary"
 msgstr "Comentario"
 
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
+msgid "Steadier pop-ups, a creeds switch, and fixes for Large Text."
+msgstr "Ventanas emergentes más estables, un interruptor para los credos y arreglos para el texto grande."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:161
+msgid "Footnotes, notes and dictionary entries that pop up now close when the text scrolls or the chapter changes."
+msgstr "Las notas al pie, las notas y las entradas del diccionario que aparecen ahora se cierran cuando el texto se desplaza o cambia el capítulo."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
+msgid "A note left open across a chapter change no longer saves onto the wrong verse."
+msgstr "Una nota que queda abierta al cambiar de capítulo ya no se guarda en el versículo equivocado."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:163
+msgid "Clicking a word no longer brings back the hidden header or moves the pop-up away from the word."
+msgstr "Al hacer clic en una palabra, ya no vuelve la cabecera oculta ni se aparta la ventana emergente de la palabra."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
+msgid "A word clicked low on the page stays in view when the lexicon opens below it."
+msgstr "Si hace clic en una palabra al pie de la página, sigue a la vista cuando el léxico se abre debajo."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
+msgid "A new switch in Preferences shows or hides the creeds mark beside verses."
+msgstr "Un nuevo interruptor en Preferencias muestra u oculta la marca de los credos junto a los versículos."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
+msgid "The creeds icon is redrawn."
+msgstr "El icono de los credos tiene un nuevo dibujo."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:167
+msgid "A search for two Strong's numbers joined by OR now finds the verses with either word."
+msgstr "Una búsqueda de dos números Strong unidos por OR ahora encuentra los versículos con cualquiera de las dos palabras."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:168
+msgid "With Large Text, the charts in the Book of Generations, the Creeds and the Bible Family Tree no longer draw labels over each other."
+msgstr "Con el texto grande, los gráficos de El libro de las generaciones, Los Credos y El árbol genealógico de la Biblia ya no ponen unas etiquetas sobre otras."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:169
+msgid "With animations turned off, the Book of Generations now shows its charts."
+msgstr "Con las animaciones desactivadas, El libro de las generaciones ahora muestra sus gráficos."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:170
+msgid "Pop-up arrows stay attached near the edge of the screen."
+msgstr "Las flechas de las ventanas emergentes siguen unidas a ellas cerca del borde de la pantalla."
+
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
 msgid "Psalm titles, paragraphs, and clearer small text."
 msgstr "Títulos de los salmos, párrafos y texto pequeño más claro."

@@ -189,6 +189,50 @@ msgstr "Ежедневное чтение"
 msgid "Commentary"
 msgstr "Комментарий"
 
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
+msgid "Steadier pop-ups, a creeds switch, and fixes for Large Text."
+msgstr "Более устойчивые всплывающие окна, переключатель для символов веры и исправления для крупного текста."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:161
+msgid "Footnotes, notes and dictionary entries that pop up now close when the text scrolls or the chapter changes."
+msgstr "Сноски, заметки и словарные статьи во всплывающих окнах теперь закрываются, когда текст прокручивается или меняется глава."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
+msgid "A note left open across a chapter change no longer saves onto the wrong verse."
+msgstr "Заметка, оставленная открытой при смене главы, больше не сохраняется к другому стиху."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:163
+msgid "Clicking a word no longer brings back the hidden header or moves the pop-up away from the word."
+msgstr "Щелчок по слову больше не возвращает скрытую панель заголовка и не уводит всплывающее окно от слова."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
+msgid "A word clicked low on the page stays in view when the lexicon opens below it."
+msgstr "Слово, по которому щёлкнули внизу страницы, остаётся на виду, когда под ним открывается словарь."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
+msgid "A new switch in Preferences shows or hides the creeds mark beside verses."
+msgstr "Новый переключатель в параметрах показывает или скрывает знак символов веры рядом со стихами."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
+msgid "The creeds icon is redrawn."
+msgstr "Значок символов веры нарисован заново."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:167
+msgid "A search for two Strong's numbers joined by OR now finds the verses with either word."
+msgstr "Поиск двух номеров Стронга, соединённых OR, теперь находит стихи с любым из этих слов."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:168
+msgid "With Large Text, the charts in the Book of Generations, the Creeds and the Bible Family Tree no longer draw labels over each other."
+msgstr "С крупным текстом схемы в «Книге родословий», «Символах веры» и «Родословном древе Библии» больше не накладывают подписи друг на друга."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:169
+msgid "With animations turned off, the Book of Generations now shows its charts."
+msgstr "С выключенной анимацией «Книга родословий» теперь показывает свои схемы."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:170
+msgid "Pop-up arrows stay attached near the edge of the screen."
+msgstr "Стрелки всплывающих окон остаются на месте у края экрана."
+
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:156
 msgid "Psalm titles, paragraphs, and clearer small text."
 msgstr "Надписания псалмов, абзацы и более чёткий мелкий текст."
