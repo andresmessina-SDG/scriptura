@@ -6,6 +6,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+## [1.9.2] — 2026-10-31
+
 ### Added
 - Preferences ▸ Reading Aids ▸ Mark verses the creeds quote: shows or hides the creeds mark beside a verse whose words a creed uses.
 
@@ -22,6 +24,10 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - The other pane no longer scrolls to a clicked verse it already shows.
 - The dictionary peek opens about 0.1 s sooner.
 - A click that opens a peek no longer brings back the hidden pane header, whose slide moved the peek off its word or closed it.
+- No hover card for the word the lexicon below already shows.
+
+### Changed
+- The creeds icon is redrawn: a cross set as a drop cap, followed by lines of text.
 
 ## [1.9.1] — 2026-10-31
 

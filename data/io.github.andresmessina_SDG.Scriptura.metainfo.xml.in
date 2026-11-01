@@ -154,6 +154,23 @@
          Every note is translated: add each line to po/es.po and po/ru.po,
          or tests/test_translations.py fails, then rebuild the site with
          tools/build-site.py so What's new shows it in all three languages. -->
+    <release version="1.9.2" date="2026-10-31">
+      <description>
+        <p>Steadier pop-ups, a creeds switch, and fixes for Large Text.</p>
+        <ul>
+          <li>Footnotes, notes and dictionary entries that pop up now close when the text scrolls or the chapter changes.</li>
+          <li>A note left open across a chapter change no longer saves onto the wrong verse.</li>
+          <li>Clicking a word no longer brings back the hidden header or moves the pop-up away from the word.</li>
+          <li>A word clicked low on the page stays in view when the lexicon opens below it.</li>
+          <li>A new switch in Preferences shows or hides the creeds mark beside verses.</li>
+          <li>The creeds icon is redrawn.</li>
+          <li>A search for two Strong's numbers joined by OR now finds the verses with either word.</li>
+          <li>With Large Text, the charts in the Book of Generations, the Creeds and the Bible Family Tree no longer draw labels over each other.</li>
+          <li>With animations turned off, the Book of Generations now shows its charts.</li>
+          <li>Pop-up arrows stay attached near the edge of the screen.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.9.1" date="2026-10-31">
       <description>
         <p>Psalm titles, paragraphs, and clearer small text.</p>
