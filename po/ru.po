@@ -214,8 +214,8 @@ msgid "A new switch in Preferences shows or hides the creeds mark beside verses.
 msgstr "Новый переключатель в параметрах показывает или скрывает знак символов веры рядом со стихами."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
-msgid "The creeds icon is redrawn."
-msgstr "Значок символов веры нарисован заново."
+msgid "The app no longer keeps a processor core busy after the book picker opens."
+msgstr "Приложение больше не загружает ядро процессора после открытия выбора книги."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:167
 msgid "A search for two Strong's numbers joined by OR now finds the verses with either word."

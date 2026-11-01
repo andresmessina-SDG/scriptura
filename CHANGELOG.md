@@ -25,6 +25,7 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - The dictionary peek opens about 0.1 s sooner.
 - A click that opens a peek no longer brings back the hidden pane header, whose slide moved the peek off its word or closed it.
 - No hover card for the word the lexicon below already shows.
+- The app no longer spins a processor core at full use after the book picker first opens. The picker's focus callback returned True and ran on every turn of the main loop until the app quit. (Fixed in the updated 1.9.2 build.)
 
 ### Changed
 - The creeds icon is redrawn: a cross set as a drop cap, followed by lines of text.
