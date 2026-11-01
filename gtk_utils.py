@@ -4,7 +4,8 @@ import logging
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Adw, Gdk, Gio, GLib, GObject, Graphene, Gtk
+gi.require_version('PangoCairo', '1.0')
+from gi.repository import Adw, Gdk, Gio, GLib, GObject, Graphene, Gtk, PangoCairo
 
 import motion
 
@@ -227,6 +228,14 @@ def arrow_target(pop: Gtk.Popover, surface) -> Gdk.Rectangle | None:
         new.x, new.y = rect.x, round(rect.y + rect.height / 2 + shift)
         new.width, new.height = rect.width, 1
     return new
+
+
+def text_scale(widget: Gtk.Widget) -> float:
+    """How much the desktop's text scaling (GNOME's Large Text) enlarges
+    type in `widget`: its font resolution over the 96 dpi a drawing is
+    planned at. 1.0 when no resolution is set."""
+    dpi = PangoCairo.context_get_resolution(widget.get_pango_context())
+    return dpi / 96.0 if dpi > 0 else 1.0
 
 
 def clear_children(widget: Gtk.Widget) -> None:

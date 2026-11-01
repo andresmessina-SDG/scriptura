@@ -201,3 +201,27 @@ def test_beside_the_bible_the_rail_narrows_but_stays(page):
     page._wide = True
     page._apply_width()
     assert page._field.get_size_request()[0] == cv.FIELD_W
+
+
+def test_large_text_widens_the_label_column(page, monkeypatch):
+    """With GNOME's Large Text the labels grew past their 128px column, the
+    column grew after the threads were measured, and every thread ended a
+    label's width away from its dot, on the label's first letter."""
+    monkeypatch.setattr(cv, 'text_scale', lambda _w: 1.3)
+    page._wide, page._narrow = False, False
+    page._apply_width()
+    labels = page._labels.get_size_request()[0]
+    assert labels == round(cv.COMPACT_LABELS_W * 1.3)
+    assert page._rail_room.get_size_request()[0] == (
+        cv.COMPACT_FIELD_W + cv.STRIP_W + labels + cv.RAIL_END)
+
+
+def test_a_label_wider_than_its_column_widens_it(page):
+    """A long reference (a translation, or Large Text past the planned
+    factor) widens the column on purpose, and the room beside the lines
+    with it, rather than pushing the strip under the threads."""
+    page._set_labels_w(300)
+    assert page._labels.get_size_request()[0] == 300
+    field = page._field.get_size_request()[0]
+    assert page._rail_room.get_size_request()[0] == (
+        field + cv.STRIP_W + 300 + cv.RAIL_END)

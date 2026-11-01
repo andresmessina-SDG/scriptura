@@ -644,3 +644,37 @@ def test_a_label_that_changed_width_is_placed_again():
         ctx.iteration(False)
     assert not view._resettling
     assert abs(node.placed_x - node.box()[0]) < 0.5
+
+
+def test_lane_names_never_touch_with_large_text():
+    """At 1.3x text the names were set at their floor size and still ran
+    into each other (Jerusalem into Holman · CSB). They may shrink back to
+    their normal size, and no further."""
+    import cairo
+    import family_layout as fl
+    from gi.repository import Pango, PangoCairo
+    cr = cairo.Context(cairo.ImageSurface(cairo.FORMAT_ARGB32, 4, 4))
+    layout = PangoCairo.create_layout(cr)
+    PangoCairo.context_set_resolution(layout.get_context(), 96)
+    base = int(11 * 1.3 * Pango.SCALE)
+    measure = lambda t, size: fv._measure(layout, t, base, size)
+    size, labels = fv.lane_labels(fl.lanes(), measure, floor=0.56 / 1.3)
+    assert size >= 0.56 / 1.3 - 1e-9
+    widths = [(lane.x, max(measure(line, size) for line in lines))
+              for lane, lines in labels]
+    for (xa, wa), (xb, wb) in zip(widths, widths[1:]):
+        assert xa + wa / 2 + 4 <= xb - wb / 2, (xa, xb)
+
+
+def test_a_name_s_second_line_steps_by_its_height():
+    """The second line of a lane name sat 13px above the first whatever the
+    type's size; with Large Text it set over it."""
+    import cairo
+    from gi.repository import Pango, PangoCairo
+    cr = cairo.Context(cairo.ImageSurface(cairo.FORMAT_ARGB32, 4, 4))
+    layout = PangoCairo.create_layout(cr)
+    PangoCairo.context_set_resolution(layout.get_context(), 96)
+    small = fv._measure(layout, 'Ag', 11 * Pango.SCALE, 0.68, height=True)
+    large = fv._measure(layout, 'Ag', int(11 * 1.3 * Pango.SCALE), 0.68,
+                        height=True)
+    assert large > small >= 12
