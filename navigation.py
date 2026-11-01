@@ -27,6 +27,20 @@ import window
 from i18n import _, book_label
 
 
+def _focus_selected_row(book_list):
+    """Put the focus on the picker's chosen book, once.
+
+    An idle callback runs again for as long as it returns something true,
+    and `grab_focus()` returns True when it works. Written as
+    `row and row.grab_focus() or False`, it returned True and ran on every
+    turn of the main loop for as long as the app stayed open: one core at
+    95% from the first time the picker opened."""
+    row = book_list.get_selected_row()
+    if row is not None:
+        row.grab_focus()
+    return GLib.SOURCE_REMOVE
+
+
 class NavigationController:
     _NAV_MAX = 100
 
@@ -553,8 +567,7 @@ class NavigationController:
 
         self._ref_pop.set_child(outer)
 
-        GLib.idle_add(lambda: (book_list.get_selected_row()
-                               and book_list.get_selected_row().grab_focus()) or False)
+        GLib.idle_add(_focus_selected_row, book_list)
 
     def _on_ref_chapter_chosen(self, btn, state):
         self._ref_pop.popdown()

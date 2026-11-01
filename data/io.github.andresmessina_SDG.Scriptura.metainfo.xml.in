@@ -163,7 +163,7 @@
           <li>Clicking a word no longer brings back the hidden header or moves the pop-up away from the word.</li>
           <li>A word clicked low on the page stays in view when the lexicon opens below it.</li>
           <li>A new switch in Preferences shows or hides the creeds mark beside verses.</li>
-          <li>The creeds icon is redrawn.</li>
+          <li>The app no longer keeps a processor core busy after the book picker opens.</li>
           <li>A search for two Strong's numbers joined by OR now finds the verses with either word.</li>
           <li>With Large Text, the charts in the Book of Generations, the Creeds and the Bible Family Tree no longer draw labels over each other.</li>
           <li>With animations turned off, the Book of Generations now shows its charts.</li>
