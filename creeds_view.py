@@ -38,7 +38,7 @@ import motion
 import settings
 from a11y import set_accessible_label
 from family_card import high_contrast, lift, redraw_on_contrast
-from gtk_utils import clear_children
+from gtk_utils import clear_children, text_scale
 from i18n import _, book_label, ngettext
 
 #: Width of the Bible strip, and of the label column beside it.
@@ -62,6 +62,13 @@ MIN_BOOK_GAP = 17
 WIDE_SP = 880
 NARROW_SP = 420
 THREAD_MS = 550
+
+
+def _children(widget: Gtk.Widget):
+    c = widget.get_first_child()
+    while c is not None:
+        yield c
+        c = c.get_next_sibling()
 
 
 def ref_label(link: dict) -> str:
@@ -141,6 +148,7 @@ class CreedsPage:
         self._focus_ref: str | None = None
         self._wide = True
         self._narrow = False
+        self._text_k = 1.0
         self._progress = 1.0
         self._anim = None
         self._rows: dict[str, Gtk.Button] = {}
@@ -167,6 +175,9 @@ class CreedsPage:
         self.widget.add_breakpoint(self._bp_medium)
         self.widget.add_breakpoint(self._bp_narrow)
         self.widget.connect('notify::current-breakpoint', self._on_breakpoint)
+        self._dpi_handler = 0
+        self.widget.connect('realize', self._on_realize)
+        self.widget.connect('unrealize', self._on_unrealize)
 
     # ── building ─────────────────────────────────────────────────────────
 
@@ -668,13 +679,39 @@ class CreedsPage:
         adj.set_value(min(max(0, b.get_y() - page / 3),
                           adj.get_upper() - page))
 
+    def _on_realize(self, _w):
+        self._dpi_handler = Gtk.Settings.get_default().connect(
+            'notify::gtk-xft-dpi', self._on_text_scale)
+
+    def _on_unrealize(self, _w):
+        if self._dpi_handler:
+            Gtk.Settings.get_default().disconnect(self._dpi_handler)
+            self._dpi_handler = 0
+
+    def _on_text_scale(self, *_a):
+        # The desktop's Large Text switched while the page is up.
+        if self._built:
+            self._apply_width()
+            self._queue_layout()
+
     def _apply_width(self):
         self._hstrip.set_visible(self._narrow)
         for w in (self._rail, self._rail_room, self._area):
             w.set_visible(not self._narrow)
         field, labels = ((FIELD_W, LABELS_W) if self._wide
                          else (COMPACT_FIELD_W, COMPACT_LABELS_W))
+        # The labels are text, and grow with the desktop's Large Text; the
+        # column has to grow with them. `_set_labels_w` widens it further
+        # if a label still does not fit.
+        self._text_k = text_scale(self.widget)
         self._field.set_size_request(field, -1)
+        self._set_labels_w(round(labels * self._text_k))
+
+    def _set_labels_w(self, labels: int):
+        """Size the label column, and the room kept for the rail beside the
+        lines. The rail sits at the end of the page, so a column wider than
+        planned pushes the strip left under the threads drawn for it."""
+        field = self._field.get_size_request()[0]
         self._labels.set_size_request(labels, -1)
         self._rail_room.set_size_request(field + STRIP_W + labels + RAIL_END, -1)
         self._side.set_visible(self._wide)
@@ -1001,7 +1038,8 @@ class CreedsPage:
                 if link['kind'] == 'w':
                     e['link'] = link
             g['ports'] = ports
-            for e in fit(list(ports.values()), LABEL_GAP, MIN_LABEL_GAP,
+            k = self._text_k
+            for e in fit(list(ports.values()), LABEL_GAP * k, MIN_LABEL_GAP * k,
                          g['top'], g['bottom']):
                 text = ref_label(e['link'])
                 if e['n'] > 1:
@@ -1020,7 +1058,9 @@ class CreedsPage:
             most = max((len(i) for _n, i in counts), default=1)
             entries = [{'y': sum(g['y'](link) for _p, link in items) / len(items),
                         'name': name, 'n': len(items)} for name, items in counts]
-            entries = fit(entries, BOOK_GAP, MIN_BOOK_GAP, g['top'], g['bottom'])
+            k = self._text_k
+            entries = fit(entries, BOOK_GAP * k, MIN_BOOK_GAP * k,
+                          g['top'], g['bottom'])
             g['books'] = entries
             for e in entries:
                 btn = Gtk.Button()
@@ -1043,6 +1083,15 @@ class CreedsPage:
                     book=book_label(e['name']), n=e['n']))
                 btn.connect('clicked', lambda _b, nm=e['name']: self.select_book(nm))
                 self._place(btn, e['py'])
+        # A label wider than its column (a long reference in a translation,
+        # or Large Text) would widen the column now, after `g` was measured,
+        # and the threads would be drawn to where the strip was. Widen it on
+        # purpose and measure again.
+        need = max((c.measure(Gtk.Orientation.HORIZONTAL, -1)[1]
+                    for c in _children(self._labels)), default=0)
+        if need > self._labels.get_size_request()[0]:
+            self._set_labels_w(need)
+            self._queue_layout()
         self._area.queue_draw()
         return GLib.SOURCE_REMOVE
 

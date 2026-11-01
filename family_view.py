@@ -27,6 +27,7 @@ import family_layout as fl
 import motion
 from family_card import (high_contrast, lift, place_sentences,
                          redraw_on_contrast, short_name)
+from gtk_utils import text_scale
 from i18n import _
 
 DOT = 7.0               # the mark's radius, in the drawing's units
@@ -223,24 +224,26 @@ def _settle(node, placed, bars=()):
             other.set_left(not other.left)
 
 
-def _measure(layout, text, base_size, size):
-    """How wide `text` sets as a lane name: bold, `size` of the base."""
+def _measure(layout, text, base_size, size, bold=True, height=False):
+    """How wide (or tall) `text` sets in the sans at `size` of the base:
+    bold, as a lane name, unless told otherwise."""
     desc = Pango.FontDescription.from_string('Adwaita Sans')
     desc.set_size(int(size * base_size))
-    desc.set_weight(Pango.Weight.BOLD)
+    if bold:
+        desc.set_weight(Pango.Weight.BOLD)
     layout.set_font_description(desc)
     layout.set_width(-1)
     layout.set_text(text, -1)
-    return layout.get_pixel_size()[0]
+    return layout.get_pixel_size()[1 if height else 0]
 
 
-def lane_labels(lanes, measure):
+def lane_labels(lanes, measure, floor=0.56):
     """(size, [(lane, lines)]): each lane's name broken to fit its lane,
-    and the size that lets every word fit. `measure(text, size)` gives a
-    width in pixels."""
+    and the size that lets every word fit, down to `floor`.
+    `measure(text, size)` gives a width in pixels."""
     gap = min((b.x - a.x for a, b in zip(lanes, lanes[1:])), default=80.0)
     size = 0.68
-    while size > 0.56 and max(measure(word, size) for lane in lanes
+    while size > floor and max(measure(word, size) for lane in lanes
                               for word in lane.name.split()) > gap - 6:
         size -= 0.02
     return size, [(lane, _wrap_words(lane.name, gap - 6,
@@ -454,6 +457,19 @@ class FamilyView:
     def _sink(self, nid, y):
         """How far a root Bible has sunk toward the rule."""
         return (ROOT_RULE - y) * self._fold if nid in self._root_ids else 0.0
+
+    def _room_left(self, y, h):
+        """Where the leftmost Bible label between `y` and `y + h` begins, in
+        the drawing's own units; far right when none does."""
+        edge = float(fl.WIDTH)
+        for node in self._nodes.values():
+            if not node.get_visible():
+                continue
+            x0, y0, _x1, y1 = node.box()
+            sink = self._dy(node) + self._shift()
+            if y0 + sink < y + h and y1 + sink > y:
+                edge = min(edge, x0)
+        return edge
 
     def _dy(self, node):
         """Where a node is drawn, below where the layout puts it."""
@@ -702,7 +718,7 @@ class FamilyView:
         self._paint(cr, w, h, area.get_color(),
                     area.get_pango_context().get_font_description().get_size(),
                     self._lit, hc=high_contrast(), fold=self._fold,
-                    caption=False)
+                    caption=False, text_k=text_scale(area))
 
     def _unplaced(self, node_id):
         """Whether a Bible stands in Not placed: arranged by literalness,
@@ -712,14 +728,16 @@ class FamilyView:
                 and not node.root)
 
     def _paint(self, cr, w, h, ink, base_size, lit, hc=False, fold=0.0,
-               caption=True):
+               caption=True, text_k=1.0):
         """The drawing under the Bibles: axis, lanes or zones, lines of
         descent, bars. `ink` is anything with red/green/blue; `lit` the
         Bibles to keep bright (None for all); `hc` lifts the faint inks for
         high contrast, but not the rules and grid, which only divide;
         `fold` how far the root is folded (1 folded); `caption` whether to
         write the root's line, which on screen is the button that folds
-        it. The poster calls it too, with the root open."""
+        it. The poster calls it too, with the root open. `text_k` is the
+        desktop's text scaling, already inside `base_size`: the labels that
+        must fit a fixed space may shrink back by it, no further."""
         cr.save()
         shift = round(fold * FOLD_SHIFT)
         cr.translate(0, -shift)
@@ -782,8 +800,16 @@ class FamilyView:
             cr.stroke()
             cr.set_dash([])
             text(str(year), 24, y - 8, size=0.75)
-        text(_('⋮ compressed'), 24, fl.year_y(1745) - 8, size=0.75,
-             alpha=0.45)
+        # Beside the axis, and clear of any Bible's label at that height
+        # (the 1769 KJV's): with Large Text the two grew into each other.
+        word, y = _('⋮ compressed'), fl.year_y(1745) - 8
+        size = 0.75
+        room = self._room_left(y, _measure(layout, word, base_size, size,
+                                           bold=False, height=True)) - 24 - 8
+        while (size > 0.75 / text_k
+               and _measure(layout, word, base_size, size, bold=False) > room):
+            size -= 0.02
+        text(word, 24, y, size=size, alpha=0.45)
 
         if self._arrangement == 'family':
             # Lane names above the axis in one row, each wrapped to its own
@@ -793,10 +819,14 @@ class FamilyView:
             # (60px of 59) and ran into "HOLMAN · CSB". A name that still
             # will not fit sets the whole row a size down.
             size, labels = lane_labels(
-                self._lanes, lambda t, sz: _measure(layout, t, base_size, sz))
+                self._lanes, lambda t, sz: _measure(layout, t, base_size, sz),
+                floor=0.56 / text_k)
+            # A name's lines step by their own height, not 13px: Large Text
+            # set the second line over the first.
+            pitch = _measure(layout, 'Ag', base_size, size, height=True)
             for lane, lines in labels:
                 for k, line in enumerate(reversed(lines)):
-                    text(line, lane.x, fl.AXIS_TOP - 24 - 13 * k,
+                    text(line, lane.x, fl.AXIS_TOP - 24 - pitch * k,
                          size=size, bold=True, anchor='center', alpha=0.55,
                          knock=True)
         else:
@@ -809,14 +839,24 @@ class FamilyView:
                 cr.line_to(x, h - 20)
             cr.stroke()
             cr.set_dash([])
-            lo = 0.0
+            zones, lo = [], 0.0
             for bound, name in bible_family.ZONES:
-                mid = fl.line_x((lo + min(bound, 1.0)) / 2)
-                text(_(name).upper(), mid, fl.AXIS_TOP - 34, size=0.68,
-                     bold=True, anchor='center', alpha=0.55, knock=True)
+                zones.append((fl.line_x(lo), fl.line_x(min(bound, 1.0)),
+                              _(name).upper()))
                 lo = bound
+            # Each name within its zone. With Large Text "THOUGHT FOR
+            # THOUGHT" ran into "FREE": the row may shrink back to its
+            # normal size, no further.
+            zsize = 0.68
+            while zsize > 0.68 / text_k and any(
+                    _measure(layout, t, base_size, zsize) > x1 - x0 - 8
+                    for x0, x1, t in zones):
+                zsize -= 0.02
+            for x0, x1, name in zones:
+                text(name, (x0 + x1) / 2, fl.AXIS_TOP - 34, size=zsize,
+                     bold=True, anchor='center', alpha=0.55, knock=True)
             text(_('Not placed').upper(), fl.NOT_PLACED_X,
-                 fl.AXIS_TOP - 34, size=0.68, bold=True, anchor='center',
+                 fl.AXIS_TOP - 34, size=zsize, bold=True, anchor='center',
                  alpha=0.55, knock=True)
             # Where charts place a Bible, its range as a soft bar under it;
             # where only its makers' word is known, a bracket over the zone.

@@ -524,3 +524,34 @@ def test_the_book_opens_at_the_pane_s_reading_size():
     assert reader._font_pt == 23
     assert reader._areas, 'no charts were built, so this proves nothing'
     assert {a._reading_pt for a in reader._areas} == {23}
+
+
+def test_large_text_scales_the_whole_chart(monkeypatch):
+    """GNOME's Large Text raises the font resolution. Measured and painted
+    at that resolution, the type grew inside rows that stayed put: Leah's
+    name ran into her note and the note into the verse chip. Type now keeps
+    its planned size and the text scaling joins the chart's one scale."""
+    plain = gr.ChartArea('house_jacob')
+    width = plain._measure('Leah', 14.5, 'semibold')
+    scale = plain._reading_scale()
+    monkeypatch.setattr(gr.gtk_utils, 'text_scale', lambda _w: 1.3)
+    large = gr.ChartArea('house_jacob')
+    assert large._measure('Leah', 14.5, 'semibold') == width
+    assert abs(large._reading_scale() - 1.3 * scale) < 1e-9
+
+
+def test_a_new_height_is_asked_for_again_after_the_frame(monkeypatch):
+    """A height set inside an allocation or a paint goes unheard. With
+    animations off no page-turn slide allocated again, and every chart in
+    the book stayed 0px tall: the pages showed their prose and no chart."""
+    area = gr.ChartArea('gen5')
+    asked = []
+    monkeypatch.setattr(area, 'queue_resize', lambda: asked.append(1))
+    area._lay_out(800.0)
+    assert area.get_content_height() > 0
+    ctx = GLib.MainContext.default()
+    for _tick in range(64):
+        if not ctx.pending():
+            break
+        ctx.iteration(False)
+    assert asked

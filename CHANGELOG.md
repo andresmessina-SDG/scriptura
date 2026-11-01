@@ -15,6 +15,8 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - A popover's arrow stays on the popover near a screen edge.
 - A dictionary peek closed in its first moments, by Escape, a chapter change or a module change, no longer comes back.
 - A search for two Strong's numbers joined by OR, such as `strong:H7965 OR strong:G1515`, finds the verses with either word. It found none.
+- With Large Text, the Book of Generations, Creeds and Bible Family Tree charts no longer draw labels over each other. Generations grows as a whole, the Creeds threads end on their dots, and the Family Tree's labels fit their places.
+- With animations turned off, the Book of Generations shows its charts. Every chart had been drawn 0px tall.
 - A click on the hover card lands on the text beneath it instead of doing nothing.
 - A word clicked low on the page stays in view when the cross-reference bar and lexicon open below it.
 - The other pane no longer scrolls to a clicked verse it already shows.

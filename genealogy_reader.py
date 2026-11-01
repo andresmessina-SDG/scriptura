@@ -31,6 +31,7 @@ from gi.repository import Gtk, Adw, GLib, Pango, PangoCairo, Gdk  # noqa: E402
 import a11y                              # noqa: E402
 import genealogy_bridge as gb            # noqa: E402
 import genealogy_layout as gl            # noqa: E402
+import gtk_utils                         # noqa: E402
 import motion                            # noqa: E402
 from genealogy_svg import PALETTE        # noqa: E402
 from i18n import _                       # noqa: E402
@@ -97,6 +98,8 @@ class ChartArea(Gtk.DrawingArea):
         self._viewport_w = 0.0
         self._reading_pt = 0.0
         self._cache: dict[tuple[str, float, str], float] = {}
+        self._pango: Pango.Context | None = None
+        self._dpi_handler = 0
         self._pending = 0
         #: The width the plate in hand was actually laid out for. Not the
         #: same as `_layout_width`, which is the width the widget has been
@@ -107,6 +110,8 @@ class ChartArea(Gtk.DrawingArea):
         self.set_hexpand(True)
         self.set_draw_func(self._draw)
         self.connect('resize', self._on_resize)
+        self.connect('realize', self._on_realize)
+        self.connect('unrealize', self._on_unrealize)
 
         click = Gtk.GestureClick.new()
         click.connect('pressed', self._on_click)
@@ -140,10 +145,41 @@ class ChartArea(Gtk.DrawingArea):
         key = (text, size, weight)
         got = self._cache.get(key)
         if got is None:
-            lay = self.create_pango_layout(text)
+            lay = self._layout(text)
             lay.set_font_description(_font(size, weight))
             got = self._cache[key] = float(lay.get_pixel_size().width)
         return got
+
+    def _layout(self, text: str) -> Pango.Layout:
+        """A layout set at 96 dpi whatever the desktop's text scaling.
+
+        The plate is planned in pixels at 96 dpi and painted through one
+        scale. Large Text raises the font resolution instead, which grew the
+        glyphs alone inside rows that stayed put: a mother's name ran into
+        her note, and the note into the verse chip. Here type keeps its
+        planned size and `_reading_scale` carries the text scaling with
+        everything else."""
+        if self._pango is None:
+            self._pango = self.create_pango_context()
+            PangoCairo.context_set_resolution(self._pango, 96.0)
+        lay = Pango.Layout.new(self._pango)
+        lay.set_text(text, -1)
+        return lay
+
+    def _on_realize(self, _w):
+        self._dpi_handler = Gtk.Settings.get_default().connect(
+            'notify::gtk-xft-dpi', self._on_text_scale)
+
+    def _on_unrealize(self, _w):
+        if self._dpi_handler:
+            Gtk.Settings.get_default().disconnect(self._dpi_handler)
+            self._dpi_handler = 0
+
+    def _on_text_scale(self, *_a):
+        # The desktop's Large Text switched while the chart is up.
+        self._pango = None
+        self._cache.clear()
+        self._refresh()
 
     def _build(self, width: float) -> gl.Plate:
         # Laid out at the nominal size and painted through a Cairo scale, so
@@ -210,11 +246,12 @@ class ChartArea(Gtk.DrawingArea):
 
     def _reading_scale(self) -> float:
         """How much bigger than its drawn size this chart wants to be, from
-        the reading size alone. The pane has no say here — `_lay_out` fits
+        the reading size and the desktop's text scaling. The pane has no say here — `_lay_out` fits
         the plate afterwards."""
+        text = gtk_utils.text_scale(self)
         if not self._reading_pt:
-            return 1.0
-        return max(0.85, self._reading_pt / self.BASE_PT)
+            return text
+        return max(0.85, self._reading_pt / self.BASE_PT) * text
 
     def _lay_out(self, w: float) -> gl.Plate:
         """The plate for a pane this wide, the scale that paints it, and the
@@ -251,9 +288,17 @@ class ChartArea(Gtk.DrawingArea):
         # not an illegible one that fits.
         self._scale = max(self._scale, self._floor_scale(plate))
         painted = plate.width * self._scale
+        tall = self.get_content_height()
         self.set_content_width(int(painted) if painted > w + 0.5 else 0)
         self._ox = max(0.0, (w - painted) / 2)
         self.set_content_height(int(plate.height * self._scale))
+        if self.get_content_height() != tall:
+            # Most lay-outs run inside an allocation (the sideways scroller
+            # reporting its width) or a paint, where a new size goes
+            # unheard: the chart kept its 0px and the page showed no chart
+            # at all. A page turn's slide allocated again and hid it; with
+            # animations off nothing did. Ask again once the frame is done.
+            GLib.idle_add(self._resize_later)
         self.update_property([Gtk.AccessibleProperty.LABEL],
                              [plate.alt or plate.title])
         return plate
@@ -319,6 +364,10 @@ class ChartArea(Gtk.DrawingArea):
             cr.fill()
         cr.restore()
 
+    def _resize_later(self):
+        self.queue_resize()
+        return GLib.SOURCE_REMOVE
+
     def _paint(self, cr, p: gl.Prim, dark: bool):
         r, g, b = _rgba(p.role, dark)
         cr.set_source_rgb(r, g, b)
@@ -378,7 +427,7 @@ class ChartArea(Gtk.DrawingArea):
         every verse pill on every chart, which reads as type that has slipped
         down inside its pill. The font knows its own height; ask it.
         """
-        lay = self.create_pango_layout(text)
+        lay = self._layout(text)
         lay.set_font_description(_font(size, weight, italic, serif))
         w, h = lay.get_pixel_size()
         if anchor == 'middle':
