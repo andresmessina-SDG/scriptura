@@ -191,7 +191,7 @@ _TYPES: list[_ContentType] = [
         kind=lambda name: 'commentary', info=_catena_info,
         feature_card=lambda name: {
             'icon': 'scriptura-commentary-symbolic',
-            'tagline': _('Fathers, medievals & reformers — per verse')},
+            'tagline': _('Fathers & medieval teachers — per verse')},
         can_remove=lambda name: True,
         remove=lambda name: catena_bridge.remove_pack()),
     _ContentType(

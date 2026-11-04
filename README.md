@@ -22,7 +22,8 @@ Website: <https://andresmessina-sdg.github.io/scriptura/>
 - **Study the Greek and Hebrew.** Click a word for its Strong's entry,
   or read an interlinear with the meaning and grammar under every word.
 - **Commentaries, devotionals and confessions**, plus an optional pack
-  of how the church read each verse, from Irenaeus to Calvin.
+  of how the church read each verse, from the early fathers through the
+  Middle Ages.
 - **Cross-references and search.** 340,000 cross-references, and fast
   search across a whole Bible.
 - **Mark and write.** Highlights, notes and tags that show in every
@@ -47,7 +48,7 @@ Preferences. Your study is your own.
 |:---:|:---:|
 | ![The Bible Family Tree: the English Bibles read today and the Bibles they came from](data/screenshots/02-bible-family-tree.png) | ![The Greek New Testament interlinear: meaning, grammar and Strong's number under every word](data/screenshots/03-interlinear-greek.png) |
 | _The Bible Family Tree_ | _Greek NT interlinear_ |
-| ![Voices of the Church: the fathers and the Reformers on the verse beside the text](data/screenshots/04-voices-of-the-church.png) | ![Caravaggio's Calling of Saint Matthew beside Matthew 9](data/screenshots/05-scripture-in-art.png) |
+| ![Voices of the Church: the fathers and medieval teachers on the verse beside the text](data/screenshots/04-voices-of-the-church.png) | ![Caravaggio's Calling of Saint Matthew beside Matthew 9](data/screenshots/05-scripture-in-art.png) |
 | _Voices of the Church_ | _Scripture in Art_ |
 | ![A sermon manuscript on John 1, in the writing room](data/screenshots/06-sermon-writing.png) | ![Psalm 23 in reading mode, dark](data/screenshots/07-reading-mode-dark.png) |
 | _Sermon writing_ | _Reading mode (dark)_ |

@@ -69,10 +69,10 @@ msgstr ""
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:25
 msgid ""
 "Commentaries, devotionals and confessions, and how the church read each "
-"verse from the early fathers to the Reformers."
+"verse from the early fathers through the Middle Ages."
 msgstr ""
 "Комментарии, книги для размышлений и исповедания веры, а также как Церковь "
-"читала каждый стих, от ранних отцов до реформаторов."
+"читала каждый стих, от ранних отцов до Средневековья."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:26
 msgid "340,000 cross-references, and fast search across any text you install."
@@ -3606,8 +3606,8 @@ msgstr ""
 "разночтения из других изданий сохранены в данных."
 
 #: content.py:180
-msgid "Fathers, medievals & reformers — per verse"
-msgstr "Отцы, средневековые авторы и реформаторы — к каждому стиху"
+msgid "Fathers & medieval teachers — per verse"
+msgstr "Отцы и средневековые учители — к каждому стиху"
 
 #: content.py:188
 msgid "Engravings, maps & place photos"
@@ -5871,8 +5871,8 @@ msgstr ""
 
 #: module_manager.py:564
 #, python-brace-format
-msgid "{n} quotations from the church fathers to the Reformers, verse by verse"
-msgstr "{n} цитат от отцов Церкви до реформаторов, стих за стихом"
+msgid "{n} quotations from the church fathers through the Middle Ages, verse by verse"
+msgstr "{n} цитат от отцов Церкви до Средневековья, стих за стихом"
 
 #: module_manager.py:566
 msgid "Church-history commentary, verse by verse"
@@ -5889,10 +5889,10 @@ msgstr "Доступен более новый набор"
 
 #: module_manager.py:579
 msgid ""
-"How the church read each verse, from the fathers to the Reformers · ~33 MB "
+"How the church read each verse, from the fathers through the Middle Ages · ~33 MB "
 "download"
 msgstr ""
-"Как Церковь читала каждый стих, от отцов до реформаторов · загрузка ~33 МБ"
+"Как Церковь читала каждый стих, от отцов до Средневековья · загрузка ~33 МБ"
 
 #: module_manager.py:581 module_manager.py:610 module_manager.py:640
 #: module_manager.py:671 module_manager.py:1502
@@ -10562,8 +10562,8 @@ msgid "The Greek New Testament word by word, with meaning, grammar and Strong's 
 msgstr "Греческий Новый Завет слово за словом, со значением, грамматикой и номером Стронга под каждым словом"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
-msgid "Voices of the Church: what the fathers and the Reformers wrote on the verse you are reading"
-msgstr "Голоса Церкви: что писали отцы и реформаторы о стихе, который вы читаете"
+msgid "Voices of the Church: what the fathers and medieval teachers wrote on the verse you are reading"
+msgstr "Голоса Церкви: что писали отцы и средневековые учители о стихе, который вы читаете"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
 msgid "Art for the passage: Caravaggio's Calling of Saint Matthew beside Matthew 9"
