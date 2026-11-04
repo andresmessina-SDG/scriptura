@@ -163,7 +163,9 @@ The pytest suite covers the pure-Python layers (`sword_bridge`,
 `open_data`, `annotations`, `reading_plans`, `paths`, `bookmarks`,
 `settings`, `ebible_bridge`, etc.) and a growing GTK layer (panes,
 the lexicon panel, interlinear and presentation paging): about
-2,000 tests, under a minute.
+3,200 tests. The GTK tests need a display and skip
+themselves without one, so run the suite from a desktop session (or
+under `GDK_BACKEND=broadway`, as CI does).
 
 ```sh
 # Fedora
@@ -180,8 +182,8 @@ python3 -m pytest
 
 Beyond the suite, a scroll-stability harness
 (`tools/verify-scroll-stability.py`) drives the real app headless to
-guard the reading view's scroll anchoring, and Woodpecker CI runs the
-tests and mypy on every push. See
+guard the reading view's scroll anchoring, and GitHub Actions runs the
+whole suite under Broadway, mypy and the app harnesses on every push. See
 [`ARCHITECTURE.md`](ARCHITECTURE.md) for the internal map: file
 layout, render pipeline, known SWORD and GTK4 quirks worth knowing
 before touching the rendering code.
