@@ -39,11 +39,39 @@ jobs:
           mkdir -p /usr/share/fonts/scriptura
           cp data/fonts/*.ttf data/fonts/*.otf /usr/share/fonts/scriptura/
           fc-cache -f
-      # Headless on purpose: the GTK test files skip themselves when there is
-      # no display, because building a widget without one segfaults rather
-      # than failing.
-      - name: Tests
-        run: python3 -m pytest -q
+      # Under Broadway, so the GTK tests run. They skip themselves when there
+      # is no display, because building a widget without one segfaults rather
+      # than failing, and this job used to run without one: about 640 tests,
+      # the panes, lexicon, search panel and editors among them, skipped on
+      # every push while the job stayed green.
+      #
+      # A scratch HOME and XDG dirs, like the harnesses below, so GTK's own
+      # files (recently-used, the Broadway socket) have somewhere private to
+      # go. The bundled fonts are in /usr/share/fonts, which the scratch
+      # XDG_DATA_HOME does not hide.
+      #
+      # The display check is the point of the step: if broadwayd does not
+      # come up, the GTK tests skip and the run looks green, which is the
+      # failure this step exists to end. So no display fails the job, and
+      # -rs lists every skip in the log.
+      - name: Tests (under Broadway)
+        run: |
+          scratch=$(mktemp -d)
+          for d in home config data cache runtime; do mkdir -m 700 "$scratch/$d"; done
+          export HOME="$scratch/home" XDG_CONFIG_HOME="$scratch/config" \
+                 XDG_DATA_HOME="$scratch/data" XDG_CACHE_HOME="$scratch/cache" \
+                 XDG_RUNTIME_DIR="$scratch/runtime"
+          gtk4-broadwayd :3 >/dev/null 2>&1 &
+          for _ in $(seq 100); do
+            [ -S "$XDG_RUNTIME_DIR/broadway4.socket" ] && break
+            sleep 0.05
+          done
+          [ -S "$XDG_RUNTIME_DIR/broadway4.socket" ] || { echo 'gtk4-broadwayd did not start'; exit 1; }
+          export GDK_BACKEND=broadway BROADWAY_DISPLAY=:3
+          # Importing Gtk is what opens the display (PyGObject's override runs
+          # gtk_init); Gdk alone answers None even with Broadway up.
+          python3 -c "import gi; gi.require_version('Gtk', '4.0'); from gi.repository import Gdk, Gtk; assert Gdk.Display.get_default() is not None, 'no display: the GTK tests would all skip'"
+          python3 -m pytest -q -rs
       # tools/ are standalone build-time generation scripts (maps, packs), not
       # the shipped app — kept out of the CI type gate. The app's typed layer
       # is checked exactly as `mypy .` does locally.

@@ -802,13 +802,23 @@ def test_sorting_does_not_force_the_filter_panel_open(isolated, display):
 
 # ── One entry, on its own ────────────────────────────────────────────────────
 
-def test_exporting_the_open_entry_takes_only_that_entry(isolated, display):
+def _quoting_from_kjv(win, monkeypatch):
+    """An export needs a translation to quote from, and answers None without
+    one, which is the CI container (no SWORD modules in the test job). These
+    entries quote nothing, so any key will do; what is under test is which
+    entries the document takes."""
+    monkeypatch.setattr(win, '_export_module', lambda: 'KJV')
+
+
+def test_exporting_the_open_entry_takes_only_that_entry(isolated, display,
+                                                        monkeypatch):
     """The filters are the scope for everything else in the window, but
     narrowing the list to the thing already open, in order to export it, is
     a filter nobody should have to build."""
     journal.save('j1', title='The first', body='one')
     journal.save('j2', title='The second', body='two')
     win = _open_journal()
+    _quoting_from_kjv(win, monkeypatch)
     try:
         win._list.select_row(next(_rows(win)))
         opened = win._current_entry['title']
@@ -850,7 +860,7 @@ def test_a_cancelled_single_export_does_not_narrow_the_next_print(isolated,
     save() is stubbed because it is the call that puts a real file chooser
     on the screen. Unstubbed, every run of the suite threw a save dialog
     onto the desktop and left it there until the window was destroyed —
-    invisible in CI, which has no screen, and unmissable on a workstation.
+    invisible on a headless display, and unmissable on a workstation.
     """
     from gi.repository import Gtk
     asked = []
@@ -861,6 +871,7 @@ def test_a_cancelled_single_export_does_not_narrow_the_next_print(isolated,
     journal.save('j1', title='The first', body='one')
     journal.save('j2', title='The second', body='two')
     win = _open_journal()
+    _quoting_from_kjv(win, monkeypatch)
     try:
         win._list.select_row(next(_rows(win)))
         win._on_export_one(None)          # a save nobody answers
