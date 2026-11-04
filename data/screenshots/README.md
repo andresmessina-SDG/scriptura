@@ -40,7 +40,7 @@ Renaming one means editing the metainfo to match.
 | `01-read-the-difference.png` | One verse in every English Bible you have, with the Hebrew above, beside the Bible you are reading |
 | `02-bible-family-tree.png` | The Bible Family Tree: the English Bibles read today and the Bibles they came from |
 | `03-interlinear-greek.png` | The Greek New Testament word by word, with meaning, grammar and Strong's number under each word |
-| `04-voices-of-the-church.png` | Voices of the Church: what the fathers and the Reformers wrote on the verse you are reading |
+| `04-voices-of-the-church.png` | Voices of the Church: what the fathers and medieval teachers wrote on the verse you are reading |
 | `05-scripture-in-art.png` | Art for the passage: Caravaggio's Calling of Saint Matthew beside Matthew 9 |
 | `06-sermon-writing.png` | Write a sermon beside the passage, with its series, dates and verses |
 | `07-reading-mode-dark.png` | Reading mode hides everything but the text |

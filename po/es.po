@@ -68,10 +68,10 @@ msgstr ""
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:25
 msgid ""
 "Commentaries, devotionals and confessions, and how the church read each "
-"verse from the early fathers to the Reformers."
+"verse from the early fathers through the Middle Ages."
 msgstr ""
 "Comentarios, devocionales y confesiones, y cómo leyó la iglesia cada "
-"versículo, desde los primeros padres hasta los reformadores."
+"versículo, desde los primeros padres hasta la Edad Media."
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:26
 msgid "340,000 cross-references, and fast search across any text you install."
@@ -3630,8 +3630,8 @@ msgstr ""
 "ediciones se conservan en los datos."
 
 #: content.py:180
-msgid "Fathers, medievals & reformers — per verse"
-msgstr "Padres, medievales y reformadores, versículo a versículo"
+msgid "Fathers & medieval teachers — per verse"
+msgstr "Padres y maestros medievales, versículo a versículo"
 
 #: content.py:188
 msgid "Engravings, maps & place photos"
@@ -5892,9 +5892,9 @@ msgstr ""
 
 #: module_manager.py:564
 #, python-brace-format
-msgid "{n} quotations from the church fathers to the Reformers, verse by verse"
+msgid "{n} quotations from the church fathers through the Middle Ages, verse by verse"
 msgstr ""
-"{n} citas, de los padres de la Iglesia a los reformadores, versículo por "
+"{n} citas, de los padres de la Iglesia a la Edad Media, versículo por "
 "versículo"
 
 #: module_manager.py:566
@@ -5912,10 +5912,10 @@ msgstr "Hay un paquete más reciente disponible"
 
 #: module_manager.py:579
 msgid ""
-"How the church read each verse, from the fathers to the Reformers · ~33 MB "
+"How the church read each verse, from the fathers through the Middle Ages · ~33 MB "
 "download"
 msgstr ""
-"Cómo leyó la Iglesia cada versículo, de los padres a los reformadores · "
+"Cómo leyó la Iglesia cada versículo, de los padres a la Edad Media · "
 "descarga de ~33 MB"
 
 #: module_manager.py:581 module_manager.py:610 module_manager.py:640
@@ -10580,8 +10580,8 @@ msgid "The Greek New Testament word by word, with meaning, grammar and Strong's 
 msgstr "El Nuevo Testamento griego palabra por palabra, con el significado, la gramática y el número de Strong bajo cada palabra"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
-msgid "Voices of the Church: what the fathers and the Reformers wrote on the verse you are reading"
-msgstr "Voces de la Iglesia: lo que los padres y los reformadores escribieron sobre el versículo que lee"
+msgid "Voices of the Church: what the fathers and medieval teachers wrote on the verse you are reading"
+msgstr "Voces de la Iglesia: lo que los padres y los maestros medievales escribieron sobre el versículo que lee"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in
 msgid "Art for the passage: Caravaggio's Calling of Saint Matthew beside Matthew 9"

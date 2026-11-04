@@ -907,13 +907,13 @@ class ModuleManagerWindow(Adw.Window):
         if catena_bridge.is_installed():
             n = catena_bridge.pack_info().get('quote_count', '')
             installed = (
-                _('{n} quotations from the church fathers to the Reformers, '
+                _('{n} quotations from the church fathers through the Middle Ages, '
                   'verse by verse').format(n=n) if n else
                 _('Church-history commentary, verse by verse'))
         return self._pack_row(
             'pack:catena', _('Historical Commentaries'), installed,
-            _('How the church read each verse, from the fathers to the '
-              'Reformers · ~33 MB download'),
+            _('How the church read each verse, from the fathers through the '
+              'Middle Ages · ~33 MB download'),
             installed is not None and catena_bridge.update_available()
             and _('A newer pack is available'),
             self._on_catena_download, self._do_catena_remove,
