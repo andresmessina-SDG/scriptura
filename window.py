@@ -3550,6 +3550,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             _('Dodson Greek Lexicon — public-domain NT Greek definitions'),
             _('eBible.org — modern translation catalog and texts'),
             _('Berean Standard Bible audio — chapters read by Bob Souer (CC0)'),
+            _('King James Version audio — Deep Dive Bible (CC0)'),
             _('HistoricalChristianFaith Commentaries Database — historical commentary pack'),
             _('Reina-Valera 1909 (eBible.org) — Spanish word renderings, public domain'),
             _('Russian Literal Open Bible (Door43) — Russian word renderings (CC BY-SA 4.0)'),

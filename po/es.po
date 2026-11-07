@@ -8341,6 +8341,10 @@ msgid "Berean Standard Bible audio — chapters read by Bob Souer (CC0)"
 msgstr ""
 "Audio de la Berean Standard Bible: capítulos leídos por Bob Souer (CC0)"
 
+#: window.py
+msgid "King James Version audio — Deep Dive Bible (CC0)"
+msgstr "Audio de la King James Version: Deep Dive Bible (CC0)"
+
 #: window.py:2952
 msgid ""
 "HistoricalChristianFaith Commentaries Database — historical commentary pack"

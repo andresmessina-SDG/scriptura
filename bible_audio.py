@@ -1,6 +1,6 @@
 """The Bible read aloud, one file a chapter, in English and in Spanish.
 
-Two readings are offered, each beside the translation it is a reading OF.
+Three readings are offered, each beside the translation it is a reading OF.
 
 **English — the Berean Standard Bible.** The BSB's publisher commissioned three
 complete readings and dedicated them to the public domain (CC0 1.0), naming the
@@ -31,12 +31,20 @@ book and chapter, where a mistake plays the wrong chapter and nothing on screen
 looks wrong. Here there is nothing to match. The reading offered beside a
 chapter is that chapter by construction.
 
+**English — the King James Version.** Deep Dive Bible (deepdivebible.org)
+recorded the KJV and dedicated the recordings to the public domain (CC0 1.0)
+on its downloads page. Its host lays a chapter out as
+`<USFM book code>/<chapter>.mp3`:
+
+    https://audio.deepdivebible.org/kjv/GEN/1.mp3
+
 Neither set is trusted from a listing. The BSB's was checked against the app's
 own installed module; every one of the 1189 Spanish addresses this file can
 build was requested before any of it was written, and all 1189 answered. Both
 of the Spanish publisher's own index gaps — Jonah, absent from the page
 entirely, and Esther 10 — turned out to be omissions in the HTML, not missing
-recordings.
+recordings. All 1189 KJV addresses were requested the same way (2026-11-07)
+and all 1189 answered with audio.
 """
 from __future__ import annotations
 
@@ -142,6 +150,17 @@ _BES_BOOKS = (
 )
 
 
+#: The USFM book codes, which are the KJV host's directory names.
+_KJV_BOOKS = tuple(zip((name for name, _ in _BSB_BOOKS), (
+    'GEN', 'EXO', 'LEV', 'NUM', 'DEU', 'JOS', 'JDG', 'RUT', '1SA', '2SA',
+    '1KI', '2KI', '1CH', '2CH', 'EZR', 'NEH', 'EST', 'JOB', 'PSA', 'PRO',
+    'ECC', 'SNG', 'ISA', 'JER', 'LAM', 'EZK', 'DAN', 'HOS', 'JOL', 'AMO',
+    'OBA', 'JON', 'MIC', 'NAM', 'HAB', 'ZEP', 'HAG', 'ZEC', 'MAL',
+    'MAT', 'MRK', 'LUK', 'JHN', 'ACT', 'ROM', '1CO', '2CO', 'GAL', 'EPH',
+    'PHP', 'COL', '1TH', '2TH', '1TI', '2TI', 'TIT', 'PHM', 'HEB', 'JAS',
+    '1PE', '2PE', '1JN', '2JN', '3JN', 'JUD', 'REV')))
+
+
 def _bsb_filename(number: int, abbrev: str, chapter: int) -> str:
     return f'BSB_{number:02d}_{abbrev}_{chapter:03d}.mp3'
 
@@ -156,6 +175,11 @@ def _bes_filename(number: int, abbrev: str, chapter: int) -> str:
     """
     width = 3 if number == 19 else 2
     return f'{number:02d}_BES_{abbrev}_{chapter:0{width}d}.mp3'
+
+
+def _kjv_filename(number: int, abbrev: str, chapter: int) -> str:
+    """A directory per book and a bare chapter number: `GEN/1.mp3`."""
+    return f'{abbrev}/{chapter}.mp3'
 
 
 #: Every reading on offer. `modules` is the set a reading may be offered
@@ -189,6 +213,17 @@ READINGS = (
         licence='CC BY 4.0',
         licence_url='https://audiotreasure.com/AT_BES.htm',
         credit='AudioBiblia.org',
+    ),
+    _Reading(
+        translation='King James Version',
+        base_url='https://audio.deepdivebible.org/kjv',
+        # The SWORD KJV and KJVA and eBible's eng-kjv and eng-kjv2006, which
+        # content.EDITION_WORKS already counts as one work.
+        modules=frozenset({'kjv', 'kjva', 'ebibleengkjv'}),
+        books=_KJV_BOOKS,
+        filename=_kjv_filename,
+        licence='CC0 1.0',
+        licence_url='https://deepdivebible.org/downloads',
     ),
 )
 
@@ -234,9 +269,23 @@ def chapter_url(reading: _Reading, book: str, chapter: int) -> str | None:
     return f'{reading.base_url}/{reading.filename(number, abbrev, chapter)}'
 
 
+def _cache_name(url: str) -> str:
+    """The cache's name for a chapter: its path under the reading's base,
+    flattened. The KJV's `GEN/1.mp3` and `EXO/1.mp3` share a last segment;
+    the other readings have no `/` in that path, so their names are the ones
+    they always had.
+    """
+    for reading in READINGS:
+        prefix = reading.base_url + '/'
+        if url.startswith(prefix):
+            return url[len(prefix):].replace('/', '_')
+    return os.path.basename(url)
+
+
 def cached_chapter(url: str) -> str | None:
     """The local copy of a chapter, if it has already been fetched."""
-    return devotional_audio.cached_episode(url, sub=CACHE_SUBDIR)
+    return devotional_audio.cached_episode(url, sub=CACHE_SUBDIR,
+                                           name=_cache_name(url))
 
 
 def fetch_chapter(url: str) -> str | None:
@@ -244,7 +293,8 @@ def fetch_chapter(url: str) -> str | None:
 
     Blocking — call from a task worker.
     """
-    path = devotional_audio.fetch_episode(url, sub=CACHE_SUBDIR)
+    path = devotional_audio.fetch_episode(url, sub=CACHE_SUBDIR,
+                                          name=_cache_name(url))
     if path:
         trim_cache()
     return path
