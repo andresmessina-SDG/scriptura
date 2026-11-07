@@ -3532,36 +3532,231 @@ def _parse_cross_ref_text(text):
     return refs
 
 
-def get_cross_refs(book, chapter, verse):
-    """Return [(book, chapter, verse, label), ...]. Uses OpenBible if downloaded, else TSK."""
+# ── Thompson chain references ────────────────────────────────────────────────
+#
+# CrossWire's TCR module holds Thompson's 1934 chain topics: each entry a
+# topic, each "(n) heading" inside it one chain, each chain an ordered run
+# of verses. Thompson's Bible prints, beside a verse, the next verse of
+# every chain it sits in; that is what the panel offers. The last verse of
+# a chain points back to the first.
+
+_thompson = None   # {(book, ch, v): [(next book, ch, v, label, short, full)]}
+_thompson_lock = threading.Lock()
+
+_SMALL_WORDS = {'of', 'the', 'and', 'in', 'to', 'a', 'an', 'for', 'on',
+                'by', 'with', 'from', 'or', 'as', 'at', 'his', 'her',
+                'concerning', 'against', 'about'}
+
+
+def _thompson_topic(key):
+    """'SUFFERINGS OF CHRIST' → 'Sufferings of Christ'. Words already in
+    lower case ('REJECTION of God and truth') are left as they are."""
+    words = key.strip().split()
+    out = []
+    for i, w in enumerate(words):
+        if w.isupper():
+            low = w.lower()
+            w = low if (i and low in _SMALL_WORDS) else \
+                '-'.join(p.capitalize() for p in low.split('-'))
+        out.append(w)
+    return ' '.join(out)
+
+
+def _thompson_heading(text):
+    """Bold heading text → a plain heading: '(3) "The Man of Sorrows"' →
+    'The Man of Sorrows'. The numbering marks — (3), (a), (Q) — go."""
+    text = plain_text(text)
+    text = re.sub(r'^\s*\([0-9A-Za-z]{1,3}\)\s*', '', text)
+    text = text.strip().strip('"“”').strip().rstrip(',.:;').strip()
+    if text.isupper():
+        text = _thompson_topic(text)
+    return text
+
+
+def _thompson_chains(key, raw):
+    """[(short, full, [(book, ch, v, label), ...]), ...] for one TCR entry.
+
+    Every bold line opens a new chain, its heading the bold text; a bare
+    number in bold ('<b>(2)</b> Predicted by Himself') takes its heading
+    from the words after it. A '--SEE' line points to other topics: what
+    follows it, up to the next heading, is not part of any chain."""
+    topic = _thompson_topic(key)
+    chains = []
+    heading, body, skipping, bare_number = '', '', False, False
+
+    def flush():
+        refs = _parse_cross_ref_text(
+            '; '.join(re.findall(r'<scripRef>(.*?)</scripRef>', body)))
+        if len(refs) < 2:
+            return
+        nonlocal heading
+        if not heading and bare_number:
+            # A bare "(n)" in bold: the heading is the words after it.
+            lead = re.split(r'<br|<scripRef', body, maxsplit=1)[0]
+            heading = _thompson_heading(re.split(r'\.\s+See\b', lead)[0])
+        # A fragment — "General References to", "of God", "facts
+        # concerning", "(Select Readings)" — reads as half a sentence on a
+        # chip; the topic stands in, and the tooltip carries both.
+        words = heading.split()
+        fragment = (not words or words[0][0].islower()
+                    or words[0].lower() == 'of'
+                    or words[-1].lower() in _SMALL_WORDS
+                    or heading.startswith('('))
+        short = topic if fragment else heading
+        full = f'{topic} — {heading}' if heading and heading != topic else topic
+        chains.append((short, full, refs))
+
+    for tok in re.split(r'(<b>.*?</b>)', raw):
+        bold = re.fullmatch(r'<b>(.*?)</b>', tok, re.S)
+        if not bold:
+            if not skipping:
+                body += tok
+            continue
+        if re.match(r'^\s*-*\s*SEE\b', plain_text(bold.group(1))):
+            flush()
+            heading, body, skipping, bare_number = '', '', True, False
+            continue
+        flush()
+        heading, body, skipping = _thompson_heading(bold.group(1)), '', False
+        bare_number = not heading
+    if not skipping:
+        flush()
+    return chains
+
+
+def _load_thompson(mod_name):
+    global _thompson
+    if _thompson is not None:
+        return
+    with _thompson_lock:
+        if _thompson is not None:
+            return
+        entries = []
+        with _lock:
+            mod = mgr().getModule(mod_name)
+            if mod is None:
+                return
+            mod.setPosition(Sword.SW_POSITION(1))
+            last_key = None
+            while len(entries) < 10000:
+                if _walk_ended(mod.popError()):
+                    break
+                key = str(mod.getKeyText())
+                if key == last_key:
+                    break
+                last_key = key
+                entries.append((key, str(mod.getRawEntry())))
+                mod.increment()
+        index = {}
+        for key, raw in entries:
+            for short, full, refs in _thompson_chains(key, raw):
+                # A run of adjacent verses ("Mr 15:29,30") is one link.
+                units = []
+                for r in refs:
+                    prev = units[-1][-1] if units else None
+                    if prev and prev[:2] == r[:2] and r[2] == prev[2] + 1:
+                        units[-1].append(r)
+                    else:
+                        units.append([r])
+                if len(units) < 2:
+                    continue
+                for i, unit in enumerate(units):
+                    nb, nc, nv, nlabel = units[(i + 1) % len(units)][0]
+                    for b, c, v, _l in unit:
+                        links = index.setdefault((b, c, v), [])
+                        if not any(l[4] == short and l[:3] == (nb, nc, nv) for l in links):
+                            links.append((nb, nc, nv, nlabel, short, full))
+        _thompson = index
+
+
+def _thompson_module():
+    return next((m for m in module_names() if m.upper() == 'TCR'), None)
+
+
+def _tsk_module():
+    return next((m for m in module_names() if m.upper() == 'TSK'), None)
+
+
+def get_thompson_links(book, chapter, verse):
+    """[(book, ch, v, label, chain, chain_full), ...] or None without TCR."""
+    mod_name = _thompson_module()
+    if not mod_name or book not in _ALL_BOOKS:
+        return None
+    _load_thompson(mod_name)
+    if _thompson is None:
+        return None
+    return list(_thompson.get((book, chapter, verse), []))
+
+
+# The sets the cross-reference panel can show, in the chooser's order.
+CROSSREF_SETS = ('openbible', 'tsk', 'ubs', 'thompson')
+
+
+def crossref_sets():
+    """The sets this install can show, in CROSSREF_SETS order."""
+    import open_data
+    have = {
+        'openbible': open_data.has_cross_refs(),
+        'tsk': _tsk_module() is not None,
+        'ubs': open_data.has_parallels(),
+        'thompson': _thompson_module() is not None,
+    }
+    return [s for s in CROSSREF_SETS if have[s]]
+
+
+def default_crossref_set(available):
+    """OpenBible if downloaded, else TSK — the panel's choice before it
+    had one — else the first set there is."""
+    for s in ('openbible', 'tsk'):
+        if s in available:
+            return s
+    return available[0] if available else None
+
+
+def get_cross_refs_from(set_id, book, chapter, verse):
+    """The references one set gives for a verse, or None if it is missing."""
+    if book not in _ALL_BOOKS:
+        return None
+    import open_data
+    if set_id == 'openbible':
+        return open_data.get_cross_refs(book, chapter, verse)
+    if set_id == 'ubs':
+        return open_data.get_parallels(book, chapter, verse)
+    if set_id == 'thompson':
+        return get_thompson_links(book, chapter, verse)
+    if set_id == 'tsk':
+        tsk_mod = _tsk_module()
+        if not tsk_mod:
+            return None
+        with _lock:
+            mod = mgr().getModule(tsk_mod)
+            if mod is None:
+                return None
+            vk = Sword.VerseKey()
+            vk.setText(f'{book} {chapter}:{verse}')
+            mod.setKey(vk)
+            raw = str(mod.renderText())
+        return _parse_cross_ref_text(plain_text(raw))
+    return None
+
+
+def get_cross_refs(book, chapter, verse, set_id=None):
+    """Return [(book, chapter, verse, label), ...] from `set_id`; with no
+    set, or one that is missing, OpenBible if downloaded, else TSK."""
     # Neither source indexes the books outside the 66, and both answer for
     # them anyway if asked: OpenBible's numeric verse id raises KeyError,
     # and TSK's VerseKey clamps Baruch 5:4 to Revelation and hands back
     # Revelation's cross-references under a Baruch label.
     if book not in _ALL_BOOKS:
         return None
-
-    import open_data
-    ob = open_data.get_cross_refs(book, chapter, verse)
-    if ob is not None:
-        return ob
-
-    # Fall back to TSK
-    installed = module_names()
-    tsk_mod = next((m for m in installed if m.upper() == 'TSK'), None)
-    if not tsk_mod:
-        return None
-
-    with _lock:
-        mod = mgr().getModule(tsk_mod)
-        if mod is None:
-            return None
-        vk = Sword.VerseKey()
-        vk.setText(f'{book} {chapter}:{verse}')
-        mod.setKey(vk)
-        raw = str(mod.renderText())
-
-    return _parse_cross_ref_text(plain_text(raw))
+    if set_id:
+        refs = get_cross_refs_from(set_id, book, chapter, verse)
+        if refs is not None:
+            return refs
+    refs = get_cross_refs_from('openbible', book, chapter, verse)
+    if refs is not None:
+        return refs
+    return get_cross_refs_from('tsk', book, chapter, verse)
 
 
 _HEB_POS = {

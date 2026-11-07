@@ -243,6 +243,11 @@ This app stands on the work of others:
 - **OpenBible.info**: cross-references and topical tags, released
   under CC-BY. The reason a click on a verse can show you everywhere
   else Scripture has interpreted Scripture.
+- **United Bible Societies**: the parallel passages, the same event or
+  saying told twice and the Old Testament quoted in the New (CC BY-SA
+  4.0; `data/parallels/ubs.tsv` carries the same licence). Moved to
+  English verse numbers with **STEPBible**'s TVTMS versification table
+  (CC BY 4.0, Tyndale House).
 - **Dodson Greek Lexicon**: public-domain NT Greek definitions.
 - **eBible.org**: the modern licensed translations (LEB, BSB, ASV,
   and many more) that complete the picture, and the Strong's-tagged

@@ -86,6 +86,11 @@ install_subdir('creeds', install_dir: pkgdatadir / 'data')
 # with typed links. Built by tools/harmony/build_harmony.py; read by harmony.py.
 install_subdir('harmony', install_dir: pkgdatadir / 'data')
 
+# Parallel passages for the cross-reference panel (UBS, CC BY-SA 4.0, see
+# parallels/NOTICE). Built by tools/build_ubs_parallels.py; read by
+# open_data.py.
+install_subdir('parallels', install_dir: pkgdatadir / 'data')
+
 # Bundled fonts (all OFL) so typography is identical on every machine
 # instead of falling back to whatever the host happens to have. The
 # Flatpak runtime's fontconfig scans /app/share/fonts, and /usr/share/fonts

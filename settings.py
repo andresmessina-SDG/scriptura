@@ -75,6 +75,10 @@ _defaults: dict[str, Any] = {
     # Reading-tools cluster). On by default; off keeps the reading surface
     # fully minimal — verse clicks stop summoning the bar.
     'show_crossrefs':     True,
+    # Which set the cross-reference bar shows ('openbible', 'tsk', 'ubs',
+    # 'thompson'), picked from its caption. None: OpenBible if downloaded,
+    # else TSK, as before there was a choice.
+    'crossref_set':       None,
     # Appearance ▸ Advanced: follow GNOME Night Light and warm/dim the
     # reading paper in step with the screen (tone only — the text never
     # moves). Off by default: the paper changing on its own must be an

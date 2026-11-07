@@ -213,6 +213,58 @@ def has_cross_refs():
     return os.path.exists(os.path.join(_DIR, 'cross_references.txt'))
 
 
+# ── Parallel passages (UBS) ───────────────────────────────────────────────────
+# Shipped with the app, not downloaded: data/parallels/ubs.tsv, one passage
+# per line, each tab-separated member the list of its English verses. A verse
+# links to the first verse of every other member of each passage it is in.
+
+_UBS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                         'data', 'parallels', 'ubs.tsv')
+_ubs = None
+_ubs_lock = threading.Lock()
+
+
+def _load_ubs():
+    global _ubs
+    if _ubs is not None:
+        return
+    with _ubs_lock:
+        if _ubs is not None:
+            return
+        data = {}
+        try:
+            with open(_UBS_PATH, encoding='utf-8') as f:
+                for line in f:
+                    members = [[t for t in (_parse_osis_one(o) for o in m.split()) if t]
+                               for m in line.rstrip('\n').split('\t')]
+                    members = [m for m in members if m]
+                    for i, own in enumerate(members):
+                        others = [m[0] for j, m in enumerate(members) if j != i]
+                        for t in own:
+                            links = data.setdefault(_vid(*t), [])
+                            for o in others:
+                                if o not in links and o != t:
+                                    links.append(o)
+        except OSError:
+            data = {}
+        _ubs = data
+
+
+def has_parallels():
+    return os.path.exists(_UBS_PATH)
+
+
+def get_parallels(book, chapter, verse):
+    """[(book, chapter, verse, label), ...] or None if the file is missing."""
+    _load_ubs()
+    if not _ubs:
+        return None
+    if book not in _BOOK_IDX:
+        return None
+    return [(b, c, v, f'{b} {c}:{v}')
+            for b, c, v in _ubs.get(_vid(book, chapter, verse), [])]
+
+
 # ── Topics ────────────────────────────────────────────────────────────────────
 
 _topics = None
