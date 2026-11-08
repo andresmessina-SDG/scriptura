@@ -3145,7 +3145,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
                 and self.xref_toggle.get_active()):
             if source_pane.book in BOOKS:
                 self._crossref_panel.load(
-                    source_pane.book, source_pane.chapter, verse_num)
+                    source_pane.book, source_pane.chapter, verse_num,
+                    source_pane.module)
                 self._crossref_revealer.set_reveal_child(True)
             else:
                 # Neither TSK nor OpenBible indexes the books outside the 66,

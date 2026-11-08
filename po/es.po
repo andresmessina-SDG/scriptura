@@ -11556,3 +11556,17 @@ msgstr "Sociedades Bíblicas Unidas: pasajes paralelos (CC BY-SA 4.0), renumerad
 #: window.py
 msgid "Thompson Chain-Reference topics (CrossWire, public domain) — chain links"
 msgstr "Temas de la Thompson Chain-Reference (CrossWire, dominio público): eslabones de las cadenas"
+
+#: crossref_panel.py
+msgid "Dictionaries"
+msgstr "Diccionarios"
+
+#: crossref_panel.py
+msgid "Articles in your dictionaries that cite this verse"
+msgstr "Artículos de sus diccionarios que citan este versículo"
+
+#: crossref_panel.py
+msgid "{n} article"
+msgid_plural "{n} articles"
+msgstr[0] "{n} artículo"
+msgstr[1] "{n} artículos"

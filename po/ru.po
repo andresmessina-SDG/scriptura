@@ -11549,3 +11549,18 @@ msgstr "Объединённые библейские общества — па�
 #: window.py
 msgid "Thompson Chain-Reference topics (CrossWire, public domain) — chain links"
 msgstr "Темы Thompson Chain-Reference (CrossWire, общественное достояние) — звенья цепочек"
+
+#: crossref_panel.py
+msgid "Dictionaries"
+msgstr "Словари"
+
+#: crossref_panel.py
+msgid "Articles in your dictionaries that cite this verse"
+msgstr "Статьи ваших словарей, где упоминается этот стих"
+
+#: crossref_panel.py
+msgid "{n} article"
+msgid_plural "{n} articles"
+msgstr[0] "{n} статья"
+msgstr[1] "{n} статьи"
+msgstr[2] "{n} статей"

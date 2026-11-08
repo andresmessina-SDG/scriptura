@@ -131,6 +131,7 @@ py_sources = files(
   'transfer.py',
   'verse_cursor.py',
   'verse_card.py',
+  'verse_articles.py',
   'welcome.py',
   'word_links.py',
   'window.py',

@@ -1,14 +1,17 @@
+import re
+
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, GLib, Pango
+from gi.repository import Adw, Gdk, Gtk, GLib, Pango
 import a11y
 from a11y import set_accessible_label
 from gtk_utils import clear_children, DelayedSpinner
+import content
 import settings
 import sword_bridge
 import tasks
-from i18n import _, ngettext, book_label
+from i18n import _, ngettext, book_label, current_language
 
 
 def _set_names():
@@ -18,6 +21,7 @@ def _set_names():
         'tsk': (_('Treasury'), _('The Treasury of Scripture Knowledge')),
         'ubs': (_('Parallels'), _('Parallel accounts and Old Testament quotations (UBS)')),
         'thompson': (_('Thompson'), _('Thompson’s chains, each link leading to the next')),
+        'dictionaries': (_('Dictionaries'), _('Articles in your dictionaries that cite this verse')),
     }
 
 
@@ -73,6 +77,8 @@ class CrossRefPanel(Gtk.Box):
         self._sets = []
         self._active_set = None
         self._place = None
+        self._article_pop = None
+        self._module = None
 
         ref_scroll = Gtk.ScrolledWindow()
         # EXTERNAL (not AUTOMATIC) horizontally: no scrollbar is drawn — the slim
@@ -133,8 +139,16 @@ class CrossRefPanel(Gtk.Box):
         adj.set_value(adj.get_value() + delta * 60)
         return True
 
-    def load(self, book, chapter, verse):
+    def load(self, book, chapter, verse, module=None):
+        """`module` is the Bible the verse was read in: its language ranks
+        the dictionaries, ahead of the interface's."""
+        if self._article_pop is not None:
+            self._article_pop.popdown()   # its chip is about to go
         self._place = (book, chapter, verse)
+        if module is not None:
+            self._module = module
+        langs = (content.language_code(self._module) if self._module else '',
+                 content.normalise_language(current_language()))
         self._update_caption()
         self._clear_refs()
         self._delayed_spinner.start()
@@ -145,17 +159,18 @@ class CrossRefPanel(Gtk.Box):
         # instead of stranding it.
         tasks.submit(
             f'crossref:{id(self)}',
-            lambda _t: self._lookup(book, chapter, verse),
+            lambda _t: self._lookup(book, chapter, verse, langs),
             self._show_lookup,
             on_error=lambda _exc: self._show_refs(None))
 
     @staticmethod
-    def _lookup(book, chapter, verse):
+    def _lookup(book, chapter, verse, langs=()):
         """Worker thread: the sets on offer, the one to show, its refs."""
-        sets = sword_bridge.crossref_sets()
+        sets = sword_bridge.crossref_sets(langs)
         pick = settings.get('crossref_set')
         active = pick if pick in sets else sword_bridge.default_crossref_set(sets)
-        return sets, active, sword_bridge.get_cross_refs(book, chapter, verse, active)
+        return sets, active, sword_bridge.get_cross_refs(
+            book, chapter, verse, active, langs)
 
     def _show_lookup(self, result):
         sets, active, refs = result
@@ -261,10 +276,16 @@ class CrossRefPanel(Gtk.Box):
         else:
             # The chips appear silently beside the reading text; say how many
             # arrived so the count is not a purely visual fact.
-            a11y.announce(self._title, ngettext(
-                '{n} cross-reference', '{n} cross-references',
-                len(refs)).format(n=len(refs)))
+            if isinstance(refs[0], sword_bridge.Article):
+                said = ngettext('{n} article', '{n} articles', len(refs))
+            else:
+                said = ngettext('{n} cross-reference', '{n} cross-references',
+                                len(refs))
+            a11y.announce(self._title, said.format(n=len(refs)))
             for ref in refs:
+                if isinstance(ref, sword_bridge.Article):
+                    self._ref_box.append(self._article_chip(ref))
+                    continue
                 ref_book, ref_ch, ref_v, label = ref[:4]
                 # Thompson's links carry their chain: (short, full) heading.
                 chain = ref[4:6] if len(ref) >= 6 else None
@@ -309,6 +330,91 @@ class CrossRefPanel(Gtk.Box):
                     btn.add_controller(rc)
                 self._ref_box.append(btn)
         return GLib.SOURCE_REMOVE
+
+    def _article_chip(self, art):
+        btn = Gtk.Button(label=art.label)
+        btn.add_css_class('xref-chip')
+        btn.connect('clicked', lambda b: self._open_article(b, art))
+        return btn
+
+    def _open_article(self, chip, art):
+        """The article in a peek above its chip, built as the word peek
+        builds one: serif headword, the dictionary named, the text."""
+        pop = self._article_pop
+        if pop is None:
+            # Parented to the bar, not the chip: the chips are rebuilt on
+            # every verse, and a popover must not outlive its parent.
+            pop = Gtk.Popover()
+            pop.set_parent(self)
+            pop.set_position(Gtk.PositionType.TOP)
+            self._article_pop = pop
+        ok, bounds = chip.compute_bounds(self)
+        rect = Gdk.Rectangle()
+        if ok:
+            rect.x, rect.y = int(bounds.get_x()), int(bounds.get_y())
+            rect.width, rect.height = int(bounds.get_width()), int(bounds.get_height())
+        pop.set_pointing_to(rect)
+        body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        root = self.get_root()
+        win_w = root.get_width() if root is not None else 0
+        body.set_size_request(360 if win_w <= 0 else max(260, min(360, win_w - 24)), -1)
+        spinner = Gtk.Spinner(spinning=True, halign=Gtk.Align.CENTER)
+        spinner.set_margin_top(28)
+        spinner.set_margin_bottom(28)
+        body.append(spinner)
+        pop.set_child(body)
+        pop.popup()
+        title = art.label.split(' · ', 1)[-1]
+        source = art.label.split(' · ', 1)[0]
+
+        def show(raw):
+            if pop.get_child() is not body:
+                return GLib.SOURCE_REMOVE   # a newer article took the peek
+            clear_children(body)
+            head = Gtk.Label(label=title, xalign=0)
+            head.add_css_class('dict-headword')
+            head.set_ellipsize(Pango.EllipsizeMode.END)
+            head.set_margin_start(18)
+            head.set_margin_end(18)
+            head.set_margin_top(10)
+            head.set_margin_bottom(2)
+            body.append(head)
+            cap = Gtk.Label(label=source, xalign=0)
+            cap.add_css_class('caption')
+            cap.add_css_class('dim-label')
+            cap.set_margin_start(18)
+            cap.set_margin_bottom(6)
+            body.append(cap)
+            scroll = Gtk.ScrolledWindow()
+            scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            scroll.set_propagate_natural_height(True)
+            scroll.set_max_content_height(320)
+            scroll.set_min_content_height(140)
+            tv = Gtk.TextView(editable=False, cursor_visible=False,
+                              wrap_mode=Gtk.WrapMode.WORD)
+            tv.set_left_margin(18)
+            tv.set_right_margin(18)
+            tv.set_top_margin(4)
+            tv.set_bottom_margin(14)
+            tv.set_pixels_below_lines(3)
+            tv.set_pixels_inside_wrap(3)
+            from pane import _html_to_markup
+            from pane_peek import _strip_leading_headword
+            html = _strip_leading_headword(raw or '', title)
+            buf = tv.get_buffer()
+            try:
+                buf.insert_markup(buf.get_end_iter(), _html_to_markup(
+                    html, Adw.StyleManager.get_default().get_dark()), -1)
+            except Exception:
+                buf.set_text(re.sub(r'<[^>]+>', '', html))
+            scroll.set_child(tv)
+            body.append(scroll)
+            return GLib.SOURCE_REMOVE
+
+        import verse_articles
+        tasks.submit(f'crossref-article:{id(self)}',
+                     lambda _t: verse_articles.article_text(art.module, art.key, art.nth),
+                     show, on_error=lambda _e: show(''))
 
     def _make_handler(self, book, chapter, verse):
         return lambda _: self._on_ref_clicked(book, chapter, verse)

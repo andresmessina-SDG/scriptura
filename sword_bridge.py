@@ -3637,15 +3637,12 @@ def _load_thompson(mod_name):
             if mod is None:
                 return
             mod.setPosition(Sword.SW_POSITION(1))
-            last_key = None
+            # To the module's own end: a dictionary can file two entries
+            # under one key, so a repeated key is not the end.
             while len(entries) < 10000:
                 if _walk_ended(mod.popError()):
                     break
-                key = str(mod.getKeyText())
-                if key == last_key:
-                    break
-                last_key = key
-                entries.append((key, str(mod.getRawEntry())))
+                entries.append((str(mod.getKeyText()), str(mod.getRawEntry())))
                 mod.increment()
         index = {}
         for key, raw in entries:
@@ -3688,18 +3685,69 @@ def get_thompson_links(book, chapter, verse):
     return list(_thompson.get((book, chapter, verse), []))
 
 
+class Article(tuple):
+    """A dictionary article on the cross-reference bar, in place of a
+    verse: (module, key, nth, label). `nth` tells apart entries filed
+    under the same key; `label` is "Easton's · Abigail"."""
+    __slots__ = ()
+
+    def __new__(cls, module, key, nth, label):
+        return super().__new__(cls, (module, key, nth, label))
+
+    module = property(lambda self: self[0])
+    key = property(lambda self: self[1])
+    nth = property(lambda self: self[2])
+    label = property(lambda self: self[3])
+
+
+_KEY_SMALL_WORDS = _SMALL_WORDS | {'ou', 'de', 'la', 'le', 'les', 'et',
+                                   'des', 'du', 'en', 'y', 'el', 'los'}
+
+
+def _article_title(key):
+    """'ABIGAIL' → 'Abigail', 'ABEL, STONE OF' → 'Abel, Stone of'. A key
+    already in mixed case is left as it is."""
+    if not key.isupper():
+        return key
+    words = key.lower().split()
+    return ' '.join(
+        w if (i and w.strip(',.;') in _KEY_SMALL_WORDS)
+        else '-'.join(p[:1].upper() + p[1:] for p in w.split('-'))
+        for i, w in enumerate(words))
+
+
+def dictionary_works(langs):
+    """The dictionaries the bar's Dictionaries set draws on, best first."""
+    import verse_articles
+    return verse_articles.works(langs)
+
+
+def dictionary_articles(book, chapter, verse, langs):
+    """[Article, ...] for the entries citing a verse, in the dictionaries
+    `dictionary_works(langs)` keeps."""
+    import verse_articles
+    from pane_peek import _short_dict_title
+    descs = dict(installed_dict_modules())
+    return [Article(m, k, n, f'{_short_dict_title(m, descs.get(m, m))} · '
+                             f'{_article_title(k)}')
+            for m, k, n in verse_articles.articles_for(book, chapter, verse, langs)]
+
+
 # The sets the cross-reference panel can show, in the chooser's order.
-CROSSREF_SETS = ('openbible', 'tsk', 'ubs', 'thompson')
+CROSSREF_SETS = ('openbible', 'tsk', 'ubs', 'thompson', 'dictionaries')
 
 
-def crossref_sets():
-    """The sets this install can show, in CROSSREF_SETS order."""
+def crossref_sets(langs=()):
+    """The sets this install can show, in CROSSREF_SETS order. `langs`,
+    the reader's languages best first, decide whether any dictionary
+    counts."""
     import open_data
     have = {
         'openbible': open_data.has_cross_refs(),
         'tsk': _tsk_module() is not None,
         'ubs': open_data.has_parallels(),
         'thompson': _thompson_module() is not None,
+        'dictionaries': bool(dictionary_works(langs)),
     }
     return [s for s in CROSSREF_SETS if have[s]]
 
@@ -3713,7 +3761,7 @@ def default_crossref_set(available):
     return available[0] if available else None
 
 
-def get_cross_refs_from(set_id, book, chapter, verse):
+def get_cross_refs_from(set_id, book, chapter, verse, langs=()):
     """The references one set gives for a verse, or None if it is missing."""
     if book not in _ALL_BOOKS:
         return None
@@ -3724,6 +3772,10 @@ def get_cross_refs_from(set_id, book, chapter, verse):
         return open_data.get_parallels(book, chapter, verse)
     if set_id == 'thompson':
         return get_thompson_links(book, chapter, verse)
+    if set_id == 'dictionaries':
+        if not dictionary_works(langs):
+            return None
+        return dictionary_articles(book, chapter, verse, langs)
     if set_id == 'tsk':
         tsk_mod = _tsk_module()
         if not tsk_mod:
@@ -3740,7 +3792,7 @@ def get_cross_refs_from(set_id, book, chapter, verse):
     return None
 
 
-def get_cross_refs(book, chapter, verse, set_id=None):
+def get_cross_refs(book, chapter, verse, set_id=None, langs=()):
     """Return [(book, chapter, verse, label), ...] from `set_id`; with no
     set, or one that is missing, OpenBible if downloaded, else TSK."""
     # Neither source indexes the books outside the 66, and both answer for
@@ -3750,7 +3802,7 @@ def get_cross_refs(book, chapter, verse, set_id=None):
     if book not in _ALL_BOOKS:
         return None
     if set_id:
-        refs = get_cross_refs_from(set_id, book, chapter, verse)
+        refs = get_cross_refs_from(set_id, book, chapter, verse, langs)
         if refs is not None:
             return refs
     refs = get_cross_refs_from('openbible', book, chapter, verse)
