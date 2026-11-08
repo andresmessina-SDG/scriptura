@@ -249,6 +249,10 @@ This app stands on the work of others:
   English verse numbers with **STEPBible**'s TVTMS versification table
   (CC BY 4.0, Tyndale House).
 - **Dodson Greek Lexicon**: public-domain NT Greek definitions.
+- **Tyndale House Publishers**: the Tyndale Open Bible Dictionary and the
+  Tyndale Open Study Notes (CC BY-SA 4.0, from tyndaleopenresources.com),
+  offered as modules from Scriptura's own source. The study notes were
+  written for the New Living Translation.
 - **eBible.org**: the modern licensed translations (LEB, BSB, ASV,
   and many more) that complete the picture, and the Strong's-tagged
   Reina-Valera 1909 (public domain) behind the Spanish line under each

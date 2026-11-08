@@ -40,6 +40,8 @@ def test_thml_passages_are_read():
 def test_a_long_range_counts_as_its_first_verse():
     raw = '<ref osisRef="Bible:Ps.119.1-Ps.119.176">Ps. 119</ref>'
     assert va.cited_verses(raw) == [('Psalms', 119, 1)]
+    story = '<ref osisRef="Bible:1Sam.25.2-1Sam.25.42">1 Sm 25:2-42</ref>'
+    assert ('1 Samuel', 25, 3) in va.cited_verses(story)
     short = '<ref osisRef="Bible:Gen.1.1-Gen.1.3">Gen. 1:1-3</ref>'
     assert va.cited_verses(short) == [
         ('Genesis', 1, 1), ('Genesis', 1, 2), ('Genesis', 1, 3)]
@@ -90,7 +92,8 @@ def fake_index(monkeypatch, tmp_path):
 
     def walk(name):
         walked.append(name)
-        return _WALKS[name]
+        entries, total = _WALKS[name]
+        return [(k, refs, len(refs)) for k, refs in entries], total
 
     monkeypatch.setattr(va, '_walk', walk)
     monkeypatch.setattr(va, '_modules', lambda: list(_WALKS))
@@ -157,6 +160,7 @@ def test_titles_read_as_names():
     assert t('ABEL, STONE OF') == 'Abel, Stone of'
     assert t('ABIGAÏL OU ABIGAL') == 'Abigaïl ou Abigal'
     assert t('Abigail') == 'Abigail'
+    assert t('“I AM” SAYINGS') == '“I Am” Sayings'
 
 
 def test_the_set_offers_articles(monkeypatch, fake_index):

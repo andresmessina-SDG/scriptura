@@ -3712,7 +3712,8 @@ def _article_title(key):
     words = key.lower().split()
     return ' '.join(
         w if (i and w.strip(',.;') in _KEY_SMALL_WORDS)
-        else '-'.join(p[:1].upper() + p[1:] for p in w.split('-'))
+        else '-'.join(re.sub(r'[^\W\d_]', lambda m: m.group(0).upper(), p, count=1)
+                      for p in w.split('-'))
         for i, w in enumerate(words))
 
 

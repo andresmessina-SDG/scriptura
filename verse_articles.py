@@ -42,13 +42,14 @@ import sword_bridge
 _log = logging.getLogger(__name__)
 
 CACHE_FILE = 'verse-articles.pickle'
-_FORMAT = 6
+_FORMAT = 7
 # A work counts as a Bible reference work when this share of its entries
 # cites a verse.
 BIBLE_WORK_SHARE = 0.25
-# A cited range longer than this is about a whole passage, not its verses:
-# only its first verse is noted.
-_RANGE_CAP = 40
+# A cited range longer than this is about a whole book or psalm, not its
+# verses: only its first verse is noted. A story is shorter: Tyndale's
+# Abigail cites 1 Sm 25:2-42, and a cap of 40 lost her at 25:3.
+_RANGE_CAP = 80
 
 _lock = threading.Lock()
 #: (signature, {(book, ch, v): [(module, key, nth), ...]},
@@ -212,8 +213,8 @@ def cited_verses(raw):
 
 
 def _walk(name):
-    """([((key, nth), cited verses)] for every entry that cites a verse,
-    the number of entries walked)."""
+    """([((key, nth), cited verses, references made)] for every entry that
+    cites a verse, the number of entries walked)."""
     entries = []
     with sword_bridge._lock:
         # A manager of its own: a walk run to the end leaves the module's
@@ -245,7 +246,13 @@ def _walk(name):
                 # cannot render while it is held. Let go between batches.
                 sword_bridge._lock.release()
                 sword_bridge._lock.acquire()
-    return [(key, cited_verses(raw)) for key, raw in entries], walked
+    return [(key, cited_verses(raw), _citations(raw))
+            for key, raw in entries], walked
+
+
+def _citations(raw):
+    """How many references an entry makes: a range is one, however long."""
+    return len(_OSIS_REF_SHOWN.findall(raw)) + len(_SCRIP_REF.findall(raw))
 
 
 def _build(names):
@@ -256,10 +263,12 @@ def _build(names):
         except Exception:
             _log.exception('could not index %s', name)
             continue
-        stats[name] = (total, sum(1 for _key, refs in walked if refs))
-        # An article that cites few verses is about them; one citing
+        stats[name] = (total, sum(1 for _key, refs, _n in walked if refs))
+        # An article that makes few references is about them; one making
         # hundreds mentions them in passing. The narrow ones go first.
-        for (key, nth), refs in sorted(walked, key=lambda e: len(e[1])):
+        # Counted by reference, not verse: a story cited as one range is
+        # one citation.
+        for (key, nth), refs, _n in sorted(walked, key=lambda e: e[2]):
             for ref in refs:
                 index.setdefault(ref, []).append((name, key, nth))
     return index, stats

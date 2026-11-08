@@ -3551,6 +3551,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             _('United Bible Societies — parallel passages (CC BY-SA 4.0), renumbered with STEPBible’s versification table (CC BY)'),
             _('Thompson Chain-Reference topics (CrossWire, public domain) — chain links'),
             _('Dodson Greek Lexicon — public-domain NT Greek definitions'),
+            _('Tyndale Open Bible Dictionary and Study Notes — Tyndale House Publishers (CC BY-SA 4.0)'),
             _('eBible.org — modern translation catalog and texts'),
             _('Berean Standard Bible audio — chapters read by Bob Souer (CC0)'),
             _('King James Version audio — Deep Dive Bible (CC0)'),

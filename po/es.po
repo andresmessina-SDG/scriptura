@@ -11570,3 +11570,7 @@ msgid "{n} article"
 msgid_plural "{n} articles"
 msgstr[0] "{n} artículo"
 msgstr[1] "{n} artículos"
+
+#: window.py
+msgid "Tyndale Open Bible Dictionary and Study Notes — Tyndale House Publishers (CC BY-SA 4.0)"
+msgstr "Diccionario bíblico y notas de estudio Tyndale Open: Tyndale House Publishers (CC BY-SA 4.0)"
