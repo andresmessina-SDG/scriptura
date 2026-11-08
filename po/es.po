@@ -11574,3 +11574,15 @@ msgstr[1] "{n} artículos"
 #: window.py
 msgid "Tyndale Open Bible Dictionary and Study Notes — Tyndale House Publishers (CC BY-SA 4.0)"
 msgstr "Diccionario bíblico y notas de estudio Tyndale Open: Tyndale House Publishers (CC BY-SA 4.0)"
+
+#: crossref_panel.py
+msgid "No dictionary article cites this verse."
+msgstr "Ningún artículo de diccionario cita este versículo."
+
+#: crossref_panel.py
+msgid "No parallel passages for this verse."
+msgstr "No hay pasajes paralelos para este versículo."
+
+#: crossref_panel.py
+msgid "No Thompson chain passes through this verse."
+msgstr "Ninguna cadena de Thompson pasa por este versículo."

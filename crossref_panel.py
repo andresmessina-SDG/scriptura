@@ -268,7 +268,13 @@ class CrossRefPanel(Gtk.Box):
             self._ref_box.append(lbl)
             a11y.announce(self._title, msg)
         elif not refs:
-            msg = _('No cross-references found.')
+            # Each set says what it looked for: "no cross-references" under
+            # Dictionaries read as if the bar had failed to look.
+            msg = {
+                'dictionaries': _('No dictionary article cites this verse.'),
+                'ubs': _('No parallel passages for this verse.'),
+                'thompson': _('No Thompson chain passes through this verse.'),
+            }.get(self._active_set, _('No cross-references found.'))
             lbl = Gtk.Label(label=msg)
             lbl.add_css_class('dim-label')
             self._ref_box.append(lbl)

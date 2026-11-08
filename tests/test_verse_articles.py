@@ -96,12 +96,15 @@ def fake_index(monkeypatch, tmp_path):
         return [(k, refs, len(refs)) for k, refs in entries], total
 
     monkeypatch.setattr(va, '_walk', walk)
+    # In this process, where the stand-in dictionaries are.
+    monkeypatch.setattr(va, '_build_in_child', lambda: False)
     monkeypatch.setattr(va, '_modules', lambda: list(_WALKS))
     import content
     monkeypatch.setattr(content, 'language_code', lambda n: _LANGS.get(n, ''))
     monkeypatch.setattr(va, '_signature', lambda names: ('sig', tuple(names)))
     monkeypatch.setattr(va.paths, 'cache_dir', lambda: str(tmp_path))
     monkeypatch.setattr(va, '_index', None)
+    monkeypatch.setattr(va, '_stale', None)
     return walked
 
 
@@ -251,3 +254,38 @@ def test_the_walk_lets_go_of_the_sword_lock(monkeypatch):
     monkeypatch.setattr(sword_bridge, '_lock', Lock())
     assert va._walk('Webster1913') == ([], 4500)
     assert len(released) == 2
+
+
+def test_the_index_is_compact(fake_index):
+    index, _stats = va._load()
+    assert index['articles'].count(('Easton', 'CHURL', 0)) == 1
+    from array import array
+    assert all(isinstance(v, array) for v in index['verses'].values())
+
+
+def test_a_child_build_is_read_from_the_cache(fake_index, monkeypatch):
+    # The child writes the cache and exits; the app only reads it.
+    def child():
+        names = va._modules()
+        va._write((va._signature(names), *va._build(names)))
+        return True
+    monkeypatch.setattr(va, '_build_in_child', child)
+    assert va.articles_for('Genesis', 4, 2, EN) == [('Smith', 'ABEL', 0)]
+
+
+def test_the_empty_bar_names_what_it_looked_for(panel):
+    panel._show_lookup((['tsk', 'dictionaries'], 'dictionaries', []))
+    assert panel._ref_box.get_first_child().get_text() == (
+        'No dictionary article cites this verse.')
+
+
+def test_a_stale_cache_is_not_reread_on_every_click(fake_index, monkeypatch):
+    va._load()                                   # a cache on disk
+    monkeypatch.setattr(va, '_index', None)
+    monkeypatch.setattr(va, '_signature', lambda names: ('a dictionary changed',))
+    loads = []
+    real = va.pickle.load
+    monkeypatch.setattr(va.pickle, 'load', lambda f: loads.append(1) or real(f))
+    for _ in range(5):
+        assert va._load(build=False) is None
+    assert len(loads) == 1

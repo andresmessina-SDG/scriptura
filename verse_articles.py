@@ -32,6 +32,7 @@ import os
 import pickle
 import re
 import threading
+from array import array
 
 import Sword
 
@@ -42,7 +43,7 @@ import sword_bridge
 _log = logging.getLogger(__name__)
 
 CACHE_FILE = 'verse-articles.pickle'
-_FORMAT = 7
+_FORMAT = 8
 # A work counts as a Bible reference work when this share of its entries
 # cites a verse.
 BIBLE_WORK_SHARE = 0.25
@@ -52,8 +53,7 @@ BIBLE_WORK_SHARE = 0.25
 _RANGE_CAP = 80
 
 _lock = threading.Lock()
-#: (signature, {(book, ch, v): [(module, key, nth), ...]},
-#:  {module: (entries, entries citing a verse)})
+#: (signature, the index (see _build), {module: (entries, entries citing a verse)})
 _index: tuple | None = None
 
 _OSIS_REF_SHOWN = re.compile(
@@ -256,7 +256,14 @@ def _citations(raw):
 
 
 def _build(names):
-    index, stats = {}, {}
+    """(index, stats). The index is compact — it holds 148,000 links to
+    15,000 articles, and as tuples it took 21 MB: each article is named
+    once in a table, and each verse keeps an array of article numbers.
+
+        {'articles': [(module, key, nth), ...],
+         'verses': {verse number: array of article numbers}}
+    """
+    articles, number, verses, stats = [], {}, {}, {}
     for name in names:
         try:
             walked, total = _walk(name)
@@ -269,13 +276,79 @@ def _build(names):
         # Counted by reference, not verse: a story cited as one range is
         # one citation.
         for (key, nth), refs, _n in sorted(walked, key=lambda e: e[2]):
+            art = (name, key, nth)
+            if art not in number:
+                number[art] = len(articles)
+                articles.append(art)
             for ref in refs:
-                index.setdefault(ref, []).append((name, key, nth))
-    return index, stats
+                vid = _verse_number(*ref)
+                if vid is not None:
+                    verses.setdefault(vid, array('I')).append(number[art])
+    return {'articles': articles, 'verses': verses}, stats
+
+
+def _verse_number(book, chapter, verse):
+    i = open_data._BOOK_IDX.get(book)
+    return None if i is None else i * 1_000_000 + chapter * 1000 + verse
 
 
 def _cache_path():
     return os.path.join(paths.cache_dir(), CACHE_FILE)
+
+
+def _write(entry):
+    try:
+        tmp = _cache_path() + f'.{os.getpid()}.tmp'
+        with open(tmp, 'wb') as f:
+            pickle.dump(entry, f, protocol=pickle.HIGHEST_PROTOCOL)
+        os.replace(tmp, _cache_path())
+    except OSError:
+        _log.exception('could not keep the verse-article index')
+
+
+#: (signature, cache file, its mtime) last found not to match: an out-of-date
+#: cache is not unpickled again on every verse click (24 ms each) while the
+#: reader has not yet chosen Dictionaries to rebuild it.
+_stale = None
+
+
+def _read(sig):
+    global _stale
+    try:
+        mtime = os.stat(_cache_path()).st_mtime_ns
+    except OSError:
+        return None
+    if _stale == (sig, _cache_path(), mtime):
+        return None
+    try:
+        with open(_cache_path(), 'rb') as f:
+            cached = pickle.load(f)
+        if cached[0] == sig:
+            return cached
+    except Exception:
+        pass
+    _stale = (sig, _cache_path(), mtime)
+    return None
+
+
+def _build_in_child():
+    """Build in a process of its own and leave the result in the cache.
+
+    Walking the dictionaries reads every entry's text: in the app's own
+    process that left about 50 MB behind after the build, which Python
+    keeps until the app closes. A child returns all of it when it exits,
+    and holds no lock the page needs while it works."""
+    import subprocess
+    import sys
+    try:
+        r = subprocess.run([sys.executable, os.path.abspath(__file__), '--build'],
+                           capture_output=True, timeout=900)
+    except (OSError, subprocess.TimeoutExpired):
+        _log.exception('the index build did not run')
+        return False
+    if r.returncode != 0:
+        _log.warning('the index build failed: %s', r.stderr[-400:])
+    return r.returncode == 0
 
 
 def _load(build=True):
@@ -291,24 +364,18 @@ def _load(build=True):
     try:
         if _index is not None and _index[0] == sig:
             return _index[1:]
-        try:
-            with open(_cache_path(), 'rb') as f:
-                cached = pickle.load(f)
-            if cached[0] == sig:
-                _index = cached
-                return cached[1:]
-        except Exception:
-            pass
+        cached = _read(sig)
+        if cached is None and build and _build_in_child():
+            cached = _read(sig)
+        if cached is not None:
+            _index = cached
+            return cached[1:]
         if not build:
             return None
+        # The child could not build (or a dictionary changed meanwhile):
+        # build here instead.
         _index = (sig, *_build(names))
-        try:
-            tmp = _cache_path() + '.tmp'
-            with open(tmp, 'wb') as f:
-                pickle.dump(_index, f, protocol=pickle.HIGHEST_PROTOCOL)
-            os.replace(tmp, _cache_path())
-        except OSError:
-            _log.exception('could not keep the verse-article index')
+        _write(_index)
         return _index[1:]
     finally:
         _lock.release()
@@ -350,8 +417,10 @@ def articles_for(book, chapter, verse, langs):
     index, stats = _load()
     keep = [n for n in works(langs) if _is_bible_work(stats, n)]
     order = {name: i for i, name in enumerate(keep)}
-    found = [a for a in index.get((book, chapter, verse), []) if a[0] in order]
-    return sorted(found, key=lambda a: order[a[0]])
+    vid = _verse_number(book, chapter, verse)
+    articles = index['articles']
+    found = [articles[i] for i in index['verses'].get(vid, ())]
+    return sorted((a for a in found if a[0] in order), key=lambda a: order[a[0]])
 
 
 def article_text(name, key, nth=0):
@@ -392,3 +461,12 @@ def article_text(name, key, nth=0):
         if str(mod.getKeyText()).strip() != want:
             return ''
         return raw
+
+
+if __name__ == '__main__':
+    # The child `_build_in_child` starts: build, keep, exit.
+    import sys
+    if sys.argv[1:] == ['--build']:
+        names = _modules()
+        _write((_signature(names), *_build(names)))
+        sys.exit(0)

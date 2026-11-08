@@ -483,13 +483,22 @@ def fragment_for(surface: str, book: str = '', chapter: int = 0,
                     refs[other].append(label)
         return [(o, person_name(o), ' · '.join(refs[o])) for o in order]
 
-    parents = _rows(parents_of(pid), 'parent')
+    # Luke 3:38's last step, "Adam, which was the son of God", is a claim
+    # the chart draws as one, not a family link: in the peek it made every
+    # double-clicked "God" answer "Children: Adam", and Adam "Parents: God".
+    # Left out here; someone it leaves with no family at all (God) has no
+    # family peek.
+    up = [e for e in parents_of(pid) if e['kind'] != 'of_god']
+    down = [e for e in children_of(pid) if e['kind'] != 'of_god']
+    if not up and not down and (parents_of(pid) or children_of(pid)):
+        return None
+    parents = _rows(up, 'parent')
     mother = None
-    for e in parents_of(pid):
+    for e in up:
         if e['mother']:
             mother = (e['mother'], person_name(e['mother']))
             break
-    children = _rows(children_of(pid), 'child')
+    children = _rows(down, 'child')
 
     return {
         'id': pid,
