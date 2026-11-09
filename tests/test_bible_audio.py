@@ -18,6 +18,7 @@ import sword_bridge
 
 BSB = ba.READINGS[0]
 BES = ba.READINGS[1]
+KJV = ba.READINGS[2]
 
 
 @pytest.mark.parametrize('reading', ba.READINGS, ids=lambda r: r.translation)
@@ -62,6 +63,18 @@ def test_chapter_url_matches_the_spanish_publishers_names():
     assert ba.chapter_url(BES, 'Revelation', 22) == f'{base}/66_BES_APOC_22.mp3'
 
 
+def test_chapter_url_matches_the_kjv_hosts_names():
+    """USFM codes and a bare chapter number, as all 1189 were requested."""
+    base = 'https://audio.deepdivebible.org/kjv'
+    assert ba.chapter_url(KJV, 'Genesis', 1) == f'{base}/GEN/1.mp3'
+    assert ba.chapter_url(KJV, 'Psalms', 119) == f'{base}/PSA/119.mp3'
+    assert ba.chapter_url(KJV, 'Song of Solomon', 8) == f'{base}/SNG/8.mp3'
+    assert ba.chapter_url(KJV, 'Ezekiel', 48) == f'{base}/EZK/48.mp3'
+    assert ba.chapter_url(KJV, 'Mark', 16) == f'{base}/MRK/16.mp3'
+    assert ba.chapter_url(KJV, '3 John', 1) == f'{base}/3JN/1.mp3'
+    assert ba.chapter_url(KJV, 'Revelation', 22) == f'{base}/REV/22.mp3'
+
+
 def test_spanish_psalms_take_three_digits_and_nothing_else_does():
     """The rule is the book's, not the number's: Psalm 1 is 001 while Genesis
     1 is 01. Reading it as "three digits past ninety-nine" would 404 on all
@@ -100,8 +113,13 @@ def test_each_reading_covers_only_the_translation_it_reads():
     assert ba.reading_for_module('BSB') is BSB
     assert ba.reading_for_module('eBible: engbsb') is BSB
     assert ba.reading_for_module('eBible: spabes') is BES
-    assert ba.reading_for_module('KJV') is None
-    assert ba.reading_for_module('eBible: engkjv') is None
+    assert ba.reading_for_module('KJV') is KJV
+    assert ba.reading_for_module('KJVA') is KJV
+    assert ba.reading_for_module('eBible: eng-kjv') is KJV
+    assert ba.reading_for_module('eBible: eng-kjv2006') is KJV
+    # A revision of the KJV is another wording, not this reading.
+    assert ba.reading_for_module('AKJV') is None
+    assert ba.reading_for_module('KJVPCE') is None
     # Another Spanish translation is not this reading: the Reina-Valera in
     # the ear over the Español Sencillo on the page is exactly the failure
     # matching on module key exists to prevent.
@@ -118,6 +136,8 @@ def test_a_reading_that_requires_attribution_carries_the_credit():
     assert BES.credit == 'AudioBiblia.org'
     assert BSB.licence == 'CC0 1.0'
     assert not BSB.credit
+    assert KJV.licence == 'CC0 1.0'
+    assert not KJV.credit
 
 
 def test_no_two_readings_claim_the_same_module():
@@ -173,8 +193,31 @@ def test_no_two_readings_can_collide_in_the_cache():
                 url = ba.chapter_url(reading, book, chapter)
                 if url is None:
                     continue
-                name = url.rsplit('/', 1)[-1]
-                assert name not in seen or seen[name] == reading.translation, (
-                    f'{name} is claimed by both {seen.get(name)} and '
-                    f'{reading.translation}')
-                seen[name] = reading.translation
+                name = ba._cache_name(url)
+                assert name not in seen, (
+                    f'{name} is claimed by both {seen[name]} and '
+                    f'{reading.translation} {book} {chapter}')
+                seen[name] = f'{reading.translation} {book} {chapter}'
+
+
+def test_cache_names_of_the_older_readings_are_unchanged():
+    """Their names are the URL's last segment, as before the KJV came, so
+    chapters already cached are found again rather than fetched twice."""
+    url = ba.chapter_url(BSB, 'Genesis', 1)
+    assert ba._cache_name(url) == 'BSB_01_Gen_001.mp3'
+    url = ba.chapter_url(BES, 'Psalms', 23)
+    assert ba._cache_name(url) == '19_BES_SAL_023.mp3'
+    assert ba._cache_name(ba.chapter_url(KJV, 'Exodus', 1)) == 'EXO_1.mp3'
+
+
+def test_kjv_chapters_are_cached_by_book_and_chapter(tmp_path, monkeypatch):
+    """Genesis 1 cached must not answer for Exodus 1: both end in `1.mp3`."""
+    monkeypatch.setattr(ba.paths, 'cache_dir', lambda: str(tmp_path))
+    monkeypatch.setattr(ba.devotional_audio.paths, 'cache_dir',
+                        lambda: str(tmp_path))
+    gen = ba.chapter_url(KJV, 'Genesis', 1)
+    directory = tmp_path / ba.CACHE_SUBDIR
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / 'GEN_1.mp3').write_bytes(b'x')
+    assert ba.cached_chapter(gen) == str(directory / 'GEN_1.mp3')
+    assert ba.cached_chapter(ba.chapter_url(KJV, 'Exodus', 1)) is None

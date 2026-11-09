@@ -300,13 +300,16 @@ def episode_url(date: datetime.date, session: str,
     return idx.get(f'{date.month:02d}-{date.day:02d}:{session}')
 
 
-def cached_episode(url: str, sub: str = 'devotional_audio') -> str | None:
+def cached_episode(url: str, sub: str = 'devotional_audio',
+                   name: str | None = None) -> str | None:
     """The local copy of an episode, if it has already been fetched.
 
     `sub` names the cache directory: scripture readings keep their own, so
     that trimming those can never remove a devotional episode or vice versa.
+    `name` is the file's name there, for a host whose last path segment does
+    not tell its files apart; by default it is that segment.
     """
-    p = os.path.join(_episode_dir(sub), _cache_name(url))
+    p = os.path.join(_episode_dir(sub), name or _cache_name(url))
     return p if os.path.exists(p) else None
 
 
@@ -315,16 +318,17 @@ def _cache_name(url: str) -> str:
     return re.sub(r'[^A-Za-z0-9._-]', '_', base)[-64:]
 
 
-def fetch_episode(url: str, sub: str = 'devotional_audio') -> str | None:
+def fetch_episode(url: str, sub: str = 'devotional_audio',
+                  name: str | None = None) -> str | None:
     """Download an episode and return its local path (or None).
 
     Blocking — call from a task worker. Written to a .part file and renamed,
     so an interrupted download can never be mistaken for a playable one.
     """
-    have = cached_episode(url, sub)
+    have = cached_episode(url, sub, name)
     if have:
         return have
-    dest = os.path.join(_episode_dir(sub), _cache_name(url))
+    dest = os.path.join(_episode_dir(sub), name or _cache_name(url))
     part = dest + '.part'
     try:
         req = urllib.request.Request(url, headers={'User-Agent': _UA})

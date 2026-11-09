@@ -3145,7 +3145,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
                 and self.xref_toggle.get_active()):
             if source_pane.book in BOOKS:
                 self._crossref_panel.load(
-                    source_pane.book, source_pane.chapter, verse_num)
+                    source_pane.book, source_pane.chapter, verse_num,
+                    source_pane.module)
                 self._crossref_revealer.set_reveal_child(True)
             else:
                 # Neither TSK nor OpenBible indexes the books outside the 66,
@@ -3547,9 +3548,13 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         dlg.add_credit_section(_('Data'), [
             _('SWORD Project (CrossWire Bible Society) — modules and data layer'),
             _('OpenBible.info — cross-references and topical tags (CC-BY)'),
+            _('United Bible Societies — parallel passages (CC BY-SA 4.0), renumbered with STEPBible’s versification table (CC BY)'),
+            _('Thompson Chain-Reference topics (CrossWire, public domain) — chain links'),
             _('Dodson Greek Lexicon — public-domain NT Greek definitions'),
+            _('Tyndale Open Bible Dictionary and Study Notes — Tyndale House Publishers (CC BY-SA 4.0)'),
             _('eBible.org — modern translation catalog and texts'),
             _('Berean Standard Bible audio — chapters read by Bob Souer (CC0)'),
+            _('King James Version audio — Deep Dive Bible (CC0)'),
             _('HistoricalChristianFaith Commentaries Database — historical commentary pack'),
             _('Reina-Valera 1909 (eBible.org) — Spanish word renderings, public domain'),
             _('Russian Literal Open Bible (Door43) — Russian word renderings (CC BY-SA 4.0)'),

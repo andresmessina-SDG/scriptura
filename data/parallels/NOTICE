@@ -1,0 +1,15 @@
+ubs.tsv — parallel passages in the Old and New Testaments, including Old
+Testament quotations in the New.
+
+Source: UBS Parallel Passage Database, © 2023 United Bible Societies,
+https://github.com/ubsicap/ubs-open-license ("parallel passages"),
+licensed CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/).
+
+Changes: verse numbers moved from the Hebrew and Greek numbering to the
+English (KJV) numbering, using STEPBible's TVTMS table (Translators
+Versification Traditions with Methodology for Standardisation),
+https://github.com/STEPBible/STEPBible-Data, CC BY 4.0, Tyndale House,
+Cambridge. Word-match marks dropped; duplicate passages merged.
+
+Built by tools/build_ubs_parallels.py. This file is shared under
+CC BY-SA 4.0, the same licence as its source.

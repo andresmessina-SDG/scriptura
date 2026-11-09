@@ -8341,6 +8341,10 @@ msgid "Berean Standard Bible audio — chapters read by Bob Souer (CC0)"
 msgstr ""
 "Audio de la Berean Standard Bible: capítulos leídos por Bob Souer (CC0)"
 
+#: window.py
+msgid "King James Version audio — Deep Dive Bible (CC0)"
+msgstr "Audio de la King James Version: Deep Dive Bible (CC0)"
+
 #: window.py:2952
 msgid ""
 "HistoricalChristianFaith Commentaries Database — historical commentary pack"
@@ -11496,3 +11500,89 @@ msgstr "Abrir en La armonía de los Evangelios"
 #: window.py
 msgid "Gospel parallels — a sign in the margin where the other Gospels tell the same event"
 msgstr "Paralelos en los Evangelios: una señal en el margen donde los otros Evangelios narran el mismo suceso"
+
+#: crossref_panel.py
+msgid "OpenBible"
+msgstr "OpenBible"
+
+#: crossref_panel.py
+msgid "340,000 links, ranked by readers’ votes"
+msgstr "340 000 enlaces, ordenados por los votos de los lectores"
+
+#: crossref_panel.py
+msgid "Treasury"
+msgstr "Tesoro"
+
+#: crossref_panel.py
+msgid "The Treasury of Scripture Knowledge"
+msgstr "The Treasury of Scripture Knowledge"
+
+#: crossref_panel.py
+msgid "Parallels"
+msgstr "Paralelos"
+
+#: crossref_panel.py
+msgid "Parallel accounts and Old Testament quotations (UBS)"
+msgstr "Relatos paralelos y citas del Antiguo Testamento (UBS)"
+
+#: crossref_panel.py
+msgid "Thompson"
+msgstr "Thompson"
+
+#: crossref_panel.py
+msgid "Thompson’s chains, each link leading to the next"
+msgstr "Las cadenas de Thompson: cada eslabón lleva al siguiente"
+
+#: crossref_panel.py
+msgid "{set} · {ref}"
+msgstr "{set} · {ref}"
+
+#: crossref_panel.py
+msgid "Cross-reference set: {name}"
+msgstr "Conjunto de referencias: {name}"
+
+#: crossref_panel.py
+msgid "→ {ref}"
+msgstr "→ {ref}"
+
+#: crossref_panel.py
+msgid "{chain}, next: {ref}"
+msgstr "{chain}; siguiente: {ref}"
+
+#: window.py
+msgid "United Bible Societies — parallel passages (CC BY-SA 4.0), renumbered with STEPBible’s versification table (CC BY)"
+msgstr "Sociedades Bíblicas Unidas: pasajes paralelos (CC BY-SA 4.0), renumerados con la tabla de versificación de STEPBible (CC BY)"
+
+#: window.py
+msgid "Thompson Chain-Reference topics (CrossWire, public domain) — chain links"
+msgstr "Temas de la Thompson Chain-Reference (CrossWire, dominio público): eslabones de las cadenas"
+
+#: crossref_panel.py
+msgid "Dictionaries"
+msgstr "Diccionarios"
+
+#: crossref_panel.py
+msgid "Articles in your dictionaries that cite this verse"
+msgstr "Artículos de sus diccionarios que citan este versículo"
+
+#: crossref_panel.py
+msgid "{n} article"
+msgid_plural "{n} articles"
+msgstr[0] "{n} artículo"
+msgstr[1] "{n} artículos"
+
+#: window.py
+msgid "Tyndale Open Bible Dictionary and Study Notes — Tyndale House Publishers (CC BY-SA 4.0)"
+msgstr "Diccionario bíblico y notas de estudio Tyndale Open: Tyndale House Publishers (CC BY-SA 4.0)"
+
+#: crossref_panel.py
+msgid "No dictionary article cites this verse."
+msgstr "Ningún artículo de diccionario cita este versículo."
+
+#: crossref_panel.py
+msgid "No parallel passages for this verse."
+msgstr "No hay pasajes paralelos para este versículo."
+
+#: crossref_panel.py
+msgid "No Thompson chain passes through this verse."
+msgstr "Ninguna cadena de Thompson pasa por este versículo."

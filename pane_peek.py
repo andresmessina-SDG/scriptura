@@ -46,6 +46,7 @@ _DICT_SHORT_NAMES = {
     'Torreys':      "Torrey's",
     'WebstersDict': "Webster's 1913",
     'Wikcionario':  'Wikcionario',
+    'TyndaleBD':    'Tyndale',
 }
 
 _DICT_FLUFF_WORDS = {

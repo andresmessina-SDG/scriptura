@@ -685,3 +685,16 @@ def test_prose_carries_no_line_breaks_of_its_own():
 
     wrapped = [p for p, s in strings(table) if re.search(r'[^\n]\n[^\n]', s)]
     assert not wrapped, f'hard line breaks in {wrapped}'
+
+
+def test_god_has_no_family_peek():
+    # Luke 3:38's "son of God" is a claim the chart draws, not a family
+    # link: a double-clicked "God" answered "Children: Adam".
+    assert gb.fragment_for('God', '2 Corinthians', 6, 4) is None
+
+
+def test_adams_peek_does_not_name_god_a_parent():
+    frag = gb.fragment_for('Adam', 'Luke', 3, 38)
+    assert frag['parents'] == []
+    assert [c[0] for c in frag['children']] == ['seth']
+    assert frag['chart'] == 'luke'      # the chart still draws Luke's line
