@@ -14,6 +14,7 @@ import time
 import unicodedata
 import zipfile
 from collections import OrderedDict
+from typing import Any
 import Sword
 
 import search_query
@@ -62,25 +63,25 @@ def wait_warm():
 # 200 chapters × ~50 KB ≈ 10 MB worst case; comfortably above any normal
 # session's working set.
 _CHAPTER_CACHE_CAP = 200
-_cache = OrderedDict()
+_cache: OrderedDict[tuple, Any] = OrderedDict()
 # Footnotes for the same chapters: {verse: [(marker_index, type, body)]}.
 # Filled by the same render pass and evicted in lockstep with _cache
 # (every insert goes through _cache_chapter, which writes both).
-_notes_cache = OrderedDict()
+_notes_cache: OrderedDict[tuple, Any] = OrderedDict()
 # Section headings for the same chapters: {verse: [heading_html, ...]}.
 # SWORD moves preverse titles out of the rendered text into entry
 # attributes (see _collect_preverse), so they ride the same render pass
 # and evict in lockstep, exactly like the footnotes above.
-_headings_cache = OrderedDict()
+_headings_cache: OrderedDict[tuple, Any] = OrderedDict()
 # Psalm superscriptions and acrostic letters for the same chapters:
 # {verse: [title_osis, ...]}. The same preverse blobs as the headings, kept
 # apart because they are Scripture, not editorial divisions.
-_titles_cache = OrderedDict()
+_titles_cache: OrderedDict[tuple, Any] = OrderedDict()
 # Strong's lookup cache — same shape, smaller cap. A typical chapter
 # references 30–50 unique Strong's numbers; 500 covers many chapters of
 # recent activity before evicting.
 _STRONGS_CACHE_CAP = 500
-_strongs_cache = OrderedDict()
+_strongs_cache: OrderedDict[str, Any] = OrderedDict()
 
 
 def _cache_chapter(key, value, notes, headings, titles):
@@ -109,7 +110,7 @@ def _cache_strong(strong_num, value):
     if len(_strongs_cache) > _STRONGS_CACHE_CAP:
         _strongs_cache.popitem(last=False)
 
-_indexing_threads = {} # To keep track of indexing processes per module
+_indexing_threads: dict[str, threading.Thread] = {} # To keep track of indexing processes per module
 # Separate lock for registering/starting indexers — never held during join().
 # Keeping it distinct from _lock avoids deadlocks (indexer threads acquire _lock
 # inside load_chapter; if we held _lock here, the indexer couldn't make progress).
@@ -529,7 +530,7 @@ def plain_text(html: object) -> str:
 # stay the module's own (a Vulgate psalter shows its printed numbering,
 # including title-verses — KJV Ps 9:1 is Vulgate Ps 9:2).
 
-_book_maps = {}  # (module_name, book) → {app_chapter: (m_book, m_chapter)} | None
+_book_maps: dict[tuple, Any] = {}  # (module_name, book) → {app_chapter: (m_book, m_chapter)} | None
 
 
 def _module_v11n(module_name):
@@ -633,7 +634,7 @@ def mapped_chapter(module_name, book, chapter):
 # would repeat those numbers (Vulg 115 starts again at 1), so they continue
 # from the last key instead and print their own numeral: see printed_verse.
 
-_line_maps = {}  # (module_name, book, chapter) → [(key, m_book, m_ch, m_v)] | None
+_line_maps: dict[tuple, Any] = {}  # (module_name, book, chapter) → [(key, m_book, m_ch, m_v)] | None
 
 
 def _v11n_verse_max(v11n, book, chapter):
@@ -653,7 +654,7 @@ def _compute_chapter_lines(v11n, book, chapter, anchor):
         ref = _map_ref(book, chapter, v, v11n)
         if ref is not None and ref[0] == m_book:
             chapters.add(ref[1])
-    lines = []
+    lines: list[Any] = []
     for m_ch in sorted(chapters):
         for m_v in range(1, _v11n_verse_max(v11n, m_book, m_ch) + 1):
             rev = _map_ref_reverse(v11n, m_book, m_ch, m_v)
@@ -937,8 +938,8 @@ def _titles_from_raw(raw):
     collapse — are testable without a live SWORD module."""
     out = []
     for attrs, body in _TITLE_RE.findall(raw):
-        kind = re.search(r'type="([^"]+)"', attrs)
-        kind = kind.group(1).lower() if kind else ''
+        found = re.search(r'type="([^"]+)"', attrs)
+        kind = found.group(1).lower() if found else ''
         if kind in _SKIP_TITLE_TYPES:
             continue
         text = re.sub(r'<[^>]+>', '', body)
@@ -1039,7 +1040,7 @@ def chapter_headings(module_name, book, chapter):
 #: testaments, each known to carry headings wherever a module supplies them —
 #: a single probe would call LEB heading-less off Psalm 23, which has none.
 _SECTION_PROBE = (('Mark', 4), ('John', 3), ('Genesis', 1))
-_marks_sections = {}
+_marks_sections: dict[str, bool] = {}
 
 
 def module_marks_sections(module_name):
@@ -1321,7 +1322,7 @@ def display_name(name):
 # Cached per-module since walking the tree key on every popover open
 # would be wasteful (the structure doesn't change at runtime).
 
-_GENBOOK_TOC_CACHE = {}
+_GENBOOK_TOC_CACHE: dict[str, Any] = {}
 
 
 def is_genbook_module(module_name):
@@ -1399,7 +1400,7 @@ def list_genbook_entries(module_name, max_entries=4000):
     if module_name in _GENBOOK_TOC_CACHE:
         return _GENBOOK_TOC_CACHE[module_name]
 
-    entries = []
+    entries: list[Any] = []
     with _lock:
         mod = mgr().getModule(module_name)
         if mod is None:
@@ -2512,7 +2513,9 @@ def _extract_catalogue(data, mods_d, skip_existing=False):
     written = []
     with tarfile.open(fileobj=io.BytesIO(data), mode='r:gz') as tar:
         for member in tar.getmembers():
-            if not member.name.endswith('.conf') or member.isdir():
+            # A regular file only: Python before 3.14 writes a link member
+            # as a link, and a conf written later would follow it out.
+            if not member.name.endswith('.conf') or not member.isfile():
                 continue
             member.name = os.path.basename(member.name)
             target = os.path.join(mods_d, member.name)
@@ -2766,6 +2769,10 @@ def _install_zip(zf, names=None, cipher_keys=None):
         name = info.get('name')
         if not name or (names is not None and name not in names):
             continue
+        # The name becomes a file name (mods.d/<name>.conf, its index), so
+        # one with a separator in it could reach outside the library.
+        if '/' in name or '\\' in name or name.startswith('.'):
+            raise BadModule(f'Unsafe module name: {name}')
         dir_rel, prefix = _module_files(info)
         modules.append((name, _zip_path(cm), dir_rel, prefix))
 
@@ -3231,7 +3238,7 @@ _DC_OSIS = {
     '2 Esdras': '2Esd', '4 Maccabees': '4Macc',
 }
 
-_module_dc = {}  # module_name → (books, ...) of deuterocanon it really holds
+_module_dc: dict[str, tuple[str, ...]] = {}  # module_name → (books, ...) of deuterocanon it really holds
 
 
 def module_books(module_name):

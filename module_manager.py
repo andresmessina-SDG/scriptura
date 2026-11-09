@@ -12,6 +12,7 @@ never dead-end a search.
 import logging
 import math
 from datetime import datetime
+from typing import Any
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
@@ -402,7 +403,7 @@ class ModuleManagerWindow(Adw.Window):
         self._tabs = {}
         self._job_widgets = {}      # job key -> [(label, ring)] on its rows
         self._action_rows = {}      # row key -> [(row, its buttons)]
-        self._check_job = None      # the check this window started itself
+        self._check_job: Any = None  # the check this window started itself
         self._populate_soon = None  # (source id, languages) of a rebuild due
         self._finished = []         # what ended in this burst, to be said
         self._finished_soon = None
@@ -1394,7 +1395,7 @@ class ModuleManagerWindow(Adw.Window):
                 out.append((sort_key, item))
                 continue
             if work not in by_work:
-                members = []
+                members: list[Any] = []
                 by_work[work] = members
                 out.append((content.edition_work_title(work).lower(),
                             ('group', (work, members))))
@@ -1409,13 +1410,15 @@ class ModuleManagerWindow(Adw.Window):
         group's."""
         src, payload = item
         if src == 'group':
-            row = self._make_group_row(*payload, installed=installed)
+            work, members = payload
+            row = self._make_group_row(work, members, installed=installed)
             key = payload[1][0][1]
         elif src == 'sword':
             row = self._make_sword_row(payload, installed)
             key = payload
         else:
-            row = self._make_eb_row(*payload, installed=installed)
+            tid, title, code, name, entry = payload
+            row = self._make_eb_row(tid, title, code, name, entry, installed=installed)
             key = payload
         if door:
             name = key['name'] if isinstance(key, dict) else key[0]

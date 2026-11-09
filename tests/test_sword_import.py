@@ -370,6 +370,15 @@ def test_install_refuses_datapath_outside_sword(sword_home, tmp_path):
     assert not (sword_home / 'mods.d' / 'evil.conf').exists()
 
 
+
+def test_install_refuses_a_name_that_is_a_path(sword_home):
+    """The name becomes mods.d/<name>.conf when a key is written or the
+    module removed; ../../x would land outside the library."""
+    z = _make_zip([('../../Evil', _conf('../../Evil'), [])])
+    with pytest.raises(ValueError, match='Unsafe module name'):
+        sword_bridge.install_module_from_zip(z, ['../../Evil'])
+    assert list((sword_home / 'mods.d').iterdir()) == []
+
 # ── _fetch_crosswire (HTTPS → FTP fallback) ────────────────────────────────────
 
 @pytest.fixture

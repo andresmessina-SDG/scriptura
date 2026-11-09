@@ -3,6 +3,7 @@ import io
 import os
 import pickle
 import threading
+from typing import Any
 import zipfile
 
 import paths
@@ -153,7 +154,7 @@ def _write_parsed_cache(src_path, data):
 
 # ── Cross-references ──────────────────────────────────────────────────────────
 
-_xref = None
+_xref: dict[Any, Any] | None = None
 # Serializes the (expensive) parse so a startup pre-warm thread and an
 # on-click fetch thread can't both build the index at once.
 _xref_lock = threading.Lock()
@@ -174,7 +175,7 @@ def _load_xref():
         if cached is not None:
             _xref = cached
             return
-        data = {}
+        data: dict[Any, Any] = {}
         with open(path, encoding='utf-8') as f:
             reader = csv.reader(f, delimiter='\t')
             next(reader)
@@ -267,7 +268,7 @@ def get_parallels(book, chapter, verse):
 
 # ── Topics ────────────────────────────────────────────────────────────────────
 
-_topics = None
+_topics: dict[Any, Any] | None = None
 _topics_lock = threading.Lock()
 
 
@@ -286,7 +287,7 @@ def _load_topics():
         if cached is not None:
             _topics = cached
             return
-        raw = {}
+        raw: dict[Any, Any] = {}
         with open(path, encoding='utf-8') as f:
             reader = csv.reader(f, delimiter='\t')
             next(reader)
@@ -323,7 +324,7 @@ def has_topics():
 
 # ── Dodson Greek Lexicon ──────────────────────────────────────────────────────
 
-_dodson = None
+_dodson: dict[Any, Any] | None = None
 _dodson_lock = threading.Lock()
 
 
