@@ -232,7 +232,7 @@ def _load_ubs():
     with _ubs_lock:
         if _ubs is not None:
             return
-        data = {}
+        data: dict[Any, Any] = {}
         try:
             with open(_UBS_PATH, encoding='utf-8') as f:
                 for line in f:

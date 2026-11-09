@@ -3638,7 +3638,7 @@ def _load_thompson(mod_name):
     with _thompson_lock:
         if _thompson is not None:
             return
-        entries = []
+        entries: list[tuple[str, str]] = []
         with _lock:
             mod = mgr().getModule(mod_name)
             if mod is None:
@@ -3651,11 +3651,11 @@ def _load_thompson(mod_name):
                     break
                 entries.append((str(mod.getKeyText()), str(mod.getRawEntry())))
                 mod.increment()
-        index = {}
+        index: dict[Any, Any] = {}
         for key, raw in entries:
             for short, full, refs in _thompson_chains(key, raw):
                 # A run of adjacent verses ("Mr 15:29,30") is one link.
-                units = []
+                units: list[list[Any]] = []
                 for r in refs:
                     prev = units[-1][-1] if units else None
                     if prev and prev[:2] == r[:2] and r[2] == prev[2] + 1:
