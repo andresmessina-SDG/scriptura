@@ -11,7 +11,6 @@ from gi.repository import Gdk, Gio, Gtk, Adw, GLib, Pango
 from a11y import set_accessible_label
 from i18n import _, ngettext, C_, book_label, current_language, format_date, format_short_date
 from gtk_utils import Autosave, clear_children, file_dialog_failed
-import annotation_dialogs
 import annotation_editors
 from annotation_editors import _HL_NAMES
 import annotations

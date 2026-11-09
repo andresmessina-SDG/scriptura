@@ -1,5 +1,4 @@
 import html as _html_mod
-import threading
 import colorsys
 import functools
 import re
@@ -2425,14 +2424,8 @@ class BiblePane(Gtk.Box):
             return
         book, chapter, module = self._book, self._chapter, self._module
 
-        def fetch():
-            try:
-                verses = content.load_chapter(module, book, chapter)
-            except Exception as e:
-                if self._on_toast:
-                    GLib.idle_add(self._on_toast,
-                                  _("Couldn't load chapter — {error}").format(error=e))
-                return
+        def fetch(_task):
+            verses = content.load_chapter(module, book, chapter)
             lines = [f'{book_label(book)} {chapter}', '']
             for v_num, html in verses:
                 plain = re.sub(r'<[^>]+>', '', str(html)).strip()
@@ -2440,10 +2433,17 @@ class BiblePane(Gtk.Box):
                     printed = sword_bridge.printed_verse(module, book,
                                                          chapter, v_num)
                     lines.append(f'{printed} {plain}')
-            text = '\n'.join(lines) + '\n'
-            GLib.idle_add(self._finish_copy_chapter, text, book, chapter)
+            return '\n'.join(lines) + '\n'
 
-        threading.Thread(target=fetch, daemon=True).start()
+        def failed(e):
+            if self._on_toast:
+                self._on_toast(_("Couldn't load chapter — {error}").format(error=e))
+
+        tasks.submit(
+            key=f'copy-chapter:{id(self)}',
+            work=fetch,
+            apply=lambda text: self._finish_copy_chapter(text, book, chapter),
+            on_error=failed)
 
     def _finish_copy_chapter(self, text, book, chapter):
         self._view.get_clipboard().set(text)
@@ -2775,13 +2775,13 @@ class BiblePane(Gtk.Box):
         self._date_label.set_text(format_date_heading(date_obj))
         self._devot_audio.sync()
 
-        def fetch():
-            raw = sword_bridge.get_devotional_raw(module, date_obj)
-            GLib.idle_add(self._display_devotional, raw, module, date_obj)
+        tasks.submit(
+            key=f'devotional:{id(self)}',
+            work=lambda _t: sword_bridge.get_devotional_raw(module, date_obj),
+            apply=lambda raw: self._display_devotional(raw, module, date_obj),
+            on_error=lambda e: self._display_devotional(None, module, date_obj, e))
 
-        threading.Thread(target=fetch, daemon=True).start()
-
-    def _display_devotional(self, raw, module, date_obj):
+    def _display_devotional(self, raw, module, date_obj, error=None):
         if module != self._module or date_obj != self._devotional_date:
             return GLib.SOURCE_REMOVE
         dark = Adw.StyleManager.get_default().get_dark()
@@ -2791,10 +2791,13 @@ class BiblePane(Gtk.Box):
         if raw:
             devotional.render_osis(self._buffer, raw, dark)
         else:
+            text = (_("Couldn't read {module} — {error}").format(
+                        module=module, error=error)
+                    if error is not None else _('No entry found for this date.'))
             self._buffer.insert_markup(
                 self._buffer.get_end_iter(),
                 '<span foreground="gray">'
-                + GLib.markup_escape_text(_('No entry found for this date.'))
+                + GLib.markup_escape_text(text)
                 + '</span>', -1)
         self._view.get_vadjustment().set_value(0)
         return GLib.SOURCE_REMOVE

@@ -302,8 +302,8 @@ class FamilyTree:
         # a theme switch re-renders too, and must leave the reader be.
         if target is not None and target is not self._scrolled_for:
             self._scrolled_for = target
-            GLib.idle_add(lambda: self._showing is None
-                          and self.family.scroll_to(target) and False)
+            GLib.idle_add(lambda: (self._showing is None
+                                   and self.family.scroll_to(target), False)[1])
 
     def can_print(self):
         """Whether the poster can be printed now: from the Family drawn,

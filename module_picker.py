@@ -545,8 +545,7 @@ class ModulePicker:
         root = self._pane.get_root()
         if root is None or not hasattr(root, 'show_family_card'):
             return
-        GLib.idle_add(lambda: root.show_family_card(node_id, self._pane)
-                      or GLib.SOURCE_REMOVE)
+        GLib.idle_add(lambda: (root.show_family_card(node_id, self._pane), GLib.SOURCE_REMOVE)[1])
 
     def _can_remove(self, name):
         """Removable only if it isn't the pane's last module and isn't a

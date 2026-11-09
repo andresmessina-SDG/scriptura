@@ -11586,3 +11586,12 @@ msgstr "No hay pasajes paralelos para este versículo."
 #: crossref_panel.py
 msgid "No Thompson chain passes through this verse."
 msgstr "Ninguna cadena de Thompson pasa por este versículo."
+
+#: genbook_reader.py pane.py annotation_dialogs.py family_read.py
+#, python-brace-format
+msgid "Couldn't read {module} — {error}"
+msgstr "No se pudo leer {module}: {error}"
+
+#: genbook_reader.py
+msgid "This generic book has no readable entries."
+msgstr "Este libro general no tiene entradas legibles."

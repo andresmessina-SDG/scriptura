@@ -14,7 +14,6 @@ that show the spread well move it.
 
 import difflib
 import re
-import threading
 
 import gi
 gi.require_version('Gtk', '4.0')
@@ -26,6 +25,7 @@ import content
 import interlinear_data
 import settings
 import sword_bridge
+import tasks
 from a11y import set_accessible_label
 from family_card import paint_track, place_sentences, redraw_on_contrast
 from family_line import COLUMN_MAX, STACK_BELOW, _Menu, line_group
@@ -306,7 +306,6 @@ class FamilyRead:
         self.ref = None
         self._rows: list[_Row] = []
         self._stacked = False
-        self._fetch_id = 0
         self._last_row = None
         self._rows_key = None
         self._build()
@@ -521,8 +520,7 @@ class FamilyRead:
         ref = parse_reference(entry.get_text())
         if ref is None:
             entry.add_css_class('error')
-            GLib.timeout_add(600, lambda: entry.remove_css_class('error')
-                             or GLib.SOURCE_REMOVE)
+            GLib.timeout_add(600, lambda: (entry.remove_css_class('error'), GLib.SOURCE_REMOVE)[1])
             return
         self._lead(ref)
 
@@ -592,29 +590,31 @@ class FamilyRead:
             if not keep_place:
                 self._scroll.get_vadjustment().set_value(0)
 
-        self._fetch_id += 1
-        fetch_id = self._fetch_id
         wanted = [(row, row.module) for row in self._rows if row.module]
 
-        def fetch():
+        def fetch(task):
             texts = []
             for row, module in wanted:
                 # A later verse asked for: stop, and leave SWORD to its fetch.
-                if fetch_id != self._fetch_id:
-                    return
-                texts.append((row, verse_text(module, ref)))
-            GLib.idle_add(fill, texts)
+                if not task.is_current():
+                    return []
+                # One Bible that fails says so in its row; the rest still show.
+                try:
+                    texts.append((row, verse_text(module, ref)))
+                except Exception as e:
+                    texts.append((row, _("Couldn't read {module} — {error}").format(
+                        module=module, error=e)))
+            return texts
 
         def fill(texts):
-            if fetch_id == self._fetch_id:
-                for row, text in texts:
-                    row.set_text(text)
-                self._apply_marks()
-                self._list.invalidate_filter()
-                self._list.invalidate_headers()
-            return GLib.SOURCE_REMOVE
+            for row, text in texts:
+                row.set_text(text)
+            self._apply_marks()
+            self._list.invalidate_filter()
+            self._list.invalidate_headers()
 
-        threading.Thread(target=fetch, daemon=True).start()
+        tasks.submit(key=f'family-read:{id(self)}', work=fetch, apply=fill,
+                     on_error=lambda _e: fill([]))
 
     def _show_source(self, ref):
         """The Greek or Hebrew with its gloss, or the way to install it."""

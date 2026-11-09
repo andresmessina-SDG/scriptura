@@ -23,7 +23,6 @@ fetch_and_render — plus step / save_position / entry property.
 from __future__ import annotations
 
 import re
-import threading
 from typing import TYPE_CHECKING, Any, Callable
 
 import gi
@@ -33,6 +32,7 @@ from gi.repository import Gtk, Adw, GLib, Pango
 
 import module_positions
 import sword_bridge
+import tasks
 from a11y import set_accessible_label
 from i18n import _
 
@@ -231,7 +231,7 @@ class GenbookReader:
         non-empty entry."""
         module = self._pane.module
 
-        def fetch() -> None:
+        def fetch(_task: tasks.Task) -> tuple[list[Entry], str | None, str]:
             entries: list[Entry] = sword_bridge.list_genbook_entries(module)
             entry_path = self._entry_path
             html = ''
@@ -263,9 +263,29 @@ class GenbookReader:
                     entry_path = entries[0][0]
                     html = sword_bridge.load_genbook_entry(module, entry_path)
 
-            GLib.idle_add(self._display, entries, entry_path, html, module)
+            return entries, entry_path, html
 
-        threading.Thread(target=fetch, daemon=True).start()
+        # A module that raises while read says so, rather than leaving the
+        # last book's page standing.
+        tasks.submit(
+            key=f'genbook:{id(self._pane)}',
+            work=fetch,
+            apply=lambda r: self._display(r[0], r[1], r[2], module),
+            on_error=lambda e: self._show_failure(module, e))
+
+    def _show_failure(self, module: str, error: BaseException) -> None:
+        pane = self._pane
+        if module != pane.module or not pane._is_genbook:
+            return
+        dark = Adw.StyleManager.get_default().get_dark()
+        pane._cancel_all_flashes()
+        pane._buffer.set_text('')
+        pane._clear_chapter_scoped_tags()
+        fg = '#8d8278' if dark else '#7a7066'
+        text = _("Couldn't read {module} — {error}").format(module=module, error=error)
+        pane._buffer.insert_markup(
+            pane._buffer.get_end_iter(),
+            f'<span foreground="{fg}">{GLib.markup_escape_text(text)}</span>', -1)
 
     @staticmethod
     def _entry_has_children(entries: list[Entry], path: str | None) -> bool:
@@ -298,7 +318,9 @@ class GenbookReader:
                 pane._buffer.get_end_iter(),
                 f'<span foreground="{fg}">'
                 f'{GLib.markup_escape_text(module)}\n\n'
-                f'This generic book has no readable entries.</span>', -1)
+                + GLib.markup_escape_text(
+                    _('This generic book has no readable entries.'))
+                + '</span>', -1)
             return GLib.SOURCE_REMOVE
 
         # Path → a quiet ancestors breadcrumb (eyebrow) + the leaf as the

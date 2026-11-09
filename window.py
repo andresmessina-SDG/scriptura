@@ -325,7 +325,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         # packs' part is read again, as a new app can expect a newer pack.
         updates.listen(self._show_updates)
         self._show_updates()
-        GLib.idle_add(lambda: updates.note_packs() or GLib.SOURCE_REMOVE)
+        GLib.idle_add(lambda: (updates.note_packs(), GLib.SOURCE_REMOVE)[1])
         # Surface a failed annotation write as a toast — otherwise the
         # in-memory change would quietly disappear on the next launch.
         annotations.set_save_error_handler(
@@ -378,7 +378,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         result = self._parse_jump(ref)
         if result:
             book, chapter, verse = result
-            GLib.idle_add(lambda: self._go_to(book, chapter, verse) or False)
+            GLib.idle_add(lambda: (self._go_to(book, chapter, verse), False)[1])
 
     def _show_updates(self):
         """The dot on the menu and the count on its Modules row."""
@@ -1586,13 +1586,16 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
                 self._today_suppress = False
             return GLib.SOURCE_REMOVE
 
-        def fetch():
-            raw    = sword_bridge.get_devotional_raw(devt_module, date_obj)
-            result = sword_bridge.parse_devotional_refs(raw)
+        def arrived(result):
             if result:
-                book, chapter, verse = result
-                GLib.idle_add(go_quiet, book, chapter, verse)
-        threading.Thread(target=fetch, daemon=True).start()
+                go_quiet(*result)
+
+        tasks.submit(
+            key='startup-devotional-ref',
+            work=lambda _t: sword_bridge.parse_devotional_refs(
+                sword_bridge.get_devotional_raw(devt_module, date_obj)),
+            apply=arrived,
+            on_error=lambda _e: None)
 
     # ── Font size ─────────────────────────────────────────────────────────────
 
@@ -2615,8 +2618,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         revealer.set_reveal_child(False)
         GLib.timeout_add(
             motion.DURATION_STANDARD + 50,
-            lambda: self._today_leaving is revealer
-            and self._hide_today(revealer) or GLib.SOURCE_REMOVE)
+            lambda: (self._today_leaving is revealer
+                     and self._hide_today(revealer), GLib.SOURCE_REMOVE)[1])
 
     def _hide_today(self, revealer):
         self._today_leaving = None

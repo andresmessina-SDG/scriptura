@@ -332,7 +332,6 @@ def driver() -> int:
         tree = getattr(win.pane1, '_family_tree', None)
         if year and tree is not None and tree.family is not None:
             import family_layout as fl
-            import family_view as fv
             fam = tree.family
             fam._scroll.get_vadjustment().set_value(
                 fl.year_y(int(year)) - fam._shift() - 24)

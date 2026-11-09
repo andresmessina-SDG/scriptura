@@ -461,7 +461,7 @@ class FamilyLine:
         # restored), and each one threw the reader back to their own row.
         if target is not None and target is not self._scrolled_for:
             self._scrolled_for = target
-            GLib.idle_add(lambda: self._scroll_to(target) or False)
+            GLib.idle_add(lambda: (self._scroll_to(target), False)[1])
 
     def reading_module(self):
         return self._reading_module()

@@ -14,7 +14,6 @@ functions in this module.
 
 import logging
 import re
-import threading
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
@@ -37,6 +36,7 @@ import passage_print
 import writing_page
 import sword_bridge
 import ebible_bridge
+import tasks
 import open_data
 from i18n import _, ngettext, C_, book_label
 
@@ -732,8 +732,7 @@ def compare_translations(pane, verse, popover=None):
 
         def on_read(_btn):
             comp.popdown()
-            GLib.idle_add(lambda: root.read_difference(pane, *where)
-                          or GLib.SOURCE_REMOVE)
+            GLib.idle_add(lambda: (root.read_difference(pane, *where), GLib.SOURCE_REMOVE)[1])
         read.connect('clicked', on_read)
         doors.append(read)
     if node is not None and hasattr(root, 'show_on_line'):
@@ -743,8 +742,7 @@ def compare_translations(pane, verse, popover=None):
         def on_see(_btn, node_id=node['id']):
             comp.popdown()
             # After the popover has gone, so the keyboard lands on the Line.
-            GLib.idle_add(lambda: root.show_on_line(node_id, pane)
-                          or GLib.SOURCE_REMOVE)
+            GLib.idle_add(lambda: (root.show_on_line(node_id, pane), GLib.SOURCE_REMOVE)[1])
         see.connect('clicked', on_see)
         doors.append(see)
     if doors.get_first_child() is not None:
@@ -759,10 +757,17 @@ def compare_translations(pane, verse, popover=None):
     targets = {mod: compare_target(reading, mod, book, chapter, verse)
                for mod in names}
 
-    def fetch():
+    def fetch(_task):
         results = []
         for mod in names:
-            vs = content.load_chapter(mod, book, chapter)
+            # One Bible that fails says so in its row; the rest still show.
+            try:
+                vs = content.load_chapter(mod, book, chapter)
+            except Exception as e:
+                _log.exception('compare: %s', mod)
+                results.append((mod, _("Couldn't read {module} — {error}").format(
+                    module=mod, error=e)))
+                continue
             want = targets[mod]
             v_html = next((h for vn, h in vs if vn == want), '')
             plain = re.sub(r'<[^>]+>', '', str(v_html)).strip()
@@ -771,7 +776,7 @@ def compare_translations(pane, verse, popover=None):
         # From word for word to free, so every compare reads as the spectrum.
         order = bible_family.order_by_line([mod for mod, _t in results])
         results.sort(key=lambda r: order.index(r[0]))
-        GLib.idle_add(populate, results)
+        return results
 
     shown = {}
 
@@ -821,7 +826,9 @@ def compare_translations(pane, verse, popover=None):
             row.set_child(rb)
             comp_list.append(row)
 
-    threading.Thread(target=fetch, daemon=True).start()
+    # One key for every compare: a newer popover replaces the old one's fetch.
+    tasks.submit(key='compare', work=fetch, apply=populate,
+                 on_error=lambda _e: populate([]))
 
 
 def _compare_names():
@@ -884,8 +891,7 @@ def _open_journal_on(pane, parent_popover):
     if root is None or not hasattr(root, '_open_journal_on'):
         return
     book, chapter = pane.book, pane.chapter
-    GLib.idle_add(lambda: root._open_journal_on(book, chapter)
-                  or GLib.SOURCE_REMOVE)
+    GLib.idle_add(lambda: (root._open_journal_on(book, chapter), GLib.SOURCE_REMOVE)[1])
 
 
 def _open_sermons_on(pane, parent_popover):
@@ -899,8 +905,7 @@ def _open_sermons_on(pane, parent_popover):
     if root is None or not hasattr(root, '_open_sermons_on'):
         return
     book, chapter = pane.book, pane.chapter
-    GLib.idle_add(lambda: root._open_sermons_on(book, chapter)
-                  or GLib.SOURCE_REMOVE)
+    GLib.idle_add(lambda: (root._open_sermons_on(book, chapter), GLib.SOURCE_REMOVE)[1])
 
 
 def collected_quote(pane, verses):
@@ -960,8 +965,7 @@ def _write_entry(pane, verses, parent_popover):
     root = pane.view.get_root()
     if root is None or not hasattr(root, '_open_annotations'):
         return
-    GLib.idle_add(lambda: root._open_annotations({'anchors': anchors})
-                  or GLib.SOURCE_REMOVE)
+    GLib.idle_add(lambda: (root._open_annotations({'anchors': anchors}), GLib.SOURCE_REMOVE)[1])
 
 
 # ── Note editor (Adw.Window) ─────────────────────────────────────────────────
@@ -1126,29 +1130,26 @@ def build_suggested_topics(book, chapter, verse, tags_entry):
             existing.append(text)
         tags_entry.set_text(', '.join(existing))
 
-    def fetch():
-        topics = open_data.get_topics(book, chapter, verse) if verse else []
+    def fetch(_task):
+        return open_data.get_topics(book, chapter, verse) if verse else []
 
-        def apply():
-            # Bail if the editor was closed before the fetch returned — appending
-            # to a finalized widget would emit GTK-CRITICALs (cf. the compare
-            # popover's get_parent() guard).
-            if chip_box.get_root() is None:
-                return False
-            if not topics:
-                return False
-            for topic in topics:
-                btn = Gtk.Button(label=topic)
-                # Slim outline chip — same family as the cross-ref bar's chips,
-                # so the suggestions read lighter than the field they feed.
-                btn.add_css_class('xref-chip')
-                btn.connect('clicked', append_topic, topic)
-                chip_box.append(btn)
-            wrapper.set_visible(True)
-            return False
-        GLib.idle_add(apply)
+    def apply(topics):
+        # Bail if the editor was closed before the fetch returned — appending
+        # to a finalized widget would emit GTK-CRITICALs (cf. the compare
+        # popover's get_parent() guard).
+        if chip_box.get_root() is None or not topics:
+            return
+        for topic in topics:
+            btn = Gtk.Button(label=topic)
+            # Slim outline chip — same family as the cross-ref bar's chips,
+            # so the suggestions read lighter than the field they feed.
+            btn.add_css_class('xref-chip')
+            btn.connect('clicked', append_topic, topic)
+            chip_box.append(btn)
+        wrapper.set_visible(True)
 
-    threading.Thread(target=fetch, daemon=True).start()
+    tasks.submit(key=f'topics:{id(chip_box)}', work=fetch, apply=apply,
+                 on_error=lambda _e: None)
     return wrapper
 
 

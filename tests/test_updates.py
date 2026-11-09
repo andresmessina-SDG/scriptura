@@ -4,8 +4,6 @@ import os
 import time
 from datetime import datetime, timedelta
 
-import pytest
-
 import settings
 import sword_bridge
 import updates

@@ -293,7 +293,7 @@ class FamilyCard(Gtk.Box):
             # After the click has finished: the Card is rebuilt, and the
             # label that was clicked, and held the keyboard, goes with it.
             node_id = uri[len('card:'):]
-            GLib.idle_add(lambda: self._go_to(node_id) or GLib.SOURCE_REMOVE)
+            GLib.idle_add(lambda: (self._go_to(node_id), GLib.SOURCE_REMOVE)[1])
             return True
         return False        # a web source: GTK opens it in the browser
 
