@@ -20,7 +20,7 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Gdk, Pango
 
 from a11y import set_accessible_description, set_accessible_label, set_role
-from gtk_utils import Autosave, clear_children, DelayedSpinner
+from gtk_utils import Autosave, clear_children, DelayedSpinner, free_when_closed
 import annotations
 import bible_family
 import family_read
@@ -342,7 +342,7 @@ def build_study_menu(pane, verses, x, y, anchor=None):
     # not opened over a verse.
     popover = Gtk.Popover(accessible_role=Gtk.AccessibleRole.MENU)
     popover.set_parent(anchor if anchor is not None else pane.view)
-    popover.connect('closed', lambda p: p.unparent())
+    free_when_closed(popover)
     if anchor is None:
         rect = Gdk.Rectangle()
         rect.x, rect.y, rect.width, rect.height = int(x), int(y), 1, 1
@@ -631,7 +631,7 @@ def compare_translations(pane, verse, popover=None):
 
     comp = Gtk.Popover()
     comp.set_parent(pane.view)
-    comp.connect('closed', lambda p: p.unparent())
+    free_when_closed(comp)
     comp.set_pointing_to(src_rect if ok else _verse_rect(pane, verse))
 
     outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)

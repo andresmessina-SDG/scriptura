@@ -1,5 +1,6 @@
 """Small GTK helpers shared across the UI."""
 import logging
+import weakref
 
 import gi
 gi.require_version('Gtk', '4.0')
@@ -153,9 +154,20 @@ def keep_popover_arrows_on_body() -> None:
 
 def _on_widget_realize(widget, *_args) -> bool:
     if isinstance(widget, Gtk.Popover) and widget.get_surface() is not None:
-        widget.get_surface().connect('layout', _on_popover_layout, widget)
-        widget.connect('unmap', _restore_pointing)
+        # A weak reference: the surface holding the popover itself kept
+        # every popover the app ever showed alive.
+        widget.get_surface().connect('layout', _on_surface_layout,
+                                     weakref.ref(widget))
+        if not getattr(widget, '_arrow_unmap', False):
+            widget._arrow_unmap = True      # once, not on every showing
+            widget.connect('unmap', _restore_pointing)
     return True     # keep the hook
+
+
+def _on_surface_layout(surface, w, h, ref) -> None:
+    pop = ref()
+    if pop is not None:
+        _on_popover_layout(surface, w, h, pop)
 
 
 def _restore_pointing(pop: Gtk.Popover) -> None:
@@ -250,6 +262,42 @@ def clear_children(widget: Gtk.Widget) -> None:
         nxt = child.get_next_sibling()
         widget.remove(child)
         child = nxt
+
+
+def release_tree(widget: Gtk.Widget) -> None:
+    """Drop every signal handler in a tree that is being thrown away.
+
+    A handler that captures a widget of its own tree makes a cycle through
+    GTK that Python's collector cannot break while GTK holds the tree: the
+    study menu and the book picker kept every copy they had ever built,
+    about 15 MB a minute in random use. Call it only on a tree that will
+    not be shown again."""
+    for controller in list(widget.observe_controllers()):
+        GObject.signal_handlers_destroy(controller)
+    GObject.signal_handlers_destroy(widget)
+    child = widget.get_first_child()
+    while child is not None:
+        release_tree(child)
+        child = child.get_next_sibling()
+
+
+def free_when_closed(pop: Gtk.Popover, unparent_later: bool = False) -> None:
+    """Unparent a one-time popover when it closes, then release its tree.
+
+    The release waits for an idle, so a handler that closed the popover
+    finishes first. `unparent_later` holds the unparent for the idle too,
+    for a popover closed by a row inside it."""
+    def release(p: Gtk.Popover) -> bool:
+        if p.get_parent() is not None:
+            p.unparent()
+        release_tree(p)
+        return bool(GLib.SOURCE_REMOVE)
+
+    def closed(p: Gtk.Popover) -> None:
+        if not unparent_later:
+            p.unparent()
+        GLib.idle_add(release, p)
+    pop.connect('closed', closed)
 
 
 def iter_at_location(view: Gtk.TextView, x: int,

@@ -7,7 +7,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 import datetime
 from gi.repository import Gtk, Adw, GLib, Gdk, Gio
-from gtk_utils import clear_children, fade_in, file_dialog_failed
+from gtk_utils import clear_children, fade_in, file_dialog_failed, free_when_closed
 import sword_bridge
 import settings
 import updates
@@ -1771,7 +1771,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         popover.set_parent(anchor)
         # Popovers using set_parent must be explicitly unparented in GTK4,
         # otherwise they accumulate as hidden children on each click.
-        popover.connect('closed', lambda p: p.unparent())
+        free_when_closed(popover)
         popover.set_child(self._build_bookmark_content(popover))
         popover.popup()
 
@@ -3185,7 +3185,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             return
         popover = Gtk.Popover()
         popover.set_parent(widget)
-        popover.connect('closed', lambda p: p.unparent())
+        free_when_closed(popover)
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         box.set_margin_start(8)
@@ -4542,7 +4542,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         pop = Gtk.Popover()
         pop.set_parent(cell)
         pop.set_has_arrow(True)
-        pop.connect('closed', lambda p: p.unparent())
+        free_when_closed(pop)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         box.set_margin_start(8)
         box.set_margin_end(8)
@@ -4600,7 +4600,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         pop = Gtk.Popover()
         pop.set_parent(anchor)
         pop.set_has_arrow(True)
-        pop.connect('closed', lambda p: p.unparent())
+        free_when_closed(pop)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         box.set_margin_start(6)
         box.set_margin_end(6)

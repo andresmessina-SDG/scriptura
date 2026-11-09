@@ -17,7 +17,7 @@ untouched.
 import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk, Gdk, GLib
-from gtk_utils import clear_children
+from gtk_utils import clear_children, release_tree
 import sword_bridge
 import settings
 import module_positions
@@ -308,7 +308,10 @@ class NavigationController:
             scroll.set_child(listbox)
             outer.append(scroll)
 
+        old = self._recent_pop.get_child()
         self._recent_pop.set_child(outer)
+        if old is not None:
+            release_tree(old)       # rebuilt on every open
 
     def _on_back_history(self, gesture, *_args):
         # Right-click / long-press on the back arrow opens recent passages.
@@ -565,7 +568,10 @@ class NavigationController:
         outer.append(nav_sep)
         outer.append(right_col)
 
+        old = self._ref_pop.get_child()
         self._ref_pop.set_child(outer)
+        if old is not None:
+            release_tree(old)       # rebuilt on every open
 
         GLib.idle_add(_focus_selected_row, book_list)
 
