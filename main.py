@@ -1,3 +1,4 @@
+import gc
 import gettext
 import locale
 import logging
@@ -488,7 +489,28 @@ def _listen_for_session_end(app):
         GLibUnix.signal_add(GLib.PRIORITY_HIGH, sig, _on_session_end, app)
 
 
+_GC_TICK_MS = 1000
+
+
+def _collect_on_main_thread():
+    """Python's own collection rule, run where GTK may be touched.
+
+    Left automatic, the cycle collector runs in whichever thread allocates
+    past the threshold, often a search or fetch worker, and a widget whose
+    last reference sat in a cycle is then freed there. GTK is not safe off
+    the main thread: a text view freed on a worker while the main loop ran
+    its layout idle crashed the app in random use."""
+    counts, limits = gc.get_count(), gc.get_threshold()
+    gen = max((g for g in range(3) if counts[g] > limits[g]), default=-1)
+    if gen >= 0:
+        gc.collect(gen)
+    return GLib.SOURCE_CONTINUE
+
+
 def _on_startup(app):
+    # Before any window exists, so no widget is ever collected elsewhere.
+    gc.disable()
+    GLib.timeout_add(_GC_TICK_MS, _collect_on_main_thread)
     # `startup` fires only in the copy that owns the window, never in a
     # launch that hands off to it, and before any store is changed.
     backup.daily_copy()
