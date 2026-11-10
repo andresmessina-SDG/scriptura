@@ -1644,9 +1644,15 @@ class BiblePane(Gtk.Box):
         date_nav_stack = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         date_nav_stack.append(date_nav)
         date_nav_stack.append(self._devot_audio.progress)
-        self._date_nav = date_nav_stack     # measured for the page strip
+        self._date_nav = date_nav_stack
         self._date_nav_revealer.set_child(date_nav_stack)
         self._date_nav_revealer.set_reveal_child(False)
+        # Inside the page, not in the chrome band: in the band it pushed a
+        # devotional's page 40 px below the page beside it in the split.
+        # Margins on the child, so a hidden bar takes no room at all.
+        date_nav_stack.set_margin_top(8)
+        date_nav_stack.set_margin_start(8)
+        date_nav_stack.set_margin_end(8)
 
         # The pane toolbar auto-hides while reading (scroll down to get it
         # out of the way, scroll up / tap the text / focus a control to
@@ -1667,15 +1673,13 @@ class BiblePane(Gtk.Box):
         toolbar_focus.connect('enter', lambda _c: self._reveal_chrome())
         toolbar.add_controller(toolbar_focus)
 
-        # The floating chrome band: toolbar + devotional date nav +
-        # per-pane search bar, stacked over the top of the reading page
+        # The floating chrome band: toolbar + per-pane search bar, stacked over the top of the reading page
         # (composed into a Gtk.Overlay with the paned below). Opaque via
         # .pane-chrome-band so text scrolling beneath it is masked.
         self._chrome_band = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self._chrome_band.add_css_class('pane-chrome-band')
         self._chrome_band.set_valign(Gtk.Align.START)
         self._chrome_band.append(self._toolbar_revealer)
-        self._chrome_band.append(self._date_nav_revealer)
         self._toolbar_separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
         self._toolbar_separator.add_css_class('pane-toolbar-separator')
         self._chrome_band.append(self._toolbar_separator)
@@ -1873,7 +1877,12 @@ class BiblePane(Gtk.Box):
         # Clip the scroll/lexicon to the page's rounded corners (square child
         # corners would otherwise poke past the 16px card edge).
         self._lex_paned.set_overflow(Gtk.Overflow.HIDDEN)
-        self._lex_paned.set_start_child(self._content_stack)
+        # The devotional date bar heads the page, above the scroller: the
+        # text view must stay the scroller's own child (see above).
+        page_top = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        page_top.append(self._date_nav_revealer)
+        page_top.append(self._content_stack)
+        self._lex_paned.set_start_child(page_top)
         self._lex_paned.set_end_child(self._lex_panel)
         self._lex_paned.set_resize_start_child(True)
         self._lex_paned.set_resize_end_child(True)
@@ -5756,8 +5765,6 @@ class BiblePane(Gtk.Box):
         is_devot = self._is_devotional
         is_chapter_keyed = self._is_verse_navigable()
         self._date_nav_revealer.set_reveal_child(is_devot)
-        # Devotionals keep the date bar in the chrome band — reserve its
-        # height too (the switch re-renders anyway, so no mid-read reflow).
         self._sync_view_top_margin()
         # Sync / chapter-note / per-pane search are only meaningful when
         # the pane is rendering a verse-keyed chapter. Devotionals get

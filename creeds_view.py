@@ -58,8 +58,11 @@ MIN_LABEL_GAP = 22
 RAIL_END = 14
 MIN_BOOK_GAP = 17
 #: Below this width the detail opens under the line and the rail narrows;
-#: below the second the strip turns sideways and the threads go.
-WIDE_SP = 880
+#: below the second the strip turns sideways and the threads go. The wide
+#: rail and the side panel take 681 px together and the lines want about
+#: 352 (44 characters), so wide waits for a pane that holds all three: at
+#: 880 the lines got 213 px and every title wrapped.
+WIDE_SP = 1080
 NARROW_SP = 420
 THREAD_MS = 550
 
@@ -996,7 +999,25 @@ class CreedsPage:
         if self._layout_pending or not self._built:
             return
         self._layout_pending = True
-        GLib.idle_add(self._layout)
+        GLib.idle_add(self._layout_if_pending)
+        # Idle waits while the split or the window is dragged, and the strip
+        # and its labels stayed where they were until the drag stopped. The
+        # frame clock keeps going: a mapped page also lays out once the next
+        # frame is painted, when the allocation is settled, and repaints.
+        # Whichever comes first does the work.
+        clock = self.widget.get_frame_clock() if self.widget.get_mapped() \
+            else None
+        if clock is not None:
+            def after_paint(clk):
+                clk.disconnect(handler)
+                self._layout_if_pending()
+            handler = clock.connect('after-paint', after_paint)
+            clock.request_phase(Gdk.FrameClockPhase.AFTER_PAINT)
+
+    def _layout_if_pending(self):
+        if self._layout_pending:
+            self._layout()
+        return GLib.SOURCE_REMOVE
 
     def _layout(self):
         """Measure where everything is, then place the labels and repaint.
@@ -1166,6 +1187,14 @@ class CreedsPage:
         if g is None:
             return
         g.update(self._measure_lines())
+        # The strip and labels move with the pane's width. `_layout` runs
+        # idle, and idle is starved while the split is dragged, so their x
+        # is read here too, or the strip is painted where it was.
+        ov = self._overlay
+        ok_s, strip = self._strip.compute_bounds(ov)
+        ok_f, lab = self._labels.compute_bounds(ov)
+        if ok_s and ok_f:
+            g['sx'], g['lx'] = strip.get_x(), lab.get_x()
         ink = area.get_color()
         hc = high_contrast()
 
