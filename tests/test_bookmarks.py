@@ -201,7 +201,8 @@ def test_the_shortcut_bookmarks_the_chapter_on_screen(isolated):
         nav_books=lambda: ['Genesis', 'Exodus'],
         book_drop=types.SimpleNamespace(get_selected=lambda: 1),
         chapter_drop=types.SimpleNamespace(get_selected=lambda: 19),
-        _toast=toasts.append)
+        _toast=toasts.append,
+        _bible_pane_in_view=lambda: object())
     fake._save_bookmark = lambda b, c: BibleWindow._save_bookmark(fake, b, c)
     BibleWindow._bookmark_here(fake)
     assert [(b['book'], b['chapter']) for b in bookmarks.get_all()] == [

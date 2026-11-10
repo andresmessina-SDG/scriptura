@@ -1979,14 +1979,7 @@ class BiblePane(Gtk.Box):
         # pane starts on. Without this, a session that ended on a
         # genbook or devotional re-opens with the verse-keyed chrome
         # (lock / chapter-note / search / copy) visible inappropriately.
-        is_chapter_keyed = self._is_verse_navigable()
-        # The catena pane follows the partnered Bible (book/chapter + verse),
-        # so it keeps the sync button but none of the verse-text chrome.
-        self._update_sync_visible()
-        self._chapter_note_btn.set_visible(is_chapter_keyed)
-        self._search.button.set_visible(is_chapter_keyed)
-        self._copy_chapter_btn.set_visible(is_chapter_keyed)
-        self._genbook.update_visibility(self._is_genbook)
+        self._sync_chrome()
 
         if self._is_devotional:
             self._date_nav_revealer.set_reveal_child(True)
@@ -2167,6 +2160,20 @@ class BiblePane(Gtk.Box):
     def _content_child(self):
         """Which content-stack child the current module renders into."""
         return self._content.stack_child
+
+    def _sync_chrome(self):
+        """The toolbar for the module on screen, at start-up and on every
+        module change. Chapter note, search, Copy chapter and the passage
+        button only mean something on a verse-keyed chapter; the catena
+        follows the Bible beside it, so it keeps the lock and nothing else;
+        a devotional gets its date bar and a generic book its TOC."""
+        keyed = self._is_verse_navigable()
+        self._update_sync_visible()
+        self._chapter_note_btn.set_visible(keyed)
+        self._search.button.set_visible(keyed)
+        self._copy_chapter_btn.set_visible(keyed)
+        self._passage_btn.set_visible(keyed)
+        self._genbook.update_visibility(self._is_genbook)
 
     def _is_verse_navigable(self):
         """Verse-based navigation only makes sense for Bibles and commentaries.
@@ -5754,21 +5761,12 @@ class BiblePane(Gtk.Box):
             if v:
                 self._restore_top_verse = v
         is_devot = self._is_devotional
-        is_chapter_keyed = self._is_verse_navigable()
         self._date_nav_revealer.set_reveal_child(is_devot)
         # Devotionals keep the date bar in the chrome band — reserve its
         # height too (the switch re-renders anyway, so no mid-read reflow).
         self._sync_view_top_margin()
-        # Sync / chapter-note / per-pane search are only meaningful when
-        # the pane is rendering a verse-keyed chapter. Devotionals get
-        # date navigation instead; Generic Books get the TOC button.
-        self._update_sync_visible()
-        self._chapter_note_btn.set_visible(is_chapter_keyed)
-        self._search.button.set_visible(is_chapter_keyed)
-        self._copy_chapter_btn.set_visible(is_chapter_keyed)
+        self._sync_chrome()
         self._search.button.set_active(False)
-        # TOC + prev/next buttons only visible for Generic Books
-        self._genbook.update_visibility(self._is_genbook)
         if is_devot:
             self._devotional_date = _date.today()
             self._sync_btn.set_active(True)  # lock navigation silently

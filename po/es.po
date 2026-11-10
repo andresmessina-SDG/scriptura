@@ -10360,19 +10360,31 @@ msgid "Scriptura · every fact and its source is in the app’s Bible Family Tre
 msgstr "Scriptura · cada dato y su fuente están en el Árbol genealógico de la Biblia de la aplicación"
 
 #: window.py
-msgid "Open a Bible beside the Family Tree to compare a verse"
-msgstr "Abra una Biblia junto al Árbol genealógico de la Biblia para comparar un versículo"
+msgid "Open a Bible or commentary to compare a verse"
+msgstr "Abra una Biblia o un comentario para comparar un versículo"
 
 #: window.py
-msgid "Open a Bible beside the Family Tree to print a passage"
-msgstr "Abra una Biblia junto al Árbol genealógico de la Biblia para imprimir un pasaje"
+msgid "Open a Bible or commentary to print a passage"
+msgstr "Abra una Biblia o un comentario para imprimir un pasaje"
 
 #: window.py
-msgid "Open a Bible beside the Family Tree to export a passage"
-msgstr "Abra una Biblia junto al Árbol genealógico de la Biblia para exportar un pasaje"
+msgid "Open a Bible or commentary to export a passage"
+msgstr "Abra una Biblia o un comentario para exportar un pasaje"
 #: fetch_errors.py
 msgid "CrossWire is unreachable, and only CrossWire may hand out this module. Try again when it is back."
 msgstr "No se puede conectar con CrossWire, y solo CrossWire puede distribuir este módulo. Inténtelo de nuevo cuando vuelva a estar disponible."
+
+#: window.py
+msgid "Open a Bible or commentary to bookmark a chapter"
+msgstr "Abra una Biblia o un comentario para añadir un capítulo a los marcadores"
+
+#: window.py
+msgid "Open a Bible or commentary to write about a chapter"
+msgstr "Abra una Biblia o un comentario para escribir sobre un capítulo"
+
+#: window.py
+msgid "Open a Bible or commentary to start a sermon on a chapter"
+msgstr "Abra una Biblia o un comentario para empezar un sermón sobre un capítulo"
 
 #: fetch_errors.py
 msgid "This module isn’t in the saved catalogue. Refresh the catalogue and try again."

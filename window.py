@@ -1846,6 +1846,12 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._save_bookmark(book, chapter)
 
     def _bookmark_here(self):
+        # The header keeps the last chapter read over a devotional or the
+        # Harmony, so with no Bible in view Ctrl+D bookmarked a chapter
+        # nobody was looking at.
+        if self._bible_pane_in_view() is None:
+            self._toast(_('Open a Bible or commentary to bookmark a chapter'))
+            return
         self._save_bookmark(self.nav_books()[self.book_drop.get_selected()],
                             self.chapter_drop.get_selected() + 1)
 
@@ -3319,9 +3325,13 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         is the shortcut you reach for having read something, and a sermon is
         rarely on one verse.
         """
-        pane = self._pane_in_view()
+        pane = self._bible_pane_in_view()
+        if pane is None:
+            self._toast(_('Open a Bible or commentary to start a sermon on a '
+                          'chapter'))
+            return
         anchors = []
-        if pane is not None and pane.book:
+        if pane.book:
             anchors = [{'book': pane.book, 'chapter': pane.chapter,
                         'verses': []}]
         self._open_annotations(new_sermon={
@@ -3425,8 +3435,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             return
         pane = self._bible_pane_in_view()
         if pane is None:
-            self._toast(_('Open a Bible beside the Family Tree to print a '
-                          'passage'))
+            self._toast(_('Open a Bible or commentary to print a passage'))
             return
         if not pane.book:
             return
@@ -3435,32 +3444,30 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
     def _export_passage(self):
         pane = self._bible_pane_in_view()
         if pane is None:
-            self._toast(_('Open a Bible beside the Family Tree to export a '
-                          'passage'))
+            self._toast(_('Open a Bible or commentary to export a passage'))
             return
         if not pane.book:
             return
         export_dialog.export_passage(pane, pane.current_verses())
 
     def _bible_pane_in_view(self):
-        """The pane a verse action acts on: the one in use, unless that is
-        the Family Tree, whose text view is hidden — then the Bible showing
-        beside it, or None when there is none."""
+        """The pane a verse action acts on: the one in use if it shows a
+        Bible or commentary, else the other one if that does and is showing,
+        else None. A devotional, a book or the Harmony has no verses to
+        print, export or compare."""
         pane = self._pane_in_view()
-        if pane is not None and pane._is_family:
-            other = self.pane2 if pane is self.pane1 else self.pane1
-            shown = other.get_visible() and not other._is_family
-            pane = other if shown else None
-        return pane
+        if pane._is_verse_navigable():
+            return pane
+        other = self.pane2 if pane is self.pane1 else self.pane1
+        if other.get_visible() and other._is_verse_navigable():
+            return other
+        return None
 
     def _compare_verse(self):
         """One verse, so the selection's first is what it compares."""
         pane = self._bible_pane_in_view()
         if pane is None:
-            # A window too narrow for two panes shows the Family Tree alone.
-            # Aimed at its hidden text, the shortcut did nothing at all.
-            self._toast(_('Open a Bible beside the Family Tree to compare '
-                          'a verse'))
+            self._toast(_('Open a Bible or commentary to compare a verse'))
             return
         if not pane.book:
             return
@@ -3478,8 +3485,12 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         you reach for having read something, and a verse-level anchor is what
         the study menu's own entry is for.
         """
-        pane = self._pane_in_view()
-        if pane is None or not pane.book:
+        pane = self._bible_pane_in_view()
+        if pane is None:
+            self._toast(_('Open a Bible or commentary to write about a '
+                          'chapter'))
+            return
+        if not pane.book:
             return
         self._open_annotations({'anchors': [
             {'book': pane.book, 'chapter': pane.chapter, 'verses': []}]})
