@@ -89,12 +89,10 @@ class ChromeController:
 
     def _strip_targets(self):
         """(base, toolbar) strip heights: base chrome that never auto-hides
-        (the devotional date bar) and the auto-hiding toolbar."""
+        (none now: the devotional date bar moved into the page) and the
+        auto-hiding toolbar."""
         p = self._pane
-        base = 0
-        if p._is_devotional:
-            base = p._date_nav.measure(Gtk.Orientation.VERTICAL, -1)[1]
-        return base, p._toolbar.measure(Gtk.Orientation.VERTICAL, -1)[1]
+        return 0, p._toolbar.measure(Gtk.Orientation.VERTICAL, -1)[1]
 
     def animate_strip(self):
         """Slide the page card's top edge in step with the toolbar, keeping the

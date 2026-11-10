@@ -3064,7 +3064,7 @@ button.creeds-port {
 button.creeds-book {
     font-size: 0.85em;
     font-weight: normal;
-    min-height: 16px;
+    min-height: 24px;   /* the least target; the label keeps its size */
     padding: 0 6px;
     opacity: 0.8;
 }
