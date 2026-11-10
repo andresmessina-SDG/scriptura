@@ -1348,6 +1348,8 @@ class BiblePane(Gtk.Box):
         self._on_open_lineage = on_open_lineage
         self._on_open_creed = on_open_creed
         self._on_toast = on_toast
+        # Set by the window: called when what `place_label` names changes.
+        self.on_place_changed = None
         self._on_font_size_request = on_font_size_request
         self._on_cipher_error = on_cipher_error
         self._on_edit_cipher = on_edit_cipher
@@ -2184,6 +2186,32 @@ class BiblePane(Gtk.Box):
         self._passage_btn.set_visible(keyed)
         self._genbook.update_visibility(self._is_genbook)
 
+    def place_label(self):
+        """What the header names while this pane is in view: None for a
+        pane that follows the chapter, else the resource's own place, since
+        its book and chapter are the last ones read, not what is on screen."""
+        if (self._is_verse_navigable() or self._is_catena
+                or self._is_imagery or self._is_interlinear):
+            return None
+        if self._is_devotional:
+            return self._date_label.get_text()
+        if self._is_genbook and self._genbook.entry:
+            # The page's own title: the last segment, as GenbookReader shows it.
+            segs = [s for s in self._genbook.entry.split('/') if s]
+            if segs:
+                return segs[-1].replace('_', ' ')
+        if self._is_creeds:
+            return _(creeds.TITLES.get(self._creeds.current_creed(), ''))
+        if self._is_harmony:
+            s = harmony.section(self._harmony.current_section() or '')
+            if s:
+                return s.get('heading', '')
+        return sword_bridge.display_name(self._module)
+
+    def _place_changed(self):
+        if self.on_place_changed:
+            self.on_place_changed()
+
     def _is_verse_navigable(self):
         """Verse-based navigation only makes sense for Bibles and commentaries.
         Lexicons, dictionaries, and generic books (e.g. Didache) don't have
@@ -2789,6 +2817,7 @@ class BiblePane(Gtk.Box):
         module = self._module
         date_obj = self._devotional_date
         self._date_label.set_text(format_date_heading(date_obj))
+        self._place_changed()
         self._devot_audio.sync()
 
         tasks.submit(
@@ -5803,6 +5832,7 @@ class BiblePane(Gtk.Box):
         # even drive the reading scroll — card views don't).
         self._reveal_chrome()
         self._fetch_and_render()
+        self._place_changed()
         if self._on_module_switched:
             self._on_module_switched()
 

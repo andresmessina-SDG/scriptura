@@ -309,6 +309,7 @@ class GenbookReader:
         pane._clear_chapter_scoped_tags()
 
         self._entry_path = entry_path
+        pane._place_changed()
         self.save_position()
         self._update_nav_sensitivity(entries)
 
