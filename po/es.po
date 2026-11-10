@@ -192,6 +192,46 @@ msgid "Commentary"
 msgstr "Comentario"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
+msgid "The KJV read aloud, new study helps beside the text, and a steadier app."
+msgstr "La KJV leída en voz alta, nuevas ayudas de estudio junto al texto y una aplicación más estable."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:161
+msgid "A new recording of the King James Version to listen to, from Deep Dive Bible."
+msgstr "Una nueva grabación de la King James Version para escuchar, de Deep Dive Bible."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
+msgid "Tyndale's Open Bible Dictionary and Study Notes can be installed from the Module Manager."
+msgstr "El Diccionario bíblico y las notas de estudio Tyndale Open se pueden instalar desde el Gestor de módulos."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:163
+msgid "The cross-reference bar's title now picks its set of references and remembers your choice."
+msgstr "El título de la barra de referencias cruzadas ahora elige su conjunto de referencias y recuerda su elección."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
+msgid "The bar offers the parallel passages of the United Bible Societies, and Thompson's chains when that module is installed."
+msgstr "La barra ofrece los pasajes paralelos de las Sociedades Bíblicas Unidas y las cadenas de Thompson cuando ese módulo está instalado."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
+msgid "The bar can list the dictionary articles that cite a verse."
+msgstr "La barra puede mostrar los artículos de diccionario que citan un versículo."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
+msgid "Fixed a crash that could close the app after a word or note popped up."
+msgstr "Se corrigió un fallo que podía cerrar la aplicación después de que apareciera una palabra o una nota."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:167
+msgid "Memory no longer grows each time a pop-up opens and closes."
+msgstr "La memoria ya no crece cada vez que se abre y se cierra una ventana emergente."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:168
+msgid "A module that fails to load now says so, instead of showing an empty page."
+msgstr "Un módulo que no se puede cargar ahora lo dice, en lugar de mostrar una página vacía."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:169
+msgid "Module files that would write outside the library are refused."
+msgstr "Se rechazan los archivos de módulos que escribirían fuera de la biblioteca."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
 msgid "Steadier pop-ups, a creeds switch, and fixes for Large Text."
 msgstr "Ventanas emergentes más estables, un interruptor para los credos y arreglos para el texto grande."
 

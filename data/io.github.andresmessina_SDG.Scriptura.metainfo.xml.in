@@ -154,6 +154,22 @@
          Every note is translated: add each line to po/es.po and po/ru.po,
          or tests/test_translations.py fails, then rebuild the site with
          tools/build-site.py so What's new shows it in all three languages. -->
+    <release version="1.10.0" date="2026-11-10">
+      <description>
+        <p>The KJV read aloud, new study helps beside the text, and a steadier app.</p>
+        <ul>
+          <li>A new recording of the King James Version to listen to, from Deep Dive Bible.</li>
+          <li>Tyndale's Open Bible Dictionary and Study Notes can be installed from the Module Manager.</li>
+          <li>The cross-reference bar's title now picks its set of references and remembers your choice.</li>
+          <li>The bar offers the parallel passages of the United Bible Societies, and Thompson's chains when that module is installed.</li>
+          <li>The bar can list the dictionary articles that cite a verse.</li>
+          <li>Fixed a crash that could close the app after a word or note popped up.</li>
+          <li>Memory no longer grows each time a pop-up opens and closes.</li>
+          <li>A module that fails to load now says so, instead of showing an empty page.</li>
+          <li>Module files that would write outside the library are refused.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.9.2" date="2026-10-31">
       <description>
         <p>Steadier pop-ups, a creeds switch, and fixes for Large Text.</p>
