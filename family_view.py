@@ -623,7 +623,7 @@ class FamilyView:
                 vadj.disconnect(handler)
                 # Not inside the layout that sent this: a scroll set there
                 # moved the value but never the drawing.
-                GLib.idle_add(lambda: go() or GLib.SOURCE_REMOVE)
+                GLib.idle_add(lambda: (go(), GLib.SOURCE_REMOVE)[1])
         handler = vadj.connect('changed', on_changed)
 
     def focus_last(self):

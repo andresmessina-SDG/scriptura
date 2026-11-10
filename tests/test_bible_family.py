@@ -382,7 +382,7 @@ def test_compare_settles_its_header_before_it_is_shown(display, monkeypatch):
 
         def start(self):
             self.target()
-    monkeypatch.setattr(ad.threading, 'Thread', _Now)
+    monkeypatch.setattr(ad.tasks.threading, 'Thread', _Now)
     queued = []
     monkeypatch.setattr(ad.GLib, 'idle_add', lambda fn, *a: queued.append(
         (fn, a)))
@@ -549,7 +549,7 @@ def _compare_with_root(monkeypatch, module):
 
         def start(self):
             pass                          # the verses never matter here
-    monkeypatch.setattr(ad.threading, 'Thread', _Now)
+    monkeypatch.setattr(ad.tasks.threading, 'Thread', _Now)
     queued = []
     monkeypatch.setattr(ad.GLib, 'idle_add', lambda fn, *a: queued.append(
         (fn, a)))
@@ -682,7 +682,7 @@ def test_compare_keeps_its_size_once_open(display, monkeypatch):
 
         def start(self):
             self.target()
-    monkeypatch.setattr(ad.threading, 'Thread', _Now)
+    monkeypatch.setattr(ad.tasks.threading, 'Thread', _Now)
     queued = []
     monkeypatch.setattr(ad.GLib, 'idle_add', lambda fn, *a: queued.append(
         (fn, a)))

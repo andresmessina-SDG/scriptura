@@ -60,7 +60,7 @@ _OSIS_REF_SHOWN = re.compile(
     r'<ref(?:erence)?\b[^>]*?osisRef="([^"]+)"[^>]*>(.*?)</ref(?:erence)?>', re.S)
 _WORK_PREFIX = re.compile(r'(^|-)([^:\s-]+):')
 _CHAPTER_ONLY = re.compile(r'^([1-3]?[A-Za-z]+)\.(\d+)$')
-_v11n_cache = {}
+_v11n_cache: dict[str, str | None] = {}
 
 
 def _work_v11n(work):

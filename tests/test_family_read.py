@@ -83,7 +83,7 @@ def _read(monkeypatch, texts=None, names=('KJVA', 'ESV'), root=None,
 
         def start(self):
             self.target()
-    monkeypatch.setattr(fr.threading, 'Thread', _Now)
+    monkeypatch.setattr(fr.tasks.threading, 'Thread', _Now)
     monkeypatch.setattr(fr.GLib, 'idle_add', lambda fn, *a: fn(*a))
     monkeypatch.setattr(fr, 'verse_text',
                         lambda m, ref: texts.get(m, f'{m} {ref}'))
@@ -304,7 +304,7 @@ def test_a_superseded_fetch_stops_reading(monkeypatch):
 
         def start(self):
             started.append(self.target)
-    monkeypatch.setattr(fr.threading, 'Thread', _Later)
+    monkeypatch.setattr(fr.tasks.threading, 'Thread', _Later)
     calls = []
     monkeypatch.setattr(fr, 'verse_text',
                         lambda m, ref: calls.append(ref) or 'x')

@@ -797,7 +797,7 @@ class ArchaeologyReader:
         self._scroller.get_vadjustment().set_value(max(0, rect.get_y() - 8))
         w.add_css_class('stone-flash')
         GLib.timeout_add(motion.FLASH_HOLD_MS,
-                         lambda: w.remove_css_class('stone-flash') or False)
+                         lambda: (w.remove_css_class('stone-flash'), False)[1])
         self._scroll_target = None
         return False
 

@@ -29,11 +29,37 @@ def test_startup_arms_a_daily_tick(monkeypatch):
     monkeypatch.setattr(GLib, 'timeout_add_seconds',
                         lambda secs, fn, *a: armed.append((secs, fn, a)) or 1)
     monkeypatch.setattr(backup, 'daily_copy', lambda: None)
+    monkeypatch.setattr(main.gc, 'disable', lambda: None)
+    monkeypatch.setattr(GLib, 'timeout_add', lambda ms, fn, *a: 1)
     app, _c, _q = _app()
     main._on_startup(app)
     assert len(armed) == 1
     secs, fn, args = armed[0]
     assert secs == main._DAILY_TICK_S
+
+
+def test_startup_moves_garbage_collection_to_the_main_loop(monkeypatch):
+    """Collected on a worker, a widget is freed off the main thread."""
+    off, ticks = [], []
+    monkeypatch.setattr(main.gc, 'disable', lambda: off.append(True))
+    monkeypatch.setattr(GLib, 'timeout_add',
+                        lambda ms, fn, *a: ticks.append((ms, fn)) or 1)
+    monkeypatch.setattr(GLib, 'timeout_add_seconds', lambda *a: 1)
+    monkeypatch.setattr(backup, 'daily_copy', lambda: None)
+    main._on_startup(_app()[0])
+    assert off == [True]
+    assert ticks == [(main._GC_TICK_MS, main._collect_on_main_thread)]
+
+
+def test_the_collector_follows_pythons_thresholds(monkeypatch):
+    done = []
+    monkeypatch.setattr(main.gc, 'collect', lambda gen: done.append(gen))
+    monkeypatch.setattr(main.gc, 'get_threshold', lambda: (700, 10, 10))
+    monkeypatch.setattr(main.gc, 'get_count', lambda: (5, 0, 0))
+    assert main._collect_on_main_thread() is GLib.SOURCE_CONTINUE
+    monkeypatch.setattr(main.gc, 'get_count', lambda: (701, 11, 3))
+    main._collect_on_main_thread()
+    assert done == [1]
 
 
 def test_the_tick_takes_the_copy_and_stays_armed(monkeypatch):

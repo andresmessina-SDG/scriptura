@@ -10,6 +10,7 @@ import io
 import os
 import sqlite3
 import threading
+from typing import Any
 import zipfile
 
 import paths
@@ -354,8 +355,8 @@ _V11N_CANDIDATES = ('KJV', 'Synodal', 'Vulg', 'SynodalProt', 'Catholic',
 #: or two does not, and keeps today's behaviour.
 _V11N_MARGIN = 0.02
 
-_v11n_cache = {}          # tid → versification name | None
-_verse_max_cache = {}     # versification name → {(book, chapter): max verse}
+_v11n_cache: dict[str, str | None] = {}  # tid → versification name | None
+_verse_max_cache: dict[str, dict[tuple[str, int], int]] = {}  # versification name → {(book, chapter): max verse}
 
 
 def _canonical_books():
@@ -480,7 +481,7 @@ def _chapter_rows(module_name, book, chapter, rows_for):
     lines = sword_bridge.chapter_lines(module_name, book, chapter)
     if lines is None:
         return rows_for(m_book, m_chapter)
-    by_ref = {}
+    by_ref: dict[Any, Any] = {}
     for m_ch in sorted({ln[2] for ln in lines}):
         for row in rows_for(m_book, m_ch):
             by_ref.setdefault((m_ch, row[0]), []).append(row[1:])
@@ -524,7 +525,7 @@ def chapter_footnotes(module_name, book, chapter):
                 'ORDER BY verse, n', (tid, b, ch)).fetchall()))
     except Exception:
         return {}
-    out = {}
+    out: dict[Any, Any] = {}
     for v, n, t, body in rows:
         out.setdefault(v, []).append((str(n), t, body))
     return out
@@ -894,14 +895,14 @@ def _parse_usfm(content):
 
     content = _RE_FN.sub(_stash, content)
 
-    verses  = {}
-    notes   = {}
+    verses: dict[Any, Any] = {}
+    notes: dict[Any, Any] = {}
     book    = None
     chapter = None
     vnum    = None
-    parts   = []          # text segments for the current verse
+    parts: list[str] = []       # text segments for the current verse
     heading = None        # pending section/psalm heading
-    pre     = []          # text after \c but before the first \v
+    pre: list[str] = []       # text after \c but before the first \v
 
     def flush():
         if book and chapter is not None and vnum is not None and parts:

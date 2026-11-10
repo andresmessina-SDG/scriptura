@@ -11580,3 +11580,12 @@ msgstr "Для этого стиха нет параллельных мест."
 #: crossref_panel.py
 msgid "No Thompson chain passes through this verse."
 msgstr "Ни одна цепочка Томпсона не проходит через этот стих."
+
+#: genbook_reader.py pane.py annotation_dialogs.py family_read.py
+#, python-brace-format
+msgid "Couldn't read {module} — {error}"
+msgstr "Не удалось прочитать {module} — {error}"
+
+#: genbook_reader.py
+msgid "This generic book has no readable entries."
+msgstr "В этой книге нет доступных для чтения статей."

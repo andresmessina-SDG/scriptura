@@ -62,6 +62,24 @@ def test_extract_returns_the_names_it_wrote(tmp_path):
                                                         'nbla.conf']
 
 
+def test_a_link_in_a_catalogue_is_not_written(tmp_path):
+    """Python before 3.14 (the Flatpak runtime's) writes a link member as a
+    link; a conf written later, such as an unlock key, would follow it."""
+    outside = tmp_path / 'outside.txt'
+    outside.write_text('[Outside]\n', encoding='utf-8')
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode='w:gz') as tar:
+        for kind in (tarfile.SYMTYPE, tarfile.LNKTYPE):
+            info = tarfile.TarInfo(f'mods.d/link{kind.decode()}.conf')
+            info.type = kind
+            info.linkname = str(outside)
+            tar.addfile(info)
+    mods_d = tmp_path / 'mods.d'
+    mods_d.mkdir()
+    assert sword_bridge._extract_catalogue(buf.getvalue(), str(mods_d)) == []
+    assert list(mods_d.iterdir()) == []
+
+
 def test_the_released_repository_wins_a_name_collision(tmp_path):
     """A module in both repositories must stay the ordinary zip install —
     otherwise it is listed from one and fetched from the other."""

@@ -18,6 +18,7 @@ from gi.repository import Adw, Gdk, GLib, Gtk, Pango, PangoCairo  # noqa: E402
 import writing_page  # noqa: E402
 import settings  # noqa: E402
 from a11y import set_accessible_label  # noqa: E402
+from gtk_utils import free_when_closed  # noqa: E402
 from i18n import N_, _  # noqa: E402
 from pane import (DROPCAP_GOLD_DARK, DROPCAP_GOLD_LIGHT, auto_reading_ink,  # noqa: E402
                   dropcap_color_hex, valid_paper)
@@ -503,7 +504,7 @@ class AppearancePageMixin:
             eff_paper, _('Paper colour'), self._on_paper_custom_clicked, pop))
 
         pop.set_child(box)
-        pop.connect('closed', lambda p: GLib.idle_add(p.unparent))
+        free_when_closed(pop, unparent_later=True)
         pop.popup()
 
     def _custom_pick_row(self, colour, label, handler, pop):
@@ -556,7 +557,7 @@ class AppearancePageMixin:
             dropcap_color_hex(dark), _('Custom colour…'),
             self._on_dropcap_custom_clicked, pop))
         pop.set_child(box)
-        pop.connect('closed', lambda p: GLib.idle_add(p.unparent))
+        free_when_closed(pop, unparent_later=True)
         pop.popup()
 
     def _on_dropcap_custom_clicked(self, btn):

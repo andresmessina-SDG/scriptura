@@ -20,7 +20,7 @@ touches nothing else.
 # that name. The hints below need no future import on the Python this ships
 # against.
 from datetime import date
-from typing import Any, Callable, TypedDict
+from typing import Any, TypedDict
 
 import gi
 gi.require_version('Gtk', '4.0')

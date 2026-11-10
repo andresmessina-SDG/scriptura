@@ -16,4 +16,6 @@ python3 tools/build-locale.py
 # GStreamer probes VA-API for audio, and libva prints its
 # "libva info:" lines to the terminal. They are harmless; errors still show.
 export LIBVA_MESSAGING_LEVEL=1
+# As the Flatpak sets it: two glibc memory pools, not one per thread.
+export MALLOC_ARENA_MAX=2
 exec python3 main.py "$@"
