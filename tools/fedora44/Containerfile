@@ -1,0 +1,15 @@
+# The image CI tests on: Fedora 44, GTK 4.22, Python 3.14, with every
+# package the CI jobs install. Built and run by tools/in-fedora44.sh.
+#
+# GTK 4.24's Broadway server crashes on some of the app's frames (a reused
+# node it no longer holds), so the headless checks stay on 4.22 here, as in
+# CI, whatever release the machine itself runs.
+FROM registry.fedoraproject.org/fedora:44
+RUN dnf install -y --setopt=install_weak_deps=False \
+      python3-pytest python3-mypy python3-pyflakes python3-sword sword-utils \
+      python3-gobject gobject-introspection gtk4 libadwaita \
+      words gettext fontconfig \
+      adwaita-sans-fonts google-noto-sans-vf-fonts \
+      dejavu-sans-fonts dejavu-serif-fonts \
+      gdb procps-ng \
+ && dnf clean all
