@@ -368,7 +368,16 @@ class NavigationController:
         self.pane2.load_reference(book, chapter)
 
     def _update_ref_label(self, book, chapter):
-        self._ref_btn.set_label(f'{book_label(book)} {chapter}')
+        # Over a resource with no chapter (the Creeds, a devotional) the
+        # header names its place: the chapter is the last one read, not
+        # what is on screen. Any pane that follows the chapter keeps it.
+        win = self._win
+        panes = [p for p in (win.pane1, win.pane2) if p.get_visible()]
+        place = None
+        if panes and all(p.place_label() is not None for p in panes):
+            pane = win._pane_in_view()
+            place = (pane if pane in panes else panes[0]).place_label()
+        self._ref_btn.set_label(place or f'{book_label(book)} {chapter}')
 
     def _build_ref_popover_content(self):
         """Books on the left; right column flips between a Chapter grid and

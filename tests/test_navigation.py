@@ -216,3 +216,62 @@ def test_back_and_forward_keys_are_not_taken_by_gnome():
     assert "('go-forward', ['<Alt>bracketright']" in src
     assert not re.search(r'<Ctrl><Alt>(Left|Right)', src)
     assert 'Alt+←' not in src and 'Alt+→' not in src
+
+
+# ── The header over a resource with no chapter ─────────────────────────────
+
+class _PlacePane:
+    def __init__(self, place, visible=True):
+        self._place, self._visible = place, visible
+
+    def place_label(self):
+        return self._place
+
+    def get_visible(self):
+        return self._visible
+
+
+def _header(pane1, pane2, in_view=None):
+    import types
+    from navigation import NavigationController
+    label = {}
+    win = types.SimpleNamespace(
+        pane1=pane1, pane2=pane2,
+        _pane_in_view=lambda: in_view or pane1,
+        _ref_btn=types.SimpleNamespace(set_label=lambda t: label.update(t=t)))
+    NavigationController(win)._update_ref_label('John', 3)
+    return label['t']
+
+
+def test_the_header_names_a_resources_own_place():
+    """Over the Creeds alone it said "John 3", the last chapter read."""
+    assert _header(_PlacePane('The Nicene Creed'),
+                   _PlacePane(None, visible=False)) == 'The Nicene Creed'
+
+
+def test_a_bible_in_view_keeps_the_chapter():
+    assert _header(_PlacePane(None), _PlacePane(None)) == 'John 3'
+    # Beside a resource, the chapter is still on screen.
+    assert _header(_PlacePane('The Nicene Creed'),
+                   _PlacePane(None)) == 'John 3'
+
+
+def test_two_resources_name_the_one_in_view():
+    creeds, devotional = _PlacePane('The Nicene Creed'), _PlacePane('May 3')
+    assert _header(creeds, devotional, in_view=devotional) == 'May 3'
+
+
+def test_the_header_follows_the_focus_between_two_resources():
+    """Clicking from the Creeds into a devotional beside it left the header
+    on the Creeds until something else changed."""
+    import types
+    from window import BibleWindow
+    creeds, devotional = _PlacePane('The Nicene Creed'), _PlacePane('May 3')
+    calls = []
+    win = types.SimpleNamespace(
+        _pane_last_in_view=creeds, _current_loc=('John', 3),
+        _update_ref_label=lambda b, c: calls.append((b, c)))
+    win._pane_in_view = lambda: devotional
+    BibleWindow._on_focus_moved(win)
+    BibleWindow._on_focus_moved(win)        # same pane: nothing to redo
+    assert calls == [('John', 3)] and win._pane_last_in_view is devotional

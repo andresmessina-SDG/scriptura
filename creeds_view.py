@@ -398,6 +398,8 @@ class CreedsPage:
         self._sel = self._book = self._hot = None
         self._geo = None
         self._title.set_label(_(creeds.TITLES.get(self._creed_id, '')))
+        if self._pane is not None:
+            self._pane._place_changed()
         origin = c.get('origin') or {}
         self._origin.set_label(_quoted(origin.get('text', '')))
         self._origin_cite.set_label(origin.get('cite', ''))

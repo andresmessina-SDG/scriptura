@@ -334,6 +334,8 @@ class HarmonyPage:
         self._sel = sid
         self._beside = None
         settings.put('harmony_section', sid or '')
+        if self._pane is not None:
+            self._pane._place_changed()
         self._show()
         self._main.get_vadjustment().set_value(0)
         btn = self._rows.get(sid or '')

@@ -437,6 +437,19 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._install_breakpoints()
         self._install_window_controllers()
         self._update_ref_label(*self._current_loc)
+        for pane in (self.pane1, self.pane2):
+            pane.on_place_changed = (
+                lambda: self._update_ref_label(*self._current_loc))
+        # With a resource in each pane the header names the one in use, so
+        # it follows the focus from one pane to the other.
+        self._pane_last_in_view = self._pane_in_view()
+        self.connect('notify::focus-widget', self._on_focus_moved)
+
+    def _on_focus_moved(self, *_a):
+        pane = self._pane_in_view()
+        if pane is not self._pane_last_in_view:
+            self._pane_last_in_view = pane
+            self._update_ref_label(*self._current_loc)
 
     def _build_header(self, toolbar_view):
         """The header bar: navigation on the left, reading tools on the right."""
@@ -2824,7 +2837,9 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         re-runs of _apply_narrow_pane don't silence a still-visible pane."""
         if not visible and pane.get_visible():
             pane.stop_audio()
-        pane.set_visible(visible)
+        if pane.get_visible() != visible:
+            pane.set_visible(visible)
+            self._update_ref_label(*self._current_loc)
 
     def _on_breakpoint_changed(self, *_args):
         """Map the single active breakpoint to the full adaptive state. None =
