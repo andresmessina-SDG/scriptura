@@ -194,6 +194,25 @@ def test_a_door_acts_on_a_verse_text(doors, door, label, module_type,
     assert _targets(win, doors) == [win.pane1]
 
 
+@pytest.mark.parametrize('door', _DOORS)
+def test_a_door_does_not_reach_a_hidden_pane(doors, door):
+    """A narrow window shows one pane. With pane 2 picked and the focus in
+    the header, the doors used to act on the Bible hidden in pane 1."""
+    win = _window(_Pane('Biblical Texts', visible=False),
+                  _Pane('The Creeds'))
+    getattr(win, door)()
+    toasts = win.toasts + win.pane1.toasts + win.pane2.toasts
+    assert doors == [] and win.calls == [] and len(toasts) == 1
+
+
+@pytest.mark.parametrize('door', _DOORS)
+def test_a_door_reaches_the_shown_bible_past_a_hidden_one(doors, door):
+    win = _window(_Pane('Biblical Texts', visible=False),
+                  _Pane('Biblical Texts'))
+    getattr(win, door)()
+    assert _targets(win, doors) == [win.pane2]
+
+
 # ── The `…` button ─────────────────────────────────────────────────────────
 
 class _Shown:

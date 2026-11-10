@@ -3456,7 +3456,9 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         else None. A devotional, a book or the Harmony has no verses to
         print, export or compare."""
         pane = self._pane_in_view()
-        if pane._is_verse_navigable():
+        # With the focus outside both panes `_pane_in_view` answers pane 1,
+        # which a narrow window may be hiding behind pane 2.
+        if pane.get_visible() and pane._is_verse_navigable():
             return pane
         other = self.pane2 if pane is self.pane1 else self.pane1
         if other.get_visible() and other._is_verse_navigable():
