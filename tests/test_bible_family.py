@@ -438,6 +438,9 @@ class _ShortcutPane:
     def get_visible(self):
         return self._visible
 
+    def _is_verse_navigable(self):
+        return not self._is_family
+
     def current_verses(self):
         return [16]
 
