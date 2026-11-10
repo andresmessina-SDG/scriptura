@@ -6,6 +6,31 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+## [1.10.0] — 2026-11-10
+
+### Added
+- A third reading of the King James Version, from Deep Dive Bible (CC0), beside the KJV, KJVA and eBible KJV texts. The chapter cache names a file by its path under the reading's base, since this reading's files share a last segment across books. Credited in About.
+- The cross-reference bar's caption chooses its set: a short list of the sets this install has, and the pick is remembered. In a narrow window it keeps the set name and drops the verse. With no choice made, the bar shows OpenBible if downloaded, else TSK.
+- UBS parallel passages (CC BY-SA 4.0) ship in data/parallels, moved from Hebrew and Greek verse numbers to the KJV's with STEPBible's TVTMS table.
+- Thompson's chains on the bar when the TCR module is installed: one chip per chain, its heading and the next verse.
+- A Dictionaries set on the bar: the articles in the installed Bible dictionaries that cite the verse, in the reader's languages. A click opens the article above the chip. The index is built in a child process and kept in the cache folder. Easton's bare continuations and repeated keys (Smith's "AB") read right.
+- The Tyndale Open Bible Dictionary (6,010 articles) and Tyndale Study Notes (16,923 verse notes, written for the NLT) as modules in Scriptura's sword-modules source (CC BY-SA 4.0). Credited in the README and About.
+
+### Fixed
+- A crash in GTK's text layout: Python's cycle collector ran on a search or fetch worker and freed a peek's text view there, while the main loop could still lay it out. The automatic collector is off; the main loop runs Python's own threshold rule once a second.
+- Every popover the app had shown stayed in memory (about 15 MB a minute of random use). The arrow guard held its popover; handlers that captured their own tree made cycles the collector cannot break. Closed popovers now release their tree.
+- The Flatpak caps glibc at two memory pools: 15 minutes of random use ended at 401 MB, was 494 MB.
+- Seven background loads (a general book, a devotional, copy chapter, the startup devotional reference, Compare, the topic chips, Read the difference) had no error path and left the old page or a spinner. A failure now says "Couldn't read {module} — {error}"; in Compare and Read the difference only the Bible that failed says so. The general book's empty message is translated.
+- Fourteen idle and timeout callbacks of the shape `lambda: f() or SOURCE_REMOVE` end in their constant now, and a test checks every one in the app.
+- A module catalogue member that is a link is no longer written as a link, and a sideloaded module whose name is a path ("../../x") is refused at install.
+- The verse-article index keeps 7.4 MB loaded (was 21 MB) and no longer re-reads a stale cache on every verse click.
+- Double-clicking "God" in the word peek no longer shows "Children: Adam" from Luke 3:38; the chart is unchanged.
+- Thompson's walk no longer stops at a repeated key.
+
+### Changed
+- The catena is described as reaching "from the early fathers through the Middle Ages", not "to the Reformers": it holds 35 Reformation quotes out of 87,995.
+- CI runs the GTK tests under Broadway (about 640 had skipped), runs pyflakes, type-checks the data layer, and pins Fedora 44. `tools/in-fedora44.sh` runs the same checks on any machine.
+
 ## [1.9.2] — 2026-10-31
 
 ### Added
