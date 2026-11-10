@@ -999,7 +999,25 @@ class CreedsPage:
         if self._layout_pending or not self._built:
             return
         self._layout_pending = True
-        GLib.idle_add(self._layout)
+        GLib.idle_add(self._layout_if_pending)
+        # Idle waits while the split or the window is dragged, and the strip
+        # and its labels stayed where they were until the drag stopped. The
+        # frame clock keeps going: a mapped page also lays out once the next
+        # frame is painted, when the allocation is settled, and repaints.
+        # Whichever comes first does the work.
+        clock = self.widget.get_frame_clock() if self.widget.get_mapped() \
+            else None
+        if clock is not None:
+            def after_paint(clk):
+                clk.disconnect(handler)
+                self._layout_if_pending()
+            handler = clock.connect('after-paint', after_paint)
+            clock.request_phase(Gdk.FrameClockPhase.AFTER_PAINT)
+
+    def _layout_if_pending(self):
+        if self._layout_pending:
+            self._layout()
+        return GLib.SOURCE_REMOVE
 
     def _layout(self):
         """Measure where everything is, then place the labels and repaint.
