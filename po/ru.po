@@ -11641,3 +11641,7 @@ msgstr "Не удалось прочитать {module} — {error}"
 #: genbook_reader.py
 msgid "This generic book has no readable entries."
 msgstr "В этой книге нет доступных для чтения статей."
+
+#: export_dialog.py
+msgid "Could not copy the image"
+msgstr "Не удалось скопировать изображение"

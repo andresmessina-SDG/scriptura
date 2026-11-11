@@ -17,6 +17,8 @@ needs a person and a printer, which is Andres's click and not a test's.
 """
 from __future__ import annotations
 
+import logging
+
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('PangoCairo', '1.0')
@@ -24,6 +26,8 @@ from gi.repository import Gtk, Pango, PangoCairo
 
 import passage_export
 from i18n import _
+
+_log = logging.getLogger(__name__)
 
 #: Points. A handout is read at arm's length on paper, not at screen distance.
 BODY_PT = 11.0
@@ -130,8 +134,9 @@ def build_operation(module: str, book: str, chapter: int,
     """
     text = passage_export.build(module, book, chapter, verses,
                                 notes=notes, markdown=False)
-    title = passage_export.format_reference(book, chapter, verses,
-                                            version=module)
+    title = passage_export.rendered_reference(
+        module, book, chapter, verses,
+        version=passage_export.version_label(module))
     return build_text_operation(text, title)
 
 
@@ -166,13 +171,13 @@ def print_passage(pane, verses, popover=None) -> None:
     Print portal, which is why no dialog is constructed here by hand."""
     if popover is not None:
         popover.popdown()
-    operation = build_operation(pane.module, pane.book, pane.chapter,
-                               list(verses))
     try:
-        operation.run(Gtk.PrintOperationAction.PRINT_DIALOG, pane.get_root())
+        operation = build_operation(pane.module, pane.book, pane.chapter,
+                                   list(verses))
+        result = operation.run(Gtk.PrintOperationAction.PRINT_DIALOG, pane.get_root())
     except Exception:
-        # A refused portal, no printers, a cancelled job: none of them is a
-        # reason to take the app down, and the dialog has already said
-        # whatever it had to say.
+        _log.exception('Could not print passage')
+        result = Gtk.PrintOperationResult.ERROR
+    if result == Gtk.PrintOperationResult.ERROR:
         if pane._on_toast:
             pane._on_toast(_('Could not print the passage'))

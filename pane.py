@@ -2084,14 +2084,24 @@ class BiblePane(Gtk.Box):
         verses = self._verses_in_range(start, end)
         if not verses:
             return
-        text = self._buffer.get_text(start, end, False).strip()
+        # Visible footnote letters are navigation, not part of a quotation.
+        # Read around their tags without changing the buffer or its selection.
+        marker = self._buffer.get_tag_table().lookup(_FN_MARKER_TAG)
+        pieces = []
+        cursor = start.copy()
+        while cursor.compare(end) < 0:
+            stop = cursor.copy()
+            if marker is None or not stop.forward_to_tag_toggle(marker) \
+                    or stop.compare(end) > 0:
+                stop = end.copy()
+            if marker is None or not cursor.has_tag(marker):
+                pieces.append(self._buffer.get_text(cursor, stop, False))
+            cursor = stop
+        text = ''.join(pieces).strip()
         if not text:
             return
-        first_v = min(verses)
-        last_v = max(verses)
-        ref = f'{book_label(self._book)} {self._chapter}:{first_v}'
-        if last_v > first_v:
-            ref += f'-{last_v}'
+        ref = passage_export.rendered_reference(
+            self._module, self._book, self._chapter, verses, localized=True)
         version = passage_export.version_label(self._module)
         enriched = f'{ref} ({version})\n{text}'
         view.get_clipboard().set(enriched)

@@ -54,9 +54,10 @@ def test_the_verse_menu_copy_names_the_translation(monkeypatch):
 
 def test_a_copied_selection_names_the_translation(monkeypatch):
     _name_it(monkeypatch)
-    buffer = types.SimpleNamespace(
-        get_selection_bounds=lambda: (0, 1),
-        get_text=lambda s, e, h: 'For God so loved the world')
+    from gi.repository import Gtk
+    buffer = Gtk.TextBuffer()
+    buffer.set_text('For God so loved the world')
+    buffer.select_range(*buffer.get_bounds())
     fake = types.SimpleNamespace(_module=KEY, _book='John', _chapter=3,
                                  _buffer=buffer,
                                  _verses_in_range=lambda s, e: [16])

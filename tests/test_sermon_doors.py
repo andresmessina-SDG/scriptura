@@ -73,6 +73,23 @@ def test_a_verse_the_module_cannot_render_still_collects_its_reference(
     assert text == 'Matthew 13:99'
 
 
+def test_disjoint_verses_are_not_cited_as_a_run(isolated, monkeypatch):
+    monkeypatch.setattr(
+        annotation_dialogs.content, 'load_chapter',
+        lambda module, book, ch: [(3, 'Three.'), (4, 'Four.'), (5, 'Five.')])
+    text, anchor = annotation_dialogs.collected_quote(_Pane(), [5, 3])
+    assert text == '> Three. Five. — Matthew 13:3, 5'
+    assert anchor['verses'] == [3, 5]
+
+
+def test_escaped_text_survives_the_quote(isolated, monkeypatch):
+    monkeypatch.setattr(
+        annotation_dialogs.content, 'load_chapter',
+        lambda module, book, ch: [(3, '<w>a</w> &lt;b&gt; &amp; c')])
+    text, _anchor = annotation_dialogs.collected_quote(_Pane(), [3])
+    assert text == '> a <b> & c — Matthew 13:3'
+
+
 def test_the_anchor_is_app_space(isolated, chapter, monkeypatch):
     """The pane speaks its module's numbering; an anchor holds the app's.
     A Synodal psalter's verse 1 is app verse 0, and a sermon anchored to the

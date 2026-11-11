@@ -40,7 +40,7 @@ import catena_bridge
 import content
 import interlinear_data
 import sword_bridge
-from i18n import _, C_
+from i18n import _, C_, book_label
 
 #: SBL Handbook §8 abbreviations, keyed by the app's own book names.
 #: Sourced, not recalled — see the module docstring. Books absent here are
@@ -140,6 +140,34 @@ def join_references(refs: list[str]) -> str:
     `Dan 12:2; Matt 25:34, 46; John 5:28-29`. The commas inside a single
     reference are `format_reference`'s business."""
     return '; '.join(refs)
+
+
+def rendered_reference(module: str, book: str, chapter: int,
+                       verses: list[int] | None = None, *,
+                       version: str | None = None,
+                       localized: bool = False) -> str:
+    """Cite rendered lines in the translation's own numbering.
+
+    Pane chapters are app-space, but their line keys can belong to a
+    different printed chapter, or span two of them. A quotation leaving
+    the app must be findable in the edition named below it.
+    """
+    groups: dict[tuple[str, int], list[int]] = {}
+    if not verses:
+        lines = sword_bridge.chapter_lines(module, book, chapter)
+        if lines:
+            verses = [line[0] for line in lines]
+        else:
+            b, ch = sword_bridge.mapped_chapter(module, book, chapter) or (book, chapter)
+            groups[b, ch] = []
+    for verse in sorted(set(verses or [])):
+        b, ch, v = sword_bridge.rendered_verse_ref(module, book, chapter, verse)
+        groups.setdefault((b, ch), []).append(v)
+    refs = [format_reference(book_label(b) if localized else b, ch, numbers,
+                             prose=localized)
+            for (b, ch), numbers in groups.items()]
+    ref = join_references(refs)
+    return f'{ref} {version}' if version else ref
 
 
 def _plain(html: str) -> str:
@@ -386,6 +414,8 @@ def _note_lines(module: str, book: str, chapter: int,
         highlight = entry.get('highlight')
         if highlight:
             parts.append(_('highlighted {colour}').format(colour=highlight))
+        if entry.get('underline'):
+            parts.append(_('underlined'))
         tags = [t for t in (entry.get('tags') or []) if t]
         if tags:
             parts.append(_('tagged {tags}').format(tags=', '.join(tags)))
@@ -416,8 +446,8 @@ def build(module: str, book: str, chapter: int,
     rows = [(v, _plain(t)) for v, t in rendered
             if wanted is None or v in wanted]
     numbers = [v for v, _t in rows]
-    heading = format_reference(book, chapter, verses if wanted else None,
-                               version=version or version_label(module))
+    heading = rendered_reference(module, book, chapter, verses if wanted else None,
+                                 version=version or version_label(module))
     # Psalm superscriptions and Psalm 119's letters: Scripture standing above
     # a verse with no number of their own, so they come with that verse.
     titles = sword_bridge.chapter_titles(module, book, chapter)
@@ -430,7 +460,7 @@ def build(module: str, book: str, chapter: int,
             for title in titles.get(verse, ()):
                 lines.append(f'> *{_md(_plain(title), markdown)}*')
             printed = sword_bridge.printed_verse(module, book, chapter, verse)
-            lines.append(f'> **{printed}** {text}')
+            lines.append(f'> **{printed}** {_md(text, markdown)}')
         lines.append('')
     else:
         lines.append(heading)
@@ -448,7 +478,7 @@ def build(module: str, book: str, chapter: int,
             lines.append(f'## {_("Notes")}' if markdown else _('Notes'))
             lines.append('')
             for verse, description in marks:
-                ref = format_reference(book, chapter, [verse])
+                ref = rendered_reference(module, book, chapter, [verse])
                 safe = _md(description, markdown)
                 lines.append(f'- **{ref}** — {safe}' if markdown
                              else f'{ref} — {description}')
@@ -467,23 +497,31 @@ def build(module: str, book: str, chapter: int,
                          else f'{ref} {render(items)}')
             lines.append('')
 
-    if interlinear:
+    # The attached study layers are keyed in app space, unlike the rendered
+    # lines above. A translation with shifted verse numbers needs that lens
+    # here just as the pane's study tools do.
+    app_numbers = sorted({app for v in numbers
+                          if (app := sword_bridge.map_verse_to_app(
+                              module, book, chapter, v)) is not None}) \
+        if interlinear or variants or catena else []
+
+    if interlinear and app_numbers:
         section(_('Interlinear'),
-                interlinear_rows(book, chapter, numbers),
+                interlinear_rows(book, chapter, app_numbers),
                 lambda words: ' · '.join(
                     _md(f'{w.surface} ({w.translit}) {w.gloss}'.strip(),
                         markdown)
                     for w in words))
 
-    if variants:
+    if variants and app_numbers:
         section(_('Textual variants'),
-                variant_rows(book, chapter, numbers),
+                variant_rows(book, chapter, app_numbers),
                 lambda words: ' · '.join(
                     _md(_variant_line(w), markdown) for w in words))
 
-    if catena:
+    if catena and app_numbers:
         section(_('Voices'),
-                catena_rows(book, chapter, numbers),
+                catena_rows(book, chapter, app_numbers),
                 lambda entries: '\n\n'.join(
                     f'*{e["author"]}* — {_md(_plain(e["text"]), markdown)}'
                     if markdown
