@@ -431,6 +431,9 @@ def _html_to_markup(html, dark, strip=True, divine_smallcaps=False,
     # Inline verse-number superscripts used by MHC: `<hi type="super">N</hi>`
     # marks the start of verse N within a section's continuous prose.
     html = re.sub(r'<hi\s[^>]*type="super"[^>]*>(.*?)</hi>', r'[[SUP_S]]\1[[SUP_E]]', html, flags=re.DOTALL)
+    # Small caps as the printer set them: a chapter's opening words, a
+    # speaker's name in Bunyan's dialogue. The divine name's face.
+    html = re.sub(r'<hi\s[^>]*type="small-caps"[^>]*>(.*?)</hi>', r'[[DN_S]]\1[[DN_E]]', html, flags=re.DOTALL)
 
     # Divine name (OSIS <divineName>, the LORD/GOD convention) → small
     # caps. Content is usually mixed-case ("Lord"), which the small-caps

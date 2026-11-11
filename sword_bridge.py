@@ -1213,6 +1213,24 @@ DISPLAY_NAMES = {
     'BaptistConfession1689': 'Baptist Confession of Faith (1689)',
     'Concord':              'Book of Concord',
     'DarkNightOfTheSoul':   'The Dark Night of the Soul',
+    # Classics: Common Weal Press editions (tools/build_classics.py), named
+    # as the press titles them.
+    'CWPSimonMagus':        'The Anatomy of Simon Magus',
+    'CWPAllOfGrace':        'All of Grace',
+    'CWPGraceAbounding':    'Grace Abounding to the Chief of Sinners',
+    'CWPPilgrim':           'The Pilgrim’s Progress',
+    'CWPIndwellingSin':     'Indwelling Sin',
+    'CWPTemptation':        'Of Temptation',
+    'CWPDeathOfDeath':      'The Death of Death in the Death of Christ',
+    'CWPMortification':     'The Mortification of Sin',
+    'CWPSinners':           'Sinners in the Hands of an Angry God',
+    'CWPGloriousFeast':     'The Glorious Feast of the Gospel',
+    'CWPCrookInTheLot':     'The Crook in the Lot',
+    'CWPPreciousRemedies':  'Precious Remedies Against Satan’s Devices',
+    'CWPSecretKey':         'The Secret Key of Heaven',
+    'CWPDivineCordial':     'A Divine Cordial',
+    'CWPDomesticalDuties':  'Of Domestical Duties',
+    'CWPChristianEconomy':  'Christian Economy',
     # Devotionals
     'SME':           'Spurgeon — Morning & Evening',
     'Spurgeon':      "Spurgeon's Morning & Evening",
@@ -2083,6 +2101,10 @@ def _parse_conf_lines(raw_lines):
                 info['cipherkey'] = v
             elif k == 'feature':
                 info.setdefault('features', set()).add(v)
+            elif k == 'collection':
+                # Scriptura's own key, which SWORD ignores: the group a
+                # module is offered in ("Classics").
+                info['collection'] = v
     return info
 
 
@@ -2180,6 +2202,7 @@ def list_available_modules():
                 'version': info.get('version', ''),
                 'history': info.get('history', {}),
                 'locked': 'cipherkey' in info,
+                'collection': info.get('collection', ''),
             })
     result.sort(key=lambda m: m['name'].lower())
     _catalog_cache = (path, result)

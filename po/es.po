@@ -5918,6 +5918,16 @@ msgstr "Seleccionados para Scriptura"
 msgid "Hand-assembled companions, built for this app."
 msgstr "Complementos preparados a mano para esta aplicación."
 
+#: module_manager.py
+msgid "Classics"
+msgstr "Clásicos"
+
+#: module_manager.py
+msgid ""
+"Puritan and Reformed books in new editions from Common Weal Press, given to "
+"the public domain."
+msgstr "Libros puritanos y reformados en ediciones nuevas de Common Weal Press, de dominio público."
+
 #: module_manager.py:548
 msgid "Open databases"
 msgstr "Bases de datos abiertas"
