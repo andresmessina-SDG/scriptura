@@ -6,6 +6,29 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+## [1.11.0] — 2026-11-11
+
+### Added
+- Classics: sixteen Puritan and Reformed books from Common Weal Press (CC0) as general books, one row each in a Classics group under Books & More, hosted on Scriptura's sword-modules source. `tools/build_classics.py` builds them from the press's signed release EPUBs, refuses unsigned books and bad hashes, checks each build word for word against its EPUB, and links about 11,000 Scripture references.
+- General books follow `Bible:` links and draw small caps.
+- Share as image shows the card as it will be sent, redrawn as paper, shape and the app's name change.
+
+### Changed
+- A card too long to set at a readable size is cut at a whole verse and cites only the verses it carries; the sheet says so. Before, the type shrank to 16px and ended in an ellipsis.
+- Cards cite in the reader's language, sized and inked to read on a phone. They set the LORD in small caps when the reader does, enlarge the first letter, carry the section heading when headings show, and can carry the Greek or Hebrew of one verse. Cards stay one ink and one gold; red letters stay in the reading view.
+- Copy, Export passage and Print set the KJV's marked LORD in capitals when small caps are on.
+- Over the Creeds, the Harmony, a devotional or a general book, the header names that page's place, not the last chapter read. A Bible beside it keeps its chapter.
+- The Creeds page waits for 1080 px before it opens its side panel and wide rail; its book buttons are 24 px high. A devotional's date bar heads its own page, so both pages of a split start level.
+
+### Fixed
+- Print, Export, Bookmark and the writing shortcuts acted on resources with no verses: Ctrl+P on a devotional printed the whole module titled "John 3". They now act only on a Bible or commentary showing on screen, else say why.
+- With the focus outside both panes, those shortcuts could act on a pane a narrow window was hiding.
+- Share sheets stay bound to the passage they opened on, and cite rendered verses in the translation's own numbering, including split chapters. Disjoint selections, word boundaries, escaped text and underlines survive; copied selections drop footnote markers. Clipboard, rendering and print failures are reported.
+- Collecting verses into a sermon or journal kept escaped characters as entities and cited "3, 5" as "3–5".
+- The card preview no longer shows a wide card squeezed, and an empty selection no longer opens a card.
+- Copying Psalm 119 as an image no longer holds the window for half a second.
+- The Creeds strip follows a dragged split or window frame by frame instead of waiting for the drag to stop.
+
 ## [1.10.0] — 2026-11-10
 
 ### Added

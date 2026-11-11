@@ -192,6 +192,46 @@ msgid "Commentary"
 msgstr "Comentario"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
+msgid "Sixteen classic books, verses to share as images, and pages that fit."
+msgstr "Dieciséis libros clásicos, versículos para compartir como imagen y páginas que caben."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:161
+msgid "Sixteen Puritan and Reformed classics from Common Weal Press, in a new Classics group under Books & More."
+msgstr "Dieciséis clásicos puritanos y reformados de Common Weal Press, en un nuevo grupo Clásicos dentro de Libros y más."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
+msgid "Scripture references in these books open the verse they name."
+msgstr "Las referencias bíblicas de estos libros abren el versículo que nombran."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:163
+msgid "Share as image now shows the card before you send it."
+msgstr "Compartir como imagen ahora muestra la tarjeta antes de enviarla."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
+msgid "A passage too long for one card stops at a whole verse, and the card cites only what it shows."
+msgstr "Un pasaje demasiado largo para una tarjeta se corta en un versículo completo, y la tarjeta cita solo lo que muestra."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
+msgid "Cards cite the verse in your language and print the LORD in small caps."
+msgstr "Las tarjetas citan el versículo en su idioma y escriben SEÑOR en versalitas."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
+msgid "Copies and prints keep the LORD in capitals when small caps are on."
+msgstr "Las copias y las impresiones mantienen SEÑOR en mayúsculas cuando las versalitas están activadas."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:167
+msgid "Over a creed, a devotional or a book, the header names that page, not the last chapter read."
+msgstr "Sobre un credo, un devocional o un libro, la cabecera nombra esa página y no el último capítulo leído."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:168
+msgid "Print, bookmark and the writing shortcuts no longer act on a page with no verses."
+msgstr "Imprimir, los marcadores y los atajos de escritura ya no actúan sobre una página sin versículos."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:169
+msgid "The Creeds page fits a smaller window, and its buttons are easier to click."
+msgstr "La página de Los Credos cabe en una ventana más pequeña y sus botones son más fáciles de pulsar."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
 msgid "The KJV read aloud, new study helps beside the text, and a steadier app."
 msgstr "La KJV leída en voz alta, nuevas ayudas de estudio junto al texto y una aplicación más estable."
 
