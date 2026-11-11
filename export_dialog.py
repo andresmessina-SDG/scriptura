@@ -41,21 +41,16 @@ SELECTION, UNIT, CHAPTER = 'selection', 'unit', 'chapter'
 #: it through the tag strip so it can come back as a small-caps span.
 _DIVINE_RE = re.compile(r'<divineName[^>]*>(.*?)</divineName>', re.DOTALL)
 _DN_OPEN, _DN_CLOSE = '\ue000', '\ue001'
-#: The words of Christ as the reading view finds them, carried the same way.
-_RED_RES = (re.compile(r'<q [^>]*who="Jesus"[^>]*>(.*?)</q>'),
-            re.compile(r'<font color="red">(.*?)</font>'))
-_RED_OPEN, _RED_CLOSE = '\ue002', '\ue003'
 
 
 def card_rows(module, book, chapter, verses, smallcaps=True,
               initial_ink=None):
     """(verse, Pango markup) for each selected verse, in reading order.
 
-    The card sets the verse as the page does. The words of Christ are red
-    where the module marks them, in the reading view's red for light paper
-    (every card paper is light). The first letter is enlarged as the page
-    enlarges a chapter's first, at its 200% and bold; `initial_ink` is its
-    gold, or None to leave it in the card's ink.
+    The first letter is enlarged as the page enlarges a chapter's first, at
+    its 200% and bold; `initial_ink` is its gold, or None to leave it in the
+    card's ink. No red letters, by Andres's call (2026-11-11): a card is one
+    ink and one gold, so it reads as a Scriptura card wherever it lands.
 
     Markup rather than plain text for one reason: the divine name. The KJV
     marks it `<divineName>Lord</divineName>`, and stripped to plain text the
@@ -66,31 +61,20 @@ def card_rows(module, book, chapter, verses, smallcaps=True,
     rule. With it off, the card shows the name as the reading view does.
     """
     from pane import (_DROPCAP_SPAN, _dropcap_split, _normalize_divine,
-                      _smallcap_divine_literals, theme_ink)
-    red = theme_ink(False)['_ink_redletter']
+                      _smallcap_divine_literals)
     wanted = set(verses)
     rows = []
     for verse, html in content.load_chapter(module, book, chapter):
         if verse not in wanted:
             continue
         html = str(html)
-        for pattern in _RED_RES:
-            html = pattern.sub(lambda m: _RED_OPEN + m.group(1) + _RED_CLOSE,
-                               html)
         if smallcaps:
             html = _DIVINE_RE.sub(
                 lambda m: _DN_OPEN + _normalize_divine(m.group(1)) + _DN_CLOSE,
                 html)
         markup = GLib.markup_escape_text(sword_bridge.plain_text(html))
-        # The strip that trims a verse cannot see past a mark at its edge,
-        # and a verse wholly in red kept a space inside its span, which set
-        # the centred line one space off.
-        markup = re.sub(r'^([\ue000-\ue003]+)\s+', r'\1', markup)
-        markup = re.sub(r'\s+([\ue000-\ue003]+)$', r'\1', markup)
         markup = (markup.replace(_DN_OPEN, '<span variant="small-caps">')
-                        .replace(_DN_CLOSE, '</span>')
-                        .replace(_RED_OPEN, f'<span foreground="{red}">')
-                        .replace(_RED_CLOSE, '</span>'))
+                        .replace(_DN_CLOSE, '</span>'))
         if smallcaps:
             markup = _smallcap_divine_literals(markup)
         if not rows and (split := _dropcap_split(markup)):

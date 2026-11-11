@@ -2,9 +2,9 @@
 
 The one place this app could cheapen itself, so the rules are the house law
 taken literally — no photographs, no gradients, no sunsets, no script faces,
-no accent colour of its own. The only colours are the reading view's: the
-red of the words of Christ and the gold of the first letter, each where the
-page would show it. The card is the reading surface, framed. What makes it look
+no accent colour of its own. The one colour is the reading view's gold on
+the first letter; the words of Christ stay in ink, so every card is one ink
+and one gold. The card is the reading surface, framed. What makes it look
 like Scriptura rather than like every other Bible app is that it is set in the
 same bundled serif the app reads with, on the same paper.
 
@@ -334,8 +334,8 @@ def _draw(*, text: str, reference: str, translation: str,
         return layout.get_pixel_size().height
 
     # Hierarchy: the verse is loudest, the citation quiet, the mark quietest.
-    # The card's ink throughout, less of it for quieter voices; red and gold
-    # come only from the verse's own markup.
+    # The card's ink throughout, less of it for quieter voices; the gold
+    # comes only from the verse's own markup.
     if head is not None:
         y += show(head, 0.62) + _label_gap(height)
     y += show(verse, 1.0, left + (column - verse_w) / 2)

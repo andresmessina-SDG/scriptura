@@ -377,13 +377,13 @@ def test_selection_copy_sets_small_caps_in_capitals(source):
         assert source[2][0].endswith(f'\nThe {word} is my shepherd.')
 
 
-def test_card_sets_the_words_of_christ_in_red_and_the_initial_in_gold(monkeypatch):
+def test_card_keeps_the_words_of_christ_in_ink_and_the_initial_in_gold(monkeypatch):
     monkeypatch.setattr(content, 'load_chapter', lambda *a: [
         (11, 'Jesus said, <q who="Jesus" marker="">I am the good shepherd</q>.')])
     [(_v, markup)] = export_dialog.card_rows('KJV', 'John', 10, [11],
                                              initial_ink='#a5822b')
-    assert markup.startswith('<span size="200%" weight="bold" foreground="#a5822b">J</span>')
-    assert '<span foreground="#bb0000">I am the good shepherd</span>.' in markup
+    assert markup == ('<span size="200%" weight="bold" foreground="#a5822b">J</span>'
+                      'esus said, I am the good shepherd.')
 
 
 def test_card_heading_is_the_nearest_section_at_or_before(monkeypatch):
