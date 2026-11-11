@@ -190,6 +190,46 @@ msgid "Commentary"
 msgstr "Комментарий"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
+msgid "Sixteen classic books, verses to share as images, and pages that fit."
+msgstr "Шестнадцать классических книг, стихи, которыми можно поделиться изображением, и страницы, которые помещаются в окне."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:161
+msgid "Sixteen Puritan and Reformed classics from Common Weal Press, in a new Classics group under Books & More."
+msgstr "Шестнадцать пуританских и реформатских классических книг от Common Weal Press в новой группе «Классика» в разделе «Книги и др.»."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
+msgid "Scripture references in these books open the verse they name."
+msgstr "Ссылки на Писание в этих книгах открывают названный стих."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:163
+msgid "Share as image now shows the card before you send it."
+msgstr "«Поделиться изображением» теперь показывает карточку до отправки."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
+msgid "A passage too long for one card stops at a whole verse, and the card cites only what it shows."
+msgstr "Отрывок, слишком длинный для одной карточки, обрывается на целом стихе, и карточка указывает только то, что на ней есть."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
+msgid "Cards cite the verse in your language and print the LORD in small caps."
+msgstr "Карточки указывают стих на вашем языке и набирают ГОСПОДЬ капителью."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
+msgid "Copies and prints keep the LORD in capitals when small caps are on."
+msgstr "Копии и печать сохраняют ГОСПОДЬ прописными, когда включена капитель."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:167
+msgid "Over a creed, a devotional or a book, the header names that page, not the last chapter read."
+msgstr "Над символом веры, ежедневным чтением или книгой заголовок называет эту страницу, а не последнюю прочитанную главу."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:168
+msgid "Print, bookmark and the writing shortcuts no longer act on a page with no verses."
+msgstr "Печать, закладки и клавиши для записей больше не действуют на странице без стихов."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:169
+msgid "The Creeds page fits a smaller window, and its buttons are easier to click."
+msgstr "Страница «Символы веры» помещается в меньшем окне, а её кнопки легче нажать."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
 msgid "The KJV read aloud, new study helps beside the text, and a steadier app."
 msgstr "KJV вслух, новые пособия рядом с текстом и более устойчивое приложение."
 

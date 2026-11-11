@@ -154,6 +154,22 @@
          Every note is translated: add each line to po/es.po and po/ru.po,
          or tests/test_translations.py fails, then rebuild the site with
          tools/build-site.py so What's new shows it in all three languages. -->
+    <release version="1.11.0" date="2026-11-11">
+      <description>
+        <p>Sixteen classic books, verses to share as images, and pages that fit.</p>
+        <ul>
+          <li>Sixteen Puritan and Reformed classics from Common Weal Press, in a new Classics group under Books &amp; More.</li>
+          <li>Scripture references in these books open the verse they name.</li>
+          <li>Share as image now shows the card before you send it.</li>
+          <li>A passage too long for one card stops at a whole verse, and the card cites only what it shows.</li>
+          <li>Cards cite the verse in your language and print the LORD in small caps.</li>
+          <li>Copies and prints keep the LORD in capitals when small caps are on.</li>
+          <li>Over a creed, a devotional or a book, the header names that page, not the last chapter read.</li>
+          <li>Print, bookmark and the writing shortcuts no longer act on a page with no verses.</li>
+          <li>The Creeds page fits a smaller window, and its buttons are easier to click.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.10.0" date="2026-11-10">
       <description>
         <p>The KJV read aloud, new study helps beside the text, and a steadier app.</p>
