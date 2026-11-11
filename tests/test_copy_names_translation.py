@@ -59,7 +59,7 @@ def test_a_copied_selection_names_the_translation(monkeypatch):
     buffer.set_text('For God so loved the world')
     buffer.select_range(*buffer.get_bounds())
     fake = types.SimpleNamespace(_module=KEY, _book='John', _chapter=3,
-                                 _buffer=buffer,
+                                 _buffer=buffer, _smallcaps_divine=True,
                                  _verses_in_range=lambda s, e: [16])
     view = _View()
     pane.BiblePane._on_copy_clipboard(fake, view)

@@ -3347,3 +3347,10 @@ button.harmony-beside:checked:hover {
     padding-top: 10px;
     border-top: 1px solid alpha(@borders, 0.3);
 }
+
+/* Share as image: the card preview in its sheet. A paper card on the
+ * dialog's own light ground needs an edge to read as a card at all. */
+.card-preview {
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px alpha(@borders, 0.6), 0 2px 8px alpha(black, 0.08);
+}

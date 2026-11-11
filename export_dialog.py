@@ -14,12 +14,16 @@ lands after the reader has moved on is worse than one that costs a frame.
 """
 import logging
 
+import re
+
+import cairo
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Adw, Gdk, GLib, Gtk
 
 import catena_bridge
+import content
 import passage_export
 import sword_bridge
 import verse_card
@@ -32,6 +36,80 @@ _log = logging.getLogger(__name__)
 
 #: Scope keys, in the order they are offered.
 SELECTION, UNIT, CHAPTER = 'selection', 'unit', 'chapter'
+
+#: The divine name as OSIS marks it, and two private-use marks that carry
+#: it through the tag strip so it can come back as a small-caps span.
+_DIVINE_RE = re.compile(r'<divineName[^>]*>(.*?)</divineName>', re.DOTALL)
+_DN_OPEN, _DN_CLOSE = '\ue000', '\ue001'
+
+
+def card_rows(module, book, chapter, verses, smallcaps=True,
+              initial_ink=None):
+    """(verse, Pango markup) for each selected verse, in reading order.
+
+    The first letter is enlarged as the page enlarges a chapter's first, at
+    its 200% and bold; `initial_ink` is its gold, or None to leave it in the
+    card's ink. No red letters, by Andres's call (2026-11-11): a card is one
+    ink and one gold, so it reads as a Scriptura card wherever it lands.
+
+    Markup rather than plain text for one reason: the divine name. The KJV
+    marks it `<divineName>Lord</divineName>`, and stripped to plain text the
+    card read "The Lord is my shepherd", losing the printed LORD that tells
+    the reader the Hebrew has the Name. With the reader's small-caps setting
+    on, the card sets it as the reading view does: marked names from the
+    markup, and literal capitals (BSB, Webster) by the same inscription-aware
+    rule. With it off, the card shows the name as the reading view does.
+    """
+    from pane import (_DROPCAP_SPAN, _dropcap_split, _normalize_divine,
+                      _smallcap_divine_literals)
+    wanted = set(verses)
+    rows = []
+    for verse, html in content.load_chapter(module, book, chapter):
+        if verse not in wanted:
+            continue
+        html = str(html)
+        if smallcaps:
+            html = _DIVINE_RE.sub(
+                lambda m: _DN_OPEN + _normalize_divine(m.group(1)) + _DN_CLOSE,
+                html)
+        markup = GLib.markup_escape_text(sword_bridge.plain_text(html))
+        markup = (markup.replace(_DN_OPEN, '<span variant="small-caps">')
+                        .replace(_DN_CLOSE, '</span>'))
+        if smallcaps:
+            markup = _smallcap_divine_literals(markup)
+        if not rows and (split := _dropcap_split(markup)):
+            before, letter, after = split
+            span = (_DROPCAP_SPAN if initial_ink is None else
+                    _DROPCAP_SPAN[:-1] + f' foreground="{initial_ink}">')
+            markup = f'{before}{span}{letter}</span>{after}'
+        rows.append((verse, markup))
+    return rows
+
+
+def _card_heading(module, book, chapter, verse):
+    """The title of the section `verse` stands in, or None.
+
+    The nearest heading at or before the verse, in this chapter: a passage
+    that starts inside a section still belongs to it.
+    """
+    headings = sword_bridge.chapter_headings(module, book, chapter) or {}
+    before = [k for k in headings if k <= verse and headings[k]]
+    if not before:
+        return None
+    return sword_bridge.plain_text(headings[max(before)][-1]) or None
+
+
+def _card_original(module, book, chapter, verse):
+    """The verse's Greek or Hebrew as one line, or None without data."""
+    app = sword_bridge.map_verse_to_app(module, book, chapter, verse)
+    words = dict(passage_export.interlinear_rows(book, chapter, [app]))
+    line = ' '.join(w.surface for w in words.get(app, ()) if w.surface)
+    return line.strip() or None
+
+
+#: The card preview's box in the sheet, in points: each shape is scaled to
+#: fit inside it.
+PREVIEW_W, PREVIEW_H = 400, 240
 
 
 def export_passage(pane, verses, popover=None):
@@ -208,6 +286,13 @@ def share_as_image(pane, verses, popover=None):
     """Open the card sheet for `verses`."""
     if popover is not None:
         popover.popdown()
+    # A verse the module leaves empty made a card of a citation and nothing
+    # else, which says nothing to whoever it is sent to.
+    if not passage_export.verse_text(pane.module, pane.book, pane.chapter,
+                                     list(verses)):
+        if pane._on_toast:
+            pane._on_toast(_('There is no text here to put on a card'))
+        return
     CardSheet(pane, verses).present(pane.get_root())
 
 
@@ -224,6 +309,25 @@ class CardSheet:
         self._pane = pane
         self._module, self._book, self._chapter = pane.module, pane.book, pane.chapter
         self._verses = list(verses)
+        # Read once: the preview redraws on every choice, and the card must
+        # carry the words the sheet opened on.
+        from pane import dropcap_color_hex
+        self._rows = card_rows(
+            self._module, self._book, self._chapter, self._verses,
+            getattr(pane, '_smallcaps_divine', True),
+            dropcap_color_hex(False)
+            if getattr(pane, '_colored_dropcap', True) else None)
+        self._counts: dict[tuple[str, bool], int] = {}
+        first = self._rows[0][0] if self._rows else None
+        self._heading = (_card_heading(self._module, self._book,
+                                       self._chapter, first)
+                         if first is not None
+                         and getattr(pane, '_show_headings', True) else None)
+        # One verse at most: under a passage the line would crowd the card,
+        # and it would no longer be the words of the one verse it sits under.
+        self._original = (_card_original(self._module, self._book,
+                                         self._chapter, first)
+                          if len(self._rows) == 1 else None)
         self._dialog = Adw.Dialog()
         self._dialog.set_title(_('Share as image'))
         self._dialog.set_content_width(460)
@@ -244,6 +348,28 @@ class CardSheet:
         view.add_top_bar(header)
 
         page = Adw.PreferencesPage()
+        # The card itself, redrawn as the reader chooses: paper and shape
+        # are judged by eye, and a choice made blind is a guess.
+        shown = Adw.PreferencesGroup()
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        # A drawing area, not a picture: a picture sizes itself from its
+        # texture, and the wide card came out squeezed into the last shape's
+        # box. Its content size is exactly the scaled card.
+        self._card = None
+        self._preview = Gtk.DrawingArea(accessible_role=Gtk.AccessibleRole.IMG,
+                                        halign=Gtk.Align.CENTER)
+        self._preview.set_draw_func(self._paint_preview)
+        self._preview.set_overflow(Gtk.Overflow.HIDDEN)
+        self._preview.add_css_class('card-preview')
+        box.append(self._preview)
+        self._cut_note = Gtk.Label(wrap=True, justify=Gtk.Justification.CENTER,
+                                   visible=False)
+        self._cut_note.add_css_class('caption')
+        self._cut_note.add_css_class('dim-label')
+        box.append(self._cut_note)
+        shown.add(box)
+        page.add(shown)
+
         group = Adw.PreferencesGroup(title=_('Card'))
         self._paper_row = Adw.ComboRow(
             title=_('Paper'),
@@ -268,9 +394,22 @@ class CardSheet:
         self._mark_row = Adw.SwitchRow(title=_('Show the app’s name'),
                                        active=False)
         group.add(self._mark_row)
+        # Offered only where there is a line to show.
+        self._original_row = Adw.SwitchRow(
+            title=(_('Show the Hebrew') if self._original
+                   and any('\u0590' <= c <= '\u05ff' for c in self._original)
+                   else _('Show the Greek')),
+            active=False, visible=self._original is not None)
+        group.add(self._original_row)
         page.add(group)
         view.set_content(page)
         self._dialog.set_child(view)
+
+        self._paper_row.connect('notify::selected', self._refresh)
+        self._shape_row.connect('notify::selected', self._refresh)
+        self._mark_row.connect('notify::active', self._refresh)
+        self._original_row.connect('notify::active', self._refresh)
+        self._refresh()
 
     def present(self, root):
         self._dialog.present(root)
@@ -278,22 +417,68 @@ class CardSheet:
     def _paper(self):
         return verse_card.CARD_PAPERS[self._paper_row.get_selected()][1]
 
-    def _reference(self):
-        return passage_export.rendered_reference(
-            self._module, self._book, self._chapter, self._verses)
+    def _shape(self):
+        return self._shapes[self._shape_row.get_selected()]
 
-    def _card_bytes(self):
+    def _shown_original(self):
+        return self._original if self._original_row.get_active() else None
+
+    def _shown(self):
+        """The verses this shape can carry at a readable size, from the first."""
+        key = (self._shape(), self._shown_original() is not None)
+        if key not in self._counts:
+            self._counts[key] = verse_card.shown_count(
+                [text for _v, text in self._rows], key[0],
+                self._heading, self._shown_original())
+        return self._rows[:self._counts[key]]
+
+    def _is_cut(self):
+        return len(self._shown()) < len(self._rows)
+
+    def _reference(self):
+        # A cut card cites only what it carries; a whole one cites the
+        # selection as made. In the reader's language: a Russian card read
+        # "Gen 1:1" under Russian text.
+        verses = ([v for v, _t in self._shown()] if self._is_cut()
+                  else self._verses)
+        return passage_export.rendered_reference(
+            self._module, self._book, self._chapter, verses, localized=True)
+
+    def _card_args(self):
         from pane import auto_reading_ink
         paper = self._paper()
-        return verse_card.render_bytes(
-            text=passage_export.verse_text(
-                self._module, self._book, self._chapter,
-                self._verses),
+        return dict(
+            text=' '.join(text for _v, text in self._shown()).strip(),
             reference=self._reference(),
             translation=passage_export.version_label(self._module),
             paper=paper, ink=auto_reading_ink(paper),
-            shape=self._shapes[self._shape_row.get_selected()],
-            wordmark=self._mark_row.get_active())
+            shape=self._shape(), wordmark=self._mark_row.get_active(),
+            heading=self._heading, original=self._shown_original())
+
+    def _card_bytes(self):
+        return verse_card.render_bytes(**self._card_args())
+
+    def _refresh(self, *_args):
+        args = self._card_args()
+        width, height = verse_card.SHAPES[args['shape']]
+        fit = min(PREVIEW_W / width, PREVIEW_H / height)
+        self._preview.set_content_width(round(width * fit))
+        self._preview.set_content_height(round(height * fit))
+        try:
+            self._card = verse_card.draw(**args)
+        except Exception:
+            # Copy and save report their own failure; a preview that cannot
+            # draw must not take the sheet down with it.
+            _log.exception('Could not draw the card preview')
+            self._card = None
+        self._preview.queue_draw()
+        self._preview.update_property([Gtk.AccessibleProperty.LABEL],
+                                      [args['reference']])
+        if self._is_cut():
+            self._cut_note.set_label(
+                _('The card shows {shown}; the rest does not fit.').format(
+                    shown=args['reference']))
+        self._cut_note.set_visible(self._is_cut())
 
     def _copy(self):
         """Put the card on the clipboard, the way the imagery plates do.
@@ -324,6 +509,14 @@ class CardSheet:
         self._dialog.close()
         self._report(_('Card copied'))
 
+    def _paint_preview(self, _area, cr, width, height):
+        if self._card is None:
+            return
+        cr.scale(width / self._card.get_width(), height / self._card.get_height())
+        cr.set_source_surface(self._card, 0, 0)
+        cr.get_source().set_filter(cairo.FILTER_GOOD)
+        cr.paint()
+
     def _choose_file(self):
         dialog = Gtk.FileDialog()
         dialog.set_title(_('Share as image'))
@@ -344,21 +537,10 @@ class CardSheet:
             self._report(_('Please choose a location on this computer.'))
             return
         self._dialog.close()
-        pane, verses = self._pane, self._verses
-        module, book, chapter = self._module, self._book, self._chapter
-        paper = self._paper()
-        shape = self._shapes[self._shape_row.get_selected()]
-        wordmark = self._mark_row.get_active()
-        reference = self._reference()
+        pane, args = self._pane, self._card_args()
 
         def work(_token):
-            from pane import auto_reading_ink
-            text = passage_export.verse_text(module, book, chapter, verses)
-            return verse_card.render(
-                path, text=text, reference=reference,
-                translation=passage_export.version_label(module),
-                paper=paper, ink=auto_reading_ink(paper), shape=shape,
-                wordmark=wordmark)
+            return verse_card.render(path, **args)
 
         tasks.submit(key=f'verse-card:{id(pane)}', work=work,
                      apply=lambda _p: self._report(
