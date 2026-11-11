@@ -568,7 +568,7 @@ def copy_verse(pane, verses, popover):
     verse_map = {v: html for v, html in chapter_verses}
     lines = []
     for v in sorted(set(verses)):
-        plain = sword_bridge.plain_text(verse_map.get(v, ''))
+        plain = passage_export.quote_text(verse_map.get(v, ''))
         line_ref = passage_export.rendered_reference(
             pane.module, pane.book, pane.chapter, [v], localized=True)
         lines.append(f'{line_ref}  {plain}')

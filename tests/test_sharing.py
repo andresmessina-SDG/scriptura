@@ -177,7 +177,7 @@ def test_selection_copy_omits_visible_footnote_markers(source):
         buffer.apply_tag(tag, buffer.get_iter_at_offset(start), buffer.get_iter_at_offset(end))
     buffer.select_range(*buffer.get_bounds())
     fake = SimpleNamespace(_module='KJV', _book='John', _chapter=3,
-                           _buffer=buffer, _verses_in_range=lambda *a: [16, 18])
+                           _buffer=buffer, _smallcaps_divine=True, _verses_in_range=lambda *a: [16, 18])
     view = SimpleNamespace(get_clipboard=source[0].view.get_clipboard,
                            stop_emission_by_name=lambda *a: None)
     pane_module.BiblePane._on_copy_clipboard(fake, view)
@@ -251,6 +251,8 @@ def test_a_long_card_cuts_at_a_whole_verse_and_cites_only_that(source, monkeypat
     sheet._verses = list(range(1, 177))
     sheet._rows = export_dialog.card_rows('KJV', 'Psalms', 119, sheet._verses)
     sheet._counts = {}
+    sheet._heading = None
+    sheet._shown_original = lambda: None
     sheet._shape = lambda: 'square'
     shown = sheet._shown()
     assert 1 < len(shown) < 176
@@ -310,20 +312,24 @@ def test_card_sheet_preview_is_the_full_card_in_each_shape(source):
                 sheet._preview.get_content_height()) == (round(w * fit), round(h * fit))
 
 
+CAP = '<span size="200%" weight="bold">'
+
+
 def test_card_sets_the_marked_divine_name_in_small_caps(monkeypatch):
     monkeypatch.setattr(content, 'load_chapter', lambda *a: [
         (1, '<w>The <divineName>Lord</divineName></w> is my shepherd &amp; guide;')])
     [(_v, markup)] = export_dialog.card_rows('KJVA', 'Psalms', 23, [1])
-    assert markup == 'The <span variant="small-caps">Lord</span> is my shepherd &amp; guide;'
+    assert markup == (CAP + 'T</span>he <span variant="small-caps">Lord</span>'
+                      ' is my shepherd &amp; guide;')
     [(_v, plain)] = export_dialog.card_rows('KJVA', 'Psalms', 23, [1], smallcaps=False)
-    assert plain == 'The Lord is my shepherd &amp; guide;'
+    assert plain == CAP + 'T</span>he Lord is my shepherd &amp; guide;'
 
 
 def test_card_sets_literal_capitals_but_not_an_inscription(monkeypatch):
     monkeypatch.setattr(content, 'load_chapter', lambda *a: [
         (1, 'The LORD is my shepherd.'), (2, 'HOLINESS TO THE LORD.')])
     rows = dict(export_dialog.card_rows('BSB', 'Psalms', 23, [1, 2]))
-    assert rows[1] == 'The L<span variant="small-caps">ord</span> is my shepherd.'
+    assert rows[1] == CAP + 'T</span>he L<span variant="small-caps">ord</span> is my shepherd.'
     assert rows[2] == 'HOLINESS TO THE LORD.'
 
 
@@ -341,3 +347,69 @@ def test_an_empty_verse_opens_no_card(source, monkeypatch):
     export_dialog.share_as_image(source[0], [16])
     assert not opened
     assert source[1] == ['There is no text here to put on a card']
+
+
+@pytest.mark.parametrize('on, expected', [(True, 'The LORD is my shepherd.'),
+                                          (False, 'The Lord is my shepherd.')])
+def test_plain_quotes_set_the_marked_name_by_the_small_caps_setting(
+        monkeypatch, on, expected):
+    real = passage_export.settings.get
+    monkeypatch.setattr(passage_export.settings, 'get',
+                        lambda key, *a: on if key == 'smallcaps_divine' else real(key, *a))
+    html = '<w>The <divineName>Lord</divineName></w> is my shepherd.'
+    assert passage_export.quote_text(html) == expected
+
+
+def test_selection_copy_sets_small_caps_in_capitals(source):
+    buffer = Gtk.TextBuffer()
+    buffer.set_text('The ')
+    buffer.insert_markup(buffer.get_end_iter(),
+                         '<span variant="small-caps">Lord</span> is my shepherd.', -1)
+    buffer.select_range(*buffer.get_bounds())
+    for caps, word in ((True, 'LORD'), (False, 'Lord')):
+        source[2].clear()
+        fake = SimpleNamespace(_module='KJV', _book='Psalms', _chapter=23,
+                               _buffer=buffer, _smallcaps_divine=caps,
+                               _verses_in_range=lambda *a: [1])
+        view = SimpleNamespace(get_clipboard=source[0].view.get_clipboard,
+                               stop_emission_by_name=lambda *a: None)
+        pane_module.BiblePane._on_copy_clipboard(fake, view)
+        assert source[2][0].endswith(f'\nThe {word} is my shepherd.')
+
+
+def test_card_sets_the_words_of_christ_in_red_and_the_initial_in_gold(monkeypatch):
+    monkeypatch.setattr(content, 'load_chapter', lambda *a: [
+        (11, 'Jesus said, <q who="Jesus" marker="">I am the good shepherd</q>.')])
+    [(_v, markup)] = export_dialog.card_rows('KJV', 'John', 10, [11],
+                                             initial_ink='#a5822b')
+    assert markup.startswith('<span size="200%" weight="bold" foreground="#a5822b">J</span>')
+    assert '<span foreground="#bb0000">I am the good shepherd</span>.' in markup
+
+
+def test_card_heading_is_the_nearest_section_at_or_before(monkeypatch):
+    monkeypatch.setattr(sword_bridge, 'chapter_headings',
+                        lambda *a: {1: ['The Lord Is My Shepherd'], 7: ['<b>Later</b>']})
+    assert export_dialog._card_heading('BSB', 'Psalms', 23, 4) == 'The Lord Is My Shepherd'
+    assert export_dialog._card_heading('BSB', 'Psalms', 23, 7) == 'Later'
+    monkeypatch.setattr(sword_bridge, 'chapter_headings', lambda *a: {5: ['X']})
+    assert export_dialog._card_heading('BSB', 'Psalms', 23, 4) is None
+
+
+def test_original_line_is_offered_for_one_verse_only(source, monkeypatch):
+    word = SimpleNamespace(surface='ποιμήν')
+    monkeypatch.setattr(passage_export, 'interlinear_rows',
+                        lambda b, c, vs: [(vs[0], [word, word])])
+    sheet = _sheet(export_dialog.CardSheet, source)         # verses 16 and 18
+    assert sheet._original is None and not sheet._original_row.get_visible()
+    one = export_dialog.CardSheet(source[0], [16])
+    assert one._original == 'ποιμήν ποιμήν'
+    assert one._original_row.get_visible()
+    assert one._original_row.get_title() == 'Show the Greek'
+    one._original_row.set_active(True)
+    assert one._card_args()['original'] == 'ποιμήν ποιμήν'
+
+
+def test_heading_and_original_take_room_from_the_verse():
+    texts = ['Blessed are the undefiled in the way. ' * 2] * 40
+    bare = verse_card.shown_count(texts)
+    assert verse_card.shown_count(texts, heading='The Law', original='ἐν ἀρχῇ ' * 12) < bare

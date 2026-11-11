@@ -41,10 +41,21 @@ SELECTION, UNIT, CHAPTER = 'selection', 'unit', 'chapter'
 #: it through the tag strip so it can come back as a small-caps span.
 _DIVINE_RE = re.compile(r'<divineName[^>]*>(.*?)</divineName>', re.DOTALL)
 _DN_OPEN, _DN_CLOSE = '\ue000', '\ue001'
+#: The words of Christ as the reading view finds them, carried the same way.
+_RED_RES = (re.compile(r'<q [^>]*who="Jesus"[^>]*>(.*?)</q>'),
+            re.compile(r'<font color="red">(.*?)</font>'))
+_RED_OPEN, _RED_CLOSE = '\ue002', '\ue003'
 
 
-def card_rows(module, book, chapter, verses, smallcaps=True):
+def card_rows(module, book, chapter, verses, smallcaps=True,
+              initial_ink=None):
     """(verse, Pango markup) for each selected verse, in reading order.
+
+    The card sets the verse as the page does. The words of Christ are red
+    where the module marks them, in the reading view's red for light paper
+    (every card paper is light). The first letter is enlarged as the page
+    enlarges a chapter's first, at its 200% and bold; `initial_ink` is its
+    gold, or None to leave it in the card's ink.
 
     Markup rather than plain text for one reason: the divine name. The KJV
     marks it `<divineName>Lord</divineName>`, and stripped to plain text the
@@ -54,24 +65,62 @@ def card_rows(module, book, chapter, verses, smallcaps=True):
     markup, and literal capitals (BSB, Webster) by the same inscription-aware
     rule. With it off, the card shows the name as the reading view does.
     """
-    from pane import _normalize_divine, _smallcap_divine_literals
+    from pane import (_DROPCAP_SPAN, _dropcap_split, _normalize_divine,
+                      _smallcap_divine_literals, theme_ink)
+    red = theme_ink(False)['_ink_redletter']
     wanted = set(verses)
     rows = []
     for verse, html in content.load_chapter(module, book, chapter):
         if verse not in wanted:
             continue
         html = str(html)
+        for pattern in _RED_RES:
+            html = pattern.sub(lambda m: _RED_OPEN + m.group(1) + _RED_CLOSE,
+                               html)
         if smallcaps:
             html = _DIVINE_RE.sub(
                 lambda m: _DN_OPEN + _normalize_divine(m.group(1)) + _DN_CLOSE,
                 html)
         markup = GLib.markup_escape_text(sword_bridge.plain_text(html))
+        # The strip that trims a verse cannot see past a mark at its edge,
+        # and a verse wholly in red kept a space inside its span, which set
+        # the centred line one space off.
+        markup = re.sub(r'^([\ue000-\ue003]+)\s+', r'\1', markup)
+        markup = re.sub(r'\s+([\ue000-\ue003]+)$', r'\1', markup)
+        markup = (markup.replace(_DN_OPEN, '<span variant="small-caps">')
+                        .replace(_DN_CLOSE, '</span>')
+                        .replace(_RED_OPEN, f'<span foreground="{red}">')
+                        .replace(_RED_CLOSE, '</span>'))
         if smallcaps:
-            markup = _smallcap_divine_literals(
-                markup.replace(_DN_OPEN, '<span variant="small-caps">')
-                      .replace(_DN_CLOSE, '</span>'))
+            markup = _smallcap_divine_literals(markup)
+        if not rows and (split := _dropcap_split(markup)):
+            before, letter, after = split
+            span = (_DROPCAP_SPAN if initial_ink is None else
+                    _DROPCAP_SPAN[:-1] + f' foreground="{initial_ink}">')
+            markup = f'{before}{span}{letter}</span>{after}'
         rows.append((verse, markup))
     return rows
+
+
+def _card_heading(module, book, chapter, verse):
+    """The title of the section `verse` stands in, or None.
+
+    The nearest heading at or before the verse, in this chapter: a passage
+    that starts inside a section still belongs to it.
+    """
+    headings = sword_bridge.chapter_headings(module, book, chapter) or {}
+    before = [k for k in headings if k <= verse and headings[k]]
+    if not before:
+        return None
+    return sword_bridge.plain_text(headings[max(before)][-1]) or None
+
+
+def _card_original(module, book, chapter, verse):
+    """The verse's Greek or Hebrew as one line, or None without data."""
+    app = sword_bridge.map_verse_to_app(module, book, chapter, verse)
+    words = dict(passage_export.interlinear_rows(book, chapter, [app]))
+    line = ' '.join(w.surface for w in words.get(app, ()) if w.surface)
+    return line.strip() or None
 
 
 #: The card preview's box in the sheet, in points: each shape is scaled to
@@ -278,10 +327,23 @@ class CardSheet:
         self._verses = list(verses)
         # Read once: the preview redraws on every choice, and the card must
         # carry the words the sheet opened on.
-        self._rows = card_rows(self._module, self._book, self._chapter,
-                               self._verses,
-                               getattr(pane, '_smallcaps_divine', True))
-        self._counts: dict[str, int] = {}
+        from pane import dropcap_color_hex
+        self._rows = card_rows(
+            self._module, self._book, self._chapter, self._verses,
+            getattr(pane, '_smallcaps_divine', True),
+            dropcap_color_hex(False)
+            if getattr(pane, '_colored_dropcap', True) else None)
+        self._counts: dict[tuple[str, bool], int] = {}
+        first = self._rows[0][0] if self._rows else None
+        self._heading = (_card_heading(self._module, self._book,
+                                       self._chapter, first)
+                         if first is not None
+                         and getattr(pane, '_show_headings', True) else None)
+        # One verse at most: under a passage the line would crowd the card,
+        # and it would no longer be the words of the one verse it sits under.
+        self._original = (_card_original(self._module, self._book,
+                                         self._chapter, first)
+                          if len(self._rows) == 1 else None)
         self._dialog = Adw.Dialog()
         self._dialog.set_title(_('Share as image'))
         self._dialog.set_content_width(460)
@@ -348,6 +410,13 @@ class CardSheet:
         self._mark_row = Adw.SwitchRow(title=_('Show the app’s name'),
                                        active=False)
         group.add(self._mark_row)
+        # Offered only where there is a line to show.
+        self._original_row = Adw.SwitchRow(
+            title=(_('Show the Hebrew') if self._original
+                   and any('\u0590' <= c <= '\u05ff' for c in self._original)
+                   else _('Show the Greek')),
+            active=False, visible=self._original is not None)
+        group.add(self._original_row)
         page.add(group)
         view.set_content(page)
         self._dialog.set_child(view)
@@ -355,6 +424,7 @@ class CardSheet:
         self._paper_row.connect('notify::selected', self._refresh)
         self._shape_row.connect('notify::selected', self._refresh)
         self._mark_row.connect('notify::active', self._refresh)
+        self._original_row.connect('notify::active', self._refresh)
         self._refresh()
 
     def present(self, root):
@@ -366,13 +436,17 @@ class CardSheet:
     def _shape(self):
         return self._shapes[self._shape_row.get_selected()]
 
+    def _shown_original(self):
+        return self._original if self._original_row.get_active() else None
+
     def _shown(self):
         """The verses this shape can carry at a readable size, from the first."""
-        shape = self._shape()
-        if shape not in self._counts:
-            self._counts[shape] = verse_card.shown_count(
-                [text for _v, text in self._rows], shape)
-        return self._rows[:self._counts[shape]]
+        key = (self._shape(), self._shown_original() is not None)
+        if key not in self._counts:
+            self._counts[key] = verse_card.shown_count(
+                [text for _v, text in self._rows], key[0],
+                self._heading, self._shown_original())
+        return self._rows[:self._counts[key]]
 
     def _is_cut(self):
         return len(self._shown()) < len(self._rows)
@@ -394,7 +468,8 @@ class CardSheet:
             reference=self._reference(),
             translation=passage_export.version_label(self._module),
             paper=paper, ink=auto_reading_ink(paper),
-            shape=self._shape(), wordmark=self._mark_row.get_active())
+            shape=self._shape(), wordmark=self._mark_row.get_active(),
+            heading=self._heading, original=self._shown_original())
 
     def _card_bytes(self):
         return verse_card.render_bytes(**self._card_args())

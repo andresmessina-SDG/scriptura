@@ -11659,3 +11659,11 @@ msgstr "La tarjeta muestra {shown}; el resto no cabe."
 #: export_dialog.py
 msgid "There is no text here to put on a card"
 msgstr "Aquí no hay texto para poner en una tarjeta"
+
+#: export_dialog.py
+msgid "Show the Greek"
+msgstr "Mostrar el griego"
+
+#: export_dialog.py
+msgid "Show the Hebrew"
+msgstr "Mostrar el hebreo"

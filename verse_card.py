@@ -2,7 +2,9 @@
 
 The one place this app could cheapen itself, so the rules are the house law
 taken literally — no photographs, no gradients, no sunsets, no script faces,
-no accent colour. The card is the reading surface, framed. What makes it look
+no accent colour of its own. The only colours are the reading view's: the
+red of the words of Christ and the gold of the first letter, each where the
+page would show it. The card is the reading surface, framed. What makes it look
 like Scriptura rather than like every other Bible app is that it is set in the
 same bundled serif the app reads with, on the same paper.
 
@@ -114,11 +116,13 @@ def _metrics(width: int, height: int) -> tuple[int, int]:
 
 
 def _layout(ctx, text, family, px, width, *, align=Pango.Alignment.CENTER,
-            tracking=0, markup=False):
+            tracking=0, markup=False, weight=None):
     layout = PangoCairo.create_layout(ctx)
     desc = Pango.FontDescription()
     desc.set_family(family)
     desc.set_absolute_size(px * Pango.SCALE)
+    if weight is not None:
+        desc.set_weight(weight)
     layout.set_font_description(desc)
     layout.set_width(width * Pango.SCALE)
     layout.set_alignment(align)
@@ -197,7 +201,36 @@ def _balanced(layout, width):
     return high
 
 
-def shown_count(texts: list[str], shape: str = 'square') -> int:
+def _extras(ctx, width, height, heading, original):
+    """The label above the verse and the original-language line below it.
+
+    (heading layout, original layout, height they take from the verse's
+    box), either layout None when absent. The label is the structural voice,
+    sans and quiet, as the kicker over a title in Scripture in Stone; the
+    original is read, so it is serif, smaller and quieter than the verse.
+    """
+    short = min(width, height)
+    _margin, column = _metrics(width, height)
+    used = 0
+    head = orig = None
+    if heading:
+        px = int(short * 0.026)
+        head = _layout(ctx, heading, SANS, px, column, tracking=px * 0.04,
+                       weight=Pango.Weight.SEMIBOLD)
+        used += head.get_pixel_size().height + _label_gap(height)
+    if original:
+        orig = _layout(ctx, original, SERIF, int(short * 0.036), column)
+        used += orig.get_pixel_size().height + _label_gap(height)
+    return head, orig, used
+
+
+def _label_gap(height):
+    return int(height * 0.03)
+
+
+def shown_count(texts: list[str], shape: str = 'square',
+                heading: str | None = None,
+                original: str | None = None) -> int:
     """How many of `texts`, from the first, fit a card at a readable size.
 
     A passage that only fits by shrinking past `READABLE` is cut at a whole
@@ -212,11 +245,13 @@ def shown_count(texts: list[str], shape: str = 'square') -> int:
     _margin, column = _metrics(width, height)
     px = int(min(width, height) * READABLE)
     ctx = cairo.Context(cairo.ImageSurface(cairo.FORMAT_RGB24, 1, 1))
+    room = height * VERSE_SHARE - _extras(ctx, width, height, heading,
+                                          original)[2]
 
     def fits(n):
         layout = _layout(ctx, ' '.join(texts[:n]).strip(), SERIF, px, column,
                          markup=True)
-        return layout.get_pixel_size().height <= height * VERSE_SHARE
+        return layout.get_pixel_size().height <= room
 
     if fits(len(texts)):
         return len(texts)
@@ -230,28 +265,21 @@ def shown_count(texts: list[str], shape: str = 'square') -> int:
     return low
 
 
-def render(path: str, *, text: str, reference: str, translation: str,
-           paper: str, ink: str, shape: str = 'square',
-           wordmark: bool = False) -> str:
-    """Draw the card and write it to `path` as a PNG."""
-    _draw(text=text, reference=reference, translation=translation,
-          paper=paper, ink=ink, shape=shape,
-          wordmark=wordmark).write_to_png(path)
+def render(path: str, **card) -> str:
+    """Draw the card (see `_draw` for its fields) and write it to `path`
+    as a PNG."""
+    _draw(**card).write_to_png(path)
     return path
 
 
-def render_bytes(*, text: str, reference: str, translation: str,
-                 paper: str, ink: str, shape: str = 'square',
-                 wordmark: bool = False) -> bytes:
+def render_bytes(**card) -> bytes:
     """The same card as PNG bytes, for the clipboard — no file involved.
 
     A card is more often pasted than filed, and going through the disk to do
     it would leave a stray PNG behind for every paste.
     """
     buffer = io.BytesIO()
-    _draw(text=text, reference=reference, translation=translation,
-          paper=paper, ink=ink, shape=shape,
-          wordmark=wordmark).write_to_png(buffer)
+    _draw(**card).write_to_png(buffer)
     return buffer.getvalue()
 
 
@@ -267,11 +295,13 @@ def draw(**card) -> cairo.ImageSurface:
 
 def _draw(*, text: str, reference: str, translation: str,
           paper: str, ink: str, shape: str = 'square',
-          wordmark: bool = False) -> cairo.ImageSurface:
+          wordmark: bool = False, heading: str | None = None,
+          original: str | None = None) -> cairo.ImageSurface:
     """The card itself. `text` is Pango markup: escape plain text first.
 
     `reference` and `translation` are both shown, always: the translation is
-    the attribution, and a card outlives the app it left.
+    the attribution, and a card outlives the app it left. `heading` is the
+    section's title, set above; `original` the Greek or Hebrew, set below.
     """
     width, height = SHAPES.get(shape, SHAPES['square'])
     surface = cairo.ImageSurface(cairo.FORMAT_RGB24, width, height)
@@ -281,7 +311,8 @@ def _draw(*, text: str, reference: str, translation: str,
 
     margin, column = _metrics(width, height)
     left = (width - column) // 2
-    verse = _fit(ctx, text, column, height * VERSE_SHARE,
+    head, orig, used = _extras(ctx, width, height, heading, original)
+    verse = _fit(ctx, text, column, height * VERSE_SHARE - used,
                  int(min(width, height) * 0.062))
     verse_w = _balanced(verse, column)
     # Sized for the phone a card is mostly read on, not for the 1080px file:
@@ -292,19 +323,27 @@ def _draw(*, text: str, reference: str, translation: str,
 
     verse_h = verse.get_pixel_size().height
     gap = int(height * 0.055)
-    top = int((height - (verse_h + gap + ref.get_pixel_size().height)) / 2)
+    y = int((height - (verse_h + used + gap + ref.get_pixel_size().height)) / 2)
 
-    ctx.set_source_rgb(*_rgb(ink))
-    ctx.move_to(left + (column - verse_w) / 2, top)
-    PangoCairo.show_layout(ctx, verse)
+    def show(layout, alpha, x=left):
+        ctx.save()
+        ctx.set_source_rgba(*_rgb(ink), alpha)
+        ctx.move_to(x, y)
+        PangoCairo.show_layout(ctx, layout)
+        ctx.restore()
+        return layout.get_pixel_size().height
 
     # Hierarchy: the verse is loudest, the citation quiet, the mark quietest.
-    # Same ink throughout — less of it, never a different colour.
-    ctx.save()
-    ctx.set_source_rgba(*_rgb(ink), 0.7)
-    ctx.move_to(left, top + verse_h + gap)
-    PangoCairo.show_layout(ctx, ref)
-    ctx.restore()
+    # The card's ink throughout, less of it for quieter voices; red and gold
+    # come only from the verse's own markup.
+    if head is not None:
+        y += show(head, 0.62) + _label_gap(height)
+    y += show(verse, 1.0, left + (column - verse_w) / 2)
+    if orig is not None:
+        y += _label_gap(height)
+        y += show(orig, 0.72)
+    y += gap
+    show(ref, 0.7)
 
     if wordmark:
         mark_px = int(min(width, height) * 0.018)

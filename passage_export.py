@@ -39,6 +39,7 @@ import annotations as annotations_store
 import catena_bridge
 import content
 import interlinear_data
+import settings
 import sword_bridge
 from i18n import _, C_, book_label
 
@@ -181,6 +182,24 @@ def _plain(html: str) -> str:
     """
     import sword_bridge
     return sword_bridge.plain_text(html)
+
+
+_DIVINE_NAME = re.compile(r'<divineName[^>]*>(.*?)</divineName>', re.DOTALL)
+
+
+def quote_text(html: str) -> str:
+    """A verse as plain text for a quotation: copy, export and print.
+
+    `_plain`, except for the divine name. The KJV marks it in its markup and
+    prints it LORD in small capitals, the sign that the Hebrew has the Name;
+    plain text has no small caps, so it came out "The Lord is my shepherd".
+    With the reader's small-caps setting on, the marked name is set in
+    capitals, which is what plain text makes of small caps. With it off, the
+    copy reads as the page does.
+    """
+    if settings.get('smallcaps_divine'):
+        html = _DIVINE_NAME.sub(lambda m: _plain(m.group(1)).upper(), str(html))
+    return _plain(html)
 
 
 def _md(text: str, markdown: bool) -> str:
@@ -443,7 +462,7 @@ def build(module: str, book: str, chapter: int,
     """
     rendered = content.load_chapter(module, book, chapter)
     wanted = set(verses) if verses else None
-    rows = [(v, _plain(t)) for v, t in rendered
+    rows = [(v, quote_text(t)) for v, t in rendered
             if wanted is None or v in wanted]
     numbers = [v for v, _t in rows]
     heading = rendered_reference(module, book, chapter, verses if wanted else None,

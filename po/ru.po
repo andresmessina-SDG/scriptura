@@ -11653,3 +11653,11 @@ msgstr "На карточке: {shown}; остальное не помещает
 #: export_dialog.py
 msgid "There is no text here to put on a card"
 msgstr "Здесь нет текста для карточки"
+
+#: export_dialog.py
+msgid "Show the Greek"
+msgstr "Показать греческий текст"
+
+#: export_dialog.py
+msgid "Show the Hebrew"
+msgstr "Показать еврейский текст"

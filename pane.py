@@ -2086,16 +2086,24 @@ class BiblePane(Gtk.Box):
             return
         # Visible footnote letters are navigation, not part of a quotation.
         # Read around their tags without changing the buffer or its selection.
+        # The divine name's small caps have no plain-text form, so a run set
+        # in them is copied in capitals: LORD, as the page shows it, not the
+        # "Lord" the buffer holds (see passage_export.quote_text).
         marker = self._buffer.get_tag_table().lookup(_FN_MARKER_TAG)
         pieces = []
         cursor = start.copy()
         while cursor.compare(end) < 0:
             stop = cursor.copy()
-            if marker is None or not stop.forward_to_tag_toggle(marker) \
-                    or stop.compare(end) > 0:
+            if not stop.forward_to_tag_toggle(None) or stop.compare(end) > 0:
                 stop = end.copy()
             if marker is None or not cursor.has_tag(marker):
-                pieces.append(self._buffer.get_text(cursor, stop, False))
+                piece = self._buffer.get_text(cursor, stop, False)
+                if self._smallcaps_divine and any(
+                        tag.props.variant_set
+                        and tag.props.variant == Pango.Variant.SMALL_CAPS
+                        for tag in cursor.get_tags()):
+                    piece = piece.upper()
+                pieces.append(piece)
             cursor = stop
         text = ''.join(pieces).strip()
         if not text:
