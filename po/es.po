@@ -11655,3 +11655,7 @@ msgstr "No se pudo copiar la imagen"
 #: export_dialog.py
 msgid "The card shows {shown}; the rest does not fit."
 msgstr "La tarjeta muestra {shown}; el resto no cabe."
+
+#: export_dialog.py
+msgid "There is no text here to put on a card"
+msgstr "Aquí no hay texto para poner en una tarjeta"

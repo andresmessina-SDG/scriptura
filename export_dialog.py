@@ -14,6 +14,8 @@ lands after the reader has moved on is worse than one that costs a frame.
 """
 import logging
 
+import re
+
 import cairo
 import gi
 gi.require_version('Gtk', '4.0')
@@ -21,6 +23,7 @@ gi.require_version('Adw', '1')
 from gi.repository import Adw, Gdk, GLib, Gtk
 
 import catena_bridge
+import content
 import passage_export
 import sword_bridge
 import verse_card
@@ -33,6 +36,43 @@ _log = logging.getLogger(__name__)
 
 #: Scope keys, in the order they are offered.
 SELECTION, UNIT, CHAPTER = 'selection', 'unit', 'chapter'
+
+#: The divine name as OSIS marks it, and two private-use marks that carry
+#: it through the tag strip so it can come back as a small-caps span.
+_DIVINE_RE = re.compile(r'<divineName[^>]*>(.*?)</divineName>', re.DOTALL)
+_DN_OPEN, _DN_CLOSE = '\ue000', '\ue001'
+
+
+def card_rows(module, book, chapter, verses, smallcaps=True):
+    """(verse, Pango markup) for each selected verse, in reading order.
+
+    Markup rather than plain text for one reason: the divine name. The KJV
+    marks it `<divineName>Lord</divineName>`, and stripped to plain text the
+    card read "The Lord is my shepherd", losing the printed LORD that tells
+    the reader the Hebrew has the Name. With the reader's small-caps setting
+    on, the card sets it as the reading view does: marked names from the
+    markup, and literal capitals (BSB, Webster) by the same inscription-aware
+    rule. With it off, the card shows the name as the reading view does.
+    """
+    from pane import _normalize_divine, _smallcap_divine_literals
+    wanted = set(verses)
+    rows = []
+    for verse, html in content.load_chapter(module, book, chapter):
+        if verse not in wanted:
+            continue
+        html = str(html)
+        if smallcaps:
+            html = _DIVINE_RE.sub(
+                lambda m: _DN_OPEN + _normalize_divine(m.group(1)) + _DN_CLOSE,
+                html)
+        markup = GLib.markup_escape_text(sword_bridge.plain_text(html))
+        if smallcaps:
+            markup = _smallcap_divine_literals(
+                markup.replace(_DN_OPEN, '<span variant="small-caps">')
+                      .replace(_DN_CLOSE, '</span>'))
+        rows.append((verse, markup))
+    return rows
+
 
 #: The card preview's box in the sheet, in points: each shape is scaled to
 #: fit inside it.
@@ -213,6 +253,13 @@ def share_as_image(pane, verses, popover=None):
     """Open the card sheet for `verses`."""
     if popover is not None:
         popover.popdown()
+    # A verse the module leaves empty made a card of a citation and nothing
+    # else, which says nothing to whoever it is sent to.
+    if not passage_export.verse_text(pane.module, pane.book, pane.chapter,
+                                     list(verses)):
+        if pane._on_toast:
+            pane._on_toast(_('There is no text here to put on a card'))
+        return
     CardSheet(pane, verses).present(pane.get_root())
 
 
@@ -231,8 +278,9 @@ class CardSheet:
         self._verses = list(verses)
         # Read once: the preview redraws on every choice, and the card must
         # carry the words the sheet opened on.
-        self._rows = passage_export.verse_rows(
-            self._module, self._book, self._chapter, self._verses)
+        self._rows = card_rows(self._module, self._book, self._chapter,
+                               self._verses,
+                               getattr(pane, '_smallcaps_divine', True))
         self._counts: dict[str, int] = {}
         self._dialog = Adw.Dialog()
         self._dialog.set_title(_('Share as image'))

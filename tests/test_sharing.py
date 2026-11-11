@@ -249,7 +249,7 @@ def test_a_long_card_cuts_at_a_whole_verse_and_cites_only_that(source, monkeypat
     sheet = export_dialog.CardSheet.__new__(export_dialog.CardSheet)
     sheet._module, sheet._book, sheet._chapter = 'KJV', 'Psalms', 119
     sheet._verses = list(range(1, 177))
-    sheet._rows = passage_export.verse_rows('KJV', 'Psalms', 119, sheet._verses)
+    sheet._rows = export_dialog.card_rows('KJV', 'Psalms', 119, sheet._verses)
     sheet._counts = {}
     sheet._shape = lambda: 'square'
     shown = sheet._shown()
@@ -308,3 +308,36 @@ def test_card_sheet_preview_is_the_full_card_in_each_shape(source):
         fit = min(export_dialog.PREVIEW_W / w, export_dialog.PREVIEW_H / h)
         assert (sheet._preview.get_content_width(),
                 sheet._preview.get_content_height()) == (round(w * fit), round(h * fit))
+
+
+def test_card_sets_the_marked_divine_name_in_small_caps(monkeypatch):
+    monkeypatch.setattr(content, 'load_chapter', lambda *a: [
+        (1, '<w>The <divineName>Lord</divineName></w> is my shepherd &amp; guide;')])
+    [(_v, markup)] = export_dialog.card_rows('KJVA', 'Psalms', 23, [1])
+    assert markup == 'The <span variant="small-caps">Lord</span> is my shepherd &amp; guide;'
+    [(_v, plain)] = export_dialog.card_rows('KJVA', 'Psalms', 23, [1], smallcaps=False)
+    assert plain == 'The Lord is my shepherd &amp; guide;'
+
+
+def test_card_sets_literal_capitals_but_not_an_inscription(monkeypatch):
+    monkeypatch.setattr(content, 'load_chapter', lambda *a: [
+        (1, 'The LORD is my shepherd.'), (2, 'HOLINESS TO THE LORD.')])
+    rows = dict(export_dialog.card_rows('BSB', 'Psalms', 23, [1, 2]))
+    assert rows[1] == 'The L<span variant="small-caps">ord</span> is my shepherd.'
+    assert rows[2] == 'HOLINESS TO THE LORD.'
+
+
+def test_card_text_with_markup_characters_renders(monkeypatch):
+    monkeypatch.setattr(content, 'load_chapter', lambda *a: [(1, 'a &lt;b&gt; &amp; c')])
+    [(_v, markup)] = export_dialog.card_rows('KJV', 'John', 1, [1])
+    verse_card.render_bytes(text=markup, reference='John 1:1', translation='A & B',
+                            paper='#f7f4ee', ink='#2b2620')
+
+
+def test_an_empty_verse_opens_no_card(source, monkeypatch):
+    monkeypatch.setattr(content, 'load_chapter', lambda *a: [(16, '<w></w> ')])
+    opened = []
+    monkeypatch.setattr(export_dialog, 'CardSheet', lambda *a: opened.append(a))
+    export_dialog.share_as_image(source[0], [16])
+    assert not opened
+    assert source[1] == ['There is no text here to put on a card']

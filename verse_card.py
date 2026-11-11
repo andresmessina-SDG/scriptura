@@ -114,7 +114,7 @@ def _metrics(width: int, height: int) -> tuple[int, int]:
 
 
 def _layout(ctx, text, family, px, width, *, align=Pango.Alignment.CENTER,
-            tracking=0):
+            tracking=0, markup=False):
     layout = PangoCairo.create_layout(ctx)
     desc = Pango.FontDescription()
     desc.set_family(family)
@@ -127,7 +127,10 @@ def _layout(ctx, text, family, px, width, *, align=Pango.Alignment.CENTER,
         attrs = Pango.AttrList()
         attrs.insert(Pango.attr_letter_spacing_new(int(tracking) * Pango.SCALE))
         layout.set_attributes(attrs)
-    layout.set_text(text, -1)
+    if markup:
+        layout.set_markup(text, -1)
+    else:
+        layout.set_text(text, -1)
     return layout
 
 
@@ -151,14 +154,14 @@ def _fit(ctx, text, width, max_height, start, floor=16):
     119 set 3168px). An ellipsis at least says there is more.
     """
     def fits(px):
-        layout = _layout(ctx, text, SERIF, px, width)
+        layout = _layout(ctx, text, SERIF, px, width, markup=True)
         return layout if layout.get_pixel_size().height <= max_height else None
 
     if start > floor and (layout := fits(start)):
         return layout
     best = fits(floor) if start > floor else None
     if best is None:
-        layout = _layout(ctx, text, SERIF, floor, width)
+        layout = _layout(ctx, text, SERIF, floor, width, markup=True)
         layout.set_ellipsize(Pango.EllipsizeMode.END)
         layout.set_height(int(max_height) * Pango.SCALE)
         return layout
@@ -211,7 +214,8 @@ def shown_count(texts: list[str], shape: str = 'square') -> int:
     ctx = cairo.Context(cairo.ImageSurface(cairo.FORMAT_RGB24, 1, 1))
 
     def fits(n):
-        layout = _layout(ctx, ' '.join(texts[:n]).strip(), SERIF, px, column)
+        layout = _layout(ctx, ' '.join(texts[:n]).strip(), SERIF, px, column,
+                         markup=True)
         return layout.get_pixel_size().height <= height * VERSE_SHARE
 
     if fits(len(texts)):
@@ -264,7 +268,7 @@ def draw(**card) -> cairo.ImageSurface:
 def _draw(*, text: str, reference: str, translation: str,
           paper: str, ink: str, shape: str = 'square',
           wordmark: bool = False) -> cairo.ImageSurface:
-    """The card itself.
+    """The card itself. `text` is Pango markup: escape plain text first.
 
     `reference` and `translation` are both shown, always: the translation is
     the attribution, and a card outlives the app it left.
