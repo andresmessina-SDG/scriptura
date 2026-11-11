@@ -926,12 +926,12 @@ def collected_quote(pane, verses):
     chapter_verses = content.load_chapter(pane.module, pane.book,
                                           pane.chapter)
     verse_map = {v: html for v, html in chapter_verses}
+    verses = sorted(set(verses))
     words = ' '.join(
-        re.sub(r'<[^>]+>', '', str(verse_map.get(v, ''))).strip()
+        sword_bridge.plain_text(verse_map.get(v, ''))
         for v in verses).strip()
-    ref = f'{book_label(pane.book)} {pane.chapter}:{verses[0]}'
-    if len(verses) > 1:
-        ref = f'{ref}\u2013{verses[-1]}'
+    ref = passage_export.format_reference(
+        book_label(pane.book), pane.chapter, verses, prose=True)
     app = [annotations.app_verse(pane.module, pane.book, pane.chapter, v)
            for v in verses]
     anchor = {'book': pane.book, 'chapter': pane.chapter,
