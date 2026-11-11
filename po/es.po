@@ -11651,3 +11651,7 @@ msgstr "Este libro general no tiene entradas legibles."
 #: export_dialog.py
 msgid "Could not copy the image"
 msgstr "No se pudo copiar la imagen"
+
+#: export_dialog.py
+msgid "The card shows {shown}; the rest does not fit."
+msgstr "La tarjeta muestra {shown}; el resto no cabe."

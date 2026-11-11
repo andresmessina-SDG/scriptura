@@ -207,11 +207,18 @@ def verse_text(module: str, book: str, chapter: int,
     What a card is set in: a card is a quotation, and a quotation carries its
     reference underneath rather than numerals through the middle of it.
     """
+    return ' '.join(text for _v, text in verse_rows(
+        module, book, chapter, verses)).strip()
+
+
+def verse_rows(module: str, book: str, chapter: int,
+               verses: list[int] | None = None) -> list[tuple[int, str]]:
+    """(verse, plain text) for each verse `verse_text` joins, in reading
+    order — for a card, which may have to stop at a whole verse."""
     wanted = set(verses) if verses else None
-    return ' '.join(
-        _plain(html)
-        for verse, html in content.load_chapter(module, book, chapter)
-        if wanted is None or verse in wanted).strip()
+    return [(verse, _plain(html))
+            for verse, html in content.load_chapter(module, book, chapter)
+            if wanted is None or verse in wanted]
 
 
 def chapter_verses(module: str, book: str, chapter: int) -> list[int]:

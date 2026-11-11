@@ -62,6 +62,14 @@ SHAPES: dict[str, tuple[int, int]] = {
 SERIF = 'Newsreader, Noto Serif, Source Serif 4, Charter, Georgia, serif'
 SANS = 'Roboto'
 
+#: The share of the card's height the verse may fill.
+VERSE_SHARE = 0.52
+
+#: The smallest verse size worth sending, as a share of the card's short
+#: side. Most cards are read on a phone at about 400px wide, where 32px of a
+#: 1080px card is 12px: below that a passage is a grey block, not a quotation.
+READABLE = 0.03
+
 
 def _rgb(hex_colour: str) -> tuple[float, float, float]:
     h = hex_colour.lstrip('#')
@@ -108,6 +116,12 @@ def _metrics(width: int, height: int) -> tuple[int, int]:
 def _layout(ctx, text, family, px, width, *, align=Pango.Alignment.CENTER,
             tracking=0):
     layout = PangoCairo.create_layout(ctx)
+    # Unhinted metrics, so the small preview in the sheet breaks its lines
+    # where the full-size card does.
+    options = cairo.FontOptions()
+    options.set_hint_metrics(cairo.HINT_METRICS_OFF)
+    PangoCairo.context_set_font_options(layout.get_context(), options)
+    layout.context_changed()
     desc = Pango.FontDescription()
     desc.set_family(family)
     desc.set_absolute_size(px * Pango.SCALE)
@@ -127,28 +141,95 @@ def _fit(ctx, text, width, max_height, start, floor=16):
     """The largest size at which the verse still fits its box.
 
     The card is a fixed export size, so the type answers to the text rather
-    than the other way round: a long passage simply sets smaller. Stepping
-    down rather than solving, because Pango's wrapping is what decides the
-    height and it is cheaper to ask it than to model it.
+    than the other way round: a long passage simply sets smaller. Searching
+    rather than solving, because Pango's wrapping is what decides the height
+    and it is cheaper to ask it than to model it. The search halves the
+    range: stepping down 2px at a time took 25 layouts of Psalm 119, about
+    500ms on the main thread when copied, where halving takes six.
 
-    There is a floor, and past it the type stops shrinking — 16px on a 1080px
-    card is already the smallest that is worth reading. A selection long
-    enough to reach the floor and still not fit is ellipsized rather than
+    There is a floor, and past it the type stops shrinking. The sheet cuts a
+    passage at whole verses well before it (see `shown_count`), so the floor
+    is a last guard for one verse too long to fit. Text that reaches the floor
+    and still does not fit is ellipsized rather than
     allowed to overflow: the layout is centred on the card, so text taller
     than the box ran off BOTH edges and was silently clipped mid-word (a
     60-verse selection set 1080px of type into a 1080px card; a whole Psalm
     119 set 3168px). An ellipsis at least says there is more.
     """
-    px = start
-    while px > floor:
+    def fits(px):
         layout = _layout(ctx, text, SERIF, px, width)
-        if layout.get_pixel_size().height <= max_height:
-            return layout
-        px -= 2
-    layout = _layout(ctx, text, SERIF, floor, width)
-    layout.set_ellipsize(Pango.EllipsizeMode.END)
-    layout.set_height(int(max_height) * Pango.SCALE)
-    return layout
+        return layout if layout.get_pixel_size().height <= max_height else None
+
+    if start > floor and (layout := fits(start)):
+        return layout
+    best = fits(floor) if start > floor else None
+    if best is None:
+        layout = _layout(ctx, text, SERIF, floor, width)
+        layout.set_ellipsize(Pango.EllipsizeMode.END)
+        layout.set_height(int(max_height) * Pango.SCALE)
+        return layout
+    low, high = floor, start             # low fits, high does not
+    while high - low > 1:
+        mid = (low + high) // 2
+        if (layout := fits(mid)):
+            low, best = mid, layout
+        else:
+            high = mid
+    return best
+
+
+def _balanced(layout, width):
+    """The narrowest width that keeps the layout's line count.
+
+    Centred type shows a lone last word far more than a page does (John 3:16
+    ended on "Son." by itself). Narrowing the box until one more line would
+    appear evens the lines out without changing the size or the height.
+    """
+    lines = layout.get_line_count()
+    if lines < 2 or layout.is_ellipsized():
+        return width
+    low, high = width // 2, width         # high keeps the count
+    while high - low > 4:
+        mid = (low + high) // 2
+        layout.set_width(mid * Pango.SCALE)
+        if layout.get_line_count() == lines:
+            high = mid
+        else:
+            low = mid
+    layout.set_width(high * Pango.SCALE)
+    return high
+
+
+def shown_count(texts: list[str], shape: str = 'square') -> int:
+    """How many of `texts`, from the first, fit a card at a readable size.
+
+    A passage that only fits by shrinking past `READABLE` is cut at a whole
+    verse instead, so the card can cite exactly the words it carries. Before
+    this the type shrank to 16px and then ended in an ellipsis, under a
+    citation that still claimed the whole passage. At least one: a single
+    verse too long to fit is still the reader's choice of verse.
+    """
+    if not texts:
+        return 0
+    width, height = SHAPES.get(shape, SHAPES['square'])
+    _margin, column = _metrics(width, height)
+    px = int(min(width, height) * READABLE)
+    ctx = cairo.Context(cairo.ImageSurface(cairo.FORMAT_RGB24, 1, 1))
+
+    def fits(n):
+        layout = _layout(ctx, ' '.join(texts[:n]).strip(), SERIF, px, column)
+        return layout.get_pixel_size().height <= height * VERSE_SHARE
+
+    if fits(len(texts)):
+        return len(texts)
+    low, high = 1, len(texts)            # high does not fit
+    while high - low > 1:
+        mid = (low + high) // 2
+        if fits(mid):
+            low = mid
+        else:
+            high = mid
+    return low
 
 
 def render(path: str, *, text: str, reference: str, translation: str,
@@ -163,62 +244,69 @@ def render(path: str, *, text: str, reference: str, translation: str,
 
 def render_bytes(*, text: str, reference: str, translation: str,
                  paper: str, ink: str, shape: str = 'square',
-                 wordmark: bool = False) -> bytes:
+                 wordmark: bool = False, scale: float = 1.0) -> bytes:
     """The same card as PNG bytes, for the clipboard — no file involved.
 
     A card is more often pasted than filed, and going through the disk to do
-    it would leave a stray PNG behind for every paste.
+    it would leave a stray PNG behind for every paste. `scale` draws the
+    same card smaller, for the sheet's preview.
     """
     buffer = io.BytesIO()
     _draw(text=text, reference=reference, translation=translation,
           paper=paper, ink=ink, shape=shape,
-          wordmark=wordmark).write_to_png(buffer)
+          wordmark=wordmark, scale=scale).write_to_png(buffer)
     return buffer.getvalue()
 
 
 def _draw(*, text: str, reference: str, translation: str,
           paper: str, ink: str, shape: str = 'square',
-          wordmark: bool = False) -> cairo.ImageSurface:
+          wordmark: bool = False, scale: float = 1.0) -> cairo.ImageSurface:
     """The card itself.
 
     `reference` and `translation` are both shown, always: the translation is
     the attribution, and a card outlives the app it left.
     """
     width, height = SHAPES.get(shape, SHAPES['square'])
-    surface = cairo.ImageSurface(cairo.FORMAT_RGB24, width, height)
+    surface = cairo.ImageSurface(cairo.FORMAT_RGB24, max(1, round(width * scale)),
+                                 max(1, round(height * scale)))
     ctx = cairo.Context(surface)
+    ctx.scale(scale, scale)
     ctx.set_source_rgb(*_rgb(paper))
     ctx.paint()
 
     margin, column = _metrics(width, height)
     left = (width - column) // 2
-    verse = _fit(ctx, text, column, height * 0.52, int(min(width, height) * 0.062))
-    ref_px = int(min(width, height) * 0.021)
+    verse = _fit(ctx, text, column, height * VERSE_SHARE,
+                 int(min(width, height) * 0.062))
+    verse_w = _balanced(verse, column)
+    # Sized for the phone a card is mostly read on, not for the 1080px file:
+    # at 400px wide this is 11px, where the old 23px at 55% ink was 8px grey.
+    ref_px = int(min(width, height) * 0.028)
     ref = _layout(ctx, f'{reference}  ·  {translation}', SANS, ref_px, column,
-                  tracking=ref_px * 0.14)
+                  tracking=ref_px * 0.08)
 
     verse_h = verse.get_pixel_size().height
     gap = int(height * 0.055)
     top = int((height - (verse_h + gap + ref.get_pixel_size().height)) / 2)
 
     ctx.set_source_rgb(*_rgb(ink))
-    ctx.move_to(left, top)
+    ctx.move_to(left + (column - verse_w) / 2, top)
     PangoCairo.show_layout(ctx, verse)
 
     # Hierarchy: the verse is loudest, the citation quiet, the mark quietest.
     # Same ink throughout — less of it, never a different colour.
     ctx.save()
-    ctx.set_source_rgba(*_rgb(ink), 0.55)
+    ctx.set_source_rgba(*_rgb(ink), 0.7)
     ctx.move_to(left, top + verse_h + gap)
     PangoCairo.show_layout(ctx, ref)
     ctx.restore()
 
     if wordmark:
-        mark_px = int(min(width, height) * 0.0135)
+        mark_px = int(min(width, height) * 0.018)
         mark = _layout(ctx, 'SCRIPTURA', SANS, mark_px, column,
                        tracking=mark_px * 0.30)
         ctx.save()
-        ctx.set_source_rgba(*_rgb(ink), 0.28)
+        ctx.set_source_rgba(*_rgb(ink), 0.45)
         ctx.move_to(left, height - margin - mark.get_pixel_size().height)
         PangoCairo.show_layout(ctx, mark)
         ctx.restore()

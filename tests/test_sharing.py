@@ -67,7 +67,8 @@ def test_sheet_keeps_original_passage_after_navigation(cls, source, monkeypatch,
     monkeypatch.setattr(export_dialog.tasks, 'submit',
                         lambda **kw: kw['apply'](kw['work'](None)))
     sheet._on_chosen(SimpleNamespace(save_finish=lambda r: Gio.File.new_for_path(str(path))), None)
-    assert calls == [('KJV', 'John', 3)]
+    # The card reads its words when the sheet opens; nothing reads the new place.
+    assert all(c == ('KJV', 'John', 3) for c in calls)
     assert path.exists()
 
 
@@ -238,3 +239,76 @@ def test_cancelled_save_keeps_sheet_open(cls, source, monkeypatch):
                                      Gtk.DialogError.DISMISSED)
     sheet._on_chosen(SimpleNamespace(save_finish=cancelled), None)
     assert not closed and not submitted and not source[1]
+
+
+def test_a_long_card_cuts_at_a_whole_verse_and_cites_only_that(source, monkeypatch):
+    rows = [(v, f'Verse {v} of a psalm too long for any card to carry whole. ' * 2)
+            for v in range(1, 177)]
+    monkeypatch.setattr(content, 'load_chapter', lambda *a: rows)
+    sheet = export_dialog.CardSheet.__new__(export_dialog.CardSheet)
+    sheet._module, sheet._book, sheet._chapter = 'KJV', 'Psalms', 119
+    sheet._verses = list(range(1, 177))
+    sheet._rows = passage_export.verse_rows('KJV', 'Psalms', 119, sheet._verses)
+    sheet._counts = {}
+    sheet._shape = lambda: 'square'
+    shown = sheet._shown()
+    assert 1 < len(shown) < 176
+    assert sheet._is_cut()
+    assert sheet._reference() == f'Psalms 119:1{passage_export.EN_DASH}{len(shown)}'
+
+
+def test_shown_count_keeps_a_passage_that_fits_and_one_verse_that_does_not():
+    assert verse_card.shown_count(['For God so loved the world.'] * 3) == 3
+    assert verse_card.shown_count(['word ' * 5000]) == 1
+    assert verse_card.shown_count([]) == 0
+
+
+def test_cut_text_stays_at_or_above_the_readable_size():
+    texts = ['Blessed are the undefiled in the way. ' * 2] * 120
+    for shape, (w, h) in verse_card.SHAPES.items():
+        n = verse_card.shown_count(texts, shape)
+        _m, column = verse_card._metrics(w, h)
+        ctx = cairo.Context(cairo.ImageSurface(cairo.FORMAT_RGB24, w, h))
+        layout = verse_card._fit(ctx, ' '.join(texts[:n]), column,
+                                 h * verse_card.VERSE_SHARE, int(min(w, h) * 0.062))
+        assert not layout.is_ellipsized()
+        size = layout.get_font_description().get_size() / 1024
+        assert size >= int(min(w, h) * verse_card.READABLE)
+
+
+def test_fit_halves_the_range_instead_of_stepping(monkeypatch):
+    made = []
+    real = verse_card._layout
+    monkeypatch.setattr(verse_card, '_layout',
+                        lambda *a, **kw: made.append(1) or real(*a, **kw))
+    ctx = cairo.Context(cairo.ImageSurface(cairo.FORMAT_RGB24, 1080, 1080))
+    verse_card._fit(ctx, 'Blessed are the undefiled in the way. ' * 60, 840, 560, 67)
+    assert len(made) <= 8
+
+
+def test_balanced_lines_leave_no_lone_last_word():
+    ctx = cairo.Context(cairo.ImageSurface(cairo.FORMAT_RGB24, 1080, 1080))
+    text = 'For God so loved the world, that he gave his only begotten Son.'
+    layout = verse_card._fit(ctx, text, 840, 560, 67)
+    lines = layout.get_line_count()
+    width = verse_card._balanced(layout, 840)
+    assert width < 840 and layout.get_line_count() == lines
+    last = layout.get_line_readonly(lines - 1)
+    assert ' ' in text[last.start_index:last.start_index + last.length].strip()
+
+
+def test_preview_is_the_card_drawn_smaller():
+    args = dict(text='For God so loved the world.', reference='John 3:16',
+                translation='KJV', paper='#f7f4ee', ink='#2b2620', shape='wide')
+    png = verse_card.render_bytes(**args, scale=0.25)
+    surface = cairo.ImageSurface.create_from_png(__import__('io').BytesIO(png))
+    assert (surface.get_width(), surface.get_height()) == (480, 270)
+
+
+def test_card_sheet_shows_a_preview_and_no_cut_note_for_a_short_passage(source):
+    sheet = _sheet(export_dialog.CardSheet, source)
+    assert sheet._preview.get_paintable() is not None
+    assert not sheet._cut_note.get_visible()
+    sheet._shape_row.set_selected(2)
+    w, h = sheet._preview.get_size_request()
+    assert (w, h) == (export_dialog.PREVIEW_W, round(1080 * export_dialog.PREVIEW_W / 1920))

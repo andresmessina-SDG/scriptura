@@ -11645,3 +11645,7 @@ msgstr "В этой книге нет доступных для чтения с�
 #: export_dialog.py
 msgid "Could not copy the image"
 msgstr "Не удалось скопировать изображение"
+
+#: export_dialog.py
+msgid "The card shows {shown}; the rest does not fit."
+msgstr "На карточке: {shown}; остальное не помещается."

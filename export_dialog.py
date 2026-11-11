@@ -33,6 +33,10 @@ _log = logging.getLogger(__name__)
 #: Scope keys, in the order they are offered.
 SELECTION, UNIT, CHAPTER = 'selection', 'unit', 'chapter'
 
+#: The card preview's box in the sheet, in points: a card's long side fits
+#: the longer of these, and the texture is drawn at twice that for HiDPI.
+PREVIEW_W, PREVIEW_H = 400, 240
+
 
 def export_passage(pane, verses, popover=None):
     """Open the sheet for `verses`, which the study menu already resolved.
@@ -224,6 +228,11 @@ class CardSheet:
         self._pane = pane
         self._module, self._book, self._chapter = pane.module, pane.book, pane.chapter
         self._verses = list(verses)
+        # Read once: the preview redraws on every choice, and the card must
+        # carry the words the sheet opened on.
+        self._rows = passage_export.verse_rows(
+            self._module, self._book, self._chapter, self._verses)
+        self._counts: dict[str, int] = {}
         self._dialog = Adw.Dialog()
         self._dialog.set_title(_('Share as image'))
         self._dialog.set_content_width(460)
@@ -244,6 +253,23 @@ class CardSheet:
         view.add_top_bar(header)
 
         page = Adw.PreferencesPage()
+        # The card itself, redrawn as the reader chooses: paper and shape
+        # are judged by eye, and a choice made blind is a guess.
+        shown = Adw.PreferencesGroup()
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        self._preview = Gtk.Picture(content_fit=Gtk.ContentFit.FILL,
+                                    can_shrink=True, halign=Gtk.Align.CENTER)
+        self._preview.set_overflow(Gtk.Overflow.HIDDEN)
+        self._preview.add_css_class('card-preview')
+        box.append(self._preview)
+        self._cut_note = Gtk.Label(wrap=True, justify=Gtk.Justification.CENTER,
+                                   visible=False)
+        self._cut_note.add_css_class('caption')
+        self._cut_note.add_css_class('dim-label')
+        box.append(self._cut_note)
+        shown.add(box)
+        page.add(shown)
+
         group = Adw.PreferencesGroup(title=_('Card'))
         self._paper_row = Adw.ComboRow(
             title=_('Paper'),
@@ -272,28 +298,73 @@ class CardSheet:
         view.set_content(page)
         self._dialog.set_child(view)
 
+        self._paper_row.connect('notify::selected', self._refresh)
+        self._shape_row.connect('notify::selected', self._refresh)
+        self._mark_row.connect('notify::active', self._refresh)
+        self._refresh()
+
     def present(self, root):
         self._dialog.present(root)
 
     def _paper(self):
         return verse_card.CARD_PAPERS[self._paper_row.get_selected()][1]
 
-    def _reference(self):
-        return passage_export.rendered_reference(
-            self._module, self._book, self._chapter, self._verses)
+    def _shape(self):
+        return self._shapes[self._shape_row.get_selected()]
 
-    def _card_bytes(self):
+    def _shown(self):
+        """The verses this shape can carry at a readable size, from the first."""
+        shape = self._shape()
+        if shape not in self._counts:
+            self._counts[shape] = verse_card.shown_count(
+                [text for _v, text in self._rows], shape)
+        return self._rows[:self._counts[shape]]
+
+    def _is_cut(self):
+        return len(self._shown()) < len(self._rows)
+
+    def _reference(self):
+        # A cut card cites only what it carries; a whole one cites the
+        # selection as made. In the reader's language: a Russian card read
+        # "Gen 1:1" under Russian text.
+        verses = ([v for v, _t in self._shown()] if self._is_cut()
+                  else self._verses)
+        return passage_export.rendered_reference(
+            self._module, self._book, self._chapter, verses, localized=True)
+
+    def _card_args(self):
         from pane import auto_reading_ink
         paper = self._paper()
-        return verse_card.render_bytes(
-            text=passage_export.verse_text(
-                self._module, self._book, self._chapter,
-                self._verses),
+        return dict(
+            text=' '.join(text for _v, text in self._shown()).strip(),
             reference=self._reference(),
             translation=passage_export.version_label(self._module),
             paper=paper, ink=auto_reading_ink(paper),
-            shape=self._shapes[self._shape_row.get_selected()],
-            wordmark=self._mark_row.get_active())
+            shape=self._shape(), wordmark=self._mark_row.get_active())
+
+    def _card_bytes(self):
+        return verse_card.render_bytes(**self._card_args())
+
+    def _refresh(self, *_args):
+        args = self._card_args()
+        width, height = verse_card.SHAPES[args['shape']]
+        fit = min(PREVIEW_W / width, PREVIEW_H / height)
+        self._preview.set_size_request(round(width * fit), round(height * fit))
+        try:
+            png = verse_card.render_bytes(**args, scale=fit * 2)
+            self._preview.set_paintable(
+                Gdk.Texture.new_from_bytes(GLib.Bytes.new(png)))
+        except Exception:
+            # Copy and save report their own failure; a preview that cannot
+            # draw must not take the sheet down with it.
+            _log.exception('Could not draw the card preview')
+            self._preview.set_paintable(None)
+        self._preview.set_alternative_text(args['reference'])
+        if self._is_cut():
+            self._cut_note.set_label(
+                _('The card shows {shown}; the rest does not fit.').format(
+                    shown=args['reference']))
+        self._cut_note.set_visible(self._is_cut())
 
     def _copy(self):
         """Put the card on the clipboard, the way the imagery plates do.
@@ -344,21 +415,10 @@ class CardSheet:
             self._report(_('Please choose a location on this computer.'))
             return
         self._dialog.close()
-        pane, verses = self._pane, self._verses
-        module, book, chapter = self._module, self._book, self._chapter
-        paper = self._paper()
-        shape = self._shapes[self._shape_row.get_selected()]
-        wordmark = self._mark_row.get_active()
-        reference = self._reference()
+        pane, args = self._pane, self._card_args()
 
         def work(_token):
-            from pane import auto_reading_ink
-            text = passage_export.verse_text(module, book, chapter, verses)
-            return verse_card.render(
-                path, text=text, reference=reference,
-                translation=passage_export.version_label(module),
-                paper=paper, ink=auto_reading_ink(paper), shape=shape,
-                wordmark=wordmark)
+            return verse_card.render(path, **args)
 
         tasks.submit(key=f'verse-card:{id(pane)}', work=work,
                      apply=lambda _p: self._report(
