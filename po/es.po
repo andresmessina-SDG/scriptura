@@ -11647,3 +11647,7 @@ msgstr "No se pudo leer {module}: {error}"
 #: genbook_reader.py
 msgid "This generic book has no readable entries."
 msgstr "Este libro general no tiene entradas legibles."
+
+#: export_dialog.py
+msgid "Could not copy the image"
+msgstr "No se pudo copiar la imagen"

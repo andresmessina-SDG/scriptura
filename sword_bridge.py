@@ -501,7 +501,10 @@ def plain_text(html: object) -> str:
     a bird". Guillemets are left alone: French sets them with a space by
     design.
     """
-    text = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', str(html or '')))
+    # Decode after stripping tags: escaped angle brackets belong to the
+    # text and must survive copying, card rendering and plain-text export.
+    text = html_mod.unescape(re.sub(r'<[^>]+>', ' ', str(html or '')))
+    text = re.sub(r'\s+', ' ', text)
     text = re.sub(r'\s+([,.;:!?’”)])', r'\1', text)
     return re.sub(r'([“‘(¿¡])\s+', r'\1', text).strip()
 

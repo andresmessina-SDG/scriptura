@@ -12,6 +12,8 @@ words with the fathers in it, and a card is a layout and a PNG compression.
 Copying a card does NOT: it is 45–75ms measured, and a clipboard action that
 lands after the reader has moved on is worse than one that costs a frame.
 """
+import logging
+
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
@@ -25,6 +27,8 @@ import tasks
 from a11y import set_accessible_label
 from gtk_utils import file_dialog_failed
 from i18n import _
+
+_log = logging.getLogger(__name__)
 
 #: Scope keys, in the order they are offered.
 SELECTION, UNIT, CHAPTER = 'selection', 'unit', 'chapter'
@@ -49,6 +53,7 @@ class ExportSheet:
 
     def __init__(self, pane, verses):
         self._pane = pane
+        self._module, self._book, self._chapter = pane.module, pane.book, pane.chapter
         self._verses = list(verses)
         self._dialog = Adw.Dialog()
         self._dialog.set_title(_('Export passage'))
@@ -86,7 +91,7 @@ class ExportSheet:
         # It also needs a verse to be the unit AROUND, so it goes with the
         # selection when there is none.
         if self._verses and sword_bridge.chapter_headings(
-                self._pane.module, self._pane.book, self._pane.chapter):
+                self._module, self._book, self._chapter):
             self._scopes.append(UNIT)
             labels.append(_('This sense-unit'))
         self._scopes.append(CHAPTER)
@@ -109,7 +114,7 @@ class ExportSheet:
         group.add(self._notes_row)
         self._layer_rows = {}
         has_interlinear = passage_export.interlinear_module_for(
-            self._pane.book) is not None
+            self._book) is not None
         for key, title, available in (
                 ('interlinear', _('Interlinear'), has_interlinear),
                 ('variants', _('Textual variants'), has_interlinear),
@@ -137,7 +142,7 @@ class ExportSheet:
             return None
         if scope == UNIT:
             return passage_export.pericope_verses(
-                self._pane.module, self._pane.book, self._pane.chapter,
+                self._module, self._book, self._chapter,
                 self._verses[0])
         return self._verses
 
@@ -148,8 +153,8 @@ class ExportSheet:
         """`John 3.16-18.md` — the reference, with the colon out of it: a
         colon is legal here and a nuisance on any drive the file is copied
         to next."""
-        ref = passage_export.format_reference(
-            self._pane.book, self._pane.chapter, self._chosen_verses())
+        ref = passage_export.rendered_reference(
+            self._module, self._book, self._chapter, self._chosen_verses())
         stem = ref.replace(':', '.').replace(passage_export.EN_DASH, '-')
         return f'{stem}.{"md" if self._markdown() else "txt"}'
 
@@ -173,7 +178,7 @@ class ExportSheet:
             return
         self._dialog.close()
         pane, verses = self._pane, self._chosen_verses()
-        module, book, chapter = pane.module, pane.book, pane.chapter
+        module, book, chapter = self._module, self._book, self._chapter
         notes = self._notes_row.get_active()
         layers = {key: row.get_active()
                   for key, row in self._layer_rows.items()}
@@ -217,6 +222,7 @@ class CardSheet:
 
     def __init__(self, pane, verses):
         self._pane = pane
+        self._module, self._book, self._chapter = pane.module, pane.book, pane.chapter
         self._verses = list(verses)
         self._dialog = Adw.Dialog()
         self._dialog.set_title(_('Share as image'))
@@ -273,18 +279,18 @@ class CardSheet:
         return verse_card.CARD_PAPERS[self._paper_row.get_selected()][1]
 
     def _reference(self):
-        return passage_export.format_reference(
-            self._pane.book, self._pane.chapter, self._verses)
+        return passage_export.rendered_reference(
+            self._module, self._book, self._chapter, self._verses)
 
     def _card_bytes(self):
         from pane import auto_reading_ink
         paper = self._paper()
         return verse_card.render_bytes(
             text=passage_export.verse_text(
-                self._pane.module, self._pane.book, self._pane.chapter,
+                self._module, self._book, self._chapter,
                 self._verses),
             reference=self._reference(),
-            translation=passage_export.version_label(self._pane.module),
+            translation=passage_export.version_label(self._module),
             paper=paper, ink=auto_reading_ink(paper),
             shape=self._shapes[self._shape_row.get_selected()],
             wordmark=self._mark_row.get_active())
@@ -302,12 +308,19 @@ class CardSheet:
         (measured), and a copy that lands after the reader has moved on is
         worse than a copy that costs a frame.
         """
-        png = GLib.Bytes.new(self._card_bytes())
-        provider = Gdk.ContentProvider.new_union([
-            Gdk.ContentProvider.new_for_bytes('image/png', png),
-            Gdk.ContentProvider.new_for_value(Gdk.Texture.new_from_bytes(png)),
-        ])
-        self._pane.get_root().get_clipboard().set_content(provider)
+        try:
+            png = GLib.Bytes.new(self._card_bytes())
+            provider = Gdk.ContentProvider.new_union([
+                Gdk.ContentProvider.new_for_bytes('image/png', png),
+                Gdk.ContentProvider.new_for_value(Gdk.Texture.new_from_bytes(png)),
+            ])
+            if not self._pane.get_root().get_clipboard().set_content(provider):
+                self._report(_('Could not copy the image'))
+                return
+        except Exception:
+            _log.exception('Could not copy verse card')
+            self._report(_('Could not copy the image'))
+            return
         self._dialog.close()
         self._report(_('Card copied'))
 
@@ -332,7 +345,7 @@ class CardSheet:
             return
         self._dialog.close()
         pane, verses = self._pane, self._verses
-        module, book, chapter = pane.module, pane.book, pane.chapter
+        module, book, chapter = self._module, self._book, self._chapter
         paper = self._paper()
         shape = self._shapes[self._shape_row.get_selected()]
         wordmark = self._mark_row.get_active()

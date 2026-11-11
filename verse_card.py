@@ -114,7 +114,7 @@ def _layout(ctx, text, family, px, width, *, align=Pango.Alignment.CENTER,
     layout.set_font_description(desc)
     layout.set_width(width * Pango.SCALE)
     layout.set_alignment(align)
-    layout.set_wrap(Pango.WrapMode.WORD)
+    layout.set_wrap(Pango.WrapMode.WORD_CHAR)
     if tracking:
         attrs = Pango.AttrList()
         attrs.insert(Pango.attr_letter_spacing_new(int(tracking) * Pango.SCALE))
