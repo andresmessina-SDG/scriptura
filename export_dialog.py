@@ -14,6 +14,7 @@ lands after the reader has moved on is worse than one that costs a frame.
 """
 import logging
 
+import cairo
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
@@ -33,8 +34,8 @@ _log = logging.getLogger(__name__)
 #: Scope keys, in the order they are offered.
 SELECTION, UNIT, CHAPTER = 'selection', 'unit', 'chapter'
 
-#: The card preview's box in the sheet, in points: a card's long side fits
-#: the longer of these, and the texture is drawn at twice that for HiDPI.
+#: The card preview's box in the sheet, in points: each shape is scaled to
+#: fit inside it.
 PREVIEW_W, PREVIEW_H = 400, 240
 
 
@@ -257,8 +258,13 @@ class CardSheet:
         # are judged by eye, and a choice made blind is a guess.
         shown = Adw.PreferencesGroup()
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        self._preview = Gtk.Picture(content_fit=Gtk.ContentFit.FILL,
-                                    can_shrink=True, halign=Gtk.Align.CENTER)
+        # A drawing area, not a picture: a picture sizes itself from its
+        # texture, and the wide card came out squeezed into the last shape's
+        # box. Its content size is exactly the scaled card.
+        self._card = None
+        self._preview = Gtk.DrawingArea(accessible_role=Gtk.AccessibleRole.IMG,
+                                        halign=Gtk.Align.CENTER)
+        self._preview.set_draw_func(self._paint_preview)
         self._preview.set_overflow(Gtk.Overflow.HIDDEN)
         self._preview.add_css_class('card-preview')
         box.append(self._preview)
@@ -349,17 +355,18 @@ class CardSheet:
         args = self._card_args()
         width, height = verse_card.SHAPES[args['shape']]
         fit = min(PREVIEW_W / width, PREVIEW_H / height)
-        self._preview.set_size_request(round(width * fit), round(height * fit))
+        self._preview.set_content_width(round(width * fit))
+        self._preview.set_content_height(round(height * fit))
         try:
-            png = verse_card.render_bytes(**args, scale=fit * 2)
-            self._preview.set_paintable(
-                Gdk.Texture.new_from_bytes(GLib.Bytes.new(png)))
+            self._card = verse_card.draw(**args)
         except Exception:
             # Copy and save report their own failure; a preview that cannot
             # draw must not take the sheet down with it.
             _log.exception('Could not draw the card preview')
-            self._preview.set_paintable(None)
-        self._preview.set_alternative_text(args['reference'])
+            self._card = None
+        self._preview.queue_draw()
+        self._preview.update_property([Gtk.AccessibleProperty.LABEL],
+                                      [args['reference']])
         if self._is_cut():
             self._cut_note.set_label(
                 _('The card shows {shown}; the rest does not fit.').format(
@@ -394,6 +401,14 @@ class CardSheet:
             return
         self._dialog.close()
         self._report(_('Card copied'))
+
+    def _paint_preview(self, _area, cr, width, height):
+        if self._card is None:
+            return
+        cr.scale(width / self._card.get_width(), height / self._card.get_height())
+        cr.set_source_surface(self._card, 0, 0)
+        cr.get_source().set_filter(cairo.FILTER_GOOD)
+        cr.paint()
 
     def _choose_file(self):
         dialog = Gtk.FileDialog()

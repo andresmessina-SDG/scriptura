@@ -67,8 +67,9 @@ def test_sheet_keeps_original_passage_after_navigation(cls, source, monkeypatch,
     monkeypatch.setattr(export_dialog.tasks, 'submit',
                         lambda **kw: kw['apply'](kw['work'](None)))
     sheet._on_chosen(SimpleNamespace(save_finish=lambda r: Gio.File.new_for_path(str(path))), None)
-    # The card reads its words when the sheet opens; nothing reads the new place.
-    assert all(c == ('KJV', 'John', 3) for c in calls)
+    # The card reads its words when the sheet opens, so it reads nothing now;
+    # the text export reads the place it opened on.
+    assert calls == ([] if cls is export_dialog.CardSheet else [('KJV', 'John', 3)])
     assert path.exists()
 
 
@@ -297,18 +298,13 @@ def test_balanced_lines_leave_no_lone_last_word():
     assert ' ' in text[last.start_index:last.start_index + last.length].strip()
 
 
-def test_preview_is_the_card_drawn_smaller():
-    args = dict(text='For God so loved the world.', reference='John 3:16',
-                translation='KJV', paper='#f7f4ee', ink='#2b2620', shape='wide')
-    png = verse_card.render_bytes(**args, scale=0.25)
-    surface = cairo.ImageSurface.create_from_png(__import__('io').BytesIO(png))
-    assert (surface.get_width(), surface.get_height()) == (480, 270)
-
-
-def test_card_sheet_shows_a_preview_and_no_cut_note_for_a_short_passage(source):
+def test_card_sheet_preview_is_the_full_card_in_each_shape(source):
     sheet = _sheet(export_dialog.CardSheet, source)
-    assert sheet._preview.get_paintable() is not None
     assert not sheet._cut_note.get_visible()
-    sheet._shape_row.set_selected(2)
-    w, h = sheet._preview.get_size_request()
-    assert (w, h) == (export_dialog.PREVIEW_W, round(1080 * export_dialog.PREVIEW_W / 1920))
+    for index, shape in enumerate(sheet._shapes):
+        sheet._shape_row.set_selected(index)
+        w, h = verse_card.SHAPES[shape]
+        assert (sheet._card.get_width(), sheet._card.get_height()) == (w, h)
+        fit = min(export_dialog.PREVIEW_W / w, export_dialog.PREVIEW_H / h)
+        assert (sheet._preview.get_content_width(),
+                sheet._preview.get_content_height()) == (round(w * fit), round(h * fit))

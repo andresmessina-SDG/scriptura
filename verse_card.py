@@ -116,12 +116,6 @@ def _metrics(width: int, height: int) -> tuple[int, int]:
 def _layout(ctx, text, family, px, width, *, align=Pango.Alignment.CENTER,
             tracking=0):
     layout = PangoCairo.create_layout(ctx)
-    # Unhinted metrics, so the small preview in the sheet breaks its lines
-    # where the full-size card does.
-    options = cairo.FontOptions()
-    options.set_hint_metrics(cairo.HINT_METRICS_OFF)
-    PangoCairo.context_set_font_options(layout.get_context(), options)
-    layout.context_changed()
     desc = Pango.FontDescription()
     desc.set_family(family)
     desc.set_absolute_size(px * Pango.SCALE)
@@ -244,33 +238,40 @@ def render(path: str, *, text: str, reference: str, translation: str,
 
 def render_bytes(*, text: str, reference: str, translation: str,
                  paper: str, ink: str, shape: str = 'square',
-                 wordmark: bool = False, scale: float = 1.0) -> bytes:
+                 wordmark: bool = False) -> bytes:
     """The same card as PNG bytes, for the clipboard — no file involved.
 
     A card is more often pasted than filed, and going through the disk to do
-    it would leave a stray PNG behind for every paste. `scale` draws the
-    same card smaller, for the sheet's preview.
+    it would leave a stray PNG behind for every paste.
     """
     buffer = io.BytesIO()
     _draw(text=text, reference=reference, translation=translation,
           paper=paper, ink=ink, shape=shape,
-          wordmark=wordmark, scale=scale).write_to_png(buffer)
+          wordmark=wordmark).write_to_png(buffer)
     return buffer.getvalue()
+
+
+def draw(**card) -> cairo.ImageSurface:
+    """The full-size card as a surface, for the sheet's preview to scale.
+
+    Drawn full size and scaled down rather than drawn small: set small, the
+    type search lands on other sizes and other line breaks, and the preview
+    stops being the card that is sent.
+    """
+    return _draw(**card)
 
 
 def _draw(*, text: str, reference: str, translation: str,
           paper: str, ink: str, shape: str = 'square',
-          wordmark: bool = False, scale: float = 1.0) -> cairo.ImageSurface:
+          wordmark: bool = False) -> cairo.ImageSurface:
     """The card itself.
 
     `reference` and `translation` are both shown, always: the translation is
     the attribution, and a card outlives the app it left.
     """
     width, height = SHAPES.get(shape, SHAPES['square'])
-    surface = cairo.ImageSurface(cairo.FORMAT_RGB24, max(1, round(width * scale)),
-                                 max(1, round(height * scale)))
+    surface = cairo.ImageSurface(cairo.FORMAT_RGB24, width, height)
     ctx = cairo.Context(surface)
-    ctx.scale(scale, scale)
     ctx.set_source_rgb(*_rgb(paper))
     ctx.paint()
 
