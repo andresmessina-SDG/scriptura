@@ -379,6 +379,15 @@ class ScrollKeeper:
         # marker-skipping count), stopping at the verse edge.
         _forward_visible_chars(it, offset_in_verse, end)
         mark = self._buffer.create_mark(None, it, True)
+        return self.restore_text_mark(mark, delta)
+
+    def restore_text_mark(self, mark, delta=0):
+        """Own and settle a text mark through GTK's incremental validation.
+
+        Shared by verse anchors and general-book character positions. The
+        mark is deleted when settled or superseded; user scrolling wins.
+        """
+        self._mark_programmatic_scroll()
         self._view.scroll_to_mark(mark, 0.0, True, 0.0, 0.0)
         seq = self._anchor_seq
         input_t0 = self._last_scroll_input

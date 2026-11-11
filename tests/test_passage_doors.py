@@ -229,7 +229,7 @@ def _chrome_pane(module_type, devotional):
     p._passage_btn = _Shown()
     p._chapter_note_btn = _Shown()
     p._copy_chapter_btn = _Shown()
-    p._search = types.SimpleNamespace(button=_Shown())
+    p._search = types.SimpleNamespace(button=_Shown(), sync_mode=lambda book: None)
     p._genbook = types.SimpleNamespace(update_visibility=lambda on: None)
     p._update_sync_visible = lambda: None
     return p
@@ -247,4 +247,4 @@ def test_the_passage_button_shows_only_on_a_verse_text(
     # …and it moves with the rest of the verse-text chrome.
     assert p._chapter_note_btn.visible is keyed
     assert p._copy_chapter_btn.visible is keyed
-    assert p._search.button.visible is keyed
+    assert p._search.button.visible is (keyed or p._is_genbook)

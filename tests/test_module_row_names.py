@@ -37,3 +37,29 @@ def test_an_uncurated_module_keeps_its_description():
 def test_a_module_with_neither_falls_back_to_its_key():
     assert module_manager._friendly_name({'name': 'NoSuchModule'}) \
         == 'NoSuchModule'
+
+
+def test_an_installed_classic_keeps_its_collection_and_credit_offline(monkeypatch):
+    import types
+    import sword_bridge
+    import pytest
+    from gi.repository import Gtk, Gdk
+    if Gdk.Display.get_default() is None:
+        pytest.skip('builds a module row; no display here')
+    mod = types.SimpleNamespace(
+        getType=lambda: 'Generic Books',
+        getConfigMap=lambda: types.SimpleNamespace(items=lambda: [
+            ('Description', 'The Mortification of Sin (John Owen)'),
+            ('Collection', 'Classics'), ('DistributionLicense', 'Public Domain'),
+            ('Lang', 'en'), ('Version', '2')]))
+    monkeypatch.setattr(sword_bridge, 'mgr',
+                        lambda: types.SimpleNamespace(getModule=lambda n: mod))
+    info = sword_bridge.installed_module_metadata('CWPMortification')
+    assert info['installed'] and info['collection'] == 'Classics'
+    fake = types.SimpleNamespace(_add_actions=lambda *args: None,
+                                 _on_install=lambda *args: None)
+    row = module_manager.ModuleManagerWindow._make_sword_row(fake, info, False)
+    assert 'Common Weal Press' in row.get_subtitle()
+    assert 'CrossWire' not in row.get_subtitle()
+    assert 'John Owen' in row.get_title()
+    assert isinstance(row, Gtk.Widget)

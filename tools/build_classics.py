@@ -265,6 +265,7 @@ class Entry:
         self.note_bodies = notes
         self.notes: list[tuple[str, str]] = []
         self.heading_seen = False
+        self.has_content = False
 
     # Inline ------------------------------------------------------------
 
@@ -319,7 +320,13 @@ class Entry:
     # Blocks ------------------------------------------------------------
 
     def blocks(self, e: ET.Element, depth: int = 0) -> str:
-        return ''.join(self.block(c, depth) for c in e)
+        parts = []
+        for c in e:
+            part = self.block(c, depth)
+            if part:
+                self.has_content = True
+            parts.append(part)
+        return ''.join(parts)
 
     def block(self, e: ET.Element, depth: int = 0) -> str:
         self.refs.reset()
@@ -356,6 +363,9 @@ class Entry:
         if tag in ('hr', 'img', 'nav', 'aside'):
             return ''
         body = self.inline(e).strip()
+        if tag == 'p' and body and ('summary' in cls or
+                                    ('inset' in cls and not self.has_content)):
+            return f'<p type="x-summary">{body}</p>'
         return f'<p>{body}</p>' if body else ''
 
     def listing(self, e: ET.Element, depth: int) -> str:

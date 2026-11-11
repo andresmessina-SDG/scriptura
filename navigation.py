@@ -16,7 +16,7 @@ untouched.
 """
 import gi
 gi.require_version('Gtk', '4.0')
-from gi.repository import Gtk, Gdk, GLib
+from gi.repository import Gtk, Gdk, GLib, Pango
 from gtk_utils import clear_children, release_tree
 import sword_bridge
 import settings
@@ -49,6 +49,7 @@ class NavigationController:
         self._nav_back = []
         self._nav_fwd = []
         self._current_loc = ('Genesis', 1)
+        self._header_pane = None
 
     # ── Proxy access to window-owned widgets / panes / Today state ───────────
     @property
@@ -374,16 +375,40 @@ class NavigationController:
         win = self._win
         panes = [p for p in (win.pane1, win.pane2) if p.get_visible()]
         place = None
+        self._header_pane = None
         if panes and all(p.place_label() is not None for p in panes):
             pane = win._pane_in_view()
-            place = (pane if pane in panes else panes[0]).place_label()
+            self._header_pane = pane if pane in panes else panes[0]
+            place = self._header_pane.place_label()
         self._ref_btn.set_label(place or f'{book_label(book)} {chapter}')
+        # Gtk.MenuButton's default label does not ellipsize. A chapter-long
+        # title otherwise forces the whole toolbar beyond the window edge.
+        def bound_label(widget):
+            if isinstance(widget, Gtk.Popover):
+                return
+            if isinstance(widget, Gtk.Label):
+                widget.set_ellipsize(Pango.EllipsizeMode.END)
+                widget.set_max_width_chars(36)
+            child = widget.get_first_child()
+            while child is not None:
+                bound_label(child)
+                child = child.get_next_sibling()
+        bound_label(self._ref_btn)
+        genbook = self._header_pane is not None and self._header_pane._is_genbook
+        self._ref_btn.set_popover(self._ref_pop if place is None or genbook else None)
+        self._ref_btn.set_tooltip_text(
+            place if place else _('Choose passage (Ctrl+L)') + '\n'
+            + _('Scroll to change chapter'))
 
     def _build_ref_popover_content(self):
         """Books on the left; right column flips between a Chapter grid and
         a Verse grid via a Stack. Left-click on a chapter navigates straight
         to that chapter; right-click slides the panel over to the verse
         picker for that chapter."""
+        if self._header_pane is not None:
+            if self._header_pane._is_genbook:
+                self._header_pane._genbook._build_toc(self._ref_pop)
+            return
         current_book    = self.nav_books()[self.book_drop.get_selected()]
         current_chapter = self.chapter_drop.get_selected() + 1
 
@@ -594,6 +619,10 @@ class NavigationController:
 
     def _on_ref_btn_scroll(self, _ctrl, _dx, dy):
         # Vertical scroll: down → next chapter, up → previous chapter.
+        if self._header_pane is not None:
+            if self._header_pane._is_genbook and dy:
+                self._header_pane._genbook.step(1 if dy > 0 else -1)
+            return True
         if dy > 0:
             self._go_next_chapter()
         elif dy < 0:

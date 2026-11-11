@@ -11711,3 +11711,51 @@ msgstr "Показать греческий текст"
 #: export_dialog.py
 msgid "Show the Hebrew"
 msgstr "Показать еврейский текст"
+
+#: pane_search.py pane_peek.py window.py
+msgid "Whole book"
+msgstr "Вся книга"
+
+#: pane_search.py pane_peek.py window.py
+msgid "Find in this book"
+msgstr "Найти в этой книге"
+
+#: pane_search.py pane_peek.py window.py
+msgid "Find in this book…"
+msgstr "Найти в этой книге…"
+
+#: pane_search.py pane_peek.py window.py
+msgid "Matches: {n} · Sections: {s}"
+msgstr "Совпадения: {n} · Разделы: {s}"
+
+#: pane_search.py pane_peek.py window.py
+msgid "Showing the first {n} sections"
+msgstr "Показаны первые {n} разделов"
+
+#: pane_search.py pane_peek.py window.py
+msgid "Show more results"
+msgstr "Показать ещё результаты"
+
+#: pane_search.py pane_peek.py window.py
+msgid "Couldn’t search this book: {error}"
+msgstr "Не удалось выполнить поиск в книге: {error}"
+
+#: pane_search.py pane_peek.py window.py
+msgid "{n} in this section"
+msgstr "{n} в этом разделе"
+
+#: pane_search.py pane_peek.py window.py
+msgid "Footnote ({letter})"
+msgstr "Сноска ({letter})"
+
+#: pane_search.py pane_peek.py window.py
+msgid "Search (Ctrl+F)"
+msgstr "Поиск (Ctrl+F)"
+
+#: pane_search.py pane_peek.py window.py
+msgid "Footnotes — notes marked in the text"
+msgstr "Сноски — примечания, отмеченные в тексте"
+
+#: pane_search.py pane_peek.py window.py
+msgid "Footnotes — the open resources don’t include any"
+msgstr "Сноски — в открытых материалах нет примечаний"

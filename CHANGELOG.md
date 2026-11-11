@@ -6,6 +6,18 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+### Added
+- Find within general books: Ctrl+F searches the open book, with section results, excerpts, match case and Enter/F3 navigation across sections. The scope switch can limit the search to the current section. Long result lists load in batches without dropping later sections.
+- A book's footnote markers open reading-sized note peeks without leaving the page. Common Weal endnotes and older SWORD inline/attribute notes are supported; notes remain available at the end of the section. Search ignores marker labels and finds phrases across them.
+
+### Fixed
+- General books remember the visible line within the chapter when reopened, including across a theme change. A removed chapter in a saved position falls back to a real entry, and book updates clear the old table-of-contents cache. Book links and small headings now use the reading paper's contrast colours.
+- General-book chapter summaries keep their place above the prose in smaller, left-aligned type, including the already-installed Common Weal Owen editions. Paragraph gaps are half a line, and chapter titles scale with the reading size. New classics builds preserve the source EPUB's summary role.
+- Long resource titles no longer push the header and reading page past the window edge. A book's header opens its own table of contents, and scrolling it steps through entries instead of changing the hidden Bible chapter.
+- Owen's older CCEL Mortification edition no longer prints “Auto-modernized” editorial notes inside its sentences. Scripture references without a `Bible:` prefix are clickable too.
+- Following a Scripture citation with two resources open keeps the source book and opens the Bible in the other pane, including in a narrow window.
+- Installed books missing from a stale catalogue remain in the Module Manager. Without a catalogue, their local metadata keeps the Classics grouping, author and Common Weal Press credit.
+
 ## [1.11.0] — 2026-11-11
 
 ### Added

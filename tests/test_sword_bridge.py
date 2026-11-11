@@ -936,6 +936,20 @@ def test_flat_fallback_collects_every_entry(monkeypatch):
     sword_bridge._GENBOOK_TOC_CACHE.pop('Flat', None)
 
 
+def test_install_or_update_reset_forgets_a_previous_books_contents(monkeypatch):
+    monkeypatch.setattr(sword_bridge, '_mgr', None)
+    monkeypatch.setattr(sword_bridge, '_GENBOOK_TOC_CACHE', {})
+    current = [_FlatModule(['/Old chapter'])]
+    monkeypatch.setattr(sword_bridge, 'mgr',
+                        lambda: types.SimpleNamespace(getModule=lambda n: current[0]))
+    monkeypatch.setattr(sword_bridge, '_genbook_tree_key', lambda m: None)
+    assert sword_bridge.list_genbook_entries('UpdatedBook')[0][0] == '/Old chapter'
+    current[0] = _FlatModule(['/New chapter', '/Another chapter'])
+    sword_bridge._reset()
+    assert [p for p, label, depth in sword_bridge.list_genbook_entries('UpdatedBook')] \
+        == ['/New chapter', '/Another chapter']
+
+
 def test_a_tag_after_an_opening_quote_leaves_no_gap():
     """The mirror of the comma defect, found on the Today page's antiphon.
     The Berean sets its quotation mark outside the tagged word — `“<w>Flee`

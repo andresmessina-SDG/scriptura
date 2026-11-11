@@ -1,12 +1,13 @@
-"""Per-pane find-in-this-chapter bar.
+"""Per-pane find for Bible chapters and general books.
 
 A `PaneSearch` owns the find-bar widgets (toggle button, revealer,
 entry, case toggle, match counter, prev/next steppers) and the
 matched-word highlight tag for one `BiblePane`. Modelled on a browser
 find-in-page: matches in the chapter on screen are highlighted in place
 and stepped through with Enter/Shift+Enter/F3, rather than listed. The
-whole-Bible search is the window's search panel; this bar never leaves
-the chapter, so the two have one job each. Composed into the pane as
+whole-Bible search is the window's search panel. General books add a
+cancellable whole-book search, section results and cross-section stepping;
+the scope toggle can restrict it to the page on screen. Composed into the pane as
 `pane._search`; the pane exposes thin delegators (`step_pane_search_result`,
 `_pane_search_results`, `_pending_search_highlight`, `_pane_search_rev`)
 to keep window.py's external interface unchanged.
@@ -23,6 +24,8 @@ from a11y import set_accessible_label
 
 import motion
 import search_query
+import tasks
+from gtk_utils import clear_children
 from i18n import _, ngettext
 
 
@@ -37,24 +40,37 @@ def _buffer_slice_without_markers(buf):
     or not they are shown, so this applies in both states.
     """
     text = buf.get_slice(buf.get_start_iter(), buf.get_end_iter(), True)
-    tag = buf.get_tag_table().lookup('fn_marker')
-    if tag is None:
-        return text
     chars = list(text)
-    it = buf.get_start_iter()
-    if not it.starts_tag(tag):
-        if not it.forward_to_tag_toggle(tag):
-            return text
-    while True:
-        if it.starts_tag(tag):
-            start = it.get_offset()
+    for name in ('fn_marker', 'gb-breadcrumb'):
+        tag = buf.get_tag_table().lookup(name)
+        if tag is None:
+            continue
+        it = buf.get_start_iter()
+        if not it.starts_tag(tag) and not it.forward_to_tag_toggle(tag):
+            continue
+        while True:
+            if it.starts_tag(tag):
+                start = it.get_offset()
+                if not it.forward_to_tag_toggle(tag):
+                    break
+                for i in range(start, min(it.get_offset(), len(chars))):
+                    chars[i] = '\x00'
             if not it.forward_to_tag_toggle(tag):
                 break
-            for i in range(start, min(it.get_offset(), len(chars))):
-                chars[i] = '\x00'
-        if not it.forward_to_tag_toggle(tag):
-            break
     return ''.join(chars)
+
+
+def _book_text_offsets(text):
+    """Search through note markers and paragraph breaks, keeping buffer offsets."""
+    chars, offsets = [], []
+    for i, char in enumerate(text):
+        if char == '\x00':
+            continue
+        char = ' ' if char.isspace() or char == '\ufffc' else char
+        if char == ' ' and chars and chars[-1] == ' ':
+            continue
+        chars.append(char); offsets.append(i)
+    return ''.join(chars), offsets
 
 class PaneSearch:
     def __init__(self, pane):
@@ -75,13 +91,23 @@ class PaneSearch:
         self._status = None
         self._prev_btn = None
         self._next_btn = None
+        self._book_controls = None
+        self._book_scope = None
+        self._book_status = None
+        self._book_scroll = None
+        self._book_list = None
+        self._book_hits = []
+        self._book_jump = None
+        self._book_drawn = 0
+        self._book_total = 0
+        self._book_more_row = None
 
     # ── Widget construction ───────────────────────────────────────────────
 
     def build_button(self):
         """Construct + return the toolbar toggle button."""
-        # Its own icon, not the header's magnifier: the header searches the
-        # whole Bible, this finds words on the page in front of you.
+        # The header's magnifier opens this bar for books; Bible panes keep
+        # their local chapter find separate from the whole-Bible sidebar.
         self._btn = Gtk.ToggleButton(icon_name='scriptura-find-in-text-symbolic')
         set_accessible_label(self._btn, _('Find in this chapter'))
         self._btn.add_css_class('flat')
@@ -155,6 +181,31 @@ class PaneSearch:
         se_row.append(self._next_btn)
         se_row.append(self._case_btn)
         inner.append(se_row)
+        self._book_controls = Gtk.Box(spacing=8)
+        self._book_controls.set_margin_start(8)
+        self._book_controls.set_margin_end(8)
+        self._book_controls.set_margin_bottom(6)
+        self._book_scope = Gtk.ToggleButton(label=_('Whole book'), active=True)
+        self._book_scope.add_css_class('flat')
+        self._book_scope.connect('toggled', self._on_case_toggled)
+        self._book_controls.append(self._book_scope)
+        self._book_status = Gtk.Label(xalign=0, wrap=True, hexpand=True)
+        self._book_status.add_css_class('caption')
+        self._book_status.add_css_class('dim-label')
+        a11y.set_role(self._book_status, Gtk.AccessibleRole.STATUS)
+        self._book_controls.append(self._book_status)
+        self._book_controls.set_visible(False)
+        inner.append(self._book_controls)
+        self._book_list = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
+        self._book_list.add_css_class('navigation-sidebar')
+        self._book_list.connect('row-activated', self._on_book_row)
+        self._book_scroll = Gtk.ScrolledWindow()
+        self._book_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        self._book_scroll.set_max_content_height(180)
+        self._book_scroll.set_propagate_natural_height(True)
+        self._book_scroll.set_child(self._book_list)
+        self._book_scroll.set_visible(False)
+        inner.append(self._book_scroll)
         inner.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
 
         # Without this the whole find bar is a nameless stack of boxes; as a
@@ -190,7 +241,7 @@ class PaneSearch:
 
     @property
     def results(self):
-        return self._matches
+        return self._matches or self._book_hits
 
     @property
     def pending_highlight(self):
@@ -209,14 +260,131 @@ class PaneSearch:
         self._matches = []
         self._idx = -1
         self._pending_highlight = None
+        self._clear_book()
+
+    def sync_mode(self, is_book):
+        self._book_controls.set_visible(is_book)
+        self._btn.set_tooltip_text(_('Find in this book') if is_book
+                                   else _('Find in this chapter'))
+        set_accessible_label(self._btn, self._btn.get_tooltip_text())
+        self._entry.set_placeholder_text(_('Find in this book…')
+            if is_book and self._book_scope.get_active() else _('Find in this chapter…'))
+
+    def _whole_book(self):
+        return (getattr(self._pane, '_is_genbook', False)
+                and self._book_scope is not None and self._book_scope.get_active())
+
+    def _clear_book(self):
+        tasks.cancel(f'book-search:{id(self._pane)}')
+        self._book_hits = []
+        self._book_jump = None
+        self._book_drawn = 0
+        self._book_total = 0
+        self._book_more_row = None
+        if self._book_list is not None:
+            clear_children(self._book_list)
+            self._book_status.set_text('')
+            self._book_scroll.set_visible(False)
+
+    def _search_book(self, query):
+        self._clear_book()
+        if len(query) < 2 or not self._whole_book():
+            return
+        from book_search import search_book
+        module = self._pane.module
+        case = self._case_btn.get_active()
+        self._book_status.set_text(_('Searching…'))
+
+        def apply(result):
+            if module != self._pane.module or not self._whole_book():
+                return
+            hits, _sections, total = result
+            self._book_hits = hits
+            self._book_total = total
+            self._append_book_results()
+            self._book_scroll.set_visible(bool(hits))
+
+        def failed(error):
+            self._book_status.set_text(_('Couldn’t search this book: {error}').format(error=error))
+
+        tasks.submit(f'book-search:{id(self._pane)}',
+                     lambda task: search_book(module, query, case, task), apply, failed)
+
+    def _append_book_results(self):
+        if self._book_more_row is not None:
+            self._book_list.remove(self._book_more_row)
+            self._book_more_row = None
+        for path, label, count, snippet in self._book_hits[self._book_drawn:self._book_drawn+200]:
+            row = Gtk.ListBoxRow()
+            row._book_path = path
+            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+            for margin in ('start', 'end', 'top', 'bottom'):
+                getattr(box, f'set_margin_{margin}')(8)
+            title = Gtk.Label(label=label, xalign=0, wrap=True)
+            title.set_max_width_chars(50)
+            title.add_css_class('heading')
+            excerpt = Gtk.Label(label=snippet, xalign=0, wrap=True)
+            excerpt.set_max_width_chars(50)
+            excerpt.add_css_class('caption')
+            excerpt.add_css_class('dim-label')
+            box.append(title)
+            box.append(excerpt)
+            row.set_child(box)
+            self._book_list.append(row)
+            self._book_drawn += 1
+        status = (_('Matches: {n} · Sections: {s}').format(
+            n=self._book_total, s=len(self._book_hits)) if self._book_hits else _('No matches'))
+        if self._book_drawn < len(self._book_hits):
+            status += ' · ' + _('Showing the first {n} sections').format(n=self._book_drawn)
+            row = Gtk.ListBoxRow()
+            label = Gtk.Label(label=_('Show more results'), margin_top=8, margin_bottom=8)
+            row.set_child(label)
+            row._book_more = True
+            self._book_list.append(row)
+            self._book_more_row = row
+        self._book_status.set_text(status)
+
+    def _open_book_result(self, path, prev=False):
+        self._book_jump = (self._entry.get_text().strip(), self._case_btn.get_active(), prev)
+        reader = self._pane._genbook
+        reader._entry_path = path
+        reader.fetch_and_render()
+
+    def _on_book_row(self, _list, row):
+        if getattr(row, '_book_more', False):
+            self._append_book_results()
+            return
+        self._open_book_result(row._book_path)
+
+    def _step_book(self, prev=False):
+        paths = [hit[0] for hit in self._book_hits]
+        current = self._pane._genbook.entry
+        index = paths.index(current) if current in paths else (0 if prev else -1)
+        self._open_book_result(paths[(index + (-1 if prev else 1)) % len(paths)], prev)
+        return True
+
+    def on_book_render(self):
+        self.apply_highlight()
+        jump, self._book_jump = self._book_jump, None
+        if jump and jump[:2] == (self._entry.get_text().strip(), self._case_btn.get_active()):
+            # F3 also works while immersive reading has hidden the find bar.
+            if not self._rev.get_reveal_child():
+                self._live_highlight(jump[0])
+            if self._matches:
+                self.step(prev=jump[2])
+                return True
+        return False
 
     def step(self, prev=False):
         """Enter / F3 (Shift for back): park on the next match in the
         chapter, wrapping round, and bring it into view. Returns True if
         there was a match to go to."""
         if not self._matches:
-            return False
+            return self._step_book(prev) if self._whole_book() and self._book_hits else False
         n = len(self._matches)
+        if self._whole_book() and len(self._book_hits) > 1 and self._idx >= 0 \
+                and ((prev and self._idx == 0) or (not prev and self._idx == n-1)):
+            return self._step_book(prev)
         if self._idx < 0:
             self._idx = n - 1 if prev else 0
         else:
@@ -233,6 +401,8 @@ class PaneSearch:
                           buf.get_iter_at_offset(e))
         s, e = self._matches[self._idx]
         si, ei = buf.get_iter_at_offset(s), buf.get_iter_at_offset(e)
+        if getattr(self._pane, '_is_genbook', False):
+            self._pane._genbook.reveal_match(si)
         buf.remove_tag(soft, si, ei)
         buf.apply_tag(cur, si, ei)
         self._pane.view.queue_draw()
@@ -329,6 +499,7 @@ class PaneSearch:
 
     def _on_toggled(self, btn):
         if btn.get_active():
+            self.sync_mode(getattr(self._pane, '_is_genbook', False))
             self._rev.set_reveal_child(True)
             self._entry.grab_focus()
         else:
@@ -348,6 +519,7 @@ class PaneSearch:
         rest state."""
         self._matches = []
         self._idx = -1
+        self._clear_book()
         self._status.set_text('')
         self._prev_btn.set_sensitive(False)
         self._next_btn.set_sensitive(False)
@@ -362,6 +534,7 @@ class PaneSearch:
             self._clear()
             return
         self._live_highlight(q)
+        self._search_book(q)
 
     def _live_highlight(self, query):
         """Substring-highlight `query` across the current chapter with a
@@ -381,10 +554,15 @@ class PaneSearch:
         tag = tag_table.lookup('_search_hl') or buf.create_tag('_search_hl')
         flags = 0 if self._case_btn.get_active() else re.IGNORECASE
         text = _buffer_slice_without_markers(buf)
+        offsets = None
+        if getattr(self._pane, '_is_genbook', False):
+            text, offsets = _book_text_offsets(text)
+            query = ' '.join(query.split())
         for m in re.finditer(re.escape(query), text, flags):
-            buf.apply_tag(tag, buf.get_iter_at_offset(m.start()),
-                          buf.get_iter_at_offset(m.end()))
-            self._matches.append((m.start(), m.end()))
+            start = offsets[m.start()] if offsets is not None else m.start()
+            end = offsets[m.end()-1]+1 if offsets is not None else m.end()
+            buf.apply_tag(tag, buf.get_iter_at_offset(start), buf.get_iter_at_offset(end))
+            self._matches.append((start, end))
         n = len(self._matches)
         self._prev_btn.set_sensitive(n > 0)
         self._next_btn.set_sensitive(n > 0)
@@ -392,12 +570,17 @@ class PaneSearch:
             self._pane.view.queue_draw()
             a11y.status(
                 self._status,
-                ngettext('{n} in this chapter', '{n} in this chapter', n)
-                .format(n=n))
+                (_('{n} in this section') if getattr(self._pane, '_is_genbook', False)
+                 else ngettext('{n} in this chapter', '{n} in this chapter', n)).format(n=n))
         else:
             a11y.status(self._status, _('No matches'))
 
     def _on_case_toggled(self, _btn):
+        if getattr(self._pane, '_is_genbook', False):
+            self.sync_mode(True)
         q = self._entry.get_text().strip()
         if q:
             self._live_highlight(q)
+            self._search_book(q)
+        elif not self._whole_book():
+            self._clear_book()
