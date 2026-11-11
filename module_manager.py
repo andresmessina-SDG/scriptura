@@ -309,6 +309,11 @@ def _friendly_name(mod):
     return mod.get('description') or key
 
 
+def _is_classic(mod):
+    """A Common Weal Press book, offered in the Classics group."""
+    return mod.get('collection') == 'Classics'
+
+
 def _short_license(text):
     """Trim a DistributionLicense string to something subtitle-sized."""
     if not text:
@@ -829,6 +834,17 @@ class ModuleManagerWindow(Adw.Window):
             group.add(self._make_interlinear_row(interlinear_data.GREEK))
             group.add(self._make_interlinear_row(interlinear_data.HEBREW))
             t['curated'].append(group)
+            classics = sorted((m for m in self._all_modules if _is_classic(m)),
+                              key=lambda m: _friendly_name(m).lower())
+            if classics:
+                group = Adw.PreferencesGroup()
+                group.set_title(_('Classics'))
+                group.set_description(
+                    _('Puritan and Reformed books in new editions from '
+                      'Common Weal Press, given to the public domain.'))
+                for m in classics:
+                    group.add(self._make_sword_row(m, m['installed']))
+                t['curated'].append(group)
         elif tab_id == 'bibles':
             # Pinned here too: someone browsing Greek/Hebrew texts should
             # meet the interlinears beside them, without knowing about the
@@ -1299,6 +1315,8 @@ class ModuleManagerWindow(Adw.Window):
         for mod in self._tab_sword_modules(t, installed=False):
             if lang and _norm_lang(mod['lang']) != lang:
                 continue
+            if _is_classic(mod) and not query:
+                continue        # listed in its own group above
             if t.get('strongs') and t['strongs'].get_active() \
                     and 'StrongsNumbers' not in mod.get('features', set()):
                 continue
@@ -1567,7 +1585,11 @@ class ModuleManagerWindow(Adw.Window):
         row = Adw.ActionRow()
         key = mod['name']
         friendly = _friendly_name(mod)
-        row.set_title(GLib.markup_escape_text(friendly[:80]))
+        # A classic's Description is its title and author, as the press
+        # gives them: "The Pilgrim’s Progress (John Bunyan)".
+        title = (mod.get('description') or friendly) if _is_classic(mod) \
+            else friendly
+        row.set_title(GLib.markup_escape_text(title[:80]))
 
         meta = []
         # A language label on every row is catalogue noise when it's the
@@ -1586,7 +1608,7 @@ class ModuleManagerWindow(Adw.Window):
         lic = _short_license(mod.get('license', ''))
         if lic:
             meta.append(lic)
-        meta.append('CrossWire')
+        meta.append('Common Weal Press' if _is_classic(mod) else 'CrossWire')
         # The raw module key as a dim monospace tag, friendly name as the title.
         subtitle = f'<tt>{GLib.markup_escape_text(key)}</tt>'
         subtitle += '  ·  ' + GLib.markup_escape_text(' · '.join(meta))

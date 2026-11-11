@@ -22,6 +22,7 @@ fetch_and_render — plus step / save_position / entry property.
 
 from __future__ import annotations
 
+import html as html_mod
 import re
 from typing import TYPE_CHECKING, Any, Callable
 
@@ -81,6 +82,10 @@ def _strip_restated_title(html: str, leaf: str) -> str:
         return html[end:]
     return html
 
+
+_BIBLE_REF = re.compile(
+    r'<reference\s[^>]*osisRef="(Bible:[^"]+)"[^>]*>(.*?)</reference>',
+    re.DOTALL)
 
 _PARA = re.compile(r'<p[^>]*>(.*?)</p>', re.DOTALL | re.IGNORECASE)
 #: The synopsis marker paragraph — CCEL's Institutes writes a bare
@@ -382,9 +387,7 @@ class GenbookReader:
             try:
                 if synopsis:
                     self._insert_synopsis(synopsis, dark)
-                markup = self._html_to_markup(html, dark)
-                pane._buffer.insert_markup(
-                    pane._buffer.get_end_iter(), markup, -1)
+                self._insert_body(html, dark)
             except Exception:
                 pane._buffer.insert(
                     pane._buffer.get_end_iter(),
@@ -406,6 +409,31 @@ class GenbookReader:
 
         pane.view.get_vadjustment().set_value(0)
         return GLib.SOURCE_REMOVE
+
+    def _insert_body(self, html: str, dark: bool) -> None:
+        """Insert an entry, each Scripture reference as a link. A reference
+        to a place inside the book itself (Dark Night's contents page) stays
+        text: the click handler knows only Bible verses."""
+        pane = self._pane
+        end = pane._buffer.get_end_iter
+
+        def plain(seg: str) -> None:
+            markup = self._html_to_markup(seg, dark, strip=False)
+            if not markup:
+                return
+            try:
+                pane._buffer.insert_markup(end(), markup, -1)
+            except Exception:
+                pane._buffer.insert(end(), re.sub(r'<[^>]+>', '', seg))
+
+        pos = 0
+        for m in _BIBLE_REF.finditer(html):
+            plain(html[pos:m.start()])
+            text = html_mod.unescape(re.sub(r'<[^>]+>', '', m.group(2))).strip()
+            if text:
+                pane._insert_ref_segment(text, m.group(1), dark)
+            pos = m.end()
+        plain(html[pos:])
 
     def _insert_synopsis(self, synopsis: str, dark: bool) -> None:
         """Insert the chapter précis collapsed behind a disclosure row.
