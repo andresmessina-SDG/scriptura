@@ -36,7 +36,7 @@ import sword_bridge
 import tasks
 from book_notes import NOTE_MARKER, prepare_notes
 from a11y import set_accessible_label
-from i18n import _
+from i18n import _, ngettext
 
 if TYPE_CHECKING:
     from pane import BiblePane
@@ -123,6 +123,37 @@ def _split_opening_summary(html: str, module: str,
     if not explicit and not (owen and chapter):
         return '', html
     return '<p>' + first.group(2) + '</p>', html[first.end():]
+
+
+#: One line of a part's contents: (path, title, sub-entries, printed summary).
+Contents = list[tuple[str, str, int, str]]
+
+
+def _contents_of(module: str, entries: list[Entry], path: str) -> Contents:
+    """A part with no text of its own, as its contents page: each direct
+    sub-entry with how many entries it holds in turn, and the summary the
+    book itself prints at its head (Owen's chapters), if any. Nothing is
+    written for a sub-entry that prints none. Reads entries: run off the
+    main thread."""
+    depth = next((d for p, _l, d in entries if p == path), None)
+    if depth is None:
+        return []
+    out: Contents = []
+    for p, label, d in entries:
+        if not (p.startswith(path + '/') and d == depth + 1):
+            continue
+        held = sum(1 for q, _l, e in entries
+                   if q.startswith(p + '/') and e == d + 1)
+        summary = ''
+        if not held:
+            leaf = p.rsplit('/', 1)[-1].replace('_', ' ')
+            body = _strip_restated_title(
+                sword_bridge.load_genbook_entry(module, p), leaf)
+            first, _rest = _split_opening_summary(body, module, p)
+            summary = ' '.join(html_mod.unescape(
+                re.sub(r'<[^>]+>', '', first)).split())
+        out.append((p, label.replace('_', ' '), held, summary))
+    return out
 
 
 def _split_synopsis(html: str) -> tuple[str, str]:
@@ -283,7 +314,8 @@ class GenbookReader:
         self.save_position()
         requested_path = self._entry_path
 
-        def fetch(_task: tasks.Task) -> tuple[list[Entry], str | None, str]:
+        def fetch(_task: tasks.Task) -> tuple[list[Entry], str | None, str,
+                                              Contents | None]:
             entries: list[Entry] = sword_bridge.list_genbook_entries(module)
             entry_path = requested_path
             html = ''
@@ -317,14 +349,18 @@ class GenbookReader:
                     entry_path = entries[0][0]
                     html = sword_bridge.load_genbook_entry(module, entry_path)
 
-            return entries, entry_path, html
+            contents: Contents | None = None
+            if entry_path and not re.sub(r'<[^>]+>', '', html).strip() \
+                    and self._entry_has_children(entries, entry_path):
+                contents = _contents_of(module, entries, entry_path)
+            return entries, entry_path, html, contents
 
         # A module that raises while read says so, rather than leaving the
         # last book's page standing.
         tasks.submit(
             key=f'genbook:{id(self._pane)}',
             work=fetch,
-            apply=lambda r: self._display(r[0], r[1], r[2], module),
+            apply=lambda r: self._display(r[0], r[1], r[2], module, r[3]),
             on_error=lambda e: self._show_failure(module, e))
 
     def _show_failure(self, module: str, error: BaseException) -> None:
@@ -352,7 +388,8 @@ class GenbookReader:
         return any(p.startswith(prefix) for p, _l, _d in entries)
 
     def _display(self, entries: list[Entry], entry_path: str | None,
-                 html: str, module: str) -> Any:
+                 html: str, module: str,
+                 contents: Contents | None = None) -> Any:
         # Returns GLib.SOURCE_REMOVE — typed as Any since gi stubs don't
         # narrow the constant; this is the GLib.idle_add callback contract.
         pane = self._pane
@@ -471,15 +508,16 @@ class GenbookReader:
             # genuinely-empty leaf so the user knows whether to open
             # the TOC or whether the module just has nothing here.
             fg = pane._paper_ink(dark)['_ink_muted']
-            if self._entry_has_children(entries, entry_path):
-                msg = ('This is a section heading. Open the table of '
-                       'contents and pick a sub-entry to read.')
+            if entry_path and self._entry_has_children(entries, entry_path):
+                # A part with no text of its own is its contents page.
+                if contents is None:
+                    contents = _contents_of(module, entries, entry_path)
+                self._insert_contents(contents, dark)
             else:
-                msg = '(Empty entry.)'
-            pane._buffer.insert_markup(
-                pane._buffer.get_end_iter(),
-                f'<span foreground="{fg}">'
-                f'{GLib.markup_escape_text(msg)}</span>', -1)
+                pane._buffer.insert_markup(
+                    pane._buffer.get_end_iter(),
+                    f'<span foreground="{fg}">'
+                    f'{GLib.markup_escape_text("(Empty entry.)")}</span>', -1)
 
         self._set_paragraph_gaps()
         # Book links and small text need the same paper-aware contrast as
@@ -497,6 +535,58 @@ class GenbookReader:
         pane._scroll.restore_text_mark(
             mark, module_positions.get_genbook_line_offset(module, entry_path))
         return GLib.SOURCE_REMOVE
+
+    def _insert_contents(self, contents: Contents, dark: bool) -> None:
+        """Each sub-entry's title as a link, as a printed contents page sets
+        it, with what it holds or the summary the book prints for it in
+        smaller muted type beneath. The titles are real link widgets at
+        child anchors, so Tab reaches them and a screen reader names them;
+        they take the reading face and ink from the view. No blank lines,
+        so the paragraph-gap pass leaves the list alone."""
+        pane = self._pane
+        buf = pane._buffer
+        table = buf.get_tag_table()
+        # A title and its line beneath read as one entry: tight leading
+        # inside the pair, room between pairs. Tag line-heights replace the
+        # reading spacing, which would part a title from its own line.
+        item = table.lookup('gb-contents-item') or buf.create_tag(
+            'gb-contents-item', line_height=1.3,
+            pixels_above_lines=16, pixels_below_lines=0,
+            justification=Gtk.Justification.LEFT)
+        note = table.lookup('gb-contents-note') or buf.create_tag(
+            'gb-contents-note', scale=0.9, line_height=1.4,
+            pixels_above_lines=2, pixels_below_lines=0,
+            justification=Gtk.Justification.LEFT)
+        note.set_property('foreground', pane._paper_ink(dark)['_ink_muted'])
+        end = buf.get_end_iter
+        for path, title, held, summary in contents:
+            start = end().get_offset()
+            anchor = buf.create_child_anchor(end())
+            label = Gtk.Label(label=title, xalign=0, wrap=True)
+            label.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+            # The view gives a child its minimum width, so the minimum is the
+            # line: a short title whole, a long one wrapping at a measure
+            # that still fits a narrow split pane.
+            label.set_width_chars(min(len(title), 34))
+            label.set_max_width_chars(34)
+            link = Gtk.Button(child=label, accessible_role=Gtk.AccessibleRole.LINK)
+            link.add_css_class('book-contents-link')
+            link.set_cursor_from_name('pointer')
+            link.connect('clicked', lambda _b, p=path: self.open_entry(p))
+            pane.view.add_child_at_anchor(link, anchor)
+            buf.insert(end(), '\n')
+            buf.apply_tag(item, buf.get_iter_at_offset(start), end())
+            line = (ngettext('{n} section', '{n} sections', held).format(n=held)
+                    if held else summary)
+            if line:
+                start = end().get_offset()
+                buf.insert(end(), line + '\n')
+                buf.apply_tag(note, buf.get_iter_at_offset(start), end())
+
+    def open_entry(self, path: str) -> None:
+        """A contents-page title, pressed: read that entry."""
+        self._entry_path = path
+        self.fetch_and_render()
 
     def _set_paragraph_gaps(self) -> None:
         """Half a line between book paragraphs, scaling with the reading face.

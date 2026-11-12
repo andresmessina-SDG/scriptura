@@ -186,6 +186,28 @@ window {
 .family-card-path-here {
     font-weight: 700;
 }
+/* A book part's contents: each title a real link at a child anchor, so
+   Tab and a screen reader reach it, set as text in the reading face and
+   ink it inherits from the view. Underlined on hover; the focus ring is
+   the theme's own. */
+textview button.book-contents-link {
+    font: inherit;
+    font-weight: 600;
+    color: inherit;
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    min-height: 0;
+    min-width: 0;
+}
+textview button.book-contents-link > label {
+    line-height: 1.26;   /* ~1.35em on Newsreader */
+}
+textview button.book-contents-link:hover > label {
+    text-decoration: underline;
+}
+
 /* Links to another Bible's Card stay on this surface: ink, underlined by
    Pango, no colour. Links to a web source leave it: clay. */
 .family-card-links link,

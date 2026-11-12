@@ -45,8 +45,9 @@ def test_a_stale_saved_path_is_not_silently_resolved_to_another_chapter(monkeypa
     reader = genbook_reader.GenbookReader(_Pane(), lambda *a: '')
     reader._entry_path = '/Removed chapter'
     reader.fetch_and_render()
-    entries, path, body = calls['work'](None)
+    entries, path, body, contents = calls["work"](None)
     assert path == '/Preface'
+    assert contents is None          # a page with text is no contents page
     assert loaded == ['/Preface']
 
 
