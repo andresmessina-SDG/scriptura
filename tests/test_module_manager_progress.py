@@ -307,7 +307,7 @@ def test_update_rows_say_their_size_and_what_changed(monkeypatch):
     win._rebuild_updates(t)
     alpha = t['update_rows'][0]
     assert alpha.get_subtitle() == \
-        'Update from v1.0 to v2.0 · 3.0 MB · New text source'
+        'Update from v1.0 to v2.0 · 3 MB · New text source'
     every = t['updates_group'].get_header_suffix()
     assert every is not None and every.get_label() == 'Update All'
     every.emit('clicked')

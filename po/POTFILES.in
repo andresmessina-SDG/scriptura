@@ -42,6 +42,7 @@ interlinear_view.py
 lexicon_panel.py
 manuscript_find.py
 module_manager.py
+module_details.py
 module_picker.py
 navigation.py
 onboarding.py

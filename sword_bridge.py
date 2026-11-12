@@ -2134,6 +2134,9 @@ def _parse_conf_lines(raw_lines):
                 info.setdefault('history', {})[k[len('history_'):]] = v
             elif k == 'version':
                 info['version'] = v
+            elif k in ('about', 'copyright', 'textsource'):
+                # What the publisher says of the module, for its details.
+                info[k] = _conf_text(v)
             elif k == 'distributionlicense':
                 info['license'] = v
             elif k == 'installsize':
@@ -2266,6 +2269,9 @@ def list_available_modules():
                 'history': info.get('history', {}),
                 'locked': 'cipherkey' in info,
                 'collection': info.get('collection', ''),
+                'about': info.get('about', ''),
+                'copyright': info.get('copyright', ''),
+                'textsource': info.get('textsource', ''),
             })
     result.sort(key=lambda m: m['name'].lower())
     _catalog_cache = (path, result)

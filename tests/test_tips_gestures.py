@@ -119,8 +119,9 @@ EXPECTED_GESTURE_SITES = {
     'manuscript_find.py': 1,
     # The Module Manager's Esc for the Bible Family Tree's Card, in the
     # capture phase so it closes the Card before the window. Esc closes the
-    # Card in the main window too: the convention, nothing to teach.
-    'module_manager.py': 1,
+    # Card in the main window too: the convention, nothing to teach. And a
+    # click on the dimmed list closes the side sheet, as any sheet's scrim.
+    'module_manager.py': 2,
     'navigation.py': 1,
     # The hover card hands a press on it to the text beneath: the reader
     # clicked the text, so there is nothing new to learn.

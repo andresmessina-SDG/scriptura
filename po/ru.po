@@ -11759,3 +11759,12 @@ msgstr "Сноски — примечания, отмеченные в текс�
 #: pane_search.py pane_peek.py window.py
 msgid "Footnotes — the open resources don’t include any"
 msgstr "Сноски — в открытых материалах нет примечаний"
+
+
+#: module_details.py module_manager.py
+msgid "Version {version}"
+msgstr "Версия {version}"
+
+#: module_details.py
+msgid "Its publisher gives no description."
+msgstr "Издатель не дал описания."
