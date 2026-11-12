@@ -1585,6 +1585,8 @@ def load_genbook_entry(module_name, path):
                     body = notes.get(key.group(1)) if key else None
                     if not body:
                         return match.group(0)
+                    # The 1689 Confession escapes verse-list dots: 'Luke 16,29\\.31'.
+                    body = body.replace('\\.', '.')
                     return '<note' + match.group(1).rstrip('/') + '>' + body + '</note>'
                 # Lazy attributes: a greedy run would take a self-closing
                 # note's slash and stretch to the next note's close.

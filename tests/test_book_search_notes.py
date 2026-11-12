@@ -102,6 +102,16 @@ def test_a_self_closing_sword_note_does_not_reach_a_later_note(monkeypatch):
                    '<note n="2">Printed.</note> c</p>')
 
 
+def test_restored_sword_notes_drop_escaped_verse_list_dots(monkeypatch):
+    mod = SimpleNamespace(setKeyText=lambda p: None,
+                          renderText=lambda: '<p>Text<note swordFootnote="1"/>.</p>')
+    monkeypatch.setattr(sword_bridge, 'mgr', lambda: SimpleNamespace(getModule=lambda n: mod))
+    monkeypatch.setattr(sword_bridge, '_collect_footnotes',
+                        lambda m: [('1', 'explanation', 'Luke 16,29\\.31')])
+    raw = sword_bridge.load_genbook_entry('Book', '/Chapter')
+    assert '<note swordFootnote="1">Luke 16,29.31</note>' in raw
+
+
 def _find_bar():
     import pytest
     from gi.repository import Gtk, Gdk
