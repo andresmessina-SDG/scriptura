@@ -109,6 +109,7 @@ def test_an_older_interlinear_offers_an_update(display, monkeypatch):
         _download_button = ModuleManagerWindow._download_button
         _add_actions = ModuleManagerWindow._add_actions
         _show_job = ModuleManagerWindow._show_job
+        _details_on_press = ModuleManagerWindow._details_on_press
         _action_rows: dict = {}
 
         def _trash_button(self, _cb):

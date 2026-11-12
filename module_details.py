@@ -1,6 +1,7 @@
-"""A module's own description, as its publisher wrote it, beside the
-Module Manager's list: About, Copyright, Version and Source from its conf.
-Shares the Family Card's side sheet and type."""
+"""A module's own description, as its publisher wrote it: About, Copyright,
+Version and Source from its conf. The Module Manager's side sheet and the
+module picker's info page share the layout below, in the Family Card's type:
+sans for the header block and labels, serif for the publisher's prose."""
 import re
 
 import gi
@@ -25,9 +26,51 @@ def _linked(text):
     return ''.join(out)
 
 
+def split_byline(title):
+    """A classic's Description ends in its author: '… (Jonathan Edwards)'.
+    → (title, author), or (title, '') when it does not."""
+    m = re.fullmatch(r'(.+?)\s*\(([^()]+)\)', title)
+    return (m.group(1), m.group(2)) if m else (title, '')
+
+
+def _label(box, text, *classes, markup=False):
+    lbl = Gtk.Label(xalign=0, wrap=True)
+    lbl.set_natural_wrap_mode(Gtk.NaturalWrapMode.WORD)
+    # A long web address must break rather than widen the sheet.
+    lbl.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+    if markup:
+        lbl.set_markup(_linked(text))
+    else:
+        lbl.set_label(text)
+    for c in classes:
+        lbl.add_css_class(c)
+    box.append(lbl)
+    return lbl
+
+
+def fill(box, title, meta, fields, deck='', after_meta=None):
+    """Title, a meta line, an optional serif deck, then each non-empty
+    (label, text) field; `after_meta` is a widget placed under the meta."""
+    _label(box, title, 'family-card-title')
+    if meta:
+        _label(box, meta, 'family-card-meta')
+    if after_meta is not None:
+        after_meta.set_margin_top(12)
+        box.append(after_meta)
+    if deck:
+        _label(box, deck, 'family-card-body', markup=True).set_margin_top(14)
+    fields = [(head, text) for head, text in fields if text]
+    for head, text in fields:
+        _label(box, head, 'family-card-kicker').set_margin_top(24)
+        _label(box, text, 'family-card-body', markup=True).set_margin_top(6)
+    if not fields and not deck:
+        _label(box, _('Its publisher gives no description.'),
+               'dim-label').set_margin_top(20)
+
+
 class ModuleDetails(Gtk.Box):
-    """`show(title, source, meta, about, copyright, text_source)` fills it.
-    Sans for the header block and labels, serif for the publisher's prose."""
+    """`show(title, source, meta, about, copyright, text_source, deck,
+    license)` fills it."""
 
     def __init__(self, on_close):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
@@ -56,43 +99,21 @@ class ModuleDetails(Gtk.Box):
         self._scroll.set_child(self._body)
         self.append(self._scroll)
 
-    def show(self, title, source, meta, about, copyright, text_source):
+    def show(self, title, source, meta, about, copyright, text_source,
+             deck='', license=''):
         child = self._body.get_first_child()
         while child is not None:
             nxt = child.get_next_sibling()
             self._body.remove(child)
             child = nxt
         self._kicker.set_label(source)
-        self._label(title, 'family-card-title')
-        if meta:
-            self._label(meta, 'family-card-meta')
         # A source that only names the publisher repeats the kicker.
         if text_source.lower().startswith(source.lower()):
             text_source = ''
-        fields = [(_('About'), about), (_('Copyright'), copyright),
-                  (_('Source'), text_source)]
-        fields = [(head, text) for head, text in fields if text]
-        for head, text in fields:
-            self._label(head, 'family-card-kicker').set_margin_top(24)
-            self._label(text, 'family-card-body', markup=True).set_margin_top(6)
-        if not fields:
-            self._label(_('Its publisher gives no description.'),
-                        'dim-label').set_margin_top(20)
+        fill(self._body, title, meta,
+             [(_('About'), about), (_('Copyright'), copyright),
+              (_('License'), license), (_('Source'), text_source)], deck=deck)
         self._scroll.get_vadjustment().set_value(0)
 
     def focus_start(self):
         self._close_btn.grab_focus()
-
-    def _label(self, text, *classes, markup=False):
-        lbl = Gtk.Label(xalign=0, wrap=True)
-        lbl.set_natural_wrap_mode(Gtk.NaturalWrapMode.WORD)
-        # A long web address must break rather than widen the sheet.
-        lbl.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
-        if markup:
-            lbl.set_markup(_linked(text))
-        else:
-            lbl.set_label(text)
-        for c in classes:
-            lbl.add_css_class(c)
-        self._body.append(lbl)
-        return lbl

@@ -199,7 +199,9 @@ window {
     font-size: 0.9em;
 }
 .family-card-source link,
-.family-card-source link:visited {
+.family-card-source link:visited,
+.family-card-body link,
+.family-card-body link:visited {
     color: #a9744f;          /* clay: leaves the current surface */
 }
 /* The Line: one flat list, the tracks in one column. The filters are quiet
