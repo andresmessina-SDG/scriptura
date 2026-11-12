@@ -6,7 +6,11 @@ semver-ish — 0.x was the pre-Flathub testing track.
 
 ## [Unreleased]
 
+## [1.12.0] — 2026-11-12
+
 ### Added
+- A book part with no text of its own is its contents page: its chapters and sub-parts listed under its title as links that Tab reaches and Enter opens, sub-parts with how many sections they hold, and Owen's chapters with the summary he printed at their head. Before, these 35 pages said only "This is a section heading".
+- Pressing a row in the Module Manager opens a side sheet with what its publisher says of it: About, Copyright and Source from a CrossWire or Common Weal conf, the eBible catalogue's description, copyright and page, or our own description, credit and licence for the curated packs. The list behind is dimmed, and a click there closes the sheet; below 560sp it takes the whole window.
 - Find within general books: Ctrl+F searches the open book, with section results, excerpts, match case and Enter/F3 navigation across sections. The scope switch can limit the search to the current section. Long result lists load in batches without dropping later sections.
 - A book's footnote markers open reading-sized note peeks without leaving the page. Common Weal endnotes and older SWORD inline/attribute notes are supported; notes remain available at the end of the section. Search ignores marker labels and finds phrases across them.
 
@@ -17,6 +21,12 @@ semver-ish — 0.x was the pre-Flathub testing track.
 - Owen's older CCEL Mortification edition no longer prints “Auto-modernized” editorial notes inside its sentences. Scripture references without a `Bible:` prefix are clickable too.
 - Following a Scripture citation with two resources open keeps the source book and opens the Bible in the other pane, including in a narrow window.
 - Installed books missing from a stale catalogue remain in the Module Manager. Without a catalogue, their local metadata keeps the Classics grouping, author and Common Weal Press credit.
+- The module picker's info page shares the side sheet's layout: the language by name rather than code, the publisher's prose in the reading serif, and no SWORD category name ("Biblical Texts"). A description that repeats the title or About is left out.
+- CrossWire's About and Copyright texts showed their RTF codes and HTML links as text ("Henry Beveridge\par Published by"). All 453 catalogue confs now read as plain paragraphs.
+- In Books & More, a search hides the curated and Classics shelves and finds a classic once among the results; installed classics no longer repeat in the Installed list.
+- The 1689 Baptist Confession's newly visible notes showed escaped dots ("Luke 16,29\.31") in 326 places, and an empty SWORD note before a filled one stayed empty.
+- eBible translations described themselves by their language's own name ("Latine"); the description is the title.
+- Sizes drop a useless decimal: "290 KB", not "290.0 KB".
 
 ## [1.11.0] — 2026-11-11
 

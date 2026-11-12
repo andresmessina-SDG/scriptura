@@ -190,6 +190,50 @@ msgid "Commentary"
 msgstr "Комментарий"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
+msgid "Search inside books, notes you can open, and clearer module details."
+msgstr "Поиск внутри книг, открывающиеся сноски и понятные сведения о модулях."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:161
+msgid "Search a whole book with Ctrl+F, and step from match to match across its chapters."
+msgstr "Ищите по всей книге с помощью Ctrl+F и переходите от совпадения к совпадению по главам."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
+msgid "Note numbers in a book open the note beside the text."
+msgstr "Номера сносок в книге открывают сноску рядом с текстом."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:163
+msgid "A part of a book with no text of its own lists its chapters, with Owen's own chapter summaries."
+msgstr "Часть книги без собственного текста показывает свои главы с краткими изложениями глав самого Оуэна."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
+msgid "Books reopen at the line you left, even after a theme change."
+msgstr "Книги открываются на той строке, где вы остановились, даже после смены темы."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
+msgid "Long book titles no longer push the window past its edge."
+msgstr "Длинные названия книг больше не выталкивают окно за его край."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
+msgid "A Scripture reference in a book opens the Bible in the other pane and keeps the book in view."
+msgstr "Ссылка на Писание в книге открывает Библию в другой панели, а книга остаётся на виду."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:167
+msgid "Press any row in Modules to read what its publisher says about it."
+msgstr "Нажмите любую строку в разделе «Модули», чтобы прочитать, что о ней пишет издатель."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:168
+msgid "The module info page is easier to read and names the language."
+msgstr "Страница сведений о модуле стала удобнее для чтения и называет язык."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:169
+msgid "Module descriptions no longer show formatting codes."
+msgstr "Описания модулей больше не показывают коды форматирования."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:170
+msgid "In Books & More, a search finds each classic once, and installed classics stay on their shelf."
+msgstr "В разделе «Книги и др.» поиск находит каждую классическую книгу один раз, а установленные остаются на своей полке."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
 msgid "Sixteen classic books, verses to share as images, and pages that fit."
 msgstr "Шестнадцать классических книг, стихи, которыми можно поделиться изображением, и страницы, которые помещаются в окне."
 

@@ -154,6 +154,23 @@
          Every note is translated: add each line to po/es.po and po/ru.po,
          or tests/test_translations.py fails, then rebuild the site with
          tools/build-site.py so What's new shows it in all three languages. -->
+    <release version="1.12.0" date="2026-11-12">
+      <description>
+        <p>Search inside books, notes you can open, and clearer module details.</p>
+        <ul>
+          <li>Search a whole book with Ctrl+F, and step from match to match across its chapters.</li>
+          <li>Note numbers in a book open the note beside the text.</li>
+          <li>A part of a book with no text of its own lists its chapters, with Owen's own chapter summaries.</li>
+          <li>Books reopen at the line you left, even after a theme change.</li>
+          <li>Long book titles no longer push the window past its edge.</li>
+          <li>A Scripture reference in a book opens the Bible in the other pane and keeps the book in view.</li>
+          <li>Press any row in Modules to read what its publisher says about it.</li>
+          <li>The module info page is easier to read and names the language.</li>
+          <li>Module descriptions no longer show formatting codes.</li>
+          <li>In Books &amp; More, a search finds each classic once, and installed classics stay on their shelf.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.11.0" date="2026-11-11">
       <description>
         <p>Sixteen classic books, verses to share as images, and pages that fit.</p>
