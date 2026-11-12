@@ -979,3 +979,28 @@ def test_a_latin1_conf_value_reaches_gtk_as_clean_text():
     assert sword_bridge._conf_text(None) == ''
     for text in ('Copyright \udca9 2001', 'caf\udcc3\udca9', 'plain'):
         sword_bridge._conf_text(text).encode('utf-8')
+
+
+def test_conf_formatting_codes_become_plain_paragraphs():
+    """About text carries RTF codes and a few HTML links; the info page
+    showed them as text ('Henry Beveridge\\par Published by …')."""
+    import sword_bridge
+    t = sword_bridge._conf_text
+    # Measured forms from the CrossWire catalogue.
+    assert t('Calvin \\par Published by CCEL') == 'Calvin\nPublished by CCEL'
+    assert t('\\pard Webster\\par\\par This version') == 'Webster\n\nThis version'
+    assert t('one\\par\\par\\par\\par two') == 'one\n\ntwo'
+    assert t('Society\\parhttp://x.org') == 'Society\nhttp://x.org'
+    assert t('congiuntivo\\par\\pardat. dativo') == 'congiuntivo\n\ndat. dativo'
+    assert t('\\qc Title\\par text') == 'Title\ntext'
+    assert t('teksteille\\n\\nLupa') == 'teksteille\n\nLupa'
+    assert t("Nestle\\'s Greek") == "Nestle's Greek"
+    assert t('corrections.\\\\par For') == 'corrections.\nFor'
+    assert t('Daniel\\') == 'Daniel'
+    assert t('Project \\ This version') == 'Project This version'
+    assert t('<a href="www.lockman.org">www.lockman.org</a> (English)') \
+        == 'www.lockman.org (English)'
+    # An address in angle brackets is text, not a tag.
+    assert t('Luke Plant <L.Plant.98@cantab.net>') == 'Luke Plant <L.Plant.98@cantab.net>'
+    assert t('3 < 4 and 5 > 2') == '3 < 4 and 5 > 2'
+    assert t('Copyright \udca9 2001\\par Lockman') == 'Copyright © 2001\nLockman'
