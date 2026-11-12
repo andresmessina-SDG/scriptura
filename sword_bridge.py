@@ -309,6 +309,7 @@ def _reset():
         _book_maps.clear()
         _line_maps.clear()
         _module_dc.clear()
+        _GENBOOK_TOC_CACHE.clear()
     with _indexing_lock:
         # Resetting module caches must not forget builders still using their
         # temporary databases, or a new search could start a second writer.
@@ -1571,7 +1572,27 @@ def load_genbook_entry(module_name, path):
             return ''
         try:
             mod.setKeyText(path)
-            return str(mod.renderText())
+            rendered = str(mod.renderText())
+            # OSIS filters can move a book's notes into entry attributes,
+            # leaving empty anchors in renderText. Read them before another
+            # entry replaces the map, under the same SWORD lock.
+            if '<note' in rendered:
+                notes = {n: body for n, _kind, body in _collect_footnotes(mod)}
+                def restore_note(match):
+                    if (match.group(2) or '').strip():
+                        return match.group(0)
+                    key = re.search(r'swordFootnote="([^"]+)"', match.group(1))
+                    body = notes.get(key.group(1)) if key else None
+                    if not body:
+                        return match.group(0)
+                    # The 1689 Confession escapes verse-list dots: 'Luke 16,29\\.31'.
+                    body = body.replace('\\.', '.')
+                    return '<note' + match.group(1).rstrip('/') + '>' + body + '</note>'
+                # Lazy attributes: a greedy run would take a self-closing
+                # note's slash and stretch to the next note's close.
+                rendered = re.sub(r'<note\b([^>]*?)(?:/>|>(.*?)</note>)',
+                                  restore_note, rendered, flags=re.DOTALL)
+            return rendered
         except Exception:
             _sword_log.exception('genbook load failed for %s %r', module_name, path)
             return ''
@@ -2118,6 +2139,25 @@ def _parse_conf(path):
     except OSError:
         return {}
     return _parse_conf_lines(raw_lines)
+
+
+def installed_module_metadata(name):
+    """Catalogue-shaped metadata from the installed module's own conf.
+
+    Keep sideloaded books, and books missing from a stale catalogue, visible
+    with their collection and source attribution even while offline.
+    """
+    with _lock:
+        mod = mgr().getModule(name)
+        if mod is None:
+            return None
+        info = _parse_conf_lines(
+            [f'[{name}]'] + [f'{k}={v}' for k, v in mod.getConfigMap().items()])
+        return {
+            **info, 'name': name, 'type': str(mod.getType()),
+            'lang': info.get('lang', ''), 'features': info.get('features', set()),
+            'locked': 'cipherkey' in info, 'installed': True,
+        }
 
 
 # Parsed catalogue cache: (shadow_path, [module dicts sans 'installed']).

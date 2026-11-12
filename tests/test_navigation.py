@@ -221,6 +221,7 @@ def test_back_and_forward_keys_are_not_taken_by_gnome():
 # ── The header over a resource with no chapter ─────────────────────────────
 
 class _PlacePane:
+    _is_genbook = False
     def __init__(self, place, visible=True):
         self._place, self._visible = place, visible
 
@@ -231,16 +232,95 @@ class _PlacePane:
         return self._visible
 
 
-def _header(pane1, pane2, in_view=None):
+def _header_controller(pane1, pane2, in_view=None):
     import types
+    from gi.repository import Gtk, Gdk
     from navigation import NavigationController
-    label = {}
+    if Gdk.Display.get_default() is None:
+        pytest.skip('builds a header widget; no display here')
+    button = Gtk.MenuButton()
     win = types.SimpleNamespace(
         pane1=pane1, pane2=pane2,
         _pane_in_view=lambda: in_view or pane1,
-        _ref_btn=types.SimpleNamespace(set_label=lambda t: label.update(t=t)))
-    NavigationController(win)._update_ref_label('John', 3)
-    return label['t']
+        _ref_btn=button, _ref_pop=Gtk.Popover())
+    nav = NavigationController(win)
+    nav._update_ref_label('John', 3)
+    return nav
+
+
+def _header(pane1, pane2, in_view=None):
+    return _header_controller(pane1, pane2, in_view)._ref_btn.get_label()
+
+
+def test_a_long_resource_title_does_not_set_the_toolbar_minimum_width():
+    from gi.repository import Gtk
+    title = 'CHAPTER 1. THE KNOWLEDGE OF GOD AND OF OURSELVES ' * 5
+    nav = _header_controller(_PlacePane(title), _PlacePane(None, visible=False))
+    assert nav._ref_btn.measure(Gtk.Orientation.HORIZONTAL, -1)[0] < 150
+    assert nav._ref_btn.get_tooltip_text() == title
+    assert nav._ref_btn.get_popover() is None
+
+
+def test_book_header_opens_its_contents_and_scrolls_its_entries():
+    import types
+    calls = []
+    pane = _PlacePane('Chapter I')
+    pane._is_genbook = True
+    pane._genbook = types.SimpleNamespace(
+        _build_toc=lambda pop: calls.append(('toc', pop)),
+        step=lambda delta: calls.append(('step', delta)))
+    nav = _header_controller(pane, _PlacePane(None, visible=False))
+    nav._go_next_chapter = lambda: pytest.fail('moved the hidden Bible')
+    nav._build_ref_popover_content()
+    nav._on_ref_btn_scroll(None, 0, 1)
+    nav._on_ref_btn_scroll(None, 0, -1)
+    assert calls == [('toc', nav._ref_pop), ('step', 1), ('step', -1)]
+
+
+def test_a_resource_without_entries_does_not_scroll_the_hidden_bible():
+    nav = _header_controller(_PlacePane('The Nicene Creed'),
+                             _PlacePane(None, visible=False))
+    nav._go_next_chapter = lambda: pytest.fail('moved the hidden Bible')
+    assert nav._on_ref_btn_scroll(None, 0, 1)
+
+
+def test_the_header_keeps_pane_twos_book_when_the_toolbar_takes_focus():
+    from window import BibleWindow
+    p1, p2 = _PlacePane('First book'), _PlacePane('Second book')
+    toolbar_button = types.SimpleNamespace(get_parent=lambda: None)
+    win = types.SimpleNamespace(pane1=p1, pane2=p2,
+                                _pane_last_in_view=p2,
+                                get_focus=lambda: toolbar_button)
+    assert BibleWindow._pane_in_view(win) is p2
+    p2._visible = False
+    assert BibleWindow._pane_in_view(win) is p1
+
+
+@pytest.mark.parametrize('source_index', [0, 1])
+@pytest.mark.parametrize('narrow', [False, True])
+def test_a_citation_keeps_its_source_book_and_reveals_the_other_pane(source_index, narrow):
+    from window import BibleWindow
+    calls = []
+    class Pane:
+        def __init__(self, module):
+            self.module = module
+        def get_visible(self):
+            return True
+        def _is_verse_navigable(self):
+            return self.module == 'KJV'
+        def _apply_module_change(self, module):
+            self.module = module
+    panes = [Pane('CWPMortification'), Pane('JOMortSin')]
+    win = types.SimpleNamespace(
+        pane1=panes[0], pane2=panes[1], _panes_narrow=narrow,
+        _pane_in_view=lambda: panes[source_index],
+        _btn_split=types.SimpleNamespace(get_active=lambda: True),
+        _first_bible_module=lambda: 'KJV', _select_narrow_pane=calls.append)
+    source = panes[source_index].module
+    BibleWindow._ensure_bible_visible(win)
+    assert panes[source_index].module == source
+    assert panes[1-source_index].module == 'KJV'
+    assert calls == ([2-source_index] if narrow else [])
 
 
 def test_the_header_names_a_resources_own_place():

@@ -34,6 +34,7 @@ from gi.repository import Gtk, Adw, GLib, Pango
 import module_positions
 import sword_bridge
 import tasks
+from book_notes import NOTE_MARKER, prepare_notes
 from a11y import set_accessible_label
 from i18n import _
 
@@ -84,8 +85,10 @@ def _strip_restated_title(html: str, leaf: str) -> str:
 
 
 _BIBLE_REF = re.compile(
-    r'<reference\s[^>]*osisRef="(Bible:[^"]+)"[^>]*>(.*?)</reference>',
+    r'<reference\s[^>]*osisRef="((?:Bible:)?[1-3]?[A-Za-z]+\.\d[^"\s]*)"[^>]*>(.*?)</reference>',
     re.DOTALL)
+_BODY_LINK = re.compile(r'(?P<ref>' + _BIBLE_REF.pattern + r')|(?P<note>'
+                        + NOTE_MARKER.pattern + ')', re.DOTALL)
 
 _PARA = re.compile(r'<p[^>]*>(.*?)</p>', re.DOTALL | re.IGNORECASE)
 #: The synopsis marker paragraph — CCEL's Institutes writes a bare
@@ -97,6 +100,29 @@ _SYNOPSIS_MARKER = re.compile(r'Sections?\.?', re.IGNORECASE)
 _SECTION_ONE = re.compile(r'[1l]\.?\s')
 #: Any numbered précis item, for counting them on the disclosure row.
 _SECTION_ITEM = re.compile(r'(?:\d+|l)\.?\s')
+
+
+def _split_opening_summary(html: str, module: str,
+                           entry: str | None) -> tuple[str, str]:
+    """Read an explicit printed summary, including the first CWP editions.
+
+    Those editions lost the EPUB's summary role during conversion. Their
+    four Owen books have a synopsis as the first paragraph of each chapter;
+    use that measured structure only for those modules and chapter entries.
+    Other books need an explicit role, never a guess based on prose.
+    """
+    first = re.match(r'\s*(?:<div\b[^>]*>\s*)*<p\b([^>]*)>(.*?)</p>',
+                     html, re.DOTALL)
+    if first is None:
+        return '', html
+    explicit = re.search(r'\btype="x-summary"', first.group(1))
+    owen = module in {'CWPMortification', 'CWPIndwellingSin',
+                      'CWPTemptation', 'CWPDeathOfDeath'}
+    chapter = re.fullmatch(r'Chapter\s+[IVXLCDM]+',
+                           (entry or '').rsplit('/', 1)[-1], re.IGNORECASE)
+    if not explicit and not (owen and chapter):
+        return '', html
+    return '<p>' + first.group(2) + '</p>', html[first.end():]
 
 
 def _split_synopsis(html: str) -> tuple[str, str]:
@@ -153,6 +179,10 @@ class GenbookReader:
         self._pane = pane
         self._html_to_markup = html_to_markup
         self._entry_path: str | None = None
+        self._displayed_entry: str | None = None
+        self._displayed_module: str | None = None
+        self._notes: dict[str, str] = {}
+        self._synopsis_icon = None
         # Widgets are created by build_toolbar() so the caller controls
         # where they sit in the toolbar Box.
         self._prev_btn: Gtk.Button | None = None
@@ -225,7 +255,19 @@ class GenbookReader:
         module = self._pane.module
         if not module:
             return
-        module_positions.remember_genbook_path(module, self._entry_path)
+        offset = None
+        line_offset = None
+        if (self._displayed_entry == self._entry_path
+                and self._displayed_module == module
+                and self._pane.view.get_mapped()):
+            view = self._pane.view
+            rect = view.get_visible_rect()
+            _found, it = view.get_iter_at_location(rect.x, rect.y)
+            offset = it.get_offset()
+            y = view.get_iter_location(it).y
+            line_offset = view.get_vadjustment().get_value() - y
+        module_positions.remember_genbook_path(module, self._entry_path,
+                                               offset, line_offset)
 
     # ── Render pipeline ──────────────────────────────────────────────────
 
@@ -235,11 +277,18 @@ class GenbookReader:
         restructured between sessions), fall back to the first
         non-empty entry."""
         module = self._pane.module
+        self._pane._peek.dismiss()
+        # Snapshot on the main thread. A worker must never borrow a path
+        # selected later, potentially from another book.
+        self.save_position()
+        requested_path = self._entry_path
 
         def fetch(_task: tasks.Task) -> tuple[list[Entry], str | None, str]:
             entries: list[Entry] = sword_bridge.list_genbook_entries(module)
-            entry_path = self._entry_path
+            entry_path = requested_path
             html = ''
+            if entry_path not in {p for p, _label, _depth in entries}:
+                entry_path = None
 
             if entry_path:
                 html = sword_bridge.load_genbook_entry(module, entry_path)
@@ -282,11 +331,12 @@ class GenbookReader:
         pane = self._pane
         if module != pane.module or not pane._is_genbook:
             return
+        self._displayed_entry = self._displayed_module = None
         dark = Adw.StyleManager.get_default().get_dark()
         pane._cancel_all_flashes()
         pane._buffer.set_text('')
         pane._clear_chapter_scoped_tags()
-        fg = '#8d8278' if dark else '#7a7066'
+        fg = pane._paper_ink(dark)['_ink_muted']
         text = _("Couldn't read {module} — {error}").format(module=module, error=error)
         pane._buffer.insert_markup(
             pane._buffer.get_end_iter(),
@@ -308,18 +358,26 @@ class GenbookReader:
         pane = self._pane
         if module != pane.module or not pane._is_genbook:
             return GLib.SOURCE_REMOVE
+        from pane import theme_ink
+        self._displayed_entry = self._displayed_module = None
         dark = Adw.StyleManager.get_default().get_dark()
+        inks = theme_ink(dark)
         pane._cancel_all_flashes()
         pane._buffer.set_text('')
         pane._clear_chapter_scoped_tags()
 
         self._entry_path = entry_path
+        html, self._notes = prepare_notes(html)
+        pane._chapter_footnotes = {(0, n): ('', body, n)
+                                   for n, body in self._notes.items()}
+        self._synopsis_icon = None
         pane._place_changed()
-        self.save_position()
+        if entry_path:
+            module_positions.remember_genbook_path(module, entry_path)
         self._update_nav_sensitivity(entries)
 
         if not entries:
-            fg = '#8d8278' if dark else '#7a7066'
+            fg = pane._paper_ink(dark)['_ink_muted']
             pane._buffer.insert_markup(
                 pane._buffer.get_end_iter(),
                 f'<span foreground="{fg}">'
@@ -342,8 +400,7 @@ class GenbookReader:
             segs = []
         leaf = segs[-1] if segs else module
         ancestors = segs[:-1]
-        eyebrow_fg = '#9a9086' if not dark else '#6f655c'
-        leaf_fg = '#7a7066' if not dark else '#8d8278'
+        eyebrow_fg = leaf_fg = inks['_ink_muted']
         title_start = pane._buffer.get_end_iter().get_offset()
         if ancestors:
             crumb = ' › '.join(ancestors)
@@ -353,12 +410,16 @@ class GenbookReader:
                 f'foreground="{eyebrow_fg}">'
                 f'{GLib.markup_escape_text(crumb)}</span>\n',
                 -1)
+            crumb_tag = (pane._buffer.get_tag_table().lookup('gb-breadcrumb')
+                         or pane._buffer.create_tag('gb-breadcrumb'))
+            pane._buffer.apply_tag(crumb_tag, pane._buffer.get_iter_at_offset(title_start),
+                                   pane._buffer.get_end_iter())
         # The leaf label is usually stored all-caps by the module; render it at
         # a modest size with NO letter-spacing — tracking amplifies caps into a
         # wall. This is the page's title.
         pane._buffer.insert_markup(
             pane._buffer.get_end_iter(),
-            f'<span size="large" weight="bold" foreground="{leaf_fg}">'
+            f'<span size="115%" weight="bold" foreground="{leaf_fg}">'
             f'{GLib.markup_escape_text(leaf)}</span>\n\n',
             -1)
         # The view-wide justification (FILL when the user enables "Justified")
@@ -380,6 +441,7 @@ class GenbookReader:
             # merely restates it (Calvin's chapters do this) so the title
             # isn't printed twice.
             html = _strip_restated_title(html, leaf)
+            opening, html = _split_opening_summary(html, module, entry_path)
             # Calvin's chapter précis is apparatus, not the text: fold it
             # behind a disclosure so the body starts under the title and the
             # reader meets prose first.
@@ -387,16 +449,28 @@ class GenbookReader:
             try:
                 if synopsis:
                     self._insert_synopsis(synopsis, dark)
+                if opening:
+                    start = pane._buffer.get_end_iter().get_offset()
+                    self._insert_body(opening, dark)
+                    tag = table.lookup('gb-opening-summary')
+                    if tag is None:
+                        tag = pane._buffer.create_tag(
+                            'gb-opening-summary', scale=0.9,
+                            line_height=1.3, pixels_below_lines=4,
+                            justification=Gtk.Justification.LEFT)
+                    pane._buffer.apply_tag(
+                        tag, pane._buffer.get_iter_at_offset(start),
+                        pane._buffer.get_end_iter())
                 self._insert_body(html, dark)
             except Exception:
                 pane._buffer.insert(
                     pane._buffer.get_end_iter(),
-                    re.sub(r'<[^>]+>', '', html))
+                    re.sub(r'<[^>]+>', '', opening + html))
         else:
             # Distinguish "section heading with sub-entries" from a
             # genuinely-empty leaf so the user knows whether to open
             # the TOC or whether the module just has nothing here.
-            fg = '#8d8278' if dark else '#7a7066'
+            fg = pane._paper_ink(dark)['_ink_muted']
             if self._entry_has_children(entries, entry_path):
                 msg = ('This is a section heading. Open the table of '
                        'contents and pick a sub-entry to read.')
@@ -407,14 +481,50 @@ class GenbookReader:
                 f'<span foreground="{fg}">'
                 f'{GLib.markup_escape_text(msg)}</span>', -1)
 
-        pane.view.get_vadjustment().set_value(0)
+        self._set_paragraph_gaps()
+        # Book links and small text need the same paper-aware contrast as
+        # Bible links. Raw markup colours alone miss custom paper themes.
+        pane._adopt_theme_ink(dark)
+        self._displayed_module, self._displayed_entry = module, entry_path
+        if pane._search.on_book_render():
+            return GLib.SOURCE_REMOVE
+        offset = module_positions.get_genbook_offset(module, entry_path)
+        buf = pane._buffer
+        at = buf.get_iter_at_offset(min(offset, buf.get_char_count()))
+        mark = buf.create_mark(None, at, True)
+        # Hold the character through incremental line validation, using the
+        # same settling and user-input guards as verse-anchor restoration.
+        pane._scroll.restore_text_mark(
+            mark, module_positions.get_genbook_line_offset(module, entry_path))
         return GLib.SOURCE_REMOVE
+
+    def _set_paragraph_gaps(self) -> None:
+        """Half a line between book paragraphs, scaling with the reading face.
+
+        Keep newlines and offsets intact for citations, verse links, poetry
+        and child anchors. Only the empty line's geometry changes.
+        """
+        buf = self._pane._buffer
+        table = buf.get_tag_table()
+        tag = table.lookup('gb-paragraph-gap')
+        if tag is None:
+            tag = buf.create_tag('gb-paragraph-gap', scale=0.5,
+                                 line_height=1.0, pixels_above_lines=0,
+                                 pixels_below_lines=4)
+        text = buf.get_slice(*buf.get_bounds(), True)
+        for gap in re.finditer(r'(?<=\n)\n', text):
+            buf.apply_tag(tag, buf.get_iter_at_offset(gap.start()),
+                          buf.get_iter_at_offset(gap.end()))
 
     def _insert_body(self, html: str, dark: bool) -> None:
         """Insert an entry, each Scripture reference as a link. A reference
         to a place inside the book itself (Dark Night's contents page) stays
         text: the click handler knows only Bible verses."""
         pane = self._pane
+        # CCEL's Owen marks modernized words with editorial notes. Their
+        # contents are metadata, not the next word of the author's sentence.
+        html = re.sub(r'<note\b[^>]*>\s*Auto-modernized\s*</note>', '', html,
+                      flags=re.IGNORECASE)
         end = pane._buffer.get_end_iter
 
         def plain(seg: str) -> None:
@@ -427,11 +537,28 @@ class GenbookReader:
                 pane._buffer.insert(end(), re.sub(r'<[^>]+>', '', seg))
 
         pos = 0
-        for m in _BIBLE_REF.finditer(html):
+        for m in _BODY_LINK.finditer(html):
             plain(html[pos:m.start()])
-            text = html_mod.unescape(re.sub(r'<[^>]+>', '', m.group(2))).strip()
-            if text:
-                pane._insert_ref_segment(text, m.group(1), dark)
+            if m.group('ref') is not None:
+                ref = _BIBLE_REF.fullmatch(m.group(0))
+                assert ref is not None
+                text = html_mod.unescape(re.sub(r'<[^>]+>', '', ref.group(2))).strip()
+                if not sword_bridge.parse_osis_ref(ref.group(1)):
+                    plain(m.group(0))
+                elif text:
+                    pane._insert_ref_segment(text, ref.group(1), dark)
+            else:
+                note = NOTE_MARKER.fullmatch(m.group(0))
+                assert note is not None
+                label = html_mod.unescape(re.sub(r'<[^>]+>', '', note.group(1))).strip()
+                start = pane._buffer.get_end_iter().get_offset()
+                plain(m.group(0))
+                if label in self._notes:
+                    tag = (pane._buffer.get_tag_table().lookup(f'fnote:0:{label}')
+                           or pane._buffer.create_tag(f'fnote:0:{label}'))
+                    pane._buffer.apply_tag(tag, pane._buffer.get_iter_at_offset(start), end())
+                    pane._buffer.apply_tag(pane._fn_marker_tag(),
+                                           pane._buffer.get_iter_at_offset(start), end())
             pos = m.end()
         plain(html[pos:])
 
@@ -452,6 +579,7 @@ class GenbookReader:
                     for p in re.findall(r'<p[^>]*>.*?</p>', synopsis, re.DOTALL))
         anchor = pane._buffer.create_child_anchor(pane._buffer.get_end_iter())
         icon = Gtk.Image.new_from_icon_name('scriptura-pan-end-symbolic')
+        self._synopsis_icon = icon
         label = Gtk.Label(label=_('Sections ({n})').format(n=items) if items
                           else _('Sections'))
         label.add_css_class('caption')
@@ -483,7 +611,7 @@ class GenbookReader:
         # Ink and collapsed state are set every render, not just at creation:
         # the tag outlives the entry, so a theme flip would otherwise leave the
         # précis in the old palette and a previously-opened block would reopen.
-        tag.set_property('foreground', '#8d8278' if dark else '#7a7066')
+        tag.set_property('foreground', pane._paper_ink(dark)['_ink_muted'])
         tag.set_property('invisible', True)
         start = pane._buffer.get_end_iter().get_offset()
         try:
@@ -516,6 +644,14 @@ class GenbookReader:
                 'scriptura-pan-end-symbolic' if shown else 'scriptura-pan-down-symbolic')
 
         btn.connect('clicked', _toggle)
+
+    def reveal_match(self, it: Gtk.TextIter) -> None:
+        """A search hit in Calvin's folded synopsis must be visible."""
+        tag = self._pane._buffer.get_tag_table().lookup('gb-synopsis')
+        if tag is not None and it.has_tag(tag):
+            tag.set_property('invisible', False)
+            if self._synopsis_icon is not None:
+                self._synopsis_icon.set_from_icon_name('scriptura-pan-down-symbolic')
 
     # ── Sibling navigation (prev/next entry buttons) ─────────────────────
 
@@ -557,11 +693,11 @@ class GenbookReader:
 
     # ── TOC popover (lazy-built on each open) ────────────────────────────
 
-    def _build_toc(self) -> None:
+    def _build_toc(self, pop: Gtk.Popover | None = None) -> None:
         """Populate the TOC popover with this module's TreeKey entries.
         Built lazily on each show because the active module can change."""
         assert self._toc_pop is not None
-        pop = self._toc_pop
+        pop = pop if pop is not None else self._toc_pop
         entries: list[Entry] = sword_bridge.list_genbook_entries(self._pane.module)
 
         scroll = Gtk.ScrolledWindow()
@@ -626,7 +762,12 @@ class GenbookReader:
                     current_row = row
                 row.set_child(lbl)
                 listbox.append(row)
-            listbox.connect('row-activated', self._on_entry_chosen)
+            def chosen(lb: Gtk.ListBox, row: Any) -> None:
+                parent_pop = row.get_ancestor(Gtk.Popover)
+                if parent_pop is not None:
+                    parent_pop.popdown()
+                self._on_entry_chosen(lb, row)
+            listbox.connect('row-activated', chosen)
 
             # Auto-scroll the TOC to the current entry once the popover
             # has had a chance to allocate. Without the idle defer, the

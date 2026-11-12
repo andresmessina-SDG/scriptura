@@ -43,6 +43,8 @@ py_sources = files(
   'backup.py',
   'bible_audio.py',
   'bible_family.py',
+  'book_notes.py',
+  'book_search.py',
   'bookmarks.py',
   'catena_bridge.py',
   'catena_reader.py',

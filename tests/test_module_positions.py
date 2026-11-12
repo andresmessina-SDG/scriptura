@@ -41,6 +41,26 @@ def test_genbook_path_roundtrip(isolated):
     assert module_positions.get_genbook_path('Concord') == '/Title_Page'
 
 
+def test_genbook_position_survives_a_path_only_save_and_reload(isolated):
+    module_positions.remember_genbook_path('Concord', '/Article 2', 1842, 27.5)
+    module_positions.remember_genbook_path('Concord', '/Article 2')
+    module_positions.flush()
+    module_positions._load()
+    assert module_positions.get_genbook_offset('Concord', '/Article 2') == 1842
+    assert module_positions.get_genbook_line_offset('Concord', '/Article 2') == 27.5
+    assert module_positions.get_genbook_offset('Concord', '/Article 3') == 0
+    assert module_positions.get_genbook_line_offset('Concord', '/Article 3') == 0
+    module_positions.remember_genbook_path('Concord', '/Article 3')
+    assert module_positions.get_genbook_offset('Concord', '/Article 3') == 0
+
+
+@pytest.mark.parametrize('offset', [None, -1, '20', True, []])
+def test_bad_saved_genbook_offsets_start_at_the_chapter_top(isolated, offset):
+    module_positions._state['Concord'] = {
+        'kind': 'genbook', 'genbook_path': '/Article 2', 'text_offset': offset}
+    assert module_positions.get_genbook_offset('Concord', '/Article 2') == 0
+
+
 # ── Chapter / book scoping ──────────────────────────────────────────────────
 
 def test_verse_position_returns_none_for_different_chapter(isolated):

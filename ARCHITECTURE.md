@@ -29,7 +29,8 @@ a clean GNOME look and feel and an emphasis on quiet, distraction-free reading.
   source runs use `data/fonts`.
 - **Search:** SQLite FTS5 full-text indexing (per-module, lazy-built;
   shared query grammar across the SWORD and eBible backends — see
-  `search_query.py`)
+  `search_query.py`). General books use a cancellable literal scan of
+  their entry tree through `book_search.py`, without an FTS index.
 - **Build:** No build step; plain Python scripts
 - **Platform:** Fedora Linux, GNOME desktop (Zorin Blue-Dark theme on this
   development machine; should work on any GNOME)
@@ -86,6 +87,8 @@ scriptura/
 +-- pane_search.py        # PaneSearch — per-pane Ctrl+F bar + match highlight
 +-- pane_peek.py          # PeekController — the double-click dictionary, footnote and verse peek
 +-- genbook_reader.py     # GenbookReader — Generic Books (TreeKey) subsystem extracted from pane.py
++-- book_search.py        # Cancellable literal search across a general book's entries
++-- book_notes.py         # Common Weal endnotes / legacy inline notes → markers + note bodies
 +-- catena_reader.py      # CatenaReader — verse-synced commentary card view (pane subsystem)
 +-- imagery_reader.py     # ImageryReader — Art/Where tabs, traditions expander, zoom viewer
 +-- archaeology_reader.py # ArchaeologyReader — Scripture in Stone bundled gallery
@@ -462,10 +465,11 @@ code or window.py pane sizing.
   - `Ctrl+=` / `Ctrl+-` — font size (also `Ctrl+scroll` and touchpad
     pinch — see `BiblePane._on_zoom_scroll` / `_on_zoom_gesture`)
   - `Ctrl+L` — quick jump bar
-  - `Ctrl+F` — open / close window search panel
+  - `Ctrl+F` — open / close window search panel; over a general book,
+    open its pane's find bar instead
   - `F3` / `Shift+F3` — next / previous search result. Routes to whichever
-    surface has cached results (window panel preferred; falls back to
-    re-revealing a closed panel if results are still in memory).
+    surface has cached results; the active book's open find bar takes
+    priority, then the window panel (including re-revealing cached results).
   - `Alt+←/→` — prev/next chapter (wraps across books)
   - `Alt+↑/↓` — prev/next book
   - `Alt+[` / `Alt+]` and mouse buttons 8/9 — back / forward through
@@ -597,6 +601,56 @@ Both enter the same projected rows; no source pane or persisted reference moves.
 The known RusSynodal Psalm 114:8/9 data/table disagreement is handled only when
 the module's 9 slot is empty: its 8 line contains both KJV 116:8 and 9. It does
 not infer combined verses from arbitrary missing text in other translations.
+
+## General books — reading, search and notes
+
+`genbook_reader.GenbookReader` owns a pane's SWORD TreeKey resource. The
+header opens that resource's contents and steps its entries; its internal
+label is bounded and ellipsized, with the full title in a tooltip. The last
+active visible pane remains the header's source when toolbar focus changes.
+Following a Scripture reference preserves the source book and selects a Bible
+in the other pane, including when the narrow layout can show only one pane.
+
+Entry paths are checked against the actual contents tree before loading:
+SWORD can silently resolve an invalid path to another entry. The bridge clears
+its contents cache on reset after module changes. Rendered module/path state
+is distinct from a pending request, so a save during a fetch records the page
+actually on screen. `module_positions` stores `genbook_path`, `text_offset`
+and the intra-line pixel `line_offset`. `ScrollKeeper.restore_text_mark`
+settles the character mark plus pixel delta through GTK line validation and
+yields to new input or a superseding render. Saving the character alone loses
+a line on repeated reopen/theme changes because of TextView margins.
+
+`PaneSearch` supplies both current-section highlighting and whole-book
+results. `book_search.search_book` scans entry titles and normalized text in
+contents order through `tasks.submit`, keyed per pane. Queries are literal,
+at least two characters, with optional case sensitivity. The default scan
+retains every matched section; the UI displays batches of 200. Selection and
+Enter/F3 navigation hand a pending jump to the reader, which applies it after
+render instead of restoring the old reading position. Marker and breadcrumb
+ranges are excluded from local matching; an index map preserves buffer offsets
+for phrases spanning markers or paragraph breaks. A hit inside a folded Calvin
+synopsis reveals it. Changing query, closing find or switching module cancels
+the worker and prevents stale results from taking over.
+
+`book_notes.prepare_notes` turns Common Weal `x-notes` blocks and legacy
+nonempty inline notes into numbered markers, a note-body map and an endnote
+fallback. It suppresses the older Owen edition's “Auto-modernized” editorial
+annotations. Before releasing the SWORD lock, `load_genbook_entry` hydrates
+empty `swordFootnote` anchors from that entry's attributes; those bodies would
+otherwise be lost when the module moves to another entry. The reader uses
+the existing `fnote:0:<label>` tags, `fn_marker` visibility and shared peek
+controller. Verse zero denotes a book note and is omitted from the caption.
+Changing entries dismisses the old peek; the window's footnote sensitivity
+also accounts for the rendered book's note map.
+
+Chapter summaries remain in the reading flow, smaller and left-aligned, while
+body text follows the reader's settings. New classics builds preserve explicit
+summary roles. Compatibility with the published Owen modules is limited to
+the four measured module keys and their Roman-numbered chapter openings.
+Headings, summaries and links derive their contrast from the reading paper.
+Empty structural parents still show the instruction to open contents; child
+section landing pages are a proposed refinement, not implemented behavior.
 
 ## Historical Commentaries (catena)
 

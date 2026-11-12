@@ -532,10 +532,12 @@ class PeekController:
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         content.set_size_request(280, -1)
         content.add_css_class('peek-reading-box')
-        cap_text = (_('Cross-references ({letter}) · verse {v}')
-                    if ftype == 'crossReference'
-                    else _('Footnote ({letter}) · verse {v}')).format(
-                        letter=letter, v=verse)
+        if verse == 0:
+            cap_text = _('Footnote ({letter})').format(letter=letter)
+        else:
+            cap_text = (_('Cross-references ({letter}) · verse {v}')
+                        if ftype == 'crossReference'
+                        else _('Footnote ({letter}) · verse {v}')).format(letter=letter, v=verse)
         cap = Gtk.Label(label=cap_text, xalign=0)
         cap.add_css_class('caption')
         cap.add_css_class('dim-label')

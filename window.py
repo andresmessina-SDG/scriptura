@@ -438,12 +438,15 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._install_window_controllers()
         self._update_ref_label(*self._current_loc)
         for pane in (self.pane1, self.pane2):
-            pane.on_place_changed = (
-                lambda: self._update_ref_label(*self._current_loc))
+            pane.on_place_changed = self._on_pane_place_changed
         # With a resource in each pane the header names the one in use, so
         # it follows the focus from one pane to the other.
         self._pane_last_in_view = self._pane_in_view()
         self.connect('notify::focus-widget', self._on_focus_moved)
+
+    def _on_pane_place_changed(self):
+        self._update_ref_label(*self._current_loc)
+        self._update_fnote_sensitivity()
 
     def _on_focus_moved(self, *_a):
         pane = self._pane_in_view()
@@ -663,8 +666,8 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._search_btn = search_btn = Gtk.Button(icon_name='scriptura-system-search-symbolic')
         search_btn.add_css_class('flat')
         search_btn.add_css_class('header-action')
-        search_btn.set_tooltip_text(_('Search the Bible (Ctrl+F)'))
-        set_accessible_label(search_btn, _('Search the Bible'))
+        search_btn.set_tooltip_text(_('Search (Ctrl+F)'))
+        set_accessible_label(search_btn, _('Search'))
         search_btn.connect('clicked', self._on_search_clicked)
         header.pack_end(search_btn)
 
@@ -1448,7 +1451,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         return False
 
     def _pane_in_view(self):
-        """Whichever pane the reader is in, or pane1 when nothing is focused.
+        """The focused pane, or the last visible pane used by the reader.
 
         The same focus walk `_focus_other_pane` does — a pane is not the
         focused widget itself, the text view inside it is.
@@ -1458,7 +1461,10 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             if f is self.pane1 or f is self.pane2:
                 return f
             f = f.get_parent()
-        return self.pane1
+        last = getattr(self, '_pane_last_in_view', None)
+        if last is not None and last.get_visible():
+            return last
+        return self.pane1 if self.pane1.get_visible() else self.pane2
 
     def _focus_other_pane(self):
         f = self.get_focus()
@@ -1482,12 +1488,17 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
              previous search — so F3 keeps working after the panel is
              dismissed (e.g. by clicking a row, which auto-closes the
              window panel)."""
+        active = self._pane_in_view()
+        panes = (active, self.pane2 if active is self.pane1 else self.pane1)
         # Visible-panel priority pass.
         if (self._search_split.get_show_sidebar()
                 and getattr(self._search_panel, '_results', None)):
             self._search_panel.step_result(prev=prev)
             return
-        for pane in (self.pane1, self.pane2):
+        if getattr(active, '_is_genbook', False) and active._pane_search_rev.get_reveal_child():
+            active.step_pane_search_result(prev=prev)
+            return
+        for pane in panes:
             if (pane._pane_search_rev.get_reveal_child()
                     and pane._pane_search_results):
                 pane.step_pane_search_result(prev=prev)
@@ -1500,7 +1511,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
             self._search_split.set_show_sidebar(True)
             self._search_panel.step_result(prev=prev)
             return
-        for pane in (self.pane1, self.pane2):
+        for pane in panes:
             if pane._pane_search_results:
                 pane.step_pane_search_result(prev=prev)
                 return
@@ -1645,6 +1656,12 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         self._overlays._toggle_menu(btn)
 
     def _on_search_clicked(self, btn):
+        pane = self._pane_in_view()
+        if pane.get_visible() and pane._is_genbook:
+            self._overlays._close_other_overlays()
+            pane._search.button.set_active(True)
+            pane._search._entry.grab_focus()
+            return
         self._overlays._on_search_clicked(btn)
 
     def _hide_search(self):
@@ -2804,12 +2821,13 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         Runs on every pane module switch and after module installs."""
         import content
         capable = any(content.has_footnotes(p.module)
+                      or (p._is_genbook and bool(p._chapter_footnotes))
                       for p in (self.pane1, self.pane2))
         self.fnote_toggle.set_sensitive(capable)
         self.fnote_toggle.set_tooltip_text(
-            _("Footnotes — the translation's own notes, marked in the text")
+            _('Footnotes — notes marked in the text')
             if capable else
-            _("Footnotes — the open translations don't include any"))
+            _('Footnotes — the open resources don’t include any'))
 
     def _on_view_mode(self, _btn):
         split = self._btn_split.get_active()
@@ -2981,7 +2999,7 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
                 _('Go forward'), lambda: self._on_nav_fwd(None),
                 sensitive=bool(self._nav_fwd))
             row(Gtk.Image.new_from_icon_name('scriptura-system-search-symbolic'),
-                _('Search the Bible'), lambda: self._on_search_clicked(None))
+                _('Search'), lambda: self._on_search_clicked(None))
 
         # Lexicon — leading glyph mirrors the header toggle (אΩ); a check marks
         # it when the lexicon is currently on.
@@ -3762,17 +3780,18 @@ class BibleWindow(AppearancePageMixin, Adw.ApplicationWindow):
         panes = (self.pane1, self.pane2)
         if any(p.get_visible() and p._is_verse_navigable() for p in panes):
             return
+        source = self._pane_in_view()
         if not self._btn_split.get_active():
             self._btn_split.set_active(True)  # → _on_view_mode reveals pane2
-        # Put the Bible in whichever pane isn't the gallery (defaults to pane2).
-        target = (self.pane2
-                  if self.pane1._is_archaeology or self.pane1._is_creeds
-                  or self.pane1._is_harmony
-                  else self.pane1)
+        # Keep the resource whose citation was clicked. This also covers
+        # general books and devotionals, including two resources side by side.
+        target = self.pane2 if source is self.pane1 else self.pane1
         if not target._is_verse_navigable():
             bible = self._first_bible_module()
             if bible:
                 target._apply_module_change(bible)
+        if self._panes_narrow:
+            self._select_narrow_pane(2 if target is self.pane2 else 1)
 
     def _open_verse_in_pane2(self, book, chapter, verse, module=None):
         """A verse peek's 'open in Bible pane' button: put the cited verse

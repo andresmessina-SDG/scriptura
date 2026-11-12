@@ -696,7 +696,7 @@ class ModuleManagerWindow(Adw.Window):
         search_row.append(t['chip_box'])
 
         # Curated packs pinned on top, before anything installed/browsable.
-        t['curated'] = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        t['curated'] = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
         t['installed_box'] = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL, spacing=18)
         t['updates_group'] = Adw.PreferencesGroup()
@@ -760,14 +760,15 @@ class ModuleManagerWindow(Adw.Window):
             self._has_catalog = False
             # Degraded state: classify what's installed from its local conf
             # so each module still lands on its right tab.
-            self._all_modules = [
-                {'name': n, 'description': '',
-                 'type': sword_bridge.module_type(n),
-                 'lang': sword_bridge.module_language(n),
-                 'features': set(), 'license': '', 'size': '',
-                 'version': '', 'locked': False, 'installed': True}
-                for n in sword_bridge.module_names()
-            ]
+            self._all_modules = []
+        # A cached catalogue can predate the installed classics, and imported
+        # modules may never appear in it. Their local conf is still available.
+        catalogued = {m['name'] for m in self._all_modules}
+        for name in sword_bridge.module_names():
+            if name not in catalogued:
+                info = sword_bridge.installed_module_metadata(name)
+                if info is not None:
+                    self._all_modules.append(info)
         self._eb_catalog = ebible_bridge.catalog_entries() or []
         self._eb_by_id = {e.get('translationId', '').strip(): e
                           for e in self._eb_catalog}

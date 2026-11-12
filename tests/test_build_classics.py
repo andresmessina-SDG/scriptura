@@ -182,6 +182,20 @@ def test_the_module_reads_as_the_epub(epub):
     assert bc.check([epub], entries) == []
 
 
+def test_a_printed_opening_summary_keeps_its_role_and_words():
+    from xml.etree import ElementTree as ET
+    root = ET.fromstring(
+        f'<section xmlns="{bc.X[1:-1]}"><h3>Chapter III</h3>'
+        '<p class="inset">The Spirit — his work.</p><p>The next principle.</p>'
+        '<p class="inset">A later quotation.</p></section>')
+    entry = bc.Entry(bc.Refs(), {})
+    out = entry.blocks(root)
+    assert out.startswith('<p type="x-summary">The Spirit — his work.</p>')
+    assert out.count('type="x-summary"') == 1
+    assert bc.plain_words(out) == ['The', 'Spirit', '—', 'his', 'work.',
+                                   'The', 'next', 'principle.', 'A', 'later', 'quotation.']
+
+
 def test_a_word_lost_on_the_way_is_caught(epub):
     entries, _ = bc.convert([epub], bc.Refs())
     entries = [(k, b.replace(' and ', ' ')) for k, b in entries]

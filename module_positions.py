@@ -12,8 +12,8 @@ Two kinds of position:
     scoped to (book, chapter). Restored only when the surrounding
     book/chapter match — top_verse for chapter A isn't valid for
     chapter B.
-  - **genbook** (Generic Books): an entry path (list of strings)
-    identifying the current TOC entry inside the module's tree.
+  - **genbook** (Generic Books): an entry path string identifying the
+    current TOC entry, and the top-visible character within that entry.
 
 Persisted to `module_positions.json` under the XDG config dir.
 
@@ -158,15 +158,29 @@ def get_verse_position(module: str, book: str, chapter: int) -> int | None:
     return None
 
 
-def remember_genbook_path(module: str, path: str) -> None:
+def remember_genbook_path(module: str, path: str, offset: int | None = None,
+                          line_offset: float | None = None) -> None:
     """Save the current entry path for a genbook module. `path` is a
     SWORD genbook key like '/Title_Page' — a string, NOT a list."""
     if not module or not path:
         return
     with _lock:
+        old = _state.get(module, {})
+        if offset is None:
+            offset = (old.get('text_offset', 0) if isinstance(old, dict)
+                      and old.get('genbook_path') == path else 0)
+            line_offset = (old.get('line_offset', 0.0) if isinstance(old, dict)
+                           and old.get('genbook_path') == path else 0.0)
+        if not isinstance(offset, int) or isinstance(offset, bool) or offset < 0:
+            offset = 0
+        if not isinstance(line_offset, (int, float)) or isinstance(line_offset, bool) \
+                or not -10000 <= line_offset <= 10000:
+            line_offset = 0.0
         _state[module] = {
             'kind': 'genbook',
             'genbook_path': str(path),
+            'text_offset': offset,
+            'line_offset': float(line_offset),
         }
     _schedule_save()
 
@@ -195,3 +209,27 @@ def get_genbook_path(module: str) -> str | None:
 
 def load_failed() -> bool:
     return _load_failed
+
+
+def get_genbook_offset(module: str, path: str | None) -> int:
+    """Character position scoped to the saved entry; old records start at 0."""
+    with _lock:
+        entry = _state.get(module)
+        if not isinstance(entry, dict) or entry.get('kind') != 'genbook' \
+                or entry.get('genbook_path') != path:
+            return 0
+        offset = entry.get('text_offset', 0)
+        return offset if isinstance(offset, int) and not isinstance(offset, bool) \
+            and offset >= 0 else 0
+
+
+def get_genbook_line_offset(module: str, path: str | None) -> float:
+    """Viewport offset within the saved character's line, including margins."""
+    with _lock:
+        entry = _state.get(module)
+        if not isinstance(entry, dict) or entry.get('kind') != 'genbook' \
+                or entry.get('genbook_path') != path:
+            return 0.0
+        delta = entry.get('line_offset', 0.0)
+        return float(delta) if isinstance(delta, (int, float)) \
+            and not isinstance(delta, bool) and -10000 <= delta <= 10000 else 0.0
