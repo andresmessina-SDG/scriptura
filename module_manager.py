@@ -11,6 +11,7 @@ never dead-end a search.
 """
 import logging
 import math
+import re
 from datetime import datetime
 from typing import Any
 import gi
@@ -32,6 +33,7 @@ import content
 import downloads
 import fetch_errors
 import updates
+from module_details import ModuleDetails
 from family_card import (FamilyCard, paint_track, place_sentences,
                          redraw_on_contrast)
 from i18n import _, ngettext
@@ -282,7 +284,7 @@ def _fmt_size(raw):
         if n < 1024 or unit == 'GB':
             if unit == 'bytes':
                 return f'{int(n)} bytes'
-            return f'{n:.1f} {unit}'
+            return f"{f'{n:.1f}'.removesuffix('.0')} {unit}"
         n /= 1024
     return ''
 
@@ -344,6 +346,8 @@ def _ago(dt):
 _FAMILY_TRACK_W = 140
 _FAMILY_TRACK_NARROW = 80
 _FAMILY_NARROW_SP = 560
+# Below this width the Card and module details take the whole window.
+_SHEET_FULL_SP = 560
 
 
 def _first_descendant(widget, kind, test=lambda _w: True):
@@ -500,8 +504,24 @@ class ModuleManagerWindow(Adw.Window):
         self._card_split.set_sidebar_position(Gtk.PackType.END)
         self._card_split.set_min_sidebar_width(420)
         self._card_split.set_max_sidebar_width(460)
-        self._card_split.set_sidebar(self._card)
-        self._card_split.set_content(toolbar_view)
+        # A module row's own description shares the Card's sheet.
+        self._details = ModuleDetails(on_close=self._hide_card)
+        self._sheet = Gtk.Stack()
+        self._sheet.add_named(self._card, 'card')
+        self._sheet.add_named(self._details, 'details')
+        self._card_split.set_sidebar(self._sheet)
+        # Dim the list under the sheet; a click on it closes the sheet.
+        scrim = Gtk.Box(visible=False)
+        scrim.add_css_class('sheet-scrim')
+        click = Gtk.GestureClick()
+        click.connect('released', lambda *_a: self._hide_card())
+        scrim.add_controller(click)
+        content = Gtk.Overlay(child=toolbar_view)
+        content.add_overlay(scrim)
+        self._card_split.connect(
+            'notify::show-sidebar',
+            lambda split, _p: scrim.set_visible(split.get_show_sidebar()))
+        self._card_split.set_content(content)
         self.set_content(self._card_split)
         # Esc closes the Card before the window: in the capture phase, ahead
         # of the window's own Esc.
@@ -516,6 +536,13 @@ class ModuleManagerWindow(Adw.Window):
         narrow.connect('unapply', lambda _b: self._set_track_width(
             _FAMILY_TRACK_W))
         self.add_breakpoint(narrow)
+        # A narrow window gives the side sheet all of it: a sheet over most
+        # of the list read as a list cut off by mistake.
+        sheet_full = Adw.Breakpoint.new(Adw.BreakpointCondition.parse(
+            f'max-width: {_SHEET_FULL_SP}sp'))
+        sheet_full.add_setter(self._card_split, 'sidebar-width-fraction', 1.0)
+        sheet_full.add_setter(self._card_split, 'max-sidebar-width', 10000.0)
+        self.add_breakpoint(sheet_full)
 
         header = Adw.HeaderBar()
         toolbar_view.add_top_bar(header)
@@ -814,6 +841,10 @@ class ModuleManagerWindow(Adw.Window):
             self._rebuild_curated(t)
             if languages:
                 self._rebuild_lang_options(t)
+        if tab_id == 'books':
+            # A search is a hunt: the shelves step aside, and a classic that
+            # matches is among the results with the same row.
+            t['curated'].set_visible(not t['search'].get_text().strip())
         self._rebuild_updates(t)
         self._rebuild_installed(t)
         self._rebuild_browse(t)
@@ -1248,8 +1279,12 @@ class ModuleManagerWindow(Adw.Window):
         query = t['search'].get_text().strip().lower()
 
         entries = []   # (sort_key, (src, payload))
+        shelved = 0
         for mod in self._tab_sword_modules(t, installed=True):
             if query and not self._matches(mod, query):
+                continue
+            if _is_classic(mod) and not query:
+                shelved += 1    # the Classics shelf lists it, with Remove
                 continue
             entries.append((_friendly_name(mod).lower(),
                             ('sword', mod)))
@@ -1268,6 +1303,8 @@ class ModuleManagerWindow(Adw.Window):
                                             lang_name, entry))))
 
         n = len(entries)   # edition count, before folding
+        if not entries and shelved:
+            return
         entries = self._fold_editions(entries)
         group = Adw.PreferencesGroup()
         group.set_title(_('Installed') + (f' ({n})' if n else ''))
@@ -1533,7 +1570,32 @@ class ModuleManagerWindow(Adw.Window):
                 + [ebible_bridge.PREFIX + t
                    for t in ebible_bridge.installed_ids()])
 
+    def _show_details(self, mod, title):
+        """A module row, pressed: what its publisher says about it."""
+        meta = []
+        if mod.get('version'):
+            meta.append(_('Version {version}').format(version=mod['version']))
+        size = _fmt_size(mod.get('size'))
+        if size:
+            meta.append(size)
+        # A classic's Description ends in its author: '… (Jonathan Edwards)'.
+        # The title alone stays on one line more often; the author leads
+        # the byline, as on a book's title page.
+        byline = re.fullmatch(r'(.+?)\s*\(([^()]+)\)', title) \
+            if _is_classic(mod) else None
+        if byline:
+            title = byline.group(1)
+            meta.insert(0, byline.group(2))
+        self._details.show(
+            title, 'Common Weal Press' if _is_classic(mod) else 'CrossWire',
+            ' · '.join(meta), mod.get('about', ''), mod.get('copyright', ''),
+            mod.get('textsource', ''))
+        self._sheet.set_visible_child_name('details')
+        self._card_split.set_show_sidebar(True)
+        self._details.focus_start()
+
     def _show_card(self, node_id):
+        self._sheet.set_visible_child_name('card')
         self._card.show(node_id, self._installed_keys(), '',
                         can_compare=False, can_open=False,
                         can_show_family=self._on_show_in_family is not None)
@@ -1591,6 +1653,8 @@ class ModuleManagerWindow(Adw.Window):
         title = (mod.get('description') or friendly) if _is_classic(mod) \
             else friendly
         row.set_title(GLib.markup_escape_text(title[:80]))
+        row.set_activatable(True)
+        row.connect('activated', lambda _r, m=mod, t=title: self._show_details(m, t))
 
         meta = []
         # A language label on every row is catalogue noise when it's the

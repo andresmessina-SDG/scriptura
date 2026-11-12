@@ -90,6 +90,7 @@ py_sources = files(
   'downloads.py',
   'updates.py',
   'fetch_errors.py',
+  'module_details.py',
   'module_manager.py',
   'module_picker.py',
   'module_positions.py',

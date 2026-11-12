@@ -378,13 +378,36 @@ def _conf_text(value):
     text = str(value or '')
     try:
         text.encode('utf-8')
-        return text
     except UnicodeEncodeError:
         raw = text.encode('utf-8', 'surrogateescape')
         try:
-            return raw.decode('utf-8')
+            text = raw.decode('utf-8')
         except UnicodeDecodeError:
-            return raw.decode('latin-1')
+            text = raw.decode('latin-1')
+    return _conf_plain(text)
+
+
+# The conf format's RTF subset, as CrossWire's catalogue uses it. \par is a
+# paragraph even when a word follows with no space ('\parhttp://'); \pard
+# resets formatting only where no letter follows ('\pardat.' is \par + 'dat.').
+_CONF_PAR = re.compile(r'\\+par(?:d(?![A-Za-z]))? ?|\\n')
+_CONF_CODE = re.compile(r'\\(?:qc|ql|qr) ?')
+_CONF_BREAK = re.compile(r'<(?:br|/?p)\b[^<>@]*>', re.I)
+_CONF_TAG = re.compile(r'</?(?:a|b|i|u|em|strong|span|font)\b[^<>@]*>', re.I)
+
+
+def _conf_plain(text):
+    """Conf formatting codes as plain text: paragraphs become newlines."""
+    if '\\' not in text and '<' not in text:
+        return text
+    text = _CONF_PAR.sub('\n', text)
+    text = _CONF_CODE.sub('', text)
+    text = re.sub(r"\\(?=['\"])", '', text)
+    text = re.sub(r'\\(?:\s+|$)', ' ', text)
+    text = _CONF_TAG.sub('', _CONF_BREAK.sub('\n', text))
+    text = re.sub(r'[ \t]*\n[ \t]*', '\n', text)
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    return re.sub(r'[ \t]{2,}', ' ', text).strip()
 
 
 def module_info(module_name):
@@ -2111,6 +2134,9 @@ def _parse_conf_lines(raw_lines):
                 info.setdefault('history', {})[k[len('history_'):]] = v
             elif k == 'version':
                 info['version'] = v
+            elif k in ('about', 'copyright', 'textsource'):
+                # What the publisher says of the module, for its details.
+                info[k] = _conf_text(v)
             elif k == 'distributionlicense':
                 info['license'] = v
             elif k == 'installsize':
@@ -2243,6 +2269,9 @@ def list_available_modules():
                 'history': info.get('history', {}),
                 'locked': 'cipherkey' in info,
                 'collection': info.get('collection', ''),
+                'about': info.get('about', ''),
+                'copyright': info.get('copyright', ''),
+                'textsource': info.get('textsource', ''),
             })
     result.sort(key=lambda m: m['name'].lower())
     _catalog_cache = (path, result)

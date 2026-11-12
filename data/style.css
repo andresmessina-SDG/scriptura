@@ -1138,6 +1138,13 @@ overlay-split-view.menu-split > dimming,
 overlay-split-view.search-split > dimming {
     background: none;
 }
+/* The Module Manager's sheet covers the whole window, header and all, so
+   its scrim has no edge to draw: dim the list, which a half-covered row
+   otherwise reads as cut off by mistake. Our own widget: the native dimming
+   gizmo is allocated no size. */
+.sheet-scrim {
+    background-color: alpha(black, 0.3);
+}
 overlay-split-view.menu-split > widget.background,
 overlay-split-view.menu-split > widget.sidebar-pane,
 overlay-split-view.search-split > widget.background,

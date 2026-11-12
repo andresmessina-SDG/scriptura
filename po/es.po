@@ -11765,3 +11765,12 @@ msgstr "Notas — notas señaladas en el texto"
 #: pane_search.py pane_peek.py window.py
 msgid "Footnotes — the open resources don’t include any"
 msgstr "Notas — los recursos abiertos no incluyen notas"
+
+
+#: module_details.py module_manager.py
+msgid "Version {version}"
+msgstr "Versión {version}"
+
+#: module_details.py
+msgid "Its publisher gives no description."
+msgstr "Su editor no da ninguna descripción."
