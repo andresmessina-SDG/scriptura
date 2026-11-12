@@ -565,6 +565,8 @@ def test_module_info_known(db):
     assert info['copyright'] == '© WEB'
     assert info['license'] == 'Public Domain'
     assert info['type'] == 'eBible translation'
+    # The title, not the language's own name ('English', 'Latine').
+    assert info['description'] == 'WEB'
 
 
 def test_module_info_unknown_still_returns_shape(db):

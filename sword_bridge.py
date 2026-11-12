@@ -415,7 +415,7 @@ def module_info(module_name):
     Missing fields come back as ''."""
     info = {'name': module_name, 'description': '', 'version': '',
             'copyright': '', 'license': '', 'about': '', 'language': '',
-            'type': ''}
+            'type': '', 'textsource': '', 'collection': ''}
     try:
         mod = mgr().getModule(module_name)
         if mod is None:
@@ -426,6 +426,8 @@ def module_info(module_name):
         info['license']     = _conf_text(mod.getConfigEntry('DistributionLicense')
                                          or mod.getConfigEntry('License'))
         info['about']       = _conf_text(mod.getConfigEntry('About'))
+        info['textsource']  = _conf_text(mod.getConfigEntry('TextSource'))
+        info['collection']  = _conf_text(mod.getConfigEntry('Collection'))
         info['language']    = str(mod.getConfigEntry('Lang') or '').strip().lower()
         info['type']        = str(mod.getType() or '')
     except Exception:

@@ -16,11 +16,15 @@ from a11y import set_accessible_label
 from gtk_utils import clear_children
 
 import bible_family
+import i18n
+import module_manager
+import re
 import sword_bridge
 import content
 import motion
 import updates
 from i18n import _
+from module_details import fill, split_byline
 
 
 def N_(message):
@@ -176,19 +180,21 @@ class ModulePicker:
         set_accessible_label(back_btn, _('Back to list'))
         back_btn.connect('clicked', lambda _b: stack.set_visible_child_name('list'))
         info_header.append(back_btn)
-        self._info_title = Gtk.Label(xalign=0, hexpand=True)
-        self._info_title.add_css_class('heading')
-        self._info_title.set_wrap(True)
-        info_header.append(self._info_title)
+        # The publisher beside Back; the module's name is the body's title.
+        self._info_kicker = Gtk.Label(xalign=0, hexpand=True)
+        self._info_kicker.add_css_class('family-card-kicker')
+        info_header.append(self._info_kicker)
         info_page.append(info_header)
-        info_page.append(Gtk.Separator())
 
-        info_scroll = Gtk.ScrolledWindow(vexpand=True)
+        self._info_scroll = info_scroll = Gtk.ScrolledWindow(vexpand=True)
         info_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         info_scroll.set_propagate_natural_height(True)
         info_scroll.set_min_content_height(160)
         info_scroll.set_max_content_height(360)
-        self._info_body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        self._info_body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self._info_body.set_margin_start(10)
+        self._info_body.set_margin_end(10)
+        self._info_body.set_margin_bottom(8)
         info_scroll.set_child(self._info_body)
         info_page.append(info_scroll)
 
@@ -485,14 +491,54 @@ class ModulePicker:
     # ── info page + removal ────────────────────────────────────────────────────
 
     def _show_info(self, name):
-        self._info_title.set_label(sword_bridge.display_name(name))
+        """The module's own description, laid out as the Module Manager's
+        details sheet: publisher, title, byline, then the publisher's prose."""
         self._info_name = name
         self._remove_btn.set_visible(self._can_remove(name))
         clear_children(self._info_body)
 
         info = content.info(name)
+        kind = content.type_key(name)
+        if kind == 'ebible':
+            source = 'eBible.org'
+        elif kind != 'sword':
+            source = 'Scriptura'
+        elif info.get('collection') == 'Classics':
+            source = 'Common Weal Press'
+        else:
+            source = 'CrossWire'
+        self._info_kicker.set_label(source)
 
-        # The Bible Family Tree's Card, for the Bibles it knows.
+        title, author = sword_bridge.display_name(name), ''
+        if source == 'Common Weal Press':
+            # The press's Description carries the author; a curated
+            # display name may not.
+            title, author = split_byline(info.get('description') or title)
+        meta = [author] if author else []
+        lang = content.normalise_language(info.get('language', ''))
+        if lang and lang != i18n.current_language():
+            raw = module_manager._LANG_NAMES.get(lang, '')
+            meta.append(_(raw) if raw else lang)
+        if info.get('version'):
+            meta.append(_('Version {version}').format(version=info['version']))
+        # A content pack's kind is a count or a word ('87995 quotations');
+        # SWORD's is its internal category name and eBible's repeats the
+        # kicker, so neither says anything here.
+        if kind not in ('sword', 'ebible') and info.get('type') \
+                and info['type'].lower() not in title.lower():
+            meta.append(info['type'])
+
+        # The description is worth a deck only when it says something the
+        # title, byline and About do not.
+        deck = info.get('description', '')
+        squash = lambda t: re.sub(r'\W+', '', t.lower())
+        if squash(deck) in squash(title + author + info.get('about', '')):
+            deck = ''
+        text_source = info.get('textsource', '')
+        if text_source.lower().startswith(source.lower()):
+            text_source = ''
+
+        family = None
         record = bible_family.node_for_module(name)
         if record is not None:
             inner = Gtk.Box(spacing=6)
@@ -500,41 +546,19 @@ class ModulePicker:
                                    xalign=0, hexpand=True))
             inner.append(Gtk.Image.new_from_icon_name(
                 'scriptura-go-next-symbolic'))
-            about = Gtk.Button(child=inner)
-            about.add_css_class('module-family-link')
-            set_accessible_label(about, _('About this translation'))
-            about.connect('clicked',
-                          lambda _b, _id=record['id']: self._open_card(_id))
-            self._info_body.append(about)
+            family = Gtk.Button(child=inner)
+            family.add_css_class('module-family-link')
+            set_accessible_label(family, _('About this translation'))
+            family.connect('clicked',
+                           lambda _b, _id=record['id']: self._open_card(_id))
 
-        def _add_field(label, value, multiline=False):
-            if not value:
-                return
-            cap = Gtk.Label(label=label, xalign=0)
-            cap.add_css_class('caption')
-            cap.add_css_class('dim-label')
-            cap.set_margin_top(6)
-            self._info_body.append(cap)
-            val = Gtk.Label(label=str(value), xalign=0,
-                            wrap=multiline, selectable=True)
-            if multiline:
-                val.set_max_width_chars(40)
-            self._info_body.append(val)
-
-        _add_field(_('Description'), info.get('description', ''), multiline=True)
-        _add_field(_('Language'),    info.get('language', ''))
-        _add_field(_('Version'),     info.get('version', ''))
-        _add_field(_('Type'),        info.get('type', ''))
-        _add_field(_('Copyright'),   info.get('copyright', ''), multiline=True)
-        _add_field(_('License'),     info.get('license', ''))
-        _add_field(_('About'),       info.get('about', ''), multiline=True)
-
-        if self._info_body.get_first_child() is None:
-            empty = Gtk.Label(
-                label=_('No metadata available for this module.'), xalign=0)
-            empty.add_css_class('dim-label')
-            empty.set_margin_top(12)
-            self._info_body.append(empty)
+        fill(self._info_body, title, ' · '.join(meta),
+             [(_('About'), info.get('about', '')),
+              (_('Copyright'), info.get('copyright', '')),
+              (_('License'), info.get('license', '')),
+              (_('Source'), text_source)],
+             deck=deck, after_meta=family)
+        self._info_scroll.get_vadjustment().set_value(0)
 
         self._stack.set_visible_child_name('info')
 

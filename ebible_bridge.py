@@ -256,7 +256,8 @@ def module_info(module_name):
             'FROM translations WHERE id=?', (tid,)
         ).fetchone()
         if row:
-            info['description'] = row[1] or row[0] or ''
+            # The title; row[1] is the language's own name ('Latine').
+            info['description'] = row[0] or ''
             info['language']    = (row[2] or '').strip().lower()
             info['copyright']   = row[3] or ''
             info['license']     = row[4] or ''

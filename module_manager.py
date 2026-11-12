@@ -11,7 +11,6 @@ never dead-end a search.
 """
 import logging
 import math
-import re
 from datetime import datetime
 from typing import Any
 import gi
@@ -33,7 +32,7 @@ import content
 import downloads
 import fetch_errors
 import updates
-from module_details import ModuleDetails
+from module_details import ModuleDetails, split_byline
 from family_card import (FamilyCard, paint_track, place_sentences,
                          redraw_on_contrast)
 from i18n import _, ngettext
@@ -925,13 +924,16 @@ class ModuleManagerWindow(Adw.Window):
         return btn
 
     def _pack_row(self, key, title, installed_subtitle, subtitle, update,
-                  on_download, on_remove, partial=None, discard=None):
+                  on_download, on_remove, partial=None, discard=None,
+                  info_key=None):
         """The row every curated pack shares. `update` is None or the
         tooltip of an Update button; `partial` the (bytes, total) of a
         download stopped part-way, which the row offers to resume — or to
         throw away with the trash button, through `discard`."""
         row = Adw.ActionRow()
         row.set_title(title)
+        if info_key:
+            self._details_on_press(row, info_key, title)
         buttons = []
         if installed_subtitle is not None:
             row.set_subtitle(installed_subtitle)
@@ -966,7 +968,8 @@ class ModuleManagerWindow(Adw.Window):
             installed is not None and catena_bridge.update_available()
             and _('A newer pack is available'),
             self._on_catena_download, self._do_catena_remove,
-            catena_bridge.partial_download(), catena_bridge.discard_partial)
+            catena_bridge.partial_download(), catena_bridge.discard_partial,
+            info_key=catena_bridge.MODULE_KEY)
 
     def _make_interlinear_row(self, name=interlinear_data.GREEK):
         hebrew = interlinear_data.is_hebrew(name)
@@ -995,7 +998,7 @@ class ModuleManagerWindow(Adw.Window):
               'and Strong’s under each word · ~7 MB download'),
             update,
             lambda b: self._on_interlinear_download(b, name),
-            lambda: self._do_interlinear_remove(name))
+            lambda: self._do_interlinear_remove(name), info_key=name)
 
     def _make_imagery_row(self):
         installed = None
@@ -1012,13 +1015,16 @@ class ModuleManagerWindow(Adw.Window):
             installed is not None and imagery_bridge.update_available()
             and _('A newer pack is available'),
             self._on_imagery_download, self._do_imagery_remove,
-            imagery_bridge.partial_download(), imagery_bridge.discard_partial)
+            imagery_bridge.partial_download(), imagery_bridge.discard_partial,
+            info_key=imagery_bridge.MODULE_KEY)
 
     def _make_archaeology_row(self):
         """Scripture in Stone ships inside the app — nothing to download,
         but it must be discoverable next to its curated siblings."""
         row = Adw.ActionRow()
         row.set_title(_(archaeology_bridge.DISPLAY_NAME))
+        self._details_on_press(row, archaeology_bridge.MODULE_KEY,
+                               _(archaeology_bridge.DISPLAY_NAME))
         row.set_subtitle(
             _('Artifacts, inscriptions, and excavated places in biblical '
               'sequence — open it from any pane’s module picker'))
@@ -1581,15 +1587,62 @@ class ModuleManagerWindow(Adw.Window):
         # A classic's Description ends in its author: '… (Jonathan Edwards)'.
         # The title alone stays on one line more often; the author leads
         # the byline, as on a book's title page.
-        byline = re.fullmatch(r'(.+?)\s*\(([^()]+)\)', title) \
-            if _is_classic(mod) else None
-        if byline:
-            title = byline.group(1)
-            meta.insert(0, byline.group(2))
+        if _is_classic(mod):
+            title, author = split_byline(title)
+            if author:
+                meta.insert(0, author)
         self._details.show(
             title, 'Common Weal Press' if _is_classic(mod) else 'CrossWire',
             ' · '.join(meta), mod.get('about', ''), mod.get('copyright', ''),
             mod.get('textsource', ''))
+        self._sheet.set_visible_child_name('details')
+        self._card_split.set_show_sidebar(True)
+        self._details.focus_start()
+
+    def _show_eb_details(self, entry, title, lang_code, lang_name):
+        """An eBible row, pressed: the catalogue's description of it."""
+        meta = []
+        if (lang_code or lang_name) and _norm_lang(lang_code) != _ui_lang():
+            meta.append(_eb_lang_display(lang_code, lang_name))
+        # Many eBible texts hold one Testament; a whole Bible goes unsaid.
+        books = {k: int(v) if (v := (entry.get(k) or '').strip()).isdigit() else 0
+                 for k in ('OTbooks', 'NTbooks', 'DCbooks')}
+        if books['OTbooks'] and not books['NTbooks']:
+            meta.append(_('Old Testament'))
+        elif books['NTbooks'] and not books['OTbooks']:
+            meta.append(_('New Testament'))
+        if books['DCbooks']:
+            meta.append(_('Deuterocanon'))
+        # The vernacular title, when the row's short one differs from it.
+        full = (entry.get('title') or '').strip()
+        self._details.show(
+            title, 'eBible.org', ' · '.join(meta),
+            (entry.get('description') or '').strip(),
+            (entry.get('Copyright') or '').strip(),
+            (entry.get('publicationURL') or '').strip(),
+            deck=full if full and full.lower() != title.lower() else '')
+        self._sheet.set_visible_child_name('details')
+        self._card_split.set_show_sidebar(True)
+        self._details.focus_start()
+
+    def _details_on_press(self, row, name, title):
+        row.set_activatable(True)
+        row.connect('activated', lambda _r: self._show_pack_details(name, title))
+
+    def _show_pack_details(self, name, title):
+        """A curated row, pressed: what we say of our own resource."""
+        info = content.info(name)
+        meta = []
+        if info.get('version'):
+            meta.append(_('Version {version}').format(version=info['version']))
+        # A pack not yet downloaded has no count to give ('? quotations'),
+        # and 'Interlinear' under 'Interlinear — Greek NT' says nothing.
+        kind = info.get('type', '')
+        if kind and not kind.startswith('?') and kind.lower() not in title.lower():
+            meta.append(kind)
+        self._details.show(
+            title, 'Scriptura', ' · '.join(meta), info.get('about', ''), '', '',
+            deck=info.get('description', ''), license=info.get('license', ''))
         self._sheet.set_visible_child_name('details')
         self._card_split.set_show_sidebar(True)
         self._details.focus_start()
@@ -1696,6 +1749,9 @@ class ModuleManagerWindow(Adw.Window):
     def _make_eb_row(self, tid, title, lang_code, lang_name, entry, installed):
         row = Adw.ActionRow()
         row.set_title(GLib.markup_escape_text(title))
+        row.set_activatable(True)
+        row.connect('activated', lambda _r, e=entry, t=title, c=lang_code, n=lang_name:
+                    self._show_eb_details(e, t, c, n))
         parts = []
         # Same rule as the CrossWire rows: the user's own language goes
         # unsaid; only a differing language earns its label.

@@ -124,3 +124,138 @@ def test_a_classics_author_moves_from_the_title_to_the_byline():
     module_manager.ModuleManagerWindow._show_details(
         fake, {'name': 'X', 'version': '1'}, 'Commentary (Abridged)')
     assert shown[1][0] == 'Commentary (Abridged)'
+
+
+def _picker_info(monkeypatch, name, info, kind='sword', display=None):
+    _display()
+    import content
+    import module_picker
+    monkeypatch.setattr(content, 'info', lambda n: dict(info))
+    monkeypatch.setattr(content, 'type_key', lambda n: kind)
+    monkeypatch.setattr(sword_bridge, 'display_name', lambda n: display or n)
+    picker = module_picker.ModulePicker.__new__(module_picker.ModulePicker)
+    picker._pane = types.SimpleNamespace()
+    picker._popover = picker._build_popover()
+    picker._can_remove = lambda n: False
+    picker._show_info(name)
+    return picker, _labels(picker._info_body), picker._info_kicker.get_label()
+
+
+def test_the_picker_names_the_language_and_drops_swords_category(monkeypatch):
+    import i18n
+    monkeypatch.setattr(i18n, 'current_language', lambda: 'en')
+    _p, labels, kicker = _picker_info(monkeypatch, 'Vulgate', {
+        'description': 'Latin Vulgate', 'language': 'la', 'version': '1.1',
+        'type': 'Biblical Texts', 'about': "Jerome's Latin."}, display='Vulgate')
+    assert kicker == 'CrossWire'
+    assert 'Latin · Version 1.1' in labels
+    assert not any('Biblical Texts' in t for t in labels)
+    assert 'Latin Vulgate' in labels          # the deck adds to the title
+
+
+def test_the_picker_gives_a_classic_its_byline_and_skips_a_repeated_description(monkeypatch):
+    _p, labels, kicker = _picker_info(monkeypatch, 'CWPSinners', {
+        'description': 'Sinners in the Hands of an Angry God (Jonathan Edwards)',
+        'language': 'en', 'version': '9', 'collection': 'Classics',
+        'about': 'Edwards’s Enfield sermon.',
+        'textsource': 'Common Weal Press, commonwealpress.org'},
+        display='Sinners in the Hands of an Angry God')
+    assert kicker == 'Common Weal Press'
+    assert labels[0] == 'Sinners in the Hands of an Angry God'
+    assert labels[1] == 'Jonathan Edwards · Version 9'
+    assert 'Source' not in labels
+    assert labels.count('Sinners in the Hands of an Angry God (Jonathan Edwards)') == 0
+
+
+def test_the_picker_keeps_a_packs_count_and_calls_it_scriptura(monkeypatch):
+    _p, labels, kicker = _picker_info(monkeypatch, 'catena', {
+        'description': 'Church commentary keyed to each verse.',
+        'version': '2026-09-22', 'type': '87995 quotations',
+        'license': 'Public domain', 'about': 'Compiled from the database.'},
+        kind='catena', display='Historical Commentaries')
+    assert kicker == 'Scriptura'
+    assert 'Version 2026-09-22 · 87995 quotations' in labels
+    assert 'License' in labels and 'Public domain' in labels
+
+
+def _eb_shown(entry, title='Reina Valera 1909', code='spa', name='Español'):
+    import module_manager
+    shown = []
+    fake = types.SimpleNamespace(
+        _details=types.SimpleNamespace(show=lambda *a, **k: shown.append((a, k)),
+                                       focus_start=lambda: None),
+        _sheet=types.SimpleNamespace(set_visible_child_name=lambda n: None),
+        _card_split=types.SimpleNamespace(set_show_sidebar=lambda v: None))
+    module_manager.ModuleManagerWindow._show_eb_details(fake, entry, title, code, name)
+    return shown[0]
+
+
+def test_an_ebible_row_shows_the_catalogues_description(monkeypatch):
+    import module_manager
+    monkeypatch.setattr(module_manager, '_ui_lang', lambda: 'en')
+    (title, source, meta, about, copyright, link), kw = _eb_shown({
+        'title': 'Santa Biblia — Reina Valera 1909', 'OTbooks': '39',
+        'NTbooks': '27', 'DCbooks': '0',
+        'description': 'The Holy Bible in Spanish, Reina Valera translation of 1909',
+        'Copyright': 'public domain', 'publicationURL': 'http://ebible.org/spaRV1909/'})
+    assert source == 'eBible.org' and title == 'Reina Valera 1909'
+    assert meta == 'Spanish (es)'                  # a whole Bible goes unsaid
+    assert about.startswith('The Holy Bible in Spanish')
+    assert link == 'http://ebible.org/spaRV1909/'
+    assert kw['deck'] == 'Santa Biblia — Reina Valera 1909'
+
+
+def test_an_ebible_new_testament_says_so_and_bad_counts_do_not_raise(monkeypatch):
+    import module_manager
+    monkeypatch.setattr(module_manager, '_ui_lang', lambda: 'es')
+    (title, _s, meta, *_rest), kw = _eb_shown(
+        {'title': 'Reina Valera 1909', 'OTbooks': '', 'NTbooks': '27', 'DCbooks': 'x'})
+    assert meta == 'New Testament'
+    assert kw['deck'] == ''                        # same as the row's title
+
+
+def _pack_shown(monkeypatch, info):
+    import content
+    import module_manager
+    monkeypatch.setattr(content, 'info', lambda n: dict(info))
+    shown = []
+    fake = types.SimpleNamespace(
+        _details=types.SimpleNamespace(show=lambda *a, **k: shown.append((a, k)),
+                                       focus_start=lambda: None),
+        _sheet=types.SimpleNamespace(set_visible_child_name=lambda n: None),
+        _card_split=types.SimpleNamespace(set_show_sidebar=lambda v: None))
+    module_manager.ModuleManagerWindow._show_pack_details(
+        fake, 'Historical Commentaries', 'Historical Commentaries')
+    return shown[0]
+
+
+def test_a_curated_pack_shows_our_description_credit_and_licence(monkeypatch):
+    (title, source, meta, about, *_r), kw = _pack_shown(monkeypatch, {
+        'description': 'Commentary keyed to each verse.', 'version': '2026-09-22',
+        'type': '87995 quotations', 'license': 'Public domain',
+        'about': 'Compiled from the HistoricalChristianFaith database.'})
+    assert source == 'Scriptura'
+    assert meta == 'Version 2026-09-22 · 87995 quotations'
+    assert about.startswith('Compiled from')
+    assert kw == {'deck': 'Commentary keyed to each verse.', 'license': 'Public domain'}
+
+
+def test_a_pack_not_yet_downloaded_drops_its_unknown_count(monkeypatch):
+    (_t, _s, meta, *_r), _kw = _pack_shown(monkeypatch, {
+        'description': 'Commentary.', 'version': '', 'type': '? quotations'})
+    assert meta == ''
+
+
+def test_a_packs_kind_that_repeats_its_title_is_left_out(monkeypatch):
+    import content
+    import module_manager
+    monkeypatch.setattr(content, 'info', lambda n: {'type': 'Interlinear'})
+    shown = []
+    fake = types.SimpleNamespace(
+        _details=types.SimpleNamespace(show=lambda *a, **k: shown.append(a),
+                                       focus_start=lambda: None),
+        _sheet=types.SimpleNamespace(set_visible_child_name=lambda n: None),
+        _card_split=types.SimpleNamespace(set_show_sidebar=lambda v: None))
+    module_manager.ModuleManagerWindow._show_pack_details(
+        fake, 'InterlinearGreek', 'Interlinear — Greek NT')
+    assert shown[0][2] == ''
