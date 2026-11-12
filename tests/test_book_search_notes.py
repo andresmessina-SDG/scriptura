@@ -91,6 +91,17 @@ def test_sword_attribute_notes_are_read_before_loading_another_entry(monkeypatch
     assert '<note swordFootnote="1">The note body.</note>' in raw
 
 
+def test_a_self_closing_sword_note_does_not_reach_a_later_note(monkeypatch):
+    mod = SimpleNamespace(setKeyText=lambda p: None,
+                          renderText=lambda: '<p>A<note swordFootnote="1"/> b '
+                                             '<note n="2">Printed.</note> c</p>')
+    monkeypatch.setattr(sword_bridge, 'mgr', lambda: SimpleNamespace(getModule=lambda n: mod))
+    monkeypatch.setattr(sword_bridge, '_collect_footnotes', lambda m: [('1','explanation','The note body.')])
+    raw = sword_bridge.load_genbook_entry('Book','/Chapter')
+    assert raw == ('<p>A<note swordFootnote="1">The note body.</note> b '
+                   '<note n="2">Printed.</note> c</p>')
+
+
 def _find_bar():
     import pytest
     from gi.repository import Gtk, Gdk

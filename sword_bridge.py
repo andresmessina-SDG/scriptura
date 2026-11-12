@@ -1586,7 +1586,9 @@ def load_genbook_entry(module_name, path):
                     if not body:
                         return match.group(0)
                     return '<note' + match.group(1).rstrip('/') + '>' + body + '</note>'
-                rendered = re.sub(r'<note\b([^>]*)(?:/>|>(.*?)</note>)',
+                # Lazy attributes: a greedy run would take a self-closing
+                # note's slash and stretch to the next note's close.
+                rendered = re.sub(r'<note\b([^>]*?)(?:/>|>(.*?)</note>)',
                                   restore_note, rendered, flags=re.DOTALL)
             return rendered
         except Exception:
