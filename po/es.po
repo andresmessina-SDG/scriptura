@@ -192,6 +192,50 @@ msgid "Commentary"
 msgstr "Comentario"
 
 #: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
+msgid "Search inside books, notes you can open, and clearer module details."
+msgstr "Búsqueda dentro de los libros, notas que se abren y detalles de módulos más claros."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:161
+msgid "Search a whole book with Ctrl+F, and step from match to match across its chapters."
+msgstr "Busque en todo un libro con Ctrl+F y pase de un resultado a otro entre sus capítulos."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:162
+msgid "Note numbers in a book open the note beside the text."
+msgstr "Los números de nota de un libro abren la nota junto al texto."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:163
+msgid "A part of a book with no text of its own lists its chapters, with Owen's own chapter summaries."
+msgstr "Una parte de un libro sin texto propio muestra sus capítulos, con los resúmenes de capítulo del propio Owen."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:164
+msgid "Books reopen at the line you left, even after a theme change."
+msgstr "Los libros se vuelven a abrir en la línea donde los dejó, incluso tras cambiar el tema."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:165
+msgid "Long book titles no longer push the window past its edge."
+msgstr "Los títulos largos de libros ya no empujan la ventana más allá de su borde."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:166
+msgid "A Scripture reference in a book opens the Bible in the other pane and keeps the book in view."
+msgstr "Una referencia bíblica en un libro abre la Biblia en el otro panel y mantiene el libro a la vista."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:167
+msgid "Press any row in Modules to read what its publisher says about it."
+msgstr "Pulse cualquier fila de Módulos para leer lo que dice de ella su editor."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:168
+msgid "The module info page is easier to read and names the language."
+msgstr "La página de información del módulo es más fácil de leer y nombra el idioma."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:169
+msgid "Module descriptions no longer show formatting codes."
+msgstr "Las descripciones de los módulos ya no muestran códigos de formato."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:170
+msgid "In Books & More, a search finds each classic once, and installed classics stay on their shelf."
+msgstr "En Libros y más, una búsqueda encuentra cada clásico una sola vez, y los clásicos instalados siguen en su estante."
+
+#: data/io.github.andresmessina_SDG.Scriptura.metainfo.xml.in:159
 msgid "Sixteen classic books, verses to share as images, and pages that fit."
 msgstr "Dieciséis libros clásicos, versículos para compartir como imagen y páginas que caben."
 
