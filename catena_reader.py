@@ -21,6 +21,7 @@ from gtk_utils import clear_children, fade_in
 from i18n import _, ngettext, book_label, current_language, N_
 
 import catena_bridge
+import sermons
 import sword_bridge
 import imagery_bridge
 
@@ -445,6 +446,21 @@ class CatenaReader:
         set_accessible_label(copy, _('Copy quote'))
         copy.connect('clicked', self._on_copy, e, text)
         head.append(copy)
+        # Into the sermon being written, when there is one — the same door,
+        # under the same name, as the verse menu's.
+        sermon = sermons.most_recent()
+        if sermon is not None:
+            label = _('Add to “{title}”').format(
+                title=sermon['title'] or _('Untitled sermon'))
+            add = Gtk.Button(icon_name='scriptura-sermons-symbolic')
+            add.add_css_class('flat')
+            add.add_css_class('circular')
+            add.add_css_class('catena-copy')
+            add.set_valign(Gtk.Align.START)
+            add.set_tooltip_text(label)
+            set_accessible_label(add, label)
+            add.connect('clicked', self._on_collect, e, text)
+            head.append(add)
         box.append(head)
 
         title = e.get('source_title')
@@ -504,9 +520,8 @@ class CatenaReader:
         quote.set_text(full if state['expanded'] else preview)
         btn.set_label(_('Show less') if state['expanded'] else _('Read more'))
 
-    def _on_copy(self, btn, e, text):
-        """Copy the quote citation-ready: the text, then an attribution line
-        (author, source, year, reference)."""
+    def _citation(self, e):
+        """"— Augustine, Tractates on John (AD 416), on John 3:16"."""
         bits = [_author_label(e)]
         title = e.get('source_title')
         if title:
@@ -516,8 +531,25 @@ class CatenaReader:
         if year:
             attribution = f'{attribution} ({year})'
         ref = f'{book_label(self._book)} {self._chapter}:{self._verse}'
-        line = _('— {attribution}, on {ref}').format(
+        return _('— {attribution}, on {ref}').format(
             attribution=attribution, ref=ref)
+
+    def _on_collect(self, btn, e, text):
+        """Put the quote into the sermon being written, signed as the copy
+        is: by the one who said it, never by the collection."""
+        sermon = sermons.most_recent()
+        root = btn.get_root()
+        if sermon is None or not hasattr(root, 'collect_into_sermon'):
+            return
+        quote = f"> {' '.join(text.split())} {self._citation(e)}"
+        anchor = {'book': self._book, 'chapter': self._chapter,
+                  'verses': [self._verse]}
+        root.collect_into_sermon(sermon['id'], quote, anchor)
+
+    def _on_copy(self, btn, e, text):
+        """Copy the quote citation-ready: the text, then an attribution line
+        (author, source, year, reference)."""
+        line = self._citation(e)
         btn.get_clipboard().set(f'{text}\n{line}')
         # Quiet confirmation: the icon flips to a check for a moment.
         btn.set_icon_name('scriptura-object-select-symbolic')

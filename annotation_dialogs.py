@@ -912,8 +912,24 @@ def _open_sermons_on(pane, parent_popover):
     GLib.idle_add(lambda: (root._open_sermons_on(book, chapter), GLib.SOURCE_REMOVE)[1])
 
 
-def collected_quote(pane, verses):
-    """(markdown, anchor) for the verses selected in `pane`.
+def _selected_comment(pane):
+    """The words selected in a commentary pane, or ''.
+
+    A commentator's note on one verse can run to a page, and what a sermon
+    wants of it is a sentence. In a Bible the door takes whole verses
+    whatever is selected: half a verse under a verse's reference misquotes.
+    """
+    buf = getattr(pane, '_buffer', None)
+    if (buf is None or not buf.get_has_selection()
+            or sword_bridge.module_type(pane.module) != 'Commentaries'):
+        return ''
+    start, end = buf.get_selection_bounds()
+    return ' '.join(buf.get_text(start, end, False).split())
+
+
+def collected_quote(pane, verses, words=''):
+    """(markdown, anchor) for the verses selected in `pane` — quoting
+    `words` when given, and the verses' whole text when not.
 
     The form a collected passage takes in a manuscript: the words as a
     blockquote, then the reference — which the body's own parser turns back
@@ -930,9 +946,11 @@ def collected_quote(pane, verses):
                                           pane.chapter)
     verse_map = {v: html for v, html in chapter_verses}
     verses = sorted(set(verses))
-    words = ' '.join(
+    # dict.fromkeys: a commentary files one note under every verse it
+    # covers, and three verses of it selected quoted the note three times.
+    words = words or ' '.join(dict.fromkeys(
         sword_bridge.plain_text(verse_map.get(v, ''))
-        for v in verses).strip()
+        for v in verses)).strip()
     ref = passage_export.format_reference(
         book_label(pane.book), pane.chapter, verses, prose=True)
     app = [annotations.app_verse(pane.module, pane.book, pane.chapter, v)
@@ -951,7 +969,7 @@ def collected_quote(pane, verses):
 def _collect_verses(pane, verses, sermon_id, parent_popover):
     """Add the selected verses to a sermon, from the reading page."""
     parent_popover.popdown()
-    text, anchor = collected_quote(pane, verses)
+    text, anchor = collected_quote(pane, verses, _selected_comment(pane))
     root = pane.view.get_root()
     if root is None or not hasattr(root, 'collect_into_sermon'):
         return

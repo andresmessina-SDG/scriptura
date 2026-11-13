@@ -892,11 +892,20 @@ class WritingPageMixin:
         card.set_parent(self.body)
         return card
 
-    def _offer_ref(self, hit):
-        start, end, book, chapter, verse = hit
-        self._ref_hit = hit
-        where = format_reference(book, chapter, [verse] if verse else None)
-        self._ref_go.set_label(_('Go to {reference}').format(reference=where))
+    def _offer_ref(self, hit, fault=''):
+        """The card under a reference: where it goes — or, for one that
+        points at no verse, `fault`, what is wrong with it."""
+        start, end = hit[:2]
+        self._ref_go.set_sensitive(not fault)
+        if fault:
+            self._ref_go.set_label(fault)
+        else:
+            _a, _b, book, chapter, verse = hit
+            self._ref_hit = hit
+            where = format_reference(book, chapter,
+                                     [verse] if verse else None)
+            self._ref_go.set_label(
+                _('Go to {reference}').format(reference=where))
         buf = self.body.get_buffer()
         # Cursor locations, not iter locations: the caret's line shows its
         # markers, but a reference is placed right either way this route.

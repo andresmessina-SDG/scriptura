@@ -10845,6 +10845,12 @@ msgstr "{title} (copia)"
 msgid "{source}, on {reference}"
 msgstr "{source}, sobre {reference}"
 
+msgid "{book} has no chapter {n}"
+msgstr "{book} no tiene capítulo {n}"
+
+msgid "{reference} has no verse {n}"
+msgstr "{reference} no tiene versículo {n}"
+
 #: window.py
 msgid "Go straight to a reference"
 msgstr "Ir directamente a una referencia"

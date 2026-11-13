@@ -17,7 +17,9 @@ with a rendered chapter, real SWORD modules, real background tasks.
 
 What it walks: the Today page at startup; a chapter; the dictionary peek; the
 study menu and every action in it; marks and notes; the sermon door, the
-collecting door and the study door that fetches back; the chapter doors; the
+collecting door and the study door that fetches back; a commentary note and
+a voice of the Church into the sermon; a reference to no verse; the delivery
+view; a duplicate; the chapter doors; the
 tag manager; a backup round trip; export, print and card documents on all
 three Annotations pages; app search over the reader's own writing; cross
 references; the footnote toggle; present mode; the side menu.
@@ -237,6 +239,127 @@ def driver() -> int:
         buf = editor.body.get_buffer()
         body = buf.get_text(*buf.get_bounds(), False)
         assert 'John 3:16' in body, body[:200]
+
+    @step
+    def open_a_commentary(win):
+        import sword_bridge
+        pane = state['pane']
+        state['bible'] = pane.module
+        state['commentary'] = next(
+            (m for m in ('MHCC', 'MHC', 'Clarke')
+             if sword_bridge.module_type(m) == 'Commentaries'), None)
+        if state['commentary']:
+            pane._apply_module_change(state['commentary'])
+            pane.load_reference_at_verse('John', 3, 16)
+
+    @step
+    def a_commentary_note_is_signed_by_the_commentator(win):
+        """It went into the sermon signed as the verse itself."""
+        import annotation_dialogs as ad
+        import sermons
+        import sword_bridge
+        if not state['commentary']:
+            return
+        pane = state['pane']
+        assert pane.module == state['commentary'], pane.module
+        name = sword_bridge.display_name(pane.module)
+        # A commentary does not speak on every verse: take one it does.
+        import content
+        verse = next(v for v, html in content.load_chapter(
+            pane.module, 'John', 3) if sword_bridge.plain_text(html).strip())
+        signed = f'— {name}, on John 3:{verse}'
+        ad.build_study_menu(pane, [verse], 40, 40).unparent()
+        whole, _anchor = ad.collected_quote(pane, [verse])
+        assert whole.endswith(signed), whole[-120:]
+        # A selection inside the note is quoted alone.
+        buf = pane._buffer
+        tag = buf.get_tag_table().lookup(f'vnum_{verse}')
+        assert tag is not None, f'the commentary rendered no verse {verse}'
+        start = buf.get_start_iter()
+        if not start.has_tag(tag):
+            start.forward_to_tag_toggle(tag)
+        start.forward_chars(8)
+        end = start.copy()
+        end.forward_chars(60)
+        buf.select_range(start, end)
+        words = ad._selected_comment(pane)
+        assert words and len(words) < len(whole) - 40, (words, len(whole))
+        pop = Gtk.Popover()
+        pop.set_parent(pane.view)
+        try:
+            ad._collect_verses(pane, [verse], state['sermon'], pop)
+        finally:
+            pop.unparent()
+        aw = win._annotations_win
+        aw._autosave.flush()
+        body = sermons.get(state['sermon'])['body']
+        assert f'> {words} {signed}' in body, body[-300:]
+
+    @step
+    def back_to_the_bible(win):
+        pane = state['pane']
+        if state['commentary']:
+            pane._apply_module_change(state['bible'])
+            pane.load_reference_at_verse('John', 3, 16)
+
+    @step
+    def a_voice_of_the_church_into_the_sermon(win):
+        import catena_bridge
+        import sermons
+        if not catena_bridge.is_installed():
+            return
+        reader = state['pane']._catena
+        reader.render_for('John', 3, 16)
+        assert reader._entries, 'no voices on John 3:16'
+        entry = reader._entries[0]
+        reader._on_collect(reader.widget, entry, entry['text'])
+        win._annotations_win._autosave.flush()
+        body = sermons.get(state['sermon'])['body']
+        assert reader._citation(entry) in body, body[-300:]
+
+    @step
+    def a_reference_to_no_verse(win):
+        editor = win._annotations_win._sermon_editor
+        buf = editor.body.get_buffer()
+        buf.insert(buf.get_end_iter(), '\n\nSee John 22:4 and John 3:17.')
+        editor._restyle_references()
+        assert [d[2] for d in editor.dead_refs] == ['John has no chapter 22'], \
+            editor.dead_refs
+        assert ('John', 3, 17) in [r[2:] for r in editor.refs]
+        editor._offer_ref(editor.dead_refs[0], fault=editor.dead_refs[0][2])
+        editor._dismiss_ref_card()
+
+    @step
+    def preach_from_it(win):
+        from gi.repository import Gdk
+        editor = win._annotations_win._sermon_editor
+        editor.idea.set_text('The seed is never the problem.')
+        view = editor._deliver()
+        state['delivery'] = view
+        for key in (Gdk.KEY_c, Gdk.KEY_plus, Gdk.KEY_plus, Gdk.KEY_Right):
+            view._on_key(None, key, 0, 0)
+        buf = view._view.get_buffer()
+        assert 'The seed is never the problem.' in buf.get_text(
+            *buf.get_bounds(), False)
+        assert view._clock.get_label().endswith('left'), \
+            view._clock.get_label()
+
+    @step
+    def leave_the_pulpit(win):
+        state.pop('delivery').close()
+
+    @step
+    def duplicate_the_sermon(win):
+        import sermons
+        aw = win._annotations_win
+        aw._on_duplicate_sermon(Gtk.Button())
+        copy_id = aw.open_sermon_id()
+        assert copy_id not in (None, state['sermon']), copy_id
+        copy, source = sermons.get(copy_id), sermons.get(state['sermon'])
+        assert copy['body'] == source['body'] and copy['preached'] == []
+        assert copy['title'] == 'The Sower Went Forth (copy)', copy['title']
+        # The steps after this one are about the first.
+        aw.select_sermon(state['sermon'])
 
     @step
     def the_chapter_doors(win):

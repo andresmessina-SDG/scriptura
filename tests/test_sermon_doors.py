@@ -73,6 +73,10 @@ def test_a_commentary_note_is_quoted_as_the_commentators(
                     '— Matthew Henry (Concise), on Matthew 13:3')
     # Still filed under the verse it comments on.
     assert anchor['book'] == 'Matthew' and anchor['chapter'] == 13
+    # A selection is quoted and not the whole note, which can run a page.
+    assert annotation_dialogs.collected_quote(
+        _Pane('MHCC'), [3], 'a sower went forth')[0] == (
+        '> a sower went forth — Matthew Henry (Concise), on Matthew 13:3')
     # And with no words to quote there is nothing to sign.
     assert annotation_dialogs.collected_quote(
         _Pane('MHCC'), [99])[0] == 'Matthew 13:99'
@@ -179,3 +183,63 @@ def test_every_door_aims_at_the_sermon_last_written_in(isolated):
     assert sermons.most_recent()['title'] == 'The Least of All Seeds'
     sermons.save('s1', title='The Sower Went Forth', body='more')
     assert sermons.most_recent()['title'] == 'The Sower Went Forth'
+
+
+def test_a_note_filed_under_three_verses_is_quoted_once(isolated,
+                                                        monkeypatch):
+    """Matthew Henry (Concise) files its note on John 3:1-8 under each of
+    the eight verses."""
+    monkeypatch.setattr(annotation_dialogs.content, 'load_chapter',
+                        lambda module, book, ch: [
+                            (1, 'Nicodemus came by night.'),
+                            (2, 'Nicodemus came by night.'),
+                            (3, 'Nicodemus came by night.')])
+    text, _anchor = annotation_dialogs.collected_quote(_Pane(), [1, 2, 3])
+    assert text == '> Nicodemus came by night. — Matthew 13:1–3'
+
+
+def test_only_a_commentary_pane_quotes_its_selection(monkeypatch):
+    """In a Bible half a verse under the verse's reference misquotes, so the
+    door takes whole verses there whatever is selected."""
+    from gi.repository import Gtk
+    buf = Gtk.TextBuffer()
+    buf.set_text('Christ is the  sower,\nand the seed is the word.')
+    buf.select_range(buf.get_iter_at_offset(0), buf.get_iter_at_offset(34))
+    pane = _Pane('MHCC')
+    pane._buffer = buf
+    kind = ['Commentaries']
+    monkeypatch.setattr(annotation_dialogs.sword_bridge, 'module_type',
+                        lambda module: kind[0])
+    assert annotation_dialogs._selected_comment(pane) == (
+        'Christ is the sower, and the seed')
+    kind[0] = 'Biblical Texts'
+    assert annotation_dialogs._selected_comment(pane) == ''
+    kind[0] = 'Commentaries'
+    buf.select_range(buf.get_start_iter(), buf.get_start_iter())
+    assert annotation_dialogs._selected_comment(pane) == ''
+
+
+def test_a_voice_of_the_church_is_signed_by_the_one_who_said_it(
+        isolated, monkeypatch):
+    import catena_reader
+    sermons.save('s1', title='The Sower', body='Words.')
+    landed = []
+
+    class _Root:
+        def collect_into_sermon(self, *args):
+            landed.append(args)
+
+    class _Btn:
+        def get_root(self):
+            return _Root()
+
+    reader = catena_reader.CatenaReader.__new__(catena_reader.CatenaReader)
+    reader._book, reader._chapter, reader._verse = 'John', 3, 16
+    entry = {'author': 'Augustine of Hippo', 'author_suffix': '',
+             'year': 416, 'source_title': 'Tractates on John'}
+    reader._on_collect(_Btn(), entry, 'God so loved\n\nthe world.')
+    (sermon_id, text, anchor), = landed
+    assert sermon_id == 's1'
+    assert text == '> God so loved the world. ' + reader._citation(entry)
+    assert 'Augustine' in text and text.endswith('on John 3:16')
+    assert anchor == {'book': 'John', 'chapter': 3, 'verses': [16]}

@@ -10827,6 +10827,12 @@ msgstr "{title} (копия)"
 msgid "{source}, on {reference}"
 msgstr "{source}, на {reference}"
 
+msgid "{book} has no chapter {n}"
+msgstr "{book}: нет главы {n}"
+
+msgid "{reference} has no verse {n}"
+msgstr "{reference}: нет стиха {n}"
+
 #: window.py
 msgid "Go straight to a reference"
 msgstr "Сразу перейти по ссылке"

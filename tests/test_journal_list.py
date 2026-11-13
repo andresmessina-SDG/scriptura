@@ -419,6 +419,55 @@ def test_typing_restyles_without_a_save(isolated, display):
         win.destroy()
 
 
+def test_a_reference_to_no_verse_is_marked_as_a_slip(isolated, display):
+    """John 22:4 was underlined as a door and opened on Acts: the parser
+    asks only that it know the book."""
+    journal.save('j1', title='x',
+                 body='see John 22:4, John 3:40 and John 3:16')
+    win = _open_journal()
+    try:
+        win._list.select_row(next(_rows(win)))
+        ed = win._entry_editor
+        assert [r[2:] for r in ed.refs] == [('John', 3, 16)]
+        assert [d[2] for d in ed.dead_refs] == ['John has no chapter 22',
+                                                'John 3 has no verse 40']
+        buf = ed.body.get_buffer()
+        it = buf.get_iter_at_offset(ed.dead_refs[0][0] + 1)
+        assert {t.get_property('name') for t in it.get_tags()} >= {
+            'md-ref-dead'}
+        assert not it.has_tag(buf.get_tag_table().lookup('md-ref'))
+        # The card says what is wrong, and is no door.
+        ed._offer_ref(ed.dead_refs[0], fault=ed.dead_refs[0][2])
+        assert ed._ref_go.get_label() == 'John has no chapter 22'
+        assert not ed._ref_go.get_sensitive()
+        ed._offer_ref(ed.refs[0])
+        assert ed._ref_go.get_sensitive()
+    finally:
+        win.destroy()
+
+
+def test_a_right_reference_is_never_called_wrong():
+    from annotation_editors import reference_fault
+    assert reference_fault('John', 3, 36) == ''
+    assert reference_fault('John', 21, None) == ''
+    assert reference_fault('John', 22, None) == 'John has no chapter 22'
+    assert reference_fault('Jude', 1, 26) == 'Jude 1 has no verse 26'
+    assert reference_fault('Obadiah', 2, 1) == 'Obadiah has no chapter 2'
+    # Not every Bible counts as the KJV does: its Daniel 3 stops at 30 and
+    # the Vulgate's runs to 100, its 3 John at 14 and most others' at 15,
+    # its Psalm 51 at 19 and the Hebrew's at 21, and the Septuagint has a
+    # Psalm 151.
+    assert reference_fault('Daniel', 3, 100) == ''
+    assert reference_fault('3 John', 1, 15) == ''
+    assert reference_fault('Psalms', 51, 21) == ''
+    assert reference_fault('Psalms', 151, 1) == ''
+    assert reference_fault('Joel', 4, 1) == ''
+    assert reference_fault('Daniel', 3, 101) == 'Daniel 3 has no verse 101'
+    # A psalm title is verse 0, and a book outside the 66 is not counted.
+    assert reference_fault('Psalms', 51, 0) == ''
+    assert reference_fault('Tobit', 14, 15) == ''
+
+
 def test_a_reference_in_the_body_is_marked_and_resolvable(isolated, display):
     journal.save('j1', title='x', body='compare John 3:16 with this')
     win = _open_journal()
