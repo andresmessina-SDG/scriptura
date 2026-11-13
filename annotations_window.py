@@ -2611,6 +2611,19 @@ class AnnotationsWindow(Adw.Window):
         print_one.connect('clicked', self._on_print_one)
         box.append(print_one)
 
+        if self._mode == 'sermons':
+            # A sermon to preach again in another place, or one whose
+            # headings are the shape the next will take.
+            box.append(Gtk.Separator(
+                orientation=Gtk.Orientation.HORIZONTAL))
+            again = Gtk.Button()
+            again.add_css_class('flat')
+            again.set_child(Gtk.Label(label=_('Duplicate this sermon'),
+                                      xalign=0))
+            again.set_sensitive(self._current_entry is not None)
+            again.connect('clicked', self._on_duplicate_sermon)
+            box.append(again)
+
         if self._mode == 'journal':
             box.append(Gtk.Separator(
                 orientation=Gtk.Orientation.HORIZONTAL))
@@ -2620,6 +2633,20 @@ class AnnotationsWindow(Adw.Window):
             incoming.connect('clicked', self._on_import)
             box.append(incoming)
         return box
+
+    def _on_duplicate_sermon(self, btn):
+        popover = btn.get_ancestor(Gtk.Popover)
+        if popover is not None:
+            popover.popdown()
+        # Flushed first: the copy is of the sermon as it reads now.
+        self._autosave.flush()
+        source = self._current_entry or {}
+        copy_id = sermons.duplicate(
+            source.get('id'),
+            _('{title} (copy)').format(
+                title=source.get('title') or _('Untitled sermon')))
+        if copy_id is not None:
+            self.select_sermon(copy_id)
 
     def _on_export(self, _btn):
         self._autosave.flush()

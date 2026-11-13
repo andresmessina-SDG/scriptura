@@ -60,6 +60,25 @@ def test_a_collected_verse_is_a_quote_and_a_reference(isolated, chapter):
     assert anchor == {'book': 'Matthew', 'chapter': 13, 'verses': [3]}
 
 
+def test_a_commentary_note_is_quoted_as_the_commentators(
+        isolated, chapter, monkeypatch):
+    """It went in as `> … — Matthew 13:3`: the commentator's words, signed
+    as the verse's."""
+    monkeypatch.setattr(annotation_dialogs.sword_bridge, 'module_type',
+                        lambda module: 'Commentaries')
+    monkeypatch.setattr(annotation_dialogs.sword_bridge, 'display_name',
+                        lambda module: 'Matthew Henry (Concise)')
+    text, anchor = annotation_dialogs.collected_quote(_Pane('MHCC'), [3])
+    assert text == ('> Behold, a sower went forth to sow; '
+                    '— Matthew Henry (Concise), on Matthew 13:3')
+    # Still filed under the verse it comments on.
+    assert anchor['book'] == 'Matthew' and anchor['chapter'] == 13
+    # And with no words to quote there is nothing to sign.
+    assert annotation_dialogs.collected_quote(
+        _Pane('MHCC'), [99])[0] == 'Matthew 13:99'
+
+
+
 def test_collected_verses_run_together_under_one_reference(isolated, chapter):
     text, anchor = annotation_dialogs.collected_quote(_Pane(), [3, 4])
     assert text.endswith('— Matthew 13:3–4')

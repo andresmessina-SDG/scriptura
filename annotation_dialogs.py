@@ -922,6 +922,9 @@ def collected_quote(pane, verses):
 
     App space for the anchor, the module's own numbering for the text: the
     pane speaks its module, and a Synodal psalter's verse 1 is app verse 0.
+
+    From a commentary the words are the commentator's, and the line says
+    so: "— Matthew Henry (Concise), on John 3:16".
     """
     chapter_verses = content.load_chapter(pane.module, pane.book,
                                           pane.chapter)
@@ -936,6 +939,11 @@ def collected_quote(pane, verses):
            for v in verses]
     anchor = {'book': pane.book, 'chapter': pane.chapter,
               'verses': [v for v in app if v is not None]}
+    if words and sword_bridge.module_type(pane.module) == 'Commentaries':
+        # A commentator's words are not the verse's: without the name the
+        # sermon quoted Matthew Henry as John 3:16.
+        ref = _('{source}, on {reference}').format(
+            source=sword_bridge.display_name(pane.module), reference=ref)
     text = f'> {words} — {ref}' if words else ref
     return text, anchor
 

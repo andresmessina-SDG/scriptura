@@ -1994,8 +1994,13 @@ class SermonEditor(_ProseEditor):
         buf = self.body.get_buffer()
         # True: markers folded out of sight are still the sermon.
         body = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True)
+        series = self._series_value() or {}
+        part = series.get('part')
         shown = ((self.row or {}).get('id'), self.title.get_text().strip(),
-                 body)
+                 body, self.idea.get_text().strip(),
+                 ' · '.join(p for p in (
+                     series.get('name'),
+                     _('Part {n}').format(n=part) if part else '') if p))
         open_on, win = getattr(self, '_delivery', (None, None))
         # Still a toplevel, or closed: 'destroy' never comes while this
         # attribute holds the window, so it cannot say.
@@ -2004,7 +2009,8 @@ class SermonEditor(_ProseEditor):
                 win.present()
                 return win
             win.close()
-        win = sermon_delivery.DeliveryWindow(shown[1], body,
+        win = sermon_delivery.DeliveryWindow(shown[1], body, idea=shown[3],
+                                             series=shown[4],
                                              transient_for=self.get_root())
         self._delivery = (shown, win)
         win.present()
