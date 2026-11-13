@@ -185,17 +185,52 @@ def test_every_door_aims_at_the_sermon_last_written_in(isolated):
     assert sermons.most_recent()['title'] == 'The Sower Went Forth'
 
 
-def test_a_note_filed_under_three_verses_is_quoted_once(isolated,
-                                                        monkeypatch):
+def test_a_note_filed_under_many_verses_is_quoted_once_and_cited_whole(
+        isolated, monkeypatch):
     """Matthew Henry (Concise) files its note on John 3:1-8 under each of
-    the eight verses."""
+    the eight verses: three chosen quoted it three times, and one chosen
+    cited it as a note on that verse alone."""
+    import passage_export
     monkeypatch.setattr(annotation_dialogs.content, 'load_chapter',
                         lambda module, book, ch: [
                             (1, 'Nicodemus came by night.'),
                             (2, 'Nicodemus came by night.'),
-                            (3, 'Nicodemus came by night.')])
-    text, _anchor = annotation_dialogs.collected_quote(_Pane(), [1, 2, 3])
-    assert text == '> Nicodemus came by night. — Matthew 13:1–3'
+                            (3, 'Nicodemus came by night.'),
+                            (4, 'The wind bloweth.'),
+                            (5, '')])
+    monkeypatch.setattr(annotation_dialogs.sword_bridge, 'module_type',
+                        lambda module: 'Commentaries')
+    monkeypatch.setattr(annotation_dialogs.sword_bridge, 'display_name',
+                        lambda module: 'Matthew Henry (Concise)')
+    pane = _Pane('MHCC', 'John', 3)
+    for chosen in ([1, 2, 3], [2]):
+        text, anchor = annotation_dialogs.collected_quote(pane, chosen)
+        assert text == ('> Nicodemus came by night. '
+                        '— Matthew Henry (Concise), on John 3:1–3')
+        assert anchor['verses'] == [1, 2, 3]
+    # A verse with no note of its own gathers no others to it.
+    assert annotation_dialogs.collected_quote(pane, [5])[0] == 'John 3:5'
+    assert [v for v, _h in passage_export.passage_rows(
+        'MHCC', 'John', 3, [1, 2, 3, 4])] == [1, 4]
+    # A Bible's verses are never folded together, alike or not.
+    monkeypatch.setattr(annotation_dialogs.sword_bridge, 'module_type',
+                        lambda module: 'Biblical Texts')
+    assert [v for v, _h in passage_export.passage_rows(
+        'KJV', 'John', 3, [1, 2, 3])] == [1, 2, 3]
+
+
+def test_the_reference_written_is_in_app_numbering(isolated, chapter,
+                                                   monkeypatch):
+    """A Synodal Psalm 51 prints its first verse as 3. The door wrote
+    "51:3", which the body reads in app numbering: the link opened two
+    verses below the words quoted."""
+    monkeypatch.setattr(annotations, 'app_verse',
+                        lambda module, book, chapter, verse: verse - 3)
+    text, anchor = annotation_dialogs.collected_quote(_Pane(), [4])
+    assert text.endswith('— Matthew 13:1') and anchor['verses'] == [1]
+    # The title line is app verse 0, and is cited as verse 1.
+    text, anchor = annotation_dialogs.collected_quote(_Pane(), [3, 4])
+    assert text.endswith('— Matthew 13:1') and anchor['verses'] == [0, 1]
 
 
 def test_only_a_commentary_pane_quotes_its_selection(monkeypatch):

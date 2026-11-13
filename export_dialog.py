@@ -23,7 +23,6 @@ gi.require_version('Adw', '1')
 from gi.repository import Adw, Gdk, GLib, Gtk
 
 import catena_bridge
-import content
 import passage_export
 import sword_bridge
 import verse_card
@@ -62,11 +61,9 @@ def card_rows(module, book, chapter, verses, smallcaps=True,
     """
     from pane import (_DROPCAP_SPAN, _dropcap_split, _normalize_divine,
                       _smallcap_divine_literals)
-    wanted = set(verses)
     rows = []
-    for verse, html in content.load_chapter(module, book, chapter):
-        if verse not in wanted:
-            continue
+    for verse, html in passage_export.passage_rows(module, book, chapter,
+                                                   list(verses)):
         html = str(html)
         if smallcaps:
             html = _DIVINE_RE.sub(

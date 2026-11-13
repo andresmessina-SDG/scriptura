@@ -442,3 +442,21 @@ def test_a_submenu_page_re_presents_the_popover():
 
     annotation_dialogs._slide(Stack(), 'share')
     assert presented == [True]
+
+
+def test_a_commentary_pane_offers_no_image_card(stores, monkeypatch):
+    """A card is a verse of Scripture in the house setting. From a
+    commentary it set a page of a commentator's notes under a drop cap,
+    headed "Chapter Outline"."""
+    Gtk = _gtk()
+    kind = ['Biblical Texts']
+    monkeypatch.setattr(annotation_dialogs.sword_bridge, 'module_type',
+                        lambda module: kind[0])
+    share = _rows(Gtk, annotation_dialogs.build_study_menu(
+        _pane(Gtk), [16], 100, 100), 'share')
+    assert 'As an image…' in share
+    kind[0] = 'Commentaries'
+    share = _rows(Gtk, annotation_dialogs.build_study_menu(
+        _pane(Gtk), [16], 100, 100), 'share')
+    assert 'As an image…' not in share
+    assert {'Export passage…', 'Print…'} <= set(share)

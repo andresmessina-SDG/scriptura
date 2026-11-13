@@ -267,10 +267,11 @@ def driver() -> int:
         import content
         verse = next(v for v, html in content.load_chapter(
             pane.module, 'John', 3) if sword_bridge.plain_text(html).strip())
-        signed = f'— {name}, on John 3:{verse}'
         ad.build_study_menu(pane, [verse], 40, 40).unparent()
         whole, _anchor = ad.collected_quote(pane, [verse])
-        assert whole.endswith(signed), whole[-120:]
+        # Cited by every verse the note is filed under: "on John 3:1–8".
+        signed = whole[whole.rindex('— '):]
+        assert signed.startswith(f'— {name}, on John 3:{verse}'), signed
         # A selection inside the note is quoted alone.
         buf = pane._buffer
         tag = buf.get_tag_table().lookup(f'vnum_{verse}')
